@@ -948,7 +948,7 @@ run_stdin:
                 /* Slightly uncomfortable calling back up to a higher
                  * level, but we'll live with it. */
                 code = gsapi_set_param(gs_lib_ctx_get_interp_instance(minst->heap),
-                                       gs_spt_parsed, adef, eqp);
+                                       adef, eqp, gs_spt_parsed);
                 if (code < 0) {
                     arg_free((char *)adef, minst->heap);
                     return code;

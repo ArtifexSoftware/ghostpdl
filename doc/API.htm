@@ -267,12 +267,12 @@ int
 
 <li><code>
 int
-<a href="#set_param">gsapi_set_param</a>(void *instance, gs_set_param_type type, const char *param, const void *value);
+<a href="#set_param">gsapi_set_param</a>(void *instance, const char *param, const void *value, gs_set_param_type type);
 </code></li>
 
 <li><code>
-int
-<a href="#get_param">gsapi_get_param</a>(void *instance, gs_set_param_type type, const char *param, const void *value);
+    int
+    <a href="#get_param">gsapi_get_param</a>(void *instance, const char *param, const void *value, gs_set_param_type type);
 </code></li>
 
 <li><code>
@@ -1622,7 +1622,7 @@ return <code>max(200, 200*(bandheight/200))</code>. If the function
 returns 0, then the existing value will be used unchanged.</p>
 <p>Any size rectangle can be chosen with any size bandheight,
 so ultimately the value chosen here will not matter much. It
-may make some small difference in speed in some cases.</p>  
+may make some small difference in speed in some cases.</p>
 
 <h3><a name="display_rectangle_request"></a>display_rectangle_request</h3>
 <pre>int (*display_rectangle_request)(void *handle, void *device,

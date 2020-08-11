@@ -378,7 +378,7 @@ gsapi_run_string(void *lib, const char *str,
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void *value)
+gsapi_set_param(void *lib, const char *param, const void *value, gs_set_param_type type)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)
@@ -387,7 +387,7 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *value)
+gsapi_get_param(void *lib, const char *param, void *value, gs_set_param_type type)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)

@@ -402,7 +402,7 @@ gsapi_exit(void *instance)
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void *value)
+gsapi_set_param(void *lib, const char *param, const void *value, gs_set_param_type type)
 {
     int code = 0;
     gs_param_string str_value;
@@ -508,7 +508,7 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *value)
+gsapi_get_param(void *lib, const char *param, void *value, gs_set_param_type type)
 {
     int code = 0;
     gs_param_string str_value;

@@ -863,14 +863,14 @@ list_params(void *instance)
 
     while ((code = gsapi_enumerate_params(instance, &iter, &key, &type)) == 0) {
         printf("Key=%s, type=%s: ", key, type >= 0 && type <= 9 ? types[type] : "invalid");
-        code = gsapi_get_param(instance, gs_spt_parsed, key, NULL);
+        code = gsapi_get_param(instance, key, NULL, gs_spt_parsed);
         if (code < 0)
             break;
         if (code > sizeof(buffer)) {
             printf("<overly long value>\n");
             continue;
         }
-        code = gsapi_get_param(instance, gs_spt_parsed, key, buffer);
+        code = gsapi_get_param(instance, key, buffer, gs_spt_parsed);
         if (code < 0)
             break;
         printf("%s\n", buffer);
@@ -889,6 +889,7 @@ param_test(const char *dev, char *outfile)
     /* Construct the argc/argv to pass to ghostscript. */
     int argc = 0;
     char *argv[10];
+    int i;
 
     sprintf(devtext, "-sDEVICE=%s", dev);
     argv[argc++] = "gpdl";
@@ -903,7 +904,7 @@ param_test(const char *dev, char *outfile)
         goto failearly;
     }
 
-    code = gsapi_set_param(instance, gs_spt_parsed, "Foo", "0");
+    code = gsapi_set_param(instance, "Foo", "0", gs_spt_parsed);
     if (code < 0) {
         printf("Got error from early param setting.\n");
         goto fail;
@@ -923,20 +924,20 @@ param_test(const char *dev, char *outfile)
         goto fail;
     }
 
-    code = gsapi_set_param(instance, gs_spt_parsed | gs_spt_more_to_come, "Bar", "1");
+    code = gsapi_set_param(instance, "Bar", "1", gs_spt_parsed | gs_spt_more_to_come);
     if (code < 0) {
         printf("Error %d in gsapi_set_param\n", code);
         goto fail;
     }
 
-    code = gsapi_set_param(instance, gs_spt_parsed, "Baz", "<</Test[0 1 2.3]/Charm(>>)/Vixen<01234567>/Scented/Ephemeral>>");
+    code = gsapi_set_param(instance, "Baz", "<</Test[0 1 2.3]/Charm(>>)/Vixen<01234567>/Scented/Ephemeral>>", gs_spt_parsed);
     if (code < 0) {
         printf("Error %d in gsapi_set_param\n", code);
         goto fail;
     }
 
     /* This should fail, as /Baz is not an expected error. */
-    code = gsapi_get_param(instance, gs_spt_parsed, "Baz", buffer);
+    code = gsapi_get_param(instance, "Baz", buffer, gs_spt_parsed);
     if (code == -1) {
         printf("Got expected error gsapi_get_param\n");
     } else  {
@@ -944,13 +945,25 @@ param_test(const char *dev, char *outfile)
         goto fail;
     }
 
-    code = gsapi_set_param(instance, gs_spt_parsed, "GrayImageDict", "<</QFactor 0.1 /Blend 0/HSamples [1 1 1 1] /VSamples [ 1 1 1 1 ] /Foo[/A/B/C/D/E] /Bar (123) /Baz <0123> /Sp#20ce /D#7fl>>");
+    code = gsapi_set_param(instance, "foo", (void *)"32", gs_spt_int);
     if (code < 0) {
         printf("Error %d in gsapi_set_param\n", code);
         goto fail;
     }
 
-    code = gsapi_get_param(instance, gs_spt_parsed, "GrayImageDict", NULL);
+    code = gsapi_get_param(instance, "foo", (void *)&i, gs_spt_int);
+    if (code < 0) {
+        printf("Error %d in gsapi_set_param\n", code);
+        goto fail;
+    }
+
+    code = gsapi_set_param(instance, "GrayImageDict", "<</QFactor 0.1 /Blend 0/HSamples [1 1 1 1] /VSamples [ 1 1 1 1 ] /Foo[/A/B/C/D/E] /Bar (123) /Baz <0123> /Sp#20ce /D#7fl>>", gs_spt_parsed);
+    if (code < 0) {
+        printf("Error %d in gsapi_set_param\n", code);
+        goto fail;
+    }
+
+    code = gsapi_get_param(instance, "GrayImageDict", NULL, gs_spt_parsed);
     if (code < 0) {
         printf("Error %d in gsapi_get_param\n", code);
         goto fail;
@@ -958,7 +971,7 @@ param_test(const char *dev, char *outfile)
     len = code;
     buffer[len-1] = 98;
     buffer[len] = 99;
-    code = gsapi_get_param(instance, gs_spt_parsed, "GrayImageDict", buffer);
+    code = gsapi_get_param(instance, "GrayImageDict", buffer, gs_spt_parsed);
     if (code < 0) {
         printf("Error %d in gsapi_get_param\n", code);
         goto fail;
@@ -1028,7 +1041,7 @@ res_change_test(const char *dev, char *outfile)
         goto fail;
     }
 
-    code = gsapi_set_param(instance, gs_spt_parsed, "HWResolution", "[200 200]");
+    code = gsapi_set_param(instance, "HWResolution", "[200 200]", gs_spt_parsed);
     if (code < 0) {
         printf("Error %d in gsapi_set_param\n", code);
         goto fail;

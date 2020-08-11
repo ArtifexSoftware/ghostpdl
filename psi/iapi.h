@@ -397,7 +397,7 @@ typedef enum {
 /* gs_spt_parsed allows for a string such as "<< /Foo 0 /Bar true >>" or
  * "[ 1 2 3 ]" etc to be used so more complex parameters can be set. */
 
-GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type, const char *param, const void *value);
+GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, const char *param, const void *value, gs_set_param_type type);
 
 /* Called to get a value. value points to storage of the appropriate
  * type. If value is passed as NULL on entry, then the return code is
@@ -407,7 +407,7 @@ GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type,
  * terminated string. (nul terminator is included in the count - hence
  * an empty string requires 1 byte storage). Returns gs_error_undefined
  * (-21) if not found. */
-GSDLLEXPORT int GSDLLAPI gsapi_get_param(void *instance, gs_set_param_type type, const char *param, void *value);
+GSDLLEXPORT int GSDLLAPI gsapi_get_param(void *instance, const char *param, void *value, gs_set_param_type type);
 
 /* Enumerator to list all the parameters.
  * Caller defines void *iter = NULL, and calls with &iter.
@@ -553,7 +553,7 @@ typedef int (GSDLLAPIPTR PFN_gsapi_run_fileW)(void *instance,
     const wchar_t *file_name, int user_errors, int *pexit_code);
 #endif
 typedef int (GSDLLAPIPTR PFN_gsapi_exit)(void *instance);
-typedef int (GSDLLAPIPTR PFN_gsapi_set_param)(void *instance, gs_set_param_type type, const char *param, const void *value);
+typedef int (GSDLLAPIPTR PFN_gsapi_set_param)(void *instance, const char *param, const void *value, gs_set_param_type type);
 
 typedef int (GSDLLAPIPTR PFN_gsapi_add_control_path)(void *instance, int type, const char *path);
 typedef int (GSDLLAPIPTR PFN_gsapi_remove_control_path)(void *instance, int type, const char *path);
