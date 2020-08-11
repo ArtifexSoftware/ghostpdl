@@ -77,7 +77,6 @@ gs_pattern_common_init(gs_pattern_template_t * ppat,
     ppat->type = type;
     ppat->PatternType = type->PatternType;
     uid_set_invalid(&ppat->uid);
-    ppat->client_data = 0;	/* for GC */
 }
 
 /* Generic makepattern */
@@ -117,6 +116,8 @@ gs_make_pattern_common(gs_client_color *pcc,
     gs_concat(saved, pmat);
     code = gs_newpath(saved);
     pinst->saved = saved;
+    pinst->client_data = NULL;	/* for GC */
+    pinst->notify_free = NULL;  /* No custom free calllback initially */
     pcc->pattern = pinst;
     pcc->pattern->pattern_id = gs_next_ids(mem, 1);
     return code;
@@ -128,6 +129,9 @@ rc_free_pattern_instance(gs_memory_t * mem, void *pinst_void,
                          client_name_t cname)
 {
     gs_pattern_instance_t *pinst = pinst_void;
+
+    if (pinst->notify_free != NULL)
+        (*pinst->notify_free) ((gs_memory_t *)mem, pinst);
 
     gs_gstate_free(pinst->saved);
     rc_free_struct_only(mem, pinst_void, cname);

@@ -53,8 +53,7 @@ typedef struct gs_pattern_type_s gs_pattern_type_t;
 #define gs_pattern_template_common\
   const gs_pattern_type_t *type;\
   int PatternType;		/* copied from the type structure */\
-  gs_uid uid;\
-  void *client_data		/* additional data for rendering */
+  gs_uid uid
 
 typedef struct gs_pattern_template_s {
     gs_pattern_template_common;
@@ -63,10 +62,12 @@ typedef struct gs_pattern_template_s {
 /* The descriptor is public for subclassing. */
 extern_st(st_pattern_template);
 #define public_st_pattern_template() /* in gspcolor.c */\
-  gs_public_st_ptrs2(st_pattern_template, gs_pattern_template_t,\
+  gs_public_st_ptrs1(st_pattern_template, gs_pattern_template_t,\
     "gs_pattern_template_t", pattern_template_enum_ptrs,\
-    pattern_template_reloc_ptrs, uid.xvalues, client_data)
+    pattern_template_reloc_ptrs, uid.xvalues)
 #define st_pattern_template_max_ptrs 2
+
+typedef void (*gs_pinst_free_proc_t) (gs_memory_t * mem, void *pinst);
 
 /* Definition of Pattern instances. */
 #define gs_pattern_instance_common\
@@ -74,6 +75,8 @@ extern_st(st_pattern_template);
     /* Following are set by makepattern */\
     const gs_pattern_type_t *type;  /* from template */\
     gs_gstate *saved;\
+    void *client_data;		/* additional data for rendering */\
+    gs_pinst_free_proc_t notify_free;\
     gs_id pattern_id
 struct gs_pattern_instance_s {
     gs_pattern_instance_common;
@@ -82,9 +85,9 @@ struct gs_pattern_instance_s {
 /* The following is public for subclassing. */
 extern_st(st_pattern_instance);
 #define public_st_pattern_instance() /* in gspcolor.c */\
-  gs_public_st_ptrs1(st_pattern_instance, gs_pattern_instance_t,\
+  gs_public_st_ptrs2(st_pattern_instance, gs_pattern_instance_t,\
     "gs_pattern_instance_t", pattern_instance_enum_ptrs,\
-    pattern_instance_reloc_ptrs, saved)
+    pattern_instance_reloc_ptrs, saved, client_data)
 #define st_pattern_instance_max_ptrs 1
 
 /* ---------------- Procedures ---------------- */

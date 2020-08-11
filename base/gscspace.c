@@ -98,6 +98,9 @@ gs_cspace_final(const gs_memory_t *cmem, void *vptr)
     gs_color_space *pcs = (gs_color_space *)vptr;
     (void)cmem; /* unused */
 
+    if (pcs->interpreter_free_cspace_proc != NULL) {
+        (*pcs->interpreter_free_cspace_proc) ((gs_memory_t *)cmem, pcs);
+    }
     if (pcs->type->final)
         pcs->type->final(pcs);
     if_debug2m('c', cmem, "[c]cspace final "PRI_INTPTR" %d\n", (intptr_t)pcs, (int)pcs->id);
@@ -124,6 +127,8 @@ gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
     pcs->id = id;
     pcs->base_space = NULL;
     pcs->pclient_color_space_data = NULL;
+    pcs->interpreter_data = NULL;
+    pcs->interpreter_free_cspace_proc = NULL;
     pcs->cmm_icc_profile_data = NULL;
     pcs->icc_equivalent = NULL;
     pcs->params.device_n.devn_process_space = NULL;

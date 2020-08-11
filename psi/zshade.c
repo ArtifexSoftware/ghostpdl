@@ -106,7 +106,6 @@ zbuildshadingpattern(i_ctx_t *i_ctx_p)
         (code = int_pattern_alloc(&pdata, op2, imemory)) < 0
         )
         return_error((code < 0 ? code : gs_error_rangecheck));
-    templat.client_data = pdata;
     code = gs_make_pattern(&cc_instance,
                            (const gs_pattern_template_t *)&templat,
                            &mat, igs, imemory);
@@ -114,6 +113,7 @@ zbuildshadingpattern(i_ctx_t *i_ctx_p)
         ifree_object(pdata, "int_pattern");
         return code;
     }
+    cc_instance.pattern->client_data = pdata;
     make_istruct(op - 1, a_readonly, cc_instance.pattern);
     pop(1);
     return code;

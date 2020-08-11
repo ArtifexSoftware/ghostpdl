@@ -770,6 +770,15 @@ typedef struct pixmap_info_s {
     void (*free_proc)(gs_memory_t *, void *, client_name_t);
 } pixmap_info;
 
+void *
+gs_get_pattern_client_data(const gs_client_color * pcc)
+{
+    const gs_pattern_instance_t *pinst = pcc->pattern;
+
+    return (pinst == 0 || pinst->type != &gs_pattern1_type ? 0 :
+            (void *)pinst->client_data);
+}
+
 gs_private_st_suffix_add1(st_pixmap_info,
                           pixmap_info,
                           "pixmap info. struct",
@@ -782,26 +791,16 @@ gs_private_st_suffix_add1(st_pixmap_info,
 #define st_pixmap_info_max_ptrs (1 + st_tile_bitmap_max_ptrs)
 
 /*
- *  Free routine for pattern instances created from pixmaps. This overwrites
- *  the free procedure originally stored in the pattern instance, and stores
- *  the pointer to that procedure in the pixmap_info structure. This procedure
- *  will call the original procedure, then free the pixmap_info structure.
+ *  Free routine for pattern instances created from pixmaps.
  *
  *  Note that this routine does NOT release the data in the original pixmap;
  *  that remains the responsibility of the client.
  */
-static void
-free_pixmap_pattern(
-    gs_memory_t *           pmem,
-    void *                  pvpinst,
-    client_name_t           cname
-)
+static void pixmap_free_notify (gs_memory_t * mem, void *vpinst)
 {
-    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pvpinst;
-    pixmap_info *ppmap = pinst->templat.client_data;
+    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)vpinst;
 
-    ppmap->free_proc(pmem, pvpinst, cname);
-    gs_free_object(pmem, ppmap, cname);
+    gs_free_object(mem, pinst->client_data, "pixmap_free_notify");
 }
 
 /*
@@ -813,7 +812,7 @@ static int
 mask_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
 {
     int code;
-    const pixmap_info *ppmap = gs_getpattern(pcolor)->client_data;
+    const pixmap_info *ppmap = (pixmap_info *)gs_get_pattern_client_data(pcolor);
     const gs_depth_bitmap *pbitmap = &(ppmap->bitmap);
     gs_image_enum *pen = gs_image_enum_alloc(gs_gstate_memory(pgs), "mask_PaintProc");
     gs_image1_t mask;
@@ -831,7 +830,7 @@ mask_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
 static int
 image_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
 {
-    const pixmap_info *ppmap = gs_getpattern(pcolor)->client_data;
+    const pixmap_info *ppmap = gs_get_pattern_client_data(pcolor);
     const gs_depth_bitmap *pbitmap = &(ppmap->bitmap);
     gs_image_enum *pen =
         gs_image_enum_alloc(gs_gstate_memory(pgs), "image_PaintProc");
@@ -946,7 +945,7 @@ int pixmap_high_level_pattern(gs_gstate * pgs)
     gs_color_space *pcs;
     gs_pattern1_instance_t *pinst =
         (gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
-    const pixmap_info *ppmap = ppat->client_data;
+    const pixmap_info *ppmap = (const pixmap_info *)gs_get_pattern_client_data((const gs_client_color *)&pdc->ccolor);
 
     code = gx_pattern_cache_add_dummy_entry(pgs, pinst, pgs->device->color_info.depth);
     if (code < 0)
@@ -1139,7 +1138,6 @@ gs_makepixmappattern(
     pat.XStep = (float)pbitmap->size.x;
     pat.YStep = (float)pbitmap->size.y;
     pat.PaintProc = (mask ? pixmap_remap_mask_pattern : pixmap_remap_image_pattern);
-    pat.client_data = ppmap;
 
     /* set the ctm to be the identity */
     gs_currentmatrix(pgs, &smat);
@@ -1165,9 +1163,8 @@ gs_makepixmappattern(
         if (!mask && (white_index >= (1 << pbitmap->pix_depth)))
             pinst->uses_mask = false;
 
-        /* overwrite the free procedure for the pattern instance */
-        ppmap->free_proc = pinst->rc.free;
-        pinst->rc.free = free_pixmap_pattern;
+        pinst->client_data = ppmap;
+        pinst->notify_free = pixmap_free_notify;
 
         /*
          * Since the PaintProcs don't reference the saved color space or

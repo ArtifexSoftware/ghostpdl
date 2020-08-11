@@ -243,7 +243,7 @@ static int
 px_paint_pattern(const gs_client_color * pcc, gs_gstate * pgs)
 {
     const gs_client_pattern *ppat = gs_getpattern(pcc);
-    const px_pattern_t *pattern = ppat->client_data;
+    const px_pattern_t *pattern = (px_pattern_t *)gs_get_pattern_client_data(pcc);
     const byte *dp = pattern->data;
     gs_image_enum *penum;
     gs_image_t image;
@@ -307,7 +307,7 @@ int px_high_level_pattern(gs_gstate * pgs)
     gs_color_space *pcs;
     gs_pattern1_instance_t *pinst =
         (gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
-    const px_pattern_t * pattern = ppat->client_data;
+    const px_pattern_t *pattern = (const px_pattern_t *)gs_get_pattern_client_data(gs_currentcolor(pgs));
 
     code = gx_pattern_cache_add_dummy_entry(pgs, pinst,
         pgs->device->color_info.depth);
@@ -470,7 +470,6 @@ render_pattern(gs_client_color * pcc, const px_pattern_t * pattern,
     templat.XStep = (float)full_width;
     templat.YStep = (float)full_height;
     templat.PaintProc = px_remap_pattern;
-    templat.client_data = (void *)pattern;
     {
         gs_matrix mat;
         gs_point dsize;
@@ -535,6 +534,7 @@ render_pattern(gs_client_color * pcc, const px_pattern_t * pattern,
             gs_setcolorspace(pgs, pcs);
         }
         code = gs_makepattern(pcc, &templat, &mat, pgs, NULL);
+        pcc->pattern->client_data = (void *)pattern;
         gs_grestore(pgs);
         return code;
     }

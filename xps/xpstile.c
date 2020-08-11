@@ -62,8 +62,7 @@ xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
 static int
 xps_paint_tiling_brush(const gs_client_color *pcc, gs_gstate *pgs)
 {
-    const gs_client_pattern *ppat = gs_getpattern(pcc);
-    struct tile_closure_s *c = ppat->client_data;
+    struct tile_closure_s *c = pcc->pattern->client_data;
     xps_context_t *ctx = c->ctx;
     gs_gstate *saved_pgs;
     int code;
@@ -200,7 +199,7 @@ static int
 xps_remap_pattern(const gs_client_color *pcc, gs_gstate *pgs)
 {
     gs_client_pattern *ppat = (gs_client_pattern *)gs_getpattern(pcc);
-    struct tile_closure_s *c = ppat->client_data;
+    struct tile_closure_s *c = pcc->pattern->client_data;
     xps_context_t *ctx = c->ctx;
     int code;
 
@@ -347,7 +346,6 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gspat.PaintType = 1;
         gspat.TilingType = 2;
         gspat.PaintProc = xps_remap_pattern;
-        gspat.client_data = &closure;
 
         /* We need to know if this tiling brush includes transparency.
            We could do a proper scan, but for now we'll be lazy and just look
@@ -384,6 +382,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         sa = gs_currentstrokeadjust(ctx->pgs);
         gs_setstrokeadjust(ctx->pgs, false);
         gs_makepattern(&gscolor, &gspat, &transform, ctx->pgs, NULL);
+        gscolor.pattern->client_data = &closure;
         gs_setpattern(ctx->pgs, &gscolor);
         /* If the tiling brush has an opacity, it was already set in the group
            that we are filling.  Reset to 1.0 here to avoid double application
