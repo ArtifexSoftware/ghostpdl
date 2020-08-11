@@ -228,9 +228,11 @@ printf_program_ident(const gs_memory_t *mem, const char *program_name, long revi
     if (program_name)
         outprintf(mem, (revision_number ? "%s " : "%s"), program_name);
     if (revision_number) {
-        int fpart = revision_number % 100;
+        int major = (int)(revision_number / 1000);
+        int minor = (int)(revision_number - (major * 1000)) / 10;
+        int patch = revision_number % 10;
 
-        outprintf(mem, "%d.%02d", (int)(revision_number / 100), fpart);
+        outprintf(mem, "%d.%02d.%d", major, minor, patch);
     }
 }
 void
@@ -241,9 +243,11 @@ emprintf_program_ident(const gs_memory_t *mem,
     if (program_name) {
         epfm(mem, (revision_number ? "%s " : "%s"), program_name);
         if (revision_number) {
-            int fpart = revision_number % 100;
+        int major = (int)(revision_number / 1000);
+        int minor = (int)(revision_number - (major * 1000)) / 10;
+        int patch = revision_number % 10;
 
-            epfm(mem, "%d.%02d", (int)(revision_number / 100), fpart);
+            epfm(mem, "%d.%02d.%d", major, minor, patch);
         }
         epfm(mem, ": ");
     }

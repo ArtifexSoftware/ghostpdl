@@ -34,7 +34,7 @@
 % Interpreter library version number
 % NOTE: the interpreter code requires that the first non-comment token
 % in this file be an integer, and that it match the compiled-in version!
-953
+9530
 
 % Check the interpreter revision.
 dup revision ne
@@ -276,9 +276,9 @@ userdict /=string 256 string put
    (\)\n) revisiondate 10 mod revisiondate 10 idiv 10 mod (-)
    revisiondate 100 idiv 10 mod revisiondate 1000 idiv 10 mod (-)
    revisiondate 10000 idiv ( \()
-   revision 10 mod
-   revision 100 mod 10 idiv (.)
-   revision 100 idiv ( )
+   revision 10 mod (.)
+   revision 1000 mod 10 idiv (.)
+   revision 1000 idiv ( )
    product
    counttomark
     { (%stdout) (w) file exch 0 .writecvp
