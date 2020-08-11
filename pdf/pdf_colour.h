@@ -19,6 +19,13 @@
 #define PDF_COLOUR_OPERATORS
 
 #include "gscolor1.h"
+#include "gscspace.h"
+
+static inline void pdfi_set_colour_callback(gs_color_space *pcs, pdf_context *ctx, gs_cspace_free_proc_t pdfi_cspace_free_callback)
+{
+    pcs->interpreter_data = ctx;
+    pcs->interpreter_free_cspace_proc = pdfi_cspace_free_callback;
+}
 
 int pdfi_setgraystroke(pdf_context *ctx);
 int pdfi_setgrayfill(pdf_context *ctx);
@@ -42,8 +49,6 @@ int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b);
 int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs);
 int pdfi_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict);
 int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image);
-int pdfi_color_cleanup(pdf_context *ctx, gs_gstate *pgs, int index);
-int pdfi_colorspace_cleanup(pdf_context *ctx, gs_color_space *pcs);
 int pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_stream *stream, gs_offset_t offset,
                                            unsigned int length, int comps, int *icc_N, gs_color_space **ppcs);
 

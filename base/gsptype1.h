@@ -82,6 +82,7 @@ void gs_pattern1_init(gs_pattern1_template_t *);
 int gs_makepattern(gs_client_color *, const gs_client_pattern *,
                    const gs_matrix *, gs_gstate *, gs_memory_t *);
 const gs_client_pattern *gs_getpattern(const gs_client_color *);
+void *gs_get_pattern_client_data(const gs_client_color *);
 
 /* Check device color for Pattern Type 1. */
 bool gx_dc_is_pattern1_color(const gx_device_color *pdevc);

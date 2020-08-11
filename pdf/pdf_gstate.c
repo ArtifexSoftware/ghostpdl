@@ -121,8 +121,6 @@ pdfi_gstate_free_cb(void *old, gs_memory_t * mem, gs_gstate *pgs)
     pdfi_int_gstate *igs = (pdfi_int_gstate *)old;
     if (old == NULL)
         return;
-    (void)pdfi_color_cleanup(igs->ctx, pgs, 0);
-    (void)pdfi_color_cleanup(igs->ctx, pgs, 1);
     pdfi_gstate_smask_free(igs);
     gs_free_object(mem, igs, "pdfi_gstate_free");
 }

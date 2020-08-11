@@ -300,34 +300,71 @@ int pdfi_ri(pdf_context *ctx)
  * functions to 'wrap' these with code to check for replacement of Patterns.
  * This comment is duplicated in pdf_pattern.c
  */
+
+static void pdfi_cspace_free_callback(gs_memory_t * mem, void *cs)
+{
+    gs_color_space *pcs = (gs_color_space *)cs;
+    pdf_context *ctx = (pdf_context *)pcs->interpreter_data;
+    gs_function_t *pfn;
+
+    if (gs_color_space_get_index(pcs) == gs_color_space_index_Separation) {
+        /* Handle cleanup of Separation functions if applicable */
+        pfn = gs_cspace_get_sepr_function(pcs);
+        if (pfn)
+            pdfi_free_function(ctx, pfn);
+    }
+
+    if (gs_color_space_get_index(pcs) == gs_color_space_index_DeviceN) {
+        /* Handle cleanup of DeviceN functions if applicable */
+        pfn = gs_cspace_get_devn_function(pcs);
+        if (pfn)
+            pdfi_free_function(ctx, pfn);
+    }
+}
+
 int pdfi_gs_setgray(pdf_context *ctx, double d)
 {
+    int code = 0;
+
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)
         return 0;
-
-    (void)pdfi_color_cleanup(ctx, ctx->pgs, 0);
-    return gs_setgray(ctx->pgs, d);
+    code = gs_setgray(ctx->pgs, d);
+    if (code < 0)
+        return code;
+    pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+    return 0;
 }
 
 int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
 {
+    int code = 0;
+
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)
         return 0;
 
-    (void)pdfi_color_cleanup(ctx, ctx->pgs, 0);
-    return gs_setrgbcolor(ctx->pgs, r, g, b);
+
+    code = gs_setrgbcolor(ctx->pgs, r, g, b);
+    if (code < 0)
+        return code;
+    pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+    return 0;
 }
 
 static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, double k)
 {
+    int code = 0;
+
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)
         return 0;
 
-    (void)pdfi_color_cleanup(ctx, ctx->pgs, 0);
-    return gs_setcmykcolor(ctx->pgs, c, m, y, k);
+    code = gs_setcmykcolor(ctx->pgs, c, m, y, k);
+    if (code < 0)
+        return code;
+    pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+    return 0;
 }
 
 int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
@@ -336,7 +373,7 @@ int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)
         return 0;
 
-    (void)pdfi_color_cleanup(ctx, ctx->pgs, 0);
+    pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
     return gs_setcolorspace(ctx->pgs, pcs);
 }
 
@@ -716,7 +753,7 @@ pattern_instance_uses_base_space(const gs_pattern_instance_t * pinst)
 int
 pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_fill)
 {
-    const gs_color_space *pcs;
+    gs_color_space *pcs;
     gs_color_space *base_space = NULL;
     int ncomps=0, code = 0;
     gs_client_color cc;
@@ -763,24 +800,16 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code < 0)
         goto cleanupExit;
-    if (is_pattern) {
-        if (ctx->pgs->color[0].ccolor->pattern != 0) {
-            code = pdfi_pattern_cleanup(ctx, ctx->pgs->color[0].ccolor);
-            if (code < 0)
-                goto cleanupExit;
-        }
+    code = gs_setcolor(ctx->pgs, &cc);
 
-        code = gs_setcolor(ctx->pgs, &cc);
+    if (is_pattern)
         /* cc is a local scope variable, holding a reference to a pattern.
          * We need to count the refrence down before the variable goes out of scope
          * in order to prevent the pattern leaking.
          */
         rc_decrement(cc.pattern, "pdfi_setcolorN");
-    } else {
-        code = gs_setcolor(ctx->pgs, &cc);
-    }
 
- cleanupExit:
+cleanupExit:
     if (!is_fill)
         gs_swapcolors_quick(ctx->pgs);
     return code;
@@ -944,6 +973,7 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
 
     if (ppcs!= NULL){
         *ppcs = pcs;
+        pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setcolorspace(ctx, pcs);
         rc_decrement_only_cs(pcs, "pdfi_seticc_cal");
@@ -1207,6 +1237,7 @@ pdfi_seticc_lab(pdf_context *ctx, float *range_buff, gs_color_space **ppcs)
     }
     if (ppcs!= NULL){
         *ppcs = pcs;
+        pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setcolorspace(ctx, pcs);
         rc_decrement_only_cs(pcs, "pdfi_seticc_lab");
@@ -1864,6 +1895,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
 
     if (ppcs!= NULL){
         *ppcs = pcs;
+        pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setcolorspace(ctx, pcs);
         /* release reference from construction */
@@ -1986,8 +2018,10 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     pcs->params.indexed.lookup.table.data = Buffer;
     Buffer = NULL;
 
-    if (ppcs != NULL)
+    if (ppcs != NULL) {
         *ppcs = pcs;
+        pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
+    }
     else {
         code = pdfi_gs_setcolorspace(ctx, pcs);
         /* release reference from construction */
@@ -2017,6 +2051,7 @@ static int pdfi_create_DeviceGray(pdf_context *ctx, gs_color_space **ppcs)
                 *ppcs = NULL;
             }
         }
+        pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setgray(ctx, 1);
     }
@@ -2038,6 +2073,7 @@ static int pdfi_create_DeviceRGB(pdf_context *ctx, gs_color_space **ppcs)
                 *ppcs = NULL;
             }
         }
+        pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setrgbcolor(ctx, 0, 0, 0);
     }
@@ -2059,6 +2095,7 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
                 *ppcs = NULL;
             }
         }
+        pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setcmykcolor(ctx, 0, 0, 0, 1);
     }
@@ -2240,79 +2277,6 @@ pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_stream *stream, gs_
         code = code1;
 
     return code;
-}
-
-/* Cleanup (deallocate) extra things for various types of color spaces
- *   pcs -- colorspace (assumed not to be null)
- *   pcc -- client color (can be null, but won't be in current usage)
- */
-static int
-pdfi_color_cleanup_inner(pdf_context *ctx, gs_color_space *pcs, gs_client_color *pcc)
-{
-    int code = 0;
-    gs_function_t *pfn;
-
-    if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
-        pcs = pcs->base_space;
-
-    /* Handle cleanup of Separation functions if applicable */
-    pfn = gs_cspace_get_sepr_function(pcs);
-    if (pfn)
-        pdfi_free_function(ctx, pfn);
-
-    if (gs_color_space_get_index(pcs) == gs_color_space_index_DeviceN) {
-        gs_device_n_colorant * pnextatt, * patt = pcs->params.device_n.colorants;
-        /* Handle cleanup of DeviceN functions if applicable */
-        pfn = gs_cspace_get_devn_function(pcs);
-        if (pfn)
-            pdfi_free_function(ctx, pfn);
-
-        while (patt != NULL) {
-            pnextatt = patt->next;
-            pcs = patt->cspace;
-            if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
-                pcs = pcs->base_space;
-            if (gs_color_space_get_index(pcs) == gs_color_space_index_Separation) {
-                pfn = gs_cspace_get_sepr_function(pcs);
-                if (pfn)
-                    pdfi_free_function(ctx, pfn);
-            }
-            patt = pnextatt;
-        }
-    }
-
-    if (pcc) {
-        /* Handle Pattern cleanup if applicable */
-        if (pcs->type->index == gs_color_space_index_Pattern)
-            code = pdfi_pattern_cleanup(ctx, pcc);
-    }
-    return code;
-}
-
-/* This is called in places where the colorspace might be about to get freed.
- * It gives us a hook to cleanup the data associated with some of the more
- * complicated colorspaces, such as patterns and spaces with functions.
- */
-int pdfi_color_cleanup(pdf_context *ctx, gs_gstate *pgs, int index)
-{
-    gs_color_space *pcs;
-    gs_client_color *pcc;
-
-    /* Only do the cleanup if it is about to be freed */
-    if (pgs->color[index].color_space->rc.ref_count != 1)
-        return 0;
-
-    pcs = pgs->color[index].color_space;
-    pcc = pgs->color[index].ccolor;
-    return pdfi_color_cleanup_inner(ctx, pcs, pcc);
-}
-
-/* Cleanup a specific colorspace (see comment on pdfi_color_cleanup() */
-int pdfi_colorspace_cleanup(pdf_context *ctx, gs_color_space *pcs)
-{
-    if (pcs->rc.ref_count != 1)
-        return 0;
-    return pdfi_color_cleanup_inner(ctx, pcs, NULL);
 }
 
 int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)

@@ -20,7 +20,7 @@
 
 #include "gscolor1.h"
 
-int pdfi_pattern_cleanup(pdf_context *ctx, const gs_client_color *pcc);
+void pdfi_pattern_cleanup(gs_memory_t * mem, void *p);
 int pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
                      pdf_dict *page_dict, pdf_name *pname, gs_client_color *cc);
 int pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,

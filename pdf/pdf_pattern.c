@@ -101,30 +101,12 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
 }
 #endif
 
-/*
- * Pattern lifetime management turns out to be more complex than we would ideally like. Although
- * Patterns are reference counted, and contain a client_data pointer, they don't have a gs_notify
- * setup. This means that there's no simple way for us to be informed when a Pattern is released.
- * We could patch up the Pattern finalize() method, replacing it with one of our own which calls
- * the original finalize() but that seems like a really nasty hack.
- * For the time being we put code in pdfi_grestore() to check for Pattern colour spaces being
- * restored away, but we also need to check for Pattern spaces being replaced in the current
- * graphics state. We define 'pdfi' variants of several graphics library colour management
- * functions to 'wrap' these with code to check for replacement of Patterns.
- * This comment is duplicated in pdf_color.c
- */
-int pdfi_pattern_cleanup(pdf_context *ctx, const gs_client_color *pcc)
+void pdfi_pattern_cleanup(gs_memory_t * mem, void *p)
 {
-    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
-    gs_pattern1_template_t *templat;
+    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)p;
     pdf_pattern_context_t *context;
 
-    if (pinst == NULL)
-        return 0;
-    templat = &pinst->templat;
-    if (templat == NULL)
-        return 0;
-    context = (pdf_pattern_context_t *)templat->client_data;
+    context = (pdf_pattern_context_t *)pinst->client_data;
 
     if (context != NULL) {
         pdfi_countdown(context->page_dict);
@@ -132,10 +114,9 @@ int pdfi_pattern_cleanup(pdf_context *ctx, const gs_client_color *pcc)
         if (context->shading)
             pdfi_shading_free(context->ctx, context->shading);
         gs_free_object(context->ctx->memory, context, "Free pattern context");
-        templat->client_data = NULL;
+        pinst->client_data = NULL;
+        pinst->notify_free = NULL;
     }
-
-    return 0;
 }
 
 /* See px_paint_pattern() */
@@ -143,8 +124,7 @@ static int
 pdfi_pattern_paint_stream(pdf_context *ctx, const gs_client_color *pcc)
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
-    const gs_pattern1_template_t *templat = &pinst->templat;
-    pdf_pattern_context_t *context = (pdf_pattern_context_t *)templat->client_data;
+    pdf_pattern_context_t *context = (pdf_pattern_context_t *)pinst->client_data;
     pdf_dict *page_dict = context->page_dict;
     pdf_dict *pat_dict = context->pat_dict;
     int code = 0;
@@ -160,8 +140,7 @@ static int
 pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
-    const gs_pattern1_template_t *templat = &pinst->templat;
-    pdf_pattern_context_t *context = (pdf_pattern_context_t *)templat->client_data;
+    pdf_pattern_context_t *context = (pdf_pattern_context_t *)pinst->client_data;
     pdf_context *ctx = context->ctx;
     int code = 0;
 
@@ -211,7 +190,7 @@ pdfi_pattern_paint_high_level(const gs_client_color *pcc, gs_gstate *pgs_ignore)
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
     const gs_pattern1_template_t *templat = &pinst->templat;
-    pdf_pattern_context_t *context = (pdf_pattern_context_t *)templat->client_data;
+    pdf_pattern_context_t *context = (pdf_pattern_context_t *)pinst->client_data;
     pdf_context *ctx = context->ctx;
     gs_gstate *pgs = ctx->pgs;
     gs_matrix m;
@@ -337,7 +316,7 @@ pdfi_pattern_gset(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *ExtGState)
 
 /* Setup the pattern gstate and other context */
 static int
-pdfi_pattern_setup(pdf_context *ctx, gs_pattern_template_t *templat,
+pdfi_pattern_setup(pdf_context *ctx, pdf_pattern_context_t **ppcontext,
                    pdf_dict *page_dict, pdf_dict *pat_dict, pdf_dict *ExtGState)
 {
     int code = 0;
@@ -359,7 +338,7 @@ pdfi_pattern_setup(pdf_context *ctx, gs_pattern_template_t *templat,
     context->shading = NULL;
     pdfi_countup(page_dict);
     pdfi_countup(pat_dict);
-    templat->client_data = context;
+    *ppcontext = context;
 
     return 0;
  errorExit:
@@ -383,6 +362,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     pdf_dict *Resources = NULL;
     pdf_array *Matrix = NULL;
     bool transparency = false;
+    pdf_pattern_context_t *context = NULL;
 
 #if DEBUG_PATTERN
     dbgmprintf(ctx->memory, "PATTERN: Type 1 pattern\n");
@@ -462,7 +442,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     if (code < 0)
         goto exit;
 
-    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict, NULL);
+    code = pdfi_pattern_setup(ctx, &context, page_dict, pdict, NULL);
     if (code < 0) {
         (void) pdfi_grestore(ctx);
         goto exit;
@@ -474,10 +454,15 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
     }
 
+    cc->pattern->client_data = context;
+    cc->pattern->notify_free = pdfi_pattern_cleanup;
+    context = NULL;
+
     code = pdfi_grestore(ctx);
     if (code < 0)
         goto exit;
  exit:
+    pdfi_countdown(context);
     pdfi_countdown(Resources);
     pdfi_countdown(Matrix);
     pdfi_countdown(BBox);
@@ -533,7 +518,7 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 
     gs_pattern2_init(&templat);
 
-    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, NULL, NULL, ExtGState);
+    code = pdfi_pattern_setup(ctx, &context, NULL, NULL, ExtGState);
     if (code < 0) {
         (void) pdfi_grestore(ctx);
         goto exit;
@@ -546,16 +531,18 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
     }
 
-    /* We need to call pdfi_pattern_setup (in order to create the ColorSpace) before
-     * we call pdfi_shading_build. So we can't pass the shading dictionary to pdfi_pattern_setup
-     * in the same way as the type 1 pattern passes its persistent data, so we need to do it
-     * ourselves here.
-     */
-    context = (pdf_pattern_context_t *)templat.client_data;
     context->shading = shading;
 
     templat.Shading = shading;
     code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat, &mat, ctx->pgs, ctx->memory);
+    if (code < 0) {
+        (void) pdfi_grestore(ctx);
+        goto exit;
+    }
+    cc->pattern->client_data = context;
+    context = NULL;
+
+    code = pdfi_pattern_setup(ctx, &context, NULL, NULL, ExtGState);
     if (code < 0) {
         (void) pdfi_grestore(ctx);
         goto exit;
@@ -566,6 +553,7 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
 
  exit:
+    pdfi_countdown(context);
     pdfi_countdown(Shading);
     pdfi_countdown(Matrix);
     pdfi_countdown(ExtGState);

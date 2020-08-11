@@ -159,12 +159,12 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     code = int_pattern_alloc(&pdata, op1, imemory);
     if (code < 0)
         return code;
-    templat.client_data = pdata;
     code = gs_makepattern(&cc_instance, &templat, &mat, igs, imemory);
     if (code < 0) {
         ifree_object(pdata, "int_pattern");
         return code;
     }
+    cc_instance.pattern->client_data = pdata;
     make_istruct(op, a_readonly, cc_instance.pattern);
     return code;
 }
@@ -200,7 +200,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     gs_gstate *pgs = igs;
     gs_pattern1_instance_t *pinst =
         (gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
-    ref *pdict = &((int_pattern *) pinst->templat.client_data)->dict;
+    ref *pdict = &((int_pattern *) pinst->client_data)->dict;
     gx_device_forward *pdev = NULL;
     gx_device *cdev = gs_currentdevice_inline(igs), *new_dev = NULL;
     int code;
