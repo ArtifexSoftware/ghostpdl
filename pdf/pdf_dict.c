@@ -447,23 +447,25 @@ int fill_float_array_from_dict(pdf_context *ctx, float *parray, int size, pdf_di
     if (code < 0)
         return code;
     if (a->type != PDF_ARRAY) {
-        pdfi_countdown(a);
-        return_error(gs_error_typecheck);
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
     }
     array_size = pdfi_array_size(a);
-    if (array_size > size)
-        return_error(gs_error_rangecheck);
+    if (array_size > size) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
 
     for (i=0; i< array_size; i++) {
         code = pdfi_array_get_number(ctx, a, (uint64_t)i, &f);
-        if (code < 0) {
-            pdfi_countdown(a);
-            return_error(code);
-        }
+        if (code < 0)
+            goto exit;
         parray[i] = (float)f;
     }
+    code = array_size;
+ exit:
     pdfi_countdown(a);
-    return array_size;
+    return code;
 }
 
 int fill_bool_array_from_dict(pdf_context *ctx, bool *parray, int size, pdf_dict *dict, const char *Key)

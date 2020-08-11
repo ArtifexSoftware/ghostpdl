@@ -319,7 +319,7 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
     params->BitsPerComponent = i;
 
     if (params->Function != NULL)
-        num_decode += 1;
+        num_decode += 2;
     else
         num_decode += gs_color_space_num_components(params->ColorSpace) * 2;
 
@@ -337,7 +337,12 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
     return 0;
 
 build_mesh_shading_error:
-    gs_free_object(ctx->memory, params->Function, "Function");
+    if (params->Function)
+        pdfi_free_function(ctx, params->Function);
+    if (params->DataSource.data.strm != NULL) {
+        s_close_filters(&params->DataSource.data.strm, params->DataSource.data.strm->strm);
+        gs_free_object(ctx->memory, params->DataSource.data.strm, "release mesh shading Data Source");
+    }
     gs_free_object(ctx->memory, params->Decode, "Decode");
     return code;
 }
