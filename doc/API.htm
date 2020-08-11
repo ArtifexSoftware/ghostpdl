@@ -257,33 +257,12 @@ int
 
 <li><code>
 int
-<a href="#set_default_device_list">gsapi_set_default_device_list</a>(void *instance, const char *list, int listlen);
-</code></li>
-
-<li><code>
-int
 <a href="#get_default_device_list">gsapi_get_default_device_list</a>(void *instance, char **list, int *listlen);
 </code></li>
 
 <li><code>
 int
-<a href="#set_param">gsapi_set_param</a>(void *instance, const char *param, const void *value, gs_set_param_type type);
-</code></li>
-
-<li><code>
-    int
-    <a href="#get_param">gsapi_get_param</a>(void *instance, const char *param, const void *value, gs_set_param_type type);
-</code></li>
-
-<li><code>
-int
-<a href="#enumerate_params">gsapi_enumerate_params</a>(void *instance, void *iter, const char **key, gs_set_param_type *type);
-</code></li>
-
-<li><code>
-int
-<a href="#init">gsapi_init_with_args</a>
-(void *instance, int argc, char **argv);
+<a href="#set_default_device_list">gsapi_set_default_device_list</a>(void *instance, const char *list, int listlen);
 </code></li>
 
 <li><code>
@@ -328,8 +307,54 @@ int
 
 <li><code>
 int
+<a href="#init">gsapi_init_with_args</a>
+(void *instance, int argc, char **argv);
+</code></li>
+
+<li><code>
+int
 <a href="#exit">gsapi_exit</a>
 (void *instance);
+</code></li>
+
+<li><code>
+int
+<a href="#set_param">gsapi_set_param</a>(void *instance, const char *param, const void *value, gs_set_param_type type);
+</code></li>
+
+<li><code>
+    int
+    <a href="#get_param">gsapi_get_param</a>(void *instance, const char *param, const void *value, gs_set_param_type type);
+</code></li>
+
+<li><code>
+int
+<a href="#enumerate_params">gsapi_enumerate_params</a>(void *instance, void **iter, const char **key, gs_set_param_type *type);
+</code></li>
+
+<li><code>
+int
+<a href="#add_control_path">gsapi_add_control_path</a>(void *instance, int type, const char *path);
+</code></li>
+
+<li><code>
+int
+<a href="#remove_control_path">gsapi_remove_control_path</a>(void *instance, int type, const char *path);
+</code></li>
+
+<li><code>
+void
+<a href="#purge_control_paths">gsapi_purge_control_paths</a>(void *instance, int type);
+</code></li>
+
+<li><code>
+void
+<a href="#activate_path_control">gsapi_activate_path_control</a>(void *instance, int enable);
+</code></li>
+
+<li><code>
+int
+<a href="#is_path_control_active">gsapi_is_path_control_active</a>(void *instance);
 </code></li>
 
 <li><code>
@@ -586,7 +611,7 @@ Note, that internally, when we set a parameter, we perform an <code>initgraphics
 <blockquote>
 Get a parameter.
 Retrieve the current value of a parameter.
-<p>The return value is -ve for error, or the number of bytes storage required for the value. Call once with <code>value = NULL</code> to get the number of bytes required, then call again with <code>value</code> pointing to at least the required number of bytes where the value will be copied out. Note that the caller is required to know the type of value in order to get it. For all types other than <code>string</code>, <code>name</code>, <code>parsed</code> knowing the type means you already know the size required.
+<p>If an error occurs, the return value is negative. Otherwise the return value is the number of bytes required for storage of the value. Call once with <code>value = NULL</code> to get the number of bytes required, then call again with <code>value</code> pointing to at least the required number of bytes where the value will be copied out. Note that the caller is required to know the type of value in order to get it. For all types other than <code>string</code>, <code>name</code>, <code>parsed</code> knowing the type means you already know the size required.
 <p>
 This call retrieves parameters/values that have made it to the device. Thus, any values set using the <code>gs_spt_more_to_come</code> without a following call without that flag will not be retrieved. Similarly, attempting to get a parameter before <code>gs_init_with_args</code> has been called will not list any, even if <code>gsapi_set_param</code> has been used.
 <p>
