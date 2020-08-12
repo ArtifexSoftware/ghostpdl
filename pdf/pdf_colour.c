@@ -1937,7 +1937,7 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     int code;
     int64_t hival, lookup_length = 0;
     int num_values;
-    gs_color_space *pcs, *pcs_base;
+    gs_color_space *pcs=NULL, *pcs_base=NULL;
     gs_color_space_index base_type;
     byte *Buffer = NULL;
 

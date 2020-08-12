@@ -1322,6 +1322,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     dbgmprintf(ctx->memory, "pdfi_do_image BEGIN\n");
 #endif
     memset(&mask_info, 0, sizeof(mask_info));
+    memset(&smask_info, 0, sizeof(mask_info));
 
     if (!inline_image) {
         /* If we are not processing an inline image, check to see if any of the abbreviated
@@ -1576,6 +1577,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     pdfi_free_image_info_components(&image_info);
     pdfi_free_image_info_components(&mask_info);
+    pdfi_free_image_info_components(&smask_info);
 
     if (pcs != NULL)
         rc_decrement_only_cs(pcs, "pdfi_do_image");
