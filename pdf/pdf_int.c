@@ -2333,6 +2333,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                     pdf_name *n = (pdf_name *)o;
 
                                     if (pdfi_name_is(n, "Catalog")) {
+                                        pdfi_countdown(ctx->Root); /* In case it was already set */
                                         ctx->Root = (pdf_dict *)ctx->stack_top[-2];
                                         pdfi_countup(ctx->Root);
                                     }
