@@ -76,6 +76,7 @@ ends_token(const char *p)
             *p == 10 ||
             *p == 12 ||
             *p == 13 ||
+            *p == 32 ||
             *p == '/' ||
             *p == '%' ||
             *p == '<' || *p == '>' ||
@@ -163,22 +164,48 @@ process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_nam
 static int
 process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char **p)
 {
-    char *p1 = *p + 1; /* Skip the '/' */
-    char *start = p1-1;
+    char *out = *p;
+    char *in = *p + 1;
+    char *start = out;
     gs_param_string ps;
 
-    while (!ends_token(p1))
-        p1[-1] = p1[0], p1++;
+    while (!ends_token(in)) {
+        if (*in == '#') {
+            int v;
+            if (in[1] >= '0' && in[1] <= '9')
+                v = (in[1] - '0')<<4;
+            else if (in[1] >= 'a' && in[1] <= 'f')
+                v = (in[1] - 'a' + 10)<<4;
+            else if (in[1] >= 'A' && in[1] <= 'F')
+                v = (in[1] - 'a' + 10)<<4;
+            else
+                return -1;
+            if (in[2] >= '0' && in[2] <= '9')
+                v += (in[2] - '0');
+            else if (in[2] >= 'a' && in[2] <= 'f')
+                v += (in[2] - 'a' + 10);
+            else if (in[2] >= 'A' && in[2] <= 'F')
+                v += (in[2] - 'a' + 10);
+            else
+                return -1;
+            if (v == 0)
+                return -1;
+            *out++ = v;
+            in += 3;
+            continue;
+        }
+        *out++ = *in++;
+    }
 
     /* Null terminate (in case it's the '*key = NULL' case below) */
-    p1[-1] = 0;
-    *p = p1;
+    *out = 0;
+    *p = in;
 
     if (*key == NULL)
         *key = (gs_param_name)start;
     else {
         ps.data = (const byte *)start;
-        ps.size = p1 - start - 1;
+        ps.size = out - start;
         ps.persistent = false;
         param_write_name((gs_param_list *)plist, *key, &ps);
         *key = NULL;
@@ -312,7 +339,7 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                 break;
 
             case '/':
-                if (array_type != gs_param_type_null && array_type != gs_param_type_string_array) {
+                if (array_type != gs_param_type_null && array_type != gs_param_type_name_array) {
                     code = gs_error_typecheck;
                     break;
                 }
@@ -331,10 +358,10 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                         array_data = new_array;
                     }
                     array_max = new_max;
-                    array_type = gs_param_type_string_array;
+                    array_type = gs_param_type_name_array;
                 }
                 parray = (gs_param_string *)array_data;
-                parray[index].data = (const byte *)p1;
+                parray[index].data = (const byte *)++p1;
                 while (!ends_token(p1))
                     p1++;
                 parray[index].size = p1 - (char *)(parray[index].data);
@@ -472,6 +499,12 @@ return_minus_one:
                 string_array.persistent = 0;
                 string_array.size = index;
                 code = param_write_string_array((gs_param_list *)plist, key, &string_array);
+                break;
+            case gs_param_type_name_array:
+                string_array.data = (const gs_param_string *)array_data;
+                string_array.persistent = 0;
+                string_array.size = index;
+                code = param_write_name_array((gs_param_list *)plist, key, &string_array);
                 break;
             case gs_param_type_int_array:
                 int_array.data = (const int *)array_data;
@@ -688,3 +721,326 @@ int gs_param_list_add_parsed_value(gs_param_list *plist, gs_param_name key, cons
     return code;
 }
 
+typedef struct {
+    char *value;
+    int *len;
+    char last;
+} outstate;
+
+static void
+out_string(outstate *out, const char *str)
+{
+    int slen = str ? (int)strlen(str) : 0;
+
+    if (slen == 0)
+        return;
+
+    if (out->last != 0 && out->last != ')' && out->last != '>' &&
+        out->last != '[' && out->last != ']' && out->last != '}' &&
+        *str != '(' && *str != ')' && *str != '<' && *str != '>' &&
+        *str != '[' && *str != ']' && *str != '{' && *str != '}' &&
+        *str != '/') {
+        /* We need to insert some whitespace */
+        *out->len += 1;
+        if (out->value != NULL) {
+            *out->value++ = ' ';
+            *out->value = 0;
+        }
+    }
+
+    *out->len += slen;
+    out->last = str[slen-1];
+    if (out->value != NULL) {
+        memcpy(out->value, str, slen);
+        out->value += slen;
+        *out->value = 0;
+    }
+}
+
+static void
+string_to_string(const char *data, int len, outstate *out)
+{
+    int i;
+    char text[4];
+    const char *d = data;
+
+    /* Check to see if we have any awkward chars */
+    for (i = len; i != 0; i--) {
+        if (*d < 32 || *d >= 127 || *d == ')')
+            break;
+        d++;
+    }
+
+    /* No awkward chars, do it the easy way. */
+    if (i == 0) {
+        d = data;
+        out_string(out, "(");
+        out->last = 0;
+        text[1] = 0;
+        for (i = len; i != 0; i--) {
+            text[0] = *d++;
+            out->last = 0;
+            out_string(out, text);
+        }
+        out->last = 0;
+        out_string(out, ")");
+        return;
+    }
+
+    /* Output as hexstring */
+    out_string(out, "<");
+    text[2] = 0;
+    for (i = 0; i < len; i++) {
+        text[0] = "0123456789ABCDEF"[(*data >> 4) & 15];
+        text[1] = "0123456789ABCDEF"[(*data++) & 15];
+        out->last = 0;
+        out_string(out, text);
+    }
+    out_string(out, ">");
+}
+
+static void
+name_to_string(const char *data, int len, outstate *out)
+{
+    int i;
+    char text[4];
+
+    out_string(out, "/");
+    text[3] = 0;
+    for (i = 0; i < len; i++) {
+        char c = *data++;
+        if (c > 32 && c < 127 && c != '/' && c != '#' &&
+            c != '<' && c != '>' &&
+            c != '[' && c != ']' &&
+            c != '(' && c != ')' &&
+            c != '{' && c != '}') {
+            text[0] = c;
+            text[1] = 0;
+        } else {
+            text[0] = '#';
+            text[1] = "0123456789ABCDEF"[(c >> 4) & 15];
+            text[2] = "0123456789ABCDEF"[c & 15];
+        }
+        out->last = 0;
+        out_string(out, text);
+    }
+}
+
+static void
+int_array_to_string(gs_param_int_array ia, outstate *out)
+{
+    int i;
+    char text[32];
+
+    out_string(out, "[");
+    for (i = 0; i < ia.size; i++) {
+        gs_sprintf(text, "%d", ia.data[i]);
+        out_string(out, text);
+    }
+    out_string(out, "]");
+}
+
+static void
+print_float(char *text, float f)
+{
+    /* We attempt to tidy up %f's somewhat unpredictable output
+     * here, so rather than printing 0.10000000 we print 0.1 */
+    char *p = text;
+    int frac = 0;
+    gs_sprintf(text, "%f", f);
+    /* Find the terminator, or 'e' to spot exponent mode. */
+    while (*p && *p != 'e' && *p != 'E') {
+        if (*p == '.')
+            frac = 1;
+        p++;
+    }
+    /* If we've hit the terminator, and passed a '.' at some point
+     * we know we potentially have a tail to tidy up. */
+    if (*p == 0 && frac) {
+        p--;
+        /* Clear a trail of 0's. */
+        while (*p == '0')
+            *p-- = 0;
+        /* If we cleared the entire fractional part, remove the . */
+        if (*p == '.') {
+            /* Allow for -.0000 => -0 rather than - */
+            if (p == text || p[-1] < '0' || p[-1] > '9')
+                *p = '0', p[1] = 0;
+            else
+                p[0] = 0;
+        }
+    }
+}
+
+static void
+float_array_to_string(gs_param_float_array fa, outstate *out)
+{
+    int i;
+    char text[32];
+
+    out_string(out, "[");
+    for (i = 0; i < fa.size; i++) {
+        print_float(text, fa.data[i]);
+        out_string(out, text);
+    }
+    out_string(out, "]");
+}
+
+static void
+string_array_to_string(gs_param_string_array sa, outstate *out)
+{
+    int i;
+
+    out_string(out, "[");
+    for (i = 0; i < sa.size; i++) {
+        string_to_string((const char *)sa.data[i].data, sa.data[i].size, out);
+    }
+    out_string(out, "]");
+}
+
+static void
+name_array_to_string(gs_param_string_array na, outstate *out)
+{
+    int i;
+
+    out_string(out, "[");
+    for (i = 0; i < na.size; i++) {
+        name_to_string((const char *)na.data[i].data, na.data[i].size, out);
+    }
+    out_string(out, "]");
+}
+
+static int to_string(gs_param_list *plist, gs_param_name key, outstate *out);
+
+static int
+out_dict(gs_param_collection *dict, outstate *out)
+{
+    gs_param_list *plist = dict->list;
+    gs_param_enumerator_t enumerator;
+    gs_param_key_t key;
+    int code;
+
+    out_string(out, "<<");
+
+    param_init_enumerator(&enumerator);
+    while ((code = param_get_next_key(plist, &enumerator, &key)) == 0) {
+        char string_key[256];	/* big enough for any reasonable key */
+
+        if (key.size > sizeof(string_key) - 1) {
+            code = gs_note_error(gs_error_rangecheck);
+            break;
+        }
+        memcpy(string_key, key.data, key.size);
+        string_key[key.size] = 0;
+        name_to_string((char *)key.data, key.size, out);
+        code = to_string(plist, string_key, out);
+        if (code < 0)
+            break;
+    }
+
+    out_string(out, ">>");
+
+    return code;
+}
+
+static int
+to_string(gs_param_list *plist, gs_param_name key, outstate *out)
+{
+    int code = 0;
+    gs_param_typed_value pvalue;
+
+    pvalue.type = gs_param_type_any;
+    code = param_read_typed(plist, key, &pvalue);
+    if (code < 0)
+        return code;
+    if (code > 0)
+        return_error(gs_error_unknownerror);
+    switch (pvalue.type) {
+    case gs_param_type_null:
+        out_string(out, "null");
+        break;
+    case gs_param_type_bool:
+        if (pvalue.value.b)
+            out_string(out, "true");
+        else
+            out_string(out, "false");
+        break;
+    case gs_param_type_int:
+    {
+        char text[32];
+        gs_sprintf(text, "%d", pvalue.value.i);
+        out_string(out, text);
+        break;
+    }
+    case gs_param_type_i64:
+    {
+        char text[32];
+        gs_sprintf(text, "%"PRId64, pvalue.value.i64);
+        out_string(out, text);
+        break;
+    }
+    case gs_param_type_long:
+    {
+        char text[32];
+        gs_sprintf(text, "%ld", pvalue.value.l);
+        out_string(out, text);
+        break;
+    }
+    case gs_param_type_size_t:
+    {
+        char text[32];
+        gs_sprintf(text, "%"PRIdSIZE, pvalue.value.z);
+        out_string(out, text);
+        break;
+    }
+    case gs_param_type_float:
+    {
+        char text[32];
+        print_float(text, pvalue.value.f);
+        out_string(out, text);
+        break;
+    }
+    case gs_param_type_dict:
+        code = out_dict(&pvalue.value.d, out);
+        break;
+    case gs_param_type_dict_int_keys:
+        return -1;
+    case gs_param_type_array:
+        return -1;
+    case gs_param_type_string:
+        string_to_string((char *)pvalue.value.s.data, pvalue.value.s.size, out);
+        break;
+    case gs_param_type_name:
+        name_to_string((char *)pvalue.value.n.data, pvalue.value.n.size, out);
+        break;
+    case gs_param_type_int_array:
+        int_array_to_string(pvalue.value.ia, out);
+        break;
+    case gs_param_type_float_array:
+        float_array_to_string(pvalue.value.fa, out);
+        break;
+    case gs_param_type_string_array:
+        string_array_to_string(pvalue.value.sa, out);
+        break;
+    case gs_param_type_name_array:
+        name_array_to_string(pvalue.value.na, out);
+        break;
+    default:
+        return -1;
+    }
+
+    return code;
+}
+
+int gs_param_list_to_string(gs_param_list *plist, gs_param_name key, char *value, int *len)
+{
+    outstate out;
+
+    out.value = value;
+    out.len = len;
+    out.last = 0;
+    *len = 1; /* Always space for the terminator. */
+    if (value)
+        *value = 0;
+    return to_string(plist, key, &out);
+}

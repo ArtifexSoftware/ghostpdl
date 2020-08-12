@@ -526,6 +526,7 @@ c_param_read_typed(gs_param_list * plist, gs_param_name pkey,
         fa.data = (float *)pparam->alternate_typed_data;
 
         pvalue->value.fa = fa;
+        pvalue->type = req_type;
         return 0;
     }
     return code;

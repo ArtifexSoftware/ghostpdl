@@ -34,6 +34,8 @@
 #include "gp.h"
 #include "gsargs.h"
 #include "gdevdsp.h"
+#include "gsstate.h"
+#include "icstate.h"
 
 typedef struct { int a[(int)GS_ARG_ENCODING_LOCAL   == (int)PS_ARG_ENCODING_LOCAL   ? 1 : -1]; } compile_time_assert_0;
 typedef struct { int a[(int)GS_ARG_ENCODING_UTF8    == (int)PS_ARG_ENCODING_UTF8    ? 1 : -1]; } compile_time_assert_1;
@@ -400,7 +402,7 @@ gsapi_exit(void *instance)
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void *value)
+gsapi_set_param(void *lib, const char *param, const void *value, gs_set_param_type type)
 {
     int code = 0;
     gs_param_string str_value;
@@ -483,7 +485,7 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
     }
     gs_c_param_list_read(params);
 
-    if (more_to_come) {
+    if (more_to_come || minst->i_ctx_p == NULL) {
         /* Leave it in the param list for later. */
         return 0;
     }
@@ -493,10 +495,281 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
     if (code < 0)
         return code;
 
-    /* Send it to the language */
     code = psapi_set_param(ctx, (gs_param_list *)params);
+    if (code < 0)
+        return code;
+
+    /* Trigger an initgraphics */
+    code = gs_initgraphics(minst->i_ctx_p->pgs);
 
     gs_c_param_list_release(params);
+
+    return code;
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_get_param(void *lib, const char *param, void *value, gs_set_param_type type)
+{
+    int code = 0;
+    gs_param_string str_value;
+    gs_c_param_list params;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+
+    if (lib == NULL)
+        return gs_error_Fatal;
+
+    gs_c_param_list_write(&params, ctx->memory);
+
+    /* Should never be set, but clear the more to come bit anyway in case. */
+    type &= ~gs_spt_more_to_come;
+
+    code = psapi_get_device_params(ctx, (gs_param_list *)&params);
+    if (code < 0) {
+        gs_c_param_list_release(&params);
+        return code;
+    }
+
+    gs_c_param_list_read(&params);
+    switch (type)
+    {
+    case gs_spt_null:
+        code = param_read_null((gs_param_list *)&params, param);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        code = 0;
+        break;
+    case gs_spt_bool:
+    {
+        bool b;
+        code = param_read_bool((gs_param_list *)&params, param, &b);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        code = sizeof(int);
+        if (value != NULL)
+            *(int *)value = !!b;
+        break;
+    }
+    case gs_spt_int:
+    {
+        int i;
+        code = param_read_int((gs_param_list *)&params, param, &i);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        code = sizeof(int);
+        if (value != NULL)
+            *(int *)value = i;
+        break;
+    }
+    case gs_spt_float:
+    {
+        float f;
+        code = param_read_float((gs_param_list *)&params, param, &f);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        code = sizeof(float);
+        if (value != NULL)
+            *(float *)value = f;
+        break;
+    }
+    case gs_spt_name:
+        code = param_read_name((gs_param_list *)&params, param, &str_value);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        if (value != NULL) {
+            memcpy(value, str_value.data, str_value.size);
+            ((char *)value)[str_value.size] = 0;
+        }
+        code = str_value.size+1;
+        break;
+    case gs_spt_string:
+        code = param_read_string((gs_param_list *)&params, param, &str_value);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        if (value != NULL) {
+            memcpy(value, str_value.data, str_value.size);
+            ((char *)value)[str_value.size] = 0;
+        }
+        code = str_value.size+1;
+        break;
+    case gs_spt_long:
+    {
+        long l;
+        code = param_read_long((gs_param_list *)&params, param, &l);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(long *)value = l;
+        code = sizeof(long);
+        break;
+    }
+    case gs_spt_i64:
+    {
+        int64_t i64;
+        code = param_read_i64((gs_param_list *)&params, param, &i64);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(int64_t *)value = i64;
+        code = sizeof(int64_t);
+        break;
+    }
+    case gs_spt_size_t:
+    {
+        size_t z;
+        code = param_read_size_t((gs_param_list *)&params, param, &z);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(size_t *)value = z;
+        code = sizeof(size_t);
+        break;
+    }
+    case gs_spt_parsed:
+    {
+        int len;
+        code = gs_param_list_to_string((gs_param_list *)&params,
+                                       param, (char *)value, &len);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code >= 0)
+            code = len;
+        break;
+    }
+    default:
+        code = gs_note_error(gs_error_rangecheck);
+    }
+    gs_c_param_list_release(&params);
+
+    return code;
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_enumerate_params(void *instance, void **iter, const char **key, gs_set_param_type *type)
+{
+    gs_main_instance *minst;
+    gs_c_param_list *params;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    int code = 0;
+    gs_param_key_t keyp;
+
+    if (ctx == NULL)
+        return gs_error_Fatal;
+
+    minst = get_minst_from_memory(ctx->memory);
+    params = &minst->enum_params;
+
+    if (key == NULL)
+        return -1;
+    *key = NULL;
+    if (iter == NULL)
+        return -1;
+
+    if (*iter == NULL) {
+        /* Free any existing param list. */
+        gs_c_param_list_release(params);
+        if (minst->i_ctx_p == NULL) {
+            return 1;
+        }
+        /* Set up a new one. */
+        gs_c_param_list_write(params, minst->heap);
+        /* Get the keys. */
+        code = psapi_get_device_params(ctx, (gs_param_list *)params);
+        if (code < 0)
+            return code;
+
+        param_init_enumerator(&minst->enum_iter);
+        *iter = &minst->enum_iter;
+    } else if (*iter != &minst->enum_iter)
+        return -1;
+
+    gs_c_param_list_read(params);
+    code = param_get_next_key((gs_param_list *)params, &minst->enum_iter, &keyp);
+    if (code < 0)
+        return code;
+    if (code != 0) {
+        /* End of iteration. */
+        *iter = NULL;
+        return 1;
+    }
+    if (minst->enum_keybuf_max < keyp.size+1) {
+        int newsize = keyp.size+1;
+        char *newkey;
+        if (newsize < 128)
+            newsize = 128;
+        if (minst->enum_keybuf == NULL) {
+            newkey = (char *)gs_alloc_bytes(minst->heap, newsize, "enumerator key buffer");
+        } else {
+            newkey = (char *)gs_resize_object(minst->heap, minst->enum_keybuf, newsize, "enumerator key buffer");
+        }
+        if (newkey == NULL)
+            return_error(gs_error_VMerror);
+        minst->enum_keybuf = newkey;
+        minst->enum_keybuf_max = newsize;
+    }
+    memcpy(minst->enum_keybuf, keyp.data, keyp.size);
+    minst->enum_keybuf[keyp.size] = 0;
+    *key = minst->enum_keybuf;
+
+    if (type) {
+        gs_param_typed_value pvalue;
+        pvalue.type = gs_param_type_any;
+        code = param_read_typed((gs_param_list *)params, *key, &pvalue);
+        if (code < 0)
+            return code;
+        if (code > 0)
+            return_error(gs_error_unknownerror);
+
+        switch (pvalue.type) {
+        case gs_param_type_null:
+            *type = gs_spt_null;
+            break;
+        case gs_param_type_bool:
+            *type = gs_spt_bool;
+            break;
+        case gs_param_type_int:
+            *type = gs_spt_int;
+            break;
+        case gs_param_type_long:
+            *type = gs_spt_long;
+            break;
+        case gs_param_type_size_t:
+            *type = gs_spt_size_t;
+            break;
+        case gs_param_type_i64:
+            *type = gs_spt_i64;
+            break;
+        case gs_param_type_float:
+            *type = gs_spt_float;
+            break;
+        case gs_param_type_string:
+            *type = gs_spt_string;
+            break;
+        case gs_param_type_name:
+            *type = gs_spt_name;
+            break;
+        default:
+            *type = gs_spt_parsed;
+            break;
+        }
+    }
 
     return code;
 }

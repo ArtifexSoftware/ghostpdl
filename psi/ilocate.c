@@ -280,6 +280,8 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
                               (intptr_t) pfree, (uint)size, i);
                     break;
                 }
+                if (pfree == *(const obj_header_t* const*)pfree)
+                    break;
             }
         }
     };

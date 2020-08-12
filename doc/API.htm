@@ -82,6 +82,8 @@
 <li><a href="#init"><code>gsapi_init_with_args</code></a></li>
 <li><a href="#exit"><code>gsapi_exit</code></a></li>
 <li><a href="#set_param"><code>gsapi_set_param</code></a></li>
+<li><a href="#get_param"><code>gsapi_get_param</code></a></li>
+<li><a href="#enumerate_params"><code>gsapi_enumerate_params</code></a></li>
 <li><a href="#add_control_path"><code>gsapi_add_control_path</code></a></li>
 <li><a href="#remove_control_path"><code>gsapi_remove_control_path</code></a></li>
 <li><a href="#purge_control_paths"><code>gsapi_purge_control_paths</code></a></li>
@@ -255,18 +257,12 @@ int
 
 <li><code>
 int
+<a href="#get_default_device_list">gsapi_get_default_device_list</a>(void *instance, char **list, int *listlen);
+</code></li>
+
+<li><code>
+int
 <a href="#set_default_device_list">gsapi_set_default_device_list</a>(void *instance, const char *list, int listlen);
-</code></li>
-
-<li><code>
-int
-<a href="#get_default_device_list">gsapi_get_default_device_list</a>(void *instance, char **list, int *listlen)
-</code></li>
-
-<li><code>
-int
-<a href="#init">gsapi_init_with_args</a>
-(void *instance, int argc, char **argv);
 </code></li>
 
 <li><code>
@@ -311,8 +307,54 @@ int
 
 <li><code>
 int
+<a href="#init">gsapi_init_with_args</a>
+(void *instance, int argc, char **argv);
+</code></li>
+
+<li><code>
+int
 <a href="#exit">gsapi_exit</a>
 (void *instance);
+</code></li>
+
+<li><code>
+int
+<a href="#set_param">gsapi_set_param</a>(void *instance, const char *param, const void *value, gs_set_param_type type);
+</code></li>
+
+<li><code>
+    int
+    <a href="#get_param">gsapi_get_param</a>(void *instance, const char *param, const void *value, gs_set_param_type type);
+</code></li>
+
+<li><code>
+int
+<a href="#enumerate_params">gsapi_enumerate_params</a>(void *instance, void **iter, const char **key, gs_set_param_type *type);
+</code></li>
+
+<li><code>
+int
+<a href="#add_control_path">gsapi_add_control_path</a>(void *instance, int type, const char *path);
+</code></li>
+
+<li><code>
+int
+<a href="#remove_control_path">gsapi_remove_control_path</a>(void *instance, int type, const char *path);
+</code></li>
+
+<li><code>
+void
+<a href="#purge_control_paths">gsapi_purge_control_paths</a>(void *instance, int type);
+</code></li>
+
+<li><code>
+void
+<a href="#activate_path_control">gsapi_activate_path_control</a>(void *instance, int enable);
+</code></li>
+
+<li><code>
+int
+<a href="#is_path_control_active">gsapi_is_path_control_active</a>(void *instance);
 </code></li>
 
 <li><code>
@@ -557,7 +599,35 @@ has been called, and just before <code>gsapi_delete_instance()</code>.
 <h3><a name="set_param"></a><code>gsapi_set_param()</code></h3>
 <blockquote>
 Set a parameter.
-Equivalent to passing a parameter on the command line.
+Broadly, this is equivalent to setting a parameter using <code>-d</code>, <code>-s</code> or <code>-p</code> on the command line. This call cannot be made during a <code>run_string</code> operation.
+<p>
+Parameters in this context are not the same as 'arguments' as processed by <code>gsapi_init_with_args</code>, but often the same thing can be achieved. For example, with <code>gsapi_init_with_args</code>, we can pass &quot;<code>-r200</code>&quot; to change the resolution. Broadly the same thing can be achieved by using <code>gsapi_set_param</code> to set a parsed value of &quot;<code>&lt;&lt;/HWResolution [ 200.0 200.0 ]&gt;&gt;</code>&quot;.
+<p>
+Note, that internally, when we set a parameter, we perform an <code>initgraphics</code> operation. This means that using <code>set_param</code> other than at the start of a page is likely to give unexpected results.
+<p>Further, note that attempting to set a parameter that the device does not recognise will be silently ignored, and that parameter will not be found in subsequent <code>gsapi_get_param</code> calls.
+</blockquote>
+
+<h3><a name="get_param"></a><code>gsapi_get_param()</code></h3>
+<blockquote>
+Get a parameter.
+Retrieve the current value of a parameter.
+<p>If an error occurs, the return value is negative. Otherwise the return value is the number of bytes required for storage of the value. Call once with <code>value = NULL</code> to get the number of bytes required, then call again with <code>value</code> pointing to at least the required number of bytes where the value will be copied out. Note that the caller is required to know the type of value in order to get it. For all types other than <code>string</code>, <code>name</code>, <code>parsed</code> knowing the type means you already know the size required.
+<p>
+This call retrieves parameters/values that have made it to the device. Thus, any values set using the <code>gs_spt_more_to_come</code> without a following call without that flag will not be retrieved. Similarly, attempting to get a parameter before <code>gs_init_with_args</code> has been called will not list any, even if <code>gsapi_set_param</code> has been used.
+<p>
+Attempting to read a parameter that is not set will return <code>gs_error_undefined (-21)</code>. Note that calling <code>gsapi_set_param</code> followed by <code>gsapi_get_param</code> may not find the value, if the device did not recognise the key as being one of its configuration keys.
+</blockquote>
+
+<h3><a name="enumerate_params"></a><code>gsapi_enumerate_params()</code></h3>
+<blockquote>
+Enumerate the current parameters.
+Call repeatedly to list out the current parameters.
+<p>
+  The first call should have <code>*iter = NULL</code>. Subsequent calls should pass the same pointer in so the iterator can be updated. Negative return codes indicate error, 0 success, and 1 indicates that there are no more keys to read. On success, <code>key</code> will be updated to point to a null terminated string with the key name that is guaranteed to be valid until the next call to <code>gsapi_enumerate_params</code>. If <code>type</code> is non <code>NULL</code> then <code>*type</code> will be updated to have the type of the parameter.
+<p>
+Note that only one enumeration can happen at a time. Starting a second enumeration will reset the first.
+<p>
+The enumeration only returns parameters/values that have made it to the device. Thus, any values set using the <code>gs_spt_more_to_come</code> without a following call without that flag will not be retrieved. Similarly, attempting to enumerate parameters before <code>gs_init_with_args</code> has been called will not list any, even if <code>gsapi_set_param</code> has been used.
 </blockquote>
 
 <h3><a name="add_control_path"></a><code>gsapi_add_control_path()</code></h3>
@@ -1577,7 +1647,7 @@ return <code>max(200, 200*(bandheight/200))</code>. If the function
 returns 0, then the existing value will be used unchanged.</p>
 <p>Any size rectangle can be chosen with any size bandheight,
 so ultimately the value chosen here will not matter much. It
-may make some small difference in speed in some cases.</p>  
+may make some small difference in speed in some cases.</p>
 
 <h3><a name="display_rectangle_request"></a>display_rectangle_request</h3>
 <pre>int (*display_rectangle_request)(void *handle, void *device,

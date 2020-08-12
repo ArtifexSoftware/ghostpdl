@@ -66,6 +66,10 @@ psapi_set_device_param(gs_lib_ctx_t *ctx,
                        gs_param_list *plist);
 
 int
+psapi_get_device_params(gs_lib_ctx_t *ctx,
+                        gs_param_list *plist);
+
+int
 psapi_add_path(gs_lib_ctx_t *ctx,
                const char   *path);
 

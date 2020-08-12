@@ -351,7 +351,7 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(ctype__h) $(string__h)\
  $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h) $(gslib_h) $(gslibctx_h)\
  $(gxdevice_h) $(gsparam_h) $(pjtop_h) $(plapi_h) $(plparse_h)\
  $(plmain_h) $(pltop_h) $(stream_h) $(strmio_h) $(gsargs_h) $(dwtrace_h) $(vdtrace_h)\
- $(gxclpage_h) $(gdevprn_h) $(gxiodev_h) $(assert__h)\
+ $(gxclpage_h) $(gdevprn_h) $(gxiodev_h) $(assert__h) $(gserrors_h)\
  $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
 

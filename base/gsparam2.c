@@ -43,7 +43,7 @@ gs_param_list_puts(stream *dest, gs_param_list *list)
     gs_param_enumerator_t key_enum;
     gs_param_key_t key;
     char *string_key = gs_alloc_bytes(dest->memory, MAX_PARAM_KEY + 1, "gs_param_list_puts(string_key)");
-    
+
     if (!string_key) {
         return_error(gs_error_VMerror);
     }
@@ -209,7 +209,7 @@ gs_param_list_gets(stream *src, gs_param_list *list, gs_memory_t *mem)
 {
     int code = 0;
     char *string_key = gs_alloc_bytes(dest->memory, MAX_PARAM_KEY + 1, "gs_param_list_gets(string_key)");
-    
+
     if (!string_key) {
         return_error(gs_error_VMerror);
     }

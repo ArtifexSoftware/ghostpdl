@@ -928,6 +928,33 @@ run_stdin:
                 arg_free((char *)adef, minst->heap);
                 break;
             }
+        case 'p':
+            {
+                char *adef = arg_copy(arg, minst->heap);
+                char *eqp;
+
+                if (adef == NULL)
+                    return gs_error_Fatal;
+                eqp = strchr(adef, '=');
+
+                if (eqp == NULL)
+                    eqp = strchr(adef, '#');
+                if (eqp == NULL) {
+                    outprintf(minst->heap, "Usage: -pNAME=STRING\n");
+                    arg_free((char *)adef, minst->heap);
+                    return gs_error_Fatal;
+                }
+                *eqp++ = 0;
+                /* Slightly uncomfortable calling back up to a higher
+                 * level, but we'll live with it. */
+                code = gsapi_set_param(gs_lib_ctx_get_interp_instance(minst->heap),
+                                       adef, eqp, gs_spt_parsed);
+                if (code < 0) {
+                    arg_free((char *)adef, minst->heap);
+                    return code;
+                }
+                break;
+            }
         case 'u':               /* undefine name */
             if (!*arg) {
                 puts(minst->heap, "-u requires a name to undefine.");

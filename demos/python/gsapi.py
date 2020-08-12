@@ -53,7 +53,7 @@ if platform.system() in ('Linux', 'OpenBSD'):
 elif platform.system() == 'Windows':
     if sys.maxsize == 2**31 - 1:
         _libgs = ctypes.CDLL('../../bin/gpdldll32.dll')
-    elif sys.maxsize == 2**63 - 10:
+    elif sys.maxsize == 2**63 - 1:
         _libgs = ctypes.CDLL('../../bin/gpdldll64.dll')
     else:
         raise Exception('Unrecognised sys.maxsize=0x%x' % sys.maxsize)
@@ -63,6 +63,9 @@ else:
 
 
 class GSError(Exception):
+    '''
+    Exception type for all errors from underlying C library.
+    '''
     def __init__(self, gs_error):
         self.gs_error = gs_error
     def __str__(self):
@@ -420,32 +423,224 @@ gs_spt_string  = 5 # void * is a char *.
 gs_spt_long    = 6 # void * is a long *.
 gs_spt_i64     = 7 # void * is an int64_t *.
 gs_spt_size_t  = 8 # void * is a size_t *.
+gs_spt_parsed  = 9 # void * is a pointer to a char * to be parsed.
+gs_spt__end    = 10
 
 
-def gsapi_set_param(instance, param, value):
+def gsapi_set_param(instance, param, value, type_=None):
+    '''
+    We behave much like the underlying gsapi_set_param() C function, except
+    that we also support automatic inference of type type_ arg by looking at
+    the type of <value>.
+
+    param:
+        Name of parameter, either a bytes or a str; if str it is encoded using
+        latin-1.
+    value:
+        A bool, int, float, bytes or str. If str, it is encoded into a bytes
+        using utf-8.
+
+        If <type_> is not None, <value> must be convertible to the Python type
+        implied by <type_>:
+
+            type_           Python type(s)
+            -----------------------------------------
+            gs_spt_null     [Ignored]
+            gs_spt_bool     bool
+            gs_spt_int      int
+            gs_spt_float    float
+            gs_spt_name     [Error]
+            gs_spt_string   (bytes, str)
+            gs_spt_long     int
+            gs_spt_i64      int
+            gs_spt_size_t   int
+            gs_spt_parsed   (bytes, str)
+
+        We raise an exception if <type_> is an integer type and <value> is
+        outside its range.
+    type_:
+        If None, we choose something suitable for type of <value>:
+
+            Python type of <value>  type_
+            -----------------------------
+            bool                    gs_spt_bool
+            int                     gs_spt_i64
+            float                   gs_spt_float
+            bytes                   gs_spt_parsed
+            str                     gs_spt_parsed (encoded with utf-8)
+
+            If <value> is None, we use gs_spt_null.
+
+        Otherwise type_ must be a gs_spt_* except for gs_spt_invalid and
+        gs_spt_name (we don't allow psapi_spt_name because the underlying C
+        does not copy the string, so cannot be safely used from Python).
+    '''
     # [unicode: we assume that underlying gsapi_set_param() expects <param> and
     # string <value> to be encoded as latin-1.]
-    param2 = param.encode('latin-1')
-    if 0: pass
-    elif isinstance(value, bool):
-        type2 = gs_spt_bool
-        value2 = ctypes.byref(ctypes.c_bool(value))
-    elif isinstance(value, int):
-        type2 = gs_spt_i64
-        value2 = ctypes.byref(ctypes.c_longlong(value))
-    elif isinstance(value, float):
-        type2 = gs_spt_float
-        value2 = ctypes.byref(ctypes.c_float(value))
-    elif isinstance(value, str):
-        # We use gs_spt_string, not psapi_spt_name, because the latter doesn't
-        # copy the string.
-        type2 = gs_spt_string
-        value2 = ctypes.c_char_p(value.encode('latin-1'))
+
+    if isinstance(param, str):
+        param = param.encode('latin-1')
+    assert isinstance(param, bytes)
+
+    if type_ is None:
+        # Choose a gs_spt_* that matches the Python type of <value>.
+        if 0: pass
+        elif value is None:
+            type_ = gs_spt_null
+        elif isinstance(value, bool):
+            type_ = gs_spt_bool
+        elif isinstance(value, int):
+            type_ = gs_spt_i64
+        elif isinstance(value, float):
+            type_ = gs_spt_float
+        elif isinstance(value, (bytes, str)):
+            type_ = gs_spt_parsed
+        else:
+            raise Exception('Unrecognised Python type (must be bool, int, float, bytes or str): %s' % type(value))
+
+    # Make a <value2> suitable for the underlying C gsapi_set_param() function.
+    #
+    if type_ == gs_spt_null:
+        # special-case, we pass value2=None.
+        value2 = None
+    elif type_ == gs_spt_name:
+        # Unsupported.
+        raise Exception('gs_spt_name is not supported from Python')
+    elif type_ in (gs_spt_string, gs_spt_parsed):
+        # String.
+        value2 = value
+        if isinstance(value2, str):
+            value2 = value2.encode('utf-8')
+        assert isinstance(value2, bytes)
     else:
-        assert 0, 'unrecognised type: %s' % type(value)
-    e = _libgs.gsapi_set_param(instance, type2, param2, value2)
+        # Bool/int/float.
+        type2 = None
+        if 0: pass
+        elif type_ == gs_spt_bool:
+            type2 = ctypes.c_bool
+        elif type_ == gs_spt_int:
+            type2 = ctypes.c_int
+        elif type_ == gs_spt_float:
+            type2 = ctypes.c_float
+        elif type_ == gs_spt_long:
+            type2 = ctypes.c_long
+        elif type_ == gs_spt_i64:
+            type2 = ctypes.c_int64
+        elif type_ == gs_spt_size_t:
+            type2 = ctypes.c_size_t
+        else:
+            assert 0, 'unrecognised gs_spt_ value: %s' % type_
+        value2 = type2(value)
+        if type_ not in (gs_spt_float, gs_spt_bool):
+            # Check for out-of-range integers.
+            if value2.value != value:
+                raise Exception('Value %s => %s is out of range for type %s (%s)' % (
+                    value, value2.value, type_, type2))
+        value2 = ctypes.byref(value2)
+
+    e = _libgs.gsapi_set_param(instance, param, value2, type_)
     if e < 0:
         raise GSError(e)
+
+
+def gsapi_get_param(instance, param, type_=None, encoding=None):
+    '''
+    Returns value of specified parameter, or None if parameter type is
+    gs_spt_null.
+
+    param:
+        Name of parameter, either a bytes or str; if a str it is encoded using
+        latin-1.
+    type:
+        A gs_spt_* constant or None. If None we try each gs_spt_* until one
+        succeeds; if none succeeds we raise the last error.
+    encoding:
+        Only affects string values. If None we return a bytes object, otherwise
+        it should be the encoding to use to decode into a string, e.g. 'utf-8'.
+    '''
+    # [unicode: we assume that underlying gsapi_get_param() expects <param> to
+    # be encoded as latin-1.]
+    #
+    param2 = param
+    if isinstance(param2, str):
+        param2 = param2.encode('latin-1')
+    assert isinstance(param2, bytes)
+
+    def _get_simple(value_type):
+        value = value_type()
+        e = _libgs.gsapi_get_param(instance, param2, ctypes.byref(value), type_)
+        if e < 0:
+            raise GSError(e)
+        return value.value
+
+    if type_ is None:
+        # Try each type until one succeeds. We raise the last error if no type
+        # works.
+        for type_ in range(0, gs_spt__end):
+            try:
+                ret = gsapi_get_param(instance, param2, type_, encoding)
+                return ret
+            except GSError as e:
+                last_error = e
+        raise last_error
+
+    elif type_ == gs_spt_null:
+        e = _libgs.gsapi_get_param(instance, param2, None, type_)
+        if e < 0:
+            raise GSError(e)
+        return None
+
+    elif type_ == gs_spt_bool:
+        return _get_simple(ctypes.c_bool)
+    elif type_ == gs_spt_int:
+        return _get_simple(ctypes.c_int)
+    elif type_ == gs_spt_float:
+        return _get_simple(ctypes.c_float)
+    elif type_ == gs_spt_long:
+        return _get_simple(ctypes.c_long)
+    elif type_ == gs_spt_i64:
+        return _get_simple(ctypes.c_int64)
+    elif type_ == gs_spt_size_t:
+        return _get_simple(ctypes.c_size_t)
+
+    elif type_ in (gs_spt_name, gs_spt_string, gs_spt_parsed):
+        # Value is a string, so get required buffer size.
+        e = _libgs.gsapi_get_param(instance, param2, None, type_)
+        if e < 0:
+            raise GSError(e)
+        value = ctypes.create_string_buffer(e)
+        e = _libgs.gsapi_get_param(instance, param2, ctypes.byref(value), type_)
+        if e < 0:
+            raise GSError(e)
+        ret = value.value
+        if encoding:
+            ret = ret.decode(encoding)
+        return ret
+
+    else:
+        raise Exception('Unrecognised type_=%s' % type_)
+
+
+def gsapi_enumerate_params(instance):
+    '''
+    Yields (key, value) for each param. <key> is decoded as latin-1.
+    '''
+    # [unicode: we assume that param names are encoded as latin-1.]
+    iterator = ctypes.c_void_p()
+    key = ctypes.c_char_p()
+    type_ = ctypes.c_int()
+    while 1:
+        e = _libgs.gsapi_enumerate_params(
+                instance,
+                ctypes.byref(iterator),
+                ctypes.byref(key),
+                ctypes.byref(type_),
+                )
+        if e == 1:
+            break
+        if e:
+            raise GSError(e)
+        yield key.value.decode('latin-1'), type_.value
 
 
 GS_PERMIT_FILE_READING = 0
@@ -756,6 +951,86 @@ if __name__ == '__main__':
     gsapi_init_with_args(instance, ['gs',])
     print('gsapi_init_with_args() ok')
 
-    for value in 32, True, 3.14, 'hello world':
+    gsapi_set_param(instance, "foo", 100, gs_spt_i64)
+
+    try:
+        gsapi_get_param(instance, "foo", gs_spt_i64)
+    except GSError as e:
+        assert e.gs_error == gs_error_undefined.num, e.gs_error
+    else:
+        assert 0, 'expected gsapi_get_param() to fail'
+
+    # Check specifying invalid type raises exception.
+    try:
+        gsapi_get_param(instance, None, -1)
+    except Exception as e:
+        pass
+    else:
+        assert 0
+
+    # Check specifying invalid param name raises exception.
+    try:
+        gsapi_get_param(instance, -1, None)
+    except Exception as e:
+        pass
+    else:
+        assert 0
+
+    # Check we can write 64-bit value.
+    gsapi_set_param(instance, 'foo', 2**40, None)
+
+    # Check specifying out-of-range raises exception.
+    try:
+        gsapi_set_param(instance, 'foo', 2**40, gs_spt_int)
+    except Exception as e:
+        print(e)
+        assert 'out of range' in str(e)
+    else:
+        assert 0
+
+    # Check specifying out-of-range raises exception.
+    try:
+        gsapi_set_param(instance, 'foo', 2**70, None)
+    except Exception as e:
+        print(e)
+        assert 'out of range' in str(e)
+    else:
+        assert 0
+
+    print('Checking that we can set and get NumCompies and get same result back')
+    gsapi_set_param(instance, "NumCopies", 10, gs_spt_i64)
+    v = gsapi_get_param(instance, "NumCopies", gs_spt_i64)
+    assert v == 10
+
+    for value in 32, True, 3.14:
         gsapi_set_param(instance, "foo", value);
         print('gsapi_set_param() %s ok.' % value)
+        try:
+            gsapi_get_param(instance, 'foo')
+        except GSError as e:
+            pass
+        else:
+            assert 0, 'expected gsapi_get_param() to fail'
+
+    value = "hello world"
+    gsapi_set_param(instance, "foo", value, gs_spt_string)
+    print('gsapi_set_param() %s ok.' % value)
+
+    gsapi_set_param(instance, "foo", 123, gs_spt_bool)
+
+    gsapi_set_param(instance, "foo", None, gs_spt_bool)
+    if 0: assert gsapi_get_param(instance, "foo") is None
+
+    # Enumerate all params and print name/value.
+    print('gsapi_enumerate_params():')
+    for param, type_ in gsapi_enumerate_params(instance):
+        value = gsapi_get_param(instance, param, type_)
+        value2 = gsapi_get_param(instance, param)
+        assert value2 == value, 'value=%s value2=%s' % (value, value2)
+        value3 = gsapi_get_param(instance, param, encoding='utf-8')
+        print('    %-24s type_=%-5s %r %r' % (param, type_, value, value3))
+        assert not isinstance(value, str)
+        if isinstance(value, bytes):
+            assert isinstance(value3, str)
+
+    print('Finished')

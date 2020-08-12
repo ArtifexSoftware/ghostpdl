@@ -372,7 +372,9 @@ gsapi_exit(void *instance);
 typedef enum {
     gs_spt_invalid = -1,
     gs_spt_null    = 0,   /* void * is NULL */
-    gs_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
+    gs_spt_bool    = 1,   /* For set, void * is NULL (false) or non-NULL
+                           * (true). For get, void * points to an int,
+                           * 0 false, 1 true. */
     gs_spt_int     = 2,   /* void * is a pointer to an int */
     gs_spt_float   = 3,   /* void * is a float * */
     gs_spt_name    = 4,   /* void * is a char * */
@@ -388,13 +390,46 @@ typedef enum {
      * itself several times. Accordingly, if you OR the type with
      * gs_spt_more_to_come, the param will held ready to be passed into
      * the device, and will only actually be sent when the next typed
-     * param is set without this flag (or on device init). */
+     * param is set without this flag (or on device init). Not valid
+     * for get_typed_param. */
     gs_spt_more_to_come = 1<<31
 } gs_set_param_type;
 /* gs_spt_parsed allows for a string such as "<< /Foo 0 /Bar true >>" or
  * "[ 1 2 3 ]" etc to be used so more complex parameters can be set. */
 
-GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type, const char *param, const void *value);
+GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, const char *param, const void *value, gs_set_param_type type);
+
+/* Called to get a value. value points to storage of the appropriate
+ * type. If value is passed as NULL on entry, then the return code is
+ * the number of bytes storage required for the type. Thus to read a
+ * name/string/parsed value, call once with value=NULL, then obtain
+ * the storage, and call again with value=the storage to get a nul
+ * terminated string. (nul terminator is included in the count - hence
+ * an empty string requires 1 byte storage). Returns gs_error_undefined
+ * (-21) if not found. */
+GSDLLEXPORT int GSDLLAPI gsapi_get_param(void *instance, const char *param, void *value, gs_set_param_type type);
+
+/* Enumerator to list all the parameters.
+ * Caller defines void *iter = NULL, and calls with &iter.
+ * Each call, iter is updated to reflect the position within the
+ * enumeration, so passing iterator back in gets the next key. The call
+ * returns negative values for errors, 0 for success, and 1 for "no more
+ * keys".
+ *
+ *  void *iter = NULL;
+ *  gs_set_param_type type;
+ *  const char *key;
+ *  int code;
+ *  while ((code = gsapi_enumerate_params(inst, &iter, &key, &type)) == 0) {
+ *      // Process key
+ *  }
+ *
+ * Note that the ordering of enumerations is NOT defined. key is valid
+ * until the next call to gsapi_enumerate_params. Only one enumeration
+ * at a time (starting a new enumeration will invalidate any previous
+ * enumeration).
+ */
+GSDLLEXPORT int GSDLLAPI gsapi_enumerate_params(void *instance, void **iterator, const char **key, gs_set_param_type *type);
 
 enum {
     GS_PERMIT_FILE_READING = 0,
@@ -518,7 +553,7 @@ typedef int (GSDLLAPIPTR PFN_gsapi_run_fileW)(void *instance,
     const wchar_t *file_name, int user_errors, int *pexit_code);
 #endif
 typedef int (GSDLLAPIPTR PFN_gsapi_exit)(void *instance);
-typedef int (GSDLLAPIPTR PFN_gsapi_set_param)(void *instance, gs_set_param_type type, const char *param, const void *value);
+typedef int (GSDLLAPIPTR PFN_gsapi_set_param)(void *instance, const char *param, const void *value, gs_set_param_type type);
 
 typedef int (GSDLLAPIPTR PFN_gsapi_add_control_path)(void *instance, int type, const char *path);
 typedef int (GSDLLAPIPTR PFN_gsapi_remove_control_path)(void *instance, int type, const char *path);

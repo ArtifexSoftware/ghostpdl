@@ -2296,6 +2296,44 @@ whereas <code>-sXYZ=35</code> is equivalent to</p>
 </dl>
 
 <dl>
+<dt><code>-p</code><em>name</em><code>=</code><em>string</em></dt>
+<dd>Define a name in systemdict with the parsed version of the given string as value. The string takes a parameter definition in (something very close to) postscript format.
+This allows more complex structures to be passed in than is possible with <code>-d</code> or <code>-s</code>. For example:
+
+<blockquote><code>
+-pFoo=&quot;&lt;&lt; /Bar[1 2 3]/Baz 0.1 /Whizz (string) /Bang &lt;0123&gt; &gt;&gt;&quot;
+</code></blockquote>
+
+<p>This means that <code>-p</code> can do the job of both <code>-d</code> and <code>-s</code>. For example:</p>
+
+<blockquote><code>
+-dDownScaleFactor=3
+</code></blockquote>
+
+<p>can be equivalently performed by</p>
+
+<blockquote><code>
+-pDownScaleFactor=3
+</code></blockquote>
+
+and
+
+<blockquote><code>
+-sPAPERSIZE=letter
+</code></blockquote>
+
+<p>can be equivalently performed by</p>
+
+<blockquote><code>
+-pPAPERSIZE=&quot;(letter)&quot;
+</code></blockquote>
+
+<p>Note, that there are some 'special' values that should be set using <code>-s</code>, not <code>-p</code>, such as <code>DEVICE</code> and <code>DefaultGrayProfile</code>. Broadly, only use <code>-p</code> if you cannot set what you want using <code>-s</code> or <code>-d</code>.</p>
+
+<p>Also, internally, after setting an parameter with <code>-p</code> we perform an <code>initgraphics</code> operation. This is required to allow changes in parameters such as <code>HWResolution</code> to take effect. This means that attempting to use <code>-p</code> other than at the start of a page is liable to give unexpected results.</p>
+</dl>
+
+<dl>
     <dt><code>-u</code><em>name</em></dt>
     <dd>Un-define a name, cancelling <code>-d</code> or <code>-s</code>.
 

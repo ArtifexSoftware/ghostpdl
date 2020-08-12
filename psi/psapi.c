@@ -147,9 +147,12 @@ psapi_delete_instance(gs_lib_ctx_t *ctx)
     minst->display = NULL;
 
     if (minst->param_list) {
-        gs_c_param_list_release((gs_c_param_list *)minst->param_list);
+        gs_c_param_list_release(minst->param_list);
         gs_free_object(minst->heap, minst->param_list, "psapi_delete_instance");
     }
+
+    gs_c_param_list_release(&minst->enum_params);
+    gs_free_object(minst->heap, minst->enum_keybuf, "psapi_delete_instance");
 
     gs_free_object(mem, minst, "init_main_instance");
 
@@ -302,6 +305,17 @@ psapi_set_device_param(gs_lib_ctx_t *ctx,
     gs_main_instance *minst = get_minst_from_memory(ctx->memory);
 
     return gs_putdeviceparams(minst->i_ctx_p->pgs->device, plist);
+}
+
+int
+psapi_get_device_params(gs_lib_ctx_t *ctx,
+                        gs_param_list *plist)
+{
+    gs_main_instance *minst = get_minst_from_memory(ctx->memory);
+
+    if (minst->i_ctx_p->pgs->device == NULL)
+        return 0;
+    return gs_getdeviceparams(minst->i_ctx_p->pgs->device, plist);
 }
 
 int

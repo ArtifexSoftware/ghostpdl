@@ -88,6 +88,12 @@ struct gs_main_instance_s {
     /* Used for gsapi_set_params in the gs (not gpdl) case. */
     gs_c_param_list *param_list;
     int mid_run_string;
+
+    /* The state for gsapi param enumeration in the gs (not gpdl) case. */
+    gs_c_param_list enum_params;
+    gs_param_enumerator_t enum_iter;
+    char *enum_keybuf;
+    int enum_keybuf_max;
 };
 
 /*

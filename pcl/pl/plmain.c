@@ -51,6 +51,7 @@
 #include "stream.h"
 #include "strmio.h"
 #include "gp.h"
+#include "gserrors.h"
 
 /* includes for the display device */
 #include "gdevdevn.h"
@@ -156,6 +157,12 @@ struct pl_main_instance_s
     bool mid_runstring; /* True if we are mid-runstring */
 
     void *buffering_runstring_as_file;
+
+    /* The state for gsapi param enumeration */
+    gs_c_param_list enum_params;
+    gs_param_enumerator_t enum_iter;
+    char *enum_keybuf;
+    int enum_keybuf_max;
 };
 
 
@@ -1156,6 +1163,9 @@ pl_main_delete_instance(pl_main_instance_t *minst)
 
     gs_free_object(mem, minst->buf_ptr, "minst_buffer");
 
+    gs_c_param_list_release(&minst->enum_params);
+    gs_free_object(mem, minst->enum_keybuf, "param enumerator keybuf");
+
     gs_iodev_finit(mem);
     gs_lib_finit(0, 0, mem);
     gs_free_object(mem, minst, "pl_main_instance");
@@ -1828,7 +1838,49 @@ pl_main_set_string_param(pl_main_instance_t * pmi, const char *arg)
 }
 
 int
-pl_main_set_typed_param(pl_main_instance_t * pmi, pl_set_param_type type, const char *param, const void *value)
+pl_main_set_parsed_param(pl_main_instance_t * pmi, const char *arg)
+{
+    char *eqp;
+    const char *value;
+    char buffer[128];
+
+    eqp = strchr(arg, '=');
+    if (!(eqp || (eqp = strchr(arg, '#')))) {
+        return -1;
+    }
+    value = eqp + 1;
+    if (!strncmp(arg, "DEVICE", 6)) {
+        dmprintf(pmi->memory, "DEVICE cannot be set by -p!\n");
+        return -1;
+    } else if (!strncmp(arg, "DefaultGrayProfile",
+                        strlen("DefaultGrayProfile"))) {
+        dmprintf(pmi->memory, "DefaultGrayProfile cannot be set by -p!\n");
+        return -1;
+    } else if (!strncmp(arg, "DefaultRGBProfile",
+                        strlen("DefaultRGBProfile"))) {
+        dmprintf(pmi->memory, "DefaultRGBProfile cannot be set by -p!\n");
+        return -1;
+    } else if (!strncmp(arg, "DefaultCMYKProfile",
+                        strlen("DefaultCMYKProfile"))) {
+        dmprintf(pmi->memory, "DefaultCMYKProfile cannot be set by -p!\n");
+        return -1;
+    } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
+        dmprintf(pmi->memory, "ICCProfileDir cannot be set by -p!\n");
+        return -1;
+    }
+
+    if (eqp-arg >= sizeof(buffer)-1) {
+        dmprintf1(pmi->memory, "Command line key is too long: %s\n", arg);
+        return -1;
+    }
+    strncpy(buffer, arg, eqp - arg);
+    buffer[eqp - arg] = '\0';
+
+    return pl_main_set_typed_param(pmi, pl_spt_parsed, buffer, value);
+}
+
+int
+pl_main_set_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const char *param, const void *value)
 {
     int code = 0;
     gs_c_param_list *params = &pmi->params;
@@ -1915,6 +1967,312 @@ pl_main_set_typed_param(pl_main_instance_t * pmi, pl_set_param_type type, const 
         gs_c_param_list_release(params);
     }
 
+    return code;
+}
+
+int
+pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const char *param, void *value)
+{
+    int code = 0;
+    gs_c_param_list params;
+    gs_param_string str_value;
+
+    if (pmi->mid_runstring) {
+        dmprintf(pmi->memory, "Can't get parameters mid run_string\n");
+        return -1;
+    }
+
+    /* The "more to come" bit should never be set, but clear it anyway. */
+    type &= ~pl_spt_more_to_come;
+
+    gs_c_param_list_write(&params, pmi->memory);
+    code = gs_getdeviceparams(pmi->device, (gs_param_list *)&params);
+    if (code < 0) {
+        gs_c_param_list_release(&params);
+        return code;
+    }
+
+    gs_c_param_list_read(&params);
+    switch (type)
+    {
+    case pl_spt_null:
+        code = param_read_null((gs_param_list *)&params, param);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        code = 0;
+        break;
+    case pl_spt_bool:
+    {
+        bool b;
+        code = param_read_bool((gs_param_list *)&params, param, &b);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        code = sizeof(int);
+        if (value != NULL)
+            *(int *)value = !!b;
+        break;
+    }
+    case pl_spt_int:
+    {
+        int i;
+        code = param_read_int((gs_param_list *)&params, param, &i);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        code = sizeof(int);
+        if (value != NULL)
+            *(int *)value = i;
+        break;
+    }
+    case pl_spt_float:
+    {
+        float f;
+        code = param_read_float((gs_param_list *)&params, param, &f);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        code = sizeof(float);
+        if (value != NULL)
+            *(float *)value = f;
+        break;
+    }
+    case pl_spt_name:
+        code = param_read_name((gs_param_list *)&params, param, &str_value);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        if (value != NULL) {
+            memcpy(value, str_value.data, str_value.size);
+            ((char *)value)[str_value.size] = 0;
+        }
+        code = str_value.size+1;
+        break;
+    case pl_spt_string:
+        code = param_read_string((gs_param_list *)&params, param, &str_value);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        else if (value != NULL) {
+            memcpy(value, str_value.data, str_value.size);
+            ((char *)value)[str_value.size] = 0;
+        }
+        code = str_value.size+1;
+        break;
+    case pl_spt_long:
+    {
+        long l;
+        code = param_read_long((gs_param_list *)&params, param, &l);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(long *)value = l;
+        code = sizeof(long);
+        break;
+    }
+    case pl_spt_i64:
+    {
+        int64_t i64;
+        code = param_read_i64((gs_param_list *)&params, param, &i64);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(int64_t *)value = i64;
+        code = sizeof(int64_t);
+        break;
+    }
+    case pl_spt_size_t:
+    {
+        size_t z;
+        code = param_read_size_t((gs_param_list *)&params, param, &z);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(size_t *)value = z;
+        code = sizeof(size_t);
+        break;
+    }
+    case pl_spt_parsed:
+    {
+        int len;
+        code = gs_param_list_to_string((gs_param_list *)&params,
+                                       param, (char *)value, &len);
+        if (code == 1)
+            code = gs_error_undefined;
+        if (code >= 0)
+            code = len;
+        break;
+    }
+    default:
+        code = gs_note_error(gs_error_rangecheck);
+    }
+    gs_c_param_list_release(&params);
+
+    return code;
+}
+
+int pl_main_enumerate_params(pl_main_instance_t *pmi, void **iter, const char **key, pl_set_param_type *type)
+{
+    int code = 0;
+    gs_param_key_t keyp;
+
+    if (key == NULL)
+        return -1;
+    *key = NULL;
+    if (pmi == NULL || iter == NULL)
+        return -1;
+
+    if (*iter == NULL) {
+        /* Free any existing param list. */
+        gs_c_param_list_release(&pmi->enum_params);
+        /* No device -> no params. */
+        if (pmi->device == NULL)
+            return 1;
+        /* Set up a new one. */
+        gs_c_param_list_write(&pmi->enum_params, pmi->memory);
+        /* Get the keys. */
+        code = gs_getdeviceparams(pmi->device, (gs_param_list *)&pmi->enum_params);
+        if (code < 0)
+            return code;
+
+        param_init_enumerator(&pmi->enum_iter);
+        *iter = &pmi->enum_iter;
+    } else if (*iter != &pmi->enum_iter)
+        return -1;
+
+    gs_c_param_list_read(&pmi->enum_params);
+    code = param_get_next_key((gs_param_list *)&pmi->enum_params, &pmi->enum_iter, &keyp);
+    if (code < 0)
+        return code;
+    if (code != 0) {
+        /* End of iteration. */
+        *iter = NULL;
+        *key = NULL;
+        return 1;
+    }
+    if (pmi->enum_keybuf_max < keyp.size+1) {
+        int newsize = keyp.size+1;
+        char *newkey;
+        if (newsize < 128)
+            newsize = 128;
+        if (pmi->enum_keybuf == NULL) {
+            newkey = (char *)gs_alloc_bytes(pmi->memory, newsize, "enumerator key buffer");
+        } else {
+            newkey = (char *)gs_resize_object(pmi->memory, pmi->enum_keybuf, newsize, "enumerator key buffer");
+        }
+        if (newkey == NULL)
+            return_error(gs_error_VMerror);
+        pmi->enum_keybuf = newkey;
+        pmi->enum_keybuf_max = newsize;
+    }
+    memcpy(pmi->enum_keybuf, keyp.data, keyp.size);
+    pmi->enum_keybuf[keyp.size] = 0;
+    *key = pmi->enum_keybuf;
+
+    if (type) {
+        gs_param_typed_value pvalue;
+        pvalue.type = gs_param_type_any;
+        code = param_read_typed((gs_param_list *)&pmi->enum_params, *key, &pvalue);
+        if (code < 0)
+            return code;
+        if (code > 0)
+            return_error(gs_error_unknownerror);
+
+        switch (pvalue.type) {
+        case gs_param_type_null:
+            *type = pl_spt_null;
+            break;
+        case gs_param_type_bool:
+            *type = pl_spt_bool;
+            break;
+        case gs_param_type_int:
+            *type = pl_spt_int;
+            break;
+        case gs_param_type_long:
+            *type = pl_spt_long;
+            break;
+        case gs_param_type_size_t:
+            *type = pl_spt_size_t;
+            break;
+        case gs_param_type_i64:
+            *type = pl_spt_i64;
+            break;
+        case gs_param_type_float:
+            *type = pl_spt_float;
+            break;
+        case gs_param_type_string:
+            *type = pl_spt_string;
+            break;
+        case gs_param_type_name:
+            *type = pl_spt_name;
+            break;
+        default:
+            *type = pl_spt_parsed;
+            break;
+        }
+    }
+
+    return code;
+}
+
+static int
+handle_dash_s(pl_main_instance_t *pmi, const char *arg, int *device_index)
+{
+    int code = 0;
+    char *eqp;
+    const char *value;
+
+    eqp = strchr(arg, '=');
+    if (!(eqp || (eqp = strchr(arg, '#')))) {
+        dmprintf(pmi->memory,
+                 "Usage for -s is -s<option>=<string>\n");
+        return -1;
+    }
+    value = eqp + 1;
+    if (!strncmp(arg, "DEVICE", 6)) {
+        if (device_index == NULL) {
+            dmprintf(pmi->memory, "DEVICE cannot be set this late!\n");
+            return -1;
+        }
+        if (*device_index != -1) {
+            dmprintf(pmi->memory, "DEVICE can only be set once!\n");
+            return -1;
+        }
+        *device_index = get_device_index(pmi->memory, value);
+        if (*device_index == -1)
+            return -1;
+    } else if (!strncmp(arg, "DefaultGrayProfile",
+                        strlen("DefaultGrayProfile"))) {
+        pmi->pdefault_gray_icc = arg_copy(value, pmi->memory);
+    } else if (!strncmp(arg, "DefaultRGBProfile",
+                        strlen("DefaultRGBProfile"))) {
+        pmi->pdefault_rgb_icc = arg_copy(value, pmi->memory);
+    } else if (!strncmp(arg, "DefaultCMYKProfile",
+                        strlen("DefaultCMYKProfile"))) {
+        pmi->pdefault_cmyk_icc = arg_copy(value, pmi->memory);
+    } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
+        pmi->piccdir = arg_copy(value, pmi->memory);
+    } else if (!strncmp(arg, "OutputFile", 10) && strlen(eqp) > 0) {
+        code = gs_add_outputfile_control_path(pmi->memory, eqp+1);
+        if (code < 0)
+            return code;
+        code = pl_main_set_string_param(pmi, arg);
+    } else {
+        code = pl_main_set_string_param(pmi, arg);
+    }
     return code;
 }
 
@@ -2315,6 +2673,11 @@ help:
                     pmi->pause = false;
                     break;
                 }
+            case 'p':
+                code = pl_main_set_parsed_param(pmi, arg);
+                if (code < 0)
+                    return code;
+                break;
             case 'r':
                 {
                     float res[2];
@@ -2347,54 +2710,10 @@ help:
                 break;
             case 's':
             case 'S':
-                {
-                    char *eqp;
-                    const char *value;
-
-                    eqp = strchr(arg, '=');
-                    if (!(eqp || (eqp = strchr(arg, '#')))) {
-                        dmprintf(pmi->memory,
-                                 "Usage for -s is -s<option>=<string>\n");
-                        return -1;
-                    }
-                    /* There's a 'check_for_special_str' function, but that is actually a compelte misnomer.
-                     * That function only actually processes *names* (ie strings beginning '/') in a -d switch
-                     * We don't really handle strings specially at all, we just write them to the device.
-                     * This whole function is inadequate in my opinion.
-                     */
-                    value = eqp + 1;
-                    if (!strncmp(arg, "DEVICE", 6)) {
-                        if (device_index != -1) {
-                            dmprintf(pmi->memory, "DEVICE can only be set once!\n");
-                            return -1;
-                        }
-                        device_index = get_device_index(pmi->memory, value);
-                        if (device_index == -1)
-                            return -1;
-                    } else if (!strncmp(arg, "DefaultGrayProfile",
-                                        strlen("DefaultGrayProfile"))) {
-                        pmi->pdefault_gray_icc = arg_copy(value, pmi->memory);
-                    } else if (!strncmp(arg, "DefaultRGBProfile",
-                                        strlen("DefaultRGBProfile"))) {
-                        pmi->pdefault_rgb_icc = arg_copy(value, pmi->memory);
-                    } else if (!strncmp(arg, "DefaultCMYKProfile",
-                                        strlen("DefaultCMYKProfile"))) {
-                        pmi->pdefault_cmyk_icc = arg_copy(value, pmi->memory);
-                    } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
-                        pmi->piccdir = arg_copy(value, pmi->memory);
-                    } else if (!strncmp(arg, "OutputFile", 10) && strlen(eqp) > 0) {
-                        code = gs_add_outputfile_control_path(pmi->memory, eqp+1);
-                        if (code < 0) return code;
-                        code = pl_main_set_string_param(pmi, arg);
-                        if (code < 0)
-                            return code;
-                    } else {
-                        code = pl_main_set_string_param(pmi, arg);
-                        if (code < 0)
-                            return code;
-                    }
-                    break;
-                }
+                code = handle_dash_s(pmi, arg, &device_index);
+                if (code < 0)
+                    return code;
+                break;
             case 'q':
                 /* Silently accept -q to match gs. We are pretty quiet
                  * on startup anyway. */
@@ -2446,7 +2765,7 @@ help:
 
     /* If we have (at least one) filename to process */
     if (arg) {
-        /* From here on in, we can only accept -c, -f, and filenames */
+        /* From here on in, we can only accept -c, -d, -f, -s, -p and filenames */
         /* In the unlikely event that someone wants to run a file starting with
          * a '-', they'll do "-f -blah". The - of the "-blah" must not be accepted
          * by the arg processing in the loop below. We use 'not_an_arg' to handle
@@ -2466,6 +2785,29 @@ help:
                 code = handle_dash_c(pmi, pal, &collected_commands, &arg);
                 if (code < 0)
                     break;
+                not_an_arg = 0;
+                continue; /* We've already read any -f into arg */
+            } else if (!not_an_arg && arg[0] == '-' &&
+                       (arg[1] == 's' || arg[1] == 'S')) {
+                code = handle_dash_s(pmi, arg+2, NULL);
+                if (code < 0)
+                    break;
+                arg = NULL;
+                not_an_arg = 0;
+                continue; /* We've already read any -f into arg */
+            } else if (!not_an_arg && arg[0] == '-' &&
+                       (arg[1] == 'd' || arg[1] == 'D')) {
+                code = pl_main_set_param(pmi, arg+2);
+                if (code < 0)
+                    break;
+                arg = NULL;
+                not_an_arg = 0;
+                continue; /* We've already read any -f into arg */
+            } else if (!not_an_arg && arg[0] == '-' && arg[1] == 'p') {
+                code = pl_main_set_parsed_param(pmi, arg+2);
+                if (code < 0)
+                    break;
+                arg = NULL;
                 not_an_arg = 0;
                 continue; /* We've already read any -f into arg */
             } else if (!not_an_arg && arg[0] == '-' && arg[1] == 'f') {
