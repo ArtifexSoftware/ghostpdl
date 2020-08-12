@@ -1410,6 +1410,18 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s, uint32_t indirect_n
         return_error(gs_error_VMerror);
 
     do {
+        if (index >= size - 1) {
+            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdfi_read_string");
+            if (NewBuf == NULL) {
+                gs_free_object(ctx->memory, Buffer, "pdfi_read_string error");
+                return_error(gs_error_VMerror);
+            }
+            memcpy(NewBuf, Buffer, size);
+            gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
+            Buffer = NewBuf;
+            size += 256;
+        }
+
         bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
 
         if (bytes == 0 && s->eof)
@@ -1551,17 +1563,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s, uint32_t indirect_n
         if (exit_loop)
             break;
 
-        if (index++ >= size - 1) {
-            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdfi_read_string");
-            if (NewBuf == NULL) {
-                gs_free_object(ctx->memory, Buffer, "pdfi_read_string error");
-                return_error(gs_error_VMerror);
-            }
-            memcpy(NewBuf, Buffer, size);
-            gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
-            Buffer = NewBuf;
-            size += 256;
-        }
+        index++;
     } while(1);
 
     code = pdfi_alloc_object(ctx, PDF_STRING, index, (pdf_obj **)&string);
