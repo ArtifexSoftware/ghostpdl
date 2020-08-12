@@ -214,9 +214,9 @@ public class GSAPI {
 
 	public static native int gsapi_set_param(long instance, byte[] param, Object value, int paramType);
 
-	public static native int gsapi_get_param(long instance, byte[] param, Reference<?> value, int paramType);
+	public static native int gsapi_get_param_once(long instance, byte[] param, Reference<?> value, int paramType);
 
-	public static native int gsapi_enumerate_params(long instance, Reference<?> iter, ByteArrayReference key, IntReference paramType);
+	public static native int gsapi_enumerate_params(long instance, Reference<Long> iter, ByteArrayReference key, IntReference paramType);
 
 	public static native int gsapi_add_control_path(long instance, int type, byte[] path);
 
@@ -266,8 +266,8 @@ public class GSAPI {
 		return gsapi_set_param(instnace, StringUtil.toNullTerminatedByteArray(param), value, paramType);
 	}
 
-	public static int gsapi_get_param(long instance, String param, Reference<?> value, int paramType) {
-		return gsapi_get_param(instance, StringUtil.toNullTerminatedByteArray(param), value, paramType);
+	public static int gsapi_get_param_once(long instance, String param, Reference<?> value, int paramType) {
+		return gsapi_get_param_once(instance, StringUtil.toNullTerminatedByteArray(param), value, paramType);
 	}
 
 	public static int gsapi_add_control_path(long instance, int type, String path) {

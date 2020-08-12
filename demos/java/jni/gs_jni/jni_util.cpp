@@ -634,21 +634,32 @@ util::Reference::Reference(JNIEnv *env) : Reference(m_env, NULL)
 {
 }
 
-util::Reference::Reference(JNIEnv *env, jobject value) : m_env(env), m_value(NULL)
+util::Reference::Reference(JNIEnv *env, jobject object) : m_env(env), m_object(NULL)
 {
-    if (value)
-        m_value = m_env->NewGlobalRef(value);
+    if (!object)
+    {
+        static const char *const CLASS_NAME = "com/artifex/gsjava/util/Reference";
+        jclass refClass = env->FindClass(CLASS_NAME);
+        if (refClass == NULL)
+        {
+            throwNoClassDefError(env, CLASS_NAME);
+            return;
+        }
+        jmethodID constructor = env->GetMethodID(refClass, "<init>", "()V");
+        if (constructor == NULL)
+        {
+            throwNoSuchMethodError(env, "com/artifex/gsjava/util/Reference.<init>()V");
+            return;
+        }
+        object = m_env->NewObject(refClass, constructor);
+        if (object == NULL)
+            return;
+    }
+    m_object = m_env->NewGlobalRef(object);
 }
 
 util::Reference::~Reference()
 {
-    if (m_value)
-        m_env->DeleteGlobalRef(m_value);
-}
-
-void util::Reference::set(jobject value)
-{
-    if (m_value)
-        m_env->DeleteGlobalRef(m_value);
-    m_value = m_env->NewGlobalRef(value);
+    if (m_object)
+        m_env->DeleteGlobalRef(m_object);
 }

@@ -253,18 +253,29 @@ namespace util
 		{
 			return getObjectField(env, object, "value");
 		}
+
+		static inline Reference *from(JNIEnv *env, jobject refObject)
+		{
+			static const char *const CLASS_NAME = "com/artifex/gsjava/util/Reference";
+			jclass clazz = env->FindClass(CLASS_NAME);
+			if (!clazz)
+			{
+				throwNoClassDefError(env, CLASS_NAME);
+				return NULL;
+			}
+		}
 	private:
 		JNIEnv *m_env;
-		jobject m_value;
+		jobject m_object;
 	public:
 
 		Reference(JNIEnv *env);
-		Reference(JNIEnv *env, jobject value);
+		Reference(JNIEnv *env, jobject object);
 		~Reference();
 
 		inline jobject value()
 		{
-			return getValueField(m_env, m_value);
+			return getValueField(m_env, m_object);
 		}
 
 		inline jboolean booleanValue()
@@ -307,7 +318,10 @@ namespace util
 			return toDouble(m_env, value());
 		}
 
-		void set(jobject value);
+		inline void set(jobject value)
+		{
+			setValueField(m_env, m_object, value);
+		}
 
 		inline void set(jboolean value)
 		{

@@ -10,18 +10,17 @@ import java.util.Arrays;
  */
 public class ByteArrayReference extends Reference<byte[]> {
 
-	public volatile byte[] value;
-
 	public ByteArrayReference() {
 		this(null);
 	}
 
 	public ByteArrayReference(final byte[] value) {
-		this.value = value;
+		//this.value = value;
+		super(value);
 	}
 
-	@Override
-	public String toString() {
-		return Arrays.toString(value);
+	public String asString() {
+		byte[] val = getValue();
+		return val == null ? "null" : new String(val);
 	}
 }

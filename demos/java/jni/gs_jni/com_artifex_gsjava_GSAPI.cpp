@@ -2,6 +2,8 @@
 
 #include <iapi.h>
 #include <gdevdsp.h>
+#include <string.h>
+#include <memory>
 
 #include "jni_util.h"
 #include "callbacks.h"
@@ -296,15 +298,76 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1param
 	const char *cstring = (const char *)env->GetByteArrayElements(param, &copy);
 
 	int code = gsapi_set_param((void *)instance, cstring, data, type);
-	delete data;
+	free(data);
 
 	return code;
 }
 
-JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param_1once
 	(JNIEnv *env, jclass, jlong instance, jbyteArray param, jobject value, jint paramType)
 {
-	return -1;
+	jboolean copy = false;
+	int exitCode;
+	const char *cstring = (const char *)env->GetByteArrayElements(param, &copy);
+
+	int bytes = gsapi_get_param((void *)instance, cstring, NULL, (gs_set_param_type)paramType);
+	if (bytes < 0)
+		return bytes;
+
+	void *data = new char[bytes];
+	int code = gsapi_get_param((void *)instance, cstring, data, (gs_set_param_type)paramType);
+	if (code < 0)
+	{
+		delete data;
+		return code;
+	}
+
+	int stripped = paramType & ~(gs_spt_more_to_come);
+	Reference ref = Reference(env, value);
+
+	jbyteArray arr = NULL;
+	const char *str = NULL;
+	int len = 0;
+	switch (stripped)
+	{
+	case gs_spt_null:
+		break;
+	case gs_spt_bool:
+		ref.set((jboolean)*((int *)data));
+		break;
+	case gs_spt_int:
+		ref.set(*((jint *)data));
+		break;
+	case gs_spt_float:
+		ref.set(*((jfloat *)data));
+		break;
+	case gs_spt_long:
+		ref.set(*((jlong *)data));
+		break;
+	case gs_spt_i64:
+		ref.set((jlong)*((long long *)data));
+		break;
+	case gs_spt_size_t:
+		ref.set((jlong)*((size_t *)data));
+		break;
+	case gs_spt_name:
+	case gs_spt_string:
+	case gs_spt_parsed:
+		str = (const char *)data;
+		len = strlen(str) + 1;
+		arr = env->NewByteArray(len);
+		env->SetByteArrayRegion(arr, 0, len, (const jbyte *)str);
+		ref.set(arr);
+		break;
+	case gs_spt_invalid:
+	default:
+		throwIllegalArgumentException(env, "paramType");
+		delete data;
+		return -1;
+		break;
+	}
+	delete data;
+	return 0;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
@@ -347,45 +410,46 @@ void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *su
 {
 	*success = true;
 	void *result = NULL;
-	jbyteArray arr = NULL;
 	int stripped = type & ~gs_spt_more_to_come;
+
+	jbyteArray arr = NULL;
+	jboolean copy = false;
+	const char *cstring = NULL;
+	jsize len = 0;
 	switch (stripped)
 	{
 	case gs_spt_null:
 		return result;
 		break;
 	case gs_spt_bool:
-		result = new bool;
-		*((bool *)result) = (bool)toBoolean(env, object);
+		result = malloc(sizeof(int));
+		*((int *)result) = (bool)toBoolean(env, object);
 		break;
 	case gs_spt_int:
-		result = new int;
+		result = malloc(sizeof(int));
 		*((int *)result) = (int)toInt(env, object);
 		break;
 	case gs_spt_float:
-		result = new float;
+		result = malloc(sizeof(float));
 		*((float *)result) = (float)toFloat(env, object);
 		break;
 	case gs_spt_long:
-		result = new long;
-		*((long *)result) = (long)toLong(env, object);
-		break;
 	case gs_spt_i64:
-		result = new long long;
+		result = malloc(sizeof(long long));
 		*((long long *)result) = (long long)toLong(env, object);
 		break;
 	case gs_spt_size_t:
-		result = new size_t;
+		result = malloc(sizeof(size_t));
 		*((size_t *)result) = (size_t)toLong(env, object);
 		break;
 	case gs_spt_name:
 	case gs_spt_string:
 	case gs_spt_parsed:
 		arr = (jbyteArray)object;
-		jboolean copy = false;
-		int exitCode;
-		const char *cstring = (const char *)env->GetByteArrayElements(arr, &copy);
-		result = new char[env->GetArrayLength(arr)];
+		cstring = (const char *)env->GetByteArrayElements(arr, &copy);
+		len = env->GetArrayLength(arr);
+		result = malloc(sizeof(char) * len);
+		((char *)result)[len - 1] = 0;
 		break;
 	case gs_spt_invalid:
 	default:
@@ -395,7 +459,7 @@ void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *su
 	if (env->ExceptionOccurred())
 	{
 		if (result)
-			delete result;
+			free(result);
 		result = NULL;
 		*success = false;
 	}
