@@ -218,6 +218,16 @@ public class GSAPI {
 
 	public static native int gsapi_enumerate_params(long instance, Reference<?> iter, ByteArrayReference key, IntReference paramType);
 
+	public static native int gsapi_add_control_path(long instance, int type, byte[] path);
+
+	public static native int gsapi_remove_control_path(long instance, int type, byte[] path);
+
+	public static native void gsapi_purge_control_paths(long instance, int type);
+
+	public static native void gsapi_activate_path_control(long instance, boolean enable);
+
+	public static native boolean gsapi_is_path_control_active(long instance);
+
 	// Utility methods to make calling some native methods easier
 
 	public static int gsapi_init_with_args(long instance, String[] argv) {
@@ -246,5 +256,25 @@ public class GSAPI {
 
 	public static int gsapi_run_file(long instance, String fileName, int userErrors, IntReference pExitCode) {
 		return gsapi_run_file(instance, StringUtil.toNullTerminatedByteArray(fileName), userErrors, pExitCode);
+	}
+
+	public static int gsapi_set_param(long instnace, String param, String value, int paramType) {
+		return gsapi_set_param(instnace, StringUtil.toNullTerminatedByteArray(param), value, paramType);
+	}
+
+	public static int gsapi_set_param(long instnace, String param, Object value, int paramType) {
+		return gsapi_set_param(instnace, StringUtil.toNullTerminatedByteArray(param), value, paramType);
+	}
+
+	public static int gsapi_get_param(long instance, String param, Reference<?> value, int paramType) {
+		return gsapi_get_param(instance, StringUtil.toNullTerminatedByteArray(param), value, paramType);
+	}
+
+	public static int gsapi_add_control_path(long instance, int type, String path) {
+		return gsapi_add_control_path(instance, type, StringUtil.toNullTerminatedByteArray(path));
+	}
+
+	public static int gsapi_remove_control_path(long instance, int type, String path) {
+		return gsapi_remove_control_path(instance, type, StringUtil.toNullTerminatedByteArray(path));
 	}
 }

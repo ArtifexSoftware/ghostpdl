@@ -248,6 +248,34 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
   (JNIEnv *, jclass, jlong, jobject, jobject, jobject);
 
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1add_1control_1path
+  (JNIEnv *, jclass, jlong, jint, jbyteArray);
+
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1remove_1control_1path
+  (JNIEnv *, jclass, jlong, jint, jbyteArray);
+
+JNIEXPORT void JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1purge_1control_1paths
+  (JNIEnv *, jclass, jlong, jint);
+
+JNIEXPORT void JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1activate_1path_1control
+  (JNIEnv *, jclass, jlong, jboolean);
+
+JNIEXPORT jboolean JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1is_1path_1control_1active
+  (JNIEnv *, jclass, jlong);
+
+
+
+/*
+public static native int gsapi_add_control_path(long instance, int type, byte[] path);
+
+public static native int gsapi_remove_control_path(long instance, int type, byte[] path);
+
+public static native void gsapi_purge_control_paths(long instance, int type);
+
+public static native void gsapi_activate_path_control(long instance, boolean enable);
+
+public static native boolean gsapi_is_path_control_active(long instance);*/
+
 #ifdef __cplusplus
 }
 #endif

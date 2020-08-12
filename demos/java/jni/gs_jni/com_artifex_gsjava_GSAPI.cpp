@@ -304,87 +304,100 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1param
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param
 	(JNIEnv *env, jclass, jlong instance, jbyteArray param, jobject value, jint paramType)
 {
-	jobject obj = toWrapperType(env, (jboolean)true);
 	return -1;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
-   (JNIEnv *, jclass, jlong, jobject, jobject, jobject)
+   (JNIEnv *env, jclass, jlong instance, jobject iter, jobject key, jobject paramType)
 {
 	return -1;
 }
 
-bool isParamOkay(jobject object, gs_set_param_type type)
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1add_1control_1path
+	(JNIEnv *env, jclass, jlong instance, jint type, jbyteArray path)
 {
-	switch (type)
-	{
-	case gs_spt_invalid:
-		break;
-	case gs_spt_null:
-		return object == NULL;
-		break;
-	case gs_spt_bool:
-		break;
-	case gs_spt_int:
-		break;
-	case gs_spt_float:
-		break;
-	case gs_spt_name:
-		break;
-	case gs_spt_string:
-		break;
-	case gs_spt_long:
-		break;
-	case gs_spt_i64:
-		break;
-	case gs_spt_size_t:
-		break;
-	case gs_spt_parsed:
-		break;
-	case gs_spt_more_to_come:
-		break;
-	default:
-		return false;
-	}
-	return false;
+	return -1;
+}
+
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1remove_1control_1path
+(JNIEnv *env, jclass, jlong instance, jint type, jbyteArray path)
+{
+	return -1;
+}
+
+JNIEXPORT void JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1purge_1control_1paths
+	(JNIEnv *, jclass, jlong instance, jint type)
+{
+	gsapi_purge_control_paths((void *)instance, type);
+}
+
+JNIEXPORT void JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1activate_1path_1control
+	(JNIEnv *, jclass, jlong instance, jboolean enable)
+{
+	gsapi_activate_path_control((void *)instance, enable);
+}
+
+JNIEXPORT jboolean JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1is_1path_1control_1active
+	(JNIEnv *env, jclass, jlong instance)
+{
+	return gsapi_is_path_control_active((void *)instance);
 }
 
 void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *success)
 {
-	if (!isParamOkay(object, type))
+	*success = true;
+	void *result = NULL;
+	jbyteArray arr = NULL;
+	int stripped = type & ~gs_spt_more_to_come;
+	switch (stripped)
 	{
-		*success = false;
-		return NULL;
-	}
-	switch (type)
-	{
-	case gs_spt_invalid:
-		break;
 	case gs_spt_null:
-		return NULL;
+		return result;
 		break;
 	case gs_spt_bool:
+		result = new bool;
+		*((bool *)result) = (bool)toBoolean(env, object);
 		break;
 	case gs_spt_int:
+		result = new int;
+		*((int *)result) = (int)toInt(env, object);
 		break;
 	case gs_spt_float:
-		break;
-	case gs_spt_name:
-		break;
-	case gs_spt_string:
+		result = new float;
+		*((float *)result) = (float)toFloat(env, object);
 		break;
 	case gs_spt_long:
+		result = new long;
+		*((long *)result) = (long)toLong(env, object);
 		break;
 	case gs_spt_i64:
+		result = new long long;
+		*((long long *)result) = (long long)toLong(env, object);
 		break;
 	case gs_spt_size_t:
+		result = new size_t;
+		*((size_t *)result) = (size_t)toLong(env, object);
 		break;
+	case gs_spt_name:
+	case gs_spt_string:
 	case gs_spt_parsed:
+		arr = (jbyteArray)object;
+		jboolean copy = false;
+		int exitCode;
+		const char *cstring = (const char *)env->GetByteArrayElements(arr, &copy);
+		result = new char[env->GetArrayLength(arr)];
 		break;
-	case gs_spt_more_to_come:
-		break;
+	case gs_spt_invalid:
 	default:
-		return NULL;
+		*success = false;
+		break;
 	}
-	return NULL;
+	if (env->ExceptionOccurred())
+	{
+		if (result)
+			delete result;
+		result = NULL;
+		*success = false;
+	}
+	return result;
 }
