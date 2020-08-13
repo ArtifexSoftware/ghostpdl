@@ -976,7 +976,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     const gs_pixel_image_t *pim;
     gs_int_rect rect;
     gs_image_format_t format;
-    const gs_color_space *pcs;
+    gs_color_space *pcs;
     int num_components;
     pdf_image_enum *pie;
     const pdf_color_space_names_t *names;
@@ -1213,6 +1213,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     }
 
     pcs = pim->ColorSpace;
+    rc_increment_cs(pcs);
     num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
 
     code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
@@ -1238,6 +1239,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
          * to DeviceGray here.
          */
         /* {csrc} make sure this gets freed */
+        rc_decrement(pcs, "pdf_begin_typed_image(pcs)");
         pcs = gs_cspace_new_DeviceGray(pdev->memory);
         if (pcs == NULL)
             code = gs_note_error(gs_error_VMerror);
@@ -1609,9 +1611,11 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 
     gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
+    rc_decrement(pcs, "pdf_begin_typed_image(pcs)");
     return 0;
 
 fail_and_fallback:
+    rc_decrement(pcs, "pdf_begin_typed_image(pcs)");
     pdev->JPEG_PassThrough = 0;
     gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                       "pdf_begin_typed_image(image)");
