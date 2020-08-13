@@ -2029,6 +2029,8 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     }
 
  exit:
+    if (code != 0)
+        rc_decrement(pcs_base, "pdfi_create_indexed(pcs_base) error");
     if (Buffer)
         gs_free_object(ctx->memory, Buffer, "pdfi_create_indexed (decompression buffer)");
     pdfi_countdown(space);
