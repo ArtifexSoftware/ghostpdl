@@ -324,7 +324,7 @@ int
 
 <li><code>
     int
-    <a href="#get_param">gsapi_get_param</a>(void *instance, const char *param, const void *value, gs_set_param_type type);
+    <a href="#get_param">gsapi_get_param</a>(void *instance, const char *param, void *value, gs_set_param_type type);
 </code></li>
 
 <li><code>
@@ -613,7 +613,7 @@ Get a parameter.
 Retrieve the current value of a parameter.
 <p>If an error occurs, the return value is negative. Otherwise the return value is the number of bytes required for storage of the value. Call once with <code>value = NULL</code> to get the number of bytes required, then call again with <code>value</code> pointing to at least the required number of bytes where the value will be copied out. Note that the caller is required to know the type of value in order to get it. For all types other than <code>string</code>, <code>name</code>, <code>parsed</code> knowing the type means you already know the size required.
 <p>
-This call retrieves parameters/values that have made it to the device. Thus, any values set using the <code>gs_spt_more_to_come</code> without a following call without that flag will not be retrieved. Similarly, attempting to get a parameter before <code>gs_init_with_args</code> has been called will not list any, even if <code>gsapi_set_param</code> has been used.
+This call retrieves parameters/values that have made it to the device. Thus, any values set using the <code>gs_spt_more_to_come</code> without a following call without that flag will not be retrieved. Similarly, attempting to get a parameter before <code>gsapi_init_with_args</code> has been called will not list any, even if <code>gsapi_set_param</code> has been used.
 <p>
 Attempting to read a parameter that is not set will return <code>gs_error_undefined (-21)</code>. Note that calling <code>gsapi_set_param</code> followed by <code>gsapi_get_param</code> may not find the value, if the device did not recognise the key as being one of its configuration keys.
 </blockquote>
@@ -627,7 +627,7 @@ Call repeatedly to list out the current parameters.
 <p>
 Note that only one enumeration can happen at a time. Starting a second enumeration will reset the first.
 <p>
-The enumeration only returns parameters/values that have made it to the device. Thus, any values set using the <code>gs_spt_more_to_come</code> without a following call without that flag will not be retrieved. Similarly, attempting to enumerate parameters before <code>gs_init_with_args</code> has been called will not list any, even if <code>gsapi_set_param</code> has been used.
+The enumeration only returns parameters/values that have made it to the device. Thus, any values set using the <code>gs_spt_more_to_come</code> without a following call without that flag will not be retrieved. Similarly, attempting to enumerate parameters before <code>gsapi_init_with_args</code> has been called will not list any, even if <code>gsapi_set_param</code> has been used.
 </blockquote>
 
 <h3><a name="add_control_path"></a><code>gsapi_add_control_path()</code></h3>
