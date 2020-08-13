@@ -144,6 +144,7 @@ gx_begin_image3x_generic(gx_device * dev,
     gs_int_point origin[2];
     int code;
     int i;
+    gs_color_space *pmcs = NULL;
 
     /* Validate the parameters. */
     if (pim->Height <= 0)
@@ -207,9 +208,6 @@ gx_begin_image3x_generic(gx_device * dev,
          * The mask data has to be defined in a DevicePixel color space
          * of the correct depth so that no color mapping will occur.
          */
-        /****** FREE COLOR SPACE ON ERROR OR AT END ******/
-        gs_color_space *pmcs;
-
         if (penum->mask[i].depth == 0) {	/* mask not supplied */
             midev[i] = 0;
             minfo[i] = 0;
@@ -217,19 +215,19 @@ gx_begin_image3x_generic(gx_device * dev,
         }
         code = gs_cspace_new_DevicePixel(mem, &pmcs, penum->mask[i].depth);
         if (code < 0)
-            return code;
+            goto out1;
         mrect.p.x = mrect.p.y = 0;
         mrect.q.x = penum->mask[i].width;
         mrect.q.y = penum->mask[i].height;
         if ((code = gs_matrix_multiply(&mask[i].matrix, pmat, &mat)) < 0 ||
             (code = gs_bbox_transform(&mrect, &mat, &mrect)) < 0
             )
-            return code;
+            goto out1;
 
         /* Bug 700438: If the rectangle is out of range, bail */
         if (mrect.p.x >= (double)INT_MAX || mrect.q.x <= (double)INT_MIN ||
             mrect.p.y >= (double)INT_MAX || mrect.q.y <= (double)INT_MIN) {
-                code = gs_note_error(gs_error_rangecheck);
+            code = gs_note_error(gs_error_rangecheck);
             goto out1;
         }
 
@@ -292,6 +290,8 @@ gx_begin_image3x_generic(gx_device * dev,
         }
         midev[i] = mdev;
         minfo[i] = penum->mask[i].info;
+        rc_decrement_only(pmcs, "gx_begin_image3x_generic(pmcs)");
+        pmcs = NULL;
     }
     gs_image_t_init(&pixel.image, pim->ColorSpace);
     {
@@ -365,6 +365,7 @@ gx_begin_image3x_generic(gx_device * dev,
                        "gx_begin_image3x(mask[0].mdev)");
     }
   out1:
+    rc_decrement(pmcs, "gx_begin_image3x_generic(pmcs)");
     gs_free_object(mem, penum->mask[0].data, "gx_begin_image3x(mask[0].data)");
     gs_free_object(mem, penum->mask[1].data, "gx_begin_image3x(mask[1].data)");
     gs_free_object(mem, penum->pixel.data, "gx_begin_image3x(pixel.data)");
