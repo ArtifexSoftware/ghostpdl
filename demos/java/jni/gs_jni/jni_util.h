@@ -280,42 +280,50 @@ namespace util
 
 		inline jboolean booleanValue()
 		{
-			return toBoolean(m_env, value());
+			jobject val = value();
+			return val ? toBoolean(m_env, val) : JNI_FALSE;
 		}
 
 		inline jbyte byteValue()
 		{
-			return toByte(m_env, value());
+			jobject val = value();
+			return val ? toByte(m_env, val) : 0;
 		}
 
 		inline jchar charValue()
 		{
-			return toChar(m_env, value());
+			jobject val = value();
+			return val ? toChar(m_env, val) : 0;
 		}
 
 		inline jshort shortValue()
 		{
-			return toShort(m_env, value());
+			jobject val = value();
+			return val ? toShort(m_env, val) : 0;
 		}
 
 		inline jint intValue()
 		{
-			return toInt(m_env, value());
+			jobject val = value();
+			return val ? toInt(m_env, val) : 0;
 		}
 
 		inline jlong longValue()
 		{
-			return toLong(m_env, value());
+			jobject val = value();
+			return val ? toLong(m_env, val) : 0LL;
 		}
 
 		inline jfloat floatValue()
 		{
-			return toFloat(m_env, value());
+			jobject val = value();
+			return val ? toFloat(m_env, val) : 0.0f;
 		}
 
 		inline jdouble doubleValue()
 		{
-			return toDouble(m_env, value());
+			jobject val = value();
+			return val ? toDouble(m_env, val) : 0.0;
 		}
 
 		inline void set(jobject value)

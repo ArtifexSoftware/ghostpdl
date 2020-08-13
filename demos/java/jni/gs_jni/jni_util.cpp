@@ -174,7 +174,7 @@ void util::setObjectField(JNIEnv *env, jobject object, const char *field, jobjec
 jobject util::getObjectField(JNIEnv *env, jobject object, const char *field)
 {
 
-    jfieldID fieldID = getFieldID(env, object, field, "Ljava/lang/Object");
+    jfieldID fieldID = getFieldID(env, object, field, "Ljava/lang/Object;");
     if (fieldID == NULL)
         return 0;
 
@@ -303,6 +303,11 @@ jobject util::toWrapperType(JNIEnv *env, jdouble value)
 
 jboolean util::toBoolean(JNIEnv *env, jobject wrapped)
 {
+    if (!wrapped)
+    {
+        throwNullPointerException(env, "attempting to get wrapped jboolean on NULL jobject");
+        return JNI_FALSE;
+    }
     jclass clazz = env->GetObjectClass(wrapped);
     jfieldID fieldID = env->GetFieldID(clazz, "value", "Z");
     if (fieldID == NULL)
@@ -315,6 +320,12 @@ jboolean util::toBoolean(JNIEnv *env, jobject wrapped)
 
 jbyte util::toByte(JNIEnv *env, jobject wrapped)
 {
+    if (!wrapped)
+    {
+        throwNullPointerException(env, "attempting to get wrapped jbyte on NULL jobject");
+        return 0;
+    }
+
     jclass clazz = env->GetObjectClass(wrapped);
     jfieldID fieldID = env->GetFieldID(clazz, "value", "B");
     if (fieldID == NULL)
@@ -327,6 +338,12 @@ jbyte util::toByte(JNIEnv *env, jobject wrapped)
 
 jchar util::toChar(JNIEnv *env, jobject wrapped)
 {
+    if (!wrapped)
+    {
+        throwNullPointerException(env, "attempting to get wrapped jchar on NULL jobject");
+        return 0;
+    }
+
     jclass clazz = env->GetObjectClass(wrapped);
     jfieldID fieldID = env->GetFieldID(clazz, "value", "C");
     if (fieldID == NULL)
@@ -339,6 +356,11 @@ jchar util::toChar(JNIEnv *env, jobject wrapped)
 
 jshort util::toShort(JNIEnv *env, jobject wrapped)
 {
+    if (!wrapped)
+    {
+        throwNullPointerException(env, "attempting to get wrapped jshort on NULL jobject");
+        return 0;
+    }
     jclass clazz = env->GetObjectClass(wrapped);
     jfieldID fieldID = env->GetFieldID(clazz, "value", "S");
     if (fieldID == NULL)
@@ -351,6 +373,12 @@ jshort util::toShort(JNIEnv *env, jobject wrapped)
 
 jint util::toInt(JNIEnv *env, jobject wrapped)
 {
+    if (!wrapped)
+    {
+        throwNullPointerException(env, "attempting to get wrapped jint on NULL jobject");
+        return 0;
+    }
+
     jclass clazz = env->GetObjectClass(wrapped);
     jfieldID fieldID = env->GetFieldID(clazz, "value", "I");
     if (fieldID == NULL)
@@ -363,6 +391,12 @@ jint util::toInt(JNIEnv *env, jobject wrapped)
 
 jlong util::toLong(JNIEnv *env, jobject wrapped)
 {
+    if (!wrapped)
+    {
+        throwNullPointerException(env, "attempting to get wrapped jlong on NULL jobject");
+        return 0;
+    }
+
     jclass clazz = env->GetObjectClass(wrapped);
     jfieldID fieldID = env->GetFieldID(clazz, "value", "J");
     if (fieldID == NULL)
@@ -375,6 +409,12 @@ jlong util::toLong(JNIEnv *env, jobject wrapped)
 
 jfloat util::toFloat(JNIEnv *env, jobject wrapped)
 {
+    if (!wrapped)
+    {
+        throwNullPointerException(env, "attempting to get wrapped jfloat on NULL jobject");
+        return 0;
+    }
+
     jclass clazz = env->GetObjectClass(wrapped);
     jfieldID fieldID = env->GetFieldID(clazz, "value", "F");
     if (fieldID == NULL)
@@ -387,6 +427,12 @@ jfloat util::toFloat(JNIEnv *env, jobject wrapped)
 
 jdouble util::toDouble(JNIEnv *env, jobject wrapped)
 {
+    if (!wrapped)
+    {
+        throwNullPointerException(env, "attempting to get wrapped jdouble on NULL jobject");
+        return 0;
+    }
+
     jclass clazz = env->GetObjectClass(wrapped);
     jfieldID fieldID = env->GetFieldID(clazz, "value", "D");
     if (fieldID == NULL)

@@ -6,20 +6,21 @@ package com.artifex.gsjava.util;
  * @author Ethan Vrhel
  *
  */
-public class IntReference {
+public class IntReference extends Reference<Integer> {
 
-	public volatile int value;
+	//public volatile int value;
 
 	public IntReference() {
 		this(0);
 	}
 
 	public IntReference(final int value) {
-		this.value = value;
+		//this.value = value;
+		super(value);
 	}
 
-	@Override
+	/*@Override
 	public String toString() {
 		return new StringBuilder().append(value).toString();
-	}
+	}*/
 }

@@ -1,5 +1,6 @@
 package com.artifex.gsjava;
 
+import java.util.Iterator;
 import java.util.List;
 
 import com.artifex.gsjava.callbacks.DisplayCallback;
@@ -216,7 +217,7 @@ public class GSAPI {
 
 	public static native int gsapi_get_param_once(long instance, byte[] param, Reference<?> value, int paramType);
 
-	public static native int gsapi_enumerate_params(long instance, Reference<Long> iter, ByteArrayReference key, IntReference paramType);
+	public static native int gsapi_enumerate_params(long instance, Reference<Long> iter, Reference<byte[]> key, Reference<Integer> paramType);
 
 	public static native int gsapi_add_control_path(long instance, int type, byte[] path);
 

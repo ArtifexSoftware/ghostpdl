@@ -5,6 +5,8 @@ import static com.artifex.gsjava.GSAPI.*;
 import java.io.File;
 
 import com.artifex.gsjava.GSAPI;
+import com.artifex.gsjava.GSParam;
+import com.artifex.gsjava.GSParams;
 import com.artifex.gsjava.util.*;
 
 public class Main {
@@ -31,7 +33,6 @@ public class Main {
 		if ((code = gsapi_get_param_once(instance, "TextAlphaBits", aaRef, GS_SPT_INT)) < 0) {
 			throw new IllegalStateException("gsapi_get_param_once returned " + code);
 		}
-		System.out.println(aaRef);
 		System.out.println("TextAlpaBits=" + aaRef.getValue());
 
 		ByteArrayReference resRef = new ByteArrayReference();
@@ -39,6 +40,11 @@ public class Main {
 			throw new IllegalStateException("gsapi_get_param_once returned " + code);
 		}
 		System.out.println(resRef.asString());
+
+		GSParams params = GSParams.getParams(instance);
+		for (GSParam<?> param : params) {
+			System.out.println(param);
+		}
 
 		gsapi_delete_instance(instance);
 	}

@@ -362,18 +362,46 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param_1once
 	case gs_spt_invalid:
 	default:
 		throwIllegalArgumentException(env, "paramType");
-		delete data;
+		delete[] data;
 		return -1;
 		break;
 	}
-	delete data;
+	delete[] data;
 	return 0;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
    (JNIEnv *env, jclass, jlong instance, jobject iter, jobject key, jobject paramType)
 {
-	return -1;
+	Reference iterRef = Reference(env, iter);
+
+	Reference keyRef = Reference(env, key);
+	Reference typeRef = Reference(env, paramType);
+
+	void *citer = (void *)iterRef.longValue();
+
+	if (env->ExceptionCheck())
+		return -1;
+
+	const char *ckey;
+	gs_set_param_type type;
+
+	int code = gsapi_enumerate_params((void *)instance, &citer, &ckey, &type);
+
+	if (code == 0)
+	{
+		iterRef.set((jlong)citer);
+
+		jsize len = strlen(ckey) + 1;
+		jbyteArray arr = env->NewByteArray(len);
+		env->SetByteArrayRegion(arr, 0, len, (const jbyte *)ckey);
+		keyRef.set(arr);
+		env->DeleteLocalRef(arr);
+
+		typeRef.set((jint)type);
+	}
+
+	return code;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1add_1control_1path
