@@ -72,7 +72,7 @@ public class GSParams implements Iterable<GSParam<?>> {
 		@Override
 		public boolean hasNext() {
 			long lastValue = iterator.getValue();
-			returnCode = gsapi_enumerate_params(instance, iterator, key, valueType);
+			returnCode = gsapi_enumerate_params(instance, iterator, null, null);
 			iterator.setValue(lastValue);
 			return returnCode != 1;
 		}

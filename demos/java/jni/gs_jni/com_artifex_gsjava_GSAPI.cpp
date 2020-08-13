@@ -303,6 +303,24 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1param
 	return code;
 }
 
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param
+	(JNIEnv *env, jclass, jlong instance, jbyteArray param, jlong value, jint paramType)
+{
+	if (!param)
+	{
+		throwNullPointerException(env, "paramType");
+		return -1;
+	}
+
+	jboolean copy = false;
+	int exitCode;
+	const char *cstring = (const char *)env->GetByteArrayElements(param, &copy);
+
+	int ret = gsapi_get_param((void *)instance, cstring, (void *)value, (gs_set_param_type)paramType);
+
+	return ret;
+}
+
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param_1once
 	(JNIEnv *env, jclass, jlong instance, jbyteArray param, jobject value, jint paramType)
 {
@@ -318,7 +336,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param_1once
 	int code = gsapi_get_param((void *)instance, cstring, data, (gs_set_param_type)paramType);
 	if (code < 0)
 	{
-		delete data;
+		delete[] data;
 		return code;
 	}
 
@@ -373,6 +391,12 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param_1once
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
    (JNIEnv *env, jclass, jlong instance, jobject iter, jobject key, jobject paramType)
 {
+	if (!iter)
+	{
+		throwNullPointerException(env, "iterator is NULL");
+		return -1;
+	}
+
 	Reference iterRef = Reference(env, iter);
 
 	Reference keyRef = Reference(env, key);
@@ -407,13 +431,35 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1add_1control_1path
 	(JNIEnv *env, jclass, jlong instance, jint type, jbyteArray path)
 {
-	return -1;
+	if (!path)
+	{
+		throwNullPointerException(env, "path is NULL");
+		return -1;
+	}
+
+	jboolean copy = false;
+	const char *cstring = (const char *)env->GetByteArrayElements(path, &copy);
+
+	int exitCode = gsapi_add_control_path((void *)instance, type, cstring);
+
+	return exitCode;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1remove_1control_1path
 (JNIEnv *env, jclass, jlong instance, jint type, jbyteArray path)
 {
-	return -1;
+	if (!path)
+	{
+		throwNullPointerException(env, "path is NULL");
+		return -1;
+	}
+
+	jboolean copy = false;
+	const char *cstring = (const char *)env->GetByteArrayElements(path, &copy);
+
+	int exitCode = gsapi_remove_control_path((void *)instance, type, cstring);
+
+	return exitCode;
 }
 
 JNIEXPORT void JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1purge_1control_1paths
@@ -484,7 +530,7 @@ void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *su
 		*success = false;
 		break;
 	}
-	if (env->ExceptionOccurred())
+	if (env->ExceptionCheck())
 	{
 		if (result)
 			free(result);

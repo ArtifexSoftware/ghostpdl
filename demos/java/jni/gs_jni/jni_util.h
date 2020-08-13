@@ -253,25 +253,31 @@ namespace util
 		{
 			return getObjectField(env, object, "value");
 		}
-
-		static inline Reference *from(JNIEnv *env, jobject refObject)
-		{
-			static const char *const CLASS_NAME = "com/artifex/gsjava/util/Reference";
-			jclass clazz = env->FindClass(CLASS_NAME);
-			if (!clazz)
-			{
-				throwNoClassDefError(env, CLASS_NAME);
-				return NULL;
-			}
-		}
 	private:
 		JNIEnv *m_env;
 		jobject m_object;
 	public:
+		/*!
+		Creates a new reference.
 
+		@param env A JNIEnv.
+		*/
 		Reference(JNIEnv *env);
+
+		/*!
+		Creates a new reference.
+
+		@param env A JNIEnv.
+		@param object A com.artifex.gsjava.util.Reference or NULL if one
+		should be created.
+		*/
 		Reference(JNIEnv *env, jobject object);
 		~Reference();
+
+		inline jobject object()
+		{
+			return m_object;
+		}
 
 		inline jobject value()
 		{

@@ -29,22 +29,28 @@ public class Main {
 
 		gsapi_init_with_args(instance, gsargs);
 
-		Reference<Integer> aaRef = new Reference<>();
+		Reference<?> aaRef = new Reference<>();
 		if ((code = gsapi_get_param_once(instance, "TextAlphaBits", aaRef, GS_SPT_INT)) < 0) {
 			throw new IllegalStateException("gsapi_get_param_once returned " + code);
 		}
 		System.out.println("TextAlpaBits=" + aaRef.getValue());
 
-		ByteArrayReference resRef = new ByteArrayReference();
-		if ((code = gsapi_get_param_once(instance, "HWResolution", resRef, GS_SPT_PARSED)) < 0) {
+		if ((code = gsapi_set_param(instance, "TextAlphaBits", 1, GS_SPT_INT)) < 0) {
+			throw new IllegalStateException("gsapi_set_param returned " + code);
+		}
+
+		/*if ((code = gsapi_get_param_once(instance, "TextAlphaBits", aaRef, GS_SPT_INT)) < 0) {
 			throw new IllegalStateException("gsapi_get_param_once returned " + code);
 		}
-		System.out.println(resRef.asString());
+		System.out.println("TextAlpaBits=" + aaRef.getValue());*/
 
-		GSParams params = GSParams.getParams(instance);
-		for (GSParam<?> param : params) {
-			System.out.println(param);
-		}
+		NativePointer value = new NativePointer();
+		int bytes = gsapi_get_param(instance, "TextAlphaBits", NativePointer.NULL, GS_SPT_INT);
+		value.malloc(bytes);
+		code = gsapi_get_param(instance, "TextAlphaBits", value.getAddress(), GS_SPT_INT);
+		int val = NativePointer.intAtNative(value.getAddress(), 0);
+		System.out.println(val);
+		value.free();
 
 		gsapi_delete_instance(instance);
 	}

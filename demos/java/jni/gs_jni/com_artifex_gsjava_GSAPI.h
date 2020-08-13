@@ -321,6 +321,9 @@ extern "C" {
 	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1param
 	(JNIEnv *, jclass, jlong, jbyteArray, jobject, jint);
 
+	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param
+	(JNIEnv *, jclass, jlong, jbyteArray, jlong, jint);
+
 	/*
 	 * Class:     com_artifex_gsjava_GSAPI
 	 * Method:    gsapi_get_param_once

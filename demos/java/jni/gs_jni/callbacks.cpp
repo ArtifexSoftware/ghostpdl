@@ -27,7 +27,7 @@ Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;Lcom/artifex/g
 Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;\
 Lcom/artifex/gsjava/IntReference;)I"
 
-#define CHECK_AND_RETURN(E) if (E->ExceptionOccurred()) { return -21; }
+#define CHECK_AND_RETURN(E) if (E->ExceptionCheck()) { return -21; }
 
 using namespace util;
 
