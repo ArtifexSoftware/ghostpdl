@@ -426,6 +426,8 @@ gs_spt_size_t  = 8 # void * is a size_t *.
 gs_spt_parsed  = 9 # void * is a pointer to a char * to be parsed.
 gs_spt__end    = 10
 
+gs_spt_more_to_come = 2**31
+
 
 def gsapi_set_param(instance, param, value, type_=None):
     '''
@@ -517,7 +519,7 @@ def gsapi_set_param(instance, param, value, type_=None):
         type2 = None
         if 0: pass
         elif type_ == gs_spt_bool:
-            type2 = ctypes.c_bool
+            type2 = ctypes.c_int
         elif type_ == gs_spt_int:
             type2 = ctypes.c_int
         elif type_ == gs_spt_float:
@@ -591,7 +593,8 @@ def gsapi_get_param(instance, param, type_=None, encoding=None):
         return None
 
     elif type_ == gs_spt_bool:
-        return _get_simple(ctypes.c_bool)
+        ret = _get_simple(ctypes.c_int)
+        return ret != 0
     elif type_ == gs_spt_int:
         return _get_simple(ctypes.c_int)
     elif type_ == gs_spt_float:
@@ -1002,6 +1005,11 @@ if __name__ == '__main__':
     v = gsapi_get_param(instance, "NumCopies", gs_spt_i64)
     assert v == 10
 
+    for value in False, True:
+        gsapi_set_param(instance, "DisablePageHandler", value)
+        v = gsapi_get_param(instance, "DisablePageHandler")
+        assert v is value
+
     for value in 32, True, 3.14:
         gsapi_set_param(instance, "foo", value);
         print('gsapi_set_param() %s ok.' % value)
@@ -1018,7 +1026,12 @@ if __name__ == '__main__':
 
     gsapi_set_param(instance, "foo", 123, gs_spt_bool)
 
-    gsapi_set_param(instance, "foo", None, gs_spt_bool)
+    try:
+        gsapi_set_param(instance, "foo", None, gs_spt_bool)
+    except Exception:
+        pass
+    else:
+        assert 0
     if 0: assert gsapi_get_param(instance, "foo") is None
 
     # Enumerate all params and print name/value.
