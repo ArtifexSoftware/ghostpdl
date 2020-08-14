@@ -939,6 +939,8 @@ out_dict(gs_param_collection *dict, outstate *out)
     }
 
     out_string(out, ">>");
+    if (code == 1)
+        code = 0;
 
     return code;
 }
@@ -954,7 +956,7 @@ to_string(gs_param_list *plist, gs_param_name key, outstate *out)
     if (code < 0)
         return code;
     if (code > 0)
-        return_error(gs_error_unknownerror);
+        return_error(gs_error_undefined);
     switch (pvalue.type) {
     case gs_param_type_null:
         out_string(out, "null");
