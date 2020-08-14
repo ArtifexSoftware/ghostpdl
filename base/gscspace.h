@@ -374,6 +374,9 @@ void gs_color_space_restrict_color(gs_client_color *, const gs_color_space *);
 /* Communicate to overprint compositor that overprint is not to be used */
 int gx_set_no_overprint(gs_gstate* pgs);
 
+/* Communicate to overprint compositor that only spot colors are to be preserved */
+int gx_set_spot_only_overprint(gs_gstate* pgs);
+
 /*
  * Get the base space of an Indexed or uncolored Pattern color space, or the
  * alternate space of a Separation or DeviceN space.  Return NULL if the

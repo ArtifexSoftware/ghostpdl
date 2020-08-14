@@ -32,6 +32,7 @@
 #include "gsicc_manage.h"
 #include "gxdevice.h"
 #include "gsccolor.h"
+#include "gxdevsop.h"
 
 #define SAVEICCPROFILE 0
 
@@ -696,9 +697,17 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
         "[overprint] gx_set_overprint_ICC. cs_ok = %d is_fill_color = %d overprint = %d stroke_overprint = %d \n",
         cs_ok, pgs->is_fill_color, pgs->overprint, pgs->stroke_overprint);
 
-    if (!op || pcinfo->opmode == GX_CINFO_OPMODE_NOT || !cs_ok)
+    if (!op || pcinfo->opmode == GX_CINFO_OPMODE_NOT) {
         return gx_set_no_overprint(pgs);
-    else
+    } else if (!cs_ok) {
+        /* In this case, we still need to maintain any spot
+           colorant channels.  Per Table 7.14. */
+        if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
+            return gx_set_spot_only_overprint(pgs);
+        } else {
+            return gx_set_no_overprint(pgs);
+        }
+    } else
         return gx_set_overprint_cmyk(pcs, pgs);
 }
 

@@ -495,6 +495,35 @@ gx_set_no_overprint(gs_gstate* pgs)
     return gs_gstate_update_overprint(pgs, &params);
 }
 
+/* Retain all the spot colorants and not the process
+   colorants.  This occurs if we have a process color
+   mismatch between the source and the destination but 
+   the output device supports spot colors */
+int
+gx_set_spot_only_overprint(gs_gstate* pgs)
+{
+    gs_overprint_params_t   params = { 0 };
+    gx_device* dev = pgs->device;
+    gx_color_index drawn_comps = 0;
+    gx_device_color_info* pcinfo = (dev == 0 ? 0 : &dev->color_info);
+
+    if (dev) {
+        /* check if color model behavior must be determined */
+        if (pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN)
+            drawn_comps = check_cmyk_color_model_comps(dev);
+        else
+            drawn_comps = pcinfo->process_comps;
+    }
+
+    params.retain_any_comps = true;
+    params.op_state = OP_STATE_NONE;
+    params.is_fill_color = pgs->is_fill_color;
+    params.effective_opm = pgs->color[0].effective_opm = 0;
+    params.drawn_comps = drawn_comps;
+
+    return gs_gstate_update_overprint(pgs, &params);
+}
+
 /*
  * Push an overprint compositor onto the current device indicating that,
  * at most, the spot color parameters are to be preserved.
@@ -651,7 +680,9 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_gstate * pgs)
    simulation ICC profile that is different than the source profile,
    overprinting is no longer previewed. We follow the same logic here.
    If the source and destination ICC profiles do not match, then there is
-   effectively no overprinting enabled.  This is bug 692433 */
+   effectively no overprinting enabled.  This is bug 692433.  However,
+   even with the mismatch, if the device supports spot colorants, those
+   colors should be maintained. This is bug 702725. */
 int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
 {
     gx_device *             dev = pgs->device;

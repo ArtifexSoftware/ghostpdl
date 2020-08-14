@@ -2967,7 +2967,7 @@ $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_) $(md5_)\
 $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(AK) $(gx_h) $(gserrors_h)\
  $(math__h) $(memory__h) $(gsstruct_h) $(stream_h) $(gxcspace_h) $(gxarith_h)\
  $(gxcie_h) $(gzstate_h) $(gsicc_h) $(gsicc_cache_h) $(gsicc_cms_h)\
- $(gsicc_manage_h) $(gxdevice_h) $(gsccolor_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_manage_h) $(gxdevice_h) $(gsccolor_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(GLSRC)gsicc.c
 
 gscms_h=$(GLSRC)gscms.h
