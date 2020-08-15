@@ -156,7 +156,7 @@ extern "C" {
 	/*
 	 * Class:     com_artifex_gsjava_GSAPI
 	 * Method:    gsapi_new_instance
-	 * Signature: (Lcom/artifex/gsjava/util/LongReference;J)I
+	 * Signature: (Lcom/artifex/gsjava/util/Reference;J)I
 	 */
 	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1new_1instance
 	(JNIEnv *, jclass, jobject, jlong);
@@ -244,7 +244,7 @@ extern "C" {
 	/*
 	 * Class:     com_artifex_gsjava_GSAPI
 	 * Method:    gsapi_get_default_device_list
-	 * Signature: (JLcom/artifex/gsjava/util/ByteArrayReference;Lcom/artifex/gsjava/util/IntReference;)I
+	 * Signature: (JLcom/artifex/gsjava/util/Reference;Lcom/artifex/gsjava/util/Reference;)I
 	 */
 	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1default_1device_1list
 	(JNIEnv *, jclass, jlong, jobject, jobject);
@@ -260,7 +260,7 @@ extern "C" {
 	/*
 	 * Class:     com_artifex_gsjava_GSAPI
 	 * Method:    gsapi_run_string_begin
-	 * Signature: (JILcom/artifex/gsjava/util/IntReference;)I
+	 * Signature: (JILcom/artifex/gsjava/util/Reference;)I
 	 */
 	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1begin
 	(JNIEnv *, jclass, jlong, jint, jobject);
@@ -268,7 +268,7 @@ extern "C" {
 	/*
 	 * Class:     com_artifex_gsjava_GSAPI
 	 * Method:    gsapi_run_string_continue
-	 * Signature: (J[BIILcom/artifex/gsjava/util/IntReference;)I
+	 * Signature: (J[BIILcom/artifex/gsjava/util/Reference;)I
 	 */
 	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1continue
 	(JNIEnv *, jclass, jlong, jbyteArray, jint, jint, jobject);
@@ -276,7 +276,7 @@ extern "C" {
 	/*
 	 * Class:     com_artifex_gsjava_GSAPI
 	 * Method:    gsapi_run_string_end
-	 * Signature: (JILcom/artifex/gsjava/util/IntReference;)I
+	 * Signature: (JILcom/artifex/gsjava/util/Reference;)I
 	 */
 	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1end
 	(JNIEnv *, jclass, jlong, jint, jobject);
@@ -284,7 +284,7 @@ extern "C" {
 	/*
 	 * Class:     com_artifex_gsjava_GSAPI
 	 * Method:    gsapi_run_string_with_length
-	 * Signature: (J[BIILcom/artifex/gsjava/util/IntReference;)I
+	 * Signature: (J[BIILcom/artifex/gsjava/util/Reference;)I
 	 */
 	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1with_1length
 	(JNIEnv *, jclass, jlong, jbyteArray, jint, jint, jobject);
@@ -292,7 +292,7 @@ extern "C" {
 	/*
 	 * Class:     com_artifex_gsjava_GSAPI
 	 * Method:    gsapi_run_string
-	 * Signature: (J[BILcom/artifex/gsjava/util/IntReference;)I
+	 * Signature: (J[BILcom/artifex/gsjava/util/Reference;)I
 	 */
 	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string
 	(JNIEnv *, jclass, jlong, jbyteArray, jint, jobject);
@@ -300,7 +300,7 @@ extern "C" {
 	/*
 	 * Class:     com_artifex_gsjava_GSAPI
 	 * Method:    gsapi_run_file
-	 * Signature: (J[BILcom/artifex/gsjava/util/IntReference;)I
+	 * Signature: (J[BILcom/artifex/gsjava/util/Reference;)I
 	 */
 	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1file
 	(JNIEnv *, jclass, jlong, jbyteArray, jint, jobject);
@@ -335,7 +335,7 @@ extern "C" {
 	/*
 	 * Class:     com_artifex_gsjava_GSAPI
 	 * Method:    gsapi_enumerate_params
-	 * Signature: (JLcom/artifex/gsjava/util/Reference;Lcom/artifex/gsjava/util/ByteArrayReference;Lcom/artifex/gsjava/util/IntReference;)I
+	 * Signature: (JLcom/artifex/gsjava/util/Reference;Lcom/artifex/gsjava/util/ByteArrayReference;Lcom/artifex/gsjava/util/Reference;)I
 	 */
 	JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
 	(JNIEnv *, jclass, jlong, jobject, jobject, jobject);

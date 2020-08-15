@@ -1,7 +1,5 @@
 package com.artifex.gsjava.util;
 
-import java.util.Arrays;
-
 /**
  * Stores a reference to a byte array.
  *
@@ -11,11 +9,10 @@ import java.util.Arrays;
 public class ByteArrayReference extends Reference<byte[]> {
 
 	public ByteArrayReference() {
-		this(null);
+		super();
 	}
 
 	public ByteArrayReference(final byte[] value) {
-		//this.value = value;
 		super(value);
 	}
 

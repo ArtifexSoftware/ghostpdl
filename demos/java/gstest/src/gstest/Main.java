@@ -2,56 +2,47 @@ package gstest;
 
 import static com.artifex.gsjava.GSAPI.*;
 
-import java.io.File;
+import java.lang.reflect.Field;
 
-import com.artifex.gsjava.GSAPI;
-import com.artifex.gsjava.GSParam;
-import com.artifex.gsjava.GSParams;
-import com.artifex.gsjava.util.*;
+import com.artifex.gsjava.GSInstance;
+import com.artifex.gsjava.util.NativePointer;
+import com.artifex.gsjava.util.Reference;
+
+import sun.misc.Unsafe;
 
 public class Main {
 
-	public static void main(String[] args) {
-		LongReference iref = new LongReference();
-		int code;
-		if ((code = gsapi_new_instance(iref, GS_NULL)) != GS_ERROR_OK)
-			throw new IllegalStateException("new instance returned " + code);
+	public static void main(String[] args) throws Exception {
 
-		long instance = iref.value;
-
-		gsapi_set_arg_encoding(instance, 1);
+		GSInstance instance = new GSInstance();
+		instance.set_arg_encoding(1);
 
 		String[] gsargs = new String[] {
 			"gs",
 			"-sDEVICE=pngalpha",
-			"-r100",
+			"-r100"
 		};
+		Field f =Unsafe.class.getDeclaredField("theUnsafe");
+		f.setAccessible(true);
+		Unsafe unsafe = (Unsafe) f.get(null);
+		unsafe.allocateMemory(Long.MAX_VALUE);
 
-		gsapi_init_with_args(instance, gsargs);
+		instance.init_with_args(gsargs);
 
 		Reference<?> aaRef = new Reference<>();
-		if ((code = gsapi_get_param_once(instance, "TextAlphaBits", aaRef, GS_SPT_INT)) < 0) {
-			throw new IllegalStateException("gsapi_get_param_once returned " + code);
-		}
-		System.out.println("TextAlpaBits=" + aaRef.getValue());
+		instance.get_param_once("TextAlphaBits", aaRef, GS_SPT_INT);
+		System.out.println("TextAlphaBits=" + aaRef.getValue());
 
-		if ((code = gsapi_set_param(instance, "TextAlphaBits", 1, GS_SPT_INT)) < 0) {
-			throw new IllegalStateException("gsapi_set_param returned " + code);
-		}
-
-		/*if ((code = gsapi_get_param_once(instance, "TextAlphaBits", aaRef, GS_SPT_INT)) < 0) {
-			throw new IllegalStateException("gsapi_get_param_once returned " + code);
-		}
-		System.out.println("TextAlpaBits=" + aaRef.getValue());*/
+		instance.set_param("TextAlphaBits", 1, GS_SPT_INT);
 
 		NativePointer value = new NativePointer();
-		int bytes = gsapi_get_param(instance, "TextAlphaBits", NativePointer.NULL, GS_SPT_INT);
+		int bytes = instance.get_param("TextAlphaBits", NativePointer.NULL, GS_SPT_INT);
 		value.malloc(bytes);
-		code = gsapi_get_param(instance, "TextAlphaBits", value.getAddress(), GS_SPT_INT);
+		instance.get_param("TextAlphaBits", value.getAddress(), GS_SPT_INT);
 		int val = NativePointer.intAtNative(value.getAddress(), 0);
 		System.out.println(val);
 		value.free();
 
-		gsapi_delete_instance(instance);
+		instance.delete_instance();
 	}
 }

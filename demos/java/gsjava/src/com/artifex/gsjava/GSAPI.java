@@ -1,6 +1,5 @@
 package com.artifex.gsjava;
 
-import java.util.Iterator;
 import java.util.List;
 
 import com.artifex.gsjava.callbacks.DisplayCallback;
@@ -9,9 +8,6 @@ import com.artifex.gsjava.callbacks.IPollFunction;
 import com.artifex.gsjava.callbacks.IStdErrFunction;
 import com.artifex.gsjava.callbacks.IStdInFunction;
 import com.artifex.gsjava.callbacks.IStdOutFunction;
-import com.artifex.gsjava.util.ByteArrayReference;
-import com.artifex.gsjava.util.IntReference;
-import com.artifex.gsjava.util.LongReference;
 import com.artifex.gsjava.util.Reference;
 import com.artifex.gsjava.util.StringUtil;
 
@@ -169,7 +165,7 @@ public class GSAPI {
 
 	public static native int gsapi_revision(GSAPI.Revision revision, int len);
 
-	public static native int gsapi_new_instance(LongReference instance, long callerHandle);
+	public static native int gsapi_new_instance(Reference<Long> instance, long callerHandle);
 
 	public static native void gsapi_delete_instance(long instance);
 
@@ -193,23 +189,23 @@ public class GSAPI {
 
 	public static native int gsapi_set_default_device_list(long instance, byte[] list, int listlen);
 
-	public static native int gsapi_get_default_device_list(long instance, ByteArrayReference list, IntReference listlen);
+	public static native int gsapi_get_default_device_list(long instance, Reference<byte[]> list, Reference<Integer> listlen);
 
 	public static native int gsapi_init_with_args(long instance, int argc, byte[][] argv);
 
-	public static native int gsapi_run_string_begin(long instance, int userErrors, IntReference pExitCode);
+	public static native int gsapi_run_string_begin(long instance, int userErrors, Reference<Integer> pExitCode);
 
 	public static native int gsapi_run_string_continue(long instance, byte[] str, int length, int userErrors,
-			IntReference pExitCode);
+			Reference<Integer> pExitCode);
 
-	public static native int gsapi_run_string_end(long instance, int userErrors, IntReference pExitCode);
+	public static native int gsapi_run_string_end(long instance, int userErrors, Reference<Integer> pExitCode);
 
 	public static native int gsapi_run_string_with_length(long instance, byte[] str, int length, int userErrors,
-			IntReference pExitCode);
+			Reference<Integer> pExitCode);
 
-	public static native int gsapi_run_string(long instance, byte[] str, int userErrors, IntReference pExitCode);
+	public static native int gsapi_run_string(long instance, byte[] str, int userErrors, Reference<Integer> pExitCode);
 
-	public static native int gsapi_run_file(long instance, byte[] fileName, int userErrors, IntReference pExitCode);
+	public static native int gsapi_run_file(long instance, byte[] fileName, int userErrors, Reference<Integer> pExitCode);
 
 	public static native int gsapi_exit(long instance);
 
@@ -242,27 +238,28 @@ public class GSAPI {
 	}
 
 	public static int gsapi_run_string_continue(long instance, String str, int length, int userErrors,
-			IntReference pExitCode) {
+			Reference<Integer> pExitCode) {
 		return gsapi_run_string_continue(instance, StringUtil.toNullTerminatedByteArray(str.substring(0, length)),
 				length, userErrors, pExitCode);
 	}
 
 	public static int gsapi_run_string_with_length(long instance, String str, int length, int userErrors,
-			IntReference pExitCode) {
+			Reference<Integer> pExitCode) {
 		return gsapi_run_string_with_length(instance, StringUtil.toNullTerminatedByteArray(str.substring(0, length)),
 				length, userErrors, pExitCode);
 	}
 
-	public static int gsapi_run_string(long instance, String str, int userErrors, IntReference pExitCode) {
+	public static int gsapi_run_string(long instance, String str, int userErrors, Reference<Integer> pExitCode) {
 		return gsapi_run_string(instance, StringUtil.toNullTerminatedByteArray(str), userErrors, pExitCode);
 	}
 
-	public static int gsapi_run_file(long instance, String fileName, int userErrors, IntReference pExitCode) {
+	public static int gsapi_run_file(long instance, String fileName, int userErrors, Reference<Integer> pExitCode) {
 		return gsapi_run_file(instance, StringUtil.toNullTerminatedByteArray(fileName), userErrors, pExitCode);
 	}
 
 	public static int gsapi_set_param(long instnace, String param, String value, int paramType) {
-		return gsapi_set_param(instnace, StringUtil.toNullTerminatedByteArray(param), value, paramType);
+		return gsapi_set_param(instnace, StringUtil.toNullTerminatedByteArray(param),
+				StringUtil.toNullTerminatedByteArray(value), paramType);
 	}
 
 	public static int gsapi_set_param(long instnace, String param, Object value, int paramType) {

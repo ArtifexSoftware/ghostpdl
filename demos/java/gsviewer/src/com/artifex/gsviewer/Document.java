@@ -18,7 +18,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import com.artifex.gsjava.GSInstance;
 import com.artifex.gsjava.callbacks.DisplayCallback;
 import com.artifex.gsjava.util.BytePointer;
-import com.artifex.gsjava.util.LongReference;
 import com.artifex.gsviewer.ImageUtil.ImageParams;
 
 /**
@@ -328,15 +327,15 @@ public class Document implements List<Page> {
 		GSInstance instance = new GSInstance();
 
 		int code;
-		code = instance.setArgEncoding(1);
+		code = instance.set_arg_encoding(1);
 		if (code != GS_ERROR_OK) {
-			instance.deleteInstance();
+			instance.delete_instance();
 			throw new IllegalStateException("Failed to set arg encoding (code = " + code + ")");
 		}
 
-		code = instance.setDisplayCallback(documentLoader.reset());
+		code = instance.set_display_callback(documentLoader.reset());
 		if (code != GS_ERROR_OK) {
-			instance.deleteInstance();
+			instance.delete_instance();
 			throw new IllegalStateException("Failed to set display callback (code = " + code + ")");
 		}
 
@@ -443,9 +442,9 @@ public class Document implements List<Page> {
 
 		documentLoader.callback = loadCallback;
 
-		int code = instance.initWithArgs(gargs);
+		int code = instance.init_with_args(gargs);
 		instance.exit();
-		instance.deleteInstance();
+		instance.delete_instance();
 		if (code != GS_ERROR_OK) {
 			operationDone();
 			throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
@@ -576,9 +575,9 @@ public class Document implements List<Page> {
 		if (instance == null)
 			throw new IllegalStateException("Failed to initialize Ghoscript");
 
-		int code = instance.initWithArgs(gargs);
+		int code = instance.init_with_args(gargs);
 		instance.exit();
-		instance.deleteInstance();
+		instance.delete_instance();
 		if (code != GS_ERROR_OK) {
 			operationDone();
 			throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
@@ -667,9 +666,9 @@ public class Document implements List<Page> {
 				if (instance == null)
 					throw new IllegalStateException("Failed to initialize Ghoscript");
 
-				int code = instance.initWithArgs(gargs);
+				int code = instance.init_with_args(gargs);
 				instance.exit();
-				instance.deleteInstance();
+				instance.delete_instance();
 				if (code != GS_ERROR_OK) {
 					throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
 				}
@@ -812,9 +811,9 @@ public class Document implements List<Page> {
 			if (instance == null)
 				throw new IllegalStateException("Failed to initialize Ghoscript");
 
-			int code = instance.initWithArgs(gargs);
+			int code = instance.init_with_args(gargs);
 			instance.exit();
-			instance.deleteInstance();
+			instance.delete_instance();
 			if (code != GS_ERROR_OK) {
 				operationDone();
 				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);

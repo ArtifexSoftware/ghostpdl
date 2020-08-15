@@ -1,8 +1,7 @@
 package com.artifex.gsjava.callbacks;
 
 import com.artifex.gsjava.util.BytePointer;
-import com.artifex.gsjava.util.IntReference;
-import com.artifex.gsjava.util.LongReference;
+import com.artifex.gsjava.util.Reference;
 
 /**
  * Class wrapping a display_callback structure.
@@ -68,9 +67,9 @@ public abstract class DisplayCallback {
 		return 0;
 	}
 
-	public int onDisplayRectangleRequest(long handle, long device, LongReference memory, IntReference ox,
-			IntReference oy, IntReference raster, IntReference planeRaster, IntReference x,
-			IntReference y, IntReference w, IntReference h) {
+	public int onDisplayRectangleRequest(long handle, long device, Reference<Long> memory, Reference<Integer> ox,
+			Reference<Integer> oy, Reference<Integer> raster, Reference<Integer> planeRaster, Reference<Integer> x,
+			Reference<Integer> y, Reference<Integer> w, Reference<Integer> h) {
 		return 0;
 	}
 }

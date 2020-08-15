@@ -339,40 +339,28 @@ int callbacks::display::displayRectangleRequestFunction(void *handle, void *devi
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		// All references must be global references to make sure Java doesn't free objects after the call in Java
-		LongReference memoryRef = LongReference(g_env, (jlong)*memory).asGlobal();
-		IntReference oxRef = IntReference(g_env, *ox).asGlobal();
-		IntReference oyRef = IntReference(g_env, *oy).asGlobal();
-		IntReference rasterRef = IntReference(g_env, *raster).asGlobal();
-		IntReference planeRasterRef = IntReference(g_env, *plane_raster).asGlobal();
-		IntReference xRef = IntReference(g_env, *x).asGlobal();
-		IntReference yRef = IntReference(g_env, *y).asGlobal();
-		IntReference wRef = IntReference(g_env, *w).asGlobal();
-		IntReference hRef = IntReference(g_env, *h).asGlobal();
+		Reference memoryRef = Reference(g_env, toWrapperType(g_env, (jlong)*memory));
+		Reference oxRef = Reference(g_env, toWrapperType(g_env, (jint)*ox));
+		Reference oyRef = Reference(g_env, toWrapperType(g_env, (jint)*oy));
+		Reference rasterRef = Reference(g_env, toWrapperType(g_env, (jint)*raster));
+		Reference planeRasterRef = Reference(g_env, toWrapperType(g_env, (jint)*plane_raster));
+		Reference xRef = Reference(g_env, toWrapperType(g_env, (jint)*x));
+		Reference yRef = Reference(g_env, toWrapperType(g_env, (jint)*y));
+		Reference wRef = Reference(g_env, toWrapperType(g_env, (jint)*w));
+		Reference hRef = Reference(g_env, toWrapperType(g_env, (jint)*h));
 
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayRectangleRequest", DISPLAY_RECTANGLE_REQUEST,
 			(jlong)handle, (jlong)device, memoryRef, oxRef, oyRef, rasterRef, planeRasterRef, xRef, yRef, wRef, hRef);
 
-		*memory = (void *)memoryRef.value();
-		*ox = oxRef.value();
-		*oy = oyRef.value();
-		*raster = rasterRef.value();
-		*plane_raster = planeRasterRef.value();
-		*x = xRef.value();
-		*y = yRef.value();
-		*w = wRef.value();
-		*h = hRef.value();
-
-		// We don't need references to these objects anymore so delete the globals to allow them to be garbage collected
-		memoryRef.deleteGlobal();
-		oxRef.deleteGlobal();
-		oyRef.deleteGlobal();
-		rasterRef.deleteGlobal();
-		planeRasterRef.deleteGlobal();
-		xRef.deleteGlobal();
-		yRef.deleteGlobal();
-		wRef.deleteGlobal();
-		hRef.deleteGlobal();
+		*memory = (void *)memoryRef.longValue();
+		*ox = oxRef.intValue();
+		*oy = oyRef.intValue();
+		*raster = rasterRef.intValue();
+		*plane_raster = planeRasterRef.intValue();
+		*x = xRef.intValue();
+		*y = yRef.intValue();
+		*w = wRef.intValue();
+		*h = hRef.intValue();
 
 		CHECK_AND_RETURN(g_env);
 	}
