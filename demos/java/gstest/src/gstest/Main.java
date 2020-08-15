@@ -2,13 +2,10 @@ package gstest;
 
 import static com.artifex.gsjava.GSAPI.*;
 
-import java.lang.reflect.Field;
-
 import com.artifex.gsjava.GSInstance;
 import com.artifex.gsjava.util.NativePointer;
 import com.artifex.gsjava.util.Reference;
 
-import sun.misc.Unsafe;
 
 public class Main {
 
@@ -22,6 +19,8 @@ public class Main {
 			"-sDEVICE=pngalpha",
 			"-r100"
 		};
+
+		instance.init_with_args(gsargs);
 
 		Reference<?> aaRef = new Reference<>();
 		instance.get_param_once("TextAlphaBits", aaRef, GS_SPT_INT);
