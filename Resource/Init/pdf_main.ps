@@ -312,7 +312,7 @@ currentdict /runpdfstring .undef
 } bind executeonly def
 
 /runpdfpagerange {	% - runpdfpagerange <firstpage#> <lastpage#>
-<</DisablePageHandler //true>> setpagedevice
+   <</DisablePageHandler //true>> setpagedevice
    /PortfolioPage where {
      pop
      PortfolioPage cvi dup pdfpagecount add                  % a b+1
@@ -496,6 +496,7 @@ currentdict /runpdfstring .undef
        } ifelse
      } ifelse
    }ifelse
+   <</DisablePageHandler //false>> setpagedevice
 } bind executeonly def
 
 /dopdfpages {   % firstpage# lastpage# dopdfpages -
