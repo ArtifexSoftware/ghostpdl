@@ -22,12 +22,6 @@ public class Main {
 			"-sDEVICE=pngalpha",
 			"-r100"
 		};
-		Field f =Unsafe.class.getDeclaredField("theUnsafe");
-		f.setAccessible(true);
-		Unsafe unsafe = (Unsafe) f.get(null);
-		unsafe.allocateMemory(Long.MAX_VALUE);
-
-		instance.init_with_args(gsargs);
 
 		Reference<?> aaRef = new Reference<>();
 		instance.get_param_once("TextAlphaBits", aaRef, GS_SPT_INT);
