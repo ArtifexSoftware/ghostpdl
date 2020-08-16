@@ -40,6 +40,6 @@ public class Reference<T> {
 
 	@Override
 	public String toString() {
-		return "Reference<" + (value == null ? "?" : value.getClass().getName()) + "> -> " + value.toString();
+		return "Reference<" + (value == null ? "?" : value.getClass().getName()) + "> -> " + value;
 	}
 }

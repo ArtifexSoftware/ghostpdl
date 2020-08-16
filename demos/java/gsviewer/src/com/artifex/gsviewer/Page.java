@@ -21,10 +21,18 @@ public class Page {
 	 */
 	public static final int PAGE_HIGH_DPI = 72;
 
+	public static final String PAGE_HIGH_DPI_STR = toDPIString(PAGE_HIGH_DPI);
+
 	/**
 	 * The low-resolution DPI to use.
 	 */
 	public static final int PAGE_LOW_DPI = 10;
+
+	public static final String PAGE_LOW_DPI_STR = toDPIString(PAGE_LOW_DPI);
+
+	public static String toDPIString(int dpi) {
+		return "[" + dpi + " " + dpi + "]";
+	}
 
 	private volatile BufferedImage lowRes;
 	private volatile BufferedImage highRes;

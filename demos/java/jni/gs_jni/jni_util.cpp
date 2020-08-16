@@ -34,9 +34,7 @@ jmethodID util::getMethodID(JNIEnv *env, jobject object, const char *method, con
     if (env == NULL || object == NULL || method == NULL || sig == NULL)
         return NULL;
 
-    jobject obj = env->NewLocalRef(object);
-    jclass clazz = env->GetObjectClass(obj);
-    env->DeleteLocalRef(obj);
+    jclass clazz = env->GetObjectClass(object);
 
     jmethodID methodID = env->GetMethodID(clazz, method, sig);
     if (methodID == NULL)

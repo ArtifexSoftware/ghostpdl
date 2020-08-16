@@ -159,6 +159,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1default_1device
 	if (list == NULL)
 		return throwNullPointerException(env, "list");
 	jboolean isCopy = false;
+	callbacks::setJNIEnv(env);
 	int code = gsapi_set_default_device_list((void *)instance,
 		(const char *)env->GetByteArrayElements(list, &isCopy), listlen);
 	return code;
@@ -191,6 +192,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1init_1with_1args
 	if (argv == NULL)
 		return throwNullPointerException(env, "argv");
 	char **cargv = jbyteArray2DToCharArray(env, argv);
+	callbacks::setJNIEnv(env);
 	int code = gsapi_init_with_args((void *)instance, argc, cargv);
 	delete2DByteArray(argc, cargv);
 	return code;
@@ -200,6 +202,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1begin
 	(JNIEnv *env, jclass, jlong instance, jint userErrors, jobject pExitCode)
 {
 	int exitCode;
+	callbacks::setJNIEnv(env);
 	int code = gsapi_run_string_begin((void *)instance, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -214,6 +217,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1continu
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
+	callbacks::setJNIEnv(env);
 	int code = gsapi_run_string_continue((void *)instance, cstring, length, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -224,6 +228,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1end
 	(JNIEnv *env, jclass, jlong instance, jint userErrors, jobject pExitCode)
 {
 	int exitCode;
+	callbacks::setJNIEnv(env);
 	int code = gsapi_run_string_end((void *)instance, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -238,6 +243,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1with_1l
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
+	callbacks::setJNIEnv(env);
 	int code = gsapi_run_string_with_length((void *)instance, cstring, length, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -252,6 +258,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
+	callbacks::setJNIEnv(env);
 	int code = gsapi_run_string((void *)instance, cstring, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -266,6 +273,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1file
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(fileName, &copy);
+	callbacks::setJNIEnv(env);
 	int code = gsapi_run_file((void *)instance, cstring, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -300,6 +308,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1param
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(param, &copy);
 
+	callbacks::setJNIEnv(env);
 	int code = gsapi_set_param((void *)instance, cstring, data, type);
 	free(data);
 
@@ -526,7 +535,8 @@ void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *su
 		cstring = (const char *)env->GetByteArrayElements(arr, &copy);
 		len = env->GetArrayLength(arr);
 		result = malloc(sizeof(char) * len);
-		((char *)result)[len - 1] = 0;
+		//((char *)result)[len - 1] = 0;
+		memcpy(result, cstring, len);
 		break;
 	case gs_spt_invalid:
 	default:
