@@ -1796,6 +1796,10 @@ error:
     gs_free_object(ctx->memory, str, "pdfi_string_from_name");
     gs_free_object(ctx->memory, pocs, "pdfi_build_type5_halftone");
     gs_free_object(ctx->memory, phtc, "pdfi_build_type5_halftone");
+    pht->params.multiple.components = NULL;
+    pht->params.multiple.num_comp = 0;
+    pdht->components = NULL;
+    pdht->num_comp = 0;
     return code;
 }
 
