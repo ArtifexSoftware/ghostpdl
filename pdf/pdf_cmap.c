@@ -1164,7 +1164,14 @@ int pdfi_free_cmap(pdf_obj *cmapo)
      * doesn't say, it just refers to tech note 5014 but the example has a CMapType of 1. The PDF
      * Reference does describe ToUnicode CMaps which have a CMapType of 2.
      */
-    if (cmap->cmaptype != 2) {
+    /* Well it seems we have PDF files which use CMapType 2 CMaps as values for a /Encoding, which is
+     * I believe incorrect, as these are ToUnicode CMaps....
+     * There's nothing for it, we'll just haev to free all CMaps for now. Note for Chris when implementing
+     * ToUnicode CMaps, we'll obviously have to rely on the context to know whether a CMap is an Encoding
+     * or a ToUnicode, we cna't use the CmMapType, just as you suspected. :-(
+     * See bug #696449 633_R00728_E.pdf
+     */
+    {
         pdfi_cmap_range_map_t *pdfir;
         gs_cmap_adobe1_t *pgscmap = cmap->gscmap;
         gs_free_object(OBJ_MEMORY(cmap), pgscmap->def.lookup, "pdfi_free_cmap(def.lookup)");
