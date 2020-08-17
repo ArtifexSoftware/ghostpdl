@@ -1308,7 +1308,7 @@ pdfi_spot1_dummy(double x, double y)
     return (x + y) / 2;
 }
 
-static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone_component *phtc, char *name, int len)
+static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
     pdf_obj *obj = NULL;
@@ -1416,7 +1416,7 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
 
     } while (1);
     code = 0;
-    pdht->order = penum->order;
+    *porder = penum->order;
 
 error:
     pdfi_countdown(obj);
@@ -1430,7 +1430,7 @@ error:
     return code;
 }
 
-static int build_type6_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone_component *phtc, char *name, int len)
+static int build_type6_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
     int64_t w, h;
@@ -1474,7 +1474,7 @@ error:
     return code;
 }
 
-static int build_type10_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone_component *phtc, char *name, int len)
+static int build_type10_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
     int64_t w, h;
@@ -1526,7 +1526,7 @@ error:
     return code;
 }
 
-static int build_type16_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone_component *phtc, char *name, int len)
+static int build_type16_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
     int64_t w, h;
@@ -1600,6 +1600,203 @@ static void pdfi_free_halftone(gs_memory_t *memory, void *data, client_name_t cn
         }
     }
     gs_free_object(memory, pht->params.multiple.components, "pdfi_free_halftone");
+    gs_free_object(memory, pht, "pdfi_free_halftone");
+}
+
+static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone *pht)
+{
+    int code, str_len, comp_number;
+    int64_t type;
+    char *str = NULL;
+    bool known = false;
+    gs_halftone_component *phtc = NULL, dummy_htc, *phtc1;
+    gx_ht_order_component *pocs = 0;
+    pdf_obj *Key = NULL, *Value = NULL;
+    int index = 0, ix = 0, NumComponents = 0;
+    gx_ht_order *porder1 = NULL;
+
+    /* The only case involving multiple halftones, we need to enumerate each entry
+     * in the dictionary
+     */
+    /* Type 5 halftone dictionaries are required to have a Default */
+    code = pdfi_dict_known(halftone_dict, "Default", &known);
+    if (code < 0)
+        return code;
+    if (!known) {
+        code = gs_note_error(gs_error_undefined);
+        return code;
+    }
+
+    if (ctx->loop_detection)
+        pdfi_loop_detector_mark(ctx);
+    code = pdfi_dict_first(ctx, halftone_dict, &Key, &Value, &index);
+    if (ctx->loop_detection)
+        pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0)
+        goto error;
+
+    /* First establish the number of components from the halftone which we will use.
+     * If the component number is GX_DEVICE_COLOR_MAX_COMPONENTS then its the default,
+     * if its < 0 then its not available in the device. Otherwise its a colorant which is
+     * being rendered, so we need to set that halftone component. The Default will be
+     * stored in the device halftone order rather than in the component array order
+     * members.
+     */
+    do {
+        if (Key->type != PDF_NAME) {
+            code = gs_note_error(gs_error_typecheck);
+            goto error;
+        }
+        if (!pdfi_name_is((const pdf_name *)Key, "HalftoneName") && !pdfi_name_is((const pdf_name *)Key, "HalftoneType") && !pdfi_name_is((const pdf_name *)Key, "Type")) {
+            code = pdfi_string_from_name(ctx, (pdf_name *)Key, &str, &str_len);
+            if (code < 0)
+                goto error;
+
+            comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)str, str_len,
+                                        ht_type_multiple);
+            if (comp_number != GX_DEVICE_COLOR_MAX_COMPONENTS && comp_number >= 0)
+                NumComponents++;
+            gs_free_object(ctx->memory, str, "pdfi_string_from_name");
+            str = NULL;
+        }
+
+        pdfi_countdown(Key);
+        pdfi_countdown(Value);
+        Key = Value = NULL;
+        if (ctx->loop_detection)
+            pdfi_loop_detector_mark(ctx);
+
+        code = pdfi_dict_next(ctx, halftone_dict, &Key, &Value, &index);
+        if (ctx->loop_detection)
+            pdfi_loop_detector_cleartomark(ctx);
+        if (code < 0 && code != gs_error_undefined)
+            goto error;
+    } while (code >= 0);
+
+    if (NumComponents > 0) {
+        pocs = gs_alloc_struct_array(ctx->memory, NumComponents,
+                                     gx_ht_order_component,
+                                     &st_ht_order_component_element,
+                                     "gs_sethalftone");
+        if (pocs == NULL)
+            goto error;
+
+        memset(pocs, 0x00, NumComponents * sizeof(gx_ht_order_component));
+        pdht->components = pocs;
+        pdht->num_comp = NumComponents;
+
+        phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component) * NumComponents, "pdfi_do_halftone");
+        if (phtc == 0) {
+            code = gs_note_error(gs_error_VMerror);
+            goto error;
+        }
+    }
+
+    if (ctx->loop_detection)
+        pdfi_loop_detector_mark(ctx);
+    code = pdfi_dict_first(ctx, halftone_dict, &Key, &Value, &index);
+    if (ctx->loop_detection)
+        pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0)
+        goto error;
+
+    ix = 0;
+    do {
+        if (Key->type != PDF_NAME) {
+            code = gs_note_error(gs_error_typecheck);
+            goto error;
+        }
+        if (!pdfi_name_is((const pdf_name *)Key, "HalftoneName") && !pdfi_name_is((const pdf_name *)Key, "HalftoneType") && !pdfi_name_is((const pdf_name *)Key, "Type")) {
+            if (!pdfi_name_is((const pdf_name *)Key, "HalftoneName") && !pdfi_name_is((const pdf_name *)Key, "HalftoneType") && !pdfi_name_is((const pdf_name *)Key, "Type")) {
+                if (Value->type != PDF_DICT) {
+                    code = gs_note_error(gs_error_typecheck);
+                    goto error;
+                }
+
+                code = pdfi_string_from_name(ctx, (pdf_name *)Key, &str, &str_len);
+                if (code < 0)
+                    goto error;
+
+                comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)str, str_len,
+                                            ht_type_multiple);
+                if (comp_number >= 0) {
+                    if (comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
+                        porder1 = &pdht->order;
+                        phtc1 = &dummy_htc;
+                    } else {
+                        porder1 = &(pdht->components[ix].corder);
+                        phtc[ix].comp_number = comp_number;
+                        pdht->components[ix].comp_number = phtc[ix].comp_number;
+                        phtc1 = &phtc[ix++];
+                    }
+                    code = pdfi_dict_get_int(ctx, (pdf_dict *)Value, "HalftoneType", &type);
+                    if (code < 0)
+                        goto error;
+
+                    switch(type) {
+                        case 1:
+                            code = build_type1_halftone(ctx, (pdf_dict *)Value, page_dict, porder1, phtc1, str, str_len);
+                            if (code < 0)
+                                goto error;
+                            break;
+                        case 6:
+                            code = build_type6_halftone(ctx, (pdf_dict *)Value, page_dict, porder1, phtc1, str, str_len);
+                            if (code < 0)
+                                goto error;
+                            break;
+                        case 10:
+                            code = build_type10_halftone(ctx, (pdf_dict *)Value, page_dict, porder1, phtc1, str, str_len);
+                            if (code < 0)
+                                goto error;
+                            break;
+                        case 16:
+                            code = build_type16_halftone(ctx, (pdf_dict *)Value, page_dict, porder1, phtc1, str, str_len);
+                            if (code < 0)
+                                goto error;
+                            break;
+                        default:
+                            code = gs_note_error(gs_error_rangecheck);
+                            goto error;
+                            break;
+
+                    }
+                    gs_free_object(ctx->memory, str, "pdfi_string_from_name");
+                    str = NULL;
+                } else {
+                    gs_free_object(ctx->memory, str, "pdfi_string_from_name");
+                    str = NULL;
+                }
+            }
+        }
+
+        pdfi_countdown(Key);
+        pdfi_countdown(Value);
+        Key = Value = NULL;
+        if (ctx->loop_detection)
+            pdfi_loop_detector_mark(ctx);
+
+        code = pdfi_dict_next(ctx, halftone_dict, &Key, &Value, &index);
+        if (ctx->loop_detection)
+            pdfi_loop_detector_cleartomark(ctx);
+        if (code < 0 && code != gs_error_undefined)
+            goto error;
+    } while (code >= 0);
+    code = 0;
+
+    pht->type = ht_type_multiple;
+    pht->params.multiple.components = phtc;
+    pht->params.multiple.num_comp = NumComponents;
+    pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
+
+    return 0;
+
+error:
+    pdfi_countdown(Key);
+    pdfi_countdown(Value);
+    gs_free_object(ctx->memory, str, "pdfi_string_from_name");
+    gs_free_object(ctx->memory, pocs, "pdfi_build_type5_halftone");
+    gs_free_object(ctx->memory, phtc, "pdfi_build_type5_halftone");
+    return code;
 }
 
 static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict)
@@ -1610,6 +1807,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
     gs_halftone *pht = NULL;
     gx_device_halftone *pdht = NULL;
     gs_halftone_component *phtc = NULL;
+    gx_ht_order_component *pocs = 0;
     pdf_obj *Key = NULL, *Value = NULL;
     int index = 0, ix = 0, NumComponents = 0;
     bool known = false;
@@ -1644,7 +1842,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
                 goto error;
             }
 
-            code = build_type1_halftone(ctx, halftone_dict, page_dict, pdht, phtc, (char *)"Default", 7);
+            code = build_type1_halftone(ctx, halftone_dict, page_dict, &pdht->order, phtc, (char *)"Default", 7);
             if (code < 0)
                 goto error;
 
@@ -1663,134 +1861,16 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             break;
 
         case 5:
-            /* The only case involving multiple halftones, we need to enumerate each entry
-             * in the dictionary
-             */
-            /* Type 5 halftone dictionaries are required to have a Default */
-            code = pdfi_dict_known(halftone_dict, "Default", &known);
-            if (code < 0)
-                return code;
-            if (!known) {
-                code = gs_note_error(gs_error_undefined);
-                return code;
-            }
-
-            if (ctx->loop_detection)
-                pdfi_loop_detector_mark(ctx);
-            code = pdfi_dict_first(ctx, halftone_dict, &Key, &Value, &index);
-            if (ctx->loop_detection)
-                pdfi_loop_detector_cleartomark(ctx);
+            code = build_type5_halftone(ctx, halftone_dict, page_dict, pdht, pht);
             if (code < 0)
                 goto error;
 
-            do {
-                if (Key->type != PDF_NAME) {
-                    code = gs_note_error(gs_error_typecheck);
-                    goto error;
-                }
-                if (!pdfi_name_is((const pdf_name *)Key, "HalftoneName") && !pdfi_name_is((const pdf_name *)Key, "HalftoneType") && !pdfi_name_is((const pdf_name *)Key, "Type"))
-                    NumComponents++;
-
-                pdfi_countdown(Key);
-                pdfi_countdown(Value);
-                Key = Value = NULL;
-                if (ctx->loop_detection)
-                    pdfi_loop_detector_mark(ctx);
-
-                code = pdfi_dict_next(ctx, halftone_dict, &Key, &Value, &index);
-                if (ctx->loop_detection)
-                    pdfi_loop_detector_cleartomark(ctx);
-                if (code < 0 && code != gs_error_undefined)
-                    goto error;
-
-            } while (code >= 0);
-
-            phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component) * NumComponents, "pdfi_do_halftone");
-            if (phtc == 0) {
-                code = gs_note_error(gs_error_VMerror);
-                goto error;
-            }
-
-            /* extract each halftone from the type 5 dictionary, build a halftone for each by type */
-            ix = index = 0;
-            if (ctx->loop_detection)
-                pdfi_loop_detector_mark(ctx);
-            code = pdfi_dict_first(ctx, halftone_dict, &Key, &Value, &index);
-            if (ctx->loop_detection)
-                pdfi_loop_detector_cleartomark(ctx);
-            if (code < 0)
-                goto error;
-            do {
-                if (Key->type != PDF_NAME || Value->type != PDF_DICT) {
-                    code = gs_note_error(gs_error_typecheck);
-                    goto error;
-                }
-                if (pdfi_name_is((const pdf_name *)Key, "HalftoneName") || pdfi_name_is((const pdf_name *)Key, "HalftoneType") || pdfi_name_is((const pdf_name *)Key, "Type")) {
-                    pdfi_countdown(Key);
-                    pdfi_countdown(Value);
-                    continue;
-                }
-
-                code = pdfi_dict_get_int(ctx, (pdf_dict *)Value, "HalftoneType", &type);
-                if (code < 0)
-                    return code;
-
-                code = pdfi_string_from_name(ctx, (pdf_name *)Key, &str, &str_len);
-                if (code < 0)
-                    goto error;
-
-                switch(type) {
-                    case 1:
-                        code = build_type1_halftone(ctx, (pdf_dict *)Value, page_dict, pdht, &phtc[ix++], str, str_len);
-                        if (code < 0)
-                            goto error;
-                        break;
-                    case 6:
-                        code = build_type6_halftone(ctx, (pdf_dict *)Value, page_dict, pdht, &phtc[ix++], str, str_len);
-                        if (code < 0)
-                            goto error;
-                        break;
-                    case 10:
-                        code = build_type10_halftone(ctx, (pdf_dict *)Value, page_dict, pdht, &phtc[ix++], str, str_len);
-                        if (code < 0)
-                            goto error;
-                        break;
-                    case 16:
-                        code = build_type16_halftone(ctx, (pdf_dict *)Value, page_dict, pdht, &phtc[ix++], str, str_len);
-                        if (code < 0)
-                            goto error;
-                        break;
-                    default:
-                        code = gs_note_error(gs_error_rangecheck);
-                        goto error;
-                        break;
-
-                }
-                gs_free_object(ctx->memory, str, "pdfi_string_from_name");
-                str = NULL;
-
-
-                pdfi_countdown(Key);
-                pdfi_countdown(Value);
-                Key = Value = NULL;
-                if (ctx->loop_detection)
-                    pdfi_loop_detector_mark(ctx);
-                code = pdfi_dict_next(ctx, halftone_dict, &Key, &Value, &index);
-                if (ctx->loop_detection)
-                    pdfi_loop_detector_cleartomark(ctx);
-                if (code < 0 && code != gs_error_undefined)
-                    goto error;
-            } while (code >= 0);
-
-            pht->type = ht_type_multiple;
-            pht->params.multiple.components = phtc;
-            pht->params.multiple.num_comp = NumComponents;
-            pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
             code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
             if (code < 0)
                 goto error;
 
             gx_device_halftone_release(pdht, pdht->rc.memory);
+            rc_decrement(ctx->pgs->halftone, "");
             ctx->pgs->halftone = pht;
             rc_increment(ctx->pgs->halftone);
             gx_unset_both_dev_colors(ctx->pgs);
@@ -1803,7 +1883,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
                 goto error;
             }
 
-            code = build_type6_halftone(ctx, halftone_dict, page_dict, pdht, phtc, (char *)"Default", 7);
+            code = build_type6_halftone(ctx, halftone_dict, page_dict, &pdht->order, phtc, (char *)"Default", 7);
             if (code < 0)
                 goto error;
 
@@ -1830,7 +1910,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
                 goto error;
             }
 
-            code = build_type10_halftone(ctx, halftone_dict, page_dict, pdht, phtc, (char *)"Default", 7);
+            code = build_type10_halftone(ctx, halftone_dict, page_dict, &pdht->order, phtc, (char *)"Default", 7);
             if (code < 0)
                 goto error;
 
@@ -1857,7 +1937,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
                 goto error;
             }
 
-            code = build_type16_halftone(ctx, halftone_dict, page_dict, pdht, phtc, (char *)"Default", 7);
+            code = build_type16_halftone(ctx, halftone_dict, page_dict, &pdht->order, phtc, (char *)"Default", 7);
             if (code < 0)
                 goto error;
 
