@@ -161,6 +161,18 @@ int gp_stat_impl(const gs_memory_t *mem, const char *path, struct _stat64 *buf)
 }
 #endif
 
+int
+gs_add_control_path_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, int flags)
+{
+    return 0;
+}
+
+int
+gs_remove_control_path_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, int flags)
+{
+    return 0;
+}
+
 /*******************************************************************************
  * The following are non-redirected printing functions to avoid the need for
  * these included from gsmisc.c (unix gp_ functions, among others, use if_debug).

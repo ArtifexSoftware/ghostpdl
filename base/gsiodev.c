@@ -305,13 +305,13 @@ iodev_os_fclose(gx_io_device * iodev, gp_file * file)
 static int
 os_delete(gx_io_device * iodev, const char *fname)
 {
-    return (unlink(fname) == 0 ? 0 : gs_error_ioerror);
+    return (gp_unlink(iodev->memory, fname) == 0 ? 0 : gs_error_ioerror);
 }
 
 static int
 os_rename(gx_io_device * iodev, const char *from, const char *to)
 {
-    return (rename(from, to) == 0 ? 0 : gs_error_ioerror);
+    return (gp_rename(iodev->memory, from, to) == 0 ? 0 : gs_error_ioerror);
 }
 
 static int

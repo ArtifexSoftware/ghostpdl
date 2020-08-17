@@ -154,6 +154,6 @@ os2_printer_fclose(gx_io_device * iodev, FILE * file)
     os2_printer_t *pr = (os2_printer_t *)iodev->state;
     fclose(file);
     pm_spool(pr->memory, pr->filename, pr->queue);
-    unlink(pr->filename);
+    unlink(pr->filename); /* unlink, not gp_unlink */
     return 0;
 }

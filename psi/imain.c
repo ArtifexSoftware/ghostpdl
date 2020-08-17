@@ -1394,7 +1394,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int env_code)
     if (tempnames) {
         char *p = tempnames;
         while (*p) {
-            unlink(p);
+            gp_unlink(minst->heap, p);
             p += strlen(p) + 1;
         }
         free(tempnames);

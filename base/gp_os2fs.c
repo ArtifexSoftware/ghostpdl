@@ -268,6 +268,18 @@ gp_fopen_impl(const gs_memory_t *mem, const char *fname, const char *mode)
     return fopen(fname, mode);
 }
 
+int
+gp_unlink_impl(gs_memory_t *mem, const char *fname)
+{
+    return unlink(fname);
+}
+
+int
+gp_rename_impl(gs_memory_t *mem, const char *from, const char *to)
+{
+    return rename(from, to);
+}
+
 int gp_stat_impl(gs_memory_t *mem, const char *path, struct stat *buf)
 {
     return stat(path, buf);

@@ -145,7 +145,7 @@ gp_close_printer(gp_file * pfile, const char *fname)
         return;			/* a file, not a printer */
 
     gp_printfile(mem, win_prntmp, fname);
-    unlink(win_prntmp);
+    unlink(win_prntmp); /* unlink not gp_unlink */
 #endif
 }
 

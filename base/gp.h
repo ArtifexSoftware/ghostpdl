@@ -431,6 +431,12 @@ gp_file *gp_open_scratch_file_rm(const gs_memory_t *mem,
                                        char         fname[gp_file_name_sizeof],
                                  const char        *mode);
 
+/* Unlink utf-8 filename, subject to 'control' path permissions */
+int gp_unlink(gs_memory_t *mem, const char *fname);
+
+/* Rename utf-8 filename, subject to 'control' path permissions */
+int gp_rename(gs_memory_t *mem, const char *from, const char *to);
+
 /* gp_stat is defined in stat_.h rather than here due to macro problems */
 
 typedef enum {
@@ -623,6 +629,10 @@ FILE *gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode);
 
 FILE *gp_fdup_impl(FILE *f, const char *mode);
 
+int gp_unlink_impl(gs_memory_t *mem, const char *fname);
+
+int gp_rename_impl(gs_memory_t *mem, const char *from, const char *to);
+
 int gp_pread_impl(char *buf, size_t count, gs_offset_t offset, FILE *f);
 
 int gp_pwrite_impl(const char *buf, size_t count, gs_offset_t offset, FILE *f);
@@ -646,7 +656,8 @@ gp_open_printer_impl(gs_memory_t *mem,
                      int         *binary_mode,
                      int          (**close)(FILE *));
 
-/* Create a scratch file (utf8) (self-deleting if remove) */
+/* Create a scratch file (utf8) (self-deleting if remove). If remove
+ * is requested, but cannot be honoured, the file is NOT opened. */
 FILE *gp_open_scratch_file_impl(const gs_memory_t *mem,
                                 const char        *prefix,
                                       char         fname[gp_file_name_sizeof],
