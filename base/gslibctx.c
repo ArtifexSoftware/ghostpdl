@@ -420,6 +420,7 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
 #ifdef WITH_CAL
         cal_fin(ctx->core->cal_ctx, ctx->core->memory);
 #endif
+        gs_purge_scratch_files(ctx->core->memory);
         gs_purge_control_paths(ctx->core->memory, gs_permit_file_reading);
         gs_purge_control_paths(ctx->core->memory, gs_permit_file_writing);
         gs_purge_control_paths(ctx->core->memory, gs_permit_file_control);
@@ -735,6 +736,12 @@ gs_add_explicit_control_path(gs_memory_t *mem, const char *arg, gs_path_control_
 int
 gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t len)
 {
+    return gs_add_control_path_len_flags(mem, type, path, len, 0);
+}
+
+int
+gs_add_control_path_len_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t len, int flags)
+{
     gs_path_control_set_t *control;
     unsigned int n, i;
     gs_lib_ctx_core_t *core;
@@ -774,33 +781,34 @@ gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const ch
     n = control->num;
     for (i = 0; i < n; i++)
     {
-        if (strncmp(control->paths[i], buffer, rlen) == 0 &&
-            control->paths[i][rlen] == 0) {
+        if (strncmp(control->entry[i].path, buffer, rlen) == 0 &&
+            control->entry[i].path[rlen] == 0) {
             gs_free_object(core->memory, buffer, "gs_add_control_path_len");
             return 0; /* Already there! */
         }
     }
 
     if (control->num == control->max) {
-        char **p;
+        gs_path_control_entry_t *p;
 
         n = control->max * 2;
         if (n == 0) {
             n = 4;
-            p = (char **)gs_alloc_bytes(core->memory, sizeof(*p)*n, "gs_lib_ctx(paths)");
+            p = (gs_path_control_entry_t *)gs_alloc_bytes(core->memory, sizeof(*p)*n, "gs_lib_ctx(entries)");
         } else
-            p = (char **)gs_resize_object(core->memory, control->paths, sizeof(*p)*n, "gs_lib_ctx(paths)");
+            p = (gs_path_control_entry_t *)gs_resize_object(core->memory, control->entry, sizeof(*p)*n, "gs_lib_ctx(entries)");
         if (p == NULL) {
             gs_free_object(core->memory, buffer, "gs_add_control_path_len");
             return gs_error_VMerror;
         }
-        control->paths = p;
+        control->entry = p;
         control->max = n;
     }
 
     n = control->num;
-    control->paths[n] = buffer;
-    control->paths[n][len] = 0;
+    control->entry[n].path = buffer;
+    control->entry[n].path[len] = 0;
+    control->entry[n].flags = flags;
     control->num++;
 
     return 0;
@@ -809,14 +817,23 @@ gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const ch
 int
 gs_add_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path)
 {
-    if (path == NULL)
-        return 0;
+    return gs_add_control_path_len_flags(mem, type, path, strlen(path), 0);
+}
 
-    return gs_add_control_path_len(mem, type, path, strlen(path));
+int
+gs_add_control_path_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, int flags)
+{
+    return gs_add_control_path_len_flags(mem, type, path, strlen(path), flags);
 }
 
 int
 gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t len)
+{
+    return gs_remove_control_path_len_flags(mem, type, path, len, 0);
+}
+
+int
+gs_remove_control_path_len_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t len, int flags)
 {
     gs_path_control_set_t *control;
     unsigned int n, i;
@@ -856,17 +873,18 @@ gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const
 
     n = control->num;
     for (i = 0; i < n; i++) {
-        if (strncmp(control->paths[i], buffer, len) == 0 &&
-            control->paths[i][len] == 0)
+        if (control->entry[i].flags == flags &&
+            strncmp(control->entry[i].path, buffer, len) == 0 &&
+            control->entry[i].path[len] == 0)
             break;
     }
     gs_free_object(core->memory, buffer, "gs_remove_control_path_len");
     if (i == n)
         return 0;
 
-    gs_free_object(core->memory, control->paths[i], "gs_lib_ctx(path)");
+    gs_free_object(core->memory, control->entry[i].path, "gs_lib_ctx(path)");
     for (;i < n-1; i++)
-        control->paths[i] = control->paths[i+1];
+        control->entry[i] = control->entry[i+1];
     control->num = n-1;
 
     return 0;
@@ -878,14 +896,23 @@ gs_remove_control_path(const gs_memory_t *mem, gs_path_control_t type, const cha
     if (path == NULL)
         return 0;
 
-    return gs_remove_control_path_len(mem, type, path, strlen(path));
+    return gs_remove_control_path_len_flags(mem, type, path, strlen(path), 0);
+}
+
+int
+gs_remove_control_path_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, int flags)
+{
+    if (path == NULL)
+        return 0;
+
+    return gs_remove_control_path_len_flags(mem, type, path, strlen(path), flags);
 }
 
 void
 gs_purge_control_paths(const gs_memory_t *mem, gs_path_control_t type)
 {
     gs_path_control_set_t *control;
-    unsigned int n, i;
+    unsigned int n, in, out;
     gs_lib_ctx_core_t *core;
 
     if (mem == NULL || mem->gs_lib_ctx == NULL ||
@@ -907,13 +934,70 @@ gs_purge_control_paths(const gs_memory_t *mem, gs_path_control_t type)
     }
 
     n = control->num;
-    for (i = 0; i < n; i++) {
-        gs_free_object(core->memory, control->paths[i], "gs_lib_ctx(path)");
+    for (in = out = 0; in < n; in++) {
+        if (control->entry[in].flags & gs_path_control_flag_is_scratch_file) {
+            /* Don't purge scratch files! */
+            control->entry[out++] = control->entry[in];
+        } else
+            gs_free_object(core->memory, control->entry[in].path, "gs_lib_ctx(path)");
     }
-    gs_free_object(core->memory, control->paths, "gs_lib_ctx(paths)");
-    control->paths = NULL;
-    control->num = 0;
-    control->max = 0;
+    control->num = out;
+    if (out == 0) {
+        gs_free_object(core->memory, control->entry, "gs_lib_ctx(paths)");
+        control->entry = NULL;
+        control->max = 0;
+    }
+}
+
+void
+gs_purge_scratch_files(const gs_memory_t *mem)
+{
+    gs_path_control_set_t *control;
+    gs_path_control_t type;
+    int n, in, out;
+    gs_lib_ctx_core_t *core;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        (core = mem->gs_lib_ctx->core) == NULL)
+        return;
+
+    for (type = gs_permit_file_reading; type <= gs_permit_file_control; type++)
+    {
+        switch(type) {
+            default:
+            case gs_permit_file_reading:
+                control = &core->permit_reading;
+                break;
+            case gs_permit_file_writing:
+                control = &core->permit_writing;
+                break;
+            case gs_permit_file_control:
+                control = &core->permit_control;
+                break;
+        }
+
+        n = control->num;
+        for (in = out = 0; in < n; in++) {
+            if ((control->entry[in].flags & gs_path_control_flag_is_scratch_file) == 0) {
+                /* Only purge scratch files! */
+                control->entry[out++] = control->entry[in];
+            } else {
+                if (type == gs_permit_file_reading) {
+                    /* Call gp_unlink_impl, as we don't want gp_unlink
+                     * to go looking in the lists we are currently
+                     * manipulating! */
+                    gp_unlink_impl(core->memory, control->entry[in].path);
+                }
+                gs_free_object(core->memory, control->entry[in].path, "gs_lib_ctx(path)");
+            }
+        }
+        control->num = out;
+        if (out == 0) {
+            gs_free_object(core->memory, control->entry, "gs_lib_ctx(paths)");
+            control->entry = NULL;
+            control->max = 0;
+        }
+    }
 }
 
 void

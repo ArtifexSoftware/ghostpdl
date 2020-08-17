@@ -825,7 +825,7 @@ pjl_delete_file(pjl_parser_state_t * pst, char *pathname)
     pjl_parsed_filename_to_string(fname, pathname);
     if (pjl_verify_file_operation(pst, fname) < 0)
         return -1;
-    return unlink(fname);
+    return gp_unlink(pst->mem, fname);
 }
 
 /* handle pattern foo = setting, e.g. volume = "0:", name = 0:]pcl.

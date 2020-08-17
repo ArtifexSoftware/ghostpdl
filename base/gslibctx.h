@@ -38,9 +38,14 @@ typedef struct gs_font_dir_s gs_font_dir;
 typedef int (*client_check_file_permission_t) (gs_memory_t *mem, const char *fname, const int len, const char *permission);
 
 typedef struct {
-    unsigned int   max;
-    unsigned int   num;
-    char         **paths;
+    char     *path;
+    int       flags;
+} gs_path_control_entry_t;
+
+typedef struct {
+    unsigned int             max;
+    unsigned int             num;
+    gs_path_control_entry_t *entry;
 } gs_path_control_set_t;
 
 typedef struct {
@@ -248,14 +253,24 @@ void sjpxd_destroy(gs_memory_t *mem);
 typedef enum {
     gs_permit_file_reading = 0,
     gs_permit_file_writing = 1,
-    gs_permit_file_control = 2,
+    gs_permit_file_control = 2
 } gs_path_control_t;
+
+enum {
+    gs_path_control_flag_is_scratch_file = 1
+};
 
 int
 gs_add_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path);
 
 int
 gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t path_len);
+
+int
+gs_add_control_path_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, int flags);
+
+int
+gs_add_control_path_len_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t path_len, int flags);
 
 int
 gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname);
@@ -272,8 +287,17 @@ gs_remove_control_path(const gs_memory_t *mem, gs_path_control_t type, const cha
 int
 gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t path_len);
 
+int
+gs_remove_control_path_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, int flags);
+
+int
+gs_remove_control_path_len_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t path_len, int flags);
+
 void
 gs_purge_control_paths(const gs_memory_t *mem, gs_path_control_t type);
+
+void
+gs_purge_scratch_files(const gs_memory_t *mem);
 
 void
 gs_activate_path_control(gs_memory_t *mem, int enable);

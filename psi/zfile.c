@@ -357,6 +357,7 @@ zdeletefile(i_ctx_t *i_ctx_p)
             return code;
         }
     }
+
     code = (*pname.iodev->procs.delete_file)(pname.iodev, pname.fname);
 
     if (code >= 0 && is_temp)

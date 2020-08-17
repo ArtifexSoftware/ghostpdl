@@ -764,15 +764,17 @@ gp_open_printer(const gs_memory_t *mem,
     return file;
 }
 
-gp_file *
-gp_open_scratch_file(const gs_memory_t *mem,
+static gp_file *
+do_open_scratch_file(const gs_memory_t *mem,
                      const char        *prefix,
                      char              *fname,
-                     const char        *mode)
+                     const char        *mode,
+                     int                rm)
 {
     gp_file *file = NULL;
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
+    int code = 0;
 
     /* If the prefix is absolute, then we must check it's a permissible
      * path. If not, we're OK. */
@@ -782,16 +784,65 @@ gp_open_scratch_file(const gs_memory_t *mem,
 
     for (fs = ctx->core->fs; fs != NULL; fs = fs->next)
     {
-        int code = 0;
         if (fs->fs.open_scratch)
-            code = fs->fs.open_scratch(mem, fs->secret, prefix, fname, mode, 0, &file);
+            code = fs->fs.open_scratch(mem, fs->secret, prefix, fname, mode, rm, &file);
         if (code < 0)
             return NULL;
         if (file != NULL)
             break;
     }
 
+    if (file == NULL) {
+        /* The file failed to open. Don't add it to the list. */
+    } else if (rm) {
+        /* This file has already been deleted by the underlying system.
+         * We don't need to add it to the lists as it will never be
+         * deleted manually, nor do we need to tidy it up on closedown. */
+    } else {
+         /* This file was not requested to be deleted. We add it to the
+          * list so that it will either be deleted by any future call to
+          * zdeletefile, OR on closedown. */
+         /* Add the scratch file name to the lists. We can't do this any
+          * earlier as we didn't know the name until now! Unfortunately
+          * that makes cleanup harder. */
+        code = gs_add_control_path_flags(mem, gs_permit_file_control, fname,
+                                         gs_path_control_flag_is_scratch_file);
+        if (code >= 0)
+            code = gs_add_control_path_flags(mem, gs_permit_file_reading, fname,
+                                             gs_path_control_flag_is_scratch_file);
+        if (code >= 0)
+            code = gs_add_control_path_flags(mem, gs_permit_file_writing, fname,
+                                         gs_path_control_flag_is_scratch_file);
+
+        if (code < 0) {
+            gp_fclose(file);
+            file = NULL;
+            /* Call directly through to the unlink implementation. We know
+             * we're 'permitted' to do this, but we might not be on all the
+             * required permit lists because of the failure. The only bad
+             * thing here, is that we're deleting an fname that might not
+             * have come from the filing system itself. */
+            if (fname && fname[0])
+                gp_unlink_impl(ctx->memory, fname);
+            (void)gs_remove_control_path_flags(mem, gs_permit_file_control, fname,
+                                               gs_path_control_flag_is_scratch_file);
+            (void)gs_remove_control_path_flags(mem, gs_permit_file_reading, fname,
+                                               gs_path_control_flag_is_scratch_file);
+            (void)gs_remove_control_path_flags(mem, gs_permit_file_writing, fname,
+                                               gs_path_control_flag_is_scratch_file);
+        }
+    }
+
     return file;
+}
+
+gp_file *
+gp_open_scratch_file(const gs_memory_t *mem,
+                     const char        *prefix,
+                     char              *fname,
+                     const char        *mode)
+{
+    return do_open_scratch_file(mem, prefix, fname, mode, 0);
 }
 
 gp_file *
@@ -800,28 +851,7 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
                         char              *fname,
                         const char        *mode)
 {
-    gp_file *file = NULL;
-    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
-    gs_fs_list_t *fs = ctx->core->fs;
-
-    /* If the prefix is absolute, then we must check it's a permissible
-     * path. If not, we're OK. */
-    if (gp_file_name_is_absolute(prefix, strlen(prefix)) &&
-        gp_validate_path(mem, prefix, mode) != 0)
-            return NULL;
-
-    for (fs = ctx->core->fs; fs != NULL; fs = fs->next)
-    {
-        int code = 0;
-        if (fs->fs.open_scratch)
-            code = fs->fs.open_scratch(mem, fs->secret, prefix, fname, mode, 1, &file);
-        if (code < 0)
-            return NULL;
-        if (file != NULL)
-            break;
-    }
-
-    return file;
+    return do_open_scratch_file(mem, prefix, fname, mode, 1);
 }
 
 int
@@ -901,7 +931,7 @@ validate(const gs_memory_t *mem,
          gs_path_control_t  type)
 {
     gs_lib_ctx_core_t *core = mem->gs_lib_ctx->core;
-    const gs_path_control_set_t *control;
+    gs_path_control_set_t *control;
     unsigned int i, n;
 
     switch (type) {
@@ -921,7 +951,7 @@ validate(const gs_memory_t *mem,
     n = control->num;
     for (i = 0; i < n; i++) {
         const char *a = path;
-        const char *b = control->paths[i];
+        const char *b = control->entry[i].path;
         while (1) {
             if (*a == 0) {
                 if (*b == 0)
@@ -963,7 +993,7 @@ validate(const gs_memory_t *mem,
                 /* Continue matching */
                 a--; /* Subtract 1 as the loop will increment it again later */
             } else if (*b == 0) {
-                if (b != control->paths[i] &&
+                if (b != control->entry[i].path &&
                     gs_file_name_check_separator(b, -1, b)) {
                     const char *a2 = a;
                     const char *aend = path + strlen(path);
@@ -1003,14 +1033,14 @@ validate(const gs_memory_t *mem,
     return gs_error_invalidfileaccess;
 
 found:
-    return 0;
+    return control->entry[i].flags;
 }
 
 int
 gp_validate_path_len(const gs_memory_t *mem,
-                 const char        *path,
-                 const uint         len,
-                 const char        *mode)
+                     const char        *path,
+                     const uint         len,
+                     const char        *mode)
 {
     char *buffer, *bufferfull;
     uint rlen;
@@ -1072,6 +1102,13 @@ gp_validate_path_len(const gs_memory_t *mem,
         case 'c': /* "Control" */
             code =  validate(mem, buffer, gs_permit_file_control);
             break;
+        case 'd': /* "Delete" (special case of control) */
+            code =  validate(mem, buffer, gs_permit_file_control);
+            break;
+        case 'f': /* "Rename from" */
+            code = (validate(mem, buffer, gs_permit_file_writing) |
+                    validate(mem, buffer, gs_permit_file_control));
+            break;
         case 't': /* "Rename to" */
             code = (validate(mem, buffer, gs_permit_file_writing) |
                     validate(mem, buffer, gs_permit_file_control));
@@ -1092,13 +1129,23 @@ gp_validate_path_len(const gs_memory_t *mem,
         }
         break;
     }
+    if (code > 0 && (mode[0] == 'd' || mode[0] == 'f') &&
+        (code & gs_path_control_flag_is_scratch_file) != 0) {
+        (void)gs_remove_control_path_flags(mem, gs_permit_file_reading, buffer,
+                                           gs_path_control_flag_is_scratch_file);
+        (void)gs_remove_control_path_flags(mem, gs_permit_file_writing, buffer,
+                                           gs_path_control_flag_is_scratch_file);
+        (void)gs_remove_control_path_flags(mem, gs_permit_file_control, buffer,
+                                           gs_path_control_flag_is_scratch_file);
+    }
 
     gs_free_object(mem->non_gc_memory, bufferfull, "gp_validate_path");
 #ifdef EACCES
     if (code == gs_error_invalidfileaccess)
         errno = EACCES;
 #endif
-    return code;
+
+    return code < 0 ? code : 0;
 }
 
 int
@@ -1107,4 +1154,26 @@ gp_validate_path(const gs_memory_t *mem,
                  const char        *mode)
 {
     return gp_validate_path_len(mem, path, strlen(path), mode);
+}
+
+int
+gp_unlink(gs_memory_t *mem, const char *fname)
+{
+    if (gp_validate_path(mem, fname, "d") != 0)
+        return gs_error_invalidaccess;
+
+    return gp_unlink_impl(mem, fname);
+}
+
+int
+gp_rename(gs_memory_t *mem, const char *from, const char *to)
+{
+    /* Always check 'to' before 'from', in case 'from' is a tempfile,
+     * and testing it might remove it from the list! */
+    if (gp_validate_path(mem, to, "t") != 0)
+        return gs_error_invalidaccess;
+    if (gp_validate_path(mem, from, "f") != 0)
+        return gs_error_invalidaccess;
+
+    return gp_rename_impl(mem, from, to);
 }
