@@ -813,12 +813,14 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 code = pdfi_read_token(ctx, compressed_stream, obj, gen);
                 if (code < 0) {
                     pdfi_close_file(ctx, compressed_stream);
+                    pdfi_close_file(ctx, SubFile_stream);
                     goto error;
                 }
                 o = ctx->stack_top[-1];
                 if (((pdf_obj *)o)->type != PDF_INT) {
                     pdfi_pop(ctx, 1);
                     pdfi_close_file(ctx, compressed_stream);
+                    pdfi_close_file(ctx, SubFile_stream);
                     goto error;
                 }
                 found_object = ((pdf_num *)o)->value.i;
@@ -826,18 +828,21 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 code = pdfi_read_token(ctx, compressed_stream, obj, gen);
                 if (code < 0) {
                     pdfi_close_file(ctx, compressed_stream);
+                    pdfi_close_file(ctx, SubFile_stream);
                     goto error;
                 }
                 o = ctx->stack_top[-1];
                 if (((pdf_obj *)o)->type != PDF_INT) {
                     pdfi_pop(ctx, 1);
                     pdfi_close_file(ctx, compressed_stream);
+                    pdfi_close_file(ctx, SubFile_stream);
                     goto error;
                 }
                 if (i == entry->u.compressed.object_index) {
                     if (found_object != obj) {
                         pdfi_pop(ctx, 1);
                         pdfi_close_file(ctx, compressed_stream);
+                        pdfi_close_file(ctx, SubFile_stream);
                         code = gs_note_error(gs_error_undefined);
                         goto error;
                     }
@@ -854,6 +859,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 code = pdfi_read_bytes(ctx, (byte *)&Buffer[0], 1, 1, compressed_stream);
                 if (code <= 0) {
                     pdfi_close_file(ctx, compressed_stream);
+                    pdfi_close_file(ctx, SubFile_stream);
                     ctx->decrypt_strings = saved_decrypt_strings;
                     return_error(gs_error_ioerror);
                 }
@@ -868,8 +874,10 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
              */
             if (object_length > 0) {
                 code = pdfi_apply_SubFileDecode_filter(ctx, object_length, NULL, compressed_stream, &Object_stream, false);
-                if (code < 0)
+                if (code < 0) {
+                    pdfi_close_file(ctx, SubFile_stream);
                     goto error;
+                }
             } else {
                 Object_stream = compressed_stream;
             }
@@ -877,6 +885,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             code = pdfi_read_token(ctx, Object_stream, obj, gen);
             if (code < 0) {
                 pdfi_close_file(ctx, Object_stream);
+                pdfi_close_file(ctx, SubFile_stream);
                 goto error;
             }
             if (ctx->stack_top[-1]->type == PDF_ARRAY_MARK || ctx->stack_top[-1]->type == PDF_DICT_MARK) {
@@ -887,10 +896,12 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                     code = pdfi_read_token(ctx, Object_stream, obj, gen);
                     if (code < 0) {
                         pdfi_close_file(ctx, Object_stream);
+                        pdfi_close_file(ctx, SubFile_stream);
                         goto error;
                     }
                     if (compressed_stream->eof == true) {
                         pdfi_close_file(ctx, Object_stream);
+                        pdfi_close_file(ctx, SubFile_stream);
                         code = gs_note_error(gs_error_ioerror);
                         goto error;
                     }
