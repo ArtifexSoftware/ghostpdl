@@ -1157,7 +1157,14 @@ error_out:
 int pdfi_free_cmap(pdf_obj *cmapo)
 {
     pdf_cmap *cmap = (pdf_cmap *)cmapo;
-    if (cmap->cmaptype == 1) {
+    /*
+     * Note there is some inconsistency in the various specifications regarding CMapType; the
+     * Adobe tech note 5014 specifically says it only documents CMaps with a CmapType of 0, the
+     * PLRM says that CMapType can be 0 or 1, and the two are equivalent, the PDF Reference Manual
+     * doesn't say, it just refers to tech note 5014 but the example has a CMapType of 1. The PDF
+     * Reference does describe ToUnicode CMaps which have a CMapType of 2.
+     */
+    if (cmap->cmaptype != 2) {
         pdfi_cmap_range_map_t *pdfir;
         gs_cmap_adobe1_t *pgscmap = cmap->gscmap;
         gs_free_object(OBJ_MEMORY(cmap), pgscmap->def.lookup, "pdfi_free_cmap(def.lookup)");
