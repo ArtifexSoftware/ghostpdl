@@ -1612,10 +1612,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
     rc_decrement(pcs, "pdf_begin_typed_image(pcs)");
+    rc_decrement(pcs_device, "pdf_begin_typed_image(pcs_device)");
     return 0;
 
 fail_and_fallback:
     rc_decrement(pcs, "pdf_begin_typed_image(pcs)");
+    rc_decrement(pcs_device, "pdf_begin_typed_image(pcs_device)");
     pdev->JPEG_PassThrough = 0;
     gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                       "pdf_begin_typed_image(image)");
