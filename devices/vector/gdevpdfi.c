@@ -958,6 +958,86 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
     return 0;
 }
 
+/* Basically, sets up the BBox for Eps2Write case */
+static int
+pdf_image_handle_eps(gx_device_pdf *pdev, const gs_gstate * pgs,
+                     const gs_matrix *pmat, const gs_image_common_t *pic,
+                     const gs_int_rect *prect,
+                     const gx_clip_path * pcpath)
+{
+    int code = 0;
+    gs_rect sbox, dbox, *Box;
+    gs_point corners[4];
+    gs_fixed_rect ibox;
+    gs_matrix * pmat1 = (gs_matrix *)pmat;
+    gs_matrix mat;
+
+    if (!pdev->Eps2Write)
+        return 0;
+
+    if (!pdev->accumulating_charproc)
+        Box = &pdev->BBox;
+    else
+        Box = &pdev->charproc_BBox;
+    if (pmat1 == 0)
+        pmat1 = (gs_matrix *)&ctm_only(pgs);
+    if ((code = gs_matrix_invert(&pic->ImageMatrix, &mat)) < 0 ||
+        (code = gs_matrix_multiply(&mat, pmat1, &mat)) < 0)
+        goto exit;
+    sbox.p.x = prect->p.x;
+    sbox.p.y = prect->p.y;
+    sbox.q.x = prect->q.x;
+    sbox.q.y = prect->q.y;
+    gs_bbox_transform_only(&sbox, &mat, corners);
+    gs_points_bbox(corners, &dbox);
+    ibox.p.x = float2fixed(dbox.p.x);
+    ibox.p.y = float2fixed(dbox.p.y);
+    ibox.q.x = float2fixed(dbox.q.x);
+    ibox.q.y = float2fixed(dbox.q.y);
+    if (pcpath != NULL &&
+        !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
+                                     ibox.q.x, ibox.q.y)
+        ) {
+        /* Let the target do the drawing, but drive two triangles */
+        /* through the clipping path to get an accurate bounding box. */
+        gx_device_clip cdev;
+        gx_drawing_color devc;
+
+        fixed x0 = float2fixed(corners[0].x), y0 = float2fixed(corners[0].y);
+        fixed bx2 = float2fixed(corners[2].x) - x0, by2 = float2fixed(corners[2].y) - y0;
+
+        pdev->AccumulatingBBox++;
+        gx_make_clip_device_on_stack(&cdev, pcpath, (gx_device *)pdev);
+        set_nonclient_dev_color(&devc, gx_device_black((gx_device *)pdev));  /* any non-white color will do */
+        gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
+                                 float2fixed(corners[1].x) - x0,
+                                 float2fixed(corners[1].y) - y0,
+                                 bx2, by2, &devc, lop_default);
+        gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
+                                 float2fixed(corners[3].x) - x0,
+                                 float2fixed(corners[3].y) - y0,
+                                 bx2, by2, &devc, lop_default);
+        pdev->AccumulatingBBox--;
+    } else {
+        /* Just use the bounding box. */
+        float x0, y0, x1, y1;
+        x0 = fixed2float(ibox.p.x) / (pdev->HWResolution[0] / 72.0);
+        y0 = fixed2float(ibox.p.y) / (pdev->HWResolution[1] / 72.0);
+        x1 = fixed2float(ibox.q.x) / (pdev->HWResolution[0] / 72.0);
+        y1 = fixed2float(ibox.q.y) / (pdev->HWResolution[1] / 72.0);
+        if (Box->p.x > x0)
+            Box->p.x = x0;
+        if (Box->p.y > y0)
+            Box->p.y = y0;
+        if (Box->q.x < x1)
+            Box->q.x = x1;
+        if (Box->q.y < y1)
+            Box->q.y = y1;
+    }
+ exit:
+    return code;
+}
+
 static int
 pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                       const gs_matrix *pmat, const gs_image_common_t *pic,
@@ -976,9 +1056,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     const gs_pixel_image_t *pim;
     gs_int_rect rect;
     gs_image_format_t format;
-    gs_color_space *pcs;
+    gs_color_space *pcs = NULL;
     int num_components;
-    pdf_image_enum *pie;
+    pdf_image_enum *pie = NULL;
     const pdf_color_space_names_t *names;
     gs_color_space *pcs_orig = NULL;
     gs_color_space *pcs_device = NULL;
@@ -1011,9 +1091,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     case 1:
         is_mask = ((const gs_image_t *)pic)->ImageMask;
         code = setup_type1_image(pdev, pic, pdcolor, image, context);
-        if (code < 0) {
+        if (code < 0)
             use_fallback = 1;
-        }
         else
             in_line = code;
         break;
@@ -1039,55 +1118,44 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
                    prect->q.x == ((const gs_image3_t *)pic)->Width &&
                    prect->q.y == ((const gs_image3_t *)pic)->Height))) {
-            gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                              "pdf_begin_typed_image(image)");
-            return (gx_default_begin_typed_image((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor,
-                pcpath, mem, pinfo));
+            use_fallback = 1;
+            goto exit;
         }
-        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                          "pdf_begin_typed_image(image)");
-        return (setup_type3_image(pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem, pinfo, image));
-        break;
+        code = setup_type3_image(pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem, pinfo, image);
+        goto exit;
 
     case IMAGE3X_IMAGETYPE:
         pdev->JPEG_PassThrough = 0;
-        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                              "pdf_begin_typed_image(image)");
         if (pdev->CompatibilityLevel < 1.4 ||
             (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
                        prect->q.x == ((const gs_image3x_t *)pic)->Width &&
                        prect->q.y == ((const gs_image3x_t *)pic)->Height))) {
-            return (gx_default_begin_typed_image((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor,
-                pcpath, mem, pinfo));
+            use_fallback = 1;
+            goto exit;
         }
         pdev->image_mask_is_SMask = true;
-        return gx_begin_image3x_generic((gx_device *)pdev, pgs, pmat, pic,
+        code = gx_begin_image3x_generic((gx_device *)pdev, pgs, pmat, pic,
                                         prect, pdcolor, pcpath, mem,
                                         pdf_image3x_make_mid,
                                         pdf_image3x_make_mcde, pinfo);
-        break;
+        goto exit;
 
     case 4:
         pdev->JPEG_PassThrough = 0;
         code = convert_type4_image(pdev, pgs, pmat, pic, prect, pdcolor,
                       pcpath, mem, pinfo, context, image, pnamed);
-        if (code < 0) {
+        if (code < 0)
             use_fallback = 1;
-        }
-        if (code == 0) {
-            gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                                  "pdf_begin_typed_image(image)");
-            return code;
-        }
+        if (code == 0)
+            goto exit;
         /* No luck.  Masked images require PDF 1.3 or higher. */
-        if (pdev->CompatibilityLevel < 1.2) {
+        if (pdev->CompatibilityLevel < 1.2)
             use_fallback = 1;
-        }
         if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
-            gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                                  "pdf_begin_typed_image(image)");
-            return (convert_type4_to_masked_image(pdev, pgs, pic, prect, pdcolor,
-                      pcpath, mem,pinfo));
+            use_fallback = 0;
+            code = convert_type4_to_masked_image(pdev, pgs, pic, prect, pdcolor,
+                                                 pcpath, mem,pinfo);
+            goto exit;
         }
         image[0].type4 = *(const gs_image4_t *)pic;
         break;
@@ -1115,14 +1183,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         case 2:
         case 4:
         case 8:
-            break;
         case 12:
         case 16:
             break;
         default:
-            gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                              "pdf_begin_typed_image(image)");
-            return_error(gs_error_rangecheck);
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
     }
     if (prect)
         rect = *prect;
@@ -1135,82 +1201,15 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         (is_mask && pim->CombineWithColor))
         use_fallback = 1;
 
-    if (pdev->Eps2Write) {
-        gs_rect sbox, dbox, *Box;
-        gs_point corners[4];
-        gs_fixed_rect ibox;
-        gs_matrix * pmat1 = (gs_matrix *)pmat;
-        gs_matrix mat;
-
-        if (!pdev->accumulating_charproc)
-            Box = &pdev->BBox;
-        else
-            Box = &pdev->charproc_BBox;
-        if (pmat1 == 0)
-            pmat1 = (gs_matrix *)&ctm_only(pgs);
-        if ((code = gs_matrix_invert(&pic->ImageMatrix, &mat)) < 0 ||
-            (code = gs_matrix_multiply(&mat, pmat1, &mat)) < 0)
-            return code;
-        sbox.p.x = rect.p.x;
-        sbox.p.y = rect.p.y;
-        sbox.q.x = rect.q.x;
-        sbox.q.y = rect.q.y;
-        gs_bbox_transform_only(&sbox, &mat, corners);
-        gs_points_bbox(corners, &dbox);
-        ibox.p.x = float2fixed(dbox.p.x);
-        ibox.p.y = float2fixed(dbox.p.y);
-        ibox.q.x = float2fixed(dbox.q.x);
-        ibox.q.y = float2fixed(dbox.q.y);
-        if (pcpath != NULL &&
-            !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
-            ibox.q.x, ibox.q.y)
-            ) {
-            /* Let the target do the drawing, but drive two triangles */
-            /* through the clipping path to get an accurate bounding box. */
-            gx_device_clip cdev;
-            gx_drawing_color devc;
-
-            fixed x0 = float2fixed(corners[0].x), y0 = float2fixed(corners[0].y);
-            fixed bx2 = float2fixed(corners[2].x) - x0, by2 = float2fixed(corners[2].y) - y0;
-
-            pdev->AccumulatingBBox++;
-            gx_make_clip_device_on_stack(&cdev, pcpath, (gx_device *)pdev);
-            set_nonclient_dev_color(&devc, gx_device_black((gx_device *)pdev));  /* any non-white color will do */
-            gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
-                float2fixed(corners[1].x) - x0,
-                float2fixed(corners[1].y) - y0,
-                bx2, by2, &devc, lop_default);
-            gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
-                float2fixed(corners[3].x) - x0,
-                float2fixed(corners[3].y) - y0,
-                bx2, by2, &devc, lop_default);
-            pdev->AccumulatingBBox--;
-        } else {
-            /* Just use the bounding box. */
-            float x0, y0, x1, y1;
-            x0 = fixed2float(ibox.p.x) / (pdev->HWResolution[0] / 72.0);
-            y0 = fixed2float(ibox.p.y) / (pdev->HWResolution[1] / 72.0);
-            x1 = fixed2float(ibox.q.x) / (pdev->HWResolution[0] / 72.0);
-            y1 = fixed2float(ibox.q.y) / (pdev->HWResolution[1] / 72.0);
-            if (Box->p.x > x0)
-                Box->p.x = x0;
-            if (Box->p.y > y0)
-                Box->p.y = y0;
-            if (Box->q.x < x1)
-                Box->q.x = x1;
-            if (Box->q.y < y1)
-                Box->q.y = y1;
-        }
+    /* Handle BBox for Eps2Write, if applicable */
+    code = pdf_image_handle_eps(pdev, pgs, pmat, pic, &rect, pcpath);
+    if (code < 0) {
+        use_fallback = 0;
+        goto exit;
     }
 
-    if (use_fallback) {
-        pdev->JPEG_PassThrough = 0;
-        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                              "pdf_begin_typed_image(image)");
-        return gx_default_begin_typed_image
-            ((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
-            pinfo);
-    }
+    if (use_fallback)
+        goto exit;
 
     pcs = pim->ColorSpace;
     rc_increment_cs(pcs);
@@ -1218,19 +1217,13 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 
     code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
     if (code < 0)
-        return code;
+        goto exit;
     if (pdf_must_put_clip_path(pdev, pcpath))
         code = pdf_unclip(pdev);
     else
         code = pdf_open_page(pdev, PDF_IN_STREAM);
-    if (code < 0) {
-        pdev->JPEG_PassThrough = 0;
-        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                              "pdf_begin_typed_image(image)");
-        return gx_default_begin_typed_image
-            ((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
-            pinfo);
-    }
+    if (code < 0)
+        goto fail_and_fallback;
 
     if (context == PDF_IMAGE_TYPE3_MASK) {
         /*
@@ -1247,21 +1240,14 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         code = pdf_prepare_imagemask(pdev, pgs, pdcolor);
     else
         code = pdf_prepare_image(pdev, pgs);
-    if (code < 0) {
-        pdev->JPEG_PassThrough = 0;
-        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                              "pdf_begin_typed_image(image)");
-        return gx_default_begin_typed_image
-            ((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
-            pinfo);
-    }
+    if (code < 0)
+        goto fail_and_fallback;
 
     pie = gs_alloc_struct(mem, pdf_image_enum, &st_pdf_image_enum,
                         "pdf_begin_image");
     if (pie == 0) {
-        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                              "pdf_begin_typed_image(image)");
-        return_error(gs_error_VMerror);
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
     }
     memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
     *pinfo = (gx_image_enum_common_t *) pie;
@@ -1305,24 +1291,18 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         if ((code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
             (code = gs_matrix_multiply(&bmat, &mat, &mat)) < 0 ||
             (code = gs_matrix_multiply(&mat, pmat, &pie->mat)) < 0
-            ) {
-            gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                              "pdf_begin_typed_image(image)");
-            gs_free_object(mem, pie, "pdf_begin_image");
-            return code;
-        }
+            )
+            goto exit;
         /* AR3,AR4 show no image when CTM is singular; AR5 reports an error */
-        if (pie->mat.xx * pie->mat.yy == pie->mat.xy * pie->mat.yx)
+        if (pie->mat.xx * pie->mat.yy == pie->mat.xy * pie->mat.yx) {
+            use_fallback = 1;
             goto fail_and_fallback;
+        }
     }
 
     code = pdf_put_clip_path(pdev, pcpath);
-    if (code < 0) {
-        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                          "pdf_begin_typed_image(image)");
-        gs_free_object(mem, pie, "pdf_begin_image");
-        return code;
-    }
+    if (code < 0)
+        goto exit;
     pdf_image_writer_init(&pie->writer);
     /* Note : Possible values for alt_writer_count are 1,2,3,4.
        1 means no alternative streams.
@@ -1352,8 +1332,10 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         if (image[0].pixel.ColorSpace != NULL && !(context == PDF_IMAGE_TYPE3_MASK))
             convert_to_process_colors = setup_image_colorspace(pdev, &image[0], pcs, &pcs_orig, names, &cs_value);
 
-        if (pim->BitsPerComponent > 8 && convert_to_process_colors)
+        if (pim->BitsPerComponent > 8 && convert_to_process_colors) {
+            use_fallback = 1;
             goto fail_and_fallback;
+        }
         if (convert_to_process_colors == 4) {
             code = convert_DeviceN_alternate(pdev, pgs, pcs, NULL, NULL, NULL, NULL, &cs_value, in_line);
             if (code < 0)
@@ -1529,9 +1511,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 
     if (pie->writer.alt_writer_count > 1) {
         code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
-        if (code) {
+        if (code < 0)
             goto fail_and_fallback;
-        }
         code = new_setup_image_filters((gx_device_psdf *) pdev,
                                   &pie->writer.binary[1], &image[1].pixel,
                                   pmat, pgs, force_lossless, in_line, convert_to_process_colors);
@@ -1542,8 +1523,11 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                 cos_stream_t *pcos = cos_stream_from_pipeline(pie->writer.binary[i].strm);
                 s_close_filters(&s, NULL);
                 gs_free_object(pdev->pdf_memory, s, "compressed image stream");
-                if (pcos == 0L)
-                    return gs_note_error(gs_error_ioerror);
+                if (pcos == 0L) {
+                    /* TODO: Seems like something should be freed here */
+                    code = gs_note_error(gs_error_ioerror);
+                    goto exit;
+                }
                 pcos->cos_procs->release((cos_object_t *)pcos, "pdf_begin_typed_image_impl");
                 gs_free_object(pdev->pdf_memory, pcos, "compressed image cos_stream");
             }
@@ -1558,9 +1542,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             image[1].pixel.BitsPerComponent = pim->BitsPerComponent;
             code = psdf_setup_image_colors_filter(&pie->writer.binary[1],
                                               (gx_device_psdf *)pdev, pim, &image[1].pixel, pgs);
-            if (code < 0) {
+            if (code < 0)
                 goto fail_and_fallback;
-            }
             image[1].pixel.ColorSpace = pcs_device;
         }
     }
@@ -1588,7 +1571,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         /* Won't use image[2]. */
         code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
                     height, NULL, false);
-        if (code)
+        if (code < 0)
             goto fail_and_fallback;
         code = psdf_setup_image_filters((gx_device_psdf *) pdev,
                                   &pie->writer.binary[i], &image[i].pixel,
@@ -1609,22 +1592,38 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         ++pie->writer.alt_writer_count;
     }
 
-    gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
-                                              "pdf_begin_typed_image(image)");
-    rc_decrement(pcs, "pdf_begin_typed_image(pcs)");
-    rc_decrement(pcs_device, "pdf_begin_typed_image(pcs_device)");
-    return 0;
+    /* use_fallback = 0, so this will drop through the below labels, doing only the cleanup parts */
+    code = 0;
 
-fail_and_fallback:
+    /* This label is used when code < 0 and we want to do the fallback code */
+ fail_and_fallback:
+    if (code != 0)
+        use_fallback = 1;
+
+    /* This label is used either when there's no error and we are just exiting normally
+     * (possibly with use_fallback=1), or there is an error but we don't want to do
+     * the fallback code.
+     */
+ exit:
+    /* Free everything */
     rc_decrement(pcs, "pdf_begin_typed_image(pcs)");
     rc_decrement(pcs_device, "pdf_begin_typed_image(pcs_device)");
-    pdev->JPEG_PassThrough = 0;
     gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                       "pdf_begin_typed_image(image)");
-    gs_free_object(mem, pie, "pdf_begin_image");
-    return gx_default_begin_typed_image
-        ((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
-        pinfo);
+
+    /* Free pie only if there was an error or we are falling back */
+    if (code < 0 || use_fallback) {
+        if (pie)
+            gs_free_object(mem, pie, "pdf_begin_image");
+        *pinfo = NULL;
+    }
+    /* Do the fallback */
+    if (use_fallback) {
+        pdev->JPEG_PassThrough = 0;
+        code = gx_default_begin_typed_image
+            ((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem, pinfo);
+    }
+    return code;
 }
 
 int
