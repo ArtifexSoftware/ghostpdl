@@ -430,58 +430,41 @@ public class Document implements List<Page> {
 		if (!handleOperationMode(operationMode))
 			return;
 
-		startOperation();
-
 		try {
+
+			startOperation();
+
 			gsInstance = initDocInstance();
-		} catch (IllegalStateException e) {
+
+			if (gsInstance == null)
+				throw new IllegalStateException("Failed to initialize Ghostscript");
+
+			documentLoader.callback = loadCallback;
+
+
+			int code = gsInstance.set_param("HWResolution", Page.PAGE_LOW_DPI_STR, GS_SPT_PARSED);
+			if (code != GS_ERROR_OK)
+				throw new IllegalStateException("Failed to set HWResolution (code = " + code + ")");
+
+			Reference<Integer> exitCode = new Reference<>();
+			code = gsInstance.run_file(file.getAbsolutePath(), 0, exitCode);
+
+			if (code != GS_ERROR_OK)
+				throw new IllegalStateException("Failed to run file (code = " + code + ")");
+
+			gsInstance.set_param("TextAlphaBits", 4, GS_SPT_INT);
+			gsInstance.set_param("GraphicsAlphaBits", 4, GS_SPT_INT);
+
+			this.pages = new ArrayList<>(documentLoader.images.size());
+			for (BufferedImage img : documentLoader.images) {
+				pages.add(new Page(img));
+			}
+
+			if (documentLoader.callback != null)
+				documentLoader.callback.onDocumentProgress(100);
+		} finally {
 			operationDone();
 		}
-
-		if (gsInstance == null) {
-			operationDone();
-			throw new IllegalStateException("Failed to initialize Ghostscript");
-		}
-
-		documentLoader.callback = loadCallback;
-
-		int code = gsInstance.set_param("HWResolution", Page.PAGE_LOW_DPI_STR, GS_SPT_PARSED);
-		if (code != GS_ERROR_OK) {
-			operationDone();
-			throw new IllegalStateException("Failed to set HWResolution (code = " + code + ")");
-		}
-
-		Reference<Integer> exitCode = new Reference<>();
-		code = gsInstance.run_file(file.getAbsolutePath(), 0, exitCode);
-
-		if (code != GS_ERROR_OK) {
-			operationDone();
-			throw new IllegalStateException("Failed to run file (code = " + code + ")");
-		}
-
-		gsInstance.set_param("TextAlphaBits", 4, GS_SPT_INT);
-		gsInstance.set_param("GraphicsAlphaBits", 4, GS_SPT_INT);
-
-		//gsInstance.exit();
-		//gsInstance.delete_instance();
-
-		/*int code = instance.init_with_args(gargs);
-		instance.exit();
-		instance.delete_instance();
-		if (code != GS_ERROR_OK) {
-			operationDone();
-			throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
-		}*/
-
-		this.pages = new ArrayList<>(documentLoader.images.size());
-		for (BufferedImage img : documentLoader.images) {
-			pages.add(new Page(img));
-		}
-
-		if (documentLoader.callback != null)
-			documentLoader.callback.onDocumentProgress(100);
-
-		operationDone();
 	}
 
 	/**
@@ -580,68 +563,37 @@ public class Document implements List<Page> {
 		if (!handleOperationMode(operationMode))
 			return;
 
-		startOperation();
-
-		final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/",
-				"-dBATCH", "-r" + Page.PAGE_HIGH_DPI, "-sDEVICE=display",
-				"-dFirstPage=" + startPage, "-dLastPage=" + endPage, "-dDisplayFormat=" + format,
-				"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
-				"-f", file.getAbsolutePath() };
-
-		/*GSInstance instance = null;
 		try {
-			instance = initDocInstance();
-		} catch (IllegalStateException e) {
+			startOperation();
+
+			final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/",
+					"-dBATCH", "-r" + Page.PAGE_HIGH_DPI, "-sDEVICE=display",
+					"-dFirstPage=" + startPage, "-dLastPage=" + endPage, "-dDisplayFormat=" + format,
+					"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
+					"-f", file.getAbsolutePath() };
+
+			documentLoader.images.clear();
+
+			this.setParams(Page.PAGE_HIGH_DPI, startPage, endPage);
+
+			Reference<Integer> exitCode = new Reference<>();
+			int code = gsInstance.run_file(file.getAbsolutePath(), 0, exitCode);
+
+			if (code != GS_ERROR_OK)
+				throw new IllegalStateException("Failed to run file (code = " + code + ")");
+
+			if (documentLoader.images.size() != endPage - startPage + 1) {
+				throw new IllegalStateException("Page range mismatch (expected " +
+						(endPage - startPage) + ", got " + documentLoader.images.size() + ")");
+			}
+
+			int ind = startPage - 1;
+			for (final BufferedImage img : documentLoader.images) {
+				this.pages.get(ind++).setHighRes(img);
+			}
+		} finally {
 			operationDone();
 		}
-
-		if (instance == null)
-			throw new IllegalStateException("Failed to initialize Ghoscript");
-
-		int code = instance.init_with_args(gargs);
-		instance.exit();
-		instance.delete_instance();
-		if (code != GS_ERROR_OK) {
-			operationDone();
-			throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
-		}*/
-		//gsInstance.set_display_callback(documentLoader.reset());
-		//documentLoader.reset();
-		documentLoader.images.clear();
-
-		this.setParams(Page.PAGE_HIGH_DPI, startPage, endPage);
-
-		for (GSInstance.GSParam<?> param : gsInstance) {
-			System.out.println(param);
-		}
-
-		Reference<Integer> ref = new Reference<>();
-		gsInstance.get_param_once("FirstPage", ref, GS_SPT_INT);
-		System.out.println(ref);
-		gsInstance.get_param_once("LastPage", ref, GS_SPT_INT);
-		System.out.println(ref);
-
-		Reference<Integer> exitCode = new Reference<>();
-		//gsInstance.set_display_callback(documentLoader.reset());
-		int code = gsInstance.run_file(file.getAbsolutePath(), 0, exitCode);
-
-		if (code != GS_ERROR_OK) {
-			operationDone();
-			throw new IllegalStateException("Failed to run file (code = " + code + ")");
-		}
-
-		if (documentLoader.images.size() != endPage - startPage + 1) {
-			operationDone();
-			throw new IllegalStateException("Page range mismatch (expected " +
-					(endPage - startPage) + ", got " + documentLoader.images.size() + ")");
-		}
-
-		int ind = startPage - 1;
-		for (final BufferedImage img : documentLoader.images) {
-			this.pages.get(ind++).setHighRes(img);
-		}
-
-		operationDone();
 	}
 
 	/**
@@ -685,7 +637,8 @@ public class Document implements List<Page> {
 	 */
 	public void loadHighResList(int operationMode, final int[] pages)
 			throws IndexOutOfBoundsException, IllegalStateException, OperationInProgressException {
-		if (pages.length > 0) {
+		throw new UnsupportedOperationException("loadHighResList");
+		/*if (pages.length > 0) {
 			if (!handleOperationMode(operationMode))
 				return;
 
@@ -733,7 +686,7 @@ public class Document implements List<Page> {
 			} finally {
 				operationDone();
 			}
-		}
+		}*/
 	}
 
 	/**
@@ -795,6 +748,10 @@ public class Document implements List<Page> {
 	 * call.
 	 */
 	public void unload() {
+		gsInstance.exit();
+		gsInstance.delete_instance();
+		gsInstance = null;
+
 		for (Page p : pages) {
 			p.unloadAll();
 		}
@@ -854,23 +811,33 @@ public class Document implements List<Page> {
 					"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
 					"-f", file.getAbsolutePath() };
 
-			GSInstance instance = null;
-			try {
-				instance = initDocInstance();
-			} catch (IllegalStateException e) {
-				operationDone();
-			}
+			documentLoader.images.clear();
 
-			if (instance == null)
-				throw new IllegalStateException("Failed to initialize Ghoscript");
+			this.setParams((int)(Page.PAGE_HIGH_DPI * zoom), start, end);
 
-			int code = instance.init_with_args(gargs);
-			instance.exit();
-			instance.delete_instance();
-			if (code != GS_ERROR_OK) {
-				operationDone();
-				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
-			}
+			Reference<Integer> exitCode = new Reference<>();
+			int code = this.gsInstance.run_file(file.getAbsolutePath(), 0, exitCode);
+
+			if (code != GS_ERROR_OK)
+				throw new IllegalStateException("Failed to run file (code = " + code + ")");
+
+//			GSInstance instance = null;
+//			try {
+//				instance = initDocInstance();
+//			} catch (IllegalStateException e) {
+//				operationDone();
+//			}
+//
+//			if (instance == null)
+//				throw new IllegalStateException("Failed to initialize Ghoscript");
+//
+//			int code = instance.init_with_args(gargs);
+//			instance.exit();
+//			instance.delete_instance();
+//			if (code != GS_ERROR_OK) {
+//				operationDone();
+//				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
+//			}
 
 			int ind = start - 1;
 			for (final BufferedImage img : documentLoader.images) {
@@ -919,6 +886,7 @@ public class Document implements List<Page> {
 			throw new IllegalStateException("Failed to set dEndPage (code = " + code + ")");
 		}
 	}
+
 
 	// Implementations of inherited methods from java.util.List.
 
@@ -1058,7 +1026,7 @@ public class Document implements List<Page> {
 	}
 
 	@Override
-	public void finalize() {
+	protected void finalize() {
 		unload();
 	}
 }

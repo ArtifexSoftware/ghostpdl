@@ -3,7 +3,6 @@ package com.artifex.gsviewer;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -33,8 +32,6 @@ public class ViewerController implements ViewerGUIListener {
 		if (currentDocument != null)
 			close();
 		Document.loadDocumentAsync(file, (final Document doc, final Exception exception) -> {
-			// Don't allow multiple ghostscript operations at once
-				//source.showWarningDialog("Error", "An operation is already in progress");
 			source.loadDocumentToViewer(doc);
 			source.setLoadProgress(0);
 			if (exception != null) {
@@ -43,12 +40,18 @@ public class ViewerController implements ViewerGUIListener {
 				this.currentDocument = doc;
 				dispatchSmartLoader();
 			}
+			source.revalidate();
 		}, (int progress) -> {
 			source.setLoadProgress(progress);
 		}, Document.OPERATION_RETURN);
 	}
 
 	public void close() {
+		if (smartLoader != null) {
+			smartLoader.stop();
+			smartLoader = null;
+		}
+
 		if (currentDocument != null) {
 			source.loadDocumentToViewer(null);
 			currentDocument.unload();
@@ -122,8 +125,6 @@ public class ViewerController implements ViewerGUIListener {
 
 	@Override
 	public void onCloseFile() {
-		smartLoader.stop();
-		smartLoader = null;
 		close();
 	}
 
@@ -147,6 +148,7 @@ public class ViewerController implements ViewerGUIListener {
 
 		@Override
 		public void uncaughtException(Thread t, Throwable e) {
+			e.printStackTrace(System.err);
 			if (source != null) {
 				ByteArrayOutputStream os = new ByteArrayOutputStream();
 				PrintStream out = new PrintStream(os);
@@ -155,6 +157,7 @@ public class ViewerController implements ViewerGUIListener {
 				source.showErrorDialog("Unhandled Exception", errorMessage);
 			}
 			DefaultUnhandledExceptionHandler.INSTANCE.uncaughtException(t, e);
+
 		}
 
 	}

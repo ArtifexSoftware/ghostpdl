@@ -602,8 +602,6 @@ public class ViewerWindow extends javax.swing.JFrame {
 			return;
 
 		lockSize();
-		//if (true)
-		//throw new NullPointerException();
 
 		this.loadedDocument = document;
 		viewerContentPane.setLayout(new BoxLayout(viewerContentPane, BoxLayout.Y_AXIS));
@@ -827,13 +825,13 @@ public class ViewerWindow extends javax.swing.JFrame {
 		Dimension size = getSize();
 		setMinimumSize(size);
 		setMaximumSize(size);
-		setResizable(false);
+		//setResizable(false);
 	}
 
 	private void unlockSize() {
 		setMinimumSize(min);
 		setMaximumSize(max);
-		setResizable(true);
+		//setResizable(true);
 	}
 
 	/**

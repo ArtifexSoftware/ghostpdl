@@ -43,8 +43,9 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1new_1instance
 }
 
 JNIEXPORT void JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1delete_1instance
-	(JNIEnv *, jclass, jlong instance)
+	(JNIEnv *env, jclass, jlong instance)
 {
+	callbacks::setJNIEnv(env);
 	gsapi_delete_instance((void *)instance);
 }
 

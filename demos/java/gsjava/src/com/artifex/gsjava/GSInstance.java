@@ -93,10 +93,9 @@ public class GSInstance implements Iterable<GSInstance.GSParam<?>> {
 	}
 
 	public void delete_instance() {
-		if (instance != GS_NULL) {
+		if (instance != GS_NULL)
 			gsapi_delete_instance(instance);
-			instance = GS_NULL;
-		}
+		instance = GS_NULL;
 	}
 
 	public int set_stdio(IStdInFunction stdin, IStdOutFunction stdout, IStdErrFunction stderr) {
@@ -245,9 +244,10 @@ public class GSInstance implements Iterable<GSInstance.GSParam<?>> {
 
 	@Override
 	public void finalize() {
-		if (instance != GS_NULL)
+		if (instance != GS_NULL) {
 			exit();
-		delete_instance();
+			delete_instance();
+		}
 	}
 
 	@Override
