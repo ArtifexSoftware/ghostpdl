@@ -1805,16 +1805,13 @@ error:
 
 static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict)
 {
-    int code, str_len;
+    int code;
     char *str = NULL;
     int64_t type;
     gs_halftone *pht = NULL;
     gx_device_halftone *pdht = NULL;
     gs_halftone_component *phtc = NULL;
-    gx_ht_order_component *pocs = 0;
     pdf_obj *Key = NULL, *Value = NULL;
-    int index = 0, ix = 0, NumComponents = 0;
-    bool known = false;
 
     code = pdfi_dict_get_int(ctx, halftone_dict, "HalftoneType", &type);
     if (code < 0)
