@@ -216,7 +216,7 @@ struct gx_image_enum_s {
     irender_proc((*render));
     int (*skip_next_line)(gx_image_enum *penum, gx_device *dev);
     const gs_gstate *pgs;
-    const gs_color_space *pcs;  /* color space of image */
+    gs_color_space *pcs;  /* color space of image */
     byte *buffer;               /* for expanding samples to a */
                                 /* byte or frac */
     uint buffer_size;
