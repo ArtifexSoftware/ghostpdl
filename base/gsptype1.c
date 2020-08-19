@@ -119,9 +119,10 @@ gs_pattern1_init(gs_pattern1_template_t * ppat)
 
 /* Make an instance of a PatternType 1 pattern. */
 static int compute_inst_matrix(gs_pattern1_instance_t *pinst,
-                               gs_rect *pbbox,
-                               int width, int height,
+                               gs_rect *pbbox, int width, int height,
                                float *bbw, float *bbh);
+static int fix_bbox_after_matrix_adjustment(gs_pattern1_instance_t *pinst,
+                                            gs_rect *pbbox);
 int
 gs_makepattern(gs_client_color * pcc, const gs_pattern1_template_t * pcp,
                const gs_matrix * pmat, gs_gstate * pgs, gs_memory_t * mem)
@@ -250,10 +251,6 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                 ) {
                 gs_scale(saved, inst.size.x / inst.step_matrix.xx,
                                 inst.size.y / inst.step_matrix.yy);
-                code = compute_inst_matrix(&inst, &bbox,
-                                           dev_width, dev_height, &bbw, &bbh);
-                if (code < 0)
-                    goto fsaved;
                 if (ADJUST_SCALE_FOR_THIN_LINES) {
                     /* To allow thin lines at a cell boundary
                        to be painted inside the cell,
@@ -262,6 +259,10 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                     gs_scale(saved, (inst.size.x - 1.0 / fixed_scale) / inst.size.x,
                                     (inst.size.y - 1.0 / fixed_scale) / inst.size.y);
                 }
+                code = compute_inst_matrix(&inst, &bbox,
+                                           dev_width, dev_height, &bbw, &bbh);
+                if (code < 0)
+                    goto fsaved;
                 if_debug2m('t', mem,
                            "[t]adjusted XStep & YStep to size=(%d,%d)\n",
                            inst.size.x, inst.size.y);
@@ -327,7 +328,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                             gs_scale(saved, 1, (inst.size.y - 1.0 / fixed_scale) / inst.size.y);
 #endif
                     }
-                    code = gs_bbox_transform(&inst.templat.BBox, &ctm_only(saved), &bbox);
+                    code = fix_bbox_after_matrix_adjustment(&inst, &bbox);
                     if (code < 0)
                         goto fsaved;
                 }
@@ -342,7 +343,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                                  fabs(inst.step_matrix.yy - bbh) <= 0.5) ?
                                 (bbh - inst.size.y)/2 : 0);
                 gs_translate_untransformed(saved, shiftx, shifty);
-                code = gs_bbox_transform(&inst.templat.BBox, &ctm_only(saved), &bbox);
+                code = fix_bbox_after_matrix_adjustment(&inst, &bbox);
                 if (code < 0)
                     goto fsaved;
             }
@@ -529,6 +530,40 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
     return 0;
 }
 
+static int
+adjust_bbox_to_pixel_origin(gs_pattern1_instance_t *pinst, gs_rect *pbbox)
+{
+    gs_gstate * saved = pinst->saved;
+    float dx, dy;
+    int code = 0;
+
+    /*
+     * Adjust saved.ctm to map the bbox origin to pixels.
+     */
+    dx = pbbox->p.x - floor(pbbox->p.x + 0.5);
+    dy = pbbox->p.y - floor(pbbox->p.y + 0.5);
+    if (dx != 0 || dy != 0) {
+        pbbox->p.x -= dx;
+        pbbox->p.y -= dy;
+        pbbox->q.x -= dx;
+        pbbox->q.y -= dy;
+
+        if (saved->ctm.txy_fixed_valid) {
+            code = gx_translate_to_fixed(saved, float2fixed_rounded(saved->ctm.tx - dx),
+                                                float2fixed_rounded(saved->ctm.ty - dy));
+        } else {         /* the ctm didn't fit in a fixed. Just adjust the float values */
+            saved->ctm.tx -= dx;
+            saved->ctm.ty -= dy;
+            /* not sure if this is needed for patterns, but lifted from gx_translate_to_fixed */
+            code = gx_path_translate(saved->path, float2fixed(-dx), float2fixed(-dy));
+        }
+    }
+    pinst->step_matrix.tx = saved->ctm.tx;
+    pinst->step_matrix.ty = saved->ctm.ty;
+
+    return code;
+}
+
 /* Compute the stepping matrix and device space instance bounding box */
 /* from the step values and the saved matrix. */
 static int
@@ -558,24 +593,8 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst,
     pbbox->p.y += ctm_only(saved).ty;
     pbbox->q.x += ctm_only(saved).tx;
     pbbox->q.y += ctm_only(saved).ty;
-    /*
-     * Adjust saved.ctm to map the bbox origin to pixels.
-     */
-    dx = pbbox->p.x - floor(pbbox->p.x + 0.5);
-    dy = pbbox->p.y - floor(pbbox->p.y + 0.5);
-    pbbox->p.x -= dx;
-    pbbox->p.y -= dy;
-    pbbox->q.x -= dx;
-    pbbox->q.y -= dy;
-    if (saved->ctm.txy_fixed_valid) {
-        code = gx_translate_to_fixed(saved, float2fixed_rounded(saved->ctm.tx - dx),
-                                            float2fixed_rounded(saved->ctm.ty - dy));
-    } else {         /* the ctm didn't fit in a fixed. Just adjust the float values */
-        saved->ctm.tx -= dx;
-        saved->ctm.ty -= dy;
-        /* not sure if this is needed for patterns, but lifted from gx_translate_to_fixed */
-        code = gx_path_translate(saved->path, float2fixed(-dx), float2fixed(-dy));
-    }
+
+    code = adjust_bbox_to_pixel_origin(pinst, pbbox);
     if (code < 0)
         return code;
 
@@ -599,8 +618,7 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst,
     pinst->step_matrix.xy = xy;
     pinst->step_matrix.yx = yx;
     pinst->step_matrix.yy = yy;
-    pinst->step_matrix.tx = saved->ctm.tx;
-    pinst->step_matrix.ty = saved->ctm.ty;
+
     /*
      * Some applications produce patterns that are larger than the page.
      * If the bounding box for the pattern is larger than the page. clamp
@@ -609,6 +627,23 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst,
     if ((pbbox->q.x - pbbox->p.x > width || pbbox->q.y - pbbox->p.y > height))
         code = clamp_pattern_bbox(pinst, pbbox, width,
                                         height, &ctm_only(saved));
+
+    return code;
+}
+
+static int
+fix_bbox_after_matrix_adjustment(gs_pattern1_instance_t *pinst, gs_rect *pbbox)
+{
+    int code;
+    gs_gstate * saved = pinst->saved;
+
+    code = gs_bbox_transform(&pinst->templat.BBox, &ctm_only(saved), pbbox);
+    if (code < 0)
+        return code;
+
+    code = adjust_bbox_to_pixel_origin(pinst, pbbox);
+    if (code < 0)
+        return code;
 
     return code;
 }
