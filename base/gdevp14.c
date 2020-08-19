@@ -1222,7 +1222,7 @@ pdf14_ctx_new(gx_device *dev, bool deep)
 {
     pdf14_ctx *result;
     gs_memory_t	*memory = dev->memory->stable_memory;
- 
+
     result = gs_alloc_struct(memory, pdf14_ctx, &st_pdf14_ctx, "pdf14_ctx_new");
     if (result == NULL)
         return result;
@@ -1269,7 +1269,6 @@ pdf14_find_backdrop_buf(gx_device* dev, pdf14_ctx *ctx, bool *is_backdrop)
 {
     /* Our new buffer is buf */
     pdf14_buf *buf = ctx->stack;
-    pdf14_device* pdev = (pdf14_device*)dev;
 
     *is_backdrop = false;
 
@@ -1333,7 +1332,7 @@ pdf14_make_base_group_color(gx_device* dev)
     memcpy(&(group_color->comp_shift), &(pdev->color_info.comp_shift),
         GX_DEVICE_COLOR_MAX_COMPONENTS);
     group_color->get_cmap_procs = pdf14_get_cmap_procs;
-    group_color->icc_profile = 
+    group_color->icc_profile =
         pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
     gsicc_adjust_profile_rc(group_color->icc_profile, 1, "pdf14_make_base_group_color");
 
@@ -1421,7 +1420,7 @@ pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive, const gs_gstate*
     memcpy(&(buf->group_color_info->comp_shift), &(pdev->color_info.comp_shift),
         GX_DEVICE_COLOR_MAX_COMPONENTS);
     buf->group_color_info->previous = NULL;  /* used during clist writing */
-    buf->group_color_info->icc_profile = 
+    buf->group_color_info->icc_profile =
         pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
     if (buf->group_color_info->icc_profile != NULL)
         gsicc_adjust_profile_rc(buf->group_color_info->icc_profile, 1, "pdf14_initialize_ctx");
@@ -1598,7 +1597,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     if (maskbuf != NULL && maskbuf->matte != NULL)
         has_matte = true;
 
-    /* Check if this is our last buffer, if yes, there is nothing to 
+    /* Check if this is our last buffer, if yes, there is nothing to
        compose to.  Keep this buffer until we have the put image.
        If we have another group push, this group must be destroyed.
        This only occurs sometimes when at clist creation time
@@ -1786,7 +1785,7 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
 
     if (ctx->stack == NULL) {
         return_error(gs_error_VMerror);
-    } 
+    }
 
     /* An optimization to consider is that if the SubType is Alpha
        then we really should only be allocating the alpha band and
@@ -2420,7 +2419,7 @@ pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profi
     global_index++;
 #endif
 
-    /* If we are doing a 16 bit buffer it will be big endian if we have already done the 
+    /* If we are doing a 16 bit buffer it will be big endian if we have already done the
        blend, otherwise it will be native endian */
     if (was_blended && (*buf)->deep) {
         big_endian = true;
@@ -2589,7 +2588,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         } else {
             /* In this case, just color convert and maintain alpha.  This is a case
                where we either either blend in the right color space and have no
-               alpha for the output device or hand back the wrong color space with 
+               alpha for the output device or hand back the wrong color space with
                alpha data.  We choose the later. */
             code = pdf14_put_image_color_convert(pdev, pgs, src_profile,
                 dev_target_profile, &buf, &buf_ptr, false, rect.p.x, rect.p.y,
@@ -2661,7 +2660,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
             rect.p.x, rect.p.y, width, height, rowstride, alpha_offset,
             tag_offset);
         /* Right now code has number of rows written */
-    
+
     }
 
     /* If code > 0 then put image worked.  Let it finish and then exit */
@@ -2979,7 +2978,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
         des_profile->hash_is_valid = true;
     }
 
-    if (pdev->using_blend_cs || 
+    if (pdev->using_blend_cs ||
         des_profile->hashcode != src_profile->hashcode)
         color_mismatch = true;
 
@@ -3373,7 +3372,7 @@ static void pdf14_cleanup_group_color_profiles (pdf14_device *pdev)
 
                        gsicc_adjust_profile_rc(pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
                                                -1, "pdf14_end_transparency_group");
-                       pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] = 
+                       pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] =
                            group_color_info->icc_profile;
                        group_color_info->icc_profile = NULL;
                    }
@@ -6405,7 +6404,7 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
             break;
     }
 
-    if (group_color_type == ICC && iccprofile != NULL) {       
+    if (group_color_type == ICC && iccprofile != NULL) {
         group_color->icc_profile = iccprofile;
         gsicc_adjust_profile_rc(iccprofile, 1, "pdf14_push_color_model");
     }
@@ -11175,11 +11174,11 @@ pdf14_increment_smask_color(gs_gstate * pgs, gx_device * dev)
         result = gs_alloc_struct(pdev->memory->stable_memory, pdf14_smaskcolor_t,
                                 &st_pdf14_smaskcolor,
                                 "pdf14_increment_smask_color");
-        if (result == NULL) 
+        if (result == NULL)
             return gs_error_VMerror;
 
         result->profiles = gsicc_new_iccsmask(pdev->memory->stable_memory);
-        if (result->profiles == NULL) 
+        if (result->profiles == NULL)
             return gs_error_VMerror;
 
         pdev->smaskcolor = result;
