@@ -119,7 +119,6 @@ gs_pattern1_init(gs_pattern1_template_t * ppat)
 
 /* Make an instance of a PatternType 1 pattern. */
 static int compute_inst_matrix(gs_pattern1_instance_t *pinst,
-                               gs_gstate *saved,
                                gs_rect *pbbox,
                                int width, int height,
                                float *bbw, float *bbh);
@@ -185,7 +184,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
             goto fsaved;
     }
     inst.templat = *pcp;
-    code = compute_inst_matrix(&inst, saved, &bbox, dev_width, dev_height, &bbw, &bbh);
+    code = compute_inst_matrix(&inst, &bbox, dev_width, dev_height, &bbw, &bbh);
     if (code < 0)
         goto fsaved;
 
@@ -229,7 +228,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
         }
 
         /* After compute_inst_matrix above, we are guaranteed that
-         * inst.step_matrix.xx >= 0 and inst.step_matrix.yy >= 0.
+         * inst.step_matrix.xx > 0 and inst.step_matrix.yy > 0.
          * Similarly, we are guaranteed that inst.size.x >= 0 and
          * inst.size.y >= 0. */
         if (inst.size.x == 0 || inst.size.y == 0) {
@@ -251,7 +250,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                 ) {
                 gs_scale(saved, inst.size.x / inst.step_matrix.xx,
                                 inst.size.y / inst.step_matrix.yy);
-                code = compute_inst_matrix(&inst, saved, &bbox,
+                code = compute_inst_matrix(&inst, &bbox,
                                            dev_width, dev_height, &bbw, &bbh);
                 if (code < 0)
                     goto fsaved;
@@ -533,12 +532,13 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
 /* Compute the stepping matrix and device space instance bounding box */
 /* from the step values and the saved matrix. */
 static int
-compute_inst_matrix(gs_pattern1_instance_t * pinst, gs_gstate * saved,
+compute_inst_matrix(gs_pattern1_instance_t * pinst,
                     gs_rect * pbbox, int width, int height,
                     float *pbbw, float *pbbh)
 {
     float xx, xy, yx, yy, dx, dy, temp;
     int code;
+    gs_gstate * saved = pinst->saved;
     gs_matrix m = ctm_only(saved);
 
     /* Bug 702124: Due to the limited precision of floats, we find that
