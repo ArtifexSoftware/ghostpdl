@@ -1350,6 +1350,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             code = make_device_color_space(pdev, pdev->pcm_color_info_index, &pcs_device);
             if (code < 0)
                 goto fail_and_fallback;
+            rc_decrement(image[0].pixel.ColorSpace, "pdf_begin_typed_image(pixel.ColorSpace)");
             image[0].pixel.ColorSpace = pcs_device;
             image[0].pixel.BitsPerComponent = 8;
             code = pdf_color_space_named(pdev, pgs, &cs_value, &pranges, pcs_device, names,
@@ -1614,7 +1615,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     /* Free pie only if there was an error or we are falling back */
     if (code < 0 || use_fallback) {
         if (pie)
-            gs_free_object(mem, pie, "pdf_begin_image");
+            gs_free_object(mem, pie, "pdf_begin_typed_image(pie)");
         *pinfo = NULL;
     }
     /* Do the fallback */
