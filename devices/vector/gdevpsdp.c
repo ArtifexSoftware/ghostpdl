@@ -1055,11 +1055,8 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
  */
 static int psdf_copy_param_string_array(gs_memory_t *mem, gs_param_list * plist, gs_param_string_array *sa, gs_param_string_array *da)
 {
-    int code;
-
     if (sa->size > 0) {
         int ix;
-        byte **dest;
 
         if (da->data != NULL) {
             for (ix = 0; ix < da->size;ix++)
@@ -1088,7 +1085,7 @@ static int psdf_copy_param_string_array(gs_memory_t *mem, gs_param_list * plist,
     return 0;
 }
 
-static int psdf_read_copy_param_string_array(gs_memory_t *mem, gs_param_list * plist, char *Key, gs_param_string_array *da)
+static int psdf_read_copy_param_string_array(gs_memory_t *mem, gs_param_list * plist, const char *Key, gs_param_string_array *da)
 {
     gs_param_string_array sa;
     int code;
