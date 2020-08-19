@@ -270,7 +270,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     const float *decode = pim->Decode;
     gs_matrix_double mat;
     int index_bps;
-    const gs_color_space *pcs = pim->ColorSpace;
+    gs_color_space *pcs = pim->ColorSpace;
     gs_logical_operation_t lop = (pgs ? pgs->log_op : lop_default);
     int code;
     int log2_xbytes = (bps <= 8 ? 0 : arch_log2_sizeof_frac);
@@ -806,6 +806,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
          image_skewed);
     penum->pgs = pgs;
     penum->pcs = pcs;
+    rc_increment_cs(pcs); /* Grab a ref (will decrement in gx_image1_end_image() */
     penum->memory = mem;
     penum->buffer = buffer;
     penum->buffer_size = bsize;
@@ -1100,11 +1101,11 @@ decode_range_needed(gx_image_enum *penum)
     bool scale = true;
 
     if (penum->map[0].decoding == sd_compute) {
-        if (!(gs_color_space_is_ICC(penum->pcs) || 
+        if (!(gs_color_space_is_ICC(penum->pcs) ||
             gs_color_space_is_PSCIE(penum->pcs))) {
             scale = false;
-        } 
-    } 
+        }
+    }
     return scale;
 }
 
@@ -1265,8 +1266,8 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
         gsicc_init_buffer(&output_buff_desc, num_des_comp, 1, false, false, false,
                           0, num_entries * num_des_comp,
                       1, num_entries);
-        (penum->icc_link->procs.map_buffer)(penum->dev, penum->icc_link, 
-                                            &input_buff_desc, &output_buff_desc, 
+        (penum->icc_link->procs.map_buffer)(penum->dev, penum->icc_link,
+                                            &input_buff_desc, &output_buff_desc,
                                             (void*) temp_buffer,
                                             (void*) penum->color_cache->device_contone);
         /* Check if we need to apply any transfer functions.  If so then do it now */
@@ -1439,12 +1440,12 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
             cc.paint.values[0] = real_decode[0];
             code = (*pcs->type->remap_color) (&cc, pcs, penum->icolor0,
                                        pgs, dev, gs_color_select_source);
-            if (code < 0) 
+            if (code < 0)
                 return code;
             cc.paint.values[0] = real_decode[1];
             code = (*pcs->type->remap_color) (&cc, pcs, penum->icolor1,
                                        pgs, dev, gs_color_select_source);
-            if (code < 0) 
+            if (code < 0)
                 return code;
         }
     }

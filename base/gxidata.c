@@ -208,7 +208,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
             dmprintf1(dev->memory, "[b]image1 y=%d\n", y);
         if (gs_debug_c('B')) {
             int i, n = width_spp;
-            byte *buftemp = (buffer == NULL) ? penum->buffer : buffer;
+            byte *buftemp = (buffer == NULL) ? penum->buffer : (byte *)buffer;
 
             if (penum->bps > 8)
                 n *= 2;
@@ -521,6 +521,11 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     if (penum->clues != NULL) {
         gs_free_object(mem,penum->clues, "image clues");
     }
+
+    /* decrement this ref that was incremented in gx_image_enum_begin() */
+    rc_decrement_only(penum->pcs, "pcs");
+    penum->pcs = NULL;
+
     gs_free_object(mem, penum->line, "image line");
     gs_free_object(mem, penum->buffer, "image buffer");
 
