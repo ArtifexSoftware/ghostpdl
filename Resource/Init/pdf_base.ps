@@ -288,9 +288,11 @@ currentdict /num-chars-dict .undef
 % Execute a file, like .pdfrun, for a marking context.
 % This temporarily rebinds LocalResources and DefaultQstate.
 /.pdfruncontext {		% <resdict> <file> <opdict> .pdfruncontext -
-  /.pdfrun load LocalResources DefaultQstate
-  /LocalResources 7 -1 roll
-  dup /ParentResources LocalResources put % save the parent LocalResources
+  /.pdfrun load LocalResources DefaultQstate % res file op .pdfrun Loc Qst
+  /LocalResources 7 -1 roll                  % file op .pdfrun Loc Qst /Loc res
+  dup 4 index ne { % Ensure Loc != res to avoid self-referencing /ParentResources
+     dup /ParentResources 5 index put        % save the parent LocalResources
+  } if
   store		% store new LocalResources
   /DefaultQstate qstate store
   3 .execn
