@@ -222,15 +222,22 @@ dmprintf_file_only(const gs_memory_t *mem,const char *file)
         dpfm(mem, dprintf_file_only_format, dprintf_file_tail(file));
 }
 #endif
+
+/* This calculation is also performed for pdfwrite to manufacture the Producer string
+ * in PDF output. The code is in ghostpdl/devices/vector/gdevpdfu.c pdf_store_default_Producer().
+ * Should we change this calculation both sets of code need to be updated.
+ */
 void
 printf_program_ident(const gs_memory_t *mem, const char *program_name, long revision_number)
 {
     if (program_name)
         outprintf(mem, (revision_number ? "%s " : "%s"), program_name);
     if (revision_number) {
-        int fpart = revision_number % 100;
+        int major = (int)(revision_number / 1000);
+        int minor = (int)(revision_number - (major * 1000)) / 10;
+        int patch = revision_number % 10;
 
-        outprintf(mem, "%d.%02d", (int)(revision_number / 100), fpart);
+        outprintf(mem, "%d.%02d.%d", major, minor, patch);
     }
 }
 void
@@ -241,9 +248,11 @@ emprintf_program_ident(const gs_memory_t *mem,
     if (program_name) {
         epfm(mem, (revision_number ? "%s " : "%s"), program_name);
         if (revision_number) {
-            int fpart = revision_number % 100;
+        int major = (int)(revision_number / 1000);
+        int minor = (int)(revision_number - (major * 1000)) / 10;
+        int patch = revision_number % 10;
 
-            epfm(mem, "%d.%02d", (int)(revision_number / 100), fpart);
+            epfm(mem, "%d.%02d.%d", major, minor, patch);
         }
         epfm(mem, ": ");
     }

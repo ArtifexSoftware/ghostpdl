@@ -6023,6 +6023,9 @@
     <ClCompile Include="..\base\gsparaml.c">
       <Filter>base</Filter>
     </ClCompile>
+    <ClCompile Include="..\base\gdevkrnlsclass.c">
+      <Filter>base\gldevices</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\base\aes.h">
@@ -8958,6 +8961,12 @@
     </ClInclude>
     <ClInclude Include="..\tesseract\src\wordrec\wordrec.h">
       <Filter>tesseract\wordrec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\gdevkrnlsclass.h">
+      <Filter>base %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\gdevepo.h">
+      <Filter>base %28.h%29\gldevices %28.h%29</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

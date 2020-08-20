@@ -34,11 +34,12 @@
 #define TIFF_PRINT_BUF_LENGTH 1024
 static const char tifs_msg_truncated[] = "\n*** Previous line has been truncated.\n";
 
-/* place to hold the data for our libtiff i/o hooks */
+/* place to hold the data for our libtiff i/o hooks
+ */
 typedef struct tifs_io_private_t
 {
     gp_file *f;
-    gx_device_printer *pdev;
+    gs_memory_t *memory;
 } tifs_io_private;
 
 /* libtiff i/o hooks */
@@ -104,12 +105,11 @@ static int
 gs_tifsCloseProc(thandle_t fd)
 {
     tifs_io_private *tiffio = (tifs_io_private *)fd;
-    gx_device_printer *pdev = tiffio->pdev;
 
     /* We don't close tiffio->f as this will be closed later by the
      * device. */
 
-    gs_free(pdev->memory, tiffio, sizeof(tifs_io_private), 1, "gs_tifsCloseProc");
+    gs_free(tiffio->memory, tiffio, sizeof(tifs_io_private), 1, "gs_tifsCloseProc");
 
     return 0;
 }
@@ -160,7 +160,7 @@ tiff_from_filep(gx_device_printer *dev,  const char *name, gp_file *filep, int b
         return NULL;
     }
     tiffio->f = filep;
-    tiffio->pdev = dev;
+    tiffio->memory = dev->memory;
 
     t = TIFFClientOpen(name, mode,
         (thandle_t) tiffio, (TIFFReadWriteProc)gs_tifsReadProc,
@@ -175,16 +175,15 @@ static void
 gs_tifsWarningHandlerEx(thandle_t client_data, const char* module, const char* fmt, va_list ap)
 {
     tifs_io_private *tiffio = (tifs_io_private *)client_data;
-    gx_device_printer *pdev = tiffio->pdev;
     int count;
     char buf[TIFF_PRINT_BUF_LENGTH];
 
     count = vsnprintf(buf, sizeof(buf), fmt, ap);
     if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99 */
-        dmlprintf1(pdev->memory, "%s", buf);
-        dmlprintf1(pdev->memory, "%s\n", tifs_msg_truncated);
+        dmlprintf1(tiffio->memory, "%s", buf);
+        dmlprintf1(tiffio->memory, "%s\n", tifs_msg_truncated);
     } else {
-        dmlprintf1(pdev->memory, "%s\n", buf);
+        dmlprintf1(tiffio->memory, "%s\n", buf);
     }
 }
 
@@ -192,22 +191,21 @@ static void
 gs_tifsErrorHandlerEx(thandle_t client_data, const char* module, const char* fmt, va_list ap)
 {
     tifs_io_private *tiffio = (tifs_io_private *)client_data;
-    gx_device_printer *pdev = tiffio->pdev;
     const char *max_size_error = "Maximum TIFF file size exceeded";
     int count;
     char buf[TIFF_PRINT_BUF_LENGTH];
 
     count = vsnprintf(buf, sizeof(buf), fmt, ap);
     if (count < 0 || count >= sizeof(buf) )  { /* MSVC || C99 */
-        dmlprintf1(pdev->memory, "%s\n", buf);
-        dmlprintf1(pdev->memory, "%s", tifs_msg_truncated);
+        dmlprintf1(tiffio->memory, "%s\n", buf);
+        dmlprintf1(tiffio->memory, "%s", tifs_msg_truncated);
     } else {
-        dmlprintf1(pdev->memory, "%s\n", buf);
+        dmlprintf1(tiffio->memory, "%s\n", buf);
     }
 
 #if (TIFFLIB_VERSION >= 20111221)
     if (!strncmp(fmt, max_size_error, strlen(max_size_error))) {
-        dmlprintf(pdev->memory, "Use -dUseBigTIFF(=true) for BigTIFF output\n");
+        dmlprintf(tiffio->memory, "Use -dUseBigTIFF(=true) for BigTIFF output\n");
     }
 #endif
 }

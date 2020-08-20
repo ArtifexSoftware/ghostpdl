@@ -63,9 +63,8 @@ int pl_main_set_parsed_param(pl_main_instance_t *minst, const char *arg);
 typedef enum {
     pl_spt_invalid = -1,
     pl_spt_null    = 0,   /* void * is NULL */
-    pl_spt_bool    = 1,   /* For set, void * is NULL (false) or non-NULL
-                           * (true). For get, void * points to an int,
-                           * 0 false, 1 true. */
+    pl_spt_bool    = 1,   /* void * is a pointer to an int (0 false,
+                           * non-zero true). */
     pl_spt_int     = 2,   /* void * is a pointer to an int */
     pl_spt_float   = 3,   /* void * is a float * */
     pl_spt_name    = 4,   /* void * is a char * */

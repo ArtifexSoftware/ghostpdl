@@ -299,7 +299,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     jxr_destroy_container(container);
 
     gp_fclose(file);
-    unlink(name);
+    gp_unlink(ctx->memory, name);
     xps_free(ctx, name);
 
     return gs_okay;

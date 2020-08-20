@@ -372,9 +372,8 @@ gsapi_exit(void *instance);
 typedef enum {
     gs_spt_invalid = -1,
     gs_spt_null    = 0,   /* void * is NULL */
-    gs_spt_bool    = 1,   /* For set, void * is NULL (false) or non-NULL
-                           * (true). For get, void * points to an int,
-                           * 0 false, 1 true. */
+    gs_spt_bool    = 1,   /* void * is a pointer to an int (0 false,
+                           * non-zero true). */
     gs_spt_int     = 2,   /* void * is a pointer to an int */
     gs_spt_float   = 3,   /* void * is a float * */
     gs_spt_name    = 4,   /* void * is a char * */

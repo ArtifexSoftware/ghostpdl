@@ -389,6 +389,32 @@ update(void *handle, void *device, int x, int y, int w, int h)
     return 0;
 }
 
+void *
+aligned_malloc(size_t size, int alignment)
+{
+    char *ret = malloc(size + alignment*2);
+    int boost;
+
+    if (ret == NULL)
+        return ret;
+
+    boost = alignment - (((intptr_t)ret) & (alignment-1));
+    memset(ret, boost, boost);
+
+    return ret + boost;
+}
+
+void aligned_free(void *ptr)
+{
+    char *p = ptr;
+
+    if (ptr == NULL)
+        return;
+
+    p -= p[-1];
+    free(p);
+}
+
 static void *
 memalloc(void *handle, void *device, size_t size)
 {
@@ -402,7 +428,7 @@ memalloc(void *handle, void *device, size_t size)
         return 0;
     }
 
-    ret = malloc(size);
+    ret = aligned_malloc(size, 64);
     printf("memalloc: %"FMT_Z" -> %p\n", Z_CAST size, ret);
 
     return ret;
@@ -415,7 +441,7 @@ memfree(void *handle, void *device, void *mem)
 
     SANITY_CHECK(ts);
     printf("memfree: %p\n", mem);
-    free(mem);
+    aligned_free(mem);
 
     return 0;
 }
@@ -474,7 +500,7 @@ rectangle_request(void *handle, void *device,
     if (ts->mem) {
         /* Rectangle returned */
         save_lines(ts, ts->lines_requested);
-        free(ts->mem);
+        aligned_free(ts->mem);
         ts->mem = NULL;
         ts->y += ts->lines_requested;
         ts->lines_requested = 0;
@@ -524,7 +550,7 @@ rectangle_request(void *handle, void *device,
     }
     *raster = ts->r;
     *plane_raster = ts->pr;
-    ts->mem = malloc(size);
+    ts->mem = aligned_malloc(size, 64);
     *memory = ts->mem;
 
     printf("x=%d y=%d w=%d h=%d mem=%p\n", *x, *y, *w, *h, *memory);
@@ -662,7 +688,7 @@ static int do_ddtest(const char *title, int format,
     }
     /* Special case: alignments are always at least pointer sized. */
     if (teststate.align <= sizeof(void *))
-        teststate.align = 8;
+        teststate.align = sizeof(void *);
 
     /* Print the test title. */
     printf("%s%s%s%s\n", title, clist_str, legacy_str, align_str);
@@ -936,23 +962,26 @@ param_test(const char *dev, char *outfile)
         goto fail;
     }
 
-    /* This should fail, as /Baz is not an expected error. */
+    /* This should fail, as /Baz is not an expected param. */
     code = gsapi_get_param(instance, "Baz", buffer, gs_spt_parsed);
-    if (code == -1) {
+    if (code == -21) {
         printf("Got expected error gsapi_get_param\n");
     } else  {
         printf("Error %d in gsapi_get_param\n", code);
         goto fail;
     }
 
-    code = gsapi_set_param(instance, "foo", (void *)"32", gs_spt_int);
+    i = 32;
+    code = gsapi_set_param(instance, "foo", (void *)&i, gs_spt_int);
     if (code < 0) {
         printf("Error %d in gsapi_set_param\n", code);
         goto fail;
     }
 
     code = gsapi_get_param(instance, "foo", (void *)&i, gs_spt_int);
-    if (code < 0) {
+    if (code == -21)
+        printf("Got expected error gsapi_get_param\n");
+    else if (code < 0) {
         printf("Error %d in gsapi_set_param\n", code);
         goto fail;
     }

@@ -274,6 +274,18 @@ gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
     return fopen(fname, mode);
 }
 
+int
+gp_unlink_impl(gs_memory_t *mem, const char *fname)
+{
+    return unlink(fname);
+}
+
+int
+gp_rename_impl(gs_memory_t *mem, const char *from, const char *to)
+{
+    return rename(from, to);
+}
+
 int gp_stat_impl(const gs_memory_t *mem, const char *path, struct stat *buf)
 {
     return stat(path, buf);
@@ -711,11 +723,11 @@ bool gp_fseekable_impl(FILE *f)
 {
     struct stat s;
     int fno;
-    
+
     fno = fileno(f);
     if (fno < 0)
         return(false);
-    
+
     if (fstat(fno, &s) < 0)
         return(false);
 

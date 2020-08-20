@@ -1930,7 +1930,7 @@ txtwrite_process_cmap_text(gs_text_enum_t *pte)
                 code = gs_matrix_multiply(&subfont->FontMatrix, &pte->orig_font->FontMatrix, &m3);
                 if (code < 0)
                     return code;
-                code = txt_update_text_state(penum->text_state, (textw_text_enum_t *)pte, pte->orig_font, &m3);
+                code = txt_update_text_state(penum->text_state, (textw_text_enum_t *)pte, subfont, &m3);
                 if (code < 0)
                     return code;
                 txt_char_widths_to_uts(pte->orig_font, &widths); /* convert design->text space */

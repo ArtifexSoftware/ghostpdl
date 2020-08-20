@@ -934,6 +934,7 @@
     <ClCompile Include="..\base\gdevepo.c" />
     <ClCompile Include="..\base\gdevflp.c" />
     <ClCompile Include="..\base\gdevhit.c" />
+    <ClCompile Include="..\base\gdevkrnlsclass.c" />
     <ClCompile Include="..\base\gdevm1.c" />
     <ClCompile Include="..\base\gdevm16.c" />
     <ClCompile Include="..\base\gdevm2.c" />
@@ -2456,7 +2457,9 @@
     <ClInclude Include="..\base\gdevddrw.h" />
     <ClInclude Include="..\base\gdevdevn.h" />
     <ClInclude Include="..\base\gdevdevnprn.h" />
+    <ClInclude Include="..\base\gdevepo.h" />
     <ClInclude Include="..\base\gdevflp.h" />
+    <ClInclude Include="..\base\gdevkrnlsclass.h" />
     <ClInclude Include="..\base\gdevmem.h" />
     <ClInclude Include="..\base\gdevmpla.h" />
     <ClInclude Include="..\base\gdevmplt.h" />

@@ -1998,13 +1998,18 @@ pdf_unclip(gx_device_pdf * pdev)
 /* ------ Miscellaneous output ------ */
 
 /* Generate the default Producer string. */
+/* This calculation is also performed for Ghostscript generally
+ * The code is in ghostpdl/base/gsmisc.c printf_program_ident().
+ * Should we change this calculation both sets of code need to be updated.
+ */
 void
 pdf_store_default_Producer(char buf[PDF_MAX_PRODUCER])
 {
-    if ((gs_revision % 100) == 0)
-        gs_sprintf(buf, "(%s %1.1f)", gs_product, gs_revision / 100.0);
-    else
-        gs_sprintf(buf, "(%s %1.2f)", gs_product, gs_revision / 100.0);
+    int major = (int)(gs_revision / 1000);
+    int minor = (int)(gs_revision - (major * 1000)) / 10;
+    int patch = gs_revision % 10;
+
+    gs_sprintf(buf, "(%s %d.%02d.%d)", gs_product, major, minor, patch);
 }
 
 /* Write matrix values. */

@@ -605,13 +605,61 @@ Parameters in this context are not the same as 'arguments' as processed by <code
 <p>
 Note, that internally, when we set a parameter, we perform an <code>initgraphics</code> operation. This means that using <code>set_param</code> other than at the start of a page is likely to give unexpected results.
 <p>Further, note that attempting to set a parameter that the device does not recognise will be silently ignored, and that parameter will not be found in subsequent <code>gsapi_get_param</code> calls.
+<p>The <code>type</code> argument dictates the kind of object that <code>value</code> points to:
+<pre><code>typedef enum {
+    gs_spt_invalid = -1,
+    gs_spt_null    = 0,   /* void * is NULL */
+    gs_spt_bool    = 1,   /* void * is a pointer to an int (0 false,
+                           * non-zero true). */
+    gs_spt_int     = 2,   /* void * is a pointer to an int */
+    gs_spt_float   = 3,   /* void * is a float * */
+    gs_spt_name    = 4,   /* void * is a char * */
+    gs_spt_string  = 5,   /* void * is a char * */
+    gs_spt_long    = 6,   /* void * is a long * */
+    gs_spt_i64     = 7,   /* void * is an int64_t * */
+    gs_spt_size_t  = 8,   /* void * is a size_t * */
+    gs_spt_parsed  = 9,   /* void * is a pointer to a char * to be parsed */
+
+    /* Setting a typed param causes it to be instantly fed to to the
+     * device. This can cause the device to reinitialise itself. Hence,
+     * setting a sequence of typed params can cause the device to reset
+     * itself several times. Accordingly, if you OR the type with
+     * gs_spt_more_to_come, the param will held ready to be passed into
+     * the device, and will only actually be sent when the next typed
+     * param is set without this flag (or on device init). Not valid
+     * for get_typed_param. */
+    gs_spt_more_to_come = 1<<31
+} gs_set_param_type;
+</code></pre>
+<p>Combining a type value by ORRing it with the <code>gs_spt_more_to_come</code> flag will cause the <code>set_param</code> operation to be queued internally, but not actually be sent to the device. Thus a series of <code>set_param</code> operations can be queued, for example as below:
+<pre>
+  int code = gsapi_set_param(instance,
+                             "HWResolution",
+                             "[300 300]",
+                             gs_spt_parsed | gs_spt_more_to_come);
+  if (code >= 0) {
+    int i = 1;
+    code = gsapi_set_param(instance,
+                           "FirstPage",
+                           &i,
+                           gs_spt_int | gs_spt_more_to_come);
+  }
+  if (code >= 0) {
+    int i = 3;
+    code = gsapi_set_param(instance,
+                           "DownScaleFactor",
+                           &i,
+                           gs_spt_int);
+  }
+</pre>
+<p>This enables a series of set operations to be performed 'atomically'. This can be useful for performance, in that any reconfigurations to the device (such as page size changes or memory reallocations) will only happen when all the parameters are sent, rather than potentially each time each one is sent.
 </blockquote>
 
 <h3><a name="get_param"></a><code>gsapi_get_param()</code></h3>
 <blockquote>
 Get a parameter.
 Retrieve the current value of a parameter.
-<p>If an error occurs, the return value is negative. Otherwise the return value is the number of bytes required for storage of the value. Call once with <code>value = NULL</code> to get the number of bytes required, then call again with <code>value</code> pointing to at least the required number of bytes where the value will be copied out. Note that the caller is required to know the type of value in order to get it. For all types other than <code>string</code>, <code>name</code>, <code>parsed</code> knowing the type means you already know the size required.
+<p>If an error occurs, the return value is negative. Otherwise the return value is the number of bytes required for storage of the value. Call once with <code>value = NULL</code> to get the number of bytes required, then call again with <code>value</code> pointing to at least the required number of bytes where the value will be copied out. Note that the caller is required to know the type of value in order to get it. For all types other than <code>string</code>, <code>name</code>, and <code>parsed</code> knowing the type means you already know the size required.
 <p>
 This call retrieves parameters/values that have made it to the device. Thus, any values set using the <code>gs_spt_more_to_come</code> without a following call without that flag will not be retrieved. Similarly, attempting to get a parameter before <code>gsapi_init_with_args</code> has been called will not list any, even if <code>gsapi_set_param</code> has been used.
 <p>

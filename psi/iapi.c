@@ -438,7 +438,7 @@ gsapi_set_param(void *lib, const char *param, const void *value, gs_set_param_ty
                                 param);
         break;
     case gs_spt_bool:
-        bval = (value != NULL);
+        bval = !!*(int *)value;
         code = param_write_bool((gs_param_list *) params,
                                 param, &bval);
         break;

@@ -208,7 +208,7 @@ $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
 
 $(GLOBJ)gp_winfs.$(OBJ): $(GLSRC)gp_winfs.c $(AK) $(gp_mswin_h) \
  $(memory__h) $(stdio__h) $(windows__h) $(gp_h) $(gserrors_h) \
- $(WINLIB_MAK)
+ $(gserrors_h) $(WINLIB_MAK)
 	$(GLCCWIN) $(GLO_)gp_winfs.$(OBJ) $(C_) $(GLSRC)gp_winfs.c
 
 $(AUX)gp_winfs.$(OBJ): $(GLSRC)gp_winfs.c $(AK) $(gp_mswin_h) \

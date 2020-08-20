@@ -1904,7 +1904,7 @@ pl_main_set_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
                                 param);
         break;
     case pl_spt_bool:
-        bval = (value != NULL);
+        bval = !!*(int *)value;
         code = param_write_bool((gs_param_list *) params,
                                 param, &bval);
         break;

@@ -228,6 +228,10 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
             inst.size.y = (int)ceil(bbh);
         }
 
+        /* After compute_inst_matrix above, we are guaranteed that
+         * inst.step_matrix.xx >= 0 and inst.step_matrix.yy >= 0.
+         * Similarly, we are guaranteed that inst.size.x >= 0 and
+         * inst.size.y >= 0. */
         if (inst.size.x == 0 || inst.size.y == 0) {
             /*
              * The pattern is empty: the stepping matrix doesn't matter.
@@ -242,11 +246,11 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
             }
             if (ADJUST_SCALE_BY_GS_TRADITION &&
                 inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
-                fabs(fabs(inst.step_matrix.xx) - bbw) < 0.5 &&
-                fabs(fabs(inst.step_matrix.yy) - bbh) < 0.5
+                fabs(inst.step_matrix.xx - bbw) < 0.5 &&
+                fabs(inst.step_matrix.yy - bbh) < 0.5
                 ) {
-                gs_scale(saved, fabs(inst.size.x / inst.step_matrix.xx),
-                         fabs(inst.size.y / inst.step_matrix.yy));
+                gs_scale(saved, inst.size.x / inst.step_matrix.xx,
+                                inst.size.y / inst.step_matrix.yy);
                 code = compute_inst_matrix(&inst, saved, &bbox,
                                            dev_width, dev_height, &bbw, &bbh);
                 if (code < 0)
@@ -256,8 +260,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                        to be painted inside the cell,
                        we adjust the scale so that
                        the scaled width is in fixed_1 smaller */
-                    gs_scale(saved, (fabs(inst.size.x) - 1.0 / fixed_scale) / fabs(inst.size.x),
-                                    (fabs(inst.size.y) - 1.0 / fixed_scale) / fabs(inst.size.y));
+                    gs_scale(saved, (inst.size.x - 1.0 / fixed_scale) / inst.size.x,
+                                    (inst.size.y - 1.0 / fixed_scale) / inst.size.y);
                 }
                 if_debug2m('t', mem,
                            "[t]adjusted XStep & YStep to size=(%d,%d)\n",
@@ -266,8 +270,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                            bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
             } else if ((ADJUST_AS_ADOBE) && (inst.templat.TilingType != 2)) {
                 if (inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
-                    fabs(fabs(inst.step_matrix.xx) - bbw) < 0.5 &&
-                    fabs(fabs(inst.step_matrix.yy) - bbh) < 0.5
+                    fabs(inst.step_matrix.xx - bbw) < 0.5 &&
+                    fabs(inst.step_matrix.yy - bbh) < 0.5
                     ) {
                     if (inst.step_matrix.xx <= 2) {
                         /* Prevent a degradation - see -r72 mspro.pdf */
@@ -304,11 +308,11 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                            we adjust the scale so that
                            the scaled width is in fixed_1 smaller */
                         if (bbw >= inst.size.x - 1.0 / fixed_scale)
-                            gs_scale(saved, (fabs(inst.size.x) - 1.0 / fixed_scale) / fabs(inst.size.x), 1);
+                            gs_scale(saved, (inst.size.x - 1.0 / fixed_scale) / inst.size.x, 1);
 #endif
                     }
                     if (inst.step_matrix.yy <= 2) {
-                        gs_scale(saved, 1, fabs(inst.size.y / inst.step_matrix.yy));
+                        gs_scale(saved, 1, inst.size.y / inst.step_matrix.yy);
                         inst.step_matrix.yy = (float)inst.size.y;
                     } else {
 #if 0
@@ -321,7 +325,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 #else
                         inst.step_matrix.yy = (float)floor(inst.step_matrix.yy + 0.5);
                         if (bbh >= inst.size.y - 1.0 / fixed_scale)
-                            gs_scale(saved, 1, (fabs(inst.size.y) - 1.0 / fixed_scale) / fabs(inst.size.y));
+                            gs_scale(saved, 1, (inst.size.y - 1.0 / fixed_scale) / inst.size.y);
 #endif
                     }
                     code = gs_bbox_transform(&inst.templat.BBox, &ctm_only(saved), &bbox);
@@ -333,10 +337,10 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                 /* RJW: This codes with non-rotated cases (with or without a
                  * skew), but won't cope with rotated ones. Find an example. */
                 float shiftx = ((inst.step_matrix.yx == 0 &&
-                                 fabs(fabs(inst.step_matrix.xx) - bbw) <= 0.5) ?
+                                 fabs(inst.step_matrix.xx - bbw) <= 0.5) ?
                                 (bbw - inst.size.x)/2 : 0);
                 float shifty = ((inst.step_matrix.xy == 0 &&
-                                 fabs(fabs(inst.step_matrix.yy) - bbh) <= 0.5) ?
+                                 fabs(inst.step_matrix.yy - bbh) <= 0.5) ?
                                 (bbh - inst.size.y)/2 : 0);
                 gs_translate_untransformed(saved, shiftx, shifty);
                 code = gs_bbox_transform(&inst.templat.BBox, &ctm_only(saved), &bbox);
@@ -349,8 +353,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
         goto fsaved;
     if_debug4m('t', mem, "[t]ibbox=(%g,%g),(%g,%g)\n",
                inst.bbox.p.x, inst.bbox.p.y, inst.bbox.q.x, inst.bbox.q.y);
-    inst.is_simple = (fabs(inst.step_matrix.xx) == inst.size.x && inst.step_matrix.xy == 0 &&
-                      inst.step_matrix.yx == 0 && fabs(inst.step_matrix.yy) == inst.size.y);
+    inst.is_simple = (inst.step_matrix.xx == inst.size.x && inst.step_matrix.xy == 0 &&
+                      inst.step_matrix.yx == 0 && inst.step_matrix.yy == inst.size.y);
     if_debug6m('t', mem,
                "[t]is_simple? xstep=(%g,%g) ystep=(%g,%g) size=(%d,%d)\n",
                inst.step_matrix.xx, inst.step_matrix.xy,

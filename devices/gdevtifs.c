@@ -390,13 +390,17 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
     TIFFSetField(tif, TIFFTAG_YRESOLUTION, (float)ypi);
 
     {
-        char revs[10];
+        char revs[32];
 #define maxSoftware 40
         char softwareValue[maxSoftware];
+        int revision = gs_revision_number();
+        int major = (int)(revision / 1000);
+        int minor = (int)(revision - (major * 1000)) / 10;
+        int patch =  revision % 10;
 
         strncpy(softwareValue, gs_product, maxSoftware);
         softwareValue[maxSoftware - 1] = 0;
-        gs_sprintf(revs, " %1.2f", gs_revision / 100.0);
+        gs_sprintf(revs, " %d.%2d.%d", major, minor, patch);
         strncat(softwareValue, revs,
                 maxSoftware - strlen(softwareValue) - 1);
 

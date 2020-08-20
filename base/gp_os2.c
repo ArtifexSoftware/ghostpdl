@@ -328,7 +328,7 @@ gp_close_printer(gp_file *pfile, const char *fname)
     if ((strlen(fname) == 0) || is_os2_spool(fname)) {
         /* spool temporary file */
         pm_spool(mem, pm_prntmp, fname);
-        unlink(pm_prntmp);
+        unlink(pm_prntmp); /* unlink, not gp_unlink */
     }
 }
 
@@ -590,11 +590,11 @@ bool gp_fseekable_impl(FILE *f)
 {
     struct stat s;
     int fno;
-    
+
     fno = fileno(f);
     if (fno < 0)
         return(false);
-    
+
     if (fstat(fno, &s) < 0)
         return(false);
 

@@ -139,7 +139,7 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
         emprintf1(mem, "**** Could not open temporary file %s\n", fname);
 
     if (remove)
-        unlink(fname);
+        unlink(fname); /* unlink, not gp_unlink here. */
 
     return fp;
 #endif
@@ -154,6 +154,18 @@ gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
 #else
     return fopen(fname, mode);
 #endif
+}
+
+int
+gp_unlink_impl(gs_memory_t *mem, const char *fname)
+{
+    return unlink(fname);
+}
+
+int
+gp_rename_impl(gs_memory_t *mem, const char *from, const char *to)
+{
+    return rename(from, to);
 }
 
 int gp_stat_impl(const gs_memory_t *mem, const char *path, struct stat *buf)
