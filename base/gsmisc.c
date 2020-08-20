@@ -222,6 +222,11 @@ dmprintf_file_only(const gs_memory_t *mem,const char *file)
         dpfm(mem, dprintf_file_only_format, dprintf_file_tail(file));
 }
 #endif
+
+/* This calculation is also performed for pdfwrite to manufacture the Producer string
+ * in PDF output. The code is in ghostpdl/devices/vector/gdevpdfu.c pdf_store_default_Producer().
+ * Should we change this calculation both sets of code need to be updated.
+ */
 void
 printf_program_ident(const gs_memory_t *mem, const char *program_name, long revision_number)
 {
