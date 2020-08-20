@@ -2,6 +2,7 @@ package com.artifex.gsviewer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -28,7 +29,33 @@ public class ViewerController implements ViewerGUIListener {
 	private Document currentDocument;
 	private SmartLoader smartLoader;
 
-	public void open(final File file) {
+	public void open(File file) {
+		if (Document.shouldDistill(file)) {
+			int ret = source.showConfirmDialog("Distill", "Would you like to distill this document before opening?");
+			if (ret == ViewerWindow.CANCEL)
+				return;
+			else if (ret == ViewerWindow.YES) {
+				try {
+					JFileChooser chooser = new JFileChooser();
+					chooser.setCurrentDirectory(new File("."));
+					ret = chooser.showSaveDialog(source);
+					if (ret != JFileChooser.APPROVE_OPTION)
+						return;
+					File out = chooser.getSelectedFile();
+					if (out.exists()) {
+						ret = source.showConfirmDialog("Overwrite?", out.getName() + " already exists. Overwrite?");
+						if (ret != ViewerWindow.YES)
+							return;
+					}
+					if (currentDocument != null)
+						close();
+					file = Document.distillDocument(file, out);
+				} catch (IllegalStateException | IOException e) {
+					System.err.println("Failed to distill: " + e);
+				}
+			}
+		}
+
 		if (currentDocument != null)
 			close();
 		Document.loadDocumentAsync(file, (final Document doc, final Exception exception) -> {

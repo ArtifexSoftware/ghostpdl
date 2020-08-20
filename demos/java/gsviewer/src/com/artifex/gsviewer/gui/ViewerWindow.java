@@ -44,6 +44,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 	 */
 	public static final int MINI_VIEWER_PAGE_GAP = 10;
 
+	public static final int YES = JOptionPane.YES_OPTION;
+	public static final int NO = JOptionPane.NO_OPTION;
+	public static final int CANCEL = JOptionPane.CANCEL_OPTION;
+
 	private ViewerGUIListener guiListener;
 	private int currentPage, maxPage;
 	private double currentZoom;
@@ -780,6 +784,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 
 	public void showWarningDialog(String title, String message) {
 		JOptionPane.showMessageDialog(this, message, title, JOptionPane.WARNING_MESSAGE);
+	}
+
+	public int showConfirmDialog(String title, String message) {
+		return JOptionPane.showConfirmDialog(this, message, title, JOptionPane.YES_NO_CANCEL_OPTION);
 	}
 
 	/**
