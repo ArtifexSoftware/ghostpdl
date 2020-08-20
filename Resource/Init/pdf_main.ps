@@ -3151,31 +3151,37 @@ currentdict /PDF2PS_matrix_key undef
            }
            {
              exch pop                               % remove the 'on error' marker
-             dup //null ne {
-               dup /Subtype knownoget {
-                 /Highlight eq {      % Highlight annotation is always implemented
-                   pop pop //true exit  % as transparency.
+             dup type /dicttype eq {
+               dup //null ne {
+                 dup /Subtype knownoget {
+                   /Highlight eq {      % Highlight annotation is always implemented
+                     pop pop //true exit  % as transparency.
+                   } if
                  } if
-               } if
-               dup /AP knownoget {	% Get appearance dict for the annoation
-                 /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
-                   4 dict exch resourceusestransparency { pop pop //true exit } if
+                 dup /AP knownoget {	% Get appearance dict for the annoation
+                   /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
+                     4 dict exch resourceusestransparency { pop pop //true exit } if
+                   } if
+                 } if  			% If AP dict known
+                 dup /BM knownoget {
+                   pop pop pop //true exit
                  } if
-               } if  			% If AP dict known
-               dup /BM knownoget {
-                 pop pop pop //true exit
-               } if
-               dup /CA knownoget {
-                 1 le {
-                   pop pop //true exit
+                 dup /CA knownoget {
+                   1 le {
+                     pop pop //true exit
+                   } if
                  } if
-               } if
-               /ca knownoget {
-                 1 le {
-                   pop //true exit
+                 /ca knownoget {
+                   1 le {
+                     pop //true exit
+                   } if
                  } if
-               } if
+               } {
+                 pop
+               } ifelse
              } {
+               (   **** Error: Annotation entry is not a dictionary, ignoring it.\n) pdfformaterror
+               (               Output may be incorrect.\n) pdfformaterror
                pop
              } ifelse
            } ifelse
