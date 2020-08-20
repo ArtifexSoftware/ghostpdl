@@ -24,6 +24,7 @@ public class ViewerController implements ViewerGUIListener {
 
 	private static final Lock lock = new ReentrantLock();
 	private static final Condition cv = lock.newCondition();
+	private static volatile boolean outOfDate = true;
 
 	private ViewerWindow source;
 	private Document currentDocument;
@@ -38,10 +39,14 @@ public class ViewerController implements ViewerGUIListener {
 				try {
 					JFileChooser chooser = new JFileChooser();
 					chooser.setCurrentDirectory(new File("."));
+					chooser.setFileFilter(PDFFileFilter.INSTANCE);
 					ret = chooser.showSaveDialog(source);
 					if (ret != JFileChooser.APPROVE_OPTION)
 						return;
 					File out = chooser.getSelectedFile();
+					String filepath = out.getAbsolutePath();
+					if (filepath.lastIndexOf('.') == -1)
+						out = new File(filepath + ".pdf");
 					if (out.exists()) {
 						ret = source.showConfirmDialog("Overwrite?", out.getName() + " already exists. Overwrite?");
 						if (ret != ViewerWindow.YES)
@@ -98,46 +103,21 @@ public class ViewerController implements ViewerGUIListener {
 
 	@Override
 	public void onPageChange(int oldPage, int newPage) {
-		lock.lock();
-		try {
-			cv.signalAll();
-		} catch (IllegalMonitorStateException e) {
-			System.err.println("Exception on signaling: " + e);
-		} finally {
-			lock.unlock();
-		}
+		smartLoader.signalOutOfDate();
 	}
 
 	@Override
 	public void onZoomChange(double oldZoom, double newZoom) {
 		if (newZoom > 1.0) {
-			int currentPage = source.getCurrentPage();
-			Runnable r = () -> {
-					//source.showWarningDialog("Error", "An operation is already in progress");
-					//return;
-
-				try {
-					currentDocument.zoomArea(Document.OPERATION_THROW, currentPage, newZoom);
-				} catch (Document.OperationInProgressException e) {
-					source.showWarningDialog("Error", "An operation is already in progress");
-				}
-			};
-			Thread t = new Thread(r);
-			t.setName("Zoom-Thread");
-			t.start();
+			smartLoader.resetZoom();
+			smartLoader.signalOutOfDate();
 		}
 	}
 
 	@Override
 	public void onScrollChange(int newScroll) {
-		lock.lock();
-		try {
-			cv.signalAll();
-		} catch (IllegalMonitorStateException e) {
-			System.err.println("Exception on signaling: " + e);
-		} finally {
-			lock.unlock();
-		}
+		if (smartLoader != null)
+			smartLoader.signalOutOfDate();
 	}
 
 	@Override
@@ -184,7 +164,6 @@ public class ViewerController implements ViewerGUIListener {
 				source.showErrorDialog("Unhandled Exception", errorMessage);
 			}
 			DefaultUnhandledExceptionHandler.INSTANCE.uncaughtException(t, e);
-
 		}
 
 	}
@@ -192,15 +171,17 @@ public class ViewerController implements ViewerGUIListener {
 	private class SmartLoader implements Runnable {
 
 		private volatile boolean[] loaded;
+		private volatile boolean[] zoomLoaded;
 		private volatile boolean shouldRun;
 		private Thread thread;
 
-		private SmartLoader(Document doc) {
+		SmartLoader(Document doc) {
 			loaded = new boolean[doc.size()];
+			zoomLoaded = new boolean[doc.size()];
 			shouldRun = true;
 		}
 
-		private void start() {
+		void start() {
 			if (thread != null)
 				stop();
 			shouldRun = true;
@@ -210,17 +191,36 @@ public class ViewerController implements ViewerGUIListener {
 			thread.start();
 		}
 
-		private void stop() {
-			shouldRun = false;
+		void stop() {
 			lock.lock();
 			cv.signalAll();
 			lock.unlock();
+			outOfDate = false;
+			shouldRun = false;
 			try {
 				thread.join();
 			} catch (InterruptedException e) {
 				throw new RuntimeException("Thread join interrupted", e);
 			}
 			thread = null;
+		}
+
+		void resetZoom() {
+			for (int i = 0; i < zoomLoaded.length; i++) {
+				zoomLoaded[i] = false;
+			}
+		}
+
+		void signalOutOfDate() {
+			outOfDate = true;
+			lock.lock();
+			try {
+				cv.signalAll();
+			} catch (IllegalMonitorStateException e) {
+				System.err.println("Exception on signaling: " + e);
+			} finally {
+				lock.unlock();
+			}
 		}
 
 		@Override
@@ -238,9 +238,23 @@ public class ViewerController implements ViewerGUIListener {
 				int ind = 0;
 				for (int page : toLoad) {
 					if (page >= 1 && page <= currentDocument.size()) {
-						if (!loaded[page - 1]) {
-							currentDocument.loadHighRes(Document.OPERATION_WAIT, page);
-							loaded[page - 1] = true;
+						if (source.getZoom() > 1.0) {
+
+							// Load the zoomed page view only if it has not already been loaded.
+							if (!zoomLoaded[page - 1]) {
+								currentDocument.zoomArea(Document.OPERATION_WAIT, page, source.getZoom());
+								zoomLoaded[page - 1] = true;
+							}
+						} else {
+
+							// Unload any zoomed image to save memory consumption
+							currentDocument.unloadZoomed(page);
+
+							// Load the high-resolution page view only if it has not already been loaded
+							if (!loaded[page - 1]) {
+								currentDocument.loadHighRes(Document.OPERATION_WAIT, page);
+								loaded[page - 1] = true;
+							}
 						}
 					}
 					ind++;
@@ -248,13 +262,20 @@ public class ViewerController implements ViewerGUIListener {
 				}
 				source.setLoadProgress(0);
 
-				lock.lock();
-				try {
-					cv.await();
-				} catch (InterruptedException e) {
-					System.err.println("Interrupted in smart loader: " + e);
-				} finally {
-					lock.unlock();
+				// First check if the current view is out of date and if so, just immediately continue
+				// so the thread does not get stuck in the lock until another event has occurred.
+				if (!outOfDate) {
+					outOfDate = false;
+					lock.lock();
+					try {
+						cv.await();
+					} catch (InterruptedException e) {
+						System.err.println("Interrupted in smart loader: " + e);
+					} finally {
+						lock.unlock();
+					}
+				} else {
+					outOfDate = false;
 				}
 			}
 		}

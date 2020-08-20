@@ -4,6 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Enumeration;
+import java.util.Properties;
 
 public class DefaultUnhandledExceptionHandler implements Thread.UncaughtExceptionHandler {
 
@@ -22,7 +26,38 @@ public class DefaultUnhandledExceptionHandler implements Thread.UncaughtExceptio
 	public void uncaughtException(Thread t, Throwable e) {
 		StringBuilder builder = new StringBuilder();
 
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 		builder.append("Unhandled exception!\n");
+
+		//builder.append("USER\n");
+		builder.append("Time: " + dtf.format(LocalDateTime.now()) + "\n\n");
+
+		builder.append("PROPERTIES\n");
+		Properties props = System.getProperties();
+		for (Enumeration<Object> keys = props.keys(); keys.hasMoreElements();) {
+			String key = keys.nextElement().toString();
+			String prop = props.getProperty(key);
+			String friendly = "\"";
+			for (int i = 0; i < prop.length(); i++) {
+				char c = prop.charAt(i);
+				switch (c) {
+				case '\n':
+					friendly += "\\n";
+					break;
+				case '\r':
+					friendly += "\\r";
+					break;
+				default:
+					friendly += c;
+					break;
+				}
+			}
+			friendly += "\"";
+			builder.append(key + " = " + friendly + "\n");
+		}
+		builder.append('\n');
+
+		builder.append("EXCEPTION\n");
 		builder.append("Exception: " + e.getClass().getName() + "\n");
 		builder.append("Message: " + e.getMessage() + "\n");
 		builder.append("Cause: " + (e.getCause() == null ? "[Unknown]" :
@@ -30,6 +65,7 @@ public class DefaultUnhandledExceptionHandler implements Thread.UncaughtExceptio
 		builder.append("Thread: " + t.getName() + " (id=" + t.getId() + ")\n");
 		builder.append("Stack trace:" + "\n");
 		builder.append(stackTraceToString(e));
+
 		String fullMessage = builder.toString();
 		System.err.println(fullMessage);
 		try {

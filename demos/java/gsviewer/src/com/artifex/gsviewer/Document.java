@@ -231,11 +231,6 @@ public class Document implements List<Page> {
 
 			if (code != GS_ERROR_OK)
 				throw new IllegalStateException("Failed to distill document (code = " + code + ")");
-
-			/*Reference<Integer> pExitCode = new Reference<>();
-			int code = gsInstance.run_file(out.getAbsolutePath(), 0, pExitCode);
-			if (code != GS_ERROR_OK)
-				throw new IllegalStateException("failed to run file (code = " + code + ")");*/
 		} finally {
 			deleteGSInstance();
 		}
@@ -682,77 +677,6 @@ public class Document implements List<Page> {
 	}
 
 	/**
-	 * Loads the high resolution images of a list of pages.
-	 *
-	 * @param operationMode How the loader should behave if an operation is already in
-	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
-	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
-	 * the loader should immediately return, or <code>OPERATION_THROW</code> meaning the loader
-	 * should throw an <code>OperationInProgressException</code>.
-	 * @param pages The pages to load.
-	 *
-	 * @throws IndexOutOfBoundsException When any page is not a page in the document.
-	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
-	 * @throws OperationInProgressException When an operation is already in progress
-	 * and <code>operationMode</code> is <code>OPERATION_THROW</code>.
-	 * @throws IllegalArgumentException When <code>operationMode</code> is not
-	 * <code>OPERATION_WAIT</coded>, <code>OPERATION_RETURN</code>, or <code>OPERATION_THROW</code>.
-	 */
-	public void loadHighResList(int operationMode, final int[] pages)
-			throws IndexOutOfBoundsException, IllegalStateException, OperationInProgressException {
-		throw new UnsupportedOperationException("loadHighResList");
-		/*if (pages.length > 0) {
-			if (!handleOperationMode(operationMode))
-				return;
-
-			try {
-				startOperation();
-
-				final StringBuilder builder = new StringBuilder();
-				if (pages[0] < 1 || pages[0] > this.pages.size())
-					throw new IndexOutOfBoundsException("page=" + pages[0]);
-				builder.append(pages[0]);
-
-				for (int i = 1; i < pages.length; i++) {
-					if (pages[i] < 1 || pages[i] > this.pages.size())
-						throw new IndexOutOfBoundsException("page=" + pages[i]);
-					builder.append(',').append(pages[i]);
-				}
-
-
-				final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/", "-dBATCH", "-r" + Page.PAGE_HIGH_DPI,
-						"-sDEVICE=display", "-sPageList=" + builder.toString(), "-dDisplayFormat=" + format,
-						"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
-						"-f", file.getAbsolutePath() };
-
-				GSInstance instance = null;
-				try {
-					instance = initDocInstance();
-				} catch (IllegalStateException e) {
-					operationDone();
-				}
-
-				if (instance == null)
-					throw new IllegalStateException("Failed to initialize Ghoscript");
-
-				int code = instance.init_with_args(gargs);
-				instance.exit();
-				instance.delete_instance();
-				if (code != GS_ERROR_OK) {
-					throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
-				}
-
-				int ind = 0;
-				for (final BufferedImage img : documentLoader.images) {
-					this.pages.get(pages[ind] - 1).setHighRes(img);
-				}
-			} finally {
-				operationDone();
-			}
-		}*/
-	}
-
-	/**
 	 * Unloads the high resolution images in a range of pages.
 	 *
 	 * @param startPage The start page to unload the high resolution image from.
@@ -880,6 +804,34 @@ public class Document implements List<Page> {
 			for (final BufferedImage img : documentLoader.images) {
 				this.pages.get(ind++).setZoomed(img);
 			}
+		} finally {
+			operationDone();
+		}
+	}
+
+	public void zoomPage(final int operationMode, final int page, final double zoom)
+		throws IndexOutOfBoundsException {
+		checkBounds(page, page);
+
+		if (!handleOperationMode(operationMode))
+			return;
+
+		try {
+			startOperation();
+
+			setParams((int)(Page.PAGE_HIGH_DPI * zoom), page, page);
+
+			Reference<Integer> exitCode = new Reference<>();
+			int code = gsInstance.run_file(file.getAbsolutePath(), 0, exitCode);
+
+			if (code != GS_ERROR_OK)
+				throw new IllegalStateException("Failed to run file (code = " + code + ")");
+
+			int ind = page - 1;
+			for (final BufferedImage img : documentLoader.images) {
+				this.pages.get(ind++).setZoomed(img);
+			}
+
 		} finally {
 			operationDone();
 		}

@@ -496,8 +496,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 					img = page.getZoomedImage();
 
 				Image result = img;
-				if (img == page.getLowResImage() || currentZoom < 1.0)
+				if (img == page.getLowResImage() || currentZoom < 1.0 ||
+						(img == page.getHighResImage() && currentZoom > 1.0 && page.getZoomedImage() == null)) {
 					result = img.getScaledInstance(actualSize.width, actualSize.height, Image.SCALE_FAST);
+				}
 				return result;
 			} else {
 				return null;
@@ -788,6 +790,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 
 	public int showConfirmDialog(String title, String message) {
 		return JOptionPane.showConfirmDialog(this, message, title, JOptionPane.YES_NO_CANCEL_OPTION);
+	}
+
+	public double getZoom() {
+		return currentZoom;
 	}
 
 	/**
