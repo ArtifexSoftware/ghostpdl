@@ -497,7 +497,7 @@ gx_set_no_overprint(gs_gstate* pgs)
 
 /* Retain all the spot colorants and not the process
    colorants.  This occurs if we have a process color
-   mismatch between the source and the destination but 
+   mismatch between the source and the destination but
    the output device supports spot colors */
 int
 gx_set_spot_only_overprint(gs_gstate* pgs)
