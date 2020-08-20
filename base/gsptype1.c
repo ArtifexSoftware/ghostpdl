@@ -194,22 +194,11 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
        to detect this since blending is expensive and we would like to avoid it
        if possible.  Note that any skew or rotation matrix will make it
        neccessary to perform blending */
-
-    { float width = inst.templat.BBox.q.x - inst.templat.BBox.p.x;
-      float height = inst.templat.BBox.q.y - inst.templat.BBox.p.y;
-
-      if ( inst.templat.XStep < width || inst.templat.YStep < height || ctm_only(saved).xy != 0 ||
-          ctm_only(saved).yx != 0 ){
-
-          inst.has_overlap = true;
-
-      } else {
-
-          inst.has_overlap = false;
-
-      }
-
-    }
+    inst.has_overlap =
+        (inst.templat.XStep < inst.templat.BBox.q.x - inst.templat.BBox.p.x ||
+         inst.templat.YStep < inst.templat.BBox.q.y - inst.templat.BBox.p.y ||
+         ctm_only(saved).xy != 0 ||
+         ctm_only(saved).yx != 0 );
 
 #define mat inst.step_matrix
     if_debug6m('t', mem, "[t]step_matrix=[%g %g %g %g %g %g]\n",
@@ -217,137 +206,130 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                inst.step_matrix.yy, inst.step_matrix.tx, inst.step_matrix.ty);
     if_debug5m('t', mem, "[t]bbox=(%g,%g),(%g,%g), uses_transparency=%d\n",
                bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y, inst.templat.uses_transparency);
-    {
-        /* If the step and the size agree to within 1/2 pixel, */
-        /* make them the same. */
-        if (ADJUST_SCALE_BY_GS_TRADITION) {
-            inst.size.x = (int)(bbw + 0.8);             /* 0.8 is arbitrary */
-            inst.size.y = (int)(bbh + 0.8);
-        } else {
-            inst.size.x = (int)ceil(bbw);
-            inst.size.y = (int)ceil(bbh);
-        }
 
-        /* After compute_inst_matrix above, we are guaranteed that
-         * inst.step_matrix.xx > 0 and inst.step_matrix.yy > 0.
-         * Similarly, we are guaranteed that inst.size.x >= 0 and
-         * inst.size.y >= 0. */
-        if (inst.size.x == 0 || inst.size.y == 0) {
-            /*
-             * The pattern is empty: the stepping matrix doesn't matter.
-             */
-            gs_make_identity(&inst.step_matrix);
-            bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
-        } else {
-            /* Check for singular stepping matrix. */
-            if (fabs(inst.step_matrix.xx * inst.step_matrix.yy - inst.step_matrix.xy * inst.step_matrix.yx) < 1.0e-9) {
-                code = gs_note_error(gs_error_rangecheck);
-                goto fsaved;
-            }
-            if (ADJUST_SCALE_BY_GS_TRADITION &&
-                inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
-                fabs(inst.step_matrix.xx - bbw) < 0.5 &&
-                fabs(inst.step_matrix.yy - bbh) < 0.5
-                ) {
-                gs_scale(saved, inst.size.x / inst.step_matrix.xx,
-                                inst.size.y / inst.step_matrix.yy);
-                if (ADJUST_SCALE_FOR_THIN_LINES) {
-                    /* To allow thin lines at a cell boundary
-                       to be painted inside the cell,
-                       we adjust the scale so that
-                       the scaled width is in fixed_1 smaller */
-                    gs_scale(saved, (inst.size.x - 1.0 / fixed_scale) / inst.size.x,
-                                    (inst.size.y - 1.0 / fixed_scale) / inst.size.y);
-                }
-                code = compute_inst_matrix(&inst, &bbox,
-                                           dev_width, dev_height, &bbw, &bbh);
-                if (code < 0)
-                    goto fsaved;
-                if_debug2m('t', mem,
-                           "[t]adjusted XStep & YStep to size=(%d,%d)\n",
-                           inst.size.x, inst.size.y);
-                if_debug4m('t', mem, "[t]bbox=(%g,%g),(%g,%g)\n",
-                           bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
-            } else if ((ADJUST_AS_ADOBE) && (inst.templat.TilingType != 2)) {
-                if (inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
-                    fabs(inst.step_matrix.xx - bbw) < 0.5 &&
-                    fabs(inst.step_matrix.yy - bbh) < 0.5
-                    ) {
-                    if (inst.step_matrix.xx <= 2) {
-                        /* Prevent a degradation - see -r72 mspro.pdf */
-                        gs_scale(saved, fabs(inst.size.x / inst.step_matrix.xx), 1);
-                        inst.step_matrix.xx = (float)inst.size.x;
-                    } else {
-#if 0
-                        /* New code from RJW, currently disabled. While
-                         * investigating an XPS pattern problem (caused by
-                         * a pattern with step 7.5 being rendered into an 8x8
-                         * tile with a fill adjust of 0 having empty edges),
-                         * I considered the following changed code, which seems
-                         * like the right thing to do. It produces many image
-                         * diffs, but none obscenely bad. We leave this
-                         * disabled for now, as the XPS problem has moved by
-                         * dint of us now using TilingType 2 instead. */
-                        /* We adjust the step matrix to an integer (as we
-                         * can't quickly tile non-integer tiles). We bend
-                         * the contents of the tile slightly so that they
-                         * completely fill the tile (rather than potentially
-                         * leaving gaps around the edge).
-                         * To allow thin lines at a cell boundary to be painted
-                         * inside the cell, we adjust the scale so that the
-                         * scaled width is fixed_1 smaller. */
-                        float newscale = (float)floor(inst.step_matrix.xx + 0.5);
-                        gs_scale(saved,
-                                 (newscale - 1.0 / fixed_scale) / inst.step_matrix.xx,
-                                 1);
-                        inst.step_matrix.xx = newscale;
-#else
-                        inst.step_matrix.xx = (float)floor(inst.step_matrix.xx + 0.5);
-                        /* To allow thin lines at a cell boundary
-                           to be painted inside the cell,
-                           we adjust the scale so that
-                           the scaled width is in fixed_1 smaller */
-                        if (bbw >= inst.size.x - 1.0 / fixed_scale)
-                            gs_scale(saved, (inst.size.x - 1.0 / fixed_scale) / inst.size.x, 1);
-#endif
-                    }
-                    if (inst.step_matrix.yy <= 2) {
-                        gs_scale(saved, 1, inst.size.y / inst.step_matrix.yy);
-                        inst.step_matrix.yy = (float)inst.size.y;
-                    } else {
-#if 0
-                        /* See above comment for explaination */
-                        float newscale = (float)floor(inst.step_matrix.yy + 0.5);
-                        gs_scale(saved,
-                                 1,
-                                 (newscale - 1.0 / fixed_scale) / inst.step_matrix.yy);
-                        inst.step_matrix.yy = newscale;
-#else
-                        inst.step_matrix.yy = (float)floor(inst.step_matrix.yy + 0.5);
-                        if (bbh >= inst.size.y - 1.0 / fixed_scale)
-                            gs_scale(saved, 1, (inst.size.y - 1.0 / fixed_scale) / inst.size.y);
-#endif
-                    }
-                    code = fix_bbox_after_matrix_adjustment(&inst, &bbox);
-                    if (code < 0)
-                        goto fsaved;
-                }
-            } else if ((inst.templat.TilingType == 2) &&
-                       ((pgs->fill_adjust.x | pgs->fill_adjust.y) == 0)) {
-                /* RJW: This codes with non-rotated cases (with or without a
-                 * skew), but won't cope with rotated ones. Find an example. */
-                float shiftx = ((inst.step_matrix.yx == 0 &&
-                                 fabs(inst.step_matrix.xx - bbw) <= 0.5) ?
-                                (bbw - inst.size.x)/2 : 0);
-                float shifty = ((inst.step_matrix.xy == 0 &&
-                                 fabs(inst.step_matrix.yy - bbh) <= 0.5) ?
-                                (bbh - inst.size.y)/2 : 0);
-                gs_translate_untransformed(saved, shiftx, shifty);
-                code = fix_bbox_after_matrix_adjustment(&inst, &bbox);
-                if (code < 0)
-                    goto fsaved;
-            }
+    /* If the step and the size agree to within 1/2 pixel, */
+    /* make them the same. */
+    if (ADJUST_SCALE_BY_GS_TRADITION) {
+        inst.size.x = (int)(bbw + 0.8);             /* 0.8 is arbitrary */
+        inst.size.y = (int)(bbh + 0.8);
+    } else {
+        inst.size.x = (int)ceil(bbw);
+        inst.size.y = (int)ceil(bbh);
+    }
+
+    /* After compute_inst_matrix above, we are guaranteed that
+     * inst.step_matrix.xx > 0 and inst.step_matrix.yy > 0.
+     * Similarly, we are guaranteed that inst.size.x >= 0 and
+     * inst.size.y >= 0. */
+    if (inst.size.x == 0 || inst.size.y == 0) {
+        /*
+         * The pattern is empty: the stepping matrix doesn't matter.
+         */
+        gs_make_identity(&inst.step_matrix);
+        bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
+    } else if (fabs(inst.step_matrix.xx * inst.step_matrix.yy -
+                    inst.step_matrix.xy * inst.step_matrix.yx) < 1.0e-9) {
+        /* Singular stepping matrix. */
+        code = gs_note_error(gs_error_rangecheck);
+        goto fsaved;
+    } else if (ADJUST_SCALE_BY_GS_TRADITION &&
+               inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
+               fabs(inst.step_matrix.xx - bbw) < 0.5 &&
+               fabs(inst.step_matrix.yy - bbh) < 0.5) {
+        gs_scale(saved, inst.size.x / inst.step_matrix.xx,
+                        inst.size.y / inst.step_matrix.yy);
+        if (ADJUST_SCALE_FOR_THIN_LINES) {
+            /* To allow thin lines at a cell boundary to be painted
+             * inside the cell, we adjust the scale so that the scaled
+             * width is in fixed_1 smaller. */
+            gs_scale(saved, (inst.size.x - 1.0 / fixed_scale) / inst.size.x,
+                            (inst.size.y - 1.0 / fixed_scale) / inst.size.y);
         }
+        code = compute_inst_matrix(&inst, &bbox,
+                                   dev_width, dev_height, &bbw, &bbh);
+        if (code < 0)
+            goto fsaved;
+        if_debug2m('t', mem,
+                   "[t]adjusted XStep & YStep to size=(%d,%d)\n",
+                   inst.size.x, inst.size.y);
+        if_debug4m('t', mem, "[t]bbox=(%g,%g),(%g,%g)\n",
+                   bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+    } else if ((ADJUST_AS_ADOBE) && (inst.templat.TilingType != 2)) {
+        if (inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
+            fabs(inst.step_matrix.xx - bbw) < 0.5 &&
+            fabs(inst.step_matrix.yy - bbh) < 0.5) {
+            if (inst.step_matrix.xx <= 2) {
+                /* Prevent a degradation - see -r72 mspro.pdf */
+                gs_scale(saved, fabs(inst.size.x / inst.step_matrix.xx), 1);
+                inst.step_matrix.xx = (float)inst.size.x;
+            } else {
+#if 0
+                /* New code from RJW, currently disabled. While
+                 * investigating an XPS pattern problem (caused by
+                 * a pattern with step 7.5 being rendered into an 8x8
+                 * tile with a fill adjust of 0 having empty edges),
+                 * I considered the following changed code, which seems
+                 * like the right thing to do. It produces many image
+                 * diffs, but none obscenely bad. We leave this
+                 * disabled for now, as the XPS problem has moved by
+                 * dint of us now using TilingType 2 instead. */
+                /* We adjust the step matrix to an integer (as we
+                 * can't quickly tile non-integer tiles). We bend
+                 * the contents of the tile slightly so that they
+                 * completely fill the tile (rather than potentially
+                 * leaving gaps around the edge).
+                 * To allow thin lines at a cell boundary to be painted
+                 * inside the cell, we adjust the scale so that the
+                 * scaled width is fixed_1 smaller. */
+                float newscale = (float)floor(inst.step_matrix.xx + 0.5);
+                gs_scale(saved,
+                         (newscale - 1.0 / fixed_scale) / inst.step_matrix.xx,
+                         1);
+                inst.step_matrix.xx = newscale;
+#else
+                inst.step_matrix.xx = (float)floor(inst.step_matrix.xx + 0.5);
+                /* To allow thin lines at a cell boundary to be painted
+                 * inside the cell, we adjust the scale so that the
+                 * scaled width is in fixed_1 smaller */
+                if (bbw >= inst.size.x - 1.0 / fixed_scale)
+                    gs_scale(saved, (inst.size.x - 1.0 / fixed_scale) / inst.size.x, 1);
+#endif
+            }
+            if (inst.step_matrix.yy <= 2) {
+                gs_scale(saved, 1, inst.size.y / inst.step_matrix.yy);
+                inst.step_matrix.yy = (float)inst.size.y;
+            } else {
+#if 0
+                /* See above comment for explaination */
+                float newscale = (float)floor(inst.step_matrix.yy + 0.5);
+                gs_scale(saved,
+                         1,
+                         (newscale - 1.0 / fixed_scale) / inst.step_matrix.yy);
+                inst.step_matrix.yy = newscale;
+#else
+                inst.step_matrix.yy = (float)floor(inst.step_matrix.yy + 0.5);
+                if (bbh >= inst.size.y - 1.0 / fixed_scale)
+                    gs_scale(saved, 1, (inst.size.y - 1.0 / fixed_scale) / inst.size.y);
+#endif
+            }
+            code = fix_bbox_after_matrix_adjustment(&inst, &bbox);
+            if (code < 0)
+                goto fsaved;
+        }
+    } else if ((inst.templat.TilingType == 2) &&
+               ((pgs->fill_adjust.x | pgs->fill_adjust.y) == 0)) {
+        /* RJW: This codes with non-rotated cases (with or without a
+         * skew), but won't cope with rotated ones. Find an example. */
+        float shiftx = ((inst.step_matrix.yx == 0 &&
+                         fabs(inst.step_matrix.xx - bbw) <= 0.5) ?
+                        (bbw - inst.size.x)/2 : 0);
+        float shifty = ((inst.step_matrix.xy == 0 &&
+                         fabs(inst.step_matrix.yy - bbh) <= 0.5) ?
+                        (bbh - inst.size.y)/2 : 0);
+        gs_translate_untransformed(saved, shiftx, shifty);
+        code = fix_bbox_after_matrix_adjustment(&inst, &bbox);
+        if (code < 0)
+            goto fsaved;
     }
     if ((code = gs_bbox_transform_inverse(&bbox, &inst.step_matrix, &inst.bbox)) < 0)
         goto fsaved;
