@@ -1185,7 +1185,7 @@ int gx_device_delete_output_file(const gx_device * dev, const char *fname)
         parsed.len = strlen(parsed.fname);
     }
     if (parsed.iodev)
-        code = parsed.iodev->procs.delete_file((gx_io_device *)(&parsed.iodev), (const char *)parsed.fname);
+        code = parsed.iodev->procs.delete_file((gx_io_device *)(parsed.iodev), (const char *)parsed.fname);
     else
         code = gs_note_error(gs_error_invalidfileaccess);
 
