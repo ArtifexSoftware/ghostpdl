@@ -212,9 +212,22 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     if (ADJUST_SCALE_BY_GS_TRADITION) {
         inst.size.x = (int)(bbw + 0.8);             /* 0.8 is arbitrary */
         inst.size.y = (int)(bbh + 0.8);
-    } else {
+    } else if (inst.templat.TilingType == 2) {
+        /* Always round up for TilingType 2, as we don't want any
+         * content to be lost. */
         inst.size.x = (int)ceil(bbw);
         inst.size.y = (int)ceil(bbh);
+    } else {
+        /* For TilingType's other than 2 allow us to round up or down
+         * to whatever is nearer. The scale we do later prevents us
+         * losing content. */
+        inst.size.x = (int)floor(bbw+0.5);
+        inst.size.y = (int)floor(bbh+0.5);
+        /* Ensure we never round down to 0. */
+        if (bbw > 0 && inst.size.x == 0)
+            inst.size.x = 1;
+        if (bbh > 0 && inst.size.y == 0)
+            inst.size.y = 1;
     }
 
     /* After compute_inst_matrix above, we are guaranteed that
@@ -222,9 +235,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
      * Similarly, we are guaranteed that inst.size.x >= 0 and
      * inst.size.y >= 0. */
     if (inst.size.x == 0 || inst.size.y == 0) {
-        /*
-         * The pattern is empty: the stepping matrix doesn't matter.
-         */
+        /* The pattern is empty: the stepping matrix doesn't matter. */
         gs_make_identity(&inst.step_matrix);
         bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
     } else if (fabs(inst.step_matrix.xx * inst.step_matrix.yy -
@@ -263,16 +274,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                 gs_scale(saved, fabs(inst.size.x / inst.step_matrix.xx), 1);
                 inst.step_matrix.xx = (float)inst.size.x;
             } else {
-#if 0
-                /* New code from RJW, currently disabled. While
-                 * investigating an XPS pattern problem (caused by
-                 * a pattern with step 7.5 being rendered into an 8x8
-                 * tile with a fill adjust of 0 having empty edges),
-                 * I considered the following changed code, which seems
-                 * like the right thing to do. It produces many image
-                 * diffs, but none obscenely bad. We leave this
-                 * disabled for now, as the XPS problem has moved by
-                 * dint of us now using TilingType 2 instead. */
+                float cx, ox, dx;
                 /* We adjust the step matrix to an integer (as we
                  * can't quickly tile non-integer tiles). We bend
                  * the contents of the tile slightly so that they
@@ -281,36 +283,65 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                  * To allow thin lines at a cell boundary to be painted
                  * inside the cell, we adjust the scale so that the
                  * scaled width is fixed_1 smaller. */
-                float newscale = (float)floor(inst.step_matrix.xx + 0.5);
                 gs_scale(saved,
-                         (newscale - 1.0 / fixed_scale) / inst.step_matrix.xx,
+                         (inst.size.x - 1.0 / fixed_scale) / inst.step_matrix.xx,
                          1);
-                inst.step_matrix.xx = newscale;
-#else
-                inst.step_matrix.xx = (float)floor(inst.step_matrix.xx + 0.5);
-                /* To allow thin lines at a cell boundary to be painted
-                 * inside the cell, we adjust the scale so that the
-                 * scaled width is in fixed_1 smaller */
-                if (bbw >= inst.size.x - 1.0 / fixed_scale)
-                    gs_scale(saved, (inst.size.x - 1.0 / fixed_scale) / inst.size.x, 1);
-#endif
+                /* We want the point in the centre of the displayed
+                   region of this pattern not to move. We don't know
+                   where the displayed region of the pattern is, so
+                   we take the centre of the pattern bbox as a guess.
+                   We call this (cx,cy). Let's suppose that this point
+                   is the image of (ox,oy) under transformation.
+
+                              (a      0      0)
+                              (0      d      0)
+                              (x      y      1)
+                     (ox oy 1)(ox.a+x oy.d+y 1)
+
+                   Thus cx = ox.a + x, cy = oy.d + y
+                   So ox = (cx - x)/a, oy = (cy - y)/d
+
+                   We want to adjust the matrix to use A and D instead
+                   of a and d, and also adjust x and y so that the image
+                   of (ox,oy) is the same.
+
+                     i.e.     (A      0      0)
+                              (0      D      0)
+                              (X      Y      1)
+                     (ox oy 1)(ox.A+X oy.D+Y 1)
+
+                     i.e. cx = ox.A+X, cy = oy.D+Y
+                     So X   = cx - ox.A
+                        x   = cx - ox.a
+                        x-X = -ox.a + ox.A
+                            = ox.(A-a)
+
+                   BUT we've been at pains already to make sure that the
+                   origin of the 0th tile falls on pixel boundaries. So
+                   clamp our correction to whole pixels.
+                */
+                cx = (bbox.p.x + bbox.q.x)/2;
+                ox = (cx - inst.step_matrix.tx) / inst.step_matrix.xx;
+                dx = ox * (inst.size.x - inst.step_matrix.xx);
+                dx = floor(dx+0.5); /* Whole pixels! */
+                inst.step_matrix.xx = (float)inst.size.x;
+                inst.saved->ctm.tx -= dx;
             }
             if (inst.step_matrix.yy <= 2) {
                 gs_scale(saved, 1, inst.size.y / inst.step_matrix.yy);
                 inst.step_matrix.yy = (float)inst.size.y;
             } else {
-#if 0
-                /* See above comment for explaination */
-                float newscale = (float)floor(inst.step_matrix.yy + 0.5);
+                float cy, oy, dy;
+                /* See above comment for explanation */
                 gs_scale(saved,
                          1,
-                         (newscale - 1.0 / fixed_scale) / inst.step_matrix.yy);
-                inst.step_matrix.yy = newscale;
-#else
-                inst.step_matrix.yy = (float)floor(inst.step_matrix.yy + 0.5);
-                if (bbh >= inst.size.y - 1.0 / fixed_scale)
-                    gs_scale(saved, 1, (inst.size.y - 1.0 / fixed_scale) / inst.size.y);
-#endif
+                         (inst.size.y - 1.0 / fixed_scale) / inst.step_matrix.yy);
+                cy = (bbox.p.y + bbox.q.y)/2;
+                oy = (cy - inst.step_matrix.ty) / inst.step_matrix.yy;
+                dy = oy * (inst.size.y - inst.step_matrix.yy);
+                dy = floor(dy+0.5); /* Whole pixels! */
+                inst.step_matrix.yy = (float)inst.size.y;
+                inst.saved->ctm.ty -= dy;
             }
             code = fix_bbox_after_matrix_adjustment(&inst, &bbox);
             if (code < 0)
