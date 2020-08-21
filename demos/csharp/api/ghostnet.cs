@@ -4,9 +4,7 @@ using System.ComponentModel;            /* Background threading */
 using System.Collections.Generic;       /* Use of List */
 using System.IO;                        /* Use of path */
 using GhostAPI;                         /* Use of Ghostscript API */
-#if WPF
 using ghostnet_wpf_example;             /* For Print control */
-#endif
 
 namespace GhostNET
 {
@@ -17,10 +15,10 @@ namespace GhostNET
 		SAVE_RESULT,
 		GET_PAGE_COUNT,
 		GENERIC,
-		DISPLAY_DEV_THUMBS_NON_PDF,
-		DISPLAY_DEV_THUMBS_PDF,
+		DISPLAY_DEV_THUMBS,
 		DISPLAY_DEV_NON_PDF,
 		DISPLAY_DEV_PDF,
+		DISPLAY_DEV_RUN_FILE
 	}
 	public enum GS_Result_t
 	{
@@ -50,6 +48,8 @@ namespace GhostNET
 		public List<String> args;
 		public int return_code;
 		public double zoom;
+		public bool aa;
+		public bool is_valid;
 	};
 
 public class gsEventArgs : EventArgs
@@ -200,10 +200,6 @@ public class gsEventArgs : EventArgs
 			return 0;
 		}
 
-		/* Delegate for stdio */
-		public delegate int gs_stdio_handler(IntPtr caller_handle, IntPtr buffer,
-			int len);
-
 		private int stdin_callback(IntPtr handle, IntPtr pointer, int count)
 		{
 			String output = Marshal.PtrToStringAnsi(pointer);
@@ -249,6 +245,8 @@ public class gsEventArgs : EventArgs
 		int m_pagewidth;
 		int m_pageheight;
 		int m_pageraster;
+		gsParamState_t m_displaystate;
+
 
 		display_callback_t m_display_callback;
 		IntPtr ptr_display_struct;
@@ -267,13 +265,15 @@ public class gsEventArgs : EventArgs
 			IntPtr data, gsParamState_t state);
 		internal event gsCallBackPageRenderedMain gsPageRenderedMain;
 
-
+		
 		/* From my understanding you cannot pin delegates.  These need to be declared
 		 * as members to keep a reference to the delegates and avoid their possible GC. 
-		 * since the C# GC has no idea that GS has a reference to these items. */
-		readonly gs_stdio_handler raise_stdin;
-		readonly gs_stdio_handler raise_stdout;
-		readonly gs_stdio_handler raise_stderr;
+		 * since the C# GC has no idea that GS has a reference to these items. While the
+		 * methods themselves dont move, apparently the address of the translation code
+		 * is what is passed, and one of these abstractions can be GC or relocated. */
+		ghostapi.gs_stdio_handler raise_stdin;
+		ghostapi.gs_stdio_handler raise_stdout;
+		ghostapi.gs_stdio_handler raise_stderr;
 		
 		/* Ghostscript display callback struct */
 		public struct display_callback_t
@@ -297,6 +297,10 @@ public class gsEventArgs : EventArgs
 			m_worker = null;
 			gsInstance = IntPtr.Zero;
 			dispInstance = IntPtr.Zero;
+
+			/* To keep track if we need to update any parameters */
+			m_displaystate = new gsParamState_t();
+			m_displaystate.is_valid = false;
 
 			/* Avoiding delegate GC during the life of this object */
 			raise_stdin = stdin_callback;
@@ -371,9 +375,11 @@ public class gsEventArgs : EventArgs
 					break;
 				case GS_Task_t.DISPLAY_DEV_NON_PDF:
 				case GS_Task_t.DISPLAY_DEV_PDF:
-				case GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF:
-				case GS_Task_t.DISPLAY_DEV_THUMBS_PDF:
+				case GS_Task_t.DISPLAY_DEV_THUMBS:
 					m_worker.DoWork -= new DoWorkEventHandler(DisplayDeviceAsync);
+					break;
+				case GS_Task_t.DISPLAY_DEV_RUN_FILE:
+					m_worker.DoWork -= new DoWorkEventHandler(DisplayDeviceRun);
 					break;
 				default:
 					m_worker.DoWork -= new DoWorkEventHandler(gsFileAsync);
@@ -785,6 +791,244 @@ public class gsEventArgs : EventArgs
 			return;
 		}
 
+		private void ResetPageHandler()
+		{
+			int code;
+
+			byte[] param = System.Text.Encoding.UTF8.GetBytes("DisablePageHandler" + "\0");
+			GCHandle pinParam = GCHandle.Alloc(param, GCHandleType.Pinned);
+			byte[] value = System.Text.Encoding.UTF8.GetBytes("\0\0\0\0");
+			GCHandle pinValue = GCHandle.Alloc(value, GCHandleType.Pinned);
+
+			/* For false pass a NULL pointer */
+			code = ghostapi.gsapi_set_param(dispInstance, pinParam.AddrOfPinnedObject(),
+					pinValue.AddrOfPinnedObject(), gs_set_param_type.gs_spt_bool);
+
+			pinParam.Free();
+			pinValue.Free();
+
+			if (code < 0)
+			{
+				throw new GhostscriptException("ResetPageHandler: gsapi_set_param error");
+			}
+		}
+
+		private void SetPageRange(int first, int last, bool delay)
+		{
+			int code;
+
+			byte[] param_first = System.Text.Encoding.UTF8.GetBytes("FirstPage" + "\0");
+			byte[] param_last = System.Text.Encoding.UTF8.GetBytes("LastPage" + "\0");
+
+			GCHandle pinParamFirst = GCHandle.Alloc(param_first, GCHandleType.Pinned);
+			GCHandle pinParamLast = GCHandle.Alloc(param_last, GCHandleType.Pinned);
+			GCHandle firstValue = GCHandle.Alloc(first, GCHandleType.Pinned);
+			GCHandle lastValue = GCHandle.Alloc(last, GCHandleType.Pinned);
+			code = ghostapi.gsapi_set_param(dispInstance, pinParamFirst.AddrOfPinnedObject(),
+				firstValue.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int | gs_set_param_type.gs_spt_more_to_come);
+			if (code < 0)
+			{
+				pinParamFirst.Free();
+				pinParamLast.Free();
+				firstValue.Free();
+				lastValue.Free();
+				throw new GhostscriptException("SetPageRange: gsapi_set_param error");
+			}
+
+			if (delay)
+				code = ghostapi.gsapi_set_param(dispInstance, pinParamLast.AddrOfPinnedObject(),
+					lastValue.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int | gs_set_param_type.gs_spt_more_to_come);
+			else
+				code = ghostapi.gsapi_set_param(dispInstance, pinParamLast.AddrOfPinnedObject(),
+					lastValue.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int);
+
+			pinParamFirst.Free();
+			pinParamLast.Free();
+			firstValue.Free();
+			lastValue.Free();
+
+			if (code < 0)
+			{
+				throw new GhostscriptException("SetPageRange: gsapi_set_param error");
+			}
+		}
+
+		private void SetAA(bool aa, bool delay)
+		{
+			int code;
+			int value;
+			byte[] param_text = System.Text.Encoding.UTF8.GetBytes("TextAlphaBits" + "\0");
+			byte[] param_graph = System.Text.Encoding.UTF8.GetBytes("GraphicsAlphaBits" + "\0");
+
+			if (aa)
+				value = 4;
+			else
+				value = 1;
+
+			GCHandle pinParamText = GCHandle.Alloc(param_text, GCHandleType.Pinned);
+			GCHandle pinParamGraph = GCHandle.Alloc(param_graph, GCHandleType.Pinned);
+			GCHandle valueParam = GCHandle.Alloc(value, GCHandleType.Pinned);
+
+			code = ghostapi.gsapi_set_param(dispInstance, pinParamText.AddrOfPinnedObject(),
+				valueParam.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int | gs_set_param_type.gs_spt_more_to_come);
+			if (code < 0)
+			{
+				pinParamText.Free();
+				pinParamGraph.Free();
+				valueParam.Free();
+				throw new GhostscriptException("SetAA: gsapi_set_param error");
+			}
+			if (delay)
+				code = ghostapi.gsapi_set_param(dispInstance, pinParamGraph.AddrOfPinnedObject(),
+					valueParam.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int | gs_set_param_type.gs_spt_more_to_come);
+			else
+				code = ghostapi.gsapi_set_param(dispInstance, pinParamGraph.AddrOfPinnedObject(),
+					valueParam.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int);
+
+			pinParamText.Free();
+			pinParamGraph.Free();
+			valueParam.Free();
+
+			if (code < 0)
+			{
+				throw new GhostscriptException("SetAA: gsapi_set_param error");
+			}
+		}
+
+		private void SetResolution(double zoom, bool delay)
+		{
+			int resolution = (int)(72.0 * zoom + 0.5);
+			int code;
+
+			byte[] param = System.Text.Encoding.UTF8.GetBytes("HWResolution" + "\0");
+			byte[] value = System.Text.Encoding.UTF8.GetBytes("[" + resolution + " " + resolution + "]\0");
+			GCHandle pinParam = GCHandle.Alloc(param, GCHandleType.Pinned);
+			GCHandle valueParam = GCHandle.Alloc(value, GCHandleType.Pinned);
+
+			if (delay)
+				code = ghostapi.gsapi_set_param(dispInstance, pinParam.AddrOfPinnedObject(),
+					valueParam.AddrOfPinnedObject(), gs_set_param_type.gs_spt_parsed | gs_set_param_type.gs_spt_more_to_come);
+			else
+				code = ghostapi.gsapi_set_param(dispInstance, pinParam.AddrOfPinnedObject(),
+					valueParam.AddrOfPinnedObject(), gs_set_param_type.gs_spt_parsed);
+
+			pinParam.Free();
+			valueParam.Free();
+
+			if (code < 0)
+			{
+				throw new GhostscriptException("SetResolution: gsapi_set_param error");
+			}
+		}
+
+		/* Worker task for running a file with a page range, aa and zoom level */
+		private void DisplayDeviceRun(object sender, DoWorkEventArgs e)
+		{
+			int code = 0;
+			gsParamState_t gsparams = (gsParamState_t)e.Argument;
+			int exitcode = 0;
+			gsparams.result = GS_Result_t.gsOK;
+
+			String fileName = gsparams.inputfile;
+			int firstpage = gsparams.firstpage;
+			int lastpage = gsparams.lastpage;
+
+			gsparams.result = GS_Result_t.gsOK;
+
+			if (dispInstance == IntPtr.Zero)
+			{
+				gsparams.result = GS_Result_t.gsFAILED;
+				e.Result = gsparams;
+				gsDLLProblemMain("Failure: Display device not initialized");
+				return;
+			}
+
+			try
+			{
+				/* Set parameters if needed */
+				if (!m_displaystate.is_valid)
+				{
+					/* First time after thumbnails */
+					if (gsparams.aa)
+					{
+						SetAA(gsparams.aa, true);
+					}
+
+					if (!(gsparams.firstpage == -1 && gsparams.lastpage == -1))
+					{
+						SetResolution(gsparams.zoom, true);
+						SetPageRange(gsparams.firstpage, gsparams.lastpage, false);
+					}
+					else
+					{
+						SetResolution(gsparams.zoom, false);
+					}
+					m_displaystate.is_valid = true;
+				}
+				else
+				{
+					/* Rendering page range */
+					if (!(gsparams.firstpage == -1 && gsparams.lastpage == -1))
+					{
+						if (gsparams.aa != m_displaystate.aa)
+							SetAA(gsparams.aa, true);
+						if (gsparams.zoom != m_displaystate.zoom)
+							SetResolution(gsparams.zoom, true);
+						SetPageRange(gsparams.firstpage, gsparams.lastpage, false);
+					}
+					else
+					{
+						/* Rendering all pages */
+						if (gsparams.aa != m_displaystate.aa)
+						{
+							if (gsparams.zoom != m_displaystate.zoom)
+							{
+								/* Zoom and AA change */
+								SetAA(gsparams.aa, true);
+								SetResolution(gsparams.zoom, false);
+							}
+							else
+							{
+								/* AA change only */
+								SetAA(gsparams.aa, false);
+							}
+						}
+						else
+						{
+							if (gsparams.zoom != m_displaystate.zoom)
+							{
+								/* Zoom change only */
+								SetResolution(gsparams.zoom, false);
+							}
+						}
+					}
+				}
+				m_displaystate.aa = gsparams.aa;
+				m_displaystate.zoom = gsparams.zoom;
+
+				byte[] fname = System.Text.Encoding.UTF8.GetBytes(fileName + "\0");
+				GCHandle pinfname = GCHandle.Alloc(fname, GCHandleType.Pinned);
+				code = ghostapi.gsapi_run_file(dispInstance, pinfname.AddrOfPinnedObject(), 0, ref exitcode);
+				pinfname.Free();
+
+				if (exitcode < 0)
+				{
+					throw new GhostscriptException("DisplayDeviceRun: gsapi_run_file error");
+				}
+
+				//ResetPageHandler();
+			}
+			catch (GhostscriptException except)
+			{
+				gsparams.result = GS_Result_t.gsFAILED;
+				gsDLLProblemMain("Exception: " + except.Message);
+			}
+			finally
+			{
+				e.Result = gsparams;
+			}
+		}
+
 		/* Worker task for using display device */
 		private void DisplayDeviceAsync(object sender, DoWorkEventArgs e)
 		{
@@ -800,31 +1044,16 @@ public class gsEventArgs : EventArgs
 
 			gsparams.result = GS_Result_t.gsOK;
 
+			if (dispInstance == IntPtr.Zero)
+			{
+				gsparams.result = GS_Result_t.gsFAILED;
+				e.Result = gsparams;
+				gsDLLProblemMain("Failure: Display device not initialized");
+				return;
+			}
+
 			try
 			{
-				code = ghostapi.gsapi_new_instance(out dispInstance, IntPtr.Zero);
-				if (code < 0)
-				{
-					throw new GhostscriptException("DisplayDeviceAsync: gsapi_new_instance error");
-				}
-
-				code = ghostapi.gsapi_set_stdio(dispInstance, stdin_callback, stdout_callback, stderr_callback);
-				if (code < 0)
-				{
-					throw new GhostscriptException("DisplayDeviceAsync: gsapi_set_stdio error");
-				}
-
-				code = ghostapi.gsapi_set_arg_encoding(dispInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
-				if (code < 0)
-				{
-					throw new GhostscriptException("DisplayDeviceAsync: gsapi_set_arg_encoding error");
-				}
-
-				code = ghostapi.gsapi_set_display_callback(dispInstance, ptr_display_struct);
-				if (code < 0)
-				{
-					throw new GhostscriptException("DisplayDeviceAsync: gsapi_set_display_callback error");
-				}
 
 				String fullcommand = "";
 				for (int k = 0; k < num_params; k++)
@@ -863,17 +1092,11 @@ public class gsEventArgs : EventArgs
 			{
 				gsDLLProblemMain("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
-				if (dispInstance != IntPtr.Zero)
-					ghostapi.gsapi_delete_instance(dispInstance);
-				dispInstance = IntPtr.Zero;
 			}
 			catch (Exception except)
 			{
 				gsDLLProblemMain("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
-				if (dispInstance != IntPtr.Zero)
-					ghostapi.gsapi_delete_instance(dispInstance);
-				dispInstance = IntPtr.Zero;
 			}
 			finally
 			{
@@ -885,17 +1108,8 @@ public class gsEventArgs : EventArgs
 					}
 					argPtrsStable.Free();
 					e.Result = gsparams;
-
-					if (gsparams.result == GS_Result_t.gsOK && (gsparams.task == GS_Task_t.DISPLAY_DEV_NON_PDF ||
-						gsparams.task == GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF))
-					{
-						gsParamState_t result = DisplayDeviceClose();
-						if (gsparams.result == 0)
-						{
-							gsparams.result = result.result;
-						}
-					}
 				}
+				//ResetPageHandler();
 			}
 			return;
 		}
@@ -927,9 +1141,11 @@ public class gsEventArgs : EventArgs
 						break;
 					case GS_Task_t.DISPLAY_DEV_NON_PDF:
 					case GS_Task_t.DISPLAY_DEV_PDF:
-					case GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF:
-					case GS_Task_t.DISPLAY_DEV_THUMBS_PDF:
+					case GS_Task_t.DISPLAY_DEV_THUMBS:
 						m_worker.DoWork += new DoWorkEventHandler(DisplayDeviceAsync);
+						break;
+					case GS_Task_t.DISPLAY_DEV_RUN_FILE:
+						m_worker.DoWork += new DoWorkEventHandler(DisplayDeviceRun);
 						break;
 					case GS_Task_t.SAVE_RESULT:
 					case GS_Task_t.CREATE_XPS:
@@ -993,9 +1209,6 @@ public class gsEventArgs : EventArgs
 
 			gsparams.args.Add("gs");
 			gsparams.args.Add("-dNODISPLAY");
-			gsparams.args.Add("-dNOPAUSE");
-			gsparams.args.Add("-dBATCH");
-			gsparams.args.Add("-I%rom%Resource/Init/");
 			//gsparams.args.Add("-q");
 			gsparams.args.Add("-sFile=\"" + fileName + "\"");
 			gsparams.args.Add("--permit-file-read=\"" + fileName + "\"");
@@ -1012,7 +1225,6 @@ public class gsEventArgs : EventArgs
 				return -1;
 		}
 
-#if WPF
 		/* Launch a thread to create XPS document for windows printing */
 		public gsStatus CreateXPS(String fileName, int resolution, int num_pages,
 								Print printsettings, int firstpage, int lastpage)
@@ -1022,13 +1234,10 @@ public class gsEventArgs : EventArgs
 
 			gsparams.inputfile = fileName;
 			gsparams.args.Add("gs");
+			gsparams.args.Add("-r" + resolution.ToString());
+			gsparams.args.Add("-sDEVICE=xpswrite");
 			gsparams.args.Add("-dNOPAUSE");
 			gsparams.args.Add("-dBATCH");
-			gsparams.args.Add("-I%rom%Resource/Init/");
-			gsparams.args.Add("-dSAFER");
-			gsparams.args.Add("-r" + resolution.ToString());
-			gsparams.args.Add("-dNOCACHE");
-			gsparams.args.Add("-sDEVICE=xpswrite");
 			gsparams.args.Add("-dFirstPage=" + firstpage.ToString());
 			gsparams.args.Add("-dLastPage=" + lastpage.ToString());
 
@@ -1067,7 +1276,6 @@ public class gsEventArgs : EventArgs
 
 			return RunGhostscriptAsync(gsparams);
 		}
-#endif
 
 		/* Launch a thread rendering all the pages with the display device
 		 * to distill an input PS file and save as a PDF. */
@@ -1078,10 +1286,6 @@ public class gsEventArgs : EventArgs
 
 			gsparams.inputfile = fileName;
 			gsparams.args.Add("gs");
-			gsparams.args.Add("-dNOPAUSE");
-			gsparams.args.Add("-dBATCH");
-			gsparams.args.Add("-I%rom%Resource/Init/");
-			gsparams.args.Add("-dSAFER");
 			gsparams.args.Add("-sDEVICE=pdfwrite");
 			gsparams.outputfile = Path.GetTempFileName();
 			gsparams.args.Add("-o" + gsparams.outputfile);
@@ -1090,9 +1294,30 @@ public class gsEventArgs : EventArgs
 			return RunGhostscriptAsync(gsparams);
 		}
 
+		/* Run a file with the display device 
+		 * public gsStatus gsDsiplayDeviceRunFile() */
+		public gsStatus gsDisplayDeviceRunFile(String fileName, double zoom, bool aa, int firstpage, int lastpage)
+		{
+			gsParamState_t gsparams = new gsParamState_t();
+
+			gsparams.inputfile = fileName;
+			gsparams.aa = aa;
+			gsparams.zoom = zoom;
+			gsparams.firstpage = firstpage;
+			gsparams.lastpage = lastpage;
+			if (firstpage > 0)
+				gsparams.currpage = firstpage - 1;
+			else
+				gsparams.currpage = 0;
+
+			gsparams.task = GS_Task_t.DISPLAY_DEV_RUN_FILE;
+
+			return RunGhostscriptAsync(gsparams);
+		}
+
 		/* Launch a thread rendering all the pages with the display device
-		 * to collect thumbnail images or full resolution.   */
-		public gsStatus gsDisplayDeviceRenderAll(String fileName, double zoom, bool aa, GS_Task_t task)
+		 * to collect thumbnail images via init_with_args.   */
+		public gsStatus gsDisplayDeviceRenderThumbs(String fileName, double zoom, bool aa, GS_Task_t task)
 		{
 			gsParamState_t gsparams = new gsParamState_t();
 			int format = (gsConstants.DISPLAY_COLORS_RGB |
@@ -1102,10 +1327,7 @@ public class gsEventArgs : EventArgs
 
 			gsparams.args = new List<string>();
 			gsparams.args.Add("gs");
-			gsparams.args.Add("-dNOPAUSE");
-			gsparams.args.Add("-dBATCH");
-			gsparams.args.Add("-I%rom%Resource/Init/");
-			gsparams.args.Add("-dSAFER");
+			gsparams.args.Add("-dFirstPage=1"); /* To ensure gdevflp is setup */
 			gsparams.args.Add("-r" + resolution);
 			if (aa)
 			{
@@ -1122,7 +1344,6 @@ public class gsEventArgs : EventArgs
 			return RunGhostscriptAsync(gsparams);
 		}
 
-
 		/* Launch a thread rendering a set of pages with the display device.  For use with languages
 		   that can be indexed via pages which include PDF and XPS */
 		public gsStatus gsDisplayDeviceRenderPages(String fileName, int first_page, int last_page, double zoom)
@@ -1135,10 +1356,6 @@ public class gsEventArgs : EventArgs
 
 			gsparams.args = new List<string>();
 			gsparams.args.Add("gs");
-			gsparams.args.Add("-dNOPAUSE");
-			gsparams.args.Add("-dBATCH");
-			gsparams.args.Add("-I%rom%Resource/Init/");
-			gsparams.args.Add("-dSAFER");
 			gsparams.args.Add("-r" + resolution);
 			gsparams.args.Add("-sDEVICE=display");
 			gsparams.args.Add("-dDisplayFormat=" + format);
@@ -1152,6 +1369,72 @@ public class gsEventArgs : EventArgs
 			return RunGhostscriptAsync(gsparams);
 		}
 
+		/* Set up the display device ahead of time */
+		public gsParamState_t DisplayDeviceOpen()
+		{
+			int code;
+			gsParamState_t gsparams = new gsParamState_t();
+			gsparams.result = GS_Result_t.gsOK;
+
+			if (dispInstance != IntPtr.Zero)
+				return gsparams;
+
+			try
+			{
+				code = ghostapi.gsapi_new_instance(out dispInstance, IntPtr.Zero);
+				if (code < 0)
+				{
+					throw new GhostscriptException("DisplayDeviceOpen: gsapi_new_instance error");
+				}
+
+				code = ghostapi.gsapi_set_stdio(dispInstance, raise_stdin, raise_stdout, raise_stderr);
+				if (code < 0)
+				{
+					throw new GhostscriptException("DisplayDeviceOpen: gsapi_set_stdio error");
+				}
+
+				code = ghostapi.gsapi_set_arg_encoding(dispInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+				if (code < 0)
+				{
+					throw new GhostscriptException("DisplayDeviceOpen: gsapi_set_arg_encoding error");
+				}
+
+				code = ghostapi.gsapi_set_display_callback(dispInstance, ptr_display_struct);
+				if (code < 0)
+				{
+					throw new GhostscriptException("DisplayDeviceOpen: gsapi_set_display_callback error");
+				}
+			}
+
+			catch (DllNotFoundException except)
+			{
+				gsDLLProblemMain("Exception: " + except.Message);
+				gsparams.result = GS_Result_t.gsFAILED;
+			}
+			catch (BadImageFormatException except)
+			{
+				gsDLLProblemMain("Exception: " + except.Message);
+				gsparams.result = GS_Result_t.gsFAILED;
+			}
+			catch (GhostscriptException except)
+			{
+				gsDLLProblemMain("Exception: " + except.Message);
+				gsparams.result = GS_Result_t.gsFAILED;
+				if (dispInstance != IntPtr.Zero)
+					ghostapi.gsapi_delete_instance(dispInstance);
+				dispInstance = IntPtr.Zero;
+			}
+			catch (Exception except)
+			{
+				gsDLLProblemMain("Exception: " + except.Message);
+				gsparams.result = GS_Result_t.gsFAILED;
+				if (dispInstance != IntPtr.Zero)
+					ghostapi.gsapi_delete_instance(dispInstance);
+				dispInstance = IntPtr.Zero;
+			}
+			return gsparams;
+		}
+
 		/* Close the display device and delete the instance */
 		public gsParamState_t DisplayDeviceClose()
 		{
@@ -1162,12 +1445,14 @@ public class gsEventArgs : EventArgs
 
 			try
 			{
-				int code1 = ghostapi.gsapi_exit(dispInstance);
-				if ((code == 0) || (code == gsConstants.E_QUIT))
-					code = code1;
+				code = ghostapi.gsapi_exit(dispInstance);
+				if (code < 0)
+				{
+					out_params.result = GS_Result_t.gsFAILED;
+					throw new GhostscriptException("DisplayDeviceClose: gsapi_exit error");
+				}
 
 				ghostapi.gsapi_delete_instance(dispInstance);
-				dispInstance = IntPtr.Zero;
 
 			}
 			catch (Exception except)
@@ -1176,6 +1461,8 @@ public class gsEventArgs : EventArgs
 				out_params.result = GS_Result_t.gsFAILED;
 			}
 
+			dispInstance = IntPtr.Zero;
+			m_displaystate.is_valid = false;
 			return out_params;
 		}
 

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace ghostnet_wpf_example
 {
@@ -51,7 +52,7 @@ namespace ghostnet_wpf_example
 
 		private bool ZoomDisabled()
 		{
-			if (!m_init_done || m_busy_render)
+			if (m_viewer_state != ViewerState_t.DOC_OPEN)
 				return true;
 			else
 				return false;
@@ -61,26 +62,28 @@ namespace ghostnet_wpf_example
 		{
 			if (ZoomDisabled())
 				return;
-			if (!m_init_done || m_doczoom <=  Constants.ZOOM_MIN)
+
+			if (m_doczoom <=  Constants.ZOOM_MIN)
 				return;
 
 			m_doczoom = GetNextZoom(m_doczoom, -1);
 			xaml_Zoomsize.Text = Math.Round(m_doczoom * 100.0).ToString();
 			ResizePages();
-			RenderMainAll();
+			RenderMain();
 		}
 
 		private void ZoomIn(object sender, RoutedEventArgs e)
 		{
 			if (ZoomDisabled())
 				return;
-			if (!m_init_done || m_doczoom >= Constants.ZOOM_MAX)
+
+			if (m_doczoom >= Constants.ZOOM_MAX)
 				return;
 
 			m_doczoom = GetNextZoom(m_doczoom, 1);
 			xaml_Zoomsize.Text = Math.Round(m_doczoom * 100.0).ToString();
 			ResizePages();
-			RenderMainAll();
+			RenderMain();
 		}
 
 		private void ZoomTextChanged(object sender, TextChangedEventArgs e)
@@ -114,6 +117,9 @@ namespace ghostnet_wpf_example
 
 			if (e.Key == Key.Return)
 			{
+				if (ZoomDisabled())
+					return;
+
 				e.Handled = true;
 				var desired_zoom = xaml_Zoomsize.Text;
 				try
@@ -126,7 +132,7 @@ namespace ghostnet_wpf_example
 
 					m_doczoom = zoom;
 					ResizePages();
-					RenderMainAll();
+					RenderMain();
 					xaml_Zoomsize.Text = Math.Round(zoom * 100.0).ToString();
 				}
 				catch (FormatException)
@@ -147,14 +153,22 @@ namespace ghostnet_wpf_example
 			if (m_page_sizes.Count == 0)
 				return;
 
+			int offset = 0;
+
+			/* Get scroll relative location */
+			Decorator border = VisualTreeHelper.GetChild(xaml_PageList, 0) as Decorator;
+			ScrollViewer scrollViewer = border.Child as ScrollViewer;
+			double top_window = scrollViewer.VerticalOffset;
+			double x_size = scrollViewer.ExtentHeight;
+
+			m_viewer_state = ViewerState_t.RESIZING;
 			for (int k = 0; k < m_numpages; k++)
 			{
 				var doc_page = m_docPages[k];
-				if (doc_page.Zoom == m_doczoom &&
-					doc_page.Width == (int)(m_doczoom * m_page_sizes[k].size.X) &&
-					doc_page.Height == (int)(m_doczoom * m_page_sizes[k].size.Y))
-					continue;
-				else
+
+				if (doc_page.Zoom != m_doczoom ||
+					doc_page.Width != (int)(m_doczoom * m_page_sizes[k].size.X) ||
+					doc_page.Height != (int)(m_doczoom * m_page_sizes[k].size.Y))
 				{
 					/* Resize it now */
 					doc_page.Width = (int)(m_doczoom * m_page_sizes[k].size.X);
@@ -162,7 +176,18 @@ namespace ghostnet_wpf_example
 					doc_page.Zoom = m_doczoom;
 					doc_page.Content= Page_Content_t.OLD_RESOLUTION;
 				}
+
+				/* Adjust page top locations */
+				m_toppage_pos[k] = offset + Constants.PAGE_VERT_MARGIN;
+				offset += doc_page.Height + 2 * Constants.PAGE_VERT_MARGIN;
 			}
+
+			m_toppage_pos[m_numpages] = offset;
+			m_viewer_state = ViewerState_t.DOC_OPEN;
+
+			/* Reset scroll location */
+			/* This could probably be improved a bit.  We should also do horizontal position */
+			scrollViewer.ScrollToVerticalOffset((top_window / x_size) * (double)offset);
 		}
 	}
 }

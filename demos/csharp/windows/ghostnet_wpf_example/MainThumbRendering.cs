@@ -18,13 +18,24 @@ namespace ghostnet_wpf_example
 			DocPage doc_page = new DocPage();
 			doc_page.Content = Page_Content_t.THUMBNAIL;
 			doc_page.Zoom = zoom_in;
+			doc_page.AA = m_aa;
 			doc_page.BitMap = m_thumbnails[page_num - 1].BitMap;
 			doc_page.Width = (int)(width / (Constants.SCALE_THUMB));
 			doc_page.Height = (int)(height / (Constants.SCALE_THUMB));
 			doc_page.PageNum = page_num;
 			m_docPages.Add(doc_page);
+
+			/* Set the page offsets.  Used for determining which pages
+			 * will be visible within viewport. */
 			m_toppage_pos.Add(offset + Constants.PAGE_VERT_MARGIN);
-			offset += doc_page.Height + Constants.PAGE_VERT_MARGIN;
+			offset += doc_page.Height + 2 * Constants.PAGE_VERT_MARGIN;
+
+			/* Set page sizes for 1.0 scaling. This is used to quick
+			 * rescale of pages prior to rendering at new zoom. */
+			pagesizes_t page_size = new pagesizes_t();
+			page_size.size.X = doc_page.Width;
+			page_size.size.Y = doc_page.Height;
+			m_page_sizes.Add(page_size);
 		}
 
 		/* Rendered all the thumbnail pages.  Stick them in the appropriate lists */
@@ -58,7 +69,6 @@ namespace ghostnet_wpf_example
 
 			m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
 
-
 			m_numpages = m_list_thumb.Count;
 			if (m_numpages < 1)
 			{
@@ -67,13 +77,14 @@ namespace ghostnet_wpf_example
 			}
 			else
 			{
-				m_init_done = true;
 				xaml_TotalPages.Text = "/" + m_numpages;
 				xaml_currPage.Text = m_currpage.ToString();
 				m_list_thumb.Clear();
 
-				/* If non-pdf, kick off full page rendering */
-				RenderMainFirst();
+				if (m_doc_type_has_page_access)
+					RenderMainRange();
+				else
+					RenderMainAll();
 			}
 		}
 
@@ -110,7 +121,7 @@ namespace ghostnet_wpf_example
 			xaml_ProgressGrid.Visibility = System.Windows.Visibility.Visible;
 
 			m_ghostscript.gsPageRenderedMain += new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
-			m_ghostscript.gsDisplayDeviceRenderAll(m_currfile, Constants.SCALE_THUMB, false, GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF);
+			m_ghostscript.gsDisplayDeviceRenderThumbs(m_currfile, Constants.SCALE_THUMB, false, GS_Task_t.DISPLAY_DEV_THUMBS);
 		}
 	}
 }
