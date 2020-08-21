@@ -305,20 +305,22 @@ currentdict /runpdfstring .undef
         % This is counter-intuitive, and we don't understand why it happens,
         % but the improvement is significant.
    /PDFTopSave save def
-   <</ProcessDSCComment //null>> setuserparams
-   <</ProcessComment //null>> setuserparams
-   %% Bug #696487, allow dict stack to grow without limit, as these PDF
-   %% files have stupidly deep gsave nesting and we need a dictionary per gsave
-   %% at the moment.
-   %% Remove ths if bug #696511 is ever completed (move ExtGstate parameters into gstate)
-   <</MaxDictStack -1>> setuserparams
-   %% Bug #696567, same customer as above. Ths time they have a file with a page whch has
-   %% 447000 ExtGState references (all of hwch contain no gstate!) Because we allocate
-   %% these on the stack, allow the stack to grow indefinitely in order to accomodate
-   %% such stupid files. Also move these lines from the end of the routine, so that
-   %% the increases are in place before we call odfopen, which will build the
-   %% resources and needs this definition in place.
-   <</MaxOpStack -1>> setuserparams
+   <<
+     /ProcessDSCComment //null
+     /ProcessComment //null
+     %% Bug #696487, allow dict stack to grow without limit, as these PDF
+     %% files have stupidly deep gsave nesting and we need a dictionary per gsave
+     %% at the moment.
+     %% Remove ths if bug #696511 is ever completed (move ExtGstate parameters into gstate)
+     /MaxDictStack -1
+     %% Bug #696567, same customer as above. Ths time they have a file with a page whch has
+     %% 447000 ExtGState references (all of which contain no gstate!) Because we allocate
+     %% these on the stack, allow the stack to grow indefinitely in order to accomodate
+     %% such stupid files. Also move these lines from the end of the routine, so that
+     %% the increases are in place before we call odfopen, which will build the
+     %% resources and needs this definition in place.
+     /MaxOpStack -1
+   >> setuserparams
 
    //DisablePageHandlerDevice exec
 
