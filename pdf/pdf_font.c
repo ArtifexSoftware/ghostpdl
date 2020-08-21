@@ -506,14 +506,12 @@ int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
     }
 
     code = pdfi_get_name_index(font->ctx, (char *)GlyphName->data, GlyphName->length, &index);
-    if (code < 0)
+    if (code < 0) {
+        pdfi_countdown(GlyphName);
         return code;
+    }
 
     code = pdfi_name_from_index(font->ctx, index, (unsigned char **)&pstr->data, &pstr->size);
-    return code;
-
-    pstr->data = GlyphName->data;
-    pstr->size = GlyphName->length;
     pdfi_countdown(GlyphName);
-    return 0;
+    return code;
 }
