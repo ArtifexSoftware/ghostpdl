@@ -157,11 +157,13 @@ gp_getenv(const char *name, char *ptr, int *plen)
               && ((HIWORD(version) & 0x4000) == 0))) {
             /* not Win32s */
             int code;
+            int major = (int)(gs_revision / 1000);
+            int minor = (int)(gs_revision - (major * 1000)) / 10;
+            int patch = gs_revision % 10;
             wchar_t key[256];
             wchar_t dotversion[16];
 
-            wsprintfW(dotversion, L"%d.%02d", (int)(gs_revision / 100),
-                      (int)(gs_revision % 100));
+            wsprintfW(dotversion, L"%d.%02d.%d", major, minor, patch);
             wsprintfW(key, L"Software\\%hs\\%s", gs_productfamily, dotversion);
             code = gp_getenv_registry(HKEY_CURRENT_USER, key, name, ptr, plen);
             if ( code <= 0 )

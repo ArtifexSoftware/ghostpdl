@@ -601,8 +601,13 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
     }
     /* add comment */
     strncpy(software_key, "Software", sizeof(software_key));
-    gs_sprintf(software_text, "%s %d.%02d", gs_product,
-            (int)(gs_revision / 100), (int)(gs_revision % 100));
+    {
+        int major = (int)(gs_revision / 1000);
+        int minor = (int)(gs_revision - (major * 1000)) / 10;
+        int patch = gs_revision % 10;
+
+        gs_sprintf(software_text, "%s %d.%02d.%d", gs_product, major, minor, patch);
+    }
     text_png.compression = -1;	/* uncompressed */
     text_png.key = software_key;
     text_png.text = software_text;
