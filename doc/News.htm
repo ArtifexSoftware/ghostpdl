@@ -93,7 +93,7 @@ overview</a>.
 <p>The 9.53.0 release is primarily maintenance.
 </li>
 <li>
-<p>Most obvious change is the (re-)introduction of the patch level to the version number,
+<p>The most obvious change is the (re-)introduction of the patch level to the version number,
 this helps facilitate a revised policy on handling security related issues.
 </li>
 <li>
@@ -118,7 +118,7 @@ interested developers.
 </li>
 <li>
 <p>For those integrating Ghostscript/GhostPDL via the <code>gsapi</code> interface, we
-have added new capbilities to that, specifically in terms of setting and interrogating
+have added new capabilities to that, specifically in terms of setting and interrogating
 device parameters. These, along with the existing interface calls, are documented in:
 <a href="API.htm">Ghostscript Interpreter API</a>
 </li>
@@ -133,8 +133,8 @@ us, so we can discuss your use case, and revise our plans accordingly.
 </li>
 <li>
 <p>IMPORTANT: We have forked LittleCMS2 into LittleCMS2mt (the "mt" indicating "multi-thread").
-LCMS2 is not thread safe, and cannot be made thread safe without breaking the ABI. Our fork
-will be thread safe, and include performance enhancements (these changes have all be been
+LCMS2 is not thread safe and cannot be made thread safe without breaking the ABI. Our fork
+will be thread safe and include performance enhancements (these changes have all be been
 offered and rejected upstream). We will maintain compatibility between Ghostscript and LCMS2
 for a time, but not in perpetuity. If there is sufficient interest, our fork will be
 available as its own package separately from Ghostscript (and MuPDF).
@@ -153,10 +153,13 @@ for now, as we are aware that not everyone upgrades with every release.</h4>
 <li>
 <p>(9.53.0) As of 9.53.0, we have (re-)introduced the patch level to the version number,
 this helps facilitate a revised policy on handling security related issues.
+<p><strong>Note for GSView Users:</strong>The patch level addition breaks GSView 5 (it is
+hardcoded to check for versions <code>704-999</code>. It is possible, but not guaranteed that
+a GSView update might be forthcoming to resolve this.
 </li>
 <li>
 <p>(9.52) As of 9.52, the Windows binaries released by the Ghostscript development
-team are built with Microsoft Visual Studio 2019. As a result Microsoft Windows XP and
+team are built with Microsoft Visual Studio 2019. As a result, Microsoft Windows XP and
 earlier are no longer supported by these binaries. This does not imply we are, or will
 start relying upon features only available in VS2019, so the <code>nmake</code> Makefiles
 will continue to allow older Visual Studio versions (back to VS2005) to build Ghostscript.
@@ -183,17 +186,17 @@ change in behaviour compared to the old code which, on Windows, was case
 in that it now supports (although does not enforce) case sensitivity.
 </li>
 <li>
-<p>(9.27) The process of &quot;tidying&quot; the Postscript name space should have removed
+<p>(9.27) The process of &quot;tidying&quot; the PostScript name space should have removed
 only non-standard and undocumented operators. Nevertheless, it is possible that
 any integrations or utilities that rely on those non-standard and undocumented
-operators may stop working, or may change behaviour.
+operators may stop working or may change behaviour.
 <p>If you encounter such a case, please contact us (either the #ghostscript IRC channel,
 or the gs-devel mailing list would be best), and we'll work with you to either find an
 alternative solution or return the previous functionality, if there is genuinely no other
 option.
 <p>One case we know this has occurred is GSView 5 (and earlier). GSView 5 support for PDF
 files relied upon internal use only features which are no longer available. GSView 5 will
-still work as previously for Postscript files. For PDF files, users are encouraged to look
+still work as previously for PostScript files. For PDF files, users are encouraged to look
 at <a href="https://www.mupdf.com">MuPDF</a>.
 </li>
 </ul>
