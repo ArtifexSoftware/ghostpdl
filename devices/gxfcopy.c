@@ -1850,7 +1850,6 @@ copy_font_cid2(gs_font *font, gs_font *copied)
                             copied2->memory, return_error(gs_error_VMerror), "copy_font_cid2");
         subst->data[0] = subst->data[1] = 0;
         copied2->subst_CID_on_WMode = subst;
-        rc_increment(subst);
     }
 
     return 0;
@@ -1865,12 +1864,13 @@ static int expand_CIDMap(gs_font_cid2 *copied2, uint CIDCount)
         return 0;
     CIDMap = (ushort *)
         gs_alloc_byte_array(copied2->memory, CIDCount, sizeof(ushort),
-                            "copy_font_cid2(CIDMap");
+                            "expand_CIDMap(new CIDMap)");
     if (CIDMap == 0)
         return_error(gs_error_VMerror);
     memcpy(CIDMap, cfdata->CIDMap, copied2->cidata.common.CIDCount * sizeof(*CIDMap));
     memset(CIDMap + copied2->cidata.common.CIDCount, 0xFF,
             (CIDCount - copied2->cidata.common.CIDCount) * sizeof(*CIDMap));
+    gs_free_object(copied2->memory, cfdata->CIDMap, "expand_CIDMap(old CIDMap)");
     cfdata->CIDMap = CIDMap;
     copied2->cidata.common.CIDCount = CIDCount;
     return 0;
@@ -2251,6 +2251,7 @@ int gs_free_copied_font(gs_font *font)
     gs_memory_t *mem = font->memory;
     int i, code;
     gs_copied_glyph_t *pcg = 0;
+    gs_copied_glyph_name_t *pcgn = 0;
 
     /* For CID fonts, we must also free the descendants, which we copied
      * at the time we copied the actual CIDFont itself
@@ -2267,12 +2268,26 @@ int gs_free_copied_font(gs_font *font)
         copied0->cidata.FDArray = 0;
     }
 
+    if (font->FontType == ft_CID_TrueType) {
+        gs_font_cid2 *copied2 = (gs_font_cid2 *)font;
+
+        if (copied2->subst_CID_on_WMode)
+            rc_decrement(copied2->subst_CID_on_WMode, "gs_free_copied_font(subst_CID_on_WMode");
+    }
+
     if (cfdata) {
         /* free copied glyph data */
         for (i=0;i < cfdata->glyphs_size;i++) {
             pcg = &cfdata->glyphs[i];
-            if(pcg->gdata.size) {
+            if(pcg->gdata.data != NULL) {
                 gs_free_string(font->memory, (byte *)pcg->gdata.data, pcg->gdata.size, "Free copied glyph");
+            }
+            if (cfdata->names) {
+                pcgn = &cfdata->names[i];
+                if (pcgn->str.data != NULL) {
+                    if (!gs_is_c_glyph_name(pcgn->str.data, pcgn->str.size))
+                        gs_free_string(font->memory, (byte *)pcgn->str.data, pcgn->str.size, "Free copied glyph");
+                }
             }
         }
 
@@ -2286,6 +2301,8 @@ int gs_free_copied_font(gs_font *font)
                       "gs_free_copied_font(Copyright)");
         if (cfdata->Encoding)
             gs_free_object(mem, cfdata->Encoding, "gs_free_copied_font(Encoding)");
+        if (cfdata->CIDMap)
+            gs_free_object(mem, cfdata->CIDMap, "gs_free_copied_font(CIDMap)");
         gs_free_object(mem, cfdata->glyphs, "gs_free_copied_font(glyphs)");
         gs_free_object(mem, cfdata->names, "gs_free_copied_font(names)");
         gs_free_object(mem, cfdata->data, "gs_free_copied_font(data)");

@@ -38,7 +38,7 @@ namespace ghostnet_wpf_example
 				case PrintPages_t.ALL:
 					print_all = true;
 					first_page = 1;
-					last_page = m_numpages + 1;
+					last_page = m_numpages;
 					break;
 			}
 
@@ -74,7 +74,7 @@ namespace ghostnet_wpf_example
 		 * pushing that file through the XPS print queue */
 		private void Print(object sender, ExecutedRoutedEventArgs e)
 		{
-			if (!m_file_open)
+			if (m_viewer_state != ViewerState_t.DOC_OPEN)
 				return;
 
 			if (m_printcontrol == null)
@@ -112,6 +112,7 @@ namespace ghostnet_wpf_example
 
 			xaml_PrintGrid.Visibility = System.Windows.Visibility.Visible;
 			xaml_PrintProgress.Value = 0;
+			m_viewer_state = ViewerState_t.PRINTING;
 			PrintThread.Start(arguments);
 		}
 
@@ -155,6 +156,7 @@ namespace ghostnet_wpf_example
 					{
 						ShowMessage(NotifyType_t.MESS_ERROR, "Printer Driver Error");
 						xaml_PrintGrid.Visibility = System.Windows.Visibility.Collapsed;
+						m_viewer_state = ViewerState_t.DOC_OPEN;
 					}));
 					break;
 				case PrintStatus_t.PRINT_CANCELLED:
@@ -162,6 +164,7 @@ namespace ghostnet_wpf_example
 					System.Windows.Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(() =>
 					{
 						xaml_PrintGrid.Visibility = System.Windows.Visibility.Collapsed;
+						m_viewer_state = ViewerState_t.DOC_OPEN;
 					}));
 					break;
 				case PrintStatus_t.PRINT_DONE:
@@ -169,6 +172,7 @@ namespace ghostnet_wpf_example
 					{
 						xaml_PrintGrid.Visibility = System.Windows.Visibility.Collapsed;
 						DeleteTempFile(Information.FileName);
+						m_viewer_state = ViewerState_t.DOC_OPEN;
 					}));
 					break;
 				case PrintStatus_t.PRINT_BUSY:

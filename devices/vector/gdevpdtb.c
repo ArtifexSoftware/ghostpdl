@@ -412,6 +412,11 @@ pdf_base_font_is_subset(const pdf_base_font_t *pbfont)
 void
 pdf_base_font_drop_complete(pdf_base_font_t *pbfont)
 {
+    /* gs_font is a subset of gs_font_base and we only want to
+     * free the members which are common to both, so this cast is
+     * (at the time of writing) safe.
+     */
+    gs_free_copied_font((gs_font *)pbfont->complete);
     pbfont->complete = NULL;
 }
 

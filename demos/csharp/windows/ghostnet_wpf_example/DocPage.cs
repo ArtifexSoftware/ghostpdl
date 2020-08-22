@@ -10,6 +10,7 @@ namespace ghostnet_wpf_example
 		private int height;
 		private int width;
 		private double zoom;
+		private bool aa;
 		private BitmapSource bitmap;
 		private String pagename;
 		private int pagenum;
@@ -39,6 +40,12 @@ namespace ghostnet_wpf_example
 		{
 			get { return zoom; }
 			set { zoom = value; }
+		}
+
+		public bool AA
+		{
+			get { return aa; }
+			set { aa = value; }
 		}
 
 		public BitmapSource BitMap
@@ -90,12 +97,13 @@ namespace ghostnet_wpf_example
 			this.pagename = "";
 		}
 
-		public DocPage(int Height, int Width, double Zoom, BitmapSource BitMap, int PageNum)
+		public DocPage(int Height, int Width, double Zoom, BitmapSource BitMap, int PageNum, bool AA)
 		{
 			this.height = Height;
 			this.width = Width;
 			this.zoom = Zoom;
 			this.bitmap = BitMap;
+			this.aa = AA;
 			this.pagename = ("Page " + (pagenum + 1));
 		}
 	};

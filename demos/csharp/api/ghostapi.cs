@@ -22,7 +22,9 @@ namespace GhostAPI
 		gs_spt_string =		5,   /* void * is a char * */
 		gs_spt_long =		6,   /* void * is a long * */
 		gs_spt_i64 =		7,   /* void * is a int64_t * */
-		gs_spt_size_t =		8    /* void * is a size_t * */
+		gs_spt_size_t =		8,    /* void * is a size_t * */
+		gs_spt_parsed =		9,   /* void * is a pointer to a char * to be parsed */
+		gs_spt_more_to_come = 1 << 31
 	};
 
 	public enum gsEncoding
@@ -63,7 +65,7 @@ namespace GhostAPI
 #endif
 #endif
         /* Callback proto for stdio */
-        public delegate int gsStdIOHandler(IntPtr caller_handle, IntPtr buffer, int len);
+        public delegate int gs_stdio_handler(IntPtr caller_handle, IntPtr buffer, int len);
 
 		/* Callback proto for poll function */
 		public delegate int gsPollHandler(IntPtr caller_handle);
@@ -84,38 +86,43 @@ namespace GhostAPI
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern void gsapi_delete_instance(IntPtr instance);
 
-		[DllImport(lib_dll, EntryPoint = "gsapi_init_with_args", CharSet = CharSet.Ansi,
+		[DllImport(lib_dll, EntryPoint = "gsapi_set_stdio_with_handle", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_init_with_args(IntPtr instance, int argc,
-			IntPtr argv);
-
-		[DllImport(lib_dll, EntryPoint = "gsapi_exit", CharSet = CharSet.Ansi,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_exit(IntPtr instance);
-
-		[DllImport(lib_dll, EntryPoint = "gsapi_set_arg_encoding", CharSet = CharSet.Ansi,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_set_arg_encoding(IntPtr instance,
-			int encoding);
+		public static extern int gsapi_set_stdio_with_handle(IntPtr instance,
+			gs_stdio_handler stdin, gs_stdio_handler stdout, gs_stdio_handler stderr, IntPtr caller_handle);
 
 		[DllImport(lib_dll, EntryPoint = "gsapi_set_stdio", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern int gsapi_set_stdio(IntPtr instance,
-			gsStdIOHandler stdin, gsStdIOHandler stdout, gsStdIOHandler stderr);
-
-		[DllImport(lib_dll, EntryPoint = "gsapi_set_stdio_with_handle", CharSet = CharSet.Ansi,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_set_stdio_with_handle(IntPtr instance,
-			gsStdIOHandler stdin, gsStdIOHandler stdout, gsStdIOHandler stderr, IntPtr caller_handle);
-
-		[DllImport(lib_dll, EntryPoint = "gsapi_set_poll", CharSet = CharSet.Ansi,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_set_poll(IntPtr instance, gsPollHandler pollfn);
+			gs_stdio_handler stdin, gs_stdio_handler stdout, gs_stdio_handler stderr);
 
 		[DllImport(lib_dll, EntryPoint = "gsapi_set_poll_with_handle", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern int gsapi_set_poll_with_handle(IntPtr instance, gsPollHandler pollfn,
 			IntPtr caller_handle);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_set_poll", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_set_poll(IntPtr instance, gsPollHandler pollfn);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_set_display_callback", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_set_display_callback(IntPtr pinstance, IntPtr caller_handle);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_register_callout", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_register_callout(IntPtr instance, gsCallOut callout,
+			IntPtr callout_handle);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_deregister_callout", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_deregister_callout(IntPtr instance, gsCallOut callout,
+			IntPtr callout_handle);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_set_arg_encoding", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_set_arg_encoding(IntPtr instance,
+			int encoding);
 
 		[DllImport(lib_dll, EntryPoint = "gsapi_get_default_device_list", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
@@ -126,21 +133,6 @@ namespace GhostAPI
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern int gsapi_set_default_device_list(IntPtr instance,
 			IntPtr list, ref int listlen);
-
-		[DllImport(lib_dll, EntryPoint = "gsapi_run_string", CharSet = CharSet.Ansi,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_run_string(IntPtr instance, IntPtr command,
-			int usererr, ref int exitcode);
-
-		[DllImport(lib_dll, EntryPoint = "gsapi_run_string_with_length", CharSet = CharSet.Ansi,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_run_string_with_length(IntPtr instance, IntPtr command,
-			uint length, int usererr, ref int exitcode);
-
-		[DllImport(lib_dll, EntryPoint = "gsapi_run_file", CharSet = CharSet.Ansi,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_run_file(IntPtr instance, IntPtr filename,
-			int usererr, ref int exitcode);
 
 		[DllImport(lib_dll, EntryPoint = "gsapi_run_string_begin", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
@@ -157,9 +149,44 @@ namespace GhostAPI
 		public static extern int gsapi_run_string_end(IntPtr instance,
 			int usererr, ref int exitcode);
 
-		[DllImport(lib_dll, EntryPoint = "gsapi_set_display_callback", CharSet = CharSet.Ansi,
+		[DllImport(lib_dll, EntryPoint = "gsapi_run_string_with_length", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_set_display_callback(IntPtr pinstance, IntPtr caller_handle);
+		public static extern int gsapi_run_string_with_length(IntPtr instance, IntPtr command,
+			uint length, int usererr, ref int exitcode);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_run_string", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_run_string(IntPtr instance, IntPtr command,
+			int usererr, ref int exitcode);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_run_file", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_run_file(IntPtr instance, IntPtr filename,
+			int usererr, ref int exitcode);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_init_with_args", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_init_with_args(IntPtr instance, int argc,
+			IntPtr argv);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_exit", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_exit(IntPtr instance);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_set_param", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_set_param(IntPtr instance, IntPtr param, IntPtr value,
+			gs_set_param_type type);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_get_param", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_get_param(IntPtr instance, IntPtr param, IntPtr value,
+			gs_set_param_type type);
+
+		[DllImport(lib_dll, EntryPoint = "gsapi_enumerate_params", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int gsapi_enumerate_params(IntPtr instance, out IntPtr inter,
+			out IntPtr key, IntPtr type);
 
 		[DllImport(lib_dll, EntryPoint = "gsapi_add_control_path", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
@@ -181,19 +208,7 @@ namespace GhostAPI
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern int gsapi_is_path_control_active(IntPtr instance);
 
-		[DllImport(lib_dll, EntryPoint = "gsapi_set_param", CharSet = CharSet.Ansi,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_set_param(IntPtr instance, gs_set_param_type type,
-			IntPtr param, IntPtr value);
 
-		[DllImport(lib_dll, EntryPoint = "gsapi_register_callout", CharSet = CharSet.Ansi,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_register_callout(IntPtr instance, gsCallOut callout,
-			IntPtr callout_handle);
 
-		[DllImport(lib_dll, EntryPoint = "gsapi_deregister_callout", CharSet = CharSet.Ansi,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_deregister_callout(IntPtr instance, gsCallOut callout,
-			IntPtr callout_handle);
 	}
 }
