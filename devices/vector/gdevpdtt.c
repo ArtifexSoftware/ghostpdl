@@ -757,6 +757,13 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
 
     font_cache_elem_array_sizes(pdev, font, &num_widths, &num_chars);
     len = (num_chars + 7) / 8;
+    if (e->glyph_usage != NULL)
+        gs_free_object(pdev->pdf_memory, e->glyph_usage,
+                            "pdf_attach_font_resource, reallocating");
+    if (e->real_widths != NULL)
+        gs_free_object(pdev->pdf_memory, e->real_widths,
+                            "alloc_font_cache_elem_arrays, reallocating");
+
     e->glyph_usage = gs_alloc_bytes(pdev->pdf_memory,
                         len, "alloc_font_cache_elem_arrays");
 
