@@ -4,6 +4,7 @@ import java.awt.Adjustable;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -44,23 +45,34 @@ public class ViewerWindow extends javax.swing.JFrame {
 	 */
 	public static final int MINI_VIEWER_PAGE_GAP = 10;
 
+	/**
+	 * Constant indicating the "Yes" option was clicked in a dialog.
+	 */
 	public static final int YES = JOptionPane.YES_OPTION;
+
+	/**
+	 * Constant indicating the "No" option was clicked in a dialog.
+	 */
 	public static final int NO = JOptionPane.NO_OPTION;
+
+	/**
+	 * Constant indicating the "Cancel" option was clicked in a ddialog.
+	 */
 	public static final int CANCEL = JOptionPane.CANCEL_OPTION;
 
-	private ViewerGUIListener guiListener;
-	private int currentPage, maxPage;
-	private double currentZoom;
+	private ViewerGUIListener guiListener; // The ViewerGUIListener to receive callbacks
+	private int currentPage, maxPage; // Current page displayed and the length of the document
+	private double currentZoom; // The amount the viewer is zoomed
 
-	private Document loadedDocument;
-	private ScrollMap scrollMap;
-	private List<PagePanel> viewerPagePanels;
-	private List<PagePanel> miniViewerPagePanels;
+	private Document loadedDocument; // The currently loaded document
+	private ScrollMap scrollMap; // The ScrollMap mapping scroll values to page numbers
+	private List<PagePanel> viewerPagePanels; // A list of the page panels in the viewer
+	private List<PagePanel> miniViewerPagePanels; // A list of the page panels in the mini viewer
 
-	private Dimension min;
-	private Dimension max;
+	private Dimension min; // The minimum window size
+	private Dimension max; // The maximum window size
 
-	private boolean gotoPage;
+	private boolean gotoPage; // Whether the viewer should jump to currentPage
 
 	/**
 	 * Creates new ViewerWindow.
@@ -72,7 +84,8 @@ public class ViewerWindow extends javax.swing.JFrame {
 	/**
 	 * Creates a new ViewerWindow with a GUIListener.
 	 *
-	 * @param listener A ViewerGUIListener.
+	 * @param listener A ViewerGUIListener which will receive callbacks regarding
+	 * different events.
 	 */
 	public ViewerWindow(final ViewerGUIListener listener) {
 		initComponents();
@@ -455,15 +468,21 @@ public class ViewerWindow extends javax.swing.JFrame {
 
 	private class PagePanel extends JPanel implements PageUpdateCallback {
 
-		private static final long serialVersionUID = 1L;
+		static final long serialVersionUID = 1L;
 
-		private Object lock;
-		private Page page;
-		private double size;
+		Object lock; // A lock to ensure multiple draw calls don't happen
+		Page page; // The page to display
+		double size; // The size of the page
 
-		private Image toDraw;
+		Image toDraw; // The image which should be drawn by the panel
 
-		private PagePanel(final Page page, double size) {
+		/**
+		 * Creates a new page panel to display a page of a document.
+		 *
+		 * @param page The page to display.
+		 * @param size The size of the page.
+		 */
+		PagePanel(final Page page, double size) {
 			this.lock = new Object();
 			this.page = page;
 			this.size = size == 0.0 ? 0.01 : size;
@@ -486,7 +505,14 @@ public class ViewerWindow extends javax.swing.JFrame {
 			page.addCallback(this);
 		}
 
-		public Image getImage() {
+		/**
+		 * Returns the image which should be displayed in the viewer. This will
+		 * change depending on the availability of high resolution images and zoom
+		 * values.
+		 *
+		 * @return The image which should be displayed in the viewer.
+		 */
+		Image getImage() {
 			if (page != null && page.getLowResImage() != null) {
 				Dimension pageSize = page.getSize();
 				Dimension actualSize = new Dimension((int)(pageSize.width * size),
@@ -506,7 +532,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 			}
 		}
 
-		private void cleanup() {
+		/**
+		 * Cleans up this page panel.
+		 */
+		void cleanup() {
 			if (page != null) {
 				page.removeCallback(this);
 				page = null;
@@ -550,11 +579,24 @@ public class ViewerWindow extends javax.swing.JFrame {
 		public void onUnloadZoomed() { }
 	}
 
+	/**
+	 * The action listener to listen for button clicks in the
+	 * mini viewer. Clicking on a button in the mini viewer will jump
+	 * the user's view to the respective page.
+	 *
+	 * @author evrhe
+	 *
+	 */
 	private class MiniViewerActionListener implements ActionListener {
 
-		private final int pageNum;
+		final int pageNum; // The assigned page number for this listener
 
-		private MiniViewerActionListener(int pageNum) {
+		/**
+		 * Creates a new listener with a tied page.
+		 *
+		 * @param pageNum The page number tied to this listener.
+		 */
+		MiniViewerActionListener(int pageNum) {
 			this.pageNum = pageNum;
 		}
 
@@ -597,10 +639,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 	}
 
 	/**
-	 * Loads a document into the viewer.
+	 * Loads a document into the viewer and unloads the currently loaded document
+	 * if one is loaded.
 	 *
-	 * @param document The document to load, if <code>null</code> the current
-	 * document will be unloaded.
+	 * @param document The document to load into the viewer.
 	 */
 	public void loadDocumentToViewer(final Document document) {
 		unloadViewerDocument();
@@ -636,6 +678,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 			miniViewerContentPane.add(Box.createVerticalStrut(MINI_VIEWER_PAGE_GAP));
 		}
 
+		// Generate the scroll map
 		this.scrollMap = new ScrollMap(document, this, VIEWER_PAGE_GAP);
 		this.scrollMap.getScroll(1);
 
@@ -644,6 +687,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 
 		setTitle("Viewer - " + document.getName());
 
+		// Enable all widgets
 		zoomSlider.setEnabled(true);
 		increaseZoomButton.setEnabled(true);
 		decreaseZoomButton.setEnabled(true);
@@ -657,19 +701,30 @@ public class ViewerWindow extends javax.swing.JFrame {
 		refreshButtons();
 	}
 
+	/**
+	 * Unloads the currently loaded document from the viewer. If no document
+	 * is loaded, this method does nothing.
+	 */
 	public void unloadViewerDocument() {
+		if (this.loadedDocument == null)
+			return;
+
 		lockSize();
 
 		this.loadedDocument = null;
 		this.scrollMap = null;
+
+		// Disable all widgets
 		this.assumePage(0);
 		this.assumeMaxPages(0);
 		this.zoomSlider.setValue(50);
 		this.zoomSlider.setEnabled(false);
 		this.zoomSlider.setFocusable(false);
 		this.pageNumberField.setEditable(false);
+
 		setTitle("Viewer");
 
+		// Remove all pages
 		for (final PagePanel panel : viewerPagePanels) {
 			synchronized (panel.lock) {
 				panel.cleanup();
@@ -774,24 +829,57 @@ public class ViewerWindow extends javax.swing.JFrame {
 		return true;
 	}
 
+	/**
+	 * Returns the current page the user is scrolled to.
+	 *
+	 * @return The current page.
+	 */
 	public int getCurrentPage() {
 		if (this.scrollMap != null)
 			return scrollMap.getCurrentPage();
 		return 0;
 	}
 
-	public void showErrorDialog(String title, String message) {
+	/**
+	 * Shows an error dialog with a title and message.
+	 *
+	 * @param title The title of the dialog.
+	 * @param message The message of the dialog.
+	 * @throws HeadlessException If <code>GraphicsEnvironment.isHeadless</code> returns <code>true</code>.
+	 */
+	public void showErrorDialog(String title, String message) throws HeadlessException {
 		JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
 	}
 
-	public void showWarningDialog(String title, String message) {
+	/**
+	 * Shows a warning dialog with a title and message.
+	 *
+	 * @param title The title of the dialog.
+	 * @param message The message of the dialog.
+	 * @throws HeadlessException If <code>GraphicsEnvironment.isHeadless</code> returns <code>true</code>.
+	 */
+	public void showWarningDialog(String title, String message) throws HeadlessException {
 		JOptionPane.showMessageDialog(this, message, title, JOptionPane.WARNING_MESSAGE);
 	}
 
-	public int showConfirmDialog(String title, String message) {
+	/**
+	 * Shows a confirmation dialog with a title and message.
+	 *
+	 * @param title The title of the dialog.
+	 * @param message The message of the dialog.
+	 * @return The button the user clicked (<code>ViewerWindow.YES</code>, <code>ViewerWindow.NO</code>,
+	 * or <code>ViewerWindow.CANCEL</code>).
+	 * @throws HeadlessException If <code>GraphicsEnvironment.isHeadless</code> returns <code>true</code>.
+	 */
+	public int showConfirmDialog(String title, String message) throws HeadlessException {
 		return JOptionPane.showConfirmDialog(this, message, title, JOptionPane.YES_NO_CANCEL_OPTION);
 	}
 
+	/**
+	 * Returns how much the viewer is zoomed in.
+	 *
+	 * @return The current zoom.
+	 */
 	public double getZoom() {
 		return currentZoom;
 	}
@@ -807,6 +895,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 		this.decreaseZoomButton.setEnabled(currentZoom != 0.0 && loadedDocument != null);
 	}
 
+	/**
+	 * Redisplays the currently loaded document. This will remove all loaded page panels
+	 * and recreate them.
+	 */
 	private void redisplayDocument() {
 		lockSize();
 
@@ -835,6 +927,9 @@ public class ViewerWindow extends javax.swing.JFrame {
 		});
 	}
 
+	/**
+	 * Prevents the window from being resized.
+	 */
 	private void lockSize() {
 		Dimension size = getSize();
 		setMinimumSize(size);
@@ -842,6 +937,9 @@ public class ViewerWindow extends javax.swing.JFrame {
 		//setResizable(false);
 	}
 
+	/**
+	 * Allows the window to be resized.
+	 */
 	private void unlockSize() {
 		setMinimumSize(min);
 		setMaximumSize(max);

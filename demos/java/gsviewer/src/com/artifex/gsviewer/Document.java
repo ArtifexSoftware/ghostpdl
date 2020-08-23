@@ -16,7 +16,6 @@ import java.util.Objects;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.artifex.gsjava.GSAPI;
 import com.artifex.gsjava.GSInstance;
 import com.artifex.gsjava.callbacks.DisplayCallback;
 import com.artifex.gsjava.util.BytePointer;
@@ -202,7 +201,24 @@ public class Document implements List<Page> {
 		return loadDocumentAsync(filename, cb, null, operationMode);
 	}
 
-	public static boolean shouldDistill(File file) {
+	/**
+	 * Returns whether a file should being distilled to a PDF before loading. Also tests
+	 * to make sure that the supplied file is a file type that can be loaded into the viewer.
+	 * If the file cannot be loaded into the viewer, an <code>IllegalArgumentException</code>
+	 * is thrown.
+	 *
+	 * @param file The file to test.
+	 * @return <code>true</code> if the file should be distilled or <code>false</code>
+	 * if it should not.
+	 * @throws FileNotFoundException If <code>file</code> does not exist.
+	 * @throws IllegalArgumentException If <code>file</code> is not a document which can
+	 * be loaded into the viewer.
+	 * @throws NullPointerException If <code>file</code> is <code>null</code>.
+	 */
+	public static boolean shouldDistill(File file)
+			throws FileNotFoundException, IllegalArgumentException, NullPointerException {
+		if (!Objects.requireNonNull(file, "file is null").exists())
+			throw new FileNotFoundException("File does not exist.");
 		String path = file.getAbsolutePath();
 		int extensionInd = path.lastIndexOf('.');
 		if (extensionInd == -1 || !GSFileFilter.INSTANCE.accept(file))
@@ -211,9 +227,23 @@ public class Document implements List<Page> {
 		return !extension.equalsIgnoreCase(".pdf");
 	}
 
-	public static File distillDocument(File input, File out) throws IOException, IllegalStateException {
+	/**
+	 * Distills a document into a PDF.
+	 *
+	 * @param input The input file to distill.
+	 * @param out The output file to write to. If the file does not exist, it will be
+	 * created. If this is <code>null</code>, a temporary file will be created.
+	 * @return The file which was written to.
+	 * @throws IOException When a file fails to be created.
+	 * @throws FileNotFoundException When <code>input</code> does not exist.
+	 * @throws IllegalStateException When the file fails to be distilled.
+	 */
+	public static File distillDocument(File input, File out) throws IOException, FileNotFoundException, IllegalStateException {
 		if (gsInstance != null)
 			throw new IllegalStateException("gsInstance is non-null");
+
+		if (!input.exists())
+			throw new FileNotFoundException(input.getAbsolutePath());
 
 		out = out == null ? File.createTempFile(input.getName() + ".pdf", null) : out;
 		if (!out.exists())
@@ -337,6 +367,14 @@ public class Document implements List<Page> {
 		}
 	}
 
+	/**
+	 * Initializes a new instance of ghostscript.
+	 *
+	 * @param args The arguments for init_with_args.
+	 * @return The return code of init_with_args.
+	 * @throws IllegalStateException When any return code of a Ghostscript call is
+	 * not <code>GS_ERROR_OK</code>.
+	 */
 	private static int initGSInstance(String... args) throws IllegalStateException {
 		deleteGSInstance();
 
@@ -365,6 +403,9 @@ public class Document implements List<Page> {
 		return code;
 	}
 
+	/**
+	 * Deletes the current instance of Ghostscript.
+	 */
 	private static void deleteGSInstance() {
 		if (gsInstance != null) {
 			gsInstance.exit();
@@ -373,6 +414,15 @@ public class Document implements List<Page> {
 		}
 	}
 
+	/**
+	 * Sets Ghostscript parameters.
+	 *
+	 * @param dpi The dpi to set.
+	 * @param startPage The start page to set.
+	 * @param lastPage The last page to set.
+	 * @throws NullPointerException When the Ghostscript instance is <code>null</code>.
+	 * @throws IllegalStateException When any Ghostscript call does not return <code>GS_ERROR_OK</code>.
+	 */
 	private static void setParams(int dpi, int startPage, int lastPage) throws NullPointerException, IllegalStateException {
 		if (gsInstance == null)
 			throw new NullPointerException("gsInstance is null");
@@ -409,11 +459,16 @@ public class Document implements List<Page> {
 		private int progress;
 		private DocLoadProgressCallback callback;
 
-		private DocumentLoader() {
+		DocumentLoader() {
 			reset();
 		}
 
-		private DocumentLoader reset() {
+		/**
+		 * Resets the DcumentLoader to its default values.
+		 *
+		 * @return <code>this</code>.
+		 */
+		DocumentLoader reset() {
 			this.pageWidth = 0;
 			this.pageHeight = 0;
 			this.pageRaster = 0;

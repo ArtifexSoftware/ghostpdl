@@ -19,10 +19,10 @@ import com.artifex.gsviewer.Document;
  */
 public class ScrollMap {
 
-	private final Document document;
-	private final ViewerWindow window;
-	private final int gap;
-	private int[] scrollMap;
+	private final Document document; // The document which is being viewed
+	private final ViewerWindow window; // The window containing the scroll pane
+	private final int gap; // The gap in between each page
+	private int[] scrollMap; // A map mapping page indices to scroll values
 
 	/**
 	 * Creates and generates a new ScrollMap at zoom 1.0.
@@ -81,7 +81,7 @@ public class ScrollMap {
 	/**
 	 * Returns the current page scrolled to in the scroll pane.
 	 *
-	 * @return The scroll value.
+	 * @return The current page scrolled to.
 	 */
 	public synchronized int getCurrentPage() {
 		final JScrollPane scrollPane = window.getViewerScrollPane();
@@ -90,6 +90,12 @@ public class ScrollMap {
 		return getPageFor(scrollValue);
 	}
 
+	/**
+	 * Returns the page for a given scroll value.
+	 *
+	 * @param scroll The scroll value to get the page for.
+	 * @return The respective page.
+	 */
 	public synchronized int getPageFor(int scroll) {
 		for (int i = 0; i < scrollMap.length; i++) {
 			if (scroll < scrollMap[i])

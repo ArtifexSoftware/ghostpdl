@@ -1,7 +1,9 @@
 package com.artifex.gsviewer;
 
+import java.awt.HeadlessException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.concurrent.locks.Condition;
@@ -22,15 +24,48 @@ import com.artifex.gsviewer.gui.ViewerWindow;
  */
 public class ViewerController implements ViewerGUIListener {
 
+	/**
+	 * The lock for the SmartLoader.
+	 */
 	private static final Lock lock = new ReentrantLock();
+
+	/**
+	 * The condition variable for the SmartLoader to signal when an operation
+	 * needs to happen.
+	 */
 	private static final Condition cv = lock.newCondition();
+
+	/**
+	 * The flag for the smart loader to read after completing an operation. If
+	 * this flag is <code>true</code>, the SmartLoader will skip waiting for
+	 * <code>cv</code> to be signaled and will immediately continue to the next
+	 * operation.
+	 */
 	private static volatile boolean outOfDate = true;
 
-	private ViewerWindow source;
-	private Document currentDocument;
-	private SmartLoader smartLoader;
+	private ViewerWindow source; // The viewer window where documents will be displayed
+	private Document currentDocument; // The current document loaded in the viewer
+	private SmartLoader smartLoader; // The SmartLoader used to load pages based on scroll and zoom
 
-	public void open(File file) {
+	/**
+	 * <p>Opens a document from a files asynchronously.</p>
+	 *
+	 * <p>This method handles distilling files if they should be distilled and the user
+	 * chooses to distill them.</p>
+	 *
+	 * @param file The file to load.
+	 * @throws NullPointerException When <code>file</code> is <code>null</code>.
+	 * @throws IllegalArgumentException If <code>file</code> is not a file type which can be loaded
+	 * into the viewer, if distilling occurs and fails.
+	 * @throws FileNotFoundException When <code>file</code> does not exist.
+	 * @throws IOException If distilling occurs and a temporary files to be created.
+	 * @throws HeadlessException If distilling occurs and <code>GraphicsEnvironment.isHeadless()</code> returns
+	 * <code>true</code>.
+	 * @throws RuntimeException When an error occurs while launching the loader thread.
+	 */
+	public void open(File file)
+			throws NullPointerException, IllegalArgumentException, FileNotFoundException, IOException,
+			HeadlessException, RuntimeException {
 		if (Document.shouldDistill(file)) {
 			int ret = source.showConfirmDialog("Distill", "Would you like to distill this document before opening?");
 			if (ret == ViewerWindow.CANCEL)
@@ -78,6 +113,10 @@ public class ViewerController implements ViewerGUIListener {
 		}, Document.OPERATION_RETURN);
 	}
 
+	/**
+	 * Closes the currently loaded document, if one is loaded. If no document
+	 * is loaded, this method does nothing.
+	 */
 	public void close() {
 		if (smartLoader != null) {
 			smartLoader.stop();
@@ -91,6 +130,12 @@ public class ViewerController implements ViewerGUIListener {
 		}
 	}
 
+	/**
+	 * Returns the current document being viewed.
+	 *
+	 * @return The current document being viewed or <code>null</code> if
+	 * no document is being viewed.
+	 */
 	public Document getCurrentDocument() {
 		return currentDocument;
 	}
@@ -126,8 +171,13 @@ public class ViewerController implements ViewerGUIListener {
 		chooser.setFileFilter(GSFileFilter.INSTANCE);
 		chooser.setCurrentDirectory(new File("").getAbsoluteFile());
 		int status = chooser.showOpenDialog(source);
-		if (status == JFileChooser.APPROVE_OPTION)
-			open(chooser.getSelectedFile());
+		if (status == JFileChooser.APPROVE_OPTION) {
+			try {
+				open(chooser.getSelectedFile());
+			} catch (IOException | RuntimeException e) {
+				source.showErrorDialog("Failed to Open", "Failed to open file (" + e + ")");
+			}
+		}
 	}
 
 	@Override
@@ -144,6 +194,10 @@ public class ViewerController implements ViewerGUIListener {
 	@Override
 	public void onSettingsOpen() { }
 
+	/**
+	 * Starts the SmartLoader on the currently loaded document. If a
+	 * SmartLoader already exists, it will be stopped.
+	 */
 	private void dispatchSmartLoader() {
 		if (smartLoader != null)
 			smartLoader.stop();
@@ -151,6 +205,14 @@ public class ViewerController implements ViewerGUIListener {
 		smartLoader.start();
 	}
 
+	/**
+	 * Implementation of <code>Thread.UncaughtExceptionHandler</code> to handle unhandled
+	 * exceptions. This is used to show an error dialog to the user describing the error
+	 * and then routes the error to the instance of the <code>DefaultUnhandledExceptionHandler</code>.
+	 *
+	 * @author Ethan Vrhel
+	 *
+	 */
 	private class UnhandledExceptionHandler implements Thread.UncaughtExceptionHandler {
 
 		@Override
