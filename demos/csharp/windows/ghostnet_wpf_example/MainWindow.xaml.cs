@@ -9,6 +9,7 @@ using System.Diagnostics;
 using Microsoft.Win32;
 using GhostNET;
 using System.IO;
+using System.Windows.Media;
 
 static class Constants
 {
@@ -402,6 +403,10 @@ namespace ghostnet_wpf_example
 			m_ghostscript.DisplayDeviceOpen();
 			m_viewer_state = ViewerState_t.NO_FILE;
 
+			/* Set vertical scroll to top position */
+			Decorator border = VisualTreeHelper.GetChild(xaml_PageList, 0) as Decorator;
+			ScrollViewer scrollViewer = border.Child as ScrollViewer;
+			scrollViewer.ScrollToVerticalOffset(0);
 			return;
 		}
 
@@ -520,7 +525,7 @@ namespace ghostnet_wpf_example
 				m_document_type == doc_t.PS)
 			{
 
-				MessageBoxResult result = MessageBox.Show("Would you like to Distill this file?", "ghostnet", MessageBoxButton.YesNoCancel);
+				MessageBoxResult result = MessageBox.Show("Would you like to distill this file?", "ghostnet", MessageBoxButton.YesNoCancel);
 				switch (result)
 				{
 					case MessageBoxResult.Yes:
@@ -537,7 +542,7 @@ namespace ghostnet_wpf_example
 						xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 						return;
 					case MessageBoxResult.No:
-						//m_has_page_access = false;
+						m_doc_type_has_page_access = false;
 						break;
 					case MessageBoxResult.Cancel:
 						m_viewer_state = ViewerState_t.NO_FILE;
@@ -657,7 +662,7 @@ namespace ghostnet_wpf_example
 		{
 			e.Handled = true;
 
-			if (m_viewer_state != ViewerState_t.DOC_OPEN || !m_doc_type_has_page_access)
+			if (m_viewer_state != ViewerState_t.DOC_OPEN)
 				return;
 
 			/* Find the pages that are visible.  */
@@ -699,7 +704,8 @@ namespace ghostnet_wpf_example
 			m_currpage = first_page;
 			xaml_currPage.Text = (m_currpage + 1).ToString();
 
-			PageRangeRender(first_page, last_page);
+			if (m_doc_type_has_page_access)
+				PageRangeRender(first_page, last_page);
 
 			return;
 		}

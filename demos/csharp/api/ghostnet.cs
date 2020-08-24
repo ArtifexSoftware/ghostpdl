@@ -791,28 +791,6 @@ public class gsEventArgs : EventArgs
 			return;
 		}
 
-		private void ResetPageHandler()
-		{
-			int code;
-
-			byte[] param = System.Text.Encoding.UTF8.GetBytes("DisablePageHandler" + "\0");
-			GCHandle pinParam = GCHandle.Alloc(param, GCHandleType.Pinned);
-			byte[] value = System.Text.Encoding.UTF8.GetBytes("\0\0\0\0");
-			GCHandle pinValue = GCHandle.Alloc(value, GCHandleType.Pinned);
-
-			/* For false pass a NULL pointer */
-			code = ghostapi.gsapi_set_param(dispInstance, pinParam.AddrOfPinnedObject(),
-					pinValue.AddrOfPinnedObject(), gs_set_param_type.gs_spt_bool);
-
-			pinParam.Free();
-			pinValue.Free();
-
-			if (code < 0)
-			{
-				throw new GhostscriptException("ResetPageHandler: gsapi_set_param error");
-			}
-		}
-
 		private void SetPageRange(int first, int last, bool delay)
 		{
 			int code;
@@ -1015,8 +993,6 @@ public class gsEventArgs : EventArgs
 				{
 					throw new GhostscriptException("DisplayDeviceRun: gsapi_run_file error");
 				}
-
-				//ResetPageHandler();
 			}
 			catch (GhostscriptException except)
 			{
@@ -1109,7 +1085,6 @@ public class gsEventArgs : EventArgs
 					argPtrsStable.Free();
 					e.Result = gsparams;
 				}
-				//ResetPageHandler();
 			}
 			return;
 		}
