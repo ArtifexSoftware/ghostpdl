@@ -3055,13 +3055,13 @@ pdf_close(gx_device * dev)
      */
 
     /* Memory management of resources in pdfwrite is bizarre and complex. Originally there was no means
-     * to free any resorucesw on completionj, pdfwrite simply relied on the garbage collector to clean up
+     * to free any resources on completion, pdfwrite simply relied on the garbage collector to clean up
      * and all the resource objects are GC-visible. However, this doesn't work well when the interpreter
      * does not use GC, ie PCL or XPS, and even when GC is available, the time taken to clean up the
      * (sometimes enormous numbers) of objects can be surprisingly significant. So code was added above
-     * to handle the simple cases useing pdf_free_resource_object(), and below to handle the more complex
+     * to handle the simple cases using pdf_free_resource_object(), and below to handle the more complex
      * situations.
-     * The way this works is that for each resrouce type we free the 'object', if the object is itself
+     * The way this works is that for each resource type we free the 'object', if the object is itself
      * a 'cos' object (array, dictionary) then we free each of its members. However, if any of the objects
      * have an ID which is not zero, then we don't free them (this is true only for contents, all the
      * objects of a given type are freed regardless of whether their ID is 0). These are taken to be
@@ -3069,7 +3069,7 @@ pdf_close(gx_device * dev)
      * that resource type is freed. For the simple resources, which is most of them, this works well.
      *
      * However, there are complications; colour spaces and functions can contain cos objects
-     * whose members pointers to other objects of the same resoruce type (eg a type 3 stitching function
+     * whose members pointers to other objects of the same resource type (eg a type 3 stitching function
      * can point to an array of type 0 functions). We can't afford to have these free the object, because
      * the resource chain is still pointing at it, and will try to free it again. The same is also true if
      * we should encounter the object which is referenced before we find the reference. So for these cases
@@ -3087,11 +3087,11 @@ pdf_close(gx_device * dev)
      * There is a 'gotcha' here; previously we used to free the 'resourceOther' resources *before* calling
      * pdf_document_metadata(), now we call it after. The problem is that the metadata is stored as a resourceOther
      * resource *and* referenced from the Catalog dictionary, which is a 'global named resource'. We free global
-     * named resoruces as the absolute last action. Previously because we had free resourceOther resoruces before
+     * named resoruces as the absolute last action. Previously because we had free resourceOther resources before
      * creating the new reference to the Metadata, the fact that it was freed by the action of releasing the
      * global named resources wasn't a problem, now it is. If we free the metadata as a 'resourceOther' then when
      * we try to free it as a global named resource we will run into trouble again. So pdf_document_metadata() has been
-     * specifally altered to remove the reference to the metadata from the resourceOther resource chain immediately
+     * specifically altered to remove the reference to the metadata from the resourceOther resource chain immediately
      * after it has been created. Ick.....
      */
     {
