@@ -153,28 +153,28 @@ tess_file_reader(const char *fname, GenericVector<char> *out)
          * length, because C and C++ differ in their definition of
          * stat on linux. */
         size = (long)romfs_file_len(leptonica_mem, text);
-        if (size < 0)
-            return false;
-        out->reserve(size + 1);
-        out->resize_no_init(size);
-        code = iodev->procs.open_file(iodev, text, strlen(text), "rb", &ps, leptonica_mem);
-        if (code < 0)
-            return false;
-        copy = (byte *)&(*out)[0];
-        i = 0;
-        while (i < size) {
-            long a, n = size - i;
-            s_process_read_buf(ps);
-            a = sbufavailable(ps);
-            if (n > a)
-                n = a;
-            memcpy(copy+i, sbufptr(ps), a);
-            i += a;
-            sbufskip(ps, a);
+        if (size >= 0) {
+            out->reserve(size + 1);
+            out->resize_no_init(size);
+            code = iodev->procs.open_file(iodev, text, strlen(text), "rb", &ps, leptonica_mem);
+            if (code < 0)
+                return code;
+            copy = (byte *)&(*out)[0];
+            i = 0;
+            while (i < size) {
+                long a, n = size - i;
+                s_process_read_buf(ps);
+                a = sbufavailable(ps);
+                if (n > a)
+                    n = a;
+                memcpy(copy+i, sbufptr(ps), a);
+                i += a;
+                sbufskip(ps, a);
+            }
+            sclose(ps);
+            gs_free_object(leptonica_mem, ps, "stream(tess_file_reader)");
+            return true;
         }
-        sclose(ps);
-        gs_free_object(leptonica_mem, ps, "stream(tess_file_reader)");
-        return true;
     }
 
     /* Fall back to gp_file access, first under Resource/Tesseract */
