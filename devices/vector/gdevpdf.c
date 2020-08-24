@@ -3170,7 +3170,7 @@ pdf_close(gx_device * dev)
 
             for (; pres != 0;) {
                 if (pres->object) {
-                    gs_free_object(pdev->pdf_memory, (byte *)pres->object, "Free CharProc");
+                    cos_free(pres->object, "free CharProc resource");
                     pres->object = 0;
                 }
                 pres = pres->next;
