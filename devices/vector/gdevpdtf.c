@@ -32,6 +32,7 @@
 #include "gdevpdtf.h"
 #include "gdevpdtw.h"
 #include "gdevpdti.h"
+#include "gdevpdfo.h"       /* for cos_free() */
 #include "whitelst.h"		/* Checks whether protected fonta cna be embedded */
 
 #include "gscencs.h"
@@ -470,6 +471,14 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
             if (pdfont->u.simple.s.type3.char_procs) {
                 pdf_free_charproc_ownership(pdev, (pdf_resource_t *)pdfont->u.simple.s.type3.char_procs);
                 pdfont->u.simple.s.type3.char_procs = 0;
+            }
+            if (pdfont->u.simple.s.type3.cached) {
+                gs_free_object(pdev->pdf_memory, pdfont->u.simple.s.type3.cached, "Free type 3 cached array");
+                pdfont->u.simple.s.type3.cached = NULL;
+            }
+            if (pdfont->u.simple.s.type3.Resources != NULL) {
+                cos_free((cos_object_t *)pdfont->u.simple.s.type3.Resources, "Free type 3 Resources dictionary");
+                pdfont->u.simple.s.type3.Resources = NULL;
             }
             break;
         case ft_CID_encrypted:
