@@ -668,10 +668,10 @@ gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
            code = gs_add_control_path(mem, gs_permit_file_writing, f);
            if (code < 0)
                return code;
-           break;
            code = gs_add_control_path(mem, gs_permit_file_control, f);
            if (code < 0)
                return code;
+           break;
         }
         if (!IS_WHITESPACE(f[i]))
             break;
