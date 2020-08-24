@@ -519,7 +519,7 @@ int
 flp_put_params(gx_device * dev, gs_param_list * plist)
 {
     bool temp_bool = false;
-    int code, ecode;
+    int code, ecode = 0;
     gs_param_string pagelist;
 
     code = param_read_int(plist, "FirstPage", &dev->FirstPage);
