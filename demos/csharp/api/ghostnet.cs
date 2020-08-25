@@ -227,7 +227,50 @@ public class gsEventArgs : EventArgs
                 var mess = excep2.Message;
             }
 
-            return count;
+			/* Callback for progress on XPS creation */
+			if (m_params.task == GS_Task_t.CREATE_XPS)
+			{
+				/* See if we have a page number */
+				if (count >= 7 && output.Substring(0, 4) == "Page")
+				{
+					String page = output.Substring(5, count - 6);
+					int numVal;
+					try
+					{
+						double perc = 0.0;
+						numVal = System.Convert.ToInt32(page);
+						if (m_params.firstpage == -1 && m_params.lastpage == -1 &&
+							m_params.pages == null)
+						{
+							/* Doing full document */
+							perc = 100.0 * (double)numVal / (double)m_params.num_pages;
+						}
+						else
+						{
+							if (m_params.pages != null)
+							{
+								perc = 100.0 * ((double)numVal - m_params.currpage) / (double)m_params.num_pages;
+								m_params.currpage = m_params.currpage + 1;
+							}
+							else
+							{
+								/* continugous set of pages */
+								perc = 100.0 * ((double)numVal - m_params.firstpage + 1) / (double)m_params.num_pages;
+							}
+						}
+						m_worker.ReportProgress((int)perc, m_params);
+					}
+					catch (FormatException)
+					{
+						Console.WriteLine("XPSPrint Error: Input string is not a sequence of digits.");
+					}
+					catch (OverflowException)
+					{
+						Console.WriteLine("XPSPrint Error: The number cannot fit in an Int32.");
+					}
+				}
+			}
+			return count;
 		}
 
 		private int stderr_callback(IntPtr handle, IntPtr pointer, int count)
@@ -404,8 +447,7 @@ public class gsEventArgs : EventArgs
 		private void gsProgressChanged(object sender, ProgressChangedEventArgs e)
 		{
 			/* Callback with progress */
-			gsParamState_t Value = new gsParamState_t();
-			gsEventArgs info = new gsEventArgs(false, e.ProgressPercentage, Value);
+			gsEventArgs info = new gsEventArgs(false, e.ProgressPercentage, (gsParamState_t) e.UserState);
 			gsUpdateMain(info);
 		}
 		private gsParamState_t gsFileSync(gsParamState_t in_params)
@@ -712,7 +754,7 @@ public class gsEventArgs : EventArgs
 
 						total = total + count;
 						perc = 100.0 * (double)total / (double)len;
-						worker.ReportProgress((int)perc);
+						worker.ReportProgress((int)perc, Params);
 						if (worker.CancellationPending == true)
 						{
 							e.Cancel = true;
@@ -789,28 +831,6 @@ public class gsEventArgs : EventArgs
 				}
 			}
 			return;
-		}
-
-		private void ResetPageHandler()
-		{
-			int code;
-
-			byte[] param = System.Text.Encoding.UTF8.GetBytes("DisablePageHandler" + "\0");
-			GCHandle pinParam = GCHandle.Alloc(param, GCHandleType.Pinned);
-			byte[] value = System.Text.Encoding.UTF8.GetBytes("\0\0\0\0");
-			GCHandle pinValue = GCHandle.Alloc(value, GCHandleType.Pinned);
-
-			/* For false pass a NULL pointer */
-			code = ghostapi.gsapi_set_param(dispInstance, pinParam.AddrOfPinnedObject(),
-					pinValue.AddrOfPinnedObject(), gs_set_param_type.gs_spt_bool);
-
-			pinParam.Free();
-			pinValue.Free();
-
-			if (code < 0)
-			{
-				throw new GhostscriptException("ResetPageHandler: gsapi_set_param error");
-			}
 		}
 
 		private void SetPageRange(int first, int last, bool delay)
@@ -1015,8 +1035,6 @@ public class gsEventArgs : EventArgs
 				{
 					throw new GhostscriptException("DisplayDeviceRun: gsapi_run_file error");
 				}
-
-				//ResetPageHandler();
 			}
 			catch (GhostscriptException except)
 			{
@@ -1109,7 +1127,6 @@ public class gsEventArgs : EventArgs
 					argPtrsStable.Free();
 					e.Result = gsparams;
 				}
-				//ResetPageHandler();
 			}
 			return;
 		}
@@ -1273,6 +1290,7 @@ public class gsEventArgs : EventArgs
 			gsparams.args.Add("-f");
 			gsparams.args.Add(fileName);
 			gsparams.task = GS_Task_t.CREATE_XPS;
+			gsparams.num_pages = num_pages;
 
 			return RunGhostscriptAsync(gsparams);
 		}

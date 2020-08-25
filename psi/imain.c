@@ -335,6 +335,15 @@ gs_main_set_language_param(gs_main_instance *minst,
     gs_param_enumerator_t enumerator;
     gs_param_key_t key;
     gs_lib_ctx_t *ctx = minst->heap->gs_lib_ctx;
+    ref error_object;
+
+    /* If we're up and running as a jobserver, exit encapsulation. */
+    if (minst->init_done > 1) {
+        code = gs_main_run_string(minst,
+                                  "JOBSERVER {true 0 startjob pop} if",
+                                  0, &code, &error_object);
+        if (code < 0) return code;
+    }
 
     ialloc_set_space(idmemory, avm_system);
 
@@ -421,6 +430,15 @@ gs_main_set_language_param(gs_main_instance *minst,
         ialloc_set_space(idmemory, space);
         /* Enter the name in systemdict. */
         i_initial_enter_name_copy(minst->i_ctx_p, string_key, &value);
+    }
+
+    if (minst->init_done > 1) {
+        int code2 = 0;
+        code2 = gs_main_run_string(minst,
+                                   "JOBSERVER {false 0 startjob pop} if",
+                                   0, &code2, &error_object);
+        if (code >= 0)
+            code = code2;
     }
 
     return code;

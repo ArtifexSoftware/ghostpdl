@@ -278,6 +278,26 @@ systemdict begin
 } bind odef
 currentdict /runpdfstring .undef
 
+/DisablePageHandlerDevice
+{
+  systemdict /FirstPage known
+  systemdict /LastPage known or
+  systemdict /Pagelist known or
+  {
+      <</DisablePageHandler //true>> setpagedevice
+  } if
+} bind def
+
+/EnablePageHandlerDevice
+{
+  systemdict /FirstPage known
+  systemdict /LastPage known or
+  systemdict /Pagelist known or
+  {
+      <</DisablePageHandler //false>> setpagedevice
+  } if
+} bind def
+
 /runpdfbegin {		% <file> runpdfbegin -
    userdict begin
         % It turns out that the PDF interpreter uses memory more
@@ -285,20 +305,24 @@ currentdict /runpdfstring .undef
         % This is counter-intuitive, and we don't understand why it happens,
         % but the improvement is significant.
    /PDFTopSave save def
-   <</ProcessDSCComment //null>> setuserparams
-   <</ProcessComment //null>> setuserparams
-   %% Bug #696487, allow dict stack to grow without limit, as these PDF
-   %% files have stupidly deep gsave nesting and we need a dictionary per gsave
-   %% at the moment.
-   %% Remove ths if bug #696511 is ever completed (move ExtGstate parameters into gstate)
-   <</MaxDictStack -1>> setuserparams
-   %% Bug #696567, same customer as above. Ths time they have a file with a page whch has
-   %% 447000 ExtGState references (all of hwch contain no gstate!) Because we allocate
-   %% these on the stack, allow the stack to grow indefinitely in order to accomodate
-   %% such stupid files. Also move these lines from the end of the routine, so that
-   %% the increases are in place before we call odfopen, which will build the
-   %% resources and needs this definition in place.
-   <</MaxOpStack -1>> setuserparams
+   <<
+     /ProcessDSCComment //null
+     /ProcessComment //null
+     %% Bug #696487, allow dict stack to grow without limit, as these PDF
+     %% files have stupidly deep gsave nesting and we need a dictionary per gsave
+     %% at the moment.
+     %% Remove ths if bug #696511 is ever completed (move ExtGstate parameters into gstate)
+     /MaxDictStack -1
+     %% Bug #696567, same customer as above. Ths time they have a file with a page whch has
+     %% 447000 ExtGState references (all of which contain no gstate!) Because we allocate
+     %% these on the stack, allow the stack to grow indefinitely in order to accomodate
+     %% such stupid files. Also move these lines from the end of the routine, so that
+     %% the increases are in place before we call odfopen, which will build the
+     %% resources and needs this definition in place.
+     /MaxOpStack -1
+   >> setuserparams
+
+   //DisablePageHandlerDevice exec
 
    0 setobjectformat
    /Page# //null def
@@ -311,8 +335,8 @@ currentdict /runpdfstring .undef
    /CumulativePageCount currentpagedevice /PageCount get def
 } bind executeonly def
 
+
 /runpdfpagerange {	% - runpdfpagerange <firstpage#> <lastpage#>
-   <</DisablePageHandler //true>> setpagedevice
    /PortfolioPage where {
      pop
      PortfolioPage cvi dup pdfpagecount add                  % a b+1
@@ -321,8 +345,8 @@ currentdict /runpdfstring .undef
      dup 3 index exch cvs pop                                % a b+1 /P (b+1)
      store
      1 sub                                                   % a b
-     /FirstPage where { pop FirstPage <</DisablePageHandler //true>> setpagedevice} { 1 } ifelse
-     /LastPage  where { pop LastPage  <</DisablePageHandler //true>> setpagedevice} {2000000000} ifelse  % a b fp lp
+     /FirstPage where { pop FirstPage} { 1 } ifelse
+     /LastPage  where { pop LastPage} {2000000000} ifelse  % a b fp lp
      2 index 2 index lt { % b < fp
        1e10
      } {
@@ -395,7 +419,6 @@ currentdict /runpdfstring .undef
              pop
            }
            forall
-           <</DisablePageHandler //true>> setpagedevice
            /PDFPageList pdfpagecount 1 add array def
            {
              (,) search {
@@ -477,7 +500,6 @@ currentdict /runpdfstring .undef
        1 pdfpagecount
      }{
        /FirstPage where {
-         <</DisablePageHandler //true>> setpagedevice
          pop FirstPage dup pdfpagecount gt {
            (\nRequested FirstPage is greater than the number of pages in the file: ) print
             pdfpagecount = flush
@@ -485,7 +507,7 @@ currentdict /runpdfstring .undef
        } {
           1
        } ifelse
-       /LastPage where {<</DisablePageHandler //true>> setpagedevice pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
+       /LastPage where {pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
        1 index 1 index gt {
          (   No pages will be processed \(FirstPage > LastPage\).) = flush
        } {
@@ -496,7 +518,6 @@ currentdict /runpdfstring .undef
        } ifelse
      } ifelse
    }ifelse
-   <</DisablePageHandler //false>> setpagedevice
 } bind executeonly def
 
 /dopdfpages {   % firstpage# lastpage# dopdfpages -
@@ -544,7 +565,11 @@ currentdict /runpdfstring .undef
    PDFTopSave restore
    end			% userdict
    2 vmreclaim		% couldn't hurt
+   //EnablePageHandlerDevice exec
 } bind executeonly def
+
+currentdict /DisablePageHandlerDevice undef
+currentdict /EnablePageHandlerDevice undef
 
 % Copy stream to an external temporary file and
 % return the file name as PS name.

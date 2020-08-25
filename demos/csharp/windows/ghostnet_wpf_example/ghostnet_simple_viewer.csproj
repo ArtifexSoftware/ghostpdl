@@ -119,6 +119,9 @@
     <Compile Include="PrintControl.xaml.cs">
       <DependentUpon>PrintControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="PrintStatus.xaml.cs">
+      <DependentUpon>PrintStatus.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TempFile.cs" />
     <Compile Include="XPSprint.cs" />
     <Page Include="About.xaml">
@@ -142,6 +145,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="PrintControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PrintStatus.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
