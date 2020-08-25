@@ -682,7 +682,8 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     uint64_t bytes_used = 0;
     uint64_t bytes_avail = 0;
     gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
-    int main_plane, mask_plane;
+    int main_plane=0, mask_plane=0;
+    bool no_progress = false;
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_render_image BEGIN\n");
@@ -774,6 +775,19 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
         if (code < 0) {
             goto cleanupExit;
         }
+        /* If no data was consumed twice in a row, then there must be some kind of error,
+         * even if the error code was not < 0.  Saw this with pdfwrite device.
+         */
+        if (used[main_plane] == 0 && used[mask_plane] == 0) {
+            if (no_progress) {
+                code = gs_note_error(gs_error_unknownerror);
+                goto cleanupExit;
+            }
+            no_progress = true;
+        } else {
+            no_progress = false;
+        }
+
         /* It might not always consume all the data, but so far the only case
          * I have seen with that was one that had mask data.
          * In that case, it used all of plane 0, and none of plane 1 on the first pass.
