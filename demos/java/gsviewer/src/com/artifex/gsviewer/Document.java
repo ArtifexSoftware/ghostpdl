@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -21,6 +22,8 @@ import com.artifex.gsjava.callbacks.DisplayCallback;
 import com.artifex.gsjava.util.BytePointer;
 import com.artifex.gsjava.util.Reference;
 import com.artifex.gsviewer.ImageUtil.ImageParams;
+
+import sun.misc.Unsafe;
 
 /**
  * <p>A Document stores an ordered list of Pages. This class implements
@@ -561,7 +564,7 @@ public class Document implements List<Page> {
 			documentLoader.callback = loadCallback;
 
 
-			code = gsInstance.set_param("HWResolution", Page.PAGE_LOW_DPI_STR, GS_SPT_PARSED);
+			code = gsInstance.set_param("HWResolution", Page.toDPIString(Page.PAGE_LOW_DPI), GS_SPT_PARSED);
 			if (code != GS_ERROR_OK)
 				throw new IllegalStateException("Failed to set HWResolution (code = " + code + ")");
 
@@ -571,8 +574,14 @@ public class Document implements List<Page> {
 			if (code != GS_ERROR_OK)
 				throw new IllegalStateException("Failed to run file (code = " + code + ")");
 
-			gsInstance.set_param("TextAlphaBits", 4, GS_SPT_INT);
-			gsInstance.set_param("GraphicsAlphaBits", 4, GS_SPT_INT);
+			boolean aa = Settings.SETTINGS.getSetting("antialiasing");
+			if (aa) {
+				gsInstance.set_param("TextAlphaBits", 4, GS_SPT_INT);
+				gsInstance.set_param("GraphicsAlphaBits", 4, GS_SPT_INT);
+			} else {
+				gsInstance.set_param("TextAlphaBits", 0, GS_SPT_INT);
+				gsInstance.set_param("GraphicsAlphaBits", 0, GS_SPT_INT);
+			}
 
 			this.pages = new ArrayList<>(documentLoader.images.size());
 			for (BufferedImage img : documentLoader.images) {
@@ -769,7 +778,7 @@ public class Document implements List<Page> {
 	 */
 	public void unloadZoomed(int startPage, int endPage) throws IndexOutOfBoundsException {
 		checkBounds(startPage, endPage);
-		for (int i = startPage; i <= endPage; i++) {
+		for (int i = startPage; i < endPage; i++) {
 			pages.get(i).unloadZoomed();
 		}
 	}
@@ -1024,8 +1033,19 @@ public class Document implements List<Page> {
 	}
 
 	@Override
-	public List<Page> subList(int fromIndex, int toIndex) {
-		return pages.subList(fromIndex, toIndex);
+	public Document subList(int fromIndex, int toIndex) {
+		try {
+			Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+			unsafeField.setAccessible(true);
+			Unsafe unsafe = (Unsafe)unsafeField.get(null);
+			Document doc = (Document)unsafe.allocateInstance(Document.class);
+			doc.pages = pages.subList(fromIndex, toIndex);
+			doc.file = file;
+			return doc;
+		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException
+				| IllegalAccessException | InstantiationException e) {
+			throw new RuntimeException("Failed to create sublist: " + e);
+		}
 	}
 
 	@Override

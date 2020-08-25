@@ -22,19 +22,9 @@ public class Page {
 	public static final int PAGE_HIGH_DPI = 72;
 
 	/**
-	 * The high-resolution DPI to use as a Ghostscript-friendly string
-	 */
-	public static final String PAGE_HIGH_DPI_STR = toDPIString(PAGE_HIGH_DPI);
-
-	/**
 	 * The low-resolution DPI to use.
 	 */
 	public static final int PAGE_LOW_DPI = 10;
-
-	/**
-	 * The low-resolution DPI to use as a Ghostscript-friendly string
-	 */
-	public static final String PAGE_LOW_DPI_STR = toDPIString(PAGE_LOW_DPI);
 
 	/**
 	 * Converts a dpi value to a Ghostscript-friendly string.

@@ -11,6 +11,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.JFileChooser;
+import com.artifex.gsviewer.gui.SettingsDialog;
 import com.artifex.gsviewer.gui.ViewerGUIListener;
 import com.artifex.gsviewer.gui.ViewerWindow;
 
@@ -46,6 +47,7 @@ public class ViewerController implements ViewerGUIListener {
 	private ViewerWindow source; // The viewer window where documents will be displayed
 	private Document currentDocument; // The current document loaded in the viewer
 	private SmartLoader smartLoader; // The SmartLoader used to load pages based on scroll and zoom
+	private boolean loadingDocument;
 
 	/**
 	 * <p>Opens a document from a files asynchronously.</p>
@@ -66,6 +68,10 @@ public class ViewerController implements ViewerGUIListener {
 	public void open(File file)
 			throws NullPointerException, IllegalArgumentException, FileNotFoundException, IOException,
 			HeadlessException, RuntimeException {
+		if (loadingDocument) {
+			source.showWarningDialog("Error", "A document is already loading");
+			return;
+		}
 		if (Document.shouldDistill(file)) {
 			int ret = source.showConfirmDialog("Distill", "Would you like to distill this document before opening?");
 			if (ret == ViewerWindow.CANCEL)
@@ -98,16 +104,22 @@ public class ViewerController implements ViewerGUIListener {
 
 		if (currentDocument != null)
 			close();
+		loadingDocument = true;
 		Document.loadDocumentAsync(file, (final Document doc, final Exception exception) -> {
-			source.loadDocumentToViewer(doc);
-			source.setLoadProgress(0);
-			if (exception != null) {
-				source.showErrorDialog("Failed to load", exception.toString());
-			} else {
-				this.currentDocument = doc;
-				dispatchSmartLoader();
+			try {
+				source.loadDocumentToViewer(doc);
+				source.setLoadProgress(0);
+				if (exception != null) {
+					throw new RuntimeException("Failed to load", exception);
+					//source.showErrorDialog("Failed to load", exception.toString());
+				} else {
+					this.currentDocument = doc;
+					dispatchSmartLoader();
+				}
+				source.revalidate();
+			} finally {
+				loadingDocument = false;
 			}
-			source.revalidate();
 		}, (int progress) -> {
 			source.setLoadProgress(progress);
 		}, Document.OPERATION_RETURN);
@@ -118,6 +130,11 @@ public class ViewerController implements ViewerGUIListener {
 	 * is loaded, this method does nothing.
 	 */
 	public void close() {
+		if (loadingDocument) {
+			source.showWarningDialog("Error", "A document is already loading");
+			return;
+		}
+
 		if (smartLoader != null) {
 			smartLoader.stop();
 			smartLoader = null;
@@ -192,7 +209,10 @@ public class ViewerController implements ViewerGUIListener {
 	}
 
 	@Override
-	public void onSettingsOpen() { }
+	public void onSettingsOpen() {
+		SettingsDialog dialog = new SettingsDialog(source, true);
+		dialog.setVisible(true);
+	}
 
 	/**
 	 * Starts the SmartLoader on the currently loaded document. If a
@@ -290,9 +310,7 @@ public class ViewerController implements ViewerGUIListener {
 			System.out.println("Smart loader dispatched.");
 			while (shouldRun) {
 				int currentPage = source.getCurrentPage();
-				int[] toLoad =  new int[] {
-						currentPage, currentPage - 1, currentPage + 1,
-						currentPage - 2, currentPage + 2 };
+				int[] toLoad = genToLoad(currentPage);
 
 				if (loaded.length != currentDocument.size())
 					throw new IllegalStateException("Array is size " + loaded.length + " while doc size is " + currentDocument.size());
@@ -340,6 +358,15 @@ public class ViewerController implements ViewerGUIListener {
 					outOfDate = false;
 				}
 			}
+		}
+
+		int[] genToLoad(int page) {
+			int range = Settings.SETTINGS.getSetting("preloadRange");
+			int[] arr = new int[range * 2 + 1];
+			for (int i = -range; i <= range; i++) {
+				arr[i + range] = page + i;
+			}
+			return arr;
 		}
 	}
 }
