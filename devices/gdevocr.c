@@ -43,6 +43,7 @@ struct gx_device_ocr_s {
     gx_prn_device_common;
     gx_downscaler_params downscale;
     char language[1024];
+    int engine;
     int page_count;
 };
 
@@ -127,6 +128,9 @@ ocr_get_params(gx_device * dev, gs_param_list * plist)
     if ((code = param_write_string(plist, "OCRLanguage", &langstr)) < 0)
         ecode = code;
 
+    if ((code = param_write_string(plist, "OCREngine", &pdev->engine)) < 0)
+        ecode = code;
+
     if ((code = gx_downscaler_write_params(plist, &pdev->downscale,
                                            GX_DOWNSCALER_PARAMS_MFS)) < 0)
         ecode = code;
@@ -146,6 +150,7 @@ ocr_put_params(gx_device *dev, gs_param_list *plist)
     gs_param_string langstr;
     const char *param_name;
     size_t len;
+    int engine;
 
     switch (code = param_read_string(plist, (param_name = "OCRLanguage"), &langstr)) {
         case 0:
@@ -154,6 +159,17 @@ ocr_put_params(gx_device *dev, gs_param_list *plist)
                 len = sizeof(pdev->language)-1;
             memcpy(pdev->language, langstr.data, len);
             pdev->language[len] = 0;
+            break;
+        case 1:
+            break;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+    }
+
+    switch (code = param_read_int(plist, (param_name = "OCREngine"), &engine)) {
+        case 0:
+            pdev->engine = engine;
             break;
         case 1:
             break;
@@ -225,14 +241,14 @@ do_ocr_print_page(gx_device_ocr * pdev, gp_file * file, int hocr)
                                  (int)pdev->HWResolution[0],
                                  (int)pdev->HWResolution[1],
                                  data, 0, pdev->page_count,
-                                 "eng", &out);
+                                 "eng", pdev->engine, &out);
     else
         code = ocr_image_to_utf8(pdev->memory,
                                  width, height,
                                  8, raster,
                                  (int)pdev->HWResolution[0],
                                  (int)pdev->HWResolution[1],
-                                 data, 0, "eng", &out);
+                                 data, 0, "eng", pdev->engine, &out);
     if (code < 0)
         goto done;
     if (out)

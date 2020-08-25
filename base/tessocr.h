@@ -21,18 +21,27 @@
 
 #include "gsmemory.h"
 
+enum
+{
+    OCR_ENGINE_DEFAULT = 0,
+    OCR_ENGINE_LSTM = 1,
+    OCR_ENGINE_LEGACY = 2,
+    OCR_ENGINE_BOTH = 3
+};
+
 int ocr_image_to_utf8(gs_memory_t *mem,
                       int w, int h, int bpp, int raster,
                       int xres, int yres,
                       void *data, int restore_data,
-                      const char *language, char **out);
+                      const char *language, int engine, char **out);
 
 int ocr_image_to_hocr(gs_memory_t *mem,
                       int w, int h, int bpp, int raster,
                       int xres, int yres, void *data, int restore,
-                      int pagecount, const char *language, char **out);
+                      int pagecount, const char *language,
+                      int engine, char **out);
 
-int ocr_init_api(gs_memory_t *mem, const char *language, void **state);
+int ocr_init_api(gs_memory_t *mem, const char *language, int engine, void **state);
 
 void ocr_fin_api(gs_memory_t *mem, void *api_);
 

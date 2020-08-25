@@ -64,6 +64,7 @@ typedef struct gx_device_pdf_image_s {
     /* OCR data */
     struct {
         char language[1024];
+        int engine;
         void *state;
 
         /* Number of "file level" objects - i.e. the number of objects

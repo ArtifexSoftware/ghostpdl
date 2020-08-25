@@ -999,6 +999,28 @@ resolution independence, and editability.</p>
 </blockquote>
 </blockquote>
 <p>
+  The system is designed to allow different OCR engines to be used.
+  Even with Tesseract, there are 2 different engines, the &quot;legacy&quot;
+  engine, and the &quot;LSTM&quot; engine. These have different tradeoffs
+  regarding speed, accuracy, sensitivity to different fonts, size of
+  data etc. The engines in use can be changed by using the
+  <code>-dOCREngine=</code> switch;
+</p>
+<blockquote>
+<dl>
+<dt><code>-dOCREngine=</code><b><em>integer</em></b></dt>
+<dd>This sets the engine to use for OCR. It is the callers responsibility
+  to ensure that the traineddata supplied is appropriate for the selected
+  engine.
+  <dl>
+    <dt>0<dd>Default engine.
+    <dt>1<dd>LSTM engine only.
+    <dt>2<dd>Tesseract &quot;legacy&quot; engine only.
+    <dt>3<dd>Legacy and LSTM Engine combined.
+  </dl>
+</dd></dl>
+</blockquote>
+<p>
   The first device is named ocr. It extracts data as unicode codepoints
   and outputs them to the device as a stream of UTF-8 bytes.
 </p>

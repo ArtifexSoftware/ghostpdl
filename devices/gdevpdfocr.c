@@ -63,6 +63,7 @@ pdfocr_put_some_params(gx_device * dev, gs_param_list * plist)
     gs_param_string langstr;
     const char *param_name;
     size_t len;
+    int engine;
 
     switch (code = param_read_string(plist, (param_name = "OCRLanguage"), &langstr)) {
         case 0:
@@ -71,6 +72,17 @@ pdfocr_put_some_params(gx_device * dev, gs_param_list * plist)
                 len = sizeof(pdf_dev->ocr.language)-1;
             memcpy(pdf_dev->ocr.language, langstr.data, len);
             pdf_dev->ocr.language[len] = 0;
+            break;
+        case 1:
+            break;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+    }
+
+    switch (code = param_read_int(plist, (param_name = "OCREngine"), &engine)) {
+        case 0:
+            pdf_dev->ocr.engine = engine;
             break;
         case 1:
             break;
@@ -118,6 +130,9 @@ pdfocr_get_some_params(gx_device * dev, gs_param_list * plist)
         langstr.persistent = false;
     }
     if ((code = param_write_string(plist, "OCRLanguage", &langstr)) < 0)
+        ecode = code;
+
+    if ((code = param_write_int(plist, "OCREngine", &pdf_dev->ocr.engine)) < 0)
         ecode = code;
 
     return ecode;
@@ -416,7 +431,7 @@ ocr_file_init(gx_device_pdf_image *dev)
     stream_write(dev->strm, funky_font6a, sizeof(funky_font6a));
     stream_write(dev->strm, funky_font6b, sizeof(funky_font6b)-1);
 
-    return ocr_init_api(dev->memory, language, &dev->ocr.state);
+    return ocr_init_api(dev->memory, language, dev->ocr.engine, &dev->ocr.state);
 }
 
 static void

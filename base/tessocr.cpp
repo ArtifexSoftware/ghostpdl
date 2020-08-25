@@ -186,9 +186,10 @@ tess_file_reader(const char *fname, GenericVector<char> *out)
 }
 
 int
-ocr_init_api(gs_memory_t *mem, const char *language, void **state)
+ocr_init_api(gs_memory_t *mem, const char *language, int engine, void **state)
 {
     tesseract::TessBaseAPI *api;
+    enum tesseract::OcrEngineMode mode;
 
     leptonica_mem = mem->non_gc_memory;
     setPixMemoryManager(my_leptonica_malloc, my_leptonica_free);
@@ -202,10 +203,28 @@ ocr_init_api(gs_memory_t *mem, const char *language, void **state)
         return_error(gs_error_VMerror);
     }
 
+    switch (engine)
+    {
+        case OCR_ENGINE_DEFAULT:
+            mode = tesseract::OcrEngineMode::OEM_DEFAULT;
+            break;
+        case OCR_ENGINE_LSTM:
+            mode = tesseract::OcrEngineMode::OEM_LSTM_ONLY;
+            break;
+        case OCR_ENGINE_LEGACY:
+            mode = tesseract::OcrEngineMode::OEM_TESSERACT_ONLY;
+            break;
+        case OCR_ENGINE_BOTH:
+            mode = tesseract::OcrEngineMode::OEM_TESSERACT_LSTM_COMBINED;
+            break;
+        default:
+            return_error(gs_error_rangecheck);
+    }
+
     // Initialize tesseract-ocr with English, without specifying tessdata path
     if (api->Init(NULL, 0, /* data, data_size */
                   language,
-                  tesseract::OcrEngineMode::OEM_DEFAULT,
+                  mode,
                   NULL, 0, /* configs, configs_size */
                   NULL, NULL, /* vars_vec */
                   false, /* set_only_non_debug_params */
@@ -265,8 +284,7 @@ do_ocr_image(gs_memory_t *mem,
              int w, int h, int bpp, int raster,
              int xres, int yres, void *data, int restore,
              int hocr, int pagecount,
-             const char *language,
-             char **out)
+             const char *language, int engine, char **out)
 {
     char *outText;
     tesseract::TessBaseAPI *api;
@@ -277,7 +295,7 @@ do_ocr_image(gs_memory_t *mem,
 
     if (language == NULL || *language == 0)
         language = "eng";
-    code = ocr_init_api(mem, language, (void **)&api);
+    code = ocr_init_api(mem, language, engine, (void **)&api);
     if (code < 0)
         return code;
 
@@ -328,19 +346,20 @@ do_ocr_image(gs_memory_t *mem,
 int ocr_image_to_hocr(gs_memory_t *mem,
                       int w, int h, int bpp, int raster,
                       int xres, int yres, void *data, int restore,
-                      int pagecount, const char *language, char **out)
+                      int pagecount, const char *language,
+                      int engine, char **out)
 {
         return do_ocr_image(mem, w, h, bpp, raster, xres, yres, data,
-                            restore, 1, pagecount, language, out);
+                            restore, 1, pagecount, language, engine, out);
 }
 
 int ocr_image_to_utf8(gs_memory_t *mem,
                       int w, int h, int bpp, int raster,
                       int xres, int yres, void *data, int restore,
-                      const char *language, char **out)
+                      const char *language, int engine, char **out)
 {
         return do_ocr_image(mem, w, h, bpp, raster, xres, yres, data,
-                            restore, 0, 0, language, out);
+                            restore, 0, 0, language, engine, out);
 }
 
 int
