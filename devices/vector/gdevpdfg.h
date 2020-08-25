@@ -296,6 +296,8 @@ pdf_complete_image_data(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h,
 int pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw,
                          int data_h);
 
+int pdf_end_abort_image(gx_device_pdf * pdev, pdf_image_writer * piw);
+
 /*
  * Finish writing an image.  If in-line, write the BI/dict/ID/data/EI and
  * return 1; if a resource, write the resource definition and return 0.

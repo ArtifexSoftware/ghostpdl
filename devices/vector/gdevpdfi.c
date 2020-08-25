@@ -1924,6 +1924,10 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
         } else
             code = pdf_end_and_do_image(pdev, &pie->writer, &pie->mat, info->id, do_image);
         pie->writer.alt_writer_count--; /* For GC. */
+    } else {
+        code = pdf_end_image_binary(pdev, &pie->writer, data_height);
+        code = pdf_end_abort_image(pdev, &pie->writer);
+        pie->writer.alt_writer_count--; /* For GC. */
     }
     if (pie->initial_colorspace != pdev->pcm_color_info_index)
         pdf_set_process_color_model(pdev, pie->initial_colorspace);
