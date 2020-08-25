@@ -1,0 +1,21 @@
+﻿<Window x:Class="ghostnet_wpf_example.PrintStatus"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ghostnet_wpf_example"
+        mc:Ignorable="d"
+        Title="GhostNet Print Status" Height="116.25" Width="600">
+
+    <!-- The progress bar that runs while the pages are rendered -->
+        <Grid x:Name="xaml_PrintProgressGrid" DockPanel.Dock="Bottom" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+        <ProgressBar x:Name="xaml_PrintProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0"
+                     Maximum="100" Height="20" HorizontalAlignment="Stretch" />
+        <TextBlock x:Name="xaml_PrintProgressText" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Creating XPS</Bold></TextBlock>
+    </Grid>
+</Window>

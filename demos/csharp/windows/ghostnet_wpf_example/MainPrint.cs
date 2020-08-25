@@ -6,6 +6,8 @@ using System.Windows.Xps.Packaging;
 using System.Printing;
 using System.Windows.Input;
 using System.IO;
+using System.Diagnostics;
+using System.ComponentModel;
 using GhostNET;
 
 namespace ghostnet_wpf_example
@@ -14,6 +16,7 @@ namespace ghostnet_wpf_example
 	{
 		Print m_printcontrol = null;
 		private xpsprint m_xpsprint = null;
+		PrintStatus m_printstatus = null;
 
 		public void PrintDiagPrint(object PrintDiag)
 		{
@@ -42,10 +45,18 @@ namespace ghostnet_wpf_example
 					break;
 			}
 
+			/* Show the progress bar dialog */
+			m_printstatus = new PrintStatus();
+			m_printstatus.Activate();
+			m_printstatus.Show();
+			string extension = System.IO.Path.GetExtension(m_currfile);
+
 			/* If file is already xps then gs need not do this */
-			if (!(m_document_type == doc_t.XPS))
+			/* We are doing this based on the extension but like should do
+			 * it based upon the content */
+			if ( !(String.Equals(extension.ToUpper(),"XPS") || String.Equals(extension.ToUpper(), "OXPS")) )
 			{
-				xaml_DistillProgress.Value = 0;
+				m_printstatus.xaml_PrintProgress.Value = 0;
 
 				if (m_ghostscript.CreateXPS(m_currfile, Constants.DEFAULT_GS_RES,
 						last_page - first_page + 1, m_printcontrol, first_page, last_page) == gsStatus.GS_BUSY)
@@ -53,30 +64,41 @@ namespace ghostnet_wpf_example
 					ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
 					return;
 				}
-				else
-				{
-					xaml_CancelDistill.Visibility = System.Windows.Visibility.Collapsed;
-					xaml_DistillName.Text = "Convert to XPS";
-					xaml_DistillName.FontWeight = FontWeights.Bold;
-					xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
-				}
 			}
 			else
 				PrintXPS(m_currfile, print_all, first_page, last_page, false);
 		}
 
-		private void PrintCommand(object sender, ExecutedRoutedEventArgs e)
-		{
-			Print(sender, e);
-		}
-
 		/* Printing is achieved using xpswrite device in ghostscript and
-		 * pushing that file through the XPS print queue */
-		private void Print(object sender, ExecutedRoutedEventArgs e)
+		 * pushing that file through the XPS print queue.  Since we can
+		 * only have one instance of gs, this occurs on a separate 
+		 * process compared to the viewer. */
+		private void PrintCommand(object sender, ExecutedRoutedEventArgs e)
 		{
 			if (m_viewer_state != ViewerState_t.DOC_OPEN)
 				return;
 
+			/* Launch new process */
+			string path = System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
+			try
+			{
+				string Arguments = m_currfile + " print " + m_currpage + " " + m_numpages;
+				Process.Start(path, Arguments);
+			}
+			catch (InvalidOperationException)
+			{
+				Console.WriteLine("InvalidOperationException");
+			}
+			catch (Win32Exception)
+			{
+				Console.WriteLine("Win32 Exception: There was an error in opening the associated file. ");
+			}
+			return;
+		}
+
+		private void Print(string FileName)
+		{
+			m_currfile = FileName;
 			if (m_printcontrol == null)
 			{
 				m_printcontrol = new Print(this, m_numpages);
@@ -110,8 +132,9 @@ namespace ghostnet_wpf_example
 			m_xpsprint.PrintUpdate += PrintProgress;
 			arguments.Add(m_xpsprint);
 
-			xaml_PrintGrid.Visibility = System.Windows.Visibility.Visible;
-			xaml_PrintProgress.Value = 0;
+			m_printstatus.xaml_PrintProgressText.Text = "Printing...";
+			m_printstatus.xaml_PrintProgressGrid.Visibility = System.Windows.Visibility.Visible;
+			m_printstatus.xaml_PrintProgress.Value = 0;
 			m_viewer_state = ViewerState_t.PRINTING;
 			PrintThread.Start(arguments);
 		}
@@ -155,33 +178,36 @@ namespace ghostnet_wpf_example
 					System.Windows.Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(() =>
 					{
 						ShowMessage(NotifyType_t.MESS_ERROR, "Printer Driver Error");
-						xaml_PrintGrid.Visibility = System.Windows.Visibility.Collapsed;
+						m_printstatus.xaml_PrintProgress.Visibility = System.Windows.Visibility.Collapsed;
 						m_viewer_state = ViewerState_t.DOC_OPEN;
+						this.Close();
 					}));
 					break;
 				case PrintStatus_t.PRINT_CANCELLED:
 				case PrintStatus_t.PRINT_READY:
 					System.Windows.Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(() =>
 					{
-						xaml_PrintGrid.Visibility = System.Windows.Visibility.Collapsed;
+						m_printstatus.xaml_PrintProgress.Visibility = System.Windows.Visibility.Collapsed;
 						m_viewer_state = ViewerState_t.DOC_OPEN;
+						this.Close();
 					}));
 					break;
 				case PrintStatus_t.PRINT_DONE:
 					System.Windows.Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(() =>
 					{
-						xaml_PrintGrid.Visibility = System.Windows.Visibility.Collapsed;
+						m_printstatus.xaml_PrintProgress.Visibility = System.Windows.Visibility.Collapsed;
 						DeleteTempFile(Information.FileName);
 						m_viewer_state = ViewerState_t.DOC_OPEN;
+						this.Close();
 					}));
 					break;
 				case PrintStatus_t.PRINT_BUSY:
 					System.Windows.Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(() =>
 					{
-						xaml_PrintProgress.Value = 100.0 * (double)(Information.Page - Information.PageStart) / (double)Information.NumPages;
+						m_printstatus.xaml_PrintProgress.Value = 100.0 * (double)(Information.Page - Information.PageStart) / (double)Information.NumPages;
 						if (Information.Page == Information.NumPages)
 						{
-							xaml_PrintGrid.Visibility = System.Windows.Visibility.Collapsed;
+							m_printstatus.xaml_PrintProgress.Visibility = System.Windows.Visibility.Collapsed;
 						}
 					}));
 					break;

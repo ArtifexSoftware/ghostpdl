@@ -167,14 +167,41 @@ namespace ghostnet_wpf_example
 			xaml_PageList.AddHandler(Grid.DragOverEvent, new System.Windows.DragEventHandler(Grid_DragOver), true);
 			xaml_PageList.AddHandler(Grid.DropEvent, new System.Windows.DragEventHandler(Grid_Drop), true);
 
-			/* For case of opening another file */
+
+			/* For case of opening another file, or launching a print process */
 			string[] arguments = Environment.GetCommandLineArgs();
-			if (arguments.Length > 1)
+			if (arguments.Length == 3)
 			{
 				string filePath = arguments[1];
-				ProcessFile(filePath);
+				string job = arguments[2];
+
+				if (String.Equals(job, "open"))
+					ProcessFile(filePath);
 			}
+			else if (arguments.Length == 5)
+			{
+				string filePath = arguments[1];
+				string job = arguments[2];
+
+				try
+				{
+					m_currpage = Int32.Parse(arguments[3]);
+					m_numpages = Int32.Parse(arguments[4]);
+				}
+				catch (FormatException)
+				{
+					Console.WriteLine("Failure to parse print page info");
+					Close();
+				}
+
+				/* Keep main window hidden if we are doing a print process */
+				this.IsVisibleChanged += new System.Windows.DependencyPropertyChangedEventHandler(WindowVisible);
+				m_viewer_state = ViewerState_t.PRINTING;
+				Print(filePath);
+			}
+
 		}
+
 		private void gsIO(String mess, int len)
 		{
 			m_gsoutput.Update(mess, len);
@@ -208,8 +235,8 @@ namespace ghostnet_wpf_example
 				{
 
 					case GS_Task_t.CREATE_XPS:
-						xaml_DistillProgress.Value = 100;
-						xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+						m_printstatus.xaml_PrintProgress.Value = 100;
+						m_printstatus.xaml_PrintProgressGrid.Visibility = System.Windows.Visibility.Collapsed;
 						break;
 
 					case GS_Task_t.PS_DISTILL:
@@ -261,7 +288,7 @@ namespace ghostnet_wpf_example
 				switch (asyncInformation.Params.task)
 				{
 					case GS_Task_t.CREATE_XPS:
-						this.xaml_DistillProgress.Value = asyncInformation.Progress;
+						m_printstatus.xaml_PrintProgress.Value = asyncInformation.Progress;
 						break;
 
 					case GS_Task_t.PS_DISTILL:
@@ -318,7 +345,7 @@ namespace ghostnet_wpf_example
 			switch (gs_result.task)
 			{
 				case GS_Task_t.CREATE_XPS:
-					xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+					//xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
 					/* Always do print all from xps conversion as it will do
 					 * the page range handling for us */
 					/* Add file to temp file list */
@@ -458,7 +485,8 @@ namespace ghostnet_wpf_example
 				string path = System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
 				try
 				{
-					Process.Start(path, FileName);
+					string Arguments = FileName + " open";
+					Process.Start(path, Arguments);
 				}
 				catch (InvalidOperationException)
 				{
@@ -720,6 +748,15 @@ namespace ghostnet_wpf_example
 				e.Effects = System.Windows.DragDropEffects.None;
 			}
 			e.Handled = false;
+		}
+		
+		/* Keep main window hidden if we are doing a print process */
+		public void WindowVisible(object sender, DependencyPropertyChangedEventArgs e)
+		{
+			if (m_viewer_state == ViewerState_t.PRINTING)
+			{
+				this.Visibility = Visibility.Hidden;
+			}
 		}
 
 		private void Grid_Drop(object sender, System.Windows.DragEventArgs e)
