@@ -528,6 +528,21 @@ smask_image_check(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *p
     return 1;
 }
 
+
+/* Abort an image without writing it.
+ * Frees any associated memory.
+ */
+int
+pdf_end_abort_image(gx_device_pdf * pdev, pdf_image_writer * piw)
+{
+    pdf_resource_t *pres = piw->pres;
+
+    if (!pres) {
+        COS_FREE(piw->data, "pdf_end_write_image");
+    }
+    return 0;
+}
+
 /*
  * Finish writing an image.  If in-line, write the BI/dict/ID/data/EI and
  * return 1; if a resource, write the resource definition and return 0.
