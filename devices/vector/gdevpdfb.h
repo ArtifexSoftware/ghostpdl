@@ -128,6 +128,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {0,0},				/* PDFXTrimBoxToMediaBoxOffset */
  {0,0},				/* PDFXBleedBoxToTrimBoxOffset */
  1 /* true */,			/* PDFXSetBleedBoxToMediaBox */
+ "",                            /* ocr_language */
+ 0,                             /* ocr_engine */
  1 /*true*/,			/* ReAssignCharacters */
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */

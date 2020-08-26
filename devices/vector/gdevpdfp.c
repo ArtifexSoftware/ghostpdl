@@ -255,6 +255,22 @@ gdev_pdf_get_param(gx_device *dev, char *Param, void *list)
             return(param_write_null(plist, "DSC"));
         }
     }
+    if (strcmp(Param, "OCRLanguage") == 0) {
+        gs_param_string langstr;
+        if (pdev->ocr_language[0]) {
+            langstr.data = (const byte *)pdev->ocr_language;
+            langstr.size = strlen(pdev->ocr_language);
+            langstr.persistent = false;
+        } else {
+            langstr.data = (const byte *)"eng";
+            langstr.size = 3;
+            langstr.persistent = false;
+        }
+        return param_write_string(plist, "OCRLanguage", &langstr);
+    }
+    if (strcmp(Param, "OCREngine") == 0)
+        return param_write_int(plist, "OCREngine", &pdev->ocr_engine);
+
     return gdev_psdf_get_param(dev, Param, list);
 }
 
@@ -268,12 +284,25 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
     float cl = (float)pdev->CompatibilityLevel;
     int code;
     int cdv = CoreDistVersion;
+    gs_param_string langstr;
+
+    if (pdev->ocr_language[0]) {
+        langstr.data = (const byte *)pdev->ocr_language;
+        langstr.size = strlen(pdev->ocr_language);
+        langstr.persistent = false;
+    } else {
+        langstr.data = (const byte *)"eng";
+        langstr.size = 3;
+        langstr.persistent = false;
+    }
 
     pdev->ParamCompatibilityLevel = cl;
     code = gdev_psdf_get_params(dev, plist);
     if (code < 0 ||
         (code = param_write_int(plist, "CoreDistVersion", &cdv)) < 0 ||
         (code = param_write_float(plist, "CompatibilityLevel", &cl)) < 0 ||
+        (code = param_write_string(plist, "OCRLanguage", &langstr)) < 0 ||
+        (code = param_write_int(plist, "OCREngine", &pdev->ocr_engine)) < 0 ||
         (!pdev->is_ps2write && (code = param_write_bool(plist, "ForOPDFRead", &pdev->ForOPDFRead)) < 0) ||
         /* Indicate that we can process pdfmark and DSC. */
         (param_requested(plist, "pdfmark") > 0 &&
@@ -297,6 +326,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     float cl = (float)pdev->CompatibilityLevel;
     bool locked = pdev->params.LockDistillerParams, ForOPDFRead;
     gs_param_name param_name;
+    gs_param_string langstr;
+    int engine;
 
     pdev->pdf_memory = gs_memory_stable(pdev->memory);
     /*
@@ -365,6 +396,36 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
             case 1:
                 break;
         }
+    }
+
+    {
+        int len;
+        gs_param_string langstr;
+        switch (code = param_read_string(plist, (param_name = "OCRLanguage"), &langstr)) {
+            case 0:
+                len = langstr.size;
+                if (len >= sizeof(pdev->ocr_language))
+                    len = sizeof(pdev->ocr_language)-1;
+                memcpy(pdev->ocr_language, langstr.data, len);
+                pdev->ocr_language[len] = 0;
+                break;
+            case 1:
+                break;
+            default:
+                ecode = code;
+                param_signal_error(plist, param_name, ecode);
+        }
+    }
+
+    switch (code = param_read_int(plist, (param_name = "OCREngine"), &engine)) {
+        case 0:
+            pdev->ocr_engine = engine;
+            break;
+        case 1:
+            break;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
     }
 
     /*

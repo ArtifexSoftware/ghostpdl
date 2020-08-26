@@ -572,6 +572,9 @@ struct gx_device_pdf_s {
     gs_param_float_array PDFXTrimBoxToMediaBoxOffset;
     gs_param_float_array PDFXBleedBoxToTrimBoxOffset;
     bool PDFXSetBleedBoxToMediaBox;
+    /* OCR Parameters */
+    char ocr_language[1024];
+    int ocr_engine;
     /* Other parameters */
     bool ReAssignCharacters;
     bool ReEncodeCharacters;

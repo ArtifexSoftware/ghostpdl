@@ -514,10 +514,14 @@ gdev_pdf_fill_mask(gx_device * dev,
         /* Process the image here */
         int code;
         void *state;
+        const char *language = pdev->ocr_language;
+        if (language == NULL || language[0] == 0)
+            language = "eng";
 
         pdev->OCRUnicode = 0;
         pdev->OCRStage = 2;
-        code = ocr_init_api(dev->memory->non_gc_memory, "eng", &state);
+        code = ocr_init_api(dev->memory->non_gc_memory, language,
+                            pdev->ocr_engine, &state);
         if (code < 0)
            return code;
 
