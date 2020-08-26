@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <stdint.h>
 
 #ifndef GHOSTPDL
 #define GHOSTPDL 1
@@ -882,7 +883,7 @@ static int
 list_params(void *instance)
 {
     void *iter = NULL;
-    char *key;
+    const char *key;
     gs_set_param_type type;
     char buffer[1024];
     int code;
