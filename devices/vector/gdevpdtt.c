@@ -678,12 +678,23 @@ pdf_font_cache_elem_t **
 pdf_locate_font_cache_elem(gx_device_pdf *pdev, gs_font *font)
 {
     pdf_font_cache_elem_t **e = &pdev->font_cache;
+    pdf_font_cache_elem_t *prev = NULL;
     long id = pdf_font_cache_elem_id(font);
 
-    for (; *e != 0; e = &(*e)->next)
+    for (; *e != 0; e = &(*e)->next) {
         if ((*e)->font_id == id) {
-            return e;
+            if (prev != NULL) {
+                pdf_font_cache_elem_t *curr = *e;
+
+                /* move the curr font to head of list (Most Recently Used) */
+                prev->next = curr->next;
+                curr->next = pdev->font_cache;
+                pdev->font_cache = curr;
+            }
+            return &(pdev->font_cache);
         }
+        prev = *e;
+    }
     return 0;
 }
 
