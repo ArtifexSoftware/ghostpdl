@@ -134,6 +134,24 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
         if (!strcmp(page->name, name))
             return;
 
+    if (ctx->page_range && !ctx->page_range->page_list)
+    {
+        ctx->page_range->current++;
+
+        if (ctx->page_range->reverse)
+        {
+            if (ctx->page_range->current < ctx->page_range->last ||
+                ctx->page_range->current > ctx->page_range->first)
+                return;
+        }
+        else
+        {
+            if ((ctx->page_range->first != 0 && ctx->page_range->current < ctx->page_range->first) ||
+                (ctx->page_range->last != 0 && ctx->page_range->current > ctx->page_range->last))
+                return;
+        }
+    }
+
     if_debug1m('|', ctx->memory, "doc: adding page %s\n", name);
 
     page = xps_alloc(ctx, sizeof(xps_page_t));
@@ -153,8 +171,17 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
     }
     else
     {
-        ctx->last_page->next = page;
-        ctx->last_page = page;
+        /* FirstPage < LastPage? */
+        if (ctx->page_range && ctx->page_range->reverse)
+        {
+            page->next = ctx->first_page;
+            ctx->first_page = page;
+        }
+        else
+        {
+            ctx->last_page->next = page;
+            ctx->last_page = page;
+        }
     }
 }
 

@@ -565,6 +565,200 @@ xps_read_and_process_page_part(xps_context_t *ctx, char *name)
     return gs_okay;
 }
 
+/* XPS page reordering based upon Device PageList setting */
+static int
+xps_reorder_add_page(xps_context_t* ctx, xps_page_t ***page_ptr, xps_page_t* page_to_add)
+{
+    xps_page_t* new_page;
+
+    new_page = xps_alloc(ctx, sizeof(xps_page_t));
+    if (!new_page)
+    {
+        return gs_throw(gs_error_VMerror, "out of memory: xps_reorder_add_page\n");
+    }
+
+    new_page->name = xps_strdup(ctx, page_to_add->name);
+    if (!new_page->name)
+    {
+        return gs_throw(gs_error_VMerror, "out of memory: xps_reorder_add_page\n");
+    }
+    new_page->height = page_to_add->height;
+    new_page->width = page_to_add->width;
+    new_page->next = NULL;
+
+    **page_ptr = new_page;
+    *page_ptr = &(new_page->next);
+
+    return 0;
+}
+
+static char*
+xps_reorder_get_range(xps_context_t *ctx, char *page_list, int *start, int *end, int num_pages)
+{
+    int comma, dash, len;
+
+    len = strlen(page_list);
+    comma = strcspn(page_list, ",");
+    dash = strcspn(page_list, "-");
+
+    if (dash < comma)
+    {
+        /* Dash at start */
+        if (dash == 0)
+        {
+            *start = num_pages;
+            *end = atoi(&(page_list[dash + 1]));
+        }
+        else
+        {
+            *start = atoi(page_list);
+
+            /* Dash at end */
+            if (page_list[dash + 1] == 0 || page_list[dash + 1] == ',')
+            {
+                *end = num_pages;
+            }
+            else
+            {
+                *end = atoi(&(page_list[dash + 1]));
+            }
+        }
+    }
+    else
+    {
+        *start = atoi(page_list);
+        *end = *start;
+    }
+    return comma == len ? page_list + comma : page_list + comma + 1;
+}
+
+static int
+xps_reorder_pages(xps_context_t *ctx)
+{
+    char *page_list = ctx->page_range->page_list;
+    char *str;
+    xps_page_t **page_ptr_array, *page = ctx->first_page;
+    int count = 0, k;
+    int code;
+    int start;
+    int end;
+    xps_page_t* first_page = NULL;
+    xps_page_t* last_page;
+    xps_page_t** page_tail = &first_page;
+
+    if (page == NULL)
+        return 0;
+
+    while (page != NULL)
+    {
+        count++;
+        page = page->next;
+    }
+
+    /* Create an array of pointers to the current pages */
+    page_ptr_array = xps_alloc(ctx, sizeof(xps_page_t*) * count);
+    if (page_ptr_array == NULL)
+        return gs_throw(gs_error_VMerror, "out of memory: xps_reorder_pages\n");
+
+    page = ctx->first_page;
+    for (k = 0; k < count; k++)
+    {
+        page_ptr_array[k] = page;
+        page = page->next;
+    }
+
+    if (strcmp(page_list, "even") == 0)
+    {
+        for (k = 1; k < count; k += 2)
+        {
+            code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[k]);
+            if (code < 0)
+                return code;
+        }
+    }
+    else if (strcmp(page_list, "odd") == 0)
+    {
+        for (k = 0; k < count; k += 2)
+        {
+            code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[k]);
+            if (code < 0)
+                return code;
+        }
+    }
+    else
+    {
+        /* Requirements. All characters must be 0 to 9 or - and ,
+          No ,, or --  */
+        str = page_list;
+        do
+        {
+            if (*str != ',' && *str != '-' && (*str < 0x30 || *str > 0x39))
+                return gs_throw(gs_error_typecheck, "Bad page list: xps_reorder_pages\n");
+
+            if ((*str == ',' && *(str + 1) == ',') || (*str == '-' && *(str + 1) == '-'))
+                return gs_throw(gs_error_typecheck, "Bad page list: xps_reorder_pages\n");
+        }
+        while (*(++str));
+
+        str = page_list;
+        do
+        {
+            /* Process each comma separated item. */
+            str = xps_reorder_get_range(ctx, str, &start, &end, count);
+
+            /* Threshold page range */
+            if (start > count)
+                start = count;
+
+            if (end > count)
+                end = count;
+
+            /* Add page(s) */
+            if (start == end)
+            {
+                code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[start - 1]);
+                if (code < 0)
+                    return code;
+            }
+            else if (start < end)
+            {
+                for (k = start - 1; k < end; k++)
+                {
+                    code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[k]);
+                    if (code < 0)
+                        return code;
+                }
+            }
+            else
+            {
+                for (k = start; k >= end; k--)
+                {
+                    code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[k - 1]);
+                    if (code < 0)
+                        return code;
+                }
+            }
+        }
+        while (*str);
+    }
+
+    /* Replace the pages. */
+    if (first_page != NULL)
+    {
+        /* Set to the last page not its next pointer (Thanks to Robin Watts) */
+        last_page = (xps_page_t*)(((char*)page_tail) - offsetof(xps_page_t, next));
+
+        xps_free_fixed_pages(ctx);
+        xps_free(ctx, page_ptr_array);
+        ctx->first_page = first_page;
+        ctx->last_page = last_page;
+    }
+    else
+        return gs_throw(gs_error_rangecheck, "Bad page list: xps_reorder_pages\n");
+
+    return 0;
+}
+
 /*
  * Called by xpstop.c
  */
@@ -696,6 +890,17 @@ xps_process_file(xps_context_t *ctx, const char *filename)
         if (code)
         {
             code = gs_rethrow(code, "cannot process FixedDocument part");
+            goto cleanup;
+        }
+    }
+
+    /* If we have a page list, adjust pages now */
+    if (ctx->page_range && ctx->page_range->page_list)
+    {
+        code = xps_reorder_pages(ctx);
+        if (code)
+        {
+            code = gs_rethrow(code, "invalid page range setting");
             goto cleanup;
         }
     }

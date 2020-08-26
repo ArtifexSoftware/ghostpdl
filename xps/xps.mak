@@ -137,7 +137,7 @@ $(PLOBJ)xpsimpl.$(OBJ): $(XPSGEN)xpsimpl.c          \
                         $(MAKEDIRS)
 	$(XPSCCC) $(XPSGEN)xpsimpl.c $(XPSO_)xpsimpl.$(OBJ)
 
-$(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(plmain_h) $(pltop_h) $(XPSINCLUDES) $(GLOBJ)gconfig.$(OBJ) \
+$(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(plmain_h) $(pltop_h) $(gsparam_h) $(XPSINCLUDES) $(GLOBJ)gconfig.$(OBJ) \
                 $(pconfig_h) $(XPS_MAK) $(MAKEDIRS)
 	$(XPSCCC) $(XPSSRC)xpstop.c $(XPSO_)xpstop.$(OBJ)
 

@@ -177,6 +177,7 @@ void xps_free_part(xps_context_t *ctx, xps_part_t *part);
 
 typedef struct xps_document_s xps_document_t;
 typedef struct xps_page_s xps_page_t;
+typedef struct xps_page_range_s xps_page_range_t;
 
 struct xps_document_s
 {
@@ -190,6 +191,15 @@ struct xps_page_s
     int width;
     int height;
     xps_page_t *next;
+};
+
+struct xps_page_range_s
+{
+    int first;
+    int last;
+    int reverse;
+    int current;
+    char *page_list;
 };
 
 int xps_parse_metadata(xps_context_t *ctx, xps_part_t *part);
@@ -409,6 +419,8 @@ struct xps_context_s
     xps_document_t *last_fixdoc; /* last fixed document */
     xps_page_t *first_page; /* first page of document */
     xps_page_t *last_page; /* last page of document */
+
+    xps_page_range_t *page_range; /* interpreter-based page range handling */
 
     char *base_uri; /* base uri for parsing XML and resolving relative paths */
     char *part_uri; /* part uri for parsing metadata relations */
