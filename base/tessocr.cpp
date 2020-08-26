@@ -552,7 +552,7 @@ ocr_set_bitmap(tesseract::TessBaseAPI *api,
     }
 
     api->SetImage(image);
-    //pixWrite("test.pnm", image, IFF_PNM);
+//    pixWrite("test.pnm", image, IFF_PNM);
 
     return image;
 }
@@ -563,6 +563,87 @@ ocr_clear_bitmap(Pix *image)
     gs_free_object(leptonica_mem, pixGetData(image), "ocr_clear_bitmap");
     pixSetData(image, NULL);
     pixDestroy(&image);
+}
+
+int ocr_bitmap_to_unicodes(void *state,
+                          const void *data, int data_x,
+                          int w, int h, int raster,
+                          int xres, int yres, int *unicode, int *char_count)
+{
+    tesseract::TessBaseAPI *api = (tesseract::TessBaseAPI *)state;
+    Pix *image;
+    int code, max_chars = *char_count, count = 0;
+
+    if (api == NULL)
+        return 0;
+
+    image = ocr_set_bitmap(api, w, h, (const unsigned char *)data,
+                           data_x, raster, xres, yres);
+    if (image == NULL)
+        return_error(gs_error_VMerror);
+
+    code = api->Recognize(NULL);
+    if (code >= 0) {
+        /* Bingo! */
+        tesseract::ResultIterator *res_it = api->GetIterator();
+
+        while (!res_it->Empty(tesseract::RIL_BLOCK)) {
+            if (res_it->Empty(tesseract::RIL_WORD)) {
+                res_it->Next(tesseract::RIL_WORD);
+                continue;
+            }
+
+            do {
+#if FUTURE_DEVELOPMENT
+                int word_bbox[4];
+                int char_bbox[4];
+                int line_bbox[4];
+#endif
+
+                const unsigned char *graph = (unsigned char *)res_it->GetUTF8Text(tesseract::RIL_SYMBOL);
+                if (graph && graph[0] != 0) {
+                    /* Quick and nasty conversion from UTF8 to unicode. */
+                    if (graph[0] < 0x80)
+                        unicode[count] = graph[0];
+                    else {
+                        unicode[count] = graph[1] & 0x3f;
+                        if (graph[0] < 0xE0)
+                            unicode[count] += (graph[0] & 0x1f)<<6;
+                        else {
+                            unicode[count] = (graph[2] & 0x3f) | (*unicode << 6);
+                            if (graph[0] < 0xF0) {
+                                unicode[count] += (graph[0] & 0x0F)<<6;
+                            } else {
+                                unicode[count] = (graph[3] & 0x3f) | (*unicode<<6);
+                                unicode[count] += (graph[0] & 0x7);
+                            }
+                        }
+                    }
+                    count++;
+#if FUTURE_DEVELOPMENT
+                    res_it->BoundingBox(tesseract::RIL_TEXTLINE,
+                        line_bbox,line_bbox + 1,
+                        line_bbox + 2,line_bbox + 3);
+                    res_it->BoundingBox(tesseract::RIL_WORD,
+                        word_bbox,word_bbox + 1,
+                        word_bbox + 2,word_bbox + 3);
+                    res_it->BoundingBox(tesseract::RIL_SYMBOL,
+                        char_bbox,char_bbox + 1,
+                        char_bbox + 2,char_bbox + 3);
+#endif
+                }
+                res_it->Next(tesseract::RIL_SYMBOL);
+             } while (!res_it->Empty(tesseract::RIL_BLOCK) &&
+                      !res_it->IsAtBeginningOf(tesseract::RIL_WORD) && count < max_chars);
+        }
+        delete res_it;
+        code = code;
+    }
+
+    ocr_clear_bitmap(image);
+    *char_count = count;
+
+    return code;
 }
 
 int ocr_bitmap_to_unicode(void *state,

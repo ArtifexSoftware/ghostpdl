@@ -506,32 +506,46 @@ gdev_pdf_fill_mask(gx_device * dev,
     if (width <= 0 || height <= 0)
         return 0;
 
-    /* If OCRStage is 1 then we are handling an image which is a rendered glyph
+    /* If OCRStage is 'OCR_Rendering' then we are handling an image which is a rendered glyph
      * that we want to have OCR software process and return a Unicode code point for.
      * We specifically do *not* want to send the image to the output PDF file!
      */
-    if (pdev->OCRStage == 1) {
-        /* Process the image here */
-        int code;
-        void *state;
-        const char *language = pdev->ocr_language;
-        if (language == NULL || language[0] == 0)
-            language = "eng";
+    if (pdev->OCRStage == OCR_Rendering) {
+        int code = 0;
+        ocr_glyph_t *new_glyph = NULL;
+        int index;
 
-        pdev->OCRUnicode = 0;
-        pdev->OCRStage = 2;
-        code = ocr_init_api(dev->memory->non_gc_memory, language,
-                            pdev->ocr_engine, &state);
-        if (code < 0)
-           return code;
+        new_glyph = (ocr_glyph_t *)gs_alloc_bytes(pdev->pdf_memory, sizeof(ocr_glyph_t), "");
+        if (new_glyph == NULL)
+            return_error(gs_error_VMerror);
+        new_glyph->data = gs_alloc_bytes(pdev->pdf_memory, raster*height, "");
+        if (new_glyph->data == NULL)
+            return_error(gs_error_VMerror);
+        memcpy(new_glyph->data, data, raster * height);
+        new_glyph->height = height;
+        new_glyph->width = width;
+        new_glyph->raster = raster;
+        new_glyph->x = x;
+        new_glyph->y = y;
+        new_glyph->char_code = pdev->OCR_char_code;
+        new_glyph->glyph = pdev->OCR_glyph;
+        new_glyph->next = NULL;
+        new_glyph->is_space = true;
+        for(index = 0; index < height * raster;index++){
+            if(data[index] != 0x00) {
+                new_glyph->is_space = false;
+                break;
+            }
+        }
+        if (pdev->ocr_glyphs == NULL)
+            pdev->ocr_glyphs = new_glyph;
+        else {
+            ocr_glyph_t *next = pdev->ocr_glyphs;
 
-        code = ocr_bitmap_to_unicode(state,
-                                     data, data_x, width, height, raster,
-                                     (int)dev->HWResolution[0],
-                                     (int)dev->HWResolution[1],
-                                     &pdev->OCRUnicode);
-        ocr_fin_api(dev->memory->non_gc_memory, state);
-
+            while (next->next != NULL)
+                next = next->next;
+            next->next = new_glyph;
+        }
         return code;
     }
 
