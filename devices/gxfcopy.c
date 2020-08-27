@@ -2292,21 +2292,19 @@ int gs_free_copied_font(gs_font *font)
                     if (!gs_is_c_glyph_name(pcgn->str.data, pcgn->str.size))
                         gs_free_string(font->memory, (byte *)pcgn->str.data, pcgn->str.size, "Free copied glyph name");
                 }
-                gs_free_object(font->memory, cfdata->names, "free copied font(names)");
-                cfdata->names = NULL;
             }
-            if (cfdata->extra_names) {
-                gs_copied_glyph_extra_name_t *extra_name = cfdata->extra_names, *next;
+        }
+        if (cfdata->extra_names) {
+            gs_copied_glyph_extra_name_t *extra_name = cfdata->extra_names, *next;
 
-                while (extra_name != NULL) {
-                    next = extra_name->next;
-                    if (!gs_is_c_glyph_name(extra_name->name.str.data, extra_name->name.str.size))
-                        gs_free_string(font->memory, (byte *)extra_name->name.str.data, extra_name->name.str.size, "Free extra name string");
-                    gs_free_object(font->memory, extra_name, "free copied font(extra_names)");
-                    extra_name = next;
-                }
-                cfdata->extra_names = NULL;
+            while (extra_name != NULL) {
+                next = extra_name->next;
+                if (!gs_is_c_glyph_name(extra_name->name.str.data, extra_name->name.str.size))
+                    gs_free_string(font->memory, (byte *)extra_name->name.str.data, extra_name->name.str.size, "Free extra name string");
+                gs_free_object(font->memory, extra_name, "free copied font(extra_names)");
+                extra_name = next;
             }
+            cfdata->extra_names = NULL;
         }
 
         uncopy_string(mem, &cfdata->info.FullName,
