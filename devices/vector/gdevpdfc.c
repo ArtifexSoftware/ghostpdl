@@ -527,7 +527,7 @@ pdf_separation_color_space(gx_device_pdf *pdev, const gs_gstate * pgs,
     }
 
     if ((code = cos_array_add(pca, cos_c_string_value(&v, csname))) < 0 ||
-        (code = cos_array_add_no_copy(pca, snames)) < 0 ||
+        (code = cos_array_add(pca, snames)) < 0 ||
         (code = pdf_color_space_named(pdev, pgs, &v, &ranges, alt_space, pcsn, false, NULL, 0, false)) < 0 ||
         (code = cos_array_add(pca, &v)) < 0 ||
         (code = pdf_function_scaled(pdev, pfn, ranges, &v)) < 0 ||
@@ -1154,9 +1154,13 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
             for (i = 0; i < pcs->params.device_n.num_components; ++i) {
                 name_string = (byte *)pcs->params.device_n.names[i];
                 name_string_length = strlen(pcs->params.device_n.names[i]);
-                if ((code = pdf_string_to_cos_name(pdev, name_string,
-                                  name_string_length, &v)) < 0 ||
-                    (code = cos_array_add_no_copy(psna, &v)) < 0)
+
+                code = pdf_string_to_cos_name(pdev, name_string, name_string_length, &v);
+                if (code < 0)
+                    return code;
+                code = cos_array_add(psna, &v);
+                cos_value_free((const cos_value_t *)&v, pdev->pdf_memory, "pdf_color_space(DeviceN component)");
+                if (code < 0)
                     return code;
             }
             COS_OBJECT_VALUE(&v, psna);
@@ -1185,6 +1189,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                         return gs_note_error(gs_error_typecheck);
                 }
                 code = cos_dict_put((cos_dict_t *)pres_attributes->object, (const byte *)"/Subtype", 8, &v_Subtype_name);
+                cos_value_free((const cos_value_t *)&v_Subtype_name, pdev->pdf_memory, "pdf_color_space(Subtype)");
                 if (code < 0)
                     return code;
             }
@@ -1212,6 +1217,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                     return code;
                 code = cos_dict_put(process, v_process_name.contents.chars.data,
                                     v_process_name.contents.chars.size, &v_process_space);
+                cos_value_free((const cos_value_t *)&v_process_name, pdev->pdf_memory, "pdf_color_space(ColorSpace)");
                 if (code < 0)
                     return code;
 
@@ -1229,6 +1235,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                     if (code < 0)
                         return code;
                     code = cos_array_put(components, m, &v_process_name);
+                    cos_value_free((const cos_value_t *)&v_process_name, pdev->pdf_memory, "pdf_color_space(process_name)");
                     if (code < 0)
                         return code;
                 }
@@ -1258,6 +1265,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                         return code;
                     code = cos_dict_put(colorants, v_colorant_name.contents.chars.data,
                                         v_colorant_name.contents.chars.size, &v_separation);
+                    cos_value_free((const cos_value_t *)&v_colorant_name, pdev->pdf_memory, "pdf_color_space(Subtype)");
                     if (code < 0)
                         return code;
                 }
@@ -1270,9 +1278,14 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                 va = &v_attributes;
                 COS_OBJECT_VALUE(va, pres_attributes->object);
             }
-            if ((code = pdf_separation_color_space(pdev, pgs, pca, "/DeviceN", &v,
+            code = pdf_separation_color_space(pdev, pgs, pca, "/DeviceN", &v,
                                                    pcs->base_space,
-                                        pfn, &pdf_color_space_names, va)) < 0)
+                                        pfn, &pdf_color_space_names, va);
+            if (v.value_type == COS_VALUE_SCALAR)
+                cos_value_free((const cos_value_t *)&v, pdev->pdf_memory, "pdf_color_space(Devicen)");
+            if (va != NULL && va->value_type == COS_VALUE_SCALAR)
+                cos_value_free((const cos_value_t *)&va, pdev->pdf_memory, "pdf_color_space(Devicen)");
+            if (code < 0)
                 return code;
         }
         break;
@@ -1285,12 +1298,18 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
         if (pfn == 0)
             return_error(gs_error_rangecheck);
         {
-            if ((code = pdf_string_to_cos_name(pdev, (const byte *)pcs->params.separation.sep_name,
-                                      strlen(pcs->params.separation.sep_name), &v)) < 0 ||
-                (code = pdf_separation_color_space(pdev, pgs, pca, "/Separation", &v,
+            code = pdf_string_to_cos_name(pdev, (const byte *)pcs->params.separation.sep_name,
+                                      strlen(pcs->params.separation.sep_name), &v);
+            if (code < 0)
+                return code;
+
+            code = pdf_separation_color_space(pdev, pgs, pca, "/Separation", &v,
                                             pcs->base_space,
-                                            pfn, &pdf_color_space_names, NULL)) < 0)
-            return code;
+                                            pfn, &pdf_color_space_names, NULL);
+            if (v.value_type == COS_VALUE_SCALAR)
+                cos_value_free((const cos_value_t *)&v, pdev->pdf_memory, "pdf_color_space(Separation name)");
+            if (code < 0)
+                return code;
         }
         break;
 

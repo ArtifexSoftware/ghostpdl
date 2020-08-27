@@ -347,7 +347,7 @@ int cos_write_object(cos_object_t *pco, gx_device_pdf *pdev, pdf_resource_type_t
 #define COS_WRITE_OBJECT(pc, pdev, type) cos_write_object(COS_OBJECT(pc), pdev, type)
 
 /* Free a Cos value owned by a Cos object. */
-void cos_value_free(const cos_value_t *, const cos_object_t *, client_name_t);
+void cos_value_free(const cos_value_t *, gs_memory_t *, client_name_t);
 
 /* Free a cos object. */
 void cos_free(cos_object_t *pco, client_name_t cname);
