@@ -540,20 +540,14 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
     }
     cc->pattern->client_data = context;
+    cc->pattern->notify_free = pdfi_pattern_cleanup;
     context = NULL;
-
-    code = pdfi_pattern_setup(ctx, &context, NULL, NULL, ExtGState);
-    if (code < 0) {
-        (void) pdfi_grestore(ctx);
-        goto exit;
-    }
 
     code = pdfi_grestore(ctx);
     if (code < 0)
         goto exit;
 
  exit:
-    pdfi_countdown(context);
     pdfi_countdown(Shading);
     pdfi_countdown(Matrix);
     pdfi_countdown(ExtGState);
