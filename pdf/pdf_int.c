@@ -1342,8 +1342,10 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s, uint32_t indirec
             bytes = pdfi_read_bytes(ctx, (byte *)HexBuf, 1, 1, s);
             if (bytes == 0 && s->eof)
                 break;
-            if (bytes <= 0)
-                return_error(gs_error_ioerror);
+            if (bytes <= 0) {
+                code = gs_note_error(gs_error_ioerror);
+                goto exit;
+            }
         } while(iswhite(HexBuf[0]));
         if (bytes == 0 && s->eof)
             break;
@@ -1358,14 +1360,18 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s, uint32_t indirec
             bytes = pdfi_read_bytes(ctx, (byte *)&HexBuf[1], 1, 1, s);
             if (bytes == 0 && s->eof)
                 break;
-            if (bytes <= 0)
-                return_error(gs_error_ioerror);
+            if (bytes <= 0) {
+                code = gs_note_error(gs_error_ioerror);
+                goto exit;
+            }
         } while(iswhite(HexBuf[1]));
         if (bytes == 0 && s->eof)
             break;
 
-        if (!ishex(HexBuf[0]) || !ishex(HexBuf[1]))
-            return_error(gs_error_syntaxerror);
+        if (!ishex(HexBuf[0]) || !ishex(HexBuf[1])) {
+            code = gs_note_error(gs_error_syntaxerror);
+            goto exit;
+        }
 
         if (ctx->pdfdebug)
             dmprintf1(ctx->memory, "%c", HexBuf[1]);
@@ -1375,8 +1381,8 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s, uint32_t indirec
         if (index++ >= size - 1) {
             NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdfi_read_hexstring");
             if (NewBuf == NULL) {
-                gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring error");
-                return_error(gs_error_VMerror);
+                code = gs_note_error(gs_error_VMerror);
+                goto exit;
             }
             memcpy(NewBuf, Buffer, size);
             gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring");
@@ -1389,20 +1395,18 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s, uint32_t indirec
         dmprintf(ctx->memory, ">");
 
     code = pdfi_alloc_object(ctx, PDF_STRING, index, (pdf_obj **)&string);
-    if (code < 0) {
-        gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
-        return code;
-    }
+    if (code < 0)
+        goto exit;
     memcpy(string->data, Buffer, index);
     string->indirect_num = indirect_num;
     string->indirect_gen = indirect_gen;
-
-    gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring");
 
     code = pdfi_push(ctx, (pdf_obj *)string);
     if (code < 0)
         pdfi_free_namestring((pdf_obj *)string);
 
+ exit:
+    gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring");
     return code;
 }
 
