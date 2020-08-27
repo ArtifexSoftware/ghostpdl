@@ -281,12 +281,12 @@ cos_resource_value(cos_value_t *pcv, cos_object_t *pco)
 
 /* Free a value. */
 void
-cos_value_free(const cos_value_t *pcv, const cos_object_t *pco,
+cos_value_free(const cos_value_t *pcv, gs_memory_t *mem,
                client_name_t cname)
 {
     switch (pcv->value_type) {
     case COS_VALUE_SCALAR:
-        gs_free_string(cos_object_memory(pco), pcv->contents.chars.data,
+        gs_free_string(mem, pcv->contents.chars.data,
                        pcv->contents.chars.size, cname);
     case COS_VALUE_CONST:
         break;
@@ -517,7 +517,7 @@ cos_array_release(cos_object_t *pco, client_name_t cname)
 
     for (cur = pca->elements; cur; cur = next) {
         next = cur->next;
-        cos_value_free(&cur->value, pco, cname);
+        cos_value_free(&cur->value, cos_object_memory(pco), cname);
         gs_free_object(cos_object_memory(pco), cur, cname);
     }
     pca->elements = 0;
@@ -654,7 +654,7 @@ cos_array_put_no_copy(cos_array_t *pca, long index, const cos_value_t *pvalue)
         ppcae = &next->next;
     if (next && next->index == index) {
         /* We're replacing an existing element. */
-        cos_value_free(&next->value, COS_OBJECT(pca),
+        cos_value_free(&next->value, mem,
                        "cos_array_put(old value)");
         pcae = next;
     } else {
@@ -807,7 +807,7 @@ cos_dict_element_free(cos_dict_t *pcd, cos_dict_element_t *pcde,
 {
     gs_memory_t *mem = COS_OBJECT_MEMORY(pcd);
 
-    cos_value_free(&pcde->value, COS_OBJECT(pcd), cname);
+    cos_value_free(&pcde->value, mem, cname);
     if (pcde->owns_key)
         gs_free_string(mem, pcde->key.data, pcde->key.size, cname);
     gs_free_object(mem, pcde, cname);
@@ -1311,7 +1311,7 @@ cos_dict_put_copy(cos_dict_t *pcd, const byte *key_data, uint key_size,
         if (flags & DICT_FREE_KEY)
             gs_free_const_string(mem, key_data, key_size,
                                  "cos_dict_put(new key)");
-        cos_value_free(&next->value, COS_OBJECT(pcd),
+        cos_value_free(&next->value, mem,
                        "cos_dict_put(old value)");
         pcde = next;
     } else {
