@@ -2194,9 +2194,13 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     if (code < 0)
         goto fail;
 
-    *pfont_new = copied;
     if (cfdata->notdef != GS_NO_GLYPH)
         code = gs_copy_glyph(font, cfdata->notdef, copied);
+    if (code < 0)
+        gs_free_copied_font(copied);
+    else
+        *pfont_new = copied;
+
     return code;
 
  fail:
