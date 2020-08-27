@@ -756,6 +756,17 @@ clist_close(gx_device *dev)
     gs_free_object(cdev->memory->thread_safe_memory, cdev->icc_cache_list, "clist_close");
     cdev->icc_cache_list = NULL;
 
+    /* So despite the comment above, it seems necessary to free the cache_chunk here,
+     * if the device is not being retained.  The code in gx_pattern_cache_free_entry() doesn't
+     * actually free it, in at least some cases.
+     * TODO: Is it sufficient to only free it here, and not in the places mentioned above?
+     */
+    if (!cdev->retained) {
+        gs_free_object(cdev->memory->non_gc_memory, cdev->cache_chunk,
+                       "clist_close(cache_chunk)");
+        cdev->cache_chunk = NULL;
+    }
+
     if (cdev->do_not_open_or_close_bandfiles)
         return 0;
     if (dev_proc(cdev, open_device) == pattern_clist_open_device) {
