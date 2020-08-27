@@ -29,6 +29,7 @@
 #include "gdevpdfo.h"
 #include "gdevpdtb.h"
 #include "gdevpdtf.h"
+#include "gdevpdtd.h"
 #include "smd5.h"
 #include "gxfcache.h"   /* for gs_purge_font_from_char_caches_completely */
 /*
@@ -372,7 +373,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     *ppbfont = pbfont;
     return 0;
  fail:
-    gs_free_object(mem, pbfont, "pdf_base_font_alloc");
+    pdf_base_font_free(pdev, pbfont);
     return code;
 }
 
