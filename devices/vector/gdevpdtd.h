@@ -104,6 +104,8 @@ int pdf_font_descriptor_alloc(gx_device_pdf *pdev,
                               pdf_font_descriptor_t **ppfd,
                               gs_font_base *font, bool embed);
 
+int pdf_base_font_free(gx_device_pdf *pdev, pdf_base_font_t *pbfont);
+
 int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres);
 
 /*

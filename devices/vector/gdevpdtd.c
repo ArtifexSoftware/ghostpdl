@@ -221,10 +221,8 @@ pdf_font_descriptor_alloc(gx_device_pdf *pdev, pdf_font_descriptor_t **ppfd,
     return 0;
 }
 
-int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres)
+int pdf_base_font_free(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
 {
-    pdf_font_descriptor_t *pfd = (pdf_font_descriptor_t *)pres;
-    pdf_base_font_t *pbfont = pfd->base_font;
     gs_font *copied = NULL, *complete = NULL;
 
     if (pbfont) {
@@ -239,17 +237,27 @@ int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres)
         gs_free_copied_font(copied);
 
     if (pbfont) {
-        if (pbfont->CIDSet) {
-            gs_free_object(cos_object_memory(pres->object), pbfont->CIDSet, "Free base font CIDSet from FontDescriptor)");
-        }
+        if (pbfont->CIDSet)
+            gs_free_object(pdev->pdf_memory, pbfont->CIDSet, "Free base font CIDSet from FontDescriptor)");
+
         if (pbfont->font_name.size) {
             gs_free_string(pdev->pdf_memory, pbfont->font_name.data, pbfont->font_name.size, "Free BaseFont FontName string");
             pbfont->font_name.data = (byte *)0L;
             pbfont->font_name.size = 0;
         }
-        gs_free_object(cos_object_memory(pres->object), pbfont, "Free base font from FontDescriptor)");
-        pfd->base_font = 0;
+        gs_free_object(pdev->pdf_memory, pbfont, "Free base font from FontDescriptor)");
     }
+    return 0;
+}
+
+int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres)
+{
+    pdf_font_descriptor_t *pfd = (pdf_font_descriptor_t *)pres;
+    pdf_base_font_t *pbfont = pfd->base_font;
+
+    pdf_base_font_free(pdev, pbfont);
+    pfd->base_font = 0;
+
     if (pres->object) {
         gs_free_object(pdev->pdf_memory, pres->object, "free FontDescriptor object");
         pres->object = NULL;
