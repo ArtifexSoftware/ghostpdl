@@ -70,24 +70,16 @@ gp_get_realtime(long *pdt)
 void
 gp_get_usertime(long *pdt)
 {
+    FILETIME CreationTime, ExitTime, KernelTime, UserTime;
 
-    LARGE_INTEGER freq;
-    LARGE_INTEGER count;
-    LARGE_INTEGER seconds;
-
-    if (!QueryPerformanceFrequency(&freq)) {
+    if (!GetProcessTimes(GetCurrentProcess(), &CreationTime, &ExitTime, &KernelTime, &UserTime))
         gp_get_realtime(pdt);	/* use previous method if high-res perf counter not available */
-        return;
+    else {
+        ULONGLONG t = (ULONGLONG)UserTime.dwLowDateTime + (ULONGLONG)KernelTime.dwLowDateTime
+                  + (((ULONGLONG)UserTime.dwHighDateTime + (ULONGLONG)KernelTime.dwHighDateTime) << 32);
+        pdt[0] = (long)(t / 10000000);
+        pdt[1] = (long)(t % 10000000)*100;
     }
-    /* Get the high resolution time as seconds and nanoseconds */
-    QueryPerformanceCounter(&count);
-
-    seconds.QuadPart = (count.QuadPart / freq.QuadPart);
-    pdt[0] = seconds.LowPart;
-    count.QuadPart -= freq.QuadPart * seconds.QuadPart;
-    count.QuadPart *= 1000000000;			/* we want nanoseconds */
-    count.QuadPart /= freq.QuadPart;
-    pdt[1] = count.LowPart;
 }
 
 /* ------ Console management ------ */
