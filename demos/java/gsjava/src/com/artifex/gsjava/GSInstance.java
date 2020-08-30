@@ -75,17 +75,21 @@ public class GSInstance implements Iterable<GSInstance.GSParam<?>> {
 		}
 	}
 
+	private static volatile boolean instanceExists = false;
 
 	private long instance;
 	private long callerHandle;
 
 	public GSInstance(long callerHandle) throws IllegalStateException {
+		if (instanceExists)
+			throw new IllegalStateException("An instance already exists");
 		Reference<Long> ref = new Reference<>();
 		int ret = gsapi_new_instance(ref, callerHandle);
 		if (ret != GS_ERROR_OK)
 			throw new IllegalStateException("Failed to create new instance: " + ret);
 		this.instance = ref.getValue();
 		this.callerHandle = callerHandle;
+		instanceExists = true;
 	}
 
 	public GSInstance() throws IllegalStateException {
@@ -96,6 +100,7 @@ public class GSInstance implements Iterable<GSInstance.GSParam<?>> {
 		if (instance != GS_NULL)
 			gsapi_delete_instance(instance);
 		instance = GS_NULL;
+		instanceExists = false;
 	}
 
 	public int set_stdio(IStdInFunction stdin, IStdOutFunction stdout, IStdErrFunction stderr) {

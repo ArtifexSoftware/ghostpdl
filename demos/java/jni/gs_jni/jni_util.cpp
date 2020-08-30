@@ -18,7 +18,7 @@ jfieldID util::getFieldID(JNIEnv *env, jobject object, const char *field, const 
     {
         const char *className = getClassName(env, clazz);
 
-        const std::string full = std::string(className) + field;
+        const std::string full = std::string(className) + "." + field;
         throwNoSuchFieldError(env, full.c_str());
 
         freeClassName(className);
