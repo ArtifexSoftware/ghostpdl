@@ -104,7 +104,7 @@ z_fontenum(i_ctx_t *i_ctx_p)
     if ((code = ialloc_ref_array(&array, a_all | icurrent_space, elements, "native fontmap")) >= 0) {
         fontenum_t *r = results;
 
-        for (e = e2 = 0; e < elements; e++) {
+        for (e = e2 = 0; e < elements && r != NULL; e++) {
             ref mapping;
 
             if ((code = ialloc_ref_array(&mapping, a_all | icurrent_space, 2, "native font mapping")) >= 0) {
@@ -138,7 +138,7 @@ z_fontenum(i_ctx_t *i_ctx_p)
         }
     }
     else {
-        while (elements--) {
+        while (elements-- && results != NULL) {
             fontenum_t *r = results->next;
 
             gs_free(imemory->non_gc_memory, results->fontname,
