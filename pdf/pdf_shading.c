@@ -588,7 +588,7 @@ pdfi_shading_build(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
 {
     gs_shading_params_t params;
     gs_shading_t *psh = NULL;
-    pdf_obj *cspace;
+    pdf_obj *cspace = NULL;
     int64_t type = 0;
     int code = 0;
 
@@ -642,11 +642,25 @@ pdfi_shading_build(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
         code = gs_note_error(gs_error_rangecheck);
         break;
     }
+    if (code < 0)
+        goto shading_error;
 
- shading_error:
     pdfi_countdown(cspace);
     if (code >= 0)
         *ppsh = psh;
+    return code;
+
+ shading_error:
+    if (cspace != NULL)
+        pdfi_countdown(cspace);
+    if (params.ColorSpace != NULL) {
+        rc_decrement_only(params.ColorSpace, "ColorSpace (shading_build_error)");
+        params.ColorSpace = NULL;
+    }
+    if (params.Background != NULL) {
+        gs_free_object(ctx->memory, params.Background, "Background (shading_build_error)");
+        params.Background = NULL;
+    }
     return code;
 }
 
@@ -659,6 +673,11 @@ pdfi_shading_free(pdf_context *ctx, gs_shading_t *psh)
 
     rc_decrement_cs(params->ColorSpace, "pdfi_shading_free(ColorSpace)");
     params->ColorSpace = NULL;
+
+    if (params->Background != NULL) {
+        gs_free_object(ctx->memory, params->Background, "pdfi_shading_free(Background)");
+        params->Background = NULL;
+    }
 
     if (psh->head.type > 3) {
         gs_shading_mesh_params_t *mesh_params = (gs_shading_mesh_params_t *)params;
