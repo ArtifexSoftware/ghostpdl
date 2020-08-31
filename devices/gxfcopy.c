@@ -515,16 +515,22 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
             code = gs_note_error(gs_error_undefined);
         else {
             uint str_size = prefix_bytes + size;
-            byte *str = gs_alloc_string(copied->memory, str_size,
-                                        "copy_glyph_data(data)");
 
-            if (str == 0)
-                code = gs_note_error(gs_error_VMerror);
-            else {
-                if (prefix_bytes)
-                    memcpy(str, prefix, prefix_bytes);
-                memcpy(str + prefix_bytes, pgdata->bits.data, size);
-                pcg->gdata.data = str;
+            code = 0;
+            if (str_size > 0) {
+                byte *str = gs_alloc_string(copied->memory, str_size,
+                                            "copy_glyph_data(data)");
+
+                if (str == 0)
+                    code = gs_note_error(gs_error_VMerror);
+                else {
+                    if (prefix_bytes)
+                        memcpy(str, prefix, prefix_bytes);
+                    memcpy(str + prefix_bytes, pgdata->bits.data, size);
+                    pcg->gdata.data = str;
+                }
+            }
+            if (code >= 0) {
                 pcg->gdata.size = str_size;
                 pcg->used = HAS_DATA;
                 pcg->order_index = -1;

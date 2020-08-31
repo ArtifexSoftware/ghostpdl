@@ -934,7 +934,24 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
         case '-':
             sign = -1;
             if(i_ctx_p->scanner_options & SCAN_PDF_INV_NUM) {
+                const byte *osptr = sptr;
                 do {
+                    /* This is slightly unpleasant: we have to bounds check the buffer,
+                       rather than just incrementing the point until we find a non '-' character.
+                       But we cannot differentiate between multiple '-' characters that
+                       straddle a buffer boundary, or a token that is only one or more '-' characters.
+                       Handling this relies on the fact that the Postscript-based PDF interpreter
+                       always uses the "token" operator to tokenize a stream, thus we can assume
+                       here that the current buffer contains the entire token. So if we reach
+                       the end of the buffer without hitting a character taht is not a '-', we'll reset
+                       the buffer pointer, and retry, treating it as a name object.
+                     */
+                    if (sptr + 1 > endptr) {
+                        sptr = osptr;
+                        sstate.s_ss.s_name.s_name_type = 0;
+                        sstate.s_ss.s_name.s_try_number = true;
+                        goto do_name;
+                    }
                     if (*(sptr + 1) == '-') {
                         sptr++;
                     } else

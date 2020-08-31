@@ -48,7 +48,7 @@ z_fontenum(i_ctx_t *i_ctx_p)
     int code = 0;
     int e,elements, e2;
     char *fontname, *path;
-    fontenum_t *r, *results;
+    fontenum_t *results, **presults;
     ref array;
     uint length;
     uint length2;
@@ -62,37 +62,39 @@ z_fontenum(i_ctx_t *i_ctx_p)
       goto all_done;
     }
 
-    r = results = gs_malloc(imemory->non_gc_memory, 1, sizeof(fontenum_t), "fontenum list");
-    if (!r) {
-        code = gs_note_error(gs_error_VMerror);
-        goto done;
-    }
-    r->next = NULL;
+    presults = &results;
+    results = NULL;
     elements = 0;
     while((code = gp_enumerate_fonts_next(enum_state, &fontname, &path )) > 0) {
+        fontenum_t *r;
+
         if (fontname == NULL || path == NULL) {
             code = gs_note_error(gs_error_ioerror);
             goto done;
         }
-
+        r = gs_malloc(imemory->non_gc_memory, 1, sizeof(fontenum_t), "fontenum list");
+        if (r == NULL)
+            break;
         length = strlen(fontname) + 1;
         r->fontname = gs_malloc(imemory->non_gc_memory, length, 1, "native font name");
         if (r->fontname) {
             memcpy(r->fontname, fontname, length);
-
-            r->next = gs_malloc(imemory->non_gc_memory, 1, sizeof(fontenum_t), "fontenum list");
             length2 = strlen(path) + 1;
             r->path = gs_malloc(imemory->non_gc_memory, length2, 1, "native font path");
-            if (r->next == NULL || r->path == NULL) {
-                gs_free(imemory->non_gc_memory, r->fontname, length, 1, "native font name");
-                gs_free(imemory->non_gc_memory, r->path, length2, 1, "native font path");
-                gs_free(imemory->non_gc_memory, r->next, sizeof(fontenum_t), 1, "fontenum list");
-            }
-            else {
+            if (r->path) {
                 memcpy(r->path, path, length2);
-                r = r->next;
+                *presults = r;
+                presults = &r->next;
+                r->next = 0;
                 elements += 1;
+            } else {
+                gs_free(imemory->non_gc_memory, r->fontname, length, 1, "native font name");
+                gs_free(imemory->non_gc_memory, r, sizeof(fontenum_t), 1, "fontenum list");
+                break;
             }
+        } else {
+            gs_free(imemory->non_gc_memory, r, sizeof(fontenum_t), 1, "fontenum list");
+            break;
         }
     }
 
@@ -100,8 +102,9 @@ z_fontenum(i_ctx_t *i_ctx_p)
     enum_state = NULL;
 
     if ((code = ialloc_ref_array(&array, a_all | icurrent_space, elements, "native fontmap")) >= 0) {
-        r = results;
-        for (e = e2 = 0; e < elements; e++) {
+        fontenum_t *r = results;
+
+        for (e = e2 = 0; e < elements && r != NULL; e++) {
             ref mapping;
 
             if ((code = ialloc_ref_array(&mapping, a_all | icurrent_space, 2, "native font mapping")) >= 0) {
@@ -135,8 +138,9 @@ z_fontenum(i_ctx_t *i_ctx_p)
         }
     }
     else {
-        while (elements--) {
-            r = results->next;
+        while (elements-- && results != NULL) {
+            fontenum_t *r = results->next;
+
             gs_free(imemory->non_gc_memory, results->fontname,
                     strlen(results->fontname) + 1, 1, "native font name");
             gs_free(imemory->non_gc_memory, results->path,
