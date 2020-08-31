@@ -101,6 +101,15 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
 }
 #endif
 
+static void pdfi_free_pattern_context(pdf_pattern_context_t *context)
+{
+    pdfi_countdown(context->page_dict);
+    pdfi_countdown(context->pat_dict);
+    if (context->shading)
+        pdfi_shading_free(context->ctx, context->shading);
+    gs_free_object(context->ctx->memory, context, "Free pattern context");
+}
+
 void pdfi_pattern_cleanup(gs_memory_t * mem, void *p)
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)p;
@@ -109,11 +118,7 @@ void pdfi_pattern_cleanup(gs_memory_t * mem, void *p)
     context = (pdf_pattern_context_t *)pinst->client_data;
 
     if (context != NULL) {
-        pdfi_countdown(context->page_dict);
-        pdfi_countdown(context->pat_dict);
-        if (context->shading)
-            pdfi_shading_free(context->ctx, context->shading);
-        gs_free_object(context->ctx->memory, context, "Free pattern context");
+        pdfi_free_pattern_context(context);
         pinst->client_data = NULL;
         pinst->notify_free = NULL;
     }
@@ -548,6 +553,8 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
 
  exit:
+    if (context != NULL)
+        pdfi_free_pattern_context(context);
     pdfi_countdown(Shading);
     pdfi_countdown(Matrix);
     pdfi_countdown(ExtGState);
