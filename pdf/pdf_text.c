@@ -553,7 +553,7 @@ int pdfi_TJ(pdf_context *ctx)
 {
     int code = 0, i;
     pdf_array *a = NULL;
-    pdf_obj *o;
+    pdf_obj *o = NULL;
     double dx = 0;
     gs_point pt;
     gs_matrix saved, Trm;
@@ -622,6 +622,7 @@ int pdfi_TJ(pdf_context *ctx)
             }
         }
         pdfi_countdown(o);
+        o = NULL;
         if (code < 0)
             goto TJ_error;
     }
@@ -642,6 +643,7 @@ int pdfi_TJ(pdf_context *ctx)
     ctx->pgs->textmatrix.ty += pt.y;
 
 TJ_error:
+    pdfi_countdown(o);
     /* Restore the CTM to the saved value */
     gs_setmatrix(ctx->pgs, &saved);
     /* And restore the currentpoint */
