@@ -45,6 +45,35 @@ void pdfi_free_dict(pdf_obj *o)
     gs_free_object(OBJ_MEMORY(d), d, "pdf interpreter free dictionary");
 }
 
+int pdfi_dict_delete_pair(pdf_context *ctx, pdf_dict *d, pdf_name *n)
+{
+    int i = 0;
+#ifdef DEBUG
+    pdf_name *name;
+#endif
+
+    for (i=0;i < d->entries;i++) {
+#ifdef DEBUG
+        name = (pdf_name *)d->keys[i];
+#endif
+        if (pdfi_name_cmp(n, (pdf_name *)d->keys[i]) == 0)
+            break;
+    }
+    if (i >= d->entries)
+        return_error(gs_error_undefined);
+
+    pdfi_countdown(d->keys[i]);
+    pdfi_countdown(d->values[i]);
+    for(i;i < d->entries - 1;i++) {
+        d->keys[i] = d->keys[i + 1];
+        d->values[i] = d->values[i + 1];
+    }
+    d->keys[i] = NULL;
+    d->values[i] = NULL;
+    d->entries--;
+    return 0;
+}
+
 int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen)
 {
     uint64_t index = 0;

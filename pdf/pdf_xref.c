@@ -151,6 +151,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
     int64_t size;
     int64_t num;
     int64_t W[3];
+    bool known = false;
 
     code = pdfi_dict_get_type(ctx, d, "Type", PDF_NAME, (pdf_obj **)&n);
     if (code < 0)
@@ -203,6 +204,49 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
     }
 
     pdfi_seek(ctx, ctx->main_stream, d->stream_offset, SEEK_SET);
+
+    /* Bug #691220 has a PDF file with a compressed XRef, the stream dictionary has
+     * a /DecodeParms entry for the stream, which has a /Colors value of 5, which makes
+     * *no* sense whatever. If we try to apply a Predictor then we end up in a loop trying
+     * to read 5 colour samples. Rather than meddles with more parameters to the filter
+     * code, we'll just remove the Colors entry from the DecodeParms dictionary,
+     * because it is nonsense. This means we'll get the (sensible) default value of 1.
+     */
+    code = pdfi_dict_known(d, "DecodeParms", &known);
+    if (code < 0)
+        return code;
+
+    if (known) {
+        pdf_dict *DP;
+        double f;
+        pdf_obj *name;
+
+        code = pdfi_dict_get_type(ctx, d, "DecodeParms", PDF_DICT, (pdf_obj **)&DP);
+        if (code < 0)
+            return code;
+
+        code = pdfi_dict_knownget_number(ctx, DP, "Colors", &f);
+        if (code < 0) {
+            pdfi_countdown(DP);
+            return code;
+        }
+        if (code > 0 && f != (double)1)
+        {
+            code = pdfi_make_name(ctx, (byte *)"Colors", 6, &name);
+            if (code < 0) {
+                pdfi_countdown(DP);
+                return code;
+            }
+            code = pdfi_dict_delete_pair(ctx, DP, (pdf_name *)name);
+            pdfi_countdown(name);
+            if (code < 0) {
+                pdfi_countdown(DP);
+                return code;
+            }
+        }
+        pdfi_countdown(DP);
+    }
+
     code = pdfi_filter_no_decryption(ctx, d, s, &XRefStrm, false);
     if (code < 0) {
         pdfi_countdown(ctx->xref_table);

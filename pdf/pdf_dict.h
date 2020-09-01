@@ -21,6 +21,7 @@
 static inline uint64_t pdfi_dict_entries(pdf_dict *d) { return d->entries; }
 
 void pdfi_free_dict(pdf_obj *o);
+int pdfi_dict_delete_pair(pdf_context *ctx, pdf_dict *d, pdf_name *n);
 int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen);
 int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known);
 int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known);
