@@ -168,7 +168,7 @@ typedef enum pdf_crypt_filter_e {
 } pdf_crypt_filter;
 
 #define INITIAL_STACK_SIZE 32
-#define MAX_STACK_SIZE 32767
+#define MAX_STACK_SIZE 524288
 #define MAX_OBJECT_CACHE_SIZE 200
 #define INITIAL_LOOP_TRACKER_SIZE 32
 

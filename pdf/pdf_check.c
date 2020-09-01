@@ -1060,7 +1060,7 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
     code = pdfi_dict_knownget_type(ctx, page_dict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
     if (code > 0)
         code = pdfi_check_Resources(ctx, Resources, page_dict, tracker);
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->pdfstoponerror || code == gs_error_stackoverflow)
         goto exit;
 
     /* If we are drawing Annotations, check to see if the page uses any Annots */

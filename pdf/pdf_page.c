@@ -667,7 +667,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     pdfi_countdown(page_dict);
     pdfi_countdown(group_dict);
 
-    if (code == 0 || !ctx->pdfstoponerror)
+    if (code == 0 || (!ctx->pdfstoponerror && code != gs_error_stackoverflow))
         if (!page_dict_error && ctx->end_page != NULL)
             code = ctx->end_page(ctx);
     return code;
