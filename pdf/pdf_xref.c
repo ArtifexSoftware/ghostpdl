@@ -919,25 +919,27 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
 int pdfi_read_xref(pdf_context *ctx)
 {
     int code = 0;
+    bool do_repair = false;
 
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         return code;
 
-    code = pdfi_loop_detector_add_object(ctx, ctx->startxref);
-    if (code < 0)
-        return code;
-
     if (ctx->startxref != 0) {
+        code = pdfi_loop_detector_add_object(ctx, ctx->startxref);
+        if (code < 0)
+            goto exit;
+
         if (ctx->pdfdebug)
             dmprintf(ctx->memory, "%% Trying to read 'xref' token for xref table, or 'int int obj' for an xref stream\n");
 
         if (ctx->startxref > ctx->main_stream_length - 5) {
             dmprintf(ctx->memory, "startxref offset is beyond end of file.\n");
             ctx->pdf_errors |= E_PDF_BADSTARTXREF;
-            (void)pdfi_loop_detector_cleartomark(ctx);
-            return(pdfi_repair_file(ctx));
+            do_repair = true;
+            goto exit;
         }
+
 
         /* Read the xref(s) */
         pdfi_seek(ctx, ctx->main_stream, ctx->startxref, SEEK_SET);
@@ -946,13 +948,13 @@ int pdfi_read_xref(pdf_context *ctx)
         if (code < 0) {
             dmprintf(ctx->memory, "Failed to read any token at the startxref location\n");
             ctx->pdf_errors |= E_PDF_BADSTARTXREF;
-            (void)pdfi_loop_detector_cleartomark(ctx);
-            return(pdfi_repair_file(ctx));
+            do_repair = true;
+            goto exit;
         }
 
         if (pdfi_count_stack(ctx) < 1) {
-            (void)pdfi_loop_detector_cleartomark(ctx);
-            return_error(gs_error_undefined);
+            code = gs_note_error(gs_error_undefined);
+            goto exit;
         }
 
         if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == PDF_XREF) {
@@ -960,20 +962,20 @@ int pdfi_read_xref(pdf_context *ctx)
             pdfi_pop(ctx, 1);
             code = read_xref(ctx, ctx->main_stream);
             if (code < 0) {
-                (void)pdfi_loop_detector_cleartomark(ctx);
-                return(pdfi_repair_file(ctx));
+                do_repair = true;
+                goto exit;
             }
         } else {
             code = pdfi_read_xref_stream_dict(ctx, ctx->main_stream);
             if (code < 0){
-                (void)pdfi_loop_detector_cleartomark(ctx);
-                return(pdfi_repair_file(ctx));
+                do_repair = true;
+                goto exit;
             }
         }
     } else {
         /* Attempt to repair PDF file */
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        return(pdfi_repair_file(ctx));
+        do_repair = true;
+        goto exit;
     }
 
     if(ctx->pdfdebug && ctx->xref_table) {
@@ -1039,7 +1041,12 @@ int pdfi_read_xref(pdf_context *ctx)
     }
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "\n");
+
+ exit:
     (void)pdfi_loop_detector_cleartomark(ctx);
+    if (do_repair)
+        return(pdfi_repair_file(ctx));
+
     if (code < 0)
         return code;
 
