@@ -26,10 +26,12 @@ userdict /GS_PDF_ProcSet undef
 /#? //false def
 
 % Test whether the current output device handles pdfmark.
-/.writepdfmarkdict 1 dict dup /pdfmark //null put readonly def
 /.writepdfmarks {	% - .writepdfmarks <bool>
-  currentdevice //.writepdfmarkdict .getdeviceparams
-  mark eq { //false } { pop pop //true } ifelse
+  /PdfmarkCapable /GetDeviceParam .special_op {
+    exch pop
+  }{
+    //false
+  }ifelse
   systemdict /DOPDFMARKS known or
 } bind executeonly def
 

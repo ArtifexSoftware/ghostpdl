@@ -283,6 +283,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  true,				/* DetectDuplicateImages */
  false,				/* AllowIncrementalCFF */
  !PDF_FOR_OPDFREAD,		/* WantsToUnicode */
+ !PDF_FOR_OPDFREAD,		/* PdfmarkCapable */
  !PDF_FOR_OPDFREAD,		/* WantsPageLabels */
  PDF_FOR_OPDFREAD,		/* AllowPSRepeatFunctions */
  true,				/* IsDistiller (true even for ps2write!) */
