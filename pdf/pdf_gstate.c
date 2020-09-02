@@ -1856,6 +1856,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
                 goto error;
 
             gx_device_halftone_release(pdht, pdht->rc.memory);
+            rc_decrement(ctx->pgs->halftone, "pdfi_do_halftone(halftone)");
             ctx->pgs->halftone = pht;
             rc_increment(ctx->pgs->halftone);
             gx_unset_both_dev_colors(ctx->pgs);
