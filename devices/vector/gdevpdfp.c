@@ -119,6 +119,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("DetectDuplicateImages", gs_param_type_bool, DetectDuplicateImages),
     pi("AllowIncrementalCFF", gs_param_type_bool, AllowIncrementalCFF),
     pi("WantsToUnicode", gs_param_type_bool, WantsToUnicode),
+    pi("PdfmarkCapable", gs_param_type_bool, PdfmarkCapable),
     pi("AllowPSRepeatFunctions", gs_param_type_bool, AllowPSRepeatFunctions),
     pi("IsDistiller", gs_param_type_bool, IsDistiller),
     pi("PreserveSMask", gs_param_type_bool, PreserveSMask),
