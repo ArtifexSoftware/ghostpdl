@@ -861,7 +861,8 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                     pdfi_close_file(ctx, compressed_stream);
                     pdfi_close_file(ctx, SubFile_stream);
                     ctx->decrypt_strings = saved_decrypt_strings;
-                    return_error(gs_error_ioerror);
+                    code = gs_note_error(gs_error_ioerror);
+                    goto error;
                 }
             }
 
