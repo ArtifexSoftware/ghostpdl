@@ -54,6 +54,8 @@
 #  include "sjpx.h"
 #endif
 
+static void pdfi_close_filter_chain(pdf_context *ctx, stream *s, stream *target);
+
 /* Utility routine to create a pdf_stream object */
 static int pdfi_alloc_stream(pdf_context *ctx, stream *source, stream *original, pdf_stream **new_stream)
 {
@@ -896,16 +898,17 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_dict *dict, pdf_stream *sour
         for (i = 0; i < pdfi_array_size(filter_array);i++) {
             code = pdfi_array_get_type(ctx, filter_array, i, PDF_NAME, &o);
             if (code < 0)
-                goto exit;
+                goto error;
             if (DecodeParams != NULL) {
                 code = pdfi_array_get(ctx, DecodeParams, i, &decode);
                 if (code < 0) {
-                    goto exit;
+                    goto error;
                 }
             }
             if (decode && decode->type != PDF_NULL && decode->type != PDF_DICT) {
-                code = gs_note_error(gs_error_typecheck);
-                goto exit;
+                pdfi_countdown(decode);
+                decode = NULL;
+                ctx->pdf_warnings |= W_PDF_STREAM_BAD_DECODEPARMS;
             }
 
             code = pdfi_apply_filter(ctx, dict, (pdf_name *)o,
@@ -914,16 +917,26 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_dict *dict, pdf_stream *sour
             decode = NULL;
             pdfi_countdown(o);
             o = NULL;
-            if (code < 0) {
-                *new_stream = 0;
-                goto exit;
-            }
+            if (code < 0)
+                goto error;
+
             s = new_s;
         }
         code = pdfi_alloc_stream(ctx, s, source->s, new_stream);
     }
 
  exit:
+    pdfi_countdown(o);
+    pdfi_countdown(o1);
+    pdfi_countdown(DecodeParams);
+    pdfi_countdown(decode);
+    pdfi_countdown(Filter);
+    return code;
+
+ error:
+    if (s)
+        pdfi_close_filter_chain(ctx, s, source->s);
+    *new_stream = NULL;
     pdfi_countdown(o);
     pdfi_countdown(o1);
     pdfi_countdown(DecodeParams);
@@ -1237,16 +1250,22 @@ int pdfi_close_memory_stream(pdf_context *ctx, byte *Buffer, pdf_stream *source)
 /***********************************************************************************/
 /* Basic 'file' operations. Because of the need to 'unread' bytes we need our own  */
 
-void pdfi_close_file(pdf_context *ctx, pdf_stream *s)
+static void pdfi_close_filter_chain(pdf_context *ctx, stream *s, stream *target)
 {
-    stream *next_s = s->s;
+    stream *next_s = s;
 
-    while(next_s && next_s != s->original){
+    while(next_s && next_s != target){
         stream *curr_s = next_s;
         next_s = next_s->strm;
         if (curr_s != ctx->main_stream->s)
             sfclose(curr_s);
     }
+}
+
+void pdfi_close_file(pdf_context *ctx, pdf_stream *s)
+{
+    pdfi_close_filter_chain(ctx, s->s, s->original);
+
     gs_free_object(ctx->memory, s, "closing pdf_file");
 }
 

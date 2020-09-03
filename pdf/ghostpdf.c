@@ -411,6 +411,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tThe file uses numbers with exponents, which is not standard PDF.\n");
         if (ctx->pdf_warnings & W_PDF_STREAM_HAS_CONTENTS)
             dmprintf(ctx->memory, "\tA stream dictionary has no stream and instead uses a /Contents entry, which is invalid.\n");
+        if (ctx->pdf_warnings & W_PDF_STREAM_BAD_DECODEPARMS)
+            dmprintf(ctx->memory, "\tA stream dictionary has an invalid /DecodeParms entry\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
