@@ -1237,7 +1237,7 @@ pdfi_make_smask_dict(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *
 
     code = pdfi_alloc_object(ctx, PDF_DICT, 32, (pdf_obj **)&smask_dict);
     if (code < 0) goto exit;
-    pdfi_countup(&smask_dict);
+    pdfi_countup(smask_dict);
 
     /* Copy everything from the image_dict */
     code = pdfi_dict_copy(smask_dict, image_dict);
