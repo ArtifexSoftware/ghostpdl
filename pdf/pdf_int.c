@@ -662,7 +662,9 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
 {
     int code = 0;
     xref_entry *compressed_entry = &ctx->xref_table->xref[entry->u.compressed.compressed_stream_num];
-    pdf_stream *compressed_stream, *SubFile_stream, *Object_stream;
+    pdf_stream *compressed_stream = NULL;
+    pdf_stream *SubFile_stream = NULL;
+    pdf_stream *Object_stream = NULL;
     char Buffer[256];
     int i = 0, object_length = 0;
     int64_t num_entries, found_object;
@@ -682,31 +684,27 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
         ctx->compressed_misses++;
 #endif
         code = pdfi_seek(ctx, ctx->main_stream, compressed_entry->u.uncompressed.offset, SEEK_SET);
-        if (code < 0)
-            goto error;
+        if (code < 0) goto exit;
 
         code = pdfi_read_object(ctx, ctx->main_stream, 0);
-        if (code < 0)
-            goto error;
+        if (code < 0) goto exit;
 
         compressed_object = (pdf_dict *)ctx->stack_top[-1];
         if (compressed_object->type != PDF_DICT) {
             pdfi_pop(ctx, 1);
             code = gs_note_error(gs_error_typecheck);
-            goto error;
+            goto exit;
         }
         if (compressed_object->object_num != compressed_entry->object_num) {
             pdfi_pop(ctx, 1);
             /* Same error (undefined) as when we read an uncompressed object with the wrong number */
             code = gs_note_error(gs_error_undefined);
-            goto error;
+            goto exit;
         }
         pdfi_countup(compressed_object);
         pdfi_pop(ctx, 1);
         code = pdfi_add_to_cache(ctx, (pdf_obj *)compressed_object);
-        if (code < 0) {
-            goto error;
-        }
+        if (code < 0) goto exit;
     } else {
 #if CACHE_STATISTICS
         ctx->compressed_hits++;
@@ -717,77 +715,57 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     }
     /* Check its an ObjStm ! */
     code = pdfi_dict_get_type(ctx, compressed_object, "Type", PDF_NAME, (pdf_obj **)&Type);
-    if (code < 0)
-        goto error;
+    if (code < 0) goto exit;
 
     if (!pdfi_name_is(Type, "ObjStm")){
         code = gs_note_error(gs_error_syntaxerror);
-        goto error;
+        goto exit;
     }
 
     /* Need to check the /N entry to see if the object is actually in this stream! */
     code = pdfi_dict_get_int(ctx, compressed_object, "N", &num_entries);
-    if (code < 0)
-        goto error;
+    if (code < 0) goto exit;
 
     if (num_entries < 0 || num_entries > ctx->xref_table->xref_size) {
         code = gs_note_error(gs_error_rangecheck);
-        goto error;
+        goto exit;
     }
 
     code = pdfi_seek(ctx, ctx->main_stream, compressed_object->stream_offset, SEEK_SET);
-    if (code < 0)
-        goto error;
+    if (code < 0) goto exit;
 
     code = pdfi_dict_get_int(ctx, compressed_object, "Length", &Length);
-    if (code < 0)
-        goto error;
+    if (code < 0) goto exit;
 
     code = pdfi_apply_SubFileDecode_filter(ctx, Length, NULL, ctx->main_stream, &SubFile_stream, false);
-    if (code < 0)
-        goto error;
+    if (code < 0) goto exit;
 
     code = pdfi_filter(ctx, compressed_object, SubFile_stream, &compressed_stream, false);
-    if (code < 0)
-        goto error;
+    if (code < 0) goto exit;
 
     for (i=0;i < num_entries;i++)
         {
             code = pdfi_read_token(ctx, compressed_stream, obj, gen);
-            if (code < 0) {
-                pdfi_close_file(ctx, compressed_stream);
-                pdfi_close_file(ctx, SubFile_stream);
-                goto error;
-            }
+            if (code < 0) goto exit;
             temp_obj = ctx->stack_top[-1];
             if (temp_obj->type != PDF_INT) {
                 pdfi_pop(ctx, 1);
-                pdfi_close_file(ctx, compressed_stream);
-                pdfi_close_file(ctx, SubFile_stream);
-                goto error;
+                goto exit;
             }
             found_object = ((pdf_num *)temp_obj)->value.i;
             pdfi_pop(ctx, 1);
             code = pdfi_read_token(ctx, compressed_stream, obj, gen);
-            if (code < 0) {
-                pdfi_close_file(ctx, compressed_stream);
-                pdfi_close_file(ctx, SubFile_stream);
-                goto error;
-            }
+            if (code < 0) goto exit;
             temp_obj = ctx->stack_top[-1];
             if (temp_obj->type != PDF_INT) {
                 pdfi_pop(ctx, 1);
-                pdfi_close_file(ctx, compressed_stream);
-                pdfi_close_file(ctx, SubFile_stream);
-                goto error;
+                goto exit;
             }
             if (i == entry->u.compressed.object_index) {
                 if (found_object != obj) {
                     pdfi_pop(ctx, 1);
-                    pdfi_close_file(ctx, compressed_stream);
-                    pdfi_close_file(ctx, SubFile_stream);
                     code = gs_note_error(gs_error_undefined);
-                    goto error;
+                    goto exit;
                 }
                 offset = ((pdf_num *)temp_obj)->value.i;
             }
@@ -801,10 +779,8 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
         {
             code = pdfi_read_bytes(ctx, (byte *)&Buffer[0], 1, 1, compressed_stream);
             if (code <= 0) {
-                pdfi_close_file(ctx, compressed_stream);
-                pdfi_close_file(ctx, SubFile_stream);
                 code = gs_note_error(gs_error_ioerror);
-                goto error;
+                goto exit;
             }
         }
 
@@ -817,44 +793,26 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
      */
     if (object_length > 0) {
         code = pdfi_apply_SubFileDecode_filter(ctx, object_length, NULL, compressed_stream, &Object_stream, false);
-        if (code < 0) {
-            pdfi_close_file(ctx, SubFile_stream);
-            goto error;
-        }
+        if (code < 0) goto exit;
     } else {
         Object_stream = compressed_stream;
     }
 
     code = pdfi_read_token(ctx, Object_stream, obj, gen);
-    if (code < 0) {
-        pdfi_close_file(ctx, Object_stream);
-        pdfi_close_file(ctx, SubFile_stream);
-        goto error;
-    }
+    if (code < 0) goto exit;
     if (ctx->stack_top[-1]->type == PDF_ARRAY_MARK || ctx->stack_top[-1]->type == PDF_DICT_MARK) {
         int start_depth = pdfi_count_stack(ctx);
 
         /* Need to read all the elements from COS objects */
         do {
             code = pdfi_read_token(ctx, Object_stream, obj, gen);
-            if (code < 0) {
-                pdfi_close_file(ctx, Object_stream);
-                pdfi_close_file(ctx, SubFile_stream);
-                goto error;
-            }
+            if (code < 0) goto exit;
             if (compressed_stream->eof == true) {
-                pdfi_close_file(ctx, Object_stream);
-                pdfi_close_file(ctx, SubFile_stream);
                 code = gs_note_error(gs_error_ioerror);
-                goto error;
+                goto exit;
             }
         }while ((ctx->stack_top[-1]->type != PDF_ARRAY && ctx->stack_top[-1]->type != PDF_DICT) || pdfi_count_stack(ctx) > start_depth);
     }
-
-    pdfi_close_file(ctx, Object_stream);
-    if (Object_stream != compressed_stream)
-        pdfi_close_file(ctx, compressed_stream);
-    pdfi_close_file(ctx, SubFile_stream);
 
     *object = ctx->stack_top[-1];
     /* For compressed objects we don't get a 'obj gen obj' sequence which is what sets
@@ -868,10 +826,17 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     code = pdfi_add_to_cache(ctx, *object);
     if (code < 0) {
         pdfi_countdown(*object);
-        goto error;
+        goto exit;
     }
 
- error:
+ exit:
+    if (Object_stream)
+        pdfi_close_file(ctx, Object_stream);
+    if (Object_stream != compressed_stream)
+        if (compressed_stream)
+            pdfi_close_file(ctx, compressed_stream);
+    if (SubFile_stream)
+        pdfi_close_file(ctx, SubFile_stream);
     pdfi_countdown(compressed_object);
     pdfi_countdown(Type);
     return code;
