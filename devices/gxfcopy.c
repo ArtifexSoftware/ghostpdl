@@ -583,11 +583,14 @@ copy_glyph_name(gs_font *font, gs_glyph glyph, gs_font *copied,
 
         if (extra_name == 0)
             return_error(gs_error_VMerror);
+        memset(extra_name, 0x00, sizeof(gs_copied_glyph_extra_name_t));
         extra_name->next = cfdata->extra_names;
         extra_name->gid = pcg - cfdata->glyphs;
         cfdata->extra_names = extra_name;
         pcgn = &extra_name->name;
     }
+    if (pcgn->str.size != 0 && !gs_is_c_glyph_name(pcgn->str.data, pcgn->str.size))
+        gs_free_string(copied->memory, (byte *)pcgn->str.data, pcgn->str.size, "Free copied glyph name");
     pcgn->glyph = glyph;
     pcgn->str = str;
     return 0;
