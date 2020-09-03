@@ -361,8 +361,10 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
         code = pdfi_dict_knownget(ctx, group_dict, "ColorSpace", &CS);
     }
     if (code > 0) {
-        if (CS->type == PDF_NULL)
+        if (CS->type == PDF_NULL) {
+            pdfi_countdown(CS);
             return_error(gs_error_undefined);
+        }
 
         code = pdfi_setcolorspace(ctx, CS, group_dict, page_dict);
         pdfi_countdown(CS);
