@@ -790,6 +790,7 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
         code = pdfi_alloc_object(ctx, PDF_STRING, 5, (pdf_obj **)&EKey);
         if (code < 0)
             goto error;
+        pdfi_countup(EKey);
         memcpy(EKey->data, Key, 5);
 
         /* Algorithm 3.7, step 2 (R == 2) Use RC4 with the computed key to decrypt the O entry of the crypt dict */
@@ -799,6 +800,7 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
 
         code = pdfi_apply_Arc4_filter(ctx, EKey, stream, &arc4_stream);
         pdfi_countdown(EKey);
+        EKey = NULL;
 
         sfread(Buffer, 1, 32, arc4_stream->s);
 
@@ -1253,6 +1255,7 @@ static int check_password_R5(pdf_context *ctx, char *Password, int PasswordLen, 
                 return code;
             }
             memcpy(P->data, Password, PasswordLen);
+            pdfi_countup(P);
             code = locale_to_utf8(ctx, P, &P_UTF8);
             if (code < 0) {
                 pdfi_countdown(P);
@@ -1301,6 +1304,7 @@ static int check_password_R6(pdf_context *ctx, char *Password, int PasswordLen, 
             if (code < 0)
                 return code;
             memcpy(P->data, Password, PasswordLen);
+            pdfi_countup(P);
             code = locale_to_utf8(ctx, P, &P_UTF8);
             if (code < 0) {
                 pdfi_countdown(P);
