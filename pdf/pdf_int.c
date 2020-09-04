@@ -692,11 +692,13 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
         compressed_object = (pdf_dict *)ctx->stack_top[-1];
         if (compressed_object->type != PDF_DICT) {
             pdfi_pop(ctx, 1);
+            compressed_object = NULL;
             code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
         if (compressed_object->object_num != compressed_entry->object_num) {
             pdfi_pop(ctx, 1);
+            compressed_object = NULL;
             /* Same error (undefined) as when we read an uncompressed object with the wrong number */
             code = gs_note_error(gs_error_undefined);
             goto exit;
