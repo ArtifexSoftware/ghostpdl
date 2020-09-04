@@ -42,6 +42,10 @@
 /* Prototype for the benefit of pdfi_read_object */
 static int skip_eol(pdf_context *ctx, pdf_stream *s);
 
+/* we use -ve returns for error, 0 for success and +ve for 'take an action' */
+/* Defining tis return so we do not need to define a new error */
+#define REPAIRED_KEYWORD 1
+
 /***********************************************************************************/
 /* Functions to create the various kinds of 'PDF objects', Created objects have a  */
 /* reference count of 0. Composite objects (dictionaries, arrays, strings) use the */
@@ -684,29 +688,30 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
         ctx->compressed_misses++;
 #endif
         code = pdfi_seek(ctx, ctx->main_stream, compressed_entry->u.uncompressed.offset, SEEK_SET);
-        if (code < 0) goto exit;
+        if (code < 0)
+            goto exit;
 
         code = pdfi_read_object(ctx, ctx->main_stream, 0);
-        if (code < 0) goto exit;
+        if (code < 0)
+            goto exit;
 
-        compressed_object = (pdf_dict *)ctx->stack_top[-1];
-        if (compressed_object->type != PDF_DICT) {
+        if (ctx->stack_top[-1]->type != PDF_DICT) {
             pdfi_pop(ctx, 1);
-            compressed_object = NULL;
             code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
-        if (compressed_object->object_num != compressed_entry->object_num) {
+        if (ctx->stack_top[-1]->object_num != compressed_entry->object_num) {
             pdfi_pop(ctx, 1);
-            compressed_object = NULL;
             /* Same error (undefined) as when we read an uncompressed object with the wrong number */
             code = gs_note_error(gs_error_undefined);
             goto exit;
         }
+        compressed_object = (pdf_dict *)ctx->stack_top[-1];
         pdfi_countup(compressed_object);
         pdfi_pop(ctx, 1);
         code = pdfi_add_to_cache(ctx, (pdf_obj *)compressed_object);
-        if (code < 0) goto exit;
+        if (code < 0)
+            goto exit;
     } else {
 #if CACHE_STATISTICS
         ctx->compressed_hits++;
@@ -717,7 +722,8 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     }
     /* Check its an ObjStm ! */
     code = pdfi_dict_get_type(ctx, compressed_object, "Type", PDF_NAME, (pdf_obj **)&Type);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
 
     if (!pdfi_name_is(Type, "ObjStm")){
         code = gs_note_error(gs_error_syntaxerror);
@@ -726,7 +732,8 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
 
     /* Need to check the /N entry to see if the object is actually in this stream! */
     code = pdfi_dict_get_int(ctx, compressed_object, "N", &num_entries);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
 
     if (num_entries < 0 || num_entries > ctx->xref_table->xref_size) {
         code = gs_note_error(gs_error_rangecheck);
@@ -734,21 +741,26 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     }
 
     code = pdfi_seek(ctx, ctx->main_stream, compressed_object->stream_offset, SEEK_SET);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
 
     code = pdfi_dict_get_int(ctx, compressed_object, "Length", &Length);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
 
     code = pdfi_apply_SubFileDecode_filter(ctx, Length, NULL, ctx->main_stream, &SubFile_stream, false);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
 
     code = pdfi_filter(ctx, compressed_object, SubFile_stream, &compressed_stream, false);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
 
     for (i=0;i < num_entries;i++)
         {
             code = pdfi_read_token(ctx, compressed_stream, obj, gen);
-            if (code < 0) goto exit;
+            if (code < 0)
+                goto exit;
             temp_obj = ctx->stack_top[-1];
             if (temp_obj->type != PDF_INT) {
                 pdfi_pop(ctx, 1);
@@ -757,7 +769,8 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
             found_object = ((pdf_num *)temp_obj)->value.i;
             pdfi_pop(ctx, 1);
             code = pdfi_read_token(ctx, compressed_stream, obj, gen);
-            if (code < 0) goto exit;
+            if (code < 0)
+                goto exit;
             temp_obj = ctx->stack_top[-1];
             if (temp_obj->type != PDF_INT) {
                 pdfi_pop(ctx, 1);
@@ -795,20 +808,23 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
      */
     if (object_length > 0) {
         code = pdfi_apply_SubFileDecode_filter(ctx, object_length, NULL, compressed_stream, &Object_stream, false);
-        if (code < 0) goto exit;
+        if (code < 0)
+            goto exit;
     } else {
         Object_stream = compressed_stream;
     }
 
     code = pdfi_read_token(ctx, Object_stream, obj, gen);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
     if (ctx->stack_top[-1]->type == PDF_ARRAY_MARK || ctx->stack_top[-1]->type == PDF_DICT_MARK) {
         int start_depth = pdfi_count_stack(ctx);
 
         /* Need to read all the elements from COS objects */
         do {
             code = pdfi_read_token(ctx, Object_stream, obj, gen);
-            if (code < 0) goto exit;
+            if (code < 0)
+                goto exit;
             if (compressed_stream->eof == true) {
                 code = gs_note_error(gs_error_ioerror);
                 goto exit;
@@ -3134,7 +3150,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
         if (pdfi_count_stack(ctx) > 0) {
             keyword = (pdf_keyword *)ctx->stack_top[-1];
             if (keyword->key != PDF_NOT_A_KEYWORD)
-                return gs_error_repaired_keyword;
+                return REPAIRED_KEYWORD;
         } else
             return 0;
     } else {
@@ -3450,7 +3466,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 if (pdfi_count_stack(ctx) > 0) {
                     keyword = (pdf_keyword *)ctx->stack_top[-1];
                     if (keyword->key != PDF_NOT_A_KEYWORD)
-                        return gs_error_repaired_keyword;
+                        return REPAIRED_KEYWORD;
                 }
                 break;
        }
@@ -3586,7 +3602,8 @@ pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string
 
     code = pdfi_open_memory_stream_from_memory(ctx, content_string->length,
                                                content_string->data, &stream);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
 
     /* NOTE: stream gets closed in here */
     code = pdfi_interpret_inner_content(ctx, stream, stream_dict, page_dict, stoponerror, desc);
@@ -3670,10 +3687,10 @@ repaired_keyword:
                     break;
                 case PDF_NOT_A_KEYWORD:
                     code = pdfi_interpret_stream_operator(ctx, stream, stream_dict, page_dict);
-                    if (code < 0) {
-                        if (code == gs_error_repaired_keyword)
-                            goto repaired_keyword;
+                    if (code == REPAIRED_KEYWORD)
+                        goto repaired_keyword;
 
+                    if (code < 0) {
                         ctx->pdf_errors |= E_PDF_TOKENERROR;
                         if (ctx->pdfstoponerror) {
                             pdfi_close_file(ctx, stream);
@@ -3716,7 +3733,8 @@ static int pdfi_resource_knownget_typedict(pdf_context *ctx, unsigned char *Type
     code = pdfi_dict_knownget_type(ctx, dict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
     if (code == 0)
         code = pdfi_dict_knownget_type(ctx, dict, "DR", PDF_DICT, (pdf_obj **)&Resources);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
     if (code > 0)
         code = pdfi_dict_knownget_type(ctx, Resources, (const char *)Type, PDF_DICT, (pdf_obj **)typedict);
  exit:
@@ -3735,7 +3753,8 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
 
     /* Check the provided dict */
     code = pdfi_resource_knownget_typedict(ctx, Type, dict, &typedict);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
     if (code > 0) {
         code = pdfi_dict_get_no_store_R(ctx, typedict, name, o);
         if (code != gs_error_undefined)
@@ -3744,7 +3763,8 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
 
     /* Check the Parents, if any */
     code = pdfi_dict_knownget_type(ctx, dict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
-    if (code < 0) goto exit;
+    if (code < 0)
+        goto exit;
     if (code > 0) {
         if (Parent->object_num != ctx->CurrentPageDict->object_num) {
             code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
@@ -3768,7 +3788,8 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
      */
     if (page_dict != NULL) {
         code = pdfi_resource_knownget_typedict(ctx, Type, page_dict, &typedict);
-        if (code < 0) goto exit;
+        if (code < 0)
+            goto exit;
 
         if (code > 0) {
             code = pdfi_dict_get_no_store_R(ctx, typedict, name, o);
@@ -3781,7 +3802,8 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
 
     if (ctx->CurrentPageDict != NULL) {
         code = pdfi_resource_knownget_typedict(ctx, Type, ctx->CurrentPageDict, &typedict);
-        if (code < 0) goto exit;
+        if (code < 0)
+            goto exit;
 
         if (code > 0) {
             code = pdfi_dict_get_no_store_R(ctx, typedict, name, o);

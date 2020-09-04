@@ -123,8 +123,6 @@ enum gs_error_type {
 
 /* Internal error for the C-based PDF interpreter, to indicate a circular PDF reference */
   gs_error_circular_reference = -112,
-/* Internal error for the C-based PDF interpreter, to indicate a repaired token included a keyword */
-  gs_error_repaired_keyword = -113
 };
 
 /* We do provide a typedef type for external API use */
