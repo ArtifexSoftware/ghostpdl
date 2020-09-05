@@ -15,10 +15,14 @@ import com.artifex.gsjava.callbacks.IStdOutFunction;
 import com.artifex.gsjava.util.Reference;
 
 /**
- * The <code>Device</code> class allows easier rendering to a Ghostscript device.
+ * <p>The <code>Device</code> class allows easier rendering to a Ghostscript device.
  * The class allows setting different device parameters, running a file, and some
  * safety with regard to Ghostcript instances. There can only be one instance of a
- * <code>Device</code> at a time.
+ * <code>Device</code> at a time.</p>
+ *
+ * <p>Full documentation on each device can be found on the
+ * <a href=https://ghostscript.com/doc/current/Devices.htm>Details of Ghostscript Output Devices</a>
+ * webpage.</p>
  *
  * @author Ethan Vrhel
  *
@@ -40,7 +44,8 @@ public abstract class Device {
 	 * @throws DeviceNotSupportedException When <code>deviceName</code> is not a supported
 	 * Ghostscript device.
 	 * @throws DeviceInUseException When a <code>Device</code> object already exists.
-	 * @throws IllegalStateException When an instance of Ghostscript already exists.
+	 * @throws IllegalStateException When an instance of Ghostscript created through <code>GSInstance</code>
+	 * already exists.
 	 */
 	public Device(String deviceName) throws DeviceNotSupportedException, DeviceInUseException, IllegalStateException {
 		if (activeDevice != null)
@@ -166,12 +171,16 @@ public abstract class Device {
 		return setParam("HWResolution", resolution, GS_SPT_PARSED);
 	}
 
-	public int setFirstPage(int page) {
-		return setParam("FirstPage", page, GS_SPT_INT);
+	public int setColorScreen(boolean state) {
+		return setParam("COLORSCREEN", state, GS_SPT_BOOL);
 	}
 
-	public int setLastPage(int page) {
-		return setParam("LastPage", page, GS_SPT_INT);
+	public int setDitherPPI(int lpi) {
+		return setParam("DITHERPPI", lpi, GS_SPT_INT);
+	}
+
+	public int setInterpolateControl(int controlValue) {
+		return setParam("InterpolateControl", controlValue, GS_SPT_INT);
 	}
 
 	public int setTextAlphaBits(int value) {
@@ -180,6 +189,62 @@ public abstract class Device {
 
 	public int setGraphicsAlphaBits(int value) {
 		return setParam("GraphicsAlphaBits", value, GS_SPT_INT);
+	}
+
+	public int setAlignToPixels(int n) {
+		return setParam("AlignToPixels", n, GS_SPT_INT);
+	}
+
+	public int setGridFitTT(int n) {
+		return setParam("GridFitTT", n, GS_SPT_INT);
+	}
+
+	public int setFirstPage(int page) {
+		return setParam("FirstPage", page, GS_SPT_INT);
+	}
+
+	public int setLastPage(int page) {
+		return setParam("LastPage", page, GS_SPT_INT);
+	}
+
+	public int setPageList(String list) {
+		return setParam("PageList", list, GS_SPT_PARSED);
+	}
+
+	public int setORIENT1(boolean state) {
+		return setParam("ORIENT1", state, GS_SPT_BOOL);
+	}
+
+	public int setDeviceWidthPoints(int w) {
+		return setParam("DEVICEWIDTHPOINTS", w, GS_SPT_INT);
+	}
+
+	public int setDeviceHeightPoints(int h) {
+		return setParam("DEVICEHEIGHTPOINTS", h, GS_SPT_INT);
+	}
+
+	public int setDefaultPaperSize(String paperSize) {
+		return setParam("DEFAULTPAPERSIZE", paperSize, GS_SPT_STRING);
+	}
+
+	public int setFontMap(String files) {
+		return setParam("FONTMAP", files, GS_SPT_PARSED);
+	}
+
+	public int setFontPath(String paths) {
+		return setParam("FONTPATH", paths, GS_SPT_PARSED);
+	}
+
+	public int setSubstFont(String fontname) {
+		return setParam("SUBSTFONT", fontname, GS_SPT_STRING);
+	}
+
+	public int setGenericResourceDir(String path) {
+		return setParam("FontResourceDir", path, GS_SPT_STRING);
+	}
+
+	public int setStdout(String filename) {
+		return setParam("stdout", filename, GS_SPT_STRING);
 	}
 
 	/**
@@ -198,8 +263,7 @@ public abstract class Device {
 
 	private class StdIO implements IStdInFunction, IStdOutFunction, IStdErrFunction {
 
-		private boolean expecting = true;
-		private boolean hasDevice = false;
+		private boolean hasDevice;
 
 		@Override
 		public int onStdIn(long callerHandle, byte[] buf, int len) {
@@ -208,7 +272,7 @@ public abstract class Device {
 
 		@Override
 		public int onStdOut(long callerHandle, byte[] str, int len) {
-			if (expecting && !hasDevice) {
+			if (!hasDevice) {
 				String outp = new String(str);
 				hasDevice = outp.contains(deviceName);
 			}
@@ -217,7 +281,7 @@ public abstract class Device {
 
 		@Override
 		public int onStdErr(long callerHandle, byte[] str, int len) {
-			if (expecting && !hasDevice) {
+			if (!hasDevice) {
 				String outp = new String(str);
 				hasDevice = outp.contains(deviceName);
 			}
