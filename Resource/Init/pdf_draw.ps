@@ -4286,7 +4286,7 @@ currentdict /set_bc_color undef
     dup annotsetcolor {
       dup drawborder dup calc_annot_scale
       2 copy mul 0 ne
-      {3 -1 roll drawwidget //false}
+      {3 -1 roll drawwidget}
       {
         pop pop
         (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
@@ -4294,6 +4294,7 @@ currentdict /set_bc_color undef
       }ifelse
     } if
     //endannottransparency exec
+    //false
   } bind executeonly def
 
   /Ink { % <annot> -> <annot> <true>
