@@ -72,6 +72,8 @@ typedef struct
   cmap_stack_object_t stack[CMAP_STACK_SIZE + 2 * CMAP_STACK_GUARDS];
 } cmap_stack_t;
 
+static int pdfi_free_cmap_contents(pdf_cmap *cmap);
+
 static inline void cmap_make_null(cmap_stack_object_t *obj)
 {
   obj->type = CMAP_OBJ_NULL;
@@ -1063,6 +1065,7 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
     byte *buf = NULL;
     int64_t buflen;
 
+    pdfi_cmap->ctx = ctx;
     if (cmap->type == PDF_NAME) {
         gs_string cmname;
         pdf_name *cmapn = (pdf_name *)cmap;
@@ -1115,7 +1118,6 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
           goto error_out;
         }
     }
-    pdfi_cmap->ctx = ctx;
     pdfi_cmap->buf = buf;
     pdfi_cmap->buflen = buflen;
 
@@ -1148,10 +1150,49 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
         }
     }
 
+    if (cmap_str)
+        sfclose(cmap_str);
+    return 0;
+
 error_out:
     if (cmap_str)
         sfclose(cmap_str);
+    pdfi_free_cmap_contents(pdfi_cmap);
+    memset(pdfi_cmap, 0x00, sizeof(pdf_cmap));
     return code;
+}
+
+static int pdfi_free_cmap_contents(pdf_cmap *cmap)
+{
+    pdfi_cmap_range_map_t *pdfir;
+    gs_cmap_adobe1_t *pgscmap = cmap->gscmap;
+
+    if (pgscmap != NULL) {
+        gs_free_object(OBJ_MEMORY(cmap), pgscmap->def.lookup, "pdfi_free_cmap(def.lookup)");
+        gs_free_object(OBJ_MEMORY(cmap), pgscmap->notdef.lookup, "pdfi_free_cmap(notdef.lookup)");
+        (void)gs_cmap_free((gs_cmap_t *)pgscmap, OBJ_MEMORY(cmap));
+    }
+    gs_free_object(OBJ_MEMORY(cmap), cmap->code_space.ranges, "pdfi_free_cmap(code_space.ranges");
+    pdfir = cmap->cmap_range.ranges;
+    while (pdfir != NULL) {
+        pdfi_cmap_range_map_t *pdfir2 = pdfir->next;
+        gs_free_object(OBJ_MEMORY(cmap), pdfir, "pdfi_free_cmap(cmap_range.ranges");
+        pdfir = pdfir2;
+    }
+    pdfir = cmap->notdef_cmap_range.ranges;
+    while (pdfir != NULL) {
+        pdfi_cmap_range_map_t *pdfir2 = pdfir->next;
+        gs_free_object(OBJ_MEMORY(cmap), pdfir, "pdfi_free_cmap(cmap_range.ranges");
+        pdfir = pdfir2;
+    }
+    gs_free_object(OBJ_MEMORY(cmap), cmap->csi_reg.data, "pdfi_free_cmap(csi_reg.data");
+    gs_free_object(OBJ_MEMORY(cmap), cmap->csi_ord.data, "pdfi_free_cmap(csi_ord.data");
+    gs_free_object(OBJ_MEMORY(cmap), cmap->name.data, "pdfi_free_cmap(name.data");
+    gs_free_object(OBJ_MEMORY(cmap), cmap->uid.xvalues, "pdfi_free_cmap(xuid.xvalues");
+    pdfi_countdown(cmap->next);
+    gs_free_object(OBJ_MEMORY(cmap), cmap->buf, "pdfi_free_cmap(cmap->buf");
+
+    return 0;
 }
 
 int pdfi_free_cmap(pdf_obj *cmapo)
@@ -1171,33 +1212,8 @@ int pdfi_free_cmap(pdf_obj *cmapo)
      * or a ToUnicode, we cna't use the CmMapType, just as you suspected. :-(
      * See bug #696449 633_R00728_E.pdf
      */
-    {
-        pdfi_cmap_range_map_t *pdfir;
-        gs_cmap_adobe1_t *pgscmap = cmap->gscmap;
-        gs_free_object(OBJ_MEMORY(cmap), pgscmap->def.lookup, "pdfi_free_cmap(def.lookup)");
-        gs_free_object(OBJ_MEMORY(cmap), pgscmap->notdef.lookup, "pdfi_free_cmap(notdef.lookup)");
-        (void)gs_cmap_free((gs_cmap_t *)pgscmap, OBJ_MEMORY(cmap));
-        gs_free_object(OBJ_MEMORY(cmap), cmap->code_space.ranges, "pdfi_free_cmap(code_space.ranges");
-        pdfir = cmap->cmap_range.ranges;
-        while (pdfir != NULL) {
-            pdfi_cmap_range_map_t *pdfir2 = pdfir->next;
-            gs_free_object(OBJ_MEMORY(cmap), pdfir, "pdfi_free_cmap(cmap_range.ranges");
-            pdfir = pdfir2;
-        }
-        pdfir = cmap->notdef_cmap_range.ranges;
-        while (pdfir != NULL) {
-            pdfi_cmap_range_map_t *pdfir2 = pdfir->next;
-            gs_free_object(OBJ_MEMORY(cmap), pdfir, "pdfi_free_cmap(cmap_range.ranges");
-            pdfir = pdfir2;
-        }
-        gs_free_object(OBJ_MEMORY(cmap), cmap->csi_reg.data, "pdfi_free_cmap(csi_reg.data");
-        gs_free_object(OBJ_MEMORY(cmap), cmap->csi_ord.data, "pdfi_free_cmap(csi_ord.data");
-        gs_free_object(OBJ_MEMORY(cmap), cmap->name.data, "pdfi_free_cmap(name.data");
-        gs_free_object(OBJ_MEMORY(cmap), cmap->uid.xvalues, "pdfi_free_cmap(xuid.xvalues");
-        pdfi_countdown(cmap->next);
-        gs_free_object(OBJ_MEMORY(cmap), cmap->buf, "pdfi_free_cmap(cmap->buf");
-        gs_free_object(OBJ_MEMORY(cmap), cmap, "pdfi_free_cmap(cmap");
-    }
 
+    pdfi_free_cmap_contents(cmap);
+    gs_free_object(OBJ_MEMORY(cmap), cmap, "pdfi_free_cmap(cmap");
     return 0;
 }
