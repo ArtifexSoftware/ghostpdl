@@ -37,7 +37,6 @@
 #include "gxdevice.h"
 #include "gxht.h"
 #include "gxstate.h"
-#include "pldraw.h"
 #include "plht.h"
 #include "pxptable.h"
 #include "gzstate.h"
@@ -245,7 +244,7 @@ px_paint_pattern(const gs_client_color * pcc, gs_gstate * pgs)
     const gs_client_pattern *ppat = gs_getpattern(pcc);
     const px_pattern_t *pattern = (px_pattern_t *)gs_get_pattern_client_data(pcc);
     const byte *dp = pattern->data;
-    gs_image_enum *penum;
+    gs_image_enum *penum = NULL;
     gs_image_t image;
     int code;
     int num_components =
@@ -280,18 +279,30 @@ px_paint_pattern(const gs_client_color * pcc, gs_gstate * pgs)
         int y;
 
         image.ImageMatrix.tx = (float)-x;
-        code = pl_begin_image2(&penum, &image, pgs);
+        penum = gs_image_enum_alloc(gs_gstate_memory(pgs), "px_paint_pattern");
+        if (penum == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            break;
+        }
+        code = gs_image_init(penum, &image, 0, false, pgs);
         if (code < 0)
             break;
         for (y = 0; y < full_height; ++y) {
             const byte *row = dp + (y % rep_height) * bytes_per_row;
             uint used;          /* better named not_used */
 
-            code = pl_image_data2(penum, row, bytes_per_row, &used);
+            code = gs_image_next(penum, row, bytes_per_row, &used);
             if (code < 0)
                 break;
         }
-        pl_end_image2(penum, pgs);
+        code = gs_image_cleanup_and_free_enum(penum, pgs);
+        penum = NULL;
+        if (code < 0)
+            break;
+    }
+    if (code < 0) {
+        (void)gs_image_cleanup_and_free_enum(penum, pgs);
+        penum = NULL;
     }
     return code;
 }

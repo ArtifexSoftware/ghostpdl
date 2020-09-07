@@ -43,11 +43,11 @@
 #include "scommon.h"
 #include "strimpl.h"
 #include "srlx.h"
-#include "pldraw.h"
 #include "jpeglib_.h"           /* for jpeg filter */
 #include "sdct.h"
 #include "sjpeg.h"
 #include "pxptable.h"
+#include "gxgstate.h"
 
 /* Define the "freeing" procedure for patterns in a dictionary. */
 void
@@ -165,7 +165,7 @@ struct px_image_enum_s
 {
     gs_image_t image;
     byte *row;                  /* buffer for one row of data */
-    void *info;                 /* state structure for driver */
+    gs_image_enum *ienum;       /* state structure for driver */
     px_bitmap_enum_t benum;
     px_bitmap_args_t bi_args;
     bool enum_started;
@@ -861,11 +861,8 @@ px_begin_image(px_state_t * pxs, bool is_jpeg, px_args_t * par)
             px_image_color_space(&pxenum->image, &params,
                                  (const gs_string *)&pxgs->palette, pgs);
 
-    if (code < 0) {
-        gs_free_object(pxs->memory, pxenum->row, "pxReadImage(row)");
-        gs_free_object(pxs->memory, pxenum, "pxReadImage(pxenum)");
-        return code;
-    }
+    if (code < 0)
+        goto free_buffers_and_exit;
 
     /* Set up the image parameters. */
     pxenum->image.Width = pbenum->rebuffered_width;
@@ -886,16 +883,26 @@ px_begin_image(px_state_t * pxs, bool is_jpeg, px_args_t * par)
         /* The ImageMatrix is dmat' * imat. */
         code = gs_matrix_invert(&dmat, &dmat);
         if (code < 0)
-            return code;
+            goto free_buffers_and_exit;
         gs_matrix_multiply(&dmat, &imat, &pxenum->image.ImageMatrix);
     }
     pxenum->image.CombineWithColor = true;
     pxenum->image.Interpolate = pxs->interpolate;
 
-    code = pl_begin_image(pgs, &pxenum->image, &pxenum->info);
+    pxenum->ienum = gs_image_enum_alloc(gs_gstate_memory(pgs), "px_begin_image");
+    if (pxenum->ienum == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto free_buffers_and_exit;
+    }
+    code = gs_image_init(pxenum->ienum, &pxenum->image,
+                         pxenum->image.ImageMask | pxenum->image.CombineWithColor,
+                         false, pgs);
     if (code < 0) {
+        gs_image_cleanup_and_free_enum(pxenum->ienum, pgs);
+        pxenum->ienum = NULL;
         /* This procedure will be re-invoked if we are remapping the
            color so don't free the resources */
+free_buffers_and_exit:
         if (code != gs_error_Remap_Color) {
             gs_free_object(pxs->memory, pxenum->row, "pxReadImage(row)");
             gs_free_object(pxs->memory, pxenum, "pxBeginImage(pxenum)");
@@ -931,6 +938,7 @@ pxReadImage(px_args_t * par, px_state_t * pxs)
     }
     for (;;) {
         byte *data = pxenum->row;
+        uint used;
         int code = read_rebuffered_bitmap(&pxenum->benum, &data, par);
         if (code != 1)
             return code;
@@ -948,8 +956,9 @@ pxReadImage(px_args_t * par, px_state_t * pxs)
             }
         }
 
-        code = pl_image_data(pxs->pgs, pxenum->info, (const byte **)&data, 0,
-                             pxenum->benum.rebuffered_data_per_row, 1);
+        code = gs_image_next(pxenum->ienum, data,
+                             pxenum->benum.rebuffered_data_per_row,
+                             &used);
         if (code < 0)
             return code;
 
@@ -963,7 +972,7 @@ pxEndImage(px_args_t * par, px_state_t * pxs)
 {
     px_image_enum_t *pxenum = pxs->image_enum;
     px_bitmap_enum_t *pbenum = &pxenum->benum;
-    int code = pl_end_image(pxs->pgs, pxenum->info, true);
+    int code = gs_image_cleanup_and_free_enum(pxenum->ienum, pxs->pgs);
 
     gs_free_object(pxs->memory, pxenum->row, "pxEndImage(row)");
     gs_free_object(pbenum->mem, pbenum->deltarow_state.seedrow,

@@ -52,6 +52,7 @@
 /* include the prototype for pixmap_high_level_pattern */
 #include "gsptype1.h"
 #include "gsgstate.h"
+#include "gxgstate.h"
 
 /* Define whether to cache TrueType characters. */
 /* This would only be disabled for debugging. */
@@ -292,21 +293,21 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
 {
     uint dest_bytes = (pim->Width + 7) >> 3;
     gx_device *dev = pgs->device;
-    void *iinfo;
-    const byte *planes[1];
     int code;
+    gs_image_enum *penum;
+    uint used;
 
     code = gx_set_dev_color(pgs);
     if (code == gs_error_Remap_Color)
         code = pixmap_high_level_pattern(pgs);
     if (code != 0)
         return code;
-    code = (*dev_proc(dev, begin_image))
-        (dev, (const gs_gstate *)pgs, pim, gs_image_format_chunky,
-         NULL, gs_currentdevicecolor_inline(pgs), pgs->clip_path,
-         pgs->memory, (gx_image_enum_common_t **) & iinfo);
+    penum = gs_image_enum_alloc(gs_gstate_memory(pgs), "pl_image_bitmap_char");
+    if (penum == NULL)
+        return_error(gs_error_VMerror);
+    code = gs_image_init(penum, pim, pim->ImageMask | pim->CombineWithColor, true, pgs);
     if (code < 0)
-        return code;
+        goto free_penum_and_exit;
     if (bold) {                 /* Pass individual smeared lines. */
         uint src_width = pim->Width - bold;
         uint src_height = pim->Height - bold;
@@ -316,7 +317,6 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
 #define merged_line(i) (bold_lines + ((i) % n1 + 1) * dest_raster)
         int y;
 
-        planes[0] = bold_lines;
         for (y = 0; y < pim->Height; ++y) {
             int y0 = (y < bold ? 0 : y - bold);
             int y1 = min(y + 1, src_height);
@@ -362,18 +362,26 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
                 }
             }
 
-            code = (*dev_proc(dev, image_data))
-                (dev, iinfo, planes, 0, dest_bytes, 1);
+            code = gs_image_next(penum, bold_lines, dest_bytes, &used);
             if (code != 0)
                 break;
         }
 #undef merged_line
     } else {                    /* Pass the entire image at once. */
-        planes[0] = bitmap_data;
-        code = (*dev_proc(dev, image_data))
-            (dev, iinfo, planes, 0, dest_bytes, pim->Height);
+        int i;
+        for (i = 0; i < pim->Height; i++) {
+            code = gs_image_next(penum, bitmap_data, dest_bytes, &used);
+            if (code < 0)
+                break;
+            bitmap_data += sraster;
+        }
     }
-    (*dev_proc(dev, end_image)) (dev, iinfo, code >= 0);
+free_penum_and_exit:
+    {
+        int code2 = gs_image_cleanup_and_free_enum(penum, pgs);
+        if (code == 0)
+            code = code2;
+    }
     return code;
 }
 

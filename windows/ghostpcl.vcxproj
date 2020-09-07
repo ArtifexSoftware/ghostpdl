@@ -479,7 +479,6 @@
     <ClCompile Include="..\pcl\pl\plapi.c" />
     <ClCompile Include="..\pcl\pl\plchar.c" />
     <ClCompile Include="..\pcl\pl\pldict.c" />
-    <ClCompile Include="..\pcl\pl\pldraw.c" />
     <ClCompile Include="..\pcl\pl\plfapi.c" />
     <ClCompile Include="..\pcl\pl\plfont.c" />
     <ClCompile Include="..\pcl\pl\plftable.c" />
@@ -576,7 +575,6 @@
     <ClInclude Include="..\pcl\pl\plchar.h" />
     <ClInclude Include="..\pcl\pl\pldebug.h" />
     <ClInclude Include="..\pcl\pl\pldict.h" />
-    <ClInclude Include="..\pcl\pl\pldraw.h" />
     <ClInclude Include="..\pcl\pl\plfapi.h" />
     <ClInclude Include="..\pcl\pl\plfont.h" />
     <ClInclude Include="..\pcl\pl\plftable.h" />
