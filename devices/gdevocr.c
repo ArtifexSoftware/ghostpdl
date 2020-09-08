@@ -128,7 +128,7 @@ ocr_get_params(gx_device * dev, gs_param_list * plist)
     if ((code = param_write_string(plist, "OCRLanguage", &langstr)) < 0)
         ecode = code;
 
-    if ((code = param_write_string(plist, "OCREngine", &pdev->engine)) < 0)
+    if ((code = param_write_int(plist, "OCREngine", &pdev->engine)) < 0)
         ecode = code;
 
     if ((code = gx_downscaler_write_params(plist, &pdev->downscale,
