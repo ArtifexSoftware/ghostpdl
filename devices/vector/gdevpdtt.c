@@ -3370,10 +3370,13 @@ pdf_text_process(gs_text_enum_t *pte)
                 pdev->procs.get_initial_matrix = pdf_type3_get_initial_matrix;
 
                 pdev->pte = (gs_text_enum_t *)penum; /* CAUTION: See comment in gdevpdfx.h . */
+                /* In case of error, text_process will restore back to the enumerator 'level'
+                 * we must make certain we do not restore back too far!
+                 */
+                pte_default->level = penum->pgs->level;
                 code = gs_text_process(pte_default);
                 if (code < 0) {
                     (void)complete_charproc(pdev, pte, pte_default, penum, false);
-                    gs_grestore(pgs);
                     return code;
                 }
                 pdev->pte = NULL;         /* CAUTION: See comment in gdevpdfx.h . */
