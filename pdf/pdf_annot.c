@@ -2827,33 +2827,28 @@ static bool pdfi_annot_check_type(pdf_context *ctx, pdf_name *subtype)
     return true;
 }
 
-static int pdfi_annot_preserve(pdf_context *ctx, pdf_dict *annot)
+/* Check to see if subtype is on the PreserveAnnotTypes list
+ * Defaults to true if there is no list
+ */
+static bool pdfi_annot_preserve_type(pdf_context *ctx, pdf_name *subtype)
 {
-    return 0;
+    /* TODO: Need to implement */
+    return true;
 }
 
-static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot)
+static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
 {
-    pdf_name *Subtype = NULL;
     pdf_dict *NormAP = NULL;
-    int code;
+    int code = 0;
     annot_dispatch_t *dispatch_ptr;
     bool render_done = true;
 
-    code = pdfi_dict_get_type(ctx, annot, "Subtype", PDF_NAME, (pdf_obj **)&Subtype);
-    if (code != 0) {
-        /* TODO: Set warning flag */
-        dbgmprintf(ctx->memory, "WARNING: Ignoring annotation with missing Subtype\n");
-        code = 0;
-        goto exit;
-    }
-
     /* See if annotation is visible */
-    if (!pdfi_annot_visible(ctx, annot, Subtype))
+    if (!pdfi_annot_visible(ctx, annot, subtype))
         goto exit;
 
     /* See if we are rendering this type of annotation */
-    if (!pdfi_annot_check_type(ctx, Subtype))
+    if (!pdfi_annot_check_type(ctx, subtype))
         goto exit;
 
     /* Get the Normal AP, if it exists */
@@ -2865,7 +2860,7 @@ static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot)
 
     /* Draw the annotation */
     for (dispatch_ptr = annot_dispatch; dispatch_ptr->subtype; dispatch_ptr ++) {
-        if (pdfi_name_is(Subtype, dispatch_ptr->subtype)) {
+        if (pdfi_name_is(subtype, dispatch_ptr->subtype)) {
             if (NormAP && dispatch_ptr->simpleAP)
                 render_done = false;
             else
@@ -2875,8 +2870,8 @@ static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot)
     }
     if (!dispatch_ptr->subtype) {
         char str[100];
-        memcpy(str, (const char *)Subtype->data, Subtype->length);
-        str[Subtype->length] = '\0';
+        memcpy(str, (const char *)subtype->data, subtype->length);
+        str[subtype->length] = '\0';
         dbgmprintf1(ctx->memory, "ANNOT: No handler for subtype %s\n", str);
 
         /* Not necessarily an error? We can just render the AP if there is one */
@@ -2889,8 +2884,41 @@ static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot)
     (void)pdfi_grestore(ctx);
 
  exit:
-    pdfi_countdown(Subtype);
     pdfi_countdown(NormAP);
+    return code;
+}
+
+static int pdfi_annot_preserve(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+{
+    int code = 0;
+
+    /* If not preserving this subtype, draw it instead */
+    if (!pdfi_annot_preserve_type(ctx, subtype))
+        return pdfi_annot_draw(ctx, annot, subtype);
+
+    return code;
+}
+
+static int pdfi_annot_handle(pdf_context *ctx, pdf_dict *annot)
+{
+    int code = 0;
+    pdf_name *Subtype = NULL;
+
+    code = pdfi_dict_get_type(ctx, annot, "Subtype", PDF_NAME, (pdf_obj **)&Subtype);
+    if (code != 0) {
+        /* TODO: Set warning flag */
+        dbgmprintf(ctx->memory, "WARNING: Ignoring annotation with missing Subtype\n");
+        code = 0;
+        goto exit;
+    }
+
+    if (ctx->preserveannots && ctx->annotations_preserved)
+        code = pdfi_annot_preserve(ctx, annot, Subtype);
+    else
+        code = pdfi_annot_draw(ctx, annot, Subtype);
+
+ exit:
+    pdfi_countdown(Subtype);
     return code;
 }
 
@@ -2912,10 +2940,7 @@ int pdfi_do_annotations(pdf_context *ctx, pdf_dict *page_dict)
         code = pdfi_array_get_type(ctx, Annots, i, PDF_DICT, (pdf_obj **)&annot);
         if (code < 0)
             continue;
-        if (ctx->preserveannots && ctx->annotations_preserved)
-            code = pdfi_annot_preserve(ctx, annot);
-        else
-            code = pdfi_annot_draw(ctx, annot);
+        code = pdfi_annot_handle(ctx, annot);
         if (code < 0)
             goto exit;
         pdfi_countdown(annot);
