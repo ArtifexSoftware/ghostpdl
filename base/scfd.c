@@ -211,7 +211,7 @@ static inline int invert_data(stream_CFD_state *ss, stream_cursor_read *pr, int 
     if (q >= ss->lbuf + ss->raster + CFD_BUFFER_SLOP) {
         return(-1);
     }
-    
+
     if ( (*rlen) > qbit )
     {
         if (q + ((*rlen - qbit) >> 3) > ss->lbuf + ss->raster + CFD_BUFFER_SLOP) {

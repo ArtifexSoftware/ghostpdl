@@ -441,7 +441,7 @@ cmap_separation_capture_cmyk_color(frac all, gx_device_color * pdc,
     dmprintf(pgs->memory, "cmap_separation_capture_cmyk_color - this routine should not be executed\n");
 }
 
-/* The call to this is actually going to occur if we happen to be using a 
+/* The call to this is actually going to occur if we happen to be using a
    named color profile and doing a replacement.  Since the destination profile
    will have been CMYK based during the swap out to find the equivalent color, we can
    go ahead and just grab the cmyk portion */
@@ -518,10 +518,10 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_gstate * pgs,
        for the CMYK + OG values. */
 
     if (curr_output_profile->data_cs == gsNCHANNEL) {
-        temp_profile.device_profile[GS_DEFAULT_DEVICE_PROFILE] = 
+        temp_profile.device_profile[GS_DEFAULT_DEVICE_PROFILE] =
             temp_state.icc_manager->default_cmyk;
     } else {
-        temp_profile.device_profile[GS_DEFAULT_DEVICE_PROFILE] = 
+        temp_profile.device_profile[GS_DEFAULT_DEVICE_PROFILE] =
             curr_output_profile;
     }
     set_dev_proc(&temp_device, get_profile, gx_default_get_profile);

@@ -298,7 +298,7 @@ static int Bobbin_thread(void *thread)
     int i;
 
     for (i = 0; i < bobbins.num_threads; i++)
-        if (BOBBIN_THREAD_EQUAL(bobbins.thread[i].thread, thread) && 
+        if (BOBBIN_THREAD_EQUAL(bobbins.thread[i].thread, thread) &&
             (bobbins.thread[i].flags & BOBBIN_THREAD_FINISHED) == 0)
             break;
     if (i == bobbins.num_threads)

@@ -841,12 +841,12 @@ static const gx_const_strip_bitmap ht_no_bitmap = {
 
 /* Set the color value(s) and halftone mask for one plane. */
 static inline void set_plane_color(int i, color_values_pair_t *pvp, const gx_device_color * pdc,
-    const gx_const_strip_bitmap * sbits[MAX_DCC], gx_ht_cache * caches[MAX_DCC], 
+    const gx_const_strip_bitmap * sbits[MAX_DCC], gx_ht_cache * caches[MAX_DCC],
     gx_color_value max_color, bool invert)
 {
     uint q = pdc->colors.colored.c_base[i];
     uint r = pdc->colors.colored.c_level[i];
-        
+
     pvp->values[0][i] = fractional_color(q, max_color);
     if (r == 0)
         pvp->values[1][i] = pvp->values[0][i], sbits[i] = &ht_no_bitmap;
@@ -855,7 +855,7 @@ static inline void set_plane_color(int i, color_values_pair_t *pvp, const gx_dev
         sbits[i] = (const gx_const_strip_bitmap *) &gx_render_ht(caches[i], r)->tiles;
     } else {
         const gx_device_halftone *pdht = pdc->colors.colored.c_ht;
-        int nlevels = 
+        int nlevels =
             (pdht->components ? pdht->components[i].corder.num_levels : pdht->order.num_levels);
         pvp->values[1][i] = pvp->values[0][i];
         pvp->values[0][i] = fractional_color(q + 1, max_color);

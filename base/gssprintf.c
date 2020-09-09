@@ -116,13 +116,13 @@ static const char null_string[] = "(null)";
 #define NDIG 80
 
 /* buf must have at least NDIG bytes */
-static char *apr_cvt(double arg, int ndigits, int *decpt, int *sign, 
+static char *apr_cvt(double arg, int ndigits, int *decpt, int *sign,
                      int eflag, char *buf)
 {
     register int r2;
     double fi, fj;
     register char *p, *p1;
-    
+
     if (ndigits >= NDIG - 1)
         ndigits = NDIG - 2;
     r2 = 0;
@@ -387,7 +387,7 @@ static char *conv_10(register apr_int32_t num, register int is_unsigned,
         *is_negative = (num < 0);
 
         /*
-         * On a 2's complement machine, negating the most negative integer 
+         * On a 2's complement machine, negating the most negative integer
          * results in a number that cannot be represented as a signed integer.
          * Here is what we do to obtain the number's magnitude:
          *      a. add 1 to the number
@@ -402,7 +402,7 @@ static char *conv_10(register apr_int32_t num, register int is_unsigned,
     }
 
     /*
-     * We use a do-while loop so that we write at least 1 digit 
+     * We use a do-while loop so that we write at least 1 digit
      */
     do {
         register apr_uint32_t new_magnitude = magnitude / 10;
@@ -439,7 +439,7 @@ static char *conv_10_quad(apr_int64_t num, register int is_unsigned,
         *is_negative = (num < 0);
 
         /*
-         * On a 2's complement machine, negating the most negative integer 
+         * On a 2's complement machine, negating the most negative integer
          * results in a number that cannot be represented as a signed integer.
          * Here is what we do to obtain the number's magnitude:
          *      a. add 1 to the number
@@ -454,7 +454,7 @@ static char *conv_10_quad(apr_int64_t num, register int is_unsigned,
     }
 
     /*
-     * We use a do-while loop so that we write at least 1 digit 
+     * We use a do-while loop so that we write at least 1 digit
      */
     do {
         apr_uint64_t new_magnitude = magnitude / 10;
@@ -885,7 +885,7 @@ static int apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
                 (sizeof(APR_INT64_T_FMT) == 3 &&
                  fmt[0] == APR_INT64_T_FMT[0]) ||
                 (sizeof(APR_INT64_T_FMT) > 4 &&
-                 strncmp(fmt, APR_INT64_T_FMT, 
+                 strncmp(fmt, APR_INT64_T_FMT,
                          sizeof(APR_INT64_T_FMT) - 2) == 0)) {
                 /* Need to account for trailing 'd' and null in sizeof() */
                 var_type = IS_QUAD;
@@ -1413,7 +1413,7 @@ static int apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
             }
 
             /*
-             * Print the string s. 
+             * Print the string s.
              */
             if (print_something == YES) {
                 for (i = s_len; i != 0; i--) {

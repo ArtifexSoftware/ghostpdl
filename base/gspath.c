@@ -324,7 +324,7 @@ static int common_clip(gs_gstate *, int);
 
 /* Figure out the bbox for a path and a clip path with adjustment if we are
    also doing a stroke.  This is used by the xps interpeter to deteremine
-   how big of a transparency group or softmask should be pushed.  Often in 
+   how big of a transparency group or softmask should be pushed.  Often in
    xps we fill a path with a particular softmask and some other graphic object.
    The transparency group will be the intersection of the path and clipping
    path */

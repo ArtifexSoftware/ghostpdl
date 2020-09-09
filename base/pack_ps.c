@@ -439,7 +439,7 @@ main(int argc, char *argv[])
 #endif
 
     /* Display processing statistics. */
-    printf("  Processed %d lines of PostScript data.\n", total_code_lines); 
+    printf("  Processed %d lines of PostScript data.\n", total_code_lines);
     printf("  %d bytes of PostScript data packed down to %d bytes.\n", total_input_length, total_output_length);
 #if STRIP_PDFR_DEBUG_CALLS
     printf("  %d PDFR_DEBUG calls removed from the code.\n", pdfr_debug_start_count);

@@ -75,7 +75,7 @@ hpgl_FT(hpgl_args_t * pargs, hpgl_state_t * pgls)
 
     if (!hpgl_arg_int(pgls->memory, pargs, &type))
         type = hpgl_FT_pattern_solid_pen1;
-    
+
     switch (type) {
 
         case hpgl_FT_pattern_solid_pen1:       /* 1 */

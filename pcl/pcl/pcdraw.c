@@ -142,9 +142,9 @@ pcl_grestore(pcl_state_t * pcs)
     /* check for bottom of graphic state stack */
     if (pcs == 0 || pcs->pids == 0 || pcs->pids->prev == 0)
         return e_Range;
-    
+
     pids = pcs->pids->prev;
-    
+
     if ((code = gs_grestore(pcs->pgs)) >= 0) {
         pcs->pids->prev = pids->prev;
         pcl_ccolor_copy_from(pcs->pids->pccolor, pids->pccolor);

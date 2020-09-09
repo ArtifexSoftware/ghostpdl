@@ -343,7 +343,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
  * For the purposes of explanation, we shall label the octants as below:
  *
  *     \2|1/       and Quadrants as:       |
- *     3\|/0                            Q1 | Q0 
+ *     3\|/0                            Q1 | Q0
  *    ---+---                          ----+----
  *     4/|\7                            Q2 | Q3
  *     /5|6\                               |
@@ -351,7 +351,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
  * We find (dx,dy), the difference between the centres of the circles.
  * We look to see which octant this falls in. Firstly, this tells us which
  * quadrant of the circle we need to draw first (Octant n, starts with
- * Quadrant floor(n/2)). Secondly, it tells us which direction to form the 
+ * Quadrant floor(n/2)). Secondly, it tells us which direction to form the
  * tensor patch in; we always want to draw from the side 'closest' to
  * dx/dy to the side further away. This ensures that we don't overwrite
  * pixels in the incorrect order as the patch decomposes.

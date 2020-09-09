@@ -1241,7 +1241,7 @@ xcf_icc_to_tile(gx_device_printer *pdev, xcf_write_ctx *xc, byte **tile_data, co
                    understand what is going on in the loop
                    with the 255^row[row_idx++] operation */
 
-            gscms_transform_color((gx_device*) pdev, link, 
+            gscms_transform_color((gx_device*) pdev, link,
                                   (void *) (&(row[row_idx])),
                                    &(base_ptr[base_idx]), 1);
 

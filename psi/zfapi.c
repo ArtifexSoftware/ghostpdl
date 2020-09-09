@@ -2873,7 +2873,7 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                         cmapnmlen = r_size(&CMapNameStr);
                     }
                 }
-                /* We only have to lookup the char code if we're *not* using an identity ordering 
+                /* We only have to lookup the char code if we're *not* using an identity ordering
                    with the exception of Identity-UTF16 which is a different beast altogether */
                 if (unicode_cp || (cmapnmlen > 0 && !strncmp(cmapnm, utfcmap, cmapnmlen > utfcmaplen ? utfcmaplen : cmapnmlen))
                     || (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) > 0

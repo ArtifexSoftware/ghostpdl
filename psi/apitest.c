@@ -72,7 +72,7 @@ static void *gs_main(void *arg)
         gsargv[i] = my_argv[i];
     gsargv[my_argv_file] = text;
     gsargc = my_argc;
-    
+
     strncpy(text, my_argv[my_argv_file], sizeof(text));
     text[sizeof(text)-1]=0;
     pos = strlen(text);
@@ -111,11 +111,11 @@ int main(int argc, char *argv[])
 
     my_argc = argc;
     my_argv = argv;
-    
+
     for (i=0; i < argc; i++)
         if (!strcmp(argv[i], "-o"))
             break;
-    
+
     if (i >= argc-1)
     {
         fprintf(stderr, "Expected a -o argument to rewrite!\n");

@@ -190,7 +190,7 @@ const px_attr_value_type_t px_attr_value_types[] = {
     /* 43 */ xyp(ub | us | rl, checkPageScale), /* PageScale */
     /* 44 */ scub(), /* ROP3 */
     /* 45 */ en(pxeTxMode_next), /* TxMode */
-    /* 46 */ none, 
+    /* 46 */ none,
     /* 47 */ xy(us | rl), /* CustomMediaSize  */
     /* 48 */ en(pxeMeasure_next), /* CustomMediaSizeUnits */
     /* 49 */ sc(us), /* PageCopies */

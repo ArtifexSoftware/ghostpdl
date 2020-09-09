@@ -497,7 +497,7 @@ bbox_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 
 static int
 bbox_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
-   int x, int y, int w, int h, const gx_drawing_color *pdcolor0, 
+   int x, int y, int w, int h, const gx_drawing_color *pdcolor0,
    const gx_drawing_color *pdcolor1, int px, int py)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;

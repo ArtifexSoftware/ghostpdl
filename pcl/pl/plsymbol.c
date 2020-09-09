@@ -3615,7 +3615,7 @@ static const pl_symbol_map_t map_12N_unicode = {
         0x03c8, 0x03c9, 0x03ca, 0x03cb, 0x03cc, 0x03cd, 0x03ce, 0xffff
     }
 };
-    
+
 /*************************************************************
  * HP-GL/2 stick font extended character set Unicode mapping *
  * (Note: this symbol set is not documented anywhere.)       *

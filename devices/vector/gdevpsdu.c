@@ -408,8 +408,8 @@ psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
         /* Make sure we get at least a full scan line of input. */
         ss->scan_line_size = jcdp->cinfo.input_components *
             jcdp->cinfo.image_width;
-        /* Profile not used in pdfwrite output */        
-        ss->icc_profile = NULL; 
+        /* Profile not used in pdfwrite output */
+        ss->icc_profile = NULL;
         jcdp->templat.min_in_size =
             max(s_DCTE_template.min_in_size, ss->scan_line_size);
         /* Make sure we can write the user markers in a single go. */

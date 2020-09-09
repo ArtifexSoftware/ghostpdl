@@ -1353,7 +1353,7 @@ pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
             pattern_length += (uint) (pattern[i]);
         if (pattern_length == 0)
             return_error(gs_error_rangecheck);
-        
+
         spputc(s, pxt_uint16_array);
         px_put_ub(s, (byte) count);
         for (i = 0; i < count; ++i)
@@ -2078,7 +2078,7 @@ pclxl_begin_image(gx_device * dev,
             goto use_default;
     }
 
-    /* 
+    /*
      * NOTE: this predicate should be fixed to be readable and easily
      * debugged.  Each condition should be separate.  See the large
      * similar conditional in clist_begin_typed_image which has

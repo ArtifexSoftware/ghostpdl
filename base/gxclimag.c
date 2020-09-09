@@ -797,7 +797,7 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
         if (!indexed) {
             pie->monitor_color = true;
             /* Set up the unpacking proc for monitoring */
-            get_unpack_proc((gx_image_enum_common_t*) pie, &(pie->decode), 
+            get_unpack_proc((gx_image_enum_common_t*) pie, &(pie->decode),
                              pim->format, pim->Decode);
             get_map(&(pie->decode), pim->format, pim->Decode);
             if (pie->decode.unpack == NULL) {
@@ -2004,7 +2004,7 @@ cmd_image_plane_data_mon(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                to see if we have any non-neutral colors */
             int pdata_x;
             byte *data_ptr =  (byte *)(planes[0].data + i * planes[0].raster + offsets[0] + offset);
-            byte *buffer = (byte *)(*pie_c->decode.unpack)(pie_c->buffer, &pdata_x, 
+            byte *buffer = (byte *)(*pie_c->decode.unpack)(pie_c->buffer, &pdata_x,
                                      data_ptr, 0, dsize, pie_c->decode.map,
                 pie_c->decode.spread, pie_c->decode.spp);
 

@@ -560,12 +560,12 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
                             for (b=0; b<bytepp1; b++)
                                 *row++ = (((*(state->pdata[compno]) << shift_bit) >> (8*(bytepp1-b-1))))
                                                         + (b==0 ? state->sign_comps[compno] : 0); /* split and shift input int to output bytes */
-                            state->pdata[compno]++; 
+                            state->pdata[compno]++;
                         }
                     }
                 }
                 else
-                {   
+                {
                     /* shift_bit = 0, bpp < 8 */
                     int bt=0;
                     int bit_pos = 0;
@@ -678,7 +678,7 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
     int locked = 0;
     int code;
 
-    if (in_size > 0) 
+    if (in_size > 0)
     {
         /* buffer available data */
         code = opj_lock(ss->memory);
@@ -703,7 +703,7 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
         }
     }
 
-    if (last == 1) 
+    if (last == 1)
     {
         if (state->image == NULL)
         {
@@ -774,11 +774,11 @@ s_opjd_release(stream_state *ss)
     /* free image data structure */
     if (state->image)
         opj_image_destroy(state->image);
-    
+
     /* free stream */
     if (state->stream)
         opj_stream_destroy(state->stream);
-		
+
     /* free decoder handle */
     if (state->codec)
 	opj_destroy_codec(state->codec);

@@ -169,16 +169,16 @@ gx_no_copy_alpha(gx_device * dev, const byte * data, int data_x,
 
 /* Currently we really should only be here if the target device is planar
    AND it supports devn colors AND is 8 or 16 bit.  For example tiffsep
-   and psdcmyk may make use of this if AA is enabled.  It is basically 
-   designed for devices that need more than 64 bits for color support 
+   and psdcmyk may make use of this if AA is enabled.  It is basically
+   designed for devices that need more than 64 bits for color support
 
-   So that I can follow things and  make it readable for future generations, 
+   So that I can follow things and  make it readable for future generations,
    I am not using the macro nightmare that default_copy_alpha uses. */
 int
 gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
            int raster, gx_bitmap_id id, int x, int y, int width, int height,
                       const gx_drawing_color *pdcolor, int depth)
-{ 
+{
     const byte *row_alpha;
     gs_memory_t *mem = dev->memory;
     int bpp = dev->color_info.depth;
@@ -223,7 +223,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                        | GB_ALIGN_STANDARD
                        | GB_OFFSET_0
                        | GB_RASTER_STANDARD
-                       | GB_SELECT_PLANES;    
+                       | GB_SELECT_PLANES;
     gb_rect.p.x = x;
     gb_rect.q.x = x + width;
     for (ry = y; ry < y + height; row_alpha += raster, ++ry) {
@@ -234,13 +234,13 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
         for (k = 0; k < ncomps; k++) {
             /* First set the params to zero for all planes except the one we want */
             /* I am not sure why get_bits_rectangle for the planar device can
-               not hand back the data in a proper planar form.  To get the 
+               not hand back the data in a proper planar form.  To get the
                individual planes seems that I need to jump through some hoops
                here */
-            for (j = 0; j < ncomps; j++) 
+            for (j = 0; j < ncomps; j++)
                 gb_params.data[j] = 0;
             gb_params.data[k] = gb_buff + k * out_raster;
-            code = dev_proc(dev, get_bits_rectangle) (dev, &gb_rect, 
+            code = dev_proc(dev, get_bits_rectangle) (dev, &gb_rect,
                                                       &gb_params, 0);
             src_planes[k] = gb_params.data[k];
             if (code < 0) {
@@ -248,7 +248,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                 return code;
             }
         }
-        /* At this point we have to carry around some additional variables 
+        /* At this point we have to carry around some additional variables
            so that we can handle any buffer flushes due to alpha == 0 values.
            See below why this is needed */
         x_curr = x;
@@ -276,14 +276,14 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
 
             if (alpha == 0) {
                 /* With alpha 0 we want to avoid writing out this value.
-                 * While it is true that writting it out leaves the color 
-                 * unchanged,  any device that's watching what pixels are 
-                 * written (such as the pattern tile devices) may have problems. 
-                 * As in gx_default_copy_alpha the right thing to do is to write 
-                 * out what we have so far and then continue to collect when we 
+                 * While it is true that writting it out leaves the color
+                 * unchanged,  any device that's watching what pixels are
+                 * written (such as the pattern tile devices) may have problems.
+                 * As in gx_default_copy_alpha the right thing to do is to write
+                 * out what we have so far and then continue to collect when we
                  * get back to non zero alpha.  */
-                code = dev_proc(dev, copy_planes)(dev, &(gb_buff[gb_buff_start]), 
-                                                  0, out_raster, gs_no_bitmap_id, 
+                code = dev_proc(dev, copy_planes)(dev, &(gb_buff[gb_buff_start]),
+                                                  0, out_raster, gs_no_bitmap_id,
                                                   x_curr, ry, w_curr-1, 1, 1);
                 if (code < 0) {
                     gs_free_object(mem, gb_buff, "copy_alpha_hl_color");
@@ -303,7 +303,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                     /* First get the old color */
                     for (k = 0; k < ncomps; k++) {
                         /* We only have 8 and 16 bit depth to worry about.
-                           However, this stuff should really be done with 
+                           However, this stuff should really be done with
                            the device encode/decode procedure. */
                         byte *ptr = ((src_planes[k]) + (sx - data_x) * word_width);
                         curr_cv[k] = 0;
@@ -316,13 +316,13 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                                 curr_cv[k] += *ptr;
                                 curr_cv[k] += curr_cv[k] << 8;
                         }
-                        /* Now compute the new color which is a blend of 
+                        /* Now compute the new color which is a blend of
                            the old and the new */
                         blend_cv[k] =  ((curr_cv[k]<<8) +
                                         (((long) src_cv[k] - (long) curr_cv[k]) * alpha))>>8;
                         composite = &(blend_cv[0]);
                     }
-                } 
+                }
                 /* Update our plane data buffers.  Just reuse the current one */
                 for (k = 0; k < ncomps; k++) {
                     byte *ptr = ((src_planes[k]) + (sx - data_x) * word_width);
@@ -335,10 +335,10 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                 }
             } /* else on alpha != 0 */
         } /* loop on x */
-        /* Flush what ever we have left.  We may only have a partial due to 
+        /* Flush what ever we have left.  We may only have a partial due to
            the presence of alpha = 0 values */
-        code = dev_proc(dev, copy_planes)(dev, &(gb_buff[gb_buff_start]), 
-                                          0, out_raster, gs_no_bitmap_id, 
+        code = dev_proc(dev, copy_planes)(dev, &(gb_buff[gb_buff_start]),
+                                          0, out_raster, gs_no_bitmap_id,
                                           x_curr, ry, w_curr, 1, 1);
     } /* loop on y */
     gs_free_object(mem, gb_buff, "copy_alpha_hl_color");
@@ -596,15 +596,15 @@ gx_default_fill_mask(gx_device * orig_dev,
 }
 
 /* Default implementation of strip_tile_rect_devn.  With the current design
-   only devices that support devn color will be making use of this 
+   only devices that support devn color will be making use of this
    procedure and those are planar devices.  So we have an implemenation
    for planar devices and not a default implemenetation at this time. */
 int
 gx_default_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
-   int x, int y, int w, int h, const gx_drawing_color * pdcolor0, 
+   int x, int y, int w, int h, const gx_drawing_color * pdcolor0,
    const gx_drawing_color * pdcolor1, int px, int py)
 {
-    return_error(gs_error_unregistered); 
+    return_error(gs_error_unregistered);
 }
 
 /* Default implementation of strip_tile_rectangle */

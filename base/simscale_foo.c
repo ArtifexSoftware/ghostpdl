@@ -123,7 +123,7 @@ unsigned int imscale_foo(unsigned int v5x5) {
     unsigned int r3 = ( v5x5 >> 20 ) & 0x1f;
     unsigned int r4 = ( v5x5 >> 25 ) & 0x1f;
 #endif
-    
+
     switch(v3x3) {
     case 0:
     case 1:

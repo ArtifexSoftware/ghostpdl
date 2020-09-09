@@ -173,7 +173,7 @@ static long gs_j_mem_init (j_common_ptr cinfo)
     if (gs_memory_chunk_wrap(&(cmem), mem) < 0) {
         return (-1);
     }
-    
+
     (void)jpeg_cust_mem_set_private(GET_CUST_MEM_DATA(cinfo), cmem);
 
     return 0;
@@ -229,7 +229,7 @@ gs_jpeg_mem_term(j_common_ptr cinfo)
     if (cinfo->client_data) {
         jpeg_cust_mem_data *custmptr = (jpeg_cust_mem_data *)cinfo->client_data;
         gs_memory_t *mem = (gs_memory_t *)(GET_CUST_MEM_DATA(cinfo)->priv);
-        
+
         gs_free_object(mem, custmptr, "gs_jpeg_mem_term");
         cinfo->client_data = NULL;
     }

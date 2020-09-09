@@ -44,9 +44,9 @@
 /*
  * The PCL printable region. In older HP printers this region was set to
  * 1/6" from the edge of the paper, irrespecitve of the paper size or the
- * device. However, recent HP printers allow the margin to be configurable 
- * and even set to 0 for full bleed.  If a non-zero margin is needed it can be 
- * set on the command line via -H (e.g. -H12x12x12x12 restores the previous 
+ * device. However, recent HP printers allow the margin to be configurable
+ * and even set to 0 for full bleed.  If a non-zero margin is needed it can be
+ * set on the command line via -H (e.g. -H12x12x12x12 restores the previous
  * 1/6" margin).  See doc/ghostpdl.pdf for details.
  */
 #define PRINTABLE_MARGIN_CP inch2coord(0.0)
@@ -393,7 +393,7 @@ new_page_size(pcl_state_t * pcs,
     reset_margins(pcs, for_passthrough);
 
     /* check if update_xfm_state changed the page size */
-    changed_page_size = !((int)old_page_size[0] == pcs->xfm_state.paper_size->width/100 && 
+    changed_page_size = !((int)old_page_size[0] == pcs->xfm_state.paper_size->width/100 &&
                           (int)old_page_size[1] == pcs->xfm_state.paper_size->height/100);
 
     /*
@@ -522,12 +522,12 @@ pcl_mark_page_for_current_pos(pcl_state_t * pcs)
         if (code < 0)
             /* shouldn't happen. */
             return code;
-        
+
         code = gx_path_current_point(gx_current_path(pcs->pgs), &pt);
         if (code < 0)
             /* shouldn't happen */
             return code;
-        
+
 
         /* half-open lower - not sure this is correct */
         if (pt.x >= page_box.p.x && pt.y >= page_box.p.y &&
@@ -571,7 +571,7 @@ pcl_mark_page_for_character(pcl_state_t * pcs, gs_fixed_point *org)
     return 0;
 }
 
-/* 
+/*
  *  Just use the current position to see if we marked the page.  This
  *  could be improved by using the bounding box of the path object but
  *  for page marking that case does not seem to come up in practice.
@@ -1055,8 +1055,8 @@ set_logical_page(pcl_args_t * pargs, pcl_state_t * pcs)
     return code;
 }
 
-/* 
- * Custom Paper Width/Length 
+/*
+ * Custom Paper Width/Length
  * from Windows Driver "HP Universal Printing PCL 5" (.GPD files) and
  * http://www.office.xerox.com/support/dctips/dc10cc0471.pdf
  *
@@ -1087,7 +1087,7 @@ set_paper_width(pcl_args_t * pargs, pcl_state_t * pcs)
     return 0;
 }
 
-int 
+int
 pcl_set_custom_paper_size(pcl_state_t *pcs, pcl_paper_size_t *p)
 {
     pcl_paper_size_t *psize = NULL;
@@ -1107,7 +1107,7 @@ pcl_set_custom_paper_size(pcl_state_t *pcs, pcl_paper_size_t *p)
         /* this should never happen - the custom paper size is
            always in the table */
         return -1;
-    
+
     return new_logical_page(pcs, 0, psize, false, false);
 }
 /*

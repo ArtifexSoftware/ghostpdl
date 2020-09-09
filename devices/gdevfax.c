@@ -69,7 +69,7 @@ gdev_fax_get_params(gx_device * dev, gs_param_list * plist)
         ecode = code;
      if ((code = param_write_bool(plist, "BlackIs1", &fdev->BlackIs1)) < 0)
         ecode = code;
- 
+
     return ecode;
 }
 int

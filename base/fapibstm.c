@@ -326,7 +326,7 @@ gs_fapi_bstm_set_mm_weight_vector(gs_fapi_server *server, gs_fapi_font *ff, floa
     (void)ff;
     (void)wvector;
     (void)length;
-    
+
     return gs_error_invalidaccess;
 }
 

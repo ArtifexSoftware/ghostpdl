@@ -220,7 +220,7 @@ hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
      */
     if (pgls->macro_level > 0 && (code == gs_error_NeedInput))
         code = gs_error_Fatal;
-        
+
     return (code == gs_error_NeedInput ? 0 : code);
 }
 

@@ -103,7 +103,7 @@ pcl_define_symbol_set(pcl_args_t * pargs, pcl_state_t * pcs)
 
     if (last_code > 255 || first_code > last_code)
         return e_Range;
-    
+
     {
         int num_codes = last_code - first_code + 1;  /* must be in [0,256] now. */
         int i;
@@ -185,13 +185,13 @@ pcl_symbol_set_control(pcl_args_t * pargs, pcl_state_t * pcs)
 
     switch (int_arg(pargs)) {
         case 0:
-            {                   
+            {
                 /* Delete all user-defined symbol sets. */
                 /* Note: When deleting symbol set(s), it is easier
                  * (safer?)  to decache and reselect fonts
                  * unconditionally.  (Consider, for example, deleting
                  * a downloaded overload of a built-in which might be
-                 * the default ID.) 
+                 * the default ID.)
                  */
                 pl_dict_release(&pcs->soft_symbol_sets);
                 pcl_decache_font(pcs, -1, true);

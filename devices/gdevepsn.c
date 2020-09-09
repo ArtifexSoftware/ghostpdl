@@ -171,7 +171,7 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         int tab_min_pixels = x_dpi * MIN_TAB_10THS / 10;
         int skip = 0, lnum = 0, pass, ypass;
         int code = 0;
-        
+
         char start_graphics;
         int first_pass;
         int last_pass;
@@ -195,12 +195,12 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
             /* This avoids divide by zero later on, bug 701843. */
             return_error(gs_error_rangecheck);
         }
-        
+
         buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "eps_print_page(buf1)");
         buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "eps_print_page(buf2)");
         in = buf1;
         out = buf2;
-        
+
 
         /* Check allocations */
         if ( buf1 == 0 || buf2 == 0 ) {

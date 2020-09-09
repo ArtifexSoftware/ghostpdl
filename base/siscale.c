@@ -930,7 +930,7 @@ do_init(stream_state        *st,
     ss->sizeofPixelOut = ss->params.BitsPerComponentOut / 8;
 
     ss->src_y = 0;
-    ss->src_size = 
+    ss->src_size =
         ss->params.WidthIn * ss->sizeofPixelIn * ss->params.spp_interp;
     ss->src_offset = 0;
     ss->dst_y = 0;
@@ -965,10 +965,10 @@ do_init(stream_state        *st,
                                                     ss->max_support*2,
                                                     sizeof(CONTRIB), "image_scale contrib_dst[*]");
     /* Allocate buffers for 1 row of source and destination. */
-    ss->dst = 
+    ss->dst =
         gs_alloc_byte_array(mem, (size_t)limited_WidthOut * ss->params.spp_interp,
                             ss->sizeofPixelOut, "image_scale dst");
-    ss->src = 
+    ss->src =
         gs_alloc_byte_array(mem, (size_t)ss->params.WidthIn * ss->params.spp_interp,
                             ss->sizeofPixelIn, "image_scale src");
     if (ss->tmp == 0 || ss->contrib == 0 || ss->items == 0 ||

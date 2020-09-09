@@ -1232,7 +1232,7 @@ int main(int argc, char *argv[])
                 code = 0;
             }
         }
-        
+
         if (code == 0)
             code = gsapi_init_with_args(instance, nargc, nargv);
 

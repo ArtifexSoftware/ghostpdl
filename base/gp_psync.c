@@ -215,7 +215,7 @@ gp_monitor_open(gp_monitor * mona)
     if (scode < 0) {
         goto done;
     }
-#else     
+#else
     ((gp_pthread_recursive_t *)mona)->self_id = 0;	/* Not valid unless mutex is locked */
     ((gp_pthread_recursive_t *)mona)->lcount = 0;
 #endif

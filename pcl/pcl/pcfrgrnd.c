@@ -102,7 +102,7 @@ build_foreground(pcl_state_t * pcs,
     }
 
     num_entries = pindexed->num_entries;
-    
+
     /* release the existing foreground */
     if (pfrgrnd != 0) {
         rc_decrement(pfrgrnd, "build pcl foreground");

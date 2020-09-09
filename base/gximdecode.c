@@ -22,7 +22,7 @@ monitoring in clist and for creating TIFF files for xpswrite device */
 /* We need to have the unpacking proc so that we can monitor the data for color
    or decode during xpswrite */
 void
-get_unpack_proc(gx_image_enum_common_t *pie, image_decode_t *imd, 
+get_unpack_proc(gx_image_enum_common_t *pie, image_decode_t *imd,
                 gs_image_format_t format, const float *decode) {
 
     static sample_unpack_proc_t procs[2][6] = {
