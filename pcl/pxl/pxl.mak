@@ -43,7 +43,7 @@ pxl.clean-not-config-clean: clean_gs
 	$(RMN_) $(PXLGEN)pxbfont.c $(PXLGEN)pxsymbol.c $(PXLGEN)pxsymbol.h
 	$(RM_) $(PXLOBJ)devs.tr6
 
-# devices are still created in the current directory.  Until that 
+# devices are still created in the current directory.  Until that
 # is fixed we will have to remove them from both directories.
 pxl.config-clean:
 	$(RM_) $(PXLOBJ)*.dev

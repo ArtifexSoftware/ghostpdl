@@ -30,7 +30,7 @@ LCUPSO_=$(O_)$(LIBCUPSOBJ)
 
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the cups source.
-LCUPS_CC=$(CUPS_CC) $(I_)$(LIBCUPSSRC) $(I_)$(LIBCUPSGEN)$(D)cups $(I_)$(LCUPSSRCDIR)$(D)libs 
+LCUPS_CC=$(CUPS_CC) $(I_)$(LIBCUPSSRC) $(I_)$(LIBCUPSGEN)$(D)cups $(I_)$(LCUPSSRCDIR)$(D)libs
 
 # Define the name of this makefile.
 LCUPS_MAK=$(GLSRC)lcups.mak $(TOP_MAKEFILES)
@@ -79,7 +79,7 @@ LIBCUPS_OBJS =\
 	$(LIBCUPSOBJ)cups_snpf.$(OBJ) \
 	$(LIBCUPSOBJ)usersys.$(OBJ) \
 	$(LIBCUPSOBJ)ppd-cache.$(OBJ) \
-	$(LIBCUPSOBJ)thread.$(OBJ) 
+	$(LIBCUPSOBJ)thread.$(OBJ)
 #	$(LIBCUPSOBJ)sidechannel.$(OBJ) \
 #	$(LIBCUPSOBJ)getifaddrs.$(OBJ) \
 #	$(LIBCUPSOBJ)pwg-ppd.$(OBJ) \
@@ -138,12 +138,12 @@ $(LIBCUPSGEN)lcups_0.dev : $(ECHOGS_XE) $(LIBCUPS_OBJS) $(LIBCUPS_DEPS)
 $(LIBCUPSGEN)$(D)cups$(D)config.h : $(LCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(LIBCUPS_DEPS)
 	$(CP_) $(LCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(LIBCUPSGEN)$(D)cups$(D)config.h
 
-$(LIBCUPSOBJ)adminutil.$(OBJ) : $(LIBCUPSSRC)adminutil.c $(LIBCUPSGEN)$(D)cups$(D)config.h $(LIBCUPS_DEPS) 
+$(LIBCUPSOBJ)adminutil.$(OBJ) : $(LIBCUPSSRC)adminutil.c $(LIBCUPSGEN)$(D)cups$(D)config.h $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)adminutil.$(OBJ) $(C_) $(LIBCUPSSRC)adminutil.c
-	
+
 $(LIBCUPSOBJ)array.$(OBJ) : $(LIBCUPSSRC)array.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)array.$(OBJ) $(C_) $(LIBCUPSSRC)array.c
-	
+
 $(LIBCUPSOBJ)attr.$(OBJ) : $(LIBCUPSSRC)attr.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)attr.$(OBJ) $(C_) $(LIBCUPSSRC)attr.c
 

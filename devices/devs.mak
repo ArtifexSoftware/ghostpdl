@@ -1709,7 +1709,7 @@ $(DEVOBJ)gdevtsep_1.$(OBJ) : $(DEVSRC)gdevtsep.c $(PDEVH) $(stdint__h)\
 
 $(DEVOBJ)gdevtsep.$(OBJ) : $(DEVOBJ)gdevtsep_$(WITH_CAL).$(OBJ)
 	$(CP_) $(DEVOBJ)gdevtsep_$(WITH_CAL).$(OBJ) $(DEVOBJ)gdevtsep.$(OBJ)
-			 
+
 
 # TIFF Scaled (downscaled gray -> mono), configurable compression
 

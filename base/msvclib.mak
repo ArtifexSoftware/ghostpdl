@@ -14,7 +14,7 @@
 #
 # makefile for Microsoft Visual C++ 4.1 or later, Windows NT or Windows 95 LIBRARY.
 #
-# All configurable options are surrounded by !ifndef/!endif to allow 
+# All configurable options are surrounded by !ifndef/!endif to allow
 # preconfiguration from within another makefile.
 
 # If we are building MEMENTO=1, then adjust default debug flags

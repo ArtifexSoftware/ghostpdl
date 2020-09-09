@@ -32,7 +32,7 @@ LCUPSIO_=$(O_)$(LIBCUPSIOBJ)
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the cups source.
 LCUPSI_CC=$(CUPS_CC) $(I_)$(LIBCUPSISRC) $(I_)$(LIBCUPSIGEN)$(D)cups $(I_)$(LCUPSISRCDIR)$(D)libs $(I_)$(GLGENDIR) \
-         $(I_)$(ZSRCDIR) $(I_)$(PNGSRCDIR) $(I_)$(TIFFSRCDIR) $(I_)$(TIFFCONFDIR) $(I_)$(TI_) 
+         $(I_)$(ZSRCDIR) $(I_)$(PNGSRCDIR) $(I_)$(TIFFSRCDIR) $(I_)$(TIFFCONFDIR) $(I_)$(TI_)
 
 # Define the name of this makefile.
 LCUPSI_MAK=$(GLSRC)lcupsi.mak $(TOP_MAKEFILES)
@@ -77,49 +77,49 @@ $(LIBCUPSIOBJ)image-bmp.$(OBJ) : $(LIBCUPSISRC)image-bmp.c $(LIBCUPSI_DEPS)
 
 $(LIBCUPSIOBJ)image-colorspace.$(OBJ) : $(LIBCUPSISRC)image-colorspace.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-colorspace.$(OBJ) $(C_) $(LIBCUPSISRC)image-colorspace.c
-	
+
 $(LIBCUPSIOBJ)image-gif.$(OBJ) : $(LIBCUPSISRC)image-gif.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-gif.$(OBJ) $(C_) $(LIBCUPSISRC)image-gif.c
-	
+
 $(LIBCUPSIOBJ)image-jpeg.$(OBJ) : $(LIBCUPSISRC)image-jpeg.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-jpeg.$(OBJ) $(C_) $(LIBCUPSISRC)image-jpeg.c
-	
+
 $(LIBCUPSIOBJ)image-photocd.$(OBJ) : $(LIBCUPSISRC)image-photocd.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-photocd.$(OBJ) $(C_) $(LIBCUPSISRC)image-photocd.c
-	
+
 $(LIBCUPSIOBJ)image-pix.$(OBJ) : $(LIBCUPSISRC)image-pix.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-pix.$(OBJ) $(C_) $(LIBCUPSISRC)image-pix.c
-	
+
 $(LIBCUPSIOBJ)image-png.$(OBJ) : $(LIBCUPSISRC)image-png.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-png.$(OBJ) $(C_) $(LIBCUPSISRC)image-png.c
-	
+
 $(LIBCUPSIOBJ)image-pnm.$(OBJ) : $(LIBCUPSISRC)image-pnm.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-pnm.$(OBJ) $(C_) $(LIBCUPSISRC)image-pnm.c
-	
+
 $(LIBCUPSIOBJ)image-sgi.$(OBJ) : $(LIBCUPSISRC)image-sgi.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-sgi.$(OBJ) $(C_) $(LIBCUPSISRC)image-sgi.c
-	
+
 $(LIBCUPSIOBJ)image-sgilib.$(OBJ) : $(LIBCUPSISRC)image-sgilib.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-sgilib.$(OBJ) $(C_) $(LIBCUPSISRC)image-sgilib.c
-	
+
 $(LIBCUPSIOBJ)image-sun.$(OBJ) : $(LIBCUPSISRC)image-sun.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-sun.$(OBJ) $(C_) $(LIBCUPSISRC)image-sun.c
-	
+
 $(LIBCUPSIOBJ)image-tiff.$(OBJ) : $(LIBCUPSISRC)image-tiff.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-tiff.$(OBJ) $(C_) $(LIBCUPSISRC)image-tiff.c
-	
+
 $(LIBCUPSIOBJ)image-zoom.$(OBJ) : $(LIBCUPSISRC)image-zoom.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-zoom.$(OBJ) $(C_) $(LIBCUPSISRC)image-zoom.c
-	
+
 $(LIBCUPSIOBJ)image.$(OBJ) : $(LIBCUPSISRC)image.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image.$(OBJ) $(C_) $(LIBCUPSISRC)image.c
-	
+
 $(LIBCUPSIOBJ)error.$(OBJ) : $(LIBCUPSISRC)error.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)error.$(OBJ) $(C_) $(LIBCUPSISRC)error.c
-	
+
 $(LIBCUPSIOBJ)interpret.$(OBJ) : $(LIBCUPSISRC)interpret.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)interpret.$(OBJ) $(C_) $(LIBCUPSISRC)interpret.c
-	
+
 $(LIBCUPSIOBJ)cupsraster.$(OBJ) : $(LIBCUPSISRC)cupsraster.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)cupsraster.$(OBJ) $(C_) $(LIBCUPSISRC)cupsraster.c
-	
+

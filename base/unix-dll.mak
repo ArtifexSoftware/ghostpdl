@@ -253,7 +253,7 @@ so-only:
                                    $(PCL_TARGET)-so-links-subtarget \
                                    $(XPS_TARGET)-so-links-subtarget \
                                    $(GPDL_TARGET)-so-links-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
-	
+
 
 so-only-stripped:
 	$(MAKE) $(SUB_MAKE_OPTION) so-only-stripped-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)

@@ -44,14 +44,14 @@ SHARE_LCUPS=0
 LCUPS_NAME=
 LCUPSSRCDIR=cups
 LCUPSBUILDTYPE=win
-CUPS_CC=$(CC) $(CFLAGS) -DWIN32 
+CUPS_CC=$(CC) $(CFLAGS) -DWIN32
 !endif
 
 !ifndef LCUPSISRCDIR
 SHARE_LCUPSI=0
 LCUPSI_NAME=
 LCUPSISRCDIR=cups
-CUPS_CC=$(CC) $(CFLAGS) -DWIN32 
+CUPS_CC=$(CC) $(CFLAGS) -DWIN32
 !endif
 
 # Define the platform name.
@@ -64,7 +64,7 @@ GSPLATFORM=mswin32_
 !endif
 !endif
 
-# Define the auxiliary program dependency. We use this to 
+# Define the auxiliary program dependency. We use this to
 # preconstruct ccf32.tr to get around the limit on the maximum
 # length of a command line.
 

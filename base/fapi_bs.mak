@@ -37,11 +37,11 @@ $(GLD)fapib1.dev : $(FAPI_BS_MAK) $(ECHOGS_XE) \
    $(GLOBJ)glyph.$(OBJ) $(GLOBJ)t1.$(OBJ) $(GLOBJ)t2kstrm.$(OBJ) $(GLOBJ)truetype.$(OBJ)\
    $(GLOBJ)util.$(OBJ) $(GLOBJ)fnt.$(OBJ) $(GLOBJ)pclread.$(OBJ) $(GLOBJ)t2ksc.$(OBJ)\
    $(GLOBJ)write_t1.$(OBJ) $(GLOBJ)write_t2.$(OBJ) $(GLOBJ)wrfont.$(OBJ) $(MAKEDIRS)
-	$(SETMOD) $(GLD)fapib1 $(GLOBJ)fapibstm.$(OBJ) 
+	$(SETMOD) $(GLD)fapib1 $(GLOBJ)fapibstm.$(OBJ)
 	$(ADDMOD) $(GLD)fapib1 $(GLOBJ)t2k.$(OBJ) $(GLOBJ)t2kextra.$(OBJ) $(GLOBJ)fnt.$(OBJ)
 	$(ADDMOD) $(GLD)fapib1 $(GLOBJ)tsimem.$(OBJ) $(GLOBJ)t2ktt.$(OBJ) $(GLOBJ)util.$(OBJ)
 	$(ADDMOD) $(GLD)fapib1 $(GLOBJ)t2kstrm.$(OBJ) $(GLOBJ)truetype.$(OBJ) $(GLOBJ)cstream.$(OBJ)
-	$(ADDMOD) $(GLD)fapib1 $(GLOBJ)fft1hint.$(OBJ) $(GLOBJ)ghints.$(OBJ) $(GLOBJ)glyph.$(OBJ) 
+	$(ADDMOD) $(GLD)fapib1 $(GLOBJ)fft1hint.$(OBJ) $(GLOBJ)ghints.$(OBJ) $(GLOBJ)glyph.$(OBJ)
 	$(ADDMOD) $(GLD)fapib1 $(GLOBJ)t1.$(OBJ) $(GLOBJ)pclread.$(OBJ) $(GLOBJ)t2ksc.$(OBJ)
 	$(ADDMOD) $(GLD)fapib1 $(GLOBJ)write_t1.$(OBJ) $(GLOBJ)write_t2.$(OBJ) $(GLOBJ)wrfont.$(OBJ)
 	$(ADDMOD) $(GLD)fapib1 -plugin fapibstm

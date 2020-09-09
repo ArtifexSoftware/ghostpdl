@@ -203,10 +203,10 @@ $(TIFFOBJ)gstiffio.$(OBJ) : $(TIFFOBJ)gstiffio_$(SHARE_LIBTIFF).$(OBJ) $(LIBTIFF
 
 $(TIFFGEN)tif_config.h: $(TIFFCONFIG_H) $(LIBTIFF_MAK) $(MAKEDIRS)
 	$(CP_) $(TIFFCONFIG_H) $(TIFFGEN)tif_config.h
-	
+
 $(TIFFGEN)tiffconf.h: $(TIFFCONF_H) $(LIBTIFF_MAK) $(MAKEDIRS)
 	$(CP_) $(TIFFCONF_H) $(TIFFGEN)tiffconf.h
-	
+
 # Define the version of libtiff.dev that we are actually using.
 $(TIFFGEN)libtiff.dev : $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev $(LIBTIFF_MAK) $(MAKEDIRS)
 	$(CP_) $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev $(TIFFGEN)libtiff.dev
