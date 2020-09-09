@@ -392,8 +392,7 @@ mem_abuf_copy_mono(gx_device * dev,
     fit_copy_xyw(dev, base, sourcex, sraster, id, x, y, w, h);	/* don't limit h */
     if (w <= 0 || h <= 0)
         return 0;
-    if (mdev->mapped_height != 0 && mdev->mapped_start != 0 &&
-        mdev->save_color != one) {
+    if (mdev->mapped_height != 0 && mdev->save_color != one) {
         /* Color has changed. Better flush. */
         int code = abuf_flush(mdev);
         if (code < 0)
@@ -429,8 +428,7 @@ mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     fit_fill_xy(dev, x, y, w, h);
     fit_fill_w(dev, x, w);	/* don't limit h */
     /* or check w <= 0, h <= 0 */
-    if (mdev->mapped_height != 0 && mdev->mapped_start != 0 &&
-        mdev->save_color != color) {
+    if (mdev->mapped_height != 0 && mdev->save_color != color) {
         /* Color has changed. Better flush. */
         int code = abuf_flush(mdev);
         if (code < 0)
@@ -471,7 +469,7 @@ mem_abuf_fill_rectangle_hl_color(gx_device * dev, const gs_fixed_rect *rect,
     fit_fill_xy(dev, x, y, w, h);
     fit_fill_w(dev, x, w);	/* don't limit h */
     /* or check w <= 0, h <= 0 */
-    if (mdev->mapped_height != 0 && mdev->mapped_start != 0 &&
+    if (mdev->mapped_height != 0 &&
         memcmp(mdev->save_hl_color, pdcolor, sizeof(*pdcolor)) != 0) {
         /* Color has changed. Better flush. */
         int code = abuf_flush(mdev);
