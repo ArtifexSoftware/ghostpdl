@@ -36,7 +36,7 @@ public abstract class Device {
 
 	/**
 	 * Creates a new device with the given device name. When this constructor is called,
-	 * an instance of Ghostcript cannot exist or an exception will be thrown. The check of
+	 * an instance of Ghostscript cannot exist or an exception will be thrown. The check of
 	 * whether an instance already exists does not include instances directly created
 	 * through <code>GSAPI.gsapi_new_instance</code>.
 	 *
@@ -254,6 +254,22 @@ public abstract class Device {
 	 */
 	protected final GSInstance getInstance() {
 		return instance;
+	}
+
+	protected final String toArrayParameter(String[] array) {
+		StringBuilder builder = new StringBuilder();
+		if (array.length > 0) {
+			builder.append(array[0]);
+			for (int i = 1; i < array.length; i++) {
+				builder.append(',');
+				builder.append(array[i]);
+			}
+		}
+		return builder.toString();
+	}
+
+	protected final String toArrayParameter(List<String> list) {
+		return toArrayParameter(list.toArray(new String[list.size()]));
 	}
 
 	@Override
