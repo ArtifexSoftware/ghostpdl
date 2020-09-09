@@ -4170,7 +4170,7 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
         blend_mode == BLEND_MODE_Compatible ||
         blend_mode == BLEND_MODE_CompatibleOverprint;
     int num_chan = buf->n_chan;
-    int num_comp = num_chan - 1;
+    int num_comp = num_chan - 1 - has_tags;
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
@@ -4359,7 +4359,7 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     bool has_tags = buf->has_tags;
     bool knockout = buf->knockout;
     int num_chan = buf->n_chan;
-    int num_comp = num_chan - 1;
+    int num_comp = num_chan - 1 - has_tags;
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
