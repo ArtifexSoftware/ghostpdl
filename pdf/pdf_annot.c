@@ -34,6 +34,7 @@
 #include "gspath2.h"
 #include "pdf_image.h"
 #include "gxfarith.h"
+#include "pdf_mark.h"
 
 typedef int (*annot_func)(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done);
 
@@ -51,6 +52,12 @@ typedef struct {
     annot_LE_func func;
 } annot_LE_dispatch_t;
 
+typedef int (*annot_preserve_func)(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype);
+
+typedef struct {
+    const char *subtype;
+    annot_preserve_func func;
+} annot_preserve_dispatch_t;
 
 static int pdfi_annot_start_transparency(pdf_context *ctx, pdf_dict *annot)
 {
@@ -2888,13 +2895,102 @@ static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
     return code;
 }
 
+static int pdfi_annot_preserve_default(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+{
+    int code = 0;
+    gs_matrix ctm;
+
+    gs_currentmatrix(ctx->pgs, &ctm);
+
+    code = pdfi_mark_from_dict(ctx, annot, &ctm, "ANN");
+    return code;
+}
+
+static int pdfi_annot_preserve_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+{
+    return 0;
+}
+
+static int pdfi_annot_preserve_Line(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+{
+    return 0;
+}
+
+static int pdfi_annot_preserve_Link(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+{
+    return 0;
+}
+
+static int pdfi_annot_preserve_StrikeOut(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+{
+    return 0;
+}
+
+static int pdfi_annot_preserve_Squiggly(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+{
+    return 0;
+}
+
+static int pdfi_annot_preserve_Underline(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+{
+    return 0;
+}
+
+static int pdfi_annot_preserve_Widget(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+{
+    /* According to the gs implementation:
+%% Widget annotations are only used with AcroForms, and since we don't preserve AcroForms
+%% we don't want to preserve widget annotations either, because the consumer of the new
+%% PDF won't know what values they should take. So we draw widget annotations instead. If we
+%% ever preserve AcroForms then we should alter this to preserve Widgets as well.
+    */
+
+    return pdfi_annot_draw(ctx, annot, subtype);
+}
+
+annot_preserve_dispatch_t annot_preserve_dispatch[] = {
+    {"Highlight", pdfi_annot_preserve_Highlight},
+    {"Line", pdfi_annot_preserve_Line},
+    {"Link", pdfi_annot_preserve_Link},
+    {"StrikeOut", pdfi_annot_preserve_StrikeOut},
+    {"Squiggly", pdfi_annot_preserve_Squiggly},
+    {"Underline", pdfi_annot_preserve_Underline},
+    {"Widget", pdfi_annot_preserve_Widget},
+    {"Circle", pdfi_annot_preserve_default},
+    {"FileAttachment", pdfi_annot_preserve_default},
+    {"FreeText", pdfi_annot_preserve_default},
+    {"Ink", pdfi_annot_preserve_default},
+    {"Movie", pdfi_annot_preserve_default},
+    {"Popup", pdfi_annot_preserve_default},
+    {"Sound", pdfi_annot_preserve_default},
+    {"Square", pdfi_annot_preserve_default},
+    {"Stamp", pdfi_annot_preserve_default},
+    {"Text", pdfi_annot_preserve_default},
+    {"TrapNet", pdfi_annot_preserve_default},
+    { NULL, NULL},
+};
+
 static int pdfi_annot_preserve(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
 {
     int code = 0;
+    annot_preserve_dispatch_t *dispatch_ptr;
 
     /* If not preserving this subtype, draw it instead */
     if (!pdfi_annot_preserve_type(ctx, subtype))
         return pdfi_annot_draw(ctx, annot, subtype);
+
+    /* Handle the annotation */
+    for (dispatch_ptr = annot_preserve_dispatch; dispatch_ptr->subtype; dispatch_ptr ++) {
+        if (pdfi_name_is(subtype, dispatch_ptr->subtype)) {
+            code = dispatch_ptr->func(ctx, annot, subtype);
+            break;
+        }
+    }
+
+    /* If there is no handler, just draw it */
+    /* NOTE: gs does a drawwidget here instead, and also fails to do PolyLine correctly (?) */
+    if (!dispatch_ptr->subtype)
+        code = pdfi_annot_draw(ctx, annot, subtype);
 
     return code;
 }

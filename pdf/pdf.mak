@@ -123,6 +123,9 @@ $(PDFOBJ)pdf_page.$(OBJ): $(PDFSRC)pdf_page.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDI
 $(PDFOBJ)pdf_annot.$(OBJ): $(PDFSRC)pdf_annot.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_annot.c $(PDFO_)pdf_annot.$(OBJ)
 
+$(PDFOBJ)pdf_mark.$(OBJ): $(PDFSRC)pdf_mark.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_mark.c $(PDFO_)pdf_mark.$(OBJ)
+
 $(PDFOBJ)pdf_sec.$(OBJ): $(PDFSRC)pdf_sec.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_sec.c $(PDFO_)pdf_sec.$(OBJ)
 
@@ -207,6 +210,7 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_image.$(OBJ)\
     $(PDFOBJ)pdf_page.$(OBJ)\
     $(PDFOBJ)pdf_annot.$(OBJ)\
+    $(PDFOBJ)pdf_mark.$(OBJ)\
     $(PDFOBJ)pdf_agl.$(OBJ) \
     $(PDFOBJ)pdf_fapi.$(OBJ)\
     $(PDFOBJ)pdf_font.$(OBJ)\
