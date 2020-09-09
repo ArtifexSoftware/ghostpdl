@@ -144,7 +144,7 @@ zcheck_r6_password(i_ctx_t * i_ctx_p)
         return_error(gs_error_typecheck);
     if (!r_has_type(Pref, t_string))
         return_error(gs_error_typecheck);
-    
+
     code = dict_find_string(CryptDict, "O", &Oref);
     if (code < 0)
         return code;

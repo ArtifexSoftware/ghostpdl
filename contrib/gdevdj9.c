@@ -634,7 +634,7 @@ static int
 cdj970_get_params(gx_device * pdev, gs_param_list * plist)
 {
     int code;
-    
+
     (void) (
         (code = gdev_prn_get_params(pdev, plist)) < 0 ||
         (code = param_write_int(plist, "Quality", &cdj970->quality)) < 0 ||

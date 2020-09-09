@@ -100,7 +100,7 @@ struct pdf14_mask_s {
 /* A structure to hold information about the group color related
  * procs and other information. These may change depending upon
  * if the blending space is different than the base space.
- * The structure is a list that is updated upo every transparency 
+ * The structure is a list that is updated upo every transparency
  * group push and pop */
 
 typedef struct pdf14_group_color_s pdf14_group_color_t;

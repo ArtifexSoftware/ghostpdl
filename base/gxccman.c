@@ -79,7 +79,7 @@ gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
        cache character memory before filling the table.  The searching
        code uses an empty table entry as a sentinel. */
     chsize = max(chsize, ROUND_UP(bmax, sizeof_cached_char) / sizeof_cached_char + 1);
-    
+
     /* Round up chsize to a power of 2. */
     while (chsize & (chsize + 1))
         chsize |= chsize >> 1;

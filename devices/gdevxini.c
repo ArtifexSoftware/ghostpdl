@@ -892,7 +892,7 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
                                   dev->width, dev->height, dev->dname);
             return_error(gs_error_rangecheck);
         }
-        
+
         /* points */
         dev->MediaSize[0] = (float)dev->width / xdev->x_pixels_per_inch * 72;
         dev->MediaSize[1] = (float)dev->height / xdev->y_pixels_per_inch * 72;
@@ -927,7 +927,7 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
     }
     xdev->MaxTempPixmap = values.MaxTempPixmap;
     xdev->MaxTempImage = values.MaxTempImage;
-    
+
     if (clear_window || xdev->space_params.MaxBitmap != orig_MaxBitmap) {
         if (xdev->is_open)
             gdev_x_clear_window(xdev);

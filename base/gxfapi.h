@@ -334,9 +334,9 @@ struct gs_fapi_server_s
     /* Used to use the stored 'OrigFont' entry but */
     /* this did not change f a font was defined    */
     /* using an existing base font */
-         
-         
-         
+
+
+
     gs_fapi_retcode(*ensure_open) (gs_fapi_server *server, const char *param, int param_size);
     gs_fapi_retcode(*get_scaled_font) (gs_fapi_server *server, gs_fapi_font *ff, const gs_fapi_font_scale *scale, const char *xlatmap, gs_fapi_descendant_code dc);
     gs_fapi_retcode(*get_decodingID) (gs_fapi_server *server, gs_fapi_font *ff, const char **decodingID);
@@ -352,7 +352,7 @@ struct gs_fapi_server_s
     gs_fapi_retcode(*get_char_outline_metrics) (gs_fapi_server *server, gs_fapi_font *ff, gs_fapi_char_ref *c, gs_fapi_metrics *metrics);
     gs_fapi_retcode(*get_char_outline) (gs_fapi_server *server, gs_fapi_path *p);
     gs_fapi_retcode(*release_char_data) (gs_fapi_server *server);
-         
+
     gs_fapi_retcode(*release_typeface) (gs_fapi_server *server, void *server_font_data);
     gs_fapi_retcode(*check_cmap_for_GID) (gs_fapi_server *server, uint *index);
     gs_fapi_retcode(*get_font_info) (gs_fapi_server *server, gs_fapi_font *ff, gs_fapi_font_info item, int index, void *data, int *datalen);
@@ -442,7 +442,7 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
  * to hold the requested information - data == NULL, or data_len too
  * small will see data_len set to the required amount, and an error
  * returned.
- */ 
+ */
 int
 gs_fapi_get_font_info(gs_font *pfont, gs_fapi_font_info item, int index,
                       void *data, int *data_len);

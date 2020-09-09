@@ -239,7 +239,7 @@ iodev_diskn_fopen(gx_io_device * iodev, const char *fname, const char *access,
     }
 
     code = iodev_os_gp_fopen(iodev_default(pstate->memory), realname, access, pfile, rfname, rnamelen);
-    
+
 done:
     if (realname != NULL)
         gs_free_object(pstate->memory, realname, "iodev_diskn_fopen(realname)");
@@ -359,7 +359,7 @@ diskn_enumerate_files(gs_memory_t * mem, gx_io_device * iodev, const char *pat,
                       uint patlen)
 {
     diskn_state * pstate = (diskn_state *)iodev->state;
-    
+
     return (file_enum *)map_file_enum_init(mem, (char *)pstate->root, pat, patlen);
 }
 
@@ -630,7 +630,7 @@ MapFileRename(gs_memory_t *mem, const char * rootpath, const char * newfilename,
     oldfullname = (char *)gs_alloc_bytes(mem, ototlen, "MapFileRename(oldfullname)");
     newfullname = (char *)gs_alloc_bytes(mem, ntotlen, "MapFileRename(newfullname)");
 
-    if (oldfullname && newfullname) {    
+    if (oldfullname && newfullname) {
         gs_sprintf(oldfullname, "%s%s", rootpath, oldfilename);
         gs_sprintf(newfullname, "%s%s", rootpath, newfilename);
         rename(oldfullname, newfullname);

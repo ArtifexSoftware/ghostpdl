@@ -367,17 +367,17 @@ hpgl_scaling_points_set(hpgl_state_t *pgls, int32 *ptxy, bool track)
 
     pgls->g.P1.x = ptxy[0];
     pgls->g.P1.y = ptxy[1];
- 
+
   /* if either coordinate is equal it is incremented by 1 */
     if (pgls->g.P1.x == pgls->g.P2.x)
         pgls->g.P2.x++;
     if (pgls->g.P1.y == pgls->g.P2.y)
         pgls->g.P2.y++;
-    
+
     return 0;
 }
 
-    
+
 /* IP p1x,p1y[,p2x,p2y]; */
 /* IP; */
 int

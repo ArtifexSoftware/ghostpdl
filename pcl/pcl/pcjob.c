@@ -182,7 +182,7 @@ pcl_duplex_page_side_select(pcl_args_t * pargs, pcl_state_t * pcs)
         if (errcode < 0)
             return errcode;
     }
-    
+
     /* if there is an error (code < 0) or the page is unmarked (code
        == 0) then nothing to update */
     if (code <= 0)
@@ -330,7 +330,7 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             /* resolution is always a single number in PJL */
             res[0] = res[1] = pcl_pjl_res(pcs);
 
-            /* 
+            /*
              * again we only have a single number from PJL so just
              *  check the width
              */

@@ -171,7 +171,7 @@ $(PXLOBJ)pximage.$(OBJ): $(PXLSRC)pximage.c $(AK) $(std_h)\
  $(gsrefct_h) $(gsrop_h) $(gsstate_h) $(gsstruct_h) $(gsuid_h) $(gsutil_h)\
  $(gxbitmap_h) $(gxcspace_h) $(gxdevice_h) $(gxcolor2_h) $(gxpcolor_h)\
  $(scommon_h) $(srlx_h) $(strimpl_h) $(gxdcolor_h) \
- $(pldraw_h) $(jpeglib__h) $(sdct_h) $(sjpeg_h)\
+ $(gxgstate_h) $(jpeglib__h) $(sdct_h) $(sjpeg_h)\
  $(pxerrors_h) $(pxptable_h) $(pxoper_h) $(pxstate_h) $(gdebug_h) \
  $(PXL_MAK) $(MAKEDIRS)
 	$(PXLCCC) $(PXLSRC)pximage.c $(PXLO_)pximage.$(OBJ)
@@ -180,7 +180,7 @@ $(PXLOBJ)pxink.$(OBJ): $(PXLSRC)pxink.c $(math__h) $(stdio__h) $(memory__h)\
  $(gdebug_h) $(gscolor2_h) $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h)\
  $(gspath2_h) $(gstypes_h) $(gscie_h) $(gscrd_h) $(gsstate_h)\
  $(gxarith_h) $(gxcspace_h) $(gxdevice_h) $(gxht_h) $(gxstate_h)\
- $(pxoper_h) $(pxptable_h) $(pxstate_h) $(plht_h) $(pldraw_h)\
+ $(pxoper_h) $(pxptable_h) $(pxstate_h) $(plht_h)\
  $(gzstate_h) $(gxdevsop_h) $(gxcolor2_h) \
  $(PXL_MAK) $(MAKEDIRS)
 	$(PXLCCC) $(PXLSRC)pxink.c $(PXLO_)pxink.$(OBJ)

@@ -313,7 +313,7 @@ check_cid_hdr(pcl_state_t * pcs, pcl_cid_data_t * pcid)
         pcidh->bits_per_primary[2] = 8;
     }
 
-    /* 
+    /*
      * All long form color commands appear to be deprecated on modern
      * HP devices.  We simply truncate all long form commands to the 6
      * byte short form.

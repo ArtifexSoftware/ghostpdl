@@ -1805,7 +1805,7 @@ get_char(gs_fapi_server *server, gs_fapi_font *ff, gs_fapi_char_ref *c,
          */
         code = CGIFFwidth2(FSA &glyph_width_code, 1, sizeof(glyph_width), glyph_width);
     }
-    
+
     if (code >= 0) {
         code = CGIFchar_handle(FSA cc, &result, (SW16) 0);
     }
@@ -1816,7 +1816,7 @@ get_char(gs_fapi_server *server, gs_fapi_font *ff, gs_fapi_char_ref *c,
     if (code == ERR_TT_UNDEFINED_INSTRUCTION
 #if UFST_VERSION_MAJOR >= 6
         || (code >= ERR_TT_NULL_FUNCDEF && code <= ERR_TT_STACK_OUT_OF_RANGE)
-#endif   
+#endif
         ) {
         int savehint = FC_DONTHINTTT(fc);
 
@@ -1861,7 +1861,7 @@ get_char(gs_fapi_server *server, gs_fapi_font *ff, gs_fapi_char_ref *c,
         code2 = CGIFchar_handle(FSA c1, &result, (SW16) 0);
         if (code2 && code2 != ERR_fixed_space && code2 != ERR_bm_buff
             && code2 != ERR_bm_too_big) {
-            
+
             notdef_str.data = (byte *)space;
             notdef_str.size = strlen(space);
             ff->char_data = (void *)&notdef_str;
@@ -1911,7 +1911,7 @@ get_char(gs_fapi_server *server, gs_fapi_font *ff, gs_fapi_char_ref *c,
         design_bbox[1] = pbm->top_indent;
         design_bbox[2] = pbm->black_width;
         design_bbox[3] = pbm->black_depth;
-        
+
         if (ff->is_vertical) {
             /* FIXME: this probably isn't need - we can probably just use glyph_width */
             if (pIFS->glyphMetricsDU.aw.x == 0 && pIFS->glyphMetricsDU.aw.y == 0) {
@@ -1958,13 +1958,13 @@ get_char(gs_fapi_server *server, gs_fapi_font *ff, gs_fapi_char_ref *c,
         design_bbox[1] = pol->bottom;
         design_bbox[2] = pol->right;
         design_bbox[3] = pol->top;
-        
+
         r->char_data = (IFOUTLINE *) result;
     }
     else {
         design_escapement[0] = glyph_width[0];
         design_escapement[1] = glyph_width[1];
-        
+
         design_bbox[0] = design_bbox[1] = design_bbox[2] = design_bbox[3] = 0;
     }
 #if 1                           /* UFST 5.0 */
@@ -2224,7 +2224,7 @@ gs_fapi_ufst_set_mm_weight_vector(gs_fapi_server *server, gs_fapi_font *ff, floa
     (void)ff;
     (void)wvector;
     (void)length;
-    
+
     return gs_error_invalidaccess;
 }
 

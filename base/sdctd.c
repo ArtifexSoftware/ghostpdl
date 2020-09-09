@@ -251,7 +251,7 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                     /*case JPEG_HEADER_OK: */
             }
 
-            /* 
+            /*
              * Default the color transform if not set and check for
              * the Adobe marker and use Adobe's transform if the
              * marker is set.
@@ -262,10 +262,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                 else
                     ss->ColorTransform = 0;
             }
-            
+
             if (jddp->dinfo.saw_Adobe_marker)
                 ss->ColorTransform = jddp->dinfo.Adobe_transform;
-            
+
             switch (jddp->dinfo.num_components) {
             case 3:
                 jddp->dinfo.jpeg_color_space =

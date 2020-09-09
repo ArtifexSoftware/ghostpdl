@@ -155,7 +155,7 @@ tile_clip_set_phase(gx_device_tile_clip * cdev, int px, int py)
 /* Fill a rectangle with high level devn color by tiling with the mask. */
 static int
 tile_clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
-                const gs_gstate *pgs, const gx_drawing_color *pdcolor, 
+                const gs_gstate *pgs, const gx_drawing_color *pdcolor,
                 const gx_clip_path *pcpath)
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
@@ -177,7 +177,7 @@ tile_clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     w = fixed2int(rect->q.x) - x;
     h = fixed2int(rect->q.y) - y;
     return (*dev_proc(tdev, strip_tile_rect_devn))(tdev, &cdev->tiles,
-                                                    x, y, w, h, &dcolor0, &dcolor1, 
+                                                    x, y, w, h, &dcolor0, &dcolor1,
                                                     cdev->phase.x, cdev->phase.y);
 }
 
@@ -379,7 +379,7 @@ tile_clip_copy_alpha(gx_device * dev,
 static int
 tile_clip_copy_alpha_hl_color(gx_device * dev,
                 const byte * data, int sourcex, int raster, gx_bitmap_id id,
-                int x, int y, int w, int h, const gx_drawing_color *pdcolor, 
+                int x, int y, int w, int h, const gx_drawing_color *pdcolor,
                 int depth)
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;

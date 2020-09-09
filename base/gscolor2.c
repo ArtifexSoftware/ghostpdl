@@ -218,7 +218,7 @@ const gs_color_space_type gs_color_space_type_Indexed = {
 };
 
 /* To keep things vectorized and avoid an if test during the remap proc we
-   have another set of procedures to use for indexed color spaces when 
+   have another set of procedures to use for indexed color spaces when
    someone has specified a named color profile and the base space of the
    index color space is DeviceN or Separation */
 const gs_color_space_type gs_color_space_type_Indexed_Named = {

@@ -174,7 +174,7 @@ $(PLOBJ)plchar.$(OBJ): $(PLSRC)plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
- $(plfont_h) $(plvalue_h) $(plchar_h) \
+ $(plfont_h) $(plvalue_h) $(plchar_h) $(gxgstate_h)\
  $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plchar.c $(PLO_)plchar.$(OBJ)
 
@@ -283,7 +283,7 @@ $(PLOBJ)plapi.$(OBJ): $(PLSRC)plapi.c $(plmain_h) $(plapi_h)\
          $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plapi.c $(PLO_)plapi.$(OBJ)
 
-pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ)
+pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ)
 
 # NB plapi is misplaced here.
 pl_obj2=$(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pltop.$(OBJ) $(PLOBJ)plapi.$(OBJ)

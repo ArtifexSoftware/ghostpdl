@@ -853,7 +853,7 @@ gx_dc_pure_fill_masked(const gx_device_color * pdevc, const byte * data,
 
         if (!rop3_uses_S(lop))
             lop |= rop3_S;
-            
+
         return (*dev_proc(dev, strip_copy_rop))
             (dev, data, data_x, raster, id, scolors,
              NULL, tcolors, x, y, w, h, 0, 0,

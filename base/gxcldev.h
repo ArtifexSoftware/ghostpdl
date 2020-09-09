@@ -271,7 +271,7 @@ struct gx_clist_state_s {
     short clip_enabled;		/* 0 = don't clip, 1 = do clip, */
                                 /* -1 is used internally */
     bool color_is_alpha;	/* for copy_color_alpha */
-    bool color_is_devn;     /* more overload of copy_color_alpha for devn support */ 
+    bool color_is_devn;     /* more overload of copy_color_alpha for devn support */
     uint known;			/* flags for whether this band */
                                 /* knows various misc. parameters */
     /* We assign 'known' flags here from the high end; */
@@ -451,7 +451,7 @@ typedef struct {
 
 extern const clist_select_color_t
       clist_select_color0, clist_select_color1, clist_select_tile_color0,
-      clist_select_tile_color1, clist_select_devn_color0, 
+      clist_select_tile_color1, clist_select_devn_color0,
       clist_select_devn_color1;
 
 /* See comments in gxclutil.c */
@@ -565,8 +565,8 @@ const byte *cmd_read_matrix(gs_matrix * pmat, const byte * cbp);
 int cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                        int op, int x, int y, int width, int height);
 /* Put out a fill with a devn color */
-int cmd_write_rect_hl_cmd(gx_device_clist_writer * cldev, 
-                             gx_clist_state * pcls, int op, int x, int y, 
+int cmd_write_rect_hl_cmd(gx_device_clist_writer * cldev,
+                             gx_clist_state * pcls, int op, int x, int y,
                              int width, int height, bool extended_command);
 /* Put out a fill or tile rectangle command for fillpage. */
 int cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op);

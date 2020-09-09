@@ -168,7 +168,7 @@ rc_free_proc(rc_free_text_enum);
     show_width_status width_status; \
     /*gs_log2_scale_point log2_scale;*/ \
     int (*continue_proc) (gs_show_enum *)	/* continuation procedure */
-    
+
 /* The typedef is in gstext.h. */
 struct gs_text_enum_s {
     gs_text_enum_common;

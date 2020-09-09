@@ -230,16 +230,16 @@ epo_check_and_install(gx_device *dev)
     int code = 0;
     bool is_installed;
     bool can_optimize = false;
-    
+
     /* Debugging mode to totally disable this */
     if (gs_debug_c(gs_debug_flag_epo_disable)) {
         return code;
     }
-    
+
     DPRINTF1(dev->memory, "current device is %s\n", dev->dname);
 
     is_installed = is_device_installed(dev, EPO_DEVICENAME);
-    
+
     if (is_installed) {
         DPRINTF1(dev->memory, "device %s already installed\n", EPO_DEVICENAME);
         /* This is looking for the case where the device
@@ -254,7 +254,7 @@ epo_check_and_install(gx_device *dev)
             /* Not doing any pending fillpages because we are about to do
              * a fillpage anyway
              */
-            gx_device_unsubclass(dev);        
+            gx_device_unsubclass(dev);
             return code;
         }
     } else {
@@ -278,7 +278,7 @@ epo_check_and_install(gx_device *dev)
         DPRINTF1(dev->memory, "ERROR installing device %s\n", EPO_DEVICENAME);
         return code;
     }
-        
+
     DPRINTF1(dev->memory, "SUCCESS installed device %s\n", dev->dname);
     return code;
 }
@@ -288,7 +288,7 @@ epo_handle_erase_page(gx_device *dev)
 {
     erasepage_subclass_data *data = (erasepage_subclass_data *)dev->subclass_data;
     int code = 0;
-    
+
     if (gs_debug_c(gs_debug_flag_epo_install_only)) {
         gx_device_unsubclass(dev);
         DPRINTF1(dev->memory, "Uninstall erasepage, device=%s\n", dev->dname);
@@ -314,7 +314,7 @@ epo_handle_erase_page(gx_device *dev)
 int epo_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
     erasepage_subclass_data *data = (erasepage_subclass_data *)dev->subclass_data;
-    
+
     if (gs_debug_c(gs_debug_flag_epo_install_only)) {
         return default_subclass_fillpage(dev, pgs, pdevc);
     }
@@ -322,13 +322,13 @@ int epo_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
     /* If color is not pure, don't defer this, uninstall and do it now */
     if (!color_is_pure(pdevc)) {
         DPRINTF(dev->memory, "epo_fillpage(), color is not pure, uninstalling\n");
-        gx_device_unsubclass(dev);        
+        gx_device_unsubclass(dev);
         return dev_proc(dev, fillpage)(dev, pgs, pdevc);
     }
-    
+
     /* Save the color being requested, and swallow the fillpage */
     data->last_color = pdevc->colors.pure;
-    
+
     DPRINTF(dev->memory, "Swallowing fillpage\n");
     return 0;
 }

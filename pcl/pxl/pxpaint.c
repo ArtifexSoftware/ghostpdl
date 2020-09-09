@@ -500,7 +500,7 @@ pxPaintPath(px_args_t * par, px_state_t * pxs)
 
     if (code >= 0)
         code = gx_setcurrentpoint_from_path(pxs->pgs, ppath);
-    
+
     return code;
 }
 

@@ -182,7 +182,7 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     char start_graphics;
     int first_pass;
     int last_pass;
-    int dots_per_space; 
+    int dots_per_space;
     int bytes_per_space;
     int skip = 0, lnum = 0, code = 0, pass;
 
@@ -201,7 +201,7 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     if (x_dpi > max_dpi) {
         return_error(gs_error_rangecheck);
     }
-    
+
     start_graphics = (char)
         ((y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60]);
     first_pass = (start_graphics & DD ? 1 : 0);

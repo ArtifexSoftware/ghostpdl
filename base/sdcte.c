@@ -25,7 +25,7 @@
 #include "sdct.h"
 #include "sjpeg.h"
 
-#define ICC_OVERHEAD  16		
+#define ICC_OVERHEAD  16
 #define MAX_MARKER_DATA_SIZE  (65535 - ICC_OVERHEAD)
 
 public_st_jpeg_compress_data();
@@ -135,9 +135,9 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
             dest->free_in_buffer = pw->limit - pw->ptr;
             ss->phase = 3;
             /* falls through */
-        case  3:     
+        case  3:
             /* If we have it, then write out the ICC profile */
-            /* Due to size limitations allowed in APP0 markers, the profile 
+            /* Due to size limitations allowed in APP0 markers, the profile
                may have to be written in mutiple markers */
 	        if (ss->icc_profile != NULL) {
 		        static const char marker[2] = {0xFF, 0xE2};  /* JPEG_APP0 + 2 */
@@ -156,7 +156,7 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
                     if (size > MAX_MARKER_DATA_SIZE)
                       size = MAX_MARKER_DATA_SIZE;
 
-                    /* In this case we are just getting started with the 
+                    /* In this case we are just getting started with the
                        header of the marker.  Write that portion out */
 		            if (ss->icc_position == -1) {
 			            byte length_byte[2];

@@ -298,7 +298,7 @@ lxm5700m_print_page(gx_device_printer *pdev, gp_file *prn_stream)
                     sxMask = 0x80>>(sx%8);
 
                     /* loop through all the swipeHeight bits of this column.
-                    
+
                     Note that <sx> looks like it can get out of range, so we
                     check for this here. This fixes bug 701842.
 

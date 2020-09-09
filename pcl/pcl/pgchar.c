@@ -349,7 +349,7 @@ hpgl_DV(hpgl_args_t * pargs, hpgl_state_t * pgls)
 
     if (!hpgl_arg_c_int(pgls->memory, pargs, &path))
         path = 0;
-    
+
     if (!hpgl_arg_c_int(pgls->memory, pargs, &line))
         line = 0;
 

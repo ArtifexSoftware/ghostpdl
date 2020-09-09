@@ -343,7 +343,7 @@ score_match(const pcl_state_t * pcs, const pcl_font_selection_t * pfs,
             tscore = 14 + delta;
         score[score_weight] = tscore;
 
-        /* 
+        /*
          * The following is a workaround needed because our font
          * selection algorithm is different than HP's.  HP uses a
          * filtering algorithm where fonts cannot be given points
@@ -422,7 +422,7 @@ score_match(const pcl_state_t * pcs, const pcl_font_selection_t * pfs,
      * (undocumented).  Negate the font number so that smaller numbers
      * have a higher score.
      */
-    
+
     score[score_pjl_fontnumber] = -fp->params.pjl_font_number;
 
 #ifdef DEBUG

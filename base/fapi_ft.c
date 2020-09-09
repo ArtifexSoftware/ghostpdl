@@ -699,10 +699,10 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     /* If FT gives us an error, try to fall back to the notdef - if that doesn't work, we'll throw an error over to Ghostscript */
     if (ft_error) {
         gs_string notdef_str;
-        
+
         notdef_str.data = (byte *)".notdef";
         notdef_str.size = 7;
-        
+
         a_fapi_font->char_data = (void *)(&notdef_str);
         a_fapi_font->char_data_len = 0;
 
@@ -1365,7 +1365,7 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
          */
 
         FT_Set_Transform(face->ft_face, &face->ft_transform, NULL);
-        
+
         if (!a_font->is_type1) {
             for (i = 0; i < GS_FAPI_NUM_TTF_CMAP_REQ && !cmap; i++) {
                 if (a_font->ttf_cmap_req[i].platform_id > 0) {
@@ -1817,7 +1817,7 @@ gs_fapi_ft_set_mm_weight_vector(gs_fapi_server *server, gs_fapi_font *ff, float 
             setit = true;
         }
     }
-    
+
     if (setit == true) {
         ft_error = FT_Set_MM_WeightVector(face->ft_face, length, nwv);
         if (ft_error != 0) return_error(gs_error_invalidaccess);

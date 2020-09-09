@@ -358,7 +358,7 @@ main_utf8(int argc, char *argv[])
         return 1;
     }
 
-#ifndef METRO    
+#ifndef METRO
     if (_beginthread(winthread, 65535, NULL) == -1) {
         fprintf(stderr, "GUI thread creation failed\n");
     }

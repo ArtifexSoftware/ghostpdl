@@ -152,7 +152,7 @@ mask_clip_fill_rectangle_hl_color(gx_device *dev,
     /* It would be nice to have a higher level way to do this operation
        like a copy_mono_hl_color */
     return (pdcolor->type->fill_masked)
-            (pdcolor, cdev->tiles.data + my0 * cdev->tiles.raster, mx0, 
+            (pdcolor, cdev->tiles.data + my0 * cdev->tiles.raster, mx0,
              cdev->tiles.raster, cdev->tiles.id, mx0 - cdev->phase.x,
              my0 - cdev->phase.y, mx1 - mx0, my1 - my0,
              tdev, lop_default, false);
@@ -404,7 +404,7 @@ mask_clip_copy_alpha(gx_device * dev,
 static int
 mask_clip_copy_alpha_hl_color(gx_device * dev,
                 const byte * data, int sourcex, int raster, gx_bitmap_id id,
-                int x, int y, int w, int h, const gx_drawing_color *pdcolor, 
+                int x, int y, int w, int h, const gx_drawing_color *pdcolor,
                 int depth)
 {
     gx_device_mask_clip *cdev = (gx_device_mask_clip *) dev;
@@ -437,7 +437,7 @@ mask_clip_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 static int
 mask_clip_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
                                int x, int y, int w, int h,
-                               const gx_drawing_color *pdcolor0, 
+                               const gx_drawing_color *pdcolor0,
                                const gx_drawing_color *pdcolor1,
                                int phase_x, int phase_y)
 {

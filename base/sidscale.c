@@ -240,9 +240,9 @@ s_ISpecialDownScale_init(stream_state * st)
     ss->sizeofPixelIn = ss->params.BitsPerComponentIn / 8;
     ss->sizeofPixelOut = ss->params.BitsPerComponentOut / 8;
 
-    ss->src_size = 
+    ss->src_size =
         ss->params.WidthIn * ss->sizeofPixelIn * ss->params.spp_interp;
-    ss->dst_size = 
+    ss->dst_size =
         ss->params.WidthOut * ss->sizeofPixelOut * ss->params.spp_interp;
 
     /* Initialize destination DDAs. */
@@ -254,14 +254,14 @@ s_ISpecialDownScale_init(stream_state * st)
     dda_init(ss->dda_y, 0, ss->params.HeightOut, ss->params.HeightIn);
 
     /* create intermediate image to hold horizontal zoom */
-    ss->tmp = 
+    ss->tmp =
         gs_alloc_byte_array(mem, (size_t)ss->params.WidthOut * ss->params.spp_interp,
                             ss->sizeofPixelIn, "image_scale tmp");
     /* Allocate buffers for 1 row of source and destination. */
-    ss->dst = 
+    ss->dst =
         gs_alloc_byte_array(mem, (size_t)ss->params.WidthOut * ss->params.spp_interp,
                             ss->sizeofPixelOut, "image_scale dst");
-    ss->src = 
+    ss->src =
         gs_alloc_byte_array(mem, (size_t)ss->params.WidthIn * ss->params.spp_interp,
                             ss->sizeofPixelIn, "image_scale src");
     if (ss->tmp == 0 || ss->dst == 0 || ss->src == 0) {

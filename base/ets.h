@@ -57,7 +57,7 @@ extern "C" {
     #define ETS_SRC_MAX 65535
 #endif
 
-/* Photoshop (and possibly other image formats define white in a CMYK image with a 
+/* Photoshop (and possibly other image formats define white in a CMYK image with a
    value of 255 (65535).  This is opposite of the PAM files that Robin has created.
    The ETS code expects white to be at 0.   Adjustments to the values in gray level
    will be baked into the LUT if needed */

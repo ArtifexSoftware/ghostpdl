@@ -403,7 +403,7 @@ pcl_end_graphics_mode(pcl_state_t * pcs)
 int
 pcl_end_graphics_mode_implicit(pcl_state_t * pcs, bool ignore_in_rtl)
 {
-    
+
 #ifdef DEBUG
     if_debug0('I', "Graphics exited implicitly\n");
 #endif
@@ -431,7 +431,7 @@ pcl_end_graphics_mode_implicit(pcl_state_t * pcs, bool ignore_in_rtl)
  * integer resolution, and we do the same in RTL mode.
  */
 
-/* 
+/*
  * A table to round up to the next higher permitted resolution.  Note
  * there are duplicates in the table because some factors are not
  * supported and they default to the next higher resolution.
@@ -766,12 +766,12 @@ gmode_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 
         prstate->gmargin_cp = 0L;
 
-        /* 
+        /*
          * The raster resolution default is device dependent, we've
          * decided to use 75 dpi for regular PCL mode and the PJL
          * resolution for HPGL/2 rtl mode based on our experience with
          * various HP products, but we doubt it is always correct.
-         */ 
+         */
 
         prstate->resolution = 75;
         if (pcs->personality == rtl) {

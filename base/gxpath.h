@@ -44,10 +44,10 @@ typedef enum {
     sn_dash_tail = 8,           /* segment is followed by dash break     */
 } segment_notes;
 
-/* 
- * Used by interpreters for optimizing bbox size for transparency groups.  
- * Depending upon the option we will return a bbox that may just included the 
- * clip path or may include the intersection of the current path and the clip 
+/*
+ * Used by interpreters for optimizing bbox size for transparency groups.
+ * Depending upon the option we will return a bbox that may just included the
+ * clip path or may include the intersection of the current path and the clip
  * path and may include an adjustement for the stroke width.
 */
 typedef enum {
@@ -311,7 +311,7 @@ int gx_default_clip_box(const gs_gstate *, gs_fixed_rect *);
 int gx_effective_clip_path(gs_gstate *, gx_clip_path **);
 int gx_curr_fixed_bbox(gs_gstate * pgs, gs_fixed_rect *bbox, gs_bbox_comp_t comp_type);
 int gx_curr_bbox(gs_gstate * pgs, gs_rect *bbox, gs_bbox_comp_t comp_type);
- 
+
 
 /* Opaque type for a clip list. */
 typedef struct gx_clip_list_s gx_clip_list;

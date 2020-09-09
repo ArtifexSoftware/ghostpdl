@@ -77,7 +77,7 @@ cov_write_page(gx_device_printer *pdev, gp_file *file)
             k = (double)k_pix / total_pix;
 	    }
 
-        
+
         if (IS_LIBCTX_STDOUT(pdev->memory, gp_get_file(file))) {
             outprintf(pdev->memory, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
                 c, m, y, k, code ? "ERROR" : "OK");
@@ -122,13 +122,13 @@ static int cov_write_page_ink(gx_device_printer *pdev, gp_file *file)
         end = row + raster;
 
         for (; row < end; row += 4) {
-          
+
 			dc_pix += row[0];
 
             dm_pix += row[1];
 
 			dy_pix += row[2];
-            
+
 			dk_pix += row[3];
 
 			++total_pix;

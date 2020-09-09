@@ -168,7 +168,7 @@ gsdll_stdin_utf8(void *instance, char *buf, int len)
             /* Previously the code here has always just checked for whether
              * _read returns <= 0 to see whether we should exit. According
              * to the docs -1 means error, 0 means EOF. Unfortunately,
-             * building using VS2015 there appears to be a bug in the 
+             * building using VS2015 there appears to be a bug in the
              * runtime, whereby a line with a single return on it (on an
              * ANSI encoded Text file at least) causes a 0 return value.
              * We hack around this by second guessing the code. We clear

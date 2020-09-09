@@ -844,7 +844,7 @@ ets_plane_new(void *malloc_arg, const ETS_Params *params, ETS_Ctx *etc, int plan
     {
         result->line[i].a = 1;
         result->line[i].b = 1;
-        /* Initialize error with a non zero random value to ensure dots don't 
+        /* Initialize error with a non zero random value to ensure dots don't
            land on dots when we have same planes with same gray level and
            the plane interaction option is turned off.  Ideally the level
            of this error should be based upon the values of the first line
@@ -877,7 +877,7 @@ ets_destroy(void *malloc_arg, ETS_Ctx *ctx)
 {
     int i;
     int n_planes;
-    
+
     if (ctx == NULL)
         return;
 

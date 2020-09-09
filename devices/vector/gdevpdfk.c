@@ -115,7 +115,7 @@ cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
         handles mapping to CIE D50.  This forces an achromatic result */
         xyz_float[0] = pWhitePoint->u * xyz_float[1];
         xyz_float[2] = pWhitePoint->w * xyz_float[1];
-    } 
+    }
 
     /* Do wp mapping to D50 in XYZ for now.  We should do bradford correction.
        Will add that in next release */

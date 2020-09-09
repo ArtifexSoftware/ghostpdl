@@ -285,7 +285,7 @@ recreate_multiple_master(gs_font_base *pbfont)
             changed = (memcmp(I->face.WeightVector.values, pfont1->data.WeightVector.values,
                              pfont1->data.WeightVector.count * sizeof(pfont1->data.WeightVector.values[0])) != 0);
         }
-        
+
         if (changed) {
             r = (I->set_mm_weight_vector(I, &I->ff, pfont1->data.WeightVector.values, pfont1->data.WeightVector.count) == gs_error_invalidaccess);
             I->face.WeightVector.count = pfont1->data.WeightVector.count;
@@ -849,7 +849,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
         code = gs_gstate_color_load(pgs);
         if (code < 0)
             return code;
-        
+
         code = gx_image_fill_masked(dev, r, 0, dstr, gx_no_bitmap_id,
                                     (int)dx, (int)dy,
                                     rast->width, rast->height,
@@ -872,7 +872,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
         byte *bold_lines = NULL;
         byte *line = NULL;
         int ascent = 0;
-        
+
         pie = gs_image_enum_alloc(mem, "image_char(image_enum)");
         if (!pie) {
             return_error(gs_error_VMerror);
@@ -943,7 +943,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
 
                                 bits_merge(merged_line(y - kmask), merged_line(y - (kmask >> 1)), dest_bytes);
                             }
-                        }   
+                        }
 
                        /*
                         * As of this point in the loop, we maintain the following
@@ -1695,7 +1695,7 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
             I->ff.fapi_set_cache(penum, pbfont, &enc_char_name_string, index,
                                  sbw + 2, &char_bbox, sbwp, &imagenow);
     }
-    
+
     /* If we can render the glyph now, do so.
      * we may not be able to in the PS world if there's a CDevProc in the font
      * in which case gs_fapi_finish_render() will be called from the PS
@@ -1746,12 +1746,12 @@ gs_fapi_passfont(gs_font *pfont, int subfont, char *font_file_path,
     int code = 0;
     gs_fapi_server *I, **list;
     bool free_params = false;
-    gs_memory_t *mem = pfont->memory; 
+    gs_memory_t *mem = pfont->memory;
     const char *decodingID = NULL;
     bool do_restart = false;
-    
+
     list = gs_fapi_get_server_list(mem);
-    
+
     if (!list) /* Should never happen */
       return_error(gs_error_unregistered);
 

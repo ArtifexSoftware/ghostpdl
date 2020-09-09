@@ -31,7 +31,7 @@ typedef struct gs_color_index_cache_elem_s gs_color_index_cache_elem_t;
 struct gs_color_index_cache_elem_s {
     union _color {
       gx_color_index cindex;
-      ushort devn[GS_CLIENT_COLOR_MAX_COMPONENTS];  
+      ushort devn[GS_CLIENT_COLOR_MAX_COMPONENTS];
     } color;
     gx_device_color_type color_type;
     uint chain;
@@ -189,7 +189,7 @@ include_into_touch_list(gs_color_index_cache_t *self, uint i)
 }
 
 static int
-get_color_index_cache_elem(gs_color_index_cache_t *self, 
+get_color_index_cache_elem(gs_color_index_cache_t *self,
                            const float *paint_values, uint *pi)
 {
     int client_num_components = self->client_num_components;
@@ -199,7 +199,7 @@ get_color_index_cache_elem(gs_color_index_cache_t *self,
     if (i != MYNULL) {
         uint tries = 16; /* Arbitrary. */
 
-        if (!memcmp(paint_values, self->paint_values + i * client_num_components, 
+        if (!memcmp(paint_values, self->paint_values + i * client_num_components,
                     sizeof(*paint_values) * client_num_components)) {
             if (self->recent_touch != i) {
                 exclude_from_touch_list(self, i);
@@ -209,7 +209,7 @@ get_color_index_cache_elem(gs_color_index_cache_t *self,
             return 1;
         }
         for (j = self->buf[i].next; tries -- && j != i; j = self->buf[j].next) {
-            if (!memcmp(paint_values, self->paint_values + j * client_num_components, 
+            if (!memcmp(paint_values, self->paint_values + j * client_num_components,
                         sizeof(*paint_values) * client_num_components)) {
                 exclude_from_chain(self, j);
                 include_into_chain(self, j, c);
@@ -251,15 +251,15 @@ compute_frac_values(gs_color_index_cache_t *self, uint i)
         for (j = 0; j < device_num_components; j++) {
                 int shift = cinfo->comp_shift[j];
                 int bits = cinfo->comp_bits[j];
-                self->frac_values[i * device_num_components + j] = 
-                    ((c >> shift) & ((1 << bits) - 1)) << 
+                self->frac_values[i * device_num_components + j] =
+                    ((c >> shift) & ((1 << bits) - 1)) <<
                     (sizeof(frac31) * 8 - 1 - bits);
         }
         self->buf[i].frac_values_done = true;
     } else {
         /* Must be devn */
         for (j = 0; j < device_num_components; j++) {
-            self->frac_values[i * device_num_components + j] = 
+            self->frac_values[i * device_num_components + j] =
                 cv2frac31(self->buf[i].color.devn[j]);
         }
         self->buf[i].frac_values_done = true;
@@ -267,7 +267,7 @@ compute_frac_values(gs_color_index_cache_t *self, uint i)
 }
 
 int
-gs_cached_color_index(gs_color_index_cache_t *self, const float *paint_values, 
+gs_cached_color_index(gs_color_index_cache_t *self, const float *paint_values,
                       gx_device_color *pdevc, frac31 *frac_values)
 {
     /* Must return 2 if the color is not pure.
@@ -283,7 +283,7 @@ gs_cached_color_index(gs_color_index_cache_t *self, const float *paint_values,
             if (self->buf[i].color_type == &gx_dc_type_data_pure) {
                 pdevc->colors.pure = self->buf[i].color.cindex;
                 pdevc->type = &gx_dc_type_data_pure;
-                memcpy(pdevc->ccolor.paint.values, paint_values, 
+                memcpy(pdevc->ccolor.paint.values, paint_values,
                        sizeof(*paint_values) * client_num_components);
             } else {
                 /* devn case */
@@ -291,7 +291,7 @@ gs_cached_color_index(gs_color_index_cache_t *self, const float *paint_values,
                     pdevc->colors.devn.values[j] = self->buf[i].color.devn[j];
                 }
                 pdevc->type = &gx_dc_type_data_devn;
-                memcpy(pdevc->ccolor.paint.values, paint_values, 
+                memcpy(pdevc->ccolor.paint.values, paint_values,
                        sizeof(*paint_values) * client_num_components);
             }
             pdevc->ccolor_valid = true;
@@ -304,11 +304,11 @@ gs_cached_color_index(gs_color_index_cache_t *self, const float *paint_values,
 
         if (pdevc == NULL)
             pdevc = &devc_local;
-        memcpy(self->paint_values + i * client_num_components, paint_values, 
+        memcpy(self->paint_values + i * client_num_components, paint_values,
                sizeof(*paint_values) * client_num_components);
-        memcpy(fcc.paint.values, paint_values, 
+        memcpy(fcc.paint.values, paint_values,
                sizeof(*paint_values) * client_num_components);
-        code = pcs->type->remap_color(&fcc, pcs, pdevc, self->pgs, 
+        code = pcs->type->remap_color(&fcc, pcs, pdevc, self->pgs,
                                       self->trans_dev, gs_color_select_texture);
         if (code < 0)
             return code;
@@ -328,7 +328,7 @@ gs_cached_color_index(gs_color_index_cache_t *self, const float *paint_values,
             self->buf[i].frac_values_done = false;
     }
     if (frac_values != NULL)
-        memcpy(frac_values, self->frac_values + i * device_num_components, 
+        memcpy(frac_values, self->frac_values + i * device_num_components,
                sizeof(*frac_values) * device_num_components);
     return 0;
 }

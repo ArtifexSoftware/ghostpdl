@@ -828,7 +828,7 @@ pxRemoveFont(px_args_t * par, px_state_t * pxs)
          */
         if (pxfont->pfont == gs_currentfont(pxs->pgs))
             gs_setfont(pxs->pgs, NULL);
-        
+
         px_dict_undef(&pxs->font_dict, par->pv[0]);
     }
 

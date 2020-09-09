@@ -171,9 +171,9 @@ cmykog_open(gx_device * pdev)
   dev->icc_struct->supports_devn = true;
 
   /* This device is a DeviceN color based device but unlike psdcmyk and
-     tiffsep it can't change its color characteristics.  It remains as 
-     a 6 color cmykog device.  Postsript files can change the maxseparations 
-     (example Bug 696600 29-07E.PS)  The gdevdevn code will, if it 
+     tiffsep it can't change its color characteristics.  It remains as
+     a 6 color cmykog device.  Postsript files can change the maxseparations
+     (example Bug 696600 29-07E.PS)  The gdevdevn code will, if it
      detects a change occured, close the device and reopen (see
      devn_printer_put_params) possibly resetting the color info.  tiffsep
      and psdcmyk, when reopened, will  reset their color characteristics based upon

@@ -72,4 +72,4 @@ typedef struct stream_jpxd_state_s
 
 extern const stream_template s_jpxd_template;
 
-#endif 
+#endif

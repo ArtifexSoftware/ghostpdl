@@ -204,9 +204,6 @@
     <ClCompile Include="..\pcl\pl\pldict.c">
       <Filter>pl</Filter>
     </ClCompile>
-    <ClCompile Include="..\pcl\pl\pldraw.c">
-      <Filter>pl</Filter>
-    </ClCompile>
     <ClCompile Include="..\pcl\pl\plfapi.c">
       <Filter>pl</Filter>
     </ClCompile>
@@ -489,9 +486,6 @@
       <Filter>pl %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\pcl\pl\pldict.h">
-      <Filter>pl %28.h%29</Filter>
-    </ClInclude>
-    <ClInclude Include="..\pcl\pl\pldraw.h">
       <Filter>pl %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\pcl\pl\plfapi.h">

@@ -196,7 +196,7 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
     const gs_gstate *pgs2 = (const gs_gstate *)pgs;
     bool hl_color_available = gx_hld_is_hl_color_available(pgs2, pdc);
     bool hl_color = (hl_color_available &&
-                dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_hlcolor, 
+                dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_hlcolor,
                                   NULL, 0));
     bool center_of_pixel = (pgs->fill_adjust.x == 0 && pgs->fill_adjust.y == 0);
 
