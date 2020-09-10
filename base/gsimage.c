@@ -706,7 +706,11 @@ gs_image_cleanup(gs_image_enum * penum, gs_gstate *pgs)
 int
 gs_image_cleanup_and_free_enum(gs_image_enum * penum, gs_gstate *pgs)
 {
-    int code = gs_image_cleanup(penum, pgs);
+    int code;
+
+    if (penum == NULL)
+            return 0;
+    code = gs_image_cleanup(penum, pgs);
 
     gs_free_object(penum->memory, penum, "gs_image_cleanup_and_free_enum");
     return code;
