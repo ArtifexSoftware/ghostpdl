@@ -884,9 +884,10 @@ int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known)
     return 0;
 }
 
-int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, void *index)
+int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index)
 {
-    int code, *i = (int *)index;
+    int code;
+    uint64_t *i = index;
 
     if (d->type != PDF_DICT)
         return_error(gs_error_typecheck);
@@ -919,9 +920,9 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
     return 0;
 }
 
-int pdfi_dict_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, void *index)
+int pdfi_dict_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index)
 {
-    int *i = (int *)index;
+    uint64_t *i = index;
 
     *i = 0;
     return pdfi_dict_next(ctx, d, Key, Value, index);

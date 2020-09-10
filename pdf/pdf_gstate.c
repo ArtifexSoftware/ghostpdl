@@ -1612,7 +1612,8 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     gs_halftone_component *phtc = NULL, dummy_htc, *phtc1;
     gx_ht_order_component *pocs = 0;
     pdf_obj *Key = NULL, *Value = NULL;
-    int index = 0, ix = 0, NumComponents = 0;
+    uint64_t index = 0, ix = 0;
+    int NumComponents = 0;
     gx_ht_order *porder1 = NULL;
 
     /* The only case involving multiple halftones, we need to enumerate each entry

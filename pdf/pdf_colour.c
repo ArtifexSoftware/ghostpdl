@@ -1821,7 +1821,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
             goto pdfi_devicen_error;
 
         if (Colorants != NULL && pdfi_dict_entries(Colorants) != 0) {
-            int ix = 0;
+            uint64_t ix = 0;
             pdf_obj *Colorant = NULL, *Space = NULL;
             char *colorant_name;
             gs_color_space *colorant_space;

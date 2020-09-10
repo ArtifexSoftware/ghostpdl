@@ -151,7 +151,8 @@ pdfi_check_init_tracker(pdf_context *ctx, pdfi_check_tracker_t *tracker)
 static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict,
                                       pdf_dict *page_dict, pdfi_check_tracker_t *tracker)
 {
-    int code, i, index;
+    int code;
+    uint64_t i, index;
     pdf_obj *Key = NULL, *Value = NULL;
 
     if (resource_is_checked(tracker, (pdf_obj *)cspace_dict))
@@ -162,7 +163,7 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict,
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, cspace_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, cspace_dict, &Key, &Value, &index);
         if (code < 0)
             goto error1;
 
@@ -189,7 +190,7 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict,
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, cspace_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, cspace_dict, &Key, &Value, &index);
                 if (code == 0 && Value->type == PDF_ARRAY)
                     break;
                 pdfi_countdown(Key);
@@ -238,7 +239,8 @@ static int pdfi_check_Shading(pdf_context *ctx, pdf_dict *shading,
 static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
                                    pdf_dict *page_dict, pdfi_check_tracker_t *tracker)
 {
-    int code, i, index;
+    int code;
+    uint64_t i, index;
     pdf_obj *Key = NULL, *Value = NULL;
 
     if (resource_is_checked(tracker, (pdf_obj *)shading_dict))
@@ -249,7 +251,7 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, shading_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, shading_dict, &Key, &Value, &index);
         if (code < 0 || Value->type != PDF_DICT)
             goto error1;
 
@@ -276,7 +278,7 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, shading_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, shading_dict, &Key, &Value, &index);
                 if (code == 0 && Value->type == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
@@ -396,7 +398,8 @@ transparency_exit:
 static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf_dict *page_dict,
                                    pdfi_check_tracker_t *tracker)
 {
-    int code, i, index;
+    int code;
+    uint64_t i, index;
     pdf_obj *Key = NULL, *Value = NULL; //, *o = NULL;
 
     if (resource_is_checked(tracker, (pdf_obj *)xobject_dict))
@@ -407,7 +410,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, xobject_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, xobject_dict, &Key, &Value, &index);
         if (code < 0)
             goto error1;
         if (Value->type != PDF_DICT)
@@ -436,7 +439,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, xobject_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, xobject_dict, &Key, &Value, &index);
                 if (code == 0 && Value->type == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
@@ -545,7 +548,8 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_
 static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_dict *page_dict,
                                      pdfi_check_tracker_t *tracker)
 {
-    int code, i, index;
+    int code;
+    uint64_t i, index;
     pdf_obj *Key = NULL, *Value = NULL;
 
     if (resource_is_checked(tracker, (pdf_obj *)extgstate_dict))
@@ -556,7 +560,7 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, extgstate_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, extgstate_dict, &Key, &Value, &index);
         if (code < 0)
             goto error1;
 
@@ -584,7 +588,7 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, extgstate_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, extgstate_dict, &Key, &Value, &index);
                 if (code == 0 && Value->type == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
@@ -674,7 +678,8 @@ int pdfi_check_Pattern_transparency(pdf_context *ctx, pdf_dict *pattern, pdf_dic
 static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf_dict *page_dict,
                                    pdfi_check_tracker_t *tracker)
 {
-    int code, i, index;
+    int code;
+    uint64_t i, index;
     pdf_obj *Key = NULL, *Value = NULL;
 
     if (resource_is_checked(tracker, (pdf_obj *)pattern_dict))
@@ -685,7 +690,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, pattern_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, pattern_dict, &Key, &Value, &index);
         if (code < 0)
             goto error1;
 
@@ -714,7 +719,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, pattern_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, pattern_dict, &Key, &Value, &index);
                 if (code == 0 && Value->type == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
@@ -774,7 +779,8 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
 static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *page_dict,
                                 pdfi_check_tracker_t *tracker)
 {
-    int code, i, index;
+    int code;
+    uint64_t i, index;
     pdf_obj *Key = NULL, *Value = NULL;
 
     if (resource_is_checked(tracker, (pdf_obj *)font_dict))
@@ -785,7 +791,7 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, font_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, font_dict, &Key, &Value, &index);
         if (code < 0)
             goto error1;
 
@@ -810,7 +816,7 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, font_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, font_dict, &Key, &Value, &index);
                 if (code == 0 && Value->type == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
