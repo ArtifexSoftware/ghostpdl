@@ -825,13 +825,13 @@ gs_add_control_path_len_flags(const gs_memory_t *mem, gs_path_control_t type, co
 int
 gs_add_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path)
 {
-    return gs_add_control_path_len_flags(mem, type, path, strlen(path), 0);
+    return gs_add_control_path_len_flags(mem, type, path, path ? strlen(path) : 0, 0);
 }
 
 int
 gs_add_control_path_flags(const gs_memory_t *mem, gs_path_control_t type, const char *path, int flags)
 {
-    return gs_add_control_path_len_flags(mem, type, path, strlen(path), flags);
+    return gs_add_control_path_len_flags(mem, type, path, path ? strlen(path) : 0, flags);
 }
 
 int
