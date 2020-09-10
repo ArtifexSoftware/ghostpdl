@@ -1958,7 +1958,7 @@ if test x$with_luratech != xno; then
 fi
 
 JB2_STDINT_TYPES_IN=
-JBIG2DEC_REQ=0.16
+JBIG2DEC_REQ=0.19
 
 if test "x$JBIG2_DECODER" = x; then
   dnl look for jbig2dec
