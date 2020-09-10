@@ -1244,7 +1244,7 @@ art_blend_pixel_8_inline(byte *gs_restrict dst, const byte *gs_restrict backdrop
             break;
         case BLEND_MODE_Hue:
             {
-                byte tmp[4];
+                byte tmp[ART_MAX_CHAN];
 
                 pblend_procs->blend_luminosity(n_chan, tmp, src, backdrop);
                 pblend_procs->blend_saturation(n_chan, dst, tmp, backdrop);
@@ -1504,7 +1504,7 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
             break;
         case BLEND_MODE_Hue:
             {
-                uint16_t tmp[4];
+                uint16_t tmp[ART_MAX_CHAN];
 
                 pblend_procs->blend_luminosity16(n_chan, tmp, src, backdrop);
                 pblend_procs->blend_saturation16(n_chan, dst, tmp, backdrop);
