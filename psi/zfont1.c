@@ -181,7 +181,7 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         goto bad;
     code = dict_find_string(BPriv, "BlueValues", &p1);
     if (code > 0) {
-        if (!r_is_array(p1)) {
+        if (!r_is_array(p1) || r_size(p1) < 2) {
             goto bad;
         }
         else {
@@ -202,7 +202,7 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
     }
     code = dict_find_string(BPriv, "OtherBlues", &p1);
     if (code > 0) {
-        if (!r_is_array(p1)) {
+        if (!r_is_array(p1) || r_size(p1) < 2) {
             goto bad;
         }
         else {
@@ -328,7 +328,7 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
     }
     code = dict_find_string(BPriv, "FamilyBlues", &p1);
     if (code > 0) {
-        if (!r_is_array(p1)) {
+        if (!r_is_array(p1) || r_size(p1) < 2) {
             goto bad;
         }
         else {
@@ -348,7 +348,7 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
     }
     code = dict_find_string(BPriv, "FamilyOtherBlues", &p1);
     if (code > 0) {
-        if (!r_is_array(p1)) {
+        if (!r_is_array(p1) || r_size(p1) < 2) {
             goto bad;
         }
         else {
@@ -450,14 +450,23 @@ charstring_font_params(const gs_memory_t *mem,
     if ((code = pdata1->BlueValues.count = dict_float_array_param(mem, pprivate, "BlueValues",
                 max_BlueValues * 2, &pdata1->BlueValues.values[0], NULL)) < 0)
         return code;
+    if (pdata1->BlueValues.count % 2 != 0)
+        return_error(gs_error_rangecheck);
+
     if ((code = dict_float_param(pprivate, "ExpansionFactor", 0.06, &pdata1->ExpansionFactor)) < 0)
         return code;
     if ((code = pdata1->FamilyBlues.count = dict_float_array_param(mem, pprivate, "FamilyBlues",
                 max_FamilyBlues * 2, &pdata1->FamilyBlues.values[0], NULL)) < 0)
         return code;
+    if (pdata1->FamilyBlues.count % 2 != 0)
+        return_error(gs_error_rangecheck);
+
     if ((code = pdata1->FamilyOtherBlues.count = dict_float_array_param(mem, pprivate, "FamilyOtherBlues",
                 max_FamilyOtherBlues * 2, &pdata1->FamilyOtherBlues.values[0], NULL)) < 0)
         return code;
+    if (pdata1->FamilyOtherBlues.count % 2 != 0)
+        return_error(gs_error_rangecheck);
+
     if ((code = dict_bool_param(pprivate, "ForceBold", false, &pdata1->ForceBold)) < 0)
         return code;
     /*
@@ -469,6 +478,9 @@ charstring_font_params(const gs_memory_t *mem,
     if ((code = pdata1->OtherBlues.count = dict_float_array_param(mem, pprivate, "OtherBlues",
                 max_OtherBlues * 2, &pdata1->OtherBlues.values[0], NULL)) < 0)
         return code;
+    if (pdata1->OtherBlues.count % 2 != 0)
+        return_error(gs_error_rangecheck);
+
     if ((code = dict_bool_param(pprivate, "RndStemUp", true, &pdata1->RndStemUp)) < 0)
         return code;
     if ((code = pdata1->StdHW.count = dict_float_array_check_param(mem, pprivate, "StdHW",
