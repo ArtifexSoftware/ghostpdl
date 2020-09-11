@@ -1526,12 +1526,18 @@ get_float(ref *fnum, const cff_data_t *data, unsigned p, unsigned pe)
                    int sign = 0;
                    char *eptr, *bptr = buf;
 
-                   if (buf[0] == '-'){
+                   if (q > buf && buf[0] == '-'){
                        sign = -1;
                        bptr = &(buf[1]);
                    }
 
-                   code = scan_number ((const byte *)bptr, (const byte *)q, sign, fnum, (const byte **)&eptr, 0);
+                   if (q > buf) {
+                       code = scan_number ((const byte *)bptr, (const byte *)q, sign, fnum, (const byte **)&eptr, 0);
+                   }
+                   else {
+                       code = 0;
+                       make_int(fnum, 0);
+                   }
                    if (code < 0) {
                        return(code);
                    }
