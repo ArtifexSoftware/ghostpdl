@@ -1527,7 +1527,7 @@ XPSWRITEDEVICE=''
 
 
 LIBTIFFDIR='src'
-LIBTIFFCONFDIR=''
+LIBTIFFCONFDIR='src'
 TIFFCFLAGS=''
 
 TIFFDEVS_ALL='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1 tiffscaled tiffscaled4 tiffscaled8 tiffscaled24 tiffscaled32'
