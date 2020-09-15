@@ -516,13 +516,6 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
 
             if (code >= 0 || (reallocate && pass > 1))
                 ppdev->procs = gs_clist_device_procs;
-            if (code > 0) {
-                /*
-                 * Now the device is a clist device, we enable multi-threaded rendering.
-                 * It will remain enabled, but that doesn't really cause any problems.
-                 */
-                clist_enable_multi_thread_render(pdev);
-            }
         } else {
             /* Render entirely in memory. */
             gx_device *bdev = (gx_device *)pmemdev;
@@ -1093,6 +1086,12 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                 npdev = (gx_device_printer *)ndev;
                 npdev->bg_print_requested = 0;
                 npdev->num_render_threads_requested = ppdev->num_render_threads_requested;
+                /* The bgprint's device was created with normal procs, so multi-threaded */
+                /* rendering was turned off. Re-enable it now if it is needed.           */
+                if (npdev->num_render_threads_requested > 0) {
+                    /* ignore return code - even if it fails, we'll output the page */
+                    (void)clist_enable_multi_thread_render(ndev);
+                }
 
                 /* Now start the thread to print the page */
                 if ((code = gp_thread_start(prn_print_page_in_background,
