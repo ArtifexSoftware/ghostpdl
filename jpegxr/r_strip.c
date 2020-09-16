@@ -46,6 +46,7 @@
 #endif
 
 # include "jxr_priv.h"
+# include <stdlib.h>
 # include <limits.h>
 # include <assert.h>
 # include <math.h>
