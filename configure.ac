@@ -1041,6 +1041,7 @@ if test x$with_libidn != xno; then
     if $PKGCONFIG --exists libidn; then
             AC_MSG_RESULT(yes)
             LIBS="$LIBS `$PKGCONFIG --libs libidn`"
+            CFLAGS="$CFLAGS `$PKGCONFIG --cflags libidn`"
             HAVE_LIBIDN=-DHAVE_LIBIDN
     else
             AC_MSG_RESULT(no)
