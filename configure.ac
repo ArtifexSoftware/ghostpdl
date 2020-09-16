@@ -1628,7 +1628,7 @@ esac
 # Skip this check for the recursive configure call.
 # Not relevant for AUX tools.
 if test x"$enable_auxtools_only" != x"yes" ; then
-  if test x"$SHARE_LIBTIFF" != x"$SHARE_LIBJPEG" ; then
+  if test x"$ENABLETIFF" != x"" && test x"$SHARE_LIBTIFF" != x"$SHARE_LIBJPEG" ; then
     AC_MSG_ERROR([Mixing local libtiff with shared libjpeg not supported])
   fi
 fi
