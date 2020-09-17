@@ -1487,9 +1487,11 @@ currentdict /clip_if_required .undef
           abs 2 copy exch abs eq {
             pop
           }{
-            % non-square scaling reduces to Text matrix in pdfwrite , so
-            % we can ignore it. (wrong answer, but consistent)
-            pop pop currentlinewidth
+            % We used to leave the linewidth alone for non-square resolutions,
+            % claiming it reduced to the text matrix in pdfwrite. This is not
+            % true. So handle it the same way we usually do, the hypotenuse of
+            % the unit square transformed through the TextSaveMatrix.
+            dup mul exch dup mul add sqrt
           }ifelse setlinewidth
           show setlinewidth} bind executeonly
         % Tr 2 - Fill then Stroke
@@ -1507,9 +1509,11 @@ currentdict /clip_if_required .undef
           abs 2 copy exch abs eq {
             pop
           }{
-            % non-square scaling reduces to Text matrix in pdfwrite , so
-            % we can ignore it. (wrong answer, but consistent)
-            pop pop currentlinewidth
+            % We used to leave the linewidth alone for non-square resolutions,
+            % claiming it reduced to the text matrix in pdfwrite. This is not
+            % true. So handle it the same way we usually do, the hypotenuse of
+            % the unit square transformed through the TextSaveMatrix.
+            dup mul exch dup mul add sqrt
           }ifelse setlinewidth
           setsmaskstate show setlinewidth} bind executeonly
         % Tr 3 - Neither fill nor stroke
@@ -1530,9 +1534,11 @@ currentdict /clip_if_required .undef
           abs 2 copy exch abs eq {
             pop
           }{
-            % non-square scaling reduces to Text matrix in pdfwrite , so
-            % we can ignore it. (wrong answer, but consistent)
-            pop pop currentlinewidth
+            % We used to leave the linewidth alone for non-square resolutions,
+            % claiming it reduced to the text matrix in pdfwrite. This is not
+            % true. So handle it the same way we usually do, the hypotenuse of
+            % the unit square transformed through the TextSaveMatrix.
+            dup mul exch dup mul add sqrt
           }ifelse setlinewidth
           setsmaskstate dup show grestore
           //true charpath} bind executeonly
@@ -1547,9 +1553,11 @@ currentdict /clip_if_required .undef
           abs 2 copy exch abs eq {
             pop
           }{
-            % non-square scaling reduces to Text matrix in pdfwrite , so
-            % we can ignore it. (wrong answer, but consistent)
-            pop pop currentlinewidth
+            % We used to leave the linewidth alone for non-square resolutions,
+            % claiming it reduced to the text matrix in pdfwrite. This is not
+            % true. So handle it the same way we usually do, the hypotenuse of
+            % the unit square transformed through the TextSaveMatrix.
+            dup mul exch dup mul add sqrt
           }ifelse setlinewidth
           setsmaskstate dup show grestore
           //true charpath} bind executeonly
