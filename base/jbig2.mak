@@ -93,7 +93,7 @@ jbig2.config-clean :
 
 JBIG2DEP=$(AK)
 
-JBIG2_CC=$(CC_) $(CFLAGS) $(I_)$(JBIG2GENDIR) $(II)$(JB2I_)$(_I) $(JB2CF_) -DJBIG_EXTERNAL_MEMENTO_H=\"../base/memento.h\"
+JBIG2_CC=$(CC) $(I_)$(JBIG2GENDIR) $(II)$(JB2I_)$(_I) $(JB2CF_) -DJBIG_EXTERNAL_MEMENTO_H=\"../base/memento.h\" $(CCFLAGS)
 JBIG2O_=$(O_)$(JBIG2OBJ)
 
 # switch in the version of libjbig2.dev we're actually using

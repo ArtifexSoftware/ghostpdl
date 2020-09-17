@@ -37,7 +37,7 @@ IJSO_=$(O_)$(IJSOBJ)
 # as are IJSGENDIR and IJSOBJDIR above.
 IJS_INCL=$(I_)$(IJSI_)$(_I)
 IJS_CCFLAGS=$(IJS_INCL) $(IJSF_)
-IJS_CC=$(CC_) $(IJS_CCFLAGS)
+IJS_CC=$(CC) $(IJS_CCFLAGS) $(CCFLAGS)
 
 # Define the name of this makefile.
 IJS_MAK=$(GLSRC)ijs.mak $(TOP_MAKEFILES)

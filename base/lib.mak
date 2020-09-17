@@ -44,14 +44,17 @@ GLINCLUDES=$(I_)$(GLI_)$(_I)
 GLCCFLAGS=$(GLINCLUDES) $(GLF_) $(D_)WHICH_CMS="$(WHICH_CMS)"$(_D)
 GLCC=$(CC_) $(GLCCFLAGS)
 GLCCAUX=$(CCAUX_) $(GLCCFLAGS)
-GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
-GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_)
-GLJBIG2CC=$(CC_) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_)
-GLJASCC=$(CC_) $(I_)$(JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
 GLLDFJB2CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(GLI_)$(_I) $(JB2CF_) $(GLF_)
 GLLWFJPXCC=$(CC_) $(I_)$(LWF_JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
-GLJPXOPJCC=$(CC_) $(I_)$(JPX_OPENJPEG_I_)$(D).. $(I_)$(JPX_OPENJPEG_I_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
 GLCCSHARED=$(CC_SHARED) $(GLCCFLAGS)
+
+GLJCC=$(CC) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_) $(CCFLAGS)
+GLZCC=$(CC) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_) $(CCFLAGS)
+GLJBIG2CC=$(CC) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_) $(CCFLAGS)
+GLJASCC=$(CC) $(I_)$(JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_) $(CCFLAGS)
+GLJPXOPJCC=$(CC) $(I_)$(JPX_OPENJPEG_I_)$(D).. $(I_)$(JPX_OPENJPEG_I_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_) $(CCFLAGS)
+GLFTCC=$(CC) $(FT_CFLAGS) $(D_)FT_CONFIG_OPTIONS_H=\"$(FTCONFH)\"$(_D) $(CCFLAGS) $(GLCCFLAGS)
+
 # We can't use $(CC_) for GLLCMS2MTCC because that includes /Za on
 # msvc builds, and lcms configures itself to depend on msvc extensions
 # (inline asm, including windows.h) when compiled under msvc.
@@ -1327,7 +1330,7 @@ $(GLOBJ)fapi_ft_0.$(OBJ) : $(GLSRC)fapi_ft.c $(AK)\
  $(gsmemory_h) $(gsmalloc_h) $(gxfixed_h) $(gdebug_h) $(gxbitmap_h)\
  $(gsmchunk_h) $(stream_h) $(gxiodev_h) $(gsfname_h) $(gxfapi_h) $(gxfont1_h)\
  $(gxfont_h) $(BASEFTCONFH) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(FT_CFLAGS) $(D_)FT_CONFIG_OPTIONS_H=\"$(FTCONFH)\"$(_D) $(GLO_)fapi_ft_0.$(OBJ) $(C_) $(GLSRC)fapi_ft.c
+	$(GLFTCC) $(FT_CFLAGS) $(D_)FT_CONFIG_OPTIONS_H=\"$(FTCONFH)\"$(_D) $(GLO_)fapi_ft_0.$(OBJ) $(C_) $(GLSRC)fapi_ft.c
 
 $(GLOBJ)fapi_ft_1.$(OBJ) : $(GLSRC)fapi_ft.c $(AK)\
  $(stdio__h) $(malloc__h) $(write_t1_h) $(write_t2_h) $(math__h) $(gserrors_h)\

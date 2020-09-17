@@ -72,6 +72,9 @@ LANG_CFLAGS=\
 
 GPDLCC=$(CC_) $(LANG_CFLAGS) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
+GPDLJB2CC=$(CC) $(LANG_CFLAGS) $(I_)$(LDF_JB2I_) $(JBIG2_CFLAGS) $(II)$(JB2I_)$(_I) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) \
+$(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(CCFLAGS) $(C_)
+
 $(GPDLGEN)gpdlimpl.c: $(PLSRC)plimpl.c $(MAKEDIRS)
 	$(CP_) $(PLSRC)plimpl.c $(GPDLGEN)gpdlimpl.c
 
@@ -128,7 +131,7 @@ $(GPDL_TIFF_TOP_OBJ): $(GPDLOBJ)tifftop_$(SHARE_LIBTIFF).$(OBJ)
 $(GPDL_JBIG2_TOP_OBJ): $(GPDLSRC)jbig2top.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
  $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
-	$(GPDLCC) $(I_)$(LDF_JB2I_) $(JBIG2_CFLAGS) $(II)$(JB2I_)$(_I) $(GPDLSRC)jbig2top.c $(GPDLO_)$(GPDL_JBIG2_TOP_OBJ_FILE)
+	$(GPDLJB2CC) $(GPDLSRC)jbig2top.c $(GPDLO_)$(GPDL_JBIG2_TOP_OBJ_FILE)
 
 $(GPDL_JP2K_TOP_OBJ): $(GPDLSRC)jp2ktop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\

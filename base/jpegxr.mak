@@ -31,7 +31,7 @@ JPEGXR_GEN=$(JPEGXR_GENDIR)$(D)
 JPEGXR_OBJ=$(JPEGXR_OBJDIR)$(D)
 JPEGXR_O_=$(O_)$(JPEGXR_OBJ)
 
-JPEGXR_CC=$(CC_) $(JPEGXR_CFLAGS) $(D_)JXR_DLL_EXPORTS=1$(_D) $(D_)NDEBUG$(_D)
+JPEGXR_CC=$(CC) $(JPEGXR_CFLAGS) $(D_)JXR_DLL_EXPORTS=1$(_D) $(D_)NDEBUG$(_D) $(CCFLAGS)
 
 jpegxr.clean : jpegxr.config-clean jpegxr.clean-not-config-clean
 
