@@ -337,7 +337,9 @@ pdf_outline_fonts_alloc(gs_memory_t *mem)
 pdf_standard_font_t *
 pdf_standard_fonts(const gx_device_pdf *pdev)
 {
-    return pdev->text->outline_fonts->standard_fonts;
+    if (pdev->text != NULL && pdev->text->outline_fonts != NULL)
+        return pdev->text->outline_fonts->standard_fonts;
+    return NULL;
 }
 
 /*
@@ -348,7 +350,8 @@ pdf_clean_standard_fonts(const gx_device_pdf *pdev)
 {
     pdf_standard_font_t *ppsf = pdf_standard_fonts(pdev);
 
-    memset(ppsf, 0, PDF_NUM_STANDARD_FONTS * sizeof(*ppsf));
+    if (ppsf != NULL)
+        memset(ppsf, 0, PDF_NUM_STANDARD_FONTS * sizeof(*ppsf));
 }
 
 /* ---------------- Font resources ---------------- */

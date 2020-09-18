@@ -768,6 +768,9 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
 {
     stream *s = pdev->strm;
 
+    if (s == NULL)
+        return_error(gs_error_ioerror);
+
     if (id <= 0) {
         id = pdf_obj_ref(pdev);
     } else {
@@ -777,10 +780,10 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
 
         if (gp_fseek(tfile, ((int64_t)(id - pdev->FirstObjectNumber)) * sizeof(pos),
               SEEK_SET) != 0)
-	  return_error(gs_error_ioerror);
+	        return_error(gs_error_ioerror);
         gp_fwrite(&pos, sizeof(pos), 1, tfile);
         if (gp_fseek(tfile, tpos, SEEK_SET) != 0)
-	  return_error(gs_error_ioerror);
+	        return_error(gs_error_ioerror);
     }
     if (pdev->ForOPDFRead && pdev->ProduceDSC) {
         switch(type) {
@@ -1887,7 +1890,7 @@ pdf_page_id(gx_device_pdf * pdev, int page_num)
 {
     cos_dict_t *Page;
 
-    if (page_num < 1)
+    if (page_num < 1 || pdev->pages == NULL)
         return 0;
     if (page_num >= pdev->num_pages) {	/* Grow the pages array. */
         uint new_num_pages;
