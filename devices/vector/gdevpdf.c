@@ -2564,7 +2564,7 @@ pdf_close(gx_device * dev)
     stream *s = NULL;
     gp_file *tfile = pdev->xref.file;
     gs_offset_t xref = 0;
-    gs_offset_t resource_pos;
+    gs_offset_t resource_pos = 0;
     long Catalog_id = 0, Info_id = 0,
         Pages_id = 0, Encrypt_id = 0;
     long Threads_id = 0;
