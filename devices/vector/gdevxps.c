@@ -118,6 +118,7 @@ typedef struct gx_device_xps_f2i_s {
     char *filename;
     gx_device_xps_zinfo_t *info;
     struct gx_device_xps_f2i_s *next;
+    gs_memory_t *memory;
 } gx_device_xps_f2i_t;
 
 /* Used for keeping track of icc profiles that we have written.   This way we
@@ -129,6 +130,16 @@ typedef struct xps_icc_data_s {
     int index;
     struct xps_icc_data_s *next;
 } xps_icc_data_t;
+
+/* Add new page relationships to this linked list, avoiding duplicates.
+   When page is closed write out all the relationships */
+typedef struct xps_relations_s xps_relations_t;
+
+struct xps_relations_s {
+    char* relation;
+    xps_relations_t *next;
+    gs_memory_t *memory;
+};
 
 typedef enum {
     xps_solidbrush,
@@ -169,7 +180,8 @@ typedef struct gx_device_xps_s {
     /* local state */
     int page_count;     /* how many output_page calls we've seen */
     int image_count;    /* number of images so far */
-    int relationship_count;  /* Pages relationships */
+    xps_relations_t *relations_head;
+    xps_relations_t *relations_tail;
     xps_icc_data_t *icc_data;
     gx_color_index strokecolor, fillcolor;
     xps_brush_t stroketype, filltype;
@@ -381,10 +393,11 @@ zip_new_info_node(gx_device_xps *xps_dev, const char *filename)
     if_debug1m('_', dev->memory, "new node %s\n", filename);
 
     if (info == NULL || f2i == NULL)
-        return gs_throw_code(gs_error_Fatal);
+        return gs_throw_code(gs_error_VMerror);
 
     f2i->info = info;
     f2i->next = NULL;
+    f2i->memory = mem->non_gc_memory;
 
     if (xps_dev->f2i == 0) { /* no head */
         xps_dev->f2i = f2i;
@@ -396,6 +409,8 @@ zip_new_info_node(gx_device_xps *xps_dev, const char *filename)
 
     lenstr = strlen(filename);
     f2i->filename = (char*)gs_alloc_bytes(mem->non_gc_memory, lenstr + 1, "zinfo_filename");
+    if (f2i->filename == NULL)
+        return gs_throw_code(gs_error_VMerror);
     strcpy(f2i->filename, filename);
 
     info->data.fp = 0;
@@ -908,7 +923,8 @@ xps_open_device(gx_device *dev)
 
     /* xps-specific initialization goes here */
     xps->page_count = 0;
-    xps->relationship_count = 0;
+    xps->relations_head = NULL;
+    xps->relations_tail = NULL;
     xps->strokecolor = gx_no_color_index;
     xps->fillcolor = gx_no_color_index;
     xps_setstrokebrush(xps, xps_solidbrush);
@@ -977,26 +993,38 @@ write_str_to_current_page(gx_device_xps *xps, const char *str)
 static int
 add_new_relationship(gx_device_xps *xps, const char *str)
 {
-    const char *rels_template = "Documents/1/Pages/_rels/%d.fpage.rels";
-    char buf[128]; /* easily enough to accommodate the string and a page number */
-    char line[300];
-    const char *fmt;
+    xps_relations_t *rel;
 
-    int code = gs_sprintf(buf, rels_template, xps->page_count + 1);
-    if (code < 0)
-        return gs_rethrow_code(code);
+    /* See if we already have this one */
+    for (rel = xps->relations_head; rel; rel = rel->next)
+        if (!strcmp(rel->relation, str))
+            return 0;
 
-    /* Check if this is our first one */
-    if (xps->relationship_count == 0)
-        write_str_to_zip_file(xps, buf, rels_header);
+    rel = (xps_relations_t*)gs_alloc_bytes(xps->memory->non_gc_memory,
+        sizeof(xps_relations_t), "add_new_relationship");
+    if (!rel) {
+        return gs_throw_code(gs_error_VMerror);
+    }
+    rel->memory = xps->memory->non_gc_memory;
+    rel->next = NULL;
 
-    /* Now add the reference */
-    fmt = "<Relationship Target = \"/%s\" Id = \"R%d\" Type = %s/>\n";
-    gs_sprintf(line, fmt, str, xps->relationship_count, rels_req_type);
+    rel->relation = (char*)gs_alloc_bytes(xps->memory->non_gc_memory,
+        strlen(str) + 1, "add_new_relationship");
+    if (!rel->relation) {
+        gs_free_object(rel->memory, rel, "add_new_relationship");
+        return gs_throw_code(gs_error_VMerror);
+    }
+    memcpy(rel->relation, str, strlen(str) + 1);
 
-    xps->relationship_count++;
+    if (!xps->relations_head) {
+        xps->relations_head = rel;
+        xps->relations_tail = rel;
+    } else {
+        xps->relations_tail->next = rel;
+        xps->relations_tail = rel;
+    }
 
-    return write_str_to_zip_file(xps, buf, line);
+    return 0;
 }
 
 static int
@@ -1013,6 +1041,51 @@ close_page_relationship(gx_device_xps *xps)
     return 0;
 }
 
+static int
+write_page_relationship(gx_device_xps* xps)
+{
+    const char* rels_template = "Documents/1/Pages/_rels/%d.fpage.rels";
+    char buf[128]; /* easily enough to accommodate the string and a page number */
+    char line[300];
+    const char* fmt;
+    int count = 0;
+    xps_relations_t *rel = xps->relations_head;
+
+    int code = gs_sprintf(buf, rels_template, xps->page_count + 1);
+    if (code < 0)
+        return gs_rethrow_code(code);
+
+    write_str_to_zip_file(xps, buf, rels_header);
+    fmt = "<Relationship Target = \"/%s\" Id = \"R%d\" Type = %s/>\n";
+
+    while (rel) {
+        gs_sprintf(line, fmt, rel->relation, count, rels_req_type);
+        write_str_to_zip_file(xps, buf, line);
+        rel = rel->next;
+        count++;
+    }
+
+    return 0;
+}
+
+static void
+release_relationship(gx_device_xps* xps)
+{
+    xps_relations_t *rel = xps->relations_head;
+    xps_relations_t *old;
+
+    while (rel) {
+        old = rel;
+        rel = rel->next;
+        gs_free_object(old->memory, old->relation, "release_relationship");
+        gs_free_object(old->memory, old, "release_relationship");
+    }
+
+    xps->relations_head = NULL;
+    xps->relations_tail = NULL;
+    return;
+}
+
         /* Page management */
 
 /* Complete a page */
@@ -1024,14 +1097,22 @@ xps_output_page(gx_device *dev, int num_copies, int flush)
     int code;
 
     write_str_to_current_page(xps, "</Canvas></FixedPage>");
-    if (xps->relationship_count > 0)
+
+    if (xps->relations_head)
     {
+        /* Write all the relations for the page */
+        code = write_page_relationship(xps);
+        if (code < 0)
+            return gs_rethrow_code(code);
+
         /* Close the relationship xml */
         code = close_page_relationship(xps);
         if (code < 0)
             return gs_rethrow_code(code);
-        xps->relationship_count = 0;  /* Reset for next page */
+
+        release_relationship(xps);
     }
+
     xps->page_count++;
 
     if (gp_ferror(xps->file))
@@ -1070,6 +1151,23 @@ xps_release_icc_info(gx_device *dev)
     return;
 }
 
+static void
+xps_release_achive_file_names(gx_device* dev)
+{
+    gx_device_xps* xps = (gx_device_xps*)dev;
+    gx_device_xps_f2i_t *curr;
+    gx_device_xps_f2i_t *f2i = xps->f2i;
+
+    while (f2i) {
+        curr = f2i;
+        f2i = f2i->next;
+        gs_free_object(curr->memory, curr->info, "xps_release_achive_file_names(info)");
+        gs_free_object(curr->memory, curr->filename, "xps_release_achive_file_names(filename)");
+        gs_free_object(curr->memory, curr, "xps_release_achive_file_names(f2i)");
+    }
+    return;
+}
+
 /* Close the device */
 static int
 xps_close_device(gx_device *dev)
@@ -1091,6 +1189,9 @@ xps_close_device(gx_device *dev)
 
     /* Release the icc info */
     xps_release_icc_info(dev);
+
+    /* Release the archive file names */
+    xps_release_achive_file_names(dev);
 
     code = gdev_vector_close_file((gx_device_vector*)dev);
     if (code < 0)
@@ -1719,6 +1820,7 @@ static TIFF* tiff_from_name(gx_device_xps *dev, const char *name, int big_endian
 static int tiff_set_values(xps_image_enum_t *pie, TIFF *tif,
                             cmm_profile_t *profile, bool force8bit);
 static void xps_tiff_set_handlers(void);
+static void tiff_client_release(gx_device_xps* dev, TIFF* t);
 
 /* Check if we have the ICC profile in the package */
 static xps_icc_data_t*
@@ -1944,10 +2046,13 @@ xps_begin_image(gx_device *dev, const gs_gstate *pgs,
         /* Add ICC relationship */
         xps_add_icc_relationship(pie);
     } else {
-        /* Get name for mark up.  We already have it in the relationship and list */
+        /* Get name for mark up.  We already have it in the resource list */
         code = xps_create_icc_name(xdev, icc_profile, &(pie->icc_name[0]));
         if (code < 0)
             return gs_rethrow_code(code);
+
+        /* Add ICC relationship.  It may not yet be present for this page. */
+        xps_add_icc_relationship(pie);
     }
 
     /* Get image name for mark up */
@@ -2207,6 +2312,7 @@ xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     /* N.B. Write the final strip, if any. */
 
     code = TIFFWriteDirectory(pie->tif);
+    tiff_client_release((gx_device_xps*)(pie->dev), pie->tif);
     TIFFCleanup(pie->tif);
 
     /* Stuff the image into the zip archive and close the file */
@@ -2481,6 +2587,13 @@ tiff_from_name(gx_device_xps *dev, const char *name, int big_endian, bool usebig
         xps_tifsCloseProc, (TIFFSizeProc)xps_tifsSizeProc, xps_tifsDummyMapProc,
         xps_tifsDummyUnmapProc);
     return t;
+}
+
+static void
+tiff_client_release(gx_device_xps *dev, TIFF *t)
+{
+    gs_free_object(dev->memory->non_gc_memory, TIFFClientdata(t),
+        "tiff_client_release");
 }
 
 static void
