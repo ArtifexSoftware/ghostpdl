@@ -2899,7 +2899,7 @@ pdf_close(gx_device * dev)
         }
     }
 
-    if (pdev->ForOPDFRead && pdev->ProduceDSC) {
+    if (pdev->ForOPDFRead && pdev->ProduceDSC && s != NULL) {
         int j;
 
         pagecount = 1;
