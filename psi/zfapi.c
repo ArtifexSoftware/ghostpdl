@@ -2118,15 +2118,14 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
                 }
                 else {
                     ulong noffs, endoffs;
-                    int code;
                     /* If we haven't got a len_glyphs array, try using the offset of the next glyph offset
                      * to work out the length
                      */
                     error = sfnt_get_glyph_offset(pdr, pfont42, char_code + 1, &noffs);
                     if (error == 0) {
                         glyph_length = noffs - offset0;
-                        code = sfnt_get_sfnt_length(pdr, &endoffs);
-                        if (code < 0) {
+                        error = sfnt_get_sfnt_length(pdr, &endoffs);
+                        if (error < 0) {
                             glyph_length = gs_fapi_glyph_invalid_index;
                         }
                         else {
@@ -2139,8 +2138,8 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
                         /* And if we can't get the next glyph offset, use the end of the sfnt data
                          * to work out the length.
                          */
-                        code = sfnt_get_sfnt_length(pdr, &noffs);
-                        if (code < 0) {
+                        error = sfnt_get_sfnt_length(pdr, &noffs);
+                        if (error < 0) {
                             glyph_length = gs_fapi_glyph_invalid_index;
                         }
                         else {
