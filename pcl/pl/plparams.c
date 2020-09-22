@@ -58,6 +58,9 @@ static int pdfmark_write_list(gs_memory_t *mem, gx_device *device, gs_param_stri
     /* and set the actual device parameters */
     code = gs_putdeviceparams(device, (gs_param_list *)&list);
 
+    /* release the memory allocated for the list parameter */
+    gs_c_param_list_release(&list);
+
     return code;
 }
 
