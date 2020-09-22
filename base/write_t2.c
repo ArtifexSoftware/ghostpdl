@@ -339,9 +339,9 @@ write_gsubrs_index(gs_fapi_font * a_fapi_font, WRF_output * a_output)
             return length;
 
         if (a_output->m_pos)
-            WRF_wtext(a_fapi_font->memory, a_output, a_output->m_pos, length);
-        else
-            a_output->m_count += length;
+            a_output->m_pos += length;
+
+        a_output->m_count += length;
         if (cur_offset) {
             long pos = a_output->m_pos - data_start + 1;
 
@@ -394,9 +394,9 @@ write_subrs_index(gs_fapi_font * a_fapi_font, WRF_output * a_output)
             return length;
 
         if (a_output->m_pos)
-            WRF_wtext(a_fapi_font->memory, a_output, a_output->m_pos, length);
-        else
-            a_output->m_count += length;
+            a_output->m_pos += length;
+
+        a_output->m_count += length;
         if (cur_offset) {
             long pos = a_output->m_pos - data_start + 1;
 
