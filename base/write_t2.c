@@ -332,8 +332,7 @@ write_gsubrs_index(gs_fapi_font * a_fapi_font, WRF_output * a_output)
 
     for (i = 0; i < count; i++) {
         long buffer_size = a_output->m_limit - a_output->m_count < 0 ? 0 : a_output->m_limit - a_output->m_count;
-        int length = a_fapi_font->get_gsubr(a_fapi_font, i, a_output->m_pos,
-                                             (ushort) (buffer_size > 65535 ? 65535 : buffer_size));
+        int length = a_fapi_font->get_gsubr(a_fapi_font, i, a_output->m_pos, buffer_size);
 
         if (length < 0)
             return length;
@@ -387,8 +386,7 @@ write_subrs_index(gs_fapi_font * a_fapi_font, WRF_output * a_output)
 
     for (i = 0; i < count; i++) {
         long buffer_size = a_output->m_limit - a_output->m_count;
-        int length = a_fapi_font->get_subr(a_fapi_font, i, a_output->m_pos,
-                                            (ushort) buffer_size);
+        int length = a_fapi_font->get_subr(a_fapi_font, i, a_output->m_pos, buffer_size);
 
         if (length < 0)
             return length;

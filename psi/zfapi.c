@@ -1704,7 +1704,7 @@ decode_bytes(byte *p, const byte *s, int l, int lenIV)
 
 static int
 get_type1_data(gs_fapi_font *ff, const ref *type1string,
-               byte *buf, ushort buf_length)
+               byte *buf, int buf_length)
 {
     gs_font_type1 *pfont = (gs_font_type1 *) ff->client_font_data;
     int lenIV = max(pfont->data.lenIV, 0);
