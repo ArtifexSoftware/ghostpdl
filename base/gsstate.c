@@ -1210,6 +1210,16 @@ gstate_free_parts(gs_gstate * parts, gs_memory_t * mem, client_name_t cname)
     }
 }
 
+static inline void
+gstate_parts_init_dev_color(gx_device_color *dc)
+{
+    gx_device_color_type dct = dc->type;
+    gs_graphics_type_tag_t gtt = dc->tag;
+    memset(dc, 0x00, sizeof(gx_device_color));
+    dc->type = dct;
+    dc->tag = gtt;
+}
+
 /* Allocate the privately allocated parts of a gstate. */
 static int
 gstate_alloc_parts(gs_gstate * parts, const gs_gstate * shared,
@@ -1254,6 +1264,8 @@ gstate_alloc_parts(gs_gstate * parts, const gs_gstate * shared,
         gstate_free_parts(parts, mem, cname);
         return_error(gs_error_VMerror);
     }
+    gstate_parts_init_dev_color(parts->color[0].dev_color);
+    gstate_parts_init_dev_color(parts->color[1].dev_color);
     return 0;
 }
 

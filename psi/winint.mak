@@ -192,8 +192,8 @@ nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_ALL) $(GS_XE) $(GSDLL_DLL) $(BIN
 !endif
 
 # -------------------- Distribution source archive ------------------- #
-# This creates a zip file containing the files needed to build 
-# ghostscript on MS-Windows.  We don't distribute this zip file, 
+# This creates a zip file containing the files needed to build
+# ghostscript on MS-Windows.  We don't distribute this zip file,
 # but use it to build the executable distribution.
 #
 # The MS-Windows build process for a release is

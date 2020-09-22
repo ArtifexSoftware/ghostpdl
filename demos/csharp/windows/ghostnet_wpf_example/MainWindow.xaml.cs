@@ -345,7 +345,6 @@ namespace ghostnet_wpf_example
 			switch (gs_result.task)
 			{
 				case GS_Task_t.CREATE_XPS:
-					//xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
 					/* Always do print all from xps conversion as it will do
 					 * the page range handling for us */
 					/* Add file to temp file list */
@@ -570,7 +569,7 @@ namespace ghostnet_wpf_example
 						xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 						return;
 					case MessageBoxResult.No:
-						m_doc_type_has_page_access = false;
+						//m_doc_type_has_page_access = false;
 						break;
 					case MessageBoxResult.Cancel:
 						m_viewer_state = ViewerState_t.NO_FILE;

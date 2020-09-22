@@ -824,7 +824,7 @@ typedef struct
                              gp_file    **file);
 } gsapi_fs_t;
 </pre>
-  
+
 <p>If the filename (always given in utf-8 format) is recognised as
 being one that the filing system handles (perhaps by the prefix used),
 then it should open the file, fill in the <code>gp_file</code>
@@ -906,7 +906,7 @@ other files too (perhaps the temporary files we produce) we'd need to
 define additional handlers (such as <code>open_scratch</code>).
 
 <p>Our handler might look as follows:
-  
+
 <pre>
 int crypt_open_file(const gs_memory_t  *mem,
                           void         *secret,

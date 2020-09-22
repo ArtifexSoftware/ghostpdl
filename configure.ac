@@ -1102,7 +1102,7 @@ if test "$enable_fontconfig" != "no"; then
                 if $PKGCONFIG --exists fontconfig; then
                         AC_MSG_RESULT(yes)
                         FONTCONFIG_CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
-                        FONTCONFIG_LIBS="`$PKGCONFIG --libs-only-l fontconfig`"
+                        FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
                         HAVE_FONTCONFIG=-DHAVE_FONTCONFIG
                 else
                         AC_MSG_RESULT(no)
@@ -1241,9 +1241,16 @@ if test x"$enable_fapi" != xno; then
             # There is a table of corresponding ft2<->libtool numbers in freetype/docs/VERSION.DLL
             if $PKGCONFIG --atleast-version=12.0.6 freetype2; then
                 AC_MSG_RESULT(yes)
-                FT_CFLAGS="$CFLAGS `$PKGCONFIG --cflags freetype2`"
-                FT_LIBS="`$PKGCONFIG --libs-only-l freetype2`"
-                FT_BRIDGE=1
+                if test "x$FT_CFLAGS" = "x"; then
+                  FT_CFLAGS="$CFLAGS `$PKGCONFIG --cflags freetype2`"
+		fi
+		if test "x$FT_LIBS" = "x"; then
+                  FT_LIBS="`$PKGCONFIG --libs-only-l freetype2`"
+                fi
+		if test "x$FT_LIB_PATH" = "x"; then
+		  FT_LIB_PATH="`$PKGCONFIG --libs-only-L freetype2`"
+		fi
+		FT_BRIDGE=1
                 SHARE_FT=1
             else
                 AC_MSG_RESULT(no)
@@ -1297,6 +1304,7 @@ AC_SUBST(SHARE_FT)
 AC_SUBST(FTSRCDIR)
 AC_SUBST(FT_CFLAGS)
 AC_SUBST(FT_LIBS)
+AC_SUBST(FT_LIB_PATH)
 
 TIFF_JPEG_INCLUDE=
 
@@ -1527,7 +1535,7 @@ XPSWRITEDEVICE=''
 
 
 LIBTIFFDIR='src'
-LIBTIFFCONFDIR=''
+LIBTIFFCONFDIR='src'
 TIFFCFLAGS=''
 
 TIFFDEVS_ALL='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1 tiffscaled tiffscaled4 tiffscaled8 tiffscaled24 tiffscaled32'
@@ -1617,9 +1625,12 @@ case "x$with_system_libtiff" in
         ;;
 esac
 
-
-if test x"$SHARE_LIBTIFF" != x"$SHARE_LIBJPEG" ; then
+# Skip this check for the recursive configure call.
+# Not relevant for AUX tools.
+if test x"$enable_auxtools_only" != x"yes" ; then
+  if test x"$ENABLETIFF" != x"" && test x"$SHARE_LIBTIFF" != x"$SHARE_LIBJPEG" ; then
     AC_MSG_ERROR([Mixing local libtiff with shared libjpeg not supported])
+  fi
 fi
 
 CGLAGS_STORE=$CFLAGS
@@ -1958,7 +1969,7 @@ if test x$with_luratech != xno; then
 fi
 
 JB2_STDINT_TYPES_IN=
-JBIG2DEC_REQ=0.16
+JBIG2DEC_REQ=0.19
 
 if test "x$JBIG2_DECODER" = x; then
   dnl look for jbig2dec

@@ -604,7 +604,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
     const pl_font_t *plfont = pcs->font;
     gs_font *pfont = plfont->pfont;
     gs_point pt;
-    int code = 0;
+    int code = 0, code2;
 
     /* save the graphic state and set the background raster operation */
     code = pcl_gsave(pcs);
@@ -628,7 +628,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
         const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
         int nbytes;
         uint used;
-        gs_image_enum *pen = 0;
+        gs_image_enum *pen = NULL;
         gs_image1_t mask;
 
         /* empty characters have no background */
@@ -656,11 +656,14 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
         mask.Width = pl_get_uint16(cdata + 10);
         mask.Height = pl_get_uint16(cdata + 12);
         nbytes = ((mask.Width + 7) / 8) * mask.Height;
-        gs_image_init(pen, &mask, false, false, pgs);
-        code = gs_image_next(pen, cdata + 16, nbytes, &used);
+        code = gs_image_init(pen, &mask, false, false, pgs);
+        if (code >= 0)
+            code = gs_image_next(pen, cdata + 16, nbytes, &used);
 
         /* clean up */
-        gs_image_cleanup(pen, pgs);
+        code2 = gs_image_cleanup(pen, pgs);
+        if (code >= 0)
+            code = code2;
         gs_free_object(gs_gstate_memory(pgs), pen, "bitmap font background");
 
     } else {
@@ -691,13 +694,12 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
             }
         }
         gs_text_release(penum, "show_char_background");
-        if (code < 0) {
-            (void)pcl_grestore(pcs);
-            return code;
-        }
     }
 
-    return pcl_grestore(pcs);
+    code2 = pcl_grestore(pcs);
+    if (code >= 0)
+        code = code2;
+    return code;
 }
 
 /*

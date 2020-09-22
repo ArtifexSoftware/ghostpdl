@@ -983,6 +983,8 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
                 params.Dict = pdev->params.MonoImage.Dict;
                 adjust_auto_filter_strategy_mono(pdev, &params, pdev->params.MonoImage.Dict, pim, in_line);
             } else {
+                if (params.Depth > 8)
+                    params.Depth = bpc_out;
                 params.Filter = pdev->params.GrayImage.Filter;
                 params.filter_template = pdev->params.GrayImage.filter_template;
                 params.Dict = pdev->params.GrayImage.Dict;

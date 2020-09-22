@@ -1531,14 +1531,15 @@ currentdict /xref-char-dict undef
                 % Guess whether the output device is a printer.
      /Printed currentpagedevice /OutputFile known def
    } ifelse
-   currentpagedevice /OutputFile known {
-     currentpagedevice /OutputFile get (%d) search {
-       pop pop pop
+   % If the file name has an odd number of '%', it is either a request for
+   % separate pages, or is invalid. In either case some marks can be omitted.
+   currentpagedevice /OutputFile .knownget {
+     //false exch {
+       37 eq xor
+     } forall {
        /NO_PDFMARK_OUTLINES //true def
        /NO_PDFMARK_DESTS //true def
-     } {
-       pop
-     }ifelse
+     } if
    } if
    /PSLevel1 where { pop } { /PSLevel1 //false def } ifelse
    % NB: PDFfile is used outside of the PDF code to determine that a

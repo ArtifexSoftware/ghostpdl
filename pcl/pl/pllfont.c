@@ -482,7 +482,7 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
 
                 for (j = 0; *pl_built_in_resident_font_table[j].full_font_name[AGFANAME]; j++) {
                     if (strcmp
-                        ((char *)pl_built_in_resident_font_table[j].full_font_name,
+                        ((char *)pl_built_in_resident_font_table[j].full_font_name[AGFANAME],
                          (char *)pname) != 0)
                         continue;
 

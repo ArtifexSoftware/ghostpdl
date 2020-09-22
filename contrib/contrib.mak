@@ -169,7 +169,7 @@ $(DD)iwlq.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 
 ### ----------------- The BJC-210/240/250/250ex/265/1000 ---------------- ###
 
-### 
+###
 ### For questions about the driver, mailto://szaszg@hu.inter.net
 ### http://bjc250gs.sourceforge.net
 ###
@@ -264,7 +264,7 @@ $(DD)cdj970.dev : $(cdeskjet9_) $(DD)page.dev \
 $(DEVOBJ)gdevdj9.$(OBJ) : $(CONTRIBSRC)gdevdj9.c $(PDEVH) $(math__h) $(string__h)\
  $(gsparam_h) $(gxlum_h) $(gdevpcl_h) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevdj9.$(OBJ) $(C_) $(CONTRIBSRC)gdevdj9.c
- 
+
 
 ### -------------- cdnj500 - HP DesignJet 500 ------------- ###
 
@@ -694,7 +694,7 @@ $(DD)md5k.dev : $(md2k_) $(DD)page.dev \
 $(DEVOBJ)gdevmd2k.$(OBJ) : $(CONTRIBSRC)gdevmd2k.c $(PDEVH) $(gsparam_h) \
                            $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevmd2k.$(OBJ) $(C_) $(CONTRIBSRC)gdevmd2k.c
- 
+
 
 ### ----------------- The Okidata OkiPage 4w+ device ------------------- ###
 
@@ -1080,7 +1080,7 @@ $(DEVOBJ)gdev10v.$(OBJ) : $(JAPSRC)gdev10v.c $(PDEVH) \
 
 
 ##
-## EPSON MachJet driver 
+## EPSON MachJet driver
 ##
 
 mj700v2c_=$(DEVOBJ)gdevmjc.$(OBJ) $(HPPCL)

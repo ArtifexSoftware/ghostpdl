@@ -133,6 +133,7 @@ namespace ghostnet_wpf_example
 			arguments.Add(m_xpsprint);
 
 			m_printstatus.xaml_PrintProgressText.Text = "Printing...";
+			m_printstatus.xaml_PrintProgressText.FontWeight = FontWeights.Bold;
 			m_printstatus.xaml_PrintProgressGrid.Visibility = System.Windows.Visibility.Visible;
 			m_printstatus.xaml_PrintProgress.Value = 0;
 			m_viewer_state = ViewerState_t.PRINTING;
@@ -175,30 +176,14 @@ namespace ghostnet_wpf_example
 			switch (Information.Status)
 			{
 				case PrintStatus_t.PRINT_ERROR:
-					System.Windows.Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(() =>
-					{
-						ShowMessage(NotifyType_t.MESS_ERROR, "Printer Driver Error");
-						m_printstatus.xaml_PrintProgress.Visibility = System.Windows.Visibility.Collapsed;
-						m_viewer_state = ViewerState_t.DOC_OPEN;
-						this.Close();
-					}));
-					break;
 				case PrintStatus_t.PRINT_CANCELLED:
 				case PrintStatus_t.PRINT_READY:
-					System.Windows.Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(() =>
-					{
-						m_printstatus.xaml_PrintProgress.Visibility = System.Windows.Visibility.Collapsed;
-						m_viewer_state = ViewerState_t.DOC_OPEN;
-						this.Close();
-					}));
-					break;
 				case PrintStatus_t.PRINT_DONE:
 					System.Windows.Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(() =>
 					{
-						m_printstatus.xaml_PrintProgress.Visibility = System.Windows.Visibility.Collapsed;
-						DeleteTempFile(Information.FileName);
-						m_viewer_state = ViewerState_t.DOC_OPEN;
-						this.Close();
+						if (File.Exists(Information.FileName))
+							DeleteTempFile(Information.FileName);
+						System.Windows.Application.Current.Shutdown();
 					}));
 					break;
 				case PrintStatus_t.PRINT_BUSY:

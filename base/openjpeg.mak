@@ -64,7 +64,7 @@ open_jpeg_OBJS = \
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thix_manager.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tpix_manager.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thread.$(OBJ)                \
-        $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)sparse_array.$(OBJ) 
+        $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)sparse_array.$(OBJ)
 
 open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)bio.h		\

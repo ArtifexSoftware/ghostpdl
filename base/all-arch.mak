@@ -44,7 +44,7 @@
 # Usage:
 #	make <arch-name> TARGETS='...'
 #
-# or, for convenience at Utah, 
+# or, for convenience at Utah,
 #
 #	make `hostname`
 #
@@ -665,7 +665,7 @@ sgi-mips-irix6.1:	init
 		XINCLUDE=-I/usr/include/X11 \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lib/X11'
 
-# 
+#
 sgi-mips-irix6.3:	init
 	$(MAKE) $(ARGS) \
 		CC='cc $(SGIARCHFLAGS) -D_POSIX_4SOURCE ' \

@@ -1308,9 +1308,6 @@ cos_dict_put_copy(cos_dict_t *pcd, const byte *key_data, uint key_size,
                                       (flags & DICT_COPY_VALUE) != 0);
         if (code < 0)
             return code;
-        if (flags & DICT_FREE_KEY)
-            gs_free_const_string(mem, key_data, key_size,
-                                 "cos_dict_put(new key)");
         cos_value_free(&next->value, mem,
                        "cos_dict_put(old value)");
         pcde = next;

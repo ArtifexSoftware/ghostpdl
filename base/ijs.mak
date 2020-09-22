@@ -36,7 +36,7 @@ IJSO_=$(O_)$(IJSOBJ)
 # IJSI_ and IJSF_ are defined in gs.mak (why?)
 # as are IJSGENDIR and IJSOBJDIR above.
 IJS_INCL=$(I_)$(IJSI_)$(_I)
-IJS_CCFLAGS=$(IJS_INCL) $(IJSF_) 
+IJS_CCFLAGS=$(IJS_INCL) $(IJSF_)
 IJS_CC=$(CC_) $(IJS_CCFLAGS)
 
 # Define the name of this makefile.

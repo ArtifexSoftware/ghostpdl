@@ -382,6 +382,10 @@ build_directional_shading(i_ctx_t *i_ctx_p, const ref * op, float *Coords, int n
     static const float default_Domain[2] = {0, 1};
     ref *pExtend;
 
+    if (code >= 0 && code < num_Coords) {
+        code = gs_note_error(gs_error_rangecheck);
+    }
+
     *pFunction = 0;
     if (code < 0 ||
         (code = dict_floats_param_errorinfo(i_ctx_p, op, "Domain", 2, Domain,

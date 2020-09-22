@@ -86,11 +86,11 @@ $(pconfig_h): $(GLGEN)pconf.h
 
 PJLVERSION="$(GS_DOT_VERSION)"
 
-# Translate pjl file system volume "0:" to a directory of your choice 
-# Use forward slash '/' not '\\'; no trailing slash 
+# Translate pjl file system volume "0:" to a directory of your choice
+# Use forward slash '/' not '\\'; no trailing slash
 # PJL_VOLUME_0=./foo
 # PJL_VOLUME_0=/tmp/pjl0
-# PJL_VOLUME_0=c:/pjl_volume_0  		
+# PJL_VOLUME_0=c:/pjl_volume_0
 
 PJL_VOLUME_0=/tmp/pjl0
 PJL_VOLUME_1=/tmp/pjl1
@@ -295,7 +295,7 @@ pl_obj=$(pl_obj1) $(pl_obj2)
 font_common_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
 
 # artifex specific objects
-afs_obj=$(font_common_obj) $(PLOBJ)pllfont.$(OBJ) 
+afs_obj=$(font_common_obj) $(PLOBJ)pllfont.$(OBJ)
 
 # ufst specific objects
 ufst_obj=$(font_common_obj) $(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
@@ -359,7 +359,7 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(ctype__h) $(string__h)\
 # On Windows this also sets up the display device so that we
 # can view the output.
 $(PLOBJ)$(REALMAIN_SRC).$(OBJ): $(PLSRC)$(REALMAIN_SRC).c $(PL_MAK) $(MAKEDIRS) \
- $(string__h) $(plapi_h) $(gserrors_h)                                
+ $(string__h) $(plapi_h) $(gserrors_h)
 	$(PLATCCC) $(PLSRC)$(REALMAIN_SRC).c $(PLO_)$(REALMAIN_SRC).$(OBJ)
 
 

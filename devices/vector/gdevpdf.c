@@ -1090,11 +1090,18 @@ round_box_coord(double xy)
 static int
 pdf_write_page(gx_device_pdf *pdev, int page_num)
 {
-    long page_id = pdf_page_id(pdev, page_num);
-    pdf_page_t *page = &pdev->pages[page_num - 1];
+    long page_id;
+    pdf_page_t *page;
     double mediabox[4] = {0, 0};
     stream *s;
-    const cos_value_t *v_mediabox = cos_dict_find_c_key(page->Page, "/MediaBox");
+    const cos_value_t *v_mediabox;
+
+    if (pdev->pages == NULL)
+        return_error(gs_error_undefined);
+
+    page = &pdev->pages[page_num - 1];
+    v_mediabox = cos_dict_find_c_key(page->Page, "/MediaBox");
+    page_id = pdf_page_id(pdev, page_num);
 
     /* If we have not been given a MediaBox overriding pdfmark, use the current media size. */
     s = pdev->strm;
@@ -2554,10 +2561,10 @@ pdf_close(gx_device * dev)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
     gs_memory_t *mem = pdev->pdf_memory;
-    stream *s;
+    stream *s = NULL;
     gp_file *tfile = pdev->xref.file;
     gs_offset_t xref = 0;
-    gs_offset_t resource_pos;
+    gs_offset_t resource_pos = 0;
     long Catalog_id = 0, Info_id = 0,
         Pages_id = 0, Encrypt_id = 0;
     long Threads_id = 0;
@@ -2569,12 +2576,15 @@ pdf_close(gx_device * dev)
     bool file_per_page = false;
 
     if (!dev->is_open)
-      return_error(gs_error_undefined);
+        return_error(gs_error_undefined);
     dev->is_open = false;
 
-    Catalog_id = pdev->Catalog->id;
-    Info_id = pdev->Info->id;
-    Pages_id = pdev->Pages->id;
+    if (pdev->Catalog)
+        Catalog_id = pdev->Catalog->id;
+    if (pdev->Info)
+        Info_id = pdev->Info->id;
+    if (pdev->Pages)
+        Pages_id = pdev->Pages->id;
 
     memset(&linear_params, 0x00, sizeof(linear_params));
     linear_params.Info_id = Info_id;
@@ -2681,7 +2691,7 @@ pdf_close(gx_device * dev)
     }
 
     /* Create the Pages tree. */
-    if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
+    if (!(pdev->ForOPDFRead && pdev->ProduceDSC) && pdev->strm != NULL) {
         pdf_open_obj(pdev, Pages_id, resourcePagesTree);
         pdf_record_usage(pdev, Pages_id, resource_usage_part9_structure);
 
@@ -2844,7 +2854,8 @@ pdf_close(gx_device * dev)
         pdf_record_usage(pdev, pdev->Info->id, resource_usage_part9_structure);
 
     } else {
-        pdev->Info->id = 0;	/* Don't write Info dict for DSC PostScript */
+        if (pdev->Info != NULL)
+            pdev->Info->id = 0;	/* Don't write Info dict for DSC PostScript */
     }
     /*
      * Write the definitions of the named objects.
@@ -2852,10 +2863,13 @@ pdf_close(gx_device * dev)
      * XObjects, and images named by NI.
      */
 
-    do {
-        cos_dict_objects_write(pdev->local_named_objects, pdev);
-    } while (pdf_pop_namespace(pdev) >= 0);
-    cos_dict_objects_write(pdev->global_named_objects, pdev);
+    if(pdev->local_named_objects != NULL) {
+        do {
+            cos_dict_objects_write(pdev->local_named_objects, pdev);
+        } while (pdf_pop_namespace(pdev) >= 0);
+    }
+    if (pdev->global_named_objects != NULL)
+        cos_dict_objects_write(pdev->global_named_objects, pdev);
 
     if (pdev->ForOPDFRead && pdev->ProduceDSC) {
         int pages;
@@ -2870,20 +2884,22 @@ pdf_close(gx_device * dev)
 
     /* Copy the resources into the main file. */
 
-    s = pdev->strm;
-    resource_pos = stell(s);
-    sflush(pdev->asides.strm);
-    {
-        gp_file *rfile = pdev->asides.file;
-        int64_t res_end = gp_ftell(rfile);
+    if (pdev->strm != NULL) {
+        s = pdev->strm;
+        resource_pos = stell(s);
+        sflush(pdev->asides.strm);
+        {
+            gp_file *rfile = pdev->asides.file;
+            int64_t res_end = gp_ftell(rfile);
 
-        gp_fseek(rfile, 0L, SEEK_SET);
-        code1 = pdf_copy_data(s, rfile, res_end, NULL);
-        if (code >= 0)
-            code = code1;
+            gp_fseek(rfile, 0L, SEEK_SET);
+            code1 = pdf_copy_data(s, rfile, res_end, NULL);
+            if (code >= 0)
+                code = code1;
+        }
     }
 
-    if (pdev->ForOPDFRead && pdev->ProduceDSC) {
+    if (pdev->ForOPDFRead && pdev->ProduceDSC && s != NULL) {
         int j;
 
         pagecount = 1;
@@ -2959,7 +2975,7 @@ pdf_close(gx_device * dev)
         memset(linear_params.Offsets, 0x00, linear_params.LastResource * sizeof(gs_offset_t));
     }
 
-    if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
+    if (!(pdev->ForOPDFRead && pdev->ProduceDSC) && pdev->strm != NULL) {
         /* Write Encrypt. */
         if (pdev->OwnerPassword.size > 0) {
             Encrypt_id = pdf_obj_ref(pdev);
@@ -3037,7 +3053,7 @@ pdf_close(gx_device * dev)
         }
     }
 
-    if (pdev->Linearise) {
+    if (pdev->Linearise && pdev->strm != NULL) {
         int i;
 
         code = pdf_linearise(pdev, &linear_params);
@@ -3366,23 +3382,30 @@ pdf_close(gx_device * dev)
 
     /* Free named objects. */
 
-    cos_release((cos_object_t *)pdev->NI_stack, "Release Name Index stack");
-    gs_free_object(mem, pdev->NI_stack, "Free Name Index stack");
-    pdev->NI_stack = 0;
+    if (pdev->NI_stack != NULL) {
+        cos_release((cos_object_t *)pdev->NI_stack, "Release Name Index stack");
+        gs_free_object(mem, pdev->NI_stack, "Free Name Index stack");
+        pdev->NI_stack = 0;
+    }
 
-    cos_dict_objects_delete(pdev->local_named_objects);
-    COS_FREE(pdev->local_named_objects, "pdf_close(local_named_objects)");
-    pdev->local_named_objects = 0;
+    if (pdev->local_named_objects != NULL) {
+        cos_dict_objects_delete(pdev->local_named_objects);
+        COS_FREE(pdev->local_named_objects, "pdf_close(local_named_objects)");
+        pdev->local_named_objects = 0;
+    }
 
-    /* global resources include the Catalog object and apparently the Info dict */
-    cos_dict_objects_delete(pdev->global_named_objects);
-    COS_FREE(pdev->global_named_objects, "pdf_close(global_named_objects)");
-    pdev->global_named_objects = 0;
+    if (pdev->global_named_objects != NULL) {
+        /* global resources include the Catalog object and apparently the Info dict */
+        cos_dict_objects_delete(pdev->global_named_objects);
+        COS_FREE(pdev->global_named_objects, "pdf_close(global_named_objects)");
+        pdev->global_named_objects = 0;
+    }
 
     /* Wrap up. */
 
     pdev->font_cache = 0;
 
+    if (pdev->pages != NULL)
     {
         int i;
         for (i=0;i < pdev->next_page;i++) {
@@ -3402,26 +3425,32 @@ pdf_close(gx_device * dev)
     gs_free_object(mem, pdev->sbstack, "Free sbstack");
     pdev->sbstack = 0;
 
-    text_data_free(mem, pdev->text);
+    if (pdev->text != NULL)
+        text_data_free(mem, pdev->text);
     pdev->text = 0;
 
-    cos_release((cos_object_t *)pdev->Pages, "release Pages dict");
-    gs_free_object(mem, pdev->Pages, "Free Pages dict");
-    pdev->Pages = 0;
+    if (pdev->Pages != NULL) {
+        cos_release((cos_object_t *)pdev->Pages, "release Pages dict");
+        gs_free_object(mem, pdev->Pages, "Free Pages dict");
+        pdev->Pages = 0;
+    }
 
+    if (pdev->vgstack != NULL)
     {
         int i;
         for (i=0;i < pdev->vgstack_size;i++) {
             if (pdev->vgstack[i].dash_pattern != NULL)
                 gs_free_object(pdev->memory->non_gc_memory, pdev->vgstack[i].dash_pattern, "pdfwrite final free stored dash in gstate");
         }
+        gs_free_object(pdev->pdf_memory, pdev->vgstack, "pdf_close(graphics state stack)");
+        pdev->vgstack = 0;
     }
-    gs_free_object(pdev->pdf_memory, pdev->vgstack, "pdf_close(graphics state stack)");
-    pdev->vgstack = 0;
 
-    cos_release((cos_object_t *)pdev->Namespace_stack, "release Name space stack");
-    gs_free_object(mem, pdev->Namespace_stack, "Free Name space stack");
-    pdev->Namespace_stack = 0;
+    if (pdev->Namespace_stack != NULL) {
+        cos_release((cos_object_t *)pdev->Namespace_stack, "release Name space stack");
+        gs_free_object(mem, pdev->Namespace_stack, "Free Name space stack");
+        pdev->Namespace_stack = 0;
+    }
 
     pdev->Catalog = 0;
     pdev->Info = 0;
@@ -3431,6 +3460,7 @@ pdf_close(gx_device * dev)
     pdev->outline_depth = -1;
     pdev->max_outline_depth = 0;
 
+    if (s != NULL)
     {
         /* pdf_open_dcument could set up filters for entire document.
            Removing them now. */

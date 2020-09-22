@@ -874,8 +874,9 @@ mask_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
     gs_image_t_init_mask(&mask, true);
     mask.Width = pbitmap->size.x;
     mask.Height = pbitmap->size.y;
-    gs_image_init(pen, &mask, false, false, pgs);
-    code = bitmap_paint(pen, (gs_data_image_t *) & mask, pbitmap, pgs);
+    code = gs_image_init(pen, &mask, false, false, pgs);
+    if (code >= 0)
+        code = bitmap_paint(pen, (gs_data_image_t *) & mask, pbitmap, pgs);
     gs_free_object(gs_gstate_memory(pgs), pen, "mask_PaintProc");
     return code;
 }

@@ -699,7 +699,8 @@ Where pdfa.pjl contains the PJL commands to create a PDF/A-1b file (see example 
 <p>
 <h4>Example creation of a PDF/A output file</h4>
 <p>For readability the line has been bisected, when used for real this must be a single line. The 'ESC' represents
-a single byte, value 0x1B an escape character in ASCII.</p>
+a single byte, value 0x1B, an escape character in ASCII. The line must end with an ASCII newline (\n, 0x0A) and this must be the only newline following the @PJL.
+The line breaks between "" below should be replaced with space characters, the double quote charcters (") are required.</p>
 <code>
 </p>
 <pre>
@@ -1401,7 +1402,7 @@ or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
 Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.52, 19 March 2020
+<small>Ghostscript version 9.53.0, 10 September 2020
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

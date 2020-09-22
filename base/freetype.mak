@@ -22,6 +22,7 @@
 #	FT_CFLAGS   - The include options for the freetype library
 #	SHARE_FT - 0 to compile in freetype, 1 to link a shared library
 #	FT_LIBS  - if SHARE_FT=1, the link options for the shared library
+#	FT_LIB_PATH - if SHARE_FT=1, the path(s) for the shared library
 
 # (Rename directories.)
 FTSRC=$(FTSRCDIR)$(D)src$(D)
@@ -213,7 +214,8 @@ $(FTGEN)freetype.dev : $(FTGEN)freetype_$(SHARE_FT).dev $(FT_MAK) $(GENFTCONFH) 
 
 # Define the shared version.
 $(FTGEN)freetype_1.dev : $(TOP_MAKEFILES) $(FT_MAK) $(ECHOGS_XE) $(FT_MAK) $(GENFTCONFH) $(MAKEDIRS)
-	$(SETMOD) $(FTGEN)freetype_1 -link $(FT_LIBS)
+	$(SETMOD) $(FTGEN)freetype_1 -lib $(FT_LIBS)
+	$(ADDMOD) $(FTGEN)freetype_1 -libpath $(FT_LIB_PATH)
 
 # Define the non-shared version.
 $(FTGEN)freetype_0.dev : $(FT_MAK) $(ECHOGS_XE) \

@@ -215,8 +215,6 @@ gs_show_begin(gs_gstate *, const byte *, uint,
     gs_charboxpath_begin(gs_gstate *, const byte *, uint, bool,
                          gs_memory_t *, gs_text_enum_t **);
 
-/* Compute the number of characters in a text. */
-int gs_text_size(gs_gstate * pgs, gs_text_params_t *text, gs_memory_t * mem);
 /* Retrieve text params from enumerator. */
 gs_text_params_t *gs_get_text_params(gs_text_enum_t *pte);
 
