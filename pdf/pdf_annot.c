@@ -2895,15 +2895,308 @@ static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
     return code;
 }
 
-static int pdfi_annot_preserve_default(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+/* Create a string containing form label
+ * I don't think the format actually matters, though it probably needs to be unique
+ * Just use a counter to ensure uniqueness
+ *
+ * Format: {FormName%d}
+ */
+static int pdfi_annot_preserve_nextformlabel(pdf_context *ctx, byte **data, int *len)
+{
+    int size = 30;
+    char *buf;
+
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_annot_preserve_nextformlabel(buf)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    snprintf(buf, size, "{FormName%d}", ctx->pdfwrite_form_counter++);
+    *len = strlen(buf);
+    *data = (byte *)buf;
+    return 0;
+}
+
+/* Build a high level form for the AP and replace it with an indirect reference
+ *
+ * There can multiple AP in the dictionary, so do all of them.
+ */
+static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name *AP_key)
+{
+    int code = 0;
+    pdf_dict *AP = NULL;
+    uint64_t index;
+    pdf_name *Key = NULL;
+    pdf_obj *Value = NULL;
+    byte *labeldata = NULL;
+    int labellen;
+    int form_id;
+    pdf_indirect_ref *ref = NULL;
+    gx_device *device = gs_currentdevice(ctx->pgs);
+
+    code = pdfi_dict_get(ctx, annot, "AP", (pdf_obj **)&AP);
+    if (code < 0) goto exit;
+
+    if (AP->type != PDF_DICT) {
+        /* Invalid AP, just delete it because I dunno what to do...
+         * TODO: Should flag a warning here
+         */
+        code = pdfi_dict_delete_pair(ctx, annot, AP_key);
+        return code;
+    }
+
+    code = pdfi_dict_first(ctx, AP, (pdf_obj **)&Key, &Value, &index);
+    if (code < 0) goto exit;
+    do {
+        if (Value->type == PDF_DICT) {
+            /* Get a form label */
+            code = pdfi_annot_preserve_nextformlabel(ctx, &labeldata, &labellen);
+            if (code < 0) goto exit;
+
+            /* Notify the driver of the label name */
+            code = (*dev_proc(device, dev_spec_op))
+                (device, gxdso_pdf_form_name, labeldata, labellen);
+
+            /* Draw the high-level form */
+            code = pdfi_do_highlevel_form(ctx, ctx->CurrentPageDict, (pdf_dict *)Value);
+            if (code < 0) goto exit;
+
+            /* Get the object number (form_id) of the high level form */
+            code = (*dev_proc(device, dev_spec_op))
+                (device, gxdso_get_form_ID, &form_id, sizeof(int));
+
+            /* Create an indirect ref to form object */
+            code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&ref);
+            if (code < 0) goto exit;
+            ref->ref_object_num = form_id;
+            ref->ref_generation_num = 0;
+
+            /* Put it in the dict */
+            code = pdfi_dict_put_obj(AP, (pdf_obj *)Key, (pdf_obj *)ref);
+            if (code < 0) goto exit;
+        }
+
+        pdfi_countdown(Key);
+        Key = NULL;
+        pdfi_countdown(Value);
+        Value = NULL;
+        gs_free_object(ctx->memory, labeldata, "pdfi_annot_preserve_modAP(labeldata)");
+        labeldata = NULL;
+
+        code = pdfi_dict_next(ctx, AP, (pdf_obj **)&Key, &Value, &index);
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+        if (code < 0) goto exit;
+    } while (1);
+
+ exit:
+    if (labeldata)
+        gs_free_object(ctx->memory, labeldata, "pdfi_annot_preserve_modAP(labeldata)");
+    pdfi_countdown(AP);
+    pdfi_countdown(Key);
+    pdfi_countdown(Value);
+    return code;
+}
+
+static int pdfi_resolve_indirect(pdf_context *ctx, pdf_obj *value);
+
+static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj)
+{
+    int code = 0;
+    uint64_t index, arraysize;
+    pdf_obj *object = NULL;
+    pdf_array *array = (pdf_array *)obj;
+    pdf_dict *nulldict = NULL;
+
+    arraysize = pdfi_array_size(array);
+    for (index = 0; index < arraysize; index++) {
+        code = pdfi_array_get(ctx, array, index, &object);
+        if (code == gs_error_circular_reference) {
+            /* Replace circular reference with empty dict */
+            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
+            if (code < 0) goto exit;
+            code = pdfi_array_put(ctx, array, index, (pdf_obj *)nulldict);
+            if (code < 0) goto exit;
+        } else {
+            if (code < 0) goto exit;
+            if (object->type == PDF_DICT && pdfi_dict_is_stream(ctx, (pdf_dict *)object)) {
+                /* Replace stream with empty dict */
+                code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
+                if (code < 0) goto exit;
+                code = pdfi_array_put(ctx, array, index, (pdf_obj *)nulldict);
+            } else {
+                code = pdfi_resolve_indirect(ctx, object);
+            }
+        }
+        if (code < 0) goto exit;
+
+        pdfi_countdown(object);
+        object = NULL;
+    }
+
+ exit:
+    pdfi_countdown(object);
+    return code;
+}
+
+static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj)
+{
+    int code = 0;
+    pdf_dict *dict = (pdf_dict *)obj;
+    pdf_name *Key = NULL;
+    pdf_obj *Value = NULL;
+    uint64_t index, dictsize;
+    pdf_dict *nulldict = NULL;
+
+    dictsize = pdfi_dict_entries(dict);
+
+    /* Note: I am not using pdfi_dict_first/next because of needing to handle
+     * circular references.
+     */
+    for (index=0; index<dictsize; index ++) {
+        Key = (pdf_name *)dict->keys[index];
+        code = pdfi_dict_get_by_key(ctx, dict, Key, &Value);
+        if (code == gs_error_circular_reference) {
+            /* Replace circular reference with empty dict */
+            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
+            if (code < 0) goto exit;
+            code = pdfi_dict_put_obj(dict, (pdf_obj *)Key, (pdf_obj *)nulldict);
+            if (code < 0) goto exit;
+        } else {
+            if (code < 0) goto exit;
+            if (Value->type == PDF_DICT && pdfi_dict_is_stream(ctx, (pdf_dict *)Value)) {
+                /* Replace stream with empty dict */
+                code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
+                if (code < 0) goto exit;
+                code = pdfi_dict_put_obj(dict, (pdf_obj *)Key, (pdf_obj *)nulldict);
+            } else {
+                code = pdfi_resolve_indirect(ctx, Value);
+            }
+        }
+        if (code < 0) goto exit;
+
+        pdfi_countdown(Value);
+        Value = NULL;
+    }
+
+ exit:
+    pdfi_countdown(Value);
+    return code;
+}
+
+/* Resolve all the indirect references for an object
+ * Resolve circular references by replacing with null dict
+ * Note: This is recursive
+ */
+static int pdfi_resolve_indirect(pdf_context *ctx, pdf_obj *value)
+{
+    int code = 0;
+
+    switch(value->type) {
+    case PDF_ARRAY:
+        code = pdfi_resolve_indirect_array(ctx, value);
+        break;
+    case PDF_DICT:
+        code = pdfi_resolve_indirect_dict(ctx, value);
+        break;
+    default:
+        break;
+    }
+    return code;
+}
+
+/* Make a temporary copy of the annotation dict with some fields left out or
+ * modified, then do a pdfmark on it
+ */
+static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
 {
     int code = 0;
     gs_matrix ctm;
+    pdf_dict *tempdict = NULL;
+    uint64_t dictsize;
+    uint64_t index;
+    pdf_name *Key = NULL;
+    pdf_obj *Value = NULL;
 
+    /* Create a temporary copy of the annot dict */
+    dictsize = pdfi_dict_entries(annot);
+    code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
+    if (code < 0) goto exit;
+    pdfi_countup(tempdict);
+    code = pdfi_dict_copy(tempdict, annot);
+    if (code < 0) goto exit;
+
+
+     /* see also: 'loadannot' in gs code */
+    /* Go through the dict, deleting and modifying some entries
+     * Note that I am iterating through the original dict because I will
+     * be deleting some keys from tempdict and the iterators wouldn't work right.
+     */
+    code = pdfi_dict_first(ctx, annot, (pdf_obj **)&Key, &Value, &index);
+    if (code < 0) goto exit;
+    do {
+        if (pdfi_name_is(Key, "Popup") || pdfi_name_is(Key, "IRT") || pdfi_name_is(Key, "RT") ||
+            pdfi_name_is(Key, "P") || pdfi_name_is(Key, "Parent")) {
+            /* Delete some keys
+             * These would not be handled correctly and are optional.
+             * (see pdf_draw.ps/loadannot())
+             * TODO: Could probably handle some of these since they are typically
+             * just references, and we do have a way to handle references?
+             * Look into it later...
+             */
+            code = pdfi_dict_delete_pair(ctx, tempdict, Key);
+            if (code < 0) goto exit;
+        } else if (pdfi_name_is(Key, "AP")) {
+            /* Special handling for AP -- have fun! */
+            code = pdfi_annot_preserve_modAP(ctx, tempdict, Key);
+            if (code < 0) goto exit;
+        } else if (Value->type == PDF_ARRAY || Value->type == PDF_DICT) {
+            /* Pre-resolve indirect references of any arrays/dicts
+             */
+            code = pdfi_loop_detector_mark(ctx);
+            code = pdfi_loop_detector_add_object(ctx, annot->object_num);
+            code = pdfi_resolve_indirect(ctx, Value);
+            if (code < 0) goto exit;
+            (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
+        }
+
+        pdfi_countdown(Key);
+        Key = NULL;
+        pdfi_countdown(Value);
+        Value = NULL;
+
+        code = pdfi_dict_next(ctx, annot, (pdf_obj **)&Key, &Value, &index);
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+        if (code < 0) goto exit;
+
+    } while (1);
+
+    /* Do pdfmark from the tempdict */
     gs_currentmatrix(ctx->pgs, &ctm);
 
-    code = pdfi_mark_from_dict(ctx, annot, &ctm, "ANN");
+    /* TODO: Loop detection no longer necessary here, since we took care of it above.
+     *
+     * (but there is no harm in playing it safe?)
+     */
+    code = pdfi_loop_detector_mark(ctx);
+    code = pdfi_loop_detector_add_object(ctx, annot->object_num);
+    code = pdfi_mark_from_dict(ctx, tempdict, &ctm, "ANN");
+    if (code < 0) goto exit;
+    (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
+
+ exit:
+    pdfi_countdown(tempdict);
+    pdfi_countdown(Key);
+    pdfi_countdown(Value);
     return code;
+}
+
+static int pdfi_annot_preserve_default(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
+{
+    return pdfi_annot_preserve_mark(ctx, annot, subtype);
 }
 
 static int pdfi_annot_preserve_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
@@ -2961,6 +3254,7 @@ annot_preserve_dispatch_t annot_preserve_dispatch[] = {
     {"FreeText", pdfi_annot_preserve_default},
     {"Ink", pdfi_annot_preserve_default},
     {"Movie", pdfi_annot_preserve_default},
+    {"PolyLine", pdfi_annot_preserve_default},
     {"Popup", pdfi_annot_preserve_default},
     {"Sound", pdfi_annot_preserve_default},
     {"Square", pdfi_annot_preserve_default},
@@ -2988,7 +3282,7 @@ static int pdfi_annot_preserve(pdf_context *ctx, pdf_dict *annot, pdf_name *subt
     }
 
     /* If there is no handler, just draw it */
-    /* NOTE: gs does a drawwidget here instead, and also fails to do PolyLine correctly (?) */
+    /* NOTE: gs does a drawwidget here instead (?) */
     if (!dispatch_ptr->subtype)
         code = pdfi_annot_draw(ctx, annot, subtype);
 

@@ -319,6 +319,12 @@ typedef struct pdf_context_s
     /* Does current output device handle pdfmark */
     bool writepdfmarks;
 
+    /* Counter for making labels for pdfmark forms (annotations) */
+    int pdfwrite_form_counter;
+
+    /* Doing a high level form for pdfwrite (annotations) */
+    bool PreservePDFForm;
+
     /* Should annotations be preserved or marked for current output device? */
     bool annotations_preserved;
 

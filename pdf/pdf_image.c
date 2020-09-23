@@ -34,7 +34,7 @@
 #include "gsiparm4.h"
 #include "gsiparm3.h"
 #include "gsipar3x.h"
-
+#include "gsform1.h"
 #include "gstrans.h"
 
 int pdfi_BI(pdf_context *ctx)
@@ -1683,95 +1683,196 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject
     return code;
 }
 
+/* See zbeginform() */
+static int pdfi_form_highlevel_begin(pdf_context *ctx, pdf_dict *form_dict, gs_matrix *CTM,
+                                     gs_rect *BBox, gs_matrix *form_matrix)
+{
+    int code = 0;
+    gx_device *cdev = gs_currentdevice_inline(ctx->pgs);
+    gs_form_template_t template;
+    gs_point ll, ur;
+    gs_fixed_rect box;
+
+    memset(&template, 0, sizeof(template));
+
+    template.CTM = *CTM; /* (structure copy) */
+    template.BBox = *BBox; /* (structure copy) */
+    template.form_matrix = *form_matrix; /* (structure copy) */
+    template.FormID = -1;
+    template.pcpath = ctx->pgs->clip_path;
+    template.pgs = ctx->pgs;
+
+    code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_form_begin, &template, 0);
+    /* return value > 0 means the device sent us back a matrix
+     * and wants the CTM set to that.
+     * TODO: No idea if we need this nonsense.  See zbeginform()
+     */
+    if (code > 0)
+    {
+        gs_setmatrix(ctx->pgs, &template.CTM);
+        gs_distance_transform(template.BBox.p.x, template.BBox.p.y, &template.CTM, &ll);
+        gs_distance_transform(template.BBox.q.x, template.BBox.q.y, &template.CTM, &ur);
+
+        /* A form can legitimately have negative co-ordinates in paths
+         * because it can be translated. But we always clip paths to the
+         * page which (clearly) can't have negative co-ordinates. NB this
+         * wouldn't be a problem if we didn't reset the CTM, but that would
+         * break the form capture.
+         * So here we temporarily set the clip to permit negative values,
+         * fortunately this works.....
+         */
+        /* We choose to permit negative values of the same magnitude as the
+         * positive ones.
+         */
+
+        box.p.x = float2fixed(ll.x);
+        box.p.y = float2fixed(ll.y);
+        box.q.x = float2fixed(ur.x);
+        box.q.y = float2fixed(ur.y);
+
+        if (box.p.x < 0) {
+            if(box.p.x * -1 > box.q.x)
+                box.q.x = box.p.x * -1;
+        } else {
+            if (fabs(ur.x) > fabs(ll.x))
+                box.p.x = box.q.x * -1;
+            else {
+                box.p.x = float2fixed(ll.x * -1);
+                box.q.x = float2fixed(ll.x);
+            }
+        }
+        if (box.p.y < 0) {
+            if(box.p.y * -1 > box.q.y)
+                box.q.y = box.p.y * -1;
+        } else {
+            if (fabs(ur.y) > fabs(ll.y))
+                box.p.y = box.q.y * -1;
+            else {
+                box.p.y = float2fixed(ll.y * -1);
+                box.q.y = float2fixed(ll.y);
+            }
+        }
+        /* This gets undone when we grestore after the form is executed */
+        code = gx_clip_to_rectangle(ctx->pgs, &box);
+    }
+
+    return code;
+}
+
+/* See zendform() */
+static int pdfi_form_highlevel_end(pdf_context *ctx)
+{
+    int code = 0;
+    gx_device *cdev = gs_currentdevice_inline(ctx->pgs);
+
+    code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_form_end, 0, 0);
+    return code;
+}
+
+/* See bug #702560. The original file has a Form XObject which is not a stream. Instead
+ * the Form XObject has a /Contents key which points to a stream dictionary. This is plainly
+ * illegal but, as always, Acrobat can open it....
+ * If PDFSTOPONERROR is true then we just exit. Otherwise we look for a /Contents key in the stream
+ * dictionary. If we find one we dereference the object to get a stream dictionary, then merge the
+ * two dictionaries, ensuring the stream offset is correct, and proceed as if that's what we'd
+ * always had. If we don't have a /Contents key then exit with a typecheck error.
+ */
+static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict)
+{
+    int code = 0;
+    pdf_dict *stream_dict = NULL;
+
+    if (pdfi_dict_is_stream(ctx, form_dict))
+        return 0;
+
+    if (!ctx->pdfstoponerror) {
+        code = pdfi_dict_knownget_type(ctx, form_dict, "Contents", PDF_DICT, (pdf_obj **)&stream_dict);
+        if (code < 0 || stream_dict == NULL || !pdfi_dict_is_stream(ctx, stream_dict)) {
+            ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
+        ctx->pdf_warnings |= W_PDF_STREAM_HAS_CONTENTS;
+        code = pdfi_merge_dicts(form_dict, stream_dict);
+        form_dict->stream_offset = stream_dict->stream_offset;
+    } else {
+        ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
+        code = gs_note_error(gs_error_typecheck);
+    }
+ exit:
+    pdfi_countdown(stream_dict);
+    return code;
+}
+
 static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
 {
     int code, code1 = 0;
     bool group_known = false;
     bool do_group = false;
     pdf_array *FormMatrix = NULL;
-    gs_matrix m;
+    gs_matrix formmatrix, CTM;
     gs_rect bbox;
     pdf_array *BBox;
-
-    if (!pdfi_dict_is_stream(ctx, form_dict)) {
-        /* See bug #702560. The original file has a Form XObject which is not a stream. Instead
-         * the Form XObject has a /Contents key which points to a stream dictionary. This is plainly
-         * illegal but, as always, Acrobat can open it....
-         * If PDFSTOPONERROR is true then we just exit. Otherwise we look for a /Contents key in the stream
-         * dictionary. If we find one we dereference the object to get a stream dictionary, then merge the
-         * two dictionaries, ensuring the stream offset is correct, and proceed as if that's what we'd
-         * always had. If we don't have a /Contents key then exit with a typecheck error.
-         */
-        pdf_dict *stream_dict = NULL;
-
-        if (!ctx->pdfstoponerror) {
-            code = pdfi_dict_knownget_type(ctx, form_dict, "Contents", PDF_DICT, (pdf_obj **)&stream_dict);
-            if (code < 0 || stream_dict == NULL || !pdfi_dict_is_stream(ctx, stream_dict)) {
-                pdfi_countdown(stream_dict);
-                ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
-                return_error(gs_error_typecheck);
-            }
-            ctx->pdf_warnings |= W_PDF_STREAM_HAS_CONTENTS;
-            code = pdfi_merge_dicts(form_dict, stream_dict);
-            form_dict->stream_offset = stream_dict->stream_offset;
-            pdfi_countdown(stream_dict);
-            if (code < 0)
-                return code;
-        } else {
-            ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
-            return_error(gs_error_typecheck);
-        }
-    }
+    bool save_PreservePDFForm;
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_form BEGIN\n");
 #endif
+    if (!pdfi_dict_is_stream(ctx, form_dict)) {
+        code = pdfi_form_stream_hack(ctx, form_dict);
+        if (code < 0)
+            return code;
+    }
+
     code = pdfi_dict_known(form_dict, "Group", &group_known);
     if (code < 0)
         goto exit;
     if (group_known && ctx->page_has_transparency)
         do_group = true;
 
+    /* Grab the CTM before it gets modified */
+    code = gs_currentmatrix(ctx->pgs, &CTM);
+    if (code < 0) goto exit1;
+
     code = pdfi_op_q(ctx);
-    if (code < 0)
-        goto exit1;
+    if (code < 0) goto exit1;
 
     code = pdfi_dict_knownget_type(ctx, form_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&FormMatrix);
-    if (code < 0)
-        goto exit1;
-    code = pdfi_array_to_gs_matrix(ctx, FormMatrix, &m);
-    if (code < 0)
-        goto exit1;
+    if (code < 0) goto exit1;
+
+    code = pdfi_array_to_gs_matrix(ctx, FormMatrix, &formmatrix);
+    if (code < 0) goto exit1;
 
     code = pdfi_dict_knownget_type(ctx, form_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
-    if (code < 0)
-        goto exit1;
-    code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
-    if (code < 0)
-        goto exit1;
+    if (code < 0) goto exit1;
 
-    code = gs_concat(ctx->pgs, &m);
-    if (code < 0) {
-        goto exit1;
-    }
+    code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+    if (code < 0) goto exit1;
+
+    code = gs_concat(ctx->pgs, &formmatrix);
+    if (code < 0) goto exit1;
 
     code = gs_rectclip(ctx->pgs, &bbox, 1);
-    if (code < 0)
-        goto exit1;
+    if (code < 0) goto exit1;
+
+    if (ctx->PreservePDFForm) {
+        code = pdfi_form_highlevel_begin(ctx, form_dict, &CTM, &bbox, &formmatrix);
+        if (code < 0) goto exit1;
+    }
+    save_PreservePDFForm = ctx->PreservePDFForm;
+    ctx->PreservePDFForm = false; /* Turn off in case there are any sub-forms */
 
     if (do_group) {
         code = pdfi_loop_detector_mark(ctx);
-        if (code < 0)
-            goto exit1;
+        if (code < 0) goto exit1;
 
         code = pdfi_trans_begin_form_group(ctx, page_dict, form_dict);
         (void)pdfi_loop_detector_cleartomark(ctx);
-        if (code < 0)
-            goto exit1;
+        if (code < 0) goto exit1;
+
         code = pdfi_form_execgroup(ctx, page_dict, form_dict, NULL, NULL);
         code1 = pdfi_trans_end_group(ctx);
-        if (code < 0)
-            code = code1;
+        if (code == 0) code = code1;
     } else {
         bool saved_decrypt_strings = ctx->decrypt_strings;
 
@@ -1785,11 +1886,14 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
         ctx->decrypt_strings = saved_decrypt_strings;
     }
 
+    ctx->PreservePDFForm = save_PreservePDFForm;
+    if (ctx->PreservePDFForm) {
+        code = pdfi_form_highlevel_end(ctx);
+    }
+
  exit1:
-    if (code != 0)
-        (void)pdfi_op_Q(ctx);
-    else
-        code = pdfi_op_Q(ctx);
+    code1 = pdfi_op_Q(ctx);
+    if (code == 0) code = code1;
 
  exit:
     pdfi_countdown(FormMatrix);
@@ -1800,6 +1904,17 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     if (code < 0)
         return code;
     return 0;
+}
+
+int pdfi_do_highlevel_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
+{
+    int code = 0;
+
+    ctx->PreservePDFForm = true;
+    code = pdfi_do_form(ctx, page_dict, form_dict);
+    ctx->PreservePDFForm = false;
+
+    return code;
 }
 
 int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
