@@ -36,6 +36,7 @@ int pdfi_dict_put_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool valu
 int pdfi_dict_put_name(pdf_context *ctx, pdf_dict *d, const char *Key, const char *name);
 int pdfi_dict_get2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, pdf_obj **o);
 int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
+int pdfi_dict_get_no_deref(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o);
 int pdfi_dict_get_by_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o);
 int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o);
 int pdfi_dict_get_type2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, pdf_obj_type type, pdf_obj **o);
@@ -58,6 +59,8 @@ int pdfi_dict_copy(pdf_dict *target, pdf_dict *source);
 int pdfi_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned);
 int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index);
 int pdfi_dict_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index);
+int pdfi_dict_key_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *index);
+int pdfi_dict_key_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *index);
 bool pdfi_dict_is_stream(pdf_context *ctx, pdf_dict *d);
 int64_t pdfi_dict_stream_length(pdf_context *ctx, pdf_dict *d);
 

@@ -64,7 +64,7 @@ int pdfi_dict_delete_pair(pdf_context *ctx, pdf_dict *d, pdf_name *n)
 
     pdfi_countdown(d->keys[i]);
     pdfi_countdown(d->values[i]);
-    for(i;i < d->entries - 1;i++) {
+    for(  ;i < d->entries - 1;i++) {
         d->keys[i] = d->keys[i + 1];
         d->values[i] = d->values[i + 1];
     }
@@ -184,6 +184,33 @@ int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
                     pdfi_countdown(d->values[i]);
                     d->values[i] = *o;
                 }
+                *o = d->values[i];
+                pdfi_countup(*o);
+                return 0;
+            }
+        }
+    }
+    return_error(gs_error_undefined);
+}
+
+/* Get object from dict without resolving indirect references
+ * Will inc refcnt by 1
+ */
+int pdfi_dict_get_no_deref(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o)
+{
+    int i=0;
+    pdf_name *t;
+
+    *o = NULL;
+
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
+    for (i=0;i< d->entries;i++) {
+        t = (pdf_name *)d->keys[i];
+
+        if (t && t->type == PDF_NAME) {
+            if (pdfi_name_cmp((pdf_name *)t, Key)== 0) {
                 *o = d->values[i];
                 pdfi_countup(*o);
                 return 0;
@@ -926,6 +953,32 @@ int pdfi_dict_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Valu
 
     *i = 0;
     return pdfi_dict_next(ctx, d, Key, Value, index);
+}
+
+int pdfi_dict_key_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *index)
+{
+    uint64_t *i = index;
+
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
+    if (*i >= d->entries) {
+        *Key = NULL;
+        return gs_error_undefined;
+    }
+
+    *Key = d->keys[*i];
+    pdfi_countup(*Key);
+    (*i)++;
+    return 0;
+}
+
+int pdfi_dict_key_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *index)
+{
+    uint64_t *i = index;
+
+    *i = 0;
+    return pdfi_dict_key_next(ctx, d, Key, index);
 }
 
 int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source)
