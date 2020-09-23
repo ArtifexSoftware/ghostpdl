@@ -1392,7 +1392,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     /* Write the annotations array if any. */
 
     if (page->Annots) {
-        cos_value_t *value = NULL;
+        const cos_value_t *value = NULL;
         const cos_array_element_t *e = NULL, *next = NULL;
         long index = 0;
 
