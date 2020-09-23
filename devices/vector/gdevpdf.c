@@ -38,6 +38,8 @@
 #include "gxfcache.h"
 #include "gdevpdts.h"       /* for sync_text_state */
 
+#include "gdevpdfo.h"
+
 /* Define the default language level and PDF compatibility level. */
 /* Acrobat 8 (PDF 1.7) is the default. (1.7 for ICC V4.2.0 profile support) */
 #define PSDF_VERSION_INITIAL psdf_version_ll3
@@ -1390,8 +1392,29 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     /* Write the annotations array if any. */
 
     if (page->Annots) {
+        cos_value_t *value = NULL;
+        const cos_array_element_t *e = NULL, *next = NULL;
+        long index = 0;
+
         stream_puts(s, "/Annots");
         COS_WRITE(page->Annots, pdev);
+        /* More complications caused by cos objects. Simply calling COS_FREE
+         * will free the array, but it won't free the elements of the array
+         * if they have non-zero IDs (see the comments regarding cleanup of
+         * resources in pdf_close at around line 1090 below). Because we've
+         * already written out the annotations, the dictionary contents have
+         * already been freed, but we need the IDs until this point when we
+         * write out the array in the page dictionary. So after using them,
+         * we must go through the array and set the ids to 0 so that COS_FREE
+         * will free the array elements as well as the array itself.
+         */
+        e = cos_array_element_first(page->Annots);
+        while (e != NULL) {
+            next = cos_array_element_next(e, &index, &value);
+            if (value->contents.object != NULL)
+                value->contents.object->id = 0;
+            e = next;
+        }
         COS_FREE(page->Annots, "pdf_write_page(Annots)");
         page->Annots = 0;
     }
