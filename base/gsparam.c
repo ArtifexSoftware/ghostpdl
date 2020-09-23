@@ -200,7 +200,7 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
                 }
                 case gs_param_type_float:
                 {
-                    float fl = (float)pvalue->value.l;
+                    float fl = (float)pvalue->value.i;
                     pvalue->value.f = fl;
                     goto ok;
                 }
@@ -274,9 +274,9 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
                 }
                 case gs_param_type_int:
                 {
-                    int int1 = (int)pvalue->value.l;
+                    int int1 = (int)pvalue->value.i64;
 #if ARCH_SIZEOF_INT < 8 /* sizeof(int64_t) */
-                    if (pvalue->value.i64 != (int)int1)
+                    if (pvalue->value.i64 != (int64_t)int1)
                         return_error(gs_error_rangecheck);
 #endif
                     pvalue->value.i = int1;
@@ -309,9 +309,9 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
                 }
                 case gs_param_type_long:
                 {
-                    long l = (long)pvalue->value.i64;
+                    long l = (long)pvalue->value.z;
 #if ARCH_SIZEOF_LONG < 8 /* sizeof(int64_t) */
-                    if (pvalue->value.i64 != (int64_t)l)
+                    if (pvalue->value.z != (size_t)l)
                         return_error(gs_error_rangecheck);
 #endif
                     pvalue->value.l = l;
@@ -319,9 +319,9 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
                 }
                 case gs_param_type_int:
                 {
-                    int int1 = (int)pvalue->value.l;
+                    int int1 = (int)pvalue->value.z;
 #if ARCH_SIZEOF_INT < 8 /* sizeof(int64_t) */
-                    if (pvalue->value.i64 != (int)int1)
+                    if (pvalue->value.z != (size_t)int1)
                         return_error(gs_error_rangecheck);
 #endif
                     pvalue->value.i = int1;
@@ -329,7 +329,7 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
                 }
                 case gs_param_type_float:
                 {
-                    float fl = (float)pvalue->value.i64;
+                    float fl = (float)pvalue->value.z;
                     pvalue->value.f = fl;
                     goto ok;
                 }
