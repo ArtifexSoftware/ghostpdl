@@ -27,6 +27,7 @@
 #include "gxdevice.h" /* so we can include gxht.h below */
 #include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
 #include "gsht1.h"
+#include "gsparam.h"
 
 #include <assert.h>
 
@@ -197,6 +198,9 @@ xps_impl_init_job(pl_interp_implementation_t *impl,
     xps_context_t *ctx = instance->ctx;
     gs_c_param_list list;
     int code;
+    bool disable_page_handler = false;
+    int true_val = 1;
+    gs_memory_t* mem = ctx->memory;
 
     if (gs_debug_c('|'))
         xps_zip_trace = 1;
@@ -236,6 +240,61 @@ xps_impl_init_job(pl_interp_implementation_t *impl,
     xps_set_nocache(impl, ctx->fontdir);
 
     gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));
+
+    /* Disable the page handler as the XPS interpreter will handle page range.
+       List takes precedent over firstpage lastpage */
+    if (pdevice->PageList != NULL && pdevice->PageHandlerPushed)
+    {
+        ctx->page_range = xps_alloc(ctx, sizeof(xps_page_range_t));
+        if (!ctx->page_range)
+        {
+            return gs_rethrow(gs_error_VMerror, "out of memory: page_range struct");
+        }
+
+        ctx->page_range->page_list = xps_strdup(ctx, pdevice->PageList->Pages);
+        if (!ctx->page_range->page_list)
+        {
+            return gs_rethrow(gs_error_VMerror, "out of memory: page_list");
+        }
+        disable_page_handler = true;
+    }
+    else if ((pdevice->FirstPage > 0 || pdevice->LastPage > 0) &&
+        pdevice->PageHandlerPushed)
+    {
+        disable_page_handler = true;
+
+        ctx->page_range = xps_alloc(ctx, sizeof(xps_page_range_t));
+        if (!ctx->page_range)
+        {
+            return gs_throw(gs_error_VMerror, "out of memory: page_range struct");
+        }
+        ctx->page_range->first = pdevice->FirstPage;
+        ctx->page_range->last = pdevice->LastPage;
+        ctx->page_range->current = 0;
+        ctx->page_range->page_list = NULL;
+
+        if (ctx->page_range->first != 0 &&
+            ctx->page_range->last != 0 &&
+            ctx->page_range->first > ctx->page_range->last)
+            ctx->page_range->reverse = true;
+        else
+            ctx->page_range->reverse = false;
+    }
+
+    if (disable_page_handler)
+    {
+        gs_c_param_list_write(&list, mem);
+        code = param_write_bool((gs_param_list*)&list, "DisablePageHandler", &(true_val));
+        if (code >= 0)
+        {
+            gs_c_param_list_read(&list);
+            code = gs_putdeviceparams(pdevice, (gs_param_list*)&list);
+            gs_c_param_list_release(&list);
+            if (code < 0) {
+                return gs_rethrow(code, "cannot set device parameters");
+            }
+        }
+    }
 
     /* gsave and grestore (among other places) assume that */
     /* there are at least 2 gstates on the graphics stack. */
@@ -412,6 +471,14 @@ xps_impl_dnit_job(pl_interp_implementation_t *impl)
     /* TODO: free resources too */
     xps_hash_free(ctx, ctx->font_table, xps_free_key_func, xps_free_font_func);
     xps_hash_free(ctx, ctx->colorspace_table, xps_free_key_func, xps_free_hashed_colorspace);
+
+    if (ctx->page_range)
+    {
+        if (ctx->page_range->page_list)
+            xps_free(ctx, ctx->page_range->page_list);
+        xps_free(ctx, ctx->page_range);
+        ctx->page_range = NULL;
+    }
 
     xps_free_fixed_pages(ctx);
     xps_free_fixed_documents(ctx);

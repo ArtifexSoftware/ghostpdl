@@ -144,12 +144,22 @@ source can be found in the GhostXPS/GhostPDL downloads from the same site.
 <hr>
 <h2><a name="GhostPDL"></a>What is GhostPDL?</h2>
 
-<p>GhostPDL (Ghost Page Description Languages) is an umbrella term for all
-the above technologies. As all the above interpreters are built upon a
-single graphics library, there are size and portability benefits to using
-two of more of the languages in a given project. A product that
-includes more than one such language in a single binary and automatically
-chooses between them is sometimes referred to as a "Language Switch" build.
+<p>Historically, we’ve used GhostPDL as an umbrella term to encompass our
+entire line of products. We've now brought all these disparate products
+together into a single package, called, appropriately enough, GhostPDL.</p>
+
+<p>When running on a printer (or server) GhostPDL now automatically detects
+the type of data being fed to it and processes it accordingly. The individual
+interpreters all plug into a top-level module that handles both automatic
+language detection and Printer Job Language (PJL) based configuration.</p>
+
+<p>The exact set of interpreters present in an installation can be tuned by
+the integrator for their specific product/use cases.</p>
+
+<p>In addition to our existing PDL modules (PS, PDF, PCL, PXL, and XPS) we
+have now added new modules to handle a range of common image formats. With
+these installed GhostPDL will handle JPEGs (both JFIF and EXIF), PWGs,
+TIFFs, PNGs, JBIG2s, and JPEG2000s.</p>
 
 <p>GhostPDL is available both under the <a href="http://www.gnu.org/licenses/agpl-3.0.html">GNU Affero GPL license</a>
 and for <a href="http://www.artifex.com/page/licesnsing-information.html">commercial licensing</a>

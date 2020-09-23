@@ -794,6 +794,18 @@ is applied to each PDF file separately. So if you were to set <code>-sPageList=1
  exercise caution when using this switch, and probably should not use it at all when processing a mixture of PostScript
  and PDF files on the same command line.
 </p>
+<p>
+The XPS language like the PDF language allows random access to pages.  The XPS interpreter handles all the PageList cases
+discussed above.  It also handles cases such as:
+<blockquote><pre>
+-sPageList=1,2,1,2 indicates repeated pages.  Pages processed in order 1, 2, 1, 2.
+-sPageList=10-5 indicates pages will be processed in the order 10, 9, 8, 7, 6, 5.
+-sPageList=1-,-1 indicates first processing from page 1 to end and then from end to page 1.
+</pre></blockquote>
+In addition, the XPS interpreter allows the use of a -dLastPage < -dFirstPage.  In this
+case the pages will be processed backwards from LastPage to FirstPage.
+</p>
+
 </dd>
 </dl>
 
@@ -2666,6 +2678,18 @@ is applied to each PDF file separately. So if you were to set <code>-sPageList=1
  exercise caution when using this switch, and probably should not use it at all when processing a mixture of PostScript
  and PDF files on the same command line.
 </p>
+<p>
+The XPS language like the PDF language allows random access to pages.  The XPS interpreter handles all the PageList cases
+discussed above.  It also handles cases such as:
+<blockquote><pre>
+-sPageList=1,2,1,2 indicates repeated pages.  Pages processed in order 1, 2, 1, 2.
+-sPageList=10-5 indicates pages will be processed in the order 10, 9, 8, 7, 6, 5.
+-sPageList=1-,-1 indicates first processing from page 1 to end and then from end to page 1.
+</pre></blockquote>
+In addition, the XPS interpreter allows the use of a -dLastPage < -dFirstPage.  In this
+case the pages will be processed backwards from LastPage to FirstPage.
+</p>
+
 </dd>
 </dl>
 
