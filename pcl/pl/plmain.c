@@ -1622,6 +1622,13 @@ pl_main_set_param(pl_main_instance_t * pmi, const char *arg)
     int code = 0;
     gs_c_param_list *params = &pmi->params;
 
+    /* FIXME: For BGPrint needs fixing due to segfaults caused by the chunk */
+    /*        allocator not being thread_safe. The fixes are in progress,   */
+    /*        but this is a hack (suggested by Chris) to allow 9.53.2 to be */
+    /*        released with BGPrint least enabled for 'gs'. Bug 702921.     */
+    if (strncmp(arg, "BGPrint", 7) == 0)
+        return 0;	/* ignore this param for now */
+
     if (eqp || (eqp = strchr(arg, '#')))
         value = eqp + 1;
     else {
@@ -1889,6 +1896,13 @@ pl_main_set_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
     gs_param_string str_value;
     bool bval;
     int more_to_come = type & pl_spt_more_to_come;
+
+    /* FIXME: For BGPrint needs fixing due to segfaults caused by the chunk */
+    /*        allocator not being thread_safe. The fixes are in progress,   */
+    /*        but this is a hack (suggested by Chris) to allow 9.53.2 to be */
+    /*        released with BGPrint least enabled for 'gs'. Bug 702921.     */
+    if (strncmp(param, "BGPrint", 7) == 0)
+        return 0;	/* ignore this param for now */
 
     if (pmi->mid_runstring) {
         dmprintf(pmi->memory, "Can't set parameters mid run_string\n");
