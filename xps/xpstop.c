@@ -257,6 +257,7 @@ xps_impl_init_job(pl_interp_implementation_t *impl,
             return gs_rethrow(gs_error_VMerror, "out of memory: page_list");
         }
         disable_page_handler = true;
+        ctx->page_range->reverse = false;
     }
     else if ((pdevice->FirstPage > 0 || pdevice->LastPage > 0) &&
         pdevice->PageHandlerPushed)
