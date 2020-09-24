@@ -584,7 +584,7 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst,
                     gs_rect * pbbox, int width, int height,
                     float *pbbw, float *pbbh)
 {
-    float xx, xy, yx, yy, dx, dy, temp;
+    float xx, xy, yx, yy, temp;
     int code;
     gs_gstate * saved = pinst->saved;
     gs_matrix m = ctm_only(saved);
