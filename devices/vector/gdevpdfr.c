@@ -337,6 +337,7 @@ pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken)
         if (end - p < 2)
             return_error(gs_error_syntaxerror);
         if (p[1] != '<') {
+            /* This is handling a hex string, just skips across the entire string to the '>' */
             /*
              * We need the cast because some compilers declare memchar as
              * returning a char * rather than a void *.
@@ -344,12 +345,19 @@ pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken)
             p = (const byte *)memchr(p + 1, '>', end - p - 1);
             if (p == 0)
                 return_error(gs_error_syntaxerror);
+            *pscan = p + 1;
+            return 1;
+        } else {
+            /* This case is is beginning of a dict, "<<". Return it as a token. */
+            *pscan = p + 2;
+            return 1;
         }
-        goto m2;
+        break;
     case '>':
+        /* This case is the end of a dict, ">>". Return it as a token. */
         if (end - p < 2 || p[1] != '>')
             return_error(gs_error_syntaxerror);
-m2:	*pscan = p + 2;
+        *pscan = p + 2;
         return 1;
     case '[': case ']': case '{': case '}':
         *pscan = p + 1;
