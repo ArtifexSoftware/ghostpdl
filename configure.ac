@@ -473,17 +473,28 @@ dnl check for sanitize support
 dnl ----------------------------
 AC_MSG_CHECKING([compiler/linker address santizer support])
 
+AC_ARG_WITH([sanitizer], AC_HELP_STRING([--with-sanitizer=@<:@address/memory@:>@],
+                                   [Sanitizer for 'sanitize' target (defaults to 'address')]),
+            [SANITIZER=$with_sanitizer], [SANITIZER=address])
+
 CFLAGS_SANITIZE=""
-CFLAGS_SANITIZE_TRY="-fsanitize=address -fno-omit-frame-pointer"
+CFLAGS_SANITIZE_TRY="-fsanitize=$SANITIZER -fno-omit-frame-pointer"
 CFLAGS_SAVED="$CFLAGS"
 CFLAGS="$CFLAGS_SANITIZE_TRY"
-
 
 AC_LINK_IFELSE(
   [AC_LANG_PROGRAM([#include <stdio.h>], [
   return(0);
   ])],
-  [CFLAGS_SANITIZE="$CFLAGS"], [CFLAGS_SANITIZE="'****************ADDRESS_SANITIZER_NOT_SUPPORTED*********************'"])
+  [CFLAGS_SANITIZE="$CFLAGS"],
+  [
+    if test x"$with_sanitizer" != x; then
+      AC_MSG_ERROR([--with-sanitizer=$with_sanitizer not supported by compiler])
+    else
+      CFLAGS_SANITIZE="'****************ADDRESS_SANITIZER_NOT_SUPPORTED*********************'"
+    fi
+  ]
+  )
 
 CFLAGS="$CFLAGS_SAVED"
 
