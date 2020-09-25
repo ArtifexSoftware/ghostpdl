@@ -676,8 +676,8 @@ $(GLOBJ)gxacpath.$(OBJ) : $(GLSRC)gxacpath.c $(AK) $(gx_h)\
  $(gzacpath_h) $(gzcpath_h) $(gzpath_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxacpath.$(OBJ) $(C_) $(GLSRC)gxacpath.c
 
-$(GLOBJ)gxbcache.$(OBJ) : $(GLSRC)gxbcache.c $(AK) $(gx_h) $(memory__h)\
- $(gsmdebug_h) $(gxbcache_h) $(LIB_MAK) $(MAKEDIRS)
+$(GLOBJ)gxbcache.$(OBJ) : $(GLSRC)gxbcache.c $(AK) $(gx_h) $(gxobj_h) \
+ $(memory__h) $(gsmdebug_h) $(gxbcache_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxbcache.$(OBJ) $(C_) $(GLSRC)gxbcache.c
 
 $(GLOBJ)gxccache.$(OBJ) : $(GLSRC)gxccache.c $(AK) $(gx_h)\
