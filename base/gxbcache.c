@@ -18,6 +18,7 @@
 #include "memory_.h"
 #include "stdint_.h"
 #include "gx.h"
+#include "gxobj.h"
 #include "gsmdebug.h"
 #include "gxbcache.h"
 
@@ -59,8 +60,10 @@ gx_bits_cache_chunk_init(gx_bits_cache_chunk * bck, byte * data, uint size)
 /* If there isn't enough room, set *pcbh to an entry requiring freeing, */
 /* or to 0 if we are at the end of the chunk, and return -1. */
 int
-gx_bits_cache_alloc(gx_bits_cache * bc, ulong lsize, gx_cached_bits_head ** pcbh)
+gx_bits_cache_alloc(gx_bits_cache * bc, ulong lsize0, gx_cached_bits_head ** pcbh)
 {
+    ulong lsize = ROUND_UP(lsize0, obj_align_mod);
+
 #define ssize ((uint)lsize)
     ulong lsize1 = lsize + sizeof(gx_cached_bits_head);
 
