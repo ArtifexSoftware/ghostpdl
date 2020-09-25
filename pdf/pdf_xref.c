@@ -22,6 +22,7 @@
 #include "pdf_loop_detect.h"
 #include "pdf_dict.h"
 #include "pdf_array.h"
+#include "pdf_repair.h"
 
 static int resize_xref(pdf_context *ctx, uint64_t new_size)
 {

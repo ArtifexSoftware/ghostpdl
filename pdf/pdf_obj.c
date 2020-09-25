@@ -1,0 +1,660 @@
+/* Copyright (C) 2001-2020 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+#include "ghostpdf.h"
+#include "pdf_stack.h"
+#include "pdf_array.h"
+#include "pdf_dict.h"
+#include "pdf_obj.h"
+#include "pdf_cmap.h"
+#include "pdf_font.h"
+
+/***********************************************************************************/
+/* Functions to create the various kinds of 'PDF objects', Created objects have a  */
+/* reference count of 0. Composite objects (dictionaries, arrays, strings) use the */
+/* 'size' argument to create an object with the correct numbr of entries or of the */
+/* requested size. Simple objects (integers etc) ignore this parameter.            */
+/* Objects do not get their data assigned, that's up to the caller, but we do      */
+/* set the length or size fields for composite objects.                             */
+
+int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pdf_obj **obj)
+{
+    int bytes = 0;
+
+    switch(type) {
+        case PDF_ARRAY_MARK:
+        case PDF_DICT_MARK:
+        case PDF_PROC_MARK:
+        case PDF_NULL:
+            bytes = sizeof(pdf_obj);
+            break;
+        case PDF_INT:
+        case PDF_REAL:
+            bytes = sizeof(pdf_num);
+            break;
+        case PDF_STRING:
+        case PDF_NAME:
+            bytes = sizeof(pdf_string);
+            break;
+        case PDF_ARRAY:
+            bytes = sizeof(pdf_array);
+            break;
+        case PDF_DICT:
+            bytes = sizeof(pdf_dict);
+            break;
+        case PDF_INDIRECT:
+            bytes = sizeof(pdf_indirect_ref);
+            break;
+        case PDF_BOOL:
+            bytes = sizeof(pdf_bool);
+            break;
+        case PDF_KEYWORD:
+            bytes = sizeof(pdf_keyword);
+            break;
+        /* The following aren't PDF object types, but are objects we either want to
+         * reference count, or store on the stack.
+         */
+        case PDF_XREF_TABLE:
+            bytes = sizeof(xref_table);
+            break;
+        default:
+            return_error(gs_error_typecheck);
+    }
+    *obj = (pdf_obj *)gs_alloc_bytes(ctx->memory, bytes, "pdfi_alloc_object");
+    if (*obj == NULL)
+        return_error(gs_error_VMerror);
+
+    memset(*obj, 0x00, bytes);
+    (*obj)->ctx = ctx;
+    (*obj)->type = type;
+
+    switch(type) {
+        case PDF_NULL:
+        case PDF_INT:
+        case PDF_REAL:
+        case PDF_INDIRECT:
+        case PDF_BOOL:
+        case PDF_ARRAY_MARK:
+        case PDF_DICT_MARK:
+        case PDF_PROC_MARK:
+            break;
+        case PDF_KEYWORD:
+        case PDF_STRING:
+        case PDF_NAME:
+            {
+                unsigned char *data = NULL;
+                data = (unsigned char *)gs_alloc_bytes(ctx->memory, size, "pdfi_alloc_object");
+                if (data == NULL) {
+                    gs_free_object(ctx->memory, *obj, "pdfi_alloc_object");
+                    *obj = NULL;
+                    return_error(gs_error_VMerror);
+                }
+                ((pdf_string *)*obj)->data = data;
+                ((pdf_string *)*obj)->length = size;
+            }
+            break;
+        case PDF_ARRAY:
+            {
+                pdf_obj **values = NULL;
+
+                ((pdf_array *)*obj)->size = size;
+                if (size > 0) {
+                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_object");
+                    if (values == NULL) {
+                        gs_free_object(ctx->memory, *obj, "pdfi_alloc_object");
+                        gs_free_object(ctx->memory, values, "pdfi_alloc_object");
+                        *obj = NULL;
+                        return_error(gs_error_VMerror);
+                    }
+                    ((pdf_array *)*obj)->values = values;
+                    memset(((pdf_array *)*obj)->values, 0x00, size * sizeof(pdf_obj *));
+                }
+            }
+            break;
+        case PDF_DICT:
+            {
+                pdf_obj **keys = NULL, **values = NULL;
+
+                ((pdf_dict *)*obj)->size = size;
+                if (size > 0) {
+                    keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_object");
+                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_object");
+                    if (keys == NULL || values == NULL) {
+                        gs_free_object(ctx->memory, *obj, "pdfi_alloc_object");
+                        gs_free_object(ctx->memory, keys, "pdfi_alloc_object");
+                        gs_free_object(ctx->memory, values, "pdfi_alloc_object");
+                        *obj = NULL;
+                        return_error(gs_error_VMerror);
+                    }
+                    ((pdf_dict *)*obj)->values = values;
+                    ((pdf_dict *)*obj)->keys = keys;
+                    memset(((pdf_dict *)*obj)->values, 0x00, size * sizeof(pdf_obj *));
+                    memset(((pdf_dict *)*obj)->keys, 0x00, size * sizeof(pdf_obj *));
+                }
+            }
+            break;
+        /* The following aren't PDF object types, but are objects we either want to
+         * reference count, or store on the stack.
+         */
+        case PDF_XREF_TABLE:
+            break;
+        default:
+            break;
+    }
+#if REFCNT_DEBUG
+    (*obj)->UID = ctx->UID++;
+    dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", (*obj)->type, (*obj)->UID);
+#endif
+    return 0;
+}
+
+/***********************************************************************************/
+/* Functions to free the various kinds of 'PDF objects'.                           */
+/* All objects are reference counted, newly allocated objects, as noted above have */
+/* a reference count of 0. Pushing an object onto the stack increments             */
+/* its reference count, popping it from the stack decrements its reference count.  */
+/* When an object's reference count is decremented to 0, pdfi_countdown calls      */
+/* pdfi_free_object() to free it.                                                  */
+
+static void pdfi_free_namestring(pdf_obj *o)
+{
+    /* Currently names and strings are the same, so a single cast is OK */
+    pdf_name *n = (pdf_name *)o;
+
+    if (n->data != NULL)
+        gs_free_object(OBJ_MEMORY(n), n->data, "pdf interpreter free name or string data");
+    gs_free_object(OBJ_MEMORY(n), n, "pdf interpreter free name or string");
+}
+
+static void pdfi_free_keyword(pdf_obj *o)
+{
+    /* Currently names and strings are the same, so a single cast is OK */
+    pdf_keyword *k = (pdf_keyword *)o;
+
+    if (k->data != NULL)
+        gs_free_object(OBJ_MEMORY(k), k->data, "pdf interpreter free keyword data");
+    gs_free_object(OBJ_MEMORY(k), k, "pdf interpreter free keyword");
+}
+
+static void pdfi_free_xref_table(pdf_obj *o)
+{
+    xref_table *xref = (xref_table *)o;
+
+    gs_free_object(OBJ_MEMORY(xref), xref->xref, "pdfi_free_xref_table");
+    gs_free_object(OBJ_MEMORY(xref), xref, "pdfi_free_xref_table");
+}
+
+void pdfi_free_object(pdf_obj *o)
+{
+    switch(o->type) {
+        case PDF_ARRAY_MARK:
+        case PDF_DICT_MARK:
+        case PDF_PROC_MARK:
+        case PDF_NULL:
+        case PDF_INT:
+        case PDF_REAL:
+        case PDF_INDIRECT:
+        case PDF_BOOL:
+            gs_free_object(OBJ_MEMORY(o), o, "pdf interpreter object refcount to 0");
+            break;
+        case PDF_STRING:
+        case PDF_NAME:
+            pdfi_free_namestring(o);
+            break;
+        case PDF_ARRAY:
+            pdfi_free_array(o);
+            break;
+        case PDF_DICT:
+            pdfi_free_dict(o);
+            break;
+        case PDF_KEYWORD:
+            pdfi_free_keyword(o);
+            break;
+        case PDF_XREF_TABLE:
+            pdfi_free_xref_table(o);
+            break;
+        case PDF_FONT:
+            pdfi_free_font(o);
+            break;
+        case PDF_CMAP:
+            pdfi_free_cmap(o);
+            break;
+        default:
+            dbgmprintf(OBJ_MEMORY(o), "!!! Attempting to free unknown obect type !!!\n");
+            break;
+    }
+}
+
+/************ bufstream module BEGIN **************/
+#define INIT_BUF_SIZE 256
+
+typedef struct {
+    int len;  /* Length of buffer */
+    int cur;  /* Current position */
+    byte *data;
+} pdfi_bufstream_t;
+
+
+static int pdfi_bufstream_init(pdf_context *ctx, pdfi_bufstream_t *stream)
+{
+    stream->len = INIT_BUF_SIZE;
+    stream->cur = 0;
+    stream->data = gs_alloc_bytes(ctx->memory, stream->len, "pdfi_bufstream_init(data)");
+
+    if (!stream->data)
+        return_error(gs_error_VMerror);
+    return 0;
+}
+
+static int pdfi_bufstream_free(pdf_context *ctx, pdfi_bufstream_t *stream)
+{
+    if (stream->data)
+        gs_free_object(ctx->memory, stream->data, "pdfi_bufstream_free(data)");
+    stream->len = 0;
+    stream->cur = 0;
+    stream->data = NULL;
+    return 0;
+}
+
+/* Grab a copy of the stream's buffer */
+static int pdfi_bufstream_copy(pdf_context *ctx, pdfi_bufstream_t *stream, byte **buf, int *len)
+{
+    *buf = stream->data;
+    *len = stream->cur;
+    stream->len = 0;
+    stream->cur = 0;
+    stream->data = NULL;
+    return 0;
+}
+
+/* Increase the size of the buffer by doubling and added the known needed amount */
+static int pdfi_bufstream_increase(pdf_context *ctx, pdfi_bufstream_t *stream, uint64_t needed)
+{
+    byte *data = NULL;
+    uint64_t newsize;
+
+    newsize = stream->len * 2 + needed;
+    data = gs_alloc_bytes(ctx->memory, newsize, "pdfi_bufstream_increase(data)");
+    if (!data)
+        return_error(gs_error_VMerror);
+
+    memcpy(data, stream->data, stream->len);
+    gs_free_object(ctx->memory, stream->data, "pdfi_bufstream_increase(data)");
+    stream->data = data;
+    stream->len = newsize;
+
+    return 0;
+}
+
+static int pdfi_bufstream_write(pdf_context *ctx, pdfi_bufstream_t *stream, byte *data, uint64_t len)
+{
+    int code = 0;
+
+    if (stream->cur + len > stream->len) {
+        code = pdfi_bufstream_increase(ctx, stream, len);
+        if (code < 0)
+            goto exit;
+    }
+    memcpy(stream->data + stream->cur, data, len);
+    stream->cur += len;
+
+ exit:
+    return code;
+}
+
+/************ bufstream module END **************/
+
+
+/*********** BEGIN obj_to_string module ************/
+
+typedef int (*str_func)(pdf_context *ctx, pdf_obj *obj, byte **data, int *len);
+
+/* Dispatch to get string representation of an object */
+typedef struct {
+    pdf_obj_type type;
+    str_func func;
+} obj_str_dispatch_t;
+
+static int pdfi_mark_default_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    int size = 12;
+    byte *buf;
+
+    buf = gs_alloc_bytes(ctx->memory, size, "pdfi_mark_default_str(data)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(buf, "/placeholder", size);
+    *data = buf;
+    *len = size;
+    return code;
+}
+
+static int pdfi_mark_name_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    pdf_name *name = (pdf_name *)obj;
+    int size = name->length + 1;
+    byte *buf;
+
+    buf = gs_alloc_bytes(ctx->memory, size, "pdfi_mark_name_str(data)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    buf[0] = '/';
+    memcpy(buf+1, name->data, name->length);
+    *data = buf;
+    *len = size;
+    return code;
+}
+
+static int pdfi_mark_real_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    int size = 15;
+    pdf_num *number = (pdf_num *)obj;
+    char *buf;
+
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_real_str(data)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    snprintf(buf, size, "%.4f", number->value.d);
+    *data = (byte *)buf;
+    *len = strlen(buf);
+    return code;
+}
+
+static int pdfi_mark_int_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    int size = 15;
+    pdf_num *number = (pdf_num *)obj;
+    char *buf;
+
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_int_str(data)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    snprintf(buf, size, "%ld", number->value.i);
+    *data = (byte *)buf;
+    *len = strlen(buf);
+    return code;
+}
+
+static int pdfi_mark_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    int size = 100;
+    pdf_indirect_ref *ref = (pdf_indirect_ref *)obj;
+    char *buf;
+
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_indirect_str(data)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    snprintf(buf, size, "%ld %d R", ref->ref_object_num, ref->ref_generation_num);
+    *data = (byte *)buf;
+    *len = strlen(buf);
+    return code;
+}
+
+static int pdfi_mark_bool_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    int size = 5;
+    pdf_bool *bool = (pdf_bool *)obj;
+    char *buf;
+
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_bool_str(data)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    if (bool->value) {
+        memcpy(buf, (byte *)"true", 4);
+        *len = 4;
+    } else {
+        memcpy(buf, (byte *)"false", 5);
+        *len = 5;
+    }
+    *data = (byte *)buf;
+    return code;
+}
+
+static int pdfi_mark_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    pdf_string *string = (pdf_string *)obj;
+    int size;
+    char *buf;
+    bool non_ascii = false;
+    int i;
+    byte *ptr;
+
+    /* See if there are any non-ascii chars */
+    for (i=0,ptr=string->data;i<string->length;i++,ptr++) {
+        if (*ptr > 127) {
+            non_ascii = true;
+            break;
+        }
+    }
+
+    if (non_ascii) {
+        size = string->length * 2 + 2;
+        buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_string_str(data)");
+        if (buf == NULL)
+            return_error(gs_error_VMerror);
+        buf[0] = '<';
+        for (i=0,ptr=string->data;i<string->length;i++,ptr++) {
+            snprintf(buf+2*i+1, 3, "%02X", *ptr);
+        }
+        buf[size-1] = '>';
+    } else {
+        size = string->length + 2;
+        buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_string_str(data)");
+        if (buf == NULL)
+            return_error(gs_error_VMerror);
+        buf[0] = '(';
+        memcpy(buf+1, string->data, string->length);
+        buf[size-1] = ')';
+    }
+
+
+    *len = size;
+    *data = (byte *)buf;
+    return code;
+}
+
+static int pdfi_mark_array_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    pdf_array *array = (pdf_array *)obj;
+    pdf_obj *object = NULL;
+    byte *itembuf = NULL;
+    int itemsize;
+    pdfi_bufstream_t bufstream;
+    uint64_t index, arraysize;
+
+    code = pdfi_bufstream_init(ctx, &bufstream);
+    if (code < 0) goto exit;
+
+    code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"[", 1);
+    if (code < 0) goto exit;
+
+    arraysize = pdfi_array_size(array);
+    for (index = 0; index < arraysize; index++) {
+        code = pdfi_array_get_no_deref(ctx, array, index, &object);
+        if (code < 0) goto exit;
+
+        code = pdfi_obj_to_string(ctx, object, &itembuf, &itemsize);
+        if (code < 0) goto exit;
+
+        code = pdfi_bufstream_write(ctx, &bufstream, itembuf, itemsize);
+        if (code < 0) goto exit;
+
+        gs_free_object(ctx->memory, itembuf, "pdfi_mark_array_str(itembuf)");
+        itembuf = NULL;
+        itemsize = 0;
+        pdfi_countdown(object);
+        object = NULL;
+
+        /* Put a space between elements unless last item */
+        if (index+1 != arraysize) {
+            code = pdfi_bufstream_write(ctx, &bufstream, (byte *)" ", 1);
+            if (code < 0) goto exit;
+        }
+    }
+
+    code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"]", 1);
+    if (code < 0) goto exit;
+
+    /* Now copy the results out into the string we can keep */
+    code = pdfi_bufstream_copy(ctx, &bufstream, data, len);
+
+ exit:
+    if (itembuf)
+        gs_free_object(ctx->memory, itembuf, "pdfi_mark_array_str(itembuf)");
+    pdfi_bufstream_free(ctx, &bufstream);
+    pdfi_countdown(object);
+    return code;
+}
+
+/* This fetches without dereferencing.  If you want to see the references inline,
+ * then you need to pre-resolve them.  See pdfi_resolve_indirect().
+ */
+static int pdfi_mark_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    pdf_dict *dict = (pdf_dict *)obj;
+    pdf_name *Key = NULL;
+    pdf_obj *Value = NULL;
+    byte *itembuf = NULL;
+    int itemsize;
+    pdfi_bufstream_t bufstream;
+    uint64_t index, dictsize;
+
+    code = pdfi_bufstream_init(ctx, &bufstream);
+    if (code < 0) goto exit;
+
+    /* TODO: How to deal with stream dictionaries?
+     * /AP is one example that has special handling (up in pdf_annot.c), but there are others.
+     * See 'pushpin' annotation in annotations-galore_II.ps
+     *
+     * For now we simply put in an empty dictionary << >>
+     * I don't want to just grab the representation of the dictionary part,
+     * because when this is used with annotations that would result in an invalid
+     * stream in the output.
+     */
+    if (pdfi_dict_is_stream(ctx, dict)) {
+        code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"<< >>", 5);
+        goto exit_copy;
+    }
+
+    code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"<<\n", 3);
+    if (code < 0) goto exit;
+
+    dictsize = pdfi_dict_entries(dict);
+
+    /* Note: We specifically fetch without dereferencing, so there will be no circular
+     * references to handle here.
+     */
+    /* Get each (key,val) pair from dict and setup param for it */
+    for (index=0; index<dictsize; index ++) {
+        Key = (pdf_name *)dict->keys[index];
+        code = pdfi_obj_to_string(ctx, (pdf_obj *)Key, &itembuf, &itemsize);
+        if (code < 0)
+            goto exit;
+
+        code = pdfi_bufstream_write(ctx, &bufstream, itembuf, itemsize);
+        if (code < 0)
+            goto exit;
+
+        gs_free_object(ctx->memory, itembuf, "pdfi_mark_dict_str(itembuf)");
+        itembuf = NULL;
+        itemsize = 0;
+
+        /* Put a space between elements */
+        code = pdfi_bufstream_write(ctx, &bufstream, (byte *)" ", 1);
+        if (code < 0) goto exit;
+
+        /* No dereference */
+        code = pdfi_dict_get_no_deref(ctx, dict, (const pdf_name *)Key, &Value);
+        if (code < 0) goto exit;
+        code = pdfi_obj_to_string(ctx, Value, &itembuf, &itemsize);
+        if (code < 0) goto exit;
+
+        code = pdfi_bufstream_write(ctx, &bufstream, itembuf, itemsize);
+        if (code < 0) goto exit;
+
+        gs_free_object(ctx->memory, itembuf, "pdfi_mark_dict_str(itembuf)");
+        itembuf = NULL;
+        itemsize = 0;
+
+        pdfi_countdown(Value);
+        Value = NULL;
+
+        /* Put a space between elements */
+        if (index + 1 != dictsize) {
+            code = pdfi_bufstream_write(ctx, &bufstream, (byte *)" ", 1);
+            if (code < 0) goto exit;
+        }
+    }
+
+    code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"\n>>", 3);
+    if (code < 0)
+        goto exit;
+
+
+ exit_copy:
+    /* Now copy the results out into the string we can keep */
+    code = pdfi_bufstream_copy(ctx, &bufstream, data, len);
+
+ exit:
+    if (itembuf)
+        gs_free_object(ctx->memory, itembuf, "pdfi_mark_dict_str(itembuf)");
+    pdfi_countdown(Value);
+    pdfi_bufstream_free(ctx, &bufstream);
+    return code;
+}
+
+obj_str_dispatch_t obj_str_dispatch[] = {
+    {PDF_NAME, pdfi_mark_name_str},
+    {PDF_ARRAY, pdfi_mark_array_str},
+    {PDF_REAL, pdfi_mark_real_str},
+    {PDF_INT, pdfi_mark_int_str},
+    {PDF_BOOL, pdfi_mark_bool_str},
+    {PDF_STRING, pdfi_mark_string_str},
+    {PDF_DICT, pdfi_mark_dict_str},
+    {PDF_INDIRECT, pdfi_mark_indirect_str},
+    {0, NULL}
+};
+
+/* Recursive function to build a string from an object
+ */
+int pdfi_obj_to_string(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    obj_str_dispatch_t *dispatch_ptr;
+    int code = 0;
+
+    *data = NULL;
+    *len = 0;
+    for (dispatch_ptr = obj_str_dispatch; dispatch_ptr->func; dispatch_ptr ++) {
+        if (obj->type == dispatch_ptr->type) {
+            code = dispatch_ptr->func(ctx, obj, data, len);
+            goto exit;
+        }
+    }
+    /* Not implemented, use default */
+    code = pdfi_mark_default_str(ctx, obj, data, len);
+ exit:
+    return code;
+}
+
+/*********** END obj_to_string module ************/

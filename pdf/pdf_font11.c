@@ -25,6 +25,7 @@
 #include "pdf_file.h"
 #include "pdf_dict.h"
 #include "pdf_array.h"
+#include "pdf_deref.h"
 #include "gxfont42.h"
 #include "gxfcid.h"
 

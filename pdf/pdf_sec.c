@@ -27,6 +27,7 @@
 #include "aes.h"
 #include "sha2.h"
 #include "pdf_utf8.h"
+#include "pdf_deref.h"
 
 /* The padding string as defined in step 1 of Algorithm 3.2 */
 static char PadString[32] = {

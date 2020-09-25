@@ -18,12 +18,13 @@
 #include "ghostpdf.h"
 #include "pdf_types.h"
 #include "pdf_stack.h"
+#include "pdf_deref.h"
 #include "pdf_array.h"
 
 /* NOTE: I think this should take a pdf_context param, but it's not available where it's
  * called, would require some surgery.
  */
-void pdfi_array_free(pdf_obj *o)
+void pdfi_free_array(pdf_obj *o)
 {
     pdf_array *a = (pdf_array *)o;
     int i;
@@ -91,7 +92,7 @@ int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indi
 
     code = pdfi_push(ctx, (pdf_obj *)a);
     if (code < 0)
-        pdfi_array_free((pdf_obj *)a);
+        pdfi_free_array((pdf_obj *)a);
 
     return code;
 }

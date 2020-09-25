@@ -177,6 +177,18 @@ $(PDFOBJ)pdf_optcontent.$(OBJ): $(PDFSRC)pdf_optcontent.c $(PDFINCLUDES) $(PDF_M
 $(PDFOBJ)pdf_check.$(OBJ): $(PDFSRC)pdf_check.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_check.c $(PDFO_)pdf_check.$(OBJ)
 
+$(PDFOBJ)pdf_deref.$(OBJ): $(PDFSRC)pdf_deref.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_deref.c $(PDFO_)pdf_deref.$(OBJ)
+
+$(PDFOBJ)pdf_repair.$(OBJ): $(PDFSRC)pdf_repair.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_repair.c $(PDFO_)pdf_repair.$(OBJ)
+
+$(PDFOBJ)pdf_obj.$(OBJ): $(PDFSRC)pdf_obj.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_obj.c $(PDFO_)pdf_obj.$(OBJ)
+
+$(PDFOBJ)pdf_doc.$(OBJ): $(PDFSRC)pdf_doc.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_doc.c $(PDFO_)pdf_doc.$(OBJ)
+
 $(PDFGEN)pdfimpl.c: $(PLSRC)plimpl.c $(PDF_MAK) $(MAKEDIRS)
 	$(CP_) $(PLSRC)plimpl.c $(PDFGEN)pdfimpl.c
 
@@ -232,6 +244,10 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_check.$(OBJ)\
     $(PDFOBJ)pdf_sec.$(OBJ)\
     $(PDFOBJ)pdf_utf8.$(OBJ)\
+    $(PDFOBJ)pdf_deref.$(OBJ)\
+    $(PDFOBJ)pdf_repair.$(OBJ)\
+    $(PDFOBJ)pdf_obj.$(OBJ)\
+    $(PDFOBJ)pdf_doc.$(OBJ)\
 
 
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is

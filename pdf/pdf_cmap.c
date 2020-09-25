@@ -23,6 +23,7 @@
 #include "pdf_stack.h"
 #include "pdf_dict.h"
 #include "pdf_file.h"
+#include "pdf_deref.h"
 
 typedef enum
 {

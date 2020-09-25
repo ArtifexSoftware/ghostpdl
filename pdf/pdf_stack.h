@@ -21,6 +21,7 @@
 #include "pdf_int.h"
 #include "pdf_types.h"
 #include "ghostpdf.h"
+#include "pdf_obj.h"
 
 int pdfi_pop(pdf_context *ctx, int num);
 int pdfi_push(pdf_context *ctx, pdf_obj *o);

@@ -23,6 +23,7 @@
 #include "pdf_font.h"
 #include "pdf_font3.h"
 #include "pdf_font_types.h"
+#include "pdf_deref.h"
 #include "gscencs.h"
 #include "gscedata.h"       /* For the encoding arrays */
 #include "gsccode.h"        /* For the Encoding indices */

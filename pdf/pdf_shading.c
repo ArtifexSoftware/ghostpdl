@@ -27,6 +27,7 @@
 #include "pdf_colour.h"
 #include "pdf_trans.h"
 #include "pdf_optcontent.h"
+#include "pdf_doc.h"
 
 #include "gxshade.h"
 #include "gsptype2.h"

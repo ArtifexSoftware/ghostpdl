@@ -35,6 +35,10 @@
 #include "pdf_check.h"
 #include "pdf_optcontent.h"
 #include "pdf_sec.h"
+#include "pdf_doc.h"
+#include "pdf_repair.h"
+#include "pdf_xref.h"
+
 /*
  * Convenience routine to check if a given string exists in a dictionary
  * verify its contents and print it in a particular fashion to stdout. This

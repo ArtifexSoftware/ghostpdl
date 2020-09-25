@@ -16,6 +16,7 @@
 /* dictionary handling for the PDF interpreter */
 #include "ghostpdf.h"
 #include "pdf_types.h"
+#include "pdf_deref.h"
 #include "pdf_dict.h"
 #include "pdf_stack.h"
 #include "pdf_array.h"

@@ -26,6 +26,7 @@
 #include "pdf_dict.h"
 #include "pdf_file.h"
 #include "pdf_cmap.h"
+#include "pdf_deref.h"
 
 static font_type pdfi_fonttype_picker(byte *buf, int64_t buflen)
 {

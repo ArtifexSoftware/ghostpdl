@@ -18,6 +18,7 @@
 #include "pdf_int.h"
 #include "pdf_stack.h"
 #include "pdf_gstate.h"
+#include "pdf_doc.h"
 #include "pdf_page.h"
 #include "pdf_image.h"
 #include "pdf_file.h"

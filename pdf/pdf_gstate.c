@@ -16,6 +16,7 @@
 /* Graphics state operations for the PDF interpreter */
 
 #include "pdf_int.h"
+#include "pdf_doc.h"
 #include "pdf_gstate.h"
 #include "pdf_stack.h"
 #include "pdf_dict.h"

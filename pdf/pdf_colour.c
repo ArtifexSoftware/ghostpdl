@@ -16,6 +16,7 @@
 /* colour operations for the PDF interpreter */
 
 #include "pdf_int.h"
+#include "pdf_doc.h"
 #include "pdf_colour.h"
 #include "pdf_pattern.h"
 #include "pdf_stack.h"

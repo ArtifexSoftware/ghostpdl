@@ -20,7 +20,7 @@
 
 static inline uint64_t pdfi_array_size(pdf_array *a) { return a->size; }
 
-void pdfi_array_free(pdf_obj *o);
+void pdfi_free_array(pdf_obj *o);
 int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a);
 int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen);
 int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o);

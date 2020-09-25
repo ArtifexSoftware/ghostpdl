@@ -22,6 +22,7 @@
 #include "pdf_font.h"
 #include "pdf_stack.h"
 #include "pdf_misc.h"
+#include "pdf_doc.h"
 #include "pdf_font_types.h"
 #include "pdf_font0.h"
 #include "pdf_font1.h"
