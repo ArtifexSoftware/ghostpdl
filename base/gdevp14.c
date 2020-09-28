@@ -6216,6 +6216,9 @@ pdf14_pop_color_model(gx_device* dev, pdf14_group_color_t* group_color)
                                     -1, "pdf14_pop_color_model");
             pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] =
                                     group_color->icc_profile;
+
+            gsicc_adjust_profile_rc(pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+                                    1, "pdf14_pop_color_model");
         }
     }
 }
@@ -6465,6 +6468,7 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
         /* iccprofile was incremented above if we had not just created it.
            When we do the pop we will decrement and if we just created it, it
            will be destroyed */
+        gsicc_adjust_profile_rc(dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE], -1, "pdf14_push_color_model");
         dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] = iccprofile;
     }
     return group_color;
@@ -6975,6 +6979,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
                 gsicc_adjust_profile_rc(dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
                                         -1, "pdf14_end_transparency_mask");
                 dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] = group_color->icc_profile;
+                gsicc_adjust_profile_rc(dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+                                         1, "pdf14_end_transparency_mask");
             }
         }
     }
