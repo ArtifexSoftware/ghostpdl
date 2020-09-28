@@ -1000,28 +1000,6 @@ resolution independence, and editability.</p>
 </blockquote>
 </blockquote>
 <p>
-  The system is designed to allow different OCR engines to be used.
-  Even with Tesseract, there are 2 different engines, the &quot;legacy&quot;
-  engine, and the &quot;LSTM&quot; engine. These have different tradeoffs
-  regarding speed, accuracy, sensitivity to different fonts, size of
-  data etc. The engines in use can be changed by using the
-  <code>-dOCREngine=</code> switch;
-</p>
-<blockquote>
-<dl>
-<dt><code>-dOCREngine=</code><b><em>integer</em></b></dt>
-<dd>This sets the engine to use for OCR. It is the callers responsibility
-  to ensure that the traineddata supplied is appropriate for the selected
-  engine.
-  <dl>
-    <dt>0<dd>Default engine.
-    <dt>1<dd>LSTM engine only.
-    <dt>2<dd>Tesseract &quot;legacy&quot; engine only.
-    <dt>3<dd>Legacy and LSTM Engine combined.
-  </dl>
-</dd></dl>
-</blockquote>
-<p>
   The first device is named ocr. It extracts data as unicode codepoints
   and outputs them to the device as a stream of UTF-8 bytes.
 </p>
@@ -1063,6 +1041,8 @@ resolution independence, and editability.</p>
   devices described above.
 </p>
 <p>
+
+<h2><a name="High-level"></a>High-level devices</h2>
 
 <h3><a name="PDF"></a>PDF writer</h3>
 
@@ -2115,7 +2095,7 @@ or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
 Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.53.0, 10 September 2020
+<small>Ghostscript version 9.53.3, 1 October 2020
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
