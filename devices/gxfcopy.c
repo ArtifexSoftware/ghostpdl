@@ -389,24 +389,34 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
  * pointer to the slot where it would be added, which will have gdata.data
  * == 0, and return gs_error_undefined; if the glyph is defined, store the
  * pointer and return 0.
+ *
+ * NOTE:
+ * The interim variable (idx) is used here as a workaround for what appears
+ * to be a compiler optimiser bug in VS2019 - using "glyph - GS_MIN_CID_GLYPH"
+ * directly to index into the cfdata->glyphs array results in a pointer value
+ * in *pslot which is complete nonsense. Using the variable to store the
+ * calculated value results in working code.
  */
 static int
 copied_glyph_slot(gs_copied_font_data_t *cfdata, gs_glyph glyph,
                   gs_copied_glyph_t **pslot)
 {
     uint gsize = cfdata->glyphs_size;
+    unsigned int idx;
 
     *pslot = 0;
     if (glyph >= GS_MIN_GLYPH_INDEX) {
         /* CIDFontType 2 uses glyph indices for slots.  */
-        if (glyph - GS_MIN_GLYPH_INDEX >= gsize)
+        idx = (unsigned int)(glyph - GS_MIN_GLYPH_INDEX);
+        if (idx >= gsize)
             return_error(gs_error_rangecheck);
-        *pslot = &cfdata->glyphs[glyph - GS_MIN_GLYPH_INDEX];
+        *pslot = &cfdata->glyphs[idx];
     } else if (glyph >= GS_MIN_CID_GLYPH) {
         /* CIDFontType 0 uses CIDS for slots.  */
-        if (glyph - GS_MIN_CID_GLYPH >= gsize)
+        idx = (unsigned int)(glyph - GS_MIN_CID_GLYPH);
+        if (idx >= gsize)
             return_error(gs_error_rangecheck);
-        *pslot = &cfdata->glyphs[glyph - GS_MIN_CID_GLYPH];
+        *pslot = &cfdata->glyphs[idx];
     } else if (cfdata->names == 0)
         return_error(gs_error_rangecheck);
     else {
