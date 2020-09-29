@@ -31,6 +31,7 @@
 #include "pdf_page.h"
 #include "pdf_annot.h"
 #include "pdf_colour.h"
+#include "pdf_deref.h"
 #include "gspath2.h"
 #include "pdf_image.h"
 #include "gxfarith.h"
@@ -2994,97 +2995,6 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
     pdfi_countdown(AP);
     pdfi_countdown(Key);
     pdfi_countdown(Value);
-    return code;
-}
-
-static int pdfi_resolve_indirect(pdf_context *ctx, pdf_obj *value);
-
-static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj)
-{
-    int code = 0;
-    uint64_t index, arraysize;
-    pdf_obj *object = NULL;
-    pdf_array *array = (pdf_array *)obj;
-    pdf_dict *nulldict = NULL;
-
-    arraysize = pdfi_array_size(array);
-    for (index = 0; index < arraysize; index++) {
-        code = pdfi_array_get(ctx, array, index, &object);
-        if (code == gs_error_circular_reference) {
-            /* Replace circular reference with empty dict */
-            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
-            if (code < 0) goto exit;
-            code = pdfi_array_put(ctx, array, index, (pdf_obj *)nulldict);
-        } else {
-            if (code < 0) goto exit;
-            code = pdfi_resolve_indirect(ctx, object);
-        }
-        if (code < 0) goto exit;
-
-        pdfi_countdown(object);
-        object = NULL;
-    }
-
- exit:
-    pdfi_countdown(object);
-    return code;
-}
-
-static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj)
-{
-    int code = 0;
-    pdf_dict *dict = (pdf_dict *)obj;
-    pdf_name *Key = NULL;
-    pdf_obj *Value = NULL;
-    uint64_t index, dictsize;
-    pdf_dict *nulldict = NULL;
-
-    dictsize = pdfi_dict_entries(dict);
-
-    /* Note: I am not using pdfi_dict_first/next because of needing to handle
-     * circular references.
-     */
-    for (index=0; index<dictsize; index ++) {
-        Key = (pdf_name *)dict->keys[index];
-        code = pdfi_dict_get_by_key(ctx, dict, Key, &Value);
-        if (code == gs_error_circular_reference) {
-            /* Replace circular reference with empty dict */
-            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
-            if (code < 0) goto exit;
-            code = pdfi_dict_put_obj(dict, (pdf_obj *)Key, (pdf_obj *)nulldict);
-        } else {
-            if (code < 0) goto exit;
-            code = pdfi_resolve_indirect(ctx, Value);
-        }
-        if (code < 0) goto exit;
-
-        pdfi_countdown(Value);
-        Value = NULL;
-    }
-
- exit:
-    pdfi_countdown(Value);
-    return code;
-}
-
-/* Resolve all the indirect references for an object
- * Resolve circular references by replacing with null dict
- * Note: This is recursive
- */
-static int pdfi_resolve_indirect(pdf_context *ctx, pdf_obj *value)
-{
-    int code = 0;
-
-    switch(value->type) {
-    case PDF_ARRAY:
-        code = pdfi_resolve_indirect_array(ctx, value);
-        break;
-    case PDF_DICT:
-        code = pdfi_resolve_indirect_dict(ctx, value);
-        break;
-    default:
-        break;
-    }
     return code;
 }
 

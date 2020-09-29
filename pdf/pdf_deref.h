@@ -21,4 +21,5 @@ int is_compressed_object(pdf_context *ctx, uint32_t obj, uint32_t gen);
 int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object);
 int pdfi_deref_loop_detect(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object);
 int pdfi_read_bare_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset, uint32_t objnum, uint32_t gen);
+int pdfi_resolve_indirect(pdf_context *ctx, pdf_obj *value);
 #endif
