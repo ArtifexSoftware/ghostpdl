@@ -539,6 +539,7 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
     int itemsize;
     pdfi_bufstream_t bufstream;
     uint64_t index, dictsize;
+    uint64_t itemnum = 0;
 
     code = pdfi_bufstream_init(ctx, &bufstream);
     if (code < 0) goto exit;
@@ -557,24 +558,27 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
         goto exit_copy;
     }
 
+    dictsize = pdfi_dict_entries(dict);
+    /* Handle empty dict specially */
+    if (dictsize == 0) {
+        code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"<< >>", 5);
+        goto exit_copy;
+    }
+
     code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"<<\n", 3);
     if (code < 0) goto exit;
-
-    dictsize = pdfi_dict_entries(dict);
 
     /* Note: We specifically fetch without dereferencing, so there will be no circular
      * references to handle here.
      */
     /* Get each (key,val) pair from dict and setup param for it */
-    for (index=0; index<dictsize; index ++) {
-        Key = (pdf_name *)dict->keys[index];
+    code = pdfi_dict_key_first(ctx, dict, (pdf_obj **)&Key, &index);
+    while (code >= 0) {
         code = pdfi_obj_to_string(ctx, (pdf_obj *)Key, &itembuf, &itemsize);
-        if (code < 0)
-            goto exit;
+        if (code < 0) goto exit;
 
         code = pdfi_bufstream_write(ctx, &bufstream, itembuf, itemsize);
-        if (code < 0)
-            goto exit;
+        if (code < 0) goto exit;
 
         gs_free_object(ctx->memory, itembuf, "pdfi_obj_dict_str(itembuf)");
         itembuf = NULL;
@@ -599,18 +603,26 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
 
         pdfi_countdown(Value);
         Value = NULL;
+        pdfi_countdown(Key);
+        Key = NULL;
+
+        code = pdfi_dict_key_next(ctx, dict, (pdf_obj **)&Key, &index);
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+        if (code < 0) goto exit;
 
         /* Put a space between elements */
-        if (index + 1 != dictsize) {
+        if (++itemnum != dictsize) {
             code = pdfi_bufstream_write(ctx, &bufstream, (byte *)" ", 1);
             if (code < 0) goto exit;
         }
     }
+    if (code < 0) goto exit;
 
     code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"\n>>", 3);
-    if (code < 0)
-        goto exit;
-
+    if (code < 0) goto exit;
 
  exit_copy:
     /* Now copy the results out into the string we can keep */

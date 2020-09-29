@@ -2944,8 +2944,7 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
     }
 
     code = pdfi_dict_first(ctx, AP, (pdf_obj **)&Key, &Value, &index);
-    if (code < 0) goto exit;
-    do {
+    while (code >= 0) {
         if (Value->type == PDF_DICT) {
             /* Get a form label */
             code = pdfi_annot_preserve_nextformlabel(ctx, &labeldata, &labellen);
@@ -2986,8 +2985,8 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
             code = 0;
             break;
         }
-        if (code < 0) goto exit;
-    } while (1);
+    }
+    if (code < 0) goto exit;
 
  exit:
     if (labeldata)
@@ -3016,17 +3015,9 @@ static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj)
             code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
             if (code < 0) goto exit;
             code = pdfi_array_put(ctx, array, index, (pdf_obj *)nulldict);
-            if (code < 0) goto exit;
         } else {
             if (code < 0) goto exit;
-            if (object->type == PDF_DICT && pdfi_dict_is_stream(ctx, (pdf_dict *)object)) {
-                /* Replace stream with empty dict */
-                code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
-                if (code < 0) goto exit;
-                code = pdfi_array_put(ctx, array, index, (pdf_obj *)nulldict);
-            } else {
-                code = pdfi_resolve_indirect(ctx, object);
-            }
+            code = pdfi_resolve_indirect(ctx, object);
         }
         if (code < 0) goto exit;
 
@@ -3061,17 +3052,9 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj)
             code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
             if (code < 0) goto exit;
             code = pdfi_dict_put_obj(dict, (pdf_obj *)Key, (pdf_obj *)nulldict);
-            if (code < 0) goto exit;
         } else {
             if (code < 0) goto exit;
-            if (Value->type == PDF_DICT && pdfi_dict_is_stream(ctx, (pdf_dict *)Value)) {
-                /* Replace stream with empty dict */
-                code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
-                if (code < 0) goto exit;
-                code = pdfi_dict_put_obj(dict, (pdf_obj *)Key, (pdf_obj *)nulldict);
-            } else {
-                code = pdfi_resolve_indirect(ctx, Value);
-            }
+            code = pdfi_resolve_indirect(ctx, Value);
         }
         if (code < 0) goto exit;
 
@@ -3133,8 +3116,7 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
      * be deleting some keys from tempdict and the iterators wouldn't work right.
      */
     code = pdfi_dict_first(ctx, annot, (pdf_obj **)&Key, &Value, &index);
-    if (code < 0) goto exit;
-    do {
+    while (code >= 0) {
         if (pdfi_name_is(Key, "Popup") || pdfi_name_is(Key, "IRT") || pdfi_name_is(Key, "RT") ||
             pdfi_name_is(Key, "P") || pdfi_name_is(Key, "Parent")) {
             /* Delete some keys
@@ -3170,9 +3152,8 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
             code = 0;
             break;
         }
-        if (code < 0) goto exit;
-
-    } while (1);
+    }
+    if (code < 0) goto exit;
 
     /* Do pdfmark from the tempdict */
     gs_currentmatrix(ctx->pgs, &ctm);

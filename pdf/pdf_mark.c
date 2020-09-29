@@ -153,9 +153,7 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
 
     /* Get each (key,val) pair from dict and setup param for it */
     code = pdfi_dict_first(ctx, dict, (pdf_obj **)&Key, &Value, &index);
-    if (code < 0)
-        goto exit;
-    do {
+    while (code >= 0) {
         pdfi_mark_setparam_pair(ctx, Key, Value, parray+(keynum*2));
 
         pdfi_countdown(Key);
@@ -163,12 +161,14 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
         pdfi_countdown(Value);
         Value = NULL;
 
-        if (++keynum == dictsize)
-            break;
         code = pdfi_dict_next(ctx, dict, (pdf_obj **)&Key, &Value, &index);
-        if (code < 0)
-            goto exit;
-    } while (1);
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+        keynum ++;
+    }
+    if (code < 0) goto exit;
 
     /* CTM */
     code = pdfi_mark_ctm_str(ctx, ctm, &ctm_data, &ctm_len);
