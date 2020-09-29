@@ -444,6 +444,20 @@ static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
             non_ascii = true;
             break;
         }
+        /* TODO: May need to figure out how to handle special characters better
+         * File: tests_private/pdf/PDFIA1.7_SUBSET/CATX2579.pdf
+         * has a '(' in a Contents string, which gs renders with an escaped '('
+         * but we currently turn into a hexstring.
+         * Original:
+         *    /Contents (in compliance with\rPurchase approval\rtransactions \(within card)
+         * Could re-insert the escape '\' but that is annoying. :(
+         * Not sure if it's worth fixing, since rendering as hexstring solves things, just not
+         * as user-friendly.
+         */
+        if (*ptr == '(') {
+            non_ascii = true;
+            break;
+        }
     }
 
     if (non_ascii) {
