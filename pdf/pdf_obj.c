@@ -327,13 +327,13 @@ typedef struct {
     str_func func;
 } obj_str_dispatch_t;
 
-static int pdfi_mark_default_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+static int pdfi_obj_default_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
     int size = 12;
     byte *buf;
 
-    buf = gs_alloc_bytes(ctx->memory, size, "pdfi_mark_default_str(data)");
+    buf = gs_alloc_bytes(ctx->memory, size, "pdfi_obj_default_str(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
     memcpy(buf, "/placeholder", size);
@@ -342,14 +342,14 @@ static int pdfi_mark_default_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
     return code;
 }
 
-static int pdfi_mark_name_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+static int pdfi_obj_name_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
     pdf_name *name = (pdf_name *)obj;
     int size = name->length + 1;
     byte *buf;
 
-    buf = gs_alloc_bytes(ctx->memory, size, "pdfi_mark_name_str(data)");
+    buf = gs_alloc_bytes(ctx->memory, size, "pdfi_obj_name_str(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
     buf[0] = '/';
@@ -359,14 +359,14 @@ static int pdfi_mark_name_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *
     return code;
 }
 
-static int pdfi_mark_real_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+static int pdfi_obj_real_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
     int size = 15;
     pdf_num *number = (pdf_num *)obj;
     char *buf;
 
-    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_real_str(data)");
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_real_str(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
     snprintf(buf, size, "%.4f", number->value.d);
@@ -375,14 +375,14 @@ static int pdfi_mark_real_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *
     return code;
 }
 
-static int pdfi_mark_int_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+static int pdfi_obj_int_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
     int size = 15;
     pdf_num *number = (pdf_num *)obj;
     char *buf;
 
-    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_int_str(data)");
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_int_str(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
     snprintf(buf, size, "%ld", number->value.i);
@@ -391,14 +391,14 @@ static int pdfi_mark_int_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
     return code;
 }
 
-static int pdfi_mark_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
     int size = 100;
     pdf_indirect_ref *ref = (pdf_indirect_ref *)obj;
     char *buf;
 
-    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_indirect_str(data)");
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_indirect_str(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
     snprintf(buf, size, "%ld %d R", ref->ref_object_num, ref->ref_generation_num);
@@ -407,14 +407,14 @@ static int pdfi_mark_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, i
     return code;
 }
 
-static int pdfi_mark_bool_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+static int pdfi_obj_bool_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
     int size = 5;
     pdf_bool *bool = (pdf_bool *)obj;
     char *buf;
 
-    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_bool_str(data)");
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_bool_str(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
     if (bool->value) {
@@ -428,7 +428,7 @@ static int pdfi_mark_bool_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *
     return code;
 }
 
-static int pdfi_mark_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
     pdf_string *string = (pdf_string *)obj;
@@ -448,7 +448,7 @@ static int pdfi_mark_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int
 
     if (non_ascii) {
         size = string->length * 2 + 2;
-        buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_string_str(data)");
+        buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_string_str(data)");
         if (buf == NULL)
             return_error(gs_error_VMerror);
         buf[0] = '<';
@@ -458,7 +458,7 @@ static int pdfi_mark_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int
         buf[size-1] = '>';
     } else {
         size = string->length + 2;
-        buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_string_str(data)");
+        buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_string_str(data)");
         if (buf == NULL)
             return_error(gs_error_VMerror);
         buf[0] = '(';
@@ -472,7 +472,7 @@ static int pdfi_mark_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int
     return code;
 }
 
-static int pdfi_mark_array_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+static int pdfi_obj_array_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
     pdf_array *array = (pdf_array *)obj;
@@ -499,7 +499,7 @@ static int pdfi_mark_array_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
         code = pdfi_bufstream_write(ctx, &bufstream, itembuf, itemsize);
         if (code < 0) goto exit;
 
-        gs_free_object(ctx->memory, itembuf, "pdfi_mark_array_str(itembuf)");
+        gs_free_object(ctx->memory, itembuf, "pdfi_obj_array_str(itembuf)");
         itembuf = NULL;
         itemsize = 0;
         pdfi_countdown(object);
@@ -520,7 +520,7 @@ static int pdfi_mark_array_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
 
  exit:
     if (itembuf)
-        gs_free_object(ctx->memory, itembuf, "pdfi_mark_array_str(itembuf)");
+        gs_free_object(ctx->memory, itembuf, "pdfi_obj_array_str(itembuf)");
     pdfi_bufstream_free(ctx, &bufstream);
     pdfi_countdown(object);
     return code;
@@ -529,7 +529,7 @@ static int pdfi_mark_array_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
 /* This fetches without dereferencing.  If you want to see the references inline,
  * then you need to pre-resolve them.  See pdfi_resolve_indirect().
  */
-static int pdfi_mark_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
     pdf_dict *dict = (pdf_dict *)obj;
@@ -576,7 +576,7 @@ static int pdfi_mark_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *
         if (code < 0)
             goto exit;
 
-        gs_free_object(ctx->memory, itembuf, "pdfi_mark_dict_str(itembuf)");
+        gs_free_object(ctx->memory, itembuf, "pdfi_obj_dict_str(itembuf)");
         itembuf = NULL;
         itemsize = 0;
 
@@ -593,7 +593,7 @@ static int pdfi_mark_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *
         code = pdfi_bufstream_write(ctx, &bufstream, itembuf, itemsize);
         if (code < 0) goto exit;
 
-        gs_free_object(ctx->memory, itembuf, "pdfi_mark_dict_str(itembuf)");
+        gs_free_object(ctx->memory, itembuf, "pdfi_obj_dict_str(itembuf)");
         itembuf = NULL;
         itemsize = 0;
 
@@ -618,21 +618,21 @@ static int pdfi_mark_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *
 
  exit:
     if (itembuf)
-        gs_free_object(ctx->memory, itembuf, "pdfi_mark_dict_str(itembuf)");
+        gs_free_object(ctx->memory, itembuf, "pdfi_obj_dict_str(itembuf)");
     pdfi_countdown(Value);
     pdfi_bufstream_free(ctx, &bufstream);
     return code;
 }
 
 obj_str_dispatch_t obj_str_dispatch[] = {
-    {PDF_NAME, pdfi_mark_name_str},
-    {PDF_ARRAY, pdfi_mark_array_str},
-    {PDF_REAL, pdfi_mark_real_str},
-    {PDF_INT, pdfi_mark_int_str},
-    {PDF_BOOL, pdfi_mark_bool_str},
-    {PDF_STRING, pdfi_mark_string_str},
-    {PDF_DICT, pdfi_mark_dict_str},
-    {PDF_INDIRECT, pdfi_mark_indirect_str},
+    {PDF_NAME, pdfi_obj_name_str},
+    {PDF_ARRAY, pdfi_obj_array_str},
+    {PDF_REAL, pdfi_obj_real_str},
+    {PDF_INT, pdfi_obj_int_str},
+    {PDF_BOOL, pdfi_obj_bool_str},
+    {PDF_STRING, pdfi_obj_string_str},
+    {PDF_DICT, pdfi_obj_dict_str},
+    {PDF_INDIRECT, pdfi_obj_indirect_str},
     {0, NULL}
 };
 
@@ -652,7 +652,7 @@ int pdfi_obj_to_string(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
         }
     }
     /* Not implemented, use default */
-    code = pdfi_mark_default_str(ctx, obj, data, len);
+    code = pdfi_obj_default_str(ctx, obj, data, len);
  exit:
     return code;
 }
