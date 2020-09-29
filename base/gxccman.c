@@ -34,6 +34,7 @@
 #include "gxxfont.h"
 #include "gxttfb.h"
 #include "gxfont42.h"
+#include "gxobj.h"
 
 /* Define the descriptors for the cache structures. */
 private_st_cached_fm_pair();
@@ -932,8 +933,8 @@ alloc_char(gs_font_dir * dir, ulong icdsize, cached_char **pcc)
             gs_memory_t *mem = dir->ccache.bits_memory;
             char_cache_chunk *cck_prev = dir->ccache.chunks;
             char_cache_chunk *cck;
-            uint cksize = dir->ccache.bmax / 5 + 1;
-            uint tsize = dir->ccache.bmax - dir->ccache.bspace;
+            uint cksize = ROUND_UP(dir->ccache.bmax / 5 + 1, obj_align_mod);
+            uint tsize = ROUND_UP(dir->ccache.bmax - dir->ccache.bspace, obj_align_mod);
             byte *cdata;
 
             if (cksize > tsize)
