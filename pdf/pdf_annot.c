@@ -2916,6 +2916,85 @@ static int pdfi_annot_preserve_nextformlabel(pdf_context *ctx, byte **data, int 
     return 0;
 }
 
+/* Modify the QuadPoints array to correct for some BS in the pdfwrite driver.
+ * comment from gs code (pdf_draw.ps/ApplyCMTToQuadPoints()):
+  %% Nasty hackery here really. We need to undo the HWResolution scaling which
+  %% is done by pdfwrite. Default is 720 dpi, so 0.1. We also need to make
+  %% sure that any translation of the page (because its been rotated for example)
+  %% is also modified by the requisite amount. SO we ned to calculate a matrix
+  %% which does the scaling and concatenate it with the current matrix.
+  %% Do this inside a gsave/grestore pair to avoid side effects!
+ *
+ * TODO: In practice, when I was debugging this code I found that it does nothing
+ * useful, since the matrice it calculates is essentially the identity matrix.
+ * I am not sure under what circumstance it is needed?
+ */
+static int pdfi_annot_preserve_modQP(pdf_context *ctx, pdf_dict *annot, pdf_name *QP_key)
+{
+    int code = 0;
+    pdf_array *QP = NULL;
+    gx_device *device = gs_currentdevice(ctx->pgs);
+    gs_matrix devmatrix, ctm, matrix;
+    uint64_t arraysize, index;
+    double old_x, old_y;
+    gs_point point;
+
+    code = pdfi_dict_get(ctx, annot, "QuadPoints", (pdf_obj **)&QP);
+    if (code < 0) goto exit;
+
+    if (QP->type != PDF_ARRAY) {
+        /* Invalid QuadPoints, just delete it because I dunno what to do...
+         * TODO: Should flag a warning here
+         */
+        code = pdfi_dict_delete_pair(ctx, annot, QP_key);
+        goto exit;
+    }
+
+    arraysize = pdfi_array_size(QP);
+    if (arraysize % 8 != 0) {
+        /* TODO: Flag a warning -- must be sets of 8 values (4 points) */
+        code = gs_note_error(gs_error_syntaxerror);
+        goto exit;
+    }
+
+
+    /* Get device matrix and adjust by default 72.0 (no idea, just following PS code...) */
+    devmatrix.xx = 72.0 / device->HWResolution[0];
+    devmatrix.xy = 0;
+    devmatrix.yx = 0;
+    devmatrix.yy = 72.0 / device->HWResolution[1];
+    devmatrix.tx = 0;
+    devmatrix.ty = 0;
+
+    /* Get the CTM */
+    gs_currentmatrix(ctx->pgs, &ctm);
+
+    /* Get matrix to adjust the QuadPoints */
+    code = gs_matrix_multiply(&ctm, &devmatrix, &matrix);
+    if (code < 0) goto exit;
+
+    /* Transform all the points by the calculated matrix */
+    for (index = 0; index < arraysize; index += 2) {
+        code = pdfi_array_get_number(ctx, QP, index, &old_x);
+        if (code < 0) goto exit;
+        code = pdfi_array_get_number(ctx, QP, index+1, &old_y);
+        if (code < 0) goto exit;
+
+        code = gs_point_transform(old_x, old_y, &matrix, &point);
+        if (code < 0) goto exit;
+
+        code = pdfi_array_put_real(ctx, QP, index, point.x);
+        if (code < 0) goto exit;
+        code = pdfi_array_put_real(ctx, QP, index+1, point.y);
+        if (code < 0) goto exit;
+    }
+
+
+ exit:
+    pdfi_countdown(QP);
+    return code;
+}
+
 /* Build a high level form for the AP and replace it with an indirect reference
  *
  * There can multiple AP in the dictionary, so do all of them.
@@ -2941,7 +3020,7 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
          * TODO: Should flag a warning here
          */
         code = pdfi_dict_delete_pair(ctx, annot, AP_key);
-        return code;
+        goto exit;
     }
 
     code = pdfi_dict_first(ctx, AP, (pdf_obj **)&Key, &Value, &index);
@@ -3042,6 +3121,9 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
             /* Special handling for AP -- have fun! */
             code = pdfi_annot_preserve_modAP(ctx, tempdict, Key);
             if (code < 0) goto exit;
+        } else if (pdfi_name_is(Key, "QuadPoints")) {
+            code = pdfi_annot_preserve_modQP(ctx, tempdict, Key);
+            if (code < 0) goto exit;
         } else if (Value->type == PDF_ARRAY || Value->type == PDF_DICT) {
             /* Pre-resolve indirect references of any arrays/dicts
              */
@@ -3090,32 +3172,12 @@ static int pdfi_annot_preserve_default(pdf_context *ctx, pdf_dict *annot, pdf_na
     return pdfi_annot_preserve_mark(ctx, annot, subtype);
 }
 
-static int pdfi_annot_preserve_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
-{
-    return 0;
-}
-
 static int pdfi_annot_preserve_Line(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
 {
     return 0;
 }
 
 static int pdfi_annot_preserve_Link(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
-{
-    return 0;
-}
-
-static int pdfi_annot_preserve_StrikeOut(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
-{
-    return 0;
-}
-
-static int pdfi_annot_preserve_Squiggly(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
-{
-    return 0;
-}
-
-static int pdfi_annot_preserve_Underline(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
 {
     return 0;
 }
@@ -3133,22 +3195,22 @@ static int pdfi_annot_preserve_Widget(pdf_context *ctx, pdf_dict *annot, pdf_nam
 }
 
 annot_preserve_dispatch_t annot_preserve_dispatch[] = {
-    {"Highlight", pdfi_annot_preserve_Highlight},
     {"Line", pdfi_annot_preserve_Line},
     {"Link", pdfi_annot_preserve_Link},
-    {"StrikeOut", pdfi_annot_preserve_StrikeOut},
-    {"Squiggly", pdfi_annot_preserve_Squiggly},
-    {"Underline", pdfi_annot_preserve_Underline},
     {"Widget", pdfi_annot_preserve_Widget},
     {"Circle", pdfi_annot_preserve_default},
     {"FileAttachment", pdfi_annot_preserve_default},
     {"FreeText", pdfi_annot_preserve_default},
+    {"Highlight", pdfi_annot_preserve_default},
     {"Ink", pdfi_annot_preserve_default},
     {"Movie", pdfi_annot_preserve_default},
     {"PolyLine", pdfi_annot_preserve_default},
     {"Popup", pdfi_annot_preserve_default},
     {"Sound", pdfi_annot_preserve_default},
     {"Square", pdfi_annot_preserve_default},
+    {"Squiggly", pdfi_annot_preserve_default},
+    {"StrikeOut", pdfi_annot_preserve_default},
+    {"Underline", pdfi_annot_preserve_default},
     {"Stamp", pdfi_annot_preserve_default},
     {"Text", pdfi_annot_preserve_default},
     {"TrapNet", pdfi_annot_preserve_default},

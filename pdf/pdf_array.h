@@ -32,6 +32,7 @@ int pdfi_array_get_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t *
 int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double *f);
 int pdfi_array_put(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj *o);
 int pdfi_array_put_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t val);
+int pdfi_array_put_real(pdf_context *ctx, pdf_array *a, uint64_t index, double val);
 
 bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *, int *index);
 
