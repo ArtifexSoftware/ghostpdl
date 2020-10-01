@@ -3172,11 +3172,6 @@ static int pdfi_annot_preserve_default(pdf_context *ctx, pdf_dict *annot, pdf_na
     return pdfi_annot_preserve_mark(ctx, annot, subtype);
 }
 
-static int pdfi_annot_preserve_Line(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
-{
-    return 0;
-}
-
 static int pdfi_annot_preserve_Link(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
 {
     return 0;
@@ -3195,7 +3190,6 @@ static int pdfi_annot_preserve_Widget(pdf_context *ctx, pdf_dict *annot, pdf_nam
 }
 
 annot_preserve_dispatch_t annot_preserve_dispatch[] = {
-    {"Line", pdfi_annot_preserve_Line},
     {"Link", pdfi_annot_preserve_Link},
     {"Widget", pdfi_annot_preserve_Widget},
     {"Circle", pdfi_annot_preserve_default},
@@ -3203,6 +3197,7 @@ annot_preserve_dispatch_t annot_preserve_dispatch[] = {
     {"FreeText", pdfi_annot_preserve_default},
     {"Highlight", pdfi_annot_preserve_default},
     {"Ink", pdfi_annot_preserve_default},
+    {"Line", pdfi_annot_preserve_default},
     {"Movie", pdfi_annot_preserve_default},
     {"PolyLine", pdfi_annot_preserve_default},
     {"Popup", pdfi_annot_preserve_default},
