@@ -5361,14 +5361,7 @@ currentdict /drawannottypes undef
 
 /PolyLine {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
 
-/Line {
-  mark exch dup /L .knownget {
-    aload 5 1 roll transform 4 -2 roll transform 4 2 roll
-    5 -1 roll astore
-    1 index /L 3 -1 roll put
-  } if
-  loadannot /ANN pdfmark //false
-} bind executeonly def
+/Line {mark exch loadannot /ANN pdfmark //false} bind executeonly def
 
 /Link {
     /NO_PDFMARK_DESTS where {pop NO_PDFMARK_DESTS not}{//true}ifelse
