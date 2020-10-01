@@ -1047,7 +1047,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                       gx_image_enum_common_t ** pinfo,
                       pdf_typed_image_context_t context)
 {
-    int code, i;
+    int code = 0, i;
     unsigned int use_fallback  = 0, in_line = 0, is_mask = 0,
         force_lossless = 0, convert_to_process_colors = 0;
     int width, height;
