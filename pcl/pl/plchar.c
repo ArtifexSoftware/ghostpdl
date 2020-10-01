@@ -292,7 +292,6 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
                      byte * bold_lines, gs_gstate * pgs)
 {
     uint dest_bytes = (pim->Width + 7) >> 3;
-    gx_device *dev = pgs->device;
     int code;
     gs_image_enum *penum;
     uint used;

@@ -117,14 +117,12 @@ rp_delete_next(run_ptr *prpc, run *data, run_line *line)
     RP_PREV(rpn) = 0;
     line->free = rpn.index;
 }
-static int
-rp_insert_next(run_ptr *prpc, run *data, run_line *line, run_ptr *prpn)
+static void
+rp_insert_next_cant_fail(run_ptr *prpc, run *data, run_line *line, run_ptr *prpn)
 {
     run_index new = line->free;
     run *prnew = data + new;
 
-    if (new == 0)
-        return -1;
     RP_TO_NEXT(*prpc, data, *prpn);
     RP_NEXT(*prpc) = new;
     RP_PREV(*prpn) = new;
@@ -133,6 +131,13 @@ rp_insert_next(run_ptr *prpc, run *data, run_line *line, run_ptr *prpn)
     prnew->next = prpn->index;
     prpn->index = new;
     prpn->ptr = prnew;
+}
+static int
+rp_insert_next(run_ptr *prpc, run *data, run_line *line, run_ptr *prpn)
+{
+    if (line->free == 0)
+        return -1;
+    rp_insert_next_cant_fail(prpc, data, line, prpn);
     return 0;
 }
 static int
@@ -549,7 +554,7 @@ run_fill_interval(run_line *line, int xo, int xe, run_value new)
                  * we just deleted at least as many runs as we're going
                  * to insert.
                  */
-                rp_insert_next(&rp0, data, line, &rpn);
+                rp_insert_next_cant_fail(&rp0, data, line, &rpn);
                 RP_LENGTH(rpn) = min(left, len);
                 RP_VALUE(rpn) = new;
             }
