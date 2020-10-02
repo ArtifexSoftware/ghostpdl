@@ -399,15 +399,15 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
                     wstr = str;
                 }
                 len1 = len + (str - wstr);
-                r.ptr = op->value.const_bytes - 1;
-                r.limit = r.ptr + (truncate ? CVP_MAX_STRING : size);
+                stream_cursor_read_init(&r, op->value.const_bytes, truncate ? CVP_MAX_STRING : size);
+
                 while (skip && status == 1) {
                     uint written;
 
-                    w.ptr = (byte *)buf - 1;
-                    w.limit = w.ptr + min(skip + len1, sizeof(buf));
+                    stream_cursor_write_init(&w, (byte *)buf, min(skip + len1, sizeof(buf)));
                     status = s_PSSE_template.process(NULL, &r, &w, false);
-                    written = w.ptr - ((byte *)buf - 1);
+                    /* +1 accounts for crazy w.ptr initialisation - see stream_cursor_write_init() */
+                    written = (w.ptr - ((byte *)buf)) + 1;
                     if (written > skip) {
                         written -= skip;
                         memcpy(wstr, buf + skip, written);
@@ -428,8 +428,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
                     }
 #endif
                 }
-                w.ptr = wstr - 1;
-                w.limit = str - 1 + len;
+                stream_cursor_write_init(&w, (byte *)wstr, (size_t)((str + len) - wstr));
                 if (status == 1)
                     status = s_PSSE_template.process(NULL, &r, &w, false);
                 *prlen = w.ptr - (str - 1);

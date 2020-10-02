@@ -708,12 +708,10 @@ do_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int 
 
         memcpy(&minst->buf_ptr[minst->buf_fill], str, length);
         minst->buf_fill += length;
-        cursor.ptr = minst->buf_ptr - 1 ; /* -1 because of gs's stupid stream convention */
-        cursor.limit = cursor.ptr + length;
+        stream_cursor_read_init(&cursor, (const byte *)minst->buf_ptr, length);
     } else {
         /* Use the callers buffer directly. */
-        cursor.ptr = (const byte *)str-1; /* -1 because of gs's stupid stream convention */
-        cursor.limit = cursor.ptr + length;
+        stream_cursor_read_init(&cursor, (const byte *)str, length);
     }
 
     /* Now process that buffer. The outside loop here is used as we
@@ -2554,10 +2552,8 @@ help:
                         i++;
                         buf[i] = '\0';
                     }
-                    /* starting pos for pointer is always one position back */
-                    cursor.ptr = buf - 1;
-                    /* set the end of data pointer */
-                    cursor.limit = cursor.ptr + buf_len;
+                    stream_cursor_read_init(&cursor, (const byte *)buf, buf_len);
+
                     /* process the pjl */
                     code = pl_process(pjli, &cursor);
                     pmi->pjl_from_args = true;

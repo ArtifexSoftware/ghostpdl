@@ -320,12 +320,12 @@ pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken)
         int status;
 
         s_PSSD_init((stream_state *)&ss);
-        r.ptr = p;		/* skip the '(' */
-        r.limit = end - 1;
-        w.limit = buf + sizeof(buf) - 1;
+
+        /* "p + 1" - skip the '(' */
+        stream_cursor_read_init(&r, p + 1, (end - p) - 1);
+
         do {
-            /* One picky compiler complains if we initialize to buf - 1. */
-            w.ptr = buf;  w.ptr--;
+            stream_cursor_write_init(&w, buf, sizeof(buf));
             status = (*s_PSSD_template.process)
                 ((stream_state *) & ss, &r, &w, true);
         }

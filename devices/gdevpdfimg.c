@@ -624,12 +624,10 @@ static void write_fileID(stream *s, const byte *str, int size)
         stream_cursor_write w;
         int status;
 
-        r.ptr = str - 1;
-        r.limit = r.ptr + size;
-        w.limit = buf + sizeof(buf) - 1;
+        stream_cursor_read_init(&r, str, size);
+
         do {
-            /* One picky compiler complains if we initialize to buf - 1. */
-            w.ptr = buf;  w.ptr--;
+            stream_cursor_write_init(&w, buf, sizeof(buf));
             status = (*templat->process) (st, &r, &w, true);
             stream_write(s, buf, (uint) (w.ptr + 1 - buf));
         }

@@ -147,8 +147,8 @@ pxPassthrough_init(px_state_t * pxs)
                     "@PJL SET PAPERLENGTH = %d\n@PJL SET PAPERWIDTH = %d\n",
                     (int)(pxs->media_dims.y * 10 + .5),
                     (int)(pxs->media_dims.x * 10 + .5));
-        r.ptr = (byte *) buf - 1;
-        r.limit = (byte *) buf + ret - 1;
+
+        stream_cursor_read_init(&r, (const byte *)buf, ret);
         pjl_proc_process(pxs->pjls, &r);
     }
 

@@ -570,9 +570,8 @@ pxSetDefaultGS(px_args_t * par, px_state_t * pxs)
     px_process_init(&st, false /* big_endian */ );
 
     st.macro_state = pst->macro_state | ptsExecStream;
-    r.ptr = pxSetDefaultGSstr - 1;
-    r.limit = r.ptr + sizeof(pxSetDefaultGSstr);
 
+    stream_cursor_read_init(&r, pxSetDefaultGSstr, sizeof(pxSetDefaultGSstr));
     /* we don't expect this to fail */
     code = px_process(&st, pxs, &r);
 

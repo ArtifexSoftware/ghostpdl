@@ -95,12 +95,13 @@ cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
     uint mask = (0xff00>>(width_bits & 7)) & 0xff;
     uint padding = width_bytes - ((width_bits+7)>>3);
 
-    r.ptr = data - 1;
     if (raster == whole_bytes) {
-        r.limit = r.ptr + raster * height;
+        stream_cursor_read_init(&r, data, raster * height);
         status = (*st->templat->process) (st, &r, pw, true);
     } else {			/* Compress row-by-row. */
         uint y;
+
+        stream_cursor_read_init(&r, data, whole_bytes);
 
         for (y = height-1; (r.limit = r.ptr + whole_bytes), y > 0; y--) {
             status = go_process(st, &r, pw, false);
@@ -108,15 +109,14 @@ cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
                 break;
             if (mask) {
                 byte b = r.ptr[1] & mask;
-                r2.limit = &b;
-                r2.ptr = r2.limit-1;
+
+                stream_cursor_read_init(&r2, &b, 1);
                 status = go_process(st, &r2, pw, false);
                 if (status)
                     break;
             }
             if (padding) {
-                r2.ptr = zeros - 1;
-                r2.limit = r2.ptr + padding;
+                stream_cursor_read_init(&r2, zeros, padding);
                 status = go_process(st, &r2, pw, false);
                 if (status)
                     break;
@@ -127,13 +127,12 @@ cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
             status = go_process(st, &r, pw, padding == 0 && mask == 0);
             if (status == 0 && mask) {
                 byte b = r.ptr[1] & mask;
-                r2.limit = &b;
-                r2.ptr = r2.limit-1;
+
+                stream_cursor_read_init(&r2, &b, 1);
                 status = go_process(st, &r2, pw, padding == 0);
             }
             if (status == 0 && padding) {
-                r2.ptr = zeros - 1;
-                r2.limit = r2.ptr + padding;
+                stream_cursor_read_init(&r2, zeros, padding);
                 status = go_process(st, &r2, pw, true);
             }
         }
