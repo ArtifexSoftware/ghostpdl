@@ -529,6 +529,7 @@ run_fill_interval(run_line *line, int xo, int xe, run_value new)
             )
             RP_LENGTH(rp0) += left;
         else {
+            run_ptr rpn = {0};
             /*
              * If we need more than one run, we divide up the length to
              * create more runs with length less than MAX_RUN_LENGTH in
@@ -547,7 +548,6 @@ run_fill_interval(run_line *line, int xo, int xe, run_value new)
                 len = (left + pieces - 1) / pieces;
             }
             do {
-                run_ptr rpn;
 
                 /*
                  * The allocation in rp_insert_next can't fail, because
