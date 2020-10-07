@@ -31,6 +31,7 @@
 #include "sjpeg.h"
 
 #include "gdevpdfimg.h"
+#include "tessocr.h"
 
 #define	    COMPRESSION_NONE	1	/* dump mode */
 #define	    COMPRESSION_LZW		2       /* Lempel-Ziv  & Welch */
