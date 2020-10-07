@@ -433,29 +433,31 @@ static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
     int code = 0;
     pdf_string *string = (pdf_string *)obj;
     int size;
+    int string_len;
     char *buf;
+    char *bufptr;
     bool non_ascii = false;
+    int num_esc = 0;
     int i;
     byte *ptr;
 
+    string_len = string->length;
     /* See if there are any non-ascii chars */
-    for (i=0,ptr=string->data;i<string->length;i++,ptr++) {
+    for (i=0,ptr=string->data;i<string_len;i++,ptr++) {
         if (*ptr > 127) {
             non_ascii = true;
             break;
         }
-        /* TODO: May need to figure out how to handle special characters better
-         * File: tests_private/pdf/PDFIA1.7_SUBSET/CATX2579.pdf
-         * has a '(' in a Contents string, which gs renders with an escaped '('
-         * but we currently turn into a hexstring.
-         * Original:
-         *    /Contents (in compliance with\rPurchase approval\rtransactions \(within card)
-         * Could re-insert the escape '\' but that is annoying. :(
-         * Not sure if it's worth fixing, since rendering as hexstring solves things, just not
-         * as user-friendly.
+        /* TODO: I was going to just turn special chars into hexstrings, but it turns out
+         * that the pdfwrite driver expects to be able to parse URI strings, and these
+         * can have special characters.  So I will handle the minimum that seems needed for that.
          */
-        if (*ptr == '(') {
-            non_ascii = true;
+        switch (*ptr) {
+        case '(':
+        case ')':
+            num_esc ++;
+            break;
+        default:
             break;
         }
     }
@@ -466,17 +468,28 @@ static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
         if (buf == NULL)
             return_error(gs_error_VMerror);
         buf[0] = '<';
-        for (i=0,ptr=string->data;i<string->length;i++,ptr++) {
+        for (i=0,ptr=string->data;i<string_len;i++,ptr++) {
             snprintf(buf+2*i+1, 3, "%02X", *ptr);
         }
         buf[size-1] = '>';
     } else {
-        size = string->length + 2;
+        size = string->length + 2 + num_esc;
         buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_string_str(data)");
         if (buf == NULL)
             return_error(gs_error_VMerror);
         buf[0] = '(';
-        memcpy(buf+1, string->data, string->length);
+        bufptr = buf + 1;
+        for (i=0,ptr=string->data;i<string_len;i++) {
+            switch (*ptr) {
+            case '(':
+            case ')':
+                *bufptr++ = '\\';
+                break;
+            default:
+                break;
+            }
+            *bufptr++ = *ptr++;
+        }
         buf[size-1] = ')';
     }
 
