@@ -31,6 +31,7 @@
 #include "sjpeg.h"
 
 #include "gdevpdfimg.h"
+#include "tessocr.h"
 
 int pdf_ocr_open(gx_device *pdev);
 int pdf_ocr_close(gx_device *pdev);
