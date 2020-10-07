@@ -2916,6 +2916,48 @@ static int pdfi_annot_preserve_nextformlabel(pdf_context *ctx, byte **data, int 
     return 0;
 }
 
+/* Special handling for "A" in Link annotations */
+static int pdfi_annot_preserve_modA(pdf_context *ctx, pdf_dict *annot, pdf_name *A_key,
+                                    pdf_name *subtype, bool *resolve)
+{
+    int code = 0;
+    pdf_dict *A = NULL;
+    bool known;
+
+    *resolve = false;
+
+    if (!pdfi_name_is(subtype, "Link"))
+        return 0;
+
+    code = pdfi_dict_get(ctx, annot, "A", (pdf_obj **)&A);
+    if (code < 0) goto exit;
+
+    if (A->type != PDF_DICT) {
+        /* Invalid AP, just delete it because I dunno what to do...
+         * TODO: Should flag a warning here
+         */
+        code = pdfi_dict_delete_pair(ctx, annot, A_key);
+        goto exit;
+    }
+
+    code = pdfi_dict_known(A, "URI", &known);
+    if (code < 0) goto exit;
+    if (known) {
+        *resolve = true;
+        goto exit;
+    }
+
+    /* Don't try to resolve non-URI /A dicts, for now
+     * TODO: Implement this (see pdf_draw.ps/preserveannottypes/Link)
+     */
+    code = pdfi_dict_delete_pair(ctx, annot, A_key);
+    *resolve = false;
+
+ exit:
+    pdfi_countdown(A);
+    return code;
+}
+
 /* Modify the QuadPoints array to correct for some BS in the pdfwrite driver.
  * comment from gs code (pdf_draw.ps/ApplyCMTToQuadPoints()):
   %% Nasty hackery here really. We need to undo the HWResolution scaling which
@@ -3089,6 +3131,7 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
     uint64_t index;
     pdf_name *Key = NULL;
     pdf_obj *Value = NULL;
+    bool resolve = false;
 
     /* Create a temporary copy of the annot dict */
     dictsize = pdfi_dict_entries(annot);
@@ -3104,8 +3147,10 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
      * Note that I am iterating through the original dict because I will
      * be deleting some keys from tempdict and the iterators wouldn't work right.
      */
-    code = pdfi_dict_first(ctx, annot, (pdf_obj **)&Key, &Value, &index);
+    code = pdfi_dict_key_first(ctx, annot, (pdf_obj **)&Key, &index);
     while (code >= 0) {
+        resolve = false;
+
         if (pdfi_name_is(Key, "Popup") || pdfi_name_is(Key, "IRT") || pdfi_name_is(Key, "RT") ||
             pdfi_name_is(Key, "P") || pdfi_name_is(Key, "Parent")) {
             /* Delete some keys
@@ -3124,14 +3169,42 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
         } else if (pdfi_name_is(Key, "QuadPoints")) {
             code = pdfi_annot_preserve_modQP(ctx, tempdict, Key);
             if (code < 0) goto exit;
-        } else if (Value->type == PDF_ARRAY || Value->type == PDF_DICT) {
-            /* Pre-resolve indirect references of any arrays/dicts
-             */
-            code = pdfi_loop_detector_mark(ctx);
-            code = pdfi_loop_detector_add_object(ctx, annot->object_num);
-            code = pdfi_resolve_indirect(ctx, Value);
+        } else if (pdfi_name_is(Key, "A")) {
+            code = pdfi_annot_preserve_modA(ctx, tempdict, Key, subtype, &resolve);
             if (code < 0) goto exit;
-            (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
+        } else if (pdfi_name_is(Key, "Dest")) {
+            /* TODO: Need to figure out how to handle this in Link annotations */
+            code = pdfi_dict_delete_pair(ctx, tempdict, Key);
+            if (code < 0) goto exit;
+        } else if (pdfi_name_is(Key, "StructTreeRoot")) {
+            /* TODO: Bug691785 has Link annots with /StructTreeRoot
+             * It is super-circular, and causes issues.
+             * GS code only adds in certain values for Link so it doesn't
+             * run into a problem.  I am just going to delete it.
+             * There should be a better solution to handle circular stuff
+             * generically.
+             */
+            code = pdfi_dict_delete_pair(ctx, tempdict, Key);
+            if (code < 0) goto exit;
+        } else {
+            resolve = true;
+        }
+
+        if (resolve) {
+            code = pdfi_dict_get_by_key(ctx, annot, (const pdf_name *)Key, &Value);
+            if (code < 0) goto exit;
+
+            if (Value->type == PDF_ARRAY || Value->type == PDF_DICT) {
+                /* Pre-resolve indirect references of any arrays/dicts
+                 */
+                code = pdfi_loop_detector_mark(ctx);
+                code = pdfi_loop_detector_add_object(ctx, annot->object_num);
+                if (Value->object_num != 0)
+                    code = pdfi_loop_detector_add_object(ctx, Value->object_num);
+                code = pdfi_resolve_indirect(ctx, Value);
+                if (code < 0) goto exit;
+                (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
+            }
         }
 
         pdfi_countdown(Key);
@@ -3139,7 +3212,7 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
         pdfi_countdown(Value);
         Value = NULL;
 
-        code = pdfi_dict_next(ctx, annot, (pdf_obj **)&Key, &Value, &index);
+        code = pdfi_dict_key_next(ctx, annot, (pdf_obj **)&Key, &index);
         if (code == gs_error_undefined) {
             code = 0;
             break;
@@ -3174,7 +3247,14 @@ static int pdfi_annot_preserve_default(pdf_context *ctx, pdf_dict *annot, pdf_na
 
 static int pdfi_annot_preserve_Link(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
 {
-    return 0;
+    int code = 0;
+
+    /* TODO: The gs code does a whole bunch of stuff I don't understand yet.
+     * I think doing the default behavior might work in most cases?
+     * See: pdf_draw.ps/preserveannottypes dict/Link()
+     */
+    code = pdfi_annot_preserve_mark(ctx, annot, subtype);
+    return code;
 }
 
 static int pdfi_annot_preserve_Widget(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
@@ -3189,6 +3269,10 @@ static int pdfi_annot_preserve_Widget(pdf_context *ctx, pdf_dict *annot, pdf_nam
     return pdfi_annot_draw(ctx, annot, subtype);
 }
 
+/* TODO: When I started writing this, I thought these handlers were necessary because
+ * the PS code has a bunch of special cases.  As it turns out, I think it could easily have
+ * been done without the handlers.   Maybe they should be taken out...
+ */
 annot_preserve_dispatch_t annot_preserve_dispatch[] = {
     {"Link", pdfi_annot_preserve_Link},
     {"Widget", pdfi_annot_preserve_Widget},

@@ -154,7 +154,8 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
     /* Get each (key,val) pair from dict and setup param for it */
     code = pdfi_dict_first(ctx, dict, (pdf_obj **)&Key, &Value, &index);
     while (code >= 0) {
-        pdfi_mark_setparam_pair(ctx, Key, Value, parray+(keynum*2));
+        code = pdfi_mark_setparam_pair(ctx, Key, Value, parray+(keynum*2));
+        if (code < 0) goto exit;
 
         pdfi_countdown(Key);
         Key = NULL;
