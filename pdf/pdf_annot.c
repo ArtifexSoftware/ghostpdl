@@ -3089,6 +3089,7 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
             if (code < 0) goto exit;
             ref->ref_object_num = form_id;
             ref->ref_generation_num = 0;
+            ref->is_label = true;
 
             /* Put it in the dict */
             code = pdfi_dict_put_obj(AP, (pdf_obj *)Key, (pdf_obj *)ref);

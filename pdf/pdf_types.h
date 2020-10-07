@@ -172,6 +172,7 @@ typedef struct pdf_indirect_ref_s {
     pdf_obj_common;
     uint64_t ref_object_num;
     uint32_t ref_generation_num;
+    bool is_label; /* Used to tell that it's a label for pdfmark */
 } pdf_indirect_ref;
 
 typedef struct pdf_obj_cache_entry_s {

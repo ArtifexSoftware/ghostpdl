@@ -783,16 +783,13 @@ static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj)
     uint64_t index, arraysize;
     pdf_obj *object = NULL;
     pdf_array *array = (pdf_array *)obj;
-    pdf_dict *nulldict = NULL;
 
     arraysize = pdfi_array_size(array);
     for (index = 0; index < arraysize; index++) {
         code = pdfi_array_get(ctx, array, index, &object);
         if (code == gs_error_circular_reference) {
-            /* Replace circular reference with empty dict */
-            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
-            if (code < 0) goto exit;
-            code = pdfi_array_put(ctx, array, index, (pdf_obj *)nulldict);
+            /* Just leave as an indirect ref */
+            code = 0;
         } else {
             if (code < 0) goto exit;
             code = pdfi_resolve_indirect(ctx, object);
@@ -815,7 +812,6 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj)
     pdf_name *Key = NULL;
     pdf_obj *Value = NULL;
     uint64_t index, dictsize;
-    pdf_dict *nulldict = NULL;
 
     dictsize = pdfi_dict_entries(dict);
 
@@ -826,10 +822,8 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj)
         Key = (pdf_name *)dict->keys[index];
         code = pdfi_dict_get_by_key(ctx, dict, Key, &Value);
         if (code == gs_error_circular_reference) {
-            /* Replace circular reference with empty dict */
-            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&nulldict);
-            if (code < 0) goto exit;
-            code = pdfi_dict_put_obj(dict, (pdf_obj *)Key, (pdf_obj *)nulldict);
+            /* Just leave as an indirect ref */
+            code = 0;
         } else {
             if (code < 0) goto exit;
             code = pdfi_resolve_indirect(ctx, Value);

@@ -401,7 +401,10 @@ static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
     buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_indirect_str(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
-    snprintf(buf, size, "%ld %d R", ref->ref_object_num, ref->ref_generation_num);
+    if (ref->is_label)
+        snprintf(buf, size, "%ld %d R", ref->ref_object_num, ref->ref_generation_num);
+    else
+        snprintf(buf, size, "{%ld %d resolveR}", ref->ref_object_num, ref->ref_generation_num);
     *data = (byte *)buf;
     *len = strlen(buf);
     return code;
