@@ -24,6 +24,12 @@ extern "C"
 static int event = 0;
 #endif
 
+/* Hackily define prototypes for alloc routines for leptonica. */
+extern "C" void *leptonica_malloc(size_t blocksize);
+extern "C" void *leptonica_calloc(size_t numelm, size_t elemsize);
+extern "C" void *leptonica_realloc(void *ptr, size_t blocksize);
+extern "C" void leptonica_free(void *ptr);
+
 void *leptonica_malloc(size_t blocksize)
 {
     void *ret = malloc(blocksize);
@@ -110,12 +116,20 @@ static void my_leptonica_free(void *ptr)
 static bool
 load_file(const char* filename, GenericVector<char>* data) {
   bool result = false;
-  gp_file *fp = gp_fopen(leptonica_mem, filename, "rb");
+  gp_file *fp;
+  int code;
+  int size;
+
+  code = gs_add_control_path(leptonica_mem, gs_permit_file_reading, filename);
+  if (code < 0)
+    return false;
+
+  fp = gp_fopen(leptonica_mem, filename, "rb");
   if (fp == NULL)
-      return false;
+    goto fail;
 
   gp_fseek(fp, 0, SEEK_END);
-  int size = (int)gp_ftell(fp);
+  size = (int)gp_ftell(fp);
   gp_fseek(fp, 0, SEEK_SET);
   // Trying to open a directory on Linux sets size to LONG_MAX. Catch it here.
   if (size > 0 && size < LONG_MAX) {
@@ -125,6 +139,10 @@ load_file(const char* filename, GenericVector<char>* data) {
     result = static_cast<long>(gp_fread(&(*data)[0], 1, size, fp)) == size;
   }
   gp_fclose(fp);
+
+fail:
+  (void)gs_remove_control_path(leptonica_mem, gs_permit_file_reading, filename);
+
   return result;
 }
 
