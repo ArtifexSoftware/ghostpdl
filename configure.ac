@@ -2638,8 +2638,7 @@ IBM_DEVS='ibmpro jetp3852'
 OKI_DEVS='oki182 okiibm oki4w'
 JAPAN_DEVS='lips4 lips4v ljet4pjl lj4dithp dj505j picty180 lips2p bjc880j pr201 pr150 pr1000 pr1000_4 jj100 bj10v bj10vh mj700v2c mj500c mj6000c mj8000c fmpr fmlbp ml600 lbp310 lbp320 md50Mono md50Eco md1xMono escpage lp2000 npdl rpdl'
 MISC_PDEVS='uniprint ap3250 atx23 atx24 atx38 itk24i itk38 coslw2p coslwxl declj250 fs600 imagen lj250 m8510 necp6 oce9050 r4081 sj48 tek4696 t4693d2 t4693d4 t4693d8 dl2100 la50 la70 la75 la75plus ln03 xes md2k md5k gdi samsunggdi'
-
-AC_ARG_WITH([openprinting],, OPVP_DEVS='opvp oprp', OPVP_DEVS='')
+OPVP_DEVS='opvp oprp'
 
 ETS_HALFTONING_DEVS='rinkj'
 
@@ -2679,12 +2678,10 @@ while test -n "$drivers"; do
         PRINTERS)
                 P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS $URF_DEVS"
                 IJS_DEVS0="$IJSDEVS"
-                if test x"$OPVP_DEVS" != x"" ; then
-                  if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
-                    P_DEVS0="$P_DEVS0 $OPVP_DEVS"
-                  else
-                    AC_MSG_ERROR(Unable to include opvp/oprp driver due to missing or disabled prerequisites...)
-                  fi
+                if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
+                        P_DEVS0="$P_DEVS0 $OPVP_DEVS"
+                else
+                        AC_MSG_WARN(Unable to include opvp/oprp driver due to missing or disabled prerequisites...)
                 fi
                 ;;
         FILES)
