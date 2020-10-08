@@ -777,7 +777,7 @@ int pdfi_deref_loop_detect(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj
 }
 
 
-static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj)
+static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj, bool recurse)
 {
     int code = 0;
     uint64_t index, arraysize;
@@ -792,7 +792,8 @@ static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj)
             code = 0;
         } else {
             if (code < 0) goto exit;
-            code = pdfi_resolve_indirect(ctx, object);
+            if (recurse)
+                code = pdfi_resolve_indirect(ctx, object, recurse);
         }
         if (code < 0) goto exit;
 
@@ -805,7 +806,7 @@ static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj)
     return code;
 }
 
-static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj)
+static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj, bool recurse)
 {
     int code = 0;
     pdf_dict *dict = (pdf_dict *)obj;
@@ -826,7 +827,8 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj)
             code = 0;
         } else {
             if (code < 0) goto exit;
-            code = pdfi_resolve_indirect(ctx, Value);
+            if (recurse)
+                code = pdfi_resolve_indirect(ctx, Value, recurse);
         }
         if (code < 0) goto exit;
 
@@ -840,19 +842,18 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj)
 }
 
 /* Resolve all the indirect references for an object
- * Resolve circular references by replacing with null dict
- * Note: This is recursive
+ * Note: This can be recursive
  */
-int pdfi_resolve_indirect(pdf_context *ctx, pdf_obj *value)
+int pdfi_resolve_indirect(pdf_context *ctx, pdf_obj *value, bool recurse)
 {
     int code = 0;
 
     switch(value->type) {
     case PDF_ARRAY:
-        code = pdfi_resolve_indirect_array(ctx, value);
+        code = pdfi_resolve_indirect_array(ctx, value, recurse);
         break;
     case PDF_DICT:
-        code = pdfi_resolve_indirect_dict(ctx, value);
+        code = pdfi_resolve_indirect_dict(ctx, value, recurse);
         break;
     default:
         break;

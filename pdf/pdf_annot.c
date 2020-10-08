@@ -3195,17 +3195,19 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
             code = pdfi_dict_get_by_key(ctx, annot, (const pdf_name *)Key, &Value);
             if (code < 0) goto exit;
 
-            if (Value->type == PDF_ARRAY || Value->type == PDF_DICT) {
-                /* Pre-resolve indirect references of any arrays/dicts
-                 */
-                code = pdfi_loop_detector_mark(ctx);
-                code = pdfi_loop_detector_add_object(ctx, annot->object_num);
-                if (Value->object_num != 0)
-                    code = pdfi_loop_detector_add_object(ctx, Value->object_num);
-                code = pdfi_resolve_indirect(ctx, Value);
-                if (code < 0) goto exit;
-                (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
-            }
+            /* Pre-resolve indirect references of any arrays/dicts
+             * TODO: I am doing this because the gs code does it, but I
+             * noticed it only goes down one level, not recursively through
+             * everything.  I am not sure what the point is in that case.
+             * For now, also doing only one level.
+             */
+            code = pdfi_loop_detector_mark(ctx);
+            code = pdfi_loop_detector_add_object(ctx, annot->object_num);
+            if (Value->object_num != 0)
+                code = pdfi_loop_detector_add_object(ctx, Value->object_num);
+            code = pdfi_resolve_indirect(ctx, Value, false);
+            if (code < 0) goto exit;
+            (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
         }
 
         pdfi_countdown(Key);
