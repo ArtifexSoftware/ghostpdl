@@ -2916,6 +2916,125 @@ static int pdfi_annot_preserve_nextformlabel(pdf_context *ctx, byte **data, int 
     return 0;
 }
 
+/* Convert a Dest array to the hacky Page and View keys that pdfwrite expects
+ * dest_array: [<page_ref> <view_info>]
+ * page_ref: indirect ref to a page dict
+ * view_info: see table 8.2 in PDF 1.7, for example "/Fit"
+ *
+ * Removes /Dest and inserts two key pairs: /Page N and /View <view_info>
+ * N is the page number, which starts at 1, not 0.
+ */
+static int pdfi_annot_add_Page_View(pdf_context *ctx, pdf_dict *annot, pdf_array *dest_array)
+{
+    int code = 0;
+    int i;
+    int page_num;
+    pdf_dict *page_dict = NULL;
+    pdf_array *view_array = NULL;
+    uint64_t array_size;
+    pdf_obj *temp_obj = NULL;
+
+    code = pdfi_array_get_type(ctx, dest_array, 0, PDF_DICT, (pdf_obj **)&page_dict);
+    if (code < 0) goto exit;
+
+    /* Find out which page number this is */
+    code = pdfi_page_get_number(ctx, page_dict, &page_num);
+    if (code < 0) goto exit;
+
+    /* Add /Page key to the annotations dict
+     * Of course pdfwrite is numbering its pages starting at 1, because... of course :(
+     */
+    code = pdfi_dict_put_int(ctx, annot, "Page", page_num+1);
+
+    /* Build an array for /View, out of the remainder of the Dest entry */
+    array_size = pdfi_array_size(dest_array) - 1;
+    code = pdfi_array_alloc(ctx, array_size, &view_array);
+    if (code < 0) goto exit;
+    pdfi_countup(view_array);
+    for (i=0; i<array_size; i++) {
+        code = pdfi_array_get(ctx, dest_array, i+1, &temp_obj);
+        if (code < 0) goto exit;
+        code = pdfi_array_put(ctx, view_array, i, temp_obj);
+        if (code < 0) goto exit;
+
+        pdfi_countdown(temp_obj);
+        temp_obj = NULL;
+    }
+    /* Add /View key to the annotations dict */
+    code = pdfi_dict_put(ctx, annot, "View", (pdf_obj *)view_array);
+    if (code < 0) goto exit;
+
+ exit:
+    pdfi_countdown(temp_obj);
+    pdfi_countdown(page_dict);
+    pdfi_countdown(view_array);
+    return code;
+}
+
+/* Special handling for "Dest" in Link annotations */
+static int pdfi_annot_preserve_modDest(pdf_context *ctx, pdf_dict *annot, pdf_name *Dest_key,
+                                       pdf_name *subtype)
+{
+    int code = 0;
+    pdf_dict *Dests = NULL;
+    pdf_obj *Dest = NULL;
+    bool delete_Dest = true;
+    pdf_array *dest_array = NULL;
+
+    if (!pdfi_name_is(subtype, "Link"))
+        return 0;
+
+    code = pdfi_dict_get(ctx, annot, "Dest", (pdf_obj **)&Dest);
+    if (code < 0) goto exit;
+
+    switch (Dest->type) {
+    case PDF_ARRAY:
+        code = pdfi_annot_add_Page_View(ctx, annot, (pdf_array *)Dest);
+        if (code < 0) goto exit;
+        break;
+    case PDF_NAME:
+        code = pdfi_dict_knownget_type(ctx, ctx->Root, "Dests", PDF_DICT, (pdf_obj **)&Dests);
+        if (code < 0) goto exit;
+        if (code == 0) {
+            /* TODO: Not found, should flag a warning */
+            code = 0;
+            goto exit;
+        }
+        code = pdfi_dict_get_by_key(ctx, Dests, (const pdf_name *)Dest, (pdf_obj **)&dest_array);
+        if (code == gs_error_undefined) {
+            /* TODO: Not found, should flag a warning */
+            code = 0;
+            goto exit;
+        }
+        if (code < 0) goto exit;
+        if (dest_array->type != PDF_ARRAY) {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
+        code = pdfi_annot_add_Page_View(ctx, annot, dest_array);
+        if (code < 0) goto exit;
+        break;
+    case PDF_STRING:
+        /* TODO: */
+        break;
+    default:
+        break;
+    }
+
+
+
+ exit:
+    if (delete_Dest) {
+        /* Delete the Dest key */
+        code = pdfi_dict_delete_pair(ctx, annot, Dest_key);
+        if (code < 0) goto exit;
+    }
+    pdfi_countdown(Dest);
+    pdfi_countdown(Dests);
+    pdfi_countdown(dest_array);
+    return code;
+}
+
 /* Special handling for "A" in Link annotations */
 static int pdfi_annot_preserve_modA(pdf_context *ctx, pdf_dict *annot, pdf_name *A_key,
                                     pdf_name *subtype, bool *resolve)
@@ -3175,7 +3294,7 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "Dest")) {
             /* TODO: Need to figure out how to handle this in Link annotations */
-            code = pdfi_dict_delete_pair(ctx, tempdict, Key);
+            code = pdfi_annot_preserve_modDest(ctx, tempdict, Key, subtype);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "StructTreeRoot")) {
             /* TODO: Bug691785 has Link annots with /StructTreeRoot
@@ -3232,9 +3351,12 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
      */
     code = pdfi_loop_detector_mark(ctx);
     code = pdfi_loop_detector_add_object(ctx, annot->object_num);
-    code = pdfi_mark_from_dict(ctx, tempdict, &ctm, "ANN");
-    if (code < 0) goto exit;
+    if (pdfi_name_is(subtype, "Link"))
+        code = pdfi_mark_from_dict(ctx, tempdict, &ctm, "LNK");
+    else
+        code = pdfi_mark_from_dict(ctx, tempdict, &ctm, "ANN");
     (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
+    if (code < 0) goto exit;
 
  exit:
     pdfi_countdown(tempdict);

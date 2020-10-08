@@ -41,5 +41,6 @@ typedef struct {
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics);
 int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info);
 int pdfi_page_graphics_begin(pdf_context *ctx);
+int pdfi_page_get_number(pdf_context *ctx, pdf_dict *target_dict, int *page_num);
 
 #endif

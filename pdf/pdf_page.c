@@ -510,6 +510,40 @@ done:
     return code;
 }
 
+/* Find the page number that corresponds to a page dictionary
+ * NOTE: This seems pretty heavy-handed, but I don't know a better way...
+ */
+int pdfi_page_get_number(pdf_context *ctx, pdf_dict *target_dict, int *page_num)
+{
+    int i;
+    int code = 0;
+    pdf_dict *page_dict = NULL;
+    uint64_t page_offset = 0;
+
+    /* TODO: I would prefer if we had just built an array mapping the object numbers
+     * to pages numbers, because this is an expensive way to look this up.
+     */
+    for (i=0; i<ctx->num_pages; i++) {
+        page_offset = 0;
+        code = pdfi_get_page_dict(ctx, ctx->Pages, i, &page_offset, &page_dict, NULL);
+        if (code < 0) goto exit;
+
+        if (target_dict->object_num == page_dict->object_num) {
+            *page_num = i;
+            goto exit;
+        }
+
+        pdfi_countdown(page_dict);
+        page_dict = NULL;
+    }
+
+    code = gs_note_error(gs_error_undefined);
+
+ exit:
+    pdfi_countdown(page_dict);
+    return code;
+}
+
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 {
     int code, code1=0;

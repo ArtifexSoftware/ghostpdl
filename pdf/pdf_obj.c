@@ -431,6 +431,21 @@ static int pdfi_obj_bool_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
     return code;
 }
 
+static int pdfi_obj_null_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    int size = 4;
+    char *buf;
+
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_null_str(data)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(buf, (byte *)"null", 4);
+    *len = 4;
+    *data = (byte *)buf;
+    return code;
+}
+
 static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
@@ -675,6 +690,7 @@ obj_str_dispatch_t obj_str_dispatch[] = {
     {PDF_STRING, pdfi_obj_string_str},
     {PDF_DICT, pdfi_obj_dict_str},
     {PDF_INDIRECT, pdfi_obj_indirect_str},
+    {PDF_NULL, pdfi_obj_null_str},
     {0, NULL}
 };
 
