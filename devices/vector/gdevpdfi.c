@@ -1732,7 +1732,7 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
     if (pie->JPEG_PassThrough) {
         pie->rows_left -= height;
         *rows_used = height;
-        return 0;
+        return !pie->rows_left;
     }
 
     for (i = 0; i < pie->writer.alt_writer_count; i++) {
