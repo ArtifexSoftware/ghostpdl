@@ -1165,4 +1165,4 @@ TESSERACT_LEGACY_OBJS=\
 TESSERACT_LEGACY=
 
 TESS_ROMFS_ARGS=\
-	-c -d Resource/ -P .$(D)Resource$(D) Tesseract$(D)*
+	-c -P $(GLSRCDIR)$(D)..$(D) tessdata$(D)*

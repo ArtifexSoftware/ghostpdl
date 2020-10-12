@@ -70,13 +70,17 @@
 <li><a href="#BMP">BMP file format</a></li>
 <li><a href="#PCX">PCX file format</a></li>
 <li><a href="#PSD">PSD file format (DeviceN color model)</a></li>
+<li><a href="#PDFimage">Bitmap PDF output, PCLm output</a></li>
+</ul>
+<li><a href="#OCR-Devices">OCR Devices</a></li>
+<ul>
+<li><a href="#OCR">OCR text output</a></li>
+<li><a href="#PDFocr">Bitmap PDF output (with OCR text)</a></li>
 </ul>
 <li><a href="#High-level">High level formats</a></li>
 <ul>
 <li><a href="#PDF">PDF file output</a></li>
-<li><a href="#PDFimage">Bitmap PDF output, PCLm output</a></li>
 <li><a href="#OCR">OCR devices</a></li>
-<li><a href="#PDFocr">Bitmap PDF output (with OCR text)</a></li>
 <li><a href="#PS">PostScript file output</a></li>
 <li><a href="#EPS">EPS file output</a></li>
 <li><a href="#PXL">PCL-XL file output</a></li>
@@ -954,9 +958,11 @@ of 'high-level' formats. These allow Ghostscript to preserve (as much as
 possible) the drawing elements of the input file maintaining flexibility,
 resolution independence, and editability.</p>
 
-<h2><a name="High-level"></a>High-level devices</h2>
+<hr>
 
-<h3><a name="OCR"></a>Optical Character Recognition (OCR) output</h3>
+<h2><a name="OCR-Devices"></a>Optical Character Recognition (OCR) devices</h2>
+
+<h3><a name="OCR"></a>OCR text output</h3>
 
 <p>
   These devices render internally in 8 bit greyscale, and then
@@ -974,12 +980,23 @@ resolution independence, and editability.</p>
   standard Tesseract tools.
 </p>
 <p>
-  These files are looked for from a variety of places. Firstly,
-  any files placed in &quot;Resource/Tesseract/&quot; will be
-  included in the binary for any standard (COMPILE_INITS=1) build.
-  Secondly, files will be searched for in the current directory.
-  Thirdly, files will be searched for in the directory given by
-  the environment variable TESSDATA_PREFIX.
+  These files are looked for from a variety of places.
+</p>
+<ul>
+  <li>Firstly, files will be searched for in the directory given by the
+    environment variable TESSDATA_PREFIX.
+  <li>Next, they will be searched for within the ROM filing system. Any
+    files placed in &quot;tessdata&quot; will be included within the ROM
+    filing system in the binary for any standard (COMPILE_INITS=1) build.
+  <li>Next, files will be searched for in the configured 'tessdata' path. On
+    Unix, this can be specified at the configure stage using
+    '--with-tessdata=&lt;path&gt;' (where &lt;path&gt; is a list of
+    directories to search, separated by ':' (on Unix) or ';' (on Windows)).
+  <li>Finally, we resort to searching the current directory.
+</ul>
+<p>
+  Please note, this pattern of directory searching differs from the original
+  release of the OCR devices.
 </p>
 <p>
   By default, the OCR process defaults to looking for English text,
@@ -1041,6 +1058,8 @@ resolution independence, and editability.</p>
   devices described above.
 </p>
 <p>
+
+<hr>
 
 <h2><a name="High-level"></a>High-level devices</h2>
 
