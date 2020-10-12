@@ -28,7 +28,7 @@ $(GLGEN)libocr.dev : $(LIBOCR_MAK) $(ECHOGS_XE)$(MAKEDIRS)\
 # Tesseract veneer.
 $(GLGEN)tessocr.$(OBJ) : $(GLSRC)tessocr.cpp $(GLSRC)tessocr.h $(LIBOCR_MAK) \
 	$(gsmemory_h) $(gxiodev_h) $(stream_h) $(TESSDEPS)
-	$(TESSCXX) $(D_)LEPTONICA_INTERCEPT_MALLOC=1$(_D) $(I_)$(LEPTONICADIR)$(D)src$(_I) $(GLO_)tessocr.$(OBJ) $(C_) $(GLSRC)tessocr.cpp
+	$(TESSCXX) $(D_)LEPTONICA_INTERCEPT_MALLOC=1$(_D) $(I_)$(LEPTONICADIR)$(D)src$(_I) $(GLO_)tessocr.$(OBJ) $(C_) $(D_)TESSDATA="$(TESSDATA)"$(_D) $(GLSRC)tessocr.cpp
 
 # 0 = No version.
 

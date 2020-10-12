@@ -3185,6 +3185,16 @@ fi
 
 AC_SUBST(fontpath)
 
+dnl look for default tessdata...
+AC_ARG_WITH([tessdata],  AC_HELP_STRING([--with-tessdata],
+    [set tesseract data search path]), tessdata="$withval", tessdata="")
+
+if test "x$tessdata" = "x"; then
+        tessdata="${datadir}/tessdata"
+fi
+
+AC_SUBST(tessdata)
+
 dnl --------------------------------------------------
 dnl Check for library functions
 dnl --------------------------------------------------

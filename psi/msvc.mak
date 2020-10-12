@@ -308,6 +308,12 @@ AROOTDIR=c:/gs
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 !endif
 
+# Define the directory to look in for tesseract data.
+
+!ifndef TESSDATA
+TESSDATA=$(GSROOTDIR)/tessdata
+!endif
+
 # Define the directory that will hold documentation at runtime.
 
 !ifndef GS_DOCDIR
