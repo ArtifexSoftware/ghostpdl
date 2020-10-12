@@ -148,8 +148,11 @@ pxPassthrough_init(px_state_t * pxs)
                     (int)(pxs->media_dims.y * 10 + .5),
                     (int)(pxs->media_dims.x * 10 + .5));
 
-        stream_cursor_read_init(&r, (const byte *)buf, ret);
-        pjl_proc_process(pxs->pjls, &r);
+        /* There is no reason gs_sprintf should fail, but to shut coverity up... */
+        if (ret > 0) {
+            stream_cursor_read_init(&r, (const byte *)buf, ret);
+            pjl_proc_process(pxs->pjls, &r);
+        }
     }
 
     /* do an initial reset to set up a permanent reset.  The
