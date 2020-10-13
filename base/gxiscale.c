@@ -2728,6 +2728,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                 if (penum->icc_link->is_identity || pss->params.early_cm) {
                     /* Fastest case. No CM needed */
                     p_cm_interp = (unsigned short *) pinterp;
+                    p_cm_interp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_cm;
                 } else {
                     /* Transform */
                     pinterp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_decode;
@@ -2739,7 +2740,6 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                                                         (void*) pinterp,
                                                         (void*) p_cm_interp);
                 }
-                p_cm_interp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_cm;
                 for (x = xo; x < xe;) {
 #ifdef DEBUG
                     if (gs_debug_c('B')) {
