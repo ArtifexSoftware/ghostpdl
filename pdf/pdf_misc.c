@@ -106,6 +106,14 @@ pdfi_name_cmp(const pdf_name *n1, const pdf_name *n2)
     return memcmp(n1->data, n2->data, n1->length);
 }
 
+int
+pdfi_string_cmp(const pdf_string *n1, const pdf_string *n2)
+{
+    if (n1->length != n2->length)
+        return -1;
+    return memcmp(n1->data, n2->data, n1->length);
+}
+
 /* Set rendering intent, translating from name to number */
 int pdfi_setrenderingintent(pdf_context *ctx, pdf_name *n)
 {

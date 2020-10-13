@@ -2971,6 +2971,78 @@ static int pdfi_annot_add_Page_View(pdf_context *ctx, pdf_dict *annot, pdf_array
     return code;
 }
 
+/* Lookup a Dest string(or name) in the Names array and try to resolve it */
+static int pdfi_annot_handle_dest_names(pdf_context *ctx, pdf_dict *annot,
+                                         pdf_obj *dest, pdf_array *Names)
+{
+    int code = 0;
+    int i;
+    uint64_t array_size;
+    pdf_obj *name = NULL;
+    pdf_dict *D_dict = NULL;
+    bool found = false;
+    pdf_array *dest_array = NULL;
+
+    array_size = pdfi_array_size(Names);
+
+    /* Needs to be an even number - pairs of [name, obj] */
+    if (array_size % 2 != 0) {
+        /* TODO: flag an error? */
+        /* Let's just ignore the last unpaired item for now */
+        array_size -= 1;
+    }
+
+    for (i=0; i<array_size; i+=2) {
+        code = pdfi_array_get(ctx, Names, i, (pdf_obj **)&name);
+        if (code < 0) goto exit;
+        /* Note: in current implementation, PDF_STRING and PDF_NAME have all the same
+         * fields, but just in case that changes I treat them separately here.
+         */
+        if (name->type == PDF_STRING && dest->type == PDF_STRING) {
+            if (!pdfi_string_cmp((pdf_string *)name, (pdf_string *)dest)) {
+                found = true;
+                break;
+            }
+        } else if (name->type == PDF_NAME && dest->type == PDF_NAME) {
+            if (!pdfi_name_cmp((pdf_name *)name, (pdf_name *)dest)) {
+                found = true;
+                break;
+            }
+        }
+        pdfi_countdown(name);
+        name = NULL;
+    }
+
+    if (!found) {
+        /* TODO: flag a warning? */
+        code = 0;
+        goto exit;
+    }
+
+    /* Next entry is supposed to be a dict */
+    code = pdfi_array_get(ctx, Names, i+1, (pdf_obj **)&D_dict);
+    if (code < 0) goto exit;
+    if (D_dict->type != PDF_DICT) {
+        /* TODO: flag a warning? */
+        code = 0;
+        goto exit;
+    }
+
+    /* Dict is supposed to contain key "D" with Dest array */
+    code = pdfi_dict_knownget_type(ctx, D_dict, "D", PDF_ARRAY, (pdf_obj **)&dest_array);
+    if (code <= 0) goto exit;
+
+    /* Process the dest_array to replace with /Page /View */
+    code = pdfi_annot_add_Page_View(ctx, annot, dest_array);
+    if (code < 0) goto exit;
+
+ exit:
+    pdfi_countdown(name);
+    pdfi_countdown(D_dict);
+    pdfi_countdown(dest_array);
+    return code;
+}
+
 /* Special handling for "Dest" in Link annotations */
 static int pdfi_annot_preserve_modDest(pdf_context *ctx, pdf_dict *annot, pdf_name *Dest_key,
                                        pdf_name *subtype)
@@ -2980,11 +3052,19 @@ static int pdfi_annot_preserve_modDest(pdf_context *ctx, pdf_dict *annot, pdf_na
     pdf_obj *Dest = NULL;
     bool delete_Dest = true;
     pdf_array *dest_array = NULL;
+    pdf_array *Names = NULL;
+    pdf_dict *Names_dict = NULL;
 
     if (!pdfi_name_is(subtype, "Link"))
         return 0;
 
     code = pdfi_dict_get(ctx, annot, "Dest", (pdf_obj **)&Dest);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "Dests", PDF_DICT, (pdf_obj **)&Dests);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, (pdf_obj **)&Names_dict);
     if (code < 0) goto exit;
 
     switch (Dest->type) {
@@ -2993,35 +3073,47 @@ static int pdfi_annot_preserve_modDest(pdf_context *ctx, pdf_dict *annot, pdf_na
         if (code < 0) goto exit;
         break;
     case PDF_NAME:
-        code = pdfi_dict_knownget_type(ctx, ctx->Root, "Dests", PDF_DICT, (pdf_obj **)&Dests);
-        if (code < 0) goto exit;
-        if (code == 0) {
-            /* TODO: Not found, should flag a warning */
-            code = 0;
-            goto exit;
-        }
-        code = pdfi_dict_get_by_key(ctx, Dests, (const pdf_name *)Dest, (pdf_obj **)&dest_array);
-        if (code == gs_error_undefined) {
-            /* TODO: Not found, should flag a warning */
-            code = 0;
-            goto exit;
-        }
-        if (code < 0) goto exit;
-        if (dest_array->type != PDF_ARRAY) {
-            code = gs_note_error(gs_error_typecheck);
-            goto exit;
-        }
-        code = pdfi_annot_add_Page_View(ctx, annot, dest_array);
-        if (code < 0) goto exit;
-        break;
     case PDF_STRING:
-        /* TODO: */
+        if (Dest->type == PDF_NAME && Dests != NULL) {
+            /* Case where it's a name to look up in Contents(Root) /Dests */
+            code = pdfi_dict_get_by_key(ctx, Dests, (const pdf_name *)Dest, (pdf_obj **)&dest_array);
+            if (code == gs_error_undefined) {
+                /* TODO: Not found, should flag a warning */
+                code = 0;
+                goto exit;
+            }
+            if (code < 0) goto exit;
+            if (dest_array->type != PDF_ARRAY) {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+            code = pdfi_annot_add_Page_View(ctx, annot, dest_array);
+            if (code < 0) goto exit;
+        } else if (Names_dict != NULL) {
+            /* Looking in Catalog(Root) for /Names<</Dests<</Names [name dict array]>>>> */
+            code = pdfi_dict_knownget_type(ctx, Names_dict, "Dests", PDF_DICT, (pdf_obj **)&Dests);
+            if (code < 0) goto exit;
+            if (code == 0) {
+                /* TODO: Not found -- not sure if there is another case here or not */
+                goto exit;
+            }
+
+            code = pdfi_dict_knownget_type(ctx, Dests, "Names", PDF_ARRAY, (pdf_obj **)&Names);
+            if (code < 0) goto exit;
+            if (code == 0) {
+                /* TODO: Not found -- not sure if there is another case here or not */
+                goto exit;
+            }
+            code = pdfi_annot_handle_dest_names(ctx, annot, Dest, Names);
+            if (code < 0) goto exit;
+        } else {
+            /* TODO: Ignore it -- flag a warning? */
+        }
         break;
     default:
+        /* TODO: Ignore it -- flag a warning? */
         break;
     }
-
-
 
  exit:
     if (delete_Dest) {
@@ -3031,6 +3123,8 @@ static int pdfi_annot_preserve_modDest(pdf_context *ctx, pdf_dict *annot, pdf_na
     }
     pdfi_countdown(Dest);
     pdfi_countdown(Dests);
+    pdfi_countdown(Names);
+    pdfi_countdown(Names_dict);
     pdfi_countdown(dest_array);
     return code;
 }
