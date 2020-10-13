@@ -5712,22 +5712,25 @@ currentdict end def
 % The recursive enumeration of the form fields doesn't descend into widget annotations.
 
 /draw_form_field { % <field> draw_form_field -
-  dup /Kids knownoget {                       % field []
-    dup length 0 gt {
-      dup 0 oget /Parent knownoget {            % field [] kid
-        pop % mon-terminal field                % field []
-        exch pop                                % []
-        { oforce draw_form_field } forall
+  dup type /dicttyype eq {	% File for Bug692447 has 'null' Fields entries
+                                % This matches what pdf_main process_trailer_attrs
+    dup /Kids knownoget {                       % field []
+      dup length 0 gt {
+        dup 0 oget /Parent knownoget {            % field [] kid
+          pop % mon-terminal field                % field []
+          exch pop                                % []
+          { oforce draw_form_field } forall
+        } {
+          pop draw_terminal_field % separate annots % -
+        } ifelse
       } {
-        pop draw_terminal_field % separate annots % -
+          (  **** Error: Ignoring empty /Kids array in Form field.\n) pdfformaterror
+          (              Output may be incorrect.\n) pdfformaterror
       } ifelse
     } {
-        (  **** Error: Ignoring empty /Kids array in Form field.\n) pdfformaterror
-        (              Output may be incorrect.\n) pdfformaterror
+      draw_terminal_field % merged annotation   % -
     } ifelse
-  } {
-    draw_terminal_field % merged annotation   % -
-  } ifelse
+  } if
 } bind executeonly def
 
 /draw_acro_form {		% <form> draw_acro_form -

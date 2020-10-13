@@ -1270,26 +1270,26 @@ currentdict /xref-char-dict undef
   % to the parent field.
   Trailer /Root knownoget {
     /AcroForm knownoget {
-    %% If we don't have a NeedAppearances entry, treat as if true.
-    %% We know Acrobat always regenerates all annotait
-    dup /NeedAppearances knownoget not { //true } if {
-      /NeedAppearances //true def
-      dup
-      /Fields knownoget {
-        { oforce
-          %% Make sure the entry from the Fields array is a dictionary
-          %% Bug #692447.pdf has an array of nulls.
-          dup type /dicttype eq {
-            link_widget_annots
-          }if
-          pop
-        } forall
-      } if
-      pop
-    } {
-      pop
-    } ifelse
-  } if
+      %% If we don't have a NeedAppearances entry, treat as if true.
+      %% We know Acrobat always regenerates all annotations.
+      dup /NeedAppearances knownoget not { //true } if {
+        /NeedAppearances //true def
+        dup
+        /Fields knownoget {
+          { oforce
+            %% Make sure the entry from the Fields array is a dictionary
+            %% Bug #692447.pdf has an array of nulls.
+            dup type /dicttype eq {
+              link_widget_annots
+            }if
+            pop
+          } forall
+        } if
+        pop
+      } {
+        pop
+      } ifelse
+    } if
   } if
 
   % Use OutputIntent ICC profile
@@ -2984,7 +2984,8 @@ currentdict /PDF2PS_matrix_key undef
       } ifelse
     } if
   } if
-  //systemdict /ShowAcroForm .knownget { //true eq } { //false } ifelse {
+  % default AcroForm to true to match Acrobat.
+  //systemdict /ShowAcroForm .knownget { //true eq } { //true } ifelse {
     Trailer /Root oget /AcroForm knownoget { draw_acro_form } if
   } if
 } bind executeonly def
