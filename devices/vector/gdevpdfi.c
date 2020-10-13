@@ -1383,53 +1383,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     if (code < 0)
         goto fail_and_fallback;
 
-    if (pdev->params.TransferFunctionInfo == tfi_Apply && pdev->transfer_not_identity && !is_mask)
-        pdev->JPEG_PassThrough = 0;
-
-    /* Code below here deals with setting up the multiple data stream writing.
-     * We can have up to 4 stream writers, which we keep in an array. We must
-     * always have at least one which writes the uncompressed stream. If we
-     * are writing compressed streams, we have one for the compressed stream
-     * and one for the compression chooser.
-     * For type 4 images being converted (for old versions of PDF or for ps2write)
-     * we need an additional stream to write a mask, which masks the real
-     * image.
-     * For colour conversion we will place an additional filter in front of all
-     * the streams which does the conversion.
-     */
-    if (in_line) {
-        pdev->JPEG_PassThrough = 0;
-        code = new_setup_lossless_filters((gx_device_psdf *) pdev,
-                                             &pie->writer.binary[0],
-                                             &image[0].pixel, in_line, convert_to_process_colors, (gs_matrix *)pmat, (gs_gstate *)pgs);
-    } else {
-        if (force_lossless) {
-            /*
-             * Some regrettable PostScript code (such as LanguageLevel 1 output
-             * from Microsoft's PSCRIPT.DLL driver) misuses the transfer
-             * function to accomplish the equivalent of indexed color.
-             * Downsampling (well, only averaging) or JPEG compression are not
-             * compatible with this.  Play it safe by using only lossless
-             * filters if the transfer function(s) is/are other than the
-             * identity and by setting the downsample type to Subsample..
-             */
-            int saved_downsample = pdev->params.ColorImage.DownsampleType;
-
-            pdev->params.ColorImage.DownsampleType = ds_Subsample;
-            code = new_setup_image_filters((gx_device_psdf *) pdev,
-                                          &pie->writer.binary[0], &image[0].pixel,
-                                          pmat, pgs, true, in_line, convert_to_process_colors);
-            pdev->params.ColorImage.DownsampleType = saved_downsample;
-        } else {
-            code = new_setup_image_filters((gx_device_psdf *) pdev,
-                                          &pie->writer.binary[0], &image[0].pixel,
-                                          pmat, pgs, true, in_line, convert_to_process_colors);
-        }
-    }
-
-    if (code < 0)
-        goto fail_and_fallback;
-
     if (!convert_to_process_colors)
     {
         gs_color_space_index csi;
@@ -1484,10 +1437,53 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             }
         }
     }
-    /* If we are not preserving the colour space unchanged, thenwe can't pass through JPEG */
+    /* If we are not preserving the colour space unchanged, then we can't pass through JPEG */
     else
         pdev->JPEG_PassThrough = 0;
 
+    /* Code below here deals with setting up the multiple data stream writing.
+     * We can have up to 4 stream writers, which we keep in an array. We must
+     * always have at least one which writes the uncompressed stream. If we
+     * are writing compressed streams, we have one for the compressed stream
+     * and one for the compression chooser.
+     * For type 4 images being converted (for old versions of PDF or for ps2write)
+     * we need an additional stream to write a mask, which masks the real
+     * image.
+     * For colour conversion we will place an additional filter in front of all
+     * the streams which does the conversion.
+     */
+    if (in_line) {
+        pdev->JPEG_PassThrough = 0;
+        code = new_setup_lossless_filters((gx_device_psdf *) pdev,
+                                             &pie->writer.binary[0],
+                                             &image[0].pixel, in_line, convert_to_process_colors, (gs_matrix *)pmat, (gs_gstate *)pgs);
+    } else {
+        if (force_lossless) {
+            /*
+             * Some regrettable PostScript code (such as LanguageLevel 1 output
+             * from Microsoft's PSCRIPT.DLL driver) misuses the transfer
+             * function to accomplish the equivalent of indexed color.
+             * Downsampling (well, only averaging) or JPEG compression are not
+             * compatible with this.  Play it safe by using only lossless
+             * filters if the transfer function(s) is/are other than the
+             * identity and by setting the downsample type to Subsample..
+             */
+            int saved_downsample = pdev->params.ColorImage.DownsampleType;
+
+            pdev->params.ColorImage.DownsampleType = ds_Subsample;
+            code = new_setup_image_filters((gx_device_psdf *) pdev,
+                                          &pie->writer.binary[0], &image[0].pixel,
+                                          pmat, pgs, true, in_line, convert_to_process_colors);
+            pdev->params.ColorImage.DownsampleType = saved_downsample;
+        } else {
+            code = new_setup_image_filters((gx_device_psdf *) pdev,
+                                          &pie->writer.binary[0], &image[0].pixel,
+                                          pmat, pgs, true, in_line, convert_to_process_colors);
+        }
+    }
+
+    if (code < 0)
+        goto fail_and_fallback;
 
     if (convert_to_process_colors) {
         image[0].pixel.ColorSpace = pcs_orig;
