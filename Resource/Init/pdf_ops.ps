@@ -1478,21 +1478,8 @@ currentdict /clip_if_required .undef
         % width under pdfwrite. Pdfwrite uses (in text mode) an identity
         % CTM, so we need to calculate the stroke width which would result
         % if the CTM had been unity.
-          currentlinewidth dup
-          currentdict /qTextSaveMatrix known {
-            matrix defaultmatrix idtransform qTextSaveMatrix dtransform
-          }{
-            matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          } ifelse
-          abs 2 copy exch abs eq {
-            pop
-          }{
-            % We used to leave the linewidth alone for non-square resolutions,
-            % claiming it reduced to the text matrix in pdfwrite. This is not
-            % true. So handle it the same way we usually do, the hypotenuse of
-            % the unit square transformed through the TextSaveMatrix.
-            dup mul exch dup mul add sqrt
-          }ifelse setlinewidth
+          calc_text_linewidth
+          setlinewidth
           show setlinewidth} bind executeonly
         % Tr 2 - Fill then Stroke
         { currentlinewidth exch setsmaskstate
@@ -1500,21 +1487,8 @@ currentdict /clip_if_required .undef
         % width under pdfwrite. Pdfwrite uses (in text mode) an identity
         % CTM, so we need to calculate the stroke width which would result
         % if the CTM had been unity.
-          currentlinewidth dup
-          currentdict /qTextSaveMatrix known {
-            matrix defaultmatrix idtransform qTextSaveMatrix dtransform
-          }{
-            matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          } ifelse
-          abs 2 copy exch abs eq {
-            pop
-          }{
-            % We used to leave the linewidth alone for non-square resolutions,
-            % claiming it reduced to the text matrix in pdfwrite. This is not
-            % true. So handle it the same way we usually do, the hypotenuse of
-            % the unit square transformed through the TextSaveMatrix.
-            dup mul exch dup mul add sqrt
-          }ifelse setlinewidth
+          calc_text_linewidth
+          setlinewidth
           setsmaskstate show setlinewidth} bind executeonly
         % Tr 3 - Neither fill nor stroke
         { setsmaskstate show } bind executeonly
@@ -1529,41 +1503,49 @@ currentdict /clip_if_required .undef
           setsmaskstate dup show grestore //true charpath } bind executeonly
         % Tr 5 - Stroke, add to clip
         { gsave 1 .settextrenderingmode
-          currentlinewidth dup
-          matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          abs 2 copy exch abs eq {
-            pop
-          }{
-            % We used to leave the linewidth alone for non-square resolutions,
-            % claiming it reduced to the text matrix in pdfwrite. This is not
-            % true. So handle it the same way we usually do, the hypotenuse of
-            % the unit square transformed through the TextSaveMatrix.
-            dup mul exch dup mul add sqrt
-          }ifelse setlinewidth
+          calc_text_linewidth
+          setlinewidth
           setsmaskstate dup show grestore
           //true charpath} bind executeonly
         % Tr 6 - Fill, stroke, add to clip
         { gsave 2 .settextrenderingmode
-          currentlinewidth dup
-          currentdict /qTextSaveMatrix known {
-            matrix defaultmatrix idtransform qTextSaveMatrix dtransform
-          }{
-            matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          } ifelse
-          abs 2 copy exch abs eq {
-            pop
-          }{
-            % We used to leave the linewidth alone for non-square resolutions,
-            % claiming it reduced to the text matrix in pdfwrite. This is not
-            % true. So handle it the same way we usually do, the hypotenuse of
-            % the unit square transformed through the TextSaveMatrix.
-            dup mul exch dup mul add sqrt
-          }ifelse setlinewidth
+          calc_text_linewidth
+          setlinewidth
           setsmaskstate dup show grestore
           //true charpath} bind executeonly
         % Tr 7 - Add to clip
         { //true charpath} bind executeonly
 ] readonly def
+
+% - calc_text_linewidth calculated_width
+% This calculates the required linewidth for stroke for *pdfwrite*, it must not be
+% used for rendering. Because pdfwrite writes text scaled into a 72 dpi resolution
+% we cannot use the current linewidth for it, it will be too large. Instead we must
+% re-calculate the original linewidth (removing the default CTM) and then apply the
+% TextSaveMatrix to find the appropriate new linewidth.
+% We check to see if the x and y scaling are approximately the same, if they are not
+% then we calculate a linewidth based on a right triangle with the x and y values
+% of the current linewidth in each direction and then calculate the hypotenuse, which
+% we then use as an approximation to the required width.
+% The 'approximation' of 0.01 is just a guess.
+/calc_text_linewidth
+{
+  currentlinewidth dup
+  currentdict /qTextSaveMatrix known {
+    matrix defaultmatrix idtransform qTextSaveMatrix dtransform
+  }{
+    matrix defaultmatrix idtransform TextSaveMatrix dtransform
+  } ifelse
+  abs 2 copy exch abs sub abs 0.01 le {
+    pop
+  }{
+    % We used to leave the linewidth alone for non-square resolutions,
+    % claiming it reduced to the text matrix in pdfwrite. This is not
+    % true. So handle it the same way we usually do, the hypotenuse of
+    % the unit square transformed through the TextSaveMatrix.
+    dup mul exch dup mul add sqrt 2 div
+  }ifelse
+} bind executeonly def
 
 /setstrokeforTrpreservation {
       % Check to see if the current device supports Tr
@@ -1581,15 +1563,7 @@ currentdict /clip_if_required .undef
           % CTM, so we need to calculate the stroke width which would result
           % if the CTM had been unity. NOTE! Only interested in magnitudes,
           % not signs.
-          currentlinewidth dup
-          matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          abs 2 copy exch abs eq {
-            pop
-          }{
-            % non-square scaling reduces to Text matrix in pdfwrite , so
-            % we can ignore it. (wrong answer, but consistent)
-            pop pop currentlinewidth
-          }ifelse
+          calc_text_linewidth
           setlinewidth
       } if
     } if
