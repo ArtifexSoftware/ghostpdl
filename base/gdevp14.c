@@ -7442,6 +7442,17 @@ map_components_to_colorants(const frac * pcc,
     }
 }
 
+/* See Section 7.6.4 of PDF 1.7 spec */
+static inline bool
+pdf14_state_opaque(pdf14_device *pdev, const gs_gstate *pgs)
+{
+    return !(pdev->in_smask_construction ||
+        pdev->smask_constructed ||
+        pgs->fillconstantalpha != 1.0 ||
+        pgs->strokeconstantalpha != 1.0 ||
+        !(pgs->blend_mode == BLEND_MODE_Normal ||
+          pgs->blend_mode == BLEND_MODE_CompatibleOverprint));
+}
 
 static	void
 pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
@@ -7460,20 +7471,20 @@ pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
         trans_device = dev;
     }
     ncomps = trans_device->color_info.num_components;
+
     /* map to the color model */
     dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_gray(trans_device, gray, cm_comps);
 
-    /* If we are in a Gray blending color space and have spots then we have
-     * possibly an issue here with the transfer function */
-    if (pgs->trans_device != NULL) {
-        cv[0] = frac2cv(gx_map_color_frac(pgs, cm_comps[0], effective_transfer[0]));
-        /* FIXME: This looks odd to me... */
-        for (i = 1; i < ncomps; i++)
-            cv[i] = gx_color_value_from_byte(cm_comps[i]);
-    } else {
-        /* Not a transparency device.  Just use the transfer functions directly */
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
+    {
+        pdf14_device *pdev = (pdf14_device *)trans_device;
+
+        if (pdf14_state_opaque(pdev, pgs)) {
+            for (i = 0; i < ncomps; i++)
+                cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
+        } else {
+            for (i = 0; i < ncomps; i++)
+                cv[i] = frac2cv(cm_comps[i]);
+        }
     }
 
     /* If output device supports devn, we need to make sure we send it the
@@ -7511,21 +7522,19 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
     /* map to the color model */
     dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_rgb(trans_device, pgs, r, g, b, cm_comps);
 
-    /* If we are in an RGB blending color space and have spots then we have
-    * possibly an issue here with the transfer function */
-    if (pgs->trans_device != NULL) {
-        for (i = 0; i < 3; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
-        /* FIXME: This looks odd to me... */
-        for (i = 3; i < ncomps; i++)
-            cv[i] = gx_color_value_from_byte(cm_comps[i]);
-    } else {
-        /* Not a transparency device.  Just use the transfer functions directly */
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
+    {
+        pdf14_device *pdev = (pdf14_device *)trans_device;
+
+        if (pdf14_state_opaque(pdev, pgs)) {
+            for (i = 0; i < ncomps; i++)
+                cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
+        } else {
+            for (i = 0; i < ncomps; i++)
+                cv[i] = frac2cv(cm_comps[i]);
+        }
     }
 
-    /* if output device supports devn, we need to make sure we send it the
+    /* If output device supports devn, we need to make sure we send it the
        proper color type.  We now support RGB + spots as devn colors */
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
         for (i = 0; i < ncomps; i++)
@@ -7545,7 +7554,7 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
      const gs_gstate * pgs, gx_device * dev, gs_color_select_t select,
      const gs_color_space *pcs)
 {
-    int i,ncomps;
+    int i, ncomps;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
@@ -7558,10 +7567,23 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
         trans_device = dev;
     }
     ncomps = trans_device->color_info.num_components;
-    /* map to the color model */
+
+    /* Map to the color model. Transfer function is only used
+       if we are drawing with an opaque color. */
     dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_cmyk(trans_device, c, m, y, k, cm_comps);
-    for (i = 0; i < ncomps; i++)
-        cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
+
+    {
+        pdf14_device *pdev = (pdf14_device *)trans_device;
+
+        if (pdf14_state_opaque(pdev, pgs)) {
+            for (i = 0; i < ncomps; i++)
+                cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
+        } else {
+            for (i = 0; i < ncomps; i++)
+                cv[i] = frac2cv(cm_comps[i]);
+        }
+    }
+
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
