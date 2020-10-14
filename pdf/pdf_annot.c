@@ -2928,7 +2928,7 @@ static int pdfi_annot_add_Page_View(pdf_context *ctx, pdf_dict *annot, pdf_array
 {
     int code = 0;
     int i;
-    int page_num;
+    uint64_t page_num;
     pdf_dict *page_dict = NULL;
     pdf_array *view_array = NULL;
     uint64_t array_size;

@@ -410,27 +410,12 @@ static int store_box(pdf_context *ctx, float *box, pdf_array *a)
 int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
 {
     int code = 0;
-    uint64_t page_offset = 0;
     pdf_dict *page_dict = NULL;
     pdf_array *a = NULL;
 
-    if (page_num > ctx->num_pages)
-        return_error(gs_error_rangecheck);
-
-    code = pdfi_loop_detector_mark(ctx);
+    code = pdfi_page_get_dict(ctx, page_num, &page_dict);
     if (code < 0)
         return code;
-
-    code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
-    if (code < 0) {
-        pdfi_loop_detector_cleartomark(ctx);
-        goto done;
-    }
-
-    code = pdfi_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict, NULL);
-    pdfi_loop_detector_cleartomark(ctx);
-    if (code < 0)
-        goto done;
 
     if (code > 0) {
         code = gs_note_error(gs_error_unknownerror);
@@ -510,31 +495,47 @@ done:
     return code;
 }
 
-/* Find the page number that corresponds to a page dictionary
- * NOTE: This seems pretty heavy-handed, but I don't know a better way...
- */
-int pdfi_page_get_number(pdf_context *ctx, pdf_dict *target_dict, int *page_num)
+int pdfi_page_get_dict(pdf_context *ctx, uint64_t page_num, pdf_dict **dict)
 {
-    int i;
     int code = 0;
-    pdf_dict *page_dict = NULL;
     uint64_t page_offset = 0;
 
-    /* TODO: I would prefer if we had just built an array mapping the object numbers
-     * to pages numbers, because this is an expensive way to look this up.
-     */
-    for (i=0; i<ctx->num_pages; i++) {
-        page_offset = 0;
-        code = pdfi_get_page_dict(ctx, ctx->Pages, i, &page_offset, &page_dict, NULL);
-        if (code < 0) goto exit;
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
 
+    code = pdfi_loop_detector_add_object(ctx, ctx->PagesTree->object_num);
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_get_page_dict(ctx, ctx->PagesTree, page_num, &page_offset, dict, NULL);
+    if (code > 0)
+        code = gs_error_unknownerror;
+
+ exit:
+    pdfi_loop_detector_cleartomark(ctx);
+    return code;
+}
+
+/* Find the page number that corresponds to a page dictionary
+ * TODO: This is very inefficient but I don't have a better solution right now.
+ * It can get called 100's of times and with the same page_num more than once, plus
+ * pdfi_page_get_dict() does a lot of work.
+ */
+int pdfi_page_get_number(pdf_context *ctx, pdf_dict *target_dict, uint64_t *page_num)
+{
+    uint64_t i;
+    int code = 0;
+    pdf_dict *page_dict = NULL;
+
+    for (i=0; i<ctx->num_pages; i++) {
+        code = pdfi_page_get_dict(ctx, i, &page_dict);
+        if (code < 0)
+            continue;
         if (target_dict->object_num == page_dict->object_num) {
             *page_num = i;
             goto exit;
         }
-
-        pdfi_countdown(page_dict);
-        page_dict = NULL;
     }
 
     code = gs_note_error(gs_error_undefined);
@@ -547,7 +548,6 @@ int pdfi_page_get_number(pdf_context *ctx, pdf_dict *target_dict, int *page_num)
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 {
     int code, code1=0;
-    uint64_t page_offset = 0;
     pdf_dict *page_dict = NULL;
     bool page_group_known = false;
     pdf_dict *group_dict = NULL;
@@ -559,30 +559,13 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Processing Page %"PRIi64" content stream\n", page_num + 1);
 
-    code = pdfi_loop_detector_mark(ctx);
-    if (code < 0)
-        return code;
-
-    code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
+    code = pdfi_page_get_dict(ctx, page_num, &page_dict);
     if (code < 0) {
-        pdfi_loop_detector_cleartomark(ctx);
-        goto exit2;
-    }
-
-    code = pdfi_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict, NULL);
-    pdfi_loop_detector_cleartomark(ctx);
-    if (code < 0) {
-        if (code == gs_error_VMerror || ctx->pdfstoponerror)
-            goto exit2;
-        code = 0;
-        goto exit2;
-    }
-
-    if (code > 0) {
-        code = gs_note_error(gs_error_unknownerror);
         page_dict_error = true;
         ctx->pdf_errors |= E_PDF_PAGEDICTERROR;
         dmprintf1(ctx->memory, "*** ERROR: Page %ld has invalid Page dict, skipping\n", page_num+1);
+        if (code != gs_error_VMerror && !ctx->pdfstoponerror)
+            code = 0;
         goto exit2;
     }
 

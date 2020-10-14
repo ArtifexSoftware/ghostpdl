@@ -344,7 +344,7 @@ typedef struct pdf_context_s
     pdf_dict *Trailer;
     pdf_dict *Root;
     pdf_dict *Info;
-    pdf_dict *Pages;
+    pdf_dict *PagesTree;
     uint64_t num_pages;
 
     /* Optional things from Root */

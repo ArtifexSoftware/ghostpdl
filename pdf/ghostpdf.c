@@ -198,26 +198,11 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
     int code;
     bool known = false;
     double f;
-    uint64_t page_offset = 0;
     pdf_dict *page_dict = NULL;
 
-    code = pdfi_loop_detector_mark(ctx);
+    code = pdfi_page_get_dict(ctx, page_num, &page_dict);
     if (code < 0)
         return code;
-
-    code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
-    if (code < 0) {
-        pdfi_loop_detector_cleartomark(ctx);
-        return code;
-    }
-
-    code = pdfi_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict, NULL);
-    pdfi_loop_detector_cleartomark(ctx);
-    if (code < 0) {
-        if (code == gs_error_VMerror || ctx->pdfstoponerror)
-            return code;
-        return 0;
-    }
 
     dmprintf1(ctx->memory, "Page %"PRIi64"", page_num + 1);
 
@@ -1043,8 +1028,8 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     if (ctx->Info)
         pdfi_countdown(ctx->Info);
 
-    if (ctx->Pages)
-        pdfi_countdown(ctx->Pages);
+    if (ctx->PagesTree)
+        pdfi_countdown(ctx->PagesTree);
 
     if (ctx->xref_table) {
         pdfi_countdown(ctx->xref_table);

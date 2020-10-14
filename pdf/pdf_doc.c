@@ -190,7 +190,7 @@ int pdfi_read_Pages(pdf_context *ctx)
     /* We don't pdfi_countdown(o1) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
      */
-    ctx->Pages = (pdf_dict *)o1;
+    ctx->PagesTree = (pdf_dict *)o1;
     return 0;
 }
 
