@@ -512,30 +512,45 @@ int pdfi_page_get_dict(pdf_context *ctx, uint64_t page_num, pdf_dict **dict)
     if (code > 0)
         code = gs_error_unknownerror;
 
+    /* Cache the page_dict number in page_array */
+    if (*dict)
+        ctx->page_array[page_num] = (*dict)->object_num;
+
  exit:
     pdfi_loop_detector_cleartomark(ctx);
     return code;
 }
 
 /* Find the page number that corresponds to a page dictionary
- * TODO: This is very inefficient but I don't have a better solution right now.
- * It can get called 100's of times and with the same page_num more than once, plus
- * pdfi_page_get_dict() does a lot of work.
+ * Uses page_array cache to minimize the number of times a page_dict needs to
+ * be fetched, because this is expensive.
  */
 int pdfi_page_get_number(pdf_context *ctx, pdf_dict *target_dict, uint64_t *page_num)
 {
     uint64_t i;
     int code = 0;
     pdf_dict *page_dict = NULL;
+    uint32_t object_num;
 
     for (i=0; i<ctx->num_pages; i++) {
-        code = pdfi_page_get_dict(ctx, i, &page_dict);
-        if (code < 0)
-            continue;
-        if (target_dict->object_num == page_dict->object_num) {
+        /* If the page has been processed before, then its object_num should already
+         * be cached in the page_array, so check that first
+         */
+        object_num = ctx->page_array[i];
+        if (object_num == 0) {
+            /* It wasn't cached, so this will cache it */
+            code = pdfi_page_get_dict(ctx, i, &page_dict);
+            if (code < 0)
+                continue;
+            object_num = ctx->page_array[i];
+        }
+        if (target_dict->object_num == object_num) {
             *page_num = i;
             goto exit;
         }
+
+        pdfi_countdown(page_dict);
+        page_dict = NULL;
     }
 
     code = gs_note_error(gs_error_undefined);

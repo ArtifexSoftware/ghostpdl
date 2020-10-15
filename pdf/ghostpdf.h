@@ -346,6 +346,7 @@ typedef struct pdf_context_s
     pdf_dict *Info;
     pdf_dict *PagesTree;
     uint64_t num_pages;
+    uint32_t *page_array; /* cache of page dict object_num's for pdfmark Dest */
 
     /* Optional things from Root */
     pdf_dict *OCProperties;

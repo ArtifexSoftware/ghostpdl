@@ -499,6 +499,27 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
     return code;
 }
 
+int pdfi_doc_page_array_init(pdf_context *ctx)
+{
+    size_t size = ctx->num_pages*sizeof(uint32_t);
+
+    ctx->page_array = (uint32_t *)gs_alloc_bytes(ctx->memory, size,
+                                                 "pdfi_doc_page_array_init(page_array)");
+    if (ctx->page_array == NULL)
+        return_error(gs_error_VMerror);
+
+    memset(ctx->page_array, 0, size);
+    return 0;
+}
+
+void pdfi_doc_page_array_free(pdf_context *ctx)
+{
+    if (!ctx->page_array)
+        return;
+    gs_free_object(ctx->memory, ctx->page_array, "pdfi_doc_page_array_free(page_array)");
+    ctx->page_array = NULL;
+}
+
 /*
  * Checks for both "Resource" and "RD" in the specified dict.
  * And then gets the typedict of Type (e.g. Font or XObject).

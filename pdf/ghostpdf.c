@@ -674,6 +674,10 @@ read_root:
     if (code < 0)
         goto exit;
 
+    code = pdfi_doc_page_array_init(ctx);
+    if (code < 0)
+        goto exit;
+
     if (ctx->num_pages == 0)
         dmprintf(ctx->memory, "\n   **** Warning: PDF document has no pages.\n");
 
@@ -1030,6 +1034,8 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
 
     if (ctx->PagesTree)
         pdfi_countdown(ctx->PagesTree);
+
+    pdfi_doc_page_array_free(ctx);
 
     if (ctx->xref_table) {
         pdfi_countdown(ctx->xref_table);
