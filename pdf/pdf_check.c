@@ -322,7 +322,7 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
 
             pdfi_countdown(n);
             n = NULL;
-            code = pdfi_dict_known(xobject, "SMask", &known);
+            code = pdfi_dict_known(ctx, xobject, "SMask", &known);
             if (code >= 0) {
                 if (known == true) {
                     tracker->transparent = true;

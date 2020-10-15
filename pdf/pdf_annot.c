@@ -3153,7 +3153,7 @@ static int pdfi_annot_preserve_modA(pdf_context *ctx, pdf_dict *annot, pdf_name 
         goto exit;
     }
 
-    code = pdfi_dict_known(A, "URI", &known);
+    code = pdfi_dict_known(ctx, A, "URI", &known);
     if (code < 0) goto exit;
     if (known) {
         *resolve = true;
@@ -3305,7 +3305,7 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
             ref->is_label = true;
 
             /* Put it in the dict */
-            code = pdfi_dict_put_obj(AP, (pdf_obj *)Key, (pdf_obj *)ref);
+            code = pdfi_dict_put_obj(ctx, AP, (pdf_obj *)Key, (pdf_obj *)ref);
             if (code < 0) goto exit;
         }
 
@@ -3352,7 +3352,7 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
     code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
     if (code < 0) goto exit;
     pdfi_countup(tempdict);
-    code = pdfi_dict_copy(tempdict, annot);
+    code = pdfi_dict_copy(ctx, tempdict, annot);
     if (code < 0) goto exit;
 
 

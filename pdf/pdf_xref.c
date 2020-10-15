@@ -197,7 +197,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
         ctx->Trailer = d;
         pdfi_countup(d);
     } else {
-        code = pdfi_merge_dicts(ctx->Trailer, d);
+        code = pdfi_merge_dicts(ctx, ctx->Trailer, d);
         if (code < 0) {
             if (code == gs_error_VMerror || ctx->pdfstoponerror)
                 return code;
@@ -213,7 +213,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
      * code, we'll just remove the Colors entry from the DecodeParms dictionary,
      * because it is nonsense. This means we'll get the (sensible) default value of 1.
      */
-    code = pdfi_dict_known(d, "DecodeParms", &known);
+    code = pdfi_dict_known(ctx, d, "DecodeParms", &known);
     if (code < 0)
         return code;
 
@@ -777,7 +777,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         ctx->Trailer = d;
         pdfi_countup(d);
     } else {
-        code = pdfi_merge_dicts(ctx->Trailer, d);
+        code = pdfi_merge_dicts(ctx, ctx->Trailer, d);
         if (code < 0) {
             if (code == gs_error_VMerror || ctx->pdfstoponerror)
                 return code;

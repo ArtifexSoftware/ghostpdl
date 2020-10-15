@@ -1621,7 +1621,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
      * in the dictionary
      */
     /* Type 5 halftone dictionaries are required to have a Default */
-    code = pdfi_dict_known(halftone_dict, "Default", &known);
+    code = pdfi_dict_known(ctx, halftone_dict, "Default", &known);
     if (code < 0)
         return code;
     if (!known) {
@@ -2212,7 +2212,7 @@ int pdfi_set_ExtGState(pdf_context *ctx, pdf_dict *stream_dict,
     bool known;
 
     for (i=0;i < limit; i++) {
-        code = pdfi_dict_known(gstate_dict, ExtGStateTable[i].Name, &known);
+        code = pdfi_dict_known(ctx, gstate_dict, ExtGStateTable[i].Name, &known);
         if (code < 0 && ctx->pdfstoponerror)
             break;
         if (known) {

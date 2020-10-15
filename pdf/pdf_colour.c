@@ -168,7 +168,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
                 continue;
             }
 
-            code = pdfi_dict_known_by_key(spot_dict, (pdf_name *)name, &known);
+            code = pdfi_dict_known_by_key(ctx, spot_dict, (pdf_name *)name, &known);
             if (code < 0) {
                 pdfi_countdown(name);
                 goto exit;
@@ -182,7 +182,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             if (code < 0)
                 goto exit;
 
-            code = pdfi_dict_put_obj(spot_dict, name, dummy);
+            code = pdfi_dict_put_obj(ctx, spot_dict, name, dummy);
             pdfi_countdown(name);
             if (code < 0)
                 break;
@@ -201,7 +201,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             pdfi_name_is((const pdf_name *)space, "Yellow") || pdfi_name_is((const pdf_name *)space, "Black") ||
             pdfi_name_is((const pdf_name *)space, "None") || pdfi_name_is((const pdf_name *)space, "All"))
             goto exit;
-        code = pdfi_dict_known_by_key(spot_dict, space, &known);
+        code = pdfi_dict_known_by_key(ctx, spot_dict, space, &known);
         if (code < 0 || known)
             goto exit;
 
@@ -209,7 +209,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         if (code < 0)
             goto exit;
 
-        code = pdfi_dict_put_obj(spot_dict, (pdf_obj *)space, dummy);
+        code = pdfi_dict_put_obj(ctx, spot_dict, (pdf_obj *)space, dummy);
         goto exit;
     } else {
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",

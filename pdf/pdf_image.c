@@ -630,31 +630,31 @@ static int pdfi_check_inline_image_keys(pdf_context *ctx, pdf_dict *image_dict)
 {
     bool known = false;
 
-    pdfi_dict_known(image_dict, "BPC", &known);
+    pdfi_dict_known(ctx, image_dict, "BPC", &known);
     if (known)
         goto error_inline_check;
-    pdfi_dict_known(image_dict, "CS", &known);
+    pdfi_dict_known(ctx, image_dict, "CS", &known);
     if (known)
         goto error_inline_check;
-    pdfi_dict_known(image_dict, "D", &known);
+    pdfi_dict_known(ctx, image_dict, "D", &known);
     if (known)
         goto error_inline_check;
-    pdfi_dict_known(image_dict, "DP", &known);
+    pdfi_dict_known(ctx, image_dict, "DP", &known);
     if (known)
         goto error_inline_check;
-    pdfi_dict_known(image_dict, "F", &known);
+    pdfi_dict_known(ctx, image_dict, "F", &known);
     if (known)
         goto error_inline_check;
-    pdfi_dict_known(image_dict, "H", &known);
+    pdfi_dict_known(ctx, image_dict, "H", &known);
     if (known)
         goto error_inline_check;
-    pdfi_dict_known(image_dict, "IM", &known);
+    pdfi_dict_known(ctx, image_dict, "IM", &known);
     if (known)
         goto error_inline_check;
-    pdfi_dict_known(image_dict, "I", &known);
+    pdfi_dict_known(ctx, image_dict, "I", &known);
     if (known)
         goto error_inline_check;
-    pdfi_dict_known(image_dict, "W", &known);
+    pdfi_dict_known(ctx, image_dict, "W", &known);
     if (known)
         goto error_inline_check;
 
@@ -1241,7 +1241,7 @@ pdfi_make_smask_dict(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *
     pdfi_countup(smask_dict);
 
     /* Copy everything from the image_dict */
-    code = pdfi_dict_copy(smask_dict, image_dict);
+    code = pdfi_dict_copy(ctx, smask_dict, image_dict);
     smask_dict->stream_offset = image_dict->stream_offset;
 
     code = pdfi_dict_put_int(ctx, smask_dict, "SMaskInData", 0);
@@ -1794,7 +1794,7 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict)
             goto exit;
         }
         ctx->pdf_warnings |= W_PDF_STREAM_HAS_CONTENTS;
-        code = pdfi_merge_dicts(form_dict, stream_dict);
+        code = pdfi_merge_dicts(ctx, form_dict, stream_dict);
         form_dict->stream_offset = stream_dict->stream_offset;
     } else {
         ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
@@ -1825,7 +1825,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
             return code;
     }
 
-    code = pdfi_dict_known(form_dict, "Group", &group_known);
+    code = pdfi_dict_known(ctx, form_dict, "Group", &group_known);
     if (code < 0)
         goto exit;
     if (group_known && ctx->page_has_transparency)

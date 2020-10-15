@@ -293,7 +293,7 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
             code = pdfi_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key);
             if (code < 0)
                 goto errorExit;
-            code = pdfi_dict_put_obj(leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
+            code = pdfi_dict_put_obj(ctx, leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
             if (code < 0)
                 goto errorExit;
             code = pdfi_dict_put(ctx, leaf_dict, "Type", (pdf_obj *)Key);
@@ -328,7 +328,7 @@ static int pdfi_check_inherited_key(pdf_context *ctx, pdf_dict *d, const char *k
     bool known;
 
     /* Check for inheritable keys, if we find any copy them to the 'inheritable' dictionary at this level */
-    code = pdfi_dict_known(d, keyname, &known);
+    code = pdfi_dict_known(ctx, d, keyname, &known);
     if (code < 0)
         goto exit;
     if (known) {
@@ -375,7 +375,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
 
     /* if we are being passed any inherited values from our parent, copy them now */
     if (inherited != NULL) {
-        code = pdfi_dict_copy(inheritable, inherited);
+        code = pdfi_dict_copy(ctx, inheritable, inherited);
         if (code < 0)
             goto exit;
     }
@@ -464,7 +464,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                         code = pdfi_dict_get(ctx, child, "PageRef", (pdf_obj **)&d);
                         if (code < 0)
                             goto exit;
-                        code = pdfi_merge_dicts(d, inheritable);
+                        code = pdfi_merge_dicts(ctx, d, inheritable);
                         *target = d;
                         pdfi_countup(*target);
                         pdfi_countdown(d);
@@ -476,7 +476,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                     if (!pdfi_name_is(Type, "Page"))
                         ctx->pdf_errors |= E_PDF_BADPAGETYPE;
                     if ((*page_offset) == page_num) {
-                        code = pdfi_merge_dicts(child, inheritable);
+                        code = pdfi_merge_dicts(ctx, child, inheritable);
                         *target = child;
                         pdfi_countup(*target);
                         goto exit;
@@ -652,7 +652,7 @@ static int pdfi_doc_info(pdf_context *ctx)
         if (pdfi_name_is(Key, "Author") || pdfi_name_is(Key, "Creator") ||
             pdfi_name_is(Key, "Title") || pdfi_name_is(Key, "Subject") ||
             pdfi_name_is(Key, "Keywords")) {
-            code = pdfi_dict_put_obj(tempdict, (pdf_obj *)Key, Value);
+            code = pdfi_dict_put_obj(ctx, tempdict, (pdf_obj *)Key, Value);
         }
         pdfi_countdown(Key);
         Key = NULL;

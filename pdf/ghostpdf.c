@@ -272,7 +272,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
             dmprintf(ctx->memory, "     Page uses transparency features");
     }
 
-    code = pdfi_dict_known(page_dict, "Annots", &known);
+    code = pdfi_dict_known(ctx, page_dict, "Annots", &known);
     if (code < 0) {
         if (code != gs_error_undefined && ctx->pdfstoponerror)
             return code;

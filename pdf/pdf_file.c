@@ -1147,9 +1147,9 @@ int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_dict *str
     if (stream_dict == NULL)
         return size;
 
-    pdfi_dict_known(stream_dict, "F", &known);
+    pdfi_dict_known(ctx, stream_dict, "F", &known);
     if (!known)
-        pdfi_dict_known(stream_dict, "Filter", &known);
+        pdfi_dict_known(ctx, stream_dict, "Filter", &known);
 
     if (!known)
         return size;
@@ -1387,12 +1387,12 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_dict *stream_dict, byte **buf, int64
     pdfi_seek(ctx, ctx->main_stream, stream_dict->stream_offset, SEEK_SET);
 
     /* See if this is a filtered stream */
-    code = pdfi_dict_known(stream_dict, "Filter", &filtered);
+    code = pdfi_dict_known(ctx, stream_dict, "Filter", &filtered);
     if (code < 0)
         goto exit;
 
     if (!filtered) {
-        code = pdfi_dict_known(stream_dict, "F", &filtered);
+        code = pdfi_dict_known(ctx, stream_dict, "F", &filtered);
         if (code < 0)
             goto exit;
     }

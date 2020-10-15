@@ -664,7 +664,7 @@ int make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, con
 }
 
 /* Put into dictionary with key as object */
-int pdfi_dict_put_obj(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
+int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *value)
 {
     uint64_t i;
     pdf_obj **new_keys, **new_values;
@@ -707,18 +707,18 @@ int pdfi_dict_put_obj(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
         }
     }
 
-    new_keys = (pdf_obj **)gs_alloc_bytes(OBJ_MEMORY(d), (d->size + 1) * sizeof(pdf_obj *), "pdfi_dict_put reallocate dictionary keys");
-    new_values = (pdf_obj **)gs_alloc_bytes(OBJ_MEMORY(d), (d->size + 1) * sizeof(pdf_obj *), "pdfi_dict_put reallocate dictionary values");
+    new_keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, (d->size + 1) * sizeof(pdf_obj *), "pdfi_dict_put reallocate dictionary keys");
+    new_values = (pdf_obj **)gs_alloc_bytes(ctx->memory, (d->size + 1) * sizeof(pdf_obj *), "pdfi_dict_put reallocate dictionary values");
     if (new_keys == NULL || new_values == NULL){
-        gs_free_object(OBJ_MEMORY(d), new_keys, "pdfi_dict_put memory allocation failure");
-        gs_free_object(OBJ_MEMORY(d), new_values, "pdfi_dict_put memory allocation failure");
+        gs_free_object(ctx->memory, new_keys, "pdfi_dict_put memory allocation failure");
+        gs_free_object(ctx->memory, new_values, "pdfi_dict_put memory allocation failure");
         return_error(gs_error_VMerror);
     }
     memcpy(new_keys, d->keys, d->size * sizeof(pdf_obj *));
     memcpy(new_values, d->values, d->size * sizeof(pdf_obj *));
 
-    gs_free_object(OBJ_MEMORY(d), d->keys, "pdfi_dict_put key reallocation");
-    gs_free_object(OBJ_MEMORY(d), d->values, "pdfi_dict_put value reallocation");
+    gs_free_object(ctx->memory, d->keys, "pdfi_dict_put key reallocation");
+    gs_free_object(ctx->memory, d->values, "pdfi_dict_put value reallocation");
 
     d->keys = new_keys;
     d->values = new_values;
@@ -743,7 +743,7 @@ int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value
     if (code < 0)
         return code;
 
-    code = pdfi_dict_put_obj(d, key, value);
+    code = pdfi_dict_put_obj(ctx, d, key, value);
     pdfi_countdown(key); /* get rid of extra ref */
     return code;
 }
@@ -788,19 +788,19 @@ int pdfi_dict_put_name(pdf_context *ctx, pdf_dict *d, const char *key, const cha
     return code;
 }
 
-int pdfi_dict_copy(pdf_dict *target, pdf_dict *source)
+int pdfi_dict_copy(pdf_context *ctx, pdf_dict *target, pdf_dict *source)
 {
     int i=0, code = 0;
 
     for (i=0;i< source->entries;i++) {
-        code = pdfi_dict_put_obj(target, source->keys[i], source->values[i]);
+        code = pdfi_dict_put_obj(ctx, target, source->keys[i], source->values[i]);
         if (code < 0)
             return code;
     }
     return 0;
 }
 
-int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known)
+int pdfi_dict_known(pdf_context *ctx, pdf_dict *d, const char *Key, bool *known)
 {
     int i;
     pdf_name *t;
@@ -832,7 +832,7 @@ int pdfi_dict_knownget(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *
     bool known = false;
     int code;
 
-    code = pdfi_dict_known(d, Key, &known);
+    code = pdfi_dict_known(ctx, d, Key, &known);
     if (code < 0)
         return code;
 
@@ -855,7 +855,7 @@ int pdfi_dict_knownget_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_
     bool known = false;
     int code;
 
-    code = pdfi_dict_known(d, Key, &known);
+    code = pdfi_dict_known(ctx, d, Key, &known);
     if (code < 0)
         return code;
 
@@ -876,7 +876,7 @@ int pdfi_dict_knownget_number(pdf_context *ctx, pdf_dict *d, const char *Key, do
     bool known = false;
     int code;
 
-    code = pdfi_dict_known(d, Key, &known);
+    code = pdfi_dict_known(ctx, d, Key, &known);
     if (code < 0)
         return code;
 
@@ -890,7 +890,7 @@ int pdfi_dict_knownget_number(pdf_context *ctx, pdf_dict *d, const char *Key, do
     return 1;
 }
 
-int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known)
+int pdfi_dict_known_by_key(pdf_context *ctx, pdf_dict *d, pdf_name *Key, bool *known)
 {
     int i;
     pdf_obj *t;
@@ -982,17 +982,17 @@ int pdfi_dict_key_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *
     return pdfi_dict_key_next(ctx, d, Key, index);
 }
 
-int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source)
+int pdfi_merge_dicts(pdf_context *ctx, pdf_dict *target, pdf_dict *source)
 {
     int i, code;
     bool known = false;
 
     for (i=0;i< source->entries;i++) {
-        code = pdfi_dict_known_by_key(target, (pdf_name *)source->keys[i], &known);
+        code = pdfi_dict_known_by_key(ctx, target, (pdf_name *)source->keys[i], &known);
         if (code < 0)
             return code;
         if (!known) {
-            code = pdfi_dict_put_obj(target, source->keys[i], source->values[i]);
+            code = pdfi_dict_put_obj(ctx, target, source->keys[i], source->values[i]);
             if (code < 0)
                 return code;
         }

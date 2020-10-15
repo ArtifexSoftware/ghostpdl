@@ -289,7 +289,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                             pdf_dict *d = (pdf_dict *)ctx->stack_top[-1];
                                             bool known = false;
 
-                                            code = pdfi_dict_known(d, "Root", &known);
+                                            code = pdfi_dict_known(ctx, d, "Root", &known);
                                             if (code == 0 && known) {
                                                 pdfi_countdown(ctx->Trailer);
                                                 ctx->Trailer = (pdf_dict *)ctx->stack_top[-1];

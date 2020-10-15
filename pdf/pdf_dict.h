@@ -23,13 +23,13 @@ static inline uint64_t pdfi_dict_entries(pdf_dict *d) { return d->entries; }
 void pdfi_free_dict(pdf_obj *o);
 int pdfi_dict_delete_pair(pdf_context *ctx, pdf_dict *d, pdf_name *n);
 int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen);
-int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known);
-int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known);
+int pdfi_dict_known(pdf_context *ctx, pdf_dict *d, const char *Key, bool *known);
+int pdfi_dict_known_by_key(pdf_context *ctx, pdf_dict *d, pdf_name *Key, bool *known);
 int pdfi_dict_knownget(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
 int pdfi_dict_knownget_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o);
 int pdfi_dict_knownget_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f);
-int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source);
-int pdfi_dict_put_obj(pdf_dict *d, pdf_obj *Key, pdf_obj *value);
+int pdfi_merge_dicts(pdf_context *ctx, pdf_dict *target, pdf_dict *source);
+int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *value);
 int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value);
 int pdfi_dict_put_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t value);
 int pdfi_dict_put_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool value);
@@ -55,7 +55,7 @@ int fill_bool_array_from_dict(pdf_context *ctx, bool *parray, int size, pdf_dict
 int fill_matrix_from_dict(pdf_context *ctx, float *parray, pdf_dict *dict);
 int make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict, const char *Key);
 int make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, const char *Key);
-int pdfi_dict_copy(pdf_dict *target, pdf_dict *source);
+int pdfi_dict_copy(pdf_context *ctx, pdf_dict *target, pdf_dict *source);
 int pdfi_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned);
 int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index);
 int pdfi_dict_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index);
