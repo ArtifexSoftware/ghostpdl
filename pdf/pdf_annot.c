@@ -3387,7 +3387,14 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
             code = pdfi_annot_preserve_modA(ctx, tempdict, Key, subtype, &resolve);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "Dest")) {
-            /* TODO: Need to figure out how to handle this in Link annotations */
+            if (ctx->no_pdfmark_dests) {
+                /* If omitting dests, such as for multi-page output, then omit this whole annotation */
+                /* TODO: it goes someplace completely different, but also need to make sure to
+                 * honor the no_pdfmark_outlines flag.
+                 */
+                code = 0;
+                goto exit;
+            }
             code = pdfi_annot_preserve_modDest(ctx, tempdict, Key, subtype);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "StructTreeRoot")) {

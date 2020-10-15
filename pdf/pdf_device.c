@@ -18,6 +18,7 @@
 #include "pdf_int.h"
 #include "pdf_stack.h"
 #include "pdf_device.h"
+#include "gdevvec.h" /* for gs_device_vector */
 
 int pdfi_device_check_param(gx_device *dev, const char *param, gs_c_param_list *list)
 {
@@ -87,6 +88,14 @@ void pdfi_device_set_flags(pdf_context *ctx)
 
     /* See if it is a DeviceN (spot capable) */
     ctx->spot_capable_device = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
+
+    /* If multi-page output, can't do certain pdfmarks */
+    if (has_pdfmark) {
+        if (gx_outputfile_is_separate_pages(((gx_device_vector *)dev)->fname, dev->memory)) {
+            ctx->no_pdfmark_outlines = true;
+            ctx->no_pdfmark_dests = true;
+        }
+    }
 
 #if DEBUG_DEVICE
     dbgmprintf2(ctx->memory, "Device writepdfmarks=%s, annotations_preserved=%s\n",
