@@ -27,6 +27,7 @@
 #include "pdf_misc.h"
 #include "pdf_repair.h"
 #include "pdf_doc.h"
+#include "pdf_mark.h"
 
 int pdfi_read_Root(pdf_context *ctx)
 {
@@ -618,5 +619,96 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
 exit:
     pdfi_countdown(typedict);
     pdfi_countdown(Parent);
+    return code;
+}
+
+static int pdfi_doc_info(pdf_context *ctx)
+{
+    int code = 0;
+    pdf_dict *Info = NULL;
+    pdf_dict *tempdict = NULL;
+    uint64_t dictsize;
+    uint64_t index;
+    pdf_name *Key = NULL;
+    pdf_obj *Value = NULL;
+
+    code = pdfi_dict_knownget_type(ctx, ctx->Trailer, "Info", PDF_DICT, (pdf_obj **)&Info);
+    if (code <= 0) {
+        /* TODO: flag a warning */
+        goto exit;
+    }
+
+    /* Make a temporary copy of the Info dict */
+    dictsize = pdfi_dict_entries(Info);
+    code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
+    if (code < 0) goto exit;
+    pdfi_countup(tempdict);
+
+    /* Copy only certain keys from Info to tempdict
+     * NOTE: pdfwrite will set /Producer, /CreationDate and /ModDate
+     */
+    code = pdfi_dict_first(ctx, Info, (pdf_obj **)&Key, &Value, &index);
+    while (code >= 0) {
+        if (pdfi_name_is(Key, "Author") || pdfi_name_is(Key, "Creator") ||
+            pdfi_name_is(Key, "Title") || pdfi_name_is(Key, "Subject") ||
+            pdfi_name_is(Key, "Keywords")) {
+            code = pdfi_dict_put_obj(tempdict, (pdf_obj *)Key, Value);
+        }
+        pdfi_countdown(Key);
+        Key = NULL;
+        pdfi_countdown(Value);
+        Value = NULL;
+
+        code = pdfi_dict_next(ctx, Info, (pdf_obj **)&Key, &Value, &index);
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+    }
+    if (code < 0) goto exit;
+
+    /* Write the pdfmark */
+    code = pdfi_mark_from_dict(ctx, tempdict, NULL, "DOCINFO");
+
+ exit:
+    pdfi_countdown(Info);
+    pdfi_countdown(tempdict);
+    return code;
+}
+
+/* See pdf_main.ps/process_trailer_attrs() */
+int pdfi_doc_trailer(pdf_context *ctx)
+{
+    int code = 0;
+
+    /* TODO: writeoutputintents */
+
+    /* Can't do this stuff with no Trailer */
+    if (!ctx->Trailer)
+        goto exit;
+
+    /* Handle Outlines */
+    /* TODO: */
+
+    /* Handle Info */
+    if (ctx->writepdfmarks) {
+        code = pdfi_doc_info(ctx);
+        if (code < 0)
+            goto exit;
+    }
+
+    /* Handle OCProperties */
+    /* TODO: */
+
+    /* Handle AcroForm */
+    /* TODO: */
+
+    /* Handle OutputIntent ICC Profile */
+    /* TODO: */
+
+    /* Handle PageLabels */
+    /* TODO: */
+
+ exit:
     return code;
 }

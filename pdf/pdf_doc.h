@@ -27,5 +27,6 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
 int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *dict, pdf_dict *page_dict, pdf_obj **o);
 int pdfi_doc_page_array_init(pdf_context *ctx);
 void pdfi_doc_page_array_free(pdf_context *ctx);
+int pdfi_doc_trailer(pdf_context *ctx);
 
 #endif

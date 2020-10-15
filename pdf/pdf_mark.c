@@ -123,7 +123,6 @@ static int pdfi_mark_write(pdf_context *ctx, gs_param_string_array *array_list)
    keys do need the "/"
 
    See plparams.c/process_pdfmark()
-
 */
 int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const char *type)
 {
@@ -138,6 +137,13 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
     gs_param_string_array array_list;
     byte *ctm_data = NULL;
     int ctm_len;
+    gs_matrix ctm_placeholder;
+
+    /* If ctm not provided, make a placeholder */
+    if (!ctm) {
+        gs_currentmatrix(ctx->pgs, &ctm_placeholder);
+        ctm = &ctm_placeholder;
+    }
 
     dictsize = pdfi_dict_entries(dict);
     size = dictsize*2 + 2; /* pairs + CTM + type */

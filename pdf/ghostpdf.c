@@ -38,6 +38,7 @@
 #include "pdf_doc.h"
 #include "pdf_repair.h"
 #include "pdf_xref.h"
+#include "pdf_device.h"
 
 /*
  * Convenience routine to check if a given string exists in a dictionary
@@ -562,6 +563,14 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
     if (code < 0) {
         goto exit;
     }
+
+    /* Need to do this here so that ctx->writepdfmarks will be setup
+     * It is also called in pdfi_page_render()
+     * TODO: Should probably look into that..
+     */
+    pdfi_device_set_flags(ctx);
+
+    code = pdfi_doc_trailer(ctx);
 
     /* Loop over each page and either render it or output the
      * required information.

@@ -90,7 +90,7 @@ void pdfi_device_set_flags(pdf_context *ctx)
     ctx->spot_capable_device = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
 
     /* If multi-page output, can't do certain pdfmarks */
-    if (has_pdfmark) {
+    if (ctx->writepdfmarks) {
         if (gx_outputfile_is_separate_pages(((gx_device_vector *)dev)->fname, dev->memory)) {
             ctx->no_pdfmark_outlines = true;
             ctx->no_pdfmark_dests = true;

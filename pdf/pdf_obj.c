@@ -473,6 +473,7 @@ static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
         switch (*ptr) {
         case '(':
         case ')':
+        case '\\':
             num_esc ++;
             break;
         default:
@@ -501,6 +502,7 @@ static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
             switch (*ptr) {
             case '(':
             case ')':
+            case '\\':
                 *bufptr++ = '\\';
                 break;
             default:
