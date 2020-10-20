@@ -268,7 +268,7 @@ TD_error:
 static int pdfi_show(pdf_context *ctx, pdf_string *s)
 {
     int code = 0, i;
-    gs_text_enum_t *penum, *saved_penum;
+    gs_text_enum_t *penum=NULL, *saved_penum=NULL;
     gs_text_params_t text;
     gs_matrix mat;
     pdf_font *current_font = NULL;
