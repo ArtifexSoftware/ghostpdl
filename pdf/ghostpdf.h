@@ -211,8 +211,8 @@ typedef struct pdf_context_s
     bool pdfstoponwarning;
     bool notransparency;
     bool nocidfallback;
-    bool no_pdfmark_outlines; /* can be overridden to false if multi-page output */
-    bool no_pdfmark_dests;    /* can be overridden to false if multi-page output */
+    bool no_pdfmark_outlines; /* can be overridden to true if multi-page output */
+    bool no_pdfmark_dests;    /* can be overridden to true if multi-page output */
     bool pdffitpage;
     bool usecropbox;
     bool useartbox;
