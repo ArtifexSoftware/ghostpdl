@@ -6026,6 +6026,9 @@
     <ClCompile Include="..\base\gdevkrnlsclass.c">
       <Filter>base\gldevices</Filter>
     </ClCompile>
+    <ClCompile Include="..\base\gsicc_blacktext.c">
+      <Filter>base\color\icc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\base\aes.h">
@@ -8967,6 +8970,9 @@
     </ClInclude>
     <ClInclude Include="..\base\gdevepo.h">
       <Filter>base %28.h%29\gldevices %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\gsicc_blacktext.h">
+      <Filter>base %28.h%29\icc %28.h%29</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

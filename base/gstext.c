@@ -32,6 +32,8 @@
 #include "gzstate.h"
 #include "gsutil.h"
 #include "gxdevsop.h"
+#include "gscspace.h"
+#include "gsicc_blacktext.h"
 
 /* GC descriptors */
 public_st_gs_text_params();
@@ -212,6 +214,7 @@ gs_text_enum_init(gs_text_enum_t *pte, const gs_text_enum_procs_t *procs,
     pte->log2_scale.x = pte->log2_scale.y = 0;
     /* init_dynamic sets index, xy_index, fstack */
     code = gs_text_enum_init_dynamic(pte, font);
+    pte->k_text_release = 0;
     if (code >= 0)
         rc_increment(dev);
     return code;
@@ -278,6 +281,23 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
         (pgs->text_rendering_mode == 0));
     bool text_op_stroke = ((pgs->stroke_overprint || (!pgs->stroke_overprint && op_active)) &&
         (pgs->text_rendering_mode == 1));
+    bool type3 = (pgs->font->FontType == ft_user_defined ||
+        pgs->font->FontType == ft_PDF_user_defined ||
+        pgs->font->FontType == ft_PCL_user_defined ||
+        pgs->font->FontType == ft_MicroType ||
+        pgs->font->FontType == ft_GL2_stick_user_defined ||
+        pgs->font->FontType == ft_GL2_531);
+    bool in_smask =
+        (dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_in_smask_construction, NULL, 0)) > 0;
+    bool black_text = (text->operation & (TEXT_DO_DRAW | TEXT_DO_ANY_CHARPATH)) &&
+                        !type3 && !in_smask;
+    cmm_dev_profile_t *icc_struct;
+
+    code = dev_proc(pgs->device, get_profile)((gx_device *)pgs->device, &icc_struct);
+    if (code < 0)
+        black_text = 0;
+    else
+        black_text = black_text && icc_struct->blacktext;
 
     /*
      * Detect nocurrentpoint now, even if the string is empty, for Adobe
@@ -311,9 +331,40 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
     /* Processing a text object operation */
     ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
+    if (black_text && pgs->black_text_state == NULL) {
+        gs_color_space *pcs_curr = gs_currentcolorspace_inline(pgs);
+        gs_color_space *pcs_alt = gs_altcolorspace_inline(pgs);
+
+        pgs->black_text_state = gsicc_blacktext_state_new(pgs->memory);
+        if (pgs->black_text_state == NULL)
+            return gs_error_VMerror;
+
+        rc_increment_cs(pcs_curr);
+        rc_increment_cs(pcs_alt);
+        pgs->black_text_state->pcs[0] = pcs_curr;
+        pgs->black_text_state->pcs[1] = pcs_alt;
+
+        pgs->black_text_state->pcc[0] = pgs->color[0].ccolor;
+        cs_adjust_color_count(pgs, 1); /* The set_gray will do a decrement */
+        pgs->black_text_state->value[0] = pgs->color[0].ccolor->paint.values[0];
+        gs_setgray(pgs, 0.0);
+
+        gs_swapcolors_quick(pgs);
+
+        pgs->black_text_state->pcc[1] = pgs->color[0].ccolor;
+        cs_adjust_color_count(pgs, 1);
+        pgs->black_text_state->value[1] = pgs->color[0].ccolor->paint.values[0];
+        gs_setgray(pgs, 0.0);
+
+        gs_swapcolors_quick(pgs);
+
+        pgs->black_text_state->is_fill = pgs->is_fill_color;
+    }
+
     code = gx_set_dev_color(pgs);
     if (code != 0)
         return code;
+
     code = gs_gstate_color_load(pgs);
     if (code < 0)
         return code;
@@ -354,10 +405,30 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
     }
 
     pgs->device->sgr.stroke_stored = false;
-    return gx_device_text_begin(pgs->device, pgs,
+    code = gx_device_text_begin(pgs->device, pgs,
                                 text, pgs->font, pgs->path,
                                 gs_currentdevicecolor_inline(pgs),
                                 pcpath, mem, ppte);
+
+    /* we need to know if we are doing a highlevel device.
+       Also we need to know if we are doing any stroke
+       or stroke fill operations. This determines when
+       we need to release the black_text_state structure. */
+    if (*ppte != NULL) {
+        if (black_text) {
+            if (!((*ppte)->k_text_release)) {
+                /* Not a high level device */
+                if (pgs->text_rendering_mode == 0 ||
+                    pgs->text_rendering_mode == 4) {
+                    /* No stroke */
+                    (*ppte)->k_text_release = 1;
+                }
+            }
+        } else
+            (*ppte)->k_text_release = 0;
+    }
+
+    return code;
 }
 
 /*
@@ -762,8 +833,10 @@ rc_free_text_enum(gs_memory_t * mem, void *obj, client_name_t cname)
     rc_free_struct_only(mem, obj, cname);
 }
 void
-gs_text_release(gs_text_enum_t * pte, client_name_t cname)
+gs_text_release(gs_gstate *pgs, gs_text_enum_t * pte, client_name_t cname)
 {
+    if (pgs != NULL && pgs->black_text_state != NULL)
+        gsicc_restore_black_text(pgs);
     rc_decrement_only(pte, cname);
 }
 

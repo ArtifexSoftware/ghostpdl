@@ -373,7 +373,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         if (code >= 0) {
             ctx->current_text_enum = penum;
             code = gs_text_process(penum);
-            gs_text_release(penum, "pdfi_Tj");
+            gs_text_release(ctx->pgs, penum, "pdfi_Tj");
             ctx->current_text_enum = NULL;
         }
     } else {
@@ -396,7 +396,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             saved_penum = ctx->current_text_enum;
             ctx->current_text_enum = penum;
             code = gs_text_process(penum);
-            gs_text_release(penum, "pdfi_Tj");
+            gs_text_release(ctx->pgs, penum, "pdfi_Tj");
             ctx->current_text_enum = saved_penum;
         }
 
@@ -409,7 +409,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 saved_penum = ctx->current_text_enum;
                 ctx->current_text_enum = penum;
                 code = gs_text_process(penum);
-                gs_text_release(penum, "pdfi_Tj");
+                gs_text_release(ctx->pgs, penum, "pdfi_Tj");
                 ctx->current_text_enum = saved_penum;
             }
         }

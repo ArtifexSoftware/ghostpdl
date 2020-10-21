@@ -945,7 +945,7 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
                    page issue in practice. */
                 code = pcl_mark_page_for_current_pos(pgls);
             }
-            gs_text_release(penum, "hpgl_print_char");
+            gs_text_release(pgs, penum, "hpgl_print_char");
             if (code < 0) {
                 hpgl_free_stick_fonts(pgls);
                 return code;

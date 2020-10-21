@@ -87,6 +87,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     bool devicegraytok = true;  /* Default if device profile stuct not set */
     bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
+    bool blacktext = false;
     bool sim_overprint = true;  /* By default simulate overprinting (only valid with cmyk devices) */
     bool prebandthreshold = true, temp_bool = false;
 
@@ -340,6 +341,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         devicegraytok = dev_profile->devicegraytok;
         graydetection = dev_profile->graydetection;
         usefastcolor = dev_profile->usefastcolor;
+        blacktext = dev_profile->blacktext;
         sim_overprint = dev_profile->sim_overprint;
         prebandthreshold = dev_profile->prebandthreshold;
         /* With respect to Output profiles that have non-standard colorants,
@@ -379,6 +381,9 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "UseFastColor") == 0) {
         return param_write_bool(plist, "UseFastColor", &usefastcolor);
+    }
+    if (strcmp(Param, "BlackText") == 0) {
+        return param_write_bool(plist, "BlackText", &blacktext);
     }
     if (strcmp(Param, "SimulateOverprint") == 0) {
         return param_write_bool(plist, "SimulateOverprint", &sim_overprint);
@@ -506,6 +511,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     bool devicegraytok = true;  /* Default if device profile stuct not set */
     bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
+    bool blacktext = false;
     bool sim_overprint = true;  /* By default simulate overprinting */
     bool prebandthreshold = true, temp_bool;
     int k;
@@ -619,6 +625,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         devicegraytok = dev_profile->devicegraytok;
         graydetection = dev_profile->graydetection;
         usefastcolor = dev_profile->usefastcolor;
+        blacktext = dev_profile->blacktext;
         sim_overprint = dev_profile->sim_overprint;
         prebandthreshold = dev_profile->prebandthreshold;
         /* With respect to Output profiles that have non-standard colorants,
@@ -679,6 +686,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_bool(plist, "DeviceGrayToK", &devicegraytok)) < 0 ||
         (code = param_write_bool(plist, "GrayDetection", &graydetection)) < 0 ||
         (code = param_write_bool(plist, "UseFastColor", &usefastcolor)) < 0 ||
+        (code = param_write_bool(plist, "BlackText", &blacktext)) < 0 ||
         (code = param_write_bool(plist, "SimulateOverprint", &sim_overprint)) < 0 ||
         (code = param_write_bool(plist, "PreBandThreshold", &prebandthreshold)) < 0 ||
         (code = param_write_string(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
@@ -1160,6 +1168,33 @@ gx_default_put_usefastcolor(bool fastcolor, gx_device * dev)
 }
 
 static int
+gx_default_put_blacktext(bool blacktext, gx_device* dev)
+{
+    int code = 0;
+    cmm_dev_profile_t* profile_struct;
+
+    if (dev_proc(dev, get_profile) == NULL) {
+        if (dev->icc_struct == NULL) {
+            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            if (dev->icc_struct == NULL)
+                return_error(gs_error_VMerror);
+        }
+        dev->icc_struct->blacktext = blacktext;
+    } else {
+        code = dev_proc(dev, get_profile)(dev, &profile_struct);
+        if (profile_struct == NULL) {
+            /* Create now  */
+            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            profile_struct = dev->icc_struct;
+            if (profile_struct == NULL)
+                return_error(gs_error_VMerror);
+        }
+        profile_struct->blacktext = blacktext;
+    }
+    return code;
+}
+
+static int
 gx_default_put_simulateoverprint(bool sim_overprint, gx_device * dev)
 {
     int code = 0;
@@ -1421,6 +1456,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     bool devicegraytok = true;
     bool graydetection = false;
     bool usefastcolor = false;
+    bool blacktext = false;
     bool sim_overprint = true;
     bool prebandthreshold = false;
     bool use_antidropout = dev->color_info.use_antidropout_downscaler;
@@ -1440,6 +1476,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
         graydetection = dev->icc_struct->graydetection;
         devicegraytok = dev->icc_struct->devicegraytok;
         usefastcolor = dev->icc_struct->usefastcolor;
+        blacktext = dev->icc_struct->blacktext;
         prebandthreshold = dev->icc_struct->prebandthreshold;
         sim_overprint = dev->icc_struct->sim_overprint;
     } else {
@@ -1747,6 +1784,11 @@ nce:
     }
     if ((code = param_read_bool(plist, (param_name = "UseFastColor"),
                                                         &usefastcolor)) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    }
+    if ((code = param_read_bool(plist, (param_name = "BlackText"),
+                                                        &blacktext)) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
@@ -2128,6 +2170,9 @@ label:\
     if (code < 0)
         return code;
     code = gx_default_put_usefastcolor(usefastcolor, dev);
+    if (code < 0)
+        return code;
+    code = gx_default_put_blacktext(blacktext, dev);
     if (code < 0)
         return code;
     code = gx_default_put_simulateoverprint(sim_overprint, dev);

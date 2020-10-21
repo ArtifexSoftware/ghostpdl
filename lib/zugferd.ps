@@ -1,0 +1,316 @@
+% Copyright (C) 2001-2020 Artifex Software, Inc.
+% All Rights Reserved.
+%
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+%
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+%
+% Refer to licensing information at http://www.artifex.com or contact
+% Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+% CA 94945, U.S.A., +1(415)492-9861, for further information.
+%
+% zugferd.ps
+% This program will create an (unsigned) ZUGFeRD compliant PDF file. In
+% order to do so the user must provide certain informatio, or edit this program.
+%
+% Required information is the path to the XML file containing the invoice data,
+% and the path to an ICC profile appropriate for the chosen ColorConversionStrategy.
+% -sZUGFeRDXMLFile defines a path to the XML invoice file and -sZUGFeRDProfile
+% defines the path to the ICC profile.
+%
+% The user must additionally set -dPDFA=3 and -sColorConversionStrategy on the
+% Ghostscript command line, and set the permissions for Ghostscript to read
+% both these files. It is simplest to put the files in a directory and then
+% permit reading of the entire directoty.
+%
+% Example command line :
+%
+% gs --permit-file-read=/usr/hoome/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3 -sColorConversionStrategy=RGB \
+%    -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml  -sZUGFeRDProfile=/usr/home/me/rgb.icc \
+%    -o /usr/home/me/zguferd/zugferd.pdf /usr/home/me/zugferd/zugferd.ps /usr/home/me/zugferd/original.pdf
+%
+% Much of this program results from a Ghostscript bug report, the thread can be found at
+% https://bugs.ghostscript.com/show_bug.cgi?id=696472 Portions of the code below were
+% supplied by Reinhard Nissl and I'm indebted to him for his efforts in helping me create
+% a solution for this problem as well as for the code he supplied, particularly for the
+% SimpleUTF16BE routine.
+%
+% It should not be necessary to modify this program, the comments int the code are there purely for information,
+% but there are two areas which might reasonably be altered. The section with the --8<-- lines could be replaced
+% with a simpler /N 3 or /N 4 if you always intend to produce the same kind of files; RGB or CMYK.
+% In step 7, the large XML string will need to be replaced if you want to produce a ZUGFeRD 2.1
+% file, and in future may require similar modification for later versions.
+%
+
+% istring SimpleUTF16BE ostring
+/SimpleUTF16BE
+{
+    dup length
+    1 add
+    2 mul
+    string
+
+    % istring ostring
+    dup 0 16#FE put
+    dup 1 16#FF put
+    2
+    3 -1 roll
+
+    % ostring index istring
+    {
+        % ostring index ichar
+        3 1 roll
+        % ichar ostring index
+        2 copy 16#00 put
+        1 add
+        2 copy
+        5 -1 roll
+        % ostring index ostring index ichar
+        put
+        1 add
+        % ostring index
+    }
+    forall
+
+    % ostring index
+    pop
+}
+bind def
+
+% First check that the user has defined the XML invoice file on the command line
+%
+/ZUGFeRDXMLFile where {
+  pop % Discard the dictionary
+  %
+  % Now check that the ICC Profile is defined
+  %
+  /ZUGFeRDProfile where {
+    pop % Discard the dictionary
+
+    % Step 1, add the required PDF/A boilerplate. This is mostly copied from lib/pdfa_de.ps
+    % Create a PDF stream object to hold the ICC profile.
+    [ /_objdef {icc_PDFA} /type /stream /OBJ pdfmark
+
+    % Add the required entries to the stream dictionary (/N only)
+    [ {icc_PDFA}
+    <<
+    %% This code attempts to set the /N (number of components) key for the ICC colour space.
+    %% To do this it checks the ColorConversionStrategy or the device ProcessColorModel if
+    %% ColorConversionStrategy is not set.
+    %% This is not 100% reliable. A better solution is for the user to edit this and replace
+    %% the code between the ---8<--- lines with a simple declaration like:
+    %%   /N 3
+    %% where the value of N is the number of components from the profile defined in ZUGFeRDProfile.
+    %%
+    %% ----------8<--------------8<-------------8<--------------8<----------
+      systemdict /ColorConversionStrategy known {
+        systemdict /ColorConversionStrategy get cvn dup /Gray eq {
+          pop /N 1 false
+        }{
+          dup /RGB eq {
+            pop /N 3 false
+          }{
+            /CMYK eq {
+              /N 4 false
+            }{
+              (ColorConversionStrategy not a device space, falling back to ProcessColorModel, output may not be valid PDF/A.)=
+              true
+            } ifelse
+          } ifelse
+        } ifelse
+      } {
+        (ColorConversionStrategy not set, falling back to ProcessColorModel, output may not be valid PDF/A.)=
+        true
+      } ifelse
+
+      {
+        currentpagedevice /ProcessColorModel get
+        dup /DeviceGray eq {
+          pop /N 1
+        }{
+          dup /DeviceRGB eq {
+            pop /N 3
+          }{
+            dup /DeviceCMYK eq {
+              pop /N 4
+            } {
+              (ProcessColorModel not a device space.)=
+              /ProcessColorModel cvx /rangecheck signalerror
+            } ifelse
+          } ifelse
+        } ifelse
+      } if
+    %% ----------8<--------------8<-------------8<--------------8<----------
+    >> /PUT pdfmark
+
+    % Now read the ICC profile from the file into the stream
+    [ {icc_PDFA} ZUGFeRDProfile (r) file /PUT pdfmark
+
+    % Define the output intent dictionary :
+    [/_objdef {OutputIntent_PDFA} /type /dict /OBJ pdfmark
+
+    % Add the required keys to the dictionary
+    [{OutputIntent_PDFA} <<
+        /Type /OutputIntent
+        /S /GTS_PDFA1                       % Required for PDF/A.
+        /DestOutputProfile {icc_PDFA}       % The actual profile.
+        /OutputConditionIdentifier (Custom) % A better solution is a string from the ICC Registry, but Custom is always valid.
+      >> /PUT pdfmark
+
+    % And now add the OutputIntent to the Catalog dictionary
+    [ {Catalog} << /OutputIntents [ {OutputIntent_PDFA} ]>> /PUT pdfmark
+
+
+    % Step 2, define the XML file and read it into the PDF
+    % First we define the PDF stream to contain the XML invoice
+    [ /_objdef {InvoiceStream} /type /stream /OBJ pdfmark
+
+    % Fill in the dictionary elements we need. We believe the
+    % ModDate is not useful so its just set to a valid value.
+    [ {InvoiceStream} <<
+        /Type        /EmbeddedFile
+        /Subtype    (text/xml) cvn
+        /Params <<
+          /ModDate    (D:20130121081433+01’00’)
+        >>
+      >> /PUT pdfmark
+
+    % Now read the data from the file and store it in the stream
+    [ {InvoiceStream} ZUGFeRDXMLFile (r) file /PUT pdfmark
+
+    % and close the stream
+    [ {InvoiceStream} /CLOSE pdfmark
+
+
+    % Step 3 create the File Specification dictionary for the embedded file
+    % Create the dictionary
+    [ /_objdef {FSDict} /type /dict /OBJ pdfmark
+
+    % Fill in the required dictionary elements
+    [ {FSDict}    <<
+      /Type /FileSpec
+      /F ZUGFeRDXMLFile
+      /UF ZUGFeRDXMLFile SimpleUTF16BE
+      /Desc (ZUGFeRD electronic invoice)
+      /AFRelationship    /Alternative
+      /EF <<
+          /F {InvoiceStream}
+          /UF {InvoiceStream}
+        >>
+      >>
+    /PUT pdfmark
+
+
+    % Step 4 Create the Associated Files dictionary to hold the FS dict
+    % Create the dictionary
+    [ /_objdef {AFArray} /type /array /OBJ pdfmark
+
+    % Put (append) the FS dictionary into the Associated Files array
+    [ {AFArray} {FSDict} /APPEND pdfmark
+
+
+    % Step 5 Add an entry in the Catalog cictioanry continaing the AF array
+    [ {Catalog} << /AF {AFArray} >> /PUT pdfmark
+
+
+    % Step 6 use the EMBED pdfmark to add the XML file and FS dictionary to the PDF name tree
+    [ /Name ZUGFeRDXMLFile /FS {FSDict} /EMBED pdfmark
+
+
+    % Step 7 Add the extra ZUGFeRD XML data to the Metadata
+    [ /XML
+(
+    <!-- XMP extension schema container for the zugferd schema -->
+    <rdf:Description rdf:about=""
+    xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/"
+    xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#"
+    xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#">
+
+    <!-- Container for all embedded extension schema descriptions -->
+    <pdfaExtension:schemas>
+        <rdf:Bag>
+        <rdf:li rdf:parseType="Resource">
+            <!-- Optional description of schema -->
+            <pdfaSchema:schema>ZUGFeRD PDFA Extension Schema</pdfaSchema:schema>
+            <!-- Schema namespace URI -->
+            <pdfaSchema:namespaceURI>urn:ferd:pdfa:invoice:rc#</pdfaSchema:namespaceURI>
+            <!-- Preferred schema namespace prefix -->
+            <pdfaSchema:prefix>zf</pdfaSchema:prefix>
+
+            <!-- Description of schema properties -->
+            <pdfaSchema:property>
+            <rdf:Seq>!
+                <rdf:li rdf:parseType="Resource">
+                <!-- DocumentFileName: Name of the embedded file;
+                    must be equal with the value of the /F tag in the /EF
+                    structure -->
+                <pdfaProperty:name>DocumentFileName</pdfaProperty:name>
+                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+                <pdfaProperty:category>external</pdfaProperty:category>
+                <pdfaProperty:description>name of the embedded xml invoice file</pdfaProperty:description>
+                </rdf:li>
+                <rdf:li rdf:parseType="Resource">
+                <!-- DocumentType: INVOICE -->
+                <pdfaProperty:name>DocumentType</pdfaProperty:name>
+                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+                <pdfaProperty:category>external</pdfaProperty:category>
+                <pdfaProperty:description>INVOICE</pdfaProperty:description>
+                </rdf:li>
+                <rdf:li rdf:parseType="Resource">
+                <!-- Version: The actual version of the
+                    ZUGFeRD standard -->
+                <pdfaProperty:name>Version</pdfaProperty:name>
+                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+                <pdfaProperty:category>external</pdfaProperty:category>
+                <pdfaProperty:description>The actual version of the ZUGFeRD data</pdfaProperty:description>
+                </rdf:li>
+                <rdf:li rdf:parseType="Resource">
+                <!-- ConformanceLevel: The actual conformance
+                    level of the ZUGFeRD standard,
+                    e.g. BASIC, COMFORT, EXTENDED -->
+                <pdfaProperty:name>ConformanceLevel</pdfaProperty:name>
+                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+                <pdfaProperty:category>external</pdfaProperty:category>
+                <pdfaProperty:description>The conformance level of the ZUGFeRD data</pdfaProperty:description>
+                </rdf:li>
+            </rdf:Seq>
+            </pdfaSchema:property>
+        </rdf:li>
+        </rdf:Bag>
+    </pdfaExtension:schemas>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="" xmlns:zf="urn:ferd:pdfa:invoice:rc#">
+    <zf:DocumentType>INVOICE</zf:DocumentType>
+    <zf:DocumentFileName>ZUGFeRD-invoice.xml</zf:DocumentFileName>
+    <zf:Version>RC</zf:Version>
+    <zf:ConformanceLevel>BASIC</zf:ConformanceLevel>
+    </rdf:Description>
+) /Ext_Metadata pdfmark
+  }
+  {
+    % No ICC Profile definition on the command line; chide the user and give them an example
+    %
+    (\nERROR - ZUGFeRDProfile has not been supplied, you must supply an ICC profile\n) print
+    (        Producing a potentially invalid PDF/A file!!\n) print
+    (example usage -  gs --permit-file-read=/usr/hoome/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3\\\n) print
+    (         -sColorConversionStrategy=RGB -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml\\\n) print
+    (         -sZUGFeRDProfile=/usr/home/me/rgb.icc -o /usr/home/me/zguferd/zugferd.pdf\\\n) print
+    (         /usr/home/me/zugferd/zugferd.ps /usr/home/me/zugferd/original.pdf\n\n) print flush
+  } ifelse
+}
+{
+  % No XML invoice definition on the command line; chide the user and give them an example
+  %
+  (\nERROR - ZUGFeRDXMLFile has not been supplied, you must supply an XML invoice file\n) print
+  (        Producing a PDF/A file not a ZUGFeRD file.\n) print
+  (example usage -  gs --permit-file-read=/usr/hoome/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3\\\n) print
+  (         -sColorConversionStrategy=RGB -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml\\\n) print
+  (         -sZUGFeRDProfile=/usr/home/me/rgb.icc -o /usr/home/me/zguferd/zugferd.pdf\\\n) print
+  (         /usr/home/me/zugferd/zugferd.ps /usr/home/me/zugferd/original.pdf\n\n) print flush
+} ifelse
+
+% That's all the ZUGFeRD and PDF/A-3 setup completed, all that remains now is to run the input file

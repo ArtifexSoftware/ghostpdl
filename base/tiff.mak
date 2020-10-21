@@ -33,7 +33,7 @@ TIFFCONF_H=$(TIFFCONF)libtiff$(D)tiffconf$(TIFFCONFIG_SUFFIX).h
 # Define the name of this makefile.
 LIBTIFF_MAK=$(GLSRC)tiff.mak $(TOP_MAKEFILES)
 
-TIFFCC=$(CC_) $(TIFF_CFLAGS) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_)
+TIFFCC=$(CC) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_) $(CCFLAGS) $(TIFF_CFLAGS)
 
 TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h $(LIBTIFF_MAK) $(MAKEDIRS)
 gstiffio_h=$(GLSRC)gstiffio.h

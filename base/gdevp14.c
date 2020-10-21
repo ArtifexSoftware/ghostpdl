@@ -3526,6 +3526,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
         dev->icc_struct->pageneutralcolor = profile_targ->pageneutralcolor;
         dev->icc_struct->supports_devn = profile_targ->supports_devn;
         dev->icc_struct->usefastcolor = profile_targ->usefastcolor;
+        dev->icc_struct->blacktext = profile_targ->blacktext;
 
         if (pdev->using_blend_cs) {
             /* Swap the device profile and the blend profile. */
@@ -6216,6 +6217,9 @@ pdf14_pop_color_model(gx_device* dev, pdf14_group_color_t* group_color)
                                     -1, "pdf14_pop_color_model");
             pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] =
                                     group_color->icc_profile;
+
+            gsicc_adjust_profile_rc(pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+                                    1, "pdf14_pop_color_model");
         }
     }
 }
@@ -6465,6 +6469,7 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
         /* iccprofile was incremented above if we had not just created it.
            When we do the pop we will decrement and if we just created it, it
            will be destroyed */
+        gsicc_adjust_profile_rc(dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE], -1, "pdf14_push_color_model");
         dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] = iccprofile;
     }
     return group_color;
@@ -6975,6 +6980,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
                 gsicc_adjust_profile_rc(dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
                                         -1, "pdf14_end_transparency_mask");
                 dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] = group_color->icc_profile;
+                gsicc_adjust_profile_rc(dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+                                         1, "pdf14_end_transparency_mask");
             }
         }
     }
@@ -7435,6 +7442,21 @@ map_components_to_colorants(const frac * pcc,
     }
 }
 
+/* See Section 7.6.4 of PDF 1.7 spec */
+static inline bool
+pdf14_state_opaque(gx_device *pdev, const gs_gstate *pgs)
+{
+    if (pgs->fillconstantalpha != 1.0 ||
+        pgs->strokeconstantalpha != 1.0 ||
+        !(pgs->blend_mode == BLEND_MODE_Normal ||
+          pgs->blend_mode == BLEND_MODE_CompatibleOverprint))
+        return 0;
+
+    /* We can only be opaque if we're not in an SMask. */
+    return dev_proc(pdev, dev_spec_op)(pdev,
+                                       gxdso_in_smask,
+                                       NULL, 0) != 1;
+}
 
 static	void
 pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
@@ -7453,20 +7475,16 @@ pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
         trans_device = dev;
     }
     ncomps = trans_device->color_info.num_components;
+
     /* map to the color model */
     dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_gray(trans_device, gray, cm_comps);
 
-    /* If we are in a Gray blending color space and have spots then we have
-     * possibly an issue here with the transfer function */
-    if (pgs->trans_device != NULL) {
-        cv[0] = frac2cv(gx_map_color_frac(pgs, cm_comps[0], effective_transfer[0]));
-        /* FIXME: This looks odd to me... */
-        for (i = 1; i < ncomps; i++)
-            cv[i] = gx_color_value_from_byte(cm_comps[i]);
-    } else {
-        /* Not a transparency device.  Just use the transfer functions directly */
+    if (pdf14_state_opaque(trans_device, pgs)) {
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
+    } else {
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(cm_comps[i]);
     }
 
     /* If output device supports devn, we need to make sure we send it the
@@ -7504,21 +7522,15 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
     /* map to the color model */
     dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_rgb(trans_device, pgs, r, g, b, cm_comps);
 
-    /* If we are in an RGB blending color space and have spots then we have
-    * possibly an issue here with the transfer function */
-    if (pgs->trans_device != NULL) {
-        for (i = 0; i < 3; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
-        /* FIXME: This looks odd to me... */
-        for (i = 3; i < ncomps; i++)
-            cv[i] = gx_color_value_from_byte(cm_comps[i]);
-    } else {
-        /* Not a transparency device.  Just use the transfer functions directly */
+    if (pdf14_state_opaque(trans_device, pgs)) {
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
+    } else {
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(cm_comps[i]);
     }
 
-    /* if output device supports devn, we need to make sure we send it the
+    /* If output device supports devn, we need to make sure we send it the
        proper color type.  We now support RGB + spots as devn colors */
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
         for (i = 0; i < ncomps; i++)
@@ -7538,7 +7550,7 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
      const gs_gstate * pgs, gx_device * dev, gs_color_select_t select,
      const gs_color_space *pcs)
 {
-    int i,ncomps;
+    int i, ncomps;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
@@ -7551,10 +7563,19 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
         trans_device = dev;
     }
     ncomps = trans_device->color_info.num_components;
-    /* map to the color model */
+
+    /* Map to the color model. Transfer function is only used
+       if we are drawing with an opaque color. */
     dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_cmyk(trans_device, c, m, y, k, cm_comps);
-    for (i = 0; i < ncomps; i++)
-        cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
+
+    if (pdf14_state_opaque(trans_device, pgs)) {
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
+    } else {
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(cm_comps[i]);
+    }
+
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
@@ -7818,6 +7839,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
             return p14dev->overprint || p14dev->stroke_overprint;
         }
     }
+    if (dev_spec_op == gxdso_in_smask_construction)
+        return p14dev->in_smask_construction > 0;
     if (dev_spec_op == gxdso_in_smask)
         return p14dev->in_smask_construction > 0 || p14dev->depth_within_smask;
 

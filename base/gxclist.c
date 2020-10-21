@@ -31,6 +31,7 @@
 #include "gsicc_manage.h"
 #include "gsicc_cache.h"
 #include "gxdevsop.h"
+#include "gxobj.h"
 
 #include "valgrind.h"
 
@@ -409,6 +410,8 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     gx_device *pbdev = (gx_device *)&bdev;
     int code;
     int align = 1 << (target->log2_align_mod > log2_align_bitmap_mod ? target->log2_align_mod : log2_align_bitmap_mod);
+
+    align = align < obj_align_mod ? obj_align_mod : align;
 
     /* the clist writer has its own color info that depends upon the
        transparency group color space (if transparency exists).  The data that is

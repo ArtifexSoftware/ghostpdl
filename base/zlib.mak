@@ -53,9 +53,10 @@ ZAO_=$(O_)$(ZAUX)
 # syntax from other compilers.
 # ZI_ and ZF_ are defined in gs.mak.
 ZCCFLAGS=$(ZLIB_CFLAGS) $(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)-1$(_D)
-ZCC=$(CC_) $(ZCCFLAGS)
+ZCC=$(CC) $(ZCCFLAGS) $(CCFLAGS)
+
 ZCCAUXFLAGS=$(ZLIB_CFLAGS) $(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)-1$(_D)
-ZCCAUX=$(CCAUX_) $(ZCCAUXFLAGS)
+ZCCAUX=$(CCAUX) $(ZCCAUXFLAGS) $(CCFLAGSAUX)
 
 # Define the name of this makefile.
 ZLIB_MAK=$(GLSRC)zlib.mak $(TOP_MAKEFILES)

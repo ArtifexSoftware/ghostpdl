@@ -79,9 +79,9 @@ typedef uint64_t gs_glyph;
 
 #define GS_NO_GLYPH ((gs_glyph)0x7fffffff)
 
-#  define GS_MIN_CID_GLYPH ((gs_glyph)0x80000000L)
+#define GS_MIN_CID_GLYPH ((gs_glyph)0x80000000)
 
-#define GS_MIN_GLYPH_INDEX (GS_MIN_CID_GLYPH | (GS_MIN_CID_GLYPH >> 1))
+#define GS_MIN_GLYPH_INDEX (gs_glyph)(GS_MIN_CID_GLYPH | (GS_MIN_CID_GLYPH >> 1))
 #define GS_GLYPH_TAG (gs_glyph)(GS_MIN_CID_GLYPH | GS_MIN_GLYPH_INDEX)
 #define GS_MAX_GLYPH max_ulong
 

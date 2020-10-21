@@ -142,6 +142,7 @@ gs_gstate_initialize(gs_gstate * pgs, gs_memory_t * mem)
     pgs->icc_link_cache = gsicc_cache_new(pgs->memory);
     pgs->icc_manager = gsicc_manager_new(pgs->memory);
     pgs->icc_profile_cache = gsicc_profilecache_new(pgs->memory);
+    pgs->black_text_state = NULL;
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     pgs->custom_color_callback = INIT_CUSTOM_COLOR_PTR;
 #endif
@@ -168,6 +169,7 @@ gs_gstate_copied(gs_gstate * pgs)
     rc_increment(pgs->icc_link_cache);
     rc_increment(pgs->icc_profile_cache);
     rc_increment(pgs->icc_manager);
+    rc_increment(pgs->black_text_state);
 }
 
 /* Adjust reference counts before assigning one gs_gstate to another. */
@@ -195,6 +197,7 @@ gs_gstate_pre_assign(gs_gstate *pto, const gs_gstate *pfrom)
     RCCOPY(icc_link_cache);
     RCCOPY(icc_profile_cache);
     RCCOPY(icc_manager);
+    RCCOPY(black_text_state);
 #undef RCCOPY
 }
 
@@ -231,5 +234,6 @@ gs_gstate_release(gs_gstate * pgs)
     RCDECR(icc_link_cache);
     RCDECR(icc_profile_cache);
     RCDECR(icc_manager);
+    RCDECR(black_text_state);
 #undef RCDECR
 }

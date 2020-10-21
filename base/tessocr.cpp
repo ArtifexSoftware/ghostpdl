@@ -24,6 +24,12 @@ extern "C"
 static int event = 0;
 #endif
 
+/* Hackily define prototypes for alloc routines for leptonica. */
+extern "C" void *leptonica_malloc(size_t blocksize);
+extern "C" void *leptonica_calloc(size_t numelm, size_t elemsize);
+extern "C" void *leptonica_realloc(void *ptr, size_t blocksize);
+extern "C" void leptonica_free(void *ptr);
+
 void *leptonica_malloc(size_t blocksize)
 {
     void *ret = malloc(blocksize);
@@ -110,12 +116,20 @@ static void my_leptonica_free(void *ptr)
 static bool
 load_file(const char* filename, GenericVector<char>* data) {
   bool result = false;
-  gp_file *fp = gp_fopen(leptonica_mem, filename, "rb");
+  gp_file *fp;
+  int code;
+  int size;
+
+  code = gs_add_control_path(leptonica_mem, gs_permit_file_reading, filename);
+  if (code < 0)
+    return false;
+
+  fp = gp_fopen(leptonica_mem, filename, "rb");
   if (fp == NULL)
-      return false;
+    goto fail;
 
   gp_fseek(fp, 0, SEEK_END);
-  int size = (int)gp_ftell(fp);
+  size = (int)gp_ftell(fp);
   gp_fseek(fp, 0, SEEK_SET);
   // Trying to open a directory on Linux sets size to LONG_MAX. Catch it here.
   if (size > 0 && size < LONG_MAX) {
@@ -125,8 +139,52 @@ load_file(const char* filename, GenericVector<char>* data) {
     result = static_cast<long>(gp_fread(&(*data)[0], 1, size, fp)) == size;
   }
   gp_fclose(fp);
+
+fail:
+  (void)gs_remove_control_path(leptonica_mem, gs_permit_file_reading, filename);
+
   return result;
 }
+
+static bool
+load_file_from_path(const char *path, const char *file, GenericVector<char> *out)
+{
+    const char *sep = gp_file_name_directory_separator();
+    size_t seplen = strlen(sep);
+    size_t bufsize = strlen(path) + seplen + strlen(file) + 1;
+    const char *s, *e;
+    bool ret = 0;
+    char *buf = (char *)gs_alloc_bytes(leptonica_mem, bufsize, "load_file_from_path");
+    if (buf == NULL)
+        return 0;
+
+    s = path;
+    do {
+        e = path;
+        while (*e && *e != gp_file_name_list_separator)
+            e++;
+        memcpy(buf, s, e-s);
+        memcpy(&buf[e-s], sep, seplen);
+        strcpy(&buf[e-s+seplen], file);
+        ret = load_file(buf, out);
+        if (ret)
+            break;
+        s = e;
+        while (*s == gp_file_name_list_separator)
+            s++;
+    } while (*s != 0);
+
+    gs_free_object(leptonica_mem, buf, "load_file_from_path");
+
+    return ret;
+}
+
+#ifndef TESSDATA
+#define TESSDATA tessdata
+#endif
+#define STRINGIFY2(S) #S
+#define STRINGIFY(S) STRINGIFY2(S)
+static char *tessdata_prefix = STRINGIFY(TESSDATA);
 
 static bool
 tess_file_reader(const char *fname, GenericVector<char> *out)
@@ -135,16 +193,25 @@ tess_file_reader(const char *fname, GenericVector<char> *out)
     const char *s;
     char text[PATH_MAX];
     int code = 0;
+    bool found;
     stream *ps;
     gx_io_device *iodev;
 
+    /* fname, as supplied to us by Tesseract has TESSDATA_PREFIX prepended
+     * to it. Check that first. */
+    found = load_file(fname, out);
+    if (found)
+            return found;
+
+    /* Find file, fname with any prefix removed, and use that in
+     * the rest of the searches. */
     for (s = fname; *s; s++)
         if (*s == '\\' || *s == '/')
             file = s+1;
 
-    /* FIXME: Try loading 'file' from gs specific paths */
+    /* Next look in romfs in the tessdata directory. */
     iodev = gs_findiodevice(leptonica_mem, (const byte *)"%rom", 4);
-    gs_snprintf(text, sizeof(text), "Resource/Tesseract/%s", file);
+    gs_snprintf(text, sizeof(text), "tessdata/%s", file);
     if (iodev) {
         long size;
         long i;
@@ -177,12 +244,13 @@ tess_file_reader(const char *fname, GenericVector<char> *out)
         }
     }
 
-    /* Fall back to gp_file access, first under Resource/Tesseract */
-    if (load_file(text, out))
-        return true;
+    /* Fall back to gp_file access under our configured tessdata path. */
+    found = load_file_from_path(tessdata_prefix, file, out);
+    if (found)
+        return found;
 
-    /* Then under TESSDATA */
-    return load_file(fname, out);
+    /* If all else fails, look in the current directory. */
+    return load_file(file, out);
 }
 
 int

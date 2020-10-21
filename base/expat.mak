@@ -31,8 +31,8 @@ EXPATGEN=$(EXPATGENDIR)$(D)
 EXPATOBJ=$(EXPATOBJDIR)$(D)
 EXPATO_=$(O_)$(EXPATOBJ)
 
-EXPATCC=$(CC) $(CFLAGS) $(I_)$(EXPATSRC)lib$(_I) \
-$(D_)XML_POOR_ENTROPY$(_D) $(EXPAT_CFLAGS)
+EXPATCC=$(CC) $(I_)$(EXPATSRC)lib$(_I) \
+$(D_)XML_POOR_ENTROPY$(_D) $(EXPAT_CFLAGS) $(CCFLAGS)
 
 expat.clean : expat.config-clean expat.clean-not-config-clean
 

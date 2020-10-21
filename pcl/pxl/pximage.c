@@ -498,14 +498,14 @@ read_rle_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par, b
         s_RLD_init_inline(ss);
         rle_set(&benum->initialized);
     }
-    r.ptr = data - 1;
-    r.limit = r.ptr + avail;
+
+    stream_cursor_read_init(&r, (const byte *)data, avail);
+
     if (pos_in_row < data_per_row) {
         /* Read more of the current row. */
         byte *data = *pdata;
 
-        w.ptr = data + pos_in_row - 1;
-        w.limit = data + data_per_row - 1;
+        stream_cursor_write_init(&w, (const byte *)(data + pos_in_row), data_per_row - pos_in_row);
         (*s_RLD_template.process) ((stream_state *) ss, &r, &w, false);
         used = w.ptr + 1 - data - pos_in_row;
         pos_in_row += used;
@@ -514,8 +514,7 @@ read_rle_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par, b
     if (pos_in_row >= data_per_row && pos_in_row < data_per_row_padded) {       /* We've read all the real data; skip the padding. */
         byte pad[3];            /* maximum padding per row */
 
-        w.ptr = pad - 1;
-        w.limit = w.ptr + data_per_row_padded - pos_in_row;
+        stream_cursor_write_init(&w, (const byte *)pad, data_per_row_padded - pos_in_row);
         (*s_RLD_template.process) ((stream_state *) ss, &r, &w, false);
         used = w.ptr + 1 - pad;
         pos_in_row += used;

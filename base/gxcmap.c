@@ -2276,7 +2276,9 @@ gx_get_cmapper(gx_cmapper_t *data, const gs_gstate *pgs,
     data->direct = 0;
     if (has_transfer && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
         check_cmyk_color_model_comps(dev);
-    if (pgs->effective_transfer_non_identity_count == 0)
+    /* Per spec. Images with soft mask, and the mask, do not use transfer function */
+    if (pgs->effective_transfer_non_identity_count == 0 ||
+        (dev_proc(dev, dev_spec_op)(dev, gxdso_in_smask, NULL, 0)) > 0)
         has_transfer = 0;
     if (has_transfer) {
         if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {

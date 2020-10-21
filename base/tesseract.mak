@@ -114,7 +114,6 @@ TESSDEPS=\
 	$(TESSERACTDIR)/src/ccutil/errcode.h\
 	$(TESSERACTDIR)/src/ccutil/fileerr.h\
 	$(TESSERACTDIR)/src/ccutil/genericheap.h\
-	$(TESSERACTDIR)/src/ccutil/globaloc.h\
 	$(TESSERACTDIR)/src/ccutil/host.h\
 	$(TESSERACTDIR)/src/ccutil/indexmapbidi.h\
 	$(TESSERACTDIR)/src/ccutil/kdpair.h\
@@ -805,9 +804,6 @@ $(TESSOBJ)ccutil_elst.$(OBJ) : $(TESSERACTDIR)/src/ccutil/elst.cpp $(TESSDEPS)
 $(TESSOBJ)ccutil_errcode.$(OBJ) : $(TESSERACTDIR)/src/ccutil/errcode.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)ccutil_errcode.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccutil/errcode.cpp
 
-$(TESSOBJ)ccutil_globaloc.$(OBJ) : $(TESSERACTDIR)/src/ccutil/globaloc.cpp $(TESSDEPS)
-	$(TESSCXX) $(TESSO_)ccutil_globaloc.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccutil/globaloc.cpp
-
 $(TESSOBJ)ccutil_mainblk.$(OBJ) : $(TESSERACTDIR)/src/ccutil/mainblk.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)ccutil_mainblk.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccutil/mainblk.cpp
 
@@ -1057,7 +1053,6 @@ TESSERACT_OBJS_4=\
 	$(TESSOBJ)ccutil_elst2.$(OBJ)\
 	$(TESSOBJ)ccutil_elst.$(OBJ)\
 	$(TESSOBJ)ccutil_errcode.$(OBJ)\
-	$(TESSOBJ)ccutil_globaloc.$(OBJ)\
 	$(TESSOBJ)ccutil_mainblk.$(OBJ)\
 	$(TESSOBJ)ccutil_serialis.$(OBJ)\
 	$(TESSOBJ)ccutil_strngs.$(OBJ)\
@@ -1170,4 +1165,4 @@ TESSERACT_LEGACY_OBJS=\
 TESSERACT_LEGACY=
 
 TESS_ROMFS_ARGS=\
-	-c -d Resource/ -P .$(D)Resource$(D) Tesseract$(D)*
+	-c -P $(GLSRCDIR)$(D)..$(D) tessdata$(D)*

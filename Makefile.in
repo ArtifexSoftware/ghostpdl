@@ -121,6 +121,11 @@ COMPILE_INITS=@COMPILE_INITS@
 
 GS_LIB_DEFAULT=$(gsdatadir)/Resource/Init:$(gsdatadir)/lib:$(gsdatadir)/Resource/Font:$(gsdir)/fonts:@fontpath@
 
+# Define the default search path for Tesseract.  Separate multiple directories
+# with a :.
+
+TESSDATA=@tessdata@
+
 # Define the default directory for cached data files
 # this must be a single path.
 

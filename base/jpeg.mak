@@ -107,7 +107,7 @@ jpeg.config-clean :
 
 # JI_ and JF_ are defined in gs.mak.
 # See below for why we need to include GLGENDIR here.
-JCC=$(CC_) $(I_)$(GLGENDIR) $(II)$(JI_)$(_I) $(JF_)
+JCC=$(CC) $(I_)$(GLGENDIR) $(II)$(JI_)$(_I) $(JF_) $(CCFLAGS)
 
 # We need our own version of jconfig.h, and our own "wrapper" for
 # jmorecfg.h.

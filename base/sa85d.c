@@ -135,9 +135,9 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
              * So we allow CR/LF between them. */
             /* PDF further relaxes the requirements and accepts bare '~'.
              */
-            while ((p[i] == 13 || p[i] == 10) && (p+i <= rlimit))
+            while ((p + i <= rlimit) && (p[i] == 13 || p[i] == 10))
                 i++;
-            if (p[i] != '>') {
+            if (p + i <= rlimit && p[i] != '>') {
                 if (ss->pdf_rules) {
                     if (p[i] == 13 || p[i] == 10) {
                         if (!last)
@@ -146,7 +146,7 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
                         p--;
                     }
                 } else {
-                    if (p+i == rlimit) {
+                    if (p + i == rlimit) {
                         if (last)
                             status = ERRC;
                         else

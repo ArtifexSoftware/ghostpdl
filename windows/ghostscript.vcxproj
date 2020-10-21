@@ -1067,6 +1067,7 @@
     <ClCompile Include="..\base\gshtscr.c" />
     <ClCompile Include="..\base\gshtx.c" />
     <ClCompile Include="..\base\gsicc.c" />
+    <ClCompile Include="..\base\gsicc_blacktext.c" />
     <ClCompile Include="..\base\gsicc_cache.c" />
     <ClCompile Include="..\base\gsicc_create.c" />
     <ClCompile Include="..\base\gsicc_lcms2.c" />
@@ -2542,6 +2543,7 @@
     <ClInclude Include="..\base\gsht1.h" />
     <ClInclude Include="..\base\gshtx.h" />
     <ClInclude Include="..\base\gsicc.h" />
+    <ClInclude Include="..\base\gsicc_blacktext.h" />
     <ClInclude Include="..\base\gsicc_cache.h" />
     <ClInclude Include="..\base\gsicc_cms.h" />
     <ClInclude Include="..\base\gsicc_create.h" />

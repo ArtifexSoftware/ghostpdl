@@ -60,7 +60,7 @@ PZGEN=$(ZGENDIR)$(D)
 # PI_ and PF_ are defined in gs.mak.
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the libpng 1.5.x source.
-PNGCC=$(CC) $(CFLAGS) $(PNG_CFLAGS) $(I_)$(PI_)$(_I) $(I_)$(PNGGENDIR)$(_I) $(PF_) \
+PNGCC=$(CC) $(I_)$(PI_)$(_I) $(I_)$(PNGGENDIR)$(_I) $(PF_) $(CCFLAGS) $(PNG_CFLAGS) \
 $(D_)PNG_NO_ASSEMBLER_CODE$(_D) $(D_)PNG_INTEL_SSE_OPT=0$(_D) \
 $(D_)PNG_INTEL_SSE_IMPLEMENTATION=0$(_D) $(D_)PNG_ARM_NEON_IMPLEMENTATION=0$(_D)
 

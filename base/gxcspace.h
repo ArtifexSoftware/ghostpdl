@@ -165,6 +165,7 @@ struct gs_color_space_type_s {
 
 #define cs_proc_adjust_color_count(proc)\
   void proc(const gs_client_color *, const gs_color_space *, int)
+
 #define cs_adjust_color_count(pgs, delta)\
   (*gs_currentcolorspace_inline(pgs)->type->adjust_color_count)\
     (gs_currentcolor_inline(pgs), gs_currentcolorspace_inline(pgs), delta)

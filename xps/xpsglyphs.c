@@ -284,7 +284,7 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
             if (code != 0)
                 return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
 
-            gs_text_release(Tr_textenum, "gslt font render");
+            gs_text_release(ctx->pgs, Tr_textenum, "gslt font render");
 
             gs_stroke(ctx->pgs);
         }
@@ -300,7 +300,7 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
     if (code != 0)
         return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
 
-    gs_text_release(textenum, "gslt font render");
+    gs_text_release(ctx->pgs, textenum, "gslt font render");
 
     buf->count = 0;
 

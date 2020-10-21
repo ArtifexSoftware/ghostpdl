@@ -301,7 +301,7 @@ pdf_text_release(gs_text_enum_t *pte, client_name_t cname)
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
 
     if (penum->pte_default) {
-        gs_text_release(penum->pte_default, cname);
+        gs_text_release(NULL, penum->pte_default, cname);
         penum->pte_default = 0;
     }
     pdf_text_release_cgp(penum);
@@ -591,7 +591,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
             if (penum->fstack.items[penum->fstack.depth].font->FontType == 3)
                 user_defined = 1;
         }
-        gs_text_release((gs_text_enum_t *)penum, "pdf_text_process");
+        gs_text_release(NULL, (gs_text_enum_t *)penum, "pdf_text_process");
     }
 
     if (!user_defined || !(text->operation & TEXT_DO_ANY_CHARPATH)) {
@@ -636,6 +636,8 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
     penum->output_char_code = GS_NO_CHAR;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
                              dev, pgs, text, font, path, pdcolor, pcpath, mem);
+    penum->k_text_release = 1; /* early release of black_text_state */
+
     if (code < 0) {
         gs_free_object(mem, penum, "gdev_pdf_text_begin");
         return code;
@@ -3103,7 +3105,7 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
     code = gx_default_text_restore_state(pte_default);
     if (code < 0)
         return code;
-    gs_text_release(pte_default, "pdf_text_process");
+    gs_text_release(NULL, pte_default, "pdf_text_process");
     penum->pte_default = 0;
 
     return 0;
@@ -3547,7 +3549,7 @@ pdf_text_process(gs_text_enum_t *pte)
         gs_text_enum_copy_dynamic(pte, pte_default, true);
         if (code)
             return code;
-        gs_text_release(pte_default, "pdf_text_process");
+        gs_text_release(NULL, pte_default, "pdf_text_process");
         penum->pte_default = 0;
         if (pdev->type3charpath)
             pdev->type3charpath = false;

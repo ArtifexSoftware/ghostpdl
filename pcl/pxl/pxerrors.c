@@ -288,8 +288,9 @@ px_error_page_show(const char *message, int ytop, px_state_t * pxs)
             code = gs_text_process(penum);
             if (code > 0)
                 code = gs_note_error(errorBadFontData); /* shouldn't happen! */
-            if (code >= 0)
-                gs_text_release(penum, "pxtext");
+            if (code >= 0) {
+                gs_text_release(pgs, penum, "pxtext");
+            }
         }
         gs_scale(pgs, 1 / scale, 1 / scale);
         y += (int)(point_size * 8 / 5);

@@ -334,6 +334,12 @@ AROOTDIR=c:/gs
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 !endif
 
+# Define the directory to look in for tesseract data.
+
+!ifndef TESSDATA
+TESSDATA=$(GSROOTDIR)/tessdata
+!endif
+
 # Define the directory that will hold documentation at runtime.
 
 !ifndef GS_DOCDIR
@@ -1051,6 +1057,10 @@ MSVC_VERSION=16
 MS_TOOLSET_VERSION=14.26.28806
 !endif
 !if "$(_NMAKE_VER)" == "14.27.29111.0"
+# VS2019 (Toolset v142)
+MSVC_VERSION=16
+!endif
+!if "$(_NMAKE_VER)" == "14.27.29112.0"
 # VS2019 (Toolset v142)
 MSVC_VERSION=16
 !endif

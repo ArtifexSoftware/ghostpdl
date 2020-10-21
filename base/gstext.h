@@ -299,7 +299,7 @@ int
 int gs_text_retry(gs_text_enum_t *pte);
 
 /* Release the text processing structures. */
-void gs_text_release(gs_text_enum_t *pte, client_name_t cname);
+void gs_text_release(gs_gstate *pgs, gs_text_enum_t *pte, client_name_t cname);
 
 /* Compute the number of characters in a text. */
 int gs_text_count_chars(gs_gstate * pgs, gs_text_params_t *text, gs_memory_t * mem);

@@ -499,7 +499,7 @@ show_char_foreground(const pcl_state_t * pcs, const gs_char * pbuff)
     code = gs_text_begin(pcs->pgs, &text, pcs->memory, &penum);
     if (code >= 0) {
         code = gs_text_process(penum);
-        gs_text_release(penum, "show_char_foreground");
+        gs_text_release(pcs->pgs, penum, "show_char_foreground");
     }
     return code;
 }
@@ -693,7 +693,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
                 /* fall through */
             }
         }
-        gs_text_release(penum, "show_char_background");
+        gs_text_release(pgs, penum, "show_char_background");
     }
 
     code2 = pcl_grestore(pcs);
