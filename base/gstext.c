@@ -414,7 +414,7 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
        Also we need to know if we are doing any stroke
        or stroke fill operations. This determines when
        we need to release the black_text_state structure. */
-    if (*ppte != NULL) {
+    if (code >= 0 && *ppte != NULL) {
         if (black_text) {
             if (!((*ppte)->k_text_release)) {
                 /* Not a high level device */
