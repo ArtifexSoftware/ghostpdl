@@ -462,10 +462,22 @@ static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
     string_len = string->length;
     /* See if there are any non-ascii chars */
     for (i=0,ptr=string->data;i<string_len;i++,ptr++) {
+        /* TODO: I wanted to convert non-ascii to hex strings, but there
+         * are cases (such as /Author field) where the non-ascii is not really binary
+         * and then pdfwrite barfs on it later.
+         * see gdevpdfu.c/pdf_put_encoded_hex_string(), which is not implemented
+         * and causes crashes...
+         * See sample: tests_private/pdf/sumatra/1532_-_Freetype_crash.pdf
+         *
+         * For now, just disabling the generation of hex strings, which will match
+         * what gs does.  Seems lame.
+         */
+#if 0
         if (*ptr > 127) {
             non_ascii = true;
             break;
         }
+#endif
         /* TODO: I was going to just turn special chars into hexstrings, but it turns out
          * that the pdfwrite driver expects to be able to parse URI strings, and these
          * can have special characters.  So I will handle the minimum that seems needed for that.

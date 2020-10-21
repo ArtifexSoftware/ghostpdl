@@ -2915,48 +2915,6 @@ static int pdfi_annot_preserve_nextformlabel(pdf_context *ctx, byte **data, int 
     return 0;
 }
 
-/* Special handling for "A" in Link annotations */
-static int pdfi_annot_preserve_modA(pdf_context *ctx, pdf_dict *annot, pdf_name *A_key,
-                                    pdf_name *subtype, bool *resolve)
-{
-    int code = 0;
-    pdf_dict *A = NULL;
-    bool known;
-
-    *resolve = false;
-
-    if (!pdfi_name_is(subtype, "Link"))
-        return 0;
-
-    code = pdfi_dict_get(ctx, annot, "A", (pdf_obj **)&A);
-    if (code < 0) goto exit;
-
-    if (A->type != PDF_DICT) {
-        /* Invalid AP, just delete it because I dunno what to do...
-         * TODO: Should flag a warning here
-         */
-        code = pdfi_dict_delete_pair(ctx, annot, A_key);
-        goto exit;
-    }
-
-    code = pdfi_dict_known(ctx, A, "URI", &known);
-    if (code < 0) goto exit;
-    if (known) {
-        *resolve = true;
-        goto exit;
-    }
-
-    /* Don't try to resolve non-URI /A dicts, for now
-     * TODO: Implement this (see pdf_draw.ps/preserveannottypes/Link)
-     */
-    code = pdfi_dict_delete_pair(ctx, annot, A_key);
-    *resolve = false;
-
- exit:
-    pdfi_countdown(A);
-    return code;
-}
-
 /* Modify the QuadPoints array to correct for some BS in the pdfwrite driver.
  * comment from gs code (pdf_draw.ps/ApplyCMTToQuadPoints()):
   %% Nasty hackery here really. We need to undo the HWResolution scaling which
@@ -3170,14 +3128,11 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
             code = pdfi_annot_preserve_modQP(ctx, tempdict, Key);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "A")) {
-            code = pdfi_annot_preserve_modA(ctx, tempdict, Key, subtype, &resolve);
+            code = pdfi_mark_modA(ctx, tempdict, Key, subtype, &resolve);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "Dest")) {
             if (ctx->no_pdfmark_dests) {
                 /* If omitting dests, such as for multi-page output, then omit this whole annotation */
-                /* TODO: it goes someplace completely different, but also need to make sure to
-                 * honor the no_pdfmark_outlines flag.
-                 */
                 code = 0;
                 goto exit;
             }

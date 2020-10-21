@@ -558,7 +558,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
     if (code < 0)
         goto exit;
     if (code > 0) {
-        code = pdfi_dict_get_no_store_R(ctx, typedict, name, o);
+        code = pdfi_dict_get_no_store_R_key(ctx, typedict, name, o);
         if (code != gs_error_undefined)
             goto exit;
     }
@@ -594,7 +594,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
             goto exit;
 
         if (code > 0) {
-            code = pdfi_dict_get_no_store_R(ctx, typedict, name, o);
+            code = pdfi_dict_get_no_store_R_key(ctx, typedict, name, o);
             goto exit;
         }
     }
@@ -608,7 +608,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
             goto exit;
 
         if (code > 0) {
-            code = pdfi_dict_get_no_store_R(ctx, typedict, name, o);
+            code = pdfi_dict_get_no_store_R_key(ctx, typedict, name, o);
             goto exit;
         }
     }
@@ -622,7 +622,146 @@ exit:
     return code;
 }
 
-static int pdfi_doc_info(pdf_context *ctx)
+/* Do pdfmark on an outline entry (recursive) */
+static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
+{
+    int code = 0;
+    int64_t Count;
+    pdf_dict *child = NULL;
+    pdf_dict *Next = NULL;
+    pdf_dict *tempdict = NULL;
+    uint64_t dictsize;
+
+    code = pdfi_dict_get_int(ctx, outline, "Count", &Count);
+    if (code < 0 && code != gs_error_undefined)
+        goto exit1;
+
+    /* Make a temporary copy of the outline dict */
+    dictsize = pdfi_dict_entries(outline);
+    code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
+    if (code < 0) goto exit1;
+    pdfi_countup(tempdict);
+
+    /* Handle this outline entry */
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto exit1;
+
+    //    dmprintf1(ctx->memory, "Outline object %d\n", outline->object_num);
+
+
+    /* Handle any children (don't deref them, we don't want to leave them hanging around) */
+    code = pdfi_dict_get_no_store_R(ctx, outline, "First", (pdf_obj **)&child);
+    if (code <= 0 || child->type != PDF_DICT) {
+        /* TODO: flag a warning? */
+        code = 0;
+        goto exit;
+    }
+
+    if (child->object_num != 0) {
+        code = pdfi_loop_detector_add_object(ctx, child->object_num);
+        if (code < 0)
+            goto exit;
+    }
+
+    do {
+        code = pdfi_doc_mark_outline(ctx, child);
+        if (code < 0) goto exit;
+
+
+        code = pdfi_dict_get_no_store_R(ctx, child, "Next", (pdf_obj **)&Next);
+        if (code == 0 || Next->type != PDF_DICT)
+            break;
+        if (code == gs_error_circular_reference) {
+            code = 0;
+            break;
+        }
+        if (code < 0)
+            goto exit;
+
+        pdfi_countdown(child);
+        child = Next;
+    } while (true);
+
+ exit:
+    (void)pdfi_loop_detector_cleartomark(ctx);
+ exit1:
+    pdfi_countdown(child);
+    pdfi_countdown(Next);
+    pdfi_countdown(tempdict);
+    return code;
+}
+
+/* Do pdfmark for Outlines */
+static int pdfi_doc_Outlines(pdf_context *ctx)
+{
+    int code = 0;
+    pdf_dict *Outlines = NULL;
+    pdf_dict *outline = NULL;
+    pdf_dict *Next = NULL;
+
+    if (ctx->no_pdfmark_outlines)
+        goto exit1;
+
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "Outlines", PDF_DICT, (pdf_obj **)&Outlines);
+    if (code <= 0) {
+        /* TODO: flag a warning */
+        code = 0;
+        goto exit1;
+    }
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto exit1;
+
+    code = pdfi_dict_knownget_type(ctx, Outlines, "First", PDF_DICT, (pdf_obj **)&outline);
+    if (code <= 0) {
+        /* TODO: flag a warning? */
+        code = 0;
+        goto exit;
+    }
+
+    if (outline->object_num != 0) {
+        code = pdfi_loop_detector_add_object(ctx, outline->object_num);
+        if (code < 0)
+            goto exit;
+    }
+
+    /* Loop through all the top-level outline entries
+     * First one is in Outlines, and if there are more, they are the Next of the
+     * current outline item.  (see spec)
+     * (basically we are walking a linked list)
+     */
+    do {
+        code = pdfi_doc_mark_outline(ctx, outline);
+        if (code < 0) goto exit;
+
+
+        code = pdfi_dict_knownget_type(ctx, outline, "Next", PDF_DICT, (pdf_obj **)&Next);
+        if (code == 0)
+            break;
+        if (code == gs_error_circular_reference) {
+            code = 0;
+            break;
+        }
+        if (code < 0)
+            goto exit;
+
+        pdfi_countdown(outline);
+        outline = Next;
+    } while (true);
+
+ exit:
+    (void)pdfi_loop_detector_cleartomark(ctx);
+ exit1:
+    pdfi_countdown(Outlines);
+    pdfi_countdown(outline);
+    pdfi_countdown(Next);
+    return code;
+}
+
+/* Do pdfmark for Info */
+static int pdfi_doc_Info(pdf_context *ctx)
 {
     int code = 0;
     pdf_dict *Info = NULL;
@@ -683,19 +822,22 @@ int pdfi_doc_trailer(pdf_context *ctx)
 
     /* TODO: writeoutputintents */
 
+    if (!ctx->writepdfmarks)
+        goto exit;
+
     /* Can't do this stuff with no Trailer */
     if (!ctx->Trailer)
         goto exit;
 
     /* Handle Outlines */
-    /* TODO: */
+    code = pdfi_doc_Outlines(ctx);
+    if (code < 0)
+        goto exit;
 
     /* Handle Info */
-    if (ctx->writepdfmarks) {
-        code = pdfi_doc_info(ctx);
-        if (code < 0)
-            goto exit;
-    }
+    code = pdfi_doc_Info(ctx);
+    if (code < 0)
+        goto exit;
 
     /* Handle OCProperties */
     /* TODO: */

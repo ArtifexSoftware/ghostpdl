@@ -291,11 +291,15 @@ int pdfi_dict_get_ref(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_indire
  * new object. This is for Resources following, such as Do, where we will have to seek and
  * read the indirect object anyway, and we need to ensure that Form XObjects (for example)
  * don't have circular calls.
+ *
+ * Takes either strKey or nameKey param. Other will be NULL.
  */
-int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o)
+static int pdfi_dict_get_no_store_R_inner(pdf_context *ctx, pdf_dict *d, const char *strKey,
+                                          const pdf_name *nameKey, pdf_obj **o)
 {
     int i=0, code;
     pdf_name *t;
+    bool match = false;
 
     *o = NULL;
 
@@ -306,7 +310,14 @@ int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const pdf_name *Key,
         t = (pdf_name *)d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (!pdfi_name_cmp((pdf_name *)t, Key)) {
+            if (strKey != NULL) {
+                if (!pdfi_name_is(t, strKey))
+                    match = true;
+            } else {
+                if (!pdfi_name_cmp(t, nameKey))
+                    match = true;
+            }
+            if (match) {
                 if (d->values[i]->type == PDF_INDIRECT) {
                     pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
 
@@ -322,6 +333,18 @@ int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const pdf_name *Key,
         }
     }
     return_error(gs_error_undefined);
+}
+
+/* Wrapper to pdfi_dict_no_store_R_inner(), takes a char * as Key */
+int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
+{
+    return pdfi_dict_get_no_store_R_inner(ctx, d, Key, NULL, o);
+}
+
+/* Wrapper to pdfi_dict_no_store_R_inner(), takes a pdf_name * as Key */
+int pdfi_dict_get_no_store_R_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o)
+{
+    return pdfi_dict_get_no_store_R_inner(ctx, d, NULL, Key, o);
 }
 
 /* Convenience routine for common case where there are two possible keys */

@@ -425,3 +425,79 @@ int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *link_dict, pdf_name *Dest_key,
     pdfi_countdown(dest_array);
     return code;
 }
+
+/* Special handling for "A" in Link annotations and Outlines */
+int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, pdf_name *A_key, pdf_name *subtype, bool *resolve)
+{
+    int code = 0;
+    pdf_dict *A_dict = NULL;
+    bool known;
+    pdf_name *S_name = NULL;
+    pdf_array *D_array = NULL;
+    bool delete_A = false;
+
+    *resolve = false;
+
+    if (!pdfi_name_is(subtype, "Link"))
+        return 0;
+
+    code = pdfi_dict_get(ctx, dict, "A", (pdf_obj **)&A_dict);
+    if (code < 0) goto exit;
+
+    if (A_dict->type != PDF_DICT) {
+        /* Invalid AP, just delete it because I dunno what to do...
+         * TODO: Should flag a warning here
+         */
+        delete_A = true;
+        goto exit;
+    }
+
+    /* Handle URI */
+    code = pdfi_dict_known(ctx, A_dict, "URI", &known);
+    if (code < 0) goto exit;
+    if (known) {
+        *resolve = true;
+        goto exit;
+    }
+
+    /* Handle S = GoTo */
+    /* TODO: this handles <</S /GoTo /D [dest array]>>
+     * Not sure if there are other cases to handle?
+     */
+    code = pdfi_dict_knownget_type(ctx, A_dict, "S", PDF_NAME, (pdf_obj **)&S_name);
+    if (code <= 0) goto exit;
+    /* We only handle GoTo for now */
+    if (pdfi_name_is(S_name, "GoTo")) {
+        code = pdfi_dict_knownget_type(ctx, A_dict, "D", PDF_ARRAY, (pdf_obj **)&D_array);
+        if (code == 0) goto exit;
+        if (code < 0) {
+            if (code == gs_error_typecheck) {
+                /* TODO: Are there other cases to handle? */
+            }
+            goto exit;
+        }
+        /* Process the D array to replace with /Page /View */
+        code = pdfi_mark_add_Page_View(ctx, dict, D_array);
+        if (code < 0) goto exit;
+        delete_A = true;
+    } else if (pdfi_name_is(S_name, "GoToR") || pdfi_name_is(S_name, "Launch")) {
+        /* TODO: I think we just leave this alone since it points out of doc? */
+        delete_A = false;
+        *resolve = true;
+        code = 0;
+    } else if (pdfi_name_is(S_name, "Named")) {
+        /* TODO: ? */
+        code = 0;
+    } else {
+        /* TODO: flag warning? */
+    }
+
+ exit:
+    if (delete_A) {
+        code = pdfi_dict_delete_pair(ctx, dict, A_key);
+    }
+    pdfi_countdown(A_dict);
+    pdfi_countdown(S_name);
+    pdfi_countdown(D_array);
+    return code;
+}

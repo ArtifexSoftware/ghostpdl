@@ -20,5 +20,6 @@
 
 int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const char *type);
 int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *dict, pdf_name *Dest_key, pdf_name *subtype);
+int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, pdf_name *A_key, pdf_name *subtype, bool *resolve);
 
 #endif
