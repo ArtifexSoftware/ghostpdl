@@ -307,7 +307,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
            setcachedevice - see pdfi_fapi_set_cache()
          */
         if (current_font->pdfi_font_type == e_pdf_font_type0 || current_font->Widths == NULL) {
-            text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+            text.operation = TEXT_FROM_STRING | TEXT_RETURN_WIDTH;
         } else {
             gs_point pt;
 
