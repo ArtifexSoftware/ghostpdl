@@ -512,11 +512,12 @@ int pdfi_Tj(pdf_context *ctx)
 
     gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
 
-    gs_distance_transform_inverse(linewidth, 0, &Trm, &pt);
-    ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
-
     gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
     gs_setmatrix(ctx->pgs, &Trm);
+
+    gs_distance_transform_inverse(ctx->pgs->line_params.half_width, 0, &Trm, &pt);
+    ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
+
     code = gs_moveto(ctx->pgs, 0, 0);
     if (code < 0)
         goto Tj_error;
@@ -544,6 +545,8 @@ Tj_error:
     gs_setmatrix(ctx->pgs, &saved);
     /* And restore the currentpoint */
     gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    /* And the line width */
+    ctx->pgs->line_params.half_width = linewidth;
 
     pdfi_pop(ctx, 1);
     return code;
@@ -558,6 +561,7 @@ int pdfi_TJ(pdf_context *ctx)
     gs_point pt;
     gs_matrix saved, Trm;
     gs_point initial_point, current_point;
+    double linewidth = ctx->pgs->line_params.half_width;
 
     /* TODO: for ken -- check pdfi_oc_is_off() and skip the actual rendering...
      * (see gs code pdf_ops.ps/TJ OFFlevels for appropriate logic)
@@ -594,6 +598,10 @@ int pdfi_TJ(pdf_context *ctx)
     gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
 
     gs_setmatrix(ctx->pgs, &Trm);
+
+    gs_distance_transform_inverse(ctx->pgs->line_params.half_width, 0, &Trm, &pt);
+    ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
+
     code = gs_moveto(ctx->pgs, 0, 0);
     if (code < 0)
         goto TJ_error;
@@ -648,6 +656,8 @@ TJ_error:
     gs_setmatrix(ctx->pgs, &saved);
     /* And restore the currentpoint */
     gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    /* And the line width */
+    ctx->pgs->line_params.half_width = linewidth;
 
     pdfi_pop(ctx, 1);
     return code;
