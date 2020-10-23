@@ -50,14 +50,14 @@ zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 
 /* Get a global glyph code.  */
 static int
-zfont_global_glyph_code(const gs_memory_t *mem, gs_const_string *gstr, gs_glyph *pglyph)
+zfont_global_glyph_code(const gs_font *pbfont, gs_const_string *gstr, gs_glyph *pglyph)
 {
     ref v;
-    int code = name_ref(mem, gstr->data, gstr->size, &v, 0);
+    int code = name_ref(pbfont->memory, gstr->data, gstr->size, &v, 0);
 
     if (code < 0)
         return code;
-    *pglyph = (gs_glyph)name_index(mem, &v);
+    *pglyph = (gs_glyph)name_index(pbfont->memory, &v);
     return 0;
 }
 

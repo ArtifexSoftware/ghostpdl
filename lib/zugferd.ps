@@ -14,7 +14,7 @@
 %
 % zugferd.ps
 % This program will create an (unsigned) ZUGFeRD compliant PDF file. In
-% order to do so the user must provide certain informatio, or edit this program.
+% order to do so the user must provide certain information, or edit this program.
 %
 % Required information is the path to the XML file containing the invoice data,
 % and the path to an ICC profile appropriate for the chosen ColorConversionStrategy.
@@ -24,13 +24,13 @@
 % The user must additionally set -dPDFA=3 and -sColorConversionStrategy on the
 % Ghostscript command line, and set the permissions for Ghostscript to read
 % both these files. It is simplest to put the files in a directory and then
-% permit reading of the entire directoty.
+% permit reading of the entire directory.
 %
 % Example command line :
 %
-% gs --permit-file-read=/usr/hoome/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3 -sColorConversionStrategy=RGB \
+% gs --permit-file-read=/usr/home/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3 -sColorConversionStrategy=RGB \
 %    -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml  -sZUGFeRDProfile=/usr/home/me/rgb.icc \
-%    -o /usr/home/me/zguferd/zugferd.pdf /usr/home/me/zugferd/zugferd.ps /usr/home/me/zugferd/original.pdf
+%    -o /usr/home/me/zugferd/zugferd.pdf /usr/home/me/zugferd/zugferd.ps /usr/home/me/zugferd/original.pdf
 %
 % Much of this program results from a Ghostscript bug report, the thread can be found at
 % https://bugs.ghostscript.com/show_bug.cgi?id=696472 Portions of the code below were
@@ -38,7 +38,7 @@
 % a solution for this problem as well as for the code he supplied, particularly for the
 % SimpleUTF16BE routine.
 %
-% It should not be necessary to modify this program, the comments int the code are there purely for information,
+% It should not be necessary to modify this program, the comments in the code are there purely for information,
 % but there are two areas which might reasonably be altered. The section with the --8<-- lines could be replaced
 % with a simpler /N 3 or /N 4 if you always intend to produce the same kind of files; RGB or CMYK.
 % In step 7, the large XML string will need to be replaced if you want to produce a ZUGFeRD 2.1
@@ -169,7 +169,7 @@ bind def
     [ /_objdef {InvoiceStream} /type /stream /OBJ pdfmark
 
     % Fill in the dictionary elements we need. We believe the
-    % ModDate is not useful so its just set to a valid value.
+    % ModDate is not useful so it's just set to a valid value.
     [ {InvoiceStream} <<
         /Type        /EmbeddedFile
         /Subtype    (text/xml) cvn
@@ -212,7 +212,7 @@ bind def
     [ {AFArray} {FSDict} /APPEND pdfmark
 
 
-    % Step 5 Add an entry in the Catalog cictioanry continaing the AF array
+    % Step 5 Add an entry in the Catalog dictionary containing the AF array
     [ {Catalog} << /AF {AFArray} >> /PUT pdfmark
 
 
@@ -296,9 +296,9 @@ bind def
     %
     (\nERROR - ZUGFeRDProfile has not been supplied, you must supply an ICC profile\n) print
     (        Producing a potentially invalid PDF/A file!!\n) print
-    (example usage -  gs --permit-file-read=/usr/hoome/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3\\\n) print
+    (example usage -  gs --permit-file-read=/usr/home/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3\\\n) print
     (         -sColorConversionStrategy=RGB -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml\\\n) print
-    (         -sZUGFeRDProfile=/usr/home/me/rgb.icc -o /usr/home/me/zguferd/zugferd.pdf\\\n) print
+    (         -sZUGFeRDProfile=/usr/home/me/rgb.icc -o /usr/home/me/zugferd/zugferd.pdf\\\n) print
     (         /usr/home/me/zugferd/zugferd.ps /usr/home/me/zugferd/original.pdf\n\n) print flush
   } ifelse
 }
@@ -307,9 +307,9 @@ bind def
   %
   (\nERROR - ZUGFeRDXMLFile has not been supplied, you must supply an XML invoice file\n) print
   (        Producing a PDF/A file not a ZUGFeRD file.\n) print
-  (example usage -  gs --permit-file-read=/usr/hoome/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3\\\n) print
+  (example usage -  gs --permit-file-read=/usr/home/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3\\\n) print
   (         -sColorConversionStrategy=RGB -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml\\\n) print
-  (         -sZUGFeRDProfile=/usr/home/me/rgb.icc -o /usr/home/me/zguferd/zugferd.pdf\\\n) print
+  (         -sZUGFeRDProfile=/usr/home/me/rgb.icc -o /usr/home/me/zugferd/zugferd.pdf\\\n) print
   (         /usr/home/me/zugferd/zugferd.ps /usr/home/me/zugferd/original.pdf\n\n) print flush
 } ifelse
 

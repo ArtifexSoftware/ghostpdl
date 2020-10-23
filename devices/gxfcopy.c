@@ -987,7 +987,7 @@ copied_type1_seac_data(gs_font_type1 * pfont, int ccode,
     code = gs_c_glyph_name(glyph, gstr);
     if (code < 0)
         return code;
-    code = pfont->dir->global_glyph_code(pfont->memory, gstr, &glyph1);
+    code = pfont->dir->global_glyph_code((gs_font *)pfont, gstr, &glyph1);
     if (code < 0)
         return code;
     if (pglyph)

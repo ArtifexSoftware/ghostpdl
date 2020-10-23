@@ -261,7 +261,7 @@ struct gs_font_dir_s {
     /* User parameter GridFitTT. */
     uint grid_fit_tt;
     gx_device_spot_analyzer *san;
-    int (*global_glyph_code)(const gs_memory_t *mem, gs_const_string *gstr, gs_glyph *pglyph);
+    int (*global_glyph_code)(const gs_font *pfont, gs_const_string *gstr, gs_glyph *pglyph);
     ulong text_enum_id; /* debug purpose only. */
 };
 
