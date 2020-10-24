@@ -693,10 +693,10 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     } else {
         saved_stream_offset = pdfi_unread_tell(ctx);
 
-        ctx->decrypt_strings = false;
-
         if (entry->compressed) {
             /* This is an object in a compressed object stream */
+            ctx->decrypt_strings = false;
+
             code = pdfi_deref_compressed(ctx, obj, gen, object, entry);
             if (code < 0)
                 goto error;
