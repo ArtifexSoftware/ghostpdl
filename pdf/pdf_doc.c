@@ -622,19 +622,100 @@ exit:
     return code;
 }
 
-/* Do pdfmark on an outline entry (recursive) */
+/* Count how many children an outline entry has
+ * This is separate just to keep the code from getting cluttered.
+ */
+static int pdfi_doc_outline_count(pdf_context *ctx, pdf_dict *outline, int64_t *count)
+{
+    int code = 0;
+    pdf_dict *child = NULL;
+    pdf_dict *Next = NULL;
+
+    /* Handle this outline entry */
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto exit1;
+
+    /* Count the children (don't deref them, we don't want to leave them hanging around) */
+    code = pdfi_dict_get_no_store_R(ctx, outline, "First", (pdf_obj **)&child);
+    if (code < 0 || child->type != PDF_DICT) {
+        /* TODO: flag a warning? */
+        code = 0;
+        goto exit;
+    }
+
+    if (child->object_num != 0) {
+        code = pdfi_loop_detector_add_object(ctx, child->object_num);
+        if (code < 0)
+            goto exit;
+    }
+
+    do {
+        (*count) ++;
+
+        code = pdfi_dict_get_no_store_R(ctx, child, "Next", (pdf_obj **)&Next);
+        if (code == gs_error_circular_reference) {
+            code = 0;
+            goto exit;
+        }
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+
+        if (code < 0 || Next->type != PDF_DICT)
+            goto exit;
+
+        pdfi_countdown(child);
+        child = Next;
+    } while (true);
+
+ exit:
+    (void)pdfi_loop_detector_cleartomark(ctx);
+ exit1:
+    pdfi_countdown(child);
+    pdfi_countdown(Next);
+    return code;
+}
+
+/* Do pdfmark on an outline entry (recursive)
+ * Note: the logic here is wonky.  It is relying on the behavior of the pdfwrite driver.
+ * See pdf_main.ps/writeoutline()
+ */
 static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
 {
     int code = 0;
-    int64_t Count;
+    int64_t count = 0;
+    int64_t numkids = 0;
     pdf_dict *child = NULL;
     pdf_dict *Next = NULL;
     pdf_dict *tempdict = NULL;
     uint64_t dictsize;
+    pdf_obj *tempobj = NULL;
+    bool resolve = false;
 
-    code = pdfi_dict_get_int(ctx, outline, "Count", &Count);
-    if (code < 0 && code != gs_error_undefined)
-        goto exit1;
+    /**** Handle the outline ****/
+    /* NOTE: I think the pdfmark for this needs to be written before the children
+     * because I think pdfwrite relies on the order of things.
+     * So this means we can't get the count of the kids from the loop farther down in
+     * the function, but need to do it here.
+     *
+     * Basically we only do /Count, /Title and /A
+     * The /First, /Last, /Next get written magically by pdfwrite (as far as I can tell)
+     */
+    /* Count how many kids there are */
+    code = pdfi_doc_outline_count(ctx, outline, &numkids);
+
+    /* If no kids, see if there is a Count */
+    if (numkids == 0) {
+        code = pdfi_dict_get_int(ctx, outline, "Count", &count);
+        if (code < 0 && code != gs_error_undefined)
+            goto exit1;
+        if (count < 0)
+            count = -count;
+    } else {
+        count = numkids;
+    }
 
     /* Make a temporary copy of the outline dict */
     dictsize = pdfi_dict_entries(outline);
@@ -642,17 +723,54 @@ static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
     if (code < 0) goto exit1;
     pdfi_countup(tempdict);
 
-    /* Handle this outline entry */
+    /* If count is non-zero, put in dictionary */
+    if (count != 0) {
+        code = pdfi_dict_put_int(ctx, tempdict, "Count", count);
+        if (code < 0)
+            goto exit1;
+    }
+
+    /* Put Title in tempdict */
+    code = pdfi_dict_knownget(ctx, outline, "Title", &tempobj);
+    if (code < 0)
+        goto exit1;
+    if (code > 0) {
+        code = pdfi_dict_put(ctx, tempdict, "Title", tempobj);
+        if (code < 0)
+            goto exit;
+    }
+    pdfi_countdown(tempobj);
+    tempobj = NULL;
+
+    /* Put A in tempdict */
+    code = pdfi_dict_knownget_type(ctx, outline, "A", PDF_DICT, &tempobj);
+    if (code < 0)
+        goto exit1;
+    if (code > 0) {
+        code = pdfi_dict_put(ctx, tempdict, "A", tempobj);
+        if (code < 0)
+            goto exit;
+        /* Turn it into a /Page /View */
+        code = pdfi_mark_modA(ctx, tempdict, &resolve);
+        if (code < 0)
+            goto exit;
+    }
+    pdfi_countdown(tempobj);
+    tempobj = NULL;
+
+    /* Write the pdfmark */
+    code = pdfi_mark_from_dict(ctx, tempdict, NULL, "OUT");
+    if (code < 0)
+        goto exit1;
+
+    /*** Handle the children ***/
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         goto exit1;
 
-    //    dmprintf1(ctx->memory, "Outline object %d\n", outline->object_num);
-
-
     /* Handle any children (don't deref them, we don't want to leave them hanging around) */
     code = pdfi_dict_get_no_store_R(ctx, outline, "First", (pdf_obj **)&child);
-    if (code <= 0 || child->type != PDF_DICT) {
+    if (code < 0 || child->type != PDF_DICT) {
         /* TODO: flag a warning? */
         code = 0;
         goto exit;
@@ -670,13 +788,15 @@ static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
 
 
         code = pdfi_dict_get_no_store_R(ctx, child, "Next", (pdf_obj **)&Next);
-        if (code == 0 || Next->type != PDF_DICT)
-            break;
-        if (code == gs_error_circular_reference) {
+        if (code == gs_error_undefined) {
             code = 0;
             break;
         }
-        if (code < 0)
+        if (code == gs_error_circular_reference) {
+            code = 0;
+            goto exit;
+        }
+        if (code < 0 || Next->type != PDF_DICT)
             goto exit;
 
         pdfi_countdown(child);
@@ -689,6 +809,7 @@ static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
     pdfi_countdown(child);
     pdfi_countdown(Next);
     pdfi_countdown(tempdict);
+    pdfi_countdown(tempobj);
     return code;
 }
 
@@ -714,8 +835,9 @@ static int pdfi_doc_Outlines(pdf_context *ctx)
     if (code < 0)
         goto exit1;
 
-    code = pdfi_dict_knownget_type(ctx, Outlines, "First", PDF_DICT, (pdf_obj **)&outline);
-    if (code <= 0) {
+    /* Handle any children (don't deref them, we don't want to leave them hanging around) */
+    code = pdfi_dict_get_no_store_R(ctx, Outlines, "First", (pdf_obj **)&outline);
+    if (code < 0 || outline->type != PDF_DICT) {
         /* TODO: flag a warning? */
         code = 0;
         goto exit;
@@ -737,14 +859,16 @@ static int pdfi_doc_Outlines(pdf_context *ctx)
         if (code < 0) goto exit;
 
 
-        code = pdfi_dict_knownget_type(ctx, outline, "Next", PDF_DICT, (pdf_obj **)&Next);
-        if (code == 0)
-            break;
-        if (code == gs_error_circular_reference) {
+        code = pdfi_dict_get_no_store_R(ctx, outline, "Next", (pdf_obj **)&Next);
+        if (code == gs_error_undefined) {
             code = 0;
             break;
         }
-        if (code < 0)
+        if (code == gs_error_circular_reference) {
+            code = 0;
+            goto exit;
+        }
+        if (code < 0 || outline->type != PDF_DICT)
             goto exit;
 
         pdfi_countdown(outline);
@@ -810,6 +934,8 @@ static int pdfi_doc_Info(pdf_context *ctx)
     code = pdfi_mark_from_dict(ctx, tempdict, NULL, "DOCINFO");
 
  exit:
+    pdfi_countdown(Key);
+    pdfi_countdown(Value);
     pdfi_countdown(Info);
     pdfi_countdown(tempdict);
     return code;

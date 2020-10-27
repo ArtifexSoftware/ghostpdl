@@ -3128,7 +3128,7 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
             code = pdfi_annot_preserve_modQP(ctx, tempdict, Key);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "A")) {
-            code = pdfi_mark_modA(ctx, tempdict, Key, subtype, &resolve);
+            code = pdfi_mark_modA(ctx, tempdict, &resolve);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "Dest")) {
             if (ctx->no_pdfmark_dests) {
@@ -3136,7 +3136,7 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
                 code = 0;
                 goto exit;
             }
-            code = pdfi_mark_modDest(ctx, tempdict, Key, subtype);
+            code = pdfi_mark_modDest(ctx, tempdict, subtype);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "StructTreeRoot")) {
             /* TODO: Bug691785 has Link annots with /StructTreeRoot

@@ -342,7 +342,7 @@ static int pdfi_mark_handle_dest_names(pdf_context *ctx, pdf_dict *link_dict,
 /* Special handling for "Dest" in Links
  * Will replace /Dest with /Page /View in link_dict (for pdfwrite)
  */
-int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *link_dict, pdf_name *Dest_key, pdf_name *subtype)
+int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *link_dict, pdf_name *subtype)
 {
     int code = 0;
     pdf_dict *Dests = NULL;
@@ -415,7 +415,7 @@ int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *link_dict, pdf_name *Dest_key,
  exit:
     if (delete_Dest) {
         /* Delete the Dest key */
-        code = pdfi_dict_delete_pair(ctx, link_dict, Dest_key);
+        code = pdfi_dict_delete(ctx, link_dict, "Dest");
         if (code < 0) goto exit;
     }
     pdfi_countdown(Dest);
@@ -426,8 +426,10 @@ int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *link_dict, pdf_name *Dest_key,
     return code;
 }
 
-/* Special handling for "A" in Link annotations and Outlines */
-int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, pdf_name *A_key, pdf_name *subtype, bool *resolve)
+/* Special handling for "A" in Link annotations and Outlines
+ * Will delete A if handled and if A_key is provided.
+ */
+int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, bool *resolve)
 {
     int code = 0;
     pdf_dict *A_dict = NULL;
@@ -437,9 +439,6 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, pdf_name *A_key, pdf_name *
     bool delete_A = false;
 
     *resolve = false;
-
-    if (!pdfi_name_is(subtype, "Link"))
-        return 0;
 
     code = pdfi_dict_get(ctx, dict, "A", (pdf_obj **)&A_dict);
     if (code < 0) goto exit;
@@ -472,7 +471,12 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, pdf_name *A_key, pdf_name *
         if (code == 0) goto exit;
         if (code < 0) {
             if (code == gs_error_typecheck) {
-                /* TODO: Are there other cases to handle? */
+                /* TODO: Are there other cases to handle?
+                 * Sample tests_private/pdf/sumatra/recursive_action_destinations.pdf
+                 * has a recursive destination that has an indirect ref here.  We return a
+                 * typecheck and that causes us to omit the whole thing, but is that
+                 * really the best treatment?
+                 */
             }
             goto exit;
         }
@@ -494,7 +498,7 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, pdf_name *A_key, pdf_name *
 
  exit:
     if (delete_A) {
-        code = pdfi_dict_delete_pair(ctx, dict, A_key);
+        code = pdfi_dict_delete(ctx, dict, "A");
     }
     pdfi_countdown(A_dict);
     pdfi_countdown(S_name);

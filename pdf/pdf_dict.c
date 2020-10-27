@@ -46,7 +46,9 @@ void pdfi_free_dict(pdf_obj *o)
     gs_free_object(OBJ_MEMORY(d), d, "pdf interpreter free dictionary");
 }
 
-int pdfi_dict_delete_pair(pdf_context *ctx, pdf_dict *d, pdf_name *n)
+/* Delete a key pair, either by specifying a char * or a pdf_name *
+ */
+static int pdfi_dict_delete_inner(pdf_context *ctx, pdf_dict *d, pdf_name *n, const char *str)
 {
     int i = 0;
 #ifdef DEBUG
@@ -57,8 +59,14 @@ int pdfi_dict_delete_pair(pdf_context *ctx, pdf_dict *d, pdf_name *n)
 #ifdef DEBUG
         name = (pdf_name *)d->keys[i];
 #endif
-        if (pdfi_name_cmp(n, (pdf_name *)d->keys[i]) == 0)
-            break;
+        if (n != NULL) {
+            if (pdfi_name_cmp(n, (pdf_name *)d->keys[i]) == 0)
+                break;
+        } else {
+            if (pdfi_name_is((pdf_name *)d->keys[i], str))
+                break;
+        }
+
     }
     if (i >= d->entries)
         return_error(gs_error_undefined);
@@ -73,6 +81,16 @@ int pdfi_dict_delete_pair(pdf_context *ctx, pdf_dict *d, pdf_name *n)
     d->values[i] = NULL;
     d->entries--;
     return 0;
+}
+
+int pdfi_dict_delete_pair(pdf_context *ctx, pdf_dict *d, pdf_name *n)
+{
+    return pdfi_dict_delete_inner(ctx, d, n, NULL);
+}
+
+int pdfi_dict_delete(pdf_context *ctx, pdf_dict *d, const char *str)
+{
+    return pdfi_dict_delete_inner(ctx, d, NULL, str);
 }
 
 int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen)
@@ -311,7 +329,7 @@ static int pdfi_dict_get_no_store_R_inner(pdf_context *ctx, pdf_dict *d, const c
 
         if (t && t->type == PDF_NAME) {
             if (strKey != NULL) {
-                if (!pdfi_name_is(t, strKey))
+                if (pdfi_name_is(t, strKey))
                     match = true;
             } else {
                 if (!pdfi_name_cmp(t, nameKey))
