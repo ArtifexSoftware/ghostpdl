@@ -36,8 +36,6 @@
 /****** THIS IS USELESS.  XGetImage DOES NOT GENERATE EXPOSURE EVENTS. ******/
 #define GET_IMAGE_EXPOSURES 0
 
-/* GC descriptors */
-private_st_device_X();
 
 /* Forward references */
 static int x_copy_image(gx_device_X * xdev, const byte * base, int sourcex,
@@ -239,6 +237,23 @@ const gx_device_X this_device = { \
         {0}			/* chars */ \
     } \
 };
+
+static void
+x_finalize(const gs_memory_t *cmem, void *vpdev)
+{
+    /* Do an actual close of the window. */
+    gx_device_X *xdev = (gx_device_X *)vpdev;
+
+    if (xdev->dpy) {
+        XCloseDisplay(xdev->dpy);
+        xdev->dpy = NULL;
+    }
+    gx_device_finalize(cmem, vpdev);
+}
+
+gs_public_st_suffix_add1_final(st_device_X, gx_device_X,
+    "gx_device_X", device_x_enum_ptrs, device_x_reloc_ptrs,
+    x_finalize, st_device_bbox, buffer);
 
 x_device(gs_x11_device,
          std_device_color_stype_body(gx_device_X, 0, "x11", &st_device_X,
