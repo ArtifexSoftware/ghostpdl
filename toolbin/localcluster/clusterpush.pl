@@ -73,7 +73,7 @@ while ($t1=shift) {
     $cull="cull";
   } elsif ($t1 eq "avx2") {
     $avx2="avx2";
-  } elsif ($t1 eq "nr" || $t1 eq "nonredundnat") {
+  } elsif ($t1 eq "nr" || $t1 eq "nonredundant") {
     $nr="nonredundant";
   } elsif ($t1 eq "pdfwrite" || $t1 eq "ps2write" || $t1 eq "xpswrite") {
     $pdfwrite="pdfwrite";
