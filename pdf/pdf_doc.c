@@ -689,8 +689,8 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
     pdf_obj *tempobj = NULL;
     bool resolve = false;
 
-    /* Basically we only do /Count, /Title and /A
-     * The /First, /Last, /Next get written magically by pdfwrite (as far as I can tell)
+    /* Basically we only do /Count, /Title, /A, /C, /F
+     * The /First, /Last, /Next, /Parent get written magically by pdfwrite
      */
     /* Count how many kids there are */
     code = pdfi_doc_outline_count(ctx, outline, &numkids);
@@ -739,6 +739,15 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
     code = pdfi_dict_knownget(ctx, outline, "C", &tempobj);
     if (code > 0)
         code = pdfi_dict_put(ctx, tempdict, "C", tempobj);
+    if (code < 0)
+        goto exit;
+    pdfi_countdown(tempobj);
+    tempobj = NULL;
+
+    /* Put F in tempdict */
+    code = pdfi_dict_knownget(ctx, outline, "F", &tempobj);
+    if (code > 0)
+        code = pdfi_dict_put(ctx, tempdict, "F", tempobj);
     if (code < 0)
         goto exit;
     pdfi_countdown(tempobj);
