@@ -2757,7 +2757,7 @@ pdf_close(gx_device * dev)
             if (code >= 0)
                 code = code1;
             pdf_open_obj(pdev, pdev->outlines_id, resourceOutline);
-            pprintd1(s, "<< /Count %d", pdev->outlines_open);
+            pprintd1(s, "<< /Type /Outlines /Count %d", pdev->outlines_open);
             pprintld2(s, " /First %ld 0 R /Last %ld 0 R >>\n",
                   pdev->outline_levels[0].first.id,
                   pdev->outline_levels[0].last.id);
