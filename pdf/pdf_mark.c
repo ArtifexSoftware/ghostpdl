@@ -342,7 +342,7 @@ static int pdfi_mark_handle_dest_names(pdf_context *ctx, pdf_dict *link_dict,
 /* Special handling for "Dest" in Links
  * Will replace /Dest with /Page /View in link_dict (for pdfwrite)
  */
-int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *link_dict, pdf_name *subtype)
+int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *link_dict)
 {
     int code = 0;
     pdf_dict *Dests = NULL;
@@ -351,9 +351,6 @@ int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *link_dict, pdf_name *subtype)
     pdf_array *dest_array = NULL;
     pdf_array *Names = NULL;
     pdf_dict *Names_dict = NULL;
-
-    if (!pdfi_name_is(subtype, "Link"))
-        return 0;
 
     code = pdfi_dict_get(ctx, link_dict, "Dest", (pdf_obj **)&Dest);
     if (code < 0) goto exit;

@@ -678,29 +678,18 @@ static int pdfi_doc_outline_count(pdf_context *ctx, pdf_dict *outline, int64_t *
     return code;
 }
 
-/* Do pdfmark on an outline entry (recursive)
- * Note: the logic here is wonky.  It is relying on the behavior of the pdfwrite driver.
- * See pdf_main.ps/writeoutline()
- */
-static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
+/* Mark the actual outline */
+static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
 {
     int code = 0;
     int64_t count = 0;
     int64_t numkids = 0;
-    pdf_dict *child = NULL;
-    pdf_dict *Next = NULL;
     pdf_dict *tempdict = NULL;
     uint64_t dictsize;
     pdf_obj *tempobj = NULL;
     bool resolve = false;
 
-    /**** Handle the outline ****/
-    /* NOTE: I think the pdfmark for this needs to be written before the children
-     * because I think pdfwrite relies on the order of things.
-     * So this means we can't get the count of the kids from the loop farther down in
-     * the function, but need to do it here.
-     *
-     * Basically we only do /Count, /Title and /A
+    /* Basically we only do /Count, /Title and /A
      * The /First, /Last, /Next get written magically by pdfwrite (as far as I can tell)
      */
     /* Count how many kids there are */
@@ -710,60 +699,109 @@ static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
     if (numkids == 0) {
         code = pdfi_dict_get_int(ctx, outline, "Count", &count);
         if (code < 0 && code != gs_error_undefined)
-            goto exit1;
+            goto exit;
         if (count < 0)
             count = -count;
     } else {
         count = numkids;
     }
 
+    /* NOTE: I am just grabbing the keys I want, rather than walking through
+     * the whole dictionary.  If you walk through the whole dictionary you
+     * will likely trigger some circular references because of the /Parent
+     * keys and stuff.  There are ways around that, but not worth the trouble
+     * for this case.
+     */
+
     /* Make a temporary copy of the outline dict */
     dictsize = pdfi_dict_entries(outline);
     code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
-    if (code < 0) goto exit1;
+    if (code < 0) goto exit;
     pdfi_countup(tempdict);
 
     /* If count is non-zero, put in dictionary */
     if (count != 0) {
         code = pdfi_dict_put_int(ctx, tempdict, "Count", count);
         if (code < 0)
-            goto exit1;
+            goto exit;
     }
 
     /* Put Title in tempdict */
     code = pdfi_dict_knownget(ctx, outline, "Title", &tempobj);
-    if (code < 0)
-        goto exit1;
-    if (code > 0) {
+    if (code > 0)
         code = pdfi_dict_put(ctx, tempdict, "Title", tempobj);
-        if (code < 0)
-            goto exit;
-    }
+    if (code < 0)
+        goto exit;
+    pdfi_countdown(tempobj);
+    tempobj = NULL;
+
+    /* Put C in tempdict */
+    code = pdfi_dict_knownget(ctx, outline, "C", &tempobj);
+    if (code > 0)
+        code = pdfi_dict_put(ctx, tempdict, "C", tempobj);
+    if (code < 0)
+        goto exit;
     pdfi_countdown(tempobj);
     tempobj = NULL;
 
     /* Put A in tempdict */
     code = pdfi_dict_knownget_type(ctx, outline, "A", PDF_DICT, &tempobj);
-    if (code < 0)
-        goto exit1;
     if (code > 0) {
         code = pdfi_dict_put(ctx, tempdict, "A", tempobj);
         if (code < 0)
             goto exit;
         /* Turn it into a /Page /View */
         code = pdfi_mark_modA(ctx, tempdict, &resolve);
+    }
+    if (code < 0)
+        goto exit;
+    pdfi_countdown(tempobj);
+    tempobj = NULL;
+
+    /* Put Dest in tempdict */
+    code = pdfi_dict_knownget(ctx, outline, "Dest", &tempobj);
+    if (code > 0) {
+        code = pdfi_dict_put(ctx, tempdict, "Dest", tempobj);
         if (code < 0)
             goto exit;
+        /* Turn it into a /Page /View */
+        code = pdfi_mark_modDest(ctx, tempdict);
     }
+    if (code < 0)
+        goto exit;
     pdfi_countdown(tempobj);
     tempobj = NULL;
 
     /* Write the pdfmark */
     code = pdfi_mark_from_dict(ctx, tempdict, NULL, "OUT");
     if (code < 0)
+        goto exit;
+
+ exit:
+    pdfi_countdown(tempdict);
+    pdfi_countdown(tempobj);
+    return code;
+}
+
+/* Do pdfmark on an outline entry (recursive)
+ * Note: the logic here is wonky.  It is relying on the behavior of the pdfwrite driver.
+ * See pdf_main.ps/writeoutline()
+ */
+static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
+{
+    int code = 0;
+    pdf_dict *child = NULL;
+    pdf_dict *Next = NULL;
+
+    /* Mark the outline */
+    /* NOTE: I think the pdfmark for this needs to be written before the children
+     * because I think pdfwrite relies on the order of things.
+     */
+    code = pdfi_doc_mark_the_outline(ctx, outline);
+    if (code < 0)
         goto exit1;
 
-    /*** Handle the children ***/
+    /* Handle the children */
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         goto exit1;
@@ -808,8 +846,6 @@ static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
  exit1:
     pdfi_countdown(child);
     pdfi_countdown(Next);
-    pdfi_countdown(tempdict);
-    pdfi_countdown(tempobj);
     return code;
 }
 
