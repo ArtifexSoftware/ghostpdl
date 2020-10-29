@@ -686,7 +686,8 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
     int64_t numkids = 0;
     pdf_dict *tempdict = NULL;
     uint64_t dictsize;
-    pdf_obj *tempobj = NULL;
+    uint64_t index;
+    pdf_name *Key = NULL;
     bool resolve = false;
 
     /* Basically we only do /Count, /Title, /A, /C, /F
@@ -706,18 +707,50 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
         count = numkids;
     }
 
-    /* NOTE: I am just grabbing the keys I want, rather than walking through
-     * the whole dictionary.  If you walk through the whole dictionary you
-     * will likely trigger some circular references because of the /Parent
-     * keys and stuff.  There are ways around that, but not worth the trouble
-     * for this case.
-     */
-
     /* Make a temporary copy of the outline dict */
     dictsize = pdfi_dict_entries(outline);
     code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
     if (code < 0) goto exit;
     pdfi_countup(tempdict);
+    code = pdfi_dict_copy(ctx, tempdict, outline);
+    if (code < 0) goto exit;
+
+    /* Go through the dict, removing some keys and doing special handling for others.
+     */
+    code = pdfi_dict_key_first(ctx, outline, (pdf_obj **)&Key, &index);
+    while (code >= 0) {
+        if (pdfi_name_is(Key, "Last") || pdfi_name_is(Key, "Next") || pdfi_name_is(Key, "First") ||
+            pdfi_name_is(Key, "Prev") || pdfi_name_is(Key, "Parent")) {
+            /* Delete some keys
+             * These are handled in pdfwrite and can lead to circular refs
+             */
+            code = pdfi_dict_delete_pair(ctx, tempdict, Key);
+        } else if (pdfi_name_is(Key, "SE")) {
+            /* TODO: Not sure what to do with SE, delete for now */
+            code = pdfi_dict_delete_pair(ctx, tempdict, Key);
+        } else if (pdfi_name_is(Key, "A")) {
+            code = pdfi_mark_modA(ctx, tempdict, &resolve);
+        } else if (pdfi_name_is(Key, "Dest")) {
+            code = pdfi_mark_modDest(ctx, tempdict);
+        } else if (pdfi_name_is(Key, "Count")) {
+            /* Delete any count we find in the dict
+             * We will use our value below
+             */
+            code = pdfi_dict_delete_pair(ctx, tempdict, Key);
+        }
+        if (code < 0)
+            goto exit;
+
+        pdfi_countdown(Key);
+        Key = NULL;
+
+        code = pdfi_dict_key_next(ctx, outline, (pdf_obj **)&Key, &index);
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+    }
+    if (code < 0) goto exit;
 
     /* If count is non-zero, put in dictionary */
     if (count != 0) {
@@ -726,61 +759,6 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
             goto exit;
     }
 
-    /* Put Title in tempdict */
-    code = pdfi_dict_knownget(ctx, outline, "Title", &tempobj);
-    if (code > 0)
-        code = pdfi_dict_put(ctx, tempdict, "Title", tempobj);
-    if (code < 0)
-        goto exit;
-    pdfi_countdown(tempobj);
-    tempobj = NULL;
-
-    /* Put C in tempdict */
-    code = pdfi_dict_knownget(ctx, outline, "C", &tempobj);
-    if (code > 0)
-        code = pdfi_dict_put(ctx, tempdict, "C", tempobj);
-    if (code < 0)
-        goto exit;
-    pdfi_countdown(tempobj);
-    tempobj = NULL;
-
-    /* Put F in tempdict */
-    code = pdfi_dict_knownget(ctx, outline, "F", &tempobj);
-    if (code > 0)
-        code = pdfi_dict_put(ctx, tempdict, "F", tempobj);
-    if (code < 0)
-        goto exit;
-    pdfi_countdown(tempobj);
-    tempobj = NULL;
-
-    /* Put A in tempdict */
-    code = pdfi_dict_knownget_type(ctx, outline, "A", PDF_DICT, &tempobj);
-    if (code > 0) {
-        code = pdfi_dict_put(ctx, tempdict, "A", tempobj);
-        if (code < 0)
-            goto exit;
-        /* Turn it into a /Page /View */
-        code = pdfi_mark_modA(ctx, tempdict, &resolve);
-    }
-    if (code < 0)
-        goto exit;
-    pdfi_countdown(tempobj);
-    tempobj = NULL;
-
-    /* Put Dest in tempdict */
-    code = pdfi_dict_knownget(ctx, outline, "Dest", &tempobj);
-    if (code > 0) {
-        code = pdfi_dict_put(ctx, tempdict, "Dest", tempobj);
-        if (code < 0)
-            goto exit;
-        /* Turn it into a /Page /View */
-        code = pdfi_mark_modDest(ctx, tempdict);
-    }
-    if (code < 0)
-        goto exit;
-    pdfi_countdown(tempobj);
-    tempobj = NULL;
-
     /* Write the pdfmark */
     code = pdfi_mark_from_dict(ctx, tempdict, NULL, "OUT");
     if (code < 0)
@@ -788,7 +766,7 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
 
  exit:
     pdfi_countdown(tempdict);
-    pdfi_countdown(tempobj);
+    pdfi_countdown(Key);
     return code;
 }
 
