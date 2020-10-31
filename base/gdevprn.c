@@ -265,7 +265,7 @@ BACKTRACE(pdev);
 open_c:
     ppdev->buf = base;
     ppdev->buffer_space = space;
-    pclist_dev->common.orig_spec_op = dev_proc(ppdev, dev_spec_op);
+    pclist_dev->common.orig_spec_op = gdev_prn_dev_spec_op;
     clist_init_io_procs(pclist_dev, ppdev->BLS_force_memory);
     clist_init_params(pclist_dev, base, space, target,
                       ppdev->printer_procs.buf_procs,
