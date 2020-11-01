@@ -379,7 +379,7 @@ clist_init_states(gx_device * dev, byte * init_data, uint data_size)
     cdev->cend = init_data + data_size;
     init_data +=  alignment;
     cdev->states = (gx_clist_state *) init_data;
-    cdev->band_range_list =  init_data + state_size;
+    cdev->band_range_list =  (cmd_list *)(init_data + state_size);
     cdev->cbuf = init_data + state_size + sizeof(cmd_list);
     return 0;
 }

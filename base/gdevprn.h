@@ -141,7 +141,7 @@ typedef struct bg_print_s {
         bool file_is_new;		/* true iff file just opened */\
         gp_file *file;  		/* output file */\
         bool bg_print_requested;	/* request background printing of page from clist */\
-        bg_print_t bg_print;            /* background printing data shared with thread */\
+        bg_print_t *bg_print;           /* background printing data shared with thread */\
         int num_render_threads_requested;	/* for multiple band rendering threads */\
         gx_saved_pages_list *saved_pages_list;	/* list when we are saving pages instead of printing */\
         gx_device_procs save_procs_while_delaying_erasepage	/* save device procs while delaying erasepage. */
@@ -309,7 +309,7 @@ extern const gx_device_procs prn_bg_procs;
         0/*false*/,	/* file_is_new */\
         0,	        /* *file */\
         0/*false*/,	/* bg_print_requested */\
-        {  0/*sema*/, 0/*device*/, 0/*thread_id*/, 0/*num_copies*/, 0/*return_code*/ }, /* bg_print */\
+        0,              /* *bg_print */\
         0, 		/* num_render_threads_requested */\
         0,              /* saved_pages_list */\
         { 0 }           /* save_procs_while_delaying_erasepage */

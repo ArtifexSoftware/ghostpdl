@@ -365,7 +365,7 @@ const gx_device_bit gs_bitrgbtags_device =
         false, /* file_is_new */
         NULL,  /* file */
         false, /* bg_print_requested */
-        {0},   /* bg_print */
+        0,     /* bg_print *  */
         0,     /* num_render_threads_requested */
         NULL,  /* saved_pages_list */
         {0}    /* save_procs_while_delaying_erasepage */
