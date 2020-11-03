@@ -284,7 +284,7 @@ currentdict /runpdfstring .undef
 {
   systemdict /FirstPage known
   systemdict /LastPage known or
-  systemdict /Pagelist known or
+  systemdict /PageList known or
   {
       <</DisablePageHandler //true>> setpagedevice
   } if
@@ -294,7 +294,7 @@ currentdict /runpdfstring .undef
 {
   systemdict /FirstPage known
   systemdict /LastPage known or
-  systemdict /Pagelist known or
+  systemdict /PageList known or
   {
       <</DisablePageHandler //false>> setpagedevice
   } if
@@ -388,9 +388,8 @@ currentdict /runpdfstring .undef
            2 2 pdfpagecount {
              PDFPageList exch 1 put
            } for
-           1 pdfpagecount
            QUIET not {
-             (Processing even-numbered pages\n) print
+             (Processing even-numbered pages\n) print (1 through ) print pdfpagecount =only
              (.) = flush
            } if
        } {
@@ -402,9 +401,8 @@ currentdict /runpdfstring .undef
            1 2 pdfpagecount {
              PDFPageList exch 1 put
            } for
-           1 pdfpagecount
            QUIET not {
-             (Processing odd-numbered pages\n) print 1 index =only ( through ) print dup =only
+             (Processing odd-numbered pages\n) print (1 through ) print pdfpagecount =only
              (.) = flush
            } if
          } {
