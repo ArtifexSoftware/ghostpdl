@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $verbose=0;
 
-# bmpcmp usage: [gs] [pcl] [xps] [mupdf] [mujstest] [murun] [mudrawpy] [runtests] [bmpcmp] [arm] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [nopdfwrite] [relaxtimeout] [extended] [smoke] [cull] [avx2] [$user] | abort
+# bmpcmp usage: [gs] [pcl] [xps] [mupdf] [mujstest] [murun] [mudrawpy] [runtests] [extract] [bmpcmp] [arm] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [nopdfwrite] [relaxtimeout] [extended] [smoke] [cull] [avx2] [$user] | abort
 
 
 
@@ -25,7 +25,8 @@ my %products=('abort' =>1,
               'mujstest'=>1,
               'murun'=>1,
               'mudrawpy'=>1,
-              'runtests'=>1);
+              'runtests'=>1,
+              'extract'=>1);
 
 my $user;
 my $product="";
@@ -138,8 +139,17 @@ my $directory=`pwd`;
 chomp $directory;
 
 $directory =~ s|.+/||;
-if ($directory ne 'gs' && $directory ne 'ghostpdl' && $directory ne 'mupdf' && $directory ne 'ghostpdl.git' && $directory ne 'mupdf.git') {
+if ($directory ne 'gs' &&
+    $directory ne 'ghostpdl' &&
+    $directory ne 'mupdf' &&
+    $directory ne 'ghostpdl.git' &&
+    $directory ne 'mupdf.git' &&
+    $directory ne 'extract' &&
+    $directory ne 'extract.git') {
   $directory="";
+  if (-f "include/extract.h") {
+    $directory='extract';
+  }
   if (-d "base" && -d "Resource") {
     $directory='gs';
   }
@@ -154,11 +164,13 @@ if ($directory ne 'gs' && $directory ne 'ghostpdl' && $directory ne 'mupdf' && $
 #$directory="gs" if ($directory eq "" && $product eq "bmpcmp");
 $directory="gs" if ($directory eq "" && $product && $product eq "abort");
 
-die "can't figure out if this is a ghostpdl, gs, or mupdf source directory" if ($directory eq "");
+die "can't figure out if this is a ghostpdl, gs, mupdf or extract source directory" if ($directory eq "");
 
 if (!$product) {
   if ($directory eq 'mupdf') {
     $product='mupdf';
+  } elsif ($directory eq 'extract') {
+    $product='extract';
   } else {
     $product='gs pcl xps gpdl'
   }
