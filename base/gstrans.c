@@ -348,7 +348,11 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
     tgp.group_opacity = pparams->opacity;
     tgp.group_shape = pparams->shape;
 
-    pgs->blend_mode = pparams->blend_mode;
+    if (tgp.Knockout && tgp.text_group == PDF14_TEXTGROUP_BT_PUSHED &&
+        ((pgs->overprint && pgs->is_fill_color) || (pgs->stroke_overprint && !pgs->is_fill_color)))
+        pgs->blend_mode = BLEND_MODE_CompatibleOverprint;
+    else
+        pgs->blend_mode = pparams->blend_mode;
     bbox = pparams->bbox;
 #ifdef DEBUG
     if (gs_debug_c('v')) {

@@ -590,6 +590,7 @@ struct spec_op_s {
 spec_op_t spec_op_defs[] = {
     {(char *)"GetDeviceParam", 0},
     {(char *)"EventInfo", 1},
+    {(char *)"SupportsDevn", 2},
 };
 
 /* <any> <any> .... /spec_op name .special_op <any> <any> .....
@@ -684,8 +685,8 @@ zspec_op(i_ctx_t *i_ctx_p)
                 stack_param_list list;
                 dev_param_req_t request;
                 ref rkeys;
-                /* Get a single device parameter, we should be supplied with
-                 * the name of the paramter, as a name object.
+                /* EventInfo we should be supplied with a name object which we
+                 * pass as the event info to the dev_spec_op
                  */
                 check_op(1);
                 if (!r_has_type(op, t_name))
@@ -721,6 +722,19 @@ zspec_op(i_ctx_t *i_ctx_p)
                     } else
                         return_error(code);
                 }
+            }
+            break;
+        case 2:
+            {
+                /* SupportsDevn. Return the boolean from the device */
+
+                code = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
+                if (code < 0 && code != gs_error_undefined)
+                    return_error(code);		/* any other error leaves the stack unchanged */
+
+                op = osp;
+                push(1);
+                make_bool(op, code > 0 ? 1 : 0);	/* return true/false */
             }
             break;
         default:

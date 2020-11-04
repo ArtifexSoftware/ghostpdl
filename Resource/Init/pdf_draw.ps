@@ -2308,6 +2308,12 @@ currentdict /last-ditch-bpc-csp undef
          % code only picks up the current colour space, not the space from the dictionary.
          currentdict /SMask get /Matte known {/CS currentdict /ColorSpace get dup pdfopdict /cs get exec } if
       >> 0 0 1 1
+      gsave 1 1 moveto 0 0 lineto
+      % If we get an error, just emit an empty box
+      { pathbbox } stopped { 0 0 0 0 } if
+      4 array astore grestore
+      /image
+      setup_trans
       .begintransparencygroup
       .currentstrokeconstantalpha .currentfillconstantalpha 3 -1 roll
       1 .setfillconstantalpha 1 .setstrokeconstantalpha
@@ -2409,12 +2415,6 @@ currentdict /last-ditch-bpc-csp undef
       makemaskimage
   } if
                 % Stack: datasource imagemask
-  gsave 1 1 moveto 0 0 lineto
-  % If we get an error, just emit an empty box
-  { pathbbox } stopped { 0 0 0 0 } if
-  4 array astore grestore
-  /image
-  setup_trans
   { currentdict end setsmaskstate //true ValidateDecode { imagemask } }
   { ColorSpace setgcolorspace currentdict end setsmaskstate //false ValidateDecode { image } }
   ifelse
@@ -3008,6 +3008,12 @@ drawopdict begin
     /File PDFsource def
     currentdict makeimagekeys
     OFFlevels length 0 eq {
+      gsave 1 1 moveto 0 0 lineto
+      % If we get an error, just emit an empty box
+      { pathbbox } stopped { 0 0 0 0 } if
+      4 array astore grestore
+      /image
+      setup_trans
       doimage
     } {
       pop Width
