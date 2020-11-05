@@ -5457,7 +5457,8 @@ currentdict /drawannottypes undef
     //false
 } bind executeonly def
 
-/Movie {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
+%% We don't handle movies correctly, so don't try to preserve them
+%/Movie {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
 /Popup {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
 /Sound {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
 /Square {mark exch loadannot /ANN pdfmark //false} bind executeonly def
