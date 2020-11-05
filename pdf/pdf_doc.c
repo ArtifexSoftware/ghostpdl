@@ -727,6 +727,10 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
             code = pdfi_dict_delete_pair(ctx, tempdict, Key);
         } else if (pdfi_name_is(Key, "SE")) {
             /* TODO: Not sure what to do with SE, delete for now */
+            /* Seems to be okay to just delete it, since there should also be a /Dest
+             * See sample fts_29_2903.pdf
+             * Currently we are same as gs
+             */
             code = pdfi_dict_delete_pair(ctx, tempdict, Key);
         } else if (pdfi_name_is(Key, "A")) {
             code = pdfi_mark_modA(ctx, tempdict, &resolve);

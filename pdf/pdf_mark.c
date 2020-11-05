@@ -482,13 +482,52 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, bool *resolve)
         if (code < 0) goto exit;
         delete_A = true;
     } else if (pdfi_name_is(S_name, "GoToR") || pdfi_name_is(S_name, "Launch")) {
-        /* TODO: I think we just leave this alone since it points out of doc? */
+        /* TODO: I think we just leave this alone since it points out of doc?
+         * Currently this is same behavior as gs, but it is not correct behavior.
+         * In at least some cases we could do better, for example if the doc
+         * pointed to happens to be the same file.
+         * Sample: fts_28_2808.pdf
+         */
         delete_A = false;
         *resolve = true;
         code = 0;
     } else if (pdfi_name_is(S_name, "Named")) {
-        /* TODO: ? */
+        /* We can just pass this through and it will work fine
+         * This should be a name like "FirstPage" or "LastPage".
+         * Note: gs implementation translates into page numbers and also has some bugs...
+         * Sample: fts_33_3310.pdf
+         */
+        delete_A = false;
         code = 0;
+    } else if (pdfi_name_is(S_name, "GoToE")) {
+        /* TODO: ??
+         * File: fts_33_3303.pdf
+         */
+    } else if (pdfi_name_is(S_name, "Thread")) {
+        /* TODO: For basically all of these below, I think just need to preserve
+         * any references and streams and pass it all through.
+         * File: fts_33_3305.pdf fts_33_3317.pdf
+         */
+    } else if (pdfi_name_is(S_name, "Sound")) {
+        /* TODO: ??
+         * File: fts_33_3307.pdf
+         */
+    } else if (pdfi_name_is(S_name, "Movie")) {
+        /* TODO: ??
+         * File: fts_33_3308.pdf
+         */
+    } else if (pdfi_name_is(S_name, "GoTo3DView")) {
+        /* TODO: ??
+         * File: fts_33_3318.pdf
+         */
+    } else if (pdfi_name_is(S_name, "RichMediaExecute")) {
+        /* TODO: ??
+         * File: fts_33_3319.pdf
+         */
+    } else if (pdfi_name_is(S_name, "Rendition")) {
+        /* TODO: make sure to pass through accurately?
+         * File: fts_07_0709.pdf fts_33_3316.pdf
+         */
     } else {
         /* TODO: flag warning? */
     }
