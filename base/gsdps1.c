@@ -206,7 +206,12 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
     code = gx_set_dev_color(pgs);
     if (code != 0)
         return code;
-    if ((is_fzero2(pgs->ctm.xy, pgs->ctm.yx) ||
+
+    if ( !(pgs->device->page_uses_transparency ||
+          dev_proc(pgs->device, dev_spec_op)(pgs->device,
+              gxdso_is_pdf14_device, &(pgs->device),
+              sizeof(pgs->device))) &&
+        (is_fzero2(pgs->ctm.xy, pgs->ctm.yx) ||
          is_fzero2(pgs->ctm.xx, pgs->ctm.yy)) &&
         gx_effective_clip_path(pgs, &pcpath) >= 0 &&
         clip_list_is_rectangle(gx_cpath_list(pcpath)) &&
