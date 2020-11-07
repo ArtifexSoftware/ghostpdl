@@ -160,6 +160,25 @@
   } ifelse
 } bind executeonly odef
 
+% Perform anchorsearch on the strings in the array until a match is found.
+/anchorsearchforany { % haystack [needle1 ...] --> post needle true
+                      %                        --> haystack false
+    false 3 1 roll    % false haystack [...]
+    {                 % false haystack needle
+      dup 3 1 roll    % false needle haystack needle
+      anchorsearch {
+                      % false needle post needle
+        pop           % false needle post
+        3 1 roll      % post false needle
+        exch not exch % post true needle
+        exit
+      } {
+                      % false needle haystack
+        exch pop      % false haystack
+      } ifelse
+    } forall
+    exch              % haystack false | post needle true
+} bind def
 
 /ProcessEPSComment { % file comment --  file comment
   /EPSBoundingBoxState .systemvar 3 lt {
@@ -213,7 +232,8 @@
           } ifelse
         } ifelse
     } {
-      (%%EndComments) anchorsearch {
+      {(%%EndComments) (%%BeginProlog) (%%BeginSetup)} anchorsearchforany {
+        EPSDEBUG { (EPSComment processing finished, encountered: ) print dup = } if
         pop pop	% discard the strings from the anchorsearch
         % We may have seen BoundingBox or HiResBounfingBox. If so and if EPSFitPage
         % is set, then we do the transformation here to scale and center the page,
