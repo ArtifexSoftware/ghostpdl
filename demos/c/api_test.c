@@ -78,26 +78,10 @@ typedef struct {
     const char *fname;
 } teststate_t;
 
-/* Some funky code for hiding pointers */
 #ifdef HIDE_POINTERS
-#define MAX_POINTERS 16384
-void *hidden_pointers[MAX_POINTERS] = { NULL };
-int num_hidden_pointers = 1;
-
 void *hide_pointer(void *p)
 {
-    int i;
-
-    for (i = 0; i < num_hidden_pointers; i++)
-        if (hidden_pointers[i] == p)
-	  return (void *)(intptr_t)i;
-
-    if (i == MAX_POINTERS)
-        return (void *)(intptr_t)i;
-
-    hidden_pointers[num_hidden_pointers++] = p;
-
-    return (void *)(intptr_t)i;
+    return (p == NULL) ? NULL : (void *)1;
 }
 
 #define PTR(p) hide_pointer(p)
