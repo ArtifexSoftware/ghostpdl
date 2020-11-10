@@ -1041,28 +1041,21 @@ int pdfi_merge_dicts(pdf_context *ctx, pdf_dict *target, pdf_dict *source)
     return 0;
 }
 
-/* Check if dict is a stream
- * It's a stream if it has a non-zero stream_offset (indicating it had a stream token)
- *
- * This also finds and catches the Length, if it is present
- *
- * Since dicts get created in various ways, we do a lazy-evaluation on whether there is a
- * Length key, then cache it in the object so we don't have to check next time.
+/* Return Length of a stream, or 0 if it's not a stream
+ * Caches the Length
  */
-bool pdfi_dict_is_stream(pdf_context *ctx, pdf_dict *d)
+int64_t pdfi_stream_length(pdf_context *ctx, pdf_stream *stream)
 {
     int64_t Length = 0;
     int code;
 
-    if (d->type != PDF_DICT)
-        return_error(gs_error_typecheck);
+    if (stream->type != PDF_STREAM)
+        return 0;
 
-    if (d->length_valid)
-        goto exit;
+    if (stream->length_valid)
+        return stream->Length;
 
-    d->is_stream = (d->stream_offset != 0);
-
-    code = pdfi_dict_get_int(ctx, d, "Length", &Length);
+    code = pdfi_dict_get_int(ctx, stream->stream_dict, "Length", &Length);
     if (code < 0)
         Length = 0;
 
@@ -1071,20 +1064,31 @@ bool pdfi_dict_is_stream(pdf_context *ctx, pdf_dict *d)
         Length = 0;
 
     /* Cache it */
-    d->Length = Length;
-    d->length_valid = true;
+    stream->Length = Length;
+    stream->length_valid = true;
 
- exit:
-    return d->is_stream;
+    return 0;
 }
 
-/* Return Length of a stream, or 0 if it's not a stream
- * Note that a stream is just a dict with a Length.
+/* Safely get offset from a stream object.
+ * If it's not actually a stream, just return 0.
  */
-int64_t pdfi_dict_stream_length(pdf_context *ctx, pdf_dict *d)
+gs_offset_t pdfi_stream_offset(pdf_context *ctx, pdf_stream *stream)
 {
-    if (pdfi_dict_is_stream(ctx, d))
-        return d->Length;
-    else
+    if (stream->type != PDF_STREAM)
         return 0;
+    return stream->stream_offset;
+}
+
+/* Get the dict from a pdf_obj, returns typecheck if it doesn't have one */
+int pdfi_dict_from_obj(pdf_context *ctx, pdf_obj *obj, pdf_dict **dict)
+{
+    *dict = NULL;
+    if (obj->type == PDF_DICT)
+        *dict = (pdf_dict *)obj;
+    else if (obj->type == PDF_STREAM)
+        *dict = ((pdf_stream *)obj)->stream_dict;
+    else
+        return_error(gs_error_typecheck);
+    return 0;
 }

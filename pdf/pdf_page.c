@@ -75,8 +75,8 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
             code = pdfi_array_get_no_deref(ctx, a, i, (pdf_obj **)&r);
             if (code < 0)
                 goto page_error;
-            if (r->type == PDF_DICT) {
-                code = pdfi_interpret_content_stream(ctx, NULL, (pdf_dict *)r, page_dict);
+            if (r->type == PDF_STREAM) {
+                code = pdfi_interpret_content_stream(ctx, NULL, (pdf_stream *)r, page_dict);
                 pdfi_countdown(r);
                 if (code < 0)
                     goto page_error;
@@ -98,12 +98,12 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                             code = 0;
                         goto page_error;
                     }
-                    if (o1->type != PDF_DICT) {
+                    if (o1->type != PDF_STREAM) {
                         pdfi_countdown(o1);
                         code = gs_note_error(gs_error_typecheck);
                         goto page_error;
                     }
-                    code = pdfi_interpret_content_stream(ctx, NULL, (pdf_dict *)o1, page_dict);
+                    code = pdfi_interpret_content_stream(ctx, NULL, (pdf_stream *)o1, page_dict);
                     pdfi_countdown(o1);
                     if (code < 0) {
                         if (code == gs_error_VMerror || ctx->pdfstoponerror == true)
@@ -113,8 +113,8 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
             }
         }
     } else {
-        if (o->type == PDF_DICT) {
-            code = pdfi_interpret_content_stream(ctx, NULL, (pdf_dict *)o, page_dict);
+        if (o->type == PDF_STREAM) {
+            code = pdfi_interpret_content_stream(ctx, NULL, (pdf_stream *)o, page_dict);
         } else {
             pdfi_countdown(o);
             ctx->decrypt_strings = true;
@@ -565,7 +565,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     int code, code1=0;
     pdf_dict *page_dict = NULL;
     bool page_group_known = false;
-    pdf_dict *group_dict = NULL;
+    pdf_stream *group_stream = NULL;
     bool page_dict_error = false;
 
     if (page_num > ctx->num_pages)
@@ -598,10 +598,10 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     else
         dbgmprintf(ctx->memory, "\n");
 
-    code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
+    code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_stream);
     if (code < 0)
         goto exit2;
-    if (group_dict != NULL)
+    if (group_stream != NULL)
         page_group_known = true;
 
     pdfi_countdown(ctx->CurrentPageDict);
@@ -648,7 +648,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
             code = gs_push_pdf14trans_device(ctx->pgs, false, false);
             if (code >= 0) {
                 if (page_group_known) {
-                    code = pdfi_trans_begin_page_group(ctx, page_dict, group_dict);
+                    code = pdfi_trans_begin_page_group(ctx, page_dict, group_stream);
                     /* If setting the page group failed for some reason, abandon the page group, but continue with the page */
                     if (code < 0)
                         page_group_known = false;
@@ -699,7 +699,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     pdfi_grestore(ctx);
  exit2:
     pdfi_countdown(page_dict);
-    pdfi_countdown(group_dict);
+    pdfi_countdown(group_stream);
 
     if (code == 0 || (!ctx->pdfstoponerror && code != gs_error_stackoverflow))
         if (!page_dict_error && ctx->end_page != NULL)

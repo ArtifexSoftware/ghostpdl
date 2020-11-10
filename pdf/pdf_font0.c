@@ -83,7 +83,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     const char *ffstrings[] = {"FontFile", "FontFile2", "FontFile3"};
     int ff;
     pdf_dict *fontdesc = NULL;
-    pdf_dict *ffile = NULL;
+    pdf_stream *ffile = NULL;
     byte *buf;
     int64_t buflen;
     pdf_font *descpfont = NULL;
@@ -161,7 +161,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto error;
 
-    if (ffile->type != PDF_DICT) {
+    if (ffile->type != PDF_STREAM) {
         code = gs_note_error(gs_error_invalidfont);
         goto error;
     }
@@ -175,7 +175,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
      * the first few bytes of the font data.
      * Owndership of the buffer is passed to the font reading function.
      */
-    code = pdfi_stream_to_buffer(ctx, (pdf_dict *)ffile, &buf, &buflen);
+    code = pdfi_stream_to_buffer(ctx, ffile, &buf, &buflen);
     pdfi_countdown(ffile);
     ffile = NULL;
     if (code < 0)

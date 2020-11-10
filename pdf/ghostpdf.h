@@ -287,7 +287,7 @@ typedef struct pdf_context_s
 
     /* The input PDF filename and the stream for it */
     char *filename;
-    pdf_stream *main_stream;
+    pdf_c_stream *main_stream;
 
     /* Length of the main file */
     gs_offset_t main_stream_length;
@@ -340,7 +340,7 @@ typedef struct pdf_context_s
     pdf_transfer DefaultUCR;
 
     /* Document level PDF objects */
-    xref_table *xref_table;
+    xref_table_t *xref_table;
     pdf_dict *Trailer;
     pdf_dict *Root;
     pdf_dict *Info;

@@ -157,7 +157,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     if (code <= 0)
         return_error(gs_error_invalidfont);
 
-    code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile2", PDF_DICT, &fontfile);
+    code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile2", PDF_STREAM, &fontfile);
     if (code < 0) {
         pdfi_countdown(fontdesc);
         return_error(gs_error_invalidfont);
@@ -192,7 +192,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     num_chars = font->LastChar - font->FirstChar + 1;
 
-    code = pdfi_stream_to_buffer(ctx, (pdf_dict *)fontfile, &buf, &buflen);
+    code = pdfi_stream_to_buffer(ctx, (pdf_stream *)fontfile, &buf, &buflen);
     pdfi_countdown(fontfile);
     if (code < 0) {
         goto error;

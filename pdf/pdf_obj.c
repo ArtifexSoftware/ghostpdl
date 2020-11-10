@@ -20,6 +20,7 @@
 #include "pdf_obj.h"
 #include "pdf_cmap.h"
 #include "pdf_font.h"
+#include "pdf_deref.h" /* for replace_cache_entry() */
 
 /***********************************************************************************/
 /* Functions to create the various kinds of 'PDF objects', Created objects have a  */
@@ -67,7 +68,10 @@ int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
          * reference count, or store on the stack.
          */
         case PDF_XREF_TABLE:
-            bytes = sizeof(xref_table);
+            bytes = sizeof(xref_table_t);
+            break;
+        case PDF_STREAM:
+            bytes = sizeof(pdf_stream);
             break;
         default:
             return_error(gs_error_typecheck);
@@ -190,10 +194,19 @@ static void pdfi_free_keyword(pdf_obj *o)
 
 static void pdfi_free_xref_table(pdf_obj *o)
 {
-    xref_table *xref = (xref_table *)o;
+    xref_table_t *xref = (xref_table_t *)o;
 
     gs_free_object(OBJ_MEMORY(xref), xref->xref, "pdfi_free_xref_table");
     gs_free_object(OBJ_MEMORY(xref), xref, "pdfi_free_xref_table");
+}
+
+static void pdfi_free_stream(pdf_obj *o)
+{
+    pdf_stream *stream = (pdf_stream *)o;
+
+    pdfi_countdown(stream->parent_obj);
+    pdfi_countdown(stream->stream_dict);
+    gs_free_object(OBJ_MEMORY(o), o, "pdfi_free_stream");
 }
 
 void pdfi_free_object(pdf_obj *o)
@@ -219,6 +232,9 @@ void pdfi_free_object(pdf_obj *o)
         case PDF_DICT:
             pdfi_free_dict(o);
             break;
+        case PDF_STREAM:
+            pdfi_free_stream(o);
+            break;
         case PDF_KEYWORD:
             pdfi_free_keyword(o);
             break;
@@ -235,6 +251,41 @@ void pdfi_free_object(pdf_obj *o)
             dbgmprintf(OBJ_MEMORY(o), "!!! Attempting to free unknown obect type !!!\n");
             break;
     }
+}
+
+
+/* Convert a pdf_dict to a pdf_stream.
+ * This assumes the dict has not been cached.
+ * The stream will come with 1 refcnt, dict refcnt will be incremented by 1.
+ */
+int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **stream)
+{
+    int code = 0;
+    pdf_stream *new_stream = NULL;
+
+    if (dict->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
+    code = pdfi_alloc_object(ctx, PDF_STREAM, 0, (pdf_obj **)&new_stream);
+    if (code < 0)
+        goto error_exit;
+
+    new_stream->ctx = ctx;
+    new_stream->object_num = dict->object_num;
+    new_stream->generation_num = dict->generation_num;
+    pdfi_countup(new_stream);
+
+    new_stream->stream_dict = dict;
+    pdfi_countup(dict);
+
+    dict->object_num = 0;
+    dict->generation_num = 0;
+    *stream = new_stream;
+    return 0;
+
+ error_exit:
+    pdfi_countdown(new_stream);
+    return code;
 }
 
 /************ bufstream module BEGIN **************/
@@ -612,7 +663,7 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
      * because when this is used with annotations that would result in an invalid
      * stream in the output.
      */
-    if (pdfi_dict_is_stream(ctx, dict)) {
+    if (obj->type == PDF_STREAM) {
         code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"<< >>", 5);
         goto exit_copy;
     }
@@ -703,6 +754,7 @@ obj_str_dispatch_t obj_str_dispatch[] = {
     {PDF_BOOL, pdfi_obj_bool_str},
     {PDF_STRING, pdfi_obj_string_str},
     {PDF_DICT, pdfi_obj_dict_str},
+    {PDF_STREAM, pdfi_obj_dict_str},
     {PDF_INDIRECT, pdfi_obj_indirect_str},
     {PDF_NULL, pdfi_obj_null_str},
     {0, NULL}

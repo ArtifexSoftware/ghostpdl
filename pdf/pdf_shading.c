@@ -50,7 +50,7 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
     if (code < 0)
         goto build_shading_function_error;
 
-    if (o->type != PDF_DICT) {
+    if (o->type != PDF_DICT && o->type != PDF_STREAM) {
         uint size;
         pdf_obj *rsubfn;
         gs_function_t **Functions;
@@ -82,7 +82,7 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
                 gs_free_object(ctx->memory, Functions, "function array error, freeing functions");
                 goto build_shading_function_error;
             }
-            code = pdfi_build_function(ctx, &Functions[i], shading_domain, num_inputs, (pdf_dict *)rsubfn, page_dict);
+            code = pdfi_build_function(ctx, &Functions[i], shading_domain, num_inputs, rsubfn, page_dict);
             if (code < 0)
                 goto build_shading_function_error;
             pdfi_countdown(rsubfn);
@@ -97,7 +97,7 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
         if (code < 0)
             goto build_shading_function_error;
     } else {
-        code = pdfi_build_function(ctx, ppfn, shading_domain, num_inputs, (pdf_dict *)o, page_dict);
+        code = pdfi_build_function(ctx, ppfn, shading_domain, num_inputs, o, page_dict);
         if (code < 0)
             goto build_shading_function_error;
     }
@@ -116,12 +116,17 @@ build_shading_function_error:
 
 static int pdfi_shading1(pdf_context *ctx, gs_shading_params_t *pcommon,
                   gs_shading_t **ppsh,
-                  pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+                  pdf_obj *Shading, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_obj *o = NULL;
     int code, i;
     gs_shading_Fb_params_t params;
     static const float default_Domain[4] = {0, 1, 0, 1};
+    pdf_dict *shading_dict;
+
+    if (Shading->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+    shading_dict = (pdf_dict *)Shading;
 
     memset(&params, 0, sizeof(params));
     *(gs_shading_params_t *)&params = *pcommon;
@@ -157,12 +162,17 @@ static int pdfi_shading1(pdf_context *ctx, gs_shading_params_t *pcommon,
 
 static int pdfi_shading2(pdf_context *ctx, gs_shading_params_t *pcommon,
                   gs_shading_t **ppsh,
-                  pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+                  pdf_obj *Shading, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_obj *o = NULL;
     gs_shading_A_params_t params;
     static const float default_Domain[2] = {0, 1};
     int code, i;
+    pdf_dict *shading_dict;
+
+    if (Shading->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+    shading_dict = (pdf_dict *)Shading;
 
     memset(&params, 0, sizeof(params));
     *(gs_shading_params_t *)&params = *pcommon;
@@ -204,12 +214,17 @@ static int pdfi_shading2(pdf_context *ctx, gs_shading_params_t *pcommon,
 
 static int pdfi_shading3(pdf_context *ctx,  gs_shading_params_t *pcommon,
                   gs_shading_t **ppsh,
-                  pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+                  pdf_obj *Shading, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_obj *o = NULL;
     gs_shading_R_params_t params;
     static const float default_Domain[2] = {0, 1};
     int code, i;
+    pdf_dict *shading_dict;
+
+    if (Shading->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+    shading_dict = (pdf_dict *)Shading;
 
     memset(&params, 0, sizeof(params));
     *(gs_shading_params_t *)&params = *pcommon;
@@ -250,31 +265,39 @@ static int pdfi_shading3(pdf_context *ctx,  gs_shading_params_t *pcommon,
 }
 
 static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *params,
-                  pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+                  pdf_obj *Shading, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int num_decode = 4, code;
     gs_offset_t savedoffset;
+    gs_offset_t stream_offset;
     int64_t Length;
     byte *data_source_buffer = NULL;
-    pdf_stream *shading_stream = NULL;
+    pdf_c_stream *shading_stream = NULL;
     int64_t i;
+    pdf_dict *shading_dict;
+
+    if (Shading->type != PDF_STREAM)
+        return_error(gs_error_typecheck);
+
+    code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
+    if (code < 0)
+        return code;
 
     params->Function = NULL;
     params->Decode = NULL;
 
-    if (shading_dict->stream_offset == 0)
+    stream_offset = pdfi_stream_offset(ctx, (pdf_stream *)Shading);
+    if (stream_offset == 0)
         return_error(gs_error_typecheck);
 
-    if (!pdfi_dict_is_stream(ctx, shading_dict))
-        return_error(gs_error_undefined);
-    Length = pdfi_dict_stream_length(ctx, shading_dict);
+    Length = pdfi_stream_length(ctx, (pdf_stream *)Shading);
 
     savedoffset = pdfi_tell(ctx->main_stream);
-    code = pdfi_seek(ctx, ctx->main_stream, shading_dict->stream_offset, SEEK_SET);
+    code = pdfi_seek(ctx, ctx->main_stream, stream_offset, SEEK_SET);
     if (code < 0)
         return code;
 
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, shading_dict, Length,
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, (pdf_stream *)Shading, Length,
                                                         &data_source_buffer, ctx->main_stream,
                                                         &shading_stream);
     if (code < 0) {
@@ -293,7 +316,8 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
     if (code < 0)
         return code;
 
-    code = pdfi_build_shading_function(ctx, &params->Function, (const float *)NULL, 1, (pdf_dict *)shading_dict, page_dict);
+    code = pdfi_build_shading_function(ctx, &params->Function, (const float *)NULL, 1,
+                                       shading_dict, page_dict);
     if (code < 0 && code != gs_error_undefined)
         return code;
 
@@ -350,16 +374,22 @@ build_mesh_shading_error:
 
 static int pdfi_shading4(pdf_context *ctx, gs_shading_params_t *pcommon,
                   gs_shading_t **ppsh,
-                  pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+                  pdf_obj *Shading, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     gs_shading_FfGt_params_t params;
     int code;
     int64_t i;
+    pdf_dict *shading_dict;
 
     memset(&params, 0, sizeof(params));
     *(gs_shading_params_t *)&params = *pcommon;
 
-    code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, shading_dict, stream_dict, page_dict);
+    code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, Shading, stream_dict, page_dict);
+    if (code < 0)
+        return code;
+
+    /* pdfi_build_mesh_shading checks the type of the Shading object, so we don't need to here */
+    code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
     if (code < 0)
         return code;
 
@@ -383,16 +413,22 @@ static int pdfi_shading4(pdf_context *ctx, gs_shading_params_t *pcommon,
 
 static int pdfi_shading5(pdf_context *ctx, gs_shading_params_t *pcommon,
                   gs_shading_t **ppsh,
-                  pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+                  pdf_obj *Shading, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     gs_shading_LfGt_params_t params;
     int code;
     int64_t i;
+    pdf_dict *shading_dict;
 
     memset(&params, 0, sizeof(params));
     *(gs_shading_params_t *)&params = *pcommon;
 
-    code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, shading_dict, stream_dict, page_dict);
+    code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, Shading, stream_dict, page_dict);
+    if (code < 0)
+        return code;
+
+    /* pdfi_build_mesh_shading checks the type of the Shading object, so we don't need to here */
+    code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
     if (code < 0)
         return code;
 
@@ -416,16 +452,22 @@ static int pdfi_shading5(pdf_context *ctx, gs_shading_params_t *pcommon,
 
 static int pdfi_shading6(pdf_context *ctx, gs_shading_params_t *pcommon,
                   gs_shading_t **ppsh,
-                  pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+                  pdf_obj *Shading, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     gs_shading_Cp_params_t params;
     int code;
     int64_t i;
+    pdf_dict *shading_dict;
 
     memset(&params, 0, sizeof(params));
     *(gs_shading_params_t *)&params = *pcommon;
 
-    code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, shading_dict, stream_dict, page_dict);
+    code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, Shading, stream_dict, page_dict);
+    if (code < 0)
+        return code;
+
+    /* pdfi_build_mesh_shading checks the type of the Shading object, so we don't need to here */
+    code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
     if (code < 0)
         return code;
 
@@ -449,16 +491,22 @@ static int pdfi_shading6(pdf_context *ctx, gs_shading_params_t *pcommon,
 
 static int pdfi_shading7(pdf_context *ctx, gs_shading_params_t *pcommon,
                   gs_shading_t **ppsh,
-                  pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+                  pdf_obj *Shading, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     gs_shading_Tpp_params_t params;
     int code;
     int64_t i;
+    pdf_dict *shading_dict;
 
     memset(&params, 0, sizeof(params));
     *(gs_shading_params_t *)&params = *pcommon;
 
-    code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, shading_dict, stream_dict, page_dict);
+    code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, Shading, stream_dict, page_dict);
+    if (code < 0)
+        return code;
+
+    /* pdfi_build_mesh_shading checks the type of the Shading object, so we don't need to here */
+    code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
     if (code < 0)
         return code;
 
@@ -585,13 +633,14 @@ get_shading_common_error:
 /* Build gs_shading_t object from a Shading Dict */
 int
 pdfi_shading_build(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
-                   pdf_dict *sdict, gs_shading_t **ppsh)
+                   pdf_obj *Shading, gs_shading_t **ppsh)
 {
     gs_shading_params_t params;
     gs_shading_t *psh = NULL;
     pdf_obj *cspace = NULL;
     int64_t type = 0;
     int code = 0;
+    pdf_dict *sdict = NULL;
 
     memset(&params, 0, sizeof(params));
 
@@ -600,6 +649,10 @@ pdfi_shading_build(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
     params.Background = 0;
     params.have_BBox = 0;
     params.AntiAlias = 0;
+
+    code = pdfi_dict_from_obj(ctx, Shading, &sdict);
+    if (code < 0)
+        return code;
 
     code = pdfi_dict_get(ctx, sdict, "ColorSpace", &cspace);
     if (code < 0)
@@ -619,25 +672,25 @@ pdfi_shading_build(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
 
     switch(type){
     case 1:
-        code = pdfi_shading1(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        code = pdfi_shading1(ctx, &params, &psh, Shading, stream_dict, page_dict);
         break;
     case 2:
-        code = pdfi_shading2(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        code = pdfi_shading2(ctx, &params, &psh, Shading, stream_dict, page_dict);
         break;
     case 3:
-        code = pdfi_shading3(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        code = pdfi_shading3(ctx, &params, &psh, Shading, stream_dict, page_dict);
         break;
     case 4:
-        code = pdfi_shading4(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        code = pdfi_shading4(ctx, &params, &psh, Shading, stream_dict, page_dict);
         break;
     case 5:
-        code = pdfi_shading5(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        code = pdfi_shading5(ctx, &params, &psh, Shading, stream_dict, page_dict);
         break;
     case 6:
-        code = pdfi_shading6(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        code = pdfi_shading6(ctx, &params, &psh, Shading, stream_dict, page_dict);
         break;
     case 7:
-        code = pdfi_shading7(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        code = pdfi_shading7(ctx, &params, &psh, Shading, stream_dict, page_dict);
         break;
     default:
         code = gs_note_error(gs_error_rangecheck);
@@ -728,17 +781,22 @@ pdfi_shading_free(pdf_context *ctx, gs_shading_t *psh)
 
 /* Setup for transparency (see pdf_draw.ps/sh) */
 static int
-pdfi_shading_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state, pdf_dict *shading)
+pdfi_shading_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state, pdf_obj *Shading)
 {
     int code;
     gs_rect bbox;
     pdf_array *BBox = NULL;
+    pdf_dict *shading_dict;
 
     code = pdfi_gsave(ctx);
     if (code < 0)
         return code;
 
-    code = pdfi_dict_knownget_type(ctx, shading, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+    code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_knownget_type(ctx, shading_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
     if (code > 0) {
         pdfi_array_to_gs_rect(ctx, BBox, &bbox);
         code = gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
@@ -767,7 +825,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code, code1;
     pdf_name *n = NULL;
-    pdf_dict *Shading = NULL;
+    pdf_obj *Shading = NULL;
     gs_shading_t *psh = NULL;
     gs_offset_t savedoffset;
     pdfi_trans_state_t trans_state;
@@ -794,12 +852,12 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         goto exit1;
 
-    code = pdfi_find_resource(ctx, (unsigned char *)"Shading", n, stream_dict, page_dict,
-                              (pdf_obj **)&Shading);
+    code = pdfi_find_resource(ctx, (unsigned char *)"Shading", n, (pdf_dict *)stream_dict, page_dict,
+                              &Shading);
     if (code < 0)
         goto exit2;
 
-    if (Shading->type != PDF_DICT) {
+    if (Shading->type != PDF_DICT && Shading->type != PDF_STREAM) {
         code = gs_note_error(gs_error_typecheck);
         goto exit2;
     }

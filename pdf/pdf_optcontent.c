@@ -474,7 +474,7 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
     /* If it's a name, look it up in Properties */
     code = pdfi_find_resource(ctx, (unsigned char *)"Properties", properties,
-                              stream_dict, page_dict, (pdf_obj **)&oc_dict);
+                              (pdf_dict *)stream_dict, page_dict, (pdf_obj **)&oc_dict);
     if (code != 0)
         goto exit;
     if (oc_dict->type != PDF_DICT)

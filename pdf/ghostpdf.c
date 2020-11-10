@@ -724,10 +724,10 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
      */
     stm->close_at_eod = false;
 
-    ctx->main_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "PDF interpreter allocate main PDF stream");
+    ctx->main_stream = (pdf_c_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_c_stream), "PDF interpreter allocate main PDF stream");
     if (ctx->main_stream == NULL)
         return_error(gs_error_VMerror);
-    memset(ctx->main_stream, 0x00, sizeof(pdf_stream));
+    memset(ctx->main_stream, 0x00, sizeof(pdf_c_stream));
     ctx->main_stream->s = stm;
 
     Buffer = gs_alloc_bytes(ctx->memory, BUF_SIZE, "PDF interpreter - allocate working buffer for file validation");

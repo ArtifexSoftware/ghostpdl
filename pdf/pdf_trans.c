@@ -82,7 +82,8 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdf_array *Matrix = NULL;
     pdf_array *a = NULL;
     pdf_array *BC = NULL;
-    pdf_dict *G_dict = NULL;
+    pdf_stream *G_stream = NULL;
+    pdf_dict *G_stream_dict = NULL;
     pdf_dict *Group = NULL;
     pdf_obj *TR = NULL;
     gs_function_t *gsfunc = NULL;
@@ -127,13 +128,18 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     code = pdfi_dict_knownget_type(ctx, SMask, "Type", PDF_NAME, (pdf_obj **)&n);
     if (code == 0 || (code > 0 && pdfi_name_is(n, "Mask"))) {
         /* G is transparency group XObject (required) */
-        code = pdfi_dict_knownget_type(ctx, SMask, "G", PDF_DICT, (pdf_obj **)&G_dict);
+        code = pdfi_dict_knownget_type(ctx, SMask, "G", PDF_STREAM, (pdf_obj **)&G_stream);
         if (code <= 0) {
             dmprintf(ctx->memory, "WARNING: Missing 'G' in SMask, ignoring.\n");
             pdfi_trans_end_smask_notify(ctx);
             code = 0;
             goto exit;
         }
+
+        code = pdfi_dict_from_obj(ctx, (pdf_obj *)G_stream, &G_stream_dict);
+        if (code < 0)
+            goto exit;
+
         /* S is a subtype name (required) */
         code = pdfi_dict_knownget_type(ctx, SMask, "S", PDF_NAME, (pdf_obj **)&S);
         if (code <= 0) {
@@ -150,8 +156,8 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         /* TR is transfer function (Optional) */
         code = pdfi_dict_knownget(ctx, SMask, "TR", (pdf_obj **)&TR);
         if (code > 0) {
-            if (TR->type == PDF_DICT) {
-                code = pdfi_build_function(ctx, &gsfunc, NULL, 1, (pdf_dict *)TR, NULL);
+            if (TR->type == PDF_DICT || TR->type == PDF_STREAM) {
+                code = pdfi_build_function(ctx, &gsfunc, NULL, 1, TR, NULL);
                 if (code < 0)
                     goto exit;
             } else if (TR->type == PDF_NAME) {
@@ -168,7 +174,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         if (code < 0)
             goto exit;
 
-        code = pdfi_dict_knownget_type(ctx, G_dict, "Matte", PDF_ARRAY, (pdf_obj **)&a);
+        code = pdfi_dict_knownget_type(ctx, G_stream_dict, "Matte", PDF_ARRAY, (pdf_obj **)&a);
         if (code > 0) {
             int ix;
 
@@ -184,7 +190,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
                 params.Matte_components = 0;
         }
 
-        code = pdfi_dict_knownget_type(ctx, G_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+        code = pdfi_dict_knownget_type(ctx, G_stream_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
         if (code < 0)
             goto exit;
         code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
@@ -206,7 +212,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         gs_currentmatrix(igs->GroupGState, &GroupMat);
         gs_setmatrix(ctx->pgs, &GroupMat);
 
-        code = pdfi_dict_knownget_type(ctx, G_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
+        code = pdfi_dict_knownget_type(ctx, G_stream_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
         if (code < 0)
             goto exit;
         code = pdfi_array_to_gs_matrix(ctx, Matrix, &group_Matrix);
@@ -218,7 +224,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
 
         /* CS is in the dict "Group" inside the dict "G" */
         /* TODO: Not sure if this is a required thing or just one possibility */
-        code = pdfi_dict_knownget_type(ctx, G_dict, "Group", PDF_DICT, (pdf_obj **)&Group);
+        code = pdfi_dict_knownget_type(ctx, G_stream_dict, "Group", PDF_DICT, (pdf_obj **)&Group);
         if (code < 0)
             goto exit;
         if (code > 0) {
@@ -270,7 +276,8 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         if (code < 0)
             goto exit;
 
-        code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict, igs->GroupGState, &group_Matrix);
+        code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_stream,
+                                   igs->GroupGState, &group_Matrix);
         code1 = gs_end_transparency_mask(ctx->pgs, colorindex);
         if (code != 0)
             code = code1;
@@ -294,7 +301,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdfi_countdown(n);
     pdfi_countdown(S);
     pdfi_countdown(Group);
-    pdfi_countdown(G_dict);
+    pdfi_countdown(G_stream);
     pdfi_countdown(a);
     pdfi_countdown(BC);
     pdfi_countdown(TR);
@@ -324,12 +331,15 @@ static int pdfi_gs_begin_transparency_group(gs_gstate * pgs,
     return gs_begin_transparency_group(pgs, params, pbbox, group_type);
 }
 
-static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict, gs_rect *bbox, pdf14_compositor_operations group_type)
+static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
+                                          pdf_stream *group_stream,
+                                          gs_rect *bbox, pdf14_compositor_operations group_type)
 {
     gs_transparency_group_params_t params;
     pdf_obj *CS = NULL;
     bool b;
     int code;
+    pdf_dict *group_dict = (pdf_dict *)group_stream; /* alias */
 
     gs_trans_group_params_init(&params, 1.0);
     //    gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
@@ -361,12 +371,18 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
         code = pdfi_dict_knownget(ctx, group_dict, "ColorSpace", &CS);
     }
     if (code > 0) {
+        pdf_dict *group_stream_dict = NULL;
+
         if (CS->type == PDF_NULL) {
             pdfi_countdown(CS);
             return_error(gs_error_undefined);
         }
 
-        code = pdfi_setcolorspace(ctx, CS, group_dict, page_dict);
+        code = pdfi_dict_from_obj(ctx, (pdf_obj *)group_stream, &group_stream_dict);
+        if (code < 0)
+            return code;
+
+        code = pdfi_setcolorspace(ctx, CS, group_stream_dict, page_dict);
         pdfi_countdown(CS);
         if (code < 0)
             return code;
@@ -400,7 +416,7 @@ int pdfi_trans_begin_simple_group(pdf_context *ctx, bool stroked_bbox, bool isol
     return code;
 }
 
-int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict)
+int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *group_dict)
 {
     gs_rect bbox;
     int code;
@@ -425,12 +441,12 @@ int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict 
 
 int pdfi_trans_begin_form_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
 {
-    pdf_dict *group_dict = NULL;
+    pdf_obj *group_stream = NULL;
     gs_rect bbox;
     pdf_array *BBox = NULL;
     int code;
 
-    code = pdfi_dict_get_type(ctx, form_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
+    code = pdfi_dict_get(ctx, form_dict, "Group", (pdf_obj **)&group_stream);
     if (code < 0)
         return_error(code);
 
@@ -449,7 +465,7 @@ int pdfi_trans_begin_form_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict 
         bbox.q.y = 0;
     }
 
-    code = pdfi_transparency_group_common(ctx, page_dict, group_dict, &bbox, PDF14_BEGIN_TRANS_GROUP);
+    code = pdfi_transparency_group_common(ctx, page_dict, (pdf_stream *)group_stream, &bbox, PDF14_BEGIN_TRANS_GROUP);
     if (code < 0)
         pdfi_grestore(ctx);
     else
@@ -457,7 +473,7 @@ int pdfi_trans_begin_form_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict 
 
  exit:
     pdfi_countdown(BBox);
-    pdfi_countdown(group_dict);
+    pdfi_countdown(group_stream);
     return code;
 }
 

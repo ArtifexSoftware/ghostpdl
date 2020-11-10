@@ -36,7 +36,7 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     int code = 0;
     pdf_font_type3 *font;
     pdf_name *GlyphName = NULL;
-    pdf_dict *CharProc = NULL;
+    pdf_stream *CharProc = NULL;
     int SavedTextBlockDepth = 0;
     char Notdef[8] = {".notdef"};
 
@@ -65,6 +65,10 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     }
     if (code < 0)
         goto build_char_error;
+    if (CharProc->type != PDF_STREAM) {
+        code = gs_note_error(gs_error_typecheck);
+        goto build_char_error;
+    }
 
     OBJ_CTX(font)->TextBlockDepth = 0;
     OBJ_CTX(font)->inside_CharProc = true;

@@ -215,18 +215,23 @@ error1:
 /*
  * Process an individual Shading dictionary to see if it contains a ColorSpace with a spot colour
  */
-static int pdfi_check_Shading(pdf_context *ctx, pdf_dict *shading,
+static int pdfi_check_Shading(pdf_context *ctx, pdf_obj *shading,
                               pdf_dict *page_dict, pdfi_check_tracker_t *tracker)
 {
     int code;
     pdf_obj *o = NULL;
+    pdf_dict *shading_dict = NULL;
 
-    if (resource_is_checked(tracker, (pdf_obj *)shading))
+    if (resource_is_checked(tracker, shading))
         return 0;
 
-    code = pdfi_dict_knownget(ctx, shading, "ColorSpace", (pdf_obj **)&o);
+    code = pdfi_dict_from_obj(ctx, shading, &shading_dict);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_knownget(ctx, shading_dict, "ColorSpace", (pdf_obj **)&o);
     if (code > 0) {
-        code = pdfi_check_ColorSpace_for_spots(ctx, o, shading, page_dict, tracker->spot_dict);
+        code = pdfi_check_ColorSpace_for_spots(ctx, o, shading_dict, page_dict, tracker->spot_dict);
         pdfi_countdown(o);
         return code;
     }
@@ -252,12 +257,12 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
             return code;
 
         code = pdfi_dict_first(ctx, shading_dict, &Key, &Value, &index);
-        if (code < 0 || Value->type != PDF_DICT)
+        if (code < 0 || !(Value->type == PDF_DICT || Value->type == PDF_STREAM))
             goto error1;
 
         i = 1;
         do {
-            code = pdfi_check_Shading(ctx, (pdf_dict *)Value, page_dict, tracker);
+            code = pdfi_check_Shading(ctx, Value, page_dict, tracker);
             if (code < 0)
                 goto error2;
 
@@ -400,7 +405,8 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
 {
     int code;
     uint64_t i, index;
-    pdf_obj *Key = NULL, *Value = NULL; //, *o = NULL;
+    pdf_obj *Key = NULL, *Value = NULL;
+    pdf_dict *Value_dict = NULL;
 
     if (resource_is_checked(tracker, (pdf_obj *)xobject_dict))
         return 0;
@@ -412,26 +418,31 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
 
         code = pdfi_dict_first(ctx, xobject_dict, &Key, &Value, &index);
         if (code < 0)
-            goto error1;
-        if (Value->type != PDF_DICT)
-            goto error2;
+            goto error_exit;
+        if (Value->type != PDF_STREAM)
+            goto error_exit;
 
         i = 1;
         do {
-            code = pdfi_check_XObject(ctx, (pdf_dict *)Value, page_dict, tracker);
+            code = pdfi_dict_from_obj(ctx, Value, &Value_dict);
             if (code < 0)
-                goto error2;
+                goto error_exit;
+
+            code = pdfi_check_XObject(ctx, Value_dict, page_dict, tracker);
+            if (code < 0)
+                goto error_exit;
 
             (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the XObject dictionary loop */
 
             code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the XObject dictionary loop */
             if (code < 0)
-                goto error1;
+                goto error_exit;
 
             pdfi_countdown(Key);
             Key = NULL;
             pdfi_countdown(Value);
             Value = NULL;
+            Value_dict = NULL;
 
             do {
                 if (i++ >= pdfi_dict_entries(xobject_dict)) {
@@ -440,7 +451,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
                 }
 
                 code = pdfi_dict_next(ctx, xobject_dict, &Key, &Value, &index);
-                if (code == 0 && Value->type == PDF_DICT)
+                if (code == 0 && Value->type == PDF_STREAM)
                     break;
                 pdfi_countdown(Key);
                 Key = NULL;
@@ -452,11 +463,9 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
     return 0;
 
 transparency_exit:
-error2:
+error_exit:
     pdfi_countdown(Key);
     pdfi_countdown(Value);
-
-error1:
     (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current resource loop */
     return code;
 }
@@ -623,9 +632,9 @@ static int pdfi_check_Pattern(pdf_context *ctx, pdf_dict *pattern, pdf_dict *pag
         return 0;
 
     if (tracker->spot_dict != NULL) {
-        code = pdfi_dict_knownget_type(ctx, pattern, "Shading", PDF_DICT, &o);
+        code = pdfi_dict_knownget(ctx, pattern, "Shading", &o);
         if (code > 0)
-            (void)pdfi_check_Shading(ctx, (pdf_dict *)o, page_dict, tracker);
+            (void)pdfi_check_Shading(ctx, o, page_dict, tracker);
         pdfi_countdown(o);
         o = NULL;
     }
@@ -681,6 +690,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
     int code;
     uint64_t i, index;
     pdf_obj *Key = NULL, *Value = NULL;
+    pdf_dict *instance_dict = NULL;
 
     if (resource_is_checked(tracker, (pdf_obj *)pattern_dict))
         return 0;
@@ -694,18 +704,23 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
         if (code < 0)
             goto error1;
 
-        if (Value->type != PDF_DICT)
+        if(Value->type != PDF_DICT && Value->type != PDF_STREAM)
             goto transparency_exit;
 
         i = 1;
         do {
-            code = pdfi_check_Pattern(ctx, (pdf_dict *)Value, page_dict, tracker);
+            code = pdfi_dict_from_obj(ctx, Value, &instance_dict);
+            if (code < 0)
+                goto transparency_exit;
+
+            code = pdfi_check_Pattern(ctx, instance_dict, page_dict, tracker);
             if (code < 0)
                 goto transparency_exit;
 
             pdfi_countdown(Key);
             Key = NULL;
             pdfi_countdown(Value);
+            instance_dict = NULL;
             Value = NULL;
             (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
 
@@ -720,7 +735,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
                 }
 
                 code = pdfi_dict_next(ctx, pattern_dict, &Key, &Value, &index);
-                if (code == 0 && Value->type == PDF_DICT)
+                if (code == 0 && (Value->type == PDF_DICT || Value->type == PDF_STREAM))
                     break;
                 pdfi_countdown(Key);
                 Key = NULL;
@@ -733,7 +748,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
 
 transparency_exit:
     pdfi_countdown(Key);
-    pdfi_countdown(Value);
+    pdfi_countdown(instance_dict);
 
 error1:
     (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current resource loop */
@@ -900,7 +915,9 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
 {
     int code;
     pdf_name *n;
-    pdf_dict *ap = NULL, *N = NULL, *Resources = NULL;
+    pdf_obj *N = NULL;
+    pdf_dict *ap = NULL;
+    pdf_dict *Resources = NULL;
     double f;
 
     if (resource_is_checked(tracker, (pdf_obj *)annot))
@@ -913,9 +930,13 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
     code = pdfi_dict_knownget_type(ctx, annot, "AP", PDF_DICT, (pdf_obj **)&ap);
     if (code > 0)
     {
-        code = pdfi_dict_knownget_type(ctx, ap, "N", PDF_DICT, (pdf_obj **)&N);
+        code = pdfi_dict_knownget(ctx, ap, "N", (pdf_obj **)&N);
         if (code > 0) {
-            code = pdfi_dict_knownget_type(ctx, N, "Resources", PDF_DICT, (pdf_obj **)&Resources);
+            pdf_dict *dict = NULL;
+
+            code = pdfi_dict_from_obj(ctx, N, &dict);
+            if (code == 0)
+                code = pdfi_dict_knownget_type(ctx, dict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
             if (code > 0)
                 code = pdfi_check_Resources(ctx, (pdf_dict *)Resources, page_dict, tracker);
         }

@@ -732,7 +732,7 @@ static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *pa
         if (obj->type != PDF_DICT)
             return_error(gs_error_typecheck);
 
-        code = pdfi_build_function(ctx, &pfn, NULL, 1, (pdf_dict *)obj, page_dict);
+        code = pdfi_build_function(ctx, &pfn, NULL, 1, obj, page_dict);
         if (code < 0)
             return code;
 
@@ -821,7 +821,7 @@ static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *
         if (obj->type != PDF_DICT)
             return_error(gs_error_typecheck);
 
-        code = pdfi_build_function(ctx, &pfn, NULL, 1, (pdf_dict *)obj, page_dict);
+        code = pdfi_build_function(ctx, &pfn, NULL, 1, obj, page_dict);
         if (code < 0)
             return code;
 
@@ -929,10 +929,10 @@ static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page
                 }
             }
         } else {
-            if (o->type == PDF_DICT) {
+            if (o->type == PDF_STREAM || o->type == PDF_DICT) {
                 proc_types[i] = E_FUNCTION;
                 map_procs[i] = gs_mapped_transfer;
-                code = pdfi_build_function(ctx, &pfn[i], NULL, 1, (pdf_dict *)o, page_dict);
+                code = pdfi_build_function(ctx, &pfn[i], NULL, 1, o, page_dict);
                 if (code < 0) {
                     pdfi_countdown(o);
                     goto exit;
@@ -1007,15 +1007,15 @@ static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page
     return code;
 }
 
-static int pdfi_set_gray_transfer(pdf_context *ctx, pdf_dict *d, pdf_dict *page_dict)
+static int pdfi_set_gray_transfer(pdf_context *ctx, pdf_obj *tr_obj, pdf_dict *page_dict)
 {
     int code = 0, i;
     gs_function_t *pfn;
 
-    if (d->type != PDF_DICT)
+    if (tr_obj->type != PDF_DICT && tr_obj->type != PDF_STREAM)
         return_error(gs_error_typecheck);
 
-    code = pdfi_build_function(ctx, &pfn, NULL, 1, d, page_dict);
+    code = pdfi_build_function(ctx, &pfn, NULL, 1, tr_obj, page_dict);
     if (code < 0)
         return code;
 
@@ -1067,7 +1067,7 @@ static int pdfi_set_transfer(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict
             code = pdfi_set_all_transfers(ctx, (pdf_array *)obj, page_dict, false);
         }
     } else
-        code = pdfi_set_gray_transfer(ctx, (pdf_dict *)obj, page_dict);
+        code = pdfi_set_gray_transfer(ctx, obj, page_dict);
 
 exit:
     return code;
@@ -1357,8 +1357,8 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                 goto error;
         }
     } else {
-        if (obj->type == PDF_DICT) {
-            code = pdfi_build_function(ctx, &pfn, (const float *)domain, 2, (pdf_dict *)obj, page_dict);
+        if (obj->type == PDF_DICT || obj->type == PDF_STREAM) {
+            code = pdfi_build_function(ctx, &pfn, (const float *)domain, 2, obj, page_dict);
             if (code < 0)
                 goto error;
         } else {
@@ -1431,11 +1431,17 @@ error:
     return code;
 }
 
-static int build_type6_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
+static int build_type6_halftone(pdf_context *ctx, pdf_stream *halftone_stream, pdf_dict *page_dict,
+                                gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
     int64_t w, h;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
+    pdf_dict *halftone_dict = NULL;
+
+    code = pdfi_dict_from_obj(ctx, (pdf_obj *)halftone_stream, &halftone_dict);
+    if (code < 0)
+        return code;
 
     ptp->thresholds.data = NULL;
     ptp->thresholds.size = 0;
@@ -1463,7 +1469,8 @@ static int build_type6_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
 
     phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
 
-    code = pdfi_stream_to_buffer(ctx, halftone_dict, (byte **)&ptp->thresholds.data, (int64_t *)&ptp->thresholds.size);
+    code = pdfi_stream_to_buffer(ctx, halftone_stream,
+                                 (byte **)&ptp->thresholds.data, (int64_t *)&ptp->thresholds.size);
     if (code < 0)
         goto error;
 
@@ -1475,11 +1482,14 @@ error:
     return code;
 }
 
-static int build_type10_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
+static int build_type10_halftone(pdf_context *ctx, pdf_stream *halftone_stream, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
     int64_t w, h;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
+    pdf_dict *halftone_dict = NULL;
+
+    code = pdfi_dict_from_obj(ctx, (pdf_obj *)halftone_stream, &halftone_dict);
 
     ptp->thresholds.data = NULL;
     ptp->thresholds.size = 0;
@@ -1515,7 +1525,8 @@ static int build_type10_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_
 
     phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
 
-    code = pdfi_stream_to_buffer(ctx, halftone_dict, (byte **)&ptp->thresholds.data, (int64_t *)&ptp->thresholds.size);
+    code = pdfi_stream_to_buffer(ctx, halftone_stream,
+                                 (byte **)&ptp->thresholds.data, (int64_t *)&ptp->thresholds.size);
     if (code < 0)
         goto error;
 
@@ -1523,15 +1534,20 @@ static int build_type10_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_
     return code;
 
 error:
-    gs_free_object(ctx->memory, (byte *)ptp->thresholds.data, "build_type6_halftone");
+    gs_free_object(ctx->memory, (byte *)ptp->thresholds.data, "build_type10_halftone");
     return code;
 }
 
-static int build_type16_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
+static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
     int64_t w, h;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
+    pdf_dict *halftone_dict = NULL;
+
+    code = pdfi_dict_from_obj(ctx, (pdf_obj *)halftone_stream, &halftone_dict);
+    if (code < 0)
+        return code;
 
     ptp->thresholds.data = NULL;
     ptp->thresholds.size = 0;
@@ -1567,7 +1583,8 @@ static int build_type16_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_
 
     phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
 
-    code = pdfi_stream_to_buffer(ctx, halftone_dict, (byte **)&ptp->thresholds.data, (int64_t *)&ptp->thresholds.size);
+    code = pdfi_stream_to_buffer(ctx, halftone_stream,
+                                 (byte **)&ptp->thresholds.data, (int64_t *)&ptp->thresholds.size);
     if (code < 0)
         goto error;
 
@@ -1575,7 +1592,7 @@ static int build_type16_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_
     return code;
 
 error:
-    gs_free_object(ctx->memory, (byte *)ptp->thresholds.data, "build_type6_halftone");
+    gs_free_object(ctx->memory, (byte *)ptp->thresholds.data, "build_type16_halftone");
     return code;
 }
 
@@ -1616,6 +1633,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     uint64_t index = 0, ix = 0;
     int NumComponents = 0;
     gx_ht_order *porder1 = NULL;
+    pdf_dict *subdict = NULL;
 
     /* The only case involving multiple halftones, we need to enumerate each entry
      * in the dictionary
@@ -1710,10 +1728,9 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         }
         if (!pdfi_name_is((const pdf_name *)Key, "HalftoneName") && !pdfi_name_is((const pdf_name *)Key, "HalftoneType") && !pdfi_name_is((const pdf_name *)Key, "Type")) {
             if (!pdfi_name_is((const pdf_name *)Key, "HalftoneName") && !pdfi_name_is((const pdf_name *)Key, "HalftoneType") && !pdfi_name_is((const pdf_name *)Key, "Type")) {
-                if (Value->type != PDF_DICT) {
-                    code = gs_note_error(gs_error_typecheck);
+                code = pdfi_dict_from_obj(ctx, Value, &subdict);
+                if (code < 0)
                     goto error;
-                }
 
                 code = pdfi_string_from_name(ctx, (pdf_name *)Key, &str, &str_len);
                 if (code < 0)
@@ -1731,7 +1748,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                         pdht->components[ix].comp_number = phtc[ix].comp_number;
                         phtc1 = &phtc[ix++];
                     }
-                    code = pdfi_dict_get_int(ctx, (pdf_dict *)Value, "HalftoneType", &type);
+                    code = pdfi_dict_get_int(ctx, subdict, "HalftoneType", &type);
                     if (code < 0)
                         goto error;
 
@@ -1742,17 +1759,29 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                                 goto error;
                             break;
                         case 6:
-                            code = build_type6_halftone(ctx, (pdf_dict *)Value, page_dict, porder1, phtc1, str, str_len);
+                            if (Value->type != PDF_STREAM) {
+                                code = gs_note_error(gs_error_typecheck);
+                                goto error;
+                            }
+                            code = build_type6_halftone(ctx, (pdf_stream *)Value, page_dict, porder1, phtc1, str, str_len);
                             if (code < 0)
                                 goto error;
                             break;
                         case 10:
-                            code = build_type10_halftone(ctx, (pdf_dict *)Value, page_dict, porder1, phtc1, str, str_len);
+                            if (Value->type != PDF_STREAM) {
+                                code = gs_note_error(gs_error_typecheck);
+                                goto error;
+                            }
+                            code = build_type10_halftone(ctx, (pdf_stream *)Value, page_dict, porder1, phtc1, str, str_len);
                             if (code < 0)
                                 goto error;
                             break;
                         case 16:
-                            code = build_type16_halftone(ctx, (pdf_dict *)Value, page_dict, porder1, phtc1, str, str_len);
+                            if (Value->type != PDF_STREAM) {
+                                code = gs_note_error(gs_error_typecheck);
+                                goto error;
+                            }
+                            code = build_type16_halftone(ctx, (pdf_stream *)Value, page_dict, porder1, phtc1, str, str_len);
                             if (code < 0)
                                 goto error;
                             break;
@@ -1805,7 +1834,7 @@ error:
     return code;
 }
 
-static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict)
+static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *page_dict)
 {
     int code;
     char *str = NULL;
@@ -1814,6 +1843,11 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
     gx_device_halftone *pdht = NULL;
     gs_halftone_component *phtc = NULL;
     pdf_obj *Key = NULL, *Value = NULL;
+    pdf_dict *halftone_dict = NULL;
+
+    code = pdfi_dict_from_obj(ctx, halftone_obj, &halftone_dict);
+    if (code < 0)
+        return code;
 
     code = pdfi_dict_get_int(ctx, halftone_dict, "HalftoneType", &type);
     if (code < 0)
@@ -1881,13 +1915,15 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             break;
 
         case 6:
+            if (halftone_obj->type != PDF_STREAM)
+                return_error(gs_error_typecheck);
             phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component), "pdfi_do_halftone");
             if (phtc == 0) {
                 code = gs_note_error(gs_error_VMerror);
                 goto error;
             }
 
-            code = build_type6_halftone(ctx, halftone_dict, page_dict, &pdht->order, phtc, (char *)"Default", 7);
+            code = build_type6_halftone(ctx, (pdf_stream *)halftone_obj, page_dict, &pdht->order, phtc, (char *)"Default", 7);
             if (code < 0)
                 goto error;
 
@@ -1909,13 +1945,15 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             gx_unset_both_dev_colors(ctx->pgs);
             break;
         case 10:
+            if (halftone_obj->type != PDF_STREAM)
+                return_error(gs_error_typecheck);
             phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component), "pdfi_do_halftone");
             if (phtc == 0) {
                 code = gs_note_error(gs_error_VMerror);
                 goto error;
             }
 
-            code = build_type10_halftone(ctx, halftone_dict, page_dict, &pdht->order, phtc, (char *)"Default", 7);
+            code = build_type10_halftone(ctx, (pdf_stream *)halftone_obj, page_dict, &pdht->order, phtc, (char *)"Default", 7);
             if (code < 0)
                 goto error;
 
@@ -1937,13 +1975,15 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             gx_unset_both_dev_colors(ctx->pgs);
             break;
         case 16:
+            if (halftone_obj->type != PDF_STREAM)
+                return_error(gs_error_typecheck);
             phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component), "pdfi_do_halftone");
             if (phtc == 0) {
                 code = gs_note_error(gs_error_VMerror);
                 goto error;
             }
 
-            code = build_type16_halftone(ctx, halftone_dict, page_dict, &pdht->order, phtc, (char *)"Default", 7);
+            code = build_type16_halftone(ctx, (pdf_stream *)halftone_obj, page_dict, &pdht->order, phtc, (char *)"Default", 7);
             if (code < 0)
                 goto error;
 
@@ -2002,11 +2042,7 @@ static int GS_HT(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
             goto exit;
         }
     } else {
-        if (obj->type != PDF_DICT) {
-            code = gs_note_error(gs_error_typecheck);
-            goto exit;
-        }
-        code = pdfi_do_halftone(ctx, (pdf_dict *)obj, page_dict);
+        code = pdfi_do_halftone(ctx, obj, page_dict);
     }
 
 exit:
@@ -2216,7 +2252,7 @@ int pdfi_set_ExtGState(pdf_context *ctx, pdf_dict *stream_dict,
         if (code < 0 && ctx->pdfstoponerror)
             break;
         if (known) {
-            code = ExtGStateTable[i].proc(ctx, gstate_dict, stream_dict, page_dict);
+            code = ExtGStateTable[i].proc(ctx, gstate_dict, NULL, page_dict);
             if (code < 0 && ctx->pdfstoponerror)
                 break;
         }
@@ -2245,7 +2281,8 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return_error(gs_error_typecheck);
     }
 
-    code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", n, stream_dict, page_dict, &o);
+    code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", n, (pdf_dict *)stream_dict,
+                              page_dict, &o);
     pdfi_pop(ctx, 1);
     if (code < 0) {
         (void)pdfi_loop_detector_cleartomark(ctx);

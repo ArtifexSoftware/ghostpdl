@@ -41,7 +41,7 @@
 typedef struct {
     pdf_context *ctx;
     pdf_dict *page_dict;
-    pdf_dict *pat_dict;
+    pdf_obj *pat_obj;
     gs_shading_t *shading;
 } pdf_pattern_context_t;
 
@@ -105,7 +105,7 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
 static void pdfi_free_pattern_context(pdf_pattern_context_t *context)
 {
     pdfi_countdown(context->page_dict);
-    pdfi_countdown(context->pat_dict);
+    pdfi_countdown(context->pat_obj);
     if (context->shading)
         pdfi_shading_free(context->ctx, context->shading);
     gs_free_object(context->ctx->memory, context, "Free pattern context");
@@ -132,11 +132,11 @@ pdfi_pattern_paint_stream(pdf_context *ctx, const gs_client_color *pcc)
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
     pdf_pattern_context_t *context = (pdf_pattern_context_t *)pinst->client_data;
     pdf_dict *page_dict = context->page_dict;
-    pdf_dict *pat_dict = context->pat_dict;
+    pdf_stream *pat_stream = (pdf_stream *)context->pat_obj;
     int code = 0;
 
     /* Interpret inner stream */
-    code = pdfi_run_context(ctx, pat_dict, page_dict, true, "PATTERN");
+    code = pdfi_run_context(ctx, pat_stream, page_dict, true, "PATTERN");
 
     return code;
 }
@@ -323,7 +323,7 @@ pdfi_pattern_gset(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *ExtGState)
 /* Setup the pattern gstate and other context */
 static int
 pdfi_pattern_setup(pdf_context *ctx, pdf_pattern_context_t **ppcontext,
-                   pdf_dict *page_dict, pdf_dict *pat_dict, pdf_dict *ExtGState)
+                   pdf_dict *page_dict, pdf_obj *pat_obj, pdf_dict *ExtGState)
 {
     int code = 0;
     pdf_pattern_context_t *context = NULL;
@@ -340,10 +340,10 @@ pdfi_pattern_setup(pdf_context *ctx, pdf_pattern_context_t **ppcontext,
     }
     context->ctx = ctx;
     context->page_dict = page_dict;
-    context->pat_dict = pat_dict;
+    context->pat_obj = pat_obj;
     context->shading = NULL;
     pdfi_countup(page_dict);
-    pdfi_countup(pat_dict);
+    pdfi_countup(pat_obj);
     *ppcontext = context;
 
     return 0;
@@ -356,7 +356,7 @@ pdfi_pattern_setup(pdf_context *ctx, pdf_pattern_context_t **ppcontext,
 /* Type 1 (tiled) Pattern */
 static int
 pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
-                      pdf_dict *pdict, gs_client_color *cc)
+                      pdf_obj *stream, gs_client_color *cc)
 {
     int code = 0;
     gs_client_pattern templat;
@@ -365,7 +365,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     int64_t PaintType, TilingType;
     pdf_array *BBox = NULL;
     double XStep, YStep;
-    pdf_dict *Resources = NULL;
+    pdf_dict *Resources = NULL, *pdict = NULL;
     pdf_array *Matrix = NULL;
     bool transparency = false;
     pdf_pattern_context_t *context = NULL;
@@ -375,6 +375,15 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 #endif
 
     gs_pattern1_init(&templat);
+
+    /* Must be a stream */
+    if (stream->type != PDF_STREAM) {
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
+    }
+    code = pdfi_dict_from_obj(ctx, stream, &pdict);
+    if (code < 0)
+        return code;
 
     /* Required */
     code = pdfi_dict_get_int(ctx, pdict, "PaintType", &PaintType);
@@ -448,7 +457,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     if (code < 0)
         goto exit;
 
-    code = pdfi_pattern_setup(ctx, &context, page_dict, pdict, NULL);
+    code = pdfi_pattern_setup(ctx, &context, page_dict, stream, NULL);
     if (code < 0) {
         (void) pdfi_grestore(ctx);
         goto exit;
@@ -478,11 +487,11 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 /* Type 2 (shading) Pattern */
 static int
 pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
-                      pdf_dict *pdict, gs_client_color *cc)
+                      pdf_obj *pattern_obj, gs_client_color *cc)
 {
     int code = 0;
-    pdf_dict *Shading = NULL;
-    pdf_dict *ExtGState = NULL;
+    pdf_obj *Shading = NULL;
+    pdf_dict *ExtGState = NULL, *pattern_dict = NULL;
     pdf_array *Matrix = NULL;
     gs_matrix mat;
     gs_shading_t *shading;
@@ -491,12 +500,16 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 
     /* See zbuildshadingpattern() */
 
+    code = pdfi_dict_from_obj(ctx, pattern_obj, &pattern_dict);
+    if (code < 0)
+        return code;
+
 #if DEBUG_PATTERN
     dbgmprintf(ctx->memory, "PATTERN: Type 2 pattern\n");
 #endif
 
     /* (optional Matrix) */
-    code = pdfi_dict_knownget_type(ctx, pdict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
+    code = pdfi_dict_knownget_type(ctx, pattern_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
     if (code < 0)
         goto exit;
     code = pdfi_array_to_gs_matrix(ctx, Matrix, &mat);
@@ -504,7 +517,7 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
 
     /* Required Shading, can be stream or dict (but a stream is also a dict..) */
-    code = pdfi_dict_knownget_type(ctx, pdict, "Shading", PDF_DICT, (pdf_obj **)&Shading);
+    code = pdfi_dict_knownget(ctx, pattern_dict, "Shading", &Shading);
     if (code < 0)
         goto exit;
     if (code == 0) {
@@ -514,7 +527,7 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     }
 
     /* Optional ExtGState */
-    code = pdfi_dict_knownget_type(ctx, pdict, "ExtGState", PDF_DICT, (pdf_obj **)&ExtGState);
+    code = pdfi_dict_knownget_type(ctx, pattern_dict, "ExtGState", PDF_DICT, (pdf_obj **)&ExtGState);
     if (code < 0)
         goto exit;
 
@@ -567,39 +580,41 @@ pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
                 pdf_dict *page_dict, pdf_name *pname,
                 gs_client_color *cc)
 {
-    pdf_dict *pdict = NULL;
+    pdf_dict *pattern_dict = NULL;
+    pdf_obj *pattern_obj = NULL;
     int code;
     int64_t patternType;
 
     memset(cc, 0, sizeof(*cc));
-    code = pdfi_find_resource(ctx, (unsigned char *)"Pattern", pname, stream_dict,
-                              page_dict, (pdf_obj **)&pdict);
+    code = pdfi_find_resource(ctx, (unsigned char *)"Pattern", pname, (pdf_dict *)stream_dict,
+                              page_dict, (pdf_obj **)&pattern_obj);
     if (code < 0) {
         dbgmprintf(ctx->memory, "WARNING: Pattern object not found in resources\n");
         goto exit;
     }
 
-    if (pdict->type != PDF_DICT) {
+    code = pdfi_dict_from_obj(ctx, pattern_obj, &pattern_dict);
+    if (code < 0) {
         /* NOTE: Bug696410.pdf gets a bogus pattern while trying to process pattern.
          * Seems like a corrupted file, but this prevents crash
          */
-        dbgmprintf(ctx->memory, "ERROR: Pattern found in resources is not a dict\n");
-        code = gs_note_error(gs_error_typecheck);
-        goto exit;
+        dbgmprintf(ctx->memory, "ERROR: Pattern found in resources is neither a stream or dict\n");
+        return code;
     }
+
 #if DEBUG_PATTERN
     dbgmprintf1(ctx->memory, "PATTERN: pdfi_setpattern: found pattern object %d\n", pdict->object_num);
 #endif
 
-    code = pdfi_dict_get_int(ctx, pdict, "PatternType", &patternType);
+    code = pdfi_dict_get_int(ctx, pattern_dict, "PatternType", &patternType);
     if (code < 0)
         goto exit;
     if (patternType == 1) {
-        code = pdfi_setpattern_type1(ctx, stream_dict, page_dict, pdict, cc);
+        code = pdfi_setpattern_type1(ctx, stream_dict, page_dict, (pdf_obj *)pattern_obj, cc);
         if (code < 0)
             goto exit;
     } else if (patternType == 2) {
-        code = pdfi_setpattern_type2(ctx, stream_dict, page_dict, pdict, cc);
+        code = pdfi_setpattern_type2(ctx, stream_dict, page_dict, pattern_obj, cc);
         if (code < 0)
             goto exit;
     } else {
@@ -608,7 +623,7 @@ pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
     }
 
  exit:
-    pdfi_countdown(pdict);
+    pdfi_countdown(pattern_obj);
     return code;
 }
 
@@ -622,8 +637,8 @@ pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
  *
  */
 int
-pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
-                    pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array, pdf_dict *stream_dict,
+                    pdf_dict *page_dict, gs_color_space **ppcs)
 {
     gs_color_space *pcs = NULL;
     gs_color_space *base_space;

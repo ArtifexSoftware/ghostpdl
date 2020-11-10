@@ -19,7 +19,7 @@
 #define PDF_SHADING_OPERATORS
 
 int pdfi_shading_build(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
-                       pdf_dict *sdict, gs_shading_t **ppsh);
+                       pdf_obj *Shading, gs_shading_t **ppsh);
 void pdfi_shading_free(pdf_context *ctx, gs_shading_t *psh);
 int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
 

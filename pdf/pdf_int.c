@@ -105,7 +105,7 @@ static int fromhex(char c)
  * pushed onto the stack does the reference count become 1, indicating the stack is
  * the only reference.
  */
-int pdfi_skip_white(pdf_context *ctx, pdf_stream *s)
+int pdfi_skip_white(pdf_context *ctx, pdf_c_stream *s)
 {
     uint32_t read = 0;
     int32_t bytes = 0;
@@ -125,7 +125,7 @@ int pdfi_skip_white(pdf_context *ctx, pdf_stream *s)
     return 0;
 }
 
-int pdfi_skip_eol(pdf_context *ctx, pdf_stream *s)
+int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s)
 {
     uint32_t read = 0;
     int32_t bytes = 0;
@@ -145,7 +145,7 @@ int pdfi_skip_eol(pdf_context *ctx, pdf_stream *s)
     return 0;
 }
 
-static int pdfi_read_num(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
+static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     byte Buffer[256];
     unsigned short index = 0;
@@ -272,7 +272,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num,
     return code;
 }
 
-static int pdfi_read_name(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
+static int pdfi_read_name(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     char *Buffer, *NewBuf = NULL;
     unsigned short index = 0;
@@ -357,7 +357,7 @@ static int pdfi_read_name(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num
     return code;
 }
 
-static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
+static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     char *Buffer, *NewBuf = NULL, HexBuf[2];
     unsigned short index = 0;
@@ -446,7 +446,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s, uint32_t indirec
     return code;
 }
 
-static int pdfi_read_string(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
+static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     char *Buffer, *NewBuf = NULL, octal[3];
     unsigned short index = 0;
@@ -649,7 +649,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s, uint32_t indirect_n
     return code;
 }
 
-int pdfi_read_dict(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
+int pdfi_read_dict(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     int code, depth;
 
@@ -668,7 +668,7 @@ int pdfi_read_dict(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint3
     return 0;
 }
 
-int pdfi_skip_comment(pdf_context *ctx, pdf_stream *s)
+int pdfi_skip_comment(pdf_context *ctx, pdf_c_stream *s)
 {
     byte Buffer;
     short bytes = 0;
@@ -699,7 +699,7 @@ int pdfi_skip_comment(pdf_context *ctx, pdf_stream *s)
  * of that type (PDF_NULL, PDF_BOOL or PDF_INDIRECT_REF)
  * and return it instead.
  */
-static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
+static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     byte Buffer[256];
     unsigned short index = 0;
@@ -753,7 +753,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s, uint32_t indirect_
     switch(Buffer[0]) {
         case 'K':
             if (keyword->length == 16 && memcmp(keyword->data, "KEYWORD_TOO_LONG", 16) == 0) {
-                keyword->key = PDF_INVALID_KEY;
+                keyword->key = TOKEN_INVALID_KEY;
             }
             break;
         case 'R':
@@ -797,19 +797,19 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s, uint32_t indirect_
             break;
         case 'e':
             if (keyword->length == 9 && memcmp((const char *)Buffer, "endstream", 9) == 0)
-                keyword->key = PDF_ENDSTREAM;
+                keyword->key = TOKEN_ENDSTREAM;
             else {
                 if (keyword->length == 6 && memcmp((const char *)Buffer, "endobj", 6) == 0)
-                    keyword->key = PDF_ENDOBJ;
+                    keyword->key = TOKEN_ENDOBJ;
             }
             break;
         case 'o':
             if (keyword->length == 3 && memcmp((const char *)Buffer, "obj", 3) == 0)
-                keyword->key = PDF_OBJ;
+                keyword->key = TOKEN_OBJ;
             break;
         case 's':
             if (keyword->length == 6 && memcmp((const char *)Buffer, "stream", 6) == 0){
-                keyword->key = PDF_STREAM;
+                keyword->key = TOKEN_STREAM;
                 code = pdfi_skip_eol(ctx, s);
                 if (code < 0) {
                     pdfi_countdown(keyword);
@@ -818,7 +818,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s, uint32_t indirect_
             }
             else {
                 if (keyword->length == 9 && memcmp((const char *)Buffer, "startxref", 9) == 0)
-                    keyword->key = PDF_STARTXREF;
+                    keyword->key = TOKEN_STARTXREF;
             }
             break;
         case 't':
@@ -842,7 +842,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s, uint32_t indirect_
             }
             else {
                 if (keyword->length == 7 && memcmp((const char *)Buffer, "trailer", 7) == 0)
-                    keyword->key = PDF_TRAILER;
+                    keyword->key = TOKEN_TRAILER;
             }
             break;
         case 'f':
@@ -886,7 +886,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s, uint32_t indirect_
             break;
         case 'x':
             if (keyword->length == 4 && memcmp((const char *)Buffer, "xref", 4) == 0)
-                keyword->key = PDF_XREF;
+                keyword->key = TOKEN_XREF;
             break;
     }
 
@@ -899,7 +899,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s, uint32_t indirect_
 /* This function reads from the given stream, at the current offset in the stream,
  * a single PDF 'token' and returns it on the stack.
  */
-int pdfi_read_token(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
+int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     int32_t bytes = 0;
     char Buffer[256];
@@ -1052,7 +1052,8 @@ static char op_table_1[27][1] = {
 };
 
 /* forward definition for the 'split_bogus_operator' function to use */
-static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *stream_dict, pdf_dict *page_dict);
+static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source,
+                                          pdf_dict *stream_dict, pdf_dict *page_dict);
 
 static int search_table_3(pdf_context *ctx, unsigned char *str, pdf_keyword **key)
 {
@@ -1064,7 +1065,7 @@ static int search_table_3(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
             if (code < 0)
                 return code;
             memcpy((*key)->data, str, 3);
-            (*key)->key = PDF_NOT_A_KEYWORD;
+            (*key)->key = TOKEN_NOT_A_KEYWORD;
             pdfi_countup(*key);
             return 1;
         }
@@ -1082,7 +1083,7 @@ static int search_table_2(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
             if (code < 0)
                 return code;
             memcpy((*key)->data, str, 2);
-            (*key)->key = PDF_NOT_A_KEYWORD;
+            (*key)->key = TOKEN_NOT_A_KEYWORD;
             pdfi_countup(*key);
             return 1;
         }
@@ -1100,7 +1101,7 @@ static int search_table_1(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
             if (code < 0)
                 return code;
             memcpy((*key)->data, str, 1);
-            (*key)->key = PDF_NOT_A_KEYWORD;
+            (*key)->key = TOKEN_NOT_A_KEYWORD;
             pdfi_countup(*key);
             return 1;
         }
@@ -1108,7 +1109,7 @@ static int search_table_1(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
     return 0;
 }
 
-static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code = 0;
     pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1], *key1 = NULL, *key2 = NULL;
@@ -1131,7 +1132,7 @@ static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *
             if (code < 0)
                 goto error_exit;
             memcpy(key1->data, "endobj", 6);
-            key1->key = PDF_ENDOBJ;
+            key1->key = TOKEN_ENDOBJ;
             pdfi_push(ctx, (pdf_obj *)key1);
             return 0;
         } else {
@@ -1149,7 +1150,7 @@ static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *
                 if (code < 0)
                     goto error_exit;
                 memcpy(key1->data, "endstream", 9);
-                key1->key = PDF_ENDSTREAM;
+                key1->key = TOKEN_ENDSTREAM;
                 pdfi_push(ctx, (pdf_obj *)key1);
                 return 0;
             } else {
@@ -1256,7 +1257,8 @@ error_exit:
 #define K2(a, b) ((a << 8) + b)
 #define K3(a, b, c) ((a << 16) + (b << 8) + c)
 
-static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source,
+                                          pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
     uint32_t op = 0;
@@ -1274,7 +1276,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
             return code;
         if (pdfi_count_stack(ctx) > 0) {
             keyword = (pdf_keyword *)ctx->stack_top[-1];
-            if (keyword->key != PDF_NOT_A_KEYWORD)
+            if (keyword->key != TOKEN_NOT_A_KEYWORD)
                 return REPAIRED_KEYWORD;
         } else
             return 0;
@@ -1520,7 +1522,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K2('T','f'):       /* set font and size */
                 pdfi_pop(ctx, 1);
-                code = pdfi_Tf(ctx, stream_dict, page_dict);
+                code = pdfi_Tf(ctx, (pdf_dict *)stream_dict, page_dict);
                 break;
             case K2('T','j'):       /* show text */
                 pdfi_pop(ctx, 1);
@@ -1590,7 +1592,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                     return code;
                 if (pdfi_count_stack(ctx) > 0) {
                     keyword = (pdf_keyword *)ctx->stack_top[-1];
-                    if (keyword->key != PDF_NOT_A_KEYWORD)
+                    if (keyword->key != TOKEN_NOT_A_KEYWORD)
                         return REPAIRED_KEYWORD;
                 }
                 break;
@@ -1649,7 +1651,7 @@ void initialise_stream_save(pdf_context *ctx)
 }
 
 /* Run a stream in a sub-context (saves/restores DefaultQState) */
-int pdfi_run_context(pdf_context *ctx, pdf_dict *stream_dict,
+int pdfi_run_context(pdf_context *ctx, pdf_stream *stream_obj,
                      pdf_dict *page_dict, bool stoponerror, const char *desc)
 {
     int code;
@@ -1660,7 +1662,7 @@ int pdfi_run_context(pdf_context *ctx, pdf_dict *stream_dict,
 #endif
     pdfi_copy_DefaultQState(ctx, &DefaultQState);
     pdfi_set_DefaultQState(ctx, ctx->pgs);
-    code = pdfi_interpret_inner_content_stream(ctx, stream_dict, page_dict, stoponerror, desc);
+    code = pdfi_interpret_inner_content_stream(ctx, stream_obj, page_dict, stoponerror, desc);
     pdfi_restore_DefaultQState(ctx, &DefaultQState);
 #if DEBUG_CONTEXT
     dbgmprintf(ctx->memory, "pdfi_run_context END\n");
@@ -1674,7 +1676,7 @@ int pdfi_run_context(pdf_context *ctx, pdf_dict *stream_dict,
  * It will make sure the stack is cleared and the gstate is matched.
  */
 static int
-pdfi_interpret_inner_content(pdf_context *ctx, pdf_stream *content_stream, pdf_dict *stream_dict,
+pdfi_interpret_inner_content(pdf_context *ctx, pdf_c_stream *content_stream, pdf_stream *stream_obj,
                              pdf_dict *page_dict, bool stoponerror, const char *desc)
 {
     int code = 0;
@@ -1691,7 +1693,7 @@ pdfi_interpret_inner_content(pdf_context *ctx, pdf_stream *content_stream, pdf_d
 #if DEBUG_CONTEXT
     dbgmprintf1(ctx->memory, "BEGIN %s stream\n", desc);
 #endif
-    code = pdfi_interpret_content_stream(ctx, content_stream, stream_dict, page_dict);
+    code = pdfi_interpret_content_stream(ctx, content_stream, stream_obj, page_dict);
 #if DEBUG_CONTEXT
     dbgmprintf1(ctx->memory, "END %s stream\n", desc);
 #endif
@@ -1723,15 +1725,21 @@ pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string
                                     bool stoponerror, const char *desc)
 {
     int code = 0;
-    pdf_stream *stream = NULL;
+    pdf_c_stream *stream = NULL;
+    pdf_stream *stream_obj = NULL;
 
     code = pdfi_open_memory_stream_from_memory(ctx, content_string->length,
                                                content_string->data, &stream);
     if (code < 0)
         goto exit;
 
+    code = pdfi_obj_dict_to_stream(ctx, stream_dict, &stream_obj);
+    if (code < 0)
+        return code;
+
     /* NOTE: stream gets closed in here */
-    code = pdfi_interpret_inner_content(ctx, stream, stream_dict, page_dict, stoponerror, desc);
+    code = pdfi_interpret_inner_content(ctx, stream, stream_obj, page_dict, stoponerror, desc);
+    pdfi_countdown(stream_obj);
  exit:
     return code;
 }
@@ -1739,10 +1747,10 @@ pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string
 /* Interpret inner content from a stream_dict
  */
 int
-pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
+pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_stream *stream_obj,
                                     pdf_dict *page_dict, bool stoponerror, const char *desc)
 {
-    return pdfi_interpret_inner_content(ctx, NULL, stream_dict, page_dict, stoponerror, desc);
+    return pdfi_interpret_inner_content(ctx, NULL, stream_obj, page_dict, stoponerror, desc);
 }
 
 /*
@@ -1751,27 +1759,27 @@ pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
  * stream_dict -- dict containing the stream
  */
 int
-pdfi_interpret_content_stream(pdf_context *ctx, pdf_stream *content_stream,
-                              pdf_dict *stream_dict, pdf_dict *page_dict)
+pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
+                              pdf_stream *stream_obj, pdf_dict *page_dict)
 {
     int code;
-    pdf_stream *stream;
+    pdf_c_stream *stream;
     pdf_keyword *keyword;
 
     if (content_stream != NULL) {
         stream = content_stream;
     } else {
-        code = pdfi_seek(ctx, ctx->main_stream, stream_dict->stream_offset, SEEK_SET);
+        code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
         if (code < 0)
             return code;
 
-        code = pdfi_filter(ctx, stream_dict, ctx->main_stream, &stream, false);
+        code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
         if (code < 0)
             return code;
     }
 
     do {
-        code = pdfi_read_token(ctx, stream, stream_dict->object_num, stream_dict->generation_num);
+        code = pdfi_read_token(ctx, stream, stream_obj->object_num, stream_obj->generation_num);
         if (code < 0) {
             if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->pdfstoponerror) {
                 if (code == gs_error_ioerror) {
@@ -1797,12 +1805,12 @@ repaired_keyword:
             keyword = (pdf_keyword *)ctx->stack_top[-1];
 
             switch(keyword->key) {
-                case PDF_ENDSTREAM:
+                case TOKEN_ENDSTREAM:
                     pdfi_close_file(ctx, stream);
                     pdfi_pop(ctx,1);
                     return 0;
                     break;
-                case PDF_ENDOBJ:
+                case TOKEN_ENDOBJ:
                     pdfi_close_file(ctx, stream);
                     pdfi_clearstack(ctx);
                     ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
@@ -1810,21 +1818,29 @@ repaired_keyword:
                         return_error(gs_error_syntaxerror);
                     return 0;
                     break;
-                case PDF_NOT_A_KEYWORD:
-                    code = pdfi_interpret_stream_operator(ctx, stream, stream_dict, page_dict);
-                    if (code == REPAIRED_KEYWORD)
-                        goto repaired_keyword;
+                case TOKEN_NOT_A_KEYWORD:
+                    {
+                        pdf_dict *stream_dict = NULL;
 
-                    if (code < 0) {
-                        ctx->pdf_errors |= E_PDF_TOKENERROR;
-                        if (ctx->pdfstoponerror) {
-                            pdfi_close_file(ctx, stream);
-                            pdfi_clearstack(ctx);
+                        code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
+                        if (code < 0)
                             return code;
+
+                        code = pdfi_interpret_stream_operator(ctx, stream, stream_dict, page_dict);
+                        if (code == REPAIRED_KEYWORD)
+                            goto repaired_keyword;
+
+                        if (code < 0) {
+                            ctx->pdf_errors |= E_PDF_TOKENERROR;
+                            if (ctx->pdfstoponerror) {
+                                pdfi_close_file(ctx, stream);
+                                pdfi_clearstack(ctx);
+                                return code;
+                            }
                         }
                     }
                     break;
-                case PDF_INVALID_KEY:
+                case TOKEN_INVALID_KEY:
                     ctx->pdf_errors |= E_PDF_KEYWORDTOOLONG;
                     pdfi_clearstack(ctx);
                     break;

@@ -69,7 +69,7 @@
 #ifndef PDF_FILES
 #define PDF_FILES
 /*
- * A pdf_stream object maintains an 'original' stream memeber. This is only used when closing a file/filter.
+ * A pdf_c_stream object maintains an 'original' stream memeber. This is only used when closing a file/filter.
  * When we apply filters to a file we supply the stream that we use as the basis for the new stream, this is
  * then stored as the 'original' member. When we close the file, we close all the chained streams until we
  * reach the 'original' member and then exit.
@@ -78,34 +78,35 @@
  * in effect at the time we created the new stream.
  */
 
-int pdfi_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **new_stream, bool inline_image);
+int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source, pdf_c_stream **new_stream, bool inline_image);
 /* pdfi_filter_no_decryption is a special function used by the xref parsing when dealing with XRefStms and should not be used
  * for anything else. The pdfi_filter routine will apply decryption as required.
  */
-int pdfi_filter_no_decryption(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **new_stream, bool inline_image);
-void pdfi_close_file(pdf_context *ctx, pdf_stream *s);
-int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, pdf_stream *s);
-int pdfi_unread(pdf_context *ctx, pdf_stream *s, byte *Buffer, uint32_t size);
-int pdfi_seek(pdf_context *ctx, pdf_stream *s, gs_offset_t offset, uint32_t origin);
+int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *d, pdf_c_stream *source, pdf_c_stream **new_stream, bool inline_image);
+void pdfi_close_file(pdf_context *ctx, pdf_c_stream *s);
+int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, pdf_c_stream *s);
+int pdfi_unread(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, uint32_t size);
+int pdfi_seek(pdf_context *ctx, pdf_c_stream *s, gs_offset_t offset, uint32_t origin);
 gs_offset_t pdfi_unread_tell(pdf_context *ctx);
-gs_offset_t pdfi_tell(pdf_stream *s);
+gs_offset_t pdfi_tell(pdf_c_stream *s);
 
-int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *EODString, pdf_stream *source, pdf_stream **new_stream, bool inline_image);
-int pdfi_open_memory_stream(pdf_context *ctx, unsigned int size, byte **Buffer, pdf_stream *source, pdf_stream **new_stream);
-int pdfi_close_memory_stream(pdf_context *ctx, byte *Buffer, pdf_stream *source);
+int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *EODString, pdf_c_stream *source, pdf_c_stream **new_stream, bool inline_image);
+int pdfi_open_memory_stream(pdf_context *ctx, unsigned int size, byte **Buffer, pdf_c_stream *source, pdf_c_stream **new_stream);
+int pdfi_close_memory_stream(pdf_context *ctx, byte *Buffer, pdf_c_stream *source);
 int pdfi_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size,
-                                        byte **Buffer, pdf_stream *source, pdf_stream **new_pdf_stream);
-int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_dict *stream_dict, unsigned int size,
-                                        byte **Buffer, pdf_stream *source, pdf_stream **new_pdf_stream);
+                                        byte **Buffer, pdf_c_stream *source, pdf_c_stream **new_pdf_stream);
+int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *stream_dict,
+                                        unsigned int size,
+                                        byte **Buffer, pdf_c_stream *source, pdf_c_stream **new_pdf_stream);
 int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size,
-                                        byte *Buffer, pdf_stream **new_pdf_stream);
-int pdfi_stream_to_buffer(pdf_context *ctx, pdf_dict *stream_dict, byte **buf, int64_t *bufferlen);
+                                        byte *Buffer, pdf_c_stream **new_pdf_stream);
+int pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_dict, byte **buf, int64_t *bufferlen);
 
-int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_stream *source, pdf_stream **new_stream);
-int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_padding, pdf_stream *source, pdf_stream **new_stream);
+int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_c_stream *source, pdf_c_stream **new_stream);
+int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_padding, pdf_c_stream *source, pdf_c_stream **new_stream);
 
 #ifdef UNUSED_FILTER
-int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_stream *source, pdf_stream **new_stream);
+int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_c_stream *source, pdf_c_stream **new_stream);
 #endif
 
 #endif /* PDF_FILES */

@@ -20,25 +20,25 @@
 #include "pdf_types.h"
 
 
-int pdfi_skip_white(pdf_context *ctx, pdf_stream *s);
-int pdfi_skip_eol(pdf_context *ctx, pdf_stream *s);
-int pdfi_skip_comment(pdf_context *ctx, pdf_stream *s);
-int pdfi_read_token(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen);
+int pdfi_skip_white(pdf_context *ctx, pdf_c_stream *s);
+int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s);
+int pdfi_skip_comment(pdf_context *ctx, pdf_c_stream *s);
+int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen);
 
 int pdfi_make_name(pdf_context *ctx, byte *key, uint32_t size, pdf_obj **o);
 
-int pdfi_read_dict(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen);
+int pdfi_read_dict(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen);
 
 void local_save_stream_state(pdf_context *ctx, stream_save *local_save);
 void local_restore_stream_state(pdf_context *ctx, stream_save *local_save);
 void cleanup_context_interpretation(pdf_context *ctx, stream_save *local_save);
 void initialise_stream_save(pdf_context *ctx);
-int pdfi_run_context(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, bool stoponerror, const char *desc);
+int pdfi_run_context(pdf_context *ctx, pdf_stream *stream_obj, pdf_dict *page_dict, bool stoponerror, const char *desc);
 int
 pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string,
                                     pdf_dict *stream_dict, pdf_dict *page_dict,
                                     bool stoponerror, const char *desc);
-int pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, bool stoponerror, const char *desc);
-int pdfi_interpret_content_stream(pdf_context *ctx, pdf_stream *content_stream, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_stream *stream_obj, pdf_dict *page_dict, bool stoponerror, const char *desc);
+int pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream, pdf_stream *stream_obj, pdf_dict *page_dict);
 
 #endif

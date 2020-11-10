@@ -29,7 +29,7 @@
 #include "gsfunc4.h"
 #include "stream.h"
 
-static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict);
+static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_obj *stream_obj, pdf_dict *page_dict);
 
 #define NUMBERTOKENSIZE 16
 #define OPTOKENSIZE 9
@@ -135,7 +135,7 @@ put_float(byte **p, float n) {
 }
 
 static int
-pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, int depth, byte *ops, unsigned int *size)
+pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, int depth, byte *ops, unsigned int *size)
 {
     int code;
     byte c;
@@ -276,32 +276,33 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, int 
 
 static int
 pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
-                    pdf_dict *function_dict, int depth, gs_function_t ** ppfn)
+                    pdf_stream *function_obj, int depth, gs_function_t ** ppfn)
 {
     gs_function_PtCr_params_t params;
-    pdf_stream *function_stream = NULL;
+    pdf_c_stream *function_stream = NULL;
     int code;
     int64_t Length;
     byte *data_source_buffer;
     byte *ops = NULL;
     unsigned int size;
     gs_offset_t savedoffset;
-
     memset(&params, 0x00, sizeof(gs_function_PtCr_params_t));
     *(gs_function_params_t *)&params = *mnDR;
     params.ops.data = 0;	/* in case of failure */
     params.ops.size = 0;	/* ditto */
 
-    if (!pdfi_dict_is_stream(ctx, function_dict))
+    if (function_obj->type != PDF_STREAM)
         return_error(gs_error_undefined);
-    Length = pdfi_dict_stream_length(ctx, function_dict);
+    Length = pdfi_stream_length(ctx, (pdf_stream *)function_obj);
 
     savedoffset = pdfi_tell(ctx->main_stream);
-    code = pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
+    code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, function_obj), SEEK_SET);
     if (code < 0)
         return code;
 
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, function_dict, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, function_obj, (unsigned int)Length,
+                                                        &data_source_buffer, ctx->main_stream,
+                                                        &function_stream);
     if (code < 0)
         goto function_4_error;
 
@@ -356,14 +357,15 @@ function_4_error:
 
 static int
 pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
-                    pdf_dict *function_dict, int depth, gs_function_t ** ppfn)
+                    pdf_stream *function_obj, int depth, gs_function_t ** ppfn)
 {
     gs_function_Sd_params_t params;
-    pdf_stream *function_stream = NULL;
+    pdf_c_stream *function_stream = NULL;
     int code = 0;
     int64_t Length, temp;
     byte *data_source_buffer;
     gs_offset_t savedoffset;
+    pdf_dict *function_dict = NULL;
 
     memset(&params, 0x00, sizeof(gs_function_params_t));
     *(gs_function_params_t *) & params = *mnDR;
@@ -372,14 +374,21 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
     params.Size = params.array_step = params.stream_step = NULL;
     params.Order = 0;
 
-    if (!pdfi_dict_is_stream(ctx, function_dict))
+    if (function_obj->type != PDF_STREAM)
         return_error(gs_error_undefined);
-    Length = pdfi_dict_stream_length(ctx, function_dict);
+
+    code = pdfi_dict_from_obj(ctx, (pdf_obj *)function_obj, &function_dict);
+    if (code < 0)
+        return code;
+
+    Length = pdfi_stream_length(ctx, (pdf_stream *)function_obj);
 
     savedoffset = pdfi_tell(ctx->main_stream);
-    pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
+    pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, function_obj), SEEK_SET);
 
-    Length = pdfi_open_memory_stream_from_filtered_stream(ctx, function_dict, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream);
+    Length = pdfi_open_memory_stream_from_filtered_stream(ctx, function_obj, (unsigned int)Length,
+                                                          &data_source_buffer, ctx->main_stream,
+                                                          &function_stream);
     if (Length < 0) {
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return Length;
@@ -552,11 +561,11 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
     for (i = 0; i < params.k; ++i) {
         pdf_obj * rsubfn = NULL;
 
-        code = pdfi_array_get_type(ctx, (pdf_array *)Functions, (int64_t)i, PDF_DICT, &rsubfn);
+        code = pdfi_array_get(ctx, (pdf_array *)Functions, (int64_t)i, &rsubfn);
         if (code < 0)
             goto function_3_error;
 
-        code = pdfi_build_sub_function(ctx, &ptr[i], shading_domain, num_inputs, (pdf_dict *)rsubfn, page_dict);
+        code = pdfi_build_sub_function(ctx, &ptr[i], shading_domain, num_inputs, rsubfn, page_dict);
         pdfi_countdown(rsubfn);
         if (code < 0)
             goto function_3_error;
@@ -591,11 +600,16 @@ function_3_error:
     return code;
 }
 
-static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_obj *stream_obj, pdf_dict *page_dict)
 {
     int code, i;
     int64_t Type;
     gs_function_params_t params;
+    pdf_dict *stream_dict;
+
+    code = pdfi_dict_from_obj(ctx, stream_obj, &stream_dict);
+    if (code < 0)
+        return code;
 
     code = pdfi_dict_get_int(ctx, stream_dict, "FunctionType", &Type);
     if (code < 0)
@@ -648,7 +662,7 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     }
     switch(Type) {
         case 0:
-            code = pdfi_build_function_0(ctx, &params, stream_dict, 0, ppfn);
+            code = pdfi_build_function_0(ctx, &params, (pdf_stream *)stream_obj, 0, ppfn);
             if (code < 0)
                 goto sub_function_error;
             break;
@@ -663,7 +677,7 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
                 goto sub_function_error;
             break;
         case 4:
-            code = pdfi_build_function_4(ctx, &params, stream_dict, 0, ppfn);
+            code = pdfi_build_function_4(ctx, &params, (pdf_stream *)stream_obj, 0, ppfn);
             if (code < 0)
                 goto sub_function_error;
             break;
@@ -735,15 +749,15 @@ int pdfi_free_function(pdf_context *ctx, gs_function_t *pfn)
     return 0;
 }
 
-int pdfi_build_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict)
+int pdfi_build_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_obj *stream_obj, pdf_dict *page_dict)
 {
-    return pdfi_build_sub_function(ctx, ppfn, shading_domain, num_inputs, stream_dict, page_dict);
+    return pdfi_build_sub_function(ctx, ppfn, shading_domain, num_inputs, stream_obj, page_dict);
 }
 
 int pdfi_build_halftone_function(pdf_context *ctx, gs_function_t ** ppfn, byte *Buffer, int64_t Length)
 {
     gs_function_PtCr_params_t params;
-    pdf_stream *function_stream = NULL;
+    pdf_c_stream *function_stream = NULL;
     int code=0;
     byte *ops = NULL;
     unsigned int size;

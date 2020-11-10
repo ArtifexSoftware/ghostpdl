@@ -19,7 +19,7 @@
 #define PDF_FUNCTIONS
 
 int pdfi_free_function(pdf_context *ctx, gs_function_t *pfn);
-int pdfi_build_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_build_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_obj *stream_obj, pdf_dict *page_dict);
 int pdfi_build_halftone_function(pdf_context *ctx, gs_function_t ** ppfn, byte *Buffer, int64_t Length);
 
 #endif

@@ -197,7 +197,7 @@ static int check_user_password_R5(pdf_context *ctx, char *Password, int Len, int
     char *UTF8_Password, *Test = NULL, Buffer[32], UEPadded[48];
     int NewLen;
     int code = 0;
-    pdf_stream *stream = NULL, *filter_stream = NULL;
+    pdf_c_stream *stream = NULL, *filter_stream = NULL;
     pdf_string *Key = NULL;
     SHA256_CTX sha256;
 
@@ -425,7 +425,7 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
 {
     pdf_string *Key = NULL, *XORKey = NULL;
     int code = 0, i, j, KeyLenBytes = KeyLen / 8;
-    pdf_stream *stream, *arc4_stream;
+    pdf_c_stream *stream, *arc4_stream;
     char Buffer[32];
     char Hash[16];
     gs_md5_state_t md5;
@@ -595,7 +595,7 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
     char *UTF8_Password, *Test = NULL, Buffer[32], OEPadded[48];
     int NewLen;
     int code = 0;
-    pdf_stream *stream = NULL, *filter_stream = NULL;
+    pdf_c_stream *stream = NULL, *filter_stream = NULL;
     pdf_string *Key = NULL;
     SHA256_CTX sha256;
 
@@ -727,7 +727,7 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
     int code = 0, i, j, KeyLenBytes = KeyLen / 8;
     pdf_string *EKey = NULL;
     gs_md5_state_t md5;
-    pdf_stream *stream, *arc4_stream;
+    pdf_c_stream *stream, *arc4_stream;
     char Buffer[32], Arc4Source[32];
 
     /* Algorithm 3.7 */
@@ -915,7 +915,7 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
 int pdfi_decrypt_string(pdf_context *ctx, pdf_string *string)
 {
     int code = 0;
-    pdf_stream *stream = NULL, *crypt_stream = NULL;
+    pdf_c_stream *stream = NULL, *crypt_stream = NULL;
     pdf_string *EKey = NULL;
     char *Buffer = NULL;
 

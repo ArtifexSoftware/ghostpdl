@@ -205,7 +205,8 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         if (code < 0)
             goto Tf_error;
 
-        code = pdfi_find_resource(ctx, (unsigned char *)"Font", (pdf_name *)o, stream_dict, page_dict, (pdf_obj **)&font_dict);
+        code = pdfi_find_resource(ctx, (unsigned char *)"Font", (pdf_name *)o,
+                                  stream_dict, page_dict, (pdf_obj **)&font_dict);
         (void)pdfi_loop_detector_cleartomark(ctx);
         if (code < 0)
             goto Tf_error;

@@ -39,8 +39,12 @@
 #include "gxcdevn.h"
 
 /* Forward definitions for a routine we need */
-static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image);
-static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image);
+static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index,
+                                           pdf_dict *stream_dict, pdf_dict *page_dict,
+                                           gs_color_space **ppcs, bool inline_image);
+static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
+                                          pdf_dict *stream_dict, pdf_dict *page_dict,
+                                          gs_color_space **ppcs, bool inline_image);
 
 /* This is used only from the page level interpreter code, we need to know the number
  * of spot colours in a PDF file, which we have to pass to the device for spot colour
@@ -986,16 +990,16 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
     return code;
 }
 
-static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, int64_t Length, int N, int *icc_N, float *range, gs_color_space **ppcs)
+static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *cname, int64_t Length, int N, int *icc_N, float *range, gs_color_space **ppcs)
 {
-    pdf_stream *profile_stream = NULL;
+    pdf_c_stream *profile_stream = NULL;
     byte *profile_buffer;
     gs_offset_t savedoffset;
     int code, code1;
 
     /* Save the current stream position, and move to the start of the profile stream */
     savedoffset = pdfi_tell(ctx->main_stream);
-    pdfi_seek(ctx, ctx->main_stream, ICC_dict->stream_offset, SEEK_SET);
+    pdfi_seek(ctx, ctx->main_stream, ICC_obj->stream_offset, SEEK_SET);
 
     /* The ICC profile reading code (irritatingly) requires a seekable stream, because it
      * rewinds it to the start, then seeks to the end to find the size, then rewinds the
@@ -1004,7 +1008,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
      * implemented in PostScript (!) so we can't use it. What we can do is create a
      * string sourced stream in memory, which is at least seekable.
      */
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, ICC_dict, Length, &profile_buffer, ctx->main_stream, &profile_stream);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, ICC_obj, Length, &profile_buffer, ctx->main_stream, &profile_stream);
     if (code < 0) {
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
@@ -1025,7 +1029,8 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
 
 static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)
 {
-    pdf_dict *ICC_dict = NULL;
+    pdf_stream *ICC_obj = NULL;
+    pdf_dict *dict; /* Alias to avoid tons of casting */
     pdf_array *a;
     int64_t Length, N;
     pdf_obj *Name = NULL;
@@ -1036,19 +1041,18 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     int icc_N;
     gs_color_space *pcs = NULL;
 
-    code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_DICT, (pdf_obj **)&ICC_dict);
+    code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_STREAM, (pdf_obj **)&ICC_obj);
+    if (code < 0)
+        return code;
+    code = pdfi_dict_from_obj(ctx, (pdf_obj *)ICC_obj, &dict);
     if (code < 0)
         return code;
 
-    if (!pdfi_dict_is_stream(ctx, ICC_dict)) {
-        code = gs_note_error(gs_error_undefined);
-        goto done;
-    }
-    Length = pdfi_dict_stream_length(ctx, ICC_dict);
-    code = pdfi_dict_get_int(ctx, ICC_dict, "N", &N);
+    Length = pdfi_stream_length(ctx, ICC_obj);
+    code = pdfi_dict_get_int(ctx, dict, "N", &N);
     if (code < 0)
         goto done;
-    code = pdfi_dict_knownget(ctx, ICC_dict, "Name", &Name);
+    code = pdfi_dict_knownget(ctx, dict, "Name", &Name);
     if (code > 0) {
         if(Name->type == PDF_STRING || Name->type == PDF_NAME) {
             cname = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)Name)->length + 1, "pdfi_create_iccbased (profile name)");
@@ -1063,7 +1067,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     if (code < 0)
         goto done;
 
-    code = pdfi_dict_knownget_type(ctx, ICC_dict, "Range", PDF_ARRAY, (pdf_obj **)&a);
+    code = pdfi_dict_knownget_type(ctx, dict, "Range", PDF_ARRAY, (pdf_obj **)&a);
     if (code < 0)
         goto done;
     if (code > 0) {
@@ -1099,7 +1103,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         }
     }
 
-    code = pdfi_create_iccprofile(ctx, ICC_dict, cname, Length, N, &icc_N, range, &pcs);
+    code = pdfi_create_iccprofile(ctx, ICC_obj, cname, Length, N, &icc_N, range, &pcs);
 
     /* This is just plain hackery for the benefit of Bug696690.pdf. The old PostScript PDF interpreter says:
      * %% This section is to deal with the horrible pair of files in Bug #696690 and Bug #696120
@@ -1140,11 +1144,12 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
             rc_decrement(pcs,"pdfi_create_iccbased");
 
         /* Failed to set the ICCBased space, attempt to use the Alternate */
-        code = pdfi_dict_knownget(ctx, ICC_dict, "Alternate", &Alternate);
+        code = pdfi_dict_knownget(ctx, dict, "Alternate", &Alternate);
         if (code > 0) {
             /* The Alternate should be one of the device spaces, therefore a Name object. If its not, fallback to using /N */
             if (Alternate->type == PDF_NAME)
-                code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict, page_dict, ppcs, inline_image);
+                code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict,
+                                                      page_dict, ppcs, inline_image);
             pdfi_countdown(Alternate);
             if (code == 0) {
                 ctx->pdf_warnings |= W_PDF_BADICC_USE_ALT;
@@ -1193,7 +1198,7 @@ done:
     if (cname)
         gs_free_object(ctx->memory, cname, "pdfi_create_iccbased (profile name)");
     pdfi_countdown(Name);
-    pdfi_countdown(ICC_dict);
+    pdfi_countdown(ICC_obj);
     return code;
 }
 
@@ -1535,7 +1540,7 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     pdf_obj *o = NULL;
     pdf_name *name = NULL, *NamedAlternate = NULL;
     pdf_array *ArrayAlternate = NULL;
-    pdf_dict *transform = NULL;
+    pdf_obj *transform = NULL;
     int code;
     gs_color_space *pcs = NULL, *pcs_alt = NULL;
     gs_function_t * pfn = NULL;
@@ -1574,7 +1579,7 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
         }
     }
 
-    code = pdfi_array_get_type(ctx, color_array, index + 3, PDF_DICT, (pdf_obj **)&transform);
+    code = pdfi_array_get(ctx, color_array, index + 3, &transform);
     if (code < 0)
         goto pdfi_separation_error;
 
@@ -1635,7 +1640,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     pdf_obj *o = NULL;
     pdf_name *NamedAlternate = NULL;
     pdf_array *ArrayAlternate = NULL, *inks = NULL;
-    pdf_dict *transform = NULL;
+    pdf_obj *transform = NULL;
     pdf_dict *attributes = NULL;
     pdf_dict *Colorants = NULL, *Process = NULL;
     gs_color_space *process_space = NULL;
@@ -1669,7 +1674,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     }
 
     /* Now the tint transform */
-    code = pdfi_array_get_type(ctx, color_array, index + 3, PDF_DICT, (pdf_obj **)&transform);
+    code = pdfi_array_get(ctx, color_array, index + 3, &transform);
     if (code < 0)
         goto pdfi_devicen_error;
 
@@ -1971,8 +1976,8 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     if (code < 0)
         goto exit;
 
-    if (lookup->type == PDF_DICT) {
-        code = pdfi_stream_to_buffer(ctx, (pdf_dict *)lookup, &Buffer, &lookup_length);
+    if (lookup->type == PDF_STREAM) {
+        code = pdfi_stream_to_buffer(ctx, (pdf_stream *)lookup, &Buffer, &lookup_length);
         if (code < 0)
             goto exit;
     } else if (lookup->type == PDF_STRING) {
@@ -2174,7 +2179,7 @@ pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int in
         code = pdfi_create_Separation(ctx, color_array, index, stream_dict, page_dict, ppcs, inline_image);
     } else {
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",
-                                  space, stream_dict, page_dict, (pdf_obj **)&a);
+                                  space, (pdf_dict *)stream_dict, page_dict, (pdf_obj **)&a);
         if (code < 0)
             goto exit;
 
@@ -2225,7 +2230,8 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
         code = pdfi_pattern_create(ctx, NULL, stream_dict, page_dict, ppcs);
     } else {
         pdf_obj *ref_space = NULL;
-        code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, stream_dict, page_dict, &ref_space);
+        code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, (pdf_dict *)stream_dict,
+                                  page_dict, &ref_space);
         if (code < 0)
             return code;
 
@@ -2248,10 +2254,10 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
  * (Used for JPXDecode images)
  */
 int
-pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_stream *stream, gs_offset_t offset,
+pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_c_stream *stream, gs_offset_t offset,
                                        unsigned int length, int comps, int *icc_N, gs_color_space **ppcs)
 {
-    pdf_stream *profile_stream = NULL;
+    pdf_c_stream *profile_stream = NULL;
     byte *profile_buffer;
     int code, code1;
     float range[8] = {0,1,0,1,0,1,0,1};

@@ -36,7 +36,7 @@
 #include "gxfarith.h"
 #include "pdf_mark.h"
 
-typedef int (*annot_func)(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done);
+typedef int (*annot_func)(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done);
 
 typedef struct {
     const char *subtype;
@@ -176,7 +176,7 @@ static int pdfi_annot_Rect(pdf_context *ctx, pdf_dict *annot, gs_rect *rect)
 }
 
 /* See pdf_draw.ps/drawwidget (draws the AP for any type of thingy) */
-static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP)
+static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP)
 {
     int code = 0;
     gs_rect rect;
@@ -185,9 +185,16 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormA
     pdf_array *Matrix = NULL;
     gs_matrix matrix;
     double xscale, yscale;
+    pdf_dict *Annot_dict;
 
     if (NormAP == NULL)
         return 0;
+    if (NormAP->type != PDF_STREAM)
+        return_error(gs_error_typecheck);
+
+    code = pdfi_dict_from_obj(ctx, NormAP, &Annot_dict);
+    if (code < 0)
+        return code;
 
     code = pdfi_op_q(ctx);
     if (code < 0)
@@ -209,12 +216,12 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormA
     code = pdfi_annot_Rect(ctx, annot, &rect);
     if (code < 0) goto exit;
 
-    code = pdfi_dict_knownget_type(ctx, NormAP, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+    code = pdfi_dict_knownget_type(ctx, Annot_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
     if (code < 0) goto exit;
     code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
     if (code < 0) goto exit;
 
-    code = pdfi_dict_knownget_type(ctx, NormAP, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
+    code = pdfi_dict_knownget_type(ctx, Annot_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
     if (code < 0) goto exit;
     code = pdfi_array_to_gs_matrix(ctx, Matrix, &matrix);
     if (code < 0) goto exit;
@@ -1007,29 +1014,35 @@ static int pdfi_annot_draw_LE(pdf_context *ctx, pdf_dict *annot,
 /* Get the Normal AP dictionary/stream, if it exists
  * Not an error if it doesn't exist, it will just be NULL
  */
-static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_dict **NormAP)
+static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **NormAP)
 {
     int code;
-    pdf_dict *AP = NULL;
-    pdf_dict *baseAP = NULL;
+    pdf_dict *AP_dict = NULL;
+    pdf_stream *AP = NULL;
+    pdf_obj *baseAP = NULL;
     pdf_name *AS = NULL;
 
     *NormAP = NULL;
 
-    code = pdfi_dict_knownget_type(ctx, annot, "AP", PDF_DICT, (pdf_obj **)&AP);
+    code = pdfi_dict_knownget_type(ctx, annot, "AP", PDF_DICT, (pdf_obj **)&AP_dict);
     if (code <= 0) goto exit;
 
-    code = pdfi_dict_knownget_type(ctx, AP, "N", PDF_DICT, (pdf_obj **)&baseAP);
+    code = pdfi_dict_knownget(ctx, AP_dict, "N", (pdf_obj **)&baseAP);
     if (code <= 0) goto exit;
 
     code = 0;
 
-    if (pdfi_dict_is_stream(ctx, baseAP)) {
+    if (baseAP->type == PDF_STREAM) {
         /* Use baseAP for the AP, and get all the refcnt's right */
-        pdfi_countdown(AP);
-        AP = baseAP;
+        pdfi_countdown(AP_dict);
+        AP = (pdf_stream *)baseAP;
         baseAP = NULL;
     } else {
+        if (baseAP->type != PDF_DICT) {
+            code = gs_error_typecheck;
+            goto exit;
+        }
+
         code = pdfi_dict_knownget_type(ctx, annot, "AS", PDF_NAME, (pdf_obj **)&AS);
         if (code < 0) goto exit;
         if (code == 0) {
@@ -1037,18 +1050,17 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_dict **N
             goto exit;
         }
 
-        pdfi_countdown(AP);
-        AP = NULL;
+        pdfi_countdown(AP_dict);
         /* Lookup the AS in the NormAP and use that as the AP */
-        code = pdfi_dict_get_by_key(ctx, baseAP, AS, (pdf_obj **)&AP);
+        code = pdfi_dict_get_by_key(ctx, (pdf_dict *)baseAP, AS, (pdf_obj **)&AP);
         if (code < 0) goto exit;
-        if (AP->type != PDF_DICT) {
+        if (AP->type != PDF_STREAM) {
             code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
     }
 
-   *NormAP = AP;
+   *NormAP = (pdf_obj *)AP;
    pdfi_countup(AP);
 
  exit:
@@ -1058,7 +1070,7 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_dict **N
     return code;
 }
 
-static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code;
     int code1;
@@ -1252,7 +1264,7 @@ static int pdfi_annot_draw_Path(pdf_context *ctx, pdf_dict *annot, pdf_array *Pa
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_Ink(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Ink(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     int code1 = 0;
@@ -1340,7 +1352,7 @@ static int pdfi_annot_drawellipse(pdf_context *ctx, double width, double height)
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_Circle(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Circle(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     int code1 = 0;
@@ -1484,7 +1496,7 @@ static int pdfi_annot_draw_stamp_text(pdf_context *ctx, pdfi_annot_stamp_text_t 
  * If there was an AP it was already handled.
  * For testing, see tests_private/pdf/PDF_1.7_FTS/fts_32_3204.pdf
  */
-static int pdfi_annot_draw_Stamp(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Stamp(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     int code1 = 0;
@@ -1646,7 +1658,7 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
  * See pdf_draw.ps/FreeText
  * If there was an AP it was already handled
  */
-static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     int code1 = 0;
@@ -1737,7 +1749,7 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict 
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_Text(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Text(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     int code1 = 0;
@@ -1961,7 +1973,7 @@ static int pdfi_annot_draw_line_offset(pdf_context *ctx, pdf_dict *annot, double
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_StrikeOut(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_StrikeOut(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     *render_done = true;
     return pdfi_annot_draw_line_offset(ctx, annot, 3/7.);
@@ -1971,7 +1983,7 @@ static int pdfi_annot_draw_StrikeOut(pdf_context *ctx, pdf_dict *annot, pdf_dict
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_Underline(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Underline(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     *render_done = true;
     return pdfi_annot_draw_line_offset(ctx, annot, 1/7.);
@@ -2008,7 +2020,7 @@ static int pdfi_annot_highlight_arc(pdf_context *ctx, double x0, double y0,
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     bool drawit;
@@ -2080,7 +2092,7 @@ static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_dict
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_Squiggly(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Squiggly(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     bool drawit;
@@ -2195,7 +2207,7 @@ static int pdfi_annot_draw_Squiggly(pdf_context *ctx, pdf_dict *annot, pdf_dict 
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_Redact(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Redact(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     /* comment from PS code:
     %% Redact annotations are part of a process, a Redact annotation is only present
@@ -2223,7 +2235,7 @@ pdfi_annot_display_text(pdf_context *ctx, double size, const char *font,
  *
  * If there's an AP, caller will handle it on return
  */
-static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0, code1 = 0;
     bool Open = false;
@@ -2355,7 +2367,7 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_dict *No
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_Line(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Line(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     int code1 = 0;
@@ -2429,7 +2441,7 @@ static int pdfi_annot_path_array(pdf_context *ctx, pdf_dict *annot, pdf_array *V
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     int code1 = 0;
@@ -2497,7 +2509,7 @@ static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_dict 
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_Polygon(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Polygon(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     int code1 = 0;
@@ -2548,7 +2560,7 @@ static int pdfi_annot_draw_Polygon(pdf_context *ctx, pdf_dict *annot, pdf_dict *
  *
  * If there was an AP it was already handled.
  */
-static int pdfi_annot_draw_Square(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Square(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     int code1 = 0;
@@ -2646,7 +2658,7 @@ static int pdfi_annot_render_Widget(pdf_context *ctx, pdf_dict *annot)
 }
 
 /* Draws a thing of type /Widget */
-static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     bool found_T = false;
@@ -2724,7 +2736,7 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
 }
 
 /* Handle Annotations that are not implemented */
-static int pdfi_annot_draw_NotImplemented(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+static int pdfi_annot_draw_NotImplemented(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
     pdf_name *Subtype = NULL;
@@ -2845,7 +2857,7 @@ static bool pdfi_annot_preserve_type(pdf_context *ctx, pdf_name *subtype)
 
 static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
 {
-    pdf_dict *NormAP = NULL;
+    pdf_obj *NormAP = NULL;
     int code = 0;
     annot_dispatch_t *dispatch_ptr;
     bool render_done = true;
@@ -3024,7 +3036,7 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
 
     code = pdfi_dict_first(ctx, AP, (pdf_obj **)&Key, &Value, &index);
     while (code >= 0) {
-        if (Value->type == PDF_DICT) {
+        if (Value->type == PDF_STREAM) {
             /* Get a form label */
             code = pdfi_annot_preserve_nextformlabel(ctx, &labeldata, &labellen);
             if (code < 0) goto exit;
@@ -3034,7 +3046,7 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
                 (device, gxdso_pdf_form_name, labeldata, labellen);
 
             /* Draw the high-level form */
-            code = pdfi_do_highlevel_form(ctx, ctx->CurrentPageDict, (pdf_dict *)Value);
+            code = pdfi_do_highlevel_form(ctx, ctx->CurrentPageDict, (pdf_stream *)Value);
             if (code < 0) goto exit;
 
             /* Get the object number (form_id) of the high level form */
@@ -3366,7 +3378,7 @@ static int pdfi_form_get_inheritable(pdf_context *ctx, pdf_dict *field, const ch
 }
 
 /* draw field Btn */
-static int pdfi_form_draw_Btn(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_dict *AP)
+static int pdfi_form_draw_Btn(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_obj *AP)
 {
     int code;
     bool Radio = false;
@@ -3401,7 +3413,7 @@ static int pdfi_form_draw_Btn(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *fi
 }
 
 /* draw field Tx */
-static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_dict *AP)
+static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_obj *AP)
 {
     int code = 0;
 
@@ -3413,7 +3425,7 @@ static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *fie
 }
 
 /* draw field Ch */
-static int pdfi_form_draw_Ch(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_dict *AP)
+static int pdfi_form_draw_Ch(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_obj *AP)
 {
     int code = 0;
     bool NeedAppearances = false; /* TODO: Spec says default is false, gs code uses true... */
@@ -3430,7 +3442,7 @@ static int pdfi_form_draw_Ch(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *fie
 }
 
 /* draw field Sig */
-static int pdfi_form_draw_Sig(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_dict *AP)
+static int pdfi_form_draw_Sig(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_obj *AP)
 {
     dmprintf(ctx->memory, "WARNING: AcroForm field 'Sig' not implemented.\n");
     return 0;
@@ -3442,7 +3454,7 @@ static int pdfi_form_draw_terminal(pdf_context *ctx, pdf_dict *Page, pdf_dict *A
     int code = 0;
     pdf_indirect_ref *P = NULL;
     pdf_name *FT = NULL;
-    pdf_dict *AP = NULL;
+    pdf_obj *AP = NULL;
 
     /* See if the field goes on this page */
     /* NOTE: We know the "P" is an indirect ref, so just fetch it that way.

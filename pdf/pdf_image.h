@@ -20,11 +20,11 @@
 
 int pdfi_BI(pdf_context *ctx);
 int pdfi_EI(pdf_context *ctx);
-int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_stream *source);
+int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_c_stream *source);
 int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
-int pdfi_do_highlevel_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict);
-int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *xobject_dict);
-int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject_dict,
+int pdfi_do_highlevel_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_stream);
+int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj *xobject_obj);
+int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *xobject_dict,
                         gs_gstate *GroupGState, gs_matrix *matrix);
 
 #endif

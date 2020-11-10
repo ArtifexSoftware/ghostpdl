@@ -13,7 +13,7 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* dictionary handling for the PDF itnerpreter */
+/* dictionary handling for the PDF interpreter */
 
 #ifndef PDF_DICTIONARY_FUNCTIONS
 #define PDF_DICTIONARY_FUNCTIONS
@@ -63,7 +63,8 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
 int pdfi_dict_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index);
 int pdfi_dict_key_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *index);
 int pdfi_dict_key_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *index);
-bool pdfi_dict_is_stream(pdf_context *ctx, pdf_dict *d);
-int64_t pdfi_dict_stream_length(pdf_context *ctx, pdf_dict *d);
 
+int pdfi_dict_from_obj(pdf_context *ctx, pdf_obj *obj, pdf_dict **dict);
+int64_t pdfi_stream_length(pdf_context *ctx, pdf_stream *stream);
+gs_offset_t pdfi_stream_offset(pdf_context *ctx, pdf_stream *stream);
 #endif

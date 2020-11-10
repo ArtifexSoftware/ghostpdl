@@ -47,6 +47,7 @@ typedef enum pdf_obj_type_e {
     PDF_BOOL = 'b',
     PDF_KEYWORD = 'K',
     PDF_FONT = 'F',
+    PDF_STREAM = 'S',
     /* The following aren't PDF object types, but are objects we either want to
      * reference count, or store on the stack.
      */
@@ -132,15 +133,15 @@ typedef struct pdf_name_s {
 } pdf_name;
 
 typedef enum pdf_key_e {
-    PDF_NOT_A_KEYWORD,
-    PDF_OBJ,
-    PDF_ENDOBJ,
-    PDF_STREAM,
-    PDF_ENDSTREAM,
-    PDF_XREF,
-    PDF_STARTXREF,
-    PDF_TRAILER,
-    PDF_INVALID_KEY,
+    TOKEN_NOT_A_KEYWORD,
+    TOKEN_OBJ,
+    TOKEN_ENDOBJ,
+    TOKEN_STREAM,
+    TOKEN_ENDSTREAM,
+    TOKEN_XREF,
+    TOKEN_STARTXREF,
+    TOKEN_TRAILER,
+    TOKEN_INVALID_KEY,
 }pdf_key;
 
 typedef struct pdf_keyword_s {
@@ -156,17 +157,31 @@ typedef struct pdf_array_s {
     pdf_obj **values;
 } pdf_array;
 
+#if 0
+#define pdf_dict_common \
+    pdf_obj_common; \
+    uint64_t size; \
+    uint64_t entries; \
+    pdf_obj **keys; \
+    pdf_obj **values
+#endif
+
 typedef struct pdf_dict_s {
     pdf_obj_common;
     uint64_t size;
     uint64_t entries;
     pdf_obj **keys;
     pdf_obj **values;
+} pdf_dict;
+
+typedef struct pdf_stream_s {
+    pdf_obj_common;
+    pdf_dict *stream_dict;
+    pdf_obj *parent_obj;  /* Pointer to parent context, if any */
     gs_offset_t stream_offset;
     int64_t Length; /* Value of Length in dict, 0 if undefined.  non-zero means it's a stream */
-    bool is_stream; /* True if it has a Length param */
     bool length_valid; /* True if Length and is_stream have been cached above */
-} pdf_dict;
+} pdf_stream;
 
 typedef struct pdf_indirect_ref_s {
     pdf_obj_common;
@@ -207,16 +222,16 @@ typedef struct xref_s {
     pdf_obj_common;
     uint64_t xref_size;
     xref_entry *xref;
-} xref_table;
+} xref_table_t;
 
 #define UNREAD_BUFFER_SIZE 256
 
-typedef struct pdf_stream_s {
+typedef struct pdf_c_stream_s {
     bool eof;
     stream *original;
     stream *s;
     uint32_t unread_size;
     char unget_buffer[UNREAD_BUFFER_SIZE];
-} pdf_stream;
+} pdf_c_stream;
 
 #endif

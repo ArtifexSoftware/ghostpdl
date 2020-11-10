@@ -1077,11 +1077,16 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
             goto error_out;
     }
     else {
-        if (cmap->type == PDF_DICT) {
+        if (cmap->type == PDF_STREAM) {
             pdf_obj *ucmap;
             pdf_cmap *upcmap = NULL;
+            pdf_dict *cmap_dict = NULL;
 
-            code = pdfi_dict_knownget(ctx, (pdf_dict *)cmap, "UseCMap", &ucmap);
+            code = pdfi_dict_from_obj(ctx, cmap, &cmap_dict);
+            if (code < 0)
+                goto error_out;
+
+            code = pdfi_dict_knownget(ctx, cmap_dict, "UseCMap", &ucmap);
             if (code > 0) {
                 code = pdfi_read_cmap(ctx, ucmap, &upcmap);
                 if (code >= 0) {
@@ -1109,7 +1114,7 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
                 }
             }
 
-            code = pdfi_stream_to_buffer(ctx, (pdf_dict *)cmap, &buf, &buflen);
+            code = pdfi_stream_to_buffer(ctx, (pdf_stream *)cmap, &buf, &buflen);
             if (code < 0) {
                 goto error_out;
             }
