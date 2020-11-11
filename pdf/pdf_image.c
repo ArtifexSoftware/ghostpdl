@@ -1198,7 +1198,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *im
 
     /* At this point ColorSpace is either a string we just made, or the one from the Image */
     code = pdfi_create_colorspace(ctx, ColorSpace,
-                                  image_info->page_dict, image_info->stream_dict,
+                                  image_info->stream_dict, image_info->page_dict,
                                   pcs, image_info->inline_image);
     /* TODO: image_2bpp.pdf has an image in there somewhere that fails on this call (probably ColorN) */
     if (code < 0) {
