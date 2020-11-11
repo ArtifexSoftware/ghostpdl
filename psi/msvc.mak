@@ -87,7 +87,11 @@ DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)profobj
 !if "$(DEBUG)"=="1"
 DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)debugobj
 !else
+!if "$(SANITIZE)"=="1"
+DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)sanobj
+!else
 DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)obj
+!endif
 !endif
 !endif
 !endif
@@ -114,10 +118,14 @@ BINDIR=.\membin
 !if "$(DEBUG)"=="1"
 BINDIR=.\debugbin
 !else
+!if "$(SANITIZE)"=="1"
+BINDIR=.\sanbin
+!else
 !if "$(DEBUGSYM)"=="1"
 BINDIR=.\profbin
 !else
 BINDIR=.\bin
+!endif
 !endif
 !endif
 !endif
@@ -386,6 +394,10 @@ DEBUGSYM=0
 # WIN32 and WIN64 are mutually exclusive.  WIN32 is the default.
 !if !defined(WIN32) && (!defined(Win64) || !defined(WIN64))
 WIN32=0
+!endif
+
+!if "$(SANITIZE)"=="1" && defined(WIN64)
+!error 64bit Sanitize builds not supported by MSVC yet!
 !endif
 
 # We can build either 32-bit or 64-bit target on a 64-bit platform
@@ -1855,6 +1867,10 @@ $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ) $(TOP_M
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PSGEN)gswin.rsp
 !endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan-i386.lib >> $(PSGEN)gswin.rsp
+	echo /wholearchive:clang_rt.asan_cxx-i386.lib >> $(PSGEN)gswin.rsp
+!endif
 !ifdef WIN64
 	echo /DEF:$(PSSRCDIR)\dwmain64.def /OUT:$(GS_XE) >> $(PSGEN)gswin.rsp
 !else
@@ -1869,6 +1885,10 @@ $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.d
 	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PSGEN)gswin.rsp
+!endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan-i386.lib >> $(PSGEN)gswin.rsp
+	echo /wholearchive:clang_rt.asan_cxx-i386.lib >> $(PSGEN)gswin.rsp
 !endif
 !ifdef WIN64
 	echo  /DEF:$(PSSRCDIR)\dw64c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin.rsp
@@ -1885,6 +1905,9 @@ $(GSDLL_DLL): $(ECHOGS_XE) $(gs_tr) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PSGEN)gswin.rsp
 !endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan_dll_thunk-i386.lib >> $(PSGEN)gswin.rsp
+!endif
 	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GSDLL_OBJS) @$(gsld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) @$(PSGEN)lib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(PSGEN)gswin.rsp
 
@@ -1899,6 +1922,9 @@ $(GPCL6DLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_A
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PSGEN)gpclwin.rsp
 !endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan_dll_thunk-i386.lib >> $(PSGEN)gpclwin.rsp
+!endif
 	$(LINK) $(LCT) @$(PCLGEN)gpclwin.rsp $(GPCL6DLL_OBJS) @$(PCLGEN)gpclwin.tr @$(PSGEN)pcllib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(PCLGEN)gpclwin.rsp
 
@@ -1906,6 +1932,10 @@ $(GPCL_XE): $(GPCL6DLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
 	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(PCLGEN)gpclwin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PCLGEN)gpclwin.rsp
+!endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan-i386.lib >> $(PCLGEN)gpclwin.rsp
+	echo /wholearchive:clang_rt.asan_cxx-i386.lib >> $(PCLGEN)gpclwin.rsp
 !endif
 !ifdef WIN64
 	echo  /OUT:$(GPCL_XE) >> $(PCLGEN)gpclwin.rsp
@@ -1927,6 +1957,9 @@ $(GXPSDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(XPS_DEVS_AL
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(XPSGEN)gxpswin.rsp
 !endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan_dll_thunk-i386.lib >> $(PSGEN)gxpswin.rsp
+!endif
 	$(LINK) $(LCT) @$(XPSGEN)gxpswin.rsp $(GXPSDLL_OBJS) @$(XPSGEN)gxpswin.tr @$(XPSGEN)xpslib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(PCLGEN)gxpswin.rsp
 
@@ -1934,6 +1967,10 @@ $(GXPS_XE): $(GXPSDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
 	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(XPSGEN)gxpswin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(XPSGEN)gxpswin.rsp
+!endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan-i386.lib >> $(XPSGEN)gxpswin.rsp
+	echo /wholearchive:clang_rt.asan_cxx-i386.lib >> $(XPSGEN)gxpswin.rsp
 !endif
 !ifdef WIN64
 	echo  /OUT:$(GXPS_XE) >> $(XPSGEN)gxpswin.rsp
@@ -1967,19 +2004,22 @@ $(GPDLDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_AL
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(GPDLGEN)gpdlwin.rsp
 !endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan_dll_thunk-i386.lib >> $(PSGEN)gpdlwin.rsp
+!endif
 	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp $(GPDLDLL_OBJS) @$(GPDLGEN)gpdlwin.tr @$(GPDLGEN)gpdllib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(GPDLGEN)gpdlwin.rsp
 
 $(GPDL_XE): $(GPDLDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
 	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(GPDLGEN)gpdlwin.rsp
 !if "$(PROFILE)"=="1"
-	echo /Profile >> $(XPSGEN)gpdlwin.rsp
+	echo /Profile >> $(GPDLGEN)gpdlwin.rsp
 !endif
-!ifdef WIN64
-	echo  /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
-!else
-	echo  /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan-i386.lib >> $(GPDLGEN)gpdlwin.rsp
+	echo /wholearchive:clang_rt.asan_cxx-i386.lib >> $(GPDLGEN)gpdlwin.rsp
 !endif
+	echo  /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
 	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp $(DWMAINOBJS) $(BINDIR)\$(GPDLDLL).lib $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res
 	del $(GPDLGEN)gpdlwin.rsp
 
@@ -2004,6 +2044,10 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PSGEN)gswin.rsp
 !endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan-i386.lib >> $(PSGEN)gswin.rsp
+	echo /wholearchive:clang_rt.asan_cxx-i386.lib >> $(PSGEN)gswin.rsp
+!endif
 	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GLOBJ)gsdll @$(PSGEN)gswin.tr $(LINKLIBPATH) @$(LIBCTR) @$(PSGEN)lib.rsp $(GSDLL_OBJ).res $(DWTRACE)
 	del $(PSGEN)gswin.tr
 	del $(PSGEN)gswin.rsp
@@ -2022,6 +2066,13 @@ $(GSCONSOLE_XE): $(ECHOGS_XE) $(gs_tr) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJ
 	echo /DEF:$(PSSRCDIR)\dw64c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin.rsp
 !else
 	echo /DEF:$(PSSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin.rsp
+!endif
+!if "$(PROFILE)"=="1"
+	echo /Profile >> $(PSGEN)gswin.rsp
+!endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan-i386.lib >> $(PSGEN)gswin.rsp
+	echo /wholearchive:clang_rt.asan_cxx-i386.lib >> $(PSGEN)gswin.rsp
 !endif
 	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GLOBJ)gsdll @$(PSGEN)gswin.tr $(LINKLIBPATH) @$(LIBCTR) @$(PSGEN)lib.rsp $(GS_OBJ).res $(DWTRACE)
 	del $(PSGEN)gswin.rsp
@@ -2049,6 +2100,13 @@ $(GXPS_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(X
 	echo $(WINMAINOBJS) $(MAIN_OBJ) $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(XPSGEN)gxpswin.tr
 	echo $(PCLOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) >> $(XPSGEN)gxpswin.tr
 	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(XPSGEN)xpswin.rsp
+!if "$(PROFILE)"=="1"
+	echo /Profile >> $(PSGEN)xpswin.rsp
+!endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan-i386.lib >> $(XPSGEN)xpswin.rsp
+	echo /wholearchive:clang_rt.asan_cxx-i386.lib >> $(XPSGEN)xpswin.rsp
+!endif
         echo /OUT:$(GXPS_XE) >> $(XPSGEN)xpswin.rsp
 	$(LINK) $(LCT) @$(XPSGEN)xpswin.rsp @$(XPSGEN)gxpswin.tr $(LINKLIBPATH) @$(LIBCTR) @$(XPSGEN)xpslib.rsp
         del $(XPSGEN)xpswin.rsp
@@ -2063,6 +2121,13 @@ $(GPDL_XE): $(ECHOGS_XE) $(ld_tr) $(gpdl_tr) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS)
 	echo $(WINMAINOBJS) $(MAIN_OBJ) $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) >> $(GPDLGEN)gpdlwin.tr
 	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
 	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(GPDLGEN)gpdlwin.rsp
+!if "$(PROFILE)"=="1"
+	echo /Profile >> $(PSGEN)gpdlwin.rsp
+!endif
+!if "$(SANITIZE)"=="1"
+	echo /wholearchive:clang_rt.asan-i386.lib >> $(GPDLGEN)gpdlwin.rsp
+	echo /wholearchive:clang_rt.asan_cxx-i386.lib >> $(GPDLGEN)gpdlwin.rsp
+!endif
         echo /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
 	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp @$(GPDLGEN)gpdlwin.tr $(LINKLIBPATH) @$(LIBCTR) @$(GPDLGEN)gpdllib.rsp
 	del $(GPDLGEN)gpdlwin.rsp
@@ -2163,6 +2228,32 @@ profilebsc:
 	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
 
 
+
+# -------------------- Sanitize targets --------------------- #
+# Simply set some definitions and call ourselves back         #
+
+SANITIZEDEFS=SANITIZE=1 $(RECURSIVEDEFS)
+
+sanitize:
+	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE)
+
+gssanitize:
+	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
+
+gpcl6sanitze:
+	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
+
+gxpssanitize:
+	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+
+gpdlsanitize:
+	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
+
+sanitizeclean:
+	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
+
+sanitizebsc:
+	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
 
 # ---------------------- UFST targets ---------------------- #
 # Simply set some definitions and call ourselves back        #
