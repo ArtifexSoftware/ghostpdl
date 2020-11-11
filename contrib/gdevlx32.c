@@ -903,9 +903,6 @@ lxm3200_put_params(gx_device *pdev, gs_param_list *plist)
    code = param_read_int(plist, "z31m", &z31m); /* What additional margin for the Z31 */
         if(code < 0)return(code);
 
-   code = gdev_prn_put_params(pdev, plist);
-        if(code < 0)return code;
-
   ((lxm_device *)pdev)->algnA = algnA;
   ((lxm_device *)pdev)->algnB = algnB;
   ((lxm_device *)pdev)->algnC = algnC;
@@ -916,40 +913,54 @@ lxm3200_put_params(gx_device *pdev, gs_param_list *plist)
   ((lxm_device *)pdev)->model = model; /* Model selection: lxm3200, Z12, Z31. */
   ((lxm_device *)pdev)->z31m = z31m;  /* Additional margin for the Z31 */
 
-        /* Depending on the selected rendering mode, change the
-         * driver's parameters that ghostscript needs for the
-         * dithering. We need to do it here because the "get_params"
-         * and "put_params" are the only routines in the driver that
-         * ghostscript calls before using the dithering parameters.
-         */
-        switch(mode)
-        {
-                case LXM3200_M:
-                        pdev->color_info.num_components = 1;
-                        pdev->color_info.max_gray = 1;
-                        pdev->color_info.max_color = 0;
-                        pdev->color_info.dither_grays = 2;
-                        pdev->color_info.dither_colors = 0;
-                        break;
+    /* Depending on the selected rendering mode, change the
+    * driver's parameters that ghostscript needs for the
+    * dithering. We need to do it here because the "get_params"
+    * and "put_params" are the only routines in the driver that
+    * ghostscript calls before using the dithering parameters.
+    */
+    {
+      int old_num = pdev->color_info.num_components;
 
-                case LXM3200_C:
-                        pdev->color_info.num_components = 3;
-                        pdev->color_info.max_gray = 1;
-                        pdev->color_info.max_color = 1;
-                        pdev->color_info.dither_grays = 2;
-                        pdev->color_info.dither_colors = 2;
-                        break;
+      switch (mode)
+      {
+      case LXM3200_M:
+          pdev->color_info.num_components = 1;
+          pdev->color_info.max_gray = 1;
+          pdev->color_info.max_color = 0;
+          pdev->color_info.dither_grays = 2;
+          pdev->color_info.dither_colors = 0;
+          break;
 
-                case LXM3200_P:
-                        pdev->color_info.num_components = 3;
-                        pdev->color_info.max_gray = 1;
-                        pdev->color_info.max_color = 2;
-                        pdev->color_info.dither_grays = 2;
-                        pdev->color_info.dither_colors = 3;
-                        break;
-        }
+      case LXM3200_C:
+          pdev->color_info.num_components = 3;
+          pdev->color_info.max_gray = 1;
+          pdev->color_info.max_color = 1;
+          pdev->color_info.dither_grays = 2;
+          pdev->color_info.dither_colors = 2;
+          break;
 
-  return 0;
+      case LXM3200_P:
+          pdev->color_info.num_components = 3;
+          pdev->color_info.max_gray = 1;
+          pdev->color_info.max_color = 2;
+          pdev->color_info.dither_grays = 2;
+          pdev->color_info.dither_colors = 3;
+          break;
+      }
+      /* The above is horrid.  But, if we change the color model
+         the ICC profile needs to change too.  Blow away the
+         current structure.  A new one will be built when we
+         go to gdev_prn_put_params. */
+      if (old_num != pdev->color_info.num_components) {
+          rc_decrement(pdev->icc_struct, "lxm3200_put_params");
+          pdev->icc_struct = NULL;
+      }
+    }
+
+    code = gdev_prn_put_params(pdev, plist);
+
+    return code;
 }
 
 /* --------- Internal routines --------- */
