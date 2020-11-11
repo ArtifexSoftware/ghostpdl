@@ -144,7 +144,8 @@ currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
 
 currentdict /BATCH known   /BATCH exch def
 currentdict /DELAYBIND known   /DELAYBIND exch def
-currentdict /DOINTERPOLATE .knownget { { -1 } { 0 } ifelse /InterpolateControl exch def } if
+currentdict /DOINTERPOLATE .knownget { { -1 } { 1 } ifelse /InterpolateControl exch def } if
+currentdict /NOINTERPOLATE .knownget { { 0 } { 1 } ifelse /InterpolateControl exch def } if
 currentdict /ESTACKPRINT known   /ESTACKPRINT exch def
 currentdict /FAKEFONTS known   /FAKEFONTS exch def
 currentdict /FIXEDMEDIA known   /FIXEDMEDIA exch def
@@ -159,7 +160,6 @@ currentdict /NODISPLAY known   not /DISPLAYING exch def
 currentdict /NOFONTMAP known   /NOFONTMAP exch def
 currentdict /NOFONTPATH known   /NOFONTPATH exch def
 currentdict /NOGC known   /NOGC exch def
-currentdict /NOINTERPOLATE .knownget { /InterpolateControl 0 def } if
 currentdict /NOMEDIAATTRS known /NOMEDIAATTRS exch def
 currentdict /NOOUTERSAVE known   /NOOUTERSAVE exch def
 currentdict /NOPAGEPROMPT known   /NOPAGEPROMPT exch def
