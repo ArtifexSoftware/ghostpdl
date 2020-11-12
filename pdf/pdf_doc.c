@@ -969,7 +969,6 @@ static int pdfi_doc_Info(pdf_context *ctx)
 }
 
 /* Handle PageLabels for pdfwrite device */
-/* TODO: */
 static int pdfi_doc_PageLabels(pdf_context *ctx)
 {
     int code;
@@ -980,6 +979,11 @@ static int pdfi_doc_PageLabels(pdf_context *ctx)
         /* TODO: flag a warning */
         goto exit;
     }
+
+    /* This will send the PageLabels object as a 'pdfpagelabels' setdeviceparams */
+    code = pdfi_mark_object(ctx, (pdf_obj *)PageLabels, "pdfpagelabels");
+    if (code < 0)
+        goto exit;
 
  exit:
     pdfi_countdown(PageLabels);

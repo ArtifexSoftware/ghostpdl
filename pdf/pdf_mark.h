@@ -19,6 +19,7 @@
 #define PDF_MARK
 
 int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const char *type);
+int pdfi_mark_object(pdf_context *ctx, pdf_obj *object, const char *label);
 int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *dict);
 int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, bool *resolve);
 

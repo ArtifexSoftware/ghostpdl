@@ -26,6 +26,7 @@
 #include "pdf_obj.h"
 #include "pdf_misc.h"
 #include "pdf_page.h"
+#include "pdf_deref.h"
 
 static int pdfi_mark_setparam_obj(pdf_context *ctx, pdf_obj *obj, gs_param_string *entry)
 {
@@ -82,8 +83,8 @@ static int pdfi_mark_ctm_str(pdf_context *ctx, gs_matrix *ctm, byte **data, int 
     return 0;
 }
 
-/* Write the pdfmark command to the device */
-static int pdfi_mark_write(pdf_context *ctx, gs_param_string_array *array_list)
+/* Write an string array command to the device (e.g. pdfmark) */
+static int pdfi_mark_write_array(pdf_context *ctx, gs_param_string_array *array_list, const char *command)
 {
     gs_c_param_list list;
     int code;
@@ -99,7 +100,39 @@ static int pdfi_mark_write(pdf_context *ctx, gs_param_string_array *array_list)
     gs_c_param_list_write_more(&list);
 
     /* Add the param string array to the list */
-    code = param_write_string_array((gs_param_list *)&list, "pdfmark", array_list);
+    code = param_write_string_array((gs_param_list *)&list, command, array_list);
+    if (code < 0)
+        return code;
+
+    /* Set the param list back to readable, so putceviceparams can readit (mad...) */
+    gs_c_param_list_read(&list);
+
+    /* and set the actual device parameters */
+    code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&list);
+
+    gs_c_param_list_release(&list);
+
+    return code;
+}
+
+/* Write an string array command to the device (e.g. pdfmark) */
+static int pdfi_mark_write_string(pdf_context *ctx, gs_param_string *param_string, const char *command)
+{
+    gs_c_param_list list;
+    int code;
+
+    /* Set the list to writeable, and initialise it */
+    gs_c_param_list_write(&list, ctx->memory);
+    /* We don't want keys to be persistent, as we are going to throw
+     * away our array, force them to be copied
+     */
+    gs_param_list_set_persistent_keys((gs_param_list *) &list, false);
+
+    /* Make really sure the list is writable, but don't initialise it */
+    gs_c_param_list_write_more(&list);
+
+    /* Add the param string array to the list */
+    code = param_write_string((gs_param_list *)&list, command, param_string);
     if (code < 0)
         return code;
 
@@ -197,7 +230,7 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
     array_list.persistent = false;
     array_list.size = size;
 
-    code = pdfi_mark_write(ctx, &array_list);
+    code = pdfi_mark_write_array(ctx, &array_list, "pdfmark");
 
  exit:
     pdfi_countdown(Key);
@@ -211,6 +244,33 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
     if (ctm_data)
         gs_free_object(ctx->memory, ctm_data, "pdfi_mark_from_dict(ctm_data)");
     gs_free_object(ctx->memory, parray, "pdfi_mark_from_dict(parray)");
+    return code;
+}
+
+/* Send an arbitrary object as a string, with command 'label' */
+int pdfi_mark_object(pdf_context *ctx, pdf_obj *object, const char *label)
+{
+    gs_param_string param_string;
+    int code = 0;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto exit;
+    if (object->object_num != 0)
+        code = pdfi_loop_detector_add_object(ctx, object->object_num);
+    code = pdfi_resolve_indirect(ctx, object, true);
+    (void)pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_mark_setparam_obj(ctx, object, &param_string);
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_mark_write_string(ctx, &param_string, label);
+    if (code < 0)
+        goto exit;
+ exit:
     return code;
 }
 
