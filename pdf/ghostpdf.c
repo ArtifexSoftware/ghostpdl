@@ -570,6 +570,10 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
      */
     pdfi_device_set_flags(ctx);
 
+    /* TODO: Need to handle /Collection around this point, somehow.
+     * see pdf_main.ps/pdf_collection_files()
+     */
+
     code = pdfi_doc_trailer(ctx);
 
     /* Loop over each page and either render it or output the

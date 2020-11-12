@@ -968,32 +968,52 @@ static int pdfi_doc_Info(pdf_context *ctx)
     return code;
 }
 
-/* See pdf_main.ps/process_trailer_attrs() */
+/* Handle PageLabels for pdfwrite device */
+/* TODO: */
+static int pdfi_doc_PageLabels(pdf_context *ctx)
+{
+    int code;
+    pdf_dict *PageLabels = NULL;
+
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "PageLabels", PDF_DICT, (pdf_obj **)&PageLabels);
+    if (code <= 0) {
+        /* TODO: flag a warning */
+        goto exit;
+    }
+
+ exit:
+    pdfi_countdown(PageLabels);
+    return code;
+}
+
+/* See pdf_main.ps/process_trailer_attrs()
+ * Some of this stuff is about pdfmarks, and some of it is just handling
+ * random things in the trailer.
+ */
 int pdfi_doc_trailer(pdf_context *ctx)
 {
     int code = 0;
 
     /* TODO: writeoutputintents */
 
-    if (!ctx->writepdfmarks)
-        goto exit;
-
     /* Can't do this stuff with no Trailer */
     if (!ctx->Trailer)
         goto exit;
 
-    /* Handle Outlines */
-    code = pdfi_doc_Outlines(ctx);
-    if (code < 0)
-        goto exit;
+    if (ctx->writepdfmarks) {
+        /* Handle Outlines */
+        code = pdfi_doc_Outlines(ctx);
+        if (code < 0)
+            goto exit;
 
-    /* Handle Info */
-    code = pdfi_doc_Info(ctx);
-    if (code < 0)
-        goto exit;
+        /* Handle Info */
+        code = pdfi_doc_Info(ctx);
+        if (code < 0)
+            goto exit;
+    }
 
     /* Handle OCProperties */
-    /* TODO: */
+    /* NOTE: Apparently already handled by pdfi_read_OptionalRoot() */
 
     /* Handle AcroForm */
     /* TODO: */
@@ -1002,7 +1022,9 @@ int pdfi_doc_trailer(pdf_context *ctx)
     /* TODO: */
 
     /* Handle PageLabels */
-    /* TODO: */
+    code = pdfi_doc_PageLabels(ctx);
+    if (code < 0)
+        goto exit;
 
  exit:
     return code;

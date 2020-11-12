@@ -160,24 +160,26 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
 
 
     /* Get each (key,val) pair from dict and setup param for it */
-    code = pdfi_dict_key_first(ctx, dict, (pdf_obj **)&Key, &index);
-    while (code >= 0) {
-        code = pdfi_dict_get_by_key(ctx, dict, Key, &Value);
-        if (code < 0) goto exit;
-        code = pdfi_mark_setparam_pair(ctx, Key, Value, parray+(keynum*2));
-        if (code < 0) goto exit;
+    if (dictsize > 0) {
+        code = pdfi_dict_key_first(ctx, dict, (pdf_obj **)&Key, &index);
+        while (code >= 0) {
+            code = pdfi_dict_get_by_key(ctx, dict, Key, &Value);
+            if (code < 0) goto exit;
+            code = pdfi_mark_setparam_pair(ctx, Key, Value, parray+(keynum*2));
+            if (code < 0) goto exit;
 
-        pdfi_countdown(Key);
-        Key = NULL;
-        pdfi_countdown(Value);
-        Value = NULL;
+            pdfi_countdown(Key);
+            Key = NULL;
+            pdfi_countdown(Value);
+            Value = NULL;
 
-        code = pdfi_dict_key_next(ctx, dict, (pdf_obj **)&Key, &index);
-        if (code == gs_error_undefined) {
-            code = 0;
-            break;
+            code = pdfi_dict_key_next(ctx, dict, (pdf_obj **)&Key, &index);
+            if (code == gs_error_undefined) {
+                code = 0;
+                break;
+            }
+            keynum ++;
         }
-        keynum ++;
     }
     if (code < 0) goto exit;
 
