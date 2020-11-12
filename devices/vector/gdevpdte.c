@@ -200,7 +200,7 @@ static int OCRText(gx_device_pdf *pdev, gs_glyph glyph, gs_char ch, gs_char *len
         if(code < 0) {
             gs_free_object(pdev->memory, bitmap, "working OCR memory");
             gs_free_object(pdev->memory, returned, "returned unicodes");
-            return code;
+            return 0;
         }
         returned_count = char_count;
 

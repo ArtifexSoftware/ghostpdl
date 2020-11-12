@@ -3228,8 +3228,8 @@ int
 pdf_text_process(gs_text_enum_t *pte)
 {
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
-    uint operation = pte->text.operation;
-    uint size = pte->text.size - pte->index;
+    uint operation;
+    uint size = 0;
     gs_text_enum_t *pte_default;
     PROCESS_TEXT_PROC((*process));
     int code = 0, early_accumulator = 0;
@@ -3279,6 +3279,9 @@ pdf_text_process(gs_text_enum_t *pte)
         if (code != 0)
             return code;
     }
+
+    operation = pte->text.operation;
+    size = pte->text.size - pte->index;
 
     code = -1;                /* to force default implementation */
 
