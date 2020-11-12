@@ -1628,7 +1628,7 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_st
     pdfi_countup(d);
     pdfi_pop(ctx, 1);
 
-    code = pdfi_do_image(ctx, stream_dict, page_dict, d, source, true);
+    code = pdfi_do_image(ctx, page_dict, stream_dict, d, source, true);
     pdfi_countdown(d);
     if (code < 0 && ctx->pdfstoponerror)
         return code;
