@@ -190,7 +190,7 @@ windows_fprintf(FILE *file, const char *fmt, ...)
 #endif
 #endif
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__OpenBSD__)
 #define MEMENTO_HAS_FORK
 #elif defined(__APPLE__) && defined(__MACH__)
 #define MEMENTO_HAS_FORK
@@ -271,7 +271,10 @@ enum {
     Memento_EventType_deleteArray = 7,
     Memento_EventType_takeRef = 8,
     Memento_EventType_dropRef = 9,
-    Memento_EventType_reference = 10
+    Memento_EventType_reference = 10,
+    Memento_EventType_strdup = 11,
+    Memento_EventType_asprintf = 12,
+    Memento_EventType_vasprintf = 13
 };
 
 static const char *eventType[] =
@@ -286,7 +289,10 @@ static const char *eventType[] =
     "delete[]",
     "takeRef",
     "dropRef",
-    "reference"
+    "reference",
+    "strdup",
+    "asprintf",
+    "vasprintf"
 };
 
 /* When we list leaked blocks at the end of execution, we search for pointers
@@ -430,6 +436,9 @@ static struct {
     int            nextPattern;
     int            patternBit;
     int            leaking;
+    int            hideMultipleReallocs;
+    int            abortOnLeak;
+    int            abortOnCorruption;
     size_t         maxMemory;
     size_t         alloc;
     size_t         peakAlloc;
@@ -509,10 +518,16 @@ static void *current_addr;
 
 static void error2_cb(void *data, const char *msg, int errnum)
 {
+    (void)data;
+    (void)msg;
+    (void)errnum;
 }
 
 static void syminfo_cb(void *data, uintptr_t pc, const char *symname, uintptr_t symval, uintptr_t symsize)
 {
+    (void)data;
+    (void)symval;
+    (void)symsize;
     if (sizeof(void *) == 4)
         fprintf(stderr, "    0x%08lx %s\n", pc, symname?symname:"?");
     else
@@ -521,6 +536,9 @@ static void syminfo_cb(void *data, uintptr_t pc, const char *symname, uintptr_t 
 
 static void error_cb(void *data, const char *msg, int errnum)
 {
+    (void)data;
+    (void)msg;
+    (void)errnum;
     backtrace_syminfo(my_backtrace_state,
                      (uintptr_t)current_addr,
                      syminfo_cb,
@@ -530,6 +548,7 @@ static void error_cb(void *data, const char *msg, int errnum)
 
 static int full_cb(void *data, uintptr_t pc, const char *fname, int line, const char *fn)
 {
+    (void)data;
     if (sizeof(void *) == 4)
         fprintf(stderr, "    0x%08lx %s(%s:%d)\n", pc, fn?fn:"?", fname?fname:"?", line);
     else
@@ -943,8 +962,8 @@ static void Memento_storeDetails(Memento_BlkHeader *head, int type)
     if (count)
         memcpy(&details->stack, &stack[skip], count * sizeof(void *));
 
-    details->type = type;
-    details->count = count;
+    details->type = (char)type;
+    details->count = (char)count;
     details->sequence = memento.sequence;
     details->next = NULL;
     VALGRIND_MAKE_MEM_DEFINED(&head->details_tail, sizeof(head->details_tail));
@@ -1291,6 +1310,7 @@ static int Memento_appBlock(Memento_Blocks    *blks,
                             Memento_BlkHeader *b)
 {
     int result;
+    (void)blks;
     VALGRIND_MAKE_MEM_DEFINED(b, sizeof(Memento_BlkHeader));
     VALGRIND_MAKE_MEM_DEFINED(MEMBLK_TOBLK(b),
                               b->rawsize + Memento_PostSize);
@@ -1421,12 +1441,14 @@ int Memento_listBlocksNested(void)
     /* Now, calculate tree */
     for (b = memento.used.head; b; b = b->next) {
         char *p = MEMBLK_TOBLK(b);
-        int end = (b->rawsize < MEMENTO_PTRSEARCH ? b->rawsize : MEMENTO_PTRSEARCH);
+        size_t end = (b->rawsize < MEMENTO_PTRSEARCH ? b->rawsize : MEMENTO_PTRSEARCH);
+        size_t z;
         VALGRIND_MAKE_MEM_DEFINED(p, end);
         end -= sizeof(void *)-1;
-        for (i = MEMENTO_SEARCH_SKIP; i < end; i += sizeof(void *)) {
-            void *q = *(void **)(&p[i]);
+        for (z = MEMENTO_SEARCH_SKIP; z < end; z += sizeof(void *)) {
+            void *q = *(void **)(&p[z]);
             void **r;
+
             /* Do trivial checks on pointer */
             if ((mask & (intptr_t)q) != mask || q < minptr || q > maxptr)
                 continue;
@@ -1552,18 +1574,24 @@ static int showInfo(Memento_BlkHeader *b, void *arg)
 {
     Memento_BlkDetails *details;
 
+    (void)arg;
+
     fprintf(stderr, FMTP":(size="FMTZ",num=%d)",
             MEMBLK_TOBLK(b), (FMTZ_CAST)b->rawsize, b->sequence);
     if (b->label)
         fprintf(stderr, " (%s)", b->label);
     fprintf(stderr, "\nEvents:\n");
 
-    details = b->details;
-    while (details)
+    for (details = b->details; details; details = details->next)
     {
+        if (memento.hideMultipleReallocs &&
+            details->type == Memento_EventType_realloc &&
+            details->next &&
+            details->next->type == Memento_EventType_realloc) {
+            continue;
+        }
         fprintf(stderr, "  Event %d (%s)\n", details->sequence, eventType[(int)details->type]);
         Memento_showStacktrace(details->stack, details->count);
-        details = details->next;
     }
     return 0;
 }
@@ -1630,64 +1658,68 @@ void Memento_fin(void)
         fprintf(stderr, "MEMENTO_NEXTFAILAT=%d\n", memento.nextFailAt);
         fprintf(stderr, "MEMENTO_NEXTPATTERN=%d\n", memento.nextPattern);
     }
+    if (Memento_nonLeakBlocksLeaked() && memento.abortOnLeak) {
+        fprintf(stderr, "Calling abort() because blocks were leaked and MEMENTO_ABORT_ON_LEAK is set.\n");
+        abort();
+    }
 }
 
 /* Reads number from <text> using strtol().
-
-Params:
-    text:
-        text to read.
-    out:
-        pointer to output value.
-    relative:
-        *relative set to 1 if <text> starts with '+' or '-', else set to 0.
-    end:
-        *end is set to point to next unread character after number.
-
-Returns 0 on success, else -1.
-*/
+ *
+ * Params:
+ *     text:
+ *         text to read.
+ *     out:
+ *         pointer to output value.
+ *     relative:
+ *         *relative set to 1 if <text> starts with '+' or '-', else set to 0.
+ *     end:
+ *         *end is set to point to next unread character after number.
+ *
+ * Returns 0 on success, else -1.
+ */
 static int read_number(const char *text, int *out, int *relative, char **end)
 {
-    if (text[0] == '+' || text[0] == '-') {
+    if (text[0] == '+' || text[0] == '-')
         *relative = 1;
-    }
-    else  {
+    else
         *relative = 0;
-    }
     errno = 0;
-    *out = strtol(text, end, 0 /*base*/);
-    if (errno || *end == text) {
+    *out = (int)strtol(text, end, 0 /*base*/);
+    if (errno || *end == text)
+    {
         fprintf(stderr, "Failed to parse number at start of '%s'.\n", text);
         return -1;
     }
-    if (0)  fprintf(stderr, "text='%s': *out=%i *relative=%i\n",
-            text, *out, *relative);
+    if (0)
+         fprintf(stderr, "text='%s': *out=%i *relative=%i\n",
+                 text, *out, *relative);
     return 0;
 }
 
 /* Reads number plus optional delta value from <text>.
-
-Evaluates <number> or <number>[+|-<delta>]. E.g. text='1234+2' sets *out=1236,
-text='1234-1' sets *out=1233.
-
-Params:
-    text:
-        text to read.
-    out:
-        pointer to output value.
-    end:
-        *end is set to point to next unread character after number.
-
-Returns 0 on success, else -1.
-*/
+ *
+ * Evaluates <number> or <number>[+|-<delta>]. E.g. text='1234+2' sets *out=1236,
+ * text='1234-1' sets *out=1233.
+ *
+ * Params:
+ *     text:
+ *         text to read.
+ *     out:
+ *         pointer to output value.
+ *     end:
+ *         *end is set to point to next unread character after number.
+ *
+ * Returns 0 on success, else -1.
+ */
 static int read_number_delta(const char *text, int *out, char **end)
 {
     int e;
     int relative;
+
     e = read_number(text, out, &relative, end);
-    if (e) {
+    if (e)
         return e;
-    }
     if (relative) {
         fprintf(stderr, "Base number should not start with '+' or '-' at start of '%s'.\n",
                 text);
@@ -1697,57 +1729,53 @@ static int read_number_delta(const char *text, int *out, char **end)
         if (**end == '-' || **end == '+') {
             int delta;
             e = read_number(*end, &delta, &relative, end);
-            if (e) {
+            if (e)
                 return e;
-            }
             *out += delta;
         }
     }
-    if (0)  fprintf(stderr, "text='%s': *out=%i\n", text, *out);
+    if (0) fprintf(stderr, "text='%s': *out=%i\n", text, *out);
+
     return 0;
 }
 
 /* Reads range.
-
-E.g.:
-    text='115867-2' sets *begin=115865 *end=115866.
-    text='115867-1..+3' sets *begin=115866 *end=115869.
-
-Supported patterns for text:
-    <range>
-        <value>             - returns *begin=value *end=*begin+1.
-        <value1>..<value2>  - returns *begin=value1 *end=value2.
-        <value>..+<number>  - returns *begin=value *end=*begin+number.
-    <value>
-        <number>
-        <number>+<number>
-        <number>-<number>
-
-    <number>: [0-9]+
-
-If not specified, *end defaults to *begin+1.
-
-Returns 0 on success, else -1, with *string_end pointing to first unused
-character.
-*/
+ *
+ * E.g.:
+ *     text='115867-2' sets *begin=115865 *end=115866.
+ *     text='115867-1..+3' sets *begin=115866 *end=115869.
+ *
+ * Supported patterns for text:
+ *     <range>
+ *         <value>             - returns *begin=value *end=*begin+1.
+ *         <value1>..<value2>  - returns *begin=value1 *end=value2.
+ *         <value>..+<number>  - returns *begin=value *end=*begin+number.
+ *     <value>
+ *         <number>
+ *         <number>+<number>
+ *         <number>-<number>
+ *
+ *     <number>: [0-9]+
+ *
+ * If not specified, *end defaults to *begin+1.
+ *
+ * Returns 0 on success, else -1, with *string_end pointing to first unused
+ * character.
+ */
 static int read_number_range(const char *text, int *begin, int *end, char **string_end)
 {
     int e;
     e = read_number_delta(text, begin, string_end);
-    if (e) {
+    if (e)
         return e;
-    }
     if (string_end && (*string_end)[0] == '.' && (*string_end)[1] == '.') {
         int relative;
         e = read_number((*string_end) + 2, end, &relative, string_end);
-        if (e) {
+        if (e)
             return e;
-        }
-        if (relative) {
+        if (relative)
             *end += *begin;
-        }
-    }
-    else {
+    } else {
         *end = *begin + 1;
     }
     if (*end < *begin) {
@@ -1755,18 +1783,18 @@ static int read_number_range(const char *text, int *begin, int *end, char **stri
                 *begin, *end, text);
         return -1;
     }
-    if (0)  fprintf(stderr, "text='%s': *begin=%i *end=%i\n", text, *begin, *end);
+    if (0) fprintf(stderr, "text='%s': *begin=%i *end=%i\n", text, *begin, *end);
+
     return 0;
 }
 
-/*
-Format: <range>[,<range>]+
-
-For description of <range>, see read_number_range() above.
-
-E.g.:
-    MEMENTO_SQUEEZES=1234-2..+4,2345,2350..+2
-*/
+/* Format: <range>[,<range>]+
+ *
+ * For description of <range>, see read_number_range() above.
+ *
+ * E.g.:
+ *     MEMENTO_SQUEEZES=1234-2..+4,2345,2350..+2
+ */
 static int Memento_add_squeezes(const char *text)
 {
     int e = 0;
@@ -1774,20 +1802,18 @@ static int Memento_add_squeezes(const char *text)
         int     begin;
         int     end;
         char   *string_end;
-        if (!*text) {
+        if (!*text)
             break;
-        }
         e = read_number_range(text, &begin, &end, &string_end);
-        if (e) {
+        if (e)
             break;
-        }
         if (*string_end && *string_end != ',') {
             fprintf(stderr, "Expecting comma at start of '%s'.\n", string_end);
             e = -1;
             break;
         }
         fprintf(stderr, "Adding squeeze range %i..%i.\n",
-                begin, end, string_end-text);
+                begin, end);
         memento.squeezes_num += 1;
         memento.squeezes = MEMENTO_UNDERLYING_REALLOC(
                 memento.squeezes,
@@ -1802,11 +1828,11 @@ static int Memento_add_squeezes(const char *text)
         memento.squeezes[memento.squeezes_num-1].begin = begin;
         memento.squeezes[memento.squeezes_num-1].end = end;
 
-        if (*string_end == 0) {
+        if (*string_end == 0)
             break;
-        }
         text = string_end + 1;
     }
+
     return e;
 }
 
@@ -1842,6 +1868,18 @@ static void Memento_init(void)
     env = getenv("MEMENTO_SQUEEZEAT");
     memento.squeezeAt = (env ? atoi(env) : 0);
 
+    env = getenv("MEMENTO_PATTERN");
+    memento.pattern = (env ? atoi(env) : 0);
+
+    env = getenv("MEMENTO_HIDE_MULTIPLE_REALLOCS");
+    memento.hideMultipleReallocs = (env ? atoi(env) : 0);
+
+    env = getenv("MEMENTO_ABORT_ON_LEAK");
+    memento.abortOnLeak = (env ? atoi(env) : 0);
+
+    env = getenv("MEMENTO_ABORT_ON_CORRUPTION");
+    memento.abortOnCorruption = (env ? atoi(env) : 0);
+
     env = getenv("MEMENTO_SQUEEZES");
     if (env) {
         int e;
@@ -1852,9 +1890,6 @@ static void Memento_init(void)
             exit(1);
         }
     }
-
-    env = getenv("MEMENTO_PATTERN");
-    memento.pattern = (env ? atoi(env) : 0);
 
     env = getenv("MEMENTO_MAXMEMORY");
     memento.maxMemory = (env ? atoi(env) : 0);
@@ -1976,7 +2011,9 @@ static int squeeze(void)
     for (i = 0; i < OPEN_MAX; i++) {
         if (stashed_map[i] == 0) {
             int j = dup(i);
-            stashed_map[j] = i+1;
+            if (j >= 0) {
+                stashed_map[j] = i+1;
+            }
         }
     }
 
@@ -1986,6 +2023,15 @@ static int squeeze(void)
     if (pid == 0) {
         /* Child */
         signal(SIGSEGV, Memento_signal);
+        /* Close the dup-licated fds to avoid them getting corrupted by faulty
+         * code. */
+        for (i = 0; i < OPEN_MAX; i++) {
+            if (stashed_map[i] != 0) {
+                /* We close duplicated fds, just in case child has some bad
+                 * code that modifies/closes random fds. */
+                close(i);
+            }
+        }
         /* In the child, we always fail the next allocation. */
         if (memento.patternBit == 0) {
             memento.patternBit = 1;
@@ -1994,7 +2040,7 @@ static int squeeze(void)
         memento.squeezing = 1;
 
         /* This is necessary to allow Memento_failThisEventLocked() near the
-        end to do 'return squeeze();'. */
+         * end to do 'return squeeze();'. */
         memento.squeezes_num = 0;
 
         return 1;
@@ -2011,7 +2057,7 @@ static int squeeze(void)
         int timeout = 30 * 1000 * 1000; /* time out in microseconds! */
         while (waitpid(pid, &status, WNOHANG) == 0) {
             nanosleep(&tm, NULL);
-            timeout -= (tm.tv_nsec/1000);
+            timeout -= (int)(tm.tv_nsec/1000);
             tm.tv_nsec *= 2;
             if (tm.tv_nsec > 999999999)
                 tm.tv_nsec = 999999999;
@@ -2187,16 +2233,9 @@ static int Memento_failThisEventLocked(void)
 
     if (!memento.squeezing && memento.squeezes_num) {
         /* Move to next relevant squeeze region if appropriate. */
-        for(;;) {
-            if (memento.squeezes_pos == memento.squeezes_num) {
+        for ( ; memento.squeezes_pos != memento.squeezes_num; memento.squeezes_pos++) {
+            if (memento.sequence < memento.squeezes[memento.squeezes_pos].end)
                 break;
-            }
-            if (memento.sequence >= memento.squeezes[memento.squeezes_pos].end) {
-                memento.squeezes_pos += 1;
-            }
-            else {
-                break;
-            }
         }
 
         /* See whether memento.sequence is within this squeeze region. */
@@ -2221,12 +2260,8 @@ static int Memento_failThisEventLocked(void)
 
     if ((memento.sequence >= memento.failAt) && (memento.failAt != 0))
         Memento_startFailing();
-    if (memento.squeezes_num==0
-            && (memento.sequence >= memento.squeezeAt)
-            && (memento.squeezeAt != 0)
-            ) {
+    if ((memento.squeezes_num==0) && (memento.sequence >= memento.squeezeAt) && (memento.squeezeAt != 0))
         return squeeze();
-    }
 
     if (!memento.failing)
         return 0;
@@ -2266,16 +2301,22 @@ static void *do_malloc(size_t s, int eventType)
     Memento_BlkHeader *memblk;
     size_t             smem = MEMBLK_SIZE(s);
 
-    if (Memento_failThisEventLocked())
+    (void)eventType;
+
+    if (Memento_failThisEventLocked()) {
+        errno = ENOMEM;
         return NULL;
+    }
 
     if (s == 0)
         return NULL;
 
     memento.numMallocs++;
 
-    if (memento.maxMemory != 0 && memento.alloc + s > memento.maxMemory)
+    if (memento.maxMemory != 0 && memento.alloc + s > memento.maxMemory) {
+        errno = ENOMEM;
         return NULL;
+    }
 
     memblk = MEMENTO_UNDERLYING_MALLOC(smem);
     if (memblk == NULL)
@@ -2298,7 +2339,7 @@ static void *do_malloc(size_t s, int eventType)
 #ifdef MEMENTO_DETAILS
     memblk->details       = NULL;
     memblk->details_tail  = &memblk->details;
-    Memento_storeDetails(memblk, Memento_EventType_malloc);
+    Memento_storeDetails(memblk, eventType);
 #endif /* MEMENTO_DETAILS */
     Memento_addBlockHead(&memento.used, memblk, 0);
 
@@ -2306,6 +2347,77 @@ static void *do_malloc(size_t s, int eventType)
         memblk->flags |= Memento_Flag_KnownLeak;
 
     return MEMBLK_TOBLK(memblk);
+}
+
+char *Memento_strdup(const char *text)
+{
+    size_t len = strlen(text) + 1;
+    char *ret;
+
+    if (!memento.inited)
+        Memento_init();
+
+    MEMENTO_LOCK();
+    ret = do_malloc(len, Memento_EventType_strdup);
+    MEMENTO_UNLOCK();
+
+    if (ret != NULL)
+        memcpy(ret, text, len);
+
+    return ret;
+}
+
+int Memento_asprintf(char **ret, const char *format, ...)
+{
+    va_list va;
+    int n;
+    int n2;
+
+    if (!memento.inited)
+        Memento_init();
+
+    va_start(va, format);
+    n = vsnprintf(NULL, 0, format, va);
+    va_end(va);
+    if (n < 0)
+        return n;
+
+    MEMENTO_LOCK();
+    *ret = do_malloc(n+1, Memento_EventType_asprintf);
+    MEMENTO_UNLOCK();
+    if (*ret == NULL)
+        return -1;
+
+    va_start(va, format);
+    n2 = vsnprintf(*ret, n + 1, format, va);
+    va_end(va);
+
+    return n2;
+}
+
+int Memento_vasprintf(char **ret, const char *format, va_list ap)
+{
+    int n;
+    va_list ap2;
+
+    if (!memento.inited)
+        Memento_init();
+
+    va_copy(ap2, ap);
+    n = vsnprintf(NULL, 0, format, ap);
+    if (n < 0)
+        return n;
+
+    MEMENTO_LOCK();
+    *ret = do_malloc(n+1, Memento_EventType_vasprintf);
+    MEMENTO_UNLOCK();
+    if (*ret == NULL)
+        return -1;
+
+    n = vsnprintf(*ret, n + 1, format, ap2);
+    va_end(ap2);
+
+    return n;
 }
 
 void *Memento_malloc(size_t s)
@@ -2318,6 +2430,7 @@ void *Memento_malloc(size_t s)
     MEMENTO_LOCK();
     ret = do_malloc(s, Memento_EventType_malloc);
     MEMENTO_UNLOCK();
+
     return ret;
 }
 
@@ -2330,9 +2443,10 @@ void *Memento_calloc(size_t n, size_t s)
 
     MEMENTO_LOCK();
     block = do_malloc(n*s, Memento_EventType_calloc);
+    MEMENTO_UNLOCK();
     if (block)
         memset(block, 0, n*s);
-    MEMENTO_UNLOCK();
+
     return block;
 }
 
@@ -2373,7 +2487,7 @@ int Memento_checkBytePointerOrNull(void *blk)
         return 0;
     Memento_checkPointerOrNull(blk);
 
-    i = *(unsigned int *)blk;
+    i = *(unsigned char *)blk;
 
     if (i == MEMENTO_PREFILL_UBYTE)
         fprintf(stderr, "Prefill value found - buffer underrun?\n");
@@ -2715,6 +2829,8 @@ static void do_free(void *blk, int eventType)
 {
     Memento_BlkHeader *memblk;
 
+    (void)eventType;
+
     if (Memento_event()) Memento_breakpointLocked();
 
     if (blk == NULL)
@@ -2723,10 +2839,16 @@ static void do_free(void *blk, int eventType)
     memblk = MEMBLK_FROMBLK(blk);
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     if (checkBlock(memblk, "free"))
+    {
+        if (memento.abortOnCorruption) {
+            fprintf(stderr, "*** memblk corrupted, calling abort()\n");
+            abort();
+        }
         return;
+    }
 
 #ifdef MEMENTO_DETAILS
-    Memento_storeDetails(memblk, Memento_EventType_free);
+    Memento_storeDetails(memblk, eventType);
 #endif
 
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
@@ -2769,13 +2891,17 @@ static void *do_realloc(void *blk, size_t newsize, int type)
     size_t             newsizemem;
     int                flags;
 
-    if (Memento_failThisEventLocked())
+    if (Memento_failThisEventLocked()) {
+        errno = ENOMEM;
         return NULL;
+    }
 
     memblk     = MEMBLK_FROMBLK(blk);
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
-    if (checkBlock(memblk, "realloc"))
+    if (checkBlock(memblk, "realloc")) {
+        errno = ENOMEM;
         return NULL;
+    }
 
 #ifdef MEMENTO_DETAILS
     Memento_storeDetails(memblk, type);
@@ -2786,8 +2912,10 @@ static void *do_realloc(void *blk, size_t newsize, int type)
         Memento_breakpointLocked();
 
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
-    if (memento.maxMemory != 0 && memento.alloc - memblk->rawsize + newsize > memento.maxMemory)
+    if (memento.maxMemory != 0 && memento.alloc - memblk->rawsize + newsize > memento.maxMemory) {
+        errno = ENOMEM;
         return NULL;
+    }
 
     newsizemem = MEMBLK_SIZE(newsize);
     Memento_removeBlock(&memento.used, memblk);
@@ -2839,6 +2967,7 @@ void *Memento_realloc(void *blk, size_t newsize)
         MEMENTO_LOCK();
         ret = do_malloc(newsize, Memento_EventType_realloc);
         MEMENTO_UNLOCK();
+        if (!ret) errno = ENOMEM;
         return ret;
     }
     if (newsize == 0) {
@@ -2851,6 +2980,7 @@ void *Memento_realloc(void *blk, size_t newsize)
     MEMENTO_LOCK();
     ret = do_realloc(blk, newsize, Memento_EventType_realloc);
     MEMENTO_UNLOCK();
+    if (!ret) errno = ENOMEM;
     return ret;
 }
 
@@ -3306,6 +3436,7 @@ void *(Memento_reference)(void *a)
 #undef Memento_free
 #undef Memento_realloc
 #undef Memento_calloc
+#undef Memento_strdup
 
 void *Memento_malloc(size_t size)
 {
@@ -3325,6 +3456,64 @@ void *Memento_realloc(void *b, size_t s)
 void *Memento_calloc(size_t n, size_t s)
 {
     return MEMENTO_UNDERLYING_CALLOC(n, s);
+}
+
+/* Avoid calling strdup, in case our compiler doesn't support it.
+ * Yes, I'm looking at you, early Visual Studios. */
+char *Memento_strdup(const char *s)
+{
+    size_t len = strlen(s)+1;
+    char *ret = MEMENTO_UNDERLYING_MALLOC(len);
+    if (ret != NULL)
+        memcpy(ret, s, len);
+    return ret;
+}
+
+/* Avoid calling asprintf, in case our compiler doesn't support it.
+ * Vaguely unhappy about relying on vsnprintf, but... */
+int Memento_asprintf(char **ret, const char *format, ...)
+{
+    va_list va;
+    int n;
+    int n2;
+
+    va_start(va, format);
+    n = vsnprintf(NULL, 0, format, va);
+    va_end(va);
+    if (n < 0)
+        return n;
+
+    *ret = MEMENTO_UNDERLYING_MALLOC(n+1);
+    if (*ret == NULL)
+        return -1;
+
+    va_start(va, format);
+    n2 = vsnprintf(*ret, n + 1, format, va);
+    va_end(va);
+
+    return n2;
+}
+
+/* Avoid calling vasprintf, in case our compiler doesn't support it.
+ * Vaguely unhappy about relying on vsnprintf, but... */
+int Memento_vasprintf(char **ret, const char *format, va_list ap)
+{
+    int n;
+    va_list ap2;
+
+    va_copy(ap2, ap);
+    n = vsnprintf(NULL, 0, format, ap);
+    if (n < 0)
+        return n;
+
+    *ret = MEMENTO_UNDERLYING_MALLOC(n+1);
+    if (*ret == NULL)
+        return -1;
+
+    n = vsnprintf(*ret, n + 1, format, ap2);
+    va_end(ap2);
+
+    return n;
 }
 
 void (Memento_listBlocks)(void)
