@@ -280,6 +280,15 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }
 
+    if (hypot(ctx->pgs->ctm.xx, ctx->pgs->ctm.xy) == 0.0
+     || hypot(ctx->pgs->ctm.yy, ctx->pgs->ctm.yx) == 0.0) {
+        /* This can mean a font scaled to 0, which appears to be valid, or a degenerate
+           ctm/text matrix, which isn't. A degenrate matrix will have triggered a warning
+           before, so we just skip the operation here.
+        */
+        goto show_error;
+    }
+
     /* NOTE: we don't scale the FontMatrix we leave it as the default
      * and do all our scaling with the textmatrix/ctm. This saves having
      * to create multiple instances of the same font, and simplifies
@@ -698,7 +707,6 @@ int pdfi_Tm(pdf_context *ctx)
     float m[6];
     pdf_num *n = NULL;
     gs_matrix mat;
-    gs_point pt;
 
     if (pdfi_count_stack(ctx) < 6) {
         pdfi_clearstack(ctx);
@@ -732,11 +740,7 @@ int pdfi_Tm(pdf_context *ctx)
             return code;
     }
 
-    code = gs_distance_transform((double)1.0, (double)1.0, (const gs_matrix *)&m, &pt);
-    if (code < 0)
-        return code;
-
-    if (pt.x == 0.0 || pt.y == 0.0) {
+    if (hypot(m[0], m[1]) == 0.0 || hypot(m[3], m[2]) == 0.0) {
         ctx->pdf_warnings |= W_PDF_DEGENERATETM;
     } else {
         code = gs_settextmatrix(ctx->pgs, (gs_matrix *)&m);
