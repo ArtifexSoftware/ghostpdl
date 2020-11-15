@@ -168,10 +168,13 @@ void gx_set_cmap_procs(gs_gstate *, const gx_device *);
   routines.  Note:  This information is currently being used by the routines
   for identifying when they are being given a separation name.  Some devices
   automaticaly add separations to the device's components if the separation
-  is not previously known and there is room in the device.
+  is not previously known and there is room in the device.  Overprint
+  simulation required a split of the NO_COMP_NAME_TYPE depending if we
+  are calling from the halftone setup or overprint setup.
 */
-#define NO_COMP_NAME_TYPE	0
-#define SEPARATION_NAME		1
+#define NO_COMP_NAME_TYPE_HT	0
+#define NO_COMP_NAME_TYPE_OP	1
+#define SEPARATION_NAME		2
 
 /*
   Convert a color component name into a colorant index.

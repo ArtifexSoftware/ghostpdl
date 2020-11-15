@@ -91,6 +91,8 @@ struct gs_pdf14trans_params_s {
     /* The type of trasnparency operation */
     pdf14_compositor_operations pdf14_op;
     int num_spot_colors;    /* Only for devices which support spot colors. */
+    int num_spot_colors_int; /* Number of spot colors reported by the interpreter */
+    bool overprint_sim_push; /* If true, put_image will need special conversion */
     /* Changed parameters flag */
     int changed;
     /* Parameters from the gs_transparency_group_params_t structure */
@@ -165,7 +167,17 @@ bool gs_currenttextknockout(const gs_gstate *);
  * We have to abbreviate the procedure name because procedure names are
  * only unique to 23 characters on VMS.
  */
-int gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain);
+/* For the push_pdf14trans_device, depth is a estimate (not authoritative) of
+ * the transparency stack depth. Value 0 means "unknown". If the depth value
+ * is < 0, that means that this pdf14 device is being used for the overprint
+ * simulation, and ordiniarly the value will be -1, since overprint
+ * simulation only needs the page buffer.
+ * The spot_color_count is provided for PDF input files to define the number
+ * of Spot colorants beyond CMYK. Thus 0 means CMYK only. If unknown, such
+ * as with PostScript input, the value will be -1.
+ */
+int gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain,
+                              int depth, int spot_color_count);
 
 int gs_pop_pdf14trans_device(gs_gstate * pgs, bool is_pattern);
 

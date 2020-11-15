@@ -377,7 +377,8 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
 /* Used to find the command block information in the bfile
    that is related to extra information stored in a psuedo band.
    Currently application of this is storage of the ICC profile
-   table and the per-band color_usage array.  We may eventually
+   table, the per-band color_usage array, and the spot equivalent
+   colors when doing overprint simulation.  We may eventually
    use this for storing other information like compressed images.   */
 
 static int
@@ -465,6 +466,23 @@ clist_read_color_usage_array(gx_device_clist_reader *crdev)
         return code;
 
     code = clist_read_chunk(crdev, cb.pos, size_data, (unsigned char *)crdev->color_usage_array);
+    return code;
+}
+
+/* read the cmyk equivalent spot colors */
+int
+clist_read_op_equiv_cmyk_colors(gx_device_clist_reader *crdev,
+    equivalent_cmyk_color_params *op_equiv_cmyk_colors)
+{
+    int code;
+    cmd_block cb;
+
+    code = clist_find_pseudoband(crdev, crdev->nbands + SPOT_EQUIV_COLORS - 1, &cb);
+    if (code < 0)
+        return code;
+
+    code = clist_read_chunk(crdev, cb.pos, sizeof(equivalent_cmyk_color_params),
+        (unsigned char *)op_equiv_cmyk_colors);
     return code;
 }
 

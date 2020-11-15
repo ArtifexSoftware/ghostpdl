@@ -540,7 +540,11 @@ gx_dc_devn_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
 /*
  * Utility to write a devn color into the clist.   We should only be here
  * if the device can handle these colors (e.g. a separation device like
- * tiffsep).  TODO:  Reduce the size of this by removing leading zeros in
+ * tiffsep). We can also be here if we are doing simulated overprint
+ * and the source document has spot colors in which case pdf14cmykspot
+ * device has been pushed and will handle devn colors.  Because the target
+ * could be bitrgbtags we need to send the tag information along.
+ * TODO:  Reduce the size of this by removing leading zeros in
  * the mask.
  *
  */
@@ -569,8 +573,8 @@ gx_devn_write_color(
     mask = comp_bits;
 
     num_bytes1 = sizeof(gx_color_index);
-    num_bytes = num_bytes1 + count * 2;
-    num_bytes_temp = num_bytes1;
+    num_bytes = num_bytes1 + count * 2 + 1; /* One for the tag byte */
+    num_bytes_temp = num_bytes1 + 1;
 
     /* check for adequate space */
     if (*psize < num_bytes) {
@@ -578,12 +582,20 @@ gx_devn_write_color(
         return_error(gs_error_rangecheck);
     }
     *psize = num_bytes;
+
     /* write out the mask */
     mask_temp = mask;
     while (--num_bytes1 >= 0) {
         pdata[num_bytes1] = mask_temp & 0xff;
         mask_temp >>= 8;
     }
+
+    /* Now the tag */
+    if (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS)
+        pdata[num_bytes_temp - 1] = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+    else
+        pdata[num_bytes_temp - 1] = GS_UNTOUCHED_TAG;
+
     /* Now the data */
     for (i = 0; i < ncomps; i++) {
         if (mask & 1) {
@@ -668,6 +680,7 @@ gx_dc_devn_write(
 static int
 gx_devn_read_color(
     ushort              values[],
+    gs_graphics_type_tag_t * tag,
     const gx_device *   dev,
     const byte *        pdata,
     int                 size )
@@ -687,6 +700,12 @@ gx_devn_read_color(
         mask = (mask << 8) | pdata[i];
     pos = i;
     num_bytes = i;
+
+    /* Now the tag */
+    *tag = pdata[pos];
+    pos++;
+    num_bytes++;
+
     /* Now the data */
     for (i = 0; i < ncomps; i++) {
         if (mask & 1) {
@@ -738,13 +757,14 @@ gx_dc_devn_read(
     const gs_gstate  *       pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,
-    int64_t		    offset,             /* ignored */
+    int64_t                 offset,             /* ignored */
     const byte *            pdata,
     uint                    size,
     gs_memory_t *           mem )               /* ignored */
 {
     pdevc->type = gx_dc_type_devn;
-    return gx_devn_read_color(&(pdevc->colors.devn.values[0]), dev, pdata, size);
+    return gx_devn_read_color(&(pdevc->colors.devn.values[0]), &(pdevc->tag),
+        dev, pdata, size);
 }
 
 /* Remember these are 16 bit values.   Also here we return the number of

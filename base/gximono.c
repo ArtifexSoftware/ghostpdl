@@ -400,6 +400,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
             code = (*remap_color)(&cc, pcs, pdevc, pgs, dev, gs_color_select_source);\
             if (code < 0)\
                 goto err;\
+            pdevc->tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);\
         }\
     } else if (!color_is_pure(pdevc)) {\
         code = gx_color_load_select(pdevc, pgs, dev, gs_color_select_source);\

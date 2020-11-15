@@ -1138,6 +1138,14 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
     bits32 test = penum->mask_color.test;
     bool lab_case = false;
 
+    if (device_encodes_tags(dev)) {
+        devc1.tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+        devc2.tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+    } else {
+        devc1.tag = 0;
+        devc2.tag = 0;
+    }
+
     if (h == 0)
         return 0;
 

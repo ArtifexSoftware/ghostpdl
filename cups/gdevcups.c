@@ -4745,7 +4745,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
           if (pdev->icc_struct) {
               rc_decrement(pdev->icc_struct, "cups_set_color_info");
           }
-          pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
+          pdev->icc_struct = gsicc_new_device_profile_array(pdev);
 
           code = gsicc_set_device_profile(pdev, pdev->memory,
               (char *)DEFAULT_RGB_ICC, gsDEFAULTPROFILE);
@@ -4764,7 +4764,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
           if (pdev->icc_struct) {
               rc_decrement(pdev->icc_struct, "cups_set_color_info");
           }
-          pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
+          pdev->icc_struct = gsicc_new_device_profile_array(pdev);
 
           code = gsicc_set_device_profile(pdev, pdev->memory->non_gc_memory,
               (char *)DEFAULT_GRAY_ICC, gsDEFAULTPROFILE);
@@ -4785,7 +4785,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
           if (pdev->icc_struct) {
               rc_decrement(pdev->icc_struct, "cups_set_color_info");
           }
-          pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
+          pdev->icc_struct = gsicc_new_device_profile_array(pdev);
 
           code = gsicc_set_device_profile(pdev, pdev->memory,
               (char *)DEFAULT_CMYK_ICC, gsDEFAULTPROFILE);

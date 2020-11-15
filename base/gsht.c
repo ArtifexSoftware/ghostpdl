@@ -636,10 +636,10 @@ gs_color_name_component_number(gx_device * dev, const char * pname,
     int num_colorant;
 
 #define check_colorant_name(dev, name) \
-    ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), NO_COMP_NAME_TYPE))
+    ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), NO_COMP_NAME_TYPE_HT))
 
 #define check_colorant_name_length(dev, name, length) \
-    ((*dev_proc(dev, get_color_comp_index)) (dev, name, length, NO_COMP_NAME_TYPE))
+    ((*dev_proc(dev, get_color_comp_index)) (dev, name, length, NO_COMP_NAME_TYPE_HT))
 
 #define check_name(str, pname, length) \
     ((strlen(str) == length) && (strncmp(pname, str, length) == 0))

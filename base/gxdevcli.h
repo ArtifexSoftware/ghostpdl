@@ -774,6 +774,7 @@ typedef struct gdev_pagelist_s {
         gx_stroked_gradient_recognizer_t sgr;\
         size_t MaxPatternBitmap;	/* Threshold for switching to pattern_clist mode */\
         bool page_uses_transparency;    /* PDF 1.4 transparency is used. */\
+        bool page_uses_overprint;       /* overprint is used. */\
         gdev_space_params space_params;\
         cmm_dev_profile_t *icc_struct;  /* object dependent profiles */\
         gs_graphics_type_tag_t   graphics_type_tag;   /* e.g. vector, image or text */\

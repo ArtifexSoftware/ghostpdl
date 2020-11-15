@@ -3207,7 +3207,7 @@ gxblend_h=$(GLSRC)gxblend.h
 gdevp14_h=$(GLSRC)gdevp14.h
 
 $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(AK) $(gx_h) $(gserrors_h)\
- $(math__h) $(memory__h) $(gdevp14_h) $(gstrans_h)\
+ $(math__h) $(memory__h) $(gdevp14_h) $(gstrans_h) $(gsicc_cache_h)\
  $(gsutil_h) $(gxdevcli_h) $(gzstate_h) $(gscspace_h)\
  $(gxclist_h) $(gsicc_manage_h) $(gdevdevn_h) $(gxarith_h) $(gxblend_h)\
  $(LIB_MAK) $(MAKEDIRS)

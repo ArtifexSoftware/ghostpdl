@@ -126,7 +126,7 @@
         0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
         0/*band_offset_x*/, 0/*band_offset_y*/, false /*BLS_force_memory*/, \
         {false}/* sgr */,\
-        0/* MaxPatternBitmap */, 0/*page_uses_transparency*/,\
+        0/* MaxPatternBitmap */, 0/*page_uses_transparency*/, 0/*page_uses_overprint*/,\
         { MAX_BITMAP, BUFFER_SPACE,\
              { BAND_PARAMS_INITIAL_VALUES },\
            0/*false*/, /* params_are_read_only */\

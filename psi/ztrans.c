@@ -26,6 +26,7 @@
 #include "gxiparam.h"		/* for image enumerator */
 #include "gxcspace.h"
 #include "idict.h"
+#include "idstack.h"
 #include "idparam.h"
 #include "ifunc.h"
 #include "igstate.h"
@@ -471,10 +472,18 @@ static int
 zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
 {
     int code;
+    int depth;
+    int spot_color_count = -1;		/* default is 'unknown' spot color count */
     os_ptr op = osp;
     gx_device *cdev = gs_currentdevice_inline(igs);
+    dict_stack_t *dstack = &(i_ctx_p->dict_stack);
+    ref_stack_t *rdstack = &dstack->stack;
+    const ref *puserdict = ref_stack_index(rdstack, ref_stack_count(rdstack) - 1 -
+                            dstack->userdict_index);
 
     check_type(*op, t_integer);
+    depth = (int)op->value.intval;
+
     if (dev_proc(cdev, dev_spec_op)(cdev, gxdso_is_pdf14_device, NULL, 0) > 0)
         return 0;		/* ignore push_device if already is pdf14 device */
 
@@ -482,7 +491,8 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
     /*             sure that the device knows that we are using the pdf14	*/
     /*             transparency. Note this will close and re-open the device	*/
     /*             and erase the page. This should not occur with PDF files.	*/
-    if (cdev->page_uses_transparency == 0) {
+    /* We don't do this if this is a push for the overprint_sim mode		*/
+    if (depth >= 0 && cdev->page_uses_transparency == 0) {
         gs_c_param_list list;
         bool bool_true = 1;
 
@@ -504,7 +514,12 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
         if ((code = gs_erasepage(igs)) < 0)
             return code;
     }
-    code = gs_push_pdf14trans_device(igs, false, true);
+    /* Get the PageSpotColors value from the userdict, if it is defined */
+    code = dict_int_param(puserdict, "PageSpotColors", -1, max_int, -1, &spot_color_count);
+    if (code < 0)
+        return code;
+    /* and finally actually push the compositor device */
+    code = gs_push_pdf14trans_device(igs, false, true, depth, spot_color_count);
     if (code < 0)
         return code;
     pop(1);

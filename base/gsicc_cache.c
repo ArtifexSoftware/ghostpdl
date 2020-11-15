@@ -373,6 +373,19 @@ gsicc_mash_hash(gsicc_hashlink_t *hash)
         (hash->des_hash >> 1) ^ (hash->rend_hash) ^ (hash->src_hash);
 }
 
+static void
+gsicc_set_hash(cmm_profile_t *profile)
+{
+    if (!profile->hash_is_valid) {
+        int64_t hash;
+
+        gsicc_get_icc_buff_hash(profile->buffer, &hash, profile->buffer_size);
+        profile->hashcode = hash;
+        profile->hash_is_valid = true;
+    }
+    return;
+}
+
 int64_t
 gsicc_get_hash(cmm_profile_t *profile)
 {
@@ -384,6 +397,23 @@ gsicc_get_hash(cmm_profile_t *profile)
         profile->hash_is_valid = true;
     }
     return profile->hashcode;
+}
+
+bool
+gsicc_profiles_equal(cmm_profile_t *profile1, cmm_profile_t *profile2) {
+
+    if (profile1 == NULL || profile2 == NULL)
+        return false;
+
+    if (!(profile1->hash_is_valid)) {
+        gsicc_set_hash(profile1);
+    }
+
+    if (!(profile1->hash_is_valid)) {
+        gsicc_set_hash(profile2);
+    }
+
+    return profile1->hashcode == profile2->hashcode;
 }
 
 void
@@ -1048,7 +1078,9 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
     cms_input_profile = gs_input_profile->profile_handle;
     /*  Check if the source was generated from a PS CIE color space.  If yes,
         then we need to make sure that the CMM does not do something like
-        force a white point mapping like lcms does */
+        force a white point mapping like lcms does.  This is also the source
+        of the issue with the flower picture that has the hand made ICC
+        profile that is highly nonlinear at the whitepoint */
     if (gsicc_profile_from_ps(gs_input_profile)) {
         cms_flags = cms_flags | gscms_avoid_white_fix_flag(memory);
     }

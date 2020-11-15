@@ -597,25 +597,25 @@ check_cmyk_color_model_comps(gx_device * dev)
                        dev,
                        "Cyan",
                        sizeof("Cyan") - 1,
-                       NO_COMP_NAME_TYPE )) < 0           ||
+                       NO_COMP_NAME_TYPE_OP)) < 0           ||
          cyan_c == GX_DEVICE_COLOR_MAX_COMPONENTS         ||
          (magenta_c = dev_proc(dev, get_color_comp_index)(
                           dev,
                           "Magenta",
                           sizeof("Magenta") - 1,
-                          NO_COMP_NAME_TYPE )) < 0        ||
+                          NO_COMP_NAME_TYPE_OP)) < 0        ||
          magenta_c == GX_DEVICE_COLOR_MAX_COMPONENTS      ||
          (yellow_c = dev_proc(dev, get_color_comp_index)(
                         dev,
                         "Yellow",
                         sizeof("Yellow") - 1,
-                        NO_COMP_NAME_TYPE )) < 0               ||
+                        NO_COMP_NAME_TYPE_OP)) < 0               ||
          yellow_c == GX_DEVICE_COLOR_MAX_COMPONENTS       ||
          (black_c = dev_proc(dev, get_color_comp_index)(
                         dev,
                         "Black",
                         sizeof("Black") - 1,
-                        NO_COMP_NAME_TYPE )) < 0                         ||
+                        NO_COMP_NAME_TYPE_OP)) < 0                         ||
          black_c == GX_DEVICE_COLOR_MAX_COMPONENTS          )
         return 0;
 
@@ -724,8 +724,7 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
     /* correct for any zero'ed color components.  But only if profiles
        match AND pgs->overprint_mode is true */
     if (pcs->cmm_icc_profile_data != NULL && output_profile != NULL) {
-        if (output_profile->hashcode ==
-            pcs->cmm_icc_profile_data->hashcode) {
+        if (gsicc_profiles_equal(output_profile, pcs->cmm_icc_profile_data)) {
             profile_ok = true;
         }
     }
@@ -759,13 +758,13 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
                space has to be CMYK. Trick is that we do need to worry about
                the colorant order on the target device */
             num_colorant[0] = (dev_proc(dev, get_color_comp_index))\
-                             (dev, "Cyan", strlen("Cyan"), NO_COMP_NAME_TYPE);
+                             (dev, "Cyan", strlen("Cyan"), NO_COMP_NAME_TYPE_OP);
             num_colorant[1] = (dev_proc(dev, get_color_comp_index))\
-                             (dev, "Magenta", strlen("Magenta"), NO_COMP_NAME_TYPE);
+                             (dev, "Magenta", strlen("Magenta"), NO_COMP_NAME_TYPE_OP);
             num_colorant[2] = (dev_proc(dev, get_color_comp_index))\
-                             (dev, "Yellow", strlen("Yellow"), NO_COMP_NAME_TYPE);
+                             (dev, "Yellow", strlen("Yellow"), NO_COMP_NAME_TYPE_OP);
             num_colorant[3] = (dev_proc(dev, get_color_comp_index))\
-                             (dev, "Black", strlen("Black"), NO_COMP_NAME_TYPE);
+                             (dev, "Black", strlen("Black"), NO_COMP_NAME_TYPE_OP);
             nz_comps = 0;
             one = 1;
             colorant_ok = true;
