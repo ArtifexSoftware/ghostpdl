@@ -96,7 +96,7 @@ cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
     uint padding = width_bytes - ((width_bits+7)>>3);
 
     if (raster == whole_bytes) {
-        stream_cursor_read_init(&r, data, raster * height);
+        stream_cursor_read_init(&r, data, raster * (size_t)height);
         status = (*st->templat->process) (st, &r, pw, true);
     } else {			/* Compress row-by-row. */
         uint y;
