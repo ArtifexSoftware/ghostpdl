@@ -180,8 +180,8 @@ static int mask_suitable_for_interpolation(gx_image_enum *penum)
 static int
 safe64fixed2int(int64_t v, int *overflow)
 {
-    if (v > (((int64_t)1)<<(sizeof(int)*8-1+_fixed_shift)-1) ||
-        v <= (((int64_t)-1)<<(sizeof(int)*8-1+_fixed_shift)-1))
+    if (v > (int)((1U<<(sizeof(int)*8-1))-128) ||
+        v < 0)
         *overflow = 1;
     return fixed2int_pixround_perfect(v);
 }
