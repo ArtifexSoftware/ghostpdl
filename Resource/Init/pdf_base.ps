@@ -1091,6 +1091,10 @@ currentdict /no_debug_dict undef
     % if we reposition beyond the end of the file.  So we compare the given
     % length to number of bytes left in the file.
     dup /Length knownoget {
+      dup type /realtype eq {
+        (   **** Warning: stream length is a real number; converting to integer.\n) pdfformatwarning
+        cvi 2 copy /Length exch put
+      } if
       dup PDFfile bytesavailable lt {	% compare to to bytes left in file
         PDFfile fileposition 		% reposition to the end of stream
         add PDFfile exch setfileposition
