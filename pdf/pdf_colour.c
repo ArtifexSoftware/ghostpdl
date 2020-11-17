@@ -1031,7 +1031,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     pdf_obj *Name = NULL;
     char *cname = NULL;
     int code;
-    bool known;
+    bool known = true;
     float range[8];
     int icc_N;
     gs_color_space *pcs = NULL;
@@ -1638,7 +1638,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     pdf_dict *transform = NULL;
     pdf_dict *attributes = NULL;
     pdf_dict *Colorants = NULL, *Process = NULL;
-    gs_color_space *process_space;
+    gs_color_space *process_space = NULL;
     int code;
     uint64_t ix;
     gs_color_space *pcs = NULL, *pcs_alt = NULL;
@@ -1706,6 +1706,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
         return code;
 
     rc_decrement(pcs_alt, "pdfi_create_DeviceN");
+    pcs_alt = NULL;
     pcs->params.device_n.mem = ctx->memory;
 
     for (ix = 0;ix < pdfi_array_size(inks);ix++) {
@@ -1825,7 +1826,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
             uint64_t ix = 0;
             pdf_obj *Colorant = NULL, *Space = NULL;
             char *colorant_name;
-            gs_color_space *colorant_space;
+            gs_color_space *colorant_space = NULL;
 
             code = pdfi_dict_first(ctx, Colorants, &Colorant, &Space, &ix);
             if (code < 0)
