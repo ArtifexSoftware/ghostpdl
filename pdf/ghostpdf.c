@@ -569,6 +569,8 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
      * TODO: Should probably look into that..
      */
     pdfi_device_set_flags(ctx);
+    /* Do any custom device configuration */
+    pdfi_device_misc_config(ctx);
 
     /* TODO: Need to handle /Collection around this point, somehow.
      * see pdf_main.ps/pdf_collection_files()

@@ -55,6 +55,25 @@ bool pdfi_device_check_param_bool(gx_device *dev, const char *param)
     return value;
 }
 
+/* Set value of boolean device parameter */
+bool pdfi_device_set_param_bool(gx_device *dev, const char *param, bool value)
+{
+    int code;
+    gs_c_param_list list;
+    bool paramval = value;
+
+    gs_c_param_list_write(&list, dev->memory);
+
+    code = param_write_bool((gs_param_list *)&list, param, &paramval);
+    if (code < 0) goto exit;
+    gs_c_param_list_read(&list);
+    code = gs_putdeviceparams(dev, (gs_param_list *)&list);
+
+ exit:
+    gs_c_param_list_release(&list);
+    return code;
+}
+
 /* Checks whether a parameter exists for the device */
 bool pdfi_device_check_param_exists(gx_device *dev, const char *param)
 {
@@ -102,4 +121,33 @@ void pdfi_device_set_flags(pdf_context *ctx)
         ctx->writepdfmarks ? "TRUE" : "FALSE",
                 ctx->annotations_preserved ? "TRUE" : "FALSE");
 #endif
+}
+
+/* Config the output device
+ * This will configure any special device parameters.
+ * Right now it just sets up some stuff for pdfwrite.
+ */
+int pdfi_device_misc_config(pdf_context *ctx)
+{
+    bool has_pdfmark;
+    int code;
+    gx_device *dev = ctx->pgs->device;
+
+    /* I am using pdfmark to identify the pdfwrite device */
+    has_pdfmark = pdfi_device_check_param_bool(dev, "pdfmark");
+    /* (only handling pdfwrite for now) */
+    if (!has_pdfmark)
+        return 0;
+
+    /* TODO: I think the pdfwrite device should have these automatically set to true,
+     * but that doesn't seem to be the case now.
+     * See pdf_document_metadata()
+     */
+    code = pdfi_device_set_param_bool(dev, "PreserveEPSInfo", true);
+    if (code < 0) goto exit;
+    code = pdfi_device_set_param_bool(dev, "ParseDSCCommentsForDocInfo", true);
+    if (code < 0) goto exit;
+
+ exit:
+    return code;
 }
