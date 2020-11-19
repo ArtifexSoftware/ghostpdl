@@ -237,6 +237,8 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
     stream_obj->stream_dict->indirect_num = stream_obj->stream_dict->object_num = objnum;
     stream_obj->stream_dict->indirect_gen = stream_obj->stream_dict->generation_num = gen;
     stream_obj->stream_offset = offset;
+    stream_obj->parent_obj = (pdf_obj *)ctx->current_stream;
+    pdfi_countup(stream_obj->parent_obj);
 
     /* This code may be a performance overhead, it simply skips over the stream contents
      * and checks that the stream ends with a 'endstream endobj' pair. We could add a
@@ -719,6 +721,22 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
         pdfi_countup(*object);
 
         pdfi_promote_cache_entry(ctx, cache_entry);
+
+        if (cache_entry->o->type == PDF_STREAM) {
+            pdf_stream *stream = (pdf_stream *)cache_entry->o;
+            /* This is plain ugly. In order to deal with the (illegal) case where a stream
+             * uses named objects which are not defined in the stream's Resources dictionary,
+             * but *are* defined in one of the enclosing stream's Resources dictionary, we need
+             * to be able to walk back up the chain of nested streams. The problem is that we
+             * may be executing this stream from a different collection of nexted streams than
+             * when we originally created and cached it, so alter the 'parent' now. Since
+             * streams cannot be recursive this shold be OK. There's no bug number for this
+             * case but the file 'inherited_resources.pdf' has been added to the test suite.
+             */
+            pdfi_countdown(stream->parent_obj);
+            stream->parent_obj = (pdf_obj *)ctx->current_stream;
+            pdfi_countup(stream->parent_obj);
+        }
     } else {
         saved_stream_offset = pdfi_unread_tell(ctx);
 

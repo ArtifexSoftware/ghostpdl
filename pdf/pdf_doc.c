@@ -613,7 +613,31 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
         }
     }
 
+    if (ctx->current_stream != NULL) {
+        pdf_dict *stream_dict = NULL;
+        pdf_stream *stream = ctx->current_stream;
+
+        do {
+            code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream, &stream_dict);
+            if (code < 0)
+                goto exit;
+            code = pdfi_resource_knownget_typedict(ctx, Type, stream_dict, &typedict);
+            if (code < 0)
+                goto exit;
+            if (code > 0) {
+                code = pdfi_dict_get_no_store_R_key(ctx, typedict, name, o);
+                dmprintf(ctx->memory, "Couldn't find named resource in suppled dictionary, or Parents, or Pages, matching name located in earlier stream Resource\n");
+                ctx->pdf_errors |= E_PDF_INHERITED_STREAM_RESOURCE;
+                goto exit;
+            }
+            pdfi_countdown(typedict);
+            typedict = NULL;
+            stream = pdfi_stream_parent(ctx, stream);
+        }while(stream != NULL);
+    }
+
     /* If we got all the way down there, we didn't find it */
+    dmprintf(ctx->memory, "Couldn't find named resource\n");
     code = gs_error_undefined;
 
 exit:

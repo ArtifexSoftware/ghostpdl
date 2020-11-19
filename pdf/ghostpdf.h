@@ -128,6 +128,7 @@ typedef enum pdf_error_flag_e {
     E_PDF_PAGEDICTERROR = E_PDF_NOHEADER << 24,
     E_PDF_STACKUNDERFLOWERROR = E_PDF_NOHEADER << 25,
     E_PDF_BADSTREAMDICT = E_PDF_NOHEADER << 26,
+    E_PDF_INHERITED_STREAM_RESOURCE = E_PDF_NOHEADER << 27
 } pdf_error_flag;
 
 typedef enum pdf_warning_flag_e {
@@ -380,8 +381,8 @@ typedef struct pdf_context_s
      * When they are in content streams we don't decrypt them, because the *stream*
      * was already decrypted. So when strings are directly or indirectly defined,
      * and *NOT* defined as part of a content stream, and not in an Objstm, we
-     * need to decrypt them. We can handle the checkign for ObjStm in the actual
-     * decryption routine, where we also handle pciking out the object number of the
+     * need to decrypt them. We can handle the checking for ObjStm in the actual
+     * decryption routine, where we also handle picking out the object number of the
      * enclosing parent, if its a directly defined string, but we cannot tell
      * whether we are executing a content stream or not, so we need to know that. This
      * flag is set whenever we are executing a content stream, it is temporarily reset
@@ -406,6 +407,12 @@ typedef struct pdf_context_s
     uint32_t loop_detection_entries;
     uint64_t *loop_detection;
 
+    /* Used to set the 'parent' stream of a stream that gets created by dereferencing
+     * We should not need this but badly fromed PDF files can use Resources defined in
+     * an earlier (non-Page) stream object, and Acrobat handles this, so we need to.
+     * We could haev done this more neatly if we'd known this during design :-(
+     */
+    pdf_stream *current_stream;
     stream_save current_stream_save;
     int (*end_page) (struct pdf_context_s *ctx);
 #if REFCNT_DEBUG

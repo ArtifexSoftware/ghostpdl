@@ -1765,6 +1765,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
     int code;
     pdf_c_stream *stream;
     pdf_keyword *keyword;
+    pdf_stream *saved_current_stream = ctx->current_stream;
 
     if (content_stream != NULL) {
         stream = content_stream;
@@ -1778,6 +1779,8 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
             return code;
     }
 
+    ctx->current_stream = stream_obj;
+
     do {
         code = pdfi_read_token(ctx, stream, stream_obj->object_num, stream_obj->generation_num);
         if (code < 0) {
@@ -1790,6 +1793,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
                     dmprintf(ctx->memory, "**** Error ran out of memory reading a content stream.  The page may be incomplete.\n");
                 }
                 pdfi_close_file(ctx, stream);
+                ctx->current_stream = saved_current_stream;
                 return code;
             }
             continue;
@@ -1808,6 +1812,7 @@ repaired_keyword:
                 case TOKEN_ENDSTREAM:
                     pdfi_close_file(ctx, stream);
                     pdfi_pop(ctx,1);
+                    ctx->current_stream = saved_current_stream;
                     return 0;
                     break;
                 case TOKEN_ENDOBJ:
@@ -1816,6 +1821,7 @@ repaired_keyword:
                     ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
                     if (ctx->pdfstoponerror)
                         return_error(gs_error_syntaxerror);
+                    ctx->current_stream = saved_current_stream;
                     return 0;
                     break;
                 case TOKEN_NOT_A_KEYWORD:
@@ -1823,8 +1829,10 @@ repaired_keyword:
                         pdf_dict *stream_dict = NULL;
 
                         code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
-                        if (code < 0)
+                        if (code < 0) {
+                            ctx->current_stream = saved_current_stream;
                             return code;
+                        }
 
                         code = pdfi_interpret_stream_operator(ctx, stream, stream_dict, page_dict);
                         if (code == REPAIRED_KEYWORD)
@@ -1835,6 +1843,7 @@ repaired_keyword:
                             if (ctx->pdfstoponerror) {
                                 pdfi_close_file(ctx, stream);
                                 pdfi_clearstack(ctx);
+                                ctx->current_stream = saved_current_stream;
                                 return code;
                             }
                         }
@@ -1857,5 +1866,6 @@ repaired_keyword:
     }while(1);
 
     pdfi_close_file(ctx, stream);
+    ctx->current_stream = saved_current_stream;
     return 0;
 }

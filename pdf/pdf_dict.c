@@ -1080,6 +1080,13 @@ gs_offset_t pdfi_stream_offset(pdf_context *ctx, pdf_stream *stream)
     return stream->stream_offset;
 }
 
+pdf_stream *pdfi_stream_parent(pdf_context *ctx, pdf_stream *stream)
+{
+    if (stream->type != PDF_STREAM)
+        return 0;
+    return (pdf_stream *)stream->parent_obj;
+}
+
 /* Get the dict from a pdf_obj, returns typecheck if it doesn't have one */
 int pdfi_dict_from_obj(pdf_context *ctx, pdf_obj *obj, pdf_dict **dict)
 {

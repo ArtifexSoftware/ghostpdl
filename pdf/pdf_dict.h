@@ -67,4 +67,5 @@ int pdfi_dict_key_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *
 int pdfi_dict_from_obj(pdf_context *ctx, pdf_obj *obj, pdf_dict **dict);
 int64_t pdfi_stream_length(pdf_context *ctx, pdf_stream *stream);
 gs_offset_t pdfi_stream_offset(pdf_context *ctx, pdf_stream *stream);
+pdf_stream *pdfi_stream_parent(pdf_context *ctx, pdf_stream *stream);
 #endif
