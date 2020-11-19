@@ -843,7 +843,7 @@ gx_upright_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
 }
 
 int
-gx_default_sync_output(gx_device * dev)
+gx_default_sync_output(gx_device * dev) /* lgtm [cpp/useless-expression] */
 {
     return 0;
 }
