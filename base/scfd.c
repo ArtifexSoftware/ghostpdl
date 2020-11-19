@@ -536,103 +536,105 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
 
     cfd_load_state();
     if_debug1m('w', ss->memory, "[w1]entry run_color = %d\n", ss->run_color);
-    if (ss->run_color > 0)
+    if (run_color > 0)
         goto db;
     else
         goto dw;
 #define q_at_stop() (q >= stop && (qbit <= end_bit || q > stop))
-  top:run_color = 0;
-    if (q_at_stop())
-        goto done;
-  dw:				/* Decode a white run. */
+    while (1)
+    {
+        run_color = 0;
+        if (q_at_stop())
+            goto done;
 
-    cfd_store_state();
-    status = get_run(ss, pr, cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
-            &bcnt, "[w1]white");
-    cfd_load_state();
-    if (status < 0) {
-        goto out0;
-    }
+  dw:   /* Decode a white run. */
+        do {
+            cfd_store_state();
+            status = get_run(ss, pr, cf_white_decode, cfd_white_initial_bits,
+                             cfd_white_min_bits, &bcnt, "[w1]white");
+            cfd_load_state();
+            if (status < 0) {
+                /* We already set run_color to 0 or -1. */
+                status = 0;
+                goto out;
+            }
 
-    if (bcnt < 0) {		/* exceptional situation */
-        switch (bcnt) {
-            case run_uncompressed:	/* Uncompressed data. */
-                cfd_store_state();
-                bcnt = cf_decode_uncompressed(ss, pr);
-                if (bcnt < 0)
-                    return bcnt;
-                cfd_load_state();
-                if (bcnt)
-                    goto db;
-                else
-                    goto dw;
-                /*case run_error: */
-                /*case run_zeros: *//* Premature end-of-line. */
-            default:
+            if (bcnt < 0) {		/* exceptional situation */
+                switch (bcnt) {
+                    case run_uncompressed:	/* Uncompressed data. */
+                        cfd_store_state();
+                        bcnt = cf_decode_uncompressed(ss, pr);
+                        if (bcnt < 0)
+                            return bcnt;
+                        cfd_load_state();
+                        if (bcnt)
+                            goto db;
+                        else
+                            continue; /* Restart decoding white */
+                        /*case run_error: */
+                        /*case run_zeros: *//* Premature end-of-line. */
+                    default:
+                        status = ERRC;
+                        goto out;
+                }
+            }
+
+            cfd_store_state();
+            status = skip_data(ss, pr, bcnt);
+            cfd_load_state();
+            if (status < 0) {
+                /* If we run out of data after a makeup code, */
+                /* note that we are still processing a white run. */
+                run_color = -1;
+            }
+        } while (status < 0);
+
+        if (q_at_stop()) {
+            run_color = 0;		/* not inside a run */
+  done:
+            if (q > stop || qbit < end_bit)
+                status = ERRC;
+            else
+                status = 1;
+            break;
+        }
+        run_color = 1;
+
+  db:   /* Decode a black run. */
+        do {
+            cfd_store_state();
+            status = get_run(ss, pr, cf_black_decode, cfd_black_initial_bits,
+                             cfd_black_min_bits, &bcnt, "[w1]black");
+            cfd_load_state();
+            if (status < 0) {
+                /* We already set run_color to 1 or 2. */
+                status = 0;
+                goto out;
+            }
+
+            if (bcnt < 0) {  /* All exceptional codes are invalid here. */
+                /****** WRONG, uncompressed IS ALLOWED ******/
                 status = ERRC;
                 goto out;
-        }
+            }
+
+            /* Invert bits designated by black run. */
+            cfd_store_state();
+            status = invert_data(ss, pr, &bcnt, black_byte);
+            cfd_load_state();
+            if (status < 0) {
+                /* If we run out of data after a makeup code, */
+                /* note that we are still processing a black run. */
+                run_color = 2;
+            }
+        } while (status < 0);
     }
 
+out:
     cfd_store_state();
-    status = skip_data(ss, pr, bcnt);
-    cfd_load_state();
-    if (status < 0) {
-        goto dwx;
-    }
-
-    if (q_at_stop()) {
-        run_color = 0;		/* not inside a run */
-        goto done;
-    }
-    run_color = 1;
-  db:			/* Decode a black run. */
-
-    cfd_store_state();
-    status = get_run(ss, pr, cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
-            &bcnt, "[w1]black");
-    cfd_load_state();
-    if (status < 0) {
-        goto out1;
-    }
-
-    if (bcnt < 0) {		/* All exceptional codes are invalid here. */
-        /****** WRONG, uncompressed IS ALLOWED ******/
-        status = ERRC;
-        goto out;
-    }
-
-    /* Invert bits designated by black run. */
-    cfd_store_state();
-    status = invert_data(ss, pr, &bcnt, black_byte);
-    cfd_load_state();
-    if (status < 0) {
-        goto dbx;
-    }
-
-    goto top;
-  dwx:				/* If we run out of data after a makeup code, */
-    /* note that we are still processing a white run. */
-    run_color = -1;
-    goto dw;
-  dbx:				/* If we run out of data after a makeup code, */
-    /* note that we are still processing a black run. */
-    run_color = 2;
-    goto db;
-  done:if (q > stop || qbit < end_bit)
-        status = ERRC;
-    else
-        status = 1;
-  out:cfd_store_state();
     ss->run_color = run_color;
     if_debug1m('w', ss->memory, "[w1]exit run_color = %d\n", run_color);
     return status;
-  out0:			/* We already set run_color to 0 or -1. */
-    status = 0;
-    goto out;
-  out1:			/* We already set run_color to 1 or 2. */
-    status = 0;
-    goto out;
 }
 
 /* Decode a 2-D scan line. */
