@@ -289,13 +289,6 @@ dict_find(const ref * pdref, const ref * pkey,
     /* Compute hash.  The only types we bother with are strings, */
     /* names, and (unlikely, but worth checking for) integers. */
     switch (r_type(pkey)) {
-    case t_name:
-        nidx = name_index(mem, pkey);
-    nh:
-        hash = dict_name_index_hash(nidx);
-        kpack = packed_name_key(nidx);
-        ktype = t_name;
-        break;
     case t_string:		/* convert to a name first */
         {
             ref nref;
@@ -309,6 +302,13 @@ dict_find(const ref * pdref, const ref * pkey,
             nidx = name_index(mem, &nref);
         }
         goto nh;
+    case t_name:
+        nidx = name_index(mem, pkey);
+    nh:
+        hash = dict_name_index_hash(nidx);
+        kpack = packed_name_key(nidx);
+        ktype = t_name;
+        break;
     case t_real:
         /*
          * Make sure that equal reals and integers hash the same.
