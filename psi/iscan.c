@@ -445,7 +445,7 @@ gs_scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
  * as well as for scan_Refill.
  */
 int
-gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
+gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate) /* lgtm [cpp/use-of-goto] */
 {
     stream *const s = pstate->s_file.value.pfile;
     ref *myref = pref;
