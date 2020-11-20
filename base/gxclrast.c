@@ -475,7 +475,8 @@ read_set_misc_map(byte cb, command_buf_t *pcb, gs_gstate *pgs, gs_memory_t *mem)
 int
 clist_playback_band(clist_playback_action playback_action,
                     gx_device_clist_reader *cdev, stream *s,
-                    gx_device *target, int x0, int y0, gs_memory_t * mem)
+                    gx_device *target, int x0, int y0,
+                    gs_memory_t * mem) /* lgtm [cpp/use-of-goto] */
 {
     byte *cbuf_storage;
     command_buf_t cbuf;

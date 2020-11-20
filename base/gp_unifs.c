@@ -247,7 +247,7 @@ int gp_pwrite_impl(const char *buf, size_t count, gs_offset_t offset, FILE *f)
 
 /* Set a file into binary or text mode. */
 int
-gp_setmode_binary_impl(FILE * pfile, bool mode)
+gp_setmode_binary_impl(FILE * pfile, bool mode) /* lgtm [cpp/useless-expression] */
 {
     return 0;                   /* Noop under Unix */
 }
