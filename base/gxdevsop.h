@@ -29,7 +29,7 @@
  * ioctl is to unix file handles.
  *
  * Design features of this scheme ensure that:
- *  * Devices that support a given call call efficiently implement both
+ *  * Devices that support a given call can efficiently implement both
  *    input and output.
  *  * Devices that do not support a given call can efficiently refuse it
  *    (without having to know all the possible calls).
@@ -401,6 +401,15 @@ enum {
      * for example).
      */
     gxdso_skip_icc_component_validation,
+
+    /* gxdso_copy_alpha_disabled:
+     *     data = NULL
+     *     size = 0
+     * Returns 1 if the command list device sets clist_disable_copy_alpha flag,
+     * 0 otherwise.
+     */
+    gxdso_copy_alpha_disabled,
+
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

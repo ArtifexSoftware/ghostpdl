@@ -145,10 +145,13 @@ static int mask_suitable_for_interpolation(gx_image_enum *penum)
     int code;
     int high_level_color = 1;
 
-    if (gx_device_must_halftone(penum->dev)) {
+    if (gx_device_must_halftone(penum->dev))
         /* We don't interpolate when going to 1bpp outputs */
         return -1;
-    } else if (gx_dc_is_pure(pdc1) && (pdc1)->colors.pure != gx_no_color_index &&
+    if (dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_copy_alpha_disabled, NULL, 0) == 1)
+        /* The target device has copy_alpha() disabled. */
+        return -1;
+    if (gx_dc_is_pure(pdc1) && (pdc1)->colors.pure != gx_no_color_index &&
         dev_proc(penum->dev, copy_alpha) != NULL &&
         dev_proc(penum->dev, copy_alpha) != gx_no_copy_alpha) {
         /* We have a 'pure' color, and a valid copy_alpha. We can work with that. */
