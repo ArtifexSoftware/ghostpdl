@@ -86,7 +86,7 @@ typedef struct gsicc_bufferdesc_s {
     unsigned char bytes_per_chan;
     bool has_alpha;
     bool alpha_first;
-    bool little_endian;
+    bool endian_swap;
     bool is_planar;
     int plane_stride;
     int row_stride;

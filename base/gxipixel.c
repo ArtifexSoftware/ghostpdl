@@ -1134,6 +1134,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int code;
 
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during image render color");
@@ -1266,10 +1267,13 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
         gsicc_init_buffer(&output_buff_desc, num_des_comp, 1, false, false, false,
                           0, num_entries * num_des_comp,
                       1, num_entries);
-        (penum->icc_link->procs.map_buffer)(penum->dev, penum->icc_link,
+        code = (penum->icc_link->procs.map_buffer)(penum->dev, penum->icc_link,
                                             &input_buff_desc, &output_buff_desc,
                                             (void*) temp_buffer,
                                             (void*) penum->color_cache->device_contone);
+        if (code < 0)
+            return gs_rethrow(code, "Failure to map color buffer");
+
         /* Check if we need to apply any transfer functions.  If so then do it now */
         if (has_transfer) {
             for (k = 0; k < num_entries; k++) {

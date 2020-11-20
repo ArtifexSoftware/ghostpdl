@@ -100,7 +100,7 @@ void smask_blend(byte *gs_restrict src, int width, int height, int rowstride,
 
 void smask_copy(int num_rows, int num_cols, int row_stride,
                          byte *gs_restrict src, const byte *gs_restrict des);
-void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
+int smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
                int row_stride, int plane_stride, byte *gs_restrict src, const byte *gs_restrict des,
                gsicc_link_t *icclink, bool deep);
 /* For spot colors, blend modes must be white preserving and separable */

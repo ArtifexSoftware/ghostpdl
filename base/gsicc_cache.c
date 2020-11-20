@@ -1788,12 +1788,7 @@ gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsig
     buffer_desc->row_stride = row_stride;
     buffer_desc->num_rows = num_rows;
     buffer_desc->pixels_per_row = pixels_per_row;
-
-#if ARCH_IS_BIG_ENDIAN
-    buffer_desc->little_endian = false;
-#else
-    buffer_desc->little_endian = true;
-#endif
+    buffer_desc->endian_swap = false;
 }
 
 /* Return the proper component numbers based upon the profiles of the device.

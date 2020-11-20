@@ -2278,9 +2278,11 @@ const gx_image_plane_t *planes, int height, int *rows_used)
             gsicc_init_buffer(&output_buff_desc, 3, bytes_comp,
                 false, false, false, 0, width * bytes_comp * 3,
                 1, width);
-            (pie->icc_link->procs.map_buffer)(pie->dev, pie->icc_link,
+            code = (pie->icc_link->procs.map_buffer)(pie->dev, pie->icc_link,
                 &input_buff_desc, &output_buff_desc, (void*)buffer,
                 (void*)pie->buffer);
+            if (code < 0)
+                return code;
             outbuffer = pie->buffer;
         }
         code = TIFFWriteScanline(pie->tif, outbuffer, pie->y, 0);
