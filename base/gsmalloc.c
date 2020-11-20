@@ -450,17 +450,23 @@ gs_heap_stable(gs_memory_t *mem)
 /*
  * NB: In a multi-threaded application, this is only a 'snapshot'
  *     since other threads may change the heap_status. The heap_available()
- *     probe is just an approximation anyway.
+ *     probe is just an approximation anyway. To pacify helgrind, we lock
+ *     around the modificatons to the gs_memory_status that is returned.
  */
 static void
 gs_heap_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
+    long avail_snapshot = heap_available();
 
-    pstat->allocated = mmem->used + heap_available();
+    if (mmem->monitor)
+        gx_monitor_enter(mmem->monitor);
+    pstat->allocated = mmem->used + avail_snapshot;
     pstat->used = mmem->used;
     pstat->max_used = mmem->max_used;
     pstat->is_thread_safe = true;	/* this allocator has a mutex (monitor) and IS thread safe */
+    if (mmem->monitor)
+        gx_monitor_leave(mmem->monitor);	/* Done with exclusive access */
 }
 static void
 gs_heap_enable_free(gs_memory_t * mem, bool enable)

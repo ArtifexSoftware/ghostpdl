@@ -268,7 +268,7 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
     int band;
     int code = cmd_write_band(cldev, cldev->band_range_min,
                               cldev->band_range_max,
-                              &cldev->band_range_list,
+                              cldev->band_range_list,
                               cmd_opv_end_run);
 
     int warning = code;
@@ -398,7 +398,7 @@ cmd_put_range_op(gx_device_clist_writer * cldev, int band_min, int band_max,
     if_debug4m('L', cldev->memory, "[L]band range(%d,%d): size=%u, left=%u",
                band_min, band_max, size, 0);
     if (cldev->ccl != 0 &&
-        (cldev->ccl != &cldev->band_range_list ||
+        (cldev->ccl != cldev->band_range_list ||
          band_min != cldev->band_range_min ||
          band_max != cldev->band_range_max)
         ) {
@@ -408,7 +408,7 @@ cmd_put_range_op(gx_device_clist_writer * cldev, int band_min, int band_max,
         cldev->band_range_min = band_min;
         cldev->band_range_max = band_max;
     }
-    return cmd_put_list_op(cldev, &cldev->band_range_list, size);
+    return cmd_put_list_op(cldev, cldev->band_range_list, size);
 }
 
 /* Write a variable-size positive integer. */
@@ -799,7 +799,7 @@ cmd_put_params(gx_device_clist_writer *cldev,
             if (code < 0) {
                 /* error serializing: back out by writing a 0-length parm list */
                 memset(dp - sizeof(unsigned), 0, sizeof(unsigned));
-                cmd_shorten_list_op(cldev, &cldev->band_range_list,
+                cmd_shorten_list_op(cldev, cldev->band_range_list,
                                     old_param_length);
             }
         } else

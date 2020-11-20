@@ -5,6 +5,11 @@
 #define _WINDOWS_
 #endif
 
+/* We can't have pointers displayed in the test output, as that will
+ * change the output between runs. The following definition hides
+ * them. */
+#define HIDE_POINTERS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,6 +77,21 @@ typedef struct {
     FILE *file;
     const char *fname;
 } teststate_t;
+
+#ifdef HIDE_POINTERS
+void *hide_pointer(void *p)
+{
+    return (p == NULL) ? NULL : (void *)1;
+}
+
+#define PTR(p) hide_pointer(p)
+
+#else
+
+#define PTR(p) p
+
+#endif
+
 
 /*--------------------------------------------------------------------*/
 /* First off, we have a set of functions that cope with dumping lines
@@ -337,7 +357,7 @@ size(void *handle, void *device, int width, int height,
 
     SANITY_CHECK(ts);
     printf("size: w=%d h=%d r=%d f=%x m=%p\n",
-           width, height, raster, format, pimage);
+           width, height, raster, format, PTR(pimage));
     ts->w = width;
     ts->h = height;
     ts->r = raster;
@@ -430,7 +450,7 @@ memalloc(void *handle, void *device, size_t size)
     }
 
     ret = aligned_malloc(size, 64);
-    printf("memalloc: %"FMT_Z" -> %p\n", Z_CAST size, ret);
+    printf("memalloc: %"FMT_Z" -> %p\n", Z_CAST size, PTR(ret));
 
     return ret;
 }
@@ -441,7 +461,7 @@ memfree(void *handle, void *device, void *mem)
     teststate_t *ts = (teststate_t *)handle;
 
     SANITY_CHECK(ts);
-    printf("memfree: %p\n", mem);
+    printf("memfree: %p\n", PTR(mem));
     aligned_free(mem);
 
     return 0;
@@ -554,7 +574,7 @@ rectangle_request(void *handle, void *device,
     ts->mem = aligned_malloc(size, 64);
     *memory = ts->mem;
 
-    printf("x=%d y=%d w=%d h=%d mem=%p\n", *x, *y, *w, *h, *memory);
+    printf("x=%d y=%d w=%d h=%d mem=%p\n", *x, *y, *w, *h, PTR(*memory));
     if (ts->mem == NULL)
         return -1;
 

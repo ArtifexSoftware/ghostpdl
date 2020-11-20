@@ -1040,10 +1040,10 @@ currentdict end readonly def
   } if                                                  % id obj node
   1 index exch /Context exch put                        % id obj
   dup /ImmediateExec true put
-  dup /IsPage true put
-  SetPageSize {dup /Context get //SetupPageView exec} if
   % This gets restored at the end of ExecuteStream if IsPage is true.
   /pagesave save def
+  dup /IsPage true put
+  SetPageSize {dup /Context get //SetupPageView exec} if
 } bind def
 
 /FontFileDaemon % <id> <obj> <font_descriptor> FontFileDaemon <id> <obj>

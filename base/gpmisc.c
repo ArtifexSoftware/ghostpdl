@@ -435,7 +435,7 @@ generic_pwrite(gp_file *f, size_t count, gs_offset_t offset, const void *buf)
 
 gp_file *gp_file_alloc(const gs_memory_t *mem, const gp_file_ops_t *prototype, size_t size, const char *cname)
 {
-    gp_file *file = (gp_file *)gs_alloc_bytes(mem->non_gc_memory, size, cname ? cname : "gp_file");
+    gp_file *file = (gp_file *)gs_alloc_bytes(mem->thread_safe_memory, size, cname ? cname : "gp_file");
     if (file == NULL)
         return NULL;
 
@@ -449,7 +449,7 @@ gp_file *gp_file_alloc(const gs_memory_t *mem, const gp_file_ops_t *prototype, s
         memset(((char *)file)+sizeof(*prototype),
                0,
                size - sizeof(*prototype));
-    file->memory = mem->non_gc_memory;
+    file->memory = mem->thread_safe_memory;
 
     return file;
 }
@@ -1077,7 +1077,7 @@ gp_validate_path_len(const gs_memory_t *mem,
           prefix_len = 0;
     }
     rlen = len+1;
-    bufferfull = (char *)gs_alloc_bytes(mem->non_gc_memory, rlen + prefix_len, "gp_validate_path");
+    bufferfull = (char *)gs_alloc_bytes(mem->thread_safe_memory, rlen + prefix_len, "gp_validate_path");
     if (bufferfull == NULL)
         return gs_error_VMerror;
 
@@ -1139,7 +1139,7 @@ gp_validate_path_len(const gs_memory_t *mem,
                                            gs_path_control_flag_is_scratch_file);
     }
 
-    gs_free_object(mem->non_gc_memory, bufferfull, "gp_validate_path");
+    gs_free_object(mem->thread_safe_memory, bufferfull, "gp_validate_path");
 #ifdef EACCES
     if (code == gs_error_invalidfileaccess)
         errno = EACCES;

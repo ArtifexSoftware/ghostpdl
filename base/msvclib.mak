@@ -617,6 +617,10 @@ MSVC_VERSION=16
 # VS2019 (Toolset v142)
 MSVC_VERSION=16
 !endif
+!if "$(_NMAKE_VER)" == "14.28.29333.0"
+# VS2019 (Toolset v142)
+MSVC_VERSION=16
+!endif
 !endif
 
 !ifndef MSVC_VERSION

@@ -1010,6 +1010,8 @@ gs_putdeviceparams(gx_device * dev, gs_param_list * plist)
     bool was_open = dev->is_open;
     int code;
 
+    /* gs_param_list_dump(plist); */
+
     gx_device_set_procs(dev);
     fill_dev_proc(dev, put_params, gx_default_put_params);
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);

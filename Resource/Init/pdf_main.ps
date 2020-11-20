@@ -284,7 +284,7 @@ currentdict /runpdfstring .undef
 {
   systemdict /FirstPage known
   systemdict /LastPage known or
-  systemdict /Pagelist known or
+  systemdict /PageList known or
   {
       <</DisablePageHandler //true>> setpagedevice
   } if
@@ -294,7 +294,7 @@ currentdict /runpdfstring .undef
 {
   systemdict /FirstPage known
   systemdict /LastPage known or
-  systemdict /Pagelist known or
+  systemdict /PageList known or
   {
       <</DisablePageHandler //false>> setpagedevice
   } if
@@ -388,9 +388,8 @@ currentdict /runpdfstring .undef
            2 2 pdfpagecount {
              PDFPageList exch 1 put
            } for
-           1 pdfpagecount
            QUIET not {
-             (Processing even-numbered pages\n) print
+             (Processing even-numbered pages\n) print (1 through ) print pdfpagecount =only
              (.) = flush
            } if
        } {
@@ -402,9 +401,8 @@ currentdict /runpdfstring .undef
            1 2 pdfpagecount {
              PDFPageList exch 1 put
            } for
-           1 pdfpagecount
            QUIET not {
-             (Processing odd-numbered pages\n) print 1 index =only ( through ) print dup =only
+             (Processing odd-numbered pages\n) print (1 through ) print pdfpagecount =only
              (.) = flush
            } if
          } {
@@ -1358,26 +1356,26 @@ currentdict /xref-char-dict undef
   % to the parent field.
   Trailer /Root knownoget {
     /AcroForm knownoget {
-    %% If we don't have a NeedAppearances entry, treat as if true.
-    %% We know Acrobat always regenerates all annotait
-    dup /NeedAppearances knownoget not { //true } if {
-      /NeedAppearances //true def
-      dup
-      /Fields knownoget {
-        { oforce
-          %% Make sure the entry from the Fields array is a dictionary
-          %% Bug #692447.pdf has an array of nulls.
-          dup type /dicttype eq {
-            link_widget_annots
-          }if
-          pop
-        } forall
-      } if
-      pop
-    } {
-      pop
-    } ifelse
-  } if
+      %% If we don't have a NeedAppearances entry, treat as if true.
+      %% We know Acrobat always regenerates all annotations.
+      dup /NeedAppearances knownoget not { //true } if {
+        /NeedAppearances //true def
+        dup
+        /Fields knownoget {
+          { oforce
+            %% Make sure the entry from the Fields array is a dictionary
+            %% Bug #692447.pdf has an array of nulls.
+            dup type /dicttype eq {
+              link_widget_annots
+            }if
+            pop
+          } forall
+        } if
+        pop
+      } {
+        pop
+      } ifelse
+    } if
   } if
 
   % Use OutputIntent ICC profile
@@ -2028,7 +2026,6 @@ currentdict /xref-char-dict undef
         }ifelse
       }{
         % No Page Resources, recursively try ParentResources as a last resort
-          pop	% page Resources
           LocalResources parent_obj_get
       } ifelse
     } {
@@ -3072,7 +3069,8 @@ currentdict /PDF2PS_matrix_key undef
       } ifelse
     } if
   } if
-  //systemdict /ShowAcroForm .knownget { //true eq } { //false } ifelse {
+  % default AcroForm to true to match Acrobat.
+  //systemdict /ShowAcroForm .knownget { //true eq } { //true } ifelse {
     Trailer /Root oget /AcroForm knownoget { draw_acro_form } if
   } if
 } bind executeonly def

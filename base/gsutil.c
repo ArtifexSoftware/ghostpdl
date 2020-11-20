@@ -24,16 +24,22 @@
 #include "gsrect.h"		/* for prototypes */
 #include "gsuid.h"
 #include "gsutil.h"		/* for prototypes */
+#include "gxsync.h"		/* for gx_monitor_t */
 
 /* ------ Unique IDs ------ */
 
+/* This is used by multiple threads, so lock around updates */
 ulong
 gs_next_ids(const gs_memory_t *mem, uint count)
 {
     gs_lib_ctx_core_t *core = mem->gs_lib_ctx->core;
-    ulong id = core->gs_next_id;
+    ulong id;
 
+    gx_monitor_enter((gx_monitor_t *)(core->monitor));
+    id = core->gs_next_id;
     core->gs_next_id += count;
+    gx_monitor_leave((gx_monitor_t *)(core->monitor));
+
     return id;
 }
 

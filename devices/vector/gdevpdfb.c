@@ -496,7 +496,7 @@ gdev_pdf_copy_color(gx_device * dev, const byte * base, int sourcex,
 /* Fill a mask. */
 int
 gdev_pdf_fill_mask(gx_device * dev,
-                 const byte * data, int data_x, int raster, gx_bitmap_id id,
+                   const byte * data, int data_x, int raster, gx_bitmap_id id,
                    int x, int y, int width, int height,
                    const gx_drawing_color * pdcolor, int depth,
                    gs_logical_operation_t lop, const gx_clip_path * pcpath)
@@ -505,6 +505,50 @@ gdev_pdf_fill_mask(gx_device * dev,
 
     if (width <= 0 || height <= 0)
         return 0;
+
+    /* If OCRStage is 'OCR_Rendering' then we are handling an image which is a rendered glyph
+     * that we want to have OCR software process and return a Unicode code point for.
+     * We specifically do *not* want to send the image to the output PDF file!
+     */
+    if (pdev->OCRStage == OCR_Rendering) {
+        int code = 0;
+        ocr_glyph_t *new_glyph = NULL;
+        int index;
+
+        new_glyph = (ocr_glyph_t *)gs_alloc_bytes(pdev->pdf_memory, sizeof(ocr_glyph_t), "");
+        if (new_glyph == NULL)
+            return_error(gs_error_VMerror);
+        new_glyph->data = gs_alloc_bytes(pdev->pdf_memory, raster*height, "");
+        if (new_glyph->data == NULL)
+            return_error(gs_error_VMerror);
+        memcpy(new_glyph->data, data, raster * height);
+        new_glyph->height = height;
+        new_glyph->width = width;
+        new_glyph->raster = raster;
+        new_glyph->x = x;
+        new_glyph->y = y;
+        new_glyph->char_code = pdev->OCR_char_code;
+        new_glyph->glyph = pdev->OCR_glyph;
+        new_glyph->next = NULL;
+        new_glyph->is_space = true;
+        for(index = 0; index < height * raster;index++){
+            if(data[index] != 0x00) {
+                new_glyph->is_space = false;
+                break;
+            }
+        }
+        if (pdev->ocr_glyphs == NULL)
+            pdev->ocr_glyphs = new_glyph;
+        else {
+            ocr_glyph_t *next = pdev->ocr_glyphs;
+
+            while (next->next != NULL)
+                next = next->next;
+            next->next = new_glyph;
+        }
+        return code;
+    }
+
     if (depth > 1 || (!gx_dc_is_pure(pdcolor) != 0 && !(gx_dc_is_pattern1_color(pdcolor))))
         return gx_default_fill_mask(dev, data, data_x, raster, id,
                                     x, y, width, height, pdcolor, depth, lop,

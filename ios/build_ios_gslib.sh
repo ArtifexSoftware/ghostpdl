@@ -29,7 +29,7 @@ export BIGENDIAN=0
 export CCAUX=/usr/bin/gcc
 export CFLAGSAUX=" "
 
-./configure --without-x --with-arch_h=./ios/ios_arch-x86.h --host=x86_64-apple-darwin7 --build=x86_64-linux-gnu 2>&1 | tee conflog_x86.txt || exit 1
+./configure --without-cal --without-x --with-arch_h=./ios/ios_arch-x86.h --host=x86_64-apple-darwin7 --build=x86_64-linux-gnu 2>&1 | tee conflog_x86.txt || exit 1
 
 make -j4 BUILDDIRPREFIX=ios_x86- GS=libgs_x86 libgs$DEBUGSTR 2>&1 | tee buildlog_x86.txt || exit 1
 
@@ -40,7 +40,7 @@ export CPP="$(xcrun --sdk iphoneos --find cpp)"
 export CFLAGS=" -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -Wno-implicit-function-declaration -arch armv7 -arch armv7s -arch arm64"
 export RANLIB="$(xcrun --sdk iphoneos --find ranlib)"
 
-./configure --without-x  --with-arch_h=./ios/ios_arch-arm.h --host=armv7-apple-darwin7 --build=x86_64-linux-gnu 2>&1 | tee conflog_arm.txt || exit 1
+./configure --without-cal -without-x  --with-arch_h=./ios/ios_arch-arm.h --host=armv7-apple-darwin7 --build=x86_64-linux-gnu 2>&1 | tee conflog_arm.txt || exit 1
 
 make -j4 BUILDDIRPREFIX=ios_arm- GS=libgs_arm libgs$DEBUGSTR 2>&1 | tee buildlog_arm.txt || exit 1
 

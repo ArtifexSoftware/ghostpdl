@@ -13,12 +13,13 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
-#if __x86_64__ == 1
+#if defined(__x86_64__) && __x86_64__ == 1
          /* ---------------- Scalar alignments ---------------- */
 
 #define ARCH_ALIGN_SHORT_MOD                 2
 #define ARCH_ALIGN_INT_MOD                   4
 #define ARCH_ALIGN_LONG_MOD                  8
+#define ARCH_ALIGN_SIZE_T_MOD                8
 #define ARCH_ALIGN_PTR_MOD                   8
 #define ARCH_ALIGN_FLOAT_MOD                 4
 #define ARCH_ALIGN_DOUBLE_MOD                8
@@ -33,7 +34,9 @@
 #define ARCH_LOG2_SIZEOF_PTR                 3
 #define ARCH_LOG2_SIZEOF_FLOAT               2
 #define ARCH_LOG2_SIZEOF_DOUBLE              3
+#define ARCH_LOG2_SIZEOF_SIZE_T              3
 
+#define ARCH_SIZEOF_SIZE_T                   8
 #define ARCH_SIZEOF_PTR                      8
 #define ARCH_SIZEOF_FLOAT                    4
 #define ARCH_SIZEOF_DOUBLE                   8
@@ -44,6 +47,7 @@
 #define ARCH_MAX_USHORT                      ((unsigned short)~(unsigned short)0 + (unsigned short)0)
 #define ARCH_MAX_UINT                        ((unsigned int)~0 + (unsigned int)0)
 #define ARCH_MAX_ULONG                       ((unsigned long)~0L + (unsigned long)0)
+#define ARCH_MAX_SIZE_T                      ((size_t)~0L + (size_t)0)
 
          /* ---------------- Floating point ---------------- */
 
@@ -96,13 +100,14 @@
 #define ARCH_ARITH_RSHIFT                    2
 #define ARCH_SIZEOF_GX_COLOR_INDEX           8
 
-#elif __i386__ == 1 /* __x86_64__ */
+#elif defined(__i386__) && __i386__ == 1 /* __x86_64__ */
 
          /* ---------------- Scalar alignments ---------------- */
 
 #define ARCH_ALIGN_SHORT_MOD                 2
 #define ARCH_ALIGN_INT_MOD                   4
 #define ARCH_ALIGN_LONG_MOD                  4
+#define ARCH_ALIGN_SIZE_T_MOD                4
 #define ARCH_ALIGN_PTR_MOD                   4
 #define ARCH_ALIGN_FLOAT_MOD                 4
 #define ARCH_ALIGN_DOUBLE_MOD                4
@@ -117,7 +122,9 @@
 #define ARCH_LOG2_SIZEOF_PTR                 2
 #define ARCH_LOG2_SIZEOF_FLOAT               2
 #define ARCH_LOG2_SIZEOF_DOUBLE              3
+#define ARCH_LOG2_SIZEOF_SIZE_T              2
 
+#define ARCH_SIZEOF_SIZE_T                   4
 #define ARCH_SIZEOF_PTR                      4
 #define ARCH_SIZEOF_FLOAT                    4
 #define ARCH_SIZEOF_DOUBLE                   8
@@ -128,6 +135,7 @@
 #define ARCH_MAX_USHORT                      ((unsigned short)~(unsigned short)0 + (unsigned short)0)
 #define ARCH_MAX_UINT                        ((unsigned int)~0 + (unsigned int)0)
 #define ARCH_MAX_ULONG                       ((unsigned long)~0L + (unsigned long)0)
+#define ARCH_MAX_SIZE_T                      ((size_t)~0L + (size_t)0)
 
          /* ---------------- Floating point ---------------- */
 

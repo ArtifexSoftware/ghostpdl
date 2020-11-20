@@ -368,7 +368,10 @@ gx_begin_image3_generic(gx_device * dev,
 
     /* Bug 700438: If the rectangle is out of range, bail */
     if (mrect.p.x >= (double)INT_MAX || mrect.q.x <= (double)INT_MIN ||
-        mrect.p.y >= (double)INT_MAX || mrect.q.y <= (double)INT_MIN) {
+        mrect.p.y >= (double)INT_MAX || mrect.q.y <= (double)INT_MIN ||
+        mrect.p.x <= (double)INT_MIN || mrect.q.x >= (double)INT_MAX ||
+        mrect.p.y <= (double)INT_MIN || mrect.q.y >= (double)INT_MAX
+	) {
             code = gs_note_error(gs_error_rangecheck);
         goto out1;
     }

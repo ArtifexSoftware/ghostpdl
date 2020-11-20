@@ -643,6 +643,19 @@ gs_cmap_ToUnicode_realloc(gs_memory_t *mem, int new_value_size, gs_cmap_t **ppcm
     return 0;
 }
 
+int gs_cmap_ToUnicode_check_pair(gs_cmap_t *pcmap, int code0)
+{
+    gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)pcmap;
+    uchar *map = pcmap->glyph_name_data;
+    const int num_codes = ((gs_cmap_ToUnicode_t *)pcmap)->num_codes;
+
+    if (code0 >= num_codes)
+        return 0;
+    if(map[code0 * (cmap->value_size + 2)] == 0 && map[code0 * (cmap->value_size + 2) + 1] == 0)
+        return 0;
+    return 1;
+}
+
 /*
  * Write a code pair to ToUnicode CMap.
  */

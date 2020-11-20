@@ -463,8 +463,8 @@ save_profile(const gs_memory_t *mem, unsigned char *buffer, char filename[], int
 
     gs_sprintf(full_file_name,"%d)Profile_%s.icc",icc_debug_index,filename);
     fid = gp_fopen(mem, full_file_name,"wb");
-    fwrite(buffer,sizeof(unsigned char),buffer_size,fid);
-    fclose(fid);
+    gp_fwrite(buffer,sizeof(unsigned char),buffer_size,fid);
+    gp_fclose(fid);
     icc_debug_index++;
 }
 #endif
@@ -2350,8 +2350,9 @@ getsize_lut16Type(int tablesize, int num_inputs, int num_outputs)
 {
     int clutsize;
 
-    /* Header plus linear curves (2 points each of 2 bytes) */
-    int size = 52 + 4 * num_inputs + 4 * num_outputs;
+    /* Header (-8 as we already include the type later)
+       plus linear curves (2 points each of 2 bytes) */
+    int size = 52 - 8 + 4 * num_inputs + 4 * num_outputs;
     clutsize = (int) pow(tablesize, num_inputs) * num_outputs * 2;
     return size + clutsize;
 }
@@ -2361,8 +2362,9 @@ getsize_lut8Type(int tablesize, int num_inputs, int num_outputs)
 {
     int clutsize;
 
-    /* Header plus linear curves (2 points each of 2 bytes) */
-    int size = 48 + 256 * num_inputs + 256 * num_outputs;
+    /* Header (-8 as we already include the type later)
+       plus linear curves (2 points each of 2 bytes) */
+    int size = 48 - 8 + 256 * num_inputs + 256 * num_outputs;
     clutsize = (int)pow(tablesize, num_inputs) * num_outputs;
     return size + clutsize;
 }
@@ -2589,7 +2591,7 @@ create_clut_v2(gsicc_clut *clut, gsicc_link_t *link, int num_in,
 /* Here we write out the lut16Type or lut8Type data V2. Curves are always linear,
    matrix is the identity.  Table data is unique and could be a forward
    or inverse table */
-static void
+static byte*
 add_lutType(byte *input_ptr, gsicc_clut *lut)
 {
     byte *curr_ptr;
@@ -2665,12 +2667,13 @@ add_lutType(byte *input_ptr, gsicc_clut *lut)
             for (j = 0; j < 256; j++)
                 *curr_ptr++ = j;
     }
+    return curr_ptr;
 }
 
 static int
 create_write_table_intent(const gs_gstate *pgs, gsicc_rendering_intents_t intent,
         cmm_profile_t *src_profile, cmm_profile_t *des_profile, byte *curr_ptr,
-        int table_size, int bit_depth)
+        int table_size, int bit_depth, int padding)
 {
     gsicc_link_t *link;
     int code;
@@ -2681,7 +2684,8 @@ create_write_table_intent(const gs_gstate *pgs, gsicc_rendering_intents_t intent
         des_profile->num_comps, table_size, pgs->memory, bit_depth);
     if (code < 0)
         return code;
-    add_lutType(curr_ptr, &clut);
+    curr_ptr = add_lutType(curr_ptr, &clut);
+    memset(curr_ptr, 0, padding);
     clean_lut(&clut, pgs->memory);
     gsicc_release_link(link);
     return 0;
@@ -2748,7 +2752,8 @@ gsicc_create_v2input(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_
     }
 
     /* Now write it out */
-    add_lutType(curr_ptr, &clut);
+    curr_ptr = add_lutType(curr_ptr, &clut);
+    memset(curr_ptr, 0, tag_list[last_tag].byte_padding);  /* padding */
 
     /* Clean up */
     gsicc_release_link(link);
@@ -2837,15 +2842,18 @@ gsicc_create_v2output(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src
 
     /* A2B0 */
     if (create_write_table_intent(pgs, gsPERCEPTUAL, src_profile, lab_profile,
-        curr_ptr, FORWARD_V2_TABLE_SIZE, 2) < 0) {
+        curr_ptr, FORWARD_V2_TABLE_SIZE, 2,
+        tag_list[tag_location].byte_padding) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
     }
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
+
     /* B2A0 */
     if (create_write_table_intent(pgs, gsPERCEPTUAL, lab_profile, src_profile,
-        curr_ptr, BACKWARD_V2_TABLE_SIZE, 1) < 0) {
+        curr_ptr, BACKWARD_V2_TABLE_SIZE, 1,
+        tag_list[tag_location].byte_padding) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
     }
@@ -2854,15 +2862,18 @@ gsicc_create_v2output(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src
 
     /* A2B1 */
     if (create_write_table_intent(pgs, gsRELATIVECOLORIMETRIC, src_profile,
-        lab_profile, curr_ptr, FORWARD_V2_TABLE_SIZE, 2) < 0) {
+        lab_profile, curr_ptr, FORWARD_V2_TABLE_SIZE, 2,
+        tag_list[tag_location].byte_padding) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
     }
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
+
     /* B2A1 */
     if (create_write_table_intent(pgs, gsRELATIVECOLORIMETRIC, lab_profile,
-        src_profile, curr_ptr, BACKWARD_V2_TABLE_SIZE, 1) < 0) {
+        src_profile, curr_ptr, BACKWARD_V2_TABLE_SIZE, 1,
+        tag_list[tag_location].byte_padding) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
     }
@@ -2871,15 +2882,18 @@ gsicc_create_v2output(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src
 
     /* A2B2 */
     if (create_write_table_intent(pgs, gsSATURATION, src_profile, lab_profile,
-        curr_ptr, FORWARD_V2_TABLE_SIZE, 2) < 0) {
+        curr_ptr, FORWARD_V2_TABLE_SIZE, 2,
+        tag_list[tag_location].byte_padding) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
     }
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
+
     /* B2A2 */
     if (create_write_table_intent(pgs, gsSATURATION, lab_profile, src_profile,
-        curr_ptr, BACKWARD_V2_TABLE_SIZE, 1) < 0) {
+        curr_ptr, BACKWARD_V2_TABLE_SIZE, 1,
+        tag_list[tag_location].byte_padding) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
     }
@@ -2892,12 +2906,15 @@ gsicc_create_v2output(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
     }
+
     /* Now write it out */
-    add_lutType(curr_ptr, &gamutlut);
+    curr_ptr = add_lutType(curr_ptr, &gamutlut);
+    memset(curr_ptr, 0, tag_list[tag_location].byte_padding);
 
     /* Done */
     gs_free_object(memory, tag_list, "gsicc_create_v2output");
-   clean_lut(&gamutlut, pgs->memory);
+    clean_lut(&gamutlut, pgs->memory);
+
     /* Save the v2 data */
     src_profile->v2_data = buffer;
     src_profile->v2_size = profile_size;
@@ -2984,7 +3001,7 @@ gsicc_create_v2displaygray(const gs_gstate *pgs, icHeader *header, cmm_profile_t
 
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
-    save_profile(buffer, "V2FromGray", profile_size);
+    save_profile(memory, buffer, "V2FromGray", profile_size);
 #endif
 }
 

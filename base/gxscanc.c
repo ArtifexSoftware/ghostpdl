@@ -3627,7 +3627,9 @@ no_merge:
         } else if (sx < ex) {
             /* Lines increasing in x. (Rightwards, rising) */
             int phase1_x_steps, phase3_x_steps;
-            fixed x_steps = ex - sx;
+            /* Use unsigned int here, to allow for extreme cases like
+             * ex = 0x7fffffff, sx = 0x80000000 */
+            unsigned int x_steps = ex - sx;
 
             /* Phase 1: */
             if (phase1_y_steps) {
@@ -3693,7 +3695,9 @@ no_merge:
         } else {
             /* Lines decreasing in x. (Leftwards, rising) */
             int phase1_x_steps, phase3_x_steps;
-            fixed x_steps = sx - ex;
+            /* Use unsigned int here, to allow for extreme cases like
+             * sx = 0x7fffffff, ex = 0x80000000 */
+            unsigned int x_steps = sx - ex;
 
             /* Phase 1: */
             if (phase1_y_steps) {
@@ -3813,7 +3817,9 @@ endFallingLeftOnEdgeOfPixel:
         } else if (sx < ex) {
             /* Lines increasing in x. (Rightwards, falling) */
             int phase1_x_steps, phase3_x_steps;
-            fixed x_steps = ex - sx;
+            /* Use unsigned int here, to allow for extreme cases like
+             * ex = 0x7fffffff, sx = 0x80000000 */
+            unsigned int x_steps = ex - sx;
 
             /* Phase 1: */
             if (phase1_y_steps) {
@@ -3878,7 +3884,9 @@ endFallingRightOnEdgeOfPixel:
         } else {
             /* Lines decreasing in x. (Falling) */
             int phase1_x_steps, phase3_x_steps;
-            fixed x_steps = sx - ex;
+            /* Use unsigned int here, to allow for extreme cases like
+             * sx = 0x7fffffff, ex = 0x80000000 */
+            unsigned int x_steps = sx - ex;
 
             /* Phase 1: */
             if (phase1_y_steps) {

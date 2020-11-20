@@ -199,10 +199,6 @@ typedef struct gx_device_X_s {
              xdev->text.origin.y, xdev->text.items, xdev->text.item_count)
 
 } gx_device_X;
-#define private_st_device_X()	/* in gdevx.c */\
-  gs_public_st_suffix_add1_final(st_device_X, gx_device_X,\
-    "gx_device_X", device_x_enum_ptrs, device_x_reloc_ptrs,\
-    gx_device_finalize, st_device_bbox, buffer)
 
 /* Send an event to the Ghostview process */
 void gdev_x_send_event(gx_device_X *xdev, Atom msg);

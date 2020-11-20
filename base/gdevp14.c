@@ -7122,8 +7122,25 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
             }
             /* Complement the results for subtractive color spaces */
             if (additive) {
-                for (k = 0; k < num_chan; ++k)
-                    dst_ptr[k * planestride] = dst[k];
+                if (!overprint) {
+                    for (k = 0; k < num_chan; ++k)
+                        dst_ptr[k * planestride] = dst[k];
+                } else {
+                    /* Hybrid additive with subtractive spots */
+                    /* We may have to do the compatible overprint blending */
+                    if (!buf->isolated && drawn_comps != (((size_t)1 << (size_t)dev->color_info.num_components) - (size_t)1)) {
+                        art_pdf_composite_knockout_8(dst2, src, num_comp,
+                            blend_mode, pdev->blend_procs, pdev);
+                    }
+                    for (k = 0, comps = drawn_comps; k < num_comp; ++k, comps >>= 1) {
+                        if ((comps & 0x1) != 0) {
+                            dst_ptr[k * planestride] = dst[k];
+                        } else {
+                            /* Compatible overprint blend result. */
+                            dst_ptr[k * planestride] = dst2[k];
+                        }
+                    }
+                }
             } else {
                 if (overprint) {
                     /* We may have to do the compatible overprint blending */
@@ -7321,8 +7338,25 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
             }
             /* Complement the results for subtractive color spaces */
             if (additive) {
-                for (k = 0; k < num_chan; ++k)
-                    dst_ptr[k * planestride] = dst[k];
+                if (!overprint) {
+                    for (k = 0; k < num_chan; ++k)
+                        dst_ptr[k * planestride] = dst[k];
+                } else {
+                    /* Hybrid additive with subtractive spots */
+                    /* We may have to do the compatible overprint blending */
+                    if (!buf->isolated && drawn_comps != (((size_t)1 << (size_t)dev->color_info.num_components) - (size_t)1)) {
+                        art_pdf_composite_knockout_16(dst2, src, num_comp,
+                            blend_mode, pdev->blend_procs, pdev);
+                    }
+                    for (k = 0, comps = drawn_comps; k < num_comp; ++k, comps >>= 1) {
+                        if ((comps & 0x1) != 0) {
+                            dst_ptr[k * planestride] = dst[k];
+                        } else {
+                            /* Compatible overprint blend result. */
+                            dst_ptr[k * planestride] = dst2[k];
+                        }
+                    }
+                }
             } else {
                 if (overprint) {
                     /* We may have to do the compatible overprint blending */

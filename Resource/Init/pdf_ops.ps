@@ -695,10 +695,11 @@ end
 {  % Check OP and BM in case we need to push a group
   //OPsaveDstack begin
   //Dpush exec			% push the current OPsaveDstack values into 'previous'
+  /SupportsDevn .special_op
   okOPcs currentcolorspace 0 get dup /Indexed eq {
     pop currentcolorspace 1 get	% use the base space
   } if
-  known {
+  known or {
     1 index /stroke ne { .currentfilloverprint } { .currentstrokeoverprint } ifelse
     % Change BM to CompatibleOverprint if this has overprint true
     dup /ChangeBM exch def

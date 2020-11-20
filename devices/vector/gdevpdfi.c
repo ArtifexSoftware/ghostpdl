@@ -1086,6 +1086,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
        until the mask is completed due to equal image merging. */
     pdev->image_mask_id = gs_no_id;
 
+    pim = (const gs_pixel_image_t *)pic;
+
     /* Check for the image types we can handle. */
     switch (pic->type->index) {
     case 1:
@@ -1141,6 +1143,69 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         goto exit;
 
     case 4:
+        /* If we are colour converting then we may not be able to preserve the
+         * type 4 image, if it has a /Mask entry which is a range of colours
+         * (chroma-key masking). If its a stencil mask then we can just conver the
+         * underlying image and leave the mask alone.
+         */
+        if (pdev->params.ColorConversionStrategy != ccs_LeaveColorUnchanged) {
+            gs_color_space *pcs2;
+            int csi = 0;
+            bool fallback = false;
+            gs_image4_t *pim4 = (gs_image4_t *)pic;
+
+            /* If the /Mask is chroma-key rather than a stencil */
+            if (pim4->MaskColor_is_range) {
+                /* Find the colour space */
+                pcs2 = pim->ColorSpace;
+                csi = gs_color_space_get_index(pcs2);
+                /* If its /Indexed, get the base space */
+                if (csi == gs_color_space_index_Indexed) {
+                    pcs2 = pim->ColorSpace->base_space;
+                    csi = gs_color_space_get_index(pcs2);
+                }
+                if (csi == gs_color_space_index_ICC)
+                    csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                /* If the base space matches the target for colour conversion
+                 * then no conversion is needed, so we can preserve the type
+                 * 4 image.
+                 */
+                switch(csi) {
+                    case gs_color_space_index_DeviceGray:
+                        if (pdev->params.ColorConversionStrategy != ccs_Gray)
+                            fallback = true;
+                        break;
+                    case gs_color_space_index_DeviceRGB:
+                        if (pdev->params.ColorConversionStrategy != ccs_RGB)
+                            fallback = true;
+                        break;
+                    case gs_color_space_index_DeviceCMYK:
+                        if (pdev->params.ColorConversionStrategy != ccs_CMYK)
+                            fallback = true;
+                        break;
+                    default:
+                        fallback = true;
+                        break;
+                }
+                if (fallback == true && pdev->CompatibilityLevel > 1.2) {
+                    /* We've arrived at the point where we have a chroma-keyed
+                     * type 4 image, and the image needs to be converted to a
+                     * different space. We can't do that, so fall back to a
+                     * default implementation, create a clip path and apply it to
+                     * the image.
+                     */
+                    pdev->JPEG_PassThrough = 0;
+                    use_fallback = 0;
+                    code = convert_type4_to_masked_image(pdev, pgs, pic, prect, pdcolor,
+                                                         pcpath, mem,pinfo);
+                    goto exit;
+                }
+                /* Note that we fall through to the original code, so if we are not
+                 * producing at least PDF 1.2 (for image mask support) then we will
+                 * fall back further filled to rectangles.
+                 */
+            }
+        }
         pdev->JPEG_PassThrough = 0;
         code = convert_type4_image(pdev, pgs, pmat, pic, prect, pdcolor,
                       pcpath, mem, pinfo, context, image, pnamed);
@@ -1165,7 +1230,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         break;
     }
 
-    pim = (const gs_pixel_image_t *)pic;
     format = pim->format;
     switch (format) {
     case gs_image_format_chunky:

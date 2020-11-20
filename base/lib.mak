@@ -386,7 +386,7 @@ $(GLOBJ)gsserial.$(OBJ) : $(GLSRC)gsserial.c $(stdpre_h) $(gstypes_h)\
 
 $(GLOBJ)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h)\
  $(string__h) $(gstypes_h) $(gserrors_h) $(gsmemory_h)\
- $(gsrect_h) $(gsuid_h) $(gsutil_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gxsync_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 
 $(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\

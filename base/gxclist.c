@@ -362,7 +362,7 @@ clist_minimum_buffer(int nbands) {
 
 /*
  * Initialize the allocation for the band states, which are used only
- * when writing.  Requires: nbands.  Sets: states, cbuf, cend.
+ * when writing.  Requires: nbands.  Sets: states, cbuf, cend, band_range_list.
  */
 static int
 clist_init_states(gx_device * dev, byte * init_data, uint data_size)
@@ -379,7 +379,8 @@ clist_init_states(gx_device * dev, byte * init_data, uint data_size)
     cdev->cend = init_data + data_size;
     init_data +=  alignment;
     cdev->states = (gx_clist_state *) init_data;
-    cdev->cbuf = init_data + state_size;
+    cdev->band_range_list =  (cmd_list *)(init_data + state_size);
+    cdev->cbuf = init_data + state_size + sizeof(cmd_list);
     return 0;
 }
 
@@ -543,7 +544,7 @@ clist_reset(gx_device * dev)
        sizeof(*cdev->tile_table));
     cdev->cnext = cdev->cbuf;
     cdev->ccl = 0;
-    cdev->band_range_list.head = cdev->band_range_list.tail = 0;
+    cdev->band_range_list->head = cdev->band_range_list->tail = 0;
     cdev->band_range_min = 0;
     cdev->band_range_max = nbands - 1;
     {

@@ -343,6 +343,22 @@ minimal_free_string(gs_memory_t * mem, byte * data, size_t nbytes, client_name_t
     return;
 }
 
+/* Minimal thread functions (needed by gs_next_ids */
+int gp_monitor_enter(gp_monitor *);
+int gp_monitor_leave(gp_monitor *);
+
+int
+gp_monitor_enter(gp_monitor * mon)
+{
+    return 0;
+}
+
+int
+gp_monitor_leave(gp_monitor * mon)
+{
+    return 0;
+}
+
 void basic_enum_ptrs(void);
 void basic_reloc_ptrs(void);
 

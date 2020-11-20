@@ -547,6 +547,33 @@ typedef enum {
     pdf_compress_Flate
 } pdf_compression_type;
 
+typedef enum {
+    OCR_UnInit,
+    OCR_Rendering,
+    OCR_Rendered,
+    OCR_UnicodeAvailable,
+    OCR_Failed
+} pdf_OCR_stage;
+
+typedef enum {
+    UseOCRNever,
+    UseOCRAsNeeded,
+    UseOCRAlways
+} pdf_OCR_usage;
+
+typedef struct ocr_glyph_s{
+    byte *data;
+    int x;
+    int y;
+    int width;
+    int height;
+    int raster;
+    void *next;
+    gs_char char_code;
+    gs_glyph glyph;
+    bool is_space;
+} ocr_glyph_t;
+
 /* Define the device structure. */
 struct gx_device_pdf_s {
     gx_device_psdf_common;
@@ -572,6 +599,9 @@ struct gx_device_pdf_s {
     gs_param_float_array PDFXTrimBoxToMediaBoxOffset;
     gs_param_float_array PDFXBleedBoxToTrimBoxOffset;
     bool PDFXSetBleedBoxToMediaBox;
+    /* OCR Parameters */
+    char ocr_language[1024];
+    int ocr_engine;
     /* Other parameters */
     bool ReAssignCharacters;
     bool ReEncodeCharacters;
@@ -909,6 +939,13 @@ struct gx_device_pdf_s {
                                      * anything in the image processing routines.
                                      */
     float UserUnit;
+    pdf_OCR_usage UseOCR;                     /* Never, AsNeeded or Always */
+    gs_text_enum_t* OCRSaved;       /* Saved state of the text enumerator before rendering glyph bitmaps for later OCR */
+    pdf_OCR_stage OCRStage;         /* Used to control a (sort of) state machine when using OCR to get a Unicode value for a glyph */
+    int *OCRUnicode;                /* Used to pass back the Unicode value from the OCR engine to the text processing */
+    gs_char OCR_char_code;          /* Passes the current character code from text processing to the image processing code when rendering glyph bitmaps for OCR */
+    gs_glyph OCR_glyph;             /* Passes the current glyph code from text processing to the image processing code when rendering glyph bitmaps for OCR */
+    ocr_glyph_t *ocr_glyphs;        /* Records bitmaps and other data from text processing when doing OCR */
 };
 
 #define is_in_page(pdev)\

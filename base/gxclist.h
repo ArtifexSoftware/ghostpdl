@@ -310,7 +310,7 @@ struct gx_device_clist_writer_s {
     byte *cnext;		/* next slot in command buffer */
     byte *cend;			/* end of command buffer */
     cmd_list *ccl;		/* &clist_state.list of last command */
-    cmd_list band_range_list;	/* list of band-range commands */
+    cmd_list *band_range_list;	/* list of band-range commands */
     int band_range_min, band_range_max;		/* range for list */
     uint tile_max_size;		/* max size of a single tile (bytes) */
     uint tile_max_count;	/* max # of hash table entries */

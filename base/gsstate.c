@@ -665,8 +665,11 @@ gs_do_set_overprint(gs_gstate * pgs)
                     return code;
                 }
             }
-
         }
+
+        /* If we have a CIE-based space, use the ICC equivalent space */
+        if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent != NULL)
+            pcs = pcs->icc_equivalent;
 
         /* The spaces that do not allow opm (e.g. ones that are not ICC or DeviceCMYK)
            will blow away any true setting later. But we have to be prepared

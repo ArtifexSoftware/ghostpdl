@@ -66,4 +66,6 @@ int gs_cmap_ToUnicode_realloc(gs_memory_t *mem, int new_value_size, gs_cmap_t **
  */
 void gs_cmap_ToUnicode_add_pair(gs_cmap_t *pcmap, int code0, ushort *unicode, unsigned int length);
 
+int gs_cmap_ToUnicode_check_pair(gs_cmap_t *pcmap, int code0);
+
 #endif /* gsfcmap_INCLUDED */
