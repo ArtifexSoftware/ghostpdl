@@ -675,35 +675,45 @@ cf_decode_2d(stream_CFD_state * ss, stream_cursor_read * pr)
             goto hbb;
             /*case 0: */
     }
-  top:if (count <= end_count) {
-        status = (count < end_count ? ERRC : 1);
-        goto out;
-    }
-    /* If invert == invert_white, white and black have their */
-    /* correct meanings; if invert == ~invert_white, */
-    /* black and white are interchanged. */
-    if_debug1m('W', ss->memory, "[w2]%4d:\n", count);
-#ifdef DEBUG
-    /* Check the invariant between q, qbit, and count. */
-    {
-        int pcount = (endptr - q) * 8 + qbit;
 
-        if (pcount != count)
-            dmlprintf2(ss->memory, "[w2]Error: count=%d pcount=%d\n",
-                       count, pcount);
-    }
+    /* top of decode loop */
+    while (1)
+    {
+        if (count <= end_count) {
+            status = (count < end_count ? ERRC : 1);
+            goto out;
+        }
+        /* If invert == invert_white, white and black have their */
+        /* correct meanings; if invert == ~invert_white, */
+        /* black and white are interchanged. */
+        if_debug1m('W', ss->memory, "[w2]%4d:\n", count);
+#ifdef DEBUG
+        /* Check the invariant between q, qbit, and count. */
+        {
+            int pcount = (endptr - q) * 8 + qbit;
+
+            if (pcount != count)
+                dmlprintf2(ss->memory, "[w2]Error: count=%d pcount=%d\n",
+                           count, pcount);
+        }
 #endif
-    /*
-     * We could just use get_run here, but we can do better.  However,
-     * we must be careful to handle the case where the very last codes
-     * in the input stream are 1-bit "vertical 0" codes: we can't just
-     * use ensure_bits(3, ...) and go to get more data if it fails.
-     */
-    ensure_bits(3, out3);
+        /*
+         * We could just use get_run here, but we can do better.  However,
+         * we must be careful to handle the case where the very last codes
+         * in the input stream are 1-bit "vertical 0" codes: we can't just
+         * use ensure_bits(3, ...) and go to get more data if it fails.
+         */
+        ensure_bits(3, out3);
 #define vertical_0 (countof(cf2_run_vertical) / 2)
-    switch (peek_bits(3)) {
+        switch (peek_bits(3)) {
         default /*4..7*/ :	/* vertical(0) */
-v0:	    skip_bits(1);
+            if (0) {
+ out3:
+                /* Unless it's a 1-bit "vertical 0" code, exit. */
+                if (!(bits_left > 0 && peek_bits(1)))
+                    goto out0;
+            }
+            skip_bits(1);
             rlen = vertical_0;
             break;
         case 2:		/* vertical(+1) */
@@ -716,14 +726,111 @@ v0:	    skip_bits(1);
             break;
         case 1:		/* horizontal */
             skip_bits(3);
-            if (invert == invert_white)
-                goto hww;
-            else
-                goto hbb;
+            if (invert == invert_white) {
+                /* We handle horizontal decoding here, so that we can
+                 * branch back into it if we run out of input data. */
+                /* White, then black. */
+  hww:
+                do {
+                    cfd_store_state();
+                    status = get_run(ss, pr, cf_white_decode,
+                                     cfd_white_initial_bits,
+                                     cfd_white_min_bits, &rlen, " white");
+                    cfd_load_state();
+                    if (status < 0) {
+                        ss->run_color = -2;
+                        goto out0;
+                    }
+
+                    if ((count -= rlen) < end_count) {
+                        status = ERRC;
+                        goto out;
+                    }
+                    if (rlen < 0) goto rlen_lt_zero;
+
+                    cfd_store_state();
+                    status = skip_data(ss, pr, rlen);
+                    cfd_load_state();
+                } while (status < 0);
+
+                /* Handle the second half of a white-black horizontal code. */
+  hwb:
+                do {
+                    cfd_store_state();
+                    status = get_run(ss, pr, cf_black_decode,
+                                     cfd_black_initial_bits,
+                                     cfd_black_min_bits, &rlen, " black");
+                    cfd_load_state();
+                    if (status < 0){
+                        ss->run_color = 1;
+                        goto out0;
+                    }
+
+                    if ((count -= rlen) < end_count) {
+                        status = ERRC;
+                        goto out;
+                    }
+                    if (rlen < 0) goto rlen_lt_zero;
+
+                    cfd_store_state();
+                    status = invert_data(ss, pr, &rlen, black_byte);
+                    cfd_load_state();
+                } while (status < 0);
+            } else {
+                /* Black, then white. */
+  hbb:
+                do {
+                    cfd_store_state();
+                    status = get_run(ss, pr, cf_black_decode,
+                                     cfd_black_initial_bits,
+                                     cfd_black_min_bits, &rlen, " black");
+                    cfd_load_state();
+                    if (status < 0) {
+                        ss->run_color = 2;
+                        goto out0;
+                    }
+
+                    if ((count -= rlen) < end_count) {
+                        status = ERRC;
+                        goto out;
+                    }
+                    if (rlen < 0) goto rlen_lt_zero;
+
+                    cfd_store_state();
+                    status = invert_data(ss, pr, &rlen, black_byte);
+                    cfd_load_state();
+                }
+                while (status < 0);
+
+                /* Handle the second half of a black-white horizontal code. */
+  hbw:
+                do {
+                    cfd_store_state();
+                    status = get_run(ss, pr, cf_white_decode,
+                                     cfd_white_initial_bits,
+                                     cfd_white_min_bits, &rlen, " white");
+                    cfd_load_state();
+                    if (status < 0) {
+                        ss->run_color = -1;
+                        goto out0;
+                    }
+
+                    if ((count -= rlen) < end_count) {
+                        status = ERRC;
+                        goto out;
+                    }
+                    if (rlen < 0) goto rlen_lt_zero;
+
+                    cfd_store_state();
+                    status = skip_data(ss, pr, rlen);
+                    cfd_load_state();
+                } while (status < 0);
+            }
+            continue; /* jump back to top of decode loop */
         case 0:		/* everything else */
             cfd_store_state();
-            status = get_run(ss, pr, cf_2d_decode, cfd_2d_initial_bits, cfd_2d_min_bits,
-                    &rlen, "[w2]");
+            status = get_run(ss, pr, cf_2d_decode, cfd_2d_initial_bits,
+                             cfd_2d_min_bits, &rlen, "[w2]");
             cfd_load_state();
             if (status < 0) {
                 goto out0;
@@ -731,105 +838,102 @@ v0:	    skip_bits(1);
 
             /* rlen may be run2_pass, run_uncompressed, or */
             /* 0..countof(cf2_run_vertical)-1. */
+            if (rlen < 0) {
 rlen_lt_zero:
-            if (rlen < 0)
                 switch (rlen) {
-                    case run2_pass:
-                        break;
-                    case run_uncompressed:
-                        {
-                            int which;
+                case run2_pass:
+                    break;
+                case run_uncompressed:
+                {
+                    int which;
 
-                            cfd_store_state();
-                            which = cf_decode_uncompressed(ss, pr);
-                            if (which < 0) {
-                                status = which;
-                                goto out;
-                            }
-                            cfd_load_state();
-/****** ADJUST count ******/
-                            invert = (which ? ~invert_white : invert_white);
-                        }
-                        goto top;
-                    default:	/* run_error, run_zeros */
-                        status = ERRC;
+                    cfd_store_state();
+                    which = cf_decode_uncompressed(ss, pr);
+                    if (which < 0) {
+                        status = which;
                         goto out;
+                    }
+                    cfd_load_state();
+/****** ADJUST count ******/
+                    invert = (which ? ~invert_white : invert_white);
+                    continue; /* jump back to top of decode loop */
                 }
-    }
-    /* Interpreting the run requires scanning the */
-    /* previous ('reference') line. */
-    {
-        int prev_count = count;
-        byte prev_data;
-        int dlen;
-        static const byte count_bit[8] =
-        {0x80, 1, 2, 4, 8, 0x10, 0x20, 0x40};
-        byte *prev_q = prev_q01 + (q - q0);
-        int plen;
+                default:	/* run_error, run_zeros */
+                    status = ERRC;
+                    goto out;
+                }
+            }
+        }
+        /* Interpreting the run requires scanning the */
+        /* previous ('reference') line. */
+        {
+            int prev_count = count;
+            byte prev_data;
+            int dlen;
+            static const byte count_bit[8] =
+                                   {0x80, 1, 2, 4, 8, 0x10, 0x20, 0x40};
+            byte *prev_q = prev_q01 + (q - q0);
+            int plen;
 
-        if (!(count & 7))
-            prev_q++;		/* because of skip macros */
-        prev_data = prev_q[-1] ^ invert;
-        /* Find the b1 transition. */
-        if ((prev_data & count_bit[prev_count & 7]) &&
-            (prev_count < init_count || invert != invert_white)
-            ) {			/* Look for changing white first. */
-            if_debug1m('W', ss->memory, " data=0x%x", prev_data);
-            skip_black_pixels(prev_data, prev_q,
-                              prev_count, invert, plen);
-            if (prev_count < end_count)		/* overshot */
-                prev_count = end_count;
-            if_debug1m('W', ss->memory, " b1 other=%d", prev_count);
-        }
-        if (prev_count != end_count) {
-            if_debug1m('W', ss->memory, " data=0x%x", prev_data);
-            skip_white_pixels(prev_data, prev_q,
-                              prev_count, invert, plen);
-            if (prev_count < end_count)		/* overshot */
-                prev_count = end_count;
-            if_debug1m('W', ss->memory, " b1 same=%d", prev_count);
-        }
-        /* b1 = prev_count; */
-        if (rlen == run2_pass) {	/* Pass mode.  Find b2. */
-            if (prev_count != end_count) {
+            if (!(count & 7))
+                prev_q++;		/* because of skip macros */
+            prev_data = prev_q[-1] ^ invert;
+            /* Find the b1 transition. */
+            if ((prev_data & count_bit[prev_count & 7]) &&
+                (prev_count < init_count || invert != invert_white)
+                ) {			/* Look for changing white first. */
                 if_debug1m('W', ss->memory, " data=0x%x", prev_data);
                 skip_black_pixels(prev_data, prev_q,
                                   prev_count, invert, plen);
-                if (prev_count < end_count)	/* overshot */
+                if (prev_count < end_count)		/* overshot */
                     prev_count = end_count;
+                if_debug1m('W', ss->memory, " b1 other=%d", prev_count);
             }
-            /* b2 = prev_count; */
-            if_debug2m('W', ss->memory, " b2=%d, pass %d\n",
-                      prev_count, count - prev_count);
-        } else {		/* Vertical coding. */
-            /* Remember that count counts *down*. */
-            prev_count += rlen - vertical_0;	/* a1 */
-            if_debug2m('W', ss->memory, " vertical %d -> %d\n",
-                       (int)(rlen - vertical_0), prev_count);
-        }
-        /* Now either invert or skip from count */
-        /* to prev_count, and reset count. */
-        if (invert == invert_white) {	/* Skip data bits. */
-            q = endptr - (prev_count >> 3);
-            qbit = prev_count & 7;
-        } else {		/* Invert data bits. */
-            dlen = count - prev_count;
+            if (prev_count != end_count) {
+                if_debug1m('W', ss->memory, " data=0x%x", prev_data);
+                skip_white_pixels(prev_data, prev_q,
+                                  prev_count, invert, plen);
+                if (prev_count < end_count)		/* overshot */
+                    prev_count = end_count;
+                if_debug1m('W', ss->memory, " b1 same=%d", prev_count);
+            }
+            /* b1 = prev_count; */
+            if (rlen == run2_pass) {	/* Pass mode.  Find b2. */
+                if (prev_count != end_count) {
+                    if_debug1m('W', ss->memory, " data=0x%x", prev_data);
+                    skip_black_pixels(prev_data, prev_q,
+                                      prev_count, invert, plen);
+                    if (prev_count < end_count)	/* overshot */
+                        prev_count = end_count;
+                }
+                /* b2 = prev_count; */
+                if_debug2m('W', ss->memory, " b2=%d, pass %d\n",
+                           prev_count, count - prev_count);
+            } else {		/* Vertical coding. */
+                /* Remember that count counts *down*. */
+                prev_count += rlen - vertical_0;	/* a1 */
+                if_debug2m('W', ss->memory, " vertical %d -> %d\n",
+                           (int)(rlen - vertical_0), prev_count);
+            }
+            /* Now either invert or skip from count */
+            /* to prev_count, and reset count. */
+            if (invert == invert_white) {	/* Skip data bits. */
+                q = endptr - (prev_count >> 3);
+                qbit = prev_count & 7;
+            } else {		/* Invert data bits. */
+                dlen = count - prev_count;
 
-            cfd_store_state();
-            (void)invert_data(ss, pr, &dlen, black_byte);
-            cfd_load_state();
+                cfd_store_state();
+                (void)invert_data(ss, pr, &dlen, black_byte);
+                cfd_load_state();
+            }
+            count = prev_count;
+            if (rlen >= 0)		/* vertical mode */
+                invert = ~invert;	/* polarity changes */
         }
-        count = prev_count;
-        if (rlen >= 0)		/* vertical mode */
-            invert = ~invert;	/* polarity changes */
+        /* jump back to top of decode loop */
     }
-    goto top;
- out3:
-    if (bits_left > 0 && peek_bits(1)) {
-        /* This is a 1-bit "vertical 0" code, which we can still process. */
-        goto v0;
-    }
-    /* falls through */
+
   out0:status = 0;
     /* falls through */
   out:cfd_store_state();
@@ -839,116 +943,6 @@ rlen_lt_zero:
     if (status == ERRC && ss->Rows > 0 && ss->row > ss->Rows)
         status = EOFC;
     return status;
-    /*
-     * We handle horizontal decoding here, so that we can
-     * branch back into it if we run out of input data.
-     */
-    /* White, then black. */
-  hww:
-
-    cfd_store_state();
-    status = get_run(ss, pr, cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
-              &rlen, " white");
-    cfd_load_state();
-    if (status < 0) {
-        goto outww;
-    }
-
-    if ((count -= rlen) < end_count) {
-        status = ERRC;
-        goto out;
-    }
-    if (rlen < 0) goto rlen_lt_zero;
-
-    cfd_store_state();
-    status = skip_data(ss, pr, rlen);
-    cfd_load_state();
-    if (status < 0) {
-        goto hww;
-    }
-
-    /* Handle the second half of a white-black horizontal code. */
-  hwb:
-
-    cfd_store_state();
-    status = get_run(ss, pr, cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
-              &rlen, " black");
-    cfd_load_state();
-    if (status < 0){
-        goto outwb;
-    }
-
-    if ((count -= rlen) < end_count) {
-        status = ERRC;
-        goto out;
-    }
-    if (rlen < 0) goto rlen_lt_zero;
-
-    cfd_store_state();
-    status = invert_data(ss, pr, &rlen, black_byte);
-    cfd_load_state();
-    if (status < 0) {
-        goto hwb;
-    }
-
-    goto top;
-  outww:ss->run_color = -2;
-    goto out0;
-  outwb:ss->run_color = 1;
-    goto out0;
-    /* Black, then white. */
-  hbb:
-
-    cfd_store_state();
-    status = get_run(ss, pr, cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
-              &rlen, " black");
-    cfd_load_state();
-    if (status < 0) {
-        goto outbb;
-    }
-
-    if ((count -= rlen) < end_count) {
-        status = ERRC;
-        goto out;
-    }
-    if (rlen < 0) goto rlen_lt_zero;
-
-    cfd_store_state();
-    status = invert_data(ss, pr, &rlen, black_byte);
-    cfd_load_state();
-    if (status < 0) {
-        goto hbb;
-    }
-
-    /* Handle the second half of a black-white horizontal code. */
-  hbw:
-
-    cfd_store_state();
-    status = get_run(ss, pr, cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
-              &rlen, " white");
-    cfd_load_state();
-    if (status < 0) {
-        goto outbw;
-    }
-
-    if ((count -= rlen) < end_count) {
-        status = ERRC;
-        goto out;
-    }
-    if (rlen < 0) goto rlen_lt_zero;
-
-    cfd_store_state();
-    status = skip_data(ss, pr, rlen);
-    cfd_load_state();
-    if (status < 0) {
-        goto hbw;
-    }
-
-    goto top;
-  outbb:ss->run_color = 2;
-    goto out0;
-  outbw:ss->run_color = -1;
-    goto out0;
 }
 
 #if 1				/*************** */
