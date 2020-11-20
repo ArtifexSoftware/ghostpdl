@@ -81,6 +81,54 @@
     <ClCompile Include="..\pdf\pdftop.c">
       <Filter>pdf %28%2a.c%29</Filter>
     </ClCompile>
+    <ClCompile Include="..\pdf\pdf_agl.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_annot.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_check.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_cmap.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_deref.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_device.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_doc.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_fapi.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_mark.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_misc.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_obj.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_optcontent.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_page.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_repair.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_sec.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_utf8.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\pdf\ghostpdf.h">
@@ -153,6 +201,54 @@
       <Filter>pdf %28%2a.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\pdf\pdf_xref.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_agl.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_annot.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_check.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_cmap.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_deref.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_device.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_doc.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_font_types.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_mark.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_misc.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_obj.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_optcontent.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_page.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_repair.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_sec.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_utf8.h">
       <Filter>pdf %28%2a.h%29</Filter>
     </ClInclude>
   </ItemGroup>
