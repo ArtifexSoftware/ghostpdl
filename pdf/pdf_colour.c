@@ -999,7 +999,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *c
 
     /* Save the current stream position, and move to the start of the profile stream */
     savedoffset = pdfi_tell(ctx->main_stream);
-    pdfi_seek(ctx, ctx->main_stream, ICC_obj->stream_offset, SEEK_SET);
+    pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, ICC_obj), SEEK_SET);
 
     /* The ICC profile reading code (irritatingly) requires a seekable stream, because it
      * rewinds it to the start, then seeks to the end to find the size, then rewinds the

@@ -162,7 +162,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     if (code < 0)
         return code;
 
-    code = pdfi_dict_get_type(ctx, (pdf_dict *)sdict, "Type", PDF_NAME, (pdf_obj **)&n);
+    code = pdfi_dict_get_type(ctx, sdict, "Type", PDF_NAME, (pdf_obj **)&n);
     if (code < 0)
         return code;
 
@@ -172,7 +172,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     }
     pdfi_countdown(n);
 
-    code = pdfi_dict_get_int(ctx, (pdf_dict *)sdict, "Size", &size);
+    code = pdfi_dict_get_int(ctx, sdict, "Size", &size);
     if (code < 0)
         return code;
 
@@ -202,17 +202,17 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
 #endif
         pdfi_countup(ctx->xref_table);
 
-        ctx->Trailer = (pdf_dict *)sdict;
+        ctx->Trailer = sdict;
         pdfi_countup(sdict);
     } else {
-        code = pdfi_merge_dicts(ctx, ctx->Trailer, (pdf_dict *)sdict);
+        code = pdfi_merge_dicts(ctx, ctx->Trailer, sdict);
         if (code < 0) {
             if (code == gs_error_VMerror || ctx->pdfstoponerror)
                 return code;
         }
     }
 
-    pdfi_seek(ctx, ctx->main_stream, stream_obj->stream_offset, SEEK_SET);
+    pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
 
     /* Bug #691220 has a PDF file with a compressed XRef, the stream dictionary has
      * a /DecodeParms entry for the stream, which has a /Colors value of 5, which makes
@@ -221,7 +221,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
      * code, we'll just remove the Colors entry from the DecodeParms dictionary,
      * because it is nonsense. This means we'll get the (sensible) default value of 1.
      */
-    code = pdfi_dict_known(ctx, (pdf_dict *)sdict, "DecodeParms", &known);
+    code = pdfi_dict_known(ctx, sdict, "DecodeParms", &known);
     if (code < 0)
         return code;
 
@@ -230,7 +230,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
         double f;
         pdf_obj *name;
 
-        code = pdfi_dict_get_type(ctx, (pdf_dict *)sdict, "DecodeParms", PDF_DICT, (pdf_obj **)&DP);
+        code = pdfi_dict_get_type(ctx, sdict, "DecodeParms", PDF_DICT, (pdf_obj **)&DP);
         if (code < 0)
             return code;
 
@@ -263,7 +263,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
         return code;
     }
 
-    code = pdfi_dict_get_type(ctx, (pdf_dict *)sdict, "W", PDF_ARRAY, (pdf_obj **)&a);
+    code = pdfi_dict_get_type(ctx, sdict, "W", PDF_ARRAY, (pdf_obj **)&a);
     if (code < 0) {
         pdfi_close_file(ctx, XRefStrm);
         pdfi_countdown(ctx->xref_table);
@@ -290,7 +290,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     }
     pdfi_countdown(a);
 
-    code = pdfi_dict_get_type(ctx, (pdf_dict *)sdict, "Index", PDF_ARRAY, (pdf_obj **)&a);
+    code = pdfi_dict_get_type(ctx, sdict, "Index", PDF_ARRAY, (pdf_obj **)&a);
     if (code == gs_error_undefined) {
         code = read_xref_stream_entries(ctx, XRefStrm, 0, size - 1, (uint64_t *)W);
         if (code < 0) {
@@ -357,7 +357,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
 
     pdfi_close_file(ctx, XRefStrm);
 
-    code = pdfi_dict_get_int(ctx, (pdf_dict *)sdict, "Prev", &num);
+    code = pdfi_dict_get_int(ctx, sdict, "Prev", &num);
     if (code == gs_error_undefined)
         return 0;
 

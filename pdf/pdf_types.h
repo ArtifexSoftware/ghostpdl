@@ -157,15 +157,6 @@ typedef struct pdf_array_s {
     pdf_obj **values;
 } pdf_array;
 
-#if 0
-#define pdf_dict_common \
-    pdf_obj_common; \
-    uint64_t size; \
-    uint64_t entries; \
-    pdf_obj **keys; \
-    pdf_obj **values
-#endif
-
 typedef struct pdf_dict_s {
     pdf_obj_common;
     uint64_t size;
