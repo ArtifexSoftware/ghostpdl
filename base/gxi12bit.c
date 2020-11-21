@@ -666,19 +666,23 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
                                         (const unsigned short*) (psrc_decode+w),
                                          get_cie_range(penum->pcs));
                 }
-                (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
+                code = (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
                                                     &input_buff_desc,
                                                     &output_buff_desc,
                                                     (void*) psrc_decode,
                                                     (void*) psrc_cm);
                 gs_free_object(pgs->memory, (byte *)psrc_decode, "image_render_color_icc");
+                if (code < 0)
+                    return code;
             } else {
                 /* CM only. No decode */
-                (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
+                code = (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
                                                     &input_buff_desc,
                                                     &output_buff_desc,
                                                     (void*) psrc,
                                                     (void*) psrc_cm);
+                if (code < 0)
+                    return code;
             }
         }
     }

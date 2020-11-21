@@ -40,10 +40,10 @@
 #define LCMS_BYTES_MASK T_BYTES(-1)	/* leaves only mask for the BYTES (currently 7) */
 #define LCMS_ENDIAN16_MASK T_ENDIAN16(-1) /* similarly, for ENDIAN16 bit */
 
-#define gsicc_link_flags(hasalpha, planarIN, planarOUT, bigendianIN, bigendianOUT, bytesIN, bytesOUT) \
+#define gsicc_link_flags(hasalpha, planarIN, planarOUT, endianswapIN, endianswapOUT, bytesIN, bytesOUT) \
     ((hasalpha != 0) << 2 | \
      (planarIN != 0) << 5 | (planarOUT != 0) << 4 | \
-     (bigendianIN != 0) << 3 | (bigendianOUT != 0) << 2 | \
+     (endianswapIN != 0) << 3 | (endianswapOUT != 0) << 2 | \
      (bytesIN == 1) << 1 | (bytesOUT == 1))
 
 typedef struct gsicc_lcms2mt_link_list_s {
@@ -338,7 +338,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     gsicc_lcms2mt_link_list_t *link_handle = (gsicc_lcms2mt_link_list_t *)(icclink->link_handle);
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)link_handle->hTransform;
     cmsUInt32Number dwInputFormat, dwOutputFormat, num_src_lcms, num_des_lcms;
-    int  hasalpha, planarIN, planarOUT, numbytesIN, numbytesOUT, big_endianIN, big_endianOUT;
+    int  hasalpha, planarIN, planarOUT, numbytesIN, numbytesOUT, swap_endianIN, swap_endianOUT;
     int needed_flags = 0;
     unsigned char *inputpos, *outputpos;
     cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
@@ -349,7 +349,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     /* Although little CMS does  make assumptions about data types in its
        transformations we can change it after the fact by cloning from any
        other transform. We always create [0] which is no_alpha, chunky IN/OUT,
-       little_endian IN/OUT, 2-bytes_per_component IN/OUT. */
+       no endian swap IN/OUT, 2-bytes_per_component IN/OUT. */
     /* Set us to the proper output type */
     /* Note, we could speed this up by passing back the encoded data type
         to the caller so that we could avoid having to go through this
@@ -368,8 +368,8 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
         return_error(gs_error_rangecheck);	/* TODO: we don't support float */
 
     /* endian */
-    big_endianIN = !input_buff_desc->little_endian;
-    big_endianOUT = !output_buff_desc->little_endian;
+    swap_endianIN = input_buff_desc->endian_swap;
+    swap_endianOUT = output_buff_desc->endian_swap;
 
     /* alpha, which is passed through unmolested */
     /* TODO:  Right now we always must have alpha last */
@@ -377,7 +377,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     hasalpha = input_buff_desc->has_alpha;
 
     needed_flags = gsicc_link_flags(hasalpha, planarIN, planarOUT,
-                                    big_endianIN, big_endianOUT,
+                                    swap_endianIN, swap_endianOUT,
                                     numbytesIN, numbytesOUT);
     while (link_handle->flags != needed_flags) {
         if (link_handle->next == NULL) {
@@ -418,8 +418,8 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
         dwOutputFormat = dwOutputFormat | EXTRA_SH(hasalpha);
         dwInputFormat = dwInputFormat | PLANAR_SH(planarIN);
         dwOutputFormat = dwOutputFormat | PLANAR_SH(planarOUT);
-        dwInputFormat = dwInputFormat | ENDIAN16_SH(big_endianIN);
-        dwOutputFormat = dwOutputFormat | ENDIAN16_SH(big_endianOUT);
+        dwInputFormat = dwInputFormat | ENDIAN16_SH(swap_endianIN);
+        dwOutputFormat = dwOutputFormat | ENDIAN16_SH(swap_endianOUT);
         dwInputFormat = dwInputFormat | BYTES_SH(numbytesIN);
         dwOutputFormat = dwOutputFormat | BYTES_SH(numbytesOUT);
 
@@ -608,9 +608,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle, gcmmhprofile_t lcms_deshandle,
       when we use the transformation. */
     src_data_type = (COLORSPACE_SH(lcms_src_color_space)|
                         CHANNELS_SH(src_nChannels)|BYTES_SH(2));
-#if 0
-    src_data_type = src_data_type | ENDIAN16_SH(1);
-#endif
+
     if (lcms_deshandle != NULL) {
         des_color_space  = cmsGetColorSpace(ctx, lcms_deshandle);
     } else {
@@ -623,10 +621,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle, gcmmhprofile_t lcms_deshandle,
     des_nChannels = cmsChannelsOf(ctx, des_color_space);
     des_data_type = (COLORSPACE_SH(lcms_des_color_space)|
                         CHANNELS_SH(des_nChannels)|BYTES_SH(2));
-    /* endian */
-#if 0
-    des_data_type = des_data_type | ENDIAN16_SH(1);
-#endif
+
     /* Set up the flags */
     flag = gscms_get_accuracy(memory);
     if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
@@ -679,7 +674,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle, gcmmhprofile_t lcms_deshandle,
             return NULL;
     }
     link_handle->next = NULL;
-    link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, little-endian */
+    link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, no endian swap */
                                           sizeof(gx_color_value), sizeof(gx_color_value));
     return link_handle;
     /* cmsFLAGS_HIGHRESPRECALC)  cmsFLAGS_NOTPRECALC  cmsFLAGS_LOWRESPRECALC*/
@@ -714,7 +709,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     if (link_handle == NULL)
          return NULL;
     link_handle->next = NULL;
-    link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, little-endian */
+    link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, no endian swap */
                                           sizeof(gx_color_value), sizeof(gx_color_value));
     /* Check if the rendering intent is something other than relative colorimetric
        and if we have a proofing profile.  In this case we need to create the
@@ -1028,7 +1023,7 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
         cmsDeleteTransform(ctx, hTransformNew);
         return;					/* bail */
     }
-    link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, little-endian */
+    link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, no endian swap */
                                           sizeof(gx_color_value), sizeof(gx_color_value));
     link_handle->hTransform = hTransformNew;
     link_handle->next = NULL;

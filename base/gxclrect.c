@@ -599,6 +599,10 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         return 1;
     if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path)
         return 1;
+    if (dev_spec_op == gxdso_copy_alpha_disabled) {
+        gx_device_clist_writer * const cdev = &((gx_device_clist *)pdev)->writer;
+        return (cdev->disable_mask & clist_disable_copy_alpha) != 0;
+    }
     if (dev_spec_op == gxdso_supports_devn
      || dev_spec_op == gxdso_skip_icc_component_validation) {
         cmm_dev_profile_t *dev_profile;

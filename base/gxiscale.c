@@ -145,10 +145,13 @@ static int mask_suitable_for_interpolation(gx_image_enum *penum)
     int code;
     int high_level_color = 1;
 
-    if (gx_device_must_halftone(penum->dev)) {
+    if (gx_device_must_halftone(penum->dev))
         /* We don't interpolate when going to 1bpp outputs */
         return -1;
-    } else if (gx_dc_is_pure(pdc1) && (pdc1)->colors.pure != gx_no_color_index &&
+    if (dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_copy_alpha_disabled, NULL, 0) == 1)
+        /* The target device has copy_alpha() disabled. */
+        return -1;
+    if (gx_dc_is_pure(pdc1) && (pdc1)->colors.pure != gx_no_color_index &&
         dev_proc(penum->dev, copy_alpha) != NULL &&
         dev_proc(penum->dev, copy_alpha) != gx_no_copy_alpha) {
         /* We have a 'pure' color, and a valid copy_alpha. We can work with that. */
@@ -2184,9 +2187,12 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                           1, width_in);
             /* Do the transformation */
             psrc = (byte*) (stream_r.ptr + 1);
-            (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, &input_buff_desc,
+            code = (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, &input_buff_desc,
                                                 &output_buff_desc, (void*) psrc,
                                                 (void*) p_cm_buff);
+            if (code < 0)
+                return code;
+
             /* Re-set the reading stream to use the cm data */
             stream_r.ptr = p_cm_buff - 1;
             stream_r.limit = stream_r.ptr + num_bytes_decode * width_in * spp_cm;
@@ -2245,11 +2251,13 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                     pinterp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_decode;
                     p_cm_interp = (unsigned short *) p_cm_buff;
                     p_cm_interp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_cm;
-                    (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
+                    code = (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
                                                         &input_buff_desc,
                                                         &output_buff_desc,
                                                         (void*) pinterp,
                                                         (void*) p_cm_interp);
+                    if (code < 0)
+                        return code;
                 }
                 code = irii_core(penum, xo, xe, spp_cm, p_cm_interp, dev, abs_interp_limit, bpp, raster, yo, dy, lop);
                 if (code < 0)
@@ -2673,9 +2681,12 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                           1, width_in);
             /* Do the transformation */
             psrc = (byte*) (stream_r.ptr + 1);
-            (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, &input_buff_desc,
+            code = (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, &input_buff_desc,
                                                 &output_buff_desc, (void*) psrc,
                                                 (void*) p_cm_buff);
+            if (code < 0)
+                return code;
+
             /* Re-set the reading stream to use the cm data */
             stream_r.ptr = p_cm_buff - 1;
             stream_r.limit = stream_r.ptr + num_bytes_decode * width_in * spp_cm;
@@ -2747,11 +2758,13 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                     pinterp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_decode;
                     p_cm_interp = (unsigned short *) p_cm_buff;
                     p_cm_interp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_cm;
-                    (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
+                    code = (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
                                                         &input_buff_desc,
                                                         &output_buff_desc,
                                                         (void*) pinterp,
                                                         (void*) p_cm_interp);
+                    if (code < 0)
+                        return code;
                 }
                 for (x = xo; x < xe;) {
 #ifdef DEBUG

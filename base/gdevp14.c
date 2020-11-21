@@ -887,13 +887,14 @@ resolve_matte(pdf14_buf *maskbuf, byte *src_data, int src_planestride, int src_r
    need to do the offset to our data in the buffer. Bug 700686: If we are in
    a softmask that includes a matte entry, then we need to undo the matte
    entry here at this time in the image's native color space not the parent
-   color space.   The big_endian term here is only set to true if the data
-   has been baked as such during the put_image blending operation.  */
+   color space.   The endian_swap term here is only set to true if the data
+   has been baked as BE during the put_image blending operation and we are
+   on a LE machine.  */
 static forceinline pdf14_buf*
 template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-    bool has_matte, bool deep, bool big_endian)
+    bool has_matte, bool deep, bool endian_swap)
 {
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
@@ -913,6 +914,8 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *output = src_buf;
     pdf14_mask_t *mask_stack;
     pdf14_buf *maskbuf;
+    int code;
+
     *did_alloc = false;
 
     /* Same profile */
@@ -970,10 +973,8 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     gsicc_init_buffer(&des_buff_desc, des_profile->num_comps, 1<<deep, false,
                       false, true, des_planestride, des_rowstride, height, width);
 
-    if (big_endian) {
-        src_buff_desc.little_endian = false;
-        des_buff_desc.little_endian = false;
-    }
+    src_buff_desc.endian_swap = endian_swap;
+    des_buff_desc.endian_swap = endian_swap;
 
     /* If we have a matte entry, undo the pre-blending now.  Also set pdf14
        context to ensure that this is not done again during the group
@@ -989,9 +990,11 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     /* Transform the data. Since the pdf14 device should be using RGB, CMYK or
        Gray buffers, this transform does not need to worry about the cmap procs
        of the target device. */
-    (icc_link->procs.map_buffer)(dev, icc_link, &src_buff_desc, &des_buff_desc,
+    code = (icc_link->procs.map_buffer)(dev, icc_link, &src_buff_desc, &des_buff_desc,
         src_data, des_data);
     gsicc_release_link(icc_link);
+    if (code < 0)
+        return NULL;
 
     output->planestride = des_planestride;
     output->rowstride = des_rowstride;
@@ -1045,28 +1048,28 @@ static pdf14_buf*
 pdf14_transform_color_buffer_no_matte(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-    bool deep, bool big_endian)
+    bool deep, bool endian_swap)
 {
     if (deep)
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, false, true, big_endian);
+            des_profile, x0, y0, width, height, did_alloc, false, true, endian_swap);
     else
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, false, false, big_endian);
+            des_profile, x0, y0, width, height, did_alloc, false, false, endian_swap);
 }
 
 static pdf14_buf*
 pdf14_transform_color_buffer_with_matte(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-    bool deep, bool big_endian)
+    bool deep, bool endian_swap)
 {
     if (deep)
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, true, true, big_endian);
+            des_profile, x0, y0, width, height, did_alloc, true, true, endian_swap);
     else
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, true, false, big_endian);
+            des_profile, x0, y0, width, height, did_alloc, true, false, endian_swap);
 }
 
 /**
@@ -1908,6 +1911,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
     gsicc_link_t *icc_link;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
+    int code = 0;
 
     dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &src_profile,
@@ -2058,7 +2062,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
                     rendering_params.cmm = gsCMM_DEFAULT;
                     icc_link = gsicc_get_link_profile(pgs, dev, des_profile,
                         src_profile, &rendering_params, pgs->memory, false);
-                    smask_icc(dev, tos->rect.q.y - tos->rect.p.y,
+                    code = smask_icc(dev, tos->rect.q.y - tos->rect.p.y,
                               tos->rect.q.x - tos->rect.p.x, tos->n_chan,
                               tos->rowstride, tos->planestride,
                               tos->data, new_data_buf, icc_link, tos->deep);
@@ -2089,7 +2093,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
             return gs_note_error(gs_error_VMerror);
         ctx->mask_stack->rc_mask->mask_buf = tos;
     }
-    return 0;
+    return code;
 }
 
 static pdf14_mask_t *
@@ -2407,7 +2411,7 @@ pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profi
     cmm_profile_t* des_profile;
     gsicc_rendering_param_t render_cond;
     bool did_alloc;
-    bool big_endian;
+    bool endian_swap;
 
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_target_profile, &des_profile,
         &render_cond);
@@ -2420,16 +2424,25 @@ pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profi
 #endif
 
     /* If we are doing a 16 bit buffer it will be big endian if we have already done the
-       blend, otherwise it will be native endian */
+       blend, otherwise it will be native endian. GS expects its 16bit buffers to be BE
+       but for sanity pdf14 device maintains 16bit buffers in native format.  The CMM
+       will need to know if it is dealing with native or BE data. */
     if (was_blended && (*buf)->deep) {
-        big_endian = true;
+        /* Data is in BE.  If we are in a LE machine, CMM will need to swap for
+           color conversion */
+#if ARCH_IS_BIG_ENDIAN
+        endian_swap = false;
+#else
+        endian_swap = true;
+#endif
     } else {
-        big_endian = false;
+        /* Data is in native format. No swap needed for CMM */
+        endian_swap = false;
     }
 
     cm_result = pdf14_transform_color_buffer_no_matte(pgs, dev->ctx, (gx_device*) dev, *buf,
         *buf_ptr, src_profile, des_profile, x, y, width,
-        height, &did_alloc, (*buf)->deep, big_endian);
+        height, &did_alloc, (*buf)->deep, endian_swap);
 
     if (cm_result == NULL)
         return_error(gs_error_VMerror);

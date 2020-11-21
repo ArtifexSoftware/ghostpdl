@@ -226,6 +226,7 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
     int y0 = max(buf->rect.p.y, tos->rect.p.y);
     int y1 = min(buf->rect.q.y, tos->rect.q.y);
     bool deep = buf->deep;
+    int code;
 
     if (x0 < x1 && y0 < y1) {
         int width = x1 - x0;
@@ -283,9 +284,11 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
                               false, true, buf->planestride, buf->rowstride, height,
                               width);
             /* Transform the data.  */
-            (icc_link->procs.map_buffer)(dev, icc_link, &input_buff_desc,
+            code = (icc_link->procs.map_buffer)(dev, icc_link, &input_buff_desc,
                                          &output_buff_desc, tos_plane, buf_plane);
             gsicc_release_link(icc_link);
+            if (code < 0)
+                return gs_throw(gs_error_unknownerror, "ICC transform failed.  Trans backdrop");
         }
         /* Copy the alpha data */
         buf_plane += buf->planestride * (buf->n_chan - 1);
