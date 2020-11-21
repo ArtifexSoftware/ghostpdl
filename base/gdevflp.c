@@ -885,6 +885,7 @@ flp_image_plane_data(gx_image_enum_common_t * info,
 static int
 flp_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
+    gs_free_object(info->memory, info, "flp_end_image");
     return 0;
 }
 
