@@ -168,7 +168,14 @@ typedef struct pdf_dict_s {
 typedef struct pdf_stream_s {
     pdf_obj_common;
     pdf_dict *stream_dict;
-    pdf_obj *parent_obj;  /* Pointer to parent context, if any */
+    /* This is plain ugly. In order to deal with the (illegal) case where a stream
+     * uses named objects which are not defined in the stream's Resources dictionary,
+     * but *are* defined in one of the enclosing stream's Resources dictionary, we need
+     * to be able to walk back up the chain of nested streams. We set/reset the parent_obj
+     * in pdfi_interpret_stream_context, the value is only ever non-NULL if we are executing
+     * the stream, and the stream has a parent context.
+     */
+    pdf_obj *parent_obj;
     gs_offset_t stream_offset;
     int64_t Length; /* Value of Length in dict, 0 if undefined.  non-zero means it's a stream */
     bool length_valid; /* True if Length and is_stream have been cached above */

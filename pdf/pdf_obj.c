@@ -204,7 +204,6 @@ static void pdfi_free_stream(pdf_obj *o)
 {
     pdf_stream *stream = (pdf_stream *)o;
 
-    pdfi_countdown(stream->parent_obj);
     pdfi_countdown(stream->stream_dict);
     gs_free_object(OBJ_MEMORY(o), o, "pdfi_free_stream");
 }

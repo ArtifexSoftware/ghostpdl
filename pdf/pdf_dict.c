@@ -1087,6 +1087,28 @@ pdf_stream *pdfi_stream_parent(pdf_context *ctx, pdf_stream *stream)
     return (pdf_stream *)stream->parent_obj;
 }
 
+void pdfi_set_stream_parent(pdf_context *ctx, pdf_stream *stream, pdf_stream *parent)
+{
+    /* Ordinarily we would increment the reference count of the parent object here,
+     * because we are taking a new reference to it. But if we do that we will end up
+     * with circular references and will never count down and release the objects.
+     * This is because the parent object must have a Resources dictionary which
+     * references this stream, when we dereference the stream we store it in the
+     * Parent's Resources dictionary. So the parent points to the child, the child
+     * points to the parent and we always end up with a refcnt for each of 1. Since we
+     * only ever consult parent_obj in an illegal case we deal with this by not
+     * incrementing the reference count. To try and avoid any dangling references
+     * we clear the parent_obj when we finish executing the stream in
+     * pdfi_interpret_content_stream.
+     */
+    stream->parent_obj = parent;
+}
+
+void pdfi_clear_stream_parent(pdf_context *ctx, pdf_stream *stream)
+{
+    stream->parent_obj = NULL;
+}
+
 /* Get the dict from a pdf_obj, returns typecheck if it doesn't have one */
 int pdfi_dict_from_obj(pdf_context *ctx, pdf_obj *obj, pdf_dict **dict)
 {

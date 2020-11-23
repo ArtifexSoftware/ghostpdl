@@ -1765,7 +1765,6 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
     int code;
     pdf_c_stream *stream;
     pdf_keyword *keyword;
-    pdf_stream *saved_current_stream = ctx->current_stream;
 
     if (content_stream != NULL) {
         stream = content_stream;
@@ -1779,6 +1778,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
             return code;
     }
 
+    pdfi_set_stream_parent(ctx, stream_obj, ctx->current_stream);
     ctx->current_stream = stream_obj;
 
     do {
@@ -1792,9 +1792,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
                     ctx->pdf_errors |= E_PDF_OUTOFMEMORY;
                     dmprintf(ctx->memory, "**** Error ran out of memory reading a content stream.  The page may be incomplete.\n");
                 }
-                pdfi_close_file(ctx, stream);
-                ctx->current_stream = saved_current_stream;
-                return code;
+                goto exit;
             }
             continue;
         }
@@ -1810,29 +1808,23 @@ repaired_keyword:
 
             switch(keyword->key) {
                 case TOKEN_ENDSTREAM:
-                    pdfi_close_file(ctx, stream);
                     pdfi_pop(ctx,1);
-                    ctx->current_stream = saved_current_stream;
-                    return 0;
+                    goto exit;
                     break;
                 case TOKEN_ENDOBJ:
-                    pdfi_close_file(ctx, stream);
                     pdfi_clearstack(ctx);
                     ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
                     if (ctx->pdfstoponerror)
-                        return_error(gs_error_syntaxerror);
-                    ctx->current_stream = saved_current_stream;
-                    return 0;
+                        code = gs_note_error(gs_error_syntaxerror);
+                    goto exit;
                     break;
                 case TOKEN_NOT_A_KEYWORD:
                     {
                         pdf_dict *stream_dict = NULL;
 
                         code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
-                        if (code < 0) {
-                            ctx->current_stream = saved_current_stream;
-                            return code;
-                        }
+                        if (code < 0)
+                            goto exit;
 
                         code = pdfi_interpret_stream_operator(ctx, stream, stream_dict, page_dict);
                         if (code == REPAIRED_KEYWORD)
@@ -1841,10 +1833,8 @@ repaired_keyword:
                         if (code < 0) {
                             ctx->pdf_errors |= E_PDF_TOKENERROR;
                             if (ctx->pdfstoponerror) {
-                                pdfi_close_file(ctx, stream);
                                 pdfi_clearstack(ctx);
-                                ctx->current_stream = saved_current_stream;
-                                return code;
+                                goto exit;
                             }
                         }
                     }
@@ -1855,9 +1845,9 @@ repaired_keyword:
                     break;
                 default:
                     ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
-                    pdfi_close_file(ctx, stream);
                     pdfi_clearstack(ctx);
-                    return_error(gs_error_typecheck);
+                    code = gs_note_error(gs_error_typecheck);
+                    goto exit;
                     break;
             }
         }
@@ -1865,7 +1855,9 @@ repaired_keyword:
             break;
     }while(1);
 
+exit:
+    ctx->current_stream = pdfi_stream_parent(ctx, stream_obj);
+    pdfi_clear_stream_parent(ctx, stream_obj);
     pdfi_close_file(ctx, stream);
-    ctx->current_stream = saved_current_stream;
-    return 0;
+    return code;
 }
