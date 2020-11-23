@@ -1101,7 +1101,7 @@ void pdfi_set_stream_parent(pdf_context *ctx, pdf_stream *stream, pdf_stream *pa
      * we clear the parent_obj when we finish executing the stream in
      * pdfi_interpret_content_stream.
      */
-    stream->parent_obj = parent;
+    stream->parent_obj = (pdf_obj *)parent;
 }
 
 void pdfi_clear_stream_parent(pdf_context *ctx, pdf_stream *stream)

@@ -274,7 +274,7 @@ int pdfi_mark_object(pdf_context *ctx, pdf_obj *object, const char *label)
         goto exit;
  exit:
     if (param_string.data != NULL)
-        gs_free_object(ctx->memory, param_string.data, "free data transferred to param_string in pdfi_mark_object\n");
+        gs_free_object(ctx->memory, (byte *)param_string.data, "free data transferred to param_string in pdfi_mark_object\n");
     return code;
 }
 

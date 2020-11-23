@@ -657,7 +657,7 @@ static int pdfi_get_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths, 
     pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)pfont->client_data;
     int i;
 
-    widths[GLYPH_W0_WIDTH_INDEX] = pdffont11->DW;
+    widths[GLYPH_W0_WIDTH_INDEX] = (double)pdffont11->DW;
     widths[GLYPH_W0_HEIGHT_INDEX] = 0;
     if (pdffont11->W != NULL) {
         i = 0;
@@ -677,7 +677,7 @@ static int pdfi_get_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths, 
                 (void)pdfi_array_peek(pdffont11->ctx, pdffont11->W, i + 2, (pdf_obj **)&o);
                 if (o->type == PDF_INT) {
                     if (cid >= c->value.i && cid <= c2->value.i) {
-                        widths[GLYPH_W0_WIDTH_INDEX] = ((pdf_num *)o)->value.i;
+                        widths[GLYPH_W0_WIDTH_INDEX] = (double)((pdf_num *)o)->value.i;
                         widths[GLYPH_W0_HEIGHT_INDEX] = 0;
                         break;
                     }
@@ -695,7 +695,7 @@ static int pdfi_get_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths, 
                 if (cid >= c->value.i && cid < c->value.i + a->size) {
                     (void)pdfi_array_peek(pdffont11->ctx, a, cid - c->value.i, (pdf_obj **)&o);
                     if (o->type == PDF_INT) {
-                        widths[GLYPH_W0_WIDTH_INDEX] = ((pdf_num *)o)->value.i;
+                        widths[GLYPH_W0_WIDTH_INDEX] = (double)((pdf_num *)o)->value.i;
                         widths[GLYPH_W0_HEIGHT_INDEX] = 0;
                         break;
                     }
@@ -723,9 +723,9 @@ static int pdfi_get_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths, 
 
             if (w2_0->type == PDF_INT && w2_1->type == PDF_INT) {
                 widths[GLYPH_W1_WIDTH_INDEX] = 0;
-                widths[GLYPH_W1_HEIGHT_INDEX] = w2_0->value.i;
+                widths[GLYPH_W1_HEIGHT_INDEX] = (double)w2_0->value.i;
                 widths[GLYPH_W1_V_X_INDEX] = widths[GLYPH_W0_WIDTH_INDEX] / 2.0;
-                widths[GLYPH_W1_V_Y_INDEX] = w2_1->value.i;
+                widths[GLYPH_W1_V_Y_INDEX] = (double)w2_1->value.i;
             }
         }
         if (pdffont11->W2 != NULL && pdffont11->W2->type == PDF_ARRAY) {
@@ -754,9 +754,9 @@ static int pdfi_get_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths, 
                             return_error(gs_error_typecheck);
                         }
                         widths[GLYPH_W1_WIDTH_INDEX] = 0;
-                        widths[GLYPH_W1_HEIGHT_INDEX] = w1y->value.i;
-                        widths[GLYPH_W1_V_X_INDEX] = v1x->value.i;
-                        widths[GLYPH_W1_V_Y_INDEX] = v1y->value.i;
+                        widths[GLYPH_W1_HEIGHT_INDEX] = (double)w1y->value.i;
+                        widths[GLYPH_W1_V_X_INDEX] = (double)v1x->value.i;
+                        widths[GLYPH_W1_V_Y_INDEX] = (double)v1y->value.i;
                         break;
                     }
                     i += 5;
@@ -777,9 +777,9 @@ static int pdfi_get_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths, 
                             return_error(gs_error_typecheck);
                         }
                         widths[GLYPH_W1_WIDTH_INDEX] = 0;
-                        widths[GLYPH_W1_HEIGHT_INDEX] = w1y->value.i;
-                        widths[GLYPH_W1_V_X_INDEX] = v1x->value.i;
-                        widths[GLYPH_W1_V_Y_INDEX] = v1y->value.i;
+                        widths[GLYPH_W1_HEIGHT_INDEX] = (double)w1y->value.i;
+                        widths[GLYPH_W1_V_X_INDEX] = (double)v1x->value.i;
+                        widths[GLYPH_W1_V_Y_INDEX] = (double)v1y->value.i;
                         break;
                     }
                     i += 2;
