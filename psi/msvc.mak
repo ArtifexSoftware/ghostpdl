@@ -750,6 +750,17 @@ JPX_LIB=luratech
 JPX_LIB=openjpeg
 !endif
 
+# If $EXTRACT_DIR is set, build with Extract library.
+#
+!if "$(EXTRACT_DIR)" != ""
+!   if !exist($(EXTRACT_DIR))
+!       error Cannot find extract directory: $(EXTRACT_DIR)
+!   endif
+EXTRACT_DEVS=$(DD)docxwrite.dev
+!else
+!   message Not building with extract: $(EXTRACT_DIR)
+!endif
+
 # Alternatively, you can build a separate DLL
 # and define SHARE_JPX=1 in src/winlib.mak
 
@@ -1698,7 +1709,7 @@ DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmp16.dev $(DD)bmp256.dev $
 DEVICE_DEVS12=$(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev $(DD)bitrgbtags.dev $(DD)chameleon.dev
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pngmonod.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev $(DD)fpng.dev $(DD)psdcmykog.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev $(DD)pdfimage8.dev $(DD)pdfimage24.dev $(DD)pdfimage32.dev $(DD)PCLm.dev
-DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)ps2write.dev $(DD)eps2write.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev $(DD)xpswrite.dev $(DD)inkcov.dev $(DD)ink_cov.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)ps2write.dev $(DD)eps2write.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev $(DD)xpswrite.dev $(DD)inkcov.dev $(DD)ink_cov.dev $(EXTRACT_DEVS)
 DEVICE_DEVS16=$(DD)bbox.dev $(DD)plib.dev $(DD)plibg.dev $(DD)plibm.dev $(DD)plibc.dev $(DD)plibk.dev $(DD)plan.dev $(DD)plang.dev $(DD)planm.dev $(DD)planc.dev $(DD)plank.dev $(DD)planr.dev
 !if "$(WITH_CUPS)" == "1"
 DEVICE_DEVS16=$(DEVICE_DEVS16) $(DD)cups.dev

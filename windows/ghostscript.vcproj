@@ -6185,6 +6185,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\devices\vector\gdevdocxw.c"
+					>
+				</File>
+				<File
+					RelativePath="..\devices\vector\doc_common.c"
+					>
+				</File>
+				<File
 					RelativePath="..\devices\vector\gdevxps.c"
 					>
 				</File>
@@ -6328,6 +6336,10 @@
 			<Filter
 				Name="vector (.h)"
 				>
+				<File
+					RelativePath="..\devices\vector\doc_common.h"
+					>
+				</File>
 				<File
 					RelativePath="..\devices\vector\gdevagl.h"
 					>

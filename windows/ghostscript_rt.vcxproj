@@ -1503,6 +1503,8 @@
     <ClCompile Include="..\devices\vector\gdevpxut.c" />
     <ClCompile Include="..\devices\vector\gdevsvg.c" />
     <ClCompile Include="..\devices\vector\gdevtxtw.c" />
+    <ClCompile Include="..\devices\vector\gdevdocxw.c" />
+    <ClCompile Include="..\devices\vector\doc_common.c" />
     <ClCompile Include="..\devices\vector\whitelst.c" />
     <ClCompile Include="..\devices\rinkj\evenbetter-rll.c" />
     <ClCompile Include="..\devices\rinkj\rinkj-byte-stream.c" />
@@ -2175,6 +2177,7 @@
     <ClInclude Include="..\devices\gdevxcmp.h" />
     <ClInclude Include="..\devices\gxfcopy.h" />
     <ClInclude Include="..\devices\minftrsz.h" />
+    <ClInclude Include="..\devices\vector\doc_common.h" />
     <ClInclude Include="..\devices\vector\gdevagl.h" />
     <ClInclude Include="..\devices\vector\gdevpdfb.h" />
     <ClInclude Include="..\devices\vector\gdevpdfc.h" />

@@ -228,6 +228,9 @@ CAL_SSE4_2_CFLAGS=@CAL_SSE4_2_CFLAGS@
 CAL_AVX2_CFLAGS=@CAL_AVX2_CFLAGS@
 CAL_NEON_CFLAGS=@CAL_NEON_CFLAGS@
 
+# Location of extract library (can be empty).
+EXTRACT_DIR=@EXTRACT_DIR@
+
 # Define whether to compile in the FreeType library, and if so, where
 # the source tree is location. Otherwise, what library name to use
 # in linking to a shared implementation.
@@ -777,6 +780,8 @@ include $(GLSRCDIR)/ocr.mak
 
 include $(GLSRCDIR)/jpegxr.mak
 include $(GLSRCDIR)/expat.mak
+
+include $(DEVSRCDIR)/extract.mak
 
 include $(GLSRCDIR)/$(WHICH_CMS).mak
 include $(GLSRCDIR)/ijs.mak

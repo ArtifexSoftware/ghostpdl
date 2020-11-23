@@ -165,6 +165,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\ijs.mak
 !include $(GLSRCDIR)\lcups.mak
 !include $(GLSRCDIR)\lcupsi.mak
+!include $(DEVSRCDIR)\extract.mak
 !include $(DEVSRCDIR)\devs.mak
 !include $(DEVSRCDIR)\dcontrib.mak
 !include $(CONTRIBDIR)\contrib.mak
