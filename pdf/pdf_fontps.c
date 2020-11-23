@@ -372,6 +372,9 @@ static int ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_FLOAT)) {
                 priv->gsu.gst1.StrokeWidth = s->cur[0].val.f;
             }
+            else if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
+                priv->gsu.gst1.StrokeWidth = (float)s->cur[0].val.i;
+            }
         }
         else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("WMode"))) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
@@ -465,7 +468,10 @@ static int ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *
                 int i, size = s->cur[0].size < 14 ? s->cur[0].size : 14;
                 for (i = 0; i < size; i++) {
                     if (pdf_ps_obj_has_type(&s->cur[0].val.arr[i], PDF_PS_OBJ_INTEGER)) {
-                        priv->gsu.gst1.data.BlueValues.values[i] = s->cur[0].val.arr[i].val.i;
+                        priv->gsu.gst1.data.BlueValues.values[i] = (float)s->cur[0].val.arr[i].val.i;
+                    }
+                    else if (pdf_ps_obj_has_type(&s->cur[0].val.arr[i], PDF_PS_OBJ_FLOAT)) {
+                        priv->gsu.gst1.data.BlueValues.values[i] = s->cur[0].val.arr[i].val.f;
                     }
                     else {
                         if (i == 0)
@@ -486,17 +492,27 @@ static int ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *
             }
         }
         else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("StdHW"))) {
-            if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)
-             && pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_INTEGER)) {
-                priv->gsu.gst1.data.StdHW.values[0] = s->cur[0].val.arr[0].val.i;
-                priv->gsu.gst1.data.StdHW.count = 1;
+            if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
+                if (pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_INTEGER)) {
+                    priv->gsu.gst1.data.StdHW.values[0] = (float)s->cur[0].val.arr[0].val.i;
+                    priv->gsu.gst1.data.StdHW.count = 1;
+                }
+                else if (pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_FLOAT)){
+                    priv->gsu.gst1.data.StdHW.values[0] = s->cur[0].val.arr[0].val.f;
+                    priv->gsu.gst1.data.StdHW.count = 1;
+                }
             }
         }
         else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("StdVW"))) {
-            if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)
-             && pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_INTEGER )) {
-                priv->gsu.gst1.data.StdVW.values[0] = s->cur[0].val.arr[0].val.i;
-                priv->gsu.gst1.data.StdVW.count = 1;
+            if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
+                if (pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_INTEGER)) {
+                    priv->gsu.gst1.data.StdVW.values[0] = (float)s->cur[0].val.arr[0].val.i;
+                    priv->gsu.gst1.data.StdVW.count = 1;
+                }
+                else if (pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_FLOAT)){
+                    priv->gsu.gst1.data.StdVW.values[0] = s->cur[0].val.arr[0].val.f;
+                    priv->gsu.gst1.data.StdVW.count = 1;
+                }
             }
         }
         else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("StemSnapH"))) {
@@ -504,9 +520,13 @@ static int ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *
                 int i, size = s->cur[0].size > 12 ? 12 : s->cur[0].size;
                 for (i = 0; i < size; i++) {
                     if (pdf_ps_obj_has_type(&s->cur[0].val.arr[i], PDF_PS_OBJ_INTEGER)) {
-                        priv->gsu.gst1.data.StemSnapH.values[i] = s->cur[0].val.arr[i].val.i;
+                        priv->gsu.gst1.data.StemSnapH.values[i] = (float)s->cur[0].val.arr[i].val.i;
+                    }
+                    else if (pdf_ps_obj_has_type(&s->cur[0].val.arr[i], PDF_PS_OBJ_FLOAT)) {
+                        priv->gsu.gst1.data.StemSnapH.values[i] = s->cur[0].val.arr[i].val.f;
                     }
                 }
+                priv->gsu.gst1.data.StemSnapH.count = size;
             }
         }
         else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("StemSnapV"))) {
@@ -514,9 +534,13 @@ static int ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *
                 int i, size = s->cur[0].size > 12 ? 12 : s->cur[0].size;
                 for (i = 0; i < size; i++) {
                     if (pdf_ps_obj_has_type(&s->cur[0].val.arr[i], PDF_PS_OBJ_INTEGER)) {
-                        priv->gsu.gst1.data.StemSnapV.values[i] = s->cur[0].val.arr[i].val.i;
+                        priv->gsu.gst1.data.StemSnapV.values[i] = (float)s->cur[0].val.arr[i].val.i;
+                    }
+                    else if (pdf_ps_obj_has_type(&s->cur[0].val.arr[i], PDF_PS_OBJ_FLOAT)) {
+                        priv->gsu.gst1.data.StemSnapV.values[i] = s->cur[0].val.arr[i].val.f;
                     }
                 }
+                priv->gsu.gst1.data.StemSnapH.count = size;
             }
         }
         else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("Encoding"))) {
