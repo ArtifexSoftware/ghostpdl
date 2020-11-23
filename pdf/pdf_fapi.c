@@ -15,6 +15,9 @@
 
 /* Interface to FAPI for the PDF interpreter */
 
+/* Include this first so that we don't get a macro redefnition of 'offsetof' */
+#include "pdf_int.h"
+
 #include "memory_.h"
 #include "gsmemory.h"
 #include "gserrors.h"
@@ -26,7 +29,6 @@
 #include "gxfapi.h"
 #include "gscoord.h"
 #include "gspath.h"
-#include "pdf_int.h"
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_font.h"

@@ -13,6 +13,9 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+/* Include this first so that we don't get a macro redefnition of 'offsetof' */
+#include "pdf_int.h"
+
 /* code for type 0 (CID) font handling */
 #include "gxfont.h"
 #include "gxfont0.h"
