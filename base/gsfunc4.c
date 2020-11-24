@@ -232,7 +232,6 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
     for (; ; ) {
         int code, n;
 
-    sw:
         switch (op_defn_table[*p++].opcode[(vsp[-1].type << 2) + vsp->type]) {
 
             /* Miscellaneous */
@@ -246,20 +245,16 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 
         case PtCr_int_to_float:
             store_float(vsp, (double)vsp->value.i);
-            --p; goto sw;
+            --p; continue;
         case PtCr_int2_to_float:
             store_float(vsp, (double)vsp->value.i);
             /* fall through */
         case PtCr_2nd_int_to_float:
             store_float(vsp - 1, (double)vsp[-1].value.i);
-            --p; goto sw;
+            --p; continue;
 
             /* Arithmetic operators */
 
-        case PtCr_abs_int:
-            if (vsp->value.i < 0)
-                goto neg_int;
-            continue;
         case PtCr_abs:
             vsp->value.f = fabs(vsp->value.f);
             continue;
@@ -359,8 +354,11 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
         case PtCr_mul:
             vsp[-1].value.f *= vsp->value.f;
             --vsp; continue;
+        case PtCr_abs_int:
+            if (vsp->value.i >= 0)
+                continue;
+            /* fallthrough */
         case PtCr_neg_int:
-        neg_int:
             if (vsp->value.i == min_int)
                 store_float(vsp, (double)vsp->value.i); /* =self negated */
             else
@@ -415,11 +413,6 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
         case PtCr_eq_int:
             DO_REL(==, i);
             goto rel;
-        case PtCr_eq:
-            DO_REL(==, f);
-        rel:
-            vsp[-1].type = CVT_BOOL;
-            --vsp; continue;
         case PtCr_ge_int:
             DO_REL(>=, i);
             goto rel;
@@ -450,6 +443,11 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
         case PtCr_ne:
             DO_REL(!=, f);
             goto rel;
+        case PtCr_eq:
+            DO_REL(==, f);
+        rel:
+            vsp[-1].type = CVT_BOOL;
+            --vsp; continue;
 
 #undef DO_REL
 

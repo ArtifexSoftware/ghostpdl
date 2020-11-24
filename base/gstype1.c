@@ -164,69 +164,27 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
     if (cip == 0)
         return (gs_note_error(gs_error_invalidfont));
     cipend = cip + pgd->bits.size;
-  call:state = crypt_charstring_seed;
-    if (encrypted) {
-        int skip = pdata->lenIV;
-
-        /* Skip initial random bytes */
-        for (; skip > 0; ++cip, --skip)
-            decrypt_skip_next(*cip, state);
-    }
-    goto top;
-  cont:if (ipsp < pcis->ipstack || ipsp->ip == 0)
-        return (gs_note_error(gs_error_invalidfont));
-    cip = ipsp->ip;
-    cipend = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
-    state = ipsp->dstate;
-  top:for (;;) {
+    goto call;
+    for (;;) {
         uint c0 = *cip++;
         if (cip > cipend)
             return_error(gs_error_invalidfont);
 
         charstring_next(c0, state, c, encrypted);
-        if (c >= c_num1) {
-            /* This is a number, decode it and push it on the stack. */
-
-            if (c < c_pos2_0) {	/* 1-byte number */
-                decode_push_num1(csp, cstack, c);
-            } else if (c < cx_num4) {	/* 2-byte number */
-                decode_push_num2(csp, cstack, c, cip, state, encrypted);
-            } else if (c == cx_num4) {	/* 4-byte number */
-                long lw;
-
-                decode_num4(lw, cip, state, encrypted);
-                CS_CHECK_PUSH(csp, cstack);
-                *++csp = int2fixed(lw);
-                if (lw != fixed2long(*csp)) {
-                    /*
-                     * The integer was too large to handle in fixed point.
-                     * Handle this case specially.
-                     */
-                    code = gs_type1_check_float(&state, encrypted, &cip, csp, lw);
-                    if (code < 0)
-                        return code;
-                }
-            } else		/* not possible */
-                return_error(gs_error_invalidfont);
-          pushed:if_debug3m('1', pfont->memory, "[1]%d: (%d) %f\n",
-                            (int)(csp - cstack), c, fixed2float(*csp));
-            continue;
-        }
+        if (c < c_num1) {
 #ifdef DEBUG
-        if (gs_debug['1']) {
-            static const char *const c1names[] =
-            {char1_command_names};
+            if (gs_debug['1']) {
+                static const char *const c1names[] =
+                {char1_command_names};
 
-            if (c1names[c] == 0)
-                dmlprintf2(pfont->memory, "[1]"PRI_INTPTR": %02x??\n", (intptr_t)(cip - 1), c);
-            else
-                dmlprintf3(pfont->memory, "[1]"PRI_INTPTR": %02x %s\n", (intptr_t)(cip - 1), c,
-                          c1names[c]);
-        }
+                if (c1names[c] == 0)
+                    dmlprintf2(pfont->memory, "[1]"PRI_INTPTR": %02x??\n", (intptr_t)(cip - 1), c);
+                else
+                    dmlprintf3(pfont->memory, "[1]"PRI_INTPTR": %02x %s\n", (intptr_t)(cip - 1), c,
+                              c1names[c]);
+            }
 #endif
-        switch ((char_command) c) {
-#define cnext clear; goto top
-#define inext goto top
+            switch ((char_command) c) {
 
                 /* Commands with identical functions in Type 1 and Type 2, */
                 /* except for 'escape'. */
@@ -256,7 +214,8 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 goto cont;
             case c_undoc15:
                 /* See gstype1.h for information on this opcode. */
-                cnext;
+                clear;
+                continue;
 
                 /* Commands with similar but not identical functions */
                 /* in Type 1 and Type 2 charstrings. */
@@ -265,24 +224,18 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 code = t1_hinter__hstem(h, cs0, cs1);
                 if (code < 0)
                     return code;
-                cnext;
+                clear;
+                continue;
             case cx_vstem:
                 code = t1_hinter__vstem(h, cs0, cs1);
                 if (code < 0)
                     return code;
-                cnext;
+                clear;
+                continue;
             case cx_vmoveto:
                 cs1 = cs0;
                 cs0 = 0;
-              move:		/* cs0 = dx, cs1 = dy for hint checking. */
-                code = t1_hinter__rmoveto(h, cs0, cs1);
-                goto cc;
-            case cx_rlineto:
-              line:		/* cs0 = dx, cs1 = dy for hint checking. */
-                code = t1_hinter__rlineto(h, cs0, cs1);
-              cc:if (code < 0)
-                    return code;
-                cnext;
+                goto move;
             case cx_hlineto:
                 cs1 = 0;
                 goto line;
@@ -290,6 +243,10 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 cs1 = cs0;
                 cs0 = 0;
                 goto line;
+            case cx_rlineto:
+  line:         /* cs0 = dx, cs1 = dy for hint checking. */
+                code = t1_hinter__rlineto(h, cs0, cs1);
+                goto cc;
             case cx_rrcurveto:
                 code = t1_hinter__rcurveto(h, cs0, cs1, cs2, cs3, cs4, cs5);
                 goto cc;
@@ -336,7 +293,9 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 goto move;
             case cx_hmoveto:
                 cs1 = 0;
-                goto move;
+  move:         /* cs0 = dx, cs1 = dy for hint checking. */
+                code = t1_hinter__rmoveto(h, cs0, cs1);
+                goto cc;
             case cx_vhcurveto:
                 code = t1_hinter__rcurveto(h, 0, cs0, cs1, cs2, cs3, 0);
                 goto cc;
@@ -349,7 +308,10 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
             case c1_closepath:
                 code = t1_hinter__closepath(h);
-                goto cc;
+  cc:           if (code < 0)
+                    return code;
+                clear;
+                continue;
             case c1_hsbw:
                 if (!pcis->seac_flag) {
                     fixed sbx = cs0, sby = fixed_0, wx = cs1, wy = fixed_0;
@@ -378,17 +340,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     return code;
                 gs_type1_sbw(pcis, cs0, fixed_0, cs1, fixed_0);
                 cs1 = fixed_0;
-rsbw:		/* Give the caller the opportunity to intervene. */
-                pcis->os_count = 0;	/* clear */
-                ipsp->ip = cip, ipsp->dstate = state;
-                pcis->ips_count = ipsp - &pcis->ipstack[0] + 1;
-                /* If we aren't in a seac, do nothing else now; */
-                /* finish_init will take care of the rest. */
-                if (pcis->init_done < 0) {
-                    /* Finish init when we return. */
-                    pcis->init_done = 0;
-                }
-                return type1_result_sbw;
+                goto rsbw;
             case cx_escape:
                 charstring_next(*cip, state, c, encrypted);
                 ++cip;
@@ -412,17 +364,20 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                         code = t1_hinter__dotsection(h);
                         if (code < 0)
                             return code;
-                        cnext;
+                        clear;
+                        continue;
                     case ce1_vstem3:
                         code = t1_hinter__vstem3(h, cs0, cs1, cs2, cs3, cs4, cs5);
                         if (code < 0)
                             return code;
-                        cnext;
+                        clear;
+                        continue;
                     case ce1_hstem3:
                         code = t1_hinter__hstem3(h, cs0, cs1, cs2, cs3, cs4, cs5);
                         if (code < 0)
                             return code;
-                        cnext;
+                        clear;
+                        continue;
                     case ce1_seac:
                         code = gs_type1_seac(pcis, cstack + 1, cstack[0],
                                              ipsp);
@@ -433,7 +388,16 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                         clear;
                         cip = ipsp->cs_data.bits.data;
                         cipend = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
-                        goto call;
+  call:
+                        state = crypt_charstring_seed;
+                        if (encrypted) {
+                            int skip = pdata->lenIV;
+
+                            /* Skip initial random bytes */
+                            for (; skip > 0; ++cip, --skip)
+                                decrypt_skip_next(*cip, state);
+                        }
+                        continue;
                     case ce1_sbw:
                         if (!pcis->seac_flag)
                             code = t1_hinter__sbw(h, cs0, cs1, cs2, cs3);
@@ -442,7 +406,18 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                         if (code < 0)
                             return code;
                         gs_type1_sbw(pcis, cs0, cs1, cs2, cs3);
-                        goto rsbw;
+  rsbw:
+                        /* Give the caller the opportunity to intervene. */
+                        pcis->os_count = 0;	/* clear */
+                        ipsp->ip = cip, ipsp->dstate = state;
+                        pcis->ips_count = ipsp - &pcis->ipstack[0] + 1;
+                        /* If we aren't in a seac, do nothing else now; */
+                        /* finish_init will take care of the rest. */
+                        if (pcis->init_done < 0) {
+                            /* Finish init when we return. */
+                            pcis->init_done = 0;
+                        }
+                        return type1_result_sbw;
                     case ce1_div:
                         CS_CHECK_POP(&csp[-1], cstack);
                         csp[-1] = float2fixed((double)csp[-1] / (double)*csp);
@@ -450,7 +425,8 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                         goto pushed;
                     case ce1_undoc15:
                         /* See gstype1.h for information on this opcode. */
-                        cnext;
+                        clear;
+                        continue;
                     case ce1_callothersubr:
                         {
                             int num_results;
@@ -477,7 +453,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                                     if (code < 0)
                                         return code;
                                     pcis->flex_count = flex_max;	/* not inside flex */
-                                    inext;
+                                    continue;
                                 case 1:
                                     CS_CHECK_POP(csp, cstack);
                                     code = t1_hinter__flex_beg(h);
@@ -485,7 +461,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                                         return code;
                                     pcis->flex_count = 1;
                                     csp -= 2;
-                                    inext;
+                                    continue;
                                 case 2:
                                     CS_CHECK_POP(csp, cstack);
                                     if (pcis->flex_count >= flex_max)
@@ -494,7 +470,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                                     if (code < 0)
                                         return code;
                                     csp -= 2;
-                                    inext;
+                                    continue;
                                 case 3:
                                     CS_CHECK_POP(csp, cstack);
                                     /* Assume the next opcode is a `pop'. */
@@ -505,22 +481,15 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                                     if (code < 0)
                                         return code;
                                     csp -= 2;
-                                    inext;
+                                    continue;
                                 case 12:
                                 case 13:
                                     /* Counter control isn't implemented. */
-                                    cnext;
+                                    clear;
+                                    continue;
                                 case 14:
                                     num_results = 1;
-                                  blend:
-                                    code = gs_type1_blend(pcis, csp,
-                                                          num_results);
-                                    if (code < 0)
-                                        return code;
-                                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[1 - code], cstack))
-                                        return_error(gs_error_invalidfont);
-                                    csp -= code;
-                                    inext;
+                                    goto blend;
                                 case 15:
                                     num_results = 2;
                                     goto blend;
@@ -532,7 +501,15 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                                     goto blend;
                                 case 18:
                                     num_results = 6;
-                                    goto blend;
+  blend:
+                                    code = gs_type1_blend(pcis, csp,
+                                                          num_results);
+                                    if (code < 0)
+                                        return code;
+                                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[1 - code], cstack))
+                                        return_error(gs_error_invalidfont);
+                                    csp -= code;
+                                    continue;
                             }
                         }
                         /* Not a recognized othersubr, */
@@ -567,7 +544,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                         /* a known othersubr. */
                         if (pcis->ignore_pops != 0) {
                             pcis->ignore_pops--;
-                            inext;
+                            continue;
                         }
                         CS_CHECK_PUSH(csp, cstack);
                         ++csp;
@@ -580,7 +557,8 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                         cs0 += pcis->adxy.x + pcis->origin_offset.x;
                         cs1 += pcis->adxy.y + pcis->origin_offset.y;
                         t1_hinter__setcurrentpoint(h, cs0, cs1);
-                        cnext;
+                        clear;
+                        continue;
                     default:
                         return_error(gs_error_invalidfont);
                 }
@@ -591,6 +569,43 @@ rsbw:		/* Give the caller the opportunity to intervene. */
               case_c1_undefs:
             default:		/* pacify compiler */
                 return_error(gs_error_invalidfont);
+            }
+        } else {
+            /* This is a number, decode it and push it on the stack. */
+
+            if (c < c_pos2_0) {	/* 1-byte number */
+                decode_push_num1(csp, cstack, c);
+            } else if (c < cx_num4) {	/* 2-byte number */
+                decode_push_num2(csp, cstack, c, cip, state, encrypted);
+            } else if (c == cx_num4) {	/* 4-byte number */
+                long lw;
+
+                decode_num4(lw, cip, state, encrypted);
+                CS_CHECK_PUSH(csp, cstack);
+                *++csp = int2fixed(lw);
+                if (lw != fixed2long(*csp)) {
+                    /*
+                     * The integer was too large to handle in fixed point.
+                     * Handle this case specially.
+                     */
+                    code = gs_type1_check_float(&state, encrypted, &cip, csp, lw);
+                    if (code < 0)
+                        return code;
+                }
+            } else		/* not possible */
+                return_error(gs_error_invalidfont);
+  pushed:
+            if_debug3m('1', pfont->memory, "[1]%d: (%d) %f\n",
+                       (int)(csp - cstack), c, fixed2float(*csp));
+            continue;
+        }
+        if (0)
+        {
+  cont:     if (ipsp < pcis->ipstack || ipsp->ip == 0)
+                return (gs_note_error(gs_error_invalidfont));
+            cip = ipsp->ip;
+            cipend = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
+            state = ipsp->dstate;
         }
     }
 }
