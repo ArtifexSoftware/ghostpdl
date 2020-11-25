@@ -426,13 +426,13 @@ int pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
 
     if (fontdesc != NULL){
-        code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile", PDF_DICT, &fontfile);
+        code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile", PDF_STREAM, &fontfile);
 
         if (code < 0)
-            code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile2", PDF_DICT, &fontfile);
+            code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile2", PDF_STREAM, &fontfile);
 
         if (code < 0)
-            code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile3", PDF_DICT, &fontfile);
+            code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile3", PDF_STREAM, &fontfile);
     }
 
     if (fontfile != NULL) {
