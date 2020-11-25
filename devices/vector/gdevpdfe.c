@@ -841,8 +841,6 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 int
 pdf_document_metadata(gx_device_pdf *pdev)
 {
-    int j;
-
     if (pdev->CompatibilityLevel < 1.4)
         return 0;
     if (cos_dict_find_c_key(pdev->Catalog, "/Metadata"))
