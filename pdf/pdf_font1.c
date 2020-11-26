@@ -14,6 +14,8 @@
 */
 
 /* code for type 1 font handling */
+#include "pdf_int.h"
+
 #include "strmio.h"
 #include "stream.h"
 #include "gsgdata.h"
@@ -24,7 +26,6 @@
 #include "stream.h"
 #include "sfilter.h"
 
-#include "pdf_int.h"
 #include "pdf_deref.h"
 #include "pdf_types.h"
 #include "pdf_array.h"
@@ -353,7 +354,7 @@ pdfi_alloc_t1_font(pdf_context *ctx, pdf_font_type1 **font, uint32_t obj_num)
     pdfi_countup(t1font);
 
     pfont = (gs_font_type1 *)gs_alloc_struct(ctx->memory, gs_font_type1, &st_gs_font_type1,
-                            "pdfi (truetype pfont)");
+                            "pdfi (Type 1 pfont)");
     if (pfont == NULL) {
         pdfi_countdown(t1font);
         return_error(gs_error_VMerror);
@@ -400,6 +401,13 @@ pdfi_alloc_t1_font(pdf_context *ctx, pdf_font_type1 **font, uint32_t obj_num)
     pfont->procs.build_char = NULL;
     pfont->procs.same_font = gs_default_same_font;
     pfont->procs.enumerate_glyph = pdfi_t1_enumerate_glyph;
+
+    pfont->data.procs.glyph_data = pdfi_t1_glyph_data;
+    pfont->data.procs.subr_data = pdfi_t1_subr_data;
+    pfont->data.procs.seac_data = pdfi_t1_seac_data;
+    pfont->data.procs.push_values = pdfi_t1_push;
+    pfont->data.procs.pop_value = pdfi_t1_pop;
+    pfont->data.interpret = gs_type1_interpret;
 
     pfont->encoding_index = 1;          /****** WRONG ******/
     pfont->nearest_encoding_index = 1;          /****** WRONG ******/
@@ -516,12 +524,6 @@ int pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         if (code >= 0) {
             gs_font_type1 *pfont1 = (gs_font_type1 *)t1f->pfont;
             memcpy(&pfont1->data, &fpriv.gsu.gst1.data, sizeof(pfont1->data));
-            pfont1->data.procs.glyph_data = pdfi_t1_glyph_data;
-            pfont1->data.procs.subr_data = pdfi_t1_subr_data;
-            pfont1->data.procs.seac_data = pdfi_t1_seac_data;
-            pfont1->data.procs.push_values = pdfi_t1_push;
-            pfont1->data.procs.pop_value = pdfi_t1_pop;
-            pfont1->data.interpret = gs_type1_interpret;
             memcpy(&pfont1->FontMatrix, &fpriv.gsu.gst1.FontMatrix, sizeof(pfont1->FontMatrix));
             memcpy(&pfont1->orig_FontMatrix, &fpriv.gsu.gst1.orig_FontMatrix, sizeof(pfont1->orig_FontMatrix));
             memcpy(&pfont1->FontBBox, &fpriv.gsu.gst1.FontBBox, sizeof(pfont1->FontBBox));
