@@ -275,6 +275,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     float *x_widths = NULL, *y_widths = NULL, width;
     double Tw = 0, Tc = 0;
     int Trmode = 0;
+    int initial_gsave_level = ctx->pgs->level;
 
     if (ctx->TextBlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
@@ -395,7 +396,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             }
         } else {
             if (Trmode == 3)
-                text.operation = TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+                text.operation |= TEXT_DO_NONE | TEXT_RENDER_MODE_3;
             else
                 text.operation |= TEXT_DO_DRAW;
         }
@@ -486,6 +487,17 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 break;
         }
     }
+
+    /* We shouldn't need to do this, but..... It turns out that if we have text rendering mode 3 set
+     * then gs_text_begin will execute a gsave, push the nulldevice and alter the saved gsave level.
+     * If we then get an error while processing the text we don't gs_restore enough time which
+     * leaves the nulldevice as the current device, and eats all the following content!
+     * To avoid that, we save the gsave depth at the start of this routine, and grestore enough
+     * times to get back to the same level. I think this is actually a bug in the graphics library
+     * but it doesn't get exposed in normal usage so we'll just work around it here.
+     */
+    while(ctx->pgs->level > initial_gsave_level)
+        gs_grestore(ctx->pgs);
 
 show_error:
     gs_free_object(ctx->memory, x_widths, "Free X widths array on error");
@@ -739,6 +751,9 @@ int pdfi_Tm(pdf_context *ctx)
         if (code < 0)
             return code;
     }
+
+    if (hypot(m[0], m[1]) == 0.0 || hypot(m[3], m[2]) == 0.0)
+        ctx->pdf_warnings |= W_PDF_DEGENERATETM;
 
     code = gs_settextmatrix(ctx->pgs, (gs_matrix *)&m);
     if (code < 0)
