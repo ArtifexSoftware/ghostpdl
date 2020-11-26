@@ -740,17 +740,12 @@ int pdfi_Tm(pdf_context *ctx)
             return code;
     }
 
-    if (hypot(m[0], m[1]) == 0.0 || hypot(m[3], m[2]) == 0.0) {
-        ctx->pdf_warnings |= W_PDF_DEGENERATETM;
-    } else {
-        code = gs_settextmatrix(ctx->pgs, (gs_matrix *)&m);
-        if (code < 0)
-            return code;
+    code = gs_settextmatrix(ctx->pgs, (gs_matrix *)&m);
+    if (code < 0)
+        return code;
 
-        code = gs_settextlinematrix(ctx->pgs, (gs_matrix *)&m);
-        if (code < 0)
-            return code;
-    }
+    code = gs_settextlinematrix(ctx->pgs, (gs_matrix *)&m);
+
     return code;
 }
 
