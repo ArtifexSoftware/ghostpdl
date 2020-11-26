@@ -176,20 +176,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
     cip = pgd->bits.data;
     if (cip == 0)
         return (gs_note_error(gs_error_invalidfont));
-  call:state = crypt_charstring_seed;
-    if (encrypted) {
-        int skip = pdata->lenIV;
-
-        /* Skip initial random bytes */
-        for (; skip > 0; ++cip, --skip)
-            decrypt_skip_next(*cip, state);
-    }
-    goto top;
-  cont:if (ipsp < pcis->ipstack || ipsp->ip == 0)
-        return (gs_note_error(gs_error_invalidfont));
-    cip = ipsp->ip;
-    state = ipsp->dstate;
-  top:for (;;) {
+    goto call;
+    for (;;) {
         uint c0 = *cip++;
 
         charstring_next(c0, state, c, encrypted);
@@ -209,9 +197,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 *++csp = arith_rshift(lw, 16 - _fixed_shift);
             } else		/* not possible */
                 return_error(gs_error_invalidfont);
-          pushed:if_debug3m('1', pfont->memory, "[1]%d: (%d) %f\n",
-                            (int)(csp - cstack), c, fixed2float(*csp));
-            continue;
+            goto pushed;
         }
 #ifdef DEBUG
         if (gs_debug['1']) {
@@ -227,7 +213,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
         }
 #endif
         switch ((char_command) c) {
-#define cnext clear; goto top
 
                 /* Commands with identical functions in Type 1 and Type 2, */
                 /* except for 'escape'. */
@@ -241,38 +226,27 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
                     code = pdata->procs.subr_data
                         (pfont, c, false, &ipsp[1].cs_data);
-                  subr:
-                    if (code < 0) {
-                        /* Calling a Subr with an out-of-range index is clearly a error:
-                         * the Adobe documentation says the results of doing this are
-                         * undefined. However, we have seen a PDF file produced by Adobe
-                         * PDF Library 4.16 that included a Type 2 font that called an
-                         * out-of-range Subr, and Acrobat Reader did not signal an error.
-                         * Therefore, we ignore such calls.
-                         */
-                        cip++;
-                        goto top;
-                    }
-                    --csp;
-                    ipsp->ip = cip, ipsp->dstate = state;
-                    ++ipsp;
-                    cip = ipsp->cs_data.bits.data;
-                    goto call;
+                    goto subr;
                 }
                 else {
                     /* Consider a missing index to be "out-of-range", and see above
                      * comment.
                      */
                     cip++;
-                    goto top;
+                    continue;
                 }
             case c_return:
                 gs_glyph_data_free(&ipsp->cs_data, "gs_type2_interpret");
                 --ipsp;
-                goto cont;
+  cont:         if (ipsp < pcis->ipstack || ipsp->ip == 0)
+                    return (gs_note_error(gs_error_invalidfont));
+                cip = ipsp->ip;
+                state = ipsp->dstate;
+                continue;
             case c_undoc15:
                 /* See gstype1.h for information on this opcode. */
-                cnext;
+                clear;
+                continue;
 
                 /* Commands with similar but not identical functions */
                 /* in Type 1 and Type 2 charstrings. */
@@ -285,11 +259,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 if (CS_CHECK_CSTACK_BOUNDS(csp, cstack)) {
                     check_first_operator(csp > cstack);
                     code = t1_hinter__rmoveto(h, 0, *csp);
-              move:
-              cc:
-                    if (code < 0)
-                        return code;
-                    goto pp;
+                    goto move;
                 }
                 else {
                     return_error(gs_error_invalidfont);
@@ -300,8 +270,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     if (code < 0)
                         return code;
                 }
-              pp:
-                cnext;
+                goto pp;
             case cx_hlineto:
                 vertical = false;
                 goto hvl;
@@ -452,7 +421,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                                 pfont->data.WeightVector.values[i]);
                 } else
                     return gs_note_error(gs_error_invalidfont);
-                cnext;
+                clear;
+                continue;
             case c2_hstemhm:
               hstem: check_first_operator(!((csp - cstack) & 1));
                 {
@@ -465,7 +435,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     }
                 }
                 pcis->num_hints += (csp + 1 - cstack) >> 1;
-                cnext;
+                clear;
+                continue;
             case c2_hintmask:
                 /*
                  * A hintmask at the beginning of the CharString is
@@ -513,7 +484,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     type2_vstem(pcis, csp, cstack);
                 }else
                     return gs_note_error(gs_error_invalidfont);
-                cnext;
+                clear;
+                continue;
             case c2_rcurveline:
                 for (ap = cstack; ap + 5 <= csp; ap += 6) {
                     code = t1_hinter__rcurveto(h, ap[0], ap[1], ap[2], ap[3],
@@ -531,7 +503,11 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 }
                 code = t1_hinter__rcurveto(h, ap[0], ap[1], ap[2], ap[3],
                                         ap[4], ap[5]);
-                goto cc;
+  move:
+  cc:
+                if (code < 0)
+                    return code;
+                goto pp;
             case c2_vvcurveto:
                 ap = cstack;
                 {
@@ -561,7 +537,9 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         dya = 0;
                     }
                 }
-                goto pp;
+              pp:
+                clear;
+                continue;
             case c2_shortint:
                 {
                     int c1, c2;
@@ -573,16 +551,43 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     CS_CHECK_PUSH(csp, cstack);
                     *++csp = int2fixed((((c1 ^ 0x80) - 0x80) << 8) + c2);
                 }
-                goto pushed;
+  pushed:       if_debug3m('1', pfont->memory, "[1]%d: (%d) %f\n",
+                           (int)(csp - cstack), c, fixed2float(*csp));
+                continue;
             case c2_callgsubr:
                 if (CS_CHECK_CSTACK_BOUNDS(csp, cstack)) {
                     c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
                     code = pdata->procs.subr_data
                         (pfont, c, true, &ipsp[1].cs_data);
-                    goto subr;
+  subr:
+                    if (code < 0) {
+                        /* Calling a Subr with an out-of-range index is clearly a error:
+                         * the Adobe documentation says the results of doing this are
+                         * undefined. However, we have seen a PDF file produced by Adobe
+                         * PDF Library 4.16 that included a Type 2 font that called an
+                         * out-of-range Subr, and Acrobat Reader did not signal an error.
+                         * Therefore, we ignore such calls.
+                         */
+                        cip++;
+                        continue;
+                    }
+                    --csp;
+                    ipsp->ip = cip, ipsp->dstate = state;
+                    ++ipsp;
+                    cip = ipsp->cs_data.bits.data;
+  call:
+                    state = crypt_charstring_seed;
+                    if (encrypted) {
+                        int skip = pdata->lenIV;
+
+                        /* Skip initial random bytes */
+                        for (; skip > 0; ++cip, --skip)
+                            decrypt_skip_next(*cip, state);
+                    }
+                    continue;
                 } else {
                     cip++;
-                    goto top;
+                    continue;
                 }
             case cx_escape:
                 charstring_next(*cip, state, c, encrypted);
@@ -810,6 +815,34 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         if (!CS_CHECK_CSTACK_BOUNDS(&csp[-12], cstack))
                             return_error(gs_error_invalidfont);
                         *csp /= 100;	/* fd/100 */
+                        goto flex;
+                    case ce2_hflex1:
+                        if (!CS_CHECK_CSTACK_BOUNDS(&csp[-3], cstack))
+                            return_error(gs_error_invalidfont);
+                        CS_CHECK_PUSHN(csp, cstack, 4);
+                        csp[4] = fixed_half;	/* fd/100 */
+                        csp[2] = *csp;          /* dx6 */
+                        csp[3] = -(csp[-7] + csp[-5] + csp[-1]);	/* dy6 */
+                        *csp = csp[-2], csp[1] = csp[-1];	/* dx5, dy5 */
+                        csp[-2] = csp[-3], csp[-1] = 0;		/* dx4, dy4 */
+                        csp[-3] = 0;	/* dy3 */
+                        csp += 4;
+                        goto flex;
+                    case ce2_flex1:
+                        if (!CS_CHECK_CSTACK_BOUNDS(&csp[-10], cstack))
+                            return_error(gs_error_invalidfont);
+                        CS_CHECK_PUSHN(csp, cstack, 2);
+                        {
+                            fixed dx = csp[-10] + csp[-8] + csp[-6] + csp[-4] + csp[-2];
+                            fixed dy = csp[-9] + csp[-7] + csp[-5] + csp[-3] + csp[-1];
+
+                            if (any_abs(dx) > any_abs(dy))
+                                csp[1] = -dy;	/* d6 is dx6 */
+                            else
+                                csp[1] = *csp, *csp = -dx;	/* d6 is dy6 */
+                        }
+                        csp[2] = fixed_half;	/* fd/100 */
+                        csp += 2;
 flex:			{
                             fixed x_join = csp[-12] + csp[-10] + csp[-8];
                             fixed y_join = csp[-11] + csp[-9] + csp[-7];
@@ -860,35 +893,8 @@ flex:			{
                             if (code < 0)
                                 return code;
                         }
-                        cnext;
-                    case ce2_hflex1:
-                        if (!CS_CHECK_CSTACK_BOUNDS(&csp[-3], cstack))
-                            return_error(gs_error_invalidfont);
-                        CS_CHECK_PUSHN(csp, cstack, 4);
-                        csp[4] = fixed_half;	/* fd/100 */
-                        csp[2] = *csp;          /* dx6 */
-                        csp[3] = -(csp[-7] + csp[-5] + csp[-1]);	/* dy6 */
-                        *csp = csp[-2], csp[1] = csp[-1];	/* dx5, dy5 */
-                        csp[-2] = csp[-3], csp[-1] = 0;		/* dx4, dy4 */
-                        csp[-3] = 0;	/* dy3 */
-                        csp += 4;
-                        goto flex;
-                    case ce2_flex1:
-                        if (!CS_CHECK_CSTACK_BOUNDS(&csp[-10], cstack))
-                            return_error(gs_error_invalidfont);
-                        CS_CHECK_PUSHN(csp, cstack, 2);
-                        {
-                            fixed dx = csp[-10] + csp[-8] + csp[-6] + csp[-4] + csp[-2];
-                            fixed dy = csp[-9] + csp[-7] + csp[-5] + csp[-3] + csp[-1];
-
-                            if (any_abs(dx) > any_abs(dy))
-                                csp[1] = -dy;	/* d6 is dx6 */
-                            else
-                                csp[1] = *csp, *csp = -dx;	/* d6 is dy6 */
-                        }
-                        csp[2] = fixed_half;	/* fd/100 */
-                        csp += 2;
-                        goto flex;
+                        clear;
+                        continue;
                 }
                 break;
 

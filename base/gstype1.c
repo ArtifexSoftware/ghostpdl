@@ -211,7 +211,12 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 gs_glyph_data_free(&ipsp->cs_data, "gs_type1_interpret");
                 CS_CHECK_IPSTACK(ipsp, pcis->ipstack);
                 --ipsp;
-                goto cont;
+  cont:         if (ipsp < pcis->ipstack || ipsp->ip == 0)
+                    return (gs_note_error(gs_error_invalidfont));
+                cip = ipsp->ip;
+                cipend = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
+                state = ipsp->dstate;
+                continue;
             case c_undoc15:
                 /* See gstype1.h for information on this opcode. */
                 clear;
@@ -598,14 +603,6 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             if_debug3m('1', pfont->memory, "[1]%d: (%d) %f\n",
                        (int)(csp - cstack), c, fixed2float(*csp));
             continue;
-        }
-        if (0)
-        {
-  cont:     if (ipsp < pcis->ipstack || ipsp->ip == 0)
-                return (gs_note_error(gs_error_invalidfont));
-            cip = ipsp->ip;
-            cipend = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
-            state = ipsp->dstate;
         }
     }
 }
