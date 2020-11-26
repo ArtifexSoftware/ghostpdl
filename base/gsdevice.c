@@ -645,6 +645,7 @@ gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
 {
     gx_device_init((gx_device *)dev_null, (const gx_device *)&gs_null_device,
                    mem, true);
+    gx_device_fill_in_procs(dev_null);
     gx_device_set_target((gx_device_forward *)dev_null, dev);
     if (dev) {
         /* The gx_device_copy_color_params() call below should
