@@ -129,6 +129,7 @@ pdfi_t1_enumerate_glyph(gs_font *pfont, int *pindex, gs_glyph_space_t glyph_spac
 
         *pindex = (int)i + 1;
     }
+    pdfi_countdown(key);
     return code;
 }
 
