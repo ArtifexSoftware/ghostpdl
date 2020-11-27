@@ -2334,6 +2334,14 @@ int gs_free_copied_font(gs_font *font)
                       "gs_free_copied_font(Notice)");
         uncopy_string(mem, &cfdata->info.Copyright,
                       "gs_free_copied_font(Copyright)");
+        if (cfdata->subrs.data != NULL)
+            gs_free_object(mem, cfdata->subrs.data, "gs_free_copied_font(subrs.data)");
+        if (cfdata->subrs.starts != NULL)
+            gs_free_object(mem, cfdata->subrs.starts, "gs_free_copied_font(subrs.dtarts)");
+        if (cfdata->global_subrs.data !=  NULL)
+            gs_free_object(mem, cfdata->global_subrs.data, "gs_free_copied_font(gsubrs.data)");
+        if (cfdata->global_subrs.starts !=  NULL)
+            gs_free_object(mem, cfdata->global_subrs.starts, "gs_free_copied_font(gsubrs.starts)");
         if (cfdata->Encoding)
             gs_free_object(mem, cfdata->Encoding, "gs_free_copied_font(Encoding)");
         if (cfdata->CIDMap)
