@@ -1033,8 +1033,7 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
     code = 0;
 
     if (baseAP->type == PDF_STREAM) {
-        /* Use baseAP for the AP, and get all the refcnt's right */
-        pdfi_countdown(AP_dict);
+        /* Use baseAP for the AP */
         AP = (pdf_stream *)baseAP;
         baseAP = NULL;
     } else {
@@ -1050,7 +1049,6 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
             goto exit;
         }
 
-        pdfi_countdown(AP_dict);
         /* Lookup the AS in the NormAP and use that as the AP */
         code = pdfi_dict_get_by_key(ctx, (pdf_dict *)baseAP, AS, (pdf_obj **)&AP);
         if (code < 0) goto exit;
@@ -1064,6 +1062,7 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
    pdfi_countup(AP);
 
  exit:
+    pdfi_countdown(AP_dict);
     pdfi_countdown(AP);
     pdfi_countdown(AS);
     pdfi_countdown(baseAP);
