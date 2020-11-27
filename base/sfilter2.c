@@ -83,93 +83,95 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
             uint v2 = v3 / 85;	/* max 85^2 */
             uint v1 = v2 / 85;	/* max 85 */
 
-put:	    if (q + 5 > qn) {
-                if (q >= wlimit) {
-                    status = 1;
-                    break;
-                }
-                *++q = prev = '\n';
-                qn = q + LINE_LIMIT;
-                if_debug1m('w', ss->memory, "[w85]EOL at %d bytes written\n",
-                           (int)(q - pw->ptr));
-                goto put;
-            }
-            if (wlimit - q < 5) {
-                status = 1;
-                break;
-            }
-            q[1] = (byte) v1 + '!';
-            q[2] = (byte) (v2 - v1 * 85) + '!';
-            q[3] = (byte) ((uint) v3 - v2 * 85) + '!';
-            q[4] = (byte) ((uint) v4 - (uint) v3 * 85) + '!';
-            q[5] = (byte) ((uint) word - (uint) v4 * 85) + '!';
-            /*
-             * '%%' or '%!' at the beginning of the line will confuse some
-             * document managers: insert (an) EOL(s) if necessary to prevent
-             * this.
-             */
-            if (q[1] == '%') {
-                if (prev == '%') {
-                    if (qn - q == LINE_LIMIT - 1) {
-                        /* A line would begin with %%. */
-                        *++q = prev = '\n';
-                        qn = q + LINE_LIMIT;
-                        if_debug1m('w', ss->memory,
-                                   "[w85]EOL for %%%% at %d bytes written\n",
-                                   (int)(q - pw->ptr));
-                        goto put;
-                    }
-                } else if (prev == '\n' && (q[2] == '%' || q[2] == '!')) {
-                    /*
-                     * We may have to insert more than one EOL if
-                     * there are more than two %s in a row.
-                     */
-                    int extra =
-                        (q[2] == '!' ? 1 : /* else q[2] == '%' */
-                         q[3] == '!' ? 2 :
-                         q[3] != '%' ? 1 :
-                         q[4] == '!' ? 3 :
-                         q[4] != '%' ? 2 :
-                         q[5] == '!' ? 4 :
-                         q[5] != '%' ? 3 : 4);
-
-                    if (wlimit - q < 5 + extra) {
+            do {
+                /* Put some bytes */
+                while (q + 5 > qn) {
+                    if (q >= wlimit) {
                         status = 1;
-                        break;
+                        goto end;
                     }
-                    if_debug6m('w', ss->memory, "[w]%c%c%c%c%c extra = %d\n",
-                               q[1], q[2], q[3], q[4], q[5], extra);
-                    switch (extra) {
-                        case 4:
-                            q[9] = q[5], q[8] = '\n';
-                            goto e3;
-                        case 3:
-                            q[8] = q[5];
-                          e3:q[7] = q[4], q[6] = '\n';
-                            goto e2;
-                        case 2:
-                            q[7] = q[5], q[6] = q[4];
-                          e2:q[5] = q[3], q[4] = '\n';
-                            goto e1;
-                        case 1:
-                            q[6] = q[5], q[5] = q[4], q[4] = q[3];
-                          e1:q[3] = q[2], q[2] = '\n';
-                    }
+                    *++q = prev = '\n';
+                    qn = q + LINE_LIMIT;
                     if_debug1m('w', ss->memory, "[w85]EOL at %d bytes written\n",
-                               (int)(q + 2 * extra - pw->ptr));
-                    qn = q + 2 * extra + LINE_LIMIT;
-                    q += extra;
+                               (int)(q - pw->ptr));
                 }
-            } else if (q[1] == '!' && prev == '%' &&
-                       qn - q == LINE_LIMIT - 1
-                       ) {
-                /* A line would begin with %!. */
-                *++q = prev = '\n';
-                qn = q + LINE_LIMIT;
-                if_debug1m('w', ss->memory, "[w85]EOL for %%! at %d bytes written\n",
-                           (int)(q - pw->ptr));
-                goto put;
-            }
+                if (wlimit - q < 5) {
+                    status = 1;
+                    goto end;
+                }
+                q[1] = (byte) v1 + '!';
+                q[2] = (byte) (v2 - v1 * 85) + '!';
+                q[3] = (byte) ((uint) v3 - v2 * 85) + '!';
+                q[4] = (byte) ((uint) v4 - (uint) v3 * 85) + '!';
+                q[5] = (byte) ((uint) word - (uint) v4 * 85) + '!';
+                /*
+                 * '%%' or '%!' at the beginning of the line will confuse some
+                 * document managers: insert (an) EOL(s) if necessary to prevent
+                 * this.
+                */
+                if (q[1] == '%') {
+                    if (prev == '%') {
+                        if (qn - q == LINE_LIMIT - 1) {
+                            /* A line would begin with %%. */
+                            *++q = prev = '\n';
+                            qn = q + LINE_LIMIT;
+                            if_debug1m('w', ss->memory,
+                                       "[w85]EOL for %%%% at %d bytes written\n",
+                                       (int)(q - pw->ptr));
+                            continue; /* Put some more bytes */
+                        }
+                    } else if (prev == '\n' && (q[2] == '%' || q[2] == '!')) {
+                        /*
+                         * We may have to insert more than one EOL if
+                         * there are more than two %s in a row.
+                         */
+                        int extra =
+                            (q[2] == '!' ? 1 : /* else q[2] == '%' */
+                             q[3] == '!' ? 2 :
+                             q[3] != '%' ? 1 :
+                             q[4] == '!' ? 3 :
+                             q[4] != '%' ? 2 :
+                             q[5] == '!' ? 4 :
+                             q[5] != '%' ? 3 : 4);
+
+                        if (wlimit - q < 5 + extra) {
+                            status = 1;
+                            goto end;
+                        }
+                        if_debug6m('w', ss->memory, "[w]%c%c%c%c%c extra = %d\n",
+                                   q[1], q[2], q[3], q[4], q[5], extra);
+                        switch (extra) {
+                            case 4:
+                                q[9] = q[5], q[8] = '\n';
+                                goto e3;
+                            case 3:
+                                q[8] = q[5];
+                              e3:q[7] = q[4], q[6] = '\n';
+                                goto e2;
+                            case 2:
+                                q[7] = q[5], q[6] = q[4];
+                              e2:q[5] = q[3], q[4] = '\n';
+                                goto e1;
+                            case 1:
+                                q[6] = q[5], q[5] = q[4], q[4] = q[3];
+                              e1:q[3] = q[2], q[2] = '\n';
+                        }
+                        if_debug1m('w', ss->memory, "[w85]EOL at %d bytes written\n",
+                                   (int)(q + 2 * extra - pw->ptr));
+                        qn = q + 2 * extra + LINE_LIMIT;
+                        q += extra;
+                    }
+                } else if (q[1] == '!' && prev == '%' &&
+                           qn - q == LINE_LIMIT - 1
+                           ) {
+                    /* A line would begin with %!. */
+                    *++q = prev = '\n';
+                    qn = q + LINE_LIMIT;
+                    if_debug1m('w', ss->memory, "[w85]EOL for %%! at %d bytes written\n",
+                               (int)(q - pw->ptr));
+                    continue; /* Put some more bytes */
+                }
+            } while (0);
             prev = *(q += 5);
         }
     }
