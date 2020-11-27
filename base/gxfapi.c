@@ -565,8 +565,8 @@ outline_char(gs_memory_t *mem, gs_fapi_server *I, int import_shift_v,
     gs_gstate *pgs = penum_s->pgs;
 
     olh.path = path;
-    olh.x0 = pgs->ctm.tx_fixed;
-    olh.y0 = pgs->ctm.ty_fixed;
+    olh.x0 = pgs->ctm.tx_fixed - float2fixed(penum_s->fapi_glyph_shift.x);
+    olh.y0 = pgs->ctm.ty_fixed - float2fixed(penum_s->fapi_glyph_shift.y);
     olh.close_path = close_path;
     olh.need_close = false;
     path_interface.olh = &olh;
