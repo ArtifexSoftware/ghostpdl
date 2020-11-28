@@ -83,7 +83,7 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
             uint v2 = v3 / 85;	/* max 85^2 */
             uint v1 = v2 / 85;	/* max 85 */
 
-            do {
+            while (1) {
                 /* Put some bytes */
                 while (q + 5 > qn) {
                     if (q >= wlimit) {
@@ -171,7 +171,8 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
                                (int)(q - pw->ptr));
                     continue; /* Put some more bytes */
                 }
-            } while (0);
+                break;
+            }
             prev = *(q += 5);
         }
     }
