@@ -951,15 +951,15 @@ gdev_x_close(gx_device_X *xdev)
         xdev->vinfo = NULL;
     }
     gdev_x_free_colors(xdev);
-    if (xdev->cmap != DefaultColormapOfScreen(xdev->scr)) {
+    if (xdev->dpy && xdev->cmap != DefaultColormapOfScreen(xdev->scr)) {
         XFreeColormap(xdev->dpy, xdev->cmap);
         xdev->cmap = DefaultColormapOfScreen(xdev->scr);
     }
-    if (xdev->gc) {
+    if (xdev->dpy && xdev->gc) {
         XFreeGC(xdev->dpy, xdev->gc);
         xdev->gc = NULL;
     }
-    if (xdev->bpixmap != (Pixmap)0) {
+    if (xdev->dpy && xdev->bpixmap != (Pixmap)0) {
         XFreePixmap(xdev->dpy, xdev->bpixmap);
         xdev->bpixmap = (Pixmap)0;
         xdev->dest = (Pixmap)0;
