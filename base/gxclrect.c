@@ -24,8 +24,6 @@
 #include "gxclpath.h"
 #include "gxdevsop.h"
 
-extern dev_proc_dev_spec_op(gdev_prn_forwarding_dev_spec_op);
-
 /* ---------------- Writing utilities ---------------- */
 
 #define cmd_set_rect(rect)\
