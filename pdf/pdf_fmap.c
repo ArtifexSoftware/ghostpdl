@@ -58,7 +58,7 @@ pdf_fontmap_open_file(pdf_context *ctx, byte **buf, int *buflen)
         if (*buf != NULL) {
             memcpy(*buf, prestring, prestringlen);
             sfread((*buf) + prestringlen, 1, *buflen, s);
-            memcpy((*buf) + *buflen, poststring, poststringlen);
+            memcpy((*buf) + *buflen + prestringlen, poststring, poststringlen);
             *buflen += prestringlen + poststringlen;
             /* This is naff, but works for now
                When parsing Fontmap in PS, ";" is defined as "def"

@@ -329,7 +329,7 @@ pdfi_alloc_t1_font(pdf_context *ctx, pdf_font_type1 **font, uint32_t obj_num)
     if (t1font == NULL)
         return_error(gs_error_VMerror);
 
-    memset(t1font, 0x00, sizeof(pdf_font_truetype));
+    memset(t1font, 0x00, sizeof(pdf_font_type1));
     t1font->ctx = ctx;
     t1font->type = PDF_FONT;
     t1font->ctx = ctx;

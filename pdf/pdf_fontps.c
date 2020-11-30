@@ -822,7 +822,7 @@ static int pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byt
 {
     ps_font_interp_private *priv = (ps_font_interp_private *)s->client_data;
     int code;
-    int size;
+    int size = 0;
 
     if (pdf_ps_stack_count(s) >= 1) {
         if (priv->u.t1.Subrs != NULL && priv->u.t1.CharStrings == NULL) {
