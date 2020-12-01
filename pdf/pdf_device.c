@@ -129,6 +129,14 @@ void pdfi_device_set_flags(pdf_context *ctx)
  */
 int pdfi_device_misc_config(pdf_context *ctx)
 {
+    /* No longer need to do anything because the PreserveEPSInfo and ParseDSCCommentsForDocInfo
+     * values now default to 'true' in the driver.
+     * Leaving the code here in case some other defaults needs to be changed in the future.
+     * TODO: Or if somebody looks at this in the future and wants to, maybe just delete this.
+     */
+    return 0;
+
+#if 0
     bool has_pdfmark;
     int code;
     gx_device *dev = ctx->pgs->device;
@@ -150,4 +158,5 @@ int pdfi_device_misc_config(pdf_context *ctx)
 
  exit:
     return code;
+#endif
 }
