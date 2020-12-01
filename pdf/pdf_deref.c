@@ -697,13 +697,8 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     if(entry->object_num == 0)
         return_error(gs_error_undefined);
 
-    if (entry->free) {
-        dmprintf1(ctx->memory, "Attempt to dereference free object %"PRIu64", returning a null object.\n", entry->object_num);
-        code = pdfi_alloc_object(ctx, PDF_NULL, 1, object);
-        if (code >= 0)
-            pdfi_countup(*object);
-        return code;
-    }
+    if (entry->free)
+        dmprintf1(ctx->memory, "Attempt to dereference free object %"PRIu64", trying next object number as offset.\n", entry->object_num);
 
     if (ctx->loop_detection) {
         if (pdfi_loop_detector_check_object(ctx, obj) == true)
@@ -753,8 +748,17 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
             pdfi_countdown(EODString);
             pdfi_close_file(ctx, SubFile_stream);
-            if (code < 0)
+            if (code < 0) {
+                if (entry->free) {
+                    dmprintf2(ctx->memory, "Dereference of free object %"PRIu64", next object number as offset failed (code = %d), returning NULL object.\n", entry->object_num, code);
+                    code = pdfi_alloc_object(ctx, PDF_NULL, 1, object);
+                    if (code >= 0) {
+                        pdfi_countup(*object);
+                        goto free_obj;
+                    }
+                }
                 goto error;
+            }
 
             if ((ctx->stack_top[-1])->object_num == obj) {
                 *object = ctx->stack_top[-1];
@@ -767,10 +771,18 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 }
             } else {
                 pdfi_pop(ctx, 1);
+                if (entry->free) {
+                    dmprintf1(ctx->memory, "Dereference of free object %"PRIu64", next object number as offset failed, returning NULL object.\n", entry->object_num);
+                    code = pdfi_alloc_object(ctx, PDF_NULL, 1, object);
+                    if (code >= 0)
+                        pdfi_countup(*object);
+                    return code;
+                }
                 code = gs_note_error(gs_error_undefined);
                 goto error;
             }
         }
+free_obj:
         (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     }
 
