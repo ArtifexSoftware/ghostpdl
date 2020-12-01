@@ -308,7 +308,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
 {
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)icclink->link_handle;
     cmsUInt32Number dwInputFormat, dwOutputFormat, num_src_lcms, num_des_lcms;
-    int planar,numbytes, big_endian, hasalpha, k;
+    int planar,numbytes, swap_endian, hasalpha, k;
     unsigned char *inputpos, *outputpos;
 #if DUMP_CMS_BUFFER
     gp_file *fid_in, *fid_out;
@@ -340,10 +340,10 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     dwOutputFormat = dwOutputFormat | BYTES_SH(numbytes);
 
     /* endian */
-    big_endian = !input_buff_desc->little_endian;
-    dwInputFormat = dwInputFormat | ENDIAN16_SH(big_endian);
-    big_endian = !output_buff_desc->little_endian;
-    dwOutputFormat = dwOutputFormat | ENDIAN16_SH(big_endian);
+    swap_endian = input_buff_desc->endian_swap;
+    dwInputFormat = dwInputFormat | ENDIAN16_SH(swap_endian);
+    swap_endian = output_buff_desc->endian_swap;
+    dwOutputFormat = dwOutputFormat | ENDIAN16_SH(swap_endian);
 
     /* number of channels.  This should not really be changing! */
     num_src_lcms = T_CHANNELS(cmsGetTransformInputFormat(hTransform));
@@ -524,9 +524,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
       when we use the transformation. */
     src_data_type = (COLORSPACE_SH(lcms_src_color_space)|
                         CHANNELS_SH(src_nChannels)|BYTES_SH(2));
-#if 0
-    src_data_type = src_data_type | ENDIAN16_SH(1);
-#endif
+
     if (lcms_deshandle != NULL) {
         des_color_space  = cmsGetColorSpace(lcms_deshandle);
     } else {
@@ -538,10 +536,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     des_nChannels = cmsChannelsOf(des_color_space);
     des_data_type = (COLORSPACE_SH(lcms_des_color_space)|
                         CHANNELS_SH(des_nChannels)|BYTES_SH(2));
-    /* endian */
-#if 0
-    des_data_type = des_data_type | ENDIAN16_SH(1);
-#endif
+
     /* Set up the flags */
     flag = cmsFLAGS_HIGHRESPRECALC;
     if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
