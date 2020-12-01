@@ -2352,7 +2352,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 if (code < 0)
                     return code;
                 pcd = cos_stream_dict((cos_stream_t *)pres->object);
-                pcd_Resources = cos_dict_alloc(pdev, "pdf_pattern(Resources)");
+                pcd_Resources = cos_dict_alloc(pdev, "pdf_form(Resources)");
                 if (pcd == NULL || pcd_Resources == NULL)
                     return_error(gs_error_VMerror);
                 code = cos_dict_put_c_strings(pcd, "/Type", "/XObject");
@@ -2533,6 +2533,13 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     pres->where_used |= pdev->used_mask;
                 } else if (pres->object->id < 0)
                     pdf_reserve_object_id(pdev, pres, 0);
+                pdev->LastFormID = pdf_resource_id(pres);
+                pdev->HighLevelForm--;
+                if (pdev->accumulating_substream_resource) {
+                    code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres);
+                    if (code < 0)
+                        return code;
+                }
                 if (pdev->PDFFormName) {
                     cos_value_t value;
 
@@ -2542,19 +2549,14 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     if (code < 0)
                         return code;
                     pdf_drop_resource_from_chain(pdev, pres, resourceXObject);
+                    pres->object = NULL;
+                    gs_free_object(pdev->pdf_memory, pres, "free redundant resource");
 
-                    gs_free_object(pdev->memory->non_gc_memory, pdev->PDFFormName, "free Name oof Form for pdfmark");
+                    gs_free_object(pdev->memory->non_gc_memory, pdev->PDFFormName, "free Name of Form for pdfmark");
                     pdev->PDFFormName = 0x00;
                 } else {
                     pprintld1(pdev->strm, "/R%ld Do Q\n", pdf_resource_id(pres));
                 }
-                pdev->HighLevelForm--;
-                if (pdev->accumulating_substream_resource) {
-                    code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres);
-                    if (code < 0)
-                        return code;
-                }
-                pdev->LastFormID = pdf_resource_id(pres);
             }
             return 0;
         case gxdso_get_form_ID:

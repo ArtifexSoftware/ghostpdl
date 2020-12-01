@@ -435,25 +435,43 @@ static int decode_image(stream_jpxd_state * const state)
     {
         case OPJ_CLRSPC_GRAY:
             state->colorspace = gs_jpx_cs_gray;
-            break;
-        case OPJ_CLRSPC_UNKNOWN: /* make the best guess based on number of channels */
-        {
-            if (numprimcomp < 3)
-            {
-                state->colorspace = gs_jpx_cs_gray;
+            if (numprimcomp > 1) {
+                dmprintf1(state->memory, "openjpeg warning: Ignoring extra components for %d component Gray data.\n", numprimcomp);
+                numprimcomp = 1;
             }
-            else if (numprimcomp == 4)
-            {
+            break;
+        case OPJ_CLRSPC_SRGB:
+        case OPJ_CLRSPC_SYCC:
+        case OPJ_CLRSPC_EYCC:
+            state->colorspace = gs_jpx_cs_rgb;
+            if (numprimcomp > 3) {
+                dmprintf1(state->memory, "openjpeg warning: Ignoring extra components for %d component RGB data.\n", numprimcomp);
+                numprimcomp = 3;
+            }
+           break;
+        case OPJ_CLRSPC_CMYK:
+            state->colorspace = gs_jpx_cs_cmyk;
+            if (numprimcomp > 4) {
+                dmprintf1(state->memory, "openjpeg warning: Ignoring extra components for %d component CMYK data.\n", numprimcomp);
+                numprimcomp = 4;
+            }
+            break;
+        default:
+        case OPJ_CLRSPC_UNSPECIFIED:
+        case OPJ_CLRSPC_UNKNOWN:
+            if (numprimcomp == 1) {
+                dmprintf1(state->memory, "openjpeg warning: unspec CS. %d component so assuming gray.\n", numprimcomp);
+                state->colorspace = gs_jpx_cs_gray;
+            } else if (numprimcomp == 4) {
+                dmprintf1(state->memory, "openjpeg warning: unspec CS. %d components so assuming CMYK.\n", numprimcomp);
                 state->colorspace = gs_jpx_cs_cmyk;
-             }
-            else
-            {
+            } else {
+                /* Note, numprimcomp > 4 possible here. Bug 694909.
+                   Trust that it is RGB though.  Do not set numprimcomp */
+                dmprintf1(state->memory, "openjpeg warning: unspec CS. %d components. Assuming data RGB.\n", numprimcomp);
                 state->colorspace = gs_jpx_cs_rgb;
             }
             break;
-        }
-        default: /* OPJ_CLRSPC_SRGB, OPJ_CLRSPC_SYCC, OPJ_CLRSPC_EYCC */
-            state->colorspace = gs_jpx_cs_rgb;
     }
 
     state->alpha_comp = -1;
