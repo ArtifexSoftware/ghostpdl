@@ -26,6 +26,7 @@ int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indi
 int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o);
 int pdfi_array_peek_type(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj_type t, pdf_obj **o);
 int pdfi_array_get_no_deref(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o);
+int pdfi_array_get_no_store_R(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o);
 int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o);
 int pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj_type t, pdf_obj **o);
 int pdfi_array_get_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t *i);

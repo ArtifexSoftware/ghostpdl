@@ -99,8 +99,9 @@ int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indi
 
 /* Fetch object from array, resolving indirect reference if needed
  * (Does not increment reference count, caller needs to do that if they want to)
+ * setref -- indicates whether to replace indirect ref with the object
  */
-static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
+static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o, bool setref)
 {
     int code;
     pdf_obj *obj;
@@ -122,8 +123,9 @@ static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_
         if (code < 0)
             return code;
 
-        (void)pdfi_array_put(ctx, a, index, o1);
-        /* Don't need this reference */
+        if (setref)
+            (void)pdfi_array_put(ctx, a, index, o1);
+        /* Don't need this extra reference */
         pdfi_countdown(o1);
         obj = o1;
     }
@@ -139,7 +141,7 @@ static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_
  */
 int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
-    return pdfi_array_fetch(ctx, a, index, o);
+    return pdfi_array_fetch(ctx, a, index, o, true);
 }
 
 /* The object returned by pdfi_array_get has its reference count incremented by 1 to
@@ -149,10 +151,9 @@ int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
     int code;
 
-    code = pdfi_array_fetch(ctx, a, index, o);
+    code = pdfi_array_fetch(ctx, a, index, o, true);
     if (code < 0) return code;
 
-    *o = a->values[index];
     pdfi_countup(*o);
     return 0;
 }
@@ -174,6 +175,19 @@ int pdfi_array_get_no_deref(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_
     return 0;
 }
 
+/* Same as pdfi_array_get() but doesn't replace indirect ref with a new object.
+ */
+int pdfi_array_get_no_store_R(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
+{
+    int code;
+
+    code = pdfi_array_fetch(ctx, a, index, o, false);
+    if (code < 0) return code;
+
+    pdfi_countup(*o);
+    return 0;
+}
+
 /* Get value from pdfi_array without incrementing its reference count.
  * Handles type-checking and resolving indirect references.
  */
@@ -182,7 +196,7 @@ int pdfi_array_peek_type(pdf_context *ctx, pdf_array *a, uint64_t index,
 {
     int code;
 
-    code = pdfi_array_fetch(ctx, a, index, o);
+    code = pdfi_array_fetch(ctx, a, index, o, true);
     if (code < 0)
         return code;
 
@@ -258,7 +272,7 @@ bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
         pdf_obj *val;
         int code;
 
-        code = pdfi_array_fetch(ctx, a, i, &val);
+        code = pdfi_array_fetch(ctx, a, i, &val, true);
         if (code < 0)
             continue;
         if (val->object_num == o->object_num) {

@@ -296,8 +296,17 @@ static int pdfi_mark_add_Page_View(pdf_context *ctx, pdf_dict *link_dict, pdf_ar
     uint64_t array_size;
     pdf_obj *temp_obj = NULL;
 
-    code = pdfi_array_get_type(ctx, dest_array, 0, PDF_DICT, (pdf_obj **)&page_dict);
+    /* Get the page_dict, without storing the deref in the array.
+     * (This is needed because otherwise there could be a circular ref that will
+     * lead to a memory leak)
+     */
+    code = pdfi_array_get_no_store_R(ctx, dest_array, 0, (pdf_obj **)&page_dict);
     if (code < 0) goto exit;
+
+    if (page_dict->type != PDF_DICT) {
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
+    }
 
     /* Find out which page number this is */
     code = pdfi_page_get_number(ctx, page_dict, &page_num);
