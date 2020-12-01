@@ -167,225 +167,231 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
         }
         goto add;
     }
-  top:if (code_size > bits_left) {
-        if (bytes_left == 0) {
-            if (p == rlimit)
-                goto out;
-            bytes_left = *++p;
-            if_debug1m('W', ss->memory, "[W]block count %d\n", bytes_left);
+    while (1) /* Loop while we have data to handle */
+    {
+        if (code_size > bits_left) {
             if (bytes_left == 0) {
-                status = EOFC;
-                goto out;
-            }
-            goto top;
-        }
-        if (low_order)
-            code = bits >> (8 - bits_left);
-        else
-            code = (uint) bits << (code_size - bits_left);
-        if (bits_left + 8 < code_size) {	/* Need 2 more data bytes */
-            if (bytes_left == 1) {
-                if (rlimit - p < 3)
+                if (p == rlimit)
                     goto out;
-                bytes_left = p[2];
-                if_debug1m('W', ss->memory, "[W]block count %d\n",
-                           bytes_left);
+                bytes_left = *++p;
+                if_debug1m('W', ss->memory, "[W]block count %d\n", bytes_left);
                 if (bytes_left == 0) {
                     status = EOFC;
                     goto out;
                 }
-                bytes_left++;
-                bits = p[1];
-                p++;
-            } else {
-                if (rlimit - p < 2)
-                    goto out;
-                bits = p[1];
+                continue;
             }
             if (low_order)
-                code += (uint) bits << bits_left;
+                code = bits >> (8 - bits_left);
             else
-                code += (uint) bits << (code_size - 8 - bits_left);
-            bits_left += 8;
-            bits = p[2];
-            p += 2;
-            bytes_left -= 2;
-        } else {
-            if (p == rlimit)
-                goto out;
-            bits = *++p;
-            bytes_left--;
-        }
-        if (low_order)
-            code += (uint) bits << bits_left,
-                bits_left += 8 - code_size;
-        else
-            bits_left += 8 - code_size,
-                code += bits >> bits_left;
-    } else {
-        if (low_order)
-            code = bits >> (8 - bits_left),
-                bits_left -= code_size;
-        else
-            bits_left -= code_size,
-                code = bits >> bits_left;
-    }
-    code &= code_mask;
-    if_debug2m('W', ss->memory, "[W]reading 0x%x,%d\n", code, code_size);
-    /*
-     * There is an anomalous case where a code S is followed
-     * immediately by another occurrence of the S string.
-     * In this case, the next available code will be defined as
-     * S followed by the first character of S, and will be
-     * emitted immediately after the code S.  We have to
-     * recognize this case specially, by noting that the code is
-     * equal to next_code.
-     */
-    if (code >= next_code) {
-        if ((code > next_code) || (prev_code < 0)) {
-#ifdef DEBUG
-            mlprintf3(ss->memory, "[W]code = %d > next_code = %d  or prev_code = %d < 0\n",
-                     code, next_code, prev_code);
-#endif
-            status = ERRC;
-            goto out;
-        }
-        /* Fabricate the entry for the code.  It will be */
-        /* overwritten immediately, of course. */
-        for (c = prev_code; c != eod; c = table[c].prefix)
-            dc_next->datum = c;
-        len = prev_len + 1;
-        dc_next->len = min(len, 255);
-        dc_next->prefix = prev_code;
-        if_debug3m('w', ss->memory, "[w]decoding anomalous 0x%x=0x%x+%c\n",
-                   next_code, prev_code, dc_next->datum);
-    }
-    /* See if there is enough room for the code. */
-reset:
-    len = table[code].len;
-    if (len == 255) {		/* Check for special code (reset or end). */
-        /* We set their lengths to 255 to avoid doing */
-        /* an extra check in the normal case. */
-        if (code == code_reset) {
-            if_debug1m('w', ss->memory, "[w]reset: next_code was %d\n",
-                       next_code);
-            next_code = code_0;
-            dc_next = table + code_0;
-            code_size = ss->InitialCodeLength + 1;
-            set_code_size();
-            prev_code = -1;
-            goto top;
-        } else if (code == eod) {
-            status = EOFC;
-            goto out;
-        }
-        /* The code length won't fit in a byte, */
-        /* compute it the hard way. */
-        for (c = code, len = 0; c != eod; len++)
-            c = table[c].prefix;
-        if_debug2m('w', ss->memory, "[w]long code %d, length=%d\n", code, len);
-    }
-    if (wlimit - q < len) {
-        ss->copy_code = code;
-        ss->copy_left = ss->copy_len = len;
-        status = 1;
-        goto out;
-    }
-    /* Copy the string to the buffer (back to front). */
-    /* Optimize for short codes, which are the most frequent. */
-    dc = &table[code];
-    switch (len) {
-        default:
-            {
-                byte *q1 = q += len;
-
-                c = code;
-                do {
-                    *q1-- = (dc = &table[c])->datum;
-                }
-                while ((c = dc->prefix) != eod);
-                b = q1[1];
-            }
-            break;
-        case 3:
-            q[3] = dc->datum;
-            dc = &table[dc->prefix];
-        case 2:
-            q[2] = dc->datum;
-            dc = &table[dc->prefix];
-        case 1:
-            q[1] = b = dc->datum;
-            q += len;
-    }
-  add:				/* Add a new entry to the table */
-    if (prev_code >= 0) {
-        /*
-         * Unfortunately, we have to check for next_code ==
-         * lzw_decode_max every time: just checking at power
-         * of 2 boundaries stops us one code too soon.
-         */
-        if (!old_tiff && next_code == lzw_decode_max) {
-            /*
-             * A few anomalous files have one data item too many before the
-             * reset code.  We think this is a bug in the application that
-             * produced the files, but Acrobat accepts the files, so we do
-             * too.
-             */
-            if (!ss->BlockData) { /* don't do this for GIF */
-                if (bits_left < 8 && p >= rlimit && last) {
-                    /* We're at EOD. */
-                    goto out;
-                }
-                if (bits_left + ((rlimit - p) << 3) < code_size) {
-                    /*
-                     * We need more data to decide whether a reset is next.
-                     * Return an error if we cannot get more.
-                     */
-                    if (last)
-                        status = ERRC;
-                    goto out;
-                }
-                if (low_order) {
-                    code = bits >> (8 - bits_left);
-                    code += (bits = *++p) << bits_left;
-                    if (bits_left + 8 < code_size)
-                        code += (bits = *++p) << (bits_left + 8);
+                code = (uint) bits << (code_size - bits_left);
+            if (bits_left + 8 < code_size) {	/* Need 2 more data bytes */
+                if (bytes_left == 1) {
+                    if (rlimit - p < 3)
+                        goto out;
+                    bytes_left = p[2];
+                    if_debug1m('W', ss->memory, "[W]block count %d\n",
+                               bytes_left);
+                    if (bytes_left == 0) {
+                        status = EOFC;
+                        goto out;
+                    }
+                    bytes_left++;
+                    bits = p[1];
+                    p++;
                 } else {
-                    code = bits & ((1 << bits_left) - 1);
-                    code = (code << 8) + (bits = *++p);
-                    if (bits_left + 8 < code_size)
-                        code = (code << 8) + (bits = *++p);
-                    code >>= (bits_left - code_size) & 7;
+                    if (rlimit - p < 2)
+                        goto out;
+                    bits = p[1];
                 }
-                bits_left = (bits_left - code_size) & 7;
-                if (code == code_reset)
-                    goto reset;
+                if (low_order)
+                    code += (uint) bits << bits_left;
+                else
+                    code += (uint) bits << (code_size - 8 - bits_left);
+                bits_left += 8;
+                bits = p[2];
+                p += 2;
+                bytes_left -= 2;
+            } else {
+                if (p == rlimit)
+                    goto out;
+                bits = *++p;
+                bytes_left--;
             }
-            status = ERRC;
-            goto out;
+            if (low_order)
+                code += (uint) bits << bits_left,
+                    bits_left += 8 - code_size;
+            else
+                bits_left += 8 - code_size,
+                    code += bits >> bits_left;
+        } else {
+            if (low_order)
+                code = bits >> (8 - bits_left),
+                    bits_left -= code_size;
+            else
+                bits_left -= code_size,
+                    code = bits >> bits_left;
         }
-        if (next_code < lzw_decode_max) {
-            dc_next->datum = b;	/* added char of string */
-            dc_next->len = min(prev_len, 254) + 1;
+        code &= code_mask;
+        if_debug2m('W', ss->memory, "[W]reading 0x%x,%d\n", code, code_size);
+        /*
+         * There is an anomalous case where a code S is followed
+         * immediately by another occurrence of the S string.
+         * In this case, the next available code will be defined as
+         * S followed by the first character of S, and will be
+         * emitted immediately after the code S.  We have to
+         * recognize this case specially, by noting that the code is
+         * equal to next_code.
+         */
+        if (code >= next_code) {
+            if ((code > next_code) || (prev_code < 0)) {
+#ifdef DEBUG
+                mlprintf3(ss->memory, "[W]code = %d > next_code = %d  or prev_code = %d < 0\n",
+                          code, next_code, prev_code);
+#endif
+                status = ERRC;
+                goto out;
+            }
+            /* Fabricate the entry for the code.  It will be */
+            /* overwritten immediately, of course. */
+            for (c = prev_code; c != eod; c = table[c].prefix)
+                dc_next->datum = c;
+            len = prev_len + 1;
+            dc_next->len = min(len, 255);
             dc_next->prefix = prev_code;
-            dc_next++;
-            if_debug4m('W', ss->memory, "[W]adding 0x%x=0x%x+%c(%d)\n",
-                       next_code, prev_code, b, min(len, 255));
+            if_debug3m('w', ss->memory, "[w]decoding anomalous 0x%x=0x%x+%c\n",
+                       next_code, prev_code, dc_next->datum);
         }
-        if (++next_code == switch_code) {	/* Crossed a power of 2. */
-            /* We have to make a strange special check for */
-            /* reaching the end of the code space. */
-            if (next_code < lzw_decode_max - 1) {
-                code_size++;
-                set_code_size();
-                if_debug2m('w', ss->memory, "[w]crossed power of 2: new code_size=%d, next_code=%d\n",
-                           code_size, next_code);
+        /* See if there is enough room for the code. */
+        while (1) /* Loop while we have codes to handle */
+        {
+            len = table[code].len;
+            if (len == 255) {	/* Check for special code (reset or end). */
+                /* We set their lengths to 255 to avoid doing */
+                /* an extra check in the normal case. */
+                if (code == code_reset) {
+                    if_debug1m('w', ss->memory, "[w]reset: next_code was %d\n",
+                               next_code);
+                    next_code = code_0;
+                    dc_next = table + code_0;
+                    code_size = ss->InitialCodeLength + 1;
+                    set_code_size();
+                    prev_code = -1;
+                    goto loop;
+                } else if (code == eod) {
+                    status = EOFC;
+                    goto out;
+                }
+                /* The code length won't fit in a byte, */
+                /* compute it the hard way. */
+                for (c = code, len = 0; c != eod; len++)
+                    c = table[c].prefix;
+                if_debug2m('w', ss->memory, "[w]long code %d, length=%d\n", code, len);
             }
+            if (wlimit - q < len) {
+                ss->copy_code = code;
+                ss->copy_left = ss->copy_len = len;
+                status = 1;
+                goto out;
+            }
+            /* Copy the string to the buffer (back to front). */
+            /* Optimize for short codes, which are the most frequent. */
+            dc = &table[code];
+            switch (len) {
+                default:
+                {
+                    byte *q1 = q += len;
+
+                    c = code;
+                    do {
+                        *q1-- = (dc = &table[c])->datum;
+                    }
+                    while ((c = dc->prefix) != eod);
+                    b = q1[1];
+                    break;
+                }
+                case 3:
+                    q[3] = dc->datum;
+                    dc = &table[dc->prefix];
+                case 2:
+                    q[2] = dc->datum;
+                    dc = &table[dc->prefix];
+                case 1:
+                    q[1] = b = dc->datum;
+                    q += len;
+            }
+  add:				/* Add a new entry to the table */
+            if (prev_code >= 0) {
+                /*
+                 * Unfortunately, we have to check for next_code ==
+                 * lzw_decode_max every time: just checking at power
+                 * of 2 boundaries stops us one code too soon.
+                 */
+                if (!old_tiff && next_code == lzw_decode_max) {
+                    /*
+                     * A few anomalous files have one data item too many before the
+                     * reset code.  We think this is a bug in the application that
+                     * produced the files, but Acrobat accepts the files, so we do
+                     * too.
+                     */
+                    if (!ss->BlockData) { /* don't do this for GIF */
+                        if (bits_left < 8 && p >= rlimit && last) {
+                            /* We're at EOD. */
+                            goto out;
+                        }
+                        if (bits_left + ((rlimit - p) << 3) < code_size) {
+                            /*
+                             * We need more data to decide whether a reset is next.
+                             * Return an error if we cannot get more.
+                             */
+                            if (last)
+                                status = ERRC;
+                            goto out;
+                        }
+                        if (low_order) {
+                            code = bits >> (8 - bits_left);
+                            code += (bits = *++p) << bits_left;
+                            if (bits_left + 8 < code_size)
+                                code += (bits = *++p) << (bits_left + 8);
+                        } else {
+                            code = bits & ((1 << bits_left) - 1);
+                            code = (code << 8) + (bits = *++p);
+                            if (bits_left + 8 < code_size)
+                                code = (code << 8) + (bits = *++p);
+                            code >>= (bits_left - code_size) & 7;
+                        }
+                        bits_left = (bits_left - code_size) & 7;
+                        if (code == code_reset)
+                            continue; /* Loop back to handle the reset */
+                    }
+                    status = ERRC;
+                    goto out;
+                }
+                if (next_code < lzw_decode_max) {
+                    dc_next->datum = b;	/* added char of string */
+                    dc_next->len = min(prev_len, 254) + 1;
+                    dc_next->prefix = prev_code;
+                    dc_next++;
+                    if_debug4m('W', ss->memory, "[W]adding 0x%x=0x%x+%c(%d)\n",
+                               next_code, prev_code, b, min(len, 255));
+                }
+                if (++next_code == switch_code) {	/* Crossed a power of 2. */
+                    /* We have to make a strange special check for */
+                    /* reaching the end of the code space. */
+                    if (next_code < lzw_decode_max - 1) {
+                        code_size++;
+                        set_code_size();
+                        if_debug2m('w', ss->memory, "[w]crossed power of 2: new code_size=%d, next_code=%d\n",
+                                   code_size, next_code);
+                    }
+                }
+            }
+            break; /* No more codes to handle */
         }
-    }
-    prev_code = code;
-    prev_len = len;
-    goto top;
+        prev_code = code;
+        prev_len = len;
+  loop: {}
+    } /* Loop back to the top */
   out:pr->ptr = p;
     pw->ptr = q;
     ss->code_size = code_size;
