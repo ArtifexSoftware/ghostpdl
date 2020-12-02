@@ -3159,6 +3159,8 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
              */
             code = pdfi_dict_delete_pair(ctx, tempdict, Key);
             if (code < 0) goto exit;
+        } else if (pdfi_name_is(Key, "Sound") || pdfi_name_is(Key, "Movie")) {
+            resolve = false;
         } else {
             resolve = true;
         }
@@ -3198,17 +3200,10 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
     /* Do pdfmark from the tempdict */
     gs_currentmatrix(ctx->pgs, &ctm);
 
-    /* TODO: Loop detection no longer necessary here, since we took care of it above.
-     *
-     * (but there is no harm in playing it safe?)
-     */
-    code = pdfi_loop_detector_mark(ctx);
-    code = pdfi_loop_detector_add_object(ctx, annot->object_num);
     if (pdfi_name_is(subtype, "Link"))
         code = pdfi_mark_from_dict(ctx, tempdict, &ctm, "LNK");
     else
         code = pdfi_mark_from_dict(ctx, tempdict, &ctm, "ANN");
-    (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
     if (code < 0) goto exit;
 
  exit:

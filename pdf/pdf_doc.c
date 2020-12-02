@@ -1014,6 +1014,80 @@ static int pdfi_doc_PageLabels(pdf_context *ctx)
     return code;
 }
 
+/* Handled an embedded files Names array for pdfwrite device */
+static int pdfi_doc_EmbeddedFiles_Names(pdf_context *ctx, pdf_array *names)
+{
+    int code;
+    uint64_t arraysize;
+    uint64_t index;
+    pdf_string *name = NULL;
+    pdf_dict *filespec = NULL;
+
+    arraysize = pdfi_array_size(names);
+    if ((arraysize % 2) != 0) {
+        code = gs_note_error(gs_error_syntaxerror);
+        goto exit;
+    }
+
+    /* This is supposed to be an array of
+     * [ (filename1) (filespec1) (filename2) (filespec2) ... ]
+     */
+    for (index = 0; index < arraysize; index += 2) {
+        code = pdfi_array_get_type(ctx, names, index, PDF_STRING, (pdf_obj **)&name);
+        if (code < 0) goto exit;
+
+        code = pdfi_array_get_type(ctx, names, index+1, PDF_DICT, (pdf_obj **)&filespec);
+        if (code < 0) goto exit;
+
+        code = pdfi_mark_embed_filespec(ctx, name, filespec);
+        if (code < 0) goto exit;
+
+        pdfi_countdown(name);
+        name = NULL;
+        pdfi_countdown(filespec);
+        filespec = NULL;
+    }
+
+
+ exit:
+    pdfi_countdown(name);
+    pdfi_countdown(filespec);
+    return code;
+}
+
+/* Handle PageLabels for pdfwrite device */
+static int pdfi_doc_EmbeddedFiles(pdf_context *ctx)
+{
+    int code;
+    pdf_dict *Names = NULL;
+    pdf_dict *EmbeddedFiles = NULL;
+    pdf_array *Names_array = NULL;
+
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, (pdf_obj **)&Names);
+    if (code <= 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, Names, "EmbeddedFiles", PDF_DICT, (pdf_obj **)&EmbeddedFiles);
+    if (code <= 0) goto exit;
+
+    /* TODO: This is a name tree.
+     * Can contain a Names array, or some complicated Kids.
+     * Just handling Names array for now
+     */
+    code = pdfi_dict_knownget_type(ctx, EmbeddedFiles, "Names", PDF_ARRAY, (pdf_obj **)&Names_array);
+    if (code <= 0) goto exit;
+
+    code = pdfi_doc_EmbeddedFiles_Names(ctx, Names_array);
+    if (code <= 0) goto exit;
+
+ exit:
+    pdfi_countdown(Names);
+    pdfi_countdown(EmbeddedFiles);
+    pdfi_countdown(Names_array);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
+    return 0;
+}
+
 /* See pdf_main.ps/process_trailer_attrs()
  * Some of this stuff is about pdfmarks, and some of it is just handling
  * random things in the trailer.
@@ -1038,6 +1112,13 @@ int pdfi_doc_trailer(pdf_context *ctx)
         code = pdfi_doc_Info(ctx);
         if (code < 0)
             goto exit;
+
+        /* Handle EmbeddedFiles */
+        /* TODO: add a configuration option to embed or omit */
+        code = pdfi_doc_EmbeddedFiles(ctx);
+        if (code < 0)
+            goto exit;
+
     }
 
     /* Handle OCProperties */

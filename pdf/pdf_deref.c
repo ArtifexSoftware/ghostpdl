@@ -829,12 +829,15 @@ static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj, bool recu
 
     arraysize = pdfi_array_size(array);
     for (index = 0; index < arraysize; index++) {
-        code = pdfi_array_get(ctx, array, index, &object);
+        code = pdfi_array_get_no_store_R(ctx, array, index, &object);
         if (code == gs_error_circular_reference) {
             /* Just leave as an indirect ref */
             code = 0;
         } else {
             if (code < 0) goto exit;
+            /* don't store the object if it's a stream (leave as a ref) */
+            if (object->type != PDF_STREAM)
+                code = pdfi_array_put(ctx, array, index, object);
             if (recurse)
                 code = pdfi_resolve_indirect(ctx, object, recurse);
         }
@@ -864,12 +867,15 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj, bool recur
      */
     for (index=0; index<dictsize; index ++) {
         Key = (pdf_name *)dict->keys[index];
-        code = pdfi_dict_get_by_key(ctx, dict, Key, &Value);
+        code = pdfi_dict_get_no_store_R_key(ctx, dict, Key, &Value);
         if (code == gs_error_circular_reference) {
             /* Just leave as an indirect ref */
             code = 0;
         } else {
             if (code < 0) goto exit;
+            /* don't store the object if it's a stream (leave as a ref) */
+            if (Value->type != PDF_STREAM)
+                pdfi_dict_put_obj(ctx, dict, (pdf_obj *)Key, Value);
             if (recurse)
                 code = pdfi_resolve_indirect(ctx, Value, recurse);
         }

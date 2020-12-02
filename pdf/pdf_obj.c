@@ -21,6 +21,8 @@
 #include "pdf_cmap.h"
 #include "pdf_font.h"
 #include "pdf_deref.h" /* for replace_cache_entry() */
+#include "pdf_mark.h"
+#include "pdf_file.h" /* for pdfi_stream_to_buffer() */
 
 /***********************************************************************************/
 /* Functions to create the various kinds of 'PDF objects', Created objects have a  */
@@ -292,6 +294,46 @@ int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **strea
     return code;
 }
 
+/* Create a pdf_string from a c char * */
+int pdfi_obj_charstr_to_string(pdf_context *ctx, const char *charstr, pdf_string **string)
+{
+    int code;
+    int length = strlen(charstr);
+    pdf_string *newstr = NULL;
+
+    *string = NULL;
+
+    code = pdfi_alloc_object(ctx, PDF_STRING, length, (pdf_obj **)&newstr);
+    if (code < 0) goto exit;
+
+    memcpy(newstr->data, (byte *)charstr, length);
+
+    *string = newstr;
+    pdfi_countup(newstr);
+ exit:
+    return code;
+}
+
+/* Create a pdf_name from a c char * */
+int pdfi_obj_charstr_to_name(pdf_context *ctx, const char *charstr, pdf_name **name)
+{
+    int code;
+    int length = strlen(charstr);
+    pdf_name *newname = NULL;
+
+    *name = NULL;
+
+    code = pdfi_alloc_object(ctx, PDF_NAME, length, (pdf_obj **)&newname);
+    if (code < 0) goto exit;
+
+    memcpy(newname->data, (byte *)charstr, length);
+
+    *name = newname;
+    pdfi_countup(newname);
+ exit:
+    return code;
+}
+
 /************ bufstream module BEGIN **************/
 #define INIT_BUF_SIZE 256
 
@@ -371,6 +413,37 @@ static int pdfi_bufstream_write(pdf_context *ctx, pdfi_bufstream_t *stream, byte
 
 /************ bufstream module END **************/
 
+
+/* Create a c-string to use as object label
+ * Uses the object_num to make it unique
+ * (don't call this for objects with object_num=0, though I am not going to check that here)
+ */
+int pdfi_obj_get_label(pdf_context *ctx, pdf_obj *obj, char **label)
+{
+    int code = 0;
+    int length;
+    const char *template = "{Obj%dG%d}"; /* The '{' and '}' are special to pdfmark/pdfwrite driver */
+    char *string = NULL;
+    pdf_indirect_ref *ref = (pdf_indirect_ref *)obj;
+
+    *label = NULL;
+    length = strlen(template)+20;
+
+    string = (char *)gs_alloc_bytes(ctx->memory, length, "pdf_obj_get_label(label)");
+    if (string == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
+
+    if (obj->type == PDF_INDIRECT)
+        snprintf(string, length, template, ref->ref_object_num, ref->ref_generation_num);
+    else
+        snprintf(string, length, template, obj->object_num, obj->generation_num);
+
+    *label = string;
+ exit:
+    return code;
+}
 
 /*********** BEGIN obj_to_string module ************/
 
@@ -452,16 +525,36 @@ static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
     int size = 100;
     pdf_indirect_ref *ref = (pdf_indirect_ref *)obj;
     char *buf;
+    pdf_obj *object = NULL;
 
-    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_indirect_str(data)");
-    if (buf == NULL)
-        return_error(gs_error_VMerror);
-    if (ref->is_label)
+    if (ref->is_label) {
+        buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_indirect_str(data)");
+        if (buf == NULL)
+            return_error(gs_error_VMerror);
         snprintf(buf, size, "%ld %d R", ref->ref_object_num, ref->ref_generation_num);
-    else
-        snprintf(buf, size, "{%ld %d resolveR}", ref->ref_object_num, ref->ref_generation_num);
+    } else {
+        if (!ref->is_marking) {
+            code = pdfi_dereference(ctx, ref->ref_object_num, ref->ref_generation_num, &object);
+            if (code < 0 && code != gs_error_circular_reference)
+                goto exit;
+            if (code == 0) {
+                if (object->type == PDF_STREAM) {
+                    code = pdfi_mark_stream(ctx, (pdf_stream *)object);
+                    if (code < 0) goto exit;
+                } else if (object->type == PDF_DICT) {
+                    code = pdfi_mark_dict(ctx, (pdf_dict *)object);
+                    if (code < 0) goto exit;
+                }
+            }
+        }
+        code = pdfi_obj_get_label(ctx, (pdf_obj *)ref, &buf);
+        if (code < 0) goto exit;
+    }
     *data = (byte *)buf;
     *len = strlen(buf);
+
+ exit:
+    pdfi_countdown(object);
     return code;
 }
 
@@ -640,6 +733,28 @@ static int pdfi_obj_array_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *
     return code;
 }
 
+static int pdfi_obj_stream_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    byte *buf;
+    pdf_stream *stream = (pdf_stream *)obj;
+    int64_t bufsize;
+
+    /* TODO: How to deal with stream dictionaries?
+     * /AP is one example that has special handling (up in pdf_annot.c), but there are others.
+     * See 'pushpin' annotation in annotations-galore_II.ps
+     *
+     * This will just literally grab the stream data.
+     */
+    code = pdfi_stream_to_buffer(ctx, stream, &buf, &bufsize);
+    if (code < 0) goto exit;
+
+    *data = buf;
+    *len = (int)bufsize;
+ exit:
+    return code;
+}
+
 /* This fetches without dereferencing.  If you want to see the references inline,
  * then you need to pre-resolve them.  See pdfi_resolve_indirect().
  */
@@ -657,20 +772,6 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
 
     code = pdfi_bufstream_init(ctx, &bufstream);
     if (code < 0) goto exit;
-
-    /* TODO: How to deal with stream dictionaries?
-     * /AP is one example that has special handling (up in pdf_annot.c), but there are others.
-     * See 'pushpin' annotation in annotations-galore_II.ps
-     *
-     * For now we simply put in an empty dictionary << >>
-     * I don't want to just grab the representation of the dictionary part,
-     * because when this is used with annotations that would result in an invalid
-     * stream in the output.
-     */
-    if (obj->type == PDF_STREAM) {
-        code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"<< >>", 5);
-        goto exit_copy;
-    }
 
     dictsize = pdfi_dict_entries(dict);
     /* Handle empty dict specially */
@@ -758,7 +859,7 @@ obj_str_dispatch_t obj_str_dispatch[] = {
     {PDF_BOOL, pdfi_obj_bool_str},
     {PDF_STRING, pdfi_obj_string_str},
     {PDF_DICT, pdfi_obj_dict_str},
-    {PDF_STREAM, pdfi_obj_dict_str},
+    {PDF_STREAM, pdfi_obj_stream_str},
     {PDF_INDIRECT, pdfi_obj_indirect_str},
     {PDF_NULL, pdfi_obj_null_str},
     {0, NULL}

@@ -151,28 +151,34 @@ static int pdfi_mark_write_string(pdf_context *ctx, gs_param_string *param_strin
    key1 val1 .... keyN valN CTM "ANN"
    CTM is (for example) "[1.0 0 0 1.0 0 0]"
 
+   This takes an optional 'label' argument which can be NULL.
+
    the /pdfmark command has this array of strings as a parameter, i.e.
-   [ key1 val1 .... keyN valN CTM "ANN" ] /pdfmark
+   [ 'label' key1 val1 .... keyN valN CTM "ANN" ] /pdfmark
 
    Apparently the "type" doesn't have a leading "/" but the other names in the
    keys do need the "/"
 
    See plparams.c/process_pdfmark()
 */
-int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const char *type)
+static int pdfi_mark_from_dict_withlabel(pdf_context *ctx, pdf_indirect_ref *label,
+                                         pdf_dict *dict, gs_matrix *ctm, const char *type)
 {
     int code = 0;
     int size;
     uint64_t dictsize;
     uint64_t index;
     uint64_t keynum = 0;
+    int i;
     pdf_name *Key = NULL;
     pdf_obj *Value = NULL;
+    pdf_obj *tempobj = NULL;
     gs_param_string *parray = NULL;
     gs_param_string_array array_list;
     byte *ctm_data = NULL;
     int ctm_len;
     gs_matrix ctm_placeholder;
+    int offset = 0;
 
     /* If ctm not provided, make a placeholder */
     if (!ctm) {
@@ -182,6 +188,8 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
 
     dictsize = pdfi_dict_entries(dict);
     size = dictsize*2 + 2; /* pairs + CTM + type */
+    if (label)
+        size += 1;
 
     parray = (gs_param_string *)gs_alloc_bytes(ctx->memory, size*sizeof(gs_param_string),
                                                "pdfi_mark_from_dict(parray)");
@@ -189,22 +197,43 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
         code = gs_note_error(gs_error_VMerror);
         goto exit;
     }
-    memset(parray, 0, size *sizeof(gs_param_string));
+    memset(parray, 0, size*sizeof(gs_param_string));
 
+    if (label) {
+        code = pdfi_mark_setparam_obj(ctx, (pdf_obj *)label, parray+0);
+        offset += 1;
+    }
 
     /* Get each (key,val) pair from dict and setup param for it */
     if (dictsize > 0) {
         code = pdfi_dict_key_first(ctx, dict, (pdf_obj **)&Key, &index);
         while (code >= 0) {
-            code = pdfi_dict_get_by_key(ctx, dict, Key, &Value);
+            code = pdfi_dict_get_no_deref(ctx, dict, Key, &Value);
             if (code < 0) goto exit;
-            code = pdfi_mark_setparam_pair(ctx, Key, Value, parray+(keynum*2));
+
+            if (Value->type == PDF_INDIRECT) {
+                pdf_indirect_ref *ref = (pdf_indirect_ref *)Value;
+
+                code = pdfi_dereference(ctx, ref->ref_object_num, ref->ref_generation_num, &tempobj);
+                if (code < 0) goto exit;
+
+                /* We use the deref'd object only if it's not a stream */
+                if (tempobj->type != PDF_STREAM) {
+                    pdfi_countdown(Value);
+                    Value = tempobj;
+                    tempobj = NULL;
+                }
+            }
+
+            code = pdfi_mark_setparam_pair(ctx, Key, Value, parray+offset+(keynum*2));
             if (code < 0) goto exit;
 
             pdfi_countdown(Key);
             Key = NULL;
             pdfi_countdown(Value);
             Value = NULL;
+            pdfi_countdown(tempobj);
+            tempobj = NULL;
 
             code = pdfi_dict_key_next(ctx, dict, (pdf_obj **)&Key, &index);
             if (code == gs_error_undefined) {
@@ -234,12 +263,12 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
 
  exit:
     pdfi_countdown(Key);
-    Key = NULL;
     pdfi_countdown(Value);
-    Value = NULL;
-    for (keynum = 0; keynum < dictsize; keynum ++) {
-        gs_free_object(ctx->memory, (byte *)parray[keynum*2].data, "pdfi_mark_from_dict(parray)");
-        gs_free_object(ctx->memory, (byte *)parray[keynum*2+1].data, "pdfi_mark_from_dict(parray)");
+    pdfi_countdown(tempobj);
+    /* Free the param data except the last two which are handled separately */
+    for (i=0; i<size-2; i++) {
+        if (parray[i].data)
+            gs_free_object(ctx->memory, (byte *)parray[i].data, "pdfi_mark_from_dict(parray)");
     }
     if (ctm_data)
         gs_free_object(ctx->memory, ctm_data, "pdfi_mark_from_dict(ctm_data)");
@@ -247,8 +276,78 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
     return code;
 }
 
-/* Send an arbitrary object as a string, with command 'label' */
-int pdfi_mark_object(pdf_context *ctx, pdf_obj *object, const char *label)
+/* Do a pdfmark from a dictionary */
+int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const char *type)
+{
+    return pdfi_mark_from_dict_withlabel(ctx, NULL, dict, ctm, type);
+}
+
+/* Does a pdfmark, from a c-array of pdf_obj's
+ * This will put in a dummy ctm if none provided
+ */
+static int pdfi_mark_from_objarray(pdf_context *ctx, pdf_obj **objarray, int len,
+                            gs_matrix *ctm, const char *type)
+{
+    int code = 0;
+    int size;
+    gs_param_string *parray = NULL;
+    gs_param_string_array array_list;
+    byte *ctm_data = NULL;
+    int ctm_len;
+    gs_matrix ctm_placeholder;
+    int i;
+
+    /* If ctm not provided, make a placeholder */
+    if (!ctm) {
+        gs_currentmatrix(ctx->pgs, &ctm_placeholder);
+        ctm = &ctm_placeholder;
+    }
+
+    size = len + 2; /* data + CTM + type */
+
+    parray = (gs_param_string *)gs_alloc_bytes(ctx->memory, size*sizeof(gs_param_string),
+                                               "pdfi_mark_from_objarray(parray)");
+    if (parray == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
+    memset(parray, 0, size *sizeof(gs_param_string));
+
+    for (i=0; i<len; i++) {
+        code = pdfi_mark_setparam_obj(ctx, objarray[i], parray+i);
+        if (code < 0) goto exit;
+    }
+
+    /* CTM */
+    code = pdfi_mark_ctm_str(ctx, ctm, &ctm_data, &ctm_len);
+    if (code < 0) goto exit;
+    parray[len].data = ctm_data;
+    parray[len].size = ctm_len;
+
+    /* Type (e.g. ANN, DOCINFO) */
+    parray[len+1].data = (const byte *)type;
+    parray[len+1].size = strlen(type);
+
+    array_list.data = parray;
+    array_list.persistent = false;
+    array_list.size = size;
+
+    code = pdfi_mark_write_array(ctx, &array_list, "pdfmark");
+
+ exit:
+    for (i=0; i<len; i++) {
+        gs_free_object(ctx->memory, (byte *)parray[i].data, "pdfi_mark_from_objarray(parray)");
+    }
+    if (ctm_data)
+        gs_free_object(ctx->memory, ctm_data, "pdfi_mark_from_objarray(ctm_data)");
+    gs_free_object(ctx->memory, parray, "pdfi_mark_from_objarray(parray)");
+    return code;
+}
+
+/* Send an arbitrary object as a string, with command 'cmd'
+ * This is not a pdfmark, has no ctm.
+ */
+int pdfi_mark_object(pdf_context *ctx, pdf_obj *object, const char *cmd)
 {
     gs_param_string param_string;
     int code = 0;
@@ -269,7 +368,7 @@ int pdfi_mark_object(pdf_context *ctx, pdf_obj *object, const char *label)
     if (code < 0)
         goto exit;
 
-    code = pdfi_mark_write_string(ctx, &param_string, label);
+    code = pdfi_mark_write_string(ctx, &param_string, cmd);
     if (code < 0)
         goto exit;
  exit:
@@ -614,5 +713,201 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, bool *resolve)
     pdfi_countdown(A_dict);
     pdfi_countdown(S_name);
     pdfi_countdown(D_array);
+    return code;
+}
+
+/* Begin defining an object
+ * Send an OBJ (_objdef) command
+ * (_objdef) (<label>) (/type) (/<type>) OBJ
+ */
+static int pdfi_mark_objdef_begin(pdf_context *ctx, pdf_indirect_ref *label, const char *type)
+{
+    int code;
+    pdf_obj *objarray[4];
+    int num_objects = 4;
+    int i;
+
+    memset(objarray, 0, sizeof(objarray));
+
+    code = pdfi_obj_charstr_to_name(ctx, "_objdef", (pdf_name **)&objarray[0]);
+    if (code < 0) goto exit;
+
+    objarray[1] = (pdf_obj *)label;
+    pdfi_countup(label);
+
+    code = pdfi_obj_charstr_to_name(ctx, "type", (pdf_name **)&objarray[2]);
+    if (code < 0) goto exit;
+
+    code = pdfi_obj_charstr_to_name(ctx, type, (pdf_name **)&objarray[3]);
+    if (code < 0) goto exit;
+
+    code = pdfi_mark_from_objarray(ctx, objarray, num_objects, NULL, "OBJ");
+    if (code < 0) goto exit;
+
+ exit:
+    for (i=0; i<num_objects; i++)
+        pdfi_countdown(objarray[i]);
+    return code;
+}
+
+/* Close an object
+ * Send a CLOSE command
+ * (<label>) CLOSE
+ */
+static int pdfi_mark_objdef_close(pdf_context *ctx, pdf_indirect_ref *label)
+{
+    int code;
+    pdf_obj *objarray[1];
+    int num_objects = 1;
+    int i;
+
+    memset(objarray, 0, sizeof(objarray));
+
+    objarray[0] = (pdf_obj *)label;
+    pdfi_countup(label);
+
+    code = pdfi_mark_from_objarray(ctx, objarray, num_objects, NULL, "CLOSE");
+    if (code < 0) goto exit;
+
+ exit:
+    for (i=0; i<num_objects; i++)
+        pdfi_countdown(objarray[i]);
+    return code;
+}
+
+static int pdfi_mark_stream_contents(pdf_context *ctx, pdf_indirect_ref *label, pdf_stream *stream)
+{
+    int code;
+    pdf_obj *objarray[2];
+    int num_objects = 2;
+    int i;
+
+    objarray[0] = (pdf_obj *)label;
+    pdfi_countup(label);
+
+    objarray[1] = (pdf_obj *)stream;
+    pdfi_countup(stream);
+
+    code = pdfi_mark_from_objarray(ctx, objarray, num_objects, NULL, ".PUTSTREAM");
+    if (code < 0) goto exit;
+
+ exit:
+    for (i=0; i<num_objects; i++)
+        pdfi_countdown(objarray[i]);
+    return code;
+}
+
+/* Mark a stream object */
+int pdfi_mark_stream(pdf_context *ctx, pdf_stream *stream)
+{
+    int code;
+    pdf_dict *streamdict = NULL;
+    pdf_indirect_ref *streamref = NULL;
+
+    if (stream->stream_written)
+        return 0;
+
+    stream->stream_written = true;
+
+    if (!ctx->writepdfmarks)
+        return 0;
+
+    /* Create an indirect ref for the stream */
+    code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&streamref);
+    if (code < 0) goto exit;
+    pdfi_countup(streamref);
+    streamref->ref_object_num = stream->object_num;
+    streamref->ref_generation_num = stream->generation_num;
+    streamref->is_marking = true;
+
+    code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream, &streamdict);
+    if (code < 0) goto exit;
+
+    code = pdfi_mark_objdef_begin(ctx, streamref, "stream");
+    if (code < 0) goto exit;
+
+    code = pdfi_mark_from_dict_withlabel(ctx, streamref, streamdict, NULL, ".PUTDICT");
+    if (code < 0) goto exit;
+
+    code = pdfi_mark_stream_contents(ctx, streamref, stream);
+    if (code < 0) goto exit;
+
+    code = pdfi_mark_objdef_close(ctx, streamref);
+    if (code < 0) goto exit;
+
+ exit:
+    pdfi_countdown(streamref);
+    return code;
+}
+
+/* Mark a dict object */
+int pdfi_mark_dict(pdf_context *ctx, pdf_dict *dict)
+{
+    int code;
+    pdf_indirect_ref *dictref = NULL;
+
+    if (dict->dict_written)
+        return 0;
+
+    dict->dict_written = true;
+
+    if (!ctx->writepdfmarks)
+        return 0;
+
+    /* Create an indirect ref for the dict */
+    code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&dictref);
+    if (code < 0) goto exit;
+    pdfi_countup(dictref);
+    dictref->ref_object_num = dict->object_num;
+    dictref->ref_generation_num = dict->generation_num;
+    dictref->is_marking = true;
+
+    code = pdfi_mark_objdef_begin(ctx, dictref, "dict");
+    if (code < 0) goto exit;
+
+    code = pdfi_mark_from_dict_withlabel(ctx, dictref, dict, NULL, ".PUTDICT");
+    if (code < 0) goto exit;
+
+ exit:
+    pdfi_countdown(dictref);
+    return code;
+}
+
+static int pdfi_mark_filespec(pdf_context *ctx, pdf_string *name, pdf_dict *filespec)
+{
+    int code;
+    pdf_dict *tempdict = NULL;
+
+    code = pdfi_alloc_object(ctx, PDF_DICT, 40, (pdf_obj **)&tempdict);
+    if (code < 0) goto exit;
+    pdfi_countup(tempdict);
+
+    code = pdfi_dict_put(ctx, tempdict, "Name", (pdf_obj *)name);
+    if (code < 0) goto exit;
+
+    /* Flatten the filespec */
+    code = pdfi_resolve_indirect(ctx, (pdf_obj *)filespec, true);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_put(ctx, tempdict, "FS", (pdf_obj *)filespec);
+    if (code < 0) goto exit;
+
+    code = pdfi_mark_from_dict(ctx, tempdict, NULL, "EMBED");
+    if (code < 0) goto exit;
+
+ exit:
+    pdfi_countdown(tempdict);
+    return code;
+}
+
+/* embed a file */
+int pdfi_mark_embed_filespec(pdf_context *ctx, pdf_string *name, pdf_dict *filespec)
+{
+    int code;
+
+    code = pdfi_mark_filespec(ctx, name, filespec);
+    if (code < 0) goto exit;
+
+ exit:
     return code;
 }

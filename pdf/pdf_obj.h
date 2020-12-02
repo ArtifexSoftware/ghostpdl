@@ -20,5 +20,8 @@ int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
 void pdfi_free_object(pdf_obj *o);
 int pdfi_obj_to_string(pdf_context *ctx, pdf_obj *obj, byte **data, int *len);
 int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **stream);
+int pdfi_obj_charstr_to_string(pdf_context *ctx, const char *charstr, pdf_string **string);
+int pdfi_obj_charstr_to_name(pdf_context *ctx, const char *charstr, pdf_name **name);
+int pdfi_obj_get_label(pdf_context *ctx, pdf_obj *obj, char **label);
 
 #endif

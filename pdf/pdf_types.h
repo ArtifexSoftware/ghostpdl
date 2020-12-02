@@ -163,6 +163,7 @@ typedef struct pdf_dict_s {
     uint64_t entries;
     pdf_obj **keys;
     pdf_obj **values;
+    bool dict_written; /* Has dict been written (for pdfwrite) */
 } pdf_dict;
 
 typedef struct pdf_stream_s {
@@ -179,6 +180,7 @@ typedef struct pdf_stream_s {
     gs_offset_t stream_offset;
     int64_t Length; /* Value of Length in dict, 0 if undefined.  non-zero means it's a stream */
     bool length_valid; /* True if Length and is_stream have been cached above */
+    bool stream_written; /* Has stream been written (for pdfwrite) */
 } pdf_stream;
 
 typedef struct pdf_indirect_ref_s {
@@ -186,6 +188,7 @@ typedef struct pdf_indirect_ref_s {
     uint64_t ref_object_num;
     uint32_t ref_generation_num;
     bool is_label; /* Used to tell that it's a label for pdfmark */
+    bool is_marking; /* Are we in the middle of marking this? */
 } pdf_indirect_ref;
 
 typedef struct pdf_obj_cache_entry_s {
