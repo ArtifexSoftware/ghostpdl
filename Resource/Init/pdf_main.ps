@@ -904,7 +904,25 @@ pdfdict begin
        {			% xref line tag was not /n
          /f ne			% verify that the tag was /f
          { /setxrefentry cvx /syntaxerror signalerror
-         } if
+         } {
+           % Bug #703214 has a invalid initial xref table. The table entries are correct
+           % but the subsection begins 1 7 instead of 0 7, which means the initial entry is
+           % declared as object 1 instead of object 0. The file is incrementally updated
+           % many times and every object *except* object 1 is redefined. Object 1 is
+           % therefore defined as free and having an offset of 0. Acrobat can open this
+           % without complaint! Because the PDF header is a comment line it is skipped
+           % so Acrobat must simply be ignoring the free flag. We can't easily detect
+           % this, but we can check for the generation number being the canonical
+           % head of the free list. If it is, and the object number we have is not
+           % zero, then pretend its not free.......
+           dup 65535 eq {
+             2 index 0 ne {
+               0 3 1 roll
+               //false setxrefentry
+               3 -1 roll pop
+             } if
+           }if
+         }ifelse
        } ifelse
        pop pop			% pop <obj location> and <gen num>
        % stack: <err count> <obj num>
