@@ -389,72 +389,85 @@ s_hex_process(stream_cursor_read * pr, stream_cursor_write * pw,
         return 1;
     if (val1 <= 0xf)
         goto d2;
-  d1:if ((rcount = (rlimit - p) >> 1) == 0)
-        goto x1;
-    /* Set up a fast end-of-loop check, so we don't have to test */
-    /* both p and q against their respective limits. */
-    flimit = (rcount < wlimit - q ? q + rcount : wlimit);
-  f1:if ((val1 = decoder[p[1]]) <= 0xf &&
-        (val2 = decoder[p[2]]) <= 0xf
-        ) {
-        p += 2;
+    do {
+        /* No digits read */
+        if ((rcount = (rlimit - p) >> 1) != 0)
+        {
+            /* Set up a fast end-of-loop check, so we don't have to test */
+            /* both p and q against their respective limits. */
+            flimit = (rcount < wlimit - q ? q + rcount : wlimit);
+            while (1) {
+                if ((val1 = decoder[p[1]]) <= 0xf &&
+                    (val2 = decoder[p[2]]) <= 0xf) {
+                    p += 2;
+                    *++q = (val1 << 4) + val2;
+                    if (q < flimit)
+                        continue;
+                    if (q >= wlimit)
+                        goto px;
+                }
+                break;
+            }
+        }
+        /* About to read the first digit */
+        while (1) {
+            if (p >= rlimit)
+                goto end1;
+            if ((val1 = decoder[*++p]) > 0xf) {
+                if (val1 == ctype_space) {
+                    switch (syntax) {
+                        case hex_ignore_garbage:
+                        case hex_ignore_whitespace:
+                            continue;
+                        case hex_ignore_leading_whitespace:
+                            if (q == q0 && *odd_digit < 0)
+                                continue;
+                            /* pass through */
+                        case hex_break_on_whitespace:
+                            --p;
+                            code = 2;
+                            goto end1;
+                    }
+                } else if (syntax == hex_ignore_garbage)
+                    continue;
+                code = ERRC;
+                goto end1;
+            }
+            break;
+        }
+  d2:
+        /* About to read the second hex digit of a pair */
+        while (1) {
+            if (p >= rlimit) {
+                *odd_digit = val1;
+                goto ended;
+            }
+            if ((val2 = decoder[*++p]) > 0xf) {
+                if (val2 == ctype_space)
+                    switch (syntax) {
+                        case hex_ignore_garbage:
+                        case hex_ignore_whitespace:
+                            continue;
+                        case hex_ignore_leading_whitespace:
+                            if (q == q0)
+                                continue;
+                            /* pass through */
+                        case hex_break_on_whitespace:
+                            --p;
+                            *odd_digit = val1;
+                            code = 2;
+                            goto ended;
+                    }
+                if (syntax == hex_ignore_garbage)
+                    continue;
+                *odd_digit = val1;
+                code = ERRC;
+                goto ended;
+            }
+            break;
+        }
         *++q = (val1 << 4) + val2;
-        if (q < flimit)
-            goto f1;
-        if (q >= wlimit)
-            goto px;
-    }
-  x1:if (p >= rlimit)
-        goto end1;
-    if ((val1 = decoder[*++p]) > 0xf) {
-        if (val1 == ctype_space) {
-            switch (syntax) {
-                case hex_ignore_garbage:
-                case hex_ignore_whitespace:
-                    goto x1;
-                case hex_ignore_leading_whitespace:
-                    if (q == q0 && *odd_digit < 0)
-                        goto x1;
-                    /* pass through */
-                case hex_break_on_whitespace:
-                    --p;
-                    code = 2;
-                    goto end1;
-            }
-        } else if (syntax == hex_ignore_garbage)
-            goto x1;
-        code = ERRC;
-        goto end1;
-    }
-  d2:if (p >= rlimit) {
-        *odd_digit = val1;
-        goto ended;
-    }
-    if ((val2 = decoder[*++p]) > 0xf) {
-        if (val2 == ctype_space)
-            switch (syntax) {
-                case hex_ignore_garbage:
-                case hex_ignore_whitespace:
-                    goto d2;
-                case hex_ignore_leading_whitespace:
-                    if (q == q0)
-                        goto d2;
-                    /* pass through */
-                case hex_break_on_whitespace:
-                    --p;
-                    *odd_digit = val1;
-                    code = 2;
-                    goto ended;
-            }
-        if (syntax == hex_ignore_garbage)
-            goto d2;
-        *odd_digit = val1;
-        code = ERRC;
-        goto ended;
-    }
-    *++q = (val1 << 4) + val2;
-    if (q < wlimit)
-        goto d1;
+    } while (q < wlimit);
   px:code = 1;
   end1:*odd_digit = -1;
   ended:pr->ptr = p;
