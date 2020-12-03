@@ -351,10 +351,14 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tToo few operands for an operator, operator was skipped.\n");
         if (ctx->pdf_errors & E_PDF_BADSTREAMDICT)
             dmprintf(ctx->memory, "\tA stream dictionary was not followed by a 'stream' keyword.\n");
+        if (ctx->pdf_errors & E_PDF_DEREF_FREE_OBJ)
+            dmprintf(ctx->memory, "\tAn attempt was made to access an object marked as free in the xref.\n");
     }
 
     if (ctx->pdf_warnings != W_PDF_NOWARNING) {
         dmprintf(ctx->memory, "The following warnings were encountered at least once while processing this file:\n");
+        if (ctx->pdf_warnings & W_PDF_BAD_XREF_SIZE)
+            dmprintf(ctx->memory, "\tThe file contains an xref with more entries than the declared /Size in the trailer dictionary.\n");
         if (ctx->pdf_warnings & W_PDF_BAD_INLINEFILTER)
             dmprintf(ctx->memory, "\tThe file attempted to use an inline decompression filter other than on an inline image.\n");
         if (ctx->pdf_warnings & W_PDF_BAD_INLINECOLORSPACE)

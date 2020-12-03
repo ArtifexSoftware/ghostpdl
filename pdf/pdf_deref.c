@@ -697,8 +697,10 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     if(entry->object_num == 0)
         return_error(gs_error_undefined);
 
-    if (entry->free)
+    if (entry->free) {
         dmprintf1(ctx->memory, "Attempt to dereference free object %"PRIu64", trying next object number as offset.\n", entry->object_num);
+        ctx->pdf_errors |= E_PDF_DEREF_FREE_OBJ;
+    }
 
     if (ctx->loop_detection) {
         if (pdfi_loop_detector_check_object(ctx, obj) == true)

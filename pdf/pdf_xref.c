@@ -641,13 +641,15 @@ static int write_offset(byte *B, gs_offset_t o, unsigned int g, unsigned char fr
     return 0;
 }
 
-static int read_xref_section(pdf_context *ctx, pdf_c_stream *s)
+static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *section_start, uint64_t *section_size)
 {
     int code = 0, i, j;
     pdf_obj *o = NULL;
     uint64_t start = 0, size = 0;
     int64_t bytes = 0;
     char Buffer[21];
+
+    *section_start = *section_size = 0;
 
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "\n%% Reading xref section\n");
@@ -670,7 +672,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s)
         return_error(gs_error_typecheck);
     }
 
-    start = ((pdf_num *)o)->value.i;
+    *section_start = start = ((pdf_num *)o)->value.i;
 
     code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
     if (code < 0) {
@@ -684,7 +686,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s)
         pdfi_pop(ctx, 2);
         return_error(gs_error_typecheck);
     }
-    size = ((pdf_num *)o)->value.i;
+    *section_size = size = ((pdf_num *)o)->value.i;
     pdfi_pop(ctx, 2);
 
     if (ctx->pdfdebug)
@@ -778,14 +780,20 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     pdf_obj **o = NULL;
     pdf_keyword *k;
     pdf_dict *d = NULL;
-    uint64_t size = 0;
+    uint64_t size = 0, max_obj = 0;
     int64_t num;
 
     do {
+        uint64_t section_start, section_size;
+
         o = ctx->stack_top;
-        code = read_xref_section(ctx, s);
+        code = read_xref_section(ctx, s, &section_start, &section_size);
         if (code < 0)
             return code;
+
+        if (section_start + section_size > max_obj)
+            max_obj = section_start + section_size;
+
         if (ctx->stack_top - o > 0) {
             k = (pdf_keyword *)ctx->stack_top[-1];
             if(k->type != PDF_KEYWORD || k->key != TOKEN_TRAILER)
@@ -912,6 +920,16 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     /* Not a hybrid file, so now check if this is a modified file and has
      * previous xref entries.
      */
+    /* But first, check if the highest subsection + size exceeds the /Size in the
+     * trailer dictionary and set a warning flag if it does
+     */
+    code = pdfi_dict_get_int(ctx, d, "Size", &num);
+    if (code < 0) {
+        return code;
+    }
+    if (max_obj > num)
+        ctx->pdf_warnings |= W_PDF_BAD_XREF_SIZE;
+
     code = pdfi_dict_get_int(ctx, d, "Prev", &num);
     if (code < 0) {
         pdfi_pop(ctx, 1);
