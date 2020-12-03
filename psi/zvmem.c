@@ -99,6 +99,8 @@ zsave(i_ctx_t *i_ctx_p)
          */
         asave = alloc_find_save(idmemory, sid);
         code2 = dorestore(i_ctx_p, asave);
+        if (code2 < 0) /* shouldn't happen! */
+            return_error(gs_error_Fatal);
         return code;
     }
     vmsave->gsave = prev;
