@@ -612,14 +612,22 @@ MS_TOOLSET_VERSION=14.26.28806
 !if "$(_NMAKE_VER)" == "14.27.29111.0"
 # VS2019 (Toolset v142)
 MSVC_VERSION=16
+MS_TOOLSET_VERSION=14.27.29111
 !endif
 !if "$(_NMAKE_VER)" == "14.27.29112.0"
 # VS2019 (Toolset v142)
 MSVC_VERSION=16
+MS_TOOLSET_VERSION=14.27.29112
 !endif
 !if "$(_NMAKE_VER)" == "14.28.29333.0"
 # VS2019 (Toolset v142)
 MSVC_VERSION=16
+MS_TOOLSET_VERSION=14.28.29333
+!endif
+!if "$(_NMAKE_VER)" == "14.28.29334.0"
+# VS2019 (Toolset v142)
+MSVC_VERSION=16
+MS_TOOLSET_VERSION=14.28.29333
 !endif
 !endif
 
@@ -913,20 +921,55 @@ LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\L
 !endif
 
 !if $(MSVC_VERSION) == 15
+! ifndef DEVSTUDIO
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\$(MS_TOOLSET_VERSION)
+! endif
 ! if "$(DEVSTUDIO)"==""
 COMPBASE=
 SHAREDBASE=
 ! else
-!MESSAGE Compilation is unlikely to work like this. Build from VS solution for now.
+!  if $(BUILD_SYSTEM) == 64
+DEVSTUDIO_HOST=Hostx64
+!  else
+DEVSTUDIO_HOST=Hostx86
+!  endif
+!  ifdef WIN64
+DEVSTUDIO_TARGET=x64
+!  else
+DEVSTUDIO_TARGET=x86
+!  endif
+COMPDIR=$(DEVSTUDIO)\bin\$(DEVSTUDIO_HOST)\$(DEVSTUDIO_TARGET)
+RCDIR=
+LINKLIBPATH=/LIBPATH:"$(DEVSTUDIO)\lib\$(DEVSTUDIO_TARGET)"
 ! endif
 !endif
 
 !if $(MSVC_VERSION) == 16
+! ifndef DEVSTUDIO
+!  if exist("C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional")
+DEVSTUDIO_VARIANT=Professional
+!  else
+DEVSTUDIO_VARIANT=Community
+!  endif
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio\2019\$(DEVSTUDIO_VARIANT)\VC\Tools\MSVC\$(MS_TOOLSET_VERSION)
+! endif
 ! if "$(DEVSTUDIO)"==""
 COMPBASE=
 SHAREDBASE=
 ! else
-!MESSAGE Compilation is unlikely to work like this. Build from VS solution for now.
+!  if $(BUILD_SYSTEM) == 64
+DEVSTUDIO_HOST=Hostx64
+!  else
+DEVSTUDIO_HOST=Hostx86
+!  endif
+!  ifdef WIN64
+DEVSTUDIO_TARGET=x64
+!  else
+DEVSTUDIO_TARGET=x86
+!  endif
+COMPDIR=$(DEVSTUDIO)\bin\$(DEVSTUDIO_HOST)\$(DEVSTUDIO_TARGET)
+RCDIR=
+LINKLIBPATH=/LIBPATH:"$(DEVSTUDIO)\lib\$(DEVSTUDIO_TARGET)"
 ! endif
 !endif
 
