@@ -924,6 +924,7 @@ static int pdfi_doc_Outlines(pdf_context *ctx)
 
         pdfi_countdown(outline);
         outline = Next;
+        Next = NULL;
     } while (true);
 
  exit:
