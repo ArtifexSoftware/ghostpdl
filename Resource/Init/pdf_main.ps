@@ -536,10 +536,16 @@ currentdict /runpdfstring .undef
         dup /Page# exch store
         QUIET not { (Page ) print dup //== exec flush } if
         pdfgetpage
-        dup //null ne { pdfshowpage } {
-          (   **** Error: Page #) pdfformaterror Page# 10 string cvs pdfformaterror
-          ( not found.\n) pdfformaterror
-          /dopdfpages cvx /syntaxerror signalerror
+        dup //null ne {
+          pdfshowpage
+        } {
+          PDFSTOPONERROR {
+            /dopdfpages cvx /syntaxerror signalerror
+          } {
+            pop
+            (   **** Error: Page #) pdfformaterror Page# 10 string cvs pdfformaterror
+            ( not found.\n) pdfformaterror
+          } ifelse
         } ifelse
       }{
         pop
@@ -2110,10 +2116,20 @@ currentdict /xref-char-dict undef
       exch pop //null
       0 1 3 index length 1 sub {
          2 index exch get
-         dup oforce dup /Kids known { /Count oget } { pop 1 } ifelse
+         dup oforce
+         dup //null eq {
+           PDFSTOPONERROR {
+             /pdffindpage? cvx /syntaxerror signalerror
+           } {
+             (   **** Error: Ignoring a null node in the Page tree.\n) pdfformaterror
+             pop pop
+           } ifelse
+         } {
+           dup /Kids known { /Count oget } { pop 1 } ifelse
                 % Stack: index kids null noderef count
-         dup 5 index ge { pop exch pop exit } if
-         5 -1 roll exch sub 4 1 roll pop
+           dup 5 index ge { pop exch pop exit } if
+           5 -1 roll exch sub 4 1 roll pop
+         } ifelse
       } for exch pop
                 % Stack: index null|noderef
       dup //null eq { pop pop 1 //null exit } if
