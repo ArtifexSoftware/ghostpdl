@@ -660,10 +660,17 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
             /* Write the type 1 font with no converting to CFF. */
             int lengths[3];
 
-            code = psf_write_type1_font(writer.binary.strm,
+            if (pbfont->do_subset != DO_SUBSET_NO)
+                code = psf_write_type1_font(writer.binary.strm,
                                 (gs_font_type1 *)out_font,
                                 WRITE_TYPE1_WITH_LENIV | WRITE_TYPE1_EEXEC |
                                 WRITE_TYPE1_EEXEC_PAD | WRITE_TYPE1_ASCIIHEX,
+                                NULL, 0, &fnstr, lengths);
+            else
+                code = psf_write_type1_font(writer.binary.strm,
+                                (gs_font_type1 *)out_font,
+                                WRITE_TYPE1_WITH_LENIV | WRITE_TYPE1_EEXEC |
+                                WRITE_TYPE1_EEXEC_PAD | WRITE_TYPE1_ASCIIHEX | WRITE_TYPE1_XUID,
                                 NULL, 0, &fnstr, lengths);
             if (lengths[0] > 0) {
                 if (code < 0)
@@ -695,7 +702,8 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
             code = psf_write_type2_font(writer.binary.strm,
                                         (gs_font_type1 *)out_font,
                                         TYPE2_OPTIONS |
-                            (pdev->CompatibilityLevel < 1.3 ? WRITE_TYPE2_AR3 : 0),
+                            (pdev->CompatibilityLevel < 1.3 ? WRITE_TYPE2_AR3 : 0) |
+                            (pbfont->do_subset == DO_SUBSET_NO ? WRITE_TYPE2_XUID : 0),
                                         NULL, 0, &fnstr, FontBBox);
         }
         goto finish;

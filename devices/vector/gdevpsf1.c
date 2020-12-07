@@ -75,12 +75,18 @@ write_float_array(gs_param_list *plist, const char *key, const float *values,
 
 /* Write a UniqueID and/or XUID. */
 static void
-write_uid(stream *s, const gs_uid *puid)
+write_uid(stream *s, const gs_uid *puid, int options)
 {
     if (uid_is_UniqueID(puid))
         pprintld1(s, "/UniqueID %ld def\n", puid->id);
-    else if (uid_is_XUID(puid)) {
+    else if (uid_is_XUID(puid) && (options & WRITE_TYPE1_XUID) != 0) {
         uint i, n = uid_XUID_size(puid);
+
+        /* Adobe products (specifically Acrobat but the same limitation is mentioned
+         * in the PLRM) cannot handle XUIDs > 16 entries.
+         */
+        if (n > 16)
+            n = 16;
 
         stream_puts(s, "/XUID [");
         for (i = 0; i < n; ++i)
@@ -530,7 +536,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
               gs_glyph *subset_glyphs, uint subset_size,
               gs_glyph notdef, int lenIV,
               int (*write_CharString)(stream *, const void *, uint),
-              const param_printer_params_t *ppp)
+              const param_printer_params_t *ppp, int options)
 {
     const gs_type1_data *const pdata = &pfont->data;
     printer_param_list_t rlist;
@@ -596,7 +602,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
         write_float_array(plist, "StemSnapV", pdata->StemSnapV.values,
                           pdata->StemSnapV.count);
     }
-    write_uid(s, &pfont->UID);
+    write_uid(s, &pfont->UID, options);
     stream_puts(s, "/MinFeature{16 16} def\n");
     stream_puts(s, "/password 5839 def\n");
 
@@ -860,7 +866,7 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
              pfont->FontMatrix.xx, pfont->FontMatrix.xy,
              pfont->FontMatrix.yx, pfont->FontMatrix.yy,
              pfont->FontMatrix.tx, pfont->FontMatrix.ty);
-    write_uid(s, &pfont->UID);
+    write_uid(s, &pfont->UID, options);
     pprintg4(s, "/FontBBox {%g %g %g %g} readonly def\n",
              pfont->FontBBox.p.x, pfont->FontBBox.p.y,
              pfont->FontBBox.q.x, pfont->FontBBox.q.y);
@@ -929,7 +935,7 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
         stream_puts(es, "****");
     }
     code = write_Private(es, pfont, glyphs.subset_glyphs, glyphs.subset_size,
-                         glyphs.notdef, lenIV, write_CharString, &ppp);
+                         glyphs.notdef, lenIV, write_CharString, &ppp, options);
     if (code < 0)
         return code;
     stream_puts(es, "dup/FontName get exch definefont pop\n");

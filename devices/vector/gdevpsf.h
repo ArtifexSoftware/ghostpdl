@@ -166,6 +166,7 @@ int psf_get_type1_glyphs(psf_outline_glyphs_t *pglyphs,
 #define WRITE_TYPE1_EEXEC_MARK 8  /* assume 512 0s will be added */
 #define WRITE_TYPE1_POSTSCRIPT 16  /* don't observe ATM restrictions */
 #define WRITE_TYPE1_WITH_LENIV 32  /* don't allow lenIV = -1 */
+#define WRITE_TYPE1_XUID 64
 int psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
                          gs_glyph *subset_glyphs, uint subset_size,
                          const gs_const_string *alt_font_name,
@@ -181,6 +182,7 @@ int psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 #define WRITE_TYPE2_CHARSTRINGS 2 /* convert T1 charstrings to T2 */
 #define WRITE_TYPE2_AR3 4	/* work around bugs in Acrobat Reader 3 */
 #define WRITE_TYPE2_NO_GSUBRS 8	/* omit GlobalSubrs */
+#define WRITE_TYPE2_XUID 16
 int psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
                          gs_glyph *subset_glyphs, uint subset_size,
                          const gs_const_string *alt_font_name,

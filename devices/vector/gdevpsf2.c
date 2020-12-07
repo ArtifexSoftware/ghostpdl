@@ -575,9 +575,14 @@ cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont,
       }
     if (uid_is_UniqueID(&pbfont->UID))
         cff_put_int_value(pcw, pbfont->UID.id, TOP_UniqueID);
-    else if (uid_is_XUID(&pbfont->UID)) {
-        int j;
+    else if (uid_is_XUID(&pbfont->UID) && (pcw->options & WRITE_TYPE2_XUID) != 0) {
+        int j, k = uid_XUID_size(&pbfont->UID);
 
+        /* Adobe products (specifically Acrobat but the same limitation is mentioned
+         * in the PLRM) cannot handle XUIDs > 16 entries.
+         */
+        if (k > 16)
+            k = 16;
         for (j = 0; j < uid_XUID_size(&pbfont->UID); ++j)
             cff_put_int(pcw, uid_XUID_values(&pbfont->UID)[j]);
         cff_put_op(pcw, TOP_XUID);
