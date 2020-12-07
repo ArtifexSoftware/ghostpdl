@@ -1899,6 +1899,7 @@ sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index,
 {                               /* Note : TTC is not supported and probably is unuseful for Type 42. */
     sfnts_reader r;
     int glyf_elem_size = (pfont42->data.indexToLocFormat) ? 4 : 2;
+    ulong fullsize;
 
     if (index < pfont42->data.trueNumGlyphs) {
         sfnts_reader_init(&r, pdr);
@@ -1906,6 +1907,10 @@ sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index,
         *offset0 =
             pfont42->data.glyf + (glyf_elem_size ==
                               2 ? r.rword(&r) * 2 : r.rlong(&r));
+        r.error = sfnt_get_sfnt_length(pdr, &fullsize);
+        if (r.error < 0 || *offset0 > fullsize) {
+            r.error = gs_note_error(gs_error_invalidaccess);
+        }
     }
     else {
         r.error = gs_note_error(gs_error_rangecheck);

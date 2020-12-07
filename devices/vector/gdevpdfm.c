@@ -2456,7 +2456,16 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
         /* strip << and >> */
         if ((pairs[1].data)[0]=='<'&&(pairs[1].data)[1]=='<')
         {
-            pairs[1].data=&(pairs[1].data[2]);
+            int ix = 0;
+            byte *p = (byte *)pairs[1].data;
+
+            /* Fortunately we don't use the 'size' when freeing the memory
+             * so we can quickly copy the string content up two places and reduce
+             * the size by 2 to remove the '<<'. This saves an alloc and free of the
+             * string data.
+             */
+            for (ix = 0; ix < pairs[1].size - 2;ix++)
+                p[ix] = pairs[1].data[ix + 2];
             pairs[1].size-=2;
         }
         else
@@ -2831,7 +2840,7 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
             gs_memory_t *mem = pdev->pdf_memory;
             int odd_ok = (pmn->options & PDFMARK_ODD_OK) != 0;
             gs_param_string *pairs;
-            int j;
+            int j, index;
 
             /*
              * Our coordinate system is scaled so that user space is always
@@ -2866,9 +2875,25 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
                                                 "pdfmark_process(pairs)");
                         if (!pairs)
                             return_error(gs_error_VMerror);
-                        memcpy(pairs, data, j * sizeof(*data));
-                        memcpy(pairs + j, data + j + 2,
-                               (size - j) * sizeof(*data));
+
+                        for (index=0;index < size;index++)
+                            pairs[index].data = NULL;
+                        for (index=0;index < j;index++) {
+                            pairs[index].data = gs_alloc_bytes(mem, data[index].size, "pdfmark_process(pairs)");
+                            if (pairs[index].data == NULL)
+                                goto error;
+                            memcpy((byte *)pairs[index].data, data[index].data, data[index].size);
+                            pairs[index].size = data[index].size;
+                            pairs[index].persistent = 1;
+                        }
+                        for (index=j+2;index < size + 2;index++) {
+                            pairs[index - 2].data = gs_alloc_bytes(mem, data[index].size, "pdfmark_process(pairs)");
+                            if (pairs[index - 2].data == NULL)
+                                goto error;
+                            memcpy((byte *)pairs[index - 2].data, data[index].data, data[index].size);
+                            pairs[index - 2].size = data[index].size;
+                            pairs[index - 2].persistent = 1;
+                        }
                         goto copied;
                     }
                 }
@@ -2879,8 +2904,17 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
                                     "pdfmark_process(pairs)");
             if (!pairs)
                 return_error(gs_error_VMerror);
-            memcpy(pairs, data, size * sizeof(*data));
-        copied:		/* Substitute object references for names. */
+            for (j=0;j < size;j++)
+                pairs[j].data = NULL;
+            for (j=0;j < size;j++) {
+                pairs[j].data = gs_alloc_bytes(mem, data[j].size, "pdfmark_process(pairs)");
+                if (pairs[j].data == NULL)
+                    goto error;
+                memcpy((byte *)pairs[j].data, data[j].data, data[j].size);
+                pairs[j].size = data[j].size;
+                pairs[j].persistent = 1;
+            }
+copied:		/* Substitute object references for names. */
             if (!(pmn->options & PDFMARK_NO_REFS)) {
                 for (j = (pmn->options & PDFMARK_KEEP_NAME ? 1 : 1 - odd_ok);
                      j < size; j += 2 - odd_ok
@@ -2893,6 +2927,9 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
                 }
             }
             code = (*pmn->proc) (pdev, pairs, size, &ctm, objname);
+error:
+            for (j=0;j < size;j++)
+                gs_free_object(mem, (byte *)pairs[j].data, "pdfmark_process(pairs)");
             gs_free_object(mem, pairs, "pdfmark_process(pairs)");
             break;
         }

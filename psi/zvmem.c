@@ -73,17 +73,36 @@ zsave(i_ctx_t *i_ctx_p)
         return_error(gs_error_VMerror);
     vmsave->gsave = NULL; /* Ensure constructed enough to destroy safely */
     code = alloc_save_state(idmemory, vmsave, &sid);
-    if (code < 0)
-        return code;
-    if (sid == 0) {
+
+    if (code < 0 || sid == 0) {
         ifree_object(vmsave, "zsave");
-        return_error(gs_error_VMerror);
+        if (code < 0)
+            return code;
+        else
+            return_error(gs_error_VMerror);
     }
     if_debug2m('u', imemory, "[u]vmsave "PRI_INTPTR", id = %lu\n",
                (intptr_t) vmsave, (ulong) sid);
     code = gs_gsave_for_save(igs, &prev);
-    if (code < 0)
+    if (code < 0) {
+        alloc_save_t *asave;
+        int code2;
+        /* dorestore() pops the restore operand off the stack,
+           despite dorestore() actually having the save state
+           passed to it as a C function parameter. So push a
+           sacrificial object.
+         */
+        push(1);
+        make_null(op);
+        /* We use dorestore() to discard the save state we
+           created above.
+         */
+        asave = alloc_find_save(idmemory, sid);
+        code2 = dorestore(i_ctx_p, asave);
+        if (code2 < 0) /* shouldn't happen! */
+            return_error(gs_error_Fatal);
         return code;
+    }
     vmsave->gsave = prev;
     push(1);
     make_tav(op, t_save, 0, saveid, sid);
@@ -156,7 +175,11 @@ dorestore(i_ctx_t *i_ctx_p, alloc_save_t *asave)
     do {
         vmsave = alloc_save_client_data(alloc_save_current(idmemory));
         /* Restore the graphics state. */
-        gs_grestoreall_for_restore(igs, vmsave->gsave);
+        /* The only time vmsave->gsave should be NULL is if we are
+           cleaning up after a VMerror during a save operation.
+         */
+        if (vmsave->gsave != NULL)
+            gs_grestoreall_for_restore(igs, vmsave->gsave);
         /*
          * If alloc_save_space decided to do a second save, the vmsave
          * object was allocated one save level less deep than the
