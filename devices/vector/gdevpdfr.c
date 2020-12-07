@@ -455,7 +455,7 @@ pdf_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
 {
     const byte *start = from->data;
     const byte *end = start + from->size;
-    const byte *scan;
+    const byte *scan, *to_free = NULL;
     uint size = 0;
     cos_object_t *pco;
     bool any = false;
@@ -485,13 +485,17 @@ pdf_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
     }
     to->persistent = true;	/* ??? */
     if (!any) {
-        to->data = start;
+        if (to->data != start) {
+            gs_free_object(pdev->pdf_memory, (byte *)to->data, "pdf_replace_names");
+            to->data = start;
+        }
         to->size = size;
         return 0;
     }
     sto = gs_alloc_bytes(pdev->pdf_memory, size, "pdf_replace_names");
     if (sto == 0)
         return_error(gs_error_VMerror);
+    to_free = to->data;
     to->data = sto;
     to->size = size;
     /* Do a second pass to do the actual substitutions. */
@@ -516,5 +520,6 @@ pdf_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
         }
         scan = next;
     }
+    gs_free_object(pdev->pdf_memory, (byte *)to_free, "pdf_replace_names");
     return 0;
 }
