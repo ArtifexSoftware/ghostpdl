@@ -832,8 +832,10 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                 cos_dict_put_string(adict, key.data, key.size,
                                     value.data, value.size);
             }
-            if (code <= 0 || !pdf_key_eq(&key, ">>"))
+            if (code <= 0 || !pdf_key_eq(&key, ">>")) {
+                cos_free((cos_object_t *)adict, "action dict");
                 return_error(gs_error_rangecheck);
+            }
             cos_dict_put(pcd, (const byte *)"/A", 2,
                          COS_OBJECT_VALUE(&avalue, adict));
         } else if (pdf_key_eq(Action + 1, "/GoTo"))
@@ -1334,8 +1336,10 @@ pdfmark_OUT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     ao.src_pg = -1;
     code = pdfmark_put_ao_pairs(pdev, node.action, pairs, count, pctm, &ao,
                                 true);
-    if (code < 0)
+    if (code < 0) {
+        cos_free((cos_object_t *)node.action, "pdfmark_OUT");
         return code;
+    }
     if (pdev->outlines_id == 0)
         pdev->outlines_id = pdf_obj_ref(pdev);
     node.id = pdf_obj_ref(pdev);
