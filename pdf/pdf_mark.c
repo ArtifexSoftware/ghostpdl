@@ -211,20 +211,6 @@ static int pdfi_mark_from_dict_withlabel(pdf_context *ctx, pdf_indirect_ref *lab
             code = pdfi_dict_get_no_deref(ctx, dict, Key, &Value);
             if (code < 0) goto exit;
 
-            if (Value->type == PDF_INDIRECT) {
-                pdf_indirect_ref *ref = (pdf_indirect_ref *)Value;
-
-                code = pdfi_dereference(ctx, ref->ref_object_num, ref->ref_generation_num, &tempobj);
-                if (code < 0) goto exit;
-
-                /* We use the deref'd object only if it's not a stream */
-                if (tempobj->type != PDF_STREAM) {
-                    pdfi_countdown(Value);
-                    Value = tempobj;
-                    tempobj = NULL;
-                }
-            }
-
             code = pdfi_mark_setparam_pair(ctx, Key, Value, parray+offset+(keynum*2));
             if (code < 0) goto exit;
 
@@ -608,8 +594,9 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict)
     pdf_name *S_name = NULL;
     pdf_array *D_array = NULL;
     bool delete_A = false;
+    bool deref_A = true;
 
-    code = pdfi_dict_get(ctx, dict, "A", (pdf_obj **)&A_dict);
+    code = pdfi_dict_get_no_store_R(ctx, dict, "A", (pdf_obj **)&A_dict);
     if (code < 0) goto exit;
 
     if (A_dict->type != PDF_DICT) {
@@ -688,10 +675,12 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict)
         /* TODO: ??
          * File: fts_33_3307.pdf
          */
+        deref_A = false;
     } else if (pdfi_name_is(S_name, "Movie")) {
         /* TODO: ??
          * File: fts_33_3308.pdf
          */
+        deref_A = false;
     } else if (pdfi_name_is(S_name, "GoTo3DView")) {
         /* TODO: ??
          * File: fts_33_3318.pdf
@@ -711,6 +700,10 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict)
  exit:
     if (delete_A) {
         code = pdfi_dict_delete(ctx, dict, "A");
+    } else if (deref_A) {
+        pdfi_countdown(A_dict);
+        A_dict = NULL;
+        code = pdfi_dict_get(ctx, dict, "A", (pdf_obj **)&A_dict);
     }
     pdfi_countdown(A_dict);
     pdfi_countdown(S_name);
@@ -789,11 +782,13 @@ static int pdfi_mark_stream_contents(pdf_context *ctx, pdf_indirect_ref *label, 
 
     objarray[1] = (pdf_obj *)stream;
     pdfi_countup(stream);
+    stream->is_marking = true;
 
     code = pdfi_mark_from_objarray(ctx, objarray, num_objects, NULL, ".PUTSTREAM");
     if (code < 0) goto exit;
 
  exit:
+    stream->is_marking = false;
     for (i=0; i<num_objects; i++)
         pdfi_countdown(objarray[i]);
     return code;
@@ -805,6 +800,10 @@ int pdfi_mark_stream(pdf_context *ctx, pdf_stream *stream)
     int code;
     pdf_dict *streamdict = NULL;
     pdf_indirect_ref *streamref = NULL;
+    pdf_dict *tempdict = NULL;
+    uint64_t dictsize;
+    uint64_t index;
+    pdf_name *Key = NULL;
 
     if (stream->stream_written)
         return 0;
@@ -825,10 +824,34 @@ int pdfi_mark_stream(pdf_context *ctx, pdf_stream *stream)
     code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream, &streamdict);
     if (code < 0) goto exit;
 
+    /* Make a copy of the dict and remove Filter keyword */
+    dictsize = pdfi_dict_entries(streamdict);
+    code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
+    if (code < 0) goto exit;
+    pdfi_countup(tempdict);
+    code = pdfi_dict_copy(ctx, tempdict, streamdict);
+    if (code < 0) goto exit;
+    code = pdfi_dict_key_first(ctx, streamdict, (pdf_obj **)&Key, &index);
+    while (code >= 0) {
+        if (pdfi_name_is(Key, "Filter")) {
+            code = pdfi_dict_delete_pair(ctx, tempdict, Key);
+            if (code < 0) goto exit;
+        }
+        pdfi_countdown(Key);
+        Key = NULL;
+
+        code = pdfi_dict_key_next(ctx, streamdict, (pdf_obj **)&Key, &index);
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+    }
+    if (code < 0) goto exit;
+
     code = pdfi_mark_objdef_begin(ctx, streamref, "stream");
     if (code < 0) goto exit;
 
-    code = pdfi_mark_from_dict_withlabel(ctx, streamref, streamdict, NULL, ".PUTDICT");
+    code = pdfi_mark_from_dict_withlabel(ctx, streamref, tempdict, NULL, ".PUTDICT");
     if (code < 0) goto exit;
 
     code = pdfi_mark_stream_contents(ctx, streamref, stream);
@@ -838,6 +861,7 @@ int pdfi_mark_stream(pdf_context *ctx, pdf_stream *stream)
     if (code < 0) goto exit;
 
  exit:
+    pdfi_countdown(tempdict);
     pdfi_countdown(streamref);
     return code;
 }

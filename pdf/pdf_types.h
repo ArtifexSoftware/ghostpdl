@@ -181,6 +181,7 @@ typedef struct pdf_stream_s {
     int64_t Length; /* Value of Length in dict, 0 if undefined.  non-zero means it's a stream */
     bool length_valid; /* True if Length and is_stream have been cached above */
     bool stream_written; /* Has stream been written (for pdfwrite) */
+    bool is_marking;
 } pdf_stream;
 
 typedef struct pdf_indirect_ref_s {

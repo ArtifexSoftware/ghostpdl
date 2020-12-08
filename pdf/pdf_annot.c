@@ -3250,10 +3250,10 @@ annot_preserve_dispatch_t annot_preserve_dispatch[] = {
     {"Highlight", pdfi_annot_preserve_default},
     {"Ink", pdfi_annot_preserve_default},
     {"Line", pdfi_annot_preserve_default},
-    /* don't try to handle Movie yet, just omit from the list */
-    /* {"Movie", pdfi_annot_preserve_default},*/
+    {"Movie", pdfi_annot_preserve_default},
     {"PolyLine", pdfi_annot_preserve_default},
     {"Popup", pdfi_annot_preserve_default},
+    //    {"Screen", pdfi_annot_preserve_default},  /* TODO: fts_07_0709.pdf */
     {"Sound", pdfi_annot_preserve_default},
     {"Square", pdfi_annot_preserve_default},
     {"Squiggly", pdfi_annot_preserve_default},

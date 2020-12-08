@@ -526,12 +526,15 @@ static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
     pdf_indirect_ref *ref = (pdf_indirect_ref *)obj;
     char *buf;
     pdf_obj *object = NULL;
+    bool use_label = true;
 
     if (ref->is_label) {
         buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_indirect_str(data)");
         if (buf == NULL)
             return_error(gs_error_VMerror);
         snprintf(buf, size, "%ld %d R", ref->ref_object_num, ref->ref_generation_num);
+        *data = (byte *)buf;
+        *len = strlen(buf);
     } else {
         if (!ref->is_marking) {
             code = pdfi_dereference(ctx, ref->ref_object_num, ref->ref_generation_num, &object);
@@ -544,14 +547,20 @@ static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
                 } else if (object->type == PDF_DICT) {
                     code = pdfi_mark_dict(ctx, (pdf_dict *)object);
                     if (code < 0) goto exit;
+                } else {
+                    code = pdfi_obj_to_string(ctx, object, data, len);
+                    if (code < 0) goto exit;
+                    use_label = false;
                 }
             }
         }
-        code = pdfi_obj_get_label(ctx, (pdf_obj *)ref, &buf);
-        if (code < 0) goto exit;
+        if (use_label) {
+            code = pdfi_obj_get_label(ctx, (pdf_obj *)ref, &buf);
+            if (code < 0) goto exit;
+            *data = (byte *)buf;
+            *len = strlen(buf);
+        }
     }
-    *data = (byte *)buf;
-    *len = strlen(buf);
 
  exit:
     pdfi_countdown(object);
@@ -739,6 +748,7 @@ static int pdfi_obj_stream_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
     byte *buf;
     pdf_stream *stream = (pdf_stream *)obj;
     int64_t bufsize;
+    pdf_indirect_ref *streamref = NULL;
 
     /* TODO: How to deal with stream dictionaries?
      * /AP is one example that has special handling (up in pdf_annot.c), but there are others.
@@ -746,12 +756,23 @@ static int pdfi_obj_stream_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
      *
      * This will just literally grab the stream data.
      */
-    code = pdfi_stream_to_buffer(ctx, stream, &buf, &bufsize);
-    if (code < 0) goto exit;
+    if (stream->is_marking) {
+        code = pdfi_stream_to_buffer(ctx, stream, &buf, &bufsize);
+        if (code < 0) goto exit;
+        *data = buf;
+        *len = (int)bufsize;
+    } else {
+        /* Create an indirect ref for the stream */
+        code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&streamref);
+        if (code < 0) goto exit;
+        pdfi_countup(streamref);
+        streamref->ref_object_num = stream->object_num;
+        streamref->ref_generation_num = stream->generation_num;
+        code = pdfi_obj_indirect_str(ctx, (pdf_obj *)streamref, data, len);
+    }
 
-    *data = buf;
-    *len = (int)bufsize;
  exit:
+    pdfi_countdown(streamref);
     return code;
 }
 
