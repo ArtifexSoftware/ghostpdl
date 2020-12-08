@@ -762,6 +762,22 @@ def
 
   .pdfruncontext
   end grestore
+
+  % check for extra garbage on the operand stack and clean it up
+  count pdfemptycount sub dup 0 ne {
+    (   **** Error: Transparency Group, Form XObject execution corrupted the stack.\n) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
+    PDFSTOPONERROR {
+       /.execgroup cvx /rangecheck signalerror
+    } {
+      dup 0 gt {
+        { pop } repeat
+      } if
+    } ifelse
+  } {
+    pop
+  } ifelse
+
   /pdfemptycount exch store
 } bind executeonly def
 
