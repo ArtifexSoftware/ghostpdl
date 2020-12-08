@@ -712,7 +712,6 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
     uint64_t dictsize;
     uint64_t index;
     pdf_name *Key = NULL;
-    bool resolve = false;
 
     /* Basically we only do /Count, /Title, /A, /C, /F
      * The /First, /Last, /Next, /Parent get written magically by pdfwrite
@@ -757,7 +756,7 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
              */
             code = pdfi_dict_delete_pair(ctx, tempdict, Key);
         } else if (pdfi_name_is(Key, "A")) {
-            code = pdfi_mark_modA(ctx, tempdict, &resolve);
+            code = pdfi_mark_modA(ctx, tempdict);
         } else if (pdfi_name_is(Key, "Dest")) {
             code = pdfi_mark_modDest(ctx, tempdict);
         } else if (pdfi_name_is(Key, "Count")) {

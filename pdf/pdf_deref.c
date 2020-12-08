@@ -909,3 +909,29 @@ int pdfi_resolve_indirect(pdf_context *ctx, pdf_obj *value, bool recurse)
     }
     return code;
 }
+
+/* Resolve all the indirect references for an object
+ * Resolve indirect references, either one level or recursively, with loop detect on
+ * the parent (can by NULL) and the value.
+ */
+int pdfi_resolve_indirect_loop_detect(pdf_context *ctx, pdf_obj *parent, pdf_obj *value, bool recurse)
+{
+    int code = 0;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0) goto exit;
+    if (parent && parent->object_num != 0) {
+        code = pdfi_loop_detector_add_object(ctx, parent->object_num);
+        if (code < 0) goto exit;
+    }
+    if (value->object_num != 0) {
+        code = pdfi_loop_detector_add_object(ctx, value->object_num);
+        if (code < 0) goto exit;
+    }
+    code = pdfi_resolve_indirect(ctx, value, false);
+    if (code < 0) goto exit;
+    (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
+
+ exit:
+    return code;
+}

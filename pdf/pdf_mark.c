@@ -600,7 +600,7 @@ int pdfi_mark_modDest(pdf_context *ctx, pdf_dict *link_dict)
 /* Special handling for "A" in Link annotations and Outlines
  * Will delete A if handled and if A_key is provided.
  */
-int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, bool *resolve)
+int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict)
 {
     int code = 0;
     pdf_dict *A_dict = NULL;
@@ -608,8 +608,6 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, bool *resolve)
     pdf_name *S_name = NULL;
     pdf_array *D_array = NULL;
     bool delete_A = false;
-
-    *resolve = false;
 
     code = pdfi_dict_get(ctx, dict, "A", (pdf_obj **)&A_dict);
     if (code < 0) goto exit;
@@ -626,7 +624,7 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, bool *resolve)
     code = pdfi_dict_known(ctx, A_dict, "URI", &known);
     if (code < 0) goto exit;
     if (known) {
-        *resolve = true;
+        code = pdfi_resolve_indirect_loop_detect(ctx, (pdf_obj *)NULL, (pdf_obj *)dict, true);
         goto exit;
     }
 
@@ -656,14 +654,18 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict, bool *resolve)
         if (code < 0) goto exit;
         delete_A = true;
     } else if (pdfi_name_is(S_name, "GoToR") || pdfi_name_is(S_name, "Launch")) {
-        /* TODO: I think we just leave this alone since it points out of doc?
+        /* These point out of the document.
+         * Flatten out the reference, but otherwise leave it alone.
+         * gs does some wack stuff here.
+         *
          * Currently this is same behavior as gs, but it is not correct behavior.
          * In at least some cases we could do better, for example if the doc
          * pointed to happens to be the same file.
          * Sample: fts_28_2808.pdf
+         * Sample: ~/work/samples/tests_private/pdf/sumatra/1874_-_clicking_ToC_link_crashes.pdf
          */
+        code = pdfi_resolve_indirect_loop_detect(ctx, (pdf_obj *)dict, (pdf_obj *)A_dict, true);
         delete_A = false;
-        *resolve = true;
         code = 0;
     } else if (pdfi_name_is(S_name, "Named")) {
         /* We can just pass this through and it will work fine

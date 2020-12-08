@@ -3139,7 +3139,7 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
             code = pdfi_annot_preserve_modQP(ctx, tempdict, Key);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "A")) {
-            code = pdfi_mark_modA(ctx, tempdict, &resolve);
+            code = pdfi_mark_modA(ctx, tempdict);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "Dest")) {
             if (ctx->no_pdfmark_dests) {
@@ -3175,13 +3175,8 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
              * everything.  I am not sure what the point is in that case.
              * For now, also doing only one level.
              */
-            code = pdfi_loop_detector_mark(ctx);
-            code = pdfi_loop_detector_add_object(ctx, annot->object_num);
-            if (Value->object_num != 0)
-                code = pdfi_loop_detector_add_object(ctx, Value->object_num);
-            code = pdfi_resolve_indirect(ctx, Value, false);
+            code = pdfi_resolve_indirect_loop_detect(ctx, (pdf_obj *)annot, Value, false);
             if (code < 0) goto exit;
-            (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
         }
 
         pdfi_countdown(Key);
