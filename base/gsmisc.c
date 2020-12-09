@@ -198,9 +198,11 @@ eprintf_program_ident(const char *program_name,
     if (program_name) {
         epf((revision_number ? "%s " : "%s"), program_name);
         if (revision_number) {
-            int fpart = revision_number % 100;
+        int major = (int)(revision_number / 1000);
+        int minor = (int)(revision_number - (major * 1000)) / 10;
+        int patch = revision_number % 10;
 
-            epf("%d.%02d", (int)(revision_number / 100), fpart);
+            epf("%d.%02d.%d", major, minor, patch);
         }
         epf(": ");
     }
