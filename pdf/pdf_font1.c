@@ -336,7 +336,6 @@ pdfi_alloc_t1_font(pdf_context *ctx, pdf_font_type1 **font, uint32_t obj_num)
     t1font->pdfi_font_type = e_pdf_font_type1;
 
 #if REFCNT_DEBUG
-    t1font->refcnt_ctx = (void *)ctx;
     t1font->UID = ctx->UID++;
     dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", t1font->type, t1font->UID);
 #endif
