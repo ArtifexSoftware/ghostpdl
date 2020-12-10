@@ -222,7 +222,7 @@ static void read_psd_line16(ETS_SrcPixel **ibufs, int xs, FILE *fi, int planes,
         {
             temp_value1 = ibufs[psd_ctx->permute[kk]][i];
             temp_value2 = ((temp_value1 & 0xff) << 8) + ((temp_value1 & 0xff00) >> 8);
-            ibufs[psd_ctx->permute[kk]][i] = temp_value2;
+            ibufs[psd_ctx->permute[kk]][i] = (unsigned char) temp_value2;
         }
 #endif
         /* Update where we are in each band */
@@ -310,11 +310,13 @@ static void read_psd(FILE *fi, psd_ctx_t *psd_ctx, FILE *fo)
     if (!(depth == 8 || depth == 16))
         die("Only 8 or 16 bit PSD files supported");
 
-    if (depth == 16 && (sizeof(ETS_SrcPixel) != 2 || ETS_SRC_MAX != 65535))
+#ifdef CHAR_SOURCE
+    if (depth == 16)
         die("ETS_SrcPixel type and ETS_SRC_MAX in ets.h not set for 16 bit support!");
-
-    if (depth == 8 && (sizeof(ETS_SrcPixel) != 1 || ETS_SRC_MAX != 255))
+#else
+    if (depth == 8)
         die("ETS_SrcPixel type and ETS_SRC_MAX in ets.h not set for 8 bit support!");
+#endif
 
     /* Dont handle duotone or indexed data at this time */
     if (color_mode == 2 || color_mode == 8) 
@@ -345,7 +347,11 @@ static void read_psd(FILE *fi, psd_ctx_t *psd_ctx, FILE *fo)
     fread(buf, 1, 4, fi);
     get4(&size,  buf);
     fwrite(buf, 1, 4, fo);
+
     temp_buff = (uchar*) malloc(size);
+    if (temp_buff == NULL)
+        die("Malloc failure in read_psd");
+
     fread(temp_buff, 1, size, fi);
     fwrite(temp_buff, 1, size, fo);
     free(temp_buff);
@@ -355,7 +361,11 @@ static void read_psd(FILE *fi, psd_ctx_t *psd_ctx, FILE *fo)
     fread(buf, 1, 4, fi);
     get4(&size,  buf);
     fwrite(buf, 1, 4, fo);
+
     temp_buff = (uchar*) malloc(size);
+    if (temp_buff == NULL)
+        die("Malloc failure in read_psd");
+
     fread(temp_buff, 1, size, fi);
     fwrite(temp_buff, 1, size, fo);
     free(temp_buff);
@@ -377,6 +387,8 @@ static void read_psd(FILE *fi, psd_ctx_t *psd_ctx, FILE *fo)
 
     /* Allocate the output buffer */
     psd_ctx->output_buffer = malloc(num_channel * height * width * bytes);
+    if (psd_ctx->output_buffer == NULL)
+        die("Malloc failure in read_psd");
 
     if (codec == 1) 
     {
@@ -384,8 +396,17 @@ static void read_psd(FILE *fi, psd_ctx_t *psd_ctx, FILE *fo)
            compressed.  First read in the size for each compressed line */
         data_size = num_channel * height;
         psd_ctx->row_lengths = (int*) malloc(data_size * sizeof(int));
+        if (psd_ctx->row_lengths == NULL)
+            die("Malloc failure in read_psd");
+
         psd_ctx->band_file_offset = (long*) malloc(num_channel * sizeof(long));
+        if (psd_ctx->band_file_offset == NULL)
+            die("Malloc failure in read_psd");
+
         psd_ctx->band_row_length_index = (int*) malloc(num_channel * sizeof(int));
+        if (psd_ctx->band_row_length_index == NULL)
+            die("Malloc failure in read_psd");
+
         count += (2 * data_size); /* This gets us to the start of the image data */
         /* Here we compute where in the file we need to go, to get the start of 
            the scan line in each band, we compute the max length of all the 
@@ -404,6 +425,9 @@ static void read_psd(FILE *fi, psd_ctx_t *psd_ctx, FILE *fo)
             }
         }
         psd_ctx->rle_row = (void*) malloc(maxlength);
+        if (psd_ctx->rle_row == NULL)
+            die("Malloc failure in read_psd");
+
         psd_ctx->read_line = read_psd_line_rle8;
         psd_ctx->write_line = write_psd_line8;
         for (kk = 0; kk < num_channel; kk++)
@@ -413,7 +437,13 @@ static void read_psd(FILE *fi, psd_ctx_t *psd_ctx, FILE *fo)
 #ifdef TEST_PSD_DUMP
         /* Now do the decode for testing */
         in_buff = (uchar*) malloc(maxlength);
+        if (in_buff == NULL)
+            die("Malloc failure in read_psd");
+
         out_buff = (uchar*) malloc(width);
+        if (out_buff == NULL)
+            die("Malloc failure in read_psd");
+
         for (kk = 0; kk < data_size; kk++) 
         {
             fread(in_buff, 1, (psd_ctx->row_lengths)[kk], fi);
@@ -433,9 +463,13 @@ static void read_psd(FILE *fi, psd_ctx_t *psd_ctx, FILE *fo)
         psd_ctx->rle_row = NULL;
         psd_ctx->band_row_length_index = NULL;
         psd_ctx->band_file_offset = (long*) malloc(num_channel * sizeof(long));
-        for (kk = 0; kk < num_channel; kk++)
-        {
-            (psd_ctx->band_file_offset)[kk] = count + height * width * kk * bytes; 
+        if (psd_ctx->band_file_offset == NULL)
+            die("Memory allocation failure in read_psd");
+        else {
+            for (kk = 0; kk < num_channel; kk++)
+            {
+                (psd_ctx->band_file_offset)[kk] = count + height * width * kk * bytes;
+            }
         }
         if (depth == 8) 
         {
@@ -449,11 +483,16 @@ static void read_psd(FILE *fi, psd_ctx_t *psd_ctx, FILE *fo)
         }
     }
     psd_ctx->finalize = finalize_psd;
+
     psd_ctx->permute = (uchar*) malloc(num_channel);
-    /* A default initialization */
-    for (kk = 0; kk < num_channel; kk++)
-    {
-        psd_ctx->permute[kk] = kk;
+    if (psd_ctx->permute == NULL) {
+        die("Memory allocation failure in read_psd");
+    } else {
+        /* A default initialization */
+        for (kk = 0; kk < num_channel; kk++)
+        {
+            psd_ctx->permute[kk] = kk;
+        }
     }
 }
 
@@ -461,22 +500,23 @@ static void read_pgm(FILE *fi, int *xs, int *ys, FILE *fo)
 {
     char buf[256];
     int depth;
+    int count;
 
     do
         fgets(buf, sizeof(buf), fi);
     while (buf[0] == '#');
-    sscanf (buf, "%d", xs);
+    count = sscanf(buf, "%d", xs);
     do
         fgets (buf, sizeof(buf), fi);
     while (buf[0] == '#');
-    sscanf (buf, "%d", ys);
+    count = sscanf (buf, "%d", ys);
     if (*xs <= 0 || *ys <= 0 || *xs > MAX_SIZE || *ys > MAX_SIZE)
         die("Input image size out of range");
 
     do
         fgets(buf, sizeof(buf), fi);
     while (buf[0] == '#');
-    sscanf(buf, "%d", &depth);
+    count = sscanf(buf, "%d", &depth);
     if (depth != 255)
         die("Only works with depth=255 images");
 
@@ -529,7 +569,7 @@ static int read_pam(FILE *fi, int *xs, int *ys, FILE *fo)
         {
             fprintf(fo, "TUPLTYPE CMYK\n");
         }
-        else if (sscanf(buf, "TUPLTYP%c") && c == 'E')
+        else if (sscanf(buf, "TUPLTYP%c", &c) && c == 'E')
         {
             die("Only CMYK/DEVN pams supported");
         }
@@ -540,7 +580,7 @@ static int read_pam(FILE *fi, int *xs, int *ys, FILE *fo)
         }
         else
         {
-            printf(stderr, "Unknown header field: %s\n", buf);
+            fprintf(stderr, "Unknown header field: %s\n", buf);
             die("Unknown header field\n");
         }
     }
@@ -608,7 +648,7 @@ main(int argc, char **argv)
     char buf[256];
     int xs, ys;
     int xsb;
-    ETS_POLARITY polarity;
+    ETS_POLARITY polarity = ETS_BLACK_IS_ZERO;
     ETS_Params params;
     ETS_Ctx *ctx;
     int lut[ETS_SRC_MAX+1], i;
@@ -637,11 +677,11 @@ main(int argc, char **argv)
     int c1_scale[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
     ETS_SrcPixel *ibufs[M] = { 0 };
     uchar *obufs[M] = { 0 };
-    int planes;
+    int planes = 0;
     void (*read_line)(ETS_SrcPixel **ibufs, int xs, FILE *fi, int planes, void *image_ctx);
     void (*write_line)(uchar **obufs, int xs, FILE *fo, int planes, void *image_ctx);
-    void (*finalize)(void *image_ctx);
-    char *gamma_tab = NULL;
+    void (*finalize)(void *image_ctx) = NULL;
+    const char *gamma_tab = NULL;
     int multiplane = 1;
     int ets_style = 1;
     int r_style = 1;
@@ -652,6 +692,7 @@ main(int argc, char **argv)
     psd_ctx_t psd_ctx;
     void *image_ctx = NULL;
     uchar byte_count = 1;
+    int count;
 
     int y;
 
@@ -696,7 +737,7 @@ main(int argc, char **argv)
                 noise = atoi(arg_value);
                 break;
             case 'a':
-                sscanf(arg_value, "%d:%d", &aspect_x, &aspect_y);
+                count = sscanf(arg_value, "%d:%d", &aspect_x, &aspect_y);
                 break;
             default:
                 goto usage_exit;
@@ -756,7 +797,12 @@ main(int argc, char **argv)
     for (i = 0; i < planes; i++)
     {
         ibufs[i] = (ETS_SrcPixel*) malloc(xs * byte_count);
+        if (ibufs[i] == NULL)
+            die("Malloc failure in main");
+
         obufs[i] = (uchar*) ets_malloc_aligned(xsb + 16, 16);
+        if (obufs[i] == NULL)
+            die("Malloc failure in main");
     }
 
     /* This sets up a simple gamma lookup table. */
@@ -764,7 +810,7 @@ main(int argc, char **argv)
     {
         FILE *lutf = fopen(gamma_tab, "r");
         for (i = 0; i < (ETS_SRC_MAX+1); i++)
-            fscanf(lutf, "%d", &lut[i]);
+            count = fscanf(lutf, "%d", &lut[i]);
         fclose(lutf);
     }
     else
@@ -794,7 +840,12 @@ main(int argc, char **argv)
     for (i = 0; i < planes; i++)
         luts[i] = lut;
     params.luts = luts;
-    params.strengths = (multiplane ? strengths[planes-1] : strengths[0]);
+
+    if (planes > 0)
+        params.strengths = (multiplane ? strengths[planes - 1] : strengths[0]);
+    else
+        params.strengths = strengths[0];
+
     params.aspect_x = aspect_x;
     params.aspect_y = aspect_y;
     params.distscale = 0;
