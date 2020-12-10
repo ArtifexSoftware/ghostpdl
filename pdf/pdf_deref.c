@@ -417,7 +417,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
 
 static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_offset)
 {
-    int code = 0;
+    int code = 0, stack_size = pdfi_count_stack(ctx), count2;
     uint64_t objnum = 0, gen = 0;
     pdf_keyword *keyword = NULL;
 
@@ -429,6 +429,8 @@ static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t strea
     code = pdfi_read_token(ctx, s, 0, 0);
     if (code < 0)
         return code;
+    if (stack_size >= pdfi_count_stack(ctx))
+        return gs_note_error(gs_error_ioerror);
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
@@ -439,6 +441,8 @@ static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t strea
     code = pdfi_read_token(ctx, s, 0, 0);
     if (code < 0)
         return code;
+    if (stack_size >= pdfi_count_stack(ctx))
+        return gs_note_error(gs_error_ioerror);
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
@@ -449,6 +453,8 @@ static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t strea
     code = pdfi_read_token(ctx, s, 0, 0);
     if (code < 0)
         return code;
+    if (stack_size >= pdfi_count_stack(ctx))
+        return gs_note_error(gs_error_ioerror);
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
