@@ -519,25 +519,39 @@ static int pdfi_obj_int_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *le
     return code;
 }
 
+static int pdfi_obj_getrefstr(pdf_context *ctx, pdf_indirect_ref *ref, byte **data, int *len)
+{
+    int size = 100;
+    char *buf;
+
+    buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_getrefstr(data)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    snprintf(buf, size, "%ld %d R", ref->ref_object_num, ref->ref_generation_num);
+    *data = (byte *)buf;
+    *len = strlen(buf);
+    return 0;
+}
+
 static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     int code = 0;
-    int size = 100;
     pdf_indirect_ref *ref = (pdf_indirect_ref *)obj;
     char *buf;
     pdf_obj *object = NULL;
     bool use_label = true;
 
     if (ref->is_label) {
-        buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_indirect_str(data)");
-        if (buf == NULL)
-            return_error(gs_error_VMerror);
-        snprintf(buf, size, "%ld %d R", ref->ref_object_num, ref->ref_generation_num);
-        *data = (byte *)buf;
-        *len = strlen(buf);
+        code = pdfi_obj_getrefstr(ctx, ref, data, len);
     } else {
         if (!ref->is_marking) {
             code = pdfi_dereference(ctx, ref->ref_object_num, ref->ref_generation_num, &object);
+            if (code == gs_error_undefined) {
+                /* Do something sensible for undefined reference (this would be a broken file) */
+                /* TODO: Flag an error? */
+                code = pdfi_obj_getrefstr(ctx, ref, data, len);
+                goto exit;
+            }
             if (code < 0 && code != gs_error_circular_reference)
                 goto exit;
             if (code == 0) {
@@ -867,6 +881,7 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
  exit:
     if (itembuf)
         gs_free_object(ctx->memory, itembuf, "pdfi_obj_dict_str(itembuf)");
+    pdfi_countdown(Key);
     pdfi_countdown(Value);
     pdfi_bufstream_free(ctx, &bufstream);
     return code;

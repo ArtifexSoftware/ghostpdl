@@ -417,7 +417,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
 
 static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_offset)
 {
-    int code = 0, stack_size = pdfi_count_stack(ctx), count2;
+    int code = 0, stack_size = pdfi_count_stack(ctx);
     uint64_t objnum = 0, gen = 0;
     pdf_keyword *keyword = NULL;
 

@@ -671,6 +671,7 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict)
          * any references and streams and pass it all through.
          * File: fts_33_3305.pdf fts_33_3317.pdf
          */
+        deref_A = false;
     } else if (pdfi_name_is(S_name, "Sound")) {
         /* TODO: ??
          * File: fts_33_3307.pdf
