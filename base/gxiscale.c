@@ -292,6 +292,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum, irender_proc_t *render_fn)
         if(!gx_device_uses_std_cmap_procs(penum->dev, penum->pgs)) {
             use_icc = false;
         }
+        pol = cs_polarity(pcs);
     }
 /*
  * USE_CONSERVATIVE_INTERPOLATION_RULES is normally NOT defined since
