@@ -430,7 +430,8 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Enco
                 if (code < 0)
                     break;
                 if (o->type == PDF_NAME) {
-                    code = pdfi_array_put(ctx, (pdf_array *)*Encoding, (uint64_t)offset, o);
+                    if (offset < pdfi_array_size((pdf_array *)*Encoding))
+                        code = pdfi_array_put(ctx, (pdf_array *)*Encoding, (uint64_t)offset, o);
                     pdfi_countdown(o);
                     offset++;
                     if (code < 0)
