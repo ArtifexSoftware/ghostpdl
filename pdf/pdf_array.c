@@ -288,7 +288,7 @@ int pdfi_array_put(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj *o)
     if (a->type != PDF_ARRAY)
         return_error(gs_error_typecheck);
 
-    if (index > a->size)
+    if (index >= a->size)
         return_error(gs_error_rangecheck);
 
     pdfi_countdown(a->values[index]);
