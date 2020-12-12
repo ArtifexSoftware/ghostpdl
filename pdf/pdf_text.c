@@ -381,10 +381,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             text.operation |= TEXT_DO_DRAW;
         code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
         if (code >= 0) {
+            saved_penum = ctx->current_text_enum;
             ctx->current_text_enum = penum;
             code = gs_text_process(penum);
             gs_text_release(ctx->pgs, penum, "pdfi_Tj");
-            ctx->current_text_enum = NULL;
+            ctx->current_text_enum = saved_penum;
         }
     } else {
         if (Trmode != 0 && Trmode != 3 && !ctx->preserve_tr_mode) {
