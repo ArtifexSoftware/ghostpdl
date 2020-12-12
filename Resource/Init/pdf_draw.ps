@@ -772,7 +772,9 @@ def
     } {
       dup 0 gt {
         { pop } repeat
-      } if
+      }{
+        pop
+      } ifelse
     } ifelse
   } {
     pop
