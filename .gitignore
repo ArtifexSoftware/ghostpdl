@@ -16,6 +16,8 @@
 # so VS2005 shows me a sensible 'Recent Projects' list. Ignore the copy.
 win32/GhostPDLGit.sln
 
+windows/.vs
+
 # Ignore all the object files
 bin
 debugbin
@@ -25,9 +27,11 @@ bin64
 debugbin64
 profbin64
 debugobj
+debugobjrt
 obj
 profobj
 memobj
+memobj64
 debugobj64
 obj64
 profobj64
