@@ -102,6 +102,14 @@ psc_fixup(byte *p, byte *to)
     p[1] = (byte)(skip >> 8);
     p[2] = (byte)skip;
 }
+static void psc_fixup_ifelse(byte *p)
+{
+    int iflen = (p[0] << 8) + p[1];
+
+    iflen += 3;         /* To skip past the 'if' body and the 'else' header */
+    p[0] = (byte)(iflen >> 8);
+    p[1] = (byte)iflen;
+}
 
 /* Store an int in the  buffer */
 static int
@@ -141,7 +149,8 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
     byte c;
     char TokenBuffer[16];
     unsigned int Size, IsReal;
-    bool clause = false;
+//    bool clause = false;
+    byte *clause = NULL;
     byte *p = (ops ? ops + *size : NULL);
 
     do {
@@ -167,14 +176,15 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                     if (code < 0)
                         return code;
                     if (p) {
-                        if (clause == false) {
+                        if (clause == NULL) {
+                            clause = p;
                             *p = (byte)PtCr_if;
                             psc_fixup(p, ops + *size);
-                            clause = true;
                         } else {
                             *p = (byte)PtCr_else;
                             psc_fixup(p, ops + *size);
-                            clause = false;
+                            psc_fixup_ifelse(clause + 1);
+                            clause = NULL;
                         }
                         p = ops + *size;
                     }
@@ -184,8 +194,8 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                 return *size;
                 break;
             default:
-                if (clause)
-                    clause = false;
+                if (clause != NULL)
+                    clause = NULL;
                 if ((c >= '0' && c <= '9') || c == '-' || c == '.') {
                     /* parse a number */
                     Size = 1;
