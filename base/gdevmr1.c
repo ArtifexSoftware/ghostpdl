@@ -78,7 +78,7 @@ mem_mono_strip_copy_rop(gx_device * dev, const byte * sdata,
      */
 
     if (invert)
-        rop = byte_reverse_bits[rop] ^ 0xff;
+        rop = byte_reverse_bits[rop & 0xff] ^ 0xff;
 
     return mem_mono_strip_copy_rop_dev(dev, sdata, sourcex, sraster, id,
                                        scolors, textures, tcolors, x, y,
