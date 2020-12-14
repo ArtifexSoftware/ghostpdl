@@ -77,6 +77,11 @@ int pdfi_d0(pdf_context *ctx)
         width[0] = font->Widths[font->ctx->current_chr - font->FirstChar];
      */
 
+    if (ctx->current_text_enum == NULL) {
+        code = gs_note_error(gs_error_unknownerror);
+        goto d0_error;
+    }
+
     code = gs_text_setcharwidth(ctx->current_text_enum, width);
 
     /* Nasty hackery. setcachedevice potentially pushes a new device into the graphics state
@@ -142,6 +147,11 @@ int pdfi_d1(pdf_context *ctx)
      */
 
     gsave_level = ctx->pgs->level;
+
+    if (ctx->current_text_enum == NULL) {
+        code = gs_note_error(gs_error_unknownerror);
+        goto d1_error;
+    }
 
     code = gs_text_setcachedevice(ctx->current_text_enum, wbox);
 
