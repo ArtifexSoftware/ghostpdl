@@ -33,7 +33,7 @@ pdfi_ttf_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
     pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
     int code = 0;
 
-    if (offset + length > ttfont->sfnt.size) {
+    if ((uint64_t)offset + length > ttfont->sfnt.size) {
         *pdata = NULL;
         code = gs_note_error(gs_error_invalidfont);
     }
