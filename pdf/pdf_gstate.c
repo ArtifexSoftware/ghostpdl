@@ -1340,22 +1340,21 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     memset(order, 0x00, sizeof(gx_ht_order));
 
     if (obj->type == PDF_NAME) {
-        if (pdfi_name_is((pdf_name *)obj, "Default")) {
-            code = 0;
-            goto error;
-        } else {
-            int i;
+        int i;
 
+        if (pdfi_name_is((pdf_name *)obj, "Default")) {
+            i = 0;
+        } else {
             for (i = 0; i < sizeof(spot_table); i++){
                 if (pdfi_name_is((pdf_name *)obj, spot_table[i]))
                     break;
             }
             if (i > sizeof(spot_table))
                 return gs_note_error(gs_error_rangecheck);
-            code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
-            if (code < 0)
-                goto error;
         }
+        code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
+        if (code < 0)
+            goto error;
     } else {
         if (obj->type == PDF_DICT || obj->type == PDF_STREAM) {
             code = pdfi_build_function(ctx, &pfn, (const float *)domain, 2, obj, page_dict);
