@@ -23,6 +23,7 @@
 #include "pdf_int.h"
 #include "pdf_font.h"
 #include "pdf_font0.h"
+#include "pdf_font1C.h"
 #include "pdf_font_types.h"
 #include "pdf_stack.h"
 #include "pdf_array.h"
@@ -31,25 +32,32 @@
 #include "pdf_cmap.h"
 #include "pdf_deref.h"
 
-static font_type pdfi_fonttype_picker(byte *buf, int64_t buflen)
+typedef enum
+{
+    decfont_type_cidtype0 = 1,
+    decfont_type_cidtype0cff = 2,
+    decfont_type_cidtype2 = 42
+} decfont_type;
+
+static decfont_type pdfi_fonttype_picker(byte *buf, int64_t buflen)
 {
 #define MAKEMAGIC(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
     if (buflen >= 4) {
         if (MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC(0, 1, 0, 0)) {
-            return ft_CID_TrueType;
+            return decfont_type_cidtype2;
         }
         else if (MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC('O', 'T', 'T', 'O')) {
-            return ft_CID_encrypted; /* OTTO will end up as CFF */
+            return decfont_type_cidtype0cff; /* OTTO will end up as CFF */
         }
         else if (MAKEMAGIC(buf[0], buf[1], buf[2], 0) == MAKEMAGIC('%', '!', 'P', 0)) {
-            return ft_CID_encrypted; /* pfa */
+            return decfont_type_cidtype0; /* pfa */
         }
         else if (MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC(1, 0, 4, 1)) {
-            return ft_CID_encrypted; /* 1C/CFF */
+            return decfont_type_cidtype0cff; /* 1C/CFF */
         }
         else if (MAKEMAGIC(buf[0], buf[1], 0, 0) == MAKEMAGIC(128, 1, 0, 0)) {
-            return ft_CID_encrypted; /* pfb */
+            return decfont_type_cidtype0; /* pfb */
         }
     }
     return 0;
@@ -122,11 +130,24 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         goto error;
     }
     pdfi_countdown(n);
+
+#if 0
     code = pdfi_dict_get(ctx, (pdf_dict *)decfont, "Subtype", (pdf_obj **)&n);
     if (code < 0)
         goto error;
 
+    if (n->type != PDF_NAME || n->length != 12 || memcmp(n->data, "CIDFontType", 11) != 0) {
+        pdfi_countdown(n);
+        code = gs_note_error(gs_error_invalidfont);
+        goto error;
+    }
+    /* cidftype is ignored for now, but we may need to know it when
+       subsitutions are allowed
+     */
+    cidftype = n->data[11] - 48;
+
     pdfi_countdown(n);
+#endif
 
     code = pdfi_dict_get(ctx, font_dict, "BaseFont", (pdf_obj **)&basefont);
     if (code < 0) {
@@ -169,16 +190,41 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
      * Owndership of the buffer is passed to the font reading function.
      */
     code = pdfi_stream_to_buffer(ctx, ffile, &buf, &buflen);
+    if (code < 0) {
+        pdfi_countdown(ffile);
+        ffile = NULL;
+        goto error;
+    }
+    if ((code = pdfi_fonttype_picker(buf, buflen)) == 0) {
+        pdf_name *subtype = NULL;
+        code = pdfi_dict_get(ctx, ffile->stream_dict, "Subtype", (pdf_obj **)&subtype);
+        if (code < 0 || subtype->type != PDF_NAME) {
+            /* Corrupt stream header, no subtype, <shrug> try Type 1 */
+            code = decfont_type_cidtype0;
+        }
+        else {
+            if (subtype->length >= 13 && !memcmp(subtype->data, "CIDFontType0C", 13)) {
+                code = decfont_type_cidtype0cff;
+            }
+            else {
+                /* <shrug> try Type 1 */
+                code = decfont_type_cidtype0;
+            }
+        }
+        pdfi_countdown(subtype);
+    }
     pdfi_countdown(ffile);
     ffile = NULL;
-    if (code < 0)
-        goto error;
-
-    switch (pdfi_fonttype_picker(buf, buflen)) {
-        case ft_CID_TrueType:
+    switch (code) {
+        case decfont_type_cidtype2:
           code = pdfi_read_cidtype2_font(ctx, decfont, buf, buflen, &descpfont);
           break;
-        case ft_CID_encrypted:
+        case decfont_type_cidtype0cff:
+        {
+            code = pdfi_read_cff_font(ctx, decfont, buf, buflen, &descpfont, true);
+            break;
+        }
+        case decfont_type_cidtype0:
         default:
           code = pdfi_read_cidtype0_font(ctx, decfont, buf, buflen, &descpfont);
           break;

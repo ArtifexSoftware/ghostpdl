@@ -29,6 +29,5 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, byte *buf, in
 int pdfi_free_font_cidtype2(pdf_obj *font);
 
 int pdfi_read_cidtype0_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, int fbuflen, pdf_font **ppfont);
-int pdfi_free_font_cidtype0(pdf_obj *font);
 
 #endif

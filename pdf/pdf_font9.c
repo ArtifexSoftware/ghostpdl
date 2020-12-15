@@ -42,8 +42,3 @@ int pdfi_read_cidtype0_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, i
 
     return_error(gs_error_invalidfont);
 }
-
-int pdfi_free_font_cidtype0(pdf_obj *font)
-{
-    return 0;
-}

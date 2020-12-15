@@ -322,6 +322,7 @@ int pdfi_free_font(pdf_obj *font)
             return pdfi_free_font_type1((pdf_obj *)font);
             break;
         case e_pdf_font_cff:
+            return pdfi_free_font_cff((pdf_obj *)font);
         case e_pdf_font_type3:
             return pdfi_free_font_type3((pdf_obj *)font);
             break;
@@ -332,6 +333,8 @@ int pdfi_free_font(pdf_obj *font)
             return pdfi_free_font_cidtype2((pdf_obj *)font);
             break;
         case e_pdf_cidfont_type0:
+            return pdfi_free_font_cidtype0((pdf_obj *)font);
+            break;
         case e_pdf_cidfont_type1:
         case e_pdf_cidfont_type4:
         default:
@@ -549,6 +552,9 @@ static int pdfi_global_glyph_code(const gs_font *pfont, gs_const_string *gstr, g
     int code = 0;
     if (pfont->FontType == ft_encrypted) {
         code = pdfi_t1_global_glyph_code(pfont, gstr, pglyph);
+    }
+    else if (pfont->FontType == ft_encrypted2) {
+        code = pdfi_cff_global_glyph_code(pfont, gstr, pglyph);
     }
     else {
         code = gs_note_error(gs_error_invalidaccess);

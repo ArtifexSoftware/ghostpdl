@@ -19,5 +19,11 @@
 #define PDF_TYPE1C_FONT
 
 int pdfi_read_type1C_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **pfont);
+int pdfi_cff_global_glyph_code(const gs_font *pfont, gs_const_string *gstr, gs_glyph *pglyph);
+int pdfi_free_font_cff(pdf_obj *font);
+
+int pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, int64_t fbuflen, pdf_font **ppdffont, bool forcecid);
+
+int pdfi_free_font_cidtype0(pdf_obj *font);
 
 #endif

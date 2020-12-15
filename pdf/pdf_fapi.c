@@ -23,6 +23,9 @@
 #include "gserrors.h"
 #include "gxdevice.h"
 #include "gxfont.h"
+#include "gxfont0.h"
+#include "gxfcid.h"
+
 #include "gzstate.h"
 #include "gxchar.h"             /* for st_gs_show_enum */
 #include "gdebug.h"
@@ -33,6 +36,7 @@
 #include "pdf_array.h"
 #include "pdf_font.h"
 #include "pdf_agl.h"
+#include "gscencs.h"
 
 /* forward declarations for the pdfi_ff_stub definition */
 static int
@@ -237,32 +241,31 @@ pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, uns
         case gs_fapi_font_feature_lenIV:
             *ret = ff->need_decrypt ? 0 : pfont->data.lenIV;
             break;
-#if 0
         case gs_fapi_font_feature_GlobalSubrs_count:
             {
-                ref *Private, *GlobalSubrs;
-
                 if (pfont->FontType == ft_encrypted2) {
-                    if (dict_find_string(pdr, "Private", &Private) <= 0) {
-                        *ret = 0;
-                        break;
-                    }
-                    if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0) {
-                        *ret = 0;
-                        break;
-                    }
-                    *ret = r_size(GlobalSubrs);
-                    break;
+                    pdf_font_cff *pdffont2 = (pdf_font_cff *)pfont->client_data;
+                    *ret = pdffont2->NumGlobalSubrs;
                 }
-                *ret = 0;
+                else {
+                    *ret = 0;
+                    code = gs_note_error(gs_error_invalidaccess);
+                }
                 break;
             }
-#endif
         case gs_fapi_font_feature_Subrs_count:
             {
                 if (pfont->FontType == ft_encrypted) {
                     pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
                     *ret = pdffont1->NumSubrs;
+                }
+                else if (pfont->FontType == ft_encrypted2) {
+                    pdf_font_cff *pdffont2 = (pdf_font_cff *)pfont->client_data;
+                    *ret = pdffont2->NumSubrs;
+                }
+                else {
+                    *ret = 0;
+                    code = gs_note_error(gs_error_invalidaccess);
                 }
                 break;
             }
@@ -388,12 +391,6 @@ pdfi_fapi_get_proc(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, cha
     return 0;
 }
 
-static int
-pdfi_fapi_get_gsubr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
-{
-    return 0;
-}
-
 static inline void
 decode_bytes(byte *p, const byte *s, int l, int lenIV)
 {
@@ -413,6 +410,41 @@ decode_bytes(byte *p, const byte *s, int l, int lenIV)
 }
 
 static int
+pdfi_fapi_get_gsubr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
+{
+    gs_font_type1 *pfont = (gs_font_type1 *) ff->client_font_data;
+    int code = 0;
+    if (pfont->FontType == ft_encrypted2) {
+        pdf_font_cff *pdffont2 = (pdf_font_cff *)pfont->client_data;
+        if (index > pdffont2->NumGlobalSubrs) {
+            code = gs_error_rangecheck;
+        }
+        else {
+            int leniv = (pfont->data.lenIV > 0 ? pfont->data.lenIV : 0);
+            pdf_string *subrstring;
+
+            code = pdfi_array_get(pdffont2->ctx, pdffont2->GlobalSubrs, index, (pdf_obj **)&subrstring);
+            if (code >= 0) {
+                code = subrstring->length - leniv;
+                if (buf && buf_length >= code) {
+                    if (ff->need_decrypt && pfont->data.lenIV >= 0) {
+                        decode_bytes(buf, subrstring->data, code + leniv, pfont->data.lenIV);
+                    }
+                    else {
+                        memcpy(buf, subrstring->data, code);
+                    }
+                }
+                pdfi_countdown(subrstring);
+            }
+        }
+    }
+    else {
+        code = gs_note_error(gs_error_invalidfont);
+    }
+    return code;
+}
+
+static int
 pdfi_fapi_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
 {
     gs_font_type1 *pfont = (gs_font_type1 *) ff->client_font_data;
@@ -421,19 +453,47 @@ pdfi_fapi_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
     if (pfont->FontType == ft_encrypted) {
         pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
         if (index > pdffont1->NumSubrs) {
-            code = gs_error_rangecheck;
+            code = gs_note_error(gs_error_rangecheck);
         }
         else {
-            code = pdffont1->Subrs[index].size;
+            int leniv = (pfont->data.lenIV > 0 ? pfont->data.lenIV : 0);
+            code = pdffont1->Subrs[index].size - leniv;
             if (buf && buf_length >= code) {
                 if (ff->need_decrypt && pfont->data.lenIV >= 0) {
-                    decode_bytes(buf, pdffont1->Subrs[index].data, code, pfont->data.lenIV);
+                    decode_bytes(buf, pdffont1->Subrs[index].data, code + leniv, pfont->data.lenIV);
                 }
                 else {
                     memcpy(buf, pdffont1->Subrs[index].data, code);
                 }
             }
         }
+    }
+    else if (pfont->FontType == ft_encrypted2) {
+        pdf_font_cff *pdffont2 = (pdf_font_cff *)pfont->client_data;
+        if (index > pdffont2->NumSubrs) {
+            code = gs_error_rangecheck;
+        }
+        else {
+            int leniv = (pfont->data.lenIV > 0 ? pfont->data.lenIV : 0);
+            pdf_string *subrstring;
+
+            code = pdfi_array_get(pdffont2->ctx, pdffont2->Subrs, index, (pdf_obj **)&subrstring);
+            if (code >= 0) {
+                code = subrstring->length - leniv;
+                if (buf && buf_length >= code) {
+                    if (ff->need_decrypt && pfont->data.lenIV >= 0) {
+                        decode_bytes(buf, subrstring->data, code + leniv, pfont->data.lenIV);
+                    }
+                    else {
+                        memcpy(buf, subrstring->data, code);
+                    }
+                }
+                pdfi_countdown(subrstring);
+            }
+        }
+    }
+    else {
+        code = gs_note_error(gs_error_invalidfont);
     }
     return code;
 }
@@ -479,12 +539,15 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                 gs_string * name, gs_glyph ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID)
 {
+    gs_fapi_server *I = pbfont->FAPI;
+    int code = 0;
+
     if (pbfont->FontType == ft_CID_TrueType) {
         pdf_cidfont_type2 *pttfont = (pdf_cidfont_type2 *)pbfont->client_data;
         gs_glyph gid;
 
         if (ccode > GS_MIN_CID_GLYPH)
-           ccode = ccode - GS_MIN_CID_GLYPH;
+            ccode = ccode - GS_MIN_CID_GLYPH;
 
         gid = ccode;
         if (pttfont->cidtogidmap.size > (ccode << 1) + 1) {
@@ -495,11 +558,72 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         cr->is_glyph_index = true;
         return 0;
     }
+    /* For cff based CIDFonts (and thus "Type 1" based CIDFonts, since the code
+     * is common to both) and cff fonts we only claim to the FAPI server that
+     * we have one (or two?) glyphs, because it makes the "stub" font simpler.
+     * But Freetype bounds checks the character code (or gid) against the number
+     * of glyphs in the font *before* asking us for the glyph data. So we need
+     * to extract the charstring here, store it in the fapi font, and unpack it
+     * in pdfi_fapi_get_glyph(), so we can then claim we're always rendering glyph
+     * index zero, and thus pass the bounds check.
+     */
+    else if (penum->current_font->FontType == ft_CID_encrypted) {
+        gs_font_cid0 *pfont9 = (gs_font_cid0 *)penum->current_font;
+        gs_glyph_data_t gd;
+        int f_ind;
+
+        code = (*pfont9->cidata.glyph_data)((gs_font_base *)pfont9, ccode, &gd, &f_ind);
+        if (code < 0) {
+            code = (*pfont9->cidata.glyph_data)((gs_font_base *)pfont9, 0, &gd, &f_ind);
+        }
+        if (code < 0)
+            return_error(gs_error_invalidfont);
+
+        I->ff.char_data = (void *)gd.bits.data;
+        I->ff.char_data_len = gd.bits.size;
+
+        cr->client_char_code = 0;
+        cr->char_codes[0] = 0;
+        cr->is_glyph_index = true;
+        I->ff.client_font_data2 = penum->fstack.items[penum->fstack.depth].font;
+
+        return 0;
+    }
+    else if (pbfont->FontType == ft_encrypted2) {
+        pdf_font_cff *cfffont = (pdf_font_cff *)pbfont->client_data;
+        pdf_name *glyphname = NULL;
+        pdf_string *charstring = NULL;
+
+        code = pdfi_array_get(cfffont->ctx, cfffont->Encoding, (uint64_t)ccode, (pdf_obj **)&glyphname);
+        if (code < 0) {
+            pdfi_countdown(glyphname);
+            return code;
+        }
+        code = pdfi_dict_get_by_key(cfffont->ctx, cfffont->CharStrings, glyphname, (pdf_obj **)&charstring);
+        pdfi_countdown(glyphname);
+        if (code < 0) {
+            code = pdfi_dict_get(cfffont->ctx, cfffont->CharStrings, ".notdef", (pdf_obj **)&charstring);
+        }
+        if (code < 0)
+            return code;
+
+        I->ff.char_data = charstring->data;
+        I->ff.char_data_len = charstring->length;
+
+        cr->client_char_code = 0;
+        cr->char_codes[0] = 0;
+        cr->is_glyph_index = true;
+
+        pdfi_countdown(charstring);
+        return code;
+    }
     else if (pbfont->FontType == ft_TrueType) {
         /* I'm not clear if the heavy lifting should be here or in pdfi_tt_encode_char() */
         pdf_font_truetype *ttfont = (pdf_font_truetype *)pbfont->client_data;
         pdf_name *GlyphName = NULL;
-        int i, code = pdfi_array_get(ttfont->ctx, ttfont->Encoding, (uint64_t)ccode, (pdf_obj **)&GlyphName);
+        int i;
+
+        code = pdfi_array_get(ttfont->ctx, ttfont->Encoding, (uint64_t)ccode, (pdf_obj **)&GlyphName);
 
         cr->client_char_code = ccode;
         cr->is_glyph_index = false;
@@ -593,39 +717,115 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         pdfi_countdown(GlyphName);
         return 0;
     }
-    return pbfont->procs.glyph_name((gs_font *)pbfont, ccode, (gs_const_string *)enc_char_name);
+    else if (pbfont->FontType == ft_encrypted) {
+        code = pbfont->procs.glyph_name((gs_font *)pbfont, ccode, (gs_const_string *)enc_char_name);
+        if (pbfont->FontType == ft_encrypted2) {
+            I->ff.char_data = enc_char_name->data;
+            I->ff.char_data_len = enc_char_name->size;
+            cr->is_glyph_index = false;
+        }
+    }
+    return code;
 }
 
 static int
 pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_length)
 {
     gs_font_base *pbfont = (gs_font_base *) ff->client_font_data2;
+    gs_fapi_server *I = pbfont->FAPI;
     int code = 0;
 
     /* This should only get called for Postscript-type fonts */
     if (ff->is_type1) {
-        gs_font_type1 *pfont1 = (gs_font_type1 *) ff->client_font_data;
-        pdf_name *glyphname = NULL;
-        pdf_string *charstring = NULL;
-        pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pbfont->client_data;
-        code = pdfi_array_get(pdffont1->ctx, pdffont1->Encoding, (uint64_t)char_code, (pdf_obj **)&glyphname);
-        if (code < 0) {
+
+        if (pbfont->FontType == ft_encrypted) {
+            gs_font_type1 *pfont1 = (gs_font_type1 *) pbfont;
+            pdf_name *glyphname = NULL;
+            pdf_string *charstring = NULL;
+            pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pbfont->client_data;
+            int leniv = pfont1->data.lenIV > 0 ? pfont1->data.lenIV : 0;
+
+            code = pdfi_array_get(pdffont1->ctx, pdffont1->Encoding, (uint64_t)char_code, (pdf_obj **)&glyphname);
+            if (code < 0) {
+                pdfi_countdown(glyphname);
+                return code;
+            }
+            code = pdfi_dict_get_by_key(pdffont1->ctx, pdffont1->CharStrings, glyphname, (pdf_obj **)&charstring);
             pdfi_countdown(glyphname);
+            if (code < 0) {
+                code = pdfi_dict_get(pdffont1->ctx, pdffont1->CharStrings, ".notdef", (pdf_obj **)&charstring);
+            }
+            code = charstring->length - leniv;
+            if (buf != NULL && code <= buf_length) {
+                if (ff->need_decrypt && pfont1->data.lenIV >= 0)
+                    decode_bytes(buf, charstring->data, code + leniv, leniv);
+                else
+                    memcpy(buf, charstring->data, charstring->length);
+            }
+            pdfi_countdown(charstring);
+        }
+        else if (pbfont->FontType == ft_CID_encrypted || pbfont->FontType == ft_encrypted2) {
+            gs_font_type1 *pfont = (gs_font_type1 *) (gs_font_base *) ff->client_font_data;
+            int leniv = pfont->data.lenIV > 0 ? pfont->data.lenIV : 0;
+
+            if (I->ff.char_data_len > 0 && I->ff.char_data != NULL) {
+                code = I->ff.char_data_len - leniv;
+
+                if (buf && buf_length >= code) {
+                    memcpy(buf, I->ff.char_data, I->ff.char_data_len);
+
+                    if (ff->need_decrypt && pfont->data.lenIV >= 0)
+                        decode_bytes(buf, I->ff.char_data, code + leniv, leniv);
+                    else
+                        memcpy(buf, I->ff.char_data, code);
+
+                    /* Trigger the seac case below - we can do this safely
+                       because I->ff.char_data points to a string managed
+                       by the charstrings dict in the pdf_font object
+                     */
+                    I->ff.char_data = NULL;
+                }
+            }
+            else {
+                pdf_font_cff *pdffont = (pdf_font_cff *)pfont->client_data;
+                pdf_name *encn;
+                pdf_string *charstring;
+
+                if (pbfont->FontType == ft_CID_encrypted) {
+                    /* we're dealing with a font that's an entry in a CIDFont FDArray
+                       so don't try to use an Encoding
+                     */
+                     char indstring[33];
+                     int l;
+                     l = gs_snprintf(indstring, 32, "%u", (unsigned int)char_code);
+                     code = pdfi_name_alloc(pdffont->ctx, (byte *)indstring, l, (pdf_obj **)&encn);
+                }
+                else {
+                    gs_const_string encstr;
+                    gs_glyph enc_ind = gs_c_known_encode(char_code, ENCODING_INDEX_STANDARD);
+                    gs_c_glyph_name(enc_ind, &encstr);
+                    code = pdfi_name_alloc(pdffont->ctx, (byte *)encstr.data, encstr.size, (pdf_obj **)&encn);
+                }
+                if (code < 0)
+                    return code;
+
+                pdfi_countup(encn);
+                code = pdfi_dict_get_by_key(pdffont->ctx, pdffont->CharStrings, encn, (pdf_obj **)&charstring);
+                pdfi_countdown(encn);
+                if (code < 0)
+                    return code;
+                code = charstring->length - leniv;
+                if (buf != NULL && code <= buf_length) {
+                    if (ff->need_decrypt && pfont->data.lenIV >= 0)
+                        decode_bytes(buf, charstring->data, code + leniv, leniv);
+                    else
+                        memcpy(buf, charstring->data, charstring->length);
+                }
+                pdfi_countdown(charstring);
+            }
+
             return code;
         }
-        code = pdfi_dict_get_by_key(pdffont1->ctx, pdffont1->CharStrings, glyphname, (pdf_obj **)&charstring);
-        pdfi_countdown(glyphname);
-        if (code < 0) {
-            code = pdfi_dict_get(pdffont1->ctx, pdffont1->CharStrings, ".notdef", (pdf_obj **)&charstring);
-        }
-        code = charstring->length;
-        if (buf != NULL && code <= buf_length) {
-            if (ff->need_decrypt && pfont1->data.lenIV >= 0)
-                decode_bytes(buf, charstring->data, charstring->length, pfont1->data.lenIV);
-            else
-                memcpy(buf, charstring->data, charstring->length);
-        }
-        pdfi_countdown(charstring);
     }
     else {
         code = gs_error_invalidaccess;
@@ -924,12 +1124,25 @@ pdfi_fapi_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                    gs_char chr, gs_glyph glyph)
 {
     int code;
+    gs_font_base *pbfont1;
+    gs_fapi_server *I;
+
     /* gs_fapi_do_char() expects the "natural" glyph, not the offset value */
     if (glyph > GS_MIN_CID_GLYPH)
         glyph -= GS_MIN_CID_GLYPH;
 
-    code =
-        gs_fapi_do_char(pfont, pgs, (gs_text_enum_t *) penum, NULL, false,
+    pbfont1 = (gs_font_base *)pfont;
+
+    if (penum->fstack.depth >= 0) {
+        gs_font_cid0 *cidpfont = (gs_font_cid0 *)penum->fstack.items[penum->fstack.depth].font;
+        if (cidpfont->FontType == ft_CID_encrypted) {
+            pbfont1 = (gs_font_base *)cidpfont->cidata.FDArray[penum->fstack.items[penum->fstack.depth].index];
+            I = (gs_fapi_server *)pbfont1->FAPI;
+            I->ff.client_font_data2 = cidpfont;
+        }
+    }
+
+    code = gs_fapi_do_char((gs_font *)pbfont1, pgs, (gs_text_enum_t *) penum, NULL, false,
                         NULL, NULL, chr, glyph, 0);
 
     return (code);

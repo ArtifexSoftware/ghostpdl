@@ -114,6 +114,21 @@ typedef struct pdf_font_type1_s {
     int NumSubrs;
 } pdf_font_type1;
 
+typedef struct pdf_font_cff_s {
+    pdf_font_common;
+    pdf_array *Subrs;
+    int NumSubrs;
+    pdf_array *GlobalSubrs;
+    int NumGlobalSubrs;
+    pdf_dict *CharStrings;
+    byte *cffdata;
+    byte *cffend;
+    byte *gsubrs;
+    byte *subrs;
+    byte *charstrings;
+    int ncharstrings;
+} pdf_font_cff;
+
 typedef struct pdf_font_type3_s {
     pdf_font_common;
 
@@ -137,18 +152,39 @@ typedef struct pdf_font_truetype_s {
     pdfi_truetype_cmap cmap;
 } pdf_font_truetype;
 
-typedef struct pdf_cidfont_type0 {
+typedef struct pdf_cidfont_type0_s {
     pdf_font_base;
-    gs_string sfnt;
+    pdf_array *Subrs;
+    int NumSubrs;
+    pdf_array *GlobalSubrs;
+    int NumGlobalSubrs;
+    pdf_dict *CharStrings;
+    byte *cffdata;
+    byte *cffend;
+    byte *gsubrs;
+    byte *subrs;
+    byte *charstrings;
+    int ncharstrings;
     pdf_dict *CIDSystemInfo;
     int64_t DW;
     pdf_array *W;
     pdf_array *DW2;
     pdf_array *W2;
+    gs_string cidtogidmap;
+    pdf_array *FDArray;
+    /* The registry and ordering strings in gs_font_cid0_data are just references to
+       strings assumed to be managed be managed by the interpreter - so we have to stash
+       them in the pdfi font, too.
+     */
+    pdf_string *registry;
+    pdf_string *ordering;
+    int supplement;
+    int cidcount;
+    int uidbase;
     font_proc_glyph_info((*orig_glyph_info));
 } pdf_cidfont_type0;
 
-typedef struct pdf_cidfont_type2 {
+typedef struct pdf_cidfont_type2_s {
     pdf_font_base;
     gs_string sfnt;
     pdf_dict *CIDSystemInfo;
