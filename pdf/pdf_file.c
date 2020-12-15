@@ -125,6 +125,7 @@ pdfi_filter_open(uint buffer_size,
         if (code < 0) {
             gs_free_object(mem, sst, "filter_open(stream_state)");
             gs_free_object(mem, s->cbuf, "filter_open(buffer)");
+            gs_free_object(mem, s, "filter_open(stream)");
             return code;
         }
     }
