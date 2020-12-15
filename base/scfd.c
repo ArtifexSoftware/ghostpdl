@@ -56,6 +56,9 @@ s_CFD_init(stream_state * st)
         ROUND_UP((ss->Columns + 7) >> 3, ss->DecodedByteAlign);
     byte white = (ss->BlackIs1 ? 0 : 0xff);
 
+    if (raster < 0)
+        return ERRC;
+
     s_hcd_init_inline(ss);
     /* Because skip_white_pixels can look as many as 4 bytes ahead, */
     /* we need to allow 4 extra bytes at the end of the row buffers. */
