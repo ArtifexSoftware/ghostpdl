@@ -834,7 +834,7 @@ int pdfi_mark_stream(pdf_context *ctx, pdf_stream *stream)
     if (code < 0) goto exit;
     code = pdfi_dict_key_first(ctx, streamdict, (pdf_obj **)&Key, &index);
     while (code >= 0) {
-        if (pdfi_name_is(Key, "Filter")) {
+        if (pdfi_name_is(Key, "Filter") || pdfi_name_is(Key, "Length")) {
             code = pdfi_dict_delete_pair(ctx, tempdict, Key);
             if (code < 0) goto exit;
         }
