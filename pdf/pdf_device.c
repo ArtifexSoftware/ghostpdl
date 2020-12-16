@@ -55,8 +55,32 @@ bool pdfi_device_check_param_bool(gx_device *dev, const char *param)
     return value;
 }
 
+/* Set value of string device parameter */
+int pdfi_device_set_param_string(gx_device *dev, const char *paramname, const char *value)
+{
+    int code;
+    gs_c_param_list list;
+    gs_param_string paramstring;
+
+    paramstring.data = (byte *)value;
+    paramstring.size = strlen(value);
+    paramstring.persistent = 0;
+
+    gs_c_param_list_write(&list, dev->memory);
+
+    gs_param_list_set_persistent_keys((gs_param_list *) &list, false);
+    code = param_write_string((gs_param_list *)&list, paramname, &paramstring);
+    if (code < 0) goto exit;
+    gs_c_param_list_read(&list);
+    code = gs_putdeviceparams(dev, (gs_param_list *)&list);
+
+ exit:
+    gs_c_param_list_release(&list);
+    return code;
+}
+
 /* Set value of boolean device parameter */
-bool pdfi_device_set_param_bool(gx_device *dev, const char *param, bool value)
+int pdfi_device_set_param_bool(gx_device *dev, const char *param, bool value)
 {
     int code;
     gs_c_param_list list;
@@ -129,14 +153,6 @@ void pdfi_device_set_flags(pdf_context *ctx)
  */
 int pdfi_device_misc_config(pdf_context *ctx)
 {
-    /* No longer need to do anything because the PreserveEPSInfo and ParseDSCCommentsForDocInfo
-     * values now default to 'true' in the driver.
-     * Leaving the code here in case some other defaults needs to be changed in the future.
-     * TODO: Or if somebody looks at this in the future and wants to, maybe just delete this.
-     */
-    return 0;
-
-#if 0
     bool has_pdfmark;
     int code;
     gx_device *dev = ctx->pgs->device;
@@ -151,12 +167,9 @@ int pdfi_device_misc_config(pdf_context *ctx)
      * but that doesn't seem to be the case now.
      * See pdf_document_metadata()
      */
-    code = pdfi_device_set_param_bool(dev, "PreserveEPSInfo", true);
-    if (code < 0) goto exit;
-    code = pdfi_device_set_param_bool(dev, "ParseDSCCommentsForDocInfo", true);
+    code = pdfi_device_set_param_string(dev, "AutoRotatePages", "PageByPage");
     if (code < 0) goto exit;
 
  exit:
     return code;
-#endif
 }
