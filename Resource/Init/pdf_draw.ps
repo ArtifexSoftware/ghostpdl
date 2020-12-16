@@ -814,12 +814,22 @@ def
   %% as arguments to .execgroup
   mark currentcolor counttomark array astore exch pop
   currentcolorspace 5 2 roll
-
-  dup /Group oget exch /BBox oget
+  dup /Group oget dup type /dicttype eq {
+    exch /BBox oget dup type /arraytype eq {
                 % Stack: resdict stream groupdict bbox
-  .beginformgroup
-  .execgroup
-  .endtransparencygroup
+      .beginformgroup
+      .execgroup
+      .endtransparencygroup
+    }{
+      (   **** Error: Form XObject has a BBox entry with an invalid type.\n) pdfformaterror
+      (               Ignoring transparency Group, output may be incorrect.\n) pdfformaterror
+      pop pop pop pop pop pop
+    } ifelse
+  } {
+    (   **** Error: Form XObject has a Group entry with an invalid type.\n) pdfformaterror
+    (               Ignoring transparency Group, output may be incorrect.\n) pdfformaterror
+    pop pop pop pop pop pop
+  } ifelse
 } bind executeonly def
 
 % Make an ImageType 103 (soft-masked) image.

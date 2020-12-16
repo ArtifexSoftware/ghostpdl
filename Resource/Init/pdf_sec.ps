@@ -481,15 +481,33 @@ systemdict /check_r6_password .forceundef
     % Even if StmF and StrF are Identity, if the StdCF is missing AuthEvent
     % or it is DocOpen, we require the password. Check for that.
     1 index /CF .knownget {
-      /StdCF .knownget {
-        /AuthEvent .knownget {
-          /DocOpen eq
-          or
+      oforce dup type /dicttype eq {
+        /StdCF .knownget {
+          oforce dup type /dicttype eq {
+            /AuthEvent .knownget {
+              oforce dup type /nametype eq {
+                /DocOpen eq
+                or
+              }{
+                (   **** Error: AuthEvent has wrong type.\n) pdfformaterror
+                (               Cannot decrypt PDF file.\n) pdfformaterror
+                /pdf_process_Encrypt cvx /invalidfileaccess signalerror
+              } ifelse
+            } {
+              pop true	% no AuthEvent, default is DocOpen, require password
+            } ifelse
+          }{
+            (   **** Error: StdCF has wrong type.\n) pdfformaterror
+            (               Cannot decrypt PDF file.\n) pdfformaterror
+            /pdf_process_Encrypt cvx /invalidfileaccess signalerror
+          } ifelse
         } {
-          pop true	% no AuthEvent, default is DocOpen, require password
+          pop true	% no StdCF, require password
         } ifelse
-      } {
-        pop true	% no StdCF, require password
+      }{
+        (   **** Error: CF has wrong type.\n) pdfformaterror
+        (               Cannot decrypt PDF file.\n) pdfformaterror
+        /pdf_process_Encrypt cvx /invalidfileaccess signalerror
       } ifelse
     } {
       pop true		% no CF, require password

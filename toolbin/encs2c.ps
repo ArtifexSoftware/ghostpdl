@@ -22,8 +22,8 @@
 % represent them in a compact format described in src/gscencs.c.
 % The generated files are named gscedata.[ch] and are included in the
 % source distribution in the src directory.  The canonical invocation is
-%   gs -dNODISPLAY -q -SO=gscedata.h toolbin/encs2c.ps > src/gscedata.h
-%   gs -dNODISPLAY -q -SO=gscedata.c toolbin/encs2c.ps > src/gscedata.c
+%   gs -dNOSAFER -Ilib -dNODISPLAY -q -SO=gscedata.h toolbin/encs2c.ps > src/gscedata.h
+%   gs -dNOSAFER -Ilib -dNODISPLAY -q -SO=gscedata.c toolbin/encs2c.ps > src/gscedata.c
 %
 % NOTE: If the C representation of encodings changes, this file
 % (toolbin/encs2c.ps), src/gscencs.h, and src/gscencs.c must be kept
@@ -33,8 +33,19 @@
 % WinAnsiEncoding, StandardEncoding, MacExpertEncoding, SymbolEncoding
 % for pdfwrite device.
 %
-%   gs -dNODISPLAY -q -SO=gdevpdtv.h toolbin/encs2c.ps > src/gdevpdtv.h
-%   gs -dNODISPLAY -q -SO=gdevpdtv.c toolbin/encs2c.ps > src/gdevpdtv.c
+%   gs -dNOSAFER -Ilib -dNODISPLAY -q -SO=gdevpdtv.h toolbin/encs2c.ps > src/gdevpdtv.h
+%   gs -dNOSAFER -Ilib -dNODISPLAY -q -SO=gdevpdtv.c toolbin/encs2c.ps > src/gdevpdtv.c
+%
+% For "-Ilib" you need to point that at a valid "lib" directory from
+% the ghostpdl tree - since gs_css_e.ps now lives there.
+
+% .namestring is longer available as an operator, define an
+% equivalent here
+/.namestring
+{
+  dup length string cvs
+} bind def
+
 
 % ================ Write header file ================ %
 
