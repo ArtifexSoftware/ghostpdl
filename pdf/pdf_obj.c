@@ -519,7 +519,7 @@ static int pdfi_obj_int_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *le
     return code;
 }
 
-static int pdfi_obj_getrefstr(pdf_context *ctx, pdf_indirect_ref *ref, byte **data, int *len)
+static int pdfi_obj_getrefstr(pdf_context *ctx, uint64_t object_num, uint32_t generation, byte **data, int *len)
 {
     int size = 100;
     char *buf;
@@ -527,7 +527,7 @@ static int pdfi_obj_getrefstr(pdf_context *ctx, pdf_indirect_ref *ref, byte **da
     buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_getrefstr(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
-    snprintf(buf, size, "%ld %d R", ref->ref_object_num, ref->ref_generation_num);
+    snprintf(buf, size, "%ld %d R", object_num, generation);
     *data = (byte *)buf;
     *len = strlen(buf);
     return 0;
@@ -541,15 +541,16 @@ static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
     pdf_obj *object = NULL;
     bool use_label = true;
 
-    if (ref->is_label) {
-        code = pdfi_obj_getrefstr(ctx, ref, data, len);
+    if (ref->is_highlevelform) {
+        code = pdfi_obj_getrefstr(ctx, ref->highlevel_object_num, 0, data, len);
+        ref->is_highlevelform = false;
     } else {
         if (!ref->is_marking) {
             code = pdfi_dereference(ctx, ref->ref_object_num, ref->ref_generation_num, &object);
             if (code == gs_error_undefined) {
                 /* Do something sensible for undefined reference (this would be a broken file) */
                 /* TODO: Flag an error? */
-                code = pdfi_obj_getrefstr(ctx, ref, data, len);
+                code = pdfi_obj_getrefstr(ctx, ref->ref_object_num, ref->ref_generation_num, data, len);
                 goto exit;
             }
             if (code < 0 && code != gs_error_circular_reference)

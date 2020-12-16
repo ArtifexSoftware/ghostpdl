@@ -3015,27 +3015,38 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
     pdf_dict *AP = NULL;
     uint64_t index;
     pdf_name *Key = NULL;
-    pdf_obj *Value = NULL;
+    pdf_indirect_ref *Value = NULL;
     byte *labeldata = NULL;
     int labellen;
     int form_id;
-    pdf_indirect_ref *ref = NULL;
     gx_device *device = gs_currentdevice(ctx->pgs);
+    bool found_ap = false; /* found at least one AP stream? */
+    pdf_obj *object = NULL;
 
     code = pdfi_dict_get(ctx, annot, "AP", (pdf_obj **)&AP);
     if (code < 0) goto exit;
 
     if (AP->type != PDF_DICT) {
-        /* Invalid AP, just delete it because I dunno what to do...
-         * TODO: Should flag a warning here
-         */
-        code = pdfi_dict_delete_pair(ctx, annot, AP_key);
+        /* This is an invalid AP, we will flag and delete it below */
+        found_ap = false;
         goto exit;
     }
 
-    code = pdfi_dict_first(ctx, AP, (pdf_obj **)&Key, &Value, &index);
+    code = pdfi_dict_key_first(ctx, AP, (pdf_obj **)&Key, &index);
     while (code >= 0) {
-        if (Value->type == PDF_STREAM) {
+        found_ap = true;
+        code = pdfi_dict_get_no_deref(ctx, AP, Key, (pdf_obj **)&Value);
+        if (code < 0) goto exit;
+
+        /* Handle indirect object */
+        if (Value->type != PDF_INDIRECT)
+            goto loop_continue;
+
+        /* Dereference it */
+        code = pdfi_dereference(ctx, Value->ref_object_num, Value->ref_generation_num, &object);
+        if (code < 0) goto exit;
+
+        if (object->type == PDF_STREAM) {
             /* Get a form label */
             code = pdfi_annot_preserve_nextformlabel(ctx, &labeldata, &labellen);
             if (code < 0) goto exit;
@@ -3045,33 +3056,30 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
                 (device, gxdso_pdf_form_name, labeldata, labellen);
 
             /* Draw the high-level form */
-            code = pdfi_do_highlevel_form(ctx, ctx->CurrentPageDict, (pdf_stream *)Value);
+            code = pdfi_do_highlevel_form(ctx, ctx->CurrentPageDict, (pdf_stream *)object);
             if (code < 0) goto exit;
 
             /* Get the object number (form_id) of the high level form */
             code = (*dev_proc(device, dev_spec_op))
                 (device, gxdso_get_form_ID, &form_id, sizeof(int));
 
-            /* Create an indirect ref to form object */
-            code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&ref);
-            if (code < 0) goto exit;
-            ref->ref_object_num = form_id;
-            ref->ref_generation_num = 0;
-            ref->is_label = true;
+            /* Save the highlevel form info for pdfi_obj_indirect_str() */
+            Value->highlevel_object_num = form_id;
+            Value->is_highlevelform = true;
 
-            /* Put it in the dict */
-            code = pdfi_dict_put_obj(ctx, AP, (pdf_obj *)Key, (pdf_obj *)ref);
-            if (code < 0) goto exit;
         }
 
+    loop_continue:
         pdfi_countdown(Key);
         Key = NULL;
         pdfi_countdown(Value);
         Value = NULL;
+        pdfi_countdown(object);
+        object = NULL;
         gs_free_object(ctx->memory, labeldata, "pdfi_annot_preserve_modAP(labeldata)");
         labeldata = NULL;
 
-        code = pdfi_dict_next(ctx, AP, (pdf_obj **)&Key, &Value, &index);
+        code = pdfi_dict_key_next(ctx, AP, (pdf_obj **)&Key, &index);
         if (code == gs_error_undefined) {
             code = 0;
             break;
@@ -3080,11 +3088,20 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
     if (code < 0) goto exit;
 
  exit:
+    /* If there was no AP found, then delete the key completely.
+     * (Bug697951.pdf)
+     */
+    if (!found_ap) {
+        /* TODO: Flag a warning for broken file? */
+        code = pdfi_dict_delete_pair(ctx, annot, AP_key);
+    }
+
     if (labeldata)
         gs_free_object(ctx->memory, labeldata, "pdfi_annot_preserve_modAP(labeldata)");
     pdfi_countdown(AP);
     pdfi_countdown(Key);
     pdfi_countdown(Value);
+    pdfi_countdown(object);
     return code;
 }
 

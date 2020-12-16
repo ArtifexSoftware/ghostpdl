@@ -188,7 +188,8 @@ typedef struct pdf_indirect_ref_s {
     pdf_obj_common;
     uint64_t ref_object_num;
     uint32_t ref_generation_num;
-    bool is_label; /* Used to tell that it's a label for pdfmark */
+    uint64_t highlevel_object_num;
+    bool is_highlevelform; /* Used to tell that it's a high level form for pdfmark */
     bool is_marking; /* Are we in the middle of marking this? */
 } pdf_indirect_ref;
 

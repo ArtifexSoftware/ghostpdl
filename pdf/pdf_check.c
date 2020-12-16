@@ -930,8 +930,9 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
     code = pdfi_dict_knownget_type(ctx, annot, "AP", PDF_DICT, (pdf_obj **)&ap);
     if (code > 0)
     {
-        code = pdfi_dict_knownget(ctx, ap, "N", (pdf_obj **)&N);
-        if (code > 0) {
+        /* Fetch without resolving indirect ref because pdfmark wants it that way later */
+        code = pdfi_dict_get_no_store_R(ctx, ap, "N", (pdf_obj **)&N);
+        if (code >= 0) {
             pdf_dict *dict = NULL;
 
             code = pdfi_dict_from_obj(ctx, N, &dict);
@@ -940,6 +941,8 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
             if (code > 0)
                 code = pdfi_check_Resources(ctx, (pdf_dict *)Resources, page_dict, tracker);
         }
+        if (code == gs_error_undefined)
+            code = 0;
     }
     pdfi_countdown(ap);
     pdfi_countdown(N);
