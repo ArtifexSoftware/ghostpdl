@@ -1,6 +1,6 @@
 api_test: api_test.c
 	(cd ../.. && ./autogen.sh)
-	(cd ../.. && make so)
+	(cd ../.. && make so XCFLAGS="-DCLUSTER")
 	pwd
 	gcc -fPIC -I../.. api_test.c -DGHOSTPDL=1 -lgpdl -L../../sobin -o api_test
 
