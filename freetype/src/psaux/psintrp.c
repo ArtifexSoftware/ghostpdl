@@ -37,8 +37,8 @@
 
 
 #include "psft.h"
-#include FT_INTERNAL_DEBUG_H
-#include FT_SERVICE_CFF_TABLE_LOAD_H
+#include <freetype/internal/ftdebug.h>
+#include <freetype/internal/services/svcfftl.h>
 
 #include "psglue.h"
 #include "psfont.h"
@@ -1434,8 +1434,8 @@
                       goto exit;
                     }
 
-                    /* save the left bearing and width of the SEAC       */
-                    /* glyph as they will be erased by the next load     */
+                    /* save the left bearing and width of the SEAC   */
+                    /* glyph as they will be erased by the next load */
 
                     left_bearing = *decoder->builder.left_bearing;
                     advance      = *decoder->builder.advance;
@@ -1450,13 +1450,13 @@
                                             &dummyWidth );
                     cf2_freeT1SeacComponent( decoder, &component );
 
-                    /* If the SEAC glyph doesn't have a (H)SBW of its    */
-                    /* own use the values from the base glyph.           */
+                    /* If the SEAC glyph doesn't have a (H)SBW of its */
+                    /* own use the values from the base glyph.        */
 
                     if ( !haveWidth )
                     {
-                        left_bearing = *decoder->builder.left_bearing;
-                        advance      = *decoder->builder.advance;
+                      left_bearing = *decoder->builder.left_bearing;
+                      advance      = *decoder->builder.advance;
                     }
 
                     decoder->builder.left_bearing->x = 0;
