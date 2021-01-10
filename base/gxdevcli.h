@@ -759,6 +759,8 @@ typedef struct gdev_pagelist_s {
         bool DisablePageHandler;   /* Can be set by the interpreter if it will process FirstPage and LastPage itself */\
         int ObjectFilter;          /* Bit field for which object filters to apply */\
         bool ObjectHandlerPushed;  /* Handles filtering of objects to devices */\
+        char *NupControl;          /* NUL terminated string parameter for Nup */\
+        bool NupHandlerPushed;     /* Handles Nup operations */\
         long PageCount;			/* number of pages written */\
         long ShowpageCount;		/* number of calls on showpage */\
         int NumCopies;\

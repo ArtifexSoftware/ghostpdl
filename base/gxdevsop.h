@@ -410,6 +410,15 @@ enum {
      */
     gxdso_copy_alpha_disabled,
 
+    /* gxdso_set_HWSize:
+     *     data = int[2], [0] is width [1] is height
+     *     size = sizeof(int[2])
+     * Returns 1 if the device controls dev->width, dev->height
+     * 0 otherwise.
+     * NB: caller should set dev->wdith and dev->height if return is <= 0
+     */
+    gxdso_set_HWSize,
+
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

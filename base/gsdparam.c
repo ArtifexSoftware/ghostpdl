@@ -21,6 +21,7 @@
 #include "gsdevice.h"		/* for prototypes */
 #include "gsparam.h"
 #include "gxdevice.h"
+#include "gxdevsop.h"
 #include "gxfixed.h"
 #include "gsicc_manage.h"
 
@@ -467,6 +468,14 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         temp_bool = dev->DisablePageHandler;
         return param_write_bool(plist, "DisablePageHandler", &temp_bool);
     }
+    if (strcmp(Param, "NupControl") == 0){
+        gs_param_string nuplist;
+        if (dev->NupControl)
+            param_string_from_string(nuplist, dev->NupControl);
+        else
+            param_string_from_string(nuplist, null_str);
+        return param_write_string(plist,"NupControl", &nuplist);
+    }
     if (strcmp(Param, "PageList") == 0){
         gs_param_string pagelist;
         if (dev->PageList) {
@@ -503,7 +512,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     bool seprs = false;
     gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES];
-    gs_param_string blend_profile, postren_profile, pagelist;
+    gs_param_string blend_profile, postren_profile, pagelist, nuplist;
     gs_param_string proof_profile, link_profile, icc_colorants;
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
     gsicc_blackptcomp_t blackptcomps[NUM_DEVICE_PROFILES];
@@ -754,6 +763,13 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     temp_bool = dev->DisablePageHandler;
     if ((code = param_write_bool(plist, "DisablePageHandler", &temp_bool)) < 0)
+        return code;
+
+    if (dev->NupControl)
+        param_string_from_string(nuplist, dev->NupControl);
+    else
+        param_string_from_string(nuplist, null_str);
+    if ((code = param_write_string(plist, "NupControl", &nuplist)) < 0)
         return code;
 
     if (dev->PageList) {
@@ -1451,7 +1467,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int rend_intent[NUM_DEVICE_PROFILES];
     int blackptcomp[NUM_DEVICE_PROFILES];
     int blackpreserve[NUM_DEVICE_PROFILES];
-    gs_param_string cms, pagelist;
+    gs_param_string cms, pagelist, nuplist;
     int leadingedge = dev->LeadingEdge;
     int k;
     int color_accuracy;
@@ -1968,6 +1984,28 @@ label:\
         ecode = code;
     if (code == 0)
         dev->DisablePageHandler = temp_bool;
+
+    code = param_read_string(plist, "NupControl", &nuplist);
+    if (code < 0)
+        ecode = code;
+
+    if (code == 0) {
+        if (dev->NupControl && (strncmp(dev->NupControl, (const char *)nuplist.data, nuplist.size) != 0)) {
+            /* There was a NupControl, but this one is different -- free the old one */
+            gs_free(dev->memory->non_gc_memory, dev->NupControl, 1,
+                    strlen(dev->NupControl) + 1, "previous NupControl string");
+            dev->NupControl = 0;
+        }
+        if (dev->NupControl == NULL && nuplist.size > 0) {
+            /* Allocate a string (with room for terminating NUL) in non_gc_memory */
+            dev->NupControl = (char *)gs_alloc_bytes(dev->memory->non_gc_memory,
+                                                     nuplist.size + 1, "NupControl string");
+            if (!dev->NupControl)
+                return gs_note_error(gs_error_VMerror);
+            memset(dev->NupControl, 0x00, nuplist.size + 1);
+            memcpy(dev->NupControl, nuplist.data, nuplist.size);
+        }
+    }
 
     code = param_read_string(plist, "PageList", &pagelist);
     if (code < 0)
