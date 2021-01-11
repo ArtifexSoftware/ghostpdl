@@ -346,9 +346,10 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
             code = gs_font_notify_register((gs_font *)pfont, gs_len_glyphs_release, (void *)pfont);
             if (code < 0) {
                 gs_free_object(pfont->memory, pfont->data.len_glyphs, "gs_len_glyphs_release");
+                pfont->data.len_glyphs = NULL;
                 return code;
             }
-
+            memset(pfont->data.len_glyphs, 0x00, loca_size * sizeof(uint));
             /* The 'loca' may not be in order, so we construct a glyph length array */
             /* Since 'loca' is usually sorted, first try the simple linear scan to  */
             /* avoid the need to perform the more expensive process. */

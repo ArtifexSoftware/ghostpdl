@@ -110,7 +110,7 @@ cleartomark		% discard the dict from --where--
 % Convert a doc string from PDFDocEncoding or UTF-16BE to UTF-8
 % and write it to standard output. 
 /write-doc-string { % (string) -> -
-  <feff> anchorsearch {
+  1024 string cvs <feff> anchorsearch {
     pop
     0 exch                 % hi16 (str) 
     0 2 2 index length 2 sub {
@@ -268,6 +268,7 @@ cleartomark		% discard the dict from --where--
 ] def
 
 /res-type-dict 10 dict begin
+
   /Font {
     {
       exch pop oforce_no_circular

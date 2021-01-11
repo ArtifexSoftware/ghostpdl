@@ -39,6 +39,9 @@ z_arcfour_d(i_ctx_t * i_ctx_p)
     os_ptr op = osp;		/* i_ctx_p->op_stack.stack.p defined in osstack.h */
     ref *sop = NULL;
     stream_arcfour_state state;
+    int code;
+
+    state.x = state.y = 0;
 
     /* extract the key from the parameter dictionary */
     check_type(*op, t_dictionary);
@@ -47,7 +50,9 @@ z_arcfour_d(i_ctx_t * i_ctx_p)
         return_error(gs_error_rangecheck);
     if (!r_has_type(sop, t_string))
     	return_error(gs_error_typecheck);
-    s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop));
+
+    if ((code = s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop))) < 0)
+        return code;
 
     /* we pass npop=0, since we've no arguments left to consume */
     /* we pass 0 instead of the usual rspace(sop) will allocate storage for
@@ -64,6 +69,9 @@ z_arcfour_e(i_ctx_t * i_ctx_p)
     os_ptr op = osp;		/* i_ctx_p->op_stack.stack.p defined in osstack.h */
     ref *sop = NULL;
     stream_arcfour_state state;
+    int code;
+
+    state.x = state.y = 0;
 
     /* extract the key from the parameter dictionary */
     check_type(*op, t_dictionary);
@@ -73,7 +81,8 @@ z_arcfour_e(i_ctx_t * i_ctx_p)
     if (!r_has_type(sop, t_string))
     	return_error(gs_error_typecheck);
 
-    s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop));
+    if ((code = s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop))) < 0)
+        return code;
 
     /* we pass npop=0, since we've no arguments left to consume */
     /* we pass 0 instead of the usual rspace(sop) will allocate storage for

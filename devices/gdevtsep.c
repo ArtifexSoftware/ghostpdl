@@ -2240,7 +2240,13 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
         for (sep_num = 0; sep_num < num_spot; sep_num++) {
             copy_separation_name(tfdev, name,
                 gp_file_name_sizeof - base_filename_length - SUFFIX_SIZE, sep_num, 0);
-            dmlprintf1(pdev->memory, "%%%%SeparationName: %s\n", name);
+            dmlprintf1(pdev->memory, "%%%%SeparationName: %s", name);
+            dmlprintf4(pdev->memory, " CMYK = [ %d %d %d %d ]\n",
+                tfdev->equiv_cmyk_colors.color[sep_num].c,
+                tfdev->equiv_cmyk_colors.color[sep_num].m,
+                tfdev->equiv_cmyk_colors.color[sep_num].y,
+                tfdev->equiv_cmyk_colors.color[sep_num].k
+            );
         }
     }
 
