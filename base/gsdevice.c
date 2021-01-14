@@ -787,7 +787,10 @@ gx_device_raster(const gx_device * dev, bool pad)
     int l2align;
 
     if (dev->is_planar)
-        bits /= dev->color_info.num_components;
+    {
+        int has_tags = device_encodes_tags(dev);
+        bits /= (dev->color_info.num_components + has_tags);
+    }
 
     raster = (uint)((bits + 7) >> 3);
     if (!pad)
