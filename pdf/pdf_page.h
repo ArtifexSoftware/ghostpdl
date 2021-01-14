@@ -36,6 +36,8 @@ typedef struct {
     float ArtBox[4];
     float BleedBox[4];
     float TrimBox[4];
+    float Rotate;
+    float UserUnit;
 } pdf_info_t;
 
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics);

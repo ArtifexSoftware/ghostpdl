@@ -16,6 +16,13 @@
 
 /* Custom operators for PDF interpreter */
 
+#if defined(BUILD_PDF) && BUILD_PDF == 1
+#include "ghostpdf.h"
+#include "pdf_page.h"
+#include "gzht.h"
+#include "gsrefct.h"
+#endif
+
 #include "ghost.h"
 #include "oper.h"
 #include "igstate.h"
@@ -245,10 +252,6 @@ zsaslprep(i_ctx_t *i_ctx_p)
 #endif
 
 #if defined(BUILD_PDF) && BUILD_PDF == 1
-#include "ghostpdf.h"
-#include "pdf_page.h"
-#include "gzht.h"
-#include "gsrefct.h"
 
 static int
 psi_pdf_end_page(pdf_context *ctx)
@@ -482,21 +485,113 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
-    code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"MediaBox", 8, &nameref, 1);
-    if (code < 0)
-        return code;
-    code = ialloc_ref_array(&aref, a_all, 4, "array");
-    if (code < 0)
-        return code;
-    refset_null(aref.value.refs, 4);
-    for (i=0;i < 4;i++) {
-        make_real(&numref, info.MediaBox[i]);
-        eltp = aref.value.refs + i;
-        ref_assign_old(&aref, eltp, &numref, "put");
+    if (info.boxes & MEDIA_BOX) {
+        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"MediaBox", 8, &nameref, 1);
+        if (code < 0)
+            return code;
+        code = ialloc_ref_array(&aref, a_all, 4, "array");
+        if (code < 0)
+            return code;
+        refset_null(aref.value.refs, 4);
+        for (i=0;i < 4;i++) {
+            make_real(&numref, info.MediaBox[i]);
+            eltp = aref.value.refs + i;
+            ref_assign_old(&aref, eltp, &numref, "put");
+        }
+        code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
+        if (code < 0)
+            return code;
     }
-    code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
+
+    if (info.boxes & CROP_BOX) {
+        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"CropBox", 7, &nameref, 1);
+        if (code < 0)
+            return code;
+        code = ialloc_ref_array(&aref, a_all, 4, "array");
+        if (code < 0)
+            return code;
+        refset_null(aref.value.refs, 4);
+        for (i=0;i < 4;i++) {
+            make_real(&numref, info.CropBox[i]);
+            eltp = aref.value.refs + i;
+            ref_assign_old(&aref, eltp, &numref, "put");
+        }
+        code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
+        if (code < 0)
+            return code;
+    }
+
+    if (info.boxes & TRIM_BOX) {
+        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"TrimBox", 7, &nameref, 1);
+        if (code < 0)
+            return code;
+        code = ialloc_ref_array(&aref, a_all, 4, "array");
+        if (code < 0)
+            return code;
+        refset_null(aref.value.refs, 4);
+        for (i=0;i < 4;i++) {
+            make_real(&numref, info.TrimBox[i]);
+            eltp = aref.value.refs + i;
+            ref_assign_old(&aref, eltp, &numref, "put");
+        }
+        code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
+        if (code < 0)
+            return code;
+    }
+
+    if (info.boxes & ART_BOX) {
+        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"ArtBox", 6, &nameref, 1);
+        if (code < 0)
+            return code;
+        code = ialloc_ref_array(&aref, a_all, 4, "array");
+        if (code < 0)
+            return code;
+        refset_null(aref.value.refs, 4);
+        for (i=0;i < 4;i++) {
+            make_real(&numref, info.ArtBox[i]);
+            eltp = aref.value.refs + i;
+            ref_assign_old(&aref, eltp, &numref, "put");
+        }
+        code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
+        if (code < 0)
+            return code;
+    }
+
+    if (info.boxes & BLEED_BOX) {
+        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"BleedBox", 8, &nameref, 1);
+        if (code < 0)
+            return code;
+        code = ialloc_ref_array(&aref, a_all, 4, "array");
+        if (code < 0)
+            return code;
+        refset_null(aref.value.refs, 4);
+        for (i=0;i < 4;i++) {
+            make_real(&numref, info.BleedBox[i]);
+            eltp = aref.value.refs + i;
+            ref_assign_old(&aref, eltp, &numref, "put");
+        }
+        code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
+        if (code < 0)
+            return code;
+    }
+
+    code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"Rotate", 6, &nameref, 1);
     if (code < 0)
         return code;
+    make_real(&numref, info.Rotate);
+    code = dict_put(op, &nameref, &numref, &i_ctx_p->dict_stack);
+    if (code < 0)
+        return code;
+
+    if (info.UserUnit != 1) {
+        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"UserUnit", 8, &nameref, 1);
+        if (code < 0)
+            return code;
+        make_real(&numref, info.UserUnit);
+        code = dict_put(op, &nameref, &numref, &i_ctx_p->dict_stack);
+        if (code < 0)
+            return code;
+    }
 
     return_error(0);
 }

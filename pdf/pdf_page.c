@@ -412,6 +412,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
     int code = 0;
     pdf_dict *page_dict = NULL;
     pdf_array *a = NULL;
+    double dbl = 0.0;
 
     code = pdfi_page_get_dict(ctx, page_num, &page_dict);
     if (code < 0)
@@ -485,6 +486,20 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
         a = NULL;
     }
     code = 0;
+
+    info->Rotate = 0;
+    code = pdfi_dict_get_number(ctx, page_dict, "Rotate", &dbl);
+    if (code < 0 && code != gs_error_undefined)
+        goto done;
+    code = 0;
+    info->Rotate = dbl;
+
+    dbl = info->UserUnit = 1;
+    code = pdfi_dict_get_number(ctx, page_dict, "UserUnit", &dbl);
+    if (code < 0 && code != gs_error_undefined)
+        goto done;
+    code = 0;
+    info->UserUnit = dbl;
 
     info->HasTransparency = ctx->page_has_transparency;
     info->NumSpots = ctx->page_num_spots;

@@ -657,25 +657,195 @@ currentdict /EnablePageHandlerDevice undef
   } if
 } bind executeonly def
 
-% This routine is used to set the PostScript /PageSize from the MediaBox of the
-% PDF file. It caters for cases where hte MediaBox does not have its origin at
-% 0,0 by translating the CTM. It also handles situations such as the MediaBox
-% being entirely negative. This routine needs more work, in particular we should
-% look at the 'Use*Box' settings for the size, we should use PDFFitPage and scale
-% the content appropriately.
+% Takes the selected Box as a parameter and scales it to fit the current media.
+% If the amount of scaling would be reduced by rotating the content, then
+% rotate the content.
+% Caters for the box non-zero lower left x and y (ie cropping)
+/NewPDF_FitPage
+{
+    dup 2 get 1 index 0 get sub                 %urx -llx = width
+    1 index 3 get 2 index 1 get sub             %ury - lly = height
+
+    currentpagedevice /PageSize get aload pop   % Stack - box boxwidth boxheight mediawidth mediaheight
+
+    % Start by deciding if we should rotate the page to better fit the media.
+    4 copy eq
+    3 1 roll eq
+    or                   % square media or square page, no point in rotating
+    {
+      //false
+    }
+    {
+      gt
+      {                                           % landscape media
+        ge
+        {                                         % landscape media, landscape box, no rotation
+          //false
+        }
+        {                                         % landscape media, portrait box, rotate it to landscape
+          //true
+        } ifelse
+      }
+      {                                           % portrait media
+        ge
+        {                                         % portrait media, landscape box, rotate it to portrait
+          //true
+        }
+        {                                         % portrait media, portrait box, no rotation
+          //false
+        } ifelse
+      }ifelse
+    } ifelse
+
+    % Store values for calculating scale, we do this here because we want to
+    % swap the media width and height (for the scale calculation) if we are
+    % rotating the page
+    1 index 2 get 2 index 0 get sub             % urx -llx = width
+    2 index 3 get 3 index 1 get sub             % ury - lly = height
+    currentpagedevice /PageSize get aload pop   % Stack - box rotate boxwidth boxheight mediawidth mediaheight
+    5 -1 roll                                   % Stack - box boxwidth boxheight mediawidth mediaheight rotate
+
+    % If we need to rotate, recalculate the box
+    {
+      90 rotate
+      0 2 index neg translate                   % move 0,0 to bottom right of media to account for rotation
+      exch                                      % swap media width/height for scaling calculation
+    }if
+
+    % Stack - box boxwidth boxheight mediawidth mediaheight
+    % Incorporate up any offset from 0,0
+    4 index aload pop pop pop neg exch neg exch
+    2 copy exch
+    translate
+
+    % Now use the box and media values to calculate the required x/y scale factors
+    3 -1 roll div                       % box boxwidth mediawidth (mediaheight / boxheight)
+    3 1 roll                            % box (mediaheight / boxheight) boxwidth mediawidth
+    exch                                % box (mediaheight / boxheight) mediawidth boxwidth
+    div                                 % box (mediaheight / boxheight) (mediawidth / boxwidth)
+
+    2 copy                              % box Yscale Xscale Yscale Xscale
+    gt {exch} if                        % select smallest scale factor
+    pop                                 %
+    dup scale                           % and scale page isomorphically
+} bind def
+
+% This routine is used to set the PostScript /PageSize from the requested Box of the
+% PDF file. Much of this is copied from the old pdfshowpage_setpage routine which
+% is used for the PDF interpreter written in PostScript.
+%
+% Called with a dictionary containing the PDF page information.
 %
 /newpdf_set_pagesize
 {
-  1 dict begin
-  /MediaBox get dup
-  dup 2 get 1 index 0 get sub dup 0 lt {-1 mul} if
-  exch dup 3 get exch 1 get sub dup 0 lt {-1 mul} if
-  2 array astore
-  /PageSize exch def
-  currentdict
-  setpagedevice
-  dup 0 get -1 mul exch 1 get -1 mul translate
-  end
+  % Stack: pdfpagedict
+
+  //pdfdict begin       % we use certain utilities which are stored in this dictionary
+
+  % Don't understand this at all, removed for now replace if we ever figure out
+  % what it's for.
+  % Only lock in Orientation if we need to for pdfmarks
+%  .writepdfmarks { /Orientation 0 def } if
+
+  dup get_any_box       % Stack: pdfpagedict /BoxName [box]
+
+  //systemdict /PDFFitPage known {
+    NewPDF_FitPage
+  } {
+    6 dict begin		% for setpagedevice
+
+    % Set the page size.
+    //systemdict /NoUserUnit .knownget not { //false } if not
+    {
+      2 index /UserUnit knownoget
+      {
+        /PassUserUnit /GetDeviceParam .special_op {
+          exch pop dup {
+            [ /UserUnit 4 -1 roll .pdfputparams pop pop
+          } if
+        }{
+          //false
+        }ifelse
+        not {
+            % scale the co-ordinate system by the UserUnit
+            dup dup scale
+            % The PageSize needs to be multiplied too
+            exch aload 5 1 roll % UserUnit box llx lly urx ury
+            2 index sub exch    % UserUnit box llx lly (ury - lly) urx
+            3 index sub         % UserUnit box llx lly boxheight boxwidth
+            5 index mul         % UserUnit box llx lly boxheight (Boxwidth*UserUnit)
+            5 index mul         % UserUnit box llx lly boxheight (Boxwidth*UserUnit)
+            5 -1 roll mul       % box llx lly (boxheight*UserUnit) (Boxwidth*UserUnit)
+            exch
+        } if
+      } {
+        /PassUserUnit /GetDeviceParam .special_op {
+          exch pop {
+            [ /UserUnit 1 .pdfputparams pop pop
+          } if
+        }if
+        % No scaling required, calculate PageSize as the widht and height of the box
+        aload 5 1 roll      % box llx lly urx ury
+        2 index sub         % box llx lly urx (ury - lly)
+        exch 3 index sub    % box llx lly (ury - lly) (urx - llx)
+        exch
+      } ifelse
+    } if
+
+    % handle page rotation here
+    6 index /Rotate known {
+      % PDF page rotation runs clockwise and must be a multiple of 90, unlike PostScript.....
+      % convert Rotate into a quadrant number
+      6 index /Rotate get 90 div cvi
+      % Make sure quadrant is 0-3
+      dup 3 gt {4 mod} if
+      dup 0 eq
+      {
+        pop
+        2 array astore /PageSize exch def
+        currentdict end setpagedevice
+        translate
+      }
+      {
+        dup 1 eq
+        {
+          pop
+          exch 4 2 roll exch 4 2 roll
+          2 array astore dup /PageSize exch def
+          currentdict end setpagedevice
+          270 rotate
+          1 get neg 0 translate
+          translate
+        }
+        {
+          2 eq
+          {
+            2 array astore dup /PageSize exch def
+            currentdict end setpagedevice
+            180 rotate
+            aload pop neg exch neg exch translate
+            translate
+          }
+          {
+            exch 4 2 roll exch 4 2 roll
+            2 array astore dup /PageSize exch def
+            currentdict end setpagedevice
+            90 rotate
+            0 get neg 0 exch translate
+            translate
+          } ifelse
+        } ifelse
+      } ifelse
+    }
+    {
+      2 array astore /PageSize exch def
+      currentdict end setpagedevice
+      translate
+    }ifelse
+  } ifelse
+
+  end % pdfdict
+  pop pop pop       % box /BoxName pdfpagedict
 } bind executeonly def
 
 % This routine checks a list of known/implemented command line switches to see if they

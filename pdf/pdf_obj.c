@@ -267,7 +267,7 @@ int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **strea
     if (dict->type != PDF_DICT)
         return_error(gs_error_typecheck);
 
-#if DEBUG
+#ifdef DEBUG
     if (dict->refcnt != 1 && dict->object_num != 0)
         dbgmprintf(ctx->memory, "WARNING: converting probable cached dictionary to stream!\n");
 #endif
