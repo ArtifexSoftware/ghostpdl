@@ -1104,13 +1104,35 @@ gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *arg)
         switch (arg[1])
         {
         case 0:   /* We can let - through unchanged */
+        case '-': /* Need to check for permitted file lists */
+            /* By default, we want to keep the key, but lose the value */
+            p = arg+2;
+            while (*p && *p != '=')
+                p++;
+            if (*p == '=')
+                p++;
+            if (*p == 0)
+                break; /* No value to elide */
+            /* Check for our blocked values here */
+#define ARG_MATCHES(STR, ARG, LEN) \
+    (strlen(STR) == LEN && !memcmp(STR, ARG, LEN))
+            if (ARG_MATCHES("permit-file-read", arg+2, p-arg-3))
+                elide=1;
+            if (ARG_MATCHES("permit-file-write", arg+2, p-arg-3))
+                elide=1;
+            if (ARG_MATCHES("permit-file-control", arg+2, p-arg-3))
+                elide=1;
+            if (ARG_MATCHES("permit-file-all", arg+2, p-arg-3))
+                elide=1;
+#undef ARG_MATCHES
+            /* Didn't match a blocked value, so allow it. */
+            break;
         case 'd': /* We can let -dFoo=<whatever> through unchanged */
         case 'D': /* We can let -DFoo=<whatever> through unchanged */
         case 'r': /* We can let -r through unchanged */
         case 'Z': /* We can let -Z through unchanged */
         case 'g': /* We can let -g through unchanged */
         case 'P': /* We can let -P through unchanged */
-        case '-': /* We can let -- through unchanged */
         case '+': /* We can let -+ through unchanged */
         case '_': /* We can let -_ through unchanged */
         case 'u': /* We can let -u through unchanged */
