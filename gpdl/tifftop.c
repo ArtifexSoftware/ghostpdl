@@ -762,6 +762,8 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 }
                 break;
             case PHOTOMETRIC_SEPARATED:
+                if (tiff->num_comps == 3 || tiff->num_comps == 4)
+                    break;
             case PHOTOMETRIC_YCBCR:
             case PHOTOMETRIC_CIELAB:
             case PHOTOMETRIC_ICCLAB:
