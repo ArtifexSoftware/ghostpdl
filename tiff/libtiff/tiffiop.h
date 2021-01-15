@@ -34,22 +34,6 @@
 # include <fcntl.h>
 #endif
 
-#ifndef O_RDONLY
-#define O_RDONLY _O_RDONLY
-#endif
-#ifndef O_WRONLY
-#define O_WRONLY _O_WRONLY
-#endif
-#ifndef O_RDWR
-#define O_RDWR _O_RDWR
-#endif
-#ifndef O_CREAT
-#define O_CREAT _O_CREAT
-#endif
-#ifndef O_TRUNC
-#define O_TRUNC _O_TRUNC
-#endif
-
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
@@ -71,12 +55,10 @@ extern void *lfind(const void *, const void *, size_t *, size_t,
 		   int (*)(const void *, const void *));
 #endif
 
-#if !defined(__WIN32__)
 #if !defined(HAVE_SNPRINTF) && !defined(HAVE__SNPRINTF)
 #undef snprintf
 #define snprintf _TIFF_snprintf_f
 extern int snprintf(char* str, size_t size, const char* format, ...);
-#endif
 #endif
 
 #include "tiffio.h"
@@ -385,6 +367,9 @@ extern int TIFFSetDefaultCompressionState(TIFF* tif);
 extern uint32 _TIFFDefaultStripSize(TIFF* tif, uint32 s);
 extern void _TIFFDefaultTileSize(TIFF* tif, uint32* tw, uint32* th);
 extern int _TIFFDataSize(TIFFDataType type);
+
+/*--: Rational2Double: Return size of TIFFSetGetFieldType in bytes. */
+extern int _TIFFSetGetFieldSize(TIFFSetGetFieldType setgettype);
 
 extern void _TIFFsetByteArray(void**, void*, uint32);
 extern void _TIFFsetString(char**, char*);
