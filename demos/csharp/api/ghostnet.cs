@@ -86,37 +86,46 @@ public class gsEventArgs : EventArgs
 			}
 		}
 
-		/* Ghostscript display device callback delegates. */
+		/* Ghostscript display device callback delegates. Make sure that
+		   these are using Cdecl calling convention, which means gsdll
+		   is doing the stack cleanup after the call */
 
 		/* New device has been opened */
 		/* This is the first event from this device. */
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		public delegate int display_open_del(IntPtr handle, IntPtr device);
 
 		/* Device is about to be closed. */
 		/* Device will not be closed until this function returns. */
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		public delegate int display_preclose_del(IntPtr handle, IntPtr device);
 
 		/* Device has been closed. */
 		/* This is the last event from this device. */
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		public delegate int display_close_del(IntPtr handle, IntPtr device);
 
 		/* Device is about to be resized. */
 		/* Resize will only occur if this function returns 0. */
 		/* raster is byte count of a row. */
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		public delegate int display_presize_del(IntPtr handle, IntPtr device,
 			int width, int height, int raster, uint format);
 
 		/* Device has been resized. */
 		/* New pointer to raster returned in pimage */
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		public delegate int display_size_del(IntPtr handle, IntPtr device,
 							int width, int height, int raster, uint format,
 							IntPtr pimage);
 
 		/* flushpage */
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		public delegate int display_sync_del(IntPtr handle, IntPtr device);
 
 		/* showpage */
 		/* If you want to pause on showpage, then don't return immediately */
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		public delegate int display_page_del(IntPtr handle, IntPtr device, int copies, int flush);
 
 
@@ -125,6 +134,7 @@ public class gsEventArgs : EventArgs
 		 * progressive update of the display.
 		 * This function pointer may be set to NULL if not required.
 		 */
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		public delegate int display_update_del(IntPtr handle, IntPtr device, int x, int y,
 			  int w, int h);
 
@@ -135,10 +145,12 @@ public class gsEventArgs : EventArgs
 		 * image buffer. The first row will be placed at the address
 		 * returned by display_memalloc.
 		 */
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		public delegate int display_memalloc_del(IntPtr handle, IntPtr device, ulong size);
 
 		/* Free memory for bitmap */
 		/* If this is NULL, the Ghostscript memory device will free the bitmap */
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 		public delegate int display_memfree_del(IntPtr handle, IntPtr device, IntPtr mem);
 
 		private int display_size(IntPtr handle, IntPtr device,
