@@ -1666,6 +1666,12 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
 
     *render_done = false;
 
+    {
+        unsigned int foo;
+
+        dmprintf1(ctx->memory, "sizeof(unsigned int)=%ld\n", sizeof(foo));
+    }
+
     code = pdfi_annot_start_transparency(ctx, annot);
     if (code < 0) goto exit1;
 

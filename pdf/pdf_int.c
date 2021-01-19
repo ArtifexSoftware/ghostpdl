@@ -1717,19 +1717,20 @@ pdfi_interpret_inner_content(pdf_context *ctx, pdf_c_stream *content_stream, pdf
     return code;
 }
 
-/* Interpret inner content from a string
+/* Interpret inner content from a buffer
  */
 int
-pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string,
-                                    pdf_dict *stream_dict, pdf_dict *page_dict,
-                                    bool stoponerror, const char *desc)
+pdfi_interpret_inner_content_buffer(pdf_context *ctx, byte *content_data,
+                                      uint32_t content_length,
+                                      pdf_dict *stream_dict, pdf_dict *page_dict,
+                                      bool stoponerror, const char *desc)
 {
     int code = 0;
     pdf_c_stream *stream = NULL;
     pdf_stream *stream_obj = NULL;
 
-    code = pdfi_open_memory_stream_from_memory(ctx, content_string->length,
-                                               content_string->data, &stream);
+    code = pdfi_open_memory_stream_from_memory(ctx, content_length,
+                                               content_data, &stream);
     if (code < 0)
         goto exit;
 
@@ -1742,6 +1743,36 @@ pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string
     pdfi_countdown(stream_obj);
  exit:
     return code;
+}
+
+/* Interpret inner content from a C string
+ */
+int
+pdfi_interpret_inner_content_c_string(pdf_context *ctx, char *content_string,
+                                      pdf_dict *stream_dict, pdf_dict *page_dict,
+                                      bool stoponerror, const char *desc)
+{
+    uint32_t length = (uint32_t)strlen(content_string);
+
+    /* Underlying buffer limit is uint32, so handle the extremely unlikely case that
+     * our string is too big.
+     */
+    if (length != strlen(content_string))
+        return_error(gs_error_limitcheck);
+
+    return pdfi_interpret_inner_content_buffer(ctx, (byte *)content_string, length,
+                                               stream_dict, page_dict, stoponerror, desc);
+}
+
+/* Interpret inner content from a string
+ */
+int
+pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string,
+                                    pdf_dict *stream_dict, pdf_dict *page_dict,
+                                    bool stoponerror, const char *desc)
+{
+    return pdfi_interpret_inner_content_buffer(ctx, content_string->data, content_string->length,
+                                               stream_dict, page_dict, stoponerror, desc);
 }
 
 /* Interpret inner content from a stream_dict

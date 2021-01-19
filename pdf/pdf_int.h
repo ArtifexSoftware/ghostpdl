@@ -34,10 +34,15 @@ void local_restore_stream_state(pdf_context *ctx, stream_save *local_save);
 void cleanup_context_interpretation(pdf_context *ctx, stream_save *local_save);
 void initialise_stream_save(pdf_context *ctx);
 int pdfi_run_context(pdf_context *ctx, pdf_stream *stream_obj, pdf_dict *page_dict, bool stoponerror, const char *desc);
-int
-pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string,
-                                    pdf_dict *stream_dict, pdf_dict *page_dict,
-                                    bool stoponerror, const char *desc);
+int pdfi_interpret_inner_content_buffer(pdf_context *ctx, byte *content_data, uint32_t content_length,
+                                        pdf_dict *stream_dict, pdf_dict *page_dict,
+                                        bool stoponerror, const char *desc);
+int pdfi_interpret_inner_content_c_string(pdf_context *ctx, char *content_string,
+                                          pdf_dict *stream_dict, pdf_dict *page_dict,
+                                          bool stoponerror, const char *desc);
+int pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string,
+                                        pdf_dict *stream_dict, pdf_dict *page_dict,
+                                        bool stoponerror, const char *desc);
 int pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_stream *stream_obj, pdf_dict *page_dict, bool stoponerror, const char *desc);
 int pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream, pdf_stream *stream_obj, pdf_dict *page_dict);
 
