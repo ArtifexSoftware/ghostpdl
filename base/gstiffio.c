@@ -293,6 +293,21 @@ _TIFFmemcmp(const void* p1, const void* p2, tmsize_t c)
     return (memcmp(p1, p2, (size_t) c));
 }
 
+#if !defined(HAVE_SNPRINTF) && !defined(HAVE__SNPRINTF)
+#include "gssprintf.h"
+int
+_TIFF_snprintf_f(char* buf, size_t size, const char* format, ...)
+{
+    int count;
+    va_list args;
+
+    va_start(args, format);
+    count = gs_vsnprintf(buf, size, format, args);
+    va_end(args);
+    return count;
+}
+#endif
+
 /* We supply our own warning/error handlers when we invoke libtiff */
 TIFFErrorHandler _TIFFwarningHandler = NULL;
 TIFFErrorHandler _TIFFerrorHandler = NULL;
