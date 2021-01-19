@@ -146,6 +146,7 @@ pdfi_oc_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
     bool is_visible;
     uint64_t i;
     int code;
+    pdf_obj *val = NULL;
 
     /* Setup default */
     switch (type) {
@@ -161,12 +162,13 @@ pdfi_oc_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
 
     for (i=0; i<pdfi_array_size(array); i++) {
         bool vis;
-        pdf_obj *val = NULL;
 
-        code = pdfi_array_peek(ctx, array, i, &val);
+        code = pdfi_array_get(ctx, array, i, &val);
         if (code < 0) continue;
         if (val->type != PDF_DICT) {
             dmprintf1(ctx->memory, "WARNING: OCMD array contains item type %d, expected PDF_DICT or PDF_NULL\n", val->type);
+            pdfi_countdown(val);
+            val = NULL;
             continue;
         }
 
@@ -204,6 +206,7 @@ pdfi_oc_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
     }
 
  cleanup:
+    pdfi_countdown(val);
     return is_visible;
 }
 

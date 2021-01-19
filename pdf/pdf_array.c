@@ -125,23 +125,13 @@ static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_
 
         if (setref)
             (void)pdfi_array_put(ctx, a, index, o1);
-        /* Don't need this extra reference */
-        pdfi_countdown(o1);
         obj = o1;
+    } else {
+        pdfi_countup(obj);
     }
 
     *o = obj;
     return 0;
-}
-
-
-/* Get the value from the pdfi_array without incrementing its reference count.
- * Caller needs to increment it themselves if they want to keep it (or just use
- * pdfi_array_get, below).
- */
-int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
-{
-    return pdfi_array_fetch(ctx, a, index, o, true);
 }
 
 /* The object returned by pdfi_array_get has its reference count incremented by 1 to
@@ -154,7 +144,6 @@ int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
     code = pdfi_array_fetch(ctx, a, index, o, true);
     if (code < 0) return code;
 
-    pdfi_countup(*o);
     return 0;
 }
 
@@ -184,27 +173,6 @@ int pdfi_array_get_no_store_R(pdf_context *ctx, pdf_array *a, uint64_t index, pd
     code = pdfi_array_fetch(ctx, a, index, o, false);
     if (code < 0) return code;
 
-    pdfi_countup(*o);
-    return 0;
-}
-
-/* Get value from pdfi_array without incrementing its reference count.
- * Handles type-checking and resolving indirect references.
- */
-int pdfi_array_peek_type(pdf_context *ctx, pdf_array *a, uint64_t index,
-                     pdf_obj_type type, pdf_obj **o)
-{
-    int code;
-
-    code = pdfi_array_fetch(ctx, a, index, o, true);
-    if (code < 0)
-        return code;
-
-    if ((*o)->type != type) {
-        *o = NULL;
-        return_error(gs_error_typecheck);
-    }
-
     return 0;
 }
 
@@ -216,11 +184,15 @@ int pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index,
 {
     int code;
 
-    code = pdfi_array_peek_type(ctx, a, index, type, o);
+    code = pdfi_array_get(ctx, a, index, o);
     if (code < 0)
         return code;
 
-    pdfi_countup(*o);
+    if ((*o)->type != type) {
+        pdfi_countdown(*o);
+        *o = NULL;
+        return_error(gs_error_typecheck);
+    }
     return 0;
 }
 
@@ -229,10 +201,11 @@ int pdfi_array_get_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t *
     int code;
     pdf_num *n;
 
-    code = pdfi_array_peek_type(ctx, a, index, PDF_INT, (pdf_obj **)&n);
+    code = pdfi_array_get_type(ctx, a, index, PDF_INT, (pdf_obj **)&n);
     if (code < 0)
         return code;
     *i = n->value.i;
+    pdfi_countdown(n);
     return 0;
 }
 
@@ -241,20 +214,22 @@ int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double
     int code;
     pdf_num *n;
 
-    code = pdfi_array_peek(ctx, a, index, (pdf_obj **)&n);
+    code = pdfi_array_get(ctx, a, index, (pdf_obj **)&n);
     if (code < 0)
         return code;
+
     if (n->type == PDF_INT)
         *f = (double)n->value.i;
     else {
         if (n->type == PDF_REAL)
             *f = n->value.d;
         else {
-            return_error(gs_error_typecheck);
+            code = gs_note_error(gs_error_typecheck);
         }
     }
+    pdfi_countdown(n);
 
-    return 0;
+    return code;
 }
 
 /* Check whether a particular object is in an array.
@@ -277,8 +252,10 @@ bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
             continue;
         if (val->object_num == o->object_num) {
             if (index != NULL) *index = i;
+            pdfi_countdown(val);
             return true;
         }
+        pdfi_countdown(val);
     }
     return false;
 }
