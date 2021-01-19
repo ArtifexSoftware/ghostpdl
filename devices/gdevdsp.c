@@ -1430,9 +1430,6 @@ static int display_check_structure(gx_device_display *ddev)
     }
     else if (ddev->callback->size == sizeof(struct display_callback_v2_s)) {
         /* V2 structure with added display_separation callback */
-        if (ddev->callback->size != sizeof(display_callback))
-            return_error(gs_error_rangecheck);
-
         if (ddev->callback->version_major != DISPLAY_VERSION_MAJOR_V2)
             return_error(gs_error_rangecheck);
 

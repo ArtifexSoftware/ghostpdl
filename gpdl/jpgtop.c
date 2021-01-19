@@ -48,7 +48,7 @@ typedef enum
 
 typedef struct {
     struct jpeg_error_mgr pub;
-    jmp_buf setjmp_buffer;
+    jmp_buf *setjmp_buffer;
 } jpg_error_mgr;
 
 /*
@@ -90,6 +90,13 @@ typedef struct jpg_interp_instance_s {
     struct jpeg_source_mgr        jsrc;
     size_t             bytes_to_skip;
     jpg_error_mgr      jerr;
+
+    struct
+    {
+        jmp_buf setjmp_buffer;
+        unsigned char pad[16];
+    } aligned_jmpbuf;
+
 
     byte              *samples;
 
@@ -412,7 +419,7 @@ jpg_error_exit(j_common_ptr cinfo)
 {
     jpg_error_mgr *jerr = (jpg_error_mgr *)cinfo->err;
 
-    longjmp(jerr->setjmp_buffer, 1);
+    longjmp(*jerr->setjmp_buffer, 1);
 }
 
 static int
@@ -457,6 +464,28 @@ consume_jpeg_data(jpg_interp_instance_t *jpg, stream_cursor_read *pr)
     return (pr->limit - pr->ptr == jpg->bytes_available_on_entry);
 }
 
+/* Horrible hack. Windows appears to expect the jmpbuf to be 16 byte
+ * aligned. Most 64bit platforms appear to return blocks from malloc
+ * that are aligned to 16 byte boundaries. Our malloc routines only
+ * return things to be 8 byte aligned on 64bit platforms, so we may
+ * fail. Accordingly, we allocate the jmpbuf in a larger structure,
+ * and align it.
+ *
+ * This is only a calculation we have to do once, so we just do it on
+ * all platforms. */
+static jmp_buf *
+align_setjmp_buffer(void *ptr)
+{
+    intptr_t offset = (intptr_t)ptr;
+    char *aligned;
+    offset &= 15;
+    offset = (16-offset) & 15;
+
+    aligned = ((char *)ptr) + offset;
+
+    return (jmp_buf *)(void *)aligned;
+}
+
 static int
 jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
 {
@@ -493,9 +522,11 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
                 break;
             }
 
+            jpg->jerr.setjmp_buffer = align_setjmp_buffer(&jpg->aligned_jmpbuf);
+
             jpg->cinfo.err = jpeg_std_error(&jpg->jerr.pub);
             jpg->jerr.pub.error_exit = jpg_error_exit;
-            if (setjmp(jpg->jerr.setjmp_buffer)) {
+            if (setjmp(*jpg->jerr.setjmp_buffer)) {
                 jpg->state = ii_state_flush;
                 break;
             }
@@ -521,7 +552,7 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
                 need_more_data = 1;
                 break; /* No bytes left after skipping */
             }
-            if (setjmp(jpg->jerr.setjmp_buffer)) {
+            if (setjmp(*jpg->jerr.setjmp_buffer)) {
                 jpeg_destroy_decompress(&jpg->cinfo);
                 jpg->state = ii_state_flush;
                 break;
@@ -657,7 +688,7 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
                 need_more_data = 1;
                 break; /* No bytes left after skipping */
             }
-            if (setjmp(jpg->jerr.setjmp_buffer)) {
+            if (setjmp(*jpg->jerr.setjmp_buffer)) {
                 jpeg_destroy_decompress(&jpg->cinfo);
                 jpg->state = ii_state_flush;
                 break;
@@ -678,7 +709,7 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
                 need_more_data = 1;
                 break; /* No bytes left after skipping */
             }
-            if (setjmp(jpg->jerr.setjmp_buffer)) {
+            if (setjmp(*jpg->jerr.setjmp_buffer)) {
                 jpeg_destroy_decompress(&jpg->cinfo);
                 jpg->state = ii_state_flush;
                 break;
@@ -720,7 +751,7 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
                 need_more_data = 1;
                 break; /* No bytes left after skipping */
             }
-            if (setjmp(jpg->jerr.setjmp_buffer)) {
+            if (setjmp(*jpg->jerr.setjmp_buffer)) {
                 jpeg_destroy_decompress(&jpg->cinfo);
                 jpg->state = ii_state_flush;
                 break;
@@ -735,7 +766,7 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
         }
         default:
         case ii_state_flush:
-            if (setjmp(jpg->jerr.setjmp_buffer))
+            if (setjmp(*jpg->jerr.setjmp_buffer))
                 break;
             jpeg_destroy_decompress(&jpg->cinfo);
 

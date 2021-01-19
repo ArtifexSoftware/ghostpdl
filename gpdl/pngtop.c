@@ -327,6 +327,20 @@ my_png_malloc(png_structp png_ptr, png_alloc_size_t size)
 {
     png_interp_instance_t *png = (png_interp_instance_t *)png_get_mem_ptr(png_ptr);
 
+    if (sizeof(void *) == 8) {
+        /* gs_alloc_bytes returns blocks aligned to 8 on 64bit platforms.
+         * PNG (on Windows at least) requires blocks aligned to 16. */
+        unsigned char *block = gs_alloc_bytes(png->memory, size+16, "my_png_malloc");
+        intptr_t num_bytes_padded;
+
+        if (block == NULL)
+            return NULL;
+        num_bytes_padded = 16-(((intptr_t)block) & 15);
+        block += num_bytes_padded;
+        block[-1] = num_bytes_padded;
+
+        return block;
+    }
     return gs_alloc_bytes(png->memory, size, "my_png_malloc");
 }
 
@@ -335,6 +349,13 @@ my_png_free(png_structp png_ptr, png_voidp ptr)
 {
     png_interp_instance_t *png = (png_interp_instance_t *)png_get_mem_ptr(png_ptr);
 
+    if (sizeof(void *) == 8) {
+        unsigned char *block = ptr;
+        if (block == NULL)
+            return;
+        block -= block[-1];
+        ptr = (void *)block;
+    }
     gs_free_object(png->memory, ptr, "my_png_free");
 }
 

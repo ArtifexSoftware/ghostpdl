@@ -338,14 +338,18 @@ gdev_mem_mono_set_inverted(gx_device_memory * dev, bool black_is_1)
 int
 gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *psize)
 {
-    int num_planes = dev->is_planar ? dev->color_info.num_components : 0;
+    int num_planes;
     gx_render_plane_t plane1;
     const gx_render_plane_t *planes;
     ulong size;
     int pi;
 
-    if (num_planes)
+    if (dev->is_planar)
+    {
+        int has_tags = device_encodes_tags((const gx_device *)dev);
+        num_planes = dev->color_info.num_components + has_tags;
         planes = dev->planes;
+    }
     else
         planes = &plane1, plane1.depth = dev->color_info.depth, num_planes = 1;
     for (size = 0, pi = 0; pi < num_planes; ++pi)
@@ -362,7 +366,11 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *p
 ulong
 gdev_mem_line_ptrs_size(const gx_device_memory * dev, int width, int height)
 {
-    return (ulong)height * sizeof(byte *) * (dev->is_planar ? dev->color_info.num_components : 1);
+    int has_tags = device_encodes_tags((const gx_device *)dev);
+    int num_planes = 1;
+    if (dev->is_planar)
+        num_planes = dev->color_info.num_components + has_tags;
+    return (ulong)height * sizeof(byte *) * num_planes;
 }
 int
 gdev_mem_data_size(const gx_device_memory * dev, int width, int height, ulong *psize)
