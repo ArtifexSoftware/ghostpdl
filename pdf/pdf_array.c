@@ -39,7 +39,8 @@ void pdfi_free_array(pdf_obj *o)
 
 int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
 {
-    int code;
+    int code, i;
+    pdf_obj *n = NULL;
 
     *a = NULL;
     code = pdfi_alloc_object(ctx, PDF_ARRAY, size, (pdf_obj **)a);
@@ -47,6 +48,26 @@ int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
         return code;
 
     (*a)->size = size;
+
+    if (size > 0) {
+        /* Make a null object */
+        code = pdfi_alloc_object(ctx, PDF_NULL, 1, &n);
+        if (code < 0) {
+            pdfi_countdown(*a);
+            *a = NULL;
+            return code;
+        }
+        /* And start all the array entries pointing at that null object.
+         * array_put will replace tehm. This ensures we always have a valid
+         * object for every entry. pdfi_array_from_stack() doesn't do this
+         * initialisation because we know how many obejcts there are in the array
+         * and we have valid objects for each entry on the stack already created.
+         */
+        for (i=0;i<size;i++){
+            (*a)->values[i] = n;
+            pdfi_countup(n);
+        }
+    }
     return 0;
 }
 
@@ -98,7 +119,6 @@ int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indi
 }
 
 /* Fetch object from array, resolving indirect reference if needed
- * (Does not increment reference count, caller needs to do that if they want to)
  * setref -- indicates whether to replace indirect ref with the object
  */
 static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o, bool setref)
@@ -176,7 +196,7 @@ int pdfi_array_get_no_store_R(pdf_context *ctx, pdf_array *a, uint64_t index, pd
     return 0;
 }
 
-/* Get value from pdfi_array, incrementing its reference count for caller.
+/* Get value from pdfi_array.
  * Handles type-checking and resolving indirect references.
  */
 int pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index,

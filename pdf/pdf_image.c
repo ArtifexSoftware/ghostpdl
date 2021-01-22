@@ -1278,7 +1278,7 @@ pdfi_make_smask_dict(pdf_context *ctx, pdf_stream *image_stream, pdfi_image_info
     if (code < 0) goto exit;
     pdfi_countup(fake_smask);
 
-    code = pdfi_alloc_object(ctx, PDF_DICT, 32, (pdf_obj **)&smask_dict);
+    code = pdfi_dict_alloc(ctx, 32, &smask_dict);
     if (code < 0) goto exit;
 
     fake_smask->stream_dict = smask_dict;

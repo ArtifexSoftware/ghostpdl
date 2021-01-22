@@ -685,6 +685,9 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
     *object = NULL;
 
+    if (ctx->xref_table == NULL)
+        return_error(gs_error_typecheck);
+
     if (obj >= ctx->xref_table->xref_size) {
         dmprintf1(ctx->memory, "Error, attempted to dereference object %"PRIu64", which is not present in the xref table\n", obj);
         ctx->pdf_errors |= E_PDF_BADOBJNUMBER;

@@ -827,7 +827,7 @@ int pdfi_mark_stream(pdf_context *ctx, pdf_stream *stream)
 
     /* Make a copy of the dict and remove Filter keyword */
     dictsize = pdfi_dict_entries(streamdict);
-    code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
+    code = pdfi_dict_alloc(ctx, dictsize, &tempdict);
     if (code < 0) goto exit;
     pdfi_countup(tempdict);
     code = pdfi_dict_copy(ctx, tempdict, streamdict);
@@ -905,7 +905,7 @@ static int pdfi_mark_filespec(pdf_context *ctx, pdf_string *name, pdf_dict *file
     int code;
     pdf_dict *tempdict = NULL;
 
-    code = pdfi_alloc_object(ctx, PDF_DICT, 40, (pdf_obj **)&tempdict);
+    code = pdfi_dict_alloc(ctx, 40, &tempdict);
     if (code < 0) goto exit;
     pdfi_countup(tempdict);
 

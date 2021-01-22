@@ -93,6 +93,17 @@ int pdfi_dict_delete(pdf_context *ctx, pdf_dict *d, const char *str)
     return pdfi_dict_delete_inner(ctx, d, NULL, str);
 }
 
+/* This function is provided for symmetry with arrays, and in case we ever
+ * want to change the behaviour of pdfi_dict_from_stack() and pdfi_dict_alloc()
+ * similarly to the array behaviour, where we always have null PDF objects
+ * rather than NULL pointers stored in the dictionary.
+ */
+int pdfi_dict_alloc(pdf_context *ctx, uint64_t size, pdf_dict **d)
+{
+    *d = NULL;
+    return pdfi_alloc_object(ctx, PDF_DICT, size, (pdf_obj **)d);
+}
+
 int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen)
 {
     uint64_t index = 0;
@@ -114,7 +125,7 @@ int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indir
         return_error(gs_error_rangecheck);
     }
 
-    code = pdfi_alloc_object(ctx, PDF_DICT, index >> 1, (pdf_obj **)&d);
+    code = pdfi_dict_alloc(ctx, index >> 1, &d);
     if (code < 0) {
         pdfi_clear_to_mark(ctx);
         return code;
@@ -961,27 +972,42 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
     if (d->type != PDF_DICT)
         return_error(gs_error_typecheck);
 
-    if (*i >= d->entries) {
-        *Key = NULL;
-        *Value= NULL;
-        return gs_error_undefined;
-    }
-
-    *Key = d->keys[*i];
-
-    if (d->values[*i]->type == PDF_INDIRECT) {
-        pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[*i];
-        pdf_obj *o;
-
-        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o);
-        if (code < 0) {
-            *Key = *Value = NULL;
-            return code;
+    while (1) {
+        if (*i >= d->entries) {
+            *Key = NULL;
+            *Value= NULL;
+            return gs_error_undefined;
         }
-        *Value = o;
-    } else {
-        *Value = d->values[*i];
-        pdfi_countup(*Value);
+
+        /* If we find NULL keys skip over them. This should never
+         * happen as we check the number of entries above, and we
+         * compact dictionaries on deletion of key/value pairs.
+         * This is a belt and braces check in case creation of the
+         * dictionary somehow ends up with NULL keys in the allocated
+         * section.
+         */
+        *Key = d->keys[*i];
+        if (*Key == NULL) {
+            *i++;
+            continue;
+        }
+
+        if (d->values[*i]->type == PDF_INDIRECT) {
+            pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[*i];
+            pdf_obj *o;
+
+            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o);
+            if (code < 0) {
+                *Key = *Value = NULL;
+                return code;
+            }
+            *Value = o;
+            break;
+        } else {
+            *Value = d->values[*i];
+            pdfi_countup(*Value);
+            break;
+        }
     }
 
     pdfi_countup(*Key);
@@ -1004,14 +1030,21 @@ int pdfi_dict_key_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *i
     if (d->type != PDF_DICT)
         return_error(gs_error_typecheck);
 
-    if (*i >= d->entries) {
-        *Key = NULL;
-        return gs_error_undefined;
-    }
+    while (1) {
+        if (*i >= d->entries) {
+            *Key = NULL;
+            return gs_error_undefined;
+        }
 
-    *Key = d->keys[*i];
-    pdfi_countup(*Key);
-    (*i)++;
+        *Key = d->keys[*i];
+        if (*Key == NULL) {
+            (*i)++;
+            continue;
+        }
+        pdfi_countup(*Key);
+        (*i)++;
+        break;
+    }
     return 0;
 }
 

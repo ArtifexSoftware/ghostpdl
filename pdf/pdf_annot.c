@@ -3121,7 +3121,7 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
 
     /* Create a temporary copy of the annot dict */
     dictsize = pdfi_dict_entries(annot);
-    code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
+    code = pdfi_dict_alloc(ctx, dictsize, &tempdict);
     if (code < 0) goto exit;
     pdfi_countup(tempdict);
     code = pdfi_dict_copy(ctx, tempdict, annot);

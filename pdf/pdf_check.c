@@ -131,7 +131,7 @@ pdfi_check_init_tracker(pdf_context *ctx, pdfi_check_tracker_t *tracker)
     memset(tracker->CheckedResources, 0x00, tracker->size);
 
     if (ctx->spot_capable_device) {
-        code = pdfi_alloc_object(ctx, PDF_DICT, 32, (pdf_obj **)&tracker->spot_dict);
+        code = pdfi_dict_alloc(ctx, 32, &tracker->spot_dict);
         if (code < 0)
             goto cleanup;
         pdfi_countup(tracker->spot_dict);

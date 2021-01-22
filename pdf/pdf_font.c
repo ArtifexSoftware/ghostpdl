@@ -404,7 +404,7 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Enco
 {
     int code = 0, i;
 
-    code = pdfi_alloc_object(ctx, PDF_ARRAY, 256, Encoding);
+    code = pdfi_array_alloc(ctx, 256, (pdf_array **)Encoding);
     if (code < 0)
         return code;
     pdfi_countup(*Encoding);

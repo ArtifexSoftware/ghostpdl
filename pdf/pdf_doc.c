@@ -287,7 +287,7 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
              * dereferenced Page dictionary, in case this is the target page.
              */
 
-            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&leaf_dict);
+            code = pdfi_dict_alloc(ctx, 0, &leaf_dict);
             if (code < 0)
                 goto errorExit;
             code = pdfi_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key);
@@ -368,7 +368,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
         dmprintf1(ctx->memory, "%% Finding page dictionary for page %"PRIi64"\n", page_num + 1);
 
     /* Allocated inheritable dict (it might stay empty) */
-    code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&inheritable);
+    code = pdfi_dict_alloc(ctx, 0, &inheritable);
     if (code < 0)
         return code;
     pdfi_countup(inheritable);
@@ -732,7 +732,7 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
 
     /* Make a temporary copy of the outline dict */
     dictsize = pdfi_dict_entries(outline);
-    code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
+    code = pdfi_dict_alloc(ctx, dictsize, &tempdict);
     if (code < 0) goto exit;
     pdfi_countup(tempdict);
     code = pdfi_dict_copy(ctx, tempdict, outline);
@@ -954,7 +954,7 @@ static int pdfi_doc_Info(pdf_context *ctx)
 
     /* Make a temporary copy of the Info dict */
     dictsize = pdfi_dict_entries(Info);
-    code = pdfi_alloc_object(ctx, PDF_DICT, dictsize, (pdf_obj **)&tempdict);
+    code = pdfi_dict_alloc(ctx, dictsize, &tempdict);
     if (code < 0) goto exit;
     pdfi_countup(tempdict);
 

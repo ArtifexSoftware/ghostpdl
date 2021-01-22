@@ -559,7 +559,7 @@ static int ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *
             }
             else if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 int i;
-                code = pdfi_alloc_object(s->pdfi_ctx, PDF_ARRAY, s->cur[0].size, (pdf_obj **)&new_enc);
+                code = pdfi_array_alloc(s->pdfi_ctx, s->cur[0].size, &new_enc);
                 if (code >= 0) {
                     pdfi_countup(new_enc);
                     for (i = 0; i < s->cur[0].size; i++) {
@@ -775,7 +775,7 @@ static int ps_font_dict_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte 
         pdf_string *pstr;
         byte notdefstr[] = {0x9E, 0x35, 0xCE, 0xD7, 0xFF, 0xD3, 0x62, 0x2F, 0x09};
 
-        code = pdfi_alloc_object(s->pdfi_ctx, PDF_DICT, s->cur[0].val.i, (pdf_obj **)&d);
+        code = pdfi_dict_alloc(s->pdfi_ctx, s->cur[0].val.i, &d);
         if (code < 0){
             priv->u.t1.CharStrings = NULL;
             (void)pdf_ps_stack_pop(s, 1);
