@@ -1090,19 +1090,30 @@ currentdict /no_debug_dict undef
     % Some (bad) PDf files have invalid stream lengths.  This causes problems
     % if we reposition beyond the end of the file.  So we compare the given
     % length to number of bytes left in the file.
-    dup /Length knownoget {
-      dup type /realtype eq {
-        (   **** Warning: stream length is a real number; converting to integer.\n) pdfformatwarning
-        cvi 2 copy /Length exch put
+    dup mark exch /Length {knownoget} stopped {
+      % Bug 703372 is a PDF file where the XRef stream dictionary has a Length which is an
+      % indirect object. Clearly we cannot look that up in an xref which we haevn't yet
+      % read! We catch the error from knownoget and do not reposition the steam. After
+      % that the normal recovery code kicks in and we will eventually manage to read
+      % the compressed xref.
+      cleartomark
+    }
+    {
+      {
+        dup type /realtype eq {
+          (   **** Warning: stream length is a real number; converting to integer.\n) pdfformatwarning
+          cvi 2 copy /Length exch put
+        } if
+        dup PDFfile bytesavailable lt {	% compare to to bytes left in file
+          PDFfile fileposition 		% reposition to the end of stream
+          add PDFfile exch setfileposition
+        } {
+          pop				% bad stream length - do not reposition.
+                                          % This will force a length warning below
+        } ifelse
       } if
-      dup PDFfile bytesavailable lt {	% compare to to bytes left in file
-        PDFfile fileposition 		% reposition to the end of stream
-        add PDFfile exch setfileposition
-      } {
-        pop				% bad stream length - do not reposition.
-                                        % This will force a length warning below
-      } ifelse
-    } if
+      pop       % the mark from the Length dereference guard above.
+    } ifelse
   } {
     pop
         % We're already reading from a stream, which we can't reposition.

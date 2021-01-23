@@ -3526,21 +3526,32 @@ currentdict /PDF2PS_matrix_key undef
 % Thus it may include Cyan, Magenta, Yellow, and Black.
 %	<colorspace> <spotcolordict> colorspacespotcolors -
 /colorspacespotcolors {
-  exch dup type /arraytype eq {
+  % Make sure we have an array, and that it is has enough info
+  exch dup type /arraytype eq
+  {
     % If we have an Indexed color space then get the base space.
     dup 0 oget                    % <<>> [csp] /Type
     dup /Indexed eq {
       pop 1 oget                  % <<>> [base]
       2 copy exch colorspacespotcolors
     } {
-      % Stack:  <spotcolordict> <colorspace> <colorspacetype>
-      dup /Separation eq exch /DeviceN eq or {
-        dup 1 oget dup type /arraytype eq {
-          { oforce 2 index putspotcolor } forall
+      dup /Pattern eq {
+        1 index length 1 gt {	% only uncolored patterns have colorspace
+          pop 1 oget                  % <<>> [base]
+          2 copy exch colorspacespotcolors
         } {
-          2 index putspotcolor
+          pop
         } ifelse
-      } if
+      } {
+        % Stack:  <spotcolordict> <colorspace> <colorspacetype>
+        dup /Separation eq exch /DeviceN eq or {
+          dup 1 oget dup type /arraytype eq {
+            { oforce 2 index putspotcolor } forall
+          } {
+            2 index putspotcolor
+          } ifelse
+        } if
+      } ifelse
     } ifelse
   } if
   pop pop

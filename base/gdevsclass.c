@@ -123,16 +123,20 @@ int default_subclass_sync_output(gx_device *dev)
 {
     if (dev->child)
         return dev_proc(dev->child, sync_output)(dev->child);
-    else
-        gx_default_sync_output(dev);
-
-    return 0;
+    /* else */
+    return gx_default_sync_output(dev);
 }
 
 int default_subclass_output_page(gx_device *dev, int num_copies, int flush)
 {
-    if (dev->child)
-        return dev_proc(dev->child, output_page)(dev->child, num_copies, flush);
+    int code = 0;
+
+    if (dev->child) {
+        code = dev_proc(dev->child, output_page)(dev->child, num_copies, flush);
+        dev->PageCount = dev->child->PageCount;
+        return code;
+    }
+    dev->PageCount += num_copies;	/* a minor lie */
     return 0;
 }
 
@@ -162,10 +166,8 @@ int default_subclass_map_color_rgb(gx_device *dev, gx_color_index color, gx_colo
 {
     if (dev->child)
         return dev_proc(dev->child, map_color_rgb)(dev->child, color, rgb);
-    else
-        gx_default_map_color_rgb(dev, color, rgb);
-
-    return 0;
+    /* else */
+    return gx_default_map_color_rgb(dev, color, rgb);
 }
 
 int default_subclass_fill_rectangle(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
@@ -212,19 +214,16 @@ int default_subclass_get_bits(gx_device *dev, int y, byte *data, byte **actual_d
 {
     if (dev->child)
         return dev_proc(dev->child, get_bits)(dev->child, y, data, actual_data);
-    else
-        return gx_default_get_bits(dev, y, data, actual_data);
-    return 0;
+    /* else */
+    return gx_default_get_bits(dev, y, data, actual_data);
 }
 
 int default_subclass_get_params(gx_device *dev, gs_param_list *plist)
 {
     if (dev->child)
         return dev_proc(dev->child, get_params)(dev->child, plist);
-    else
-        return gx_default_get_params(dev, plist);
-
-    return 0;
+    /* else */
+    return gx_default_get_params(dev, plist);
 }
 
 int default_subclass_put_params(gx_device *dev, gs_param_list *plist)
@@ -238,61 +237,49 @@ int default_subclass_put_params(gx_device *dev, gs_param_list *plist)
         gx_update_from_subclass(dev);
         return code;
     }
-    else
-        return gx_default_put_params(dev, plist);
-
-    return 0;
+    /* else */
+    return gx_default_put_params(dev, plist);
 }
 
 gx_color_index default_subclass_map_cmyk_color(gx_device *dev, const gx_color_value cv[])
 {
     if (dev->child)
         return dev_proc(dev->child, map_cmyk_color)(dev->child, cv);
-    else
-        return gx_default_map_cmyk_color(dev, cv);
-
-    return 0;
+    /* else */
+    return gx_default_map_cmyk_color(dev, cv);
 }
 
 const gx_xfont_procs *default_subclass_get_xfont_procs(gx_device *dev)
 {
     if (dev->child)
         return dev_proc(dev->child, get_xfont_procs)(dev->child);
-    else
-        return gx_default_get_xfont_procs(dev);
-
-    return 0;
+    /* else */
+    return gx_default_get_xfont_procs(dev);
 }
 
 gx_device *default_subclass_get_xfont_device(gx_device *dev)
 {
     if (dev->child)
         return dev_proc(dev->child, get_xfont_device)(dev->child);
-    else
-        return gx_default_get_xfont_device(dev);
-
-    return 0;
+    /* else */
+    return gx_default_get_xfont_device(dev);
 }
 
 gx_color_index default_subclass_map_rgb_alpha_color(gx_device *dev, gx_color_value red, gx_color_value green, gx_color_value blue,
     gx_color_value alpha)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, map_rgb_alpha_color)(dev->child, red, green, blue, alpha);
-    } else
-        return gx_default_map_rgb_alpha_color(dev, red, green, blue, alpha);
-
-    return 0;
+    /* else */
+    return gx_default_map_rgb_alpha_color(dev, red, green, blue, alpha);
 }
 
 gx_device *default_subclass_get_page_device(gx_device *dev)
 {
     if (dev->child)
         return dev_proc(dev->child, get_page_device)(dev->child);
-    else
-        return gx_default_get_page_device(dev);
-
-    return 0;
+    /* else */
+    return gx_default_get_page_device(dev);
 }
 
 int default_subclass_get_alpha_bits(gx_device *dev, graphics_object_type type)
@@ -315,9 +302,8 @@ int default_subclass_get_band(gx_device *dev, int y, int *band_start)
 {
     if (dev->child)
         return dev_proc(dev->child, get_band)(dev->child, y, band_start);
-    else
-        return gx_default_get_band(dev, y, band_start);
-    return 0;
+    /* else */
+    return gx_default_get_band(dev, y, band_start);
 }
 
 int default_subclass_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
@@ -326,34 +312,30 @@ int default_subclass_copy_rop(gx_device *dev, const byte *sdata, int sourcex, ui
     int x, int y, int width, int height,
     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, copy_rop)(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
-    } else
-        return gx_default_copy_rop(dev, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
-    return 0;
+    /* else */
+    return gx_default_copy_rop(dev, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
 }
 
 int default_subclass_fill_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_fill_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, fill_path)(dev->child, pgs, ppath, params, pdcolor, pcpath);
-    } else
-        return gx_default_fill_path(dev, pgs, ppath, params, pdcolor, pcpath);
-
-    return 0;
+    /* else */
+    return gx_default_fill_path(dev, pgs, ppath, params, pdcolor, pcpath);
 }
 
 int default_subclass_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_stroke_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, stroke_path)(dev->child, pgs, ppath, params, pdcolor, pcpath);
-    } else
-        return gx_default_stroke_path(dev, pgs, ppath, params, pdcolor, pcpath);
-    return 0;
+    /* else */
+    return gx_default_stroke_path(dev, pgs, ppath, params, pdcolor, pcpath);
 }
 
 int default_subclass_fill_mask(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,
@@ -361,53 +343,48 @@ int default_subclass_fill_mask(gx_device *dev, const byte *data, int data_x, int
     const gx_drawing_color *pdcolor, int depth,
     gs_logical_operation_t lop, const gx_clip_path *pcpath)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, fill_mask)(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
-    } else
-        return gx_default_fill_mask(dev, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
-    return 0;
+    /* else */
+    return gx_default_fill_mask(dev, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
 }
 
 int default_subclass_fill_trapezoid(gx_device *dev, const gs_fixed_edge *left, const gs_fixed_edge *right,
     fixed ybot, fixed ytop, bool swap_axes,
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, fill_trapezoid)(dev->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
-    } else
-        return gx_default_fill_trapezoid(dev, left, right, ybot, ytop, swap_axes, pdcolor, lop);
-    return 0;
+    /* else */
+    return gx_default_fill_trapezoid(dev, left, right, ybot, ytop, swap_axes, pdcolor, lop);
 }
 
 int default_subclass_fill_parallelogram(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, fill_parallelogram)(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
-    } else
-        return gx_default_fill_parallelogram(dev, px, py, ax, ay, bx, by, pdcolor, lop);
-    return 0;
+    /* else */
+    return gx_default_fill_parallelogram(dev, px, py, ax, ay, bx, by, pdcolor, lop);
 }
 
 int default_subclass_fill_triangle(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, fill_triangle)(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
-    } else
-        return gx_default_fill_triangle(dev, px, py, ax, ay, bx, by, pdcolor, lop);
-    return 0;
+    /* else */
+    return gx_default_fill_triangle(dev, px, py, ax, ay, bx, by, pdcolor, lop);
 }
 
 int default_subclass_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, fixed fy1,
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop,
     fixed adjustx, fixed adjusty)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, draw_thin_line)(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
-    } else
-        return gx_default_draw_thin_line(dev, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
-    return 0;
+    /* else */
+    return gx_default_draw_thin_line(dev, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
 }
 
 int default_subclass_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_t *pim,
@@ -415,12 +392,10 @@ int default_subclass_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, begin_image)(dev->child, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
-    } else
-        return gx_default_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
-
-    return 0;
+    /* else */
+    return gx_default_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
 }
 
 int default_subclass_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **planes, int data_x,
@@ -442,11 +417,10 @@ int default_subclass_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap 
     gx_color_index color0, gx_color_index color1,
     int phase_x, int phase_y)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, strip_tile_rectangle)(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
-    } else
-        return gx_default_strip_tile_rectangle(dev, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
-    return 0;
+    /* else */
+    return gx_default_strip_tile_rectangle(dev, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
 }
 
 int default_subclass_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
@@ -455,11 +429,10 @@ int default_subclass_strip_copy_rop(gx_device *dev, const byte *sdata, int sourc
     int x, int y, int width, int height,
     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, strip_copy_rop)(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
-    } else
-        return gx_default_strip_copy_rop(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
-    return 0;
+    /* else */
+    return gx_default_strip_copy_rop(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
 }
 
 void default_subclass_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
@@ -477,32 +450,27 @@ int default_subclass_begin_typed_image(gx_device *dev, const gs_gstate *pgs, con
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, begin_typed_image)(dev->child, pgs, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
-    } else
-        return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
-    return 0;
+    /* else */
+    return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
 }
 
 int default_subclass_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
     gs_get_bits_params_t *params, gs_int_rect **unread)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, get_bits_rectangle)(dev->child, prect, params, unread);
-    } else
-        return gx_default_get_bits_rectangle(dev, prect, params, unread);
-
-    return 0;
+    /* else */
+    return gx_default_get_bits_rectangle(dev, prect, params, unread);
 }
 
 int default_subclass_map_color_rgb_alpha(gx_device *dev, gx_color_index color, gx_color_value rgba[4])
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, map_color_rgb_alpha)(dev->child, color, rgba);
-    } else
-        return gx_default_map_color_rgb_alpha(dev, color, rgba);
-
-    return 0;
+    /* else */
+    return gx_default_map_color_rgb_alpha(dev, color, rgba);
 }
 
 int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
@@ -567,24 +535,20 @@ int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const 
 
 int default_subclass_get_hardware_params(gx_device *dev, gs_param_list *plist)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, get_hardware_params)(dev->child, plist);
-    } else
-        return gx_default_get_hardware_params(dev, plist);
-
-    return 0;
+    /* else */
+    return gx_default_get_hardware_params(dev, plist);
 }
 
 int default_subclass_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
     gs_font *font, gx_path *path, const gx_device_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gs_text_enum_t **ppte)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, text_begin)(dev->child, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
-    } else
-        return gx_default_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
-
-    return 0;
+    /* else */
+    return gx_default_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
 }
 
 /* This method seems (despite the name) to be intended to allow for
@@ -626,6 +590,7 @@ int default_subclass_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
 {
     if (dev->child)
         return dev_proc(dev->child, end_transparency_mask)(dev->child, pgs);
+
     return 0;
 }
 
@@ -639,32 +604,26 @@ int default_subclass_discard_transparency_layer(gx_device *dev, gs_gstate *pgs)
 
 const gx_cm_color_map_procs *default_subclass_get_color_mapping_procs(const gx_device *dev)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, get_color_mapping_procs)(dev->child);
-    } else
-        return gx_default_DevGray_get_color_mapping_procs(dev);
-
-    return 0;
+    /* else */
+    return gx_default_DevGray_get_color_mapping_procs(dev);
 }
 
 int  default_subclass_get_color_comp_index(gx_device *dev, const char * pname, int name_size, int component_type)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, get_color_comp_index)(dev->child, pname, name_size, component_type);
-    } else
-        return gx_error_get_color_comp_index(dev, pname, name_size, component_type);
-
-    return 0;
+    /* else */
+    return gx_error_get_color_comp_index(dev, pname, name_size, component_type);
 }
 
 gx_color_index default_subclass_encode_color(gx_device *dev, const gx_color_value colors[])
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, encode_color)(dev->child, colors);
-    } else
-        return gx_error_encode_color(dev, colors);
-
-    return 0;
+    /* else */
+    return gx_error_encode_color(dev, colors);
 }
 
 int default_subclass_decode_color(gx_device *dev, gx_color_index cindex, gx_color_value colors[])
@@ -692,10 +651,8 @@ int default_subclass_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect
 {
     if (dev->child)
         return dev_proc(dev->child, fill_rectangle_hl_color)(dev->child, rect, pgs, pdcolor, pcpath);
-    else
-        return_error(gs_error_rangecheck);
-
-    return 0;
+    /* else */
+    return_error(gs_error_rangecheck);
 }
 
 int default_subclass_include_color_space(gx_device *dev, gs_color_space *cspace, const byte *res_name, int name_length)
@@ -710,12 +667,10 @@ int default_subclass_fill_linear_color_scanline(gx_device *dev, const gs_fill_at
         int i, int j, int w, const frac31 *c0, const int32_t *c0_f, const int32_t *cg_num,
         int32_t cg_den)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, fill_linear_color_scanline)(dev->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
-    } else
-        return gx_default_fill_linear_color_scanline(dev, fa, i, j, w, c0, c0_f, cg_num, cg_den);
-
-    return 0;
+    /* else */
+    return gx_default_fill_linear_color_scanline(dev, fa, i, j, w, c0, c0_f, cg_num, cg_den);
 }
 
 int default_subclass_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes *fa,
@@ -724,24 +679,20 @@ int default_subclass_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_a
         const frac31 *c0, const frac31 *c1,
         const frac31 *c2, const frac31 *c3)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, fill_linear_color_trapezoid)(dev->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
-    } else
-        return gx_default_fill_linear_color_trapezoid(dev, fa, p0, p1, p2, p3, c0, c1, c2, c3);
-
-    return 0;
+    /* else */
+    return gx_default_fill_linear_color_trapezoid(dev, fa, p0, p1, p2, p3, c0, c1, c2, c3);
 }
 
 int default_subclass_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
         const gs_fixed_point *p0, const gs_fixed_point *p1,
         const gs_fixed_point *p2, const frac31 *c0, const frac31 *c1, const frac31 *c2)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, fill_linear_color_triangle)(dev->child, fa, p0, p1, p2, c0, c1, c2);
-    } else
-        return gx_default_fill_linear_color_triangle(dev, fa, p0, p1, p2, c0, c1, c2);
-
-    return 0;
+    /* else */
+    return gx_default_fill_linear_color_triangle(dev, fa, p0, p1, p2, c0, c1, c2);
 }
 
 int default_subclass_update_spot_equivalent_colors(gx_device *dev, const gs_gstate * pgs)
@@ -762,12 +713,10 @@ gs_devn_params *default_subclass_ret_devn_params(gx_device *dev)
 
 int default_subclass_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
-    if (dev->child) {
+    if (dev->child)
         return dev_proc(dev->child, fillpage)(dev->child, pgs, pdevc);
-    } else
-        return gx_default_fillpage(dev, pgs, pdevc);
-
-    return 0;
+    /* else */
+    return gx_default_fillpage(dev, pgs, pdevc);
 }
 
 int default_subclass_push_transparency_state(gx_device *dev, gs_gstate *pgs)
@@ -823,11 +772,8 @@ int default_subclass_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile
     if (dev->child) {
         return dev_proc(dev->child, get_profile)(dev->child, dev_profile);
     }
-    else {
-        return gx_default_get_profile(dev, dev_profile);
-    }
-
-    return 0;
+    /* else */
+    return gx_default_get_profile(dev, dev_profile);
 }
 
 /* In a delightful asymmetry, we have a set_graphics_type_tag, but no get_graphics_type_tag. Instead
@@ -868,10 +814,8 @@ int default_subclass_strip_tile_rect_devn(gx_device *dev, const gx_strip_bitmap 
 {
     if (dev->child)
         return dev_proc(dev->child, strip_tile_rect_devn)(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
-    else
-        return gx_default_strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
-
-    return 0;
+    /* else */
+    return gx_default_strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
 }
 
 int default_subclass_copy_alpha_hl_color(gx_device *dev, const byte *data, int data_x,
@@ -880,10 +824,8 @@ int default_subclass_copy_alpha_hl_color(gx_device *dev, const byte *data, int d
 {
     if (dev->child)
         return dev_proc(dev->child, copy_alpha_hl_color)(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth);
-    else
-        return_error(gs_error_rangecheck);
-
-    return 0;
+    /* else */
+    return_error(gs_error_rangecheck);
 }
 
 int default_subclass_process_page(gx_device *dev, gx_process_page_options_t *options)

@@ -204,6 +204,7 @@ static  dev_proc_copy_alpha(pdf14_copy_alpha);
 static  dev_proc_copy_planes(pdf14_copy_planes);
 static  dev_proc_copy_alpha_hl_color(pdf14_copy_alpha_hl_color);
 static  dev_proc_discard_transparency_layer(pdf14_discard_trans_layer);
+static  dev_proc_strip_tile_rect_devn(pdf14_strip_tile_rect_devn);
 static	const gx_color_map_procs *
     pdf14_get_cmap_procs(const gs_gstate *, const gx_device *);
 
@@ -284,7 +285,7 @@ static	const gx_color_map_procs *
         NULL,                           /*  */\
         gx_forward_set_graphics_type_tag, /* set_graphics_type_tag */\
         NULL,                           /* strip_copy_rop2 */\
-        NULL,                           /* strip_tile_rect_devn */\
+        pdf14_strip_tile_rect_devn,     /* strip_tile_rect_devn */\
         pdf14_copy_alpha_hl_color,       /* copy_alpha_hl_color */\
         NULL,                            /* process_page */\
         NULL,				/* transform_pixel_region */\
@@ -3680,8 +3681,12 @@ update_lop_for_pdf14(gs_gstate *pgs, const gx_drawing_color *pdcolor)
             hastrans = true;
         }
     }
-    /* The only idempotent blend modes are Normal, Darken and Lighten */
-    if ((pgs->blend_mode != BLEND_MODE_Normal && pgs->blend_mode != BLEND_MODE_Darken && pgs->blend_mode != BLEND_MODE_Lighten) ||
+    /* The only idempotent blend modes are Normal, Darken and Lighten.
+       This appears to be the only place where this test is done so
+       not adding a is_idempotent method */
+    if ((pgs->blend_mode != BLEND_MODE_Normal &&
+        pgs->blend_mode != BLEND_MODE_Darken &&
+        pgs->blend_mode != BLEND_MODE_Lighten) ||
         (pgs->fillconstantalpha != 1.0) ||
         (pgs->strokeconstantalpha != 1.0) ||
         (hastrans))
@@ -3824,7 +3829,8 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
             return code;
         }
     }
-    if (gx_dc_is_pattern2_color(pdcolor)) {
+    if (gx_dc_is_pattern2_color(pdcolor) ||
+        pdcolor->type == &gx_dc_devn_masked) {
         /* Non-idempotent blends require a transparency
          * group to be pushed because shadings might
          * paint several pixels twice. */
@@ -5885,7 +5891,7 @@ pdf14_copy_mono(gx_device * dev,
     sbit = sourcex & 7;
     first_bit = 7 - sbit;
 
-    /* Loop through the height of the specfied area. */
+    /* Loop through the height of the specified area. */
     while (h-- > 0) {
         /* Set up for the start of each line of the area. */
         sptr = line;
@@ -5940,9 +5946,291 @@ pdf14_copy_mono(gx_device * dev,
     return 0;
 }
 
+/* Added to avoid having to go back and forth between fixed and int
+   in some of the internal methods used for dealing with tiling
+   and devn colors */
+static int
+pdf14_fill_rectangle_devn(gx_device *dev, int x, int y, int w, int h,
+    const gx_drawing_color *pdcolor)
+{
+    pdf14_device *pdev = (pdf14_device *)dev;
+    pdf14_buf *buf;
+    int code;
+
+    fit_fill_xywh(dev, x, y, w, h);
+    if (w <= 0 || h <= 0)
+        return 0;
+
+    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+    if (code < 0)
+        return code;
+    buf = pdev->ctx->stack;
+
+    if (buf->knockout)
+        return pdf14_mark_fill_rectangle_ko_simple(dev, x, y, w, h, 0, pdcolor,
+            true);
+    else
+        return pdf14_mark_fill_rectangle(dev, x, y, w, h, 0, pdcolor, true);
+}
+
+/* Step through and do rect fills with the devn colors as
+   we hit each transistion in the bitmap. It is possible
+   that one of the colors is not devn, but is pure and
+   is set to gx_no_color_index. This type of mix happens
+   for example from tile_clip_fill_rectangle_hl_color */
+static int
+pdf14_copy_mono_devn(gx_device *dev,
+    const byte *base, int sourcex, int sraster, gx_bitmap_id id,
+    int x, int y, int w, int h, const gx_drawing_color *pdcolor0,
+    const gx_drawing_color *pdcolor1)
+{
+    const byte *sptr;
+    const byte *line;
+    int sbit, first_bit;
+    int code, sbyte, bit, count;
+    int run_length, startx, current_bit, bit_value;
+    const gx_drawing_color *current_color;
+
+    fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
+    line = base + (sourcex >> 3);
+    sbit = sourcex & 7;
+    first_bit = 7 - sbit;
+
+    /* Loop through the height of the specified area. */
+    while (h-- > 0) {
+        /* Set up for the start of each line of the area. */
+        sptr = line;
+        sbyte = *sptr++;
+        bit = first_bit;
+        count = w;
+        run_length = 0;
+        startx = x;
+        current_bit = 0;
+        current_color = pdcolor0;
+
+        /* Loop across each pixel of a line. */
+        do {
+            bit_value = (sbyte >> bit) & 1;
+            if (bit_value == current_bit) {
+                /* The value did not change, simply increment our run length */
+                run_length++;
+            } else {
+                /* The value changed, fill the current rectangle. */
+                if (run_length != 0) {
+                    if (current_color->type != gx_dc_type_pure &&
+                        current_color->colors.pure != gx_no_color_index) {
+                        code = pdf14_fill_rectangle_devn(dev, startx, y,
+                            run_length, 1, current_color);
+                        if (code < 0)
+                            return code;
+                    }
+                    startx += run_length;
+                }
+                run_length = 1;
+                current_color = bit_value ? pdcolor1 : pdcolor0;
+                current_bit = bit_value;
+            }
+
+            /* Move to the next input bit. */
+            if (bit == 0) {
+                bit = 7;
+                sbyte = *sptr++;
+            } else
+                bit--;
+        } while (--count > 0);
+
+        /* Fill the last rectangle in the line. */
+        if (run_length != 0 && current_color->type != gx_dc_type_pure &&
+            current_color->colors.pure != gx_no_color_index) {
+            code = pdf14_fill_rectangle_devn(dev, startx, y,
+                run_length, 1, current_color);
+            if (code < 0)
+                return code;
+        }
+        /* Move to the next line */
+        line += sraster;
+        y++;
+    }
+    return 0;
+}
+
+/* Step through the tiles doing essentially copy_mono but with devn colors */
+static int
+pdf14_impl_strip_tile_rectangle_devn(gx_device *dev, const gx_strip_bitmap *tiles,
+    int x, int y, int w, int h, const gx_drawing_color *pdcolor0,
+    const gx_drawing_color *pdcolor1, int px, int py)
+{   /* Fill the rectangle in chunks. */
+    int width = tiles->size.x;
+    int height = tiles->size.y;
+    int raster = tiles->raster;
+    int rwidth = tiles->rep_width;
+    int rheight = tiles->rep_height;
+    int shift = tiles->shift;
+    gs_id tile_id = tiles->id;
+
+    if (rwidth == 0 || rheight == 0)
+        return_error(gs_error_unregistered);
+    fit_fill_xy(dev, x, y, w, h);
+
+     {
+        int xoff = (shift == 0 ? px :
+                px + (y + py) / rheight * tiles->rep_shift);
+        int irx = ((rwidth & (rwidth - 1)) == 0 ? /* power of 2 */
+            (x + xoff) & (rwidth - 1) :
+            (x + xoff) % rwidth);
+        int ry = ((rheight & (rheight - 1)) == 0 ? /* power of 2 */
+            (y + py) & (rheight - 1) :
+            (y + py) % rheight);
+        int icw = width - irx;
+        int ch = height - ry;
+        byte *row = tiles->data + ry * raster;
+        int code = 0;
+
+        if (ch >= h) {      /* Shallow operation */
+            if (icw >= w) { /* Just one (partial) tile to transfer. */
+                code = pdf14_copy_mono_devn(dev, row, irx, raster,
+                    (w == width && h == height ? tile_id : gs_no_bitmap_id),
+                    x, y, w, h, pdcolor0, pdcolor1);
+                if (code < 0)
+                    return_error(code);
+            } else {
+                int ex = x + w;
+                int fex = ex - width;
+                int cx = x + icw;
+                ulong id = (h == height ? tile_id : gs_no_bitmap_id);
+
+                code = pdf14_copy_mono_devn(dev, row, irx, raster, gs_no_bitmap_id,
+                    x, y, icw, h, pdcolor0, pdcolor1);
+                if (code < 0)
+                    return_error(code);
+
+                while (cx <= fex) {
+                    code = pdf14_copy_mono_devn(dev, row, 0, raster, id, cx, y,
+                        width, h, pdcolor0, pdcolor1);
+                    if (code < 0)
+                        return_error(code);
+                    cx += width;
+                }
+                if (cx < ex) {
+                    code = pdf14_copy_mono_devn(dev, row, 0, raster, gs_no_bitmap_id, cx, y,
+                        ex - cx, h, pdcolor0, pdcolor1);
+                    if (code < 0)
+                        return_error(code);
+                }
+            }
+        } else if (icw >= w && shift == 0) {
+            /* Narrow operation, no shift */
+            int ey = y + h;
+            int fey = ey - height;
+            int cy = y + ch;
+            ulong id = (w == width ? tile_id : gs_no_bitmap_id);
+
+            code = pdf14_copy_mono_devn(dev, row, irx, raster,
+                (ch == height ? id : gs_no_bitmap_id), x, y,
+                w, ch, pdcolor0, pdcolor1);
+            if (code < 0)
+                return_error(code);
+            row = tiles->data;
+            do {
+                ch = (cy > fey ? ey - cy : height);
+                code = pdf14_copy_mono_devn(dev, row, irx, raster,
+                    (ch == height ? id : gs_no_bitmap_id), x, cy,
+                    w, ch, pdcolor0, pdcolor1);
+                if (code < 0)
+                    return_error(code);
+            } while ((cy += ch) < ey);
+        } else {
+            /* Full operation.  If shift != 0, some scan lines */
+            /* may be narrow.  We could test shift == 0 in advance */
+            /* and use a slightly faster loop, but right now */
+            /* we don't bother. */
+            int ex = x + w, ey = y + h;
+            int fex = ex - width, fey = ey - height;
+            int cx, cy;
+
+            for (cy = y;;) {
+                ulong id = (ch == height ? tile_id : gs_no_bitmap_id);
+
+                if (icw >= w) {
+                    code = pdf14_copy_mono_devn(dev, row, irx, raster,
+                        (w == width ? id : gs_no_bitmap_id), x, cy,
+                        w, ch, pdcolor0, pdcolor1);
+                    if (code < 0)
+                        return_error(code);
+                } else {
+                    code = pdf14_copy_mono_devn(dev, row, irx, raster,
+                        gs_no_bitmap_id, x, cy, icw, ch, pdcolor0, pdcolor1);
+                    if (code < 0)
+                        return_error(code);
+                    cx = x + icw;
+                    while (cx <= fex) {
+                        code = pdf14_copy_mono_devn(dev, row, 0, raster,
+                            id, cx, cy, width, ch, pdcolor0, pdcolor1);
+                        if (code < 0)
+                            return_error(code);
+                        cx += width;
+                    }
+                    if (cx < ex) {
+                        code = pdf14_copy_mono_devn(dev, row, 0, raster,
+                            gs_no_bitmap_id, cx, cy, ex - cx, ch, pdcolor0, pdcolor1);
+                        if (code < 0)
+                            return_error(code);
+                    }
+                }
+                if ((cy += ch) >= ey)
+                    break;
+                ch = (cy > fey ? ey - cy : height);
+                if ((irx += shift) >= rwidth)
+                    irx -= rwidth;
+                icw = width - irx;
+                row = tiles->data;
+            }
+        }
+    }
+    return 0;
+}
+
+/* pdf14 device supports devn */
+static int
+pdf14_strip_tile_rect_devn(gx_device *dev, const gx_strip_bitmap *tiles,
+    int x, int y, int w, int h,
+    const gx_drawing_color *pdcolor0,
+    const gx_drawing_color *pdcolor1, int px, int py)
+{
+    pdf14_device *pdev = (pdf14_device *)dev;
+    pdf14_buf *buf = pdev->ctx->stack;
+    int num_comp = buf->n_chan - 1;
+    int k;
+    bool same = false;
+    int code = 0;
+
+    /* if color0 is identical to color1, do rect fill */
+    if (pdcolor0->type == gx_dc_type_devn && pdcolor1->type == gx_dc_type_devn) {
+        same = true;
+        for (k = 0; k < num_comp; k++) {
+            if (pdcolor0->colors.devn.values[k] != pdcolor1->colors.devn.values[k]) {
+                same = false;
+                break;
+            }
+        }
+    }
+
+    if (same) {
+        code = pdf14_fill_rectangle_devn(dev, x, y, w, h, pdcolor0);
+    } else {
+        /* Go through the tile stepping using code stolen from
+           gx_default_strip_tile_rectangle and call the rect fills
+           using code stolen from pdf14_copy_mono but using devn
+           colors */
+        code = pdf14_impl_strip_tile_rectangle_devn(dev, tiles,
+            x, y, w, h, pdcolor0, pdcolor1, px, py);
+    }
+    return code;
+}
+
 /* Used in a few odd cases where the target device is planar and we have
    a planar tile (pattern) and we are copying it into place here */
-
 static int
 pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
                   gx_bitmap_id id, int x, int y, int w, int h, int plane_height)
@@ -6014,15 +6302,16 @@ pdf14_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     int w = fixed2int(rect->q.x) - x;
     int h = fixed2int(rect->q.y) - y;
 
+    fit_fill_xywh(dev, x, y, w, h);
+    if (w <= 0 || h <= 0)
+        return 0;
+
     code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
         dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
     if (code < 0)
         return code;
     buf = pdev->ctx->stack;
 
-    fit_fill_xywh(dev, x, y, w, h);
-    if (w <= 0 || h <= 0)
-        return 0;
     if (buf->knockout)
         return pdf14_mark_fill_rectangle_ko_simple(dev, x, y, w, h, 0, pdcolor,
                                                    true);
@@ -6038,6 +6327,10 @@ pdf14_fill_rectangle(gx_device * dev,
     pdf14_buf *buf;
     int code;
 
+    fit_fill_xywh(dev, x, y, w, h);
+    if (w <= 0 || h <= 0)
+        return 0;
+
     code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
             dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
     if (code < 0)
@@ -6045,9 +6338,6 @@ pdf14_fill_rectangle(gx_device * dev,
 
     buf = pdev->ctx->stack;
 
-    fit_fill_xywh(dev, x, y, w, h);
-    if (w <= 0 || h <= 0)
-        return 0;
     if (buf->knockout)
         return pdf14_mark_fill_rectangle_ko_simple(dev, x, y, w, h, color, NULL,
                                                    false);
