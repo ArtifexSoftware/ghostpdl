@@ -277,6 +277,8 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     int Trmode = 0;
     int initial_gsave_level = ctx->pgs->level;
 
+    text.data.chars = NULL;
+
     if (ctx->TextBlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }
@@ -317,7 +319,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
            setcachedevice - see pdfi_fapi_set_cache()
          */
         if (current_font->pdfi_font_type == e_pdf_font_type0 || current_font->Widths == NULL) {
-            text.operation = TEXT_FROM_STRING | TEXT_RETURN_WIDTH;
+            text.operation = TEXT_RETURN_WIDTH;
         } else {
             gs_point pt;
 
@@ -353,7 +355,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 /* Add any Tc value */
                 x_widths[i] += Tc;
             }
-            text.operation = TEXT_FROM_STRING | TEXT_RETURN_WIDTH | TEXT_REPLACE_WIDTHS;
+            text.operation = TEXT_RETURN_WIDTH | TEXT_REPLACE_WIDTHS;
             text.x_widths = x_widths;
             text.y_widths = y_widths;
             text.widths_size = s->length * 2;
@@ -366,7 +368,21 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             text.delta_space.y = 0;
             text.space.s_char = 0x20;
         }
-        text.data.chars = (const gs_char *)s->data;
+
+        if (current_font->pdfi_font_type == e_pdf_font_type3) {
+            text.operation |= TEXT_FROM_CHARS;
+            text.data.chars = (gs_char *)gs_alloc_bytes(ctx->memory, s->length * sizeof(gs_char), "string gs_chars");
+            if (!text.data.chars)
+                goto show_error;
+
+            for (i = 0; i < s->length; i++) {
+                ((gs_char *)text.data.chars)[i] = (gs_char)s->data[i];
+            }
+        }
+        else {
+            text.operation |= TEXT_FROM_BYTES;
+            text.data.bytes = s->data;
+        }
         text.size = s->length;
 
         Trmode = gs_currenttextrenderingmode(ctx->pgs);
@@ -375,14 +391,21 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     }
 
     if (ctx->preserve_tr_mode) {
-        if (Trmode == 3)
-            text.operation = TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+        if (Trmode == 3) {
+            if (current_font->pdfi_font_type == e_pdf_font_type3)
+                text.operation = TEXT_FROM_CHARS | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+            else
+                text.operation = TEXT_FROM_BYTES | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+        }
         else
             text.operation |= TEXT_DO_DRAW;
         code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
         if (code >= 0) {
             saved_penum = ctx->current_text_enum;
             ctx->current_text_enum = penum;
+
+            penum->returned.current_glyph = GS_NO_GLYPH;
+
             code = gs_text_process(penum);
             gs_text_release(ctx->pgs, penum, "pdfi_Tj");
             ctx->current_text_enum = saved_penum;
@@ -501,6 +524,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         gs_grestore(ctx->pgs);
 
 show_error:
+    if (text.data.chars != s->data) gs_free_object(ctx->memory, text.data.chars, "string gs_chars");
     gs_free_object(ctx->memory, x_widths, "Free X widths array on error");
     gs_free_object(ctx->memory, y_widths, "Free Y widths array on error");
     return code;
