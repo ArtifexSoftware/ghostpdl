@@ -649,6 +649,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
     penum->cdevproc_callout = false;
     penum->returned.total_width.x = penum->returned.total_width.y = 0;
     penum->cgp = NULL;
+    penum->returned.current_glyph = GS_NO_GLYPH;
     penum->output_char_code = GS_NO_CHAR;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
                              dev, pgs, text, font, path, pdcolor, pcpath, mem);
@@ -3228,7 +3229,7 @@ int
 pdf_text_process(gs_text_enum_t *pte)
 {
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
-    uint operation;
+    uint operation = pte->text.operation;
     uint size = 0;
     gs_text_enum_t *pte_default;
     PROCESS_TEXT_PROC((*process));
