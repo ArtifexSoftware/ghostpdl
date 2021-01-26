@@ -1599,7 +1599,7 @@ cmsUInt32Number CMSEXPORT cmsGetTransformOutputFormat(cmsContext ContextID, cmsH
     return xform->OutputFormat;
 }
 
-cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
+cmsHTRANSFORM CMSEXPORT cmsCloneTransformChangingFormats(cmsContext ContextID,
                                                const cmsHTRANSFORM hTransform,
                                                cmsUInt32Number InputFormat,
                                                cmsUInt32Number OutputFormat)

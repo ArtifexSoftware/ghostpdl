@@ -1748,7 +1748,7 @@ CMSAPI cmsFloat64Number CMSEXPORT cmsSetAdaptationState(cmsContext ContextID, cm
 CMSAPI cmsUInt32Number CMSEXPORT cmsGetTransformInputFormat(cmsContext ContextID, cmsHTRANSFORM hTransform);
 CMSAPI cmsUInt32Number CMSEXPORT cmsGetTransformOutputFormat(cmsContext ContextID, cmsHTRANSFORM hTransform);
 
-cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
+CMSAPI cmsHTRANSFORM CMSEXPORT cmsCloneTransformChangingFormats(cmsContext ContextID,
                                                const cmsHTRANSFORM hTransform,
                                                cmsUInt32Number InputFormat,
                                                cmsUInt32Number OutputFormat);
