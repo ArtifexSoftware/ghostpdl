@@ -1634,6 +1634,7 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
 {
     int code = 0;
     pdf_string *DA = NULL;
+    const char *default_DA = "0 g /Helv 12 Tf";
 
     code = pdfi_dict_knownget_type(ctx, annot, "DA", PDF_STRING, (pdf_obj **)&DA);
     if (code < 0) goto exit;
@@ -1642,8 +1643,9 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
                                                    ctx->CurrentPageDict, false, "DA");
         if (code < 0) goto exit;
     } else {
-        /* TODO: Setup defaults if there is no DA */
-        code = pdfi_gs_setgray(ctx, 0);
+        /* Setup defaults if there is no DA */
+        code = pdfi_interpret_inner_content_c_string(ctx, (char *)default_DA, annot,
+                                                   ctx->CurrentPageDict, false, "DA");
         if (code < 0) goto exit;
     }
 
@@ -1665,12 +1667,6 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     pdf_dict *BS = NULL;
 
     *render_done = false;
-
-    {
-        unsigned int foo;
-
-        dmprintf1(ctx->memory, "sizeof(unsigned int)=%ld\n", sizeof(foo));
-    }
 
     code = pdfi_annot_start_transparency(ctx, annot);
     if (code < 0) goto exit1;
