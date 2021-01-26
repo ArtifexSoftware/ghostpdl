@@ -988,7 +988,7 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
          */
         *Key = d->keys[*i];
         if (*Key == NULL) {
-            *i++;
+            i++;
             continue;
         }
 
