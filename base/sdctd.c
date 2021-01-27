@@ -239,8 +239,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                 u.c = pr->ptr+1;
                 update_jpeg_header_height(u.u, src->bytes_in_buffer, ss->data.common->Height);
             }
-            if ((code = gs_jpeg_read_header(ss, TRUE)) < 0)
-                return ERRC;
+            if ((code = gs_jpeg_read_header(ss, TRUE)) < 0) {
+                code = ERRC;
+                goto error_out;
+            }
             pr->ptr =
                 (jddp->faked_eoi ? pr->limit : src->next_input_byte - 1);
             switch (code) {
@@ -281,8 +283,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
             ss->phase = 2;
             /* falls through */
         case 2:		/* start_decompress */
-            if ((code = gs_jpeg_start_decompress(ss)) < 0)
-                return ERRC;
+            if ((code = gs_jpeg_start_decompress(ss)) < 0) {
+                code = ERRC;
+                goto error_out;
+            }
             pr->ptr =
                 (jddp->faked_eoi ? pr->limit : src->next_input_byte - 1);
             if (code == 0) {
@@ -302,8 +306,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                     gs_alloc_bytes_immovable(gs_memory_stable(jddp->memory),
                                              ss->scan_line_size,
                                          "s_DCTD_process(scanline_buffer)");
-                if (jddp->scanline_buffer == NULL)
-                    return ERRC;
+                if (jddp->scanline_buffer == NULL) {
+                    code = ERRC;
+                    goto error_out;
+                }
             }
             jddp->bytes_in_scanline = 0;
             ss->phase = 3;
@@ -357,8 +363,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                     samples = pw->ptr + 1;
                 }
                 read = gs_jpeg_read_scanlines(ss, &samples, 1);
-                if (read < 0)
-                    return ERRC;
+                if (read < 0) {
+                    code = ERRC;
+                    goto error_out;
+                }
                 if_debug3m('w', ss->memory, "[wdd]read returns %d, used=%u, faked_eoi=%d\n",
                            read,
                            (uint) (src->next_input_byte - 1 - pr->ptr),
@@ -380,8 +388,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                      * buffer can be grown as required. */
                     if ((src->next_input_byte-1 == pr->ptr) &&
                         (pr->limit - pr->ptr >= ss->templat->min_in_size) &&
-                        (compact_jpeg_buffer(pr) == 0))
-                        return ERRC;
+                        (compact_jpeg_buffer(pr) == 0)) {
+                        code = ERRC;
+                        goto error_out;
+                    }
                     if (jddp->PassThrough && jddp->PassThroughfn) {
                         (jddp->PassThroughfn)(jddp->device, Buf, pr->ptr - (Buf - 1));
                     }
@@ -398,8 +408,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
         case 4:		/* end of image; scan for EOI */
             if (jddp->PassThrough && jddp->PassThroughfn)
                 (jddp->PassThroughfn)(jddp->device, Buf, pr->ptr - (Buf - 1));
-            if ((code = gs_jpeg_finish_decompress(ss)) < 0)
-                return ERRC;
+            if ((code = gs_jpeg_finish_decompress(ss)) < 0) {
+                code = ERRC;
+                goto error_out;
+            }
             pr->ptr =
                 (jddp->faked_eoi ? pr->limit : src->next_input_byte - 1);
             if (code == 0)
@@ -411,6 +423,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
     }
     /* Default case can't happen.... */
     return ERRC;
+
+error_out:
+    stream_dct_end_passthrough(jddp);
+    return code;
 }
 
 /* Stream template */
