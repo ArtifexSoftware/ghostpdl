@@ -125,6 +125,8 @@ gdev_prn_size_buf_planar(gx_device_buf_space_t *space, gx_device *target,
     gx_device_memory mdev;
     int code;
 
+    memset(&mdev, 0, sizeof(mdev));
+
     if (render_plane && render_plane->index >= 0)
         return gx_default_size_buf_device(space, target, render_plane,
                                           height, for_band);
