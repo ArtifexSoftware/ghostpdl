@@ -65,6 +65,7 @@ stream_dct_finalize(const gs_memory_t *cmem, void *vptr)
         st->templat = &s_DCTE_template;
     }
     else {
+        stream_dct_end_passthrough(ss->data.decompress);
         gs_jpeg_destroy(ss);
         if (ss->data.decompress != NULL) {
             if (ss->data.decompress->scanline_buffer != NULL) {
@@ -87,10 +88,11 @@ stream_dct_end_passthrough(jpeg_decompress_data *jddp)
 {
     char EOI[2] = {0xff, 0xD9};
 
-    if (jddp->PassThrough && jddp->PassThroughfn) {
+    if (jddp != NULL && jddp->PassThrough != 0 && jddp->PassThroughfn != NULL) {
         (jddp->PassThroughfn)(jddp->device, (byte *)EOI, 2);
         (jddp->PassThroughfn)(jddp->device, NULL, 0);
         jddp->PassThrough = 0;
         jddp->PassThroughfn = NULL;
+        jddp->StartedPassThrough = 0;
     }
 }

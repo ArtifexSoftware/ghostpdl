@@ -19,12 +19,15 @@
 #ifndef gdev_subclass_dev_INCLUDED
 #  define gdev_subclass_dev_INCLUDED
 
+#include "gdevnup.h"
 #include "gdevflp.h"
 #include "gdevoflt.h"
 
 extern gx_device_obj_filter  gs_obj_filter_device;
 
 extern gx_device_flp  gs_flp_device;
+
+extern gx_device_nup gs_nup_device;
 
 int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded);
 

@@ -15,11 +15,12 @@
 
 #include "gx.h"
 #include "gxdcolor.h"
-#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and object filter */
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently Page, Object, and Nup filter */
 
 /* If set to '1' ths forces all devices to be loaded, even if they won't do anything.
  * This is useful for cluster testing that the very presence of a device doesn't
- * break anything.
+ * break anything. This requires that all of these devices pass through if the params
+ * they use are 0/NULL.
  */
 #define FORCE_TESTING_SUBCLASSING 0
 
@@ -28,6 +29,44 @@ int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded)
     int code = 0;
     gx_device *dev = (gx_device *)*ppdev, *saved;
 
+    /*
+     * NOTE: the Nup device should precede the PageHandler so the FirstPage, LastPage
+     *       and PageList will filter pages out BEFORE they are seen by the nesting.
+     */
+
+#if FORCE_TESTING_SUBCLASSING
+    if (!dev->NupHandlerPushed) {
+#else
+    if (!dev->NupHandlerPushed && dev->NupControl != 0) {
+#endif
+        code = gx_device_subclass(dev, (gx_device *)&gs_nup_device, sizeof(Nup_device_subclass_data));
+        if (code < 0)
+            return code;
+
+        saved = dev = dev->child;
+
+        /* Open all devices *after* the new current device */
+        do {
+            dev->is_open = true;
+            dev = dev->child;
+        }while(dev);
+
+        dev = saved;
+
+        /* Rewind to top device in chain */
+        while(dev->parent)
+            dev = dev->parent;
+
+        /* Note in all devices in chain that we have loaded the PageHandler */
+        do {
+            dev->NupHandlerPushed = true;
+            dev = dev->child;
+        }while(dev);
+
+        dev = saved;
+        if (devices_loaded)
+            *devices_loaded = true;
+    }
 #if FORCE_TESTING_SUBCLASSING
     if (!dev->PageHandlerPushed) {
 #else

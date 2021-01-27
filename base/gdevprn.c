@@ -100,8 +100,12 @@ gdev_prn_open(gx_device * pdev)
             gx_copy_device_procs(pdev->parent, pdev, &gs_obj_filter_device);
             pdev = pdev->parent;
         }
-        if (pdev->PageHandlerPushed)
+        if (pdev->PageHandlerPushed) {
             gx_copy_device_procs(pdev->parent, pdev, &gs_flp_device);
+            pdev = pdev->parent;
+        }
+        if (pdev->NupHandlerPushed)
+            gx_copy_device_procs(pdev->parent, pdev, &gs_nup_device);
     }
     if (code < 0)
         return code;

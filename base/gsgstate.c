@@ -140,8 +140,14 @@ gs_gstate_initialize(gs_gstate * pgs, gs_memory_t * mem)
     if (pgs->devicergb_cs == NULL || pgs->devicecmyk_cs == NULL)
         return_error(gs_error_VMerror);
     pgs->icc_link_cache = gsicc_cache_new(pgs->memory);
+    if (pgs->icc_link_cache == NULL)
+        return_error(gs_error_VMerror);
     pgs->icc_manager = gsicc_manager_new(pgs->memory);
+    if (pgs->icc_manager == NULL)
+        return_error(gs_error_VMerror);
     pgs->icc_profile_cache = gsicc_profilecache_new(pgs->memory);
+    if (pgs->icc_profile_cache == NULL)
+        return_error(gs_error_VMerror);
     pgs->black_text_state = NULL;
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     pgs->custom_color_callback = INIT_CUSTOM_COLOR_PTR;

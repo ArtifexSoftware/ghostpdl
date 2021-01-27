@@ -32,6 +32,7 @@
 #include "gxcmap.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
+#include "gxdevsop.h"
 #include "gxiodev.h"
 #include "gxcspace.h"
 #include "gsicc_manage.h"
@@ -201,7 +202,7 @@ gs_output_page(gs_gstate * pgs, int num_copies, int flush)
     ((code = gs_fill(pgs)) < 0))
     {
         gs_grestore(pgs);
-	return code;
+        return code;
     }
     code = gs_grestore(pgs);
     if (code < 0)
@@ -873,9 +874,21 @@ gx_device_set_hwsize_from_media(gx_device *dev)
     int rot = (dev->LeadingEdge & 1);
     double rot_media_x = rot ? dev->MediaSize[1] : dev->MediaSize[0];
     double rot_media_y = rot ? dev->MediaSize[0] : dev->MediaSize[1];
+    gx_device *parent = dev;
+    int hwsize[2];
 
-    dev->width = (int)(rot_media_x * dev->HWResolution[0] / 72.0 + 0.5);
-    dev->height = (int)(rot_media_y * dev->HWResolution[1] / 72.0 + 0.5);
+    /* Try the spec_op to give the device to control it */
+    hwsize[0] = (int)(rot_media_x * dev->HWResolution[0] / 72.0 + 0.5);
+    hwsize[1] = (int)(rot_media_y * dev->HWResolution[1] / 72.0 + 0.5);
+
+    while (parent->parent != NULL) {
+        parent = dev->parent;
+    }
+    if (dev_proc(parent, dev_spec_op)(parent, gxdso_set_HWSize, &hwsize, sizeof(hwsize)) <= 0) {
+        /* just do the default setting */
+        dev->width = hwsize[0];
+        dev->height = hwsize[1];
+    }
 }
 
 static void
@@ -1159,7 +1172,7 @@ int gx_device_delete_output_file(const gx_device * dev, const char *fname)
 
     if (pfname == NULL) {
         code = gs_note_error(gs_error_VMerror);
-	goto done;
+        goto done;
     }
 
     code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname),
@@ -1218,7 +1231,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 
     if (pfname == NULL) {
         code = gs_note_error(gs_error_VMerror);
-	goto done;
+        goto done;
     }
 
     if (strlen(fname) == 0) {
@@ -1234,8 +1247,8 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
     if (parsed.iodev && !strcmp(parsed.iodev->dname, "%stdout%")) {
         if (parsed.fname) {
             code = gs_note_error(gs_error_undefinedfilename);
-	    goto done;
-	}
+            goto done;
+        }
         *pfile = gp_file_FILE_alloc(dev->memory);
         if (*pfile == NULL) {
             code = gs_note_error(gs_error_VMerror);
@@ -1244,7 +1257,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
         gp_file_FILE_set(*pfile, dev->memory->gs_lib_ctx->core->fstdout, noclose);
         /* Force stdout to binary. */
         code = gp_setmode_binary_impl(dev->memory->gs_lib_ctx->core->fstdout, true);
-	goto done;
+        goto done;
     } else if (parsed.iodev && !strcmp(parsed.iodev->dname, "%pipe%")) {
         positionable = false;
     }
@@ -1271,8 +1284,8 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 
         if (!parsed.fname) {
             code = gs_note_error(gs_error_undefinedfilename);
-	    goto done;
-	}
+            goto done;
+        }
         strcpy(fmode, gp_fmode_wb);
         if (positionable)
             strcat(fmode, "+");

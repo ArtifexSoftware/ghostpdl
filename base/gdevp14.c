@@ -5975,13 +5975,13 @@ pdf14_fill_rectangle_devn(gx_device *dev, int x, int y, int w, int h,
 }
 
 /* Step through and do rect fills with the devn colors as
-   we hit each transistion in the bitmap. It is possible
+   we hit each transition in the bitmap. It is possible
    that one of the colors is not devn, but is pure and
    is set to gx_no_color_index. This type of mix happens
    for example from tile_clip_fill_rectangle_hl_color */
 static int
 pdf14_copy_mono_devn(gx_device *dev,
-    const byte *base, int sourcex, int sraster, gx_bitmap_id id,
+    const byte *base, int sourcex, int sraster,
     int x, int y, int w, int h, const gx_drawing_color *pdcolor0,
     const gx_drawing_color *pdcolor1)
 {
@@ -5992,7 +5992,25 @@ pdf14_copy_mono_devn(gx_device *dev,
     int run_length, startx, current_bit, bit_value;
     const gx_drawing_color *current_color;
 
-    fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
+    if ((x | y) < 0) {
+        if (x < 0) {
+            w += x;
+            sourcex -= x;
+            x = 0;
+        }
+        if (y < 0) {
+            h += y;
+            base -= (int)(y * sraster);
+            y = 0;
+        }
+    }
+    if (w > (dev)->width - x)
+        w = (dev)->width - x;
+    if (h > (dev)->height - y)
+        h = (dev)->height - y;
+    if (w <= 0 || h <= 0)
+        return 0;
+
     line = base + (sourcex >> 3);
     sbit = sourcex & 7;
     first_bit = 7 - sbit;
@@ -6067,7 +6085,6 @@ pdf14_impl_strip_tile_rectangle_devn(gx_device *dev, const gx_strip_bitmap *tile
     int rwidth = tiles->rep_width;
     int rheight = tiles->rep_height;
     int shift = tiles->shift;
-    gs_id tile_id = tiles->id;
 
     if (rwidth == 0 || rheight == 0)
         return_error(gs_error_unregistered);
@@ -6089,31 +6106,29 @@ pdf14_impl_strip_tile_rectangle_devn(gx_device *dev, const gx_strip_bitmap *tile
 
         if (ch >= h) {      /* Shallow operation */
             if (icw >= w) { /* Just one (partial) tile to transfer. */
-                code = pdf14_copy_mono_devn(dev, row, irx, raster,
-                    (w == width && h == height ? tile_id : gs_no_bitmap_id),
-                    x, y, w, h, pdcolor0, pdcolor1);
+                code = pdf14_copy_mono_devn(dev, row, irx, raster, x, y,
+                    w, h, pdcolor0, pdcolor1);
                 if (code < 0)
                     return_error(code);
             } else {
                 int ex = x + w;
                 int fex = ex - width;
                 int cx = x + icw;
-                ulong id = (h == height ? tile_id : gs_no_bitmap_id);
 
-                code = pdf14_copy_mono_devn(dev, row, irx, raster, gs_no_bitmap_id,
+                code = pdf14_copy_mono_devn(dev, row, irx, raster,
                     x, y, icw, h, pdcolor0, pdcolor1);
                 if (code < 0)
                     return_error(code);
 
                 while (cx <= fex) {
-                    code = pdf14_copy_mono_devn(dev, row, 0, raster, id, cx, y,
+                    code = pdf14_copy_mono_devn(dev, row, 0, raster, cx, y,
                         width, h, pdcolor0, pdcolor1);
                     if (code < 0)
                         return_error(code);
                     cx += width;
                 }
                 if (cx < ex) {
-                    code = pdf14_copy_mono_devn(dev, row, 0, raster, gs_no_bitmap_id, cx, y,
+                    code = pdf14_copy_mono_devn(dev, row, 0, raster, cx, y,
                         ex - cx, h, pdcolor0, pdcolor1);
                     if (code < 0)
                         return_error(code);
@@ -6124,19 +6139,16 @@ pdf14_impl_strip_tile_rectangle_devn(gx_device *dev, const gx_strip_bitmap *tile
             int ey = y + h;
             int fey = ey - height;
             int cy = y + ch;
-            ulong id = (w == width ? tile_id : gs_no_bitmap_id);
 
             code = pdf14_copy_mono_devn(dev, row, irx, raster,
-                (ch == height ? id : gs_no_bitmap_id), x, y,
-                w, ch, pdcolor0, pdcolor1);
+                x, y, w, ch, pdcolor0, pdcolor1);
             if (code < 0)
                 return_error(code);
             row = tiles->data;
             do {
                 ch = (cy > fey ? ey - cy : height);
                 code = pdf14_copy_mono_devn(dev, row, irx, raster,
-                    (ch == height ? id : gs_no_bitmap_id), x, cy,
-                    w, ch, pdcolor0, pdcolor1);
+                    x, cy, w, ch, pdcolor0, pdcolor1);
                 if (code < 0)
                     return_error(code);
             } while ((cy += ch) < ey);
@@ -6150,30 +6162,27 @@ pdf14_impl_strip_tile_rectangle_devn(gx_device *dev, const gx_strip_bitmap *tile
             int cx, cy;
 
             for (cy = y;;) {
-                ulong id = (ch == height ? tile_id : gs_no_bitmap_id);
-
                 if (icw >= w) {
                     code = pdf14_copy_mono_devn(dev, row, irx, raster,
-                        (w == width ? id : gs_no_bitmap_id), x, cy,
-                        w, ch, pdcolor0, pdcolor1);
+                        x, cy, w, ch, pdcolor0, pdcolor1);
                     if (code < 0)
                         return_error(code);
                 } else {
                     code = pdf14_copy_mono_devn(dev, row, irx, raster,
-                        gs_no_bitmap_id, x, cy, icw, ch, pdcolor0, pdcolor1);
+                        x, cy, icw, ch, pdcolor0, pdcolor1);
                     if (code < 0)
                         return_error(code);
                     cx = x + icw;
                     while (cx <= fex) {
                         code = pdf14_copy_mono_devn(dev, row, 0, raster,
-                            id, cx, cy, width, ch, pdcolor0, pdcolor1);
+                            cx, cy, width, ch, pdcolor0, pdcolor1);
                         if (code < 0)
                             return_error(code);
                         cx += width;
                     }
                     if (cx < ex) {
                         code = pdf14_copy_mono_devn(dev, row, 0, raster,
-                            gs_no_bitmap_id, cx, cy, ex - cx, ch, pdcolor0, pdcolor1);
+                            cx, cy, ex - cx, ch, pdcolor0, pdcolor1);
                         if (code < 0)
                             return_error(code);
                     }

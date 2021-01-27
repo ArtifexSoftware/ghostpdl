@@ -647,6 +647,8 @@ gdevdevnprn_h=$(GLSRC)gdevdevnprn.h
 
 gdevoflt_h=$(GLSRC)gdevoflt.h
 
+gdevnup_h=$(GLSRC)gdevnup.h
+
 png__h=$(GLSRC)png_.h $(MAKEFILE)
 x__h=$(GLSRC)x_.h
 
@@ -1419,7 +1421,7 @@ $(GLOBJ)gxdownscale.$(OBJ) : $(GLOBJ)gxdownscale_$(WITH_CAL).$(OBJ) $(AK) $(gp_h
 
 LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ) $(GLOBJ)strmio.$(OBJ)
 LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gxdownscale.$(OBJ) $(downscale_) $(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevflp.$(OBJ) $(GLOBJ)gdevkrnlsclass.$(OBJ) $(GLOBJ)gdevepo.$(OBJ)
-LIB2s=$(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
+LIB2s=$(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevnup.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
 # we include it only for backward compatibility for library clients.
 LIB3s=$(GLOBJ)gscedata.$(OBJ) $(GLOBJ)gscencs.$(OBJ) $(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ)
@@ -2085,7 +2087,7 @@ gdevprn_h=$(GLSRC)gdevprn.h
 gdevmplt_h=$(GLSRC)gdevmplt.h
 
 page_=$(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gdevflp.$(OBJ)\
- $(downscale_) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ) $(GLOBJ)gdevepo.$(OBJ)
+ $(downscale_) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevnup.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ) $(GLOBJ)gdevepo.$(OBJ)
 
 $(GLD)page.dev : $(LIB_MAK) $(ECHOGS_XE) $(page_) $(LIB_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLD)page $(page_)
@@ -2123,6 +2125,12 @@ $(GLOBJ)gdevoflt.$(OBJ) : $(GLSRC)gdevoflt.c $(gdevoflt_h) $(gdevp14_h)\
  $(gsstype_h) $(gx_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gximage_h) $(gxiparam_h) $(gxpaint_h) $(gxpath_h) $(math__h) $(memory__h)
 	$(GLCC) $(GLO_)gdevoflt.$(OBJ) $(C_) $(GLSRC)gdevoflt.c
+
+$(GLOBJ)gdevnup.$(OBJ) : $(GLSRC)gdevnup.c $(gdevnup_h) $(gdevp14_h)\
+ $(gdevprn_h) $(gdevsclass_h) $(gsdevice_h) $(gserrors_h) $(gsparam_h)\
+ $(gsstype_h) $(gx_h) $(gxdevice_h)\
+ $(math__h) $(memory__h)
+	$(GLCC) $(GLO_)gdevnup.$(OBJ) $(C_) $(GLSRC)gdevnup.c
 
 $(GLOBJ)gdevsclass.$(OBJ) : $(GLSRC)gdevsclass.c $(gdevsclass_h) $(gdevp14_h)\
  $(gdevprn_h) $(gsdevice_h) $(gserrors_h) $(gsparam_h) $(gsstype_h) $(gx_h)\
@@ -4424,6 +4432,7 @@ $(GLSRC)gdevflp.h:$(GLGEN)arch.h
 $(GLSRC)gdevflp.h:$(GLSRC)gs_dll_call.h
 $(GLSRC)gdevkrnlsclass.h:$(GLSRC)gdevflp.h
 $(GLSRC)gdevkrnlsclass.h:$(GLSRC)gdevoflt.h
+$(GLSRC)gdevkrnlsclass.h:$(GLSRC)gdevnup.h
 $(GLSRC)gdevkrnlsclass.h:$(GLSRC)gxdevice.h
 $(GLSRC)gdevkrnlsclass.h:$(GLSRC)gxdevcli.h
 $(GLSRC)gdevkrnlsclass.h:$(GLSRC)gxcmap.h
@@ -10312,6 +10321,64 @@ $(GLSRC)gdevoflt.h:$(GLSRC)std.h
 $(GLSRC)gdevoflt.h:$(GLSRC)stdpre.h
 $(GLSRC)gdevoflt.h:$(GLGEN)arch.h
 $(GLSRC)gdevoflt.h:$(GLSRC)gs_dll_call.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxdevice.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxdevcli.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsnamecl.h
+$(GLSRC)gdevnup.h:$(GLSRC)gstparam.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxfmap.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsmalloc.h
+$(GLSRC)gdevnup.h:$(GLSRC)gscsel.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxbcache.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxdda.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxpath.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxfrac.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxtmap.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxftype.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsrect.h
+$(GLSRC)gdevnup.h:$(GLSRC)gslparam.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsdevice.h
+$(GLSRC)gdevnup.h:$(GLSRC)gscpm.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsgstate.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxstdio.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsxfont.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsdsrc.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsio.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsiparam.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxfixed.h
+$(GLSRC)gdevnup.h:$(GLSRC)gscompt.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsmatrix.h
+$(GLSRC)gdevnup.h:$(GLSRC)gspenum.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsparam.h
+$(GLSRC)gdevnup.h:$(GLSRC)gp.h
+$(GLSRC)gdevnup.h:$(GLSRC)memento.h
+$(GLSRC)gdevnup.h:$(GLSRC)memory_.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsuid.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsstruct.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxsync.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxbitmap.h
+$(GLSRC)gdevnup.h:$(GLSRC)srdline.h
+$(GLSRC)gdevnup.h:$(GLSRC)scommon.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsfname.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsbitmap.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsccolor.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxarith.h
+$(GLSRC)gdevnup.h:$(GLSRC)stat_.h
+$(GLSRC)gdevnup.h:$(GLSRC)gpsync.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsstype.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsmemory.h
+$(GLSRC)gdevnup.h:$(GLSRC)gpgetenv.h
+$(GLSRC)gdevnup.h:$(GLSRC)gscdefs.h
+$(GLSRC)gdevnup.h:$(GLSRC)gslibctx.h
+$(GLSRC)gdevnup.h:$(GLSRC)gxcindex.h
+$(GLSRC)gdevnup.h:$(GLSRC)stdio_.h
+$(GLSRC)gdevnup.h:$(GLSRC)gsccode.h
+$(GLSRC)gdevnup.h:$(GLSRC)stdint_.h
+$(GLSRC)gdevnup.h:$(GLSRC)gssprintf.h
+$(GLSRC)gdevnup.h:$(GLSRC)gstypes.h
+$(GLSRC)gdevnup.h:$(GLSRC)std.h
+$(GLSRC)gdevnup.h:$(GLSRC)stdpre.h
+$(GLSRC)gdevnup.h:$(GLGEN)arch.h
+$(GLSRC)gdevnup.h:$(GLSRC)gs_dll_call.h
 $(GLSRC)gxfapi.h:$(GLSRC)gstext.h
 $(GLSRC)gxfapi.h:$(GLSRC)gsfont.h
 $(GLSRC)gxfapi.h:$(GLSRC)gsdcolor.h
