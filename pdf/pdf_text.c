@@ -371,7 +371,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
 
         if (current_font->pdfi_font_type == e_pdf_font_type3) {
             text.operation |= TEXT_FROM_CHARS;
-            text.data.chars = (gs_char *)gs_alloc_bytes(ctx->memory, s->length * sizeof(gs_char), "string gs_chars");
+            text.data.chars = (const gs_char *)gs_alloc_bytes(ctx->memory, s->length * sizeof(gs_char), "string gs_chars");
             if (!text.data.chars)
                 goto show_error;
 
@@ -381,7 +381,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         }
         else {
             text.operation |= TEXT_FROM_BYTES;
-            text.data.bytes = s->data;
+            text.data.bytes = (const byte *)s->data;
         }
         text.size = s->length;
 
@@ -524,7 +524,9 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         gs_grestore(ctx->pgs);
 
 show_error:
-    if (text.data.chars != s->data) gs_free_object(ctx->memory, text.data.chars, "string gs_chars");
+    if ((void *)text.data.chars != (void *)s->data)
+        gs_free_object(ctx->memory, (void *)text.data.chars, "string gs_chars");
+
     gs_free_object(ctx->memory, x_widths, "Free X widths array on error");
     gs_free_object(ctx->memory, y_widths, "Free Y widths array on error");
     return code;
