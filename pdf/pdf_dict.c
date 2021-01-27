@@ -967,13 +967,12 @@ int pdfi_dict_known_by_key(pdf_context *ctx, pdf_dict *d, pdf_name *Key, bool *k
 int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index)
 {
     int code;
-    uint64_t *i = index;
 
     if (d->type != PDF_DICT)
         return_error(gs_error_typecheck);
 
     while (1) {
-        if (*i >= d->entries) {
+        if (*index >= d->entries) {
             *Key = NULL;
             *Value= NULL;
             return gs_error_undefined;
@@ -986,14 +985,14 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
          * dictionary somehow ends up with NULL keys in the allocated
          * section.
          */
-        *Key = d->keys[*i];
+        *Key = d->keys[*index];
         if (*Key == NULL) {
-            i++;
+            (*index)++;
             continue;
         }
 
-        if (d->values[*i]->type == PDF_INDIRECT) {
-            pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[*i];
+        if (d->values[*index]->type == PDF_INDIRECT) {
+            pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[*index];
             pdf_obj *o;
 
             code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o);
@@ -1004,14 +1003,14 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
             *Value = o;
             break;
         } else {
-            *Value = d->values[*i];
+            *Value = d->values[*index];
             pdfi_countup(*Value);
             break;
         }
     }
 
     pdfi_countup(*Key);
-    (*i)++;
+    (*index)++;
     return 0;
 }
 
