@@ -509,7 +509,8 @@ static int PDF_DCTD_PassThrough(void *d, byte *Buffer, int Size)
     return 0;
 }
 
-static int pdfi_DCT_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
+static int pdfi_DCT_filter(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *decode,
+                           stream *source, stream **new_stream)
 {
     stream_DCT_state dcts;
     uint min_size = s_DCTD_template.min_out_size;
@@ -517,6 +518,7 @@ static int pdfi_DCT_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream
     int64_t i;
     jpeg_decompress_data *jddp;
     gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+    double Height = 0;
 
     dcts.memory = ctx->memory;
     /* First allocate space for IJG parameters. */
@@ -537,8 +539,9 @@ static int pdfi_DCT_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream
         return code;
     }
 
-    if (d && d->type == PDF_DICT) {
-        code = pdfi_dict_get_int(ctx, d, "ColorTransform", &i);
+    if (decode && decode->type == PDF_DICT) {
+        /* TODO: Why is this here?  'i' never gets used? */
+        code = pdfi_dict_get_int(ctx, decode, "ColorTransform", &i);
         if (code < 0 && code != gs_error_undefined)
             return code;
     }
@@ -553,6 +556,12 @@ static int pdfi_DCT_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream
         jddp->PassThrough = 0;
         jddp->device = (void *)NULL;
     }
+
+    /* Hack for Bug695112.pdf to grab a height in case it is missing from the JPEG data */
+    code = pdfi_dict_knownget_number(ctx, stream_dict, "Height", &Height);
+    if (code < 0)
+        return code;
+    jddp->Height = Height;
 
     jddp->templat = s_DCTD_template;
 
@@ -729,7 +738,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         return code;
     }
     if (pdfi_name_is(n, "DCTDecode")) {
-        code = pdfi_DCT_filter(ctx, decode, source, new_stream);
+        code = pdfi_DCT_filter(ctx, dict, decode, source, new_stream);
         return code;
     }
     if (pdfi_name_is(n, "JPXDecode")) {
@@ -779,7 +788,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
             if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
-        code = pdfi_DCT_filter(ctx, decode, source, new_stream);
+        code = pdfi_DCT_filter(ctx, dict, decode, source, new_stream);
         return code;
     }
     if (pdfi_name_is(n, "Fl")) {
