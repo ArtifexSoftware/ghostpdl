@@ -888,4 +888,6 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
         rc_decrement(dev->icc_struct, "finalize subclass device");
     if (dev->PageList)
         rc_decrement(dev->PageList, "finalize subclass device");
+    if (dev->NupControl)
+        rc_decrement(dev->NupControl, "finalize subclass device");
 }

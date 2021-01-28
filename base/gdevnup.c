@@ -54,6 +54,11 @@ RELOC_PTRS_END
 
 public_st_nup_device();
 
+
+/**************************************************************************************/
+/* Externals not in headers                                                           */
+/* Imported from gsdparam.c                                                           */
+extern void rc_free_NupControl(gs_memory_t * mem, void *ptr_in, client_name_t cname);
 /**************************************************************************************/
 
 /* This device is one of the 'subclassing' devices, part of a chain or pipeline
@@ -199,8 +204,8 @@ ParseNupControl(gx_device *dev, Nup_device_subclass_data *pNup_data)
         return 0;
     }
     /* First parse the NupControl string for our parameters */
-    if (sscanf(dev->NupControl, "%dx%d", &(pNup_data->NupH), &(pNup_data->NupV)) != 2) {
-        emprintf1(dev->memory, "*** Invalid NupControl format '%s'\n", dev->NupControl);
+    if (sscanf(dev->NupControl->nupcontrol_str, "%dx%d", &(pNup_data->NupH), &(pNup_data->NupV)) != 2) {
+        emprintf1(dev->memory, "*** Invalid NupControl format '%s'\n", dev->NupControl->nupcontrol_str);
         nup_disable_nesting(pNup_data);
         return_error(gs_error_unknownerror);
     }
@@ -386,6 +391,7 @@ nup_put_params(gx_device *dev, gs_param_list * plist)
     const float *res = dev->HWResolution;
     gs_param_string nuplist;
     Nup_device_subclass_data* pNup_data = dev->subclass_data;
+    gx_device *next_dev;
 
 #if 0000
 gs_param_list_dump(plist);
@@ -396,28 +402,49 @@ gs_param_list_dump(plist);
         ecode = code;
 
     if (code == 0) {
-        if (dev->NupControl && (
-            nuplist.size == 0 ||
-            (strncmp(dev->NupControl, (const char *)nuplist.data, nuplist.size) != 0))) {
-            /* There was a NupControl, but this one is different -- free the old one */
-            gs_free(dev->memory->non_gc_memory, dev->NupControl, 1,
-                    strlen(dev->NupControl) + 1, "previous NupControl string");
-
+        if (dev->NupControl && (nuplist.size == 0 ||
+            (strncmp(dev->NupControl->nupcontrol_str, (const char *)nuplist.data, nuplist.size) != 0))) {
             /* If we have accumulated a nest when the NupControl changes, flush the nest */
             if (pNup_data->PagesPerNest > 1 && pNup_data->PageCount > 0)
                 code = nup_flush_nest_to_output(dev, pNup_data, true);
             if (code < 0)
                 ecode = code;
+            /* There was a NupControl, but this one is different -- no longer use the old one */
+            rc_decrement(dev->NupControl, "default put_params NupControl");
             dev->NupControl = 0;
         }
         if (dev->NupControl == NULL && nuplist.size > 0) {
-            /* Allocate a string (with room for terminating NUL) in non_gc_memory */
-            dev->NupControl = (char *)gs_alloc_bytes(dev->memory->non_gc_memory,
-                                                     nuplist.size + 1, "NupControl string");
-            if (!dev->NupControl)
+            dev->NupControl = (gdev_nupcontrol *)gs_alloc_bytes(dev->memory->non_gc_memory,
+                                                              sizeof(gdev_nupcontrol), "structure to hold nupcontrol_str");
+            if (dev->NupControl == NULL)
                 return gs_note_error(gs_error_VMerror);
-            memset(dev->NupControl, 0x00, nuplist.size + 1);
-            memcpy(dev->NupControl, nuplist.data, nuplist.size);
+            dev->NupControl->nupcontrol_str = (void *)gs_alloc_bytes(dev->memory->non_gc_memory,
+                                                                     nuplist.size + 1, "nupcontrol string");
+            if (dev->NupControl->nupcontrol_str == NULL){
+                gs_free(dev->memory->non_gc_memory, dev->NupControl, 1, sizeof(gdev_nupcontrol),
+                        "free structure to hold nupcontrol string");
+                dev->NupControl = 0;
+                return gs_note_error(gs_error_VMerror);
+            }
+            memset(dev->NupControl->nupcontrol_str, 0x00, nuplist.size + 1);
+            memcpy(dev->NupControl->nupcontrol_str, nuplist.data, nuplist.size);
+            rc_init_free(dev->NupControl, dev->memory->non_gc_memory, 1, rc_free_NupControl);
+        }
+        /* Propagate the new NupControl struct to children so get_params has a valid param */
+        next_dev = dev->child;
+        while (next_dev != NULL) {
+            rc_decrement(next_dev->NupControl, "nup_put_params");
+            next_dev->NupControl = dev->NupControl;
+            rc_increment(next_dev->NupControl);
+            next_dev = next_dev->child;
+        }
+        /* Propagate the new NupControl struct to parents so get_params has a valid param */
+        next_dev = dev->parent;
+        while (next_dev != NULL) {
+            rc_decrement(next_dev->NupControl, "nup_put_params");
+            next_dev->NupControl = dev->NupControl;
+            rc_increment(next_dev->NupControl);
+            next_dev = next_dev->parent;
         }
         if (ecode < 0)
             return ecode;

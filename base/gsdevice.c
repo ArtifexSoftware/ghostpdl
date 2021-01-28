@@ -71,6 +71,10 @@ gx_device_finalize(const gs_memory_t *cmem, void *vptr)
         rc_decrement(dev->PageList, "gx_device_finalize(PageList)");
         dev->PageList = 0;
     }
+    if (dev->NupControl) {
+        rc_decrement(dev->NupControl, "gx_device_finalize(NupControl)");
+        dev->NupControl = 0;
+    }
 
     if (dev->finalize)
         dev->finalize(dev);

@@ -1181,6 +1181,8 @@ gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *arg)
                 break;
             if (ARG_MATCHES("ColorConversionStrategy", arg+2, p-arg-3))
                 break;
+            if (ARG_MATCHES("NupControl", arg+2, p-arg-3))
+                break;
             if (ARG_MATCHES("PageList", arg+2, p-arg-3))
                 break;
             if (ARG_MATCHES("ProcessColorModel", arg+2, p-arg-3))
