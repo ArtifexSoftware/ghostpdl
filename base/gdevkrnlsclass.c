@@ -57,7 +57,7 @@ int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded)
         while(dev->parent)
             dev = dev->parent;
 
-        /* Note in all devices in chain that we have loaded the PageHandler */
+        /* Note in all devices in chain that we have loaded the NupHandler */
         do {
             dev->NupHandlerPushed = true;
             dev = dev->child;
