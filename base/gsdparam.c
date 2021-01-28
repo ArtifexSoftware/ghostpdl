@@ -25,6 +25,8 @@
 #include "gxdevsop.h"
 #include "gxfixed.h"
 #include "gsicc_manage.h"
+#include "gdevnup.h"		/* to install N-up subclass device */
+extern gx_device_nup gs_nup_device;
 
 /* Define whether we accept PageSize as a synonym for MediaSize. */
 /* This is for backward compatibility only. */
@@ -483,12 +485,15 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         return param_write_bool(plist, "DisablePageHandler", &temp_bool);
     }
     if (strcmp(Param, "NupControl") == 0){
-        gs_param_string nuplist;
-        if (dev->NupControl)
-            param_string_from_string(nuplist, dev->NupControl);
+        gs_param_string nupcontrol;
+
+        if (dev->NupControl) {
+            gdev_nupcontrol *p = (gdev_nupcontrol *)dev->NupControl;
+            param_string_from_string(nupcontrol, p->nupcontrol_str);
+        }
         else
-            param_string_from_string(nuplist, null_str);
-        return param_write_string(plist,"NupControl", &nuplist);
+            param_string_from_string(nupcontrol, null_str);
+        return param_write_string(plist, "NupControl", &nupcontrol);
     }
     if (strcmp(Param, "PageList") == 0){
         gs_param_string pagelist;
@@ -786,19 +791,21 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     if ((code = param_write_bool(plist, "DisablePageHandler", &temp_bool)) < 0)
         return code;
 
-    if (dev->NupControl)
-        param_string_from_string(nuplist, dev->NupControl);
-    else
+    if (dev->NupControl) {
+        gdev_nupcontrol *p = (gdev_nupcontrol *)dev->NupControl;
+        param_string_from_string(nuplist, p->nupcontrol_str);
+    } else {
         param_string_from_string(nuplist, null_str);
+    }
     if ((code = param_write_string(plist, "NupControl", &nuplist)) < 0)
         return code;
 
     if (dev->PageList) {
         gdev_pagelist *p = (gdev_pagelist *)dev->PageList;
         param_string_from_string(pagelist, p->Pages);
-    }
-    else
+    } else {
         param_string_from_string(pagelist, null_str);
+    }
     if ((code = param_write_string(plist, "PageList", &pagelist)) < 0)
         return code;
 
@@ -1437,6 +1444,19 @@ gx_default_put_icc(gs_param_string *icc_pro, gx_device * dev,
     return code;
 }
 
+void rc_free_NupControl(gs_memory_t * mem, void *ptr_in, client_name_t cname);	/* silence warning */
+/* Exported for use by nup_put_params in gdevnup.c */
+void
+rc_free_NupControl(gs_memory_t * mem, void *ptr_in, client_name_t cname)
+{
+    gdev_nupcontrol *pnupc = (gdev_nupcontrol *)ptr_in;
+
+    if (pnupc->rc.ref_count <= 1) {
+        gs_free(mem->non_gc_memory, pnupc->nupcontrol_str, 1, strlen(pnupc->nupcontrol_str), "free nupcontrol string");
+        gs_free(mem->non_gc_memory, pnupc, 1, sizeof(gdev_nupcontrol), "free structure to hold nupcontrol string");
+    }
+}
+
 static void
 rc_free_pages_list(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 {
@@ -2012,25 +2032,58 @@ label:\
     if (code == 0)
         dev->DisablePageHandler = temp_bool;
 
+    /* If we have an NupControl subclass device (N-up) installed, this param will have	*/
+    /* been handled there, so the check for different will be false, meaning that this	*/
+    /* code won't end up doing anything. This will catch the first occurence and needs	*/
+    /* to install the N-up subclass device.						*/
     code = param_read_string(plist, "NupControl", &nuplist);
     if (code < 0)
         ecode = code;
-
     if (code == 0) {
-        if (dev->NupControl && (strncmp(dev->NupControl, (const char *)nuplist.data, nuplist.size) != 0)) {
-            /* There was a NupControl, but this one is different -- free the old one */
-            gs_free(dev->memory->non_gc_memory, dev->NupControl, 1,
-                    strlen(dev->NupControl) + 1, "previous NupControl string");
-            dev->NupControl = 0;
+        if (dev->NupControl && (
+            nuplist.size == 0 ||
+            (strncmp(dev->NupControl->nupcontrol_str, (const char *)nuplist.data, nuplist.size) != 0))) {
+            /* There was a NupControl, but this one is different -- no longer use the old one */
+            rc_decrement(dev->NupControl, "default put_params NupControl");
+            dev->NupControl = NULL;
         }
-        if (dev->NupControl == NULL && nuplist.size > 0) {
-            /* Allocate a string (with room for terminating NUL) in non_gc_memory */
-            dev->NupControl = (char *)gs_alloc_bytes(dev->memory->non_gc_memory,
-                                                     nuplist.size + 1, "NupControl string");
-            if (!dev->NupControl)
-                return gs_note_error(gs_error_VMerror);
-            memset(dev->NupControl, 0x00, nuplist.size + 1);
-            memcpy(dev->NupControl, nuplist.data, nuplist.size);
+    }
+    if (dev->NupControl == NULL && code == 0 && nuplist.size > 0) {
+        gx_device *next_dev;
+
+        dev->NupControl = (gdev_nupcontrol *)gs_alloc_bytes(dev->memory->non_gc_memory,
+                                                          sizeof(gdev_nupcontrol), "structure to hold nupcontrol_str");
+        if (dev->NupControl == NULL)
+            return gs_note_error(gs_error_VMerror);
+        dev->NupControl->nupcontrol_str = (void *)gs_alloc_bytes(dev->memory->non_gc_memory,
+                                                                 nuplist.size + 1, "nupcontrol string");
+        if (dev->NupControl->nupcontrol_str == NULL){
+            gs_free(dev->memory->non_gc_memory, dev->NupControl, 1, sizeof(gdev_nupcontrol),
+                    "free structure to hold nupcontrol string");
+            dev->NupControl = 0;
+            return gs_note_error(gs_error_VMerror);
+        }
+        memset(dev->NupControl->nupcontrol_str, 0x00, nuplist.size + 1);
+        memcpy(dev->NupControl->nupcontrol_str, nuplist.data, nuplist.size);
+        rc_init_free(dev->NupControl, dev->memory->non_gc_memory, 1, rc_free_NupControl);
+
+        /* Propagate the new NupControl struct to children */
+        next_dev = dev->child;
+        while (next_dev != NULL) {
+            if (next_dev->NupControl)
+                rc_decrement(next_dev->NupControl, "nup_put_params");
+            next_dev->NupControl = dev->NupControl;
+            rc_increment(dev->NupControl);
+            next_dev = next_dev->child;
+        }
+        /* Propagate the new NupControl struct to parents */
+        next_dev = dev->parent;
+        while (next_dev != NULL) {
+            if (next_dev->NupControl)
+                rc_decrement(next_dev->NupControl, "nup_put_params");
+            next_dev->NupControl = dev->NupControl;
+            rc_increment(dev->NupControl);
+            next_dev = next_dev->parent;
         }
     }
 
