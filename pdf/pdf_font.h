@@ -59,6 +59,7 @@ static inline pdf_font *pdfi_get_current_pdf_font(pdf_context *ctx)
 
 int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Encoding);
 gs_glyph pdfi_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_used);
+int pdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph);
 int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr);
 int pdfi_decode_glyph(gs_font * font, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length);
 

@@ -146,6 +146,13 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
         goto cleanup_setdevice;
 #endif
 
+    /* gsave and grestore (among other places) assume that */
+    /* there are at least 2 gstates on the graphics stack. */
+    /* Ensure that now. */
+    code = gs_gsave(ctx->pgs);
+    if (code < 0)
+        goto cleanup_gsave;
+
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)
         goto cleanup_setdevice;
@@ -163,13 +170,6 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
 
     gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));
-
-    /* gsave and grestore (among other places) assume that */
-    /* there are at least 2 gstates on the graphics stack. */
-    /* Ensure that now. */
-    code = gs_gsave(ctx->pgs);
-    if (code < 0)
-        goto cleanup_gsave;
 
     code = gs_erasepage(ctx->pgs);
     if (code < 0)
@@ -552,7 +552,11 @@ pdf_impl_dnit_job(pl_interp_implementation_t *impl)
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
 
-    return gs_grestore_only(ctx->pgs); /* pdf_impl_set_device does a gsave (after setting the device), restore now. */
+    return gs_grestoreall(ctx->pgs); /* pdf_impl_set_device does a gsave which we need to restore now.
+                                      * Using grestoreall will restore any dangling gstates back to the last restore.
+                                      * This should ensure we don't have dangling references to the device created by the
+                                      * top level code.
+                                      */
 }
 
 /* Deallocate a interpreter instance */

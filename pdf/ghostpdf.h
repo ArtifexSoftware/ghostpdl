@@ -420,6 +420,8 @@ typedef struct pdf_context_s
     pdf_dict *pdffontmap;
 
     int (*end_page) (struct pdf_context_s *ctx);
+    int (*get_glyph_name)(gs_font *font, gs_glyph index, gs_const_string *pstr);
+    int (*get_glyph_index)(gs_font *font, byte *str, uint size, uint *glyph);
 #if REFCNT_DEBUG
     uint64_t UID;
 #endif

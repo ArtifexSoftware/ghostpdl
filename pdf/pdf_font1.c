@@ -111,24 +111,32 @@ pdfi_t1_enumerate_glyph(gs_font *pfont, int *pindex, gs_glyph_space_t glyph_spac
 {
     int code;
     pdf_font_type1 *t1font = (pdf_font_type1 *)pfont->client_data;
+    pdf_context *ctx = (pdf_context *)t1font->ctx;
     pdf_name *key;
     uint64_t i = (uint64_t)*pindex;
     (void)glyph_space;
+
     if (*pindex <= 0)
-        code = pdfi_dict_key_first(t1font->ctx, t1font->CharStrings, (pdf_obj **)&key, &i);
+        code = pdfi_dict_key_first(ctx, t1font->CharStrings, (pdf_obj **)&key, &i);
     else
-        code = pdfi_dict_key_next(t1font->ctx, t1font->CharStrings, (pdf_obj **)&key, &i);
+        code = pdfi_dict_key_next(ctx, t1font->CharStrings, (pdf_obj **)&key, &i);
     if (code < 0) {
         *pindex = 0;
         code = gs_note_error(gs_error_undefined);
     }
     else {
-        *pglyph = gs_c_name_glyph((const byte *)key->data, key->length);
+        uint dummy = GS_NO_GLYPH;
+        code = ctx->get_glyph_index(pfont, key->data, key->length, &dummy);
+        if (code < 0) {
+            *pglyph = (gs_glyph)*pindex;
+            goto exit;
+        }
+        *pglyph = dummy;
         if (*pglyph == GS_NO_GLYPH)
             *pglyph = (gs_glyph)*pindex;
-
         *pindex = (int)i + 1;
     }
+exit:
     pdfi_countdown(key);
     return code;
 }
@@ -380,7 +388,7 @@ pdfi_alloc_t1_font(pdf_context *ctx, pdf_font_type1 **font, uint32_t obj_num)
     /* The buildchar proc will be filled in by FAPI -
        we won't worry about working without FAPI */
     pfont->procs.encode_char = pdfi_encode_char;
-    pfont->procs.glyph_name = pdfi_glyph_name;
+    pfont->procs.glyph_name = ctx->get_glyph_name;
     pfont->procs.decode_glyph = pdfi_decode_glyph;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;

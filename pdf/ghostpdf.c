@@ -966,6 +966,8 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
     /* We decrypt strings from encrypted files until we start a page */
     ctx->decrypt_strings = true;
+    ctx->get_glyph_name = pdfi_glyph_name;
+    ctx->get_glyph_index = pdfi_glyph_index;
 
     /* Weirdly the graphics library wants us to always have two gstates, the
      * initial state and at least one saved state. if we don't then when we
@@ -1037,8 +1039,6 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     dmprintf1(ctx->memory, "Normal object cache hit rate: %f\n", hit_rate);
     dmprintf1(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
 #endif
-    pdfi_free_name_table(ctx);
-
     if (ctx->PageList)
         gs_free_object(ctx->memory, ctx->PageList, "pdfi_free_context");
 
@@ -1103,6 +1103,8 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         gs_gstate_free(ctx->pgs);
         ctx->pgs = NULL;
     }
+
+    pdfi_free_name_table(ctx);
 
     pdfi_free_DefaultQState(ctx);
     pdfi_oc_free(ctx);

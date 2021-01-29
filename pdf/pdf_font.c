@@ -483,6 +483,16 @@ int pdfi_decode_glyph(gs_font * font, gs_glyph glyph, int ch, ushort *unicode_re
     return 0;
 }
 
+int pdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph)
+{
+    int code = 0;
+    pdf_font *font;
+
+    font = (pdf_font *)pfont->client_data;
+    code = pdfi_get_name_index(font->ctx, (char *)str, size, glyph);
+    return code;
+}
+
 /*
  * For simple fonts (ie not CIDFonts), given a character code, look up the
  * Encoding array and return the glyph name
@@ -505,7 +515,7 @@ int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
         if (code < 0 && !font->fake_glyph_names)
             return code;
         /* For the benefit of the vector devices, if a glyph index is outside the encoding, we create a fake name */
-        if (GlyphName == NULL) {
+        if (GlyphName == NULL || GlyphName->type == PDF_NULL) {
             int i;
             char cid_name[5 + sizeof(gs_glyph) * 3 + 1];
             for (i = 0; i < font->LastChar; i++)

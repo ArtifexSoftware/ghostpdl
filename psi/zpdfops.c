@@ -252,7 +252,6 @@ zsaslprep(i_ctx_t *i_ctx_p)
 #endif
 
 #if defined(BUILD_PDF) && BUILD_PDF == 1
-
 static int
 psi_pdf_end_page(pdf_context *ctx)
 {
@@ -664,6 +663,17 @@ static int zPDFdrawannots(i_ctx_t *i_ctx_p)
     return_error(gs_error_undefined);
 }
 
+static int zpdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph)
+{
+    int code = 0;
+    ref nref;
+    code = name_ref(pfont->memory, str, size, &nref, true);
+    if (code < 0)
+        return code;
+    *glyph = name_index(pfont->memory, &nref);
+    return 0;
+}
+
 static int zPDFInit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -808,6 +818,8 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     } else {
         push(1);
     }
+    get_zfont_glyph_name(&pdffile->ctx->get_glyph_name);
+    pdffile->ctx->get_glyph_index = zpdfi_glyph_index;
 
     make_tav(op, t_pdffile, icurrent_space | a_all, pstruct, (obj_header_t *)(pdffile));
     return 0;
