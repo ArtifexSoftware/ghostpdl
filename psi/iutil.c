@@ -340,9 +340,12 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
              */
             float value = op->value.realval;
             float scanned;
-
-            gs_sprintf(buf, "%g", value);
-            (void)sscanf(buf, "%f", &scanned);
+            code = gs_sprintf(buf, "%g", value);
+            if (code <= 0)
+                return_error(gs_error_undefinedresult);
+            code = sscanf(buf, "%f", &scanned);
+            if (code <= 0)
+                return_error(gs_error_undefinedresult);
             if (scanned != value)
                 gs_sprintf(buf, "%.9g", value);
             ensure_dot(buf);

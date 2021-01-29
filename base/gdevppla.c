@@ -134,6 +134,7 @@ gdev_prn_size_buf_planar(gx_device_buf_space_t *space, gx_device *target,
     mdev.pad = target->pad;
     mdev.log2_align_mod = target->log2_align_mod;
     mdev.is_planar = target->is_planar;
+    mdev.graphics_type_tag = target->graphics_type_tag;
     code = gdev_prn_set_planar(&mdev, target);
     if (code < 0)
         return code;
