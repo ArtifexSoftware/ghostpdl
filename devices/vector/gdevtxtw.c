@@ -160,9 +160,9 @@ typedef struct textw_text_enum_s {
 } textw_text_enum_t;
 #define private_st_textw_text_enum()\
   extern_st(st_gs_text_enum);\
-  gs_private_st_suffix_add0(st_textw_text_enum, textw_text_enum_t,\
+  gs_private_st_suffix_add1(st_textw_text_enum, textw_text_enum_t,\
     "textw_text_enum_t", textw_text_enum_enum_ptrs, textw_text_enum_reloc_ptrs,\
-    st_gs_text_enum)
+    st_gs_text_enum, pte_fallback)
 
 private_st_textw_text_enum();
 
@@ -2520,8 +2520,6 @@ textw_text_release(gs_text_enum_t *pte, client_name_t cname)
      */
     if (penum->text_state)
         gs_free(tdev->memory, penum->text_state, 1, sizeof(penum->text_state), "txtwrite free text state");
-
-    gs_text_release(NULL, pte, cname);
 }
 
 /* This is the list of methods for the text enumerator */
