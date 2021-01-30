@@ -1626,8 +1626,9 @@ txt_glyph_widths(gs_font *font, int wmode, gs_glyph glyph,
         return code;
     gs_matrix_scale(&scale_c, 1000.0, 1000.0, &scale_c);
     gs_matrix_scale(&scale_o, 1000.0, 1000.0, &scale_o);
-    pwidths->Width.v.x = pwidths->Width.v.y = 0;
-    pwidths->real_width.v.x = pwidths->real_width.v.y = 0;
+    pwidths->Width.v.x = pwidths->Width.v.y = pwidths->Width.xy.x = pwidths->Width.xy.y = 0;
+    pwidths->real_width.v.x = pwidths->real_width.v.y = pwidths->real_width.xy.x = pwidths->real_width.xy.y = 0;
+    pwidths->Width.w = pwidths->real_width.w = 0.0;
     pwidths->replaced_v = false;
     if (glyph == GS_NO_GLYPH)
         return get_missing_width(font, wmode, &scale_c, pwidths);
