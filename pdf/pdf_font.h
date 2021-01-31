@@ -76,5 +76,16 @@ pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint *c);
 int
 pdfi_init_font_directory(pdf_context *ctx);
 
+/* Loads a (should be!) non-embedded font by name
+   Only currently works for the Type 1 font set from romfs.
+ */
+int
+pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, pdf_obj **ppdffont);
+
+/* Convenience function for using fonts created by
+   pdfi_load_font_by_name_string
+ */
+int
+pdfi_set_font_internal(pdf_context *ctx, pdf_obj *fontobj, double point_size);
 
 #endif

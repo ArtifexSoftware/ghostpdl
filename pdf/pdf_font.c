@@ -568,3 +568,58 @@ int pdfi_init_font_directory(pdf_context *ctx)
     ctx->font_dir->global_glyph_code = pdfi_global_glyph_code;
     return 0;
 }
+
+/* Loads a (should be!) non-embedded font by name
+   Only currently works for the Type 1 font set from romfs.
+ */
+int pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, pdf_obj **ppdffont)
+{
+    pdf_obj *fname;
+    pdf_dict *fdict;
+    int code;
+    gs_font *pgsfont;
+
+    code = pdfi_make_name(ctx, (byte *)fontname, strlen((char *)fontname), &fname);
+    if (code < 0)
+        return code;
+    code = pdfi_dict_alloc(ctx, 1, &fdict);
+    if (code < 0) {
+        pdfi_countdown(fname);
+        return code;
+    }
+    pdfi_countup(fdict);
+    code = pdfi_dict_put(ctx, fdict, "BaseFont", fname);
+    if (code < 0) {
+        pdfi_countdown(fname);
+        pdfi_countdown(fdict);
+        return code;
+    }
+    pdfi_countdown(fname);
+
+    code = pdfi_read_type1_font(ctx, fdict, NULL, NULL, &pgsfont);
+    if (code < 0) {
+        pdfi_countdown(fdict);
+        return code;
+    }
+    *ppdffont = (pdf_obj *)pgsfont->client_data;
+
+    return code;
+}
+
+/* Convenience function for using fonts created by
+   pdfi_load_font_by_name_string
+ */
+int pdfi_set_font_internal(pdf_context *ctx, pdf_obj *fontobj, double point_size)
+{
+    int code;
+    pdf_font *pdffont = (pdf_font *)fontobj;
+
+    if (pdffont->type != PDF_FONT || pdffont->pfont == NULL)
+        return_error(gs_error_invalidfont);
+
+    code = gs_setPDFfontsize(ctx->pgs, point_size);
+    if (code < 0)
+        return code;
+
+    return pdfi_gs_setfont(ctx, (gs_font *)pdffont->pfont);
+}
