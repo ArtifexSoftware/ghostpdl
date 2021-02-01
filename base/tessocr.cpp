@@ -1,6 +1,4 @@
 #include "tesseract/baseapi.h"
-#include "tesseract/genericvector.h"
-#include "tesseract/serialis.h"
 
 extern "C"
 {
@@ -114,7 +112,7 @@ static void my_leptonica_free(void *ptr)
 }
 
 static bool
-load_file(const char* filename, GenericVector<char>* data) {
+load_file(const char* filename, std::vector<char>* data) {
   bool result = false;
   gp_file *fp;
   int code;
@@ -135,7 +133,7 @@ load_file(const char* filename, GenericVector<char>* data) {
   if (size > 0 && size < LONG_MAX) {
     // reserve an extra byte in case caller wants to append a '\0' character
     data->reserve(size + 1);
-    data->resize_no_init(size);
+    data->resize(size);
     result = static_cast<long>(gp_fread(&(*data)[0], 1, size, fp)) == size;
   }
   gp_fclose(fp);
@@ -147,7 +145,7 @@ fail:
 }
 
 static bool
-load_file_from_path(const char *path, const char *file, GenericVector<char> *out)
+load_file_from_path(const char *path, const char *file, std::vector<char> *out)
 {
     const char *sep = gp_file_name_directory_separator();
     size_t seplen = strlen(sep);
@@ -187,7 +185,7 @@ load_file_from_path(const char *path, const char *file, GenericVector<char> *out
 static char *tessdata_prefix = STRINGIFY(TESSDATA);
 
 static bool
-tess_file_reader(const char *fname, GenericVector<char> *out)
+tess_file_reader(const char *fname, std::vector<char> *out)
 {
     const char *file = fname;
     const char *s;
@@ -222,7 +220,7 @@ tess_file_reader(const char *fname, GenericVector<char> *out)
         size = (long)romfs_file_len(leptonica_mem, text);
         if (size >= 0) {
             out->reserve(size + 1);
-            out->resize_no_init(size);
+            out->resize(size);
             code = iodev->procs.open_file(iodev, text, strlen(text), "rb", &ps, leptonica_mem);
             if (code < 0)
                 return code;
