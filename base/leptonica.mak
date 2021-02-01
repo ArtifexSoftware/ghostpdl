@@ -108,9 +108,6 @@ $(LEPTOBJ)classapp.$(OBJ) : $(LEPTONICADIR)/src/classapp.c $(LEPTDEPS)
 $(LEPTOBJ)colorcontent.$(OBJ) : $(LEPTONICADIR)/src/colorcontent.c $(LEPTDEPS)
 	$(LEPTCC) $(LEPTO_)colorcontent.$(OBJ) $(C_) $(LEPTONICADIR)/src/colorcontent.c
 
-$(LEPTOBJ)colorinfo.$(OBJ) : $(LEPTONICADIR)/src/colorinfo.c $(LEPTDEPS)
-	$(LEPTCC) $(LEPTO_)colorinfo.$(OBJ) $(C_) $(LEPTONICADIR)/src/colorinfo.c
-
 $(LEPTOBJ)coloring.$(OBJ) : $(LEPTONICADIR)/src/coloring.c $(LEPTDEPS)
 	$(LEPTCC) $(LEPTO_)coloring.$(OBJ) $(C_) $(LEPTONICADIR)/src/coloring.c
 
@@ -515,7 +512,6 @@ LEPTONICA_OBJS=\
 	$(LEPTOBJ)ccbord.$(OBJ)\
 	$(LEPTOBJ)classapp.$(OBJ)\
 	$(LEPTOBJ)colorcontent.$(OBJ)\
-	$(LEPTOBJ)colorinfo.$(OBJ)\
 	$(LEPTOBJ)coloring.$(OBJ)\
 	$(LEPTOBJ)colormap.$(OBJ)\
 	$(LEPTOBJ)colormorph.$(OBJ)\
