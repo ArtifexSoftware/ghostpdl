@@ -159,6 +159,18 @@ int gp_stat_impl(const gs_memory_t *mem, const char *path, struct _stat64 *buf)
     (void)buf;
     return 0;
 }
+#ifdef MEMENTO
+#undef malloc
+#undef free
+void* Memento_malloc(size_t s)
+{
+    return malloc(s);
+}
+void Memento_free(void* blk)
+{
+    free(blk);
+}
+#endif
 #endif
 
 int
