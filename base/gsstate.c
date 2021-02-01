@@ -641,7 +641,7 @@ gs_do_set_overprint(gs_gstate * pgs)
         gs_color_space_index pcs_index = gs_color_space_get_index(pcs);
 
         dev_proc(dev, get_profile)(dev, &dev_profile);
-        if (!dev_profile->sim_overprint)
+        if (dev_profile->overprint_control == gs_overprint_control_disable)
             return code;
 
         /* Transparency device that supports spots and where we have

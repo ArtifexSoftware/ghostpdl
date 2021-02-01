@@ -1456,7 +1456,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     result->blacktext = false;
     result->prebandthreshold = true;
     result->supports_devn = false;
-    result->sim_overprint = true;  /* Default is to simulate overprint */
+    result->overprint_control = gs_overprint_control_enable;  /* Default overprint if the device can */
     rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
     return result;
 }

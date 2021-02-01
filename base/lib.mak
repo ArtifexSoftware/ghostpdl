@@ -989,7 +989,7 @@ $(GLOBJ)gsdevmem.$(OBJ) : $(GLSRC)gsdevmem.c $(AK) $(gx_h)\
 
 $(GLOBJ)gsdparam.$(OBJ) : $(GLSRC)gsdparam.c $(AK) $(gx_h)\
  $(gserrors_h) $(memory__h) $(string__h)\
- $(gsdevice_h) $(gsparam_h) $(gxdevice_h) $(gxfixed_h)\
+ $(gsdevice_h) $(gsparam_h) $(gsparamx_h) $(gxdevice_h) $(gxfixed_h)\
  $(gsicc_manage_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsdparam.$(OBJ) $(C_) $(GLSRC)gsdparam.c
 
