@@ -20,6 +20,7 @@
 #include "gserrors.h"
 #include "gsdevice.h"		/* for prototypes */
 #include "gsparam.h"
+#include "gsparamx.h"		/* for param_put_enum */
 #include "gxdevice.h"
 #include "gxdevsop.h"
 #include "gxfixed.h"
@@ -28,6 +29,11 @@
 /* Define whether we accept PageSize as a synonym for MediaSize. */
 /* This is for backward compatibility only. */
 #define PAGESIZE_IS_MEDIASIZE
+
+/* Names corresponding to gs_overprint_control_t enum */
+static const char *const overprint_control_names[] = {
+    gs_overprint_control_names, 0
+};
 
 /* ================ Getting parameters ================ */
 
@@ -89,7 +95,8 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
     bool blacktext = false;
-    bool sim_overprint = true;  /* By default simulate overprinting (only valid with cmyk devices) */
+    /* By default overprinting only valid with cmyk devices */
+    gs_overprint_control_t overprint_control = gs_overprint_control_enable;
     bool prebandthreshold = true, temp_bool = false;
 
     if(strcmp(Param, "OutputDevice") == 0){
@@ -343,7 +350,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         graydetection = dev_profile->graydetection;
         usefastcolor = dev_profile->usefastcolor;
         blacktext = dev_profile->blacktext;
-        sim_overprint = dev_profile->sim_overprint;
+        overprint_control = dev_profile->overprint_control;
         prebandthreshold = dev_profile->prebandthreshold;
         /* With respect to Output profiles that have non-standard colorants,
            we rely upon the default profile to give us the colorants if they do
@@ -386,8 +393,12 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "BlackText") == 0) {
         return param_write_bool(plist, "BlackText", &blacktext);
     }
-    if (strcmp(Param, "SimulateOverprint") == 0) {
-        return param_write_bool(plist, "SimulateOverprint", &sim_overprint);
+    if (strcmp(Param, "Overprint") == 0) {
+        gs_param_string opc_name;
+        char *s = overprint_control_names[(int)overprint_control];
+
+        param_string_from_string(opc_name, s);
+        return param_write_name(plist, "Overprint", &opc_name);
     }
     if (strcmp(Param, "PreBandThreshold") == 0) {
         return param_write_bool(plist, "PreBandThreshold", &prebandthreshold);
@@ -521,7 +532,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
     bool blacktext = false;
-    bool sim_overprint = true;  /* By default simulate overprinting */
+    /* By default, only overprint if the device supports it */
+    gs_overprint_control_t overprint_control = gs_overprint_control_enable;
     bool prebandthreshold = true, temp_bool;
     int k;
     int color_accuracy = MAX_COLOR_ACCURACY;
@@ -635,7 +647,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         graydetection = dev_profile->graydetection;
         usefastcolor = dev_profile->usefastcolor;
         blacktext = dev_profile->blacktext;
-        sim_overprint = dev_profile->sim_overprint;
+        overprint_control = dev_profile->overprint_control;
         prebandthreshold = dev_profile->prebandthreshold;
         /* With respect to Output profiles that have non-standard colorants,
            we rely upon the default profile to give us the colorants if they do
@@ -696,7 +708,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_bool(plist, "GrayDetection", &graydetection)) < 0 ||
         (code = param_write_bool(plist, "UseFastColor", &usefastcolor)) < 0 ||
         (code = param_write_bool(plist, "BlackText", &blacktext)) < 0 ||
-        (code = param_write_bool(plist, "SimulateOverprint", &sim_overprint)) < 0 ||
         (code = param_write_bool(plist, "PreBandThreshold", &prebandthreshold)) < 0 ||
         (code = param_write_string(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
         (code = param_write_string(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
@@ -746,7 +757,13 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_int(plist, "InterpolateControl", &dev->interpolate_control)) < 0
         )
         return code;
+    {
+        gs_param_string opc_name;
+        char *s = overprint_control_names[(int)overprint_control];
 
+        param_string_from_string(opc_name, s);
+        param_write_name(plist, "Overprint", &opc_name);
+    }
     /* If LeadingEdge was set explicitly, report it here. */
     if (dev->LeadingEdge & LEADINGEDGE_SET_MASK) {
         int leadingedge = dev->LeadingEdge & LEADINGEDGE_MASK;
@@ -1213,7 +1230,7 @@ gx_default_put_blacktext(bool blacktext, gx_device* dev)
 }
 
 static int
-gx_default_put_simulateoverprint(bool sim_overprint, gx_device * dev)
+gx_default_put_overprint_control(gs_overprint_control_t overprint_control, gx_device * dev)
 {
     int code = 0;
     cmm_dev_profile_t *profile_struct;
@@ -1235,7 +1252,7 @@ gx_default_put_simulateoverprint(bool sim_overprint, gx_device * dev)
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
-        dev->icc_struct->sim_overprint = sim_overprint;
+        dev->icc_struct->overprint_control = overprint_control;
     } else {
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
         if (profile_struct == NULL) {
@@ -1245,7 +1262,7 @@ gx_default_put_simulateoverprint(bool sim_overprint, gx_device * dev)
             if (profile_struct == NULL)
                 return_error(gs_error_VMerror);
         }
-        profile_struct->sim_overprint = sim_overprint;
+        profile_struct->overprint_control = overprint_control;
     }
     return code;
 }
@@ -1475,7 +1492,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     bool graydetection = false;
     bool usefastcolor = false;
     bool blacktext = false;
-    bool sim_overprint = true;
+    gs_overprint_control_t overprint_control = gs_overprint_control_enable;
     bool prebandthreshold = false;
     bool use_antidropout = dev->color_info.use_antidropout_downscaler;
     bool temp_bool;
@@ -1496,7 +1513,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
         usefastcolor = dev->icc_struct->usefastcolor;
         blacktext = dev->icc_struct->blacktext;
         prebandthreshold = dev->icc_struct->prebandthreshold;
-        sim_overprint = dev->icc_struct->sim_overprint;
+        overprint_control = dev->icc_struct->overprint_control;
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             rend_intent[k] = gsRINOTSPECIFIED;
@@ -1810,8 +1827,8 @@ nce:
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
-    if ((code = param_read_bool(plist, (param_name = "SimulateOverprint"),
-                                                        &sim_overprint)) < 0) {
+    if ((code = param_put_enum(plist, "Overprint",
+                           (int*)&overprint_control, overprint_control_names, ecode)) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
@@ -2215,7 +2232,7 @@ label:\
     code = gx_default_put_blacktext(blacktext, dev);
     if (code < 0)
         return code;
-    code = gx_default_put_simulateoverprint(sim_overprint, dev);
+    code = gx_default_put_overprint_control(overprint_control, dev);
     if (code < 0)
         return code;
     code = gx_default_put_graydetection(graydetection, dev);

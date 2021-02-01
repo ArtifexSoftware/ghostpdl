@@ -479,7 +479,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_gstate * pgs,
                           { {0} } /* rendercond[] */, 0 /* devicegraytok */,
                           0 /* graydection */, 0 /* pageneutralcolor */,
                           0 /* usefastcolor */, 0 /* blacktext */, 0 /* supports_devn */,
-                          0 /* sim_overprint */, 0 /* spotnames */,
+                          0 /* overprint_control */, 0 /* spotnames */,
                           0 /* prebandthreshold */, 0 /* memory */,
                           { 0 } /* rc_header */
                           };

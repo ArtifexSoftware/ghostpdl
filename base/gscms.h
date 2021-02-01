@@ -264,6 +264,19 @@ struct gsicc_namelist_s {
                               do our first mapping */
 };
 
+/* Overprint (overprint_control)
+ *    /enable	is the default
+ *    /disable	turns off overprint
+ *    /simulate	performs overprint simulation for all devices
+ */
+typedef enum {
+    gs_overprint_control_enable = 0,	/* Overprint for CMYK devices (default) */
+    gs_overprint_control_disable = 1,	/* No overprint for any devices */
+    gs_overprint_control_simulate = 2	/* Simulate overprint for RGB and Gray devices */
+} gs_overprint_control_t;
+#define gs_overprint_control_names\
+        "enable", "disable", "simulate"
+
 /* Destination profiles for different objects */
 struct cmm_dev_profile_s {
         cmm_profile_t  *device_profile[NUM_DEVICE_PROFILES];
@@ -279,7 +292,7 @@ struct cmm_dev_profile_s {
         bool usefastcolor;         /* Used when we want to use no cm */
         bool blacktext;           /* Force text to be pure black */
         bool supports_devn;        /* If the target handles devn colors */
-        bool sim_overprint;     /* Indicates we want to do overprint blending */
+        gs_overprint_control_t overprint_control;	/* enable is the default */
         gsicc_namelist_t *spotnames;  /* If our device profiles are devn */
         bool prebandthreshold;     /* Used to indicate use of HT pre-clist */
         gs_memory_t *memory;

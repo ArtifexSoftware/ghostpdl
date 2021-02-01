@@ -3328,15 +3328,31 @@ are used to convert between RGB and CMYK with black generation and undercolor
 <dl>
     <dt><code>-dSimulateOverprint=</code><em>true/false</em></dt>
 <dd>
-This option enables continous tone CMYK devices (e.g. tiff32nc) the capability to
-provide a  simulation of spot color overprinting.  The default setting is true.
+This option has been replaced by <code><b>-dOverprint=</b></code>
+</dd>
+</dl>
+
+
+<dl>
+    <dt><code>-dOverprint=</code><em>/enable | /disable | /simulate</em></dt>
+<dd>
+This option provides control of overprinting.  The default setting is <em><b>/enable</b></em>
+which allows devices such as CMYK that can support overprint to leave planes unchanged
+under control of PostScript and PDF overprint settings.
+<p>
+The <em><b>/disable</b></em> setting ignores all overprint (and overprint mode) from the input.
+<p>
+If <em><b>/simulate</b></em> is set, then pages with overprint (or overprint mode) set for
+CMYK or Separation colors will be internally maintained and output to RGB or Gray
+devices.
+<p>
 Note that not all spot color overprint cases can be accurately simulated with a CMYK
 only device.   For example, a case where you have a spot color overprinted with CMYK
 colors will be indistiguishable from a case where you have spot color equivalent
 CMYK colorants overprinted with CMYK colors, even though they may need to show
 significantly different overprint simulations.  To obtain a full overprint simulation,
-use the psdcmyk or tiffsep device, where the spot colors are kept in their own
-    individual planes.</dd>
+use the <em><b>/simulate</b></em> setting or the psdcmyk or tiffsep device, where the spot
+colors are kept in their own individual planes.</dd>
 </dl>
 
 <dl>

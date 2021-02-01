@@ -215,6 +215,13 @@ currentdict /EPSFitPage known { /PSFitPage //true def } if
 % This is a "convenience" option that sets a combination of EPSFitPage, PDFFitPage and PSFitPage
 currentdict /FitPage known { /EPSFitPage //true def /PDFFitPage //true def /PSFitPage //true def } if
 
+currentdict /SimulateOverprint known {
+  (\n**** -dSimulateOverprint={true|false} is no longer supported.    ****\n) print
+  (**** It has been replaced by -dOverprint={enable|disable|simulate} ****\n\n) print
+  % Set the new variable appropriately.
+  /Overprint SimulateOverprint { /enable } { /disable } ifelse def
+} if
+
 % Acquire environment variables.
 currentdict /DEVICE known not
  { (GS_DEVICE) getenv { /DEVICE exch def } if } if
