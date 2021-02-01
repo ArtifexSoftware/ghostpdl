@@ -1876,10 +1876,9 @@ currentdict /xref-char-dict undef
    % Check for recursion in the page tree. Bug 689954, MOAB-06-01-2007
    % Make sure that the operand stack is cleaned up in case there's
    % an error and we ignore it (bug #700953)
-   mark
+   /StackMarkVerifyPageTree
    verify_page_tree
-   cleartomark
-
+   /StackMarkVerifyPageTree ClearToKey
    currentdict end
  } bind executeonly def
 
@@ -2267,7 +2266,8 @@ currentdict /xref-char-dict undef
 
 % Get the total number of pages in the document.
 /pdfpagecount		% - pdfpagecount <int>
- { Trailer /Root knownoget {
+ {
+  Trailer /Root knownoget {
     /Pages knownoget {
      dup /Count knownoget {
        dup type /integertype eq { dup 0 le } { //true } ifelse {
@@ -3970,6 +3970,70 @@ currentdict /PDF2PS_matrix_key undef
     } if
   } if
 } bind executeonly def
+
+% These functions can be used in error handling. It is not always possible to
+% use the PostScript sequence 'mark ..... cleartomark' to clean up behind a
+% sequence of operations, because processing the PDF might leave a mark
+% object on the stack. There are a number of ways to address that problem; one
+% is to count the objects on the stack at the time and store that value in a
+% convenient dictionary, presented here is an alternative. Instead of using a
+% mark object, we can use a specific name object as if it were a mark object
+% and use the two routines below to count the number of objects on the stack
+% up to a specific key, and to clear the stack back to a named key.
+
+%
+% /key CountToKey false | int true
+%
+% Counts the operand stack backwards until it encounters
+% a specific name key on the stack. Returns true and the count
+% of objects on the stack after that key, or false if the key
+% was not found on the stack. Consumes the key passed
+% to CountToKey. Throws a typecheck if the operand is not
+% a name type.
+%
+/CountToKey
+{
+  dup type /nametype eq {
+    //false
+    0 1 count 5 sub
+    {
+      dup 3 add index
+      3 index eq
+      {
+        3 1 roll pop pop //true exit
+      }
+      {pop} ifelse
+    } for
+
+    {
+      //true
+    }
+    {
+      pop //false
+    } ifelse
+  }
+  {
+    /CountToKey cvx /typecheck signalerror
+  }ifelse
+}bind readonly def
+
+%
+% /key ClearToKey -
+%
+% Clears the operand stack backwards until it encounters
+% the name object passed as an operand. If the name object
+% is not present on the stack then it will clear the entire
+% stack. Like cleartomark this removes the 'key' from the stack.
+%
+/ClearToKey
+{
+  0 1 count 4 sub
+  {
+    pop
+    dup 3 1 roll eq {exit} if
+  } for
+  pop
+}bind readonly def
 
 end			% pdfdict
 
