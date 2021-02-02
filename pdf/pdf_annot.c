@@ -35,6 +35,7 @@
 #include "pdf_image.h"
 #include "gxfarith.h"
 #include "pdf_mark.h"
+#include "pdf_font.h"
 
 typedef int (*annot_func)(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done);
 
@@ -1627,6 +1628,21 @@ static int pdfi_annot_draw_CL(pdf_context *ctx, pdf_dict *annot)
     return code;
 }
 
+/* Set font */
+static int
+pdfi_annot_set_font(pdf_context *ctx, const char *font, double size)
+{
+    int code = 0;
+
+    if (font != NULL) {
+        code = pdfi_font_set_internal_string(ctx, font, size);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    return code;
+}
+
 /* Process the /DA string by either running it through the interpreter
  *  or providing a bunch of defaults
  */
@@ -1634,7 +1650,6 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
 {
     int code = 0;
     pdf_string *DA = NULL;
-    const char *default_DA = "0 g /Helv 12 Tf";
 
     code = pdfi_dict_knownget_type(ctx, annot, "DA", PDF_STRING, (pdf_obj **)&DA);
     if (code < 0) goto exit;
@@ -1643,14 +1658,64 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
                                                    ctx->CurrentPageDict, false, "DA");
         if (code < 0) goto exit;
     } else {
-        /* Setup defaults if there is no DA */
-        code = pdfi_interpret_inner_content_c_string(ctx, (char *)default_DA, annot,
-                                                   ctx->CurrentPageDict, false, "DA");
+        code = pdfi_gs_setgray(ctx, 0);
+        if (code < 0) goto exit;
+        code = pdfi_annot_set_font(ctx, "Helvetica", 12.0);
         if (code < 0) goto exit;
     }
 
  exit:
     pdfi_countdown(DA);
+    return code;
+}
+
+/* Display a string */
+static int
+pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double size, const char *font,
+                        double x, double y, pdf_string *text)
+{
+    char strbuf[1000]; /* TODO: Temp hack -- allocate dynamically */
+    size_t buflen = sizeof(strbuf);
+    int code = 0;
+    char *ptr;
+
+    code = pdfi_annot_set_font(ctx, font, size);
+    if (code < 0) goto exit;
+
+    snprintf(strbuf, buflen, "%g %g Td (", x, y);
+    ptr = strbuf + strlen(strbuf);
+    strncpy(ptr, (const char *)text->data, text->length);
+    ptr += text->length;
+    *ptr++ = ')';
+    strncpy(ptr, " Tj", buflen-strlen(strbuf));
+
+    code = pdfi_interpret_inner_content_c_string(ctx, strbuf, annot,
+                                               ctx->CurrentPageDict, false, "Annot text Tj");
+    if (code < 0) goto exit;
+
+ exit:
+    return code;
+}
+
+/* Display a string formatted to fit in rect */
+static int
+pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot, double size, const char *font,
+                                  gs_rect *rect, pdf_string *text)
+{
+    double x, y;
+    int code = 0;
+
+    code = pdfi_annot_set_font(ctx, font, size);
+    if (code < 0) goto exit;
+
+    x = rect->p.x;
+    y = rect->p.y;
+
+    /* TODO: Need to deal with fitting it into the bbox, newlines, etc. */
+    code = pdfi_annot_display_text(ctx, annot, 0, NULL, x, y, text);
+    if (code < 0) goto exit;
+
+ exit:
     return code;
 }
 
@@ -1665,6 +1730,8 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     int code1 = 0;
     bool drawbackground;
     pdf_dict *BS = NULL;
+    pdf_string *Contents = NULL;
+    gs_rect annotrect;
 
     *render_done = false;
 
@@ -1672,6 +1739,9 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     if (code < 0) goto exit1;
 
     code = pdfi_annot_opacity(ctx, annot);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_Rect(ctx, annot, &annotrect);
     if (code < 0) goto exit;
 
     /* Set the (background?) color if applicable */
@@ -1728,7 +1798,14 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
 #endif
 
     /* TODO: /Rotate */
+
     /* TODO: /Contents */
+    code = pdfi_dict_knownget_type(ctx, annot, "Contents", PDF_STRING, (pdf_obj **)&Contents);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = pdfi_annot_display_formatted_text(ctx, annot, 0, NULL, &annotrect, Contents);
+        if (code < 0) goto exit;
+    }
 
     code = pdfi_annot_draw_CL(ctx, annot);
     if (code < 0) goto exit;
@@ -1740,6 +1817,7 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
  exit1:
     *render_done = true;
     pdfi_countdown(BS);
+    pdfi_countdown(Contents);
     return code;
 }
 
@@ -2221,16 +2299,6 @@ static int pdfi_annot_draw_Redact(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
     return 0;
 }
 
-/* Display a string */
-static int
-pdfi_annot_display_text(pdf_context *ctx, double size, const char *font,
-                            double x, double y, pdf_string *text)
-{
-    /* TODO: Implement this.  See pdf_draw.ps/Popup */
-    dbgmprintf(ctx->memory, "ANNOT: Rendering of text not implemented\n");
-    return 0;
-}
-
 /* Handle PopUp (see pdf_draw.ps/Popup)
  * Renders only if /Open=true
  *
@@ -2321,9 +2389,17 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     code = pdfi_dict_knownget_type(ctx, Parent, "Contents", PDF_STRING, (pdf_obj **)&Contents);
     if (code < 0) goto exit;
     if (code > 0) {
+        code = pdfi_gsave(ctx);
+        if (code < 0) goto exit;
+        need_grestore = true;
+        code = pdfi_gs_setgray(ctx, 0);
+        if (code < 0) goto exit;
         x = rect.p.x + 5;
         y = rect.q.y - 30;
-        code = pdfi_annot_display_text(ctx, 9, "Helvetica", x, y, Contents);
+        code = pdfi_annot_display_text(ctx, annot, 9, "Helvetica", x, y, Contents);
+        if (code < 0) goto exit;
+        code = pdfi_grestore(ctx);
+        need_grestore = false;
         if (code < 0) goto exit;
     }
 
@@ -2346,7 +2422,7 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     if (code > 0) {
         x = rect.p.x + 2; /* TODO: Center it based on stringwidth */
         y = rect.q.y - 11;
-        code = pdfi_annot_display_text(ctx, 9, "Helvetica", x, y, T);
+        code = pdfi_annot_display_text(ctx, annot, 9, "Helvetica", x, y, T);
         if (code < 0) goto exit;
     }
 
