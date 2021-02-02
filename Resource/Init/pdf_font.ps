@@ -1234,6 +1234,23 @@ setglobal
   { /undef_proc_warning /missing-type1-procs /readonly-op-dict }
   { currentdict exch undef } forall
 
+  % Bug703454.pdf contains a number of fonts with multiple definitions
+  % of a given glyph name in the CharStrings dict - i.e. two entries
+  % for /a - the first of which is "correct" the second is "wrong".
+  % Normal Postscript behaviour replaces the first value with the second
+  % for the given key/value pair.
+  % To handle this, *only* for Type 1 fonts embedded in PDFs, we
+  % have a special definition of "def" which won't overwrite existing
+  % values in the CharStrings dict.
+  /def
+  {
+    3 index /CharStrings eq
+    currentdict 3 index known and
+    { pstack flush pop pop }
+    { systemdict /def get exec }
+    ifelse
+  } bind executeonly def
+
 end readonly def
 
 currentdict /eexec_pdf_param_dict .undef
