@@ -38,6 +38,7 @@
 #include "gxdevsop.h"
 #include "idict.h"
 #include "iname.h"
+#include "bfont.h"
 
 #ifdef HAVE_LIBIDN
 #  include <stringprep.h>
@@ -818,7 +819,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     } else {
         push(1);
     }
-    get_zfont_glyph_name(&pdffile->ctx->get_glyph_name);
+    get_zfont_glyph_name((void **)&pdffile->ctx->get_glyph_name);
     pdffile->ctx->get_glyph_index = zpdfi_glyph_index;
 
     make_tav(op, t_pdffile, icurrent_space | a_all, pstruct, (obj_header_t *)(pdffile));
