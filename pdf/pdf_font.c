@@ -572,37 +572,32 @@ int pdfi_init_font_directory(pdf_context *ctx)
 /* Loads a (should be!) non-embedded font by name
    Only currently works for the Type 1 font set from romfs.
  */
-int pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, pdf_obj **ppdffont)
+int pdfi_load_font_by_name_string(pdf_context *ctx, const char *fontname, pdf_obj **ppdffont)
 {
-    pdf_obj *fname;
-    pdf_dict *fdict;
+    pdf_obj *fname = NULL;
+    pdf_dict *fdict = NULL;
     int code;
-    gs_font *pgsfont;
+    gs_font *pgsfont = NULL;
 
     code = pdfi_make_name(ctx, (byte *)fontname, strlen((char *)fontname), &fname);
     if (code < 0)
         return code;
     code = pdfi_dict_alloc(ctx, 1, &fdict);
-    if (code < 0) {
-        pdfi_countdown(fname);
-        return code;
-    }
+    if (code < 0)
+        goto exit;
     pdfi_countup(fdict);
     code = pdfi_dict_put(ctx, fdict, "BaseFont", fname);
-    if (code < 0) {
-        pdfi_countdown(fname);
-        pdfi_countdown(fdict);
-        return code;
-    }
-    pdfi_countdown(fname);
+    if (code < 0)
+        goto exit;
 
     code = pdfi_read_type1_font(ctx, fdict, NULL, NULL, &pgsfont);
-    if (code < 0) {
-        pdfi_countdown(fdict);
-        return code;
-    }
+    if (code < 0)
+        goto exit;
     *ppdffont = (pdf_obj *)pgsfont->client_data;
 
+ exit:
+    pdfi_countdown(fname);
+    pdfi_countdown(fdict);
     return code;
 }
 
@@ -622,4 +617,24 @@ int pdfi_set_font_internal(pdf_context *ctx, pdf_obj *fontobj, double point_size
         return code;
 
     return pdfi_gs_setfont(ctx, (gs_font *)pdffont->pfont);
+}
+
+/* Convenience function for setting font by name
+ * Keeps one ref to the font, which will be in the graphics state font ->client_data
+ */
+int pdfi_font_set_internal(pdf_context *ctx, const char *fontname, double point_size)
+{
+    int code = 0;
+    pdf_obj *font = NULL;
+
+
+    code = pdfi_load_font_by_name_string(ctx, fontname, &font);
+    if (code < 0) goto exit;
+
+    code = pdfi_set_font_internal(ctx, font, point_size);
+
+ exit:
+    if (code < 0)
+        pdfi_countdown(font); /* Keep the ref if succeeded */
+    return code;
 }
