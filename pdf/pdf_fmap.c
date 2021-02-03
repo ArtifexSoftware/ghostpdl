@@ -25,6 +25,18 @@
 #include "pdf_file.h"
 #include "pdf_fmap.h"
 
+typedef struct
+{
+    const char *keyname;
+    const char *mappedname;
+} pdfi_custom_fmap_entry;
+
+pdfi_custom_fmap_entry pdfi_custom_fmap_enties[] =
+{
+  {"Helv", "Helvetica"},
+  {NULL, NULL}
+};
+
 static int
 pdf_fontmap_open_file(pdf_context *ctx, byte **buf, int *buflen)
 {
@@ -84,6 +96,8 @@ pdf_make_fontmap(pdf_context *ctx)
     int code, fmapbuflen;
     pdf_c_stream *fmapstr = NULL;
     pdf_stream fakedict = {0};
+    pdfi_custom_fmap_entry *pcfe = pdfi_custom_fmap_enties;
+    int i;
 
     pdf_c_stream fakemainstream = {0};
 
@@ -106,6 +120,24 @@ pdf_make_fontmap(pdf_context *ctx)
             ctx->pdffontmap = (pdf_dict *)ctx->stack_top[-1];
             pdfi_countup(ctx->pdffontmap);
             pdfi_pop(ctx, 1);
+            code = 0;
+
+            /* Add our internal aliases to the fontmap. */
+            for (i = 0; pcfe[i].keyname != NULL; i++) {
+                pdf_obj *value;
+                bool k;
+
+                /* We don't want to *replace* entries */
+                if (pdfi_dict_known(ctx, ctx->pdffontmap, pcfe[i].keyname, &k) >= 0
+                    && k != true) {
+                    code = pdfi_make_name(ctx, (byte *)pcfe[i].mappedname, strlen(pcfe[i].mappedname), &value);
+                    if (code < 0)
+                        continue;
+                    /* If dict_put throws an error, we just carry on - hence the (void) */
+                    (void)pdfi_dict_put(ctx,  ctx->pdffontmap, pcfe[i].keyname, value);
+                    pdfi_countdown(value);
+                }
+            }
         }
         else {
             code = gs_note_error(gs_error_syntaxerror);
