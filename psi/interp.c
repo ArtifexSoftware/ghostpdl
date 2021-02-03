@@ -670,11 +670,12 @@ again:
      *  so we'll always find the default one. If not SAFERERRORS, only gs specific
      *  errors are in gserrordict.
      */
-    if (dict_find_string(systemdict, "gserrordict", &perrordict) <= 0 ||
-        (dict_find(perrordict, &error_name, &epref) <= 0 &&
-         (dict_find_string(systemdict, "errordict", &perrordict) <= 0 ||
-          dict_find(perrordict, &error_name, &epref) <= 0))
-        )
+    if ((dict_find_string(systemdict, "gserrordict", &perrordict) <= 0 ||
+        !r_has_type(perrordict, t_dictionary)                          ||
+        dict_find(perrordict, &error_name, &epref) <= 0)               &&
+       (dict_find_string(systemdict, "errordict", &perrordict) <= 0    ||
+        !r_has_type(perrordict, t_dictionary)                          ||
+        dict_find(perrordict, &error_name, &epref) <= 0))
         return code;            /* error name not in errordict??? */
 
     doref = *epref;
