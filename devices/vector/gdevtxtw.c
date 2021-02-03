@@ -439,16 +439,30 @@ static int merge_horizontally(gx_device_txtwrite_t *tdev)
 
             if (to->start.x - from->end.x < average_width / 2) {
                 /* consolidate fragments */
-                unsigned short *NewText;
-                float *NewWidths;
+                unsigned short *NewText = NULL;
+                float *NewWidths = NULL, *NewAdvs = NULL, *NewGlyphWidths = NULL, *NewSpanDeltaX = NULL;
 
                 NewText = (unsigned short *)gs_malloc(tdev->memory->stable_memory,
                     (from->Unicode_Text_Size + to->Unicode_Text_Size), sizeof(unsigned short), "txtwrite alloc working text buffer");
                 NewWidths = (float *)gs_malloc(tdev->memory->stable_memory,
                     (from->Unicode_Text_Size + to->Unicode_Text_Size), sizeof(float), "txtwrite alloc Widths array");
-                if (!NewText || !NewWidths) {
+                NewAdvs = (float *)gs_malloc(tdev->memory->stable_memory,
+                    (from->Unicode_Text_Size + to->Unicode_Text_Size), sizeof(float), "txtwrite alloc Advs array");
+                NewGlyphWidths = (float *)gs_malloc(tdev->memory->stable_memory,
+                    (from->Unicode_Text_Size + to->Unicode_Text_Size), sizeof(float), "txtwrite alloc GlyphWidths array");
+                NewSpanDeltaX = (float *)gs_malloc(tdev->memory->stable_memory,
+                    (from->Unicode_Text_Size + to->Unicode_Text_Size), sizeof(float), "txtwrite alloc SpanDeltaX array");
+                if (!NewText || !NewWidths || !NewAdvs || !NewGlyphWidths || !NewSpanDeltaX) {
                     if (NewText)
                         gs_free(tdev->memory, NewText, from->Unicode_Text_Size + to->Unicode_Text_Size, sizeof (unsigned short), "free working text fragment");
+                    if (NewWidths)
+                        gs_free(tdev->memory, NewWidths, from->Unicode_Text_Size + to->Unicode_Text_Size, sizeof (unsigned short), "free working text fragment");
+                    if (NewAdvs)
+                        gs_free(tdev->memory, NewAdvs, from->Unicode_Text_Size + to->Unicode_Text_Size, sizeof (unsigned short), "free working text fragment");
+                    if (NewGlyphWidths)
+                        gs_free(tdev->memory, NewGlyphWidths, from->Unicode_Text_Size + to->Unicode_Text_Size, sizeof (unsigned short), "free working text fragment");
+                    if (NewSpanDeltaX)
+                        gs_free(tdev->memory, NewSpanDeltaX, from->Unicode_Text_Size + to->Unicode_Text_Size, sizeof (unsigned short), "free working text fragment");
                     /* ran out of memory, don't consolidate */
                     from = from->next;
                     to = to->next;
@@ -463,14 +477,31 @@ static int merge_horizontally(gx_device_txtwrite_t *tdev)
                     memcpy(&NewText[from->Unicode_Text_Size], to->Unicode_Text, to->Unicode_Text_Size * sizeof(unsigned short));
                     memcpy(NewWidths, from->Widths, from->Unicode_Text_Size * sizeof(float));
                     memcpy(&NewWidths[from->Unicode_Text_Size], to->Widths, to->Unicode_Text_Size * sizeof(float));
+                    memcpy(NewAdvs, from->Advs, from->Unicode_Text_Size * sizeof(float));
+                    memcpy(&NewAdvs[from->Unicode_Text_Size], to->Advs, to->Unicode_Text_Size * sizeof(float));
+                    memcpy(NewGlyphWidths, from->GlyphWidths, from->Unicode_Text_Size * sizeof(float));
+                    memcpy(&NewGlyphWidths[from->Unicode_Text_Size], to->GlyphWidths, to->Unicode_Text_Size * sizeof(float));
+                    memcpy(NewSpanDeltaX, from->SpanDeltaX, from->Unicode_Text_Size * sizeof(float));
+                    memcpy(&NewSpanDeltaX[from->Unicode_Text_Size], to->SpanDeltaX, to->Unicode_Text_Size * sizeof(float));
+
                     gs_free(tdev->memory, from->Unicode_Text, from->Unicode_Text_Size, sizeof (unsigned short), "free consolidated text fragment");
                     gs_free(tdev->memory, to->Unicode_Text, to->Unicode_Text_Size, sizeof (unsigned short), "free consolidated text fragment");
                     gs_free(tdev->memory, from->Widths, from->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
                     gs_free(tdev->memory, to->Widths, to->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                    gs_free(tdev->memory, from->Advs, from->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                    gs_free(tdev->memory, to->Advs, to->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                    gs_free(tdev->memory, from->GlyphWidths, from->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                    gs_free(tdev->memory, to->GlyphWidths, to->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                    gs_free(tdev->memory, from->SpanDeltaX, from->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                    gs_free(tdev->memory, to->SpanDeltaX, to->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
                     gs_free(tdev->memory, to->FontName, 1, strlen(from->FontName) + 1, "free FontName");
+
                     from->Unicode_Text = NewText;
                     from->Unicode_Text_Size += to->Unicode_Text_Size;
                     from->Widths = NewWidths;
+                    from->Advs = NewAdvs;
+                    from->GlyphWidths = NewGlyphWidths;
+                    from->SpanDeltaX = NewSpanDeltaX;
 #ifdef TRACE_TXTWRITE
                     gp_fprintf(tdev->DebugFile, "After:\n\t");
                     gp_fwrite(from->Unicode_Text, sizeof(unsigned short), from->Unicode_Text_Size, tdev->DebugFile);
@@ -484,16 +515,30 @@ static int merge_horizontally(gx_device_txtwrite_t *tdev)
                 }
             } else {
                 if (to->start.x - from->end.x < average_width *2){
-                    unsigned short *NewText;
-                    float *NewWidths;
+                    unsigned short *NewText = NULL;
+                    float *NewWidths = NULL, *NewAdvs = NULL, *NewGlyphWidths = NULL, *NewSpanDeltaX = NULL;
 
                     NewText = (unsigned short *)gs_malloc(tdev->memory->stable_memory,
                         (from->Unicode_Text_Size + to->Unicode_Text_Size + 1), sizeof(unsigned short), "txtwrite alloc text state");
                     NewWidths = (float *)gs_malloc(tdev->memory->stable_memory,
                         (from->Unicode_Text_Size + to->Unicode_Text_Size + 1), sizeof(float), "txtwrite alloc Widths array");
-                    if (!NewText || !NewWidths) {
+                    NewAdvs = (float *)gs_malloc(tdev->memory->stable_memory,
+                        (from->Unicode_Text_Size + to->Unicode_Text_Size + 1), sizeof(float), "txtwrite alloc Advs array");
+                    NewGlyphWidths = (float *)gs_malloc(tdev->memory->stable_memory,
+                        (from->Unicode_Text_Size + to->Unicode_Text_Size + 1), sizeof(float), "txtwrite alloc GlyphWidths array");
+                    NewSpanDeltaX = (float *)gs_malloc(tdev->memory->stable_memory,
+                        (from->Unicode_Text_Size + to->Unicode_Text_Size + 1), sizeof(float), "txtwrite alloc SpanDeltaX array");
+                    if (!NewText || !NewWidths || !NewAdvs || !NewGlyphWidths || !NewSpanDeltaX) {
                         if (NewText)
                             gs_free(tdev->memory, NewText, from->Unicode_Text_Size + to->Unicode_Text_Size, sizeof (unsigned short), "free working text fragment");
+                        if (NewWidths)
+                            gs_free(tdev->memory, NewWidths, from->Unicode_Text_Size + to->Unicode_Text_Size, sizeof (unsigned short), "free working text fragment");
+                        if (NewAdvs)
+                            gs_free(tdev->memory, NewAdvs, from->Unicode_Text_Size + to->Unicode_Text_Size, sizeof (unsigned short), "free working text fragment");
+                        if (NewGlyphWidths)
+                            gs_free(tdev->memory, NewGlyphWidths, from->Unicode_Text_Size + to->Unicode_Text_Size, sizeof (unsigned short), "free working text fragment");
+                        if (NewSpanDeltaX)
+                            gs_free(tdev->memory, NewSpanDeltaX, from->Unicode_Text_Size + to->Unicode_Text_Size, sizeof (unsigned short), "free working text fragment");
                         /* ran out of memory, don't consolidate */
                         from = from->next;
                         to = to->next;
@@ -504,14 +549,34 @@ static int merge_horizontally(gx_device_txtwrite_t *tdev)
                         memcpy(NewWidths, from->Widths, from->Unicode_Text_Size * sizeof(float));
                         NewWidths[from->Unicode_Text_Size] = to->start.x - from->end.x;
                         memcpy(&NewWidths[from->Unicode_Text_Size + 1], to->Widths, to->Unicode_Text_Size * sizeof(float));
+                        memcpy(NewAdvs, from->Advs, from->Unicode_Text_Size * sizeof(float));
+                        NewAdvs[from->Unicode_Text_Size] = to->start.x - from->end.x;
+                        memcpy(&NewAdvs[from->Unicode_Text_Size + 1], to->Advs, to->Unicode_Text_Size * sizeof(float));
+                        memcpy(NewGlyphWidths, from->GlyphWidths, from->Unicode_Text_Size * sizeof(float));
+                        NewGlyphWidths[from->Unicode_Text_Size] = 0.0;
+                        memcpy(&NewGlyphWidths[from->Unicode_Text_Size + 1], to->GlyphWidths, to->Unicode_Text_Size * sizeof(float));
+                        memcpy(NewSpanDeltaX, from->SpanDeltaX, from->Unicode_Text_Size * sizeof(float));
+                        NewSpanDeltaX[from->Unicode_Text_Size] = 0;
+                        memcpy(&NewSpanDeltaX[from->Unicode_Text_Size + 1], to->SpanDeltaX, to->Unicode_Text_Size * sizeof(float));
+
                         gs_free(tdev->memory, from->Unicode_Text, from->Unicode_Text_Size, sizeof (unsigned short), "free consolidated text fragment");
                         gs_free(tdev->memory, to->Unicode_Text, to->Unicode_Text_Size, sizeof (unsigned short), "free consolidated text fragment");
                         gs_free(tdev->memory, from->Widths, from->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
                         gs_free(tdev->memory, to->Widths, to->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                        gs_free(tdev->memory, from->Advs, from->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                        gs_free(tdev->memory, to->Advs, to->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                        gs_free(tdev->memory, from->GlyphWidths, from->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                        gs_free(tdev->memory, to->GlyphWidths, to->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                        gs_free(tdev->memory, from->SpanDeltaX, from->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
+                        gs_free(tdev->memory, to->SpanDeltaX, to->Unicode_Text_Size, sizeof (float), "free consolidated Widths array");
                         gs_free(tdev->memory, to->FontName, 1, strlen(from->FontName) + 1, "free FontName");
+
                         from->Unicode_Text = NewText;
                         from->Unicode_Text_Size += to->Unicode_Text_Size + 1;
                         from->Widths = NewWidths;
+                        from->Advs = NewAdvs;
+                        from->GlyphWidths = NewGlyphWidths;
+                        from->SpanDeltaX = NewSpanDeltaX;
                         from->end = to->end;
                         from->next = to->next;
                         if (from->next)
@@ -1503,12 +1568,6 @@ txt_update_text_state(text_list_entry_t *ppts,
     ppts->size = size;
     ppts->matrix = tmat;
     ppts->render_mode = penum->pgs->text_rendering_mode;
-    ppts->FontName = (char *)gs_malloc(pdev->memory->stable_memory, 1,
-        font->font_name.size + 1, "txtwrite alloc font name");
-    if (!ppts->FontName)
-        return gs_note_error(gs_error_VMerror);
-    memcpy(ppts->FontName, font->font_name.chars, font->font_name.size);
-    ppts->FontName[font->font_name.size] = 0x00;
     ppts->render_mode = font->WMode;
 
     if (font->PaintType == 2 && penum->pgs->text_rendering_mode == 0)
@@ -2206,6 +2265,7 @@ txt_add_sorted_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
 static int
 txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
 {
+    gs_font *font = penum->current_font;
     text_list_entry_t *unsorted_entry, *t;
 
 #ifdef TRACE_TXTWRITE
@@ -2269,6 +2329,12 @@ txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
     memcpy(penum->text_state->GlyphWidths, penum->GlyphWidths, penum->TextBufferIndex * sizeof(float));
     memset(penum->text_state->SpanDeltaX, 0x00, penum->TextBufferIndex * sizeof(float));
     memcpy(penum->text_state->SpanDeltaX, penum->SpanDeltaX, penum->TextBufferIndex * sizeof(float));
+    penum->text_state->FontName = (char *)gs_malloc(tdev->memory->stable_memory, 1,
+        font->font_name.size + 1, "txtwrite alloc font name");
+    if (!penum->text_state->FontName)
+        return gs_note_error(gs_error_VMerror);
+    memcpy(penum->text_state->FontName, font->font_name.chars, font->font_name.size);
+    penum->text_state->FontName[font->font_name.size] = 0x00;
 
     unsorted_entry->Unicode_Text = (unsigned short *)gs_malloc(tdev->memory->stable_memory,
         penum->TextBufferIndex, sizeof(unsigned short), "txtwrite alloc sorted text buffer");
@@ -2515,12 +2581,29 @@ textw_text_release(gs_text_enum_t *pte, client_name_t cname)
         gs_free(tdev->memory, penum->TextBuffer, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
     if (penum->Widths)
         gs_free(tdev->memory, penum->Widths, sizeof(float), pte->text.size, "txtwrite free temporary widths array");
+    if (penum->Advs)
+        gs_free(tdev->memory, penum->Advs, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
+    if (penum->GlyphWidths)
+        gs_free(tdev->memory, penum->GlyphWidths, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
+    if (penum->SpanDeltaX)
+        gs_free(tdev->memory, penum->SpanDeltaX, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
     /* If this is copied away when we complete the text enumeration succesfully, then
      * we set the pointer to NULL, if we get here with it non-NULL , then there was
      * an error.
      */
-    if (penum->text_state)
+    if (penum->text_state) {
+        if (penum->text_state->Widths)
+            gs_free(tdev->memory, penum->text_state->Widths, sizeof(float), pte->text.size, "txtwrite free temporary widths array");
+        if (penum->text_state->Advs)
+            gs_free(tdev->memory, penum->text_state->Advs, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
+        if (penum->text_state->GlyphWidths)
+            gs_free(tdev->memory, penum->text_state->GlyphWidths, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
+        if (penum->text_state->SpanDeltaX)
+            gs_free(tdev->memory, penum->text_state->SpanDeltaX, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
+        if (penum->text_state->FontName)
+            gs_free(tdev->memory, penum->text_state->FontName, 1, penum->TextBufferIndex, "txtwrite free temporary font name copy");
         gs_free(tdev->memory, penum->text_state, 1, sizeof(penum->text_state), "txtwrite free text state");
+    }
 }
 
 /* This is the list of methods for the text enumerator */
