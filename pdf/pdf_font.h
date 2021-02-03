@@ -80,7 +80,7 @@ pdfi_init_font_directory(pdf_context *ctx);
    Only currently works for the Type 1 font set from romfs.
  */
 int
-pdfi_load_font_by_name_string(pdf_context *ctx, const char *fontname, pdf_obj **ppdffont);
+pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, size_t length, pdf_obj **ppdffont);
 
 /* Convenience function for using fonts created by
    pdfi_load_font_by_name_string
@@ -88,7 +88,8 @@ pdfi_load_font_by_name_string(pdf_context *ctx, const char *fontname, pdf_obj **
 int
 pdfi_set_font_internal(pdf_context *ctx, pdf_obj *fontobj, double point_size);
 
-int pdfi_font_set_internal(pdf_context *ctx, const char *fontname, double point_size);
+int pdfi_font_set_internal_string(pdf_context *ctx, const char *fontname, double point_size);
+int pdfi_font_set_internal_name(pdf_context *ctx, pdf_name *fontname, double point_size);
 
 
 #endif

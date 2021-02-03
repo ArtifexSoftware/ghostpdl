@@ -184,134 +184,127 @@ static int pdfi_gs_setfont(pdf_context *ctx, gs_font *pfont)
 int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     double point_size = 0;
-    pdf_obj *o = NULL;
+    pdf_obj *point_arg = NULL;
     int code = 0;
     pdf_dict *font_dict = NULL;
     gs_font *pfont = NULL;
+    pdf_name *fontname = NULL;
+    pdf_name *Type = NULL;
+    pdf_name *Subtype = NULL;
 
-    if (pdfi_count_stack(ctx) >= 2) {
-        o = ctx->stack_top[-1];
-        if (o->type == PDF_INT)
-            point_size = (double)((pdf_num *)o)->value.i;
-        else {
-            if (o->type == PDF_REAL)
-                point_size = ((pdf_num *)o)->value.d;
-            else {
-                code = gs_note_error(gs_error_typecheck);
-                goto Tf_error;
-            }
-        }
-        code = gs_setPDFfontsize(ctx->pgs, point_size);
-        if (code < 0)
-            goto Tf_error;
-
-        o = ctx->stack_top[-2];
-        if (o->type != PDF_NAME) {
-            code = gs_note_error(gs_error_typecheck);
-            goto Tf_error;
-        }
-
-        code = pdfi_loop_detector_mark(ctx);
-        if (code < 0)
-            goto Tf_error;
-
-        code = pdfi_find_resource(ctx, (unsigned char *)"Font", (pdf_name *)o,
-                                  stream_dict, page_dict, (pdf_obj **)&font_dict);
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        if (code < 0)
-            goto Tf_error;
-
-        o = NULL;
-
-        if (font_dict->type != PDF_DICT) {
-            pdf_font *font = (pdf_font *)font_dict;
-
-            if (font_dict->type != PDF_FONT) {
-                code = gs_note_error(gs_error_typecheck);
-                goto Tf_error;
-            }
-            /* Don't swap fonts if this is already the current font */
-            if (font->pfont != (gs_font_base *)ctx->pgs->font) {
-                code = pdfi_gs_setfont(ctx, (gs_font *)font->pfont);
-            }
-            else
-                pdfi_countdown(font_dict);
-            pdfi_pop(ctx, 2);
-            return code;
-        }
-
-        code = pdfi_dict_knownget_type(ctx, font_dict, "Type", PDF_NAME, &o);
-        if (code < 0)
-            goto Tf_error_o;
-        if (code == 0) {
-            code = gs_note_error(gs_error_undefined);
-            goto Tf_error_o;
-        }
-        if (!pdfi_name_is((const pdf_name *)o, "Font")){
-            code = gs_note_error(gs_error_typecheck);
-            goto Tf_error_o;
-        }
-        pdfi_countdown(o);
-        o = NULL;
-
-        code = pdfi_dict_knownget_type(ctx, font_dict, "Subtype", PDF_NAME, &o);
-        if (code < 0)
-            goto Tf_error_o;
-
-        if (pdfi_name_is((const pdf_name *)o, "Type0")) {
-            code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
-            if (code < 0)
-                goto Tf_error_o;
-        } else {
-            if (pdfi_name_is((const pdf_name *)o, "Type1")) {
-                code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
-                if (code < 0)
-                    goto Tf_error_o;
-            } else {
-                if (pdfi_name_is((const pdf_name *)o, "Type1C")) {
-                    code = pdfi_read_type1C_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
-                    if (code < 0)
-                        goto Tf_error_o;
-                } else {
-                    if (pdfi_name_is((const pdf_name *)o, "Type3")) {
-                        code = pdfi_read_type3_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
-                        if (code < 0)
-                            goto Tf_error_o;
-                    } else {
-                        if (pdfi_name_is((const pdf_name *)o, "TrueType")) {
-                            code = pdfi_read_truetype_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
-                        } else {
-                            code = gs_note_error(gs_error_undefined);
-                                goto Tf_error_o;
-                        }
-                    }
-                }
-            }
-        }
-
-        code = pdfi_gs_setfont(ctx, pfont);
-        if (code < 0)
-            goto Tf_error_o;
-
-        pdfi_countdown(o);
-
-        pdfi_countdown(font_dict);
-
-        pdfi_pop(ctx, 2);
-    }
-    else {
+    if (pdfi_count_stack(ctx) < 2) {
         pdfi_clearstack(ctx);
-        code = gs_note_error(gs_error_typecheck);
-        goto Tf_error;
+        return_error(gs_error_stackunderflow);
     }
-    return 0;
 
-Tf_error_o:
-    pdfi_countdown(o);
-Tf_error:
-    code = pdfi_gs_setfont(ctx, NULL);
+    /* Get refs to the args and pop them */
+    point_arg = ctx->stack_top[-1];
+    pdfi_countup(point_arg);
+    fontname = (pdf_name *)ctx->stack_top[-2];
+    pdfi_countup(fontname);
+    pdfi_pop(ctx, 2);
+
+    /* Get the point_size */
+    if (point_arg->type == PDF_INT)
+        point_size = (double)((pdf_num *)point_arg)->value.i;
+    else {
+        if (point_arg->type == PDF_REAL)
+            point_size = ((pdf_num *)point_arg)->value.d;
+        else {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit0;
+        }
+    }
+    code = gs_setPDFfontsize(ctx->pgs, point_size);
+    if (code < 0)
+        goto exit0;
+
+    /* Get the font name */
+    if (fontname->type != PDF_NAME) {
+        code = gs_note_error(gs_error_typecheck);
+        fontname = NULL;
+        goto exit0;
+    }
+
+    /* Look fontname up in the resources */
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto exit;
+    code = pdfi_find_resource(ctx, (unsigned char *)"Font", fontname,
+                              stream_dict, page_dict, (pdf_obj **)&font_dict);
+    (void)pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0)
+        goto exit;
+
+    /* Now try to render as the correct type of font */
+    if (font_dict->type != PDF_DICT) {
+        pdf_font *font = (pdf_font *)font_dict;
+
+        if (font_dict->type != PDF_FONT) {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
+        /* Don't swap fonts if this is already the current font */
+        if (font->pfont != (gs_font_base *)ctx->pgs->font)
+            code = pdfi_gs_setfont(ctx, (gs_font *)font->pfont);
+        else
+            code = 0;
+        font_dict = NULL;
+        goto exit;
+    }
+
+    code = pdfi_dict_get_type(ctx, font_dict, "Type", PDF_NAME, (pdf_obj **)&Type);
+    if (code < 0)
+        goto exit;
+    if (!pdfi_name_is(Type, "Font")){
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
+    }
+
+    code = pdfi_dict_get_type(ctx, font_dict, "Subtype", PDF_NAME, (pdf_obj **)&Subtype);
+    if (code < 0)
+        goto exit;
+
+    if (pdfi_name_is(Subtype, "Type0")) {
+        code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
+        if (code < 0)
+            goto exit;
+    } else if (pdfi_name_is(Subtype, "Type1")) {
+        code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
+        if (code < 0)
+            goto exit;
+    } else if (pdfi_name_is(Subtype, "Type1C")) {
+        code = pdfi_read_type1C_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
+        if (code < 0)
+            goto exit;
+    } else if (pdfi_name_is(Subtype, "Type3")) {
+        code = pdfi_read_type3_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
+        if (code < 0)
+            goto exit;
+    } else if (pdfi_name_is(Subtype, "TrueType")) {
+        code = pdfi_read_truetype_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
+        if (code < 0)
+            goto exit;
+    } else {
+        code = gs_note_error(gs_error_undefined);
+        goto exit;
+    }
+
+    /* Everything looks good, set the font */
+    code = pdfi_gs_setfont(ctx, pfont);
+    if (code < 0)
+        goto exit;
+
+ exit:
+    /* If we failed to load font, try to load an internal one */
+    if (code < 0 && fontname)
+        code = pdfi_font_set_internal_name(ctx, fontname, point_size);
+ exit0:
+    pdfi_countdown(Type);
+    pdfi_countdown(Subtype);
     pdfi_countdown(font_dict);
-    pdfi_clearstack(ctx);
+    pdfi_countdown(fontname);
+    pdfi_countdown(point_arg);
     return code;
 }
 
@@ -572,14 +565,15 @@ int pdfi_init_font_directory(pdf_context *ctx)
 /* Loads a (should be!) non-embedded font by name
    Only currently works for the Type 1 font set from romfs.
  */
-int pdfi_load_font_by_name_string(pdf_context *ctx, const char *fontname, pdf_obj **ppdffont)
+int pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, size_t length,
+                                  pdf_obj **ppdffont)
 {
     pdf_obj *fname = NULL;
     pdf_dict *fdict = NULL;
     int code;
     gs_font *pgsfont = NULL;
 
-    code = pdfi_make_name(ctx, (byte *)fontname, strlen((char *)fontname), &fname);
+    code = pdfi_make_name(ctx, (byte *)fontname, length, &fname);
     if (code < 0)
         return code;
     code = pdfi_dict_alloc(ctx, 1, &fdict);
@@ -622,13 +616,14 @@ int pdfi_set_font_internal(pdf_context *ctx, pdf_obj *fontobj, double point_size
 /* Convenience function for setting font by name
  * Keeps one ref to the font, which will be in the graphics state font ->client_data
  */
-int pdfi_font_set_internal(pdf_context *ctx, const char *fontname, double point_size)
+static int pdfi_font_set_internal_inner(pdf_context *ctx, const byte *fontname, size_t length,
+                                        double point_size)
 {
     int code = 0;
     pdf_obj *font = NULL;
 
 
-    code = pdfi_load_font_by_name_string(ctx, fontname, &font);
+    code = pdfi_load_font_by_name_string(ctx, fontname, length, &font);
     if (code < 0) goto exit;
 
     code = pdfi_set_font_internal(ctx, font, point_size);
@@ -637,4 +632,14 @@ int pdfi_font_set_internal(pdf_context *ctx, const char *fontname, double point_
     if (code < 0)
         pdfi_countdown(font); /* Keep the ref if succeeded */
     return code;
+}
+
+int pdfi_font_set_internal_string(pdf_context *ctx, const char *fontname, double point_size)
+{
+    return pdfi_font_set_internal_inner(ctx, (const byte *)fontname, strlen(fontname), point_size);
+}
+
+int pdfi_font_set_internal_name(pdf_context *ctx, pdf_name *fontname, double point_size)
+{
+    return pdfi_font_set_internal_inner(ctx, fontname->data, fontname->length, point_size);
 }

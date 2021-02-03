@@ -300,11 +300,6 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     current_font = pdfi_get_current_pdf_font(ctx);
 
     if (current_font == NULL) {
-        /* This should be an error, but until we have all the font
-         * types available we can get a NULL font even though there's
-         * nthing wrong with the file, so for now don't throw an error.
-         */
-        return 0;
         return_error(gs_error_invalidfont);
     }
 
