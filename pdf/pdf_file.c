@@ -1093,7 +1093,10 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *
         min_size = EODString->length;
     }
 
-    state.count = EODCount;
+    if (EODCount > 0)
+        state.count = EODCount - source->unread_size;
+    else
+        state.count = EODCount;
 
     code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_SFD_template, (const stream_state *)&state, ctx->memory->non_gc_memory, &new_s);
     if (code < 0)
@@ -1101,6 +1104,11 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *
 
     code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
     new_s->strm = source->s;
+    if (source->unread_size != 0) {
+        (*new_stream)->unread_size = source->unread_size;
+        memcpy((*new_stream)->unget_buffer, source->unget_buffer, source->unread_size);
+        source->unread_size = 0;
+    }
     return code;
 }
 
