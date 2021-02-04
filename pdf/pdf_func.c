@@ -734,9 +734,16 @@ static int pdfi_free_function_3(pdf_context *ctx, gs_function_t *pfn)
 static int pdfi_free_function_special(pdf_context *ctx, gs_function_t *pfn)
 {
     switch(pfn->head.type) {
+#if 0
+    /* Before commit 3f2408d5ac786ac1c0a837b600f4ef3be9be0332
+     * https://git.ghostscript.com/?p=ghostpdl.git;a=commit;h=3f2408d5ac786ac1c0a837b600f4ef3be9be0332
+     * we needed to close the data stream and free the memory. That is now
+     * performed by the graphics library so we don't need to do this any more.
+     */
     case 0:
         pdfi_free_function_0(ctx, pfn);
         break;
+#endif
     case 3:
         pdfi_free_function_3(ctx, pfn);
         break;
