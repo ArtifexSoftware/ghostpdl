@@ -82,7 +82,6 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pdf_name *n = NULL;
     pdf_obj *basefont = NULL;
     pdf_obj *tounicode = NULL;
-    int cidftype;
     const char *ffstrings[] = {"FontFile", "FontFile2", "FontFile3"};
     int ff;
     pdf_dict *fontdesc = NULL;
@@ -127,15 +126,6 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto error;
 
-    if (n->type != PDF_NAME || n->length != 12 || memcmp(n->data, "CIDFontType", 11) != 0) {
-        pdfi_countdown(n);
-        code = gs_note_error(gs_error_invalidfont);
-        goto error;
-    }
-    /* cidftype is ignored for now, but we may need to know it when
-       subsitutions are allowed
-     */
-    cidftype = n->data[11] - 48;
     pdfi_countdown(n);
 
     code = pdfi_dict_get(ctx, font_dict, "BaseFont", (pdf_obj **)&basefont);

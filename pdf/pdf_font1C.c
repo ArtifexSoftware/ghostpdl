@@ -24,10 +24,5 @@
 
 int pdfi_read_type1C_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **pfont)
 {
-    int code;
-    byte *fbuf = NULL;
-    int fbuflen = 0;
-    pdf_font *ppfont = NULL;
-
     return_error(gs_error_invalidfont);
 }
