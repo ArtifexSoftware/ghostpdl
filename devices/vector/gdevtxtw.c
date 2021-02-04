@@ -1567,7 +1567,6 @@ txt_update_text_state(text_list_entry_t *ppts,
 
     ppts->size = size;
     ppts->matrix = tmat;
-    ppts->render_mode = penum->pgs->text_rendering_mode;
     ppts->render_mode = font->WMode;
 
     if (font->PaintType == 2 && penum->pgs->text_rendering_mode == 0)
