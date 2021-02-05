@@ -705,6 +705,7 @@ sub_function_error:
 
 static int pdfi_free_function_special(pdf_context *ctx, gs_function_t *pfn);
 
+#if 0
 /* For type 0 functions, need to free up the data associated with the stream
  * that it was using.  This doesn't get freed in the gs_function_free() code.
  */
@@ -716,6 +717,7 @@ static int pdfi_free_function_0(pdf_context *ctx, gs_function_t *pfn)
     gs_free_object(ctx->memory, params->DataSource.data.strm, "pdfi_free_function");
     return 0;
 }
+#endif
 
 /* For type 3 functions, it has an array of functions that might need special handling.
  */
