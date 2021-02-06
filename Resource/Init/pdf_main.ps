@@ -3117,7 +3117,22 @@ currentdict /PDF2PS_matrix_key undef
 /pageusesoverprint {		% <pagedict> pageusesoverprint <bool>
   dup //false exch {
     4 dict 1 index resourceusesoverprint { pop not exit } if
-    /Parent knownoget not { exit } if
+    %% Check the current dictionary and its Parent (if any) to see
+    %% if they both have stored object numbers. If they do then
+    %% check the numbers, don't allow self-references.
+    dup /Parent knownoget not { pop exit }
+    {
+      exch /.gs.pdfobj# .knownget
+      {
+        1 index /.gs.pdfobj# .knownget {
+          eq {
+            pop exit
+          }if
+        }{
+          pop
+        }ifelse
+      }if
+    } ifelse
   } loop
   % Also check for transparency in the annotation (if not in resources).
   { pop //true } { annotsuseoverprint } ifelse
