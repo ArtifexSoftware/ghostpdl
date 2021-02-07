@@ -1956,25 +1956,41 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
         if (pdev->PDFA !=0) {
             const gs_param_string *p = pairs + i + 1;
-            if (p->size > 9 && memcmp(p->data, "(\\376\\377", 9) == 0) {
+            bool abort = false;
+
+            if (p->size > 9 && memcmp(p->data, "(\\376\\377", 9) == 0)
+                abort = true;
+            else {
+                int j;
+                for (j = 0;j < p->size;j++)
+                {
+                    if (p->data[j] == '\\' || p->data[j] > 0x7F || p->data[j] < 0x20)
+                    {
+                        abort = true;
+                        break;
+                    }
+                }
+            }
+            if (abort == true)
+            {
                 /* Can't handle UTF16BE in PDF/A1, so abort this pair or abort PDF/A or just abort,
                  * depending on PDFACompatibilityPolicy
                  */
                 switch (pdev->PDFACompatibilityPolicy) {
                     case 0:
                         emprintf(pdev->memory,
-                         "UTF16BE text string detected in DOCINFO cannot be represented in XMP for PDF/A1, reverting to normal PDF output\n");
+                         "Text string detected in DOCINFO cannot be represented in XMP for PDF/A1, reverting to normal PDF output\n");
                         pdev->AbortPDFAX = true;
                         pdev->PDFX = 0;
                         break;
                     case 1:
                         emprintf(pdev->memory,
-                         "UTF16BE text string detected in DOCINFO cannot be represented in XMP for PDF/A1, discarding DOCINFO\n");
+                         "Text string detected in DOCINFO cannot be represented in XMP for PDF/A1, discarding DOCINFO\n");
                         continue;
                         break;
                     case 2:
                         emprintf(pdev->memory,
-                         "UTF16BE text string detected in DOCINFO cannot be represented in XMP for PDF/A1, aborting conversion.\n");
+                         "Text string detected in DOCINFO cannot be represented in XMP for PDF/A1, aborting conversion.\n");
                         /* If we don't return a fatal error then zputdeviceparams simply ignores it (!) */
                         return_error(gs_error_Fatal);
                         break;
