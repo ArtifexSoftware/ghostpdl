@@ -56,8 +56,8 @@ int fill_domain_from_dict(pdf_context *ctx, float *parray, int size, pdf_dict *d
 int fill_float_array_from_dict(pdf_context *ctx, float *parray, int size, pdf_dict *dict, const char *Key);
 int fill_bool_array_from_dict(pdf_context *ctx, bool *parray, int size, pdf_dict *dict, const char *Key);
 int fill_matrix_from_dict(pdf_context *ctx, float *parray, pdf_dict *dict);
-int make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict, const char *Key);
-int make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, const char *Key);
+int pdfi_make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict, const char *Key);
+int pdfi_make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, const char *Key);
 int pdfi_dict_copy(pdf_context *ctx, pdf_dict *target, pdf_dict *source);
 int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index);
 int pdfi_dict_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index);

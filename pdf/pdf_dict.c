@@ -641,7 +641,7 @@ int fill_matrix_from_dict(pdf_context *ctx, float *parray, pdf_dict *dict)
 }
 
 /* Returns < 0 for error or the number of entries allocated */
-int make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict, const char *Key)
+int pdfi_make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict, const char *Key)
 {
     int code, i;
     pdf_array *a = NULL;
@@ -678,7 +678,7 @@ int make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict,
     return array_size;
 }
 
-int make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, const char *Key)
+int pdfi_make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, const char *Key)
 {
     int code, i;
     pdf_array *a = NULL;

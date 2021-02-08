@@ -426,7 +426,7 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
         goto function_0_error;
     params.BitsPerSample = temp;
 
-    code = make_float_array_from_dict(ctx, (float **)&params.Encode, function_dict, "Encode");
+    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Encode, function_dict, "Encode");
     if (code < 0) {
         if (code == gs_error_undefined)
             code = 2 * params.m;
@@ -438,7 +438,7 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
         goto function_0_error;
     }
 
-    code = make_float_array_from_dict(ctx, (float **)&params.Decode, function_dict, "Decode");
+    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Decode, function_dict, "Decode");
     if (code < 0) {
         if (code == gs_error_undefined)
             code = 2 * params.n;
@@ -450,7 +450,7 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
         goto function_0_error;
     }
 
-    code = make_int_array_from_dict(ctx, (int **)&params.Size, function_dict, "Size");
+    code = pdfi_make_int_array_from_dict(ctx, (int **)&params.Size, function_dict, "Size");
     if (code != params.m) {
         if (code > 0)
             code = gs_error_rangecheck;
@@ -508,12 +508,12 @@ pdfi_build_function_2(pdf_context *ctx, gs_function_params_t * mnDR,
         return code;
     params.N = (float)temp;
 
-    code = make_float_array_from_dict(ctx, (float **)&params.C0, function_dict, "C0");
+    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.C0, function_dict, "C0");
     if (code < 0 && code != gs_error_undefined)
         return code;
     n0 = code;
 
-    code = make_float_array_from_dict(ctx, (float **)&params.C1, function_dict, "C1");
+    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.C1, function_dict, "C1");
     if (code < 0 && code != gs_error_undefined)
         goto function_2_error;
 
@@ -581,11 +581,11 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
             goto function_3_error;
     }
 
-    code = make_float_array_from_dict(ctx, (float **)&params.Bounds, function_dict, "Bounds");
+    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Bounds, function_dict, "Bounds");
     if (code < 0)
         goto function_3_error;
 
-    code = make_float_array_from_dict(ctx, (float **)&params.Encode, function_dict, "Encode");
+    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Encode, function_dict, "Encode");
     if (code < 0)
         goto function_3_error;
 
@@ -630,7 +630,7 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     memset(&params, 0x00, sizeof(gs_function_params_t));
 
     /* First gather all the entries common to all functions */
-    code = make_float_array_from_dict(ctx, (float **)&params.Domain, stream_dict, "Domain");
+    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Domain, stream_dict, "Domain");
     if (code < 0)
         return code;
 
@@ -661,7 +661,7 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
 
     params.m = code >> 1;
 
-    code = make_float_array_from_dict(ctx, (float **)&params.Range, stream_dict, "Range");
+    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Range, stream_dict, "Range");
     if (code < 0 && code != gs_error_undefined)
         goto sub_function_error;
     else {
