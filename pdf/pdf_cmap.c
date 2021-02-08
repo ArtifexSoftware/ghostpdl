@@ -50,6 +50,7 @@ static int cmap_usecmap_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte 
         }
         code = pdfi_name_alloc(pdficmap->ctx, nstr, len, (pdf_obj **)&n);
         if (code >= 0) {
+            pdfi_countup(n);
             code = pdfi_read_cmap(pdficmap->ctx, (pdf_obj *)n, &upcmap);
             if (code >= 0) {
                 gx_code_space_range_t * ranges =

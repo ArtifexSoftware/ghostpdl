@@ -748,6 +748,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             code = pdfi_name_alloc(ctx, (byte *)"trailer", 6, (pdf_obj **)&EODString);
             if (code < 0)
                 goto error;
+            pdfi_countup(EODString);
 
             code = pdfi_apply_SubFileDecode_filter(ctx, 0, EODString, ctx->main_stream, &SubFile_stream, false);
             if (code < 0) {

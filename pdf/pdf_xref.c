@@ -246,6 +246,8 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
                 pdfi_countdown(DP);
                 return code;
             }
+            pdfi_countup(name);
+
             code = pdfi_dict_delete_pair(ctx, DP, (pdf_name *)name);
             pdfi_countdown(name);
             if (code < 0) {

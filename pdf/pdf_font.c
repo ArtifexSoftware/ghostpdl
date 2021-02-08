@@ -378,6 +378,7 @@ static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Enco
         code = pdfi_name_alloc(ctx, (byte *)str.data, str.size, (pdf_obj **)&n);
         if (code < 0)
             return code;
+        pdfi_countup(n);
         code = pdfi_array_put(ctx, Encoding, (uint64_t)i, (pdf_obj *)n);
         pdfi_countdown(n);
         if (code < 0)
@@ -418,6 +419,7 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Enco
                 code = pdfi_name_alloc(ctx, (byte *)"StandardEncoding", 16, (pdf_obj **)&n);
                 if (code < 0)
                     return code;
+                pdfi_countup(n);
             }
             code = pdfi_build_Encoding(ctx, n, (pdf_array *)*Encoding);
             if (code < 0) {
@@ -576,6 +578,7 @@ int pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, size_t
     code = pdfi_name_alloc(ctx, (byte *)fontname, length, &fname);
     if (code < 0)
         return code;
+    pdfi_countup(fname);
     code = pdfi_dict_alloc(ctx, 1, &fdict);
     if (code < 0)
         goto exit;

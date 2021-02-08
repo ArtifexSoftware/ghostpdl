@@ -549,6 +549,8 @@ static int ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *
                 pdf_name *pname;
                 code = pdfi_name_alloc(s->pdfi_ctx, (byte *)s->cur[0].val.name, s->cur[0].size, (pdf_obj **)&pname);
                 if (code >= 0) {
+                    pdfi_countup(pname);
+
                     code = pdfi_create_Encoding(s->pdfi_ctx, (pdf_obj *)pname, (pdf_obj **)&new_enc);
                     if (code >= 0) {
                         pdfi_countdown(priv->u.t1.Encoding);
@@ -570,6 +572,7 @@ static int ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *
                         code = pdfi_name_alloc(s->pdfi_ctx, (byte *)nm, nlen, (pdf_obj **)&n);
                         if (code < 0)
                             break;
+                        pdfi_countup(n);
                         code = pdfi_array_put(s->pdfi_ctx, new_enc, (uint64_t)i, (pdf_obj *)n);
                         pdfi_countdown(n);
                         if (code < 0)
@@ -856,6 +859,7 @@ static int pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byt
                     (void)pdf_ps_stack_pop(s, 2);
                     return code;
                 }
+                pdfi_countup(key);
 
                 if (buf + size < bufend) {
                     code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, size, (pdf_obj **)&str);

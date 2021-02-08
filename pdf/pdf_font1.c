@@ -52,6 +52,8 @@ pdfi_t1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_data_t *pgd)
         code = gs_c_glyph_name(glyph, &str);
         if (code >= 0) {
             code = pdfi_name_alloc(pdffont1->ctx, (byte *)str.data, str.size, (pdf_obj **)&glyphname);
+            if (code >= 0)
+                pdfi_countup(glyphname);
         }
     }
     else {
@@ -466,6 +468,10 @@ int pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
 
             pdfi_countdown(mapname);
             code = pdfi_name_alloc(ctx, (byte *)"Helvetica", 9, &defname);
+            if (code < 0)
+                goto error;
+
+            pdfi_countup(defname);
             code = pdf_fontmap_lookup_font(ctx, (pdf_name *)defname, &mapname);
             pdfi_countdown(defname);
             if (code < 0) return code; /* Done can't carry on! */

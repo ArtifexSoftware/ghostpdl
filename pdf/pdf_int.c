@@ -1030,7 +1030,6 @@ int pdfi_name_alloc(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
     code = pdfi_object_alloc(ctx, PDF_NAME, size, o);
     if (code < 0)
         return code;
-    pdfi_countup(*o);
 
     memcpy(((pdf_name *)*o)->data, n, size);
 

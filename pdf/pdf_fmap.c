@@ -133,6 +133,7 @@ pdf_make_fontmap(pdf_context *ctx)
                     code = pdfi_name_alloc(ctx, (byte *)pcfe[i].mappedname, strlen(pcfe[i].mappedname), &value);
                     if (code < 0)
                         continue;
+                    pdfi_countup(value);
                     /* If dict_put throws an error, we just carry on - hence the (void) */
                     (void)pdfi_dict_put(ctx,  ctx->pdffontmap, pcfe[i].keyname, value);
                     pdfi_countdown(value);

@@ -1213,6 +1213,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                 code = pdfi_name_alloc(ctx, (byte *)color_str, strlen(color_str), &ColorSpace);
                 if (code < 0)
                     goto cleanupExit;
+                pdfi_countup(ColorSpace);
             }
         } else {
             /* Assume DeviceRGB colorspace */
@@ -1221,6 +1222,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
             code = pdfi_name_alloc(ctx, (byte *)"DeviceRGB", strlen("DeviceRGB"), &ColorSpace);
             if (code < 0)
                 goto cleanupExit;
+            pdfi_countup(ColorSpace);
         }
     }
 

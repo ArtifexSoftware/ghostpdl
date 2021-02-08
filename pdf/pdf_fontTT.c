@@ -245,6 +245,10 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     code = pdfi_dict_get(ctx, font_dict, "Encoding", &obj);
     if (code < 0)
         code = pdfi_name_alloc(ctx, (byte *)"MacRomanEncoding", 16, (pdf_obj **)&obj);
+    if (code >= 0)
+        pdfi_countup(obj);
+    else
+        goto error;
 
     code = pdfi_create_Encoding(ctx, obj, (pdf_obj **)&font->Encoding);
     if (code < 0)

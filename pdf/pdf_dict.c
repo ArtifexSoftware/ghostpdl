@@ -794,6 +794,7 @@ int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value
     code = pdfi_name_alloc(ctx, (byte *)Key, strlen(Key), &key);
     if (code < 0)
         return code;
+    pdfi_countup(key);
 
     code = pdfi_dict_put_obj(ctx, d, key, value);
     pdfi_countdown(key); /* get rid of extra ref */
@@ -834,6 +835,7 @@ int pdfi_dict_put_name(pdf_context *ctx, pdf_dict *d, const char *key, const cha
     code = pdfi_name_alloc(ctx, (byte *)name, strlen(name), &obj);
     if (code < 0)
         return code;
+    pdfi_countup(obj);
 
     code = pdfi_dict_put(ctx, d, key, obj);
     pdfi_countdown(obj); /* get rid of extra ref */

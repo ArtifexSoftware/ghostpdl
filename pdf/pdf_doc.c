@@ -293,6 +293,8 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
             code = pdfi_name_alloc(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key);
             if (code < 0)
                 goto errorExit;
+            pdfi_countup(Key);
+
             code = pdfi_dict_put_obj(ctx, leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
             if (code < 0)
                 goto errorExit;
