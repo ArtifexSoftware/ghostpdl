@@ -375,7 +375,7 @@ static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Enco
     for (i=0;i<256;i++) {
         temp = gs_c_known_encode(i, gs_encoding);
         gs_c_glyph_name(temp, &str);
-        code = pdfi_make_name(ctx, (byte *)str.data, str.size, (pdf_obj **)&n);
+        code = pdfi_name_alloc(ctx, (byte *)str.data, str.size, (pdf_obj **)&n);
         if (code < 0)
             return code;
         code = pdfi_array_put(ctx, Encoding, (uint64_t)i, (pdf_obj *)n);
@@ -415,7 +415,7 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Enco
 
             code = pdfi_dict_get(ctx, (pdf_dict *)pdf_Encoding, "BaseEncoding", (pdf_obj **)&n);
             if (code < 0) {
-                code = pdfi_make_name(ctx, (byte *)"StandardEncoding", 16, (pdf_obj **)&n);
+                code = pdfi_name_alloc(ctx, (byte *)"StandardEncoding", 16, (pdf_obj **)&n);
                 if (code < 0)
                     return code;
             }
@@ -573,7 +573,7 @@ int pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, size_t
     int code;
     gs_font *pgsfont = NULL;
 
-    code = pdfi_make_name(ctx, (byte *)fontname, length, &fname);
+    code = pdfi_name_alloc(ctx, (byte *)fontname, length, &fname);
     if (code < 0)
         return code;
     code = pdfi_dict_alloc(ctx, 1, &fdict);

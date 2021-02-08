@@ -101,7 +101,7 @@ int pdfi_dict_delete(pdf_context *ctx, pdf_dict *d, const char *str)
 int pdfi_dict_alloc(pdf_context *ctx, uint64_t size, pdf_dict **d)
 {
     *d = NULL;
-    return pdfi_alloc_object(ctx, PDF_DICT, size, (pdf_obj **)d);
+    return pdfi_object_alloc(ctx, PDF_DICT, size, (pdf_obj **)d);
 }
 
 int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen)
@@ -791,7 +791,7 @@ int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value
     int code;
     pdf_obj *key = NULL;
 
-    code = pdfi_make_name(ctx, (byte *)Key, strlen(Key), &key);
+    code = pdfi_name_alloc(ctx, (byte *)Key, strlen(Key), &key);
     if (code < 0)
         return code;
 
@@ -805,7 +805,7 @@ int pdfi_dict_put_int(pdf_context *ctx, pdf_dict *d, const char *key, int64_t va
     int code;
     pdf_num *obj;
 
-    code = pdfi_alloc_object(ctx, PDF_INT, 0, (pdf_obj **)&obj);
+    code = pdfi_object_alloc(ctx, PDF_INT, 0, (pdf_obj **)&obj);
     obj->value.i = value;
     if (code < 0)
         return code;
@@ -818,7 +818,7 @@ int pdfi_dict_put_bool(pdf_context *ctx, pdf_dict *d, const char *key, bool valu
     int code;
     pdf_bool *obj = NULL;
 
-    code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_obj **)&obj);
+    code = pdfi_object_alloc(ctx, PDF_BOOL, 0, (pdf_obj **)&obj);
     if (code < 0)
         return code;
 
@@ -831,7 +831,7 @@ int pdfi_dict_put_name(pdf_context *ctx, pdf_dict *d, const char *key, const cha
     int code;
     pdf_obj *obj = NULL;
 
-    code = pdfi_make_name(ctx, (byte *)name, strlen(name), &obj);
+    code = pdfi_name_alloc(ctx, (byte *)name, strlen(name), &obj);
     if (code < 0)
         return code;
 

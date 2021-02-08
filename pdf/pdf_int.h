@@ -25,7 +25,7 @@ int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s);
 int pdfi_skip_comment(pdf_context *ctx, pdf_c_stream *s);
 int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen);
 
-int pdfi_make_name(pdf_context *ctx, byte *key, uint32_t size, pdf_obj **o);
+int pdfi_name_alloc(pdf_context *ctx, byte *key, uint32_t size, pdf_obj **o);
 
 int pdfi_read_dict(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen);
 

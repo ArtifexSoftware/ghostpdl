@@ -1210,7 +1210,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                 }
 
                 /* Make a ColorSpace for the name */
-                code = pdfi_make_name(ctx, (byte *)color_str, strlen(color_str), &ColorSpace);
+                code = pdfi_name_alloc(ctx, (byte *)color_str, strlen(color_str), &ColorSpace);
                 if (code < 0)
                     goto cleanupExit;
             }
@@ -1218,7 +1218,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
             /* Assume DeviceRGB colorspace */
             dmprintf(ctx->memory, "**** Error: image has no /ColorSpace key; assuming /DeviceRGB.\n");
             ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
-            code = pdfi_make_name(ctx, (byte *)"DeviceRGB", strlen("DeviceRGB"), &ColorSpace);
+            code = pdfi_name_alloc(ctx, (byte *)"DeviceRGB", strlen("DeviceRGB"), &ColorSpace);
             if (code < 0)
                 goto cleanupExit;
         }
@@ -1274,7 +1274,7 @@ pdfi_make_smask_dict(pdf_context *ctx, pdf_stream *image_stream, pdfi_image_info
     if (code < 0) goto exit;
 
     /* Make a new stream object and a dict for it */
-    code = pdfi_alloc_object(ctx, PDF_STREAM, 0, (pdf_obj **)&fake_smask);
+    code = pdfi_object_alloc(ctx, PDF_STREAM, 0, (pdf_obj **)&fake_smask);
     if (code < 0) goto exit;
     pdfi_countup(fake_smask);
 

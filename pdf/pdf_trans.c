@@ -113,11 +113,11 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     /* If /Processed not in the dict, put it there */
     if (code == 0) {
         /* the cleanup at end of this routine assumes Processed has a ref */
-        code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_obj **)&Processed);
+        code = pdfi_object_alloc(ctx, PDF_BOOL, 0, (pdf_obj **)&Processed);
         if (code < 0)
             goto exit;
         Processed->value = false;
-        /* pdfi_alloc_object() doesn't grab a ref */
+        /* pdfi_object_alloc() doesn't grab a ref */
         pdfi_countup(Processed);
         code = pdfi_dict_put(ctx, SMask, "Processed", (pdf_obj *)Processed);
         if (code < 0)

@@ -241,7 +241,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
         }
         if (code > 0 && f != (double)1)
         {
-            code = pdfi_make_name(ctx, (byte *)"Colors", 6, &name);
+            code = pdfi_name_alloc(ctx, (byte *)"Colors", 6, &name);
             if (code < 0) {
                 pdfi_countdown(DP);
                 return code;

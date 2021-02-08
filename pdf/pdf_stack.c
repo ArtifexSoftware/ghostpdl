@@ -81,7 +81,7 @@ int pdfi_mark_stack(pdf_context *ctx, pdf_obj_type type)
     if (type != PDF_ARRAY_MARK && type != PDF_DICT_MARK && type != PDF_PROC_MARK)
         return_error(gs_error_typecheck);
 
-    code = pdfi_alloc_object(ctx, type, 0, &o);
+    code = pdfi_object_alloc(ctx, type, 0, &o);
     code = pdfi_push(ctx, o);
     return code;
 }

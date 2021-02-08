@@ -223,9 +223,9 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     } while(1);
 
     if (real && !malformed)
-        code = pdfi_alloc_object(ctx, PDF_REAL, 0, (pdf_obj **)&num);
+        code = pdfi_object_alloc(ctx, PDF_REAL, 0, (pdf_obj **)&num);
     else
-        code = pdfi_alloc_object(ctx, PDF_INT, 0, (pdf_obj **)&num);
+        code = pdfi_object_alloc(ctx, PDF_INT, 0, (pdf_obj **)&num);
     if (code < 0)
         return code;
 
@@ -335,7 +335,7 @@ static int pdfi_read_name(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_n
         }
     } while(1);
 
-    code = pdfi_alloc_object(ctx, PDF_NAME, index, (pdf_obj **)&name);
+    code = pdfi_object_alloc(ctx, PDF_NAME, index, (pdf_obj **)&name);
     if (code < 0) {
         gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
         return code;
@@ -430,7 +430,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, ">");
 
-    code = pdfi_alloc_object(ctx, PDF_STRING, index, (pdf_obj **)&string);
+    code = pdfi_object_alloc(ctx, PDF_STRING, index, (pdf_obj **)&string);
     if (code < 0)
         goto exit;
     memcpy(string->data, Buffer, index);
@@ -617,7 +617,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
         index++;
     } while(1);
 
-    code = pdfi_alloc_object(ctx, PDF_STRING, index, (pdf_obj **)&string);
+    code = pdfi_object_alloc(ctx, PDF_STRING, index, (pdf_obj **)&string);
     if (code < 0) {
         gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
         return code;
@@ -737,7 +737,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     /* NB The code below uses 'Buffer', not the data stored in keyword->data to compare strings */
     Buffer[index] = 0x00;
 
-    code = pdfi_alloc_object(ctx, PDF_KEYWORD, index, (pdf_obj **)&keyword);
+    code = pdfi_object_alloc(ctx, PDF_KEYWORD, index, (pdf_obj **)&keyword);
     if (code < 0)
         return code;
 
@@ -779,7 +779,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
                 obj_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
                 pdfi_pop(ctx, 1);
 
-                code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&o);
+                code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&o);
                 if (code < 0)
                     return code;
 
@@ -827,7 +827,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
 
                 pdfi_countdown(keyword);
 
-                code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_obj **)&o);
+                code = pdfi_object_alloc(ctx, PDF_BOOL, 0, (pdf_obj **)&o);
                 if (code < 0)
                     return code;
 
@@ -852,7 +852,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
 
                 pdfi_countdown(keyword);
 
-                code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_obj **)&o);
+                code = pdfi_object_alloc(ctx, PDF_BOOL, 0, (pdf_obj **)&o);
                 if (code < 0)
                     return code;
 
@@ -872,7 +872,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
 
                 pdfi_countdown(keyword);
 
-                code = pdfi_alloc_object(ctx, PDF_NULL, 0, &o);
+                code = pdfi_object_alloc(ctx, PDF_NULL, 0, &o);
                 if (code < 0)
                     return code;
                 o->indirect_num = indirect_num;
@@ -1022,12 +1022,12 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
  * caller need not increment the reference count to the object, but must decrement
  * it (pdf_countdown) before exiting.
  */
-int pdfi_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
+int pdfi_name_alloc(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
 {
     int code;
     *o = NULL;
 
-    code = pdfi_alloc_object(ctx, PDF_NAME, size, o);
+    code = pdfi_object_alloc(ctx, PDF_NAME, size, o);
     if (code < 0)
         return code;
     pdfi_countup(*o);
@@ -1061,7 +1061,7 @@ static int search_table_3(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
 
     for (i = 0; i < 5; i++) {
         if (memcmp(str, op_table_3[i], 3) == 0) {
-            code = pdfi_alloc_object(ctx, PDF_KEYWORD, 3, (pdf_obj **)key);
+            code = pdfi_object_alloc(ctx, PDF_KEYWORD, 3, (pdf_obj **)key);
             if (code < 0)
                 return code;
             memcpy((*key)->data, str, 3);
@@ -1079,7 +1079,7 @@ static int search_table_2(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
 
     for (i = 0; i < 39; i++) {
         if (memcmp(str, op_table_2[i], 2) == 0) {
-            code = pdfi_alloc_object(ctx, PDF_KEYWORD, 2, (pdf_obj **)key);
+            code = pdfi_object_alloc(ctx, PDF_KEYWORD, 2, (pdf_obj **)key);
             if (code < 0)
                 return code;
             memcpy((*key)->data, str, 2);
@@ -1097,7 +1097,7 @@ static int search_table_1(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
 
     for (i = 0; i < 39; i++) {
         if (memcmp(str, op_table_1[i], 1) == 0) {
-            code = pdfi_alloc_object(ctx, PDF_KEYWORD, 1, (pdf_obj **)key);
+            code = pdfi_object_alloc(ctx, PDF_KEYWORD, 1, (pdf_obj **)key);
             if (code < 0)
                 return code;
             memcpy((*key)->data, str, 1);
@@ -1119,7 +1119,7 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
          * operators. Check to see if it includes an endstream or endobj.
          */
         if (memcmp(&keyword->data[keyword->length - 6], "endobj", 6) == 0) {
-            code = pdfi_alloc_object(ctx, PDF_KEYWORD, keyword->length - 6, (pdf_obj **)&key1);
+            code = pdfi_object_alloc(ctx, PDF_KEYWORD, keyword->length - 6, (pdf_obj **)&key1);
             if (code < 0)
                 goto error_exit;
             memcpy(key1->data, keyword->data, key1->length);
@@ -1128,7 +1128,7 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
             code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
             if (code < 0)
                 goto error_exit;
-            code = pdfi_alloc_object(ctx, PDF_KEYWORD, 6, (pdf_obj **)&key1);
+            code = pdfi_object_alloc(ctx, PDF_KEYWORD, 6, (pdf_obj **)&key1);
             if (code < 0)
                 goto error_exit;
             memcpy(key1->data, "endobj", 6);
@@ -1137,7 +1137,7 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
             return 0;
         } else {
             if (keyword->length > 9 && memcmp(&keyword->data[keyword->length - 9], "endstream", 9) == 0) {
-                code = pdfi_alloc_object(ctx, PDF_KEYWORD, keyword->length - 9, (pdf_obj **)&key1);
+                code = pdfi_object_alloc(ctx, PDF_KEYWORD, keyword->length - 9, (pdf_obj **)&key1);
                 if (code < 0)
                     goto error_exit;
                 memcpy(key1->data, keyword->data, key1->length);
@@ -1146,7 +1146,7 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
                 code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
                 if (code < 0)
                     goto error_exit;
-                code = pdfi_alloc_object(ctx, PDF_KEYWORD, 9, (pdf_obj **)&key1);
+                code = pdfi_object_alloc(ctx, PDF_KEYWORD, 9, (pdf_obj **)&key1);
                 if (code < 0)
                     goto error_exit;
                 memcpy(key1->data, "endstream", 9);

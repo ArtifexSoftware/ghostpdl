@@ -815,7 +815,7 @@ int pdfi_mark_stream(pdf_context *ctx, pdf_stream *stream)
         return 0;
 
     /* Create an indirect ref for the stream */
-    code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&streamref);
+    code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&streamref);
     if (code < 0) goto exit;
     pdfi_countup(streamref);
     streamref->ref_object_num = stream->object_num;
@@ -882,7 +882,7 @@ int pdfi_mark_dict(pdf_context *ctx, pdf_dict *dict)
         return 0;
 
     /* Create an indirect ref for the dict */
-    code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&dictref);
+    code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&dictref);
     if (code < 0) goto exit;
     pdfi_countup(dictref);
     dictref->ref_object_num = dict->object_num;

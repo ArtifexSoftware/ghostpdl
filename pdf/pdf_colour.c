@@ -182,7 +182,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
                 continue;
             }
 
-            code = pdfi_alloc_object(ctx, PDF_INT, 0, &dummy);
+            code = pdfi_object_alloc(ctx, PDF_INT, 0, &dummy);
             if (code < 0)
                 goto exit;
 
@@ -209,7 +209,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         if (code < 0 || known)
             goto exit;
 
-        code = pdfi_alloc_object(ctx, PDF_INT, 0, &dummy);
+        code = pdfi_object_alloc(ctx, PDF_INT, 0, &dummy);
         if (code < 0)
             goto exit;
 

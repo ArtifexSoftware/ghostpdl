@@ -547,7 +547,7 @@ static int ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *
             pdf_array *new_enc = NULL;
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_NAME)) {
                 pdf_name *pname;
-                code = pdfi_make_name(s->pdfi_ctx, (byte *)s->cur[0].val.name, s->cur[0].size, (pdf_obj **)&pname);
+                code = pdfi_name_alloc(s->pdfi_ctx, (byte *)s->cur[0].val.name, s->cur[0].size, (pdf_obj **)&pname);
                 if (code >= 0) {
                     code = pdfi_create_Encoding(s->pdfi_ctx, (pdf_obj *)pname, (pdf_obj **)&new_enc);
                     if (code >= 0) {
@@ -567,7 +567,7 @@ static int ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *
                         byte *nm = (byte *)s->cur[0].val.arr[i].val.name;
                         int nlen = s->cur[0].val.arr[i].size;
 
-                        code = pdfi_make_name(s->pdfi_ctx, (byte *)nm, nlen, (pdf_obj **)&n);
+                        code = pdfi_name_alloc(s->pdfi_ctx, (byte *)nm, nlen, (pdf_obj **)&n);
                         if (code < 0)
                             break;
                         code = pdfi_array_put(s->pdfi_ctx, new_enc, (uint64_t)i, (pdf_obj *)n);
@@ -787,7 +787,7 @@ static int ps_font_dict_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte 
         /* Seems there are plently of invalid Type 1 fonts without a .notdef,
            so make a fake one - a valid font will end up replacing this.
          */
-        code = pdfi_alloc_object(s->pdfi_ctx, PDF_STRING, sizeof(notdefstr), (pdf_obj **)&pstr);
+        code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, sizeof(notdefstr), (pdf_obj **)&pstr);
         if (code < 0){
             (void)pdf_ps_stack_pop(s, 1);
             return code;
@@ -851,14 +851,14 @@ static int pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byt
 
                 size = s->cur[0].val.i;
                 buf++;
-                code = pdfi_make_name(s->pdfi_ctx, (byte *)s->cur[-1].val.name, s->cur[-1].size, &key);
+                code = pdfi_name_alloc(s->pdfi_ctx, (byte *)s->cur[-1].val.name, s->cur[-1].size, &key);
                 if (code < 0) {
                     (void)pdf_ps_stack_pop(s, 2);
                     return code;
                 }
 
                 if (buf + size < bufend) {
-                    code = pdfi_alloc_object(s->pdfi_ctx, PDF_STRING, size, (pdf_obj **)&str);
+                    code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, size, (pdf_obj **)&str);
                     if (code < 0) {
                         pdfi_countdown(key);
                         (void)pdf_ps_stack_pop(s, 2);

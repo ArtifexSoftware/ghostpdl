@@ -56,7 +56,7 @@ locale_to_utf8(pdf_context *ctx, pdf_string *input, pdf_string **output)
         return_error(gs_error_ioerror);
     }
 
-    code = pdfi_alloc_object(ctx, PDF_STRING, strlen(out), (pdf_obj **)output);
+    code = pdfi_object_alloc(ctx, PDF_STRING, strlen(out), (pdf_obj **)output);
     if (code < 0)
         return code;
     pdfi_countup(*output);
@@ -96,7 +96,7 @@ locale_to_utf8(pdf_context *ctx, pdf_string *input, pdf_string **output)
     if (BytesWritten == 0)
         return_error(gs_error_ioerror);
 
-    code = pdfi_alloc_object(ctx, PDF_STRING, BytesWritten, (pdf_obj **)output);
+    code = pdfi_object_alloc(ctx, PDF_STRING, BytesWritten, (pdf_obj **)output);
     if (code < 0)
         return code;
     pdfi_countup(*output);
@@ -113,7 +113,7 @@ locale_to_utf8(pdf_context *ctx, pdf_string *input, pdf_string **output)
 {
     int code = 0;
 
-    code = pdfi_alloc_object(ctx, PDF_STRING, input->length, (pdf_obj **)output);
+    code = pdfi_object_alloc(ctx, PDF_STRING, input->length, (pdf_obj **)output);
     if (code < 0)
         return code;
     pdfi_countup(*output);

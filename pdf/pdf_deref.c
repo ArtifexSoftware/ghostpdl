@@ -695,7 +695,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
         if(ctx->pdfstoponerror)
             return_error(gs_error_rangecheck);
 
-        code = pdfi_alloc_object(ctx, PDF_NULL, 0, object);
+        code = pdfi_object_alloc(ctx, PDF_NULL, 0, object);
         if (code == 0)
             pdfi_countup(*object);
         return code;
@@ -745,7 +745,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             if (code < 0)
                 goto error;
 
-            code = pdfi_make_name(ctx, (byte *)"trailer", 6, (pdf_obj **)&EODString);
+            code = pdfi_name_alloc(ctx, (byte *)"trailer", 6, (pdf_obj **)&EODString);
             if (code < 0)
                 goto error;
 
@@ -762,7 +762,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             if (code < 0) {
                 if (entry->free) {
                     dmprintf2(ctx->memory, "Dereference of free object %"PRIu64", next object number as offset failed (code = %d), returning NULL object.\n", entry->object_num, code);
-                    code = pdfi_alloc_object(ctx, PDF_NULL, 1, object);
+                    code = pdfi_object_alloc(ctx, PDF_NULL, 1, object);
                     if (code >= 0) {
                         pdfi_countup(*object);
                         goto free_obj;
@@ -784,7 +784,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 pdfi_pop(ctx, 1);
                 if (entry->free) {
                     dmprintf1(ctx->memory, "Dereference of free object %"PRIu64", next object number as offset failed, returning NULL object.\n", entry->object_num);
-                    code = pdfi_alloc_object(ctx, PDF_NULL, 1, object);
+                    code = pdfi_object_alloc(ctx, PDF_NULL, 1, object);
                     if (code >= 0)
                         pdfi_countup(*object);
                     return code;

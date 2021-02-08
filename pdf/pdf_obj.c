@@ -32,7 +32,7 @@
 /* Objects do not get their data assigned, that's up to the caller, but we do      */
 /* set the length or size fields for composite objects.                             */
 
-int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pdf_obj **obj)
+int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pdf_obj **obj)
 {
     int bytes = 0;
 
@@ -78,7 +78,7 @@ int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         default:
             return_error(gs_error_typecheck);
     }
-    *obj = (pdf_obj *)gs_alloc_bytes(ctx->memory, bytes, "pdfi_alloc_object");
+    *obj = (pdf_obj *)gs_alloc_bytes(ctx->memory, bytes, "pdfi_object_alloc");
     if (*obj == NULL)
         return_error(gs_error_VMerror);
 
@@ -101,9 +101,9 @@ int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         case PDF_NAME:
             {
                 unsigned char *data = NULL;
-                data = (unsigned char *)gs_alloc_bytes(ctx->memory, size, "pdfi_alloc_object");
+                data = (unsigned char *)gs_alloc_bytes(ctx->memory, size, "pdfi_object_alloc");
                 if (data == NULL) {
-                    gs_free_object(ctx->memory, *obj, "pdfi_alloc_object");
+                    gs_free_object(ctx->memory, *obj, "pdfi_object_alloc");
                     *obj = NULL;
                     return_error(gs_error_VMerror);
                 }
@@ -117,10 +117,10 @@ int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
 
                 ((pdf_array *)*obj)->size = size;
                 if (size > 0) {
-                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_object");
+                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_object_alloc");
                     if (values == NULL) {
-                        gs_free_object(ctx->memory, *obj, "pdfi_alloc_object");
-                        gs_free_object(ctx->memory, values, "pdfi_alloc_object");
+                        gs_free_object(ctx->memory, *obj, "pdfi_object_alloc");
+                        gs_free_object(ctx->memory, values, "pdfi_object_alloc");
                         *obj = NULL;
                         return_error(gs_error_VMerror);
                     }
@@ -135,12 +135,12 @@ int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
 
                 ((pdf_dict *)*obj)->size = size;
                 if (size > 0) {
-                    keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_object");
-                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_object");
+                    keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_object_alloc");
+                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_object_alloc");
                     if (keys == NULL || values == NULL) {
-                        gs_free_object(ctx->memory, *obj, "pdfi_alloc_object");
-                        gs_free_object(ctx->memory, keys, "pdfi_alloc_object");
-                        gs_free_object(ctx->memory, values, "pdfi_alloc_object");
+                        gs_free_object(ctx->memory, *obj, "pdfi_object_alloc");
+                        gs_free_object(ctx->memory, keys, "pdfi_object_alloc");
+                        gs_free_object(ctx->memory, values, "pdfi_object_alloc");
                         *obj = NULL;
                         return_error(gs_error_VMerror);
                     }
@@ -267,7 +267,7 @@ int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **strea
     if (dict->type != PDF_DICT)
         return_error(gs_error_typecheck);
 
-    code = pdfi_alloc_object(ctx, PDF_STREAM, 0, (pdf_obj **)&new_stream);
+    code = pdfi_object_alloc(ctx, PDF_STREAM, 0, (pdf_obj **)&new_stream);
     if (code < 0)
         goto error_exit;
 
@@ -298,7 +298,7 @@ int pdfi_obj_charstr_to_string(pdf_context *ctx, const char *charstr, pdf_string
 
     *string = NULL;
 
-    code = pdfi_alloc_object(ctx, PDF_STRING, length, (pdf_obj **)&newstr);
+    code = pdfi_object_alloc(ctx, PDF_STRING, length, (pdf_obj **)&newstr);
     if (code < 0) goto exit;
 
     memcpy(newstr->data, (byte *)charstr, length);
@@ -318,7 +318,7 @@ int pdfi_obj_charstr_to_name(pdf_context *ctx, const char *charstr, pdf_name **n
 
     *name = NULL;
 
-    code = pdfi_alloc_object(ctx, PDF_NAME, length, (pdf_obj **)&newname);
+    code = pdfi_object_alloc(ctx, PDF_NAME, length, (pdf_obj **)&newname);
     if (code < 0) goto exit;
 
     memcpy(newname->data, (byte *)charstr, length);
@@ -773,7 +773,7 @@ static int pdfi_obj_stream_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
         *len = (int)bufsize;
     } else {
         /* Create an indirect ref for the stream */
-        code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&streamref);
+        code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&streamref);
         if (code < 0) goto exit;
         pdfi_countup(streamref);
         streamref->ref_object_num = stream->object_num;

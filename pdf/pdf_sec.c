@@ -113,7 +113,7 @@ static int pdf_compute_encryption_key_preR5(pdf_context *ctx, char *Password, in
     /* 7. Finish the hash */
     gs_md5_finish(&md5, (gs_md5_byte_t *)&Key);
 
-    code = pdfi_alloc_object(ctx, PDF_STRING, KeyLenBytes, (pdf_obj **)EKey);
+    code = pdfi_object_alloc(ctx, PDF_STRING, KeyLenBytes, (pdf_obj **)EKey);
     if (code < 0)
         goto done;
     pdfi_countup((pdf_obj *)*EKey);
@@ -266,10 +266,10 @@ static int check_user_password_R5(pdf_context *ctx, char *Password, int Len, int
     memset(UEPadded, 0x00, 16);
     memcpy(&UEPadded[16], ctx->UE, 32);
 
-    code = pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&Key);
+    code = pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&Key);
     if (code < 0)
         goto error;
-    /* pdfi_alloc_object() creates objects with a refrence count of 0 */
+    /* pdfi_object_alloc() creates objects with a refrence count of 0 */
     pdfi_countup(Key);
     memcpy(Key->data, Buffer, 32);
 
@@ -287,7 +287,7 @@ static int check_user_password_R5(pdf_context *ctx, char *Password, int Len, int
     sfread(Buffer, 1, 32, filter_stream->s);
     pdfi_close_file(ctx, filter_stream);
     pdfi_close_memory_stream(ctx, NULL, stream);
-    pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
+    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
     if (ctx->EKey == NULL)
         goto error;
     memcpy(ctx->EKey->data, Buffer, 32);
@@ -412,7 +412,7 @@ static int check_user_password_R6(pdf_context *ctx, char *Password, int Len, int
     if (memcmp(validation, ctx->U, 32) != 0)
         return_error(gs_error_unknownerror);
 
-    pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
+    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
     if (ctx->EKey == NULL)
         return_error(gs_error_VMerror);;
     memcpy(ctx->EKey->data, output, 32);
@@ -521,10 +521,10 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
             pdfi_close_file(ctx, arc4_stream);
             pdfi_close_memory_stream(ctx, NULL, stream);
 
-            code = pdfi_alloc_object(ctx, PDF_STRING, KeyLenBytes, (pdf_obj **)&XORKey);
+            code = pdfi_object_alloc(ctx, PDF_STRING, KeyLenBytes, (pdf_obj **)&XORKey);
             if (code < 0)
                 goto error;
-            /* pdfi_alloc_object() creates objects with a reference count of 0 */
+            /* pdfi_object_alloc() creates objects with a reference count of 0 */
             pdfi_countup(XORKey);
 
             /* Step 5
@@ -665,10 +665,10 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
     memset(OEPadded, 0x00, 16);
     memcpy(&OEPadded[16], ctx->OE, 32);
 
-    code = pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&Key);
+    code = pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&Key);
     if (code < 0)
         goto error;
-    /* pdfi_alloc_object() creates objects with a refrence count of 0 */
+    /* pdfi_object_alloc() creates objects with a refrence count of 0 */
     pdfi_countup(Key);
     memcpy(Key->data, Buffer, 32);
 
@@ -686,7 +686,7 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
     sfread(Buffer, 1, 32, filter_stream->s);
     pdfi_close_file(ctx, filter_stream);
     pdfi_close_memory_stream(ctx, NULL, stream);
-    pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
+    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
     if (ctx->EKey == NULL)
         goto error;
     memcpy(ctx->EKey->data, Buffer, 32);
@@ -712,7 +712,7 @@ static int check_owner_password_R6(pdf_context *ctx, char *Password, int Len, in
     if (memcmp(validation, ctx->O, 32) != 0)
         return_error(gs_error_unknownerror);
 
-    pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
+    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
     if (ctx->EKey == NULL)
         return_error(gs_error_VMerror);;
     memcpy(ctx->EKey->data, output, 32);
@@ -749,10 +749,10 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
 
     /* Algorithm 3.3, step 3. Only for R3 or greater */
     if (R > 2) {
-        code = pdfi_alloc_object(ctx, PDF_STRING, KeyLenBytes, (pdf_obj **)&EKey);
+        code = pdfi_object_alloc(ctx, PDF_STRING, KeyLenBytes, (pdf_obj **)&EKey);
         if (code < 0)
             goto error;
-        /* pdfi_alloc_object() creates objects with a refrence count of 0 */
+        /* pdfi_object_alloc() creates objects with a refrence count of 0 */
         pdfi_countup(EKey);
 
         for (i = 0; i < 50; i++) {
@@ -788,7 +788,7 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
 
     } else {
         /* Algorithm 3.3, step 4. For revision 2 always use 5 bytes of the final hash as an RC4 key */
-        code = pdfi_alloc_object(ctx, PDF_STRING, 5, (pdf_obj **)&EKey);
+        code = pdfi_object_alloc(ctx, PDF_STRING, 5, (pdf_obj **)&EKey);
         if (code < 0)
             goto error;
         pdfi_countup(EKey);
@@ -897,10 +897,10 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
         if (ELength > 16)
             ELength = 16;
 
-        code = pdfi_alloc_object(ctx, PDF_STRING, (uint64_t)ELength, (pdf_obj **)Key);
+        code = pdfi_object_alloc(ctx, PDF_STRING, (uint64_t)ELength, (pdf_obj **)Key);
         if (code >= 0)
             memcpy((*Key)->data, Buffer, ELength);
-        /* pdfi_alloc_object() creates objects with a refrence count of 0 */
+        /* pdfi_object_alloc() creates objects with a refrence count of 0 */
         pdfi_countup(*Key);
 
         gs_free_object(ctx->memory, Buffer, "");
@@ -1251,7 +1251,7 @@ static int check_password_R5(pdf_context *ctx, char *Password, int PasswordLen, 
         if (code < 0) {
             pdf_string *P = NULL, *P_UTF8 = NULL;
 
-            code = pdfi_alloc_object(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
+            code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
             if (code < 0) {
                 return code;
             }
@@ -1301,7 +1301,7 @@ static int check_password_R6(pdf_context *ctx, char *Password, int PasswordLen, 
         if (code < 0) {
             pdf_string *P = NULL, *P_UTF8 = NULL;
 
-            code = pdfi_alloc_object(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
+            code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
             if (code < 0)
                 return code;
             memcpy(P->data, Password, PasswordLen);

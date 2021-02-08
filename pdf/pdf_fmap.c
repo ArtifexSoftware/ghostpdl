@@ -130,7 +130,7 @@ pdf_make_fontmap(pdf_context *ctx)
                 /* We don't want to *replace* entries */
                 if (pdfi_dict_known(ctx, ctx->pdffontmap, pcfe[i].keyname, &k) >= 0
                     && k != true) {
-                    code = pdfi_make_name(ctx, (byte *)pcfe[i].mappedname, strlen(pcfe[i].mappedname), &value);
+                    code = pdfi_name_alloc(ctx, (byte *)pcfe[i].mappedname, strlen(pcfe[i].mappedname), &value);
                     if (code < 0)
                         continue;
                     /* If dict_put throws an error, we just carry on - hence the (void) */

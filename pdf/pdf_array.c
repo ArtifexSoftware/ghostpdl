@@ -43,7 +43,7 @@ int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
     pdf_obj *n = NULL;
 
     *a = NULL;
-    code = pdfi_alloc_object(ctx, PDF_ARRAY, size, (pdf_obj **)a);
+    code = pdfi_object_alloc(ctx, PDF_ARRAY, size, (pdf_obj **)a);
     if (code < 0)
         return code;
 
@@ -51,7 +51,7 @@ int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
 
     if (size > 0) {
         /* Make a null object */
-        code = pdfi_alloc_object(ctx, PDF_NULL, 1, &n);
+        code = pdfi_object_alloc(ctx, PDF_NULL, 1, &n);
         if (code < 0) {
             pdfi_countdown(*a);
             *a = NULL;
@@ -302,7 +302,7 @@ int pdfi_array_put_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t v
     if (a->type != PDF_ARRAY)
         return_error(gs_error_typecheck);
 
-    code = pdfi_alloc_object(ctx, PDF_INT, 0, (pdf_obj **)&obj);
+    code = pdfi_object_alloc(ctx, PDF_INT, 0, (pdf_obj **)&obj);
     obj->value.i = val;
     if (code < 0)
         return code;
@@ -318,7 +318,7 @@ int pdfi_array_put_real(pdf_context *ctx, pdf_array *a, uint64_t index, double v
     if (a->type != PDF_ARRAY)
         return_error(gs_error_typecheck);
 
-    code = pdfi_alloc_object(ctx, PDF_REAL, 0, (pdf_obj **)&obj);
+    code = pdfi_object_alloc(ctx, PDF_REAL, 0, (pdf_obj **)&obj);
     obj->value.d = val;
     if (code < 0)
         return code;
