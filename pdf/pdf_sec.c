@@ -153,7 +153,6 @@ static int apply_sasl(pdf_context *ctx, char *Password, int Len, char **NewPassw
 {
     byte *buffer;
     uint buffer_size;
-    uint output_size;
     Stringprep_rc err;
 
     buffer_size = Len * 11 + 1;
@@ -185,7 +184,7 @@ static int apply_sasl(pdf_context *ctx, char *Password, int Len, char **NewPassw
     }
 
     *NewLen = strlen((char *)buffer);
-    *NewPassword = buffer;
+    *NewPassword = (char *)buffer;
 
     return 0;
 
