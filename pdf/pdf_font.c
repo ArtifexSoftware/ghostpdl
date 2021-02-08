@@ -247,8 +247,10 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         /* Don't swap fonts if this is already the current font */
         if (font->pfont != (gs_font_base *)ctx->pgs->font)
             code = pdfi_gs_setfont(ctx, (gs_font *)font->pfont);
-        else
+        else {
+            pdfi_countdown(font_dict);
             code = 0;
+        }
         font_dict = NULL;
         goto exit;
     }
