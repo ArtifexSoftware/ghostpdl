@@ -295,7 +295,28 @@ so-subtarget: so-only-subtarget
 	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(GSSOC_XE) $(GSSOX_XE) $(PCL_TARGET)-so-loader $(XPS_TARGET)-so-loader $(GPDL_TARGET)-so-loader
 
-install-so:
+install-so-gs:
+	$(MAKE) $(SUB_MAKE_OPTION) install-so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+
+install-so-gpcl6:
+	$(MAKE) $(SUB_MAKE_OPTION) install-so-subtarget-pcl BUILDDIRPREFIX=$(SODIRPREFIX)
+
+install-so-no_gpcl6:
+	$(NO_OP)
+
+install-so-gxps:
+	$(MAKE) $(SUB_MAKE_OPTION) install-so-subtarget-xps BUILDDIRPREFIX=$(SODIRPREFIX)
+
+install-so-no_gxps:
+	$(NO_OP)
+
+install-so-gpdl:
+	$(MAKE) $(SUB_MAKE_OPTION) install-so-subtarget-gpdl BUILDDIRPREFIX=$(SODIRPREFIX)
+
+install-so-no_gpdl:
+	$(NO_OP)
+
+install-so: install-so-$(PCL_SO_BASE) install-so-$(XPS_SO_BASE) install-so-$(GPDL_SO_BASE)
 	$(MAKE) $(SUB_MAKE_OPTION) install-so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
 install-sodebug:
@@ -318,6 +339,51 @@ install-so-subtarget: so-subtarget
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GS_SONAME_MAJOR)
 	$(INSTALL_DATA) $(PSSRC)iapi.h $(DESTDIR)$(gsincludedir)iapi.h
 	$(INSTALL_DATA) $(PSSRC)ierrors.h $(DESTDIR)$(gsincludedir)ierrors.h
+	$(INSTALL_DATA) $(GLSRC)gserrors.h $(DESTDIR)$(gsincludedir)gserrors.h
+	$(INSTALL_DATA) $(DEVSRC)gdevdsp.h $(DESTDIR)$(gsincludedir)gdevdsp.h
+
+install-so-subtarget-pcl: so-subtarget
+	-mkdir -p $(DESTDIR)$(prefix)
+	-mkdir -p $(DESTDIR)$(bindir)
+	-mkdir -p $(DESTDIR)$(libdir)
+	-mkdir -p $(DESTDIR)$(gsincludedir)
+	$(INSTALL_PROGRAM) $(PCLSOC) $(DESTDIR)$(bindir)/$(PCLSOC_XENAME)
+	$(INSTALL_PROGRAM) $(BINDIR)/$(PCL_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(PCL_SONAME_MAJOR_MINOR)
+	$(RM_) $(DESTDIR)$(libdir)/$(PCL_SONAME)
+	ln -s $(PCL_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(PCL_SONAME)
+	$(RM_) $(DESTDIR)$(libdir)/$(PCL_SONAME_MAJOR)
+	ln -s $(PCL_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(PCL_SONAME_MAJOR)
+	$(INSTALL_DATA) $(PLSRC)plapi.h $(DESTDIR)$(gsincludedir)plapi.h
+	$(INSTALL_DATA) $(GLSRC)gserrors.h $(DESTDIR)$(gsincludedir)gserrors.h
+	$(INSTALL_DATA) $(DEVSRC)gdevdsp.h $(DESTDIR)$(gsincludedir)gdevdsp.h
+
+install-so-subtarget-xps: so-subtarget
+	-mkdir -p $(DESTDIR)$(prefix)
+	-mkdir -p $(DESTDIR)$(bindir)
+	-mkdir -p $(DESTDIR)$(libdir)
+	-mkdir -p $(DESTDIR)$(gsincludedir)
+	$(INSTALL_PROGRAM) $(XPSSOC) $(DESTDIR)$(bindir)/$(XPSSOC_XENAME)
+	$(INSTALL_PROGRAM) $(BINDIR)/$(XPS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(XPS_SONAME_MAJOR_MINOR)
+	$(RM_) $(DESTDIR)$(libdir)/$(XPS_SONAME)
+	ln -s $(XPS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(XPS_SONAME)
+	$(RM_) $(DESTDIR)$(libdir)/$(XPS_SONAME_MAJOR)
+	ln -s $(XPS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(XPS_SONAME_MAJOR)
+	$(INSTALL_DATA) $(PLSRC)plapi.h $(DESTDIR)$(gsincludedir)plapi.h
+	$(INSTALL_DATA) $(GLSRC)gserrors.h $(DESTDIR)$(gsincludedir)gserrors.h
+	$(INSTALL_DATA) $(DEVSRC)gdevdsp.h $(DESTDIR)$(gsincludedir)gdevdsp.h
+
+install-so-subtarget-gpdl: so-subtarget
+	-mkdir -p $(DESTDIR)$(prefix)
+	-mkdir -p $(DESTDIR)$(bindir)
+	-mkdir -p $(DESTDIR)$(libdir)
+	-mkdir -p $(DESTDIR)$(gsincludedir)
+	$(INSTALL_PROGRAM) $(GPDLSOC) $(DESTDIR)$(bindir)/$(GPDLSOC_XENAME)
+	$(INSTALL_PROGRAM) $(BINDIR)/$(GPDL_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GPDL_SONAME_MAJOR_MINOR)
+	$(RM_) $(DESTDIR)$(libdir)/$(GPDL_SONAME)
+	ln -s $(GPDL_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GPDL_SONAME)
+	$(RM_) $(DESTDIR)$(libdir)/$(GPDL_SONAME_MAJOR)
+	ln -s $(GPDL_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GPDL_SONAME_MAJOR)
+	$(INSTALL_DATA) $(PLSRC)plapi.h $(DESTDIR)$(gsincludedir)plapi.h
 	$(INSTALL_DATA) $(GLSRC)gserrors.h $(DESTDIR)$(gsincludedir)gserrors.h
 	$(INSTALL_DATA) $(DEVSRC)gdevdsp.h $(DESTDIR)$(gsincludedir)gdevdsp.h
 
