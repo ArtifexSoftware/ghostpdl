@@ -297,36 +297,36 @@ done:
 
 /*
  * Declare the structure we use to represent an instance of the PDF parser
- * as a t_struct. Just a dummy for the moment.
+ * as a t_struct.
  */
-typedef struct pdffile_s {
+typedef struct pdfctx_s {
     pdf_context *ctx;
     stream *ps_stream;
     stream *pdf_stream;
-} pdffile_t;
+} pdfctx_t;
 
 /* Structure descriptors */
-static void pdffile_finalize(const gs_memory_t *cmem, void *vptr);
+static void pdfctx_finalize(const gs_memory_t *cmem, void *vptr);
 
-gs_private_st_composite_final(st_pdffile_t, pdffile_t, "pdffile_struct",\
-    pdffile_enum_ptrs, pdffile_reloc_ptrs, pdffile_finalize);
+gs_private_st_composite_final(st_pdfctx_t, pdfctx_t, "pdfctx_struct",\
+    pdfctx_enum_ptrs, pdfctx_reloc_ptrs, pdfctx_finalize);
 
 static
-ENUM_PTRS_BEGIN(pdffile_enum_ptrs) return 0;
-ENUM_PTR2(0, pdffile_t, ps_stream, pdf_stream);
+ENUM_PTRS_BEGIN(pdfctx_enum_ptrs) return 0;
+ENUM_PTR2(0, pdfctx_t, ps_stream, pdf_stream);
 ENUM_PTRS_END
 
-static RELOC_PTRS_BEGIN(pdffile_reloc_ptrs);
-RELOC_PTR2(pdffile_t, ps_stream, pdf_stream);
+static RELOC_PTRS_BEGIN(pdfctx_reloc_ptrs);
+RELOC_PTR2(pdfctx_t, ps_stream, pdf_stream);
 RELOC_PTRS_END
 
 static void
-pdffile_finalize(const gs_memory_t *cmem, void *vptr)
+pdfctx_finalize(const gs_memory_t *cmem, void *vptr)
 {
-    pdffile_t *pdffile = vptr;
+    pdfctx_t *pdfctx = vptr;
 
-    if (cmem != NULL && pdffile->ctx != NULL)
-        (void)pdfi_free_context(cmem->non_gc_memory, pdffile->ctx);
+    if (cmem != NULL && pdfctx->ctx != NULL)
+        (void)pdfi_free_context(cmem->non_gc_memory, pdfctx->ctx);
 }
 
 static int zPDFstream(i_ctx_t *i_ctx_p)
@@ -334,26 +334,26 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code = 0;
     stream *s;
-    pdffile_t *pdffile;
+    pdfctx_t *pdfctx;
 
     check_op(2);
 
     check_read_file(i_ctx_p, s, op - 1);
     s->close_at_eod = false;
 
-    check_type(*op, t_pdffile);
-    pdffile = r_ptr(op, pdffile_t);
+    check_type(*op, t_pdfctx);
+    pdfctx = r_ptr(op, pdfctx_t);
 
-    pdffile->ps_stream = s;
-    pdffile->pdf_stream = s_alloc_immovable(imemory, "PDFstream copy of PS stream");
-    *(pdffile->pdf_stream) = *(pdffile->ps_stream);
+    pdfctx->ps_stream = s;
+    pdfctx->pdf_stream = s_alloc_immovable(imemory, "PDFstream copy of PS stream");
+    *(pdfctx->pdf_stream) = *(pdfctx->ps_stream);
 
-    code = pdfi_set_input_stream(pdffile->ctx, pdffile->pdf_stream);
+    code = pdfi_set_input_stream(pdfctx->ctx, pdfctx->pdf_stream);
     if (code < 0)
         return code;
 
-    pdffile->ctx->end_page = NULL;
-    make_tav(op, t_pdffile, icurrent_space | a_all, pstruct, (obj_header_t *)(pdffile));
+    pdfctx->ctx->end_page = NULL;
+    make_tav(op, t_pdfctx, icurrent_space | a_all, pstruct, (obj_header_t *)(pdfctx));
 
     pop(2);
     return 0;
@@ -362,28 +362,28 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
 static int zPDFfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    pdffile_t *pdffile;
+    pdfctx_t *pdfctx;
     char pdffilename[gp_file_name_sizeof];
     int code = 0;
 
     check_op(2);
 
-    check_type(*op, t_pdffile);
-    pdffile = r_ptr(op, pdffile_t);
+    check_type(*op, t_pdfctx);
+    pdfctx = r_ptr(op, pdfctx_t);
 
     check_read_type(*(op - 1), t_string);
     if (r_size(op - 1) > gp_file_name_sizeof - 2)
         return_error(gs_error_limitcheck);
 
-    pdffile->ps_stream = NULL;
+    pdfctx->ps_stream = NULL;
 
     memcpy(pdffilename, (op - 1)->value.bytes, r_size(op - 1));
     pdffilename[r_size(op - 1)] = 0;
-    code = pdfi_open_pdf_file(pdffile->ctx, pdffilename);
+    code = pdfi_open_pdf_file(pdfctx->ctx, pdffilename);
     if (code < 0)
         return code;
 
-    pdffile->ctx->end_page = NULL;
+    pdfctx->ctx->end_page = NULL;
 
     pop(2);
     return 0;
@@ -393,18 +393,18 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int code = 0;
-    pdffile_t *pdffile;
+    pdfctx_t *pdfctx;
 
-    check_type(*op, t_pdffile);
-    pdffile = r_ptr(op, pdffile_t);
+    check_type(*op, t_pdfctx);
+    pdfctx = r_ptr(op, pdfctx_t);
 
-    if (pdffile->ctx != NULL) {
-        code = pdfi_free_context(imemory, pdffile->ctx);
-        pdffile->ctx = NULL;
+    if (pdfctx->ctx != NULL) {
+        code = pdfi_free_context(imemory, pdfctx->ctx);
+        pdfctx->ctx = NULL;
     }
-    if (pdffile->ps_stream) {
-        *(pdffile->ps_stream) = *(pdffile->pdf_stream);
-        memset(pdffile->pdf_stream, 0x00, sizeof(stream));
+    if (pdfctx->ps_stream) {
+        *(pdfctx->ps_stream) = *(pdfctx->pdf_stream);
+        memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
     }
     pop(1);
     return code;
@@ -413,12 +413,12 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
 static int zPDFinfo(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    pdffile_t *pdffile;
+    pdfctx_t *pdfctx;
     int code = 0;
     ref intref, nameref;
 
-    check_type(*(op - 1), t_pdffile);
-    pdffile = r_ptr(op - 1, pdffile_t);
+    check_type(*(op - 1), t_pdfctx);
+    pdfctx = r_ptr(op - 1, pdfctx_t);
 
     code = dict_create(4, op);
     if (code < 0)
@@ -428,7 +428,7 @@ static int zPDFinfo(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
-    make_int(&intref, pdffile->ctx->num_pages);
+    make_int(&intref, pdfctx->ctx->num_pages);
 
     code = dict_put(op, &nameref, &intref, &i_ctx_p->dict_stack);
     return code;
@@ -439,7 +439,7 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref aref, boolref, nameref, numref, *eltp;
     int page = 0, code = 0, i;
-    pdffile_t *pdffile;
+    pdfctx_t *pdfctx;
     pdf_info_t info;
 
     check_op(2);
@@ -447,10 +447,10 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     page = op->value.intval;
 
-    check_type(*(op - 1), t_pdffile);
-    pdffile = r_ptr(op - 1, pdffile_t);
+    check_type(*(op - 1), t_pdfctx);
+    pdfctx = r_ptr(op - 1, pdfctx_t);
 
-    code = pdfi_page_info(pdffile->ctx, (uint64_t)page, &info);
+    code = pdfi_page_info(pdfctx->ctx, (uint64_t)page, &info);
     if (code < 0)
         return code;
 
@@ -606,7 +606,7 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code = 0;
     uint64_t page = 0;
-    pdffile_t *pdffile;
+    pdfctx_t *pdfctx;
     gs_matrix mat;
 
     check_op(2);
@@ -614,31 +614,31 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     page = op->value.intval;
 
-    check_type(*(op - 1), t_pdffile);
-    pdffile = r_ptr(op - 1, pdffile_t);
+    check_type(*(op - 1), t_pdfctx);
+    pdfctx = r_ptr(op - 1, pdfctx_t);
 
-    code = gs_gsave(pdffile->ctx->pgs);
+    code = gs_gsave(pdfctx->ctx->pgs);
     if (code < 0)
         return code;
 
-    code = gs_setdevice_no_erase(pdffile->ctx->pgs, igs->device);
+    code = gs_setdevice_no_erase(pdfctx->ctx->pgs, igs->device);
     if (code < 0)
         goto error;
 
-    if (pdffile->ctx->pgs->dev_ht)
-        rc_decrement(pdffile->ctx->pgs->dev_ht, "zPDFdrawpage");
-    pdffile->ctx->pgs->dev_ht = igs->dev_ht;
-    rc_increment(pdffile->ctx->pgs->dev_ht);
+    if (pdfctx->ctx->pgs->dev_ht)
+        rc_decrement(pdfctx->ctx->pgs->dev_ht, "zPDFdrawpage");
+    pdfctx->ctx->pgs->dev_ht = igs->dev_ht;
+    rc_increment(pdfctx->ctx->pgs->dev_ht);
 
-    code = gx_cpath_copy(igs->clip_path, (gx_clip_path *)pdffile->ctx->pgs->clip_path);
+    code = gx_cpath_copy(igs->clip_path, (gx_clip_path *)pdfctx->ctx->pgs->clip_path);
     if (code < 0)
         return code;
 
-    code = gx_cpath_copy(igs->effective_clip_path, (gx_clip_path *)pdffile->ctx->pgs->effective_clip_path);
+    code = gx_cpath_copy(igs->effective_clip_path, (gx_clip_path *)pdfctx->ctx->pgs->effective_clip_path);
     if (code < 0)
         return code;
 
-    code = gx_cpath_copy(igs->view_clip, (gx_clip_path *)pdffile->ctx->pgs->view_clip);
+    code = gx_cpath_copy(igs->view_clip, (gx_clip_path *)pdfctx->ctx->pgs->view_clip);
     if (code < 0)
         return code;
 
@@ -646,16 +646,16 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
     if (code < 0)
         goto error;
 
-    code = gs_setmatrix(pdffile->ctx->pgs, &mat);
+    code = gs_setmatrix(pdfctx->ctx->pgs, &mat);
     if (code < 0)
         goto error;
 
-    code = pdfi_page_render(pdffile->ctx, page, false);
+    code = pdfi_page_render(pdfctx->ctx, page, false);
     if (code >= 0)
         pop(2);
 
 error:
-    code = gs_grestore(pdffile->ctx->pgs);
+    code = gs_grestore(pdfctx->ctx->pgs);
     return code;
 }
 
@@ -679,151 +679,181 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     ref *pdictref = NULL, *pvalueref;
-    pdffile_t *pdffile;
-    pdf_context *ctx;
+    pdfctx_t *pdfctx = NULL;
+    pdf_context *ctx = NULL;
+    int code = 0;
 
     ctx = pdfi_create_context(imemory->non_gc_memory);
     if (ctx == NULL)
         return_error(gs_error_VMerror);
 
-    pdffile = gs_alloc_struct(imemory, pdffile_t, &st_pdffile_t, "PDFfile");
-    if (!pdffile)
-        return_error(gs_error_VMerror);
+    pdfctx = gs_alloc_struct(imemory, pdfctx_t, &st_pdfctx_t, "PDFcontext");
+    if (!pdfctx) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
 
-    pdffile->ctx = ctx;
-    pdffile->ps_stream = NULL;
+    pdfctx->ctx = ctx;
+    pdfctx->ps_stream = NULL;
+    get_zfont_glyph_name((void **)&pdfctx->ctx->get_glyph_name);
+    pdfctx->ctx->get_glyph_index = zpdfi_glyph_index;
 
-    if (ref_stack_count(&o_stack) - 1 > 0) {
-        check_op(1);
-
-        check_type(*op, t_dictionary);
+    if (ref_stack_count(&o_stack) > 0 && r_has_type(op, t_dictionary)) {
         pdictref = op;
 
+        code = gs_error_typecheck;
         if (dict_find_string(pdictref, "PDFDEBUG", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->pdfdebug = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->pdfdebug = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFSTOPONERROR", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->pdfstoponerror = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->pdfstoponerror = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFSTOPONWARNING", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->pdfstoponwarning = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->pdfstoponwarning = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "NOTRANSPARENCY", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->notransparency = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->notransparency = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFPassword", &pvalueref) > 0) {
-            check_type(*pvalueref, t_string);
-            pdffile->ctx->Password = (char *)gs_alloc_bytes(pdffile->ctx->memory, r_size(pvalueref) + 1, "PDF Password from zpdfops");
-            memset(pdffile->ctx->Password, 0x00, r_size(pvalueref) + 1);
-            memcpy(pdffile->ctx->Password, pvalueref->value.const_bytes, r_size(pvalueref));
-            pdffile->ctx->PasswordLen = r_size(pvalueref);
+            if (!r_has_type(pvalueref, t_string))
+                goto error;
+            pdfctx->ctx->Password = (char *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF Password from zpdfops");
+            memset(pdfctx->ctx->Password, 0x00, r_size(pvalueref) + 1);
+            memcpy(pdfctx->ctx->Password, pvalueref->value.const_bytes, r_size(pvalueref));
+            pdfctx->ctx->PasswordLen = r_size(pvalueref);
         }
 
         if (dict_find_string(pdictref, "FirstPage", &pvalueref) > 0) {
-            check_type(*pvalueref, t_integer);
-            pdffile->ctx->first_page = pvalueref->value.intval;
+            if (!r_has_type(pvalueref, t_integer))
+                goto error;
+            pdfctx->ctx->first_page = pvalueref->value.intval;
         }
 
         if (dict_find_string(pdictref, "LastPage", &pvalueref) > 0) {
-            check_type(*pvalueref, t_integer);
-            pdffile->ctx->last_page = pvalueref->value.intval;
+            if (!r_has_type(pvalueref, t_integer))
+                goto error;
+            pdfctx->ctx->last_page = pvalueref->value.intval;
         }
 
         if (dict_find_string(pdictref, "NOCIDFALLBACK", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->nocidfallback = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->nocidfallback = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "NO_PDFMARK_OUTLINES", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->no_pdfmark_outlines = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->no_pdfmark_outlines = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "NO_PDFMARK_DESTS", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->no_pdfmark_dests = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->no_pdfmark_dests = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFFitPage", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->pdffitpage = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->pdffitpage = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "Printed", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->printed = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->printed = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "UseBleedBox", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->usebleedbox = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->usebleedbox = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "UseCropBox", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->usecropbox = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->usecropbox = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "UseArtBox", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->useartbox = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->useartbox = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "UseTrimBox", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->usetrimbox = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->usetrimbox = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "ShowAcroForm", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->showacroform = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->showacroform = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "ShowAnnots", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->showannots = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->showannots = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PreserveAnnots", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->preserveannots = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->preserveannots = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "NoUserUnit", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->nouserunit = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->nouserunit = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "RENDERTTNOTDEF", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->renderttnotdef = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->renderttnotdef = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "DOPDFMARKS", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->dopdfmarks = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->dopdfmarks = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFINFO", &pvalueref) > 0) {
-            check_type(*pvalueref, t_boolean);
-            pdffile->ctx->pdfinfo = pvalueref->value.boolval;
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->pdfinfo = pvalueref->value.boolval;
         }
-    } else {
-        push(1);
+        code = 0;
+        pop(1);
     }
-    get_zfont_glyph_name((void **)&pdffile->ctx->get_glyph_name);
-    pdffile->ctx->get_glyph_index = zpdfi_glyph_index;
-
-    make_tav(op, t_pdffile, icurrent_space | a_all, pstruct, (obj_header_t *)(pdffile));
+    op = osp;
+    push(1);
+    make_tav(op, t_pdfctx, icurrent_space | a_all, pstruct, (obj_header_t *)(pdfctx));
     return 0;
+
+error:
+    pdfi_free_context(imemory->non_gc_memory, ctx);
+    pdfctx->ctx = NULL;
+    return code;
 }
 #else
 static int zdopdffile(i_ctx_t *i_ctx_p)

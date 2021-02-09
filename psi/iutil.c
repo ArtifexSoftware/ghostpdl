@@ -179,7 +179,7 @@ obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
             return (pref1->value.pdevice == pref2->value.pdevice);
         case t_struct:
         case t_astruct:
-        case t_pdffile:
+        case t_pdfctx:
             return (pref1->value.pstruct == pref2->value.pstruct);
         case t_fontID:
             /* This is complicated enough to deserve a separate procedure. */
@@ -479,8 +479,8 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
             size += 2;
             data = (const byte *)buf;
             goto nl;
-        case t_pdffile:
-            data = (const byte *)"-pdffile-";
+        case t_pdfctx:
+            data = (const byte *)"-pdfcontext-";
             goto rs;
         default:
 other:

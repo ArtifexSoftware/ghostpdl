@@ -132,7 +132,7 @@ debug_print_full_ref(const gs_memory_t *mem, const ref * pref)
         case t_string:
             dmprintf2(mem, "string(%u)"PRI_INTPTR"", size, (intptr_t)pref->value.bytes);
             break;
-        case t_pdffile:
+        case t_pdfctx:
         case t_struct:
           strct:{
                 obj_header_t *obj = (obj_header_t *) pref->value.pstruct;

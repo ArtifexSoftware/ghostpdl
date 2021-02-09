@@ -431,7 +431,7 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
                 case t_fontID:
                 case t_struct:
                 case t_astruct:
-                case t_pdffile:
+                case t_pdfctx:
                     DO_RELOC(pref->value.pstruct,
                              RELOC_VAR(pref->value.pstruct));
                     break;
