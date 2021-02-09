@@ -111,6 +111,11 @@ gx_hl_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
                 for (k = 0; k < n; k++) {
                     devc.colors.devn.values[k] = frac312cv(curr[k]);
                 }
+                if (device_encodes_tags(dev)) {
+                    devc.tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+                } else {
+                    devc.tag = 0;
+                }
                 code = dev_proc(dev, fill_rectangle_hl_color) (dev, &rect, NULL, &devc, NULL);
                 if (code < 0)
                     return code;
@@ -173,6 +178,11 @@ gx_hl_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
         }
         for (k = 0; k < n; k++) {
             devc.colors.devn.values[k] = frac312cv(curr[k]);
+        }
+        if (device_encodes_tags(dev)) {
+            devc.tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+        } else {
+            devc.tag = 0;
         }
         return dev_proc(dev, fill_rectangle_hl_color) (dev, &rect, NULL, &devc, NULL);
     }

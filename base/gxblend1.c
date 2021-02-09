@@ -843,7 +843,7 @@ gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
 
 void
 gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
-                        int planestride, int num_comp, uint16_t bg)
+                        int planestride, int num_comp, uint16_t bg, bool keep_native)
 {
     uint16_t *buf_ptr = (uint16_t *)(void *)buf_ptr_;
     int x, y;
@@ -873,10 +873,12 @@ gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
             } else if (a == 0xffff) {
 #if ARCH_IS_BIG_ENDIAN
 #else
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp  = buf_ptr[position + planestride * comp_num];
-                    ((byte *)&buf_ptr[position + planestride * comp_num])[0] = comp>>8;
-                    ((byte *)&buf_ptr[position + planestride * comp_num])[1] = comp;
+                if (!keep_native) {
+                    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                        comp = buf_ptr[position + planestride * comp_num];
+                        ((byte *)&buf_ptr[position + planestride * comp_num])[0] = comp >> 8;
+                        ((byte *)&buf_ptr[position + planestride * comp_num])[1] = comp;
+                    }
                 }
 #endif
             } else {

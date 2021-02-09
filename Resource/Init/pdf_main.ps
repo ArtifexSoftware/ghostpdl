@@ -2953,7 +2953,11 @@ currentdict /PDF2PS_matrix_key undef
   % Determine the number of spot colors used on the page.  Note: This searches
   % the pages resources.  It may be high if a spot color is in a resource but
   % is not actually used on the page.
-  currentpagedevice /PageSpotColors known { /PageSpotColors 2 index countspotcolors def } if
+  currentpagedevice /PageSpotColors known {
+    /PageSpotColors 2 index countspotcolors
+    userdict /PageSpotColors 2 index put
+    def
+  } if
 
   % If the user told us to use a named OutputIntent
   systemdict /UseOutputIntent .knownget {
@@ -3007,7 +3011,34 @@ currentdict /PDF2PS_matrix_key undef
         % Stack: pagedict currentpagedict installproc
   /Install exch def
         % Stack: pagedict currentpagedict
-  pop currentdict end setpagedevice
+  % If the Overprint device flag is not /disable, check usage of OP/op
+  /PageUsesOverprint //false def	% assume we don't need OP simulation
+  dup /Overprint get /disable ne
+  % If the device suppports SpotColors (DeviceN device) we don't need simulation
+  1 index /PageSpotColors known
+  not and
+  /HighLevelDevice /GetDeviceParam .special_op {
+    exch pop
+  }{
+    //false
+  }ifelse
+  not and      % Only if not HighLevelDevice
+  {
+    % Overprint is /enable, so the device might need the overprint compositor
+    % if it does not support spot colors, thus check if overprint is used so
+    % overprint simulation can be done with the pdf14 compositor
+    1 index countspotcolors userdict exch /PageSpotColors exch put	% save it in a known place
+    1 index pageusesoverprint
+    1 index /ProcessColorModel get /DeviceCMYK eq {
+      PageSpotColors 0 gt	% count of colorants NOT including CMYK
+      and
+    } {
+    } ifelse
+    /PageUsesOverprint exch def	% the page needs OP simulation so set device param.
+  } if
+  pop PageUsesOverprint currentdict end
+  setpagedevice
+  /PageUsesOverprint exch def		% tuck it away in the pagedict
 } bind executeonly def
 
 /.free_page_resources {   % - .free_page_resources -
@@ -3075,18 +3106,47 @@ currentdict /PDF2PS_matrix_key undef
         % and the result was set in the pagedevice dictionary. Use it rather than
         % scanning again IF it is present. If the pdfshowpage_setup was not called
         % (eg GSView 5) then it will not be present, so we must rescan.
-  currentpagedevice /PageUsesTransparency .knownget not {dup pageusestransparency} if
+  currentdict /PageUsesTransparency .knownget not {dup pageusestransparency} if
   dup /PDFusingtransparency exch def {
-    % If the current device isn't CMYK, or if it is a device that (currently) supports transparency
+    % If the current device isn't CMYK, or if it is a device that supports transparency
     % we don't need the special handling of Overprint transparency, so disable the checking.
-    currentpagedevice dup /Colors get 4 lt 1 index /Overprint get /simulate eq or
-    exch /HaveTransparency .knownget not { //false } if or
-    % device needs special Oveprint handling
+
+    4 dict begin		% working directory to simplify
+    currentpagedevice dup /Colors get
+    /devColors exch def			% put into our convenience dict
+    dup /HaveTransparency .knownget not { //false } if
+    /devSupportsTrans exch def		% put into our convenience dict
+    /Overprint get
+    /SimOP exch def			% put into our convenience dict
+    SimOP /simulate eq
+    PageUsesOverprint
+    and		% both Overprint==/simulate and PageUsesOverprint
+    {
+      % Determine if the device needs the special pdf14 compositor push
+      devColors 4 eq PageSpotColors 0 gt and	% CMYK device, but device has spot colors
+      devColors 4 lt				% RGB or Gray device
+      or
+    } {
+      //false		% Overprint is not /simulate or PageUseOverprint is false
+    } ifelse
+
+    % Determine if the device needs SMask for Overprint
+    SimOP /simulate eq {
+      //true		% we will need setupOPrtans for Compatible BM
+    } {
+      SimOP /enable eq
+      devColors 4 ge	% CMYK device
+      and
+    } ifelse
+    devSupportsTrans not and	% If device supports transparency (e.g. pdfwrite) then no setupOPtrans
+    end		% pop the convenience dict
     /setup_trans exch
-    { /setupSMtrans } { /setupOPtrans } ifelse
+    { /setupOPtrans } { /setupSMtrans } ifelse
     load def
+
     % Show the page within a PDF 1.4 device filter.
-    0 .pushpdf14devicefilter {
+    { -1 } { 0 } ifelse
+    .pushpdf14devicefilter {
       /DefaultQstate qstate store		% device has changed -- reset DefaultQstate
       % If the page has a Group, enclose contents in transparency group.
       % (Adobe Tech Note 5407, sec 9.2)
@@ -3114,7 +3174,31 @@ currentdict /PDF2PS_matrix_key undef
   } {
     /setup_trans { pop pop } def    % no-op this if the page doesn't use transparency
                                 % NB: original will be restored from PDFsave
-    showpagecontents
+    % The page doesn't use transparency, but if Overprint is /simulate, we may need to
+    % push a pdf14devicefilter to handle the overprint simulation using the pdf14 device.
+    currentpagedevice
+    dup /Overprint get /simulate eq
+    exch /PageSpotColors known
+    not and
+    PageUsesOverprint
+    and
+    {
+       % Show the page within a PDF 1.4 device filter for overprint_simulation.
+       -1 .pushpdf14devicefilter {
+         /DefaultQstate qstate store		% device has changed -- reset DefaultQstate
+         showpagecontents
+       } stopped {
+         % abort the transparency device
+         .abortpdf14devicefilter
+         /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
+         stop
+       } if
+       { } settransfer		% identity transfer during popdevice (put_image)
+       .poppdf14devicefilter	% NB: reset to DefaultQstate will also restore transfer function
+       /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
+    } {
+      showpagecontents
+    } ifelse
   } ifelse
   .free_page_resources
   % todo: mixing drawing ops outside the device filter could cause
@@ -3286,6 +3370,112 @@ currentdict /PDF2PS_matrix_key undef
   dup type /nametype ne { cvn } if
   dup { setcolorspace } //.internalstopped exec { pop /DeviceRGB } if
 } bind executeonly def
+
+% returns true if OP or op is true in an ExtGState
+/pageusesoverprint {		% <pagedict> pageusesoverprint <bool>
+  dup //false exch {
+    4 dict 1 index resourceusesoverprint { pop not exit } if
+    %% Check the current dictionary and its Parent (if any) to see
+    %% if they both have stored object numbers. If they do then
+    %% check the numbers, don't allow self-references.
+    dup /Parent knownoget not { pop exit }
+    {
+      exch /.gs.pdfobj# .knownget
+      {
+        1 index /.gs.pdfobj# .knownget {
+          eq {
+            pop exit
+          }if
+        }{
+          pop
+        }ifelse
+      }if
+    } ifelse
+  } loop
+  % Also check for transparency in the annotation (if not in resources).
+  { pop //true } { annotsuseoverprint } ifelse
+} bind def
+
+% Check if Overprint (OP/op) is specified in an ExtGState dict
+/extgstateusesoverprint {	% <gstate dict> extgstateusesoverprint <bool>
+  //false exch		% Assume no overprint
+  dup //null eq {
+    pop % bug 692050
+  } {
+    {			% establish loop context
+      dup /OP knownoget { { pop not exit } if } if
+      dup /op knownoget { { pop not exit } if } if
+      pop exit
+    } loop
+  } ifelse
+} bind def
+
+% Check if overprint is used in a Pattern
+/patternusesoverprint {	% <Pattern dict> patternusesoverprint <bool>
+  //false exch		% Assume no overprint
+  {
+    4 dict 1 index resourceusesoverprint { pop not exit } if
+    dup /ExtGState knownoget { extgstateusesoverprint { pop not exit } if } if
+    pop exit
+  } loop
+} bind def
+
+% Check the Resources of a page or Form. Check for loops in the resource chain.
+/resourceusesoverprint {	% <dict> <dict> resourceusesoverprint <bool>
+  {	% Use loop to provide an exitable context.
+    /Resources knownoget not { 0 dict } if
+    2 copy .knownget {
+      { % Some circular references may be missed because scanning stops
+        % when the 1st overprint is found.
+        (   **** File has circular references in resource dictionaries.\n)
+        pdfformaterror
+      } if
+      pop //false exit
+    } if
+    2 copy //true put              % In the current chain.
+    dup /ExtGState knownoget {
+      //false exch
+      { exch pop oforce extgstateusesoverprint { pop //true exit } if
+      } forall
+      { pop //true exit } if
+    } if
+    dup /Pattern knownoget {
+      //false exch
+      { exch pop oforce patternusesoverprint { pop //true exit } if
+      } forall
+      { pop //true exit } if
+    } if
+    2 copy //false put             % Visited but not in the current chain.
+    pop //false exit
+  } loop
+  exch pop
+} bind def
+
+% Check if the annotations on a page use overprint
+/annotsuseoverprint {	% <page dict> annotsuseoverprint <bool>
+   //false exch			% Assume no overprint
+   /Annots knownoget {		% Get Annots array
+     dup type /arraytype eq {
+       {
+         oforce
+         dup //null ne {
+           /AP knownoget {	% Get appearance dict for the annoation
+             /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
+               4 dict exch resourceusesoverprint { pop pop //true exit } if
+             } if
+           } if  			% If AP dict known
+         } {
+           pop
+         } ifelse
+       } forall			% For all annots on the page
+     } {
+        (   **** Error: Annotation array is not an array, ignoring it.\n) pdfformaterror
+        (               Output may be incorrect.\n) pdfformaterror
+        pop
+     }
+     ifelse
+   } if
+} bind def
 
 % ------ Transparency support ------ %
 

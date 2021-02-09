@@ -52,6 +52,7 @@ gsicc_link_t* gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
                                      gs_memory_t *memory, bool devicegraytok);
 void gsicc_release_link(gsicc_link_t *icclink);
 void gsicc_link_free(gsicc_link_t *icc_link, const gs_memory_t *memory);
+bool gsicc_profiles_equal(cmm_profile_t *profile1, cmm_profile_t *profile2);
 void gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash, unsigned int buff_size);
 int64_t gsicc_get_hash(cmm_profile_t *profile);
 int gsicc_transform_named_color(const float tint_values[],

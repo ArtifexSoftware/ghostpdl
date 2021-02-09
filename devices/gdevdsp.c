@@ -1721,7 +1721,8 @@ open_c:
                        ddev->memory->non_gc_memory:
                        ddev->bandlist_memory),
                       ddev->clist_disable_mask,
-                      ddev->page_uses_transparency);
+                      ddev->page_uses_transparency,
+                      ddev->page_uses_overprint);
     code = (*gs_clist_device_procs.open_device)( (gx_device *)pcldev );
     if (code < 0) {
         /* If there wasn't enough room, and we haven't */
@@ -2282,7 +2283,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
             if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) {
                 ddev->devn_params.bitspercomponent = bpc;
                 if (ddev->icc_struct == NULL) {
-                    ddev->icc_struct = gsicc_new_device_profile_array(ddev->memory);
+                    ddev->icc_struct = gsicc_new_device_profile_array((gx_device *)ddev);
                     if (ddev->icc_struct == NULL)
                         return_error(gs_error_VMerror);
                 }

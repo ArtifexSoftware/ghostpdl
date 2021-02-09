@@ -772,13 +772,14 @@ include @PXL_MAK@ # pxl.mak
 
 include @XPS_MAK@ # xps.mak
 
+include $(GLSRCDIR)/jpeg.mak
+
 include @PDF_MAK@ # pdf.mak
 
 include @GPDL_MAK@ # gpdl.mak
 
 include $(GLSRCDIR)/freetype.mak
 include @FAPIUFST_MAK@
-include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede png.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/png.mak

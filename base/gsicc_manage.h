@@ -120,7 +120,7 @@ void gsicc_adjust_profile_rc(cmm_profile_t *profile_data, int delta, const char 
     const char* dirname, int dir_namelen, stream **stmp);
 
 /* Device related */
-cmm_dev_profile_t* gsicc_new_device_profile_array(gs_memory_t *memory);
+cmm_dev_profile_t* gsicc_new_device_profile_array(gx_device *);
 int gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
     char *file_name, gsicc_profile_types_t defaulttype);
 char* gsicc_get_dev_icccolorants(cmm_dev_profile_t *dev_profile);

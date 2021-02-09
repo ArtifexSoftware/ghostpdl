@@ -863,6 +863,7 @@ clist_end_page(gx_device_clist_writer * cldev)
         clist_free_icc_table(cldev->icc_table, cldev->memory);
         cldev->icc_table = NULL;
     }
+
     if (code >= 0) {
         code = clist_write_color_usage_array(cldev);
         if (code >= 0) {
@@ -1218,6 +1219,17 @@ clist_write_color_usage_array(gx_device_clist_writer *cldev)
                           size_data, COLOR_USAGE_OFFSET);
     gs_free_object(cldev->memory, color_usage_array, "clist_write_color_usage_array");
     return(0);
+}
+
+/* This writes out the spot equivalent cmyk values for the page.
+   These are used for overprint simulation.  Read back by the
+   pdf14 device during the put_image operation */
+int
+clist_write_op_equiv_cmyk_colors(gx_device_clist_writer *cldev,
+    equivalent_cmyk_color_params *op_equiv_cmyk)
+{
+    return cmd_write_pseudo_band(cldev, (unsigned char *)op_equiv_cmyk,
+        sizeof(equivalent_cmyk_color_params), SPOT_EQUIV_COLORS);
 }
 
 /* Compute color_usage over a Y range while writing clist */

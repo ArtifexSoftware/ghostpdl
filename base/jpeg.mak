@@ -125,9 +125,9 @@ jmorecf__h=$(GLGEN)jmorecf_.h
 
 # We use our own jconfig.h and jmorecfg.h iff we aren't sharing the library.
 # The library itself may need copies of them.
-
 jconfig_h=$(GLGEN)jconfig.h
 jmorecfg_h=$(GLGEN)jmorecfg.h
+jmemcust_h=$(GLSRC)jmemcust.h $(jconfig_h)
 
 $(GLGEN)jconfig_.h : $(GLGEN)jconfig$(SHARE_JPEG).h $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)jconfig$(SHARE_JPEG).h $(GLGEN)jconfig_.h

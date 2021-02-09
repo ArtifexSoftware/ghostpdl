@@ -630,6 +630,9 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         penum->icolor0 = &(penum->icolor0_val);
         penum->icolor1 = &(penum->icolor1_val);
     }
+    penum->icolor0->tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+    penum->icolor1->tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+
     if (masked) {       /* This is imagemask. */
         if (bps != 1 || pcs != NULL || penum->alpha || decode[0] == decode[1]) {
             code = gs_error_rangecheck;

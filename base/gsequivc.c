@@ -487,6 +487,14 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_gstate * pgs,
     dev_proc(pdev, get_profile)(pdev, &dev_profile);
     gsicc_extract_profile(pdev->graphics_type_tag,
                           dev_profile, &(curr_output_profile), &render_cond);
+
+    /* If the output profile is not CMYK based (which can happen during overprint
+       simulation. In particular when the blending space is RGB or Gray based.
+       Think of the case where the file has transparency and we are in an RGB
+       page group), then just use DefaultCMYK */
+    if (curr_output_profile->data_cs != gsCMYK)
+        curr_output_profile = pgs->icc_manager->default_cmyk;
+
     /*
      * Create a temp device.  The primary purpose of this device is pass the
      * separation number and a pointer to the original device's equivalent

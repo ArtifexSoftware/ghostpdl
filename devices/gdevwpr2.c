@@ -704,7 +704,7 @@ win_pr2_set_bpp(gx_device * dev, int depth)
             if (wdev->icc_struct) {
                 rc_decrement(wdev->icc_struct, "win_pr2_set_bpp");
             }
-            wdev->icc_struct = gsicc_new_device_profile_array(wdev->memory);
+            wdev->icc_struct = gsicc_new_device_profile_array(wdev);
 
             if (wdev->icc_struct) {
                 code = gsicc_set_device_profile(dev, dev->memory,
@@ -729,7 +729,7 @@ win_pr2_set_bpp(gx_device * dev, int depth)
             if (wdev->icc_struct) {
                 rc_decrement(wdev->icc_struct, "win_pr2_set_bpp");
             }
-            wdev->icc_struct = gsicc_new_device_profile_array(wdev->memory);
+            wdev->icc_struct = gsicc_new_device_profile_array(wdev);
 
             if (wdev->icc_struct) {
                 code = gsicc_set_device_profile(dev, dev->memory,
@@ -754,7 +754,7 @@ win_pr2_set_bpp(gx_device * dev, int depth)
             if (wdev->icc_struct) {
                 rc_decrement(wdev->icc_struct, "win_pr2_set_bpp");
             }
-            wdev->icc_struct = gsicc_new_device_profile_array(wdev->memory);
+            wdev->icc_struct = gsicc_new_device_profile_array(wdev);
 
             if (wdev->icc_struct) {
                 code = gsicc_set_device_profile(dev, dev->memory,
@@ -776,7 +776,7 @@ win_pr2_set_bpp(gx_device * dev, int depth)
             if (wdev->icc_struct) {
                 rc_decrement(wdev->icc_struct, "win_pr2_set_bpp");
             }
-            wdev->icc_struct = gsicc_new_device_profile_array(wdev->memory);
+            wdev->icc_struct = gsicc_new_device_profile_array(wdev);
 
             if (wdev->icc_struct) {
                 code = gsicc_set_device_profile(dev, dev->memory,

@@ -230,6 +230,9 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "PageUsesTransparency") == 0) {
         return param_write_bool(plist, "PageUsesTransparency", &dev->page_uses_transparency);
     }
+    if (strcmp(Param, "PageUsesOverprint") == 0) {
+        return param_write_bool(plist, "PageUsesOverprint", &dev->page_uses_overprint);
+    }
     if (strcmp(Param, "MaxBitmap") == 0) {
         return param_write_size_t(plist, "MaxBitmap", &(dev->space_params.MaxBitmap));
     }
@@ -395,7 +398,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "Overprint") == 0) {
         gs_param_string opc_name;
-        char *s = overprint_control_names[(int)overprint_control];
+        const char *s = overprint_control_names[(int)overprint_control];
 
         param_string_from_string(opc_name, s);
         return param_write_name(plist, "Overprint", &opc_name);
@@ -749,6 +752,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 ||
         (code = param_write_size_t(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap)) < 0 ||
         (code = param_write_bool(plist, "PageUsesTransparency", &dev->page_uses_transparency)) < 0 ||
+        (code = param_write_bool(plist, "PageUsesOverprint", &dev->page_uses_overprint)) < 0 ||
         (code = param_write_size_t(plist, "MaxBitmap", &(dev->space_params.MaxBitmap))) < 0 ||
         (code = param_write_size_t(plist, "BandBufferSpace", &dev->space_params.band.BandBufferSpace)) < 0 ||
         (code = param_write_int(plist, "BandHeight", &dev->space_params.band.BandHeight)) < 0 ||
@@ -759,7 +763,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         return code;
     {
         gs_param_string opc_name;
-        char *s = overprint_control_names[(int)overprint_control];
+        const char *s = overprint_control_names[(int)overprint_control];
 
         param_string_from_string(opc_name, s);
         param_write_name(plist, "Overprint", &opc_name);
@@ -1071,7 +1075,7 @@ gx_default_put_graydetection(bool graydetection, gx_device * dev)
            may not be fully set up at this time.  */
         if (dev->icc_struct == NULL) {
             /* Allocate at this time the structure */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
         }
         dev->icc_struct->graydetection = graydetection;
         dev->icc_struct->pageneutralcolor = graydetection;
@@ -1079,7 +1083,7 @@ gx_default_put_graydetection(bool graydetection, gx_device * dev)
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
         if (profile_struct == NULL) {
             /* Create now  */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             profile_struct =  dev->icc_struct;
         }
         profile_struct->graydetection = graydetection;
@@ -1107,7 +1111,7 @@ gx_default_put_graytok(bool graytok, gx_device * dev)
            may not be fully set up at this time.  */
         if (dev->icc_struct == NULL) {
             /* Allocate at this time the structure */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1116,7 +1120,7 @@ gx_default_put_graytok(bool graytok, gx_device * dev)
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
         if (profile_struct == NULL) {
             /* Create now  */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             profile_struct =  dev->icc_struct;
             if (profile_struct == NULL)
                 return_error(gs_error_VMerror);
@@ -1145,7 +1149,7 @@ gx_default_put_prebandthreshold(bool prebandthreshold, gx_device * dev)
            may not be fully set up at this time.  */
         if (dev->icc_struct == NULL) {
             /* Allocate at this time the structure */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1154,7 +1158,7 @@ gx_default_put_prebandthreshold(bool prebandthreshold, gx_device * dev)
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
         if (profile_struct == NULL) {
             /* Create now  */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             profile_struct =  dev->icc_struct;
             if (profile_struct == NULL)
                 return_error(gs_error_VMerror);
@@ -1183,7 +1187,7 @@ gx_default_put_usefastcolor(bool fastcolor, gx_device * dev)
            may not be fully set up at this time.  */
         if (dev->icc_struct == NULL) {
             /* Allocate at this time the structure */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1192,7 +1196,7 @@ gx_default_put_usefastcolor(bool fastcolor, gx_device * dev)
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
         if (profile_struct == NULL) {
             /* Create now  */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             profile_struct =  dev->icc_struct;
             if (profile_struct == NULL)
                 return_error(gs_error_VMerror);
@@ -1210,7 +1214,7 @@ gx_default_put_blacktext(bool blacktext, gx_device* dev)
 
     if (dev_proc(dev, get_profile) == NULL) {
         if (dev->icc_struct == NULL) {
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1219,7 +1223,7 @@ gx_default_put_blacktext(bool blacktext, gx_device* dev)
         code = dev_proc(dev, get_profile)(dev, &profile_struct);
         if (profile_struct == NULL) {
             /* Create now  */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             profile_struct = dev->icc_struct;
             if (profile_struct == NULL)
                 return_error(gs_error_VMerror);
@@ -1248,7 +1252,7 @@ gx_default_put_overprint_control(gs_overprint_control_t overprint_control, gx_de
            may not be fully set up at this time.  */
         if (dev->icc_struct == NULL) {
             /* Allocate at this time the structure */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1257,7 +1261,7 @@ gx_default_put_overprint_control(gs_overprint_control_t overprint_control, gx_de
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
         if (profile_struct == NULL) {
             /* Create now  */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             profile_struct =  dev->icc_struct;
             if (profile_struct == NULL)
                 return_error(gs_error_VMerror);
@@ -1285,7 +1289,7 @@ gx_default_put_intent(gsicc_rendering_intents_t icc_intent, gx_device * dev,
            the target device */
         if (dev->icc_struct == NULL) {
             /* Intializes the device structure.  Not the profile though for index */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1296,7 +1300,7 @@ gx_default_put_intent(gsicc_rendering_intents_t icc_intent, gx_device * dev,
             return code;
         if (profile_struct == NULL) {
             /* Create now  */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1323,7 +1327,7 @@ gx_default_put_blackpreserve(gsicc_blackpreserve_t blackpreserve, gx_device * de
            the target device */
         if (dev->icc_struct == NULL) {
             /* Intializes the device structure.  Not the profile though for index */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1334,7 +1338,7 @@ gx_default_put_blackpreserve(gsicc_blackpreserve_t blackpreserve, gx_device * de
             return code;
         if (profile_struct == NULL) {
             /* Create now  */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1364,7 +1368,7 @@ gx_default_put_blackptcomp(gsicc_blackptcomp_t blackptcomp, gx_device * dev,
            the target device */
         if (dev->icc_struct == NULL) {
             /* Intializes the device structure.  Not the profile though for index */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1375,7 +1379,7 @@ gx_default_put_blackptcomp(gsicc_blackptcomp_t blackptcomp, gx_device * dev,
             return code;
         if (profile_struct == NULL) {
             /* Create now  */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
             if (dev->icc_struct == NULL)
                 return_error(gs_error_VMerror);
         }
@@ -1479,6 +1483,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     size_t mpbm = dev->MaxPatternBitmap;
     int ic = dev->interpolate_control;
     bool page_uses_transparency = dev->page_uses_transparency;
+    bool page_uses_overprint = dev->page_uses_overprint;
     gdev_space_params sp = dev->space_params;
     gdev_space_params save_sp = dev->space_params;
     int rend_intent[NUM_DEVICE_PROFILES];
@@ -1856,6 +1861,11 @@ nce:
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
+    if ((code = param_read_bool(plist, (param_name = "PageUsesOverprint"),
+                                &page_uses_overprint)) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    }
     if ((code = param_read_size_t(plist, "MaxBitmap", &sp.MaxBitmap)) < 0)
         ecode = code;
 
@@ -2178,6 +2188,7 @@ label:\
     dev->interpolate_control = ic;
     dev->space_params = sp;
     dev->page_uses_transparency = page_uses_transparency;
+    dev->page_uses_overprint = page_uses_overprint;
     gx_device_decache_colors(dev);
 
     /* Take care of the rendering intents and blackpts.  For those that

@@ -5166,10 +5166,11 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
      * Unpack the gx_color_index values.  Complement the components for subtractive
      * color spaces.
      */
-    if (has_tags) {
-        curr_tag = (color >> (num_comp*8)) & 0xff;
-    }
+
     if (devn) {
+        if (has_tags) {
+            curr_tag = pdc->tag;
+        }
         if (additive) {
             for (j = 0; j < (num_comp - num_spots); j++) {
                 src[j] = ((pdc->colors.devn.values[j]) >> shift & mask);
@@ -5183,8 +5184,12 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                 src[j] = 255 - ((pdc->colors.devn.values[j]) >> shift & mask);
             }
         }
-    } else
+    } else {
+        if (has_tags) {
+            curr_tag = (color >> (num_comp * 8)) & 0xff;
+        }
         pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
+    }
     src_alpha = src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
     if (has_shape)
         shape = (byte)floor (255 * pdev->shape + 0.5);
@@ -5797,10 +5802,10 @@ do_mark_fill_rectangle16(gx_device * dev, int x, int y, int w, int h,
      * Unpack the gx_color_index values.  Complement the components for subtractive
      * color spaces.
      */
-    if (has_tags) {
-        curr_tag = (color >> (num_comp*16)) & 0xff;
-    }
     if (devn) {
+        if (has_tags) {
+            curr_tag = pdc->tag;
+        }
         if (additive) {
             for (j = 0; j < (num_comp - num_spots); j++) {
                 src[j] = pdc->colors.devn.values[j];
@@ -5814,8 +5819,12 @@ do_mark_fill_rectangle16(gx_device * dev, int x, int y, int w, int h,
                 src[j] = 65535 - pdc->colors.devn.values[j];
             }
         }
-    } else
+    } else {
+        if (has_tags) {
+            curr_tag = (color >> (num_comp * 16)) & 0xff;
+        }
         pdev->pdf14_procs->unpack_color16(num_comp, color, pdev, src);
+    }
     src_alpha = src[num_comp] = (uint16_t)floor (65535 * pdev->alpha + 0.5);
     if (has_shape)
         shape = (uint16_t)floor (65535 * pdev->shape + 0.5);

@@ -389,7 +389,7 @@ void gx_build_blended_image_row16(const byte *gs_restrict buf_ptr, int planestri
 void gx_blend_image_buffer(byte *buf_ptr, int width, int height,
                       int rowstride, int planestride, int num_comp, byte bg);
 void gx_blend_image_buffer16(byte *buf_ptr, int width, int height,
-    int rowstride, int planestride, int num_comp, uint16_t bg);
+    int rowstride, int planestride, int num_comp, uint16_t bg, bool keep_native);
 void gx_blend_image_buffer8to16(const byte *buf_ptr, unsigned short *buf_ptr_out,
     int width, int height, int rowstride, int planestride, int num_comp, byte bg);
 int gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,

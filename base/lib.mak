@@ -1071,7 +1071,6 @@ $(GLOBJ)gsparam.$(OBJ) : $(GLSRC)gsparam.c $(AK) $(gx_h) $(gserrors_h)\
  $(memory__h) $(string__h) $(gsparam_h) $(gsstruct_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsparam.$(OBJ) $(C_) $(GLSRC)gsparam.c
 
-# gsparamx is not included in the base configuration.
 $(GLOBJ)gsparamx.$(OBJ) : $(AK) $(GLSRC)gsparamx.c $(string__h)\
  $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gsparamx_h)\
  $(gstypes_h) $(LIB_MAK) $(MAKEDIRS)
@@ -2188,7 +2187,7 @@ gxclpath_h=$(GLSRC)gxclpath.h
 
 clbase1_=$(GLOBJ)gxclist.$(OBJ) $(GLOBJ)gxclbits.$(OBJ) $(GLOBJ)gxclpage.$(OBJ)
 clbase2_=$(GLOBJ)gxclrast.$(OBJ) $(GLOBJ)gxclread.$(OBJ) $(GLOBJ)gxclrect.$(OBJ)
-clbase3_=$(GLOBJ)gxclutil.$(OBJ) $(GLOBJ)gsparams.$(OBJ) $(GLOBJ)gsparaml.$(OBJ) $(GLOBJ)gxshade6.$(OBJ)
+clbase3_=$(GLOBJ)gxclutil.$(OBJ) $(GLOBJ)gsparams.$(OBJ) $(GLOBJ)gsparaml.$(OBJ) $(GLOBJ)gsparamx.$(OBJ) $(GLOBJ)gxshade6.$(OBJ)
 # gxclrect.c requires rop_proc_table, so we need gsroptab here.
 clbase4_=$(GLOBJ)gsroptab.$(OBJ) $(GLOBJ)gsroprun.$(OBJ) $(GLOBJ)stream.$(OBJ)
 clpath_=$(GLOBJ)gxclimag.$(OBJ) $(GLOBJ)gxclpath.$(OBJ) $(GLOBJ)gxdhtserial.$(OBJ)
@@ -3209,7 +3208,7 @@ gxblend_h=$(GLSRC)gxblend.h
 gdevp14_h=$(GLSRC)gdevp14.h
 
 $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(AK) $(gx_h) $(gserrors_h)\
- $(math__h) $(memory__h) $(gdevp14_h) $(gstrans_h)\
+ $(math__h) $(memory__h) $(gdevp14_h) $(gstrans_h) $(gsicc_cache_h)\
  $(gsutil_h) $(gxdevcli_h) $(gzstate_h) $(gscspace_h)\
  $(gxclist_h) $(gsicc_manage_h) $(gdevdevn_h) $(gxarith_h) $(gxblend_h)\
  $(LIB_MAK) $(MAKEDIRS)

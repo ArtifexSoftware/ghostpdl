@@ -30,6 +30,7 @@
 #include "gxarith.h"
 #include "gxclist.h"
 #include "gsicc_manage.h"
+#include "gsicc_cache.h"
 
 /* ------ Transparency-related graphics state elements ------ */
 
@@ -270,7 +271,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
                 blend_color_space->cmm_icc_profile_data->num_comps;
             /* Get the ICC profile */
             params.iccprofile = blend_color_space->cmm_icc_profile_data;
-            params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
+            params.icc_hash = gsicc_get_hash(blend_color_space->cmm_icc_profile_data);
         } else {
             /* Color space was NOT ICC based.  PS CIE space and DeviceN are the only
                other option.  Use the ICC default based upon the component count. */
@@ -296,7 +297,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
                 params.group_color_type = ICC;
                 params.group_color_numcomps = profile->num_comps;
                 params.iccprofile = profile;
-                params.icc_hash = profile->hashcode;
+                params.icc_hash = gsicc_get_hash(profile);
             }
         }
     }
@@ -636,7 +637,7 @@ gs_begin_transparency_mask(gs_gstate * pgs,
              * pdf14_update_device_color_procs_pop_c()
              */
             params.iccprofile = blend_color_space->cmm_icc_profile_data;
-            params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
+            params.icc_hash = gsicc_get_hash(blend_color_space->cmm_icc_profile_data);
         } else {
             params.group_color_type = GRAY_SCALE;
             params.group_color_numcomps = 1;  /* Need to check */
@@ -779,7 +780,8 @@ get_num_pdf14_spot_colors(gs_gstate * pgs)
 }
 
 int
-gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain)
+gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain,
+                          int depth, int spot_color_count)
 {
     gs_pdf14trans_params_t params = { 0 };
     cmm_profile_t *icc_profile;
@@ -801,6 +803,12 @@ gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain)
      */
     params.num_spot_colors = get_num_pdf14_spot_colors(pgs);
     params.is_pattern = is_pattern;
+
+    /* Information related to overprint simulation */
+    params.num_spot_colors_int = spot_color_count;
+    if (depth < 0)
+        params.overprint_sim_push = true;
+
     /* If we happen to be in a situation where we are going out to a device
        whose profile is CIELAB then we will need to make sure that we
        do our blending in RGB and convert to CIELAB when we do the put_image

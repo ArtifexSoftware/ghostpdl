@@ -418,7 +418,7 @@ extern_st(st_device_clist);
 #define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
 
 /* setup before opening clist device */
-#define clist_init_params(xclist, xdata, xdata_size, xtarget, xbuf_procs, xband_params, xexternal, xmemory, xdisable, pageusestransparency)\
+#define clist_init_params(xclist, xdata, xdata_size, xtarget, xbuf_procs, xband_params, xexternal, xmemory, xdisable, pageusestransparency, pageusesoverprint)\
     BEGIN\
         (xclist)->common.data = (xdata);\
         (xclist)->common.data_size = (xdata_size);\
@@ -429,6 +429,7 @@ extern_st(st_device_clist);
         (xclist)->common.bandlist_memory = (xmemory);\
         (xclist)->writer.disable_mask = (xdisable);\
         (xclist)->writer.page_uses_transparency = (pageusestransparency);\
+        (xclist)->writer.page_uses_overprint = (pageusesoverprint);\
         (xclist)->writer.pinst = NULL;\
     END
 
@@ -492,6 +493,10 @@ int clist_put_data(const gx_device_clist *cdev, int select, int64_t offset, cons
 
 /* Write out the array of color usage entries (one per band) */
 int clist_write_color_usage_array(gx_device_clist_writer *cldev);
+
+/* Write out simulated overprint CMYK equiv. values for spot colors */
+int clist_write_op_equiv_cmyk_colors(gx_device_clist_writer *cldev,
+    equivalent_cmyk_color_params *op_equiv_cmyk);
 
 /* get the color_usage summary over a Y range from the clist writer states */
 /* Not expected to be used */

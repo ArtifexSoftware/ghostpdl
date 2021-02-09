@@ -279,7 +279,8 @@ open_c:
                       (ppdev->bandlist_memory == 0 ? pdev->memory->non_gc_memory:
                        ppdev->bandlist_memory),
                       ppdev->clist_disable_mask,
-                      ppdev->page_uses_transparency);
+                      ppdev->page_uses_transparency,
+                      ppdev->page_uses_overprint);
     code = (*gs_clist_device_procs.open_device)( (gx_device *)pcldev );
     if (code < 0) {
         /* If there wasn't enough room, and we haven't */

@@ -334,6 +334,7 @@ const gx_device_bit gs_bitrgbtags_device =
         {false}, /*sgr*/
         0, /*MaxPatternBitmap*/
         0, /*page_uses_transparency*/
+        0, /*page_uses_overprint*/
         {
           MAX_BITMAP, BUFFER_SPACE,
           { BAND_PARAMS_INITIAL_VALUES },

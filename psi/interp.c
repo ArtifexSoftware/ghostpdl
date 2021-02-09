@@ -789,6 +789,41 @@ set_gc_signal(i_ctx_t *i_ctx_p, int value)
     }
 }
 
+/* Create a printable string ref (or null) from an arbitrary ref.
+ * For the purpose this is used here, it cannot fail, any
+ * error in the process results in a null object, instead
+ * of the string.
+ */
+static void obj_cvs_ref(i_ctx_t *i_ctx_p, const ref *in, ref *out)
+{
+    uint rlen;
+    int code;
+    byte sbuf[65], *buf = sbuf;
+    uint len = sizeof(sbuf) - 1;
+
+    code = obj_cvs(imemory, in, buf, len, &rlen, NULL);
+    if (code == gs_error_rangecheck) {
+        len = rlen;
+        buf = gs_alloc_bytes(imemory, len + 1, "obj_cvs_ref");
+        if (!buf)
+            code = -1;
+        else
+            code = obj_cvs(imemory, in, buf, len, &rlen, NULL);
+    }
+    if (code < 0) {
+        make_null(out);
+    }
+    else {
+        buf[rlen] = '\0';
+        code = string_to_ref((const char *)buf, out, iimemory, "obj_cvs_ref");
+        if (code < 0)
+            make_null(out);
+    }
+    if (buf != sbuf)
+        gs_free_object(imemory, buf, "obj_cvs_ref");
+    return;
+}
+
 /* Copy top elements of an overflowed stack into a (local) array. */
 /* Adobe copies only 500 top elements, we copy up to 65535 top elements */
 /* for better debugging, PLRM compliance, and backward compatibility. */
@@ -808,12 +843,23 @@ copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, int skip, ref * arr)
         code = ref_stack_store(pstack, arr, size, 0, 1, true, idmemory,
                                "copy_stack");
     /* If we are copying the exec stack, try to replace any oparrays with
-     * with the operator than references them
+     * the operator that references them
+     * We also replace any internal objects (t_struct and t_astruct) with
+     * string representations, since these can contain references to objects
+     * with uncertain lifespans, it is safer not to risk them persisting.
+     * Since we basically did this later on for the error handler, it isn't
+     * a significant speed hit.
      */
     if (pstack == &e_stack) {
         for (i = 0; i < size; i++) {
             if (errorexec_find(i_ctx_p, &arr->value.refs[i]) < 0)
                 make_null(&arr->value.refs[i]);
+            else if (r_has_type(&arr->value.refs[i], t_struct)
+                  || r_has_type(&arr->value.refs[i], t_astruct)) {
+                ref r;
+                obj_cvs_ref(i_ctx_p, (const ref *)&arr->value.refs[i], &r);
+                ref_assign(&arr->value.refs[i], &r);
+            }
         }
     }
     if (pstack == &o_stack && dict_find_string(systemdict, "SAFETY", &safety) > 0 &&

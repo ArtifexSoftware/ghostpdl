@@ -1421,10 +1421,11 @@ rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 
 /* Allocate device icc structure. The actual profiles are in this structure */
 cmm_dev_profile_t*
-gsicc_new_device_profile_array(gs_memory_t *memory)
+gsicc_new_device_profile_array(gx_device *dev)
 {
     cmm_dev_profile_t *result;
     int k;
+    gs_memory_t *memory = dev->memory;
 
     if_debug0m(gs_debug_flag_icc,memory,"[icc] Allocating device profile struct\n");
     result = (cmm_dev_profile_t *) gs_alloc_bytes(memory->non_gc_memory,
@@ -1774,7 +1775,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
     } else {
         /* We have no profile structure at all. Allocate the structure in
            non-GC memory.  */
-        dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+        dev->icc_struct = gsicc_new_device_profile_array(dev);
         profile_struct = dev->icc_struct;
         if (profile_struct == NULL)
             return_error(gs_error_VMerror);

@@ -689,6 +689,8 @@ int clist_writer_pop_cropping(gx_device_clist_writer *cdev);
 int clist_writer_check_empty_cropping_stack(gx_device_clist_writer *cdev);
 int clist_read_icctable(gx_device_clist_reader *crdev);
 int clist_read_color_usage_array(gx_device_clist_reader *crdev);
+int clist_read_op_equiv_cmyk_colors(gx_device_clist_reader *crdev,
+    equivalent_cmyk_color_params *op_equiv);
 
 /* Special write out for the serialized icc profile table */
 
@@ -699,9 +701,9 @@ int cmd_write_icctable(gx_device_clist_writer * cldev, unsigned char *pbuf, int 
    may later include compressed image data */
 
 typedef enum {
-
     COLOR_USAGE_OFFSET = 1,
-    ICC_TABLE_OFFSET = 2
+    SPOT_EQUIV_COLORS = 2,
+    ICC_TABLE_OFFSET = 3
 
 } psuedoband_offset;
 
