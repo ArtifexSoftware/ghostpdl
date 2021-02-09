@@ -2312,6 +2312,9 @@ ufst-lib:
 ufst-debug: ufst-lib
 	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)"
 
+ufst-debug-pcl: ufst-lib
+	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" pcl
+
 ufst-debugclean: ufst-lib
 	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" clean
 
@@ -2320,6 +2323,9 @@ ufst-debugbsc: ufst-lib
 
 ufst: ufst-lib
 	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)"
+
+ufst-pcl: ufst-lib
+	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" pcl
 
 ufst-clean: ufst-lib
 	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" clean
