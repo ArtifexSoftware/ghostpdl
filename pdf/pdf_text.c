@@ -19,6 +19,7 @@
 #include "pdf_array.h"
 #include "pdf_text.h"
 #include "pdf_image.h"
+#include "pdf_colour.h"
 #include "pdf_stack.h"
 #include "pdf_gstate.h"
 #include "pdf_font.h"
@@ -26,6 +27,7 @@
 
 #include "gsstate.h"
 #include "gsmatrix.h"
+#include "gdevbbox.h"
 
 static int pdfi_set_TL(pdf_context *ctx, double TL);
 
@@ -524,6 +526,60 @@ show_error:
 
     gs_free_object(ctx->memory, x_widths, "Free X widths array on error");
     gs_free_object(ctx->memory, y_widths, "Free Y widths array on error");
+    return code;
+}
+
+int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, bool for_stroke)
+{
+    int code = 0;
+    gx_device_bbox *bbdev;
+    pdf_font *current_font = pdfi_get_current_pdf_font(ctx);
+
+    if (current_font == NULL)
+        return_error(gs_error_invalidfont);
+
+    for_stroke = current_font->pdfi_font_type == e_pdf_font_type3 ? false : for_stroke;
+
+    bbdev = gs_alloc_struct_immovable(ctx->memory, gx_device_bbox, &st_device_bbox, "pdfi_string_bbox(bbdev)");
+    if (bbdev == NULL)
+        return_error(gs_error_VMerror);
+
+    gx_device_bbox_init(bbdev, NULL, ctx->memory);
+    gx_device_retain((gx_device *)bbdev, true);
+    gx_device_bbox_set_white_opaque(bbdev, true);
+
+    code = pdfi_gsave(ctx);
+    if (code < 0) {
+        gx_device_retain((gx_device *)bbdev, false);
+        return code;
+    }
+    /* The bbox device needs a fairly high resolution to get accurate results */
+    gx_device_set_resolution((gx_device *)bbdev, 720.0, 720.0);
+
+    code = gs_setdevice_no_erase(ctx->pgs, (gx_device *)bbdev);
+    if (code < 0)
+        goto out;
+    gs_settextrenderingmode(ctx->pgs, for_stroke ? 2 : 0);
+
+    code = pdfi_gs_setgray(ctx, 1.0);
+    if (code < 0)
+        goto out;
+
+    code = gs_moveto(ctx->pgs, 0, 0);
+    if (code < 0)
+        goto out;
+
+    code = pdfi_show(ctx, s);
+    if (code < 0)
+        goto out;
+    bboxout->p.x = fixed2float(bbdev->bbox.p.x);
+    bboxout->p.y = fixed2float(bbdev->bbox.p.y);
+    bboxout->q.x = fixed2float(bbdev->bbox.q.x);
+    bboxout->q.y = fixed2float(bbdev->bbox.q.y);
+out:
+    pdfi_grestore(ctx);
+    gx_device_retain((gx_device *)bbdev, false);
+
     return code;
 }
 

@@ -121,7 +121,7 @@ $(PDFOBJ)pdf_fmap.$(OBJ): $(PDFSRC)pdf_fmap.c $(PDFINCLUDES) \
 $(strmio_h) $(stream_h) $(scanchar_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_fmap.c $(PDFO_)pdf_fmap.$(OBJ)
 
-$(PDFOBJ)pdf_text.$(OBJ): $(PDFSRC)pdf_text.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+$(PDFOBJ)pdf_text.$(OBJ): $(PDFSRC)pdf_text.c $(gdevbbox_h) $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_text.c $(PDFO_)pdf_text.$(OBJ)
 
 $(PDFOBJ)pdf_shading.$(OBJ): $(PDFSRC)pdf_shading.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
