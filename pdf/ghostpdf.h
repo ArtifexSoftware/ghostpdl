@@ -171,6 +171,13 @@ typedef enum pdf_crypt_filter_e {
     CRYPT_AESV3,  /* 256-bit AES */
 } pdf_crypt_filter;
 
+
+typedef enum {
+    PDF_OVERPRINT_ENABLE = 0,/* Default */
+    PDF_OVERPRINT_DISABLE,
+    PDF_OVERPRINT_SIMULATE
+} pdf_overprint_control_t;
+
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 524288
 #define MAX_OBJECT_CACHE_SIZE 200
@@ -229,6 +236,7 @@ typedef struct pdf_context_s
     bool nouserunit;
     bool renderttnotdef;
     bool pdfinfo;
+    pdf_overprint_control_t overprint_control;     /* Overprint -- enabled, disabled, simulated */
 
     char *PageList;
 
@@ -318,6 +326,12 @@ typedef struct pdf_context_s
 
     /* Does this page need overprint support? */
     bool page_needs_OP;
+
+    /* Does this page have OP=true in ExtGState? */
+    bool page_has_OP;
+
+    /* Are we simulating overprint on this page? */
+    bool page_simulate_op;
 
     /* Does current output device handle pdfmark */
     bool writepdfmarks;

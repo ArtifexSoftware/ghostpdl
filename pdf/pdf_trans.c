@@ -551,27 +551,55 @@ int pdfi_trans_end_smask_notify(pdf_context *ctx)
 
 /* Setup whether or not we need to support overprint (for device)
  * Check for:
- *   1) whether or not it is a CMYK device, and
+ *   1) how many components the device has (CMYK or other)
  *   2) whether it is a device that has transparency support
+ *   3) Overprint mode (enable, disable, simulate)
  * Based on pdf_main.ps/pdfshowpage_finish
+ * Test file (run with -dOverprint=/simulate)
+ *    tests_private/pdf/uploads/op_trans_spot_testing.pdf
  */
 void pdfi_trans_set_needs_OP(pdf_context *ctx)
 {
     bool is_cmyk;
-    bool have_transparency = false;
+    bool device_transparency = false;
 
     /* PS code checks for >= 4 components... */
     is_cmyk = ctx->pgs->device->color_info.num_components >= 4;
 
-    have_transparency = pdfi_device_check_param_bool(ctx->pgs->device, "HaveTransparency");
+    device_transparency = pdfi_device_check_param_bool(ctx->pgs->device, "HaveTransparency");
 
-    if (!is_cmyk || have_transparency)
-        ctx->page_needs_OP = false;
-    else
-        ctx->page_needs_OP = true;
+    ctx->page_needs_OP = false;
+    ctx->page_simulate_op = false;
+    switch(ctx->overprint_control) {
+    case PDF_OVERPRINT_DISABLE:
+        /* Use defaults */
+        break;
+    case PDF_OVERPRINT_SIMULATE:
+        if (!device_transparency && ctx->page_has_OP) {
+            if (is_cmyk) {
+                if (ctx->page_num_spots > 0) {
+                    ctx->page_needs_OP = true;
+                    ctx->page_simulate_op = true;
+                }
+            } else {
+                ctx->page_needs_OP = true;
+                ctx->page_simulate_op = true;
+            }
+        }
+        break;
+    case PDF_OVERPRINT_ENABLE:
+    default:
+        if (!is_cmyk || device_transparency)
+            ctx->page_needs_OP = false;
+        else
+            ctx->page_needs_OP = true;
+        break;
+    }
+
     if(ctx->pdfdebug)
-        dbgmprintf1(ctx->memory, "Page %s Overprint\n", ctx->page_needs_OP ?
-                "NEEDS" : "does NOT NEED");
+        dbgmprintf2(ctx->memory, "Page %s Overprint, Simulate is %s\n",
+                    ctx->page_needs_OP ? "NEEDS" : "does NOT NEED",
+                    ctx->page_simulate_op ? "TRUE" : "FALSE");
 }
 
 /* Figures out if current colorspace is okay for Overprint (see pdf_ops.ps/okOPcs and setupOPtrans) */

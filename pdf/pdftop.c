@@ -332,19 +332,31 @@ static int plist_value_get_int64(gs_param_typed_value *pvalue, int64_t *pint)
     return_error(gs_error_typecheck);
 }
 
-static int plist_value_get_string(pdf_context *ctx, gs_param_typed_value *pvalue, char **pstr, int *plen)
+/* Get the value for a string or a name (null terminated) */
+static int plist_value_get_string_or_name(pdf_context *ctx, gs_param_typed_value *pvalue,
+                                          char **pstr, int *plen)
 {
-    if (pvalue->type == gs_param_type_string) {
-        *pstr = (char *)gs_alloc_bytes(ctx->memory, pvalue->value.s.size + 1, "string from param list");
-        if (*pstr == NULL)
-            return_error(gs_error_VMerror);
+    const byte *data;
+    uint size;
 
-        memset(*pstr, 0x00, pvalue->value.s.size + 1);
-        memcpy(*pstr, pvalue->value.s.data, pvalue->value.s.size + 1);
-        *plen = pvalue->value.s.size;
-        return 0;
+    if (pvalue->type == gs_param_type_string) {
+        data = pvalue->value.s.data;
+        size = pvalue->value.s.size;
+    } else if (pvalue->type == gs_param_type_name) {
+        data = pvalue->value.n.data;
+        size = pvalue->value.n.size;
+    } else {
+        return_error(gs_error_typecheck);
     }
-    return_error(gs_error_typecheck);
+
+    *pstr = (char *)gs_alloc_bytes(ctx->memory, size + 1, "string from param list");
+    if (*pstr == NULL)
+        return_error(gs_error_VMerror);
+
+    memcpy(*pstr, data, size);
+    *((*pstr)+size) = 0; /* Null terminate */
+    *plen = size;
+    return 0;
 }
 
 static int plist_value_get_int(gs_param_typed_value *pvalue, int *pint)
@@ -377,6 +389,31 @@ static int plist_value_get_bool(gs_param_typed_value *pvalue, bool *pbool)
         return 0;
     }
     return_error(gs_error_typecheck);
+}
+
+/* Get the Overprint value and translate it to a numeric value */
+static int
+pdfi_get_overprint_param(pdf_context *ctx, gs_param_typed_value *pvalue)
+{
+    char *val = NULL;
+    int len;
+    int code;
+
+    code = plist_value_get_string_or_name(ctx, pvalue, &val, &len);
+    if (code < 0)
+        return code;
+
+    ctx->overprint_control = PDF_OVERPRINT_ENABLE;
+    if (!strncmp(val, "disable", len)) {
+        ctx->overprint_control = PDF_OVERPRINT_DISABLE;
+    }
+    if (!strncmp(val, "simulate", len)) {
+        ctx->overprint_control = PDF_OVERPRINT_SIMULATE;
+    }
+
+    if (val)
+        gs_free_object(ctx->memory, val, "Transparency param");
+    return code;
 }
 
 static int
@@ -506,7 +543,7 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PDFINFO", 13)) {
+        if (!strncmp(param, "PDFINFO", 7)) {
             code = plist_value_get_bool(&pvalue, &ctx->pdfinfo);
             if (code < 0)
                 return code;
@@ -516,8 +553,13 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PDFPassword", 8)) {
-            code = plist_value_get_string(ctx, &pvalue, &ctx->Password , &ctx->PasswordLen);
+        if (!strncmp(param, "PDFPassword", 11)) {
+            code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->Password , &ctx->PasswordLen);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "Overprint", 9)) {
+            code = pdfi_get_overprint_param(ctx, &pvalue);
             if (code < 0)
                 return code;
         }

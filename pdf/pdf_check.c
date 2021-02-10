@@ -68,6 +68,7 @@
  */
 typedef struct {
     bool transparent;
+    bool has_overprint; /* Does it have OP or op in an ExtGState? */
     pdf_dict *spot_dict;
     uint32_t size;
     byte *CheckedResources;
@@ -130,7 +131,7 @@ pdfi_check_init_tracker(pdf_context *ctx, pdfi_check_tracker_t *tracker)
 
     memset(tracker->CheckedResources, 0x00, tracker->size);
 
-    if (ctx->spot_capable_device) {
+    if (ctx->spot_capable_device || ctx->overprint_control == PDF_OVERPRINT_SIMULATE) {
         code = pdfi_dict_alloc(ctx, 32, &tracker->spot_dict);
         if (code < 0)
             goto cleanup;
@@ -471,8 +472,7 @@ error_exit:
 }
 
 /*
- * This routine checks an ExtGState dictionary to see if it contains any spot
- * colour definitions, or transparency usage.
+ * This routine checks an ExtGState dictionary to see if it contains transparency or OP
  */
 static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_dict *page_dict,
                                 pdfi_check_tracker_t *tracker)
@@ -480,14 +480,21 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_
     int code;
     pdf_obj *o = NULL;
     double f;
+    bool overprint;
 
     if (resource_is_checked(tracker, (pdf_obj *)extgstate_dict))
         return 0;
 
     if (pdfi_dict_entries(extgstate_dict) > 0) {
-        /* Check SMask first, because if we test spot colours first we can exit as
-         * soon as we detect transparency.
-         */
+        /* See if /OP or /op is true */
+        code = pdfi_dict_get_bool(ctx, extgstate_dict, "OP", &overprint);
+        if (code == 0 && overprint)
+            tracker->has_overprint = true;
+        code = pdfi_dict_get_bool(ctx, extgstate_dict, "op", &overprint);
+        if (code == 0 && overprint)
+            tracker->has_overprint = true;
+
+        /* Check SMask */
         code = pdfi_dict_knownget(ctx, extgstate_dict, "SMask", &o);
         if (code > 0) {
             if (o->type == PDF_NAME) {
@@ -547,6 +554,7 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_
                 return 0;
             }
         }
+
     }
     return 0;
 }
@@ -664,7 +672,7 @@ int pdfi_check_Pattern_transparency(pdf_context *ctx, pdf_dict *pattern, pdf_dic
                                     bool *transparent)
 {
     int code;
-    pdfi_check_tracker_t tracker = {0, NULL, 0, NULL};
+    pdfi_check_tracker_t tracker = {0, 0, NULL, 0, NULL};
 
     /* NOTE: We use a "null" tracker that won't do any optimization to prevent
      * checking the same resource twice.
@@ -1169,6 +1177,7 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     /* Set our values in the context, for caller */
     ctx->page_has_transparency = tracker.transparent;
     ctx->page_num_spots = spots;
+    ctx->page_has_OP = tracker.has_overprint;
 
  exit:
     (void)pdfi_check_free_tracker(ctx, &tracker);

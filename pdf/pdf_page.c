@@ -582,6 +582,8 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     bool page_group_known = false;
     pdf_stream *group_stream = NULL;
     bool page_dict_error = false;
+    bool need_pdf14 = false; /* true if the device is needed and was successfully pushed */
+    int trans_depth = 0; /* -1 means special mode for transparency simulation */
 
     if (page_num > ctx->num_pages)
         return_error(gs_error_rangecheck);
@@ -657,20 +659,31 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
     pdfi_gsave(ctx);
 
+    /* Figure out if pdf14 device is needed.
+     * This can be either for normal transparency deviceN, or because we are using
+     * Overprint=/simulate for other devices
+     */
     if (ctx->page_has_transparency) {
+        need_pdf14 = true;
+        if (ctx->page_simulate_op)
+            trans_depth = -1;
+    } else {
+        /* This is the case where we are simulating overprint without transparency */
+        if (ctx->page_simulate_op) {
+            need_pdf14 = true;
+            trans_depth = -1;
+        }
+    }
+    if (need_pdf14) {
         if (code >= 0) {
             /* We don't retain the PDF14 device */
-            /* FIXME - With the addition of the overprint simulation to the PDF14 device, we need to
-             * push the PDF14 device if there is transparency on the page, or there is overprint
-             * and the device is not spot-capable, in the latter case the 'depth' parameter
-             * (a total misnomer) needs to be set to -1. Spot capable devices should set it
-             * to 0.
-             */
-            code = gs_push_pdf14trans_device(ctx->pgs, false, false, 0, ctx->page_num_spots);
+            code = gs_push_pdf14trans_device(ctx->pgs, false, false, trans_depth, ctx->page_num_spots);
             if (code >= 0) {
                 if (page_group_known) {
                     code = pdfi_trans_begin_page_group(ctx, page_dict, group_stream);
-                    /* If setting the page group failed for some reason, abandon the page group, but continue with the page */
+                    /* If setting the page group failed for some reason, abandon the page group,
+                     *  but continue with the page
+                     */
                     if (code < 0)
                         page_group_known = false;
                 }
@@ -679,12 +692,14 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
                  * This is probably fatal, but attempt to recover by abandoning transparency
                  */
                 ctx->page_has_transparency = false;
+                need_pdf14 = false;
             }
         } else {
             /* Couldn't gsave round the transparency compositor.
              * This is probably fatal, but attempt to recover by abandoning transparency
              */
             ctx->page_has_transparency = false;
+            need_pdf14 = false;
         }
     }
 
@@ -703,7 +718,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     pdfi_countdown(ctx->CurrentPageDict);
     ctx->CurrentPageDict = NULL;
 
-    if (ctx->page_has_transparency) {
+    if (need_pdf14) {
         if (code1 < 0) {
             (void)gs_abort_pdf14trans_device(ctx->pgs);
             goto exit1;
