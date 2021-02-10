@@ -874,10 +874,14 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
             for (i = 0; i <= max_value; ++i) {
                 /* Enumerate the indexed colors, or just Black (DeviceGray = 0) */
                 cc.paint.values[0] = (double)i;
-                remap_color(&cc, pcs, &dcolor, pgs, dev,
+                code = remap_color(&cc, pcs, &dcolor, pgs, dev,
                             gs_color_select_source);
+                if (code < 0)
+                    break;
                 color_usage |= cmd_drawing_color_usage(cdev, &dcolor);
             }
+            if (code < 0)
+                goto use_default;
         }
     }
     pie->color_usage.or = color_usage;
