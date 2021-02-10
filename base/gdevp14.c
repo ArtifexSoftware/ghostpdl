@@ -10418,6 +10418,14 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 return code;
                 break;
             case PDF14_ABORT_DEVICE:
+                code = gx_abort_trans_device(pgs, dev);
+                if (pdev->free_devicen) {
+                    devn_free_params(dev);
+                }
+                pdf14_disable_device(dev);
+                pdf14_close(dev);
+                *pcdev = dev;
+                return code;
                 break;
             default:
                 break;		/* Pass remaining ops to target */
