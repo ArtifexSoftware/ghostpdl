@@ -478,6 +478,7 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
     bool is_planar_dev = dev->is_planar;
     bool render_is_valid;
     int csi;
+    gx_clip_path *lpcpath = NULL;
 
     /* We can only handle a limited set of image types. */
     switch ((gs_debug_c('`') ? -1 : pic->type->index)) {
@@ -600,7 +601,19 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
             pie->rect.q.x = pim->Width, pie->rect.q.y = pim->Height;
         }
         pie->pgs = pgs;
-        pie->pcpath = pcpath;
+
+        if (pcpath) {
+            lpcpath = gx_cpath_alloc(mem, "clist_begin_typed_image(lpcpath)");
+            if (!lpcpath) {
+                goto use_default;
+            }
+            code = gx_cpath_copy(pcpath, lpcpath);
+            if (code < 0) {
+                goto use_default;
+            }
+        }
+        pie->pcpath = lpcpath;
+
         pie->buffer = NULL;
         pie->format = format;
         pie->bits_per_plane = bits_per_pixel / pie->num_planes;
@@ -767,7 +780,7 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
     gs_bbox_transform(&sbox, &mat, &dbox);
 
     if (cdev->disable_mask & clist_disable_complex_clip)
-        if (!check_rect_for_trivial_clip(pcpath,
+        if (!check_rect_for_trivial_clip(lpcpath,
                                 (int)floor(dbox.p.x), (int)floor(dbox.p.y),
                                 (int)ceil(dbox.q.x), (int)ceil(dbox.q.y)))
             goto use_default;
@@ -896,9 +909,9 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
         int y0 = (int)floor(dbox.p.y - 0.51);   /* adjust + rounding slop */
         int y1 = (int)ceil(dbox.q.y + 0.51);    /* ditto */
 
-        if (pcpath) {
+        if (lpcpath) {
             gs_fixed_rect obox;
-            gx_cpath_outer_box(pcpath, &obox);
+            gx_cpath_outer_box(lpcpath, &obox);
             pie->ymin = max(0, max(y0, fixed2int(obox.p.y)));
             pie->ymax = min(min(y1, fixed2int(obox.q.y)), dev->height);
         } else {
@@ -934,6 +947,9 @@ use_default:
         gs_free_object(mem, pie->buffer, "clist_begin_typed_image");
     gs_free_object(mem, pie, "clist_begin_typed_image");
     *pinfo = NULL;
+
+    if (lpcpath != NULL)
+        gx_cpath_free(lpcpath, "clist_begin_typed_image(lpcpath)");
 
     if (pgs->has_transparency){
         return -1;
@@ -1262,6 +1278,9 @@ clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 #endif
     code = write_image_end_all(dev, pie);
     cdev->image_enum_id = gs_no_id;
+    gx_cpath_free((gx_clip_path *)pie->pcpath, "clist_image_end_image(pie->pcpath)");
+    cdev->clip_path = NULL;
+    cdev->clip_path_id = gs_no_id;
     gx_image_free_enum(&info);
     return code;
 }
