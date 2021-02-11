@@ -64,6 +64,9 @@
 #include "gsicc.h"
 #ifdef WITH_CAL
 #include "cal.h"
+#define CAL_SLOP 16
+#else
+#define CAL_SLOP 0
 #endif
 
 #if RAW_DUMP
@@ -948,7 +951,7 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         des_n_planes = src_n_planes + diff;
         des_n_chan = src_n_chan + diff;
         des_data = gs_alloc_bytes(ctx->memory,
-                                  (size_t)des_planestride * des_n_planes,
+                                  (size_t)des_planestride * des_n_planes + CAL_SLOP,
                                   "pdf14_transform_color_buffer");
         if (des_data == NULL)
             return NULL;
@@ -1140,7 +1143,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
         planestride = rowstride * height;
         result->planestride = planestride;
         result->data = gs_alloc_bytes(memory,
-                                      (size_t)planestride * n_planes,
+                                      (size_t)planestride * n_planes + CAL_SLOP,
                                       "pdf14_buf_new");
         if (result->data == NULL) {
             gs_free_object(memory, result, "pdf14_buf_new");
@@ -1541,7 +1544,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
        an isolated knockout group. */
     if (buf->knockout && pdf14_backdrop != NULL) {
         buf->backdrop = gs_alloc_bytes(ctx->memory,
-                                       (size_t)buf->planestride * buf->n_planes,
+                                       (size_t)buf->planestride * buf->n_planes + CAL_SLOP,
                                        "pdf14_push_transparency_group");
         if (buf->backdrop == NULL) {
             return gs_throw(gs_error_VMerror, "Knockout backdrop allocation failed");
@@ -1814,7 +1817,7 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
     buf->group_color_info = group_color;
 
     if (Matte_components) {
-        buf->matte = (uint16_t *)gs_alloc_bytes(ctx->memory, Matte_components * sizeof(uint16_t),
+        buf->matte = (uint16_t *)gs_alloc_bytes(ctx->memory, Matte_components * sizeof(uint16_t) + CAL_SLOP,
                                                 "pdf14_push_transparency_mask");
         if (buf->matte == NULL)
             return_error(gs_error_VMerror);
@@ -1976,7 +1979,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
         /* This will reduce our memory.  We won't reuse the existing one, due */
         /* Due to the fact that on certain systems we may have issues recovering */
         /* the data after a resize */
-        new_data_buf = gs_alloc_bytes(ctx->memory, tos->planestride,
+        new_data_buf = gs_alloc_bytes(ctx->memory, tos->planestride + CAL_SLOP,
                                         "pdf14_pop_transparency_mask");
         if (new_data_buf == NULL)
             return_error(gs_error_VMerror);
@@ -2306,7 +2309,7 @@ pdf14_get_buffer_information(const gx_device * dev,
                          gs_alloc_bytes(mem,
                                         (size_t)planestride *
                                                 (buf->n_chan +
-                                                 buf->has_tags ? 1 : 0),
+                                                 buf->has_tags ? 1 : 0) + CAL_SLOP,
                                         "pdf14_get_buffer_information");
             if (transbuff->transbytes == NULL)
                 return gs_error_VMerror;
