@@ -786,8 +786,13 @@ time with the <code>-DDEBUG</code> or
 <dl>
     <dt><code>make so</code></dt>
     <dd>On some platforms (Linux, *BSD, Darwin/Mac OS X, SunOS),
-    it is possible to build ghostscript as a shared object library.
+    it is possible to build Ghostscript as a shared object library.
     There is a corresponding "<code>make soclean</code>" for cleaning up.</dd>
+</dl>
+
+<dl>
+    <dt><code>make sanitize</code></dt>
+    <dd>Builds Ghostscript with AddressSanitizer. Output is placed in ./sanbin .</dd>
 </dl>
 
 <p>
