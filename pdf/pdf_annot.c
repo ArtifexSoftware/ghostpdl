@@ -36,6 +36,7 @@
 #include "gxfarith.h"
 #include "pdf_mark.h"
 #include "pdf_font.h"
+#include "pdf_text.h"
 
 typedef int (*annot_func)(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done);
 
@@ -1671,16 +1672,12 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
 
 /* Display a string */
 static int
-pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double size, const char *font,
-                        double x, double y, pdf_string *text)
+pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double x, double y, pdf_string *text)
 {
     char strbuf[1000]; /* TODO: Temp hack -- allocate dynamically */
     size_t buflen = sizeof(strbuf);
     int code = 0;
     char *ptr;
-
-    code = pdfi_annot_set_font(ctx, font, size);
-    if (code < 0) goto exit;
 
     snprintf(strbuf, buflen, "%g %g Td (", x, y);
     ptr = strbuf + strlen(strbuf);
@@ -1699,20 +1696,17 @@ pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double size, const ch
 
 /* Display a string formatted to fit in rect */
 static int
-pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot, double size, const char *font,
+pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
                                   gs_rect *rect, pdf_string *text)
 {
     double x, y;
     int code = 0;
 
-    code = pdfi_annot_set_font(ctx, font, size);
-    if (code < 0) goto exit;
-
     x = rect->p.x;
     y = rect->p.y;
 
     /* TODO: Need to deal with fitting it into the bbox, newlines, etc. */
-    code = pdfi_annot_display_text(ctx, annot, 0, NULL, x, y, text);
+    code = pdfi_annot_display_text(ctx, annot, x, y, text);
     if (code < 0) goto exit;
 
  exit:
@@ -1803,7 +1797,7 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     code = pdfi_dict_knownget_type(ctx, annot, "Contents", PDF_STRING, (pdf_obj **)&Contents);
     if (code < 0) goto exit;
     if (code > 0) {
-        code = pdfi_annot_display_formatted_text(ctx, annot, 0, NULL, &annotrect, Contents);
+        code = pdfi_annot_display_formatted_text(ctx, annot, &annotrect, Contents);
         if (code < 0) goto exit;
     }
 
@@ -2396,7 +2390,9 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
         if (code < 0) goto exit;
         x = rect.p.x + 5;
         y = rect.q.y - 30;
-        code = pdfi_annot_display_text(ctx, annot, 9, "Helvetica", x, y, Contents);
+        code = pdfi_annot_set_font(ctx, "Helvetica", 9);
+        if (code < 0) goto exit;
+        code = pdfi_annot_display_text(ctx, annot, x, y, Contents);
         if (code < 0) goto exit;
         code = pdfi_grestore(ctx);
         need_grestore = false;
@@ -2420,9 +2416,19 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     code = pdfi_dict_knownget_type(ctx, Parent, "T", PDF_STRING, (pdf_obj **)&T);
     if (code < 0) goto exit;
     if (code > 0) {
-        x = rect.p.x + 2; /* TODO: Center it based on stringwidth */
+        gs_rect bbox;
+
+        code = pdfi_annot_set_font(ctx, "Helvetica", 9);
+        if (code < 0) goto exit;
+
+        /* Get width of the string */
+        code = pdfi_string_bbox(ctx, T, &bbox, true);
+        if (code < 0) goto exit;
+
+        /* Center the title in the box */
+        x = rect.p.x + ((rect.q.x - rect.p.x) - (bbox.q.x - bbox.p.x)) / 2;
         y = rect.q.y - 11;
-        code = pdfi_annot_display_text(ctx, annot, 9, "Helvetica", x, y, T);
+        code = pdfi_annot_display_text(ctx, annot, x, y, T);
         if (code < 0) goto exit;
     }
 
