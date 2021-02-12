@@ -1026,24 +1026,6 @@ activated, <code>false</code> if not.
 </dl>
 
 <dl>
-<dt><a name=".setpdfwrite"></a>
-<code>.setpdfwrite</code></dt>
-<dd>
-<strong>This operator is now deprecated, and its use is discouraged</strong>
-<p>This operator conditions the environment for the <tt>pdfwrite</tt> output device.
-It is a shorthand for setting parameters that have been deemed benificial. While not strictly necessary, it is usually helpful to set call this when using the pdfwrite device.
-For example, this is how the ps2pdf script calls Ghostscript:
-<blockquote><code>
-gs -q -dSAFER -dNOPAUSE -dBATCH -sOutputFile=file.pdf </code><em>[more options]</em><code> \<br>
-&nbsp;&nbsp;-sDEVICE=pdfwrite -c .setpdfwrite -f </code><em>source1.ps [more files]</em>
-</blockquote>
-<p>Currently, the operator just sets a minimum 3&nbsp;MB vmthreshold to allow for
-accumulating shared object data and to reduce the incidence of garbage
-collection as a performance improvement. Additional settings may be added in the future.</p>
-</dd>
-</dl>
-
-<dl>
 <dt><a name=".genordered"></a>
 <code>&lt;dict&gt; .genordered &lt;dict&gt;</code> (default: /OutputType /Type3).</dt>
 <dt><code>&lt;dict&gt; .genordered &lt;string&gt;</code> (/OutputType /ThreshString).</dt>
