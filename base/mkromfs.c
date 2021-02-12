@@ -212,26 +212,6 @@ int outprintf(const gs_memory_t *mem, const char *fmt, ...)
     return count;
 }
 
-#ifndef GS_THREADSAFE
-int errprintf_nomem(const char *fmt, ...)
-{
-    int count;
-    char buf[PRINTF_BUF_LENGTH];
-    va_list args;
-
-    va_start(args, fmt);
-    count = vsnprintf(buf, sizeof(buf), fmt, args);
-    if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99 */
-        fwrite(buf, 1, sizeof(buf) - 1, stderr);
-        fwrite(msg_truncated, 1, sizeof(msg_truncated) - 1, stderr);
-    } else {
-        fwrite(buf, 1, count, stderr);
-    }
-    va_end(args);
-    return count;
-}
-#endif
-
 int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 {
     int count;
@@ -250,19 +230,36 @@ int errprintf(const gs_memory_t *mem, const char *fmt, ...)
     return count;
 }
 
+int errprintf_nomem(const char *fmt, ...)
+{
+    int count;
+    char buf[PRINTF_BUF_LENGTH];
+    va_list args;
+
+    va_start(args, fmt);
+    count = vsnprintf(buf, sizeof(buf), fmt, args);
+    if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99 */
+        fwrite(buf, 1, sizeof(buf) - 1, stderr);
+        fwrite(msg_truncated, 1, sizeof(msg_truncated) - 1, stderr);
+    } else {
+        fwrite(buf, 1, count, stderr);
+    }
+    va_end(args);
+    return count;
+}
 
 #ifndef GS_THREADSAFE
 #if __LINE__                    /* compiler provides it */
 void
 lprintf_file_and_line(const char *file, int line)
 {
-    epf("%s(%d): ", file, line);
+    errprintf(NULL, "%s(%d): ", file, line);
 }
 #else
 void
 lprintf_file_only(FILE * f, const char *file)
 {
-    epf("%s(?): ", file);
+    errprintf(NULL, "%s(?): ", file);
 }
 #endif
 
@@ -271,13 +268,13 @@ eprintf_program_ident(const char *program_name,
                       long revision_number)
 {
     if (program_name) {
-        epf((revision_number ? "%s " : "%s"), program_name);
+        errprintf(NULL, (revision_number ? "%s " : "%s"), program_name);
         if (revision_number) {
             int fpart = revision_number % 100;
 
-            epf("%d.%02d", (int)(revision_number / 100), fpart);
+            errprintf(NULL, "%d.%02d", (int)(revision_number / 100), fpart);
         }
-        epf(": ");
+        errprintf(NULL, ": ");
     }
 }
 #endif
@@ -302,9 +299,9 @@ int
 gs_log_error(int err, const char *file, int line)
 {
     if (file == NULL)
-        errprintf_nomem("Returning error %d.\n", err);
+        errprintf(NULL, "Returning error %d.\n", err);
     else
-        errprintf_nomem("%s(%d): Returning error %d.\n",
+        errprintf(NULL, "%s(%d): Returning error %d.\n",
                  (const char *)file, line, err);
     return err;
 }
