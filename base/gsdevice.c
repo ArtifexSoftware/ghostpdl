@@ -882,7 +882,7 @@ gx_device_set_hwsize_from_media(gx_device *dev)
     hwsize[1] = (int)(rot_media_y * dev->HWResolution[1] / 72.0 + 0.5);
 
     while (parent->parent != NULL) {
-        parent = dev->parent;
+        parent = parent->parent;
     }
     if (dev_proc(parent, dev_spec_op)(parent, gxdso_set_HWSize, &hwsize, sizeof(hwsize)) <= 0) {
         /* just do the default setting */
