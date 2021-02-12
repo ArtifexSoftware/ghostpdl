@@ -16,6 +16,8 @@
 
 /* plmain.c */
 /* Main program command-line interpreter for PCL interpreters */
+#include "std.h"
+#include "gserrors.h"
 #include "ctype_.h"
 #include "string_.h"
 #include <stdlib.h> /* atof */
@@ -51,7 +53,6 @@
 #include "stream.h"
 #include "strmio.h"
 #include "gp.h"
-#include "gserrors.h"
 
 /* includes for the display device */
 #include "gdevdevn.h"
