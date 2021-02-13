@@ -34,7 +34,7 @@ int pdfi_moveto (pdf_context *ctx)
 
     if (pdfi_count_stack(ctx) < 2) {
         pdfi_clearstack(ctx);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         else
             return 0;
@@ -49,7 +49,7 @@ int pdfi_moveto (pdf_context *ctx)
             y = n1->value.d;
         } else {
             pdfi_pop(ctx, 2);
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return_error(gs_error_typecheck);
             return 0;
         }
@@ -61,7 +61,7 @@ int pdfi_moveto (pdf_context *ctx)
             x = n2->value.d;
         } else {
             pdfi_pop(ctx, 2);
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return_error(gs_error_typecheck);
             return 0;
         }
@@ -69,7 +69,7 @@ int pdfi_moveto (pdf_context *ctx)
 
     code = gs_moveto(ctx->pgs, x, y);
     pdfi_pop(ctx, 2);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -86,7 +86,7 @@ int pdfi_lineto (pdf_context *ctx)
 
     if (pdfi_count_stack(ctx) < 2) {
         pdfi_clearstack(ctx);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         else
             return 0;
@@ -101,7 +101,7 @@ int pdfi_lineto (pdf_context *ctx)
             y = n1->value.d;
         } else {
             pdfi_pop(ctx, 2);
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return_error(gs_error_typecheck);
             return 0;
         }
@@ -113,7 +113,7 @@ int pdfi_lineto (pdf_context *ctx)
             x = n2->value.d;
         } else {
             pdfi_pop(ctx, 2);
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return_error(gs_error_typecheck);
             return 0;
         }
@@ -121,7 +121,7 @@ int pdfi_lineto (pdf_context *ctx)
 
     code = gs_lineto(ctx->pgs, x, y);
     pdfi_pop(ctx, 2);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -158,7 +158,7 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
     code1 = pdfi_newpath(ctx);
     if (code == 0) code = code1;
 
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -204,7 +204,7 @@ int pdfi_stroke(pdf_context *ctx)
     code1 = pdfi_newpath(ctx);
     if (code == 0) code = code1;
 
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -220,7 +220,7 @@ int pdfi_closepath_stroke(pdf_context *ctx)
     code = gs_closepath(ctx->pgs);
     if (code == 0)
         code = pdfi_stroke(ctx);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -234,7 +234,7 @@ int pdfi_curveto(pdf_context *ctx)
 
     if (pdfi_count_stack(ctx) < 6) {
         pdfi_clearstack(ctx);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         else {
             ctx->pdf_errors |= E_PDF_STACKUNDERFLOWERROR;
@@ -247,7 +247,7 @@ int pdfi_curveto(pdf_context *ctx)
         if (num->type != PDF_INT) {
             if(num->type != PDF_REAL) {
                 pdfi_pop(ctx, 6);
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_typecheck);
                 return 0;
             }
@@ -263,7 +263,7 @@ int pdfi_curveto(pdf_context *ctx)
 
     code = gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[4], Values[5]);
     pdfi_pop(ctx, 6);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -278,7 +278,7 @@ int pdfi_v_curveto(pdf_context *ctx)
 
     if (pdfi_count_stack(ctx) < 4) {
         pdfi_clearstack(ctx);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         else
             return 0;
@@ -289,7 +289,7 @@ int pdfi_v_curveto(pdf_context *ctx)
         if (num->type != PDF_INT) {
             if(num->type != PDF_REAL) {
                 pdfi_pop(ctx, 4);
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_typecheck);
                 return 0;
             }
@@ -306,7 +306,7 @@ int pdfi_v_curveto(pdf_context *ctx)
     code = gs_currentpoint(ctx->pgs, &pt);
     if (code < 0) {
         pdfi_pop(ctx, 4);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return code;
         else
             return 0;
@@ -314,7 +314,7 @@ int pdfi_v_curveto(pdf_context *ctx)
 
     code = gs_curveto(ctx->pgs, pt.x, pt.y, Values[0], Values[1], Values[2], Values[3]);
     pdfi_pop(ctx, 4);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -328,7 +328,7 @@ int pdfi_y_curveto(pdf_context *ctx)
 
     if (pdfi_count_stack(ctx) < 4) {
         pdfi_clearstack(ctx);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         else
             return 0;
@@ -339,7 +339,7 @@ int pdfi_y_curveto(pdf_context *ctx)
         if (num->type != PDF_INT) {
             if(num->type != PDF_REAL) {
                 pdfi_pop(ctx, 4);
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_typecheck);
                 return 0;
             }
@@ -355,7 +355,7 @@ int pdfi_y_curveto(pdf_context *ctx)
 
     code = gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[2], Values[3]);
     pdfi_pop(ctx, 4);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -368,7 +368,7 @@ int pdfi_closepath(pdf_context *ctx)
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -395,7 +395,7 @@ int pdfi_newpath(pdf_context *ctx)
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -411,7 +411,7 @@ int pdfi_b(pdf_context *ctx)
     code = gs_closepath(ctx->pgs);
     if (code >= 0)
         code = pdfi_B(ctx);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -427,7 +427,7 @@ int pdfi_b_star(pdf_context *ctx)
     code = gs_closepath(ctx->pgs);
     if (code >= 0)
         code = pdfi_B_star(ctx);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -456,7 +456,7 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
     code1 = pdfi_newpath(ctx);
     if (code == 0) code = code1;
 
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -479,7 +479,7 @@ int pdfi_clip(pdf_context *ctx)
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -492,7 +492,7 @@ int pdfi_eoclip(pdf_context *ctx)
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -506,7 +506,7 @@ int pdfi_rectpath(pdf_context *ctx)
 
     if (pdfi_count_stack(ctx) < 4) {
         pdfi_clearstack(ctx);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         else
             return 0;
@@ -517,7 +517,7 @@ int pdfi_rectpath(pdf_context *ctx)
         if (num->type != PDF_INT) {
             if(num->type != PDF_REAL) {
                 pdfi_pop(ctx, 4);
-                if(ctx->pdfstoponerror)
+                if(ctx->args.pdfstoponerror)
                     return_error(gs_error_typecheck);
                 return 0;
             }
@@ -545,7 +545,7 @@ int pdfi_rectpath(pdf_context *ctx)
         }
     }
     pdfi_pop(ctx, 4);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;

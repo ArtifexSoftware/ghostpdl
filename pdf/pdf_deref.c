@@ -288,7 +288,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 
     code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
     if (code < 0) {
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return code;
         else
             /* Something went wrong looking for endobj, but we found endstream, so assume
@@ -303,7 +303,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
         pdfi_pop(ctx, 1);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_typecheck);
         ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
         /* Didn't find an endobj, but we have an endstream, so assume
@@ -395,7 +395,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
     }
 
     /* Assume that any other keyword means a missing 'endobj' */
-    if (!ctx->pdfstoponerror) {
+    if (!ctx->args.pdfstoponerror) {
         pdf_obj *o;
 
         ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
@@ -487,7 +487,7 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     pdf_name *Type = NULL;
     pdf_obj *temp_obj;
 
-    if (ctx->pdfdebug) {
+    if (ctx->args.pdfdebug) {
         dmprintf1(ctx->memory, "%% Reading compressed object (%"PRIi64" 0 obj)", obj);
         dmprintf1(ctx->memory, " from ObjStm with object number %"PRIi64"\n", compressed_entry->object_num);
     }
@@ -692,7 +692,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
         dmprintf1(ctx->memory, "Error, attempted to dereference object %"PRIu64", which is not present in the xref table\n", obj);
         ctx->pdf_errors |= E_PDF_BADOBJNUMBER;
 
-        if(ctx->pdfstoponerror)
+        if(ctx->args.pdfstoponerror)
             return_error(gs_error_rangecheck);
 
         code = pdfi_object_alloc(ctx, PDF_NULL, 0, object);

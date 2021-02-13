@@ -94,7 +94,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                     code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
                     pdfi_countdown(r);
                     if (code < 0) {
-                        if (code != gs_error_VMerror || ctx->pdfstoponerror == false)
+                        if (code != gs_error_VMerror || ctx->args.pdfstoponerror == false)
                             code = 0;
                         goto page_error;
                     }
@@ -106,7 +106,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                     code = pdfi_interpret_content_stream(ctx, NULL, (pdf_stream *)o1, page_dict);
                     pdfi_countdown(o1);
                     if (code < 0) {
-                        if (code == gs_error_VMerror || ctx->pdfstoponerror == true)
+                        if (code == gs_error_VMerror || ctx->args.pdfstoponerror == true)
                             goto page_error;
                     }
                 }
@@ -230,22 +230,22 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
         return 0;
     }
 
-    if (ctx->usecropbox) {
+    if (ctx->args.usecropbox) {
         if (a != NULL)
             pdfi_countdown(a);
         (void)pdfi_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
     }
-    if (ctx->useartbox) {
+    if (ctx->args.useartbox) {
         if (a != NULL)
             pdfi_countdown(a);
         (void)pdfi_dict_get_type(ctx, page_dict, "ArtBox", PDF_ARRAY, (pdf_obj **)&a);
     }
-    if (ctx->usebleedbox) {
+    if (ctx->args.usebleedbox) {
         if (a != NULL)
             pdfi_countdown(a);
         (void)pdfi_dict_get_type(ctx, page_dict, "BleedBox", PDF_ARRAY, (pdf_obj **)&a);
     }
-    if (ctx->usetrimbox) {
+    if (ctx->args.usetrimbox) {
         if (a != NULL)
             pdfi_countdown(a);
         (void)pdfi_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&a);
@@ -253,7 +253,7 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     if (a == NULL)
         a = default_media;
 
-    if (!ctx->nouserunit) {
+    if (!ctx->args.nouserunit) {
         (void)pdfi_dict_knownget_number(ctx, page_dict, "UserUnit", &userunit);
     }
     ctx->UserUnit = userunit;
@@ -588,7 +588,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     if (page_num > ctx->num_pages)
         return_error(gs_error_rangecheck);
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf1(ctx->memory, "%% Processing Page %"PRIi64" content stream\n", page_num + 1);
 
     code = pdfi_page_get_dict(ctx, page_num, &page_dict);
@@ -596,7 +596,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         page_dict_error = true;
         ctx->pdf_errors |= E_PDF_PAGEDICTERROR;
         dmprintf1(ctx->memory, "*** ERROR: Page %ld has invalid Page dict, skipping\n", page_num+1);
-        if (code != gs_error_VMerror && !ctx->pdfstoponerror)
+        if (code != gs_error_VMerror && !ctx->args.pdfstoponerror)
             code = 0;
         goto exit2;
     }
@@ -606,7 +606,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     if (code < 0)
         goto exit2;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dbgmprintf2(ctx->memory, "Current page %ld transparency setting is %d", page_num+1,
                 ctx->page_has_transparency);
 
@@ -737,7 +737,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     pdfi_countdown(page_dict);
     pdfi_countdown(group_stream);
 
-    if (code == 0 || (!ctx->pdfstoponerror && code != gs_error_stackoverflow))
+    if (code == 0 || (!ctx->args.pdfstoponerror && code != gs_error_stackoverflow))
         if (!page_dict_error && ctx->end_page != NULL)
             code = ctx->end_page(ctx);
     return code;

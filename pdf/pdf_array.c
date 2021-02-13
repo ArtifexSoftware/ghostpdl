@@ -105,7 +105,7 @@ int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indi
     if (code < 0)
         return code;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf (ctx->memory, " ]\n");
 
     a->indirect_num = indirect_num;

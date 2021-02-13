@@ -2908,7 +2908,7 @@ static bool pdfi_annot_visible(pdf_context *ctx, pdf_dict *annot, pdf_name *subt
         goto exit;
     }
 
-    if (ctx->printed) {
+    if (ctx->args.printed) {
         /* Even if Print flag (bit 3) is off, will print if 3D */
         is_visible = ((F & 0x4) != 0) || is_3D;
     } else {
@@ -3243,7 +3243,7 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
             code = pdfi_mark_modA(ctx, tempdict);
             if (code < 0) goto exit;
         } else if (pdfi_name_is(Key, "Dest")) {
-            if (ctx->no_pdfmark_dests) {
+            if (ctx->args.no_pdfmark_dests) {
                 /* If omitting dests, such as for multi-page output, then omit this whole annotation */
                 code = 0;
                 goto exit;
@@ -3404,7 +3404,7 @@ static int pdfi_annot_handle(pdf_context *ctx, pdf_dict *annot)
         goto exit;
     }
 
-    if (ctx->preserveannots && ctx->annotations_preserved)
+    if (ctx->args.preserveannots && ctx->annotations_preserved)
         code = pdfi_annot_preserve(ctx, annot, Subtype);
     else
         code = pdfi_annot_draw(ctx, annot, Subtype);
@@ -3421,7 +3421,7 @@ int pdfi_do_annotations(pdf_context *ctx, pdf_dict *page_dict)
     pdf_dict *annot = NULL;
     int i;
 
-    if (!ctx->showannots)
+    if (!ctx->args.showannots)
         return 0;
 
     code = pdfi_dict_knownget_type(ctx, page_dict, "Annots", PDF_ARRAY, (pdf_obj **)&Annots);
@@ -3676,7 +3676,7 @@ int pdfi_do_acroform(pdf_context *ctx, pdf_dict *page_dict)
     pdf_dict *field = NULL;
     int i;
 
-    if (!ctx->showacroform)
+    if (!ctx->args.showacroform)
         return 0;
 
     code = pdfi_dict_knownget_type(ctx, ctx->Root, "AcroForm", PDF_DICT, (pdf_obj **)&AcroForm);

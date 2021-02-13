@@ -403,12 +403,12 @@ pdfi_get_overprint_param(pdf_context *ctx, gs_param_typed_value *pvalue)
     if (code < 0)
         return code;
 
-    ctx->overprint_control = PDF_OVERPRINT_ENABLE;
+    ctx->args.overprint_control = PDF_OVERPRINT_ENABLE;
     if (!strncmp(val, "disable", len)) {
-        ctx->overprint_control = PDF_OVERPRINT_DISABLE;
+        ctx->args.overprint_control = PDF_OVERPRINT_DISABLE;
     }
     if (!strncmp(val, "simulate", len)) {
-        ctx->overprint_control = PDF_OVERPRINT_SIMULATE;
+        ctx->args.overprint_control = PDF_OVERPRINT_SIMULATE;
     }
 
     if (val)
@@ -443,113 +443,113 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
         }
 
         if (!strncmp(param, "FirstPage", 9)) {
-            code = plist_value_get_int(&pvalue, &ctx->first_page);
+            code = plist_value_get_int(&pvalue, &ctx->args.first_page);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "LastPage", 8)) {
-            code = plist_value_get_int(&pvalue, &ctx->last_page);
+            code = plist_value_get_int(&pvalue, &ctx->args.last_page);
             if (code < 0)
                 return code;
         }
         /* PDF interpreter flags */
         if (!strncmp(param, "PDFDEBUG", 8)) {
-            code = plist_value_get_bool(&pvalue, &ctx->pdfdebug);
+            code = plist_value_get_bool(&pvalue, &ctx->args.pdfdebug);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "PDFSTOPONERROR", 14)) {
-            code = plist_value_get_bool(&pvalue, &ctx->pdfstoponerror);
+            code = plist_value_get_bool(&pvalue, &ctx->args.pdfstoponerror);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "PDFSTOPONWARNING", 16)) {
-            code = plist_value_get_bool(&pvalue, &ctx->pdfstoponwarning);
+            code = plist_value_get_bool(&pvalue, &ctx->args.pdfstoponwarning);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "NOTRANSPARENCY", 14)) {
-            code = plist_value_get_bool(&pvalue, &ctx->notransparency);
+            code = plist_value_get_bool(&pvalue, &ctx->args.notransparency);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "NOCIDFALLBACK", 13)) {
-            code = plist_value_get_bool(&pvalue, &ctx->nocidfallback);
+            code = plist_value_get_bool(&pvalue, &ctx->args.nocidfallback);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "NO_PDFMARK_OUTLINES", 19)) {
-            code = plist_value_get_bool(&pvalue, &ctx->no_pdfmark_outlines);
+            code = plist_value_get_bool(&pvalue, &ctx->args.no_pdfmark_outlines);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "NO_PDFMARK_DESTS", 16)) {
-            code = plist_value_get_bool(&pvalue, &ctx->no_pdfmark_dests);
+            code = plist_value_get_bool(&pvalue, &ctx->args.no_pdfmark_dests);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "PDFFitPage", 10)) {
-            code = plist_value_get_bool(&pvalue, &ctx->pdffitpage);
+            code = plist_value_get_bool(&pvalue, &ctx->args.pdffitpage);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "UseCropBox", 10)) {
-            code = plist_value_get_bool(&pvalue, &ctx->usecropbox);
+            code = plist_value_get_bool(&pvalue, &ctx->args.usecropbox);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "UseArtBox", 9)) {
-            code = plist_value_get_bool(&pvalue, &ctx->useartbox);
+            code = plist_value_get_bool(&pvalue, &ctx->args.useartbox);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "UseBleedBox", 11)) {
-            code = plist_value_get_bool(&pvalue, &ctx->usebleedbox);
+            code = plist_value_get_bool(&pvalue, &ctx->args.usebleedbox);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "UseTrimBox", 10)) {
-            code = plist_value_get_bool(&pvalue, &ctx->usetrimbox);
+            code = plist_value_get_bool(&pvalue, &ctx->args.usetrimbox);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "Printed", 7)) {
-            code = plist_value_get_bool(&pvalue, &ctx->printed);
+            code = plist_value_get_bool(&pvalue, &ctx->args.printed);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "ShowAcroForm", 12)) {
-            code = plist_value_get_bool(&pvalue, &ctx->showacroform);
+            code = plist_value_get_bool(&pvalue, &ctx->args.showacroform);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "ShowAnnots", 10)) {
-            code = plist_value_get_bool(&pvalue, &ctx->showannots);
+            code = plist_value_get_bool(&pvalue, &ctx->args.showannots);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "PreserveAnnots", 14)) {
-            code = plist_value_get_bool(&pvalue, &ctx->preserveannots);
+            code = plist_value_get_bool(&pvalue, &ctx->args.preserveannots);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "NoUserUnit", 10)) {
-            code = plist_value_get_bool(&pvalue, &ctx->nouserunit);
+            code = plist_value_get_bool(&pvalue, &ctx->args.nouserunit);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "RENDERTTNOTDEF", 13)) {
-            code = plist_value_get_bool(&pvalue, &ctx->renderttnotdef);
+            code = plist_value_get_bool(&pvalue, &ctx->args.renderttnotdef);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "PDFINFO", 7)) {
-            code = plist_value_get_bool(&pvalue, &ctx->pdfinfo);
+            code = plist_value_get_bool(&pvalue, &ctx->args.pdfinfo);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "DOPDFMARKS", 10)) {
-            code = plist_value_get_bool(&pvalue, &ctx->dopdfmarks);
+            code = plist_value_get_bool(&pvalue, &ctx->args.dopdfmarks);
             if (code < 0)
                 return code;
         }
@@ -582,7 +582,7 @@ pdf_impl_init_job(pl_interp_implementation_t *impl,
     pdf_context *ctx = instance->ctx;
 
     if (getenv("PDF_DISABLE_TRANSPARENCY"))
-        ctx->notransparency = true;
+        ctx->args.notransparency = true;
 
     return pdf_impl_set_device(impl, device);
 }

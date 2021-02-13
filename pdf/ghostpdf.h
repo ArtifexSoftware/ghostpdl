@@ -204,15 +204,7 @@ typedef struct name_entry {
     void *next;
 } pdfi_name_entry;
 
-typedef struct pdf_context_s
-{
-    void *instance;
-    gs_memory_t *memory;
-
-    /* Bitfields recording whether any errors or warnings were encountered */
-    pdf_error_flag pdf_errors;
-    pdf_warning_flag pdf_warnings;
-
+typedef struct cmd_args_t {
     /* These are various command line switches, the list is not yet complete */
     int first_page;             /* -dFirstPage= */
     int last_page;              /* -dLastPage= */
@@ -237,16 +229,44 @@ typedef struct pdf_context_s
     bool renderttnotdef;
     bool pdfinfo;
     pdf_overprint_control_t overprint_control;     /* Overprint -- enabled, disabled, simulated */
-
     char *PageList;
+} cmd_args;
+
+typedef struct pdf_context_s
+{
+    void *instance;
+    gs_memory_t *memory;
+
+    cmd_args args;
+
+    /* Parameters/capabilities of the selected device */
+
+    /* Needed to determine whether we need to reset the device to handle any spots
+     * and whether we need to prescan the PDF file to determine how many spot colourants
+     * (if any) are used in the file.
+     */
+    bool spot_capable_device;
+    /* for avoiding charpath with pdfwrite */
+    bool preserve_tr_mode;
+    /* Are SMask's preserved by device (pdfwrite) */
+    bool preserve_smask;
+    bool ForOPDFRead;
+    bool pdfmark;
+    /* These are derived from the device parameters rather than extracted from the device */
+    /* Does current output device handle pdfmark */
+    bool writepdfmarks;
+    /* Should annotations be preserved or marked for current output device? */
+    bool annotations_preserved;
+
 
     /* Text and text state parameters */
+
     /* we need the text enumerator in order to call gs_text_setcharwidth() for d0 and d1 */
     gs_text_enum_t *current_text_enum;
-    /* And also for d0 and d1, we need to know the character code of the glyph description
-     * (CharProc) we are running, so that we can find the relevant entry in the /Widths
-     * array (if present) of the font.
-    gs_char current_chr;
+    /* Detect if we are inside a text block at any time. Nested text blocks are illegal and certain
+     * marking operations are illegal inside text blocks. We also manipulate this when rendering
+     * type 3 BuildChar procedures, as those marking operations are legal in a BuildChar, even
+     * when we are in a text block.
      */
     int TextBlockDepth;
     /* This is to determine if we get Type 3 Charproc operators (d0 and d1) outside
@@ -259,19 +279,22 @@ typedef struct pdf_context_s
      */
     bool CharProc_is_d1;
 
-    /* The HeaderVersion is the declared version from the PDF header, but this
-     * can be overridden by later trailer dictionaries, so the FinalVersion is
-     * the version as finally read from the file. Note we don't currently use
-     * these for anything, we might in future emit warnings if PDF files use features
-     * inconsistent with the FinalVersion.
-     */
-    float HeaderVersion, FinalVersion;
 
-    /* Needed to determine whether we need to reset the device to handle any spots
-     * and whether we need to prescan the PDF file to determine how many spot colourants
-     * (if any) are used in the file.
-     */
-    bool spot_capable_device;
+    /* State for handling the wacky W and W* operators */
+    bool clip_active;
+    bool do_eoclip;
+
+    /* Doing a high level form for pdfwrite (annotations) */
+    bool PreservePDFForm;
+    /* Counter for making labels for pdfmark forms (annotations) */
+    int pdfwrite_form_counter;
+
+
+    /* PDF interpreter state */
+
+    /* Bitfields recording whether any errors or warnings were encountered */
+    pdf_error_flag pdf_errors;
+    pdf_warning_flag pdf_warnings;
 
     /* A name table :-( */
     pdfi_name_entry *name_table;
@@ -285,16 +308,6 @@ typedef struct pdf_context_s
      */
     gs_gstate *DefaultQState;
 
-    bool preserve_tr_mode; /* for avoiding charpath with pdfwrite */
-    /* Are SMask's preserved by device (pdfwrite) */
-    bool preserve_smask;
-
-
-    gs_color_space *gray_lin; /* needed for transparency */
-    gs_color_space *gray;
-    gs_color_space *srgb;
-    gs_color_space *scrgb;
-    gs_color_space *cmyk;
 
     /* The input PDF filename and the stream for it */
     char *filename;
@@ -305,10 +318,6 @@ typedef struct pdf_context_s
     /* offset to the xref table */
     gs_offset_t startxref;
 
-    /* State for handling the wacky W and W* operators */
-    bool clip_active;
-    bool do_eoclip;
-
     /* Track whether file is a hybrid. Initially prefer XRefStm but
      * if we fail to read the structure using an XRefStm, try again
      * using the xref
@@ -317,6 +326,22 @@ typedef struct pdf_context_s
     bool is_hybrid;
     /* If we've already repaired the file once, and it still fails, don't try to repair it again */
     bool repaired;
+
+    /* The HeaderVersion is the declared version from the PDF header, but this
+     * can be overridden by later trailer dictionaries, so the FinalVersion is
+     * the version as finally read from the file. Note we don't currently use
+     * these for anything, we might in future emit warnings if PDF files use features
+     * inconsistent with the FinalVersion.
+     */
+    float HeaderVersion, FinalVersion;
+
+    /* Page level PDF objects */
+    pdf_dict *CurrentPageDict;      /* Last-ditch resource lookup */
+
+    /* Page leve 'Default' transfer functions, black generation and under colour removal */
+    pdf_transfer DefaultTransfers[4];
+    pdf_transfer DefaultBG;
+    pdf_transfer DefaultUCR;
 
     /* This tracks whether the current page uses transparency features */
     bool page_has_transparency;
@@ -333,28 +358,8 @@ typedef struct pdf_context_s
     /* Are we simulating overprint on this page? */
     bool page_simulate_op;
 
-    /* Does current output device handle pdfmark */
-    bool writepdfmarks;
-
-    /* Counter for making labels for pdfmark forms (annotations) */
-    int pdfwrite_form_counter;
-
-    /* Doing a high level form for pdfwrite (annotations) */
-    bool PreservePDFForm;
-
-    /* Should annotations be preserved or marked for current output device? */
-    bool annotations_preserved;
-
     double PageSize[4];
     double UserUnit;
-
-    /* Page level PDF objects */
-    pdf_dict *CurrentPageDict;      /* Last-ditch resource lookup */
-
-    /* Page leve 'Default' transfer functions, black generation and under colour removal */
-    pdf_transfer DefaultTransfers[4];
-    pdf_transfer DefaultBG;
-    pdf_transfer DefaultUCR;
 
     /* Document level PDF objects */
     xref_table_t *xref_table;
@@ -433,6 +438,10 @@ typedef struct pdf_context_s
 
     pdf_dict *pdffontmap;
 
+    /* These function pointers can be replaced by ones intended to replicate
+     * PostScript functionality when running inside the Ghostscript PostScript
+     * interpreter.
+     */
     int (*end_page) (struct pdf_context_s *ctx);
     int (*get_glyph_name)(gs_font *font, gs_glyph index, gs_const_string *pstr);
     int (*get_glyph_index)(gs_font *font, byte *str, uint size, uint *glyph);

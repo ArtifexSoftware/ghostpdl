@@ -122,7 +122,7 @@ void pdfi_device_set_flags(pdf_context *ctx)
     has_ForOPDFRead = pdfi_device_check_param_bool(dev, "ForOPDFRead");
 
     /* Cache these so they don't have to constantly be calculated */
-    ctx->writepdfmarks = has_pdfmark || ctx->dopdfmarks;
+    ctx->writepdfmarks = has_pdfmark || ctx->args.dopdfmarks;
     ctx->annotations_preserved = ctx->writepdfmarks && !has_ForOPDFRead;
 
     /* PreserveTrMode is for pdfwrite device */
@@ -135,8 +135,8 @@ void pdfi_device_set_flags(pdf_context *ctx)
     /* If multi-page output, can't do certain pdfmarks */
     if (ctx->writepdfmarks) {
         if (gx_outputfile_is_separate_pages(((gx_device_vector *)dev)->fname, dev->memory)) {
-            ctx->no_pdfmark_outlines = true;
-            ctx->no_pdfmark_dests = true;
+            ctx->args.no_pdfmark_outlines = true;
+            ctx->args.no_pdfmark_dests = true;
         }
     }
 

@@ -131,7 +131,7 @@ pdfi_check_init_tracker(pdf_context *ctx, pdfi_check_tracker_t *tracker)
 
     memset(tracker->CheckedResources, 0x00, tracker->size);
 
-    if (ctx->spot_capable_device || ctx->overprint_control == PDF_OVERPRINT_SIMULATE) {
+    if (ctx->spot_capable_device || ctx->args.overprint_control == PDF_OVERPRINT_SIMULATE) {
         code = pdfi_dict_alloc(ctx, 32, &tracker->spot_dict);
         if (code < 0)
             goto cleanup;
@@ -966,7 +966,7 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
 
     code = pdfi_dict_get_type(ctx, annot, "Subtype", PDF_NAME, (pdf_obj **)&n);
     if (code < 0) {
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return code;
     } else {
         /* Check #2, Highlight annotations are always preformed with transparency */
@@ -1033,7 +1033,7 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
         code = pdfi_array_get_type(ctx, annots_array, (uint64_t)i, PDF_DICT, (pdf_obj **)&annot);
         if (code >= 0) {
             code = pdfi_check_annot_for_transparency(ctx, annot, page_dict, tracker);
-            if (code < 0 && ctx->pdfstoponerror)
+            if (code < 0 && ctx->args.pdfstoponerror)
                 goto exit;
 
             /* If we've found transparency, and don't need to continue checkign for spot colours
@@ -1045,7 +1045,7 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
             pdfi_countdown(annot);
             annot = NULL;
         }
-        if (code < 0 && ctx->pdfstoponerror)
+        if (code < 0 && ctx->args.pdfstoponerror)
             goto exit;
         code = 0;
     }
@@ -1089,7 +1089,7 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
             code = pdfi_dict_knownget(ctx, Group, "CS", &CS);
             if (code > 0)
                 code = pdfi_check_ColorSpace_for_spots(ctx, CS, Group, page_dict, tracker->spot_dict);
-            if (code < 0 && ctx->pdfstoponerror)
+            if (code < 0 && ctx->args.pdfstoponerror)
                 goto exit;
         }
     }
@@ -1098,16 +1098,16 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
     code = pdfi_dict_knownget_type(ctx, page_dict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
     if (code > 0)
         code = pdfi_check_Resources(ctx, Resources, page_dict, tracker);
-    if ((code < 0 && ctx->pdfstoponerror) || (code == gs_error_stackoverflow))
+    if ((code < 0 && ctx->args.pdfstoponerror) || (code == gs_error_stackoverflow))
         goto exit;
 
     /* If we are drawing Annotations, check to see if the page uses any Annots */
-    if (ctx->showannots) {
+    if (ctx->args.showannots) {
         code = pdfi_dict_knownget_type(ctx, page_dict, "Annots", PDF_ARRAY, (pdf_obj **)&Annots);
         if (code > 0)
             code = pdfi_check_Annots_for_transparency(ctx, Annots, page_dict,
                                                       tracker);
-        if (code < 0 && ctx->pdfstoponerror)
+        if (code < 0 && ctx->args.pdfstoponerror)
             goto exit;
     }
 

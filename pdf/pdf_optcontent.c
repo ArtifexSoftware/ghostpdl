@@ -106,7 +106,7 @@ pdfi_oc_check_OCG_usage(pdf_context *ctx, pdf_dict *ocdict)
         goto cleanup;
     }
 
-    if (ctx->printed) {
+    if (ctx->args.printed) {
         code = pdfi_dict_knownget_type(ctx, ocdict, "Print", PDF_DICT, (pdf_obj **)&dict);
         if (code <= 0)
             goto cleanup;
@@ -307,7 +307,7 @@ pdfi_oc_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
  cleanup:
     pdfi_countdown(type);
 
-    if (ctx->pdfdebug) {
+    if (ctx->args.pdfdebug) {
         dmprintf2(ctx->memory, "OCG: OC Dict %d %s visible\n", ocdict->object_num,
                   is_visible ? "IS" : "IS NOT");
     }

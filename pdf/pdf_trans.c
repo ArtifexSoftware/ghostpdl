@@ -570,7 +570,7 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
 
     ctx->page_needs_OP = false;
     ctx->page_simulate_op = false;
-    switch(ctx->overprint_control) {
+    switch(ctx->args.overprint_control) {
     case PDF_OVERPRINT_DISABLE:
         /* Use defaults */
         break;
@@ -596,7 +596,7 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
         break;
     }
 
-    if(ctx->pdfdebug)
+    if(ctx->args.pdfdebug)
         dbgmprintf2(ctx->memory, "Page %s Overprint, Simulate is %s\n",
                     ctx->page_needs_OP ? "NEEDS" : "does NOT NEED",
                     ctx->page_simulate_op ? "TRUE" : "FALSE");

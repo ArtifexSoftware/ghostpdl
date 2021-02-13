@@ -82,49 +82,49 @@ static int pdfi_output_metadata(pdf_context *ctx)
 
         code = dump_info_string(ctx, ctx->Info, "Title");
         if (code < 0) {
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return code;
         }
 
         code = dump_info_string(ctx, ctx->Info, "Author");
         if (code < 0) {
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return code;
         }
 
         code = dump_info_string(ctx, ctx->Info, "Subject");
         if (code < 0) {
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return code;
         }
 
         code = dump_info_string(ctx, ctx->Info, "Keywords");
         if (code < 0) {
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return code;
         }
 
         code = dump_info_string(ctx, ctx->Info, "Creator");
         if (code < 0) {
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return code;
         }
 
         code = dump_info_string(ctx, ctx->Info, "Producer");
         if (code < 0) {
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return code;
         }
 
         code = dump_info_string(ctx, ctx->Info, "CreationDate");
         if (code < 0) {
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return code;
         }
 
         code = dump_info_string(ctx, ctx->Info, "ModDate");
         if (code < 0) {
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return code;
         }
 
@@ -217,7 +217,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 
     code = pdfi_dump_box(ctx, page_dict, "MediaBox");
     if (code < 0) {
-        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+        if (code != gs_error_undefined && ctx->args.pdfstoponerror) {
             pdfi_countdown(page_dict);
             return code;
         }
@@ -225,7 +225,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 
     code = pdfi_dump_box(ctx, page_dict, "CropBox");
     if (code < 0) {
-        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+        if (code != gs_error_undefined && ctx->args.pdfstoponerror) {
             pdfi_countdown(page_dict);
             return code;
         }
@@ -233,7 +233,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 
     code = pdfi_dump_box(ctx, page_dict, "BleedBox");
     if (code < 0) {
-        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+        if (code != gs_error_undefined && ctx->args.pdfstoponerror) {
             pdfi_countdown(page_dict);
             return code;
         }
@@ -241,7 +241,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 
     code = pdfi_dump_box(ctx, page_dict, "TrimBox");
     if (code < 0) {
-        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+        if (code != gs_error_undefined && ctx->args.pdfstoponerror) {
             pdfi_countdown(page_dict);
             return code;
         }
@@ -249,7 +249,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 
     code = pdfi_dump_box(ctx, page_dict, "ArtBox");
     if (code < 0) {
-        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+        if (code != gs_error_undefined && ctx->args.pdfstoponerror) {
             pdfi_countdown(page_dict);
             return code;
         }
@@ -265,7 +265,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 
     code = pdfi_check_page(ctx, page_dict, false);
     if (code < 0) {
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return code;
     } else {
         if (ctx->page_has_transparency)
@@ -274,7 +274,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 
     code = pdfi_dict_known(ctx, page_dict, "Annots", &known);
     if (code < 0) {
-        if (code != gs_error_undefined && ctx->pdfstoponerror)
+        if (code != gs_error_undefined && ctx->args.pdfstoponerror)
             return code;
     } else {
         if (known == true)
@@ -586,20 +586,20 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
      * required information.
      */
     for (i=0;i < ctx->num_pages;i++) {
-        if (ctx->first_page != 0) {
-            if (i < ctx->first_page - 1)
+        if (ctx->args.first_page != 0) {
+            if (i < ctx->args.first_page - 1)
                 continue;
         }
-        if (ctx->last_page != 0) {
-            if (i > ctx->last_page - 1)
+        if (ctx->args.last_page != 0) {
+            if (i > ctx->args.last_page - 1)
                 break;;
         }
-        if (ctx->pdfinfo)
+        if (ctx->args.pdfinfo)
             code = pdfi_output_page_info(ctx, i);
         else
             code = pdfi_page_render(ctx, i, true);
 
-        if (code < 0 && ctx->pdfstoponerror)
+        if (code < 0 && ctx->args.pdfstoponerror)
             goto exit;
         code = 0;
     }
@@ -678,7 +678,7 @@ read_root:
     if (ctx->Trailer) {
         code = pdfi_read_Info(ctx);
         if (code < 0 && code != gs_error_undefined) {
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 goto exit;
             pdfi_clearstack(ctx);
         }
@@ -702,9 +702,9 @@ read_root:
 
     pdfi_read_OptionalRoot(ctx);
 
-    if (ctx->pdfinfo) {
+    if (ctx->args.pdfinfo) {
         code = pdfi_output_metadata(ctx);
-        if (code < 0 && ctx->pdfstoponerror)
+        if (code < 0 && ctx->args.pdfstoponerror)
             goto exit;
     }
 
@@ -749,7 +749,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
 
     bytes = Offset = min(BUF_SIZE - 1, ctx->main_stream_length);
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Reading header\n");
 
     bytes = pdfi_read_bytes(ctx, Buffer, 1, Offset, ctx->main_stream);
@@ -768,7 +768,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     /* First check for existence of header */
     s = strstr((char *)Buffer, "%PDF");
     if (s == NULL) {
-        if (ctx->pdfdebug) {
+        if (ctx->args.pdfdebug) {
             if (ctx->filename)
                 dmprintf1(ctx->memory, "%% File %s does not appear to be a PDF file (no %%PDF in first 2Kb of file)\n", ctx->filename);
             else
@@ -778,7 +778,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     } else {
         /* Now extract header version (may be overridden later) */
         if (sscanf(s + 5, "%f", &version) != 1) {
-            if (ctx->pdfdebug)
+            if (ctx->args.pdfdebug)
                 dmprintf(ctx->memory, "%% Unable to read PDF version from header\n");
             ctx->HeaderVersion = 0;
             ctx->pdf_errors |= E_PDF_NOHEADERVERSION;
@@ -786,14 +786,14 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
         else {
             ctx->HeaderVersion = version;
         }
-        if (ctx->pdfdebug)
+        if (ctx->args.pdfdebug)
             dmprintf1(ctx->memory, "%% Found header, PDF version is %f\n", ctx->HeaderVersion);
     }
 
     /* Jump to EOF and scan backwards looking for startxref */
     pdfi_seek(ctx, ctx->main_stream, 0, SEEK_END);
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Searching for 'startxerf' keyword\n");
 
     bytes = Offset;
@@ -859,7 +859,7 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
     stream *s = NULL;
     int code;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
 
     ctx->filename = (char *)gs_alloc_bytes(ctx->memory, strlen(filename) + 1, "copy of filename");
@@ -944,22 +944,15 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
      */
     ctx->pgs->have_pattern_streams = true;
     ctx->preserve_tr_mode = 0;
-    ctx->notransparency = false;
+    ctx->args.notransparency = false;
 
     ctx->main_stream = NULL;
 
     /* Setup some flags that don't default to 'false' */
-    ctx->showannots = true;
-    ctx->preserveannots = true;
+    ctx->args.showannots = true;
+    ctx->args.preserveannots = true;
     /* NOTE: For testing certain annotations on cluster, might want to set this to false */
-    ctx->printed = true; /* TODO: Should be true if OutputFile is set, false otherwise */
-
-    /* Gray, RGB and CMYK profiles set when color spaces installed in graphics lib */
-    ctx->gray_lin = gs_cspace_new_ICC(ctx->memory, ctx->pgs, -1);
-    ctx->gray = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 1);
-    ctx->cmyk = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 4);
-    ctx->srgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
-    ctx->scrgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
+    ctx->args.printed = true; /* TODO: Should be true if OutputFile is set, false otherwise */
 
     /* Initially, prefer the XrefStm in a hybrid file */
     ctx->prefer_xrefstm = true;
@@ -1039,8 +1032,8 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     dmprintf1(ctx->memory, "Normal object cache hit rate: %f\n", hit_rate);
     dmprintf1(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
 #endif
-    if (ctx->PageList)
-        gs_free_object(ctx->memory, ctx->PageList, "pdfi_free_context");
+    if (ctx->args.PageList)
+        gs_free_object(ctx->memory, ctx->args.PageList, "pdfi_free_context");
 
     if (ctx->Trailer)
         pdfi_countdown(ctx->Trailer);
@@ -1080,12 +1073,6 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         ctx->main_stream = NULL;
     }
     ctx->main_stream_length = 0;
-
-    rc_decrement_cs(ctx->gray_lin, "pdfi_free_context");
-    rc_decrement_cs(ctx->gray, "pdfi_free_context");
-    rc_decrement_cs(ctx->cmyk, "pdfi_free_context");
-    rc_decrement_cs(ctx->srgb, "pdfi_free_context");
-    rc_decrement_cs(ctx->scrgb, "pdfi_free_context");
 
     if(ctx->pgs != NULL) {
         gx_pattern_cache_free(ctx->pgs->pattern_cache);

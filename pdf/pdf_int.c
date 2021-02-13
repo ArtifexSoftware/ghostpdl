@@ -181,7 +181,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         }
         if (Buffer[index] == '.') {
             if (has_decimal_point == true) {
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_syntaxerror);
                 malformed = true;
             } else {
@@ -193,7 +193,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
              * but gs seems to accept it, so we should also?
              */
             if (has_exponent == true) {
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_syntaxerror);
                 malformed = true;
             } else {
@@ -204,12 +204,12 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
             }
         } else if (Buffer[index] == '-' || Buffer[index] == '+') {
             if (!(index == 0 || (has_exponent && index == exponent_index+1))) {
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_syntaxerror);
                 malformed = true;
             }
         } else if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return_error(gs_error_syntaxerror);
             if (!(ctx->pdf_errors & E_PDF_MISSINGWHITESPACE))
                 dmprintf(ctx->memory, "Ignoring missing white space while parsing number\n");
@@ -238,7 +238,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         if (real) {
             float tempf;
             if (sscanf((const char *)Buffer, "%f", &tempf) == 0) {
-                if (ctx->pdfdebug)
+                if (ctx->args.pdfdebug)
                     dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
                 gs_free_object(OBJ_MEMORY(num), num, "pdfi_read_num error");
                 return_error(gs_error_syntaxerror);
@@ -247,7 +247,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         } else {
             int tempi;
             if (sscanf((const char *)Buffer, "%d", &tempi) == 0) {
-                if (ctx->pdfdebug)
+                if (ctx->args.pdfdebug)
                     dmprintf1(ctx->memory, "failed to read integer : %s\n", Buffer);
                 gs_free_object(OBJ_MEMORY(num), num, "pdfi_read_num error");
                 return_error(gs_error_syntaxerror);
@@ -255,7 +255,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
             num->value.i = tempi;
         }
     }
-    if (ctx->pdfdebug) {
+    if (ctx->args.pdfdebug) {
         if (real)
             dmprintf1(ctx->memory, " %f", num->value.d);
         else
@@ -344,7 +344,7 @@ static int pdfi_read_name(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_n
     name->indirect_num = indirect_num;
     name->indirect_gen = indirect_gen;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf1(ctx->memory, " /%s", Buffer);
 
     gs_free_object(ctx->memory, Buffer, "pdfi_read_name");
@@ -370,7 +370,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
     if (Buffer == NULL)
         return_error(gs_error_VMerror);
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, " <");
 
     do {
@@ -389,7 +389,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
         if (HexBuf[0] == '>')
             break;
 
-        if (ctx->pdfdebug)
+        if (ctx->args.pdfdebug)
             dmprintf1(ctx->memory, "%c", HexBuf[0]);
 
         do {
@@ -409,7 +409,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
             goto exit;
         }
 
-        if (ctx->pdfdebug)
+        if (ctx->args.pdfdebug)
             dmprintf1(ctx->memory, "%c", HexBuf[1]);
 
         Buffer[index] = (fromhex(HexBuf[0]) << 4) + fromhex(HexBuf[1]);
@@ -427,7 +427,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
         }
     } while(1);
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, ">");
 
     code = pdfi_object_alloc(ctx, PDF_STRING, index, (pdf_obj **)&string);
@@ -634,7 +634,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
             return code;
     }
 
-    if (ctx->pdfdebug) {
+    if (ctx->args.pdfdebug) {
         int i;
         dmprintf(ctx->memory, " (");
         for (i=0;i<string->length;i++)
@@ -673,7 +673,7 @@ int pdfi_skip_comment(pdf_context *ctx, pdf_c_stream *s)
     byte Buffer;
     short bytes = 0;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf (ctx->memory, " %%");
 
     do {
@@ -682,7 +682,7 @@ int pdfi_skip_comment(pdf_context *ctx, pdf_c_stream *s)
             return_error(gs_error_ioerror);
 
         if (bytes > 0) {
-            if (ctx->pdfdebug)
+            if (ctx->args.pdfdebug)
                 dmprintf1 (ctx->memory, " %c", Buffer);
 
             if ((Buffer == 0x0A) || (Buffer == 0x0D)) {
@@ -728,7 +728,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     } while (bytes && index < 255);
 
     if (index >= 255 || index == 0) {
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_syntaxerror);
         strcpy((char *)Buffer, "KEYWORD_TOO_LONG");
         index = 16;
@@ -747,7 +747,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     keyword->indirect_num = indirect_num;
     keyword->indirect_gen = indirect_gen;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf1(ctx->memory, " %s\n", Buffer);
 
     switch(Buffer[0]) {
@@ -946,7 +946,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
                 bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
             }
             if (Buffer[1] == '<') {
-                if (ctx->pdfdebug)
+                if (ctx->args.pdfdebug)
                     dmprintf (ctx->memory, " <<\n");
                 return pdfi_mark_stack(ctx, PDF_DICT_MARK);
             } else {
@@ -978,21 +978,21 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
             return pdfi_read_string(ctx, s, indirect_num, indirect_gen);
             break;
         case '[':
-            if (ctx->pdfdebug)
+            if (ctx->args.pdfdebug)
                 dmprintf (ctx->memory, "[");
             return pdfi_mark_stack(ctx, PDF_ARRAY_MARK);
             break;
         case ']':
             code = pdfi_array_from_stack(ctx, indirect_num, indirect_gen);
             if (code < 0) {
-                if (code == gs_error_VMerror || code == gs_error_ioerror || ctx->pdfstoponerror)
+                if (code == gs_error_VMerror || code == gs_error_ioerror || ctx->args.pdfstoponerror)
                     return code;
                 pdfi_clearstack(ctx);
                 return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
             }
             break;
         case '{':
-            if (ctx->pdfdebug)
+            if (ctx->args.pdfdebug)
                 dmprintf (ctx->memory, "{");
             return pdfi_mark_stack(ctx, PDF_PROC_MARK);
             break;
@@ -1006,7 +1006,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
             break;
         default:
             if (isdelimiter(Buffer[0])) {
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_syntaxerror);
                 return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
             }
@@ -1679,7 +1679,7 @@ pdfi_interpret_inner_content(pdf_context *ctx, pdf_c_stream *content_stream, pdf
                              pdf_dict *page_dict, bool stoponerror, const char *desc)
 {
     int code = 0;
-    bool saved_stoponerror = ctx->pdfstoponerror;
+    bool saved_stoponerror = ctx->args.pdfstoponerror;
     stream_save local_entry_save;
 
     local_save_stream_state(ctx, &local_entry_save);
@@ -1687,7 +1687,7 @@ pdfi_interpret_inner_content(pdf_context *ctx, pdf_c_stream *content_stream, pdf
 
     /* Stop on error in substream, and also be prepared to clean up the stack */
     if (stoponerror)
-        ctx->pdfstoponerror = true;
+        ctx->args.pdfstoponerror = true;
 
 #if DEBUG_CONTEXT
     dbgmprintf1(ctx->memory, "BEGIN %s stream\n", desc);
@@ -1700,7 +1700,7 @@ pdfi_interpret_inner_content(pdf_context *ctx, pdf_c_stream *content_stream, pdf
     if (code < 0)
         dbgmprintf1(ctx->memory, "ERROR: inner_stream: code %d when rendering stream\n", code);
 
-    ctx->pdfstoponerror = saved_stoponerror;
+    ctx->args.pdfstoponerror = saved_stoponerror;
 
     /* Put our state back the way it was on entry */
 #if PROBE_STREAMS
@@ -1711,7 +1711,7 @@ pdfi_interpret_inner_content(pdf_context *ctx, pdf_c_stream *content_stream, pdf
 
     cleanup_context_interpretation(ctx, &local_entry_save);
     local_restore_stream_state(ctx, &local_entry_save);
-    if (!ctx->pdfstoponerror)
+    if (!ctx->args.pdfstoponerror)
         code = 0;
     return code;
 }
@@ -1814,7 +1814,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
     do {
         code = pdfi_read_token(ctx, stream, stream_obj->object_num, stream_obj->generation_num);
         if (code < 0) {
-            if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->pdfstoponerror) {
+            if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->args.pdfstoponerror) {
                 if (code == gs_error_ioerror) {
                     ctx->pdf_errors |= E_PDF_BADSTREAM;
                     dmprintf(ctx->memory, "**** Error reading a content stream.  The page may be incomplete.\n");
@@ -1844,7 +1844,7 @@ repaired_keyword:
                 case TOKEN_ENDOBJ:
                     pdfi_clearstack(ctx);
                     ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
-                    if (ctx->pdfstoponerror)
+                    if (ctx->args.pdfstoponerror)
                         code = gs_note_error(gs_error_syntaxerror);
                     goto exit;
                     break;
@@ -1862,7 +1862,7 @@ repaired_keyword:
 
                         if (code < 0) {
                             ctx->pdf_errors |= E_PDF_TOKENERROR;
-                            if (ctx->pdfstoponerror) {
+                            if (ctx->args.pdfstoponerror) {
                                 pdfi_clearstack(ctx);
                                 goto exit;
                             }

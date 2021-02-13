@@ -215,7 +215,7 @@ get_box(pdf_context *ctx, pdf_c_stream *source, int length, uint32_t *box_len, u
         return code;
     *box_val = READ32BE(blob);
 
-    if(ctx->pdfdebug)
+    if(ctx->args.pdfdebug)
         dbgmprintf3(ctx->memory, "JPXFilter: BOX: l:%d, v:%x (%4.4s)\n", *box_len, *box_val, blob);
     return 8;
 }
@@ -237,7 +237,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
     uint32_t cs_enum = 0;
     bool got_color = false;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dbgmprintf1(ctx->memory, "JPXFilter: Image length %d\n", length);
 
     /* Clear out the info param */
@@ -298,12 +298,12 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
         goto exit;
     avail -= LEN_IHDR;
     comps = READ16BE(ihdr_data+8);
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dbgmprintf1(ctx->memory, "    COMPS: %d\n", comps);
     bpc = ihdr_data[10];
     if (bpc != 255)
         bpc += 1;
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dbgmprintf1(ctx->memory, "    BPC: %d\n", bpc);
 
     /* Parse the rest of the things */
@@ -319,7 +319,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
         }
         /* Re-alloc buffer if it wasn't big enough (unlikely) */
         if (box_len > data_buf_len) {
-            if (ctx->pdfdebug)
+            if (ctx->args.pdfdebug)
                 dbgmprintf2(ctx->memory, "data buffer (size %d) was too small, reallocing to size %d\n",
                       data_buf_len, box_len);
             gs_free_object(ctx->memory, data, "pdfi_scan_jpxfilter (data)");
@@ -350,13 +350,13 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
                     }
                 }
                 bpc = bpc2+1;
-                if (ctx->pdfdebug)
+                if (ctx->args.pdfdebug)
                     dbgmprintf1(ctx->memory, "    BPCC: %d\n", bpc);
             }
             break;
         case K4('c','o','l','r'):
             if (got_color) {
-                if (ctx->pdfdebug)
+                if (ctx->args.pdfdebug)
                     dbgmprintf(ctx->memory, "JPXFilter: Ignore extra COLR specs\n");
                 break;
             }
@@ -374,28 +374,28 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
                 info->iccbased = true;
                 info->icc_offset = pdfi_tell(source) - (box_len-3);
                 info->icc_length = box_len - 3;
-                if (ctx->pdfdebug)
+                if (ctx->args.pdfdebug)
                     dbgmprintf5(ctx->memory, "JPXDecode: COLR Meth %d at offset %d(0x%x), length %d(0x%x)\n",
                                 cs_meth, info->icc_offset, info->icc_offset,
                                 info->icc_length, info->icc_length);
                 cs_enum = 0;
             } else {
-                if (ctx->pdfdebug)
+                if (ctx->args.pdfdebug)
                     dbgmprintf1(ctx->memory, "JPXDecode: COLR unexpected method %d\n", cs_meth);
                 cs_enum = 0;
             }
-            if (ctx->pdfdebug)
+            if (ctx->args.pdfdebug)
                 dbgmprintf2(ctx->memory, "    COLR: M:%d, ENUM:%d\n", cs_meth, cs_enum);
             got_color = true;
             break;
         case K4('p','c','l','r'):
             /* Apparently we just grab the BPC out of this */
-            if (ctx->pdfdebug)
+            if (ctx->args.pdfdebug)
                 dbgmprintf7(ctx->memory, "    PCLR Data: %x %x %x %x %x %x %x\n",
                       data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
             bpc = data[3];
             bpc = (bpc & 0x7) + 1;
-            if (ctx->pdfdebug)
+            if (ctx->args.pdfdebug)
                 dbgmprintf1(ctx->memory, "    PCLR BPC: %d\n", bpc);
             break;
         case K4('c','d','e','f'):
@@ -453,7 +453,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     info->Height = (int)temp_f;
     if ((int)temp_f != (int)(temp_f+.5)) {
         ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
-        if (ctx->pdfstoponwarning) {
+        if (ctx->args.pdfstoponwarning) {
             code = gs_note_error(gs_error_rangecheck);
             goto errorExit;
         }
@@ -466,7 +466,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     info->Width = (int)temp_f;
     if ((int)temp_f != (int)(temp_f+.5)) {
         ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
-        if (ctx->pdfstoponwarning) {
+        if (ctx->args.pdfstoponwarning) {
             code = gs_note_error(gs_error_rangecheck);
             goto errorExit;
         }
@@ -513,7 +513,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
          */
         if (code != gs_error_undefined) {
            ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
-           if (ctx->pdfstoponwarning)
+           if (ctx->args.pdfstoponwarning)
                 goto errorExit;
         }
     }
@@ -667,7 +667,7 @@ static int pdfi_check_inline_image_keys(pdf_context *ctx, pdf_dict *image_dict)
 
 error_inline_check:
     ctx->pdf_warnings |= W_PDF_BAD_INLINEIMAGEKEY;
-    if (ctx->pdfstoponwarning)
+    if (ctx->args.pdfstoponwarning)
         return_error(gs_error_syntaxerror);
     return 0;
 }
@@ -1197,7 +1197,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                      * We can do same and get matching output (but is it correct?)
                      * (should probably look at num comps, but gs code doesn't)
                      */
-                    if (ctx->pdfdebug)
+                    if (ctx->args.pdfdebug)
                         dmprintf1(ctx->memory,
                                   "WARNING JPXDecode: Unsupported EnumCS %d, assuming DeviceRGB\n",
                                   jpx_info->cs_enum);
@@ -1628,7 +1628,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                              mask_buffer, mask_size,
                              comps, image_info.ImageMask);
     if (code < 0) {
-        if (ctx->pdfdebug)
+        if (ctx->args.pdfdebug)
             dmprintf1(ctx->memory, "WARNING: pdfi_do_image: error %d from pdfi_render_image\n", code);
     }
 
@@ -1702,7 +1702,7 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_c_
 error:
     pdfi_countdown(image_stream);
     pdfi_countdown(d);
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     return 0;
 }
@@ -1862,7 +1862,7 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
     if (form_dict->type == PDF_STREAM)
         return 0;
 
-    if (!ctx->pdfstoponerror) {
+    if (!ctx->args.pdfstoponerror) {
         pdf_dict *stream_dict = NULL;
 
         code = pdfi_dict_knownget_type(ctx, form_dict, "Contents", PDF_STREAM,
@@ -2064,7 +2064,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image_or_form END\n");
 #endif
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     return 0;
 }
@@ -2129,7 +2129,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     /* No need to countdown 'n' because that points to the stack object, and we're going to pop that */
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     return 0;
 }

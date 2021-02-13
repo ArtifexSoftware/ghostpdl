@@ -984,7 +984,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     int64_t i64;
     double f;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Checking for Encrypt dictionary\n");
 
     code = pdfi_dict_get(ctx, ctx->Trailer, "Encrypt", (pdf_obj **)&d);

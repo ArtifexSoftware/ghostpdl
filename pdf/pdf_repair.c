@@ -100,7 +100,7 @@ int pdfi_repair_file(pdf_context *ctx)
 
     pdfi_clearstack(ctx);
 
-    if(ctx->pdfdebug)
+    if(ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Error encountered in opening PDF file, attempting repair\n");
 
     /* First try to locate a %PDF header. If we can't find one, abort this, the file is too broken
@@ -396,7 +396,7 @@ int pdfi_repair_file(pdf_context *ctx)
                         }
                         code = pdfi_dict_knownget_type(ctx, d, "Type", PDF_NAME, (pdf_obj **)&n);
                         if (code < 0) {
-                            if (ctx->pdfstoponerror || code == gs_error_VMerror) {
+                            if (ctx->args.pdfstoponerror || code == gs_error_VMerror) {
                                 pdfi_clearstack(ctx);
                                 return code;
                             }
@@ -452,7 +452,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                     pdfi_close_file(ctx, compressed_stream);
                                 }
                                 if (code < 0) {
-                                    if (ctx->pdfstoponerror || code == gs_error_VMerror) {
+                                    if (ctx->args.pdfstoponerror || code == gs_error_VMerror) {
                                         pdfi_clearstack(ctx);
                                         return code;
                                     }

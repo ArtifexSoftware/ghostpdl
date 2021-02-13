@@ -561,7 +561,7 @@ static int pdfi_DCT_filter(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *de
     code = pdfi_dict_knownget_number(ctx, stream_dict, "Height", &Height);
     if (code < 0)
         return code;
-    jddp->Height = Height;
+    jddp->Height = (int)floor(Height);
 
     jddp->templat = s_DCTD_template;
 
@@ -697,7 +697,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
 {
     int code;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
     {
         char str[100];
         memcpy(str, (const char *)n->data, n->length);
@@ -749,7 +749,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     if (pdfi_name_is(n, "AHx")) {
         if (!inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_simple_filter(ctx, &s_AXD_template, source, new_stream);
@@ -758,7 +758,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     if (pdfi_name_is(n, "A85")) {
         if (!inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_ASCII85_filter(ctx, decode, source, new_stream);
@@ -767,7 +767,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     if (pdfi_name_is(n, "LZW")) {
         if (!inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_LZW_filter(ctx, decode, source, new_stream);
@@ -776,7 +776,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     if (pdfi_name_is(n, "CCF")) {
         if (!inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_CCITTFax_filter(ctx, decode, source, new_stream);
@@ -785,7 +785,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     if (pdfi_name_is(n, "DCT")) {
         if (!inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_DCT_filter(ctx, dict, decode, source, new_stream);
@@ -794,7 +794,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     if (pdfi_name_is(n, "Fl")) {
         if (!inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_Flate_filter(ctx, decode, source, new_stream);
@@ -803,7 +803,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     if (pdfi_name_is(n, "RL")) {
         if (!inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_RunLength_filter(ctx, decode, source, new_stream);
@@ -828,7 +828,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
 
     *new_stream = NULL;
 
-    if (ctx->pdfdebug) {
+    if (ctx->args.pdfdebug) {
         gs_offset_t stream_offset = pdfi_stream_offset(ctx, stream_obj);
         dmprintf2(ctx->memory, "Filter: offset %ld(0x%lx)\n", stream_offset, stream_offset);
     }

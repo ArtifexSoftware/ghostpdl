@@ -207,7 +207,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     } else {
         code = pdfi_merge_dicts(ctx, ctx->Trailer, sdict);
         if (code < 0) {
-            if (code == gs_error_VMerror || ctx->pdfstoponerror)
+            if (code == gs_error_VMerror || ctx->args.pdfstoponerror)
                 return code;
         }
     }
@@ -377,7 +377,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
             return code;
     }
 
-    if(ctx->pdfdebug)
+    if(ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Reading /Prev xref\n");
 
     pdfi_seek(ctx, s, num, SEEK_SET);
@@ -400,7 +400,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s)
 {
     int code;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n%% Reading PDF 1.5+ xref stream\n");
 
     if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_INT) {
@@ -653,7 +653,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
 
     *section_start = *section_size = 0;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n%% Reading xref section\n");
 
     code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
@@ -691,7 +691,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
     *section_size = size = ((pdf_num *)o)->value.i;
     pdfi_pop(ctx, 2);
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf2(ctx->memory, "\n%% Section starts at %d and has %d entries\n", (unsigned int) start, (unsigned int)size);
 
     if (size > 0) {
@@ -823,7 +823,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     } else {
         code = pdfi_merge_dicts(ctx, ctx->Trailer, d);
         if (code < 0) {
-            if (code == gs_error_VMerror || ctx->pdfstoponerror)
+            if (code == gs_error_VMerror || ctx->args.pdfstoponerror)
                 return code;
         }
     }
@@ -884,7 +884,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
         code = gs_error_undefined;
 
     if (code == 0 && ctx->prefer_xrefstm) {
-        if (ctx->pdfdebug)
+        if (ctx->args.pdfdebug)
             dmprintf(ctx->memory, "%% File is a hybrid, containing xref table and xref stream. Using the stream.\n");
 
         pdfi_pop(ctx, 2);
@@ -985,7 +985,7 @@ int pdfi_read_xref(pdf_context *ctx)
         if (code < 0)
             goto exit;
 
-        if (ctx->pdfdebug)
+        if (ctx->args.pdfdebug)
             dmprintf(ctx->memory, "%% Trying to read 'xref' token for xref table, or 'int int obj' for an xref stream\n");
 
         if (ctx->startxref > ctx->main_stream_length - 5) {
@@ -1033,7 +1033,7 @@ int pdfi_read_xref(pdf_context *ctx)
         goto exit;
     }
 
-    if(ctx->pdfdebug && ctx->xref_table) {
+    if(ctx->args.pdfdebug && ctx->xref_table) {
         int i, j;
         xref_entry *entry;
         char Buffer[32];
@@ -1094,7 +1094,7 @@ int pdfi_read_xref(pdf_context *ctx)
                 dmprintf(ctx->memory, "n\n");
         }
     }
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n");
 
  exit:

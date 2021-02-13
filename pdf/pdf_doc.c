@@ -34,7 +34,7 @@ int pdfi_read_Root(pdf_context *ctx)
     pdf_obj *o, *o1;
     int code;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Reading Root dictionary\n");
 
     code = pdfi_dict_get(ctx, ctx->Trailer, "Root", &o1);
@@ -77,7 +77,7 @@ int pdfi_read_Root(pdf_context *ctx)
     }
     pdfi_countdown(o);
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n");
     /* We don't pdfi_countdown(o1) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
@@ -92,7 +92,7 @@ int pdfi_read_Info(pdf_context *ctx)
     pdf_obj *o, *o1;
     int code;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Reading Info dictionary\n");
 
     code = pdfi_dict_get(ctx, ctx->Trailer, "Info", &o1);
@@ -123,7 +123,7 @@ int pdfi_read_Info(pdf_context *ctx)
         }
     }
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n");
     /* We don't pdfi_countdown(o1) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
@@ -138,7 +138,7 @@ int pdfi_read_Pages(pdf_context *ctx)
     int code;
     double d;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Reading Pages dictionary\n");
 
     code = pdfi_dict_get(ctx, ctx->Root, "Pages", &o1);
@@ -173,7 +173,7 @@ int pdfi_read_Pages(pdf_context *ctx)
         }
     }
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n");
 
     /* Acrobat allows the Pages Count to be a flaoting point nuber (!) */
@@ -201,17 +201,17 @@ void pdfi_read_OptionalRoot(pdf_context *ctx)
     pdf_obj *obj = NULL;
     int code;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Reading other Root contents\n");
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% OCProperties\n");
     code = pdfi_dict_get_type(ctx, ctx->Root, "OCProperties", PDF_DICT, &obj);
     if (code == 0) {
         ctx->OCProperties = (pdf_dict *)obj;
     } else {
         ctx->OCProperties = NULL;
-        if (ctx->pdfdebug)
+        if (ctx->args.pdfdebug)
             dmprintf(ctx->memory, "%% (None)\n");
     }
 
@@ -366,7 +366,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
     int64_t num;
     double dbl;
 
-    if (ctx->pdfdebug)
+    if (ctx->args.pdfdebug)
         dmprintf1(ctx->memory, "%% Finding page dictionary for page %"PRIi64"\n", page_num + 1);
 
     /* Allocated inheritable dict (it might stay empty) */
@@ -873,7 +873,7 @@ static int pdfi_doc_Outlines(pdf_context *ctx)
     pdf_dict *outline = NULL;
     pdf_dict *Next = NULL;
 
-    if (ctx->no_pdfmark_outlines)
+    if (ctx->args.no_pdfmark_outlines)
         goto exit1;
 
     code = pdfi_dict_knownget_type(ctx, ctx->Root, "Outlines", PDF_DICT, (pdf_obj **)&Outlines);
@@ -1085,7 +1085,7 @@ static int pdfi_doc_EmbeddedFiles(pdf_context *ctx)
     pdfi_countdown(Names);
     pdfi_countdown(EmbeddedFiles);
     pdfi_countdown(Names_array);
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     return 0;
 }

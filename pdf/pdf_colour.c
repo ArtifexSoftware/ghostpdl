@@ -274,21 +274,21 @@ int pdfi_ri(pdf_context *ctx)
     int code;
 
     if (pdfi_count_stack(ctx) < 1) {
-        if(ctx->pdfstoponerror)
+        if(ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
 
     if (ctx->stack_top[-1]->type != PDF_NAME) {
         pdfi_pop(ctx, 1);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_typecheck);
         return 0;
     }
     n = (pdf_name *)ctx->stack_top[-1];
     code = pdfi_setrenderingintent(ctx, n);
     pdfi_pop(ctx, 1);
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     return 0;
 }
@@ -390,7 +390,7 @@ int pdfi_setgraystroke(pdf_context *ctx)
     double d1;
 
     if (pdfi_count_stack(ctx) < 1) {
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
@@ -403,7 +403,7 @@ int pdfi_setgraystroke(pdf_context *ctx)
             d1 = n1->value.d;
         } else {
             pdfi_pop(ctx, 1);
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return_error(gs_error_typecheck);
             else
                 return 0;
@@ -413,7 +413,7 @@ int pdfi_setgraystroke(pdf_context *ctx)
     code = pdfi_gs_setgray(ctx, d1);
     gs_swapcolors_quick(ctx->pgs);
     pdfi_pop(ctx, 1);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -426,7 +426,7 @@ int pdfi_setgrayfill(pdf_context *ctx)
     double d1;
 
     if (pdfi_count_stack(ctx) < 1) {
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
@@ -439,7 +439,7 @@ int pdfi_setgrayfill(pdf_context *ctx)
             d1 = n1->value.d;
         } else {
             pdfi_pop(ctx, 1);
-            if (ctx->pdfstoponerror)
+            if (ctx->args.pdfstoponerror)
                 return_error(gs_error_typecheck);
             else
                 return 0;
@@ -447,7 +447,7 @@ int pdfi_setgrayfill(pdf_context *ctx)
     }
     code = pdfi_gs_setgray(ctx, d1);
     pdfi_pop(ctx, 1);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -461,7 +461,7 @@ int pdfi_setrgbstroke(pdf_context *ctx)
 
     if (pdfi_count_stack(ctx) < 3) {
         pdfi_clearstack(ctx);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
@@ -471,7 +471,7 @@ int pdfi_setrgbstroke(pdf_context *ctx)
         if (num->type != PDF_INT) {
             if(num->type != PDF_REAL) {
                 pdfi_pop(ctx, 3);
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_typecheck);
                 else
                     return 0;
@@ -486,7 +486,7 @@ int pdfi_setrgbstroke(pdf_context *ctx)
     code = pdfi_gs_setrgbcolor(ctx, Values[0], Values[1], Values[2]);
     gs_swapcolors_quick(ctx->pgs);
     pdfi_pop(ctx, 3);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -504,7 +504,7 @@ int pdfi_setrgbfill_array(pdf_context *ctx)
     dmprintf(ctx->memory, "WARNING: Non-standard 'r' operator\n");
 
     if (pdfi_count_stack(ctx) < 1) {
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
@@ -518,7 +518,7 @@ int pdfi_setrgbfill_array(pdf_context *ctx)
     code = pdfi_setcolor_from_array(ctx, array);
  exit:
     pdfi_pop(ctx, 1);
-    if (code != 0 && ctx->pdfstoponerror)
+    if (code != 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -532,7 +532,7 @@ int pdfi_setrgbfill(pdf_context *ctx)
 
     if (pdfi_count_stack(ctx) < 3) {
         pdfi_clearstack(ctx);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
@@ -542,7 +542,7 @@ int pdfi_setrgbfill(pdf_context *ctx)
         if (num->type != PDF_INT) {
             if(num->type != PDF_REAL) {
                 pdfi_pop(ctx, 3);
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_typecheck);
                 else
                     return 0;
@@ -555,7 +555,7 @@ int pdfi_setrgbfill(pdf_context *ctx)
     }
     code = pdfi_gs_setrgbcolor(ctx, Values[0], Values[1], Values[2]);
     pdfi_pop(ctx, 3);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -569,7 +569,7 @@ int pdfi_setcmykstroke(pdf_context *ctx)
 
     if (pdfi_count_stack(ctx) < 4) {
         pdfi_clearstack(ctx);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
@@ -579,7 +579,7 @@ int pdfi_setcmykstroke(pdf_context *ctx)
         if (num->type != PDF_INT) {
             if(num->type != PDF_REAL) {
                 pdfi_pop(ctx, 4);
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_typecheck);
                 else
                     return 0;
@@ -594,7 +594,7 @@ int pdfi_setcmykstroke(pdf_context *ctx)
     code = pdfi_gs_setcmykcolor(ctx, Values[0], Values[1], Values[2], Values[3]);
     gs_swapcolors_quick(ctx->pgs);
     pdfi_pop(ctx, 4);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -608,7 +608,7 @@ int pdfi_setcmykfill(pdf_context *ctx)
 
     if (pdfi_count_stack(ctx) < 4) {
         pdfi_clearstack(ctx);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
@@ -618,7 +618,7 @@ int pdfi_setcmykfill(pdf_context *ctx)
         if (num->type != PDF_INT) {
             if(num->type != PDF_REAL) {
                 pdfi_pop(ctx, 4);
-                if (ctx->pdfstoponerror)
+                if (ctx->args.pdfstoponerror)
                     return_error(gs_error_typecheck);
                 else
                     return 0;
@@ -631,7 +631,7 @@ int pdfi_setcmykfill(pdf_context *ctx)
     }
     code = pdfi_gs_setcmykcolor(ctx, Values[0], Values[1], Values[2], Values[3]);
     pdfi_pop(ctx, 4);
-    if(code < 0 && ctx->pdfstoponerror)
+    if(code < 0 && ctx->args.pdfstoponerror)
         return code;
     else
         return 0;
@@ -724,7 +724,7 @@ int pdfi_setstrokecolor(pdf_context *ctx)
         code = gs_setcolor(ctx->pgs, &cc);
     }
     gs_swapcolors_quick(ctx->pgs);
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     return 0;
 }
@@ -740,7 +740,7 @@ int pdfi_setfillcolor(pdf_context *ctx)
     if (code == 0) {
         code = gs_setcolor(ctx->pgs, &cc);
     }
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     return 0;
 }
@@ -2135,14 +2135,14 @@ pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int in
     if (pdfi_name_is(space, "G") || pdfi_name_is(space, "DeviceGray")) {
         if (pdfi_name_is(space, "G") && !inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceGray(ctx, ppcs);
     } else if (pdfi_name_is(space, "I") || pdfi_name_is(space, "Indexed")) {
         if (pdfi_name_is(space, "I") && !inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, ppcs, inline_image);
@@ -2151,14 +2151,14 @@ pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int in
     } else if (pdfi_name_is(space, "RGB") || pdfi_name_is(space, "DeviceRGB")) {
         if (pdfi_name_is(space, "RGB") && !inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceRGB(ctx, ppcs);
     } else if (pdfi_name_is(space, "CMYK") || pdfi_name_is(space, "DeviceCMYK")) {
         if (pdfi_name_is(space, "CMYK") && !inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceCMYK(ctx, ppcs);
@@ -2208,21 +2208,21 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
     if (pdfi_name_is(name, "G") || pdfi_name_is(name, "DeviceGray")) {
         if (pdfi_name_is(name, "G") && !inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceGray(ctx, ppcs);
     } else if (pdfi_name_is(name, "RGB") || pdfi_name_is(name, "DeviceRGB")) {
         if (pdfi_name_is(name, "RGB") && !inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceRGB(ctx, ppcs);
     } else if (pdfi_name_is(name, "CMYK") || pdfi_name_is(name, "DeviceCMYK")) {
         if (pdfi_name_is(name, "CMYK") && !inline_image) {
             ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
-            if (ctx->pdfstoponwarning)
+            if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceCMYK(ctx, ppcs);
@@ -2325,13 +2325,13 @@ int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
     int code;
 
     if (pdfi_count_stack(ctx) < 1) {
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
     if (ctx->stack_top[-1]->type != PDF_NAME) {
         pdfi_pop(ctx, 1);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
@@ -2340,7 +2340,7 @@ int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
     gs_swapcolors_quick(ctx->pgs);
     pdfi_pop(ctx, 1);
 
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     return 0;
 }
@@ -2350,20 +2350,20 @@ int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *p
     int code;
 
     if (pdfi_count_stack(ctx) < 1) {
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
     if (ctx->stack_top[-1]->type != PDF_NAME) {
         pdfi_pop(ctx, 1);
-        if (ctx->pdfstoponerror)
+        if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
     code = pdfi_setcolorspace(ctx, ctx->stack_top[-1], stream_dict, page_dict);
     pdfi_pop(ctx, 1);
 
-    if (code < 0 && ctx->pdfstoponerror)
+    if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     return 0;
 }

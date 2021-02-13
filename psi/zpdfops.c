@@ -705,25 +705,25 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
         if (dict_find_string(pdictref, "PDFDEBUG", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->pdfdebug = pvalueref->value.boolval;
+            pdfctx->ctx->args.pdfdebug = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFSTOPONERROR", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->pdfstoponerror = pvalueref->value.boolval;
+            pdfctx->ctx->args.pdfstoponerror = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFSTOPONWARNING", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->pdfstoponwarning = pvalueref->value.boolval;
+            pdfctx->ctx->args.pdfstoponwarning = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "NOTRANSPARENCY", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->notransparency = pvalueref->value.boolval;
+            pdfctx->ctx->args.notransparency = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFPassword", &pvalueref) > 0) {
@@ -738,109 +738,109 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
         if (dict_find_string(pdictref, "FirstPage", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_integer))
                 goto error;
-            pdfctx->ctx->first_page = pvalueref->value.intval;
+            pdfctx->ctx->args.first_page = pvalueref->value.intval;
         }
 
         if (dict_find_string(pdictref, "LastPage", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_integer))
                 goto error;
-            pdfctx->ctx->last_page = pvalueref->value.intval;
+            pdfctx->ctx->args.last_page = pvalueref->value.intval;
         }
 
         if (dict_find_string(pdictref, "NOCIDFALLBACK", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->nocidfallback = pvalueref->value.boolval;
+            pdfctx->ctx->args.nocidfallback = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "NO_PDFMARK_OUTLINES", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->no_pdfmark_outlines = pvalueref->value.boolval;
+            pdfctx->ctx->args.no_pdfmark_outlines = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "NO_PDFMARK_DESTS", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->no_pdfmark_dests = pvalueref->value.boolval;
+            pdfctx->ctx->args.no_pdfmark_dests = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFFitPage", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->pdffitpage = pvalueref->value.boolval;
+            pdfctx->ctx->args.pdffitpage = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "Printed", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->printed = pvalueref->value.boolval;
+            pdfctx->ctx->args.printed = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "UseBleedBox", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->usebleedbox = pvalueref->value.boolval;
+            pdfctx->ctx->args.usebleedbox = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "UseCropBox", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->usecropbox = pvalueref->value.boolval;
+            pdfctx->ctx->args.usecropbox = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "UseArtBox", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->useartbox = pvalueref->value.boolval;
+            pdfctx->ctx->args.useartbox = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "UseTrimBox", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->usetrimbox = pvalueref->value.boolval;
+            pdfctx->ctx->args.usetrimbox = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "ShowAcroForm", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->showacroform = pvalueref->value.boolval;
+            pdfctx->ctx->args.showacroform = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "ShowAnnots", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->showannots = pvalueref->value.boolval;
+            pdfctx->ctx->args.showannots = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PreserveAnnots", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->preserveannots = pvalueref->value.boolval;
+            pdfctx->ctx->args.preserveannots = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "NoUserUnit", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->nouserunit = pvalueref->value.boolval;
+            pdfctx->ctx->args.nouserunit = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "RENDERTTNOTDEF", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->renderttnotdef = pvalueref->value.boolval;
+            pdfctx->ctx->args.renderttnotdef = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "DOPDFMARKS", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->dopdfmarks = pvalueref->value.boolval;
+            pdfctx->ctx->args.dopdfmarks = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFINFO", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->pdfinfo = pvalueref->value.boolval;
+            pdfctx->ctx->args.pdfinfo = pvalueref->value.boolval;
         }
         code = 0;
         pop(1);
