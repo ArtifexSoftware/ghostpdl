@@ -958,7 +958,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     ctx->prefer_xrefstm = true;
 
     /* We decrypt strings from encrypted files until we start a page */
-    ctx->decrypt_strings = true;
+    ctx->encryption.decrypt_strings = true;
     ctx->get_glyph_name = pdfi_glyph_name;
     ctx->get_glyph_index = pdfi_glyph_index;
 
@@ -1096,10 +1096,10 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     pdfi_free_DefaultQState(ctx);
     pdfi_oc_free(ctx);
 
-    if(ctx->EKey)
-        pdfi_countdown(ctx->EKey);
-    if (ctx->Password)
-        gs_free_object(ctx->memory, ctx->Password, "PDF Password from params");
+    if(ctx->encryption.EKey)
+        pdfi_countdown(ctx->encryption.EKey);
+    if (ctx->encryption.Password)
+        gs_free_object(ctx->memory, ctx->encryption.Password, "PDF Password from params");
 
     if (ctx->cache_entries != 0) {
         pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;

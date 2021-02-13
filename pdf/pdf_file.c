@@ -982,7 +982,7 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
      * image then its in a content stream and will already be decrypted, so don't
      * apply decryption again.
      */
-    if (ctx->is_encrypted && !inline_image) {
+    if (ctx->encryption.is_encrypted && !inline_image) {
         int64_t Length;
 
         code = pdfi_dict_get_type(ctx, stream_dict, "StreamKey", PDF_STRING, (pdf_obj **)&StreamKey);
@@ -1011,7 +1011,7 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
          */
         Length = pdfi_stream_length(ctx, stream_obj);
 
-        if (Length <= 0 || ctx->StrF == CRYPT_IDENTITY) {
+        if (Length <= 0 || ctx->encryption.StrF == CRYPT_IDENTITY) {
             /* Don't treat as an encrypted stream if Length is 0 */
             pdfi_countdown(StreamKey);
             return pdfi_filter_no_decryption(ctx, stream_obj, source, new_stream, inline_image);
@@ -1023,7 +1023,7 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
 
         SubFile_stream->original = source->s;
 
-        switch(ctx->StrF) {
+        switch(ctx->encryption.StrF) {
             case CRYPT_IDENTITY:
                 /* Can't happen, handled above */
                 break;

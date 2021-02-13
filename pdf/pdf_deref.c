@@ -681,7 +681,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     xref_entry *entry;
     int code;
     gs_offset_t saved_stream_offset;
-    bool saved_decrypt_strings = ctx->decrypt_strings;
+    bool saved_decrypt_strings = ctx->encryption.decrypt_strings;
 
     *object = NULL;
 
@@ -730,7 +730,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
         if (entry->compressed) {
             /* This is an object in a compressed object stream */
-            ctx->decrypt_strings = false;
+            ctx->encryption.decrypt_strings = false;
 
             code = pdfi_deref_compressed(ctx, obj, gen, object, entry);
             if (code < 0)
@@ -801,15 +801,15 @@ free_obj:
     if (ctx->loop_detection) {
         code = pdfi_loop_detector_add_object(ctx, (*object)->object_num);
         if (code < 0) {
-            ctx->decrypt_strings = saved_decrypt_strings;
+            ctx->encryption.decrypt_strings = saved_decrypt_strings;
             return code;
         }
     }
-    ctx->decrypt_strings = saved_decrypt_strings;
+    ctx->encryption.decrypt_strings = saved_decrypt_strings;
     return 0;
 
 error:
-    ctx->decrypt_strings = saved_decrypt_strings;
+    ctx->encryption.decrypt_strings = saved_decrypt_strings;
     (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     pdfi_clearstack(ctx);
     return code;

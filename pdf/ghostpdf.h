@@ -232,12 +232,56 @@ typedef struct cmd_args_t {
     char *PageList;
 } cmd_args;
 
+typedef struct encryption_state_t {
+    /* Encryption, passwords and filter details */
+    bool is_encrypted;
+    int V;
+    int Length;
+    char *Password;
+    int PasswordLen;
+    int R;
+    /* Revision 1-4 have O and E being 32 bytes, revision 5 and 6 48 bytes */
+    char O[48];
+    char U[48];
+    /* OE and UE are used for revision 5 and 6 encryption */
+    char OE[32];
+    char UE[32];
+    int P;
+    pdf_string *EKey;
+    bool EncryptMetadata;
+    pdf_crypt_filter StrF;
+    pdf_crypt_filter StmF;
+    /* decrypting strings is complicated :-(
+     * Streams are easy, because they can't be in compressed ObjStms, and they
+     * have to be indirect objects. Strings can be indirect references or directly
+     * defined, can be in compressed ObjStms and can appear inside content streams.
+     * When they are in content streams we don't decrypt them, because the *stream*
+     * was already decrypted. So when strings are directly or indirectly defined,
+     * and *NOT* defined as part of a content stream, and not in an Objstm, we
+     * need to decrypt them. We can handle the checking for ObjStm in the actual
+     * decryption routine, where we also handle picking out the object number of the
+     * enclosing parent, if its a directly defined string, but we cannot tell
+     * whether we are executing a content stream or not, so we need to know that. This
+     * flag is set whenever we are executing a content stream, it is temporarily reset
+     * by pdfi_dereference() because indirect references can't appear in a content stream
+     * so we know we need to decrypt any strings that are indirectly referenced. Note that
+     * Form handling needs to set this flag for the duration of a Form content stream,
+     * because we can execute Forms outside a page context (eg Annotations).
+     */
+    bool decrypt_strings;
+
+} encryption_state;
+
 typedef struct pdf_context_s
 {
     void *instance;
     gs_memory_t *memory;
 
+    /* command line argument storage */
     cmd_args args;
+
+    /* Encryption state */
+    encryption_state encryption;
 
     /* Parameters/capabilities of the selected device */
 
@@ -376,43 +420,6 @@ typedef struct pdf_context_s
     /* Optional/Marked Content stuff */
     void *OFFlevels;
     uint64_t BMClevel;
-
-    /* Encryption, passwords and filter details */
-    bool is_encrypted;
-    int V;
-    int Length;
-    char *Password;
-    int PasswordLen;
-    int R;
-    /* Revision 1-4 have O and E being 32 bytes, revision 5 and 6 48 bytes */
-    char O[48];
-    char U[48];
-    /* OE and UE are used for revision 5 and 6 encryption */
-    char OE[32];
-    char UE[32];
-    int P;
-    pdf_string *EKey;
-    bool EncryptMetadata;
-    pdf_crypt_filter StrF;
-    pdf_crypt_filter StmF;
-    /* decrypting strings is complicated :-(
-     * Streams are easy, because they can't be in compressed ObjStms, and they
-     * have to be indirect objects. Strings can be indirect references or directly
-     * defined, can be in compressed ObjStms and can appear inside content streams.
-     * When they are in content streams we don't decrypt them, because the *stream*
-     * was already decrypted. So when strings are directly or indirectly defined,
-     * and *NOT* defined as part of a content stream, and not in an Objstm, we
-     * need to decrypt them. We can handle the checking for ObjStm in the actual
-     * decryption routine, where we also handle picking out the object number of the
-     * enclosing parent, if its a directly defined string, but we cannot tell
-     * whether we are executing a content stream or not, so we need to know that. This
-     * flag is set whenever we are executing a content stream, it is temporarily reset
-     * by pdfi_dereference() because indirect references can't appear in a content stream
-     * so we know we need to decrypt any strings that are indirectly referenced. Note that
-     * Form handling needs to set this flag for the duration of a Form content stream,
-     * because we can execute Forms outside a page context (eg Annotations).
-     */
-    bool decrypt_strings;
 
     /* Interpreter level PDF objects */
     uint32_t stack_size;

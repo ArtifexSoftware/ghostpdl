@@ -729,10 +729,10 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
         if (dict_find_string(pdictref, "PDFPassword", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_string))
                 goto error;
-            pdfctx->ctx->Password = (char *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF Password from zpdfops");
-            memset(pdfctx->ctx->Password, 0x00, r_size(pvalueref) + 1);
-            memcpy(pdfctx->ctx->Password, pvalueref->value.const_bytes, r_size(pvalueref));
-            pdfctx->ctx->PasswordLen = r_size(pvalueref);
+            pdfctx->ctx->encryption.Password = (char *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF Password from zpdfops");
+            memset(pdfctx->ctx->encryption.Password, 0x00, r_size(pvalueref) + 1);
+            memcpy(pdfctx->ctx->encryption.Password, pvalueref->value.const_bytes, r_size(pvalueref));
+            pdfctx->ctx->encryption.PasswordLen = r_size(pvalueref);
         }
 
         if (dict_find_string(pdictref, "FirstPage", &pvalueref) > 0) {

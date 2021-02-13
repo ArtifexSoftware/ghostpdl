@@ -66,7 +66,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
         return code;
     }
 
-    ctx->decrypt_strings = false;
+    ctx->encryption.decrypt_strings = false;
     if (o->type == PDF_ARRAY) {
         pdf_array *a = (pdf_array *)o;
 
@@ -117,12 +117,12 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
             code = pdfi_interpret_content_stream(ctx, NULL, (pdf_stream *)o, page_dict);
         } else {
             pdfi_countdown(o);
-            ctx->decrypt_strings = true;
+            ctx->encryption.decrypt_strings = true;
             return_error(gs_error_typecheck);
         }
     }
 page_error:
-    ctx->decrypt_strings = true;
+    ctx->encryption.decrypt_strings = true;
     pdfi_clearstack(ctx);
     pdfi_grestore(ctx);
     pdfi_countdown(o);

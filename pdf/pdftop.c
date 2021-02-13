@@ -554,7 +554,7 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
                 return code;
         }
         if (!strncmp(param, "PDFPassword", 11)) {
-            code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->Password , &ctx->PasswordLen);
+            code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->encryption.Password , &ctx->encryption.PasswordLen);
             if (code < 0)
                 return code;
         }

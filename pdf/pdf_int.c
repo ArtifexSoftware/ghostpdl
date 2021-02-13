@@ -628,7 +628,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
 
     gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
 
-    if (ctx->is_encrypted && ctx->decrypt_strings) {
+    if (ctx->encryption.is_encrypted && ctx->encryption.decrypt_strings) {
         code = pdfi_decrypt_string(ctx, string);
         if (code < 0)
             return code;

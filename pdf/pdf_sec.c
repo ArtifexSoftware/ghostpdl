@@ -76,13 +76,13 @@ static int pdf_compute_encryption_key_preR5(pdf_context *ctx, char *Password, in
     gs_md5_append(&md5, (gs_md5_byte_t *)&Key, 32);
 
     /* 3. Pass the value of the encryption dictionary's O entry to the MD5 hash */
-    gs_md5_append(&md5, (gs_md5_byte_t *)ctx->O, 32);
+    gs_md5_append(&md5, (gs_md5_byte_t *)ctx->encryption.O, 32);
 
     /* 4. Treat the value of P as an unsigned 4 byte integer and pass those bytes to the MD5 */
-    P[3] = ((uint32_t)ctx->P) >> 24;
-    P[2] = ((uint32_t)ctx->P & 0x00ff0000) >> 16;
-    P[1] = ((uint32_t)ctx->P & 0x0000ff00) >> 8;
-    P[0] = ((uint32_t)ctx->P & 0xff);
+    P[3] = ((uint32_t)ctx->encryption.P) >> 24;
+    P[2] = ((uint32_t)ctx->encryption.P & 0x00ff0000) >> 16;
+    P[1] = ((uint32_t)ctx->encryption.P & 0x0000ff00) >> 8;
+    P[0] = ((uint32_t)ctx->encryption.P & 0xff);
     gs_md5_append(&md5, (gs_md5_byte_t *)P, 4);
 
     /* 5. Pass the first element of the file's file identifier array */
@@ -106,7 +106,7 @@ static int pdf_compute_encryption_key_preR5(pdf_context *ctx, char *Password, in
      * (revision 4 or greater) If document Metadata is not being encrypted
      * pass 4 bytes with the value 0xFFFFFFFF to the MD5 hash function.
      */
-    if (R > 3 && !ctx->EncryptMetadata) {
+    if (R > 3 && !ctx->encryption.EncryptMetadata) {
         gs_md5_append(&md5, (const gs_md5_byte_t *)R4String, 4);
     }
 
@@ -232,13 +232,13 @@ static int check_user_password_R5(pdf_context *ctx, char *Password, int Len, int
     /* concatenate the password */
     memcpy(Test, UTF8_Password, NewLen);
     /* With the 'User Validation Salt' (stored as part of the /O string */
-    memcpy(&Test[NewLen], &ctx->U[32], 8);
+    memcpy(&Test[NewLen], &ctx->encryption.U[32], 8);
 
     pSHA256_Init(&sha256);
     pSHA256_Update(&sha256, (uint8_t *)Test, NewLen + 8);
     pSHA256_Final((uint8_t *)Buffer, &sha256);
 
-    if (memcmp(Buffer, ctx->U, 32) != 0) {
+    if (memcmp(Buffer, ctx->encryption.U, 32) != 0) {
         code = gs_note_error(gs_error_unknownerror);
         goto error;
     }
@@ -256,14 +256,14 @@ static int check_user_password_R5(pdf_context *ctx, char *Password, int Len, int
 
     memcpy(Test, UTF8_Password, NewLen);
     /* The 'User Key Salt' (stored as part of the /O string */
-    memcpy(&Test[NewLen], &ctx->U[40], 8);
+    memcpy(&Test[NewLen], &ctx->encryption.U[40], 8);
 
     pSHA256_Init(&sha256);
     pSHA256_Update(&sha256, (uint8_t *)Test, NewLen + 8);
     pSHA256_Final((uint8_t *)Buffer, &sha256);
 
     memset(UEPadded, 0x00, 16);
-    memcpy(&UEPadded[16], ctx->UE, 32);
+    memcpy(&UEPadded[16], ctx->encryption.UE, 32);
 
     code = pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&Key);
     if (code < 0)
@@ -286,11 +286,11 @@ static int check_user_password_R5(pdf_context *ctx, char *Password, int Len, int
     sfread(Buffer, 1, 32, filter_stream->s);
     pdfi_close_file(ctx, filter_stream);
     pdfi_close_memory_stream(ctx, NULL, stream);
-    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
-    if (ctx->EKey == NULL)
+    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->encryption.EKey);
+    if (ctx->encryption.EKey == NULL)
         goto error;
-    memcpy(ctx->EKey->data, Buffer, 32);
-    pdfi_countup(ctx->EKey);
+    memcpy(ctx->encryption.EKey->data, Buffer, 32);
+    pdfi_countup(ctx->encryption.EKey);
 
 error:
     pdfi_countdown(Key);
@@ -405,17 +405,17 @@ static int check_user_password_R6(pdf_context *ctx, char *Password, int Len, int
 	unsigned char validation[32];
 	unsigned char output[32];
 
-    pdf_compute_encryption_key_r6((unsigned char *)Password, Len, (unsigned char *)ctx->O, (unsigned char *)ctx->OE,
-                                  (unsigned char *)ctx->U, (unsigned char *)ctx->UE, 0, validation, output);
+    pdf_compute_encryption_key_r6((unsigned char *)Password, Len, (unsigned char *)ctx->encryption.O, (unsigned char *)ctx->encryption.OE,
+                                  (unsigned char *)ctx->encryption.U, (unsigned char *)ctx->encryption.UE, 0, validation, output);
 
-    if (memcmp(validation, ctx->U, 32) != 0)
+    if (memcmp(validation, ctx->encryption.U, 32) != 0)
         return_error(gs_error_unknownerror);
 
-    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
-    if (ctx->EKey == NULL)
+    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->encryption.EKey);
+    if (ctx->encryption.EKey == NULL)
         return_error(gs_error_VMerror);;
-    memcpy(ctx->EKey->data, output, 32);
-    pdfi_countup(ctx->EKey);
+    memcpy(ctx->encryption.EKey->data, output, 32);
+    pdfi_countup(ctx->encryption.EKey);
 
     return 0;
 }
@@ -468,12 +468,12 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
              * If the result of the step above is equal to the value of the encryption dictionary
              * U entry the password supplied is the correct user password.
              */
-            if (memcmp(Buffer, ctx->U, 32) != 0) {
+            if (memcmp(Buffer, ctx->encryption.U, 32) != 0) {
                 code = gs_error_unknownerror;
                 goto error;
             } else {
                 /* Password authenticated, we can now use the calculated encryption key to decrypt the file */
-                ctx->EKey = Key;
+                ctx->encryption.EKey = Key;
             }
             break;
         case 3:
@@ -558,12 +558,12 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
              * (comparing on the first 16 bytes in the case of revision 3 of greater)
              * the password supplied is the correct user password.
              */
-            if (memcmp(Buffer, ctx->U, 16) != 0) {
+            if (memcmp(Buffer, ctx->encryption.U, 16) != 0) {
                 code = gs_error_unknownerror;
                 goto error;
             } else {
                 /* Password authenticated, we can now use the calculated encryption key to decrypt the file */
-                ctx->EKey = Key;
+                ctx->encryption.EKey = Key;
             }
             break;
         default:
@@ -626,16 +626,16 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
     /* concatenate the password */
     memcpy(Test, UTF8_Password, NewLen);
     /* With the 'Owner Validation Salt' (stored as part of the /O string */
-    memcpy(&Test[NewLen], &ctx->O[32], 8);
+    memcpy(&Test[NewLen], &ctx->encryption.O[32], 8);
     /* and also concatenated with the /U string, which is defined to be 48 bytes for revision 5 */
-    memcpy(&Test[NewLen + 8], &ctx->U, 48);
+    memcpy(&Test[NewLen + 8], &ctx->encryption.U, 48);
 
     /* Now calculate the SHA256 hash */
     pSHA256_Init(&sha256);
     pSHA256_Update(&sha256, (const uint8_t *)Test, NewLen + 8 + 48);
     pSHA256_Final((uint8_t *)Buffer, &sha256);
 
-    if (memcmp(Buffer, ctx->O, 32) != 0) {
+    if (memcmp(Buffer, ctx->encryption.O, 32) != 0) {
         code = gs_note_error(gs_error_unknownerror);
         goto error;
     }
@@ -653,8 +653,8 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
 
     memcpy(Test, UTF8_Password, NewLen);
     /* The 'User Key Salt' (stored as part of the /O string */
-    memcpy(&Test[NewLen], &ctx->O[40], 8);
-    memcpy(&Test[NewLen + 8], ctx->U, 48);
+    memcpy(&Test[NewLen], &ctx->encryption.O[40], 8);
+    memcpy(&Test[NewLen + 8], ctx->encryption.U, 48);
 
     /* Now calculate the SHA256 hash */
     pSHA256_Init(&sha256);
@@ -662,7 +662,7 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
     pSHA256_Final((uint8_t *)Buffer, &sha256);
 
     memset(OEPadded, 0x00, 16);
-    memcpy(&OEPadded[16], ctx->OE, 32);
+    memcpy(&OEPadded[16], ctx->encryption.OE, 32);
 
     code = pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&Key);
     if (code < 0)
@@ -685,11 +685,11 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
     sfread(Buffer, 1, 32, filter_stream->s);
     pdfi_close_file(ctx, filter_stream);
     pdfi_close_memory_stream(ctx, NULL, stream);
-    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
-    if (ctx->EKey == NULL)
+    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->encryption.EKey);
+    if (ctx->encryption.EKey == NULL)
         goto error;
-    memcpy(ctx->EKey->data, Buffer, 32);
-    pdfi_countup(ctx->EKey);
+    memcpy(ctx->encryption.EKey->data, Buffer, 32);
+    pdfi_countup(ctx->encryption.EKey);
 
 error:
     pdfi_countdown(Key);
@@ -705,17 +705,17 @@ static int check_owner_password_R6(pdf_context *ctx, char *Password, int Len, in
 	unsigned char validation[32];
 	unsigned char output[32];
 
-    pdf_compute_encryption_key_r6((unsigned char *)Password, Len, (unsigned char *)ctx->O, (unsigned char *)ctx->OE,
-                                  (unsigned char *)ctx->U, (unsigned char *)ctx->UE, 1, validation, output);
+    pdf_compute_encryption_key_r6((unsigned char *)Password, Len, (unsigned char *)ctx->encryption.O, (unsigned char *)ctx->encryption.OE,
+                                  (unsigned char *)ctx->encryption.U, (unsigned char *)ctx->encryption.UE, 1, validation, output);
 
-    if (memcmp(validation, ctx->O, 32) != 0)
+    if (memcmp(validation, ctx->encryption.O, 32) != 0)
         return_error(gs_error_unknownerror);
 
-    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
-    if (ctx->EKey == NULL)
+    pdfi_object_alloc(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->encryption.EKey);
+    if (ctx->encryption.EKey == NULL)
         return_error(gs_error_VMerror);;
-    memcpy(ctx->EKey->data, output, 32);
-    pdfi_countup(ctx->EKey);
+    memcpy(ctx->encryption.EKey->data, output, 32);
+    pdfi_countup(ctx->encryption.EKey);
 
     return 0;
 }
@@ -761,7 +761,7 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
         }
         /* Algorithm 3.3, step 4. Use KeyLen bytes of the final hash as an RC$ key */
         /* Algorithm 3.7, step 2 (R >= 3) */
-        memcpy(Buffer, ctx->O, 32);
+        memcpy(Buffer, ctx->encryption.O, 32);
 
         /* Algorithm 3.7 states (at the end):
          * "performing an XOR (exclusive or) operation between each byte of the key and the single-byte value of the iteration counter (from 19 to 0)."
@@ -794,7 +794,7 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
         memcpy(EKey->data, Key, 5);
 
         /* Algorithm 3.7, step 2 (R == 2) Use RC4 with the computed key to decrypt the O entry of the crypt dict */
-        code = pdfi_open_memory_stream_from_memory(ctx, 32, (byte *)ctx->O, &stream);
+        code = pdfi_open_memory_stream_from_memory(ctx, 32, (byte *)ctx->encryption.O, &stream);
         if (code < 0)
             goto error;
 
@@ -827,7 +827,7 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
     int64_t object_num;
     uint32_t generation_num;
 
-    if (ctx->R < 5) {
+    if (ctx->encryption.R < 5) {
         if (obj->object_num == 0) {
             /* The object is a direct object, use the object number of the container instead */
             object_num = obj->indirect_num;
@@ -843,7 +843,7 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
          * + 2 bytes from the generation number and (for AES filters) 4 bytes of sALT.
          * But... We must make sure the buffer is large enough for the 128 bits of an MD5 hash.
          */
-        md5_length = ctx->EKey->length + 9;
+        md5_length = ctx->encryption.EKey->length + 9;
         if (md5_length < 16)
             md5_length = 16;
 
@@ -860,22 +860,22 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
          * we can just use the length of the string data, we calculated the length as part of
          * creating the key.
          */
-        memcpy(Buffer, ctx->EKey->data, ctx->EKey->length);
-        idx = ctx->EKey->length;
+        memcpy(Buffer, ctx->encryption.EKey->data, ctx->encryption.EKey->length);
+        idx = ctx->encryption.EKey->length;
         Buffer[idx] = object_num & 0xff;
         Buffer[++idx] = (object_num & 0xff00) >> 8;
         Buffer[++idx] = (object_num & 0xff0000) >> 16;
         Buffer[++idx] = generation_num & 0xff;
         Buffer[++idx] = (generation_num & 0xff00) >> 8;
 
-        md5_length = ctx->EKey->length + 5;
+        md5_length = ctx->encryption.EKey->length + 5;
 
         /* If using the AES algorithm, extend the encryption key an additional 4 bytes
          * by adding the value "sAlT" which corresponds to the hexadecimal 0x73416c54
          * (This addition is done for backward compatibility and is not intended to
          * provide addtional security).
          */
-        if (ctx->StmF == CRYPT_AESV2 || ctx->StmF == CRYPT_AESV3){
+        if (ctx->encryption.StmF == CRYPT_AESV2 || ctx->encryption.StmF == CRYPT_AESV3){
             memcpy(&Buffer[++idx], sAlTString, 4);
             md5_length += 4;
         }
@@ -892,7 +892,7 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
          * hash as the key for the RC4 or AES symmetric key algorithms, along with the
          * string or stream data to be encrypted.
          */
-        ELength = ctx->EKey->length + 5;
+        ELength = ctx->encryption.EKey->length + 5;
         if (ELength > 16)
             ELength = 16;
 
@@ -905,7 +905,7 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
         gs_free_object(ctx->memory, Buffer, "");
     } else {
         /* Revision 5 & 6 don't use the object number and generation, just return the pre-calculated key */
-        *Key = ctx->EKey;
+        *Key = ctx->encryption.EKey;
         pdfi_countup(*Key);
     }
     return code;
@@ -931,7 +931,7 @@ int pdfi_decrypt_string(pdf_context *ctx, pdf_string *string)
         if (code < 0)
             goto error;
 
-        switch(ctx->StrF) {
+        switch(ctx->encryption.StrF) {
             /* There are only two possible filters, RC4 or AES, we take care
              * of the number of bits in the key by using ctx->Length.
              */
@@ -1039,34 +1039,34 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
         goto done;
     }
 
-    ctx->V = (int)i64;
+    ctx->encryption.V = (int)i64;
 
     code = pdfi_dict_get_int(ctx, d, "R", &i64);
     if (code < 0)
         goto done;
-    ctx->R = (int)i64;
+    ctx->encryption.R = (int)i64;
 
     code = pdfi_dict_get_int(ctx, d, "P", &i64);
     if (code < 0)
         goto done;
-    ctx->P = (int)i64;
+    ctx->encryption.P = (int)i64;
 
     code = pdfi_dict_get_type(ctx, d, "O", PDF_STRING, (pdf_obj **)&s);
     if (code < 0)
         goto done;
 
-    if (ctx->R < 5) {
+    if (ctx->encryption.R < 5) {
         if (s->length < 32) {
             code = gs_note_error(gs_error_rangecheck);
             goto done;
         }
-        memcpy(ctx->O, s->data, 32);
+        memcpy(ctx->encryption.O, s->data, 32);
     } else {
         if (s->length < 48) {
             code = gs_note_error(gs_error_rangecheck);
             goto done;
         }
-        memcpy(ctx->O, s->data, 48);
+        memcpy(ctx->encryption.O, s->data, 48);
     }
     pdfi_countdown(s);
     s = NULL;
@@ -1075,18 +1075,18 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     if (code < 0)
         goto done;
 
-    if (ctx->R < 5) {
+    if (ctx->encryption.R < 5) {
         if (s->length < 32) {
             code = gs_note_error(gs_error_rangecheck);
             goto done;
         }
-        memcpy(ctx->U, s->data, 32);
+        memcpy(ctx->encryption.U, s->data, 32);
     } else {
         if (s->length < 48) {
             code = gs_note_error(gs_error_rangecheck);
             goto done;
         }
-        memcpy(ctx->U, s->data, 48);
+        memcpy(ctx->encryption.U, s->data, 48);
     }
     pdfi_countdown(s);
     s = NULL;
@@ -1095,13 +1095,13 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     if (code < 0)
         goto done;
     if (code > 0) {
-        ctx->EncryptMetadata = ((pdf_bool *)o)->value;
+        ctx->encryption.EncryptMetadata = ((pdf_bool *)o)->value;
         pdfi_countdown(o);
     }
     else
-        ctx->EncryptMetadata = true;
+        ctx->encryption.EncryptMetadata = true;
 
-    if (ctx->R > 3) {
+    if (ctx->encryption.R > 3) {
         /* Check the Encrypt dictionary has default values for Stmf and StrF
          * and that they have the names /StdCF. We don't support anything else.
          */
@@ -1110,7 +1110,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
             goto done;
         if (!pdfi_name_is((pdf_name *)o, "StdCF")) {
             if (pdfi_name_is((pdf_name *)o, "Identity")) {
-                ctx->StmF = CRYPT_IDENTITY;
+                ctx->encryption.StmF = CRYPT_IDENTITY;
             } else {
                 code = gs_note_error(gs_error_undefined);
                 goto done;
@@ -1124,7 +1124,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
             goto done;
         if (!pdfi_name_is((pdf_name *)o, "StdCF")) {
             if (pdfi_name_is((pdf_name *)o, "Identity")) {
-                ctx->StrF = CRYPT_IDENTITY;
+                ctx->encryption.StrF = CRYPT_IDENTITY;
             } else {
                 code = gs_note_error(gs_error_undefined);
                 goto done;
@@ -1149,22 +1149,22 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
             goto done;
 
         if (pdfi_name_is((pdf_name *)o, "V2")) {
-            if (ctx->StmF == CRYPT_NONE)
-                ctx->StmF = CRYPT_V2;
-            if (ctx->StrF == CRYPT_NONE)
-                ctx->StrF = CRYPT_V2;
+            if (ctx->encryption.StmF == CRYPT_NONE)
+                ctx->encryption.StmF = CRYPT_V2;
+            if (ctx->encryption.StrF == CRYPT_NONE)
+                ctx->encryption.StrF = CRYPT_V2;
         } else {
             if (pdfi_name_is((pdf_name *)o, "AESV2")) {
-                if (ctx->StmF == CRYPT_NONE)
-                    ctx->StmF = CRYPT_AESV2;
-                if (ctx->StrF == CRYPT_NONE)
-                    ctx->StrF = CRYPT_AESV2;
+                if (ctx->encryption.StmF == CRYPT_NONE)
+                    ctx->encryption.StmF = CRYPT_AESV2;
+                if (ctx->encryption.StrF == CRYPT_NONE)
+                    ctx->encryption.StrF = CRYPT_AESV2;
             } else {
                 if (pdfi_name_is((pdf_name *)o, "AESV3")) {
-                    if (ctx->StmF == CRYPT_NONE)
-                        ctx->StmF = CRYPT_AESV3;
-                    if (ctx->StrF == CRYPT_NONE)
-                        ctx->StrF = CRYPT_AESV3;
+                    if (ctx->encryption.StmF == CRYPT_NONE)
+                        ctx->encryption.StmF = CRYPT_AESV3;
+                    if (ctx->encryption.StrF == CRYPT_NONE)
+                        ctx->encryption.StrF = CRYPT_AESV3;
                 } else {
                     emprintf(ctx->memory, "\n   **** Error: Unknown default encryption method in crypt filter.\n");
                     code = gs_error_rangecheck;
@@ -1175,7 +1175,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
         pdfi_countdown(o);
         o = NULL;
 
-        if (ctx->R > 4) {
+        if (ctx->encryption.R > 4) {
             code = pdfi_dict_get_type(ctx, d, "OE", PDF_STRING, (pdf_obj **)&s);
             if (code < 0)
                 goto done;
@@ -1184,7 +1184,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
                 code = gs_note_error(gs_error_rangecheck);
                 goto done;
             }
-            memcpy(ctx->OE, s->data, 32);
+            memcpy(ctx->encryption.OE, s->data, 32);
             pdfi_countdown(s);
             s = NULL;
 
@@ -1196,7 +1196,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
                 code = gs_note_error(gs_error_rangecheck);
                 goto done;
             }
-            memcpy(ctx->UE, s->data, 32);
+            memcpy(ctx->encryption.UE, s->data, 32);
             pdfi_countdown(s);
             s = NULL;
         }
@@ -1250,7 +1250,7 @@ static int check_password_R5(pdf_context *ctx, char *Password, int PasswordLen, 
         if (code < 0) {
             pdf_string *P = NULL, *P_UTF8 = NULL;
 
-            code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
+            code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->encryption.Password), (pdf_obj **)&P);
             if (code < 0) {
                 return code;
             }
@@ -1300,7 +1300,7 @@ static int check_password_R6(pdf_context *ctx, char *Password, int PasswordLen, 
         if (code < 0) {
             pdf_string *P = NULL, *P_UTF8 = NULL;
 
-            code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
+            code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->encryption.Password), (pdf_obj **)&P);
             if (code < 0)
                 return code;
             memcpy(P->data, Password, PasswordLen);
@@ -1348,70 +1348,70 @@ int pdfi_initialise_Decryption(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    switch(ctx->R) {
+    switch(ctx->encryption.R) {
         case 2:
             /* Set up the defaults if not already set */
             /* Revision 2 is always 40-bit RC4 */
             if (KeyLen == 0)
                 KeyLen = 40;
-            if (ctx->StmF == CRYPT_NONE)
-                ctx->StmF = CRYPT_V1;
-            if (ctx->StrF == CRYPT_NONE)
-                ctx->StrF = CRYPT_V1;
-            code = check_password_preR5(ctx, ctx->Password, ctx->PasswordLen, KeyLen, 2);
+            if (ctx->encryption.StmF == CRYPT_NONE)
+                ctx->encryption.StmF = CRYPT_V1;
+            if (ctx->encryption.StrF == CRYPT_NONE)
+                ctx->encryption.StrF = CRYPT_V1;
+            code = check_password_preR5(ctx, ctx->encryption.Password, ctx->encryption.PasswordLen, KeyLen, 2);
             break;
         case 3:
             /* Set up the defaults if not already set */
             /* Revision 3 is always 128-bit RC4 */
             if (KeyLen == 0)
                 KeyLen = 128;
-            if (ctx->StmF == CRYPT_NONE)
-                ctx->StmF = CRYPT_V2;
-            if (ctx->StrF == CRYPT_NONE)
-                ctx->StrF = CRYPT_V2;
-            code = check_password_preR5(ctx, ctx->Password, ctx->PasswordLen, KeyLen, 3);
+            if (ctx->encryption.StmF == CRYPT_NONE)
+                ctx->encryption.StmF = CRYPT_V2;
+            if (ctx->encryption.StrF == CRYPT_NONE)
+                ctx->encryption.StrF = CRYPT_V2;
+            code = check_password_preR5(ctx, ctx->encryption.Password, ctx->encryption.PasswordLen, KeyLen, 3);
             break;
         case 4:
             /* Revision 4 is either AES or RC4, but its always 128-bits */
             if (KeyLen == 0)
                 KeyLen = 128;
             /* We can't set the encryption filter, so we have to hope the PDF file did */
-            code = check_password_preR5(ctx, ctx->Password, ctx->PasswordLen, KeyLen, 4);
+            code = check_password_preR5(ctx, ctx->encryption.Password, ctx->encryption.PasswordLen, KeyLen, 4);
             break;
         case 5:
             /* Set up the defaults if not already set */
             if (KeyLen == 0)
                 KeyLen = 256;
-            if (ctx->StmF == CRYPT_NONE)
-                ctx->StmF = CRYPT_AESV2;
-            if (ctx->StrF == CRYPT_NONE)
-                ctx->StrF = CRYPT_AESV2;
-            code = check_password_R5(ctx, ctx->Password, ctx->PasswordLen, KeyLen);
+            if (ctx->encryption.StmF == CRYPT_NONE)
+                ctx->encryption.StmF = CRYPT_AESV2;
+            if (ctx->encryption.StrF == CRYPT_NONE)
+                ctx->encryption.StrF = CRYPT_AESV2;
+            code = check_password_R5(ctx, ctx->encryption.Password, ctx->encryption.PasswordLen, KeyLen);
             break;
         case 6:
             /* Set up the defaults if not already set */
             /* Revision 6 is always 256-bit AES */
             if (KeyLen == 0)
                 KeyLen = 256;
-            if (ctx->StmF == CRYPT_NONE)
-                ctx->StmF = CRYPT_AESV3;
-            if (ctx->StrF == CRYPT_NONE)
-                ctx->StrF = CRYPT_AESV3;
-            code = check_password_R6(ctx, ctx->Password, ctx->PasswordLen, KeyLen);
+            if (ctx->encryption.StmF == CRYPT_NONE)
+                ctx->encryption.StmF = CRYPT_AESV3;
+            if (ctx->encryption.StrF == CRYPT_NONE)
+                ctx->encryption.StrF = CRYPT_AESV3;
+            code = check_password_R6(ctx, ctx->encryption.Password, ctx->encryption.PasswordLen, KeyLen);
             break;
         default:
-            emprintf1(ctx->memory, "\n   **** Warning: This file uses an unknown standard security handler revision: %d\n", ctx->R);
+            emprintf1(ctx->memory, "\n   **** Warning: This file uses an unknown standard security handler revision: %d\n", ctx->encryption.R);
             code = gs_error_rangecheck;
             goto done;
     }
     if (code < 0) {
-        if(ctx->Password) {
+        if(ctx->encryption.Password) {
             emprintf(ctx->memory, "\n   **** Error: Password did not work.\n");
             emprintf(ctx->memory, "               Cannot decrypt PDF file.\n");
         } else
             emprintf(ctx->memory, "\n   **** This file requires a password for access.\n");
     } else
-        ctx->is_encrypted = true;
+        ctx->encryption.is_encrypted = true;
 
 done:
     return code;
