@@ -570,7 +570,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
     if (code < 0)
         goto exit;
     if (code > 0) {
-        if (Parent->object_num != ctx->CurrentPageDict->object_num) {
+        if (Parent->object_num != ctx->page.CurrentPageDict->object_num) {
             code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
             if (code != gs_error_undefined)
                 goto exit;
@@ -604,8 +604,8 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
     pdfi_countdown(typedict);
     typedict = NULL;
 
-    if (ctx->CurrentPageDict != NULL) {
-        code = pdfi_resource_knownget_typedict(ctx, Type, ctx->CurrentPageDict, &typedict);
+    if (ctx->page.CurrentPageDict != NULL) {
+        code = pdfi_resource_knownget_typedict(ctx, Type, ctx->page.CurrentPageDict, &typedict);
         if (code < 0)
             goto exit;
 

@@ -1121,7 +1121,7 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
 }
 
 /* Checks page for transparency, and sets up device for spots, if applicable
- * Sets ctx->page_has_transparency and ctx->page_num_spots
+ * Sets ctx->page.has_transparency and ctx->page.num_spots
  * do_setup -- indicates whether to actually set up the device with the spot count.
  */
 int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
@@ -1131,8 +1131,8 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     int spots = 0;
     pdfi_check_tracker_t tracker;
 
-    ctx->page_num_spots = 0;
-    ctx->page_has_transparency = false;
+    ctx->page.num_spots = 0;
+    ctx->page.has_transparency = false;
 
     code = pdfi_check_init_tracker(ctx, &tracker);
 
@@ -1175,9 +1175,9 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     }
 
     /* Set our values in the context, for caller */
-    ctx->page_has_transparency = tracker.transparent;
-    ctx->page_num_spots = spots;
-    ctx->page_has_OP = tracker.has_overprint;
+    ctx->page.has_transparency = tracker.transparent;
+    ctx->page.num_spots = spots;
+    ctx->page.has_OP = tracker.has_overprint;
 
  exit:
     (void)pdfi_check_free_tracker(ctx, &tracker);

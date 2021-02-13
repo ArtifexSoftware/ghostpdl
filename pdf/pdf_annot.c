@@ -65,7 +65,7 @@ static int pdfi_annot_start_transparency(pdf_context *ctx, pdf_dict *annot)
 {
     int code;
 
-    if (!ctx->page_has_transparency)
+    if (!ctx->page.has_transparency)
         return 0;
 
     /* TODO: ps code does something with /BM which is apparently the Blend Mode,
@@ -82,7 +82,7 @@ static int pdfi_annot_start_transparency(pdf_context *ctx, pdf_dict *annot)
 
 static int pdfi_annot_end_transparency(pdf_context *ctx, pdf_dict *annot)
 {
-    if (!ctx->page_has_transparency)
+    if (!ctx->page.has_transparency)
         return 0;
 
     return pdfi_trans_end_simple_group(ctx);
@@ -212,7 +212,7 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP
     /* graphicsbeginpage() */
     /* textbeginpage() */
     code = gs_initgraphics(ctx->pgs);
-    ctx->TextBlockDepth = 0;
+    ctx->text.BlockDepth = 0;
     /* TODO: FIXME */
 
     code = pdfi_annot_Rect(ctx, annot, &rect);
@@ -256,7 +256,7 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP
     }
 
     /* Render the annotation */
-    code = pdfi_do_image_or_form(ctx, NULL, ctx->CurrentPageDict, NormAP);
+    code = pdfi_do_image_or_form(ctx, NULL, ctx->page.CurrentPageDict, NormAP);
     if (code < 0) goto exit;
 
  exit:
@@ -1656,7 +1656,7 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
     if (code < 0) goto exit;
     if (code > 0) {
         code = pdfi_interpret_inner_content_string(ctx, DA, annot,
-                                                   ctx->CurrentPageDict, false, "DA");
+                                                   ctx->page.CurrentPageDict, false, "DA");
         if (code < 0) goto exit;
     } else {
         code = pdfi_gs_setgray(ctx, 0);
@@ -1687,7 +1687,7 @@ pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double x, double y, p
     strncpy(ptr, " Tj", buflen-strlen(strbuf));
 
     code = pdfi_interpret_inner_content_c_string(ctx, strbuf, annot,
-                                               ctx->CurrentPageDict, false, "Annot text Tj");
+                                               ctx->page.CurrentPageDict, false, "Annot text Tj");
     if (code < 0) goto exit;
 
  exit:
@@ -2135,7 +2135,7 @@ static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_obj 
         code = gs_closepath(ctx->pgs);
         if (code < 0) goto exit;
 
-        if (ctx->page_has_transparency) {
+        if (ctx->page.has_transparency) {
             code = pdfi_trans_begin_simple_group(ctx, false, false, false);
             if (code < 0) goto exit;
 
@@ -3140,7 +3140,7 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
                 (device, gxdso_pdf_form_name, labeldata, labellen);
 
             /* Draw the high-level form */
-            code = pdfi_do_highlevel_form(ctx, ctx->CurrentPageDict, (pdf_stream *)object);
+            code = pdfi_do_highlevel_form(ctx, ctx->page.CurrentPageDict, (pdf_stream *)object);
             if (code < 0) goto exit;
 
             /* Get the object number (form_id) of the high level form */

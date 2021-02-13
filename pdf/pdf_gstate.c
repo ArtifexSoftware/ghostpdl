@@ -158,7 +158,7 @@ int pdfi_concat(pdf_context *ctx)
         return 0;
     }
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     for (i=0;i < 6;i++){
@@ -203,7 +203,7 @@ int pdfi_op_q(pdf_context *ctx)
     if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     else {
-        if (ctx->page_has_transparency)
+        if (ctx->page.has_transparency)
             return gs_push_transparency_state(ctx->pgs);
     }
     return 0;
@@ -222,7 +222,7 @@ int pdfi_op_Q(pdf_context *ctx)
         dbgmprintf(ctx->memory, "WARNING: Too many q/Q (too many Q's) -- ignoring Q\n");
         return 0;
     }
-    if (ctx->page_has_transparency)
+    if (ctx->page.has_transparency)
         code = gs_pop_transparency_state(ctx->pgs, false);
 
     if (code < 0 && ctx->args.pdfstoponerror)
@@ -720,8 +720,8 @@ static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *pa
             goto exit;
         } else {
             if (!is_BG && pdfi_name_is((const pdf_name *)obj, "Default")) {
-                code = gs_setblackgeneration_remap(ctx->pgs, ctx->DefaultBG.proc, false);
-                memcpy(ctx->pgs->black_generation->values, ctx->DefaultBG.values, transfer_map_size * sizeof(frac));
+                code = gs_setblackgeneration_remap(ctx->pgs, ctx->page.DefaultBG.proc, false);
+                memcpy(ctx->pgs->black_generation->values, ctx->page.DefaultBG.values, transfer_map_size * sizeof(frac));
                 goto exit;
             } else {
                 code = gs_note_error(gs_error_rangecheck);
@@ -809,8 +809,8 @@ static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *
             goto exit;
         } else {
             if (!is_BG && pdfi_name_is((const pdf_name *)obj, "Default")) {
-                code = gs_setundercolorremoval_remap(ctx->pgs, ctx->DefaultUCR.proc, false);
-                memcpy(ctx->pgs->undercolor_removal->values, ctx->DefaultUCR.values, transfer_map_size * sizeof(frac));
+                code = gs_setundercolorremoval_remap(ctx->pgs, ctx->page.DefaultUCR.proc, false);
+                memcpy(ctx->pgs->undercolor_removal->values, ctx->page.DefaultUCR.values, transfer_map_size * sizeof(frac));
                 goto exit;
             } else {
                 code = gs_note_error(gs_error_rangecheck);
@@ -921,7 +921,7 @@ static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page
             } else {
                 if (!is_TR && pdfi_name_is((const pdf_name *)o, "Default")) {
                     proc_types[i] = E_DEFAULT;
-                    map_procs[i] = ctx->DefaultTransfers[i].proc;
+                    map_procs[i] = ctx->page.DefaultTransfers[i].proc;
                 } else {
                     pdfi_countdown(o);
                     code = gs_note_error(gs_error_typecheck);
@@ -954,16 +954,16 @@ static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page
         if (proc_types[j] == E_DEFAULT) {
             switch(j) {
                 case 0:
-                    memcpy(ctx->pgs->set_transfer.red->values, ctx->DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
+                    memcpy(ctx->pgs->set_transfer.red->values, ctx->page.DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
                     break;
                 case 1:
-                    memcpy(ctx->pgs->set_transfer.green->values, ctx->DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
+                    memcpy(ctx->pgs->set_transfer.green->values, ctx->page.DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
                     break;
                 case 2:
-                    memcpy(ctx->pgs->set_transfer.blue->values, ctx->DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
+                    memcpy(ctx->pgs->set_transfer.blue->values, ctx->page.DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
                     break;
                 case 3:
-                    memcpy(ctx->pgs->set_transfer.gray->values, ctx->DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
+                    memcpy(ctx->pgs->set_transfer.gray->values, ctx->page.DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
                     break;
             }
         }
@@ -1049,8 +1049,8 @@ static int pdfi_set_transfer(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict
             goto exit;
         } else {
             if (!is_TR && pdfi_name_is((const pdf_name *)obj, "Default")) {
-                code = gs_settransfer_remap(ctx->pgs, ctx->DefaultTransfers[3].proc, false);
-                memcpy(ctx->pgs->set_transfer.gray->values, ctx->DefaultTransfers[3].values, transfer_map_size * sizeof(frac));
+                code = gs_settransfer_remap(ctx->pgs, ctx->page.DefaultTransfers[3].proc, false);
+                memcpy(ctx->pgs->set_transfer.gray->values, ctx->page.DefaultTransfers[3].values, transfer_map_size * sizeof(frac));
                 goto exit;
             } else {
                 code = gs_note_error(gs_error_rangecheck);
@@ -2112,7 +2112,7 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     int code;
 
-    if (ctx->page_has_transparency == false || ctx->args.notransparency == true)
+    if (ctx->page.has_transparency == false || ctx->args.notransparency == true)
         return 0;
 
     code = pdfi_dict_get(ctx, GS, "SMask", (pdf_obj **)&o);

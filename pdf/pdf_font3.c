@@ -42,7 +42,7 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
 
     font = (pdf_font_type3 *)pfont->client_data;
 
-    SavedTextBlockDepth = OBJ_CTX(font)->TextBlockDepth;
+    SavedTextBlockDepth = OBJ_CTX(font)->text.BlockDepth;
     code = pdfi_array_get(OBJ_CTX(font), font->Encoding, (uint64_t)chr, (pdf_obj **)&GlyphName);
     if (code < 0)
         return code;
@@ -70,15 +70,15 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
         goto build_char_error;
     }
 
-    OBJ_CTX(font)->TextBlockDepth = 0;
-    OBJ_CTX(font)->inside_CharProc = true;
-    OBJ_CTX(font)->CharProc_is_d1 = false;
+    OBJ_CTX(font)->text.BlockDepth = 0;
+    OBJ_CTX(font)->text.inside_CharProc = true;
+    OBJ_CTX(font)->text.CharProc_is_d1 = false;
     pdfi_gsave(OBJ_CTX(font));
     code = pdfi_interpret_inner_content_stream(OBJ_CTX(font), CharProc, font->PDF_font, true, "CharProc");
     pdfi_grestore(OBJ_CTX(font));
-    OBJ_CTX(font)->inside_CharProc = false;
-    OBJ_CTX(font)->CharProc_is_d1 = false;
-    OBJ_CTX(font)->TextBlockDepth = SavedTextBlockDepth;
+    OBJ_CTX(font)->text.inside_CharProc = false;
+    OBJ_CTX(font)->text.CharProc_is_d1 = false;
+    OBJ_CTX(font)->text.BlockDepth = SavedTextBlockDepth;
 
 build_char_error:
     pdfi_countdown(GlyphName);

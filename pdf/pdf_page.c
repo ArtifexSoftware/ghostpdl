@@ -167,11 +167,11 @@ static void pdfi_set_ctm(pdf_context *ctx)
 {
     gs_matrix mat;
 
-    /* Adjust for UserUnits */
-    mat.xx = ctx->UserUnit;
+    /* Adjust for page.UserUnits */
+    mat.xx = ctx->page.UserUnit;
     mat.xy = 0;
     mat.yx = 0;
-    mat.yy = ctx->UserUnit;
+    mat.yy = ctx->page.UserUnit;
     mat.tx = 0;
     mat.ty = 0;
     gs_concat(ctx->pgs, &mat);
@@ -185,7 +185,7 @@ static void pdfi_set_ctm(pdf_context *ctx)
 
 }
 
-/* Get .MediaSize from the device to setup PageSize in context */
+/* Get .MediaSize from the device to setup page.Size in context */
 static int pdfi_get_media_size(pdf_context *ctx)
 {
     gs_c_param_list list;
@@ -202,10 +202,10 @@ static int pdfi_get_media_size(pdf_context *ctx)
     /* TODO: I have no idea if this works right when the page is rotated.
      * It makes my brain explode :(
      */
-    ctx->PageSize[0] = 0;
-    ctx->PageSize[1] = 0;
-    ctx->PageSize[2] = msa.data[0];
-    ctx->PageSize[3] = msa.data[1];
+    ctx->page.Size[0] = 0;
+    ctx->page.Size[1] = 0;
+    ctx->page.Size[2] = msa.data[0];
+    ctx->page.Size[3] = msa.data[1];
 
  exit:
     gs_c_param_list_release(&list);
@@ -256,7 +256,7 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     if (!ctx->args.nouserunit) {
         (void)pdfi_dict_knownget_number(ctx, page_dict, "UserUnit", &userunit);
     }
-    ctx->UserUnit = userunit;
+    ctx->page.UserUnit = userunit;
 
     for (i=0;i<4;i++) {
         code = pdfi_array_get_number(ctx, a, i, &d[i]);
@@ -265,7 +265,7 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     pdfi_countdown(a);
 
     normalize_rectangle(d);
-    memcpy(ctx->PageSize, d, 4 * sizeof(double));
+    memcpy(ctx->page.Size, d, 4 * sizeof(double));
 
     code = pdfi_dict_get_int(ctx, page_dict, "Rotate", &rotate);
 
@@ -350,46 +350,46 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
 static void pdfi_setup_transfers(pdf_context *ctx)
 {
     if (ctx->pgs->set_transfer.red == 0x00) {
-        ctx->DefaultTransfers[0].proc = gs_identity_transfer;
-        memset(ctx->DefaultTransfers[0].values, 0x00, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultTransfers[0].proc = gs_identity_transfer;
+        memset(ctx->page.DefaultTransfers[0].values, 0x00, transfer_map_size * sizeof(frac));
     } else {
-        ctx->DefaultTransfers[0].proc = ctx->pgs->set_transfer.red->proc;
-        memcpy(ctx->DefaultTransfers[0].values, ctx->pgs->set_transfer.red->values, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultTransfers[0].proc = ctx->pgs->set_transfer.red->proc;
+        memcpy(ctx->page.DefaultTransfers[0].values, ctx->pgs->set_transfer.red->values, transfer_map_size * sizeof(frac));
     }
     if (ctx->pgs->set_transfer.green == 0x00) {
-        ctx->DefaultTransfers[1].proc = gs_identity_transfer;
-        memset(ctx->DefaultTransfers[1].values, 0x00, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultTransfers[1].proc = gs_identity_transfer;
+        memset(ctx->page.DefaultTransfers[1].values, 0x00, transfer_map_size * sizeof(frac));
     } else {
-        ctx->DefaultTransfers[1].proc = ctx->pgs->set_transfer.green->proc;
-        memcpy(ctx->DefaultTransfers[1].values, ctx->pgs->set_transfer.green->values, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultTransfers[1].proc = ctx->pgs->set_transfer.green->proc;
+        memcpy(ctx->page.DefaultTransfers[1].values, ctx->pgs->set_transfer.green->values, transfer_map_size * sizeof(frac));
     }
     if (ctx->pgs->set_transfer.blue == 0x00) {
-        ctx->DefaultTransfers[2].proc = gs_identity_transfer;
-        memset(ctx->DefaultTransfers[2].values, 0x00, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultTransfers[2].proc = gs_identity_transfer;
+        memset(ctx->page.DefaultTransfers[2].values, 0x00, transfer_map_size * sizeof(frac));
     } else {
-        ctx->DefaultTransfers[2].proc = ctx->pgs->set_transfer.blue->proc;
-        memcpy(ctx->DefaultTransfers[2].values, ctx->pgs->set_transfer.blue->values, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultTransfers[2].proc = ctx->pgs->set_transfer.blue->proc;
+        memcpy(ctx->page.DefaultTransfers[2].values, ctx->pgs->set_transfer.blue->values, transfer_map_size * sizeof(frac));
     }
     if (ctx->pgs->set_transfer.gray == 0x00) {
-        ctx->DefaultTransfers[3].proc = gs_identity_transfer;
-        memset(ctx->DefaultTransfers[3].values, 0x00, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultTransfers[3].proc = gs_identity_transfer;
+        memset(ctx->page.DefaultTransfers[3].values, 0x00, transfer_map_size * sizeof(frac));
     } else {
-        ctx->DefaultTransfers[3].proc = ctx->pgs->set_transfer.gray->proc;
-        memcpy(ctx->DefaultTransfers[3].values, ctx->pgs->set_transfer.gray->values, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultTransfers[3].proc = ctx->pgs->set_transfer.gray->proc;
+        memcpy(ctx->page.DefaultTransfers[3].values, ctx->pgs->set_transfer.gray->values, transfer_map_size * sizeof(frac));
     }
     if (ctx->pgs->black_generation == 0x00) {
-        ctx->DefaultBG.proc = gs_identity_transfer;
-        memset(ctx->DefaultBG.values, 0x00, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultBG.proc = gs_identity_transfer;
+        memset(ctx->page.DefaultBG.values, 0x00, transfer_map_size * sizeof(frac));
     } else {
-        ctx->DefaultBG.proc = ctx->pgs->black_generation->proc;
-        memcpy(ctx->DefaultBG.values, ctx->pgs->black_generation->values, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultBG.proc = ctx->pgs->black_generation->proc;
+        memcpy(ctx->page.DefaultBG.values, ctx->pgs->black_generation->values, transfer_map_size * sizeof(frac));
     }
     if (ctx->pgs->undercolor_removal == 0x00) {
-        ctx->DefaultUCR.proc = gs_identity_transfer;
-        memset(ctx->DefaultUCR.values, 0x00, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultUCR.proc = gs_identity_transfer;
+        memset(ctx->page.DefaultUCR.values, 0x00, transfer_map_size * sizeof(frac));
     } else {
-        ctx->DefaultUCR.proc = ctx->pgs->undercolor_removal->proc;
-        memcpy(ctx->DefaultUCR.values, ctx->pgs->undercolor_removal->values, transfer_map_size * sizeof(frac));
+        ctx->page.DefaultUCR.proc = ctx->pgs->undercolor_removal->proc;
+        memcpy(ctx->page.DefaultUCR.values, ctx->pgs->undercolor_removal->values, transfer_map_size * sizeof(frac));
     }
 }
 
@@ -501,8 +501,8 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
     code = 0;
     info->UserUnit = dbl;
 
-    info->HasTransparency = ctx->page_has_transparency;
-    info->NumSpots = ctx->page_num_spots;
+    info->HasTransparency = ctx->page.has_transparency;
+    info->NumSpots = ctx->page.num_spots;
 
 done:
     pdfi_countdown(a);
@@ -608,10 +608,10 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
     if (ctx->args.pdfdebug)
         dbgmprintf2(ctx->memory, "Current page %ld transparency setting is %d", page_num+1,
-                ctx->page_has_transparency);
+                ctx->page.has_transparency);
 
     if (ctx->spot_capable_device)
-        dbgmprintf1(ctx->memory, ", spots=%d\n", ctx->page_num_spots);
+        dbgmprintf1(ctx->memory, ", spots=%d\n", ctx->page.num_spots);
     else
         dbgmprintf(ctx->memory, "\n");
 
@@ -621,9 +621,9 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     if (group_stream != NULL)
         page_group_known = true;
 
-    pdfi_countdown(ctx->CurrentPageDict);
-    ctx->CurrentPageDict = page_dict;
-    pdfi_countup(ctx->CurrentPageDict);
+    pdfi_countdown(ctx->page.CurrentPageDict);
+    ctx->page.CurrentPageDict = page_dict;
+    pdfi_countup(ctx->page.CurrentPageDict);
 
     /* If we are being called from the PDF interpreter then
      * we need to set up the page  and the default graphics state
@@ -643,9 +643,9 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
         pdfi_setup_transfers(ctx);
     } else {
-        /* Gets ctx->PageSize setup correctly
+        /* Gets ctx->page.Size setup correctly
          * TODO: Probably not right if the page is rotated?
-         * PageSize is needed by the transparency code,
+         * page.Size is needed by the transparency code,
          * not sure where else it might be used, if anywhere.
          */
         pdfi_get_media_size(ctx);
@@ -663,13 +663,13 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
      * This can be either for normal transparency deviceN, or because we are using
      * Overprint=/simulate for other devices
      */
-    if (ctx->page_has_transparency) {
+    if (ctx->page.has_transparency) {
         need_pdf14 = true;
-        if (ctx->page_simulate_op)
+        if (ctx->page.simulate_op)
             trans_depth = -1;
     } else {
         /* This is the case where we are simulating overprint without transparency */
-        if (ctx->page_simulate_op) {
+        if (ctx->page.simulate_op) {
             need_pdf14 = true;
             trans_depth = -1;
         }
@@ -677,7 +677,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     if (need_pdf14) {
         if (code >= 0) {
             /* We don't retain the PDF14 device */
-            code = gs_push_pdf14trans_device(ctx->pgs, false, false, trans_depth, ctx->page_num_spots);
+            code = gs_push_pdf14trans_device(ctx->pgs, false, false, trans_depth, ctx->page.num_spots);
             if (code >= 0) {
                 if (page_group_known) {
                     code = pdfi_trans_begin_page_group(ctx, page_dict, group_stream);
@@ -691,14 +691,14 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
                 /* Couldn't push the transparency compositor.
                  * This is probably fatal, but attempt to recover by abandoning transparency
                  */
-                ctx->page_has_transparency = false;
+                ctx->page.has_transparency = false;
                 need_pdf14 = false;
             }
         } else {
             /* Couldn't gsave round the transparency compositor.
              * This is probably fatal, but attempt to recover by abandoning transparency
              */
-            ctx->page_has_transparency = false;
+            ctx->page.has_transparency = false;
             need_pdf14 = false;
         }
     }
@@ -711,12 +711,12 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     /* Render one page (including annotations) */
     code = pdfi_process_one_page(ctx, page_dict);
 
-    if (ctx->page_has_transparency && page_group_known) {
+    if (ctx->page.has_transparency && page_group_known) {
         code1 = pdfi_trans_end_group(ctx);
     }
 
-    pdfi_countdown(ctx->CurrentPageDict);
-    ctx->CurrentPageDict = NULL;
+    pdfi_countdown(ctx->page.CurrentPageDict);
+    ctx->page.CurrentPageDict = NULL;
 
     if (need_pdf14) {
         if (code1 < 0) {

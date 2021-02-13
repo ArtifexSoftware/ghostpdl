@@ -40,7 +40,7 @@
 
 int pdfi_BI(pdf_context *ctx)
 {
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     return pdfi_mark_stack(ctx, PDF_DICT_MARK);
@@ -1486,13 +1486,13 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     /* Make a fake SMask dict if needed for JPXDecode */
-    if (ctx->page_has_transparency && image_info.is_JPXDecode && image_info.SMaskInData != 0) {
+    if (ctx->page.has_transparency && image_info.is_JPXDecode && image_info.SMaskInData != 0) {
         code = pdfi_make_smask_dict(ctx, image_stream, &image_info, comps);
         if (code < 0)
             goto cleanupExit;
     }
 
-    if (ctx->page_has_transparency == true && image_info.SMask != NULL) {
+    if (ctx->page.has_transparency == true && image_info.SMask != NULL) {
         /* If this flag is set, then device will process the SMask and we need do nothing
          * here (e.g. pdfwrite).
          */
@@ -1677,7 +1677,7 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_c_
     int code;
     pdf_stream *image_stream;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     /* we want to have the indirect_num and indirect_gen of the created dictionary
@@ -1709,7 +1709,7 @@ error:
 
 int pdfi_EI(pdf_context *ctx)
 {
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
 /*    pdfi_clearstack(ctx);*/
@@ -1925,7 +1925,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
     code = pdfi_dict_known(ctx, form_dict, "Group", &group_known);
     if (code < 0)
         goto exit;
-    if (group_known && ctx->page_has_transparency)
+    if (group_known && ctx->page.has_transparency)
         do_group = true;
 
     /* Grab the CTM before it gets modified */
@@ -2086,7 +2086,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit;
     }
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = pdfi_loop_detector_mark(ctx);

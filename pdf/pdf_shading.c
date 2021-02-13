@@ -833,7 +833,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if (pdfi_oc_is_off(ctx))
@@ -870,7 +870,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         goto exit2;
 
-    if (ctx->page_has_transparency) {
+    if (ctx->page.has_transparency) {
         code = pdfi_shading_setup_trans(ctx, &trans_state, Shading);
         if (code < 0)
             goto exit2;
@@ -883,7 +883,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         code = 0;
     }
 
-    if (ctx->page_has_transparency) {
+    if (ctx->page.has_transparency) {
         code1 = pdfi_trans_teardown(ctx, &trans_state);
         if (code == 0)
             code = code1;

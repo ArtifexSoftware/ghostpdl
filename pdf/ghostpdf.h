@@ -272,6 +272,48 @@ typedef struct encryption_state_t {
 
 } encryption_state;
 
+typedef struct page_state_t {
+    /* Page level PDF objects */
+    pdf_dict *CurrentPageDict;      /* Last-ditch resource lookup */
+    /* Page leve 'Default' transfer functions, black generation and under colour removal */
+    pdf_transfer DefaultTransfers[4];
+    pdf_transfer DefaultBG;
+    pdf_transfer DefaultUCR;
+    /* This tracks whether the current page uses transparency features */
+    bool has_transparency;
+    /* This tracks how many spots are on the current page */
+    int num_spots;
+    /* Does this page need overprint support? */
+    bool needs_OP;
+    /* Does this page have OP=true in ExtGState? */
+    bool has_OP;
+    /* Are we simulating overprint on this page? */
+    bool simulate_op;
+    double Size[4];
+    double UserUnit;
+} page_state;
+
+typedef struct text_state_t {
+    /* we need the text enumerator in order to call gs_text_setcharwidth() for d0 and d1 */
+    gs_text_enum_t *current_enum;
+    /* Detect if we are inside a text block at any time. Nested text blocks are illegal and certain
+     * marking operations are illegal inside text blocks. We also manipulate this when rendering
+     * type 3 BuildChar procedures, as those marking operations are legal in a BuildChar, even
+     * when we are in a text block.
+     */
+    int BlockDepth;
+    /* This is to determine if we get Type 3 Charproc operators (d0 and d1) outside
+     * a Type 3 BuildChar.
+     */
+    bool inside_CharProc;
+    /* We need to know if we're in a type 3 CharProc which has executed a 'd1' operator.
+     * Colour operators are technically invalid if we are in a 'd1' context and we must
+     * ignore them.
+     */
+    bool CharProc_is_d1;
+
+} text_state;
+
 typedef struct pdf_context_s
 {
     void *instance;
@@ -282,6 +324,9 @@ typedef struct pdf_context_s
 
     /* Encryption state */
     encryption_state encryption;
+
+    /* Text and text state parameters */
+    text_state text;
 
     /* Parameters/capabilities of the selected device */
 
@@ -301,27 +346,6 @@ typedef struct pdf_context_s
     bool writepdfmarks;
     /* Should annotations be preserved or marked for current output device? */
     bool annotations_preserved;
-
-
-    /* Text and text state parameters */
-
-    /* we need the text enumerator in order to call gs_text_setcharwidth() for d0 and d1 */
-    gs_text_enum_t *current_text_enum;
-    /* Detect if we are inside a text block at any time. Nested text blocks are illegal and certain
-     * marking operations are illegal inside text blocks. We also manipulate this when rendering
-     * type 3 BuildChar procedures, as those marking operations are legal in a BuildChar, even
-     * when we are in a text block.
-     */
-    int TextBlockDepth;
-    /* This is to determine if we get Type 3 Charproc operators (d0 and d1) outside
-     * a Type 3 BuildChar.
-     */
-    bool inside_CharProc;
-    /* We need to know if we're in a type 3 CharProc which has executed a 'd1' operator.
-     * Colour operators are technically invalid if we are in a 'd1' context and we must
-     * ignore them.
-     */
-    bool CharProc_is_d1;
 
 
     /* State for handling the wacky W and W* operators */
@@ -379,31 +403,7 @@ typedef struct pdf_context_s
      */
     float HeaderVersion, FinalVersion;
 
-    /* Page level PDF objects */
-    pdf_dict *CurrentPageDict;      /* Last-ditch resource lookup */
-
-    /* Page leve 'Default' transfer functions, black generation and under colour removal */
-    pdf_transfer DefaultTransfers[4];
-    pdf_transfer DefaultBG;
-    pdf_transfer DefaultUCR;
-
-    /* This tracks whether the current page uses transparency features */
-    bool page_has_transparency;
-
-    /* This tracks how many spots are on the current page */
-    int page_num_spots;
-
-    /* Does this page need overprint support? */
-    bool page_needs_OP;
-
-    /* Does this page have OP=true in ExtGState? */
-    bool page_has_OP;
-
-    /* Are we simulating overprint on this page? */
-    bool page_simulate_op;
-
-    double PageSize[4];
-    double UserUnit;
+    page_state page;
 
     /* Document level PDF objects */
     xref_table_t *xref_table;

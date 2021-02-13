@@ -36,7 +36,7 @@ int pdfi_BT(pdf_context *ctx)
     int code;
     gs_matrix m;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_NESTEDTEXTBLOCK;
 
     gs_make_identity(&m);
@@ -49,7 +49,7 @@ int pdfi_BT(pdf_context *ctx)
         return code;
 
     code = gs_moveto(ctx->pgs, 0, 0);
-    ctx->TextBlockDepth++;
+    ctx->text.BlockDepth++;
     return code;
 }
 
@@ -57,12 +57,12 @@ int pdfi_ET(pdf_context *ctx)
 {
     int code = 0;
 
-    if (ctx->TextBlockDepth == 0) {
+    if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_ETNOTEXTBLOCK;
         return_error(gs_error_syntaxerror);
     }
 
-    ctx->TextBlockDepth--;
+    ctx->text.BlockDepth--;
     if (gs_currenttextrenderingmode(ctx->pgs) >= 4)
         gs_clip(ctx->pgs);
     return code;
@@ -73,7 +73,7 @@ int pdfi_T_star(pdf_context *ctx)
     int code;
     gs_matrix m, mat;
 
-    if (ctx->TextBlockDepth == 0) {
+    if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }
 
@@ -159,7 +159,7 @@ int pdfi_Td(pdf_context *ctx)
         }
     }
 
-    if (ctx->TextBlockDepth == 0) {
+    if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
 
         gs_make_identity(&mat);
@@ -230,7 +230,7 @@ int pdfi_TD(pdf_context *ctx)
         }
     }
 
-    if (ctx->TextBlockDepth == 0) {
+    if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
 
         gs_make_identity(&mat);
@@ -281,7 +281,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
 
     text.data.chars = NULL;
 
-    if (ctx->TextBlockDepth == 0) {
+    if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }
 
@@ -398,14 +398,14 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             text.operation |= TEXT_DO_DRAW;
         code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
         if (code >= 0) {
-            saved_penum = ctx->current_text_enum;
-            ctx->current_text_enum = penum;
+            saved_penum = ctx->text.current_enum;
+            ctx->text.current_enum = penum;
 
             penum->returned.current_glyph = GS_NO_GLYPH;
 
             code = gs_text_process(penum);
             gs_text_release(ctx->pgs, penum, "pdfi_Tj");
-            ctx->current_text_enum = saved_penum;
+            ctx->text.current_enum = saved_penum;
         }
     } else {
         if (Trmode != 0 && Trmode != 3 && !ctx->preserve_tr_mode) {
@@ -424,11 +424,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
 
         code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
         if (code >= 0) {
-            saved_penum = ctx->current_text_enum;
-            ctx->current_text_enum = penum;
+            saved_penum = ctx->text.current_enum;
+            ctx->text.current_enum = penum;
             code = gs_text_process(penum);
             gs_text_release(ctx->pgs, penum, "pdfi_Tj");
-            ctx->current_text_enum = saved_penum;
+            ctx->text.current_enum = saved_penum;
         }
 
         if (Trmode >= 4) {
@@ -437,11 +437,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             gs_moveto(ctx->pgs, 0, 0);
             code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
             if (code >= 0) {
-                saved_penum = ctx->current_text_enum;
-                ctx->current_text_enum = penum;
+                saved_penum = ctx->text.current_enum;
+                ctx->text.current_enum = penum;
                 code = gs_text_process(penum);
                 gs_text_release(ctx->pgs, penum, "pdfi_Tj");
-                ctx->current_text_enum = saved_penum;
+                ctx->text.current_enum = saved_penum;
             }
         }
 
@@ -666,7 +666,7 @@ int pdfi_TJ(pdf_context *ctx)
      * (see gs code pdf_ops.ps/TJ OFFlevels for appropriate logic)
      */
 
-    if (ctx->TextBlockDepth == 0) {
+    if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }
 
@@ -817,7 +817,7 @@ int pdfi_Tm(pdf_context *ctx)
     }
     pdfi_pop(ctx, 6);
 
-    if (ctx->TextBlockDepth == 0) {
+    if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
 
         gs_make_identity(&mat);
@@ -967,7 +967,7 @@ int pdfi_singlequote(pdf_context *ctx)
 {
     int code;
 
-    if (ctx->TextBlockDepth == 0) {
+    if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }
 
@@ -989,7 +989,7 @@ int pdfi_doublequote(pdf_context *ctx)
     pdf_string *s;
     pdf_num *Tw, *Tc;
 
-    if (ctx->TextBlockDepth == 0) {
+    if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }
 

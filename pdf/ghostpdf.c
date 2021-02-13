@@ -268,7 +268,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
         if (ctx->args.pdfstoponerror)
             return code;
     } else {
-        if (ctx->page_has_transparency)
+        if (ctx->page.has_transparency)
             dmprintf(ctx->memory, "     Page uses transparency features");
     }
 

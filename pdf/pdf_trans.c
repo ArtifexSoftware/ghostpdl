@@ -234,7 +234,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
                 goto exit;
             if (code > 0) {
                 code = pdfi_create_colorspace(ctx, CS, (pdf_dict *)ctx->main_stream,
-                                              ctx->CurrentPageDict, &pcs, false);
+                                              ctx->page.CurrentPageDict, &pcs, false);
                 params.ColorSpace = pcs;
                 if (code < 0)
                     goto exit;
@@ -276,7 +276,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         if (code < 0)
             goto exit;
 
-        code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_stream,
+        code = pdfi_form_execgroup(ctx, ctx->page.CurrentPageDict, G_stream,
                                    igs->GroupGState, &group_Matrix);
         code1 = gs_end_transparency_mask(ctx->pgs, colorindex);
         if (code != 0)
@@ -425,10 +425,10 @@ int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_strea
         return_error(gs_error_undefined);
 
     code = pdfi_gsave(ctx);
-    bbox.p.x = ctx->PageSize[0];
-    bbox.p.y = ctx->PageSize[1];
-    bbox.q.x = ctx->PageSize[2];
-    bbox.q.y = ctx->PageSize[3];
+    bbox.p.x = ctx->page.Size[0];
+    bbox.p.y = ctx->page.Size[1];
+    bbox.q.x = ctx->page.Size[2];
+    bbox.q.y = ctx->page.Size[3];
 
     code = pdfi_transparency_group_common(ctx, page_dict, group_dict, &bbox, PDF14_BEGIN_TRANS_PAGE_GROUP);
     if (code < 0)
@@ -568,38 +568,38 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
 
     device_transparency = pdfi_device_check_param_bool(ctx->pgs->device, "HaveTransparency");
 
-    ctx->page_needs_OP = false;
-    ctx->page_simulate_op = false;
+    ctx->page.needs_OP = false;
+    ctx->page.simulate_op = false;
     switch(ctx->args.overprint_control) {
     case PDF_OVERPRINT_DISABLE:
         /* Use defaults */
         break;
     case PDF_OVERPRINT_SIMULATE:
-        if (!device_transparency && ctx->page_has_OP) {
+        if (!device_transparency && ctx->page.has_OP) {
             if (is_cmyk) {
-                if (ctx->page_num_spots > 0) {
-                    ctx->page_needs_OP = true;
-                    ctx->page_simulate_op = true;
+                if (ctx->page.num_spots > 0) {
+                    ctx->page.needs_OP = true;
+                    ctx->page.simulate_op = true;
                 }
             } else {
-                ctx->page_needs_OP = true;
-                ctx->page_simulate_op = true;
+                ctx->page.needs_OP = true;
+                ctx->page.simulate_op = true;
             }
         }
         break;
     case PDF_OVERPRINT_ENABLE:
     default:
         if (!is_cmyk || device_transparency)
-            ctx->page_needs_OP = false;
+            ctx->page.needs_OP = false;
         else
-            ctx->page_needs_OP = true;
+            ctx->page.needs_OP = true;
         break;
     }
 
     if(ctx->args.pdfdebug)
         dbgmprintf2(ctx->memory, "Page %s Overprint, Simulate is %s\n",
-                    ctx->page_needs_OP ? "NEEDS" : "does NOT NEED",
-                    ctx->page_simulate_op ? "TRUE" : "FALSE");
+                    ctx->page.needs_OP ? "NEEDS" : "does NOT NEED",
+                    ctx->page.simulate_op ? "TRUE" : "FALSE");
 }
 
 /* Figures out if current colorspace is okay for Overprint (see pdf_ops.ps/okOPcs and setupOPtrans) */
@@ -647,10 +647,10 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
 
     memset(state, 0, sizeof(*state));
 
-    if (!ctx->page_has_transparency)
+    if (!ctx->page.has_transparency)
         return 0;
 
-    if (ctx->page_needs_OP) {
+    if (ctx->page.needs_OP) {
         okOPcs = pdfi_trans_okOPcs(ctx);
         if (okOPcs) {
             if (caller == TRANSPARENCY_Caller_Stroke)
@@ -703,7 +703,7 @@ int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)
 {
     int code = 0;
 
-    if (!ctx->page_has_transparency)
+    if (!ctx->page.has_transparency)
         return 0;
 
     if (state->GroupPushed) {
@@ -723,7 +723,7 @@ int pdfi_trans_set_params(pdf_context *ctx)
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     gs_transparency_channel_selector_t csel;
 
-    if (ctx->page_has_transparency) {
+    if (ctx->page.has_transparency) {
         if (gs_getalphaisshape(ctx->pgs))
             csel = TRANSPARENCY_CHANNEL_Shape;
         else

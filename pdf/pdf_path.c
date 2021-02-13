@@ -29,7 +29,7 @@ int pdfi_moveto (pdf_context *ctx)
     int code;
     double x, y;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if (pdfi_count_stack(ctx) < 2) {
@@ -81,7 +81,7 @@ int pdfi_lineto (pdf_context *ctx)
     int code;
     double x, y;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if (pdfi_count_stack(ctx) < 2) {
@@ -132,7 +132,7 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
     int code=0, code1;
     pdfi_trans_state_t state;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if (pdfi_oc_is_off(ctx))
@@ -179,7 +179,7 @@ int pdfi_stroke(pdf_context *ctx)
     int code=0, code1;
     pdfi_trans_state_t state;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if (pdfi_oc_is_off(ctx))
@@ -214,7 +214,7 @@ int pdfi_closepath_stroke(pdf_context *ctx)
 {
     int code;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = gs_closepath(ctx->pgs);
@@ -258,7 +258,7 @@ int pdfi_curveto(pdf_context *ctx)
         }
     }
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[4], Values[5]);
@@ -300,7 +300,7 @@ int pdfi_v_curveto(pdf_context *ctx)
         }
     }
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = gs_currentpoint(ctx->pgs, &pt);
@@ -350,7 +350,7 @@ int pdfi_y_curveto(pdf_context *ctx)
         }
     }
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[2], Values[3]);
@@ -365,7 +365,7 @@ int pdfi_closepath(pdf_context *ctx)
 {
     int code = gs_closepath(ctx->pgs);
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if(code < 0 && ctx->args.pdfstoponerror)
@@ -392,7 +392,7 @@ int pdfi_newpath(pdf_context *ctx)
     code1 = gs_newpath(ctx->pgs);
     if (code == 0) code = code1;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if (code < 0 && ctx->args.pdfstoponerror)
@@ -405,7 +405,7 @@ int pdfi_b(pdf_context *ctx)
 {
     int code;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = gs_closepath(ctx->pgs);
@@ -421,7 +421,7 @@ int pdfi_b_star(pdf_context *ctx)
 {
     int code;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = gs_closepath(ctx->pgs);
@@ -438,7 +438,7 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
 {
     int code=0, code1=0;
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if (pdfi_oc_is_off(ctx))
@@ -476,7 +476,7 @@ int pdfi_clip(pdf_context *ctx)
 {
     int code = gs_clip(ctx->pgs);
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if(code < 0 && ctx->args.pdfstoponerror)
@@ -489,7 +489,7 @@ int pdfi_eoclip(pdf_context *ctx)
 {
     int code = gs_eoclip(ctx->pgs);
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if(code < 0 && ctx->args.pdfstoponerror)
@@ -528,7 +528,7 @@ int pdfi_rectpath(pdf_context *ctx)
         }
     }
 
-    if (ctx->TextBlockDepth != 0)
+    if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = gs_moveto(ctx->pgs, Values[0], Values[1]);

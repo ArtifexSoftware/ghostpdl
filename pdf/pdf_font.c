@@ -38,7 +38,7 @@ int pdfi_d0(pdf_context *ctx)
     int code = 0, gsave_level = 0;
     double width[2];
 
-    if (ctx->inside_CharProc == false)
+    if (ctx->text.inside_CharProc == false)
         ctx->pdf_warnings |= W_PDF_NOTINCHARPROC;
 
     if (pdfi_count_stack(ctx) < 2) {
@@ -54,7 +54,7 @@ int pdfi_d0(pdf_context *ctx)
         code = gs_note_error(gs_error_typecheck);
         goto d0_error;
     }
-    if(ctx->current_text_enum == NULL) {
+    if(ctx->text.current_enum == NULL) {
         code = gs_note_error(gs_error_undefined);
         goto d0_error;
     }
@@ -77,12 +77,12 @@ int pdfi_d0(pdf_context *ctx)
         width[0] = font->Widths[font->ctx->current_chr - font->FirstChar];
      */
 
-    if (ctx->current_text_enum == NULL) {
+    if (ctx->text.current_enum == NULL) {
         code = gs_note_error(gs_error_unknownerror);
         goto d0_error;
     }
 
-    code = gs_text_setcharwidth(ctx->current_text_enum, width);
+    code = gs_text_setcharwidth(ctx->text.current_enum, width);
 
     /* Nasty hackery. setcachedevice potentially pushes a new device into the graphics state
      * and there's no way to remove that device again without grestore'ing back to a point
@@ -118,10 +118,10 @@ int pdfi_d1(pdf_context *ctx)
     int code = 0, i, gsave_level;
     double wbox[6];
 
-    if (ctx->inside_CharProc == false)
+    if (ctx->text.inside_CharProc == false)
         ctx->pdf_warnings |= W_PDF_NOTINCHARPROC;
 
-    ctx->CharProc_is_d1 = true;
+    ctx->text.CharProc_is_d1 = true;
 
     if (pdfi_count_stack(ctx) < 2) {
         code = gs_note_error(gs_error_stackunderflow);
@@ -148,12 +148,12 @@ int pdfi_d1(pdf_context *ctx)
 
     gsave_level = ctx->pgs->level;
 
-    if (ctx->current_text_enum == NULL) {
+    if (ctx->text.current_enum == NULL) {
         code = gs_note_error(gs_error_unknownerror);
         goto d1_error;
     }
 
-    code = gs_text_setcachedevice(ctx->current_text_enum, wbox);
+    code = gs_text_setcachedevice(ctx->text.current_enum, wbox);
 
     /* See the comment immediately after gs_text_setcachedvice() in pdfi_d0 above */
     if (ctx->pgs->level > gsave_level)
