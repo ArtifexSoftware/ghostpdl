@@ -314,6 +314,27 @@ typedef struct text_state_t {
 
 } text_state;
 
+typedef struct device_state_t {
+    /* Parameters/capabilities of the selected device */
+    /* Needed to determine whether we need to reset the device to handle any spots
+     * and whether we need to prescan the PDF file to determine how many spot colourants
+     * (if any) are used in the file.
+     */
+    bool spot_capable;
+    /* for avoiding charpath with pdfwrite */
+    bool preserve_tr_mode;
+    /* Are SMask's preserved by device (pdfwrite) */
+    bool preserve_smask;
+    bool ForOPDFRead;
+    bool pdfmark;
+    /* These are derived from the device parameters rather than extracted from the device */
+    /* But this is a convenient place to keep them. */
+    /* Does current output device handle pdfmark */
+    bool writepdfmarks;
+    /* Should annotations be preserved or marked for current output device? */
+    bool annotations_preserved;
+} device_state;
+
 typedef struct pdf_context_s
 {
     void *instance;
@@ -328,25 +349,13 @@ typedef struct pdf_context_s
     /* Text and text state parameters */
     text_state text;
 
-    /* Parameters/capabilities of the selected device */
+    /* The state of the current page being processed */
+    page_state page;
 
-    /* Needed to determine whether we need to reset the device to handle any spots
-     * and whether we need to prescan the PDF file to determine how many spot colourants
-     * (if any) are used in the file.
-     */
-    bool spot_capable_device;
-    /* for avoiding charpath with pdfwrite */
-    bool preserve_tr_mode;
-    /* Are SMask's preserved by device (pdfwrite) */
-    bool preserve_smask;
-    bool ForOPDFRead;
-    bool pdfmark;
-    /* These are derived from the device parameters rather than extracted from the device */
-    /* Does current output device handle pdfmark */
-    bool writepdfmarks;
-    /* Should annotations be preserved or marked for current output device? */
-    bool annotations_preserved;
+    device_state device;
 
+
+    /* PDF interpreter state */
 
     /* State for handling the wacky W and W* operators */
     bool clip_active;
@@ -357,15 +366,16 @@ typedef struct pdf_context_s
     /* Counter for making labels for pdfmark forms (annotations) */
     int pdfwrite_form_counter;
 
+    /* Optional things from Root */
+    pdf_dict *OCProperties;
 
-    /* PDF interpreter state */
+    /* Optional/Marked Content stuff */
+    void *OFFlevels;
+    uint64_t BMClevel;
 
     /* Bitfields recording whether any errors or warnings were encountered */
     pdf_error_flag pdf_errors;
     pdf_warning_flag pdf_warnings;
-
-    /* A name table :-( */
-    pdfi_name_entry *name_table;
 
     /* We need a gs_font_dir for gs_definefotn() */
     gs_font_dir * font_dir;
@@ -403,8 +413,6 @@ typedef struct pdf_context_s
      */
     float HeaderVersion, FinalVersion;
 
-    page_state page;
-
     /* Document level PDF objects */
     xref_table_t *xref_table;
     pdf_dict *Trailer;
@@ -414,23 +422,21 @@ typedef struct pdf_context_s
     uint64_t num_pages;
     uint32_t *page_array; /* cache of page dict object_num's for pdfmark Dest */
 
-    /* Optional things from Root */
-    pdf_dict *OCProperties;
-
-    /* Optional/Marked Content stuff */
-    void *OFFlevels;
-    uint64_t BMClevel;
 
     /* Interpreter level PDF objects */
+
+    /* The interpreter operand stack */
     uint32_t stack_size;
     pdf_obj **stack_bot;
     pdf_obj **stack_top;
     pdf_obj **stack_limit;
 
+    /* The object cache */
     uint32_t cache_entries;
     pdf_obj_cache_entry *cache_LRU;
     pdf_obj_cache_entry *cache_MRU;
 
+    /* The loop detection state */
     uint32_t loop_detection_size;
     uint32_t loop_detection_entries;
     uint64_t *loop_detection;
@@ -442,6 +448,9 @@ typedef struct pdf_context_s
      */
     pdf_stream *current_stream;
     stream_save current_stream_save;
+
+    /* A name table :-( */
+    pdfi_name_entry *name_table;
 
     pdf_dict *pdffontmap;
 

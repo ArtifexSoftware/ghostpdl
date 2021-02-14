@@ -122,18 +122,18 @@ void pdfi_device_set_flags(pdf_context *ctx)
     has_ForOPDFRead = pdfi_device_check_param_bool(dev, "ForOPDFRead");
 
     /* Cache these so they don't have to constantly be calculated */
-    ctx->writepdfmarks = has_pdfmark || ctx->args.dopdfmarks;
-    ctx->annotations_preserved = ctx->writepdfmarks && !has_ForOPDFRead;
+    ctx->device.writepdfmarks = has_pdfmark || ctx->args.dopdfmarks;
+    ctx->device.annotations_preserved = ctx->device.writepdfmarks && !has_ForOPDFRead;
 
     /* PreserveTrMode is for pdfwrite device */
-    ctx->preserve_tr_mode = pdfi_device_check_param_bool(dev, "PreserveTrMode");
-    ctx->preserve_smask = pdfi_device_check_param_bool(dev, "PreserveSMask");
+    ctx->device.preserve_tr_mode = pdfi_device_check_param_bool(dev, "PreserveTrMode");
+    ctx->device.preserve_smask = pdfi_device_check_param_bool(dev, "PreserveSMask");
 
     /* See if it is a DeviceN (spot capable) */
-    ctx->spot_capable_device = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
+    ctx->device.spot_capable = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
 
     /* If multi-page output, can't do certain pdfmarks */
-    if (ctx->writepdfmarks) {
+    if (ctx->device.writepdfmarks) {
         if (gx_outputfile_is_separate_pages(((gx_device_vector *)dev)->fname, dev->memory)) {
             ctx->args.no_pdfmark_outlines = true;
             ctx->args.no_pdfmark_dests = true;

@@ -811,7 +811,7 @@ int pdfi_mark_stream(pdf_context *ctx, pdf_stream *stream)
 
     stream->stream_written = true;
 
-    if (!ctx->writepdfmarks)
+    if (!ctx->device.writepdfmarks)
         return 0;
 
     /* Create an indirect ref for the stream */
@@ -878,7 +878,7 @@ int pdfi_mark_dict(pdf_context *ctx, pdf_dict *dict)
 
     dict->dict_written = true;
 
-    if (!ctx->writepdfmarks)
+    if (!ctx->device.writepdfmarks)
         return 0;
 
     /* Create an indirect ref for the dict */

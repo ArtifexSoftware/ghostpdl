@@ -1496,7 +1496,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         /* If this flag is set, then device will process the SMask and we need do nothing
          * here (e.g. pdfwrite).
          */
-        if (!ctx->preserve_smask) {
+        if (!ctx->device.preserve_smask) {
             code = pdfi_do_image_smask(ctx, source, &image_info);
             if (code < 0)
                 goto cleanupExit;
@@ -1530,7 +1530,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     /* Get the SMask info if we will need it (Type 3x images) */
-    if (image_info.SMask && image_info.SMask->type == PDF_STREAM && ctx->preserve_smask) {
+    if (image_info.SMask && image_info.SMask->type == PDF_STREAM && ctx->device.preserve_smask) {
         /* smask_dict non-NULL is used to flag a Type 3x image below */
         smask_stream = (pdf_stream *)image_info.SMask;
         code = pdfi_get_image_info(ctx, smask_stream, page_dict, stream_dict,

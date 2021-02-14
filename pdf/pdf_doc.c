@@ -1104,7 +1104,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
     if (!ctx->Trailer)
         goto exit;
 
-    if (ctx->writepdfmarks) {
+    if (ctx->device.writepdfmarks) {
         /* Handle Outlines */
         code = pdfi_doc_Outlines(ctx);
         if (code < 0)

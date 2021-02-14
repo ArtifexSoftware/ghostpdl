@@ -943,7 +943,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
      * of pdfwrite and other high-level devices
      */
     ctx->pgs->have_pattern_streams = true;
-    ctx->preserve_tr_mode = 0;
+    ctx->device.preserve_tr_mode = 0;
     ctx->args.notransparency = false;
 
     ctx->main_stream = NULL;

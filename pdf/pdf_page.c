@@ -610,7 +610,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         dbgmprintf2(ctx->memory, "Current page %ld transparency setting is %d", page_num+1,
                 ctx->page.has_transparency);
 
-    if (ctx->spot_capable_device)
+    if (ctx->device.spot_capable)
         dbgmprintf1(ctx->memory, ", spots=%d\n", ctx->page.num_spots);
     else
         dbgmprintf(ctx->memory, "\n");

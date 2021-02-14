@@ -387,7 +387,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             Trmode = 0;
     }
 
-    if (ctx->preserve_tr_mode) {
+    if (ctx->device.preserve_tr_mode) {
         if (Trmode == 3) {
             if (current_font->pdfi_font_type == e_pdf_font_type3)
                 text.operation = TEXT_FROM_CHARS | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
@@ -408,7 +408,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             ctx->text.current_enum = saved_penum;
         }
     } else {
-        if (Trmode != 0 && Trmode != 3 && !ctx->preserve_tr_mode) {
+        if (Trmode != 0 && Trmode != 3 && !ctx->device.preserve_tr_mode) {
             text.operation |= TEXT_DO_FALSE_CHARPATH;
             if (Trmode < 4) {
                 pdfi_gsave(ctx);

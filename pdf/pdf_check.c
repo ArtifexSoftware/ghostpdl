@@ -131,7 +131,7 @@ pdfi_check_init_tracker(pdf_context *ctx, pdfi_check_tracker_t *tracker)
 
     memset(tracker->CheckedResources, 0x00, tracker->size);
 
-    if (ctx->spot_capable_device || ctx->args.overprint_control == PDF_OVERPRINT_SIMULATE) {
+    if (ctx->device.spot_capable || ctx->args.overprint_control == PDF_OVERPRINT_SIMULATE) {
         code = pdfi_dict_alloc(ctx, 32, &tracker->spot_dict);
         if (code < 0)
             goto cleanup;
