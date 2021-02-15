@@ -679,7 +679,7 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
 int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
 {
     xref_entry *entry;
-    int code;
+    int code, stack_depth = pdfi_count_stack(ctx);
     gs_offset_t saved_stream_offset;
     bool saved_decrypt_strings = ctx->encryption.decrypt_strings;
 
@@ -772,7 +772,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 goto error;
             }
 
-            if ((ctx->stack_top[-1])->object_num == obj) {
+            if (pdfi_count_stack(ctx) > 0 && (ctx->stack_top[-1])->object_num == obj) {
                 *object = ctx->stack_top[-1];
                 pdfi_countup(*object);
                 pdfi_pop(ctx, 1);
@@ -811,7 +811,8 @@ free_obj:
 error:
     ctx->encryption.decrypt_strings = saved_decrypt_strings;
     (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-    pdfi_clearstack(ctx);
+    /* Return the stack to the state at entry */
+    pdfi_pop(ctx, pdfi_count_stack(ctx) - stack_depth);
     return code;
 }
 
