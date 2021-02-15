@@ -202,9 +202,9 @@ typedef struct gs_xstate_trans_flags {
 #define gs_currentdevicecolor_inline(pgs) ((pgs)->color[0].dev_color)
 #define gs_currentcolor_inline(pgs)       ((pgs)->color[0].ccolor)
 #define gs_currentcolorspace_inline(pgs)  ((pgs)->color[0].color_space)
-#define gs_altdevicecolor_inline(pgs)     ((pgs)->color[1].dev_color)
-#define gs_altcolor_inline(pgs)           ((pgs)->color[1].ccolor)
-#define gs_altcolorspace_inline(pgs)      ((pgs)->color[1].color_space)
+#define gs_swappeddevicecolor_inline(pgs) ((pgs)->color[1].dev_color)
+#define gs_swappedcolor_inline(pgs)       ((pgs)->color[1].ccolor)
+#define gs_swappedcolorspace_inline(pgs)  ((pgs)->color[1].color_space)
 #define gs_currentcolor_eopm(pgs)         ((pgs)->color[0].effective_opm)
 
 #define char_tm_only(pgs) *(gs_matrix *)&(pgs)->char_tm

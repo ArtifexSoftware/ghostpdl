@@ -302,10 +302,10 @@ int gx_remap_color(gs_gstate *);
 #define gx_unset_dev_color(pgs)\
   color_unset(gs_currentdevicecolor_inline(pgs))
 #define gx_unset_alt_dev_color(pgs)\
-  color_unset(gs_altdevicecolor_inline(pgs))
+  color_unset(gs_swappeddevicecolor_inline(pgs))
 #define gx_unset_both_dev_colors(pgs)\
   (color_unset(gs_currentdevicecolor_inline(pgs)),\
-  color_unset(gs_altdevicecolor_inline(pgs)))
+  color_unset(gs_swappeddevicecolor_inline(pgs)))
 
 /* Load the halftone cache in preparation for drawing. */
 #define gx_color_load_select(pdevc, pgs, dev, select)\

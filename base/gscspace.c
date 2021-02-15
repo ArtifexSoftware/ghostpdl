@@ -429,12 +429,12 @@ void cs_adjust_counts_icc(gs_gstate *pgs, int delta)
     }
 }
 
-void cs_adjust_altcounts_icc(gs_gstate *pgs, int delta)
+void cs_adjust_swappedcounts_icc(gs_gstate *pgs, int delta)
 {
-    gs_color_space *pcs = gs_altcolorspace_inline(pgs);
+    gs_color_space *pcs = gs_swappedcolorspace_inline(pgs);
 
     if (pcs) {
-        cs_adjust_altcounts(pgs, delta);
+        cs_adjust_swappedcounts(pgs, delta);
     }
 }
 

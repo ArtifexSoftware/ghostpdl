@@ -1354,7 +1354,7 @@ gstate_clone_core(const gs_gstate               *pfrom,
     *clone_data->parts.color[1].ccolor    = *pgs->color[1].ccolor;
     *clone_data->parts.color[1].dev_color = *pgs->color[1].dev_color;
     cs_adjust_counts_icc(pgs, 1);
-    cs_adjust_altcounts_icc(pgs, 1);
+    cs_adjust_swappedcounts_icc(pgs, 1);
 
     return pgs;
 
