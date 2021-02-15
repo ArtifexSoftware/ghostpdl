@@ -2830,7 +2830,7 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
         ;
     }
     if (options & dump_do_marks) {
-        dmprintf2(mem, " smark/back=%u ("PRI_INTPTR")", pre->o_smark, pre->o_smark);
+        dmprintf2(mem, " smark/back=%u (0x%x)", pre->o_smark, pre->o_smark);
     }
     dmputc(mem, '\n');
     if (type == &st_free)
@@ -2987,8 +2987,8 @@ static void ddct(const gs_memory_t *mem, clump_t *cp, clump_t *parent, int depth
 
     dmlprintf7(mem, "Clump "PRI_INTPTR":"PRI_INTPTR" parent="PRI_INTPTR" left="PRI_INTPTR":"PRI_INTPTR" right="PRI_INTPTR":"PRI_INTPTR"\n",
         (intptr_t)cp, (intptr_t)cp->cbase, (intptr_t)cp->parent,
-        (intptr_t)cp->left, (intptr_t)cp->left ? cp->left->cbase : NULL,
-        (intptr_t)cp->right, (intptr_t)cp->right ? cp->right->cbase : NULL);
+        (intptr_t)cp->left, (intptr_t)(cp->left ? cp->left->cbase : NULL),
+        (intptr_t)cp->right, (intptr_t)(cp->right ? cp->right->cbase : NULL));
     if (cp->parent != parent)
         dmlprintf(mem, "Parent pointer mismatch!\n");
     ddct(mem, cp->left, cp, depth+1);
