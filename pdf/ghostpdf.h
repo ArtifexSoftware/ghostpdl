@@ -172,7 +172,7 @@ typedef enum pdf_crypt_filter_e {
 } pdf_crypt_filter;
 
 
-typedef enum {
+typedef enum pdf_overprint_control_e {
     PDF_OVERPRINT_ENABLE = 0,/* Default */
     PDF_OVERPRINT_DISABLE,
     PDF_OVERPRINT_SIMULATE
@@ -186,7 +186,7 @@ typedef enum {
 typedef struct pdf_transfer_s {
     gs_mapping_proc proc;	/* typedef is in gxtmap.h */
     frac values[transfer_map_size];
-} pdf_transfer;
+} pdf_transfer_t;
 
 /* Items we want preserved around content stream executions */
 typedef struct stream_save_s {
@@ -197,14 +197,14 @@ typedef struct stream_save_s {
     int group_depth;
 } stream_save;
 
-typedef struct name_entry {
+typedef struct name_entry_s {
     char *name;
     int len;
     unsigned int index;
     void *next;
-} pdfi_name_entry;
+} pdfi_name_entry_t;
 
-typedef struct cmd_args_t {
+typedef struct cmd_args_s {
     /* These are various command line switches, the list is not yet complete */
     int first_page;             /* -dFirstPage= */
     int last_page;              /* -dLastPage= */
@@ -230,9 +230,9 @@ typedef struct cmd_args_t {
     bool pdfinfo;
     pdf_overprint_control_t overprint_control;     /* Overprint -- enabled, disabled, simulated */
     char *PageList;
-} cmd_args;
+} cmd_args_t;
 
-typedef struct encryption_state_t {
+typedef struct encryption_state_s {
     /* Encryption, passwords and filter details */
     bool is_encrypted;
     int V;
@@ -269,16 +269,15 @@ typedef struct encryption_state_t {
      * because we can execute Forms outside a page context (eg Annotations).
      */
     bool decrypt_strings;
+} encryption_state_t;
 
-} encryption_state;
-
-typedef struct page_state_t {
+typedef struct page_state_s {
     /* Page level PDF objects */
     pdf_dict *CurrentPageDict;      /* Last-ditch resource lookup */
     /* Page leve 'Default' transfer functions, black generation and under colour removal */
-    pdf_transfer DefaultTransfers[4];
-    pdf_transfer DefaultBG;
-    pdf_transfer DefaultUCR;
+    pdf_transfer_t DefaultTransfers[4];
+    pdf_transfer_t DefaultBG;
+    pdf_transfer_t DefaultUCR;
     /* This tracks whether the current page uses transparency features */
     bool has_transparency;
     /* This tracks how many spots are on the current page */
@@ -291,9 +290,9 @@ typedef struct page_state_t {
     bool simulate_op;
     double Size[4];
     double UserUnit;
-} page_state;
+} page_state_t;
 
-typedef struct text_state_t {
+typedef struct text_state_s {
     /* we need the text enumerator in order to call gs_text_setcharwidth() for d0 and d1 */
     gs_text_enum_t *current_enum;
     /* Detect if we are inside a text block at any time. Nested text blocks are illegal and certain
@@ -311,10 +310,9 @@ typedef struct text_state_t {
      * ignore them.
      */
     bool CharProc_is_d1;
+} text_state_t;
 
-} text_state;
-
-typedef struct device_state_t {
+typedef struct device_state_s {
     /* Parameters/capabilities of the selected device */
     /* Needed to determine whether we need to reset the device to handle any spots
      * and whether we need to prescan the PDF file to determine how many spot colourants
@@ -333,7 +331,7 @@ typedef struct device_state_t {
     bool writepdfmarks;
     /* Should annotations be preserved or marked for current output device? */
     bool annotations_preserved;
-} device_state;
+} device_state_t;
 
 typedef struct pdf_context_s
 {
@@ -341,18 +339,18 @@ typedef struct pdf_context_s
     gs_memory_t *memory;
 
     /* command line argument storage */
-    cmd_args args;
+    cmd_args_t args;
 
     /* Encryption state */
-    encryption_state encryption;
+    encryption_state_t encryption;
 
     /* Text and text state parameters */
-    text_state text;
+    text_state_t text;
 
     /* The state of the current page being processed */
-    page_state page;
+    page_state_t page;
 
-    device_state device;
+    device_state_t device_state;
 
 
     /* PDF interpreter state */
@@ -450,7 +448,7 @@ typedef struct pdf_context_s
     stream_save current_stream_save;
 
     /* A name table :-( */
-    pdfi_name_entry *name_table;
+    pdfi_name_entry_t *name_table;
 
     pdf_dict *pdffontmap;
 
@@ -461,6 +459,7 @@ typedef struct pdf_context_s
     int (*end_page) (struct pdf_context_s *ctx);
     int (*get_glyph_name)(gs_font *font, gs_glyph index, gs_const_string *pstr);
     int (*get_glyph_index)(gs_font *font, byte *str, uint size, uint *glyph);
+
 #if REFCNT_DEBUG
     uint64_t UID;
 #endif

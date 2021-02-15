@@ -439,7 +439,7 @@ pdfi_report_errors(pdf_context *ctx)
 
 int pdfi_get_name_index(pdf_context *ctx, char *name, int len, unsigned int *returned)
 {
-    pdfi_name_entry *e = NULL, *last_entry = NULL, *new_entry = NULL;
+    pdfi_name_entry_t *e = NULL, *last_entry = NULL, *new_entry = NULL;
     int index = 0;
 
     if (ctx->name_table == NULL) {
@@ -460,10 +460,10 @@ int pdfi_get_name_index(pdf_context *ctx, char *name, int len, unsigned int *ret
         e = e->next;
     }
 
-    new_entry = (pdfi_name_entry *)gs_alloc_bytes(ctx->memory, sizeof(pdfi_name_entry), "Alloc name table entry");
+    new_entry = (pdfi_name_entry_t *)gs_alloc_bytes(ctx->memory, sizeof(pdfi_name_entry_t), "Alloc name table entry");
     if (new_entry == NULL)
         return_error(gs_error_VMerror);
-    memset(new_entry, 0x00, sizeof(pdfi_name_entry));
+    memset(new_entry, 0x00, sizeof(pdfi_name_entry_t));
     new_entry->name = (char *)gs_alloc_bytes(ctx->memory, len+1, "Alloc name table name");
     if (new_entry->name == NULL) {
         gs_free_object(ctx->memory, new_entry, "Failed to allocate name entry");
@@ -486,10 +486,10 @@ int pdfi_get_name_index(pdf_context *ctx, char *name, int len, unsigned int *ret
 static int pdfi_free_name_table(pdf_context *ctx)
 {
     if (ctx->name_table) {
-        pdfi_name_entry *next = NULL, *e = (pdfi_name_entry *)ctx->name_table;
+        pdfi_name_entry_t *next = NULL, *e = (pdfi_name_entry_t *)ctx->name_table;
 
         while (e != NULL) {
-            next = (pdfi_name_entry *)e->next;
+            next = (pdfi_name_entry_t *)e->next;
             gs_free_object(ctx->memory, e->name, "free name table entries");
             gs_free_object(ctx->memory, e, "free name table entries");
             e = next;
@@ -501,7 +501,7 @@ static int pdfi_free_name_table(pdf_context *ctx)
 
 int pdfi_name_from_index(pdf_context *ctx, int index, unsigned char **name, unsigned int *len)
 {
-    pdfi_name_entry *e = (pdfi_name_entry *)ctx->name_table;
+    pdfi_name_entry_t *e = (pdfi_name_entry_t *)ctx->name_table;
 
     while (e != NULL) {
         if (e->index == index) {
@@ -519,7 +519,7 @@ int pdfi_separation_name_from_index(gs_gstate *pgs, gs_separation_name index, un
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)pgs->client_data;
     pdf_context *ctx = NULL;
-    pdfi_name_entry *e = NULL;
+    pdfi_name_entry_t *e = NULL;
 
     if (igs == NULL)
         return_error(gs_error_undefined);
@@ -528,7 +528,7 @@ int pdfi_separation_name_from_index(gs_gstate *pgs, gs_separation_name index, un
     if (ctx == NULL)
         return_error(gs_error_undefined);
 
-    e = (pdfi_name_entry *)ctx->name_table;
+    e = (pdfi_name_entry_t *)ctx->name_table;
 
     while (e != NULL) {
         if (e->index == index) {
@@ -943,7 +943,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
      * of pdfwrite and other high-level devices
      */
     ctx->pgs->have_pattern_streams = true;
-    ctx->device.preserve_tr_mode = 0;
+    ctx->device_state.preserve_tr_mode = 0;
     ctx->args.notransparency = false;
 
     ctx->main_stream = NULL;

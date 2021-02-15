@@ -3404,7 +3404,7 @@ static int pdfi_annot_handle(pdf_context *ctx, pdf_dict *annot)
         goto exit;
     }
 
-    if (ctx->args.preserveannots && ctx->device.annotations_preserved)
+    if (ctx->args.preserveannots && ctx->device_state.annotations_preserved)
         code = pdfi_annot_preserve(ctx, annot, Subtype);
     else
         code = pdfi_annot_draw(ctx, annot, Subtype);
