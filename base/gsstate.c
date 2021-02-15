@@ -44,8 +44,10 @@
 /* Forward references */
 static gs_gstate *gstate_alloc(gs_memory_t *, client_name_t,
                                const gs_gstate *);
-static gs_gstate *gstate_clone(gs_gstate *, gs_memory_t *, client_name_t,
-                               gs_gstate_copy_reason_t);
+static gs_gstate *gstate_clone_for_gsave(gs_gstate *,
+                                         client_name_t);
+static gs_gstate *gstate_clone_for_gstate(const gs_gstate *, gs_memory_t *,
+                                          client_name_t);
 static void gstate_free_contents(gs_gstate *);
 static int gstate_copy(gs_gstate *, const gs_gstate *,
                         gs_gstate_copy_reason_t, client_name_t);
@@ -161,7 +163,7 @@ extern_st(st_gs_gstate); /* for gstate_alloc() */
 /* Copy client data, using the copy_for procedure if available, */
 /* the copy procedure otherwise. */
 static int
-gstate_copy_client_data(gs_gstate * pgs, void *dto, void *dfrom,
+gstate_copy_client_data(const gs_gstate * pgs, void *dto, void *dfrom,
                         gs_gstate_copy_reason_t reason)
 {
     return (pgs->client_procs.copy_for != 0 ?
@@ -301,10 +303,9 @@ gs_gstate_free(gs_gstate * pgs)
 int
 gs_gsave(gs_gstate * pgs)
 {
-    gs_gstate *pnew = gstate_clone(pgs, pgs->memory, "gs_gsave",
-                                  copy_for_gsave);
+    gs_gstate *pnew = gstate_clone_for_gsave(pgs, "gs_gsave");
 
-    if (pnew == 0)
+    if (pnew == NULL)
         return_error(gs_error_VMerror);
     /* As of PLRM3, the interaction between gsave and the clip stack is
      * now clear. gsave stores the clip stack into the saved graphics
@@ -314,7 +315,7 @@ gs_gsave(gs_gstate * pgs)
      * on pgs->clip_stack, but gstate_clone() has an exception for
      * the clip_stack field.
      */
-    pgs->clip_stack = 0;
+    pgs->clip_stack = NULL;
     pgs->saved = pnew;
     if (pgs->show_gstate == pgs)
         pgs->show_gstate = pnew->show_gstate = pnew;
@@ -461,27 +462,23 @@ gs_grestoreall(gs_gstate * pgs)
 
 /* Allocate and return a new graphics state. */
 gs_gstate *
-gs_gstate_copy(gs_gstate * pgs, gs_memory_t * mem)
+gs_gstate_copy(const gs_gstate * pgs, gs_memory_t * mem)
 {
     gs_gstate *pnew;
-    /* Prevent 'capturing' the view clip path. */
-    gx_clip_path *view_clip = pgs->view_clip;
 
-    pgs->view_clip = 0;
-    pnew = gstate_clone(pgs, mem, "gs_gstate", copy_for_gstate);
-    if (pnew == 0)
-        return 0;
+    pnew = gstate_clone_for_gstate(pgs, mem, "gs_gstate");
+    if (pnew == NULL)
+        return NULL;
     clip_stack_rc_adjust(pnew->clip_stack, 1, "gs_gstate_copy");
-    pgs->view_clip = view_clip;
-    pnew->saved = 0;
+    pnew->saved = NULL;
     /*
      * Prevent dangling references from the show_gstate pointer.  If
      * this context is its own show_gstate, set the pointer in the clone
      * to point to the clone; otherwise, set the pointer in the clone to
-     * 0, and let gs_setgstate fix it up.
+     * NULL, and let gs_setgstate fix it up.
      */
     pnew->show_gstate =
-        (pgs->show_gstate == pgs ? pnew : 0);
+        (pgs->show_gstate == pgs ? pnew : NULL);
     return pnew;
 }
 
@@ -1304,63 +1301,58 @@ gstate_copy_dash(gs_memory_t *mem, gx_dash_params *dash , const gs_gstate * pfro
                       pfrom->line_params.dash.offset, mem);
 }
 
-/* Clone an existing graphics state. */
-/* Return 0 if the allocation fails. */
-/* If reason is for_gsave, the clone refers to the old contents, */
-/* and we switch the old state to refer to the new contents. */
+typedef struct {
+    gs_gstate_parts  parts;
+    gx_dash_params   dash;
+} gs_gstate_clone_data;
+
 static gs_gstate *
-gstate_clone(gs_gstate * pfrom, gs_memory_t * mem, client_name_t cname,
-             gs_gstate_copy_reason_t reason)
+gstate_clone_core(const gs_gstate               *pfrom,
+                        client_name_t            cname,
+                        gs_gstate_clone_data    *clone_data,
+                        gs_gstate_copy_reason_t  reason)
 {
+    gs_memory_t *mem = pfrom->memory;
     gs_gstate *pgs = gstate_alloc(mem, cname, pfrom);
-    gs_gstate_parts parts;
     void *pdata = NULL;
-    gx_dash_params dash;
 
     if (pgs == NULL)
-        return 0;
-    GSTATE_ASSIGN_PARTS(&parts, pgs);
+        return NULL;
     if (pfrom->client_data != NULL) {
         pdata = (*pfrom->client_procs.alloc) (mem);
 
         if (pdata == NULL ||
-         gstate_copy_client_data(pfrom, pdata, pfrom->client_data, reason) < 0
-            )
+            gstate_copy_client_data(pfrom, pdata, pfrom->client_data,
+                                    reason) < 0)
             goto fail;
     }
     /* Copy the dash and dash pattern if necessary. */
-    dash = gs_currentlineparams_inline(pfrom)->dash;
-    if (pfrom->line_params.dash.pattern) {
+    clone_data->dash = gs_currentlineparams_inline(pfrom)->dash;
+    if (clone_data->dash.pattern) {
         int code;
 
-        dash.pattern = NULL; /* Ensures a fresh allocation */
-        code = gstate_copy_dash(mem, &dash, pfrom);
+        clone_data->dash.pattern = NULL; /* Ensures a fresh allocation */
+        code = gstate_copy_dash(mem, &clone_data->dash, pfrom);
         if (code < 0)
             goto fail;
     }
+    /* Some records within pgs are allocated. We copy pfrom into pgs
+     * wholesale (to avoid problems with the structure being updated and
+     * us having to keep it in sync), so we copy those allocated regions
+     * out first. The caller of this routine will then put them back
+     * into either pgs or pfrom as appropriate. */
+    GSTATE_ASSIGN_PARTS(&clone_data->parts, pgs);
     *pgs = *pfrom;
     pgs->client_data = pdata;
-    gs_currentlineparams_inline(pgs)->dash = dash;
-    pgs->memory = mem;
 
     gs_gstate_copied(pgs);
     /* Don't do anything to clip_stack. */
 
     rc_increment(pgs->device);
-    *parts.color[0].ccolor    = *pfrom->color[0].ccolor;
-    *parts.color[0].dev_color = *pfrom->color[0].dev_color;
-    *parts.color[1].ccolor    = *pfrom->color[1].ccolor;
-    *parts.color[1].dev_color = *pfrom->color[1].dev_color;
-    if (reason == copy_for_gsave) {
-        float *dfrom = pfrom->line_params.dash.pattern;
-        float *dto = pgs->line_params.dash.pattern;
-
-        GSTATE_ASSIGN_PARTS(pfrom, &parts);
-        pgs->line_params.dash.pattern = dfrom;
-        pfrom->line_params.dash.pattern = dto;
-    } else {
-        GSTATE_ASSIGN_PARTS(pgs, &parts);
-    }
+    *clone_data->parts.color[0].ccolor    = *pgs->color[0].ccolor;
+    *clone_data->parts.color[0].dev_color = *pgs->color[0].dev_color;
+    *clone_data->parts.color[1].ccolor    = *pgs->color[1].ccolor;
+    *clone_data->parts.color[1].dev_color = *pgs->color[1].dev_color;
     cs_adjust_counts_icc(pgs, 1);
     cs_adjust_altcounts_icc(pgs, 1);
 
@@ -1369,12 +1361,54 @@ gstate_clone(gs_gstate * pfrom, gs_memory_t * mem, client_name_t cname,
   fail:
     if (pdata != NULL)
         (*pfrom->client_procs.free) (pdata, mem, pgs);
-    gs_free_object(mem, pgs->line_params.dash.pattern, cname);
-    GSTATE_ASSIGN_PARTS(pgs, &parts);
+    gs_free_object(mem, clone_data->dash.pattern, cname);
     gstate_free_parts(pgs, mem, cname);
     gs_free_object(mem, pgs, cname);
 
     return NULL;
+}
+
+
+/* Clone an existing graphics state for use in gsave. The clone refers
+ * to the old contents, and the old state refers to the new contents. */
+/* Return NULL if the allocation fails. */
+static gs_gstate *
+gstate_clone_for_gsave(gs_gstate     *pfrom,
+                       client_name_t  cname)
+{
+    gs_gstate_clone_data clone_data;
+    gs_gstate *pgs = gstate_clone_core(pfrom, cname, &clone_data,
+                                       copy_for_gsave);
+
+    if (pgs == NULL)
+        return NULL;
+
+    /* Newly allocated parts go back into pfrom, not pgs! */
+    GSTATE_ASSIGN_PARTS(pfrom, &clone_data.parts);
+    gs_currentlineparams_inline(pfrom)->dash = clone_data.dash;
+
+    return pgs;
+}
+
+/* Clone an existing graphics state. The view_clip is not copied. */
+/* Return NULL if the allocation fails. */
+static gs_gstate *
+gstate_clone_for_gstate(const gs_gstate     *pfrom,
+                              gs_memory_t   *mem,
+                              client_name_t  cname)
+{
+    gs_gstate_clone_data clone_data;
+    gs_gstate *pgs = gstate_clone_core(pfrom, cname, &clone_data,
+                                       copy_for_gstate);
+
+    if (pgs == NULL)
+        return NULL;
+    GSTATE_ASSIGN_PARTS(pgs, &clone_data.parts);
+    pgs->view_clip = NULL;
+    gs_currentlineparams_inline(pgs)->dash = clone_data.dash;
+    pgs->memory = mem;
+
+    return pgs;
 }
 
 /* Adjust reference counters for the whole clip stack */

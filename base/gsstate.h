@@ -33,7 +33,7 @@ int gs_gsave(gs_gstate *), gs_grestore(gs_gstate *), gs_grestoreall(gs_gstate *)
 int gs_grestore_only(gs_gstate *);
 int gs_gsave_for_save(gs_gstate *, gs_gstate **), gs_grestoreall_for_restore(gs_gstate *, gs_gstate *);
 
-gs_gstate *gs_gstate_copy(gs_gstate *, gs_memory_t *);
+gs_gstate *gs_gstate_copy(const gs_gstate *, gs_memory_t *);
 int gs_copygstate(gs_gstate * /*to */ , const gs_gstate * /*from */ ),
       gs_currentgstate(gs_gstate * /*to */ , const gs_gstate * /*from */ ),
       gs_setgstate(gs_gstate * /*to */ , const gs_gstate * /*from */ );
