@@ -1361,20 +1361,20 @@ gstate_clone(gs_gstate * pfrom, gs_memory_t * mem, client_name_t cname,
     } else {
         GSTATE_ASSIGN_PARTS(pgs, &parts);
     }
-    gs_swapcolors_quick(pgs);
     cs_adjust_counts_icc(pgs, 1);
-    gs_swapcolors_quick(pgs);
-    cs_adjust_counts_icc(pgs, 1);
+    cs_adjust_altcounts_icc(pgs, 1);
+
     return pgs;
+
   fail:
     if (pdata != NULL)
         (*pfrom->client_procs.free) (pdata, mem, pgs);
-    memset(pgs->color, 0, 2*sizeof(gs_gstate_color));
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
     GSTATE_ASSIGN_PARTS(pgs, &parts);
     gstate_free_parts(pgs, mem, cname);
     gs_free_object(mem, pgs, cname);
-    return 0;
+
+    return NULL;
 }
 
 /* Adjust reference counters for the whole clip stack */

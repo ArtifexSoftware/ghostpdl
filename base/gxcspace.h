@@ -169,12 +169,20 @@ struct gs_color_space_type_s {
 #define cs_adjust_color_count(pgs, delta)\
   (*gs_currentcolorspace_inline(pgs)->type->adjust_color_count)\
     (gs_currentcolor_inline(pgs), gs_currentcolorspace_inline(pgs), delta)
+#define cs_adjust_altcolor_count(pgs, delta)\
+  (*gs_altcolorspace_inline(pgs)->type->adjust_color_count)\
+    (gs_altcolor_inline(pgs), gs_altcolorspace_inline(pgs), delta)
+
         cs_proc_adjust_color_count((*adjust_color_count));
 
 /* Adjust both reference counts. */
 #define cs_adjust_counts(pgs, delta)\
     cs_adjust_color_count(pgs, delta);					\
         rc_adjust_const(gs_currentcolorspace_inline(pgs), delta, "cs_adjust_counts")
+
+#define cs_adjust_altcounts(pgs, delta)\
+    cs_adjust_altcolor_count(pgs, delta);					\
+        rc_adjust_const(gs_altcolorspace_inline(pgs), delta, "cs_adjust_altcounts")
 
     /* Serialization. */
     /*
