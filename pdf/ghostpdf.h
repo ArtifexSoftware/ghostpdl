@@ -361,8 +361,6 @@ typedef struct pdf_context_s
 
     /* Doing a high level form for pdfwrite (annotations) */
     bool PreservePDFForm;
-    /* Counter for making labels for pdfmark forms (annotations) */
-    int pdfwrite_form_counter;
 
     /* Optional things from Root */
     pdf_dict *OCProperties;

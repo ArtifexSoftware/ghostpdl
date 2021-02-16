@@ -2998,13 +2998,14 @@ static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
  */
 static int pdfi_annot_preserve_nextformlabel(pdf_context *ctx, byte **data, int *len)
 {
-    int size = 30;
+    int size = 40;
     char *buf;
+    gs_id counter = gs_next_ids(ctx->memory, 1);
 
     buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_annot_preserve_nextformlabel(buf)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
-    snprintf(buf, size, "{FormName%d}", ctx->pdfwrite_form_counter++);
+    snprintf(buf, size, "{FN%ld}", counter);
     *len = strlen(buf);
     *data = (byte *)buf;
     return 0;
