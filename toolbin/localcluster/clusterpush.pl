@@ -245,7 +245,8 @@ my $cmd="rsync -avxcz ".
 
 # Excludes for extract library.
 " --exclude /src/build/".
-" --exclude /thirdparty/extract/src/build/".
+" --exclude extract/src/build/".
+" --exclude extract/test/generated/".
 
 # " --exclude Makefile". We can't just exclude Makefile, since the MuPDF Makefile is not a derived file.
 " -e \"$ssh\" ".
