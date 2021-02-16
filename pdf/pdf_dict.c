@@ -28,12 +28,12 @@ void pdfi_free_dict(pdf_obj *o)
 {
     pdf_dict *d = (pdf_dict *)o;
     int i;
-#ifdef DEBUG_DICT
+#if DEBUG_DICT
     pdf_name *name;
 #endif
 
     for (i=0;i < d->entries;i++) {
-#ifdef DEBUG_DICT
+#if DEBUG_DICT
         name = (pdf_name *)d->keys[i];
 #endif
         if (d->values[i] != NULL)
@@ -51,12 +51,12 @@ void pdfi_free_dict(pdf_obj *o)
 static int pdfi_dict_delete_inner(pdf_context *ctx, pdf_dict *d, pdf_name *n, const char *str)
 {
     int i = 0;
-#ifdef DEBUG_DICT
+#if DEBUG_DICT
     pdf_name *name;
 #endif
 
     for (i=0;i < d->entries;i++) {
-#ifdef DEBUG_DICT
+#if DEBUG_DICT
         name = (pdf_name *)d->keys[i];
 #endif
         if (n != NULL) {
@@ -110,7 +110,7 @@ int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indir
     pdf_dict *d = NULL;
     uint64_t i = 0;
     int code;
-#ifdef DEBUG_DICT
+#if DEBUG_DICT
     pdf_name *key;
 #endif
 
@@ -140,7 +140,7 @@ int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indir
         if (((pdf_obj *)ctx->stack_top[-2])->type == PDF_NAME) {
             d->keys[i] = ctx->stack_top[-2];
             pdfi_countup(d->keys[i]);
-#ifdef DEBUG_DICT
+#if DEBUG_DICT
             key = (pdf_name *)d->keys[i];
 #endif
             d->values[i] = ctx->stack_top[-1];
