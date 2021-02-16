@@ -403,6 +403,10 @@ docxwrite_close_device(gx_device * dev)
 {
     int code = 0;
     gx_device_docxwrite_t *const tdev = (gx_device_docxwrite_t *) dev;
+    if (!tdev->file_per_page)
+    {
+        s_end_page(tdev, true /*write_file*/);
+    }
     extract_end(&tdev->extract);
     extract_alloc_destroy(&tdev->alloc);
     return code;
