@@ -703,7 +703,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
 
             ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
             if (ctx->xref_table->xref == NULL){
-                pdfi_countdown(ctx->xref_table);
+                gs_free_object(ctx->memory, ctx->xref_table, "free xref table on error allocating entries");
                 ctx->xref_table = NULL;
                 return_error(gs_error_VMerror);
             }
