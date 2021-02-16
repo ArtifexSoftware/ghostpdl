@@ -855,6 +855,7 @@ static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
 
         pdfi_countdown(child);
         child = Next;
+        Next = NULL;
     } while (true);
 
  exit:
