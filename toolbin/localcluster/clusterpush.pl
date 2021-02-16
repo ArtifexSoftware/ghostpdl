@@ -212,8 +212,19 @@ if ($msys) {
   $hostpath="regression:$dir/$user/$directory";
 }
 
-my $cmd="rsync -avxcz ".
-" --max-size=30000000".
+my $cmd="rsync -axcz";
+
+if ($product eq "extractgs") {
+  $cmd .= "L"; # expand links.
+}
+
+if ($verbose) {
+  $cmd .= "i";
+} else {
+  $cmd .= "v";
+}
+
+$cmd .= " --max-size=30000000".
 " --delete --delete-excluded".
 " --exclude .svn --exclude .git".
 " --exclude _darcs --exclude .bzr --exclude .hg".
