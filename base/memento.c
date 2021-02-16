@@ -2385,7 +2385,6 @@ static void *do_malloc(size_t s, int eventType)
     return MEMBLK_TOBLK(memblk);
 }
 
-#if !defined(MEMENTO_GS_HACKS) && !defined(MEMENTO_MUPDF_HACKS)
 char *Memento_strdup(const char *text)
 {
     size_t len = strlen(text) + 1;
@@ -2404,6 +2403,7 @@ char *Memento_strdup(const char *text)
     return ret;
 }
 
+#if !defined(MEMENTO_GS_HACKS) && !defined(MEMENTO_MUPDF_HACKS)
 int Memento_asprintf(char **ret, const char *format, ...)
 {
     va_list va;
