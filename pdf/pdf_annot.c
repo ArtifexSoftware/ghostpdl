@@ -1674,16 +1674,20 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
 static int
 pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double x, double y, pdf_string *text)
 {
-    char strbuf[1000]; /* TODO: Temp hack -- allocate dynamically */
-    size_t buflen = sizeof(strbuf);
+    char *strbuf = NULL;
+    size_t buflen = 50 + text->length; /* 50 to account for formatting, plus the text itself */
     int code = 0;
     char *ptr;
 
+    strbuf = (char *)gs_alloc_bytes(ctx->memory, buflen, "pdfi_annot_display_text(strbuf)");
+    if (strbuf == NULL)
+        return_error(gs_error_VMerror);
     snprintf(strbuf, buflen, "%g %g Td (", x, y);
     ptr = strbuf + strlen(strbuf);
     strncpy(ptr, (const char *)text->data, text->length);
     ptr += text->length;
     *ptr++ = ')';
+    *(ptr+1) = 0;
     strncpy(ptr, " Tj", buflen-strlen(strbuf));
 
     code = pdfi_interpret_inner_content_c_string(ctx, strbuf, annot,
@@ -1691,6 +1695,8 @@ pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double x, double y, p
     if (code < 0) goto exit;
 
  exit:
+    if (strbuf)
+        gs_free_object(ctx->memory, strbuf, "pdfi_annot_display_text(strbuf)");
     return code;
 }
 
