@@ -809,6 +809,12 @@ xps_parse_glyphs(xps_context_t *ctx,
 
     if (fill_tag)
     {
+        if (ctx->in_high_level_pattern)
+        {
+            float value = 0;
+            xps_set_color(ctx, ctx->gray, &value);
+        }
+
         ctx->fill_rule = 1; /* always use non-zero winding rule for char paths */
         code = xps_parse_glyphs_imp(ctx, font, font_size,
                 atof(origin_x_att), atof(origin_y_att),

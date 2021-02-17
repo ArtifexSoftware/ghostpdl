@@ -142,6 +142,7 @@ xps_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     ctx->file = NULL;
     ctx->zip_count = 0;
     ctx->zip_table = NULL;
+    ctx->in_high_level_pattern = false;
 
     /* Gray, RGB and CMYK profiles set when color spaces installed in graphics lib */
     ctx->gray_lin = gs_cspace_new_ICC(ctx->memory, ctx->pgs, -1);
