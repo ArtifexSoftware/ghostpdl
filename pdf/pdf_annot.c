@@ -2314,6 +2314,7 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     bool has_color;
     gs_rect rect, rect2;
     bool need_grestore = false;
+    bool need_ET = false;
     double x, y;
 
     /* Render only if open */
@@ -2396,10 +2397,20 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
         if (code < 0) goto exit;
         x = rect.p.x + 5;
         y = rect.q.y - 30;
+
+        code = pdfi_BT(ctx);
+        if (code < 0) goto exit;
+        need_ET = true;
+
         code = pdfi_annot_set_font(ctx, "Helvetica", 9);
         if (code < 0) goto exit;
         code = pdfi_annot_display_text(ctx, annot, x, y, Contents);
         if (code < 0) goto exit;
+
+        code = pdfi_ET(ctx);
+        need_ET = false;
+        if (code < 0) goto exit;
+
         code = pdfi_grestore(ctx);
         need_grestore = false;
         if (code < 0) goto exit;
@@ -2425,21 +2436,33 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
         gs_rect bbox;
         gs_point awidth;
 
+        code = pdfi_BT(ctx);
+        if (code < 0) goto exit;
+        need_ET = true;
+
         code = pdfi_annot_set_font(ctx, "Helvetica", 9);
         if (code < 0) goto exit;
 
         /* Get width of the string */
-        code = pdfi_string_bbox(ctx, T, &bbox, &awidth, true);
+        code = pdfi_string_bbox(ctx, T, &bbox, &awidth, false);
         if (code < 0) goto exit;
 
         /* Center the title in the box */
-        x = rect.p.x + ((rect.q.x - rect.p.x) - (bbox.q.x - bbox.p.x)) / 2;
+        x = rect.p.x + ((rect.q.x - rect.p.x) - awidth.x) / 2;
         y = rect.q.y - 11;
         code = pdfi_annot_display_text(ctx, annot, x, y, T);
+        if (code < 0) goto exit;
+
+        code = pdfi_ET(ctx);
+        need_ET = false;
         if (code < 0) goto exit;
     }
 
  exit:
+    if (need_ET) {
+        code1 = pdfi_ET(ctx);
+        if (code == 0) code = code1;
+    }
     if (need_grestore) {
         code1= pdfi_grestore(ctx);
         if (code == 0) code = code1;
