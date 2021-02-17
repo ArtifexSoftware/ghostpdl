@@ -1670,7 +1670,37 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
     return code;
 }
 
-/* Display a string */
+/* Display text at current position (inside BT/ET) */
+static int
+pdfi_annot_display_nexttext(pdf_context *ctx, pdf_dict *annot, pdf_string *text)
+{
+    char *strbuf = NULL;
+    size_t buflen = 50 + text->length; /* 50 to account for formatting, plus the text itself */
+    int code = 0;
+    char *ptr;
+
+    strbuf = (char *)gs_alloc_bytes(ctx->memory, buflen, "pdfi_annot_display_text(strbuf)");
+    if (strbuf == NULL)
+        return_error(gs_error_VMerror);
+    snprintf(strbuf, buflen, "(");
+    ptr = strbuf + strlen(strbuf);
+    strncpy(ptr, (const char *)text->data, text->length);
+    ptr += text->length;
+    *ptr++ = ')';
+    *(ptr+1) = 0;
+    strncpy(ptr, " Tj", buflen-strlen(strbuf));
+
+    code = pdfi_interpret_inner_content_c_string(ctx, strbuf, annot,
+                                               ctx->page.CurrentPageDict, false, "Annot text Tj");
+    if (code < 0) goto exit;
+
+ exit:
+    if (strbuf)
+        gs_free_object(ctx->memory, strbuf, "pdfi_annot_display_text(strbuf)");
+    return code;
+}
+
+/* Display text with positioning (inside BT/ET) */
 static int
 pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double x, double y, pdf_string *text)
 {
@@ -1700,22 +1730,158 @@ pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double x, double y, p
     return code;
 }
 
-/* Display a string formatted to fit in rect */
+/* Get Text height for current font (assumes font is already set, inside BT/ET) */
 static int
-pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
-                                  gs_rect *rect, pdf_string *text)
+pdfi_annot_get_text_height(pdf_context *ctx, double *height)
 {
-    double x, y;
+    int code;
+    pdf_string *temp_string = NULL;
+    gs_rect bbox;
+    gs_point awidth;
+
+    code = pdfi_obj_charstr_to_string(ctx, "Hy", &temp_string);
+    if (code < 0)
+        goto exit;
+
+    /* Find the bbox of the string "Hy" */
+    code = pdfi_string_bbox(ctx, temp_string, &bbox, &awidth, false);
+    if (code < 0)
+        goto exit;
+
+    *height = bbox.q.y - bbox.p.y;
+
+ exit:
+    pdfi_countdown(temp_string);
+    return code;
+}
+
+/* Display a simple text string (outside BT/ET) */
+static int
+pdfi_annot_display_simple_text(pdf_context *ctx, pdf_dict *annot, double x, double y, pdf_string *text)
+{
     int code = 0;
+    int code1 = 0;
 
-    x = rect->p.x;
-    y = rect->p.y;
+    code = pdfi_BT(ctx);
+    if (code < 0)
+        return code;
 
-    /* TODO: Need to deal with fitting it into the bbox, newlines, etc. */
+    code = pdfi_annot_display_text(ctx, annot, x, y, text);
+    code1 = pdfi_ET(ctx);
+    if (code == 0) code = code1;
+
+    return code;
+}
+
+/* Display a centered text string (outside BT/ET) */
+static int
+pdfi_annot_display_centered_text(pdf_context *ctx, pdf_dict *annot, gs_rect *rect, pdf_string *text)
+{
+    int code = 0;
+    int code1 = 0;
+    gs_rect bbox;
+    gs_point awidth;
+    double x, y;
+
+    code = pdfi_BT(ctx);
+    if (code < 0)
+        return code;
+
+    /* Get width of the string */
+    code = pdfi_string_bbox(ctx, text, &bbox, &awidth, false);
+    if (code < 0) goto exit;
+
+    /* Center the title in the box */
+    x = rect->p.x + ((rect->q.x - rect->p.x) - awidth.x) / 2;
+    y = rect->q.y - 11;
+
     code = pdfi_annot_display_text(ctx, annot, x, y, text);
     if (code < 0) goto exit;
 
  exit:
+    code1 = pdfi_ET(ctx);
+    if (code == 0) code = code1;
+    return code;
+}
+
+/* Display a string formatted to fit in rect (outside BT/ET) */
+static int
+pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
+                                  gs_rect *rect, pdf_string *text)
+{
+    double x;
+    double lineheight;
+    double y_start;
+    double x_start, x_max;
+    gs_rect bbox;
+    gs_point awidth; /* Advance width */
+    int code = 0;
+    int code1 = 0;
+    pdf_string *temp_string = NULL;
+    int i;
+    byte ch;
+    bool firstchar = true;
+    bool linestart = true;
+
+    code = pdfi_BT(ctx);
+    if (code < 0)
+        return code;
+
+    /* Allocate a temp string to use, length 1 char */
+    code = pdfi_object_alloc(ctx, PDF_STRING, 1, (pdf_obj **)&temp_string);
+    if (code < 0) goto exit;
+    pdfi_countup(temp_string);
+
+    code = pdfi_annot_get_text_height(ctx, &lineheight);
+
+    y_start = rect->q.y - lineheight;
+    x_start = rect->p.x;
+    x_max = rect->q.x;
+    x = x_start;
+
+    for (i=0; i<text->length; i++) {
+        if (linestart) {
+            x = x_start;
+        }
+
+        ch = text->data[i];
+        temp_string->data[0] = ch;
+
+        /* If EOL character encountered, move down to next line */
+        if (ch == '\r' || ch == '\n') {
+            linestart = true;
+            continue;
+        }
+
+        /* get size of the character */
+        code = pdfi_string_bbox(ctx, temp_string, &bbox, &awidth, false);
+        if (code < 0) goto exit;
+
+        if (linestart || ((x + awidth.x) <= x_max)) {
+        } else {
+            x = x_start;
+            linestart = true;
+        }
+
+        /* display the character */
+        if (firstchar) {
+            code = pdfi_annot_display_text(ctx, annot, x, y_start, temp_string);
+            firstchar = false;
+        } else {
+            if (linestart)
+                code = pdfi_annot_display_text(ctx, annot, 0, -lineheight, temp_string);
+            else
+                code = pdfi_annot_display_nexttext(ctx, annot, temp_string);
+        }
+        if (code < 0) goto exit;
+        x += awidth.x;
+        linestart = false;
+    }
+
+ exit:
+    code1 = pdfi_ET(ctx);
+    if (code == 0) code = code1;
+    pdfi_countdown(temp_string);
     return code;
 }
 
@@ -1731,7 +1897,7 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     bool drawbackground;
     pdf_dict *BS = NULL;
     pdf_string *Contents = NULL;
-    gs_rect annotrect;
+    gs_rect annotrect, modrect;
 
     *render_done = false;
 
@@ -1754,6 +1920,9 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
         if (code < 0) goto exit;
     }
 
+    /* Set DA (Default Appearance)
+     * This will generally set a color and font.
+     */
     code = pdfi_annot_process_DA(ctx, annot);
     if (code < 0) goto exit;
 
@@ -1799,11 +1968,18 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
 
     /* TODO: /Rotate */
 
-    /* TODO: /Contents */
+    /* Move to initial position (slightly offset from the corner of the rect) */
+    modrect = annotrect; /* structure copy */
+    modrect.p.x += 2;
+    modrect.q.y -= 2;
+    code = gs_moveto(ctx->pgs, modrect.p.x, modrect.q.y);
+    if (code < 0) goto exit;
+
+    /* /Contents */
     code = pdfi_dict_knownget_type(ctx, annot, "Contents", PDF_STRING, (pdf_obj **)&Contents);
     if (code < 0) goto exit;
     if (code > 0) {
-        code = pdfi_annot_display_formatted_text(ctx, annot, &annotrect, Contents);
+        code = pdfi_annot_display_formatted_text(ctx, annot, &modrect, Contents);
         if (code < 0) goto exit;
     }
 
@@ -2314,7 +2490,6 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     bool has_color;
     gs_rect rect, rect2;
     bool need_grestore = false;
-    bool need_ET = false;
     double x, y;
 
     /* Render only if open */
@@ -2398,17 +2573,10 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
         x = rect.p.x + 5;
         y = rect.q.y - 30;
 
-        code = pdfi_BT(ctx);
-        if (code < 0) goto exit;
-        need_ET = true;
-
         code = pdfi_annot_set_font(ctx, "Helvetica", 9);
         if (code < 0) goto exit;
-        code = pdfi_annot_display_text(ctx, annot, x, y, Contents);
-        if (code < 0) goto exit;
 
-        code = pdfi_ET(ctx);
-        need_ET = false;
+        code = pdfi_annot_display_simple_text(ctx, annot, x, y, Contents);
         if (code < 0) goto exit;
 
         code = pdfi_grestore(ctx);
@@ -2433,36 +2601,15 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     code = pdfi_dict_knownget_type(ctx, Parent, "T", PDF_STRING, (pdf_obj **)&T);
     if (code < 0) goto exit;
     if (code > 0) {
-        gs_rect bbox;
-        gs_point awidth;
-
-        code = pdfi_BT(ctx);
-        if (code < 0) goto exit;
-        need_ET = true;
-
         code = pdfi_annot_set_font(ctx, "Helvetica", 9);
         if (code < 0) goto exit;
 
-        /* Get width of the string */
-        code = pdfi_string_bbox(ctx, T, &bbox, &awidth, false);
+        code = pdfi_annot_display_centered_text(ctx, annot, &rect, T);
         if (code < 0) goto exit;
 
-        /* Center the title in the box */
-        x = rect.p.x + ((rect.q.x - rect.p.x) - awidth.x) / 2;
-        y = rect.q.y - 11;
-        code = pdfi_annot_display_text(ctx, annot, x, y, T);
-        if (code < 0) goto exit;
-
-        code = pdfi_ET(ctx);
-        need_ET = false;
-        if (code < 0) goto exit;
     }
 
  exit:
-    if (need_ET) {
-        code1 = pdfi_ET(ctx);
-        if (code == 0) code = code1;
-    }
     if (need_grestore) {
         code1= pdfi_grestore(ctx);
         if (code == 0) code = code1;
