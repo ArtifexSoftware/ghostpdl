@@ -1376,6 +1376,11 @@ clist_create_compositor(gx_device * dev,
         temp_cropping_min = cdev->cropping_min;
         temp_cropping_max = cdev->cropping_max;
     }
+    /* Adjust the lower and upper bound to allow for image gridfitting changing boundaries */
+    if (temp_cropping_min > 0)
+        temp_cropping_min--;
+    if (temp_cropping_max < dev->height - 1)
+        temp_cropping_max++;
     if (temp_cropping_min < temp_cropping_max) {
         /* The pdf14 compositor could be applied
            only to bands covered by the pcte->params.bbox. */
