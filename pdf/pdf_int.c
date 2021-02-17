@@ -222,6 +222,21 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
             return_error(gs_error_syntaxerror);
     } while(1);
 
+    /* Check for integer overflow, represent as real if so */
+    if (index > 18) {
+        if (index > 19)
+            real = true;
+        else {
+            char max64[20] = "9223372036854775808";
+            int j;
+            for (j=0;j< 19; j++) {
+                if (Buffer[j] > max64[j]) {
+                    real=true;
+                    break;
+                }
+            }
+        }
+    }
     if (real && !malformed)
         code = pdfi_object_alloc(ctx, PDF_REAL, 0, (pdf_obj **)&num);
     else
