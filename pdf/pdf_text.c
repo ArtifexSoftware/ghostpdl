@@ -529,11 +529,13 @@ show_error:
     return code;
 }
 
-int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, bool for_stroke)
+int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, gs_point *advance_width, bool for_stroke)
 {
     int code = 0;
     gx_device_bbox *bbdev;
     pdf_font *current_font = pdfi_get_current_pdf_font(ctx);
+    gs_matrix tmpmat, Trm, Trm_ctm;
+    gs_point cppt;
 
     if (current_font == NULL)
         return_error(gs_error_invalidfont);
@@ -559,6 +561,25 @@ int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, bool for
     code = gs_setdevice_no_erase(ctx->pgs, (gx_device *)bbdev);
     if (code < 0)
         goto out;
+
+    Trm.xx = ctx->pgs->PDFfontsize * (ctx->pgs->texthscaling / 100);
+    Trm.xy = 0;
+    Trm.yx = 0;
+    Trm.yy = ctx->pgs->PDFfontsize;
+    Trm.tx = 0;
+    Trm.ty = ctx->pgs->textrise;
+
+    memcpy(&tmpmat, &ctx->pgs->textmatrix, sizeof(tmpmat));
+    /* We want to avoid any translations unrelated to the extents of the text */
+    tmpmat.tx = tmpmat.ty = 0;
+    gs_matrix_multiply(&Trm, &tmpmat, &Trm);
+
+    memcpy(&tmpmat, &ctm_only(ctx->pgs), sizeof(tmpmat));
+    /* As above */
+    tmpmat.tx = tmpmat.ty = 0;
+    gs_matrix_multiply(&Trm, &tmpmat, &Trm_ctm);
+    gs_setmatrix(ctx->pgs, &Trm_ctm);
+
     gs_settextrenderingmode(ctx->pgs, for_stroke ? 2 : 0);
 
     code = pdfi_gs_setgray(ctx, 1.0);
@@ -572,10 +593,20 @@ int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, bool for
     code = pdfi_show(ctx, s);
     if (code < 0)
         goto out;
-    bboxout->p.x = fixed2float(bbdev->bbox.p.x);
-    bboxout->p.y = fixed2float(bbdev->bbox.p.y);
-    bboxout->q.x = fixed2float(bbdev->bbox.q.x);
-    bboxout->q.y = fixed2float(bbdev->bbox.q.y);
+
+    code = gx_device_bbox_bbox(bbdev, bboxout);
+    if (code < 0)
+        goto out;
+
+    code = gs_currentpoint(ctx->pgs, &cppt);
+    if (code >= 0) {
+        /* gs_currentpoint() undoes the ctm scaling, which includes the text scaling
+           we have to reapply the text scaling to get points.
+         */
+        code = gs_distance_transform(cppt.x, cppt.y, &Trm, &cppt);
+        advance_width->x = hypot(cppt.x, cppt.y);
+        advance_width->y = 0;
+    }
 out:
     pdfi_grestore(ctx);
     gx_device_retain((gx_device *)bbdev, false);

@@ -2417,12 +2417,13 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     if (code < 0) goto exit;
     if (code > 0) {
         gs_rect bbox;
+        gs_point awidth;
 
         code = pdfi_annot_set_font(ctx, "Helvetica", 9);
         if (code < 0) goto exit;
 
         /* Get width of the string */
-        code = pdfi_string_bbox(ctx, T, &bbox, true);
+        code = pdfi_string_bbox(ctx, T, &bbox, &awidth, true);
         if (code < 0) goto exit;
 
         /* Center the title in the box */
