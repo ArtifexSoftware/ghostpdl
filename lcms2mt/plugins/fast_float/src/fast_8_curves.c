@@ -63,6 +63,9 @@ static void FastEvaluateRGBCurves8(cmsContext ContextID,
        _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, NULL, &nalpha, SourceStartingOrder, SourceIncrements);
        _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, NULL, &nalpha, DestStartingOrder, DestIncrements);
 
+       if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+           nalpha = 0;
+
        strideIn = strideOut = 0;
        for (i = 0; i < LineCount; i++) {
 
@@ -138,6 +141,9 @@ static void FastRGBIdentity8(cmsContext ContextID,
        _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, NULL, &nalpha, SourceStartingOrder, SourceIncrements);
        _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, NULL, &nalpha, DestStartingOrder, DestIncrements);
 
+       if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+           nalpha = 0;
+
        strideIn = strideOut = 0;
        for (i = 0; i < LineCount; i++) {
 
@@ -212,6 +218,9 @@ static void FastEvaluateGrayCurves8(cmsContext ContextID,
        _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, NULL, &nalpha, SourceStartingOrder, SourceIncrements);
        _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, NULL, &nalpha, DestStartingOrder, DestIncrements);
 
+       if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+           nalpha = 0;
+
        strideIn = strideOut = 0;
        for (i = 0; i < LineCount; i++) {
 
@@ -272,6 +281,9 @@ static void FastGrayIdentity8(cmsContext ContextID,
 
        _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, NULL, &nalpha, SourceStartingOrder, SourceIncrements);
        _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, NULL, &nalpha, DestStartingOrder, DestIncrements);
+
+       if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+           nalpha = 0;
 
        strideIn = strideOut = 0;
        for (i = 0; i < LineCount; i++) {
@@ -400,9 +412,9 @@ cmsBool Optimize8ByJoiningCurves(cmsContext ContextID,
 
     // Maybe the curves are linear at the end
     if (nChans == 1)
-        *TransformFn = (_cmsTransformFn) (AllCurvesAreLinear(Data) ? FastGrayIdentity8 : FastEvaluateGrayCurves8);
+      *TransformFn = (_cmsTransformFn)(AllCurvesAreLinear(Data) ? FastGrayIdentity8 : FastEvaluateGrayCurves8);
     else
-        *TransformFn = (_cmsTransformFn) (AllCurvesAreLinear(Data) ? FastRGBIdentity8 : FastEvaluateRGBCurves8);
+        *TransformFn = (_cmsTransformFn)(AllCurvesAreLinear(Data) ? FastRGBIdentity8 : FastEvaluateRGBCurves8);
 
     return TRUE;
 

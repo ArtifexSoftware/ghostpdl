@@ -30,19 +30,15 @@ typedef cmsInt32Number cmsS1Fixed14Number;   // Note that this may hold more tha
 // This is the private data container used by this optimization
 typedef struct {
 
-     // This is for SSE2, MUST be aligned at 16 bit boundary
+    // Alignment makes it faster
 
-    cmsFloat32Number  fMatrix[4][4];
-    cmsFloat32Number  fShaper1[256 * 3];
+    cmsS1Fixed14Number Mat[4][4];     // n.14 to n.14 (needs a saturation after that)
 
     void * real_ptr;
 
     cmsS1Fixed14Number Shaper1R[256];  // from 0..255 to 1.14  (0.0...1.0)
     cmsS1Fixed14Number Shaper1G[256];
     cmsS1Fixed14Number Shaper1B[256];
-
-    cmsS1Fixed14Number Mat[3][3];     // n.14 to n.14 (needs a saturation after that)
-    cmsS1Fixed14Number Off[3];
 
     cmsUInt8Number Shaper2R[0x4001];    // 1.14 to 0..255
     cmsUInt8Number Shaper2G[0x4001];
@@ -95,20 +91,6 @@ void FillFirstShaper(cmsContext ContextID, cmsS1Fixed14Number* Table, cmsToneCur
     }
 }
 
-static
-void FillFirstShaperFloat(cmsContext ContextID, cmsFloat32Number* Table, cmsToneCurve* Curve)
-{
-    int i;
-    cmsFloat32Number R;
-
-    for (i=0; i < 256; i++) {
-
-        R   = (cmsFloat32Number) (i / 255.0);
-
-        Table[i] = cmsEvalToneCurveFloat(ContextID, Curve, R);
-    }
-}
-
 
 // This table converts form 1.14 (being 0x4000 the last entry) to 8 bits after applying the curve
 static
@@ -116,15 +98,17 @@ void FillSecondShaper(cmsContext ContextID, cmsUInt8Number* Table, cmsToneCurve*
 {
     int i;
     cmsFloat32Number R, Val;
-    cmsUInt16Number w;
+    cmsInt32Number w;
 
     for (i=0; i < 0x4001; i++) {
 
-        R   = (cmsFloat32Number) (i / 16384.0);
+        R   = (cmsFloat32Number) (i / 16384.0f);
         Val = cmsEvalToneCurveFloat(ContextID, Curve, R);
-        w = _cmsSaturateWord(Val * 65535.0 + 0.5);
+        w = (cmsInt32Number) (Val * 255.0f + 0.5f);
+        if (w < 0) w = 0;
+        if (w > 255) w = 255;
 
-        Table[i] = FROM_16_TO_8(w);
+        Table[i] = (cmsInt8Number) w;
 
     }
 }
@@ -150,29 +134,21 @@ XMatShaper8Data* SetMatShaper(cmsContext ContextID, cmsToneCurve* Curve1[3], cms
     FillSecondShaper(ContextID, p ->Shaper2B, Curve2[2]);
 
 
-    FillFirstShaperFloat(ContextID, p ->fShaper1,         Curve1[0]);
-    FillFirstShaperFloat(ContextID, p ->fShaper1 + 256,   Curve1[1]);
-    FillFirstShaperFloat(ContextID, p ->fShaper1 + 256*2, Curve1[2]);
-
     // Convert matrix to nFixed14. Note that those values may take more than 16 bits as
     for (i=0; i < 3; i++) {
         for (j=0; j < 3; j++) {
-            p ->Mat[i][j] = DOUBLE_TO_1FIXED14(Mat->v[i].n[j]);
-            p ->fMatrix[j][i] = (cmsFloat32Number) Mat ->v[i].n[j];
+            p ->Mat[j][i] = DOUBLE_TO_1FIXED14(Mat->v[i].n[j]);
         }
     }
-
 
     for (i=0; i < 3; i++) {
 
         if (Off == NULL) {
 
-            p ->Off[i] =  0x2000;
-            p ->fMatrix[3][i] = 0.0f;
+            p->Mat[3][i] = DOUBLE_TO_1FIXED14(0.5);
         }
         else {
-            p ->Off[i] = DOUBLE_TO_1FIXED14(Off->n[i]) + 0x2000;
-            p ->fMatrix[3][i] = (cmsFloat32Number) Off->n[i];
+            p->Mat[3][i] = DOUBLE_TO_1FIXED14(Off->n[i] + 0.5);
         }
     }
 
@@ -195,7 +171,7 @@ void MatShaperXform8(cmsContext ContextID,
 {
     XMatShaper8Data* p = (XMatShaper8Data*) _cmsGetTransformUserData(CMMcargo);
 
-    register cmsS1Fixed14Number l1, l2, l3;
+    cmsS1Fixed14Number l1, l2, l3;
     cmsS1Fixed14Number r, g, b;
     cmsUInt32Number ri, gi, bi;
     cmsUInt32Number i, ii;
@@ -220,6 +196,9 @@ void MatShaperXform8(cmsContext ContextID,
     _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, NULL, &nalpha, SourceStartingOrder, SourceIncrements);
     _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, NULL, &nalpha, DestStartingOrder, DestIncrements);
 
+    if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+        nalpha = 0;
+
     strideIn = strideOut = 0;
     for (i = 0; i < LineCount; i++) {
 
@@ -236,7 +215,6 @@ void MatShaperXform8(cmsContext ContextID,
            if (nalpha)
                   aout = (cmsUInt8Number*)Output + DestStartingOrder[3] + strideOut;
 
-
            for (ii = 0; ii < PixelsPerLine; ii++) {
 
                   // Across first shaper, which also converts to 1.14 fixed point. 16 bits guaranteed.
@@ -245,9 +223,9 @@ void MatShaperXform8(cmsContext ContextID,
                   b = p->Shaper1B[*bin];
 
                   // Evaluate the matrix in 1.14 fixed point
-                  l1 = (p->Mat[0][0] * r + p->Mat[0][1] * g + p->Mat[0][2] * b + p->Off[0]) >> 14;
-                  l2 = (p->Mat[1][0] * r + p->Mat[1][1] * g + p->Mat[1][2] * b + p->Off[1]) >> 14;
-                  l3 = (p->Mat[2][0] * r + p->Mat[2][1] * g + p->Mat[2][2] * b + p->Off[2]) >> 14;
+                  l1 = (p->Mat[0][0] * r + p->Mat[1][0] * g + p->Mat[2][0] * b + p->Mat[3][0]) >> 14;
+                  l2 = (p->Mat[0][1] * r + p->Mat[1][1] * g + p->Mat[2][1] * b + p->Mat[3][1]) >> 14;
+                  l3 = (p->Mat[0][2] * r + p->Mat[1][2] * g + p->Mat[2][2] * b + p->Mat[3][2]) >> 14;
 
 
                   // Now we have to clip to 0..1.0 range

@@ -35,33 +35,39 @@ cmsBool Floating_Point_Transforms_Dispatcher(cmsContext ContextID,
                                   cmsUInt32Number* dwFlags)
 {
 
-       // Try to optimize as a set of curves plus a matrix plus a set of curves
-       if (OptimizeMatrixShaper15(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
+    // Try to optimize as a set of curves plus a matrix plus a set of curves
+    if (OptimizeMatrixShaper15(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
 
-       // Try to optimize by joining curves
-       if (Optimize8ByJoiningCurves(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
+    // Try to optimize by joining curves
+    if (Optimize8ByJoiningCurves(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
 
-       // Try to optimize as a set of curves plus a matrix plus a set of curves
-       if (Optimize8MatrixShaper(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
+#ifndef CMS_DONT_USE_SSE2
+    // Try to use SSE2 to optimize as a set of curves plus a matrix plus a set of curves
+    if (Optimize8MatrixShaperSSE(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
+#endif
+    // Try to optimize as a set of curves plus a matrix plus a set of curves
+    if (Optimize8MatrixShaper(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
 
-       // Try to optimize by joining curves
-       if (OptimizeFloatByJoiningCurves(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
+    // Try to optimize by joining curves
+    if (OptimizeFloatByJoiningCurves(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
 
-       // Try to optimize as a set of curves plus a matrix plus a set of curves
-       if (OptimizeFloatMatrixShaper(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
+    // Try to optimize as a set of curves plus a matrix plus a set of curves
+    if (OptimizeFloatMatrixShaper(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
 
-       // Try to optimize using prelinearization plus tetrahedral
-       if (Optimize8BitRGBTransform(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
+    // Try to optimize using prelinearization plus tetrahedral
+    if (Optimize8BitRGBTransform(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
 
-       // Try to optimize using prelinearization plus tetrahedral
-       if (Optimize16BitRGBTransform(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
+    // Try to optimize using prelinearization plus tetrahedral
+    if (Optimize16BitRGBTransform(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
 
-       // Try to optimize using prelinearization plus tetrahedral
-       if (OptimizeCLUTRGBTransform(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
+    // Try to optimize using prelinearization plus tetrahedral
+    if (OptimizeCLUTRGBTransform(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
 
-       // Try to optimize using prelinearization plus tetrahedral
-       if (OptimizeCLUTCMYKTransform(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
+    // Try to optimize using prelinearization plus tetrahedral
+    if (OptimizeCLUTCMYKTransform(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
 
+    // Try to optimize for Lab float as input
+    if (OptimizeCLUTLabTransform(ContextID, TransformFn, UserData, FreeUserData, Lut, InputFormat, OutputFormat, dwFlags)) return TRUE;
 
     // Cannot optimize, use lcms normal process
     return FALSE;
@@ -78,13 +84,15 @@ static cmsPluginTransform PluginList = {
 
               { cmsPluginMagicNumber, REQUIRED_LCMS_VERSION, cmsPluginTransformSig, (cmsPluginBase *) &PluginFastFloat },
 
-              Floating_Point_Transforms_Dispatcher
+              // When initializing a union, the initializer list must have only one member, which initializes the first member of
+              // the union unless a designated initializer is used (C99)
+
+              { (_cmsTransformFactory) Floating_Point_Transforms_Dispatcher }
 };
 
 // This is the main plug-in installer.
 // Using a function to retrieve the plug-in entry point allows us to execute initialization data.
-void* cmsFastFloatExtensions(void)
+void* CMSEXPORT cmsFastFloatExtensions(void)
 {
        return (void*)&PluginList;
 }
-
