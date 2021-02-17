@@ -352,6 +352,7 @@ df:         return mem_default_strip_copy_rop(dev,
             int ty = y + phase_y;
 
             rop_set_s_constant(&ropper, const_source);
+            rop_set_t_colors(&ropper, tcolors);
             if (rop_get_run_op(&ropper, lop, depth, rop_s_constant | rop_t_1bit)) {
                 for (; line_count-- > 0; drow += draster, ++ty) {   /* Loop over copies of the tile. */
                     int dx = x, w = width, nw;
