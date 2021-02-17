@@ -148,6 +148,8 @@ int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s)
 static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     byte Buffer[256];
+    char Max[256];
+    int MaxLen = 0;
     unsigned short index = 0;
     short bytes;
     bool real = false;
@@ -222,21 +224,38 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
             return_error(gs_error_syntaxerror);
     } while(1);
 
-    /* Check for integer overflow, represent as real if so */
-    if (index > 18) {
-        if (index > 19)
-            real = true;
-        else {
-            char max64[20] = "9223372036854775808";
-            int j;
-            for (j=0;j< 19; j++) {
-                if (Buffer[j] > max64[j]) {
-                    real=true;
+    if (!real && index > 7) {
+        /* Check for integer overflow, represent as real if so */
+        gs_sprintf(Max, "%d", (max_uint >> 1));
+        MaxLen = strlen((const char *)Max);
+
+        if (index >= MaxLen) {
+            int j = 0;
+
+            if (Buffer[j] == '-')
+                j++;
+
+            while (Buffer[j] == '0')
+                j++;
+
+            if (index - j > MaxLen)
+                real = true;
+
+            if (index - j == MaxLen)
+            {
+                real = false;
+
+                for (;j< MaxLen; j++) {
+                    if (Buffer[j] == Max[j])
+                        continue;
+                    if (Buffer[j] > Max[j])
+                        real=true;
                     break;
                 }
             }
         }
     }
+
     if (real && !malformed)
         code = pdfi_object_alloc(ctx, PDF_REAL, 0, (pdf_obj **)&num);
     else
