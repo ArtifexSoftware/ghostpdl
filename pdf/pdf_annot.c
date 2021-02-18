@@ -1658,6 +1658,11 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
         code = pdfi_interpret_inner_content_string(ctx, DA, annot,
                                                    ctx->page.CurrentPageDict, false, "DA");
         if (code < 0) goto exit;
+        /* If no font got set, set one */
+        if (pdfi_get_current_pdf_font(ctx) == NULL) {
+            code = pdfi_annot_set_font(ctx, "Helvetica", 12.0);
+            if (code < 0) goto exit;
+        }
     } else {
         code = pdfi_gs_setgray(ctx, 0);
         if (code < 0) goto exit;
