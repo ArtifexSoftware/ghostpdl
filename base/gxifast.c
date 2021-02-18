@@ -507,7 +507,11 @@ sw:	    if ((data = psrc[1]) != 0) {
             break;
     }
  end:
+    {
+#ifdef PACIFY_VALGRIND
     VALGRIND_SET_VBITS(stop,&vbits,1);
+#endif
+    }
 }
 
 /* Copy one rendered scan line to the device. */

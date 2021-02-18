@@ -22,7 +22,7 @@
 #include "fast_float_internal.h"
 
 // lcms internal
-cmsBool  _cmsOptimizePipeline(cmsContext ContextID,
+CMSAPI cmsBool  CMSEXPORT _cmsOptimizePipeline(cmsContext ContextID,
                               cmsPipeline** Lut,
                               cmsUInt32Number  Intent,
                               cmsUInt32Number* InputFormat,
@@ -120,6 +120,9 @@ void PerformanceEval16(cmsContext ContextID,
 
        in16  = (T_BYTES(dwInFormat) == 2);
        out16 = (T_BYTES(dwOutFormat) == 2);
+
+       if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+           nalpha = 0;
 
        strideIn = strideOut = 0;
        for (i = 0; i < LineCount; i++) {
@@ -332,8 +335,21 @@ cmsBool Optimize16BitRGBTransform(cmsContext ContextID,
     // Only real 16 bits
     if (T_BIT15(*InputFormat) != 0 || T_BIT15(*OutputFormat) != 0) return FALSE;
 
+	// Swap endian is not supported
+    if (T_ENDIAN16(*InputFormat) != 0 || T_ENDIAN16(*OutputFormat) != 0) return FALSE;
+
     // Only on input RGB
     if (T_COLORSPACE(*InputFormat)  != PT_RGB) return FALSE;
+
+
+    // If this is a matrix-shaper, the default does already a good job
+    if (cmsPipelineCheckAndRetreiveStages(ContextID, *Lut, 4,
+        cmsSigCurveSetElemType, cmsSigMatrixElemType, cmsSigMatrixElemType, cmsSigCurveSetElemType,
+        NULL, NULL, NULL, NULL)) return FALSE;
+
+    if (cmsPipelineCheckAndRetreiveStages(ContextID, *Lut, 2,
+        cmsSigCurveSetElemType, cmsSigCurveSetElemType,
+        NULL, NULL)) return FALSE;
 
    // Named color pipelines cannot be optimized either
    for (mpe = cmsPipelineGetPtrToFirstStage(ContextID, *Lut);
@@ -359,7 +375,7 @@ cmsBool Optimize16BitRGBTransform(cmsContext ContextID,
     p16 = Performance16alloc(ContextID, data->Params);
     if (p16 == NULL) return FALSE;
 
-    *TransformFn = (_cmsTransformFn) PerformanceEval16;
+    *TransformFn = (_cmsTransformFn)PerformanceEval16;
     *UserData   = p16;
     *FreeDataFn = Performance16free;
     *InputFormat  |= 0x02000000;

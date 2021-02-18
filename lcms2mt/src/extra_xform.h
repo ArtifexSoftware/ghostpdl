@@ -189,13 +189,13 @@ void FUNCTION_NAME(cmsContext ContextID,
     XFORM_TYPE wOut[cmsMAXCHANNELS];
 #endif
 #ifdef GAMUTCHECK
-    _cmsOPTeval16Fn evalGamut = core->GamutCheck->Eval16Fn;
+    _cmsPipelineEval16Fn evalGamut = core->GamutCheck->Eval16Fn;
 #endif /* GAMUTCHECK */
 #ifdef XFORM_FLOAT
     _cmsPipelineEvalFloatFn eval = core->Lut->EvalFloatFn;
     const cmsPipeline *data = core->Lut;
 #else
-    _cmsOPTeval16Fn eval = core->Lut->Eval16Fn;
+    _cmsPipelineEval16Fn eval = core->Lut->Eval16Fn;
     void *data = core->Lut->Data;
 #endif
     cmsUInt32Number bppi = Stride->BytesPerPlaneIn;

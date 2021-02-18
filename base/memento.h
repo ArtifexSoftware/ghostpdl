@@ -239,8 +239,10 @@ void *Memento_realloc(void *, size_t s);
 void  Memento_free(void *);
 void *Memento_calloc(size_t, size_t);
 char *Memento_strdup(const char*);
+#if !defined(MEMENTO_GS_HACKS) && !defined(MEMENTO_MUPDF_HACKS)
 int Memento_asprintf(char **ret, const char *format, ...);
 int Memento_vasprintf(char **ret, const char *format, va_list ap);
+#endif
 
 void Memento_info(void *addr);
 void Memento_listBlockInfo(void);
@@ -282,8 +284,10 @@ void Memento_bt(void);
 #define realloc   Memento_realloc
 #define calloc    Memento_calloc
 #define strdup    Memento_strdup
+#if !defined(MEMENTO_GS_HACKS) && !defined(MEMENTO_MUPDF_HACKS)
 #define asprintf  Memento_asprintf
 #define vasprintf Memento_vasprintf
+#endif
 #endif
 
 #else
@@ -293,8 +297,10 @@ void Memento_bt(void);
 #define Memento_realloc   MEMENTO_UNDERLYING_REALLOC
 #define Memento_calloc    MEMENTO_UNDERLYING_CALLOC
 #define Memento_strdup    strdup
+#if !defined(MEMENTO_GS_HACKS) && !defined(MEMENTO_MUPDF_HACKS)
 #define Memento_asprintf  asprintf
 #define Memento_vasprintf vasprintf
+#endif
 
 #define Memento_checkBlock(A)              0
 #define Memento_checkAllMemory()           0

@@ -71,6 +71,7 @@
     ghostscript's header files are not self-contained. Therefore, if this file
     does not compile because of undefined symbols, just add include directives
     until it does.  */
+#include "gserrors.h"
 #include "iref.h"       /* needed by icstate.h */
 #include "gsmemraw.h"   /* needed by icstate.h */
 #include "gsmemory.h"   /* needed by icstate.h */

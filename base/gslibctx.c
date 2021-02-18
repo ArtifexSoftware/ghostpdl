@@ -629,7 +629,18 @@ rewrite_percent_specifiers(char *s)
             *s == 'X') {
             /* Success! */
             memset(match_start, '*', s - match_start + 1);
-            return;
+        }
+        /* If we have escaped percents ("%%") so the percent
+           will survive a call to sprintf and co, then we need
+           to drop the extra one here, because the validation
+           code will see the string *after* it's been sprintf'ed.
+         */
+        else if (*s == '%') {
+            char *s0 = s;
+            while (*s0) {
+                *s0 = *(s0 + 1);
+                s0++;
+            }
         }
     }
 }

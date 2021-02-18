@@ -445,6 +445,12 @@ struct xps_context_s
      * 1=nonzero, 0=evenodd
      */
     int fill_rule;
+
+    /* Enable us to detect that we are currently sending high level
+       pattern to a device.  If during this process we encounter
+       a glyph that has a pattern, make sure to set the color
+       space appropriately prior to setting the text. */
+    bool in_high_level_pattern;
 };
 
 int xps_process_file(xps_context_t *ctx, const char *filename);

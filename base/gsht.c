@@ -1440,11 +1440,17 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
     }
 #ifdef DEBUG
     if ( gs_debug_c('h') ) {
-         for( i=0; i<(int)d_order->height; i++ ) {
-            dmprintf1(memory, "threshold array row %3d= ", i);
-            for( j=0; j<(int)(d_order->width); j++ )
-                dmprintf1(memory, "%3d ", *(thresh+j+(i*d_order->width)) );
-            dmprintf(memory, "\n");
+         dmprintf3(memory, "threshold array component %d [ %d x %d ]:\n",
+                  plane_index, (int)(d_order->full_height), (int)(d_order->width));
+         for( i=0; i<(int)d_order->full_height; i++ ) {
+            dmprintf1(memory, "row %3d= ", i);
+            for( j=0; j<(int)(d_order->width); j++ ) {
+                dmprintf1(memory, "%02x ", *(thresh+j+(i*d_order->width)) );
+                if ((j&31) == 31)
+                    dmprintf(memory, "\n         ");
+            }
+            if ((j&31) != 0)
+                dmprintf(memory, "\n");
         }
    }
 #endif

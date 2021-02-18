@@ -117,6 +117,7 @@ DEVGEN=$(DEVGENDIR)$(D)
 # High-level file formats:
 #	pdfwrite	PDF output (like Adobe Acrobat Distiller)
 #	txtwrite	ASCII or Unicode text output
+#	docxwrite	Docx output
 #	pxlmono 	Black-and-white PCL XL
 #	pxlcolor	Color PCL XL
 # Other raster file formats and devices:
@@ -659,7 +660,7 @@ $(DEVOBJ)gdevpsdu.$(OBJ) : $(DEVVECSRC)gdevpsdu.c $(GXERR)\
 
 gdevagl_h=$(DEVVECSRC)gdevagl.h
 
-txtwrite_=$(DEVOBJ)gdevtxtw.$(OBJ) $(DEVOBJ)gdevagl.$(OBJ)
+txtwrite_=$(DEVOBJ)gdevtxtw.$(OBJ) $(DEVOBJ)gdevagl.$(OBJ) $(DEVOBJ)doc_common.$(OBJ)
 
 $(DD)txtwrite.dev : $(ECHOGS_XE) $(txtwrite_) $(GDEV)\
  $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS)
@@ -668,12 +669,38 @@ $(DD)txtwrite.dev : $(ECHOGS_XE) $(txtwrite_) $(GDEV)\
 $(DEVOBJ)gdevtxtw.$(OBJ) : $(DEVVECSRC)gdevtxtw.c $(GDEV) $(gdevkrnlsclass_h) \
   $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
   $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
-  $(gxgstate_h) $(gxpath_h) $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS)
+  $(gxgstate_h) $(gxpath_h) $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS) $(DEVVECSRC)doc_common.h
 	$(DEVCC) $(DEVO_)gdevtxtw.$(OBJ) $(C_) $(DEVVECSRC)gdevtxtw.c
 
 $(DEVOBJ)gdevagl.$(OBJ) : $(DEVVECSRC)gdevagl.c $(GDEV)\
  $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevagl.$(OBJ) $(C_) $(DEVVECSRC)gdevagl.c
+
+
+# Docx writer
+
+gdevagl_h=$(DEVVECSRC)gdevagl.h
+
+docxwrite_=$(DEVOBJ)gdevdocxw.$(OBJ) $(DEVOBJ)gdevagl.$(OBJ) $(DEVOBJ)doc_common.$(OBJ)
+
+$(DD)docxwrite.dev : $(ECHOGS_XE) $(docxwrite_) $(GDEV)\
+ $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS) $(EXTRACT_OBJS)
+	$(SETDEV2) $(DD)docxwrite $(docxwrite_) $(EXTRACT_OBJS)
+
+$(DEVOBJ)gdevdocxw.$(OBJ) : $(DEVVECSRC)gdevdocxw.c $(GDEV) $(gdevkrnlsclass_h) \
+  $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
+  $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
+  $(gxgstate_h) $(gxpath_h) $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS) \
+  $(DEVVECSRC)doc_common.h
+	$(DEVCC) $(DEVO_)gdevdocxw.$(OBJ) $(C_) $(DEVVECSRC)gdevdocxw.c
+
+# Shared code used by txtwrite and docxwrite.
+
+$(DEVOBJ)doc_common.$(OBJ) : $(DEVVECSRC)doc_common.c $(GDEV) $(gdevkrnlsclass_h) \
+  $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
+  $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
+  $(gxgstate_h) $(gxpath_h) $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS) $(DEVVECSRC)doc_common.h
+	$(DEVCC) $(DEVO_)doc_common.$(OBJ) $(C_) $(DEVVECSRC)doc_common.c
 
 
 ################ BEGIN PDF WRITER ################

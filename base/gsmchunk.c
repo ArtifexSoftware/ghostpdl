@@ -141,8 +141,8 @@ typedef struct chunk_obj_node_s {
     unsigned int sequence;
 #endif
     struct chunk_obj_node_s *defer_next;
-    uint size; /* Actual size of block */
-    uint padding; /* Actual size - requested size */
+    size_t size; /* Actual size of block */
+    size_t padding; /* Actual size - requested size */
 } chunk_obj_node_t;
 
 typedef struct chunk_free_node_s {
@@ -150,7 +150,7 @@ typedef struct chunk_free_node_s {
     struct chunk_free_node_s *right_loc;
     struct chunk_free_node_s *left_size;
     struct chunk_free_node_s *right_size;
-    uint size;                  /* size of entire freelist block */
+    size_t size;                  /* size of entire freelist block */
 } chunk_free_node_t;
 
 /*
@@ -169,9 +169,9 @@ typedef struct gs_memory_chunk_s {
     chunk_free_node_t *free_loc; /* free tree */
     chunk_obj_node_t *defer_finalize_list;
     chunk_obj_node_t *defer_free_list;
-    unsigned long used;
-    unsigned long max_used;
-    unsigned long total_free;
+    size_t used;
+    size_t max_used;
+    size_t total_free;
 #ifdef DEBUG_SEQ
     unsigned int sequence;
 #endif
@@ -755,12 +755,12 @@ static void remove_free(gs_memory_chunk_t *cmem, chunk_free_node_t *node)
 
 /* All of the allocation routines reduce to this function */
 static byte *
-chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t cname)
+chunk_obj_alloc(gs_memory_t *mem, size_t size, gs_memory_type_ptr_t type, client_name_t cname)
 {
     gs_memory_chunk_t  *cmem = (gs_memory_chunk_t *)mem;
     chunk_free_node_t **ap, **okp;
     chunk_free_node_t  *a, *b, *c;
-    uint newsize;
+    size_t newsize;
     chunk_obj_node_t *obj = NULL;
 
     newsize = round_up_to_align(size + SIZEOF_ROUND_ALIGN(chunk_obj_node_t));	/* space we will need */
@@ -778,10 +778,10 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
 
 #ifdef DEBUG_CHUNK_PRINT
 #ifdef DEBUG_SEQ
-    dmlprintf4(cmem->target, "Event %x: malloc(chunk="PRI_INTPTR", size=%x, cname=%s)\n",
+    dmlprintf4(cmem->target, "Event %x: malloc(chunk="PRI_INTPTR", size="PRIxSIZE", cname=%s)\n",
                cmem->sequence, (intptr_t)cmem, newsize, cname);
 #else
-    dmlprintf3(cmem->target, "malloc(chunk="PRI_INTPTR", size=%x, cname=%s)\n",
+    dmlprintf3(cmem->target, "malloc(chunk="PRI_INTPTR", size="PRIxSIZE", cname=%s)\n",
                (intptr_t)cmem, newsize, cname);
 #endif
 #endif
@@ -951,14 +951,14 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     obj->sequence = cmem->sequence;
 #endif
     if (gs_debug_c('A'))
-        dmlprintf3(mem, "[a+]chunk_obj_alloc (%s)(%u) = "PRI_INTPTR": OK.\n",
+        dmlprintf3(mem, "[a+]chunk_obj_alloc (%s)(%"PRIuSIZE") = "PRI_INTPTR": OK.\n",
                    client_name_string(cname), size, (intptr_t) obj);
 #ifdef DEBUG_CHUNK_PRINT
 #ifdef DEBUG_SEQ
-    dmlprintf5(cmem->target, "Event %x: malloced(chunk="PRI_INTPTR", addr="PRI_INTPTR", size=%x, cname=%s)\n",
+    dmlprintf5(cmem->target, "Event %x: malloced(chunk="PRI_INTPTR", addr="PRI_INTPTR", size=%"PRIxSIZE", cname=%s)\n",
                obj->sequence, (intptr_t)cmem, (intptr_t)obj, obj->size, cname);
 #else
-    dmlprintf4(cmem->target, "malloced(chunk="PRI_INTPTR", addr="PRI_INTPTR", size=%x, cname=%s)\n",
+    dmlprintf4(cmem->target, "malloced(chunk="PRI_INTPTR", addr="PRI_INTPTR", size=%"PRI_xSIZE", cname=%s)\n",
                (intptr_t)cmem, (intptr_t)obj, obj->size, cname);
 #endif
 #endif

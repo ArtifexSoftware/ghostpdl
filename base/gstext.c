@@ -333,7 +333,7 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
 
     if (black_text && pgs->black_text_state == NULL) {
         gs_color_space *pcs_curr = gs_currentcolorspace_inline(pgs);
-        gs_color_space *pcs_alt = gs_altcolorspace_inline(pgs);
+        gs_color_space *pcs_alt = gs_swappedcolorspace_inline(pgs);
 
         pgs->black_text_state = gsicc_blacktext_state_new(pgs->memory);
         if (pgs->black_text_state == NULL)

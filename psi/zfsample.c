@@ -551,9 +551,17 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
     } else {
         if (stack_depth_adjust) {
             stack_depth_adjust -= num_out;
-            push(O_STACK_PAD - stack_depth_adjust);
-            for (i=0;i<O_STACK_PAD - stack_depth_adjust;i++)
-                make_null(op - i);
+            if ((O_STACK_PAD - stack_depth_adjust) < 0) {
+                stack_depth_adjust = -(O_STACK_PAD - stack_depth_adjust);
+                check_op(stack_depth_adjust);
+                pop(stack_depth_adjust);
+            }
+            else {
+                check_ostack(O_STACK_PAD - stack_depth_adjust);
+                push(O_STACK_PAD - stack_depth_adjust);
+                for (i=0;i<O_STACK_PAD - stack_depth_adjust;i++)
+                    make_null(op - i);
+            }
         }
     }
 

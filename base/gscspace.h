@@ -397,6 +397,8 @@ void rc_decrement_only_cs(gs_color_space *pcs, const char *cname);
 
 void cs_adjust_counts_icc(gs_gstate *pgs, int delta);
 
+void cs_adjust_swappedcounts_icc(gs_gstate *pgs, int delta);
+
 /* backwards compatibility */
 #define gs_color_space_indexed_base_space(pcspace)\
     gs_cspace_base_space(pcspace)

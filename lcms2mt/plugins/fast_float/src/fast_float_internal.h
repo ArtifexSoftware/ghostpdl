@@ -25,10 +25,13 @@
 #include "lcms2mt_fast_float.h"
 #include <stdint.h>
 
-#define REQUIRED_LCMS_VERSION (2100-2000)
+#define REQUIRED_LCMS_VERSION (2120-2000)
 
 // Unused parameter warning supression
 #define UNUSED_PARAMETER(x) ((void)x)
+
+// For testbed
+#define CMSCHECKPOINT CMSAPI
 
 // The specification for "inline" is section 6.7.4 of the C99 standard (ISO/IEC 9899:1999).
 // unfortunately VisualC++ does not conform that
@@ -141,31 +144,40 @@ cmsINLINE cmsFloat32Number flerp(const cmsFloat32Number LutTable[], cmsFloat32Nu
 
 
 
-
 // Some secret sauce from lcms
-int  _cmsReasonableGridpointsByColorspace(cmsColorSpaceSignature Colorspace, cmsUInt32Number dwFlags);
+CMSAPI cmsUInt32Number  CMSEXPORT _cmsReasonableGridpointsByColorspace(cmsColorSpaceSignature Colorspace, cmsUInt32Number dwFlags);
 
 
 
 // Compute the increments to be used by the transform functions
-void  _cmsComputeComponentIncrements(cmsUInt32Number Format,
-                                     cmsUInt32Number BytesPerPlane,
-                                     cmsUInt32Number* nChannels,
-                                     cmsUInt32Number* nAlpha,
-                                     cmsUInt32Number ComponentStartingOrder[],
-                                     cmsUInt32Number ComponentPointerIncrements[]);
+CMSCHECKPOINT void CMSEXPORT _cmsComputeComponentIncrements(cmsUInt32Number Format,
+                                                            cmsUInt32Number BytesPerPlane,
+                                                            cmsUInt32Number* nChannels,
+                                                            cmsUInt32Number* nAlpha,
+                                                            cmsUInt32Number ComponentStartingOrder[],
+                                                            cmsUInt32Number ComponentPointerIncrements[]);
 
 // 15 bits formatters
-cmsFormatter Formatter_15Bit_Factory(cmsContext ContextID,
-                                     cmsUInt32Number Type,
-                                     cmsFormatterDirection Dir,
-                                     cmsUInt32Number dwFlags);
+CMSCHECKPOINT cmsFormatter CMSEXPORT Formatter_15Bit_Factory(cmsContext ContextID,
+                                                             cmsUInt32Number Type,
+                                                             cmsFormatterDirection Dir,
+                                                             cmsUInt32Number dwFlags);
 
 // Optimizers
 
 //  8 bits on input allows matrix-shaper boost up a little bit
 cmsBool Optimize8MatrixShaper(cmsContext ContextID,
                               _cmsTransformFn* TransformFn,
+                              void** UserData,
+                              _cmsFreeUserDataFn* FreeUserData,
+                              cmsPipeline** Lut,
+                              cmsUInt32Number* InputFormat,
+                              cmsUInt32Number* OutputFormat,
+                              cmsUInt32Number* dwFlags);
+
+//  8 bits using SSE
+cmsBool Optimize8MatrixShaperSSE(cmsContext ContextID,
+                             _cmsTransformFn* TransformFn,
                               void** UserData,
                               _cmsFreeUserDataFn* FreeUserData,
                               cmsPipeline** Lut,
@@ -193,22 +205,22 @@ cmsBool Optimize8ByJoiningCurves(cmsContext ContextID,
                                  cmsUInt32Number* dwFlags);
 
 cmsBool OptimizeFloatByJoiningCurves(cmsContext ContextID,
-                                _cmsTransformFn* TransformFn,
-                                void** UserData,
-                                _cmsFreeUserDataFn* FreeUserData,
-                                cmsPipeline** Lut,
-                                cmsUInt32Number* InputFormat,
-                                cmsUInt32Number* OutputFormat,
-                                cmsUInt32Number* dwFlags);
+                                   _cmsTransformFn* TransformFn,
+                                   void** UserData,
+                                   _cmsFreeUserDataFn* FreeUserData,
+                                   cmsPipeline** Lut,
+                                   cmsUInt32Number* InputFormat,
+                                   cmsUInt32Number* OutputFormat,
+                                   cmsUInt32Number* dwFlags);
 
 cmsBool OptimizeFloatMatrixShaper(cmsContext ContextID,
-                             _cmsTransformFn* TransformFn,
-                             void** UserData,
-                             _cmsFreeUserDataFn* FreeUserData,
-                             cmsPipeline** Lut,
-                             cmsUInt32Number* InputFormat,
-                             cmsUInt32Number* OutputFormat,
-                             cmsUInt32Number* dwFlags);
+                                   _cmsTransformFn* TransformFn,
+                                   void** UserData,
+                                   _cmsFreeUserDataFn* FreeUserData,
+                                   cmsPipeline** Lut,
+                                   cmsUInt32Number* InputFormat,
+                                   cmsUInt32Number* OutputFormat,
+                                   cmsUInt32Number* dwFlags);
 
 cmsBool Optimize8BitRGBTransform(cmsContext ContextID,
                                    _cmsTransformFn* TransformFn,
@@ -238,12 +250,23 @@ cmsBool OptimizeCLUTRGBTransform(cmsContext ContextID,
                                   cmsUInt32Number* dwFlags);
 
 cmsBool OptimizeCLUTCMYKTransform(cmsContext ContextID,
-                                        _cmsTransformFn* TransformFn,
-					void** UserData,
-					_cmsFreeUserDataFn* FreeDataFn,
-					cmsPipeline** Lut,
-					cmsUInt32Number* InputFormat,
-					cmsUInt32Number* OutputFormat,
-					cmsUInt32Number* dwFlags);
+                                                      _cmsTransformFn* TransformFn,
+					              void** UserData,
+					              _cmsFreeUserDataFn* FreeDataFn,
+					              cmsPipeline** Lut,
+					              cmsUInt32Number* InputFormat,
+					              cmsUInt32Number* OutputFormat,
+					              cmsUInt32Number* dwFlags);
+
+
+cmsBool OptimizeCLUTLabTransform(cmsContext ContextID,
+                                 _cmsTransformFn* TransformFn,
+                                 void** UserData,
+                                 _cmsFreeUserDataFn* FreeDataFn,
+                                 cmsPipeline** Lut,
+                                 cmsUInt32Number* InputFormat,
+                                 cmsUInt32Number* OutputFormat,
+                                 cmsUInt32Number* dwFlags);
+
 
 #endif

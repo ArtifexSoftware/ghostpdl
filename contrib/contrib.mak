@@ -23,7 +23,6 @@ CONTRIB_MAK=$(CONTRIBDIR)$(D)contrib.mak $(TOP_MAKEFILES)
 CONTRIBSRC=$(CONTRIBDIR)$(D)
 
 # Almost all device drivers depend on the following:
-CONTDEVH=$(gserrors_h) $(gx_h) $(gxdevice_h)
 CONTDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 
 ###### --------------------------- Catalog -------------------------- ######

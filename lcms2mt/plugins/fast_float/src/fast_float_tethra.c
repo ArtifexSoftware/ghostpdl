@@ -28,7 +28,7 @@ typedef struct {
 
 } FloatCLUTData;
 
-// Precomputes tables for 8-bit on input devicelink.
+// Allocates container
 static
 FloatCLUTData* FloatCLUTAlloc(cmsContext ContextID, const cmsInterpParams* p)
 {
@@ -38,35 +38,34 @@ FloatCLUTData* FloatCLUTAlloc(cmsContext ContextID, const cmsInterpParams* p)
     if (fd == NULL) return NULL;
 
     fd ->p = p;
+
     return fd;
 }
 
 
-// Sampler implemented by another LUT. This is a clean way to precalculate the devicelink 3D CLUT for
-// almost any transform. We use floating point precision and then convert from floating point to 16 bits.
+// Sampler implemented by another LUT.
 static
 int XFormSampler(cmsContext ContextID, CMSREGISTER const cmsFloat32Number In[], CMSREGISTER cmsFloat32Number Out[], CMSREGISTER void* Cargo)
 {
-    // Evaluate in 16 bits
     cmsPipelineEvalFloat(ContextID, In, Out, (cmsPipeline*) Cargo);
-
-    // Always succeed
     return TRUE;
 }
 
-
-
-// A optimized interpolation for 8-bit input.
+// A optimized interpolation for input.
 #define DENS(i,j,k) (LutTable[(i)+(j)+(k)+OutChan])
 
 static
 void FloatCLUTEval(cmsContext ContextID,
                       struct _cmstransform_struct *CMMcargo,
-                      const cmsFloat32Number* Input,
-                      cmsFloat32Number* Output,
-                      cmsUInt32Number len,
-                      cmsUInt32Number Stride)
+                        const void* Input,
+                        void* Output,
+                        cmsUInt32Number PixelsPerLine,
+                        cmsUInt32Number LineCount,
+                        const cmsStride* Stride)
+
 {
+
+    FloatCLUTData* pfloat = (FloatCLUTData*)_cmsGetTransformUserData(CMMcargo);
 
     cmsFloat32Number        r, g, b;
     cmsFloat32Number        px, py, pz;
@@ -74,17 +73,18 @@ void FloatCLUTEval(cmsContext ContextID,
     int                     X0, Y0, Z0, X1, Y1, Z1;
     cmsFloat32Number        rx, ry, rz;
     cmsFloat32Number        c0, c1 = 0, c2 = 0, c3 = 0;
-
     cmsUInt32Number         OutChan;
-    FloatCLUTData*          p8 = (FloatCLUTData*) _cmsGetTransformUserData(CMMcargo);
 
-    const cmsInterpParams*  p = p8 ->p;
-    cmsUInt32Number        TotalOut = p -> nOutputs;
+    const cmsInterpParams* p = pfloat->p;
+    cmsUInt32Number        TotalOut = p->nOutputs;
+    cmsUInt32Number        TotalPlusAlpha;
     const cmsFloat32Number* LutTable = (const cmsFloat32Number*)p->Table;
-    cmsUInt32Number        ii;
-    const cmsUInt8Number*  rin;
-    const cmsUInt8Number*  gin;
-    const cmsUInt8Number*  bin;
+
+    cmsUInt32Number       i, ii;
+    const cmsUInt8Number* rin;
+    const cmsUInt8Number* gin;
+    const cmsUInt8Number* bin;
+    const cmsUInt8Number* ain = NULL;
 
     cmsUInt8Number* out[cmsMAXCHANNELS];
     cmsUInt32Number SourceStartingOrder[cmsMAXCHANNELS];
@@ -96,112 +96,125 @@ void FloatCLUTEval(cmsContext ContextID,
     cmsUInt32Number OutputFormat = cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM) CMMcargo);
 
     cmsUInt32Number nchans, nalpha;
+    cmsUInt32Number strideIn, strideOut;
 
-    _cmsComputeComponentIncrements(InputFormat, Stride, &nchans, &nalpha, SourceStartingOrder, SourceIncrements);
-    _cmsComputeComponentIncrements(OutputFormat, Stride, &nchans, &nalpha, DestStartingOrder, DestIncrements);
+    _cmsComputeComponentIncrements(InputFormat, Stride->BytesPerPlaneIn, &nchans, &nalpha, SourceStartingOrder, SourceIncrements);
+    _cmsComputeComponentIncrements(OutputFormat, Stride->BytesPerPlaneOut, &nchans, &nalpha, DestStartingOrder, DestIncrements);
 
-    // SeparateRGB(InputFormat, Stride,  SourceStartingOrder, SourceIncrements);
-    // SeparateRGB(OutputFormat, Stride, DestStartingOrder, DestIncrements);
+    if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+        nalpha = 0;
 
-    rin = (const cmsUInt8Number*)Input + SourceStartingOrder[0];
-    gin = (const cmsUInt8Number*)Input + SourceStartingOrder[1];
-    bin = (const cmsUInt8Number*)Input + SourceStartingOrder[2];
+    strideIn = strideOut = 0;
+    for (i = 0; i < LineCount; i++) {
 
-    for (ii=0; ii < TotalOut; ii++)
-           out[ii] = (cmsUInt8Number*) Output + DestStartingOrder[ii];
+        rin = (const cmsUInt8Number*)Input + SourceStartingOrder[0] + strideIn;
+        gin = (const cmsUInt8Number*)Input + SourceStartingOrder[1] + strideIn;
+        bin = (const cmsUInt8Number*)Input + SourceStartingOrder[2] + strideIn;
+        if (nalpha)
+            ain = (const cmsUInt8Number*)Input + SourceStartingOrder[3] + strideIn;
 
-    for (ii=0; ii < len; ii++) {
+        TotalPlusAlpha = TotalOut;
+        if (ain) TotalPlusAlpha++;
 
-           r = fclamp(*(cmsFloat32Number*)rin);
-           g = fclamp(*(cmsFloat32Number*)gin);
-           b = fclamp(*(cmsFloat32Number*)bin);
+        for (ii = 0; ii < TotalPlusAlpha; ii++)
+            out[ii] = (cmsUInt8Number*)Output + DestStartingOrder[ii] + strideOut;
 
-        rin += SourceIncrements[0];
-        gin += SourceIncrements[1];
-        bin += SourceIncrements[2];
+        for (ii = 0; ii < PixelsPerLine; ii++) {
 
-        px = r * p->Domain[0];
-        py = g * p->Domain[1];
-        pz = b * p->Domain[2];
+            r = fclamp(*(cmsFloat32Number*)rin);
+            g = fclamp(*(cmsFloat32Number*)gin);
+            b = fclamp(*(cmsFloat32Number*)bin);
+
+            rin += SourceIncrements[0];
+            gin += SourceIncrements[1];
+            bin += SourceIncrements[2];
+
+            px = r * p->Domain[0];
+            py = g * p->Domain[1];
+            pz = b * p->Domain[2];
+
+            x0 = _cmsQuickFloor(px); rx = (px - (cmsFloat32Number)x0);
+            y0 = _cmsQuickFloor(py); ry = (py - (cmsFloat32Number)y0);
+            z0 = _cmsQuickFloor(pz); rz = (pz - (cmsFloat32Number)z0);
 
 
-        x0 = (int)_cmsQuickFloor(px); rx = (px - (cmsFloat32Number)x0);
-        y0 = (int)_cmsQuickFloor(py); ry = (py - (cmsFloat32Number)y0);
-        z0 = (int)_cmsQuickFloor(pz); rz = (pz - (cmsFloat32Number)z0);
+            X0 = p->opta[2] * x0;
+            X1 = X0 + (r >= 1.0 ? 0 : p->opta[2]);
 
-        X0 = p->opta[2] * x0;
-        X1 = X0 + (r >= 1.0 ? 0 : p->opta[2]);
+            Y0 = p->opta[1] * y0;
+            Y1 = Y0 + (g >= 1.0 ? 0 : p->opta[1]);
 
-        Y0 = p->opta[1] * y0;
-        Y1 = Y0 + (g >= 1.0 ? 0 : p->opta[1]);
+            Z0 = p->opta[0] * z0;
+            Z1 = Z0 + (b >= 1.0 ? 0 : p->opta[0]);
 
-        Z0 = p->opta[0] * z0;
-        Z1 = Z0 + (b >= 1.0 ? 0 : p->opta[0]);
+            for (OutChan = 0; OutChan < TotalOut; OutChan++) {
 
-        for (OutChan = 0; OutChan < TotalOut; OutChan++) {
+                // These are the 6 Tetrahedral
 
-               // These are the 6 Tetrahedral
+                c0 = DENS(X0, Y0, Z0);
 
-               c0 = DENS(X0, Y0, Z0);
+                if (rx >= ry && ry >= rz) {
 
-               if (rx >= ry && ry >= rz) {
+                    c1 = DENS(X1, Y0, Z0) - c0;
+                    c2 = DENS(X1, Y1, Z0) - DENS(X1, Y0, Z0);
+                    c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
 
-                      c1 = DENS(X1, Y0, Z0) - c0;
-                      c2 = DENS(X1, Y1, Z0) - DENS(X1, Y0, Z0);
-                      c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
+                }
+                else
+                    if (rx >= rz && rz >= ry) {
 
-               }
-               else
-                      if (rx >= rz && rz >= ry) {
+                        c1 = DENS(X1, Y0, Z0) - c0;
+                        c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
+                        c3 = DENS(X1, Y0, Z1) - DENS(X1, Y0, Z0);
 
-                             c1 = DENS(X1, Y0, Z0) - c0;
-                             c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
-                             c3 = DENS(X1, Y0, Z1) - DENS(X1, Y0, Z0);
+                    }
+                    else
+                        if (rz >= rx && rx >= ry) {
 
-                      }
-                      else
-                             if (rz >= rx && rx >= ry) {
+                            c1 = DENS(X1, Y0, Z1) - DENS(X0, Y0, Z1);
+                            c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
+                            c3 = DENS(X0, Y0, Z1) - c0;
 
-                                    c1 = DENS(X1, Y0, Z1) - DENS(X0, Y0, Z1);
-                                    c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
-                                    c3 = DENS(X0, Y0, Z1) - c0;
+                        }
+                        else
+                            if (ry >= rx && rx >= rz) {
 
-                             }
-                             else
-                                    if (ry >= rx && rx >= rz) {
+                                c1 = DENS(X1, Y1, Z0) - DENS(X0, Y1, Z0);
+                                c2 = DENS(X0, Y1, Z0) - c0;
+                                c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
 
-                                           c1 = DENS(X1, Y1, Z0) - DENS(X0, Y1, Z0);
-                                           c2 = DENS(X0, Y1, Z0) - c0;
-                                           c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
+                            }
+                            else
+                                if (ry >= rz && rz >= rx) {
+
+                                    c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
+                                    c2 = DENS(X0, Y1, Z0) - c0;
+                                    c3 = DENS(X0, Y1, Z1) - DENS(X0, Y1, Z0);
+
+                                }
+                                else
+                                    if (rz >= ry && ry >= rx) {
+
+                                        c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
+                                        c2 = DENS(X0, Y1, Z1) - DENS(X0, Y0, Z1);
+                                        c3 = DENS(X0, Y0, Z1) - c0;
 
                                     }
-                                    else
-                                           if (ry >= rz && rz >= rx) {
+                                    else {
+                                        c1 = c2 = c3 = 0;
+                                    }
 
-                                                  c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
-                                                  c2 = DENS(X0, Y1, Z0) - c0;
-                                                  c3 = DENS(X0, Y1, Z1) - DENS(X0, Y1, Z0);
+                *(cmsFloat32Number*)(out[OutChan]) = c0 + c1 * rx + c2 * ry + c3 * rz;
 
-                                           }
-                                           else
-                                                  if (rz >= ry && ry >= rx) {
+                out[OutChan] += DestIncrements[OutChan];
+            }
 
-                                                         c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
-                                                         c2 = DENS(X0, Y1, Z1) - DENS(X0, Y0, Z1);
-                                                         c3 = DENS(X0, Y0, Z1) - c0;
-
-                                                  }
-                                                  else  {
-                                                         c1 = c2 = c3 = 0;
-                                                  }
-
-                                                  *(cmsFloat32Number*) (out[OutChan]) = c0 + c1 * rx + c2 * ry + c3 * rz;
-
-                                                  out[OutChan] += DestIncrements[OutChan];
-
+            if (ain)
+                *out[TotalOut] = *ain;
         }
 
-
+        strideIn  += Stride->BytesPerLineIn;
+        strideOut += Stride->BytesPerLineOut;
     }
 }
 
@@ -224,23 +237,22 @@ cmsBool OptimizeCLUTRGBTransform(cmsContext ContextID,
     int nGridPoints;
     cmsPipeline* OptimizedLUT = NULL;
     cmsStage* OptimizedCLUTmpe;
-    cmsColorSpaceSignature OutputColorSpace;
     cmsStage* mpe;
-    FloatCLUTData* p8;
+    FloatCLUTData* pfloat;
     _cmsStageCLutData* data;
 
     // For empty transforms, do nothing
     if (*Lut == NULL) return FALSE;
 
-    // This is a loosy optimization! does not apply in floating-point cases
+    // Check for floating point only
     if (!T_FLOAT(*InputFormat) || !T_FLOAT(*OutputFormat)) return FALSE;
 
-    // Only on 8-bit
-    if (T_BYTES(*InputFormat) != 4 || T_BYTES(*OutputFormat) != 4) return FALSE;
+    // Only on floats
+    if (T_BYTES(*InputFormat) != sizeof(cmsFloat32Number) ||
+        T_BYTES(*OutputFormat) != sizeof(cmsFloat32Number)) return FALSE;
 
-    // Only on RGB
-    if (T_COLORSPACE(*InputFormat)  != PT_RGB) return FALSE;
-    if (T_COLORSPACE(*OutputFormat) != PT_RGB) return FALSE;
+    // Input has to be RGB, Output may be any
+    if (T_COLORSPACE(*InputFormat) != PT_RGB) return FALSE;
 
     OriginalLut = *Lut;
 
@@ -251,13 +263,11 @@ cmsBool OptimizeCLUTRGBTransform(cmsContext ContextID,
             if (cmsStageType(ContextID, mpe) == cmsSigNamedColorElemType) return FALSE;
     }
 
-    OutputColorSpace = _cmsICCcolorSpace(ContextID, T_COLORSPACE(*OutputFormat));
     nGridPoints      = _cmsReasonableGridpointsByColorspace(cmsSigRgbData, *dwFlags);
 
     // Create the result LUT
     OptimizedLUT = cmsPipelineAlloc(ContextID, 3, cmsPipelineOutputChannels(ContextID, OriginalLut));
     if (OptimizedLUT == NULL) goto Error;
-
 
     // Allocate the CLUT for result
     OptimizedCLUTmpe = cmsStageAllocCLutFloat(ContextID, nGridPoints, 3, cmsPipelineOutputChannels(ContextID, OriginalLut), NULL);
@@ -271,15 +281,15 @@ cmsBool OptimizeCLUTRGBTransform(cmsContext ContextID,
     // Set the evaluator, copy parameters
     data = (_cmsStageCLutData*) cmsStageData(ContextID, OptimizedCLUTmpe);
 
-    p8 = FloatCLUTAlloc(ContextID, data ->Params);
-    if (p8 == NULL) return FALSE;
+    pfloat = FloatCLUTAlloc(ContextID, data ->Params);
+    if (pfloat == NULL) return FALSE;
 
     // And return the obtained LUT
     cmsPipelineFree(ContextID, OriginalLut);
 
     *Lut = OptimizedLUT;
-    *TransformFn = (_cmsTransformFn) FloatCLUTEval;
-    *UserData   = p8;
+    *TransformFn = (_cmsTransformFn)FloatCLUTEval;
+    *UserData   = pfloat;
     *FreeDataFn = _cmsFree;
     *dwFlags &= ~cmsFLAGS_CAN_CHANGE_FORMATTER;
     return TRUE;

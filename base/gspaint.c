@@ -712,7 +712,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     abits = 0;
     {
         gx_device_color *col_fill = gs_currentdevicecolor_inline(pgs);
-        gx_device_color *col_stroke = gs_altdevicecolor_inline(pgs);
+        gx_device_color *col_stroke = gs_swappeddevicecolor_inline(pgs);
         devn = color_is_devn(col_fill) && color_is_devn(col_stroke);
         /* could be devn and masked_devn */
         if (color_is_pure(col_fill) || color_is_pure(col_stroke) || devn)
@@ -778,11 +778,11 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         }
     }
 out:
-    if (gx_dc_is_pattern1_color(gs_altdevicecolor_inline(pgs))) {
+    if (gx_dc_is_pattern1_color(gs_swappeddevicecolor_inline(pgs))) {
         gs_id id;
 
-        if (gs_altdevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
-            id = gs_altdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
+        if (gs_swappeddevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
+            id = gs_swappeddevicecolor_inline(pgs)->colors.pattern.p_tile->id;
             rcode = gx_pattern_cache_entry_set_lock(pgs, id, false);
 	        if (rcode < 0)
 	            return rcode;	/* unlock failed -- shouldn't be possible */

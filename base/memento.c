@@ -2403,6 +2403,7 @@ char *Memento_strdup(const char *text)
     return ret;
 }
 
+#if !defined(MEMENTO_GS_HACKS) && !defined(MEMENTO_MUPDF_HACKS)
 int Memento_asprintf(char **ret, const char *format, ...)
 {
     va_list va;
@@ -2459,6 +2460,7 @@ int Memento_vasprintf(char **ret, const char *format, va_list ap)
 
     return n;
 }
+#endif
 
 void *Memento_malloc(size_t s)
 {
@@ -3477,6 +3479,8 @@ void *(Memento_reference)(void *a)
 #undef Memento_realloc
 #undef Memento_calloc
 #undef Memento_strdup
+#undef Memento_asprintf
+#undef Memento_vasprintf
 
 void *Memento_malloc(size_t size)
 {
@@ -3498,6 +3502,7 @@ void *Memento_calloc(size_t n, size_t s)
     return MEMENTO_UNDERLYING_CALLOC(n, s);
 }
 
+#if !defined(MEMENTO_GS_HACKS) && !defined(MEMENTO_MUPDF_HACKS)
 /* Avoid calling strdup, in case our compiler doesn't support it.
  * Yes, I'm looking at you, early Visual Studios. */
 char *Memento_strdup(const char *s)
@@ -3559,6 +3564,7 @@ int Memento_vasprintf(char **ret, const char *format, va_list ap)
 
     return n;
 }
+#endif
 
 void (Memento_listBlocks)(void)
 {

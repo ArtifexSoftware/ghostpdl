@@ -69,13 +69,17 @@ xps_fill(xps_context_t *ctx)
         gs_newpath(ctx->pgs);
     else if (ctx->fill_rule == 0) {
         if (gs_eofill(ctx->pgs) == gs_error_Remap_Color){
+            ctx->in_high_level_pattern = true;
             xps_high_level_pattern(ctx);
+            ctx->in_high_level_pattern = false;
             gs_eofill(ctx->pgs);
         }
     }
     else {
         if (gs_fill(ctx->pgs) == gs_error_Remap_Color){
+            ctx->in_high_level_pattern = true;
             xps_high_level_pattern(ctx);
+            ctx->in_high_level_pattern = false;
             gs_fill(ctx->pgs);
         }
     }

@@ -100,7 +100,7 @@ gx_fill_stroke_path(gs_gstate * pgs, int rule)
     code = (*dev_proc(dev, fill_stroke_path))
         (dev, (const gs_gstate *)pgs, pgs->path,
          &fill_params, gs_currentdevicecolor_inline(pgs),
-         &stroke_params, gs_altdevicecolor_inline(pgs),
+         &stroke_params, gs_swappeddevicecolor_inline(pgs),
          pcpath);
 
     if (pgs->black_text_state) {

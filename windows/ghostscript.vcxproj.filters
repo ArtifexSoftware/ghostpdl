@@ -3377,6 +3377,12 @@
     <ClCompile Include="..\devices\vector\gdevtxtw.c">
       <Filter>devices\vector</Filter>
     </ClCompile>
+    <ClCompile Include="..\devices\vector\gdevdocxw.c">
+      <Filter>devices\vector</Filter>
+    </ClCompile>
+    <ClCompile Include="..\devices\vector\doc_common.c">
+      <Filter>devices\vector</Filter>
+    </ClCompile>
     <ClCompile Include="..\devices\vector\gdevxps.c">
       <Filter>devices\vector</Filter>
     </ClCompile>
