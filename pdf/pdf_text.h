@@ -51,6 +51,8 @@ int pdfi_doublequote(pdf_context *ctx);
    for Type 3 fonts. Also returns the accumlated "advance width" of all the glyphs
    in the string.
    This can be an expensive operation, so should be used sparingly, with care.
+   NOTE: the bounding box this generates has llx and lly at 0,0,
+   so is arguably not a "real" bounding box
  */
 int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, gs_point *advance_width, bool for_stroke);
 

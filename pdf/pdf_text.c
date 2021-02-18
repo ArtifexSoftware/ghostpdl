@@ -529,16 +529,20 @@ show_error:
     return code;
 }
 
+/* NOTE: the bounding box this generates has llx and lly at 0,0,
+   so is arguably not a "real" bounding box
+ */
 int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, gs_point *advance_width, bool for_stroke)
 {
     int code = 0;
     gx_device_bbox *bbdev;
     pdf_font *current_font = pdfi_get_current_pdf_font(ctx);
     gs_matrix tmpmat, Trm, Trm_ctm;
-    gs_point cppt;
+    gs_point cppt, startpt;
 
     if (current_font == NULL)
         return_error(gs_error_invalidfont);
+
 
     for_stroke = current_font->pdfi_font_type == e_pdf_font_type3 ? false : for_stroke;
 
@@ -586,7 +590,15 @@ int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, gs_point
     if (code < 0)
         goto out;
 
-    code = gs_moveto(ctx->pgs, 0, 0);
+    /* The bbox device (not surprisingly) clips to the device width/height
+       so we have to offset our initial point to cope with glyphs that include
+       negative coordinates. Most significantly, descender features - hence the
+       larger y offset.
+       The offsets are guesses.
+     */
+    startpt.x = ctx->pgs->PDFfontsize;
+    startpt.y = ctx->pgs->PDFfontsize * 16.0 * (ctx->pgs->textrise >= 0 ? 1 : -ctx->pgs->textrise);
+    code = gs_moveto(ctx->pgs, startpt.x, startpt.y);
     if (code < 0)
         goto out;
 
@@ -598,14 +610,18 @@ int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, gs_point
     if (code < 0)
         goto out;
 
+    bboxout->q.x -= bboxout->p.x;
+    bboxout->q.y -= bboxout->p.y;
+    bboxout->p.x = bboxout->p.y = 0;
+
     code = gs_currentpoint(ctx->pgs, &cppt);
     if (code >= 0) {
-        /* gs_currentpoint() undoes the ctm scaling, which includes the text scaling
-           we have to reapply the text scaling to get points.
-         */
-        code = gs_distance_transform(cppt.x, cppt.y, &Trm, &cppt);
-        advance_width->x = hypot(cppt.x, cppt.y);
-        advance_width->y = 0;
+        code = gs_point_transform(startpt.x, startpt.y, &ctm_only(ctx->pgs), &startpt);
+        if (code < 0)
+            goto out;
+        advance_width->x = ctx->pgs->current_point.x - startpt.x;
+        advance_width->y = ctx->pgs->current_point.y - startpt.y;
+        code = gs_point_transform_inverse(advance_width->x, advance_width->y, &tmpmat, advance_width);
     }
 out:
     pdfi_grestore(ctx);
