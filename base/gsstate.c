@@ -847,6 +847,8 @@ gs_initgraphics(gs_gstate * pgs)
     const gs_gstate gstate_initial = {
             gs_gstate_initial(1.0)
         };
+    gs_matrix m;
+    gs_make_identity(&m);
 
     gs_initmatrix(pgs);
     if ((code = gs_newpath(pgs)) < 0 ||
@@ -980,7 +982,13 @@ gs_initgraphics(gs_gstate * pgs)
     if (code < 0)
         goto exit;
 
-    return 0;
+    code = gs_settextmatrix(pgs, &m);
+    if (code < 0)
+        goto exit;
+
+    code = gs_settextlinematrix(pgs, &m);
+    if (code < 0)
+        goto exit;
 exit:
     return code;
 }
