@@ -362,7 +362,7 @@ s_end_page(gx_device_docxwrite_t *tdev, int write_file)
         code = s_errno_to_gs();
         goto end;
     }
-    if (extract_process(tdev->extract, 1 /*spacing*/, 1 /*rotation*/, 1 /*images*/)) {
+    if (extract_process(tdev->extract, 0 /*spacing*/, 1 /*rotation*/, 1 /*images*/)) {
         code = s_errno_to_gs();
         goto end;
     }
