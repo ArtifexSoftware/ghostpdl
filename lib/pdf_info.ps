@@ -249,9 +249,27 @@ cleartomark		% discard the dict from --where--
        pop
         (     Page contains Annotations) print
     } if
-    pageusestransparency {
+    dup pageusestransparency {
         (     Page uses transparency features) print
     } if
+    dup pagespotcolors
+    dup length 0 gt {
+      (\n    Page Spot colors: ) =
+      << /Black 0 /Cyan 0 /Magenta 0 /Yellow 0 >> exch
+      {
+        pop	% discard the value
+        1 index 1 index known not {	% check if colorant is a standard one
+          (        ) print
+          (') print =print (') =
+        } {
+          pop	% ignore this standard colorant
+        } ifelse
+      } forall
+      pop	% discard dict of standard colorants
+    } {
+      pop
+    } ifelse
+    pop		% done with pagedict
     () = flush
   }
   {
