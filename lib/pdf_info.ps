@@ -412,6 +412,28 @@ currentdict /res-type-dict undef
   currentdict /ProcessedResources undef
 } bind def
 
+% If running with -dSAFER, .sort may not be present. Define a (slower) PS alternative
+systemdict /.sort known not {
+% <array> <lt-proc> .sort <array>
+ /.sort
+   { 1 index length 1 sub -1 1
+       { 2 index exch 2 copy get 3 copy % arr proc arr i arr[i] arr i arr[i]
+         0 1 3 index 1 sub
+           { 3 index 1 index get        % arr proc arr i arr[i] arr imax amax j arr[j]
+             2 index 1 index 10 index exec
+               {                        % ... amax < arr[j]
+                 4 2 roll
+               }
+             if pop pop
+           }
+         for                            % arr proc arr i arr[i] arr imax amax
+         4 -1 roll exch 4 1 roll put put
+       }
+     for
+     pop
+   } bind def
+} if
+
 /dump-fonts-used { % <dict for fonts> dump-fonts-used -
   % If DumpFontsUsed is not true, then remove the 'standard' fonts from the list
   systemdict /DumpFontsUsed known not {
