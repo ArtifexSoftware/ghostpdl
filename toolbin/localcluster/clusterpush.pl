@@ -212,8 +212,19 @@ if ($msys) {
   $hostpath="regression:$dir/$user/$directory";
 }
 
-my $cmd="rsync -avxcz ".
-" --max-size=30000000".
+my $cmd="rsync -axcz";
+
+if ($product eq "extractgs") {
+  $cmd .= "L"; # expand links.
+}
+
+if ($verbose) {
+  $cmd .= "i";
+} else {
+  $cmd .= "v";
+}
+
+$cmd .= " --max-size=30000000".
 " --delete --delete-excluded".
 " --exclude .svn --exclude .git".
 " --exclude _darcs --exclude .bzr --exclude .hg".
@@ -245,7 +256,8 @@ my $cmd="rsync -avxcz ".
 
 # Excludes for extract library.
 " --exclude /src/build/".
-" --exclude /thirdparty/extract/src/build/".
+" --exclude extract/src/build/".
+" --exclude extract/test/generated/".
 
 # " --exclude Makefile". We can't just exclude Makefile, since the MuPDF Makefile is not a derived file.
 " -e \"$ssh\" ".

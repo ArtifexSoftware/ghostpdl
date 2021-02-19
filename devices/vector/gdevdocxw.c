@@ -362,7 +362,7 @@ s_end_page(gx_device_docxwrite_t *tdev, int write_file)
         code = s_errno_to_gs();
         goto end;
     }
-    if (extract_process(tdev->extract, 1 /*spacing*/, 1 /*rotation*/, 1 /*images*/)) {
+    if (extract_process(tdev->extract, 0 /*spacing*/, 1 /*rotation*/, 1 /*images*/)) {
         code = s_errno_to_gs();
         goto end;
     }
@@ -403,6 +403,7 @@ docxwrite_close_device(gx_device * dev)
 {
     int code = 0;
     gx_device_docxwrite_t *const tdev = (gx_device_docxwrite_t *) dev;
+
     extract_end(&tdev->extract);
     extract_alloc_destroy(&tdev->alloc);
     return code;

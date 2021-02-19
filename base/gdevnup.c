@@ -406,6 +406,8 @@ gs_param_list_dump(plist);
             /* If we have accumulated a nest when the NupControl changes, flush the nest */
             if (pNup_data->PagesPerNest > 1 && pNup_data->PageCount > 0)
                 code = nup_flush_nest_to_output(dev, pNup_data, true);
+            if (code < 0)
+                ecode = code;
             dev->NupControl = 0;
         }
         if (dev->NupControl == NULL && nuplist.size > 0) {
@@ -417,6 +419,8 @@ gs_param_list_dump(plist);
             memset(dev->NupControl, 0x00, nuplist.size + 1);
             memcpy(dev->NupControl, nuplist.data, nuplist.size);
         }
+        if (ecode < 0)
+            return ecode;
     }
 
     code = ParseNupControl(dev, pNup_data);		/* update the nesting params */
