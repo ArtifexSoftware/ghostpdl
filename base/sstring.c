@@ -52,7 +52,7 @@ s_AXE_process(stream_state * st, stream_cursor_read * pr,
 
     if (last && ss->EndOfData)
         wcount--;		/* leave room for '>' */
-    wcount -= (wcount + pos * 2) / 65; /* leave room for \n */
+    wcount -= (wcount + pos * 2) / 64; /* leave room for \n */
     wcount >>= 1;		/* 2 chars per input byte */
     count = (wcount < rcount ? (status = 1, wcount) : rcount);
     while (--count >= 0) {
