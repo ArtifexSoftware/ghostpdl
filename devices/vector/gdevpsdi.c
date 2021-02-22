@@ -33,12 +33,6 @@
 #include "spngpx.h"
 #include "szlibx.h"
 #include "gsicc_manage.h"
-#ifdef USE_LDF_JB2
-#include "sjbig2_luratech.h"
-#endif
-#ifdef USE_LWF_JP2
-#include "sjpx_luratech.h"
-#endif
 #include "sisparam.h"
 
 /* Define parameter-setting procedures. */
@@ -250,10 +244,6 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     stream_state *st;
     int code;
 
-#   ifdef USE_LWF_JP2
-    if (lossless && templat == &s_jpxe_template && !Indexed)
-        lossless_template = &s_jpxe_template;
-#   endif
     if (!pdip->Encode)		/* no compression */
         return 0;
     if (pdip->AutoFilter) {
@@ -356,41 +346,6 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
             goto fail;
         /* psdf_DCT_filter already did the psdf_encode_binary. */
         return 0;
-    } else {
-#	ifdef USE_LDF_JB2
-            if (templat == &s_jbig2encode_template) {
-                stream_jbig2encode_state *state = (stream_jbig2encode_state *)st;
-
-                state->width = pim->Width;
-                state->height = pim->Height;
-            }
-#	endif
-#	ifdef USE_LWF_JP2
-            if (templat == &s_jpxe_template) {
-                stream_jpxe_state *state = (stream_jpxe_state *)st;
-                int ncomps = pim->ColorSpace->type->num_components(pim->ColorSpace);
-
-                /* HACK : We choose a JPX color space from the number of components :
-                   CIEBasedA goes as gs_jpx_cs_gray,
-                   CIEBasedABC and DeviceN(3) go as gs_jpx_cs_rgb,
-                   CIEBasedABCD and DeviceN(4) go as gs_jpx_cs_cmyk.
-                */
-                switch (ncomps) {
-                    case 1 : state->colorspace = gs_jpx_cs_gray; break;
-                    case 3 : state->colorspace = gs_jpx_cs_rgb; break;
-                    case 4 : state->colorspace = gs_jpx_cs_cmyk; break;
-                    default:
-                        return_error(gs_error_unregistered); /* Must not happen. */
-                }
-                state->width = pim->Width;
-                state->height = pim->Height;
-                state->bpc = pim->BitsPerComponent;
-                state->components = ncomps;
-                state->lossless = lossless;
-                /* Other encode parameters are not implemented yet.
-                   Therefore ACSDict is being ignored. */
-            }
-#	endif
     }
     code = psdf_encode_binary(pbw, templat, st);
     if (code >= 0)
@@ -600,39 +555,6 @@ psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev,
             gs_color_space_index_DeviceCMYK));
 }
 
-static inline void
-adjust_auto_filter_strategy(gx_device_psdf *pdev,
-                psdf_image_params *params, gs_c_param_list *plist,
-                const gs_pixel_image_t * pim, bool in_line)
-{
-#ifdef USE_LWF_JP2
-    if (!in_line && params->Depth > 1 && pdev->ParamCompatibilityLevel >= 1.5 &&
-            pim->ColorSpace->type->index != gs_color_space_index_Indexed &&
-            params->AutoFilter &&
-            params->AutoFilterStrategy != af_Jpeg) {
-        params->Filter = "/JPXEncode";
-        params->filter_template = &s_jpxe_template;
-        params->Dict = plist;
-    }
-#endif
-}
-
-static inline void
-adjust_auto_filter_strategy_mono(gx_device_psdf *pdev,
-                psdf_image_params *params, gs_c_param_list *plist,
-                const gs_pixel_image_t * pim, bool in_line)
-{
-#ifdef USE_LDF_JB2
-    if (!in_line && pdev->ParamCompatibilityLevel >= 1.5 &&
-            params->AutoFilter &&
-            pim->ColorSpace->type->index != gs_color_space_index_Indexed) {
-        params->Filter = "/JBIG2Encode";
-        params->filter_template = &s_jbig2encode_template;
-        params->Dict = plist;
-    }
-#endif
-}
-
 /* Set up compression and downsampling filters for an image. */
 /* Note that this may modify the image parameters. */
 int
@@ -714,16 +636,13 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
                 params.Filter = pdev->params.MonoImage.Filter;
                 params.filter_template = pdev->params.MonoImage.filter_template;
                 params.Dict = pdev->params.MonoImage.Dict;
-                adjust_auto_filter_strategy_mono(pdev, &params, pdev->params.MonoImage.Dict, pim, in_line);
             } else {
                 params.Filter = pdev->params.GrayImage.Filter;
                 params.filter_template = pdev->params.GrayImage.filter_template;
                 params.Dict = pdev->params.GrayImage.Dict;
-                adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
             }
             code = setup_downsampling(pbw, &params, pim, pgs, resolution, lossless);
         } else {
-            adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
             code = setup_image_compression(pbw, &params, pim, pgs, lossless);
         }
         if (code < 0)
@@ -745,10 +664,8 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
         if (params.Depth == -1)
             params.Depth = (cmyk_to_rgb ? 8 : bpc_out);
         if (do_downsample(&params, pim, resolution)) {
-            adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
             code = setup_downsampling(pbw, &params, pim, pgs, resolution, lossless);
         } else {
-            adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
             code = setup_image_compression(pbw, &params, pim, pgs, lossless);
         }
         if (code < 0)
@@ -981,19 +898,16 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
                 params.Filter = pdev->params.MonoImage.Filter;
                 params.filter_template = pdev->params.MonoImage.filter_template;
                 params.Dict = pdev->params.MonoImage.Dict;
-                adjust_auto_filter_strategy_mono(pdev, &params, pdev->params.MonoImage.Dict, pim, in_line);
             } else {
                 if (params.Depth > 8)
                     params.Depth = bpc_out;
                 params.Filter = pdev->params.GrayImage.Filter;
                 params.filter_template = pdev->params.GrayImage.filter_template;
                 params.Dict = pdev->params.GrayImage.Dict;
-                adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
             }
             pdev->JPEG_PassThrough = 0;
             code = setup_downsampling(pbw, &params, pim, pgs, resolution, lossless);
         } else {
-            adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
             code = setup_image_compression(pbw, &params, pim, pgs, lossless);
         }
         if (code < 0)
@@ -1004,11 +918,9 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
         if (params.Depth == -1)
             params.Depth = (colour_conversion ? 8 : bpc_out);
         if (do_downsample(&params, pim, resolution)) {
-            adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
             pdev->JPEG_PassThrough = 0;
             code = setup_downsampling(pbw, &params, pim, pgs, resolution, lossless);
         } else {
-            adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
             code = setup_image_compression(pbw, &params, pim, pgs, lossless);
         }
         if (code < 0)

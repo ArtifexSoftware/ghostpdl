@@ -31,11 +31,7 @@
 #include "strimpl.h"
 #include "ifilter.h"
 
-#ifdef USE_LDF_JB2
-#include "sjbig2_luratech.h"
-#else
 #include "sjbig2.h"
-#endif
 
 /* We define a structure, s_jbig2_global_data_t,
    allocated in the postscript

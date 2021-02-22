@@ -265,15 +265,6 @@ SHARE_JBIG2=0
 JBIG2SRCDIR=./jbig2dec
 JBIG2_CFLAGS=-DHAVE_STDINT_H=1
 
-# uncomment the following three lines and one of the last two to
-# compile in the Luratech ldf_jb2 codec
-#JBIG2_LIB=luratech
-#SHARE_JBIG2=0
-#JBIG2SRCDIR=ldf_jb2
-#JBIG2_CFLAGS=-DUSE_LDF_JB2 -DLINUX
-#JBIG2_CFLAGS=-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD
-
-
 # Choose the library to use for (JPXDecode support)
 # whether to link to an external build or compile in from source
 # and source location and configuration flags for compiling in
@@ -281,14 +272,6 @@ JPX_LIB=openjpeg
 SHARE_JPX=0
 JPXSRCDIR=./openjpeg
 JPX_CFLAGS=  -DUSE_JPIP -DUSE_OPENJPEG_JP2 -DOPJ_HAVE_STDINT_H=1 -DOPJ_HAVE_INTTYPES_H=1  -DOPJ_HAVE_FSEEKO=1
-
-# uncomment the following three lines and one of the last two to
-# compile in the Luratech lwf_jp2 codec
-#JPX_LIB=luratech
-#SHARE_JPX=0
-#JPXSRCDIR=lwf_jp2
-#JPX_CFLAGS=-DUSE_LWF_JP2 -DLINUX
-#JPX_CFLAGS=-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD
 
 # Uncomment the following 4 lines to to compile in OpenJPEG codec
 #JPX_LIB=openjpeg
@@ -663,8 +646,6 @@ include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/png.mak
 include $(GLSRCDIR)/tiff.mak
 include $(GLSRCDIR)/jbig2.mak
-include $(GLSRCDIR)/ldf_jb2.mak
-include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/openjpeg.mak
 include $(GLSRCDIR)/cal.mak
 include $(GLSRCDIR)/ocr.mak

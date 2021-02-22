@@ -2123,9 +2123,6 @@
     <ClCompile Include="..\base\sjbig2.c">
       <Filter>base</Filter>
     </ClCompile>
-    <ClCompile Include="..\base\sjbig2_luratech.c">
-      <Filter>base</Filter>
-    </ClCompile>
     <ClCompile Include="..\base\sjpegc.c">
       <Filter>base</Filter>
     </ClCompile>
@@ -2136,9 +2133,6 @@
       <Filter>base</Filter>
     </ClCompile>
     <ClCompile Include="..\base\sjpx.c">
-      <Filter>base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\base\sjpx_luratech.c">
       <Filter>base</Filter>
     </ClCompile>
     <ClCompile Include="..\base\sjpx_openjpeg.c">
@@ -6955,13 +6949,7 @@
     <ClInclude Include="..\base\sjbig2.h">
       <Filter>base %28.h%29</Filter>
     </ClInclude>
-    <ClInclude Include="..\base\sjbig2_luratech.h">
-      <Filter>base %28.h%29</Filter>
-    </ClInclude>
     <ClInclude Include="..\base\sjpeg.h">
-      <Filter>base %28.h%29</Filter>
-    </ClInclude>
-    <ClInclude Include="..\base\sjpx_luratech.h">
       <Filter>base %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\base\sjpx_openjpeg.h">
