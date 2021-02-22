@@ -414,7 +414,16 @@
     pop
     /firstcode startc 0 getu16a 16#ff00 and dup 16#f000 ne { pop 0 } if def
     /putglyph {
-      glyphs code 3 -1 roll put /code code 1 add def
+      glyphs code known
+      {
+        glyphs /.cmap_warning_issued known not {
+          (**** Warning: Invalid TTF cmap mapping (overlapping/repeated map)\n) print flush
+           glyphs /.cmap_warning_issued //true put
+        } if
+        pop
+      }
+      {glyphs code 3 -1 roll put}ifelse
+      /code code 1 add def
     } bind def
     /glyphs 0 dict def
 
@@ -438,6 +447,10 @@
     % Two choices are: drop later repeated/overlapping segments entirely,
     % or only use codes from later, overlapping segments not already set
     % by the earlier segment. (Inspired by Bug 700968).
+    % Revision: bug 703589 has an (invalid) cmap table with overlapping
+    % (actually repeating) ranges, and requires the *first* range definition
+    % to be used in order to render correctly. So /putglyph now refuses to
+    % overwrite existing keys in the "glyphs" dictionary
     0 2 nseg2 dup 4 lt {pop 4}if 3 sub {
       /i2 exch def
       /scode startc i2 getu16a def
@@ -464,7 +477,10 @@
           } for
         } ifelse
       } if
-    } for glyphs /glyphs //null def	% for GC
+    } for
+    % If we've encoutered an invalid table, remove the key before returning
+    glyphs /.cmap_warning_issued undef
+    glyphs /glyphs //null def	% for GC
   } .bind
   6 {		% Single interval lookup.
     dup 6 getu16a /firstcode exch def
