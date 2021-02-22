@@ -278,6 +278,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     double Tw = 0, Tc = 0;
     int Trmode = 0;
     int initial_gsave_level = ctx->pgs->level;
+    gs_point end_point;
 
     text.data.chars = NULL;
 
@@ -411,9 +412,10 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         if (Trmode != 0 && Trmode != 3 && !ctx->device_state.preserve_tr_mode) {
             text.operation |= TEXT_DO_FALSE_CHARPATH;
             if (Trmode < 4) {
+                code = gs_currentpoint(ctx->pgs, &end_point);
                 pdfi_gsave(ctx);
                 gs_newpath(ctx->pgs);
-                gs_moveto(ctx->pgs, 0, 0);
+                gs_moveto(ctx->pgs, end_point.x, end_point.y);
             }
         } else {
             if (Trmode == 3)
@@ -449,12 +451,17 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             case 0:
                 break;
             case 1:
+                code = gs_currentpoint(ctx->pgs, &end_point);
                 gs_swapcolors_quick(ctx->pgs);
                 gs_stroke(ctx->pgs);
                 gs_swapcolors_quick(ctx->pgs);
                 pdfi_grestore(ctx);
+                if (code >= 0)
+                    gs_moveto(ctx->pgs, end_point.x, end_point.y);
+                code = 0;
                 break;
             case 2:
+                code = gs_currentpoint(ctx->pgs, &end_point);
                 pdfi_gsave(ctx);
                 gs_fill(ctx->pgs);
                 pdfi_grestore(ctx);
@@ -462,6 +469,9 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 gs_stroke(ctx->pgs);
                 gs_swapcolors_quick(ctx->pgs);
                 pdfi_grestore(ctx);
+                if (code >= 0)
+                    gs_moveto(ctx->pgs, end_point.x, end_point.y);
+                code = 0;
                 break;
             case 3:
                 /* Can't happen, we drop out earlier in this case */
@@ -472,13 +482,17 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
              * or stroke some portions of it in the middle.
              */
             case 4:
+                code = gs_currentpoint(ctx->pgs, &end_point);
                 pdfi_gsave(ctx);
                 gs_fill(ctx->pgs);
                 pdfi_grestore(ctx);
                 pdfi_grestore(ctx);
 //                gs_clip(ctx->pgs);
+                if (code >= 0)
+                    gs_moveto(ctx->pgs, end_point.x, end_point.y);
                 break;
             case 5:
+                code = gs_currentpoint(ctx->pgs, &end_point);
                 pdfi_gsave(ctx);
                 gs_swapcolors_quick(ctx->pgs);
                 gs_stroke(ctx->pgs);
@@ -486,8 +500,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 pdfi_grestore(ctx);
                 pdfi_grestore(ctx);
 //                gs_clip(ctx->pgs);
+                if (code >= 0)
+                    gs_moveto(ctx->pgs, end_point.x, end_point.y);
                 break;
             case 6:
+                code = gs_currentpoint(ctx->pgs, &end_point);
                 pdfi_gsave(ctx);
                 gs_fill(ctx->pgs);
                 pdfi_grestore(ctx);
@@ -498,6 +515,8 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 pdfi_grestore(ctx);
                 pdfi_grestore(ctx);
 //                gs_clip(ctx->pgs);
+                if (code >= 0)
+                    gs_moveto(ctx->pgs, end_point.x, end_point.y);
                 break;
             case 7:
                 pdfi_grestore(ctx);
@@ -508,7 +527,6 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 break;
         }
     }
-
     /* We shouldn't need to do this, but..... It turns out that if we have text rendering mode 3 set
      * then gs_text_begin will execute a gsave, push the nulldevice and alter the saved gsave level.
      * If we then get an error while processing the text we don't gs_restore enough time which
@@ -519,6 +537,8 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
      */
     while(ctx->pgs->level > initial_gsave_level)
         gs_grestore(ctx->pgs);
+
+    code = 0;
 
 show_error:
     if ((void *)text.data.chars != (void *)s->data)
