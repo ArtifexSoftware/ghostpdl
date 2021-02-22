@@ -1473,6 +1473,7 @@ c_overprint_create_default_compositor(
     const gs_overprint_t *  ovrpct = (const gs_overprint_t *)pct;
     overprint_device_t *    opdev = 0;
     gs_overprint_params_t params;
+    int code;
 
     /* see if there is anything to do */
     if ( !ovrpct->params.retain_any_comps) {
@@ -1525,5 +1526,8 @@ c_overprint_create_default_compositor(
     opdev->retain_none_stroke = true;
 
     /* set up the overprint parameters */
-    return update_overprint_params(opdev, &params);
+    code = update_overprint_params(opdev, &params);
+    if (code < 0)
+        return code;
+    return 1;
 }

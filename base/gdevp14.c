@@ -68,6 +68,7 @@
 #else
 #define CAL_SLOP 0
 #endif
+#include "assert_.h"
 
 #if RAW_DUMP
 unsigned int global_index = 0;
@@ -5923,7 +5924,6 @@ pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     gx_device * tdev = pdev->target;
-    gx_device * ndev;
     int code;
 
     *pcdev = dev;
@@ -5934,11 +5934,14 @@ pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
             return gx_update_pdf14_compositor(dev, pgs, pdf14pct, mem);
         return 0;
     }
-    code = dev_proc(tdev, create_compositor)(tdev, &ndev, pct, pgs, mem, cdev);
-    if (code < 0)
-        return code;
-    gx_device_set_target((gx_device_forward *)pdev, ndev);
-    return 0;
+    code = dev_proc(tdev, create_compositor)(tdev, pcdev, pct, pgs, mem, cdev);
+    if (code == 1) {
+        /* We have created a new compositor that wrapped tdev. This means
+         * that our target should be updated to point to that. */
+        gx_device_set_target((gx_device_forward *)pdev, *pcdev);
+        code = 0; /* We have not created a new compositor that wrapped dev. */
+    }
+    return code;
 }
 
 /*
@@ -8449,7 +8452,7 @@ gs_pdf14_device_color_mon_set(gx_device *pdev, bool monitoring)
     return code;
 }
 
-int
+static int
 gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         gx_device ** pdev, gx_device * target, const gs_pdf14trans_t * pdf14pct)
 {
@@ -9205,7 +9208,6 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
     gs_memory_t * mem)
 {
     const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pct;
-    gx_device * p14dev = NULL;
     int code = 0;
 
     /*
@@ -9215,8 +9217,11 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
      */
     switch (pdf14pct->params.pdf14_op) {
         case PDF14_PUSH_DEVICE:
-            code = gs_pdf14_device_push(mem, pgs, &p14dev, tdev, pdf14pct);
-            *pp14dev = p14dev;
+            code = gs_pdf14_device_push(mem, pgs, pp14dev, tdev, pdf14pct);
+            /* Change (non-error) code to 1 to indicate that we created
+             * a device. */
+            if (code >= 0)
+                code = 1;
             break;
         default:
 	    /* No other compositor actions are allowed if this isn't a pdf14 compositor */
@@ -10280,7 +10285,8 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                     pctemp.type = &gs_composite_pdf14trans_no_clist_writer_type;
                     code = dev_proc(pdev->target, create_compositor)
                                 (pdev->target, pcdev, (gs_composite_t *)&pctemp, pgs, mem, cdev);
-                    *pcdev = dev;
+                    /* We should never have created a new device here. */
+                    assert(code != 1);
                     return code;
                 }
             case PDF14_POP_DEVICE:
@@ -10571,8 +10577,11 @@ put_accum_error:
         }
         return code;		/* DON'T perform set_target */
     }
-    if (*pcdev != pdev->target)
+    if (code == 1) {
+        /* We just wrapped pdev->target, so we need to update that.*/
         gx_device_set_target((gx_device_forward *)pdev, *pcdev);
+        code = 0; /* We did not wrap dev. */
+    }
     *pcdev = dev;
     return code;
 }
@@ -10604,10 +10613,12 @@ pdf14_clist_forward_create_compositor(gx_device	* dev, gx_device * * pcdev,
         return 0;
     }
     code = dev_proc(tdev, create_compositor)(tdev, &ndev, pct, pgs, mem, cdev);
-    if (code < 0)
-        return code;
-    gx_device_set_target((gx_device_forward *)pdev, ndev);
-    return 0;
+    if (code == 1) {
+        /* We just wrapped tdev, so update our target. */
+        gx_device_set_target((gx_device_forward *)pdev, ndev);
+        code = 0; /* We did not wrap dev. */
+    }
+    return code;
 }
 
 /*
@@ -10670,7 +10681,7 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
     }
     params.changed = changed;
     /* Avoid recursion when we have a PDF14_SET_BLEND_PARAMS forced and apply
-       now to the target.  Otherwise we send of te compositor action
+       now to the target.  Otherwise we send the compositor action
        to the pdf14 device at this time.  This is due to the fact that we
        need to often perform this operation when we are already starting to
        do a compositor action */
@@ -11364,6 +11375,8 @@ gs_pdf14_clist_device_push(gs_memory_t *mem, gs_gstate *pgs, gx_device **pcdev,
     gx_device_clist_writer * const cdev = &((gx_device_clist *)dev)->writer;
 
     code = pdf14_create_clist_device(mem, pgs, pcdev, dev, pdf14pct);
+    if (code < 0)
+        return code;
     /*
      * Set the color_info of the clist device to match the compositing
      * device.  We will restore it when the compositor is popped.
@@ -11425,7 +11438,12 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
     /* We only handle the push/pop operations */
     switch (pdf14pct->params.pdf14_op) {
         case PDF14_PUSH_DEVICE:
-            return gs_pdf14_clist_device_push(mem, pgs, pcdev, dev, pdf14pct);
+            code = gs_pdf14_clist_device_push(mem, pgs, pcdev, dev, pdf14pct);
+            /* Change (non-error) code to 1 to indicate that we created
+             * a device. */
+            if (code >= 0)
+                code = 1;
+            return code;
 
         case PDF14_POP_DEVICE:
 #	    if 0 /* Disabled because pdf14_clist_create_compositor does so. */

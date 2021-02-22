@@ -488,35 +488,37 @@ int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const 
         if (code < 0)
             return code;
 
-        if (*pcdev != 0L && *pcdev != dev->child){
-            /* If the child created a new compositor, which it wants to be the new 'device' in the
-             * graphics state, it sets it in the returned pcdev variable. When we return from this
-             * method, if pcdev is not the same as the device in the graphics state then the interpreter
-             * sets pcdev as the new device in the graphics state. But because we passed in the child device
-             * to the child method, if it did create a compositor it will be a forwarding device, and it will
-             * be forwarding to our child, we need it to point to us instead. So if pcdev is not the same as the
-             * child device, we fixup the target in the child device to point to us.
+        /* *pcdev is always returned containing a device capable of doing
+         * compositing. This may mean it is a new device. If this wants
+         * to be the new 'device' in the graphics state, then code will
+         * return as 1. */
+        if (code == 1) {
+            /* So, we want the new compositor device to become the device
+             * in the graphics state. That device needs to point to us
+             * (the subclassing device) as its child, and our child in
+             * turn will remain as before. Currently the compositor
+             * device has our child as its child. We need to change
+             * this.
              */
             gx_device_forward *fdev = (gx_device_forward *)*pcdev;
 
-            if (fdev->target == dev->child) {
-                if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(fdev->dname, "pdf14clist", 10) == 0) {
-                    pdf14_clist_device *p14dev;
+            if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(fdev->dname, "pdf14clist", 10) == 0) {
+                pdf14_clist_device *p14dev;
 
-                    p14dev = (pdf14_clist_device *)*pcdev;
+                p14dev = (pdf14_clist_device *)*pcdev;
 
-                    dev->color_info = dev->child->color_info;
+                dev->color_info = dev->child->color_info;
 
-                    psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
-                    psubclass_data->forwarding_dev = fdev;
-                    p14dev->procs.create_compositor = gx_subclass_create_compositor;
-                }
-
-                fdev->target = dev;
-                rc_decrement_only(dev->child, "first-last page compositor code");
-                rc_increment(dev);
+                psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
+                psubclass_data->forwarding_dev = fdev;
+                p14dev->procs.create_compositor = gx_subclass_create_compositor;
             }
-            return_error(gs_error_handled);
+
+            fdev->target = dev;
+            rc_decrement_only(dev->child, "subclass compositor code");
+            rc_increment(dev);
+            /* Return 1 so that *pcdev becomes the current device. */
+            return 1;
         }
         else {
             /* See the 2 comments above. Now, if the child did not create a new compositor (eg its a clist)

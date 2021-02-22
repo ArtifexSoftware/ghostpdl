@@ -1830,19 +1830,35 @@ Devices will normally implement this in one of the following standard ways:</dd>
 <ul>
 <li>Devices that don't do any imaging and don't forward any imaging
 operations (for example, the null device, the hit detection device, and the
-clipping list accumulation device) simply return themselves, which
-effectively ignores the compositing function.</li>
+clipping list accumulation device) simply set *pcdev to themselves, and
+return 0, which effectively ignores the compositing function.</li>
 
 <li>"Leaf" devices that do imaging and have no special optimizations for
 compositing (for example, some memory devices) ask the
-<code>gs_composite_t</code> to create a default compositor. </li>
+<code>gs_composite_t</code> to create a default compositor device that
+'wraps' the current device. They put this in <code>*pcdev</code> and
+return 1.</li>
 
 <li>Leaf devices that can implement some kinds of compositing operation
 efficiently (for example, monobit memory devices and RasterOp) inspect the
 type and values of <code>*pcte</code> to determine whether it specifies
 such an operation: if so, they create a specialized compositor, and if not,
-they ask the <code>gs_composite_t</code> to create a default compositor. </li>
+they ask the <code>gs_composite_t</code> to create a default compositor. They
+place this in <code>*pcdev</code> and return 1.</li>
 </ul>
+
+<p>In short, on every non-error return, <code>*pcdev</code> will be set
+either to the leaf device (in the case where no special compositing is
+required), or to the device that does the compositing. If the return
+code is 1, then <code>*pcdev</code> is a new device that was created
+to wrap <code>dev</code> to perform the compositing for it. Callers
+may need to spot this case so as to update which device future
+operations are sent to.</p>
+
+<p>For forwarding devices, for example, if the call returns 1, then
+they should update their target device to be the new device. For the
+graphics library, if the call returns 1, then it should update the
+current device to be the new one.</p>
 
 <p>
 Other kinds of forwarding devices, which don't fall into any of these
