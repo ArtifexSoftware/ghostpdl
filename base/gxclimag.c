@@ -1301,6 +1301,7 @@ clist_create_compositor(gx_device * dev,
     int first_band = 0, no_of_bands = cdev->nbands;
     int code = pcte->type->procs.write(pcte, 0, &size, cdev);
     int temp_cropping_min, temp_cropping_max;
+    int newdev;
 
     CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
 
@@ -1314,6 +1315,7 @@ clist_create_compositor(gx_device * dev,
                                                         pcdev, pgs, mem);
     if (code < 0)
         return code;
+    newdev = code == 1;
 
     CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
 
@@ -1379,6 +1381,9 @@ clist_create_compositor(gx_device * dev,
         /* serialize the remainder of the compositor */
         if ((code = pcte->type->procs.write(pcte, dp + 3, &size_dummy, cdev)) < 0)
             ((gx_device_clist_writer *)dev)->cnext = dp;
+
+        if (code >= 0 && newdev)
+            code = 1; /* Return 1 to indicate we created a new device. */
         return code;
     }
     if (cropping_op == PUSHCROP) {
@@ -1424,6 +1429,9 @@ clist_create_compositor(gx_device * dev,
         if (code < 0)
             return code;
     }
+
+    if (newdev)
+        code = 1; /* Return 1 to indicate we created a new device. */
 
     return code;
 }

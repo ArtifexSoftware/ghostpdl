@@ -145,9 +145,10 @@ gs_gstate_update_pdf14trans2(gs_gstate * pgs, gs_pdf14trans_params_t * pparams, 
      * If we created a new PDF 1.4 compositor device then we need to install it
      * into the graphics state.
      */
-    if (pdf14dev != dev) {
+    if (code == 1) {
         gx_set_device_only(pgs, pdf14dev);
         gx_device_retain(pdf14dev, retain_on_create);
+        code = 0;
     }
 
     /* If we had a color space change and we are in overprint, then we need to

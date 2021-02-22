@@ -1009,6 +1009,12 @@ gx_forward_create_compositor(gx_device * dev, gx_device ** pcdev,
     code = dev_proc(tdev, create_compositor)(tdev, pcdev, pcte, pgs, memory, cdev);
     /* the compositor may have changed color_info. Pick up the new value */
     dev->color_info = tdev->color_info;
+    if (code == 1) {
+        /* If a new compositor was made that wrapped tdev, then that
+         * compositor should be our target now. */
+        gx_device_set_target((gx_device_forward *)dev, *pcdev);
+        code = 0; /* We have not made a new compositor that wrapped dev. */
+    }
     return code;
 }
 
