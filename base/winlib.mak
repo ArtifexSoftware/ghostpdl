@@ -152,8 +152,6 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\png.mak
 !include $(GLSRCDIR)\tiff.mak
 !include $(GLSRCDIR)\jbig2.mak
-!include $(GLSRCDIR)\ldf_jb2.mak
-!include $(GLSRCDIR)\lwf_jp2.mak
 !include $(GLSRCDIR)\openjpeg.mak
 !include $(GLSRCDIR)\cal.mak
 !include $(GLSRCDIR)\ocr.mak

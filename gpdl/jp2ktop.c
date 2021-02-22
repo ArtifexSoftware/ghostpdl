@@ -25,11 +25,7 @@
 #include "gsicc_manage.h"
 #include "gspaint.h"
 #include "plmain.h"
-#ifdef USE_LWF_JP2
-#include "sjpx_luratech.h"
-#else
 #include "sjpx_openjpeg.h"
-#endif
 #include "stream.h"
 
 /* Forward decls */
@@ -468,11 +464,7 @@ do_process(jp2k_interp_instance_t *jp2k, stream_cursor_read * pr, bool eof)
                         break;
                     }
                     jp2k->height = jp2k->jp2k_state.height;
-#ifdef USE_LWF_JP2
-                    jp2k->bpp = jp2k->jp2k_state.bpc * jp2k->jp2k_state.ncomp;
-#else
                     jp2k->bpp = jp2k->jp2k_state.bpp;
-#endif
                     jp2k->xresolution = 72;
                     jp2k->yresolution = 72;
                     jp2k->copies = 1;

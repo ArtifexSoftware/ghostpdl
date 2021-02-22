@@ -690,13 +690,6 @@ ENABLE_TIFF=$(D_)TIFF_INCLUDED$(_D)
 ZSRCDIR=.\zlib
 !endif
 
-# Define which jbig2 library to use
-!if !defined(JBIG2_LIB) && (!defined(NO_LURATECH) || "$(NO_LURATECH)" != "1")
-!if exist("luratech\ldf_jb2")
-JBIG2_LIB=luratech
-!endif
-!endif
-
 !if exist("leptonica")
 LEPTONICADIR=leptonica
 !endif
@@ -714,37 +707,14 @@ OCR_VERSION=0
 JBIG2_LIB=jbig2dec
 !endif
 
-!if "$(JBIG2_LIB)" == "luratech" || "$(JBIG2_LIB)" == "ldf_jb2"
-# Set defaults for using the Luratech JB2 implementation
-!ifndef JBIG2SRCDIR
-# CSDK source code location
-JBIG2SRCDIR=luratech\ldf_jb2
-!endif
-!ifndef JBIG2_CFLAGS
-# required compiler flags
-!ifdef WIN64
-JBIG2_CFLAGS=-DUSE_LDF_JB2 -DWIN64
-!else
-JBIG2_CFLAGS=-DUSE_LDF_JB2 -DWIN32
-!endif
-!endif
-!else
 # Use jbig2dec by default. See jbig2.mak for more information.
 !ifndef JBIG2SRCDIR
 # location of included jbig2dec library source
 JBIG2SRCDIR=jbig2dec
 !endif
-!endif
 
 # Alternatively, you can build a separate DLL
 # and define SHARE_JBIG2=1 in src/winlib.mak
-
-# Define which jpeg2k library to use
-!if !defined(JPX_LIB) && (!defined(NO_LURATECH) || "$(NO_LURATECH)" != "1")
-!if exist("luratech\lwf_jp2")
-JPX_LIB=luratech
-!endif
-!endif
 
 !ifndef JPX_LIB
 JPX_LIB=openjpeg
@@ -1589,24 +1559,6 @@ JPX_SSE_CFLAGS=
 
 !ifndef SYNC
 SYNC=winsync
-!endif
-
-# Luratech jp2 flags depend on the compiler version
-#
-!if "$(JPX_LIB)" == "luratech" || "$(JPX_LIB)" == "lwf_jp2"
-# Set defaults for using the Luratech JP2 implementation
-!ifndef JPXSRCDIR
-# CSDK source code location
-JPXSRCDIR=luratech\lwf_jp2
-!endif
-!ifndef JPX_CFLAGS
-# required compiler flags
-!ifdef WIN64
-JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN64 -DNO_ASSEMBLY
-!else
-JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32 -DNO_ASSEMBLY
-!endif
-!endif
 !endif
 
 # OpenJPEG compiler flags

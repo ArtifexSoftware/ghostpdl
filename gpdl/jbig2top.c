@@ -25,11 +25,7 @@
 #include "gsicc_manage.h"
 #include "gspaint.h"
 #include "plmain.h"
-#ifdef USE_LDF_JB2
-#include <ldf_jb2.h>
-#else
 #include "jbig2.h"
-#endif
 
 /* Forward decls */
 
@@ -64,18 +60,8 @@ typedef struct jbig2_interp_instance_s {
     gs_image_enum     *penum;
     gs_gstate         *pgs;
 
-#ifdef USE_LDF_JB2
-    JB2_Handle_Document doc;
-    int                page;
-    size_t             buffer_full;
-    size_t             buffer_max;
-    byte              *jbig2_buffer;
-    size_t             file_pos;
-#else
     Jbig2Ctx          *jbig_ctx;
     struct _Jbig2Allocator allocator;
-#endif
-
 
     byte              *samples;
 
@@ -299,76 +285,6 @@ bytes_until_uel(const stream_cursor_read *pr)
     return pr->limit - pr->ptr;
 }
 
-#ifdef USE_LDF_JB2
-static void * JB2_Callback my_lur_alloc(unsigned long  size,
-                                        void          *pParam)
-{
-    jbig2_interp_instance_t *jbig2 = (jbig2_interp_instance_t *)pParam;
-
-    return gs_alloc_bytes(jbig2->memory, size, "my_lur_alloc");
-}
-
-static JB2_Error JB2_Callback my_lur_free(void *ptr,
-                                          void *pParam)
-{
-    jbig2_interp_instance_t *jbig2 = (jbig2_interp_instance_t *)pParam;
-
-    gs_free_object(jbig2->memory, ptr, "my_lur_free");
-
-    return cJB2_Error_OK;
-}
-
-static void JB2_Callback my_lur_message(const char        *message,
-                                        JB2_Message_Level  level,
-                                        void              *messageParam)
-{
-    /* Just swallow messages for now */
-}
-
-static JB2_Size_T JB2_Callback my_lur_read(unsigned char *buffer,
-                                           JB2_Size_T     pos,
-                                           JB2_Size_T     size,
-                                           void           *readParam)
-{
-    jbig2_interp_instance_t *jbig2 = (jbig2_interp_instance_t *)readParam;
-    size_t avail;
-
-    if (pos < 0)
-        return 0;
-    if (pos > jbig2->buffer_full)
-        pos = jbig2->buffer_full;
-    avail = jbig2->buffer_full - pos;
-    if (avail > size)
-        avail = size;
-
-    memcpy(buffer, &jbig2->jbig2_buffer[pos], avail);
-
-    return (JB2_Size_T)avail;
-}
-
-static JB2_Error JB2_Callback my_output(unsigned char *buffer,
-                                        unsigned long  rownum,
-                                        unsigned long  width,
-                                        unsigned long  bps,
-                                        void          *param)
-{
-    jbig2_interp_instance_t *jbig2 = (jbig2_interp_instance_t *)param;
-    int code;
-    unsigned int used;
-
-    if (bps != 1)
-        return cJB2_Error_Failure_Output;
-
-    code = gs_image_next(jbig2->penum,
-                         buffer,
-                         (width+7)>>3,
-                         &used);
-
-    return (code < 0) ? cJB2_Error_Failure_Output : 0;
-
-}
-
-#else
 static void my_errors(void *data, const char *msg, Jbig2Severity severity, uint32_t seg_idx)
 {
     /* Do nothing */
@@ -394,7 +310,6 @@ static void *my_realloc(Jbig2Allocator *allocator, void *p, size_t size)
 
     return gs_resize_object(jbig2->memory, p, size, "jbig2(my_realloc)");
 }
-#endif
 
 static int
 do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int eof)
@@ -448,39 +363,6 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 break;
             }
 
-#ifdef USE_LDF_JB2
-            /* For luratech, we need to gather all the data into a buffer.
-             * Once we've got it all, we drop to the next state and pass
-             * it in/decode it all at once. */
-            if (jbig2->buffer_full + bytes > jbig2->buffer_max) {
-                /* Need to expand our buffer */
-                size_t proposed = jbig2->buffer_full*2;
-                if (proposed == 0)
-                    proposed = 32768;
-                while (proposed < jbig2->buffer_full + bytes)
-                    proposed *= 2;
-
-                if (jbig2->jbig2_buffer == NULL) {
-                    jbig2->jbig2_buffer = gs_alloc_bytes(jbig2->memory, proposed, "jbig2_buffer");
-                    if (jbig2->jbig2_buffer == NULL) {
-                        jbig2->state = ii_state_flush;
-                        break;
-                    }
-                } else {
-                    void *new_buf = gs_resize_object(jbig2->memory, jbig2->jbig2_buffer, proposed, "jbig2_buffer");
-                    if (new_buf == NULL) {
-                        jbig2->state = ii_state_flush;
-                        break;
-                    }
-                    jbig2->jbig2_buffer = new_buf;
-                }
-                jbig2->buffer_max = proposed;
-            }
-
-            memcpy(&jbig2->jbig2_buffer[jbig2->buffer_full], pr->ptr+1, bytes);
-            jbig2->buffer_full += bytes;
-            pr->ptr += bytes;
-#else
             if (jbig2->jbig_ctx == NULL) {
                 jbig2->allocator.alloc = &my_alloc;
                 jbig2->allocator.free = &my_free;
@@ -500,7 +382,6 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 break;
             }
             pr->ptr += bytes;
-#endif
             break;
         }
         case ii_state_jbig2_start:
@@ -517,48 +398,6 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             float xext, yext, xoffset, yoffset, scale;
             unsigned long y, w, h;
             unsigned int used;
-#ifdef USE_LDF_JB2
-            JB2_Error error;
-
-            if (jbig2->doc == NULL) {
-                error = JB2_Document_Start(&jbig2->doc,
-                                           my_lur_alloc, jbig2->memory,
-                                           my_lur_free, jbig2->memory,
-                                           my_lur_read, jbig2,
-                                           my_lur_message, jbig2);
-#if defined(JB2_LICENSE_NUM_1) && defined(JB2_LICENSE_NUM_2)
-                if (error == cJB2_Error_OK) {
-                    /* set the license keys if appropriate */
-                    error = JB2_Document_Set_License(jbig2->doc,
-                                                     JB2_LICENSE_NUM_1,
-                                                     JB2_LICENSE_NUM_2);
-                }
-#endif
-                if (error != cJB2_Error_OK) {
-                    jbig2->state = ii_state_flush;
-                    break;
-                }
-            }
-            /* decode relevent image parameters */
-            error = JB2_Document_Set_Page(jbig2->doc, jbig2->page++);
-            if (error == cJB2_Error_Invalid_Index) {
-                /* Normal exit! */
-                jbig2->state = ii_state_flush;
-                break;
-            }
-            if (error == cJB2_Error_OK)
-                error = JB2_Document_Get_Property(jbig2->doc,
-                                                  cJB2_Prop_Page_Width,
-                                                  &w);
-            if (error == cJB2_Error_OK)
-                error = JB2_Document_Get_Property(jbig2->doc,
-                                                  cJB2_Prop_Page_Height,
-                                                  &h);
-            if (error != cJB2_Error_OK) {
-                jbig2->state = ii_state_flush;
-                break;
-            }
-#else
             Jbig2Image *img = jbig2_page_out(jbig2->jbig_ctx);
             if (img == NULL) {
                 jbig2->state = ii_state_flush;
@@ -566,7 +405,6 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             }
             w = img->width;
             h = img->height;
-#endif
 
             /* Scale to fit, if too large. */
             scale = 1.0f;
@@ -634,28 +472,6 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             if (code < 0)
                 goto fail_during_decode;
 
-#ifdef USE_LDF_JB2
-            {
-                JB2_Scaling_Factor scale;
-                JB2_Rect rect;
-                scale.ulScaleUpFactor = 1;
-                scale.ulScaleDownFactor = 1;
-                rect.ulLeft = 0;
-                rect.ulRight = w;
-                rect.ulTop = 0;
-                rect.ulBottom = h;
-                error = JB2_Document_Decompress_Page(jbig2->doc,
-                                                     scale,
-                                                     rect,
-                                                     my_output,
-                                                     jbig2);
-                if (error != cJB2_Error_OK) {
-                    code = (error == cJB2_Error_Failure_Alloc) ?
-gs_error_VMerror : gs_error_unknownerror;
-                    goto fail_during_decode;
-                }
-            }
-#else
             for (y = 0; y < img->height; y++) {
                 code = gs_image_next(jbig2->penum,
                                      &img->data[y*img->stride],
@@ -665,7 +481,6 @@ gs_error_VMerror : gs_error_unknownerror;
                     goto fail_during_decode;
             }
             jbig2_release_page(jbig2->jbig_ctx, img);
-#endif
             code = gs_image_cleanup_and_free_enum(jbig2->penum, jbig2->pgs);
             jbig2->penum = NULL;
             if (code < 0) {
@@ -677,32 +492,16 @@ gs_error_VMerror : gs_error_unknownerror;
             jbig2->state = ii_state_jbig2_start;
             break;
 fail_during_decode:
-#ifdef USE_LDF_JB2
-#else
             jbig2_release_page(jbig2->jbig_ctx, img);
             jbig2->state = ii_state_flush;
-#endif
             break;
         }
         default:
         case ii_state_flush:
-
-#ifdef USE_LDF_JB2
-            if (jbig2->doc) {
-                JB2_Document_End(&jbig2->doc);
-                jbig2->doc = NULL;
-            }
-
-            if (jbig2->jbig2_buffer) {
-                gs_free_object(jbig2->memory, jbig2->jbig2_buffer, "jbig2_impl_process(jbig2_buffer)");
-                jbig2->jbig2_buffer = NULL;
-            }
-#else
             if (jbig2->jbig_ctx) {
                 jbig2_ctx_free(jbig2->jbig_ctx);
                 jbig2->jbig_ctx = NULL;
             }
-#endif
 
             if (jbig2->penum) {
                 (void)gs_image_cleanup_and_free_enum(jbig2->penum, jbig2->pgs);

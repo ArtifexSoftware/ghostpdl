@@ -597,8 +597,6 @@ smd5_h=$(GLSRC)smd5.h
 sarc4_h=$(GLSRC)sarc4.h
 saes_h=$(GLSRC)saes.h
 sjbig2_h=$(GLSRC)sjbig2.h
-sjbig2_luratech_h=$(GLSRC)sjbig2_luratech.h $(scommon_h)
-sjpx_luratech_h=$(GLSRC)sjpx_luratech.h $(scommon_h)
 sjpx_openjpeg_h=$(GLSRC)sjpx_openjpeg.h $(scommon_h) $(openjpeg_h)
 spdiffx_h=$(GLSRC)spdiffx.h
 spngpx_h=$(GLSRC)spngpx.h
@@ -1855,22 +1853,6 @@ $(GLOBJ)snojbig2.$(OBJ) : $(GLSRC)snojbig2.c $(AK) \
  $(strimpl_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLJBIG2CC) $(GLO_)snojbig2.$(OBJ) $(C_) $(GLSRC)snojbig2.c
 
-# luratech version
-sjbig2_luratech=$(GLOBJ)sjbig2_luratech.$(OBJ)
-
-$(GLD)sjbig2_luratech.dev : $(LIB_MAK) $(ECHOGS_XE) \
- $(GLD)ldf_jb2.dev $(sjbig2_luratech)
-	$(SETMOD) $(GLD)sjbig2_luratech $(sjbig2_luratech)
-	$(ADDMOD) $(GLD)sjbig2_luratech -include $(GLD)ldf_jb2.dev
-
-# ldf_jb2.dev is defined in jbig2_luratech.mak
-
-$(GLOBJ)sjbig2_luratech.$(OBJ) : $(GLSRC)sjbig2_luratech.c $(AK) \
- $(memory__h) $(malloc__h) $(gserrors_h) $(gdebug_h) \
- $(strimpl_h) $(sjbig2_luratech_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLLDFJB2CC) $(GLO_)sjbig2_luratech.$(OBJ) \
-		$(C_) $(GLSRC)sjbig2_luratech.c
-
 # ---------------- JPEG 2000 compression filter ---------------- #
 
 $(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sjpx_$(JPX_LIB).dev $(LIB_MAK) $(MAKEDIRS)
@@ -1880,22 +1862,6 @@ $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
  $(memory__h) $(gsmalloc_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLJASCC) $(GLO_)sjpx.$(OBJ) $(C_) $(GLSRC)sjpx.c
-
-# luratech version
-sjpx_luratech=$(GLOBJ)sjpx_luratech.$(OBJ)
-$(GLD)sjpx_luratech.dev : $(LIB_MAK) $(ECHOGS_XE) \
- $(GLD)lwf_jp2.dev $(sjpx_luratech) $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)sjpx_luratech $(sjpx_luratech)
-	$(ADDMOD) $(GLD)sjpx_luratech -include $(GLD)lwf_jp2.dev
-
-$(GLD)luratech_jp2.dev : $(ECHOGS_XE) $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)luratech_jp2 $(GLD)liblwf_jp2.a
-
-$(GLOBJ)sjpx_luratech.$(OBJ) : $(GLSRC)sjpx_luratech.c $(AK) \
- $(memory__h) $(gserrors_h) \
- $(gdebug_h) $(strimpl_h) $(sjpx_luratech_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLLWFJPXCC) $(GLO_)sjpx_luratech.$(OBJ) \
-		$(C_) $(GLSRC)sjpx_luratech.c
 
 # openjpeg version
 sjpx_openjpeg=$(GLOBJ)sjpx_openjpeg.$(OBJ)
