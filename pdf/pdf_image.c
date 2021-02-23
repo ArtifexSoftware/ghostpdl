@@ -958,7 +958,7 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
               pdfi_stream_offset(ctx, (pdf_stream *)image_info->SMask), SEEK_SET);
 
     if (image_info->SMask->type == PDF_DICT) {
-        code = pdfi_obj_dict_to_stream(ctx, (pdf_dict *)image_info->SMask, &stream_obj);
+        code = pdfi_obj_dict_to_stream(ctx, (pdf_dict *)image_info->SMask, &stream_obj, false);
         if (code == 0) {
             code = pdfi_do_image_or_form(ctx, image_info->stream_dict,
                                          image_info->page_dict, (pdf_obj *)stream_obj);
@@ -1694,7 +1694,7 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_c_
     pdfi_countup(d);
     pdfi_pop(ctx, 1);
 
-    code = pdfi_obj_dict_to_stream(ctx, d, &image_stream);
+    code = pdfi_obj_dict_to_stream(ctx, d, &image_stream, true);
     if (code < 0)
         goto error;
 

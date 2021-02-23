@@ -463,7 +463,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s)
                         dict = (pdf_dict *)ctx->stack_top[-1];
 
                         /* Convert the dict into a stream (sdict comes back with at least one ref) */
-                        code = pdfi_obj_dict_to_stream(ctx, dict, &sdict);
+                        code = pdfi_obj_dict_to_stream(ctx, dict, &sdict, true);
                         if (code < 0) {
                             pdfi_pop(ctx, 1);
                             /* TODO: should I return code instead of trying to repair?

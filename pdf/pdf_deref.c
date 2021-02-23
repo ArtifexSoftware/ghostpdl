@@ -223,7 +223,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
     }
 
     /* Convert the dict into a stream */
-    code = pdfi_obj_dict_to_stream(ctx, dict, &stream_obj);
+    code = pdfi_obj_dict_to_stream(ctx, dict, &stream_obj, true);
     if (code < 0) {
         pdfi_pop(ctx, 1);
         return code;

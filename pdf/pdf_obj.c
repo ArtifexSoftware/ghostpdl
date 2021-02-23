@@ -256,10 +256,11 @@ void pdfi_free_object(pdf_obj *o)
 
 
 /* Convert a pdf_dict to a pdf_stream.
- * This assumes the dict has not been cached.
+ * do_convert -- convert the stream to use same object num as dict
+ *               (This assumes the dict has not been cached.)
  * The stream will come with 1 refcnt, dict refcnt will be incremented by 1.
  */
-int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **stream)
+int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **stream, bool do_convert)
 {
     int code = 0;
     pdf_stream *new_stream = NULL;
@@ -272,15 +273,20 @@ int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **strea
         goto error_exit;
 
     new_stream->ctx = ctx;
-    new_stream->object_num = dict->object_num;
-    new_stream->generation_num = dict->generation_num;
     pdfi_countup(new_stream);
 
     new_stream->stream_dict = dict;
     pdfi_countup(dict);
 
-    dict->object_num = 0;
-    dict->generation_num = 0;
+    /* this replaces the dict with the stream.
+     * assumes it's not cached
+     */
+    if (do_convert) {
+        new_stream->object_num = dict->object_num;
+        new_stream->generation_num = dict->generation_num;
+        dict->object_num = 0;
+        dict->generation_num = 0;
+    }
     *stream = new_stream;
     return 0;
 

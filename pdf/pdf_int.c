@@ -1767,7 +1767,7 @@ pdfi_interpret_inner_content_buffer(pdf_context *ctx, byte *content_data,
     if (code < 0)
         goto exit;
 
-    code = pdfi_obj_dict_to_stream(ctx, stream_dict, &stream_obj);
+    code = pdfi_obj_dict_to_stream(ctx, stream_dict, &stream_obj, false);
     if (code < 0)
         return code;
 

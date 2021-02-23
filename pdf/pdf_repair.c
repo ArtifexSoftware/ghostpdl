@@ -412,7 +412,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                 offset = pdfi_unread_tell(ctx);
                                 pdfi_seek(ctx, ctx->main_stream, offset, SEEK_SET);
 
-                                code = pdfi_obj_dict_to_stream(ctx, d, &stream);
+                                code = pdfi_obj_dict_to_stream(ctx, d, &stream, true);
                                 if (code == 0)
                                     code = pdfi_filter(ctx, stream, ctx->main_stream, &compressed_stream, false);
 
