@@ -1903,6 +1903,7 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     pdf_dict *BS = NULL;
     pdf_string *Contents = NULL;
     gs_rect annotrect, modrect;
+    int64_t Rotate;
 
     *render_done = false;
 
@@ -1971,14 +1972,62 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     }
 #endif
 
-    /* TODO: /Rotate */
-
-    /* Move to initial position (slightly offset from the corner of the rect) */
-    modrect = annotrect; /* structure copy */
-    modrect.p.x += 2;
-    modrect.q.y -= 2;
-    code = gs_moveto(ctx->pgs, modrect.p.x, modrect.q.y);
+    code = pdfi_annot_draw_CL(ctx, annot);
     if (code < 0) goto exit;
+
+    /* Modify rect by RD if applicable */
+    code = pdfi_annot_applyRD(ctx, annot, &annotrect);
+    if (code < 0) goto exit;
+
+    /* /Rotate */
+    code = pdfi_dict_get_int_def(ctx, annot, "Rotate", &Rotate, 0);
+    if (code < 0) goto exit;
+
+    modrect = annotrect; /* structure copy */
+    /* TODO: I think this can all be done in a generic way using gs_transform() but it
+     * makes my head explode...
+     */
+    switch(Rotate) {
+    case 270:
+        code = gs_moveto(ctx->pgs, modrect.q.y, modrect.q.x);
+        if (code < 0) goto exit;
+        code = gs_rotate(ctx->pgs, 270.0);
+        modrect.p.x = -annotrect.q.y;
+        modrect.q.x = -annotrect.p.y;
+        modrect.p.y = annotrect.p.x;
+        modrect.q.y = annotrect.q.x;
+        break;
+    case 180:
+        code = gs_moveto(ctx->pgs, modrect.q.x, modrect.p.y);
+        if (code < 0) goto exit;
+        code = gs_rotate(ctx->pgs, 180.0);
+        modrect.p.x = -annotrect.q.x;
+        modrect.q.x = -annotrect.p.x;
+        modrect.p.y = -annotrect.q.y;
+        modrect.q.y = -annotrect.p.y;
+        break;
+        break;
+    case 90:
+        code = gs_moveto(ctx->pgs, modrect.p.y, modrect.p.x);
+        if (code < 0) goto exit;
+        code = gs_rotate(ctx->pgs, 90.0);
+        modrect.p.x = annotrect.p.y;
+        modrect.q.x = annotrect.q.y;
+        modrect.p.y = -annotrect.q.x;
+        modrect.q.y = -annotrect.p.x;
+        break;
+    case 0:
+    default:
+        modrect.p.x += 2;
+        modrect.p.y += 2;
+        modrect.q.x -= 2;
+        modrect.q.y -= 2;
+
+        /* Move to initial position (slightly offset from the corner of the rect) */
+        code = gs_moveto(ctx->pgs, modrect.p.x, modrect.q.y);
+        if (code < 0) goto exit;
+        break;
+    }
 
     /* /Contents */
     code = pdfi_dict_knownget_type(ctx, annot, "Contents", PDF_STRING, (pdf_obj **)&Contents);
@@ -1987,9 +2036,6 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
         code = pdfi_annot_display_formatted_text(ctx, annot, &modrect, Contents);
         if (code < 0) goto exit;
     }
-
-    code = pdfi_annot_draw_CL(ctx, annot);
-    if (code < 0) goto exit;
 
  exit:
     code1 = pdfi_annot_end_transparency(ctx, annot);
