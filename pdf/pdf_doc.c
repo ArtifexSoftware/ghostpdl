@@ -1065,12 +1065,20 @@ static int pdfi_doc_EmbeddedFiles(pdf_context *ctx)
     pdf_dict *Names = NULL;
     pdf_dict *EmbeddedFiles = NULL;
     pdf_array *Names_array = NULL;
+    pdf_array *Kids = NULL;
 
     code = pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, (pdf_obj **)&Names);
     if (code <= 0) goto exit;
 
     code = pdfi_dict_knownget_type(ctx, Names, "EmbeddedFiles", PDF_DICT, (pdf_obj **)&EmbeddedFiles);
     if (code <= 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, Names, "Kids", PDF_ARRAY, (pdf_obj **)&Kids);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        /* TODO: Need to implement */
+        dmprintf(ctx->memory, "*** WARNING Kids array in EmbeddedFiles not implemented\n");
+    }
 
     /* TODO: This is a name tree.
      * Can contain a Names array, or some complicated Kids.
@@ -1083,6 +1091,7 @@ static int pdfi_doc_EmbeddedFiles(pdf_context *ctx)
     if (code <= 0) goto exit;
 
  exit:
+    pdfi_countdown(Kids);
     pdfi_countdown(Names);
     pdfi_countdown(EmbeddedFiles);
     pdfi_countdown(Names_array);
