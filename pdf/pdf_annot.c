@@ -1749,12 +1749,55 @@ static int pdfi_annot_draw_stamp_frame(pdf_context *ctx)
 }
 
 /* draw text for stamp */
-static int pdfi_annot_draw_stamp_text(pdf_context *ctx, pdfi_annot_stamp_text_t *text)
+static int pdfi_annot_draw_stamp_text(pdf_context *ctx, pdf_dict *annot, gs_rect *rect,
+                                      pdfi_annot_stamp_text_t *text)
 {
+    int code = 0;
+    int code1 = 0;
+    pdf_string *string = NULL;
+    gs_rect bbox;
+    gs_point awidth;
+    double x,y;
+
     if (!text->text)
         return 0;
 
-    /* TODO: Figure this out later (see pdf_draw.ps/text) */
+    code = pdfi_BT(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_annot_set_font(ctx, "Times-Bold", text->h);
+    if (code < 0) goto exit;
+
+    code = pdfi_obj_charstr_to_string(ctx, text->text, &string);
+    if (code < 0) goto exit;
+
+
+    /* At this point the graphics state is slightly rotated and current position
+     * is at the lower left corner of the stamp's box.
+     * The math here matches what the gs code does, so it's kind of confusing.
+     */
+    /* Get width of the string */
+    code = pdfi_string_bbox(ctx, string, &bbox, &awidth, false);
+    if (code < 0) goto exit;
+
+    /* Calculate offset from corner (95 is hard-coded value based on size of the stamp I think) */
+    x = 95 - (bbox.q.x-bbox.p.x)/2; /* hard-coded value taken from gs code */
+    y = text->y;
+
+    code = pdfi_gsave(ctx);
+    code = pdfi_gs_setgray(ctx, .75);
+    code = pdfi_annot_display_simple_text(ctx, annot, x+1, y-1, string);
+    if (code < 0) goto exit;
+    code = pdfi_grestore(ctx);
+
+    code = pdfi_annot_display_simple_text(ctx, annot, x, y, string);
+    if (code < 0) goto exit;
+
+ exit:
+    code1 = pdfi_ET(ctx);
+    if (code == 0) code = code1;
+    pdfi_countdown(string);
     return 0;
 }
 
@@ -1836,7 +1879,7 @@ static int pdfi_annot_draw_Stamp(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
 
     /* Draw the text */
     for (i=0; i<2; i++) {
-        code = pdfi_annot_draw_stamp_text(ctx, &stamp_type->text[i]);
+        code = pdfi_annot_draw_stamp_text(ctx, annot, &rect, &stamp_type->text[i]);
         if (code < 0) goto exit;
     }
 
