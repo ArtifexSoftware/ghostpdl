@@ -1017,6 +1017,34 @@ static int pdfi_doc_PageLabels(pdf_context *ctx)
     return code;
 }
 
+/* Handle OutputIntents stuff
+ * (bottom of pdf_main.ps/process_trailer_attrs)
+ */
+static int pdfi_doc_OutputIntents(pdf_context *ctx)
+{
+    int code;
+    pdf_dict *OutputIntents = NULL;
+
+    /* Sample file tests_private/comparefiles/Bug689830.pdf contains an /OutputIntents entry.
+     */
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "OutputIntents", PDF_DICT,
+                                   (pdf_obj **)&OutputIntents);
+    if (code <= 0) {
+        goto exit;
+    }
+
+
+    /* TODO: Implement writeoutputintents  if somebody ever complains...
+     * See pdf_main.ps/writeoutputintents
+     * I am not aware of a device that supports "/OutputIntent" so
+     * couldn't figure out what to do for this.
+     */
+
+ exit:
+    pdfi_countdown(OutputIntents);
+    return code;
+}
+
 /* Handled an embedded files Names array for pdfwrite device */
 static int pdfi_doc_EmbeddedFiles_Names(pdf_context *ctx, pdf_array *names)
 {
@@ -1108,8 +1136,6 @@ int pdfi_doc_trailer(pdf_context *ctx)
 {
     int code = 0;
 
-    /* TODO: writeoutputintents */
-
     /* Can't do this stuff with no Trailer */
     if (!ctx->Trailer)
         goto exit;
@@ -1140,7 +1166,9 @@ int pdfi_doc_trailer(pdf_context *ctx)
     /* TODO: */
 
     /* Handle OutputIntent ICC Profile */
-    /* TODO: */
+    code = pdfi_doc_OutputIntents(ctx);
+    if (code < 0)
+        goto exit;
 
     /* Handle PageLabels */
     code = pdfi_doc_PageLabels(ctx);
