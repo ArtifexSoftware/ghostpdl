@@ -48,7 +48,42 @@ int pdfi_BT(pdf_context *ctx)
     if (code < 0)
         return code;
 
+    /* In theory we should not perform the clip (for text rendering modes involving a clip)
+     * when preserving the text rendering mode. However the pdfwrite device requires us to do
+     * so. The reason is that it wraps all text operations in a sequence like 'q BT...ET Q'
+     * and the grestore obviously restores away the clip before any following operation can use it.
+     * The reason pdfwrite does this is historical; originally the PDF graphics state was not
+     * part of the graphics library graphics state, so the only information available to
+     * the device was the CTM, after the text rendering matrix and text line matrix had been
+     * applied. Obviously that had to be undone at the end of the text to avoid polluting
+     * the CTM for following operations.
+     * Now that we track the Trm and Tlm in the graphics state it would be possible to
+     * modify pdfwrite so that it emits those instead of modifying the CTM, which would avoid
+     * the q/Q pair round the text, which would mean we could do away with the separate
+     * clip for text rendering. However this would mean modifying both the pdfwrite device
+     * and the existing PDF interpreter, which would be awkward to do. I will open an
+     * enhancement bug for this, but won't begin work on it until we have completely
+     * deprecated and removed the old PDF interpreter.
+     * In the meantime we have to persist with this kludge.
+     */
+    if (gs_currenttextrenderingmode(ctx->pgs) >= 4 && ctx->text.BlockDepth == 0 /* && !ctx->device_state.preserve_tr_mode*/) {
+        /* Whenever we are doing a 'clip' text rendering mode we need to
+         * accumulate a path until we reach ET, and then we need to turn that
+         * path into a clip and apply it (along with any existing clip). But
+         * we must not disturb any existing path in the current graphics
+         * state, so we need an extra gsave which we will undo when we get
+         * an ET.
+         */
+        pdfi_gsave(ctx);
+        /* Capture the current position */
+        /* Start a new path (so our clip doesn't include any
+         * already extant path in the graphics state)
+         */
+        gs_newpath(ctx->pgs);
+    }
+
     code = gs_moveto(ctx->pgs, 0, 0);
+
     ctx->text.BlockDepth++;
     return code;
 }
@@ -56,6 +91,7 @@ int pdfi_BT(pdf_context *ctx)
 int pdfi_ET(pdf_context *ctx)
 {
     int code = 0;
+    gx_clip_path *copy = NULL;
 
     if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_ETNOTEXTBLOCK;
@@ -63,8 +99,31 @@ int pdfi_ET(pdf_context *ctx)
     }
 
     ctx->text.BlockDepth--;
-    if (gs_currenttextrenderingmode(ctx->pgs) >= 4)
-        gs_clip(ctx->pgs);
+    /* If we have reached the end of a text block (or the outermost block
+     * if we have illegally nested text blocks) and we are using a 'clip'
+     * text rendering mode, then we need to apply the clip. We also need
+     * to grestore back one level as we will have pushed a gsave either in
+     * pdfi_BT or in pdfi_Tr. The extra gsave is so we can accumulate a
+     * clipping path separately to any path already existing in the
+     * graphics state.
+     */
+
+    /* See the note on text rendering modes with clip in pdfi_BT() above */
+    if (ctx->text.BlockDepth == 0 && gs_currenttextrenderingmode(ctx->pgs) >= 4 /*&& !ctx->device_state.preserve_tr_mode*/) {
+        gs_point initial_point;
+
+        /* Capture the current position */
+        code = gs_currentpoint(ctx->pgs, &initial_point);
+        if (code >= 0) {
+            code = gs_clip(ctx->pgs);
+            if (code >= 0)
+                copy = gx_cpath_alloc_shared(ctx->pgs->clip_path, ctx->memory, "save clip path");
+            pdfi_grestore(ctx);
+            if (copy != NULL)
+                (void)gx_cpath_assign_free(ctx->pgs->clip_path, copy);
+            code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+        }
+    }
     return code;
 }
 
@@ -267,33 +326,26 @@ TD_error:
     return code;
 }
 
-static int pdfi_show(pdf_context *ctx, pdf_string *s)
+/* This routine sets up most of the text params structure. In particular it
+ * creates and initialises the x and y widths arrays, and for type 3 fonts
+ * it creates and populates the 'chars' member.
+ * It also sets the delta_sace member and partially set sup the 'operation'
+ * bitfield. It does not set any of the TEXT_DO_* fields because we intend
+ * to use this routine to set up the 'common' parts of the structure and
+ * then we will twiddle the 'TEXT_DO_*' fields as required for the type of
+ * operation we are doing (fill, create path for stroke, create path for fill)
+ */
+static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_t *text)
 {
-    int code = 0, i;
-    gs_text_enum_t *penum=NULL, *saved_penum=NULL;
-    gs_text_params_t text;
-    gs_matrix mat;
     pdf_font *current_font = NULL;
+    gs_matrix mat;
     float *x_widths = NULL, *y_widths = NULL, width;
     double Tw = 0, Tc = 0;
-    int Trmode = 0;
-    int initial_gsave_level = ctx->pgs->level;
-    gs_point end_point;
+    int i, code;
 
-    text.data.chars = NULL;
-
-    if (ctx->text.BlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
-    }
-
-    if (hypot(ctx->pgs->ctm.xx, ctx->pgs->ctm.xy) == 0.0
-     || hypot(ctx->pgs->ctm.yy, ctx->pgs->ctm.yx) == 0.0) {
-        /* This can mean a font scaled to 0, which appears to be valid, or a degenerate
-           ctm/text matrix, which isn't. A degenrate matrix will have triggered a warning
-           before, so we just skip the operation here.
-        */
-        goto show_error;
-    }
+    text->data.chars = NULL;
+    text->x_widths = NULL;
+    text->y_widths = NULL;
 
     /* NOTE: we don't scale the FontMatrix we leave it as the default
      * and do all our scaling with the textmatrix/ctm. This saves having
@@ -302,9 +354,8 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
      */
     current_font = pdfi_get_current_pdf_font(ctx);
 
-    if (current_font == NULL) {
+    if (current_font == NULL)
         return_error(gs_error_invalidfont);
-    }
 
     if (current_font->pdfi_font_type == e_pdf_font_type1 ||
         current_font->pdfi_font_type == e_pdf_font_cff ||
@@ -317,14 +368,16 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
            setcachedevice - see pdfi_fapi_set_cache()
          */
         if (current_font->pdfi_font_type == e_pdf_font_type0 || current_font->Widths == NULL) {
-            text.operation = TEXT_RETURN_WIDTH;
+            text->operation = TEXT_RETURN_WIDTH;
         } else {
             gs_point pt;
 
             x_widths = (float *)gs_alloc_bytes(ctx->memory, s->length * sizeof(float), "X widths array for text");
             y_widths = (float *)gs_alloc_bytes(ctx->memory, s->length * sizeof(float), "Y widths array for text");
-            if (x_widths == NULL || y_widths == NULL)
-                goto show_error;
+            if (x_widths == NULL || y_widths == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto text_params_error;
+            }
 
             memset(x_widths, 0x00, s->length * sizeof(float));
             memset(y_widths, 0x00, s->length * sizeof(float));
@@ -353,183 +406,411 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 /* Add any Tc value */
                 x_widths[i] += Tc;
             }
-            text.operation = TEXT_RETURN_WIDTH | TEXT_REPLACE_WIDTHS;
-            text.x_widths = x_widths;
-            text.y_widths = y_widths;
-            text.widths_size = s->length * 2;
+            text->operation = TEXT_RETURN_WIDTH | TEXT_REPLACE_WIDTHS;
+            text->x_widths = x_widths;
+            text->y_widths = y_widths;
+            text->widths_size = s->length * 2;
         }
 
         Tw = gs_currentwordspacing(ctx->pgs);
         if (Tw != 0) {
-            text.operation |= TEXT_ADD_TO_SPACE_WIDTH;
-            text.delta_space.x = Tw / ctx->pgs->PDFfontsize;
-            text.delta_space.y = 0;
-            text.space.s_char = 0x20;
+            text->operation |= TEXT_ADD_TO_SPACE_WIDTH;
+            text->delta_space.x = Tw / ctx->pgs->PDFfontsize;
+            text->delta_space.y = 0;
+            text->space.s_char = 0x20;
         }
 
         if (current_font->pdfi_font_type == e_pdf_font_type3) {
-            text.operation |= TEXT_FROM_CHARS;
-            text.data.chars = (const gs_char *)gs_alloc_bytes(ctx->memory, s->length * sizeof(gs_char), "string gs_chars");
-            if (!text.data.chars)
-                goto show_error;
+            text->operation |= TEXT_FROM_CHARS;
+            text->data.chars = (const gs_char *)gs_alloc_bytes(ctx->memory, s->length * sizeof(gs_char), "string gs_chars");
+            if (!text->data.chars) {
+                code = gs_note_error(gs_error_VMerror);
+                goto text_params_error;
+            }
 
             for (i = 0; i < s->length; i++) {
-                ((gs_char *)text.data.chars)[i] = (gs_char)s->data[i];
+                ((gs_char *)text->data.chars)[i] = (gs_char)s->data[i];
             }
         }
         else {
-            text.operation |= TEXT_FROM_BYTES;
-            text.data.bytes = (const byte *)s->data;
+            text->operation |= TEXT_FROM_BYTES;
+            text->data.bytes = (const byte *)s->data;
         }
-        text.size = s->length;
+        text->size = s->length;
+    }
+    return 0;
 
-        Trmode = gs_currenttextrenderingmode(ctx->pgs);
-        if (current_font->pdfi_font_type == e_pdf_font_type3 && Trmode != 0 && Trmode != 3)
-            Trmode = 0;
+text_params_error:
+    gs_free_object(ctx->memory, x_widths, "X widths array for text");
+    text->x_widths = NULL;
+    gs_free_object(ctx->memory, y_widths, "Y widths array for text");
+    text->y_widths = NULL;
+    gs_free_object(ctx->memory, (void *)text->data.chars, "string gs_chars");
+    text->data.chars = NULL;
+    return code;
+}
+
+/* These routines actually perform the fill/stroke/clip of the text.
+ * We build up the compound cases by reusing the basic cases which
+ * is why we reset the TEXT_DO_ fields after use.
+ */
+
+/* Mode 0 - fill */
+static int pdfi_show_Tr_0(pdf_context *ctx, gs_text_params_t *text)
+{
+    int code;
+    gs_text_enum_t *penum=NULL, *saved_penum=NULL;
+
+    /* just draw the text */
+    text->operation |= TEXT_DO_DRAW;
+
+    code = gs_text_begin(ctx->pgs, text, ctx->memory, &penum);
+    if (code >= 0) {
+        saved_penum = ctx->text.current_enum;
+        ctx->text.current_enum = penum;
+        code = gs_text_process(penum);
+        gs_text_release(ctx->pgs, penum, "pdfi_Tj");
+        ctx->text.current_enum = saved_penum;
+    }
+    text->operation &= ~TEXT_DO_DRAW;
+    return code;
+}
+
+/* Mode 1 - stroke */
+static int pdfi_show_Tr_1(pdf_context *ctx, gs_text_params_t *text)
+{
+    int code;
+    gs_text_enum_t *penum=NULL, *saved_penum=NULL;
+    gs_point end_point, initial_point;
+
+    end_point.x = end_point.y = initial_point.x = initial_point.y = 0;
+
+    /* Capture the current position */
+    code = gs_currentpoint(ctx->pgs, &initial_point);
+    if (code < 0)
+        return code;
+
+    /* We don't want to disturb the current path, so do a gsave now
+     * We will grestore back to this point after we have stroked the
+     * text, which will leave any current path unchanged.
+     */
+    pdfi_gsave(ctx);
+
+    /* Start a new path (so our stroke doesn't include any
+     * already extant path in the graphics state)
+     */
+    code = gs_newpath(ctx->pgs);
+    if (code < 0)
+        goto Tr1_error;
+    code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    if (code < 0)
+        goto Tr1_error;
+
+    /* Don't draw the text, create a path suitable for stroking */
+    text->operation |= TEXT_DO_FALSE_CHARPATH;
+
+    /* Run the text methods to create the path */
+    code = gs_text_begin(ctx->pgs, text, ctx->memory, &penum);
+    if (code < 0)
+        goto Tr1_error;
+
+    saved_penum = ctx->text.current_enum;
+    ctx->text.current_enum = penum;
+    code = gs_text_process(penum);
+    gs_text_release(ctx->pgs, penum, "pdfi_Tj");
+    ctx->text.current_enum = saved_penum;
+    if (code < 0)
+        goto Tr1_error;
+
+    /* After a stroke operation there is no current point and we need
+     * it to be set as if we had drawn the text. So capture it now
+     * and we will append a 'move' to the current point when we have
+     * finished the stroke.
+     */
+    code = gs_currentpoint(ctx->pgs, &end_point);
+    if (code < 0)
+        goto Tr1_error;
+    /* Change to the current stroking colour */
+    gs_swapcolors_quick(ctx->pgs);
+    /* Finally, stroke the actual path */
+    code = gs_stroke(ctx->pgs);
+    /* Switch back to the non-stroke colour */
+    gs_swapcolors_quick(ctx->pgs);
+
+Tr1_error:
+    /* And grestore back to where we started */
+    pdfi_grestore(ctx);
+    /* If everything went well, then move the current point to the
+     * position we captured at the end of the path creation */
+    if (code >= 0)
+        code = gs_moveto(ctx->pgs, end_point.x, end_point.y);
+
+    text->operation &= ~TEXT_DO_FALSE_CHARPATH;
+    return code;
+}
+
+/* Mode 2 - fill then stroke */
+static int pdfi_show_Tr_2(pdf_context *ctx, gs_text_params_t *text)
+{
+    int code;
+    gs_point initial_point;
+
+    /* Capture the current position */
+    code = gs_currentpoint(ctx->pgs, &initial_point);
+    if (code < 0)
+        return code;
+
+    /* First fill the text */
+    code = pdfi_show_Tr_0(ctx, text);
+    if (code < 0)
+        return code;
+
+    /* Return the current point to the initial point */
+    code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    if (code >= 0)
+        /* And stroke the text */
+        code = pdfi_show_Tr_1(ctx, text);
+
+    return code;
+}
+
+static int pdfi_show_Tr_3(pdf_context *ctx, gs_text_params_t *text)
+{
+    int code;
+    gs_text_enum_t *penum=NULL, *saved_penum=NULL;
+    gs_point end_point, initial_point;
+
+    /* Don't draw the text */
+    text->operation |= TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+
+    /* Run the text methods to create the path */
+    code = gs_text_begin(ctx->pgs, text, ctx->memory, &penum);
+    if (code < 0)
+        return code;
+
+    saved_penum = ctx->text.current_enum;
+    ctx->text.current_enum = penum;
+    code = gs_text_process(penum);
+    gs_text_release(ctx->pgs, penum, "pdfi_Tj");
+    ctx->text.current_enum = saved_penum;
+
+    return code;
+}
+
+/* Prototype the basic 'clip' function, as the following routines will all use it */
+static int pdfi_show_Tr_7(pdf_context *ctx, gs_text_params_t *text);
+
+static int pdfi_show_Tr_4(pdf_context *ctx, gs_text_params_t *text)
+{
+    int code;
+    gs_point initial_point;
+
+    /* Capture the current position */
+    code = gs_currentpoint(ctx->pgs, &initial_point);
+    if (code < 0)
+        return code;
+
+    /* First fill the text */
+    code = pdfi_show_Tr_0(ctx, text);
+    if (code < 0)
+        return code;
+
+    /* Return the current point to the initial point */
+    code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    if (code >= 0)
+        /* And add the text to the acumulated path for clipping */
+        code = pdfi_show_Tr_7(ctx, text);
+
+    return code;
+}
+
+static int pdfi_show_Tr_5(pdf_context *ctx, gs_text_params_t *text)
+{
+    int code;
+    gs_point initial_point;
+
+    /* Capture the current position */
+    code = gs_currentpoint(ctx->pgs, &initial_point);
+    if (code < 0)
+        return code;
+
+    /* First stroke the text */
+    code = pdfi_show_Tr_1(ctx, text);
+    if (code < 0)
+        return code;
+
+    /* Return the current point to the initial point */
+    code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    if (code >= 0)
+        /* And add the text to the acumulated path for clipping */
+        code = pdfi_show_Tr_7(ctx, text);
+
+    return code;
+}
+
+static int pdfi_show_Tr_6(pdf_context *ctx, gs_text_params_t *text)
+{
+    int code;
+    gs_point initial_point;
+
+    /* Capture the current position */
+    code = gs_currentpoint(ctx->pgs, &initial_point);
+    if (code < 0)
+        return code;
+
+    /* First fill and stroke the text */
+    code = pdfi_show_Tr_2(ctx, text);
+    if (code < 0)
+        return code;
+
+    /* Return the current point to the initial point */
+    code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    if (code >= 0)
+        /* And add the text to the acumulated path for clipping */
+        code = pdfi_show_Tr_7(ctx, text);
+
+    return code;
+}
+
+static int pdfi_show_Tr_7(pdf_context *ctx, gs_text_params_t *text)
+{
+    int code;
+    gs_text_enum_t *penum=NULL, *saved_penum=NULL;
+
+    /* Don't draw the text, create a path suitable for filling */
+    text->operation |= TEXT_DO_TRUE_CHARPATH;
+
+    /* Run the text methods to create the path */
+    code = gs_text_begin(ctx->pgs, text, ctx->memory, &penum);
+    if (code < 0)
+        goto Tr7_error;
+
+    saved_penum = ctx->text.current_enum;
+    ctx->text.current_enum = penum;
+    code = gs_text_process(penum);
+    gs_text_release(ctx->pgs, penum, "pdfi_Tj");
+    ctx->text.current_enum = saved_penum;
+
+Tr7_error:
+    text->operation &= ~TEXT_DO_TRUE_CHARPATH;
+    return code;
+}
+
+static int pdfi_show_Tr_preserve(pdf_context *ctx, gs_text_params_t *text)
+{
+    int Trmode = 0, code;
+    pdf_font *current_font = NULL;
+    gs_point initial_point;
+
+    current_font = pdfi_get_current_pdf_font(ctx);
+    if (current_font == NULL)
+        return_error(gs_error_invalidfont);
+
+    /* Capture the current position, in case we need it for clipping */
+    code = gs_currentpoint(ctx->pgs, &initial_point);
+
+    Trmode = gs_currenttextrenderingmode(ctx->pgs);
+    if (Trmode == 3) {
+        if (current_font->pdfi_font_type == e_pdf_font_type3)
+            text->operation = TEXT_FROM_CHARS | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+        else
+            text->operation = TEXT_FROM_BYTES | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
     }
 
+    code = pdfi_show_Tr_0(ctx, text);
+    if (code < 0)
+        return code;
+
+    /* See the comment in pdfi_BT() aboe regarding  text rendering modes and clipping.
+     * NB regardless of the device, we never apply clipping modes to text in a type 3 font.
+     */
+    if (Trmode >= 4 && current_font->pdfi_font_type != e_pdf_font_type3) {
+        text->operation &= ~TEXT_DO_DRAW;
+
+        gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+        code = pdfi_show_Tr_7(ctx, text);
+    }
+    return code;
+}
+
+static int pdfi_show(pdf_context *ctx, pdf_string *s)
+{
+    int code = 0, i;
+    gs_text_enum_t *penum=NULL, *saved_penum=NULL;
+    gs_text_params_t text;
+    gs_matrix mat;
+    pdf_font *current_font = NULL;
+    float *x_widths = NULL, *y_widths = NULL, width;
+    double Tw = 0, Tc = 0;
+    int Trmode = 0;
+    int initial_gsave_level = ctx->pgs->level;
+    gs_point end_point;
+
+    if (ctx->text.BlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+    }
+
+    if (hypot(ctx->pgs->ctm.xx, ctx->pgs->ctm.xy) == 0.0
+     || hypot(ctx->pgs->ctm.yy, ctx->pgs->ctm.yx) == 0.0) {
+        /* This can mean a font scaled to 0, which appears to be valid, or a degenerate
+         * ctm/text matrix, which isn't. A degenrate matrix will have triggered a warning
+         * before, so we just skip the operation here.
+         */
+         return 0;
+    }
+
+    current_font = pdfi_get_current_pdf_font(ctx);
+    if (current_font == NULL)
+        return_error(gs_error_invalidfont);
+
+    code = pdfi_show_set_params(ctx, s, &text);
+    if (code < 0)
+        goto show_error;
+
     if (ctx->device_state.preserve_tr_mode) {
-        if (Trmode == 3) {
-            if (current_font->pdfi_font_type == e_pdf_font_type3)
-                text.operation = TEXT_FROM_CHARS | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
-            else
-                text.operation = TEXT_FROM_BYTES | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
-        }
-        else
-            text.operation |= TEXT_DO_DRAW;
-        code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
-        if (code >= 0) {
-            saved_penum = ctx->text.current_enum;
-            ctx->text.current_enum = penum;
-
-            penum->returned.current_glyph = GS_NO_GLYPH;
-
-            code = gs_text_process(penum);
-            gs_text_release(ctx->pgs, penum, "pdfi_Tj");
-            ctx->text.current_enum = saved_penum;
-        }
+        code = pdfi_show_Tr_preserve(ctx, &text);
     } else {
-        if (Trmode != 0 && Trmode != 3 && !ctx->device_state.preserve_tr_mode) {
-            text.operation |= TEXT_DO_FALSE_CHARPATH;
-            if (Trmode < 4) {
-                code = gs_currentpoint(ctx->pgs, &end_point);
-                pdfi_gsave(ctx);
-                gs_newpath(ctx->pgs);
-                gs_moveto(ctx->pgs, end_point.x, end_point.y);
-            }
-        } else {
-            if (Trmode == 3)
-                text.operation |= TEXT_DO_NONE | TEXT_RENDER_MODE_3;
-            else
-                text.operation |= TEXT_DO_DRAW;
-        }
+        Trmode = gs_currenttextrenderingmode(ctx->pgs);
 
-        code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
-        if (code >= 0) {
-            saved_penum = ctx->text.current_enum;
-            ctx->text.current_enum = penum;
-            code = gs_text_process(penum);
-            gs_text_release(ctx->pgs, penum, "pdfi_Tj");
-            ctx->text.current_enum = saved_penum;
-        }
-
-        if (Trmode >= 4) {
-            pdfi_gsave(ctx);
-            gs_newpath(ctx->pgs);
-            gs_moveto(ctx->pgs, 0, 0);
-            code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
-            if (code >= 0) {
-                saved_penum = ctx->text.current_enum;
-                ctx->text.current_enum = penum;
-                code = gs_text_process(penum);
-                gs_text_release(ctx->pgs, penum, "pdfi_Tj");
-                ctx->text.current_enum = saved_penum;
-            }
-        }
+        /* The spec says that we ignore text rendering modes other than 0 for
+         * type 3 fonts, but Acrobat also honours mode 3 (do nothing)
+         */
+        if (current_font->pdfi_font_type == e_pdf_font_type3 && Trmode != 0 && Trmode != 3)
+            Trmode = 0;
 
         switch(Trmode) {
             case 0:
+                code = pdfi_show_Tr_0(ctx, &text);
                 break;
             case 1:
-                code = gs_currentpoint(ctx->pgs, &end_point);
-                gs_swapcolors_quick(ctx->pgs);
-                gs_stroke(ctx->pgs);
-                gs_swapcolors_quick(ctx->pgs);
-                pdfi_grestore(ctx);
-                if (code >= 0)
-                    gs_moveto(ctx->pgs, end_point.x, end_point.y);
-                code = 0;
+                code = pdfi_show_Tr_1(ctx, &text);
                 break;
             case 2:
-                code = gs_currentpoint(ctx->pgs, &end_point);
-                pdfi_gsave(ctx);
-                gs_fill(ctx->pgs);
-                pdfi_grestore(ctx);
-                gs_swapcolors_quick(ctx->pgs);
-                gs_stroke(ctx->pgs);
-                gs_swapcolors_quick(ctx->pgs);
-                pdfi_grestore(ctx);
-                if (code >= 0)
-                    gs_moveto(ctx->pgs, end_point.x, end_point.y);
-                code = 0;
+                code = pdfi_show_Tr_2(ctx, &text);
                 break;
             case 3:
-                /* Can't happen, we drop out earlier in this case */
+                code = pdfi_show_Tr_3(ctx, &text);
                 break;
-            /* FIXME: Need to think about this. The text is supposed to accumulate
-             * a path until we hit a ET operator, only then is it supposed to execute
-             * an actual clip. Even though potentially we could be required to fill
-             * or stroke some portions of it in the middle.
-             */
             case 4:
-                code = gs_currentpoint(ctx->pgs, &end_point);
-                pdfi_gsave(ctx);
-                gs_fill(ctx->pgs);
-                pdfi_grestore(ctx);
-                pdfi_grestore(ctx);
-//                gs_clip(ctx->pgs);
-                if (code >= 0)
-                    gs_moveto(ctx->pgs, end_point.x, end_point.y);
+                code = pdfi_show_Tr_4(ctx, &text);
                 break;
             case 5:
-                code = gs_currentpoint(ctx->pgs, &end_point);
-                pdfi_gsave(ctx);
-                gs_swapcolors_quick(ctx->pgs);
-                gs_stroke(ctx->pgs);
-                gs_swapcolors_quick(ctx->pgs);
-                pdfi_grestore(ctx);
-                pdfi_grestore(ctx);
-//                gs_clip(ctx->pgs);
-                if (code >= 0)
-                    gs_moveto(ctx->pgs, end_point.x, end_point.y);
+                code = pdfi_show_Tr_5(ctx, &text);
                 break;
             case 6:
-                code = gs_currentpoint(ctx->pgs, &end_point);
-                pdfi_gsave(ctx);
-                gs_fill(ctx->pgs);
-                pdfi_grestore(ctx);
-                pdfi_gsave(ctx);
-                gs_swapcolors_quick(ctx->pgs);
-                gs_stroke(ctx->pgs);
-                gs_swapcolors_quick(ctx->pgs);
-                pdfi_grestore(ctx);
-                pdfi_grestore(ctx);
-//                gs_clip(ctx->pgs);
-                if (code >= 0)
-                    gs_moveto(ctx->pgs, end_point.x, end_point.y);
+                code = pdfi_show_Tr_6(ctx, &text);
                 break;
             case 7:
-                pdfi_grestore(ctx);
-//                gs_clip(ctx->pgs);
+                code = pdfi_show_Tr_7(ctx, &text);
                 break;
             default:
-                pdfi_grestore(ctx);
                 break;
         }
     }
+
     /* We shouldn't need to do this, but..... It turns out that if we have text rendering mode 3 set
      * then gs_text_begin will execute a gsave, push the nulldevice and alter the saved gsave level.
-     * If we then get an error while processing the text we don't gs_restore enough time which
+     * If we then get an error while processing the text we don't gs_restore enough times which
      * leaves the nulldevice as the current device, and eats all the following content!
      * To avoid that, we save the gsave depth at the start of this routine, and grestore enough
      * times to get back to the same level. I think this is actually a bug in the graphics library
@@ -538,14 +819,12 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     while(ctx->pgs->level > initial_gsave_level)
         gs_grestore(ctx->pgs);
 
-    code = 0;
-
 show_error:
     if ((void *)text.data.chars != (void *)s->data)
         gs_free_object(ctx->memory, (void *)text.data.chars, "string gs_chars");
 
-    gs_free_object(ctx->memory, x_widths, "Free X widths array on error");
-    gs_free_object(ctx->memory, y_widths, "Free Y widths array on error");
+    gs_free_object(ctx->memory, (void *)text.x_widths, "Free X widths array on error");
+    gs_free_object(ctx->memory, (void *)text.y_widths, "Free Y widths array on error");
     return code;
 }
 
@@ -936,13 +1215,53 @@ int pdfi_Tr(pdf_context *ctx)
     if (mode < 0 || mode > 7)
         code = gs_note_error(gs_error_rangecheck);
     else {
-        /* Detect attempts to switch fomr a clipping mode to a non-clipping
-         * mode, this is defined as invalid in the spec.
-         */
-        if (gs_currenttextrenderingmode(ctx->pgs) > 3 && mode < 4)
-            ctx->pdf_warnings |= W_PDF_BADTRSWITCH;
+/* See comment regarding text rendering modes involving clip in pdfi_BT() above.
+ * The commented out code here will be needed when we enhance pdfwrite so that
+ * we don't need to do the clip separately.
+ */
+/*        if (!ctx->device_state.preserve_tr_mode) {*/
+            gs_point initial_point;
 
-        gs_settextrenderingmode(ctx->pgs, mode);
+            /* Detect attempts to switch from a clipping mode to a non-clipping
+             * mode, this is defined as invalid in the spec.
+             */
+            if (gs_currenttextrenderingmode(ctx->pgs) > 3 && mode < 4 && ctx->text.BlockDepth != 0)
+                ctx->pdf_warnings |= W_PDF_BADTRSWITCH;
+
+            if (gs_currenttextrenderingmode(ctx->pgs) < 4 && mode >= 4 && ctx->text.BlockDepth != 0) {
+                /* If we are switching from a non-clip text rendering mode to a
+                 * mode involving a cip, and we are already inside a text block,
+                 * put a gsave in place so that we can accumulate a path for
+                 * clipping without disturbing any existing path in the
+                 * graphics state.
+                 */
+                gs_settextrenderingmode(ctx->pgs, mode);
+                pdfi_gsave(ctx);
+                /* Capture the current position */
+                code = gs_currentpoint(ctx->pgs, &initial_point);
+                /* Start a new path (so our clip doesn't include any
+                 * already extant path in the graphics state)
+                 */
+                gs_newpath(ctx->pgs);
+                gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+            }
+            else {
+                if (gs_currenttextrenderingmode(ctx->pgs) >= 4 && mode < 4 && ctx->text.BlockDepth != 0) {
+                    /* If we are switching from a clipping mode to a non-clipping
+                     * mode then behave as if we had an implicit ET to flush the
+                     * accumulated text to a clip, then set the text rendering mode
+                     * to the non-clip mode, and perform an implicit BT.
+                     */
+                    pdfi_ET(ctx);
+                    gs_settextrenderingmode(ctx->pgs, mode);
+                    pdfi_BT(ctx);
+                }
+                else
+                    gs_settextrenderingmode(ctx->pgs, mode);
+            }
+/*        }
+        else
+            gs_settextrenderingmode(ctx->pgs, mode);*/
     }
 
     return code;
