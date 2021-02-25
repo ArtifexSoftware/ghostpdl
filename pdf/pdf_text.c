@@ -578,7 +578,6 @@ static int pdfi_show_Tr_3(pdf_context *ctx, gs_text_params_t *text)
 {
     int code;
     gs_text_enum_t *penum=NULL, *saved_penum=NULL;
-    gs_point end_point, initial_point;
 
     /* Don't draw the text */
     text->operation |= TEXT_DO_NONE | TEXT_RENDER_MODE_3;
@@ -735,16 +734,11 @@ static int pdfi_show_Tr_preserve(pdf_context *ctx, gs_text_params_t *text)
 
 static int pdfi_show(pdf_context *ctx, pdf_string *s)
 {
-    int code = 0, i;
-    gs_text_enum_t *penum=NULL, *saved_penum=NULL;
+    int code = 0;
     gs_text_params_t text;
-    gs_matrix mat;
     pdf_font *current_font = NULL;
-    float *x_widths = NULL, *y_widths = NULL, width;
-    double Tw = 0, Tc = 0;
     int Trmode = 0;
     int initial_gsave_level = ctx->pgs->level;
-    gs_point end_point;
 
     if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
