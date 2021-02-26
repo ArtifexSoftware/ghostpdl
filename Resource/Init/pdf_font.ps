@@ -1498,7 +1498,9 @@ currentdict /eexec_pdf_param_dict .undef
   } {
                                           % filepos fontres stream
     1 index /FontDescriptor oget
-    /Flags oget 4 and 0 ne {
+    /Flags oget dup                       % only believe the symbolic flag if the non-symbolic flag is not also set!
+    4 and 0 ne
+    exch 32 and 0 eq and {
        //true  %  symbolic
     } {
        1 index /Encoding oknown not  % no encoding => symbolic
