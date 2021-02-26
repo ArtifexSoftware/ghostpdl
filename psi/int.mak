@@ -1211,12 +1211,6 @@ $(PSD)jbig2_jbig2dec.dev : $(ECHOGS_XE) $(fjbig2_) $(GLD)sjbig2.dev\
 	$(ADDMOD) $(PSD)jbig2_jbig2dec -include $(GLD)sjbig2
 	$(ADDMOD) $(PSD)jbig2_jbig2dec -oper zfjbig2
 
-$(PSD)jbig2_luratech.dev : $(ECHOGS_XE) $(fjbig2_) $(GLD)sjbig2.dev\
- $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)jbig2_luratech $(fjbig2_)
-	$(ADDMOD) $(PSD)jbig2_luratech -include $(GLD)sjbig2
-	$(ADDMOD) $(PSD)jbig2_luratech -oper zfjbig2
-
 $(PSD)jbig2_.dev : $(ECHOGS_XE) $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)jbig2_
 
@@ -1229,11 +1223,6 @@ $(PSOBJ)zfjbig2_jbig2dec.$(OBJ) : $(PSSRC)zfjbig2.c $(OP) $(memory__h)\
  $(store_h) $(stream_h) $(strimpl_h) $(sjbig2_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSJBIG2CC) $(PSO_)zfjbig2_jbig2dec.$(OBJ) $(C_) $(PSSRC)zfjbig2.c
 
-$(PSOBJ)zfjbig2_luratech.$(OBJ) : $(PSSRC)zfjbig2.c $(OP) $(memory__h)\
- $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
- $(store_h) $(stream_h) $(strimpl_h) $(sjbig2_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSLDFJB2CC) $(PSO_)zfjbig2_luratech.$(OBJ) $(C_) $(PSSRC)zfjbig2.c
-
 # JPX (jpeg 2000) compression filter
 # this can be turned on and off with a FEATURE_DEV
 
@@ -1244,27 +1233,11 @@ $(PSD)jpx.dev : $(ECHOGS_XE) $(PSD)jpx_$(JPX_LIB).dev\
 $(PSD)jpx_.dev : $(ECHOGS_XE) $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)jpx_
 
-fjpx_luratech=$(PSOBJ)zfjpx_luratech.$(OBJ)
-
 $(PSOBJ)zfjpx.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
  $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
  $(store_h) $(stream_h) $(strimpl_h) $(ialloc_h) $(iname_h)\
  $(gdebug_h) $(sjpx_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSJASCC) $(PSO_)zfjpx.$(OBJ) $(C_) $(PSSRC)zfjpx.c
-
-$(PSD)jpx_luratech.dev : $(ECHOGS_XE) $(fjpx_luratech)\
- $(GLD)sjpx.dev $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)jpx_luratech $(fjpx_luratech)
-	$(ADDMOD) $(PSD)jpx_luratech -include $(GLD)sjpx
-	$(ADDMOD) $(PSD)jpx_luratech -include $(GLD)lwf_jp2
-	$(ADDMOD) $(PSD)jpx_luratech -oper zfjpx
-
-$(PSOBJ)zfjpx_luratech.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
- $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
- $(store_h) $(stream_h) $(strimpl_h) $(sjpx_luratech_h)\
- $(INT_MAK) $(MAKEDIRS)
-	$(PSLWFJPXCC) $(PSO_)zfjpx_luratech.$(OBJ) \
-		$(C_) $(PSSRC)zfjpx.c
 
 fjpx_openjpeg=$(PSOBJ)zfjpx_openjpeg.$(OBJ)
 

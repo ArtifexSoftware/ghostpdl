@@ -39,12 +39,6 @@
 #include "sstring.h"
 #include "strmio.h"
 #include "szlibx.h"
-#ifdef USE_LDF_JB2
-#include "sjbig2_luratech.h"
-#endif
-#ifdef USE_LWF_JP2
-#include "sjpx_luratech.h"
-#endif
 
 #include "opdfread.h"
 #include "gdevagl.h"
@@ -2397,14 +2391,6 @@ pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
             filter_name = pfn->FlateDecode;
         else if (TEMPLATE_IS(s_LZWE_template))
             filter_name = pfn->LZWDecode;
-#ifdef USE_LDF_JB2
-        else if (TEMPLATE_IS(s_jbig2encode_template))
-            filter_name = pfn->JBIG2Decode;
-#endif
-#ifdef USE_LWF_JP2
-        else if (TEMPLATE_IS(s_jpxe_template))
-            filter_name = pfn->JPXDecode;
-#endif
         else if (TEMPLATE_IS(s_PNGPE_template)) {
             /* This is a predictor for FlateDecode or LZWEncode. */
             const stream_PNGP_state *const ss =

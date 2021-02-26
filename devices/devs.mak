@@ -634,14 +634,14 @@ $(DEVOBJ)gdevpsdi.$(OBJ) : $(DEVVECSRC)gdevpsdi.c $(GXERR)\
  $(scfx_h) $(slzwx_h) $(spngpx_h)\
  $(strimpl_h) $(szlibx_h) $(sisparam_h)\
  $(gdevpsdf_h) $(gdevpsds_h) $(gxdevmem_h) $(gxcspace_h) $(gxparamx_h)\
- $(sjbig2_luratech_h) $(sjpx_luratech_h) $(gsicc_manage_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gsicc_manage_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(GDEVLWFJB2JPXCC) $(DEVO_)gdevpsdi.$(OBJ) $(C_) $(DEVVECSRC)gdevpsdi.c
 
 $(DEVOBJ)gdevpsdp.$(OBJ) : $(DEVVECSRC)gdevpsdp.c $(GDEVH)\
  $(string__h) $(jpeglib__h)\
  $(scfx_h) $(sdct_h) $(slzwx_h) $(srlx_h) $(strimpl_h) $(szlibx_h)\
  $(gsparamx_h) $(gsutil_h) $(gdevpsdf_h)\
- $(sjbig2_luratech_h) $(sjpx_luratech_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(DEVS_MAK) $(MAKEDIRS)
 	$(GDEVLWFJB2JPXCC) $(DEVO_)gdevpsdp.$(OBJ) $(C_) $(DEVVECSRC)gdevpsdp.c
 
 $(DEVOBJ)gdevpsds.$(OBJ) : $(DEVVECSRC)gdevpsds.c $(GX) $(memory__h)\
@@ -874,7 +874,7 @@ $(DEVOBJ)gdevpdfu.$(OBJ) : $(DEVVECSRC)gdevpdfu.c $(GXERR)\
  $(gsdsrc_h) $(gsfunc_h) $(gsfunc3_h)\
  $(sa85x_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
  $(srlx_h) $(sarc4_h) $(smd5_h) $(sstring_h) $(strimpl_h) $(szlibx_h)\
- $(strmio_h) $(sjbig2_luratech_h) $(sjpx_luratech_h)\
+ $(strmio_h) \
  $(opdfread_h) $(gdevagl_h) $(gs_mro_e_h) $(gs_mgl_e_h) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(GDEVLWFJB2JPXCC) $(DEVO_)gdevpdfu.$(OBJ) $(C_) $(DEVVECSRC)gdevpdfu.c
@@ -1275,38 +1275,6 @@ $(DEVOBJ)gdevperm.$(OBJ) : $(DEVSRC)gdevperm.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevperm.$(OBJ) $(C_) $(DEVSRC)gdevperm.c
 
-### ------------------------ JBIG2 testing device ---------------------- ###
-
-gdevjbig2_=$(DEVOBJ)gdevjbig2.$(OBJ)
-
-$(DD)gdevjbig2.dev : $(gdevjbig2_) $(GLD)page.dev $(GDEV) \
- $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)gdevjbig2 $(gdevjbig2_)
-
-$(DEVOBJ)gdevjbig2.$(OBJ) : $(DEVSRC)gdevjbig2.c $(PDEVH)\
- $(stream_h) $(strimpl_h) $(sjbig2_luratech_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(GDEVLDFJB2CC) $(DEVO_)gdevjbig2.$(OBJ) $(C_) $(DEVSRC)gdevjbig2.c
-
-### ------------------------ JPX testing device ----------------------
-###
-
-gdevjpx_=$(DEVOBJ)gdevjpx.$(OBJ)
-
-$(DD)jpxrgb.dev : $(gdevjpx_) $(GLD)page.dev $(GDEV) \
- $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)jpxrgb $(gdevjpx_)
-
-$(DD)jpxgray.dev : $(gdevjpx_) $(GLD)page.dev $(GDEV) \
- $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)jpxgray $(gdevjpx_)
-
-$(DD)jpxcmyk.dev : $(gdevjpx_) $(GLD)page.dev $(GDEV) \
- $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)jpxcmyk $(gdevjpx_)
-
-$(DEVOBJ)gdevjpx.$(OBJ) : $(DEVSRC)gdevjpx.c $(PDEVH)\
- $(stream_h) $(strimpl_h) $(sjpx_luratech_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(GDEVLWFJPXCC) $(DEVO_)gdevjpx.$(OBJ) $(C_) $(DEVSRC)gdevjpx.c
 
 ### ------------------------- JPEG file format ------------------------- ###
 

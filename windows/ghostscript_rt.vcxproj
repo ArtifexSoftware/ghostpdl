@@ -631,12 +631,10 @@
     <ClCompile Include="..\base\simscale.c" />
     <ClCompile Include="..\base\siscale.c" />
     <ClCompile Include="..\base\sjbig2.c" />
-    <ClCompile Include="..\base\sjbig2_luratech.c" />
     <ClCompile Include="..\base\sjpegc.c" />
     <ClCompile Include="..\base\sjpegd.c" />
     <ClCompile Include="..\base\sjpege.c" />
     <ClCompile Include="..\base\sjpx.c" />
-    <ClCompile Include="..\base\sjpx_luratech.c" />
     <ClCompile Include="..\base\slzwc.c" />
     <ClCompile Include="..\base\slzwd.c" />
     <ClCompile Include="..\base\slzwe.c" />
@@ -1944,9 +1942,7 @@
     <ClInclude Include="..\base\siscale.h" />
     <ClInclude Include="..\base\sisparam.h" />
     <ClInclude Include="..\base\sjbig2.h" />
-    <ClInclude Include="..\base\sjbig2_luratech.h" />
     <ClInclude Include="..\base\sjpeg.h" />
-    <ClInclude Include="..\base\sjpx_luratech.h" />
     <ClInclude Include="..\base\sjpx_openjpeg.h" />
     <ClInclude Include="..\base\slzwx.h" />
     <ClInclude Include="..\base\smd5.h" />

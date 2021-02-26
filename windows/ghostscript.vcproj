@@ -2662,10 +2662,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\sjbig2_luratech.c"
-				>
-			</File>
-			<File
 				RelativePath="..\base\sjpegc.c"
 				>
 			</File>
@@ -2679,10 +2675,6 @@
 			</File>
 			<File
 				RelativePath="..\base\sjpx.c"
-				>
-			</File>
-			<File
-				RelativePath="..\base\sjpx_luratech.c"
 				>
 			</File>
 			<File
@@ -4534,15 +4526,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\sjbig2_luratech.h"
-				>
-			</File>
-			<File
 				RelativePath="..\base\sjpeg.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\sjpx_luratech.h"
 				>
 			</File>
 			<File

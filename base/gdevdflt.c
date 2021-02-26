@@ -1692,6 +1692,10 @@ int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_co
 
                     p14dev->target = subclass_device;
 
+                    /* We return 0, rather than 1, as we have not created
+                     * a new compositor that wraps dev. */
+                    if (code == 1)
+                        code = 0;
                     return code;
                 }
                 break;

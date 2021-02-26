@@ -153,7 +153,7 @@ if test x"$host" != x"$build" ; then
   echo $AUXFLAGS_MAK_LINE07 >> $AUXFLAGS_MAK.in
 
   AC_MSG_NOTICE([Begin recursive call to configure script (for auxiliary tools)])
-  "$absolute_source_path/configure" CC="$CCAUX" CFLAGS="$CFLAGSAUX" CPPFLAGS="$CPPFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host=$build --build=$build --enable-auxtools_only --disable-hidden-visibility --with-local-zlib --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
+  "$absolute_source_path/configure" CC="$CCAUX" CFLAGS="$CFLAGSAUX" CPPFLAGS="$CPPFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host=$build --build=$build --enable-auxtools_only --disable-hidden-visibility --with-local-zlib --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-jbig2dec --without-x --with-drivers=""
   status=$?
   cp config.log "$olddir/configaux.log"
   if test $status -eq 0 ; then
@@ -1938,48 +1938,6 @@ SHARE_JBIG2=0
 JBIG2DEVS=''
 JBIG2_AUTOCONF_CFLAGS=
 
-dnl Luratech detection
-LURATECHDIR=luratech
-
-AC_ARG_WITH([luratech], AC_HELP_STRING([--without-luratech],
-    [do not try to use the Luratech library for JBIG2 nor JPX decoding]))
-
-
-if test x$with_luratech != xno; then
-  AC_MSG_CHECKING([for local Luratech JBIG2 library source])
-  if test -d $srcdir/luratech/ldf_jb2; then
-    AC_MSG_RESULT([yes])
-    JBIG2_DECODER=luratech
-    SHARE_JBIG2=0
-    JBIG2DIR=$srcdir/luratech/ldf_jb2
-
-    if test x"$JBIG2_CFLAGS" != x""; then
-      JBIG2_AUTOCONF_CFLAGS="$JBIG2_CFLAGS"
-    else
-      case $host in
-        *-darwin*)
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD -fsigned-char"
-        ;;
-        *-aix*)
-          if test $GCC = yes; then
-            JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
-          else
-            JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -qchars=signed -DLINUX=1 -DFORTE"
-          fi
-        ;;
-        *)
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
-        ;;
-      esac
-    fi
-
-    JBIG2FILEDEVS='$(DD)gdevjbig2.dev'
-    JBIG2DEVS='$(PSD)jbig2.dev'
-  else
-    AC_MSG_RESULT([no])
-  fi
-fi
-
 JB2_STDINT_TYPES_IN=
 JBIG2DEC_REQ=0.19
 
@@ -2085,39 +2043,6 @@ JPXDEVS=''
 JPX_DECODER=
 JPX_AUTOCONF_CFLAGS=
 JPX_LRINTF_SUBST=
-
-if test x$with_luratech != xno; then
-  AC_MSG_CHECKING([for local Luratech JPEG2K library source])
-  if test -d $srcdir/luratech/lwf_jp2; then
-    AC_MSG_RESULT([yes])
-    JPX_DECODER=luratech
-    SHARE_JPX=0
-    JPXDIR=$srcdir/luratech/lwf_jp2
-
-    if test x"$JPX_CFLAGS" != x""; then
-      JPX_AUTOCONF_CFLAGS="$JPX_CFLAGS"
-    else
-      case $host in
-        *-darwin*)
-          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
-        ;;
-        *-aix*)
-          if test $GCC = yes; then
-            JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -fsigned-char -DLINUX=1 -DFORTE"
-          else
-            JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -qchars=signed -DLINUX=1 -DFORTE"
-          fi
-        ;;
-        *)
-          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX=1 -DFORTE"
-        ;;
-      esac
-    fi
-    JPXDEVS='$(PSD)jpx.dev'
-  else
-    AC_MSG_RESULT([no])
-  fi
-fi
 
 if test "x$ac_cv_header_stdint_h" = "xyes"; then
   CFLAGS_OPJ_HAVE_STDINT_H="-DOPJ_HAVE_STDINT_H=1"

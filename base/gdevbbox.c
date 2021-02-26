@@ -1245,7 +1245,7 @@ bbox_create_compositor(gx_device * dev,
             (target, &temp_cdev, pcte, pgs, memory, cindev);
 
         /* If the target did not create a new compositor then we are done. */
-        if (code < 0 || target == temp_cdev) {
+        if (code <= 0) {
             *pcdev = dev;
             return code;
         }
@@ -1261,7 +1261,9 @@ bbox_create_compositor(gx_device * dev,
         bbcdev->box_procs = box_procs_forward;
         bbcdev->box_proc_data = bdev;
         *pcdev = (gx_device *) bbcdev;
-        return 0;
+        /* We return 1 to indicate that a new compositor was created
+         * that wrapped dev. */
+        return 1;
     }
 }
 

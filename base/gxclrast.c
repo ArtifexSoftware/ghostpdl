@@ -3096,18 +3096,11 @@ static int apply_create_compositor(gx_device_clist_reader *cdev, gs_gstate *pgs,
      * change the target device.
      */
     code = dev_proc(tdev, create_compositor)(tdev, &tdev, pcomp, pgs, mem, (gx_device*) cdev);
-    if (code >= 0 && tdev != *ptarget) {
-        /* If we created a new compositor here, then that new compositor should
-         * become the device to which we send all future drawing requests. If
-         * the above create_compositor call found an existing compositor
-         * already in the chain of devices (such as might happen when we are
-         * playing back a clist based pattern, and the top device is a clip
-         * device that forwards to a pdf14 device), then we'll just reuse
-         * that one. We do not want to send new drawing operations to the
-         * compositor, as that will sidestep the clipping. We therefore check
-         * the reference count to see if this is a new device or not. */
-        if (tdev->rc.ref_count == 1)
-            *ptarget = tdev;
+    if (code == 1) {
+        /* A new compositor was created that wrapped tdev. This should
+         * be our new target. */
+        *ptarget = tdev;
+        code = 0;
     }
     if (code < 0)
         return code;

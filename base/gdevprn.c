@@ -168,7 +168,7 @@ gdev_prn_close(gx_device * pdev)
     int code = 0;
 
     prn_finish_bg_print(ppdev);
-    if (ppdev->bg_print->sema != NULL) {
+    if (ppdev->bg_print != NULL && ppdev->bg_print->sema != NULL) {
         gx_semaphore_free(ppdev->bg_print->sema);
         ppdev->bg_print->sema = NULL;		/* prevent double free */
     }

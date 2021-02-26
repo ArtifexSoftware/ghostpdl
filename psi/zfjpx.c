@@ -33,9 +33,7 @@
 #include "iname.h"
 #include "gdebug.h"
 
-#if defined(USE_LWF_JP2)
-#  include "sjpx_luratech.h"
-#elif defined(USE_OPENJPEG_JP2)
+#if defined(USE_OPENJPEG_JP2)
 #  include "sjpx_openjpeg.h"
 #else
 #  include "sjpx.h"
