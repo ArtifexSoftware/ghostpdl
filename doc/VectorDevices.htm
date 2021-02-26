@@ -1000,13 +1000,13 @@ PDF files contain these it can be beneficial to create them.
 <p>
 Note that, for English text, it is possible that the existing standard character
 encoding (which most PDF consumers will fall back to in the absence of Unicode
-information) is better than using OCR, as OCR is ot a 100% reliable process.
+information) is better than using OCR, as OCR is not a 100% reliable process.
 OCR processing is also comparatively slow.
 </p>
 <p>
 For the reasons above it is useful to be able to exercise some control over the
 action of pdfwrite when OCR processing is available, and the <code>UseOCR</code>
-parameter provides that control. There are three possible valuues:
+parameter provides that control. There are three possible values:
 </p>
 <li><code>Never</code> Default - don't use OCR at all even if support is built-in.
 <li><code>AsNeeded</code> If there is no existing ToUnicode information, use OCR.
@@ -1019,7 +1019,7 @@ limited to the graphics library operations for text as follows.
 <p>
 The code works on text 'fragments'; these are the text sequences sent to the text
 operators of the source language. Generally most input languages will try to send
-text in its simplest form, eg "Abc", but the requirements of justification, kerning
+text in its simplest form, eg "Hello", but the requirements of justification, kerning
 and so on mean that sometimes each character is positioned independently on the page.
 </p>
 <p>
@@ -1028,9 +1028,10 @@ set up to use OCR. Later, if any character in the font does not have a Unicode
 value already we use the bitmaps to assemble a 'strip' of text which we then send
 to the OCR engine. If the engine returns a different number of recognised characters
 than we expected then we ignore that result. We've found that (for English text)
-constructions such as ". T" tend to ignore the full stop, presumably because the OCR
+constructions such as ". The" tend to ignore the full stop, presumably because the OCR
 engine thinks that it is simply noise. In contrast "text." does identify the full
-stop correctly. So by ignoring the failed result we cna get a better result later.
+stop correctly. So by ignoring the failed result we can potentially get a better result
+later in the document.
 </p>
 <p>
 Obviously this is all heuristic and undoubtedly there is more we can do to improve the
