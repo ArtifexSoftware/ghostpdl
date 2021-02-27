@@ -157,6 +157,11 @@ int pdfi_device_misc_config(pdf_context *ctx)
     int code;
     gx_device *dev = ctx->pgs->device;
 
+    if (ctx->args.first_page != 0 || ctx->args.last_page != 0) {
+        code = pdfi_device_set_param_bool(dev, "DisablePageHandler", true);
+        if (code < 0) goto exit;
+    }
+
     /* I am using pdfmark to identify the pdfwrite device */
     has_pdfmark = pdfi_device_check_param_bool(dev, "pdfmark");
     /* (only handling pdfwrite for now) */
@@ -170,6 +175,6 @@ int pdfi_device_misc_config(pdf_context *ctx)
     code = pdfi_device_set_param_string(dev, "AutoRotatePages", "PageByPage");
     if (code < 0) goto exit;
 
- exit:
+exit:
     return code;
 }
