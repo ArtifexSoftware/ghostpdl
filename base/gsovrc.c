@@ -1426,6 +1426,19 @@ overprint_dev_spec_op(gx_device* pdev, int dev_spec_op,
     if (dev_spec_op == gxdso_overprint_active)
         return !opdev->is_idle;
 
+    if (dev_spec_op == gxdso_device_child) {
+        gxdso_device_child_request *d = (gxdso_device_child_request *)data;
+        if (d->target == pdev) {
+            d->target = tdev;
+            return 1;
+        }
+    }
+    if (dev_spec_op == gxdso_device_insert_child) {
+        opdev->target = (gx_device *)data;
+        rc_increment(opdev->target);
+        rc_decrement_only(tdev, "overprint_dev_spec_op");
+        return 0;
+    }
     return dev_proc(tdev, dev_spec_op)(tdev, dev_spec_op, data, size);
 }
 
