@@ -865,6 +865,11 @@ gx_forward_dev_spec_op(gx_device * dev, int dev_spec_op, void *data, int size)
             d->target = fdev->target;
             return 1;
         }
+    } else if (dev_spec_op == gxdso_device_insert_child) {
+        fdev->target = (gx_device *)data;
+        rc_increment(fdev->target);
+        rc_decrement_only(tdev, "gx_forward_device");
+        return 0;
     }
     return dev_proc(tdev, dev_spec_op)(tdev, dev_spec_op, data, size);
 }
