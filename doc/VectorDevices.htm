@@ -58,6 +58,7 @@
 <li><a href="#Overview">Overview</a>
 <li><a href="#PXL">PCL-XL file output</a>
 <li><a href="#TXT">Text output</a>
+<li><a href="#DOCX">DOCX file output</a>
 <li><a href="#XPS">XPS file output</a>
 <li><a href="#PDFWRITE">PDF file output</a>
 <li><a href="#PDFWRITE">PostScript file output</a>
@@ -88,7 +89,8 @@
 <p>
 High level devices are Ghostscript output devices which do not render to a raster,
 in general they produce 'vector' as opposed to bitmap output. Such devices currently
-include: pdfwrite, ps2write, eps2write, txtwrite, xpswrite, pxlmono and pxlcolor.
+include: pdfwrite, ps2write, eps2write, txtwrite, xpswrite, pxlmono, pxlcolor and
+docxwrite.
 </p>
 
 <p>
@@ -187,6 +189,20 @@ approximates the layout of the text in the original document.</dd></p>
 <p><dd>Format 3 is the same as format 2, but the text is encoded in UTF-8.</dd></p>
 <p><dd>Format 4 is internal format similar to Format 0 but with extra information.</dd></p>
 </dl></blockquote>
+
+<p>
+
+<hr>
+<h2><a name="DOCX"></a>DOCX output</h2>
+
+<p>The docxwrite device creates a DOCX file suitable for use with applications
+such as Word or LibreOffice, containing the text in the original document.
+</p>
+<p>Rotated text is placed into textboxes. Heuristics are used to group
+glyphs into words, lines and paragraphs; for some types of formatting, these
+heuristics may not be able to recover all of the original document structure.
+</p>
+<p>This device currently has no special configuration parameters.</p>
 
 <p>
 
