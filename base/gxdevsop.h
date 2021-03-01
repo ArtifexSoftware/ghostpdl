@@ -419,6 +419,17 @@ enum {
      */
     gxdso_set_HWSize,
 
+    /* gxdso_device_insert_child:
+     *     data = pointer to device to insert as child of the device
+     *            handling this special op.
+     *     size = 0
+     * Returns 0 if completed successfully, negative otherwise.
+     */
+    gxdso_device_insert_child,
+
+    /* Determine if a given device is a clist one. Returns 1 if it is. */
+    gxdso_is_clist_device,
+
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

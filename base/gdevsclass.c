@@ -32,6 +32,7 @@
 #include "gdevprn.h"
 #include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
 #include "gdevsclass.h"
+#include "gxdevsop.h"
 
 /*
  * It would be nice if we could rewrite the clist handling to use this kind of device class chain
@@ -476,7 +477,6 @@ int default_subclass_map_color_rgb_alpha(gx_device *dev, gx_color_index color, g
 int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
-    default_subclass_subclass_data *psubclass_data = dev->subclass_data;
     int code;
 
     if (dev->child) {
@@ -493,33 +493,62 @@ int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const 
          * to be the new 'device' in the graphics state, then code will
          * return as 1. */
         if (code == 1) {
-            /* So, we want the new compositor device to become the device
-             * in the graphics state. That device needs to point to us
-             * (the subclassing device) as its child, and our child in
-             * turn will remain as before. Currently the compositor
-             * device has our child as its child. We need to change
-             * this.
+            /* The device chain on entry to this function was:
+             *   dev(the subclassing device) -> child.
+             * But now we also have:
+             *   *pcdev -> child.
+             * Or in some cases:
+             *   *pcdev (-> other device)* -> child
+             * Most callers would be happy to make dev->child = *pcdev,
+             * thus giving us:
+             *   dev -> *pcdev (-> other device)* ->child
+             * Unfortunately, we are not happy with that. We need to
+             * remain tightly bound to the child. i.e. we are aiming for:
+             *   *pcdev (-> other device)* -> dev -> child
+             * Accordingly, we need to move ourselves within the device
+             * chain.
              */
-            gx_device_forward *fdev = (gx_device_forward *)*pcdev;
+            gx_device *penult = *pcdev;
 
-            if(fdev->target == dev->child) {
-                if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(fdev->dname, "pdf14clist", 10) == 0) {
-                    pdf14_clist_device *p14dev;
-
-                    p14dev = (pdf14_clist_device *)*pcdev;
-
-                    dev->color_info = dev->child->color_info;
-
-                    psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
-                    psubclass_data->forwarding_dev = fdev;
-                    p14dev->procs.create_compositor = gx_subclass_create_compositor;
-                }
-
-                fdev->target = dev;
-                rc_decrement_only(dev->child, "subclass compositor code");
-                rc_increment(dev);
+            if (penult == NULL) {
+                /* This should never happen. */
+                return gs_error_unknownerror;
             }
-            /* Return 1 so that *pcdev becomes the current device. */
+
+            /* Find the penultimate device. */
+            while (1) {
+                gxdso_device_child_request req;
+                req.target = penult;
+                req.n = 0;
+                code = dev_proc(penult, dev_spec_op)(penult, gxdso_device_child, &req, sizeof(req));
+                if (code < 0)
+                    return code;
+                if (req.target == NULL) {
+                    /* Wooah! Where was dev->child? */
+                    return gs_error_unknownerror;
+                }
+                if (req.target == dev->child)
+                    break; /* penult is the parent. */
+                penult = req.target;
+            }
+
+            if (penult == NULL) {
+                /* This should never happen. We know that we've just
+                 * had a compositor inserted before dev->child, so there
+                 * really ought to be one! */
+                return gs_error_unknownerror;
+            }
+
+            /* We already point to dev->child, and hence own a reference
+             * to it. */
+
+            /* Now insert ourselves as the child of the penultimate one. */
+            code = dev_proc(penult, dev_spec_op)(penult, gxdso_device_insert_child, dev, 0);
+            if (code < 0)
+                return code;
+
+            /* Now we want our caller to update itself to recognise that
+             * *pcdev should be its child, not dev. So we return 1. */
             return 1;
         }
         else {
@@ -756,6 +785,15 @@ int default_subclass_put_image(gx_device *dev, gx_device *mdev, const byte **buf
 
 int default_subclass_dev_spec_op(gx_device *dev, int op, void *data, int datasize)
 {
+    if (op == gxdso_is_clist_device)
+        return 0;
+    if (op == gxdso_device_child) {
+        gxdso_device_child_request *d = (gxdso_device_child_request *)data;
+        if (d->target == dev) {
+            d->target = dev->child;
+            return 1;
+        }
+    }
     if (dev->child)
         return dev_proc(dev->child, dev_spec_op)(dev->child, op, data, datasize);
 
