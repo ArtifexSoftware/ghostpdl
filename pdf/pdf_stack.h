@@ -49,6 +49,7 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
 {
     if (o != NULL) {
 #ifdef DEBUG
+        pdf_context *ctx1 = (pdf_context *)o->ctx;
         if (o->refcnt == 0)
             emprintf(OBJ_MEMORY(o), "Decrementing object with refcount at 0!\n");
 #endif
@@ -72,8 +73,9 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
             dmprintf2(OBJ_MEMORY(o), "Freeing object %d, UID %lu\n", o->object_num, o->UID);
 #endif
 #if DEBUG
-            pdf_context *ctx1 = (pdf_context *)o->ctx;
-            if (ctx1->xref_table != NULL && o->object_num > 0 && ctx1->xref_table->xref[o->object_num].cache != NULL) {
+            if (ctx1->xref_table != NULL && o->object_num > 0 &&
+                ctx1->xref_table->xref[o->object_num].cache != NULL &&
+                ctx1->xref_table->xref[o->object_num].cache->o == o) {
                 dmprintf1(OBJ_MEMORY(o), "Freeing object %d while it is still in the object cache!\n", o->object_num);
             }
 #endif
