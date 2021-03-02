@@ -1,4 +1,4 @@
-extract_cc = $(CC) $(CCFLAGS) $(I_)$(EXTRACT_DIR)/include$(_I) $(O_)
+extract_cc = $(CC) $(CCFLAGS) $(I_)$(EXTRACT_DIR)/include$(_I) $(I_)$(ZSRCDIR)$(_I) $(O_)
 extract_out_prefix = $(GLOBJDIR)$(D)extract_
 
 $(extract_out_prefix)alloc.$(OBJ):          $(EXTRACT_DIR)/src/alloc.c
