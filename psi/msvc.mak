@@ -720,6 +720,14 @@ JBIG2SRCDIR=jbig2dec
 JPX_LIB=openjpeg
 !endif
 
+# If $EXTRACT_DIR is unset, and the 'extract' directory exists,
+# default it to that.
+!if "$(EXTRACT_DIR)" == ""
+!   if exist("extract")
+EXTRACT_DIR=extract
+!   endif
+!endif
+
 # If $EXTRACT_DIR is set, build with Extract library.
 #
 !if "$(EXTRACT_DIR)" != ""
