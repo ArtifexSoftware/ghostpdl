@@ -86,14 +86,13 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 <h2><a name="Version9.54.0"></a>Version 9.54.0 (2021-02-25)</h2>
+<p>The 9.54.0 release is a maintenance release, and also adds new functionality.
+<br>
 <p> Highlights in this release include:
 <ul>
 <li>
-<p>The 9.54.0 release is a maintenance release, and also adds new functionality.
-</li>
-<li>
 <p>Overprint simulation is now available to all output devices, allowing
-quality previewing/proofing of Postscript and PDF jobs that rely on overprint.
+quality previewing/proofing of PostScript and PDF jobs that rely on overprint.
 See the <code>-dOverprint</code> option documentation in:
 <a href="Use.htm#Overprint">Overprint</a>
 </li>
@@ -107,7 +106,7 @@ built into Ghostscript to improve searchability and copy and paste functionality
 the input lacks the metadata for that purpose. See: <a href="VectorDevices.htm#UseOCR">UseOCR</a>
 </li>
 <li>
-<p>The GhostPDL family of products now includes a &quot;map text to black&quot;
+<p>Ghostscript/GhostPDL now includes a &quot;map text to black&quot;
 function, where text drawn by an input job (except when drawn using a
 Type 3 font) can be forced to draw in solid black.
 </li>
@@ -126,7 +125,7 @@ PDF file, with the OCR generated text information included as "invisible" text
 (in PDF terms, text rendering mode 3).
 <p>Mainly due to time constraints, we only support including Tesseract from
 source included in our release packages, and not linking to Tesseract/Leptonica
-shared libraries. Whether we add this capability will be largely dependant on
+shared libraries. Whether we add this capability will be largely dependent on
 community demand for the feature.
 <p>See <a href="https://www.ghostscript.com/ocr.html">Enabling OCR</a> for more details.
 </li>
