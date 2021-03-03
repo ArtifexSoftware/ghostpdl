@@ -126,6 +126,7 @@ int replace_cache_entry(pdf_context *ctx, pdf_obj *o)
 {
     xref_entry *entry;
     pdf_obj_cache_entry *cache_entry;
+    pdf_obj *old_cached_obj = NULL;
 
     /* Limited error checking here, we assume that things like the
      * validity of the object (eg not a free oobject) have already been handled.
@@ -137,11 +138,19 @@ int replace_cache_entry(pdf_context *ctx, pdf_obj *o)
     if (cache_entry == NULL) {
         return(pdfi_add_to_cache(ctx, o));
     } else {
+        /* NOTE: We grab the object without decrementing, to avoid triggering
+         * a warning message for freeing an object that's in the cache
+         */
         if (cache_entry->o != NULL)
-            pdfi_countdown(cache_entry->o);
+            old_cached_obj = cache_entry->o;
+
+        /* Put new entry in the cache */
         cache_entry->o = o;
         pdfi_countup(o);
         pdfi_promote_cache_entry(ctx, cache_entry);
+
+        /* Now decrement the old cache entry, if any */
+        pdfi_countdown(old_cached_obj);
     }
     return 0;
 }
