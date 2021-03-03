@@ -23,7 +23,10 @@
 #ifndef RAW_SCREEN_DUMP
 #  define RAW_SCREEN_DUMP 0	/* Noisy output for .raw files for detailed debugging */
 #endif
-#if RAW_SCREEN_DUMP || !defined(LIB_BUILD)
+#ifndef FINAL_SCREEN_DUMP
+#  define FINAL_SCREEN_DUMP 0	/* Dump of the final PS result */
+#endif
+#if RAW_SCREEN_DUMP || FINAL_SCREEN_DUMP || !defined(LIB_BUILD)
 #  define FULL_FILE_NAME_LENGTH 50
 #endif
 
@@ -100,6 +103,11 @@ void htsc_set_default_params(htsc_param_t *params);
     Note that final_mask.memory must be set as needed for the allocator and
     it is the callers responsibilty to free the final_mask.data that is returned.
 */
-int htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask);
+int htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask, gs_memory_t *mem);
+
+#if FINAL_SCREEN_DUMP
+int htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
+    htsc_param_t params, gs_memory_t *mem);
+#endif
 
 #endif

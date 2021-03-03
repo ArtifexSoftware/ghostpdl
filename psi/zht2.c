@@ -448,7 +448,12 @@ zgenordered(i_ctx_t *i_ctx_p)
         return gs_error_undefined;
 
     params.output_format = OUTPUT_TOS;		/* we want this format */
-    code = htsc_gen_ordered(params, &S, &final_mask);
+    code = htsc_gen_ordered(params, &S, &final_mask, mem);
+
+#if FINAL_SCREEN_DUMP
+    if (code >= 0)
+        code = htsc_save_screen(&final_mask, params.holladay, S, params, mem);
+#endif
 
     if (code < 0)
         goto done;
