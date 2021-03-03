@@ -193,16 +193,23 @@ gx_device_epo gs_epo_device =
 #undef MAX_COORD
 #undef MAX_RESOLUTION
 
-static bool
-is_device_installed(gx_device *dev, const char *name)
+/* Starting at the top of the device chain (top parent) find	*/
+/* and return the epo device, or NULL if not found.		*/
+static gx_device *
+find_installed_epo_device(gx_device *dev)
 {
-    while (dev) {
-        if (!strcmp(dev->dname, name)) {
-            return true;
+    gx_device *next_dev = dev;
+
+    while (next_dev->parent != NULL)
+        next_dev = next_dev->parent;
+
+    while (next_dev) {
+        if (next_dev->procs.fillpage == epo_fillpage) {
+            return next_dev;
         }
-        dev = dev->child;
+        next_dev = next_dev->child;
     }
-    return false;
+    return NULL;
 }
 
 /* See if this is a device we can optimize
@@ -228,7 +235,7 @@ int
 epo_check_and_install(gx_device *dev)
 {
     int code = 0;
-    bool is_installed;
+    gx_device *installed_epo_device = NULL;
     bool can_optimize = false;
 
     /* Debugging mode to totally disable this */
@@ -238,23 +245,21 @@ epo_check_and_install(gx_device *dev)
 
     DPRINTF1(dev->memory, "current device is %s\n", dev->dname);
 
-    is_installed = is_device_installed(dev, EPO_DEVICENAME);
+    installed_epo_device = find_installed_epo_device(dev);
 
-    if (is_installed) {
+    if (installed_epo_device != NULL) {
         DPRINTF1(dev->memory, "device %s already installed\n", EPO_DEVICENAME);
         /* This is looking for the case where the device
          * changed into something we can't optimize, after it was already installed
          * (could be clist or some other weird thing)
          */
-        if (dev->child) {
-            can_optimize = device_wants_optimization(dev->child);
+        if (installed_epo_device->child) {
+            can_optimize = device_wants_optimization(installed_epo_device->child);
         }
         if (!can_optimize) {
-            DPRINTF1(dev->memory, "child %s can't be optimized, uninstalling\n", dev->child->dname);
-            /* Not doing any pending fillpages because we are about to do
-             * a fillpage anyway
-             */
-            gx_device_unsubclass(dev);
+            DPRINTF1(dev->memory, "child %s can't be optimized, uninstalling\n", installed_epo_device->child->dname);
+            /* Not doing any pending fillpages because we are about to do a fillpage anyway */
+            gx_device_unsubclass(installed_epo_device);
             return code;
         }
     } else {
@@ -262,7 +267,7 @@ epo_check_and_install(gx_device *dev)
     }
 
     /* Already installed, nothing to do */
-    if (is_installed) {
+    if (installed_epo_device != NULL) {
         return code;
     }
 
