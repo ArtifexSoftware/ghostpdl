@@ -153,7 +153,7 @@ void pdfi_device_set_flags(pdf_context *ctx)
  */
 int pdfi_device_misc_config(pdf_context *ctx)
 {
-    bool has_pdfmark;
+    bool has_pdfmark = false;
     int code;
     gx_device *dev = ctx->pgs->device;
 
