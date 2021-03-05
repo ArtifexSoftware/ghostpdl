@@ -752,56 +752,12 @@ psd_get_params_cmyk(gx_device * pdev, gs_param_list * plist)
     return psd_get_params_generic(pdev, plist, 1);
 }
 
-
-
-/* Compare a C string and a gs_param_string. */
-static bool
-param_string_eq(const gs_param_string *pcs, const char *str)
-{
-    return (strlen(str) == pcs->size &&
-            !strncmp(str, (const char *)pcs->data, pcs->size));
-}
-
-static int
-psd_set_color_model(psd_device *xdev, psd_color_model color_model)
-{
-    xdev->color_model = color_model;
-    if (color_model == psd_DEVICE_GRAY) {
-        xdev->devn_params.std_colorant_names = DeviceGrayComponents;
-        xdev->devn_params.num_std_colorant_names = 1;
-        xdev->color_info.cm_name = "DeviceGray";
-        xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
-    } else if (color_model == psd_DEVICE_RGB) {
-        xdev->devn_params.std_colorant_names = DeviceRGBComponents;
-        xdev->devn_params.num_std_colorant_names = 3;
-        xdev->color_info.cm_name = "DeviceRGB";
-        xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
-    } else if (color_model == psd_DEVICE_CMYK) {
-        xdev->devn_params.std_colorant_names = DeviceCMYKComponents;
-        xdev->devn_params.num_std_colorant_names = 4;
-        xdev->color_info.cm_name = "DeviceCMYK";
-        xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
-    } else if (color_model == psd_DEVICE_N) {
-        xdev->devn_params.std_colorant_names = DeviceCMYKComponents;
-        xdev->devn_params.num_std_colorant_names = 4;
-        xdev->color_info.cm_name = "DeviceN";
-        xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
-    } else {
-        return -1;
-    }
-
-    return 0;
-}
-
 /* Set parameters.  We allow setting the number of bits per component. */
 static int
 psd_put_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
 {
     psd_device * const pdevn = (psd_device *) pdev;
     int code = 0;
-    gs_param_string pcm;
-    psd_color_model color_model = pdevn->color_model;
-    gx_device_color_info save_info = pdevn->color_info;
 
     code = gx_downscaler_read_params(plist, &pdevn->downscale,
                                      cmyk ? GX_DOWNSCALER_PARAMS_TRAP : 0);
@@ -835,36 +791,9 @@ psd_put_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
             break;
     }
 
-    if (code >= 0)
-        code = param_read_name(plist, "ProcessColorModel", &pcm);
-
-    /* Bug 696318.  Don't allow process color model change for RGB device */
-    if (code == 0 && color_model != psd_DEVICE_RGB) {
-        if (param_string_eq (&pcm, "DeviceGray"))
-            color_model = psd_DEVICE_GRAY;
-        else if (param_string_eq (&pcm, "DeviceRGB"))
-            color_model = psd_DEVICE_RGB;
-        else if (param_string_eq (&pcm, "DeviceCMYK"))
-            color_model = psd_DEVICE_CMYK;
-        else if (param_string_eq (&pcm, "DeviceN"))
-            color_model = psd_DEVICE_N;
-        else {
-            param_signal_error(plist, "ProcessColorModel",
-                               code = gs_error_rangecheck);
-        }
-    }
-
-    if (code >= 0)
-        code = psd_set_color_model(pdevn, color_model);
-
     /* handle the standard DeviceN related parameters */
-    if (code == 0)
+    if (code >= 0)
         code = gx_devn_prn_put_params(pdev, plist);
-
-    if (code < 0) {
-        pdev->color_info = save_info;
-        return code;
-    }
 
     return code;
 }

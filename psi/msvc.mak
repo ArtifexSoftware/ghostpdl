@@ -769,6 +769,14 @@ JBIG2SRCDIR=jbig2dec
 JPX_LIB=openjpeg
 !endif
 
+# If $EXTRACT_DIR is unset, and the 'extract' directory exists,
+# default it to that.
+!if "$(EXTRACT_DIR)" == ""
+!   if exist("extract")
+EXTRACT_DIR=extract
+!   endif
+!endif
+
 # If $EXTRACT_DIR is set, build with Extract library.
 #
 !if "$(EXTRACT_DIR)" != ""
@@ -1075,6 +1083,11 @@ MSVC_VERSION=16
 MS_TOOLSET_VERSION=14.28.29333
 !endif
 !if "$(_NMAKE_VER)" == "14.28.29336.0"
+# VS2019 (Toolset v142)
+MSVC_VERSION=16
+MS_TOOLSET_VERSION=14.28.29333
+!endif
+!if "$(_NMAKE_VER)" == "14.28.29910.0"
 # VS2019 (Toolset v142)
 MSVC_VERSION=16
 MS_TOOLSET_VERSION=14.28.29333

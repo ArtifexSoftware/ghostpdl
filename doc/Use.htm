@@ -2759,6 +2759,39 @@ This option sets the <code>-dEPSFitPage</code>, <code>-dPDFFitPage</code>, and
 the <code>-dFitPage</code> options.</p>
 </dd>
 </dl>
+
+<dl>
+<a name="NupControl"></a>
+    <dt><code>-sNupControl=</code><em>Nup_option_string</em></dt>
+<dd>This option specifies the N-up nesting to be performed. The pages are scaled
+and arranged on the current PageSize "master" page according the the option.
+<p>
+The only option strings are as follows:
+    <ul>
+    <li>
+        <dt><code>-sNupControl=</code><em>number1</em><code>x</code><em>number2</em></dt>
+    will fit <em>number1</em> nested pages across the master page, and <em>number2</em>
+    down the master page, from the upper left, then to the right to fill the row, moving down
+    to the leftmost place on the next row until the nest is complete.
+    <p>
+    A partially filled nest will be output when the <code>-sNupControl=</code> string is changed,
+    or when Ghostscript exits.
+    <p>
+    Pages are scaled to fit the requested number horizontally and vertically, maintaining the
+    aspect ratio. If the scaling selected for fitting the nested pages leaves space horizontally
+    on the master page, the blank area will be added to the left and right of the <b>entire</b>
+    row of nested pages. If the fit results in vertical space, the blank area will be added
+    above and below <b>all</b> of the rows.
+    </li>
+    <li>
+        <dt><code>-sNupControl=</code></dt>
+    An empty string will turn off nesting. If there are any nested pages on the master page,
+    the partially filled master page will be output.
+    </li>
+    </ul>
+</dd>
+</dl>
+
 <h4><a name="Font_related_parameters"></a>Font-related parameters</h4>
 
 <dl>
@@ -3326,6 +3359,7 @@ This option has been replaced by <code><b>-dOverprint=</b></code>
 
 
 <dl>
+<a name="Overprint"></a>
     <dt><code>-dOverprint=</code><em>/enable | /disable | /simulate</em></dt>
 <dd>
 This option provides control of overprinting.  The default setting is <em><b>/enable</b></em>

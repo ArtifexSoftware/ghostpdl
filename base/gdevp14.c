@@ -334,7 +334,7 @@ static	const gx_device_procs pdf14_custom_procs =
                         gx_forward_encode_color,
                         gx_forward_decode_color);
 
-struct_proc_finalize(pdf14_device_finalize);
+static struct_proc_finalize(pdf14_device_finalize);
 
 gs_private_st_composite_use_final(st_pdf14_device, pdf14_device, "pdf14_device",
                                   pdf14_device_enum_ptrs, pdf14_device_reloc_ptrs,
@@ -612,6 +612,23 @@ struct gx_device_pdf14_accum_s {
     gx_device *save_p14dev;		/* the non-clist pdf14 deivce saved for after accum */
 };
 typedef struct gx_device_pdf14_accum_s gx_device_pdf14_accum;
+
+int
+pdf14_accum_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
+{
+    gx_device_pdf14_accum *adev = (gx_device_pdf14_accum *)pdev;
+
+    if (dev_spec_op == gxdso_device_child) {
+        gxdso_device_child_request *req = (gxdso_device_child_request *)data;
+        if (size < sizeof(*req))
+            return gs_error_unknownerror;
+        req->target = adev->save_p14dev;
+        req->n = 0;
+        return 0;
+    }
+
+    return gdev_prn_dev_spec_op(pdev, dev_spec_op, data, size);
+}
 
 gs_private_st_suffix_add1_final(st_gx_devn_accum_device, gx_device_pdf14_accum,
         "gx_device_pdf14_accum", pdf14_accum_device_enum_ptrs, pdf14_accum_device_reloc_ptrs,
@@ -8434,6 +8451,13 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         return p14dev->in_smask_construction > 0;
     if (dev_spec_op == gxdso_in_smask)
         return p14dev->in_smask_construction > 0 || p14dev->depth_within_smask;
+    if (dev_spec_op == gxdso_device_insert_child) {
+        gx_device *tdev = p14dev->target;
+        p14dev->target = (gx_device *)data;
+        rc_increment(p14dev->target);
+        rc_decrement_only(tdev, "pdf14_dev_spec_op");
+        return 0;
+    }
 
      return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
 }
@@ -10290,11 +10314,30 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                     return code;
                 }
             case PDF14_POP_DEVICE:
+            {
+                gx_device *clistdev = pdev->target;
+
+                /* Find the clist device */
+                while (1) {
+                    gxdso_device_child_request req;
+                    /* Ignore any errors here, that's expected as non-clist
+                     * devices don't implement it. */
+                    code = dev_proc(clistdev, dev_spec_op)(clistdev, gxdso_is_clist_device, NULL, 0);
+                    if (code == 1)
+                        break;
+                    req.n = 0;
+                    req.target = clistdev;
+                    code = dev_proc(clistdev, dev_spec_op)(clistdev, gxdso_device_child, &req, sizeof(req));
+                    if (code < 0)
+                        return code;
+                    clistdev = req.target;
+                }
+
                 /* If we have overprint simulation spot color information, store
                    it in a pseudo-band of the clist */
                 if (pdev->overprint_sim &&
                     pdev->devn_params.page_spot_colors > 0) {
-                    code = clist_write_op_equiv_cmyk_colors((gx_device_clist_writer *)(pdev->target),
+                    code = clist_write_op_equiv_cmyk_colors((gx_device_clist_writer *)clistdev,
                         &pdev->op_pequiv_cmyk_colors);
                     if (code < 0)
                         return code;
@@ -10306,24 +10349,24 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                  */
                 pdf14_decrement_smask_color(pgs, dev);
                 /* Restore the color_info for the clist device */
-                pdev->target->color_info = pdev->saved_target_color_info;
-                set_dev_proc(pdev->target, encode_color, pdev->saved_target_encode_color);
-                set_dev_proc(pdev->target, decode_color, pdev->saved_target_decode_color);
-                set_dev_proc(pdev->target, get_color_mapping_procs, pdev->saved_target_get_color_mapping_procs);
-                set_dev_proc(pdev->target, get_color_comp_index, pdev->saved_target_get_color_comp_index);
+                clistdev->color_info = pdev->saved_target_color_info;
+                set_dev_proc(clistdev, encode_color, pdev->saved_target_encode_color);
+                set_dev_proc(clistdev, decode_color, pdev->saved_target_decode_color);
+                set_dev_proc(clistdev, get_color_mapping_procs, pdev->saved_target_get_color_mapping_procs);
+                set_dev_proc(clistdev, get_color_comp_index, pdev->saved_target_get_color_comp_index);
                 pgs->get_cmap_procs = pdev->save_get_cmap_procs;
-                gx_set_cmap_procs(pgs, pdev->target);
-                gx_device_decache_colors(pdev->target);
+                gx_set_cmap_procs(pgs, clistdev);
+                gx_device_decache_colors(clistdev);
                 /* Disable the PDF 1.4 compositor */
                 pdf14_disable_clist_device(mem, pgs, dev);
                 /*
                  * Make sure that the transfer funtions, etc. are current.
                  */
-                code = cmd_put_color_mapping(
-                        (gx_device_clist_writer *)(pdev->target), pgs);
+                code = cmd_put_color_mapping((gx_device_clist_writer *)clistdev, pgs);
                 if (code < 0)
                     return code;
                 break;
+            }
             case PDF14_BEGIN_TRANS_PAGE_GROUP:
             case PDF14_BEGIN_TRANS_GROUP:
                 if (pdev->smask_constructed || pdev->depth_within_smask)
@@ -12101,7 +12144,7 @@ pdf14_free_smask_color(pdf14_device * pdev)
     }
 }
 
-void
+static void
 pdf14_device_finalize(const gs_memory_t *cmem, void *vptr)
 {
     gx_device * const dev = (gx_device *)vptr;

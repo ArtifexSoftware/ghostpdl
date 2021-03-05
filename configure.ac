@@ -2610,8 +2610,13 @@ AC_ARG_WITH([extract-dir],
     AC_HELP_STRING([--with-extract-dir=EXTRACT_DIR]),
     [
         EXTRACT_DIR="$withval"
-        AS_IF([test ! -e $EXTRACT_DIR], AC_MSG_ERROR([EXTRACT_DIR does not exist: $EXTRACT_DIR]))
-        PS_DEVS="$PS_DEVS docxwrite"
+        AS_IF([test x"$EXTRACT_DIR" != x"no"],
+        [AS_IF([test -e $EXTRACT_DIR],[ PS_DEVS="$PS_DEVS docxwrite"] ,AC_MSG_ERROR([EXTRACT_DIR does not exist: $EXTRACT_DIR]))])
+    ],
+    [
+        AC_MSG_CHECKING([Checking for "extract" in default location])
+        EXTRACT_DIR="extract"
+        AS_IF([test -e $EXTRACT_DIR], [AC_MSG_RESULT(yes); PS_DEVS="$PS_DEVS docxwrite"], [EXTRACT_DIR=""; AC_MSG_RESULT(no)])
     ]
 )
 

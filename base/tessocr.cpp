@@ -11,6 +11,7 @@ extern "C"
 #include "gssprintf.h"
 #include "gxiodev.h"
 #include "stream.h"
+#include <climits>
 
 #ifndef PATH_MAX
 #define PATH_MAX 4096

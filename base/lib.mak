@@ -3314,7 +3314,7 @@ $(GLD)shadelib.dev : $(LIB_MAK) $(ECHOGS_XE) $(shadelib_)\
 	$(ADDMOD) $(GLD)shadelib -include $(GLD)funclib $(GLD)patlib
 
 $(GLOBJ)gen_ordered.$(OBJ) : $(GLSRC)gen_ordered.c $(GLSRC)gen_ordered.h\
- $(std_h) $(gsmemory_h) $(math__h) $(string__h) $(LIB_MAK) $(MAKEDIRS)
+ $(std_h) $(gsmemory_h) $(math__h) $(string__h) $(gp_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gen_ordered.$(OBJ) $(C_)  $(D_)GS_LIB_BUILD$(_D) \
         $(GLSRC)gen_ordered.c
 

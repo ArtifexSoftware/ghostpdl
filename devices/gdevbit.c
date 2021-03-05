@@ -319,7 +319,7 @@ const gx_device_bit gs_bitrgbtags_device =
         0,  /*DisablePageHandler*/
         0,  /*ObjectFilter*/
         0,  /*ObjectHandlerPushed*/
-        0,  /*NupList*/
+        0,  /*NupControl*/
         0,  /*NupHandlerPushed*/
         0,  /*PageCount*/
         0,  /*ShowPageCount*/

@@ -621,9 +621,16 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
             ibox->q.y = cwdev->cropping_max;
         return 0;
     }
+    if (dev_spec_op == gxdso_is_clist_device)
+        return 1;
     if (dev_spec_op == gxdso_overprint_active) {
         gx_device_clist_writer* cwdev = &((gx_device_clist*)pdev)->writer;
         return cwdev->op_fill_active || cwdev->op_stroke_active;
+    }
+    /* This is a horrible hack. Accumulator devices have their procs
+     * overriden by clist ones in gdev_prn_open. */
+    if (strncmp(pdev->dname, "pdf14-accum-", 12) == 0) {
+        return pdf14_accum_dev_spec_op(pdev, dev_spec_op, data, size);
     }
     /* forward to the appropriate super class */
     if (cdev->orig_spec_op)

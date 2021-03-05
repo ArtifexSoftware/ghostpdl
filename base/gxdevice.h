@@ -121,7 +121,7 @@
 #define std_device_part3_()\
         0/*FirstPage*/, 0/*LastPage*/, 0/*PageHandlerPushed*/, 0/*DisablePageHandler*/,\
         0/* Object Filter*/, 0/*ObjectHandlerPushed*/,\
-        0/* NupControl */, 0/* NupHandlerPushed */,\
+        0, /* NupControl */ 0, /* NupHandlerPushed */\
         0/*PageCount*/, 0/*ShowpageCount*/, 1/*NumCopies*/, 0/*NumCopies_set*/,\
         0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
         0/*band_offset_x*/, 0/*band_offset_y*/, false /*BLS_force_memory*/, \
