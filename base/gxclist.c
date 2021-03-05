@@ -1378,7 +1378,7 @@ clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, 
                         bool use_memory_clist, bool uses_transparency,
                         gs_pattern1_instance_t *pinst)
 {
-        gx_device_clist *cdev = gs_alloc_struct(mem, gx_device_clist,
+        gx_device_clist *cdev = gs_alloc_struct(mem->stable_memory, gx_device_clist,
                         &st_device_clist, "clist_make_accum_device");
         gx_device_clist_writer *cwdev = (gx_device_clist_writer *)cdev;
 
@@ -1388,10 +1388,10 @@ clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, 
         cwdev->params_size = sizeof(gx_device_clist);
         cwdev->static_procs = NULL;
         cwdev->dname = dname;
-        cwdev->memory = mem;
+        cwdev->memory = mem->stable_memory;
         cwdev->stype = &st_device_clist;
         cwdev->stype_is_dynamic = false;
-        rc_init(cwdev, mem, 1);
+        rc_init(cwdev, mem->stable_memory, 1);
         cwdev->retained = true;
         cwdev->is_open = false;
         cwdev->color_info = target->color_info;
