@@ -812,6 +812,7 @@ pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
     pdfi_countup(temp_string);
 
     code = pdfi_annot_get_text_height(ctx, &lineheight);
+    if (code < 0) goto exit;
 
     y_start = rect->q.y - lineheight;
     x_start = rect->p.x;
