@@ -695,6 +695,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
 
     pdfctx->ctx = ctx;
     pdfctx->ps_stream = NULL;
+    pdfctx->pdf_stream = NULL;
     get_zfont_glyph_name((void **)&pdfctx->ctx->get_glyph_name);
     pdfctx->ctx->get_glyph_index = zpdfi_glyph_index;
 
