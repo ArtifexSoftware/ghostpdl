@@ -231,6 +231,8 @@ rc_object_type_name(const void *vp, const rc_header *prc)
     if (prc->memory == 0)
         return "(unknown)";
     pstype = gs_object_type(prc->memory, vp);
+    if (pstype < 10000)
+        return ("?????");
     if (prc->free != rc_free_struct_only) {
         /*
          * This object might be stack-allocated or have other unusual memory
