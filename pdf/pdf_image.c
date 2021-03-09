@@ -1524,8 +1524,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             if (code < 0)
                 goto cleanupExit;
         } else {
-            code = gs_note_error(gs_error_typecheck);
-            goto cleanupExit;
+            pdfi_countdown(image_info.Mask);
+            image_info.Mask = NULL;
+            ctx->pdf_warnings |= W_PDF_MASK_ERROR;
         }
     }
 

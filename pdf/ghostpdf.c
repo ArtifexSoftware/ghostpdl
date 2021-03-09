@@ -407,6 +407,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tA stream dictionary has no stream and instead uses a /Contents entry, which is invalid.\n");
         if (ctx->pdf_warnings & W_PDF_STREAM_BAD_DECODEPARMS)
             dmprintf(ctx->memory, "\tA stream dictionary has an invalid /DecodeParms entry\n");
+        if (ctx->pdf_warnings & W_PDF_MASK_ERROR)
+            dmprintf(ctx->memory, "\tAn image dictionary has an invalid /Mask entry\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
