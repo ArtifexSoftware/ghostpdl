@@ -29,6 +29,13 @@ extern "C" void *leptonica_calloc(size_t numelm, size_t elemsize);
 extern "C" void *leptonica_realloc(void *ptr, size_t blocksize);
 extern "C" void leptonica_free(void *ptr);
 
+typedef struct
+{
+    gs_memory_t *mem;
+    tesseract::TessBaseAPI *api;
+} wrapped_api;
+
+
 void *leptonica_malloc(size_t blocksize)
 {
     void *ret = malloc(blocksize);
@@ -255,19 +262,34 @@ tess_file_reader(const char *fname, std::vector<char> *out)
 int
 ocr_init_api(gs_memory_t *mem, const char *language, int engine, void **state)
 {
-    tesseract::TessBaseAPI *api;
     enum tesseract::OcrEngineMode mode;
+    wrapped_api *wrapped;
+    int code = 0;
 
-    leptonica_mem = mem->non_gc_memory;
+    if (mem->non_gc_memory != mem) {
+        dlprintf("ocr_init_api must not be called with gc controlled memory!\n");
+        return_error(gs_error_unknownerror);
+    }
+
+    wrapped = (wrapped_api *)(void *)gs_alloc_bytes(mem, sizeof(*wrapped), "ocr_init_api");
+    if (wrapped == NULL)
+        return gs_error_VMerror;
+
+    leptonica_mem = mem;
     setPixMemoryManager(my_leptonica_malloc, my_leptonica_free);
-    api = new tesseract::TessBaseAPI();
+
+    wrapped->mem = mem;
+    wrapped->api = new tesseract::TessBaseAPI();
 
     *state = NULL;
 
-    if (api == NULL) {
-        leptonica_mem = NULL;
-        setPixMemoryManager(malloc, free);
-        return_error(gs_error_VMerror);
+    if (wrapped->api == NULL) {
+        code = gs_error_VMerror;
+        goto fail;
+    }
+
+    if (language == NULL || language[0] == 0) {
+        language = "eng";
     }
 
     switch (engine)
@@ -285,38 +307,48 @@ ocr_init_api(gs_memory_t *mem, const char *language, int engine, void **state)
             mode = tesseract::OcrEngineMode::OEM_TESSERACT_LSTM_COMBINED;
             break;
         default:
-            return_error(gs_error_rangecheck);
+            code = gs_error_rangecheck;
+            goto fail;
     }
 
     // Initialize tesseract-ocr with English, without specifying tessdata path
-    if (api->Init(NULL, 0, /* data, data_size */
-                  language,
-                  mode,
-                  NULL, 0, /* configs, configs_size */
-                  NULL, NULL, /* vars_vec */
-                  false, /* set_only_non_debug_params */
-                  &tess_file_reader)) {
-        delete api;
-        leptonica_mem = NULL;
-        setPixMemoryManager(malloc, free);
-        return_error(gs_error_unknownerror);
+    if (wrapped->api->Init(NULL, 0, /* data, data_size */
+                           language,
+                           mode,
+                           NULL, 0, /* configs, configs_size */
+                           NULL, NULL, /* vars_vec */
+                           false, /* set_only_non_debug_params */
+                           &tess_file_reader)) {
+        code = gs_error_unknownerror;
+        goto fail;
     }
 
-    *state = (void *)api;
+    *state = (void *)wrapped;
 
     return 0;
+fail:
+    if (wrapped->api) {
+        delete wrapped->api;
+    }
+    leptonica_mem = NULL;
+    setPixMemoryManager(malloc, free);
+    gs_free_object(wrapped->mem, wrapped, "ocr_init_api");
+    return_error(code);
 }
 
 void
 ocr_fin_api(gs_memory_t *mem, void *api_)
 {
-    tesseract::TessBaseAPI *api = (tesseract::TessBaseAPI *)api_;
+    wrapped_api *wrapped = (wrapped_api *)api_;
 
-    if (api == NULL)
+    if (wrapped == NULL)
         return;
 
-    api->End();
-    delete api;
+    if (wrapped->api) {
+        wrapped->api->End();
+        delete wrapped->api;
+    }
+    gs_free_object(wrapped->mem, wrapped, "ocr_fin_api");
     leptonica_mem = NULL;
     setPixMemoryManager(malloc, free);
 }
@@ -347,45 +379,37 @@ ocr_clear_image(Pix *image)
 }
 
 static int
-do_ocr_image(gs_memory_t *mem,
+do_ocr_image(wrapped_api *wrapped,
              int w, int h, int bpp, int raster,
              int xres, int yres, void *data, int restore,
              int hocr, int pagecount,
-             const char *language, int engine, char **out)
+             char **out)
 {
     char *outText;
-    tesseract::TessBaseAPI *api;
     int code;
     Pix *image;
 
     *out = NULL;
 
-    if (language == NULL || *language == 0)
-        language = "eng";
-    code = ocr_init_api(mem, language, engine, (void **)&api);
-    if (code < 0)
-        return code;
-
     if (bpp == 8)
         w = convert2pix((l_uint32 *)data, w, h, raster);
 
-    image = ocr_set_image(api, w, h, data, xres, yres);
+    image = ocr_set_image(wrapped->api, w, h, data, xres, yres);
     if (image == NULL) {
         if (restore && bpp == 8)
             convert2pix((l_uint32 *)data, w, h, raster);
-        ocr_fin_api(mem, api);
         return_error(gs_error_VMerror);
     }
 
     // Get OCR result
     //pixWrite("test.pnm", image, IFF_PNM);
     if (hocr) {
-        api->SetVariable("hocr_font_info", "true");
-        api->SetVariable("hocr_char_boxes", "true");
-        outText = api->GetHOCRText(pagecount);
+        wrapped->api->SetVariable("hocr_font_info", "true");
+        wrapped->api->SetVariable("hocr_char_boxes", "true");
+        outText = wrapped->api->GetHOCRText(pagecount);
     }
     else
-        outText = api->GetUTF8Text();
+        outText = wrapped->api->GetUTF8Text();
 
     ocr_clear_image(image);
 
@@ -397,36 +421,34 @@ do_ocr_image(gs_memory_t *mem,
     if (outText)
     {
         size_t len = strlen(outText)+1;
-        *out = (char *)(void *)gs_alloc_bytes(mem, len, "ocr_to_utf8");
+        *out = (char *)(void *)gs_alloc_bytes(wrapped->mem, len, "ocr_to_utf8");
         if (*out)
             memcpy(*out, outText, len);
     }
 
     delete [] outText;
 
-    // Destroy used object and release memory
-    ocr_fin_api(mem, api);
-
     return 0;
 }
 
-int ocr_image_to_hocr(gs_memory_t *mem,
+int ocr_image_to_hocr(void *api,
                       int w, int h, int bpp, int raster,
                       int xres, int yres, void *data, int restore,
-                      int pagecount, const char *language,
-                      int engine, char **out)
+                      int pagecount, char **out)
 {
-        return do_ocr_image(mem, w, h, bpp, raster, xres, yres, data,
-                            restore, 1, pagecount, language, engine, out);
+        return do_ocr_image((wrapped_api *)api,
+                            w, h, bpp, raster, xres, yres, data,
+                            restore, 1, pagecount, out);
 }
 
-int ocr_image_to_utf8(gs_memory_t *mem,
+int ocr_image_to_utf8(void *api,
                       int w, int h, int bpp, int raster,
                       int xres, int yres, void *data, int restore,
-                      const char *language, int engine, char **out)
+                      char **out)
 {
-        return do_ocr_image(mem, w, h, bpp, raster, xres, yres, data,
-                            restore, 0, 0, language, engine, out);
+        return do_ocr_image((wrapped_api *)api,
+                            w, h, bpp, raster, xres, yres, data,
+                            restore, 0, 0, out);
 }
 
 int
@@ -435,7 +457,7 @@ ocr_recognise(void *api_, int w, int h, void *data,
               int (*callback)(void *, const char *, const int *, const int *, const int *, int),
               void *arg)
 {
-    tesseract::TessBaseAPI *api = (tesseract::TessBaseAPI *)api_;
+    wrapped_api *wrapped = (wrapped_api *)api_;
     Pix *image;
     int code;
     int word_bbox[4];
@@ -445,17 +467,17 @@ ocr_recognise(void *api_, int w, int h, void *data,
     int pointsize, font_id;
     const char* font_name;
 
-    if (api == NULL)
+    if (wrapped == NULL || wrapped->api == NULL)
         return 0;
 
-    image = ocr_set_image(api, w, h, data, xres, yres);
+    image = ocr_set_image(wrapped->api, w, h, data, xres, yres);
     if (image == NULL)
         return_error(gs_error_VMerror);
 
-    code = api->Recognize(NULL);
+    code = wrapped->api->Recognize(NULL);
     if (code >= 0) {
         /* Bingo! */
-        tesseract::ResultIterator *res_it = api->GetIterator();
+        tesseract::ResultIterator *res_it = wrapped->api->GetIterator();
 
         while (!res_it->Empty(tesseract::RIL_BLOCK)) {
             if (res_it->Empty(tesseract::RIL_WORD)) {
@@ -504,7 +526,7 @@ ocr_recognise(void *api_, int w, int h, void *data,
 }
 
 static Pix *
-ocr_set_bitmap(tesseract::TessBaseAPI *api,
+ocr_set_bitmap(wrapped_api *wrapped,
                int w, int h,
                const unsigned char *data, int data_x, int raster,
                int xres, int yres)
@@ -521,7 +543,7 @@ ocr_set_bitmap(tesseract::TessBaseAPI *api,
     if (image == NULL)
         return NULL;
 
-    pdata = gs_alloc_bytes(leptonica_mem, r * (h+BORDER_SIZE*2), "ocr_set_bitmap");
+    pdata = gs_alloc_bytes(wrapped->mem, r * (h+BORDER_SIZE*2), "ocr_set_bitmap");
     if (pdata == NULL) {
         pixDestroy(&image);
         return NULL;
@@ -550,16 +572,16 @@ ocr_set_bitmap(tesseract::TessBaseAPI *api,
         d += r;
     }
 
-    api->SetImage(image);
+    wrapped->api->SetImage(image);
 //    pixWrite("test.pnm", image, IFF_PNM);
 
     return image;
 }
 
 static void
-ocr_clear_bitmap(Pix *image)
+ocr_clear_bitmap(wrapped_api *wrapped, Pix *image)
 {
-    gs_free_object(leptonica_mem, pixGetData(image), "ocr_clear_bitmap");
+    gs_free_object(wrapped->mem, pixGetData(image), "ocr_clear_bitmap");
     pixSetData(image, NULL);
     pixDestroy(&image);
 }
@@ -569,22 +591,22 @@ int ocr_bitmap_to_unicodes(void *state,
                           int w, int h, int raster,
                           int xres, int yres, int *unicode, int *char_count)
 {
-    tesseract::TessBaseAPI *api = (tesseract::TessBaseAPI *)state;
+    wrapped_api *wrapped = (wrapped_api *)state;
     Pix *image;
     int code, max_chars = *char_count, count = 0;
 
-    if (api == NULL)
+    if (wrapped == NULL || wrapped->api == NULL)
         return 0;
 
-    image = ocr_set_bitmap(api, w, h, (const unsigned char *)data,
+    image = ocr_set_bitmap(wrapped, w, h, (const unsigned char *)data,
                            data_x, raster, xres, yres);
     if (image == NULL)
         return_error(gs_error_VMerror);
 
-    code = api->Recognize(NULL);
+    code = wrapped->api->Recognize(NULL);
     if (code >= 0) {
         /* Bingo! */
-        tesseract::ResultIterator *res_it = api->GetIterator();
+        tesseract::ResultIterator *res_it = wrapped->api->GetIterator();
 
         while (!res_it->Empty(tesseract::RIL_BLOCK)) {
             if (res_it->Empty(tesseract::RIL_WORD)) {
@@ -639,74 +661,11 @@ int ocr_bitmap_to_unicodes(void *state,
         code = code;
     }
 
-    ocr_clear_bitmap(image);
+    ocr_clear_bitmap(wrapped, image);
     *char_count = count;
 
     return code;
 }
-
-int ocr_bitmap_to_unicode(void *state,
-                          const void *data, int data_x,
-                          int w, int h, int raster,
-                          int xres, int yres, int *unicode)
-{
-    tesseract::TessBaseAPI *api = (tesseract::TessBaseAPI *)state;
-    Pix *image;
-    int code;
-
-    if (api == NULL)
-        return 0;
-
-    image = ocr_set_bitmap(api, w, h, (const unsigned char *)data,
-                           data_x, raster, xres, yres);
-    if (image == NULL)
-        return_error(gs_error_VMerror);
-
-    code = api->Recognize(NULL);
-    if (code >= 0) {
-        /* Bingo! */
-        tesseract::ResultIterator *res_it = api->GetIterator();
-
-        while (!res_it->Empty(tesseract::RIL_BLOCK)) {
-            if (res_it->Empty(tesseract::RIL_WORD)) {
-                res_it->Next(tesseract::RIL_WORD);
-                continue;
-            }
-
-            do {
-                const unsigned char *graph = (unsigned char *)res_it->GetUTF8Text(tesseract::RIL_SYMBOL);
-                if (graph && graph[0] != 0) {
-                    /* Quick and nasty conversion from UTF8 to unicode. */
-                    if (graph[0] < 0x80)
-                        *unicode = graph[0];
-                    else {
-                        *unicode = graph[1] & 0x3f;
-                        if (graph[0] < 0xE0)
-                            *unicode += (graph[0] & 0x1f)<<6;
-                        else {
-                            *unicode = (graph[2] & 0x3f) | (*unicode << 6);
-                            if (graph[0] < 0xF0) {
-                                *unicode += (graph[0] & 0x0F)<<6;
-                            } else {
-                                *unicode = (graph[3] & 0x3f) | (*unicode<<6);
-                                *unicode += (graph[0] & 0x7);
-                            }
-                        }
-                    }
-                }
-                res_it->Next(tesseract::RIL_SYMBOL);
-             } while (!res_it->Empty(tesseract::RIL_BLOCK) &&
-                      !res_it->IsAtBeginningOf(tesseract::RIL_WORD));
-        }
-        delete res_it;
-        code = code;
-    }
-
-    ocr_clear_bitmap(image);
-
-    return code;
-}
-
 
 };
 
