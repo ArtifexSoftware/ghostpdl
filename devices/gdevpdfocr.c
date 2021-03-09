@@ -420,7 +420,7 @@ ocr_file_init(gx_device_pdf_image *dev)
     stream_write(dev->strm, funky_font6a, sizeof(funky_font6a));
     stream_write(dev->strm, funky_font6b, sizeof(funky_font6b)-1);
 
-    return ocr_init_api(dev->memory, language, dev->ocr.engine, &dev->ocr.state);
+    return ocr_init_api(dev->memory->non_gc_memory, language, dev->ocr.engine, &dev->ocr.state);
 }
 
 static void
