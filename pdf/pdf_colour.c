@@ -990,7 +990,8 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
     return code;
 }
 
-static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *cname, int64_t Length, int N, int *icc_N, float *range, gs_color_space **ppcs)
+static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *cname,
+                                  int64_t Length, int N, int *icc_N, float *range, gs_color_space **ppcs)
 {
     pdf_c_stream *profile_stream = NULL;
     byte *profile_buffer;
@@ -2366,4 +2367,224 @@ int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *p
     if (code < 0 && ctx->args.pdfstoponerror)
         return code;
     return 0;
+}
+
+
+/*
+ * Set device outputintent from stream
+ * see zicc.c/zset_outputintent()
+ */
+static int pdfi_device_setoutputintent(pdf_context *ctx, pdf_dict *profile_dict, stream *stream)
+{
+    int code = 0;
+    gs_gstate *pgs = ctx->pgs;
+    gx_device *dev = gs_currentdevice(pgs);
+    cmm_dev_profile_t *dev_profile;
+    int64_t N;
+    int ncomps, dev_comps;
+    int expected = 0;
+    cmm_profile_t *picc_profile = NULL;
+    cmm_profile_t *source_profile = NULL;
+    gsicc_manager_t *icc_manager = pgs->icc_manager;
+    gs_color_space_index index;
+
+    if_debug0m(gs_debug_flag_icc, ctx->memory, "[icc] Using OutputIntent\n");
+
+    /* get dev_profile and try initing it if fail first time */
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    if (code < 0)
+        return code;
+
+    if (dev_profile == NULL) {
+        code = gsicc_init_device_profile_struct(dev, NULL, 0);
+        if (code < 0)
+            return code;
+        code = dev_proc(dev, get_profile)(dev, &dev_profile);
+        if (code < 0)
+            return code;
+    }
+    if (dev_profile->oi_profile != NULL) {
+        return 0;  /* Allow only one setting of this object */
+    }
+
+    code = pdfi_dict_get_int(ctx, profile_dict, "N", &N);
+    if (code < 0)
+        goto exit;
+    ncomps = (int)N;
+
+    picc_profile = gsicc_profile_new(stream, gs_gstate_memory(pgs), NULL, 0);
+    if (picc_profile == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
+    picc_profile->num_comps = ncomps;
+    picc_profile->profile_handle =
+        gsicc_get_profile_handle_buffer(picc_profile->buffer,
+                                        picc_profile->buffer_size,
+                                        gs_gstate_memory(pgs));
+    if (picc_profile->profile_handle == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
+
+    picc_profile->data_cs =
+        gscms_get_profile_data_space(picc_profile->profile_handle,
+            picc_profile->memory);
+    switch (picc_profile->data_cs) {
+        case gsCIEXYZ:
+        case gsCIELAB:
+        case gsRGB:
+            expected = 3;
+            source_profile = icc_manager->default_rgb;
+            break;
+        case gsGRAY:
+            expected = 1;
+            source_profile = icc_manager->default_gray;
+            break;
+        case gsCMYK:
+            expected = 4;
+            source_profile = icc_manager->default_cmyk;
+            break;
+        case gsNCHANNEL:
+            expected = 0;
+            break;
+        case gsNAMED:
+        case gsUNDEFINED:
+            break;
+    }
+    if (expected && ncomps != expected) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+    gsicc_init_hash_cs(picc_profile, pgs);
+
+    /* All is well with the profile.  Lets set the stuff that needs to be set */
+    dev_profile->oi_profile = picc_profile;
+    rc_increment(picc_profile);
+    picc_profile->name = (char *) gs_alloc_bytes(picc_profile->memory,
+                                                 MAX_DEFAULT_ICC_LENGTH,
+                                                 "pdfi_color_setoutputintent");
+    strncpy(picc_profile->name, OI_PROFILE, strlen(OI_PROFILE));
+    picc_profile->name[strlen(OI_PROFILE)] = 0;
+    picc_profile->name_length = strlen(OI_PROFILE);
+    /* Set the range of the profile */
+    gsicc_set_icc_range(&picc_profile);
+
+    /* If the output device has a different number of components, then we are
+       going to set the output intent as the proofing profile, unless the
+       proofing profile has already been set.
+
+       If the device has the same number of components (and color model) then as
+       the profile we will use this as the output profile, unless someone has
+       explicitly set the output profile.
+
+       Finally, we will use the output intent profile for the default profile
+       of the proper Device profile in the icc manager, again, unless someone
+       has explicitly set this default profile.
+    */
+    dev_comps = dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps;
+    index = gsicc_get_default_type(dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]);
+    if (ncomps == dev_comps && index < gs_color_space_index_DevicePixel) {
+        /* The OI profile is the same type as the profile for the device and a
+           "default" profile for the device was not externally set. So we go
+           ahead and use the OI profile as the device profile.  Care needs to be
+           taken here to keep from screwing up any device parameters.   We will
+           use a keyword of OIProfile for the user/device parameter to indicate
+           its usage.  Also, note conflicts if one is setting object dependent
+           color management */
+        dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE] = picc_profile;
+        rc_increment(picc_profile);
+        if_debug0m(gs_debug_flag_icc, ctx->memory, "[icc] OutputIntent used for device profile\n");
+    } else {
+        if (dev_profile->proof_profile == NULL) {
+            /* This means that we should use the OI profile as the proofing
+               profile.  Note that if someone already has specified a
+               proofing profile it is unclear what they are trying to do
+               with the output intent.  In this case, we will use it
+               just for the source data below */
+            dev_profile->proof_profile = picc_profile;
+            rc_increment(picc_profile);
+            if_debug0m(gs_debug_flag_icc, ctx->memory, "[icc] OutputIntent used for proof profile\n");
+        }
+    }
+    /* Now the source colors.  See which source color space needs to use the
+       output intent ICC profile */
+    index = gsicc_get_default_type(source_profile);
+    if (index < gs_color_space_index_DevicePixel) {
+        /* source_profile is currently the default.  Set it to the OI profile */
+        switch (picc_profile->data_cs) {
+            case gsGRAY:
+                if_debug0m(gs_debug_flag_icc, ctx->memory, "[icc] OutputIntent used source Gray\n");
+                icc_manager->default_gray = picc_profile;
+                rc_increment(picc_profile);
+                break;
+            case gsRGB:
+                if_debug0m(gs_debug_flag_icc, ctx->memory, "[icc] OutputIntent used source RGB\n");
+                icc_manager->default_rgb = picc_profile;
+                rc_increment(picc_profile);
+                break;
+            case gsCMYK:
+                if_debug0m(gs_debug_flag_icc, ctx->memory, "[icc] OutputIntent used source CMYK\n");
+                icc_manager->default_cmyk = picc_profile;
+                rc_increment(picc_profile);
+                break;
+            default:
+                break;
+        }
+    }
+
+ exit:
+    if (picc_profile != NULL)
+        rc_decrement(picc_profile, "pdfi_color_setoutputintent");
+    return code;
+}
+
+/*
+ * intent_dict -- the outputintent dictionary
+ * profile -- the color profile (a stream)
+ *
+ */
+int pdfi_color_setoutputintent(pdf_context *ctx, pdf_dict *intent_dict, pdf_stream *profile)
+{
+    pdf_c_stream *profile_stream = NULL;
+    byte *profile_buffer;
+    gs_offset_t savedoffset;
+    int code, code1;
+    int64_t Length;
+    pdf_dict *profile_dict;
+
+    code = pdfi_dict_from_obj(ctx, (pdf_obj *)profile, &profile_dict);
+    if (code < 0)
+        return code;
+
+    /* Save the current stream position, and move to the start of the profile stream */
+    savedoffset = pdfi_tell(ctx->main_stream);
+    pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, profile), SEEK_SET);
+
+    Length = pdfi_stream_length(ctx, profile);
+
+    /* The ICC profile reading code (irritatingly) requires a seekable stream, because it
+     * rewinds it to the start, then seeks to the end to find the size, then rewinds the
+     * stream again.
+     * Ideally we would use a ReusableStreamDecode filter here, but that is largely
+     * implemented in PostScript (!) so we can't use it. What we can do is create a
+     * string sourced stream in memory, which is at least seekable.
+     */
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, profile, Length,
+                                                        &profile_buffer, ctx->main_stream,
+                                                        &profile_stream);
+    if (code < 0)
+        goto exit;
+
+    /* Create and set the device profile */
+    code = pdfi_device_setoutputintent(ctx, profile_dict, profile_stream->s);
+
+    code1 = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
+
+    if (code == 0)
+        code = code1;
+
+ exit:
+    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+    return code;
 }

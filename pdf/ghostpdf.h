@@ -230,6 +230,9 @@ typedef struct cmd_args_s {
     bool nouserunit;
     bool renderttnotdef;
     bool pdfinfo;
+    bool UsePDFX3Profile;
+    int PDFX3Profile_num;
+    char *UseOutputIntent;
     pdf_overprint_control_t overprint_control;     /* Overprint -- enabled, disabled, simulated */
     char *PageList;
 } cmd_args_t;

@@ -28,6 +28,7 @@
 #include "pdf_repair.h"
 #include "pdf_doc.h"
 #include "pdf_mark.h"
+#include "pdf_colour.h"
 
 int pdfi_read_Root(pdf_context *ctx)
 {
@@ -1023,16 +1024,21 @@ static int pdfi_doc_PageLabels(pdf_context *ctx)
 static int pdfi_doc_OutputIntents(pdf_context *ctx)
 {
     int code;
-    pdf_dict *OutputIntents = NULL;
+    pdf_array *OutputIntents = NULL;
+    pdf_dict *intent = NULL;
+    pdf_string *name = NULL;
+    pdf_stream *DestOutputProfile = NULL;
+    uint64_t index;
 
-    /* Sample file tests_private/comparefiles/Bug689830.pdf contains an /OutputIntents entry.
+    /* NOTE: subtle difference in error handling -- we are checking for OutputIntents first,
+     * so this will just ignore UsePDFX3Profile or UseOutputIntent params without warning,
+     * if OutputIntents doesn't exist.  Seems fine to me.
      */
-    code = pdfi_dict_knownget_type(ctx, ctx->Root, "OutputIntents", PDF_DICT,
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "OutputIntents", PDF_ARRAY,
                                    (pdf_obj **)&OutputIntents);
     if (code <= 0) {
         goto exit;
     }
-
 
     /* TODO: Implement writeoutputintents  if somebody ever complains...
      * See pdf_main.ps/writeoutputintents
@@ -1040,8 +1046,72 @@ static int pdfi_doc_OutputIntents(pdf_context *ctx)
      * couldn't figure out what to do for this.
      */
 
+    /* Handle UsePDFX3Profile and UseOutputIntent command line options */
+    if (ctx->args.UsePDFX3Profile) {
+        /* This is an index into the array */
+        code = pdfi_array_get_type(ctx, OutputIntents, ctx->args.PDFX3Profile_num,
+                                   PDF_DICT, (pdf_obj **)&intent);
+        if (code < 0) {
+            dmprintf1(ctx->memory,
+                      "*** WARNING UsePDFX3Profile specified invalid index %d for OutputIntents\n",
+                      ctx->args.PDFX3Profile_num);
+            goto exit;
+        }
+    } else if (ctx->args.UseOutputIntent != NULL) {
+        /* This is a name to look up in the array */
+        for (index=0; index<pdfi_array_size(OutputIntents); index ++) {
+            code = pdfi_array_get_type(ctx, OutputIntents, index, PDF_DICT, (pdf_obj **)&intent);
+            if (code < 0) goto exit;
+
+            code = pdfi_dict_knownget_type(ctx, intent, "OutputConditionIdentifier", PDF_STRING,
+                                           (pdf_obj **)&name);
+            if (code < 0) goto exit;
+            if (code == 0)
+                continue;
+
+            /* If the ID is "Custom" then check "Info" instead */
+            if (pdfi_string_is(name, "Custom")) {
+                pdfi_countdown(name);
+                name = NULL;
+                code = pdfi_dict_knownget_type(ctx, intent, "Info", PDF_STRING, (pdf_obj **)&name);
+                if (code < 0) goto exit;
+                if (code == 0)
+                    continue;
+            }
+
+            /* Check for a match */
+            if (pdfi_string_is(name, ctx->args.UseOutputIntent))
+                break;
+
+            pdfi_countdown(intent);
+            intent = NULL;
+            pdfi_countdown(name);
+            name = NULL;
+        }
+        code = 0;
+    } else {
+        /* No command line arg was specified, so nothing to do */
+        code = 0;
+        goto exit;
+    }
+
+    /* Now if intent is non-null, we found the selected intent dictionary */
+    if (intent == NULL)
+        goto exit;
+
+    /* Load the profile, if it exists */
+    code = pdfi_dict_knownget_type(ctx, intent, "DestOutputProfile", PDF_STREAM, (pdf_obj **)&DestOutputProfile);
+    /* TODO: Flag an error if it doesn't exist?  Only required in some cases */
+    if (code <= 0) goto exit;
+
+    /* Set the intent to the profile */
+    code = pdfi_color_setoutputintent(ctx, intent, DestOutputProfile);
+
  exit:
     pdfi_countdown(OutputIntents);
+    pdfi_countdown(intent);
+    pdfi_countdown(name);
+    pdfi_countdown(DestOutputProfile);
     return code;
 }
 

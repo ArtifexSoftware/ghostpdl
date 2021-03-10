@@ -90,6 +90,15 @@ pdfi_name_strcmp(const pdf_name *n, const char *s)
 }
 
 bool
+pdfi_string_is(const pdf_string *n, const char *s)
+{
+    int len = strlen(s);
+    if (n->length == len)
+        return (memcmp(n->data, s, len) == 0);
+    return false;
+}
+
+bool
 pdfi_name_is(const pdf_name *n, const char *s)
 {
     int len = strlen(s);

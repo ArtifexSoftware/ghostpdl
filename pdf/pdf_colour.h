@@ -55,4 +55,6 @@ int pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_c_stream *strea
 /* Page level spot colour detection and enumeration */
 int pdfi_check_ColorSpace_for_spots(pdf_context *ctx, pdf_obj *space, pdf_dict *parent_dict, pdf_dict *page_dict, pdf_dict *spot_dict);
 
+int pdfi_color_setoutputintent(pdf_context *ctx, pdf_dict *intent_dict, pdf_stream *profile);
+
 #endif

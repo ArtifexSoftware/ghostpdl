@@ -425,6 +425,7 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
     gs_param_enumerator_t enumerator;
     gs_param_key_t key;
     int code;
+    int len;
 
     param_init_enumerator(&enumerator);
     while ((code = param_get_next_key(plist, &enumerator, &key)) == 0) {
@@ -560,6 +561,27 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
         }
         if (!strncmp(param, "Overprint", 9)) {
             code = pdfi_get_overprint_param(ctx, &pvalue);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "UsePDFX3Profile", strlen("UsePDFX3Profile"))) {
+            /* This is a weird one because it can be either a bool or an int.
+             * If it's a bool=true, then it defaults to PDFX3Profile_num = 0
+             * If it's an int, then we set the flag to true and use the
+             * specified number.
+             * PS: Yuck!
+             */
+            code = plist_value_get_bool(&pvalue, &ctx->args.UsePDFX3Profile);
+            if (code == gs_error_typecheck) {
+                code = plist_value_get_int(&pvalue, &ctx->args.PDFX3Profile_num);
+                if (code == 0)
+                    ctx->args.UsePDFX3Profile = true;
+            }
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "UseOutputIntent", strlen("UseOutputIntent"))) {
+            code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->args.UseOutputIntent, &len);
             if (code < 0)
                 return code;
         }
