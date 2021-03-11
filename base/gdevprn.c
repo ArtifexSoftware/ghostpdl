@@ -218,107 +218,6 @@ gdev_prn_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
-static int		/* returns 0 ok, else -ve error cde */
-gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
-                               byte **the_memory,
-                               const gdev_space_params *space_params,
-                               bool bufferSpace_is_exact)
-{
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
-    gx_device *target = pdev;
-    uint space;
-    int code;
-    gx_device_clist *const pclist_dev = (gx_device_clist *)pdev;
-    gx_device_clist_common * const pcldev = &pclist_dev->common;
-    bool reallocate = *the_memory != 0;
-    byte *base;
-    bool save_is_open = pdev->is_open;	/* Save around temporary failure in open_c loop */
-
-    while (target->parent != NULL) {
-        target = target->parent;
-        gx_update_from_subclass(target);
-    }
-
-    /* Try to allocate based simply on param-requested buffer size */
-#ifdef DEBUGGING_HACKS
-#define BACKTRACE(first_arg)\
-  BEGIN\
-    ulong *fp_ = (ulong *)&first_arg - 2;\
-    for (; fp_ && (fp_[1] & 0xff000000) == 0x08000000; fp_ = (ulong *)*fp_)\
-        dmprintf2(buffer_memory, "  fp="PRI_INTPTR" ip=0x%lx\n", (intptr_t)fp_, fp_[1]);\
-  END
-dmputs(buffer_memory, "alloc buffer:\n");
-BACKTRACE(pdev);
-#endif /*DEBUGGING_HACKS*/
-    for ( space = space_params->BufferSpace; ; ) {
-        base = (reallocate ?
-                (byte *)gs_resize_object(buffer_memory, *the_memory, space,
-                                         "cmd list buffer") :
-                gs_alloc_bytes(buffer_memory, space,
-                               "cmd list buffer"));
-        if (base != 0)
-            break;
-        if (bufferSpace_is_exact || (space >>= 1) < PRN_MIN_BUFFER_SPACE)
-            break;
-    }
-    if (base == 0)
-        return_error(gs_error_VMerror);
-    *the_memory = base;
-
-    /* Try opening the command list, to see if we allocated */
-    /* enough buffer space. */
-open_c:
-    ppdev->buf = base;
-    ppdev->buffer_space = space;
-    pclist_dev->common.orig_spec_op = gdev_prn_forwarding_dev_spec_op;
-    clist_init_io_procs(pclist_dev, ppdev->BLS_force_memory);
-    clist_init_params(pclist_dev, base, space, target,
-                      ppdev->printer_procs.buf_procs,
-                      space_params->band,
-                      false, /* do_not_open_or_close_bandfiles */
-                      (ppdev->bandlist_memory == 0 ? pdev->memory->non_gc_memory:
-                       ppdev->bandlist_memory),
-                      ppdev->clist_disable_mask,
-                      ppdev->page_uses_transparency,
-                      ppdev->page_uses_overprint);
-    code = (*gs_clist_device_procs.open_device)( (gx_device *)pcldev );
-    if (code < 0) {
-        /* If there wasn't enough room, and we haven't */
-        /* already shrunk the buffer, try enlarging it. */
-        if ( code == gs_error_rangecheck &&
-             space >= space_params->BufferSpace &&
-             !bufferSpace_is_exact
-             ) {
-            space += space / 8;
-            if (reallocate) {
-                base = gs_resize_object(buffer_memory,
-                                        *the_memory, space,
-                                        "cmd list buf(retry open)");
-                if (base != 0)
-                    *the_memory = base;
-            } else {
-                gs_free_object(buffer_memory, base,
-                               "cmd list buf(retry open)");
-                *the_memory = base =
-                    gs_alloc_bytes(buffer_memory, space,
-                                   "cmd list buf(retry open)");
-            }
-            ppdev->buf = *the_memory;
-            if (base != 0) {
-                pdev->is_open = save_is_open;	/* allow for success when we loop */
-                goto open_c;
-            }
-        }
-        /* Failure. */
-        if (!reallocate) {
-            gs_free_object(buffer_memory, base, "cmd list buf");
-            ppdev->buffer_space = 0;
-            *the_memory = 0;
-        }
-    }
-    return code;
-}
-
 static bool	/* ret true if device was cmd list, else false */
 gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
 {
@@ -526,9 +425,13 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
                     ppdev->bg_print->obfile = ppdev->bg_print->ocfile = NULL;
             }
 
-            code = gdev_prn_setup_as_command_list(pdev, buffer_memory,
-                                                  &the_memory, &space_params,
-                                                  !bufferSpace_is_default);
+            code = clist_mutate_to_clist((gx_device_clist_mutatable *)pdev,
+                                         buffer_memory,
+                                         &the_memory, &space_params,
+                                         !bufferSpace_is_default,
+                                         &ppdev->printer_procs.buf_procs,
+                                         gdev_prn_forwarding_dev_spec_op,
+                                         PRN_MIN_BUFFER_SPACE);
             if (ecode == 0)
                 ecode = code;
 
