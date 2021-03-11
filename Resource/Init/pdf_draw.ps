@@ -2197,7 +2197,15 @@ currentdict /last-ditch-bpc-csp undef
       (               Output may be incorrect.\n) pdfformaterror
     } ifelse
   } if
-  1 index /Mask knownoget { 1 index exch /Mask exch put } if
+  1 index /Mask knownoget {
+    dup type dup /dicttype eq exch /arraytype eq or { % Bug #703681
+      1 index exch /Mask exch put
+    } {
+      pop
+      (   **** Error: Ignoring Mask attribute that is not an array or a dictionary.\n)
+      pdfformaterror
+    } ifelse
+  } if
   makeimagedict doimagesmask
 } bind executeonly def
 /makemaskimage {	% <datasource> <imagemask> <Mask> makemaskimage
