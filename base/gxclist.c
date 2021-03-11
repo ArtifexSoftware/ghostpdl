@@ -1474,3 +1474,108 @@ RELOC_PTRS_WITH(device_clist_mutatable_reloc_ptrs, gx_device_clist_mutatable *pd
         RELOC_PREFIX(st_device_forward);
 } RELOC_PTRS_END
 public_st_device_clist_mutatable();
+
+int
+clist_mutate_to_clist(gx_device_clist_mutatable  *pdev,
+                      gs_memory_t                *buffer_memory,
+                      byte                      **the_memory,
+                const gdev_space_params          *space_params,
+                      bool                        bufferSpace_is_exact,
+                const gx_device_buf_procs_t      *buf_procs,
+                      dev_proc_dev_spec_op(dev_spec_op),
+                      uint                        min_buffer_space)
+{
+    gx_device *target = (gx_device *)pdev;
+    uint space;
+    int code;
+    gx_device_clist *const pclist_dev = (gx_device_clist *)pdev;
+    gx_device_clist_common * const pcldev = &pclist_dev->common;
+    bool reallocate = the_memory != NULL && *the_memory != NULL;
+    byte *base;
+    bool save_is_open = pdev->is_open;	/* Save around temporary failure in open_c loop */
+
+    while (target->parent != NULL) {
+        target = target->parent;
+        gx_update_from_subclass(target);
+    }
+
+    /* Try to allocate based simply on param-requested buffer size */
+#ifdef DEBUGGING_HACKS
+#define BACKTRACE(first_arg)\
+  BEGIN\
+    ulong *fp_ = (ulong *)&first_arg - 2;\
+    for (; fp_ && (fp_[1] & 0xff000000) == 0x08000000; fp_ = (ulong *)*fp_)\
+        dmprintf2(buffer_memory, "  fp="PRI_INTPTR" ip=0x%lx\n", (intptr_t)fp_, fp_[1]);\
+  END
+dmputs(buffer_memory, "alloc buffer:\n");
+BACKTRACE(pdev);
+#endif /*DEBUGGING_HACKS*/
+    for ( space = space_params->BufferSpace; ; ) {
+        base = (reallocate ?
+                (byte *)gs_resize_object(buffer_memory, *the_memory, space,
+                                         "cmd list buffer") :
+                gs_alloc_bytes(buffer_memory, space,
+                               "cmd list buffer"));
+        if (base != 0)
+            break;
+        if (bufferSpace_is_exact || (space >>= 1) < min_buffer_space)
+            break;
+    }
+    if (base == 0)
+        return_error(gs_error_VMerror);
+    if (the_memory)
+        *the_memory = base;
+
+    /* Try opening the command list, to see if we allocated */
+    /* enough buffer space. */
+open_c:
+    pdev->buf = base;
+    pdev->buffer_space = space;
+    pclist_dev->common.orig_spec_op = dev_spec_op;
+    clist_init_io_procs(pclist_dev, pdev->BLS_force_memory);
+    clist_init_params(pclist_dev, base, space, target,
+                      *buf_procs,
+                      space_params->band,
+                      false, /* do_not_open_or_close_bandfiles */
+                      (pdev->bandlist_memory == 0 ? pdev->memory->non_gc_memory:
+                       pdev->bandlist_memory),
+                      pdev->clist_disable_mask,
+                      pdev->page_uses_transparency,
+                      pdev->page_uses_overprint);
+    code = (*gs_clist_device_procs.open_device)( (gx_device *)pcldev );
+    if (code < 0) {
+        /* If there wasn't enough room, and we haven't */
+        /* already shrunk the buffer, try enlarging it. */
+        if ( code == gs_error_rangecheck &&
+             space >= space_params->BufferSpace &&
+             !bufferSpace_is_exact
+             ) {
+            space += space / 8;
+            if (reallocate) {
+                base = gs_resize_object(buffer_memory,
+                                        *the_memory, space,
+                                        "cmd list buf(retry open)");
+                if (base != 0)
+                    *the_memory = base;
+            } else {
+                gs_free_object(buffer_memory, base,
+                               "cmd list buf(retry open)");
+                *the_memory = base =
+                    gs_alloc_bytes(buffer_memory, space,
+                                   "cmd list buf(retry open)");
+            }
+            pdev->buf = *the_memory;
+            if (base != 0) {
+                pdev->is_open = save_is_open;	/* allow for success when we loop */
+                goto open_c;
+            }
+        }
+        /* Failure. */
+        if (!reallocate) {
+            gs_free_object(buffer_memory, base, "cmd list buf");
+            pdev->buffer_space = 0;
+            *the_memory = NULL;
+        }
+    }
+    return code;
+}
