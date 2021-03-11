@@ -387,11 +387,19 @@ gx_ht_alloc_threshold_order(gx_ht_order * porder, uint width, uint height,
                             uint num_levels, gs_memory_t * mem)
 {
     gx_ht_order order;
-    uint num_bits = width * height;
-    const gx_ht_order_procs_t *procs =
-        (num_bits > 2000 && num_bits <= max_ushort ?
-         &ht_order_procs_short : &ht_order_procs_default);
+
+    unsigned long num_bits = bitmap_raster(width) * 8 * height;
+    const gx_ht_order_procs_t *procs;
     int code;
+
+    if (num_bits <= 2000)
+        procs = &ht_order_procs_default;
+    else if (num_bits <= max_ushort + 1)  /* We can index 0 to 65535 so a size of 65536 (max_ushort + 1) is OK */
+        procs = &ht_order_procs_short;
+    else if (num_bits <= max_uint)
+        procs = &ht_order_procs_uint;
+    else
+        return_error(gs_error_VMerror);  /* At this point in history, this is way too large of a screen */
 
     order = *porder;
     gx_compute_cell_values(&order.params);
