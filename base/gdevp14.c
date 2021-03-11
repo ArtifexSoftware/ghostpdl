@@ -4372,6 +4372,14 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         gs_swapcolors_quick(pgs);
         if (code < 0)
             goto cleanup;
+        /* Bug 703324 we need to reset the fill constant alpha in the graphics
+         * state to the correct saved value. We also need to reset the 'opacity' member of the
+         * device, because some device methods (eg fill_masked_image) don't take a graphics
+         * state pointer as a parameter and so are unable to set the opacity value themselves.
+         * We therefore need to make sure it is set according to the current fill state.
+         */
+        (void)gs_setfillconstantalpha(pgs, fill_alpha);
+        pdf14_set_marking_params(dev, pgs);
     }
 
 cleanup:
