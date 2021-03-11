@@ -188,11 +188,14 @@ typedef struct gx_ht_order_procs_s {
 } gx_ht_order_procs_t;
 /*
  * Define the procedure vectors for the supported implementations
- * (in gxhtbit.c).
+ * (in gxhtbit.c).  This defines the type of data that the turn-on-sequence (TOS)
+ * elements are pointing too.  For the ushort and uint case, they are offsets
+ * into the address of the bitmap tiles.
  */
-extern const gx_ht_order_procs_t ht_order_procs_table[2];
+extern const gx_ht_order_procs_t ht_order_procs_table[3];
 #define ht_order_procs_default ht_order_procs_table[0]	/* bit_data is gx_ht_bit[] */
 #define ht_order_procs_short ht_order_procs_table[1]	/* bit_data is ushort[] */
+#define ht_order_procs_uint ht_order_procs_table[2]     /* bit_data is uint[] */
 /* For screen/spot halftones, we must record additional parameters. */
 typedef struct gx_ht_order_screen_params_s {
     gs_matrix matrix;		/* CTM when the function was sampled */
