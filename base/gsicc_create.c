@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2020 Artifex Software, Inc.
+/* Copyright (C) 2001-2021 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -169,7 +169,7 @@ typedef struct cielab_s {
 } cielab_t;
 
 static const char desc_name[] = "Ghostscript Internal Profile";
-static const char copy_right[] = "Copyright Artifex Software 2009";
+static const char copy_right[] = "Copyright Artifex Software 2009-2021";
 
 typedef struct {
     icTagSignature      sig;            /* The tag signature */

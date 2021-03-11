@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2020 Artifex Software, Inc.
+dnl Copyright (C) 2001-2021 Artifex Software, Inc.
 dnl
 dnl Permission is hereby granted, free of charge, to any person
 dnl obtaining a copy of this software and associated documentation

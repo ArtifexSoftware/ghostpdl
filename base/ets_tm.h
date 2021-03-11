@@ -10,7 +10,7 @@
  * agreement between artofcode LLC and the licensee. Please see
  * http://www.artofcode.com/eventone/ for information on licensing.
  *
- * Subsequent Changes: Copyright (C) 2013-2020 Artifex Software, Inc.
+ * Subsequent Changes: Copyright (C) 2013-2021 Artifex Software, Inc.
  *
  * All Rights Reserved.
  *

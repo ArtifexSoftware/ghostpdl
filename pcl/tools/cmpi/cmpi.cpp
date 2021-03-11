@@ -5,7 +5,7 @@
 // Modified by:
 // Created:     2006
 // RCS-ID:      $Id:$
-// Copyright:   (c) 2006-2018 Artifex Software Inc.
+// Copyright:   (c) 2006-2021 Artifex Software Inc.
 // License:     AFPL
 ///////////////////////////////////////////////////////////////////////////////
 
