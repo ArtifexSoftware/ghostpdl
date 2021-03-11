@@ -35,8 +35,10 @@
  * program will crash soon after returning due to stack corruption.
  */
 
-#ifdef __WINDOWS__
-# define _Windows
+#if defined(_WINDOWS_) || defined(__WINDOWS__)
+# ifndef _Windows
+#  define _Windows
+# endif
 #endif
 
 #ifdef _Windows
