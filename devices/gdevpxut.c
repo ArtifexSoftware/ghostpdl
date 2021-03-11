@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2020 Artifex Software, Inc.
+/* Copyright (C) 2001-2021 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -45,7 +45,7 @@ px_write_file_header(stream *s, const gx_device *dev, bool staple)
     static const char *const resolution_2400 = "2400";
     static const char *const file_header =
         "\n@PJL ENTER LANGUAGE = PCLXL\n\
-) HP-PCL XL;1;1;Comment Copyright Artifex Sofware, Inc. 2005\000\n";
+) HP-PCL XL;1;1;Comment Copyright Artifex Sofware, Inc. 2005-2021\000\n";
     static const byte stream_header[] = {
         DA(pxaUnitsPerMeasure),
         DUB(0), DA(pxaMeasure),
