@@ -33,6 +33,7 @@
 #include "zht2.h"
 #include "gxgstate.h"
 #include "gen_ordered.h"
+#include "gp.h"
 
 /* Forward references */
 static int dict_spot_params(const ref *, gs_spot_halftone *, ref *, ref *,
@@ -451,8 +452,9 @@ zgenordered(i_ctx_t *i_ctx_p)
     code = htsc_gen_ordered(params, &S, &final_mask, mem);
 
 #if FINAL_SCREEN_DUMP
-    if (code >= 0)
+    if (code >= 0) {
         code = htsc_save_screen(&final_mask, params.holladay, S, params, mem);
+    }
 #endif
 
     if (code < 0)
@@ -517,6 +519,19 @@ zgenordered(i_ctx_t *i_ctx_p)
             for (; cur_pix < num_pix; cur_pix++) {
                 thresh[final_mask.data[2 * cur_pix] + (width*final_mask.data[2 * cur_pix + 1])] = 0;
             }
+#if FINAL_SCREEN_DUMP
+            {
+                char file_name[FULL_FILE_NAME_LENGTH];
+                gp_file *fid;
+
+                snprintf(file_name, FULL_FILE_NAME_LENGTH, "Screen_%dx%d.raw", width, final_mask.height);
+                fid = gp_fopen(mem, file_name, "wb");
+                if (fid) {
+                    gp_fwrite(thresh, sizeof(unsigned char), num_pix, fid);
+                    gp_fclose(fid);
+                }
+            }
+#endif
             if (output_type == OUTPUT_RAW) {
                 make_string(&thresh_ref, a_all | icurrent_space, 4 + num_pix, thresh-4);
                 *op = thresh_ref;

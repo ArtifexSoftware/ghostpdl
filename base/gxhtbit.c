@@ -25,6 +25,9 @@
 #include "gxtmap.h"
 #include "gxdht.h"
 #include "gxdhtres.h"
+#include "gp.h"
+
+#define DUMP_TOS 0
 
 extern_gx_device_halftone_list();
 
@@ -75,7 +78,6 @@ construct_ht_order_short(gx_ht_order *porder, const byte *thresholds)
         for (i = 0; i < size; i++) {
             uint value = max(1, thresholds[i]);
 
-            /* Adjust the bit index to account for padding. */
             bits[levels[value]++] = i + (i / width * padding);
         }
     }
@@ -114,6 +116,22 @@ construct_ht_order_short(gx_ht_order *porder, const byte *thresholds)
             }
         }
     }
+#if DUMP_TOS
+/* Lets look at the bit data which is the TOS level by level if I understand what the above
+   code is supposed to be doing */
+    {
+        char file_name[50];
+        gp_file *fid;
+
+        snprintf(file_name, 50, "TOS_porder_%dx%d.raw", porder->width, porder->height);
+        fid = gp_fopen(porder->data_memory, file_name, "wb");
+        if (fid) {
+            gp_fwrite(porder->bit_data, sizeof(unsigned short), size, fid);
+            gp_fclose(fid);
+        }
+    }
+#endif
+
  out:
     return 0;
 }

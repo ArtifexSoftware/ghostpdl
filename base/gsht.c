@@ -27,6 +27,9 @@
 #include "gxdevice.h"           /* for gzht.h */
 #include "gzht.h"
 #include "gxfmap.h"             /* For effective transfer usage in threshold */
+#include "gp.h"
+
+#define DUMP_SCREENS 0
 
 /* Forward declarations */
 void gx_set_effective_transfer(gs_gstate *);
@@ -1454,5 +1457,20 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
         }
    }
 #endif
+/* Large screens are easier to see as images */
+#if DUMP_SCREENS
+    {
+        char file_name[50];
+        gp_file *fid;
+
+        snprintf(file_name, 50, "Screen_From_Tiles_%dx%d.raw", d_order->width, d_order->full_height);
+        fid = gp_fopen(memory, file_name, "wb");
+        if (fid) {
+            gp_fwrite(thresh, sizeof(unsigned char), d_order->width * d_order->full_height, fid);
+            gp_fclose(fid);
+        }
+    }
+#endif
+
     return 0;
 }
