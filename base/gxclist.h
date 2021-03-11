@@ -666,4 +666,14 @@ extern_st(st_device_clist_mutatable);
 #define CLIST_MUTATABLE_HAS_MUTATED(pdev) \
     (((gx_device_clist_mutatable *)(pdev))->buffer_space != 0)
 
+int
+clist_mutate_to_clist(gx_device_clist_mutatable  *pdev,
+                      gs_memory_t                *buffer_memory,
+                      byte                      **the_memory,
+                const gdev_space_params          *space_params,
+                      bool                        bufferSpace_is_exact,
+                const gx_device_buf_procs_t      *buf_procs,
+                      dev_proc_dev_spec_op(dev_spec_op),
+                      uint                        min_buffer_space);
+
 #endif /* gxclist_INCLUDED */
