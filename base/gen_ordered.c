@@ -23,7 +23,7 @@
 #include "string_.h"
 #include "gsmemory.h"
 #include "math_.h"
-#include <gp.h>
+#include "gp.h"
 
 #   define ALLOC(mem, size) (gs_alloc_bytes((gs_memory_t *)mem, size, "gen_ordered"))
 #   define FREE(mem, ptr)   gs_free_object((gs_memory_t *)mem, ptr, "gen_ordered")
@@ -35,6 +35,15 @@
 #   define EPRINTF(mem, str) errprintf((gs_memory_t *)mem, str)
 #   define EPRINTF1(mem, str, v1) errprintf((gs_memory_t *)mem, str, v1)
 #   define EPRINTF3(mem, str, v1, v2, v3) errprintf((gs_memory_t *)mem, str, v1, v2, v3)
+#   define _FILE gp_file
+#   define FOPEN(mem, v1, v2) gp_fopen(mem, v1, v2)
+#   define FCLOSE(fid) gp_fclose(fid)
+#   define FPRINTF(fid, str) gp_fprintf(fid, str)
+#   define FPRINTF1(fid, str, v1) gp_fprintf(fid, str, v1)
+#   define FPRINTF2(fid, str, v1, v2) gp_fprintf(fid, str, v1, v2)
+#   define FPRINTF6(fid, str, v1, v2, v3, v4, v5, v6) gp_fprintf(fid, str, v1, v2, v3, v4, v5, v6)
+#   define FWRITE(v1, v2, v3, fid) gp_fwrite(v1, v2, v3, fid)
+
 
 #endif /* defined GS_LIB_BUILD */
 
@@ -65,6 +74,14 @@ typedef unsigned char byte;
 #   define EPRINTF(mem, str) fprintf(stderr, str)
 #   define EPRINTF1(mem, str, v1) fprintf(stderr, str, v1)
 #   define EPRINTF3(mem, str, v1, v2, v3) fprintf(stderr, str, v1, v2, v3)
+#   define _FILE FILE
+#   define FOPEN(mem, v1, v2) fopen(v1, v2)
+#   define FCLOSE(fid) fclose(fid)
+#   define FPRINTF(fid, str) fprintf(fid, str)
+#   define FPRINTF1(fid, str, v1) fprintf(fid, str, v1)
+#   define FPRINTF2(fid, str, v1, v2) fprintf(fid, str, v1, v2)
+#   define FPRINTF6(fid, str, v1, v2, v3, v4, v5, v6) fprintf(fid, str, v1, v2, v3, v4, v5, v6)
+#   define FWRITE(v1, v2, v3, fid) fwrite(v1, v2, v3, fid)
 
 #endif /* ndef LIB_BUILD */
 
@@ -125,7 +142,7 @@ static int htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, in
                            htsc_dig_grid_t dot_grid, int N, int *S, int *H, int *L);
 static void htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid,
                  int x, int y, int u, int v, int N);
-void create_2d_gauss_filter(double *filter, int x_size, int y_size,
+int create_2d_gauss_filter(double *filter, int x_size, int y_size,
                             double stdvalx, double stdvaly, gs_memory_t *mem);
 static int htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
                                double gamma, htsc_dig_grid_t *final_mask);
@@ -144,10 +161,10 @@ static void htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vecto
                    htsc_vector_t *vector_out);
 static int htsc_mask_to_tos(htsc_dig_grid_t *final_mask);
 #if RAW_SCREEN_DUMP
-static void htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[], gs_memory_t *mem);
-static void htsc_dump_float_image(double *image, int height, int width, double max_val,
+static int htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[], gs_memory_t *mem);
+static int htsc_dump_float_image(double *image, int height, int width, double max_val,
                       char filename[], gs_memory_t *mem);
-static void htsc_dump_byte_image(byte *image, int height, int width, double max_val,
+static int htsc_dump_byte_image(byte *image, int height, int width, double max_val,
                       char filename[], gs_memory_t *mem);
 #endif
 
@@ -233,10 +250,12 @@ htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask, gs_me
        on sequence or dot profile */
     code = htsc_create_dot_mask(&dot_grid, x, y, u, v, params.scr_ang, vertices);
     if (code < 0) {
-        return -1;
+        return code;
     }
 #if RAW_SCREEN_DUMP
-    htsc_dump_screen(&dot_grid, "mask", mem);
+    code = htsc_dump_screen(&dot_grid, "mask", mem);
+    if (code < 0)
+        return code;
 #endif
     /* A sanity check */
     if (htsc_sumsum(dot_grid) != -N) {
@@ -257,7 +276,9 @@ htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask, gs_me
                             params.spot_type, trans_matrix_inv);
 
 #if RAW_SCREEN_DUMP
-    htsc_dump_screen(&dot_grid, "dot_profile", mem);
+    code = htsc_dump_screen(&dot_grid, "dot_profile", mem);
+    if (code < 0)
+        return code;
 #endif
     /* Allocate super cell */
     code = htsc_allocate_supercell(&super_cell, x, y, u, v, params.targ_size,
@@ -281,7 +302,9 @@ htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask, gs_me
     /* Go ahead and fill up the super cell grid with our growth dot values */
     htsc_tile_supercell(&super_cell, &dot_grid, x, y, u, v, N);
 #if RAW_SCREEN_DUMP
-    htsc_dump_screen(&super_cell, "super_cell_tiled", mem);
+    code = htsc_dump_screen(&super_cell, "super_cell_tiled", mem);
+    if (code < 0)
+        return code;
 #endif
     /* If we are using the Holladay grid (non dithered) then we are done. */
     if (params.holladay) {
@@ -1138,7 +1161,7 @@ htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid,
 
 /* Create 2d gaussian filter that varies with respect to coordinate
    spatial resolution */
-void
+int
 create_2d_gauss_filter(double *filter, int x_size, int y_size,
     double stdvalx, double stdvaly, gs_memory_t *mem)
 {
@@ -1150,6 +1173,7 @@ create_2d_gauss_filter(double *filter, int x_size, int y_size,
     double max_val = 0;
     int total_size = x_size * y_size;
     int index_x, index_y;
+    int code = 0;
 
     for (j = -y_half_size; j < y_half_size+1; j++) {
         index_y = j + y_half_size;
@@ -1167,8 +1191,9 @@ create_2d_gauss_filter(double *filter, int x_size, int y_size,
         filter[j]/=sum;
     }
 #if RAW_SCREEN_DUMP
-    htsc_dump_float_image(filter, y_size, x_size, max_val/sum, "guass_filt", mem);
+    code = htsc_dump_float_image(filter, y_size, x_size, max_val/sum, "guass_filt", mem);
 #endif
+    return code;
 }
 
 /* 2-D convolution (or correlation) with periodic boundary condition */
@@ -1258,6 +1283,7 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
     int k,j;
     int dist, curr_dist;
     htsc_dither_pos_t curr_position;
+    int code;
 
     sizefiltx = ROUND(sigma_x * 4);
     sizefilty = ROUND(sigma_y * 4);
@@ -1270,7 +1296,10 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
     filter = (double*) ALLOC(mem, sizeof(double) * sizefilty * sizefiltx);
     if (filter == NULL)
         return -1;
-    create_2d_gauss_filter(filter, sizefiltx, sizefilty, (double)sizefiltx, (double)sizefilty, mem);
+    code = create_2d_gauss_filter(filter, sizefiltx, sizefilty, (double)sizefiltx, (double)sizefilty, mem);
+    if (code < 0)
+        return code;
+
     screen_blur = (double*)ALLOC(mem, sizeof(double) * num_cols * num_rows);
     if (screen_blur == NULL) {
         FREE(mem, filter);
@@ -1329,6 +1358,7 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
     int k;
     int dist, curr_dist;
     bool found_it;
+    int code = 0;
 
     sizefiltx = ROUND(sigma_x * 4);
     sizefilty = ROUND(sigma_y * 4);
@@ -1341,7 +1371,10 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
     filter = (double*) ALLOC(mem, sizeof(double) * sizefilty * sizefiltx);
     if (filter == NULL)
         return -1;
-    create_2d_gauss_filter(filter, sizefiltx, sizefilty, (double)sizefiltx, (double)sizefilty, mem);
+    code = create_2d_gauss_filter(filter, sizefiltx, sizefilty, (double)sizefiltx, (double)sizefilty, mem);
+    if (code < 0)
+        return code;
+
     screen_blur = (double*) ALLOC(mem, sizeof(double) * num_cols * num_rows);
     if (screen_blur == NULL) {
         FREE(mem, filter);
@@ -1353,7 +1386,9 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
         htsc_apply_filter(screen_matrix, num_cols, num_rows, filter, sizefiltx,
                   sizefilty, screen_blur, &max_val, &max_pos, &min_val, &min_pos);
 #if RAW_SCREEN_DUMP
-        htsc_dump_float_image(screen_blur, num_cols, num_rows, max_val, "blur_one", mem);
+        code = htsc_dump_float_image(screen_blur, num_cols, num_rows, max_val, "blur_one", mem);
+        if (code < 0)
+            return code;
 #endif
     /* Find the closest on dot to the max position */
         black_pos = 0;
@@ -1565,8 +1600,10 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             }
         }
 #if RAW_SCREEN_DUMP
-        htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
+        code  = htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
                              1, "screen0_init", mem);
+        if (code < 0)
+            goto out;
 #endif
         /* Rearrange these dots into a pleasing pattern, but only if there is
         * more than 1.  Otherwise there are none to move */
@@ -1577,8 +1614,10 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         if (code < 0)
             goto out;
 #if RAW_SCREEN_DUMP
-        htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
+        code  = htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
                              1, "screen0_arrange", mem);
+        if (code < 0)
+            goto out;
 #endif
         /* Now we want to introduce more dots at each level */
         for (k = 1; k < num_levels; k++) {
@@ -1592,8 +1631,10 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             {
             char str_name[30];
             snprintf(str_name, 30, "screen%d_arrange",k);
-            htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
+            code = htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
                                  1, str_name, mem);
+            if (code < 0)
+                goto out;
             }
 #endif
         }
@@ -1938,19 +1979,22 @@ htsc_save_tos(htsc_dig_grid_t *final_mask, gs_memory_t *mem)
     int width = final_mask->width;
     int height = final_mask->height;
     int *buff_ptr;
-    FILE *fid;
+    _FILE *fid;
     int k = 0;
     int count = height * width;
 
-    fid =  gp_fopen(mem, "turn_on_seq.out", "w");
-    fprintf(fid, "# W=%d H=%d\n", width, height);
+    fid = FOPEN(mem, "turn_on_seq.out", "w");
+    if (fid == NULL)
+        return -1;
+
+    FPRINTF2(fid, "# W=%d H=%d\n", width, height);
 
     /* Write out */
     buff_ptr = final_mask->data;
     for (k = 0; k < count; k++) {
-        fprintf(fid, "%d\t%d\n", *buff_ptr++, *buff_ptr++);
+        FPRINTF2(fid, "%d\t%d\n", *buff_ptr++, *buff_ptr++);
     }
-    gp_fclose(fid);
+    FCLOSE(fid);
     return 0;
 }
 
@@ -1959,7 +2003,7 @@ htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
     htsc_param_t params, gs_memory_t *mem)
 {
     char full_file_name[FULL_FILE_NAME_LENGTH];
-    FILE *fid;
+    _FILE *fid;
     int x, y, code = 0;
     int *buff_ptr = final_mask->data;
     int width = final_mask->width;
@@ -1983,10 +2027,12 @@ htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
             snprintf(full_file_name, FULL_FILE_NAME_LENGTH, "Screen_Dithered_%dx%d.%s", width, height,
                 output_extension);
         }
-        fid = gp_fopen(mem, full_file_name, "wb");
+        fid = FOPEN(mem, full_file_name, "wb");
+        if (fid == NULL)
+            return -1;
 
         if (output_format == OUTPUT_PPM)
-            fprintf(fid, "P5\n"
+            FPRINTF6(fid, "P5\n"
                 "# Halftone threshold array, %s, [%d, %d], S=%d\n"
                 "%d %d\n"
                 "255\n",
@@ -2001,7 +2047,7 @@ htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
                         data_short = ROUND((double)data_short * 255.0 / MAXVAL);
                         if (data_short > 255) data_short = 255;
                         data = (byte)(data_short & 0xff);
-                        fwrite(&data, sizeof(byte), 1, fid);
+                        FWRITE(&data, sizeof(byte), 1, fid);
                         buff_ptr++;
                     }
                 }
@@ -2009,7 +2055,7 @@ htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
                 for (y = 0; y < height; y++) {
                     for (x = 0; x < width; x++) {
                         data_short = (unsigned short)(*buff_ptr & 0xffff);
-                        fwrite(&data_short, sizeof(short), 1, fid);
+                        FWRITE(&data_short, sizeof(short), 1, fid);
                         buff_ptr++;
                     }
                 }
@@ -2017,7 +2063,7 @@ htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
         } else {	/* ps output format */
             if (params.targ_quant <= 256) {
                 /* Output PS HalftoneType 3 dictionary */
-                fprintf(fid, "%%!PS\n"
+                FPRINTF2(fid, "%%!PS\n"
                     "<< /HalftoneType 3\n"
                     "   /Width  %d\n"
                     "   /Height %d\n"
@@ -2030,34 +2076,34 @@ htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
                         data_short = ROUND((double)data_short * 255.0 / MAXVAL);
                         if (data_short > 255) data_short = 255;
                         data = (byte)(data_short & 0xff);
-                        fprintf(fid, "%02x", data);
+                        FPRINTF1(fid, "%02x", data);
                         buff_ptr++;
                         if ((x & 0x1f) == 0x1f && (x != (width - 1)))
-                            fprintf(fid, "\n");
+                            FPRINTF(fid, "\n");
                     }
-                    fprintf(fid, "\n");
+                    FPRINTF(fid, "\n");
                 }
-                fprintf(fid, "   >\n"
+                FPRINTF(fid, "   >\n"
                     ">>\n"
                 );
             } else {
                 /* Output PS HalftoneType 16 dictionary. Single array. */
-                fprintf(fid, "%%!PS\n"
+                FPRINTF(fid, "%%!PS\n"
                     "%% Create a 'filter' from local hex data\n"
                     "{ currentfile /ASCIIHexDecode filter /ReusableStreamDecode filter } exec\n");
                 /* hex data follows, 'file' object will be left on stack */
                 for (y = 0; y < height; y++) {
                     for (x = 0; x < width; x++) {
                         data_short = (unsigned short)(*buff_ptr & 0xffff);
-                        fprintf(fid, "%04x", data_short);
+                        FPRINTF1(fid, "%04x", data_short);
                         buff_ptr++;
                         if ((x & 0x1f) == 0x1f && (x != (width - 1)))
-                            fprintf(fid, "\n");
+                            FPRINTF(fid, "\n");
                     }
-                    fprintf(fid, "\n");	/* end of one row */
+                    FPRINTF(fid, "\n");	/* end of one row */
                 }
-                fprintf(fid, ">\n");	/* ASCIIHexDecode EOF */
-                fprintf(fid,
+                FPRINTF(fid, ">\n");	/* ASCIIHexDecode EOF */
+                FPRINTF2(fid,
                     "<< /Thresholds 2 index    %% file object for the 16-bit data\n"
                     "   /HalftoneType 16\n"
                     "   /Width  %d\n"
@@ -2067,19 +2113,18 @@ htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
                     width, height);
             }
         }
-        gp_fclose(fid);
+        FCLOSE(fid);
     }
     return code;
 }
 #endif
 
 #if RAW_SCREEN_DUMP
-void
-static
+static int
 htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[], gs_memory_t *mem)
 {
     char full_file_name[FULL_FILE_NAME_LENGTH];
-    FILE *fid;
+    _FILE *fid;
     int x,y;
     int *buff_ptr = dig_grid->data;
     int width = dig_grid->width;
@@ -2087,7 +2132,9 @@ htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[], gs_memory_t *mem)
     byte data[3];
 
     snprintf(full_file_name, FULL_FILE_NAME_LENGTH, "Screen_%s_%dx%dx3.raw",filename,width,height);
-    fid = gp_fopen(mem, full_file_name,"wb");
+    fid = FOPEN(mem, full_file_name,"wb");
+    if (fid == NULL)
+        return -1;
 
     for (y = 0; y < height; y++) {
         for ( x = 0; x < width; x++ ) {
@@ -2104,58 +2151,67 @@ htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[], gs_memory_t *mem)
                 data[1] = *buff_ptr;
                 data[2] = *buff_ptr;
             }
-            fwrite(data,sizeof(unsigned char),3,fid);
+            FWRITE(data,sizeof(unsigned char),3,fid);
             buff_ptr++;
         }
     }
-    gp_fclose(fid);
+    FCLOSE(fid);
+    return 0;
 }
 
-static void
+static int
 htsc_dump_float_image(double *image, int height, int width, double max_val,
                       char filename[], gs_memory_t *mem)
 {
     char full_file_name[FULL_FILE_NAME_LENGTH];
-    FILE *fid;
+    _FILE *fid;
     int x,y;
     int data;
     byte data_byte;
 
     snprintf(full_file_name, FULL_FILE_NAME_LENGTH, "Float_%s_%dx%d.raw",filename,width,height);
-    fid = gp_fopen(mem, full_file_name,"wb");
+    fid = FOPEN(mem, full_file_name,"wb");
+    if (fid == NULL)
+        return -1;
+
     for (y = 0; y < height; y++) {
         for ( x = 0; x < width; x++ ) {
             data = (255.0 * image[x + y * width] / max_val);
             if (data > 255) data = 255;
             if (data < 0) data = 0;
             data_byte = data;
-            fwrite(&data_byte,sizeof(byte),1,fid);
+            FWRITE(&data_byte,sizeof(byte),1,fid);
         }
     }
-    gp_fclose(fid);
+    FCLOSE(fid);
+    return 0;
 }
 
-static void
+static int
 htsc_dump_byte_image(byte *image, int height, int width, double max_val,
                       char filename[], gs_memory_t *mem)
 {
     char full_file_name[FULL_FILE_NAME_LENGTH];
-    FILE *fid;
+    _FILE *fid;
     int x,y;
     int data;
     byte data_byte;
 
     snprintf(full_file_name, FULL_FILE_NAME_LENGTH, "ByteScaled_%s_%dx%d.raw",filename,width,height);
-    fid = gp_fopen(mem, full_file_name,"wb");
+    fid = FOPEN(mem, full_file_name,"wb");
+    if (fid == NULL)
+        return -1;
+
     for (y = 0; y < height; y++) {
         for ( x = 0; x < width; x++ ) {
             data = (255.0 * image[x + y * width] / max_val);
             if (data > 255) data = 255;
             if (data < 0) data = 0;
             data_byte = data;
-            fwrite(&data_byte,sizeof(byte),1,fid);
+            FWRITE(&data_byte,sizeof(byte),1,fid);
         }
     }
-    gp_fclose(fid);
+    FCLOSE(fid);
+    return 0;
 }
 #endif
