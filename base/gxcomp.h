@@ -106,7 +106,7 @@ typedef struct gs_composite_type_procs_s {
     /*
      * Checks whether a next compositor operation closes this one.
      * Must set the 2nd argument with a pointer to the opening compositor operation.
-     * Return coides : <0 - error, 0 - not closing,
+     * Return codes : <0 - error, 0 - not closing,
      * 1 - closing with annihilation, 2 - execute immediately,
      * 3 - closing and replacing, 4 - replace one, 5 - drop queue.
      */
@@ -116,7 +116,7 @@ typedef struct gs_composite_type_procs_s {
 
     /*
      * Checks whether a next operation is friendly to the compositor
-     * so that it may commutate with the compositor operation.
+     * so that it may commute with the compositor operation.
      */
 #define composite_is_friendly_proc(proc)\
   bool proc(const gs_composite_t *this, byte cmd0, byte cmd1)

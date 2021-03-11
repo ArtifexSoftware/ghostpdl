@@ -9441,7 +9441,7 @@ const gs_composite_type_t   gs_composite_pdf14trans_type = {
         c_pdf14trans_is_friendly,                /* procs.is_friendly */
                 /* Create a PDF 1.4 clist write device */
         c_pdf14trans_clist_write_update,   /* procs.composite_clist_write_update */
-        c_pdf14trans_clist_read_update,	   /* procs.composite_clist_reade_update */
+        c_pdf14trans_clist_read_update,	   /* procs.composite_clist_read_update */
         c_pdf14trans_get_cropping	   /* procs.composite_get_cropping */
     }                                            /* procs */
 };
@@ -9458,7 +9458,7 @@ const gs_composite_type_t   gs_composite_pdf14trans_no_clist_writer_type = {
         c_pdf14trans_is_friendly,                /* procs.is_friendly */
                 /* The PDF 1.4 clist writer already exists, Do not create it. */
         gx_default_composite_clist_write_update, /* procs.composite_clist_write_update */
-        c_pdf14trans_clist_read_update,	   /* procs.composite_clist_reade_update */
+        c_pdf14trans_clist_read_update,	   /* procs.composite_clist_read_update */
         c_pdf14trans_get_cropping	   /* procs.composite_get_cropping */
     }                                            /* procs */
 };
