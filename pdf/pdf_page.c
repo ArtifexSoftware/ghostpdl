@@ -641,7 +641,6 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
         pdfi_set_ctm(ctx);
 
-        pdfi_setup_transfers(ctx);
     } else {
         /* Gets ctx->page.Size setup correctly
          * TODO: Probably not right if the page is rotated?
@@ -650,6 +649,8 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
          */
         pdfi_get_media_size(ctx);
     }
+
+    pdfi_setup_transfers(ctx);
 
     /* Set whether device needs OP support
      * This needs to be before transparency device is pushed, if applicable
