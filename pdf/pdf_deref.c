@@ -204,8 +204,6 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
     gs_offset_t offset;
     pdf_stream *stream_obj = NULL;
 
-    pdfi_skip_eol(ctx, s);
-
     /* Strange code time....
      * If we are using a stream which is *not* the PDF uncompressed main file stream
      * then doing stell on it will only tell us how many bytes have been read from

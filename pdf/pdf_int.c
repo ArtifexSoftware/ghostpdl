@@ -133,15 +133,15 @@ int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s)
 
     do {
         bytes = pdfi_read_bytes(ctx, &c, 1, 1, s);
-        if (bytes < 0)
-            return_error(gs_error_ioerror);
-        if (bytes == 0)
+        if (read) {
+            if (c == 0x0A)
+                return 0;
+            pdfi_unread(ctx, s, &c, 1);
             return 0;
-        read += bytes;
-    } while (bytes != 0 && (c == 0x0A || c == 0x0D));
-
-    if (read > 0)
-        pdfi_unread(ctx, s, &c, 1);
+        }
+        if (c == 0x0D)
+            read++;
+    } while (c != 0x0A);
     return 0;
 }
 
@@ -750,6 +750,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
 
         if (bytes > 0) {
             if (iswhite(Buffer[index])) {
+                pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
                 break;
             } else {
                 if (isdelimiter(Buffer[index])) {
