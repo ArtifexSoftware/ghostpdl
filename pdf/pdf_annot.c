@@ -789,7 +789,7 @@ pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
                                   gs_rect *rect, pdf_string *text)
 {
     double x;
-    double lineheight;
+    double lineheight = 0;
     double y_start;
     double x_start, x_max;
     gs_rect bbox;
@@ -3812,8 +3812,18 @@ static int pdfi_form_draw_Ch(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *fie
 /* draw field Sig */
 static int pdfi_form_draw_Sig(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_obj *AP)
 {
-    dmprintf(ctx->memory, "WARNING: AcroForm field 'Sig' not implemented.\n");
-    return 0;
+    int code = 0;
+    bool NeedAppearances = false; /* TODO: Spec says default is false, gs code uses true... */
+
+    code = pdfi_dict_get_bool(ctx, AcroForm, "NeedAppearances", &NeedAppearances);
+    if (code < 0 && code != gs_error_undefined) goto exit;
+
+    if (!NeedAppearances && AP != NULL)
+        return pdfi_annot_draw_AP(ctx, field, AP);
+
+    dmprintf(ctx->memory, "WARNING: AcroForm field 'Sig' with no AP not implemented.\n");
+ exit:
+    return code;
 }
 
 /* draw terminal field */
