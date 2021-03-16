@@ -81,6 +81,7 @@
 
 #include "gxtmap.h"
 #include "gxfmap.h"
+#include "gspath2.h"        /* for gs_rectclip */
 
 #ifndef PDF_CONTEXT
 #define PDF_CONTEXT
@@ -290,6 +291,7 @@ typedef struct page_state_s {
     /* Are we simulating overprint on this page? */
     bool simulate_op;
     double Size[4];
+    double Crop[4];
     double UserUnit;
 } page_state_t;
 

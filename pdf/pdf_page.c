@@ -218,8 +218,9 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     gs_param_float_array fa;
     pdf_array *a = NULL, *default_media = NULL;
     float fv[2];
-    double d[4];
-    int code;
+    double d[4], d_crop[4];
+    gs_rect bbox;
+    int code, do_crop = false;
     uint64_t i;
     int64_t rotate = 0;
     double userunit = 1.0;
@@ -248,10 +249,22 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     if (ctx->args.usetrimbox) {
         if (a != NULL)
             pdfi_countdown(a);
-        (void)pdfi_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&a);
+        (void)pdfi_dict_get_type(ctx, page_dict, "TrimBox", PDF_ARRAY, (pdf_obj **)&a);
     }
-    if (a == NULL)
+    if (a == NULL) {
+        code = pdfi_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
+        if (code >= 0 && pdfi_array_size(a) >= 4) {
+            for (i=0;i<4;i++) {
+                code = pdfi_array_get_number(ctx, a, i, &d_crop[i]);
+                d_crop[i] *= userunit;
+            }
+            pdfi_countdown(a);
+            normalize_rectangle(d_crop);
+            memcpy(ctx->page.Crop, d_crop, 4 * sizeof(double));
+            do_crop = true;
+        }
         a = default_media;
+    }
 
     if (!ctx->args.nouserunit) {
         (void)pdfi_dict_knownget_number(ctx, page_dict, "UserUnit", &userunit);
@@ -338,6 +351,17 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
             break;
         default:
             break;
+    }
+
+    bbox.p.x = d_crop[0] - d[0];
+    bbox.p.y = d_crop[1] - d[1];
+    bbox.q.x = d_crop[2] - d[0];
+    bbox.q.y = d_crop[3] - d[1];
+
+    if (do_crop) {
+        code = gs_rectclip(ctx->pgs, &bbox, 1);
+        if (code < 0)
+            return code;;
     }
 
     gs_translate(ctx->pgs, d[0] * -1, d[1] * -1);
