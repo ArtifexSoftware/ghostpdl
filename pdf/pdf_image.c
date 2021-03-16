@@ -2036,8 +2036,20 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
         return code;
 
     code = pdfi_dict_get(ctx, xobject_dict, "Subtype", (pdf_obj **)&n);
-    if (code < 0)
-        goto exit;
+    if (code < 0) {
+        if (code == gs_error_undefined) {
+            code = pdfi_dict_get(ctx, xobject_dict, "FormType", (pdf_obj **)&n);
+            if (code >= 0) {
+                pdfi_countdown(n);
+                code = pdfi_name_alloc(ctx, "Form", 4, &n);
+                pdfi_countup(n);
+            }
+            else
+                goto exit;
+        }
+        else
+            goto exit;
+    }
     if (pdfi_name_is(n, "Image")) {
         gs_offset_t savedoffset;
 
