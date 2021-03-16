@@ -133,6 +133,8 @@ int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s)
 
     do {
         bytes = pdfi_read_bytes(ctx, &c, 1, 1, s);
+        if (bytes == 0)
+            return 0;
         if (read) {
             if (c == 0x0A)
                 return 0;
