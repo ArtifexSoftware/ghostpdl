@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2020 Artifex Software, Inc.
+/* Copyright (C) 2001-2021 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -231,6 +231,8 @@ rc_object_type_name(const void *vp, const rc_header *prc)
     if (prc->memory == 0)
         return "(unknown)";
     pstype = gs_object_type(prc->memory, vp);
+    if ((uintptr_t)pstype < 10000)
+        return ("?????");
     if (prc->free != rc_free_struct_only) {
         /*
          * This object might be stack-allocated or have other unusual memory
@@ -242,7 +244,7 @@ rc_object_type_name(const void *vp, const rc_header *prc)
         dist = (const char *)&dist - (const char *)vp;
         if (dist < 10000 && dist > -10000)
             return "(on stack)";
-        if ((uintptr_t)pstype < 0x10000 || (uintptr_t)pstype < 0)
+        if ((uintptr_t)pstype < 0x10000)
             return "(anomalous)";
     }
     return client_name_string(gs_struct_type_name(pstype));

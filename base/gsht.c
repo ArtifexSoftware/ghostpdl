@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2020 Artifex Software, Inc.
+/* Copyright (C) 2001-2021 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -27,6 +27,9 @@
 #include "gxdevice.h"           /* for gzht.h */
 #include "gzht.h"
 #include "gxfmap.h"             /* For effective transfer usage in threshold */
+#include "gp.h"
+
+#define DUMP_SCREENS 0
 
 /* Forward declarations */
 void gx_set_effective_transfer(gs_gstate *);
@@ -384,11 +387,19 @@ gx_ht_alloc_threshold_order(gx_ht_order * porder, uint width, uint height,
                             uint num_levels, gs_memory_t * mem)
 {
     gx_ht_order order;
-    uint num_bits = width * height;
-    const gx_ht_order_procs_t *procs =
-        (num_bits > 2000 && num_bits <= max_ushort ?
-         &ht_order_procs_short : &ht_order_procs_default);
+
+    unsigned long num_bits = bitmap_raster(width) * 8 * height;
+    const gx_ht_order_procs_t *procs;
     int code;
+
+    if (num_bits <= 2000)
+        procs = &ht_order_procs_default;
+    else if (num_bits <= max_ushort + 1)  /* We can index 0 to 65535 so a size of 65536 (max_ushort + 1) is OK */
+        procs = &ht_order_procs_short;
+    else if (num_bits <= max_uint)
+        procs = &ht_order_procs_uint;
+    else
+        return_error(gs_error_VMerror);  /* At this point in history, this is way too large of a screen */
 
     order = *porder;
     gx_compute_cell_values(&order.params);
@@ -1454,5 +1465,20 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
         }
    }
 #endif
+/* Large screens are easier to see as images */
+#if DUMP_SCREENS
+    {
+        char file_name[50];
+        gp_file *fid;
+
+        snprintf(file_name, 50, "Screen_From_Tiles_%dx%d.raw", d_order->width, d_order->full_height);
+        fid = gp_fopen(memory, file_name, "wb");
+        if (fid) {
+            gp_fwrite(thresh, sizeof(unsigned char), d_order->width * d_order->full_height, fid);
+            gp_fclose(fid);
+        }
+    }
+#endif
+
     return 0;
 }

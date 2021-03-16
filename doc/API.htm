@@ -500,7 +500,7 @@ such parameter). If the <a href="#display">display</a> device is used,
 this must be called after
 <code>gsapi_new_instance()</code>
 and before <code>gsapi_init_with_args()</code>.
-See <code><a href="../base/gdevdsp.h">gdevdsp.h</a></code>
+See <code><a href="../devices/gdevdsp.h">gdevdsp.h</a></code>
 for more details.
 </blockquote>
 
@@ -1318,7 +1318,7 @@ this is now powerful enough to provide a simple mechanism for
 getting rendered output suitable for use in all manner of
 output scenarios, including printing.</p>
 <p>Details of the API and options are given in the file
-<code><a href="../base/gdevdsp.h">gdevdsp.h</a></code>.
+<code><a href="../devices/gdevdsp.h">gdevdsp.h</a></code>.
 This device provides you with access to the raster output of
 Ghostscript.  It is the callers responsibility to copy this raster
 to a display window or printer.</p>
@@ -1504,7 +1504,7 @@ device.</p>
 Next we tell the display device what output format to use. The
 format is flexible enough to support common Windows, OS/2, Linux
 and Mac raster formats.  <p>The format values are described in
-<code><a href="../base/gdevdsp.h">gdevdsp.h</a></code>.
+<code><a href="../devices/gdevdsp.h">gdevdsp.h</a></code>.
 To select the display device with a Windows 24-bit RGB raster:</p>
 <pre>
     sprintf(argv[argc++], "-dDisplayFormat=%d",
@@ -1745,11 +1745,11 @@ Some examples of driving this code in full page mode are in
 <code><a href="../psi/dmmain.c">dmmain.c</a></code> (MacOS Classic or Carbon).</p>
 <p>Alternatively an example that drives this code in both full page
 and rectangle request mode can be found in
-<code><a href="../toolbin/displaydevice_test.c">displaydevice_test.c</a></code>.</p>
+<code><a href="../demos/c/api_test.c">api_test.c</a></code>.</p>
 
 <p>
 On some platforms, the calling convention for the display device callbacks in
-<code><a href="../base/gdevdsp.h">gdevdsp.h</a></code>
+<code><a href="../devices/gdevdsp.h">gdevdsp.h</a></code>
 is not the same as the exported
 <a href="#Exported_functions "><code>gsapi_*()</code></a>
 functions in <a href="../psi/iapi.h"><code>iapi.h</code></a>.</p></p>
@@ -1758,7 +1758,7 @@ functions in <a href="../psi/iapi.h"><code>iapi.h</code></a>.</p></p>
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 <p>
-<small>Copyright &copy; 2000-2020 Artifex Software, Inc. All rights reserved.</small></p>
+<small>Copyright &copy; 2000-2021 Artifex Software, Inc. All rights reserved.</small></p>
 
 <p>
 This software is provided AS-IS with no warranty, either express or
@@ -1798,7 +1798,7 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.</p>
            </ul>
         </div>
         <div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
-              © Copyright 2019 Artifex Software, Inc. <br>
+              © Copyright 2019-2021 Artifex Software, Inc. <br>
             All rights reserved.
         </div>
           </div>

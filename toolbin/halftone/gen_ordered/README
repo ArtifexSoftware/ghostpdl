@@ -1,4 +1,4 @@
-Ordered Dither Screen Creation Tool. Copyright 2010-2018 Artifex Software, Inc.
+Ordered Dither Screen Creation Tool. Copyright 2010-2021 Artifex Software, Inc.
 
 This code is designed to enable the creation of clustered dot threshold arrays
 for halftoning, which can provide high lpi without quantization issues.  As

@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2020 Artifex Software, Inc.
+% Copyright (C) 2001-2021 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -2817,7 +2817,7 @@ end readonly def
     2 index sub exch 3 index sub exch 4 2 roll pop pop
             % stack: savedCTM <pdfpagedict> [Box] XImageable YImageable
     2 index aload pop 2 index sub exch 3 index sub exch 4 2 roll pop pop
-    5 index /Rotate pget not { 0 } if 90 cvi idiv 1 and 0 ne { exch } if
+    5 index /Rotate pget not { 0 } if cvi 90 idiv 1 and 0 ne { exch } if
             % stack: savedCTM <pdfpagedict> [Box] XImageable YImageable XBox YBox
     4 copy
     3 -1 roll exch div 3 1 roll div .min

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2020 Artifex Software, Inc.
+/* Copyright (C) 2001-2021 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -715,7 +715,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         gx_device_color *col_stroke = gs_swappeddevicecolor_inline(pgs);
         devn = color_is_devn(col_fill) && color_is_devn(col_stroke);
         /* could be devn and masked_devn */
-        if (color_is_pure(col_fill) || color_is_pure(col_stroke) || devn)
+        if ((color_is_pure(col_fill) && color_is_pure(col_stroke)) || devn)
             abits = alpha_buffer_bits(pgs);
     }
     if (abits > 1) {

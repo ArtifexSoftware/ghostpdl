@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1999-2020 Artifex Software, Inc.
+  Copyright (C) 1999-2021 Artifex Software, Inc.
   All rights reserved.
 
   This software is provided 'as-is', without any express or implied

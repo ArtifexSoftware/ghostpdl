@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2020 Artifex Software, Inc.
+/* Copyright (C) 2001-2021 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -4372,6 +4372,14 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         gs_swapcolors_quick(pgs);
         if (code < 0)
             goto cleanup;
+        /* Bug 703324 we need to reset the fill constant alpha in the graphics
+         * state to the correct saved value. We also need to reset the 'opacity' member of the
+         * device, because some device methods (eg fill_masked_image) don't take a graphics
+         * state pointer as a parameter and so are unable to set the opacity value themselves.
+         * We therefore need to make sure it is set according to the current fill state.
+         */
+        (void)gs_setfillconstantalpha(pgs, fill_alpha);
+        pdf14_set_marking_params(dev, pgs);
     }
 
 cleanup:
@@ -5802,7 +5810,11 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
     }
     dev->static_procs = dev_proto->static_procs;
     gx_device_set_procs(dev);
-    gx_device_fill_in_procs(dev);
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
+    gx_device_fill_in_procs((gx_device *)pdev);
+    pdev->save_get_cmap_procs = pgs->get_cmap_procs;
+    pgs->get_cmap_procs = pdf14_get_cmap_procs;
+    gx_set_cmap_procs(pgs, (gx_device *)pdev);
     check_device_separable(dev);
     return dev_proc(pdev, open_device)(dev);
 }
@@ -9441,7 +9453,7 @@ const gs_composite_type_t   gs_composite_pdf14trans_type = {
         c_pdf14trans_is_friendly,                /* procs.is_friendly */
                 /* Create a PDF 1.4 clist write device */
         c_pdf14trans_clist_write_update,   /* procs.composite_clist_write_update */
-        c_pdf14trans_clist_read_update,	   /* procs.composite_clist_reade_update */
+        c_pdf14trans_clist_read_update,	   /* procs.composite_clist_read_update */
         c_pdf14trans_get_cropping	   /* procs.composite_get_cropping */
     }                                            /* procs */
 };
@@ -9458,7 +9470,7 @@ const gs_composite_type_t   gs_composite_pdf14trans_no_clist_writer_type = {
         c_pdf14trans_is_friendly,                /* procs.is_friendly */
                 /* The PDF 1.4 clist writer already exists, Do not create it. */
         gx_default_composite_clist_write_update, /* procs.composite_clist_write_update */
-        c_pdf14trans_clist_read_update,	   /* procs.composite_clist_reade_update */
+        c_pdf14trans_clist_read_update,	   /* procs.composite_clist_read_update */
         c_pdf14trans_get_cropping	   /* procs.composite_get_cropping */
     }                                            /* procs */
 };
@@ -10060,7 +10072,11 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_gstate *	pgs,
     else
         pdev->is_planar = target->is_planar;
 
-    gx_device_fill_in_procs(dev);
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
+    gx_device_fill_in_procs((gx_device *)pdev);
+    pdev->save_get_cmap_procs = pgs->get_cmap_procs;
+    pgs->get_cmap_procs = pdf14_get_cmap_procs;
+    gx_set_cmap_procs(pgs, (gx_device *)pdev);
     check_device_separable((gx_device *)pdev);
     return code;
 }

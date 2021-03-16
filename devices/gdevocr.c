@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2020 Artifex Software, Inc.
+/* Copyright (C) 2001-2021 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -34,7 +34,8 @@ static dev_proc_print_page(ocr_print_page);
 static dev_proc_print_page(hocr_print_page);
 static dev_proc_get_params(ocr_get_params);
 static dev_proc_put_params(ocr_put_params);
-static dev_proc_open_device(hocr_open);
+static dev_proc_open_device(ocr_open);
+static dev_proc_close_device(ocr_close);
 static dev_proc_close_device(hocr_close);
 
 typedef struct gx_device_ocr_s gx_device_ocr;
@@ -45,12 +46,13 @@ struct gx_device_ocr_s {
     char language[1024];
     int engine;
     int page_count;
+    void *api;
 };
 
 /* 8-bit gray bitmap -> UTF8 OCRd text */
 
 static const gx_device_procs ocr_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
+prn_color_params_procs(ocr_open, gdev_prn_bg_output_page, ocr_close,
                        gx_default_gray_map_rgb_color,
                        gx_default_gray_map_color_rgb,
                        ocr_get_params, ocr_put_params);
@@ -67,7 +69,7 @@ const gx_device_ocr gs_ocr_device =
 /* 8-bit gray bitmap -> HTML OCRd text */
 
 static const gx_device_procs hocr_procs =
-prn_color_params_procs(hocr_open, gdev_prn_bg_output_page, hocr_close,
+prn_color_params_procs(ocr_open, gdev_prn_bg_output_page, hocr_close,
                        gx_default_gray_map_rgb_color,
                        gx_default_gray_map_color_rgb,
                        ocr_get_params, ocr_put_params);
@@ -87,13 +89,30 @@ const gx_device_ocr gs_hocr_device =
 #define HOCR_TRAILER " </body>\n</html>\n"
 
 static int
-hocr_open(gx_device *pdev)
+ocr_open(gx_device *pdev)
 {
     gx_device_ocr *dev = (gx_device_ocr *)pdev;
+    int code;
 
     dev->page_count = 0;
 
+    code = ocr_init_api(dev->memory->non_gc_memory,
+                        dev->language, dev->engine, &dev->api);
+    if (code < 0)
+        return code;
+
     return gdev_prn_open(pdev);
+}
+
+static int
+ocr_close(gx_device *pdev)
+{
+    gx_device_ocr *dev = (gx_device_ocr *)pdev;
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+
+    ocr_fin_api(dev->memory->non_gc_memory, dev->api);
+
+    return gdev_prn_close(pdev);
 }
 
 static int
@@ -106,7 +125,7 @@ hocr_close(gx_device *pdev)
        gp_fwrite(HOCR_TRAILER, 1, sizeof(HOCR_TRAILER)-1, dev->file);
     }
 
-    return gdev_prn_close(pdev);
+    return ocr_close(pdev);
 }
 
 static int
@@ -235,20 +254,20 @@ do_ocr_print_page(gx_device_ocr * pdev, gp_file * file, int hocr)
         goto done;
 
     if (hocr)
-        code = ocr_image_to_hocr(pdev->memory,
+        code = ocr_image_to_hocr(pdev->api,
                                  width, height,
                                  8, raster,
                                  (int)pdev->HWResolution[0],
                                  (int)pdev->HWResolution[1],
                                  data, 0, pdev->page_count,
-                                 "eng", pdev->engine, &out);
+                                 &out);
     else
-        code = ocr_image_to_utf8(pdev->memory,
+        code = ocr_image_to_utf8(pdev->api,
                                  width, height,
                                  8, raster,
                                  (int)pdev->HWResolution[0],
                                  (int)pdev->HWResolution[1],
-                                 data, 0, "eng", pdev->engine, &out);
+                                 data, 0, &out);
     if (code < 0)
         goto done;
     if (out)
@@ -257,7 +276,8 @@ do_ocr_print_page(gx_device_ocr * pdev, gp_file * file, int hocr)
             gp_fwrite(HOCR_HEADER, 1, sizeof(HOCR_HEADER)-1, file);
         }
         gp_fwrite(out, 1, strlen(out), file);
-        gs_free_object(pdev->memory, out, "ocr_image_to_utf8");
+        gs_free_object(pdev->memory->non_gc_memory,
+                       out, "ocr_image_to_utf8");
     }
 
   done:

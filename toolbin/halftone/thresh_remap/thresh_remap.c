@@ -1,4 +1,4 @@
-/* Copyright (C) 2009-2018 Artifex Software Inc. All rights reserved.
+/* Copyright (C) 2009-2021 Artifex Software Inc. All rights reserved.
 
   This software is provided AS-IS with no warranty, either express or
   implied.

@@ -1,5 +1,5 @@
 %!PS
-% Copyright (C) 2001-2020 Artifex Software, Inc.
+% Copyright (C) 2001-2021 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -167,19 +167,6 @@ cleartomark		% discard the dict from --where--
   } ifelse
 } bind def
 
-/printXML {	% <string> printXML -
-  % print non-blank lines without trailing spaces
-  dup dup length 1 sub -1 0 {
-    1 index 1 index get 32 eq {
-      0 exch getinterval exch
-    } {
-      exch = exit	% non-blank on this line
-    }
-    ifelse
-  } for
-  pop pop		% clean up
-} bind def
-
 /dump-pdf-info {    % (fname) -> -
   () = (        ) print print ( has ) print
   PDFPageCount dup =print 10 mod 1 eq { ( page.\n) } { ( pages\n) } ifelse = flush
@@ -195,9 +182,9 @@ cleartomark		% discard the dict from --where--
     pop
     Trailer /Root oget /Metadata knownoget {
       //false resolvestream
-      { dup 256 string readline exch printXML not { exit } if } loop
+      { dup 256 string readstring exch print not { exit } if } loop
       pop		% done with the stream
-      (_____________________________________________________________) =
+      (\n_____________________________________________________________) =
       flush
     } if
   } if

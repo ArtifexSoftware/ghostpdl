@@ -3,7 +3,7 @@
 # CUPS driver makefile for Ghostscript.
 #
 # Copyright 2001-2005 by Easy Software Products.
-# Copyright 2007 Artifex Software, Inc.
+# Copyright 2007-2021 Artifex Software, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
