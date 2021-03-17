@@ -243,10 +243,12 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
                 params.ColorSpace = ctx->pgs->color[colorindex].color_space;
             }
         } else {
-            /* TODO: Is this an error or what?
-               Inherit current colorspace
+            /* GS and Adobe will ignore the whole mask in this case, so we do the same.
             */
-            params.ColorSpace = ctx->pgs->color[colorindex].color_space;
+            dmprintf(ctx->memory, "*** Error: Ignoring a transparency group XObject without /Group attribute.\n");
+            dmprintf(ctx->memory, "           Output may be incorrect.\n");
+            ctx->pdf_errors |= E_PDF_INVALID_TRANS_XOBJECT;
+            goto exit;
         }
 
         /* If there's a BC, put it in the params */

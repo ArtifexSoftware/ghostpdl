@@ -130,7 +130,8 @@ typedef enum pdf_error_flag_e {
     E_PDF_STACKUNDERFLOWERROR = E_PDF_NOHEADER << 25,
     E_PDF_BADSTREAMDICT = E_PDF_NOHEADER << 26,
     E_PDF_INHERITED_STREAM_RESOURCE = E_PDF_NOHEADER << 27,
-    E_PDF_DEREF_FREE_OBJ = E_PDF_NOHEADER << 28
+    E_PDF_DEREF_FREE_OBJ = E_PDF_NOHEADER << 28,
+    E_PDF_INVALID_TRANS_XOBJECT = E_PDF_NOHEADER << 29
 } pdf_error_flag;
 
 typedef enum pdf_warning_flag_e {

@@ -353,6 +353,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tA stream dictionary was not followed by a 'stream' keyword.\n");
         if (ctx->pdf_errors & E_PDF_DEREF_FREE_OBJ)
             dmprintf(ctx->memory, "\tAn attempt was made to access an object marked as free in the xref.\n");
+        if (ctx->pdf_errors & E_PDF_INVALID_TRANS_XOBJECT)
+            dmprintf(ctx->memory, "\tAn invalid transparency group XObject was ignored.\n");
     }
 
     if (ctx->pdf_warnings != W_PDF_NOWARNING) {

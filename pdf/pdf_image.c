@@ -2041,7 +2041,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             code = pdfi_dict_get(ctx, xobject_dict, "FormType", (pdf_obj **)&n);
             if (code >= 0) {
                 pdfi_countdown(n);
-                code = pdfi_name_alloc(ctx, "Form", 4, &n);
+                code = pdfi_name_alloc(ctx, (byte *)"Form", 4, (pdf_obj **)&n);
                 pdfi_countup(n);
             }
             else
