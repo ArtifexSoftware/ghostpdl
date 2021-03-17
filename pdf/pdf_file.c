@@ -876,9 +876,15 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
             goto exit;
 
         if (DecodeParams != NULL) {
-            if (pdfi_array_size(DecodeParams) != pdfi_array_size(filter_array)) {
-                code = gs_note_error(gs_error_typecheck);
-                goto exit;
+            if (pdfi_array_size(DecodeParams) == 0) {
+                pdfi_countdown(DecodeParams);
+                DecodeParams = NULL;
+                ctx->pdf_warnings |= W_PDF_STREAM_BAD_DECODEPARMS;
+            } else {
+                if (pdfi_array_size(DecodeParams) != pdfi_array_size(filter_array)) {
+                    code = gs_note_error(gs_error_typecheck);
+                    goto exit;
+                }
             }
         }
 
