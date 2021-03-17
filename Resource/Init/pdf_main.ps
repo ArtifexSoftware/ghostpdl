@@ -747,7 +747,8 @@ currentdict /EnablePageHandlerDevice undef
   % Only lock in Orientation if we need to for pdfmarks
 %  .writepdfmarks { /Orientation 0 def } if
 
-  dup get_any_box       % Stack: pdfpagedict /BoxName [box]
+  dup
+  dup get_any_box       % Stack: pdfpagedict pdfpagedict /BoxName [box]
 
   //systemdict /PDFFitPage known {
     NewPDF_FitPage
@@ -845,7 +846,20 @@ currentdict /EnablePageHandlerDevice undef
   } ifelse
 
   end % pdfdict
-  pop pop pop       % box /BoxName pdfpagedict
+  pop exch pop      % pop the box and pdfpagedict
+
+  % If we are using the MediaBox (and only the MediaBox) then we
+  % want to clip to the CropBox, if there s one present
+
+  /MediaBox eq {
+    dup /CropBox known {
+      /CropBox get
+      aload pop 2 index sub exch 3 index sub exch rectclip
+    } {
+      pop
+    } ifelse
+  } if
+
 } bind executeonly def
 
 % This routine checks a list of known/implemented command line switches to see if they
