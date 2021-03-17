@@ -848,7 +848,7 @@ if test x$with_tesseract != xno; then
     AC_LANG_PUSH(C++)
     AC_TRY_COMPILE([],
                    [return 0;],
-                   [HAVE_CXX_COMPILER=yes],
+                   [HAVE_CXX_COMPILER=yes, AC_SUBST(CXX)],
                    [HAVE_CXX_COMPILER=no])
     if test x$HAVE_CXX_COMPILER != xyes; then
       AC_MSG_WARN([Disabling tesseract as no working C++ compiler])
