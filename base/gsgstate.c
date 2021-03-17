@@ -112,7 +112,8 @@ gs_gstate_initialize(gs_gstate * pgs, gs_memory_t * mem)
         for (i = 0; i < gs_color_select_count; ++i)
             pgs->screen_phase[i].x = pgs->screen_phase[i].y = 0;
     }
-    pgs->dev_ht = 0;
+    for (i=0; i < HT_OBJTYPE_COUNT; i++)
+        pgs->dev_ht[i] = NULL;
     pgs->cie_render = 0;
     pgs->cie_to_xyz = false;
     pgs->black_generation = 0;
@@ -159,8 +160,11 @@ gs_gstate_initialize(gs_gstate * pgs, gs_memory_t * mem)
 void
 gs_gstate_copied(gs_gstate * pgs)
 {
+    int i;
+
     rc_increment(pgs->halftone);
-    rc_increment(pgs->dev_ht);
+    for (i=0; i < HT_OBJTYPE_COUNT; i++)
+        rc_increment(pgs->dev_ht[i]);
     rc_increment(pgs->cie_render);
     rc_increment(pgs->black_generation);
     rc_increment(pgs->undercolor_removal);
@@ -183,6 +187,7 @@ void
 gs_gstate_pre_assign(gs_gstate *pto, const gs_gstate *pfrom)
 {
     const char *const cname = "gs_gstate_pre_assign";
+    int i;
 
 #define RCCOPY(element)\
     rc_pre_assign(pto->element, pfrom->element, cname)
@@ -196,7 +201,8 @@ gs_gstate_pre_assign(gs_gstate *pto, const gs_gstate *pfrom)
     RCCOPY(undercolor_removal);
     RCCOPY(black_generation);
     RCCOPY(cie_render);
-    RCCOPY(dev_ht);
+    for (i=0; i < HT_OBJTYPE_COUNT; i++)
+        RCCOPY(dev_ht[i]);
     RCCOPY(halftone);
     RCCOPY(devicergb_cs);
     RCCOPY(devicecmyk_cs);
@@ -212,7 +218,8 @@ void
 gs_gstate_release(gs_gstate * pgs)
 {
     const char *const cname = "gs_gstate_release";
-    gx_device_halftone *pdht = pgs->dev_ht;
+    gx_device_halftone *pdht;
+    int i;
 
 #define RCDECR(element)\
     rc_decrement(pgs->element, cname);\
@@ -227,13 +234,16 @@ gs_gstate_release(gs_gstate * pgs)
     RCDECR(black_generation);
     RCDECR(cie_render);
     /*
-     * If we're going to free the device halftone, make sure we free the
+     * If we're going to free a device halftone, make sure we free the
      * dependent structures as well.
      */
-    if (pdht != 0 && pdht->rc.ref_count == 1) {
-        gx_device_halftone_release(pdht, pdht->rc.memory);
+    for (i=0; i < HT_OBJTYPE_COUNT; i++) {
+        pdht = pgs->dev_ht[i];
+        if (pdht != NULL && pdht->rc.ref_count == 1) {
+            gx_device_halftone_release(pdht, pdht->rc.memory);
+        }
+        RCDECR(dev_ht[i]);
     }
-    RCDECR(dev_ht);
     RCDECR(halftone);
     RCDECR(devicergb_cs);
     RCDECR(devicecmyk_cs);

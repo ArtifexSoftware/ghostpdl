@@ -379,7 +379,7 @@ gx_dc_ht_colored_read(
 
     /* the number of components is determined by the color model */
     devc.colors.colored.num_components = num_comps;
-    devc.colors.colored.c_ht = pgs->dev_ht;
+    devc.colors.colored.c_ht = pgs->dev_ht[HT_OBJTYPE_DEFAULT];
 
     /*
      * Verify that we have at least the flag bits. For performance
@@ -462,8 +462,8 @@ gx_dc_ht_colored_read(
     color_set_phase_mod( &devc,
                          pgs->screen_phase[0].x,
                          pgs->screen_phase[0].y,
-                         pgs->dev_ht->lcm_width,
-                         pgs->dev_ht->lcm_height );
+                         pgs->dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width,
+                         pgs->dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height );
 
     /* everything looks OK */
     *pdevc = devc;

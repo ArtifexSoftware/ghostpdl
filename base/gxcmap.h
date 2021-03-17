@@ -290,4 +290,8 @@ void gx_get_cmapper(gx_cmapper_t *cmapper, const gs_gstate *pgs,
                     gx_device *dev, bool has_transfer, bool has_halftone,
                     gs_color_select_t select);
 
+/* Return the dev_ht[] selected by the pgs->device->graphics_tag	*/
+/* or the  pgs->dev_ht[HT_OBJTYPE_DEFAULT]				*/
+gx_device_halftone *gx_select_dev_ht(const gs_gstate *pgs);
+
 #endif /* gxcmap_INCLUDED */

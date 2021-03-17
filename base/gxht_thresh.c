@@ -585,9 +585,11 @@ gxht_thresh_image_init(gx_image_enum *penum)
     gx_dda_fixed dda_ht;
 
     if (gx_device_must_halftone(penum->dev)) {
-        if (penum->pgs != NULL && penum->pgs->dev_ht != NULL) {
-            for (k = 0; k < penum->pgs->dev_ht->num_comp; k++) {
-                d_order = &(penum->pgs->dev_ht->components[k].corder);
+        if (penum->pgs != NULL && penum->pgs->dev_ht[HT_OBJTYPE_DEFAULT] != NULL) {
+            gx_device_halftone *pdht = gx_select_dev_ht(penum->pgs);
+
+            for (k = 0; k < pdht->num_comp; k++) {
+                d_order = &(pdht->components[k].corder);
                 code = gx_ht_construct_threshold(d_order, penum->dev,
                                                  penum->pgs, k);
                 if (code < 0 ) {
@@ -871,6 +873,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
     gx_color_index dev_black = gx_device_black(dev);
     int spp_out = dev->color_info.num_components;
     byte *contone_align = NULL; /* Init to silence compiler warnings */
+    gx_device_halftone *pdht = gx_select_dev_ht(penum->pgs);
 
     /* Go ahead and fill the threshold line buffer with tiled threshold values.
        First just grab the row or column that we are going to tile with and
@@ -883,10 +886,10 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
             /*  Iterate over the vdi and fill up our threshold buffer.  We
                  also need to loop across the planes of data */
             for (j = 0; j < spp_out; j++) {
-                bool threshold_inverted = penum->pgs->dev_ht->components[j].corder.threshold_inverted;
+                bool threshold_inverted = pdht->components[j].corder.threshold_inverted;
 
-                thresh_width = penum->pgs->dev_ht->components[j].corder.width;
-                thresh_height = penum->pgs->dev_ht->components[j].corder.full_height;
+                thresh_width = pdht->components[j].corder.width;
+                thresh_height = pdht->components[j].corder.full_height;
                 halftone = penum->ht_buffer + j * vdi * dithered_stride;
                 /* Compute the tiling positions with dest_width */
                 dx = (fixed2int_var_rounded(xrun) + penum->pgs->screen_phase[0].x) % thresh_width;
@@ -901,7 +904,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                 right_tile_width = dest_width -  num_full_tiles * thresh_width -
                                    left_width;
                 /* Get the proper threshold for the colorant count */
-                threshold = penum->pgs->dev_ht->components[j].corder.threshold;
+                threshold = pdht->components[j].corder.threshold;
                 /* Point to the proper contone data */
                 contone_align = penum->line + contone_stride * j +
                                 offset_contone[j];
@@ -995,11 +998,11 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                 for (j = 0; j < spp_out; j++) {
                     halftone = penum->ht_buffer +
                                    j * penum->ht_plane_height * (LAND_BITS>>3);
-                    thresh_width = penum->pgs->dev_ht->components[j].corder.width;
+                    thresh_width = pdht->components[j].corder.width;
                     thresh_height =
-                          penum->pgs->dev_ht->components[j].corder.full_height;
+                          pdht->components[j].corder.full_height;
                     /* Get the proper threshold for the colorant count */
-                    threshold = penum->pgs->dev_ht->components[j].corder.threshold;
+                    threshold = pdht->components[j].corder.threshold;
                     /* Point to the proper contone data */
                     contone_align = penum->line + offset_contone[j] +
                                       LAND_BITS * j * contone_stride;

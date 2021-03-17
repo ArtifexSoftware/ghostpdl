@@ -73,6 +73,7 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
         code = gs_note_error(gs_error_VMerror);
     else {
         pht->type = ht_type_colorscreen;
+        pht->objtype = HT_OBJTYPE_DEFAULT;
         pht->params.colorscreen = cscreen;
         code = gs_sethalftone_prepare(igs, pht, pdht);
     }

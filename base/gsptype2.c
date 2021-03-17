@@ -158,13 +158,14 @@ gx_dc_is_pattern2_color(const gx_device_color *pdevc)
 }
 
 /*
- * The device halftone used by a PatternType 2 patter is that current in
+ * The device halftone used by a PatternType 2 pattern is that current in
  * the graphic state at the time of the makepattern call.
  */
 static const gx_device_halftone *
 gx_dc_pattern2_get_dev_halftone(const gx_device_color * pdevc)
 {
-    return ((gs_pattern2_instance_t *)pdevc->ccolor.pattern)->saved->dev_ht;
+    /* FIXME: Do we need to be objtype specific w.r.t. to the dev_ht ??? */
+    return ((gs_pattern2_instance_t *)pdevc->ccolor.pattern)->saved->dev_ht[HT_OBJTYPE_DEFAULT];
 }
 
 /* Load a PatternType 2 color into the cache.  (No effect.) */

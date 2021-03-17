@@ -76,7 +76,7 @@ static void clip_stack_rc_adjust(gx_clip_stack_t *cs, int delta, client_name_t c
  *
  *   (3a) Objects that are logically connected to individual gstates.
  *      We use reference counting to manage these.  Currently these are:
- *              halftone, dev_ht, cie_render, black_generation,
+ *              halftone, dev_ht(4), cie_render, black_generation,
  *              undercolor_removal, set_transfer.*, cie_joint_caches,
  *              clip_stack, {opacity,shape}.mask
  *      effective_transfer.* may point to some of the same objects as

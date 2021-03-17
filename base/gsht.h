@@ -23,6 +23,15 @@
 #include "gsgstate.h"
 #include "gstypes.h"
 
+/* Define the ObjectType enum for Halftones */
+typedef enum {
+    HT_OBJTYPE_DEFAULT = 0,
+    HT_OBJTYPE_VECTOR,
+    HT_OBJTYPE_IMAGE,
+    HT_OBJTYPE_TEXT,
+    HT_OBJTYPE_COUNT		/* Must be last */
+} gs_HT_objtype_t;
+
 /* Client definition of (Type 1) halftones */
 typedef struct gs_screen_halftone_s {
     float frequency;

@@ -15,6 +15,7 @@
 
 
 /* Color mapping for Ghostscript */
+#include "assert_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsccolor.h"
@@ -27,6 +28,7 @@
 #include "gxcmap.h"
 #include "gxlum.h"
 #include "gzstate.h"
+#include "gzht.h"
 #include "gxdither.h"
 #include "gxcdevn.h"
 #include "string_.h"
@@ -888,6 +890,32 @@ gx_remap_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
     return 0;
 }
 
+/* ------ Utility for selecting the dev_ht from the pgs using the dev->graphics_type_tag ----- */
+
+static gs_HT_objtype_t
+tag_to_HT_objtype[8] = { HT_OBJTYPE_DEFAULT,
+                         HT_OBJTYPE_TEXT,	/* GS_TEXT_TAG = 0x1  */
+                         HT_OBJTYPE_IMAGE,	/* GS_IMAGE_TAG = 0x2 */
+                         HT_OBJTYPE_DEFAULT,
+                         HT_OBJTYPE_VECTOR,	/* GS_VECTOR_TAG = 0x4  */
+                         HT_OBJTYPE_DEFAULT, HT_OBJTYPE_DEFAULT, HT_OBJTYPE_DEFAULT
+                       };
+
+/* Return the selected dev_ht[] or the pgs->dev_ht[HT_OBJTYPE_DEFAULT] */
+gx_device_halftone *
+gx_select_dev_ht(const gs_gstate *pgs)
+{
+    gs_HT_objtype_t objtype;
+
+    /* This function only works with 3 bits currently. Flag here in case we add object types */
+    assert(HT_OBJTYPE_COUNT == 4);
+
+    objtype = tag_to_HT_objtype[pgs->device->graphics_type_tag & 7];
+    if (pgs->dev_ht[objtype] == NULL)
+        objtype = HT_OBJTYPE_DEFAULT;
+    return pgs->dev_ht[objtype];
+}
+
 /* ------ Render Gray color. ------ */
 
 static void
@@ -924,7 +952,7 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
                             (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
         }
     }
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
         gx_color_load_select(pdc, pgs, dev, select);
 }
@@ -981,7 +1009,7 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
         color_set_pure(pdc, color);
         return;
     }
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
         gx_color_load_select(pdc, pgs, dev, select);
 }
@@ -1012,7 +1040,7 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
     }
 
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
         gx_color_load_select(pdc, pgs, dev, select);
 }
@@ -1056,7 +1084,7 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
         color_set_pure(pdc, color);
         return;
     }
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
         gx_color_load_select(pdc, pgs, dev, select);
 }
@@ -1115,7 +1143,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     /* duplicating most of the code of this procedure. */
     if (gx_device_must_halftone(dev)) {
         if (gx_render_device_DeviceN(cm_comps, pdc, dev,
-                    pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+                    gx_select_dev_ht(pgs), &pgs->screen_phase[select]) == 1)
             gx_color_load_select(pdc, pgs, dev, select);
         return;
     }
@@ -1133,7 +1161,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
             color_set_pure(pdc, color);
         else {
             if (gx_render_device_DeviceN(cm_comps, pdc, dev,
-                        pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+                        gx_select_dev_ht(pgs), &pgs->screen_phase[select]) == 1)
                 gx_color_load_select(pdc, pgs, dev, select);
         }
     }
@@ -1177,7 +1205,7 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
     }
 
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
         gx_color_load_select(pdc, pgs, dev, select);
 }
@@ -1233,7 +1261,7 @@ cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
         color_set_pure(pdc, color);
         return;
     }
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
         gx_color_load_select(pdc, pgs, dev, select);
 }
@@ -1447,7 +1475,7 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
     }
 
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
         gx_color_load_select(pdc, pgs, dev, select);
 }
@@ -1572,7 +1600,7 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
         return;
     }
 
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
         gx_color_load_select(pdc, pgs, dev, select);
 }
@@ -1618,7 +1646,7 @@ cmap_devicen_halftoned(const frac * pcc,
     }
 
     /* We need to finish halftoning */
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
         gx_color_load_select(pdc, pgs, dev, select);
 }
@@ -1713,7 +1741,7 @@ cmap_devicen_direct(const frac * pcc,
         color_set_pure(pdc, color);
         return;
     }
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
         gx_color_load_select(pdc, pgs, dev, select);
 }
@@ -2093,7 +2121,7 @@ cmapper_transfer_halftone_add(gx_cmapper_t *data)
     }
     /* Halftoning */
     if (gx_render_device_DeviceN(&(cv_frac[0]), &data->devc, dev,
-                    pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+                    gx_select_dev_ht(pgs), &pgs->screen_phase[select]) == 1)
         gx_color_load_select(&data->devc, pgs, dev, select);
 }
 
@@ -2122,7 +2150,7 @@ cmapper_transfer_halftone_op(gx_cmapper_t *data)
     }
     /* Halftoning */
     if (gx_render_device_DeviceN(&(cv_frac[0]), &data->devc, dev,
-                    pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+                    gx_select_dev_ht(pgs), &pgs->screen_phase[select]) == 1)
         gx_color_load_select(&data->devc, pgs, dev, select);
 }
 
@@ -2146,7 +2174,7 @@ cmapper_transfer_halftone_sub(gx_cmapper_t *data)
     }
     /* Halftoning */
     if (gx_render_device_DeviceN(&(cv_frac[0]), &data->devc, dev,
-                    pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+                    gx_select_dev_ht(pgs), &pgs->screen_phase[select]) == 1)
         gx_color_load_select(&data->devc, pgs, dev, select);
 }
 
@@ -2242,7 +2270,7 @@ cmapper_halftone(gx_cmapper_t *data)
         cv_frac[i] = cv2frac(pconc[i]);
     }
     if (gx_render_device_DeviceN(&(cv_frac[0]), &data->devc, dev,
-                pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+                gx_select_dev_ht(pgs), &pgs->screen_phase[select]) == 1)
         gx_color_load_select(&data->devc, pgs, dev, select);
 }
 
@@ -2371,7 +2399,7 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
     /* Halftoning */
     if (has_halftone) {
         if (gx_render_device_DeviceN(&(cv_frac[0]), pdc, dev,
-                    pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+                    gx_select_dev_ht(pgs), &pgs->screen_phase[select]) == 1)
             gx_color_load_select(pdc, pgs, dev, select);
     } else {
         /* We have a frac value from the transfer function.  Do the encode.

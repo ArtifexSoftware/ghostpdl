@@ -809,7 +809,7 @@ in:                             /* Initialize for a new page. */
                                                halftone_type, num_comp);
 #endif
                                     code = cmd_resize_halftone(
-                                                        &gs_gstate.dev_ht,
+                                                        &gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT],
                                                         num_comp, mem);
                                     if (code < 0)
                                         goto out;
@@ -1209,10 +1209,10 @@ set_phase:      /*
                 if (state_tile.size.x)
                     tile_phase.x =
                         (state.tile_phase.x + x0) % state_tile.size.x;
-                if (gs_gstate.dev_ht && gs_gstate.dev_ht->lcm_width)
+                if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width)
                     color_phase.x =
                         (state.tile_phase.x + x0) %
-                        gs_gstate.dev_ht->lcm_width;
+                        gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width;
                 /*
                  * The true tile height for shifted tiles is not
                  * size.y: see gxbitmap.h for the computation.
@@ -1230,10 +1230,10 @@ set_phase:      /*
                     tile_phase.y =
                         (state.tile_phase.y + y0) % full_height;
                 }
-                if (gs_gstate.dev_ht && gs_gstate.dev_ht->lcm_height)
+                if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height)
                     color_phase.y =
                         (state.tile_phase.y + y0) %
-                        gs_gstate.dev_ht->lcm_height;
+                        gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height;
                 gx_gstate_setscreenphase(&gs_gstate,
                                          -(state.tile_phase.x + x0),
                                          -(state.tile_phase.y + y0),

@@ -108,7 +108,7 @@ color_halftone_init(gx_image_enum *penum)
     if (!gx_device_must_halftone(penum->dev))
         return NULL;
 
-    if (penum->pgs == NULL || penum->pgs->dev_ht == NULL)
+    if (penum->pgs == NULL || penum->pgs->dev_ht[HT_OBJTYPE_DEFAULT] == NULL)
         return NULL;
     dda_ht = penum->dda.pixel0.x;
     if (penum->dxx > 0)
@@ -136,20 +136,20 @@ color_halftone_init(gx_image_enum *penum)
     if (cal_ht == NULL)
         goto fail;
 
-    for (k = 0; k < penum->pgs->dev_ht->num_comp; k++) {
-        d_order = &(penum->pgs->dev_ht->components[k].corder);
+    for (k = 0; k < penum->pgs->dev_ht[HT_OBJTYPE_DEFAULT]->num_comp; k++) {
+        d_order = &(penum->pgs->dev_ht[HT_OBJTYPE_DEFAULT]->components[k].corder);
         code = gx_ht_construct_threshold(d_order, penum->dev, penum->pgs, k);
         if (code < 0)
             goto fail;
         if (cal_halftone_add_screen(ctx,
                                     penum->memory->non_gc_memory,
                                     cal_ht,
-                                    penum->pgs->dev_ht->components[k].corder.threshold_inverted,
-                                    penum->pgs->dev_ht->components[k].corder.width,
-                                    penum->pgs->dev_ht->components[k].corder.full_height,
+                                    penum->pgs->dev_ht[HT_OBJTYPE_DEFAULT]->components[k].corder.threshold_inverted,
+                                    penum->pgs->dev_ht[HT_OBJTYPE_DEFAULT]->components[k].corder.width,
+                                    penum->pgs->dev_ht[HT_OBJTYPE_DEFAULT]->components[k].corder.full_height,
                                     -penum->pgs->screen_phase[k].x,
                                     -penum->pgs->screen_phase[k].y,
-                                    penum->pgs->dev_ht->components[k].corder.threshold) < 0)
+                                    penum->pgs->dev_ht[HT_OBJTYPE_DEFAULT]->components[k].corder.threshold) < 0)
             goto fail;
     }
 

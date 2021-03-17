@@ -365,7 +365,7 @@ top:
         }
     if (num_colors <= 32) {
         /****** WRONG FOR MULTI-PLANE HALFTONES ******/
-        num_colors *= pgs->dev_ht->components[0].corder.num_levels;
+        num_colors *= pgs->dev_ht[HT_OBJTYPE_DEFAULT]->components[0].corder.num_levels;
     }
     if (psh->head.type == 2 || psh->head.type == 3) {
         max_error *= 0.25;

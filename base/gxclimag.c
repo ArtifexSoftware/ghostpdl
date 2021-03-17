@@ -1585,7 +1585,7 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
                       const gs_gstate * pgs)
 {
     int code;
-    const gx_device_halftone *pdht = pgs->dev_ht;
+    const gx_device_halftone *pdht = gx_select_dev_ht(pgs);
 
     /* Put out the halftone, if present. */
     if (pdht && pdht->id != cldev->device_halftone_id) {

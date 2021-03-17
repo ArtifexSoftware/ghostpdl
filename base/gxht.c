@@ -545,7 +545,7 @@ gx_dc_ht_binary_read(
     devc.type = gx_dc_type_ht_binary;
 
     /* the halftone is always taken from the gs_gstate */
-    devc.colors.binary.b_ht = pgs->dev_ht;
+    devc.colors.binary.b_ht = pgs->dev_ht[HT_OBJTYPE_DEFAULT];
 
     /* cache is not porvided until the device color is used */
     devc.colors.binary.b_tile = 0;
@@ -592,14 +592,14 @@ gx_dc_ht_binary_read(
         devc.colors.binary.b_index = *pdata++;
     }
 
-    if (pgs->dev_ht == NULL)
+    if (pgs->dev_ht[HT_OBJTYPE_DEFAULT] == NULL)
         return_error(gs_error_unregistered); /* Must not happen. */
     /* set the phase as required (select value is arbitrary) */
     color_set_phase_mod( &devc,
                          pgs->screen_phase[0].x,
                          pgs->screen_phase[0].y,
-                         pgs->dev_ht->lcm_width,
-                         pgs->dev_ht->lcm_height );
+                         pgs->dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width,
+                         pgs->dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height );
 
     /* everything looks good */
     *pdevc = devc;

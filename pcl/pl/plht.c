@@ -40,6 +40,7 @@ pl_set_pcl_halftone(gs_gstate * pgs, gs_mapping_proc transfer_proc,
     if (code < 0)
         return code;
     ht.type = ht_type_threshold;
+    ht.objtype = HT_OBJTYPE_DEFAULT;
     ht.params.threshold.width = width;
     ht.params.threshold.height = height;
     ht.params.threshold.thresholds.data = threshold_data.data;

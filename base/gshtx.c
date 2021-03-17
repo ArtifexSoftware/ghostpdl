@@ -95,6 +95,7 @@ gs_ht_build(
     /* initialize the halftone */
     pht->type = ht_type_multiple;
     pht->rc.free = free_comps;
+    pht->objtype = HT_OBJTYPE_DEFAULT;
     pht->params.ht_multiple.components = phtc;
     pht->params.ht_multiple.num_comp = num_comps;
 
