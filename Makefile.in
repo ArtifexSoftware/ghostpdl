@@ -715,6 +715,8 @@ TESSSSE41=@TESS_SSE4_1@
 TESSNEON=@TESS_NEON@
 TESSCXXFLAGS=@TESS_CXXFLAGS@
 TESSERACTDIR=@TESSERACTDIR@
+# Since C++ is only used for tesseract, set the compiler here
+CXX=@CXX@
 
 # ---------------- End of platform-specific section ---------------- #
 
