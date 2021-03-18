@@ -102,7 +102,7 @@ static const gx_device_procs perm_procs = {
     NULL,				/* create_compositor */
     NULL,				/* get_hardware_params */
     NULL,				/* text_begin */
-    NULL,				/* finish_copydevice */
+    NULL,				/* initialize */
     NULL,				/* begin_transparency_group */
     NULL,				/* end_transparency_group */
     NULL,				/* begin_transparency_mask */

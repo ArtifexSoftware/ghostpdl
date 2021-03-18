@@ -139,7 +139,7 @@ gx_device_nup gs_nup_device =
      default_subclass_create_compositor,
      default_subclass_get_hardware_params,		/* get_hardware_params */
      default_subclass_text_begin,
-     default_subclass_finish_copydevice,		/* finish_copydevice */
+     default_subclass_initialize,		        /* initialize */
      default_subclass_begin_transparency_group,		/* begin_transparency_group */
      default_subclass_end_transparency_group,		/* end_transparency_group */
      default_subclass_begin_transparency_mask,		/* begin_transparency_mask */

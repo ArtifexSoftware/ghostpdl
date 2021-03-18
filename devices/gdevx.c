@@ -70,7 +70,7 @@ static dev_proc_copy_color(x_copy_color);
 static dev_proc_get_page_device(x_get_page_device);
 static dev_proc_strip_tile_rectangle(x_strip_tile_rectangle);
 static dev_proc_get_bits_rectangle(x_get_bits_rectangle);
-/*extern dev_proc_get_xfont_procs(gdev_x_finish_copydevice);*/
+/*extern dev_proc_get_xfont_procs(gdev_x_initialize);*/
 static dev_proc_fillpage(x_fillpage);
 
 /* The device descriptor */
@@ -121,7 +121,7 @@ const gx_device_X this_device = { \
         NULL,			/* create_compositor */ \
         NULL,			/* get_hardware_params */ \
         NULL,			/* text_begin */ \
-        gdev_x_finish_copydevice, \
+        gdev_x_initialize, \
         NULL,			/* begin_transparency_group */ \
         NULL,                   /* end_transparency_group */ \
         NULL,                  /* begin_transparency_mask */ \

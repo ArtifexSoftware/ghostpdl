@@ -92,7 +92,7 @@ static const gx_device_rop_texture gs_rop_texture_device = {
      NULL,				/* create_compositor */
      gx_forward_get_hardware_params,
      NULL,				/* text_begin */
-     NULL,				/* finish_copydevice */
+     NULL,				/* initialize */
      NULL,				/* begin_transparency_group */
      NULL,				/* end_transparency_group */
      NULL,				/* begin_transparency_mask */

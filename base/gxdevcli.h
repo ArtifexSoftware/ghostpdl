@@ -1210,10 +1210,10 @@ typedef enum FILTER_FLAGS {
 
                 /* Added in release 6.23 */
 
-#define dev_t_proc_finish_copydevice(proc, dev_t)\
-  int proc(dev_t *dev, const gx_device *from_dev)
-#define dev_proc_finish_copydevice(proc)\
-  dev_t_proc_finish_copydevice(proc, gx_device)
+#define dev_t_proc_initialize(proc, dev_t)\
+  int proc(dev_t *dev)
+#define dev_proc_initialize(proc)\
+  dev_t_proc_initialize(proc, gx_device)
 
                 /* Added in release 6.61 (raph) */
 
@@ -1635,7 +1635,7 @@ typedef struct {
         dev_t_proc_create_compositor((*create_compositor), dev_t);\
         dev_t_proc_get_hardware_params((*get_hardware_params), dev_t);\
         dev_t_proc_text_begin((*text_begin), dev_t);\
-        dev_t_proc_finish_copydevice((*finish_copydevice), dev_t);\
+        dev_t_proc_initialize((*initialize), dev_t);\
         dev_t_proc_begin_transparency_group((*begin_transparency_group), dev_t);\
         dev_t_proc_end_transparency_group((*end_transparency_group), dev_t);\
         dev_t_proc_begin_transparency_mask((*begin_transparency_mask), dev_t);\

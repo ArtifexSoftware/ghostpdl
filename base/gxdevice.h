@@ -298,7 +298,7 @@ dev_proc_create_compositor(gx_default_create_compositor);
 dev_proc_create_compositor(gx_null_create_compositor);
 dev_proc_get_hardware_params(gx_default_get_hardware_params);
 dev_proc_text_begin(gx_default_text_begin);
-dev_proc_finish_copydevice(gx_default_finish_copydevice);
+dev_proc_initialize(gx_default_initialize);
 dev_proc_dev_spec_op(gx_default_dev_spec_op);
 dev_proc_fill_rectangle_hl_color(gx_default_fill_rectangle_hl_color);
 dev_proc_include_color_space(gx_default_include_color_space);

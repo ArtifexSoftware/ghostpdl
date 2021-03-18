@@ -756,7 +756,7 @@ gdev_x_clear_window(gx_device_X * xdev)
 
 /* Clean up the instance after making a copy. */
 int
-gdev_x_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+gdev_x_initialize(gx_device *dev)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
 

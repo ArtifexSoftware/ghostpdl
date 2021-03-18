@@ -584,11 +584,11 @@ int default_subclass_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_pa
     return gx_default_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
 }
 
-/* This method seems (despite the name) to be intended to allow for
+/* This method is intended to allow for
  * devices to initialise data before being invoked. For our subclassed
  * device this should already have been done.
  */
-int default_subclass_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+int default_subclass_initialize(gx_device *dev)
 {
     return 0;
 }

@@ -180,7 +180,7 @@ gx_device_flp gs_flp_device =
      flp_create_compositor,
      default_subclass_get_hardware_params,			/* get_hardware_params */
      flp_text_begin,
-     default_subclass_finish_copydevice,			/* finish_copydevice */
+     default_subclass_initialize,			/* initialize */
      flp_begin_transparency_group,			/* begin_transparency_group */
      flp_end_transparency_group,			/* end_transparency_group */
      flp_begin_transparency_mask,			/* begin_transparency_mask */

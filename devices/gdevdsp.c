@@ -94,7 +94,7 @@ static dev_proc_copy_color(display_copy_color);
 static dev_proc_get_bits(display_get_bits);
 static dev_proc_get_params(display_get_params);
 static dev_proc_put_params(display_put_params);
-static dev_proc_finish_copydevice(display_finish_copydevice);
+static dev_proc_initialize(display_initialize);
 
 static dev_proc_get_color_mapping_procs(display_separation_get_color_mapping_procs);
 static dev_proc_get_color_comp_index(display_separation_get_color_comp_index);
@@ -151,7 +151,7 @@ static const gx_device_procs display_procs =
     NULL,				/* create_compositor */
     NULL,				/* get_hardware_params */
     NULL,				/* text_begin */
-    display_finish_copydevice,		/* finish_copydevice */
+    display_initialize,		        /* initialize */
     NULL,				/* begin_transparency_group */
     NULL,				/* end_transparency_group */
     NULL,				/* begin_transparency_mask */
@@ -1213,7 +1213,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 
 /* Clean up the instance after making a copy. */
 int
-display_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+display_initialize(gx_device *dev)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
 

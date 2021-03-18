@@ -172,7 +172,7 @@ const gx_device_procs gs_clist_device_procs = {
     clist_create_compositor,
     gx_forward_get_hardware_params,
     gx_default_text_begin,
-    gx_default_finish_copydevice,
+    NULL, /* initialize */
     gx_default_begin_transparency_group,                       /* begin_transparency_group */
     gx_default_end_transparency_group,                       /* end_transparency_group */
     gx_default_begin_transparency_mask,                       /* begin_transparency_mask */

@@ -251,7 +251,7 @@ static const gx_device_spot_analyzer gx_spot_analyzer_device =
   NULL,
   NULL,
   NULL,
-  gx_default_finish_copydevice,
+  gx_default_initialize,
   NULL,
   NULL,
   NULL,

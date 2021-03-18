@@ -150,7 +150,7 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
      gx_default_create_compositor,
      NULL,                              /* create_compositor */
      gx_default_text_begin,
-     gx_default_finish_copydevice,
+     gx_default_initialize,
      NULL,                              /* begin_transparency_group */
      NULL,                              /* end_transparency_group */
      NULL,                              /* begin_transparency_mask */

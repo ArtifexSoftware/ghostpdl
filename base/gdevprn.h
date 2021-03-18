@@ -243,7 +243,7 @@ prn_dev_proc_get_space_params(gx_default_get_space_params);
         NULL,	/* create_compositor */\
         NULL,	/* get_hardware_params */\
         NULL,	/* text_begin */\
-        NULL,	/* finish_copydevice */\
+        NULL,	/* initialize */\
         NULL,	/* begin_transparency_group */\
         NULL,	/* end_transparency_group */\
         NULL,	/* begin_transparency_mask */\

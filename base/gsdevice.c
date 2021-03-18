@@ -416,18 +416,11 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
     /*
      * keep_open is very dangerous.  On the other hand, so is copydevice in
      * general, since it just copies the bits without any regard to pointers
-     * (including self-pointers) that they may contain.  We handle this by
-     * making the default finish_copydevice forbid copying of anything other
-     * than the device prototype.
+     * (including self-pointers) that they may contain.
      */
     new_dev->is_open = dev->is_open && keep_open;
-    fill_dev_proc(new_dev, finish_copydevice, gx_default_finish_copydevice);
-    /* We really want to be able to interrogate the device for capabilities
-     * and/or preferences right from when it is created, so set dev_spec_op
-     * now (if not already set).
-     */
-    fill_dev_proc(new_dev, dev_spec_op, gx_default_dev_spec_op);
-    code = dev_proc(new_dev, finish_copydevice)(new_dev, dev);
+    fill_dev_proc(new_dev, initialize, gx_default_initialize);
+    code = dev_proc(new_dev, initialize)(new_dev);
     if (code < 0) {
         gs_free_object(mem, new_dev, "gs_copydevice(device)");
 #if 0 /* gs_free_object above calls gx_device_finalize,
@@ -437,6 +430,11 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
 #endif
         return code;
     }
+    /* We really want to be able to interrogate the device for capabilities
+     * and/or preferences right from when it is created, so set dev_spec_op
+     * now (if not already set).
+     */
+    fill_dev_proc(new_dev, dev_spec_op, gx_default_dev_spec_op);
     *pnew_dev = new_dev;
     return 0;
 }

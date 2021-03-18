@@ -102,7 +102,7 @@ static const gx_device_cpath_accum gs_cpath_accum_device =
   NULL,
   NULL,
   gx_default_text_begin,
-  gx_default_finish_copydevice,
+  NULL, /* initialize */
   NULL,	/* begin_transparency_group */
   NULL,	/* end_transparency_group */
   NULL,	/* begin_transparency_mask */

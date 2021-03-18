@@ -173,7 +173,7 @@ dev_proc_transform_pixel_region(mem_transform_pixel_region);
                 gx_default_create_compositor,\
                 gx_default_get_hardware_params,\
                 gx_default_text_begin,\
-                gx_default_finish_copydevice,\
+                NULL, /* initialize */\
                 NULL, /* begin_transparency_group */\
                 NULL, /* end_transparency_group */\
                 NULL, /* begin_transparency_mask */\

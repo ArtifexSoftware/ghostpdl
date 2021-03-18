@@ -195,7 +195,7 @@ const gx_device_docxwrite_t gs_docxwrite_device =
      gx_null_create_compositor,
      NULL,			/* get_hardware_params */
      docxwrite_text_begin,
-     NULL,			/* finish_copydevice */
+     NULL,			/* initialize */
      NULL,			/* begin_transparency_group */
      NULL,			/* end_transparency_group */
      NULL,			/* begin_transparency_mask */

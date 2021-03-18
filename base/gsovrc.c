@@ -451,7 +451,7 @@ static const gx_device_procs no_overprint_procs = {
     overprint_create_compositor,        /* create_compositor */
     0,                                  /* get_hardware_params */
     0,                                  /* text_begin */
-    0,                                  /* gx_finish_copydevice */
+    0,                                  /* initialize */
     0,                                  /* begin_transparency_group */
     0,                                  /* end_transparency_group */
     0,                                  /* being_transparency_mask */
@@ -563,7 +563,7 @@ static const gx_device_procs generic_overprint_procs = {
     overprint_create_compositor,        /* create_compositor */
     0,                                  /* get_hardware_params */
     overprint_text_begin,              /* text_begin */
-    0,                                  /* gx_finish_copydevice */
+    0,                                  /* initialize */
     0,                                  /* begin_transparency_group */
     0,                                  /* end_transparency_group */
     0,                                  /* begin_transparency_mask */
@@ -641,7 +641,7 @@ static const gx_device_procs sep_overprint_procs = {
     overprint_create_compositor,        /* create_compositor */
     0,                                  /* get_hardware_params */
     overprint_text_begin,               /* text_begin */
-    0,                                  /* gx_finish_copydevice */
+    0,                                  /* initialize */
     0,                                  /* begin_transparency_group */
     0,                                  /* end_transparency_group */
     0,                                  /* begin_transparency_mask */

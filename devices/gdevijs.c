@@ -90,7 +90,7 @@ static dev_proc_close_device(gsijs_close);
 static dev_proc_output_page(gsijs_output_page);
 static dev_proc_get_params(gsijs_get_params);
 static dev_proc_put_params(gsijs_put_params);
-static dev_proc_finish_copydevice(gsijs_finish_copydevice);
+static dev_proc_initialize(gsijs_initialize);
 
 /* Following definitions are for krgb support. */
 static dev_proc_create_buf_device(gsijs_create_buf_device);
@@ -144,7 +144,7 @@ static const gx_device_procs gsijs_procs = {
         NULL,	/* create_compositor */
         NULL,	/* get_hardware_params */
         NULL,	/* text_begin */
-        gsijs_finish_copydevice
+        gsijs_initialize
 };
 
 typedef struct gx_device_ijs_s gx_device_ijs;
@@ -928,19 +928,19 @@ gsijs_open(gx_device *dev)
 
 /* Finish device initialization. */
 static int
-gsijs_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+gsijs_initialize(gx_device *dev)
 {
     int code;
     static const char rgb[] = "DeviceRGB";
     gx_device_ijs *ijsdev = (gx_device_ijs *)dev;
 
-    code = gx_default_finish_copydevice(dev, from_dev);
+    code = gx_default_initialize(dev);
     if(code < 0)
         return code;
 
     if (!ijsdev->ColorSpace) {
         ijsdev->ColorSpace = gs_malloc(ijsdev->memory, sizeof(rgb), 1,
-                "gsijs_finish_copydevice");
+                                       "gsijs_initialize");
         if (!ijsdev->ColorSpace)
             return gs_note_error(gs_error_VMerror);
         ijsdev->ColorSpace_size = sizeof(rgb);

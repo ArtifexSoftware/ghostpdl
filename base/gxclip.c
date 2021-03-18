@@ -96,7 +96,7 @@ static const gx_device_clip gs_clip_device =
   gx_forward_create_compositor,
   gx_forward_get_hardware_params,
   gx_default_text_begin,
-  gx_default_finish_copydevice,
+  NULL, /* initialise */
   NULL,			/* begin_transparency_group */
   NULL,			/* end_transparency_group */
   NULL,			/* begin_transparency_mask */

@@ -214,7 +214,7 @@ static dev_proc_get_params(xps_get_params);
 static dev_proc_put_params(xps_put_params);
 static dev_proc_fill_path(gdev_xps_fill_path);
 static dev_proc_stroke_path(gdev_xps_stroke_path);
-static dev_proc_finish_copydevice(xps_finish_copydevice);
+static dev_proc_initialize(xps_initialize);
 static dev_proc_begin_image(xps_begin_image);
 
 #define xps_device_procs \
@@ -262,7 +262,7 @@ static dev_proc_begin_image(xps_begin_image);
         NULL,                   /* create_compositor */\
         NULL,                   /* get_hardware_params */\
         NULL,                   /* text_begin */\
-        xps_finish_copydevice,\
+        xps_initialize,\
         NULL,\
 }
 
@@ -1321,7 +1321,7 @@ xps_put_params(gx_device *dev, gs_param_list *plist)
     return code;
 }
 
-static int xps_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+static int xps_initialize(gx_device *dev)
 {
     gx_device_xps *xps = (gx_device_xps*)dev;
 

@@ -654,7 +654,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, create_compositor, gx_default_create_compositor);
     fill_dev_proc(dev, get_hardware_params, gx_default_get_hardware_params);
     fill_dev_proc(dev, text_begin, gx_default_text_begin);
-    fill_dev_proc(dev, finish_copydevice, gx_default_finish_copydevice);
+    fill_dev_proc(dev, initialize, gx_default_initialize);
 
     set_dev_proc(dev, encode_color, get_encode_color(dev));
     if (dev->color_info.num_components == 3)
@@ -1001,10 +1001,9 @@ gx_default_composite_get_cropping(const gs_composite_t *pxcte, int *ry, int *rhe
 }
 
 int
-gx_default_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+gx_default_initialize(gx_device *dev)
 {
-    /* Only allow copying the prototype. */
-    return (from_dev->memory ? gs_note_error(gs_error_rangecheck) : 0);
+    return 0;
 }
 
 int
@@ -1297,7 +1296,7 @@ int gx_copy_device_procs(gx_device *dest, gx_device *src, gx_device *prototype)
     set_dev_proc(dest, create_compositor, dev_proc(prototype, create_compositor));
     set_dev_proc(dest, get_hardware_params, dev_proc(prototype, get_hardware_params));
     set_dev_proc(dest, text_begin, dev_proc(prototype, text_begin));
-    set_dev_proc(dest, finish_copydevice, dev_proc(prototype, finish_copydevice));
+    set_dev_proc(dest, initialize, dev_proc(prototype, initialize));
     set_dev_proc(dest, discard_transparency_layer, dev_proc(prototype, discard_transparency_layer));
     set_dev_proc(dest, get_color_mapping_procs, dev_proc(prototype, get_color_mapping_procs));
     set_dev_proc(dest, get_color_comp_index, dev_proc(prototype, get_color_comp_index));

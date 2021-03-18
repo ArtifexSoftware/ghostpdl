@@ -76,7 +76,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
   gdev_pdf_create_compositor,	/* create_compositor */
   NULL,				/* get_hardware_params */
   gdev_pdf_text_begin,
-  NULL,				/* finish_copydevice */
+  NULL,				/* initialize */
   gdev_pdf_begin_transparency_group,	/* begin_transparency_group */
   gdev_pdf_end_transparency_group,	/* end_transparency_group */
   gdev_pdf_begin_transparency_mask,	/* begin_transparency_mask */

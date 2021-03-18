@@ -193,7 +193,7 @@ static	dev_proc_fill_mask(pdf14_fill_mask);
 static	dev_proc_stroke_path(pdf14_stroke_path);
 static	dev_proc_begin_typed_image(pdf14_begin_typed_image);
 static	dev_proc_text_begin(pdf14_text_begin);
-static  dev_proc_finish_copydevice(pdf14_finish_copydevice);
+static  dev_proc_initialize(pdf14_initialize);
 static	dev_proc_create_compositor(pdf14_create_compositor);
 static	dev_proc_create_compositor(pdf14_forward_create_compositor);
 static	dev_proc_begin_transparency_group(pdf14_begin_transparency_group);
@@ -263,7 +263,7 @@ static	const gx_color_map_procs *
         pdf14_create_compositor,	/* create_compositor */\
         NULL,				/* get_hardware_params */\
         pdf14_text_begin,		/* text_begin */\
-        pdf14_finish_copydevice,        /* finish_copydevice */\
+        pdf14_initialize,               /* initialize */\
         pdf14_begin_transparency_group,\
         pdf14_end_transparency_group,\
         pdf14_begin_transparency_mask,\
@@ -730,7 +730,7 @@ static const gx_device_procs pdf14_accum_CMYKspot_procs =
         NULL,				/* create_compositor */\
         NULL,				/* get_hardware_params */\
         NULL,				/* text_begin */\
-        NULL,  				/* finish_copydevice */\
+        NULL,  				/* initialize */\
         NULL,				/* begin_transparency_group */\
         NULL,				/* end_transparency_group */\
         NULL,				/* begin_transparency_mask */\
@@ -6138,7 +6138,7 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
 }
 
 static	int
-pdf14_finish_copydevice(gx_device *new_dev, const gx_device *from_dev)
+pdf14_initialize(gx_device *new_dev)
 {
     pdf14_device *pdev = (pdf14_device*)new_dev;
 
@@ -6146,8 +6146,7 @@ pdf14_finish_copydevice(gx_device *new_dev, const gx_device *from_dev)
     pdev->color_model_stack = NULL;
     pdev->smaskcolor = NULL;
 
-    /* Only allow copying the prototype. */
-    return (from_dev->memory ? gs_note_error(gs_error_rangecheck) : 0);
+    return 0;
 }
 
 /*
@@ -9603,7 +9602,7 @@ send_pdf14trans(gs_gstate	* pgs, gx_device * dev,
         pdf14_clist_create_compositor,	/* create_compositor */\
         gx_forward_get_hardware_params,	/* get_hardware_params */\
         pdf14_clist_text_begin,		/* text_begin */\
-        NULL,				/* finish_copydevice */\
+        NULL,				/* initialize */\
         pdf14_begin_transparency_group,\
         pdf14_end_transparency_group,\
         pdf14_begin_transparency_mask,\

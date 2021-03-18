@@ -116,7 +116,7 @@ static const gx_device_plane_extract gs_plane_extract_device = {
         gx_no_create_compositor, /* WRONG */
         NULL,
         gx_default_text_begin,
-        gx_default_finish_copydevice,
+        NULL, /* initialize */
         NULL,	/* deprecated and never implemented transparency procs */
         NULL,	/*	|	*/
         NULL,	/*	|	*/

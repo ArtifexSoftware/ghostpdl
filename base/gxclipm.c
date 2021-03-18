@@ -83,7 +83,7 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_no_create_compositor,
   gx_forward_get_hardware_params,
   gx_default_text_begin,
-  gx_default_finish_copydevice,
+  NULL, /* initialize */
   NULL,			/* begin_transparency_group */
   NULL,			/* end_transparency_group */
   NULL,			/* begin_transparency_mask */

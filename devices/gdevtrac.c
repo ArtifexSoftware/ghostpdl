@@ -655,7 +655,7 @@ trace_text_begin(gx_device * dev, gs_gstate * pgs,
      NULL,			/* create_compositor */\
      NULL,			/* get_hardware_params */\
      trace_text_begin,\
-     NULL,			/* finish_copydevice */\
+     NULL,			/* initialize */\
      NULL,			/* begin_transparency_group */\
      NULL,			/* end_transparency_group */\
      NULL,			/* begin_transparency_mask */\

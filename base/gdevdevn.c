@@ -987,7 +987,7 @@ gs_public_st_composite_final(st_gx_devn_prn_device, gx_devn_prn_device,
         NULL,                           /* create_compositor */\
         NULL,                           /* get_hardware_params */\
         NULL,                           /* text_begin */\
-        NULL,                           /* finish_copydevice */\
+        NULL,                           /* initialize */\
         NULL,                           /* begin_transparency_group */\
         NULL,                           /* end_transparency_group */\
         NULL,                           /* begin_transparency_mask */\

@@ -102,7 +102,7 @@ dev_proc_get_color_comp_index(gx_default_DevRGB_get_color_comp_index);
         NULL,	/* create_compositor */\
         NULL,	/* get_hardware_params */\
         NULL,	/* text_begin */\
-        NULL,	/* finish_copydevice */\
+        NULL,	/* initialize */\
         NULL,	/* begin_transparency_group */\
         NULL,	/* end_transparency_group */\
         NULL,	/* begin_transparency_mask */\
@@ -219,7 +219,7 @@ static const gx_device_procs bitrgbtags_procs =
         ((void *)0),                       /* create_compositor */
         ((void *)0),                       /* get_hardware_params */
         ((void *)0),                       /* text_begin */
-        ((void *)0),                       /* finish_copydevice */
+        ((void *)0),                       /* initialize */
         ((void *)0),                       /* begin_transparency_group */
         ((void *)0),                       /* end_transparency_group */
         ((void *)0),                       /* begin_transparency_mask */

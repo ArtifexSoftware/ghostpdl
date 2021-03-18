@@ -60,6 +60,12 @@ static dev_proc_create_compositor(bbox_create_compositor);
 static dev_proc_text_begin(bbox_text_begin);
 static dev_proc_fillpage(bbox_fillpage);
 
+static int
+bbox_initialize(gx_device *dev)
+{
+    return 0;
+}
+
 /* The device prototype */
 /*
  * Normally this would be static, but if the device is going to be used
@@ -132,7 +138,7 @@ gx_device_bbox gs_bbox_device =
      bbox_create_compositor,
      NULL,			/* get_hardware_params */
      bbox_text_begin,
-     NULL,			/* finish_copydevice */
+     bbox_initialize,		/* initialize */
      NULL,			/* begin_transparency_group */
      NULL,			/* end_transparency_group */
      NULL,			/* begin_transparency_mask */
