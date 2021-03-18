@@ -2043,6 +2043,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
                 pdfi_countdown(n);
                 code = pdfi_name_alloc(ctx, (byte *)"Form", 4, (pdf_obj **)&n);
                 pdfi_countup(n);
+                ctx->pdf_errors |= E_PDF_NO_SUBTYPE;
             }
             else
                 goto exit;

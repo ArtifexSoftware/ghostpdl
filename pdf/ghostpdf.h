@@ -131,7 +131,8 @@ typedef enum pdf_error_flag_e {
     E_PDF_BADSTREAMDICT = E_PDF_NOHEADER << 26,
     E_PDF_INHERITED_STREAM_RESOURCE = E_PDF_NOHEADER << 27,
     E_PDF_DEREF_FREE_OBJ = E_PDF_NOHEADER << 28,
-    E_PDF_INVALID_TRANS_XOBJECT = E_PDF_NOHEADER << 29
+    E_PDF_INVALID_TRANS_XOBJECT = E_PDF_NOHEADER << 29,
+    E_PDF_NO_SUBTYPE = E_PDF_NOHEADER << 30
 } pdf_error_flag;
 
 typedef enum pdf_warning_flag_e {
@@ -162,7 +163,7 @@ typedef enum pdf_warning_flag_e {
     W_PDF_NUM_EXPONENT = W_PDF_NONSTANDARD_OP << 1,
     W_PDF_STREAM_HAS_CONTENTS = W_PDF_NUM_EXPONENT << 1,
     W_PDF_STREAM_BAD_DECODEPARMS = W_PDF_STREAM_HAS_CONTENTS << 1,
-    W_PDF_MASK_ERROR = W_PDF_STREAM_BAD_DECODEPARMS << 1
+    W_PDF_MASK_ERROR = W_PDF_STREAM_BAD_DECODEPARMS << 1,
 } pdf_warning_flag;
 
 typedef enum pdf_crypt_filter_e {
