@@ -2323,6 +2323,14 @@ currentdict /last-ditch-bpc-csp undef
     currentdict /SMask knownoget {
       % We are doing transparency and SMask is present in the image
       % stack: <imagemask> <SMask>
+      % Normalize /Matte attribute for .begintransparencymaskimage
+      dup /Matte .knownget {
+        oforce dup //null eq {
+          pop dup /Matte undef
+        } {
+          1 index /Matte [ 4 -1 roll { oforce } forall ] put
+        } ifelse
+      } if
       .begintransparencymaskimage
       PDFfile fileposition exch
       gsave //nodict begin
