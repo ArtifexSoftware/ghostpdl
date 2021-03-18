@@ -848,10 +848,12 @@ if test x$with_tesseract != xno; then
     AC_LANG_PUSH(C++)
     AC_TRY_COMPILE([],
                    [return 0;],
-                   [HAVE_CXX_COMPILER=yes],
+                   [HAVE_CXX_COMPILER=yes; AC_SUBST(CXX)],
                    [HAVE_CXX_COMPILER=no])
     if test x$HAVE_CXX_COMPILER != xyes; then
       AC_MSG_WARN([Disabling tesseract as no working C++ compiler])
+    elif test x$SYNC = xnosync ; then
+      AC_MSG_ERROR([Threading disabled or not available. Tesseract OCR relies on threading. Rerun configure with "--without-tesseract" to exclude OCR from the build])
     else
       dnl --------------------------------------------------
       dnl check for sse4.1, avx, avx2 or fma

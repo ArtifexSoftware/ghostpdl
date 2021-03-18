@@ -1516,19 +1516,27 @@ BACKTRACE(pdev);
                                          "cmd list buffer") :
                 gs_alloc_bytes(buffer_memory, space,
                                "cmd list buffer"));
-        if (base != 0)
+        if (base != NULL)
+            break; /* Allocation worked! Stop trying. */
+        if (bufferSpace_is_exact) {
+            /* We wanted a specific size. Accept no substitutes. */
             break;
-        if (bufferSpace_is_exact || (space >>= 1) < min_buffer_space)
-            break;
+        }
+        /* Let's try again for half the size. */
+        if (space == min_buffer_space)
+            break; /* We already failed at the minimum size. */
+        space >>= 1;
+        if (space < min_buffer_space)
+            space = min_buffer_space;
     }
-    if (base == 0)
+    if (base == NULL)
         return_error(gs_error_VMerror);
-    if (the_memory)
-        *the_memory = base;
 
     /* Try opening the command list, to see if we allocated */
     /* enough buffer space. */
 open_c:
+    if (the_memory)
+        *the_memory = base;
     pdev->buf = base;
     pdev->buffer_space = space;
     pclist_dev->common.orig_spec_op = dev_spec_op;
@@ -1555,17 +1563,15 @@ open_c:
                 base = gs_resize_object(buffer_memory,
                                         *the_memory, space,
                                         "cmd list buf(retry open)");
-                if (base != 0)
-                    *the_memory = base;
             } else {
                 gs_free_object(buffer_memory, base,
                                "cmd list buf(retry open)");
-                *the_memory = base =
-                    gs_alloc_bytes(buffer_memory, space,
-                                   "cmd list buf(retry open)");
+                base = gs_alloc_bytes(buffer_memory, space,
+                                      "cmd list buf(retry open)");
+                if (the_memory != NULL)
+                    *the_memory = base;
             }
-            pdev->buf = *the_memory;
-            if (base != 0) {
+            if (base != NULL) {
                 pdev->is_open = save_is_open;	/* allow for success when we loop */
                 goto open_c;
             }
@@ -1574,7 +1580,9 @@ open_c:
         if (!reallocate) {
             gs_free_object(buffer_memory, base, "cmd list buf");
             pdev->buffer_space = 0;
-            *the_memory = NULL;
+            if (the_memory != NULL)
+                *the_memory = NULL;
+            pdev->buf = NULL;
         }
     }
     return code;
