@@ -144,10 +144,18 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
        which stretch subglyphs. Uniting with FontBBox helps.
        In same time, FontBBox with no glyph bbox
        doesn't work for 34_all.PS page 4. */
-    bbox.p.x = min(sbw_bbox[4], pbfont->FontBBox.p.y);
-    bbox.p.y = min(sbw_bbox[5], pbfont->FontBBox.p.y);
-    bbox.q.x = max(sbw_bbox[6], pbfont->FontBBox.q.x);
-    bbox.q.y = max(sbw_bbox[7], pbfont->FontBBox.q.y);
+    /* Previously we used to expand the bbox to the maximum/minimum
+     * of the glyph and font bounding boxes combined, as noted above.
+     * However this causes incorrect output (bug #703697) for vertical
+     * writing fonts with pdfwrite. Since we no longer use this code
+     * for rendering, and pdfwrite doesn't use the metrics for clipping,
+     * but does for positioning, we've removed this code.
+     */
+
+    bbox.p.x = sbw_bbox[4];
+    bbox.p.y = sbw_bbox[5];
+    bbox.q.x = sbw_bbox[6];
+    bbox.q.y = sbw_bbox[7];
     return zchar_set_cache(i_ctx_p, pbfont, cnref,
                            NULL,
                            w, &bbox,
