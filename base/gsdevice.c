@@ -161,17 +161,6 @@ gx_device_reloc_ptr(gx_device * dev, gc_state_t * gcst)
     return RELOC_OBJ(dev);	/* gcst implicit */
 }
 
-/* Set up the device procedures in the device structure. */
-/* Also copy old fields to new ones. */
-void
-gx_device_set_procs(gx_device * dev)
-{
-    if (dev->static_procs != 0) {	/* 0 if already populated */
-        dev->procs = *dev->static_procs;
-        dev->static_procs = 0;
-    }
-}
-
 /* Flush buffered output to the device */
 int
 gs_flushpage(gs_gstate * pgs)
@@ -410,7 +399,10 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
         return_error(gs_error_VMerror);
     }
     gx_device_init(new_dev, dev, mem, false);
-    gx_device_set_procs(new_dev);
+    if (new_dev->static_procs != NULL) {	/* 0 if already populated */
+        new_dev->procs = *new_dev->static_procs;
+        new_dev->static_procs = 0;
+    }
     new_dev->stype = new_std;
     new_dev->stype_is_dynamic = new_std != std;
     /*

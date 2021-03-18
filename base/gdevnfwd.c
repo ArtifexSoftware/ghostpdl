@@ -55,7 +55,6 @@ gx_device_set_target(gx_device_forward *fdev, gx_device *target)
 void
 gx_device_forward_fill_in_procs(register gx_device_forward * dev)
 {
-    gx_device_set_procs((gx_device *) dev);
     /* NOT open_device */
     fill_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
     fill_dev_proc(dev, sync_output, gx_forward_sync_output);

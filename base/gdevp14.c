@@ -5807,7 +5807,6 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
         pdev->color_info.depth += 8;
     }
     dev->static_procs = dev_proto.static_procs;
-    gx_device_set_procs(dev);
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
     gx_device_fill_in_procs((gx_device *)pdev);
     pdev->save_get_cmap_procs = pgs->get_cmap_procs;

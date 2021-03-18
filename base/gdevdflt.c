@@ -586,7 +586,6 @@ int gx_default_no_copy_alpha_hl_color(gx_device * dev, const byte * data, int da
 void
 gx_device_fill_in_procs(register gx_device * dev)
 {
-    gx_device_set_procs(dev);
     fill_dev_proc(dev, open_device, gx_default_open_device);
     fill_dev_proc(dev, get_initial_matrix, gx_default_get_initial_matrix);
     fill_dev_proc(dev, sync_output, gx_default_sync_output);

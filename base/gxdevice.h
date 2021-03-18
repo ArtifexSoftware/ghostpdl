@@ -426,9 +426,6 @@ dev_proc_fill_stroke_path(gx_forward_fill_stroke_path);
 /* ---------------- Implementation utilities ---------------- */
 int gx_default_get_param(gx_device *dev, char *Param, void *list);
 
-/* Convert the device procedures to the proper form (see above). */
-void gx_device_set_procs(gx_device *);
-
 /* Fill in defaulted procedures in a device procedure record. */
 void gx_device_fill_in_procs(gx_device *);
 void gx_device_forward_fill_in_procs(gx_device_forward *);
