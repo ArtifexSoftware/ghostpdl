@@ -894,6 +894,7 @@ currentdict /EnablePageHandlerDevice undef
 
 /runpdf {		% <file> runpdf -
   /NEWPDF where {/NEWPDF get not} {true} ifelse
+  pop //false
   {
   %% Get the PDF filename (it *must* be a file even if it came from stdin it gets
   %% copied to a temporary file) and store it in pdfdict. We will use this for
