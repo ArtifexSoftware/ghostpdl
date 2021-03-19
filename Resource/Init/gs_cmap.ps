@@ -224,11 +224,19 @@
 /beginbfchar {		% <count> beginbfchar -
   pop mark
 } bind def
-/endbfchar {		% <code> <to_code|charname> ... endbfchar
-  counttomark 2 idiv {
-    counttomark -2 roll		% process in correct order
-    .addbfchar
-  } repeat 1 .appendmap
+/endbfchar {		% [ <code> <to_code|charname> ... endbfchar
+  ] [ //true  % [<da><ta>] [ true
+  3 -1 roll   % [ true [<da><ta>]
+  {
+    exch {
+      //false % [ <da> false
+    } {       % [ <da> <ta>
+      .addbfchar % [ prefix params key value font_index
+      //true
+    } ifelse
+  } forall
+  pop
+  1 .appendmap
 } bind def
 
 /beginbfrange {		% <count> beginbfrange -
@@ -236,26 +244,35 @@
 } bind def
 /endbfrange {		% <code_lo> <code_hi> <to_code|(charname*)> ...
                         %   endbfrange -
-  counttomark 3 idiv {
-    counttomark -3 roll		% process in correct order
-    dup type dup /arraytype eq exch /packedarraytype eq or {
+  ] [ 0        % [<da><ta><set>] [ 0
+  3 -1 roll    % [ 0 [<da><ta><set>]
+  {
+    exch       % [ <da> 0
+    { 1 2
+      {
+        dup type dup /arraytype eq exch /packedarraytype eq or {
                         % Array value, split up.
-      exch pop {
+          exch pop {
                         % Stack: code to_code|charname
-        1 index exch .addbfchar
+            1 index exch .addbfchar
                         % Increment the code.  As noted above, we require
                         % that only the last byte vary, but we still must
                         % mask it after incrementing, in case the last
                         % value was 0xff.
                         % Stack: code prefix params key value fontindex
-        6 -1 roll dup length string copy
-        dup dup length 1 sub 2 copy get 1 add 255 and put
-      } forall pop
-    } {
+            6 -1 roll dup length string copy
+            dup dup length 1 sub 2 copy get 1 add 255 and put
+          } forall pop
+        } {
                         % Single value, handle directly.
-      .addbfrange
-    } ifelse
-  } repeat 1 .appendmap
+          .addbfrange
+        } ifelse
+        0
+      }
+    } exch get exec
+  } forall
+  pop
+  1 .appendmap
 } bind def
 
 /.addbfchar {		% <code> <to_code|charname> .addbfchar
