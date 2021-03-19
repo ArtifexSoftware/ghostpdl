@@ -219,7 +219,12 @@ find_installed_epo_device(gx_device *dev)
 static bool
 device_wants_optimization(gx_device *dev)
 {
-    return (!gs_is_null_device(dev) && dev_proc(dev, fillpage) == gx_default_fillpage);
+    gx_device *terminal = dev;
+
+    while(terminal->child != NULL)
+        terminal = terminal->child;
+
+    return (!gs_is_null_device(terminal) && dev_proc(terminal, fillpage) == gx_default_fillpage);
 }
 
 /* Use this when debugging to enable/disable epo
