@@ -2601,7 +2601,9 @@ PS_DEVS='psdf psdcmyk psdrgb psdcmyk16 psdrgb16 pdfwrite ps2write eps2write bbox
 # device.
 #
 AC_ARG_WITH([extract-dir],
-    AC_HELP_STRING([--with-extract-dir=EXTRACT_DIR]),
+    AC_HELP_STRING([--with-extract-dir=EXTRACT_DIR],
+            [Build with the specified Extract library. By default we build with Extract automatically if <ghostpdl-directory>/extract exists.]
+            ),
     [
         EXTRACT_DIR="$withval"
         AS_IF([test x"$EXTRACT_DIR" != x"no"],
