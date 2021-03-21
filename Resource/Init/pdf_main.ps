@@ -2774,13 +2774,10 @@ currentdict /PDF2PS_matrix_key undef
     1 index /ProcessColorModel get /DeviceCMYK eq {
       PageSpotColors 0 gt	% count of colorants NOT including CMYK
       and
-    } {
-    } ifelse
+    } if
     /PageUsesOverprint exch def	% the page needs OP simulation so set device param.
   } if
-  pop PageUsesOverprint currentdict end
-  setpagedevice
-  /PageUsesOverprint exch def		% tuck it away in the pagedict
+  pop currentdict end setpagedevice
 } bind executeonly def
 
 /.free_page_resources {   % - .free_page_resources -
@@ -2858,10 +2855,10 @@ currentdict /PDF2PS_matrix_key undef
     /devColors exch def			% put into our convenience dict
     dup /HaveTransparency .knownget not { //false } if
     /devSupportsTrans exch def		% put into our convenience dict
-    /Overprint get
+    dup /Overprint get
     /SimOP exch def			% put into our convenience dict
     SimOP /simulate eq
-    PageUsesOverprint
+    exch /PageUsesOverprint .knownget not { //false } if
     and		% both Overprint==/simulate and PageUsesOverprint
     {
       % Determine if the device needs the special pdf14 compositor push
@@ -2871,7 +2868,6 @@ currentdict /PDF2PS_matrix_key undef
     } {
       //false		% Overprint is not /simulate or PageUseOverprint is false
     } ifelse
-
     % Determine if the device needs SMask for Overprint
     SimOP /simulate eq {
       //true		% we will need setupOPrtans for Compatible BM
@@ -2920,9 +2916,9 @@ currentdict /PDF2PS_matrix_key undef
     % push a pdf14devicefilter to handle the overprint simulation using the pdf14 device.
     currentpagedevice
     dup /Overprint get /simulate eq
-    exch /PageSpotColors known
+    1 index /PageSpotColors known
     not and
-    PageUsesOverprint
+    exch /PageUsesOverprint .knownget not { //false } if
     and
     {
        % Show the page within a PDF 1.4 device filter for overprint_simulation.
