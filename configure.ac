@@ -855,12 +855,30 @@ if test x$with_tesseract != xno; then
     elif test x$SYNC = xnosync ; then
       AC_MSG_ERROR([Threading disabled or not available. Tesseract OCR relies on threading. Rerun configure with "--without-tesseract" to exclude OCR from the build])
     else
+
+      save_cxxflags="$CXXFLAGS"
+      cxxflags_to_try="-std=c++17 -stdlib=libstdc++"
+      CXXFLAGS_TO_USE=""
+
+      AC_MSG_CHECKING([supported C++ compiler flags])
+      for flag in $cxxflags_to_try ; do
+        CXXFLAGS="$CXXFLAGS $flag"
+
+        AC_TRY_COMPILE(, [return 0;], [
+                echo "   $flag"; CXXFLAGS_TO_USE="$CXXFLAGS_TO_USE $flag"
+        ])
+
+        CXXFLAGS="$old_cflags"
+      done
+
+      CXXFLAGS="$save_cxxflags $CXXFLAGS_TO_USE"
+
       dnl --------------------------------------------------
       dnl check for sse4.1, avx, avx2 or fma
       dnl --------------------------------------------------
       AC_MSG_CHECKING([sse4.1 support])
       save_cxxflags=$CXXFLAGS
-      TESS_CXXFLAGS=""
+      TESS_CXXFLAGS="$CXXFLAGS"
       CXXFLAGS="$CXXFLAGS -msse4.1"
 
       TESS_SSE4_1=""
