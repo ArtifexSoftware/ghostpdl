@@ -805,6 +805,7 @@ currentdict /EnablePageHandlerDevice undef
         pop
         2 array astore /PageSize exch def
         currentdict end setpagedevice
+        neg exch neg exch
         translate
       }
       {
@@ -841,6 +842,7 @@ currentdict /EnablePageHandlerDevice undef
     {
       2 array astore /PageSize exch def
       currentdict end setpagedevice
+      neg exch neg exch
       translate
     }ifelse
   } ifelse
