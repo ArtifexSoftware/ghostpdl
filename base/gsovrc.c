@@ -553,7 +553,7 @@ sep_overprint_initialize(gx_device *dev)
  */
 const overprint_device_t    gs_overprint_device = {
     std_device_std_body_open( overprint_device_t,   /* device type */
-                              0,                    /* static_procs */
+                              NULL,                 /* initialize */
                               "overprint_device",   /* dname */
                               0, 0,                 /* width, height */
                               1, 1 ),               /* HWResolution */
@@ -1331,7 +1331,7 @@ fill_in_procs(gx_device_procs * pprocs,
               dev_proc_initialize(initialize),
               int is_planar)
 {
-    gx_device_forward   tmpdev;
+    gx_device_forward tmpdev;
     int code;
 
     /*
@@ -1350,9 +1350,8 @@ fill_in_procs(gx_device_procs * pprocs,
      * fill in the procs.  Our tmpdev is not complete enough for it.
      */
     tmpdev.color_info.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
-    tmpdev.static_procs = 0;
-    memcpy(&tmpdev.procs, pprocs, sizeof(tmpdev.procs));
-    tmpdev.procs.initialize = initialize;
+    memset(&tmpdev.procs, 0, sizeof(tmpdev.procs));
+    tmpdev.initialize = initialize;
     code = initialize((gx_device *)&tmpdev);
     if (code < 0)
         return code;

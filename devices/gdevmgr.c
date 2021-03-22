@@ -76,6 +76,12 @@ mgr_initialize(gx_device *dev)
 
     set_dev_proc(dev, open_device, gdev_mgr_open);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
@@ -88,6 +94,12 @@ mgrN_initialize(gx_device *dev)
         return code;
 
     set_dev_proc(dev, open_device, gdev_mgr_open);
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
 
     return 0;
 }
@@ -104,6 +116,12 @@ cmgr4_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_4bit_map_color_rgb);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
@@ -119,31 +137,28 @@ cmgr8_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, mgr_8bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, mgr_8bit_map_color_rgb);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static gx_device_procs mgr_procs =
-    devprocs_initialize(mgr_initialize);
-static gx_device_procs mgrN_procs =
-    devprocs_initialize(mgrN_initialize);
-static gx_device_procs cmgr4_procs =
-    devprocs_initialize(cmgr4_initialize);
-static gx_device_procs cmgr8_procs =
-    devprocs_initialize(cmgr8_initialize);
-
 /* The device descriptors themselves */
 gx_device_mgr far_data gs_mgrmono_device =
-  mgr_prn_device( mgr_procs,  "mgrmono", 1,  1, 1,   1,   0, 2, 0, mgr_print_page);
+  mgr_prn_device( mgr_initialize,  "mgrmono", 1,  1, 1,   1,   0, 2, 0, mgr_print_page);
 gx_device_mgr far_data gs_mgrgray2_device =
-  mgr_prn_device(mgrN_procs,  "mgrgray2",1,  8, 2, 255,   0, 4, 0, mgrN_print_page);
+  mgr_prn_device(mgrN_initialize,  "mgrgray2",1,  8, 2, 255,   0, 4, 0, mgrN_print_page);
 gx_device_mgr far_data gs_mgrgray4_device =
-  mgr_prn_device(mgrN_procs,  "mgrgray4",1,  8, 4, 255,   0,16, 0, mgrN_print_page);
+  mgr_prn_device(mgrN_initialize,  "mgrgray4",1,  8, 4, 255,   0,16, 0, mgrN_print_page);
 gx_device_mgr far_data gs_mgrgray8_device =
-  mgr_prn_device(mgrN_procs,  "mgrgray8",1,  8, 8, 255,   0, 0, 0, mgrN_print_page);
+  mgr_prn_device(mgrN_initialize,  "mgrgray8",1,  8, 8, 255,   0, 0, 0, mgrN_print_page);
 gx_device_mgr far_data gs_mgr4_device =
-  mgr_prn_device(cmgr4_procs, "mgr4",    3,  8, 4,   1,   1, 2, 2, cmgrN_print_page);
+  mgr_prn_device(cmgr4_initialize, "mgr4",    3,  8, 4,   1,   1, 2, 2, cmgrN_print_page);
 gx_device_mgr far_data gs_mgr8_device =
-  mgr_prn_device(cmgr8_procs, "mgr8",    3,  8, 8, 255, 255, 6, 5, cmgrN_print_page);
+  mgr_prn_device(cmgr8_initialize, "mgr8",    3,  8, 8, 255, 255, 6, 5, cmgrN_print_page);
 
 /* ------ Internal routines ------ */
 

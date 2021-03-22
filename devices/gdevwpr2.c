@@ -162,11 +162,14 @@ win_pr2_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, win_pr2_get_params);
     set_dev_proc(dev, put_params, win_pr2_put_params);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
-
-static const gx_device_procs win_pr2_procs =
-    devprocs_initialize(win_pr2_initialize);
 
 #define PARENT_WINDOW  HWND_DESKTOP
 BOOL CALLBACK CancelDlgProc(HWND, UINT, WPARAM, LPARAM);
@@ -213,8 +216,11 @@ struct gx_device_win_pr2_s {
 
 gx_device_win_pr2 far_data gs_mswinpr2_device =
 {
-    prn_device_std_body(gx_device_win_pr2, win_pr2_procs, "mswinpr2",
-                      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, 72.0, 72.0,
+    prn_device_std_body(gx_device_win_pr2,
+                        win_pr2_initialize,
+                        "mswinpr2",
+                        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                        72.0, 72.0,
                         0, 0, 0, 0,
                         0, win_pr2_print_page),		/* depth = 0 */
     0,				/* hdcprn */

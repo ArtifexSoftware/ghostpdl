@@ -53,11 +53,14 @@ tiff12_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, tiff_get_params);
     set_dev_proc(dev, put_params, tiff_put_params);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
-
-static const gx_device_procs tiff12_procs =
-    devprocs_initialize(tiff12_initialize);
 
 static int
 tiff24_initialize(gx_device *dev)
@@ -73,14 +76,17 @@ tiff24_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, tiff_get_params);
     set_dev_proc(dev, put_params, tiff_put_params);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs tiff24_procs =
-    devprocs_initialize(tiff24_initialize);
-
 const gx_device_tiff gs_tiff12nc_device = {
-    prn_device_std_body(gx_device_tiff, tiff12_procs, "tiff12nc",
+    prn_device_std_body(gx_device_tiff, tiff12_initialize, "tiff12nc",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         X_DPI, Y_DPI,
                         0, 0, 0, 0,
@@ -96,7 +102,7 @@ const gx_device_tiff gs_tiff12nc_device = {
 };
 
 const gx_device_tiff gs_tiff24nc_device = {
-    prn_device_std_body(gx_device_tiff, tiff24_procs, "tiff24nc",
+    prn_device_std_body(gx_device_tiff, tiff24_initialize, "tiff24nc",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         X_DPI, Y_DPI,
                         0, 0, 0, 0,
@@ -112,7 +118,7 @@ const gx_device_tiff gs_tiff24nc_device = {
 };
 
 const gx_device_tiff gs_tiff48nc_device = {
-    prn_device_std_body(gx_device_tiff, tiff24_procs, "tiff48nc",
+    prn_device_std_body(gx_device_tiff, tiff24_initialize, "tiff48nc",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         X_DPI, Y_DPI,
                         0, 0, 0, 0,

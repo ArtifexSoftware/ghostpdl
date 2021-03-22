@@ -127,7 +127,7 @@ static dev_proc_get_band(clist_get_band);
 /* Other forward declarations */
 static int clist_put_current_params(gx_device_clist_writer *cldev);
 
-static int
+int
 clist_initialize(gx_device *dev)
 {
     set_dev_proc(dev, open_device, clist_open);
@@ -185,10 +185,6 @@ clist_initialize(gx_device *dev)
 
     return 0;
 }
-
-/* The device procedures */
-const gx_device_procs gs_clist_device_procs =
-    devprocs_initialize(clist_initialize);
 
 /*------------------- Choose the implementation -----------------------
 
@@ -1370,7 +1366,7 @@ clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, 
             return 0;
         memset(cdev, 0, sizeof(*cdev));
         cwdev->params_size = sizeof(gx_device_clist);
-        cwdev->static_procs = NULL;
+        cwdev->initialize = clist_initialize;
         cwdev->dname = dname;
         cwdev->memory = mem->stable_memory;
         cwdev->stype = &st_device_clist;
@@ -1397,9 +1393,8 @@ clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, 
         cwdev->icc_table = NULL;
         cwdev->UseCIEColor = target->UseCIEColor;
         cwdev->LockSafetyParams = true;
-        cwdev->procs = gs_clist_device_procs;
         /* Hacky - we know this can't fail. */
-        (void)cwdev->procs.initialize((gx_device *)cwdev);
+        (void)cwdev->initialize((gx_device *)cwdev);
         gx_device_fill_in_procs((gx_device *)cwdev);
         gx_device_copy_color_params((gx_device *)cwdev, target);
         rc_assign(cwdev->target, target, "clist_make_accum_device");

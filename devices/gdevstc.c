@@ -146,8 +146,6 @@ stcolor_initialize(gx_device *dev)
 
     return 0;
 }
-static gx_device_procs stcolor_procs =
-    devprocs_initialize(stcolor_initialize);
 
 /***
  *** A local dummy-array for extvals
@@ -159,7 +157,7 @@ static float defext[] = { 0.0, 1.0 };
  *** Main device-control structure
  ***/
 stcolor_device far_data gs_stcolor_device = {
-   prn_device_body(stcolor_device, stcolor_procs, "stcolor",
+   prn_device_body(stcolor_device, stcolor_initialize, "stcolor",
       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
       X_DPI,  Y_DPI,
       STC_L_MARGIN,STC_B_MARGIN,STC_R_MARGIN,STC_T_MARGIN,

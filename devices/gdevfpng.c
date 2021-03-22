@@ -122,11 +122,8 @@ fpng_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs fpng_procs =
-    devprocs_initialize(fpng_initialize);
-
 const gx_device_fpng gs_fpng_device =
-{prn_device_body(gx_device_fpng, fpng_procs, "fpng",
+{prn_device_body(gx_device_fpng, fpng_initialize, "fpng",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */

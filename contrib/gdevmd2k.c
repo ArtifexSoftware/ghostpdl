@@ -78,15 +78,18 @@ alps_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, alps_put_params);
     set_dev_proc(dev, map_cmyk_color, alps_map_cmyk_color);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static gx_device_procs alps_procs =
-    devprocs_initialize(alps_initialize);
-
 #define alps_device(dname, print_page) \
 {\
-    prn_device_body(gx_device_alps, alps_procs, dname,\
+    prn_device_body(gx_device_alps, alps_initialize, dname,\
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,\
                     600, 600,\
                     0, 0, 0, 0, /* margin */\

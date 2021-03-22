@@ -117,9 +117,9 @@ plane_initialize(gx_device *dev)
 }
 
 static const gx_device_plane_extract gs_plane_extract_device = {
-    std_device_std_body(gx_device_plane_extract, 0, "plane_extract",
+    std_device_std_body(gx_device_plane_extract, plane_initialize, "plane_extract",
                         0, 0, 72, 72),
-    devprocs_initialize(plane_initialize),
+    { 0 },
     /* device-specific members */
     NULL,				/* target */
     NULL,				/* plane_dev */

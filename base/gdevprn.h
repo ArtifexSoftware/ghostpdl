@@ -187,11 +187,6 @@ prn_dev_proc_get_space_params(gx_default_get_space_params);
 /* BACKWARD COMPATIBILITY */
 #define gdev_prn_default_get_space_params gx_default_get_space_params
 
-/* The standard printer device procedures */
-/* (using gdev_prn_open/output_page/close). */
-extern const gx_device_procs prn_std_procs;
-extern const gx_device_procs prn_bg_procs;
-
 /*
  * Define macros for generating the device structure,
  * analogous to the std_device_body macros in gxdevice.h
@@ -236,8 +231,8 @@ extern const gx_device_procs prn_bg_procs;
 
 /* The Sun cc compiler won't allow \ within a macro argument list. */
 /* This accounts for the short parameter names here and below. */
-#define prn_device_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-        std_device_full_body_type(dtype, &procs, dname, &st_device_printer,\
+#define prn_device_margins_body(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+        std_device_full_body_type(dtype, init, dname, &st_device_printer,\
           (int)((float)(w10) * (xdpi) / 10 + 0.5),\
           (int)((float)(h10) * (ydpi) / 10 + 0.5),\
           xdpi, ydpi,\
@@ -247,8 +242,8 @@ extern const gx_device_procs prn_bg_procs;
           (float)((rm) * 72.0), (float)((tm) * 72.0)\
         ),\
         prn_device_body_rest_(print_page)
-#define prn_device_margins_stype_body(dtype, procs, dname, stype, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-        std_device_full_body_type(dtype, &procs, dname, stype,\
+#define prn_device_margins_stype_body(dtype, init, dname, stype, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+        std_device_full_body_type(dtype, init, dname, stype,\
           (int)((float)(w10) * (xdpi) / 10 + 0.5),\
           (int)((float)(h10) * (ydpi) / 10 + 0.5),\
           xdpi, ydpi,\
@@ -259,15 +254,15 @@ extern const gx_device_procs prn_bg_procs;
         ),\
         prn_device_body_rest_(print_page)
 
-#define prn_device_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-  prn_device_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device_body(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+  prn_device_margins_body(dtype, init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)
-#define prn_device_stype_body(dtype, procs, dname, stype, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-  prn_device_margins_stype_body(dtype, procs, dname, stype, w10, h10, xdpi, ydpi,\
+#define prn_device_stype_body(dtype, init, dname, stype, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+  prn_device_margins_stype_body(dtype, init, dname, stype, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)
 
-#define prn_device_margins_body_extended(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
-        std_device_full_body_type_extended(dtype, &procs, dname, &st_device_printer,\
+#define prn_device_margins_body_extended(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
+        std_device_full_body_type_extended(dtype, init, dname, &st_device_printer,\
           (int)((long)(w10) * (xdpi) / 10),\
           (int)((long)(h10) * (ydpi) / 10),\
           xdpi, ydpi,\
@@ -278,12 +273,12 @@ extern const gx_device_procs prn_bg_procs;
         ),\
         prn_device_body_rest_(print_page)
 
-#define prn_device_body_extended(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
-  prn_device_margins_body_extended(dtype, procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device_body_extended(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
+  prn_device_margins_body_extended(dtype, init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)
 
-#define prn_device_std_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
-        std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
+#define prn_device_std_margins_body(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
+        std_device_std_color_full_body_type(dtype,init, dname, &st_device_printer,\
           (int)((float)(w10) * (xdpi) / 10 + 0.5),\
           (int)((float)(h10) * (ydpi) / 10 + 0.5),\
           xdpi, ydpi, color_bits,\
@@ -293,12 +288,12 @@ extern const gx_device_procs prn_bg_procs;
         ),\
         prn_device_body_rest_(print_page)
 
-#define prn_device_std_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
-  prn_device_std_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device_std_body(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
+  prn_device_std_margins_body(dtype, init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, color_bits, print_page)
 
-#define prn_device_std_margins_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
-        std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
+#define prn_device_std_margins_body_copies(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
+        std_device_std_color_full_body_type(dtype, init, dname, &st_device_printer,\
           (int)((float)(w10) * (xdpi) / 10 + 0.5),\
           (int)((float)(h10) * (ydpi) / 10 + 0.5),\
           xdpi, ydpi, color_bits,\
@@ -308,28 +303,28 @@ extern const gx_device_procs prn_bg_procs;
         ),\
         prn_device_body_copies_rest_(print_page_copies)
 
-#define prn_device_std_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
-  prn_device_std_margins_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device_std_body_copies(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
+  prn_device_std_margins_body_copies(dtype, init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, color_bits, print_page_copies)
 
      /* Note that the following macros add { } around the data. */
 
-#define prn_device_margins(procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
-{ prn_device_std_margins_body(gx_device_printer, procs, dname,\
+#define prn_device_margins(init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
+{ prn_device_std_margins_body(gx_device_printer, init, dname,\
     w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
 }
 
-#define prn_device(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
-  prn_device_margins(procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device(init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
+  prn_device_margins(init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, color_bits, print_page)
 
-#define prn_device_margins_copies(procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
-{ prn_device_std_margins_body_copies(gx_device_printer, procs, dname,\
+#define prn_device_margins_copies(init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
+{ prn_device_std_margins_body_copies(gx_device_printer, init, dname,\
     w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
 }
 
-#define prn_device_copies(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
-  prn_device_margins_copies(procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device_copies(init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
+  prn_device_margins_copies(init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, color_bits, print_page_copies)
 
 /* ------ Utilities ------ */

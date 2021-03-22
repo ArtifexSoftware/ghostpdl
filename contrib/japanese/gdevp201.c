@@ -41,7 +41,7 @@ static dev_proc_print_page(pr201_print_page);
 
 /* The device descriptor */
 gx_device_printer gs_pr201_device =
-  prn_device(prn_std_procs, "pr201",
+  prn_device(gdev_prn_initialize_mono, "pr201",
         WIDTH,
         HEIGHT,
         160,
@@ -50,7 +50,7 @@ gx_device_printer gs_pr201_device =
         1, pr201_print_page);
 
 gx_device_printer gs_pr1000_device =
-  prn_device(prn_std_procs, "pr1000",
+  prn_device(gdev_prn_initialize_mono, "pr1000",
         WIDTH,
         HEIGHT,
         240,
@@ -59,7 +59,7 @@ gx_device_printer gs_pr1000_device =
         1, pr201_print_page);
 
 gx_device_printer gs_pr150_device =
-  prn_device(prn_std_procs, "pr150",
+  prn_device(gdev_prn_initialize_mono, "pr150",
         WIDTH,
         HEIGHT,
         320,
@@ -68,7 +68,7 @@ gx_device_printer gs_pr150_device =
         1, pr201_print_page);
 
 gx_device_printer gs_pr1000_4_device =
-  prn_device(prn_std_procs, "pr1000_4",
+  prn_device(gdev_prn_initialize, "pr1000_4",
         WIDTH,
         HEIGHT,
         400,

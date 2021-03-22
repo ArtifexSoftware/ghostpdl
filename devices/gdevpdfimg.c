@@ -71,15 +71,18 @@ pdfimage8_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs pdfimage8_procs =
-    devprocs_initialize(pdfimage8_initialize);
-
 const gx_device_pdf_image gs_pdfimage8_device = {
     prn_device_body(gx_device_pdf_image,
-                    pdfimage8_procs,
+                    pdfimage8_initialize,
                     "pdfimage8",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -110,15 +113,18 @@ pdfimage24_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs pdfimage24_procs =
-    devprocs_initialize(pdfimage24_initialize);
-
 const gx_device_pdf_image gs_pdfimage24_device = {
     prn_device_body(gx_device_pdf_image,
-                    pdfimage24_procs,
+                    pdfimage24_initialize,
                     "pdfimage24",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -149,15 +155,18 @@ pdfimage32_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale_cmyk);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale_cmyk);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs pdfimage32_procs =
-    devprocs_initialize(pdfimage32_initialize);
-
 const gx_device_pdf_image gs_pdfimage32_device = {
     prn_device_body(gx_device_pdf_image,
-                    pdfimage32_procs,
+                    pdfimage32_initialize,
                     "pdfimage32",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -1145,17 +1154,20 @@ PCLm_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
 static dev_proc_print_page(PCLm_print_page);
 
-static const gx_device_procs PCLm_procs =
-    devprocs_initialize(PCLm_initialize);
-
 const gx_device_pdf_image gs_PCLm_device = {
     prn_device_body(gx_device_pdf_image,
-                    PCLm_procs,
+                    PCLm_initialize,
                     "pclm",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */

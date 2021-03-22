@@ -527,6 +527,12 @@ clj_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, gdev_pcl_3bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gdev_pcl_3bit_map_color_rgb);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
@@ -544,14 +550,11 @@ cljet5_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs cljet5_procs =
-    devprocs_initialize(cljet5_initialize);
-
 /* CLJ device structure */
-#define CLJ_DEVICE_BODY(procs, dname, rotated)\
+#define CLJ_DEVICE_BODY(init, dname, rotated)\
   prn_device_body(\
     gx_device_clj,\
-    procs,                  /* procedures */\
+    init,                   /* initialize */\
     dname,                  /* device name */\
     110,                    /* width - will be overridden subsequently */\
     85,                     /* height - will be overridden subsequently */\
@@ -567,7 +570,7 @@ static gx_device_procs cljet5_procs =
     rotated		    /* rotated - may be overridden subsequently */
 
 gx_device_clj gs_cljet5_device = {
-    CLJ_DEVICE_BODY(cljet5_procs, "cljet5", 0 /*false*/)
+    CLJ_DEVICE_BODY(cljet5_initialize, "cljet5", 0 /*false*/)
 };
 
 /* ---------------- Driver with page rotation ---------------- */
@@ -696,10 +699,7 @@ cljet5pr_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs cljet5pr_procs =
-    devprocs_initialize(cljet5pr_initialize);
-
 /* CLJ device structure -- see above for CLJ_DEVICE_BODY */
 gx_device_clj gs_cljet5pr_device = {
-    CLJ_DEVICE_BODY(cljet5pr_procs, "cljet5pr", 1 /*true*/)
+    CLJ_DEVICE_BODY(cljet5pr_initialize, "cljet5pr", 1 /*true*/)
 };

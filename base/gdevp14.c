@@ -168,6 +168,8 @@ gs_private_st_ptrs1(st_pdf14_smaskcolor, pdf14_smaskcolor_t, "pdf14_smaskcolor",
 #define	X_DPI 72
 #define	Y_DPI 72
 
+static int pdf14_initialize(gx_device *dev);
+
 static	int pdf14_open(gx_device * pdev);
 static	dev_proc_close_device(pdf14_close);
 static	int pdf14_output_page(gx_device	* pdev,	int num_copies,	int flush);
@@ -193,7 +195,6 @@ static	dev_proc_fill_mask(pdf14_fill_mask);
 static	dev_proc_stroke_path(pdf14_stroke_path);
 static	dev_proc_begin_typed_image(pdf14_begin_typed_image);
 static	dev_proc_text_begin(pdf14_text_begin);
-static  dev_proc_initialize(pdf14_initialize);
 static	dev_proc_create_compositor(pdf14_create_compositor);
 static	dev_proc_create_compositor(pdf14_forward_create_compositor);
 static	dev_proc_begin_transparency_group(pdf14_begin_transparency_group);
@@ -275,9 +276,6 @@ pdf14_Gray_initialize(gx_device *dev)
                                   pdf14_decode_color);
 }
 
-static	const gx_device_procs pdf14_Gray_procs =
-    devprocs_initialize(pdf14_Gray_initialize);
-
 static int
 pdf14_RGB_initialize(gx_device *dev)
 {
@@ -287,9 +285,6 @@ pdf14_RGB_initialize(gx_device *dev)
                                   pdf14_encode_color,
                                   pdf14_decode_color);
 }
-
-static	const gx_device_procs pdf14_RGB_procs =
-    devprocs_initialize(pdf14_RGB_initialize);
 
 static int
 pdf14_CMYK_initialize(gx_device *dev)
@@ -301,9 +296,6 @@ pdf14_CMYK_initialize(gx_device *dev)
                                   pdf14_decode_color);
 }
 
-static	const gx_device_procs pdf14_CMYK_procs =
-    devprocs_initialize(pdf14_CMYK_initialize);
-
 static int
 pdf14_CMYKspot_initialize(gx_device *dev)
 {
@@ -313,9 +305,6 @@ pdf14_CMYKspot_initialize(gx_device *dev)
                                   pdf14_encode_color,
                                   pdf14_decode_color);
 }
-
-static	const gx_device_procs pdf14_CMYKspot_procs =
-    devprocs_initialize(pdf14_CMYKspot_initialize);
 
 static int
 pdf14_RGBspot_initialize(gx_device *dev)
@@ -327,9 +316,6 @@ pdf14_RGBspot_initialize(gx_device *dev)
                                   pdf14_decode_color);
 }
 
-static	const gx_device_procs pdf14_RGBspot_procs =
-    devprocs_initialize(pdf14_RGBspot_initialize);
-
 static int
 pdf14_Grayspot_initialize(gx_device *dev)
 {
@@ -340,9 +326,6 @@ pdf14_Grayspot_initialize(gx_device *dev)
                                   pdf14_decode_color);
 }
 
-static	const gx_device_procs pdf14_Grayspot_procs =
-    devprocs_initialize(pdf14_Grayspot_initialize);
-
 static int
 pdf14_custom_initialize(gx_device *dev)
 {
@@ -352,9 +335,6 @@ pdf14_custom_initialize(gx_device *dev)
                                   gx_forward_encode_color,
                                   gx_forward_decode_color);
 }
-
-static	const gx_device_procs pdf14_custom_procs =
-    devprocs_initialize(pdf14_custom_initialize);
 
 static struct_proc_finalize(pdf14_device_finalize);
 
@@ -470,10 +450,12 @@ static const pdf14_nonseparable_blending_procs_t custom_blending_procs = {
 };
 
 const pdf14_device gs_pdf14_Gray_device	= {
-    std_device_std_color_full_body_type(pdf14_device, &pdf14_Gray_procs, "pdf14gray",
-                                &st_pdf14_device,
-                                XSIZE, YSIZE, X_DPI, Y_DPI, 8,
-                                0, 0, 0, 0, 0, 0),
+    std_device_std_color_full_body_type(pdf14_device,
+                                        pdf14_Gray_initialize,
+                                        "pdf14gray",
+                                        &st_pdf14_device,
+                                        XSIZE, YSIZE, X_DPI, Y_DPI, 8,
+                                        0, 0, 0, 0, 0, 0),
     { 0 },			/* Procs */
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
@@ -483,7 +465,9 @@ const pdf14_device gs_pdf14_Gray_device	= {
 };
 
 const pdf14_device gs_pdf14_RGB_device = {
-    std_device_color_stype_body(pdf14_device, &pdf14_RGB_procs, "pdf14RGB",
+    std_device_color_stype_body(pdf14_device,
+                                pdf14_RGB_initialize,
+                                "pdf14RGB",
                                 &st_pdf14_device,
                                 XSIZE, YSIZE, X_DPI, Y_DPI, 24, 255, 256),
     { 0 },			/* Procs */
@@ -494,10 +478,13 @@ const pdf14_device gs_pdf14_RGB_device = {
     3
 };
 
-const pdf14_device gs_pdf14_CMYK_device	= {
-    std_device_std_color_full_body_type(pdf14_device, &pdf14_CMYK_procs,
-            "pdf14cmyk", &st_pdf14_device, XSIZE, YSIZE, X_DPI, Y_DPI, 32,
-            0, 0, 0, 0, 0, 0),
+const pdf14_device gs_pdf14_CMYK_device = {
+    std_device_std_color_full_body_type(pdf14_device,
+                                        pdf14_CMYK_initialize,
+                                        "pdf14cmyk",
+                                        &st_pdf14_device,
+                                        XSIZE, YSIZE, X_DPI, Y_DPI, 32,
+                                        0, 0, 0, 0, 0, 0),
     { 0 },			/* Procs */
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
@@ -507,8 +494,11 @@ const pdf14_device gs_pdf14_CMYK_device	= {
 };
 
 const pdf14_device gs_pdf14_CMYKspot_device	= {
-    std_device_part1_(pdf14_device, &pdf14_CMYKspot_procs, "pdf14cmykspot",
-                        &st_pdf14_device, open_init_closed),
+    std_device_part1_(pdf14_device,
+                      pdf14_CMYKspot_initialize,
+                      "pdf14cmykspot",
+                      &st_pdf14_device,
+                      open_init_closed),
     dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
@@ -531,8 +521,11 @@ const pdf14_device gs_pdf14_CMYKspot_device	= {
 };
 
 const pdf14_device gs_pdf14_RGBspot_device = {
-    std_device_part1_(pdf14_device, &pdf14_RGBspot_procs, "pdf14rgbspot",
-    &st_pdf14_device, open_init_closed),
+    std_device_part1_(pdf14_device,
+                      pdf14_RGBspot_initialize,
+                      "pdf14rgbspot",
+                      &st_pdf14_device,
+                      open_init_closed),
     dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
@@ -555,8 +548,11 @@ const pdf14_device gs_pdf14_RGBspot_device = {
 };
 
 const pdf14_device gs_pdf14_Grayspot_device = {
-    std_device_part1_(pdf14_device, &pdf14_Grayspot_procs, "pdf14grayspot",
-    &st_pdf14_device, open_init_closed),
+    std_device_part1_(pdf14_device,
+                      pdf14_Grayspot_initialize,
+                      "pdf14grayspot",
+                      &st_pdf14_device,
+                      open_init_closed),
     dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
@@ -590,8 +586,11 @@ const pdf14_device gs_pdf14_Grayspot_device = {
  * about how to treat these blending modes.
  */
 const pdf14_device gs_pdf14_custom_device = {
-    std_device_part1_(pdf14_device, &pdf14_custom_procs, "pdf14custom",
-                        &st_pdf14_device, open_init_closed),
+    std_device_part1_(pdf14_device,
+                      pdf14_custom_initialize,
+                      "pdf14custom",
+                      &st_pdf14_device,
+                      open_init_closed),
     dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
@@ -656,49 +655,97 @@ gs_private_st_suffix_add1_final(st_gx_devn_accum_device, gx_device_pdf14_accum,
         "gx_device_pdf14_accum", pdf14_accum_device_enum_ptrs, pdf14_accum_device_reloc_ptrs,
                           gx_devn_prn_device_finalize, st_gx_devn_prn_device, save_p14dev);
 
-static const gx_device_procs pdf14_accum_Gray_procs =
-    devprocs_initialize(gdev_prn_initialize_gray8);
+static int
+pdf14_accum_Gray_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray8(dev);
+
+    if (code < 0)
+        return code;
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 const gx_device_pdf14_accum pdf14_accum_Gray = {
-    prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_Gray_procs, "pdf14-accum-Gray",
-                    &st_gx_devn_accum_device,
-                    0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
-                    0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
-                    1/*ncomp*/, 8/*depth*/, 255/*max_gray*/, 0/*max_color*/,
-                    256/*dither_grays*/, 0/*dither_colors*/,
-                    no_print_page),
+    prn_device_stype_body(gx_device_pdf14_accum,
+                          pdf14_accum_Gray_initialize,
+                          "pdf14-accum-Gray",
+                          &st_gx_devn_accum_device,
+                          0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
+                          0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
+                          1/*ncomp*/, 8/*depth*/, 255/*max_gray*/, 0/*max_color*/,
+                          256/*dither_grays*/, 0/*dither_colors*/,
+                          no_print_page),
     { 0 },			/* devn_params - not used */
     { 0 },			/* equivalent_cmyk_color_params - not used */
     0/*save_p14dev*/
 };
 
-static const gx_device_procs pdf14_accum_RGB_procs =
-    devprocs_initialize(gdev_prn_initialize_rgb);
+static int
+pdf14_accum_RGB_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_rgb(dev);
+
+    if (code < 0)
+        return code;
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 const gx_device_pdf14_accum pdf14_accum_RGB = {
-    prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_RGB_procs, "pdf14-accum-RGB",
-                    &st_gx_devn_accum_device,
-                    0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
-                    0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
-                    3/*ncomp*/, 24/*depth*/, 0/*max_gray*/, 255/*max_color*/,
-                    1/*dither_grays*/, 256/*dither_colors*/,
-                    no_print_page),
+    prn_device_stype_body(gx_device_pdf14_accum,
+                          pdf14_accum_RGB_initialize,
+                          "pdf14-accum-RGB",
+                          &st_gx_devn_accum_device,
+                          0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
+                          0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
+                          3/*ncomp*/, 24/*depth*/, 0/*max_gray*/, 255/*max_color*/,
+                          1/*dither_grays*/, 256/*dither_colors*/,
+                          no_print_page),
     { 0 },			/* devn_params - not used */
     { 0 },			/* equivalent_cmyk_color_params - not used */
     0/*save_p14dev*/
 };
 
-static const gx_device_procs pdf14_accum_CMYK_procs =
-    devprocs_initialize(gdev_prn_initialize_cmyk8);
+static int
+pdf14_accum_CMYK_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk8(dev);
+
+    if (code < 0)
+        return code;
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 const gx_device_pdf14_accum pdf14_accum_CMYK = {
-    prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_CMYK_procs, "pdf14-accum-CMYK",
-                    &st_gx_devn_accum_device,
-                    0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
-                    0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
-                    4/*ncomp*/, 32/*depth*/, 255/*max_gray*/, 255/*max_color*/,
-                    256/*dither_grays*/, 256/*dither_colors*/,
-                    no_print_page),
+    prn_device_stype_body(gx_device_pdf14_accum,
+                          pdf14_accum_CMYK_initialize,
+                          "pdf14-accum-CMYK",
+                          &st_gx_devn_accum_device,
+                          0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
+                          0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
+                          4/*ncomp*/, 32/*depth*/, 255/*max_gray*/, 255/*max_color*/,
+                          256/*dither_grays*/, 256/*dither_colors*/,
+                          no_print_page),
     { 0 },			/* devn_params - not used */
     { 0 },			/* equivalent_cmyk_color_params - not used */
     0/*save_p14dev*/
@@ -707,7 +754,7 @@ const gx_device_pdf14_accum pdf14_accum_CMYK = {
 static int
 pdf14_accum_initialize_cmykspot(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk8(dev);
+    int code = pdf14_accum_CMYK_initialize(dev);
 
     if (code < 0)
         return code;
@@ -720,17 +767,16 @@ pdf14_accum_initialize_cmykspot(gx_device *dev)
     return code;
 }
 
-static const gx_device_procs pdf14_accum_CMYKspot_procs =
-    devprocs_initialize(pdf14_accum_initialize_cmykspot);
-
 const gx_device_pdf14_accum pdf14_accum_CMYKspot = {
-    prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_CMYKspot_procs, "pdf14-accum-CMYKspot",
-                    &st_gx_devn_accum_device,
-                    0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
-                    0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
-                    4/*ncomp*/, 32/*depth*/, 255/*max_gray*/, 255/*max_color*/,
-                    256/*dither_grays*/, 256/*dither_colors*/,
-                    no_print_page),
+    prn_device_stype_body(gx_device_pdf14_accum,
+                          pdf14_accum_initialize_cmykspot,
+                          "pdf14-accum-CMYKspot",
+                          &st_gx_devn_accum_device,
+                          0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
+                          0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
+                          4/*ncomp*/, 32/*depth*/, 255/*max_gray*/, 255/*max_color*/,
+                          256/*dither_grays*/, 256/*dither_colors*/,
+                          no_print_page),
     /* DeviceN parameters */
     { 8,			/* Not used - Bits per color */
       DeviceCMYKComponents,	/* Names of color model colorants */
@@ -5768,7 +5814,6 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
         pdev->color_info.comp_shift[pdev->color_info.num_components] = pdev->color_info.depth;
         pdev->color_info.depth += 8;
     }
-    dev->static_procs = dev_proto.static_procs;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
     gx_device_fill_in_procs((gx_device *)pdev);
     pdev->save_get_cmap_procs = pgs->get_cmap_procs;
@@ -6988,9 +7033,9 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
     {
         gx_device local_device;
 
-        local_device.procs.initialize = pdevproto->static_procs->initialize;
+        local_device.initialize = pdevproto->initialize;
         /* We know the initialize call can't fail! */
-        (void)local_device.procs.initialize(&local_device);
+        (void)local_device.initialize(&local_device);
         set_dev_proc(pdev, get_color_mapping_procs, local_device.procs.get_color_mapping_procs);
         set_dev_proc(pdev, get_color_comp_index, local_device.procs.get_color_comp_index);
     }
@@ -7272,9 +7317,9 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     {
         gx_device local_device;
 
-        local_device.procs.initialize = pdevproto->static_procs->initialize;
+        local_device.initialize = pdevproto->initialize;
         /* We know the initialize call can't fail! */
-        (void)local_device.procs.initialize(&local_device);
+        (void)local_device.initialize(&local_device);
         set_dev_proc(pdev, get_color_mapping_procs, local_device.procs.get_color_mapping_procs);
         set_dev_proc(pdev, get_color_comp_index, local_device.procs.get_color_comp_index);
     }
@@ -9616,9 +9661,6 @@ pdf14_clist_Gray_initialize(gx_device *dev)
                                   gx_default_DevGray_get_color_comp_index);
 }
 
-static const gx_device_procs pdf14_clist_Gray_procs =
-    devprocs_initialize(pdf14_clist_Gray_initialize);
-
 static int
 pdf14_clist_RGB_initialize(gx_device *dev)
 {
@@ -9626,9 +9668,6 @@ pdf14_clist_RGB_initialize(gx_device *dev)
                                   gx_default_DevRGB_get_color_mapping_procs,
                                   gx_default_DevRGB_get_color_comp_index);
 }
-
-static const gx_device_procs pdf14_clist_RGB_procs =
-    devprocs_initialize(pdf14_clist_RGB_initialize);
 
 static int
 pdf14_clist_CMYK_initialize(gx_device *dev)
@@ -9638,9 +9677,6 @@ pdf14_clist_CMYK_initialize(gx_device *dev)
                                   gx_default_DevCMYK_get_color_comp_index);
 }
 
-static	const gx_device_procs pdf14_clist_CMYK_procs =
-    devprocs_initialize(pdf14_clist_CMYK_initialize);
-
 static int
 pdf14_clist_CMYKspot_initialize(gx_device *dev)
 {
@@ -9648,9 +9684,6 @@ pdf14_clist_CMYKspot_initialize(gx_device *dev)
                                   pdf14_cmykspot_get_color_mapping_procs,
                                   pdf14_cmykspot_get_color_comp_index);
 }
-
-static const gx_device_procs pdf14_clist_CMYKspot_procs =
-    devprocs_initialize(pdf14_clist_CMYKspot_initialize);
 
 #if 0 /* NOT USED */
 static int
@@ -9661,9 +9694,6 @@ pdf14_clist_RGBspot_initialize(gx_device *dev)
                                   pdf14_rgbspot_get_color_comp_index);
 }
 
-static const gx_device_procs pdf14_clist_RGBspot_procs =
-    devprocs_initialize(pdf14_clist_RGBspot_initialize);
-
 static int
 pdf14_clist_Grayspot_initialize(gx_device *dev)
 {
@@ -9671,15 +9701,14 @@ pdf14_clist_Grayspot_initialize(gx_device *dev)
                                   pdf14_grayspot_get_color_mapping_procs,
                                   pdf14_grayspot_get_color_comp_index);
 }
-
-static const gx_device_procs pdf14_clist_Grayspot_procs =
-    devprocs_initialize(pdf14_clist_Grayspot_initialize);
 #endif  /* NOT USED */
 
 const pdf14_clist_device pdf14_clist_Gray_device = {
-    std_device_color_stype_body(pdf14_clist_device, &pdf14_clist_Gray_procs,
-                        "pdf14clistgray", &st_pdf14_device,
-                        XSIZE, YSIZE, X_DPI, Y_DPI, 8, 255, 256),
+    std_device_color_stype_body(pdf14_clist_device,
+                                pdf14_clist_Gray_initialize,
+                                "pdf14clistgray",
+                                &st_pdf14_device,
+                                XSIZE, YSIZE, X_DPI, Y_DPI, 8, 255, 256),
     { 0 },			/* Procs */
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
@@ -9688,9 +9717,11 @@ const pdf14_clist_device pdf14_clist_Gray_device = {
 };
 
 const pdf14_clist_device pdf14_clist_RGB_device	= {
-    std_device_color_stype_body(pdf14_clist_device, &pdf14_clist_RGB_procs,
-                        "pdf14clistRGB", &st_pdf14_device,
-                        XSIZE, YSIZE, X_DPI, Y_DPI, 24, 255, 256),
+    std_device_color_stype_body(pdf14_clist_device,
+                                pdf14_clist_RGB_initialize,
+                                "pdf14clistRGB",
+                                &st_pdf14_device,
+                                XSIZE, YSIZE, X_DPI, Y_DPI, 24, 255, 256),
     { 0 },			/* Procs */
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
@@ -9700,9 +9731,11 @@ const pdf14_clist_device pdf14_clist_RGB_device	= {
 
 const pdf14_clist_device pdf14_clist_CMYK_device = {
     std_device_std_color_full_body_type(pdf14_clist_device,
-                        &pdf14_clist_CMYK_procs, "pdf14clistcmyk",
-                        &st_pdf14_device, XSIZE, YSIZE, X_DPI, Y_DPI, 32,
-                        0, 0, 0, 0, 0, 0),
+                                        pdf14_clist_CMYK_initialize,
+                                        "pdf14clistcmyk",
+                                        &st_pdf14_device,
+                                        XSIZE, YSIZE, X_DPI, Y_DPI, 32,
+                                        0, 0, 0, 0, 0, 0),
     { 0 },			/* Procs */
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
@@ -9711,7 +9744,11 @@ const pdf14_clist_device pdf14_clist_CMYK_device = {
 };
 
 const pdf14_clist_device pdf14_clist_CMYKspot_device = {
-    std_device_part1_(pdf14_device, &pdf14_clist_CMYKspot_procs, "pdf14clistcmykspot", &st_pdf14_device, open_init_closed),
+    std_device_part1_(pdf14_device,
+                      pdf14_clist_CMYKspot_initialize,
+                      "pdf14clistcmykspot",
+                      &st_pdf14_device,
+                      open_init_closed),
     dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
@@ -9733,7 +9770,11 @@ const pdf14_clist_device pdf14_clist_CMYKspot_device = {
 };
 
 const pdf14_clist_device pdf14_clist_custom_device = {
-    std_device_part1_(pdf14_device, &pdf14_clist_CMYKspot_procs, "pdf14clistcustom", &st_pdf14_device, open_init_closed),
+    std_device_part1_(pdf14_device,
+                      pdf14_clist_CMYKspot_initialize,
+                      "pdf14clistcustom",
+                      &st_pdf14_device,
+                      open_init_closed),
     dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
@@ -10053,7 +10094,6 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_gstate *	pgs,
         return code;
     pdev->color_info = dev_proto.color_info;
     pdev->procs = dev_proto.procs;
-    pdev->static_procs = dev_proto.static_procs;
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
 

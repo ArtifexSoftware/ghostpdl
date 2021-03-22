@@ -123,9 +123,8 @@ clipper_initialize(gx_device *dev)
     return 0;
 }
 static const gx_device_clip gs_clip_device =
-{std_device_std_body(gx_device_clip, 0, "clipper",
-                     0, 0, 1, 1),
- devprocs_initialize(clipper_initialize)
+{std_device_std_body(gx_device_clip, clipper_initialize, "clipper",
+                     0, 0, 1, 1)
 };
 
 /* Make a clipping device. */

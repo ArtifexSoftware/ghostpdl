@@ -57,7 +57,7 @@ static void do_flush_text(gx_device_X *);
 #define x_device(this_device, dev_body) \
 const gx_device_X this_device = { \
     dev_body, \
-    devprocs_initialize(gdev_x_initialize), \
+    { 0 },\
     gx_device_bbox_common_initial(0 /*false*/, 1 /*true*/, 1 /*true*/), \
     0 /*false*/,		/* is_buffered */ \
     1 /*true*/,			/* IsPageDevice */ \
@@ -162,14 +162,14 @@ gs_public_st_suffix_add1_final(st_device_X, gx_device_X,
     x_finalize, st_device_bbox, buffer);
 
 x_device(gs_x11_device,
-         std_device_color_stype_body(gx_device_X, 0, "x11", &st_device_X,
+         std_device_color_stype_body(gx_device_X, gdev_x_initialize, "x11", &st_device_X,
                                      FAKE_RES * DEFAULT_WIDTH_10THS / 10,
                                      FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
                                      FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
                                      24, 255, 256 ))
 
 x_device(gs_x11alpha_device,
-         std_device_dci_alpha_type_body(gx_device_X, 0, "x11alpha", &st_device_X,
+         std_device_dci_alpha_type_body(gx_device_X, gdev_x_initialize, "x11alpha", &st_device_X,
                                         FAKE_RES * DEFAULT_WIDTH_10THS / 10,
                                         FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
                                         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */

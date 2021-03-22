@@ -42,11 +42,9 @@ cfax_initialize(gx_device *dev)
 
     return 0;
 }
-static const gx_device_procs gdev_cfax_std_procs =
-    devprocs_initialize(cfax_initialize);
 
 const gx_device_fax gs_cfax_device = {
-    FAX_DEVICE_BODY(gx_device_fax, gdev_cfax_std_procs, "cfax", cfax_print_page)
+    FAX_DEVICE_BODY(gx_device_fax, cfax_initialize, "cfax", cfax_print_page)
 };
 
 /* ---------------- SFF output ----------------- */

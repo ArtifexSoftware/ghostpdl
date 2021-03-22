@@ -101,35 +101,43 @@ static dev_proc_print_page(ibmpro_print_page);
 
 /* Standard Epson device */
 const gx_device_printer far_data gs_epson_device =
-  prn_device(prn_bg_procs, "epson",	/* The print_page proc is compatible with allowing bg printing */
-        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-        X_DPI, Y_DPI,
-        0.25, 0.02, 0.25, 0.4,			/* margins */
-        1, epson_print_page);
+  /* The print_page proc is compatible with allowing bg printing */
+  prn_device(gdev_prn_initialize_mono_bg,
+             "epson",
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, Y_DPI,
+             0.25, 0.02, 0.25, 0.4, /* margins */
+             1, epson_print_page);
 
 /* Mid-res (interleaved, 1 pass per line) 9-pin device */
 const gx_device_printer far_data gs_eps9mid_device =
-  prn_device(prn_bg_procs, "eps9mid",	/* The print_page proc is compatible with allowing bg printing */
-        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-        X_DPI, 3*Y_BASERES,
-        0.2, 0.0, 0, 0.0,			/* margins */
-        1, eps9mid_print_page);
+  /* The print_page proc is compatible with allowing bg printing */
+  prn_device(gdev_prn_initialize_mono_bg,
+             "eps9mid",
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, 3*Y_BASERES,
+             0.2, 0.0, 0, 0.0, /* margins */
+             1, eps9mid_print_page);
 
 /* High-res (interleaved) 9-pin device */
 const gx_device_printer far_data gs_eps9high_device =
-  prn_device(prn_bg_procs, "eps9high",	/* The print_page proc is compatible with allowing bg printing */
-        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-        X_DPI, 3*Y_BASERES,
-        0.2, 0.0, 0.0, 0.0,			/* margins */
-        1, eps9high_print_page);
+  /* The print_page proc is compatible with allowing bg printing */
+  prn_device(gdev_prn_initialize_mono_bg,
+             "eps9high",
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, 3*Y_BASERES,
+             0.2, 0.0, 0.0, 0.0, /* margins */
+             1, eps9high_print_page);
 
 /* IBM ProPrinter device */
 const gx_device_printer far_data gs_ibmpro_device =
-  prn_device(prn_bg_procs, "ibmpro",	/* The print_page proc is compatible with allowing bg printing */
-        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-        X_DPI, Y_DPI,
-        0.2, 0.0, 0.0, 0.0,			/* margins */
-        1, ibmpro_print_page);
+  /* The print_page proc is compatible with allowing bg printing */
+  prn_device(gdev_prn_initialize_mono_bg,
+             "ibmpro",
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, Y_DPI,
+             0.2, 0.0, 0.0, 0.0, /* margins */
+             1, ibmpro_print_page);
 
 /* ------ Driver procedures ------ */
 

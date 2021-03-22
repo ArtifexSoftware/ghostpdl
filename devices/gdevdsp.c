@@ -108,9 +108,6 @@ static dev_proc_fill_rectangle_hl_color(display_fill_rectangle_hl_color);
 extern dev_proc_open_device(clist_open);
 extern dev_proc_close_device(clist_close);
 
-static const gx_device_procs display_procs =
-    devprocs_initialize(display_initialize);
-
 /* GC descriptor */
 public_st_device_display();
 
@@ -135,10 +132,12 @@ RELOC_PTRS_END
 
 const gx_device_display gs_display_device =
 {
-    std_device_std_body_type(gx_device_display, &display_procs, "display",
-                        &st_device_display,
-                        INITIAL_WIDTH, INITIAL_HEIGHT,
-                        INITIAL_RESOLUTION, INITIAL_RESOLUTION),
+    std_device_std_body_type(gx_device_display,
+                             display_initialize,
+                             "display",
+                             &st_device_display,
+                             INITIAL_WIDTH, INITIAL_HEIGHT,
+                             INITIAL_RESOLUTION, INITIAL_RESOLUTION),
     {0},			/* std_procs */
     GX_CLIST_MUTATABLE_DEVICE_DEFAULTS,
     NULL,			/* callback */
@@ -1555,6 +1554,9 @@ display_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         dev_t_proc_dev_spec_op((*orig_dso), gx_device) = dev_proc(mdev, dev_spec_op);
         /* The following is a special hack for setting up printer devices. */
         assign_dev_procs(mdev, mdproto);
+        mdev->initialize = mdproto->initialize;
+        /* This can never fail */
+        (void)mdev->initialize((gx_device *)mdev);
         /* Do not override the dev_spec_op! */
         dev_proc(mdev, dev_spec_op) = orig_dso;
         check_device_separable((gx_device *)mdev);
@@ -1703,7 +1705,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
                                       ddev->orig_procs.dev_spec_op,
                                       MIN_BUFFER_SPACE);
         if (ccode >= 0) {
-            ddev->procs = gs_clist_device_procs;
+            ddev->initialize = clist_initialize;
             /* Hacky - we know this can't fail. */
             clist_open((gx_device *)ddev);
         }

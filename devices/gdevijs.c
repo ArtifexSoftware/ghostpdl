@@ -100,9 +100,6 @@ static dev_proc_fill_mask(gsijs_fill_mask);
 static dev_proc_fill_path(gsijs_fill_path);
 static dev_proc_stroke_path(gsijs_stroke_path);
 
-static const gx_device_procs gsijs_procs =
-    devprocs_initialize(gsijs_initialize);
-
 typedef struct gx_device_ijs_s gx_device_ijs;
 
 /* The device descriptor */
@@ -145,7 +142,9 @@ struct gx_device_ijs_s {
 
 gx_device_ijs gs_ijs_device =
 {
-    prn_device_std_body(gx_device_ijs, gsijs_procs, "ijs",
+    prn_device_std_body(gx_device_ijs,
+                        gsijs_initialize,
+                        "ijs",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         DEFAULT_DPI, DEFAULT_DPI,
                         0, 0, 0, 0,

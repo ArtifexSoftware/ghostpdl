@@ -86,15 +86,17 @@ tiffgray_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, tiff_get_params);
     set_dev_proc(dev, put_params, tiff_put_params);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-
-static const gx_device_procs tiffgray_procs =
-    devprocs_initialize(tiffgray_initialize);
-
 const gx_device_tiff gs_tiffgray_device = {
-    prn_device_body(gx_device_tiff, tiffgray_procs, "tiffgray",
+    prn_device_body(gx_device_tiff, tiffgray_initialize, "tiffgray",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0, /* Margins */
@@ -138,15 +140,18 @@ tiffscaled_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, tiff_get_params_downscale);
     set_dev_proc(dev, put_params, tiff_put_params_downscale);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs tiffscaled_procs =
-    devprocs_initialize(tiffscaled_initialize);
-
 const gx_device_tiff gs_tiffscaled_device = {
     prn_device_body(gx_device_tiff,
-                    tiffscaled_procs,
+                    tiffscaled_initialize,
                     "tiffscaled",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -184,15 +189,18 @@ tiffscaled8_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, tiff_put_params_downscale);
     set_dev_proc(dev, dev_spec_op, tiffscaled_spec_op);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs tiffscaled8_procs =
-    devprocs_initialize(tiffscaled8_initialize);
-
 const gx_device_tiff gs_tiffscaled8_device = {
     prn_device_body(gx_device_tiff,
-                    tiffscaled8_procs,
+                    tiffscaled8_initialize,
                     "tiffscaled8",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -233,12 +241,9 @@ tiffscaled24_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs tiffscaled24_procs =
-    devprocs_initialize(tiffscaled24_initialize);
-
 const gx_device_tiff gs_tiffscaled24_device = {
     prn_device_body(gx_device_tiff,
-                    tiffscaled24_procs,
+                    tiffscaled24_initialize,
                     "tiffscaled24",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -279,12 +284,9 @@ tiffscaled32_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs tiffscaled32_procs =
-    devprocs_initialize(tiffscaled32_initialize);
-
 const gx_device_tiff gs_tiffscaled32_device = {
     prn_device_body(gx_device_tiff,
-                    tiffscaled32_procs,
+                    tiffscaled32_initialize,
                     "tiffscaled32",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -324,12 +326,9 @@ tiffscaled4_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs tiffscaled4_procs =
-    devprocs_initialize(tiffscaled4_initialize);
-
 const gx_device_tiff gs_tiffscaled4_device = {
     prn_device_body(gx_device_tiff,
-                    tiffscaled4_procs,
+                    tiffscaled4_initialize,
                     "tiffscaled4",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -607,11 +606,8 @@ tiffcmyk_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs tiffcmyk_procs =
-    devprocs_initialize(tiffcmyk_initialize);
-
 const gx_device_tiff gs_tiff32nc_device = {
-    prn_device_body(gx_device_tiff, tiffcmyk_procs, "tiff32nc",
+    prn_device_body(gx_device_tiff, tiffcmyk_initialize, "tiff32nc",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0, /* Margins */
@@ -645,11 +641,8 @@ tiff64_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs tiff64nc_procs =
-    devprocs_initialize(tiff64_initialize);
-
 const gx_device_tiff gs_tiff64nc_device = {
-    prn_device_body(gx_device_tiff, tiff64nc_procs, "tiff64nc",
+    prn_device_body(gx_device_tiff, tiff64_initialize, "tiff64nc",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0, /* Margins */
@@ -873,15 +866,9 @@ tiffsep1_initialize(gx_device *dev)
 /*
  * TIFF devices with CMYK process color model and spot color support.
  */
-static const gx_device_procs spot_cmyk_procs =
-    devprocs_initialize(tiffsep_initialize);
-
-static const gx_device_procs spot1_cmyk_procs =
-    devprocs_initialize(tiffsep1_initialize);
-
 const tiffsep_device gs_tiffsep_device =
 {
-    tiffsep_devices_body(tiffsep_device, spot_cmyk_procs, "tiffsep", ARCH_SIZEOF_GX_COLOR_INDEX, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, GX_CINFO_SEP_LIN, "DeviceCMYK", tiffsep_print_page, COMPRESSION_LZW),
+    tiffsep_devices_body(tiffsep_device, tiffsep_initialize, "tiffsep", ARCH_SIZEOF_GX_COLOR_INDEX, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, GX_CINFO_SEP_LIN, "DeviceCMYK", tiffsep_print_page, COMPRESSION_LZW),
     /* devn_params specific parameters */
     { 8,                        /* Ignored - Bits per color */
       DeviceCMYKComponents,     /* Names of color model colorants */
@@ -898,7 +885,7 @@ const tiffsep_device gs_tiffsep_device =
 
 const tiffsep1_device gs_tiffsep1_device =
 {
-    tiffsep_devices_body(tiffsep1_device, spot1_cmyk_procs, "tiffsep1", ARCH_SIZEOF_GX_COLOR_INDEX, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, GX_CINFO_SEP_LIN, "DeviceCMYK", tiffsep1_print_page, COMPRESSION_CCITTFAX4),
+    tiffsep_devices_body(tiffsep1_device, tiffsep1_initialize, "tiffsep1", ARCH_SIZEOF_GX_COLOR_INDEX, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, GX_CINFO_SEP_LIN, "DeviceCMYK", tiffsep1_print_page, COMPRESSION_CCITTFAX4),
     /* devn_params specific parameters */
     { 8,                        /* Ignored - Bits per color */
       DeviceCMYKComponents,     /* Names of color model colorants */
@@ -3029,21 +3016,22 @@ tiff_open_s(gx_device *pdev)
         memset(&(pdev->procs), 0, sizeof(pdev->procs));
         switch (pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps) {
         case 1:
-            pdev->procs = tiffscaled8_procs;
+            pdev->initialize = tiffscaled8_initialize;
             pdev->color_info.dither_colors = 0;
             pdev->color_info.max_color = 0;
             break;
         case 3:
-            pdev->procs = tiffscaled24_procs;
+            pdev->initialize = tiffscaled24_initialize;
             pdev->color_info.dither_colors = 0;
             pdev->color_info.max_color = 0;
             break;
         case 4:
-            pdev->procs = tiffscaled32_procs;
+            pdev->initialize = tiffscaled32_initialize;
             pdev->color_info.dither_colors = 256;
             pdev->color_info.max_color = 255;
             break;
         }
+        (void)pdev->initialize(pdev);
         check_device_separable(pdev);
         gx_device_fill_in_procs(pdev);
     }

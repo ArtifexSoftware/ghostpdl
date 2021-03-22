@@ -107,9 +107,6 @@ planm_initialize(gx_device *dev)
                                 gdev_prn_map_color_rgb);
 }
 
-static const gx_device_procs planm_procs =
-    devprocs_initialize(planm_initialize);
-
 static int
 plang_initialize(gx_device *dev)
 {
@@ -118,9 +115,6 @@ plang_initialize(gx_device *dev)
                                 plang_encode_color,
                                 plang_decode_color);
 }
-
-static const gx_device_procs plang_procs =
-    devprocs_initialize(plang_initialize);
 
 static int
 plan_initialize(gx_device *dev)
@@ -131,9 +125,6 @@ plan_initialize(gx_device *dev)
                                 plan_decode_color);
 }
 
-static const gx_device_procs plan_procs =
-    devprocs_initialize(plan_initialize);
-
 static int
 planc_initialize(gx_device *dev)
 {
@@ -142,9 +133,6 @@ planc_initialize(gx_device *dev)
                                 planc_encode_color,
                                 planc_decode_color);
 }
-
-static const gx_device_procs planc_procs =
-    devprocs_initialize(planc_initialize);
 
 static int
 plank_initialize(gx_device *dev)
@@ -155,9 +143,6 @@ plank_initialize(gx_device *dev)
                                 planc_decode_color);
 }
 
-static const gx_device_procs plank_procs =
-    devprocs_initialize(plank_initialize);
-
 static int
 planr_initialize(gx_device *dev)
 {
@@ -167,12 +152,9 @@ planr_initialize(gx_device *dev)
                                 plan_decode_color);
 }
 
-static const gx_device_procs planr_procs =
-    devprocs_initialize(planr_initialize);
-
 /* Macro for generating device descriptors. */
-#define plan_prn_device(procs, dev_name, num_comp, depth, max_gray, max_rgb, print_page) \
-{       prn_device_body(gx_device_printer, procs, dev_name,\
+#define plan_prn_device(init, dev_name, num_comp, depth, max_gray, max_rgb, print_page) \
+{       prn_device_body(gx_device_printer, init, dev_name,\
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, X_DPI, Y_DPI,\
         0, 0, 0, 0,\
         num_comp, depth, max_gray, max_rgb, max_gray + 1, max_rgb + 1,\
@@ -181,17 +163,17 @@ static const gx_device_procs planr_procs =
 
 /* The device descriptors themselves */
 const gx_device_printer gs_plan_device =
-  plan_prn_device(plan_procs, "plan", 3, 24, 255, 255, plan_print_page);
+  plan_prn_device(plan_initialize, "plan", 3, 24, 255, 255, plan_print_page);
 const gx_device_printer gs_plang_device =
-  plan_prn_device(plang_procs, "plang", 1, 8, 255, 0, plang_print_page);
+  plan_prn_device(plang_initialize, "plang", 1, 8, 255, 0, plang_print_page);
 const gx_device_printer gs_planm_device =
-  plan_prn_device(planm_procs, "planm", 1, 1, 1, 0, planm_print_page);
+  plan_prn_device(planm_initialize, "planm", 1, 1, 1, 0, planm_print_page);
 const gx_device_printer gs_plank_device =
-  plan_prn_device(plank_procs, "plank", 4, 4, 1, 1, plank_print_page);
+  plan_prn_device(plank_initialize, "plank", 4, 4, 1, 1, plank_print_page);
 const gx_device_printer gs_planc_device =
-  plan_prn_device(planc_procs, "planc", 4, 32, 255, 255, planc_print_page);
+  plan_prn_device(planc_initialize, "planc", 4, 32, 255, 255, planc_print_page);
 const gx_device_printer gs_planr_device =
-  plan_prn_device(planr_procs, "planr", 3, 3, 1, 1, planr_print_page);
+  plan_prn_device(planr_initialize, "planr", 3, 3, 1, 1, planr_print_page);
 
 /* ------ Initialization ------ */
 

@@ -54,9 +54,6 @@ lxm5700m_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs lxm5700m_procs =
-    devprocs_initialize(lxm5700m_initialize);
-
 /* The device descriptors */
 
 /* define a subclass with useful state in it. */
@@ -68,7 +65,7 @@ typedef struct lxm_device_s { /* a sub-class of gx_device_printer */
 
 /* Standard lxm5700m device */
 lxm_device far_data gs_lxm5700m_device = {
-    prn_device_std_body(lxm_device, lxm5700m_procs, "lxm5700m",
+    prn_device_std_body(lxm_device, lxm5700m_initialize, "lxm5700m",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         600, 600,	/* x dpi, y dpi */
         0.2, 0.0, 0.0, 0.0,			/* margins */

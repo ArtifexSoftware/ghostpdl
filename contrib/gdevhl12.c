@@ -175,11 +175,8 @@ hl1250_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs prn_hl1250_procs =
-    devprocs_initialize(hl1250_initialize);
-
 #define hl1250_device_copies(dname, xdpi, ydpi)\
-{   prn_device_std_body_copies(gx_device_hl1250, prn_hl1250_procs,\
+{   prn_device_std_body_copies(gx_device_hl1250, hl1250_initialize,\
                                dname,\
                                DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,\
                                xdpi, ydpi,\

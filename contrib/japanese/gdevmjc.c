@@ -239,9 +239,6 @@ mj700v2c_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs mj700v2c_procs =
-    devprocs_initialize(mj700v2c_initialize);
-
 static int
 mj500c_initialize(gx_device *dev)
 {
@@ -255,9 +252,6 @@ mj500c_initialize(gx_device *dev)
 
     return 0;
 }
-
-static gx_device_procs mj500c_procs =
-    devprocs_initialize(mj500c_initialize);
 
 static int
 mj6000c_initialize(gx_device *dev)
@@ -273,9 +267,6 @@ mj6000c_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs mj6000c_procs =
-    devprocs_initialize(mj6000c_initialize);
-
 static int
 mj8000c_initialize(gx_device *dev)
 {
@@ -290,23 +281,20 @@ mj8000c_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs mj8000c_procs =
-    devprocs_initialize(mj8000c_initialize);
-
 gx_device_mj far_data gs_mj700v2c_device =
-mjcmyk_device(mj700v2c_procs, "mj700v2c", 360, 360, BITSPERPIXEL,
+mjcmyk_device(mj700v2c_initialize, "mj700v2c", 360, 360, BITSPERPIXEL,
           mj700v2c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
 
 gx_device_mj far_data gs_mj500c_device =
-mjcmy_device(mj500c_procs, "mj500c", 360, 360, BITSPERPIXEL,
+mjcmy_device(mj500c_initialize, "mj500c", 360, 360, BITSPERPIXEL,
           mj500c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
 
 gx_device_mj far_data gs_mj6000c_device =
-mjcmyk_device(mj6000c_procs, "mj6000c", 360, 360, BITSPERPIXEL,
+mjcmyk_device(mj6000c_initialize, "mj6000c", 360, 360, BITSPERPIXEL,
           mj6000c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
 
 gx_device_mj far_data gs_mj8000c_device =
-mjcmyk_device(mj8000c_procs, "mj8000c", 360, 360, BITSPERPIXEL,
+mjcmyk_device(mj8000c_initialize, "mj8000c", 360, 360, BITSPERPIXEL,
           mj8000c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
 
 /* Get the paper size code, based on width and height. */

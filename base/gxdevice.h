@@ -98,8 +98,8 @@
  * Note also that the macro does not initialize procs, which is
  * the next element of the structure.
  */
-    #define std_device_part1_(devtype, ptr_procs, dev_name, stype, open_init)\
-        sizeof(devtype), ptr_procs, dev_name,\
+    #define std_device_part1_(devtype, init, dev_name, stype, open_init)\
+        sizeof(devtype), init, dev_name,\
         0 /*memory*/, stype, 0 /*stype_is_dynamic*/, 0 /*finalize*/,\
         { 0 } /*rc*/, 0 /*retained*/, 0 /* parent */, 0 /* child */, 0 /* subclass_data */, 0 /* PageList */,\
         open_init() /*is_open, max_fill_band*/
@@ -151,91 +151,91 @@
  *        6 for margins/offset).
  *
  */
-#define std_device_body_with_macros_(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, open_init, dci_macro, margins_macro)\
-        std_device_part1_(dtype, pprocs, dname, stype, open_init),\
+#define std_device_body_with_macros_(dtype, init, dname, stype, w, h, xdpi, ydpi, open_init, dci_macro, margins_macro)\
+        std_device_part1_(dtype, init, dname, stype, open_init),\
         dci_macro(),\
         std_device_part2_(w, h, xdpi, ydpi),\
         margins_macro(),\
         std_device_part3_()
 
-#define std_device_std_body_type(dtype, pprocs, dname, stype, w, h, xdpi, ydpi)\
-        std_device_body_with_macros_(dtype, pprocs, dname, stype,\
+#define std_device_std_body_type(dtype, init, dname, stype, w, h, xdpi, ydpi)\
+        std_device_body_with_macros_(dtype, init, dname, stype,\
           w, h, xdpi, ydpi,\
           open_init_closed, dci_black_and_white_, no_margins_)
 
-#define std_device_std_body(dtype, pprocs, dname, w, h, xdpi, ydpi)\
-        std_device_std_body_type(dtype, pprocs, dname, 0, w, h, xdpi, ydpi)
+#define std_device_std_body(dtype, init, dname, w, h, xdpi, ydpi)\
+        std_device_std_body_type(dtype, init, dname, 0, w, h, xdpi, ydpi)
 
-#define std_device_std_body_type_open(dtype, pprocs, dname, stype, w, h, xdpi, ydpi)\
-        std_device_body_with_macros_(dtype, pprocs, dname, stype,\
+#define std_device_std_body_type_open(dtype, init, dname, stype, w, h, xdpi, ydpi)\
+        std_device_body_with_macros_(dtype, init, dname, stype,\
           w, h, xdpi, ydpi,\
           open_init_open, dci_black_and_white_, no_margins_)
 
-#define std_device_std_body_open(dtype, pprocs, dname, w, h, xdpi, ydpi)\
-        std_device_std_body_type_open(dtype, pprocs, dname, 0, w, h, xdpi, ydpi)
+#define std_device_std_body_open(dtype, init, dname, w, h, xdpi, ydpi)\
+        std_device_std_body_type_open(dtype, init, dname, 0, w, h, xdpi, ydpi)
 
-#define std_device_full_body_type(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)\
-        std_device_part1_(dtype, pprocs, dname, stype, open_init_closed),\
+#define std_device_full_body_type(dtype, init, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)\
+        std_device_part1_(dtype, init, dname, stype, open_init_closed),\
         dci_values(ncomp, depth, mg, mc, dg, dc),\
         std_device_part2_(w, h, xdpi, ydpi),\
         offset_margin_values(xoff, yoff, lm, bm, rm, tm),\
         std_device_part3_()
 
-#define std_device_full_body_type_extended(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, xoff, yoff, lm, bm, rm, tm)\
-        std_device_part1_(dtype, pprocs, dname, stype, open_init_closed),\
+#define std_device_full_body_type_extended(dtype, init, dname, stype, w, h, xdpi, ydpi, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, xoff, yoff, lm, bm, rm, tm)\
+        std_device_part1_(dtype, init, dname, stype, open_init_closed),\
         dci_extended_alpha_values(mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, 1, 1, ef, cn), \
         std_device_part2_(w, h, xdpi, ydpi),\
         offset_margin_values(xoff, yoff, lm, bm, rm, tm),\
         std_device_part3_()
 
-#define std_device_full_body(dtype, pprocs, dname, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)\
-        std_device_full_body_type(dtype, pprocs, dname, 0, w, h, xdpi, ydpi,\
+#define std_device_full_body(dtype, init, dname, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)\
+        std_device_full_body_type(dtype, init, dname, 0, w, h, xdpi, ydpi,\
             ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)
 
-#define std_device_dci_alpha_type_body(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, ta, ga)\
-        std_device_part1_(dtype, pprocs, dname, stype, open_init_closed),\
+#define std_device_dci_alpha_type_body(dtype, init, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, ta, ga)\
+        std_device_part1_(dtype, init, dname, stype, open_init_closed),\
         dci_alpha_values(ncomp, depth, mg, mc, dg, dc, ta, ga),\
         std_device_part2_(w, h, xdpi, ydpi),\
         offset_margin_values(0, 0, 0, 0, 0, 0),\
         std_device_part3_()
 
-#define std_device_dci_type_body(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)\
-        std_device_dci_alpha_type_body(dtype, pprocs, dname, stype, w, h,\
+#define std_device_dci_type_body(dtype, init, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)\
+        std_device_dci_alpha_type_body(dtype, init, dname, stype, w, h,\
           xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, 1, 1)
 
-#define std_device_dci_body(dtype, pprocs, dname, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)\
-        std_device_dci_type_body(dtype, pprocs, dname, 0,\
+#define std_device_dci_body(dtype, init, dname, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)\
+        std_device_dci_type_body(dtype, init, dname, 0,\
           w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)
 
-#define std_device_color_full_body(dtype, pprocs, dname, w, h, xdpi, ydpi, depth, max_value, dither, xoff, yoff, lm, bm, rm, tm)\
-        std_device_part1_(dtype, pprocs, dname, 0, open_init_closed),\
+#define std_device_color_full_body(dtype, init, dname, w, h, xdpi, ydpi, depth, max_value, dither, xoff, yoff, lm, bm, rm, tm)\
+        std_device_part1_(dtype, init, dname, 0, open_init_closed),\
         dci_color(depth, max_value, dither),\
         std_device_part2_(w, h, xdpi, ydpi),\
         offset_margin_values(xoff, yoff, lm, bm, rm, tm),\
         std_device_part3_()
 
-#define std_device_color_body(dtype, pprocs, dname, w, h, xdpi, ydpi, depth, max_value, dither)\
-        std_device_color_full_body(dtype, pprocs, dname,\
+#define std_device_color_body(dtype, init, dname, w, h, xdpi, ydpi, depth, max_value, dither)\
+        std_device_color_full_body(dtype, init, dname,\
           w, h, xdpi, ydpi,\
           depth, max_value, dither,\
           0, 0, 0, 0, 0, 0)
 
-#define std_device_color_stype_body(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, depth, max_value, dither)\
-        std_device_part1_(dtype, pprocs, dname, stype, open_init_closed),\
+#define std_device_color_stype_body(dtype, init, dname, stype, w, h, xdpi, ydpi, depth, max_value, dither)\
+        std_device_part1_(dtype, init, dname, stype, open_init_closed),\
         dci_color(depth, max_value, dither),\
         std_device_part2_(w, h, xdpi, ydpi),\
         offset_margin_values(0, 0, 0, 0, 0, 0),\
         std_device_part3_()
 
-#define std_device_std_color_full_body_type(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, depth, xoff, yoff, lm, bm, rm, tm)\
-        std_device_part1_(dtype, pprocs, dname, stype, open_init_closed),\
+#define std_device_std_color_full_body_type(dtype, init, dname, stype, w, h, xdpi, ydpi, depth, xoff, yoff, lm, bm, rm, tm)\
+        std_device_part1_(dtype, init, dname, stype, open_init_closed),\
         dci_std_color(depth),\
         std_device_part2_(w, h, xdpi, ydpi),\
         offset_margin_values(xoff, yoff, lm, bm, rm, tm),\
         std_device_part3_()
 
-#define std_device_std_color_full_body(dtype, pprocs, dname, w, h, xdpi, ydpi, depth, xoff, yoff, lm, bm, rm, tm)\
-        std_device_std_color_full_body_type(dtype, pprocs, dname, 0,\
+#define std_device_std_color_full_body(dtype, init, dname, w, h, xdpi, ydpi, depth, xoff, yoff, lm, bm, rm, tm)\
+        std_device_std_color_full_body_type(dtype, init, dname, 0,\
             w, h, xdpi, ydpi, depth, xoff, yoff, lm, bm, rm, tm)
 
 /* ---------------- Default implementations ---------------- */
@@ -298,7 +298,6 @@ dev_proc_create_compositor(gx_default_create_compositor);
 dev_proc_create_compositor(gx_null_create_compositor);
 dev_proc_get_hardware_params(gx_default_get_hardware_params);
 dev_proc_text_begin(gx_default_text_begin);
-dev_proc_initialize(gx_default_initialize);
 dev_proc_dev_spec_op(gx_default_dev_spec_op);
 dev_proc_fill_rectangle_hl_color(gx_default_fill_rectangle_hl_color);
 dev_proc_include_color_space(gx_default_include_color_space);
@@ -328,6 +327,8 @@ dev_proc_pop_transparency_state(gx_default_pop_transparency_state);
 dev_proc_put_image(gx_default_put_image);
 dev_proc_copy_alpha_hl_color(gx_default_no_copy_alpha_hl_color);
 dev_proc_copy_planes(gx_default_copy_planes);
+
+int gx_default_initialize(gx_device *dev);
 
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor

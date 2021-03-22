@@ -608,14 +608,10 @@ gx_device_init(gx_device * dev, const gx_device * proto, gs_memory_t * mem,
                bool internal)
 {
     memcpy(dev, proto, proto->params_size);
-    if (dev->static_procs != NULL) { /* NULL if already populated */
-        dev->procs = *dev->static_procs;
-        dev->static_procs = NULL;
-    }
-    if (dev->procs.initialize) {
+    if (dev->initialize) {
         /* A condition of devices inited in this way is that they can
          * never fail to initialize! */
-        int code = dev->procs.initialize(dev);
+        int code = dev->initialize(dev);
         if (code < 0)
             return code;
     }
@@ -632,10 +628,10 @@ gx_device_init_on_stack(gx_device * dev, const gx_device * proto,
                         gs_memory_t * mem)
 {
     memcpy(dev, proto, proto->params_size);
-    if (dev->procs.initialize) {
+    if (dev->initialize) {
         /* A condition of devices inited on the stack is that they can
          * never fail to initialize! */
-        (void)dev->procs.initialize(dev);
+        (void)dev->initialize(dev);
     }
     gx_device_fill_in_procs(dev);
     dev->memory = mem;

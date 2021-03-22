@@ -643,21 +643,11 @@ typedef struct gx_stroked_gradient_recognizer_s {
 /* ---------------- Device structure ---------------- */
 
 /*
- * Define the generic device structure.  The device procedures can
- * have two different configurations:
+ * Define the generic device structure.
  *
- *      - Statically initialized devices predating release 2.8.1
- *      set the static_procs pointer to point to a separate procedure record,
- *      and do not initialize procs.
- *
- *      - Statically initialized devices starting with release 2.8.1,
- *      and all dynamically created device instances,
- *      set the static_procs pointer to 0, and initialize procs.
- *
- * The gx_device_set_procs procedure converts the first of these to
- * the second, which is what all client code starting in 2.8.1 expects
- * (using the procs record, not the static_procs pointer, to call the
- * driver procedures).
+ * All devices start off with no device procs. The initialize function
+ * is called as soon as the device is copied from its prototype, and
+ * that fills in the procs table with the device procedure pointers.
  *
  * The choice of the name Margins (rather than, say, HWOffset), and the
  * specification in terms of a default device resolution rather than
@@ -717,11 +707,15 @@ typedef struct gdev_pagelist_s {
         int PagesSize;
 } gdev_pagelist;
 
+#define dev_t_proc_initialize(proc, dev_t)\
+  int proc(dev_t *dev)
+#define dev_proc_initialize(proc)\
+  dev_t_proc_initialize((proc), gx_device)
+
 #define gx_device_common\
         int params_size;		/* OBSOLETE if stype != 0: */\
                                         /* size of this structure */\
-        const gx_device_procs *static_procs;	/* OBSOLETE */\
-                                        /* pointer to procs */\
+        dev_proc_initialize(*initialize);/* initialize */\
         const char *dname;		/* the device name */\
         gs_memory_t *memory;		/* (0 iff static prototype) */\
         gs_memory_type_ptr_t stype;	/* memory manager structure type, */\
@@ -1208,13 +1202,6 @@ typedef enum FILTER_FLAGS {
 
      /* ... text_begin ... see gstext.h for definition */
 
-                /* Added in release 6.23 */
-
-#define dev_t_proc_initialize(proc, dev_t)\
-  int proc(dev_t *dev)
-#define dev_proc_initialize(proc)\
-  dev_t_proc_initialize(proc, gx_device)
-
                 /* Added in release 6.61 (raph) */
 
 /*
@@ -1592,7 +1579,8 @@ typedef struct {
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
-{	dev_t_proc_open_device((*open_device), dev_t);\
+{\
+        dev_t_proc_open_device((*open_device), dev_t);\
         dev_t_proc_get_initial_matrix((*get_initial_matrix), dev_t);\
         dev_t_proc_sync_output((*sync_output), dev_t);\
         dev_t_proc_output_page((*output_page), dev_t);\
@@ -1635,7 +1623,6 @@ typedef struct {
         dev_t_proc_create_compositor((*create_compositor), dev_t);\
         dev_t_proc_get_hardware_params((*get_hardware_params), dev_t);\
         dev_t_proc_text_begin((*text_begin), dev_t);\
-        dev_t_proc_initialize((*initialize), dev_t);\
         dev_t_proc_begin_transparency_group((*begin_transparency_group), dev_t);\
         dev_t_proc_end_transparency_group((*end_transparency_group), dev_t);\
         dev_t_proc_begin_transparency_mask((*begin_transparency_mask), dev_t);\
@@ -1667,53 +1654,6 @@ typedef struct {
         dev_t_proc_process_page((*process_page), dev_t);\
         dev_t_proc_transform_pixel_region((*transform_pixel_region), dev_t);\
         dev_t_proc_fill_stroke_path((*fill_stroke_path), dev_t);\
-}
-
-#define devprocs_initialize(p_init) {\
-        NULL, /* open */\
-        NULL, /* get_initial_matrix */\
-        NULL, /* sync_output */\
-        NULL, /* output_page */\
-        NULL, /* close */\
-        NULL, /* map_rgb_color */\
-        NULL, /* map_color_rgb */\
-        NULL, /* fill_rectangle */\
-        NULL, /* tile_rectangle */\
-        NULL, /* copy_mono */\
-        NULL, /* copy_color */\
-        NULL, /* draw_line */\
-        NULL, /* get_bits */\
-        NULL, /* get_params */\
-        NULL, /* put_params */\
-        NULL, /* map_cmyk_color */\
-        NULL, /* get_xfont_procs */\
-        NULL, /* get_xfont_device */\
-        NULL, /* map_rgb_alpha_color */\
-        NULL, /* gx_page_device_get_page_device */\
-        NULL, /* get_alpha_bits */\
-        NULL, /* copy_alpha */\
-        NULL, /* get_band */\
-        NULL, /* copy_rop */\
-        NULL, /* fill_path */\
-        NULL, /* stroke_path */\
-        NULL, /* fill_mask */\
-        NULL, /* fill_trapezoid */\
-        NULL, /* fill_parallelogram */\
-        NULL, /* fill_triangle */\
-        NULL, /* draw_thin_line */\
-        NULL, /* begin_image */\
-        NULL, /* image_data */\
-        NULL, /* end_image */\
-        NULL, /* strip_tile_rectangle */\
-        NULL, /* strip_copy_rop, */\
-        NULL, /* get_clipping_box */\
-        NULL, /* begin_typed_image */\
-        NULL, /* get_bits_rectangle */\
-        NULL, /* map_color_rgb_alpha */\
-        NULL, /* create_compositor */\
-        NULL, /* get_hardware_params */\
-        NULL, /* text_begin */\
-        p_init /* initialize */\
 }
 
 /*

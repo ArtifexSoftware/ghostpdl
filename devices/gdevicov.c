@@ -166,18 +166,15 @@ static int cov_write_page_ink(gx_device_printer *pdev, gp_file *file)
     return (code > 0) ? ecode : 0;
 }
 
-static const gx_device_procs cov_procs =
-    devprocs_initialize(gdev_prn_initialize_cmyk8_bg);
-
 const gx_device_printer gs_inkcov_device = prn_device(
-    cov_procs, "inkcov",
+    gdev_prn_initialize_cmyk8_bg, "inkcov",
     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
     75, 75,	/* dpi */
     0, 0, 0, 0,	/* margins */
     32, cov_write_page);
 
 const gx_device_printer gs_ink_cov_device = prn_device(
-    cov_procs, "ink_cov",
+    gdev_prn_initialize_cmyk8_bg, "ink_cov",
     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
     75, 75,	/* dpi */
     0, 0, 0, 0,	/* margins */

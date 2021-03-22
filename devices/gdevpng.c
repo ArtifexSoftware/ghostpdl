@@ -93,7 +93,7 @@ struct gx_device_png_s {
 
 const gx_device_png gs_pngmono_device =
 { /* The print_page proc is compatible with allowing bg printing */
-  prn_device_body(gx_device_png, prn_bg_procs, "pngmono",
+  prn_device_body(gx_device_png, gdev_prn_initialize_mono_bg, "pngmono",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -116,14 +116,17 @@ png16_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_4bit_map_color_rgb);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs png16_procs =
-  devprocs_initialize(png16_initialize);
-
 const gx_device_png gs_png16_device = {
-  prn_device_body(gx_device_png, png16_procs, "png16",
+  prn_device_body(gx_device_png, png16_initialize, "png16",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -146,14 +149,17 @@ png256_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, pc_8bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_8bit_map_color_rgb);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs png256_procs =
-  devprocs_initialize(png256_initialize);
-
 const gx_device_png gs_png256_device = {
-  prn_device_body(gx_device_png, png256_procs, "png256",
+  prn_device_body(gx_device_png, png256_initialize, "png256",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -175,14 +181,17 @@ pnggray_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, png_get_params_downscale);
     set_dev_proc(dev, put_params, png_put_params_downscale);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs pnggray_procs =
-  devprocs_initialize(pnggray_initialize);
-
 const gx_device_png gs_pnggray_device =
-{prn_device_body(gx_device_png, pnggray_procs, "pnggray",
+{prn_device_body(gx_device_png, pnggray_initialize, "pnggray",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -196,7 +205,7 @@ const gx_device_png gs_pnggray_device =
 static int
 pngmonod_initialize(gx_device *dev)
 {
-    int code = gdev_prn_initialize_rgb_bg(dev);
+    int code = gdev_prn_initialize_gray_bg(dev);
 
     if (code < 0)
         return code;
@@ -204,14 +213,17 @@ pngmonod_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, png_get_params_downscale_mfs);
     set_dev_proc(dev, put_params, png_put_params_downscale_mfs);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs pngmonod_procs =
-  devprocs_initialize(pngmonod_initialize);
-
 const gx_device_png gs_pngmonod_device =
-{prn_device_body(gx_device_png, pngmonod_procs, "pngmonod",
+{prn_device_body(gx_device_png, pngmonod_initialize, "pngmonod",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -233,14 +245,17 @@ png16m_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, png_get_params_downscale);
     set_dev_proc(dev, put_params, png_put_params_downscale);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs png16m_procs =
-  devprocs_initialize(png16m_initialize);
-
 const gx_device_png gs_png16m_device =
-{prn_device_body(gx_device_png, png16m_procs, "png16m",
+{prn_device_body(gx_device_png, png16m_initialize, "png16m",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -250,12 +265,26 @@ const gx_device_png gs_png16m_device =
 
 /* 48 bit color. */
 
-/* Since the print_page doesn't alter the device, this device can print in the background */
-static const gx_device_procs png48_procs =
-  devprocs_initialize(gdev_prn_initialize_rgb_bg);
+static int
+png48_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_rgb_bg(dev);
 
+    if (code < 0)
+        return code;
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
+
+/* Since the print_page doesn't alter the device, this device can print in the background */
 const gx_device_png gs_png48_device =
-{prn_device_body(gx_device_png, png48_procs, "png48",
+{prn_device_body(gx_device_png, png48_initialize, "png48",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -304,11 +333,8 @@ pngalpha_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs pngalpha_procs =
-    devprocs_initialize(pngalpha_initialize);
-
 const gx_device_pngalpha gs_pngalpha_device = {
-        std_device_part1_(gx_device_pngalpha, &pngalpha_procs, "pngalpha",
+        std_device_part1_(gx_device_pngalpha, pngalpha_initialize, "pngalpha",
                 &st_device_printer, open_init_closed),
         /* color_info */
         {3 /* max components */,

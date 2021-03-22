@@ -338,11 +338,8 @@ cups_initialize(gx_device *dev)
     return 0;
 }
 
-private gx_device_procs cups_procs =
-    devprocs_initialize(cups_initialize);
-
-#define prn_device_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_pages)\
-	std_device_full_body_type(dtype, &procs, dname, &st_device_printer,\
+#define prn_device_body_copies(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_pages)\
+	std_device_full_body_type(dtype, init, dname, &st_device_printer,\
 	  (int)((long)(w10) * (xdpi) / 10),\
 	  (int)((long)(h10) * (ydpi) / 10),\
 	  xdpi, ydpi,\
@@ -376,7 +373,7 @@ private gx_device_procs cups_procs =
 
 #define gs_xxx_device(dname, mediaclass)\
   prn_device_body_copies(gx_device_cups,/* type */\
-                         cups_procs,	/* procedures */\
+                         cups_initialize,/* init */\
 			 dname,		/* device name */\
 			 85,		/* initial width */\
 			 110,		/* initial height */\

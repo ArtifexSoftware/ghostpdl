@@ -71,6 +71,12 @@ bit_initialize(gx_device *dev)
     set_dev_proc(dev, decode_color, bit_map_color_rgb);
     set_dev_proc(dev, dev_spec_op, bit_dev_spec_op);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
@@ -106,11 +112,8 @@ bitmono_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs bitmono_procs =
-    devprocs_initialize(bitmono_initialize);
-
 const gx_device_bit gs_bit_device =
-{prn_device_body(gx_device_bit, bitmono_procs, "bit",
+{prn_device_body(gx_device_bit, bitmono_initialize, "bit",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,    /* margins */
@@ -132,11 +135,8 @@ bitrgb_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs bitrgb_procs =
-    devprocs_initialize(bitrgb_initialize);
-
 const gx_device_bit gs_bitrgb_device =
-{prn_device_body(gx_device_bit, bitrgb_procs, "bitrgb",
+{prn_device_body(gx_device_bit, bitrgb_initialize, "bitrgb",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -158,10 +158,8 @@ bitcmyk_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs bitcmyk_procs =
-    devprocs_initialize(bitcmyk_initialize);
 const gx_device_bit gs_bitcmyk_device =
-{prn_device_body(gx_device_bit, bitcmyk_procs, "bitcmyk",
+{prn_device_body(gx_device_bit, bitcmyk_initialize, "bitcmyk",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -192,13 +190,10 @@ bitrgbtags_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs bitrgbtags_procs =
-    devprocs_initialize(bitrgbtags_initialize);
-
 const gx_device_bit gs_bitrgbtags_device =
     {
         sizeof(gx_device_bit),
-        &bitrgbtags_procs,
+        bitrgbtags_initialize,
         "bitrgbtags",
         0,                              /* memory */
         &st_device_printer,

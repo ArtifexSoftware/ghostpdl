@@ -111,9 +111,9 @@ mask_clip_initialize(gx_device *dev)
  }
 
 const gx_device_mask_clip gs_mask_clip_device =
-{std_device_std_body_open(gx_device_mask_clip, 0, "mask clipper",
-                          0, 0, 1, 1),
- devprocs_initialize(mask_clip_initialize)
+{std_device_std_body_open(gx_device_mask_clip, mask_clip_initialize,
+                          "mask clipper",
+                          0, 0, 1, 1)
 };
 
 /* Fill a rectangle with a hl color, painting through the mask */

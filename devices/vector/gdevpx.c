@@ -122,8 +122,8 @@ gs_public_st_suffix_add0_final(st_device_pclxl, gx_device_pclxl,
                                device_pclxl_reloc_ptrs, gx_device_finalize,
                                st_device_vector);
 
-#define pclxl_device_body(dname, depth)\
-  std_device_dci_type_body(gx_device_pclxl, 0, dname, &st_device_pclxl,\
+#define pclxl_device_body(dname, depth, init)\
+  std_device_dci_type_body(gx_device_pclxl, init, dname, &st_device_pclxl,\
                            DEFAULT_WIDTH_10THS * X_DPI / 10,\
                            DEFAULT_HEIGHT_10THS * Y_DPI / 10,\
                            X_DPI, Y_DPI,\
@@ -191,13 +191,11 @@ pxlcolor_initialize(gx_device *dev)
 }
 
 const gx_device_pclxl gs_pxlmono_device = {
-    pclxl_device_body("pxlmono", 8),
-    devprocs_initialize(pxlmono_initialize)
+    pclxl_device_body("pxlmono", 8, pxlmono_initialize)
 };
 
 const gx_device_pclxl gs_pxlcolor_device = {
-    pclxl_device_body("pxlcolor", 24),
-    devprocs_initialize(pxlcolor_initialize)
+    pclxl_device_body("pxlcolor", 24, pxlcolor_initialize)
 };
 
 /* ---------------- Other utilities ---------------- */

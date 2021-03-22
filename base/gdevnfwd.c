@@ -1155,19 +1155,17 @@ nullpage_initialize(gx_device *dev)
 #define NULLD_Y_RES 72
 
 const gx_device_null gs_null_device = {
-    std_device_std_body_type_open(gx_device_null, 0, "null", &st_device_null,
-                                  0, 0, NULLD_X_RES, NULLD_Y_RES),
-    devprocs_initialize(null_initialize),
-    0                           /* target */
+    std_device_std_body_type_open(gx_device_null, null_initialize,
+                                  "null", &st_device_null,
+                                  0, 0, NULLD_X_RES, NULLD_Y_RES)
 };
 
 const gx_device_null gs_nullpage_device = {
-std_device_std_body_type_open(gx_device_null, 0, "nullpage", &st_device_null,
+std_device_std_body_type_open(gx_device_null, nullpage_initialize,
+                              "nullpage", &st_device_null,
                               (int)((float)(DEFAULT_WIDTH_10THS * NULLD_X_RES) / 10),
                               (int)((float)(DEFAULT_HEIGHT_10THS * NULLD_Y_RES) / 10),
-                              NULLD_X_RES, NULLD_Y_RES),
-    devprocs_initialize(nullpage_initialize),
-    0                           /* target */
+                              NULLD_X_RES, NULLD_Y_RES)
 };
 
 static void

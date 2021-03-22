@@ -120,11 +120,8 @@ bj200_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs prn_bj200_procs =
-    devprocs_initialize(bj200_initialize);
-
 const gx_device_printer far_data gs_bj200_device =
-  prn_device(prn_bj200_procs, "bj200",
+  prn_device(bj200_initialize, "bj200",
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
         360,				/* x_dpi */
@@ -168,11 +165,8 @@ bj10e_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs prn_bj10e_procs =
-    devprocs_initialize(bj10e_initialize);
-
 const gx_device_printer far_data gs_bj10e_device =
-  prn_device(prn_bj10e_procs, "bj10e",
+  prn_device(bj10e_initialize, "bj10e",
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
         360,				/* x_dpi */

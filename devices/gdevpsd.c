@@ -194,12 +194,9 @@ psd_initialize(gx_device *dev)
 /*
  * PSD device with RGB process color model.
  */
-static const gx_device_procs spot_rgb_procs =
-    devprocs_initialize(psd_initialize);
-
 const psd_device gs_psdrgb_device =
 {
-    psd_device_body(spot_rgb_procs, "psdrgb", 3, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    psd_device_body(psd_initialize, "psdrgb", 3, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
     /* devn_params specific parameters */
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceRGBComponents,	/* Names of color model colorants */
@@ -220,7 +217,7 @@ const psd_device gs_psdrgb_device =
 
 const psd_device gs_psdrgb16_device =
 {
-    psd_device_body(spot_rgb_procs, "psdrgb16", 3, GX_CINFO_POLARITY_ADDITIVE, 48, 65535, 65535, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    psd_device_body(psd_initialize, "psdrgb16", 3, GX_CINFO_POLARITY_ADDITIVE, 48, 65535, 65535, GX_CINFO_SEP_LIN, "DeviceRGB"),
     /* devn_params specific parameters */
     { 16,	/* Bits per color - must match ncomp, depth, etc. above */
     DeviceRGBComponents,	/* Names of color model colorants */
@@ -256,12 +253,10 @@ psdcmyk_initialize(gx_device *dev)
 
     return 0;
 }
-static const gx_device_procs spot_cmyk_procs =
-    devprocs_initialize(psdcmyk_initialize);
 
 const psd_device gs_psdcmyk_device =
 {
-    psd_device_body(spot_cmyk_procs, "psdcmyk",
+    psd_device_body(psdcmyk_initialize, "psdcmyk",
                     ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
                     GX_CINFO_POLARITY_SUBTRACTIVE,
                     ARCH_SIZEOF_GX_COLOR_INDEX * 8, /* 8 bits per component (albeit in planes) */
@@ -286,7 +281,7 @@ const psd_device gs_psdcmyk_device =
 
 const psd_device gs_psdcmyk16_device =
 {
-    psd_device_body(spot_cmyk_procs, "psdcmyk16",
+    psd_device_body(psdcmyk_initialize, "psdcmyk16",
     ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
     GX_CINFO_POLARITY_SUBTRACTIVE,
     ARCH_SIZEOF_GX_COLOR_INDEX * 16, /* 8 bits per component (albeit in planes) */

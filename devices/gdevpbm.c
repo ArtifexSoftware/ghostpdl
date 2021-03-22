@@ -151,6 +151,12 @@ pbm_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, ppm_put_params);
     set_dev_proc(dev, output_page, ppm_output_page);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
@@ -241,81 +247,66 @@ pnmcmyk_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs pbm_procs =
-    devprocs_initialize(pbm_initialize);
-static const gx_device_procs pgm_procs =
-    devprocs_initialize(pgm_initialize);
-static const gx_device_procs ppm_procs =
-    devprocs_initialize(ppm_initialize);
-static const gx_device_procs pnm_procs =
-    devprocs_initialize(pnm_initialize);
-static const gx_device_procs pkm_procs =
-    devprocs_initialize(pkm_initialize);
-static const gx_device_procs pam_procs =
-    devprocs_initialize(pam_initialize);
-static const gx_device_procs pnmcmyk_procs =
-    devprocs_initialize(pnmcmyk_initialize);
-
 /* The device descriptors themselves */
 const gx_device_pbm gs_pbm_device =
-pbm_prn_device(pbm_procs, "pbm", '1', 0, 1, 1, 1, 0, 0,
+pbm_prn_device(pbm_initialize, "pbm", '1', 0, 1, 1, 1, 0, 0,
                X_DPI, Y_DPI, pbm_print_page);
 const gx_device_pbm gs_pbmraw_device =
-pbm_prn_device(pbm_procs, "pbmraw", '4', 1, 1, 1, 1, 1, 0,
+pbm_prn_device(pbm_initialize, "pbmraw", '4', 1, 1, 1, 1, 1, 0,
                X_DPI, Y_DPI, pbm_print_page);
 const gx_device_pbm gs_pgm_device =
-pbm_prn_device(pgm_procs, "pgm", '2', 0, 1, 8, 255, 0, 0,
+pbm_prn_device(pgm_initialize, "pgm", '2', 0, 1, 8, 255, 0, 0,
                X_DPI, Y_DPI, pgm_print_page);
 const gx_device_pbm gs_pgmraw_device =
-pbm_prn_device(pgm_procs, "pgmraw", '5', 1, 1, 8, 255, 0, 0,
+pbm_prn_device(pgm_initialize, "pgmraw", '5', 1, 1, 8, 255, 0, 0,
                X_DPI, Y_DPI, pgm_print_page);
 const gx_device_pbm gs_pgnm_device =
-pbm_prn_device(pgm_procs, "pgnm", '2', 0, 1, 8, 255, 0, 1,
+pbm_prn_device(pgm_initialize, "pgnm", '2', 0, 1, 8, 255, 0, 1,
                X_DPI, Y_DPI, pgm_print_page);
 const gx_device_pbm gs_pgnmraw_device =
-pbm_prn_device(pgm_procs, "pgnmraw", '5', 1, 1, 8, 255, 0, 1,
+pbm_prn_device(pgm_initialize, "pgnmraw", '5', 1, 1, 8, 255, 0, 1,
                X_DPI, Y_DPI, pgm_print_page);
 const gx_device_pbm gs_ppm_device =
-pbm_prn_device(ppm_procs, "ppm", '3', 0, 3, 24, 255, 255, 0,
+pbm_prn_device(ppm_initialize, "ppm", '3', 0, 3, 24, 255, 255, 0,
                X_DPI, Y_DPI, ppm_print_page);
 const gx_device_pbm gs_ppmraw_device =
-pbm_prn_device(ppm_procs, "ppmraw", '6', 1, 3, 24, 255, 255, 0,
+pbm_prn_device(ppm_initialize, "ppmraw", '6', 1, 3, 24, 255, 255, 0,
                X_DPI, Y_DPI, ppm_print_page);
 const gx_device_pbm gs_pnm_device =
-pbm_prn_device(pnm_procs, "pnm", '3', 0, 3, 24, 255, 255, 1,
+pbm_prn_device(pnm_initialize, "pnm", '3', 0, 3, 24, 255, 255, 1,
                X_DPI, Y_DPI, ppm_print_page);
 const gx_device_pbm gs_pnmraw_device =
-pbm_prn_device(pnm_procs, "pnmraw", '6', 1, 3, 24, 255, 255, 1,
+pbm_prn_device(pnm_initialize, "pnmraw", '6', 1, 3, 24, 255, 255, 1,
                X_DPI, Y_DPI, ppm_print_page);
 const gx_device_pbm gs_pkm_device =
-pbm_prn_device(pkm_procs, "pkm", '3', 0, 4, 4, 1, 1, 0,
+pbm_prn_device(pkm_initialize, "pkm", '3', 0, 4, 4, 1, 1, 0,
                X_DPI, Y_DPI, pkm_print_page);
 const gx_device_pbm gs_pkmraw_device =
-pbm_prn_device(pkm_procs, "pkmraw", '6', 1, 4, 4, 1, 1, 0,
+pbm_prn_device(pkm_initialize, "pkmraw", '6', 1, 4, 4, 1, 1, 0,
                X_DPI, Y_DPI, pkm_print_page);
 const gx_device_pbm gs_pksm_device =
-pbm_prn_device(pkm_procs, "pksm", '1', 0, 4, 4, 1, 1, 0,
+pbm_prn_device(pkm_initialize, "pksm", '1', 0, 4, 4, 1, 1, 0,
                X_DPI, Y_DPI, psm_print_page);
 const gx_device_pbm gs_pksmraw_device =
-pbm_prn_device(pkm_procs, "pksmraw", '4', 1, 4, 4, 1, 1, 0,
+pbm_prn_device(pkm_initialize, "pksmraw", '4', 1, 4, 4, 1, 1, 0,
                X_DPI, Y_DPI, psm_print_page);
 const gx_device_pbm gs_pamcmyk32_device =
-pbm_prn_device(pam_procs, "pamcmyk32", '7', 1, 4, 32, 255, 255, 0,
+pbm_prn_device(pam_initialize, "pamcmyk32", '7', 1, 4, 32, 255, 255, 0,
                X_DPI, Y_DPI, pam_print_page);
 const gx_device_pbm gs_pnmcmyk_device =
-pbm_prn_device(pnmcmyk_procs, "pnmcmyk", '7', 1, 4, 32, 255, 255, 0, /* optimize false since this relies on GrayDetection */
+pbm_prn_device(pnmcmyk_initialize, "pnmcmyk", '7', 1, 4, 32, 255, 255, 0, /* optimize false since this relies on GrayDetection */
                X_DPI, Y_DPI, pnmcmyk_print_page);	/* May output PGM, magic = 5 */
 const gx_device_pbm gs_pamcmyk4_device =
-pbm_prn_device(pam_procs, "pamcmyk4", '7', 1, 4, 4, 1, 1, 0,
+pbm_prn_device(pam_initialize, "pamcmyk4", '7', 1, 4, 4, 1, 1, 0,
                X_DPI, Y_DPI, pam4_print_page);
 /* Also keep the old device name so anyone using it won't be surprised */
 const gx_device_pbm gs_pam_device =
-pbm_prn_device(pam_procs, "pam", '7', 1, 4, 32, 255, 255, 0,
+pbm_prn_device(pam_initialize, "pam", '7', 1, 4, 32, 255, 255, 0,
                X_DPI, Y_DPI, pam_print_page);
 
 /* Plan 9 bitmaps default to 100 dpi. */
 const gx_device_pbm gs_plan9bm_device =
-pbm_prn_device(pbm_procs, "plan9bm", '9', 1, 1, 1, 1, 1, 1,
+pbm_prn_device(pbm_initialize, "plan9bm", '9', 1, 1, 1, 1, 1, 1,
                100, 100, pbm_print_page);
 
 /* ------ Initialization ------ */

@@ -167,12 +167,13 @@ docxwrite_initialize(gx_device *dev)
 const gx_device_docxwrite_t gs_docxwrite_device =
 {
     /* Define the device as 8-bit gray scale to avoid computing halftones. */
-    std_device_dci_body(gx_device_docxwrite_t, 0, "docxwrite",
+    std_device_dci_body(gx_device_docxwrite_t, docxwrite_initialize,
+                        "docxwrite",
                         DEFAULT_WIDTH_10THS * X_DPI / 10,
                         DEFAULT_HEIGHT_10THS * Y_DPI / 10,
                         X_DPI, Y_DPI,
                         1, 8, 255, 0, 256, 1),
-    devprocs_initialize(docxwrite_initialize),
+    { 0 },                      /* procs */
     { 0 },			/* Page Data */
     0,				/* Output FILE * */
     0,				/* TextFormat */

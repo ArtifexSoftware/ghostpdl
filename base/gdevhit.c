@@ -59,9 +59,8 @@ hit_initialize(gx_device *dev)
     return 0;
 }
 const gx_device gs_hit_device = {
- std_device_std_body(gx_device, 0, "hit detector",
-                     0, 0, 1, 1),
- devprocs_initialize(hit_initialize)
+ std_device_std_body(gx_device, hit_initialize, "hit detector",
+                     0, 0, 1, 1)
 };
 
 /* Test for a hit when filling a rectangle. */

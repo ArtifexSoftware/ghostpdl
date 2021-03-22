@@ -108,11 +108,8 @@ gdi_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs prn_gdi_procs =
-    devprocs_initialize(gdi_initialize);
-
 gx_device_printer far_data gs_gdi_device =
-  prn_device(prn_gdi_procs, "gdi",
+  prn_device(gdi_initialize, "gdi",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, /* paper size (unit : 10/72 inch size) */
         X_DPI2, Y_DPI2,
         0.20, 0.25, 0.25, 0.25,		/* margins filled in by gdi_open */
@@ -120,7 +117,7 @@ gx_device_printer far_data gs_gdi_device =
         gdi_print_page);
 
 gx_device_printer far_data gs_samsunggdi_device =
-  prn_device(prn_gdi_procs, "samsunggdi",
+  prn_device(gdi_initialize, "samsunggdi",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, /* paper size (unit : 10/72 inch size) */
         X_DPI2, Y_DPI2,
         0.20, 0.25, 0.25, 0.25,		/* margins filled in by gdi_open */

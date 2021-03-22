@@ -145,12 +145,9 @@ pattern_accum_initialize(gx_device *dev)
 }
 
 static const gx_device_pattern_accum gs_pattern_accum_device =
-{std_device_std_body_type_open(gx_device_pattern_accum, 0,
+{std_device_std_body_type_open(gx_device_pattern_accum, pattern_accum_initialize,
                           "pattern accumulator", &st_device_pattern_accum,
-                          0, 0, 72, 72),
- devprocs_initialize(pattern_accum_initialize),
- 0,                             /* target */
- 0, 0, 0, 0                     /* bitmap_memory, bits, mask, instance */
+                          0, 0, 72, 72)
 };
 
 extern dev_proc_open_device(clist_open);

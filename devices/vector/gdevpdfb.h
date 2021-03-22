@@ -27,13 +27,14 @@
 #ifdef PDF_DEVICE_NAME
 
 const gx_device_pdf PDF_DEVICE_IDENT =
-{std_device_dci_type_body(gx_device_pdf, 0, PDF_DEVICE_NAME,
+{std_device_dci_type_body(gx_device_pdf, pdfwrite_initialize,
+                          PDF_DEVICE_NAME,
                           &st_device_pdfwrite,
                           DEFAULT_WIDTH_10THS * X_DPI / 10,
                           DEFAULT_HEIGHT_10THS * Y_DPI / 10,
                           X_DPI, Y_DPI,
                           3, 24, 255, 255, 256, 256),
- devprocs_initialize(pdfwrite_initialize),
+ { 0 },
  psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
  0,                     /* pdf_font_dir */
  PDF_FOR_OPDFREAD,		/* is_ps2write */

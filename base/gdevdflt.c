@@ -653,7 +653,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, create_compositor, gx_default_create_compositor);
     fill_dev_proc(dev, get_hardware_params, gx_default_get_hardware_params);
     fill_dev_proc(dev, text_begin, gx_default_text_begin);
-    fill_dev_proc(dev, initialize, gx_default_initialize);
 
     set_dev_proc(dev, encode_color, get_encode_color(dev));
     if (dev->color_info.num_components == 3)
@@ -1255,13 +1254,13 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
 {
     gx_device prototype = *pprototype;
 
-    /* In the new "don't static initialize device procs" world, we expect
-     * the prototype to be mostly empty. We need to call the 'initialize'
-     * function to properly populate the procs array. We can't write
-     * to the const prototype pointer we are passed in, so copy it to a
-     * local block, and initialize that instead, */
-    if (dev_proc(&prototype, initialize) != NULL) {
-        int code = dev_proc(&prototype, initialize)(&prototype);
+    /* In the new (as of 2021) world, the prototype does not contain
+     * device procs. We need to call the 'initialize' function to
+     * properly populate the procs array. We can't write to the const
+     * prototype pointer we are passed in, so copy it to a local block,
+     * and initialize that instead, */
+    if (prototype.initialize != NULL) {
+        int code = prototype.initialize(&prototype);
 
         if (code < 0)
             return code;
@@ -1269,6 +1268,9 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
         /* Fill in missing entries with the global defaults */
         gx_device_fill_in_procs(&prototype);
     }
+
+    if (dest->initialize == NULL)
+       dest->initialize = prototype.initialize;
 
     set_dev_proc(dest, open_device, dev_proc(&prototype, open_device));
     set_dev_proc(dest, get_initial_matrix, dev_proc(&prototype, get_initial_matrix));
@@ -1312,7 +1314,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, create_compositor, dev_proc(&prototype, create_compositor));
     set_dev_proc(dest, get_hardware_params, dev_proc(&prototype, get_hardware_params));
     set_dev_proc(dest, text_begin, dev_proc(&prototype, text_begin));
-    set_dev_proc(dest, initialize, dev_proc(&prototype, initialize));
     set_dev_proc(dest, discard_transparency_layer, dev_proc(&prototype, discard_transparency_layer));
     set_dev_proc(dest, get_color_mapping_procs, dev_proc(&prototype, get_color_mapping_procs));
     set_dev_proc(dest, get_color_comp_index, dev_proc(&prototype, get_color_comp_index));

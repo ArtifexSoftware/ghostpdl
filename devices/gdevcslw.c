@@ -29,15 +29,17 @@ typedef ulong word;
 
 static dev_proc_print_page(coslw_print_page);
 
+/* The print_page proc is compatible with allowing bg printing */
 const gx_device_printer gs_coslw2p_device =
-prn_device(prn_bg_procs, "coslw2p",	/* The print_page proc is compatible with allowing bg printing */
+prn_device(gdev_prn_initialize_mono_bg, "coslw2p",
            200, 400,    /* 2 inches wide */
            128, 128,    /* 5 dots per mm */
            0, 0, 0, 0,
            1, coslw_print_page);
 
+/* The print_page proc is compatible with allowing bg printing */
 const gx_device_printer gs_coslwxl_device =
-prn_device(prn_bg_procs, "coslwxl",	/* The print_page proc is compatible with allowing bg printing */
+prn_device(gdev_prn_initialize_mono_bg, "coslwxl",
            200, 400,    /* 2 inches wide */
            204, 204,    /* 8 dots per mm */
            0, 0, 0, 0,

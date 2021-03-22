@@ -92,13 +92,10 @@ lj3100sw_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs prn_lj3100sw_procs =
-    devprocs_initialize(lj3100sw_initialize);
-
 /* workaround to emulate the missing prn_device_margins_copies macro */
 #define gx_default_print_page_copies lj3100sw_print_page_copies
 gx_device_printer far_data gs_lj3100sw_device =
-    prn_device_margins/*_copies*/(prn_lj3100sw_procs, "lj3100sw",
+    prn_device_margins/*_copies*/(lj3100sw_initialize, "lj3100sw",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
              XCORRECTION, YCORRECTION,

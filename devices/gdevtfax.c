@@ -73,12 +73,9 @@ tfax_initialize(gx_device *dev)
 }
 
 
-static const gx_device_procs gdev_tfax_std_procs =
-    devprocs_initialize(tfax_initialize);
-
 #define TFAX_DEVICE(dname, print_page, compr)\
 {\
-    FAX_DEVICE_BODY(gx_device_tfax, gdev_tfax_std_procs, dname, print_page),\
+    FAX_DEVICE_BODY(gx_device_tfax, tfax_initialize, dname, print_page),\
     TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,\
     ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,\
     false,                      /* default to not using bigtiff */\
@@ -275,7 +272,7 @@ static dev_proc_print_page(tifflzw_print_page);
 static dev_proc_print_page(tiffpack_print_page);
 
 const gx_device_tfax gs_tifflzw_device = {
-    prn_device_std_body(gx_device_tfax, gdev_tfax_std_procs, "tifflzw",
+    prn_device_std_body(gx_device_tfax, tfax_initialize, "tifflzw",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         X_DPI, Y_DPI,
                         0, 0, 0, 0, /* margins */
@@ -291,7 +288,7 @@ const gx_device_tfax gs_tifflzw_device = {
 };
 
 const gx_device_tfax gs_tiffpack_device = {
-    prn_device_std_body(gx_device_tfax, gdev_tfax_std_procs, "tiffpack",
+    prn_device_std_body(gx_device_tfax, tfax_initialize, "tiffpack",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         X_DPI, Y_DPI,
                         0, 0, 0, 0, /* margins */

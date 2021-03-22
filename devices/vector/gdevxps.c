@@ -198,8 +198,8 @@ gs_public_st_suffix_add1_final(st_device_xps, gx_device_xps,
     "gx_device_xps", device_xps_enum_ptrs, device_xps_reloc_ptrs,
     gx_device_finalize, st_device_vector, xps_pie);
 
-#define xps_device_body(dname, depth)\
-  std_device_dci_type_body(gx_device_xps, 0, dname, &st_device_xps, \
+#define xps_device_body(dname, depth, init)\
+  std_device_dci_type_body(gx_device_xps, init, dname, &st_device_xps, \
                            DEFAULT_WIDTH_10THS * X_DPI / 10, \
                            DEFAULT_HEIGHT_10THS * Y_DPI / 10, \
                            X_DPI, Y_DPI, \
@@ -218,8 +218,7 @@ static dev_proc_initialize(xps_initialize);
 static dev_proc_begin_image(xps_begin_image);
 
 const gx_device_xps gs_xpswrite_device = {
-    xps_device_body("xpswrite", 24),
-    devprocs_initialize(xps_initialize)
+    xps_device_body("xpswrite", 24, xps_initialize),
 };
 
 static int

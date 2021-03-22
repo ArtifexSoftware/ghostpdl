@@ -354,17 +354,6 @@ plibk_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs plibm_procs =
-    devprocs_initialize(plibm_initialize);
-static const gx_device_procs plibg_procs =
-    devprocs_initialize(plibg_initialize);
-static const gx_device_procs plib_procs =
-    devprocs_initialize(plib_initialize);
-static const gx_device_procs plibc_procs =
-    devprocs_initialize(plibc_initialize);
-static const gx_device_procs plibk_procs =
-    devprocs_initialize(plibk_initialize);
-
 /* Macro for generating device descriptors. */
 /* Ideally we'd use something like:
  * #define plib_prn_device(procs, dev_name, num_comp, depth, max_gray, max_rgb, print_page) \
@@ -377,8 +366,8 @@ static const gx_device_procs plibk_procs =
  * But that doesn't let us override the band space params. So we have to do
  * it the large way.
  */
-#define plib_prn_device(procs, dev_name, num_comp, depth, max_gray, max_rgb, print_page) \
-{       std_device_full_body_type(gx_device_plib, &procs, dev_name, &st_device_printer,\
+#define plib_prn_device(init, dev_name, num_comp, depth, max_gray, max_rgb, print_page) \
+{       std_device_full_body_type(gx_device_plib, init, dev_name, &st_device_printer,\
           (int)((float)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10 + 0.5),\
           (int)((float)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10 + 0.5),\
           X_DPI, Y_DPI,\
@@ -391,15 +380,15 @@ static const gx_device_procs plibk_procs =
 
 /* The device descriptors themselves */
 const gx_device_plib gs_plib_device =
-  plib_prn_device(plib_procs, "plib", 3, 24, 255, 255, plib_print_page);
+  plib_prn_device(plib_initialize, "plib", 3, 24, 255, 255, plib_print_page);
 const gx_device_plib gs_plibg_device =
-  plib_prn_device(plibg_procs, "plibg", 1, 8, 255, 0, plibg_print_page);
+  plib_prn_device(plibg_initialize, "plibg", 1, 8, 255, 0, plibg_print_page);
 const gx_device_plib gs_plibm_device =
-  plib_prn_device(plibm_procs, "plibm", 1, 1, 1, 0, plibm_print_page);
+  plib_prn_device(plibm_initialize, "plibm", 1, 1, 1, 0, plibm_print_page);
 const gx_device_plib gs_plibk_device =
-  plib_prn_device(plibk_procs, "plibk", 4, 4, 1, 1, plibk_print_page);
+  plib_prn_device(plibk_initialize, "plibk", 4, 4, 1, 1, plibk_print_page);
 const gx_device_plib gs_plibc_device =
-  plib_prn_device(plibc_procs, "plibc", 4, 32, 255, 255, plibc_print_page);
+  plib_prn_device(plibc_initialize, "plibc", 4, 32, 255, 255, plibc_print_page);
 
 /* ------ Initialization ------ */
 

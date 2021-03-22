@@ -63,9 +63,6 @@ sixel_initialize(gx_device *dev)
 }
 
 
-static gx_device_procs xes_procs =
-  devprocs_initialize(sixel_initialize);
-
 #ifdef A4
 #  define BOTTOM_MARGIN 0.5
 #  define PAGE_LENGTH_PELS 3300
@@ -75,7 +72,7 @@ static gx_device_procs xes_procs =
 #endif
 
 gx_device_printer gs_xes_device =
-    prn_device(xes_procs, "xes",
+    prn_device(sixel_initialize, "xes",
                DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                300, 300,		/* x_dpi, y_dpi */
                0, BOTTOM_MARGIN, 0, 0,	/* left, bottom, right, top margin */

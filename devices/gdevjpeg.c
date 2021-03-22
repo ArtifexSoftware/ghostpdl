@@ -78,11 +78,8 @@ jpeg_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs jpeg_procs =
-    devprocs_initialize(jpeg_initialize);
-
 const gx_device_jpeg gs_jpeg_device =
-{prn_device_std_body(gx_device_jpeg, jpeg_procs, "jpeg",
+{prn_device_std_body(gx_device_jpeg, jpeg_initialize, "jpeg",
                      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                      X_DPI, Y_DPI, 0, 0, 0, 0, 24, jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */
@@ -106,14 +103,17 @@ jpeggray_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, jpeg_get_params);
     set_dev_proc(dev, put_params, jpeg_put_params);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs jpeggray_procs =
-    devprocs_initialize(jpeggray_initialize);
-
 const gx_device_jpeg gs_jpeggray_device =
-{prn_device_body(gx_device_jpeg, jpeggray_procs, "jpeggray",
+{prn_device_body(gx_device_jpeg, jpeggray_initialize, "jpeggray",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI, 0, 0, 0, 0,
                  1, 8, 255, 0, 256, 0,
@@ -141,14 +141,17 @@ jpegcmyk_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, jpeg_put_params);
     set_dev_proc(dev, map_cmyk_color, jpegcmyk_map_cmyk_color);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs jpegcmyk_procs =
-    devprocs_initialize(jpegcmyk_initialize);
-
 const gx_device_jpeg gs_jpegcmyk_device =
-{prn_device_std_body(gx_device_jpeg, jpegcmyk_procs, "jpegcmyk",
+{prn_device_std_body(gx_device_jpeg, jpegcmyk_initialize, "jpegcmyk",
                      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                      X_DPI, Y_DPI, 0, 0, 0, 0, 32, jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */

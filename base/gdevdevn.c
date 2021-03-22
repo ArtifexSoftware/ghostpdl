@@ -979,8 +979,8 @@ fixed_colorant_name DeviceCMYKComponents[] = {
         0               /* List terminator */
 };
 
-#define gx_devn_prn_device_body(procs, dname, ncomp, pol, depth, mg, mc, cn)\
-    std_device_full_body_type_extended(gx_devn_prn_device, &procs, dname,\
+#define gx_devn_prn_device_body(init, dname, ncomp, pol, depth, mg, mc, cn)\
+    std_device_full_body_type_extended(gx_devn_prn_device, init, dname,\
           &st_gx_devn_prn_device,\
           (int)((long)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10),\
           (int)((long)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10),\
@@ -1001,12 +1001,9 @@ fixed_colorant_name DeviceCMYKComponents[] = {
 /*
  * Example device with CMYK and spot color support
  */
-static const gx_device_procs spot_cmyk_procs =
-    devprocs_initialize(devicen_initialize);
-
 const gx_devn_prn_device gs_spotcmyk_device =
 {
-    gx_devn_prn_device_body(spot_cmyk_procs, "spotcmyk", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 4, 1, 1, "DeviceCMYK"),
+    gx_devn_prn_device_body(devicen_initialize, "spotcmyk", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 4, 1, 1, "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 1,                        /* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,     /* Names of color model colorants */
@@ -1022,12 +1019,9 @@ const gx_devn_prn_device gs_spotcmyk_device =
 /*
  * Example DeviceN color device
  */
-static const gx_device_procs devicen_procs =
-    devprocs_initialize(devicen_initialize);
-
 const gx_devn_prn_device gs_devicen_device =
 {
-    gx_devn_prn_device_body(devicen_procs, "devicen", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
+    gx_devn_prn_device_body(devicen_initialize, "devicen", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,     /* Names of color model colorants */

@@ -163,12 +163,9 @@ spot_rgb_initialize(gx_device *dev)
 /*
  * Example device with RGB and spot color support
  */
-static const gx_device_procs spot_rgb_procs =
-    devprocs_initialize(spot_rgb_initialize);
-
 const xcf_device gs_xcf_device =
 {
-    prn_device_body_extended(xcf_device, spot_rgb_procs, "xcf",
+    prn_device_body_extended(xcf_device, spot_rgb_initialize, "xcf",
          DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
          X_DPI, Y_DPI,		/* X and Y hardware resolution */
          0, 0, 0, 0,		/* margins */
@@ -196,12 +193,9 @@ spot_cmyk_initialize(gx_device *dev)
     return xcf_initialize(dev);
 }
 
-static const gx_device_procs spot_cmyk_procs =
-    devprocs_initialize(spot_cmyk_initialize);
-
 const xcf_device gs_xcfcmyk_device =
 {
-    prn_device_body_extended(xcf_device, spot_cmyk_procs, "xcfcmyk",
+    prn_device_body_extended(xcf_device, spot_cmyk_initialize, "xcfcmyk",
          DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
          X_DPI, Y_DPI,		/* X and Y hardware resolution */
          0, 0, 0, 0,		/* margins */

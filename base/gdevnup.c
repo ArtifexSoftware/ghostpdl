@@ -110,11 +110,11 @@ gx_device_nup gs_nup_device =
     /*
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
-    std_device_dci_type_body(gx_device_nup, 0, "N-up", &st_nup_device,
+    std_device_dci_type_body(gx_device_nup, nup_initialize,
+                        "N-up", &st_nup_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
-                        1, 8, 255, 0, 256, 1),
-    devprocs_initialize(nup_initialize)
+                        1, 8, 255, 0, 256, 1)
 };
 
 #undef MAX_COORD

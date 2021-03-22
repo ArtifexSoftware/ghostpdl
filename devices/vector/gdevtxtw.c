@@ -168,12 +168,12 @@ txtwrite_initialize(gx_device *dev)
 const gx_device_txtwrite_t gs_txtwrite_device =
 {
     /* Define the device as 8-bit gray scale to avoid computing halftones. */
-    std_device_dci_body(gx_device_txtwrite_t, 0, "txtwrite",
+    std_device_dci_body(gx_device_txtwrite_t, txtwrite_initialize, "txtwrite",
                         DEFAULT_WIDTH_10THS * X_DPI / 10,
                         DEFAULT_HEIGHT_10THS * Y_DPI / 10,
                         X_DPI, Y_DPI,
                         1, 8, 255, 0, 256, 1),
-    devprocs_initialize(txtwrite_initialize),
+    { 0 }, /* proc table */
     { 0 },			/* Page Data */
     { 0 },			/* Output Filename */
     0,				/* Output FILE * */

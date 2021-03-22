@@ -88,11 +88,11 @@ gx_device_mplt gs_pcl_mono_palette_device =
     /*
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
-    std_device_dci_type_body(gx_device_mplt, 0, "PCL_Mono_Palette", &st_pcl_mono_palette_device,
+    std_device_dci_type_body(gx_device_mplt, pcl_mono_palette_initialize,
+                        "PCL_Mono_Palette", &st_pcl_mono_palette_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
-                        1, 8, 255, 0, 256, 1),
-    devprocs_initialize(pcl_mono_palette_initialize)
+                        1, 8, 255, 0, 256, 1)
 };
 
 #undef MAX_COORD

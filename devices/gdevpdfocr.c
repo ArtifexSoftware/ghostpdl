@@ -156,15 +156,18 @@ pdfocr8_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, pdfocr_get_params_downscale);
     set_dev_proc(dev, put_params, pdfocr_put_params_downscale);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs pdfocr8_procs =
-    devprocs_initialize(pdfocr8_initialize);
-
 const gx_device_pdf_image gs_pdfocr8_device = {
     prn_device_body(gx_device_pdf_image,
-                    pdfocr8_procs,
+                    pdfocr8_initialize,
                     "pdfocr8",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -184,7 +187,7 @@ const gx_device_pdf_image gs_pdfocr8_device = {
 static int
 pdfocr24_initialize(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
+    int code = gdev_prn_initialize_rgb(dev);
 
     if (code < 0)
         return code;
@@ -195,15 +198,18 @@ pdfocr24_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, pdfocr_get_params_downscale);
     set_dev_proc(dev, put_params, pdfocr_put_params_downscale);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs pdfocr24_procs =
-    devprocs_initialize(pdfocr24_initialize);
-
 const gx_device_pdf_image gs_pdfocr24_device = {
     prn_device_body(gx_device_pdf_image,
-                    pdfocr24_procs,
+                    pdfocr24_initialize,
                     "pdfocr24",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -237,12 +243,9 @@ pdfocr32_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs pdfocr32_procs =
-    devprocs_initialize(pdfocr32_initialize);
-
 const gx_device_pdf_image gs_pdfocr32_device = {
     prn_device_body(gx_device_pdf_image,
-                    pdfocr32_procs,
+                    pdfocr32_initialize,
                     "pdfocr32",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */

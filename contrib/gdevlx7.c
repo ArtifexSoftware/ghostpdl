@@ -121,9 +121,6 @@ lxm7000m_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs lxm7000m_procs =
-    devprocs_initialize(lxm7000m_initialize);
-
 /* The device descriptors */
 
 /* define a subclass with useful state in it. */
@@ -153,7 +150,7 @@ typedef struct lxm_device_s { /* a sub-class of gx_device_printer */
 #define LXR_1200 2
 
 lxm_device far_data gs_lex7000_device = {
-    prn_device_std_body(lxm_device, lxm7000m_procs, "lex7000",
+    prn_device_std_body(lxm_device, lxm7000m_initialize, "lex7000",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         /* total width & height in 10x " - A4 or letter compiled in.
          * may be overriden by -sPAPERSIZE=a4 of -sPAPERSIZE=letter
@@ -176,7 +173,7 @@ lxm_device far_data gs_lex7000_device = {
 };
 
 lxm_device far_data gs_lex5700_device = {
-    prn_device_std_body(lxm_device, lxm7000m_procs, "lex5700",
+    prn_device_std_body(lxm_device, lxm7000m_initialize, "lex5700",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         /* total width & height in 10x " - A4 or letter compiled in.
          * may be overriden by -sPAPERSIZE=a4 of -sPAPERSIZE=letter
@@ -199,7 +196,7 @@ lxm_device far_data gs_lex5700_device = {
 };
 
 lxm_device far_data gs_lex3200_device = {
-    prn_device_std_body(lxm_device, lxm7000m_procs, "lex3200",
+    prn_device_std_body(lxm_device, lxm7000m_initialize, "lex3200",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         /* total width & height in 10x " - A4 or letter compiled in.
          * may be overriden by -sPAPERSIZE=a4 of -sPAPERSIZE=letter
@@ -222,7 +219,7 @@ lxm_device far_data gs_lex3200_device = {
 };
 
 lxm_device far_data gs_lex2050_device = {
-    prn_device_std_body(lxm_device, lxm7000m_procs, "lex2050",
+    prn_device_std_body(lxm_device, lxm7000m_initialize, "lex2050",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         /* total width & height in 10x " - A4 or letter compiled in.
          * may be overriden by -sPAPERSIZE=a4 of -sPAPERSIZE=letter

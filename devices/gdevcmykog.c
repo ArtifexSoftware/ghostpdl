@@ -772,12 +772,9 @@ fixed_colorant_name DevCMYKOGComponents[] = {
 /*
  * PSDCMYKOG 8bits
  */
-static const gx_device_procs cmykog_procs =
-    devprocs_initialize(psdcmykog_initialize);
-
 const gx_device_cmykog gs_psdcmykog_device =
 {
-  CMYKOG_DEVICE(cmykog_procs, "psdcmykog", 6, GX_CINFO_POLARITY_SUBTRACTIVE, 48, 255, 255, "DeviceCMYK", 600, 600),
+  CMYKOG_DEVICE(psdcmykog_initialize, "psdcmykog", 6, GX_CINFO_POLARITY_SUBTRACTIVE, 48, 255, 255, "DeviceCMYK", 600, 600),
   /* device specific parameters */
   { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
     DevCMYKOGComponents,      /* Names of color model colorants */

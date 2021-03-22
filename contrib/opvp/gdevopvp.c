@@ -323,6 +323,12 @@ opvp_initialize(gx_device *dev)
     set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
     set_dev_proc(dev, begin_image, opvp_begin_image);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
@@ -358,7 +364,7 @@ const   gx_device_opvp          gs_opvp_device =
 {
     std_device_dci_type_body(
         gx_device_opvp,
-        0,
+        opvp_initialize,
         "opvp",
         &st_device_opvp,
         DEFAULT_WIDTH_10THS_A4  * X_DPI / 10,
@@ -371,8 +377,7 @@ const   gx_device_opvp          gs_opvp_device =
         255,
         256,
         256
-    ),
-    devprocs_initialize(opvp_initialize)
+    )
 };
 
 /* for inkjet */
@@ -392,17 +397,20 @@ oprp_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, oprp_get_params);
     set_dev_proc(dev, put_params, oprp_put_params);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
-
-static  gx_device_procs prn_oprp_procs =
-    devprocs_initialize(oprp_initialize);
 
 const gx_device_oprp gs_oprp_device =
 {
     prn_device_std_margins_body(
         gx_device_oprp,
-        prn_oprp_procs,
+        oprp_initialize,
         "oprp",
         DEFAULT_WIDTH_10THS_A4,
         DEFAULT_HEIGHT_10THS_A4,

@@ -50,11 +50,8 @@ rpdl_initialize(gx_device *dev)
     return code;
 }
 
-static gx_device_procs rpdl_prn_procs =
-    devprocs_initialize(rpdl_initialize);
-
 gx_device_lprn far_data gs_rpdl_device =
-lprn_device(gx_device_lprn, rpdl_prn_procs, "rpdl",
+lprn_device(gx_device_lprn, rpdl_initialize, "rpdl",
             DPI, DPI, 0.0, 0.0, 0.0, 0.0, 1,
             rpdl_print_page_copies, rpdl_image_out);
 

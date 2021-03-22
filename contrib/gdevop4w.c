@@ -108,11 +108,8 @@ oki4w_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs prn_hp_procs =
-    devprocs_initialize(oki4w_initialize);
-
 gx_device_printer far_data gs_oki4w_device =
-  prn_device(prn_hp_procs, "oki4w",
+  prn_device(oki4w_initialize, "oki4w",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
         0, 0, 0, 0,		/* margins filled in by oki4w_open */

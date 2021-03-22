@@ -42,12 +42,9 @@ fax_initialize(gx_device *dev)
     return 0;
 }
 
-const gx_device_procs gdev_fax_std_procs =
-    devprocs_initialize(fax_initialize);
-
 #define FAX_DEVICE(dname, print_page)\
 {\
-    FAX_DEVICE_BODY(gx_device_fax, gdev_fax_std_procs, dname, print_page)\
+    FAX_DEVICE_BODY(gx_device_fax, fax_initialize, dname, print_page)\
 }
 
 const gx_device_fax gs_faxg3_device =

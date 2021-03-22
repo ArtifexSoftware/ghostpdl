@@ -43,11 +43,8 @@ sonyfb_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs sonyfb_procs =
-    devprocs_initialize(sonyfb_initialize);
-
 const gx_device_printer far_data gs_sonyfb_device =
-  prn_device(sonyfb_procs, "sonyfb",
+  prn_device(sonyfb_initialize, "sonyfb",
         102.4,				/* width_10ths */
         103.2,				/* height_10ths */
         100,				/* x_dpi */

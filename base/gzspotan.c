@@ -216,9 +216,8 @@ san_initialize(gx_device *dev)
     return 0;
 }
 static const gx_device_spot_analyzer gx_spot_analyzer_device =
-{std_device_std_body(gx_device_spot_analyzer, 0, "spot analyzer",
-                     0, 0, 1, 1),
- devprocs_initialize(san_initialize)
+{std_device_std_body(gx_device_spot_analyzer, san_initialize, "spot analyzer",
+                     0, 0, 1, 1)
 };
 
 int

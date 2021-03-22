@@ -145,7 +145,7 @@ gs_public_st_suffix_add0_final(st_device_lips4v, gx_device_lips4v,
         std_device_part3_()
 
 #define lips4v_device_body\
-  lips_device_full_body(gx_device_lips4v, 0, "lips4v",\
+  lips_device_full_body(gx_device_lips4v, lips4v_initialize, "lips4v",\
                         &st_device_lips4v,\
                         DEFAULT_WIDTH_10THS * X_DPI / 10,\
                         DEFAULT_HEIGHT_10THS * Y_DPI / 10,\
@@ -184,7 +184,7 @@ lips4v_initialize(gx_device *dev)
 
 gx_device_lips4v far_data gs_lips4v_device = {
     lips4v_device_body,
-    devprocs_initialize(lips4v_initialize),
+    { 0 },
     vector_initial_values,
     LIPS_CASSETFEED_DEFAULT,
     LIPS_USERNAME_DEFAULT,

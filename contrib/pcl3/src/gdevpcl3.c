@@ -114,10 +114,6 @@ eprn_initialize(gx_device *dev)
     return 0;
 };
 
-/* Device procedure table */
-static gx_device_procs pcl3_procs =
-    devprocs_initialize(eprn_initialize);
-
 /* prn procedure implementations */
 #if !defined(GS_REVISION) || GS_REVISION >= 550
 static prn_dev_proc_print_page(pcl3_print_page);
@@ -149,7 +145,7 @@ static void pcl3_flag_mismatch_reporter(
   pcl3_Device gs_##dname##_device = {                           \
     eprn_device_initdata(                                       \
       pcl3_Device,      /* device type */                       \
-      pcl3_procs,       /* static device procedure table */     \
+      eprn_initialize,  /* initialize pointer */                \
       #dname,           /* device name */                       \
       300.0, 300.0,     /* horizontal and vertical resolution */\
       pcl3_print_page,  /* print page routine */                \

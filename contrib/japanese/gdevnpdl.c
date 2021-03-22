@@ -134,11 +134,8 @@ npdl_initialize(gx_device *dev)
     return code;
 }
 
-static gx_device_procs npdl_prn_procs =
-    devprocs_initialize(npdl_initialize);
-
 gx_device_lprn far_data gs_npdl_device =
-lprn_duplex_device(gx_device_lprn, npdl_prn_procs, "npdl",
+lprn_duplex_device(gx_device_lprn, npdl_initialize, "npdl",
             X_DPI, Y_DPI,	/* default resolution */
             0.0, 0.0, 0.0, 0.0,	/* margins */
             1, npdl_print_page_copies, npdl_image_out);

@@ -572,13 +572,9 @@ x_cmyk_initialize(gx_device *dev)
     return 0;
 }
 
-/* The device descriptor */
-static const gx_device_procs x_cmyk_procs =
-    devprocs_initialize(x_cmyk_initialize);
-
 /* The instances are public. */
 const gx_device_X_wrapper gs_x11cmyk_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk",
+    std_device_dci_type_body(gx_device_X_wrapper, x_cmyk_initialize, "x11cmyk",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -586,7 +582,7 @@ const gx_device_X_wrapper gs_x11cmyk_device = {
     X_WRAPPER_DATA(x_cmyk_alt_map_color)
 };
 const gx_device_X_wrapper gs_x11cmyk2_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk2",
+    std_device_dci_type_body(gx_device_X_wrapper, x_cmyk_initialize, "x11cmyk2",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -594,7 +590,7 @@ const gx_device_X_wrapper gs_x11cmyk2_device = {
     X_WRAPPER_DATA(x_cmyk_alt_map_color)
 };
 const gx_device_X_wrapper gs_x11cmyk4_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk4",
+    std_device_dci_type_body(gx_device_X_wrapper, x_cmyk_initialize, "x11cmyk4",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -602,7 +598,7 @@ const gx_device_X_wrapper gs_x11cmyk4_device = {
     X_WRAPPER_DATA(x_cmyk_alt_map_color)
 };
 const gx_device_X_wrapper gs_x11cmyk8_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk8",
+    std_device_dci_type_body(gx_device_X_wrapper, x_cmyk_initialize, "x11cmyk8",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -705,12 +701,9 @@ x_mono_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs x_mono_procs =
-    devprocs_initialize(x_mono_initialize);
-
 /* The instance is public. */
 const gx_device_X_wrapper gs_x11mono_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, &x_mono_procs, "x11mono",
+    std_device_dci_type_body(gx_device_X_wrapper, x_mono_initialize, "x11mono",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -757,12 +750,9 @@ x_gray_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs x_gray_procs =
-    devprocs_initialize(x_gray_initialize);
-
 /* The instances are public. */
 const gx_device_X_wrapper gs_x11gray2_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, &x_gray_procs, "x11gray2",
+    std_device_dci_type_body(gx_device_X_wrapper, x_gray_initialize, "x11gray2",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -771,7 +761,7 @@ const gx_device_X_wrapper gs_x11gray2_device = {
 };
 
 const gx_device_X_wrapper gs_x11gray4_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, &x_gray_procs, "x11gray4",
+    std_device_dci_type_body(gx_device_X_wrapper, x_gray_initialize, "x11gray4",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -848,11 +838,8 @@ x_rg16x_initialize(gx_device *dev)
     return rgbx_initialize(dev);
 }
 
-static const gx_device_procs x_rg16x_procs =
-    devprocs_initialize(x_rg16x_initialize);
-
 const gx_device_X_wrapper gs_x11rg16x_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, &x_rg16x_procs, "x11rg16x",
+    std_device_dci_type_body(gx_device_X_wrapper, x_rg16x_initialize, "x11rg16x",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -868,11 +855,8 @@ x_rg32x_initialize(gx_device *dev)
     return rgbx_initialize(dev);
 }
 
-static const gx_device_procs x_rg32x_procs =
-    devprocs_initialize(x_rg32x_initialize);
-
 const gx_device_X_wrapper gs_x11rg32x_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, &x_rg32x_procs, "x11rg32x",
+    std_device_dci_type_body(gx_device_X_wrapper, x_rg32x_initialize, "x11rg32x",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */

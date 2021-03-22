@@ -56,11 +56,8 @@ dfax_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs dfax_procs =
-    devprocs_initialize(dfax_initialize);
-
 gx_device_dfax far_data gs_dfaxlow_device =
-{   prn_device_std_body(gx_device_dfax, dfax_procs, "dfaxlow",
+{   prn_device_std_body(gx_device_dfax, dfax_initialize, "dfaxlow",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI/2,
         0,0,0,0,			/* margins */
@@ -68,7 +65,7 @@ gx_device_dfax far_data gs_dfaxlow_device =
 };
 
 gx_device_dfax far_data gs_dfaxhigh_device =
-{   prn_device_std_body(gx_device_dfax, dfax_procs, "dfaxhigh",
+{   prn_device_std_body(gx_device_dfax, dfax_initialize, "dfaxhigh",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
         0,0,0,0,			/* margins */

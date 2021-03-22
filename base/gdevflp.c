@@ -134,11 +134,11 @@ public_st_flp_device();
 const
 gx_device_flp gs_flp_device =
 {
-    std_device_dci_type_body(gx_device_flp, 0, "first_lastpage", &st_flp_device,
+    std_device_dci_type_body(gx_device_flp, flp_initialize,
+                        "first_lastpage", &st_flp_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
-                        1, 8, 255, 0, 256, 1),
-    devprocs_initialize(flp_initialize)
+                        1, 8, 255, 0, 256, 1)
 };
 
 #undef MAX_COORD

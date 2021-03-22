@@ -56,11 +56,8 @@ ljet5_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs ljet5_procs =
-    devprocs_initialize(ljet5_initialize);
-
 const gx_device_printer gs_lj5mono_device =
-prn_device(ljet5_procs, "lj5mono",
+prn_device(ljet5_initialize, "lj5mono",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,
@@ -78,14 +75,17 @@ lj5gray_initialize(gx_device *dev)
     set_dev_proc(dev, open_device, ljet5_open);
     set_dev_proc(dev, close_device, ljet5_close);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs lj5gray_procs =
-    devprocs_initialize(lj5gray_initialize);
-
 const gx_device_printer gs_lj5gray_device = {
-    prn_device_body(gx_device_printer, lj5gray_procs, "lj5gray",
+    prn_device_body(gx_device_printer, lj5gray_initialize, "lj5gray",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0,

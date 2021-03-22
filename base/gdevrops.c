@@ -88,9 +88,10 @@ rop_texture_initialize(gx_device *dev)
     return 0;
 }
 static const gx_device_rop_texture gs_rop_texture_device = {
-    std_device_std_body(gx_device_rop_texture, 0, "rop source",
+    std_device_std_body(gx_device_rop_texture, rop_texture_initialize,
+                        "rop source",
                         0, 0, 1, 1),
-    devprocs_initialize(rop_texture_initialize),
+    { 0 },
     0,				/* target */
     lop_default			/* log_op */
     /* */				/* texture */

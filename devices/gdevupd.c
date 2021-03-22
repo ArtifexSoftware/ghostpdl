@@ -209,12 +209,6 @@ static int             upd_procs_map( upd_device *udev);
 /* Prototype of the Device-Structure (the only thing exported!)        */
 /* ------------------------------------------------------------------- */
 
-/**
-"uniprint" needs a procedure-table of its own, since it provides several
-optional procedures. Simpler-Drivers (e.g. non-color-drivers) may use
-prn_std_procs instead of defining their own procedure-table.
-*/
-
 #define upd_set_dev_proc(dev, p, proc) \
    ((dev)->std_procs.p = (dev)->orig_procs.p = (proc))
 
@@ -232,9 +226,6 @@ upd_initialize(gx_device *dev)
 
     return 0;
 }
-
-static gx_device_procs upd_procs =
-    devprocs_initialize(upd_initialize);
 
 /**
 The prototype-instance of the device-structure _must_ have the name
@@ -255,7 +246,7 @@ and the reader might directly skip to the section titled
 */
 
 upd_device far_data gs_uniprint_device = { /** */
-   prn_device_body(upd_device, upd_procs,  /** The Type and Procedures */
+   prn_device_body(upd_device, upd_initialize, /** The Type and Init Proc */
       "uniprint",                          /** External name of the Device */
       DEFAULT_WIDTH_10THS,                 /** X-Size (1/10") */
       DEFAULT_HEIGHT_10THS,                /** Y-Size (1/10") */

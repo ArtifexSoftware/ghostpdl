@@ -526,6 +526,12 @@ cdj970_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, cdj970_put_params);
     set_dev_proc(dev, map_cmyk_color, gdev_cmyk_map_cmyk_color);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
@@ -542,11 +548,8 @@ cdj970_print_non_blank_lines(gx_device_printer * pdev,
 static void
 cdj970_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
-static const gx_device_procs cdj970_procs =
-    devprocs_initialize(cdj970_initialize);
-
 const gx_device_cdj970 gs_cdj970_device =
-cdj_970_device(cdj970_procs, "cdj970", 600, 600, 32, cdj970_print_page, 0,
+cdj_970_device(cdj970_initialize, "cdj970", 600, 600, 32, cdj970_print_page, 0,
                NORMAL, PLAIN_PAPER, NONE, 4, DJ970C, 2,
                1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
                cdj970_start_raster_mode, cdj970_print_non_blank_lines,

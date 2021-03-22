@@ -34,15 +34,18 @@ t4693d_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, gdev_t4693d_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gdev_t4693d_map_color_rgb);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static gx_device_procs t4693d_procs =
-        devprocs_initialize(t4693d_initialize);
-
 #define t4693d_prn_device(name,depth,max_rgb) {prn_device_body( \
-        gx_device_printer,t4693d_procs,name, \
+        gx_device_printer,t4693d_initialize,name, \
         WIDTH_10THS, HEIGHT_10THS, X_DPI, Y_DPI, 0.25, 0.25, 0.25, 0.25, \
         3,depth,max_rgb,max_rgb,max_rgb + 1,max_rgb + 1, \
         t4693d_print_page)}

@@ -46,11 +46,8 @@ ml600_initialize(gx_device *dev)
     return code;
 }
 
-static gx_device_procs ml600_procs =
-    devprocs_initialize(ml600_initialize);
-
 gx_device_printer gs_ml600_device =
-  prn_device(ml600_procs, "ml600",
+  prn_device(ml600_initialize, "ml600",
         83,				/* width_10ths, 8.3" */
         117,				/* height_10ths, 11.7" */
         600, 600,

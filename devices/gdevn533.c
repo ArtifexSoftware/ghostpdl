@@ -61,11 +61,8 @@ nwp533_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs nwp533_procs =
-    devprocs_initialize(mwp533_initialize);
-
 const gx_device_printer far_data gs_nwp533_device =
-  prn_device(nwp533_procs, "nwp533",
+  prn_device(mwp533_initialize, "nwp533",
         PAPER_XDOTS * 10.0 / DPI,	/* width_10ths */
         PAPER_YDOTS * 10.0 / DPI,	/* height_10ths */
         DPI,				/* x_dpi */

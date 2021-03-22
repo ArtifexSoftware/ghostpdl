@@ -1026,9 +1026,6 @@ photoex_initialize(gx_device *dev)
     return 0;
 }
 
-static	const gx_device_procs photoex_device_procs =
-    devprocs_initialize(photoex_initialize);
-
 /*
 *	Device descriptor structure - this is what GhostScript looks
 *	for and uses to identify our device.
@@ -1042,7 +1039,7 @@ gx_photoex_device far_data gs_photoex_device = {
         prn_device_body(
 
                 gx_photoex_device,			/* Device struct type					*/
-                photoex_device_procs, 		/* Procedure table						*/
+                photoex_initialize, 		/* Initialize proc						*/
                 "photoex",					/* Name of the device					*/
                 DEFAULT_WIDTH_10THS,		/* Default width						*/
                 DEFAULT_HEIGHT_10THS,		/* Default height						*/

@@ -144,12 +144,9 @@ spot_cmyk_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs spot_cmyk_procs =
-    devprocs_initialize(spot_cmyk_initialize);
-
 const rinkj_device gs_rinkj_device =
 {
-    prn_device_body_extended(rinkj_device, spot_cmyk_procs, "rinkj",
+    prn_device_body_extended(rinkj_device, spot_cmyk_initialize, "rinkj",
          DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
          X_DPI, Y_DPI,		/* X and Y hardware resolution */
          0, 0, 0, 0,		/* margins */

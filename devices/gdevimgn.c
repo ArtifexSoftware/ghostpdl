@@ -242,14 +242,11 @@ imagen_initialize(gx_device *dev)
     return 0;
 }
 
-gx_device_procs imagen_procs =
-    devprocs_initialize(imagen_initialize);
-
 #define ppdev ((gx_device_printer *)pdev)
 
 /*-------------------------------------------*/
 const gx_device_printer far_data gs_imagen_device =
-  prn_device(/*prn_std_procs*/ imagen_procs,
+  prn_device(imagen_initialize,
         "imagen",
         WIDTH_10THS,
         HEIGHT_10THS,

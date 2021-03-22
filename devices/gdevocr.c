@@ -63,15 +63,18 @@ ocr_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, ocr_get_params);
     set_dev_proc(dev, put_params, ocr_put_params);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs ocr_procs =
-    devprocs_initialize(ocr_initialize);
-
 const gx_device_ocr gs_ocr_device =
 {
-    prn_device_body(gx_device_ocr, ocr_procs, "ocr",
+    prn_device_body(gx_device_ocr, ocr_initialize, "ocr",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0,	/* margins */
@@ -93,15 +96,18 @@ hocr_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, ocr_get_params);
     set_dev_proc(dev, put_params, ocr_put_params);
 
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs hocr_procs =
-    devprocs_initialize(hocr_initialize);
-
 const gx_device_ocr gs_hocr_device =
 {
-    prn_device_body(gx_device_ocr, hocr_procs, "hocr",
+    prn_device_body(gx_device_ocr, hocr_initialize, "hocr",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0,	/* margins */

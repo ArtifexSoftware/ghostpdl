@@ -80,8 +80,8 @@ typedef struct gx_device_ccr_s gx_device_ccr;
 #define DEFAULT_HEIGHT_10THS_A3 165
 
 /* Macro for generating ccr device descriptors. */
-#define ccr_prn_device(procs, dev_name, margin, num_comp, depth, max_gray, max_rgb, print_page)\
-{	prn_device_body(gx_device_ccr, procs, dev_name,\
+#define ccr_prn_device(init, dev_name, margin, num_comp, depth, max_gray, max_rgb, print_page)\
+{	prn_device_body(gx_device_ccr, init, dev_name,\
           DEFAULT_WIDTH_10THS_A3, DEFAULT_HEIGHT_10THS_A3, X_DPI, Y_DPI,\
           margin, margin, margin, margin,\
           num_comp, depth, max_gray, max_rgb, max_gray + 1, max_rgb + 1,\
@@ -99,6 +99,8 @@ static dev_proc_print_page(ccr_print_page);
 static int
 ccr_initialize(gx_device *dev)
 {
+    /* Since the print_page doesn't alter the device, this device can
+     * print in the background */
     int code = gdev_prn_initialize_bg(dev);
 
     if (code < 0)
@@ -107,16 +109,18 @@ ccr_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, ccr_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, ccr_map_color_rgb);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-/* Since the print_page doesn't alter the device, this device can print in the background */
-static gx_device_procs ccr_procs =
-    devprocs_initialize(ccr_initialize);
-
 /* The device descriptors themselves */
 gx_device_ccr far_data gs_ccr_device =
-  ccr_prn_device(ccr_procs, "ccr", 0.2, 3, 8, 1, 1,
+  ccr_prn_device(ccr_initialize, "ccr", 0.2, 3, 8, 1, 1,
                  ccr_print_page);
 
 /* ------ Color mapping routines ------ */

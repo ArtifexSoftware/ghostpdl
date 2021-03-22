@@ -94,14 +94,17 @@ inferno_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, inferno_rgb2cmap);
     set_dev_proc(dev, map_color_rgb, inferno_cmap2rgb);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
-static const gx_device_procs inferno_procs =
-        devprocs_initialize(inferno_initialize);
-
 inferno_device far_data gs_inferno_device =
-{ prn_device_stype_body(inferno_device, inferno_procs, "inferno",
+{ prn_device_stype_body(inferno_device, inferno_initialize, "inferno",
         &st_inferno_device,
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,

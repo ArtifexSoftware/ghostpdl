@@ -404,22 +404,22 @@ typedef struct {
 /* The basic structure for all printers. Note the presence of the cmyk, depth
    and correct fields even if soem are not used by all printers. */
 
-#define prn_colour_device_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page, cmyk, correct)\
-    prn_device_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page), cmyk, depth /* default */, correct
+#define prn_colour_device_body(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page, cmyk, correct)\
+    prn_device_body(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page), cmyk, depth /* default */, correct
 
 /* Note: the computation of color_info values here must match */
 /* the computation in the cdj_set_bpp procedure below. */
 
-#define prn_hp_colour_device(dtype, procs, dev_name, x_dpi, y_dpi, bpp, print_page, correct)\
-    prn_colour_device_body(dtype, procs, dev_name,\
+#define prn_hp_colour_device(dtype, init, dev_name, x_dpi, y_dpi, bpp, print_page, correct)\
+    prn_colour_device_body(dtype, init, dev_name,\
     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, x_dpi, y_dpi, 0, 0, 0, 0,\
     (bpp == 32 ? 4 : (bpp == 1 || bpp == 8) ? 1 : 3), bpp,\
     (bpp >= 8 ? 255 : 1), (bpp >= 8 ? 255 : bpp > 1 ? 1 : 0),\
     (bpp >= 8 ? 256 : 2), (bpp >= 8 ? 256 : bpp > 1 ? 2 : 0),\
     print_page, 0 /* cmyk */, correct)
 
-#define prn_cmyk_colour_device(dtype, procs, dev_name, x_dpi, y_dpi, bpp, print_page, correct)\
-    prn_colour_device_body(dtype, procs, dev_name,\
+#define prn_cmyk_colour_device(dtype, init, dev_name, x_dpi, y_dpi, bpp, print_page, correct)\
+    prn_colour_device_body(dtype, init, dev_name,\
     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, x_dpi, y_dpi, 0, 0, 0, 0,\
     ((bpp == 1 || bpp == 4) ? 1 : 4), bpp,\
     (bpp > 8 ? 255 : 1), (1 << (bpp >> 2)) - 1, /* max_gray, max_color */\
@@ -429,27 +429,27 @@ typedef struct {
 #define bjc_device(dtype, p, d, x, y, b, pp, c) \
     prn_cmyk_colour_device(dtype, p, d, x, y, b, pp, c)
 
-#define cdj_device(procs, dev_name, x_dpi, y_dpi, bpp, print_page, correction, shingling, depletion)\
-{ prn_hp_colour_device(gx_device_cdj, procs, dev_name, x_dpi, y_dpi, bpp, print_page, correction),\
+#define cdj_device(init, dev_name, x_dpi, y_dpi, bpp, print_page, correction, shingling, depletion)\
+{ prn_hp_colour_device(gx_device_cdj, init, dev_name, x_dpi, y_dpi, bpp, print_page, correction),\
     shingling,\
     depletion\
 }
 
-#define pjxl_device(procs, dev_name, x_dpi, y_dpi, bpp, print_page, printqual, rendertype)\
-{ prn_hp_colour_device(gx_device_pjxl, procs, dev_name, x_dpi, y_dpi, bpp, print_page, 0), \
+#define pjxl_device(init, dev_name, x_dpi, y_dpi, bpp, print_page, printqual, rendertype)\
+{ prn_hp_colour_device(gx_device_pjxl, init, dev_name, x_dpi, y_dpi, bpp, print_page, 0), \
     printqual,\
     rendertype\
 }
 
-#define pj_device(procs, dev_name, x_dpi, y_dpi, bpp, print_page)\
-{ prn_hp_colour_device(gx_device_pj, procs, dev_name, x_dpi, y_dpi, bpp, print_page, 0) }
+#define pj_device(init, dev_name, x_dpi, y_dpi, bpp, print_page)\
+{ prn_hp_colour_device(gx_device_pj, init, dev_name, x_dpi, y_dpi, bpp, print_page, 0) }
 
-#define bjc600_device(procs, dev_name, x_dpi, y_dpi, bpp, print_page, t, mf, mt, mws, mw, pq, dt, cc, pc, mp) \
-{ bjc_device(gx_device_bjc600, procs, dev_name, x_dpi, y_dpi, bpp, print_page, 0),\
+#define bjc600_device(init, dev_name, x_dpi, y_dpi, bpp, print_page, t, mf, mt, mws, mw, pq, dt, cc, pc, mp) \
+{ bjc_device(gx_device_bjc600, init, dev_name, x_dpi, y_dpi, bpp, print_page, 0),\
     t, 0., { mf, mt, mws, mw, pq, dt, cc, pc, mp }\
 }
-#define bjc800_device(procs, dev_name, x_dpi, y_dpi, bpp, print_page, t, mf, mt, mws, mw, pq, dt, cc, pc) \
-{ bjc_device(gx_device_bjc800, procs, dev_name, x_dpi, y_dpi, bpp, print_page, 0),\
+#define bjc800_device(init, dev_name, x_dpi, y_dpi, bpp, print_page, t, mf, mt, mws, mw, pq, dt, cc, pc) \
+{ bjc_device(gx_device_bjc800, init, dev_name, x_dpi, y_dpi, bpp, print_page, 0),\
     t, 0., { mf, mt, mws, mw, pq, dt, cc, pc }\
 }
 
@@ -467,6 +467,12 @@ hp_colour_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, cdj_get_params);
     set_dev_proc(dev, put_params, cdj_put_params);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
 
@@ -483,9 +489,6 @@ cdj500_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs cdj500_procs =
-    devprocs_initialize(cdj500_initialize);
-
 static int
 cdj550_initialize(gx_device *dev)
 {
@@ -498,9 +501,6 @@ cdj550_initialize(gx_device *dev)
 
     return 0;
 }
-
-static gx_device_procs cdj550_procs =
-    devprocs_initialize(cdj550_initialize);
 
 #ifdef USE_CDJ550_CMYK
 static int
@@ -520,9 +520,6 @@ cdj550cmyk_initialize(gx_device *dev)
 
     return 0;
 }
-
-static gx_device_procs cdj550cmyk_procs =
-    devprocs_initialize(cdj550cmyk_initialize);
 #endif
 
 static int
@@ -538,9 +535,6 @@ dj505j_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs dj505j_procs =
-    devprocs_initialize(dj505j_initialize);
-
 static int
 dnj650c_initialize(gx_device *dev)
 {
@@ -554,9 +548,6 @@ dnj650c_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs dnj650c_procs =
-    devprocs_initialize(dnj650c_initialize);
-
 static int
 lj4dith_initialize(gx_device *dev)
 {
@@ -569,9 +560,6 @@ lj4dith_initialize(gx_device *dev)
 
     return 0;
 }
-
-static gx_device_procs lj4dith_procs =
-    devprocs_initialize(lj4dith_initialize);
 
 static int
 pj_initialize(gx_device *dev)
@@ -588,9 +576,6 @@ pj_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs pj_procs =
-    devprocs_initialize(pj_initialize);
-
 static int
 pjxl_initialize(gx_device *dev)
 {
@@ -606,9 +591,6 @@ pjxl_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs pjxl_procs =
-    devprocs_initialize(pjxl_initialize);
-
 static int
 pjxl300_initialize(gx_device *dev)
 {
@@ -623,9 +605,6 @@ pjxl300_initialize(gx_device *dev)
 
     return 0;
 }
-
-static gx_device_procs pjxl300_procs =
-    devprocs_initialize(pjxl300_initialize);
 
 static int
 bjc_initialize(gx_device *dev)
@@ -645,9 +624,6 @@ bjc_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs bjc_procs =
-    devprocs_initialize(bjc_initialize);
-
 static int
 escp_initialize(gx_device *dev)
 {
@@ -663,27 +639,24 @@ escp_initialize(gx_device *dev)
     return 0;
 }
 
-static gx_device_procs escp_procs =
-    devprocs_initialize(escp_initialize);
-
 gx_device_cdj far_data gs_cdjmono_device =
-cdj_device(cdj500_procs, "cdjmono", 300, 300, 1,
+cdj_device(cdj500_initialize, "cdjmono", 300, 300, 1,
            dj500c_print_page, 4, 0, 1);
 
 gx_device_cdj far_data gs_cdeskjet_device =
-cdj_device(cdj500_procs, "cdeskjet", 300, 300, 24,
+cdj_device(cdj500_initialize, "cdeskjet", 300, 300, 24,
            dj500c_print_page, 4, 2, 1);
 
 gx_device_cdj far_data gs_cdjcolor_device =
-cdj_device(cdj500_procs, "cdjcolor", 300, 300, 24,
+cdj_device(cdj500_initialize, "cdjcolor", 300, 300, 24,
            dj500c_print_page, 4, 2, 1);
 
 gx_device_cdj far_data gs_cdj500_device =
-cdj_device(cdj500_procs, "cdj500", 300, 300, BITSPERPIXEL,
+cdj_device(cdj500_initialize, "cdj500", 300, 300, BITSPERPIXEL,
            dj500c_print_page, 4, 2, 1);
 
 gx_device_cdj far_data gs_cdj550_device =
-cdj_device(cdj550_procs, "cdj550", 300, 300, BITSPERPIXEL,
+cdj_device(cdj550_initialize, "cdj550", 300, 300, BITSPERPIXEL,
            dj550c_print_page, 0, 2, 1);
 
 #ifdef USE_CDJ550_CMYK
@@ -694,47 +667,47 @@ gx_device_cdj far_data gs_cdj550cmyk_device = {
 #endif
 
 gx_device_cdj far_data gs_picty180_device =
-cdj_device(cdj550_procs, "picty180", 300, 300, BITSPERPIXEL,
+cdj_device(cdj550_initialize, "picty180", 300, 300, BITSPERPIXEL,
            picty180_print_page, 0, 2, 1);
 
 gx_device_cdj far_data gs_dj505j_device =
-cdj_device(dj505j_procs, "dj505j", 300, 300, 1,
+cdj_device(dj505j_initialize, "dj505j", 300, 300, 1,
            dj505j_print_page, 4, 0, 1);
 
 gx_device_pj far_data gs_declj250_device =
-pj_device(pj_procs, "declj250", 180, 180, BITSPERPIXEL,
+pj_device(pj_initialize, "declj250", 180, 180, BITSPERPIXEL,
           declj250_print_page);
 
 gx_device_cdj far_data gs_dnj650c_device =
-cdj_device(dnj650c_procs, "dnj650c", 300, 300, BITSPERPIXEL,
+cdj_device(dnj650c_initialize, "dnj650c", 300, 300, BITSPERPIXEL,
            dnj650c_print_page, 0, 2, 1);
 
 gx_device_cdj far_data gs_lj4dith_device =
-cdj_device(lj4dith_procs, "lj4dith", 600, 600, 8,
+cdj_device(lj4dith_initialize, "lj4dith", 600, 600, 8,
            lj4dith_print_page, 4, 0, 1);
 
 gx_device_cdj far_data gs_lj4dithp_device =
-cdj_device(lj4dith_procs, "lj4dithp", 600, 600, 8,
+cdj_device(lj4dith_initialize, "lj4dithp", 600, 600, 8,
            lj4dithp_print_page, 4, 0, 1);
 
 gx_device_pj far_data gs_pj_device =
-pj_device(pj_procs, "pj", 180, 180, BITSPERPIXEL,
+pj_device(pj_initialize, "pj", 180, 180, BITSPERPIXEL,
           pj_print_page);
 
 gx_device_pjxl far_data gs_pjxl_device =
-pjxl_device(pjxl_procs, "pjxl", 180, 180, BITSPERPIXEL,
+pjxl_device(pjxl_initialize, "pjxl", 180, 180, BITSPERPIXEL,
             pjxl_print_page, 0, 0);
 
 gx_device_pjxl far_data gs_pjxl300_device =
-pjxl_device(pjxl300_procs, "pjxl300", 300, 300, BITSPERPIXEL,
+pjxl_device(pjxl300_initialize, "pjxl300", 300, 300, BITSPERPIXEL,
             pjxl300_print_page, 0, 0);
 
 gx_device_cdj far_data gs_escp_device =
-cdj_device(escp_procs, "escp", 360, 360, 8,
+cdj_device(escp_initialize, "escp", 360, 360, 8,
            escp_print_page, 0, 0, 1);
 
 gx_device_cdj far_data gs_escpc_device =
-cdj_device(escp_procs, "escpc", 360, 360, 24,
+cdj_device(escp_initialize, "escpc", 360, 360, 24,
            escp_print_page, 0, 0, 1);
 
 /* Args of bjc drivers are manualFeed, mediaType, printQuality, printColor,
@@ -742,7 +715,7 @@ cdj_device(escp_procs, "escpc", 360, 360, 24,
 
 gx_device_bjc600 far_data gs_bjc600_device =
     bjc600_device(
-        bjc_procs,
+        bjc_initialize,
         BJC_BJC600,
         BJC600_DEFAULT_RESOLUTION,
         BJC600_DEFAULT_RESOLUTION,
@@ -761,7 +734,7 @@ gx_device_bjc600 far_data gs_bjc600_device =
 
 gx_device_bjc800 far_data gs_bjc800_device =
     bjc800_device(
-        bjc_procs,
+        bjc_initialize,
         BJC_BJC800,
         BJC800_DEFAULT_RESOLUTION,
         BJC800_DEFAULT_RESOLUTION,

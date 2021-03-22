@@ -120,11 +120,11 @@ gx_device_bbox gs_bbox_device =
     /*
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
-    std_device_dci_body(gx_device_bbox, 0, "bbox",
+    std_device_dci_body(gx_device_bbox, bbox_initialize, "bbox",
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
                         1, 8, 255, 0, 256, 1),
-    devprocs_initialize(bbox_initialize),
+    { 0 },
     0,				/* target */
     1,				/*true *//* free_standing */
     1				/*true *//* forward_open_close */

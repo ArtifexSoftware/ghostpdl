@@ -111,9 +111,8 @@ tile_clipper_initialize(gx_device *dev)
 }
 
 static const gx_device_tile_clip gs_tile_clip_device =
-{std_device_std_body_open(gx_device_tile_clip, 0, "tile clipper",
-                          0, 0, 1, 1),
- devprocs_initialize(tile_clipper_initialize)
+{std_device_std_body_open(gx_device_tile_clip, tile_clipper_initialize, "tile clipper",
+                          0, 0, 1, 1)
 };
 
 /* Initialize a tile clipping device from a mask. */

@@ -271,11 +271,14 @@ lxm3200_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, lxm3200_get_params);
     set_dev_proc(dev, put_params, lxm3200_put_params);
 
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
     return 0;
 }
-
-static gx_device_procs lxm3200_procs =
-  devprocs_initialize(lxm3200_initialize);
 
 /* Define an extension (subclass) of gx_device_printer. */
 struct lxm_device_s
@@ -323,7 +326,7 @@ struct lxm_device_s
 lxm_device far_data gs_lxm3200_device =
 {
         prn_device_body(lxm_device,
-                lxm3200_procs,
+                lxm3200_initialize,
                 "lxm3200",
                 DEFAULT_WIDTH_10THS,
                 DEFAULT_HEIGHT_10THS,

@@ -126,7 +126,7 @@ int mem_dev_initialize(gx_device *dev);
 int mem_word_dev_initialize(gx_device *dev);
 
 #define mem_device(name, rgb_depth, gray_depth, initialize)\
-{	std_device_dci_body(gx_device_memory, 0, name,\
+{	std_device_dci_body(gx_device_memory, initialize, name,\
           0, 0, 72, 72,\
           (rgb_depth ? 3 : 0) + (gray_depth ? 1 : 0),	/* num_components */\
           rgb_depth + gray_depth,	/* depth */\
@@ -135,7 +135,7 @@ int mem_word_dev_initialize(gx_device *dev);
           max_value_gray(rgb_depth, gray_depth) + 1, /* dither_grays */\
           max_value_rgb(rgb_depth, gray_depth) + 1 /* dither_colors */\
         ),\
-        devprocs_initialize(initialize),\
+        { 0 },\
         0,			/* target */\
         mem_device_init_private	/* see gxdevmem.h */\
 }

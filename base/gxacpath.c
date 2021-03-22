@@ -71,9 +71,9 @@ cpath_accum_initialize(gx_device *dev)
 
 /* Many of these procedures won't be called; they are set to NULL. */
 static const gx_device_cpath_accum gs_cpath_accum_device =
-{std_device_std_body(gx_device_cpath_accum, 0, "clip list accumulator",
-                     0, 0, 1, 1),
- devprocs_initialize(cpath_accum_initialize)
+{std_device_std_body(gx_device_cpath_accum, cpath_accum_initialize,
+                     "clip list accumulator",
+                     0, 0, 1, 1)
 };
 
 /* Start accumulating a clipping path. */

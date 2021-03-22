@@ -262,11 +262,8 @@ hl7x0_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs prn_hl_procs =
-    devprocs_initialize(hl7x0_initialize);
-
 const gx_device_printer far_data gs_hl7x0_device =
-  prn_device(prn_hl_procs, "hl7x0",
+  prn_device(hl7x0_initialize, "hl7x0",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
         0, 0, 0, 0,		/* margins filled in by hl7x0_open */

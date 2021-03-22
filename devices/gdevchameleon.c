@@ -79,11 +79,8 @@ chameleon_initialize(gx_device *dev)
     return 0;
 }
 
-static const gx_device_procs chameleon_procs =
-    devprocs_initialize(chameleon_initialize);
-
 const gx_device_chameleon gs_chameleon_device =
-{prn_device_body(gx_device_chameleon, chameleon_procs, "chameleon",
+{prn_device_body(gx_device_chameleon, chameleon_initialize, "chameleon",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */

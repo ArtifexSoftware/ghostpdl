@@ -163,20 +163,8 @@ lips4_initialize(gx_device *dev)
     return 0;
 };
 
-static gx_device_procs lips2p_prn_procs =
-    devprocs_initialize(lips2p_initialize);
-
-static gx_device_procs lips3_prn_procs =
-    devprocs_initialize(lips3_initialize);
-
-static gx_device_procs bjc880j_prn_color_procs =
-    devprocs_initialize(bjc880j_initialize);
-
-static gx_device_procs lips4_prn_procs =
-    devprocs_initialize(lips4_initialize);
-
 gx_device_lips far_data gs_lips2p_device =
-lips_device(gx_device_lips, lips2p_prn_procs, "lips2p",
+lips_device(gx_device_lips, lips2p_initialize, "lips2p",
             LIPS2P_DPI_DEFAULT,
             LIPS2P_DPI_DEFAULT,
             LIPS2P_LEFT_MARGIN_DEFAULT,
@@ -188,7 +176,7 @@ lips_device(gx_device_lips, lips2p_prn_procs, "lips2p",
             LIPS_USERNAME_DEFAULT);
 
 gx_device_lips far_data gs_lips3_device =
-lips_device(gx_device_lips, lips3_prn_procs, "lips3",
+lips_device(gx_device_lips, lips3_initialize, "lips3",
             LIPS3_DPI_DEFAULT,
             LIPS3_DPI_DEFAULT,
             LIPS3_LEFT_MARGIN_DEFAULT,
@@ -200,7 +188,7 @@ lips_device(gx_device_lips, lips3_prn_procs, "lips3",
             LIPS_USERNAME_DEFAULT);
 
 gx_device_lips4 far_data gs_bjc880j_device =
-lips4_device(gx_device_lips4, bjc880j_prn_color_procs, "bjc880j",
+lips4_device(gx_device_lips4, bjc880j_initialize, "bjc880j",
              BJC880J_DPI_DEFAULT,
              BJC880J_DPI_DEFAULT,
              BJC880J_LEFT_MARGIN_DEFAULT,
@@ -212,7 +200,7 @@ lips4_device(gx_device_lips4, bjc880j_prn_color_procs, "bjc880j",
              LIPS_USERNAME_DEFAULT);
 
 gx_device_lips4 far_data gs_lips4_device =
-lips4_device(gx_device_lips4, lips4_prn_procs, "lips4",
+lips4_device(gx_device_lips4, lips4_initialize, "lips4",
              LIPS4_DPI_DEFAULT,
              LIPS4_DPI_DEFAULT,
              LIPS4_LEFT_MARGIN_DEFAULT,

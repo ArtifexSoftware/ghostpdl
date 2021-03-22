@@ -57,9 +57,6 @@ lp2000_initialize(gx_device *dev)
     return code;
 }
 
-static gx_device_procs lp2000_prn_procs =
-    devprocs_initialize(lp2000_initialize);
-
 static int
 escpage_initialize(gx_device *dev)
 {
@@ -76,16 +73,13 @@ escpage_initialize(gx_device *dev)
     return code;
 }
 
-static gx_device_procs escpage_prn_procs =
-    devprocs_initialize(escpage_initialize);
-
 gx_device_lprn far_data gs_lp2000_device =
-lprn_device(gx_device_lprn, lp2000_prn_procs, "lp2000",
+lprn_device(gx_device_lprn, lp2000_initialize, "lp2000",
             DPI, DPI, 0.0, 0.0, 0.0, 0.0, 1,
             lp2000_print_page_copies, escpage_image_out);
 
 gx_device_lprn far_data gs_escpage_device =
-lprn_duplex_device(gx_device_lprn, escpage_prn_procs, "escpage",
+lprn_duplex_device(gx_device_lprn, escpage_initialize, "escpage",
                    DPI, DPI, 0.0, 0.0, 0.0, 0.0, 1,
                    escpage_print_page_copies, escpage_image_out);
 
