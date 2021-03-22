@@ -695,7 +695,7 @@ LEPTONICADIR=leptonica
 !endif
 !if exist("tesseract")
 TESSERACTDIR=tesseract
-TESSCXXFLAGS=-DHAVE_AVX -DHAVE_AVX2 -DHAVE_SSE4_1 -DHAVE_FMA -D__AVX__ -D__AVX2__ -D__FMA__ -D__SSE4_1__ /EHsc /std:c++17
+TESSCXXFLAGS=-DHAVE_AVX -DHAVE_AVX2 -DHAVE_SSE4_1 -DHAVE_FMA -D__AVX__ -D__AVX2__ -D__FMA__ -D__SSE4_1__ /EHsc /std:c++17 /utf-8
 !endif
 !if defined(TESSERACTDIR) && defined(LEPTONICADIR)
 OCR_VERSION=1
