@@ -1146,6 +1146,8 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
     int code = 0;
     pdfi_jpx_info_t *jpx_info = &image_info->jpx_info;
     pdf_obj *ColorSpace = NULL;
+    char *backup_color_name = NULL;
+    bool using_enum_cs = false;
 
     /* NOTE: Spec says ImageMask and ColorSpace mutually exclusive */
     if (image_info->ImageMask) {
@@ -1186,33 +1188,40 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
             } else {
                 char *color_str;
 
-                /* TODO: Hackity BS here, just trying to pull out a reasonable color for now */
+                /* TODO: These colorspace names are pulled from the gs code (jp2_csp_dict), but need
+                 * to be implemented to actually work.
+                 */
+                backup_color_name = (char *)"DeviceRGB";
                 switch(jpx_info->cs_enum) {
                 case 12:
                     color_str = (char *)"DeviceCMYK";
                     break;
+                case 14:
+                    /* TODO: set WhitePoint somehow? */
+                    color_str = (char *)"LAB";
+                    break;
                 case 16:
+                    color_str = (char *)"sRGBICC";
+                    break;
+                case 17:
+                    color_str = (char *)"sGrayICC";
+                    backup_color_name = (char *)"DeviceGray";
+                    break;
                 case 18:
                     color_str = (char *)"DeviceRGB";
                     break;
-                case 17:
-                    color_str = (char *)"DeviceGray";
-                    break;
                 case 20:
                 case 24:
-                    /* TODO: gs Implementation assumes these are DeviceRGB.
-                     * We can do same and get matching output (but is it correct?)
-                     * (should probably look at num comps, but gs code doesn't)
-                     */
-                    if (ctx->args.pdfdebug)
-                        dmprintf1(ctx->memory,
-                                  "WARNING JPXDecode: Unsupported EnumCS %d, assuming DeviceRGB\n",
-                                  jpx_info->cs_enum);
-                    color_str = (char *)"DeviceRGB";
+                    color_str = (char *)"esRGBICC";
+                    break;
+                case 21:
+                    color_str = (char *)"rommRGBICC";
                     break;
                 default:
+                    /* TODO: Could try DeviceRGB instead of erroring out? */
                     dmprintf1(ctx->memory,
-                              "WARNING JPXDecode: Unsupported EnumCS %d\n", jpx_info->cs_enum);
+                              "**** Error: JPXDecode: Unsupported EnumCS %d\n", jpx_info->cs_enum);
+                    ctx->pdf_warnings |= E_PDF_IMAGECOLOR_ERROR;
                     goto cleanupExit;
                 }
 
@@ -1221,6 +1230,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                 if (code < 0)
                     goto cleanupExit;
                 pdfi_countup(ColorSpace);
+                using_enum_cs = true;
             }
         } else {
             /* Assume DeviceRGB colorspace */
@@ -1243,11 +1253,10 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
     code = pdfi_create_colorspace(ctx, ColorSpace,
                                   image_info->stream_dict, image_info->page_dict,
                                   pcs, image_info->inline_image);
-    /* TODO: image_2bpp.pdf has an image in there somewhere that fails on this call (probably ColorN) */
     if (code < 0) {
         dmprintf(ctx->memory, "WARNING: Image has unsupported ColorSpace ");
-        if (image_info->ColorSpace->type == PDF_NAME) {
-            pdf_name *name = (pdf_name *)image_info->ColorSpace;
+        if (ColorSpace->type == PDF_NAME) {
+            pdf_name *name = (pdf_name *)ColorSpace;
             char str[100];
             memcpy(str, (const char *)name->data, name->length);
             str[name->length] = '\0';
@@ -1255,7 +1264,27 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
         } else {
             dmprintf(ctx->memory, "(not a name)\n");
         }
-        goto cleanupExit;
+
+        /* If we were trying an enum_cs, attempt to use backup_color_name instead */
+        if (using_enum_cs) {
+            pdfi_countdown(ColorSpace);
+            code = pdfi_name_alloc(ctx, (byte *)backup_color_name, strlen(backup_color_name), &ColorSpace);
+            if (code < 0)
+                goto cleanupExit;
+            pdfi_countup(ColorSpace);
+            /* Try to set the backup name */
+            code = pdfi_create_colorspace(ctx, ColorSpace,
+                                          image_info->stream_dict, image_info->page_dict,
+                                          pcs, image_info->inline_image);
+
+            if (code < 0) {
+                ctx->pdf_warnings |= E_PDF_IMAGECOLOR_ERROR;
+                goto cleanupExit;
+            }
+        } else {
+            ctx->pdf_warnings |= E_PDF_IMAGECOLOR_ERROR;
+            goto cleanupExit;
+        }
     }
     *comps = gs_color_space_num_components(*pcs);
 

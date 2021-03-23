@@ -357,6 +357,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tAn invalid transparency group XObject was ignored.\n");
         if (ctx->pdf_errors & E_PDF_NO_SUBTYPE)
             dmprintf(ctx->memory, "\tAn object was missing the required /Subtype.\n");
+        if (ctx->pdf_errors & E_PDF_IMAGECOLOR_ERROR)
+            dmprintf(ctx->memory, "\tAn image had an unknown or invalid colorspace.\n");
     }
 
     if (ctx->pdf_warnings != W_PDF_NOWARNING) {
