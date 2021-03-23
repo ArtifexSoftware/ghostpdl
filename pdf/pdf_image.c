@@ -51,6 +51,8 @@ typedef struct {
     int bpc;
     uint32_t cs_enum;
     bool iccbased;
+    bool no_data;
+    bool is_valid;
     uint32_t icc_offset;
     uint32_t icc_length;
 } pdfi_jpx_info_t;
@@ -243,6 +245,8 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
     /* Clear out the info param */
     memset(info, 0, sizeof(pdfi_jpx_info_t));
 
+    info->no_data = false;
+
     /* Allocate a data buffer that hopefully is big enough */
     data_buf_len = LEN_DATA;
     data = gs_alloc_bytes(ctx->memory, data_buf_len, "pdfi_scan_jpxfilter (data)");
@@ -270,6 +274,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
         avail -= box_len;
     }
     if (avail <= 0) {
+        info->no_data = true;
         code = gs_note_error(gs_error_ioerror);
         goto exit;
     }
@@ -410,13 +415,15 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
     info->comps = comps;
     info->bpc = bpc;
     info->cs_enum = cs_enum;
+    info->is_valid = true;
 
  exit:
     if (data)
         gs_free_object(ctx->memory, data, "pdfi_scan_jpxfilter (data)");
     /* Always return 0 -- there are cases where this no image header at all, and just ignoring
-     * the header seems to work.  May need to add an is_valid flag for other weird cases?
-     * (need to encounter such a sample first)
+     * the header seems to work.  In this case is_valid will be false, so we know not to rely on
+     * the data from it.
+     * Sample: tests_private/comparefiles/Bug694873.pdf
      */
     return 0;
 }
@@ -1224,6 +1231,12 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                 goto cleanupExit;
             pdfi_countup(ColorSpace);
         }
+    } else {
+        /* Override BPC from JPXDecode if applicable
+         * Sample: tests_private/comparefiles/Bug695387.pdf
+         */
+        if (image_info->is_JPXDecode && jpx_info->is_valid)
+            image_info->BPC = jpx_info->bpc;
     }
 
     /* At this point ColorSpace is either a string we just made, or the one from the Image */
@@ -1457,6 +1470,11 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         code = pdfi_scan_jpxfilter(ctx, source, image_info.Length, &image_info.jpx_info);
         if (code < 0 && image_info.is_JPXDecode)
             goto cleanupExit;
+
+        /* I saw this JPXDecode images that have SMaskInData */
+        if (image_info.jpx_info.no_data)
+            image_info.is_JPXDecode = false;
+
         if (code == 0 && maybe_jpxdecode)
             image_info.is_JPXDecode = true;
     }
