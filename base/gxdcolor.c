@@ -1146,8 +1146,11 @@ gx_dc_write_color(
 
     /* check for adequate space */
     if (*psize < num_bytes) {
+        uint x = *psize;
         *psize = num_bytes;
-        return_error(gs_error_rangecheck);
+        if (x != 0)
+            return_error(gs_error_rangecheck);
+        return gs_error_rangecheck;
     }
     *psize = num_bytes;
 
