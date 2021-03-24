@@ -64,6 +64,7 @@ pdfi_set_GrayBackground(gs_transparency_mask_params_t *params)
         if (num > 1)
             num = 1;
         params->GrayBackground = 1 - num;
+        break;
     default:
         /* No clue... */
         params->GrayBackground = 0;
