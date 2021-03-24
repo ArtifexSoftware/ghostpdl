@@ -816,7 +816,7 @@ currentdict /EnablePageHandlerDevice undef
           2 array astore dup /PageSize exch def
           currentdict end setpagedevice
           270 rotate
-          1 get neg 0 translate
+          1 get add neg exch neg
           translate
         }
         {
@@ -825,7 +825,7 @@ currentdict /EnablePageHandlerDevice undef
             2 array astore dup /PageSize exch def
             currentdict end setpagedevice
             180 rotate
-            aload pop neg exch neg exch translate
+            aload pop 3 -1 roll add neg 3 1 roll add neg exch
             translate
           }
           {
@@ -833,7 +833,8 @@ currentdict /EnablePageHandlerDevice undef
             2 array astore dup /PageSize exch def
             currentdict end setpagedevice
             90 rotate
-            0 get neg 0 exch translate
+            0 get 3 -1 roll add
+            neg exch neg exch
             translate
           } ifelse
         } ifelse
