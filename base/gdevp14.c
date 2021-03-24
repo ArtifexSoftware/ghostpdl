@@ -11505,17 +11505,6 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
             return code;
 
         case PDF14_POP_DEVICE:
-#	    if 0 /* Disabled because pdf14_clist_create_compositor does so. */
-            /*
-             * Ensure that the tranfer functions, etc.  are current before we
-             * dump our transparency image to the output device.
-             */
-            if (pgs->dev_ht)
-                code = cmd_put_halftone((gx_device_clist_writer *)
-                           (((pdf14_clist_device *)dev)->target), pgs->dev_ht);
-#	    else
-            code = 0;
-#	    endif
             code = clist_writer_check_empty_cropping_stack(cdev);
             break;
 
