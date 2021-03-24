@@ -281,10 +281,7 @@ X Windows). This may be needed if the platform fonts look undesirably
 different from the scalable fonts.
 .TP
 .B \-dSAFER
-Restricts file operations the job can perform.  Strongly recommended for
-spoolers, conversion scripts or other sensitive environments where a badly 
-written or malicious PostScript program code must be prevented from changing
-important files.
+Restricts file operations the job can perform. Now the default mode of operation.
 .TP
 .B \-dWRITESYSTEMDICT
 Leaves "systemdict" writable.  This is necessary when running special
@@ -301,37 +298,21 @@ device, as described above.
 .PP
 The
 .B \-dSAFER
-option disables the "deletefile" and "renamefile" operators and prohibits
-opening piped commands ("%pipe%\fIcmd\fR"). Only "%stdout" and "%stderr" can be
-opened for writing. It also disables reading from files, except for "%stdin",
-files given as a command line argument, and files contained in paths given by
-LIBPATH and FONTPATH or specified by the system params /FontResourceDir and
-/GenericResourceDir.
+option restricts file system accesses to those files and directories
+allowed by the relevant environment variables (such as GS_LIB) or
+by the command line parameters (see https://ghostscript.com/doc/current/Use.htm
+for details).
 .PP
-This mode also sets the .LockSafetyParams parameter of the initial output device
-to protect against programs that attempt to write to files using the OutputFile
-device parameter. Since the device parameters specified on the command line,
-including OutputFile, are set prior to SAFER mode, use of "-sOutputFile=..." on
-the command line is unrestricted.
-.PP
-SAFER mode prevents changing the /GenericResourceDir, /FontResourceDir,
-/SystemParamsPassword, and /StartJobPassword.
-.PP
-While SAFER mode is not the default, it is the default for many wrapper scripts
-such as ps2pdf and may be the default in a subsequent release of Ghostscript.
-Thus when running programs that need to open files or set restricted parameters
+SAFER mode is now the default mode of operation. Thus when running programs that
+need to open files or set restricted parameters
 you should pass the
 .B \-dNOSAFER
 command line option or its synonym
 .BR \-dDELAYSAFER .
 .PP
-When running with
-.B \-dNOSAFER
-it is possible to perform a "save" followed by ".setsafe", execute a file or
-procedure in SAFER mode, and then use "restore" to return to NOSAFER mode.  In
-order to prevent the save object from being restored by the foreign file or
-procedure, the ".runandhide" operator should be used to hide the save object
-from the restricted procedure.
+Running with NOSAFER/DELAYSAFER (as the same suggests) loosens the security
+and is thus recommended ONLY for debugging or in VERY controlled workflows,
+and strongly NOT recommended in any other circumstances.
 .SH FILES
 .PP
 The locations of many Ghostscript run-time files are compiled into the

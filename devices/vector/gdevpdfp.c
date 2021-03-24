@@ -852,7 +852,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         }
     }
 
-    if (pdev->Linearise && !gp_fseekable(pdev->file)) {
+    if (pdev->Linearise && pdev->file != NULL && !gp_fseekable(pdev->file)) {
         emprintf(pdev->memory, "Can't linearise a non-seekable output file, ignoring\n");
         pdev->Linearise = false;
     }

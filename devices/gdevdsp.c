@@ -1646,7 +1646,7 @@ display_size_buf_device(gx_device_buf_space_t *space, gx_device *target,
                         int height, bool for_band)
 {
     gx_device_display *ddev = (gx_device_display *)target;
-    gx_device_memory mdev;
+    gx_device_memory mdev = { 0 };
     int code;
     int planar = ddev->nFormat & (DISPLAY_PLANAR | DISPLAY_PLANAR_INTERLEAVED);
     int interleaved = (ddev->nFormat & DISPLAY_PLANAR_INTERLEAVED);
