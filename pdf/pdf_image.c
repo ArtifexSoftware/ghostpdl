@@ -1425,6 +1425,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     pdfi_trans_state_t trans_state;
     int saved_intent;
     gs_offset_t stream_offset;
+    float save_strokeconstantalpha, save_fillconstantalpha;
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image BEGIN\n");
@@ -1560,6 +1561,13 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         transparency_group = true;
     }
 
+    if (transparency_group && !ctx->device_state.preserve_smask) {
+        save_strokeconstantalpha = gs_getstrokeconstantalpha(ctx->pgs);
+        save_fillconstantalpha = gs_getfillconstantalpha(ctx->pgs);
+        gs_setstrokeconstantalpha(ctx->pgs, 1.0);
+        gs_setfillconstantalpha(ctx->pgs, 1.0);
+    }
+
     /* Get the Mask data either as an array or a dict, if present */
     if (image_info.SMask == NULL && image_info.Mask != NULL) {
         if (image_info.Mask->type == PDF_ARRAY) {
@@ -1691,6 +1699,10 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     code = 0;  /* suppress errors */
 
     if (transparency_group) {
+        if (!ctx->device_state.preserve_smask) {
+            gs_setstrokeconstantalpha(ctx->pgs, save_strokeconstantalpha);
+            gs_setfillconstantalpha(ctx->pgs, save_fillconstantalpha);
+        }
         pdfi_trans_end_isolated_group(ctx);
         if (need_smask_cleanup)
             pdfi_trans_end_smask_notify(ctx);
