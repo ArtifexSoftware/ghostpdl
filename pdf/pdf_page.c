@@ -191,6 +191,7 @@ static int pdfi_get_media_size(pdf_context *ctx)
     gs_c_param_list list;
     int code;
     gs_param_float_array msa;
+    gs_point point;
 
     code = pdfi_device_check_param(ctx->pgs->device, ".MediaSize", &list);
     if (code < 0) goto exit;
@@ -199,13 +200,13 @@ static int pdfi_get_media_size(pdf_context *ctx)
     code = param_read_float_array((gs_param_list *)&list, ".MediaSize", &msa);
     if (code < 0) goto exit;
 
-    /* TODO: I have no idea if this works right when the page is rotated.
-     * It makes my brain explode :(
-     */
-    ctx->page.Size[0] = 0;
-    ctx->page.Size[1] = 0;
-    ctx->page.Size[2] = msa.data[0];
-    ctx->page.Size[3] = msa.data[1];
+    code = gs_point_transform_inverse(0, 0, &ctm_only(ctx->pgs), &point);
+    ctx->page.Size[0] = point.x;
+    ctx->page.Size[1] = point.y;
+    code = gs_point_transform_inverse(msa.data[0], msa.data[1], &ctm_only(ctx->pgs), &point);
+    ctx->page.Size[2] = point.x;
+    ctx->page.Size[3] = point.y;
+
 
  exit:
     gs_c_param_list_release(&list);
