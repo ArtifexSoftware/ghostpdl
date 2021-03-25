@@ -1139,6 +1139,84 @@ pdfi_image_setup_type3x(pdf_context *ctx, pdfi_image_info_t *image_info,
     return code;
 }
 
+static int pdfi_create_JPX_Lab(pdf_context *ctx, pdf_obj **ColorSpace)
+{
+    int code, i;
+    pdf_name *SpaceName = NULL, *WhitePointName = NULL;
+    pdf_dict *Params = NULL;
+    pdf_array *WhitePoint = NULL;
+    double WP[3] = {0.9505, 1.0, 1.0890};
+    pdf_num *num = NULL;
+
+    *ColorSpace = NULL;
+    code = pdfi_name_alloc(ctx, (byte *)"Lab", 3, (pdf_obj **)&SpaceName);
+    if (code < 0)
+        goto cleanupExit;
+    pdfi_countup(SpaceName);
+
+    code = pdfi_dict_alloc(ctx, 1, &Params);
+    if (code < 0)
+        goto cleanupExit;
+    pdfi_countup(Params);
+
+    code = pdfi_name_alloc(ctx, (byte *)"WhitePoint", 3, (pdf_obj **)&WhitePointName);
+    if (code < 0)
+        goto cleanupExit;
+    pdfi_countup(WhitePointName);
+
+    code = pdfi_array_alloc(ctx, 3, &WhitePoint);
+    if (code < 0)
+        goto cleanupExit;
+
+    for (i = 0; i < 3; i++) {
+        code = pdfi_object_alloc(ctx, PDF_REAL, 0, (pdf_obj **)&num);
+        if (code < 0)
+            goto cleanupExit;
+        num->value.d = WP[i];
+        pdfi_countup(num);
+        code = pdfi_array_put(ctx, WhitePoint, i, (pdf_obj *)num);
+        if (code < 0)
+            goto cleanupExit;
+        pdfi_countdown(num);
+    }
+    num = NULL;
+
+    code = pdfi_dict_put_obj(ctx, Params, (pdf_obj *)WhitePointName, (pdf_obj *)WhitePoint);
+    if (code < 0)
+        goto cleanupExit;
+
+    pdfi_countdown(WhitePointName);
+    WhitePointName = NULL;
+    pdfi_countdown(WhitePoint);
+    WhitePoint = NULL;
+
+    code = pdfi_array_alloc(ctx, 2, (pdf_array **)ColorSpace);
+    if (code < 0)
+        goto cleanupExit;
+
+    code = pdfi_array_put(ctx, (pdf_array *)ColorSpace, 0, (pdf_obj *)SpaceName);
+    if (code < 0)
+        goto cleanupExit;
+    pdfi_countdown(SpaceName);
+    SpaceName = NULL;
+
+    code = pdfi_array_put(ctx, (pdf_array *)ColorSpace, 1, (pdf_obj *)Params);
+    if (code < 0)
+        goto cleanupExit;
+    pdfi_countdown(Params);
+
+    return 0;
+
+cleanupExit:
+    pdfi_countdown(*ColorSpace);
+    pdfi_countdown(SpaceName);
+    pdfi_countdown(Params);
+    pdfi_countdown(WhitePointName);
+    pdfi_countdown(WhitePoint);
+    pdfi_countdown(num);
+    return code;
+}
+
 static int
 pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *image_info,
                      int *comps, gs_color_space **pcs)
@@ -1197,8 +1275,16 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                     color_str = (char *)"DeviceCMYK";
                     break;
                 case 14:
-                    /* TODO: set WhitePoint somehow? */
-                    color_str = (char *)"LAB";
+                    /* All the other colour spaces are set by name, either a device name or a
+                     * 'special' internal name (same as Ghostscript) which is picked up in
+                     * pdfi_create_colorspace_by_name() in pdf_colour.c. These names must
+                     * match!
+                     * However for Lab we need to set a White Point and its simplest just
+                     * to create an appropriate color space array here.
+                     */
+                    code = pdfi_create_JPX_Lab(ctx, &ColorSpace);
+                    if (code < 0)
+                        goto cleanupExit;
                     break;
                 case 16:
                     color_str = (char *)"sRGBICC";

@@ -856,6 +856,9 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
             }
         }
     } else {
+        if (s == NULL)
+            return_error(gs_error_undefined);
+
         picc_profile = gsicc_profile_new(s, gs_gstate_memory(ctx->pgs), NULL, 0);
         if (picc_profile == NULL) {
             rc_decrement(pcs,"pdfi_create_icc");
@@ -2112,6 +2115,15 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
     return code;
 }
 
+static int pdfi_create_JPX_space(pdf_context *ctx, char *name, int num_components, gs_color_space **ppcs)
+{
+    int code, icc_N;
+    float range_buff[6] = {0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f};
+
+    code = pdfi_create_icc(ctx, name, NULL, num_components, &icc_N, range_buff, ppcs);
+    return 0;
+}
+
 /* These next routines allow us to use recursion to set up colour spaces. We can set
  * colour space starting from a name (which can be a named resource) or an array.
  * If we get a name, and its a named resource we dereference it and go round again.
@@ -2229,6 +2241,14 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
         code = pdfi_create_DeviceCMYK(ctx, ppcs);
     } else if (pdfi_name_is(name, "Pattern")) {
         code = pdfi_pattern_create(ctx, NULL, stream_dict, page_dict, ppcs);
+    } else if (pdfi_name_is(name, "esRGBICC")) {                /* These 4 spaces are 'special' for JPX images          */
+        code = pdfi_create_JPX_space(ctx, "esrgb", 3, ppcs);    /* the names are non-standad and must match those in    */
+    } else if (pdfi_name_is(name, "rommRGBICC")) {              /* pdfi_image_get_color() in pdf_image.c                */
+        code = pdfi_create_JPX_space(ctx, "rommrgb", 3, ppcs);  /* Note that the Lab space for JPX images does not use  */
+    } else if (pdfi_name_is(name, "sRGBICC")) {                 /* a special space but simply constructs an appropriate */
+        code = pdfi_create_JPX_space(ctx, "srgb", 3, ppcs);     /* pdf_array object with the corerct contents for an    */
+    } else if (pdfi_name_is(name, "sGrayICC")) {                /* Lab space with a D65 white point.                    */
+        code = pdfi_create_JPX_space(ctx, "sgray", 1, ppcs);
     } else {
         pdf_obj *ref_space = NULL;
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, (pdf_dict *)stream_dict,
