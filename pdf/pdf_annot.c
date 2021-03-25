@@ -211,7 +211,7 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP
      */
     /* graphicsbeginpage() */
     /* textbeginpage() */
-    code = gs_initgraphics(ctx->pgs);
+    /* code = gs_initgraphics(ctx->pgs); */
     ctx->text.BlockDepth = 0;
     /* TODO: FIXME */
 
