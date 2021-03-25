@@ -2115,13 +2115,13 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
     return code;
 }
 
-static int pdfi_create_JPX_space(pdf_context *ctx, char *name, int num_components, gs_color_space **ppcs)
+static int pdfi_create_JPX_space(pdf_context *ctx, const char *name, int num_components, gs_color_space **ppcs)
 {
     int code, icc_N;
     float range_buff[6] = {0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f};
 
-    code = pdfi_create_icc(ctx, name, NULL, num_components, &icc_N, range_buff, ppcs);
-    return 0;
+    code = pdfi_create_icc(ctx, (char *)name, NULL, num_components, &icc_N, range_buff, ppcs);
+    return code;
 }
 
 /* These next routines allow us to use recursion to set up colour spaces. We can set

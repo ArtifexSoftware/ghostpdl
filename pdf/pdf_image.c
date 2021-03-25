@@ -1264,7 +1264,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                 *comps = gs_color_space_num_components(*pcs);
                 goto cleanupExit;
             } else {
-                char *color_str;
+                char *color_str = NULL;
 
                 /* TODO: These colorspace names are pulled from the gs code (jp2_csp_dict), but need
                  * to be implemented to actually work.
@@ -1312,11 +1312,13 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                 }
 
                 /* Make a ColorSpace for the name */
-                code = pdfi_name_alloc(ctx, (byte *)color_str, strlen(color_str), &ColorSpace);
-                if (code < 0)
-                    goto cleanupExit;
-                pdfi_countup(ColorSpace);
-                using_enum_cs = true;
+                if (color_str != NULL) {
+                    code = pdfi_name_alloc(ctx, (byte *)color_str, strlen(color_str), &ColorSpace);
+                    if (code < 0)
+                        goto cleanupExit;
+                    pdfi_countup(ColorSpace);
+                    using_enum_cs = true;
+                }
             }
         } else {
             /* Assume DeviceRGB colorspace */
