@@ -1,6 +1,20 @@
-﻿using System;
+﻿/* Copyright (C) 2020-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -102,7 +116,7 @@ namespace ghostnet_wpf_example
 
 	public partial class MainWindow : Window
 	{
-		ghostsharp m_ghostscript;
+		GSNET m_ghostscript;
 		doc_t m_document_type;
 		bool m_doc_type_has_page_access;
 		String m_currfile;
@@ -136,15 +150,15 @@ namespace ghostnet_wpf_example
 			}
 		}
 		public MainWindow()
-        {
-            InitializeComponent();
+		{
+			InitializeComponent();
 			this.Closing += new System.ComponentModel.CancelEventHandler(Window_Closing);
 
 			/* Set up ghostscript calls for progress update */
-			m_ghostscript = new ghostsharp();
-			m_ghostscript.gsUpdateMain += new ghostsharp.gsCallBackMain(gsProgress);
-			m_ghostscript.gsIOUpdateMain += new ghostsharp.gsIOCallBackMain(gsIO);
-			m_ghostscript.gsDLLProblemMain += new ghostsharp.gsDLLProblem(gsDLL);
+			m_ghostscript = new GSNET();
+			m_ghostscript.ProgressCallBack+= new GSNET.Progress(gsProgress);
+			m_ghostscript.StdIOCallBack += new GSNET.StdIO(gsIO);
+			m_ghostscript.DLLProblemCallBack += new GSNET.DLLProblem(gsDLL);
 			m_ghostscript.DisplayDeviceOpen();
 
 			m_currpage = 0;
@@ -199,17 +213,18 @@ namespace ghostnet_wpf_example
 				m_viewer_state = ViewerState_t.PRINTING;
 				Print(filePath);
 			}
-
 		}
 
 		private void gsIO(String mess, int len)
 		{
 			m_gsoutput.Update(mess, len);
 		}
+
 		private void ShowGSMessage(object sender, RoutedEventArgs e)
 		{
 			m_gsoutput.Show();
 		}
+
 		private void gsDLL(String mess)
 		{
 			ShowMessage(NotifyType_t.MESS_STATUS, mess);
@@ -301,7 +316,6 @@ namespace ghostnet_wpf_example
 			}
 		}
 
-		/* GS Result*/
 		public void GSResult(gsParamState_t gs_result)
 		{
 			TempFile tempfile = null;
@@ -389,8 +403,8 @@ namespace ghostnet_wpf_example
 
 		private void OpenFileCommand(object sender, ExecutedRoutedEventArgs e)
 		{
-            OpenFile(sender, e);
-        }
+			OpenFile(sender, e);
+		}
 
 		private void CleanUp()
 		{
@@ -424,7 +438,7 @@ namespace ghostnet_wpf_example
 			xaml_currPage.Text = "0";
 			CloseExtraWindows(false);
 
-			m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsPageRendered);
+			m_ghostscript.PageRenderedCallBack -= new GSNET.PageRendered(gsPageRendered);
 			m_ghostscript.DisplayDeviceClose();
 			m_ghostscript.DisplayDeviceOpen();
 			m_viewer_state = ViewerState_t.NO_FILE;
@@ -508,7 +522,7 @@ namespace ghostnet_wpf_example
 			 * progress as we distill the stream for PS or page by page for PDF */
 			string extension = System.IO.Path.GetExtension(FileName);
 
-			/* We are doing this based on the extension but like should do
+			/* We are doing this based on the extension but should do
 			 * it based upon the content */
 			switch (extension.ToUpper())
 			{
@@ -551,7 +565,6 @@ namespace ghostnet_wpf_example
 				m_document_type == doc_t.XPS ||
 				m_document_type == doc_t.PS)
 			{
-
 				MessageBoxResult result = MessageBox.Show("Would you like to distill this file?", "ghostnet", MessageBoxButton.YesNoCancel);
 				switch (result)
 				{

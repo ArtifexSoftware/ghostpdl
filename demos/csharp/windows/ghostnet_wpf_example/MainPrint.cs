@@ -1,4 +1,19 @@
-﻿using System;
+﻿/* Copyright (C) 2020-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+using System;
 using System.Windows;
 using System.Collections.Generic;
 using System.Threading;
@@ -52,17 +67,40 @@ namespace ghostnet_wpf_example
 			string extension = System.IO.Path.GetExtension(m_currfile);
 
 			/* If file is already xps then gs need not do this */
-			/* We are doing this based on the extension but like should do
+			/* We are doing this based on the extension but should do
 			 * it based upon the content */
-			if ( !(String.Equals(extension.ToUpper(),"XPS") || String.Equals(extension.ToUpper(), "OXPS")) )
+			if (!(String.Equals(extension.ToUpper(), "XPS") || String.Equals(extension.ToUpper(), "OXPS")))
 			{
 				m_printstatus.xaml_PrintProgress.Value = 0;
 
-				if (m_ghostscript.CreateXPS(m_currfile, Constants.DEFAULT_GS_RES,
-						last_page - first_page + 1, m_printcontrol, first_page, last_page) == gsStatus.GS_BUSY)
+				/* Extract needed information from print dialog and pass to GSNET */
+				if (m_printcontrol == null)
 				{
-					ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
 					return;
+				}
+				else
+				{
+					double width;
+					double height;
+					bool fit_page = (m_printcontrol.xaml_autofit.IsChecked == true);
+
+					if (m_printcontrol.m_pagedetails.Landscape == true)
+					{
+						height = m_printcontrol.m_pagedetails.PrintableArea.Width * 72.0 / 100.0;
+						width = m_printcontrol.m_pagedetails.PrintableArea.Height * 72.0 / 100.0;
+					}
+					else
+					{
+						height = m_printcontrol.m_pagedetails.PrintableArea.Height * 72.0 / 100.0;
+						width = m_printcontrol.m_pagedetails.PrintableArea.Width * 72.0 / 100.0;
+					}
+
+					if (m_ghostscript.CreateXPS(m_currfile, Constants.DEFAULT_GS_RES,
+						last_page - first_page + 1, height, width, fit_page, first_page, last_page) == gsStatus.GS_BUSY)
+					{
+						ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
+						return;
+					}
 				}
 			}
 			else
@@ -82,7 +120,7 @@ namespace ghostnet_wpf_example
 			string path = System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
 			try
 			{
-				string Arguments = m_currfile + " print " + m_currpage + " " + m_numpages;
+				string Arguments = "\"" + m_currfile + "\"" + " print " + m_currpage + " " + m_numpages;
 				Process.Start(path, Arguments);
 			}
 			catch (InvalidOperationException)

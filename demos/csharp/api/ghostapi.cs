@@ -1,4 +1,19 @@
-﻿using System;                           /* IntPtr */
+﻿/* Copyright (C) 2020-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+using System;                           /* IntPtr */
 using System.Runtime.InteropServices;   /* DLLImport */
 
 namespace GhostAPI
@@ -42,13 +57,13 @@ namespace GhostAPI
 		public const int DISPLAY_COLORS_RGB = (1 << 2);
 		public const int DISPLAY_DEPTH_8 = (1 << 11);
 		public const int DISPLAY_LITTLEENDIAN = (1 << 16);
-        public const int DISPLAY_BIGENDIAN = (0 << 16);
+		public const int DISPLAY_BIGENDIAN = (0 << 16);
 	}
 
-	class ghostapi
+	class GSAPI
 	{
 #if MONO
-    private const string lib_dll = "libgpdl.so";
+	private const string lib_dll = "libgpdl.so";
 #else
 #if WIN64
 #if !GHOSTPDL
@@ -64,8 +79,8 @@ namespace GhostAPI
 #endif
 #endif
 #endif
-        /* Callback proto for stdio */
-        public delegate int gs_stdio_handler(IntPtr caller_handle, IntPtr buffer, int len);
+		/* Callback proto for stdio */
+		public delegate int gs_stdio_handler(IntPtr caller_handle, IntPtr buffer, int len);
 
 		/* Callback proto for poll function */
 		public delegate int gsPollHandler(IntPtr caller_handle);
@@ -185,7 +200,7 @@ namespace GhostAPI
 
 		[DllImport(lib_dll, EntryPoint = "gsapi_enumerate_params", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_enumerate_params(IntPtr instance, out IntPtr inter,
+		public static extern int gsapi_enumerate_params(IntPtr instance, out IntPtr iter,
 			out IntPtr key, IntPtr type);
 
 		[DllImport(lib_dll, EntryPoint = "gsapi_add_control_path", CharSet = CharSet.Ansi,

@@ -1,4 +1,19 @@
-﻿using System;
+﻿/* Copyright (C) 2020-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+using System;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Runtime.InteropServices;
@@ -36,7 +51,7 @@ namespace ghostnet_wpf_example
 				return;
 
 			m_viewer_state = ViewerState_t.BUSY_RENDER;
-			m_ghostscript.gsDisplayDeviceRunFile(m_currfile, m_doczoom, m_aa, real_first_page + 1, real_last_page + 1);
+			m_ghostscript.DisplayDeviceRunFile(m_currfile, m_doczoom, m_aa, real_first_page + 1, real_last_page + 1);
 		}
 
 		/* Callback from ghostscript with the rendered image. */
@@ -150,12 +165,12 @@ namespace ghostnet_wpf_example
 			{
 				m_doczoom = 1.0;
 				xaml_Zoomsize.Text = "100";
-				m_ghostscript.gsPageRenderedMain += new ghostsharp.gsCallBackPageRenderedMain(gsPageRendered);
+				m_ghostscript.PageRenderedCallBack += new GSNET.PageRendered(gsPageRendered);
 			}
 
 			m_viewer_state = ViewerState_t.BUSY_RENDER;
 			(int first_page, int last_page) = GetVisiblePages();
-			m_ghostscript.gsDisplayDeviceRunFile(m_currfile, m_doczoom, m_aa, first_page + 1, last_page + 1);
+			m_ghostscript.DisplayDeviceRunFile(m_currfile, m_doczoom, m_aa, first_page + 1, last_page + 1);
 		}
 
 		/* Render all pages full resolution. Used for single page files as
@@ -171,11 +186,11 @@ namespace ghostnet_wpf_example
 			{
 				m_doczoom = 1.0;
 				xaml_Zoomsize.Text = "100";
-				m_ghostscript.gsPageRenderedMain += new ghostsharp.gsCallBackPageRenderedMain(gsPageRendered);
+				m_ghostscript.PageRenderedCallBack += new GSNET.PageRendered(gsPageRendered);
 			}
 
 			m_viewer_state = ViewerState_t.BUSY_RENDER;
-			m_ghostscript.gsDisplayDeviceRunFile(m_currfile, m_doczoom, m_aa, -1, -1);
+			m_ghostscript.DisplayDeviceRunFile(m_currfile, m_doczoom, m_aa, -1, -1);
 		}
 
 		/* Called via zoom or aa changes */
