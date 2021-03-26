@@ -805,6 +805,27 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code < 0)
         goto cleanupExit;
+
+    if (pcs->type == &gs_color_space_type_Indexed) {
+        if (cc.paint.values[0] < 0)
+            cc.paint.values[0] = 0.0;
+        else
+        {
+            if (cc.paint.values[0] > pcs->params.indexed.hival)
+                cc.paint.values[0] = pcs->params.indexed.hival;
+            else
+            {
+                if (cc.paint.values[0] != floor(cc.paint.values[0]))
+                {
+                    if (cc.paint.values[0] - floor(cc.paint.values[0]) < 0.5)
+                        cc.paint.values[0] = floor(cc.paint.values[0]);
+                    else
+                        cc.paint.values[0] = ceil(cc.paint.values[0]);
+                }
+            }
+        }
+    }
+
     code = gs_setcolor(ctx->pgs, &cc);
 
     if (is_pattern)
