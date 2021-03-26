@@ -552,25 +552,68 @@ Tr1_error:
 /* Mode 2 - fill then stroke */
 static int pdfi_show_Tr_2(pdf_context *ctx, gs_text_params_t *text)
 {
-    int code;
-    gs_point initial_point;
+    int code, restart = 0;
+    gs_text_enum_t *penum=NULL, *saved_penum=NULL;
+    gs_point end_point, initial_point;
+
+    end_point.x = end_point.y = initial_point.x = initial_point.y = 0;
 
     /* Capture the current position */
     code = gs_currentpoint(ctx->pgs, &initial_point);
     if (code < 0)
         return code;
 
-    /* First fill the text */
-    code = pdfi_show_Tr_0(ctx, text);
+    /* We don't want to disturb the current path, so do a gsave now
+     * We will grestore back to this point after we have stroked the
+     * text, which will leave any current path unchanged.
+     */
+    pdfi_gsave(ctx);
+
+    /* Start a new path (so our stroke doesn't include any
+     * already extant path in the graphics state)
+     */
+    code = gs_newpath(ctx->pgs);
     if (code < 0)
-        return code;
-
-    /* Return the current point to the initial point */
+        goto Tr1_error;
     code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
-    if (code >= 0)
-        /* And stroke the text */
-        code = pdfi_show_Tr_1(ctx, text);
+    if (code < 0)
+        goto Tr1_error;
 
+    /* Don't draw the text, create a path suitable for stroking */
+    text->operation |= TEXT_DO_FALSE_CHARPATH;
+
+    /* Run the text methods to create the path */
+    code = gs_text_begin(ctx->pgs, text, ctx->memory, &penum);
+    if (code < 0)
+        goto Tr1_error;
+
+    saved_penum = ctx->text.current_enum;
+    ctx->text.current_enum = penum;
+    code = gs_text_process(penum);
+    gs_text_release(ctx->pgs, penum, "pdfi_Tj");
+    ctx->text.current_enum = saved_penum;
+    if (code < 0)
+        goto Tr1_error;
+
+    /* After a stroke operation there is no current point and we need
+     * it to be set as if we had drawn the text. So capture it now
+     * and we will append a 'move' to the current point when we have
+     * finished the stroke.
+     */
+    code = gs_currentpoint(ctx->pgs, &end_point);
+    if (code < 0)
+        goto Tr1_error;
+    code = gs_fillstroke(ctx->pgs, &restart);
+
+Tr1_error:
+    /* And grestore back to where we started */
+    pdfi_grestore(ctx);
+    /* If everything went well, then move the current point to the
+     * position we captured at the end of the path creation */
+    if (code >= 0)
+        code = gs_moveto(ctx->pgs, end_point.x, end_point.y);
+
+    text->operation &= ~TEXT_DO_FALSE_CHARPATH;
     return code;
 }
 
