@@ -876,7 +876,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
             goto exit;
 
         if (DecodeParams != NULL) {
-            if (pdfi_array_size(DecodeParams) == 0) {
+            if (pdfi_array_size(DecodeParams) == 0 || pdfi_array_size(DecodeParams) != pdfi_array_size(filter_array)) {
                 pdfi_countdown(DecodeParams);
                 DecodeParams = NULL;
                 ctx->pdf_warnings |= W_PDF_STREAM_BAD_DECODEPARMS;
