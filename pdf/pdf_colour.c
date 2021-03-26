@@ -2066,7 +2066,7 @@ static int pdfi_create_DeviceGray(pdf_context *ctx, gs_color_space **ppcs)
         }
         pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
     } else {
-        code = pdfi_gs_setgray(ctx, 1);
+        code = pdfi_gs_setgray(ctx, 0);
     }
     return code;
 }
