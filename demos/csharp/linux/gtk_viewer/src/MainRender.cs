@@ -1,4 +1,19 @@
-﻿using System;
+﻿/* Copyright (C) 2020-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+using System;
 using System.Runtime;
 using System.Runtime.InteropServices;
 using GhostMono;
@@ -7,8 +22,6 @@ namespace gs_mono_example
 {
 	public partial class MainWindow
 	{
-		int m_firstpage;
-		int m_lastpage;
         int m_current_page;
         Gtk.TreeIter m_tree_iter;
 
@@ -28,8 +41,6 @@ namespace gs_mono_example
 				return;
 
 			m_busy_render = true;
-			m_firstpage = first_page;
-			m_lastpage = last_page;
 			//m_ghostscript.gsDisplayDeviceRender(m_currfile, first_page + 1, last_page + 1, 1.0);
 		}
 
@@ -97,7 +108,7 @@ namespace gs_mono_example
 
             RemoveProgressBar();
             m_file_open = true;
-            m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsPageRendered);
+            m_ghostscript.PageRenderedCallBack -= new GSMONO.PageRendered(gsPageRendered);
             m_GtkaaCheck.Sensitive = true;
             m_GtkZoomMinus.Sensitive = true;
             m_GtkZoomPlus.Sensitive = true;
@@ -106,11 +117,10 @@ namespace gs_mono_example
 		/* Render all pages full resolution */
 		private void RenderMainFirst()
 		{
-			m_firstpage = 1;
             m_current_page = 0;
             m_GtkimageStoreMain.GetIterFirst(out m_tree_iter);
             m_busy_render = true;
-            m_ghostscript.gsPageRenderedMain += new ghostsharp.gsCallBackPageRenderedMain(gsPageRendered);
+            m_ghostscript.PageRenderedCallBack += new GSMONO.PageRendered(gsPageRendered);
             AddProgressBar("Rendering Pages");
             m_ghostscript.gsDisplayDeviceRenderAll(m_currfile, m_doczoom, m_aa, GS_Task_t.DISPLAY_DEV_NON_PDF);
 		}

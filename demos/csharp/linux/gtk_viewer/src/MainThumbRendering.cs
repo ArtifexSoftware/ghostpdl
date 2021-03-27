@@ -1,4 +1,19 @@
-﻿using System;
+﻿/* Copyright (C) 2020-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using GhostMono;
@@ -30,7 +45,7 @@ namespace gs_mono_example
         private void ThumbsDone()
         {
             m_GtkProgressBar.Fraction = 1.0;
-            m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
+            m_ghostscript.PageRenderedCallBack -= new GSMONO.PageRendered(gsThumbRendered);
             m_numpages = m_thumbnails.Count;
             if (m_numpages < 1)
             {
@@ -82,8 +97,8 @@ namespace gs_mono_example
 		private void RenderThumbs()
 		{
             AddProgressBar("Rendering Thumbs");
-            m_ghostscript.gsPageRenderedMain += 
-                new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
+            m_ghostscript.PageRenderedCallBack +=
+                new GSMONO.PageRendered(gsThumbRendered);
             m_ghostscript.gsDisplayDeviceRenderAll(m_currfile,
                 Constants.SCALE_THUMB, false, GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF);
 		}

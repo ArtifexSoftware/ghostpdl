@@ -28,5 +28,6 @@ performance on rendering only the visible pages when PDF is the document source.
 PCL and PS file formats are streamed and so cannot work in this manner without
 a severe performance penalty.
 
+The Linux application is built using the make.sh bash script.
 
 
