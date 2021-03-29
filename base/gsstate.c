@@ -319,6 +319,7 @@ gs_gsave(gs_gstate * pgs)
     pgs->saved = pnew;
     if (pgs->show_gstate == pgs)
         pgs->show_gstate = pnew->show_gstate = pnew;
+    pgs->trans_flags.xstate_change = false;
     pgs->level++;
     if_debug2m('g', pgs->memory, "[g]gsave -> "PRI_INTPTR", level = %d\n",
               (intptr_t)pnew, pgs->level);
