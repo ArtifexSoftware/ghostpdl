@@ -114,6 +114,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
 #endif
         goto exit;
     }
+
     /* If /Processed not in the dict, put it there */
     if (code == 0) {
         /* the cleanup at end of this routine assumes Processed has a ref */
@@ -291,9 +292,11 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         /* Put back the matrix (we couldn't just rely on gsave/grestore for whatever reason,
          * according to PS code anyway...
          */
-        if (Processed)
-            Processed->value = true;
         gs_setmatrix(ctx->pgs, &save_matrix);
+
+        /* Set Processed flag */
+        if (code == 0 && Processed)
+            Processed->value = true;
     } else {
         /* take action on a non-/Mask entry. What does this mean ? What do we need to do */
         dmprintf(ctx->memory, "Warning: Type is not /Mask, entry ignored in pdfi_set_trans_mask\n");

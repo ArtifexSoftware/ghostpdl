@@ -281,6 +281,7 @@ int pdfi_grestore(pdf_context *ctx)
     } else {
         /* We don't throw an error here, we just ignore it and continue */
         ctx->pdf_warnings |= W_PDF_TOOMANYQ;
+        dbgmprintf(ctx->memory, "WARNING: pdfi_grestore() Too many q/Q (too many Q's)\n");
     }
     return 0;
 }
@@ -2111,6 +2112,7 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
     pdf_obj *o = NULL;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     int code;
+    pdf_bool *Processed = NULL;
 
     if (ctx->page.has_transparency == false || ctx->args.notransparency == true)
         return 0;
@@ -2136,6 +2138,14 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
     }
 
     if (o->type == PDF_DICT) {
+        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Processed", PDF_BOOL, (pdf_obj **)&Processed);
+        /* Need to clear the Processed flag in the SMask if another value is set
+         * (even if it's the same SMask?)
+         * TODO: I think there is a better way to do this that doesn't require sticking this
+         * flag in the SMask dictionary.  But for now, let's get correct behavior.
+         */
+        if (code > 0 && Processed->value)
+            Processed->value = false;
         if (igs->SMask)
             pdfi_gstate_smask_free(igs);
         pdfi_gstate_smask_install(igs, ctx->memory, (pdf_dict *)o, ctx->pgs);
@@ -2143,6 +2153,7 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
 
  exit:
     pdfi_countdown(o);
+    pdfi_countdown(Processed);
     return 0;
 }
 
