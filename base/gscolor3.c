@@ -109,7 +109,7 @@ gs_shfill(gs_gstate * pgs, const gs_shading_t * psh)
 
     /* make sure the tag gets set correctly */
     if (pgs->show_gstate == NULL)
-        ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+        ensure_tag_is_set(pgs, pgs->device, GS_VECTOR_TAG);	/* NB: may unset_dev_color */
     else
         ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 

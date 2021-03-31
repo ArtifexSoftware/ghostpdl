@@ -29,7 +29,7 @@
 #define NUM_DEVICE_PROFILES 4
 #define NUM_SOURCE_PROFILES 3
 #define GS_DEFAULT_DEVICE_PROFILE 0
-#define GS_GRAPHIC_DEVICE_PROFILE 1
+#define GS_VECTOR_DEVICE_PROFILE 1
 #define GS_IMAGE_DEVICE_PROFILE 2
 #define GS_TEXT_DEVICE_PROFILE 3
 
@@ -210,7 +210,7 @@ typedef enum {
     GS_UNTOUCHED_TAG = 0x0,	/* UNTOUCHED *must* be 0 -- transparency code relies on this */
     GS_TEXT_TAG = 0x1,
     GS_IMAGE_TAG = 0x2,
-    GS_PATH_TAG = 0x4,
+    GS_VECTOR_TAG = 0x4,
     GS_UNKNOWN_TAG = 0x40,
     GS_DEVICE_ENCODES_TAGS = 0x80
 } gs_graphics_type_tag_t;
