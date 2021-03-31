@@ -31,10 +31,21 @@ declare_mem_procs(mem_mapped4_copy_mono, mem_mapped4_copy_color, mem_mapped4_fil
 
 /* The device descriptor. */
 const gx_device_memory mem_mapped4_device =
-mem_device("image4", 3, 1,
-           mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
-  mem_mapped4_copy_mono, mem_mapped4_copy_color, mem_mapped4_fill_rectangle,
-           mem_gray_strip_copy_rop);
+    mem_device("image4", 3, 1, mem_dev_initialize);
+
+const gdev_mem_functions gdev_mem_fns_4 =
+{
+    mem_mapped_map_rgb_color,
+    mem_mapped_map_color_rgb,
+    mem_mapped4_fill_rectangle,
+    mem_mapped4_copy_mono,
+    mem_mapped4_copy_color,
+    gx_default_copy_alpha,
+    gx_default_strip_tile_rectangle,
+    mem_gray_strip_copy_rop,
+    gx_default_strip_copy_rop2,
+    mem_get_bits_rectangle
+};
 
 /* Convert x coordinate to byte offset in scan line. */
 #undef x_to_byte
@@ -216,9 +227,9 @@ mem_mapped4_copy_color(gx_device * dev,
 
     /* Patch the width in the device temporarily. */
     dev->width <<= 2;
-    code = (*dev_proc(&mem_mono_device, copy_mono))
-        (dev, base, sourcex << 2, sraster, id,
-         x << 2, y, w << 2, h, (gx_color_index) 0, (gx_color_index) 1);
+    code = mem_mono_copy_mono(dev, base, sourcex << 2, sraster, id,
+                              x << 2, y, w << 2, h,
+                              (gx_color_index) 0, (gx_color_index) 1);
     /* Restore the correct width. */
     dev->width >>= 2;
     return code;
@@ -236,11 +247,21 @@ declare_mem_procs(mem4_word_copy_mono, mem4_word_copy_color, mem4_word_fill_rect
 
 /* Here is the device descriptor. */
 const gx_device_memory mem_mapped4_word_device =
-mem_full_device("image4w", 4, 0, mem_open,
-                mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
-        mem4_word_copy_mono, mem4_word_copy_color, mem4_word_fill_rectangle,
-                gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,
-                gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
+    mem_device("image4w", 4, 0, mem_word_dev_initialize);
+
+const gdev_mem_functions gdev_mem_fns_4w =
+{
+    mem_mapped_map_rgb_color,
+    mem_mapped_map_color_rgb,
+    mem4_word_fill_rectangle,
+    mem4_word_copy_mono,
+    mem4_word_copy_color,
+    gx_default_copy_alpha,
+    gx_default_strip_tile_rectangle,
+    gx_no_strip_copy_rop,
+    gx_default_strip_copy_rop2,
+    mem_word_get_bits_rectangle
+};
 
 /* Fill a rectangle with a color. */
 static int
@@ -295,7 +316,7 @@ mem4_word_copy_color(gx_device * dev,
     /* Use monobit copy_mono. */
     /* Patch the width in the device temporarily. */
     dev->width <<= 2;
-    code = (*dev_proc(&mem_mono_word_device, copy_mono))
+    code = gdev_mem_word_functions_for_bits(1)->copy_mono
         (dev, base, sourcex << 2, sraster, id,
          x << 2, y, w << 2, h, (gx_color_index) 0, (gx_color_index) 1);
     /* Restore the correct width. */

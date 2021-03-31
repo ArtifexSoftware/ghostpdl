@@ -426,13 +426,13 @@ plane_open_device(gx_device *dev)
     gx_device_plane_extract * const edev = (gx_device_plane_extract *)dev;
     gx_device * const plane_dev = edev->plane_dev;
     int plane_depth = plane_dev->color_info.depth;
-    const gx_device_memory * const mdproto =
-        gdev_mem_device_for_bits(plane_depth);
+    const gdev_mem_functions *fns =
+                               gdev_mem_functions_for_bits(plane_depth);
 
     edev->plane_white = gx_device_white(plane_dev);
     edev->plane_mask = (1 << plane_depth) - 1;
-    edev->plane_dev_is_memory = mdproto != 0 &&
-        dev_proc(plane_dev, copy_color) == dev_proc(mdproto, copy_color);
+    edev->plane_dev_is_memory = fns != NULL &&
+                     dev_proc(plane_dev, copy_color) == fns->copy_color;
     /* We don't set or clear any_marks here: see ...init above. */
     return 0;
 }

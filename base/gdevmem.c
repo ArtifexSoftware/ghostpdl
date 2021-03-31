@@ -122,6 +122,44 @@ gdev_mem_word_device_for_bits(int bits_per_pixel)
             mem_word_devices[bits_per_pixel]);
 }
 
+static const gdev_mem_functions *mem_fns[65] = {
+    NULL, &gdev_mem_fns_1, &gdev_mem_fns_2, NULL,
+                            &gdev_mem_fns_4, NULL, NULL, NULL,
+    &gdev_mem_fns_8, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_16, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_24, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_32, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_40, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_48, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_56, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_64
+};
+
+const gdev_mem_functions *
+gdev_mem_functions_for_bits(int bits_per_pixel)
+{
+    return ((uint)bits_per_pixel > 64 ? NULL : mem_fns[bits_per_pixel]);
+}
+
+static const gdev_mem_functions *mem_word_fns[65] = {
+    NULL, &gdev_mem_fns_1, &gdev_mem_fns_2w, NULL,
+                            &gdev_mem_fns_4w, NULL, NULL, NULL,
+    &gdev_mem_fns_8w, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_24w, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_32w, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_40w, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_48w, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_56w, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    &gdev_mem_fns_64w
+};
+
+const gdev_mem_functions *
+gdev_mem_word_functions_for_bits(int bits_per_pixel)
+{
+    return ((uint)bits_per_pixel > 64 ? NULL : mem_word_fns[bits_per_pixel]);
+}
+
 /* Test whether a device is a memory device */
 bool
 gs_device_is_memory(const gx_device * dev)
@@ -130,17 +168,7 @@ gs_device_is_memory(const gx_device * dev)
      * We use the draw_thin_line procedure to mark memory devices.
      * See gdevmem.h.
      */
-    int bits_per_pixel = dev->color_info.depth;
-    const gx_device_memory *mdproto;
-
-    if (dev->is_planar)
-        bits_per_pixel /= dev->color_info.num_components;
-
-    mdproto = gdev_mem_device_for_bits(bits_per_pixel);
-    if (mdproto != 0 && dev_proc(dev, draw_thin_line) == dev_proc(mdproto, draw_thin_line))
-        return true;
-    mdproto = gdev_mem_word_device_for_bits(bits_per_pixel);
-    return (mdproto != 0 && dev_proc(dev, draw_thin_line) == dev_proc(mdproto, draw_thin_line));
+    return (dev_proc(dev, draw_thin_line) == mem_draw_thin_line);
 }
 
 /* Make a memory device. */
@@ -850,4 +878,92 @@ mem_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, fixed fy1,
 {
     return gx_default_draw_thin_line(dev, fx0, fy0, fx1, fy1, pdcolor, lop,
                                      adjustx, adjusty);
+}
+
+void mem_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, get_initial_matrix, mem_get_initial_matrix);
+    set_dev_proc(dev, sync_output, gx_default_sync_output);
+    set_dev_proc(dev, output_page, gx_default_output_page);
+    set_dev_proc(dev, close_device, mem_close);
+    set_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
+    set_dev_proc(dev, obsolete_draw_line, gx_default_draw_line);
+    set_dev_proc(dev, get_bits, gx_default_get_bits);
+    set_dev_proc(dev, get_params, gx_default_get_params);
+    set_dev_proc(dev, put_params, gx_default_put_params);
+    set_dev_proc(dev, get_xfont_procs, gx_forward_get_xfont_procs);
+    set_dev_proc(dev, get_xfont_device, gx_forward_get_xfont_device);
+    set_dev_proc(dev, map_rgb_alpha_color, gx_default_map_rgb_alpha_color);
+    set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
+    set_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
+    set_dev_proc(dev, get_band, gx_default_get_band);
+    set_dev_proc(dev, copy_rop, gx_default_copy_rop);
+    set_dev_proc(dev, fill_path, gx_default_fill_path);
+    set_dev_proc(dev, stroke_path, gx_default_stroke_path);
+    set_dev_proc(dev, fill_mask, gx_default_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, gx_default_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, mem_draw_thin_line);
+    set_dev_proc(dev, begin_image, gx_default_begin_image);
+    set_dev_proc(dev, image_data, gx_default_image_data);
+    set_dev_proc(dev, end_image, gx_default_end_image);
+    set_dev_proc(dev, get_clipping_box, gx_default_get_clipping_box);
+    set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
+    set_dev_proc(dev, map_color_rgb_alpha, gx_default_map_color_rgb_alpha);
+    set_dev_proc(dev, create_compositor, gx_default_create_compositor);
+    set_dev_proc(dev, get_hardware_params, gx_default_get_hardware_params);
+    set_dev_proc(dev, text_begin, gx_default_text_begin);
+    set_dev_proc(dev, transform_pixel_region, mem_transform_pixel_region);
+
+    /* Defaults that may well get overridden. */
+    set_dev_proc(dev, open_device, mem_open);
+    set_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
+    set_dev_proc(dev, map_cmyk_color, gx_default_map_cmyk_color);
+    set_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
+    set_dev_proc(dev, get_bits_rectangle, mem_get_bits_rectangle);
+}
+
+int mem_dev_initialize(gx_device *dev)
+{
+    int depth = dev->color_info.depth;
+    const gdev_mem_functions *fns;
+
+    if (dev->is_planar)
+        depth /= dev->color_info.num_components;
+    fns = gdev_mem_functions_for_bits(depth);
+
+    mem_initialize(dev);
+
+    set_dev_proc(dev, map_rgb_color, fns->map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, fns->map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, fns->fill_rectangle);
+    set_dev_proc(dev, copy_mono, fns->copy_mono);
+    set_dev_proc(dev, copy_color, fns->copy_color);
+    set_dev_proc(dev, copy_alpha, fns->copy_alpha);
+    set_dev_proc(dev, strip_copy_rop, fns->strip_copy_rop);
+    set_dev_proc(dev, strip_copy_rop2, fns->strip_copy_rop2);
+    set_dev_proc(dev, strip_tile_rectangle, fns->strip_tile_rectangle);
+
+    return 0;
+}
+
+int mem_word_dev_initialize(gx_device *dev)
+{
+    const gdev_mem_functions *fns =
+                gdev_mem_word_functions_for_bits(dev->color_info.depth);
+
+    mem_initialize(dev);
+
+    set_dev_proc(dev, map_rgb_color, fns->map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, fns->map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, fns->fill_rectangle);
+    set_dev_proc(dev, copy_mono, fns->copy_mono);
+    set_dev_proc(dev, copy_color, fns->copy_color);
+    set_dev_proc(dev, copy_alpha, fns->copy_alpha);
+    set_dev_proc(dev, strip_copy_rop, fns->strip_copy_rop);
+    set_dev_proc(dev, strip_copy_rop2, fns->strip_copy_rop2);
+    set_dev_proc(dev, strip_tile_rectangle, fns->strip_tile_rectangle);
+
+    return 0;
 }

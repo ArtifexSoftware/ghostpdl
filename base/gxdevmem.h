@@ -202,6 +202,57 @@ int gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
 #define gdev_mem_raster(mdev)\
   gx_device_raster((const gx_device *)(mdev), true)
 
+typedef struct
+{
+    dev_proc_map_rgb_color((*map_rgb_color));
+    dev_proc_map_color_rgb((*map_color_rgb));
+    dev_proc_fill_rectangle((*fill_rectangle));
+    dev_proc_copy_mono((*copy_mono));
+    dev_proc_copy_color((*copy_color));
+    dev_proc_copy_alpha((*copy_alpha));
+    dev_proc_strip_tile_rectangle((*strip_tile_rectangle));
+    dev_proc_strip_copy_rop((*strip_copy_rop));
+    dev_proc_strip_copy_rop2((*strip_copy_rop2));
+    dev_proc_get_bits_rectangle((*get_bits_rectangle));
+} gdev_mem_functions;
+
+extern const gdev_mem_functions gdev_mem_fns_1;
+extern const gdev_mem_functions gdev_mem_fns_2;
+extern const gdev_mem_functions gdev_mem_fns_4;
+extern const gdev_mem_functions gdev_mem_fns_8;
+extern const gdev_mem_functions gdev_mem_fns_16;
+extern const gdev_mem_functions gdev_mem_fns_24;
+extern const gdev_mem_functions gdev_mem_fns_32;
+extern const gdev_mem_functions gdev_mem_fns_40;
+extern const gdev_mem_functions gdev_mem_fns_48;
+extern const gdev_mem_functions gdev_mem_fns_56;
+extern const gdev_mem_functions gdev_mem_fns_64;
+#if ARCH_IS_BIG_ENDIAN
+#define gdev_mem_fns_1w  gdev_mem_fns_1
+#define gdev_mem_fns_2w  gdev_mem_fns_2
+#define gdev_mem_fns_4w  gdev_mem_fns_4
+#define gdev_mem_fns_8w  gdev_mem_fns_8
+#define gdev_mem_fns_24w gdev_mem_fns_24
+#define gdev_mem_fns_32w gdev_mem_fns_32
+#define gdev_mem_fns_40w gdev_mem_fns_40
+#define gdev_mem_fns_48w gdev_mem_fns_48
+#define gdev_mem_fns_56w gdev_mem_fns_56
+#define gdev_mem_fns_64w gdev_mem_fns_64
+#else
+extern const gdev_mem_functions gdev_mem_fns_1w;
+extern const gdev_mem_functions gdev_mem_fns_2w;
+extern const gdev_mem_functions gdev_mem_fns_4w;
+extern const gdev_mem_functions gdev_mem_fns_8w;
+extern const gdev_mem_functions gdev_mem_fns_24w;
+extern const gdev_mem_functions gdev_mem_fns_32w;
+extern const gdev_mem_functions gdev_mem_fns_40w;
+extern const gdev_mem_functions gdev_mem_fns_48w;
+extern const gdev_mem_functions gdev_mem_fns_56w;
+extern const gdev_mem_functions gdev_mem_fns_64w;
+#endif
+const gdev_mem_functions *gdev_mem_functions_for_bits(int bits);
+const gdev_mem_functions *gdev_mem_word_functions_for_bits(int bits);
+
 /* Determine the appropriate memory device for a given */
 /* number of bits per pixel (0 if none suitable). */
 const gx_device_memory *gdev_mem_device_for_bits(int);

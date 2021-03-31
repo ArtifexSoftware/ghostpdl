@@ -46,12 +46,21 @@ declare_mem_procs(mem_true48_copy_mono, mem_true48_copy_color, mem_true48_fill_r
 
 /* The device descriptor. */
 const gx_device_memory mem_true48_device =
-mem_full_alpha_device("image48", 48, 0, mem_open,
-                 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
-     mem_true48_copy_mono, mem_true48_copy_color, mem_true48_fill_rectangle,
-                      gx_default_map_cmyk_color, gx_default_copy_alpha,
-                 gx_default_strip_tile_rectangle, mem_default_strip_copy_rop,
-                      mem_get_bits_rectangle);
+    mem_device("image48", 48, 0, mem_dev_initialize);
+
+const gdev_mem_functions gdev_mem_fns_48 =
+{
+    gx_default_rgb_map_rgb_color,
+    gx_default_rgb_map_color_rgb,
+    mem_true48_fill_rectangle,
+    mem_true48_copy_mono,
+    mem_true48_copy_color,
+    gx_default_copy_alpha,
+    gx_default_strip_tile_rectangle,
+    mem_default_strip_copy_rop,
+    gx_default_strip_copy_rop2,
+    mem_get_bits_rectangle
+};
 
 /* Convert x coordinate to byte offset in scan line. */
 #undef x_to_byte
@@ -385,11 +394,21 @@ declare_mem_procs(mem48_word_copy_mono, mem48_word_copy_color, mem48_word_fill_r
 
 /* Here is the device descriptor. */
 const gx_device_memory mem_true48_word_device =
-mem_full_device("image48w", 48, 0, mem_open,
-                gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
-     mem48_word_copy_mono, mem48_word_copy_color, mem48_word_fill_rectangle,
-                gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,
-                gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
+    mem_device("image48w", 48, 0, mem_word_dev_initialize);
+
+const gdev_mem_functions gdev_mem_fns_48w =
+{
+    gx_default_rgb_map_rgb_color,
+    gx_default_rgb_map_color_rgb,
+    mem48_word_fill_rectangle,
+    mem48_word_copy_mono,
+    mem48_word_copy_color,
+    gx_default_copy_alpha,
+    gx_default_strip_tile_rectangle,
+    gx_no_strip_copy_rop,
+    gx_default_strip_copy_rop2,
+    mem_word_get_bits_rectangle
+};
 
 /* Fill a rectangle with a color. */
 static int

@@ -25,4 +25,4 @@
 
 /* The device descriptor. */
 const gx_device_memory mem_x_device =
-    mem_device("imagex", 256, 0, NULL, NULL, NULL, NULL, NULL, NULL);
+    mem_device("imagex", 256, 0, NULL);
