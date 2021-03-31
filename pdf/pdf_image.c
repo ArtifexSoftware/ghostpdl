@@ -2128,7 +2128,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
          * streams are not additionally encrypted).
          */
         ctx->encryption.decrypt_strings = false;
-        code = pdfi_interpret_inner_content_stream(ctx, form_stream, page_dict, false, "FORM");
+        code = pdfi_run_context(ctx, form_stream, page_dict, false, "FORM");
         ctx->encryption.decrypt_strings = saved_decrypt_strings;
     }
 
