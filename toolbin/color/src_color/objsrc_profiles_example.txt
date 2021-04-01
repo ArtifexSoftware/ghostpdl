@@ -1,6 +1,6 @@
-Graphic_CMYK	cmyk_src_cyan.icc	0	1	0	0	
-Image_CMYK	cmyk_src_magenta.icc	0	1	0	0	
+Vector_CMYK	cmyk_src_cyan.icc	0	1	0	0
+Image_CMYK	cmyk_src_magenta.icc	0	1	0	0
 Text_CMYK	cmyk_src_yellow.icc	0	1	0	0
-Graphic_RGB	rgb_source_red.icc	0	1	0
+Vector_RGB	rgb_source_red.icc	0	1	0
 Image_RGB	rgb_source_green.icc	0	1	0
 Text_RGB	rgb_source_blue.icc	0	1	0
