@@ -864,7 +864,7 @@ if test x$with_tesseract != xno; then
       for flag in $cxxflags_to_try ; do
         CXXFLAGS="$CXXFLAGS $flag"
 
-        AC_TRY_COMPILE(, [return 0;], [
+        AC_TRY_COMPILE([#include <cstdlib>], [return 0;], [
                 echo "   $flag"; CXXFLAGS_TO_USE="$CXXFLAGS_TO_USE $flag"
         ])
 
