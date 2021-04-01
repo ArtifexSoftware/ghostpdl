@@ -379,26 +379,23 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
         /* Didn't find a /CS key, try again using /ColorSpace */
         code = pdfi_dict_knownget(ctx, group_dict, "ColorSpace", &CS);
     }
-    if (code > 0) {
+    if (code > 0 && CS->type != PDF_NULL) {
         pdf_dict *group_stream_dict = NULL;
-
-        if (CS->type == PDF_NULL) {
-            pdfi_countdown(CS);
-            return_error(gs_error_undefined);
-        }
 
         code = pdfi_dict_from_obj(ctx, (pdf_obj *)group_stream, &group_stream_dict);
         if (code < 0)
-            return code;
+            goto exit;
 
         code = pdfi_setcolorspace(ctx, CS, group_stream_dict, page_dict);
-        pdfi_countdown(CS);
         if (code < 0)
-            return code;
+            goto exit;
         params.ColorSpace = gs_currentcolorspace(ctx->pgs);
     } else {
         params.ColorSpace = NULL;
     }
+
+ exit:
+    pdfi_countdown(CS);
     if (code < 0)
         return_error(code);
 
