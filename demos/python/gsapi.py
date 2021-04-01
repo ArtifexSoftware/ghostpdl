@@ -1,9 +1,11 @@
 #! /usr/bin/env python3
 
 '''
-Python version of the C API in psi/iapi.h, using ctypes.
+Python version of the C API in psi/iapi.h.
 
 Overview:
+
+    Implemented using Python's ctypes module.
 
     All functions have the same name as the C function that they wrap.
 
@@ -15,12 +17,38 @@ Overview:
 
     See examples.py for sample usage.
 
-Usage:
+Example usage:
 
-    make sodebug
-    LD_LIBRARY_PATH=sodebugbin ./demos/python/gsapi.py
+    On Linux/OpenBSD/MacOS:
+        Build the ghostscript shared library:
+            make sodebug
 
-    On Windows perform Release build (x64 or Win32).
+        Run gsapi.py as a test script:
+            GSAPI_LIBDIR=sodebugbin ./demos/python/gsapi.py
+
+    On Windows:
+        Build ghostscript dll, for example:
+            devenv.com windows/GhostPDL.sln /Build Debug /Project ghostscript
+
+        Run gsapi.py as a test script in a cmd.exe window:
+            set GSAPI_LIBDIR=debugbin&& python ./demos/python/gsapi.py
+
+        Run gsapi.py as a test script in a PowerShell window:
+            cmd /C "set GSAPI_LIBDIR=debugbin&& python ./demos/python/gsapi.py"
+
+Specifying the Ghostscript shared library:
+
+    Two environmental variables can be used to specify where to find the
+    Ghostscript shared library.
+
+    GSAPI_LIB sets the exact path of the ghostscript shared library, else
+    GSAPI_LIBDIR sets the directory containing the ghostscript shared
+    library. If neither is defined we will use the OS's default location(s) for
+    shared libraries.
+
+    If GSAPI_LIB is not defined, the leafname of the shared library is inferred
+    from the OS type - libgs.so on Unix, libgs.dylib on MacOS, gsdll64.dll on
+    Windows 64.
 
 Requirements:
 
@@ -43,23 +71,36 @@ Limitations as of 2020-07-21:
 '''
 
 import ctypes
+import os
 import platform
 import sys
 
 
-if platform.system() in ('Linux', 'OpenBSD'):
-    _libgs = ctypes.CDLL('libgs.so')
-
-elif platform.system() == 'Windows':
-    if sys.maxsize == 2**31 - 1:
-        _libgs = ctypes.CDLL('../../bin/gpdldll32.dll')
-    elif sys.maxsize == 2**63 - 1:
-        _libgs = ctypes.CDLL('../../bin/gpdldll64.dll')
+_lib = os.environ.get('GSAPI_LIB')
+if not _lib:
+    if platform.system() in ('Linux', 'OpenBSD'):
+        _lib = 'libgs.so'
+    elif platform.system() == 'Darwin':
+        _lib = 'libgs.dylib'
+    elif platform.system() == 'Windows':
+        if sys.maxsize == 2**31 - 1:
+            _lib = 'gsdll32.dll'
+        elif sys.maxsize == 2**63 - 1:
+            _lib = 'gsdll64.dll'
+        else:
+            raise Exception('Unrecognised sys.maxsize=0x%x' % sys.maxsize)
     else:
-        raise Exception('Unrecognised sys.maxsize=0x%x' % sys.maxsize)
+        raise Exception('Unrecognised platform.system()=%s' % platform.system())
 
-else:
-    raise Exception('Unrecognised platform.system()=%s' % platform.system())
+    _libdir = os.environ.get('GSAPI_LIBDIR')
+    if _libdir:
+        _lib = os.path.join(_libdir, _lib)
+
+try:
+    _libgs = ctypes.CDLL(_lib)
+except Exception as e:
+    print('gsapi.py: Failed to load Ghostscript library "%s".' % _lib)
+    raise
 
 
 class GSError(Exception):
