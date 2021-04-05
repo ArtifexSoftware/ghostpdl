@@ -39,7 +39,6 @@ dev_proc_fill_rectangle(default_subclass_fill_rectangle);
 dev_proc_tile_rectangle(default_subclass_tile_rectangle);
 dev_proc_copy_mono(default_subclass_copy_mono);
 dev_proc_copy_color(default_subclass_copy_color);
-dev_proc_draw_line(default_subclass_draw_line);
 dev_proc_get_bits(default_subclass_get_bits);
 dev_proc_get_params(default_subclass_get_params);
 dev_proc_put_params(default_subclass_put_params);

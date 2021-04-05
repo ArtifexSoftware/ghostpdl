@@ -955,14 +955,6 @@ gx_default_draw_thin_line(gx_device * dev,
     }
 }
 
-/* Stub out the obsolete procedure. */
-int
-gx_default_draw_line(gx_device * dev,
-                     int x0, int y0, int x1, int y1, gx_color_index color)
-{
-    return -1;
-}
-
 /* ---------------- Image drawing ---------------- */
 
 /* GC structures for image enumerator */

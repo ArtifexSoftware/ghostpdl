@@ -255,7 +255,6 @@ dev_proc_map_color_rgb(gx_default_w_b_map_color_rgb);
 dev_proc_tile_rectangle(gx_default_tile_rectangle);
 dev_proc_copy_mono(gx_default_copy_mono);
 dev_proc_copy_color(gx_default_copy_color);
-dev_proc_draw_line(gx_default_draw_line);
 dev_proc_get_bits(gx_no_get_bits);      /* gives error */
 dev_proc_get_bits(gx_default_get_bits);
 dev_proc_get_params(gx_default_get_params);

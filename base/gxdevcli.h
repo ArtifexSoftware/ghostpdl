@@ -923,14 +923,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_copy_color(proc)\
   dev_t_proc_copy_color(proc, gx_device)
 
-                /* OBSOLETED in release 3.66 */
-
-#define dev_t_proc_draw_line(proc, dev_t)\
-  int proc(dev_t *dev,\
-    int x0, int y0, int x1, int y1, gx_color_index color)
-#define dev_proc_draw_line(proc)\
-  dev_t_proc_draw_line(proc, gx_device)
-
                 /* Added in release 2.4 */
 
 #define dev_t_proc_get_bits(proc, dev_t)\
@@ -1559,7 +1551,6 @@ typedef struct {
         dev_t_proc_tile_rectangle((*tile_rectangle), dev_t);\
         dev_t_proc_copy_mono((*copy_mono), dev_t);\
         dev_t_proc_copy_color((*copy_color), dev_t);\
-        dev_t_proc_draw_line((*obsolete_draw_line), dev_t);\
         dev_t_proc_get_bits((*get_bits), dev_t);\
         dev_t_proc_get_params((*get_params), dev_t);\
         dev_t_proc_put_params((*put_params), dev_t);\

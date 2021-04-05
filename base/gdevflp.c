@@ -63,7 +63,6 @@ static dev_proc_fill_rectangle(flp_fill_rectangle);
 static dev_proc_tile_rectangle(flp_tile_rectangle);
 static dev_proc_copy_mono(flp_copy_mono);
 static dev_proc_copy_color(flp_copy_color);
-static dev_proc_draw_line(flp_draw_line);
 static dev_proc_get_bits(flp_get_bits);
 static dev_proc_get_params(flp_put_params);
 static dev_proc_get_alpha_bits(flp_get_alpha_bits);
@@ -411,18 +410,6 @@ int flp_copy_color(gx_device *dev, const byte *data, int data_x, int raster, gx_
         return code;
     if (!code)
         return default_subclass_copy_color(dev, data, data_x, raster, id, x, y, width, height);
-
-    return 0;
-}
-
-int flp_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index color)
-{
-    int code = SkipPage(dev);
-
-    if (code < 0)
-        return code;
-    if (!code)
-        return default_subclass_draw_line(dev, x0, y0, x1, y1, color);
 
     return 0;
 }
@@ -1273,7 +1260,6 @@ flp_initialize(gx_device *dev)
     set_dev_proc(dev, tile_rectangle, flp_tile_rectangle);
     set_dev_proc(dev, copy_mono, flp_copy_mono);
     set_dev_proc(dev, copy_color, flp_copy_color);
-    set_dev_proc(dev, obsolete_draw_line, flp_draw_line);
     set_dev_proc(dev, get_bits, flp_get_bits);
     set_dev_proc(dev, put_params, flp_put_params);
     set_dev_proc(dev, get_alpha_bits, flp_get_alpha_bits);

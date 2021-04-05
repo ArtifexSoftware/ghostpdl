@@ -597,7 +597,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
     fill_dev_proc(dev, copy_mono, gx_default_copy_mono);
     fill_dev_proc(dev, copy_color, gx_default_copy_color);
-    fill_dev_proc(dev, obsolete_draw_line, gx_default_draw_line);
     fill_dev_proc(dev, get_bits, gx_default_get_bits);
     fill_dev_proc(dev, get_params, gx_default_get_params);
     fill_dev_proc(dev, put_params, gx_default_put_params);
@@ -1276,7 +1275,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, tile_rectangle, dev_proc(&prototype, tile_rectangle));
     set_dev_proc(dest, copy_mono, dev_proc(&prototype, copy_mono));
     set_dev_proc(dest, copy_color, dev_proc(&prototype, copy_color));
-    set_dev_proc(dest, obsolete_draw_line, dev_proc(&prototype, obsolete_draw_line));
     set_dev_proc(dest, get_bits, dev_proc(&prototype, get_bits));
     set_dev_proc(dest, get_params, dev_proc(&prototype, get_params));
     set_dev_proc(dest, put_params, dev_proc(&prototype, put_params));

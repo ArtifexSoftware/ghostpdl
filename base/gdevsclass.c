@@ -204,13 +204,6 @@ int default_subclass_copy_color(gx_device *dev, const byte *data, int data_x, in
     return 0;
 }
 
-int default_subclass_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index color)
-{
-    if (dev->child)
-        return dev_proc(dev->child, obsolete_draw_line)(dev->child, x0, y0, x1, y1, color);
-    return 0;
-}
-
 int default_subclass_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
 {
     if (dev->child)
@@ -925,7 +918,6 @@ int default_subclass_initialize(gx_device *dev)
     set_dev_proc(dev, tile_rectangle, default_subclass_tile_rectangle);
     set_dev_proc(dev, copy_mono, default_subclass_copy_mono);
     set_dev_proc(dev, copy_color, default_subclass_copy_color);
-    set_dev_proc(dev, obsolete_draw_line, default_subclass_draw_line);
     set_dev_proc(dev, get_bits, default_subclass_get_bits);
     set_dev_proc(dev, get_params, default_subclass_get_params);
     set_dev_proc(dev, put_params, default_subclass_put_params);

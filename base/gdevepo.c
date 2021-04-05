@@ -49,7 +49,6 @@ extern void epo_disable(int flag);
 /* Device procedures, we need quite a lot of them */
 static dev_proc_output_page(epo_output_page);
 static dev_proc_fill_rectangle(epo_fill_rectangle);
-static dev_proc_draw_line(epo_draw_line);
 static dev_proc_fill_path(epo_fill_path);
 static dev_proc_fill_mask(epo_fill_mask);
 static dev_proc_fill_trapezoid(epo_fill_trapezoid);
@@ -286,15 +285,6 @@ int epo_fill_rectangle(gx_device *dev, int x, int y, int width, int height, gx_c
     return dev_proc(dev, fill_rectangle)(dev, x, y, width, height, color);
 }
 
-int epo_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index color)
-{
-    int code = epo_handle_erase_page(dev);
-
-    if (code != 0)
-        return code;
-    return dev_proc(dev, obsolete_draw_line)(dev, x0, y0, x1, y1, color);
-}
-
 int epo_fill_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_fill_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
@@ -449,7 +439,6 @@ int epo_initialize(gx_device *dev)
     set_dev_proc(dev, tile_rectangle, epo_tile_rectangle);
     set_dev_proc(dev, copy_mono, epo_copy_mono);
     set_dev_proc(dev, copy_color, epo_copy_color);
-    set_dev_proc(dev, obsolete_draw_line, epo_draw_line);
     set_dev_proc(dev, get_bits, epo_get_bits);
     set_dev_proc(dev, copy_alpha, epo_copy_alpha);
     set_dev_proc(dev, copy_rop, epo_copy_rop);

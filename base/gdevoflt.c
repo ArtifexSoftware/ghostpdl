@@ -45,7 +45,6 @@ private_st_obj_filter_text_enum();
 /* Device procedures, we need to implement all of them */
 static dev_proc_fill_rectangle(obj_filter_fill_rectangle);
 static dev_proc_tile_rectangle(obj_filter_tile_rectangle);
-static dev_proc_draw_line(obj_filter_draw_line);
 static dev_proc_fill_path(obj_filter_fill_path);
 static dev_proc_stroke_path(obj_filter_stroke_path);
 static dev_proc_fill_mask(obj_filter_fill_mask);
@@ -102,7 +101,6 @@ obj_filter_initialize(gx_device *dev)
 
     set_dev_proc(dev, fill_rectangle, obj_filter_fill_rectangle);
     set_dev_proc(dev, tile_rectangle, obj_filter_tile_rectangle);
-    set_dev_proc(dev, obsolete_draw_line, obj_filter_draw_line);
     set_dev_proc(dev, fill_path, obj_filter_fill_path);
     set_dev_proc(dev, stroke_path, obj_filter_stroke_path);
     set_dev_proc(dev, fill_mask, obj_filter_fill_mask);
@@ -158,13 +156,6 @@ int obj_filter_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x,
 {
     if ((dev->ObjectFilter & FILTERVECTOR) == 0)
         return default_subclass_tile_rectangle(dev, tile, x, y, width, height, color0, color1, phase_x, phase_y);
-    return 0;
-}
-
-int obj_filter_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index color)
-{
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
-        return default_subclass_draw_line(dev, x0, y0, x1, y1, color);
     return 0;
 }
 

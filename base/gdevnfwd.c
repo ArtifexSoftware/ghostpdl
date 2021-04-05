@@ -66,7 +66,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     /* NOT tile_rectangle */
     /* NOT copy_mono */
     /* NOT copy_color */
-    /* NOT draw_line (OBSOLETE) */
     fill_dev_proc(dev, get_bits, gx_forward_get_bits);
     fill_dev_proc(dev, get_params, gx_forward_get_params);
     fill_dev_proc(dev, put_params, gx_forward_put_params);

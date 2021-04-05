@@ -887,7 +887,6 @@ void mem_initialize(gx_device *dev)
     set_dev_proc(dev, output_page, gx_default_output_page);
     set_dev_proc(dev, close_device, mem_close);
     set_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
-    set_dev_proc(dev, obsolete_draw_line, gx_default_draw_line);
     set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, get_params, gx_default_get_params);
     set_dev_proc(dev, put_params, gx_default_put_params);
