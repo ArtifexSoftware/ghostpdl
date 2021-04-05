@@ -755,7 +755,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, end_transparency_mask, gx_default_end_transparency_mask);
     fill_dev_proc(dev, discard_transparency_layer, gx_default_discard_transparency_layer);
 
-    fill_dev_proc(dev, pattern_manage, gx_default_pattern_manage);
     fill_dev_proc(dev, push_transparency_state, gx_default_push_transparency_state);
     fill_dev_proc(dev, pop_transparency_state, gx_default_pop_transparency_state);
 
@@ -1168,12 +1167,6 @@ gx_default_discard_transparency_layer(gx_device *dev, gs_gstate *pgs)
 }
 
 int
-gx_default_pattern_manage(gx_device *pdev, gx_bitmap_id id, gs_pattern1_instance_t *pinst, pattern_manage_t function)
-{
-    return_error(gs_error_undefined);
-}
-
-int
 gx_default_push_transparency_state(gx_device *dev, gs_gstate *pgs)
 {
     return 0;
@@ -1319,7 +1312,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, get_color_comp_index, dev_proc(&prototype, get_color_comp_index));
     set_dev_proc(dest, encode_color, dev_proc(&prototype, encode_color));
     set_dev_proc(dest, decode_color, dev_proc(&prototype, decode_color));
-    set_dev_proc(dest, pattern_manage, dev_proc(&prototype, pattern_manage));
     set_dev_proc(dest, fill_rectangle_hl_color, dev_proc(&prototype, fill_rectangle_hl_color));
     set_dev_proc(dest, include_color_space, dev_proc(&prototype, include_color_space));
     set_dev_proc(dest, fill_linear_color_scanline, dev_proc(&prototype, fill_linear_color_scanline));

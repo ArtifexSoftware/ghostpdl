@@ -116,7 +116,7 @@
 /* ---------------- Auxiliary types and structures ---------------- */
 
 /* We need an abstract type for the pattern instance, */
-/* for pattern_manage. */
+/* for pattern management. */
 typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
 
 /* Define the type for colors passed to the higher-level procedures. */
@@ -1293,38 +1293,6 @@ typedef enum FILTER_FLAGS {
      /* (end of DeviceN color support) */
 
 /*
-  Pattern management for high level devices.
-  Now we need it for PatternType 1 only.
-  Return codes :
-  1 - the device handles high level patterns.
-  0 - the device needs low level pattern tiles.
-  <0 - error.
-
-  THIS IS NOW DEPRECATED, AND UNUSED. DO NOT USE THIS. USE THIS NOT. THIS
-  IS NOT TO BE USED.
-
-  Pattern Management is now done using the dev_spec_op calls.
-*/
-
-/* High level device support. */
-typedef enum {
-    pattern_manage__can_accum,
-    pattern_manage__start_accum,
-    pattern_manage__finish_accum,
-    pattern_manage__load,
-    pattern_manage__shading_area,
-    pattern_manage__is_cpath_accum,
-    pattern_manage__shfill_doesnt_need_path,
-    pattern_manage__handles_clip_path
-} pattern_manage_t;
-
-#define dev_t_proc_pattern_manage(proc, dev_t)\
-  int proc(gx_device *pdev, gx_bitmap_id id,\
-                gs_pattern1_instance_t *pinst, pattern_manage_t function)
-#define dev_proc_pattern_manage(proc)\
-  dev_t_proc_pattern_manage(proc, gx_device)
-
-/*
   Fill rectangle with a high level color.
   Return rangecheck, if the device can't handle the high level color.
 
@@ -1632,7 +1600,6 @@ typedef struct {
         dev_t_proc_get_color_comp_index((*get_color_comp_index), dev_t); \
         dev_t_proc_encode_color((*encode_color), dev_t); \
         dev_t_proc_decode_color((*decode_color), dev_t); \
-        dev_t_proc_pattern_manage((*pattern_manage), dev_t); \
         dev_t_proc_fill_rectangle_hl_color((*fill_rectangle_hl_color), dev_t); \
         dev_t_proc_include_color_space((*include_color_space), dev_t); \
         dev_t_proc_fill_linear_color_scanline((*fill_linear_color_scanline), dev_t); \

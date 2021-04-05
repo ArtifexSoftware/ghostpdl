@@ -91,7 +91,6 @@ static dev_proc_end_transparency_group(flp_end_transparency_group);
 static dev_proc_begin_transparency_mask(flp_begin_transparency_mask);
 static dev_proc_end_transparency_mask(flp_end_transparency_mask);
 static dev_proc_discard_transparency_layer(flp_discard_transparency_layer);
-static dev_proc_pattern_manage(flp_pattern_manage);
 static dev_proc_fill_rectangle_hl_color(flp_fill_rectangle_hl_color);
 static dev_proc_fill_linear_color_scanline(flp_fill_linear_color_scanline);
 static dev_proc_fill_linear_color_trapezoid(flp_fill_linear_color_trapezoid);
@@ -1060,19 +1059,6 @@ int flp_discard_transparency_layer(gx_device *dev, gs_gstate *pgs)
     return 0;
 }
 
-int flp_pattern_manage(gx_device *dev, gx_bitmap_id id,
-                gs_pattern1_instance_t *pinst, pattern_manage_t function)
-{
-    int code = SkipPage(dev);
-
-    if (code < 0)
-        return code;
-    if (!code)
-        return default_subclass_pattern_manage(dev, id, pinst, function);
-
-    return 0;
-}
-
 int flp_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         const gs_gstate *pgs, const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
@@ -1315,7 +1301,6 @@ flp_initialize(gx_device *dev)
     set_dev_proc(dev, begin_transparency_mask, flp_begin_transparency_mask);
     set_dev_proc(dev, end_transparency_mask, flp_end_transparency_mask);
     set_dev_proc(dev, discard_transparency_layer, flp_discard_transparency_layer);
-    set_dev_proc(dev, pattern_manage, flp_pattern_manage);
     set_dev_proc(dev, fill_rectangle_hl_color, flp_fill_rectangle_hl_color);
     set_dev_proc(dev, fill_linear_color_scanline, flp_fill_linear_color_scanline);
     set_dev_proc(dev, fill_linear_color_trapezoid, flp_fill_linear_color_trapezoid);

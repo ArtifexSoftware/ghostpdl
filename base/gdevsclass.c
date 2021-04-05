@@ -661,15 +661,6 @@ int default_subclass_decode_color(gx_device *dev, gx_color_index cindex, gx_colo
     return 0;
 }
 
-int default_subclass_pattern_manage(gx_device *dev, gx_bitmap_id id,
-                gs_pattern1_instance_t *pinst, pattern_manage_t function)
-{
-    if (dev->child)
-        return dev_proc(dev->child, pattern_manage)(dev->child, id, pinst, function);
-
-    return 0;
-}
-
 int default_subclass_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         const gs_gstate *pgs, const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
@@ -975,7 +966,6 @@ int default_subclass_initialize(gx_device *dev)
     set_dev_proc(dev, get_color_comp_index, default_subclass_get_color_comp_index);
     set_dev_proc(dev, encode_color, default_subclass_encode_color);
     set_dev_proc(dev, decode_color, default_subclass_decode_color);
-    set_dev_proc(dev, pattern_manage, default_subclass_pattern_manage);
     set_dev_proc(dev, fill_rectangle_hl_color, default_subclass_fill_rectangle_hl_color);
     set_dev_proc(dev, include_color_space, default_subclass_include_color_space);
     set_dev_proc(dev, fill_linear_color_scanline, default_subclass_fill_linear_color_scanline);

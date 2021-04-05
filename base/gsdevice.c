@@ -672,7 +672,6 @@ gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
         set_dev_proc(dn, begin_transparency_mask, gx_default_begin_transparency_mask);
         set_dev_proc(dn, end_transparency_mask, gx_default_end_transparency_mask);
         set_dev_proc(dn, discard_transparency_layer, gx_default_discard_transparency_layer);
-        set_dev_proc(dn, pattern_manage, gx_default_pattern_manage);
         set_dev_proc(dn, push_transparency_state, gx_default_push_transparency_state);
         set_dev_proc(dn, pop_transparency_state, gx_default_pop_transparency_state);
         set_dev_proc(dn, put_image, gx_default_put_image);
