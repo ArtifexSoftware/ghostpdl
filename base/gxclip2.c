@@ -87,7 +87,6 @@ tile_clipper_initialize(gx_device *dev)
     set_dev_proc(dev, sync_output, gx_default_sync_output);
     set_dev_proc(dev, output_page, gx_default_output_page);
     set_dev_proc(dev, close_device, gx_default_close_device);
-    set_dev_proc(dev, copy_rop, gx_default_copy_rop);
     set_dev_proc(dev, fill_path, gx_default_fill_path);
     set_dev_proc(dev, stroke_path, gx_default_stroke_path);
     set_dev_proc(dev, fill_mask, gx_default_fill_mask);

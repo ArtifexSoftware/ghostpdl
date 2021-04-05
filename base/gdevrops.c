@@ -62,7 +62,6 @@ rop_texture_initialize(gx_device *dev)
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, copy_alpha, gx_no_copy_alpha);
     set_dev_proc(dev, get_band, gx_forward_get_band);
-    set_dev_proc(dev, copy_rop, gx_no_copy_rop);
     set_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
     set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
     set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);

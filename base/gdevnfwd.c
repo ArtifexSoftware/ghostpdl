@@ -74,7 +74,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     /* NOT get_alpha_bits (OBSOLETE) */
     /* NOT copy_alpha */
     fill_dev_proc(dev, get_band, gx_forward_get_band);
-    fill_dev_proc(dev, copy_rop, gx_forward_copy_rop);
     fill_dev_proc(dev, fill_path, gx_forward_fill_path);
     fill_dev_proc(dev, stroke_path, gx_forward_stroke_path);
     fill_dev_proc(dev, fill_mask, gx_forward_fill_mask);
@@ -360,26 +359,6 @@ gx_forward_get_band(gx_device * dev, int y, int *band_start)
     return (tdev == 0 ?
             gx_default_get_band(dev, y, band_start) :
             dev_proc(tdev, get_band)(tdev, y, band_start));
-}
-
-int
-gx_forward_copy_rop(gx_device * dev,
-                    const byte * sdata, int sourcex, uint sraster,
-                    gx_bitmap_id id, const gx_color_index * scolors,
-                    const gx_tile_bitmap * texture,
-                    const gx_color_index * tcolors,
-                    int x, int y, int width, int height,
-                    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-    dev_proc_copy_rop((*proc)) =
-        (tdev == 0 ? (tdev = dev, gx_default_copy_rop) :
-         dev_proc(tdev, copy_rop));
-
-    return proc(tdev, sdata, sourcex, sraster, id, scolors,
-                texture, tcolors, x, y, width, height,
-                phase_x, phase_y, lop);
 }
 
 int
@@ -1041,7 +1020,6 @@ static dev_proc_copy_mono(null_copy_mono);
 static dev_proc_copy_color(null_copy_color);
 static dev_proc_put_params(null_put_params);
 static dev_proc_copy_alpha(null_copy_alpha);
-static dev_proc_copy_rop(null_copy_rop);
 static dev_proc_fill_path(null_fill_path);
 static dev_proc_stroke_path(null_stroke_path);
 static dev_proc_fill_trapezoid(null_fill_trapezoid);
@@ -1074,7 +1052,6 @@ null_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
     set_dev_proc(dev, copy_alpha, null_copy_alpha);
     set_dev_proc(dev, get_band, gx_forward_get_band);
-    set_dev_proc(dev, copy_rop, null_copy_rop);
     set_dev_proc(dev, fill_path, null_fill_path);
     set_dev_proc(dev, stroke_path, null_stroke_path);
     set_dev_proc(dev, fill_trapezoid, null_fill_trapezoid);
@@ -1193,16 +1170,6 @@ static int
 null_copy_alpha(gx_device * dev, const byte * data, int data_x, int raster,
                 gx_bitmap_id id, int x, int y, int width, int height,
                 gx_color_index color, int depth)
-{
-    return 0;
-}
-static int
-null_copy_rop(gx_device * dev,
-              const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-              const gx_color_index * scolors,
-              const gx_tile_bitmap * texture, const gx_color_index * tcolors,
-              int x, int y, int width, int height,
-              int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     return 0;
 }
@@ -1361,7 +1328,6 @@ void gx_forward_device_initialize_procs(gx_device *dev)
     fill_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
     fill_dev_proc(dev, copy_alpha, gx_forward_copy_alpha);
     fill_dev_proc(dev, get_band, gx_forward_get_band);
-    fill_dev_proc(dev, copy_rop, gx_forward_copy_rop);
     fill_dev_proc(dev, fill_path, gx_forward_fill_path);
     fill_dev_proc(dev, stroke_path, gx_forward_stroke_path);
     fill_dev_proc(dev, fill_mask, gx_forward_fill_mask);

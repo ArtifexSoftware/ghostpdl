@@ -119,7 +119,6 @@ pattern_accum_initialize(gx_device *dev)
      * defaults for us, but that doesn't work for some reason. */
     set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
-    set_dev_proc(dev, copy_rop, gx_default_copy_rop);
     set_dev_proc(dev, fill_path, gx_default_fill_path);
     set_dev_proc(dev, stroke_path, gx_default_stroke_path);
     set_dev_proc(dev, fill_mask, gx_default_fill_mask);

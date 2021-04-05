@@ -148,7 +148,6 @@ clist_initialize(gx_device *dev)
     set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, clist_copy_alpha);
     set_dev_proc(dev, get_band, clist_get_band);
-    set_dev_proc(dev, copy_rop, gx_default_copy_rop);
     set_dev_proc(dev, fill_path, clist_fill_path);
     set_dev_proc(dev, stroke_path, clist_stroke_path);
     set_dev_proc(dev, fill_mask, clist_fill_mask);

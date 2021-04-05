@@ -982,18 +982,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_get_band(proc)\
   dev_t_proc_get_band(proc, gx_device)
 
-                /* Added in release 3.44 */
-
-#define dev_t_proc_copy_rop(proc, dev_t)\
-  int proc(dev_t *dev,\
-    const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,\
-    const gx_color_index *scolors,\
-    const gx_tile_bitmap *texture, const gx_color_index *tcolors,\
-    int x, int y, int width, int height,\
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-#define dev_proc_copy_rop(proc)\
-  dev_t_proc_copy_rop(proc, gx_device)
-
                 /* Added in release 3.60, changed in 3.68. */
 
 #define dev_t_proc_fill_path(proc, dev_t)\
@@ -1539,7 +1527,6 @@ typedef struct {
         dev_t_proc_get_alpha_bits((*get_alpha_bits), dev_t);\
         dev_t_proc_copy_alpha((*copy_alpha), dev_t);\
         dev_t_proc_get_band((*get_band), dev_t);\
-        dev_t_proc_copy_rop((*copy_rop), dev_t);\
         dev_t_proc_fill_path((*fill_path), dev_t);\
         dev_t_proc_stroke_path((*stroke_path), dev_t);\
         dev_t_proc_fill_mask((*fill_mask), dev_t);\

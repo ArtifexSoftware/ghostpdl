@@ -266,8 +266,6 @@ dev_proc_get_alpha_bits(gx_default_get_alpha_bits);
 dev_proc_copy_alpha(gx_no_copy_alpha);  /* gives error */
 dev_proc_copy_alpha(gx_default_copy_alpha);
 dev_proc_get_band(gx_default_get_band);
-dev_proc_copy_rop(gx_no_copy_rop);      /* gives error */
-dev_proc_copy_rop(gx_default_copy_rop);
 dev_proc_fill_path(gx_default_fill_path);
 dev_proc_stroke_path(gx_default_stroke_path);
 dev_proc_fill_mask(gx_default_fill_mask);
@@ -373,7 +371,6 @@ dev_proc_get_page_device(gx_forward_get_page_device);
 #define gx_forward_get_alpha_bits gx_default_get_alpha_bits
 dev_proc_copy_alpha(gx_forward_copy_alpha);
 dev_proc_get_band(gx_forward_get_band);
-dev_proc_copy_rop(gx_forward_copy_rop);
 dev_proc_fill_path(gx_forward_fill_path);
 dev_proc_stroke_path(gx_forward_stroke_path);
 dev_proc_fill_mask(gx_forward_fill_mask);

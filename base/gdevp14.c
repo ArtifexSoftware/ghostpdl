@@ -9606,7 +9606,6 @@ pdf14_clist_initialize(gx_device *dev,
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, copy_alpha, gx_forward_copy_alpha);
     set_dev_proc(dev, get_band, gx_forward_get_band);
-    set_dev_proc(dev, copy_rop, gx_forward_copy_rop);
     set_dev_proc(dev, fill_path, pdf14_clist_fill_path);
     set_dev_proc(dev, stroke_path, pdf14_clist_stroke_path);
     set_dev_proc(dev, fill_mask, gx_forward_fill_mask);

@@ -515,17 +515,6 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 }
 
 int
-gx_no_copy_rop(gx_device * dev,
-             const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-               const gx_color_index * scolors,
-             const gx_tile_bitmap * texture, const gx_color_index * tcolors,
-               int x, int y, int width, int height,
-               int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    return_error(gs_error_unknownerror);	/* not implemented */
-}
-
-int
 gx_default_fill_mask(gx_device * orig_dev,
                      const byte * data, int dx, int raster, gx_bitmap_id id,
                      int x, int y, int w, int h,

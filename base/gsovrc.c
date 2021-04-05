@@ -476,7 +476,6 @@ generic_overprint_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, overprint_put_params);
     set_dev_proc(dev, get_page_device, overprint_get_page_device);
     set_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
-    set_dev_proc(dev, copy_rop, gx_default_copy_rop);
     set_dev_proc(dev, fill_path, overprint_fill_path);
     set_dev_proc(dev, stroke_path, overprint_stroke_path);
     set_dev_proc(dev, fill_mask, gx_default_fill_mask);
@@ -516,7 +515,6 @@ sep_overprint_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, overprint_put_params);
     set_dev_proc(dev, get_page_device, overprint_get_page_device);
     set_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
-    set_dev_proc(dev, copy_rop, gx_default_copy_rop);
     set_dev_proc(dev, fill_path, overprint_fill_path);
     set_dev_proc(dev, stroke_path, overprint_stroke_path);
     set_dev_proc(dev, fill_mask, gx_default_fill_mask);

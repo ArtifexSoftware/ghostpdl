@@ -605,7 +605,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
     fill_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
     fill_dev_proc(dev, get_band, gx_default_get_band);
-    fill_dev_proc(dev, copy_rop, gx_default_copy_rop);
     fill_dev_proc(dev, fill_path, gx_default_fill_path);
     fill_dev_proc(dev, stroke_path, gx_default_stroke_path);
     fill_dev_proc(dev, fill_mask, gx_default_fill_mask);
@@ -1268,7 +1267,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, get_alpha_bits, dev_proc(&prototype, get_alpha_bits));
     set_dev_proc(dest, copy_alpha, dev_proc(&prototype, copy_alpha));
     set_dev_proc(dest, get_band, dev_proc(&prototype, get_band));
-    set_dev_proc(dest, copy_rop, dev_proc(&prototype, copy_rop));
     set_dev_proc(dest, fill_path, dev_proc(&prototype, fill_path));
     set_dev_proc(dest, stroke_path, dev_proc(&prototype, stroke_path));
     set_dev_proc(dest, fill_trapezoid, dev_proc(&prototype, fill_trapezoid));

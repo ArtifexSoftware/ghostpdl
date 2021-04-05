@@ -47,7 +47,6 @@ dev_proc_get_page_device(default_subclass_get_page_device);
 dev_proc_get_alpha_bits(default_subclass_get_alpha_bits);
 dev_proc_copy_alpha(default_subclass_copy_alpha);
 dev_proc_get_band(default_subclass_get_band);
-dev_proc_copy_rop(default_subclass_copy_rop);
 dev_proc_fill_path(default_subclass_fill_path);
 dev_proc_stroke_path(default_subclass_stroke_path);
 dev_proc_fill_mask(default_subclass_fill_mask);

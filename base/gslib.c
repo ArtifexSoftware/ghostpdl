@@ -55,7 +55,6 @@
 /* Test programs */
 static int test1(gs_gstate *, gs_memory_t *);	/* kaleidoscope */
 static int test2(gs_gstate *, gs_memory_t *);	/* pattern fill */
-static int test3(gs_gstate *, gs_memory_t *);	/* RasterOp */
 static int test4(gs_gstate *, gs_memory_t *);	/* set resolution */
 static int test5(gs_gstate *, gs_memory_t *);	/* images */
 static int test6(gs_gstate *, gs_memory_t *);	/* CIE API, snapping */
@@ -69,7 +68,7 @@ static int test10(gs_gstate *, gs_memory_t *);	/* captured data */
 #endif
 static int (*tests[]) (gs_gstate *, gs_memory_t *) =
 {
-    test1, test2, test3, test4, test5,
+    test1, test2, test4, test5,
         test6, test7, test8, 0
 #ifdef CAPTURE
         test10
@@ -407,45 +406,6 @@ test2(gs_gstate * pgs, gs_memory_t * mem)
 /* ---------------- Test program 3 ---------------- */
 /* Exercise RasterOp a little. */
 /* Currently, this only works with monobit devices. */
-
-static int
-test3(gs_gstate * pgs, gs_memory_t * mem)
-{
-    gx_device *dev = gs_currentdevice(pgs);
-    gx_color_index black = gx_device_black(dev);
-    gx_color_index white = gx_device_white(dev);
-    gx_color_index black2[2];
-    gx_color_index black_white[2];
-    gx_color_index white_black[2];
-    long pattern[max(align_bitmap_mod / sizeof(long), 1) * 4];
-
-#define pbytes ((byte *)pattern)
-    gx_tile_bitmap tile;
-
-    black2[0] = black2[1] = black;
-    black_white[0] = white_black[1] = black;
-    black_white[1] = white_black[0] = white;
-    pbytes[0] = 0xf0;
-    pbytes[align_bitmap_mod] = 0x90;
-    pbytes[align_bitmap_mod * 2] = 0x90;
-    pbytes[align_bitmap_mod * 3] = 0xf0;
-    tile.data = pbytes;
-    tile.raster = align_bitmap_mod;
-    tile.size.x = tile.size.y = 4;
-    tile.id = gs_next_ids(mem, 1);
-    tile.rep_width = tile.rep_height = 4;
-    (*dev_proc(dev, copy_rop))
-        (dev, NULL, 0, 0, gx_no_bitmap_id, black2,
-         &tile, white_black, 100, 100, 150, 150, 0, 0, rop3_T);
-    (*dev_proc(dev, copy_rop))
-        (dev, NULL, 0, 0, gx_no_bitmap_id, black2,
-         NULL, NULL, 120, 120, 110, 110, 0, 0, ~rop3_S & rop3_1);
-    (*dev_proc(dev, copy_rop))
-        (dev, NULL, 0, 0, gx_no_bitmap_id, black2,
-         &tile, white_black, 110, 110, 130, 130, 0, 0, rop3_T ^ rop3_D);
-#undef pbytes
-    return 0;
-}
 
 /* ---------------- Test program 4 ---------------- */
 /* Set the resolution dynamically. */
