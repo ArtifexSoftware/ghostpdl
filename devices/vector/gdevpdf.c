@@ -2602,6 +2602,18 @@ pdf_close(gx_device * dev)
         return_error(gs_error_undefined);
     dev->is_open = false;
 
+    if (pdev->initial_pattern_states != NULL) {
+        int pdepth = 0;
+
+        while (pdev->initial_pattern_states[pdepth] != 0x00) {
+            gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdepth], "Freeing dangling pattern state");
+            pdev->initial_pattern_states[pdepth] = NULL;
+            pdepth++;
+        }
+        gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states, "Freeing dangling pattern state stack");
+        pdev->initial_pattern_states = NULL;
+    }
+
     if (pdev->Catalog)
         Catalog_id = pdev->Catalog->id;
     if (pdev->Info)

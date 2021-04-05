@@ -2291,6 +2291,81 @@ check_unsubstituted1(gx_device_pdf * pdev, pdf_resource_t *pres0)
     return ppat->substitute != NULL;
 }
 
+static int reset_gstate_for_pattern(gx_device_pdf * pdev, gs_gstate *destination, gs_gstate *source)
+{
+    if (pdev->vg_initial_set) {
+        destination->strokeconstantalpha = source->strokeconstantalpha;
+        source->strokeconstantalpha = pdev->vg_initial.strokeconstantalpha;
+        destination->fillconstantalpha = source->fillconstantalpha;
+        source->fillconstantalpha = pdev->vg_initial.fillconstantalpha;
+        if (destination->set_transfer.red != NULL)
+            destination->set_transfer.red->id = (source->set_transfer.red != NULL ? source->set_transfer.red->id : 0);
+        if (destination->set_transfer.green != NULL)
+            destination->set_transfer.green->id = (source->set_transfer.green != NULL ? source->set_transfer.green->id : 0);
+        if (destination->set_transfer.blue != NULL)
+            destination->set_transfer.blue->id = (source->set_transfer.blue != NULL ? source->set_transfer.blue->id : 0);
+        if (destination->set_transfer.gray != NULL)
+            destination->set_transfer.gray->id = (source->set_transfer.gray != NULL ? source->set_transfer.gray->id : 0);
+        if (source->set_transfer.red != NULL)
+            source->set_transfer.red->id = pdev->vg_initial.transfer_ids[0];
+        if (source->set_transfer.green != NULL)
+            source->set_transfer.green->id = pdev->vg_initial.transfer_ids[1];
+        if (source->set_transfer.blue != NULL)
+            source->set_transfer.blue->id = pdev->vg_initial.transfer_ids[2];
+        if (source->set_transfer.gray != NULL)
+            source->set_transfer.gray->id = pdev->vg_initial.transfer_ids[3];
+        destination->alphaisshape = source->alphaisshape;
+        source->alphaisshape = pdev->vg_initial.alphaisshape;
+        destination->blend_mode = source->blend_mode;
+        source->blend_mode = pdev->vg_initial.blend_mode;
+        if (destination->black_generation != NULL)
+            destination->black_generation->id = (source->black_generation != NULL ? source->black_generation->id : 0);
+        if (source->black_generation != NULL)
+            source->black_generation->id = pdev->vg_initial.black_generation_id;
+        if (destination->undercolor_removal != NULL)
+            destination->undercolor_removal->id = (source->undercolor_removal != NULL ? source->undercolor_removal->id : 0);
+        if (source->undercolor_removal != NULL)
+            source->undercolor_removal->id = pdev->vg_initial.undercolor_removal_id;
+        destination->overprint_mode = source->overprint_mode;
+        source->overprint_mode = pdev->vg_initial.overprint_mode;
+        destination->flatness = source->flatness;
+        source->flatness = pdev->vg_initial.flatness;
+        destination->smoothness = source->smoothness;
+        source->smoothness = pdev->vg_initial.smoothness;
+        destination->flatness = source->flatness;
+        source->flatness = pdev->vg_initial.flatness;
+        destination->text_knockout = source->text_knockout;
+        source->text_knockout = pdev->vg_initial.text_knockout;
+        destination->stroke_adjust = source->stroke_adjust;
+        source->stroke_adjust = pdev->vg_initial.stroke_adjust;
+        destination->line_params.half_width = source->line_params.half_width;
+        source->line_params.half_width = pdev->vg_initial.line_params.half_width;
+        destination->line_params.start_cap = source->line_params.start_cap;
+        source->line_params.start_cap = pdev->vg_initial.line_params.start_cap;
+        destination->line_params.end_cap = source->line_params.end_cap;
+        source->line_params.end_cap = pdev->vg_initial.line_params.end_cap;
+        destination->line_params.dash_cap = source->line_params.dash_cap;
+        source->line_params.dash_cap = pdev->vg_initial.line_params.dash_cap;
+        destination->line_params.join = source->line_params.join;
+        source->line_params.join = pdev->vg_initial.line_params.join;
+        destination->line_params.curve_join = source->line_params.curve_join;
+        source->line_params.curve_join = pdev->vg_initial.line_params.curve_join;
+        destination->line_params.miter_limit = source->line_params.miter_limit;
+        source->line_params.miter_limit = pdev->vg_initial.line_params.miter_limit;
+        destination->line_params.miter_check = source->line_params.miter_check;
+        source->line_params.miter_check = pdev->vg_initial.line_params.miter_check;
+        destination->line_params.dot_length = source->line_params.dot_length;
+        source->line_params.dot_length = pdev->vg_initial.line_params.dot_length;
+        destination->line_params.dot_length_absolute = source->line_params.dot_length_absolute;
+        source->line_params.dot_length_absolute = pdev->vg_initial.line_params.dot_length_absolute;
+        destination->line_params.dot_orientation = source->line_params.dot_orientation;
+        source->line_params.dot_orientation = pdev->vg_initial.line_params.dot_orientation;
+        memcpy(&destination->line_params.dash, &source->line_params.dash, sizeof(source->line_params.dash));
+        memcpy(&source->line_params.dash, &pdev->vg_initial.line_params.dash, sizeof(source->line_params.dash));
+    }
+    return 0;
+}
+
 /*
    The device specific operations - just pattern management.
    See gxdevcli.h about return codes.
@@ -2608,10 +2683,50 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
                 if (code < 0)
                     return code;
-                code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false,
-                        pdev->CompressStreams);
+                if (pdev->context == PDF_IN_NONE) {
+                    code = pdf_open_page(pdev, PDF_IN_STREAM);
+                    if (code < 0)
+                        return code;
+                }
+                code = pdf_prepare_fill_stroke(pdev, (gs_gstate *)pgs, false);
                 if (code < 0)
                     return code;
+                if (pdev->PatternDepth == 0 && pdev->initial_pattern_states != NULL) {
+                    int pdepth = 0;
+
+                    while (pdev->initial_pattern_states[pdepth] != 0x00) {
+                        gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdepth], "Freeing dangling pattern state");
+                        pdev->initial_pattern_states[pdepth] = NULL;
+                        pdepth++;
+                    }
+                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states, "Freeing dangling pattern state stack");
+                }
+
+                {
+                    gs_gstate **new_states;
+                    int pdepth;
+
+                    new_states = (gs_gstate **)gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, sizeof(gs_gstate *) * (pdev->PatternDepth + 2), "pattern initial graphics state stack");
+                    memset(new_states, 0x00, sizeof(gs_gstate *) * (pdev->PatternDepth + 2));
+                    for (pdepth = 0; pdepth < pdev->PatternDepth;pdepth++)
+                        new_states[pdepth] = pdev->initial_pattern_states[pdepth];
+                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states, "Freeing old pattern state stack");
+                    pdev->initial_pattern_states = new_states;
+                }
+                pdev->initial_pattern_states[pdev->PatternDepth] = (gs_gstate *)gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, sizeof(gs_gstate), "pattern initial graphics state");
+                if (pdev->initial_pattern_states[pdev->PatternDepth] == NULL)
+                    return code;
+                memset(pdev->initial_pattern_states[pdev->PatternDepth], 0x00, sizeof(gs_gstate));
+
+                reset_gstate_for_pattern(pdev, pdev->initial_pattern_states[pdev->PatternDepth], pgs);
+                code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false,
+                        pdev->CompressStreams);
+                if (code < 0) {
+                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                    pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
+                    return code;
+                }
+
                 /* We have started a new substream, to avoid confusing the 'saved viewer state'
                  * (the stack of pdfwrite's saved copies of graophics states) we need to reset the
                  * soft_mask_id, which is the ID of the SMask we have already created in the pdfwrite
@@ -2622,8 +2737,11 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 pdev->state.soft_mask_id = pgs->soft_mask_id;
                 pres->rid = id;
                 code = pdf_store_pattern1_params(pdev, pres, pinst);
-                if (code < 0)
+                if (code < 0) {
+                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                    pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
                     return code;
+                }
                 /* Scale the coordinate system, because object handlers assume so. See none_to_stream. */
                 pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
                          72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
@@ -2632,43 +2750,68 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             }
             return 1;
         case gxdso_pattern_finish_accum:
-            if (pdev->CompatibilityLevel <= 1.7) {
-                if (pdev->substream_Resources == NULL) {
-                    pdev->substream_Resources = cos_dict_alloc(pdev, "pdf_pattern(Resources)");
-                    if (pdev->substream_Resources == NULL)
-                        return_error(gs_error_VMerror);
-                }
-                code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
-                if (code < 0)
-                    return code;
-            }
-            pres = pres1 = pdev->accumulating_substream_resource;
-            code = pdf_exit_substream(pdev);
-            if (code < 0)
-                return code;
-            if (pdev->substituted_pattern_count > 300 &&
-                    pdev->substituted_pattern_drop_page != pdev->next_page) { /* arbitrary */
-                pdf_drop_resources(pdev, resourcePattern, check_unsubstituted1);
-                pdev->substituted_pattern_count = 0;
-                pdev->substituted_pattern_drop_page = pdev->next_page;
-            }
-            code = pdf_find_same_resource(pdev, resourcePattern, &pres, check_unsubstituted2);
-            if (code < 0)
-                return code;
-            if (code > 0) {
-                pdf_pattern_t *ppat = (pdf_pattern_t *)pres1;
+            {
+                pattern_accum_param_s *param = (pattern_accum_param_s *)data;
+                gs_gstate *pgs = param->graphics_state;
 
-                code = pdf_cancel_resource(pdev, pres1, resourcePattern);
-                if (code < 0)
+                if (pdev->CompatibilityLevel <= 1.7) {
+                    if (pdev->substream_Resources == NULL) {
+                        pdev->substream_Resources = cos_dict_alloc(pdev, "pdf_pattern(Resources)");
+                        if (pdev->substream_Resources == NULL)
+                            return_error(gs_error_VMerror);
+                    }
+                    code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
+                    if (code < 0) {
+                        gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                        pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
+                        return code;
+                    }
+                }
+                pres = pres1 = pdev->accumulating_substream_resource;
+                code = pdf_exit_substream(pdev);
+                if (code < 0) {
+                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                    pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
                     return code;
-                /* Do not remove pres1, because it keeps the substitution. */
-                ppat->substitute = (pdf_pattern_t *)pres;
-                pres->where_used |= pdev->used_mask;
-                pdev->substituted_pattern_count++;
-            } else if (pres->object->id < 0)
-                pdf_reserve_object_id(pdev, pres, 0);
-            pdev->PatternDepth--;
-            pdev->PatternsSinceForm--;
+                }
+                if (pdev->substituted_pattern_count > 300 &&
+                        pdev->substituted_pattern_drop_page != pdev->next_page) { /* arbitrary */
+                    pdf_drop_resources(pdev, resourcePattern, check_unsubstituted1);
+                    pdev->substituted_pattern_count = 0;
+                    pdev->substituted_pattern_drop_page = pdev->next_page;
+                }
+                code = pdf_find_same_resource(pdev, resourcePattern, &pres, check_unsubstituted2);
+                if (code < 0) {
+                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                    pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
+                    return code;
+                }
+                if (code > 0) {
+                    pdf_pattern_t *ppat = (pdf_pattern_t *)pres1;
+
+                    code = pdf_cancel_resource(pdev, pres1, resourcePattern);
+                    if (code < 0) {
+                        gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                        pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
+                        return code;
+                    }
+                    /* Do not remove pres1, because it keeps the substitution. */
+                    ppat->substitute = (pdf_pattern_t *)pres;
+                    pres->where_used |= pdev->used_mask;
+                    pdev->substituted_pattern_count++;
+                } else if (pres->object->id < 0)
+                    pdf_reserve_object_id(pdev, pres, 0);
+                reset_gstate_for_pattern(pdev, pgs, pdev->initial_pattern_states[pdev->PatternDepth - 1]);
+                gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth - 1], "Freeing dangling pattern state");
+                pdev->initial_pattern_states[pdev->PatternDepth - 1] = NULL;
+                if (pdev->PatternDepth == 1) {
+                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states, "Freeing dangling pattern state");
+                    pdev->initial_pattern_states = NULL;
+                }
+
+                pdev->PatternDepth--;
+                pdev->PatternsSinceForm--;
+            }
             return 1;
         case gxdso_pattern_load:
             pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, id);
