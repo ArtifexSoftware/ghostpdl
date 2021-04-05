@@ -2910,22 +2910,24 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
         pdev->state.strokeconstantalpha != pgs->strokeconstantalpha ||
         pdev->state.fillconstantalpha != pgs->fillconstantalpha) {
 
-        pdev->state.strokeconstantalpha = pgs->strokeconstantalpha;
-        pdev->state.fillconstantalpha = pgs->fillconstantalpha;
-        pdev->state.alphaisshape = pgs->alphaisshape;
-
         code = pdf_open_gstate(pdev, ppres);
         if (code < 0)
             return code;
+
         code = cos_dict_put_c_key_bool(resource_dict(*ppres), "/AIS", pgs->alphaisshape);
         if (code < 0)
             return code;
+        pdev->state.alphaisshape = pgs->alphaisshape;
         code = cos_dict_put_c_key_real(resource_dict(*ppres), "/CA", pgs->strokeconstantalpha);
         if (code < 0)
             return code;
-        return cos_dict_put_c_key_real(resource_dict(*ppres), "/ca", pgs->fillconstantalpha);
-    } else
-        return 0;
+        pdev->state.strokeconstantalpha = pgs->strokeconstantalpha;
+        code = cos_dict_put_c_key_real(resource_dict(*ppres), "/ca", pgs->fillconstantalpha);
+        if (code < 0)
+            return code;
+        pdev->state.fillconstantalpha = pgs->fillconstantalpha;
+    }
+    return 0;
 }
 
 /*

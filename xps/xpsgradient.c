@@ -85,7 +85,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
 
                 /* Set the rendering parameters */
                 rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
-                rendering_params.graphics_type_tag = GS_PATH_TAG;
+                rendering_params.graphics_type_tag = GS_VECTOR_TAG;
                 rendering_params.override_icc = false;
                 rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
                 rendering_params.rendering_intent = gsPERCEPTUAL;

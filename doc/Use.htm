@@ -2629,6 +2629,7 @@ processing of PostScript source files. Note: in releases 7.30 and
     earlier, processing of DoPS was always enabled.</dd>
 </dl>
 
+<a name="BlackText"></a>
 <dl>
     <dt><code>-dBlackText</code></dt>
 <dd>Forces text to be drawn with black.  This occurs for text fill and
@@ -3212,7 +3213,7 @@ PRESERVE_K_PLANE approach.   This is only valid when using littleCMS for
 </dl>
 
 <dl>
-    <dt><code>-sGraphicICCProfile=</code><em>filename</em></dt>
+    <dt><code>-sVectorICCProfile=</code><em>filename</em></dt>
 <dd>Set the ICC profile that will be associated with
 the output device for vector-based graphics (e.g. Fill,
 Stroke operations).
@@ -3223,20 +3224,20 @@ as the profile.  This can be used to obtain more saturated
 </dl>
 
 <dl>
-    <dt><code>-dGraphicIntent=</code><em>0/1/2/3</em></dt>
-<dd>Set the rendering intent that should be used with graphic objects.  The
+    <dt><code>-dVectorIntent=</code><em>0/1/2/3</em></dt>
+<dd>Set the rendering intent that should be used with vector-based graphic objects.  The
     options are the same as specified for -dRenderIntent.</dd>
 </dl>
 
 <dl>
-    <dt><code>-dGraphicBlackPt=</code><em>0/1</em></dt>
-    <dd>Specify if black point compensation should be used for graphic objects.</dd>
+    <dt><code>-dVectorBlackPt=</code><em>0/1</em></dt>
+    <dd>Specify if black point compensation should be used for vector-based graphic objects.</dd>
 </dl>
 
 <dl>
-    <dt><code>-dGraphicKPreserve=</code><em>0/1/2</em></dt>
+    <dt><code>-dVectorKPreserve=</code><em>0/1/2</em></dt>
 <dd>Specify if black preservation should be used when mapping
-from CMYK to CMYK for graphic objects.   The
+from CMYK to CMYK for vector-based graphic objects.   The
     options are the same as specified for -dKPreserve.</dd>
 </dl>
 
@@ -3311,7 +3312,7 @@ control in the specification of source colors see
 <dd>
 This option provides an extreme level of override control to
 specify the source color spaces and rendering intents to use
-with graphics, images and text for both RGB and CMYK source
+with vector-based graphics, images and text for both RGB and CMYK source
 objects.  The specification is made through a file that contains
 on a line a key name to specify the object type (e.g. Image_CMYK)
 followed by an ICC profile file name, a rendering intent
@@ -5366,7 +5367,7 @@ or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
 Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.53.3, 1 October 2020
+<small>Ghostscript version 9.54.0, 30 March 2021
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

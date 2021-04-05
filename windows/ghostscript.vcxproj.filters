@@ -2324,6 +2324,9 @@
     <ClCompile Include="..\base\gdevnfwd.c">
       <Filter>base\gldevices</Filter>
     </ClCompile>
+    <ClCompile Include="..\base\gdevnup.c">
+      <Filter>base\gldevices</Filter>
+    </ClCompile>
     <ClCompile Include="..\base\gdevpccm.c">
       <Filter>base\gldevices</Filter>
     </ClCompile>
@@ -7130,6 +7133,9 @@
       <Filter>base %28.h%29\gldevices %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\base\gdevmrun.h">
+      <Filter>base %28.h%29\gldevices %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\gdevnup.h">
       <Filter>base %28.h%29\gldevices %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\base\gdevp14.h">

@@ -426,8 +426,8 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "OutputICCProfile") == 0) {
         return param_write_string(plist,"OutputICCProfile", &(profile_array[0]));
     }
-    if (strcmp(Param, "GraphicICCProfile") == 0) {
-        return param_write_string(plist,"GraphicICCProfile", &(profile_array[1]));
+    if (strcmp(Param, "VectorICCProfile") == 0) {
+        return param_write_string(plist,"VectorICCProfile", &(profile_array[1]));
     }
     if (strcmp(Param, "ImageICCProfile") == 0) {
         return param_write_string(plist,"ImageICCProfile", &(profile_array[2]));
@@ -441,8 +441,8 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "RenderIntent") == 0) {
         return param_write_int(plist,"RenderIntent", (const int *) (&(profile_intents[0])));
     }
-    if (strcmp(Param, "GraphicIntent") == 0) {
-        return param_write_int(plist,"GraphicIntent", (const int *) &(profile_intents[1]));
+    if (strcmp(Param, "VectorIntent") == 0) {
+        return param_write_int(plist,"VectorIntent", (const int *) &(profile_intents[1]));
     }
     if (strcmp(Param, "ImageIntent") == 0) {
         return param_write_int(plist,"ImageIntent", (const int *) &(profile_intents[2]));
@@ -453,8 +453,8 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "BlackPtComp") == 0) {
         return param_write_int(plist,"BlackPtComp", (const int *) (&(blackptcomps[0])));
     }
-    if (strcmp(Param, "GraphicBlackPt") == 0) {
-        return param_write_int(plist,"GraphicBlackPt", (const int *) &(blackptcomps[1]));
+    if (strcmp(Param, "VectorBlackPt") == 0) {
+        return param_write_int(plist,"VectorBlackPt", (const int *) &(blackptcomps[1]));
     }
     if (strcmp(Param, "ImageBlackPt") == 0) {
         return param_write_int(plist,"ImageBlackPt", (const int *) &(blackptcomps[2]));
@@ -465,8 +465,8 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "KPreserve") == 0) {
         return param_write_int(plist,"KPreserve", (const int *) (&(blackpreserve[0])));
     }
-    if (strcmp(Param, "GraphicKPreserve") == 0) {
-        return param_write_int(plist,"GraphicKPreserve", (const int *) &(blackpreserve[1]));
+    if (strcmp(Param, "VectorKPreserve") == 0) {
+        return param_write_int(plist,"VectorKPreserve", (const int *) &(blackpreserve[1]));
     }
     if (strcmp(Param, "ImageKPreserve") == 0) {
         return param_write_int(plist,"ImageKPreserve", (const int *) &(blackpreserve[2]));
@@ -718,7 +718,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_bool(plist, "BlackText", &blacktext)) < 0 ||
         (code = param_write_bool(plist, "PreBandThreshold", &prebandthreshold)) < 0 ||
         (code = param_write_string(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
-        (code = param_write_string(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
+        (code = param_write_string(plist,"VectorICCProfile", &(profile_array[1]))) < 0 ||
         (code = param_write_string(plist,"ImageICCProfile", &(profile_array[2]))) < 0 ||
         (code = param_write_string(plist,"TextICCProfile", &(profile_array[3]))) < 0 ||
         (code = param_write_string(plist,"ProofProfile", &(proof_profile))) < 0 ||
@@ -728,15 +728,15 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_string(plist,"ICCOutputColors", &(icc_colorants))) < 0 ||
         (code = param_write_int(plist, "RenderIntent", (const int *)(&(profile_intents[0])))) < 0 ||
         (code = param_write_int(plist, "ColorAccuracy", (const int *)(&(color_accuracy)))) < 0 ||
-        (code = param_write_int(plist,"GraphicIntent", (const int *) &(profile_intents[1]))) < 0 ||
+        (code = param_write_int(plist,"VectorIntent", (const int *) &(profile_intents[1]))) < 0 ||
         (code = param_write_int(plist,"ImageIntent", (const int *) &(profile_intents[2]))) < 0 ||
         (code = param_write_int(plist,"TextIntent", (const int *) &(profile_intents[3]))) < 0 ||
         (code = param_write_int(plist,"BlackPtComp", (const int *) (&(blackptcomps[0])))) < 0 ||
-        (code = param_write_int(plist,"GraphicBlackPt", (const int *) &(blackptcomps[1]))) < 0 ||
+        (code = param_write_int(plist,"VectorBlackPt", (const int *) &(blackptcomps[1]))) < 0 ||
         (code = param_write_int(plist,"ImageBlackPt", (const int *) &(blackptcomps[2]))) < 0 ||
         (code = param_write_int(plist,"TextBlackPt", (const int *) &(blackptcomps[3]))) < 0 ||
         (code = param_write_int(plist,"KPreserve", (const int *) (&(blackpreserve[0])))) < 0 ||
-        (code = param_write_int(plist,"GraphicKPreserve", (const int *) &(blackpreserve[1]))) < 0 ||
+        (code = param_write_int(plist,"VectorKPreserve", (const int *) &(blackpreserve[1]))) < 0 ||
         (code = param_write_int(plist,"ImageKPreserve", (const int *) &(blackpreserve[2]))) < 0 ||
         (code = param_write_int(plist,"TextKPreserve", (const int *) &(blackpreserve[3]))) < 0 ||
         (code = param_write_int_array(plist, "HWSize", &hwsa)) < 0 ||
@@ -1737,10 +1737,10 @@ nce:
     }
     /* Note, if a change is made to NUM_DEVICE_PROFILES we need to update
        this with the name of the profile */
-    if ((code = param_read_string(plist, "GraphicICCProfile", &icc_pro)) != 1) {
+    if ((code = param_read_string(plist, "VectorICCProfile", &icc_pro)) != 1) {
         if ((code = gx_default_put_icc(&icc_pro, dev, gsGRAPHICPROFILE)) < 0) {
             ecode = code;
-            param_signal_error(plist, "GraphicICCProfile", ecode);
+            param_signal_error(plist, "VectorICCProfile", ecode);
         }
     }
     if ((code = param_read_string(plist, "ImageICCProfile", &icc_pro)) != 1) {
@@ -1772,7 +1772,7 @@ nce:
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
-    if ((code = param_read_int(plist, (param_name = "GraphicIntent"),
+    if ((code = param_read_int(plist, (param_name = "VectorIntent"),
                                                     &(rend_intent[1]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
@@ -1792,7 +1792,7 @@ nce:
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
-    if ((code = param_read_int(plist, (param_name = "GraphicBlackPt"),
+    if ((code = param_read_int(plist, (param_name = "VectorBlackPt"),
                                                     &(blackptcomp[1]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
@@ -1812,7 +1812,7 @@ nce:
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
-    if ((code = param_read_int(plist, (param_name = "GraphicKPreserve"),
+    if ((code = param_read_int(plist, (param_name = "VectorKPreserve"),
                                                     &(blackpreserve[1]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);

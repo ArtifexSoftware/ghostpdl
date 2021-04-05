@@ -5600,9 +5600,11 @@ pdf14_determine_default_blend_cs(gx_device * pdev, bool use_pdf14_accum,
  * currently only using a color space based upon the device.
  */
 static	int
-get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
-        pdf14_device * ptempdevproto, gs_gstate * pgs,
-        const gs_pdf14trans_t * pdf14pct, bool use_pdf14_accum)
+get_pdf14_device_proto(gx_device       *dev,
+                       pdf14_device    *pdevproto,
+                       gs_gstate       *pgs,
+                 const gs_pdf14trans_t *pdf14pct,
+                       bool             use_pdf14_accum)
 {
     bool using_blend_cs;
     pdf14_default_colorspace_t dev_cs =
@@ -5623,38 +5625,32 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
 
     switch (dev_cs) {
         case PDF14_DeviceGray:
-            *pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
-            *ptempdevproto = **pdevproto;
-            ptempdevproto->color_info.max_components = 1;
-            ptempdevproto->color_info.num_components =
-                                    ptempdevproto->color_info.max_components;
-            ptempdevproto->color_info.depth = 8<<deep;
-            ptempdevproto->color_info.max_gray = deep ? 65535 : 255;
-            ptempdevproto->color_info.gray_index = 0; /* Avoid halftoning */
-            ptempdevproto->color_info.dither_grays = deep ? 65536 : 256;
-            ptempdevproto->sep_device = false;
-            *pdevproto = ptempdevproto;
+            *pdevproto = gs_pdf14_Gray_device;
+            pdevproto->color_info.max_components = 1;
+            pdevproto->color_info.num_components =
+                                    pdevproto->color_info.max_components;
+            pdevproto->color_info.depth = 8<<deep;
+            pdevproto->color_info.max_gray = deep ? 65535 : 255;
+            pdevproto->color_info.gray_index = 0; /* Avoid halftoning */
+            pdevproto->color_info.dither_grays = deep ? 65536 : 256;
+            pdevproto->sep_device = false;
             break;
         case PDF14_DeviceRGB:
-            *pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
-            *ptempdevproto = **pdevproto;
-            ptempdevproto->color_info.depth = 24<<deep;
-            ptempdevproto->color_info.max_gray = deep ? 65535 : 255;
-            ptempdevproto->color_info.dither_grays = deep ? 65536 : 256;
-            ptempdevproto->sep_device = false;
-            *pdevproto = ptempdevproto;
+            *pdevproto = gs_pdf14_RGB_device;
+            pdevproto->color_info.depth = 24<<deep;
+            pdevproto->color_info.max_gray = deep ? 65535 : 255;
+            pdevproto->color_info.dither_grays = deep ? 65536 : 256;
+            pdevproto->sep_device = false;
             break;
         case PDF14_DeviceCMYK:
-            *pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
-            *ptempdevproto = **pdevproto;
-            ptempdevproto->color_info.depth = 32<<deep;
-            ptempdevproto->color_info.max_gray = deep ? 65535 : 255;
-            ptempdevproto->color_info.dither_grays = deep ? 65536 : 256;
-            ptempdevproto->sep_device = false;
-            *pdevproto = ptempdevproto;
+            *pdevproto = gs_pdf14_CMYK_device;
+            pdevproto->color_info.depth = 32<<deep;
+            pdevproto->color_info.max_gray = deep ? 65535 : 255;
+            pdevproto->color_info.dither_grays = deep ? 65536 : 256;
+            pdevproto->sep_device = false;
             break;
         case PDF14_DeviceCMYKspot:
-            *pdevproto = (pdf14_device *)&gs_pdf14_CMYKspot_device;
+            *pdevproto = gs_pdf14_CMYKspot_device;
             /* Need to figure out how we want to handle the device profile
                for this case */
             /*
@@ -5663,18 +5659,14 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
              * for the page.
              */
             if (num_spots >= 0) {
-                *ptempdevproto = **pdevproto;
-                ptempdevproto->devn_params.page_spot_colors = num_spots;
-                ptempdevproto->color_info.num_components =
-                    ptempdevproto->devn_params.num_std_colorant_names + num_spots;
-                if (ptempdevproto->color_info.num_components >
-                        GS_CLIENT_COLOR_MAX_COMPONENTS)
-                    ptempdevproto->color_info.num_components =
-                        GS_CLIENT_COLOR_MAX_COMPONENTS;
-                ptempdevproto->color_info.depth =
-                                    ptempdevproto->color_info.num_components * (8<<deep);
-                ptempdevproto->sep_device = true;
-                *pdevproto = ptempdevproto;
+                pdevproto->devn_params.page_spot_colors = num_spots;
+                pdevproto->color_info.num_components =
+                    pdevproto->devn_params.num_std_colorant_names + num_spots;
+                if (pdevproto->color_info.num_components > GS_CLIENT_COLOR_MAX_COMPONENTS)
+                    pdevproto->color_info.num_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
+                pdevproto->color_info.depth =
+                                    pdevproto->color_info.num_components * (8<<deep);
+                pdevproto->sep_device = true;
             }
             break;
         case PDF14_DeviceCustom:
@@ -5683,23 +5675,21 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
              * color_info for the PDF 1.4 compositing device needs to match
              * the output device.
              */
-            *ptempdevproto = gs_pdf14_custom_device;
-            ptempdevproto->color_info = dev->color_info;
+            *pdevproto = gs_pdf14_custom_device;
+            pdevproto->color_info = dev->color_info;
             /* The pdf14 device has to be 8 (or 16) bit continuous tone. Force it */
-            ptempdevproto->color_info.depth =
-                ptempdevproto->color_info.num_components * (8<<deep);
-            ptempdevproto->color_info.max_gray = deep ? 65535 : 255;
-            ptempdevproto->color_info.max_color = deep ? 65535 : 255;
-            ptempdevproto->color_info.dither_grays = deep ? 65536 : 256;
-            ptempdevproto->color_info.dither_colors = deep ? 65536 : 256;
-
-            *pdevproto = ptempdevproto;
+            pdevproto->color_info.depth =
+                       pdevproto->color_info.num_components * (8<<deep);
+            pdevproto->color_info.max_gray = deep ? 65535 : 255;
+            pdevproto->color_info.max_color = deep ? 65535 : 255;
+            pdevproto->color_info.dither_grays = deep ? 65536 : 256;
+            pdevproto->color_info.dither_colors = deep ? 65536 : 256;
             break;
         default:			/* Should not occur */
             return_error(gs_error_rangecheck);
     }
-    ptempdevproto->using_blend_cs = using_blend_cs;
-    ptempdevproto->overprint_sim = pdf14pct->params.overprint_sim_push;
+    pdevproto->using_blend_cs = using_blend_cs;
+    pdevproto->overprint_sim = pdf14pct->params.overprint_sim_push;
     return 0;
 }
 
@@ -5773,8 +5763,7 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
 {
     pdf14_device * pdev = (pdf14_device *)dev;
     gx_device * target = pdev->target;
-    pdf14_device * dev_proto;
-    pdf14_device temp_dev_proto;
+    pdf14_device dev_proto;
     bool has_tags = device_encodes_tags(dev);
     int code;
     bool deep = device_is_deep(dev);
@@ -5785,11 +5774,11 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
      * We will not use the entire prototype device but we will set the
      * color related info and the device procs to match the prototype.
      */
-    code = get_pdf14_device_proto(target, &dev_proto, &temp_dev_proto, pgs,
+    code = get_pdf14_device_proto(target, &dev_proto, pgs,
                                   pdf14pct, false);
     if (code < 0)
         return code;
-    pdev->color_info = dev_proto->color_info;
+    pdev->color_info = dev_proto.color_info;
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
 
@@ -5798,7 +5787,7 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
     else
         pdev->is_planar = target->is_planar;
 
-    pdev->procs = dev_proto->procs;
+    pdev->procs = dev_proto.procs;
     if (deep) {
         set_dev_proc(pdev, encode_color, pdf14_encode_color16);
         set_dev_proc(pdev, decode_color, pdf14_decode_color16);
@@ -5808,7 +5797,7 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
         pdev->color_info.comp_shift[pdev->color_info.num_components] = pdev->color_info.depth;
         pdev->color_info.depth += 8;
     }
-    dev->static_procs = dev_proto->static_procs;
+    dev->static_procs = dev_proto.static_procs;
     gx_device_set_procs(dev);
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
     gx_device_fill_in_procs((gx_device *)pdev);
@@ -8492,8 +8481,8 @@ static int
 gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         gx_device ** pdev, gx_device * target, const gs_pdf14trans_t * pdf14pct)
 {
-    pdf14_device * dev_proto;
-    pdf14_device * p14dev, temp_dev_proto;
+    pdf14_device dev_proto;
+    pdf14_device * p14dev;
     int code;
     bool has_tags;
     cmm_profile_t *icc_profile;
@@ -8540,12 +8529,12 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
                           &render_cond);
     if_debug0m('v', mem, "[v]gs_pdf14_device_push\n");
 
-    code = get_pdf14_device_proto(target, &dev_proto, &temp_dev_proto, pgs,
+    code = get_pdf14_device_proto(target, &dev_proto, pgs,
                                   pdf14pct, use_pdf14_accum);
     if (code < 0)
         return code;
     code = gs_copydevice((gx_device **) &p14dev,
-                         (const gx_device *) dev_proto, mem);
+                         (const gx_device *) &dev_proto, mem);
     if (code < 0)
         return code;
 
@@ -9763,9 +9752,11 @@ const pdf14_clist_device pdf14_clist_custom_device = {
  * currently only using a color space based upon the device.
  */
 static	int
-get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
-        pdf14_clist_device * ptempdevproto, gs_gstate * pgs,
-        const gs_pdf14trans_t * pdf14pct, bool use_pdf14_accum)
+get_pdf14_clist_device_proto(gx_device          *dev,
+                             pdf14_clist_device *pdevproto,
+                             gs_gstate          *pgs,
+                       const gs_pdf14trans_t    *pdf14pct,
+                             bool                use_pdf14_accum)
 {
     bool using_blend_cs;
     pdf14_default_colorspace_t dev_cs =
@@ -9787,7 +9778,6 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
 
     switch (dev_cs) {
         case PDF14_DeviceGray:
-            *pdevproto = (pdf14_clist_device *)&pdf14_clist_Gray_device;
            /* We want gray to be single channel.  Low level
                initialization of gray device prototype is
                peculiar in that in dci_std_color_num_components
@@ -9796,70 +9786,63 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
               Here we want monochrome anytime we have a gray device.
               To avoid breaking things elsewhere, we will overide
               the prototype intialization here */
-            *ptempdevproto = **pdevproto;
-            ptempdevproto->color_info.max_components = 1;
-            ptempdevproto->color_info.num_components =
-                                    ptempdevproto->color_info.max_components;
-            ptempdevproto->color_info.max_gray = deep ? 65535 : 255;
-            ptempdevproto->color_info.gray_index = 0; /* Avoid halftoning */
-            ptempdevproto->color_info.dither_grays = ptempdevproto->color_info.max_gray+1;
-            ptempdevproto->color_info.anti_alias = dev->color_info.anti_alias;
-            ptempdevproto->color_info.depth = deep ? 16 : 8;
-            ptempdevproto->sep_device = false;
-            *pdevproto = ptempdevproto;
+            *pdevproto = pdf14_clist_Gray_device;
+            pdevproto->color_info.max_components = 1;
+            pdevproto->color_info.num_components =
+                                    pdevproto->color_info.max_components;
+            pdevproto->color_info.max_gray = deep ? 65535 : 255;
+            pdevproto->color_info.gray_index = 0; /* Avoid halftoning */
+            pdevproto->color_info.dither_grays = pdevproto->color_info.max_gray+1;
+            pdevproto->color_info.anti_alias = dev->color_info.anti_alias;
+            pdevproto->color_info.depth = deep ? 16 : 8;
+            pdevproto->sep_device = false;
             break;
         case PDF14_DeviceRGB:
-            *pdevproto = (pdf14_clist_device *)&pdf14_clist_RGB_device;
-            *ptempdevproto = **pdevproto;
-            ptempdevproto->color_info.anti_alias = dev->color_info.anti_alias;
-            ptempdevproto->sep_device = false;
+            *pdevproto = pdf14_clist_RGB_device;
+            pdevproto->color_info.anti_alias = dev->color_info.anti_alias;
+            pdevproto->sep_device = false;
             if (deep) {
-                ptempdevproto->color_info.depth = 3*16;
-                ptempdevproto->color_info.max_color = 65535;
-                ptempdevproto->color_info.max_gray = 65535;
-                ptempdevproto->color_info.dither_colors = 65536;
-                ptempdevproto->color_info.dither_grays = 65536;
+                pdevproto->color_info.depth = 3*16;
+                pdevproto->color_info.max_color = 65535;
+                pdevproto->color_info.max_gray = 65535;
+                pdevproto->color_info.dither_colors = 65536;
+                pdevproto->color_info.dither_grays = 65536;
             }
-            *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceCMYK:
-            *pdevproto = (pdf14_clist_device *)&pdf14_clist_CMYK_device;
-            *ptempdevproto = **pdevproto;
-            ptempdevproto->color_info.anti_alias = dev->color_info.anti_alias;
-            ptempdevproto->sep_device = false;
+            *pdevproto = pdf14_clist_CMYK_device;
+            pdevproto->color_info.anti_alias = dev->color_info.anti_alias;
+            pdevproto->sep_device = false;
             if (deep) {
-                ptempdevproto->color_info.depth = 4*16;
-                ptempdevproto->color_info.max_color = 65535;
-                ptempdevproto->color_info.max_gray = 65535;
-                ptempdevproto->color_info.dither_colors = 65536;
-                ptempdevproto->color_info.dither_grays = 65536;
+                pdevproto->color_info.depth = 4*16;
+                pdevproto->color_info.max_color = 65535;
+                pdevproto->color_info.max_gray = 65535;
+                pdevproto->color_info.dither_colors = 65536;
+                pdevproto->color_info.dither_grays = 65536;
             }
-            *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceCMYKspot:
-            *pdevproto = (pdf14_clist_device *)&pdf14_clist_CMYKspot_device;
-            *ptempdevproto = **pdevproto;
+            *pdevproto = pdf14_clist_CMYKspot_device;
             /*
              * The number of components for the PDF14 device is the sum
              * of the process components and the number of spot colors
              * for the page.
              */
             if (num_spots >= 0) {
-                ptempdevproto->devn_params.page_spot_colors = num_spots;
-                ptempdevproto->color_info.num_components =
-                    ptempdevproto->devn_params.num_std_colorant_names + num_spots;
-                if (ptempdevproto->color_info.num_components >
-                        ptempdevproto->color_info.max_components)
-                    ptempdevproto->color_info.num_components =
-                        ptempdevproto->color_info.max_components;
-                ptempdevproto->color_info.depth =
-                                    ptempdevproto->color_info.num_components * (8<<deep);
+                pdevproto->devn_params.page_spot_colors = num_spots;
+                pdevproto->color_info.num_components =
+                    pdevproto->devn_params.num_std_colorant_names + num_spots;
+                if (pdevproto->color_info.num_components >
+                              pdevproto->color_info.max_components)
+                    pdevproto->color_info.num_components =
+                              pdevproto->color_info.max_components;
+                pdevproto->color_info.depth =
+                              pdevproto->color_info.num_components * (8<<deep);
                 if (deep && has_tags)
-                    ptempdevproto->color_info.depth -= 8;
+                    pdevproto->color_info.depth -= 8;
             }
-            ptempdevproto->color_info.anti_alias = dev->color_info.anti_alias;
-            ptempdevproto->sep_device = true;
-            *pdevproto = ptempdevproto;
+            pdevproto->color_info.anti_alias = dev->color_info.anti_alias;
+            pdevproto->sep_device = true;
             break;
         case PDF14_DeviceCustom:
             /*
@@ -9867,23 +9850,22 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
              * color_info for the PDF 1.4 compositing device needs to match
              * the output device.
              */
-            *ptempdevproto = pdf14_clist_custom_device;
-            ptempdevproto->color_info = dev->color_info;
+            *pdevproto = pdf14_clist_custom_device;
+            pdevproto->color_info = dev->color_info;
             /* The pdf14 device has to be 8 (or 16) bit continuous tone. Force it */
-            ptempdevproto->color_info.depth =
-                ptempdevproto->color_info.num_components * (8<<deep);
-            ptempdevproto->color_info.max_gray = deep ? 65535 : 255;
-            ptempdevproto->color_info.max_color = deep ? 65535 : 255;
-            ptempdevproto->color_info.dither_grays = deep ? 65536 : 256;
-            ptempdevproto->color_info.dither_colors = deep ? 65536 : 256;
-            ptempdevproto->color_info.anti_alias = dev->color_info.anti_alias;
-            *pdevproto = ptempdevproto;
+            pdevproto->color_info.depth =
+                pdevproto->color_info.num_components * (8<<deep);
+            pdevproto->color_info.max_gray = deep ? 65535 : 255;
+            pdevproto->color_info.max_color = deep ? 65535 : 255;
+            pdevproto->color_info.dither_grays = deep ? 65536 : 256;
+            pdevproto->color_info.dither_colors = deep ? 65536 : 256;
+            pdevproto->color_info.anti_alias = dev->color_info.anti_alias;
             break;
         default:			/* Should not occur */
             return_error(gs_error_rangecheck);
     }
-    ptempdevproto->overprint_sim = pdf14pct->params.overprint_sim_push;
-    ptempdevproto->using_blend_cs = using_blend_cs;
+    pdevproto->overprint_sim = pdf14pct->params.overprint_sim_push;
+    pdevproto->using_blend_cs = using_blend_cs;
     return 0;
 }
 
@@ -9892,8 +9874,8 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
                                 gx_device ** ppdev, gx_device * target,
                                 const gs_pdf14trans_t * pdf14pct)
 {
-    pdf14_clist_device * dev_proto;
-    pdf14_clist_device * pdev, temp_dev_proto;
+    pdf14_clist_device dev_proto;
+    pdf14_clist_device * pdev;
     int code;
     bool has_tags = device_encodes_tags(target);
     cmm_profile_t *target_profile;
@@ -9911,11 +9893,11 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
                           &render_cond);
     if_debug0m('v', pgs->memory, "[v]pdf14_create_clist_device\n");
     code = get_pdf14_clist_device_proto(target, &dev_proto,
-                                 &temp_dev_proto, pgs, pdf14pct, false);
+                                        pgs, pdf14pct, false);
     if (code < 0)
         return code;
     code = gs_copydevice((gx_device **) &pdev,
-                         (const gx_device *) dev_proto, mem);
+                         (const gx_device *) &dev_proto, mem);
     if (code < 0)
         return code;
 
@@ -10048,8 +10030,7 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_gstate *	pgs,
 {
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     gx_device * target = pdev->target;
-    pdf14_clist_device * dev_proto;
-    pdf14_clist_device temp_dev_proto;
+    pdf14_clist_device dev_proto;
     int code;
 
     if_debug0m('v', pgs->memory, "[v]pdf14_recreate_clist_device\n");
@@ -10058,12 +10039,12 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_gstate *	pgs,
      * color related info to match the prototype.
      */
     code = get_pdf14_clist_device_proto(target, &dev_proto,
-                                 &temp_dev_proto, pgs, pdf14pct, false);
+                                        pgs, pdf14pct, false);
     if (code < 0)
         return code;
-    pdev->color_info = dev_proto->color_info;
-    pdev->procs = dev_proto->procs;
-    pdev->static_procs = dev_proto->static_procs;
+    pdev->color_info = dev_proto.color_info;
+    pdev->procs = dev_proto.procs;
+    pdev->static_procs = dev_proto.static_procs;
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
 
@@ -11505,17 +11486,6 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
             return code;
 
         case PDF14_POP_DEVICE:
-#	    if 0 /* Disabled because pdf14_clist_create_compositor does so. */
-            /*
-             * Ensure that the tranfer functions, etc.  are current before we
-             * dump our transparency image to the output device.
-             */
-            if (pgs->dev_ht)
-                code = cmd_put_halftone((gx_device_clist_writer *)
-                           (((pdf14_clist_device *)dev)->target), pgs->dev_ht);
-#	    else
-            code = 0;
-#	    endif
             code = clist_writer_check_empty_cropping_stack(cdev);
             break;
 

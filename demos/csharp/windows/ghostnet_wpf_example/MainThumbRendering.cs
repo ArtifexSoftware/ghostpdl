@@ -1,4 +1,19 @@
-﻿using System;
+﻿/* Copyright (C) 2020-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -9,7 +24,7 @@ namespace ghostnet_wpf_example
 {
 	public partial class MainWindow
 	{
-	    private static List<DocPage> m_thumbnails;
+		private static List<DocPage> m_thumbnails;
 
 		/* Assign current pages to blown up thumbnail images */
 		private void ThumbAssignMain(int page_num, int width, int height, double zoom_in, ref int offset)
@@ -67,7 +82,7 @@ namespace ghostnet_wpf_example
 			xaml_ThumbList.Items.Refresh();
 			xaml_ThumbGrid.Visibility = System.Windows.Visibility.Visible;
 
-			m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
+			m_ghostscript.PageRenderedCallBack -= new GSNET.PageRendered(gsThumbRendered);
 
 			m_numpages = m_list_thumb.Count;
 			if (m_numpages < 1)
@@ -120,8 +135,8 @@ namespace ghostnet_wpf_example
 			xaml_RenderProgressText.Text = "Creating Thumbs";
 			xaml_ProgressGrid.Visibility = System.Windows.Visibility.Visible;
 
-			m_ghostscript.gsPageRenderedMain += new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
-			m_ghostscript.gsDisplayDeviceRenderThumbs(m_currfile, Constants.SCALE_THUMB, false, GS_Task_t.DISPLAY_DEV_THUMBS);
+			m_ghostscript.PageRenderedCallBack += new GSNET.PageRendered(gsThumbRendered);
+			m_ghostscript.DisplayDeviceRenderThumbs(m_currfile, Constants.SCALE_THUMB, false);
 		}
 	}
 }

@@ -593,34 +593,5 @@ int gdev_create_buf_device(create_buf_device_proc_t cbd_proc,
 #define gdev_prn_transpose_8x8(inp,ils,outp,ols)\
   memflip8x8(inp,ils,outp,ols)
 
-/* ------ Printer device types ------ */
-/**************** THE FOLLOWING CODE IS NOT USED YET. ****************/
-
-#if 0				/**************** VMS linker gets upset *************** */
-#endif
-int gdev_prn_initialize(gx_device *, const char *, dev_proc_print_page((*)));
-void gdev_prn_init_color(gx_device *, int, dev_proc_map_rgb_color((*)), dev_proc_map_color_rgb((*)));
-
-#define prn_device_type(dtname, initproc, pageproc)\
-static dev_proc_print_page(pageproc);\
-device_type(dtname, st_prn_device, initproc)
-
-#define prn_device_type_mono(dtname, dname, initproc, pageproc)\
-static dev_proc_print_page(pageproc);\
-static int \
-initproc(gx_device *dev)\
-{	return gdev_prn_initialize(dev, dname, pageproc);\
-}\
-device_type(dtname, st_prn_device, initproc)
-
-#define prn_device_type_color(dtname, dname, depth, initproc, pageproc, rcproc, crproc)\
-static dev_proc_print_page(pageproc);\
-static int \
-initproc(gx_device *dev)\
-{	int code = gdev_prn_initialize(dev, dname, pageproc);\
-        gdev_prn_init_color(dev, depth, rcproc, crproc);\
-        return code;\
-}\
-device_type(dtname, st_prn_device, initproc)
 
 #endif /* gdevprn_INCLUDED */

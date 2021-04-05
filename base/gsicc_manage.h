@@ -45,13 +45,13 @@
 /* This enumeration has to be in sync with GSICC_SRCGTAG_KEYS */
 typedef enum {
     COLOR_TUNE,
-    GRAPHIC_CMYK,
+    VECTOR_CMYK,
     IMAGE_CMYK,
     TEXT_CMYK,
-    GRAPHIC_RGB,
+    VECTOR_RGB,
     IMAGE_RGB,
     TEXT_RGB,
-    GRAPHIC_GRAY,
+    VECTOR_GRAY,
     IMAGE_GRAY,
     TEXT_GRAY
 } gsicc_srcgtagkey_t;

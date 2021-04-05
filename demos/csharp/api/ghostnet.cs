@@ -1,10 +1,24 @@
-﻿using System;
+﻿/* Copyright (C) 2020-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+using System;
 using System.Runtime.InteropServices;   /* Marshaling */
 using System.ComponentModel;            /* Background threading */
 using System.Collections.Generic;       /* Use of List */
 using System.IO;                        /* Use of path */
 using GhostAPI;                         /* Use of Ghostscript API */
-using ghostnet_wpf_example;             /* For Print control */
 
 namespace GhostNET
 {
@@ -77,7 +91,7 @@ public class gsEventArgs : EventArgs
 		}
 	}
 
-	class ghostsharp
+	class GSNET
 	{
 		public class GhostscriptException : Exception
 		{
@@ -167,7 +181,7 @@ public class gsEventArgs : EventArgs
 		private int display_page(IntPtr handle, IntPtr device, int copies, int flush)
 		{
 			m_params.currpage += 1;
-			gsPageRenderedMain(m_pagewidth, m_pageheight, m_pageraster, m_pageptr, m_params);
+			PageRenderedCallBack(m_pagewidth, m_pageheight, m_pageraster, m_pageptr, m_params);
 			return 0;
 		}
 
@@ -220,24 +234,24 @@ public class gsEventArgs : EventArgs
 
 		private int stdout_callback(IntPtr handle, IntPtr pointer, int count)
 		{
-            String output = null;
-            try
-            {
-                output = Marshal.PtrToStringAnsi(pointer);
-            }
-            catch (Exception except)
-            {
-                var mess = except.Message;
-            }
+			String output = null;
+			try
+			{
+				output = Marshal.PtrToStringAnsi(pointer);
+			}
+			catch (Exception except)
+			{
+				var mess = except.Message;
+			}
 
-            try
-            {
-                gsIOUpdateMain(output, count);
-            }
-            catch (Exception excep2)
-            {
-                var mess = excep2.Message;
-            }
+			try
+			{
+				StdIOCallBack(output, count);
+			}
+			catch (Exception excep2)
+			{
+				var mess = excep2.Message;
+			}
 
 			/* Callback for progress on XPS creation */
 			if (m_params.task == GS_Task_t.CREATE_XPS)
@@ -288,7 +302,7 @@ public class gsEventArgs : EventArgs
 		private int stderr_callback(IntPtr handle, IntPtr pointer, int count)
 		{
 			String output = Marshal.PtrToStringAnsi(pointer);
-			gsIOUpdateMain(output, count);
+			StdIOCallBack(output, count);
 			return count;
 		}
 
@@ -302,33 +316,31 @@ public class gsEventArgs : EventArgs
 		int m_pageraster;
 		gsParamState_t m_displaystate;
 
-
 		display_callback_t m_display_callback;
 		IntPtr ptr_display_struct;
 
-		/* Callbacks to Main */
-		internal delegate void gsDLLProblem(String mess);
-		internal event gsDLLProblem gsDLLProblemMain;
+		/* Callbacks to application */
+		internal delegate void DLLProblem(String mess);
+		internal event DLLProblem DLLProblemCallBack;
 
-		internal delegate void gsIOCallBackMain(String mess, int len);
-		internal event gsIOCallBackMain gsIOUpdateMain;
+		internal delegate void StdIO(String mess, int len);
+		internal event StdIO StdIOCallBack;
 
-		internal delegate void gsCallBackMain(gsEventArgs info);
-		internal event gsCallBackMain gsUpdateMain;
+		internal delegate void Progress(gsEventArgs info);
+		internal event Progress ProgressCallBack;
 
-		internal delegate void gsCallBackPageRenderedMain(int width, int height, int raster,
+		internal delegate void PageRendered(int width, int height, int raster,
 			IntPtr data, gsParamState_t state);
-		internal event gsCallBackPageRenderedMain gsPageRenderedMain;
+		internal event PageRendered PageRenderedCallBack;
 
-		
 		/* From my understanding you cannot pin delegates.  These need to be declared
 		 * as members to keep a reference to the delegates and avoid their possible GC. 
 		 * since the C# GC has no idea that GS has a reference to these items. While the
-		 * methods themselves dont move, apparently the address of the translation code
+		 * methods themselves don't move, apparently the address of the translation code
 		 * is what is passed, and one of these abstractions can be GC or relocated. */
-		ghostapi.gs_stdio_handler raise_stdin;
-		ghostapi.gs_stdio_handler raise_stdout;
-		ghostapi.gs_stdio_handler raise_stderr;
+		GSAPI.gs_stdio_handler raise_stdin;
+		GSAPI.gs_stdio_handler raise_stdout;
+		GSAPI.gs_stdio_handler raise_stderr;
 		
 		/* Ghostscript display callback struct */
 		public struct display_callback_t
@@ -347,7 +359,8 @@ public class gsEventArgs : EventArgs
 			public display_memalloc_del display_memalloc;
 			public display_memfree_del display_memfree;
 		};
-		public ghostsharp()
+
+		public GSNET()
 		{
 			m_worker = null;
 			gsInstance = IntPtr.Zero;
@@ -384,7 +397,6 @@ public class gsEventArgs : EventArgs
 			Marshal.StructureToPtr(m_display_callback, ptr_display_struct, false);
 		}
 
-
 		/* Callback upon worker all done */
 		private void gsCompleted(object sender, RunWorkerCompletedEventArgs e)
 		{
@@ -420,7 +432,7 @@ public class gsEventArgs : EventArgs
 				gsIOUpdateMain(this, bound, bound.Length);
 				gsIOUpdateMain(this, stack, stack.Length); */
 				String output = "Ghostscript DLL Invalid Access.";
-				gsDLLProblemMain(output);
+				DLLProblemCallBack(output);
 				return;
 			}
 			switch (Params.task)
@@ -452,7 +464,7 @@ public class gsEventArgs : EventArgs
 				Value = (gsParamState_t)e.Result;
 				info = new gsEventArgs(true, 100, Value);
 			}
-			gsUpdateMain(info);
+			ProgressCallBack(info);
 		}
 
 		/* Callback as worker progresses */
@@ -460,7 +472,7 @@ public class gsEventArgs : EventArgs
 		{
 			/* Callback with progress */
 			gsEventArgs info = new gsEventArgs(false, e.ProgressPercentage, (gsParamState_t) e.UserState);
-			gsUpdateMain(info);
+			ProgressCallBack(info);
 		}
 		private gsParamState_t gsFileSync(gsParamState_t in_params)
 		{
@@ -474,17 +486,17 @@ public class gsEventArgs : EventArgs
 
 			try
 			{
-				code = ghostapi.gsapi_new_instance(out gsInstance, IntPtr.Zero);
+				code = GSAPI.gsapi_new_instance(out gsInstance, IntPtr.Zero);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileSync: gsapi_new_instance error");
 				}
-				code = ghostapi.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
+				code = GSAPI.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileSync: gsapi_set_stdio error");
 				}
-				code = ghostapi.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+				code = GSAPI.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileSync: gsapi_set_arg_encoding error");
@@ -505,8 +517,8 @@ public class gsEventArgs : EventArgs
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(fullcommand, fullcommand.Length);
-				code = ghostapi.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+				StdIOCallBack(fullcommand, fullcommand.Length);
+				code = GSAPI.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0 && code != gsConstants.E_QUIT)
 				{
 					throw new GhostscriptException("gsFileSync: gsapi_init_with_args error");
@@ -514,23 +526,23 @@ public class gsEventArgs : EventArgs
 			}
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				in_params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				in_params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 			}
 			finally
 			{
@@ -543,11 +555,11 @@ public class gsEventArgs : EventArgs
 					}
 					argPtrsStable.Free();
 
-					int code1 = ghostapi.gsapi_exit(gsInstance);
+					int code1 = GSAPI.gsapi_exit(gsInstance);
 					if ((code == 0) || (code == gsConstants.E_QUIT))
 						code = code1;
 
-					ghostapi.gsapi_delete_instance(gsInstance);
+					GSAPI.gsapi_delete_instance(gsInstance);
 					in_params.return_code = code;
 
 					if ((code == 0) || (code == gsConstants.E_QUIT))
@@ -578,24 +590,24 @@ public class gsEventArgs : EventArgs
 
 			try
 			{
-				code = ghostapi.gsapi_new_instance(out gsInstance, IntPtr.Zero);
+				code = GSAPI.gsapi_new_instance(out gsInstance, IntPtr.Zero);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileAsync: gsapi_new_instance error");
 				}
-				code = ghostapi.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
+				code = GSAPI.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileAsync: gsapi_set_stdio error");
 				}
-				code = ghostapi.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+				code = GSAPI.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileAsync: gsapi_set_arg_encoding error");
 				}
 
 				/* Now convert our Strings to char* and get pinned handles to these.
-					* This keeps the c# GC from moving stuff around on us */
+				 * This keeps the c# GC from moving stuff around on us */
 				String fullcommand = "";
 				for (int k = 0; k < num_params; k++)
 				{
@@ -609,8 +621,8 @@ public class gsEventArgs : EventArgs
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(fullcommand, fullcommand.Length);
-				code = ghostapi.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+				StdIOCallBack(fullcommand, fullcommand.Length);
+				code = GSAPI.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileAsync: gsapi_init_with_args error");
@@ -618,25 +630,25 @@ public class gsEventArgs : EventArgs
 			}
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = Params;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = Params;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 			}
 			finally
 			{ 
@@ -649,11 +661,11 @@ public class gsEventArgs : EventArgs
 					}
 					argPtrsStable.Free();
 
-					int code1 = ghostapi.gsapi_exit(gsInstance);
+					int code1 = GSAPI.gsapi_exit(gsInstance);
 					if ((code == 0) || (code == gsConstants.E_QUIT))
 						code = code1;
 
-					ghostapi.gsapi_delete_instance(gsInstance);
+					GSAPI.gsapi_delete_instance(gsInstance);
 					Params.return_code = code;
 
 					if ((code == 0) || (code == gsConstants.E_QUIT))
@@ -697,24 +709,24 @@ public class gsEventArgs : EventArgs
 				fs = new FileStream(Params.inputfile, FileMode.Open);
 				var len = (int)fs.Length;
 
-				code = ghostapi.gsapi_new_instance(out gsInstance, IntPtr.Zero);
+				code = GSAPI.gsapi_new_instance(out gsInstance, IntPtr.Zero);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsBytesAsync: gsapi_new_instance error");
 				}
-				code = ghostapi.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
+				code = GSAPI.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsBytesAsync: gsapi_set_stdio error");
 				}
-				code = ghostapi.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+				code = GSAPI.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsBytesAsync: gsapi_set_arg_encoding error");
 				}
 
 				/* Now convert our Strings to char* and get pinned handles to these.
-					* This keeps the c# GC from moving stuff around on us */
+				 * This keeps the c# GC from moving stuff around on us */
 				String fullcommand = "";
 				for (int k = 0; k < num_params; k++)
 				{
@@ -728,8 +740,8 @@ public class gsEventArgs : EventArgs
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(fullcommand, fullcommand.Length);
-				code = ghostapi.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+				StdIOCallBack(fullcommand, fullcommand.Length);
+				code = GSAPI.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsBytesAsync: gsapi_init_with_args error");
@@ -748,7 +760,7 @@ public class gsEventArgs : EventArgs
 					int total = 0;
 					int ret_code;
 
-					ret_code = ghostapi.gsapi_run_string_begin(gsInstance, 0, ref exitcode);
+					ret_code = GSAPI.gsapi_run_string_begin(gsInstance, 0, ref exitcode);
 					if (exitcode < 0)
 					{
 						code = exitcode;
@@ -757,7 +769,7 @@ public class gsEventArgs : EventArgs
 
 					while ((count = fs.Read(Buffer, 0, gsConstants.GS_READ_BUFFER)) > 0)
 					{
-						ret_code = ghostapi.gsapi_run_string_continue(gsInstance, FeedPtr, count, 0, ref exitcode);
+						ret_code = GSAPI.gsapi_run_string_continue(gsInstance, FeedPtr, count, 0, ref exitcode);
 						if (exitcode < 0)
 						{
 							code = exitcode;
@@ -773,7 +785,7 @@ public class gsEventArgs : EventArgs
 							break;
 						}
 					}
-					ret_code = ghostapi.gsapi_run_string_end(gsInstance, 0, ref exitcode);
+					ret_code = GSAPI.gsapi_run_string_end(gsInstance, 0, ref exitcode);
 					if (exitcode < 0)
 					{
 						code = exitcode;
@@ -783,26 +795,26 @@ public class gsEventArgs : EventArgs
 			}
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = Params;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = Params;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 			}
 			catch (Exception except)
 			{
 				/* Could be a file io issue */
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = Params;
@@ -822,11 +834,11 @@ public class gsEventArgs : EventArgs
 					Feed.Free();
 
 					/* gs clean up */
-					int code1 = ghostapi.gsapi_exit(gsInstance);
+					int code1 = GSAPI.gsapi_exit(gsInstance);
 					if ((code == 0) || (code == gsConstants.E_QUIT))
 						code = code1;
 
-					ghostapi.gsapi_delete_instance(gsInstance);
+					GSAPI.gsapi_delete_instance(gsInstance);
 					Params.return_code = code;
 
 					if ((code == 0) || (code == gsConstants.E_QUIT))
@@ -856,7 +868,7 @@ public class gsEventArgs : EventArgs
 			GCHandle pinParamLast = GCHandle.Alloc(param_last, GCHandleType.Pinned);
 			GCHandle firstValue = GCHandle.Alloc(first, GCHandleType.Pinned);
 			GCHandle lastValue = GCHandle.Alloc(last, GCHandleType.Pinned);
-			code = ghostapi.gsapi_set_param(dispInstance, pinParamFirst.AddrOfPinnedObject(),
+			code = GSAPI.gsapi_set_param(dispInstance, pinParamFirst.AddrOfPinnedObject(),
 				firstValue.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int | gs_set_param_type.gs_spt_more_to_come);
 			if (code < 0)
 			{
@@ -868,10 +880,10 @@ public class gsEventArgs : EventArgs
 			}
 
 			if (delay)
-				code = ghostapi.gsapi_set_param(dispInstance, pinParamLast.AddrOfPinnedObject(),
+				code = GSAPI.gsapi_set_param(dispInstance, pinParamLast.AddrOfPinnedObject(),
 					lastValue.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int | gs_set_param_type.gs_spt_more_to_come);
 			else
-				code = ghostapi.gsapi_set_param(dispInstance, pinParamLast.AddrOfPinnedObject(),
+				code = GSAPI.gsapi_set_param(dispInstance, pinParamLast.AddrOfPinnedObject(),
 					lastValue.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int);
 
 			pinParamFirst.Free();
@@ -901,7 +913,7 @@ public class gsEventArgs : EventArgs
 			GCHandle pinParamGraph = GCHandle.Alloc(param_graph, GCHandleType.Pinned);
 			GCHandle valueParam = GCHandle.Alloc(value, GCHandleType.Pinned);
 
-			code = ghostapi.gsapi_set_param(dispInstance, pinParamText.AddrOfPinnedObject(),
+			code = GSAPI.gsapi_set_param(dispInstance, pinParamText.AddrOfPinnedObject(),
 				valueParam.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int | gs_set_param_type.gs_spt_more_to_come);
 			if (code < 0)
 			{
@@ -911,10 +923,10 @@ public class gsEventArgs : EventArgs
 				throw new GhostscriptException("SetAA: gsapi_set_param error");
 			}
 			if (delay)
-				code = ghostapi.gsapi_set_param(dispInstance, pinParamGraph.AddrOfPinnedObject(),
+				code = GSAPI.gsapi_set_param(dispInstance, pinParamGraph.AddrOfPinnedObject(),
 					valueParam.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int | gs_set_param_type.gs_spt_more_to_come);
 			else
-				code = ghostapi.gsapi_set_param(dispInstance, pinParamGraph.AddrOfPinnedObject(),
+				code = GSAPI.gsapi_set_param(dispInstance, pinParamGraph.AddrOfPinnedObject(),
 					valueParam.AddrOfPinnedObject(), gs_set_param_type.gs_spt_int);
 
 			pinParamText.Free();
@@ -938,10 +950,10 @@ public class gsEventArgs : EventArgs
 			GCHandle valueParam = GCHandle.Alloc(value, GCHandleType.Pinned);
 
 			if (delay)
-				code = ghostapi.gsapi_set_param(dispInstance, pinParam.AddrOfPinnedObject(),
+				code = GSAPI.gsapi_set_param(dispInstance, pinParam.AddrOfPinnedObject(),
 					valueParam.AddrOfPinnedObject(), gs_set_param_type.gs_spt_parsed | gs_set_param_type.gs_spt_more_to_come);
 			else
-				code = ghostapi.gsapi_set_param(dispInstance, pinParam.AddrOfPinnedObject(),
+				code = GSAPI.gsapi_set_param(dispInstance, pinParam.AddrOfPinnedObject(),
 					valueParam.AddrOfPinnedObject(), gs_set_param_type.gs_spt_parsed);
 
 			pinParam.Free();
@@ -971,7 +983,7 @@ public class gsEventArgs : EventArgs
 			{
 				gsparams.result = GS_Result_t.gsFAILED;
 				e.Result = gsparams;
-				gsDLLProblemMain("Failure: Display device not initialized");
+				DLLProblemCallBack("Failure: Display device not initialized");
 				return;
 			}
 
@@ -1040,7 +1052,7 @@ public class gsEventArgs : EventArgs
 
 				byte[] fname = System.Text.Encoding.UTF8.GetBytes(fileName + "\0");
 				GCHandle pinfname = GCHandle.Alloc(fname, GCHandleType.Pinned);
-				code = ghostapi.gsapi_run_file(dispInstance, pinfname.AddrOfPinnedObject(), 0, ref exitcode);
+				code = GSAPI.gsapi_run_file(dispInstance, pinfname.AddrOfPinnedObject(), 0, ref exitcode);
 				pinfname.Free();
 
 				if (exitcode < 0)
@@ -1051,7 +1063,7 @@ public class gsEventArgs : EventArgs
 			catch (GhostscriptException except)
 			{
 				gsparams.result = GS_Result_t.gsFAILED;
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 			}
 			finally
 			{
@@ -1078,7 +1090,7 @@ public class gsEventArgs : EventArgs
 			{
 				gsparams.result = GS_Result_t.gsFAILED;
 				e.Result = gsparams;
-				gsDLLProblemMain("Failure: Display device not initialized");
+				DLLProblemCallBack("Failure: Display device not initialized");
 				return;
 			}
 
@@ -1096,8 +1108,8 @@ public class gsEventArgs : EventArgs
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(fullcommand, fullcommand.Length);
-				code = ghostapi.gsapi_init_with_args(dispInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+				StdIOCallBack(fullcommand, fullcommand.Length);
+				code = GSAPI.gsapi_init_with_args(dispInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0)
 				{
 					throw new GhostscriptException("DisplayDeviceAsync: gsapi_init_with_args error");
@@ -1106,26 +1118,26 @@ public class gsEventArgs : EventArgs
 
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = gsparams;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = gsparams;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 			}
 			finally
@@ -1208,7 +1220,7 @@ public class gsEventArgs : EventArgs
 
 			try
 			{
-				if (ghostapi.gsapi_revision(ref vers, size) == 0)
+				if (GSAPI.gsapi_revision(ref vers, size) == 0)
 				{
 					String product = Marshal.PtrToStringAnsi(vers.product);
 					String output;
@@ -1223,7 +1235,7 @@ public class gsEventArgs : EventArgs
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 			}
 			return null;
 		}
@@ -1256,7 +1268,8 @@ public class gsEventArgs : EventArgs
 
 		/* Launch a thread to create XPS document for windows printing */
 		public gsStatus CreateXPS(String fileName, int resolution, int num_pages,
-								Print printsettings, int firstpage, int lastpage)
+								double width, double height, bool fit_page, int firstpage,
+								int lastpage)
 		{
 			gsParamState_t gsparams = new gsParamState_t();
 			gsparams.args = new List<string>();
@@ -1270,32 +1283,13 @@ public class gsEventArgs : EventArgs
 			gsparams.args.Add("-dFirstPage=" + firstpage.ToString());
 			gsparams.args.Add("-dLastPage=" + lastpage.ToString());
 
-			if (printsettings != null)
-			{
-				double paperheight;
-				double paperwidth;
+			gsparams.args.Add("-dDEVICEWIDTHPOINTS=" + Convert.ToInt32(width));
+			gsparams.args.Add("-dDEVICEHEIGHTPOINTS=" + Convert.ToInt32(height));
+			gsparams.args.Add("-dFIXEDMEDIA");
 
-				if (printsettings.m_pagedetails.Landscape == true)
-				{
-					paperheight = printsettings.m_pagedetails.PrintableArea.Width;
-					paperwidth = printsettings.m_pagedetails.PrintableArea.Height;
-				}
-				else
-				{
-					paperheight = printsettings.m_pagedetails.PrintableArea.Height;
-					paperwidth = printsettings.m_pagedetails.PrintableArea.Width;
-				}
+			if (fit_page)
+				gsparams.args.Add("-dFitPage");
 
-				double width = paperwidth * 72.0 / 100.0;
-				double height = paperheight * 72.0 / 100.0;
-				gsparams.args.Add("-dDEVICEWIDTHPOINTS=" + width);
-				gsparams.args.Add("-dDEVICEHEIGHTPOINTS=" + height);
-				gsparams.args.Add("-dFIXEDMEDIA");
-
-				/* Scale and translate and rotate if needed */
-				if (printsettings.xaml_autofit.IsChecked == true)
-					gsparams.args.Add("-dFitPage");
-			}
 			gsparams.outputfile = Path.GetTempFileName();
 			gsparams.args.Add("-o");
 			gsparams.args.Add(gsparams.outputfile);
@@ -1326,7 +1320,7 @@ public class gsEventArgs : EventArgs
 
 		/* Run a file with the display device 
 		 * public gsStatus gsDsiplayDeviceRunFile() */
-		public gsStatus gsDisplayDeviceRunFile(String fileName, double zoom, bool aa, int firstpage, int lastpage)
+		public gsStatus DisplayDeviceRunFile(String fileName, double zoom, bool aa, int firstpage, int lastpage)
 		{
 			gsParamState_t gsparams = new gsParamState_t();
 
@@ -1347,13 +1341,14 @@ public class gsEventArgs : EventArgs
 
 		/* Launch a thread rendering all the pages with the display device
 		 * to collect thumbnail images via init_with_args.   */
-		public gsStatus gsDisplayDeviceRenderThumbs(String fileName, double zoom, bool aa, GS_Task_t task)
+		public gsStatus DisplayDeviceRenderThumbs(String fileName, double zoom, bool aa)
 		{
 			gsParamState_t gsparams = new gsParamState_t();
 			int format = (gsConstants.DISPLAY_COLORS_RGB |
 							gsConstants.DISPLAY_DEPTH_8 |
 							gsConstants.DISPLAY_LITTLEENDIAN);
 			int resolution = (int)(72.0 * zoom + 0.5);
+			GS_Task_t task = GS_Task_t.DISPLAY_DEV_THUMBS;
 
 			gsparams.args = new List<string>();
 			gsparams.args.Add("gs");
@@ -1375,8 +1370,8 @@ public class gsEventArgs : EventArgs
 		}
 
 		/* Launch a thread rendering a set of pages with the display device.  For use with languages
-		   that can be indexed via pages which include PDF and XPS */
-		public gsStatus gsDisplayDeviceRenderPages(String fileName, int first_page, int last_page, double zoom)
+		 * that can be indexed via pages which include PDF and XPS */
+		public gsStatus DisplayDeviceRenderPages(String fileName, int first_page, int last_page, double zoom)
 		{
 			gsParamState_t gsparams = new gsParamState_t();
 			int format = (gsConstants.DISPLAY_COLORS_RGB |
@@ -1411,25 +1406,25 @@ public class gsEventArgs : EventArgs
 
 			try
 			{
-				code = ghostapi.gsapi_new_instance(out dispInstance, IntPtr.Zero);
+				code = GSAPI.gsapi_new_instance(out dispInstance, IntPtr.Zero);
 				if (code < 0)
 				{
 					throw new GhostscriptException("DisplayDeviceOpen: gsapi_new_instance error");
 				}
 
-				code = ghostapi.gsapi_set_stdio(dispInstance, raise_stdin, raise_stdout, raise_stderr);
+				code = GSAPI.gsapi_set_stdio(dispInstance, raise_stdin, raise_stdout, raise_stderr);
 				if (code < 0)
 				{
 					throw new GhostscriptException("DisplayDeviceOpen: gsapi_set_stdio error");
 				}
 
-				code = ghostapi.gsapi_set_arg_encoding(dispInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+				code = GSAPI.gsapi_set_arg_encoding(dispInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 				if (code < 0)
 				{
 					throw new GhostscriptException("DisplayDeviceOpen: gsapi_set_arg_encoding error");
 				}
 
-				code = ghostapi.gsapi_set_display_callback(dispInstance, ptr_display_struct);
+				code = GSAPI.gsapi_set_display_callback(dispInstance, ptr_display_struct);
 				if (code < 0)
 				{
 					throw new GhostscriptException("DisplayDeviceOpen: gsapi_set_display_callback error");
@@ -1438,28 +1433,28 @@ public class gsEventArgs : EventArgs
 
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				if (dispInstance != IntPtr.Zero)
-					ghostapi.gsapi_delete_instance(dispInstance);
+					GSAPI.gsapi_delete_instance(dispInstance);
 				dispInstance = IntPtr.Zero;
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				if (dispInstance != IntPtr.Zero)
-					ghostapi.gsapi_delete_instance(dispInstance);
+					GSAPI.gsapi_delete_instance(dispInstance);
 				dispInstance = IntPtr.Zero;
 			}
 			return gsparams;
@@ -1475,19 +1470,19 @@ public class gsEventArgs : EventArgs
 
 			try
 			{
-				code = ghostapi.gsapi_exit(dispInstance);
+				code = GSAPI.gsapi_exit(dispInstance);
 				if (code < 0)
 				{
 					out_params.result = GS_Result_t.gsFAILED;
 					throw new GhostscriptException("DisplayDeviceClose: gsapi_exit error");
 				}
 
-				ghostapi.gsapi_delete_instance(dispInstance);
+				GSAPI.gsapi_delete_instance(dispInstance);
 
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+				DLLProblemCallBack("Exception: " + except.Message);
 				out_params.result = GS_Result_t.gsFAILED;
 			}
 

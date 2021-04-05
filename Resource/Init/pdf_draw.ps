@@ -2180,33 +2180,48 @@ currentdict /last-ditch-bpc-csp undef
   %% and don't exhaust memory. Note that we have to copy the actual colour space array too, copying
   %% the dictionary just copies the opriginal array as well.
   %%
-  dup /ColorSpace known {
-    dup /ColorSpace get dup type /arraytype eq {
-      exch dup length dict copy exch
-      dup length array copy /ColorSpace exch 2 index 3 1 roll put
-    } {pop} ifelse
-  } if
+  1 dict begin
+  /.ImageDictStackDepth countdictstack def
+  /.ImageOpStackDepth count 2 sub def
+  {
+    dup /ColorSpace known {
+      dup /ColorSpace get dup type /arraytype eq {
+        exch dup length dict copy exch
+        dup length array copy /ColorSpace exch 2 index 3 1 roll put
+      } {pop} ifelse
+    } if
 
-  checkaltimage dup length 6 add dict  % <<image>> <<>>
-  1 index /SMask knownoget {           % <<image>> <<>> <<sm>>
-    dup 3 index ne {                   % <<image>> <<>> <<sm>> <<sm>>
-      1 index exch /SMask exch put
-    } {
-      pop
-      (   **** Error: ignoring recursive /SMask attribute.\n) pdfformaterror
-      (               Output may be incorrect.\n) pdfformaterror
-    } ifelse
+    checkaltimage dup length 6 add dict  % <<image>> <<>>
+    1 index /SMask knownoget {           % <<image>> <<>> <<sm>>
+      dup 3 index ne {                   % <<image>> <<>> <<sm>> <<sm>>
+        1 index exch /SMask exch put
+      } {
+        pop
+        (   **** Error: ignoring recursive /SMask attribute.\n) pdfformaterror
+        (               Output may be incorrect.\n) pdfformaterror
+      } ifelse
+    } if
+    1 index /Mask knownoget {
+      dup type dup /dicttype eq exch /arraytype eq or { % Bug #703681
+        1 index exch /Mask exch put
+      } {
+        pop
+        (   **** Error: Ignoring Mask attribute that is not an array or a dictionary.\n)
+        pdfformaterror
+      } ifelse
+    } if
+    makeimagedict doimagesmask
+  } PDFSTOPONERROR {exec false}{stopped} ifelse
+  {
+    (\n   **** Error: File encountered ')
+    $error /errorname get dup length string cvs concatstrings
+    (' error while processing an image.\n) concatstrings
+    (               Output may be incorrect.\n) concatstrings
+    pdfformaterror
   } if
-  1 index /Mask knownoget {
-    dup type dup /dicttype eq exch /arraytype eq or { % Bug #703681
-      1 index exch /Mask exch put
-    } {
-      pop
-      (   **** Error: Ignoring Mask attribute that is not an array or a dictionary.\n)
-      pdfformaterror
-    } ifelse
-  } if
-  makeimagedict doimagesmask
+  count .ImageOpStackDepth sub {pop} repeat
+  countdictstack .ImageDictStackDepth sub {end} repeat
+  end
 } bind executeonly def
 /makemaskimage {	% <datasource> <imagemask> <Mask> makemaskimage
                         %   <datasource> <imagemask>, updates currentdict =

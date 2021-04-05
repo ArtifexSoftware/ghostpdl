@@ -309,7 +309,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  NULL,                  /* OCRUnicode */
  0,                     /* OCR_char_code */
  0,                     /* OCR_glyph */
- NULL                   /* ocr_glyphs */
+ NULL,                  /* ocr_glyphs */
+ 0                   /* initial_pattern_state */
 };
 
 #else

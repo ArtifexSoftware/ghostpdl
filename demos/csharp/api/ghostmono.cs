@@ -1,4 +1,19 @@
-﻿using System;
+﻿/* Copyright (C) 2020-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+using System;
 using System.Runtime.InteropServices;   /* Marshaling */
 using System.Threading;
 using System.Collections.Generic;       /* Use of List */
@@ -74,7 +89,7 @@ namespace GhostMono
         }
     }
 
-    class ghostsharp
+    class GSMONO
     {
         public class GhostscriptException : Exception
         {
@@ -153,7 +168,7 @@ namespace GhostMono
         {
             m_params.currpage += 1;
             Gtk.Application.Invoke(delegate {
-                gsPageRenderedMain(m_pagewidth, m_pageheight, m_pageraster, m_pageptr, m_params);
+                PageRenderedCallBack(m_pagewidth, m_pageheight, m_pageraster, m_pageptr, m_params);
             });
             return 0;
         }
@@ -205,7 +220,7 @@ namespace GhostMono
 
         private int stdin_callback(IntPtr handle, IntPtr pointer, int count)
         {
-            String output = Marshal.PtrToStringAnsi(pointer);
+            Marshal.PtrToStringAnsi(pointer);
             return count;
         }
 
@@ -216,7 +231,7 @@ namespace GhostMono
             {
                 output = Marshal.PtrToStringAnsi(pointer);    
                 Gtk.Application.Invoke(delegate {
-                    gsIOUpdateMain(output, count);
+                    StdIOCallBack(output, count);
                 });
             }
             catch (Exception excep2)
@@ -232,7 +247,7 @@ namespace GhostMono
         {
             String output = Marshal.PtrToStringAnsi(pointer);
             Gtk.Application.Invoke(delegate {
-                gsIOUpdateMain(output, count);
+                StdIOCallBack(output, count);
             });
 
             return count;
@@ -252,26 +267,29 @@ namespace GhostMono
         IntPtr ptr_display_struct;
 
         /* Callbacks to Main */
-        internal delegate void gsDLLProblem(String mess);
-        internal event gsDLLProblem gsDLLProblemMain;
+        internal delegate void DLLProblem(String mess);
+        internal event DLLProblem DLLProblemCallBack;
 
-        internal delegate void gsIOCallBackMain(String mess, int len);
-        internal event gsIOCallBackMain gsIOUpdateMain;
+        internal delegate void StdIO(String mess, int len);
+        internal event StdIO StdIOCallBack;
 
-        internal delegate void gsCallBackMain(gsThreadCallBack info);
-        internal event gsCallBackMain gsUpdateMain;
+        internal delegate void Progress(gsThreadCallBack info);
+        internal event Progress ProgressCallBack;
 
-        internal delegate void gsCallBackPageRenderedMain(int width, int height, int raster,
+        internal delegate void PageRendered(int width, int height, int raster,
             IntPtr data, gsParamState_t state);
-        internal event gsCallBackPageRenderedMain gsPageRenderedMain;
-
+        internal event PageRendered PageRenderedCallBack;
 
         /* From my understanding you cannot pin delegates.  These need to be declared
 		 * as members to keep a reference to the delegates and avoid their possible GC. 
-		 * since the C# GC has no idea that GS has a reference to these items. */
+		 * since the C# GC has no idea that GS has a reference to these items.  For some
+		 * reason the Mono compiler throws a CS0414 warning about these not being assigned
+		 * even though they are */
+#pragma warning disable 0414
         readonly gs_stdio_handler raise_stdin;
         readonly gs_stdio_handler raise_stdout;
         readonly gs_stdio_handler raise_stderr;
+#pragma warning restore 0414
 
         /* Ghostscript display callback struct */
         public struct display_callback_t
@@ -290,7 +308,8 @@ namespace GhostMono
             public display_memalloc_del display_memalloc;
             public display_memfree_del display_memfree;
         };
-        public ghostsharp()
+
+        public GSMONO()
         {
             m_worker = null;
             gsInstance = IntPtr.Zero;
@@ -331,7 +350,7 @@ namespace GhostMono
             gsThreadCallBack info = new gsThreadCallBack(true, 100, Params);
             m_worker_busy = false;
             Gtk.Application.Invoke(delegate {
-                gsUpdateMain(info);
+                ProgressCallBack(info);
             });
         }
 
@@ -341,7 +360,7 @@ namespace GhostMono
             /* Callback with progress */
             gsThreadCallBack info = new gsThreadCallBack(false, percent, Params);
             Gtk.Application.Invoke(delegate {
-                gsUpdateMain(info);
+                ProgressCallBack(info);
             });
         }
 
@@ -349,7 +368,7 @@ namespace GhostMono
         private void gsErrorReport(string message)
         {
             Gtk.Application.Invoke(delegate {
-                gsDLLProblemMain(message);;
+                DLLProblemCallBack(message);;
             });
             m_worker_busy = false;
         }
@@ -366,17 +385,17 @@ namespace GhostMono
 
 			try
 			{
-				code = ghostapi.gsapi_new_instance(out gsInstance, IntPtr.Zero);
+				code = GSAPI.gsapi_new_instance(out gsInstance, IntPtr.Zero);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileSync: gsapi_new_instance error");
 				}
-				code = ghostapi.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
+				code = GSAPI.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileSync: gsapi_set_stdio error");
 				}
-				code = ghostapi.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+				code = GSAPI.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileSync: gsapi_set_arg_encoding error");
@@ -397,8 +416,8 @@ namespace GhostMono
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(fullcommand, fullcommand.Length);
-				code = ghostapi.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+				StdIOCallBack(fullcommand, fullcommand.Length);
+				code = GSAPI.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0 && code != gsConstants.E_QUIT)
 				{
 					throw new GhostscriptException("gsFileSync: gsapi_init_with_args error");
@@ -435,11 +454,11 @@ namespace GhostMono
 					}
 					argPtrsStable.Free();
 
-					int code1 = ghostapi.gsapi_exit(gsInstance);
+					int code1 = GSAPI.gsapi_exit(gsInstance);
 					if ((code == 0) || (code == gsConstants.E_QUIT))
 						code = code1;
 
-					ghostapi.gsapi_delete_instance(gsInstance);
+					GSAPI.gsapi_delete_instance(gsInstance);
 					in_params.return_code = code;
 
 					if ((code == 0) || (code == gsConstants.E_QUIT))
@@ -472,17 +491,17 @@ namespace GhostMono
 
 			try
 			{
-				code = ghostapi.gsapi_new_instance(out gsInstance, IntPtr.Zero);
+				code = GSAPI.gsapi_new_instance(out gsInstance, IntPtr.Zero);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileAsync: gsapi_new_instance error");
 				}
-				code = ghostapi.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
+				code = GSAPI.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileAsync: gsapi_set_stdio error");
 				}
-				code = ghostapi.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+				code = GSAPI.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileAsync: gsapi_set_arg_encoding error");
@@ -503,8 +522,8 @@ namespace GhostMono
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(fullcommand, fullcommand.Length);
-				code = ghostapi.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+				StdIOCallBack(fullcommand, fullcommand.Length);
+				code = GSAPI.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsFileAsync: gsapi_init_with_args error");
@@ -543,11 +562,11 @@ namespace GhostMono
 					}
 					argPtrsStable.Free();
 
-					int code1 = ghostapi.gsapi_exit(gsInstance);
+					int code1 = GSAPI.gsapi_exit(gsInstance);
 					if ((code == 0) || (code == gsConstants.E_QUIT))
 						code = code1;
 
-					ghostapi.gsapi_delete_instance(gsInstance);
+					GSAPI.gsapi_delete_instance(gsInstance);
 					Params.return_code = code;
 
 					if ((code == 0) || (code == gsConstants.E_QUIT))
@@ -586,7 +605,6 @@ namespace GhostMono
 			int exitcode = 0;
 			var Feed = new GCHandle();
 			var FeedPtr = new IntPtr();
-			String[] strParams = new String[num_params];
 			FileStream fs = null;
 			bool cleanup = true;
 
@@ -596,24 +614,24 @@ namespace GhostMono
 				fs = new FileStream(Params.inputfile, FileMode.Open);
 				var len = (int)fs.Length;
 
-				code = ghostapi.gsapi_new_instance(out gsInstance, IntPtr.Zero);
+				code = GSAPI.gsapi_new_instance(out gsInstance, IntPtr.Zero);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsBytesAsync: gsapi_new_instance error");
 				}
-				code = ghostapi.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
+				code = GSAPI.gsapi_set_stdio(gsInstance, stdin_callback, stdout_callback, stderr_callback);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsBytesAsync: gsapi_set_stdio error");
 				}
-				code = ghostapi.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+				code = GSAPI.gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsBytesAsync: gsapi_set_arg_encoding error");
 				}
 
 				/* Now convert our Strings to char* and get pinned handles to these.
-					* This keeps the c# GC from moving stuff around on us */
+				 * This keeps the c# GC from moving stuff around on us */
 				String fullcommand = "";
 				for (int k = 0; k < num_params; k++)
 				{
@@ -627,8 +645,8 @@ namespace GhostMono
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(fullcommand, fullcommand.Length);
-				code = ghostapi.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+				StdIOCallBack(fullcommand, fullcommand.Length);
+				code = GSAPI.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0)
 				{
 					throw new GhostscriptException("gsBytesAsync: gsapi_init_with_args error");
@@ -645,9 +663,8 @@ namespace GhostMono
 					int count;
 					double perc;
 					int total = 0;
-					int ret_code;
 
-					ret_code = ghostapi.gsapi_run_string_begin(gsInstance, 0, ref exitcode);
+					GSAPI.gsapi_run_string_begin(gsInstance, 0, ref exitcode);
 					if (exitcode < 0)
 					{
 						code = exitcode;
@@ -656,7 +673,7 @@ namespace GhostMono
 
 					while ((count = fs.Read(Buffer, 0, gsConstants.GS_READ_BUFFER)) > 0)
 					{
-						ret_code = ghostapi.gsapi_run_string_continue(gsInstance, FeedPtr, count, 0, ref exitcode);
+						GSAPI.gsapi_run_string_continue(gsInstance, FeedPtr, count, 0, ref exitcode);
 						if (exitcode < 0)
 						{
 							code = exitcode;
@@ -667,7 +684,7 @@ namespace GhostMono
 						perc = 100.0 * (double)total / (double)len;
 						gsProgressChanged(Params, (int)perc);
 					}
-					ret_code = ghostapi.gsapi_run_string_end(gsInstance, 0, ref exitcode);
+					GSAPI.gsapi_run_string_end(gsInstance, 0, ref exitcode);
 					if (exitcode < 0)
 					{
 						code = exitcode;
@@ -716,11 +733,11 @@ namespace GhostMono
 					Feed.Free();
 
 					/* gs clean up */
-					int code1 = ghostapi.gsapi_exit(gsInstance);
+					int code1 = GSAPI.gsapi_exit(gsInstance);
 					if ((code == 0) || (code == gsConstants.E_QUIT))
 						code = code1;
 
-					ghostapi.gsapi_delete_instance(gsInstance);
+					GSAPI.gsapi_delete_instance(gsInstance);
 					Params.return_code = code;
 
 					if ((code == 0) || (code == gsConstants.E_QUIT))
@@ -758,25 +775,25 @@ namespace GhostMono
 
 			try
 			{
-				code = ghostapi.gsapi_new_instance(out dispInstance, IntPtr.Zero);
+				code = GSAPI.gsapi_new_instance(out dispInstance, IntPtr.Zero);
 				if (code < 0)
 				{
 					throw new GhostscriptException("DisplayDeviceAsync: gsapi_new_instance error");
 				}
 
-				code = ghostapi.gsapi_set_stdio(dispInstance, stdin_callback, stdout_callback, stderr_callback);
+				code = GSAPI.gsapi_set_stdio(dispInstance, stdin_callback, stdout_callback, stderr_callback);
 				if (code < 0)
 				{
 					throw new GhostscriptException("DisplayDeviceAsync: gsapi_set_stdio error");
 				}
 
-				code = ghostapi.gsapi_set_arg_encoding(dispInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+				code = GSAPI.gsapi_set_arg_encoding(dispInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 				if (code < 0)
 				{
 					throw new GhostscriptException("DisplayDeviceAsync: gsapi_set_arg_encoding error");
 				}
 
-				code = ghostapi.gsapi_set_display_callback(dispInstance, ptr_display_struct);
+				code = GSAPI.gsapi_set_display_callback(dispInstance, ptr_display_struct);
 				if (code < 0)
 				{
 					throw new GhostscriptException("DisplayDeviceAsync: gsapi_set_display_callback error");
@@ -793,8 +810,8 @@ namespace GhostMono
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(fullcommand, fullcommand.Length);
-				code = ghostapi.gsapi_init_with_args(dispInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+				StdIOCallBack(fullcommand, fullcommand.Length);
+				code = GSAPI.gsapi_init_with_args(dispInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0)
 				{
 					throw new GhostscriptException("DisplayDeviceAsync: gsapi_init_with_args error");
@@ -820,7 +837,7 @@ namespace GhostMono
                 gsErrorReport("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				if (dispInstance != IntPtr.Zero)
-					ghostapi.gsapi_delete_instance(dispInstance);
+					GSAPI.gsapi_delete_instance(dispInstance);
 				dispInstance = IntPtr.Zero;
 			}
 			catch (Exception except)
@@ -828,7 +845,7 @@ namespace GhostMono
                 gsErrorReport("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				if (dispInstance != IntPtr.Zero)
-					ghostapi.gsapi_delete_instance(dispInstance);
+					GSAPI.gsapi_delete_instance(dispInstance);
 				dispInstance = IntPtr.Zero;
 			}
 			finally
@@ -915,7 +932,7 @@ namespace GhostMono
 
 			try
 			{
-				if (ghostapi.gsapi_revision(ref vers, size) == 0)
+				if (GSAPI.gsapi_revision(ref vers, size) == 0)
 				{
 					String product = Marshal.PtrToStringAnsi(vers.product);
 					String output;
@@ -1017,7 +1034,6 @@ namespace GhostMono
             return RunGhostscriptAsync(gsparams);
 		}
 
-
 		/* Launch a thread rendering a set of pages with the display device.  For use with languages
 		   that can be indexed via pages which include PDF and XPS */
 		public gsStatus gsDisplayDeviceRenderPages(String fileName, int first_page, int last_page, double zoom)
@@ -1058,11 +1074,11 @@ namespace GhostMono
 
 			try
 			{
-				int code1 = ghostapi.gsapi_exit(dispInstance);
+				int code1 = GSAPI.gsapi_exit(dispInstance);
 				if ((code == 0) || (code == gsConstants.E_QUIT))
 					code = code1;
 
-				ghostapi.gsapi_delete_instance(dispInstance);
+				GSAPI.gsapi_delete_instance(dispInstance);
 				dispInstance = IntPtr.Zero;
 
 			}
@@ -1071,7 +1087,6 @@ namespace GhostMono
                 gsErrorReport("Exception: " + except.Message);
 				out_params.result = GS_Result_t.gsFAILED;
 			}
-
 			return out_params;
 		}
 

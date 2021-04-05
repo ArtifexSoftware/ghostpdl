@@ -526,7 +526,7 @@ convert_intensity_into_device_color(const frac intensity,
                 cm = ck = 0;
                 cc = cy = frac_1 - intensity;
                 break;
-        case GS_PATH_TAG:		/* Make lines and fills blue. */
+        case GS_VECTOR_TAG:		/* Make lines and fills blue. */
         default:
                 cy = ck = 0;
                 cc = cm = frac_1 - intensity;

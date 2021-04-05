@@ -759,7 +759,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     /* Color tune profile. No intent */
                     srcgtag->color_warp_profile = icc_profile;
                     break;
-                case GRAPHIC_CMYK:
+                case VECTOR_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_GRAPPRO] = icc_profile;
                     srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
@@ -786,7 +786,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                             return code;
                     }
                     break;
-                case GRAPHIC_RGB:
+                case VECTOR_RGB:
                     srcgtag->rgb_profiles[gsSRC_GRAPPRO] = icc_profile;
                     srcgtag->rgb_rend_cond[gsSRC_GRAPPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
@@ -813,7 +813,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                             return code;
                     }
                     break;
-                case GRAPHIC_GRAY:
+                case VECTOR_GRAY:
                     srcgtag->gray_profiles[gsSRC_GRAPPRO] = icc_profile;
                     srcgtag->gray_rend_cond[gsSRC_GRAPPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
@@ -2796,10 +2796,10 @@ gsicc_extract_profile(gs_graphics_type_tag_t graphics_type_tag,
             (*profile) = profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
             *render_cond = profile_struct->rendercond[GS_DEFAULT_DEVICE_PROFILE];
             break;
-        case GS_PATH_TAG:
-            *render_cond = profile_struct->rendercond[GS_GRAPHIC_DEVICE_PROFILE];
-            if (profile_struct->device_profile[GS_GRAPHIC_DEVICE_PROFILE] != NULL) {
-                (*profile) = profile_struct->device_profile[GS_GRAPHIC_DEVICE_PROFILE];
+        case GS_VECTOR_TAG:
+            *render_cond = profile_struct->rendercond[GS_VECTOR_DEVICE_PROFILE];
+            if (profile_struct->device_profile[GS_VECTOR_DEVICE_PROFILE] != NULL) {
+                (*profile) = profile_struct->device_profile[GS_VECTOR_DEVICE_PROFILE];
             } else {
                 (*profile) = profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
             }

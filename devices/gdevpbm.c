@@ -253,7 +253,7 @@ ppm_set_dev_procs(gx_device * pdev)
         if (bdev->color_info.depth == 4) {
             set_dev_proc(pdev, map_color_rgb, cmyk_1bit_map_color_rgb);
             set_dev_proc(pdev, map_cmyk_color, cmyk_1bit_map_cmyk_color);
-        } else if (bdev->magic == 7) {
+        } else if (bdev->magic == '7') {
             set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
             set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
         } else {

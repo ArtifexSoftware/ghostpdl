@@ -635,7 +635,7 @@ gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
     case GS_UNTOUCHED_TAG:
     default:
         break;
-    case GS_PATH_TAG:
+    case GS_VECTOR_TAG:
         if (data_cs == gsRGB) {
             (*profile) = srcgtag_profile->rgb_profiles[gsSRC_GRAPPRO];
             *render_cond = srcgtag_profile->rgb_rend_cond[gsSRC_GRAPPRO];

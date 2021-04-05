@@ -1,4 +1,19 @@
-﻿using System;
+﻿/* Copyright (C) 2020-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+using System;
 using System.Collections.Generic;
 using Gtk;
 using GhostMono;
@@ -38,7 +53,7 @@ namespace gs_mono_example
 
     public partial class MainWindow : Gtk.Window
     {
-        ghostsharp m_ghostscript;
+        GSMONO m_ghostscript;
         bool m_file_open;
         String m_currfile;
         String m_extension;
@@ -107,10 +122,10 @@ namespace gs_mono_example
         public MainWindow() : base(Gtk.WindowType.Toplevel)
         {
             /* Set up ghostscript calls for progress update */
-            m_ghostscript = new ghostsharp();
-            m_ghostscript.gsUpdateMain += new ghostsharp.gsCallBackMain(gsProgress);
-            m_ghostscript.gsIOUpdateMain += new ghostsharp.gsIOCallBackMain(gsIO);
-            m_ghostscript.gsDLLProblemMain += new ghostsharp.gsDLLProblem(gsDLL);
+            m_ghostscript = new GSMONO();
+            m_ghostscript.ProgressCallBack += new GSMONO.Progress(gsProgress);
+            m_ghostscript.StdIOCallBack += new GSMONO.StdIO(gsIO);
+            m_ghostscript.DLLProblemCallBack += new GSMONO.DLLProblem(gsDLL);
 
             DeleteEvent += delegate { Application.Quit(); };
 
@@ -546,7 +561,7 @@ namespace gs_mono_example
                                 System.IO.File.Delete(m_currfile);
                             }
 
-                            var res = System.IO.File.Exists(tempfile.Filename);
+                            System.IO.File.Exists(tempfile.Filename);
                             System.IO.File.Copy(tempfile.Filename, dialog.Filename);
                         }
                         catch (Exception except)
@@ -607,7 +622,6 @@ namespace gs_mono_example
                 /* launch a new process */
                 string path = System.Reflection.Assembly.GetExecutingAssembly().Location;
 
-                Process p = new Process();
                 try
                 {
                     String name = dialog.Filename;

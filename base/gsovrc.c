@@ -181,8 +181,11 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
 
     /* check for overflow */
     *psize = used;
-    if (used > avail)
-        return_error(gs_error_rangecheck);
+    if (used > avail) {
+        if (avail != 0)
+            return_error(gs_error_rangecheck);
+        return gs_error_rangecheck;
+    }
     data[0] = flags;
     if_debug2m('v', ((const gx_device *)cdev)->memory, "[v]c_overprint_write(%d), drawn_comps=0x%x\n",
                flags, pparams->drawn_comps);

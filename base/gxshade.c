@@ -390,7 +390,7 @@ top:
             return code;
     }
     rendering_params.black_point_comp = pgs->blackptcomp;
-    rendering_params.graphics_type_tag = GS_PATH_TAG;
+    rendering_params.graphics_type_tag = GS_VECTOR_TAG;
     rendering_params.override_icc = false;
     rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
     rendering_params.rendering_intent = pgs->renderingintent;

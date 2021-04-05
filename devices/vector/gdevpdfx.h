@@ -946,6 +946,7 @@ struct gx_device_pdf_s {
     gs_char OCR_char_code;          /* Passes the current character code from text processing to the image processing code when rendering glyph bitmaps for OCR */
     gs_glyph OCR_glyph;             /* Passes the current glyph code from text processing to the image processing code when rendering glyph bitmaps for OCR */
     ocr_glyph_t *ocr_glyphs;        /* Records bitmaps and other data from text processing when doing OCR */
+    gs_gstate **initial_pattern_states;
 };
 
 #define is_in_page(pdev)\

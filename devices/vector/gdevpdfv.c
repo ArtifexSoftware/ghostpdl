@@ -360,6 +360,9 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
             if (code < 0)
                 return code;
             *ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, pdc->mask.id);
+            if (*ppres == NULL)
+                return_error(gs_error_undefined);
+
             *ppres = pdf_substitute_pattern(*ppres);
             if (!pdev->AR4_save_bug && pdev->CompatibilityLevel <= 1.3) {
                 /* We reconnized AR4 behavior as reserving "q Q" stack elements

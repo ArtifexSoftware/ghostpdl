@@ -995,6 +995,7 @@
     <ClCompile Include="..\base\gdevmrun.c" />
     <ClCompile Include="..\base\gdevmx.c" />
     <ClCompile Include="..\base\gdevnfwd.c" />
+    <ClCompile Include="..\base\gdevnup.c" />
     <ClCompile Include="..\base\gdevoflt.c" />
     <ClCompile Include="..\base\gdevp14.c" />
     <ClCompile Include="..\base\gdevpccm.c" />
@@ -2521,6 +2522,7 @@
     <ClInclude Include="..\base\gdevmplt.h" />
     <ClInclude Include="..\base\gdevmrop.h" />
     <ClInclude Include="..\base\gdevmrun.h" />
+    <ClInclude Include="..\base\gdevnup.h" />
     <ClInclude Include="..\base\gdevoflt.h" />
     <ClInclude Include="..\base\gdevp14.h" />
     <ClInclude Include="..\base\gdevpccm.h" />

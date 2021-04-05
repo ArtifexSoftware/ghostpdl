@@ -295,7 +295,7 @@ static int do_fill(gs_gstate *pgs, int rule)
        segment structure (depending on how fine grained we require it to be).
      */
     if (pgs->show_gstate == NULL)
-        ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+        ensure_tag_is_set(pgs, pgs->device, GS_VECTOR_TAG);	/* NB: may unset_dev_color */
     else
         ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
@@ -415,7 +415,7 @@ do_stroke(gs_gstate * pgs)
        segment structure (depending on how fine grained we require it to be).
      */
     if (pgs->show_gstate == NULL)
-        ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+        ensure_tag_is_set(pgs, pgs->device, GS_VECTOR_TAG);	/* NB: may unset_dev_color */
     else
         ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
@@ -644,7 +644,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
            segment structure (depending on how fine grained we require it to be).
          */
         if (pgs->show_gstate == NULL)
-            ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+            ensure_tag_is_set(pgs, pgs->device, GS_VECTOR_TAG);	/* NB: may unset_dev_color */
         else
             ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
@@ -684,7 +684,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
 
     /* Have to set the fill color too */
     if (pgs->show_gstate == NULL)
-        ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+        ensure_tag_is_set(pgs, pgs->device, GS_VECTOR_TAG);	/* NB: may unset_dev_color */
     else
         ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
