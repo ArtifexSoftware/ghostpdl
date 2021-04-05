@@ -890,8 +890,6 @@ void mem_initialize(gx_device *dev)
     set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, get_params, gx_default_get_params);
     set_dev_proc(dev, put_params, gx_default_put_params);
-    set_dev_proc(dev, get_xfont_procs, gx_forward_get_xfont_procs);
-    set_dev_proc(dev, get_xfont_device, gx_forward_get_xfont_device);
     set_dev_proc(dev, map_rgb_alpha_color, gx_default_map_rgb_alpha_color);
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);

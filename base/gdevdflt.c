@@ -601,8 +601,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, get_params, gx_default_get_params);
     fill_dev_proc(dev, put_params, gx_default_put_params);
     /* see below for map_cmyk_color */
-    fill_dev_proc(dev, get_xfont_procs, gx_default_get_xfont_procs);
-    fill_dev_proc(dev, get_xfont_device, gx_default_get_xfont_device);
     fill_dev_proc(dev, map_rgb_alpha_color, gx_default_map_rgb_alpha_color);
     fill_dev_proc(dev, get_page_device, gx_default_get_page_device);
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
@@ -858,18 +856,6 @@ int
 gx_default_close_device(gx_device * dev)
 {
     return 0;
-}
-
-const gx_xfont_procs *
-gx_default_get_xfont_procs(gx_device * dev)
-{
-    return NULL;
-}
-
-gx_device *
-gx_default_get_xfont_device(gx_device * dev)
-{
-    return dev;
 }
 
 gx_device *
@@ -1279,8 +1265,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, get_params, dev_proc(&prototype, get_params));
     set_dev_proc(dest, put_params, dev_proc(&prototype, put_params));
     set_dev_proc(dest, map_cmyk_color, dev_proc(&prototype, map_cmyk_color));
-    set_dev_proc(dest, get_xfont_procs, dev_proc(&prototype, get_xfont_procs));
-    set_dev_proc(dest, get_xfont_device, dev_proc(&prototype, get_xfont_device));
     set_dev_proc(dest, map_rgb_alpha_color, dev_proc(&prototype, map_rgb_alpha_color));
     set_dev_proc(dest, get_page_device, dev_proc(&prototype, get_page_device));
     set_dev_proc(dest, get_alpha_bits, dev_proc(&prototype, get_alpha_bits));

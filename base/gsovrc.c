@@ -476,7 +476,6 @@ generic_overprint_initialize(gx_device *dev)
     set_dev_proc(dev, copy_mono, gx_default_copy_mono);
     set_dev_proc(dev, copy_color, gx_default_copy_color);
     set_dev_proc(dev, put_params, overprint_put_params);
-    set_dev_proc(dev, get_xfont_device, gx_default_get_xfont_device);
     set_dev_proc(dev, get_page_device, overprint_get_page_device);
     set_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
     set_dev_proc(dev, copy_rop, gx_default_copy_rop);

@@ -243,22 +243,6 @@ gx_color_index default_subclass_map_cmyk_color(gx_device *dev, const gx_color_va
     return gx_default_map_cmyk_color(dev, cv);
 }
 
-const gx_xfont_procs *default_subclass_get_xfont_procs(gx_device *dev)
-{
-    if (dev->child)
-        return dev_proc(dev->child, get_xfont_procs)(dev->child);
-    /* else */
-    return gx_default_get_xfont_procs(dev);
-}
-
-gx_device *default_subclass_get_xfont_device(gx_device *dev)
-{
-    if (dev->child)
-        return dev_proc(dev->child, get_xfont_device)(dev->child);
-    /* else */
-    return gx_default_get_xfont_device(dev);
-}
-
 gx_color_index default_subclass_map_rgb_alpha_color(gx_device *dev, gx_color_value red, gx_color_value green, gx_color_value blue,
     gx_color_value alpha)
 {
@@ -922,8 +906,6 @@ int default_subclass_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, default_subclass_get_params);
     set_dev_proc(dev, put_params, default_subclass_put_params);
     set_dev_proc(dev, map_cmyk_color, default_subclass_map_cmyk_color);
-    set_dev_proc(dev, get_xfont_procs, default_subclass_get_xfont_procs);
-    set_dev_proc(dev, get_xfont_device, default_subclass_get_xfont_device);
     set_dev_proc(dev, map_rgb_alpha_color, default_subclass_map_rgb_alpha_color);
     set_dev_proc(dev, get_page_device, default_subclass_get_page_device);
     set_dev_proc(dev, get_alpha_bits, default_subclass_get_alpha_bits);

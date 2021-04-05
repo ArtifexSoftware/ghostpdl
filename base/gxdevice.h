@@ -260,8 +260,6 @@ dev_proc_get_bits(gx_default_get_bits);
 dev_proc_get_params(gx_default_get_params);
 dev_proc_put_params(gx_default_put_params);
 dev_proc_map_cmyk_color(gx_default_map_cmyk_color);
-dev_proc_get_xfont_procs(gx_default_get_xfont_procs);
-dev_proc_get_xfont_device(gx_default_get_xfont_device);
 dev_proc_map_rgb_alpha_color(gx_default_map_rgb_alpha_color);
 dev_proc_get_page_device(gx_default_get_page_device);   /* returns NULL */
 dev_proc_get_page_device(gx_page_device_get_page_device);       /* returns dev */
@@ -372,8 +370,6 @@ dev_proc_get_bits(gx_forward_get_bits);
 dev_proc_get_params(gx_forward_get_params);
 dev_proc_put_params(gx_forward_put_params);
 dev_proc_map_cmyk_color(gx_forward_map_cmyk_color);
-dev_proc_get_xfont_procs(gx_forward_get_xfont_procs);
-dev_proc_get_xfont_device(gx_forward_get_xfont_device);
 dev_proc_map_rgb_alpha_color(gx_forward_map_rgb_alpha_color);
 dev_proc_get_page_device(gx_forward_get_page_device);
 #define gx_forward_get_alpha_bits gx_default_get_alpha_bits

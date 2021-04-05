@@ -951,18 +951,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_map_cmyk_color(proc)\
   dev_t_proc_map_cmyk_color(proc, gx_device)
 
-#define dev_t_proc_get_xfont_procs(proc, dev_t)\
-  const gx_xfont_procs *proc(dev_t *dev)
-#define dev_proc_get_xfont_procs(proc)\
-  dev_t_proc_get_xfont_procs(proc, gx_device)
-
-                /* Added in release 2.6.1 */
-
-#define dev_t_proc_get_xfont_device(proc, dev_t)\
-  gx_device *proc(dev_t *dev)
-#define dev_proc_get_xfont_device(proc)\
-  dev_t_proc_get_xfont_device(proc, gx_device)
-
                 /* Added in release 2.7.1 */
 
 #define dev_t_proc_map_rgb_alpha_color(proc, dev_t)\
@@ -1555,8 +1543,6 @@ typedef struct {
         dev_t_proc_get_params((*get_params), dev_t);\
         dev_t_proc_put_params((*put_params), dev_t);\
         dev_t_proc_map_cmyk_color((*map_cmyk_color), dev_t);\
-        dev_t_proc_get_xfont_procs((*get_xfont_procs), dev_t);\
-        dev_t_proc_get_xfont_device((*get_xfont_device), dev_t);\
         dev_t_proc_map_rgb_alpha_color((*map_rgb_alpha_color), dev_t);\
         dev_t_proc_get_page_device((*get_page_device), dev_t);\
         dev_t_proc_get_alpha_bits((*get_alpha_bits), dev_t);\

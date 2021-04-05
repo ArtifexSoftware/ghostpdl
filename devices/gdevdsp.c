@@ -1161,7 +1161,6 @@ display_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, display_get_params);
     set_dev_proc(dev, put_params, display_put_params);
     set_dev_proc(dev, map_cmyk_color, gx_default_cmyk_map_cmyk_color);
-    set_dev_proc(dev, get_xfont_procs, gx_default_get_xfont_procs);
     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
     set_dev_proc(dev, fill_rectangle_hl_color, display_fill_rectangle_hl_color);
     set_dev_proc(dev, update_spot_equivalent_colors, display_update_spot_equivalent_colors);
@@ -1738,8 +1737,6 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     COPY_PROC(get_params);
     COPY_PROC(put_params);
     COPY_PROC(map_cmyk_color);
-    COPY_PROC(get_xfont_procs);
-    COPY_PROC(get_xfont_device);
     COPY_PROC(map_rgb_alpha_color);
     set_dev_proc(ddev, get_page_device, gx_page_device_get_page_device);
     COPY_PROC(get_clipping_box);

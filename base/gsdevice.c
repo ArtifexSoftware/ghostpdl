@@ -345,7 +345,7 @@ gx_device_make_struct_type(gs_memory_struct_type_t *st,
 {
     if (dev->stype)
         *st = *dev->stype;
-    else if (dev_proc(dev, get_xfont_procs) == gx_forward_get_xfont_procs)
+    else if (dev_proc(dev, get_page_device) == gx_forward_get_page_device)
         *st = st_device_forward;
     else
         *st = st_device;

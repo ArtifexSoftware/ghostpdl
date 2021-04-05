@@ -70,8 +70,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, get_params, gx_forward_get_params);
     fill_dev_proc(dev, put_params, gx_forward_put_params);
     fill_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
-    fill_dev_proc(dev, get_xfont_procs, gx_forward_get_xfont_procs);
-    fill_dev_proc(dev, get_xfont_device, gx_forward_get_xfont_device);
     fill_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
     fill_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     /* NOT get_alpha_bits (OBSOLETE) */
@@ -340,26 +338,6 @@ gx_forward_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 
     return (tdev == 0 ? gx_default_map_cmyk_color(dev, cv) :
             dev_proc(tdev, map_cmyk_color)(tdev, cv));
-}
-
-const gx_xfont_procs *
-gx_forward_get_xfont_procs(gx_device * dev)
-{
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-
-    return (tdev == 0 ? gx_default_get_xfont_procs(dev) :
-            dev_proc(tdev, get_xfont_procs)(tdev));
-}
-
-gx_device *
-gx_forward_get_xfont_device(gx_device * dev)
-{
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-
-    return (tdev == 0 ? gx_default_get_xfont_device(dev) :
-            dev_proc(tdev, get_xfont_device)(tdev));
 }
 
 gx_color_index
@@ -1108,8 +1086,6 @@ null_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, gx_forward_get_params);
     set_dev_proc(dev, put_params, null_put_params);
     set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
-    set_dev_proc(dev, get_xfont_procs, gx_forward_get_xfont_procs);
-    set_dev_proc(dev, get_xfont_device, gx_forward_get_xfont_device);
     set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
     set_dev_proc(dev, copy_alpha, null_copy_alpha);
     set_dev_proc(dev, get_band, gx_forward_get_band);
@@ -1396,8 +1372,6 @@ void gx_forward_device_initialize_procs(gx_device *dev)
     fill_dev_proc(dev, get_params, gx_forward_get_params);
     fill_dev_proc(dev, put_params, gx_forward_put_params);
     fill_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
-    fill_dev_proc(dev, get_xfont_procs, gx_forward_get_xfont_procs);
-    fill_dev_proc(dev, get_xfont_device, gx_forward_get_xfont_device);
     fill_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
     fill_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     fill_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
