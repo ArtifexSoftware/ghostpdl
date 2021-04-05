@@ -44,7 +44,6 @@ private_st_obj_filter_text_enum();
 
 /* Device procedures, we need to implement all of them */
 static dev_proc_fill_rectangle(obj_filter_fill_rectangle);
-static dev_proc_tile_rectangle(obj_filter_tile_rectangle);
 static dev_proc_fill_path(obj_filter_fill_path);
 static dev_proc_stroke_path(obj_filter_stroke_path);
 static dev_proc_fill_mask(obj_filter_fill_mask);
@@ -100,7 +99,6 @@ obj_filter_initialize(gx_device *dev)
         return code;
 
     set_dev_proc(dev, fill_rectangle, obj_filter_fill_rectangle);
-    set_dev_proc(dev, tile_rectangle, obj_filter_tile_rectangle);
     set_dev_proc(dev, fill_path, obj_filter_fill_path);
     set_dev_proc(dev, stroke_path, obj_filter_stroke_path);
     set_dev_proc(dev, fill_mask, obj_filter_fill_mask);
@@ -147,15 +145,6 @@ int obj_filter_fill_rectangle(gx_device *dev, int x, int y, int width, int heigh
 {
     if ((dev->ObjectFilter & FILTERVECTOR) == 0)
         return default_subclass_fill_rectangle(dev, x, y, width, height, color);
-    return 0;
-}
-
-int obj_filter_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x, int y, int width, int height,
-    gx_color_index color0, gx_color_index color1,
-    int phase_x, int phase_y)
-{
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
-        return default_subclass_tile_rectangle(dev, tile, x, y, width, height, color0, color1, phase_x, phase_y);
     return 0;
 }
 

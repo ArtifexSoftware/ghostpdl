@@ -67,7 +67,6 @@ static dev_proc_initialize(epo_initialize);
 static dev_proc_begin_image(epo_begin_image);
 static dev_proc_begin_typed_image(epo_begin_typed_image);
 static dev_proc_stroke_path(epo_stroke_path);
-static dev_proc_tile_rectangle(epo_tile_rectangle);
 static dev_proc_copy_mono(epo_copy_mono);
 static dev_proc_copy_color(epo_copy_color);
 static dev_proc_get_bits(epo_get_bits);
@@ -436,7 +435,6 @@ int epo_initialize(gx_device *dev)
 
     set_dev_proc(dev, output_page, epo_output_page);
     set_dev_proc(dev, fill_rectangle, epo_fill_rectangle);
-    set_dev_proc(dev, tile_rectangle, epo_tile_rectangle);
     set_dev_proc(dev, copy_mono, epo_copy_mono);
     set_dev_proc(dev, copy_color, epo_copy_color);
     set_dev_proc(dev, get_bits, epo_get_bits);
@@ -512,17 +510,6 @@ int epo_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     if (code != 0)
         return code;
     return dev_proc(dev, stroke_path)(dev, pgs, ppath, params, pdcolor, pcpath);
-}
-
-int epo_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x, int y, int width, int height,
-    gx_color_index color0, gx_color_index color1,
-    int phase_x, int phase_y)
-{
-    int code = epo_handle_erase_page(dev);
-
-    if (code != 0)
-        return code;
-    return dev_proc(dev, tile_rectangle)(dev, tile, x, y, width, height, color0, color1, phase_x, phase_y);
 }
 
 int epo_copy_mono(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,

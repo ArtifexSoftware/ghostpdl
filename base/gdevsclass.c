@@ -178,15 +178,6 @@ int default_subclass_fill_rectangle(gx_device *dev, int x, int y, int width, int
     return 0;
 }
 
-int default_subclass_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x, int y, int width, int height,
-    gx_color_index color0, gx_color_index color1,
-    int phase_x, int phase_y)
-{
-    if (dev->child)
-        return dev_proc(dev->child, tile_rectangle)(dev->child, tile, x, y, width, height, color0, color1, phase_x, phase_y);
-    return 0;
-}
-
 int default_subclass_copy_mono(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,
     int x, int y, int width, int height,
     gx_color_index color0, gx_color_index color1)
@@ -899,7 +890,6 @@ int default_subclass_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, default_subclass_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, default_subclass_map_color_rgb);
     set_dev_proc(dev, fill_rectangle, default_subclass_fill_rectangle);
-    set_dev_proc(dev, tile_rectangle, default_subclass_tile_rectangle);
     set_dev_proc(dev, copy_mono, default_subclass_copy_mono);
     set_dev_proc(dev, copy_color, default_subclass_copy_color);
     set_dev_proc(dev, get_bits, default_subclass_get_bits);

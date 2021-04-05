@@ -117,7 +117,6 @@ pattern_accum_initialize(gx_device *dev)
 
     /* It would be much nicer if gx_device_init set the following
      * defaults for us, but that doesn't work for some reason. */
-    set_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
     set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
     set_dev_proc(dev, copy_rop, gx_default_copy_rop);

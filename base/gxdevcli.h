@@ -900,14 +900,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_fill_rectangle(proc)\
   dev_t_proc_fill_rectangle(proc, gx_device)
 
-#define dev_t_proc_tile_rectangle(proc, dev_t)\
-  int proc(dev_t *dev,\
-    const gx_tile_bitmap *tile, int x, int y, int width, int height,\
-    gx_color_index color0, gx_color_index color1,\
-    int phase_x, int phase_y)
-#define dev_proc_tile_rectangle(proc)\
-  dev_t_proc_tile_rectangle(proc, gx_device)
-
 #define dev_t_proc_copy_mono(proc, dev_t)\
   int proc(dev_t *dev,\
     const byte *data, int data_x, int raster, gx_bitmap_id id,\
@@ -1536,7 +1528,6 @@ typedef struct {
         dev_t_proc_map_rgb_color((*map_rgb_color), dev_t);\
         dev_t_proc_map_color_rgb((*map_color_rgb), dev_t);\
         dev_t_proc_fill_rectangle((*fill_rectangle), dev_t);\
-        dev_t_proc_tile_rectangle((*tile_rectangle), dev_t);\
         dev_t_proc_copy_mono((*copy_mono), dev_t);\
         dev_t_proc_copy_color((*copy_color), dev_t);\
         dev_t_proc_get_bits((*get_bits), dev_t);\

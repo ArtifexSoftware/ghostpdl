@@ -2291,7 +2291,7 @@ idata:                  data_size = 0;
                 }
             case cmd_op_tile_rect_short >> 4:
             case cmd_op_tile_rect_tiny >> 4:
-                /* Currently we don't use lop with tile_rectangle. */
+                /* Currently we don't use lop with strip_tile_rectangle. */
                 code = (*dev_proc(tdev, strip_tile_rectangle))
                     (tdev, &state_tile,
                      state.rect.x - x0, state.rect.y - y0,

@@ -60,7 +60,6 @@ private_st_flp_text_enum();
 static dev_proc_output_page(flp_output_page);
 static dev_proc_close_device(flp_close_device);
 static dev_proc_fill_rectangle(flp_fill_rectangle);
-static dev_proc_tile_rectangle(flp_tile_rectangle);
 static dev_proc_copy_mono(flp_copy_mono);
 static dev_proc_copy_color(flp_copy_color);
 static dev_proc_get_bits(flp_get_bits);
@@ -369,20 +368,6 @@ int flp_fill_rectangle(gx_device *dev, int x, int y, int width, int height, gx_c
         return code;
     if (!code)
         return default_subclass_fill_rectangle(dev, x, y, width, height, color);
-
-    return 0;
-}
-
-int flp_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x, int y, int width, int height,
-    gx_color_index color0, gx_color_index color1,
-    int phase_x, int phase_y)
-{
-    int code = SkipPage(dev);
-
-    if (code < 0)
-        return code;
-    if (!code)
-        return default_subclass_tile_rectangle(dev, tile, x, y, width, height, color0, color1, phase_x, phase_y);
 
     return 0;
 }
@@ -1257,7 +1242,6 @@ flp_initialize(gx_device *dev)
     set_dev_proc(dev, output_page, flp_output_page);
     set_dev_proc(dev, close_device, flp_close_device);
     set_dev_proc(dev, fill_rectangle, flp_fill_rectangle);
-    set_dev_proc(dev, tile_rectangle, flp_tile_rectangle);
     set_dev_proc(dev, copy_mono, flp_copy_mono);
     set_dev_proc(dev, copy_color, flp_copy_color);
     set_dev_proc(dev, get_bits, flp_get_bits);

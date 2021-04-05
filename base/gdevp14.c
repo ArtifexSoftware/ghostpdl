@@ -5461,7 +5461,6 @@ pdf14_forward_device_procs(gx_device * dev)
     set_dev_proc(dev, close_device, gx_forward_close_device);
     set_dev_proc(dev, fill_rectangle, gx_forward_fill_rectangle);
     set_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
-    set_dev_proc(dev, tile_rectangle, gx_forward_tile_rectangle);
     set_dev_proc(dev, copy_mono, gx_forward_copy_mono);
     set_dev_proc(dev, copy_color, gx_forward_copy_color);
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
@@ -9598,7 +9597,6 @@ pdf14_clist_initialize(gx_device *dev,
     set_dev_proc(dev, map_rgb_color, pdf14_encode_color);
     set_dev_proc(dev, map_color_rgb, pdf14_decode_color);
     set_dev_proc(dev, fill_rectangle, gx_forward_fill_rectangle);
-    set_dev_proc(dev, tile_rectangle, gx_forward_tile_rectangle);
     set_dev_proc(dev, copy_mono, gx_forward_copy_mono);
     set_dev_proc(dev, copy_color, gx_forward_copy_color);
     set_dev_proc(dev, get_bits, gx_forward_get_bits);

@@ -412,7 +412,6 @@ nooverprint_initialize(gx_device *dev)
 {
     set_dev_proc(dev, open_device, overprint_open_device);
     set_dev_proc(dev, fill_rectangle, gx_forward_fill_rectangle);
-    set_dev_proc(dev, tile_rectangle, gx_forward_tile_rectangle);
     set_dev_proc(dev, copy_mono, gx_forward_copy_mono);
     set_dev_proc(dev, copy_color, gx_forward_copy_color);
     set_dev_proc(dev, put_params, overprint_put_params);
@@ -472,7 +471,6 @@ generic_overprint_initialize(gx_device *dev)
      * ones, and that doesn't work. Maybe look into this in future. */
     set_dev_proc(dev, open_device, overprint_open_device);
     set_dev_proc(dev, fill_rectangle, overprint_generic_fill_rectangle);
-    set_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
     set_dev_proc(dev, copy_mono, gx_default_copy_mono);
     set_dev_proc(dev, copy_color, gx_default_copy_color);
     set_dev_proc(dev, put_params, overprint_put_params);
@@ -513,7 +511,6 @@ sep_overprint_initialize(gx_device *dev)
      * ones, and that doesn't work. Maybe look into this in future. */
     set_dev_proc(dev, open_device, overprint_open_device);
     set_dev_proc(dev, fill_rectangle, overprint_sep_fill_rectangle);
-    set_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
     set_dev_proc(dev, copy_mono, gx_default_copy_mono);
     set_dev_proc(dev, copy_color, gx_default_copy_color);
     set_dev_proc(dev, put_params, overprint_put_params);

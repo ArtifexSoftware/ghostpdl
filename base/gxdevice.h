@@ -252,7 +252,6 @@ dev_proc_map_rgb_color(gx_default_w_b_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_w_b_map_color_rgb);
 #define gx_default_map_rgb_color gx_default_w_b_map_rgb_color
 #define gx_default_map_color_rgb gx_default_w_b_map_color_rgb
-dev_proc_tile_rectangle(gx_default_tile_rectangle);
 dev_proc_copy_mono(gx_default_copy_mono);
 dev_proc_copy_color(gx_default_copy_color);
 dev_proc_get_bits(gx_no_get_bits);      /* gives error */
@@ -363,7 +362,6 @@ dev_proc_output_page(gx_forward_output_page);
 dev_proc_map_rgb_color(gx_forward_map_rgb_color);
 dev_proc_map_color_rgb(gx_forward_map_color_rgb);
 dev_proc_fill_rectangle(gx_forward_fill_rectangle);
-dev_proc_tile_rectangle(gx_forward_tile_rectangle);
 dev_proc_copy_mono(gx_forward_copy_mono);
 dev_proc_copy_color(gx_forward_copy_color);
 dev_proc_get_bits(gx_forward_get_bits);

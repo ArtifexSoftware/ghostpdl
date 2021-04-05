@@ -36,7 +36,6 @@ dev_proc_close_device(default_subclass_close_device);
 dev_proc_map_rgb_color(default_subclass_map_rgb_color);
 dev_proc_map_color_rgb(default_subclass_map_color_rgb);
 dev_proc_fill_rectangle(default_subclass_fill_rectangle);
-dev_proc_tile_rectangle(default_subclass_tile_rectangle);
 dev_proc_copy_mono(default_subclass_copy_mono);
 dev_proc_copy_color(default_subclass_copy_color);
 dev_proc_get_bits(default_subclass_get_bits);

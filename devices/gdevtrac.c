@@ -260,20 +260,6 @@ trace_draw_thin_line(gx_device * dev,
 }
 
 static int
-trace_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
-                           int x, int y, int w, int h,
-                           gx_color_index color0, gx_color_index color1,
-                           int px, int py)
-{
-    dmprintf6(dev->memory,"strip_tile_rectangle(x=%d, y=%d, w=%d, h=%d, colors=(0x%lx,0x%lx),\n",
-             x, y, w, h, (ulong)color0, (ulong)color1);
-    dmprintf8(dev->memory,"    size=(%d,%d) shift %u, rep=(%u,%u) shift %u, phase=(%d,%d))\n",
-             tiles->size.x, tiles->size.y, tiles->shift,
-             tiles->rep_width, tiles->rep_height, tiles->rep_shift, px, py);
-    return 0;
-}
-
-static int
 trace_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
                      uint sraster, gx_bitmap_id id,
                      const gx_color_index * scolors,

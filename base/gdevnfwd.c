@@ -63,7 +63,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
     fill_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
     /* NOT fill_rectangle */
-    /* NOT tile_rectangle */
     /* NOT copy_mono */
     /* NOT copy_color */
     fill_dev_proc(dev, get_bits, gx_forward_get_bits);
@@ -217,20 +216,6 @@ gx_forward_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     if (tdev == 0)
         return_error(gs_error_Fatal);
     return dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color);
-}
-
-int
-gx_forward_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
-                          int x, int y, int w, int h, gx_color_index color0,
-                          gx_color_index color1, int px, int py)
-{
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-    dev_proc_tile_rectangle((*proc)) =
-        (tdev == 0 ? (tdev = dev, gx_default_tile_rectangle) :
-         dev_proc(tdev, tile_rectangle));
-
-    return proc(tdev, tile, x, y, w, h, color0, color1, px, py);
 }
 
 int
@@ -1365,7 +1350,6 @@ void gx_forward_device_initialize_procs(gx_device *dev)
     fill_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
     fill_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
     fill_dev_proc(dev, fill_rectangle, gx_forward_fill_rectangle);
-    fill_dev_proc(dev, tile_rectangle, gx_forward_tile_rectangle);
     fill_dev_proc(dev, copy_mono, gx_forward_copy_mono);
     fill_dev_proc(dev, copy_color, gx_forward_copy_color);
     fill_dev_proc(dev, get_bits, gx_forward_get_bits);

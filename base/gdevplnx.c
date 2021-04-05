@@ -91,7 +91,6 @@ plane_initialize(gx_device *dev)
     /* Ideally the following would be initialized to the defaults
      * automatically, but this does not currently work. */
     set_dev_proc(dev, close_device, gx_default_close_device);
-    set_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
     set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, copy_rop, gx_default_copy_rop);
     set_dev_proc(dev, fill_trapezoid, gx_default_fill_trapezoid);
