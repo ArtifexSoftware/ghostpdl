@@ -1555,11 +1555,10 @@ on other devices. The PDF 1.4 transparency features are supported on all devices
 <dt><code>typedef&nbsp;enum&nbsp;{&nbsp;go_text,
 go_graphics&nbsp;}&nbsp;graphic_object_type;&nbsp;int
 (*get_alpha_bits)(gx_device&nbsp;*dev,
-graphic_object_type&nbsp;type)</code> <b><em>[OPTIONAL] [OBSOLETE]</em></b></dt>
-<dd>This procedure is no longer used: it is replaced by the
-color_info.anti_alias member of the driver structure.  However, it still
-appears in the driver procedure vector for backward compatibility.  It
-should never be called, and drivers should not implement it.</dd>
+graphic_object_type&nbsp;type)</code> <b><em>[OPTIONAL]</em></b></dt>
+<dd>This procedure returns the number of bits to use for anti-aliasing.
+The default implementation simply returns the color_info.anti_alias
+member of the driver structure.</dd>
 </dl>
 
 <dl>

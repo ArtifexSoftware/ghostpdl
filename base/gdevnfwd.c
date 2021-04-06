@@ -71,7 +71,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
     fill_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
     fill_dev_proc(dev, get_page_device, gx_forward_get_page_device);
-    /* NOT get_alpha_bits (OBSOLETE) */
+    fill_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
     /* NOT copy_alpha */
     fill_dev_proc(dev, get_band, gx_forward_get_band);
     fill_dev_proc(dev, fill_path, gx_forward_fill_path);

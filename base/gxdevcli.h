@@ -960,6 +960,7 @@ typedef enum FILTER_FLAGS {
   dev_t_proc_get_page_device(proc, gx_device)
 
                 /* Added in release 3.20, OBSOLETED in 5.65 */
+                /* 'Unobsoleted' in 9.55. */
 
 #define dev_t_proc_get_alpha_bits(proc, dev_t)\
   int proc(dev_t *dev, graphics_object_type type)
@@ -1593,13 +1594,6 @@ int gx_image_plane_data_rows(gx_image_enum_common_t *info,
 int gx_image_flush(gx_image_enum_common_t *info);
 bool gx_image_planes_wanted(const gx_image_enum_common_t *info, byte *wanted);
 int gx_image_end(gx_image_enum_common_t *info, bool draw_last);
-
-/*
- * Get the anti-aliasing parameters for a device.  This replaces the
- * obsolete get_alpha_bits device procedure.
- */
-#define gx_device_get_alpha_bits(dev, type)\
-  gx_default_get_alpha_bits(dev, type)
 
 /* A generic device procedure record. */
 struct gx_device_procs_s gx_device_proc_struct(gx_device);

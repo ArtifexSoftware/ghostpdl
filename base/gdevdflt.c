@@ -613,26 +613,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
     fill_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
     fill_dev_proc(dev, begin_image, gx_default_begin_image);
-    /*
-     * We always replace get_alpha_bits, image_data, and end_image with the
-     * new procedures, and, if in a DEBUG configuration, print a warning if
-     * the definitions aren't the default ones.
-     */
-#ifdef DEBUG
-#  define CHECK_NON_DEFAULT(proc, default, procname)\
-    BEGIN\
-        if ( dev_proc(dev, proc) != NULL && dev_proc(dev, proc) != default )\
-            dmprintf2(dev->memory, "**** Warning: device %s implements obsolete procedure %s\n",\
-                     dev->dname, procname);\
-    END
-#else
-#  define CHECK_NON_DEFAULT(proc, default, procname)\
-    DO_NOTHING
-#endif
-    CHECK_NON_DEFAULT(get_alpha_bits, gx_default_get_alpha_bits,
-                      "get_alpha_bits");
-    set_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
-#undef CHECK_NON_DEFAULT
+    fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
     fill_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
     fill_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
     fill_dev_proc(dev, strip_copy_rop2, gx_default_strip_copy_rop2);
