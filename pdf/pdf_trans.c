@@ -98,6 +98,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     gs_matrix save_matrix, GroupMat, group_Matrix;
     gs_transparency_mask_subtype_t subtype = TRANSPARENCY_MASK_Luminosity;
     pdf_bool *Processed = NULL;
+    bool save_OverrideICC = gs_currentoverrideicc(ctx->pgs);
 
 #if DEBUG_TRANSPARENCY
     dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) BEGIN\n");
@@ -114,6 +115,8 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
 #endif
         goto exit;
     }
+
+    gs_setoverrideicc(ctx->pgs, true);
 
     /* If /Processed not in the dict, put it there */
     if (code == 0) {
@@ -303,6 +306,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     }
 
  exit:
+    gs_setoverrideicc(ctx->pgs, save_OverrideICC);
     if (gsfunc)
         pdfi_free_function(ctx, gsfunc);
     if (pcs)
