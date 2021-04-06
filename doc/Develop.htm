@@ -1046,7 +1046,7 @@ virtual procedure in the device color, either <code>fill_rectangle</code>
 or <code>fill_mask</code> to actually paint pixels.  For rectangle fills,
 pure colors call the device's <code>fill_rectangle</code> procedure;
 halftones and tiled Patterns call the device's
-<code>tile_rectangle</code>; shaded Patterns, and painting operations
+<code>strip_tile_rectangle</code>; shaded Patterns, and painting operations
 that involve a RasterOp, do something more complicated.
 
 <dl>

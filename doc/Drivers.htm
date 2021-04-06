@@ -244,21 +244,20 @@ href="../devices/gdevdjet.c">gdevdjet.c</a> are good examples of this approach.<
 A device is represented by a structure divided into three parts:</p>
 
 <ul>
-<li>procedures that are (normally) shared by all instances of each device;</li>
-
 <li>parameters that are present in all devices but may be different for
-each device or instance; and</li>
+each device or instance;</li>
+
+<li>an initialize procedure; and</li>
 
 <li>device-specific parameters that may be different for each instance.</li>
 </ul>
 
 <p>
-Normally the procedure structure is defined and initialized at compile
-time.  A prototype of the parameter structure (including both generic and
+A prototype of the parameter structure (including both generic and
 device-specific parameters) is defined and initialized at compile time, but
-is copied and filled in when an instance of the device is created.  Both of
-these structures should be declared as <code>const</code>, but for backward
-compatibility reasons the latter is not.</p>
+is copied and filled in when an instance of the device is created.  This
+structure should be declared as <code>const</code>, but for backward
+compatibility reasons it is not.</p>
 
 <p>
 The <code>gx_device_common</code> macro defines the common structure
@@ -275,7 +274,7 @@ href="../base/gdevprn.h">gdevprn.h</a>.</p>
 } smurf_device;
 smurf_device gs_smurf_device = {
         <b><em>... macro for generic parameter values ...,</em></b>
-        { <b><em>... procedures ...</em></b> },         /* std_procs */
+        <b><em>initialize_procedure,</em></b>
         <b><em>... device-specific parameter values if any ...</em></b>
 };</pre>
 </blockquote>
@@ -284,6 +283,45 @@ The device structure instance <b>must</b> have the name
 <code>gs_smurf_device</code>, where <code>smurf</code> is the device
 name used in <code>contrib.mak</code>.  <code>gx_device_common</code>
 is a macro consisting only of the element definitions. </p>
+<p>
+The <code>initialize_procedure</code> function pointer is called when
+the device is created. Its primary job is to initialize the entries in
+the device procedure table. On entry, the device procedure table will
+be full of NULL pointers. On exit, any NULLs left in the table will be
+filled in with pointers to the default routines. Therefore, the routine
+should set any non-default entries itself.
+<p>
+Devices that are (in object-oriented terms) derived from 'base' classes
+(for instance a new printer device that derives from the <code>prn</code>
+device) can call provided helper functions for setting the standard
+functions for that base class.
+<p>
+For example, if the smurf device was a printer device, its initialize
+procedure might look like:</p>
+<blockquote>
+<pre>static int smurf_initialize(gx_device *dev) {
+  /* We are derived from a prn device, and can print in the background */
+  int code = gdev_prn_initialize_bg(dev);
+  if (code < 0) return code;
+
+  /* Override functions for our specifics */
+  set_dev_proc(dev, map_color_rgb, smurf_map_color_rgb);
+  set_dev_proc(dev, map_rgb_color, smurf_map_rgb_color);
+  ...
+
+  return 0;
+}</pre>
+</blockquote>
+<p>
+The initialize procedure function pointer does not live in the in the
+device procedure table (and as such is statically initialized at compile
+time). Nonetheless, we refer to this as being a device procedure in the
+rest of the discussion here.
+<p>
+The use of the initialize procedure is new to Ghostscript 9.55. Previous
+versions used a statically initialized table of device procedures. We
+changed to a dynamically initialized system to more easily cope with
+future changes to the device procedures.
 <p>
 All the device procedures are called with the device as the first argument.
 Since each device type is actually a different structure type, the device
@@ -1221,12 +1259,12 @@ help accelerate devices such as <tt>pdfwrite</tt> or <tt>ps2write</tt>.</p>
 Most of the procedures that a driver may implement are optional.  If a
 device doesn't supply an optional procedure <code>WXYZ</code>, the entry
 in the procedure structure may be either <code>gx_default_WXYZ</code>,
-for instance <code>gx_default_tile_rectangle</code>, or
+for instance <code>gx_default_strip_tile_rectangle</code>, or
 <code>NULL</code> or 0.  (The device procedure must also call the
 <code>gx_default_</code> procedure if it doesn't implement the function
-for particular values of the arguments.)  Since C compilers supply 0 as the
-value for omitted structure elements, this convention means that statically
-initialized procedure structures continue to work even if new (optional)
+for particular values of the arguments.)  Since, by construction,
+device procedure entries are set to 0 at creation time, ones that are
+not explicitly initialised will continue to work even if new (optional)
 members are added.</p>
 
 <h3><a name="Life_cycle"></a>Life cycle</h3>
@@ -1236,8 +1274,8 @@ A device instance begins life in a closed state.  In this state, no output
 operations will occur.  Only the following procedures may be called:</p>
 
 <blockquote><code>
+initialize<br>
 open_device<br>
-finish_copydevice<br>
 get_initial_matrix<br>
 get_params<br>
 put_params<br>
@@ -1281,26 +1319,23 @@ level at the time the instance was created.</li>
 <h3><a name="Open_close"></a>Open, close, sync, copy</h3>
 
 <dl>
+<dt><code>int (*initialize)(gx_device *dev)</code></dt> <dd>Called once
+a new device instance has been created. The function should initialize
+the device procedure tables and perform the minimum initialization required
+to any internal device state required. If the initial setup fails, this
+procedure should return an error; the new instance will be freed.
+<b>NOTE</b>: Clients should never call a device's <code>initialize</code>
+procedure: this procedure is only intended for use by the internal device
+creation code.</dd>
+</dl>
+
+<dl>
 <dt><code>int (*open_device)(gx_device *)</code> <b><em>[OPTIONAL]</em></b></dt>
 <dd>Open the device: do any initialization associated with making the device
 instance valid. This must be done before any output to the device. The
 default implementation does nothing. <b>NOTE</b>: Clients should never call
 a device's <code>open_device</code> procedure directly: they should
 always call <code>gs_opendevice</code> instead.</dd>
-</dl>
-
-<dl>
-<dt><code>int (*finish_copydevice)(gx_device *dev, const gx_device
-*from_dev)</code> <b><em>[OPTIONAL]</em></b></dt> <dd>Perform any cleanup
-required after <code>copydevice</code> has created a new device instance
-by copying <code>from_dev</code>. If the copy operation should not be
-allowed, this procedure should return an error; the copy will be freed. The
-default implementation allows copying the device prototype, but does not
-allow copying device instances, because instances may contain internal
-pointers that should not be shared between copies, and there is no way to
-determine this from outside the device. <b>NOTE</b>: Clients should never
-call a device's <code>finish_copydevice</code> procedure: this procedure
-is only intended for use by <code>gs_copydevice[2]</code>. </dd>
 </dl>
 
 <dl>
@@ -1601,21 +1636,6 @@ efficiently is very important.</p>
 </dl>
 
 <dl>
-<dt><code>int (*tile_rectangle)(gx_device&nbsp;*,
-const&nbsp;gx_tile_bitmap&nbsp;*tile, int&nbsp;x, int&nbsp;y,
-int&nbsp;width, int&nbsp;height, gx_color_index&nbsp;color0,
-gx_color_index&nbsp;color1, int&nbsp;phase_x, int&nbsp;phase_y)</code>
-<b><em>[OPTIONAL] [OBSOLETE]</em></b></dt>
-<dd>This procedure is still supported, but has been superseded by
-<code>strip_tile_rectangle</code>.  New drivers should implement
-<code>strip_tile_rectangle</code>; if they cannot cope with non-zero
-shift values, they should test for this explicitly and call the default
-implementation (<code>gx_default_strip_tile_rectangle</code>) if
-shift&nbsp;!=&nbsp;0.  Clients should call
-<code>strip_tile_rectangle</code>, not <code>tile_rectangle</code>.</dd>
-</dl>
-
-<dl>
 <dt><code>int (*strip_tile_rectangle)(gx_device&nbsp;*,
 const&nbsp;gx_strip_bitmap&nbsp;*tile, int&nbsp;x, int&nbsp;y,
 int&nbsp;width, int&nbsp;height, gx_color_index&nbsp;color0,
@@ -1691,7 +1711,7 @@ than or equal to the plane_height.</dd>
 
 <p>
 We do not provide a separate procedure for tiling with a pixmap; instead,
-<code>tile_rectangle</code> can also take colored tiles.  This is
+<code>strip_tile_rectangle</code> can also take colored tiles.  This is
 indicated by the <code>color0</code> and <code>color1</code>
 arguments' both being <code>gx_no_color_index</code>.  In this case, as
 for <code>copy_color</code>, the <code>raster</code> and
@@ -1822,9 +1842,15 @@ than a gx_color_index.</dd>
 gx_device_t&nbsp;**pcdev, const&nbsp;gs_composite_t&nbsp;*pcte,
 const&nbsp;gs_imager_state&nbsp;*pis, gs_memory_t&nbsp;*memory)</code>
 <b><em>[OPTIONAL]</em></b> </dt>
-<dd>Create a new device (called a "compositing device" or "compositor")
-that will composite data written to it with the device's existing data,
+<dd>Requests that a device perform a compositing operation; the device
+should composite data written to it with the device's existing data,
 according to the compositing function defined by <code>*pcte</code>.
+If a device cannot perform such an operation itself, it will create a
+compositor device to wrap itself that will perform such operations for
+it. Accordingly, the caller must watch the return values from this
+function to understand if a new device has been created to which future
+calls should be made.
+<p>
 Devices will normally implement this in one of the following standard ways:</dd>
 
 <ul>
@@ -1888,365 +1914,6 @@ return the same device, clients must check for this case, and only call the
 close procedure if a separate device was created.</p>
 </dl>
 
-<p>
-<font size="+1">
-<b><em>[strip_]copy_rop WILL BE SUPERSEDED BY COMPOSITORS</em></b>
-</font></p>
-
-<dl>
-<dt><code>int (*copy_rop)(gx_device&nbsp;*dev,
-const&nbsp;byte&nbsp;*sdata, int&nbsp;sourcex, uint&nbsp;sraster,
-gx_bitmap_id&nbsp;id, const&nbsp;gx_color_index&nbsp;*scolors,
-const&nbsp;gx_tile_bitmap&nbsp;*texture,
-const&nbsp;gx_color_index&nbsp;*tcolors, int&nbsp;x, int&nbsp;y,
-int&nbsp;width, int&nbsp;height, int&nbsp;phase_x, int&nbsp;phase_y,
-int&nbsp;command)</code> <b><em>[OPTIONAL]</em></b></dt>
-<dd>This procedure is still supported, but has been superseded by
-<code>strip_copy_rop</code>.  New drivers should implement
-<code>strip_copy_rop</code>; if they cannot cope with non-zero shift
-values in the texture, they should test for this explicitly and call the
-default implementation (<code>gx_default_strip_copy_rop</code>) if
-shift&nbsp;!=&nbsp;0.  Clients should call <code>strip_copy_rop</code>,
-not <code>copy_rop</code>.</dd>
-</dl>
-
-<dl>
-<dt><code>int (*strip_copy_rop)(gx_device&nbsp;*dev,
-const&nbsp;byte&nbsp;*sdata, int&nbsp;sourcex, uint&nbsp;sraster,
-gx_bitmap_id&nbsp;id, const&nbsp;gx_color_index&nbsp;*scolors,
-const&nbsp;gx_strip_bitmap&nbsp;*texture,
-const&nbsp;gx_color_index&nbsp;*tcolors, int&nbsp;x, int&nbsp;y,
-int&nbsp;width, int&nbsp;height, int&nbsp;phase_x, int&nbsp;phase_y,
-int&nbsp;command)</code> <b><em>[OPTIONAL]</em></b></dt>
-<dd>Combine an optional source image <b>S</b> (as for
-<code>copy_mono</code> or <code>copy_color</code>) and an optional
-texture <b>T</b> (a tile, as for <code>tile_rectangle</code>) with the
-existing bitmap or pixmap <b>D</b> held by the driver, pixel by pixel,
-using any 3-input Boolean operation as modified by "transparency" flags:
-schematically, set <b>D&nbsp;=&nbsp;f(D,S,T)</b>, computing <b>f</b> in RGB
-space rather than using actual device pixel values.  <b>S</b> and <b>T</b>
-may each (independently) be a solid color, a bitmap with "foreground" and
-"background" colors, or a pixmap.  This is a complex (and currently rather
-slow) operation.  The arguments are as follows:</dd>
-
-<blockquote><table>
-<tr valign="top">    <td><code>dev</code></td>
-    <td>&nbsp;</td>
-    <td>the device, as for all driver procedures</td></tr>
-<tr valign="top">    <td><code>sdata</code>, <code>sourcex</code>, <code>sraster</code>, <code>id</code>, <code>scolors</code></td>
-    <td>&nbsp;</td>
-    <td>specify <b>S</b>, <a href="#S_spec">see below</a></td></tr>
-<tr valign="top">    <td><code>texture</code>, <code>tcolors</code></td>
-    <td>&nbsp;</td>
-    <td>specify <b>T</b>, <a href="#T_spec">see below</a></td></tr>
-<tr valign="top">    <td><code>x</code>, <code>y</code>, <code>width</code>, <code>height</code></td>
-    <td>&nbsp;</td>
-    <td>as for the other copy and fill procedures</td></tr>
-<tr valign="top">    <td><code>phase_x</code>, <code>phase_y</code></td>
-    <td>&nbsp;</td>
-    <td>part of <b>T</b> specification, <a href="#T_spec">see below</a></td></tr>
-<tr valign="top">    <td><code>command</code></td>
-    <td>&nbsp;</td>
-    <td><a href="#F_spec">see below</a></td></tr>
-</table></blockquote>
-</dl>
-
-<h5><a name="S_spec"></a>The source specification S</h5>
-
-<p>
-As noted above, the source <b>S</b> may be a solid color, a bitmap, or a
-pixmap.  If <b>S</b> is a solid color:</p>
-
-<ul>
-<li><code>sdata</code>, <code>sourcex</code>,
-<code>sraster</code>, and <code>id</code> are irrelevant.</li>
-
-<li><code>scolors</code> points to two <code>gx_color_index</code>
-values; <code>scolors[0]</code> = <code>scolors[1]</code> = the
-color.</li>
-</ul>
-
-<p>
-If <b>S</b> is a bitmap:</p>
-
-<ul>
-<li><code>sdata</code>, <code>sourcex</code>,
-<code>sraster</code>, and <code>id</code> arguments are as for
-<code>copy_mono</code> or <code>copy_color</code>
-(<code>data</code>, <code>data_x</code>, <code>raster</code>,
-<code>id</code>), and specify a source bitmap.</li>
-
-<li><code>scolors</code> points to two <code>gx_color_index</code>
-values; <code>scolors[0]</code> is the background color (the color
-corresponding to 0-bits in the bitmap), <code>scolors[1]</code> is the
-foreground color (the color corresponding to 1-bits in the bitmap).</li>
-</ul>
-
-<p>
-If <b>S</b> is a pixmap:</p>
-
-<ul>
-<li><code>sdata</code>, <code>sourcex</code>,
-<code>sraster</code>, and <code>id</code> arguments are as for
-<code>copy_mono</code> or <code>copy_color</code>
-(<code>data</code>, <code>data_x</code>, <code>raster</code>,
-<code>id</code>), and specify a source pixmap whose depth is the same as
-the depth of the destination.</li>
-
-<li><code>scolors</code> is <code>NULL</code>.</li>
-</ul>
-
-<p>
-Note that if the source is a bitmap with background=0 and foreground=1, and
-the destination is 1 bit deep, then the source can be treated as a pixmap
-(scolors=<code>NULL</code>).</p>
-
-<h5><a name="T_spec"></a>The texture specification T</h5>
-
-<p>
-Similar to the source, the texture <b>T</b> may be a solid color, a bitmap,
-or a pixmap.  If <b>T</b> is a solid color:</p>
-
-<ul>
-<li>The texture pointer is irrelevant.</li>
-
-<li><code>tcolors</code> points to two <code>gx_color_index</code>
-values; <code>tcolors[0]</code> = <code>tcolors[1]</code> = the
-color.</li>
-</ul>
-
-<p>
-If <b>T</b> is a bitmap:</p>
-
-<ul>
-<li>The texture argument points to a <code>gx_tile_bitmap</code>, as for
-the <code>tile_rectangle</code> procedure.  Similarly,
-<code>phase_x</code> and <code>phase_y</code> specify the offset of
-the texture relative to the device coordinate system origin, again as for
-<code>tile_rectangle</code>.  The tile is a bitmap (1 bit per pixel).</li>
-
-<li><code>tcolors</code> points to two <code>gx_color_index</code>
-values; <code>tcolors[0]</code> is the background color (the color
-corresponding to 0-bits in the bitmap), <code>tcolors[1]</code> is the
-foreground color (the color corresponding to 1-bits in the bitmap).</li>
-</ul>
-
-<p>
-If <b>T</b> is a pixmap:</p>
-
-<ul>
-<li>The texture argument points to a <code>gx_tile_bitmap</code> whose
-depth is the same as the depth of the destination.</li>
-
-<li>tcolors is <code>NULL</code>.</li>
-</ul>
-
-<p>
-Again, if the texture is a bitmap with background=0 and foreground=1, and
-the destination depth is 1, the texture bitmap can be treated as a pixmap
-(tcolors=<code>NULL</code>).</p>
-
-<p>
-Note that while a source bitmap or pixmap has the same width and height as
-the destination, a texture bitmap or pixmap has its own width and height
-specified in the <code>gx_tile_bitmap</code> structure, and is
-replicated or clipped as needed.</p>
-
-<h5><a name="F_spec"></a>The function specification f</h5>
-
-<p>
-"Command" indicates the raster operation and transparency as follows:</p>
-
-<blockquote><table>
-<tr valign="bottom">
-    <th colspan ="3">Bits</th>
-</tr>
-<tr valign="top">    <td>7-0</td>
-    <td>&nbsp;</td>
-    <td>raster op</td></tr>
-<tr valign="top">    <td>8</td>
-    <td>&nbsp;</td>
-    <td>0 if source opaque, 1 if source transparent</td></tr>
-<tr valign="top">    <td>9</td>
-    <td>&nbsp;</td>
-    <td>0 if texture opaque, 1 if texture transparent</td></tr>
-<tr valign="top">    <td>10</td>
-    <td>&nbsp;</td>
-    <td>1 if pdf transparency is in use, 0 otherwise. This makes no
-difference to the rendering, but forces the raster operation to be considered
-        non-idempotent by internal routines.</td></tr>
-<tr valign="top">    <td>11</td>
-    <td>&nbsp;</td>
-    <td>1 if the target of this operation is a specific plane, rather
-than all planes. The plane in question is given by bits 13 upwards. This
-is only used by the planar device.</td></tr>
-<tr valign="top">    <td>12-</td>
-    <td>&nbsp;</td>
-    <td>If bit 11 = 1, then bits 12 upwards give the plane number to
-        operate on. Otherwise, should be set to 0.</td></tr>
-</table></blockquote>
-
-<p>In general most devices should just check to see that bits they do not
-handle (11 and above typically) are zero, and should jump to the default
-    implementation, or return an error otherwise.</p>
-
-<p>
-The raster operation follows the Microsoft and H-P specification.  It is an
-8-element truth table that specifies the output value for each of the
-possible 2&times;2&times;2 input values as follows:</p>
-
-<blockquote><table>
-<tr valign="bottom">
-    <th>Bit</th>
-    <th>&nbsp;</th>
-    <th>Texture</th>
-    <th>&nbsp;</th>
-    <th>Source</th>
-    <th>&nbsp;</th>
-    <th>Destination</th></tr>
-<tr valign="top">    <td align="center">7</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td></tr>
-<tr valign="top">    <td align="center">6</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td></tr>
-<tr valign="top">    <td align="center">5</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td></tr>
-<tr valign="top">    <td align="center">4</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td></tr>
-<tr valign="top">    <td align="center">3</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td></tr>
-<tr valign="top">    <td align="center">2</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td></tr>
-<tr valign="top">    <td align="center">1</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td>
-    <td>&nbsp;</td>
-    <td align="center">1</td></tr>
-<tr valign="top">    <td align="center">0</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td>
-    <td>&nbsp;</td>
-    <td align="center">0</td></tr>
-</table></blockquote>
-
-<p>
-Transparency affects the output in the following way. A source or texture
-pixel is considered transparent if its value is all 1s (for instance, 1 for
-bitmaps, <tt>0xffffff</tt> for 24-bit RGB pixmaps) <b><em>and</em></b> the
-corresponding transparency bit is set in the command. For each pixel, the
-result of the Boolean operation is written into the destination iff neither
-the source nor the texture pixel is transparent. (Note that the HP
-RasterOp specification, on which this is based, specifies that if the
-source and texture are both all 1s and the command specifies transparent
-source and opaque texture, the result <b><em>should</em></b> be written in
-    the output. We think this is an error in the documentation.) </p>
-
-<h5><a name="Compositing_notes"></a>Notes</h5>
-
-<p>
-<code>copy_rop</code> is defined to operate on pixels in RGB space,
-again following the HP and Microsoft specification. For devices that
-don't use RGB (or gray-scale with black = 0, white = all 1s) as their
-native color representation, the implementation of <code>copy_rop</code>
-must convert to RGB or gray space, do the operation, and convert back (or
-do the equivalent of this). Here are the <code>copy_rop</code>
-equivalents of the most important previous imaging calls. We assume the
-declaration: </p>
-
-<blockquote><code>
-static const gx_color_index white2[2] = { 1, 1 };
-</code></blockquote>
-
-<p>
-Note that <code>rop3_S</code> may be replaced by any other Boolean operation.
-For monobit devices, we assume that black = 1.</p>
-
-<blockquote>
-<pre>/* For all devices: */
-(*fill_rectangle)(dev, x, y, w, h, color) ==&gt;
-
-        { gx_color_index colors[2];
-          colors[0] = colors[1] = color;
-          (*dev_proc(dev, copy_rop))(dev, NULL, 0, 0, gx_no_bitmap_id, colors,
-                                     NULL, colors /*irrelevant*/,
-                                     x, y, w, h, 0, 0, rop3_S);
-        }
-
-/* For black-and-white devices only: */
-(*copy_mono)(dev, base, sourcex, sraster, id,
-             x, y, w, h, (gx_color_index)0, (gx_color_index)1) ==&gt;
-
-        (*dev_proc(dev, copy_rop))(dev, base, sourcex, sraster, id, NULL,
-                                   NULL, white2 /*irrelevant*/,
-                                   x, y, w, h, 0, 0, rop3_S);
-
-/* For color devices, where neither color0 nor color1 is gx_no_color_index: */
-(*copy_mono)(dev, base, sourcex, sraster, id,
-             x, y, w, h, color0, color1) ==&gt;
-
-        { gx_color_index colors[2];
-          colors[0] = color0, colors[1] = color1;
-          (*dev_proc(dev, copy_rop))(dev, base, sourcex, sraster, id, colors,
-                                     NULL, white2 /*irrelevant*/,
-                                     x, y, w, h, 0, 0, rop3_S);
-        }
-
-/* For black-and-white devices only: */
-(*copy_mono)(dev, base, sourcex, sraster, id,
-             x, y, w, h, gx_no_color_index, (gx_color_index)1) ==&gt;
-
-        (*dev_proc(dev, copy_rop))(dev, base, sourcex, sraster, id, NULL,
-                                   NULL, white2 /*irrelevant*/,
-                                   x, y, w, h, 0, 0,
-                                   rop3_S | lop_S_transparent);
-
-/* For all devices: */
-(*copy_color)(dev, base, sourcex, sraster, id,
-              x, y, w, h) ==&gt; [same as first copy_mono above]
-
-/* For black-and-white devices only: */
-(*tile_rectangle)(dev, tile, x, y, w, h,
-                  (gx_color_index)0, (gx_color_index)1, px, py) ==&gt;
-
-        (*dev_proc(dev, copy_rop))(dev, NULL, 0, 0, gx_no_bitmap_id,
-                                   white2 /*irrelevant*/,
-                                   tile, NULL,
-                                   x, y, w, h, px, py, rop3_T)
-</pre></blockquote>
-
 <h3><a name="Polygon_level_drawing"></a>Polygon-level drawing</h3>
 
 <p>
@@ -2306,15 +1973,6 @@ const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 gs_logical_operation_t&nbsp;lop)</code> <b><em>[OPTIONAL]</em></b></dt>
 <dd>Draw a one-pixel-wide line from <em>(fx0,fy0)</em> to
 <em>(fx1,fy1)</em>.</dd>
-
-<dt><code>int (*draw_line)(gx_device&nbsp;*dev, int&nbsp;x0, int&nbsp;y0,
-int&nbsp;x1, int&nbsp;y1, gx_color_index&nbsp;color)</code>
-<b><em>[OPTIONAL] [OBSOLETE]</em></b></dt>
-<dd>This procedure is no longer used: it is replaced by the draw_thin_line
-procedure.  However, still appears in the driver procedure vector for
-backward compatibility.  It should never be called, and drivers should not
-implement it.</dd>
-</dl>
 
 <h3><a name="Linear_color_drawing"></a>Linear color drawing</h3>
 
@@ -2580,8 +2238,130 @@ with the given color and logical operation.  The clip path pointer may be
 <code>NULL</code>, meaning do not clip.  The parameters
 <code>data</code>, ..., <code>height</code> are as for
 <code>copy_mono</code>; depth is as for <code>copy_alpha</code>;
-command is as for <code>copy_rop</code>.</dd>
+command is as below.</dd>
 </dl>
+
+<h5><a name="F_spec"></a>The function specification f</h5>
+
+<p>
+"Command" indicates the raster operation and transparency as follows:</p>
+
+<blockquote><table>
+<tr valign="bottom">
+    <th colspan ="3">Bits</th>
+</tr>
+<tr valign="top">    <td>7-0</td>
+    <td>&nbsp;</td>
+    <td>raster op</td></tr>
+<tr valign="top">    <td>8</td>
+    <td>&nbsp;</td>
+    <td>0 if source opaque, 1 if source transparent</td></tr>
+<tr valign="top">    <td>9</td>
+    <td>&nbsp;</td>
+    <td>0 if texture opaque, 1 if texture transparent</td></tr>
+<tr valign="top">    <td>10</td>
+    <td>&nbsp;</td>
+    <td>1 if pdf transparency is in use, 0 otherwise. This makes no
+difference to the rendering, but forces the raster operation to be considered
+        non-idempotent by internal routines.</td></tr>
+<tr valign="top">    <td>11</td>
+    <td>&nbsp;</td>
+    <td>1 if the target of this operation is a specific plane, rather
+than all planes. The plane in question is given by bits 13 upwards. This
+is only used by the planar device.</td></tr>
+<tr valign="top">    <td>12-</td>
+    <td>&nbsp;</td>
+    <td>If bit 11 = 1, then bits 12 upwards give the plane number to
+        operate on. Otherwise, should be set to 0.</td></tr>
+</table></blockquote>
+
+<p>In general most devices should just check to see that bits they do not
+handle (11 and above typically) are zero, and should jump to the default
+    implementation, or return an error otherwise.</p>
+
+<p>
+The raster operation follows the Microsoft and H-P specification.  It is an
+8-element truth table that specifies the output value for each of the
+possible 2&times;2&times;2 input values as follows:</p>
+
+<blockquote><table>
+<tr valign="bottom">
+    <th>Bit</th>
+    <th>&nbsp;</th>
+    <th>Texture</th>
+    <th>&nbsp;</th>
+    <th>Source</th>
+    <th>&nbsp;</th>
+    <th>Destination</th></tr>
+<tr valign="top">    <td align="center">7</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td></tr>
+<tr valign="top">    <td align="center">6</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td></tr>
+<tr valign="top">    <td align="center">5</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td></tr>
+<tr valign="top">    <td align="center">4</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td></tr>
+<tr valign="top">    <td align="center">3</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td></tr>
+<tr valign="top">    <td align="center">2</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td></tr>
+<tr valign="top">    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td></tr>
+<tr valign="top">    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td></tr>
+</table></blockquote>
+
+<p>
+Transparency affects the output in the following way. A source or texture
+pixel is considered transparent if its value is all 1s (for instance, 1 for
+bitmaps, <tt>0xffffff</tt> for 24-bit RGB pixmaps) <b><em>and</em></b> the
+corresponding transparency bit is set in the command. For each pixel, the
+result of the Boolean operation is written into the destination iff neither
+the source nor the texture pixel is transparent. (Note that the HP
+RasterOp specification, on which this is based, specifies that if the
+source and texture are both all 1s and the command specifies transparent
+source and opaque texture, the result <b><em>should</em></b> be written in
+    the output. We think this is an error in the documentation.) </p>
 
 <h4><a name="Images"></a>Images</h4>
 
@@ -3401,32 +3181,6 @@ defined as true then ToUnicode CMaps and GlyphName2Unicode tables will be
 processed and stored.
 </dd>
 </dl></blockquote>
-
-<h3><a name="External_fonts"></a>External fonts</h3>
-
-<p>
-Drivers may include the ability to display text.  More precisely, they may
-supply a set of procedures that in turn implement some font and text
-handling capabilities, described in <a href="Xfonts.htm">a separate
-document</a>.  The link between the two is the driver procedure that
-supplies the font and text procedures:</p>
-
-<dl>
-<dt><code>xfont_procs&nbsp;*(*get_xfont_procs)(gx_device&nbsp;*dev)</code> <b><em>[OPTIONAL]</em></b></dt>
-<dd>Return a structure of procedures for handling external fonts and text
-display.  A <code>NULL</code> value means that this driver doesn't
-provide this capability.</dd>
-</dl>
-
-<p>
-For technical reasons, a second procedure is also needed:</p>
-
-<dl>
-<dt><code>gx_device&nbsp;*(*get_xfont_device)(gx_device&nbsp;*dev)</code> <b><em>[OPTIONAL]</em></b></dt>
-<dd>Return the device that implements <code>get_xfont_procs</code> in a
-non-default way for this device, if any.  Except for certain special
-internal devices, this is always the device argument.</dd>
-</dl>
 
 <h3><a name="Page_devices"></a>Page devices</h3>
 
