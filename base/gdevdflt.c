@@ -645,7 +645,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     fill_dev_proc(dev, get_bits_rectangle, gx_default_get_bits_rectangle);
     fill_dev_proc(dev, map_color_rgb_alpha, gx_default_map_color_rgb_alpha);
-    fill_dev_proc(dev, create_compositor, gx_default_create_compositor);
+    fill_dev_proc(dev, composite, gx_default_composite);
     fill_dev_proc(dev, get_hardware_params, gx_default_get_hardware_params);
     fill_dev_proc(dev, text_begin, gx_default_text_begin);
 
@@ -898,7 +898,7 @@ gx_get_largest_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 }
 
 int
-gx_no_create_compositor(gx_device * dev, gx_device ** pcdev,
+gx_no_composite(gx_device * dev, gx_device ** pcdev,
                         const gs_composite_t * pcte,
                         gs_gstate * pgs, gs_memory_t * memory,
                         gx_device *cdev)
@@ -906,7 +906,7 @@ gx_no_create_compositor(gx_device * dev, gx_device ** pcdev,
     return_error(gs_error_unknownerror);	/* not implemented */
 }
 int
-gx_default_create_compositor(gx_device * dev, gx_device ** pcdev,
+gx_default_composite(gx_device * dev, gx_device ** pcdev,
                              const gs_composite_t * pcte,
                              gs_gstate * pgs, gs_memory_t * memory,
                              gx_device *cdev)
@@ -915,7 +915,7 @@ gx_default_create_compositor(gx_device * dev, gx_device ** pcdev,
         (pcte, pcdev, dev, pgs, memory);
 }
 int
-gx_null_create_compositor(gx_device * dev, gx_device ** pcdev,
+gx_null_composite(gx_device * dev, gx_device ** pcdev,
                           const gs_composite_t * pcte,
                           gs_gstate * pgs, gs_memory_t * memory,
                           gx_device *cdev)
@@ -1282,7 +1282,7 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, begin_typed_image, dev_proc(&prototype, begin_typed_image));
     set_dev_proc(dest, get_bits_rectangle, dev_proc(&prototype, get_bits_rectangle));
     set_dev_proc(dest, map_color_rgb_alpha, dev_proc(&prototype, map_color_rgb_alpha));
-    set_dev_proc(dest, create_compositor, dev_proc(&prototype, create_compositor));
+    set_dev_proc(dest, composite, dev_proc(&prototype, composite));
     set_dev_proc(dest, get_hardware_params, dev_proc(&prototype, get_hardware_params));
     set_dev_proc(dest, text_begin, dev_proc(&prototype, text_begin));
     set_dev_proc(dest, discard_transparency_layer, dev_proc(&prototype, discard_transparency_layer));
@@ -1488,7 +1488,7 @@ int gx_device_unsubclass(gx_device *dev)
 
     /* We need to account for the fact that we are removing ourselves from
      * the device chain after a clist device has been pushed, due to a
-     * compositor action. Since we patched the clist 'create_compositor'
+     * compositor action. Since we patched the clist 'composite'
      * method (and target device) when it was pushed.
      * A point to note; we *don't* want to change the forwarding device's
      * 'target', because when we copy the child up to replace 'this' device
@@ -1496,7 +1496,7 @@ int gx_device_unsubclass(gx_device *dev)
      * device that goes away.
      */
     if (psubclass_data != NULL && psubclass_data->forwarding_dev != NULL && psubclass_data->saved_compositor_method)
-        psubclass_data->forwarding_dev->procs.create_compositor = psubclass_data->saved_compositor_method;
+        psubclass_data->forwarding_dev->procs.composite = psubclass_data->saved_compositor_method;
 
     /* If ths device's stype is dynamically allocated, keep a copy of it
      * in case we might need it.
@@ -1640,7 +1640,7 @@ int gx_update_from_subclass(gx_device *dev)
     return 0;
 }
 
-int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+int gx_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
     pdf14_clist_device *p14dev;
@@ -1650,7 +1650,7 @@ int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_co
     p14dev = (pdf14_clist_device *)dev;
     psubclass_data = p14dev->target->subclass_data;
 
-    set_dev_proc(dev, create_compositor, psubclass_data->saved_compositor_method);
+    set_dev_proc(dev, composite, psubclass_data->saved_compositor_method);
 
     if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(dev->dname, "pdf14clist", 10) == 0) {
         const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pcte;
@@ -1677,7 +1677,7 @@ int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_co
                     subclass_device = p14dev->target;
                     p14dev->target = p14dev->target->child;
 
-                    code = dev_proc(dev, create_compositor)(dev, pcdev, pcte, pgs, memory, cdev);
+                    code = dev_proc(dev, composite)(dev, pcdev, pcte, pgs, memory, cdev);
 
                     p14dev->target = subclass_device;
 
@@ -1689,13 +1689,13 @@ int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_co
                 }
                 break;
             default:
-                code = dev_proc(dev, create_compositor)(dev, pcdev, pcte, pgs, memory, cdev);
+                code = dev_proc(dev, composite)(dev, pcdev, pcte, pgs, memory, cdev);
                 break;
         }
     } else {
-        code = dev_proc(dev, create_compositor)(dev, pcdev, pcte, pgs, memory, cdev);
+        code = dev_proc(dev, composite)(dev, pcdev, pcte, pgs, memory, cdev);
     }
-    set_dev_proc(dev, create_compositor, gx_subclass_create_compositor);
+    set_dev_proc(dev, composite, gx_subclass_composite);
     return code;
 }
 

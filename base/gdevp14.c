@@ -195,8 +195,8 @@ static	dev_proc_fill_mask(pdf14_fill_mask);
 static	dev_proc_stroke_path(pdf14_stroke_path);
 static	dev_proc_begin_typed_image(pdf14_begin_typed_image);
 static	dev_proc_text_begin(pdf14_text_begin);
-static	dev_proc_create_compositor(pdf14_create_compositor);
-static	dev_proc_create_compositor(pdf14_forward_create_compositor);
+static	dev_proc_composite(pdf14_composite);
+static	dev_proc_composite(pdf14_forward_composite);
 static	dev_proc_begin_transparency_group(pdf14_begin_transparency_group);
 static	dev_proc_end_transparency_group(pdf14_end_transparency_group);
 static	dev_proc_begin_transparency_mask(pdf14_begin_transparency_mask);
@@ -240,7 +240,7 @@ pdf14_procs_initialize(gx_device *dev,
     set_dev_proc(dev, stroke_path, pdf14_stroke_path);
     set_dev_proc(dev, fill_mask, pdf14_fill_mask);
     set_dev_proc(dev, begin_typed_image, pdf14_begin_typed_image);
-    set_dev_proc(dev, create_compositor, pdf14_create_compositor);
+    set_dev_proc(dev, composite, pdf14_composite);
     set_dev_proc(dev, text_begin, pdf14_text_begin);
     set_dev_proc(dev, begin_transparency_group, pdf14_begin_transparency_group);
     set_dev_proc(dev, end_transparency_group, pdf14_end_transparency_group);
@@ -5487,7 +5487,7 @@ pdf14_disable_device(gx_device * dev)
     if_debug0m('v', dev->memory, "[v]pdf14_disable_device\n");
     dev->color_info = pdev->target->color_info;
     pdf14_forward_device_procs(dev);
-    set_dev_proc(dev, create_compositor, pdf14_forward_create_compositor);
+    set_dev_proc(dev, composite, pdf14_forward_composite);
     return 0;
 }
 
@@ -5950,7 +5950,7 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
  * to the target.
  */
 static	int
-pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
+pdf14_forward_composite(gx_device * dev, gx_device * * pcdev,
         const gs_composite_t * pct, gs_gstate * pgs,
         gs_memory_t * mem, gx_device *cdev)
 {
@@ -5966,7 +5966,7 @@ pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
             return gx_update_pdf14_compositor(dev, pgs, pdf14pct, mem);
         return 0;
     }
-    code = dev_proc(tdev, create_compositor)(tdev, pcdev, pct, pgs, mem, cdev);
+    code = dev_proc(tdev, composite)(tdev, pcdev, pct, pgs, mem, cdev);
     if (code == 1) {
         /* We have created a new compositor that wrapped tdev. This means
          * that our target should be updated to point to that. */
@@ -5982,7 +5982,7 @@ pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
  * of the interface, don't bother trying to handle any other compositor.
  */
 static int
-pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
+pdf14_composite(gx_device * dev, gx_device * * pcdev,
         const gs_composite_t * pct, gs_gstate * pgs,
         gs_memory_t * mem, gx_device *cdev)
 {
@@ -6030,7 +6030,7 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
                 *pcdev = dev;
                 return 0;
     } else
-        return gx_no_create_compositor(dev, pcdev, pct, pgs, mem, cdev);
+        return gx_no_composite(dev, pcdev, pct, pgs, mem, cdev);
 }
 
 static int
@@ -8740,7 +8740,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
             goto no_clist_accum;
 
         (*dev_proc(new_target, fillpage))(new_target, pgs, &pdcolor);
-        code = clist_create_compositor(new_target, pdev, (gs_composite_t *)pdf14pct, pgs, mem, NULL);
+        code = clist_composite(new_target, pdev, (gs_composite_t *)pdf14pct, pgs, mem, NULL);
         if (code < 0)
             goto no_clist_accum;
 
@@ -9272,7 +9272,7 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
 
     /*
      * We only handle the push operation.  All other operations are ignored.
-     * The other operations will be handled by the create_compositor routine
+     * The other operations will be handled by the composite routine
      * for the PDF 1.4 compositing device.
      */
     switch (pdf14pct->params.pdf14_op) {
@@ -9546,7 +9546,7 @@ send_pdf14trans(gs_gstate	* pgs, gx_device * dev,
     code = gs_create_pdf14trans(&pct, pparams, mem);
     if (code < 0)
         return code;
-    code = dev_proc(dev, create_compositor) (dev, pcdev, pct, pgs, mem, NULL);
+    code = dev_proc(dev, composite) (dev, pcdev, pct, pgs, mem, NULL);
     if (code == gs_error_handled)
         code = 0;
 
@@ -9575,8 +9575,8 @@ send_pdf14trans(gs_gstate	* pgs, gx_device * dev,
  * device.
  */
 
-static	dev_proc_create_compositor(pdf14_clist_create_compositor);
-static	dev_proc_create_compositor(pdf14_clist_forward_create_compositor);
+static	dev_proc_composite(pdf14_clist_composite);
+static	dev_proc_composite(pdf14_clist_forward_composite);
 static	dev_proc_fill_path(pdf14_clist_fill_path);
 static	dev_proc_stroke_path(pdf14_clist_stroke_path);
 static	dev_proc_fill_stroke_path(pdf14_clist_fill_stroke_path);
@@ -9621,7 +9621,7 @@ pdf14_clist_initialize(gx_device *dev,
     set_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
     set_dev_proc(dev, begin_typed_image, pdf14_clist_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
-    set_dev_proc(dev, create_compositor, pdf14_clist_create_compositor);
+    set_dev_proc(dev, composite, pdf14_clist_composite);
     set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
     set_dev_proc(dev, text_begin, pdf14_clist_text_begin);
     set_dev_proc(dev, begin_transparency_group, pdf14_begin_transparency_group);
@@ -10053,12 +10053,12 @@ pdf14_disable_clist_device(gs_memory_t *mem, gs_gstate * pgs,
 
     /*
      * To disable the action of this device, we forward all device
-     * procedures to the target except the create_compositor and copy
+     * procedures to the target except the composite and copy
      * the target's color_info.
      */
     dev->color_info = target->color_info;
     pdf14_forward_device_procs(dev);
-    set_dev_proc(dev, create_compositor, pdf14_clist_forward_create_compositor);
+    set_dev_proc(dev, composite, pdf14_clist_forward_composite);
     return 0;
 }
 
@@ -10301,7 +10301,7 @@ pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
  * exists.
  */
 static	int
-pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
+pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
     const gs_composite_t * pct, gs_gstate * pgs, gs_memory_t * mem,
     gx_device *cdev)
 {
@@ -10348,7 +10348,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                     gs_pdf14trans_t pctemp = *pdf14pct;
 
                     pctemp.type = &gs_composite_pdf14trans_no_clist_writer_type;
-                    code = dev_proc(pdev->target, create_compositor)
+                    code = dev_proc(pdev->target, composite)
                                 (pdev->target, pcdev, (gs_composite_t *)&pctemp, pgs, mem, cdev);
                     /* We should never have created a new device here. */
                     assert(code != 1);
@@ -10524,7 +10524,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 break;		/* Pass remaining ops to target */
         }
     }
-    code = dev_proc(pdev->target, create_compositor)
+    code = dev_proc(pdev->target, composite)
                         (pdev->target, pcdev, pct, pgs, mem, cdev);
     /* If we were accumulating into a pdf14-clist-accum device, */
     /* we now have to render the page into it's target device */
@@ -10575,7 +10575,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
             gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile,
                                   &(pcs->cmm_icc_profile_data), &render_cond);
             /* pcs takes a reference to the profile data it just retrieved. */
-            gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "pdf14_clist_create_compositor");
+            gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "pdf14_clist_composite");
             gsicc_set_icc_range(&(pcs->cmm_icc_profile_data));
         } else {
              /* DeviceN case -- need to handle spot colors */
@@ -10679,7 +10679,7 @@ put_accum_error:
  * to the targer.
  */
 static	int
-pdf14_clist_forward_create_compositor(gx_device	* dev, gx_device * * pcdev,
+pdf14_clist_forward_composite(gx_device	* dev, gx_device * * pcdev,
         const gs_composite_t * pct, gs_gstate * pgs,
         gs_memory_t * mem, gx_device *cdev)
 {
@@ -10693,10 +10693,10 @@ pdf14_clist_forward_create_compositor(gx_device	* dev, gx_device * * pcdev,
         const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pct;
 
         if (pdf14pct->params.pdf14_op == PDF14_PUSH_DEVICE)
-            return pdf14_clist_create_compositor(dev, &ndev, pct, pgs, mem, cdev);
+            return pdf14_clist_composite(dev, &ndev, pct, pgs, mem, cdev);
         return 0;
     }
-    code = dev_proc(tdev, create_compositor)(tdev, &ndev, pct, pgs, mem, cdev);
+    code = dev_proc(tdev, composite)(tdev, &ndev, pct, pgs, mem, cdev);
     if (code == 1) {
         /* We just wrapped tdev, so update our target. */
         gx_device_set_target((gx_device_forward *)pdev, ndev);
@@ -10772,7 +10772,7 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
     if (changed != 0) {
         code = gs_create_pdf14trans(&pct_new, &params, pgs->memory);
         if (code < 0) return code;
-        code = dev_proc(pdev->target, create_compositor)
+        code = dev_proc(pdev->target, composite)
                     (pdev->target, &pcdev, pct_new, (gs_gstate *)pgs, pgs->memory, NULL);
         gs_free_object(pgs->memory, pct_new, "pdf14_clist_update_params");
     }
@@ -11464,7 +11464,7 @@ gs_pdf14_clist_device_push(gs_memory_t *mem, gs_gstate *pgs, gx_device **pcdev,
     /*
      * Set the color_info of the clist device to match the compositing
      * device.  We will restore it when the compositor is popped.
-     * See pdf14_clist_create_compositor for the restore.  Do the
+     * See pdf14_clist_composite for the restore.  Do the
      * same with the gs_gstate's get_cmap_procs.  We do not want
      * the gs_gstate to use transfer functions on our color values.
      * The transfer functions will be applied at the end after we
@@ -11598,7 +11598,7 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
     if (code < 0)
         return code;
     /* See c_pdf14trans_write, c_pdf14trans_adjust_ctm, and
-       apply_create_compositor. */
+       apply_composite. */
     code = gs_gstate_setmatrix(&cdev->gs_gstate, &pdf14pct->params.ctm);
     /* Wrote an extra ctm. */
     cmd_clear_known(cdev, ctm_known);
@@ -11867,7 +11867,7 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
 
     target_get_color_comp_index = dev_proc(tdev, get_color_comp_index);
 
-    /* The pdf14_clist_create_compositor may have set the color procs.
+    /* The pdf14_clist_composite may have set the color procs.
        We need the real target procs, but not if we are doing simulated
        overprint */
     if (target_get_color_comp_index == pdf14_cmykspot_get_color_comp_index &&

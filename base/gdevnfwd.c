@@ -90,7 +90,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, begin_typed_image, gx_forward_begin_typed_image);
     fill_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
     fill_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
-    fill_dev_proc(dev, create_compositor, gx_no_create_compositor);
+    fill_dev_proc(dev, composite, gx_no_composite);
     fill_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
     fill_dev_proc(dev, text_begin, gx_forward_text_begin);
     fill_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
@@ -939,7 +939,7 @@ gx_forward_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 }
 
 int
-gx_forward_create_compositor(gx_device * dev, gx_device ** pcdev,
+gx_forward_composite(gx_device * dev, gx_device ** pcdev,
                         const gs_composite_t * pcte,
                         gs_gstate * pgs, gs_memory_t * memory,
                         gx_device *cdev)
@@ -949,9 +949,9 @@ gx_forward_create_compositor(gx_device * dev, gx_device ** pcdev,
     int code;
 
     if (tdev == 0)
-        return gx_no_create_compositor(dev, pcdev, pcte, pgs, memory, cdev);
+        return gx_no_composite(dev, pcdev, pcte, pgs, memory, cdev);
     /* else do the compositor action */
-    code = dev_proc(tdev, create_compositor)(tdev, pcdev, pcte, pgs, memory, cdev);
+    code = dev_proc(tdev, composite)(tdev, pcdev, pcte, pgs, memory, cdev);
     /* the compositor may have changed color_info. Pick up the new value */
     dev->color_info = tdev->color_info;
     if (code == 1) {
@@ -1060,7 +1060,7 @@ null_initialize(gx_device *dev)
     set_dev_proc(dev, draw_thin_line, null_draw_thin_line);
     set_dev_proc(dev, strip_copy_rop, null_strip_copy_rop);
     set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
-    set_dev_proc(dev, create_compositor, gx_non_imaging_create_compositor);
+    set_dev_proc(dev, composite, gx_non_imaging_composite);
     set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
     set_dev_proc(dev, get_color_mapping_procs, gx_default_DevGray_get_color_mapping_procs);
     set_dev_proc(dev, get_color_comp_index, gx_default_DevGray_get_color_comp_index);
@@ -1344,7 +1344,7 @@ void gx_forward_device_initialize_procs(gx_device *dev)
     fill_dev_proc(dev, begin_typed_image, gx_forward_begin_typed_image);
     fill_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
     fill_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
-    /* There is no forward_create_compositor (see Drivers.htm). */
+    /* There is no forward_composite (see Drivers.htm). */
     fill_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
     fill_dev_proc(dev, text_begin, gx_forward_text_begin);
     fill_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
@@ -1362,7 +1362,7 @@ void gx_forward_device_initialize_procs(gx_device *dev)
     fill_dev_proc(dev, fillpage, gx_forward_fillpage);
     fill_dev_proc(dev, put_image, gx_forward_put_image);
     fill_dev_proc(dev, copy_planes, gx_forward_copy_planes);
-    fill_dev_proc(dev, create_compositor, gx_forward_create_compositor);
+    fill_dev_proc(dev, composite, gx_forward_composite);
     fill_dev_proc(dev, get_profile, gx_forward_get_profile);
     fill_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
     fill_dev_proc(dev, strip_copy_rop2, gx_forward_strip_copy_rop2);

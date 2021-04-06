@@ -571,7 +571,7 @@ gs_gstate_swap_memory(gs_gstate * pgs, gs_memory_t * mem)
 /*
  * Push an overprint compositor onto the current device. Note that if
  * the current device already is an overprint compositor, the
- * create_compositor will update its parameters but not create a new
+ * composite will update its parameters but not create a new
  * compositor device.
  */
 int
@@ -584,7 +584,7 @@ gs_gstate_update_overprint(gs_gstate * pgs, const gs_overprint_params_t * pparam
 
     code = gs_create_overprint(&pct, pparams, pgs->memory);
     if (code >= 0) {
-        code = dev_proc(dev, create_compositor)( dev,
+        code = dev_proc(dev, composite)( dev,
                                                    &ovptdev,
                                                    pct,
                                                    pgs,

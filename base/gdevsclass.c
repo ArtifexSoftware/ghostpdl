@@ -430,7 +430,7 @@ int default_subclass_map_color_rgb_alpha(gx_device *dev, gx_color_index color, g
     return gx_default_map_color_rgb_alpha(dev, color, rgba);
 }
 
-int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+int default_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
     int code;
@@ -440,7 +440,7 @@ int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const 
          * that we pass to access its own data (not unreasonably), so we need to make sure we pass in the
          * child device. This has some follow on implications detailed below.
          */
-        code = dev_proc(dev->child, create_compositor)(dev->child, pcdev, pcte, pgs, memory, cdev);
+        code = dev_proc(dev->child, composite)(dev->child, pcdev, pcte, pgs, memory, cdev);
         if (code < 0)
             return code;
 
@@ -905,7 +905,7 @@ int default_subclass_initialize(gx_device *dev)
     set_dev_proc(dev, begin_typed_image, default_subclass_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, default_subclass_get_bits_rectangle);
     set_dev_proc(dev, map_color_rgb_alpha, default_subclass_map_color_rgb_alpha);
-    set_dev_proc(dev, create_compositor, default_subclass_create_compositor);
+    set_dev_proc(dev, composite, default_subclass_composite);
     set_dev_proc(dev, get_hardware_params, default_subclass_get_hardware_params);
     set_dev_proc(dev, text_begin, default_subclass_text_begin);
     set_dev_proc(dev, begin_transparency_group, default_subclass_begin_transparency_group);

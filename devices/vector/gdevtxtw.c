@@ -158,7 +158,7 @@ txtwrite_initialize(gx_device *dev)
     set_dev_proc(dev, fill_path, txtwrite_fill_path);
     set_dev_proc(dev, stroke_path, txtwrite_stroke_path);
     set_dev_proc(dev, strip_copy_rop, txtwrite_strip_copy_rop);
-    set_dev_proc(dev, create_compositor, gx_null_create_compositor);
+    set_dev_proc(dev, composite, gx_null_composite);
     set_dev_proc(dev, text_begin, txtwrite_text_begin);
     set_dev_proc(dev, dev_spec_op, txtwrite_dev_spec_op);
 

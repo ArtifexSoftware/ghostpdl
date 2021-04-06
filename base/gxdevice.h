@@ -285,11 +285,11 @@ dev_proc_begin_typed_image(gx_default_begin_typed_image);
 dev_proc_get_bits_rectangle(gx_no_get_bits_rectangle);  /* gives error */
 dev_proc_get_bits_rectangle(gx_default_get_bits_rectangle);
 dev_proc_map_color_rgb_alpha(gx_default_map_color_rgb_alpha);
-dev_proc_create_compositor(gx_no_create_compositor);
+dev_proc_composite(gx_no_composite);
 /* default is for ordinary "leaf" devices, null is for */
 /* devices that only care about coverage and not contents. */
-dev_proc_create_compositor(gx_default_create_compositor);
-dev_proc_create_compositor(gx_null_create_compositor);
+dev_proc_composite(gx_default_composite);
+dev_proc_composite(gx_null_composite);
 dev_proc_get_hardware_params(gx_default_get_hardware_params);
 dev_proc_text_begin(gx_default_text_begin);
 dev_proc_dev_spec_op(gx_default_dev_spec_op);
@@ -324,7 +324,7 @@ dev_proc_copy_planes(gx_default_copy_planes);
 int gx_default_initialize(gx_device *dev);
 
 /* BACKWARD COMPATIBILITY */
-#define gx_non_imaging_create_compositor gx_null_create_compositor
+#define gx_non_imaging_composite gx_null_composite
 
 /* Color mapping routines for black-on-white, gray scale, true RGB, */
 /* true CMYK, and 1-bit CMYK color. */
@@ -387,7 +387,7 @@ dev_proc_get_clipping_box(gx_forward_get_clipping_box);
 dev_proc_begin_typed_image(gx_forward_begin_typed_image);
 dev_proc_get_bits_rectangle(gx_forward_get_bits_rectangle);
 dev_proc_map_color_rgb_alpha(gx_forward_map_color_rgb_alpha);
-/* There is no forward_create_compositor (see Drivers.htm). */
+/* There is no forward_composite (see Drivers.htm). */
 dev_proc_get_hardware_params(gx_forward_get_hardware_params);
 dev_proc_text_begin(gx_forward_text_begin);
 dev_proc_get_color_mapping_procs(gx_forward_get_color_mapping_procs);
@@ -405,7 +405,7 @@ dev_proc_ret_devn_params(gx_forward_ret_devn_params);
 dev_proc_fillpage(gx_forward_fillpage);
 dev_proc_put_image(gx_forward_put_image);
 dev_proc_copy_planes(gx_forward_copy_planes);
-dev_proc_create_compositor(gx_forward_create_compositor);
+dev_proc_composite(gx_forward_composite);
 dev_proc_get_profile(gx_forward_get_profile);
 dev_proc_set_graphics_type_tag(gx_forward_set_graphics_type_tag);
 dev_proc_strip_copy_rop2(gx_forward_strip_copy_rop2);
@@ -658,13 +658,13 @@ void gx_device_request_leadingedge(gx_device *dev, int le_req);
 int gs_is_pdf14trans_compositor(const gs_composite_t * pct);
 
 #define subclass_common\
-    t_dev_proc_create_compositor *saved_compositor_method;\
+    t_dev_proc_composite *saved_compositor_method;\
     gx_device_forward *forwarding_dev
 
-typedef int (t_dev_proc_create_compositor) (gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte, gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
+typedef int (t_dev_proc_composite) (gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte, gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
 
 typedef struct {
-    t_dev_proc_create_compositor *saved_compositor_method;
+    t_dev_proc_composite *saved_compositor_method;
     gx_device_forward *forwarding_dev;
 } generic_subclass_data;
 
@@ -673,7 +673,7 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
 int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size);
 int gx_device_unsubclass(gx_device *dev);
 int gx_update_from_subclass(gx_device *dev);
-int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+int gx_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
 
 

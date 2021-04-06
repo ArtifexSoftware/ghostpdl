@@ -61,7 +61,7 @@ static dev_proc_fill_linear_color_trapezoid(epo_fill_linear_color_trapezoid);
 static dev_proc_fill_linear_color_triangle(epo_fill_linear_color_triangle);
 static dev_proc_put_image(epo_put_image);
 static dev_proc_fillpage(epo_fillpage);
-static dev_proc_create_compositor(epo_create_compositor);
+static dev_proc_composite(epo_composite);
 static dev_proc_text_begin(epo_text_begin);
 static dev_proc_initialize(epo_initialize);
 static dev_proc_begin_image(epo_begin_image);
@@ -404,14 +404,14 @@ int epo_put_image(gx_device *dev, gx_device *mdev, const byte **buffers, int num
     return dev_proc(dev, put_image)(dev, mdev, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
 }
 
-int epo_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+int epo_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
     int code = epo_handle_erase_page(dev);
 
     if (code != 0)
         return code;
-    return dev_proc(dev, create_compositor)(dev, pcdev, pcte, pgs, memory, cdev);
+    return dev_proc(dev, composite)(dev, pcdev, pcte, pgs, memory, cdev);
 }
 
 int epo_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
@@ -449,7 +449,7 @@ int epo_initialize(gx_device *dev)
     set_dev_proc(dev, strip_tile_rectangle, epo_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, epo_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, epo_begin_typed_image);
-    set_dev_proc(dev, create_compositor, epo_create_compositor);
+    set_dev_proc(dev, composite, epo_composite);
     set_dev_proc(dev, text_begin, epo_text_begin);
     set_dev_proc(dev, fill_rectangle_hl_color, epo_fill_rectangle_hl_color);
     set_dev_proc(dev, fill_linear_color_scanline, epo_fill_linear_color_scanline);

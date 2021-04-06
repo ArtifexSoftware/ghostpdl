@@ -81,7 +81,7 @@ static dev_proc_strip_tile_rectangle(flp_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(flp_strip_copy_rop);
 static dev_proc_begin_typed_image(flp_begin_typed_image);
 static dev_proc_get_bits_rectangle(flp_get_bits_rectangle);
-static dev_proc_create_compositor(flp_create_compositor);
+static dev_proc_composite(flp_composite);
 static dev_proc_text_begin(flp_text_begin);
 static dev_proc_begin_transparency_group(flp_begin_transparency_group);
 static dev_proc_end_transparency_group(flp_end_transparency_group);
@@ -829,7 +829,7 @@ int flp_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
     return gx_default_get_bits_rectangle(dev->child, prect, params, unread);
 }
 
-int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+int flp_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
     int code = SkipPage(dev);
@@ -845,7 +845,7 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_create_compositor(dev, pcdev, pcte, pgs, memory, cdev);
+        return default_subclass_composite(dev, pcdev, pcte, pgs, memory, cdev);
 
     return 0;
 }
@@ -1246,7 +1246,7 @@ flp_initialize(gx_device *dev)
     set_dev_proc(dev, strip_copy_rop, flp_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, flp_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, flp_get_bits_rectangle);
-    set_dev_proc(dev, create_compositor, flp_create_compositor);
+    set_dev_proc(dev, composite, flp_composite);
     set_dev_proc(dev, text_begin, flp_text_begin);
     set_dev_proc(dev, begin_transparency_group, flp_begin_transparency_group);
     set_dev_proc(dev, end_transparency_group, flp_end_transparency_group);

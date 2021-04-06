@@ -124,7 +124,7 @@ check_for_nontrans_pattern(gs_gstate *pgs, unsigned char *comp_name)
 /*
  * Push a PDF 1.4 transparency compositor onto the current device. Note that
  * if the current device already is a PDF 1.4 transparency compositor, the
- * create_compositor will update its parameters but not create a new
+ * composite will update its parameters but not create a new
  * compositor device.
  */
 static int
@@ -207,7 +207,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
     }
     /*
      * Put parameters into a compositor parameter and then call the
-     * create_compositor.  This will pass the data to the PDF 1.4
+     * composite.  This will pass the data to the PDF 1.4
      * transparency device.
      */
     params.pdf14_op = group_type;

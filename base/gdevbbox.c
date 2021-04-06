@@ -56,7 +56,7 @@ static dev_proc_strip_copy_rop(bbox_strip_copy_rop);
 static dev_proc_strip_copy_rop2(bbox_strip_copy_rop2);
 static dev_proc_strip_tile_rect_devn(bbox_strip_tile_rect_devn);
 static dev_proc_begin_typed_image(bbox_begin_typed_image);
-static dev_proc_create_compositor(bbox_create_compositor);
+static dev_proc_composite(bbox_composite);
 static dev_proc_text_begin(bbox_text_begin);
 static dev_proc_fillpage(bbox_fillpage);
 
@@ -86,7 +86,7 @@ bbox_initialize(gx_device *dev)
      set_dev_proc(dev, strip_tile_rectangle, bbox_strip_tile_rectangle);
      set_dev_proc(dev, strip_copy_rop, bbox_strip_copy_rop);
      set_dev_proc(dev, begin_typed_image, bbox_begin_typed_image);
-     set_dev_proc(dev, create_compositor, bbox_create_compositor);
+     set_dev_proc(dev, composite, bbox_composite);
      set_dev_proc(dev, text_begin, bbox_text_begin);
      set_dev_proc(dev, fillpage, bbox_fillpage);
      set_dev_proc(dev, strip_copy_rop2, bbox_strip_copy_rop2);
@@ -1188,7 +1188,7 @@ static const gx_device_bbox_procs_t box_procs_forward = {
 };
 
 static int
-bbox_create_compositor(gx_device * dev,
+bbox_composite(gx_device * dev,
                        gx_device ** pcdev, const gs_composite_t * pcte,
                        gs_gstate * pgs, gs_memory_t * memory, gx_device *cindev)
 {
@@ -1211,7 +1211,7 @@ bbox_create_compositor(gx_device * dev,
     {
         gx_device *temp_cdev;
         gx_device_bbox *bbcdev;
-        int code = (*dev_proc(target, create_compositor))
+        int code = (*dev_proc(target, composite))
             (target, &temp_cdev, pcte, pgs, memory, cindev);
 
         /* If the target did not create a new compositor then we are done. */
@@ -1221,7 +1221,7 @@ bbox_create_compositor(gx_device * dev,
         }
         bbcdev = gs_alloc_struct_immovable(memory, gx_device_bbox,
                                            &st_device_bbox,
-                                           "bbox_create_compositor");
+                                           "bbox_composite");
         if (bbcdev == 0) {
             (*dev_proc(temp_cdev, close_device)) (temp_cdev);
             return_error(gs_error_VMerror);

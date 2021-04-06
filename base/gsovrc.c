@@ -384,7 +384,7 @@ gs_private_st_suffix_add0_final( st_overprint_device_t,
 
 /*
  * In the default (overprint false) case, the overprint device is almost
- * a pure forwarding device: only the open_device and create_compositor
+ * a pure forwarding device: only the open_device and composite
  * methods are not pure-forwarding methods. The
  * gx_device_foward_fill_in_procs procedure does not fill in all of the
  * necessary procedures, so some of them are provided explicitly below.
@@ -399,7 +399,7 @@ gs_private_st_suffix_add0_final( st_overprint_device_t,
 static dev_proc_open_device(overprint_open_device);
 static dev_proc_put_params(overprint_put_params);
 static dev_proc_get_page_device(overprint_get_page_device);
-static dev_proc_create_compositor(overprint_create_compositor);
+static dev_proc_composite(overprint_composite);
 static dev_proc_get_color_comp_index(overprint_get_color_comp_index);
 static dev_proc_fill_stroke_path(overprint_fill_stroke_path);
 static dev_proc_fill_path(overprint_fill_path);
@@ -417,7 +417,7 @@ nooverprint_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, overprint_put_params);
     set_dev_proc(dev, get_page_device, overprint_get_page_device);
     set_dev_proc(dev, strip_tile_rectangle, gx_forward_strip_tile_rectangle);
-    set_dev_proc(dev, create_compositor, overprint_create_compositor);
+    set_dev_proc(dev, composite, overprint_composite);
     set_dev_proc(dev, get_color_comp_index, overprint_get_color_comp_index);
     set_dev_proc(dev, fillpage, gx_forward_fillpage);
     set_dev_proc(dev, dev_spec_op, overprint_dev_spec_op);
@@ -487,7 +487,7 @@ generic_overprint_initialize(gx_device *dev)
     set_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
-    set_dev_proc(dev, create_compositor, overprint_create_compositor);
+    set_dev_proc(dev, composite, overprint_composite);
     set_dev_proc(dev, text_begin, overprint_text_begin);
     set_dev_proc(dev, get_color_comp_index, overprint_get_color_comp_index);
     set_dev_proc(dev, fill_rectangle_hl_color, overprint_fill_rectangle_hl_color);
@@ -526,7 +526,7 @@ sep_overprint_initialize(gx_device *dev)
     set_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
-    set_dev_proc(dev, create_compositor, overprint_create_compositor);
+    set_dev_proc(dev, composite, overprint_composite);
     set_dev_proc(dev, text_begin, overprint_text_begin);
     set_dev_proc(dev, get_color_comp_index, overprint_get_color_comp_index);
     set_dev_proc(dev, fill_rectangle_hl_color, overprint_fill_rectangle_hl_color);
@@ -808,11 +808,11 @@ overprint_get_page_device(gx_device * dev)
 }
 
 /*
- * Calling create_compositor on the overprint device just updates the
+ * Calling composite on the overprint device just updates the
  * overprint parameters; no new device is created.
  */
 static int
-overprint_create_compositor(
+overprint_composite(
     gx_device *             dev,
     gx_device **            pcdev,
     const gs_composite_t *  pct,
@@ -821,7 +821,7 @@ overprint_create_compositor(
     gx_device *             cdev)
 {
     if (pct->type != &gs_composite_overprint_type)
-        return gx_default_create_compositor(dev, pcdev, pct, pgs, memory, cdev);
+        return gx_default_composite(dev, pcdev, pct, pgs, memory, cdev);
     else {
         gs_overprint_params_t params = ((const gs_overprint_t *)pct)->params;
         overprint_device_t *opdev = (overprint_device_t *)dev;
@@ -838,7 +838,7 @@ overprint_create_compositor(
         params.idle = pct->idle;
         /* device must already exist, so just update the parameters if settings change */
         if_debug6m(gs_debug_flag_overprint, opdev->memory,
-            "[overprint] overprint_create_compositor test for change. params.idle = %d vs. opdev->is_idle = %d \n  params.is_fill_color = %d: params.drawn_comps = 0x%x vs. opdev->drawn_comps_fill =  0x%x OR opdev->drawn_comps_stroke = 0x%x\n",
+            "[overprint] overprint_composite test for change. params.idle = %d vs. opdev->is_idle = %d \n  params.is_fill_color = %d: params.drawn_comps = 0x%x vs. opdev->drawn_comps_fill =  0x%x OR opdev->drawn_comps_stroke = 0x%x\n",
             params.idle, opdev->is_idle, params.is_fill_color, params.drawn_comps, opdev->drawn_comps_fill, opdev->drawn_comps_stroke);
 
         if (update || params.idle != opdev->is_idle || params.op_state != OP_STATE_NONE)

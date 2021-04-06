@@ -86,7 +86,7 @@ plane_initialize(gx_device *dev)
     set_dev_proc(dev, strip_copy_rop, plane_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, plane_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, plane_get_bits_rectangle);
-    set_dev_proc(dev, create_compositor, gx_no_create_compositor); /* WRONG */
+    set_dev_proc(dev, composite, gx_no_composite); /* WRONG */
 
     /* Ideally the following would be initialized to the defaults
      * automatically, but this does not currently work. */

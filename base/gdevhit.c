@@ -32,7 +32,7 @@ static int
 hit_initialize(gx_device *dev)
 {
     set_dev_proc(dev, fill_rectangle, hit_fill_rectangle);
-    set_dev_proc(dev, create_compositor, gx_non_imaging_create_compositor);
+    set_dev_proc(dev, composite, gx_non_imaging_composite);
 
     set_dev_proc(dev, map_rgb_color, gx_default_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);

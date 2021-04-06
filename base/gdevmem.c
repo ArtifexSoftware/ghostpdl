@@ -906,7 +906,7 @@ void mem_initialize(gx_device *dev)
     set_dev_proc(dev, get_clipping_box, gx_default_get_clipping_box);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     set_dev_proc(dev, map_color_rgb_alpha, gx_default_map_color_rgb_alpha);
-    set_dev_proc(dev, create_compositor, gx_default_create_compositor);
+    set_dev_proc(dev, composite, gx_default_composite);
     set_dev_proc(dev, get_hardware_params, gx_default_get_hardware_params);
     set_dev_proc(dev, text_begin, gx_default_text_begin);
     set_dev_proc(dev, transform_pixel_region, mem_transform_pixel_region);

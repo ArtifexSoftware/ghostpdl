@@ -157,7 +157,7 @@ docxwrite_initialize(gx_device *dev)
     set_dev_proc(dev, fill_path, docxwrite_fill_path);
     set_dev_proc(dev, stroke_path, docxwrite_stroke_path);
     set_dev_proc(dev, strip_copy_rop, docxwrite_strip_copy_rop);
-    set_dev_proc(dev, create_compositor, gx_null_create_compositor);
+    set_dev_proc(dev, composite, gx_null_composite);
     set_dev_proc(dev, text_begin, docxwrite_text_begin);
     set_dev_proc(dev, dev_spec_op, docxwrite_dev_spec_op);
 

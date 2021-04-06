@@ -1818,7 +1818,7 @@ than a gx_color_index.</dd>
 </dl>
 
 <dl>
-<dt><code>int (*create_compositor)(dev_t&nbsp;*dev,
+<dt><code>int (*composite)(dev_t&nbsp;*dev,
 gx_device_t&nbsp;**pcdev, const&nbsp;gs_composite_t&nbsp;*pcte,
 const&nbsp;gs_imager_state&nbsp;*pis, gs_memory_t&nbsp;*memory)</code>
 <b><em>[OPTIONAL]</em></b> </dt>
@@ -1883,7 +1883,7 @@ even if the underlying device doesn't.</p>
 
 <p>
 Closing a compositor frees all of its storage, including the compositor
-itself.  However, since the <code>create_compositor</code> call may
+itself.  However, since the <code>composite</code> call may
 return the same device, clients must check for this case, and only call the
 close procedure if a separate device was created.</p>
 </dl>

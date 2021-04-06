@@ -132,7 +132,7 @@ pattern_accum_initialize(gx_device *dev)
     set_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
-    set_dev_proc(dev, create_compositor, gx_default_create_compositor);
+    set_dev_proc(dev, composite, gx_default_composite);
     set_dev_proc(dev, text_begin, gx_default_text_begin);
     set_dev_proc(dev, strip_copy_rop2, gx_default_strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rect_devn, gx_default_strip_tile_rect_devn);

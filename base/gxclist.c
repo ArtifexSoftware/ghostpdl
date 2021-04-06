@@ -160,7 +160,7 @@ clist_initialize(gx_device *dev)
     set_dev_proc(dev, begin_typed_image, clist_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, clist_get_bits_rectangle);
     set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
-    set_dev_proc(dev, create_compositor, clist_create_compositor);
+    set_dev_proc(dev, composite, clist_composite);
     set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
     set_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
     set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);

@@ -401,7 +401,7 @@ pdf_set_blend_params(gs_gstate * pgs, gx_device_pdf * dev,
 }
 
 int
-gdev_pdf_create_compositor(gx_device *dev,
+gdev_pdf_composite(gx_device *dev,
     gx_device **pcdev, const gs_composite_t *pct,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
@@ -451,7 +451,7 @@ gdev_pdf_create_compositor(gx_device *dev,
         }
         return 0;
     }
-    return psdf_create_compositor(dev, pcdev, pct, pgs, memory, cdev);
+    return psdf_composite(dev, pcdev, pct, pgs, memory, cdev);
 }
 
 /* We're not sure why the folllowing device methods are never called.

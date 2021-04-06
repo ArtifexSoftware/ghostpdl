@@ -242,7 +242,7 @@ pdfwrite_initialize(gx_device *dev)
     set_dev_proc(dev, strip_tile_rectangle, gdev_pdf_strip_tile_rectangle);
     set_dev_proc(dev, begin_typed_image, gdev_pdf_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, psdf_get_bits_rectangle);
-    set_dev_proc(dev, create_compositor, gdev_pdf_create_compositor);
+    set_dev_proc(dev, composite, gdev_pdf_composite);
     set_dev_proc(dev, text_begin, gdev_pdf_text_begin);
     set_dev_proc(dev, begin_transparency_group, gdev_pdf_begin_transparency_group);
     set_dev_proc(dev, end_transparency_group, gdev_pdf_end_transparency_group);
