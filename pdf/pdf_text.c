@@ -372,6 +372,8 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
     if (current_font == NULL)
         return_error(gs_error_invalidfont);
 
+    Tc = gs_currenttextspacing(ctx->pgs);
+
     if (current_font->pdfi_font_type == e_pdf_font_type1 ||
         current_font->pdfi_font_type == e_pdf_font_cff ||
         current_font->pdfi_font_type == e_pdf_font_type3 ||
@@ -384,6 +386,11 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
          */
         if (current_font->pdfi_font_type == e_pdf_font_type0 || current_font->Widths == NULL) {
             text->operation = TEXT_RETURN_WIDTH;
+            if (Tc != 0) {
+                text->operation |= TEXT_ADD_TO_ALL_WIDTHS;
+                text->delta_all.x = Tc;
+                text->delta_all.y = 0;
+            }
         } else {
             gs_point pt;
 
@@ -401,9 +408,6 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
              * space we need to transform it by the FontMatrix
              */
             mat = current_font->pfont->FontMatrix;
-
-            /* Same for the Tc value (its defined in unscaled text units) */
-            Tc = gs_currenttextspacing(ctx->pgs);
 
             for (i = 0;i < s->length; i++) {
                 /* Get the width (in unscaled text units) */
