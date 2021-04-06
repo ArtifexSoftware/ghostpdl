@@ -24,6 +24,7 @@
 #include "pdf_gstate.h"
 #include "pdf_font.h"
 #include "pdf_font_types.h"
+#include "pdf_trans.h"
 
 #include "gsstate.h"
 #include "gsmatrix.h"
@@ -35,9 +36,12 @@ int pdfi_BT(pdf_context *ctx)
 {
     int code;
     gs_matrix m;
+    bool illegal_BT = false;
 
-    if (ctx->text.BlockDepth != 0)
+    if (ctx->text.BlockDepth != 0) {
         ctx->pdf_warnings |= W_PDF_NESTEDTEXTBLOCK;
+        illegal_BT = true;
+    }
 
     gs_make_identity(&m);
     code = gs_settextmatrix(ctx->pgs, &m);
@@ -85,6 +89,10 @@ int pdfi_BT(pdf_context *ctx)
     code = gs_moveto(ctx->pgs, 0, 0);
 
     ctx->text.BlockDepth++;
+
+    if (ctx->page.has_transparency && gs_currenttextknockout(ctx->pgs) && !illegal_BT)
+        gs_begin_transparency_text_group(ctx->pgs);
+
     return code;
 }
 
@@ -124,6 +132,9 @@ int pdfi_ET(pdf_context *ctx)
             code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
         }
     }
+    if (ctx->page.has_transparency && gs_currenttextknockout(ctx->pgs))
+        gs_end_transparency_text_group(ctx->pgs);
+
     return code;
 }
 
@@ -456,6 +467,11 @@ static int pdfi_show_Tr_0(pdf_context *ctx, gs_text_params_t *text)
 {
     int code;
     gs_text_enum_t *penum=NULL, *saved_penum=NULL;
+    pdfi_trans_state_t state;
+
+    code = pdfi_trans_setup_text(ctx, &state, true);
+    if (code < 0)
+        return code;
 
     /* just draw the text */
     text->operation |= TEXT_DO_DRAW;
@@ -469,6 +485,7 @@ static int pdfi_show_Tr_0(pdf_context *ctx, gs_text_params_t *text)
         ctx->text.current_enum = saved_penum;
     }
     text->operation &= ~TEXT_DO_DRAW;
+    (void)pdfi_trans_teardown(ctx, &state);
     return code;
 }
 
@@ -774,10 +791,12 @@ static int pdfi_show_Tr_preserve(pdf_context *ctx, gs_text_params_t *text)
 static int pdfi_show(pdf_context *ctx, pdf_string *s)
 {
     int code = 0;
+    int code1 = 0;
     gs_text_params_t text;
     pdf_font *current_font = NULL;
     int Trmode = 0;
     int initial_gsave_level = ctx->pgs->level;
+    pdfi_trans_state_t state;
 
     if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
@@ -811,7 +830,9 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         if (current_font->pdfi_font_type == e_pdf_font_type3 && Trmode != 0 && Trmode != 3)
             Trmode = 0;
 
-        switch(Trmode) {
+        code = pdfi_trans_setup_text(ctx, &state, true);
+        if (code >= 0) {
+            switch(Trmode) {
             case 0:
                 code = pdfi_show_Tr_0(ctx, &text);
                 break;
@@ -838,6 +859,10 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 break;
             default:
                 break;
+            }
+            code1 = pdfi_trans_teardown(ctx, &state);
+            if (code == 0)
+                code = code1;
         }
     }
 

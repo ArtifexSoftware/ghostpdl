@@ -643,6 +643,39 @@ static bool pdfi_trans_okOPcs(pdf_context *ctx)
     return false;
 }
 
+int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_show)
+{
+    int Trmode = gs_currenttextrenderingmode(ctx->pgs);
+    int code, code1;
+
+    code = gs_gsave(ctx->pgs);
+    if (code < 0) goto exit;
+
+    if (is_show) {
+        code = gs_clippath(ctx->pgs);
+    } else {
+        code = gs_strokepath(ctx->pgs);
+    }
+    if (code < 0) {
+        /* TODO: Need to set the path to have bbox 0,0,0,0 ? */
+        code = 0;
+    }
+    switch (Trmode) {
+    case 0:
+        code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Fill);
+        break;
+    default:
+        /* TODO: All the others */
+        code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Fill);
+        break;
+    }
+    code1 = gs_grestore(ctx->pgs);
+    if (code == 0) code = code1;
+
+ exit:
+    return code;
+}
+
 int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
                      pdfi_transparency_caller_t caller)
 {

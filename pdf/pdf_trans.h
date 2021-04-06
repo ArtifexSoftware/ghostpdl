@@ -33,6 +33,7 @@ typedef enum {
     TRANSPARENCY_Caller_EOFill
 } pdfi_transparency_caller_t;
 
+int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_show);
 int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, pdfi_transparency_caller_t caller);
 int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state);
 
