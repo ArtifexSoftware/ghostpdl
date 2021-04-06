@@ -1075,23 +1075,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_begin_image(proc)\
   dev_t_proc_begin_image(proc, gx_device)
 
-                /* OBSOLETED in release 5.23 */
-
-#define dev_t_proc_image_data(proc, dev_t)\
-  int proc(dev_t *dev,\
-    gx_image_enum_common_t *info, const byte **planes, int data_x,\
-    uint raster, int height)
-#define dev_proc_image_data(proc)\
-  dev_t_proc_image_data(proc, gx_device)
-
-                /* OBSOLETED in release 5.23 */
-
-#define dev_t_proc_end_image(proc, dev_t)\
-  int proc(dev_t *dev,\
-    gx_image_enum_common_t *info, bool draw_last)
-#define dev_proc_end_image(proc)\
-  dev_t_proc_end_image(proc, gx_device)
-
                 /* Added in release 3.68 */
 
 #define dev_t_proc_strip_tile_rectangle(proc, dev_t)\
@@ -1535,8 +1518,6 @@ typedef struct {
         dev_t_proc_fill_triangle((*fill_triangle), dev_t);\
         dev_t_proc_draw_thin_line((*draw_thin_line), dev_t);\
         dev_t_proc_begin_image((*begin_image), dev_t);\
-        dev_t_proc_image_data((*image_data), dev_t);\
-        dev_t_proc_end_image((*end_image), dev_t);\
         dev_t_proc_strip_tile_rectangle((*strip_tile_rectangle), dev_t);\
         dev_t_proc_strip_copy_rop((*strip_copy_rop), dev_t);\
         dev_t_proc_get_clipping_box((*get_clipping_box), dev_t);\

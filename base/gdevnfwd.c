@@ -82,8 +82,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
     fill_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
     fill_dev_proc(dev, begin_image, gx_forward_begin_image);
-    /* NOT image_data (OBSOLETE) */
-    /* NOT end_image (OBSOLETE) */
     /* NOT strip_tile_rectangle */
     fill_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
     fill_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
@@ -1336,8 +1334,6 @@ void gx_forward_device_initialize_procs(gx_device *dev)
     fill_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
     fill_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
     fill_dev_proc(dev, begin_image, gx_forward_begin_image);
-    fill_dev_proc(dev, image_data, gx_forward_image_data);
-    fill_dev_proc(dev, end_image, gx_forward_end_image);
     fill_dev_proc(dev, strip_tile_rectangle, gx_forward_strip_tile_rectangle);
     fill_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
     fill_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);

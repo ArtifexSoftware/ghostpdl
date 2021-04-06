@@ -274,8 +274,6 @@ dev_proc_fill_parallelogram(gx_default_fill_parallelogram);
 dev_proc_fill_triangle(gx_default_fill_triangle);
 dev_proc_draw_thin_line(gx_default_draw_thin_line);
 dev_proc_begin_image(gx_default_begin_image);
-dev_proc_image_data(gx_default_image_data);
-dev_proc_end_image(gx_default_end_image);
 dev_proc_strip_tile_rectangle(gx_default_strip_tile_rectangle);
 dev_proc_strip_copy_rop(gx_no_strip_copy_rop);  /* gives error */
 dev_proc_strip_copy_rop(gx_default_strip_copy_rop);
@@ -379,8 +377,6 @@ dev_proc_fill_parallelogram(gx_forward_fill_parallelogram);
 dev_proc_fill_triangle(gx_forward_fill_triangle);
 dev_proc_draw_thin_line(gx_forward_draw_thin_line);
 dev_proc_begin_image(gx_forward_begin_image);
-#define gx_forward_image_data gx_default_image_data
-#define gx_forward_end_image gx_default_end_image
 dev_proc_strip_tile_rectangle(gx_forward_strip_tile_rectangle);
 dev_proc_strip_copy_rop(gx_forward_strip_copy_rop);
 dev_proc_get_clipping_box(gx_forward_get_clipping_box);

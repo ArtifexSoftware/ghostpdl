@@ -355,21 +355,6 @@ int default_subclass_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_
     return gx_default_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
 }
 
-int default_subclass_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **planes, int data_x,
-    uint raster, int height)
-{
-    if (dev->child)
-        return dev_proc(dev->child, image_data)(dev->child, info, planes, data_x, raster, height);
-    return 0;
-}
-
-int default_subclass_end_image(gx_device *dev, gx_image_enum_common_t *info, bool draw_last)
-{
-    if (dev->child)
-        return dev_proc(dev->child, end_image)(dev->child, info, draw_last);
-    return 0;
-}
-
 int default_subclass_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x, int y, int width, int height,
     gx_color_index color0, gx_color_index color1,
     int phase_x, int phase_y)
@@ -897,8 +882,6 @@ int default_subclass_initialize(gx_device *dev)
     set_dev_proc(dev, fill_triangle, default_subclass_fill_triangle);
     set_dev_proc(dev, draw_thin_line, default_subclass_draw_thin_line);
     set_dev_proc(dev, begin_image, default_subclass_begin_image);
-    set_dev_proc(dev, image_data, default_subclass_image_data);
-    set_dev_proc(dev, end_image, default_subclass_end_image);
     set_dev_proc(dev, strip_tile_rectangle, default_subclass_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, default_subclass_strip_copy_rop);
     set_dev_proc(dev, get_clipping_box, default_subclass_get_clipping_box);

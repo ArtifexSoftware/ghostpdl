@@ -52,8 +52,6 @@ static dev_proc_fill_parallelogram(obj_filter_fill_parallelogram);
 static dev_proc_fill_triangle(obj_filter_fill_triangle);
 static dev_proc_draw_thin_line(obj_filter_draw_thin_line);
 static dev_proc_begin_image(obj_filter_begin_image);
-static dev_proc_image_data(obj_filter_image_data);
-static dev_proc_end_image(obj_filter_end_image);
 static dev_proc_strip_tile_rectangle(obj_filter_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(obj_filter_strip_copy_rop);
 static dev_proc_begin_typed_image(obj_filter_begin_typed_image);
@@ -107,8 +105,6 @@ obj_filter_initialize(gx_device *dev)
     set_dev_proc(dev, fill_triangle, obj_filter_fill_triangle);
     set_dev_proc(dev, draw_thin_line, obj_filter_draw_thin_line);
     set_dev_proc(dev, begin_image, obj_filter_begin_image);
-    set_dev_proc(dev, image_data, obj_filter_image_data);
-    set_dev_proc(dev, end_image, obj_filter_end_image);
     set_dev_proc(dev, strip_tile_rectangle, obj_filter_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, obj_filter_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, obj_filter_begin_typed_image);
@@ -227,21 +223,6 @@ int obj_filter_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_
 {
     if ((dev->ObjectFilter & FILTERIMAGE) == 0)
         return default_subclass_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
-    return 0;
-}
-
-int obj_filter_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **planes, int data_x,
-    uint raster, int height)
-{
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
-        return default_subclass_image_data(dev, info, planes, data_x, raster, height);
-    return 0;
-}
-
-int obj_filter_end_image(gx_device *dev, gx_image_enum_common_t *info, bool draw_last)
-{
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
-        return default_subclass_end_image(dev, info, draw_last);
     return 0;
 }
 

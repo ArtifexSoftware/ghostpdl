@@ -9614,8 +9614,6 @@ pdf14_clist_initialize(gx_device *dev,
     set_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
     set_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
     set_dev_proc(dev, begin_image, pdf14_clist_begin_image);
-    set_dev_proc(dev, image_data, gx_forward_image_data);
-    set_dev_proc(dev, end_image, gx_forward_end_image);
     set_dev_proc(dev, strip_tile_rectangle, gx_forward_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
     set_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);

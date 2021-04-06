@@ -75,8 +75,6 @@ static dev_proc_fill_parallelogram(flp_fill_parallelogram);
 static dev_proc_fill_triangle(flp_fill_triangle);
 static dev_proc_draw_thin_line(flp_draw_thin_line);
 static dev_proc_begin_image(flp_begin_image);
-static dev_proc_image_data(flp_image_data);
-static dev_proc_end_image(flp_end_image);
 static dev_proc_strip_tile_rectangle(flp_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(flp_strip_copy_rop);
 static dev_proc_begin_typed_image(flp_begin_typed_image);
@@ -673,31 +671,6 @@ int flp_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_t *pim,
     return 0;
 }
 
-int flp_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **planes, int data_x,
-    uint raster, int height)
-{
-    int code = SkipPage(dev);
-
-    if (code < 0)
-        return code;
-    if (!code)
-        return default_subclass_image_data(dev, info, planes, data_x, raster, height);
-
-    return 0;
-}
-
-int flp_end_image(gx_device *dev, gx_image_enum_common_t *info, bool draw_last)
-{
-    int code = SkipPage(dev);
-
-    if (code < 0)
-        return code;
-    if (!code)
-        return default_subclass_end_image(dev, info, draw_last);
-
-    return 0;
-}
-
 int flp_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x, int y, int width, int height,
     gx_color_index color0, gx_color_index color1,
     int phase_x, int phase_y)
@@ -1240,8 +1213,6 @@ flp_initialize(gx_device *dev)
     set_dev_proc(dev, fill_triangle, flp_fill_triangle);
     set_dev_proc(dev, draw_thin_line, flp_draw_thin_line);
     set_dev_proc(dev, begin_image, flp_begin_image);
-    set_dev_proc(dev, image_data, flp_image_data);
-    set_dev_proc(dev, end_image, flp_end_image);
     set_dev_proc(dev, strip_tile_rectangle, flp_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, flp_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, flp_begin_typed_image);
