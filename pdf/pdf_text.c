@@ -389,10 +389,6 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
 
             /* Same for the Tc value (its defined in unscaled text units) */
             Tc = gs_currenttextspacing(ctx->pgs);
-            if (Tc != 0) {
-                gs_distance_transform(ctx->pgs->textspacing, 0, &mat, &pt);
-                Tc = pt.x;
-            }
 
             for (i = 0;i < s->length; i++) {
                 /* Get the width (in unscaled text units) */
