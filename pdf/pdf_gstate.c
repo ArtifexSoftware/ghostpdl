@@ -664,14 +664,23 @@ static int GS_RI(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
 static int GS_OP(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    pdf_bool *b;
+    pdf_bool *b = NULL;
     int code;
+    bool known=false;
 
     code = pdfi_dict_get_type(ctx, GS, "OP", PDF_BOOL, (pdf_obj **)&b);
     if (code < 0)
         return code;
 
     gs_setstrokeoverprint(ctx->pgs, b->value);
+
+    /* If op not in the dict, then also set it with OP
+     * Because that's what gs does pdf_draw.ps/gsparamdict/OP
+     */
+    code = pdfi_dict_known(ctx, GS, "op", &known);
+    if (!known)
+        gs_setfilloverprint(ctx->pgs, b->value);
+
     pdfi_countdown(b);
     return 0;
 }
