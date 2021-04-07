@@ -1447,7 +1447,7 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
             goto exit;
     }
 
-    if (filtered) {
+    if (filtered || ctx->encryption.is_encrypted) {
         code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
         if (code < 0) {
             goto exit;
@@ -1472,7 +1472,7 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
     code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
     if (code < 0)
         goto exit;
-    if (filtered) {
+    if (filtered || ctx->encryption.is_encrypted) {
         code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
         sfread(Buffer, 1, buflen, stream->s);
         pdfi_close_file(ctx, stream);
