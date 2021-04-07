@@ -74,6 +74,7 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
 #endif
 #ifdef DEBUG
             if (ctx1->xref_table != NULL && o->object_num > 0 &&
+                o->object_num < ctx1->xref_table->xref_size &&
                 ctx1->xref_table->xref[o->object_num].cache != NULL &&
                 ctx1->xref_table->xref[o->object_num].cache->o == o) {
                 dmprintf1(OBJ_MEMORY(o), "Freeing object %d while it is still in the object cache!\n", o->object_num);
