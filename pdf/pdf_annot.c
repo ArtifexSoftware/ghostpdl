@@ -1314,13 +1314,19 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
         code = pdfi_dict_knownget_type(ctx, annot, "AS", PDF_NAME, (pdf_obj **)&AS);
         if (code < 0) goto exit;
         if (code == 0) {
-            dbgmprintf(ctx->memory, "WARNING Annotation has non-stream AP but no AS.  Don't know what to render. Skipping\n");
+            dbgmprintf(ctx->memory, "WARNING Annotation has non-stream AP but no AS.  Don't know what to render.\n");
+            ctx->pdf_warnings |= W_PDF_ANNOT_AP_ERROR;
             goto exit;
         }
 
         /* Lookup the AS in the NormAP and use that as the AP */
         code = pdfi_dict_get_by_key(ctx, (pdf_dict *)baseAP, AS, (pdf_obj **)&AP);
-        if (code < 0) goto exit;
+        if (code < 0) {
+            dbgmprintf(ctx->memory, "WARNING Annotation has non-stream AP AS key doesn't match.  Don't know what to render.\n");
+            ctx->pdf_warnings |= W_PDF_ANNOT_AP_ERROR;
+            code = 0;
+            goto exit;
+        }
         if (AP->type != PDF_STREAM) {
             code = gs_note_error(gs_error_typecheck);
             goto exit;
@@ -3711,7 +3717,7 @@ int pdfi_do_annotations(pdf_context *ctx, pdf_dict *page_dict)
         if (code < 0)
             continue;
         code = pdfi_annot_handle(ctx, annot);
-        if (code < 0)
+        if (code < 0 && ctx->args.pdfstoponerror)
             goto exit;
         pdfi_countdown(annot);
         annot = NULL;

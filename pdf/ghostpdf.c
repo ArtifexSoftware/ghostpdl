@@ -415,6 +415,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tA stream dictionary has an invalid /DecodeParms entry\n");
         if (ctx->pdf_warnings & W_PDF_MASK_ERROR)
             dmprintf(ctx->memory, "\tAn image dictionary has an invalid /Mask entry\n");
+        if (ctx->pdf_warnings & W_PDF_ANNOT_AP_ERROR)
+            dmprintf(ctx->memory, "\tAn Annotation has an invalid AP entry.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
