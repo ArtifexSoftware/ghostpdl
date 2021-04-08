@@ -179,13 +179,8 @@ static int lips4c_output_page(gx_device_printer * pdev, gp_file * prn_stream);
 static int lips_delta_encode(byte * inBuff, byte * prevBuff, byte * outBuff, byte * diffBuff, int Length);
 static int lips_byte_cat(byte * TotalBuff, byte * Buff, int TotalLen, int Len);
 static int lips_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, lips_printer_type ptype, int numcopies);
-#if GS_VERSION_MAJOR >= 8
 static int lips_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, lips_printer_type ptype, int numcopies);
 static int lips4type_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_copies, int ptype);
-#else
-static int lips_print_page_copies(P4(gx_device_printer * pdev, gp_file * prn_stream, lips_printer_type ptype, int numcopies));
-static int lips_print_page_copies(P4(gx_device_printer * pdev, gp_file * prn_stream, lips_printer_type ptype, int numcopies));
-#endif
 static int
 lips2p_open(gx_device * pdev)
 {

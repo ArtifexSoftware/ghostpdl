@@ -226,7 +226,6 @@ gx_device_lips4v far_data gs_lips4v_device = {
 };
 
 /* Vector device implementation */
-#if GS_VERSION_MAJOR >= 8
 static int lips4v_beginpage(gx_device_vector * vdev);
 static int lips4v_setfillcolor(gx_device_vector * vdev, const gs_gstate * pgs,
                                                                                 const gx_drawing_color * pdc);
@@ -258,43 +257,6 @@ lips4v_closepath(gx_device_vector * vdev, double x, double y, double x_start,
                   double y_start, gx_path_type_t type);
 
 static int lips4v_endpath(gx_device_vector * vdev, gx_path_type_t type);
-#else
-static int lips4v_beginpage(P1(gx_device_vector * vdev));
-static int lips4v_setfillcolor(P2(gx_device_vector * vdev,
-                                   const gx_drawing_color * pdc));
-static int lips4v_setstrokecolor(P2(gx_device_vector * vdev,
-                                     const gx_drawing_color * pdc));
-static int lips4v_setdash(P4(gx_device_vector * vdev, const float *pattern,
-                              uint count, double offset));
-static int lips4v_setflat(P2(gx_device_vector * vdev, double flatness));
-static int
-lips4v_setlogop(P3
-
-                (gx_device_vector * vdev, gs_logical_operation_t lop,
-                 gs_logical_operation_t diff));
-static int
-
-lips4v_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-static int
-lips4v_moveto(P6
-              (gx_device_vector * vdev, double x0, double y0, double x,
-               double y, gx_path_type_t type));
-static int
-lips4v_lineto(P6
-              (gx_device_vector * vdev, double x0, double y0, double x,
-               double y, gx_path_type_t type));
-static int
-lips4v_curveto(P10
-               (gx_device_vector * vdev, double x0, double y0, double x1,
-                double y1, double x2, double y2, double x3, double y3,
-                gx_path_type_t type));
-static int
-lips4v_closepath(P6
-                 (gx_device_vector * vdev, double x, double y, double x_start,
-                  double y_start, gx_path_type_t type));
-
-static int lips4v_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-#endif
 static int lips4v_setlinewidth(gx_device_vector * vdev, double width);
 static int lips4v_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
 static int lips4v_setlinejoin(gx_device_vector * vdev, gs_line_join join);
@@ -311,9 +273,7 @@ static const gx_device_vector_procs lips4v_vector_procs = {
     lips4v_setflat,
     lips4v_setlogop,
     /* Other state */
-#if GS_VERSION_MAJOR >= 8
     lips4v_can_handle_hl_color,		/* can_handle_hl_color (dummy) */
-#endif
     lips4v_setfillcolor,	/* fill & stroke colors are the same */
     lips4v_setstrokecolor,
     /* Paths */
@@ -1070,13 +1030,8 @@ lips4v_setmiterlimit(gx_device_vector * vdev, double limit)
     return 0;
 }
 
-#if GS_VERSION_MAJOR >= 8
 static int
 lips4v_setfillcolor(gx_device_vector * vdev, const gs_gstate * pgs, const gx_drawing_color * pdc)
-#else
-static int
-lips4v_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
-#endif
 {
 
     if (!gx_dc_is_pure(pdc))
@@ -1138,13 +1093,8 @@ lips4v_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
     return 0;
 }
 
-#if GS_VERSION_MAJOR >= 8
 static int
 lips4v_setstrokecolor(gx_device_vector * vdev, const gs_gstate * pgs, const gx_drawing_color * pdc)
-#else
-static int
-lips4v_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
-#endif
 {
     if (!gx_dc_is_pure(pdc))
         return_error(gs_error_rangecheck);
@@ -1280,7 +1230,6 @@ lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
     return 0;
 }
 
-#if GS_VERSION_MAJOR >= 8
 /*--- added for Ghostscritp 8.15 ---*/
 static int
 lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs1,
@@ -1288,7 +1237,6 @@ lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs1,
 {
     return false; /* High level color is not implemented yet. */
 }
-#endif
 
 static int
 lips4v_beginpath(gx_device_vector * vdev, gx_path_type_t type)
@@ -1438,21 +1386,15 @@ lips4v_open(gx_device * dev)
 /****** WRONG ******/
     vdev->vec_procs = &lips4v_vector_procs;
 
-#if GS_VERSION_MAJOR >= 8
-      code = gdev_vector_open_file_options(vdev, 512,
+    code = gdev_vector_open_file_options(vdev, 512,
                         (VECTOR_OPEN_FILE_SEQUENTIAL|VECTOR_OPEN_FILE_BBOX));
-#else
-    code = gdev_vector_open_file_bbox(vdev, 512, true);
-#endif
     if (code < 0)
         return code;
 
-#if GS_VERSION_MAJOR >= 8
-        if (pdev->bbox_device != NULL) {
-                if (pdev->bbox_device->memory == NULL)
-                        pdev->bbox_device->memory = gs_memory_stable(dev->memory);
-        }
-#endif
+    if (pdev->bbox_device != NULL) {
+        if (pdev->bbox_device->memory == NULL)
+            pdev->bbox_device->memory = gs_memory_stable(dev->memory);
+    }
 
     gdev_vector_init(vdev);
     pdev->first_page = true;
@@ -1874,11 +1816,7 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
         gx_drawing_color dcolor;
 
         color_set_pure(&dcolor, one);
-#if GS_VERSION_MAJOR >= 8
         lips4v_setfillcolor(vdev, NULL, &dcolor);
-#else
-        lips4v_setfillcolor(vdev, &dcolor);
-#endif
 
         if (lips4v_copy_text_char(dev, data, raster, id, x, y, w, h) >= 0)
             return 0;
@@ -1978,13 +1916,8 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
         }
         color_set_pure(&color, one);
 
-#if GS_VERSION_MAJOR >= 8
         code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
                                              NULL, &color);
-#else
-        code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
-                                             &color);
-#endif
     }
     if (code < 0)
         return 0;
@@ -2061,11 +1994,7 @@ lips4v_copy_color(gx_device * dev,
         /* LIPS IV ではグレースケールも単色イメージ・カラー指定命令に
            影響されるので黒色を指定しなければならない。 */
         color_set_pure(&dcolor, vdev->black);
-#if GS_VERSION_MAJOR >= 8
         lips4v_setfillcolor(vdev, NULL, &dcolor);
-#else
-        lips4v_setfillcolor(vdev, &dcolor);
-#endif
     } else {
         if (pdev->TextMode) {
             sputc(s, LIPS_CSI);
@@ -2131,11 +2060,7 @@ lips4v_fill_mask(gx_device * dev,
     if (w <= 0 || h <= 0)
         return 0;
     if (depth > 1 ||
-#if GS_VERSION_MAJOR >= 8
         gdev_vector_update_fill_color(vdev, NULL, pdcolor) < 0 ||
-#else
-        gdev_vector_update_fill_color(vdev, pdcolor) < 0 ||
-#endif
         gdev_vector_update_clip_path(vdev, pcpath) < 0 ||
         gdev_vector_update_log_op(vdev, lop) < 0)
         return gx_default_fill_mask(dev, data, data_x, raster, id,
@@ -2276,11 +2201,7 @@ lips4v_begin_image(gx_device * dev,
         /* LIPS IV ではグレースケールも単色イメージ・カラー指定命令に
            影響されるので黒色を明示的に指定しなければならない。 */
         color_set_pure(&dcolor, vdev->black);
-#if GS_VERSION_MAJOR >= 8
         lips4v_setfillcolor(vdev, NULL, &dcolor);
-#else
-        lips4v_setfillcolor(vdev, &dcolor);
-#endif
     }
     if (pim->ImageMask || (pim->BitsPerComponent == 1 && num_components == 1)) {
         if (pim->Decode[0] > pim->Decode[1])
