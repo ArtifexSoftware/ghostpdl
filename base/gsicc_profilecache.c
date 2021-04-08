@@ -95,6 +95,9 @@ gsicc_add_cs(gs_gstate * pgs, gs_color_space * colorspace, uint64_t dictkey)
     gsicc_profile_cache_t *profile_cache = pgs->icc_profile_cache;
     gs_memory_t *memory =  pgs->memory;
 
+    if (dictkey == 0)
+        return;
+
     /* The entry has to be added in stable memory. We want them
        to be maintained across the gsave and grestore process */
     result = gs_alloc_struct(memory->stable_memory, gsicc_profile_entry_t,
@@ -124,6 +127,9 @@ gsicc_find_cs(uint64_t key_test, gs_gstate * pgs)
 {
     gsicc_profile_cache_t *profile_cache = pgs->icc_profile_cache;
     gsicc_profile_entry_t *prev = NULL, *curr = profile_cache->head;
+
+    if (key_test == 0)
+        return NULL;
 
     /* Look through the cache for the key. If found, move to MRU */
     while (curr != NULL ){
