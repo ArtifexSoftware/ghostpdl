@@ -848,7 +848,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         return code;
 
-    code = pdfi_gsave(ctx);
+    code = pdfi_op_q(ctx);
     if (code < 0)
         goto exit1;
 
@@ -894,7 +894,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         pdfi_shading_free(ctx, psh);
 
     pdfi_countdown(Shading);
-    code1 = pdfi_grestore(ctx);
+    code1 = pdfi_op_Q(ctx);
     if (code == 0)
         code = code1;
  exit1:
