@@ -35,13 +35,6 @@
 
 #include <stdlib.h>		/* for abs() and free */
 
-/* Get this definition in before we read memento.h */
-static void
-unvectored_free(void *x)
-{
-  free(x);
-}
-
 #if ( 6 > GS_VERSION_MAJOR )
 
 #include <string.h>
@@ -1032,8 +1025,7 @@ escv_beginpage(gx_device_vector * vdev)
       if (sysname)
         {
           lputs(s, sysname );
-          /* Carefully avoid memento interfering here. */
-          unvectored_free(sysname);
+          free(sysname);
           sysname = NULL;
         }
     }
