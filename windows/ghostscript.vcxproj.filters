@@ -6045,6 +6045,12 @@
     <ClCompile Include="..\extract\src\xml.c" />
     <ClCompile Include="..\extract\src\zip-test.c" />
     <ClCompile Include="..\extract\src\zip.c" />
+    <ClCompile Include="..\contrib\gdevadmp.c">
+      <Filter>contrib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\devices\gdevlj56.c">
+      <Filter>devices</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\base\aes.h">
