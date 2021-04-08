@@ -86,7 +86,9 @@ int pdfi_BT(pdf_context *ctx)
         gs_newpath(ctx->pgs);
     }
 
-    code = gs_moveto(ctx->pgs, 0, 0);
+    ctx->text.initial_current_point_valid = ctx->pgs->current_point_valid;
+    if (!ctx->pgs->current_point_valid)
+        code = gs_moveto(ctx->pgs, 0, 0);
 
     ctx->text.BlockDepth++;
 
@@ -135,6 +137,8 @@ int pdfi_ET(pdf_context *ctx)
     if (ctx->page.has_transparency && gs_currenttextknockout(ctx->pgs))
         gs_end_transparency_text_group(ctx->pgs);
 
+    if (!ctx->text.initial_current_point_valid)
+        gs_newpath(ctx->pgs);
     return code;
 }
 

@@ -320,6 +320,16 @@ typedef struct text_state_s {
      * ignore them.
      */
     bool CharProc_is_d1;
+    /* If there is no current point when we do a BT we start by doing a 0 0 moveto in order
+     * to establish an initial point. However, this also starts a path. When we finish
+     * off with a BT we need to clear that path by doing a newpath, otherwise we might
+     * end up drawing it. See /tests_private/comparefiles/Bug692867.pdf
+     * We store the initial current poitn validity and if t was not initially valid
+     * (ie no path) then we do a newpath on a ET.
+     * BT/ET are not supposed to be nested, and path construction is not permitted inside
+     * a BT/ET block.
+     */
+    bool initial_current_point_valid;
 } text_state_t;
 
 typedef struct device_state_s {
