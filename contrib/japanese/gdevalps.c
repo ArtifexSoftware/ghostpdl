@@ -57,8 +57,21 @@ static dev_proc_print_page(md50m_print_page);
 static dev_proc_print_page(md50e_print_page);
 static dev_proc_print_page(md1xm_print_page);
 
+static int
+md_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, md_open);
+
+    return 0;
+}
+
 static gx_device_procs prn_md_procs =
-  prn_procs(md_open, gdev_prn_output_page, gdev_prn_close);
+  devprocs_initialize(md_initialize);
 
 gx_device_printer far_data gs_md50Mono_device =
   prn_device(prn_md_procs, "md50Mono",

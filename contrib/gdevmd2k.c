@@ -64,28 +64,25 @@ typedef struct gx_device_alps_s gx_device_alps;
 
 #define dev_alps ((gx_device_alps *) pdev)
 
-static gx_device_procs alps_procs = {
-    alps_open,
-    gx_default_get_initial_matrix,
-    NULL,			/* sync_output */
-    gdev_prn_output_page,
-    gdev_prn_close,
-    NULL,			/* map_rgb_color,*/
-    alps_map_color_rgb,
-    NULL,			/* fill_rectangle */
-    NULL,			/* tile_rectangle */
-    NULL,			/* copy_mono */
-    NULL,			/* copy_color */
-    NULL,			/* draw_line */
-    NULL,			/* get_bits */
-    alps_get_params,
-    alps_put_params,
-    alps_map_cmyk_color,
-    NULL,			/* get_xfont_procs */
-    NULL,			/* get_xfont_device */
-    NULL,			/* map_rgb_alpha_color */
-    gx_page_device_get_page_device /* get_page_device */
-};
+static int
+alps_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, alps_open);
+    set_dev_proc(dev, map_color_rgb, alps_map_color_rgb);
+    set_dev_proc(dev, get_params, alps_get_params);
+    set_dev_proc(dev, put_params, alps_put_params);
+    set_dev_proc(dev, map_cmyk_color, alps_map_cmyk_color);
+
+    return 0;
+}
+
+static gx_device_procs alps_procs =
+    devprocs_initialize(alps_initialize);
 
 #define alps_device(dname, print_page) \
 {\

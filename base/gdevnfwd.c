@@ -1096,78 +1096,59 @@ static dev_proc_strip_tile_rect_devn(null_strip_tile_rect_devn);
 static dev_proc_fill_rectangle_hl_color(null_fill_rectangle_hl_color);
 static dev_proc_dev_spec_op(null_spec_op);
 
-#define null_procs(get_initial_matrix, get_page_device) {\
-        gx_default_open_device,\
-        get_initial_matrix, /* differs */\
-        gx_default_sync_output,\
-        gx_default_output_page,\
-        gx_default_close_device,\
-        gx_forward_map_rgb_color,\
-        gx_forward_map_color_rgb,\
-        null_fill_rectangle,\
-        gx_default_tile_rectangle,\
-        null_copy_mono,\
-        null_copy_color,\
-        gx_default_draw_line,\
-        gx_default_get_bits,\
-        gx_forward_get_params,\
-        null_put_params,\
-        gx_forward_map_cmyk_color,\
-        gx_forward_get_xfont_procs,\
-        gx_forward_get_xfont_device,\
-        gx_forward_map_rgb_alpha_color,\
-        get_page_device,        /* differs */\
-        gx_default_get_alpha_bits,\
-        null_copy_alpha,\
-        gx_forward_get_band,\
-        null_copy_rop,\
-        null_fill_path,\
-        null_stroke_path,\
-        gx_default_fill_mask,\
-        null_fill_trapezoid,\
-        null_fill_parallelogram,\
-        null_fill_triangle,\
-        null_draw_thin_line,\
-        gx_default_begin_image,\
-        gx_default_image_data,\
-        gx_default_end_image,\
-        gx_default_strip_tile_rectangle,\
-        null_strip_copy_rop,\
-        gx_default_get_clipping_box,\
-        gx_default_begin_typed_image,\
-        gx_default_get_bits_rectangle,\
-        gx_forward_map_color_rgb_alpha,\
-        gx_non_imaging_create_compositor,\
-        gx_forward_get_hardware_params,\
-        gx_default_text_begin,\
-        NULL, /* initialise */\
-        NULL,                           /* begin_transparency_group */\
-        NULL,                           /* end_transparency_group */\
-        NULL,                           /* begin_transparency_mask */\
-        NULL,                           /* end_transparency_mask */\
-        NULL,                           /* discard_transparency_layer */\
-        gx_default_DevGray_get_color_mapping_procs,     /* get_color_mapping_procs */\
-        gx_default_DevGray_get_color_comp_index,/* get_color_comp_index */\
-        gx_default_gray_fast_encode,            /* encode_color */\
-        null_decode_color,              /* decode_color */\
-        NULL, /* pattern_manage */\
-        null_fill_rectangle_hl_color,\
-        gx_default_include_color_space,\
-        NULL, /* fill_line_sl */\
-        NULL, /* fill_line_tr */\
-        NULL, /* fill_line_tri */\
-        NULL, /* up_spot_eq_col */\
-        gx_default_ret_devn_params, /* ret_devn_params */\
-        NULL, /* fillpage */\
-        NULL, /* push_transparency_state */\
-        NULL, /* pop_transparency_state */\
-        NULL, /* put_image */\
-        null_spec_op, /* dev_spec_op */\
-        NULL, /* copy_planes */\
-        NULL, /* get_profile */\
-        NULL, /* set_graphics_type_tag */\
-        null_strip_copy_rop2,\
-        null_strip_tile_rect_devn\
+static int
+null_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, get_initial_matrix, gx_forward_upright_get_initial_matrix);
+    set_dev_proc(dev, get_page_device, gx_default_get_page_device);
+    set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, null_fill_rectangle);
+    set_dev_proc(dev, copy_mono, null_copy_mono);
+    set_dev_proc(dev, copy_color, null_copy_color);
+    set_dev_proc(dev, get_params, gx_forward_get_params);
+    set_dev_proc(dev, put_params, null_put_params);
+    set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
+    set_dev_proc(dev, get_xfont_procs, gx_forward_get_xfont_procs);
+    set_dev_proc(dev, get_xfont_device, gx_forward_get_xfont_device);
+    set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
+    set_dev_proc(dev, copy_alpha, null_copy_alpha);
+    set_dev_proc(dev, get_band, gx_forward_get_band);
+    set_dev_proc(dev, copy_rop, null_copy_rop);
+    set_dev_proc(dev, fill_path, null_fill_path);
+    set_dev_proc(dev, stroke_path, null_stroke_path);
+    set_dev_proc(dev, fill_trapezoid, null_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, null_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, null_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, null_draw_thin_line);
+    set_dev_proc(dev, strip_copy_rop, null_strip_copy_rop);
+    set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
+    set_dev_proc(dev, create_compositor, gx_non_imaging_create_compositor);
+    set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
+    set_dev_proc(dev, get_color_mapping_procs, gx_default_DevGray_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, gx_default_DevGray_get_color_comp_index);
+    set_dev_proc(dev, encode_color, gx_default_gray_fast_encode);
+    set_dev_proc(dev, decode_color, null_decode_color);
+    set_dev_proc(dev, fill_rectangle_hl_color, null_fill_rectangle_hl_color);
+    set_dev_proc(dev, dev_spec_op, null_spec_op);
+    set_dev_proc(dev, strip_copy_rop2, null_strip_copy_rop2);
+    set_dev_proc(dev, strip_tile_rect_devn, null_strip_tile_rect_devn);
+
+    return 0;
+}
+
+static int
+nullpage_initialize(gx_device *dev)
+{
+    int code = null_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+
+    return 0;
 }
 
 #define NULLD_X_RES 72
@@ -1176,8 +1157,7 @@ static dev_proc_dev_spec_op(null_spec_op);
 const gx_device_null gs_null_device = {
     std_device_std_body_type_open(gx_device_null, 0, "null", &st_device_null,
                                   0, 0, NULLD_X_RES, NULLD_Y_RES),
-    null_procs(gx_forward_upright_get_initial_matrix, /* upright matrix */
-               gx_default_get_page_device     /* not a page device */ ),
+    devprocs_initialize(null_initialize),
     0                           /* target */
 };
 
@@ -1186,8 +1166,7 @@ std_device_std_body_type_open(gx_device_null, 0, "nullpage", &st_device_null,
                               (int)((float)(DEFAULT_WIDTH_10THS * NULLD_X_RES) / 10),
                               (int)((float)(DEFAULT_HEIGHT_10THS * NULLD_Y_RES) / 10),
                               NULLD_X_RES, NULLD_Y_RES),
-    null_procs( gx_forward_get_initial_matrix, /* default matrix */
-                gx_page_device_get_page_device /* a page device */ ),
+    devprocs_initialize(nullpage_initialize),
     0                           /* target */
 };
 
@@ -1401,6 +1380,74 @@ fwd_get_target_cmap_procs(gx_device * dev)
         pprocs = fwd_get_target_cmap_procs(tdev);
     }
     return pprocs;
+}
+
+void gx_forward_device_initialize_procs(gx_device *dev)
+{
+    fill_dev_proc(dev, close_device, gx_forward_close_device);
+    fill_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
+    fill_dev_proc(dev, sync_output, gx_forward_sync_output);
+    fill_dev_proc(dev, output_page, gx_forward_output_page);
+    fill_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
+    fill_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
+    fill_dev_proc(dev, fill_rectangle, gx_forward_fill_rectangle);
+    fill_dev_proc(dev, tile_rectangle, gx_forward_tile_rectangle);
+    fill_dev_proc(dev, copy_mono, gx_forward_copy_mono);
+    fill_dev_proc(dev, copy_color, gx_forward_copy_color);
+    fill_dev_proc(dev, get_bits, gx_forward_get_bits);
+    fill_dev_proc(dev, get_params, gx_forward_get_params);
+    fill_dev_proc(dev, put_params, gx_forward_put_params);
+    fill_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
+    fill_dev_proc(dev, get_xfont_procs, gx_forward_get_xfont_procs);
+    fill_dev_proc(dev, get_xfont_device, gx_forward_get_xfont_device);
+    fill_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
+    fill_dev_proc(dev, get_page_device, gx_forward_get_page_device);
+    fill_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
+    fill_dev_proc(dev, copy_alpha, gx_forward_copy_alpha);
+    fill_dev_proc(dev, get_band, gx_forward_get_band);
+    fill_dev_proc(dev, copy_rop, gx_forward_copy_rop);
+    fill_dev_proc(dev, fill_path, gx_forward_fill_path);
+    fill_dev_proc(dev, stroke_path, gx_forward_stroke_path);
+    fill_dev_proc(dev, fill_mask, gx_forward_fill_mask);
+    fill_dev_proc(dev, fill_trapezoid, gx_forward_fill_trapezoid);
+    fill_dev_proc(dev, fill_parallelogram, gx_forward_fill_parallelogram);
+    fill_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
+    fill_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
+    fill_dev_proc(dev, begin_image, gx_forward_begin_image);
+    fill_dev_proc(dev, image_data, gx_forward_image_data);
+    fill_dev_proc(dev, end_image, gx_forward_end_image);
+    fill_dev_proc(dev, strip_tile_rectangle, gx_forward_strip_tile_rectangle);
+    fill_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
+    fill_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
+    fill_dev_proc(dev, begin_typed_image, gx_forward_begin_typed_image);
+    fill_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
+    fill_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
+    /* There is no forward_create_compositor (see Drivers.htm). */
+    fill_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
+    fill_dev_proc(dev, text_begin, gx_forward_text_begin);
+    fill_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
+    fill_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
+    fill_dev_proc(dev, encode_color, gx_forward_encode_color);
+    fill_dev_proc(dev, decode_color, gx_forward_decode_color);
+    fill_dev_proc(dev, dev_spec_op, gx_forward_dev_spec_op);
+    fill_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
+    fill_dev_proc(dev, include_color_space, gx_forward_include_color_space);
+    fill_dev_proc(dev, fill_linear_color_scanline, gx_forward_fill_linear_color_scanline);
+    fill_dev_proc(dev, fill_linear_color_trapezoid, gx_forward_fill_linear_color_trapezoid);
+    fill_dev_proc(dev, fill_linear_color_triangle, gx_forward_fill_linear_color_triangle);
+    fill_dev_proc(dev, update_spot_equivalent_colors, gx_forward_update_spot_equivalent_colors);
+    fill_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
+    fill_dev_proc(dev, fillpage, gx_forward_fillpage);
+    fill_dev_proc(dev, put_image, gx_forward_put_image);
+    fill_dev_proc(dev, copy_planes, gx_forward_copy_planes);
+    fill_dev_proc(dev, create_compositor, gx_forward_create_compositor);
+    fill_dev_proc(dev, get_profile, gx_forward_get_profile);
+    fill_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+    fill_dev_proc(dev, strip_copy_rop2, gx_forward_strip_copy_rop2);
+    fill_dev_proc(dev, strip_tile_rect_devn, gx_forward_strip_tile_rect_devn);
+    fill_dev_proc(dev, copy_alpha_hl_color, gx_forward_copy_alpha_hl_color);
+    fill_dev_proc(dev, transform_pixel_region, gx_forward_transform_pixel_region);
+    fill_dev_proc(dev, fill_stroke_path, gx_forward_fill_stroke_path);
 }
 
 #ifdef DEBUG

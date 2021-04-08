@@ -754,11 +754,28 @@ gdev_x_clear_window(gx_device_X * xdev)
 }
 
 
-/* Clean up the instance after making a copy. */
+/* (External procedures are declared in gdevx.h.) */
 int
 gdev_x_initialize(gx_device *dev)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
+
+    set_dev_proc(dev, open_device, x_open);
+    set_dev_proc(dev, get_initial_matrix, x_get_initial_matrix);
+    set_dev_proc(dev, sync_output, x_sync);
+    set_dev_proc(dev, output_page, x_output_page);
+    set_dev_proc(dev, close_device, x_close);
+    set_dev_proc(dev, map_rgb_color, gdev_x_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gdev_x_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, x_fill_rectangle);
+    set_dev_proc(dev, copy_mono, x_copy_mono);
+    set_dev_proc(dev, copy_color, x_copy_color);
+    set_dev_proc(dev, get_params, gdev_x_get_params);
+    set_dev_proc(dev, put_params, gdev_x_put_params);
+    set_dev_proc(dev, get_page_device, x_get_page_device);
+    set_dev_proc(dev, strip_tile_rectangle, x_strip_tile_rectangle);
+    set_dev_proc(dev, get_bits_rectangle, x_get_bits_rectangle);
+    set_dev_proc(dev, fillpage, x_fillpage);
 
     /* Mark the new instance as closed. */
     xdev->is_open = false;

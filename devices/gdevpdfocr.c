@@ -142,15 +142,25 @@ pdfocr_get_params_downscale(gx_device * dev, gs_param_list * plist)
 }
 
 /* ------ The pdfocr8 device ------ */
+static int
+pdfocr8_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, pdf_ocr_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, pdf_ocr_close);
+    set_dev_proc(dev, get_params, pdfocr_get_params_downscale);
+    set_dev_proc(dev, put_params, pdfocr_put_params_downscale);
+
+    return 0;
+}
 
 static const gx_device_procs pdfocr8_procs =
-prn_color_params_procs(pdf_ocr_open,
-                       gdev_prn_output_page_seekable,
-                       pdf_ocr_close,
-                       gx_default_gray_map_rgb_color,
-                       gx_default_gray_map_color_rgb,
-                       pdfocr_get_params_downscale,
-                       pdfocr_put_params_downscale);
+    devprocs_initialize(pdfocr8_initialize);
 
 const gx_device_pdf_image gs_pdfocr8_device = {
     prn_device_body(gx_device_pdf_image,
@@ -171,15 +181,25 @@ const gx_device_pdf_image gs_pdfocr8_device = {
 };
 
 /* ------ The pdfocr24 device ------ */
+static int
+pdfocr24_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, pdf_ocr_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, pdf_ocr_close);
+    set_dev_proc(dev, get_params, pdfocr_get_params_downscale);
+    set_dev_proc(dev, put_params, pdfocr_put_params_downscale);
+
+    return 0;
+}
 
 static const gx_device_procs pdfocr24_procs =
-prn_color_params_procs(pdf_ocr_open,
-                       gdev_prn_output_page_seekable,
-                       pdf_ocr_close,
-                       gx_default_rgb_map_rgb_color,
-                       gx_default_rgb_map_color_rgb,
-                       pdfocr_get_params_downscale,
-                       pdfocr_put_params_downscale);
+    devprocs_initialize(pdfocr24_initialize);
 
 const gx_device_pdf_image gs_pdfocr24_device = {
     prn_device_body(gx_device_pdf_image,
@@ -200,13 +220,25 @@ const gx_device_pdf_image gs_pdfocr24_device = {
 };
 
 /* ------ The pdfocr32 device ------ */
+static int
+pdfocr32_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk8(dev);
 
-static const gx_device_procs pdfocr32_procs = {
-    pdf_ocr_open, NULL, NULL, gdev_prn_output_page_seekable, pdf_ocr_close,
-    NULL, cmyk_8bit_map_color_cmyk, NULL, NULL, NULL, NULL, NULL, NULL,
-    pdfocr_get_params_downscale_cmyk, pdfocr_put_params_downscale_cmyk,
-    cmyk_8bit_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
-};
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, pdf_ocr_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, pdf_ocr_close);
+    set_dev_proc(dev, get_params, pdfocr_get_params_downscale_cmyk);
+    set_dev_proc(dev, put_params, pdfocr_put_params_downscale_cmyk);
+
+    return 0;
+}
+
+static const gx_device_procs pdfocr32_procs =
+    devprocs_initialize(pdfocr32_initialize);
 
 const gx_device_pdf_image gs_pdfocr32_device = {
     prn_device_body(gx_device_pdf_image,

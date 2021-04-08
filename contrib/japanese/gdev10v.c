@@ -86,8 +86,21 @@ gx_device_procs prn_bj10v_procs =
   prn_matrix_procs(gdev_prn_open, bj10v_get_initial_matrix,
     gdev_prn_output_page, gdev_prn_close);
 #endif
+static int
+bj10v_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, bj10v_open);
+
+    return 0;
+}
+
 gx_device_procs prn_bj10v_procs =
-  prn_procs(bj10v_open, gdev_prn_output_page, gdev_prn_close);
+  devprocs_initialize(bj10v_initialize);
 
 gx_device_printer gs_bj10v_device =
   prn_device(prn_bj10v_procs, "bj10v",

@@ -312,91 +312,34 @@ typedef struct gx_device_cups_s
   /* Used by cups_put_params(): */
 } gx_device_cups;
 
-private gx_device_procs	cups_procs =
+static int
+cups_initialize(gx_device *dev)
 {
-   cups_open,
-   cups_get_matrix,
-   cups_sync_output,
-   cups_output_page,
-   cups_close,
+    set_dev_proc(dev, open_device, cups_open);
+    set_dev_proc(dev, get_initial_matrix, cups_get_matrix);
+    set_dev_proc(dev, sync_output, cups_sync_output);
+    set_dev_proc(dev, output_page, cups_output_page);
+    set_dev_proc(dev, close_device, cups_close);
 #ifdef dev_t_proc_encode_color
-   NULL,				/* map_rgb_color */
-   NULL,				/* map_color_rgb */
+    set_dev_proc(dev, get_color_mapping_procs, cups_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, cups_get_color_comp_index);
+    set_dev_proc(dev, encode_color, cups_encode_color);
+    set_dev_proc(dev, decode_color, cups_decode_color);
 #else
-   cups_map_rgb_color,
-   cups_map_color_rgb,
-#endif /* dev_t_proc_encode_color */
-   NULL,				/* fill_rectangle */
-   NULL,				/* tile_rectangle */
-   NULL,				/* copy_mono */
-   NULL,				/* copy_color */
-   NULL,				/* draw_line */
-   gx_default_get_bits,
-   cups_get_params,
-   cups_put_params,
-#ifdef dev_t_proc_encode_color
-   NULL,				/* map_cmyk_color */
-#else
-   cups_map_cmyk_color,
-#endif /* dev_t_proc_encode_color */
-   NULL,				/* get_xfont_procs */
-   NULL,				/* get_xfont_device */
-   NULL,				/* map_rgb_alpha_color */
-   gx_page_device_get_page_device,
-   NULL,				/* get_alpha_bits */
-   NULL,				/* copy_alpha */
-   NULL,				/* get_band */
-   NULL,				/* copy_rop */
-   NULL,				/* fill_path */
-   NULL,				/* stroke_path */
-   NULL,				/* fill_mask */
-   NULL,				/* fill_trapezoid */
-   NULL,				/* fill_parallelogram */
-   NULL,				/* fill_triangle */
-   NULL,				/* draw_thin_line */
-   NULL,				/* begin_image */
-   NULL,				/* image_data */
-   NULL,				/* end_image */
-   NULL,				/* strip_tile_rectangle */
-   NULL,				/* strip_copy_rop */
-   NULL,				/* get_clipping_box */
-   NULL,				/* begin_typed_image */
-   NULL,				/* get_bits_rectangle */
-   NULL,				/* map_color_rgb_alpha */
-   NULL,				/* create_compositor */
-   NULL,				/* get_hardware_params */
-   NULL,				/* text_begin */
-   NULL,				/* initialize */
-   NULL,				/* begin_transparency_group */
-   NULL,				/* end_transparency_group */
-   NULL,				/* begin_transparency_mask */
-   NULL,				/* end_transparency_mask */
-   NULL,				/* discard_transparency_layer */
-#ifdef dev_t_proc_encode_color
-   cups_get_color_mapping_procs,
-   cups_get_color_comp_index,
-   cups_encode_color,
-   cups_decode_color,
-#else
-   NULL,                                /* get_color_mapping_procs */
-   NULL,                                /* get_color_comp_index */
-   NULL,                                /* encode_color */
-   NULL,                                /* decode_color */
-#endif /* dev_t_proc_encode_color */
-   NULL,				/* pattern_manage */
-   NULL,				/* fill_rectangle_hl_color */
-   NULL,				/* include_color_space */
-   NULL,				/* fill_linear_color_scanline */
-   NULL,				/* fill_linear_color_trapezoid */
-   NULL,				/* fill_linear_color_triangle */
-   NULL,				/* update_spot_equivalent_colors */
-   NULL,				/* ret_devn_params */
-   NULL,				/* fillpage */
-   NULL,				/* push_transparency_state */
-   NULL,				/* pop_transparency_state */
-   NULL,                                /* put_image */
-   cups_spec_op
-};
+    set_dev_proc(dev, map_rgb_color, cups_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, cups_map_color_rgb);
+    set_dev_proc(dev, map_cmyk_color, cups_map_cmyk_color);
+#endif
+    set_dev_proc(dev, get_params, cups_get_params);
+    set_dev_proc(dev, put_params, cups_put_params);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, dev_spec_op, cups_spec_op);
+
+    return 0;
+}
+
+private gx_device_procs cups_procs =
+    devprocs_initialize(cups_initialize);
 
 #define prn_device_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_pages)\
 	std_device_full_body_type(dtype, &procs, dname, &st_device_printer,\

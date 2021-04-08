@@ -584,15 +584,6 @@ int default_subclass_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_pa
     return gx_default_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
 }
 
-/* This method is intended to allow for
- * devices to initialise data before being invoked. For our subclassed
- * device this should already have been done.
- */
-int default_subclass_initialize(gx_device *dev)
-{
-    return 0;
-}
-
 int default_subclass_begin_transparency_group(gx_device *dev, const gs_transparency_group_params_t *ptgp,
     const gs_rect *pbbox, gs_gstate *pgs, gs_memory_t *mem)
 {
@@ -928,4 +919,84 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
         rc_decrement(dev->PageList, "finalize subclass device");
     if (dev->NupControl)
         rc_decrement(dev->NupControl, "finalize subclass device");
+}
+
+int default_subclass_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, default_subclass_open_device);
+    set_dev_proc(dev, get_initial_matrix, default_subclass_get_initial_matrix);
+    set_dev_proc(dev, sync_output, default_subclass_sync_output);
+    set_dev_proc(dev, output_page, default_subclass_output_page);
+    set_dev_proc(dev, close_device, default_subclass_close_device);
+    set_dev_proc(dev, map_rgb_color, default_subclass_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, default_subclass_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, default_subclass_fill_rectangle);
+    set_dev_proc(dev, tile_rectangle, default_subclass_tile_rectangle);
+    set_dev_proc(dev, copy_mono, default_subclass_copy_mono);
+    set_dev_proc(dev, copy_color, default_subclass_copy_color);
+    set_dev_proc(dev, obsolete_draw_line, default_subclass_draw_line);
+    set_dev_proc(dev, get_bits, default_subclass_get_bits);
+    set_dev_proc(dev, get_params, default_subclass_get_params);
+    set_dev_proc(dev, put_params, default_subclass_put_params);
+    set_dev_proc(dev, map_cmyk_color, default_subclass_map_cmyk_color);
+    set_dev_proc(dev, get_xfont_procs, default_subclass_get_xfont_procs);
+    set_dev_proc(dev, get_xfont_device, default_subclass_get_xfont_device);
+    set_dev_proc(dev, map_rgb_alpha_color, default_subclass_map_rgb_alpha_color);
+    set_dev_proc(dev, get_page_device, default_subclass_get_page_device);
+    set_dev_proc(dev, get_alpha_bits, default_subclass_get_alpha_bits);
+    set_dev_proc(dev, copy_alpha, default_subclass_copy_alpha);
+    set_dev_proc(dev, get_band, default_subclass_get_band);
+    set_dev_proc(dev, copy_rop, default_subclass_copy_rop);
+    set_dev_proc(dev, fill_path, default_subclass_fill_path);
+    set_dev_proc(dev, stroke_path, default_subclass_stroke_path);
+    set_dev_proc(dev, fill_mask, default_subclass_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, default_subclass_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, default_subclass_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, default_subclass_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, default_subclass_draw_thin_line);
+    set_dev_proc(dev, begin_image, default_subclass_begin_image);
+    set_dev_proc(dev, image_data, default_subclass_image_data);
+    set_dev_proc(dev, end_image, default_subclass_end_image);
+    set_dev_proc(dev, strip_tile_rectangle, default_subclass_strip_tile_rectangle);
+    set_dev_proc(dev, strip_copy_rop, default_subclass_strip_copy_rop);
+    set_dev_proc(dev, get_clipping_box, default_subclass_get_clipping_box);
+    set_dev_proc(dev, begin_typed_image, default_subclass_begin_typed_image);
+    set_dev_proc(dev, get_bits_rectangle, default_subclass_get_bits_rectangle);
+    set_dev_proc(dev, map_color_rgb_alpha, default_subclass_map_color_rgb_alpha);
+    set_dev_proc(dev, create_compositor, default_subclass_create_compositor);
+    set_dev_proc(dev, get_hardware_params, default_subclass_get_hardware_params);
+    set_dev_proc(dev, text_begin, default_subclass_text_begin);
+    set_dev_proc(dev, begin_transparency_group, default_subclass_begin_transparency_group);
+    set_dev_proc(dev, end_transparency_group, default_subclass_end_transparency_group);
+    set_dev_proc(dev, begin_transparency_mask, default_subclass_begin_transparency_mask);
+    set_dev_proc(dev, end_transparency_mask, default_subclass_end_transparency_mask);
+    set_dev_proc(dev, discard_transparency_layer, default_subclass_discard_transparency_layer);
+    set_dev_proc(dev, get_color_mapping_procs, default_subclass_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, default_subclass_get_color_comp_index);
+    set_dev_proc(dev, encode_color, default_subclass_encode_color);
+    set_dev_proc(dev, decode_color, default_subclass_decode_color);
+    set_dev_proc(dev, pattern_manage, default_subclass_pattern_manage);
+    set_dev_proc(dev, fill_rectangle_hl_color, default_subclass_fill_rectangle_hl_color);
+    set_dev_proc(dev, include_color_space, default_subclass_include_color_space);
+    set_dev_proc(dev, fill_linear_color_scanline, default_subclass_fill_linear_color_scanline);
+    set_dev_proc(dev, fill_linear_color_trapezoid, default_subclass_fill_linear_color_trapezoid);
+    set_dev_proc(dev, fill_linear_color_triangle, default_subclass_fill_linear_color_triangle);
+    set_dev_proc(dev, update_spot_equivalent_colors, default_subclass_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, default_subclass_ret_devn_params);
+    set_dev_proc(dev, fillpage, default_subclass_fillpage);
+    set_dev_proc(dev, push_transparency_state, default_subclass_push_transparency_state);
+    set_dev_proc(dev, pop_transparency_state, default_subclass_pop_transparency_state);
+    set_dev_proc(dev, put_image, default_subclass_put_image);
+    set_dev_proc(dev, dev_spec_op, default_subclass_dev_spec_op);
+    set_dev_proc(dev, copy_planes, default_subclass_copy_planes);
+    set_dev_proc(dev, get_profile, default_subclass_get_profile);
+    set_dev_proc(dev, set_graphics_type_tag, default_subclass_set_graphics_type_tag);
+    set_dev_proc(dev, strip_copy_rop2, default_subclass_strip_copy_rop2);
+    set_dev_proc(dev, strip_tile_rect_devn, default_subclass_strip_tile_rect_devn);
+    set_dev_proc(dev, copy_alpha_hl_color, default_subclass_copy_alpha_hl_color);
+    set_dev_proc(dev, process_page, default_subclass_process_page);
+    set_dev_proc(dev, transform_pixel_region, default_subclass_transform_pixel_region);
+    set_dev_proc(dev, fill_stroke_path, default_subclass_fill_stroke_path);
+
+    return 0;
 }

@@ -149,8 +149,9 @@ void
 gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
                    gs_memory_t * mem, int page_device, gx_device * target)
 {
-    gx_device_init((gx_device *) dev, (const gx_device *)mdproto,
-                   mem, true);
+    /* Can never fail */
+    (void)gx_device_init((gx_device *) dev, (const gx_device *)mdproto,
+                         mem, true);
     dev->stype = &st_device_memory;
     switch (page_device) {
         case -1:
@@ -297,8 +298,10 @@ void
 gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
                         gx_device * target)
 {
-    gx_device_init((gx_device *)dev, (const gx_device *)&mem_mono_device,
-                   mem, true);
+    /* Can never fail */
+    (void)gx_device_init((gx_device *)dev,
+                         (const gx_device *)&mem_mono_device,
+                         mem, true);
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
     gx_device_set_target((gx_device_forward *)dev, target);
     dev->raster = gx_device_raster((gx_device *)dev, 1);

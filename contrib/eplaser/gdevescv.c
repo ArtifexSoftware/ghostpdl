@@ -118,60 +118,47 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
                                 ESCPAGE_RIGHT_MARGIN_DEFAULT,\
                                 ESCPAGE_TOP_MARGIN_DEFAULT)
 
-#define escv_procs_part1 \
-        escv_open,				/* open_device */\
-        gx_default_get_initial_matrix,		/* get_initial_matrix */\
-        NULL,					/* sync_output */\
-        escv_output_page,			/* output_page */\
-        escv_close				/* close_device */
+static int
+esc_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, escv_open);
+    set_dev_proc(dev, output_page, escv_output_page);
+    set_dev_proc(dev, close_device, escv_close);
+    set_dev_proc(dev, fill_rectangle, gdev_vector_fill_rectangle);
+    set_dev_proc(dev, copy_mono, escv_copy_mono);
+    set_dev_proc(dev, copy_color, escv_copy_color);
+    set_dev_proc(dev, get_params, escv_get_params);
+    set_dev_proc(dev, put_params, escv_put_params);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, fill_path, gdev_vector_fill_path);
+    set_dev_proc(dev, stroke_path, gdev_vector_stroke_path);
+    set_dev_proc(dev, fill_mask, escv_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, gdev_vector_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
+    set_dev_proc(dev, begin_image, escv_begin_image);
 
-#define escv_procs_part2 \
-        gdev_vector_fill_rectangle,		/* fill_rectangle */\
-        NULL,					/* tile_rectangle */\
-        escv_copy_mono,				/* dev_t_proc_copy_mono */\
-        escv_copy_color,			/* dev_t_proc_copy_color */\
-        NULL,					/* draw_line */\
-        NULL,					/* get_bits */\
-        escv_get_params,			/* dev_t_proc_get_params */\
-        escv_put_params,			/* dev_t_proc_put_params */\
-        NULL,					/* map_cmyk_color */\
-        NULL,					/* get_xfont_procs */\
-        NULL,					/* get_xfont_device */\
-        NULL,					/* map_rgb_alpha_color */\
-        gx_page_device_get_page_device,		/* dev_t_proc_get_page_device */\
-        NULL,					/* get_alpha_bits */\
-        NULL,					/* copy_alpha */\
-        NULL,					/* get_band */\
-        NULL,					/* copy_rop */\
-        gdev_vector_fill_path,			/* fill_path */\
-        gdev_vector_stroke_path,		/* stroke_path */\
-        escv_fill_mask,				/* fill_mask */\
-        gdev_vector_fill_trapezoid,		/* fill_trapezoid */\
-        gdev_vector_fill_parallelogram,		/* fill_parallelogram */\
-        gdev_vector_fill_triangle,		/* fill_triangle */\
-        NULL,	/****** WRONG ******/		/* draw_thin_line */\
-        escv_begin_image,			/* begin_image */\
-        NULL,					/* image_data */\
-        NULL,					/* end_image */\
-        NULL,					/* strip_tile_rectangle */\
-        NULL					/******strip_copy_rop******/
+    return 0;
+}
 
 /* for ESC/Page-Color */
-#define escv_procs	\
-{\
-        escv_procs_part1,\
-        gx_default_rgb_map_rgb_color, /* map_rgb_color */\
-        gx_default_rgb_map_color_rgb, /* map_color_rgb */\
-        escv_procs_part2\
+static int
+escv_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
+
+    return esc_initialize(dev);
 }
 
 /* for ESC/Page (Monochrome) */
-#define esmv_procs	\
-{\
-        escv_procs_part1,\
-        gx_default_gray_map_rgb_color, /* map_rgb_color */\
-        gx_default_gray_map_color_rgb, /* map_color_rgb */\
-        escv_procs_part2\
+static int
+esmv_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, map_rgb_color, gx_default_gray_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_gray_map_color_rgb);
+
+    return esc_initialize(dev);
 }
 
 #define	escv_init_code_common \
@@ -245,60 +232,60 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
         escv_init_code_common
 
 /* for ESC/Page (Monochrome) */
-gx_device_escv far_data gs_epl2050_device ={esmv_device_body("epl2050"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_epl2050p_device={esmv_device_body("epl2050p"),esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_epl2120_device ={esmv_device_body("epl2120"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_epl2500_device ={esmv_device_body("epl2500"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_epl2750_device ={esmv_device_body("epl2750"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_epl5800_device ={esmv_device_body("epl5800"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_epl5900_device ={esmv_device_body("epl5900"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_epl6100_device ={esmv_device_body("epl6100"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_epl6200_device ={esmv_device_body("epl6200"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp1800_device  ={esmv_device_body("lp1800"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp1900_device  ={esmv_device_body("lp1900"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp2200_device  ={esmv_device_body("lp2200"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp2400_device  ={esmv_device_body("lp2400"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp2500_device  ={esmv_device_body("lp2500"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp7500_device  ={esmv_device_body("lp7500"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp7700_device  ={esmv_device_body("lp7700"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp7900_device  ={esmv_device_body("lp7900"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp8100_device  ={esmv_device_body("lp8100"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp8300f_device ={esmv_device_body("lp8300f"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp8400f_device ={esmv_device_body("lp8400f"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp8600_device  ={esmv_device_body("lp8600"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp8600f_device ={esmv_device_body("lp8600f"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp8700_device  ={esmv_device_body("lp8700"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp8900_device  ={esmv_device_body("lp8900"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp9000b_device ={esmv_device_body("lp9000b"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp9100_device  ={esmv_device_body("lp9100"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp9200b_device ={esmv_device_body("lp9200b"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp9300_device  ={esmv_device_body("lp9300"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp9400_device  ={esmv_device_body("lp9400"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp9600_device  ={esmv_device_body("lp9600"),  esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lp9600s_device ={esmv_device_body("lp9600s"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_lps4500_device ={esmv_device_body("lps4500"), esmv_procs, esmv_init_code};
-gx_device_escv far_data gs_eplmono_device ={esmv_device_body(ESCPAGE_DEVICENAME_MONO), esmv_procs, esmv_init_code};
+gx_device_escv far_data gs_epl2050_device ={esmv_device_body("epl2050"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_epl2050p_device={esmv_device_body("epl2050p"),devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_epl2120_device ={esmv_device_body("epl2120"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_epl2500_device ={esmv_device_body("epl2500"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_epl2750_device ={esmv_device_body("epl2750"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_epl5800_device ={esmv_device_body("epl5800"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_epl5900_device ={esmv_device_body("epl5900"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_epl6100_device ={esmv_device_body("epl6100"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_epl6200_device ={esmv_device_body("epl6200"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp1800_device  ={esmv_device_body("lp1800"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp1900_device  ={esmv_device_body("lp1900"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp2200_device  ={esmv_device_body("lp2200"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp2400_device  ={esmv_device_body("lp2400"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp2500_device  ={esmv_device_body("lp2500"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp7500_device  ={esmv_device_body("lp7500"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp7700_device  ={esmv_device_body("lp7700"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp7900_device  ={esmv_device_body("lp7900"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp8100_device  ={esmv_device_body("lp8100"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp8300f_device ={esmv_device_body("lp8300f"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp8400f_device ={esmv_device_body("lp8400f"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp8600_device  ={esmv_device_body("lp8600"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp8600f_device ={esmv_device_body("lp8600f"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp8700_device  ={esmv_device_body("lp8700"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp8900_device  ={esmv_device_body("lp8900"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp9000b_device ={esmv_device_body("lp9000b"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp9100_device  ={esmv_device_body("lp9100"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp9200b_device ={esmv_device_body("lp9200b"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp9300_device  ={esmv_device_body("lp9300"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp9400_device  ={esmv_device_body("lp9400"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp9600_device  ={esmv_device_body("lp9600"),  devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lp9600s_device ={esmv_device_body("lp9600s"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_lps4500_device ={esmv_device_body("lps4500"), devprocs_initialize(esmv_initialize), esmv_init_code};
+gx_device_escv far_data gs_eplmono_device ={esmv_device_body(ESCPAGE_DEVICENAME_MONO), devprocs_initialize(esmv_initialize), esmv_init_code};
 
 /* for ESC/Page-Color */
-gx_device_escv far_data gs_alc1900_device ={escv_device_body("alc1900"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_alc2000_device ={escv_device_body("alc2000"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_alc4000_device ={escv_device_body("alc4000"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_alc4100_device ={escv_device_body("alc4100"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_alc8500_device ={escv_device_body("alc8500"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_alc8600_device ={escv_device_body("alc8600"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_alc9100_device ={escv_device_body("alc9100"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lp3000c_device ={escv_device_body("lp3000c"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lp8000c_device ={escv_device_body("lp8000c"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lp8200c_device ={escv_device_body("lp8200c"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lp8300c_device ={escv_device_body("lp8300c"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lp8500c_device ={escv_device_body("lp8500c"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lp8800c_device ={escv_device_body("lp8800c"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lp9000c_device ={escv_device_body("lp9000c"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lp9200c_device ={escv_device_body("lp9200c"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lp9500c_device ={escv_device_body("lp9500c"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lp9800c_device ={escv_device_body("lp9800c"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_lps6500_device ={escv_device_body("lps6500"), escv_procs, escv_init_code};
-gx_device_escv far_data gs_eplcolor_device ={escv_device_body(ESCPAGE_DEVICENAME_COLOR), escv_procs, escv_init_code};
+gx_device_escv far_data gs_alc1900_device ={escv_device_body("alc1900"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_alc2000_device ={escv_device_body("alc2000"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_alc4000_device ={escv_device_body("alc4000"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_alc4100_device ={escv_device_body("alc4100"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_alc8500_device ={escv_device_body("alc8500"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_alc8600_device ={escv_device_body("alc8600"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_alc9100_device ={escv_device_body("alc9100"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lp3000c_device ={escv_device_body("lp3000c"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lp8000c_device ={escv_device_body("lp8000c"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lp8200c_device ={escv_device_body("lp8200c"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lp8300c_device ={escv_device_body("lp8300c"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lp8500c_device ={escv_device_body("lp8500c"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lp8800c_device ={escv_device_body("lp8800c"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lp9000c_device ={escv_device_body("lp9000c"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lp9200c_device ={escv_device_body("lp9200c"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lp9500c_device ={escv_device_body("lp9500c"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lp9800c_device ={escv_device_body("lp9800c"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_lps6500_device ={escv_device_body("lps6500"), devprocs_initialize(escv_initialize), escv_init_code};
+gx_device_escv far_data gs_eplcolor_device ={escv_device_body(ESCPAGE_DEVICENAME_COLOR), devprocs_initialize(escv_initialize), escv_init_code};
 
 /* Vector device implementation */
 /* Page management */

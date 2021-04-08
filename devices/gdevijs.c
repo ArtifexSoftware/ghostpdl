@@ -100,52 +100,8 @@ static dev_proc_fill_mask(gsijs_fill_mask);
 static dev_proc_fill_path(gsijs_fill_path);
 static dev_proc_stroke_path(gsijs_stroke_path);
 
-static const gx_device_procs gsijs_procs = {
-        gsijs_open,
-        NULL,	/* get_initial_matrix */
-        NULL,	/* sync_output */
-        gsijs_output_page,
-        gsijs_close,
-        gx_default_rgb_map_rgb_color,
-        gx_default_rgb_map_color_rgb,
-        NULL,	/* fill_rectangle */
-        NULL,	/* tile_rectangle */
-        NULL,	/* copy_mono */
-        NULL,	/* copy_color */
-        NULL,	/* draw_line */
-        NULL,	/* get_bits */
-        gsijs_get_params,
-        gsijs_put_params,
-        NULL,	/* map_cmyk_color */
-        NULL,	/* get_xfont_procs */
-        NULL,	/* get_xfont_device */
-        NULL,	/* map_rgb_alpha_color */
-        gx_page_device_get_page_device,
-        NULL,	/* get_alpha_bits */
-        NULL,	/* copy_alpha */
-        NULL,	/* get_band */
-        NULL,	/* copy_rop */
-        NULL,	/* fill_path */
-        NULL,	/* stroke_path */
-        NULL,	/* fill_mask */
-        NULL,	/* fill_trapezoid */
-        NULL,	/* fill_parallelogram */
-        NULL,	/* fill_triangle */
-        NULL,	/* draw_thin_line */
-        NULL,	/* begin_image */
-        NULL,	/* image_data */
-        NULL,	/* end_image */
-        NULL,	/* strip_tile_rectangle */
-        NULL,	/* strip_copy_rop, */
-        NULL,	/* get_clipping_box */
-        NULL,	/* begin_typed_image */
-        NULL,	/* get_bits_rectangle */
-        NULL,	/* map_color_rgb_alpha */
-        NULL,	/* create_compositor */
-        NULL,	/* get_hardware_params */
-        NULL,	/* text_begin */
-        gsijs_initialize
-};
+static const gx_device_procs gsijs_procs =
+    devprocs_initialize(gsijs_initialize);
 
 typedef struct gx_device_ijs_s gx_device_ijs;
 
@@ -937,6 +893,14 @@ gsijs_initialize(gx_device *dev)
     code = gx_default_initialize(dev);
     if(code < 0)
         return code;
+
+    set_dev_proc(dev, open_device, gsijs_open);
+    set_dev_proc(dev, output_page, gsijs_output_page);
+    set_dev_proc(dev, close_device, gsijs_close);
+    set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
+    set_dev_proc(dev, get_params, gsijs_get_params);
+    set_dev_proc(dev, put_params, gsijs_put_params);
 
     if (!ijsdev->ColorSpace) {
         ijsdev->ColorSpace = gs_malloc(ijsdev->memory, sizeof(rgb), 1,

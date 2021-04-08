@@ -187,90 +187,6 @@ prn_dev_proc_get_space_params(gx_default_get_space_params);
 /* BACKWARD COMPATIBILITY */
 #define gdev_prn_default_get_space_params gx_default_get_space_params
 
-/* Macro for generating procedure table */
-#define prn_procs(p_open, p_output_page, p_close)\
-  prn_color_procs_enc_dec(p_open, p_output_page, p_close, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb)
-#define prn_params_procs(p_open, p_output_page, p_close, p_get_params, p_put_params)\
-  prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, p_get_params, p_put_params, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb)
-#define prn_color_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb)\
-  prn_color_params_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, gdev_prn_get_params, gdev_prn_put_params)
-#define prn_color_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_encode_color, p_decode_color)\
-  prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, gdev_prn_get_params, gdev_prn_put_params, p_encode_color, p_decode_color)
-/* See gdev_prn_open for explanation of the NULLs below. */
-#define prn_color_params_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params) \
-  prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params, NULL, NULL)
-#define prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params, p_encode_color, p_decode_color) {\
-        p_open,\
-        NULL,	/* get_initial_matrix */\
-        NULL,	/* sync_output */\
-        p_output_page,\
-        p_close,\
-        p_map_rgb_color,\
-        p_map_color_rgb,\
-        NULL,	/* fill_rectangle */\
-        NULL,	/* tile_rectangle */\
-        NULL,	/* copy_mono */\
-        NULL,	/* copy_color */\
-        NULL,	/* draw_line */\
-        NULL,	/* get_bits */\
-        p_get_params,\
-        p_put_params,\
-        NULL,	/* map_cmyk_color */\
-        NULL,	/* get_xfont_procs */\
-        NULL,	/* get_xfont_device */\
-        NULL,	/* map_rgb_alpha_color */\
-        gx_page_device_get_page_device,\
-        NULL,	/* get_alpha_bits */\
-        NULL,	/* copy_alpha */\
-        NULL,	/* get_band */\
-        NULL,	/* copy_rop */\
-        NULL,	/* fill_path */\
-        NULL,	/* stroke_path */\
-        NULL,	/* fill_mask */\
-        NULL,	/* fill_trapezoid */\
-        NULL,	/* fill_parallelogram */\
-        NULL,	/* fill_triangle */\
-        NULL,	/* draw_thin_line */\
-        NULL,	/* begin_image */\
-        NULL,	/* image_data */\
-        NULL,	/* end_image */\
-        NULL,	/* strip_tile_rectangle */\
-        NULL,	/* strip_copy_rop, */\
-        NULL,	/* get_clipping_box */\
-        NULL,	/* begin_typed_image */\
-        NULL,	/* get_bits_rectangle */\
-        NULL,	/* map_color_rgb_alpha */\
-        NULL,	/* create_compositor */\
-        NULL,	/* get_hardware_params */\
-        NULL,	/* text_begin */\
-        NULL,	/* initialize */\
-        NULL,	/* begin_transparency_group */\
-        NULL,	/* end_transparency_group */\
-        NULL,	/* begin_transparency_mask */\
-        NULL,	/* end_transparency_mask */\
-        NULL,	/* discard_transparency_layer */\
-        NULL,  /* get_color_mapping_procs */\
-        NULL,  /* get_color_comp_index */\
-        p_encode_color,	/* encode_color */\
-        p_decode_color,	/* decode_color */\
-        NULL,  /* pattern_manage */\
-        NULL,  /* fill_rectangle_hl_color */\
-        NULL,  /* include_color_space */\
-        NULL,  /* fill_linear_color_scanline */\
-        NULL,  /* fill_linear_color_trapezoid */\
-        NULL,  /* fill_linear_color_triangle */\
-        NULL,  /* update_spot_equivalent_colors */\
-        NULL,  /* ret_devn_params */\
-        NULL,  /* fillpage */\
-        NULL,  /* push_transparency_state */\
-        NULL,  /* pop_transparency_state */\
-        NULL,  /* put_image */\
-        gdev_prn_dev_spec_op,  /* dev_spec_op */\
-        NULL,  /* copy plane */\
-        gx_default_get_profile, /* get_profile */\
-        gx_default_set_graphics_type_tag /* set_graphics_type_tag */\
-}
-
 /* The standard printer device procedures */
 /* (using gdev_prn_open/output_page/close). */
 extern const gx_device_procs prn_std_procs;
@@ -593,5 +509,21 @@ int gdev_create_buf_device(create_buf_device_proc_t cbd_proc,
 #define gdev_prn_transpose_8x8(inp,ils,outp,ols)\
   memflip8x8(inp,ils,outp,ols)
 
+int gdev_prn_initialize(gx_device *dev);
+int gdev_prn_initialize_bg(gx_device *dev);
+int gdev_prn_initialize_mono(gx_device *dev);
+int gdev_prn_initialize_mono_bg(gx_device *dev);
+int gdev_prn_initialize_rgb(gx_device *dev);
+int gdev_prn_initialize_rgb_bg(gx_device *dev);
+int gdev_prn_initialize_gray(gx_device *dev);
+int gdev_prn_initialize_gray_bg(gx_device *dev);
+int gdev_prn_initialize_gray8(gx_device *dev);
+int gdev_prn_initialize_gray8_bg(gx_device *dev);
+int gdev_prn_initialize_cmyk1(gx_device *dev);
+int gdev_prn_initialize_cmyk1_bg(gx_device *dev);
+int gdev_prn_initialize_cmyk8(gx_device *dev);
+int gdev_prn_initialize_cmyk8_bg(gx_device *dev);
+int gdev_prn_initialize_cmyk16(gx_device *dev);
+int gdev_prn_initialize_cmyk16_bg(gx_device *dev);
 
 #endif /* gdevprn_INCLUDED */

@@ -42,8 +42,22 @@ static dev_proc_close_device(ljet5_close);
 static dev_proc_print_page(ljet5_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
+static int
+ljet5_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, ljet5_open);
+    set_dev_proc(dev, close_device, ljet5_close);
+
+    return 0;
+}
+
 static const gx_device_procs ljet5_procs =
-prn_procs(ljet5_open, gdev_prn_bg_output_page, ljet5_close);
+    devprocs_initialize(ljet5_initialize);
 
 const gx_device_printer gs_lj5mono_device =
 prn_device(ljet5_procs, "lj5mono",
@@ -53,10 +67,22 @@ prn_device(ljet5_procs, "lj5mono",
            1, ljet5_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
+static int
+lj5gray_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, ljet5_open);
+    set_dev_proc(dev, close_device, ljet5_close);
+
+    return 0;
+}
+
 static const gx_device_procs lj5gray_procs =
-prn_color_procs(ljet5_open, gdev_prn_bg_output_page, ljet5_close,
-                gx_default_gray_map_rgb_color,
-                gx_default_gray_map_color_rgb);
+    devprocs_initialize(lj5gray_initialize);
 
 const gx_device_printer gs_lj5gray_device = {
     prn_device_body(gx_device_printer, lj5gray_procs, "lj5gray",

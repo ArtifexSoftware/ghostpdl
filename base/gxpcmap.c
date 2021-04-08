@@ -101,97 +101,65 @@ static dev_proc_fill_rectangle_hl_color(pattern_accum_fill_rectangle_hl_color);
 dev_proc_dev_spec_op(pattern_accum_dev_spec_op);
 
 /* The device descriptor */
+static int
+pattern_accum_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, pattern_accum_open);
+    set_dev_proc(dev, close_device, pattern_accum_close);
+    set_dev_proc(dev, fill_rectangle, pattern_accum_fill_rectangle);
+    set_dev_proc(dev, copy_mono, pattern_accum_copy_mono);
+    set_dev_proc(dev, copy_color, pattern_accum_copy_color);
+    set_dev_proc(dev, get_clipping_box, gx_get_largest_clipping_box);
+    set_dev_proc(dev, get_bits_rectangle, pattern_accum_get_bits_rectangle);
+    set_dev_proc(dev, fill_rectangle_hl_color, pattern_accum_fill_rectangle_hl_color);
+    set_dev_proc(dev, dev_spec_op, pattern_accum_dev_spec_op);
+    set_dev_proc(dev, copy_planes, pattern_accum_copy_planes);
+
+    /* It would be much nicer if gx_device_init set the following
+     * defaults for us, but that doesn't work for some reason. */
+    set_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
+    set_dev_proc(dev, get_bits, gx_default_get_bits);
+    set_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
+    set_dev_proc(dev, copy_rop, gx_default_copy_rop);
+    set_dev_proc(dev, fill_path, gx_default_fill_path);
+    set_dev_proc(dev, stroke_path, gx_default_stroke_path);
+    set_dev_proc(dev, fill_mask, gx_default_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, gx_default_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
+    set_dev_proc(dev, begin_image, gx_default_begin_image);
+    set_dev_proc(dev, image_data, gx_default_image_data);
+    set_dev_proc(dev, end_image, gx_default_end_image);
+    set_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
+    set_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
+    set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
+    set_dev_proc(dev, create_compositor, gx_default_create_compositor);
+    set_dev_proc(dev, text_begin, gx_default_text_begin);
+    set_dev_proc(dev, strip_copy_rop2, gx_default_strip_copy_rop2);
+    set_dev_proc(dev, strip_tile_rect_devn, gx_default_strip_tile_rect_devn);
+    set_dev_proc(dev, transform_pixel_region, gx_default_transform_pixel_region);
+    set_dev_proc(dev, fill_stroke_path, gx_default_fill_stroke_path);
+
+    return 0;
+}
+
 static const gx_device_pattern_accum gs_pattern_accum_device =
 {std_device_std_body_type_open(gx_device_pattern_accum, 0,
                           "pattern accumulator", &st_device_pattern_accum,
                           0, 0, 72, 72),
- {
-     /* NOTE: all drawing procedures must be defaulted, not forwarded. */
-     pattern_accum_open,
-     NULL,                              /* get_initial_matrix */
-     NULL,                              /* sync_output */
-     NULL,                              /* output_page */
-     pattern_accum_close,
-     NULL,                              /* map_rgb_color */
-     NULL,                              /* map_color_rgb */
-     pattern_accum_fill_rectangle,
-     gx_default_tile_rectangle,
-     pattern_accum_copy_mono,
-     pattern_accum_copy_color,
-     NULL,                              /* obselete_draw_line */
-     gx_default_get_bits,
-     NULL,                              /* get_params */
-     NULL,                              /* put_params */
-     NULL,                              /* map_cmyk_color */
-     NULL,                              /* get_xfont_procs */
-     NULL,                              /* get_xfont_device */
-     NULL,                              /* map_rgb_alpha_color */
-     NULL,                              /* get_page_device */
-     NULL,                              /* get_alpha_bits */
-     gx_default_copy_alpha,
-     NULL,                              /* get_band */
-     gx_default_copy_rop,
-     gx_default_fill_path,
-     gx_default_stroke_path,
-     gx_default_fill_mask,
-     gx_default_fill_trapezoid,
-     gx_default_fill_parallelogram,
-     gx_default_fill_triangle,
-     gx_default_draw_thin_line,
-     gx_default_begin_image,
-     gx_default_image_data,
-     gx_default_end_image,
-     gx_default_strip_tile_rectangle,
-     gx_default_strip_copy_rop,
-     gx_get_largest_clipping_box,
-     gx_default_begin_typed_image,
-     pattern_accum_get_bits_rectangle,
-     NULL,                              /* map_color_rgb_alpha */
-     gx_default_create_compositor,
-     NULL,                              /* create_compositor */
-     gx_default_text_begin,
-     gx_default_initialize,
-     NULL,                              /* begin_transparency_group */
-     NULL,                              /* end_transparency_group */
-     NULL,                              /* begin_transparency_mask */
-     NULL,                              /* end_transparency_mask */
-     NULL,                              /* discard_transparency_layer */
-     NULL,                              /* get_color_mapping_procs */
-     NULL,                              /* get_color_comp_index */
-     NULL,                              /* encode_color */
-     NULL,                              /* decode_color */
-     NULL,                              /* pattern_manage */
-     pattern_accum_fill_rectangle_hl_color, /* fill_rectangle_hl_color */
-     NULL,                              /* include_color_space */
-     NULL,                              /* fill_linear_color_scanline */
-     NULL,                              /* fill_linear_color_trapezoid */
-     NULL,                              /* fill_linear_color_triangle */
-     NULL,                              /* update_spot_equivalent_colors */
-     NULL,                              /* ret_devn_params */
-     NULL,                              /* fillpage */
-     NULL,                              /* push_transparency_state */
-     NULL,                              /* pop_transparency_state */
-     NULL,                              /* put_image */
-     pattern_accum_dev_spec_op,         /* dev_spec_op */
-     pattern_accum_copy_planes,         /* copy_planes */
-     NULL,                              /* get_profile */
-     NULL,                              /* set_graphics_type_tag */
-     gx_default_strip_copy_rop2,
-     gx_default_strip_tile_rect_devn,
-     NULL,                              /* alpha_hl_color */
-     NULL,                              /* process_page */
-     gx_default_transform_pixel_region, /* NOT the default forwarding one */
-     gx_default_fill_stroke_path,
-},
+ devprocs_initialize(pattern_accum_initialize),
  0,                             /* target */
  0, 0, 0, 0                     /* bitmap_memory, bits, mask, instance */
 };
+
+extern dev_proc_open_device(clist_open);
 
 int
 pattern_clist_open_device(gx_device *dev)
 {
     /* This function is defiled only for clist_init_bands. */
-    return gs_clist_device_procs.open_device(dev);
+    return clist_open(dev);
 }
 
 static dev_proc_create_buf_device(dummy_create_buf_device)
@@ -296,9 +264,9 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
             emprintf(mem, "not using clist even though clist is requested\n");
 #endif
         pinst->is_clist = false;
-        gx_device_init((gx_device *)adev,
-                       (const gx_device *)&gs_pattern_accum_device,
-                       mem, true);
+        (void)gx_device_init((gx_device *)adev,
+                             (const gx_device *)&gs_pattern_accum_device,
+                             mem, true);
         adev->instance = pinst;
         adev->bitmap_memory = storage_memory;
         fdev = (gx_device_forward *)adev;

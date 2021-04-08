@@ -55,80 +55,25 @@ RELOC_PTRS_WITH(device_cpath_accum_reloc_ptrs, gx_device_cpath_accum *pdev)
 public_st_device_cpath_accum();
 
 /* The device descriptor */
+static int
+cpath_accum_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, accum_open_device);
+    set_dev_proc(dev, close_device, accum_close);
+    set_dev_proc(dev, fill_rectangle, accum_fill_rectangle);
+    set_dev_proc(dev, get_clipping_box, accum_get_clipping_box);
+    set_dev_proc(dev, get_color_mapping_procs, gx_default_DevGray_get_color_mapping_procs);
+    set_dev_proc(dev, dev_spec_op, accum_dev_spec_op);
+
+    return 0;
+}
+
+
 /* Many of these procedures won't be called; they are set to NULL. */
 static const gx_device_cpath_accum gs_cpath_accum_device =
 {std_device_std_body(gx_device_cpath_accum, 0, "clip list accumulator",
                      0, 0, 1, 1),
- {accum_open_device,
-  NULL,
-  NULL,
-  NULL,
-  accum_close,
-  NULL,
-  NULL,
-  accum_fill_rectangle,
-  NULL,
-  gx_default_copy_mono,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  gx_default_fill_path,
-  gx_default_stroke_path,
-  gx_default_fill_mask,
-  gx_default_fill_trapezoid,
-  gx_default_fill_parallelogram,
-  gx_default_fill_triangle,
-  gx_default_draw_thin_line,
-  gx_default_begin_image,
-  gx_default_image_data,
-  gx_default_end_image,
-  NULL,
-  NULL,
-  accum_get_clipping_box,
-  gx_default_begin_typed_image,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  gx_default_text_begin,
-  NULL, /* initialize */
-  NULL,	/* begin_transparency_group */
-  NULL,	/* end_transparency_group */
-  NULL,	/* begin_transparency_mask */
-  NULL,	/* end_transparency_mask */
-  NULL,	/* discard_transparency_layer */
-  gx_default_DevGray_get_color_mapping_procs,
-  NULL, /* get_color_comp_index */
-  NULL,	/* encode_color */
-  NULL,	/* decode_color */
-  NULL, /* pattern_manage */
-  NULL, /* fill_rectangle_hl_color */
-  NULL, /* ics */
-  NULL, /* fill_lin_tri */
-  NULL, /* fill_lin_tri */
-  NULL, /* fill_lin_tri */
-  NULL, /* up_spot_eq_col */
-  NULL, /* ret_dev */
-  NULL, /* fillpage */
-  NULL, /* push_transparency_state */
-  NULL, /* pop_transparency_state */
-  NULL, /* put_image */
-  accum_dev_spec_op,
-  NULL, /* copy_planes */
-  NULL, /* get_profile */
-  gx_default_set_graphics_type_tag
- }
+ devprocs_initialize(cpath_accum_initialize)
 };
 
 /* Start accumulating a clipping path. */

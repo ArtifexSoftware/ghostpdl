@@ -147,10 +147,26 @@ static dev_proc_put_params(win_pr2_put_params);
 
 static int win_pr2_set_bpp(gx_device * dev, int depth);
 
+static int
+win_pr2_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, win_pr2_open);
+    set_dev_proc(dev, close_device, win_pr2_close);
+    set_dev_proc(dev, map_rgb_color, win_pr2_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, win_pr2_map_color_rgb);
+    set_dev_proc(dev, get_params, win_pr2_get_params);
+    set_dev_proc(dev, put_params, win_pr2_put_params);
+
+    return 0;
+}
+
 static const gx_device_procs win_pr2_procs =
-prn_color_params_procs(win_pr2_open, gdev_prn_output_page, win_pr2_close,
-                       win_pr2_map_rgb_color, win_pr2_map_color_rgb,
-                       win_pr2_get_params, win_pr2_put_params);
+    devprocs_initialize(win_pr2_initialize);
 
 #define PARENT_WINDOW  HWND_DESKTOP
 BOOL CALLBACK CancelDlgProc(HWND, UINT, WPARAM, LPARAM);

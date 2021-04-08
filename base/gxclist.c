@@ -120,95 +120,79 @@ private_st_clist_icctable();
 /* Forward declarations of driver procedures */
 dev_proc_open_device(clist_open);
 dev_proc_output_page(clist_output_page);
-static dev_proc_close_device(clist_close);
+dev_proc_close_device(clist_close);
 static dev_proc_get_band(clist_get_band);
 /* Driver procedures defined in other files are declared in gxcldev.h. */
 
 /* Other forward declarations */
 static int clist_put_current_params(gx_device_clist_writer *cldev);
 
+static int
+clist_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, clist_open);
+    set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
+    set_dev_proc(dev, sync_output, gx_default_sync_output);
+    set_dev_proc(dev, output_page, clist_output_page);
+    set_dev_proc(dev, close_device, clist_close);
+    set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, clist_fill_rectangle);
+    set_dev_proc(dev, copy_mono, clist_copy_mono);
+    set_dev_proc(dev, copy_color, clist_copy_color);
+    set_dev_proc(dev, get_params, gx_forward_get_params);
+    set_dev_proc(dev, put_params, gx_forward_put_params);
+    set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
+    set_dev_proc(dev, get_xfont_procs, gx_forward_get_xfont_procs);
+    set_dev_proc(dev, get_xfont_device, gx_forward_get_xfont_device);
+    set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
+    set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
+    set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
+    set_dev_proc(dev, copy_alpha, clist_copy_alpha);
+    set_dev_proc(dev, get_band, clist_get_band);
+    set_dev_proc(dev, copy_rop, gx_default_copy_rop);
+    set_dev_proc(dev, fill_path, clist_fill_path);
+    set_dev_proc(dev, stroke_path, clist_stroke_path);
+    set_dev_proc(dev, fill_mask, clist_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, clist_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, clist_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, clist_fill_triangle);
+    set_dev_proc(dev, strip_tile_rectangle, clist_strip_tile_rectangle);
+    set_dev_proc(dev, strip_copy_rop, clist_strip_copy_rop);
+    set_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
+    set_dev_proc(dev, begin_typed_image, clist_begin_typed_image);
+    set_dev_proc(dev, get_bits_rectangle, clist_get_bits_rectangle);
+    set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
+    set_dev_proc(dev, create_compositor, clist_create_compositor);
+    set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
+    set_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
+    set_dev_proc(dev, encode_color, gx_forward_encode_color);
+    set_dev_proc(dev, decode_color, gx_forward_decode_color);
+    set_dev_proc(dev, fill_rectangle_hl_color, clist_fill_rectangle_hl_color);
+    set_dev_proc(dev, fill_linear_color_trapezoid, clist_fill_linear_color_trapezoid);
+    set_dev_proc(dev, fill_linear_color_triangle, clist_fill_linear_color_triangle);
+    set_dev_proc(dev, update_spot_equivalent_colors, gx_forward_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
+    set_dev_proc(dev, fillpage, clist_fillpage);
+    set_dev_proc(dev, dev_spec_op, clist_dev_spec_op);
+    set_dev_proc(dev, copy_planes, clist_copy_planes);
+    set_dev_proc(dev, strip_copy_rop2, clist_strip_copy_rop2);
+    set_dev_proc(dev, strip_tile_rect_devn, clist_strip_tile_rect_devn);
+    set_dev_proc(dev, copy_alpha_hl_color, clist_copy_alpha_hl_color);
+    set_dev_proc(dev, process_page, clist_process_page);
+    set_dev_proc(dev, fill_stroke_path, clist_fill_stroke_path);
+
+    return 0;
+}
+
 /* The device procedures */
-const gx_device_procs gs_clist_device_procs = {
-    clist_open,
-    gx_forward_get_initial_matrix,
-    gx_default_sync_output,
-    clist_output_page,
-    clist_close,
-    gx_forward_map_rgb_color,
-    gx_forward_map_color_rgb,
-    clist_fill_rectangle,
-    gx_default_tile_rectangle,
-    clist_copy_mono,
-    clist_copy_color,
-    gx_default_draw_line,
-    gx_default_get_bits,
-    gx_forward_get_params,
-    gx_forward_put_params,
-    gx_forward_map_cmyk_color,
-    gx_forward_get_xfont_procs,
-    gx_forward_get_xfont_device,
-    gx_forward_map_rgb_alpha_color,
-    gx_forward_get_page_device,
-    gx_forward_get_alpha_bits,
-    clist_copy_alpha,
-    clist_get_band,
-    gx_default_copy_rop,
-    clist_fill_path,
-    clist_stroke_path,
-    clist_fill_mask,
-    clist_fill_trapezoid,
-    clist_fill_parallelogram,
-    clist_fill_triangle,
-    gx_default_draw_thin_line,
-    gx_default_begin_image,
-    gx_default_image_data,
-    gx_default_end_image,
-    clist_strip_tile_rectangle,
-    clist_strip_copy_rop,
-    gx_forward_get_clipping_box,
-    clist_begin_typed_image,
-    clist_get_bits_rectangle,
-    gx_forward_map_color_rgb_alpha,
-    clist_create_compositor,
-    gx_forward_get_hardware_params,
-    gx_default_text_begin,
-    NULL, /* initialize */
-    gx_default_begin_transparency_group,                       /* begin_transparency_group */
-    gx_default_end_transparency_group,                       /* end_transparency_group */
-    gx_default_begin_transparency_mask,                       /* begin_transparency_mask */
-    gx_default_end_transparency_mask,                       /* end_transparency_mask */
-    gx_default_discard_transparency_layer,                       /* discard_transparency_layer */
-    gx_forward_get_color_mapping_procs,
-    gx_forward_get_color_comp_index,
-    gx_forward_encode_color,
-    gx_forward_decode_color,
-    gx_default_pattern_manage,                       /* pattern_manage */
-    clist_fill_rectangle_hl_color,
-    gx_default_include_color_space,
-    gx_default_fill_linear_color_scanline,
-    clist_fill_linear_color_trapezoid,
-    clist_fill_linear_color_triangle,
-    gx_forward_update_spot_equivalent_colors,
-    gx_forward_ret_devn_params,
-    clist_fillpage,
-    gx_default_push_transparency_state,                      /* push_transparency_state */
-    gx_default_pop_transparency_state,                      /* pop_transparency_state */
-    gx_default_put_image,                      /* put_image */
-    clist_dev_spec_op,
-    clist_copy_planes,         /* copy planes */
-    gx_default_get_profile,
-    gx_default_set_graphics_type_tag,
-    clist_strip_copy_rop2,
-    clist_strip_tile_rect_devn,
-    clist_copy_alpha_hl_color,
-    clist_process_page,
-    gx_default_transform_pixel_region,
-    clist_fill_stroke_path,
-};
+const gx_device_procs gs_clist_device_procs =
+    devprocs_initialize(clist_initialize);
 
 /*------------------- Choose the implementation -----------------------
 
-   For chossing the clist i/o implementation by makefile options
+   For choosing the clist i/o implementation by makefile options
    we define global variables, which are initialized with
    file/memory io procs when they are included into the build.
  */
@@ -741,7 +725,7 @@ errxit:
     return code;
 }
 
-static int
+int
 clist_close(gx_device *dev)
 {
     int i;
@@ -1414,6 +1398,9 @@ clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, 
         cwdev->UseCIEColor = target->UseCIEColor;
         cwdev->LockSafetyParams = true;
         cwdev->procs = gs_clist_device_procs;
+        /* Hacky - we know this can't fail. */
+        (void)cwdev->procs.initialize((gx_device *)cwdev);
+        gx_device_fill_in_procs((gx_device *)cwdev);
         gx_device_copy_color_params((gx_device *)cwdev, target);
         rc_assign(cwdev->target, target, "clist_make_accum_device");
         clist_init_io_procs(cdev, use_memory_clist);
@@ -1550,7 +1537,7 @@ open_c:
                       pdev->clist_disable_mask,
                       pdev->page_uses_transparency,
                       pdev->page_uses_overprint);
-    code = (*gs_clist_device_procs.open_device)( (gx_device *)pcldev );
+    code = clist_open( (gx_device *)pcldev );
     if (code < 0) {
         /* If there wasn't enough room, and we haven't */
         /* already shrunk the buffer, try enlarging it. */

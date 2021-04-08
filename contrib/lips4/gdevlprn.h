@@ -114,9 +114,6 @@
        lp_duplex_device_body_rest_(print_page_copies, image_out)\
 }
 
-#define lprn_procs(p_open, p_output_page, p_close)\
-  prn_params_procs(p_open, p_output_page, p_close, lprn_get_params, lprn_put_params)
-
 typedef struct _Bubble
 {
     struct _Bubble *next;

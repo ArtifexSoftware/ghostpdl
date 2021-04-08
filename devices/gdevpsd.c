@@ -148,77 +148,28 @@ gs_private_st_composite_final(st_psd_device, psd_device,
     "psd_device", psd_device_enum_ptrs, psd_device_reloc_ptrs,
     psd_device_finalize);
 
-/*
- * Macro definition for psd device procedures
- */
-#define device_procs(get_color_mapping_procs, params)\
-{	psd_prn_open,\
-        gx_default_get_initial_matrix,\
-        NULL,				/* sync_output */\
-        /* Since the print_page doesn't alter the device, this device can print in the background */\
-        gdev_prn_bg_output_page,		/* output_page */\
-        psd_prn_close,			/* close */\
-        NULL,				/* map_rgb_color - not used */\
-        psd_map_color_rgb,		/* map_color_rgb */\
-        NULL,				/* fill_rectangle */\
-        NULL,				/* tile_rectangle */\
-        NULL,				/* copy_mono */\
-        NULL,				/* copy_color */\
-        NULL,				/* draw_line */\
-        NULL,				/* get_bits */\
-        psd_get_##params,		/* get_params */\
-        psd_put_##params,		/* put_params */\
-        NULL,				/* map_cmyk_color - not used */\
-        NULL,				/* get_xfont_procs */\
-        NULL,				/* get_xfont_device */\
-        NULL,				/* map_rgb_alpha_color */\
-        gx_page_device_get_page_device,	/* get_page_device */\
-        NULL,				/* get_alpha_bits */\
-        NULL,				/* copy_alpha */\
-        NULL,				/* get_band */\
-        NULL,				/* copy_rop */\
-        NULL,				/* fill_path */\
-        NULL,				/* stroke_path */\
-        NULL,				/* fill_mask */\
-        NULL,				/* fill_trapezoid */\
-        NULL,				/* fill_parallelogram */\
-        NULL,				/* fill_triangle */\
-        NULL,				/* draw_thin_line */\
-        NULL,				/* begin_image */\
-        NULL,				/* image_data */\
-        NULL,				/* end_image */\
-        NULL,				/* strip_tile_rectangle */\
-        NULL,				/* strip_copy_rop */\
-        NULL,				/* get_clipping_box */\
-        NULL,				/* begin_typed_image */\
-        NULL,				/* get_bits_rectangle */\
-        NULL,				/* map_color_rgb_alpha */\
-        NULL,				/* create_compositor */\
-        NULL,				/* get_hardware_params */\
-        NULL,				/* text_begin */\
-        NULL,				/* initialize */\
-        NULL,				/* begin_transparency_group */\
-        NULL,				/* end_transparency_group */\
-        NULL,				/* begin_transparency_mask */\
-        NULL,				/* end_transparency_mask */\
-        NULL,				/* discard_transparency_layer */\
-        get_color_mapping_procs,	/* get_color_mapping_procs */\
-        psd_get_color_comp_index,	/* get_color_comp_index */\
-        gx_devn_prn_encode_color,	/* encode_color */\
-        gx_devn_prn_decode_color,	/* decode_color */\
-        NULL,				/* pattern_manage */\
-        NULL,				/* fill_rectangle_hl_color */\
-        NULL,				/* include_color_space */\
-        NULL,				/* fill_linear_color_scanline */\
-        NULL,				/* fill_linear_color_trapezoid */\
-        NULL,				/* fill_linear_color_triangle */\
-        gx_devn_prn_update_spot_equivalent_colors, /* update_spot_equivalent_colors */\
-        gx_devn_prn_ret_devn_params, /* ret_devn_params */\
-        NULL,                       /* fillpage */\
-        NULL,                       /* push_transparency_state */\
-        NULL,                       /* pop_transparency_state */\
-        NULL,                       /* put_image */\
-        psd_spec_op                 /* dev_spec_op */\
+static int
+psd_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, psd_prn_open);
+    set_dev_proc(dev, close_device, psd_prn_close);
+    set_dev_proc(dev, map_color_rgb, psd_map_color_rgb);
+    set_dev_proc(dev, get_params, psd_get_params);
+    set_dev_proc(dev, put_params, psd_put_params);
+    set_dev_proc(dev, get_color_mapping_procs, get_psdrgb_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, psd_get_color_comp_index);
+    set_dev_proc(dev, encode_color, gx_devn_prn_encode_color);
+    set_dev_proc(dev, decode_color, gx_devn_prn_decode_color);
+    set_dev_proc(dev, update_spot_equivalent_colors, gx_devn_prn_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, gx_devn_prn_ret_devn_params);
+    set_dev_proc(dev, dev_spec_op, psd_spec_op);
+
+    return 0;
 }
 
 #define psd_device_body(procs, dname, ncomp, pol, depth, mg, mc, sl, cn)\
@@ -244,7 +195,7 @@ gs_private_st_composite_final(st_psd_device, psd_device,
  * PSD device with RGB process color model.
  */
 static const gx_device_procs spot_rgb_procs =
-    device_procs(get_psdrgb_color_mapping_procs, params);
+    devprocs_initialize(psd_initialize);
 
 const psd_device gs_psdrgb_device =
 {
@@ -291,8 +242,22 @@ const psd_device gs_psdrgb16_device =
 /*
  * PSD device with CMYK process color model and spot color support.
  */
-static const gx_device_procs spot_cmyk_procs
-        = device_procs(get_psd_color_mapping_procs, params_cmyk);
+static int
+psdcmyk_initialize(gx_device *dev)
+{
+    int code = psd_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, psd_get_params_cmyk);
+    set_dev_proc(dev, put_params, psd_put_params_cmyk);
+    set_dev_proc(dev, get_color_mapping_procs, get_psd_color_mapping_procs);
+
+    return 0;
+}
+static const gx_device_procs spot_cmyk_procs =
+    devprocs_initialize(psdcmyk_initialize);
 
 const psd_device gs_psdcmyk_device =
 {

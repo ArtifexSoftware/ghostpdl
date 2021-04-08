@@ -50,85 +50,82 @@ static dev_proc_transform_pixel_region(clip_transform_pixel_region);
 static dev_proc_fill_stroke_path(clip_fill_stroke_path);
 
 /* The device descriptor. */
+static int
+clipper_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, clip_open);
+    set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
+    set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, clip_fill_rectangle);
+    set_dev_proc(dev, copy_mono, clip_copy_mono);
+    set_dev_proc(dev, copy_color, clip_copy_color);
+    set_dev_proc(dev, get_params, gx_forward_get_params);
+    set_dev_proc(dev, put_params, gx_forward_put_params);
+    set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
+    set_dev_proc(dev, get_xfont_procs, gx_forward_get_xfont_procs);
+    set_dev_proc(dev, get_xfont_device, gx_forward_get_xfont_device);
+    set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
+    set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
+    set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
+    set_dev_proc(dev, copy_alpha, clip_copy_alpha);
+    set_dev_proc(dev, get_band, gx_forward_get_band);
+    set_dev_proc(dev, fill_path, clip_fill_path);
+    set_dev_proc(dev, fill_mask, clip_fill_mask);
+    set_dev_proc(dev, strip_tile_rectangle, clip_strip_tile_rectangle);
+    set_dev_proc(dev, strip_copy_rop, clip_strip_copy_rop);
+    set_dev_proc(dev, get_clipping_box, clip_get_clipping_box);
+    set_dev_proc(dev, get_bits_rectangle, clip_get_bits_rectangle);
+    set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
+    set_dev_proc(dev, create_compositor, gx_forward_create_compositor);
+    set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
+    set_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
+    set_dev_proc(dev, encode_color, gx_forward_encode_color);
+    set_dev_proc(dev, decode_color, gx_forward_decode_color);
+    set_dev_proc(dev, fill_rectangle_hl_color, clip_fill_rectangle_hl_color);
+    set_dev_proc(dev, include_color_space, gx_forward_include_color_space);
+    set_dev_proc(dev, update_spot_equivalent_colors, gx_forward_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
+    set_dev_proc(dev, fillpage, gx_forward_fillpage);
+    set_dev_proc(dev, dev_spec_op, gx_forward_dev_spec_op);
+    set_dev_proc(dev, copy_planes, clip_copy_planes);
+    set_dev_proc(dev, get_profile, gx_forward_get_profile);
+    set_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+    set_dev_proc(dev, strip_copy_rop2, clip_strip_copy_rop2);
+    set_dev_proc(dev, strip_tile_rect_devn, clip_strip_tile_rect_devn);
+    set_dev_proc(dev, copy_alpha_hl_color, clip_copy_alpha_hl_color);
+    set_dev_proc(dev, transform_pixel_region, clip_transform_pixel_region);
+    set_dev_proc(dev, fill_stroke_path, clip_fill_stroke_path);
+    /* Ideally the following defaults would be filled in for us, but that
+     * doesn't work at the moment. */
+    set_dev_proc(dev, sync_output, gx_default_sync_output);
+    set_dev_proc(dev, output_page, gx_default_output_page);
+    set_dev_proc(dev, close_device, gx_default_close_device);
+    set_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
+    set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
+    set_dev_proc(dev, get_bits, gx_default_get_bits);
+    set_dev_proc(dev, copy_rop, gx_default_copy_rop);
+    set_dev_proc(dev, stroke_path, gx_default_stroke_path);
+    set_dev_proc(dev, fill_trapezoid, gx_default_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
+    set_dev_proc(dev, begin_image, gx_default_begin_image);
+    set_dev_proc(dev, image_data, gx_default_image_data);
+    set_dev_proc(dev, end_image, gx_default_end_image);
+    set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
+    set_dev_proc(dev, text_begin, gx_default_text_begin);
+    set_dev_proc(dev, fill_linear_color_scanline, gx_default_fill_linear_color_scanline);
+    set_dev_proc(dev, fill_linear_color_trapezoid, gx_default_fill_linear_color_trapezoid);
+    set_dev_proc(dev, fill_linear_color_triangle, gx_default_fill_linear_color_triangle);
+
+    return 0;
+}
 static const gx_device_clip gs_clip_device =
 {std_device_std_body(gx_device_clip, 0, "clipper",
                      0, 0, 1, 1),
- {clip_open,
-  gx_forward_get_initial_matrix,
-  gx_default_sync_output,
-  gx_default_output_page,
-  gx_default_close_device,
-  gx_forward_map_rgb_color,
-  gx_forward_map_color_rgb,
-  clip_fill_rectangle,
-  gx_default_tile_rectangle,
-  clip_copy_mono,
-  clip_copy_color,
-  gx_default_draw_line,
-  gx_default_get_bits,
-  gx_forward_get_params,
-  gx_forward_put_params,
-  gx_forward_map_cmyk_color,
-  gx_forward_get_xfont_procs,
-  gx_forward_get_xfont_device,
-  gx_forward_map_rgb_alpha_color,
-  gx_forward_get_page_device,
-  gx_forward_get_alpha_bits,
-  clip_copy_alpha,
-  gx_forward_get_band,
-  gx_default_copy_rop,
-  clip_fill_path,
-  gx_default_stroke_path,
-  clip_fill_mask,
-  gx_default_fill_trapezoid,
-  gx_default_fill_parallelogram,
-  gx_default_fill_triangle,
-  gx_default_draw_thin_line,
-  gx_default_begin_image,
-  gx_default_image_data,
-  gx_default_end_image,
-  clip_strip_tile_rectangle,
-  clip_strip_copy_rop,
-  clip_get_clipping_box,
-  gx_default_begin_typed_image,
-  clip_get_bits_rectangle,
-  gx_forward_map_color_rgb_alpha,
-  gx_forward_create_compositor,
-  gx_forward_get_hardware_params,
-  gx_default_text_begin,
-  NULL, /* initialise */
-  NULL,			/* begin_transparency_group */
-  NULL,			/* end_transparency_group */
-  NULL,			/* begin_transparency_mask */
-  NULL,			/* end_transparency_mask */
-  NULL,			/* discard_transparency_layer */
-  gx_forward_get_color_mapping_procs,
-  gx_forward_get_color_comp_index,
-  gx_forward_encode_color,
-  gx_forward_decode_color,
-  NULL,
-  clip_fill_rectangle_hl_color,
-  gx_forward_include_color_space,
-  gx_default_fill_linear_color_scanline,
-  gx_default_fill_linear_color_trapezoid,
-  gx_default_fill_linear_color_triangle,
-  gx_forward_update_spot_equivalent_colors,
-  gx_forward_ret_devn_params,
-  gx_forward_fillpage,
-  NULL,                      /* push_transparency_state */
-  NULL,                      /* pop_transparency_state */
-  NULL,                      /* put_image */
-  gx_forward_dev_spec_op,
-  clip_copy_planes,          /* copy planes */
-  gx_forward_get_profile,
-  gx_forward_set_graphics_type_tag,
-  clip_strip_copy_rop2,
-  clip_strip_tile_rect_devn,
-  clip_copy_alpha_hl_color,
-  NULL,						/* process_page */
-  clip_transform_pixel_region,
-  clip_fill_stroke_path,
- }
+ devprocs_initialize(clipper_initialize)
 };
 
 /* Make a clipping device. */
@@ -197,10 +194,14 @@ gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path 
     return (gx_device *)dev;
 }
 void
-gx_make_clip_device_in_heap(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target,
-                              gs_memory_t *mem)
+gx_make_clip_device_in_heap(gx_device_clip *dev,
+                      const gx_clip_path   *pcpath,
+                            gx_device      *target,
+                            gs_memory_t    *mem)
 {
-    gx_device_init((gx_device *)dev, (const gx_device *)&gs_clip_device, mem, true);
+    /* Can never fail */
+    (void)gx_device_init((gx_device *)dev,
+                         (const gx_device *)&gs_clip_device, mem, true);
     dev->list = *gx_cpath_list(pcpath);
     dev->translation.x = 0;
     dev->translation.y = 0;
@@ -212,7 +213,8 @@ gx_make_clip_device_in_heap(gx_device_clip * dev, const gx_clip_path *pcpath, gx
     dev->is_planar = target->is_planar;
     gx_device_set_target((gx_device_forward *)dev, target);
     gx_device_retain((gx_device *)dev, true); /* will free explicitly */
-    (*dev_proc(dev, open_device)) ((gx_device *)dev);
+    /* Can never fail */
+    (void)(*dev_proc(dev, open_device)) ((gx_device *)dev);
 }
 /* Define debugging statistics for the clipping loops. */
 #if defined(DEBUG) && !defined(GS_THREADSAFE)

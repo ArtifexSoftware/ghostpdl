@@ -145,6 +145,26 @@ typedef struct textw_text_enum_s {
 
 private_st_textw_text_enum();
 
+static int
+txtwrite_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, txtwrite_open_device);
+    set_dev_proc(dev, output_page, txtwrite_output_page);
+    set_dev_proc(dev, close_device, txtwrite_close_device);
+    set_dev_proc(dev, fill_rectangle, txtwrite_fill_rectangle);
+    set_dev_proc(dev, get_params, txtwrite_get_params);
+    set_dev_proc(dev, put_params, txtwrite_put_params);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, fill_path, txtwrite_fill_path);
+    set_dev_proc(dev, stroke_path, txtwrite_stroke_path);
+    set_dev_proc(dev, strip_copy_rop, txtwrite_strip_copy_rop);
+    set_dev_proc(dev, create_compositor, gx_null_create_compositor);
+    set_dev_proc(dev, text_begin, txtwrite_text_begin);
+    set_dev_proc(dev, dev_spec_op, txtwrite_dev_spec_op);
+
+    return 0;
+}
+
 const gx_device_txtwrite_t gs_txtwrite_device =
 {
     /* Define the device as 8-bit gray scale to avoid computing halftones. */
@@ -153,78 +173,7 @@ const gx_device_txtwrite_t gs_txtwrite_device =
                         DEFAULT_HEIGHT_10THS * Y_DPI / 10,
                         X_DPI, Y_DPI,
                         1, 8, 255, 0, 256, 1),
-    {txtwrite_open_device,
-     NULL, /*gx_upright_get_initial_matrix,*/
-     NULL, /*gx_default_sync_output,*/
-     txtwrite_output_page,
-     txtwrite_close_device,
-     NULL, /*gx_default_gray_map_rgb_color,*/
-     NULL, /*gx_default_gray_map_color_rgb,*/
-     txtwrite_fill_rectangle,               /* Can't be NULL and there is no gx_default_fill_rectangle! */
-     NULL, /*gx_default_tile_rectangle,*/
-     NULL, /*gx_default_copy_mono,*/
-     NULL, /*gx_default_copy_color,*/
-     NULL, /*gx_default_draw_line,*/
-     NULL, /*gx_default_get_bits,*/
-     txtwrite_get_params,
-     txtwrite_put_params,
-     NULL, /*gx_default_map_cmyk_color,*/
-     NULL, /*gx_default_get_xfont_procs,*/
-     NULL, /*gx_default_get_xfont_device,*/
-     NULL, /*gx_default_map_rgb_alpha_color,*/
-     gx_page_device_get_page_device, /*gx_page_device_get_page_device,*/
-     NULL,			/* get_alpha_bits */
-     NULL, /*gx_default_copy_alpha,*/
-     NULL,			/* get_band */
-     NULL,			/* copy_rop */
-     txtwrite_fill_path,
-     txtwrite_stroke_path,
-     NULL, /*gx_default_fill_mask,*/
-     NULL, /*gx_default_fill_trapezoid,*/
-     NULL, /*gx_default_fill_parallelogram,*/
-     NULL, /*gx_default_fill_triangle,*/
-     NULL, /*gx_default_draw_thin_line,*/
-     NULL,                      /* begin image */
-     NULL,			/* image_data */
-     NULL,			/* end_image */
-     NULL, /*gx_default_strip_tile_rectangle,*/
-     txtwrite_strip_copy_rop,
-     NULL,			/* get_clipping_box */
-     NULL, /* txtwrite_begin_typed_image */
-     NULL,			/* get_bits_rectangle */
-     NULL, /*gx_default_map_color_rgb_alpha,*/
-     gx_null_create_compositor,
-     NULL,			/* get_hardware_params */
-     txtwrite_text_begin,
-     NULL,			/* initialize */
-     NULL,			/* begin_transparency_group */
-     NULL,			/* end_transparency_group */
-     NULL,			/* begin_transparency_mask */
-     NULL,			/* end_transparency_mask */
-     NULL,			/* discard_transparency_layer */
-     NULL,			/* get_color_mapping_procs */
-     NULL,			/* get_color_comp_index */
-     NULL,			/* encode_color */
-     NULL,			/* decode_color */
-     NULL,                      /* pattern manager */
-     NULL,                      /* fill_rectangle_hl_color */
-     NULL,                      /* include_color_space */
-     NULL,                      /* fill_linear_color_scanline */
-     NULL,                      /* fill_linear_color_trapezoid */
-     NULL,                      /* fill_linear_color_triangle */
-     NULL,                      /* update_spot_equivalent_colors */
-     NULL,                      /* ret_devn_params */
-     NULL,                      /* fillpage */
-     NULL,                      /* push_transparency_state */
-     NULL,                      /* pop_transparency_state */
-     NULL,                      /* put_image */
-     txtwrite_dev_spec_op,      /* dev_spec_op */
-     NULL,                      /* copy_planes */
-     NULL,                      /* get_profile */
-     NULL,                      /* set_graphics_type_tag */
-     NULL,                      /* strip_copy_rop2 */
-     NULL                       /* strip_tile_rect_devn */
-    },
+    devprocs_initialize(txtwrite_initialize),
     { 0 },			/* Page Data */
     { 0 },			/* Output Filename */
     0,				/* Output FILE * */

@@ -358,6 +358,7 @@ dev_proc_encode_color(gx_default_8bit_map_gray_color);
 dev_proc_decode_color(gx_default_8bit_map_color_gray);
 
 /* Default implementations for forwarding devices */
+void gx_forward_initialize_procs(gx_device *dev);
 dev_proc_close_device(gx_forward_close_device);
 dev_proc_get_initial_matrix(gx_forward_get_initial_matrix);
 dev_proc_sync_output(gx_forward_sync_output);
@@ -422,6 +423,7 @@ dev_proc_strip_tile_rect_devn(gx_forward_strip_tile_rect_devn);
 dev_proc_copy_alpha_hl_color(gx_forward_copy_alpha_hl_color);
 dev_proc_transform_pixel_region(gx_forward_transform_pixel_region);
 dev_proc_fill_stroke_path(gx_forward_fill_stroke_path);
+void gx_forward_device_initialize_procs(gx_device *dev);
 
 /* ---------------- Implementation utilities ---------------- */
 int gx_default_get_param(gx_device *dev, char *Param, void *list);
@@ -677,7 +679,7 @@ typedef struct {
 } generic_subclass_data;
 
 
-int gx_copy_device_procs(gx_device *dest, gx_device *src, gx_device *prototype);
+int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device *prototype);
 int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size);
 int gx_device_unsubclass(gx_device *dev);
 int gx_update_from_subclass(gx_device *dev);

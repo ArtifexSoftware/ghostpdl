@@ -92,6 +92,43 @@ RELOC_PTRS_END
 
 public_st_obj_filter_device();
 
+static int
+obj_filter_initialize(gx_device *dev)
+{
+    int code = default_subclass_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, fill_rectangle, obj_filter_fill_rectangle);
+    set_dev_proc(dev, tile_rectangle, obj_filter_tile_rectangle);
+    set_dev_proc(dev, obsolete_draw_line, obj_filter_draw_line);
+    set_dev_proc(dev, fill_path, obj_filter_fill_path);
+    set_dev_proc(dev, stroke_path, obj_filter_stroke_path);
+    set_dev_proc(dev, fill_mask, obj_filter_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, obj_filter_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, obj_filter_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, obj_filter_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, obj_filter_draw_thin_line);
+    set_dev_proc(dev, begin_image, obj_filter_begin_image);
+    set_dev_proc(dev, image_data, obj_filter_image_data);
+    set_dev_proc(dev, end_image, obj_filter_end_image);
+    set_dev_proc(dev, strip_tile_rectangle, obj_filter_strip_tile_rectangle);
+    set_dev_proc(dev, strip_copy_rop, obj_filter_strip_copy_rop);
+    set_dev_proc(dev, begin_typed_image, obj_filter_begin_typed_image);
+    set_dev_proc(dev, text_begin, obj_filter_text_begin);
+    set_dev_proc(dev, fill_rectangle_hl_color, obj_filter_fill_rectangle_hl_color);
+    set_dev_proc(dev, fill_linear_color_scanline, obj_filter_fill_linear_color_scanline);
+    set_dev_proc(dev, fill_linear_color_trapezoid, obj_filter_fill_linear_color_trapezoid);
+    set_dev_proc(dev, fill_linear_color_triangle, obj_filter_fill_linear_color_triangle);
+    set_dev_proc(dev, put_image, obj_filter_put_image);
+    set_dev_proc(dev, strip_copy_rop2, obj_filter_strip_copy_rop2);
+    set_dev_proc(dev, strip_tile_rect_devn, obj_filter_strip_tile_rect_devn);
+    set_dev_proc(dev, fill_stroke_path, obj_filter_fill_stroke_path);
+
+    return 0;
+}
+
 const
 gx_device_obj_filter gs_obj_filter_device =
 {
@@ -102,82 +139,7 @@ gx_device_obj_filter gs_obj_filter_device =
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
                         1, 8, 255, 0, 256, 1),
-    {default_subclass_open_device,
-     default_subclass_get_initial_matrix,
-     default_subclass_sync_output,			/* sync_output */
-     default_subclass_output_page,
-     default_subclass_close_device,
-     default_subclass_map_rgb_color,
-     default_subclass_map_color_rgb,
-     obj_filter_fill_rectangle,
-     obj_filter_tile_rectangle,			/* tile_rectangle */
-     default_subclass_copy_mono,
-     default_subclass_copy_color,
-     obj_filter_draw_line,			/* draw_line */
-     default_subclass_get_bits,			/* get_bits */
-     default_subclass_get_params,
-     default_subclass_put_params,
-     default_subclass_map_cmyk_color,
-     default_subclass_get_xfont_procs,			/* get_xfont_procs */
-     default_subclass_get_xfont_device,			/* get_xfont_device */
-     default_subclass_map_rgb_alpha_color,
-     default_subclass_get_page_device,
-     default_subclass_get_alpha_bits,			/* get_alpha_bits */
-     default_subclass_copy_alpha,
-     default_subclass_get_band,			/* get_band */
-     default_subclass_copy_rop,			/* copy_rop */
-     obj_filter_fill_path,
-     obj_filter_stroke_path,
-     obj_filter_fill_mask,
-     obj_filter_fill_trapezoid,
-     obj_filter_fill_parallelogram,
-     obj_filter_fill_triangle,
-     obj_filter_draw_thin_line,
-     obj_filter_begin_image,
-     obj_filter_image_data,			/* image_data */
-     obj_filter_end_image,			/* end_image */
-     obj_filter_strip_tile_rectangle,
-     obj_filter_strip_copy_rop,
-     default_subclass_get_clipping_box,			/* get_clipping_box */
-     obj_filter_begin_typed_image,
-     default_subclass_get_bits_rectangle,			/* get_bits_rectangle */
-     default_subclass_map_color_rgb_alpha,
-     default_subclass_create_compositor,
-     default_subclass_get_hardware_params,			/* get_hardware_params */
-     obj_filter_text_begin,
-     default_subclass_initialize,			/* initialize */
-     default_subclass_begin_transparency_group,			/* begin_transparency_group */
-     default_subclass_end_transparency_group,			/* end_transparency_group */
-     default_subclass_begin_transparency_mask,			/* begin_transparency_mask */
-     default_subclass_end_transparency_mask,			/* end_transparency_mask */
-     default_subclass_discard_transparency_layer,			/* discard_transparency_layer */
-     default_subclass_get_color_mapping_procs,			/* get_color_mapping_procs */
-     default_subclass_get_color_comp_index,			/* get_color_comp_index */
-     default_subclass_encode_color,			/* encode_color */
-     default_subclass_decode_color,			/* decode_color */
-     default_subclass_pattern_manage,			/* pattern_manage */
-     obj_filter_fill_rectangle_hl_color,			/* fill_rectangle_hl_color */
-     default_subclass_include_color_space,			/* include_color_space */
-     obj_filter_fill_linear_color_scanline,			/* fill_linear_color_scanline */
-     obj_filter_fill_linear_color_trapezoid,			/* fill_linear_color_trapezoid */
-     obj_filter_fill_linear_color_triangle,			/* fill_linear_color_triangle */
-     default_subclass_update_spot_equivalent_colors,			/* update_spot_equivalent_colors */
-     default_subclass_ret_devn_params,			/* ret_devn_params */
-     default_subclass_fillpage,		/* fillpage */
-     default_subclass_push_transparency_state,                      /* push_transparency_state */
-     default_subclass_pop_transparency_state,                      /* pop_transparency_state */
-     obj_filter_put_image,                      /* put_image */
-     default_subclass_dev_spec_op,                      /* dev_spec_op */
-     default_subclass_copy_planes,                      /* copy_planes */
-     default_subclass_get_profile,                      /* get_profile */
-     default_subclass_set_graphics_type_tag,                      /* set_graphics_type_tag */
-     obj_filter_strip_copy_rop2,
-     obj_filter_strip_tile_rect_devn,
-     default_subclass_copy_alpha_hl_color,
-     default_subclass_process_page,
-     default_subclass_transform_pixel_region,
-     obj_filter_fill_stroke_path,
-    }
+    devprocs_initialize(obj_filter_initialize)
 };
 
 #undef MAX_COORD

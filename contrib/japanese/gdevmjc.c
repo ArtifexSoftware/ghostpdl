@@ -208,73 +208,90 @@ typedef struct gx_device_mj_s gx_device_mj;
          (bpp == 32 ? 3 : 1), dns, r, g, b, k, drct, mcrwv, dtsz \
 }
 
-#define mj_colour_procs(proc_colour_open, proc_get_params, proc_put_params)\
-{	proc_colour_open,\
-        gx_default_get_initial_matrix,\
-        gx_default_sync_output,\
-        gdev_prn_output_page,\
-        gdev_prn_close,\
-        gdev_mjc_map_rgb_color,\
-        gdev_mjc_map_color_rgb,\
-        NULL,	/* fill_rectangle */\
-        NULL,	/* tile_rectangle */\
-        NULL,	/* copy_mono */\
-        NULL,	/* copy_color */\
-        NULL,	/* draw_line */\
-        gx_default_get_bits,\
-        proc_get_params,\
-        proc_put_params,\
-        NULL,	/* map_cmyk_color */\
-        NULL,	/* get_xfont_procs */\
-        NULL,	/* get_xfont_device */\
-        NULL,	/* map_rgb_alpha_color */\
-        NULL,   /* get_page_device */\
-        NULL,	/* get_alpha_bits */\
-        NULL,   /* copy_alpha */\
-        NULL,	/* get_band */\
-        NULL,	/* copy_rop */\
-        NULL,	/* fill_path */\
-        NULL,	/* stroke_path */\
-        NULL,	/* fill_mask */\
-        NULL,	/* fill_trapezoid */\
-        NULL,	/* fill_parallelogram */\
-        NULL,	/* fill_triangle */\
-        NULL,	/* draw_thin_line */\
-        NULL,	/* begin_image */\
-        NULL,	/* image_data */\
-        NULL,	/* end_image */\
-        NULL,	/* strip_tile_rectangle */\
-        NULL,	/* strip_copy_rop, */\
-        NULL,	/* get_clipping_box */\
-        NULL,	/* begin_typed_image */\
-        NULL,	/* get_bits_rectangle */\
-        NULL,	/* map_color_rgb_alpha */\
-        NULL,	/* create_compositor */\
-        NULL,	/* get_hardware_params */\
-        NULL,	/* text_begin */\
-        NULL,	/* initialize */\
-        NULL, 	/* begin_transparency_group */\
-        NULL, 	/* end_transparency_group */\
-        NULL, 	/* begin_transparency_mask */\
-        NULL, 	/* end_transparency_mask */\
-        NULL, 	/* discard_transparency_layer */\
-        NULL,   /* get_color_mapping_procs */\
-        NULL,   /* get_color_comp_index */\
-        gdev_mjc_encode_color,\
-        gdev_mjc_decode_color\
+static int
+mj_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, gdev_mjc_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gdev_mjc_map_color_rgb);
+    set_dev_proc(dev, get_params, mj_get_params);
+    set_dev_proc(dev, encode_color, gdev_mjc_encode_color);
+    set_dev_proc(dev, decode_color, gdev_mjc_decode_color);
+
+    return 0;
+}
+
+static int
+mj700v2c_initialize(gx_device *dev)
+{
+    int code = mj_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, mj700v2c_open);
+    set_dev_proc(dev, put_params, mj700v2c_put_params);
+
+    return 0;
 }
 
 static gx_device_procs mj700v2c_procs =
-mj_colour_procs(mj700v2c_open, mj_get_params, mj700v2c_put_params);
+    devprocs_initialize(mj700v2c_initialize);
+
+static int
+mj500c_initialize(gx_device *dev)
+{
+    int code = mj_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, mj500c_open);
+    set_dev_proc(dev, put_params, mj500c_put_params);
+
+    return 0;
+}
 
 static gx_device_procs mj500c_procs =
-mj_colour_procs(mj500c_open, mj_get_params, mj500c_put_params);
+    devprocs_initialize(mj500c_initialize);
+
+static int
+mj6000c_initialize(gx_device *dev)
+{
+    int code = mj_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, mj6000c_open);
+    set_dev_proc(dev, put_params, mj700v2c_put_params);
+
+    return 0;
+}
 
 static gx_device_procs mj6000c_procs =
-mj_colour_procs(mj6000c_open, mj_get_params, mj700v2c_put_params);
+    devprocs_initialize(mj6000c_initialize);
+
+static int
+mj8000c_initialize(gx_device *dev)
+{
+    int code = mj_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, mj8000c_open);
+    set_dev_proc(dev, put_params, mj700v2c_put_params);
+
+    return 0;
+}
 
 static gx_device_procs mj8000c_procs =
-mj_colour_procs(mj8000c_open, mj_get_params, mj700v2c_put_params);
+    devprocs_initialize(mj8000c_initialize);
 
 gx_device_mj far_data gs_mj700v2c_device =
 mjcmyk_device(mj700v2c_procs, "mj700v2c", 360, 360, BITSPERPIXEL,

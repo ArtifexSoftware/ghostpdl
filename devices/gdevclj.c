@@ -515,32 +515,37 @@ xit:
 }
 
 /* CLJ device methods */
-#define CLJ_PROCS(get_params, put_params)\
-    gdev_prn_open,                  /* open_device */\
-    clj_get_initial_matrix,         /* get_initial matrix */\
-    NULL,	                    /* sync_output */\
-/* Since the print_page doesn't alter the device, this device can print in the background */\
-    gdev_prn_bg_output_page,        /* output_page */\
-    gdev_prn_close,                 /* close_device */\
-    gdev_pcl_3bit_map_rgb_color,    /* map_rgb_color */\
-    gdev_pcl_3bit_map_color_rgb,    /* map_color_rgb */\
-    NULL,	                    /* fill_rectangle */\
-    NULL,	                    /* tile_rectangle */\
-    NULL,	                    /* copy_mono */\
-    NULL,	                    /* copy_color */\
-    NULL,	                    /* obsolete draw_line */\
-    NULL,	                    /* get_bits */\
-    get_params, 	            /* get_params */\
-    put_params,                     /* put_params */\
-    NULL,	                    /* map_cmyk_color */\
-    NULL,	                    /* get_xfont_procs */\
-    NULL,	                    /* get_xfont_device */\
-    NULL,	                    /* map_rgb_alpha_color */\
-    gx_page_device_get_page_device  /* get_page_device */
+static int
+clj_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
 
-static gx_device_procs cljet5_procs = {
-    CLJ_PROCS(clj_get_params, clj_put_params)
-};
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_initial_matrix, clj_get_initial_matrix);
+    set_dev_proc(dev, map_rgb_color, gdev_pcl_3bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gdev_pcl_3bit_map_color_rgb);
+
+    return 0;
+}
+
+static int
+cljet5_initialize(gx_device *dev)
+{
+    int code = clj_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, clj_get_params);
+    set_dev_proc(dev, put_params, clj_put_params);
+
+    return 0;
+}
+
+static gx_device_procs cljet5_procs =
+    devprocs_initialize(cljet5_initialize);
 
 /* CLJ device structure */
 #define CLJ_DEVICE_BODY(procs, dname, rotated)\
@@ -677,9 +682,22 @@ clj_pr_put_params(
 }
 
 /* CLJ device methods -- se above for CLJ_PROCS */
-static gx_device_procs cljet5pr_procs = {
-    CLJ_PROCS(clj_pr_get_params, clj_pr_put_params)
-};
+static int
+cljet5pr_initialize(gx_device *dev)
+{
+    int code = clj_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, clj_pr_get_params);
+    set_dev_proc(dev, put_params, clj_pr_put_params);
+
+    return 0;
+}
+
+static gx_device_procs cljet5pr_procs =
+    devprocs_initialize(cljet5pr_initialize);
 
 /* CLJ device structure -- see above for CLJ_DEVICE_BODY */
 gx_device_clj gs_cljet5pr_device = {

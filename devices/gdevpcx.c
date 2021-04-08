@@ -37,8 +37,8 @@ static dev_proc_print_page(pcxmono_print_page);
 /* Use the default RGB->color map, so we get black=0, white=1. */
 /* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs pcxmono_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                gx_default_map_rgb_color, gx_default_map_color_rgb);
+    devprocs_initialize(gdev_prn_initialize_mono_bg);
+
 const gx_device_printer gs_pcxmono_device =
 prn_device(pcxmono_procs, "pcxmono",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -52,8 +52,8 @@ static dev_proc_print_page(pcx256_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs pcxgray_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-              gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
+    devprocs_initialize(gdev_prn_initialize_gray_bg);
+
 const gx_device_printer gs_pcxgray_device =
 {prn_device_body(gx_device_printer, pcxgray_procs, "pcxgray",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -67,9 +67,23 @@ const gx_device_printer gs_pcxgray_device =
 static dev_proc_print_page(pcx16_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
+static int
+pcx16_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return 0;
+
+    set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, pc_4bit_map_color_rgb);
+
+    return 0;
+}
+
 static const gx_device_procs pcx16_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
+    devprocs_initialize(pcx16_initialize);
+
 const gx_device_printer gs_pcx16_device =
 {prn_device_body(gx_device_printer, pcx16_procs, "pcx16",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -82,9 +96,23 @@ const gx_device_printer gs_pcx16_device =
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
+static int
+pcx256_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return 0;
+
+    set_dev_proc(dev, map_rgb_color, pc_8bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, pc_8bit_map_color_rgb);
+
+    return 0;
+}
+
 static const gx_device_procs pcx256_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
+    devprocs_initialize(pcx256_initialize);
+
 const gx_device_printer gs_pcx256_device =
 {prn_device_body(gx_device_printer, pcx256_procs, "pcx256",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -99,8 +127,8 @@ static dev_proc_print_page(pcx24b_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs pcx24b_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+    devprocs_initialize(gdev_prn_initialize_rgb_bg);
+
 const gx_device_printer gs_pcx24b_device =
 prn_device(pcx24b_procs, "pcx24b",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -113,29 +141,8 @@ prn_device(pcx24b_procs, "pcx24b",
 static dev_proc_print_page(pcxcmyk_print_page);
 
 static const gx_device_procs pcxcmyk_procs =
-{
-    gdev_prn_open,
-    NULL,			/* get_initial_matrix */
-    NULL,			/* sync_output */
-/* Since the print_page doesn't alter the device, this device can print in the background */
-    gdev_prn_bg_output_page,
-    gdev_prn_close,
-    NULL,			/* map_rgb_color */
-    cmyk_1bit_map_color_rgb,
-    NULL,			/* fill_rectangle */
-    NULL,			/* tile_rectangle */
-    NULL,			/* copy_mono */
-    NULL,			/* copy_color */
-    NULL,			/* draw_line */
-    NULL,			/* get_bits */
-    gdev_prn_get_params,
-    gdev_prn_put_params,
-    cmyk_1bit_map_cmyk_color,
-    NULL,			/* get_xfont_procs */
-    NULL,			/* get_xfont_device */
-    NULL,			/* map_rgb_alpha_color */
-    gx_page_device_get_page_device
-};
+    devprocs_initialize(gdev_prn_initialize_cmyk1_bg);
+
 const gx_device_printer gs_pcxcmyk_device =
 {prn_device_body(gx_device_printer, pcxcmyk_procs, "pcxcmyk",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,

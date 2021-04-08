@@ -37,8 +37,8 @@ prn_device(prn_bg_procs, "bmpmono",	/* The print_page proc is compatible with al
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs bmpgray_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
+    devprocs_initialize(gdev_prn_initialize_gray_bg);
+
 const gx_device_printer gs_bmpgray_device = {
   prn_device_body(gx_device_printer, bmpgray_procs, "bmpgray",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -56,9 +56,9 @@ const gx_device_printer gs_bmpgray_device = {
     gdev_prn_get_params, gdev_prn_put_params,\
     p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
 
-static const gx_device_procs bmpsep1_procs = {
-    bmp_cmyk_procs(cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color)
-};
+static const gx_device_procs bmpsep1_procs =
+    devprocs_initialize(gdev_prn_initialize_cmyk1_bg);
+
 const gx_device_printer gs_bmpsep1_device = {
   prn_device_body(gx_device_printer, bmpsep1_procs, "bmpsep1",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -68,10 +68,9 @@ const gx_device_printer gs_bmpsep1_device = {
 };
 
 /* 8-bit-per-plane separated CMYK color. */
+static const gx_device_procs bmpsep8_procs =
+    devprocs_initialize(gdev_prn_initialize_cmyk8_bg);
 
-static const gx_device_procs bmpsep8_procs = {
-    bmp_cmyk_procs(cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color)
-};
 const gx_device_printer gs_bmpsep8_device = {
   prn_device_body(gx_device_printer, bmpsep8_procs, "bmpsep8",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -83,9 +82,22 @@ const gx_device_printer gs_bmpsep8_device = {
 /* 4-bit planar (EGA/VGA-style) color. */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
+static int
+bmpsep16_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk8_bg(dev);
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, pc_4bit_map_color_rgb);
+
+    return 0;
+}
+
 static const gx_device_procs bmp16_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
+    devprocs_initialize(bmpsep16_initialize);
+
 const gx_device_printer gs_bmp16_device = {
   prn_device_body(gx_device_printer, bmp16_procs, "bmp16",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -98,9 +110,22 @@ const gx_device_printer gs_bmp16_device = {
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
+static int
+bmp256_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, pc_8bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, pc_8bit_map_color_rgb);
+
+    return 0;
+}
+
 static const gx_device_procs bmp256_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
+    devprocs_initialize(bmp256_initialize);
+
 const gx_device_printer gs_bmp256_device = {
   prn_device_body(gx_device_printer, bmp256_procs, "bmp256",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -112,9 +137,22 @@ const gx_device_printer gs_bmp256_device = {
 /* 24-bit color. */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
+static int
+bmp16m_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, bmp_map_16m_rgb_color);
+    set_dev_proc(dev, map_color_rgb, bmp_map_16m_color_rgb);
+
+    return 0;
+}
+
 static const gx_device_procs bmp16m_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                bmp_map_16m_rgb_color, bmp_map_16m_color_rgb);
+    devprocs_initialize(bmp16m_initialize);
+
 const gx_device_printer gs_bmp16m_device =
 prn_device(bmp16m_procs, "bmp16m",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -123,10 +161,9 @@ prn_device(bmp16m_procs, "bmp16m",
            24, bmp_print_page);
 
 /* 32-bit CMYK color (outside the BMP specification). */
+static const gx_device_procs bmp32b_procs =
+    devprocs_initialize(gdev_prn_initialize_cmyk8_bg);
 
-static const gx_device_procs bmp32b_procs = {
-    bmp_cmyk_procs(cmyk_8bit_map_color_rgb, gx_default_cmyk_map_cmyk_color)
-};
 const gx_device_printer gs_bmp32b_device =
 prn_device(bmp32b_procs, "bmp32b",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,

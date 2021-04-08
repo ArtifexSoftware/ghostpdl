@@ -140,35 +140,121 @@ static dev_proc_print_page(pnmcmyk_print_page);
 
 /* The device procedures */
 
-/* See gdevprn.h for the template for the following. */
-#define pgpm_procs(p_open, p_get_params, p_map_rgb_color, p_map_color_rgb, p_map_cmyk_color) {\
-        p_open, NULL, NULL, ppm_output_page, gdev_prn_close,\
-        p_map_rgb_color, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
-        p_get_params, ppm_put_params,\
-        p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device\
+static int
+pbm_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, put_params, ppm_put_params);
+    set_dev_proc(dev, output_page, ppm_output_page);
+
+    return 0;
+}
+
+static int
+ppm_initialize(gx_device *dev)
+{
+    int code = pbm_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, ppm_get_params);
+    set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, ppm_map_color_rgb);
+    set_dev_proc(dev, open_device, ppm_open);
+
+    return 0;
+}
+
+static int
+pgm_initialize(gx_device *dev)
+{
+    int code = pbm_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, pgm_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, pgm_map_color_rgb);
+    set_dev_proc(dev, open_device, ppm_open);
+
+    return 0;
+}
+
+static int
+pnm_initialize(gx_device *dev)
+{
+    int code = ppm_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, ppm_map_rgb_color);
+
+    return 0;
+}
+
+static int
+pkm_initialize(gx_device *dev)
+{
+    int code = ppm_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, NULL);
+    set_dev_proc(dev, map_color_rgb, cmyk_1bit_map_color_rgb);
+    set_dev_proc(dev, map_cmyk_color, cmyk_1bit_map_cmyk_color);
+
+    return 0;
+}
+
+static int
+pam_initialize(gx_device *dev)
+{
+    int code = ppm_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, NULL);
+    set_dev_proc(dev, map_color_rgb, cmyk_8bit_map_color_rgb);
+    set_dev_proc(dev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
+
+    return 0;
+}
+
+static int
+pnmcmyk_initialize(gx_device *dev)
+{
+    int code = pam_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, pnmcmyk_open);
+
+    return 0;
 }
 
 static const gx_device_procs pbm_procs =
-    pgpm_procs(gdev_prn_open, gdev_prn_get_params,
-               gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, NULL);
+    devprocs_initialize(pbm_initialize);
 static const gx_device_procs pgm_procs =
-    pgpm_procs(ppm_open, gdev_prn_get_params,
-               pgm_map_rgb_color, pgm_map_color_rgb, NULL);
+    devprocs_initialize(pgm_initialize);
 static const gx_device_procs ppm_procs =
-    pgpm_procs(ppm_open, ppm_get_params,
-               gx_default_rgb_map_rgb_color, ppm_map_color_rgb, NULL);
+    devprocs_initialize(ppm_initialize);
 static const gx_device_procs pnm_procs =
-    pgpm_procs(ppm_open, ppm_get_params,
-               ppm_map_rgb_color, ppm_map_color_rgb, NULL);
+    devprocs_initialize(pnm_initialize);
 static const gx_device_procs pkm_procs =
-    pgpm_procs(ppm_open, ppm_get_params,
-               NULL, cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color);
+    devprocs_initialize(pkm_initialize);
 static const gx_device_procs pam_procs =
-    pgpm_procs(ppm_open, ppm_get_params,
-               NULL, cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color);
+    devprocs_initialize(pam_initialize);
 static const gx_device_procs pnmcmyk_procs =
-    pgpm_procs(pnmcmyk_open, ppm_get_params,
-               NULL, cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color);
+    devprocs_initialize(pnmcmyk_initialize);
 
 /* The device descriptors themselves */
 const gx_device_pbm gs_pbm_device =

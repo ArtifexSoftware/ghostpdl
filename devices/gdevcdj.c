@@ -454,115 +454,217 @@ typedef struct {
 }
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-#define hp_colour_procs(proc_colour_open, proc_get_params, proc_put_params) {\
-        proc_colour_open,\
-        gx_default_get_initial_matrix,\
-        gx_default_sync_output,\
-        gdev_prn_bg_output_page,\
-        gdev_prn_close,\
-        gdev_pcl_map_rgb_color,\
-        gdev_pcl_map_color_rgb,\
-        NULL,	/* fill_rectangle */\
-        NULL,	/* tile_rectangle */\
-        NULL,	/* copy_mono */\
-        NULL,	/* copy_color */\
-        NULL,	/* draw_line */\
-        gx_default_get_bits,\
-        proc_get_params,\
-        proc_put_params\
+static int
+hp_colour_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, gdev_pcl_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gdev_pcl_map_color_rgb);
+    set_dev_proc(dev, get_params, cdj_get_params);
+    set_dev_proc(dev, put_params, cdj_put_params);
+
+    return 0;
 }
 
-/* Since the print_page doesn't alter the device, this device can print in the background */
-#define cmyk_colour_procs(proc_colour_open, proc_get_params, proc_put_params) {\
-        proc_colour_open,\
-        gx_default_get_initial_matrix,\
-        gx_default_sync_output,\
-        gdev_prn_bg_output_page,\
-        gdev_prn_close,\
-        NULL /* map_rgb_color */,\
-        NULL /* map_color_rgb */,\
-        NULL /* fill_rectangle */,\
-        NULL /* tile_rectangle */,\
-        NULL /* copy_mono */,\
-        NULL /* copy_color */,\
-        NULL /* draw_line */,\
-        gx_default_get_bits,\
-        proc_get_params,\
-        proc_put_params,\
-        gdev_cmyk_map_cmyk_color,\
-        NULL,	/* get_xfont_procs */\
-        NULL,	/* get_xfont_device */\
-        NULL,	/* map_rgb_alpha_color */\
-        NULL,	/* get_page_device */\
-        NULL,	/* get_alpha_bits */\
-        NULL,	/* copy_alpha */\
-        NULL,	/* get_band */\
-        NULL,	/* copy_rop */\
-        NULL,	/* fill_path */\
-        NULL,	/* stroke_path */\
-        NULL,	/* fill_mask */\
-        NULL,	/* fill_trapezoid */\
-        NULL,	/* fill_parallelogram */\
-        NULL,	/* fill_triangle */\
-        NULL,	/* draw_thin_line */\
-        NULL,	/* begin_image */\
-        NULL,	/* image_data */\
-        NULL,	/* end_image */\
-        NULL,	/* strip_tile_rectangle */\
-        NULL,	/* strip_copy_rop */\
-        NULL,	/* get_clipping_box */\
-        NULL,	/* begin_typed_image */\
-        NULL,	/* get_bits_rectangle */\
-        NULL,	/* map_color_rgb_alpha */\
-        NULL,	/* create_compositor */\
-        NULL,	/* get_hardware_params */\
-        NULL,	/* text_begin */\
-        NULL,	/* initialize */\
-        NULL,	/* begin_transparency_group */\
-        NULL,	/* end_transparency_group */\
-        NULL,	/* begin_transparency_mask */\
-        NULL,	/* end_transparency_mask */\
-        NULL,	/* discard_transparency_layer */\
-        NULL,	/* get_color_mapping_procs */\
-        NULL,	/* get_color_comp_index */\
-        gdev_cmyk_map_cmyk_color,	/* encode_color */\
-        gdev_cmyk_map_color_cmyk	/* decode_color */\
+static int
+cdj500_initialize(gx_device *dev)
+{
+    int code = hp_colour_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, dj500c_open);
+
+    return 0;
 }
 
 static gx_device_procs cdj500_procs =
-hp_colour_procs(dj500c_open, cdj_get_params, cdj_put_params);
+    devprocs_initialize(cdj500_initialize);
+
+static int
+cdj550_initialize(gx_device *dev)
+{
+    int code = hp_colour_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, dj550c_open);
+
+    return 0;
+}
 
 static gx_device_procs cdj550_procs =
-hp_colour_procs(dj550c_open, cdj_get_params, cdj_put_params);
+    devprocs_initialize(cdj550_initialize);
 
 #ifdef USE_CDJ550_CMYK
+static int
+cdj550cmyk_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, dj550c_open);
+    set_dev_proc(dev, get_params, cdj_get_params);
+    set_dev_proc(dev, put_params, cdj_put_params);
+    set_dev_proc(dev, map_cmyk_color, gdev_cmyk_map_cmyk_color);
+    set_dev_proc(dev, encode_color, gdev_cmyk_map_cmyk_color);
+    set_dev_proc(dev, decode_color, gdev_cmyk_map_color_cmyk);
+
+    return 0;
+}
+
 static gx_device_procs cdj550cmyk_procs =
-cmyk_colour_procs(dj550c_open, cdj_get_params, cdj_put_params);
+    devprocs_initialize(cdj550cmyk_initialize);
 #endif
 
+static int
+dj505j_initialize(gx_device *dev)
+{
+    int code = hp_colour_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, dj505j_open);
+
+    return 0;
+}
+
 static gx_device_procs dj505j_procs =
-hp_colour_procs(dj505j_open, cdj_get_params, cdj_put_params);
+    devprocs_initialize(dj505j_initialize);
+
+static int
+dnj650c_initialize(gx_device *dev)
+{
+    int code = hp_colour_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, dnj650c_open);
+
+    return 0;
+}
 
 static gx_device_procs dnj650c_procs =
-hp_colour_procs(dnj650c_open, cdj_get_params, cdj_put_params);
+    devprocs_initialize(dnj650c_initialize);
+
+static int
+lj4dith_initialize(gx_device *dev)
+{
+    int code = hp_colour_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, lj4dith_open);
+
+    return 0;
+}
 
 static gx_device_procs lj4dith_procs =
-hp_colour_procs(lj4dith_open, cdj_get_params, cdj_put_params);
+    devprocs_initialize(lj4dith_initialize);
+
+static int
+pj_initialize(gx_device *dev)
+{
+    int code = hp_colour_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, pj_open);
+    set_dev_proc(dev, get_params, gdev_prn_get_params);
+    set_dev_proc(dev, put_params, pj_put_params);
+
+    return 0;
+}
 
 static gx_device_procs pj_procs =
-hp_colour_procs(pj_open, gdev_prn_get_params, pj_put_params);
+    devprocs_initialize(pj_initialize);
+
+static int
+pjxl_initialize(gx_device *dev)
+{
+    int code = hp_colour_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, pjxl_open);
+    set_dev_proc(dev, get_params, pjxl_get_params);
+    set_dev_proc(dev, put_params, pjxl_put_params);
+
+    return 0;
+}
 
 static gx_device_procs pjxl_procs =
-hp_colour_procs(pjxl_open, pjxl_get_params, pjxl_put_params);
+    devprocs_initialize(pjxl_initialize);
+
+static int
+pjxl300_initialize(gx_device *dev)
+{
+    int code = hp_colour_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, pjxl300_open);
+    set_dev_proc(dev, get_params, pjxl_get_params);
+    set_dev_proc(dev, put_params, pjxl_put_params);
+
+    return 0;
+}
 
 static gx_device_procs pjxl300_procs =
-hp_colour_procs(pjxl300_open, pjxl_get_params, pjxl_put_params);
+    devprocs_initialize(pjxl300_initialize);
+
+static int
+bjc_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, bjc_open);
+    set_dev_proc(dev, get_params, bjc_get_params);
+    set_dev_proc(dev, put_params, bjc_put_params);
+    set_dev_proc(dev, map_cmyk_color, gdev_cmyk_map_cmyk_color);
+    set_dev_proc(dev, encode_color, gdev_cmyk_map_cmyk_color);
+    set_dev_proc(dev, decode_color, gdev_cmyk_map_color_cmyk);
+
+    return 0;
+}
 
 static gx_device_procs bjc_procs =
-cmyk_colour_procs(bjc_open, bjc_get_params, bjc_put_params);
+    devprocs_initialize(bjc_initialize);
+
+static int
+escp_initialize(gx_device *dev)
+{
+    int code = hp_colour_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, escp_open);
+    set_dev_proc(dev, get_params, ep_get_params);
+    set_dev_proc(dev, put_params, ep_put_params);
+
+    return 0;
+}
 
 static gx_device_procs escp_procs =
-hp_colour_procs(escp_open, ep_get_params, ep_put_params);
+    devprocs_initialize(escp_initialize);
 
 gx_device_cdj far_data gs_cdjmono_device =
 cdj_device(cdj500_procs, "cdjmono", 300, 300, 1,

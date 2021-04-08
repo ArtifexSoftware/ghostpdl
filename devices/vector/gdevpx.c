@@ -146,56 +146,58 @@ static dev_proc_put_params(pclxl_put_params);
 static dev_proc_begin_image(pclxl_begin_image);
 static dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
 
-#define pclxl_device_procs(map_rgb_color, map_color_rgb)\
-{\
-        pclxl_open_device,\
-        NULL,			/* get_initial_matrix */\
-        NULL,			/* sync_output */\
-        pclxl_output_page,\
-        pclxl_close_device,\
-        map_rgb_color,		/* differs */\
-        map_color_rgb,		/* differs */\
-        gdev_vector_fill_rectangle,\
-        NULL,			/* tile_rectangle */\
-        pclxl_copy_mono,\
-        pclxl_copy_color,\
-        NULL,			/* draw_line */\
-        NULL,			/* get_bits */\
-        pclxl_get_params,\
-        pclxl_put_params,\
-        NULL,			/* map_cmyk_color */\
-        NULL,			/* get_xfont_procs */\
-        NULL,			/* get_xfont_device */\
-        NULL,			/* map_rgb_alpha_color */\
-        gx_page_device_get_page_device,\
-        NULL,			/* get_alpha_bits */\
-        NULL,			/* copy_alpha */\
-        NULL,			/* get_band */\
-        NULL,			/* copy_rop */\
-        gdev_vector_fill_path,\
-        gdev_vector_stroke_path,\
-        pclxl_fill_mask,\
-        gdev_vector_fill_trapezoid,\
-        gdev_vector_fill_parallelogram,\
-        gdev_vector_fill_triangle,\
-        NULL /****** WRONG ******/,	/* draw_thin_line */\
-        pclxl_begin_image,\
-        NULL,			/* image_data */\
-        NULL,			/* end_image */\
-        NULL,			/* strip_tile_rectangle */\
-        pclxl_strip_copy_rop\
+static int
+pclxl_initialize(gx_device *dev,
+                 dev_proc_map_rgb_color(map_rgb_color),
+                 dev_proc_map_color_rgb(map_color_rgb))
+{
+    set_dev_proc(dev, open_device, pclxl_open_device);
+    set_dev_proc(dev, output_page, pclxl_output_page);
+    set_dev_proc(dev, close_device, pclxl_close_device);
+    set_dev_proc(dev, map_rgb_color, map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, gdev_vector_fill_rectangle);
+    set_dev_proc(dev, copy_mono, pclxl_copy_mono);
+    set_dev_proc(dev, copy_color, pclxl_copy_color);
+    set_dev_proc(dev, get_params, pclxl_get_params);
+    set_dev_proc(dev, put_params, pclxl_put_params);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, fill_path, gdev_vector_fill_path);
+    set_dev_proc(dev, stroke_path, gdev_vector_stroke_path);
+    set_dev_proc(dev, fill_mask, pclxl_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, gdev_vector_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
+    set_dev_proc(dev, begin_image, pclxl_begin_image);
+    set_dev_proc(dev, strip_copy_rop, pclxl_strip_copy_rop);
+
+    return 0;
+}
+
+static int
+pxlmono_initialize(gx_device *dev)
+{
+    return pclxl_initialize(dev,
+                            gx_default_gray_map_rgb_color,
+                            gx_default_gray_map_color_rgb);
+}
+
+static int
+pxlcolor_initialize(gx_device *dev)
+{
+    return pclxl_initialize(dev,
+                            gx_default_rgb_map_rgb_color,
+                            gx_default_rgb_map_color_rgb);
 }
 
 const gx_device_pclxl gs_pxlmono_device = {
     pclxl_device_body("pxlmono", 8),
-    pclxl_device_procs(gx_default_gray_map_rgb_color,
-                       gx_default_gray_map_color_rgb)
+    devprocs_initialize(pxlmono_initialize)
 };
 
 const gx_device_pclxl gs_pxlcolor_device = {
     pclxl_device_body("pxlcolor", 24),
-    pclxl_device_procs(gx_default_rgb_map_rgb_color,
-                       gx_default_rgb_map_color_rgb)
+    devprocs_initialize(pxlcolor_initialize)
 };
 
 /* ---------------- Other utilities ---------------- */

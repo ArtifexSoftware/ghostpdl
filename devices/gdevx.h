@@ -228,5 +228,18 @@ dev_proc_map_color_rgb(gdev_x_map_color_rgb);  /* gdevxcmp.c */
 dev_proc_get_params(gdev_x_get_params);  /* gdevxini.c */
 dev_proc_put_params(gdev_x_put_params);  /* gdevxini.c */
 dev_proc_initialize(gdev_x_initialize);  /* gdevxini.c */
+dev_proc_open_device(x_open);
+dev_proc_get_initial_matrix(x_get_initial_matrix);
+dev_proc_sync_output(x_sync);
+dev_proc_output_page(x_output_page);
+dev_proc_close_device(x_close);
+dev_proc_fill_rectangle(x_fill_rectangle);
+dev_proc_copy_mono(x_copy_mono);
+dev_proc_copy_color(x_copy_color);
+dev_proc_get_page_device(x_get_page_device);
+dev_proc_strip_tile_rectangle(x_strip_tile_rectangle);
+dev_proc_get_bits_rectangle(x_get_bits_rectangle);
+dev_proc_fillpage(x_fillpage);
+
 
 #endif /* gdevx_INCLUDED */

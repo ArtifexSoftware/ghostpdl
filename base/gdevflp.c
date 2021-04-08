@@ -107,6 +107,7 @@ static dev_proc_copy_alpha_hl_color(flp_copy_alpha_hl_color);
 static dev_proc_process_page(flp_process_page);
 static dev_proc_transform_pixel_region(flp_transform_pixel_region);
 static dev_proc_fill_stroke_path(flp_fill_stroke_path);
+static dev_proc_initialize(flp_initialize);
 
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
@@ -137,82 +138,7 @@ gx_device_flp gs_flp_device =
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
                         1, 8, 255, 0, 256, 1),
-    {default_subclass_open_device,
-     default_subclass_get_initial_matrix,
-     default_subclass_sync_output,			/* sync_output */
-     flp_output_page,
-     flp_close_device,
-     default_subclass_map_rgb_color,
-     default_subclass_map_color_rgb,
-     flp_fill_rectangle,
-     flp_tile_rectangle,			/* tile_rectangle */
-     flp_copy_mono,
-     flp_copy_color,
-     flp_draw_line,			/* draw_line */
-     flp_get_bits,			/* get_bits */
-     default_subclass_get_params,
-     flp_put_params,
-     default_subclass_map_cmyk_color,
-     default_subclass_get_xfont_procs,			/* get_xfont_procs */
-     default_subclass_get_xfont_device,			/* get_xfont_device */
-     default_subclass_map_rgb_alpha_color,
-     default_subclass_get_page_device,
-     flp_get_alpha_bits,			/* get_alpha_bits */
-     flp_copy_alpha,
-     flp_get_band,			/* get_band */
-     flp_copy_rop,			/* copy_rop */
-     flp_fill_path,
-     flp_stroke_path,
-     flp_fill_mask,
-     flp_fill_trapezoid,
-     flp_fill_parallelogram,
-     flp_fill_triangle,
-     flp_draw_thin_line,
-     flp_begin_image,
-     flp_image_data,			/* image_data */
-     flp_end_image,			/* end_image */
-     flp_strip_tile_rectangle,
-     flp_strip_copy_rop,
-     default_subclass_get_clipping_box,			/* get_clipping_box */
-     flp_begin_typed_image,
-     flp_get_bits_rectangle,			/* get_bits_rectangle */
-     default_subclass_map_color_rgb_alpha,
-     flp_create_compositor,
-     default_subclass_get_hardware_params,			/* get_hardware_params */
-     flp_text_begin,
-     default_subclass_initialize,			/* initialize */
-     flp_begin_transparency_group,			/* begin_transparency_group */
-     flp_end_transparency_group,			/* end_transparency_group */
-     flp_begin_transparency_mask,			/* begin_transparency_mask */
-     flp_end_transparency_mask,			/* end_transparency_mask */
-     flp_discard_transparency_layer,			/* discard_transparency_layer */
-     default_subclass_get_color_mapping_procs,			/* get_color_mapping_procs */
-     default_subclass_get_color_comp_index,			/* get_color_comp_index */
-     default_subclass_encode_color,			/* encode_color */
-     default_subclass_decode_color,			/* decode_color */
-     flp_pattern_manage,			/* pattern_manage */
-     flp_fill_rectangle_hl_color,			/* fill_rectangle_hl_color */
-     default_subclass_include_color_space,			/* include_color_space */
-     flp_fill_linear_color_scanline,			/* fill_linear_color_scanline */
-     flp_fill_linear_color_trapezoid,			/* fill_linear_color_trapezoid */
-     flp_fill_linear_color_triangle,			/* fill_linear_color_triangle */
-     default_subclass_update_spot_equivalent_colors,			/* update_spot_equivalent_colors */
-     default_subclass_ret_devn_params,			/* ret_devn_params */
-     flp_fillpage,		/* fillpage */
-     flp_push_transparency_state,                      /* push_transparency_state */
-     flp_pop_transparency_state,                      /* pop_transparency_state */
-     flp_put_image,                      /* put_image */
-     default_subclass_dev_spec_op,                      /* dev_spec_op */
-     flp_copy_planes,                      /* copy_planes */
-     default_subclass_get_profile,                      /* get_profile */
-     default_subclass_set_graphics_type_tag,        /* set_graphics_type_tag */
-     flp_strip_copy_rop2,
-     flp_strip_tile_rect_devn,
-     flp_copy_alpha_hl_color,
-     flp_process_page,
-     flp_transform_pixel_region,
-     flp_fill_stroke_path,
-    }
+    devprocs_initialize(flp_initialize)
 };
 
 #undef MAX_COORD
@@ -1343,6 +1269,68 @@ int flp_transform_pixel_region(gx_device *dev, transform_pixel_region_reason rea
         return code;
     if (!code)
         return default_subclass_transform_pixel_region(dev, reason, data);
+
+    return 0;
+}
+
+static int
+flp_initialize(gx_device *dev)
+{
+    int code = default_subclass_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, output_page, flp_output_page);
+    set_dev_proc(dev, close_device, flp_close_device);
+    set_dev_proc(dev, fill_rectangle, flp_fill_rectangle);
+    set_dev_proc(dev, tile_rectangle, flp_tile_rectangle);
+    set_dev_proc(dev, copy_mono, flp_copy_mono);
+    set_dev_proc(dev, copy_color, flp_copy_color);
+    set_dev_proc(dev, obsolete_draw_line, flp_draw_line);
+    set_dev_proc(dev, get_bits, flp_get_bits);
+    set_dev_proc(dev, put_params, flp_put_params);
+    set_dev_proc(dev, get_alpha_bits, flp_get_alpha_bits);
+    set_dev_proc(dev, copy_alpha, flp_copy_alpha);
+    set_dev_proc(dev, get_band, flp_get_band);
+    set_dev_proc(dev, copy_rop, flp_copy_rop);
+    set_dev_proc(dev, fill_path, flp_fill_path);
+    set_dev_proc(dev, stroke_path, flp_stroke_path);
+    set_dev_proc(dev, fill_mask, flp_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, flp_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, flp_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, flp_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, flp_draw_thin_line);
+    set_dev_proc(dev, begin_image, flp_begin_image);
+    set_dev_proc(dev, image_data, flp_image_data);
+    set_dev_proc(dev, end_image, flp_end_image);
+    set_dev_proc(dev, strip_tile_rectangle, flp_strip_tile_rectangle);
+    set_dev_proc(dev, strip_copy_rop, flp_strip_copy_rop);
+    set_dev_proc(dev, begin_typed_image, flp_begin_typed_image);
+    set_dev_proc(dev, get_bits_rectangle, flp_get_bits_rectangle);
+    set_dev_proc(dev, create_compositor, flp_create_compositor);
+    set_dev_proc(dev, text_begin, flp_text_begin);
+    set_dev_proc(dev, begin_transparency_group, flp_begin_transparency_group);
+    set_dev_proc(dev, end_transparency_group, flp_end_transparency_group);
+    set_dev_proc(dev, begin_transparency_mask, flp_begin_transparency_mask);
+    set_dev_proc(dev, end_transparency_mask, flp_end_transparency_mask);
+    set_dev_proc(dev, discard_transparency_layer, flp_discard_transparency_layer);
+    set_dev_proc(dev, pattern_manage, flp_pattern_manage);
+    set_dev_proc(dev, fill_rectangle_hl_color, flp_fill_rectangle_hl_color);
+    set_dev_proc(dev, fill_linear_color_scanline, flp_fill_linear_color_scanline);
+    set_dev_proc(dev, fill_linear_color_trapezoid, flp_fill_linear_color_trapezoid);
+    set_dev_proc(dev, fill_linear_color_triangle, flp_fill_linear_color_triangle);
+    set_dev_proc(dev, fillpage, flp_fillpage);
+    set_dev_proc(dev, push_transparency_state, flp_push_transparency_state);
+    set_dev_proc(dev, pop_transparency_state, flp_pop_transparency_state);
+    set_dev_proc(dev, put_image, flp_put_image);
+    set_dev_proc(dev, copy_planes, flp_copy_planes);
+    set_dev_proc(dev, strip_copy_rop2, flp_strip_copy_rop2);
+    set_dev_proc(dev, strip_tile_rect_devn, flp_strip_tile_rect_devn);
+    set_dev_proc(dev, copy_alpha_hl_color, flp_copy_alpha_hl_color);
+    set_dev_proc(dev, process_page, flp_process_page);
+    set_dev_proc(dev, transform_pixel_region, flp_transform_pixel_region);
+    set_dev_proc(dev, fill_stroke_path, flp_fill_stroke_path);
 
     return 0;
 }

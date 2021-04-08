@@ -99,21 +99,81 @@ struct gx_device_lips4_s {
     lips4_params_common;
 };
 
+static int
+lips2p_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, lips2p_open);
+    set_dev_proc(dev, close_device, lips_close);
+    set_dev_proc(dev, get_params, lips_get_params);
+    set_dev_proc(dev, put_params, lips_put_params);
+
+    return 0;
+};
+
+static int
+lips3_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, lips3_open);
+    set_dev_proc(dev, close_device, lips_close);
+    set_dev_proc(dev, get_params, lips_get_params);
+    set_dev_proc(dev, put_params, lips_put_params);
+
+    return 0;
+};
+
+static int
+bjc880j_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, bjc880j_open);
+    set_dev_proc(dev, close_device, lips_close);
+    set_dev_proc(dev, get_params, lips4_get_params);
+    set_dev_proc(dev, put_params, lips4_put_params);
+
+    return 0;
+};
+
+static int
+lips4_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, lips4_open);
+    set_dev_proc(dev, close_device, lips_close);
+    set_dev_proc(dev, get_params, lips4_get_params);
+    set_dev_proc(dev, put_params, lips4_put_params);
+
+    return 0;
+};
+
 static gx_device_procs lips2p_prn_procs =
-prn_params_procs(lips2p_open, gdev_prn_output_page, lips_close,
-                 lips_get_params, lips_put_params);
+    devprocs_initialize(lips2p_initialize);
 
 static gx_device_procs lips3_prn_procs =
-prn_params_procs(lips3_open, gdev_prn_output_page, lips_close,
-                 lips_get_params, lips_put_params);
+    devprocs_initialize(lips3_initialize);
 
 static gx_device_procs bjc880j_prn_color_procs =
-prn_params_procs(bjc880j_open, gdev_prn_output_page, lips_close,
-                       lips4_get_params, lips4_put_params);
+    devprocs_initialize(bjc880j_initialize);
 
 static gx_device_procs lips4_prn_procs =
-prn_params_procs(lips4_open, gdev_prn_output_page, lips_close,
-                       lips4_get_params, lips4_put_params);
+    devprocs_initialize(lips4_initialize);
 
 gx_device_lips far_data gs_lips2p_device =
 lips_device(gx_device_lips, lips2p_prn_procs, "lips2p",

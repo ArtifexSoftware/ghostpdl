@@ -48,10 +48,24 @@ static int sixel_print_page(gx_device_printer *pdev, gp_file *prn_stream,
 /* The device descriptor */
 static dev_proc_output_page(sixel_output_page);
 static dev_proc_print_page(ln03_print_page);
+
 /* We have to supply our own procs, since we have to intercept */
 /* output_page so we can open the printer in text mode. */
+static int
+sixel_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, output_page, sixel_output_page);
+
+    return 0;
+}
+
 static gx_device_procs sixel_procs =
-  prn_procs(gdev_prn_open, sixel_output_page, gdev_prn_close);
+  devprocs_initialize(sixel_initialize);
 
 #ifdef A4
 #  define BOTTOM_MARGIN 0.5

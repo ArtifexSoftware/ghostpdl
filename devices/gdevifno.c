@@ -81,10 +81,24 @@ gs_private_st_suffix_add1_final(st_inferno_device, inferno_device,
         "inferno_device", inferno_device_enum_ptrs, inferno_device_reloc_ptrs,
                           gx_device_finalize, st_device_printer, p9color);
 
+static int
+inferno_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, inferno_open);
+    set_dev_proc(dev, close_device, inferno_close);
+    set_dev_proc(dev, map_rgb_color, inferno_rgb2cmap);
+    set_dev_proc(dev, map_color_rgb, inferno_cmap2rgb);
+
+    return 0;
+}
+
 static const gx_device_procs inferno_procs =
-        prn_color_params_procs(inferno_open, gdev_prn_output_page, inferno_close,
-                inferno_rgb2cmap, inferno_cmap2rgb,
-                gdev_prn_get_params, gdev_prn_put_params);
+        devprocs_initialize(inferno_initialize);
 
 inferno_device far_data gs_inferno_device =
 { prn_device_stype_body(inferno_device, inferno_procs, "inferno",

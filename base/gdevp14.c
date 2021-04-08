@@ -218,121 +218,143 @@ static	const gx_color_map_procs *
 
 /* 24-bit color. */
 
-#define	pdf14_dev_procs(get_color_mapping_procs, get_color_comp_index, encode_color, decode_color) \
-{\
-        pdf14_open,			/* open */\
-        NULL,				/* get_initial_matrix */\
-        NULL,				/* sync_output */\
-        pdf14_output_page,		/* output_page */\
-        pdf14_close,			/* close */\
-        encode_color,			/* rgb_map_rgb_color */\
-        decode_color,			/* gx_default_rgb_map_color_rgb */\
-        pdf14_fill_rectangle,		/* fill_rectangle */\
-        NULL,				/* tile_rectangle */\
-        pdf14_copy_mono,		/* copy_mono */\
-        NULL,				/* copy_color */\
-        NULL,				/* draw_line */\
-        NULL,				/* get_bits */\
-        gx_forward_get_params,		/* get_params */\
-        pdf14_put_params,		/* put_params */\
-        NULL,				/* map_cmyk_color */\
-        NULL,				/* get_xfont_procs */\
-        NULL,				/* get_xfont_device */\
-        NULL,				/* map_rgb_alpha_color */\
-        NULL,				/* get_page_device */\
-        NULL,				/* get_alpha_bits */\
-        pdf14_copy_alpha,		/* copy_alpha */\
-        NULL,				/* get_band */\
-        NULL,				/* copy_rop */\
-        pdf14_fill_path,		/* fill_path */\
-        pdf14_stroke_path,		/* stroke_path */\
-        pdf14_fill_mask,		/* fill_mask */\
-        NULL,				/* fill_trapezoid */\
-        NULL,				/* fill_parallelogram */\
-        NULL,				/* fill_triangle */\
-        NULL,				/* draw_thin_line */\
-        NULL,				/* begin_image */\
-        NULL,				/* image_data */\
-        NULL,				/* end_image */\
-        NULL,				/* strip_tile_rectangle */\
-        NULL,				/* strip_copy_rop, */\
-        NULL,				/* get_clipping_box */\
-        pdf14_begin_typed_image,	/* begin_typed_image */\
-        NULL,				/* get_bits_rectangle */\
-        NULL,				/* map_color_rgb_alpha */\
-        pdf14_create_compositor,	/* create_compositor */\
-        NULL,				/* get_hardware_params */\
-        pdf14_text_begin,		/* text_begin */\
-        pdf14_initialize,               /* initialize */\
-        pdf14_begin_transparency_group,\
-        pdf14_end_transparency_group,\
-        pdf14_begin_transparency_mask,\
-        pdf14_end_transparency_mask,\
-        pdf14_discard_trans_layer,\
-        get_color_mapping_procs,	/* get_color_mapping_procs */\
-        get_color_comp_index,		/* get_color_comp_index */\
-        encode_color,			/* encode_color */\
-        decode_color,			/* decode_color */\
-        NULL,                           /* pattern_manage */\
-        pdf14_fill_rectangle_hl_color,	/* fill_rectangle_hl_color */\
-        NULL,				/* include_color_space */\
-        NULL,				/* fill_linear_color_scanline */\
-        NULL,				/* fill_linear_color_trapezoid */\
-        NULL,				/* fill_linear_color_triangle */\
-        gx_forward_update_spot_equivalent_colors,	/* update spot */\
-        pdf14_ret_devn_params,          /* DevN params */\
-        NULL,                           /* fill page */\
-        pdf14_push_transparency_state,  /* push_transparency_state */\
-        pdf14_pop_transparency_state,   /* pop_transparency_state */\
-        NULL,                           /* put_image */\
-        pdf14_dev_spec_op,               /* dev_spec_op */\
-        pdf14_copy_planes,               /* copy_planes */\
-        NULL,                           /*  */\
-        gx_forward_set_graphics_type_tag, /* set_graphics_type_tag */\
-        NULL,                           /* strip_copy_rop2 */\
-        pdf14_strip_tile_rect_devn,     /* strip_tile_rect_devn */\
-        pdf14_copy_alpha_hl_color,       /* copy_alpha_hl_color */\
-        NULL,                            /* process_page */\
-        NULL,				/* transform_pixel_region */\
-        pdf14_fill_stroke_path,         /* fill_stroke */\
+static int
+pdf14_procs_initialize(gx_device *dev,
+                       dev_proc_get_color_mapping_procs(get_color_mapping_procs),
+                       dev_proc_get_color_comp_index(get_color_comp_index),
+                       dev_proc_encode_color(encode_color),
+                       dev_proc_decode_color(decode_color))
+{
+    set_dev_proc(dev, open_device, pdf14_open);
+    set_dev_proc(dev, output_page, pdf14_output_page);
+    set_dev_proc(dev, close_device, pdf14_close);
+    set_dev_proc(dev, map_rgb_color, encode_color);
+    set_dev_proc(dev, map_color_rgb, decode_color);
+    set_dev_proc(dev, fill_rectangle, pdf14_fill_rectangle);
+    set_dev_proc(dev, copy_mono, pdf14_copy_mono);
+    set_dev_proc(dev, get_params, gx_forward_get_params);
+    set_dev_proc(dev, put_params, pdf14_put_params);
+    set_dev_proc(dev, copy_alpha, pdf14_copy_alpha);
+    set_dev_proc(dev, fill_path, pdf14_fill_path);
+    set_dev_proc(dev, stroke_path, pdf14_stroke_path);
+    set_dev_proc(dev, fill_mask, pdf14_fill_mask);
+    set_dev_proc(dev, begin_typed_image, pdf14_begin_typed_image);
+    set_dev_proc(dev, create_compositor, pdf14_create_compositor);
+    set_dev_proc(dev, text_begin, pdf14_text_begin);
+    set_dev_proc(dev, begin_transparency_group, pdf14_begin_transparency_group);
+    set_dev_proc(dev, end_transparency_group, pdf14_end_transparency_group);
+    set_dev_proc(dev, begin_transparency_mask, pdf14_begin_transparency_mask);
+    set_dev_proc(dev, end_transparency_mask, pdf14_end_transparency_mask);
+    set_dev_proc(dev, discard_transparency_layer, pdf14_discard_trans_layer);
+    set_dev_proc(dev, get_color_mapping_procs, get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, get_color_comp_index);
+    set_dev_proc(dev, encode_color, encode_color);
+    set_dev_proc(dev, decode_color, decode_color);
+    set_dev_proc(dev, fill_rectangle_hl_color, pdf14_fill_rectangle_hl_color);
+    set_dev_proc(dev, update_spot_equivalent_colors, gx_forward_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, pdf14_ret_devn_params);
+    set_dev_proc(dev, push_transparency_state, pdf14_push_transparency_state);
+    set_dev_proc(dev, pop_transparency_state, pdf14_pop_transparency_state);
+    set_dev_proc(dev, dev_spec_op, pdf14_dev_spec_op);
+    set_dev_proc(dev, copy_planes, pdf14_copy_planes);
+    set_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+    set_dev_proc(dev, strip_tile_rect_devn, pdf14_strip_tile_rect_devn);
+    set_dev_proc(dev, copy_alpha_hl_color, pdf14_copy_alpha_hl_color);
+    set_dev_proc(dev, fill_stroke_path, pdf14_fill_stroke_path);
+
+    return pdf14_initialize(dev);
+}
+
+static int
+pdf14_Gray_initialize(gx_device *dev)
+{
+    return pdf14_procs_initialize(dev,
+                                  gx_default_DevGray_get_color_mapping_procs,
+                                  gx_default_DevGray_get_color_comp_index,
+                                  pdf14_encode_color,
+                                  pdf14_decode_color);
 }
 
 static	const gx_device_procs pdf14_Gray_procs =
-        pdf14_dev_procs(gx_default_DevGray_get_color_mapping_procs,
-                        gx_default_DevGray_get_color_comp_index,
-                        pdf14_encode_color, pdf14_decode_color);
+    devprocs_initialize(pdf14_Gray_initialize);
+
+static int
+pdf14_RGB_initialize(gx_device *dev)
+{
+    return pdf14_procs_initialize(dev,
+                                  gx_default_DevRGB_get_color_mapping_procs,
+                                  gx_default_DevRGB_get_color_comp_index,
+                                  pdf14_encode_color,
+                                  pdf14_decode_color);
+}
 
 static	const gx_device_procs pdf14_RGB_procs =
-        pdf14_dev_procs(gx_default_DevRGB_get_color_mapping_procs,
-                        gx_default_DevRGB_get_color_comp_index,
-                        pdf14_encode_color, pdf14_decode_color);
+    devprocs_initialize(pdf14_RGB_initialize);
+
+static int
+pdf14_CMYK_initialize(gx_device *dev)
+{
+    return pdf14_procs_initialize(dev,
+                                  gx_default_DevCMYK_get_color_mapping_procs,
+                                  gx_default_DevCMYK_get_color_comp_index,
+                                  pdf14_encode_color,
+                                  pdf14_decode_color);
+}
 
 static	const gx_device_procs pdf14_CMYK_procs =
-        pdf14_dev_procs(gx_default_DevCMYK_get_color_mapping_procs,
-                        gx_default_DevCMYK_get_color_comp_index,
-                        pdf14_encode_color, pdf14_decode_color);
+    devprocs_initialize(pdf14_CMYK_initialize);
+
+static int
+pdf14_CMYKspot_initialize(gx_device *dev)
+{
+    return pdf14_procs_initialize(dev,
+                                  pdf14_cmykspot_get_color_mapping_procs,
+                                  pdf14_cmykspot_get_color_comp_index,
+                                  pdf14_encode_color,
+                                  pdf14_decode_color);
+}
 
 static	const gx_device_procs pdf14_CMYKspot_procs =
-        pdf14_dev_procs(pdf14_cmykspot_get_color_mapping_procs,
-                        pdf14_cmykspot_get_color_comp_index,
-                        pdf14_encode_color, pdf14_decode_color);
+    devprocs_initialize(pdf14_CMYKspot_initialize);
+
+static int
+pdf14_RGBspot_initialize(gx_device *dev)
+{
+    return pdf14_procs_initialize(dev,
+                                  pdf14_rgbspot_get_color_mapping_procs,
+                                  pdf14_rgbspot_get_color_comp_index,
+                                  pdf14_encode_color,
+                                  pdf14_decode_color);
+}
 
 static	const gx_device_procs pdf14_RGBspot_procs =
-        pdf14_dev_procs(pdf14_rgbspot_get_color_mapping_procs,
-            pdf14_rgbspot_get_color_comp_index,
-            pdf14_encode_color, pdf14_decode_color);
+    devprocs_initialize(pdf14_RGBspot_initialize);
+
+static int
+pdf14_Grayspot_initialize(gx_device *dev)
+{
+    return pdf14_procs_initialize(dev,
+                                  pdf14_grayspot_get_color_mapping_procs,
+                                  pdf14_grayspot_get_color_comp_index,
+                                  pdf14_encode_color,
+                                  pdf14_decode_color);
+}
 
 static	const gx_device_procs pdf14_Grayspot_procs =
-pdf14_dev_procs(pdf14_grayspot_get_color_mapping_procs,
-    pdf14_grayspot_get_color_comp_index,
-    pdf14_encode_color, pdf14_decode_color);
+    devprocs_initialize(pdf14_Grayspot_initialize);
 
+static int
+pdf14_custom_initialize(gx_device *dev)
+{
+    return pdf14_procs_initialize(dev,
+                                  gx_forward_get_color_mapping_procs,
+                                  gx_forward_get_color_comp_index,
+                                  gx_forward_encode_color,
+                                  gx_forward_decode_color);
+}
 
 static	const gx_device_procs pdf14_custom_procs =
-        pdf14_dev_procs(gx_forward_get_color_mapping_procs,
-                        gx_forward_get_color_comp_index,
-                        gx_forward_encode_color,
-                        gx_forward_decode_color);
+    devprocs_initialize(pdf14_custom_initialize);
 
 static struct_proc_finalize(pdf14_device_finalize);
 
@@ -635,8 +657,7 @@ gs_private_st_suffix_add1_final(st_gx_devn_accum_device, gx_device_pdf14_accum,
                           gx_devn_prn_device_finalize, st_gx_devn_prn_device, save_p14dev);
 
 static const gx_device_procs pdf14_accum_Gray_procs =
-    prn_color_procs(gdev_prn_open, NULL, gdev_prn_close,
-        gx_default_8bit_map_gray_color, gx_default_8bit_map_color_gray);
+    devprocs_initialize(gdev_prn_initialize_gray8);
 
 const gx_device_pdf14_accum pdf14_accum_Gray = {
     prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_Gray_procs, "pdf14-accum-Gray",
@@ -652,8 +673,7 @@ const gx_device_pdf14_accum pdf14_accum_Gray = {
 };
 
 static const gx_device_procs pdf14_accum_RGB_procs =
-    prn_color_procs(gdev_prn_open, NULL, gdev_prn_close,
-        gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+    devprocs_initialize(gdev_prn_initialize_rgb);
 
 const gx_device_pdf14_accum pdf14_accum_RGB = {
     prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_RGB_procs, "pdf14-accum-RGB",
@@ -669,8 +689,7 @@ const gx_device_pdf14_accum pdf14_accum_RGB = {
 };
 
 static const gx_device_procs pdf14_accum_CMYK_procs =
-    prn_color_procs(gdev_prn_open, NULL, gdev_prn_close,
-        cmyk_8bit_map_cmyk_color, cmyk_8bit_map_color_cmyk);
+    devprocs_initialize(gdev_prn_initialize_cmyk8);
 
 const gx_device_pdf14_accum pdf14_accum_CMYK = {
     prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_CMYK_procs, "pdf14-accum-CMYK",
@@ -685,81 +704,24 @@ const gx_device_pdf14_accum pdf14_accum_CMYK = {
     0/*save_p14dev*/
 };
 
+static int
+pdf14_accum_initialize_cmykspot(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk8(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_color_mapping_procs, pdf14_accum_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, pdf14_accum_get_color_comp_index);
+    set_dev_proc(dev, update_spot_equivalent_colors, pdf14_accum_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, pdf14_accum_ret_devn_params);
+
+    return code;
+}
+
 static const gx_device_procs pdf14_accum_CMYKspot_procs =
-{\
-        gdev_prn_open,			/* open */\
-        NULL,				/* get_initial_matrix */\
-        NULL,				/* sync_output */\
-        NULL,				/* output_page */\
-        gdev_prn_close,			/* close */\
-        cmyk_8bit_map_cmyk_color,	/* rgb_map_rgb_color */\
-        cmyk_8bit_map_color_cmyk,	/* gx_default_rgb_map_color_rgb */\
-        NULL,				/* fill_rectangle */\
-        NULL,				/* tile_rectangle */\
-        NULL,				/* copy_mono */\
-        NULL,				/* copy_color */\
-        NULL,				/* draw_line */\
-        NULL,				/* get_bits */\
-        NULL,				/* get_params */\
-        NULL,				/* put_params */\
-        NULL,				/* map_cmyk_color */\
-        NULL,				/* get_xfont_procs */\
-        NULL,				/* get_xfont_device */\
-        NULL,				/* map_rgb_alpha_color */\
-        NULL,				/* get_page_device */\
-        NULL,				/* get_alpha_bits */\
-        NULL		,		/* copy_alpha */\
-        NULL,				/* get_band */\
-        NULL,				/* copy_rop */\
-        NULL,				/* fill_path */\
-        NULL,				/* stroke_path */\
-        NULL,				/* fill_mask */\
-        NULL,				/* fill_trapezoid */\
-        NULL,				/* fill_parallelogram */\
-        NULL,				/* fill_triangle */\
-        NULL,				/* draw_thin_line */\
-        NULL,				/* begin_image */\
-        NULL,				/* image_data */\
-        NULL,				/* end_image */\
-        NULL,				/* strip_tile_rectangle */\
-        NULL,				/* strip_copy_rop, */\
-        NULL,				/* get_clipping_box */\
-        NULL,				/* begin_typed_image */\
-        NULL,				/* get_bits_rectangle */\
-        NULL,				/* map_color_rgb_alpha */\
-        NULL,				/* create_compositor */\
-        NULL,				/* get_hardware_params */\
-        NULL,				/* text_begin */\
-        NULL,  				/* initialize */\
-        NULL,				/* begin_transparency_group */\
-        NULL,				/* end_transparency_group */\
-        NULL,				/* begin_transparency_mask */\
-        NULL,				/* end_transparency_mask */\
-        NULL,				/* discard_trans_layer */\
-        pdf14_accum_get_color_mapping_procs,	/* get_color_mapping_procs */\
-        pdf14_accum_get_color_comp_index,	/* get_color_comp_index */\
-        cmyk_8bit_map_cmyk_color,	/* encode_color */\
-        cmyk_8bit_map_color_cmyk,	/* decode_color */\
-        NULL,                           /* pattern_manage */\
-        NULL,				/* fill_rectangle_hl_color */\
-        NULL,				/* include_color_space */\
-        NULL,				/* fill_linear_color_scanline */\
-        NULL,				/* fill_linear_color_trapezoid */\
-        NULL,				/* fill_linear_color_triangle */\
-        pdf14_accum_update_spot_equivalent_colors,	/* update spot */\
-        pdf14_accum_ret_devn_params,	/* DevN params */\
-        NULL,                           /* fill page */\
-        NULL,				/* push_transparency_state */\
-        NULL,				/* pop_transparency_state */\
-        NULL,                           /* put_image */\
-        NULL,				/* dev_spec_op */\
-        NULL,				/* copy_planes */\
-        NULL,                           /*  */\
-        NULL,				/* set_graphics_type_tag */\
-        NULL,                           /* strip_copy_rop2 */\
-        NULL,                           /* strip_tile_rect_devn */\
-        NULL				/* copy_alpha_hl_color */\
-};
+    devprocs_initialize(pdf14_accum_initialize_cmykspot);
 
 const gx_device_pdf14_accum pdf14_accum_CMYKspot = {
     prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_CMYKspot_procs, "pdf14-accum-CMYKspot",
@@ -7023,8 +6985,15 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
     if_debug2m('v', pdev->memory,
                 "[v]pdf14_push_color_model, num_components_old = %d num_components_new = %d\n",
                 pdev->color_info.num_components,new_num_comps);
-    set_dev_proc(pdev, get_color_mapping_procs, pdevproto->static_procs->get_color_mapping_procs);
-    set_dev_proc(pdev, get_color_comp_index, pdevproto->static_procs->get_color_comp_index);
+    {
+        gx_device local_device;
+
+        local_device.procs.initialize = pdevproto->static_procs->initialize;
+        /* We know the initialize call can't fail! */
+        (void)local_device.procs.initialize(&local_device);
+        set_dev_proc(pdev, get_color_mapping_procs, local_device.procs.get_color_mapping_procs);
+        set_dev_proc(pdev, get_color_comp_index, local_device.procs.get_color_comp_index);
+    }
     group_color->blend_procs = pdev->blend_procs = pdevproto->blend_procs;
     group_color->polarity = pdev->color_info.polarity = new_polarity;
     group_color->num_components = pdev->color_info.num_components = new_num_comps;
@@ -7300,8 +7269,15 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
         "[v]pdf14_clist_push_color_model, num_components_old = %d num_components_new = %d\n",
         pdev->color_info.num_components, new_num_comps);
     /* Set new information in the device */
-    set_dev_proc(pdev, get_color_mapping_procs, pdevproto->static_procs->get_color_mapping_procs);
-    set_dev_proc(pdev, get_color_comp_index, pdevproto->static_procs->get_color_comp_index);
+    {
+        gx_device local_device;
+
+        local_device.procs.initialize = pdevproto->static_procs->initialize;
+        /* We know the initialize call can't fail! */
+        (void)local_device.procs.initialize(&local_device);
+        set_dev_proc(pdev, get_color_mapping_procs, local_device.procs.get_color_mapping_procs);
+        set_dev_proc(pdev, get_color_comp_index, local_device.procs.get_color_comp_index);
+    }
     pdev->blend_procs = pdevproto->blend_procs;
     pdev->color_info.polarity = new_polarity;
     pdev->color_info.num_components = new_num_comps;
@@ -9555,86 +9531,6 @@ send_pdf14trans(gs_gstate	* pgs, gx_device * dev,
  * device.
  */
 
-#define	pdf14_clist_procs(get_color_mapping_procs, get_color_comp_index,\
-                                                encode_color, decode_color) \
-{\
-        NULL,				/* open */\
-        gx_forward_get_initial_matrix,	/* get_initial_matrix */\
-        gx_forward_sync_output,		/* sync_output */\
-        gx_forward_output_page,		/* output_page */\
-        gx_forward_close_device,	/* close_device */\
-        encode_color,			/* rgb_map_rgb_color */\
-        decode_color,			/* map_color_rgb */\
-        gx_forward_fill_rectangle,	/* fill_rectangle */\
-        gx_forward_tile_rectangle,	/* tile_rectangle */\
-        gx_forward_copy_mono,		/* copy_mono */\
-        gx_forward_copy_color,		/* copy_color */\
-        NULL		,		/* draw_line - obsolete */\
-        gx_forward_get_bits,		/* get_bits */\
-        gx_forward_get_params,		/* get_params */\
-        pdf14_put_params,		/* put_params */\
-        encode_color,			/* map_cmyk_color */\
-        gx_forward_get_xfont_procs,	/* get_xfont_procs */\
-        gx_forward_get_xfont_device,	/* get_xfont_device */\
-        NULL,				/* map_rgb_alpha_color */\
-        gx_forward_get_page_device,	/* get_page_device */\
-        NULL,	                        /* get_alpha_bits */\
-        gx_forward_copy_alpha,		/* copy_alpha */\
-        gx_forward_get_band,		/* get_band */\
-        gx_forward_copy_rop,		/* copy_rop */\
-        pdf14_clist_fill_path,		/* fill_path */\
-        pdf14_clist_stroke_path,	/* stroke_path */\
-        gx_forward_fill_mask,		/* fill_mask */\
-        gx_forward_fill_trapezoid,	/* fill_trapezoid */\
-        gx_forward_fill_parallelogram,	/* fill_parallelogram */\
-        gx_forward_fill_triangle,	/* fill_triangle */\
-        gx_forward_draw_thin_line,	/* draw_thin_line */\
-        pdf14_clist_begin_image,	/* begin_image */\
-        gx_forward_image_data,		/* image_data */\
-        gx_forward_end_image,		/* end_image */\
-        gx_forward_strip_tile_rectangle, /* strip_tile_rectangle */\
-        gx_forward_strip_copy_rop,	/* strip_copy_rop, */\
-        gx_forward_get_clipping_box,	/* get_clipping_box */\
-        pdf14_clist_begin_typed_image,	/* begin_typed_image */\
-        gx_forward_get_bits_rectangle,	/* get_bits_rectangle */\
-        NULL,				/* map_color_rgb_alpha */\
-        pdf14_clist_create_compositor,	/* create_compositor */\
-        gx_forward_get_hardware_params,	/* get_hardware_params */\
-        pdf14_clist_text_begin,		/* text_begin */\
-        NULL,				/* initialize */\
-        pdf14_begin_transparency_group,\
-        pdf14_end_transparency_group,\
-        pdf14_begin_transparency_mask,\
-        pdf14_end_transparency_mask,\
-        gx_default_discard_transparency_layer,				/* discard_transparency_layer */\
-        get_color_mapping_procs,	/* get_color_mapping_procs */\
-        get_color_comp_index,		/* get_color_comp_index */\
-        encode_color,			/* encode_color */\
-        decode_color,			/* decode_color */\
-        NULL,                           /* pattern_manage */\
-        gx_forward_fill_rectangle_hl_color,	/* fill_rectangle_hl_color */\
-        NULL,				/* include_color_space */\
-        NULL,				/* fill_linear_color_scanline */\
-        NULL,				/* fill_linear_color_trapezoid */\
-        NULL,				/* fill_linear_color_triangle */\
-        gx_forward_update_spot_equivalent_colors,	/* update spot */\
-        gx_forward_ret_devn_params,	/* gx_forward_ret_devn_params */\
-        gx_forward_fillpage,\
-        pdf14_push_transparency_state,\
-        pdf14_pop_transparency_state,\
-        NULL,                           /* put_image */\
-        pdf14_dev_spec_op,\
-        pdf14_clist_copy_planes,        /* copy planes */\
-        NULL,                           /* get_profile */\
-        gx_forward_set_graphics_type_tag, /* set_graphics_type_tag */\
-        NULL,                           /* strip_copy_rop2 */\
-        NULL,                           /* strip_tile_rect_devn */\
-        gx_forward_copy_alpha_hl_color,\
-        NULL,				/* process_page */\
-        NULL,				/* transform_pixel_region */\
-        pdf14_clist_fill_stroke_path,\
-}
-
 static	dev_proc_create_compositor(pdf14_clist_create_compositor);
 static	dev_proc_create_compositor(pdf14_clist_forward_create_compositor);
 static	dev_proc_fill_path(pdf14_clist_fill_path);
@@ -9645,41 +9541,139 @@ static	dev_proc_begin_image(pdf14_clist_begin_image);
 static	dev_proc_begin_typed_image(pdf14_clist_begin_typed_image);
 static  dev_proc_copy_planes(pdf14_clist_copy_planes);
 
-static	const gx_device_procs pdf14_clist_Gray_procs =
-        pdf14_clist_procs(gx_default_DevGray_get_color_mapping_procs,
-                        gx_default_DevGray_get_color_comp_index,
-                        pdf14_encode_color,
-                        pdf14_decode_color);
+static int
+pdf14_clist_initialize(gx_device *dev,
+                       dev_proc_get_color_mapping_procs(get_color_mapping_procs),
+                       dev_proc_get_color_comp_index(get_color_comp_index))
+{
+    set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
+    set_dev_proc(dev, sync_output, gx_forward_sync_output);
+    set_dev_proc(dev, output_page, gx_forward_output_page);
+    set_dev_proc(dev, close_device, gx_forward_close_device);
+    set_dev_proc(dev, map_rgb_color, pdf14_encode_color);
+    set_dev_proc(dev, map_color_rgb, pdf14_decode_color);
+    set_dev_proc(dev, fill_rectangle, gx_forward_fill_rectangle);
+    set_dev_proc(dev, tile_rectangle, gx_forward_tile_rectangle);
+    set_dev_proc(dev, copy_mono, gx_forward_copy_mono);
+    set_dev_proc(dev, copy_color, gx_forward_copy_color);
+    set_dev_proc(dev, get_bits, gx_forward_get_bits);
+    set_dev_proc(dev, get_params, gx_forward_get_params);
+    set_dev_proc(dev, put_params, pdf14_put_params);
+    set_dev_proc(dev, map_cmyk_color, pdf14_encode_color);
+    set_dev_proc(dev, get_xfont_procs, gx_forward_get_xfont_procs);
+    set_dev_proc(dev, get_xfont_device, gx_forward_get_xfont_device);
+    set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
+    set_dev_proc(dev, copy_alpha, gx_forward_copy_alpha);
+    set_dev_proc(dev, get_band, gx_forward_get_band);
+    set_dev_proc(dev, copy_rop, gx_forward_copy_rop);
+    set_dev_proc(dev, fill_path, pdf14_clist_fill_path);
+    set_dev_proc(dev, stroke_path, pdf14_clist_stroke_path);
+    set_dev_proc(dev, fill_mask, gx_forward_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, gx_forward_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, gx_forward_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
+    set_dev_proc(dev, begin_image, pdf14_clist_begin_image);
+    set_dev_proc(dev, image_data, gx_forward_image_data);
+    set_dev_proc(dev, end_image, gx_forward_end_image);
+    set_dev_proc(dev, strip_tile_rectangle, gx_forward_strip_tile_rectangle);
+    set_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
+    set_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
+    set_dev_proc(dev, begin_typed_image, pdf14_clist_begin_typed_image);
+    set_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
+    set_dev_proc(dev, create_compositor, pdf14_clist_create_compositor);
+    set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
+    set_dev_proc(dev, text_begin, pdf14_clist_text_begin);
+    set_dev_proc(dev, begin_transparency_group, pdf14_begin_transparency_group);
+    set_dev_proc(dev, end_transparency_group, pdf14_end_transparency_group);
+    set_dev_proc(dev, begin_transparency_mask, pdf14_begin_transparency_mask);
+    set_dev_proc(dev, end_transparency_mask, pdf14_end_transparency_mask);
+    set_dev_proc(dev, discard_transparency_layer, gx_default_discard_transparency_layer);
+    set_dev_proc(dev, get_color_mapping_procs, get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, get_color_comp_index);
+    set_dev_proc(dev, encode_color, pdf14_encode_color);
+    set_dev_proc(dev, decode_color, pdf14_decode_color);
+    set_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
+    set_dev_proc(dev, update_spot_equivalent_colors, gx_forward_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
+    set_dev_proc(dev, fillpage, gx_forward_fillpage);
+    set_dev_proc(dev, push_transparency_state, pdf14_push_transparency_state);
+    set_dev_proc(dev, pop_transparency_state, pdf14_pop_transparency_state);
+    set_dev_proc(dev, dev_spec_op, pdf14_dev_spec_op);
+    set_dev_proc(dev, copy_planes, pdf14_clist_copy_planes);
+    set_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+    set_dev_proc(dev, copy_alpha_hl_color, gx_forward_copy_alpha_hl_color);
+    set_dev_proc(dev, fill_stroke_path, pdf14_clist_fill_stroke_path);
 
-static	const gx_device_procs pdf14_clist_RGB_procs =
-        pdf14_clist_procs(gx_default_DevRGB_get_color_mapping_procs,
-                        gx_default_DevRGB_get_color_comp_index,
-                        pdf14_encode_color,
-                        pdf14_decode_color);
+    return 0;
+}
+
+static int
+pdf14_clist_Gray_initialize(gx_device *dev)
+{
+    return pdf14_clist_initialize(dev,
+                                  gx_default_DevGray_get_color_mapping_procs,
+                                  gx_default_DevGray_get_color_comp_index);
+}
+
+static const gx_device_procs pdf14_clist_Gray_procs =
+    devprocs_initialize(pdf14_clist_Gray_initialize);
+
+static int
+pdf14_clist_RGB_initialize(gx_device *dev)
+{
+    return pdf14_clist_initialize(dev,
+                                  gx_default_DevRGB_get_color_mapping_procs,
+                                  gx_default_DevRGB_get_color_comp_index);
+}
+
+static const gx_device_procs pdf14_clist_RGB_procs =
+    devprocs_initialize(pdf14_clist_RGB_initialize);
+
+static int
+pdf14_clist_CMYK_initialize(gx_device *dev)
+{
+    return pdf14_clist_initialize(dev,
+                                  gx_default_DevCMYK_get_color_mapping_procs,
+                                  gx_default_DevCMYK_get_color_comp_index);
+}
 
 static	const gx_device_procs pdf14_clist_CMYK_procs =
-        pdf14_clist_procs(gx_default_DevCMYK_get_color_mapping_procs,
-                        gx_default_DevCMYK_get_color_comp_index,
-                        pdf14_encode_color, pdf14_decode_color);
+    devprocs_initialize(pdf14_clist_CMYK_initialize);
 
-static	const gx_device_procs pdf14_clist_CMYKspot_procs =
-        pdf14_clist_procs(pdf14_cmykspot_get_color_mapping_procs,
-                        pdf14_cmykspot_get_color_comp_index,
-                        pdf14_encode_color,
-                        pdf14_decode_color);
+static int
+pdf14_clist_CMYKspot_initialize(gx_device *dev)
+{
+    return pdf14_clist_initialize(dev,
+                                  pdf14_cmykspot_get_color_mapping_procs,
+                                  pdf14_cmykspot_get_color_comp_index);
+}
+
+static const gx_device_procs pdf14_clist_CMYKspot_procs =
+    devprocs_initialize(pdf14_clist_CMYKspot_initialize);
 
 #if 0 /* NOT USED */
-static	const gx_device_procs pdf14_clist_RGBspot_procs =
-        pdf14_clist_procs(pdf14_rgbspot_get_color_mapping_procs,
-                        pdf14_rgbspot_get_color_comp_index,
-                        pdf14_encode_color,
-                        pdf14_decode_color);
+static int
+pdf14_clist_RGBspot_initialize(gx_device *dev)
+{
+    return pdf14_clist_initialize(dev,
+                                  pdf14_rgbspot_get_color_mapping_procs,
+                                  pdf14_rgbspot_get_color_comp_index);
+}
 
-static	const gx_device_procs pdf14_clist_Grayspot_procs =
-        pdf14_clist_procs(pdf14_grayspot_get_color_mapping_procs,
-                        pdf14_grayspot_get_color_comp_index,
-                        pdf14_encode_color,
-                        pdf14_decode_color);
+static const gx_device_procs pdf14_clist_RGBspot_procs =
+    devprocs_initialize(pdf14_clist_RGBspot_initialize);
+
+static int
+pdf14_clist_Grayspot_initialize(gx_device *dev)
+{
+    return pdf14_clist_initialize(dev,
+                                  pdf14_grayspot_get_color_mapping_procs,
+                                  pdf14_grayspot_get_color_comp_index);
+}
+
+static const gx_device_procs pdf14_clist_Grayspot_procs =
+    devprocs_initialize(pdf14_clist_Grayspot_initialize);
 #endif  /* NOT USED */
 
 const pdf14_clist_device pdf14_clist_Gray_device = {

@@ -211,10 +211,23 @@ static media_t media_codes[] = {
 /* ------------------------- 1 bit Monochrome ---------------------------- */
 /***************************************************************************/
 
+static int
+bjcmono_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, gdev_bjc_get_params);
+    set_dev_proc(dev, put_params, gdev_bjc_put_params);
+
+    return 0;
+}
+
+
 static const gx_device_procs bjcmono_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-                 NULL, NULL,
-                 gdev_bjc_get_params, gdev_bjc_put_params);
+devprocs_initialize(bjcmono_initialize);
 
 const gx_device_bjc_printer gs_bjcmono_device =
 bjc_device(bjcmono_procs, "bjcmono",
@@ -234,10 +247,22 @@ bjc_device(bjcmono_procs, "bjcmono",
 /* -------------------------- 8 bit Grayscale ---------------------------- */
 /***************************************************************************/
 
+static int
+bjcgray_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, gdev_bjc_get_params);
+    set_dev_proc(dev, put_params, gdev_bjc_put_params);
+
+    return 0;
+}
+
 static const gx_device_procs bjcgray_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-                 gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb,
-                 gdev_bjc_get_params, gdev_bjc_put_params);
+devprocs_initialize(bjcgray_initialize);
 
 const gx_device_bjc_printer gs_bjcgray_device =
 bjc_device(bjcgray_procs, "bjcgray",
@@ -257,10 +282,22 @@ bjc_device(bjcgray_procs, "bjcgray",
 /* --------------------------- 3 bit CMYK Color -------------------------- */
 /***************************************************************************/
 
+static int
+bjccmyk_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk1(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, gdev_bjc_get_params);
+    set_dev_proc(dev, put_params, gdev_bjc_put_params);
+
+    return 0;
+}
+
 static const gx_device_procs bjc_cmykcolor_procs =
-bjc_cmyk_param_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-                     cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color,
-                     gdev_bjc_get_params, gdev_bjc_put_params);
+devprocs_initialize(bjccmyk_initialize);
 
 const gx_device_bjc_printer gs_bjccmyk_device =
 bjc_device(bjc_cmykcolor_procs, "bjccmyk",
@@ -280,10 +317,22 @@ bjc_device(bjc_cmykcolor_procs, "bjccmyk",
 /* --------------------------- 24 bit TrueColor -------------------------- */
 /***************************************************************************/
 
+static int
+bjc_truecolor_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk8(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, gdev_bjc_get_params);
+    set_dev_proc(dev, put_params, gdev_bjc_put_params);
+
+    return 0;
+}
+
 static const gx_device_procs bjc_truecolor_procs =
-bjc_cmyk_param_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-                     cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color,
-                     gdev_bjc_get_params, gdev_bjc_put_params);
+devprocs_initialize(bjc_truecolor_initialize);
 
 const gx_device_bjc_printer gs_bjccolor_device =
 bjc_device(bjc_truecolor_procs, "bjccolor",

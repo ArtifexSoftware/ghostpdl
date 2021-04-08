@@ -205,63 +205,20 @@ trap_is_last(const gx_san_trap *list, const gx_san_trap *t)
 
 /* The device descriptor */
 /* Many of these procedures won't be called; they are set to NULL. */
+static int
+san_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, san_open);
+    set_dev_proc(dev, close_device, san_close);
+    set_dev_proc(dev, fill_path, gx_default_fill_path);
+    set_dev_proc(dev, get_clipping_box, san_get_clipping_box);
+
+    return 0;
+}
 static const gx_device_spot_analyzer gx_spot_analyzer_device =
 {std_device_std_body(gx_device_spot_analyzer, 0, "spot analyzer",
                      0, 0, 1, 1),
- {san_open,
-  NULL,
-  NULL,
-  NULL,
-  san_close,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  gx_default_fill_path,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  san_get_clipping_box,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  gx_default_initialize,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL
- }
+ devprocs_initialize(san_initialize)
 };
 
 int
@@ -419,8 +376,11 @@ gx_san__obtain(gs_memory_t *mem, gx_device_spot_analyzer **ppadev)
                 &st_device_spot_analyzer, "gx_san__obtain");
     if (padev == 0)
         return_error(gs_error_VMerror);
-    gx_device_init((gx_device *)padev, (const gx_device *)&gx_spot_analyzer_device,
-                   mem, false);
+    code = gx_device_init((gx_device *)padev,
+                          (const gx_device *)&gx_spot_analyzer_device,
+                          mem, false);
+    if (code < 0)
+        return code;
     code = gs_opendevice((gx_device *)padev);
     if (code < 0) {
         gs_free_object(mem, padev, "gx_san__obtain");

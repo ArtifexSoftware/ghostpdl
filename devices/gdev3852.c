@@ -39,12 +39,26 @@ Modified by L. Peter Deutsch <ghost@aladdin.com> 1999-01-10 to remove _ss
 /* Should = 96 (KMG) */
 #define LINE_SIZE ((X_DPI * 86 / 10 + 63) / 64 * 8)
 
+static int
+jetp3852_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
+    set_dev_proc(dev, map_rgb_color, gdev_pcl_3bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gdev_pcl_3bit_map_color_rgb);
+
+    return 0;
+}
+
 /* The device descriptor */
 static dev_proc_print_page(jetp3852_print_page);
 /* Since the 'print_page' does not change the device, this device can print in the background */
 static gx_device_procs jetp3852_procs =
-  prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-    gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
+  devprocs_initialize(jetp3852_initialize);
 const gx_device_printer far_data gs_jetp3852_device =
   prn_device(jetp3852_procs, "jetp3852",
         86,				/* width_10ths, 8.6" (?) */

@@ -30,9 +30,23 @@ static dev_proc_print_page(paintjet_print_page);
 static dev_proc_print_page(pjetxl_print_page);
 static int pj_common_print_page(gx_device_printer *, gp_file *, int, const char *);
 /* Since the print_page doesn't alter the device, this device can print in the background */
+static int
+paintjet_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, gdev_pcl_3bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gdev_pcl_3bit_map_color_rgb);
+
+    return 0;
+}
+
 static gx_device_procs paintjet_procs =
-  prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-    gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
+  devprocs_initialize(paintjet_initialize);
+
 const gx_device_printer far_data gs_lj250_device =
   prn_device(paintjet_procs, "lj250",
         85,				/* width_10ths, 8.5" */
@@ -49,8 +63,8 @@ const gx_device_printer far_data gs_paintjet_device =
         3, paintjet_print_page);
 /* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs pjetxl_procs =
-  prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-    gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
+  devprocs_initialize(paintjet_initialize);
+
 const gx_device_printer far_data gs_pjetxl_device =
   prn_device(pjetxl_procs, "pjetxl",
         85,				/* width_10ths, 8.5" */

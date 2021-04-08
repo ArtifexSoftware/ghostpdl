@@ -701,26 +701,6 @@ typedef struct {
     terminate_page\
 }
 
-#define cmyk_colour_procs(proc_colour_open, proc_get_params, proc_put_params, \
-                          map_rgb_color, map_color_rgb, map_cmyk_color)\
-{	proc_colour_open,\
-        gx_default_get_initial_matrix,\
-        gx_default_sync_output,\
-        gdev_prn_output_page,\
-        gdev_prn_close,\
-        map_rgb_color,\
-        map_color_rgb,\
-        NULL /* fill_rectangle */,\
-        NULL /* tile_rectangle */,\
-        NULL /* copy_mono */,\
-        NULL /* copy_color */,\
-        NULL /* draw_line */,\
-        gx_default_get_bits,\
-        proc_get_params,\
-        proc_put_params,\
-        map_cmyk_color\
-}
-
 /*  Printer-specific functions.  Most printers are handled by the cdj850_xx()
  *  functions.
  */
@@ -788,30 +768,78 @@ static void
 static void
      cdnj500_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
+static int
+cdj670_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, hp_colour_open);
+    set_dev_proc(dev, map_rgb_color, NULL);
+    set_dev_proc(dev, map_color_rgb, gdev_cmyk_map_color_rgb);
+    set_dev_proc(dev, get_params, cdj850_get_params);
+    set_dev_proc(dev, put_params, cdj850_put_params);
+    set_dev_proc(dev, map_cmyk_color, gdev_cmyk_map_cmyk_color);
+
+    return 0;
+}
+
+static int
+cdj1600_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, hp_colour_open);
+    set_dev_proc(dev, map_rgb_color, gdev_pcl_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gdev_pcl_map_color_rgb);
+    set_dev_proc(dev, get_params, cdj850_get_params);
+    set_dev_proc(dev, put_params, cdj850_put_params);
+    set_dev_proc(dev, map_cmyk_color, NULL);
+
+    return 0;
+}
+
+static int
+chp2200_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, hp_colour_open);
+    set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
+    set_dev_proc(dev, get_params, cdj850_get_params);
+    set_dev_proc(dev, put_params, cdj850_put_params);
+    set_dev_proc(dev, map_cmyk_color, NULL);
+
+    return 0;
+}
+
 static const gx_device_procs cdj670_procs =
-cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-                  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
+    devprocs_initialize(cdj670_initialize);
 
 static const gx_device_procs cdj850_procs =
-cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-                  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
+    devprocs_initialize(cdj670_initialize);
 
 static const gx_device_procs cdj880_procs =
-cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-                  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
+    devprocs_initialize(cdj670_initialize);
 
 static const gx_device_procs cdj890_procs =
-cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-                  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
+    devprocs_initialize(cdj670_initialize);
 
 static const gx_device_procs cdj1600_procs =
-cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-                  gdev_pcl_map_rgb_color, gdev_pcl_map_color_rgb, NULL);
+    devprocs_initialize(cdj1600_initialize);
 
 /* HP2200 and DNJ500 is a RGB printer */
 static const gx_device_procs chp2200_procs =
-cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-                  gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb, NULL);
+    devprocs_initialize(chp2200_initialize);
 
 const gx_device_cdj850 gs_cdj670_device =
 cdj_850_device(cdj670_procs, "cdj670", 600, 600, 32, cdj850_print_page, 0,

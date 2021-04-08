@@ -1669,6 +1669,53 @@ typedef struct {
         dev_t_proc_fill_stroke_path((*fill_stroke_path), dev_t);\
 }
 
+#define devprocs_initialize(p_init) {\
+        NULL, /* open */\
+        NULL, /* get_initial_matrix */\
+        NULL, /* sync_output */\
+        NULL, /* output_page */\
+        NULL, /* close */\
+        NULL, /* map_rgb_color */\
+        NULL, /* map_color_rgb */\
+        NULL, /* fill_rectangle */\
+        NULL, /* tile_rectangle */\
+        NULL, /* copy_mono */\
+        NULL, /* copy_color */\
+        NULL, /* draw_line */\
+        NULL, /* get_bits */\
+        NULL, /* get_params */\
+        NULL, /* put_params */\
+        NULL, /* map_cmyk_color */\
+        NULL, /* get_xfont_procs */\
+        NULL, /* get_xfont_device */\
+        NULL, /* map_rgb_alpha_color */\
+        NULL, /* gx_page_device_get_page_device */\
+        NULL, /* get_alpha_bits */\
+        NULL, /* copy_alpha */\
+        NULL, /* get_band */\
+        NULL, /* copy_rop */\
+        NULL, /* fill_path */\
+        NULL, /* stroke_path */\
+        NULL, /* fill_mask */\
+        NULL, /* fill_trapezoid */\
+        NULL, /* fill_parallelogram */\
+        NULL, /* fill_triangle */\
+        NULL, /* draw_thin_line */\
+        NULL, /* begin_image */\
+        NULL, /* image_data */\
+        NULL, /* end_image */\
+        NULL, /* strip_tile_rectangle */\
+        NULL, /* strip_copy_rop, */\
+        NULL, /* get_clipping_box */\
+        NULL, /* begin_typed_image */\
+        NULL, /* get_bits_rectangle */\
+        NULL, /* map_color_rgb_alpha */\
+        NULL, /* create_compositor */\
+        NULL, /* get_hardware_params */\
+        NULL, /* text_begin */\
+        p_init /* initialize */\
+}
+
 /*
  * Provide procedures for passing image data.  image_data and end_image
  * are the equivalents of the obsolete driver procedures.  image_plane_data
@@ -1885,13 +1932,16 @@ extern_st(st_device_null);
  * about what this means.  Normally, devices created for temporary use have
  * internal = true (retained = false).
  */
-void gx_device_init(gx_device * dev, const gx_device * proto,
-                    gs_memory_t * mem, bool internal);
+int gx_device_init(gx_device * dev, const gx_device * proto,
+                   gs_memory_t * mem, bool internal);
 
 /*
  * Identical to gx_device_init, except that the reference counting is set
  * up so that it doesn't attempt to free the device structure when the last
  * instance is removed, and the device is always internal (never retained).
+ *
+ * If the device uses an initialize proc (and it should!) it can never
+ * fail.
  */
 void gx_device_init_on_stack(gx_device * dev, const gx_device * proto,
                              gs_memory_t * mem);

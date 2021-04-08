@@ -85,8 +85,7 @@ out:
 /* CLJ device methods */
 /* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs cljc_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+    devprocs_initialize(gdev_prn_initialize_rgb_bg);
 
 /* the CLJ device */
 const gx_device_printer gs_cljet5c_device =

@@ -42,8 +42,22 @@ struct gx_device_dfax_s {
 typedef struct gx_device_dfax_s gx_device_dfax;
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
+static int
+dfax_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, dfax_prn_open);
+    set_dev_proc(dev, output_page, gdev_prn_bg_output_page_seekable);
+
+    return 0;
+}
+
 static gx_device_procs dfax_procs =
-  prn_procs(dfax_prn_open, gdev_prn_bg_output_page_seekable, gdev_prn_close);
+    devprocs_initialize(dfax_initialize);
 
 gx_device_dfax far_data gs_dfaxlow_device =
 {   prn_device_std_body(gx_device_dfax, dfax_procs, "dfaxlow",

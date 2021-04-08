@@ -42,11 +42,42 @@ static dev_proc_image_out(escpage_image_out);
 static void escpage_printer_initialize(gx_device_printer * pdev, gp_file * fp, int);
 static void escpage_paper_set(gx_device_printer * pdev, gp_file * fp);
 
+static int
+lp2000_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, lp2000_open);
+    set_dev_proc(dev, get_params, lprn_get_params);
+    set_dev_proc(dev, put_params, lprn_put_params);
+
+    return code;
+}
+
 static gx_device_procs lp2000_prn_procs =
-lprn_procs(lp2000_open, gdev_prn_output_page, gdev_prn_close);
+    devprocs_initialize(lp2000_initialize);
+
+static int
+escpage_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, escpage_open);
+    set_dev_proc(dev, close_device, escpage_close);
+    set_dev_proc(dev, get_params, lprn_get_params);
+    set_dev_proc(dev, put_params, lprn_put_params);
+
+    return code;
+}
 
 static gx_device_procs escpage_prn_procs =
-lprn_procs(escpage_open, gdev_prn_output_page, escpage_close);
+    devprocs_initialize(escpage_initialize);
 
 gx_device_lprn far_data gs_lp2000_device =
 lprn_device(gx_device_lprn, lp2000_prn_procs, "lp2000",

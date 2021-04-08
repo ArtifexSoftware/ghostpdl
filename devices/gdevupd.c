@@ -218,24 +218,23 @@ prn_std_procs instead of defining their own procedure-table.
 #define upd_set_dev_proc(dev, p, proc) \
    ((dev)->std_procs.p = (dev)->orig_procs.p = (proc))
 
-static gx_device_procs upd_procs = {  /** Table of procedures */
-   upd_open,                      /** open-function, upd-special */
-   gx_default_get_initial_matrix, /** retrieve matrix */
-   gx_default_sync_output,        /** sync display */
-   gdev_prn_output_page,          /** superclass-print (calls back) */
-   upd_close,                     /** close-function, upd-special */
-   gx_default_map_rgb_color,      /** RGB-mapping */
-   gx_default_map_color_rgb,      /** reverse mapping */
-   NULL,                          /** fill_rectangle */
-   NULL,                          /** tile_rectangle */
-   NULL,                          /** copy_mono */
-   NULL,                          /** copy_color */
-   NULL,                          /** draw_line */
-   gx_default_get_bits,           /** reads scanlines, e.g. for the driver */
-   upd_get_params,                /** Export parameters, upd-special */
-   upd_put_params,                /** Import parameters, upd-special */
-   gx_default_map_cmyk_color      /** KCMY-mapping */
-};                                     /** */
+static int
+upd_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, upd_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page);
+    set_dev_proc(dev, close_device, upd_close);
+    set_dev_proc(dev, map_rgb_color, gx_default_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
+    set_dev_proc(dev, get_params, upd_get_params);
+    set_dev_proc(dev, get_params, upd_put_params);
+    set_dev_proc(dev, map_cmyk_color, gx_default_map_cmyk_color);
+
+    return 0;
+}
+
+static gx_device_procs upd_procs =
+    devprocs_initialize(upd_initialize);
 
 /**
 The prototype-instance of the device-structure _must_ have the name

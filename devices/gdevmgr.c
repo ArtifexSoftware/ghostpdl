@@ -66,17 +66,70 @@ static dev_proc_print_page(cmgrN_print_page);
 
 /* The device procedures */
 /* Since the print_page doesn't alter the device, this device can print in the background */
+static int
+mgr_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, gdev_mgr_open);
+
+    return 0;
+}
+
+static int
+mgrN_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, gdev_mgr_open);
+
+    return 0;
+}
+
+static int
+cmgr4_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, gdev_mgr_open);
+    set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, pc_4bit_map_color_rgb);
+
+    return 0;
+}
+
+static int
+cmgr8_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, gdev_mgr_open);
+    set_dev_proc(dev, map_rgb_color, mgr_8bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, mgr_8bit_map_color_rgb);
+
+    return 0;
+}
+
 static gx_device_procs mgr_procs =
-    prn_procs(gdev_mgr_open, gdev_prn_bg_output_page, gdev_prn_close);
+    devprocs_initialize(mgr_initialize);
 static gx_device_procs mgrN_procs =
-    prn_color_procs(gdev_mgr_open, gdev_prn_bg_output_page, gdev_prn_close,
-        gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
+    devprocs_initialize(mgrN_initialize);
 static gx_device_procs cmgr4_procs =
-    prn_color_procs(gdev_mgr_open, gdev_prn_bg_output_page, gdev_prn_close,
-        pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
+    devprocs_initialize(cmgr4_initialize);
 static gx_device_procs cmgr8_procs =
-    prn_color_procs(gdev_mgr_open, gdev_prn_bg_output_page, gdev_prn_close,
-        mgr_8bit_map_rgb_color, mgr_8bit_map_color_rgb);
+    devprocs_initialize(cmgr8_initialize);
 
 /* The device descriptors themselves */
 gx_device_mgr far_data gs_mgrmono_device =

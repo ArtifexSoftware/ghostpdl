@@ -63,6 +63,35 @@ static dev_proc_fillpage(bbox_fillpage);
 static int
 bbox_initialize(gx_device *dev)
 {
+     set_dev_proc(dev, open_device, bbox_open_device);
+     set_dev_proc(dev, get_initial_matrix, gx_upright_get_initial_matrix);
+     set_dev_proc(dev, output_page, bbox_output_page);
+     set_dev_proc(dev, close_device, bbox_close_device);
+     set_dev_proc(dev, map_rgb_color, gx_default_gray_map_rgb_color);
+     set_dev_proc(dev, map_color_rgb, gx_default_gray_map_color_rgb);
+     set_dev_proc(dev, fill_rectangle, bbox_fill_rectangle);
+     set_dev_proc(dev, copy_mono, bbox_copy_mono);
+     set_dev_proc(dev, copy_color, bbox_copy_color);
+     set_dev_proc(dev, get_params, bbox_get_params);
+     set_dev_proc(dev, put_params, bbox_put_params);
+     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+     set_dev_proc(dev, copy_alpha, bbox_copy_alpha);
+     set_dev_proc(dev, fill_path, bbox_fill_path);
+     set_dev_proc(dev, stroke_path, bbox_stroke_path);
+     set_dev_proc(dev, fill_mask, bbox_fill_mask);
+     set_dev_proc(dev, fill_trapezoid, bbox_fill_trapezoid);
+     set_dev_proc(dev, fill_parallelogram, bbox_fill_parallelogram);
+     set_dev_proc(dev, fill_triangle, bbox_fill_triangle);
+     set_dev_proc(dev, draw_thin_line, bbox_draw_thin_line);
+     set_dev_proc(dev, strip_tile_rectangle, bbox_strip_tile_rectangle);
+     set_dev_proc(dev, strip_copy_rop, bbox_strip_copy_rop);
+     set_dev_proc(dev, begin_typed_image, bbox_begin_typed_image);
+     set_dev_proc(dev, create_compositor, bbox_create_compositor);
+     set_dev_proc(dev, text_begin, bbox_text_begin);
+     set_dev_proc(dev, fillpage, bbox_fillpage);
+     set_dev_proc(dev, strip_copy_rop2, bbox_strip_copy_rop2);
+     set_dev_proc(dev, strip_tile_rect_devn, bbox_strip_tile_rect_devn);
+
     return 0;
 }
 
@@ -95,78 +124,7 @@ gx_device_bbox gs_bbox_device =
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
                         1, 8, 255, 0, 256, 1),
-    {bbox_open_device,
-     gx_upright_get_initial_matrix,
-     NULL,			/* sync_output */
-     bbox_output_page,
-     bbox_close_device,
-     gx_default_gray_map_rgb_color,
-     gx_default_gray_map_color_rgb,
-     bbox_fill_rectangle,
-     NULL,			/* tile_rectangle */
-     bbox_copy_mono,
-     bbox_copy_color,
-     NULL,			/* draw_line */
-     NULL,			/* get_bits */
-     bbox_get_params,
-     bbox_put_params,
-     gx_default_map_cmyk_color,
-     NULL,			/* get_xfont_procs */
-     NULL,			/* get_xfont_device */
-     gx_default_map_rgb_alpha_color,
-     gx_page_device_get_page_device,
-     NULL,			/* get_alpha_bits */
-     bbox_copy_alpha,
-     NULL,			/* get_band */
-     NULL,			/* copy_rop */
-     bbox_fill_path,
-     bbox_stroke_path,
-     bbox_fill_mask,
-     bbox_fill_trapezoid,
-     bbox_fill_parallelogram,
-     bbox_fill_triangle,
-     bbox_draw_thin_line,
-     gx_default_begin_image,
-     NULL,			/* image_data */
-     NULL,			/* end_image */
-     bbox_strip_tile_rectangle,
-     bbox_strip_copy_rop,
-     NULL,			/* get_clipping_box */
-     bbox_begin_typed_image,
-     NULL,			/* get_bits_rectangle */
-     gx_default_map_color_rgb_alpha,
-     bbox_create_compositor,
-     NULL,			/* get_hardware_params */
-     bbox_text_begin,
-     bbox_initialize,		/* initialize */
-     NULL,			/* begin_transparency_group */
-     NULL,			/* end_transparency_group */
-     NULL,			/* begin_transparency_mask */
-     NULL,			/* end_transparency_mask */
-     NULL,			/* discard_transparency_layer */
-     NULL,			/* get_color_mapping_procs */
-     NULL,			/* get_color_comp_index */
-     NULL,			/* encode_color */
-     NULL,			/* decode_color */
-     NULL,			/* pattern_manage */
-     NULL,			/* fill_rectangle_hl_color */
-     NULL,			/* include_color_space */
-     NULL,			/* fill_linear_color_scanline */
-     NULL,			/* fill_linear_color_trapezoid */
-     NULL,			/* fill_linear_color_triangle */
-     NULL,			/* update_spot_equivalent_colors */
-     NULL,			/* ret_devn_params */
-     bbox_fillpage,		/* fillpage */
-     NULL,                      /* push_transparency_state */
-     NULL,                      /* pop_transparency_state */
-     NULL,                      /* put_image */
-     NULL,                      /* dev_spec_op */
-     NULL,                      /* copy_planes */
-     NULL,                      /* get_profile */
-     NULL,                      /* set_graphics_type_tag */
-     bbox_strip_copy_rop2,
-     bbox_strip_tile_rect_devn
-    },
+    devprocs_initialize(bbox_initialize),
     0,				/* target */
     1,				/*true *//* free_standing */
     1				/*true *//* forward_open_close */
@@ -281,8 +239,9 @@ bbox_close_device(gx_device * dev)
 void
 gx_device_bbox_init(gx_device_bbox * dev, gx_device * target, gs_memory_t *mem)
 {
-    gx_device_init((gx_device *) dev, (const gx_device *)&gs_bbox_device,
-                   (target ? target->memory : mem), true);
+    /* Can never fail */
+    (void)gx_device_init((gx_device *) dev, (const gx_device *)&gs_bbox_device,
+                         (target ? target->memory : mem), true);
     if (target) {
         gx_device_forward_fill_in_procs((gx_device_forward *) dev);
         set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);

@@ -57,66 +57,26 @@ struct gx_device_perm_s {
 };
 typedef struct gx_device_perm_s gx_device_perm_t;
 
-static const gx_device_procs perm_procs = {
-    gdev_prn_open,
-    NULL,
-/* Since the print_page doesn't alter the device, this device can print in the background */
-    NULL,
-    gdev_prn_bg_output_page,
-    gdev_prn_close,
-    NULL,
-    NULL,
-    NULL,				/* fill_rectangle */
-    NULL,				/* tile_rectangle */
-    NULL,				/* copy_mono */
-    NULL,				/* copy_color */
-    NULL,				/* draw_line */
-    NULL,				/* get_bits */
-    perm_get_params,		        /* get_params */
-    perm_put_params,		        /* put_params */
-    NULL,				/* map_cmyk_color - not used */
-    NULL,				/* get_xfont_procs */
-    NULL,				/* get_xfont_device */
-    NULL,				/* map_rgb_alpha_color */
-    gx_page_device_get_page_device,	/* get_page_device */
-    NULL,				/* get_alpha_bits */
-    NULL,				/* copy_alpha */
-    NULL,				/* get_band */
-    NULL,				/* copy_rop */
-    NULL,				/* fill_path */
-    NULL,				/* stroke_path */
-    NULL,				/* fill_mask */
-    NULL,				/* fill_trapezoid */
-    NULL,				/* fill_parallelogram */
-    NULL,				/* fill_triangle */
-    NULL,				/* draw_thin_line */
-    NULL,				/* begin_image */
-    NULL,				/* image_data */
-    NULL,				/* end_image */
-    NULL,				/* strip_tile_rectangle */
-    NULL,				/* strip_copy_rop */
-    NULL,				/* get_clipping_box */
-    NULL,				/* begin_typed_image */
-    NULL,				/* get_bits_rectangle */
-    NULL,				/* map_color_rgb_alpha */
-    NULL,				/* create_compositor */
-    NULL,				/* get_hardware_params */
-    NULL,				/* text_begin */
-    NULL,				/* initialize */
-    NULL,				/* begin_transparency_group */
-    NULL,				/* end_transparency_group */
-    NULL,				/* begin_transparency_mask */
-    NULL,				/* end_transparency_mask */
-    NULL,				/* discard_transparency_layer */
-    perm_get_color_mapping_procs,	/* get_color_mapping_procs */
-    perm_get_color_comp_index,
-    perm_encode_color,		/* encode_color */
-    perm_decode_color		/* decode_color */
+static int
+perm_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
 
-};
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, perm_get_params);
+    set_dev_proc(dev, put_params, perm_put_params);
+    set_dev_proc(dev, get_color_mapping_procs, perm_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, perm_get_color_comp_index);
+    set_dev_proc(dev, encode_color, perm_encode_color);
+    set_dev_proc(dev, decode_color, perm_decode_color);
+
+    return 0;
+}
 
 const gx_device_perm_t gs_perm_device = {
-    prn_device_body_extended(gx_device_perm_t, perm_procs, "permute",
+    prn_device_body_extended(gx_device_perm_t, perm_initialize, "permute",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, 72, 72,
         0, 0, 0, 0,
         GX_DEVICE_COLOR_MAX_COMPONENTS, 4,

@@ -34,8 +34,24 @@ static dev_proc_image_out(rpdl_image_out);
 static void rpdl_printer_initialize(gx_device_printer * pdev, gp_file * prn_stream, int num_copies);
 static void rpdl_paper_set(gx_device_printer * pdev, gp_file * prn_stream);
 
+static int
+rpdl_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, rpdl_open);
+    set_dev_proc(dev, close_device, rpdl_close);
+    set_dev_proc(dev, get_params, lprn_get_params);
+    set_dev_proc(dev, put_params, lprn_put_params);
+
+    return code;
+}
+
 static gx_device_procs rpdl_prn_procs =
-lprn_procs(rpdl_open, gdev_prn_output_page, rpdl_close);
+    devprocs_initialize(rpdl_initialize);
 
 gx_device_lprn far_data gs_rpdl_device =
 lprn_device(gx_device_lprn, rpdl_prn_procs, "rpdl",

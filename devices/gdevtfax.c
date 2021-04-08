@@ -54,10 +54,27 @@ struct gx_device_tfax_s {
 typedef struct gx_device_tfax_s gx_device_tfax;
 
 /* Define procedures that adjust the paper size. */
-static const gx_device_procs gdev_tfax_std_procs =
 /* FIXME: From initial analysis this is NOT safe for bg_printing, but might be fixable */
-    prn_params_procs(tfax_open, gdev_prn_output_page_seekable, tfax_close,
-                     tfax_get_params, tfax_put_params);
+static int
+tfax_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tfax_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, tfax_close);
+    set_dev_proc(dev, get_params, tfax_get_params);
+    set_dev_proc(dev, put_params, tfax_put_params);
+
+    return 0;
+}
+
+
+static const gx_device_procs gdev_tfax_std_procs =
+    devprocs_initialize(tfax_initialize);
 
 #define TFAX_DEVICE(dname, print_page, compr)\
 {\

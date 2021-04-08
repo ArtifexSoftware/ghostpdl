@@ -398,11 +398,7 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
         gs_free_object(mem->non_gc_memory, a_std, "gs_copydevice(stype)");
         return_error(gs_error_VMerror);
     }
-    gx_device_init(new_dev, dev, mem, false);
-    if (new_dev->static_procs != NULL) {	/* 0 if already populated */
-        new_dev->procs = *new_dev->static_procs;
-        new_dev->static_procs = 0;
-    }
+    code = gx_device_init(new_dev, dev, mem, false);
     new_dev->stype = new_std;
     new_dev->stype_is_dynamic = new_std != std;
     /*
@@ -411,8 +407,6 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
      * (including self-pointers) that they may contain.
      */
     new_dev->is_open = dev->is_open && keep_open;
-    fill_dev_proc(new_dev, initialize, gx_default_initialize);
-    code = dev_proc(new_dev, initialize)(new_dev);
     if (code < 0) {
         gs_free_object(mem, new_dev, "gs_copydevice(device)");
 #if 0 /* gs_free_object above calls gx_device_finalize,
@@ -609,15 +603,28 @@ gs_setdevice_no_init(gs_gstate * pgs, gx_device * dev)
 }
 
 /* Initialize a just-allocated device. */
-void
+int
 gx_device_init(gx_device * dev, const gx_device * proto, gs_memory_t * mem,
                bool internal)
 {
     memcpy(dev, proto, proto->params_size);
+    if (dev->static_procs != NULL) { /* NULL if already populated */
+        dev->procs = *dev->static_procs;
+        dev->static_procs = NULL;
+    }
+    if (dev->procs.initialize) {
+        /* A condition of devices inited in this way is that they can
+         * never fail to initialize! */
+        int code = dev->procs.initialize(dev);
+        if (code < 0)
+            return code;
+    }
     dev->memory = mem;
     dev->retained = !internal;
     rc_init(dev, mem, (internal ? 0 : 1));
     rc_increment(dev->icc_struct);
+
+    return 0;
 }
 
 void
@@ -625,6 +632,12 @@ gx_device_init_on_stack(gx_device * dev, const gx_device * proto,
                         gs_memory_t * mem)
 {
     memcpy(dev, proto, proto->params_size);
+    if (dev->procs.initialize) {
+        /* A condition of devices inited on the stack is that they can
+         * never fail to initialize! */
+        (void)dev->procs.initialize(dev);
+    }
+    gx_device_fill_in_procs(dev);
     dev->memory = mem;
     dev->retained = 0;
     dev->pad = proto->pad;
@@ -638,8 +651,10 @@ void
 gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
                     gs_memory_t * mem)
 {
-    gx_device_init((gx_device *)dev_null, (const gx_device *)&gs_null_device,
-                   mem, true);
+    /* Can never fail */
+    (void)gx_device_init((gx_device *)dev_null,
+                         (const gx_device *)&gs_null_device,
+                         mem, true);
     gx_device_fill_in_procs((gx_device *)dev_null);
     gx_device_set_target((gx_device_forward *)dev_null, dev);
     if (dev) {

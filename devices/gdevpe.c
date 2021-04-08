@@ -50,22 +50,19 @@ dev_proc_close_device(pe_close);
 dev_proc_fill_rectangle(pe_fill_rectangle);
 dev_proc_copy_mono(pe_copy_mono);
 
-static gx_device_procs pe_procs =
-{	pe_open,
-        NULL,			/* get_initial_matrix */
-        NULL,			/* sync_output */
-        NULL,			/* output_page */
-        pe_close,
-        NULL,			/* map_rgb_color */
-        NULL,			/* map_color_rgb */
-        pe_fill_rectangle,
-        NULL,			/* tile_rectangle */
-        pe_copy_mono,
-        NULL			/* copy_color */
-};
+static int
+pe_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, pe_open);
+    set_dev_proc(dev, close_device, pe_close);
+    set_dev_proc(dev, fill_rectangle, pe_fill_rectangle);
+    set_dev_proc(dev, copy_mono, pe_copy_mono);
+
+    return 0;
+}
 
 gx_device_pe far_data gs_pe_device =
-{	std_device_std_body(gx_device_pe, &pe_procs, "pe",
+{	std_device_std_body(gx_device_pe, pe_initialize, "pe",
           XSIZE, YSIZE, XPPI, YPPI),
          { 0 },		/* std_procs */
         DEFAULT_ADDRESS, DEFAULT_REGISTERS

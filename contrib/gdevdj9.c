@@ -510,24 +510,23 @@ typedef struct
     terminate_page\
 }
 
-#define cmyk_colour_procs(proc_colour_open, proc_get_params, proc_put_params, \
-                          proc_colour_close, map_rgb_color, map_color_rgb, map_cmyk_color) {\
-        proc_colour_open,\
-        gx_default_get_initial_matrix,\
-        gx_default_sync_output,\
-        gdev_prn_output_page,\
-        proc_colour_close,\
-        map_rgb_color,\
-        map_color_rgb,\
-        NULL /* fill_rectangle */,\
-        NULL /* tile_rectangle */,\
-        NULL /* copy_mono */,\
-        NULL /* copy_color */,\
-        NULL /* draw_line */,\
-        gx_default_get_bits,\
-        proc_get_params,\
-        proc_put_params,\
-        map_cmyk_color\
+static int
+cdj970_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, hp_colour_open);
+    set_dev_proc(dev, close_device, cdj970_close);
+    set_dev_proc(dev, map_rgb_color, NULL);
+    set_dev_proc(dev, map_color_rgb, gdev_cmyk_map_color_rgb);
+    set_dev_proc(dev, get_params, cdj970_get_params);
+    set_dev_proc(dev, put_params, cdj970_put_params);
+    set_dev_proc(dev, map_cmyk_color, gdev_cmyk_map_cmyk_color);
+
+    return 0;
 }
 
 static void
@@ -544,9 +543,7 @@ static void
 cdj970_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
 static const gx_device_procs cdj970_procs =
-cmyk_colour_procs(hp_colour_open, cdj970_get_params, cdj970_put_params,
-                  cdj970_close, NULL, gdev_cmyk_map_color_rgb,
-                  gdev_cmyk_map_cmyk_color);
+    devprocs_initialize(cdj970_initialize);
 
 const gx_device_cdj970 gs_cdj970_device =
 cdj_970_device(cdj970_procs, "cdj970", 600, 600, 32, cdj970_print_page, 0,

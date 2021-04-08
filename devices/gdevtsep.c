@@ -72,11 +72,26 @@
 static dev_proc_print_page(tiffgray_print_page);
 
 /* FIXME: From initial analysis this is NOT safe for bg_printing, but might be fixable */
+static int
+tiffgray_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tiff_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, tiff_close);
+    set_dev_proc(dev, get_params, tiff_get_params);
+    set_dev_proc(dev, put_params, tiff_put_params);
+
+    return 0;
+}
+
 
 static const gx_device_procs tiffgray_procs =
-prn_color_params_procs(tiff_open, gdev_prn_output_page_seekable, tiff_close,
-                gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb,
-                tiff_get_params, tiff_put_params);
+    devprocs_initialize(tiffgray_initialize);
 
 const gx_device_tiff gs_tiffgray_device = {
     prn_device_body(gx_device_tiff, tiffgray_procs, "tiffgray",
@@ -109,14 +124,25 @@ dev_proc_open_device(tiff_open_s);
 static dev_proc_print_page(tiffscaled_print_page);
 static int tiff_set_icc_color_fields(gx_device_printer *pdev);
 
+static int
+tiffscaled_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tiff_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, tiff_close);
+    set_dev_proc(dev, get_params, tiff_get_params_downscale);
+    set_dev_proc(dev, put_params, tiff_put_params_downscale);
+
+    return 0;
+}
+
 static const gx_device_procs tiffscaled_procs =
-prn_color_params_procs(tiff_open,
-                       gdev_prn_output_page_seekable,
-                       tiff_close,
-                       gx_default_gray_map_rgb_color,
-                       gx_default_gray_map_color_rgb,
-                       tiff_get_params_downscale,
-                       tiff_put_params_downscale);
+    devprocs_initialize(tiffscaled_initialize);
 
 const gx_device_tiff gs_tiffscaled_device = {
     prn_device_body(gx_device_tiff,
@@ -143,16 +169,26 @@ const gx_device_tiff gs_tiffscaled_device = {
 
 static dev_proc_print_page(tiffscaled8_print_page);
 
-static const gx_device_procs tiffscaled8_procs = {
-    tiff_open_s, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
-    gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb, NULL, NULL,
-    NULL, NULL, NULL, NULL, tiff_get_params_downscale, tiff_put_params_downscale,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, tiffscaled_spec_op
-};
+static int
+tiffscaled8_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tiff_open_s);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, tiff_close);
+    set_dev_proc(dev, get_params, tiff_get_params_downscale);
+    set_dev_proc(dev, put_params, tiff_put_params_downscale);
+    set_dev_proc(dev, dev_spec_op, tiffscaled_spec_op);
+
+    return 0;
+}
+
+static const gx_device_procs tiffscaled8_procs =
+    devprocs_initialize(tiffscaled8_initialize);
 
 const gx_device_tiff gs_tiffscaled8_device = {
     prn_device_body(gx_device_tiff,
@@ -179,16 +215,26 @@ const gx_device_tiff gs_tiffscaled8_device = {
 
 static dev_proc_print_page(tiffscaled24_print_page);
 
-static const gx_device_procs tiffscaled24_procs = {
-    tiff_open_s, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
-    gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb, NULL, NULL,
-    NULL, NULL, NULL, NULL, tiff_get_params_downscale, tiff_put_params_downscale,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, tiffscaled_spec_op
-};
+static int
+tiffscaled24_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_rgb(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tiff_open_s);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, tiff_close);
+    set_dev_proc(dev, get_params, tiff_get_params_downscale);
+    set_dev_proc(dev, put_params, tiff_put_params_downscale);
+    set_dev_proc(dev, dev_spec_op, tiffscaled_spec_op);
+
+    return 0;
+}
+
+static const gx_device_procs tiffscaled24_procs =
+    devprocs_initialize(tiffscaled24_initialize);
 
 const gx_device_tiff gs_tiffscaled24_device = {
     prn_device_body(gx_device_tiff,
@@ -215,16 +261,26 @@ const gx_device_tiff gs_tiffscaled24_device = {
 
 static dev_proc_print_page(tiffscaled32_print_page);
 
-static const gx_device_procs tiffscaled32_procs = {
-    tiff_open_s, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
-    NULL, cmyk_8bit_map_color_cmyk, NULL, NULL, NULL, NULL, NULL, NULL,
-    tiff_get_params_downscale_cmyk, tiff_put_params_downscale_cmyk,
-    cmyk_8bit_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tiffscaled_spec_op
-};
+static int
+tiffscaled32_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk8(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tiff_open_s);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, tiff_close);
+    set_dev_proc(dev, get_params, tiff_get_params_downscale_cmyk);
+    set_dev_proc(dev, put_params, tiff_put_params_downscale_cmyk);
+    set_dev_proc(dev, dev_spec_op, tiffscaled_spec_op);
+
+    return 0;
+}
+
+static const gx_device_procs tiffscaled32_procs =
+    devprocs_initialize(tiffscaled32_initialize);
 
 const gx_device_tiff gs_tiffscaled32_device = {
     prn_device_body(gx_device_tiff,
@@ -251,12 +307,25 @@ const gx_device_tiff gs_tiffscaled32_device = {
 
 static dev_proc_print_page(tiffscaled4_print_page);
 
-static const gx_device_procs tiffscaled4_procs = {
-    tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
-    NULL, cmyk_8bit_map_color_cmyk, NULL, NULL, NULL, NULL, NULL, NULL,
-    tiff_get_params_downscale_cmyk_ets, tiff_put_params_downscale_cmyk_ets,
-    cmyk_8bit_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
-};
+static int
+tiffscaled4_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk8(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tiff_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, tiff_close);
+    set_dev_proc(dev, get_params, tiff_get_params_downscale_cmyk_ets);
+    set_dev_proc(dev, put_params, tiff_put_params_downscale_cmyk_ets);
+
+    return 0;
+}
+
+static const gx_device_procs tiffscaled4_procs =
+    devprocs_initialize(tiffscaled4_initialize);
 
 const gx_device_tiff gs_tiffscaled4_device = {
     prn_device_body(gx_device_tiff,
@@ -519,17 +588,27 @@ tiffsep_spec_op(gx_device *dev_, int op, void *data, int datasize)
 
 static dev_proc_print_page(tiffcmyk_print_page);
 
-#define cmyk_procs(p_map_color_rgb, p_map_cmyk_color)\
-    tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,\
-    NULL, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
-    tiff_get_params, tiff_put_params,\
-    p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
-
 /* 8-bit-per-plane separated CMYK color. */
 
-static const gx_device_procs tiffcmyk_procs = {
-    cmyk_procs(cmyk_8bit_map_color_cmyk, cmyk_8bit_map_cmyk_color)
-};
+static int
+tiffcmyk_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk8(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tiff_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, tiff_close);
+    set_dev_proc(dev, get_params, tiff_get_params);
+    set_dev_proc(dev, put_params, tiff_put_params);
+
+    return 0;
+}
+
+static const gx_device_procs tiffcmyk_procs =
+    devprocs_initialize(tiffcmyk_initialize);
 
 const gx_device_tiff gs_tiff32nc_device = {
     prn_device_body(gx_device_tiff, tiffcmyk_procs, "tiff32nc",
@@ -549,9 +628,25 @@ const gx_device_tiff gs_tiff32nc_device = {
 
 /* 16-bit-per-plane separated CMYK color. */
 
-static const gx_device_procs tiff64nc_procs = {
-    cmyk_procs(cmyk_16bit_map_color_cmyk, cmyk_16bit_map_cmyk_color)
-};
+static int
+tiff64_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk16(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tiff_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, close_device, tiff_close);
+    set_dev_proc(dev, get_params, tiff_get_params);
+    set_dev_proc(dev, put_params, tiff_put_params);
+
+    return 0;
+}
+
+static const gx_device_procs tiff64nc_procs =
+    devprocs_initialize(tiff64_initialize);
 
 const gx_device_tiff gs_tiff64nc_device = {
     prn_device_body(gx_device_tiff, tiff64nc_procs, "tiff64nc",
@@ -701,78 +796,45 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
     "tiffsep_device", tiffsep_device_enum_ptrs, tiffsep_device_reloc_ptrs,
     tiffsep_device_finalize);
 
-/*
- * Macro definition for tiffsep device procedures
- */
-#define sep_device_procs(open, close, encode_color, decode_color, update_spot_colors,put_params, fill_path) \
-{       open,\
-        gx_default_get_initial_matrix,\
-        NULL,                           /* sync_output */\
-        gdev_prn_output_page_seekable,  /* output_page */\
-        close,                          /* close */\
-        NULL,                           /* map_rgb_color - not used */\
-        tiffsep_decode_color,           /* map_color_rgb */\
-        NULL,                           /* fill_rectangle */\
-        NULL,                           /* tile_rectangle */\
-        NULL,                           /* copy_mono */\
-        NULL,                           /* copy_color */\
-        NULL,                           /* draw_line */\
-        NULL,                           /* get_bits */\
-        tiffsep_get_params,             /* get_params */\
-        put_params,                     /* put_params */\
-        NULL,                           /* map_cmyk_color - not used */\
-        NULL,                           /* get_xfont_procs */\
-        NULL,                           /* get_xfont_device */\
-        NULL,                           /* map_rgb_alpha_color */\
-        gx_page_device_get_page_device, /* get_page_device */\
-        NULL,                           /* get_alpha_bits */\
-        NULL,                           /* copy_alpha */\
-        NULL,                           /* get_band */\
-        NULL,                           /* copy_rop */\
-        fill_path,                      /* fill_path */\
-        NULL,                           /* stroke_path */\
-        NULL,                           /* fill_mask */\
-        NULL,                           /* fill_trapezoid */\
-        NULL,                           /* fill_parallelogram */\
-        NULL,                           /* fill_triangle */\
-        NULL,                           /* draw_thin_line */\
-        NULL,                           /* begin_image */\
-        NULL,                           /* image_data */\
-        NULL,                           /* end_image */\
-        NULL,                           /* strip_tile_rectangle */\
-        NULL,                           /* strip_copy_rop */\
-        NULL,                           /* get_clipping_box */\
-        NULL,                           /* begin_typed_image */\
-        NULL,                           /* get_bits_rectangle */\
-        NULL,                           /* map_color_rgb_alpha */\
-        NULL,                           /* create_compositor */\
-        NULL,                           /* get_hardware_params */\
-        NULL,                           /* text_begin */\
-        NULL,                           /* initialize */\
-        NULL,                           /* begin_transparency_group */\
-        NULL,                           /* end_transparency_group */\
-        NULL,                           /* begin_transparency_mask */\
-        NULL,                           /* end_transparency_mask */\
-        NULL,                           /* discard_transparency_layer */\
-        tiffsep_get_color_mapping_procs,/* get_color_mapping_procs */\
-        tiffsep_get_color_comp_index,   /* get_color_comp_index */\
-        encode_color,                   /* encode_color */\
-        decode_color,                   /* decode_color */\
-        NULL,                           /* pattern_manage */\
-        NULL,                           /* fill_rectangle_hl_color */\
-        NULL,                           /* include_color_space */\
-        NULL,                           /* fill_linear_color_scanline */\
-        NULL,                           /* fill_linear_color_trapezoid */\
-        NULL,                           /* fill_linear_color_triangle */\
-        update_spot_colors,             /* update_spot_equivalent_colors */\
-        tiffsep_ret_devn_params,         /* ret_devn_params */\
-        NULL,                           /* fillpage */\
-        NULL,                           /* push_transparency_state */\
-        NULL,                           /* pop_transparency_state */\
-        NULL,                           /* put_image */\
-        tiffsep_spec_op                 /* dev_spec_op */\
+static int
+tiffsep_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tiffsep_prn_open);
+    set_dev_proc(dev, close_device, tiffsep_prn_close);
+    set_dev_proc(dev, map_color_rgb, tiffsep_decode_color);
+    set_dev_proc(dev, get_params, tiffsep_get_params);
+    set_dev_proc(dev, put_params, tiffsep_put_params);
+    set_dev_proc(dev, get_color_mapping_procs, tiffsep_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, tiffsep_get_color_comp_index);
+    set_dev_proc(dev, encode_color, tiffsep_encode_color);
+    set_dev_proc(dev, decode_color, tiffsep_decode_color);
+    set_dev_proc(dev, update_spot_equivalent_colors, tiffsep_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, tiffsep_ret_devn_params);
+    set_dev_proc(dev, dev_spec_op, tiffsep_spec_op);
+
+    return 0;
 }
 
+static int
+tiffsep1_initialize(gx_device *dev)
+{
+    int code = tiffsep_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, tiffsep1_prn_open);
+    set_dev_proc(dev, close_device, tiffsep1_prn_close);
+    set_dev_proc(dev, put_params, tiffsep1_put_params);
+    set_dev_proc(dev, fill_path, sep1_fill_path);
+
+    return 0;
+}
 
 #define tiffsep_devices_body(dtype, procs, dname, ncomp, pol, depth, mg, mc, sl, cn, print_page, compr)\
     std_device_full_body_type_extended(dtype, &procs, dname,\
@@ -812,12 +874,10 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
  * TIFF devices with CMYK process color model and spot color support.
  */
 static const gx_device_procs spot_cmyk_procs =
-                sep_device_procs(tiffsep_prn_open, tiffsep_prn_close, tiffsep_encode_color, tiffsep_decode_color,
-                                tiffsep_update_spot_equivalent_colors, tiffsep_put_params, NULL);
+    devprocs_initialize(tiffsep_initialize);
 
 static const gx_device_procs spot1_cmyk_procs =
-                sep_device_procs(tiffsep1_prn_open, tiffsep1_prn_close, tiffsep_encode_color, tiffsep_decode_color,
-                                tiffsep_update_spot_equivalent_colors, tiffsep1_put_params, sep1_fill_path);
+    devprocs_initialize(tiffsep1_initialize);
 
 const tiffsep_device gs_tiffsep_device =
 {
@@ -2989,4 +3049,3 @@ tiff_open_s(gx_device *pdev)
     }
     return tiff_open(pdev);
 }
-
