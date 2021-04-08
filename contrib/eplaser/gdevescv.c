@@ -38,7 +38,9 @@
 #if ( 6 > GS_VERSION_MAJOR )
 
 #include <string.h>
+#ifndef _WIN32
 #include <sys/utsname.h>	/* for uname(2) */
+#endif
 #include <ctype.h>		/* for toupper(3) */
 
 #include "math_.h"
@@ -61,7 +63,9 @@
 #else /* 6 <= GS_VERSION_MAJOR */
 
 #include "math_.h"
+#ifndef _WIN32
 #include <sys/utsname.h>	/* for uname(2) */
+#endif
 #include <ctype.h>		/* for toupper(3) */
 
 #include "time_.h"
@@ -820,6 +824,9 @@ escv_checkpapersize(gx_device_vector * vdev)
 static char *
 get_sysname ( void )
 {
+#ifdef _WIN32
+  return strdup("BOGUS");
+#else
   char *result = NULL;
   struct utsname utsn;
 
@@ -828,6 +835,7 @@ get_sysname ( void )
       result = strdup (utsn.sysname);
     }
   return result;
+#endif
 }
 
 /* EPSON printer model name translation.
