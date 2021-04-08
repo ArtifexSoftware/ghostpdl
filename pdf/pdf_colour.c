@@ -812,7 +812,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         else
         {
             if (cc.paint.values[0] > pcs->params.indexed.hival)
-                cc.paint.values[0] = pcs->params.indexed.hival;
+                cc.paint.values[0] = (float)pcs->params.indexed.hival;
             else
             {
                 if (cc.paint.values[0] != floor(cc.paint.values[0]))
