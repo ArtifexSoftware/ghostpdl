@@ -430,6 +430,9 @@ enum {
     /* Determine if a given device is a clist one. Returns 1 if it is. */
     gxdso_is_clist_device,
 
+    /* Determine if a given device is a null device. Returns 1 if it is. */
+    gxdso_is_null_device,
+
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

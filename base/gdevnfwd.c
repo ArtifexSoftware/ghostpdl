@@ -1348,9 +1348,10 @@ null_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
     /* Defeat the ICC profile components check, which we want to do since
        we also short-circuit ICC device parameters - see null_put_params.
      */
-    if (dev_spec_op == gxdso_skip_icc_component_validation) {
+    if (dev_spec_op == gxdso_skip_icc_component_validation)
         return 1;
-    }
+    if (dev_spec_op == gxdso_is_null_device)
+        return 1;
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 

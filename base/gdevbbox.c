@@ -782,8 +782,7 @@ bbox_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *tdev = bdev->target;
     dev_proc_fill_path((*fill_path)) =
-        (tdev == 0 ? dev_proc(&gs_null_device, fill_path) :
-         dev_proc(tdev, fill_path));
+        (tdev == 0 ? NULL : dev_proc(tdev, fill_path));
     int code;
     gx_drawing_color devc;
 
@@ -811,6 +810,8 @@ bbox_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
          * If the path lies within the already accumulated box, just draw
          * on the target.
          */
+        if (fill_path == NULL)
+            return 0;
         if (BBOX_IN_RECT(bdev, &ibox))
             return fill_path(tdev, pgs, ppath, params, pdevc, pcpath);
         /*
@@ -819,6 +820,8 @@ bbox_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
          */
         if (tdev != 0 && fill_path == gx_default_fill_path)
             return fill_path(dev, pgs, ppath, params, pdevc, pcpath);
+        if (fill_path == NULL)
+            return 0;
         /* Draw on the target now. */
         code = fill_path(tdev, pgs, ppath, params, pdevc, pcpath);
         if (code < 0)
@@ -838,7 +841,9 @@ bbox_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
         code = gx_default_fill_path(dev, pgs, ppath, params, &devc, pcpath);
         bdev->target = tdev;
         return code;
-    } else
+    } else if (fill_path == NULL)
+            return 0;
+    else
         return fill_path(tdev, pgs, ppath, params, pdevc, pcpath);
 }
 
