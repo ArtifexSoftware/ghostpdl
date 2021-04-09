@@ -1758,14 +1758,16 @@ currentdict /jp2_csp_dict .undef
 % <resdict> <key> <value> -> <resdict>
 /add-to-last-param {
   2 index /DecodeParms knownoget {
-    dup {} eq {
+    dup type /dicttype ne 1 index type /arrratype ne and 1 index length 1 lt or {
       pop //false
     } {
       //true
     } ifelse
   } {
     //false
-  } ifelse {
+  }
+  ifelse
+  {
     dup type /arraytype eq {
       [ exch { oforce } forall
         dup //null eq { pop 1 dict } if
