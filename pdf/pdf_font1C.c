@@ -2131,8 +2131,14 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
                 registry = ordering = NULL;
                 cffcid->supplement = 0;
 
-                gs_make_identity(&pfont->FontMatrix);
-                gs_make_identity(&pfont->orig_FontMatrix);
+                /* Because we're faking a CIDFont, we want to move the scaling to the "parent" fake
+                   CIDFont, and make the FDArrray use identity scaling
+                 */
+                memcpy(&pfont->FontMatrix, &pfdfont->FontMatrix, sizeof(pfdfont->FontMatrix));
+                memcpy(&pfont->orig_FontMatrix, &pfdfont->orig_FontMatrix, sizeof(pfdfont->orig_FontMatrix));
+
+                gs_make_identity(&pfdfont->FontMatrix);
+                gs_make_identity(&pfdfont->orig_FontMatrix);
 
                 pfont->cidata.CIDMapOffset = 0;
                 pfont->cidata.FDArray_size = 1;
