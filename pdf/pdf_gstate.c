@@ -212,6 +212,7 @@ int pdfi_op_q(pdf_context *ctx)
 int pdfi_op_Q(pdf_context *ctx)
 {
     int code = 0;
+    gx_path *ppath = NULL;
 
 #if DEBUG_GSAVE
     dbgmprintf(ctx->memory, "(doing Q)\n"); /* TODO: Spammy, delete me at some point */
@@ -222,14 +223,32 @@ int pdfi_op_Q(pdf_context *ctx)
         dbgmprintf(ctx->memory, "WARNING: Too many q/Q (too many Q's) -- ignoring Q\n");
         return 0;
     }
-    if (ctx->page.has_transparency)
+    if (ctx->page.has_transparency) {
         code = gs_pop_transparency_state(ctx->pgs, false);
+        if (code < 0 && ctx->args.pdfstoponerror)
+            return code;
+    }
 
-    if (code < 0 && ctx->args.pdfstoponerror)
-        return code;
-    else
-        return pdfi_grestore(ctx);
-    return 0;
+    /* Section 4.4.1 of the 3rd Edition PDF_Refrence Manual, p226 of the 1.7 version
+     * states that the current path is **NOT** part of the graphics state and is not
+     * saved and restored along with the other graphics state parameters. So here
+     * we need to indulge in some ugliness. We take a copy of the current path
+     * before we do a grestore, and below we assign the copy to the graphics state
+     * after the grestore, thus preserving it unchanged. This is still better than
+     * the 'PDF interpreter written in PostScript' method.
+     */
+    ppath = gx_path_alloc_shared(ctx->pgs->path, ctx->memory, "temporary current path copy for Q");
+    if (ppath == NULL < 0)
+        return_error(gs_error_VMerror);
+
+    code = pdfi_grestore(ctx);
+
+    if (code >= 0)
+        code = gx_path_assign_preserve(ctx->pgs->path, ppath);
+
+    gx_path_free(ppath, "temporary current path copy for Q");
+
+    return code;
 }
 
 int pdfi_gsave(pdf_context *ctx)
