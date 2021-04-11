@@ -631,14 +631,15 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     if (code < 0)
         goto exit2;
 
-    if (ctx->args.pdfdebug)
+    if (ctx->args.pdfdebug) {
         dbgmprintf2(ctx->memory, "Current page %ld transparency setting is %d", page_num+1,
                 ctx->page.has_transparency);
 
-    if (ctx->device_state.spot_capable)
-        dbgmprintf1(ctx->memory, ", spots=%d\n", ctx->page.num_spots);
-    else
-        dbgmprintf(ctx->memory, "\n");
+        if (ctx->device_state.spot_capable)
+            dbgmprintf1(ctx->memory, ", spots=%d\n", ctx->page.num_spots);
+        else
+            dbgmprintf(ctx->memory, "\n");
+    }
 
     code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_stream);
     if (code < 0)
