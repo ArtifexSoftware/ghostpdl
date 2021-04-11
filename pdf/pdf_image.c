@@ -2185,15 +2185,13 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     code = pdfi_dict_get(ctx, xobject_dict, "Subtype", (pdf_obj **)&n);
     if (code < 0) {
         if (code == gs_error_undefined) {
-            code = pdfi_dict_get(ctx, xobject_dict, "FormType", (pdf_obj **)&n);
-            if (code >= 0) {
-                pdfi_countdown(n);
-                code = pdfi_name_alloc(ctx, (byte *)"Form", 4, (pdf_obj **)&n);
-                pdfi_countup(n);
-                ctx->pdf_errors |= E_PDF_NO_SUBTYPE;
-            }
-            else
-                goto exit;
+            /* This is illegal, because we have no way to tell is an XObject is a Form
+             * or Image object. However it seems Acrobat just assumes that it's a Form!
+             * See test file /tests_private/pdf/PDFIA1.7_SUBSET/CATX2063.pdf
+             */
+            code = pdfi_name_alloc(ctx, (byte *)"Form", 4, (pdf_obj **)&n);
+            pdfi_countup(n);
+            ctx->pdf_errors |= E_PDF_NO_SUBTYPE;
         }
         else
             goto exit;
