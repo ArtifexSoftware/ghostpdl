@@ -208,7 +208,7 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
                          gs_glyph_space_t glyph_space, gs_glyph *pglyph)
 {
     int code;
-    pdf_name *key;
+    pdf_name *key = NULL;
     uint64_t i = (uint64_t) *pindex;
     pdf_dict *cstrings;
     pdf_font *pdffont = (pdf_font *) pfont->client_data;
@@ -254,6 +254,7 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
         if (l > 0)
             *pglyph = (gs_glyph) (val) + GS_MIN_CID_GLYPH;
     }
+    pdfi_countdown(key);
     return code;
 }
 
