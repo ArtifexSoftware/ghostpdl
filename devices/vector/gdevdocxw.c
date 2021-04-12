@@ -314,7 +314,7 @@ docxwrite_open_device(gx_device * dev)
     }
     extract_alloc_exp_min(tdev->alloc, 64);
 
-    if (extract_begin(tdev->alloc, &tdev->extract)) {
+    if (extract_begin(tdev->alloc, extract_format_DOCX, &tdev->extract)) {
         code = s_errno_to_gs();
         goto end;
     }
@@ -423,7 +423,7 @@ docxwrite_output_page(gx_device * dev, int num_copies, int flush)
     if (tdev->file_per_page) {
         /* Create a new extract_t for the next page. */
         extract_end(&tdev->extract);
-        if (extract_begin(tdev->alloc, &tdev->extract)) {
+        if (extract_begin(tdev->alloc, extract_format_DOCX, &tdev->extract)) {
             code = s_errno_to_gs();
             goto end;
         }

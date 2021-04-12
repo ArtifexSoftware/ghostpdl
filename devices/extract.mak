@@ -25,8 +25,20 @@ $(extract_out_prefix)join.$(OBJ):           $(EXTRACT_DIR)/src/join.c
 $(extract_out_prefix)mem.$(OBJ):            $(EXTRACT_DIR)/src/mem.c
 	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/mem.c
 
+$(extract_out_prefix)odt.$(OBJ):            $(EXTRACT_DIR)/src/odt.c
+	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/odt.c
+
+$(extract_out_prefix)odt_template.$(OBJ):   $(EXTRACT_DIR)/src/odt_template.c
+	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/odt_template.c
+
 $(extract_out_prefix)outf.$(OBJ):           $(EXTRACT_DIR)/src/outf.c
 	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/outf.c
+
+$(extract_out_prefix)sys.$(OBJ):           $(EXTRACT_DIR)/src/sys.c
+	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/sys.c
+
+$(extract_out_prefix)text.$(OBJ):           $(EXTRACT_DIR)/src/text.c
+	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/text.c
 
 $(extract_out_prefix)xml.$(OBJ):            $(EXTRACT_DIR)/src/xml.c
 	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/xml.c
@@ -43,6 +55,10 @@ EXTRACT_OBJS = \
 	$(extract_out_prefix)extract.$(OBJ) \
 	$(extract_out_prefix)join.$(OBJ) \
 	$(extract_out_prefix)mem.$(OBJ) \
+	$(extract_out_prefix)odt.$(OBJ) \
+	$(extract_out_prefix)odt_template.$(OBJ) \
 	$(extract_out_prefix)outf.$(OBJ) \
+	$(extract_out_prefix)sys.$(OBJ) \
+	$(extract_out_prefix)text.$(OBJ) \
 	$(extract_out_prefix)xml.$(OBJ) \
 	$(extract_out_prefix)zip.$(OBJ) \
