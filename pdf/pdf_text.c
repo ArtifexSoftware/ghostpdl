@@ -372,7 +372,11 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
     if (current_font == NULL)
         return_error(gs_error_invalidfont);
 
-    Tc = gs_currenttextspacing(ctx->pgs);
+    /* Division by PDFfontsize because these are in unscaled font units,
+       and the font scale is now pickled into the text matrix, so we have to
+       undo that.
+     */
+    Tc = gs_currenttextspacing(ctx->pgs) / ctx->pgs->PDFfontsize;
 
     if (current_font->pdfi_font_type == e_pdf_font_type1 ||
         current_font->pdfi_font_type == e_pdf_font_cff ||
@@ -388,11 +392,7 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
             text->operation = TEXT_RETURN_WIDTH;
             if (Tc != 0) {
                 text->operation |= TEXT_ADD_TO_ALL_WIDTHS;
-                /* Division by PDFfontsize because these are in unscaled font units,
-                   and the font scale is now pickled into the text matrix, so we have to
-                   undo that.
-                 */
-                text->delta_all.x = Tc / ctx->pgs->PDFfontsize;
+                text->delta_all.x = Tc;
                 text->delta_all.y = 0;
             }
         } else {
