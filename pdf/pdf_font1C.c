@@ -857,7 +857,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                 ptpriv->type1data.BlueShift = args[0].fval;
 
             if (b0 == (256 | 11))
-                ptpriv->type1data.BlueFuzz = args[0].fval;
+                ptpriv->type1data.BlueFuzz = (int)args[0].fval;
 
             if (b0 == (256 | 12)) {
                 ptpriv->type1data.StemSnapH.count = n;
@@ -1657,7 +1657,7 @@ pdfi_alloc_cff_cidfont(pdf_context *ctx, pdf_cidfont_type0 ** font, uint32_t obj
 {
     pdf_cidfont_type0 *cffcidfont = NULL;
     gs_font_cid0 *pfont = NULL;
-    gs_matrix defmat = { 0.001, 0.0, 0.0, 0.001, 0.0, 0.0 };
+    gs_matrix defmat = { 0.001f, 0.0f, 0.0f, 0.001f, 0.0f, 0.0f };
 
     cffcidfont = (pdf_cidfont_type0 *) gs_alloc_bytes(ctx->memory, sizeof(pdf_cidfont_type0), "pdfi (cff pdf_cidfont_type0)");
     if (cffcidfont == NULL)
@@ -1740,8 +1740,8 @@ pdfi_alloc_cff_font(pdf_context *ctx, pdf_font_cff ** font, uint32_t obj_num, bo
 {
     pdf_font_cff *cfffont = NULL;
     gs_font_type1 *pfont = NULL;
-    gs_matrix defmat_font = { 0.001, 0.0, 0.0, 0.001, 0.0, 0.0 };
-    gs_matrix defmat_fd = { 1.00, 0.0, 0.0, 1.000, 0.0, 0.0 };
+    gs_matrix defmat_font = { 0.001f, 0.0f, 0.0f, 0.001f, 0.0f, 0.0f };
+    gs_matrix defmat_fd = { 1.00f, 0.0f, 0.0f, 1.000f, 0.0f, 0.0f };
     gs_matrix *defmat = (for_fdarray ? &defmat_fd : &defmat_font);
 
     cfffont = (pdf_font_cff *) gs_alloc_bytes(ctx->memory, sizeof(pdf_font_cff), "pdfi (cff pdf_font)");
@@ -1830,8 +1830,8 @@ static void
 pdfi_init_cff_font_priv(pdf_context *ctx, pdfi_gs_cff_font_priv *cffpriv,
                         byte *buf, int buflen, bool for_fdarray)
 {
-    gs_matrix defmat_font = { 0.001, 0.0, 0.0, 0.001, 0.0, 0.0 };
-    gs_matrix defmat_fd = { 1.00, 0.0, 0.0, 1.000, 0.0, 0.0 };
+    gs_matrix defmat_font = { 0.001f, 0.0f, 0.0f, 0.001f, 0.0f, 0.0f };
+    gs_matrix defmat_fd = { 1.00f, 0.0f, 0.0f, 1.000f, 0.0f, 0.0f };
     gs_matrix *defmat = (for_fdarray ? &defmat_fd : &defmat_font);
 
     memset(cffpriv, 0x00, sizeof(pdfi_gs_cff_font_priv));
