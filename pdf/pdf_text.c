@@ -388,7 +388,11 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
             text->operation = TEXT_RETURN_WIDTH;
             if (Tc != 0) {
                 text->operation |= TEXT_ADD_TO_ALL_WIDTHS;
-                text->delta_all.x = Tc;
+                /* Division by PDFfontsize because these are in unscaled font units,
+                   and the font scale is now pickled into the text matrix, so we have to
+                   undo that.
+                 */
+                text->delta_all.x = Tc / ctx->pgs->PDFfontsize;
                 text->delta_all.y = 0;
             }
         } else {
@@ -430,6 +434,10 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
         Tw = gs_currentwordspacing(ctx->pgs);
         if (Tw != 0) {
             text->operation |= TEXT_ADD_TO_SPACE_WIDTH;
+            /* Division by PDFfontsize because these are in unscaled font units,
+               and the font scale is now pickled into the text matrix, so we have to
+               undo that.
+             */
             text->delta_space.x = Tw / ctx->pgs->PDFfontsize;
             text->delta_space.y = 0;
             text->space.s_char = 0x20;
