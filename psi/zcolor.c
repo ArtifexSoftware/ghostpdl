@@ -5519,6 +5519,60 @@ static int checkGamma(i_ctx_t * i_ctx_p, ref *CIEdict, int numvalues)
     return 0;
 }
 
+static int hashcalgrayspace(i_ctx_t *i_ctx_p, ref *space, gs_md5_state_t *md5)
+{
+    int code = 0;
+    ref cgdict1, spacename, *tempref;
+    static const int ncomps = 1;
+    float g = 1.0;
+    int i;
+
+    code = array_get(imemory, space, 0, &spacename);
+    if (code < 0)
+        return 0;
+    gs_md5_append(md5, (const gs_md5_byte_t *)&spacename.value.pname, sizeof(spacename.value.pname));
+
+    code = array_get(imemory, space, 1, &cgdict1);
+    if (code < 0)
+        return 0;
+    check_read_type(cgdict1, t_dictionary);
+
+    code = dict_find_string(&cgdict1, "WhitePoint", &tempref);
+    if (code > 0) {
+        code = hasharray(i_ctx_p, tempref, md5);
+    }
+    if (code <= 0) {
+        float WP = 0.0;
+        for (i = 0; i < 3; i++) {
+            gs_md5_append(md5, (const gs_md5_byte_t *)&WP, sizeof(WP));
+        }
+    }
+
+    code = dict_find_string(&cgdict1, "BlackPoint", &tempref);
+    if (code > 0) {
+        code = hasharray(i_ctx_p, tempref, md5);
+    }
+    if (code <= 0) {
+        float BP = 0.0;
+        for (i = 0; i < 3; i++) {
+            gs_md5_append(md5, (const gs_md5_byte_t *)&BP, sizeof(BP));
+        }
+    }
+
+    code = dict_find_string(&cgdict1, "Gamma", &tempref);
+    if (code > 0) {
+        if (r_has_type(tempref, t_real))
+            g = tempref->value.realval;
+        else if (r_has_type(tempref, t_integer))
+            g = (float)tempref->value.intval;
+    }
+
+    gs_md5_append(md5, (const gs_md5_byte_t *)&g, sizeof(g));
+
+    gs_md5_append(md5, (const gs_md5_byte_t *)&ncomps, sizeof(ncomps));
+    return 1;
+}
+
 /* Here we set up an equivalent ICC form for the CalGray color space */
 static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
 {
@@ -5528,6 +5582,9 @@ static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     double                  dflt_gamma = 1.0;
     static const float      dflt_black[3] = {0,0,0}, dflt_white[3] = {0,0,0};
     gs_client_color cc;
+    uint64_t dictkey = 0;
+    gs_md5_state_t md5;
+    byte key[16];
 
     *cont = 0;
     code = array_get(imemory, r, 1, &graydict);
@@ -5558,8 +5615,15 @@ static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
         return code;
     if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
         return_error(gs_error_rangecheck);
-    code = seticc_cal(i_ctx_p, white, black, &gamma, NULL, 1,
-                        graydict.value.saveid);
+
+    gs_md5_init(&md5);
+    hashcalgrayspace(i_ctx_p, r, &md5);
+    gs_md5_finish(&md5, key);
+    if (code > 0) {
+        dictkey = *(uint64_t *)&key[sizeof(key) - sizeof(uint64_t)];
+    }
+
+    code = seticc_cal(i_ctx_p, white, black, &gamma, NULL, 1, dictkey);
     if ( code < 0)
         return gs_rethrow(code, "setting CalGray  color space");
     cc.pattern = 0x00;
@@ -5601,6 +5665,72 @@ static int validatecalgrayspace(i_ctx_t * i_ctx_p, ref **r)
     return 0;
 }
 
+static int hashcalrgbspace(i_ctx_t *i_ctx_p, ref *space, gs_md5_state_t *md5)
+{
+    int code = 0;
+    ref crgbdict1, spacename, *tempref;
+    static const int ncomps = 3;
+    int i;
+
+    code = array_get(imemory, space, 0, &spacename);
+    if (code < 0)
+        return 0;
+    gs_md5_append(md5, (const gs_md5_byte_t *)&spacename.value.pname, sizeof(spacename.value.pname));
+
+    code = array_get(imemory, space, 1, &crgbdict1);
+    if (code < 0)
+        return 0;
+    check_read_type(crgbdict1, t_dictionary);
+
+    code = dict_find_string(&crgbdict1, "WhitePoint", &tempref);
+    if (code > 0) {
+        code = hasharray(i_ctx_p, tempref, md5);
+    }
+    if (code <= 0) {
+        float WP = 0.0;
+        for (i = 0; i < 3; i++) {
+            gs_md5_append(md5, (const gs_md5_byte_t *)&WP, sizeof(WP));
+        }
+    }
+
+    code = dict_find_string(&crgbdict1, "BlackPoint", &tempref);
+    if (code > 0) {
+        code = hasharray(i_ctx_p, tempref, md5);
+    }
+    if (code <= 0) {
+        float BP = 0.0;
+        for (i = 0; i < 3; i++) {
+            gs_md5_append(md5, (const gs_md5_byte_t *)&BP, sizeof(BP));
+        }
+    }
+
+    code = dict_find_string(&crgbdict1, "Matrix", &tempref);
+    if (code > 0) {
+        code = hasharray(i_ctx_p, tempref, md5);
+    }
+    if (code <= 0) {
+        static const float mt[9] = {1,0,0,0,1,0,0,0,1};
+
+        for (i = 0; i < 9; i++) {
+            gs_md5_append(md5, (const gs_md5_byte_t *)&(mt[i]), sizeof(mt[i]));
+        }
+    }
+
+    code = dict_find_string(&crgbdict1, "Gamma", &tempref);
+    if (code > 0) {
+        code = hasharray(i_ctx_p, tempref, md5);
+    }
+    if (code <= 0) {
+        static const float g[3] = { 1.0, 1.0, 1.0 };
+        for (i = 0; i < 3; i++) {
+            gs_md5_append(md5, (const gs_md5_byte_t *)&(g[i]), sizeof(g[i]));
+        }
+    }
+
+    gs_md5_append(md5, (const gs_md5_byte_t *)&ncomps, sizeof(ncomps));
+    return 1;
+}
+
 /* Here we set up an equivalent ICC form for the CalRGB color space */
 static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
 {
@@ -5612,6 +5742,9 @@ static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
     static const float      dflt_matrix[9] = {1,0,0,0,1,0,0,0,1};
     int i;
     gs_client_color cc;
+    uint64_t dictkey = 0;
+    gs_md5_state_t md5;
+    byte key[16];
 
     *cont = 0;
     code = array_get(imemory, r, 1, &rgbdict);
@@ -5654,7 +5787,13 @@ static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
                               dflt_matrix );
     if (code < 0)
         return code;
-    code = seticc_cal(i_ctx_p, white, black, gamma, matrix, 3, rgbdict.value.saveid);
+    gs_md5_init(&md5);
+    hashcalrgbspace(i_ctx_p, r, &md5);
+    gs_md5_finish(&md5, key);
+    if (code > 0) {
+        dictkey = *(uint64_t *)&key[sizeof(key) - sizeof(uint64_t)];
+    }
+    code = seticc_cal(i_ctx_p, white, black, gamma, matrix, 3, dictkey);
     if ( code < 0)
         return gs_rethrow(code, "setting CalRGB  color space");
     cc.pattern = 0x00;

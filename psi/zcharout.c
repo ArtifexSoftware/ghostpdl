@@ -326,8 +326,26 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
             charstring_is_notdef_proc(font->memory, pcstr)
             )
             return charstring_make_notdef(pgd, font);
-        else
+        else {
+            /* Bug #703779. It seems that other tools can modify type 1 fonts, using
+             * a procedure in place of a CharString for the /.notdef. In this case the
+             * culprit is "Polylogics DIAD White Pages Pagination". Doing this prevents
+             * pdfwrite from being able to write the font. Obviously we cannot have a
+             * PostScript procedure in a PDF file. Adobe Acrobat Distiller replaces
+             * the procedure with a simple 'endchar' CharString, so we now do the
+             * same. I've chosen to leave the specific ADOBEPS4 test above unchanged, rather
+             * than roll it in here, because I can't find an example file for it and
+             * can't be certain that 'pgref' will be a name in that case.
+             */
+            ref namestr;
+
+            if (r_has_type(pgref, t_name)) {
+                name_string_ref(pgd->memory, pgref, &namestr);
+                if (r_size(&namestr) == 7 && !memcmp(namestr.value.bytes, ".notdef", 7))
+                    return charstring_make_notdef(pgd, font);
+            }
             return_error(gs_error_typecheck);
+        }
     }
     gs_glyph_data_from_string(pgd, pcstr->value.const_bytes, r_size(pcstr),
                               NULL);

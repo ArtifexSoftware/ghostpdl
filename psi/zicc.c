@@ -64,7 +64,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         dict_find_string(ICCdict, ".hash", &phashval) == 1 &&
         r_has_type(phashval, t_integer)) {
         pcs = gsicc_find_cs(phashval->value.intval, igs);
-        if (pcs != NULL) {
+        if (pcs != NULL && gs_color_space_num_components(pcs) == ncomps) {
             /* Set the color space.  We are done. */
             code = gs_setcolorspace(igs, pcs);
             /* Remove the ICC dict from the stack */
@@ -468,6 +468,10 @@ seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
 
     /* See if the color space is in the profile cache */
     pcs = gsicc_find_cs(dictkey, igs);
+    if (pcs != NULL && gs_color_space_num_components(pcs) != num_colorants) {
+        pcs = NULL;
+        dictkey = 0;
+    }
     if (pcs == NULL ) {
         /* build the color space object.  Since this is cached
            in the profile cache which is a member variable
