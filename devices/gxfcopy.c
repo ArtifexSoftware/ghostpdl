@@ -2289,6 +2289,10 @@ int gs_free_copied_font(gs_font *font)
         }
         gs_free_object(mem, copied0->cidata.FDArray, "free copied CIDFont FDArray");
         copied0->cidata.FDArray = 0;
+        gs_free_string(mem, (byte *)copied0->cidata.common.CIDSystemInfo.Registry.data, copied0->cidata.common.CIDSystemInfo.Registry.size, "Free copied Registry");
+        gs_free_string(mem, (byte *)copied0->cidata.common.CIDSystemInfo.Ordering.data, copied0->cidata.common.CIDSystemInfo.Ordering.size, "Free copied Registry");
+        copied0->cidata.common.CIDSystemInfo.Registry.data = copied0->cidata.common.CIDSystemInfo.Ordering.data = NULL;
+        copied0->cidata.common.CIDSystemInfo.Registry.size = copied0->cidata.common.CIDSystemInfo.Ordering.size = 0;
     }
 
     if (font->FontType == ft_CID_TrueType) {
