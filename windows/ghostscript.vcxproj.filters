@@ -2135,9 +2135,6 @@
     <ClCompile Include="..\base\sjpx.c">
       <Filter>base</Filter>
     </ClCompile>
-    <ClCompile Include="..\base\sjpx_openjpeg.c">
-      <Filter>base</Filter>
-    </ClCompile>
     <ClCompile Include="..\base\slzwc.c">
       <Filter>base</Filter>
     </ClCompile>
@@ -6032,6 +6029,22 @@
     <ClCompile Include="..\base\gsicc_blacktext.c">
       <Filter>base\color\icc</Filter>
     </ClCompile>
+    <ClCompile Include="..\extract\src\alloc.c" />
+    <ClCompile Include="..\extract\src\astring.c" />
+    <ClCompile Include="..\extract\src\buffer-test.c" />
+    <ClCompile Include="..\extract\src\buffer.c" />
+    <ClCompile Include="..\extract\src\docx.c" />
+    <ClCompile Include="..\extract\src\docx_template.c" />
+    <ClCompile Include="..\extract\src\extract-exe.c" />
+    <ClCompile Include="..\extract\src\extract.c" />
+    <ClCompile Include="..\extract\src\join.c" />
+    <ClCompile Include="..\extract\src\mem.c" />
+    <ClCompile Include="..\extract\src\memento.c" />
+    <ClCompile Include="..\extract\src\misc-test.c" />
+    <ClCompile Include="..\extract\src\outf.c" />
+    <ClCompile Include="..\extract\src\xml.c" />
+    <ClCompile Include="..\extract\src\zip-test.c" />
+    <ClCompile Include="..\extract\src\zip.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\base\aes.h">
@@ -8974,6 +8987,7 @@
     <ClInclude Include="..\base\gsicc_blacktext.h">
       <Filter>base %28.h%29\icc %28.h%29</Filter>
     </ClInclude>
+    <ClInclude Include="..\devices\vector\doc_common.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\base\gspmdrv.rc">
