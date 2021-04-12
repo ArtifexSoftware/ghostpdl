@@ -334,10 +334,22 @@ int pdfi_gs_setgray(pdf_context *ctx, double d)
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->text.inside_CharProc && ctx->text.CharProc_is_d1)
         return 0;
-    code = gs_setgray(ctx->pgs, d);
-    if (code < 0)
-        return code;
-    pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+
+    if (ctx->page.DefaultGray_cs != NULL) {
+        gs_client_color cc;
+
+        code = gs_setcolorspace(ctx->pgs, ctx->page.DefaultGray_cs);
+        if (code < 0)
+            return code;
+        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, NULL);
+        cc.paint.values[0] = d;
+        return gs_setcolor(ctx->pgs, &cc);
+    } else {
+        code = gs_setgray(ctx->pgs, d);
+        if (code < 0)
+            return code;
+        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+    }
     return 0;
 }
 
@@ -349,11 +361,23 @@ int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
     if (ctx->text.inside_CharProc && ctx->text.CharProc_is_d1)
         return 0;
 
+    if (ctx->page.DefaultRGB_cs != NULL) {
+        gs_client_color cc;
 
-    code = gs_setrgbcolor(ctx->pgs, r, g, b);
-    if (code < 0)
-        return code;
-    pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+        code = gs_setcolorspace(ctx->pgs, ctx->page.DefaultRGB_cs);
+        if (code < 0)
+            return code;
+        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, NULL);
+        cc.paint.values[0] = r;
+        cc.paint.values[1] = g;
+        cc.paint.values[2] = b;
+        return gs_setcolor(ctx->pgs, &cc);
+    } else {
+        code = gs_setrgbcolor(ctx->pgs, r, g, b);
+        if (code < 0)
+            return code;
+        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+    }
     return 0;
 }
 
@@ -365,10 +389,24 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
     if (ctx->text.inside_CharProc && ctx->text.CharProc_is_d1)
         return 0;
 
-    code = gs_setcmykcolor(ctx->pgs, c, m, y, k);
-    if (code < 0)
-        return code;
-    pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+    if (ctx->page.DefaultCMYK_cs != NULL) {
+        gs_client_color cc;
+
+        code = gs_setcolorspace(ctx->pgs, ctx->page.DefaultCMYK_cs);
+        if (code < 0)
+            return code;
+        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, NULL);
+        cc.paint.values[0] = c;
+        cc.paint.values[1] = m;
+        cc.paint.values[2] = y;
+        cc.paint.values[3] = k;
+        return gs_setcolor(ctx->pgs, &cc);
+    } else {
+        code = gs_setcmykcolor(ctx->pgs, c, m, y, k);
+        if (code < 0)
+            return code;
+        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+    }
     return 0;
 }
 
@@ -2075,17 +2113,22 @@ static int pdfi_create_DeviceGray(pdf_context *ctx, gs_color_space **ppcs)
     int code = 0;
 
     if (ppcs != NULL) {
-        *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
-        if (*ppcs == NULL)
-            code = gs_note_error(gs_error_VMerror);
-        else {
-            code = ((gs_color_space *)*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
-            if (code < 0) {
-                rc_decrement_only_cs(*ppcs, "pdfi_create_DeviceGray");
-                *ppcs = NULL;
+        if (ctx->page.DefaultGray_cs != NULL) {
+            *ppcs = ctx->page.DefaultGray_cs;
+            rc_increment(*ppcs);
+        } else {
+            *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
+            if (*ppcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            else {
+                code = ((gs_color_space *)*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
+                if (code < 0) {
+                    rc_decrement_only_cs(*ppcs, "pdfi_create_DeviceGray");
+                    *ppcs = NULL;
+                }
             }
+            pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
         }
-        pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setgray(ctx, 0);
     }
@@ -2097,17 +2140,22 @@ static int pdfi_create_DeviceRGB(pdf_context *ctx, gs_color_space **ppcs)
     int code = 0;
 
     if (ppcs != NULL) {
-        *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
-        if (*ppcs == NULL)
-            code = gs_note_error(gs_error_VMerror);
-        else {
-            code = ((gs_color_space *)*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
-            if (code < 0) {
-                rc_decrement_only_cs(*ppcs, "pdfi_create_DeviceRGB");
-                *ppcs = NULL;
+        if (ctx->page.DefaultRGB_cs != NULL) {
+            *ppcs = ctx->page.DefaultRGB_cs;
+            rc_increment(*ppcs);
+        } else {
+            *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
+            if (*ppcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            else {
+                code = ((gs_color_space *)*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
+                if (code < 0) {
+                    rc_decrement_only_cs(*ppcs, "pdfi_create_DeviceRGB");
+                    *ppcs = NULL;
+                }
             }
+            pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
         }
-        pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setrgbcolor(ctx, 0, 0, 0);
     }
@@ -2119,17 +2167,22 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
     int code = 0;
 
     if (ppcs != NULL) {
-        *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-        if (*ppcs == NULL)
-            code = gs_note_error(gs_error_VMerror);
-        else {
-            code = ((gs_color_space *)*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
-            if (code < 0) {
-                rc_decrement_only_cs(*ppcs, "pdfi_create_DeviceCMYK");
-                *ppcs = NULL;
+        if (ctx->page.DefaultCMYK_cs != NULL) {
+            *ppcs = ctx->page.DefaultCMYK_cs;
+            rc_increment(*ppcs);
+        } else {
+            *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
+            if (*ppcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            else {
+                code = ((gs_color_space *)*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
+                if (code < 0) {
+                    rc_decrement_only_cs(*ppcs, "pdfi_create_DeviceCMYK");
+                    *ppcs = NULL;
+                }
             }
+            pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
         }
-        pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setcmykcolor(ctx, 0, 0, 0, 1);
     }

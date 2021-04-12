@@ -600,6 +600,84 @@ int pdfi_page_get_number(pdf_context *ctx, pdf_dict *target_dict, uint64_t *page
     return code;
 }
 
+static void release_page_DefaultSpaces(pdf_context *ctx)
+{
+    if (ctx->page.DefaultGray_cs != NULL) {
+        rc_decrement(ctx->page.DefaultGray_cs, "pdfi_page_render");
+        ctx->page.DefaultGray_cs = NULL;
+    }
+    if (ctx->page.DefaultRGB_cs != NULL) {
+        rc_decrement(ctx->page.DefaultRGB_cs, "pdfi_page_render");
+        ctx->page.DefaultRGB_cs = NULL;
+    }
+    if (ctx->page.DefaultCMYK_cs != NULL) {
+        rc_decrement(ctx->page.DefaultCMYK_cs, "pdfi_page_render");
+        ctx->page.DefaultCMYK_cs = NULL;
+    }
+}
+
+static int setup_page_DefaultSpaces(pdf_context *ctx, pdf_dict *page_dict)
+{
+    int code = 0;
+    pdf_dict *resources_dict = NULL, *colorspaces_dict = NULL;
+    pdf_obj *DefaultSpace = NULL;
+
+    /* Create any required DefaultGray, DefaultRGB or DefaultCMYK
+     * spaces.
+     */
+    release_page_DefaultSpaces(ctx);
+
+    code = pdfi_dict_knownget(ctx, page_dict, "Resources", (pdf_obj **)&resources_dict);
+    if (code > 0) {
+        code = pdfi_dict_knownget(ctx, resources_dict, "ColorSpace", (pdf_obj **)&colorspaces_dict);
+        if (code > 0) {
+            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultGray", &DefaultSpace);
+            if (code > 0) {
+                gs_color_space *pcs;
+                code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, page_dict, &pcs, false);
+                if (code < 0)
+                    goto exit;
+                ctx->page.DefaultGray_cs = pcs;
+                pdfi_set_colour_callback(pcs, ctx, NULL);
+            }
+            pdfi_countdown(DefaultSpace);
+            DefaultSpace = NULL;
+            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultRGB", &DefaultSpace);
+            if (code > 0) {
+                gs_color_space *pcs;
+                code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, page_dict, &pcs, false);
+                if (code < 0)
+                    goto exit;
+                ctx->page.DefaultRGB_cs = pcs;
+                pdfi_set_colour_callback(pcs, ctx, NULL);
+            }
+            pdfi_countdown(DefaultSpace);
+            DefaultSpace = NULL;
+            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultCMYK", &DefaultSpace);
+            if (code > 0) {
+                gs_color_space *pcs;
+                code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, page_dict, &pcs, false);
+                if (code < 0)
+                    goto exit;
+                ctx->page.DefaultCMYK_cs = pcs;
+                pdfi_set_colour_callback(pcs, ctx, NULL);
+            }
+            pdfi_countdown(DefaultSpace);
+            DefaultSpace = NULL;
+        }
+    }
+
+exit:
+    pdfi_countdown(DefaultSpace);
+    pdfi_countdown(resources_dict);
+    pdfi_countdown(colorspaces_dict);
+
+    if (code < 0)
+        release_page_DefaultSpaces(ctx);
+
+    return code;
+}
+
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 {
     int code, code1=0;
@@ -675,6 +753,10 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
          */
         pdfi_get_media_size(ctx);
     }
+
+    code = setup_page_DefaultSpaces(ctx, page_dict);
+    if (code < 0)
+        goto exit2;
 
     pdfi_setup_transfers(ctx);
 
@@ -763,6 +845,8 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
  exit2:
     pdfi_countdown(page_dict);
     pdfi_countdown(group_stream);
+
+    release_page_DefaultSpaces(ctx);
 
     if (code == 0 || (!ctx->args.pdfstoponerror && code != gs_error_stackoverflow))
         if (!page_dict_error && ctx->end_page != NULL)

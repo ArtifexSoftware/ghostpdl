@@ -282,7 +282,12 @@ typedef struct encryption_state_s {
 
 typedef struct page_state_s {
     /* Page level PDF objects */
-    pdf_dict *CurrentPageDict;      /* Last-ditch resource lookup */
+    /* DefaultGray, RGB and CMYK spaces */
+    gs_color_space *DefaultGray_cs;
+    gs_color_space *DefaultRGB_cs;
+    gs_color_space *DefaultCMYK_cs;
+    /* Last-ditch resource lookup */
+    pdf_dict *CurrentPageDict;
     /* Page leve 'Default' transfer functions, black generation and under colour removal */
     pdf_transfer_t DefaultTransfers[4];
     pdf_transfer_t DefaultBG;
