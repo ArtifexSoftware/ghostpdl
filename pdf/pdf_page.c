@@ -688,7 +688,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     int code, code1=0;
     pdf_dict *page_dict = NULL;
     bool page_group_known = false;
-    pdf_stream *group_stream = NULL;
+    pdf_dict *group_dict = NULL;
     bool page_dict_error = false;
     bool need_pdf14 = false; /* true if the device is needed and was successfully pushed */
     int trans_depth = 0; /* -1 means special mode for transparency simulation */
@@ -724,10 +724,10 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
             dbgmprintf(ctx->memory, "\n");
     }
 
-    code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_stream);
+    code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
     if (code < 0)
         goto exit2;
-    if (group_stream != NULL)
+    if (group_dict != NULL)
         page_group_known = true;
 
     pdfi_countdown(ctx->page.CurrentPageDict);
@@ -794,7 +794,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
             code = gs_push_pdf14trans_device(ctx->pgs, false, false, trans_depth, ctx->page.num_spots);
             if (code >= 0) {
                 if (page_group_known) {
-                    code = pdfi_trans_begin_page_group(ctx, page_dict, group_stream);
+                    code = pdfi_trans_begin_page_group(ctx, page_dict, group_dict);
                     /* If setting the page group failed for some reason, abandon the page group,
                      *  but continue with the page
                      */
@@ -849,7 +849,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     pdfi_grestore(ctx);
  exit2:
     pdfi_countdown(page_dict);
-    pdfi_countdown(group_stream);
+    pdfi_countdown(group_dict);
 
     release_page_DefaultSpaces(ctx);
 

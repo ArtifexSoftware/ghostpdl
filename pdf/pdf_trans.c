@@ -345,14 +345,13 @@ static int pdfi_gs_begin_transparency_group(gs_gstate * pgs,
 }
 
 static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
-                                          pdf_stream *group_stream,
+                                          pdf_dict *group_dict,
                                           gs_rect *bbox, pdf14_compositor_operations group_type)
 {
     gs_transparency_group_params_t params;
     pdf_obj *CS = NULL;
     bool b;
     int code;
-    pdf_dict *group_dict = (pdf_dict *)group_stream; /* alias */
 
     gs_trans_group_params_init(&params, 1.0);
     //    gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
@@ -369,7 +368,7 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     /* It seems the flag for Knockout is /K */
     code = pdfi_dict_get_bool(ctx, group_dict, "K", &b);
     if (code < 0 && code != gs_error_undefined)
-        return_error(code);
+        goto exit;
     if (code == gs_error_undefined)
         params.Knockout = false;
     else
@@ -384,13 +383,7 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
         code = pdfi_dict_knownget(ctx, group_dict, "ColorSpace", &CS);
     }
     if (code > 0 && CS->type != PDF_NULL) {
-        pdf_dict *group_stream_dict = NULL;
-
-        code = pdfi_dict_from_obj(ctx, (pdf_obj *)group_stream, &group_stream_dict);
-        if (code < 0)
-            goto exit;
-
-        code = pdfi_setcolorspace(ctx, CS, group_stream_dict, page_dict);
+        code = pdfi_setcolorspace(ctx, CS, group_dict, page_dict);
         if (code < 0)
             goto exit;
         params.ColorSpace = gs_currentcolorspace(ctx->pgs);
@@ -426,7 +419,7 @@ int pdfi_trans_begin_simple_group(pdf_context *ctx, bool stroked_bbox, bool isol
     return code;
 }
 
-int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *group_dict)
+int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict)
 {
     gs_rect bbox;
     int code;
@@ -451,14 +444,23 @@ int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_strea
 
 int pdfi_trans_begin_form_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
 {
-    pdf_obj *group_stream = NULL;
+    pdf_obj *group_obj = NULL;
     gs_rect bbox;
     pdf_array *BBox = NULL;
     int code;
+    pdf_dict *group_dict = NULL;
 
-    code = pdfi_dict_get(ctx, form_dict, "Group", (pdf_obj **)&group_stream);
+    /* TODO: Maybe sometimes this is actually a stream?
+     * Otherwise should just fetch it as a dict.
+     * Anyway this will work for either dict or stream
+     */
+    code = pdfi_dict_get(ctx, form_dict, "Group", &group_obj);
     if (code < 0)
         return_error(code);
+
+    code = pdfi_dict_from_obj(ctx, (pdf_obj *)group_obj, &group_dict);
+    if (code < 0)
+        goto exit;
 
     code = pdfi_gsave(ctx);
     code = pdfi_dict_knownget_type(ctx, form_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
@@ -475,7 +477,7 @@ int pdfi_trans_begin_form_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict 
         bbox.q.y = 0;
     }
 
-    code = pdfi_transparency_group_common(ctx, page_dict, (pdf_stream *)group_stream, &bbox, PDF14_BEGIN_TRANS_GROUP);
+    code = pdfi_transparency_group_common(ctx, page_dict, group_dict, &bbox, PDF14_BEGIN_TRANS_GROUP);
     if (code < 0)
         pdfi_grestore(ctx);
     else
@@ -483,7 +485,7 @@ int pdfi_trans_begin_form_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict 
 
  exit:
     pdfi_countdown(BBox);
-    pdfi_countdown(group_stream);
+    pdfi_countdown(group_obj);
     return code;
 }
 
