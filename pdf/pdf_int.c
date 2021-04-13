@@ -1751,7 +1751,6 @@ static int setup_stream_DefaultSpaces(pdf_context *ctx, pdf_dict *stream_dict)
         }
     }
 
-exit:
     pdfi_countdown(DefaultSpace);
     pdfi_countdown(resources_dict);
     pdfi_countdown(colorspaces_dict);

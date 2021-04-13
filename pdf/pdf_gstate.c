@@ -238,7 +238,7 @@ int pdfi_op_Q(pdf_context *ctx)
      * the 'PDF interpreter written in PostScript' method.
      */
     ppath = gx_path_alloc_shared(ctx->pgs->path, ctx->memory, "temporary current path copy for Q");
-    if (ppath == NULL < 0)
+    if (ppath == NULL)
         return_error(gs_error_VMerror);
 
     code = pdfi_grestore(ctx);
