@@ -1866,7 +1866,7 @@ int pdfi_EI(pdf_context *ctx)
 
 /* see .execgroup */
 int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *xobject_obj,
-                        gs_gstate *GroupGState, gs_matrix *matrix)
+                        gs_gstate *GroupGState, gs_color_space *pcs, gs_matrix *matrix)
 {
     int code;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
@@ -1877,6 +1877,13 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *xobje
 
     if (GroupGState) {
         code = pdfi_gs_setgstate(ctx->pgs, GroupGState);
+        if (code < 0)
+            goto exit2;
+    }
+
+    /* Override the colorspace if specified */
+    if (pcs) {
+        code = gs_setcolorspace(ctx->pgs, pcs);
         if (code < 0)
             goto exit2;
     }
@@ -2054,6 +2061,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
     pdf_stream *form_stream = NULL; /* Alias */
     pdf_stream *hacked_stream = NULL;
     pdf_dict *form_dict;
+    gs_color_space *pcs = NULL;
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_form BEGIN\n");
@@ -2112,11 +2120,15 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
         code = pdfi_loop_detector_mark(ctx);
         if (code < 0) goto exit1;
 
+        /* Save the current color space in case it gets changed */
+        pcs = gs_currentcolorspace(ctx->pgs);
+        rc_increment(pcs);
+
         code = pdfi_trans_begin_form_group(ctx, page_dict, form_dict);
         (void)pdfi_loop_detector_cleartomark(ctx);
         if (code < 0) goto exit1;
 
-        code = pdfi_form_execgroup(ctx, page_dict, form_stream, NULL, NULL);
+        code = pdfi_form_execgroup(ctx, page_dict, form_stream, NULL, pcs, NULL);
         code1 = pdfi_trans_end_group(ctx);
         if (code == 0) code = code1;
     } else {
@@ -2145,6 +2157,8 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
     pdfi_countdown(FormMatrix);
     pdfi_countdown(BBox);
     pdfi_countdown(hacked_stream);
+    if (pcs)
+        rc_decrement_only_cs(pcs, "pdfi_do_form(pcs)");
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_form END\n");
 #endif
