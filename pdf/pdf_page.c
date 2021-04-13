@@ -622,11 +622,12 @@ static int setup_page_DefaultSpaces(pdf_context *ctx, pdf_dict *page_dict)
     pdf_dict *resources_dict = NULL, *colorspaces_dict = NULL;
     pdf_obj *DefaultSpace = NULL;
 
+    /* First off, discard any dangling Default* colour spaces, just in case. */
+    release_page_DefaultSpaces(ctx);
+
     /* Create any required DefaultGray, DefaultRGB or DefaultCMYK
      * spaces.
      */
-    release_page_DefaultSpaces(ctx);
-
     code = pdfi_dict_knownget(ctx, page_dict, "Resources", (pdf_obj **)&resources_dict);
     if (code > 0) {
         code = pdfi_dict_knownget(ctx, resources_dict, "ColorSpace", (pdf_obj **)&colorspaces_dict);
@@ -635,10 +636,13 @@ static int setup_page_DefaultSpaces(pdf_context *ctx, pdf_dict *page_dict)
             if (code > 0) {
                 gs_color_space *pcs;
                 code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, page_dict, &pcs, false);
-                if (code < 0)
-                    goto exit;
-                ctx->page.DefaultGray_cs = pcs;
-                pdfi_set_colour_callback(pcs, ctx, NULL);
+                /* If any given Default* space fails simply ignore it, we wil then use the Device
+                 * space instead, this is as per the spec.
+                 */
+                if (code >= 0) {
+                    ctx->page.DefaultGray_cs = pcs;
+                    pdfi_set_colour_callback(pcs, ctx, NULL);
+                }
             }
             pdfi_countdown(DefaultSpace);
             DefaultSpace = NULL;
@@ -646,10 +650,13 @@ static int setup_page_DefaultSpaces(pdf_context *ctx, pdf_dict *page_dict)
             if (code > 0) {
                 gs_color_space *pcs;
                 code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, page_dict, &pcs, false);
-                if (code < 0)
-                    goto exit;
-                ctx->page.DefaultRGB_cs = pcs;
-                pdfi_set_colour_callback(pcs, ctx, NULL);
+                /* If any given Default* space fails simply ignore it, we wil then use the Device
+                 * space instead, this is as per the spec.
+                 */
+                if (code >= 0) {
+                    ctx->page.DefaultRGB_cs = pcs;
+                    pdfi_set_colour_callback(pcs, ctx, NULL);
+                }
             }
             pdfi_countdown(DefaultSpace);
             DefaultSpace = NULL;
@@ -657,10 +664,13 @@ static int setup_page_DefaultSpaces(pdf_context *ctx, pdf_dict *page_dict)
             if (code > 0) {
                 gs_color_space *pcs;
                 code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, page_dict, &pcs, false);
-                if (code < 0)
-                    goto exit;
-                ctx->page.DefaultCMYK_cs = pcs;
-                pdfi_set_colour_callback(pcs, ctx, NULL);
+                /* If any given Default* space fails simply ignore it, we wil then use the Device
+                 * space instead, this is as per the spec.
+                 */
+                if (code >= 0) {
+                    ctx->page.DefaultCMYK_cs = pcs;
+                    pdfi_set_colour_callback(pcs, ctx, NULL);
+                }
             }
             pdfi_countdown(DefaultSpace);
             DefaultSpace = NULL;
@@ -671,11 +681,7 @@ exit:
     pdfi_countdown(DefaultSpace);
     pdfi_countdown(resources_dict);
     pdfi_countdown(colorspaces_dict);
-
-    if (code < 0)
-        release_page_DefaultSpaces(ctx);
-
-    return code;
+    return 0;
 }
 
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
