@@ -823,8 +823,10 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     } else {
         code = pdfi_merge_dicts(ctx, ctx->Trailer, d);
         if (code < 0) {
-            if (code == gs_error_VMerror || ctx->args.pdfstoponerror)
+            if (code == gs_error_VMerror || ctx->args.pdfstoponerror) {
+                pdfi_pop(ctx, 1);
                 return code;
+            }
         }
     }
 
@@ -837,17 +839,17 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
 
         code = pdfi_dict_get_int(ctx, d, "Size", &size);
         if (code < 0) {
-            pdfi_pop(ctx, 2);
+            pdfi_pop(ctx, 1);
             return code;
         }
         if (size < 0) {
-            pdfi_pop(ctx, 2);
+            pdfi_pop(ctx, 1);
             return_error(gs_error_rangecheck);
         }
 
         ctx->xref_table = (xref_table_t *)gs_alloc_bytes(ctx->memory, sizeof(xref_table_t), "read_xref_stream allocate xref table");
         if (ctx->xref_table == NULL) {
-            pdfi_pop(ctx, 2);
+            pdfi_pop(ctx, 1);
             return_error(gs_error_VMerror);
         }
         memset(ctx->xref_table, 0x00, sizeof(xref_table_t));
@@ -858,7 +860,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
 
         ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, size * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
         if (ctx->xref_table->xref == NULL){
-            pdfi_pop(ctx, 2);
+            pdfi_pop(ctx, 1);
             pdfi_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             return_error(gs_error_VMerror);
@@ -875,7 +877,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     if (ctx->Trailer == d) {
         code = pdfi_dict_get_int(ctx, d, "XRefStm", &num);
         if (code < 0 && code != gs_error_undefined) {
-            pdfi_pop(ctx, 2);
+            pdfi_pop(ctx, 1);
             return code;
         }
         if (code == 0)
@@ -887,14 +889,17 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
         if (ctx->args.pdfdebug)
             dmprintf(ctx->memory, "%% File is a hybrid, containing xref table and xref stream. Using the stream.\n");
 
-        pdfi_pop(ctx, 2);
 
-        if (pdfi_loop_detector_check_object(ctx, num) == true)
+        if (pdfi_loop_detector_check_object(ctx, num) == true) {
+            pdfi_pop(ctx, 1);
             return_error(gs_error_circular_reference);
+        }
         else {
             code = pdfi_loop_detector_add_object(ctx, num);
-            if (code < 0)
+            if (code < 0) {
+                pdfi_pop(ctx, 1);
                 return code;
+            }
         }
 
         pdfi_loop_detector_mark(ctx);
@@ -907,12 +912,14 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
         code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
         if (code < 0) {
             pdfi_loop_detector_cleartomark(ctx);
+            pdfi_pop(ctx, 1);
             return code;
         }
 
         code = pdfi_read_xref_stream_dict(ctx, ctx->main_stream);
         if (code < 0) {
             pdfi_loop_detector_cleartomark(ctx);
+            pdfi_pop(ctx, 1);
             return code;
         }
 
@@ -927,6 +934,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
      */
     code = pdfi_dict_get_int(ctx, d, "Size", &num);
     if (code < 0) {
+        pdfi_pop(ctx, 1);
         return code;
     }
     if (max_obj > num)
