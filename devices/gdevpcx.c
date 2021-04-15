@@ -373,6 +373,10 @@ pcx_write_page(gx_device_printer * pdev, gp_file * file, pcx_header * phdr,
                     {
                         byte *pend = plane + rsize;
                         int shift;
+                        /* We'll have a run of full 32bit words,
+                         * followed by some sets of stray 4-bits. */
+                        int stray = pdev->width & 7;
+                        byte *fend = row + ((pdev->width & ~7)>>1);
 
                         for (shift = 0; shift < 4; shift++) {
                             register byte *from, *to;
@@ -380,7 +384,7 @@ pcx_write_page(gx_device_printer * pdev, gp_file * file, pcx_header * phdr,
                             register int bleft = bright << 4;
 
                             for (from = row, to = plane;
-                                 from < end; from += 4
+                                 from < fend; from += 4
                                 ) {
                                 *to++ =
                                     (from[0] & bleft ? 0x80 : 0) |
@@ -392,9 +396,21 @@ pcx_write_page(gx_device_printer * pdev, gp_file * file, pcx_header * phdr,
                                     (from[3] & bleft ? 0x02 : 0) |
                                     (from[3] & bright ? 0x01 : 0);
                             }
-                            /* We might be one byte short of rsize. */
-                            if (to < pend)
+                            if (stray) {
+                                byte v = (from[0] & bleft ? 0x80 : 0);
+                                if (stray > 1) v |= from[0] & bright ? 0x40 : 0;
+                                if (stray > 2) v |= from[1] & bleft ? 0x20 : 0;
+                                if (stray > 3) v |= from[1] & bright ? 0x10 : 0;
+                                if (stray > 4) v |= from[2] & bleft ? 0x08 : 0;
+                                if (stray > 5) v |= from[2] & bright ? 0x04 : 0;
+                                if (stray > 6) v |= from[3] & bleft ? 0x02 : 0;
+                                *to++ = v;
+                            }
+                            /* Continue to 'raster' rather than width. */
+                            while (to < pend) {
                                 *to = to[-1];
+                                to++;
+                            }
                             pcx_write_rle(plane, pend, 1, file);
                         }
                     }
