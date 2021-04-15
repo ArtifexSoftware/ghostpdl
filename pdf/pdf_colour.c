@@ -1242,15 +1242,9 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
                 break;
         }
     }
-    if (ppcs!= NULL){
-        /* FIXME
-         * I can see no justification for this whatever, but if I don't do this then some
-         * files with images in a /Separation colour space come out incorrectly. Even surrounding
-         * this with a gsave/grestore pair causes differences.
-         */
-        code = pdfi_gs_setcolorspace(ctx, pcs);
+    if (ppcs!= NULL)
         *ppcs = pcs;
-    } else {
+    else {
         code = pdfi_gs_setcolorspace(ctx, pcs);
         /* release reference from construction */
         rc_decrement_only_cs(pcs, "setseparationspace");
