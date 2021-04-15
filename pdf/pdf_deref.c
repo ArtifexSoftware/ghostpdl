@@ -258,40 +258,86 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         return 0;
     }
 
-    /* Cache the Length in the stream object and mark it valid */
-    stream_obj->Length = i;
-    stream_obj->length_valid = true;
-
     if (i < 0 || (i + offset)> ctx->main_stream_length) {
         dmprintf1(ctx->memory, "Stream object %u has /Length which, when added to offset of object, exceeds file size.\n", objnum);
         ctx->pdf_errors |= E_PDF_BADSTREAM;
-        return 0;
-    }
-    code = pdfi_seek(ctx, ctx->main_stream, i, SEEK_CUR);
-    if (code < 0) {
-        pdfi_pop(ctx, 1);
-        return code;
+    } else {
+        code = pdfi_seek(ctx, ctx->main_stream, i, SEEK_CUR);
+        if (code < 0) {
+            pdfi_pop(ctx, 1);
+            return code;
+        }
+
+        stream_obj->Length = 0;
+        stream_obj->length_valid = false;
+
+        code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
+        if (pdfi_count_stack(ctx) < 2) {
+            dmprintf1(ctx->memory, "Failed to find a valid object at end of stream object %u.\n", objnum);
+        }
+        else {
+            if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+                dmprintf1(ctx->memory, "Failed to find 'endstream' keyword at end of stream object %u.\n", objnum);
+                ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
+            } else {
+                keyword = ((pdf_keyword *)ctx->stack_top[-1]);
+                if (keyword->key != TOKEN_ENDSTREAM) {
+                    dmprintf2(ctx->memory, "Stream object %u has an incorrect /Length of %"PRIu64"\n", objnum, i);
+                } else {
+                    /* Cache the Length in the stream object and mark it valid */
+                    stream_obj->Length = i;
+                    stream_obj->length_valid = true;
+                }
+            }
+            pdfi_pop(ctx, 1);
+        }
     }
 
-    code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
-    if (pdfi_count_stack(ctx) < 2) {
-        dmprintf1(ctx->memory, "Failed to find a valid object at end of stream object %u.\n", objnum);
-        return 0;
-    }
+    /* If we failed to find a valid object, or the object wasn't a keyword, or the
+     * keywrod wasn't 'endstream' then the Length is wrong. We need to have the correct
+     * Length for streams if we have encrypted files, because we must install a
+     * SubFileDecode filter iwth a Length (EODString is incompatible with AES encryption)
+     * Rather than mess about checking for encryption, we'll choose to just correctly
+     * calculate the Length of all streams. Although this takes time, it will only
+     * happen for files which are invalid.
+     */
+    if (stream_obj->length_valid != true) {
+        gs_offset_t found_offset;
+        char Buffer[10];
+        unsigned int loop, bytes, total = 0;
 
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-        dmprintf1(ctx->memory, "Failed to find 'endstream' keyword at end of stream object %u.\n", objnum);
-        ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
-        pdfi_pop(ctx, 1);
+        code = pdfi_seek(ctx, ctx->main_stream, stream_obj->stream_offset, SEEK_SET);
+        if (code < 0) {
+            pdfi_pop(ctx, 1);
+            return code;
+        }
+        memset(Buffer, 0x00, 10);
+        bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 9, ctx->main_stream);
+        if (bytes < 9)
+            return_error(gs_error_ioerror);
+
+        total = bytes;
+        do {
+            if (memcmp(Buffer, "endstream", 9) == 0) {
+                stream_obj->Length = total - 9;
+                stream_obj->length_valid = true;
+                break;
+            }
+            if (memcmp(Buffer, "endobj", 6) == 0) {
+                stream_obj->Length = total - 6;
+                stream_obj->length_valid = true;
+                break;
+            }
+            for (loop = 0;loop < 9;loop++){
+                Buffer[loop] = Buffer[loop + 1];
+            }
+            bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[9], 1, 1, ctx->main_stream);
+            total += bytes;
+        } while(bytes);
+        if (bytes <= 0)
+            return_error(gs_error_ioerror);
         return 0;
     }
-    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
-    if (keyword->key != TOKEN_ENDSTREAM) {
-        dmprintf2(ctx->memory, "Stream object %u has an incorrect /Length of %"PRIu64"\n", objnum, i);
-        pdfi_pop(ctx, 1);
-        return 0;
-    }
-    pdfi_pop(ctx, 1);
 
     code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
     if (code < 0) {
