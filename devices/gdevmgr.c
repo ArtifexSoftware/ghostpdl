@@ -239,14 +239,19 @@ mgrN_print_page(gx_device_printer *pdev, gp_file *pstream)
                                 break;
 
                         case 4:
-                                for (i = 0,dp = data, bp = cur.data; i < mgr_line_size; i++) {
+                        {
+                                int size = mgr_line_size - (bdev->width & 1);
+                                for (i = 0,dp = data, bp = cur.data; i < size; i++) {
                                         *dp =  mgr->bgreybacktable[*(bp++) >> 4] << 4;
                                     *(dp++) |= mgr->bgreybacktable[*(bp++) >> 4];
+                                }
+                                if (bdev->width & 1) {
+                                    *dp =  mgr->bgreybacktable[*(bp++) >> 4] << 4;
                                 }
                                 if ( gp_fwrite(data, sizeof(byte), mgr_line_size, pstream) < mgr_line_size )
                                         return_error(gs_error_ioerror);
                                 break;
-
+                        }
                         case 8:
                                 for (i = 0,bp = cur.data; i < mgr_line_size; i++, bp++)
                                       *bp = mgr->bgrey256backtable[*bp];
