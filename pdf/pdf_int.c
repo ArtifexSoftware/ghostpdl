@@ -1817,9 +1817,22 @@ pdfi_interpret_inner_content(pdf_context *ctx, pdf_c_stream *content_stream, pdf
     local_save_stream_state(ctx, &local_entry_save);
     initialise_stream_save(ctx);
 
+    /* This causes several files to render 'incorrectly', even though they are in some sense
+     * invalid. It doesn't seem to provide any benefits so I have, for now, removed it. If
+     * there is a good reason for it we can put it back again.
+     * FIXME - either restore or remove these lines
+     * /tests_private/pdf/PDF_2.0_FTS/fts_23_2310.pdf
+     * /tests_private/pdf/PDF_2.0_FTS/fts_23_2311.pdf
+     * /tests_private/pdf/PDF_2.0_FTS/fts_23_2312.pdf
+     * /tests_private/pdf/sumatra/recursive_colorspace.pdf
+     * /tests_private/pdf/uploads/Bug696410.pdf
+     * /tests_private/pdf/sumatra/1900_-_cairo_transparency_inefficiency.pdf (with pdfwrite)
+     */
+#if 0
     /* Stop on error in substream, and also be prepared to clean up the stack */
     if (stoponerror)
         ctx->args.pdfstoponerror = true;
+#endif
 
 #if DEBUG_CONTEXT
     dbgmprintf1(ctx->memory, "BEGIN %s stream\n", desc);
