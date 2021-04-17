@@ -4018,6 +4018,7 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
 
     if (pdcolor == NULL)
        return_error(gs_error_unknownerror);	/* color must be defined */
+    ((pdf14_device *)dev)->op_state = pgs->is_fill_color ? PDF14_OP_STATE_FILL : PDF14_OP_STATE_STROKE;
     if (gx_dc_is_pattern1_color(pdcolor)){
         if( gx_pattern1_get_transptr(pdcolor) != NULL ||
             gx_pattern1_clist_has_trans(pdcolor) ){
@@ -4209,9 +4210,13 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
     } else
         update_lop_for_pdf14(&new_pgs, pdcolor);
     pdf14_set_marking_params(dev, &new_pgs);
-    if (code >= 0)
-        code = gx_default_stroke_path(dev, &new_pgs, ppath, params, pdcolor,
-                                      pcpath);
+    if (code >= 0) {
+        PDF14_OP_FS_STATE save_op_state = ((pdf14_device *)dev)->op_state;
+
+        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
+        code = gx_default_stroke_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
+        ((pdf14_device*)dev)->op_state = save_op_state;
+    }
     if (code >= 0 && push_group) {
         code = pop_shfill_group(&new_pgs);
         pdf14_set_marking_params(dev, pgs);
@@ -4242,6 +4247,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
     float stroke_alpha = cpgs->strokeconstantalpha;
     float fill_alpha = cpgs->fillconstantalpha;
     gs_blend_mode_t blend_mode = cpgs->blend_mode;
+    PDF14_OP_FS_STATE save_op_state = p14dev->op_state;
 
     /* Break const just once, neatly */
     const_breaker.cpgs = cpgs;
@@ -4290,7 +4296,10 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
     code = gs_bbox_transform_inverse(&bbox, &ctm_only(pgs), &group_stroke_box);
     if (code < 0)
         return code;
-
+    if (p14dev->overprint != pgs->overprint || p14dev->stroke_overprint != pgs->stroke_overprint) {
+        p14dev->overprint = pgs->overprint;
+        p14dev->stroke_overprint = pgs->stroke_overprint;
+    }
     /* See if overprint is enabled for both stroke and fill AND if ca == CA */
     if (fill_alpha == stroke_alpha &&
         p14dev->overprint && p14dev->stroke_overprint &&
@@ -4345,7 +4354,6 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
 
         /* restore blend mode for actual drawing in the group */
         (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
-        p14dev->op_state = PDF14_OP_STATE_FILL;
 
         /* If we are in an overprint situation, set the blend mode to compatible
             overprint */
@@ -4384,6 +4392,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
 
 cleanup:
     /* Restore the state */
+    p14dev->op_state = save_op_state;
     (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
     (void)gs_setstrokeconstantalpha(pgs, stroke_alpha);
     (void)gs_setfillconstantalpha(pgs, fill_alpha);
@@ -5994,7 +6003,8 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
 
                 p14dev->op_state = op_pct->params.op_state;
 
-                if (!p14dev->op_state) {
+
+                if (p14dev->op_state == PDF14_OP_STATE_NONE) {
                     if (op_pct->params.retain_any_comps) {
                         drawn_comps = op_pct->params.drawn_comps;
                     } else {
@@ -8634,7 +8644,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         p14dev->height = 1;
     }
 
-    p14dev->op_state = pgs->is_fill_color;
+    p14dev->op_state = pgs->is_fill_color ? PDF14_OP_STATE_FILL : PDF14_OP_STATE_NONE;
     code = dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
     *pdev = (gx_device *) p14dev;
     pdf14_set_marking_params((gx_device *)p14dev, pgs);
@@ -9925,7 +9935,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     else
         pdev->is_planar = target->is_planar;
 
-    pdev->op_state = pgs->is_fill_color;
+    pdev->op_state = pgs->is_fill_color ? PDF14_OP_STATE_FILL : PDF14_OP_STATE_NONE;
 
     if (deep) {
         set_dev_proc(pdev, encode_color, pdf14_encode_color16);
