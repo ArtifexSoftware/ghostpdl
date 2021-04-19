@@ -767,18 +767,24 @@ currentdict /EnablePageHandlerDevice undef
         }{
           //false
         }ifelse
+
         not {
-            % scale the co-ordinate system by the UserUnit
-            dup dup scale
             % The PageSize needs to be multiplied too
             exch aload 5 1 roll % UserUnit box llx lly urx ury
             2 index sub exch    % UserUnit box llx lly (ury - lly) urx
             3 index sub         % UserUnit box llx lly boxheight boxwidth
             5 index mul         % UserUnit box llx lly boxheight (Boxwidth*UserUnit)
-            5 index mul         % UserUnit box llx lly boxheight (Boxwidth*UserUnit)
-            5 -1 roll mul       % box llx lly (boxheight*UserUnit) (Boxwidth*UserUnit)
             exch
-        } if
+            5 index mul         % UserUnit box llx lly (Boxwidth*UserUnit) (boxheight*UserUnit)
+            4 -2 roll
+            5 index mul exch    % UserUnit box (Boxwidth*UserUnit) (boxheight*UserUnit) (lly*UserUnit) llx
+            5 index mul exch    % UserUnit box (Boxwidth*UserUnit) (boxheight*UserUnit) (llx*UserUnit) (lly*UserUnit)
+            4 2 roll            % UserUnit box (llx*UserUnit) (lly*UserUnit) (Boxwidth*UserUnit) (boxheight*UserUnit)
+            6 -1 roll pop       % box (llx*UserUnit) (lly*UserUnit) (Boxwidth*UserUnit) (boxheight*UserUnit)
+            //true                  % Do rotation and CTM scaling
+        }{
+          //false             % Don't do rotation and CTM scaling
+        } ifelse
       } {
         /PassUserUnit /GetDeviceParam .special_op {
           exch pop {
@@ -790,62 +796,76 @@ currentdict /EnablePageHandlerDevice undef
         2 index sub         % box llx lly urx (ury - lly)
         exch 3 index sub    % box llx lly (ury - lly) (urx - llx)
         exch
+        //true             % Do rotation and CTM scaling
       } ifelse
     } if
 
-    % handle page rotation here
-    6 index /Rotate known {
-      % PDF page rotation runs clockwise and must be a multiple of 90, unlike PostScript.....
-      % convert Rotate into a quadrant number
-      6 index /Rotate get 90 div cvi
-      % Make sure quadrant is 0-3
-      dup 3 gt {4 mod} if
-      dup 0 eq
+    {
+      % handle page rotation here
+      6 index /Rotate known {
+        % PDF page rotation runs clockwise and must be a multiple of 90, unlike PostScript.....
+        % convert Rotate into a quadrant number
+        6 index /Rotate get 90 div cvi
+        % Make sure quadrant is 0-3
+        dup 3 gt {4 mod} if
+        dup 0 eq
+        {
+          pop
+          2 array astore /PageSize exch def
+          currentdict end setpagedevice
+          neg exch neg exch
+          translate
+        }
+        {
+          dup 1 eq
+          {
+            pop
+            exch 4 2 roll exch 4 2 roll
+            2 array astore dup /PageSize exch def
+            currentdict end setpagedevice
+            270 rotate
+            1 get add neg exch neg
+            translate
+          }
+          {
+            2 eq
+            {
+              2 array astore dup /PageSize exch def
+              currentdict end setpagedevice
+              180 rotate
+              aload pop 3 -1 roll add neg 3 1 roll add neg exch
+              translate
+            }
+            {
+              exch 4 2 roll exch 4 2 roll
+              2 array astore dup /PageSize exch def
+              currentdict end setpagedevice
+              90 rotate
+              0 get 3 -1 roll add
+              neg exch neg exch
+              translate
+            } ifelse
+          } ifelse
+        } ifelse
+      }
       {
-        pop
         2 array astore /PageSize exch def
         currentdict end setpagedevice
         neg exch neg exch
         translate
-      }
+      }ifelse
+
+      % scale the co-ordinate system by the UserUnit
+      % We have to do this after setting the PageSize, because
+      % setpagedevice does an implicit initgraphics, resetting the CTM.
+      %
+      //systemdict /NoUserUnit .knownget not { //false } if not
       {
-        dup 1 eq
-        {
-          pop
-          exch 4 2 roll exch 4 2 roll
-          2 array astore dup /PageSize exch def
-          currentdict end setpagedevice
-          270 rotate
-          1 get add neg exch neg
-          translate
-        }
-        {
-          2 eq
-          {
-            2 array astore dup /PageSize exch def
-            currentdict end setpagedevice
-            180 rotate
-            aload pop 3 -1 roll add neg 3 1 roll add neg exch
-            translate
-          }
-          {
-            exch 4 2 roll exch 4 2 roll
-            2 array astore dup /PageSize exch def
-            currentdict end setpagedevice
-            90 rotate
-            0 get 3 -1 roll add
-            neg exch neg exch
-            translate
-          } ifelse
-        } ifelse
-      } ifelse
-    }
-    {
-      2 array astore /PageSize exch def
-      currentdict end setpagedevice
-      neg exch neg exch
-      translate
-    }ifelse
+        2 index /UserUnit knownoget {
+          dup scale
+        } if
+      } if
+    } if
   } ifelse
 
   end % pdfdict
