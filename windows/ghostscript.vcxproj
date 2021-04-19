@@ -1331,6 +1331,7 @@
     <ClCompile Include="..\base\ttobjs.c" />
     <ClCompile Include="..\base\vdtrace.c" />
     <ClCompile Include="..\contrib\eplaser\gdevescv.c" />
+    <ClCompile Include="..\contrib\gdevadmp.c" />
     <ClCompile Include="..\contrib\gdevbjca.c" />
     <ClCompile Include="..\contrib\gdevbjc_.c" />
     <ClCompile Include="..\contrib\gdevcd8.c" />
@@ -1499,6 +1500,7 @@
     <ClCompile Include="..\devices\gdevjpx.c" />
     <ClCompile Include="..\devices\gdevl31s.c" />
     <ClCompile Include="..\devices\gdevlbp8.c" />
+    <ClCompile Include="..\devices\gdevlj56.c" />
     <ClCompile Include="..\devices\gdevlp8k.c" />
     <ClCompile Include="..\devices\gdevlxm.c" />
     <ClCompile Include="..\devices\gdevmeds.c" />
@@ -1627,9 +1629,13 @@
     <ClCompile Include="..\extract\src\extract.c" />
     <ClCompile Include="..\extract\src\join.c" />
     <ClCompile Include="..\extract\src\mem.c" />
+    <ClCompile Include="..\extract\src\odt.c" />
+    <ClCompile Include="..\extract\src\odt_template.c" />
     <ClCompile Include="..\extract\src\memento.c" />
     <ClCompile Include="..\extract\src\misc-test.c" />
     <ClCompile Include="..\extract\src\outf.c" />
+    <ClCompile Include="..\extract\src\sys.c" />
+    <ClCompile Include="..\extract\src\text.c" />
     <ClCompile Include="..\extract\src\xml.c" />
     <ClCompile Include="..\extract\src\zip-test.c" />
     <ClCompile Include="..\extract\src\zip.c" />

@@ -35,33 +35,6 @@
 
 #include <stdlib.h>		/* for abs() and free */
 
-#if ( 6 > GS_VERSION_MAJOR )
-
-#include <string.h>
-#ifndef _WIN32
-#include <sys/utsname.h>	/* for uname(2) */
-#endif
-#include <ctype.h>		/* for toupper(3) */
-
-#include "math_.h"
-#include "gx.h"
-#include "gserrors.h"
-#include "gsmatrix.h"
-#include "gsparam.h"
-#include "gxdevice.h"
-#include "gscspace.h"
-#include "gsutil.h"
-#include "gdevvec.h"
-#include "gdevpstr.h"
-#include "ghost.h"
-#include "gzstate.h"
-
-#include "gdevescv.h"
-#include "gspath.h"
-#include "gzpath.h"
-
-#else /* 6 <= GS_VERSION_MAJOR */
-
 #include "math_.h"
 #ifndef _WIN32
 #include <sys/utsname.h>	/* for uname(2) */
@@ -76,13 +49,9 @@
 #include "gxdevice.h"
 #include "gdevvec.h"
 
-#if ( 7 >= GS_VERSION_MAJOR )
 #include "gscspace.h"
-#endif
 
 #include "gdevescv.h"
-
-#endif /* GS_VERSION_MAJOR */
 
 #define ESCV_FORCEDRAWPATH 0	/* 0: correct LP-9200C path trouble. */
 
@@ -332,38 +301,6 @@ gx_device_escv far_data gs_lps6500_device ={escv_device_body("lps6500"), escv_pr
 gx_device_escv far_data gs_eplcolor_device ={escv_device_body(ESCPAGE_DEVICENAME_COLOR), escv_procs, escv_init_code};
 
 /* Vector device implementation */
-#if ( 6 > GS_VERSION_MAJOR )
-static int escv_beginpage(P1(gx_device_vector * vdev));
-static int escv_setfillcolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
-static int escv_setstrokecolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
-static int escv_setdash(P4(gx_device_vector * vdev, const float *pattern,
-                            uint count, double offset));
-static int escv_setflat(P2(gx_device_vector * vdev, double flatness));
-static int escv_setlogop(P3(gx_device_vector * vdev, gs_logical_operation_t lop,
-                             gs_logical_operation_t diff));
-static int escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
-                               fixed y1, gx_path_type_t type);
-static int escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
-                               gx_path_type_t type);
-static int escv_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-static int escv_moveto(P6(gx_device_vector * vdev, double x0, double y0,
-                           double x, double y, gx_path_type_t type));
-static int escv_lineto(P6(gx_device_vector * vdev, double x0, double y0,
-                           double x, double y, gx_path_type_t type));
-static int escv_curveto(P10(gx_device_vector * vdev, double x0, double y0,
-                             double x1, double y1, double x2, double y2,
-                             double x3, double y3, gx_path_type_t type));
-static int escv_closepath(P6(gx_device_vector * vdev, double x, double y,
-                              double x_start, double y_start, gx_path_type_t type));
-
-static int escv_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-static int escv_setlinewidth(gx_device_vector * vdev, double width);
-static int escv_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
-static int escv_setlinejoin(gx_device_vector * vdev, gs_line_join join);
-static int escv_setmiterlimit(gx_device_vector * vdev, double limit);
-
-#else /* 6 <= GS_VERSION_MAJOR */
-
 /* Page management */
 static int escv_beginpage (gx_device_vector * vdev);
 /* Imager state */
@@ -377,17 +314,12 @@ static int escv_setflat (gx_device_vector * vdev, double flatness);
 static int escv_setlogop (gx_device_vector * vdev, gs_logical_operation_t lop,
                            gs_logical_operation_t diff);
 /* Other state */
-#if ( 8 <= GS_VERSION_MAJOR )
 static bool escv_can_handle_hl_color (gx_device_vector * vdev, const gs_gstate * pgs,
                                        const gx_drawing_color * pdc);
 static int escv_setfillcolor (gx_device_vector * vdev, const gs_gstate * pgs,
                                const gx_drawing_color * pdc);
 static int escv_setstrokecolor (gx_device_vector * vdev, const gs_gstate * pgs,
                                  const gx_drawing_color * pdc);
-#else
-static int escv_setfillcolor (gx_device_vector * vdev, const gx_drawing_color * pdc);
-static int escv_setstrokecolor (gx_device_vector * vdev, const gx_drawing_color * pdc);
-#endif
 /* Paths */
 /* dopath and dorect are normally defaulted */
 static int escv_vector_dopath (gx_device_vector * vdev, const gx_path * ppath,
@@ -406,7 +338,6 @@ static int escv_closepath (gx_device_vector * vdev, double x0, double y0,
                             double x_start, double y_start, gx_path_type_t type);
 static int escv_endpath (gx_device_vector * vdev, gx_path_type_t type);
 
-#endif /* GS_VERSION_MAJOR */
 
 static const gx_device_vector_procs escv_vector_procs =
   {
@@ -421,9 +352,7 @@ static const gx_device_vector_procs escv_vector_procs =
     escv_setflat,
     escv_setlogop,
     /* Other state */
-#if ( 8 <= GS_VERSION_MAJOR )
     escv_can_handle_hl_color,	/* add gs815 */
-#endif
     escv_setfillcolor,	/* fill & stroke colors are the same */
     escv_setstrokecolor,
     /* Paths */
@@ -508,10 +437,7 @@ escv_range_check(gx_device * dev)
 
 static int
 escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
-                   gx_path_type_t type
-#if ( 6 <= GS_VERSION_MAJOR )
-                   , const gs_matrix *pmat
-#endif
+                   gx_path_type_t type, const gs_matrix *pmat
                    )
 {
   gx_device_escv *pdev = (gx_device_escv *) vdev;
@@ -1320,19 +1246,6 @@ escv_setlinewidth(gx_device_vector * vdev, double width)
   gx_device_escv *const	pdev = (gx_device_escv *) vdev;
   char			obuf[64];
 
-#if GS_VERSION_MAJOR == 5
-  /* Scale を掛けているのは, Ghostscript 5.10/5.50 のバグのため */
-  double xscale, yscale;
-
-  xscale = fabs(igs->ctm.xx);
-  yscale = fabs(igs->ctm.xy);
-
-  if (xscale == 0 || yscale > xscale)		/* if portrait */
-    width = ceil(width * yscale);
-  else
-    width = ceil(width * xscale);
-#endif
-
   if (width < 1) width = 1;
 
   /* ESC/Page では線幅／終端／接合部の設定は１つのコマンドになっているため保持しておく。 */
@@ -1425,20 +1338,16 @@ escv_setmiterlimit(gx_device_vector * vdev, double limit)
   return 0;
 }
 
-#if ( 8 <= GS_VERSION_MAJOR )
 static bool
 escv_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs,
                          const gx_drawing_color * pdc)
 {
   return false;
 }
-#endif
 
 static int
 escv_setfillcolor(gx_device_vector * vdev,
-#if ( 8 <= GS_VERSION_MAJOR )
                   const gs_gstate * pgs,
-#endif
                   const gx_drawing_color * pdc)
 {
   stream			*s = gdev_vector_stream(vdev);
@@ -1479,9 +1388,7 @@ escv_setfillcolor(gx_device_vector * vdev,
 
 static int
 escv_setstrokecolor(gx_device_vector * vdev,
-#if ( 8 <= GS_VERSION_MAJOR )
                     const gs_gstate * pgs,
-#endif
                     const gx_drawing_color * pdc)
 {
   stream			*s = gdev_vector_stream(vdev);
@@ -1532,18 +1439,6 @@ escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, double o
   int				i;
   char			obuf[64];
 
-#if GS_VERSION_MAJOR == 5
-  float			scale, xscale, yscale;
-  /* Scale を掛けているのは, Ghostscript 5.10/5.50 のバグのため */
-  xscale = fabs(igs->ctm.xx);
-  yscale = fabs(igs->ctm.xy);
-
-  if (xscale == 0)		/* if portrait */
-    scale = yscale;
-  else
-    scale = xscale;
-#endif
-
   if (count == 0){
     /* 実線 */
     lputs(s, ESC_GS "0;0lpG");
@@ -1555,13 +1450,7 @@ escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, double o
 
   if (count) {
     if (count == 1) {
-#if GS_VERSION_MAJOR == 5
-      (void)gs_sprintf(obuf, ESC_GS "1;%d;%ddlG",
-                    (int)(pattern[0] * scale / vdev->x_pixels_per_inch + 0.5),
-                    (int)(pattern[0] * scale / vdev->x_pixels_per_inch + 0.5));
-#else
       (void)gs_sprintf(obuf, ESC_GS "1;%d;%ddlG", (int) pattern[0], (int) pattern[0]);
-#endif
       lputs(s, obuf);
     } else {
       /* pattern に０があった場合は描画不可として返却 */
@@ -1571,12 +1460,7 @@ escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, double o
 
       lputs(s, ESC_GS "1");
       for (i = 0; i < count; ++i) {
-#if GS_VERSION_MAJOR == 5
-        (void)gs_sprintf(obuf, ";%d", (int)(pattern[i] * scale / vdev->x_pixels_per_inch + 0.5));
-
-#else
         (void)gs_sprintf(obuf, ";%d", (int) pattern[i]);
-#endif
         lputs(s, obuf);
       }
       lputs(s, "dlG");
@@ -2171,19 +2055,14 @@ escv_copy_mono(gx_device * dev, const byte * data,
   gx_color_index		c_color = 0;
   char			obuf[128];
   int				depth = 1;
-#if ( 8 <= GS_VERSION_MAJOR )
-  /* FIXME! add for gs815 */
   const gs_gstate * pgs = (const gs_gstate *)0;
-#endif
 
   if (id != gs_no_id && zero == gx_no_color_index && one != gx_no_color_index && data_x == 0) {
     gx_drawing_color dcolor;
 
     color_set_pure(&dcolor, one);
     escv_setfillcolor(vdev,
-#if ( 8 <= GS_VERSION_MAJOR )
                       pgs,
-#endif
                       &dcolor); /* FIXME! gs815 */
   }
 
@@ -2269,9 +2148,7 @@ escv_copy_mono(gx_device * dev, const byte * data,
       }
       color_set_pure(&color, one);
       code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
-#if ( 8 <= GS_VERSION_MAJOR )
                                            pgs,
-#endif
                                            &color);
 
       /* ここを通過したら以下の色設定は無意味？ */
@@ -2383,18 +2260,13 @@ escv_fill_mask(gx_device * dev,
   gx_color_index		color = gx_dc_pure_color(pdcolor);
   char			obuf[64];
 
-#if ( 8 <= GS_VERSION_MAJOR )
-  /* FIXME! add for gs815 */
   const gs_gstate * pgs = (const gs_gstate *)0;
-#endif
 
   if (w <= 0 || h <= 0) return 0;
 
   if (depth > 1 ||
       gdev_vector_update_fill_color(vdev,
-#if ( 8 <= GS_VERSION_MAJOR )
                                     pgs,
-#endif
                                     pdcolor) < 0 ||
       gdev_vector_update_clip_path(vdev, pcpath) < 0 ||
       gdev_vector_update_log_op(vdev, lop) < 0
@@ -2667,15 +2539,9 @@ escv_begin_image(gx_device * dev,
 
 /* Process the next piece of an image. */
 static int
-#if GS_VERSION_MAJOR >= 6
 escv_image_plane_data(gx_image_enum_common_t *info, const gx_image_plane_t *planes, int height, int *rows_used)
-#else
-     escv_image_plane_data(gx_device *dev, gx_image_enum_common_t *info, const gx_image_plane_t *planes, int height)
-#endif
 {
-#if GS_VERSION_MAJOR >= 6
   gx_device *dev = info->dev;
-#endif
   gx_device_vector *const	vdev = (gx_device_vector *) dev;
   gx_device_escv *const	pdev = (gx_device_escv *) dev;
   gdev_vector_image_enum_t	*pie = (gdev_vector_image_enum_t *) info;
@@ -2691,10 +2557,8 @@ escv_image_plane_data(gx_image_enum_common_t *info, const gx_image_plane_t *plan
 
   {
 
-#if GS_VERSION_MAJOR >= 6
     if (height == 260)
       height = 1;
-#endif
     width_bytes = (pie->width * pie->bits_per_pixel / pdev->ncomp + 7) / 8 * pdev->ncomp;
     tbyte = width_bytes * height;
     buf = gs_alloc_bytes(vdev->memory, tbyte, "escv_image_data(buf)");
@@ -2881,15 +2745,9 @@ escv_image_plane_data(gx_image_enum_common_t *info, const gx_image_plane_t *plan
 }
 
 static int
-#if GS_VERSION_MAJOR >= 6
 escv_image_end_image(gx_image_enum_common_t * info, bool draw_last)
-#else
-     escv_image_end_image(gx_device *dev, gx_image_enum_common_t * info, bool draw_last)
-#endif
 {
-#if GS_VERSION_MAJOR >= 6
   gx_device *dev = info->dev;
-#endif
   gx_device_vector		*const vdev = (gx_device_vector *) dev;
   gx_device_escv		*const pdev = (gx_device_escv *) dev;
   gdev_vector_image_enum_t	*pie = (gdev_vector_image_enum_t *) info;

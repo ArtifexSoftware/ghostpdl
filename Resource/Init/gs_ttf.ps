@@ -244,7 +244,21 @@
   1 index length 0 gt {	% check for zero length name table
     0 1 3 index 2 getu16 1 sub {
                 % Stack: false table id index
-      12 mul 6 add 2 index exch 12 getinterval
+      12 mul 6 add 2 index exch 12
+      % Check the table is actually long enough to contain the requested index
+      1 index add 2 index length gt
+      {
+        /pdfformaterror where
+        {
+          (   **** TrueType font has malformed name table.\n) exch /pdfformaterror get exec
+          PDFSTOPONERROR {
+             /.loadpdfttfont cvx /invalidfont signalerror
+          } if
+        } if
+        pop pop
+        exit
+      } if
+      12 getinterval
       dup 6 getu16 2 index eq 1 index 8 getu16 0 ne and {
                   % We found the name we want.
         exch pop

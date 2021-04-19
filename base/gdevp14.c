@@ -6477,11 +6477,18 @@ pdf14_strip_tile_rect_devn(gx_device *dev, const gx_strip_bitmap *tiles,
     const gx_drawing_color *pdcolor1, int px, int py)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    pdf14_buf *buf = pdev->ctx->stack;
-    int num_comp = buf->n_chan - 1;
+    pdf14_buf *buf;
+    int num_comp;
     int k;
     bool same = false;
-    int code = 0;
+    int code;
+
+    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+    if (code < 0)
+        return code;
+    buf = pdev->ctx->stack;
+    num_comp = buf->n_chan - 1;
 
     /* if color0 is identical to color1, do rect fill */
     if (pdcolor0->type == gx_dc_type_devn && pdcolor1->type == gx_dc_type_devn) {

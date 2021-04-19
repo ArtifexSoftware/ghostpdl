@@ -1089,6 +1089,15 @@ round_box_coord(double xy)
 {
     return (int)(xy * 100 + 0.5) / 100.0;
 }
+static int check_annot_in_named(void *client_data, const byte *key_data, uint key_size, const cos_value_t *value)
+{
+    cos_value_t *v = (cos_value_t *)client_data;
+
+    if (value->contents.object == v->contents.object)
+        return 1;
+    return 0;
+}
+
 static int
 pdf_write_page(gx_device_pdf *pdev, int page_num)
 {
@@ -1411,8 +1420,15 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
         e = cos_array_element_first(page->Annots);
         while (e != NULL) {
             next = cos_array_element_next(e, &index, &value);
-            if (value->contents.object != NULL)
-                value->contents.object->id = 0;
+            if (value->contents.object != NULL) {
+                /* Check to see if this is a local named object, if it is do not
+                 * zero the ID! This object has not yet been written, because it
+                 * is a named object it can be modified after creation. We must
+                 * allow the named object code to write out the object and free it.
+                 */
+                if (cos_dict_forall(pdev->local_named_objects, value, check_annot_in_named) == 0)
+                    value->contents.object->id = 0;
+            }
             e = next;
         }
         COS_FREE(page->Annots, "pdf_write_page(Annots)");

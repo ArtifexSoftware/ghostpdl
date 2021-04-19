@@ -170,12 +170,7 @@ static  int oprp_open(gx_device *);
 static  void opvp_get_initial_matrix(gx_device *, gs_matrix *);
 static  int opvp_output_page(gx_device *, int, int);
 static  int opvp_close(gx_device *);
-#if GS_VERSION_MAJOR >= 8
 static  gx_color_index opvp_map_rgb_color(gx_device *, const gx_color_value *); /* modified for gs 8.15 */
-#else
-static  gx_color_index opvp_map_rgb_color(gx_device *, gx_color_value,
-                       gx_color_value, gx_color_value);
-#endif
 static  int opvp_map_color_rgb(gx_device *, gx_color_index, gx_color_value *);
 static  int opvp_copy_mono(gx_device *, const byte *, int, int,
                            gx_bitmap_id, int, int, int, int,
@@ -221,14 +216,9 @@ static  int opvp_setdash(gx_device_vector *, const float *, uint, double);
 static  int opvp_setflat(gx_device_vector *, double);
 static  int opvp_setlogop(gx_device_vector *, gs_logical_operation_t,
                           gs_logical_operation_t);
-#if GS_VERSION_MAJOR >= 8
 static  int opvp_can_handle_hl_color(gx_device_vector *, const gs_gstate *, const gx_drawing_color *);
 static  int opvp_setfillcolor(gx_device_vector *, const gs_gstate *, const gx_drawing_color *);
 static  int opvp_setstrokecolor(gx_device_vector *, const gs_gstate *,const gx_drawing_color *);
-#else
-static  int opvp_setfillcolor(gx_device_vector *, const gx_drawing_color *);
-static  int opvp_setstrokecolor(gx_device_vector *, const gx_drawing_color *);
-#endif
 static  int opvp_vector_dopath(gx_device_vector *, const gx_path *,
                                gx_path_type_t, const gs_matrix *);
 static  int opvp_vector_dorect(gx_device_vector *, fixed, fixed, fixed, fixed,
@@ -373,9 +363,7 @@ static  gx_device_vector_procs  opvp_vector_procs =
     opvp_setflat,
     opvp_setlogop,
     /* Other state */
-#if GS_VERSION_MAJOR >= 8
     opvp_can_handle_hl_color,           /* added for gs 8.15 */
-#endif
     opvp_setfillcolor,
     opvp_setstrokecolor,
     /* Paths */
@@ -1931,11 +1919,9 @@ prepare_open(gx_device *dev)
             dev->color_info.dither_grays = 256;
             dev->color_info.dither_colors = 256;
         }
-#if GS_VERSION_MAJOR >= 8
         dev->procs.get_color_mapping_procs = NULL;
         dev->procs.get_color_comp_index = NULL;
         gx_device_fill_in_procs(dev);
-#endif
     }
 
     /* call Closerinter as dummy */
@@ -2050,13 +2036,11 @@ opvp_open(gx_device *dev)
         }
         rdev = (gx_device_oprp *)(dev);
         pdev = (gx_device_opvp *)(dev);
-#if GS_VERSION_MAJOR >= 8
         if (pdev->bbox_device != NULL) {
             if (pdev->bbox_device->memory == NULL) {
                 pdev->bbox_device->memory = gs_memory_stable(dev->memory);
             }
         }
-#endif
         outputFD = fileno(gp_get_file(pdev->file));
     } else {
         /* open printer device */
@@ -2479,17 +2463,9 @@ opvp_close(gx_device *dev)
 /*
  * map rgb color
  */
-#if GS_VERSION_MAJOR >= 8
 static  gx_color_index
 opvp_map_rgb_color(gx_device *dev,
         const gx_color_value *prgb /* modified for gs 8.15 */)
-#else
-static  gx_color_index
-opvp_map_rgb_color(gx_device *dev,
-        gx_color_value r,
-        gx_color_value g,
-        gx_color_value b)
-#endif
 {
     opvp_cspace_t cs;
     uint c, m, y, k;
@@ -2499,12 +2475,10 @@ opvp_map_rgb_color(gx_device *dev,
     opvp_result_t r;
 #endif
 
-#if GS_VERSION_MAJOR >= 8
     gx_color_value r, g, b; /* added for gs 8.15 */
     r = prgb[0];
     g = prgb[1];
     b = prgb[2];
-#endif
 
 #if ENABLE_SIMPLE_MODE
     cs = colorSpace;
@@ -2565,31 +2539,19 @@ opvp_map_rgb_color(gx_device *dev,
                 ;
         break;
     case OPVP_CSPACE_DEVICEGRAY:
-#if GS_VERSION_MAJOR >= 8
         {
             gx_color_value rgb[3];
             rgb[0] = rgb[1] = rgb[2] = r;
             return gx_default_gray_map_rgb_color(dev, rgb);
         }
-#else
-        return gx_default_gray_map_rgb_color(dev, r, g, b);
-#endif
         break;
     case OPVP_CSPACE_BW :
-#if GS_VERSION_MAJOR >= 8
         return gx_default_b_w_map_rgb_color(dev, prgb);
-#else
-        return gx_default_b_w_map_rgb_color(dev, r, g, b);
-#endif
         break;
     case OPVP_CSPACE_STANDARDRGB:
     case OPVP_CSPACE_DEVICEKRGB:
     default:
-#if GS_VERSION_MAJOR >= 8
         return gx_default_rgb_map_rgb_color(dev, prgb);
-#else
-        return gx_default_rgb_map_rgb_color(dev, r, g, b);
-#endif
         break;
     }
 }
@@ -3584,11 +3546,7 @@ opvp_fill_mask(
 {
     if (vector) {
         int code;
-#if GS_VERSION_MAJOR >= 8       /* for gs 8.15 */
         code = gdev_vector_update_fill_color((gx_device_vector *)dev, NULL, pdcolor);
-#else
-        code = gdev_vector_update_fill_color((gx_device_vector *)dev, pdcolor);
-#endif
         if (code < 0)   return code;
         code = gdev_vector_update_clip_path((gx_device_vector *)dev, pcpath);
         if (code < 0)   return code;
@@ -3687,11 +3645,7 @@ opvp_begin_image(
                                byte2frac((*(p + 1 + (count * 4)))),
                                byte2frac((*(p + 2 + (count * 4)))),
                                byte2frac((*(p + 3 + (count * 4)))),
-#if GS_VERSION_MAJOR >= 9
                                pgs, rgb, mem);
-#else
-                               pgs, rgb);
-#endif
                             *(palette + 0 + (count * 3)) = frac2byte(rgb[0]);
                             *(palette + 1 + (count * 3)) = frac2byte(rgb[1]);
                             *(palette + 2 + (count * 3)) = frac2byte(rgb[2]);
@@ -4344,7 +4298,6 @@ opvp_image_plane_data(
                 }
             }
         }
-#if GS_VERSION_MAJOR >= 8
         if (vinfo->bits_per_pixel == 24) { /* 24bit RGB color */
             for (i = 0; i < height; i++) {
                 ptr = buf + raster_length * i;
@@ -4362,25 +4315,6 @@ opvp_image_plane_data(
                 }
             }
         }
-#else
-        if (vinfo->bits_per_pixel == 24) { /* 24bit RGB color */
-            for (i = 0; i < height; i++) {
-                ptr = buf + raster_length * i;
-                for (j = 0; j < vinfo->width; j++) {
-                    ptr[j*3+0] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j*3+0]), effective_transfer.colored.red));
-                    ptr[j*3+1] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j*3+1]), effective_transfer.colored.green));
-                    ptr[j*3+2] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j*3+2]), effective_transfer.colored.blue));
-                }
-            }
-        } else if (vinfo->bits_per_pixel == 8) { /* 8bit Gray image */
-            for (i = 0; i < height; i++) {
-                ptr = buf + raster_length * i;
-                for (j = 0; j < vinfo->width; j++) {
-                    ptr[j] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j]), effective_transfer.colored.gray));
-                }
-            }
-        }
-#endif
 
         /* call TansferDrawImage */
         if (apiEntry->opvpTransferDrawImage) {
@@ -4721,29 +4655,22 @@ opvp_setlogop(
     return 0;
 }
 
-#if GS_VERSION_MAJOR >= 8
-/*--- added for Ghostscritp 8.15 ---*/
+/*--- added for Ghostscript 8.15 ---*/
 static int
 opvp_can_handle_hl_color(gx_device_vector * vdev,
               const gs_gstate * pgs1, const gx_drawing_color * pdc)
 {
     return false; /* High level color is not implemented yet. */
 }
-#endif
 
 /*
  * set fill color
  */
-#if GS_VERSION_MAJOR >= 8
 static  int
 opvp_setfillcolor(
     gx_device_vector *vdev,
     const gs_gstate *pgs, /* added for gs 8.15 */
     const gx_drawing_color *pdc)
-#else
-static  int
-opvp_setfillcolor(gx_device_vector *vdev, const gx_drawing_color *pdc)
-#endif
 {
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;
     opvp_result_t r = -1;
@@ -4775,16 +4702,11 @@ opvp_setfillcolor(gx_device_vector *vdev, const gx_drawing_color *pdc)
 /*
  * set stroke color
  */
-#if GS_VERSION_MAJOR >= 8
 static  int
 opvp_setstrokecolor(
     gx_device_vector *vdev,
     const gs_gstate *pgs, /* added for gs 8.15 */
     const gx_drawing_color *pdc)
-#else
-static  int
-opvp_setstrokecolor(gx_device_vector *vdev, const gx_drawing_color *pdc)
-#endif
 {
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;
     opvp_result_t r = -1;
