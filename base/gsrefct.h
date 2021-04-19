@@ -21,6 +21,7 @@
 
 #include "memento.h"
 #include "std.h"
+#include "gdebug.h"
 
 /*
  * A reference-counted object must include the following header:
