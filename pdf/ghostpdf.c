@@ -417,6 +417,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tAn image dictionary has an invalid /Mask entry\n");
         if (ctx->pdf_warnings & W_PDF_ANNOT_AP_ERROR)
             dmprintf(ctx->memory, "\tAn Annotation has an invalid AP entry.\n");
+        if (ctx->pdf_warnings & W_PDF_BAD_NAME_ESCAPE)
+            dmprintf(ctx->memory, "\tA name contained a '#' escape character but it was not a valid escape.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");

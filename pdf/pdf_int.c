@@ -344,17 +344,12 @@ static int pdfi_read_name(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_n
             byte NumBuf[2];
 
             bytes = pdfi_read_bytes(ctx, (byte *)&NumBuf, 1, 2, s);
-            if (bytes < 2) {
-                gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
-                return_error(gs_error_ioerror);
+            if (bytes < 2 || (!ishex(NumBuf[0]) || !ishex(NumBuf[1]))) {
+                ctx->pdf_warnings |= W_PDF_BAD_NAME_ESCAPE;
+                pdfi_unread(ctx, s, (byte *)NumBuf, bytes);
             }
-
-            if (!ishex(NumBuf[0]) || !ishex(NumBuf[1])) {
-                gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
-                return_error(gs_error_ioerror);
-            }
-
-            Buffer[index] = (fromhex(NumBuf[0]) << 4) + fromhex(NumBuf[1]);
+            else
+                Buffer[index] = (fromhex(NumBuf[0]) << 4) + fromhex(NumBuf[1]);
         }
 
         /* If we ran out of memory, increase the buffer size */
