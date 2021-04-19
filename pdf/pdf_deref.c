@@ -29,6 +29,7 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_deref.h"
+#include "pdf_repair.h"
 
 /* Start with the object caching functions */
 
@@ -302,7 +303,6 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
      * happen for files which are invalid.
      */
     if (stream_obj->length_valid != true) {
-        gs_offset_t found_offset;
         char Buffer[10];
         unsigned int loop, bytes, total = 0;
 
