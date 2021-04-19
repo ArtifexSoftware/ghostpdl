@@ -34,7 +34,7 @@ static image_proc_sput(gx_image1_sput);
 static image_proc_sget(gx_image1_sget);
 static image_proc_release(gx_image1_release);
 const gx_image_type_t gs_image_type_1 = {
-    &st_gs_image1, gx_begin_image1, gx_data_image_source_size,
+    &st_gs_image1, gx_begin_image1,
     gx_image1_sput, gx_image1_sget, gx_image1_release, 1
 };
 static image_proc_sput(gx_image1_mask_sput);
@@ -44,7 +44,7 @@ static image_proc_sget(gx_image1_mask_sget);
  * worry about releasing the color space.
  */
 const gx_image_type_t gs_image_type_mask1 = {
-    &st_gs_image1, gx_begin_image1, gx_data_image_source_size,
+    &st_gs_image1, gx_begin_image1,
     gx_image1_mask_sput, gx_image1_mask_sget, gx_image_default_release, 1
 };
 

@@ -41,19 +41,6 @@ struct gx_image_type_s {
     dev_proc_begin_typed_image((*begin_typed_image));
 
     /*
-     * Compute the width and height of the source data.  For images with
-     * explicit data, this information is in the gs_data_image_t
-     * structure, but ImageType 2 images must compute it.
-     * NOTE: we no longer support ImageType 2, so maybe this could be
-     * simplified/refactored?
-     */
-#define image_proc_source_size(proc)\
-  int proc(const gs_gstate *pgs, const gs_image_common_t *pic,\
-    gs_int_point *psize)
-
-    image_proc_source_size((*source_size));
-
-    /*
      * Put image parameters on a stream.  Currently this is used
      * only for banding.  If the parameters include a color space,
      * store it in *ppcs.
@@ -90,11 +77,6 @@ struct gx_image_type_s {
     int index;		/* PostScript ImageType */
 };
 
-/*
- * Define the procedure for getting the source size of an image with
- * explicit data.
- */
-image_proc_source_size(gx_data_image_source_size);
 /*
  * Define dummy sput/sget/release procedures for image types that don't
  * implement these functions.

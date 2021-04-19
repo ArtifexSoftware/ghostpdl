@@ -112,18 +112,6 @@ gx_image_enum_common_init(gx_image_enum_common_t * piec,
     return 0;
 }
 
-/* Compute the source size of an ordinary image with explicit data. */
-int
-gx_data_image_source_size(const gs_gstate * pgs,
-                          const gs_image_common_t * pim, gs_int_point * psize)
-{
-    const gs_data_image_t *pdi = (const gs_data_image_t *)pim;
-
-    psize->x = pdi->Width;
-    psize->y = pdi->Height;
-    return 0;
-}
-
 /* Process the next piece of an image with no source data. */
 /* This procedure should never be called. */
 int

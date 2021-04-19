@@ -980,15 +980,8 @@ bbox_image_begin(const gs_gstate * pgs, const gs_matrix * pmat,
         pbe->x0 = prect->p.x, pbe->x1 = prect->q.x;
         pbe->y = prect->p.y, pbe->height = prect->q.y - prect->p.y;
     } else {
-        gs_int_point size;
-        int code = (*pic->type->source_size) (pgs, pic, &size);
-
-        if (code < 0) {
-            gs_free_object(memory, pbe, "bbox_image_begin");
-            return code;
-        }
-        pbe->x0 = 0, pbe->x1 = size.x;
-        pbe->y = 0, pbe->height = size.y;
+        pbe->x0 = 0, pbe->x1 = pic->Width;
+        pbe->y = 0, pbe->height = pic->Height;
     }
     *ppbe = pbe;
     return 0;
