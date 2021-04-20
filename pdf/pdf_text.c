@@ -25,6 +25,7 @@
 #include "pdf_font.h"
 #include "pdf_font_types.h"
 #include "pdf_trans.h"
+#include "pdf_optcontent.h"
 
 #include "gsstate.h"
 #include "gsmatrix.h"
@@ -1014,6 +1015,9 @@ int pdfi_Tj(pdf_context *ctx)
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
+    if (pdfi_oc_is_off(ctx))
+        goto exit;
+
     s = (pdf_string *)ctx->stack_top[-1];
     if (s->type != PDF_STRING)
         return_error(gs_error_typecheck);
@@ -1067,6 +1071,7 @@ Tj_error:
     /* And the line width */
     ctx->pgs->line_params.half_width = linewidth;
 
+ exit:
     pdfi_pop(ctx, 1);
     return code;
 }
@@ -1082,16 +1087,15 @@ int pdfi_TJ(pdf_context *ctx)
     gs_point initial_point, current_point;
     double linewidth = ctx->pgs->line_params.half_width;
 
-    /* TODO: for ken -- check pdfi_oc_is_off() and skip the actual rendering...
-     * (see gs code pdf_ops.ps/TJ OFFlevels for appropriate logic)
-     */
-
     if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
+
+    if (pdfi_oc_is_off(ctx))
+        goto exit;
 
     a = (pdf_array *)ctx->stack_top[-1];
     if (a->type != PDF_ARRAY) {
@@ -1178,6 +1182,7 @@ TJ_error:
     /* And the line width */
     ctx->pgs->line_params.half_width = linewidth;
 
+ exit:
     pdfi_pop(ctx, 1);
     return code;
 }
