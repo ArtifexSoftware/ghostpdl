@@ -15,12 +15,6 @@
 
 
 /* Testbed implementation of Even Better Screening. */
-
-/*
- * Code in this module is covered by US Patents 5,055,942 and
- * 5,917,614, and corresponding international patents.
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
