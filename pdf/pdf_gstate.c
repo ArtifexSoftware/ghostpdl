@@ -1171,7 +1171,7 @@ static const char *spot_functions[] = {
     "{abs exch abs 0.9 mul add 2 div}",             /* Rhomboid */
     "{abs exch abs 2 copy add 0.75 le\
      {dup mul exch dup mul add 1 exch sub}\
-     {1 copy add 1.23 le\
+     {2 copy add 1.23 le\
      {0.85 mul add 1 exch sub}\
      {1 sub dup mul exch 1 sub dup mul add 1 sub}\
      ifelse} ifelse}"                               /* Diamond */
