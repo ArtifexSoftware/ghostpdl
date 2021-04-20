@@ -700,8 +700,11 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
         if (okOPcs) {
             if (caller == TRANSPARENCY_Caller_Stroke)
                 current_overprint = gs_currentstrokeoverprint(ctx->pgs);
-            else
+            else {
                 current_overprint = gs_currentfilloverprint(ctx->pgs);
+                if (caller == TRANSPARENCY_Caller_FillStroke)
+                    current_overprint |= gs_currentstrokeoverprint(ctx->pgs);
+            }
             ChangeBM = current_overprint;
             mode = gs_currentblendmode(ctx->pgs);
             if (mode != BLEND_MODE_Normal && mode != BLEND_MODE_Compatible)
@@ -728,7 +731,7 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
 
     /* TODO: error handling... */
     if (need_group) {
-        stroked_bbox = (caller == TRANSPARENCY_Caller_Stroke);
+        stroked_bbox = (caller == TRANSPARENCY_Caller_Stroke || caller == TRANSPARENCY_Caller_FillStroke);
         code = pdfi_trans_begin_simple_group(ctx, stroked_bbox, true, false);
         state->GroupPushed = true;
         state->saveStrokeAlpha = gs_getstrokeconstantalpha(ctx->pgs);

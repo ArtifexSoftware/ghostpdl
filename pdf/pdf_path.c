@@ -437,6 +437,7 @@ int pdfi_b_star(pdf_context *ctx)
 static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
 {
     int code=0, code1=0;
+    pdfi_trans_state_t state;
 
     if (ctx->text.BlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
@@ -444,13 +445,21 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
     if (pdfi_oc_is_off(ctx))
         goto exit;
 
-    code = pdfi_trans_set_params(ctx);
+    code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+
+    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_FillStroke);
     if (code == 0) {
         if (use_eofill)
             code = gs_eofillstroke(ctx->pgs, &code1);
         else
             code = gs_fillstroke(ctx->pgs, &code1);
+        code1 = pdfi_trans_teardown(ctx, &state);
+        if (code == 0) code = code1;
     }
+
+    code1 = pdfi_grestore(ctx);
+    if (code == 0) code = code1;
 
  exit:
     code1 = pdfi_newpath(ctx);

@@ -29,8 +29,8 @@ typedef enum {
     TRANSPARENCY_Caller_Other,
     TRANSPARENCY_Caller_Image,
     TRANSPARENCY_Caller_Stroke,
-    TRANSPARENCY_Caller_Fill,
-    TRANSPARENCY_Caller_EOFill
+    TRANSPARENCY_Caller_Fill, /* Also includes EOFill */
+    TRANSPARENCY_Caller_FillStroke /* Also includes EOFillStroke */
 } pdfi_transparency_caller_t;
 
 int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_show);
