@@ -2869,6 +2869,7 @@ currentdict end readonly def
           {
             %% We are behaving as a printer, check the Print state
             /Print .knownget {
+              oforce
               /PrintState .knownget {
                 oforce
                 /OFF eq {
@@ -2888,6 +2889,7 @@ currentdict end readonly def
             /View .knownget {
               oforce
               /ViewState .knownget {
+                oforce
                 /OFF eq {
                   //false
                 }{

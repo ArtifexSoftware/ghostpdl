@@ -700,7 +700,14 @@ end
     pop currentcolorspace 1 get	% use the base space
   } if
   known or {
-    1 index /stroke ne { .currentfilloverprint } { .currentstrokeoverprint } ifelse
+    dup /stroke ne {
+      .currentfilloverprint
+      1 index dup /.fillstroke eq exch /.eofillstroke eq or {
+        .currentstrokeoverprint or
+      } if
+     } {
+      .currentstrokeoverprint
+    } ifelse
     % Change BM to CompatibleOverprint if this has overprint true
     dup /ChangeBM exch def
     .currentblendmode dup /Normal eq exch /Compatible eq or

@@ -5242,7 +5242,7 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                 fn = mark_fill_rect_add_nospots_common;
         } else
             fn = mark_fill_rect_add_nospots;
-    } else if (!additive && num_spots == 0 && num_comp == 4 && num_spots == 0 &&
+    } else if (!additive && num_spots == 0 && num_comp == 4 &&
         first_blend_spot == 0 && blend_mode == BLEND_MODE_Normal &&
         !overprint && tag_off == 0 && alpha_g_off == 0 && shape_off == 0)
         fn = mark_fill_rect_sub4_fast;
