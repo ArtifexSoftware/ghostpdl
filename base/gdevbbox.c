@@ -820,8 +820,6 @@ bbox_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
          */
         if (tdev != 0 && fill_path == gx_default_fill_path)
             return fill_path(dev, pgs, ppath, params, pdevc, pcpath);
-        if (fill_path == NULL)
-            return 0;
         /* Draw on the target now. */
         code = fill_path(tdev, pgs, ppath, params, pdevc, pcpath);
         if (code < 0)
