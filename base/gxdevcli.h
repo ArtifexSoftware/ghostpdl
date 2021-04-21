@@ -1062,20 +1062,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_draw_thin_line(proc)\
   dev_t_proc_draw_thin_line(proc, gx_device)
 
-                /* Added in release 3.66 (as stubs); */
-                /* changed in 3.68; */
-                /* begin_image and image_data changed in 4.30, */
-                /* begin_image changed in 5.23. */
-
-#define dev_t_proc_begin_image(proc, dev_t)\
-  int proc(dev_t *dev,\
-    const gs_gstate *pgs, const gs_image_t *pim,\
-    gs_image_format_t format, const gs_int_rect *prect,\
-    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,\
-    gs_memory_t *memory, gx_image_enum_common_t **pinfo)
-#define dev_proc_begin_image(proc)\
-  dev_t_proc_begin_image(proc, gx_device)
-
                 /* Added in release 3.68 */
 
 #define dev_t_proc_strip_tile_rectangle(proc, dev_t)\
@@ -1518,7 +1504,6 @@ typedef struct {
         dev_t_proc_fill_parallelogram((*fill_parallelogram), dev_t);\
         dev_t_proc_fill_triangle((*fill_triangle), dev_t);\
         dev_t_proc_draw_thin_line((*draw_thin_line), dev_t);\
-        dev_t_proc_begin_image((*begin_image), dev_t);\
         dev_t_proc_strip_tile_rectangle((*strip_tile_rectangle), dev_t);\
         dev_t_proc_strip_copy_rop((*strip_copy_rop), dev_t);\
         dev_t_proc_get_clipping_box((*get_clipping_box), dev_t);\
@@ -1573,9 +1558,6 @@ typedef struct gx_image_plane_s {
     uint raster;
 } gx_image_plane_t;
 
-#define gx_device_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo)\
-  ((*dev_proc(dev, begin_image))\
-   (dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo))
 #define gx_device_begin_typed_image(dev, pgs, pmat, pim, prect, pdcolor, pcpath, memory, pinfo)\
   ((*dev_proc(dev, begin_typed_image))\
    (dev, pgs, pmat, pim, prect, pdcolor, pcpath, memory, pinfo))

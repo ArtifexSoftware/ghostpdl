@@ -1012,7 +1012,7 @@ bbox_begin_typed_image(gx_device * dev,
     if (code < 0)
         return code;
     /*
-     * If there is no target, we still have to call default_begin_image
+     * If there is no target, we still have to call default_begin_typed_image
      * to get the correct num_planes and plane_depths.
      */
     {

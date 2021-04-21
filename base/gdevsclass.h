@@ -54,7 +54,6 @@ dev_proc_fill_trapezoid(default_subclass_fill_trapezoid);
 dev_proc_fill_parallelogram(default_subclass_fill_parallelogram);
 dev_proc_fill_triangle(default_subclass_fill_triangle);
 dev_proc_draw_thin_line(default_subclass_draw_thin_line);
-dev_proc_begin_image(default_subclass_begin_image);
 dev_proc_strip_tile_rectangle(default_subclass_strip_tile_rectangle);
 dev_proc_strip_copy_rop(default_subclass_strip_copy_rop);
 dev_proc_get_clipping_box(default_subclass_get_clipping_box);

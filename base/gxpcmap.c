@@ -126,7 +126,6 @@ pattern_accum_initialize(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
     set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
-    set_dev_proc(dev, begin_image, gx_default_begin_image);
     set_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);

@@ -51,7 +51,6 @@ static dev_proc_fill_trapezoid(obj_filter_fill_trapezoid);
 static dev_proc_fill_parallelogram(obj_filter_fill_parallelogram);
 static dev_proc_fill_triangle(obj_filter_fill_triangle);
 static dev_proc_draw_thin_line(obj_filter_draw_thin_line);
-static dev_proc_begin_image(obj_filter_begin_image);
 static dev_proc_strip_tile_rectangle(obj_filter_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(obj_filter_strip_copy_rop);
 static dev_proc_begin_typed_image(obj_filter_begin_typed_image);
@@ -104,7 +103,6 @@ obj_filter_initialize(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, obj_filter_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, obj_filter_fill_triangle);
     set_dev_proc(dev, draw_thin_line, obj_filter_draw_thin_line);
-    set_dev_proc(dev, begin_image, obj_filter_begin_image);
     set_dev_proc(dev, strip_tile_rectangle, obj_filter_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, obj_filter_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, obj_filter_begin_typed_image);
@@ -213,16 +211,6 @@ int obj_filter_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, f
 {
     if ((dev->ObjectFilter & FILTERVECTOR) == 0)
         return default_subclass_draw_thin_line(dev, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
-    return 0;
-}
-
-int obj_filter_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_t *pim,
-    gs_image_format_t format, const gs_int_rect *prect,
-    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
-    gs_memory_t *memory, gx_image_enum_common_t **pinfo)
-{
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
-        return default_subclass_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
     return 0;
 }
 

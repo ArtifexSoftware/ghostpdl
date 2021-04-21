@@ -81,7 +81,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, fill_parallelogram, gx_forward_fill_parallelogram);
     fill_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
     fill_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
-    fill_dev_proc(dev, begin_image, gx_forward_begin_image);
     /* NOT strip_tile_rectangle */
     fill_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
     fill_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
@@ -482,24 +481,6 @@ gx_forward_draw_thin_line(gx_device * dev,
          dev_proc(tdev, draw_thin_line));
 
     return proc(tdev, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
-}
-
-int
-gx_forward_begin_image(gx_device * dev,
-                       const gs_gstate * pgs, const gs_image_t * pim,
-                       gs_image_format_t format, const gs_int_rect * prect,
-                       const gx_drawing_color * pdcolor,
-                       const gx_clip_path * pcpath,
-                       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
-{
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-    dev_proc_begin_image((*proc)) =
-        (tdev == 0 ? (tdev = dev, gx_default_begin_image) :
-         dev_proc(tdev, begin_image));
-
-    return proc(tdev, pgs, pim, format, prect, pdcolor, pcpath,
-                memory, pinfo);
 }
 
 int
@@ -1333,7 +1314,6 @@ void gx_forward_device_initialize_procs(gx_device *dev)
     fill_dev_proc(dev, fill_parallelogram, gx_forward_fill_parallelogram);
     fill_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
     fill_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
-    fill_dev_proc(dev, begin_image, gx_forward_begin_image);
     fill_dev_proc(dev, strip_tile_rectangle, gx_forward_strip_tile_rectangle);
     fill_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
     fill_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);

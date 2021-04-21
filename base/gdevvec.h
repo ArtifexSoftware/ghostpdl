@@ -374,6 +374,17 @@ int gdev_vector_begin_image(gx_device_vector * vdev,
                     gs_memory_t * mem, const gx_image_enum_procs_t * pprocs,
                             gdev_vector_image_enum_t * pie);
 
+int gdev_vector_begin_typed_image(gx_device_vector         *vdev,
+                            const gs_gstate                *pgs,
+                            const gs_matrix                *pmat,
+                            const gs_image_common_t        *pim,
+                            const gs_int_rect              *prect,
+                            const gx_drawing_color         *pdcolor,
+                            const gx_clip_path             *pcpath,
+                                  gs_memory_t              *mem,
+                            const gx_image_enum_procs_t    *pprocs,
+                                  gdev_vector_image_enum_t *pie);
+
 /* End an image, optionally supplying any necessary blank padding rows. */
 /* Return 0 if we used the default implementation, 1 if not. */
 int gdev_vector_end_image(gx_device_vector * vdev,

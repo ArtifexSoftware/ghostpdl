@@ -94,7 +94,6 @@ plane_initialize(gx_device *dev)
     set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, fill_trapezoid, gx_default_fill_trapezoid);
     set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
-    set_dev_proc(dev, begin_image, gx_default_begin_image);
     set_dev_proc(dev, text_begin, gx_default_text_begin);
     set_dev_proc(dev, fill_rectangle_hl_color, gx_default_fill_rectangle_hl_color);
     set_dev_proc(dev, include_color_space, gx_default_include_color_space);

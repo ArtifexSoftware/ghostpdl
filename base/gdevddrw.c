@@ -972,51 +972,6 @@ static RELOC_PTRS_WITH(image_enum_common_reloc_ptrs, gx_image_enum_common_t *ept
 }
 RELOC_PTRS_END
 
-/*
- * gx_default_begin_image is only invoked for ImageType 1 images.  However,
- * the argument types are different, and if the device provides a
- * begin_typed_image procedure, we should use it.  See gxdevice.h.
- */
-static int
-gx_no_begin_image(gx_device * dev,
-                  const gs_gstate * pgs, const gs_image_t * pim,
-                  gs_image_format_t format, const gs_int_rect * prect,
-              const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-                  gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
-{
-    return -1;
-}
-int
-gx_default_begin_image(gx_device * dev,
-                       const gs_gstate * pgs, const gs_image_t * pim,
-                       gs_image_format_t format, const gs_int_rect * prect,
-              const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-                       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
-{
-    /*
-     * Hand off to begin_typed_image, being careful to avoid a
-     * possible recursion loop.
-     */
-    dev_proc_begin_image((*save_begin_image)) = dev_proc(dev, begin_image);
-    gs_image_t image;
-    const gs_image_t *ptim;
-    int code;
-
-    set_dev_proc(dev, begin_image, gx_no_begin_image);
-    if (pim->format == format)
-        ptim = pim;
-    else {
-        image = *pim;
-        image.format = format;
-        ptim = &image;
-    }
-    code = (*dev_proc(dev, begin_typed_image))
-        (dev, pgs, NULL, (const gs_image_common_t *)ptim, prect, pdcolor,
-         pcpath, memory, pinfo);
-    set_dev_proc(dev, begin_image, save_begin_image);
-    return code;
-}
-
 int
 gx_default_begin_typed_image(gx_device * dev,
                         const gs_gstate * pgs, const gs_matrix * pmat,
@@ -1024,23 +979,6 @@ gx_default_begin_typed_image(gx_device * dev,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
 {
-    /* If this is an ImageType 1 image using the gs_gstate's CTM,
-         * defer to begin_image.
-         */
-    if (pic->type->begin_typed_image == gx_begin_image1) {
-        const gs_image_t *pim = (const gs_image_t *)pic;
-
-        if (pmat == 0 ||
-            (pgs != 0 && !gs_matrix_compare(pmat, &ctm_only(pgs)))
-            ) {
-            int code = (*dev_proc(dev, begin_image))
-            (dev, pgs, pim, pim->format, prect, pdcolor,
-             pcpath, memory, pinfo);
-
-            if (code >= 0)
-                return code;
-        }
-    }
     return (*pic->type->begin_typed_image)
         (dev, pgs, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
 }

@@ -215,7 +215,7 @@ static dev_proc_put_params(xps_put_params);
 static dev_proc_fill_path(gdev_xps_fill_path);
 static dev_proc_stroke_path(gdev_xps_stroke_path);
 static dev_proc_initialize(xps_initialize);
-static dev_proc_begin_image(xps_begin_image);
+static dev_proc_begin_typed_image(xps_begin_typed_image);
 
 const gx_device_xps gs_xpswrite_device = {
     xps_device_body("xpswrite", 24, xps_initialize),
@@ -237,7 +237,7 @@ xps_initialize(gx_device *dev)
     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
     set_dev_proc(dev, fill_path, gdev_xps_fill_path);
     set_dev_proc(dev, stroke_path, gdev_xps_stroke_path);
-    set_dev_proc(dev, begin_image, xps_begin_image);
+    set_dev_proc(dev, begin_typed_image, xps_begin_typed_image);
 
     memset(xps->PrinterName, 0x00, MAXPRINTERNAME);
 
@@ -1863,15 +1863,20 @@ xps_write_profile(const gs_gstate *pgs, char *name, cmm_profile_t *profile, gx_d
 }
 
 static int
-xps_begin_image(gx_device *dev, const gs_gstate *pgs,
-                const gs_image_t *pim, gs_image_format_t format,
-                const gs_int_rect *prect, const gx_drawing_color *pdcolor,
-                const gx_clip_path *pcpath, gs_memory_t *mem,
-                gx_image_enum_common_t **pinfo)
+xps_begin_typed_image(gx_device               *dev,
+                const gs_gstate               *pgs,
+                const gs_matrix               *pmat,
+                const gs_image_common_t       *pic,
+                const gs_int_rect             *prect,
+                const gx_drawing_color        *pdcolor,
+                const gx_clip_path            *pcpath,
+                      gs_memory_t             *mem,
+                      gx_image_enum_common_t **pinfo)
 {
     gx_device_vector *vdev = (gx_device_vector *)dev;
     gx_device_xps *xdev = (gx_device_xps *)dev;
-    gs_color_space *pcs = pim->ColorSpace;
+    const gs_image_t *pim = (const gs_image_t *)pic;
+    gs_color_space *pcs;
     xps_image_enum_t *pie = NULL;
     xps_icc_data_t *icc_data;
     gs_matrix mat;
@@ -1887,6 +1892,10 @@ xps_begin_image(gx_device *dev, const gs_gstate *pgs,
     gsicc_rendering_param_t rendering_params;
     bool force8bit = false;
 
+    if (pic->type->index != 1)
+        goto use_default;
+
+    pcs = pim->ColorSpace;
     /* No image mask yet.  Also, need a color space */
     if (pcs == NULL || ((const gs_image1_t *)pim)->ImageMask)
         goto use_default;
@@ -1904,8 +1913,10 @@ xps_begin_image(gx_device *dev, const gs_gstate *pgs,
 
     if (gs_matrix_invert(&pim->ImageMatrix, &mat) < 0)
         goto use_default;
+    if (pmat == NULL)
+        pmat = &ctm_only(pgs);
     if (pgs)
-        gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
+        gs_matrix_multiply(&mat, pmat, &mat);
 
     pie = gs_alloc_struct(mem, xps_image_enum_t, &st_xps_image_enum,
                           "xps_begin_image");
@@ -2043,7 +2054,7 @@ xps_begin_image(gx_device *dev, const gs_gstate *pgs,
 
     if (pgs == NULL)
         return(gs_error_invalidaccess);
-    code = gdev_vector_begin_image(vdev, pgs, pim, format, prect,
+    code = gdev_vector_begin_image(vdev, pgs, pim, pim->format, prect,
         pdcolor, pcpath, mem, &xps_image_enum_procs,
         (gdev_vector_image_enum_t *)pie);
     if (code < 0)
@@ -2112,8 +2123,8 @@ xps_begin_image(gx_device *dev, const gs_gstate *pgs,
     return 0;
 
 use_default:
-    return gx_default_begin_image(dev, pgs, pim, format, prect,
-        pdcolor, pcpath, mem, pinfo);
+    return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
+                                        pdcolor, pcpath, mem, pinfo);
 }
 
 /* Handles conversion from decoded DeviceN, Sep or Indexed space to Device color

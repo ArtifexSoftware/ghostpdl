@@ -536,10 +536,11 @@ test5(gs_gstate * pgs, gs_memory_t * mem)
         image1.Width = W;
         image1.Height = H;
         image1.BitsPerComponent = 8;
+        image1.format = gs_image_format_chunky;
 
         gs_translate(pgs, 0.5, 4.0);
-        code = gx_device_begin_image(dev, pgs,
-                                     &image1, gs_image_format_chunky,
+        code = gx_device_begin_typed_image(dev, pgs, NULL
+                                     (gs_image_common_t *)&image1,
                                      NULL, &dcolor, NULL, mem, &info1);
 /****** TEST code >= 0 ******/
         planes[0].data = data3;

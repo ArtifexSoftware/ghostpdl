@@ -5360,7 +5360,7 @@ pdf14_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
                    renderer which will end up installed for this case.
                    Detect setting of begin_image to gx_no_begin_image.
                    (final recursive call) */
-                if (dev_proc(dev, begin_image) != gx_default_begin_image) {
+                if (dev_proc(dev, begin_typed_image) != gx_default_begin_typed_image) {
                     code = pdf14_patt_trans_image_fill(dev, pgs, pmat, pic,
                                                 prect, pdcolor, pcpath, mem,
                                                 pinfo);
@@ -9581,7 +9581,6 @@ static	dev_proc_fill_path(pdf14_clist_fill_path);
 static	dev_proc_stroke_path(pdf14_clist_stroke_path);
 static	dev_proc_fill_stroke_path(pdf14_clist_fill_stroke_path);
 static	dev_proc_text_begin(pdf14_clist_text_begin);
-static	dev_proc_begin_image(pdf14_clist_begin_image);
 static	dev_proc_begin_typed_image(pdf14_clist_begin_typed_image);
 static  dev_proc_copy_planes(pdf14_clist_copy_planes);
 
@@ -9613,7 +9612,6 @@ pdf14_clist_initialize(gx_device *dev,
     set_dev_proc(dev, fill_parallelogram, gx_forward_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
     set_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
-    set_dev_proc(dev, begin_image, pdf14_clist_begin_image);
     set_dev_proc(dev, strip_tile_rectangle, gx_forward_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
     set_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
@@ -11290,36 +11288,6 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
 }
 
 static	int
-pdf14_clist_begin_image(gx_device * dev,
-                       const gs_gstate * pgs, const gs_image_t * pim,
-                       gs_image_format_t format, const gs_int_rect * prect,
-                       const gx_drawing_color * pdcolor,
-                       const gx_clip_path * pcpath,
-                       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
-{
-    pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
-    int code;
-
-    /*
-     * Ensure that that the PDF 1.4 reading compositor will have the current
-     * blending parameters.  This is needed since the fill_rectangle routines
-     * do not have access to the gs_gstate.  Thus we have to pass any
-     * changes explictly.
-     */
-    code = pdf14_clist_update_params(pdev, pgs, false, NULL);
-    if (code < 0)
-        return code;
-    /* Pass image to the target */
-    code = gx_forward_begin_image(dev, pgs, pim, format, prect,
-                                        pdcolor, pcpath, memory, pinfo);
-    if (code < 0)
-        return gx_default_begin_image(dev, pgs, pim, format, prect,
-                                        pdcolor, pcpath, memory, pinfo);
-    else return code;
-
-}
-
-static	int
 pdf14_clist_begin_typed_image(gx_device	* dev, const gs_gstate * pgs,
                            const gs_matrix *pmat, const gs_image_common_t *pic,
                            const gs_int_rect * prect,
@@ -11358,7 +11326,7 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_gstate * pgs,
     if (pim->ImageMask) {
         if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor)) {
             if( gx_pattern1_get_transptr(pdcolor) != NULL){
-                 if (dev_proc(dev, begin_image) != pdf14_clist_begin_image) {
+                if (dev_proc(dev, begin_typed_image) != pdf14_clist_begin_typed_image) {
                     ptile = pdcolor->colors.pattern.p_tile;
                     /* Set up things in the ptile so that we get the proper
                        blending etc */

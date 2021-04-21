@@ -268,7 +268,7 @@ static  dev_proc_get_params(oprp_get_params);
 static  dev_proc_put_params(opvp_put_params);
 static  dev_proc_put_params(oprp_put_params);
 static  dev_proc_fill_rectangle(opvp_fill_rectangle);
-static  dev_proc_begin_image(opvp_begin_image);
+static  dev_proc_begin_typed_image(opvp_begin_typed_image);
 static  image_enum_proc_plane_data(opvp_image_plane_data);
 static  image_enum_proc_end_image(opvp_image_end_image);
 
@@ -321,7 +321,7 @@ opvp_initialize(gx_device *dev)
     set_dev_proc(dev, fill_trapezoid, gdev_vector_fill_trapezoid);
     set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
-    set_dev_proc(dev, begin_image, opvp_begin_image);
+    set_dev_proc(dev, begin_typed_image, opvp_begin_typed_image);
 
     /* The static init used in previous versions of the code leave
      * encode_color and decode_color set to NULL (which are then rewritten
@@ -3558,11 +3558,11 @@ opvp_fill_mask(
  * begin image
  */
 static  int
-opvp_begin_image(
+opvp_begin_typed_image(
     gx_device *dev,
     const gs_gstate *pgs,
-    const gs_image_t *pim,
-    gs_image_format_t format,
+    const gs_matrix *pmat,
+    const gs_image_common_t *pic,
     const gs_int_rect *prect,
     const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath,
@@ -3570,7 +3570,8 @@ opvp_begin_image(
     gx_image_enum_common_t **pinfo)
 {
     gx_device_vector *vdev =(gx_device_vector *)dev;
-    gdev_vector_image_enum_t *vinfo;
+    const gs_image_t *pim = (const gs_image_t *)pic;
+    gdev_vector_image_enum_t *vinfo = NULL;
     gs_matrix mtx;
     opvp_ctm_t ctm;
     bool draw_image = false;
@@ -3582,16 +3583,13 @@ opvp_begin_image(
     bool can_reverse = false;
     int p;
     float mag[2] = {1, 1};
-    const gs_color_space *pcs = pim->ColorSpace;
+    const gs_color_space *pcs;
 
     /* check if paths are too complex */
-    if (!checkCPath(pcpath)) {
-        return gx_default_begin_image(
-                    dev, pgs, pim, format,
-                    prect, pdcolor, pcpath,
-                    mem, pinfo);
-    }
+    if (pic->type->index != 1 || !checkCPath(pcpath))
+        goto fallback;
 
+    pcs = pim->ColorSpace;
     color_index = 0;
 
     vinfo = gs_alloc_struct(mem, gdev_vector_image_enum_t,
@@ -3600,8 +3598,8 @@ opvp_begin_image(
 
     if (vinfo) {
         memcpy(imageDecode,pim->Decode,sizeof(pim->Decode));
-        vinfo->memory =mem;
-        code = gdev_vector_begin_image(vdev, pgs, pim, format, prect,
+        vinfo->memory = mem;
+        code = gdev_vector_begin_image(vdev, pgs, pim, pim->format, prect,
                                        pdcolor, pcpath, mem,
                                        &opvp_image_enum_procs,
                                        vinfo);
@@ -3619,14 +3617,10 @@ opvp_begin_image(
                 if (color_index == gs_color_space_index_Indexed) {
                     base_color_index
                       = gs_color_space_indexed_base_space(pcs)->type->index;
-                    if (((pcs->params.indexed.hival + 1) > 256)
-                        || (bits_per_pixel != 8 && bits_per_pixel != 1)) {
-                        return gx_default_begin_image(
-                                dev, pgs, pim, format,
-                                prect, pdcolor, pcpath,
-                                mem, pinfo);
-                    } else if (base_color_index
-                         == gs_color_space_index_DeviceCMYK) {
+                    if (((pcs->params.indexed.hival + 1) > 256) ||
+                        (bits_per_pixel != 8 && bits_per_pixel != 1))
+                        goto fallback;
+                    if (base_color_index == gs_color_space_index_DeviceCMYK) {
                         /* for CMYK indexed color */
                         int count;
                         const unsigned char *p
@@ -3648,26 +3642,25 @@ opvp_begin_image(
                         }
 
                         bits_per_pixel = 24;
-                    } else if (base_color_index
-                        == gs_color_space_index_DeviceRGB ||
-                        base_color_index == gs_color_space_index_CIEABC) {
+                    } else if (base_color_index ==
+                                       gs_color_space_index_DeviceRGB ||
+                               base_color_index ==
+                                          gs_color_space_index_CIEABC) {
                         /* for RGB or CalRGB indexed color */
                         memcpy(palette, pcs->params.indexed.lookup.table.data,\
                         pcs->params.indexed.lookup.table.size);
                         bits_per_pixel = 24;
-                    } else if (base_color_index
-                        == gs_color_space_index_DeviceGray ||
-                        base_color_index == gs_color_space_index_CIEA) {
+                    } else if (base_color_index ==
+                                      gs_color_space_index_DeviceGray ||
+                               base_color_index ==
+                                      gs_color_space_index_CIEA) {
                         /* for Gray or CalGray indexed color */
                         memcpy(palette, pcs->params.indexed.lookup.table.data,\
                         pcs->params.indexed.lookup.table.size);
                         bits_per_pixel = 8;
                     } else {
                         /* except CMYK and RGB */
-                        return gx_default_begin_image(
-                                    dev, pgs, pim, format,
-                                    prect, pdcolor, pcpath,
-                                    mem, pinfo);
+                        goto fallback;
                     }
                 }
             }
@@ -3680,7 +3673,9 @@ opvp_begin_image(
             /* adjust matrix */
             reverse_image = false;
             ecode = gs_matrix_invert(&pim->ImageMatrix, &mtx);
-            gs_matrix_multiply(&mtx, &ctm_only(pgs), &mtx);
+            if (pmat == NULL)
+                pmat = &ctm_only(pgs);
+            gs_matrix_multiply(&mtx, pmat, &mtx);
             switch (FastImageMode) {
             case FastImageNoCTM:
                 if ((mtx.xy==0)&&(mtx.yx==0)&& (mtx.yy>=0)) {
@@ -3913,8 +3908,7 @@ fallthrough:
                 if(apiEntry->opvpResetCTM) {
                     apiEntry->opvpResetCTM(printerContext); /* reset CTM */
                 }
-                return gx_default_begin_image(dev, pgs, pim, format,
-                                    prect, pdcolor, pcpath, mem, pinfo);
+                goto fallback;
             }
         }
 
@@ -3925,8 +3919,10 @@ fallthrough:
         return ecode;
     }
 
-    return gx_default_begin_image(dev, pgs, pim, format, prect,
-                                  pdcolor, pcpath, mem, pinfo);
+fallback:
+    gs_free_object(mem, vinfo, "opvp_end_image");
+    return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
+                                        pdcolor, pcpath, mem, pinfo);
 }
 
 /*

@@ -96,7 +96,6 @@ mask_clip_initialize(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
     set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
-    set_dev_proc(dev, begin_image, gx_default_begin_image);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     set_dev_proc(dev, text_begin, gx_default_text_begin);
 
