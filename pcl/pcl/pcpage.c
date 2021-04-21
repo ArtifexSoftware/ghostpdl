@@ -1144,20 +1144,17 @@ set_paper_length(pcl_args_t * pargs, pcl_state_t * pcs)
  * ESC * o <quality> Q
  *
  * Set print quality.
+ *
+ * We don't implement this command, it appears to only be supported on
+ * DeskJet 1200C, an obsolete inkjet, which is not a target of
+ * emulation.
  */
+
 static int
 pcl_print_quality(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    int quality = int_arg(pargs);
 
-    if ((quality >= -1) && (quality <= 1)) {
-        int code = pcl_end_page_if_marked(pcs);
-
-        if (code >= 0)
-            code = pcl_home_cursor(pcs);
-        return (code < 0 ? code : 0);
-    } else
-        return e_Range;
+    return_error(e_Unimplemented);
 }
 
 /*
