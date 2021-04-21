@@ -28,7 +28,6 @@
 /* ---------------- Generic image support ---------------- */
 
 /* Structure descriptors */
-public_st_gs_image_common();
 public_st_gs_data_image();
 public_st_gs_pixel_image();
 
