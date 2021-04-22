@@ -116,7 +116,7 @@
 /* ---------------- Auxiliary types and structures ---------------- */
 
 /* We need an abstract type for the pattern instance, */
-/* for pattern_manage. */
+/* for pattern management. */
 typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
 
 /* Define the type for colors passed to the higher-level procedures. */
@@ -643,21 +643,11 @@ typedef struct gx_stroked_gradient_recognizer_s {
 /* ---------------- Device structure ---------------- */
 
 /*
- * Define the generic device structure.  The device procedures can
- * have two different configurations:
+ * Define the generic device structure.
  *
- *      - Statically initialized devices predating release 2.8.1
- *      set the static_procs pointer to point to a separate procedure record,
- *      and do not initialize procs.
- *
- *      - Statically initialized devices starting with release 2.8.1,
- *      and all dynamically created device instances,
- *      set the static_procs pointer to 0, and initialize procs.
- *
- * The gx_device_set_procs procedure converts the first of these to
- * the second, which is what all client code starting in 2.8.1 expects
- * (using the procs record, not the static_procs pointer, to call the
- * driver procedures).
+ * All devices start off with no device procs. The initialize function
+ * is called as soon as the device is copied from its prototype, and
+ * that fills in the procs table with the device procedure pointers.
  *
  * The choice of the name Margins (rather than, say, HWOffset), and the
  * specification in terms of a default device resolution rather than
@@ -717,11 +707,15 @@ typedef struct gdev_pagelist_s {
         int PagesSize;
 } gdev_pagelist;
 
+#define dev_t_proc_initialize(proc, dev_t)\
+  int proc(dev_t *dev)
+#define dev_proc_initialize(proc)\
+  dev_t_proc_initialize((proc), gx_device)
+
 #define gx_device_common\
         int params_size;		/* OBSOLETE if stype != 0: */\
                                         /* size of this structure */\
-        const gx_device_procs *static_procs;	/* OBSOLETE */\
-                                        /* pointer to procs */\
+        dev_proc_initialize(*initialize);/* initialize */\
         const char *dname;		/* the device name */\
         gs_memory_t *memory;		/* (0 iff static prototype) */\
         gs_memory_type_ptr_t stype;	/* memory manager structure type, */\
@@ -906,14 +900,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_fill_rectangle(proc)\
   dev_t_proc_fill_rectangle(proc, gx_device)
 
-#define dev_t_proc_tile_rectangle(proc, dev_t)\
-  int proc(dev_t *dev,\
-    const gx_tile_bitmap *tile, int x, int y, int width, int height,\
-    gx_color_index color0, gx_color_index color1,\
-    int phase_x, int phase_y)
-#define dev_proc_tile_rectangle(proc)\
-  dev_t_proc_tile_rectangle(proc, gx_device)
-
 #define dev_t_proc_copy_mono(proc, dev_t)\
   int proc(dev_t *dev,\
     const byte *data, int data_x, int raster, gx_bitmap_id id,\
@@ -928,14 +914,6 @@ typedef enum FILTER_FLAGS {
     int x, int y, int width, int height)
 #define dev_proc_copy_color(proc)\
   dev_t_proc_copy_color(proc, gx_device)
-
-                /* OBSOLETED in release 3.66 */
-
-#define dev_t_proc_draw_line(proc, dev_t)\
-  int proc(dev_t *dev,\
-    int x0, int y0, int x1, int y1, gx_color_index color)
-#define dev_proc_draw_line(proc)\
-  dev_t_proc_draw_line(proc, gx_device)
 
                 /* Added in release 2.4 */
 
@@ -965,18 +943,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_map_cmyk_color(proc)\
   dev_t_proc_map_cmyk_color(proc, gx_device)
 
-#define dev_t_proc_get_xfont_procs(proc, dev_t)\
-  const gx_xfont_procs *proc(dev_t *dev)
-#define dev_proc_get_xfont_procs(proc)\
-  dev_t_proc_get_xfont_procs(proc, gx_device)
-
-                /* Added in release 2.6.1 */
-
-#define dev_t_proc_get_xfont_device(proc, dev_t)\
-  gx_device *proc(dev_t *dev)
-#define dev_proc_get_xfont_device(proc)\
-  dev_t_proc_get_xfont_device(proc, gx_device)
-
                 /* Added in release 2.7.1 */
 
 #define dev_t_proc_map_rgb_alpha_color(proc, dev_t)\
@@ -994,6 +960,7 @@ typedef enum FILTER_FLAGS {
   dev_t_proc_get_page_device(proc, gx_device)
 
                 /* Added in release 3.20, OBSOLETED in 5.65 */
+                /* 'Unobsoleted' in 9.55. */
 
 #define dev_t_proc_get_alpha_bits(proc, dev_t)\
   int proc(dev_t *dev, graphics_object_type type)
@@ -1015,18 +982,6 @@ typedef enum FILTER_FLAGS {
   int proc(dev_t *dev, int y, int *band_start)
 #define dev_proc_get_band(proc)\
   dev_t_proc_get_band(proc, gx_device)
-
-                /* Added in release 3.44 */
-
-#define dev_t_proc_copy_rop(proc, dev_t)\
-  int proc(dev_t *dev,\
-    const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,\
-    const gx_color_index *scolors,\
-    const gx_tile_bitmap *texture, const gx_color_index *tcolors,\
-    int x, int y, int width, int height,\
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-#define dev_proc_copy_rop(proc)\
-  dev_t_proc_copy_rop(proc, gx_device)
 
                 /* Added in release 3.60, changed in 3.68. */
 
@@ -1121,23 +1076,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_begin_image(proc)\
   dev_t_proc_begin_image(proc, gx_device)
 
-                /* OBSOLETED in release 5.23 */
-
-#define dev_t_proc_image_data(proc, dev_t)\
-  int proc(dev_t *dev,\
-    gx_image_enum_common_t *info, const byte **planes, int data_x,\
-    uint raster, int height)
-#define dev_proc_image_data(proc)\
-  dev_t_proc_image_data(proc, gx_device)
-
-                /* OBSOLETED in release 5.23 */
-
-#define dev_t_proc_end_image(proc, dev_t)\
-  int proc(dev_t *dev,\
-    gx_image_enum_common_t *info, bool draw_last)
-#define dev_proc_end_image(proc)\
-  dev_t_proc_end_image(proc, gx_device)
-
                 /* Added in release 3.68 */
 
 #define dev_t_proc_strip_tile_rectangle(proc, dev_t)\
@@ -1190,12 +1128,12 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_map_color_rgb_alpha(proc)\
   dev_t_proc_map_color_rgb_alpha(proc, gx_device)
 
-#define dev_t_proc_create_compositor(proc, dev_t)\
+#define dev_t_proc_composite(proc, dev_t)\
   int proc(dev_t *dev,\
     gx_device **pcdev, const gs_composite_t *pcte,\
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
-#define dev_proc_create_compositor(proc)\
-  dev_t_proc_create_compositor(proc, gx_device)\
+#define dev_proc_composite(proc)\
+  dev_t_proc_composite(proc, gx_device)\
 
                 /* Added in release 5.23 */
 
@@ -1207,13 +1145,6 @@ typedef enum FILTER_FLAGS {
                 /* Added in release 5.24 */
 
      /* ... text_begin ... see gstext.h for definition */
-
-                /* Added in release 6.23 */
-
-#define dev_t_proc_finish_copydevice(proc, dev_t)\
-  int proc(dev_t *dev, const gx_device *from_dev)
-#define dev_proc_finish_copydevice(proc)\
-  dev_t_proc_finish_copydevice(proc, gx_device)
 
                 /* Added in release 6.61 (raph) */
 
@@ -1304,38 +1235,6 @@ typedef enum FILTER_FLAGS {
  * dev_proc_decode_color
  */
      /* (end of DeviceN color support) */
-
-/*
-  Pattern management for high level devices.
-  Now we need it for PatternType 1 only.
-  Return codes :
-  1 - the device handles high level patterns.
-  0 - the device needs low level pattern tiles.
-  <0 - error.
-
-  THIS IS NOW DEPRECATED, AND UNUSED. DO NOT USE THIS. USE THIS NOT. THIS
-  IS NOT TO BE USED.
-
-  Pattern Management is now done using the dev_spec_op calls.
-*/
-
-/* High level device support. */
-typedef enum {
-    pattern_manage__can_accum,
-    pattern_manage__start_accum,
-    pattern_manage__finish_accum,
-    pattern_manage__load,
-    pattern_manage__shading_area,
-    pattern_manage__is_cpath_accum,
-    pattern_manage__shfill_doesnt_need_path,
-    pattern_manage__handles_clip_path
-} pattern_manage_t;
-
-#define dev_t_proc_pattern_manage(proc, dev_t)\
-  int proc(gx_device *pdev, gx_bitmap_id id,\
-                gs_pattern1_instance_t *pinst, pattern_manage_t function)
-#define dev_proc_pattern_manage(proc)\
-  dev_t_proc_pattern_manage(proc, gx_device)
 
 /*
   Fill rectangle with a high level color.
@@ -1592,7 +1491,8 @@ typedef struct {
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
-{	dev_t_proc_open_device((*open_device), dev_t);\
+{\
+        dev_t_proc_open_device((*open_device), dev_t);\
         dev_t_proc_get_initial_matrix((*get_initial_matrix), dev_t);\
         dev_t_proc_sync_output((*sync_output), dev_t);\
         dev_t_proc_output_page((*output_page), dev_t);\
@@ -1600,22 +1500,17 @@ typedef struct {
         dev_t_proc_map_rgb_color((*map_rgb_color), dev_t);\
         dev_t_proc_map_color_rgb((*map_color_rgb), dev_t);\
         dev_t_proc_fill_rectangle((*fill_rectangle), dev_t);\
-        dev_t_proc_tile_rectangle((*tile_rectangle), dev_t);\
         dev_t_proc_copy_mono((*copy_mono), dev_t);\
         dev_t_proc_copy_color((*copy_color), dev_t);\
-        dev_t_proc_draw_line((*obsolete_draw_line), dev_t);\
         dev_t_proc_get_bits((*get_bits), dev_t);\
         dev_t_proc_get_params((*get_params), dev_t);\
         dev_t_proc_put_params((*put_params), dev_t);\
         dev_t_proc_map_cmyk_color((*map_cmyk_color), dev_t);\
-        dev_t_proc_get_xfont_procs((*get_xfont_procs), dev_t);\
-        dev_t_proc_get_xfont_device((*get_xfont_device), dev_t);\
         dev_t_proc_map_rgb_alpha_color((*map_rgb_alpha_color), dev_t);\
         dev_t_proc_get_page_device((*get_page_device), dev_t);\
         dev_t_proc_get_alpha_bits((*get_alpha_bits), dev_t);\
         dev_t_proc_copy_alpha((*copy_alpha), dev_t);\
         dev_t_proc_get_band((*get_band), dev_t);\
-        dev_t_proc_copy_rop((*copy_rop), dev_t);\
         dev_t_proc_fill_path((*fill_path), dev_t);\
         dev_t_proc_stroke_path((*stroke_path), dev_t);\
         dev_t_proc_fill_mask((*fill_mask), dev_t);\
@@ -1624,18 +1519,15 @@ typedef struct {
         dev_t_proc_fill_triangle((*fill_triangle), dev_t);\
         dev_t_proc_draw_thin_line((*draw_thin_line), dev_t);\
         dev_t_proc_begin_image((*begin_image), dev_t);\
-        dev_t_proc_image_data((*image_data), dev_t);\
-        dev_t_proc_end_image((*end_image), dev_t);\
         dev_t_proc_strip_tile_rectangle((*strip_tile_rectangle), dev_t);\
         dev_t_proc_strip_copy_rop((*strip_copy_rop), dev_t);\
         dev_t_proc_get_clipping_box((*get_clipping_box), dev_t);\
         dev_t_proc_begin_typed_image((*begin_typed_image), dev_t);\
         dev_t_proc_get_bits_rectangle((*get_bits_rectangle), dev_t);\
         dev_t_proc_map_color_rgb_alpha((*map_color_rgb_alpha), dev_t);\
-        dev_t_proc_create_compositor((*create_compositor), dev_t);\
+        dev_t_proc_composite((*composite), dev_t);\
         dev_t_proc_get_hardware_params((*get_hardware_params), dev_t);\
         dev_t_proc_text_begin((*text_begin), dev_t);\
-        dev_t_proc_finish_copydevice((*finish_copydevice), dev_t);\
         dev_t_proc_begin_transparency_group((*begin_transparency_group), dev_t);\
         dev_t_proc_end_transparency_group((*end_transparency_group), dev_t);\
         dev_t_proc_begin_transparency_mask((*begin_transparency_mask), dev_t);\
@@ -1645,7 +1537,6 @@ typedef struct {
         dev_t_proc_get_color_comp_index((*get_color_comp_index), dev_t); \
         dev_t_proc_encode_color((*encode_color), dev_t); \
         dev_t_proc_decode_color((*decode_color), dev_t); \
-        dev_t_proc_pattern_manage((*pattern_manage), dev_t); \
         dev_t_proc_fill_rectangle_hl_color((*fill_rectangle_hl_color), dev_t); \
         dev_t_proc_include_color_space((*include_color_space), dev_t); \
         dev_t_proc_fill_linear_color_scanline((*fill_linear_color_scanline), dev_t); \
@@ -1703,13 +1594,6 @@ int gx_image_plane_data_rows(gx_image_enum_common_t *info,
 int gx_image_flush(gx_image_enum_common_t *info);
 bool gx_image_planes_wanted(const gx_image_enum_common_t *info, byte *wanted);
 int gx_image_end(gx_image_enum_common_t *info, bool draw_last);
-
-/*
- * Get the anti-aliasing parameters for a device.  This replaces the
- * obsolete get_alpha_bits device procedure.
- */
-#define gx_device_get_alpha_bits(dev, type)\
-  gx_default_get_alpha_bits(dev, type)
 
 /* A generic device procedure record. */
 struct gx_device_procs_s gx_device_proc_struct(gx_device);
@@ -1885,13 +1769,16 @@ extern_st(st_device_null);
  * about what this means.  Normally, devices created for temporary use have
  * internal = true (retained = false).
  */
-void gx_device_init(gx_device * dev, const gx_device * proto,
-                    gs_memory_t * mem, bool internal);
+int gx_device_init(gx_device * dev, const gx_device * proto,
+                   gs_memory_t * mem, bool internal);
 
 /*
  * Identical to gx_device_init, except that the reference counting is set
  * up so that it doesn't attempt to free the device structure when the last
  * instance is removed, and the device is always internal (never retained).
+ *
+ * If the device uses an initialize proc (and it should!) it can never
+ * fail.
  */
 void gx_device_init_on_stack(gx_device * dev, const gx_device * proto,
                              gs_memory_t * mem);

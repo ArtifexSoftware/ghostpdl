@@ -161,17 +161,6 @@ gx_device_reloc_ptr(gx_device * dev, gc_state_t * gcst)
     return RELOC_OBJ(dev);	/* gcst implicit */
 }
 
-/* Set up the device procedures in the device structure. */
-/* Also copy old fields to new ones. */
-void
-gx_device_set_procs(gx_device * dev)
-{
-    if (dev->static_procs != 0) {	/* 0 if already populated */
-        dev->procs = *dev->static_procs;
-        dev->static_procs = 0;
-    }
-}
-
 /* Flush buffered output to the device */
 int
 gs_flushpage(gs_gstate * pgs)
@@ -356,7 +345,7 @@ gx_device_make_struct_type(gs_memory_struct_type_t *st,
 {
     if (dev->stype)
         *st = *dev->stype;
-    else if (dev_proc(dev, get_xfont_procs) == gx_forward_get_xfont_procs)
+    else if (dev_proc(dev, get_page_device) == gx_forward_get_page_device)
         *st = st_device_forward;
     else
         *st = st_device;
@@ -409,25 +398,15 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
         gs_free_object(mem->non_gc_memory, a_std, "gs_copydevice(stype)");
         return_error(gs_error_VMerror);
     }
-    gx_device_init(new_dev, dev, mem, false);
-    gx_device_set_procs(new_dev);
+    code = gx_device_init(new_dev, dev, mem, false);
     new_dev->stype = new_std;
     new_dev->stype_is_dynamic = new_std != std;
     /*
      * keep_open is very dangerous.  On the other hand, so is copydevice in
      * general, since it just copies the bits without any regard to pointers
-     * (including self-pointers) that they may contain.  We handle this by
-     * making the default finish_copydevice forbid copying of anything other
-     * than the device prototype.
+     * (including self-pointers) that they may contain.
      */
     new_dev->is_open = dev->is_open && keep_open;
-    fill_dev_proc(new_dev, finish_copydevice, gx_default_finish_copydevice);
-    /* We really want to be able to interrogate the device for capabilities
-     * and/or preferences right from when it is created, so set dev_spec_op
-     * now (if not already set).
-     */
-    fill_dev_proc(new_dev, dev_spec_op, gx_default_dev_spec_op);
-    code = dev_proc(new_dev, finish_copydevice)(new_dev, dev);
     if (code < 0) {
         gs_free_object(mem, new_dev, "gs_copydevice(device)");
 #if 0 /* gs_free_object above calls gx_device_finalize,
@@ -437,6 +416,11 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
 #endif
         return code;
     }
+    /* We really want to be able to interrogate the device for capabilities
+     * and/or preferences right from when it is created, so set dev_spec_op
+     * now (if not already set).
+     */
+    fill_dev_proc(new_dev, dev_spec_op, gx_default_dev_spec_op);
     *pnew_dev = new_dev;
     return 0;
 }
@@ -619,15 +603,24 @@ gs_setdevice_no_init(gs_gstate * pgs, gx_device * dev)
 }
 
 /* Initialize a just-allocated device. */
-void
+int
 gx_device_init(gx_device * dev, const gx_device * proto, gs_memory_t * mem,
                bool internal)
 {
     memcpy(dev, proto, proto->params_size);
+    if (dev->initialize) {
+        /* A condition of devices inited in this way is that they can
+         * never fail to initialize! */
+        int code = dev->initialize(dev);
+        if (code < 0)
+            return code;
+    }
     dev->memory = mem;
     dev->retained = !internal;
     rc_init(dev, mem, (internal ? 0 : 1));
     rc_increment(dev->icc_struct);
+
+    return 0;
 }
 
 void
@@ -635,6 +628,12 @@ gx_device_init_on_stack(gx_device * dev, const gx_device * proto,
                         gs_memory_t * mem)
 {
     memcpy(dev, proto, proto->params_size);
+    if (dev->initialize) {
+        /* A condition of devices inited on the stack is that they can
+         * never fail to initialize! */
+        (void)dev->initialize(dev);
+    }
+    gx_device_fill_in_procs(dev);
     dev->memory = mem;
     dev->retained = 0;
     dev->pad = proto->pad;
@@ -648,8 +647,10 @@ void
 gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
                     gs_memory_t * mem)
 {
-    gx_device_init((gx_device *)dev_null, (const gx_device *)&gs_null_device,
-                   mem, true);
+    /* Can never fail */
+    (void)gx_device_init((gx_device *)dev_null,
+                         (const gx_device *)&gs_null_device,
+                         mem, true);
     gx_device_fill_in_procs((gx_device *)dev_null);
     gx_device_set_target((gx_device_forward *)dev_null, dev);
     if (dev) {
@@ -671,7 +672,6 @@ gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
         set_dev_proc(dn, begin_transparency_mask, gx_default_begin_transparency_mask);
         set_dev_proc(dn, end_transparency_mask, gx_default_end_transparency_mask);
         set_dev_proc(dn, discard_transparency_layer, gx_default_discard_transparency_layer);
-        set_dev_proc(dn, pattern_manage, gx_default_pattern_manage);
         set_dev_proc(dn, push_transparency_state, gx_default_push_transparency_state);
         set_dev_proc(dn, pop_transparency_state, gx_default_pop_transparency_state);
         set_dev_proc(dn, put_image, gx_default_put_image);

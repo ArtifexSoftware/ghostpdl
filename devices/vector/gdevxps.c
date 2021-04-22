@@ -198,8 +198,8 @@ gs_public_st_suffix_add1_final(st_device_xps, gx_device_xps,
     "gx_device_xps", device_xps_enum_ptrs, device_xps_reloc_ptrs,
     gx_device_finalize, st_device_vector, xps_pie);
 
-#define xps_device_body(dname, depth)\
-  std_device_dci_type_body(gx_device_xps, 0, dname, &st_device_xps, \
+#define xps_device_body(dname, depth, init)\
+  std_device_dci_type_body(gx_device_xps, init, dname, &st_device_xps, \
                            DEFAULT_WIDTH_10THS * X_DPI / 10, \
                            DEFAULT_HEIGHT_10THS * Y_DPI / 10, \
                            X_DPI, Y_DPI, \
@@ -214,62 +214,35 @@ static dev_proc_get_params(xps_get_params);
 static dev_proc_put_params(xps_put_params);
 static dev_proc_fill_path(gdev_xps_fill_path);
 static dev_proc_stroke_path(gdev_xps_stroke_path);
-static dev_proc_finish_copydevice(xps_finish_copydevice);
+static dev_proc_initialize(xps_initialize);
 static dev_proc_begin_image(xps_begin_image);
 
-#define xps_device_procs \
-{ \
-        xps_open_device, \
-        NULL,                   /* get_initial_matrix */\
-        NULL,                   /* sync_output */\
-        xps_output_page,\
-        xps_close_device,\
-        gx_default_rgb_map_rgb_color,\
-        gx_default_rgb_map_color_rgb,\
-        gdev_vector_fill_rectangle,\
-        NULL,                   /* tile_rectangle */\
-        NULL,                   /* copy_mono */\
-        NULL,                   /* copy_color */\
-        NULL,                   /* draw_line */\
-        NULL,                   /* get_bits */\
-        xps_get_params,\
-        xps_put_params,\
-        NULL,                   /* map_cmyk_color */\
-        NULL,                   /* get_xfont_procs */\
-        NULL,                   /* get_xfont_device */\
-        NULL,                   /* map_rgb_alpha_color */\
-        gx_page_device_get_page_device,\
-        NULL,                   /* get_alpha_bits */\
-        NULL,                   /* copy_alpha */\
-        NULL,                   /* get_band */\
-        NULL,                   /* copy_rop */\
-        gdev_xps_fill_path,\
-        gdev_xps_stroke_path,\
-        NULL,                   /* fill_mask */\
-        NULL,                   /* gdev_vector_fill_trapezoid, */     \
-        NULL,                   /* gdev_vector_fill_parallelogram */        \
-        NULL,                   /* gdev_vector_fill_triangle */           \
-        NULL,                   /* draw_thin_line */\
-        xps_begin_image,        /* begin_image */   \
-        NULL,                   /* image_data */\
-        NULL,                   /* end_image */\
-        NULL,                   /* strip_tile_rectangle */\
-        NULL,                    /* strip_copy_rop */\
-        NULL,                   /* get_clipping_box */\
-        NULL,                   /* begin_typed_image */\
-        NULL,                   /* get_bits_rectangle */\
-        NULL,                   /* map_color_rgb_alpha */\
-        NULL,                   /* create_compositor */\
-        NULL,                   /* get_hardware_params */\
-        NULL,                   /* text_begin */\
-        xps_finish_copydevice,\
-        NULL,\
-}
-
 const gx_device_xps gs_xpswrite_device = {
-    xps_device_body("xpswrite", 24),
-    xps_device_procs
+    xps_device_body("xpswrite", 24, xps_initialize),
 };
+
+static int
+xps_initialize(gx_device *dev)
+{
+    gx_device_xps *xps = (gx_device_xps*)dev;
+
+    set_dev_proc(dev, open_device, xps_open_device);
+    set_dev_proc(dev, output_page, xps_output_page);
+    set_dev_proc(dev, close_device, xps_close_device);
+    set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, gdev_vector_fill_rectangle);
+    set_dev_proc(dev, get_params, xps_get_params);
+    set_dev_proc(dev, put_params, xps_put_params);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, fill_path, gdev_xps_fill_path);
+    set_dev_proc(dev, stroke_path, gdev_xps_stroke_path);
+    set_dev_proc(dev, begin_image, xps_begin_image);
+
+    memset(xps->PrinterName, 0x00, MAXPRINTERNAME);
+
+    return 0;
+}
 
 /* Vector device procedures */
 static int
@@ -1319,14 +1292,6 @@ xps_put_params(gx_device *dev, gs_param_list *plist)
     code = gdev_vector_put_params(dev, plist);	/* errors are handled by caller  or setpagedevice */
 
     return code;
-}
-
-static int xps_finish_copydevice(gx_device *dev, const gx_device *from_dev)
-{
-    gx_device_xps *xps = (gx_device_xps*)dev;
-
-    memset(xps->PrinterName, 0x00, MAXPRINTERNAME);
-    return 0;
 }
 
 static int

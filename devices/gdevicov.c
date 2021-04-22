@@ -166,42 +166,16 @@ static int cov_write_page_ink(gx_device_printer *pdev, gp_file *file)
     return (code > 0) ? ecode : 0;
 }
 
-static const gx_device_procs cov_procs =
-{
-    gdev_prn_open,
-    NULL,			/* get_initial_matrix */
-    NULL,			/* sync_output */
-    /* Since the print_page doesn't alter the device, this device can print in the background */
-    gdev_prn_bg_output_page,
-    gdev_prn_close,
-    NULL,			/* map_rgb_color */
-    cmyk_8bit_map_color_rgb,
-    NULL,			/* fill_rectangle */
-    NULL,			/* tile_rectangle */
-    NULL,			/* copy_mono */
-    NULL,			/* copy_color */
-    NULL,			/* draw_line */
-    NULL,			/* get_bits */
-    gdev_prn_get_params,
-    gdev_prn_put_params,
-    cmyk_8bit_map_cmyk_color,
-    NULL,			/* get_xfont_procs */
-    NULL,			/* get_xfont_device */
-    NULL,			/* map_rgb_alpha_color */
-    gx_page_device_get_page_device
-};
-
 const gx_device_printer gs_inkcov_device = prn_device(
-    cov_procs, "inkcov",
+    gdev_prn_initialize_cmyk8_bg, "inkcov",
     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
     75, 75,	/* dpi */
     0, 0, 0, 0,	/* margins */
     32, cov_write_page);
 
 const gx_device_printer gs_ink_cov_device = prn_device(
-    cov_procs, "ink_cov",
+    gdev_prn_initialize_cmyk8_bg, "ink_cov",
     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
     75, 75,	/* dpi */
     0, 0, 0, 0,	/* margins */
     32, cov_write_page_ink);
-

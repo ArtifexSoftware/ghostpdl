@@ -94,7 +94,7 @@ static dev_proc_copy_color(display_copy_color);
 static dev_proc_get_bits(display_get_bits);
 static dev_proc_get_params(display_get_params);
 static dev_proc_put_params(display_put_params);
-static dev_proc_finish_copydevice(display_finish_copydevice);
+static dev_proc_initialize(display_initialize);
 
 static dev_proc_get_color_mapping_procs(display_separation_get_color_mapping_procs);
 static dev_proc_get_color_comp_index(display_separation_get_color_comp_index);
@@ -105,76 +105,8 @@ static dev_proc_ret_devn_params(display_ret_devn_params);
 static dev_proc_dev_spec_op(display_spec_op);
 static dev_proc_fill_rectangle_hl_color(display_fill_rectangle_hl_color);
 
-static const gx_device_procs display_procs =
-{
-    display_open,
-    display_get_initial_matrix,
-    display_sync_output,
-    display_output_page,
-    display_close,
-    gx_default_w_b_map_rgb_color,
-    gx_default_w_b_map_color_rgb,
-    NULL, /* display_fill_rectangle - will be inserted later */
-    NULL,				/* tile rectangle */
-    NULL, /* display_copy_mono - will be inserted later */
-    NULL, /* display_copy_color - will be inserted later */
-    NULL,				/* draw line */
-    NULL, /* display_get_bits - will be inserted later */
-    display_get_params,
-    display_put_params,
-    gx_default_cmyk_map_cmyk_color, 	/* map_cmyk_color */
-    gx_default_get_xfont_procs,
-    NULL,				/* get_xfont_device */
-    NULL,				/* map_rgb_alpha_color */
-    gx_page_device_get_page_device,
-    /* extra entries */
-    NULL,				/* get_alpha_bits */
-    NULL,				/* copy_alpha */
-    NULL,				/* get_band */
-    NULL,				/* copy_rop */
-    NULL,				/* fill_path */
-    NULL,				/* stroke_path */
-    NULL,				/* fill_mask */
-    NULL,				/* fill_trapezoid */
-    NULL,				/* fill_parallelogram */
-    NULL,				/* fill_triangle */
-    NULL,				/* draw_thin_line */
-    NULL,				/* begin_image */
-    NULL,				/* image_data */
-    NULL,				/* end_image */
-    NULL,				/* strip_tile_rectangle */
-    NULL,				/* strip_copy_rop */
-    NULL,				/* get_clipping_box */
-    NULL,				/* begin_typed_image */
-    NULL,				/* get_bits_rectangle */
-    NULL,				/* map_color_rgb_alpha */
-    NULL,				/* create_compositor */
-    NULL,				/* get_hardware_params */
-    NULL,				/* text_begin */
-    display_finish_copydevice,		/* finish_copydevice */
-    NULL,				/* begin_transparency_group */
-    NULL,				/* end_transparency_group */
-    NULL,				/* begin_transparency_mask */
-    NULL,				/* end_transparency_mask */
-    NULL,				/* discard_transparency_layer */
-    NULL,				/* get_color_mapping_procs */
-    NULL,				/* get_color_comp_index */
-    NULL,           			/* encode_color */
-    NULL,           			/* decode_color */
-    NULL,                          	/* pattern_manage */
-    display_fill_rectangle_hl_color,	/* fill_rectangle_hl_color */\
-    NULL,				/* include_color_space */\
-    NULL,				/* fill_linear_color_scanline */\
-    NULL,				/* fill_linear_color_trapezoid */\
-    NULL,				/* fill_linear_color_triangle */\
-    display_update_spot_equivalent_colors, /* update_spot_equivalent_colors */
-    display_ret_devn_params,		/* ret_devn_params */\
-    NULL,                        /* fillpage */\
-    NULL,                        /* push_transparency_state */\
-    NULL,                        /* pop_transparency_state */\
-    NULL,                        /* put_image */\
-    display_spec_op              /* dev_spec_op */\
-};
+extern dev_proc_open_device(clist_open);
+extern dev_proc_close_device(clist_close);
 
 /* GC descriptor */
 public_st_device_display();
@@ -200,10 +132,12 @@ RELOC_PTRS_END
 
 const gx_device_display gs_display_device =
 {
-    std_device_std_body_type(gx_device_display, &display_procs, "display",
-                        &st_device_display,
-                        INITIAL_WIDTH, INITIAL_HEIGHT,
-                        INITIAL_RESOLUTION, INITIAL_RESOLUTION),
+    std_device_std_body_type(gx_device_display,
+                             display_initialize,
+                             "display",
+                             &st_device_display,
+                             INITIAL_WIDTH, INITIAL_HEIGHT,
+                             INITIAL_RESOLUTION, INITIAL_RESOLUTION),
     {0},			/* std_procs */
     GX_CLIST_MUTATABLE_DEVICE_DEFAULTS,
     NULL,			/* callback */
@@ -1213,9 +1147,25 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 
 /* Clean up the instance after making a copy. */
 int
-display_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+display_initialize(gx_device *dev)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
+
+    set_dev_proc(dev, open_device, display_open);
+    set_dev_proc(dev, get_initial_matrix, display_get_initial_matrix);
+    set_dev_proc(dev, sync_output, display_sync_output);
+    set_dev_proc(dev, output_page, display_output_page);
+    set_dev_proc(dev, close_device, display_close);
+    set_dev_proc(dev, map_rgb_color, gx_default_w_b_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_w_b_map_color_rgb);
+    set_dev_proc(dev, get_params, display_get_params);
+    set_dev_proc(dev, put_params, display_put_params);
+    set_dev_proc(dev, map_cmyk_color, gx_default_cmyk_map_cmyk_color);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, fill_rectangle_hl_color, display_fill_rectangle_hl_color);
+    set_dev_proc(dev, update_spot_equivalent_colors, display_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, display_ret_devn_params);
+    set_dev_proc(dev, dev_spec_op, display_spec_op);
 
     /* Mark the new instance as closed. */
     ddev->is_open = false;
@@ -1493,7 +1443,7 @@ display_free_bitmap(gx_device_display * ddev)
         gx_device_clist_common * const pcldev = &pclist_dev->common;
         gx_device_clist_reader * const pcrdev = &pclist_dev->reader;
         /* Close cmd list device & point to the storage */
-        (*gs_clist_device_procs.close_device)( (gx_device *)pcldev );
+        clist_close( (gx_device *)pcldev );
         ddev->buf = NULL;
         ddev->buffer_space = 0;
 
@@ -1603,6 +1553,9 @@ display_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         dev_t_proc_dev_spec_op((*orig_dso), gx_device) = dev_proc(mdev, dev_spec_op);
         /* The following is a special hack for setting up printer devices. */
         assign_dev_procs(mdev, mdproto);
+        mdev->initialize = mdproto->initialize;
+        /* This can never fail */
+        (void)mdev->initialize((gx_device *)mdev);
         /* Do not override the dev_spec_op! */
         dev_proc(mdev, dev_spec_op) = orig_dso;
         check_device_separable((gx_device *)mdev);
@@ -1750,8 +1703,12 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
                                       &display_buf_procs,
                                       ddev->orig_procs.dev_spec_op,
                                       MIN_BUFFER_SPACE);
-        if (ccode >= 0)
-            ddev->procs = gs_clist_device_procs;
+        if (ccode >= 0) {
+            ddev->initialize = clist_initialize;
+            /* Hacky - we know this can't fail. */
+            (void)ddev->initialize((gx_device *)ddev);
+            gx_device_fill_in_procs((gx_device *)ddev);
+        }
     } else {
         /* Set up as PageMode. */
         gx_device *bdev = (gx_device *)ddev;
@@ -1781,8 +1738,6 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     COPY_PROC(get_params);
     COPY_PROC(put_params);
     COPY_PROC(map_cmyk_color);
-    COPY_PROC(get_xfont_procs);
-    COPY_PROC(get_xfont_device);
     COPY_PROC(map_rgb_alpha_color);
     set_dev_proc(ddev, get_page_device, gx_page_device_get_page_device);
     COPY_PROC(get_clipping_box);

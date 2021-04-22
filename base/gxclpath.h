@@ -175,7 +175,7 @@ typedef enum {
  */
 typedef enum {
     cmd_opv_ext_put_params = 0x00,           /* serialized parameter list */
-    cmd_opv_ext_create_compositor = 0x01,    /* compositor id,
+    cmd_opv_ext_composite = 0x01,    /* compositor id,
                                               * serialized compositor */
     cmd_opv_ext_put_halftone = 0x02,         /* length of entire halftone */
     cmd_opv_ext_put_ht_seg = 0x03,           /* segment length,

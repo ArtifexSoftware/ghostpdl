@@ -32,9 +32,25 @@ static dev_proc_map_rgb_color(tekink_map_rgb_color);
 static dev_proc_map_color_rgb(tekink_map_color_rgb);
 static dev_proc_print_page(tekink_print_page);
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static gx_device_procs tekink_procs =
-    prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-        tekink_map_rgb_color, tekink_map_color_rgb);
+static int
+tekink_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, tekink_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, tekink_map_color_rgb);
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 /*
    Device descriptor for the Tek 4696.
@@ -43,7 +59,7 @@ static gx_device_procs tekink_procs =
    aspect ratio is close to sqrt(2).
 */
 const gx_device_printer far_data gs_tek4696_device =
-    prn_device(tekink_procs,"tek4696",
+    prn_device(tekink_initialize,"tek4696",
     85,120,	/* Page size in 10th of inches */
     120,120,	/* Resolution in DPI */
     0.0,0.0,0.0,0.0,	/* Margins */

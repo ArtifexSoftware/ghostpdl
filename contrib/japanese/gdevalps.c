@@ -57,11 +57,21 @@ static dev_proc_print_page(md50m_print_page);
 static dev_proc_print_page(md50e_print_page);
 static dev_proc_print_page(md1xm_print_page);
 
-static gx_device_procs prn_md_procs =
-  prn_procs(md_open, gdev_prn_output_page, gdev_prn_close);
+static int
+md_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, md_open);
+
+    return 0;
+}
 
 gx_device_printer far_data gs_md50Mono_device =
-  prn_device(prn_md_procs, "md50Mono",
+  prn_device(md_initialize, "md50Mono",
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
         600,				/* x_dpi */
@@ -70,7 +80,7 @@ gx_device_printer far_data gs_md50Mono_device =
         1, md50m_print_page);
 
 gx_device_printer far_data gs_md50Eco_device =
-  prn_device(prn_md_procs, "md50Eco",
+  prn_device(md_initialize, "md50Eco",
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
         600,				/* x_dpi */
@@ -79,7 +89,7 @@ gx_device_printer far_data gs_md50Eco_device =
         1, md50e_print_page);
 
 gx_device_printer far_data gs_md1xMono_device =
-  prn_device(prn_md_procs, "md1xMono",
+  prn_device(md_initialize, "md1xMono",
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
         600,				/* x_dpi */

@@ -256,8 +256,8 @@ static int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
 static int read_put_params(command_buf_t *pcb, gs_gstate *pgs,
                             gx_device_clist_reader *cdev,
                             gs_memory_t *mem);
-static int read_create_compositor(command_buf_t *pcb, gs_memory_t *mem, gs_composite_t **ppcomp);
-static int apply_create_compositor(gx_device_clist_reader *cdev, gs_gstate *pgs,
+static int read_composite(command_buf_t *pcb, gs_memory_t *mem, gs_composite_t **ppcomp);
+static int apply_composite(gx_device_clist_reader *cdev, gs_gstate *pgs,
                                    gs_memory_t *mem, gs_composite_t *pcomp,
                                    int x0, int y0, gx_device **ptarget);
 static int read_alloc_ht_buff(ht_buff_t *, uint, gs_memory_t *);
@@ -382,7 +382,7 @@ execute_compositor_queue(gx_device_clist_reader *cdev, gx_device **target, gx_de
         if (code < 0)
             return code;
         pcomp->idle |= idle;
-        code = apply_create_compositor(cdev, pgs, mem, pcomp, x0, y0, target); /* Releases the compositor. */
+        code = apply_composite(cdev, pgs, mem, pcomp, x0, y0, target); /* Releases the compositor. */
         if (code < 0)
             return code;
         *tdev = *target;
@@ -1615,8 +1615,8 @@ idata:                  data_size = 0;
                                 if (playback_action == playback_action_setup)
                                     goto out;
                                 break;
-                            case cmd_opv_ext_create_compositor:
-                                if_debug0m('L', mem, " ext_create_compositor\n");
+                            case cmd_opv_ext_composite:
+                                if_debug0m('L', mem, " ext_composite\n");
                                 cbuf.ptr = cbp;
                                 /*
                                  * The screen phase may have been changed during
@@ -1637,12 +1637,12 @@ idata:                  data_size = 0;
                                         if (code < 0)
                                             goto out;
                                     }
-                                    if (cbp[0] == cmd_opv_extend && cbp[1] == cmd_opv_ext_create_compositor) {
+                                    if (cbp[0] == cmd_opv_extend && cbp[1] == cmd_opv_ext_composite) {
                                         gs_composite_t *pcomp, *pcomp_opening;
                                         gs_compositor_closing_state closing_state;
 
                                         cbuf.ptr = cbp += 2;
-                                        code = read_create_compositor(&cbuf, mem, &pcomp);
+                                        code = read_composite(&cbuf, mem, &pcomp);
                                         if (code < 0)
                                             goto out;
                                         cbp = cbuf.ptr;
@@ -1651,7 +1651,7 @@ idata:                  data_size = 0;
                                         if (gs_is_pdf14trans_compositor(pcomp) &&
                                             playback_action == playback_action_render_no_pdf14) {
                                             /* free the compositor object */
-                                            gs_free_object(mem, pcomp, "read_create_compositor");
+                                            gs_free_object(mem, pcomp, "read_composite");
                                             pcomp = NULL;
                                             continue;
                                         }
@@ -2291,7 +2291,7 @@ idata:                  data_size = 0;
                 }
             case cmd_op_tile_rect_short >> 4:
             case cmd_op_tile_rect_tiny >> 4:
-                /* Currently we don't use lop with tile_rectangle. */
+                /* Currently we don't use lop with strip_tile_rectangle. */
                 code = (*dev_proc(tdev, strip_tile_rectangle))
                     (tdev, &state_tile,
                      state.rect.x - x0, state.rect.y - y0,
@@ -3030,7 +3030,7 @@ out:
 }
 
 /*
- * Read a "create_compositor" command, and execute the command.
+ * Read a "composite" command, and execute the command.
  *
  * This code assumes that a the largest create compositor command,
  * including the compositor name size, is smaller than the data buffer
@@ -3038,7 +3038,7 @@ out:
  * and the de-serializer interface, as no length field is provided.
  *
  * At the time of this writing, no compositor violates this assumption.
- * The largest create_compositor is currently 1275 bytes, while the command
+ * The largest composite is currently 1275 bytes, while the command
  * data buffer is 4096 bytes.
  *
  * In the event that this assumption is violated, a change in the encoding
@@ -3049,7 +3049,7 @@ out:
 extern_gs_find_compositor();
 
 static int
-read_create_compositor(
+read_composite(
     command_buf_t *pcb,  gs_memory_t *mem, gs_composite_t **ppcomp)
 {
     const byte *                cbp = pcb->ptr;
@@ -3081,7 +3081,7 @@ read_create_compositor(
     return code;
 }
 
-static int apply_create_compositor(gx_device_clist_reader *cdev, gs_gstate *pgs,
+static int apply_composite(gx_device_clist_reader *cdev, gs_gstate *pgs,
                                    gs_memory_t *mem, gs_composite_t *pcomp,
                                    int x0, int y0, gx_device **ptarget)
 {
@@ -3095,7 +3095,7 @@ static int apply_create_compositor(gx_device_clist_reader *cdev, gs_gstate *pgs,
      * Apply the compositor to the target device; note that this may
      * change the target device.
      */
-    code = dev_proc(tdev, create_compositor)(tdev, &tdev, pcomp, pgs, mem, (gx_device*) cdev);
+    code = dev_proc(tdev, composite)(tdev, &tdev, pcomp, pgs, mem, (gx_device*) cdev);
     if (code == 1) {
         /* A new compositor was created that wrapped tdev. This should
          * be our new target. */
@@ -3112,7 +3112,7 @@ static int apply_create_compositor(gx_device_clist_reader *cdev, gs_gstate *pgs,
         return code;
 
     /* free the compositor object */
-    gs_free_object(mem, pcomp, "read_create_compositor");
+    gs_free_object(mem, pcomp, "read_composite");
 
     return code;
 }

@@ -79,14 +79,23 @@ static dev_proc_print_page_copies(lj3100sw_print_page_copies);
 static dev_proc_close_device(lj3100sw_close);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static gx_device_procs prn_lj3100sw_procs =
-    prn_params_procs(gdev_prn_open, gdev_prn_bg_output_page, lj3100sw_close,
-             gdev_prn_get_params, gdev_prn_put_params);
+static int
+lj3100sw_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, close_device, lj3100sw_close);
+
+    return 0;
+}
 
 /* workaround to emulate the missing prn_device_margins_copies macro */
 #define gx_default_print_page_copies lj3100sw_print_page_copies
 gx_device_printer far_data gs_lj3100sw_device =
-    prn_device_margins/*_copies*/(prn_lj3100sw_procs, "lj3100sw",
+    prn_device_margins/*_copies*/(lj3100sw_initialize, "lj3100sw",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
              XCORRECTION, YCORRECTION,

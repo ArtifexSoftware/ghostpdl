@@ -28,52 +28,36 @@ const int gs_hit_detected = gs_error_hit_detected;
  * It returns e_hit whenever it is asked to actually paint any pixels.
  */
 static dev_proc_fill_rectangle(hit_fill_rectangle);
+static int
+hit_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, fill_rectangle, hit_fill_rectangle);
+    set_dev_proc(dev, composite, gx_non_imaging_composite);
+
+    set_dev_proc(dev, map_rgb_color, gx_default_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
+    set_dev_proc(dev, map_cmyk_color, gx_default_map_cmyk_color);
+    set_dev_proc(dev, map_rgb_alpha_color, gx_default_map_rgb_alpha_color);
+    set_dev_proc(dev, get_page_device, gx_default_get_page_device);
+    set_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
+    set_dev_proc(dev, get_band, gx_default_get_band);
+    set_dev_proc(dev, fill_path, gx_default_fill_path);
+    set_dev_proc(dev, fill_trapezoid, gx_default_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
+    set_dev_proc(dev, begin_image, gx_default_begin_image);
+    set_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
+    set_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
+    set_dev_proc(dev, get_clipping_box, gx_get_largest_clipping_box);
+    set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
+    set_dev_proc(dev, map_color_rgb_alpha, gx_default_map_color_rgb_alpha);
+
+    return 0;
+}
 const gx_device gs_hit_device = {
- std_device_std_body(gx_device, 0, "hit detector",
-                     0, 0, 1, 1),
- {NULL,				/* open_device */
-  NULL,				/* get_initial_matrix */
-  NULL,				/* sync_output */
-  NULL,				/* output_page */
-  NULL,				/* close_device */
-  gx_default_map_rgb_color,
-  gx_default_map_color_rgb,
-  hit_fill_rectangle,
-  NULL,				/* tile_rectangle */
-  NULL,				/* copy_mono */
-  NULL,				/* copy_color */
-  gx_default_draw_line,
-  NULL,				/* get_bits */
-  NULL,				/* get_params */
-  NULL,				/* put_params */
-  gx_default_map_cmyk_color,
-  NULL,				/* get_xfont_procs */
-  NULL,				/* get_xfont_device */
-  gx_default_map_rgb_alpha_color,
-  gx_default_get_page_device,
-  gx_default_get_alpha_bits,
-  NULL,				/* copy_alpha */
-  gx_default_get_band,
-  NULL,				/* copy_rop */
-  gx_default_fill_path,
-  NULL,				/* stroke_path */
-  NULL,				/* fill_mask */
-  gx_default_fill_trapezoid,
-  gx_default_fill_parallelogram,
-  gx_default_fill_triangle,
-  gx_default_draw_thin_line,
-  gx_default_begin_image,
-  gx_default_image_data,
-  gx_default_end_image,
-  gx_default_strip_tile_rectangle,
-  gx_default_strip_copy_rop,
-  gx_get_largest_clipping_box,
-  gx_default_begin_typed_image,
-  NULL,				/* get_bits_rectangle */
-  gx_default_map_color_rgb_alpha,
-  gx_non_imaging_create_compositor,
-  NULL				/* get_hardware_params */
- }
+ std_device_std_body(gx_device, hit_initialize, "hit detector",
+                     0, 0, 1, 1)
 };
 
 /* Test for a hit when filling a rectangle. */

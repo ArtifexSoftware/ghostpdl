@@ -57,74 +57,27 @@ static dev_proc_put_image(bit_put_image);
 static dev_proc_dev_spec_op(bit_dev_spec_op);
 dev_proc_get_color_comp_index(gx_default_DevRGB_get_color_comp_index);
 
-#define bit_procs(encode_color)\
-{	gdev_prn_open,\
-        gx_default_get_initial_matrix,\
-        NULL,	/* sync_output */\
-        /* Since the print_page doesn't alter the device, this device can print in the background */\
-        gdev_prn_bg_output_page,\
-        gdev_prn_close,\
-        encode_color,	/* map_rgb_color */\
-        bit_map_color_rgb,	/* map_color_rgb */\
-        NULL,	/* fill_rectangle */\
-        NULL,	/* tile_rectangle */\
-        NULL,	/* copy_mono */\
-        NULL,	/* copy_color */\
-        NULL,	/* draw_line */\
-        NULL,	/* get_bits */\
-        bit_get_params,\
-        bit_put_params,\
-        encode_color,	/* map_cmyk_color */\
-        NULL,	/* get_xfont_procs */\
-        NULL,	/* get_xfont_device */\
-        NULL,	/* map_rgb_alpha_color */\
-        gx_page_device_get_page_device,	/* get_page_device */\
-        NULL,	/* get_alpha_bits */\
-        NULL,	/* copy_alpha */\
-        NULL,	/* get_band */\
-        NULL,	/* copy_rop */\
-        NULL,	/* fill_path */\
-        NULL,	/* stroke_path */\
-        NULL,	/* fill_mask */\
-        NULL,	/* fill_trapezoid */\
-        NULL,	/* fill_parallelogram */\
-        NULL,	/* fill_triangle */\
-        NULL,	/* draw_thin_line */\
-        NULL,	/* begin_image */\
-        NULL,	/* image_data */\
-        NULL,	/* end_image */\
-        NULL,	/* strip_tile_rectangle */\
-        NULL,	/* strip_copy_rop */\
-        NULL,	/* get_clipping_box */\
-        NULL,	/* begin_typed_image */\
-        NULL,	/* get_bits_rectangle */\
-        NULL,	/* map_color_rgb_alpha */\
-        NULL,	/* create_compositor */\
-        NULL,	/* get_hardware_params */\
-        NULL,	/* text_begin */\
-        NULL,	/* finish_copydevice */\
-        NULL,	/* begin_transparency_group */\
-        NULL,	/* end_transparency_group */\
-        NULL,	/* begin_transparency_mask */\
-        NULL,	/* end_transparency_mask */\
-        NULL,	/* discard_transparency_layer */\
-        NULL,	/* get_color_mapping_procs */\
-        NULL,	/* get_color_comp_index */\
-        encode_color,		/* encode_color */\
-        bit_map_color_rgb,	/* decode_color */\
-        NULL,   /* pattern_manage */\
-        NULL,   /* fill_rectangle_hl_color */\
-        NULL,   /* include_color_space */\
-        NULL,   /* fill_linear_color_scanline */\
-        NULL,   /* fill_linear_color_trapezoid */\
-        NULL,   /* fill_linear_color_triangle */\
-        NULL,   /* update_spot_equivalent_colors */\
-        NULL,   /* ret_devn_params */\
-        NULL,   /* fillpage */\
-        NULL,   /* push_transparency_state */\
-        NULL,   /* pop_transparency_state */\
-        NULL,   /* put_image */\
-        bit_dev_spec_op\
+static int
+bit_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_color_rgb, bit_map_color_rgb);
+    set_dev_proc(dev, get_params, bit_get_params);
+    set_dev_proc(dev, put_params, bit_put_params);
+    set_dev_proc(dev, decode_color, bit_map_color_rgb);
+    set_dev_proc(dev, dev_spec_op, bit_dev_spec_op);
+
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
 }
 
 /*
@@ -144,110 +97,103 @@ struct gx_device_bit_s {
 };
 typedef struct gx_device_bit_s gx_device_bit;
 
-static const gx_device_procs bitmono_procs =
-bit_procs(bit_mono_map_color);
+static int
+bitmono_initialize(gx_device *dev)
+{
+    int code = bit_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, bit_mono_map_color);
+    set_dev_proc(dev, map_cmyk_color, bit_mono_map_color);
+    set_dev_proc(dev, encode_color, bit_mono_map_color);
+
+    return 0;
+}
+
 const gx_device_bit gs_bit_device =
-{prn_device_body(gx_device_bit, bitmono_procs, "bit",
+{prn_device_body(gx_device_bit, bitmono_initialize, "bit",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,    /* margins */
                  1, 1, 1, 0, 2, 1, bit_print_page)
 };
 
-static const gx_device_procs bitrgb_procs =
-bit_procs(bitrgb_rgb_map_rgb_color);
+static int
+bitrgb_initialize(gx_device *dev)
+{
+    int code = bit_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, bitrgb_rgb_map_rgb_color);
+    set_dev_proc(dev, map_cmyk_color, bitrgb_rgb_map_rgb_color);
+    set_dev_proc(dev, encode_color, bitrgb_rgb_map_rgb_color);
+
+    return 0;
+}
+
 const gx_device_bit gs_bitrgb_device =
-{prn_device_body(gx_device_bit, bitrgb_procs, "bitrgb",
+{prn_device_body(gx_device_bit, bitrgb_initialize, "bitrgb",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
                  3, 4, 1, 1, 2, 2, bit_print_page)
 };
 
-static const gx_device_procs bitcmyk_procs =
-bit_procs(bit_map_cmyk_color);
+static int
+bitcmyk_initialize(gx_device *dev)
+{
+    int code = bit_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, bit_map_cmyk_color);
+    set_dev_proc(dev, map_cmyk_color, bit_map_cmyk_color);
+    set_dev_proc(dev, encode_color, bit_map_cmyk_color);
+
+    return 0;
+}
+
 const gx_device_bit gs_bitcmyk_device =
-{prn_device_body(gx_device_bit, bitcmyk_procs, "bitcmyk",
+{prn_device_body(gx_device_bit, bitcmyk_initialize, "bitcmyk",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
                  4, 4, 1, 1, 2, 2, bit_print_page)
 };
 
-static const gx_device_procs bitrgbtags_procs =
-    {
-        bittag_open,                        /* open_device */
-        gx_default_get_initial_matrix,        /* initial_matrix */
-        ((void *)0),                        /* sync_output */
-        gdev_prn_output_page,                 /* output page */
-        gdev_prn_close,                       /* close_device */
-        bittag_rgb_map_rgb_color,             /* map rgb color */
-        bittag_map_color_rgb,                 /* map color rgb */
-        ((void *)0),                        /* fill_rectangle */
-        ((void *)0),                        /* tile rectangle */
-        ((void *)0),                        /* copy mono */
-        ((void *)0),                        /* copy color */
-        ((void *)0),                        /* obsolete draw line */
-        ((void *)0),                        /* get_bits */
-        gdev_prn_get_params,                  /* get params */
-        bittag_put_params,                    /* put params */
-        bittag_rgb_map_rgb_color,             /* map_cmyk_color */
-        ((void *)0),                        /* get_xfonts */
-        ((void *)0),                        /* get_xfont_device */
-        ((void *)0),                        /* map_rgb_alpha_color */
-        gx_page_device_get_page_device,       /* get_page_device */
-        ((void *)0),                        /* get_alpha_bits */
-        ((void *)0),                        /* copy_alpha */
-        ((void *)0),                        /* get_band */
-        ((void *)0),                        /* copy_rop */
-        ((void *)0),                       /* fill_path */
-        ((void *)0),                       /* stroke_path */
-        ((void *)0),                       /* fill_mask */
-        ((void *)0),                        /* fill_trapezoid */
-        ((void *)0),                        /* fill_parallelogram */
-        ((void *)0),                        /* fill_triangle */
-        ((void *)0),                        /* draw_thin_line */
-        ((void *)0),                        /* begin_image */
-        ((void *)0),                        /* image_data */
-        ((void *)0),                        /* end_image */
-        ((void *)0),                        /* strip_tile_rectangle */
-        ((void *)0),                        /* strip_copy_rop */
-        ((void *)0),                        /* get_clipping_box */
-        ((void *)0),                        /* begin_typed_image */
-        ((void *)0),                        /* get_bits_rectangle */
-        ((void *)0),                        /* map_color_rgb_alpha */
-        ((void *)0),                       /* create_compositor */
-        ((void *)0),                       /* get_hardware_params */
-        ((void *)0),                       /* text_begin */
-        ((void *)0),                       /* finish_copydevice */
-        ((void *)0),                       /* begin_transparency_group */
-        ((void *)0),                       /* end_transparency_group */
-        ((void *)0),                       /* begin_transparency_mask */
-        ((void *)0),                       /* end_transparency_mask */
-        ((void *)0),                       /* discard_transparency_layer */
-        bittag_get_color_mapping_procs,      /* get_color_mapping_procs */
-        gx_default_DevRGB_get_color_comp_index, /* get_color_comp_index */
-        bittag_rgb_map_rgb_color,           /* encode_color */
-        bittag_map_color_rgb,               /* decode_color */
-        ((void *)0),                        /* pattern_manage */
-        ((void *)0),                        /* fill_rectangle_hl_color */
-        ((void *)0),                        /* include_color_space */
-        ((void *)0),                        /* fill_linear_color_scanline */
-        ((void *)0),                        /* fill_linear_color_trapezoid */
-        ((void *)0),                        /* fill_linear_color_triangle */
-        ((void *)0),                        /* update_spot_equivalent_colors */
-        ((void *)0),                        /* ret_devn_params */
-        bittag_fillpage,                    /* fillpage */
-        ((void *)0),                        /* push_transparency_state */
-        ((void *)0),                        /* pop_transparency_state */
-        bit_put_image,                      /* put_image */
-        bit_dev_spec_op                     /* dev_spec_op */
-    };
+static int
+bitrgbtags_initialize(gx_device *dev)
+{
+    int code = bit_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, bittag_open);
+    set_dev_proc(dev, map_rgb_color, bittag_rgb_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, bittag_map_color_rgb);
+    set_dev_proc(dev, get_params, gdev_prn_get_params);
+    set_dev_proc(dev, put_params, bittag_put_params);
+    set_dev_proc(dev, map_cmyk_color, bittag_rgb_map_rgb_color);
+    set_dev_proc(dev, get_color_mapping_procs, bittag_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, gx_default_DevRGB_get_color_comp_index);
+    set_dev_proc(dev, encode_color, bittag_rgb_map_rgb_color);
+    set_dev_proc(dev, decode_color, bittag_map_color_rgb);
+    set_dev_proc(dev, fillpage, bittag_fillpage);
+    set_dev_proc(dev, put_image, bit_put_image);
+
+    return 0;
+}
 
 const gx_device_bit gs_bitrgbtags_device =
     {
         sizeof(gx_device_bit),
-        &bitrgbtags_procs,
+        bitrgbtags_initialize,
         "bitrgbtags",
         0,                              /* memory */
         &st_device_printer,

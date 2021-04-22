@@ -296,57 +296,40 @@ gs_public_st_suffix_add0_final(
     NULL /* *docInfo */
 
 /* device procs */
-#define opvp_procs \
-{\
-    opvp_open,\
-    opvp_get_initial_matrix,\
-    NULL, /* sync_output */\
-    opvp_output_page,\
-    opvp_close,\
-    opvp_map_rgb_color,\
-    opvp_map_color_rgb,\
-    opvp_fill_rectangle, /*gdev_vector_fill_rectangle,*/\
-    NULL, /* tile_rectangle OBSOLETE */\
-    opvp_copy_mono,\
-    opvp_copy_color,\
-    NULL, /* draw_line OBSOLETE */\
-    NULL, /* get_bits */\
-    opvp_get_params,\
-    opvp_put_params,\
-    NULL, /* map_cmyk_color */\
-    NULL, /* get_xfont_procs */\
-    NULL, /* get_xfont_device */\
-    NULL, /* map_rgb_alpha_color */\
-    gx_page_device_get_page_device,\
-    NULL, /* get_alpha_bits OBSOLETE */\
-    NULL, /* copy_alpha */\
-    NULL, /* get_band */\
-    NULL, /* copy_rop */\
-    opvp_fill_path,\
-    opvp_stroke_path,\
-    opvp_fill_mask,\
-    gdev_vector_fill_trapezoid,\
-    gdev_vector_fill_parallelogram,\
-    gdev_vector_fill_triangle,\
-    NULL, /* draw_thin_line */\
-    opvp_begin_image,\
-    NULL, /* image_data */\
-    NULL, /* end_image */\
-    NULL, /* strip_tile_rectangle */\
-    NULL, /* strip_copy_rop */\
-    NULL, /* get_clipping_box */\
-    NULL, /* begin_typed_image */\
-    NULL, /* get_bits_rectangle */\
-    NULL, /* map_color_rgb_alpha */\
-    NULL, /* create_compositor */\
-    NULL, /* get_hardware_params */\
-    NULL, /* text_begin */\
-    NULL, /* finish_copydevice */\
-    NULL, /* begin_transparency_group */\
-    NULL, /* end_transparency_group */\
-    NULL, /* begin_transparency_mask */\
-    NULL, /* end_transparency_mask */\
-    NULL  /* discard_transparency_layer */\
+static int
+opvp_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, opvp_open);
+    set_dev_proc(dev, get_initial_matrix, opvp_get_initial_matrix);
+    set_dev_proc(dev, output_page, opvp_output_page);
+    set_dev_proc(dev, close_device, opvp_close);
+    set_dev_proc(dev, map_rgb_color, opvp_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, opvp_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, opvp_fill_rectangle);
+    set_dev_proc(dev, copy_mono, opvp_copy_mono);
+    set_dev_proc(dev, copy_color, opvp_copy_color);
+    set_dev_proc(dev, get_params, opvp_get_params);
+    set_dev_proc(dev, put_params, opvp_put_params);
+    set_dev_proc(dev, fill_path, opvp_fill_path);
+    set_dev_proc(dev, stroke_path, opvp_stroke_path);
+    set_dev_proc(dev, fill_mask, opvp_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, gdev_vector_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
+    set_dev_proc(dev, begin_image, opvp_begin_image);
+
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
 }
 
 /* vector procs */
@@ -381,7 +364,7 @@ const   gx_device_opvp          gs_opvp_device =
 {
     std_device_dci_type_body(
         gx_device_opvp,
-        0,
+        opvp_initialize,
         "opvp",
         &st_device_opvp,
         DEFAULT_WIDTH_10THS_A4  * X_DPI / 10,
@@ -394,27 +377,40 @@ const   gx_device_opvp          gs_opvp_device =
         255,
         256,
         256
-    ),
-    opvp_procs
+    )
 };
 
 /* for inkjet */
-static  gx_device_procs prn_oprp_procs =
-    prn_color_params_procs(
-        oprp_open,
-        opvp_output_page,
-        opvp_close,
-        opvp_map_rgb_color,
-        opvp_map_color_rgb,
-        oprp_get_params,
-        oprp_put_params
-    );
+static int
+oprp_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, oprp_open);
+    set_dev_proc(dev, output_page, opvp_output_page);
+    set_dev_proc(dev, close_device, opvp_close);
+    set_dev_proc(dev, map_rgb_color, opvp_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, opvp_map_color_rgb);
+    set_dev_proc(dev, get_params, oprp_get_params);
+    set_dev_proc(dev, put_params, oprp_put_params);
+
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 const gx_device_oprp gs_oprp_device =
 {
     prn_device_std_margins_body(
         gx_device_oprp,
-        prn_oprp_procs,
+        oprp_initialize,
         "oprp",
         DEFAULT_WIDTH_10THS_A4,
         DEFAULT_HEIGHT_10THS_A4,

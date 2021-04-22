@@ -49,7 +49,6 @@ extern void epo_disable(int flag);
 /* Device procedures, we need quite a lot of them */
 static dev_proc_output_page(epo_output_page);
 static dev_proc_fill_rectangle(epo_fill_rectangle);
-static dev_proc_draw_line(epo_draw_line);
 static dev_proc_fill_path(epo_fill_path);
 static dev_proc_fill_mask(epo_fill_mask);
 static dev_proc_fill_trapezoid(epo_fill_trapezoid);
@@ -62,18 +61,16 @@ static dev_proc_fill_linear_color_trapezoid(epo_fill_linear_color_trapezoid);
 static dev_proc_fill_linear_color_triangle(epo_fill_linear_color_triangle);
 static dev_proc_put_image(epo_put_image);
 static dev_proc_fillpage(epo_fillpage);
-static dev_proc_create_compositor(epo_create_compositor);
+static dev_proc_composite(epo_composite);
 static dev_proc_text_begin(epo_text_begin);
-static dev_proc_finish_copydevice(epo_finish_copydevice);
+static dev_proc_initialize(epo_initialize);
 static dev_proc_begin_image(epo_begin_image);
 static dev_proc_begin_typed_image(epo_begin_typed_image);
 static dev_proc_stroke_path(epo_stroke_path);
-static dev_proc_tile_rectangle(epo_tile_rectangle);
 static dev_proc_copy_mono(epo_copy_mono);
 static dev_proc_copy_color(epo_copy_color);
 static dev_proc_get_bits(epo_get_bits);
 static dev_proc_copy_alpha(epo_copy_alpha);
-static dev_proc_copy_rop(epo_copy_rop);
 static dev_proc_strip_tile_rectangle(epo_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(epo_strip_copy_rop);
 static dev_proc_strip_copy_rop2(epo_strip_copy_rop2);
@@ -108,86 +105,11 @@ public_st_epo_device();
 const
 gx_device_epo gs_epo_device =
 {
-    std_device_dci_type_body(gx_device_epo, 0, EPO_DEVICENAME, &st_epo_device,
+    std_device_dci_type_body(gx_device_epo, epo_initialize,
+                        EPO_DEVICENAME, &st_epo_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
-                        1, 8, 255, 0, 256, 1),
-    {default_subclass_open_device,
-     default_subclass_get_initial_matrix,
-     default_subclass_sync_output,			/* sync_output */
-     epo_output_page,
-     default_subclass_close_device,
-     default_subclass_map_rgb_color,
-     default_subclass_map_color_rgb,
-     epo_fill_rectangle,
-     epo_tile_rectangle,			/* tile_rectangle */
-     epo_copy_mono,
-     epo_copy_color,
-     epo_draw_line,			/* draw_line */
-     epo_get_bits,			/* get_bits */
-     default_subclass_get_params,
-     default_subclass_put_params,
-     default_subclass_map_cmyk_color,
-     default_subclass_get_xfont_procs,			/* get_xfont_procs */
-     default_subclass_get_xfont_device,			/* get_xfont_device */
-     default_subclass_map_rgb_alpha_color,
-     default_subclass_get_page_device,
-     default_subclass_get_alpha_bits,			/* get_alpha_bits */
-     epo_copy_alpha,
-     default_subclass_get_band,			/* get_band */
-     epo_copy_rop,			/* copy_rop */
-     epo_fill_path,
-     epo_stroke_path,
-     epo_fill_mask,
-     epo_fill_trapezoid,
-     epo_fill_parallelogram,
-     epo_fill_triangle,
-     epo_draw_thin_line,
-     epo_begin_image,
-     default_subclass_image_data,			/* image_data */
-     default_subclass_end_image,			/* end_image */
-     epo_strip_tile_rectangle,
-     epo_strip_copy_rop,
-     default_subclass_get_clipping_box,			/* get_clipping_box */
-     epo_begin_typed_image,
-     default_subclass_get_bits_rectangle,			/* get_bits_rectangle */
-     default_subclass_map_color_rgb_alpha,
-     epo_create_compositor,
-     default_subclass_get_hardware_params,			/* get_hardware_params */
-     epo_text_begin,
-     epo_finish_copydevice,                                     /* finish_copydevice */
-     default_subclass_begin_transparency_group,			/* begin_transparency_group */
-     default_subclass_end_transparency_group,			/* end_transparency_group */
-     default_subclass_begin_transparency_mask,			/* begin_transparency_mask */
-     default_subclass_end_transparency_mask,			/* end_transparency_mask */
-     default_subclass_discard_transparency_layer,			/* discard_transparency_layer */
-     default_subclass_get_color_mapping_procs,			/* get_color_mapping_procs */
-     default_subclass_get_color_comp_index,			/* get_color_comp_index */
-     default_subclass_encode_color,			/* encode_color */
-     default_subclass_decode_color,			/* decode_color */
-     default_subclass_pattern_manage,			/* pattern_manage */
-     epo_fill_rectangle_hl_color,			/* fill_rectangle_hl_color */
-     default_subclass_include_color_space,			/* include_color_space */
-     epo_fill_linear_color_scanline,			/* fill_linear_color_scanline */
-     epo_fill_linear_color_trapezoid,			/* fill_linear_color_trapezoid */
-     epo_fill_linear_color_triangle,			/* fill_linear_color_triangle */
-     default_subclass_update_spot_equivalent_colors,			/* update_spot_equivalent_colors */
-     default_subclass_ret_devn_params,			/* ret_devn_params */
-     epo_fillpage,		/* fillpage */
-     default_subclass_push_transparency_state,                      /* push_transparency_state */
-     default_subclass_pop_transparency_state,                      /* pop_transparency_state */
-     epo_put_image,                      /* put_image */
-     default_subclass_dev_spec_op,                      /* dev_spec_op */
-     epo_copy_planes,                      /* copy_planes */
-     default_subclass_get_profile,                      /* get_profile */
-     default_subclass_set_graphics_type_tag,        /* set_graphics_type_tag */
-     epo_strip_copy_rop2,
-     default_subclass_strip_tile_rect_devn,
-     epo_copy_alpha_hl_color,
-     epo_process_page,
-     epo_transform_pixel_region,
-     epo_fill_stroke_path,
-    }
+                        1, 8, 255, 0, 256, 1)
 };
 
 #undef MAX_COORD
@@ -361,15 +283,6 @@ int epo_fill_rectangle(gx_device *dev, int x, int y, int width, int height, gx_c
     return dev_proc(dev, fill_rectangle)(dev, x, y, width, height, color);
 }
 
-int epo_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index color)
-{
-    int code = epo_handle_erase_page(dev);
-
-    if (code != 0)
-        return code;
-    return dev_proc(dev, obsolete_draw_line)(dev, x0, y0, x1, y1, color);
-}
-
 int epo_fill_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_fill_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
@@ -491,14 +404,14 @@ int epo_put_image(gx_device *dev, gx_device *mdev, const byte **buffers, int num
     return dev_proc(dev, put_image)(dev, mdev, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
 }
 
-int epo_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+int epo_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
     int code = epo_handle_erase_page(dev);
 
     if (code != 0)
         return code;
-    return dev_proc(dev, create_compositor)(dev, pcdev, pcte, pgs, memory, cdev);
+    return dev_proc(dev, composite)(dev, pcdev, pcte, pgs, memory, cdev);
 }
 
 int epo_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
@@ -512,8 +425,45 @@ int epo_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
     return dev_proc(dev, text_begin)(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
 }
 
-int epo_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+int epo_initialize(gx_device *dev)
 {
+    int code = default_subclass_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, output_page, epo_output_page);
+    set_dev_proc(dev, fill_rectangle, epo_fill_rectangle);
+    set_dev_proc(dev, copy_mono, epo_copy_mono);
+    set_dev_proc(dev, copy_color, epo_copy_color);
+    set_dev_proc(dev, get_bits, epo_get_bits);
+    set_dev_proc(dev, copy_alpha, epo_copy_alpha);
+    set_dev_proc(dev, fill_path, epo_fill_path);
+    set_dev_proc(dev, stroke_path, epo_stroke_path);
+    set_dev_proc(dev, fill_mask, epo_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, epo_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, epo_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, epo_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, epo_draw_thin_line);
+    set_dev_proc(dev, begin_image, epo_begin_image);
+    set_dev_proc(dev, strip_tile_rectangle, epo_strip_tile_rectangle);
+    set_dev_proc(dev, strip_copy_rop, epo_strip_copy_rop);
+    set_dev_proc(dev, begin_typed_image, epo_begin_typed_image);
+    set_dev_proc(dev, composite, epo_composite);
+    set_dev_proc(dev, text_begin, epo_text_begin);
+    set_dev_proc(dev, fill_rectangle_hl_color, epo_fill_rectangle_hl_color);
+    set_dev_proc(dev, fill_linear_color_scanline, epo_fill_linear_color_scanline);
+    set_dev_proc(dev, fill_linear_color_trapezoid, epo_fill_linear_color_trapezoid);
+    set_dev_proc(dev, fill_linear_color_triangle, epo_fill_linear_color_triangle);
+    set_dev_proc(dev, fillpage, epo_fillpage);
+    set_dev_proc(dev, put_image, epo_put_image);
+    set_dev_proc(dev, copy_planes, epo_copy_planes);
+    set_dev_proc(dev, strip_copy_rop2, epo_strip_copy_rop2);
+    set_dev_proc(dev, copy_alpha_hl_color, epo_copy_alpha_hl_color);
+    set_dev_proc(dev, process_page, epo_process_page);
+    set_dev_proc(dev, transform_pixel_region, epo_transform_pixel_region);
+    set_dev_proc(dev, fill_stroke_path, epo_fill_stroke_path);
+
     /* We musn't allow the following pointers to remain shared with the from_dev
        because we're about to tell the caller it's only allowed to copy the prototype
        and free the attempted copy of a non-prototype. If from_dev is the prototype
@@ -522,8 +472,7 @@ int epo_finish_copydevice(gx_device *dev, const gx_device *from_dev)
     dev->child = NULL;
     dev->parent = NULL;
     dev->subclass_data = NULL;
-    /* Only allow copying the prototype. */
-    return (from_dev->memory ? gs_note_error(gs_error_rangecheck) : 0);
+    return 0;
 }
 
 int epo_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_t *pim,
@@ -559,17 +508,6 @@ int epo_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     if (code != 0)
         return code;
     return dev_proc(dev, stroke_path)(dev, pgs, ppath, params, pdcolor, pcpath);
-}
-
-int epo_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x, int y, int width, int height,
-    gx_color_index color0, gx_color_index color1,
-    int phase_x, int phase_y)
-{
-    int code = epo_handle_erase_page(dev);
-
-    if (code != 0)
-        return code;
-    return dev_proc(dev, tile_rectangle)(dev, tile, x, y, width, height, color0, color1, phase_x, phase_y);
 }
 
 int epo_copy_mono(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,
@@ -611,19 +549,6 @@ int epo_copy_alpha(gx_device *dev, const byte *data, int data_x,
     if (code != 0)
         return code;
     return dev_proc(dev, copy_alpha)(dev, data, data_x, raster, id, x, y, width, height, color, depth);
-}
-
-int epo_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
-    const gx_color_index *scolors,
-    const gx_tile_bitmap *texture, const gx_color_index *tcolors,
-    int x, int y, int width, int height,
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    int code = epo_handle_erase_page(dev);
-
-    if (code != 0)
-        return code;
-    return dev_proc(dev, copy_rop)(dev, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
 }
 
 int epo_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x, int y, int width, int height,

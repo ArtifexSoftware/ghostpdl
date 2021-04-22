@@ -33,8 +33,9 @@
 
 /* The device descriptor */
 static dev_proc_print_page(cif_print_page);
+/* The print_page proc is compatible with allowing bg printing */
 const gx_device_printer far_data gs_cif_device =
-  prn_device(prn_bg_procs, "cif",	/* The print_page proc is compatible with allowing bg printing */
+  prn_device(gdev_prn_initialize_mono_bg, "cif",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
         0,0,0,0,

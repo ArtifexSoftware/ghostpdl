@@ -52,106 +52,12 @@ static void update_do_flush(gx_device_X *);
 static void do_flush_text(gx_device_X *);
 
 /* Driver procedures */
-/* (External procedures are declared in gdevx.h.) */
-/*extern int gdev_x_open(gx_device_X *);*/
-static dev_proc_open_device(x_open);
-static dev_proc_get_initial_matrix(x_get_initial_matrix);
-static dev_proc_sync_output(x_sync);
-static dev_proc_output_page(x_output_page);
-/*extern int gdev_x_close(gx_device_X *);*/
-static dev_proc_close_device(x_close);
-/*extern dev_proc_map_rgb_color(gdev_x_map_rgb_color);*/
-/*extern dev_proc_map_color_rgb(gdev_x_map_color_rgb);*/
-static dev_proc_fill_rectangle(x_fill_rectangle);
-static dev_proc_copy_mono(x_copy_mono);
-static dev_proc_copy_color(x_copy_color);
-/*extern dev_proc_get_params(gdev_x_get_params);*/
-/*extern dev_proc_put_params(gdev_x_put_params);*/
-static dev_proc_get_page_device(x_get_page_device);
-static dev_proc_strip_tile_rectangle(x_strip_tile_rectangle);
-static dev_proc_get_bits_rectangle(x_get_bits_rectangle);
-/*extern dev_proc_get_xfont_procs(gdev_x_finish_copydevice);*/
-static dev_proc_fillpage(x_fillpage);
 
 /* The device descriptor */
 #define x_device(this_device, dev_body) \
 const gx_device_X this_device = { \
     dev_body, \
-    {				/* std_procs */ \
-        x_open, \
-        x_get_initial_matrix, \
-        x_sync, \
-        x_output_page, \
-        x_close, \
-        gdev_x_map_rgb_color, \
-        gdev_x_map_color_rgb, \
-        x_fill_rectangle, \
-        NULL,			/* tile_rectangle */ \
-        x_copy_mono, \
-        x_copy_color, \
-        NULL,			/* draw_line */ \
-        NULL,			/* get_bits */ \
-        gdev_x_get_params, \
-        gdev_x_put_params, \
-        NULL,			/* map_cmyk_color */ \
-        NULL, \
-        NULL,			/* get_xfont_device */ \
-        NULL,			/* map_rgb_alpha_color */ \
-        x_get_page_device, \
-        NULL,			/* get_alpha_bits */ \
-        NULL,			/* copy_alpha */ \
-        NULL,			/* get_band */ \
-        NULL,			/* copy_rop */ \
-        NULL,			/* fill_path */ \
-        NULL,			/* stroke_path */ \
-        NULL,			/* fill_mask */ \
-        NULL,			/* fill_trapezoid */ \
-        NULL,			/* fill_parallelogram */ \
-        NULL,			/* fill_triangle */ \
-        NULL,			/* draw_thin_line */ \
-        NULL,			/* begin_image */ \
-        NULL,			/* image_data */ \
-        NULL,			/* end_image */ \
-        x_strip_tile_rectangle, \
-        NULL,			/* strip_copy_rop */ \
-        NULL,			/* get_clipping_box */ \
-        NULL,                   /* begin_typed_image */ \
-        x_get_bits_rectangle, \
-        NULL,			/* map_color_rgb_alpha */ \
-        NULL,			/* create_compositor */ \
-        NULL,			/* get_hardware_params */ \
-        NULL,			/* text_begin */ \
-        gdev_x_finish_copydevice, \
-        NULL,			/* begin_transparency_group */ \
-        NULL,                   /* end_transparency_group */ \
-        NULL,                  /* begin_transparency_mask */ \
-        NULL,                    /* end_transparency_mask */ \
-        NULL,                       /* discard_transparency_layer */ \
-        NULL,                  /* get_color_mapping_procs */ \
-        NULL,                     /* get_color_comp_index */ \
-        NULL,                     /* encode_color */ \
-        NULL,                     /* decode_color */ \
-        NULL,                   /* pattern_manage */ \
-        NULL,                       /* fill_rectangle_hl_color */ \
-        NULL,                      /* include_color_space */ \
-        NULL,                    /* fill_linear_color_scanline */ \
-        NULL,                   /* fill_linear_color_trapezoid */ \
-        NULL,                    /* fill_linear_color_triangle */ \
-        NULL,                    /* update_spot_equivalent_colors */ \
-        NULL,                  /* ret_devn_params */ \
-        x_fillpage,              /* fillpage */ \
-        NULL,                      /* push_transparency_state */ \
-        NULL,                      /* pop_transparency_state */ \
-        NULL,                      /* put_image */ \
-        NULL,                      /* dev_spec_op */ \
-        NULL,                      /* copy_planes */ \
-        NULL,                      /* get_profile */ \
-        NULL,        /* set_graphics_type_tag */ \
-        NULL, \
-        NULL, \
-        NULL, \
-        NULL  \
-    }, \
+    { 0 },\
     gx_device_bbox_common_initial(0 /*false*/, 1 /*true*/, 1 /*true*/), \
     0 /*false*/,		/* is_buffered */ \
     1 /*true*/,			/* IsPageDevice */ \
@@ -256,14 +162,14 @@ gs_public_st_suffix_add1_final(st_device_X, gx_device_X,
     x_finalize, st_device_bbox, buffer);
 
 x_device(gs_x11_device,
-         std_device_color_stype_body(gx_device_X, 0, "x11", &st_device_X,
+         std_device_color_stype_body(gx_device_X, gdev_x_initialize, "x11", &st_device_X,
                                      FAKE_RES * DEFAULT_WIDTH_10THS / 10,
                                      FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
                                      FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
                                      24, 255, 256 ))
 
 x_device(gs_x11alpha_device,
-         std_device_dci_alpha_type_body(gx_device_X, 0, "x11alpha", &st_device_X,
+         std_device_dci_alpha_type_body(gx_device_X, gdev_x_initialize, "x11alpha", &st_device_X,
                                         FAKE_RES * DEFAULT_WIDTH_10THS / 10,
                                         FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
                                         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -284,7 +190,7 @@ GC gc, XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h);
   END
 
 /* Open the device.  Most of the code is in gdevxini.c. */
-static int
+int
 x_open(gx_device * dev)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
@@ -310,7 +216,7 @@ x_open(gx_device * dev)
 }
 
 /* Close the device. */
-static int
+int
 x_close(gx_device * dev)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
@@ -321,7 +227,7 @@ x_close(gx_device * dev)
 /* Get initial matrix for X device. */
 /* This conflicts seriously with the code for page devices; */
 /* we only do it if Ghostview is active. */
-static void
+void
 x_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
@@ -339,7 +245,7 @@ x_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 }
 
 /* Synchronize the display with the commands already given. */
-static int
+int
 x_sync(gx_device * dev)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
@@ -366,7 +272,7 @@ gdev_x_send_event(gx_device_X *xdev, Atom msg)
 }
 
 /* Output "page" */
-static int
+int
 x_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
@@ -389,7 +295,7 @@ x_output_page(gx_device * dev, int num_copies, int flush)
 }
 
 /* Fill a rectangle with a color. */
-static int
+int
 x_fill_rectangle(gx_device * dev,
                  int x, int y, int w, int h, gx_color_index gscolor)
 {
@@ -420,7 +326,7 @@ x_fill_rectangle(gx_device * dev,
 }
 
 /* Copy a monochrome bitmap. */
-static int
+int
 x_copy_mono(gx_device * dev,
             const byte * base, int sourcex, int raster, gx_bitmap_id id,
             int x, int y, int w, int h,
@@ -642,7 +548,8 @@ x_copy_image(gx_device_X * xdev, const byte * base, int sourcex, int raster,
     }
     return 0;
 }
-static int
+
+int
 x_copy_color(gx_device * dev,
              const byte * base, int sourcex, int raster, gx_bitmap_id id,
              int x, int y, int w, int h)
@@ -662,14 +569,14 @@ x_copy_color(gx_device * dev,
 
 /* Get the page device.  We reimplement this so that we can make this */
 /* device be a page device conditionally. */
-static gx_device *
+gx_device *
 x_get_page_device(gx_device * dev)
 {
     return (((gx_device_X *) dev)->IsPageDevice ? dev : (gx_device *) 0);
 }
 
 /* Tile a rectangle. */
-static int
+int
 x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                        int x, int y, int w, int h,
                        gx_color_index zero, gx_color_index one,
@@ -751,7 +658,7 @@ x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 }
 
 /* Read bits back from the screen. */
-static int
+int
 x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
                      gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
@@ -947,7 +854,7 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 /* Supplying a fillpage prevents the erasepage optimisation
    device being installed.
  */
-static int
+int
 x_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
     return gx_default_fillpage(dev, pgs, pdevc);

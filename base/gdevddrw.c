@@ -955,14 +955,6 @@ gx_default_draw_thin_line(gx_device * dev,
     }
 }
 
-/* Stub out the obsolete procedure. */
-int
-gx_default_draw_line(gx_device * dev,
-                     int x0, int y0, int x1, int y1, gx_color_index color)
-{
-    return -1;
-}
-
 /* ---------------- Image drawing ---------------- */
 
 /* GC structures for image enumerator */
@@ -1051,23 +1043,6 @@ gx_default_begin_typed_image(gx_device * dev,
     }
     return (*pic->type->begin_typed_image)
         (dev, pgs, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
-}
-
-/* Backward compatibility for obsolete driver procedures. */
-
-int
-gx_default_image_data(gx_device *dev, gx_image_enum_common_t * info,
-                      const byte ** plane_data,
-                      int data_x, uint raster, int height)
-{
-    return gx_image_data(info, plane_data, data_x, raster, height);
-}
-
-int
-gx_default_end_image(gx_device *dev, gx_image_enum_common_t * info,
-                     bool draw_last)
-{
-    return gx_image_end(info, draw_last);
 }
 
 int

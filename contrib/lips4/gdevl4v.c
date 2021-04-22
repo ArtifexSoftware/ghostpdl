@@ -145,7 +145,7 @@ gs_public_st_suffix_add0_final(st_device_lips4v, gx_device_lips4v,
         std_device_part3_()
 
 #define lips4v_device_body\
-  lips_device_full_body(gx_device_lips4v, 0, "lips4v",\
+  lips_device_full_body(gx_device_lips4v, lips4v_initialize, "lips4v",\
                         &st_device_lips4v,\
                         DEFAULT_WIDTH_10THS * X_DPI / 10,\
                         DEFAULT_HEIGHT_10THS * Y_DPI / 10,\
@@ -156,48 +156,35 @@ gs_public_st_suffix_add0_final(st_device_lips4v, gx_device_lips4v,
                         LIPS4_RIGHT_MARGIN_DEFAULT,\
                         LIPS4_TOP_MARGIN_DEFAULT)
 
-#define lips4v_procs\
-        {	lips4v_open,\
-                gx_upright_get_initial_matrix,\
-                NULL,			/* sync_output */\
-                lips4v_output_page,\
-                lips4v_close,\
-                gx_default_gray_map_rgb_color,\
-                gx_default_gray_map_color_rgb,\
-                gdev_vector_fill_rectangle,\
-                NULL,			/* tile_rectangle */\
-                lips4v_copy_mono,\
-                lips4v_copy_color,\
-                NULL,			/* draw_line */\
-                NULL,			/* get_bits */\
-                lips4v_get_params,\
-                lips4v_put_params,\
-                NULL,			/* map_cmyk_color */\
-                NULL,			/* get_xfont_procs */\
-                NULL,			/* get_xfont_device */\
-                NULL,			/* map_rgb_alpha_color */\
-                gx_page_device_get_page_device,\
-                NULL,			/* get_alpha_bits */\
-                NULL,			/* copy_alpha */\
-                NULL,			/* get_band */\
-                NULL,			/* copy_rop */\
-                gdev_vector_fill_path,\
-                gdev_vector_stroke_path,\
-                lips4v_fill_mask,\
-                gdev_vector_fill_trapezoid,\
-                gdev_vector_fill_parallelogram,\
-                gdev_vector_fill_triangle,\
-                NULL /****** WRONG ******/,	/* draw_thin_line */\
-                lips4v_begin_image,\
-                NULL,\
-                NULL,\
-                NULL,			/* strip_tile_rectangle */\
-                NULL/******strip_copy_rop******/\
-        }
+static int
+lips4v_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, lips4v_open);
+    set_dev_proc(dev, get_initial_matrix, gx_upright_get_initial_matrix);
+    set_dev_proc(dev, output_page, lips4v_output_page);
+    set_dev_proc(dev, close_device, lips4v_close);
+    set_dev_proc(dev, map_rgb_color, gx_default_gray_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_gray_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, gdev_vector_fill_rectangle);
+    set_dev_proc(dev, copy_mono, lips4v_copy_mono);
+    set_dev_proc(dev, copy_color, lips4v_copy_color);
+    set_dev_proc(dev, get_params, lips4v_get_params);
+    set_dev_proc(dev, put_params, lips4v_put_params);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, fill_path, gdev_vector_fill_path);
+    set_dev_proc(dev, stroke_path, gdev_vector_stroke_path);
+    set_dev_proc(dev, fill_mask, lips4v_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, gdev_vector_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
+    set_dev_proc(dev, begin_image, lips4v_begin_image);
+
+    return 0;
+}
 
 gx_device_lips4v far_data gs_lips4v_device = {
     lips4v_device_body,
-    lips4v_procs,
+    { 0 },
     vector_initial_values,
     LIPS_CASSETFEED_DEFAULT,
     LIPS_USERNAME_DEFAULT,

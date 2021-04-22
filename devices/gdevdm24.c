@@ -25,7 +25,8 @@
 /* Driver for NEC P6 */
 static dev_proc_print_page (necp6_print_page);
 const gx_device_printer far_data gs_necp6_device =
-  prn_device (prn_bg_procs, "necp6",	/* The print_page proc is compatible with allowing bg printing */
+  /* The print_page proc is compatible with allowing bg printing */
+  prn_device (gdev_prn_initialize_mono_bg, "necp6",
               DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
               360, 360,
               0, 0, 0.5, 0,	/* margins */
@@ -35,7 +36,8 @@ const gx_device_printer far_data gs_necp6_device =
 /* I've tested this driver on a BJ300 with LQ850 emulation and there it produce correct 360x360dpi output. */
 static dev_proc_print_page (lq850_print_page);
 const gx_device_printer gs_lq850_device =
-  prn_device (prn_bg_procs, "lq850",	/* The print_page proc is compatible with allowing bg printing */
+  /* The print_page proc is compatible with allowing bg printing */
+  prn_device (gdev_prn_initialize_mono_bg, "lq850",
               DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
               360, 360,
               0, 0, 0.5, 0,	/* margins */

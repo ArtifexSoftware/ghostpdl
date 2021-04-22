@@ -50,15 +50,31 @@ struct gx_device_ocr_s {
 };
 
 /* 8-bit gray bitmap -> UTF8 OCRd text */
+static int
+ocr_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray_bg(dev);
 
-static const gx_device_procs ocr_procs =
-prn_color_params_procs(ocr_open, gdev_prn_bg_output_page, ocr_close,
-                       gx_default_gray_map_rgb_color,
-                       gx_default_gray_map_color_rgb,
-                       ocr_get_params, ocr_put_params);
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, ocr_open);
+    set_dev_proc(dev, close_device, ocr_close);
+    set_dev_proc(dev, get_params, ocr_get_params);
+    set_dev_proc(dev, put_params, ocr_put_params);
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
+
 const gx_device_ocr gs_ocr_device =
 {
-    prn_device_body(gx_device_ocr, ocr_procs, "ocr",
+    prn_device_body(gx_device_ocr, ocr_initialize, "ocr",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0,	/* margins */
@@ -67,15 +83,31 @@ const gx_device_ocr gs_ocr_device =
 };
 
 /* 8-bit gray bitmap -> HTML OCRd text */
+static int
+hocr_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray_bg(dev);
 
-static const gx_device_procs hocr_procs =
-prn_color_params_procs(ocr_open, gdev_prn_bg_output_page, hocr_close,
-                       gx_default_gray_map_rgb_color,
-                       gx_default_gray_map_color_rgb,
-                       ocr_get_params, ocr_put_params);
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, ocr_open);
+    set_dev_proc(dev, close_device, hocr_close);
+    set_dev_proc(dev, get_params, ocr_get_params);
+    set_dev_proc(dev, put_params, ocr_put_params);
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
+
 const gx_device_ocr gs_hocr_device =
 {
-    prn_device_body(gx_device_ocr, hocr_procs, "hocr",
+    prn_device_body(gx_device_ocr, hocr_initialize, "hocr",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0,	/* margins */

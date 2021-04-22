@@ -170,11 +170,24 @@ static dev_proc_get_clipping_box(mem_abuf_get_clipping_box);
 static dev_proc_fill_rectangle_hl_color(mem_abuf_fill_rectangle_hl_color);
 
 /* The device descriptor. */
+static int
+mem_alpha_initialize(gx_device *dev)
+{
+    mem_initialize(dev);
+
+    set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, mem_abuf_fill_rectangle);
+    set_dev_proc(dev, copy_mono, mem_abuf_copy_mono);
+    set_dev_proc(dev, copy_color, gx_default_copy_color);
+    set_dev_proc(dev, strip_copy_rop, gx_no_strip_copy_rop);
+    set_dev_proc(dev, fill_rectangle_hl_color, mem_abuf_fill_rectangle_hl_color);
+
+    return 0;
+}
+
 static const gx_device_memory mem_alpha_buffer_device =
-mem_device_hl("image(alpha buffer)", 0, 1,
-           gx_forward_map_rgb_color, gx_forward_map_color_rgb,
-           mem_abuf_copy_mono, gx_default_copy_color, mem_abuf_fill_rectangle,
-           gx_no_strip_copy_rop, mem_abuf_fill_rectangle_hl_color);
+   mem_device("image(alpha buffer)", 0, 1, mem_alpha_initialize);
 
 /* Make an alpha-buffer memory device. */
 /* We use abuf instead of alpha_buffer because */
@@ -406,11 +419,13 @@ mem_abuf_copy_mono(gx_device * dev,
         code = y_transfer_next(&yt, dev);
         if (code < 0)
             return code;
-        (*dev_proc(&mem_mono_device, copy_mono)) (dev,
-                                           base + (yt.y_next - y) * sraster,
-                                          sourcex, sraster, gx_no_bitmap_id,
-                                    x, yt.transfer_y, w, yt.transfer_height,
-                                     gx_no_color_index, (gx_color_index) 1);
+        code = mem_mono_copy_mono(dev,
+                                  base + (yt.y_next - y) * sraster,
+                                  sourcex, sraster, gx_no_bitmap_id,
+                                  x, yt.transfer_y, w, yt.transfer_height,
+                                  gx_no_color_index, (gx_color_index) 1);
+        if (code < 0)
+            return code;
     }
     return 0;
 }
@@ -442,9 +457,11 @@ mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
         code = y_transfer_next(&yt, dev);
         if (code < 0)
             return code;
-        (*dev_proc(&mem_mono_device, fill_rectangle)) (dev,
-                                    x, yt.transfer_y, w, yt.transfer_height,
-                                                       (gx_color_index) 1);
+        code = mem_mono_fill_rectangle(dev, x, yt.transfer_y,
+                                       w, yt.transfer_height,
+                                       (gx_color_index) 1);
+        if (code < 0)
+            return code;
     }
     return 0;
 }
@@ -484,9 +501,11 @@ mem_abuf_fill_rectangle_hl_color(gx_device * dev, const gs_fixed_rect *rect,
         code = y_transfer_next(&yt, dev);
         if (code < 0)
             return code;
-        (*dev_proc(&mem_mono_device, fill_rectangle)) (dev,
-                                    x, yt.transfer_y, w, yt.transfer_height,
-                                                       (gx_color_index) 1);
+        code = mem_mono_fill_rectangle(dev, x, yt.transfer_y,
+                                       w, yt.transfer_height,
+                                       (gx_color_index) 1);
+        if (code < 0)
+            return code;
     }
     return 0;
 }

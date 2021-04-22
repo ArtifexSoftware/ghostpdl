@@ -30,11 +30,21 @@ declare_mem_procs(mem_true32_copy_mono, mem_true32_copy_color, mem_true32_fill_r
 
 /* The device descriptor. */
 const gx_device_memory mem_true32_device =
-mem_full_device("image32", 24, 8, mem_open,
-                gx_default_map_rgb_color, gx_default_map_color_rgb,
-     mem_true32_copy_mono, mem_true32_copy_color, mem_true32_fill_rectangle,
-            gx_default_cmyk_map_cmyk_color, gx_default_strip_tile_rectangle,
-                mem_default_strip_copy_rop, mem_get_bits_rectangle);
+    mem_device("image32", 24, 8, mem_dev_initialize);
+
+const gdev_mem_functions gdev_mem_fns_32 =
+{
+    gx_default_map_rgb_color,
+    gx_default_map_color_rgb,
+    mem_true32_fill_rectangle,
+    mem_true32_copy_mono,
+    mem_true32_copy_color,
+    gx_default_copy_alpha,
+    gx_default_strip_tile_rectangle,
+    mem_default_strip_copy_rop,
+    gx_default_strip_copy_rop2,
+    mem_get_bits_rectangle
+};
 
 /* Convert x coordinate to byte offset in scan line. */
 #undef x_to_byte
@@ -248,11 +258,21 @@ declare_mem_procs(mem32_word_copy_mono, mem32_word_copy_color, mem32_word_fill_r
 
 /* Here is the device descriptor. */
 const gx_device_memory mem_true32_word_device =
-mem_full_device("image32w", 24, 8, mem_open,
-                gx_default_map_rgb_color, gx_default_map_color_rgb,
-     mem32_word_copy_mono, mem32_word_copy_color, mem32_word_fill_rectangle,
-            gx_default_cmyk_map_cmyk_color, gx_default_strip_tile_rectangle,
-                gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
+    mem_device("image32w", 24, 8, mem_word_dev_initialize);
+
+const gdev_mem_functions gdev_mem_fns_32w =
+{
+    gx_default_map_rgb_color,
+    gx_default_map_color_rgb,
+    mem32_word_fill_rectangle,
+    mem32_word_copy_mono,
+    mem32_word_copy_color,
+    gx_default_copy_alpha,
+    gx_default_strip_tile_rectangle,
+    gx_no_strip_copy_rop,
+    gx_default_strip_copy_rop2,
+    mem_word_get_bits_rectangle
+};
 
 /* Fill a rectangle with a color. */
 static int

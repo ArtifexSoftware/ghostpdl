@@ -330,10 +330,12 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
                 /* set up parameters required by copy_mono's fit_copy */
                 tdev.width = dest_bit_x + (align << 3) + bit_w;
                 tdev.height = 1;
-                (*dev_proc(&mem_mono_device, copy_mono))
-                    ((gx_device *) & tdev, src, bit_x, dev_raster, gx_no_bitmap_id,
-                     dest_bit_x + (align << 3), 0, bit_w, 1,
-                     (gx_color_index) 0, (gx_color_index) 1);
+                code = mem_mono_copy_mono((gx_device *) & tdev, src, bit_x,
+                                          dev_raster, gx_no_bitmap_id,
+                                          dest_bit_x + (align << 3), 0, bit_w, 1,
+                                          (gx_color_index) 0, (gx_color_index) 1);
+                if (code < 0)
+                    break;
             }
         } else if (options & ~stored_options & GB_COLORS_NATIVE) {
             /* Convert standard colors to native. */
@@ -714,8 +716,7 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
                     tdev.line_ptrs = &tdev.base;
                     tdev.base = data;
                     tdev.raster = bitmap_raster(width_bits);
-                    code = (*dev_proc(&mem_mono_device, copy_mono))
-                        ((gx_device *) & tdev,
+                    code = mem_mono_copy_mono((gx_device *) & tdev,
                          (params->options & GB_RETURN_POINTER) ? params->data[0] : row,
                          prect->p.x * depth,
                          min_raster, gx_no_bitmap_id, 0, 0, width_bits, 1,

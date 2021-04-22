@@ -30,7 +30,7 @@ static dev_proc_print_page(fmpr_print_page);
 
 /* The device descriptor */
 gx_device_printer gs_fmpr_device =
-  prn_device(prn_std_procs, "fmpr",
+  prn_device(gdev_prn_initialize_mono, "fmpr",
              DEFAULT_WIDTH_10THS,
              DEFAULT_HEIGHT_10THS,
              180,		/* x_dpi */

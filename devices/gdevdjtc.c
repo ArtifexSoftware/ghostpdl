@@ -40,12 +40,28 @@
 static dev_proc_print_page(djet500c_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static gx_device_procs djet500c_procs =
-  prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-    gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
+static int
+djet500c_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return 0;
+
+    set_dev_proc(dev, map_rgb_color, gdev_pcl_3bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gdev_pcl_3bit_map_color_rgb);
+
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 const gx_device_printer far_data gs_djet500c_device =
-  prn_device(djet500c_procs, "djet500c",
+  prn_device(djet500c_initialize, "djet500c",
     85,                /* width_10ths, 8.5" */
     120,		/* height_10ths, 12" */
     X_DPI, Y_DPI,

@@ -330,7 +330,7 @@ dev_proc_process_page(clist_process_page);
 /* In gxclimag.c */
 dev_proc_fill_mask(clist_fill_mask);
 dev_proc_begin_typed_image(clist_begin_typed_image);
-dev_proc_create_compositor(clist_create_compositor);
+dev_proc_composite(clist_composite);
 
 /* In gxclread.c */
 dev_proc_get_bits_rectangle(clist_get_bits_rectangle);

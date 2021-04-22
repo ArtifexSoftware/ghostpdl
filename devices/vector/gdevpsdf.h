@@ -513,6 +513,6 @@ dev_proc_get_bits(psdf_get_bits);
 dev_proc_get_bits_rectangle(psdf_get_bits_rectangle);
 
 /* intercept and ignore overprint compositor creation */
-dev_proc_create_compositor(psdf_create_compositor);
+dev_proc_composite(psdf_composite);
 
 #endif /* gdevpsdf_INCLUDED */

@@ -77,93 +77,84 @@ static int planr_print_page(gx_device_printer * pdev, gp_file * pstream);
 
 /* The device procedures */
 
-/* See gdevprn.h for the template for the following. */
-#define pgpm_procs(p_color_rgb, encode_color, decode_color) {\
-        plan_open,\
-        NULL, /* get_initial_matrix */ \
-        NULL, /* sync output */ \
-        /* Since the print_page doesn't alter the device, this device can print in the background */\
-        gdev_prn_bg_output_page, \
-        plan_close,\
-        NULL, /* map_rgb_color */ \
-        p_color_rgb, /* map_color_rgb */ \
-        NULL, /* fill_rectangle */ \
-        NULL, /* tile_rectangle */ \
-        NULL, /* copy_mono */ \
-        NULL, /* copy_color */ \
-        NULL, /* draw_line */ \
-        NULL, /* get_bits */ \
-        gdev_prn_get_params, \
-        gdev_prn_put_params,\
-        NULL, /* map_cmyk_color */ \
-        NULL, /* get_xfont_procs */ \
-        NULL, /* get_xfont_device */ \
-        NULL, /* map_rgb_alpha_color */ \
-        gx_page_device_get_page_device, \
-        NULL,   /* get_alpha_bits */\
-        NULL,   /* copy_alpha */\
-        NULL,   /* get_band */\
-        NULL,   /* copy_rop */\
-        NULL,   /* fill_path */\
-        NULL,   /* stroke_path */\
-        NULL,   /* fill_mask */\
-        NULL,   /* fill_trapezoid */\
-        NULL,   /* fill_parallelogram */\
-        NULL,   /* fill_triangle */\
-        NULL,   /* draw_thin_line */\
-        NULL,   /* begin_image */\
-        NULL,   /* image_data */\
-        NULL,   /* end_image */\
-        NULL,   /* strip_tile_rectangle */\
-        NULL,   /* strip_copy_rop */\
-        NULL,   /* get_clipping_box */\
-        NULL,   /* begin_typed_image */\
-        NULL,   /* get_bits_rectangle */\
-        NULL,   /* map_color_rgb_alpha */\
-        NULL,   /* create_compositor */\
-        NULL,   /* get_hardware_params */\
-        NULL,   /* text_begin */\
-        NULL,   /* finish_copydevice */\
-        NULL,   /* begin_transparency_group */\
-        NULL,   /* end_transparency_group */\
-        NULL,   /* begin_transparency_mask */\
-        NULL,   /* end_transparency_mask */\
-        NULL,   /* discard_transparency_layer */\
-        NULL,   /* get_color_mapping_procs */\
-        NULL,   /* get_color_comp_index */\
-        encode_color, /* encode_color */\
-        decode_color, /* decode_color */\
-        NULL,   /* pattern_manage */\
-        NULL,   /* fill_rectangle_hl_color */\
-        NULL,   /* include_color_space */\
-        NULL,   /* fill_linear_color_scanline */\
-        NULL,   /* fill_linear_color_trapezoid */\
-        NULL,   /* fill_linear_color_triangle */\
-        NULL,	/* update spot */\
-        NULL,   /* DevN params */\
-        NULL,   /* fill page */\
-        NULL,   /* push_transparency_state */\
-        NULL,   /* pop_transparency_state */\
-        NULL,   /* put_image */\
-        NULL    /* dev_spec_op */\
+static int
+plan_base_initialize(gx_device *dev,
+                     dev_proc_map_color_rgb(map_color_rgb),
+                     dev_proc_encode_color(encode_color),
+                     dev_proc_decode_color(decode_color))
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, plan_open);
+    set_dev_proc(dev, close_device, plan_close);
+    set_dev_proc(dev, map_color_rgb, map_color_rgb);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, encode_color, encode_color);
+    set_dev_proc(dev, decode_color, decode_color);
+
+    return 0;
 }
 
-static const gx_device_procs planm_procs =
-  pgpm_procs(gdev_prn_map_color_rgb, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb);
-static const gx_device_procs plang_procs =
-  pgpm_procs(plang_decode_color, plang_encode_color, plang_decode_color);
-static const gx_device_procs plan_procs =
-  pgpm_procs(plan_decode_color, gx_default_rgb_map_rgb_color, plan_decode_color);
-static const gx_device_procs planc_procs =
-  pgpm_procs(planc_map_color_rgb, planc_encode_color, planc_decode_color);
-static const gx_device_procs plank_procs =
-  pgpm_procs(planc_map_color_rgb, planc_encode_color, planc_decode_color);
-static const gx_device_procs planr_procs =
-  pgpm_procs(plan_decode_color, gx_default_rgb_map_rgb_color, plan_decode_color);
+static int
+planm_initialize(gx_device *dev)
+{
+    return plan_base_initialize(dev,
+                                gdev_prn_map_color_rgb,
+                                gdev_prn_map_rgb_color,
+                                gdev_prn_map_color_rgb);
+}
+
+static int
+plang_initialize(gx_device *dev)
+{
+    return plan_base_initialize(dev,
+                                plang_decode_color,
+                                plang_encode_color,
+                                plang_decode_color);
+}
+
+static int
+plan_initialize(gx_device *dev)
+{
+    return plan_base_initialize(dev,
+                                plan_decode_color,
+                                gx_default_rgb_map_rgb_color,
+                                plan_decode_color);
+}
+
+static int
+planc_initialize(gx_device *dev)
+{
+    return plan_base_initialize(dev,
+                                planc_map_color_rgb,
+                                planc_encode_color,
+                                planc_decode_color);
+}
+
+static int
+plank_initialize(gx_device *dev)
+{
+    return plan_base_initialize(dev,
+                                planc_map_color_rgb,
+                                planc_encode_color,
+                                planc_decode_color);
+}
+
+static int
+planr_initialize(gx_device *dev)
+{
+    return plan_base_initialize(dev,
+                                plan_decode_color,
+                                gx_default_rgb_map_rgb_color,
+                                plan_decode_color);
+}
 
 /* Macro for generating device descriptors. */
-#define plan_prn_device(procs, dev_name, num_comp, depth, max_gray, max_rgb, print_page) \
-{       prn_device_body(gx_device_printer, procs, dev_name,\
+#define plan_prn_device(init, dev_name, num_comp, depth, max_gray, max_rgb, print_page) \
+{       prn_device_body(gx_device_printer, init, dev_name,\
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, X_DPI, Y_DPI,\
         0, 0, 0, 0,\
         num_comp, depth, max_gray, max_rgb, max_gray + 1, max_rgb + 1,\
@@ -172,17 +163,17 @@ static const gx_device_procs planr_procs =
 
 /* The device descriptors themselves */
 const gx_device_printer gs_plan_device =
-  plan_prn_device(plan_procs, "plan", 3, 24, 255, 255, plan_print_page);
+  plan_prn_device(plan_initialize, "plan", 3, 24, 255, 255, plan_print_page);
 const gx_device_printer gs_plang_device =
-  plan_prn_device(plang_procs, "plang", 1, 8, 255, 0, plang_print_page);
+  plan_prn_device(plang_initialize, "plang", 1, 8, 255, 0, plang_print_page);
 const gx_device_printer gs_planm_device =
-  plan_prn_device(planm_procs, "planm", 1, 1, 1, 0, planm_print_page);
+  plan_prn_device(planm_initialize, "planm", 1, 1, 1, 0, planm_print_page);
 const gx_device_printer gs_plank_device =
-  plan_prn_device(plank_procs, "plank", 4, 4, 1, 1, plank_print_page);
+  plan_prn_device(plank_initialize, "plank", 4, 4, 1, 1, plank_print_page);
 const gx_device_printer gs_planc_device =
-  plan_prn_device(planc_procs, "planc", 4, 32, 255, 255, planc_print_page);
+  plan_prn_device(planc_initialize, "planc", 4, 32, 255, 255, planc_print_page);
 const gx_device_printer gs_planr_device =
-  plan_prn_device(planr_procs, "planr", 3, 3, 1, 1, planr_print_page);
+  plan_prn_device(planr_initialize, "planr", 3, 3, 1, 1, planr_print_page);
 
 /* ------ Initialization ------ */
 

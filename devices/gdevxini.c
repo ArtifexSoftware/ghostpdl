@@ -567,7 +567,11 @@ x_set_buffer(gx_device_X * xdev)
      */
     gs_memory_t *mem = gs_memory_stable(xdev->memory);
     bool buffered = xdev->space_params.MaxBitmap > 0;
-    const gx_device_procs *procs;
+    union {
+      gx_device dev;
+      gx_device_bbox bbox;
+      gx_device_X x11;
+    } tempdev;
 
  setup:
     if (buffered) {
@@ -645,7 +649,7 @@ x_set_buffer(gx_device_X * xdev)
         }
         xdev->white = gx_device_white((gx_device *)xdev);
         xdev->black = gx_device_black((gx_device *)xdev);
-        procs = &gs_bbox_device.procs;
+        tempdev.bbox = gs_bbox_device;
     } else {
         /* Not buffering.  Release the buffer and memory device. */
         gs_free_object(mem, xdev->buffer, "buffer");
@@ -656,10 +660,12 @@ x_set_buffer(gx_device_X * xdev)
         gx_device_set_target((gx_device_forward *)xdev->target, NULL);
         gx_device_set_target((gx_device_forward *)xdev, NULL);
         xdev->is_buffered = false;
-        procs = &gs_x11_device.procs;
+        tempdev.x11 = gs_x11_device;
     }
-    if (dev_proc(xdev, fill_rectangle) != procs->fill_rectangle) {
-#define COPY_PROC(p) set_dev_proc(xdev, p, procs->p)
+    /* We know this cannot fail. */
+    tempdev.dev.initialize(&tempdev.dev);
+    if (dev_proc(xdev, fill_rectangle) != tempdev.dev.procs.fill_rectangle) {
+#define COPY_PROC(p) set_dev_proc(xdev, p, tempdev.dev.procs.p)
         COPY_PROC(fill_rectangle);
         COPY_PROC(copy_mono);
         COPY_PROC(copy_color);
@@ -754,11 +760,28 @@ gdev_x_clear_window(gx_device_X * xdev)
 }
 
 
-/* Clean up the instance after making a copy. */
+/* (External procedures are declared in gdevx.h.) */
 int
-gdev_x_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+gdev_x_initialize(gx_device *dev)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
+
+    set_dev_proc(dev, open_device, x_open);
+    set_dev_proc(dev, get_initial_matrix, x_get_initial_matrix);
+    set_dev_proc(dev, sync_output, x_sync);
+    set_dev_proc(dev, output_page, x_output_page);
+    set_dev_proc(dev, close_device, x_close);
+    set_dev_proc(dev, map_rgb_color, gdev_x_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gdev_x_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, x_fill_rectangle);
+    set_dev_proc(dev, copy_mono, x_copy_mono);
+    set_dev_proc(dev, copy_color, x_copy_color);
+    set_dev_proc(dev, get_params, gdev_x_get_params);
+    set_dev_proc(dev, put_params, gdev_x_put_params);
+    set_dev_proc(dev, get_page_device, x_get_page_device);
+    set_dev_proc(dev, strip_tile_rectangle, x_strip_tile_rectangle);
+    set_dev_proc(dev, get_bits_rectangle, x_get_bits_rectangle);
+    set_dev_proc(dev, fillpage, x_fillpage);
 
     /* Mark the new instance as closed. */
     xdev->is_open = false;
@@ -779,9 +802,6 @@ gdev_x_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 
     /* Reset pointer-related parameters. */
     xdev->is_buffered = false;
-    /* See x_set_buffer for why we do this: */
-    set_dev_proc(xdev, fill_rectangle,
-                 dev_proc(&gs_x11_device, fill_rectangle));
 
     return 0;
 }

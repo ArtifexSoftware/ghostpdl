@@ -433,8 +433,7 @@ extern_st(st_device_clist);
         (xclist)->writer.pinst = NULL;\
     END
 
-/* The device template itself is never used, only the procedures. */
-extern const gx_device_procs gs_clist_device_procs;
+int clist_initialize(gx_device *dev);
 
 void clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory);
 

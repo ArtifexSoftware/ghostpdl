@@ -59,78 +59,28 @@ struct gx_device_chameleon_s {
 };
 typedef struct gx_device_chameleon_s gx_device_chameleon;
 
-static const gx_device_procs chameleon_procs =
-{	gdev_prn_open,
-        gx_default_get_initial_matrix,
-        NULL,	/* sync_output */
-        /* Since the print_page doesn't alter the device, this device can print in the background */
-        gdev_prn_bg_output_page,
-        gdev_prn_close,
-        chameleon_rgb_encode_color,	/* map_rgb_color */
-        chameleon_rgb_decode_color,	/* map_color_rgb */
-        NULL,	/* fill_rectangle */
-        NULL,	/* tile_rectangle */
-        NULL,	/* copy_mono */
-        NULL,	/* copy_color */
-        NULL,	/* draw_line */
-        NULL,	/* get_bits */
-        chameleon_get_params,
-        chameleon_put_params,
-        chameleon_rgb_encode_color,	/* map_cmyk_color */
-        NULL,	/* get_xfont_procs */
-        NULL,	/* get_xfont_device */
-        NULL,	/* map_rgb_alpha_color */
-        gx_page_device_get_page_device,	/* get_page_device */
-        NULL,	/* get_alpha_bits */
-        NULL,	/* copy_alpha */
-        NULL,	/* get_band */
-        NULL,	/* copy_rop */
-        NULL,	/* fill_path */
-        NULL,	/* stroke_path */
-        NULL,	/* fill_mask */
-        NULL,	/* fill_trapezoid */
-        NULL,	/* fill_parallelogram */
-        NULL,	/* fill_triangle */
-        NULL,	/* draw_thin_line */
-        NULL,	/* begin_image */
-        NULL,	/* image_data */
-        NULL,	/* end_image */
-        NULL,	/* strip_tile_rectangle */
-        NULL,	/* strip_copy_rop */
-        NULL,	/* get_clipping_box */
-        NULL,	/* begin_typed_image */
-        NULL,	/* get_bits_rectangle */
-        NULL,	/* map_color_rgb_alpha */
-        NULL,	/* create_compositor */
-        NULL,	/* get_hardware_params */
-        NULL,	/* text_begin */
-        NULL,	/* finish_copydevice */
-        NULL,	/* begin_transparency_group */
-        NULL,	/* end_transparency_group */
-        NULL,	/* begin_transparency_mask */
-        NULL,	/* end_transparency_mask */
-        NULL,	/* discard_transparency_layer */
-        NULL,	/* get_color_mapping_procs */
-        NULL,	/* get_color_comp_index */
-        chameleon_rgb_encode_color,/* encode_color */
-        chameleon_rgb_decode_color, /* decode_color */
-        NULL,   /* pattern_manage */
-        NULL,   /* fill_rectangle_hl_color */
-        NULL,   /* include_color_space */
-        NULL,   /* fill_linear_color_scanline */
-        NULL,   /* fill_linear_color_trapezoid */
-        NULL,   /* fill_linear_color_triangle */
-        NULL,   /* update_spot_equivalent_colors */
-        NULL,   /* ret_devn_params */
-        NULL,   /* fillpage */
-        NULL,   /* push_transparency_state */
-        NULL,   /* pop_transparency_state */
-        NULL,   /* put_image */
-        chameleon_spec_op   /* dev_spec_op */
-};
+static int
+chameleon_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, chameleon_rgb_encode_color);
+    set_dev_proc(dev, map_color_rgb, chameleon_rgb_decode_color);
+    set_dev_proc(dev, get_params, chameleon_get_params);
+    set_dev_proc(dev, put_params, chameleon_put_params);
+    set_dev_proc(dev, map_cmyk_color, chameleon_rgb_encode_color);
+    set_dev_proc(dev, encode_color, chameleon_rgb_encode_color);
+    set_dev_proc(dev, decode_color, chameleon_rgb_decode_color);
+    set_dev_proc(dev, dev_spec_op, chameleon_spec_op);
+
+    return 0;
+}
 
 const gx_device_chameleon gs_chameleon_device =
-{prn_device_body(gx_device_chameleon, chameleon_procs, "chameleon",
+{prn_device_body(gx_device_chameleon, chameleon_initialize, "chameleon",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */

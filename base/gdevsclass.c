@@ -178,15 +178,6 @@ int default_subclass_fill_rectangle(gx_device *dev, int x, int y, int width, int
     return 0;
 }
 
-int default_subclass_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x, int y, int width, int height,
-    gx_color_index color0, gx_color_index color1,
-    int phase_x, int phase_y)
-{
-    if (dev->child)
-        return dev_proc(dev->child, tile_rectangle)(dev->child, tile, x, y, width, height, color0, color1, phase_x, phase_y);
-    return 0;
-}
-
 int default_subclass_copy_mono(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,
     int x, int y, int width, int height,
     gx_color_index color0, gx_color_index color1)
@@ -201,13 +192,6 @@ int default_subclass_copy_color(gx_device *dev, const byte *data, int data_x, in
 {
     if (dev->child)
         return dev_proc(dev->child, copy_color)(dev->child, data, data_x, raster, id, x, y, width, height);
-    return 0;
-}
-
-int default_subclass_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index color)
-{
-    if (dev->child)
-        return dev_proc(dev->child, obsolete_draw_line)(dev->child, x0, y0, x1, y1, color);
     return 0;
 }
 
@@ -250,22 +234,6 @@ gx_color_index default_subclass_map_cmyk_color(gx_device *dev, const gx_color_va
     return gx_default_map_cmyk_color(dev, cv);
 }
 
-const gx_xfont_procs *default_subclass_get_xfont_procs(gx_device *dev)
-{
-    if (dev->child)
-        return dev_proc(dev->child, get_xfont_procs)(dev->child);
-    /* else */
-    return gx_default_get_xfont_procs(dev);
-}
-
-gx_device *default_subclass_get_xfont_device(gx_device *dev)
-{
-    if (dev->child)
-        return dev_proc(dev->child, get_xfont_device)(dev->child);
-    /* else */
-    return gx_default_get_xfont_device(dev);
-}
-
 gx_color_index default_subclass_map_rgb_alpha_color(gx_device *dev, gx_color_value red, gx_color_value green, gx_color_value blue,
     gx_color_value alpha)
 {
@@ -305,18 +273,6 @@ int default_subclass_get_band(gx_device *dev, int y, int *band_start)
         return dev_proc(dev->child, get_band)(dev->child, y, band_start);
     /* else */
     return gx_default_get_band(dev, y, band_start);
-}
-
-int default_subclass_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
-    const gx_color_index *scolors,
-    const gx_tile_bitmap *texture, const gx_color_index *tcolors,
-    int x, int y, int width, int height,
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    if (dev->child)
-        return dev_proc(dev->child, copy_rop)(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
-    /* else */
-    return gx_default_copy_rop(dev, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
 }
 
 int default_subclass_fill_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
@@ -399,21 +355,6 @@ int default_subclass_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_
     return gx_default_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
 }
 
-int default_subclass_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **planes, int data_x,
-    uint raster, int height)
-{
-    if (dev->child)
-        return dev_proc(dev->child, image_data)(dev->child, info, planes, data_x, raster, height);
-    return 0;
-}
-
-int default_subclass_end_image(gx_device *dev, gx_image_enum_common_t *info, bool draw_last)
-{
-    if (dev->child)
-        return dev_proc(dev->child, end_image)(dev->child, info, draw_last);
-    return 0;
-}
-
 int default_subclass_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x, int y, int width, int height,
     gx_color_index color0, gx_color_index color1,
     int phase_x, int phase_y)
@@ -474,7 +415,7 @@ int default_subclass_map_color_rgb_alpha(gx_device *dev, gx_color_index color, g
     return gx_default_map_color_rgb_alpha(dev, color, rgba);
 }
 
-int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+int default_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
     int code;
@@ -484,7 +425,7 @@ int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const 
          * that we pass to access its own data (not unreasonably), so we need to make sure we pass in the
          * child device. This has some follow on implications detailed below.
          */
-        code = dev_proc(dev->child, create_compositor)(dev->child, pcdev, pcte, pgs, memory, cdev);
+        code = dev_proc(dev->child, composite)(dev->child, pcdev, pcte, pgs, memory, cdev);
         if (code < 0)
             return code;
 
@@ -584,15 +525,6 @@ int default_subclass_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_pa
     return gx_default_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
 }
 
-/* This method seems (despite the name) to be intended to allow for
- * devices to initialise data before being invoked. For our subclassed
- * device this should already have been done.
- */
-int default_subclass_finish_copydevice(gx_device *dev, const gx_device *from_dev)
-{
-    return 0;
-}
-
 int default_subclass_begin_transparency_group(gx_device *dev, const gs_transparency_group_params_t *ptgp,
     const gs_rect *pbbox, gs_gstate *pgs, gs_memory_t *mem)
 {
@@ -666,15 +598,6 @@ int default_subclass_decode_color(gx_device *dev, gx_color_index cindex, gx_colo
     else {
         memset(colors, 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     }
-
-    return 0;
-}
-
-int default_subclass_pattern_manage(gx_device *dev, gx_bitmap_id id,
-                gs_pattern1_instance_t *pinst, pattern_manage_t function)
-{
-    if (dev->child)
-        return dev_proc(dev->child, pattern_manage)(dev->child, id, pinst, function);
 
     return 0;
 }
@@ -928,4 +851,76 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
         rc_decrement(dev->PageList, "finalize subclass device");
     if (dev->NupControl)
         rc_decrement(dev->NupControl, "finalize subclass device");
+}
+
+int default_subclass_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, default_subclass_open_device);
+    set_dev_proc(dev, get_initial_matrix, default_subclass_get_initial_matrix);
+    set_dev_proc(dev, sync_output, default_subclass_sync_output);
+    set_dev_proc(dev, output_page, default_subclass_output_page);
+    set_dev_proc(dev, close_device, default_subclass_close_device);
+    set_dev_proc(dev, map_rgb_color, default_subclass_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, default_subclass_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, default_subclass_fill_rectangle);
+    set_dev_proc(dev, copy_mono, default_subclass_copy_mono);
+    set_dev_proc(dev, copy_color, default_subclass_copy_color);
+    set_dev_proc(dev, get_bits, default_subclass_get_bits);
+    set_dev_proc(dev, get_params, default_subclass_get_params);
+    set_dev_proc(dev, put_params, default_subclass_put_params);
+    set_dev_proc(dev, map_cmyk_color, default_subclass_map_cmyk_color);
+    set_dev_proc(dev, map_rgb_alpha_color, default_subclass_map_rgb_alpha_color);
+    set_dev_proc(dev, get_page_device, default_subclass_get_page_device);
+    set_dev_proc(dev, get_alpha_bits, default_subclass_get_alpha_bits);
+    set_dev_proc(dev, copy_alpha, default_subclass_copy_alpha);
+    set_dev_proc(dev, get_band, default_subclass_get_band);
+    set_dev_proc(dev, fill_path, default_subclass_fill_path);
+    set_dev_proc(dev, stroke_path, default_subclass_stroke_path);
+    set_dev_proc(dev, fill_mask, default_subclass_fill_mask);
+    set_dev_proc(dev, fill_trapezoid, default_subclass_fill_trapezoid);
+    set_dev_proc(dev, fill_parallelogram, default_subclass_fill_parallelogram);
+    set_dev_proc(dev, fill_triangle, default_subclass_fill_triangle);
+    set_dev_proc(dev, draw_thin_line, default_subclass_draw_thin_line);
+    set_dev_proc(dev, begin_image, default_subclass_begin_image);
+    set_dev_proc(dev, strip_tile_rectangle, default_subclass_strip_tile_rectangle);
+    set_dev_proc(dev, strip_copy_rop, default_subclass_strip_copy_rop);
+    set_dev_proc(dev, get_clipping_box, default_subclass_get_clipping_box);
+    set_dev_proc(dev, begin_typed_image, default_subclass_begin_typed_image);
+    set_dev_proc(dev, get_bits_rectangle, default_subclass_get_bits_rectangle);
+    set_dev_proc(dev, map_color_rgb_alpha, default_subclass_map_color_rgb_alpha);
+    set_dev_proc(dev, composite, default_subclass_composite);
+    set_dev_proc(dev, get_hardware_params, default_subclass_get_hardware_params);
+    set_dev_proc(dev, text_begin, default_subclass_text_begin);
+    set_dev_proc(dev, begin_transparency_group, default_subclass_begin_transparency_group);
+    set_dev_proc(dev, end_transparency_group, default_subclass_end_transparency_group);
+    set_dev_proc(dev, begin_transparency_mask, default_subclass_begin_transparency_mask);
+    set_dev_proc(dev, end_transparency_mask, default_subclass_end_transparency_mask);
+    set_dev_proc(dev, discard_transparency_layer, default_subclass_discard_transparency_layer);
+    set_dev_proc(dev, get_color_mapping_procs, default_subclass_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, default_subclass_get_color_comp_index);
+    set_dev_proc(dev, encode_color, default_subclass_encode_color);
+    set_dev_proc(dev, decode_color, default_subclass_decode_color);
+    set_dev_proc(dev, fill_rectangle_hl_color, default_subclass_fill_rectangle_hl_color);
+    set_dev_proc(dev, include_color_space, default_subclass_include_color_space);
+    set_dev_proc(dev, fill_linear_color_scanline, default_subclass_fill_linear_color_scanline);
+    set_dev_proc(dev, fill_linear_color_trapezoid, default_subclass_fill_linear_color_trapezoid);
+    set_dev_proc(dev, fill_linear_color_triangle, default_subclass_fill_linear_color_triangle);
+    set_dev_proc(dev, update_spot_equivalent_colors, default_subclass_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, default_subclass_ret_devn_params);
+    set_dev_proc(dev, fillpage, default_subclass_fillpage);
+    set_dev_proc(dev, push_transparency_state, default_subclass_push_transparency_state);
+    set_dev_proc(dev, pop_transparency_state, default_subclass_pop_transparency_state);
+    set_dev_proc(dev, put_image, default_subclass_put_image);
+    set_dev_proc(dev, dev_spec_op, default_subclass_dev_spec_op);
+    set_dev_proc(dev, copy_planes, default_subclass_copy_planes);
+    set_dev_proc(dev, get_profile, default_subclass_get_profile);
+    set_dev_proc(dev, set_graphics_type_tag, default_subclass_set_graphics_type_tag);
+    set_dev_proc(dev, strip_copy_rop2, default_subclass_strip_copy_rop2);
+    set_dev_proc(dev, strip_tile_rect_devn, default_subclass_strip_tile_rect_devn);
+    set_dev_proc(dev, copy_alpha_hl_color, default_subclass_copy_alpha_hl_color);
+    set_dev_proc(dev, process_page, default_subclass_process_page);
+    set_dev_proc(dev, transform_pixel_region, default_subclass_transform_pixel_region);
+    set_dev_proc(dev, fill_stroke_path, default_subclass_fill_stroke_path);
+
+    return 0;
 }

@@ -426,19 +426,26 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
 /* Procedures */
 static dev_proc_map_rgb_color(mem_mono_map_rgb_color);
 static dev_proc_map_color_rgb(mem_mono_map_color_rgb);
-static dev_proc_copy_mono(mem_mono_copy_mono);
-static dev_proc_fill_rectangle(mem_mono_fill_rectangle);
 static dev_proc_strip_tile_rectangle(mem_mono_strip_tile_rectangle);
 
 /* The device descriptor. */
 /* The instance is public. */
 const gx_device_memory mem_mono_device =
-mem_full_alpha_device("image1", 0, 1, mem_open,
-                      mem_mono_map_rgb_color, mem_mono_map_color_rgb,
-         mem_mono_copy_mono, gx_default_copy_color, mem_mono_fill_rectangle,
-                      gx_default_map_cmyk_color, gx_no_copy_alpha,
-                      mem_mono_strip_tile_rectangle, mem_mono_strip_copy_rop,
-                      mem_get_bits_rectangle);
+    mem_device("image1", 0, 1, mem_dev_initialize);
+
+const gdev_mem_functions gdev_mem_fns_1 =
+{
+    mem_mono_map_rgb_color,
+    mem_mono_map_color_rgb,
+    mem_mono_fill_rectangle,
+    mem_mono_copy_mono,
+    gx_default_copy_color,
+    gx_default_copy_alpha,
+    mem_mono_strip_tile_rectangle,
+    mem_mono_strip_copy_rop,
+    gx_default_strip_copy_rop2,
+    mem_get_bits_rectangle
+};
 
 /* Map color to/from RGB.  This may be inverted. */
 static gx_color_index
@@ -458,7 +465,7 @@ mem_mono_map_color_rgb(gx_device * dev, gx_color_index color,
 }
 
 /* Fill a rectangle with a color. */
-static int
+int
 mem_mono_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                         gx_color_index color)
 {
@@ -582,7 +589,7 @@ static const copy_mode copy_modes[16] = {
   (invert ? gs_note_error(-1) :\
    mem_mono_fill_rectangle(dev, x, y, w, h, color0))
 
-static int
+int
 mem_mono_copy_mono(gx_device * dev,
  const byte * source_data, int source_x, int source_raster, gx_bitmap_id id,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1)
@@ -1074,6 +1081,8 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 #endif /* !USE_COPY_ROP */
 }
 
+
+
 /* ================ "Word"-oriented device ================ */
 
 /* Note that on a big-endian machine, this is the same as the */
@@ -1089,12 +1098,21 @@ static dev_proc_fill_rectangle(mem1_word_fill_rectangle);
 
 /* Here is the device descriptor. */
 const gx_device_memory mem_mono_word_device =
-mem_full_alpha_device("image1w", 0, 1, mem_open,
-                      mem_mono_map_rgb_color, mem_mono_map_color_rgb,
-       mem1_word_copy_mono, gx_default_copy_color, mem1_word_fill_rectangle,
-                      gx_default_map_cmyk_color, gx_no_copy_alpha,
-                      mem1_word_strip_tile_rectangle, gx_no_strip_copy_rop,
-                      mem_word_get_bits_rectangle);
+    mem_device("image1w", 0, 1, mem_word_dev_initialize);
+
+const gdev_mem_functions gdev_mem_fns_1w =
+{
+    mem_mono_map_rgb_color,
+    mem_mono_map_color_rgb,
+    mem1_word_fill_rectangle,
+    mem1_word_copy_mono,
+    gx_default_copy_color,
+    gx_default_copy_alpha,
+    mem1_word_strip_tile_rectangle,
+    gx_no_strip_copy_rop,
+    gx_default_strip_copy_rop2,
+    mem_word_get_bits_rectangle
+};
 
 /* Fill a rectangle with a color. */
 static int

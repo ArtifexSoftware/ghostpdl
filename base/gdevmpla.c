@@ -94,7 +94,8 @@ gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
     int same_depth = planes[0].depth;
     gx_color_index covered = 0;
     int pi;
-    const gx_device_memory *mdproto = gdev_mem_device_for_bits(mdev->color_info.depth);
+    const gdev_mem_functions *fns =
+                    gdev_mem_functions_for_bits(mdev->color_info.depth);
 
     if (num_planes < 1 || num_planes > GX_DEVICE_COLOR_MAX_COMPONENTS || num_planes != mdev->color_info.num_components)
         return_error(gs_error_rangecheck);
@@ -136,14 +137,14 @@ gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
                  mem_planar_fill_rectangle_hl_color);
     if (num_planes == 1) {
         /* For 1 plane, just use a normal device */
-        set_dev_proc(mdev, fill_rectangle, dev_proc(mdproto, fill_rectangle));
-        set_dev_proc(mdev, copy_mono,  dev_proc(mdproto, copy_mono));
-        set_dev_proc(mdev, copy_color, dev_proc(mdproto, copy_color));
-        set_dev_proc(mdev, copy_alpha, dev_proc(mdproto, copy_alpha));
-        set_dev_proc(mdev, strip_tile_rectangle, dev_proc(mdproto, strip_tile_rectangle));
-        set_dev_proc(mdev, strip_copy_rop, dev_proc(mdproto, strip_copy_rop));
-        set_dev_proc(mdev, strip_copy_rop2, dev_proc(mdproto, strip_copy_rop2));
-        set_dev_proc(mdev, get_bits_rectangle, dev_proc(mdproto, get_bits_rectangle));
+        set_dev_proc(mdev, fill_rectangle, fns->fill_rectangle);
+        set_dev_proc(mdev, copy_mono,  fns->copy_mono);
+        set_dev_proc(mdev, copy_color, fns->copy_color);
+        set_dev_proc(mdev, copy_alpha, fns->copy_alpha);
+        set_dev_proc(mdev, strip_tile_rectangle, fns->strip_tile_rectangle);
+        set_dev_proc(mdev, strip_copy_rop, fns->strip_copy_rop);
+        set_dev_proc(mdev, strip_copy_rop2, fns->strip_copy_rop2);
+        set_dev_proc(mdev, get_bits_rectangle, fns->get_bits_rectangle);
     } else {
         /* If we are going out to a separation device or one that has more than
            four planes then use the high level color filling procedure.  Also
@@ -247,7 +248,7 @@ put_image_copy_planes(gx_device * dev, const byte **base_ptr, int sourcex,
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     int plane_depth;
     mem_save_params_t save;
-    const gx_device_memory *mdproto;
+    const gdev_mem_functions *fns;
     int code = 0;
     uchar plane;
 
@@ -256,19 +257,17 @@ put_image_copy_planes(gx_device * dev, const byte **base_ptr, int sourcex,
     {
         const byte *base = base_ptr[plane];
         plane_depth = mdev->planes[plane].depth;
-        mdproto = gdev_mem_device_for_bits(plane_depth);
+        fns = gdev_mem_functions_for_bits(plane_depth);
         if (base == NULL) {
             /* Blank the plane */
-            code = dev_proc(mdproto, fill_rectangle)(dev, x, y, w, h,
+            code = fns->fill_rectangle(dev, x, y, w, h,
                 (gx_color_index)(dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE ? 0 : -1));
         } else if (plane_depth == 1)
-            code = dev_proc(mdproto, copy_mono)(dev, base, sourcex, sraster, id,
-                                                x, y, w, h,
-                                                (gx_color_index)0,
-                                                (gx_color_index)1);
+            code = fns->copy_mono(dev, base, sourcex, sraster, id,
+                                  x, y, w, h,
+                                  (gx_color_index)0, (gx_color_index)1);
         else
-            code = dev_proc(mdproto, copy_color)(dev, base, sourcex, sraster,
-                                                 id, x, y, w, h);
+            fns->copy_color(dev, base, sourcex, sraster, id, x, y, w, h);
         mdev->line_ptrs += mdev->height;
     }
     MEM_RESTORE_PARAMS(mdev, save);
@@ -319,11 +318,12 @@ mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         int plane_depth = mdev->planes[pi].depth;
         gx_color_index mask = ((gx_color_index)1 << plane_depth) - 1;
         int shift = 16 - plane_depth;
-        const gx_device_memory *mdproto = gdev_mem_device_for_bits(plane_depth);
+        const gdev_mem_functions *fns =
+                               gdev_mem_functions_for_bits(plane_depth);
 
         MEM_SET_PARAMS(mdev, plane_depth);
-        dev_proc(mdproto, fill_rectangle)(dev, x, y, w, h,
-                                          (pdcolor->colors.devn.values[pi]) >> shift & mask);
+        fns->fill_rectangle(dev, x, y, w, h,
+                            (pdcolor->colors.devn.values[pi]) >> shift & mask);
         mdev->line_ptrs += mdev->height;
     }
     MEM_RESTORE_PARAMS(mdev, save);
@@ -343,13 +343,12 @@ mem_planar_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     for (pi = 0; pi < mdev->color_info.num_components; ++pi) {
         int plane_depth = mdev->planes[pi].depth;
         gx_color_index mask = ((gx_color_index)1 << plane_depth) - 1;
-        const gx_device_memory *mdproto =
-            gdev_mem_device_for_bits(plane_depth);
+        const gdev_mem_functions *fns =
+                               gdev_mem_functions_for_bits(plane_depth);
 
         MEM_SET_PARAMS(mdev, plane_depth);
-        dev_proc(mdproto, fill_rectangle)(dev, x, y, w, h,
-                                          (color >> mdev->planes[pi].shift) &
-                                          mask);
+        fns->fill_rectangle(dev, x, y, w, h,
+                            (color >> mdev->planes[pi].shift) & mask);
         mdev->line_ptrs += mdev->height;
     }
     MEM_RESTORE_PARAMS(mdev, save);
@@ -371,8 +370,8 @@ mem_planar_copy_mono(gx_device * dev, const byte * base, int sourcex,
         int plane_depth = mdev->planes[pi].depth;
         int shift = mdev->planes[pi].shift;
         gx_color_index mask = ((gx_color_index)1 << plane_depth) - 1;
-        const gx_device_memory *mdproto =
-            gdev_mem_device_for_bits(plane_depth);
+        const gdev_mem_functions *fns =
+                               gdev_mem_functions_for_bits(plane_depth);
         gx_color_index c0 =
             (color0 == gx_no_color_index ? gx_no_color_index :
              (color0 >> shift) & mask);
@@ -382,10 +381,10 @@ mem_planar_copy_mono(gx_device * dev, const byte * base, int sourcex,
 
         MEM_SET_PARAMS(mdev, plane_depth);
         if (c0 == c1)
-            dev_proc(mdproto, fill_rectangle)(dev, x, y, w, h, c0);
+            fns->fill_rectangle(dev, x, y, w, h, c0);
         else
-            dev_proc(mdproto, copy_mono)
-                (dev, base, sourcex, sraster, id, x, y, w, h, c0, c1);
+            fns->copy_mono(dev, base, sourcex, sraster, id,
+                           x, y, w, h, c0, c1);
         mdev->line_ptrs += mdev->height;
     }
     MEM_RESTORE_PARAMS(mdev, save);
@@ -406,7 +405,8 @@ mem_planar_copy_color_24to8(gx_device * dev, const byte * base, int sourcex,
         byte b[BUF_BYTES];
     } buf, buf1, buf2;
     mem_save_params_t save;
-    const gx_device_memory *mdproto = gdev_mem_device_for_bits(8);
+    dev_proc_copy_color((*copy_color)) =
+                             gdev_mem_functions_for_bits(8)->copy_color;
     uint plane_raster = bitmap_raster(w<<3);
     int br, bw, bh, cx, cy, cw, ch, ix, iy;
 
@@ -449,14 +449,11 @@ mem_planar_copy_color_24to8(gx_device * dev, const byte * base, int sourcex,
                 } while (--ix);
                 source_base += sraster;
             }
-            dev_proc(mdproto, copy_color)
-                        (dev, buf.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
+            copy_color(dev, buf.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
             mdev->line_ptrs += mdev->height;
-            dev_proc(mdproto, copy_color)
-                    (dev, buf1.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
+            copy_color(dev, buf1.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
             mdev->line_ptrs += mdev->height;
-            dev_proc(mdproto, copy_color)
-                    (dev, buf2.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
+            copy_color(dev, buf2.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
             mdev->line_ptrs -= 2*mdev->height;
         }
     }
@@ -485,7 +482,8 @@ mem_planar_copy_color_4to1(gx_device * dev, const byte * base, int sourcex,
         byte b[BUF_BYTES];
     } buf0, buf1, buf2, buf3;
     mem_save_params_t save;
-    const gx_device_memory *mdproto = gdev_mem_device_for_bits(1);
+    dev_proc_copy_mono((*copy_mono)) =
+                        gdev_mem_fill_functions_for_bits(1)->copy_mono;
     uint plane_raster = bitmap_raster(w);
     int br, bw, bh, cx, cy, cw, ch, ix, iy;
 
@@ -632,21 +630,17 @@ loop_entry:
                     source_base += sraster;
                 }
             }
-            dev_proc(mdproto, copy_mono)
-                        (dev, buf0.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
-                         (gx_color_index)0, (gx_color_index)1);
+            copy_mono(dev, buf0.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                      (gx_color_index)0, (gx_color_index)1);
             mdev->line_ptrs += mdev->height;
-            dev_proc(mdproto, copy_mono)
-                        (dev, buf1.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
-                         (gx_color_index)0, (gx_color_index)1);
+            copy_mono(dev, buf1.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                      (gx_color_index)0, (gx_color_index)1);
             mdev->line_ptrs += mdev->height;
-            dev_proc(mdproto, copy_mono)
-                        (dev, buf2.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
-                         (gx_color_index)0, (gx_color_index)1);
+            copy_mono(dev, buf2.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                      (gx_color_index)0, (gx_color_index)1);
             mdev->line_ptrs += mdev->height;
-            dev_proc(mdproto, copy_mono)
-                        (dev, buf3.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
-                         (gx_color_index)0, (gx_color_index)1);
+            copy_mono(dev, buf3.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                      (gx_color_index)0, (gx_color_index)1);
             mdev->line_ptrs -= 3*mdev->height;
         }
     }
@@ -736,7 +730,8 @@ mem_planar_copy_color_4to1(gx_device * dev, const byte * base, int sourcex,
         byte b[BUF_BYTES];
     } buf0, buf1, buf2, buf3;
     mem_save_params_t save;
-    const gx_device_memory *mdproto = gdev_mem_device_for_bits(1);
+    dev_proc_copy_mono((*copy_mono)) =
+                         gdev_mem_functions_for_bits(1)->copy_mono;
     uint plane_raster = bitmap_raster(w);
     int br, bw, bh, cx, cy, cw, ch, ix, iy;
 
@@ -833,21 +828,17 @@ loop_entry:
                     source_base += sraster;
                 }
             }
-            dev_proc(mdproto, copy_mono)
-                        (dev, buf0.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
-                         (gx_color_index)0, (gx_color_index)1);
+            copy_mono(dev, buf0.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                      (gx_color_index)0, (gx_color_index)1);
             mdev->line_ptrs += mdev->height;
-            dev_proc(mdproto, copy_mono)
-                        (dev, buf1.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
-                         (gx_color_index)0, (gx_color_index)1);
+            copy_mono(dev, buf1.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                      (gx_color_index)0, (gx_color_index)1);
             mdev->line_ptrs += mdev->height;
-            dev_proc(mdproto, copy_mono)
-                        (dev, buf2.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
-                         (gx_color_index)0, (gx_color_index)1);
+            copy_mono(dev, buf2.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                      (gx_color_index)0, (gx_color_index)1);
             mdev->line_ptrs += mdev->height;
-            dev_proc(mdproto, copy_mono)
-                        (dev, buf3.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
-                         (gx_color_index)0, (gx_color_index)1);
+            copy_mono(dev, buf3.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                      (gx_color_index)0, (gx_color_index)1);
             mdev->line_ptrs -= 3*mdev->height;
         }
     }
@@ -888,8 +879,8 @@ mem_planar_copy_color(gx_device * dev, const byte * base, int sourcex,
         int plane_depth = mdev->planes[pi].depth;
         int shift = mdev->planes[pi].shift;
         gx_color_index mask = ((gx_color_index)1 << plane_depth) - 1;
-        const gx_device_memory *mdproto =
-            gdev_mem_device_for_bits(plane_depth);
+        const gdev_mem_functions *fns =
+                               gdev_mem_functions_for_bits(plane_depth);
         /*
          * Divide up the transfer into chunks that can be assembled
          * within the fixed-size buffer.  This code can be simplified
@@ -960,11 +951,11 @@ mem_planar_copy_color(gx_device * dev, const byte * base, int sourcex,
                  * defined in terms of copy_mono.
                  */
                 if (plane_depth == 1)
-                    dev_proc(mdproto, copy_mono)
+                    fns->copy_mono
                         (dev, buf.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
                          (gx_color_index)0, (gx_color_index)1);
                 else
-                    dev_proc(mdproto, copy_color)
+                    fns->copy_color
                         (dev, buf.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
             }
         }
@@ -983,25 +974,23 @@ mem_planar_copy_planes(gx_device * dev, const byte * base, int sourcex,
                        int x, int y, int w, int h, int plane_height)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-    int plane_depth;
     mem_save_params_t save;
-    const gx_device_memory *mdproto;
     int code = 0;
     uchar plane;
 
     MEM_SAVE_PARAMS(mdev, save);
     for (plane = 0; plane < mdev->color_info.num_components; plane++)
     {
-        plane_depth = mdev->planes[plane].depth;
-        mdproto = gdev_mem_device_for_bits(plane_depth);
+        int plane_depth = mdev->planes[plane].depth;
+        const gdev_mem_functions *fns =
+                               gdev_mem_functions_for_bits(plane_depth);
         if (plane_depth == 1)
-            code = dev_proc(mdproto, copy_mono)(dev, base, sourcex, sraster, id,
-                                                x, y, w, h,
-                                                (gx_color_index)0,
-                                                (gx_color_index)1);
+            code = fns->copy_mono(dev, base, sourcex, sraster, id,
+                                  x, y, w, h,
+                                  (gx_color_index)0, (gx_color_index)1);
         else
-            code = dev_proc(mdproto, copy_color)(dev, base, sourcex, sraster,
-                                                 id, x, y, w, h);
+            code = fns->copy_color(dev, base, sourcex, sraster,
+                                   id, x, y, w, h);
         base += sraster * plane_height;
         mdev->line_ptrs += mdev->height;
     }
@@ -1024,8 +1013,8 @@ mem_planar_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
         int plane_depth = mdev->planes[pi].depth;
         gx_color_index mask = ((gx_color_index)1 << plane_depth) - 1;
         int shift = 16 - plane_depth;
-        const gx_device_memory *mdproto =
-            gdev_mem_device_for_bits(plane_depth);
+        const gdev_mem_functions *fns =
+                               gdev_mem_functions_for_bits(plane_depth);
         gx_color_index c1, c0;
 
         if (pdcolor0->type == gx_dc_type_devn) {
@@ -1045,15 +1034,14 @@ mem_planar_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
 #endif
         MEM_SET_PARAMS(mdev, plane_depth);
         if (c0 == c1)
-            dev_proc(mdproto, fill_rectangle)(dev, x, y, w, h, c0);
+            fns->fill_rectangle(dev, x, y, w, h, c0);
         else {
             /*
              * Temporarily replace copy_mono in case strip_tile_rectangle is
              * defined in terms of it.
              */
-            set_dev_proc(dev, copy_mono, dev_proc(mdproto, copy_mono));
-            dev_proc(mdproto, strip_tile_rectangle)
-                (dev, tiles, x, y, w, h, c0, c1, px, py);
+            set_dev_proc(dev, copy_mono, fns->copy_mono);
+            fns->strip_tile_rectangle(dev, tiles, x, y, w, h, c0, c1, px, py);
         }
         mdev->line_ptrs += mdev->height;
     }
@@ -1081,8 +1069,8 @@ mem_planar_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
         int plane_depth = mdev->planes[pi].depth;
         int shift = mdev->planes[pi].shift;
         gx_color_index mask = ((gx_color_index)1 << plane_depth) - 1;
-        const gx_device_memory *mdproto =
-            gdev_mem_device_for_bits(plane_depth);
+        const gdev_mem_functions *fns =
+                               gdev_mem_functions_for_bits(plane_depth);
         gx_color_index c0 =
             (color0 == gx_no_color_index ? gx_no_color_index :
              (color0 >> shift) & mask);
@@ -1092,15 +1080,14 @@ mem_planar_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 
         MEM_SET_PARAMS(mdev, plane_depth);
         if (c0 == c1)
-            dev_proc(mdproto, fill_rectangle)(dev, x, y, w, h, c0);
+            fns->fill_rectangle(dev, x, y, w, h, c0);
         else {
             /*
              * Temporarily replace copy_mono in case strip_tile_rectangle is
              * defined in terms of it.
              */
-            set_dev_proc(dev, copy_mono, dev_proc(mdproto, copy_mono));
-            dev_proc(mdproto, strip_tile_rectangle)
-                (dev, tiles, x, y, w, h, c0, c1, px, py);
+            set_dev_proc(dev, copy_mono, fns->copy_mono);
+            fns->strip_tile_rectangle(dev, tiles, x, y, w, h, c0, c1, px, py);
         }
         mdev->line_ptrs += mdev->height;
     }
@@ -1733,21 +1720,21 @@ plane_strip_copy_rop(gx_device_memory * mdev,
 {
     mem_save_params_t save;
     int code;
-    const gx_device_memory *mdproto;
+    const gdev_mem_functions *fns;
 
     MEM_SAVE_PARAMS(mdev, save);
     mdev->line_ptrs += mdev->height * plane;
-    mdproto = gdev_mem_device_for_bits(mdev->planes[plane].depth);
+    fns = gdev_mem_functions_for_bits(mdev->planes[plane].depth);
     /* strip_copy_rop might end up calling get_bits_rectangle or fill_rectangle,
      * so ensure we have the right ones in there. */
-    set_dev_proc(mdev, get_bits_rectangle, dev_proc(mdproto, get_bits_rectangle));
-    set_dev_proc(mdev, fill_rectangle, dev_proc(mdproto, fill_rectangle));
+    set_dev_proc(mdev, get_bits_rectangle, fns->get_bits_rectangle);
+    set_dev_proc(mdev, fill_rectangle, fns->fill_rectangle);
     /* mdev->color_info.depth is restored by MEM_RESTORE_PARAMS below. */
     mdev->color_info.depth = mdev->planes[plane].depth;
-    code = dev_proc(mdproto, strip_copy_rop)((gx_device *)mdev, sdata, sourcex, sraster,
-                                             id, scolors, textures, tcolors,
-                                             x, y, width, height,
-                                             phase_x, phase_y, lop);
+    code = fns->strip_copy_rop((gx_device *)mdev, sdata, sourcex, sraster,
+                               id, scolors, textures, tcolors,
+                               x, y, width, height,
+                               phase_x, phase_y, lop);
     set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
     /* The following effectively does: mdev->line_ptrs -= mdev->height * plane; */

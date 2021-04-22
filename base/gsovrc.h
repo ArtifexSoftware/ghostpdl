@@ -195,7 +195,7 @@
  * state, cease to exist as as independent item. The only way to discard
  * the compositor is to change the current device.
  *
- * Subsequent invocations of create_compositor will not create a new
+ * Subsequent invocations of composite will not create a new
  * compositor. Rather, they change the parameters of the existing
  * compositor device. The compositor functions with only a small
  * performance penalty if overprint is disabled, so there is no reason

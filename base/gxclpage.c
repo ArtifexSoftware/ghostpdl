@@ -24,6 +24,8 @@
 #include "string_.h"
 #include <ctype.h>	/* for isalpha, etc. */
 
+extern dev_proc_open_device(clist_open);
+
 /* Save the current clist state into a saved page structure,
  * and optionally stashes the files into the given save_files
  * pointers.
@@ -106,7 +108,7 @@ params_out:
         }
     }
     /* Now re-open the clist device so that we get new files for the next page */
-    return (*gs_clist_device_procs.open_device) ((gx_device *) pdev);
+    return clist_open((gx_device *) pdev);
 }
 
 /* Save a page. The elements are allocated by this function in non_gc_memory */

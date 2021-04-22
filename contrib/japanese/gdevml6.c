@@ -32,11 +32,22 @@ static dev_proc_open_device(ml600_open);
 static dev_proc_close_device(ml600_close);
 static dev_proc_print_page(ml600_print_page);
 
-static gx_device_procs ml600_procs =
-        prn_procs(ml600_open, gdev_prn_output_page, ml600_close);
+static int
+ml600_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, ml600_open);
+    set_dev_proc(dev, close_device, ml600_close);
+
+    return code;
+}
 
 gx_device_printer gs_ml600_device =
-  prn_device(ml600_procs, "ml600",
+  prn_device(ml600_initialize, "ml600",
         83,				/* width_10ths, 8.3" */
         117,				/* height_10ths, 11.7" */
         600, 600,

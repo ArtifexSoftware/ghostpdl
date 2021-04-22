@@ -211,13 +211,27 @@ static media_t media_codes[] = {
 /* ------------------------- 1 bit Monochrome ---------------------------- */
 /***************************************************************************/
 
-static const gx_device_procs bjcmono_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-                 NULL, NULL,
-                 gdev_bjc_get_params, gdev_bjc_put_params);
+static int
+bjcmono_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, gdev_bjc_get_params);
+    set_dev_proc(dev, put_params, gdev_bjc_put_params);
+    set_dev_proc(dev, map_color_rgb, NULL);
+    set_dev_proc(dev, map_rgb_color, NULL);
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
+
 
 const gx_device_bjc_printer gs_bjcmono_device =
-bjc_device(bjcmono_procs, "bjcmono",
+bjc_device(bjcmono_initialize, "bjcmono",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            (float)(3.4 / 25.4), (float)(7.0 / 25.4),
@@ -234,13 +248,28 @@ bjc_device(bjcmono_procs, "bjcmono",
 /* -------------------------- 8 bit Grayscale ---------------------------- */
 /***************************************************************************/
 
-static const gx_device_procs bjcgray_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-                 gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb,
-                 gdev_bjc_get_params, gdev_bjc_put_params);
+static int
+bjcgray_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, gdev_bjc_get_params);
+    set_dev_proc(dev, put_params, gdev_bjc_put_params);
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 const gx_device_bjc_printer gs_bjcgray_device =
-bjc_device(bjcgray_procs, "bjcgray",
+bjc_device(bjcgray_initialize, "bjcgray",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            (float)(3.4 / 25.4), (float)(7.0 / 25.4),
@@ -257,13 +286,28 @@ bjc_device(bjcgray_procs, "bjcgray",
 /* --------------------------- 3 bit CMYK Color -------------------------- */
 /***************************************************************************/
 
-static const gx_device_procs bjc_cmykcolor_procs =
-bjc_cmyk_param_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-                     cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color,
-                     gdev_bjc_get_params, gdev_bjc_put_params);
+static int
+bjccmyk_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk1(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, gdev_bjc_get_params);
+    set_dev_proc(dev, put_params, gdev_bjc_put_params);
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 const gx_device_bjc_printer gs_bjccmyk_device =
-bjc_device(bjc_cmykcolor_procs, "bjccmyk",
+bjc_device(bjccmyk_initialize, "bjccmyk",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            (float)(3.4 / 25.4), (float)(7.0 / 25.4),
@@ -280,13 +324,28 @@ bjc_device(bjc_cmykcolor_procs, "bjccmyk",
 /* --------------------------- 24 bit TrueColor -------------------------- */
 /***************************************************************************/
 
-static const gx_device_procs bjc_truecolor_procs =
-bjc_cmyk_param_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-                     cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color,
-                     gdev_bjc_get_params, gdev_bjc_put_params);
+static int
+bjc_truecolor_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_cmyk8(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, gdev_bjc_get_params);
+    set_dev_proc(dev, put_params, gdev_bjc_put_params);
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 const gx_device_bjc_printer gs_bjccolor_device =
-bjc_device(bjc_truecolor_procs, "bjccolor",
+bjc_device(bjc_truecolor_initialize, "bjccolor",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            (float)(3.4 / 25.4), (float)(7.0 / 25.4),

@@ -27,88 +27,14 @@
 #ifdef PDF_DEVICE_NAME
 
 const gx_device_pdf PDF_DEVICE_IDENT =
-{std_device_dci_type_body(gx_device_pdf, 0, PDF_DEVICE_NAME,
+{std_device_dci_type_body(gx_device_pdf, pdfwrite_initialize,
+                          PDF_DEVICE_NAME,
                           &st_device_pdfwrite,
                           DEFAULT_WIDTH_10THS * X_DPI / 10,
                           DEFAULT_HEIGHT_10THS * Y_DPI / 10,
                           X_DPI, Y_DPI,
                           3, 24, 255, 255, 256, 256),
- {pdf_open,
-  gx_upright_get_initial_matrix,
-  NULL,				/* sync_output */
-  pdf_output_page,
-  pdf_close,
-  gx_default_rgb_map_rgb_color,
-  gx_default_rgb_map_color_rgb,
-  gdev_pdf_fill_rectangle,
-  NULL,				/* tile_rectangle */
-  gdev_pdf_copy_mono,
-  gdev_pdf_copy_color,
-  NULL,				/* draw_line */
-  psdf_get_bits,		/* get_bits */
-  gdev_pdf_get_params,
-  gdev_pdf_put_params,
-  NULL,				/* map_cmyk_color */
-  NULL,				/* get_xfont_procs */
-  NULL,				/* get_xfont_device */
-  NULL,				/* map_rgb_alpha_color */
-  gx_page_device_get_page_device,
-  NULL,				/* get_alpha_bits */
-  NULL,				/* copy_alpha */
-  NULL,				/* get_band */
-  NULL,				/* copy_rop */
-  gdev_pdf_fill_path,
-  gdev_pdf_stroke_path,
-  gdev_pdf_fill_mask,
-  NULL,				/* fill_trapezoid */
-  NULL,				/* fill_parallelogram */
-  NULL,				/* fill_triangle */
-  NULL,				/* draw_thin_line */
-  NULL,				/* begin_image */
-  NULL,				/* image_data */
-  NULL,				/* end_image */
-  gdev_pdf_strip_tile_rectangle,
-  NULL,				/* strip_copy_rop */
-  NULL,				/* get_clipping_box */
-  gdev_pdf_begin_typed_image,
-  psdf_get_bits_rectangle,	/* get_bits_rectangle */
-  NULL,				/* map_color_rgb_alpha */
-  gdev_pdf_create_compositor,	/* create_compositor */
-  NULL,				/* get_hardware_params */
-  gdev_pdf_text_begin,
-  NULL,				/* finish_copydevice */
-  gdev_pdf_begin_transparency_group,	/* begin_transparency_group */
-  gdev_pdf_end_transparency_group,	/* end_transparency_group */
-  gdev_pdf_begin_transparency_mask,	/* begin_transparency_mask */
-  gdev_pdf_end_transparency_mask,	/* end_transparency_mask */
-  NULL,	            /* discard_transparency_layer */
-  NULL,				/* get_color_mapping_procs */
-  NULL,				/* get_color_comp_index */
-  NULL,				/* encode_color */
-  NULL,				/* decode_color */
-  NULL, 			/* pattern_manage */
-  gdev_pdf_fill_rectangle_hl_color, 	/* fill_rectangle_hl_color */
-  gdev_pdf_include_color_space, 	/* include_color_space */
-  NULL,				/* fill_linear_color_scanline */
-  NULL,				/* fill_linear_color_trapezoid */
-  NULL,				/* fill_linear_color_triangle */
-  NULL,				/* update_spot_equivalent_colors */
-  NULL,				/* ret_devn_params */
-  gdev_pdf_fillpage,		/* fillpage */
-  NULL,				/* push_transparency_state */
-  NULL,				/* pop_transparency_state */
-  NULL,				/* put_image */
-  gdev_pdf_dev_spec_op,		/* dev_spec_op */
-  NULL,             /* copy_planes */
-  NULL,             /* get_profile */
-  NULL,             /* set_graphics_type_tag */
-  NULL,             /* strip_copy_rop2 */
-  NULL,             /* strip_tile_rect_devn */
-  NULL,             /* copy_alpha_hl_color */
-  NULL,             /* process_page */
-  NULL,             /* transform_pixel_region */
-  gdev_pdf_fill_stroke_path /* fill_stroke_path */
- },
+ { 0 },
  psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
  0,                     /* pdf_font_dir */
  PDF_FOR_OPDFREAD,		/* is_ps2write */

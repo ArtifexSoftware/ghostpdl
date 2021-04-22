@@ -42,7 +42,7 @@ private_st_gs_image3();
 
 /* Define the image type for ImageType 3 images. */
 const gx_image_type_t gs_image_type_3 = {
-    &st_gs_image3, gx_begin_image3, gx_data_image_source_size,
+    &st_gs_image3, gx_begin_image3,
     gx_image_no_sput, gx_image_no_sget, gx_image_default_release, 3
 };
 static const gx_image_enum_procs_t image3_enum_procs = {

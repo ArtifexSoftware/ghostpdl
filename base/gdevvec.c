@@ -926,8 +926,7 @@ gdev_vector_end_image(gx_device_vector * vdev,
     int code;
 
     if (pie->default_info) {
-        code = gx_default_end_image((gx_device *) vdev, pie->default_info,
-                                    draw_last);
+        code = gx_image_end(pie->default_info, draw_last);
         if (code >= 0)
             code = 0;
     } else {			/* Fill out to the full image height. */

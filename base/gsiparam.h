@@ -43,20 +43,6 @@
  */
 typedef struct gx_image_type_s gx_image_type_t;
 
-#define gs_image_common\
-        const gx_image_type_t *type;\
-                /*\
-                 * Define the transformation from user space to image space.\
-                 */\
-        gs_matrix ImageMatrix
-typedef struct gs_image_common_s {
-    gs_image_common;
-} gs_image_common_t;
-
-#define public_st_gs_image_common() /* in gximage.c */\
-  gs_public_st_simple(st_gs_image_common, gs_image_common_t,\
-    "gs_image_common_t")
-
 /*  Parent image type enumerations.  Since type3 images can give rise to
     type 1 image types, we want to know the origin of these to avoid
     doing different halftone methods to the image and the mask.  */
@@ -87,7 +73,11 @@ typedef enum {
  *      how the data are actually supplied.
  */
 #define gs_data_image_common\
-        gs_image_common;\
+        const gx_image_type_t *type;\
+                /*\
+                 * Define the transformation from user space to image space.\
+                 */\
+        gs_matrix ImageMatrix;\
                 /*\
                  * Define the width of source image in pixels.\
                  */\
@@ -122,6 +112,9 @@ typedef struct gs_data_image_s {
 #define public_st_gs_data_image() /* in gximage.c */\
   gs_public_st_simple(st_gs_data_image, gs_data_image_t,\
     "gs_data_image_t")
+
+/* Historically these were different. No longer. */
+typedef gs_data_image_t gs_image_common_t;
 
 /*
  * Define the data common to ImageType 1 images, ImageType 3 DataDicts,

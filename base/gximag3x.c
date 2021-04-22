@@ -45,7 +45,7 @@ private_st_gs_image3x();
 
 /* Define the image type for ImageType 3x images. */
 const gx_image_type_t gs_image_type_3x = {
-    &st_gs_image3x, gx_begin_image3x, gx_data_image_source_size,
+    &st_gs_image3x, gx_begin_image3x,
     gx_image_no_sput, gx_image_no_sget, gx_image_default_release,
     IMAGE3X_IMAGETYPE
 };

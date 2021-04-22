@@ -32,10 +32,21 @@ declare_mem_procs(mem_true16_copy_mono, mem_true16_copy_color, mem_true16_fill_r
 
 /* The device descriptor. */
 const gx_device_memory mem_true16_device =
-    mem_device("image16", 16, 0,
-               mem_true16_map_rgb_color, mem_true16_map_color_rgb,
-               mem_true16_copy_mono, mem_true16_copy_color,
-               mem_true16_fill_rectangle, mem_default_strip_copy_rop);
+    mem_device("image16", 16, 0, mem_dev_initialize);
+
+const gdev_mem_functions gdev_mem_fns_16 =
+{
+    mem_true16_map_rgb_color,
+    mem_true16_map_color_rgb,
+    mem_true16_fill_rectangle,
+    mem_true16_copy_mono,
+    mem_true16_copy_color,
+    gx_default_copy_alpha,
+    gx_default_strip_tile_rectangle,
+    mem_default_strip_copy_rop,
+    gx_default_strip_copy_rop2,
+    mem_get_bits_rectangle
+};
 
 /* Map a r-g-b color to a color index. */
 static gx_color_index

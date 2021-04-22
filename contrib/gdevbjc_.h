@@ -168,14 +168,6 @@ typedef struct gx_device_bjc_printer_s gx_device_bjc_printer;
   bjc_device_margins(procs, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page, def_ink)
 
-#define bjc_cmyk_param_procs(v_prn_open, v_prn_output_page, v_prn_close, \
-                 p_map_color_rgb, p_map_cmyk_color, \
-                 v_prn_get_params, v_prn_put_params)\
-   {v_prn_open, NULL, NULL, v_prn_output_page, v_prn_close,\
-    NULL, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
-    v_prn_get_params, v_prn_put_params,\
-    p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device}
-
 /* There are the definitions of commands for the Canon BJC printers. */
 
 #define BJC_BJL_CLEANING     0x00  /*   "@Cleaning=1\n" */

@@ -35,7 +35,7 @@ static image_proc_sput(gx_image4_sput);
 static image_proc_sget(gx_image4_sget);
 static image_proc_release(gx_image4_release);
 const gx_image_type_t gs_image_type_4 = {
-    &st_gs_image4, gx_begin_image4, gx_data_image_source_size,
+    &st_gs_image4, gx_begin_image4,
     gx_image4_sput, gx_image4_sget, gx_image4_release, 4
 };
 /*

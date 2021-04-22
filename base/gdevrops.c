@@ -46,79 +46,49 @@ static dev_proc_copy_color(rop_texture_copy_color);
 static dev_proc_copy_planes(rop_texture_copy_planes);
 
 /* The device descriptor. */
+static int
+rop_texture_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, get_initial_matrix,gx_forward_get_initial_matrix);
+    set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, rop_texture_fill_rectangle);
+    set_dev_proc(dev, copy_mono, rop_texture_copy_mono);
+    set_dev_proc(dev, copy_color, rop_texture_copy_color);
+    set_dev_proc(dev, get_params, gx_forward_get_params);
+    set_dev_proc(dev, put_params, gx_forward_put_params);
+    set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
+    set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
+    set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
+    set_dev_proc(dev, copy_alpha, gx_no_copy_alpha);
+    set_dev_proc(dev, get_band, gx_forward_get_band);
+    set_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
+    set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
+    set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
+    set_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
+    set_dev_proc(dev, encode_color, gx_forward_encode_color);
+    set_dev_proc(dev, decode_color, gx_forward_decode_color);
+    set_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
+    set_dev_proc(dev, include_color_space, gx_forward_include_color_space);
+    set_dev_proc(dev, fill_linear_color_scanline, gx_forward_fill_linear_color_scanline);
+    set_dev_proc(dev, fill_linear_color_trapezoid, gx_forward_fill_linear_color_trapezoid);
+    set_dev_proc(dev, fill_linear_color_triangle, gx_forward_fill_linear_color_triangle);
+    set_dev_proc(dev, update_spot_equivalent_colors, gx_forward_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
+    set_dev_proc(dev, fillpage, gx_forward_fillpage);
+    set_dev_proc(dev, dev_spec_op, gx_forward_dev_spec_op);
+    set_dev_proc(dev, copy_planes, rop_texture_copy_planes);
+    set_dev_proc(dev, get_profile, gx_forward_get_profile);
+    set_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+
+    return 0;
+}
 static const gx_device_rop_texture gs_rop_texture_device = {
-    std_device_std_body(gx_device_rop_texture, 0, "rop source",
+    std_device_std_body(gx_device_rop_texture, rop_texture_initialize,
+                        "rop source",
                         0, 0, 1, 1),
-    {NULL,				/* open_device */
-     gx_forward_get_initial_matrix,
-     NULL,				/* default_sync_output */
-     NULL,				/* output_page */
-     NULL,				/* close_device */
-     gx_forward_map_rgb_color,
-     gx_forward_map_color_rgb,
-     rop_texture_fill_rectangle,
-     NULL,				/* tile_rectangle */
-     rop_texture_copy_mono,
-     rop_texture_copy_color,
-     NULL,				/* draw_line */
-     NULL,				/* get_bits */
-     gx_forward_get_params,
-     gx_forward_put_params,
-     gx_forward_map_cmyk_color,
-     gx_forward_get_xfont_procs,
-     gx_forward_get_xfont_device,
-     gx_forward_map_rgb_alpha_color,
-     gx_forward_get_page_device,
-     NULL,				/* get_alpha_bits (no alpha) */
-     gx_no_copy_alpha,		/* shouldn't be called */
-     gx_forward_get_band,
-     gx_no_copy_rop,		/* shouldn't be called */
-     NULL,				/* fill_path */
-     NULL,				/* stroke_path */
-     NULL,				/* fill_mask */
-     NULL,				/* fill_trapezoid */
-     NULL,				/* fill_parallelogram */
-     NULL,				/* fill_triangle */
-     NULL,				/* draw_thin_line */
-     NULL,				/* begin_image */
-     NULL,				/* image_data */
-     NULL,				/* end_image */
-     NULL,				/* strip_tile_rectangle */
-     NULL,				/* strip_copy_rop */
-     gx_forward_get_clipping_box,
-     NULL,				/* begin_typed_image */
-     NULL,				/* get_bits_rectangle */
-     gx_forward_map_color_rgb_alpha,
-     NULL,				/* create_compositor */
-     gx_forward_get_hardware_params,
-     NULL,				/* text_begin */
-     NULL,				/* finish_copydevice */
-     NULL,				/* begin_transparency_group */
-     NULL,				/* end_transparency_group */
-     NULL,				/* begin_transparency_mask */
-     NULL,				/* end_transparency_mask */
-     NULL,				/* discard_transparency_layer */
-     gx_forward_get_color_mapping_procs,
-     gx_forward_get_color_comp_index,
-     gx_forward_encode_color,
-     gx_forward_decode_color,
-     NULL,                              /* dev_spec_op */
-     gx_forward_fill_rectangle_hl_color,
-     gx_forward_include_color_space,
-     gx_forward_fill_linear_color_scanline,
-     gx_forward_fill_linear_color_trapezoid,
-     gx_forward_fill_linear_color_triangle,
-     gx_forward_update_spot_equivalent_colors,
-     gx_forward_ret_devn_params,
-     gx_forward_fillpage,
-     NULL,                              /* push_transparency_state */
-     NULL,                              /* pop_transparency_state */
-     NULL,                              /* put_image */
-     gx_forward_dev_spec_op,
-     rop_texture_copy_planes,           /* copy planes */
-     gx_forward_get_profile,
-     gx_forward_set_graphics_type_tag
-    },
+    { 0 },
     0,				/* target */
     lop_default			/* log_op */
     /* */				/* texture */
@@ -140,9 +110,10 @@ void
 gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
              gs_logical_operation_t log_op, const gx_device_color * texture)
 {
-    gx_device_init((gx_device *) dev,
-                   (const gx_device *)&gs_rop_texture_device,
-                   target->memory, true);
+    /* Can never fail */
+    (void)gx_device_init((gx_device *) dev,
+                         (const gx_device *)&gs_rop_texture_device,
+                         target->memory, true);
     gx_device_set_target((gx_device_forward *)dev, target);
     /* Drawing operations are defaulted, non-drawing are forwarded. */
     check_device_separable((gx_device *) dev);

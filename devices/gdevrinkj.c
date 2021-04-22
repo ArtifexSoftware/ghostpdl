@@ -126,71 +126,27 @@ typedef struct rinkj_device_s {
     char setup_fn[256];
 } rinkj_device;
 
-/*
- * Macro definition for DeviceN procedures
- */
-#define device_procs(get_color_mapping_procs)\
-{	gdev_prn_open,\
-        gx_default_get_initial_matrix,\
-        NULL,				/* sync_output */\
-        /* Since the print_page doesn't alter the device, this device can print in the background */\
-        gdev_prn_bg_output_page,		/* output_page */\
-        rinkj_close_device,		/* close */\
-        NULL,				/* map_rgb_color - not used */\
-        rinkj_map_color_rgb,		/* map_color_rgb */\
-        NULL,				/* fill_rectangle */\
-        NULL,				/* tile_rectangle */\
-        NULL,				/* copy_mono */\
-        NULL,				/* copy_color */\
-        NULL,				/* draw_line */\
-        NULL,				/* get_bits */\
-        rinkj_get_params,		/* get_params */\
-        rinkj_put_params,		/* put_params */\
-        NULL,				/* map_cmyk_color - not used */\
-        NULL,				/* get_xfont_procs */\
-        NULL,				/* get_xfont_device */\
-        NULL,				/* map_rgb_alpha_color */\
-        gx_page_device_get_page_device,	/* get_page_device */\
-        NULL,				/* get_alpha_bits */\
-        NULL,				/* copy_alpha */\
-        NULL,				/* get_band */\
-        NULL,				/* copy_rop */\
-        NULL,				/* fill_path */\
-        NULL,				/* stroke_path */\
-        NULL,				/* fill_mask */\
-        NULL,				/* fill_trapezoid */\
-        NULL,				/* fill_parallelogram */\
-        NULL,				/* fill_triangle */\
-        NULL,				/* draw_thin_line */\
-        NULL,				/* begin_image */\
-        NULL,				/* image_data */\
-        NULL,				/* end_image */\
-        NULL,				/* strip_tile_rectangle */\
-        NULL,				/* strip_copy_rop */\
-        NULL,				/* get_clipping_box */\
-        NULL,				/* begin_typed_image */\
-        NULL,				/* get_bits_rectangle */\
-        NULL,				/* map_color_rgb_alpha */\
-        NULL,				/* create_compositor */\
-        NULL,				/* get_hardware_params */\
-        NULL,				/* text_begin */\
-        NULL,				/* finish_copydevice */\
-        NULL,				/* begin_transparency_group */\
-        NULL,				/* end_transparency_group */\
-        NULL,				/* begin_transparency_mask */\
-        NULL,				/* end_transparency_mask */\
-        NULL,				/* discard_transparency_layer */\
-        get_color_mapping_procs,	/* get_color_mapping_procs */\
-        rinkj_get_color_comp_index,	/* get_color_comp_index */\
-        rinkj_encode_color,		/* encode_color */\
-        rinkj_decode_color		/* decode_color */\
-}
+static int
+spot_cmyk_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, gdev_prn_open);
+    set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
+    set_dev_proc(dev, close_device, rinkj_close_device);
+    set_dev_proc(dev, map_color_rgb, rinkj_map_color_rgb);
+    set_dev_proc(dev, get_params, rinkj_get_params);
+    set_dev_proc(dev, put_params, rinkj_put_params);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, get_color_mapping_procs, get_rinkj_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, rinkj_get_color_comp_index);
+    set_dev_proc(dev, encode_color, rinkj_encode_color);
+    set_dev_proc(dev, decode_color, rinkj_decode_color);
 
-static const gx_device_procs spot_cmyk_procs = device_procs(get_rinkj_color_mapping_procs);
+    return 0;
+}
 
 const rinkj_device gs_rinkj_device =
 {
-    prn_device_body_extended(rinkj_device, spot_cmyk_procs, "rinkj",
+    prn_device_body_extended(rinkj_device, spot_cmyk_initialize, "rinkj",
          DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
          X_DPI, Y_DPI,		/* X and Y hardware resolution */
          0, 0, 0, 0,		/* margins */

@@ -1007,19 +1007,24 @@ static	const HFUNCS	htable[ MAXHTONE ] = {
 *	The definition is based on GS macros, the only real stuff that we
 *	define here are the photoex_ functions.
 */
-static	const gx_device_procs photoex_device_procs = prn_color_params_procs_enc_dec(
+static int
+photoex_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
 
-        photoex_open,					/* Opens the device						*/
-/* Since the print_page doesn't alter the device, this device can print in the background */
-        gdev_prn_bg_output_page,
-        gdev_prn_close,
-        photoex_map_rgb_color,			/* Maps an RGB pixel to device colour	*/
-        photoex_map_color_rgb,			/* Maps device colour back to RGB		*/
-        photoex_get_params,				/* Gets device parameters				*/
-        photoex_put_params,				/* Puts device parameters				*/
-        photoex_encode_color,
-        photoex_decode_color
-);
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, photoex_open);
+    set_dev_proc(dev, map_rgb_color, photoex_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, photoex_map_color_rgb);
+    set_dev_proc(dev, get_params, photoex_get_params);
+    set_dev_proc(dev, put_params, photoex_put_params);
+    set_dev_proc(dev, encode_color, photoex_encode_color);
+    set_dev_proc(dev, decode_color, photoex_decode_color);
+
+    return 0;
+}
 
 /*
 *	Device descriptor structure - this is what GhostScript looks
@@ -1034,7 +1039,7 @@ gx_photoex_device far_data gs_photoex_device = {
         prn_device_body(
 
                 gx_photoex_device,			/* Device struct type					*/
-                photoex_device_procs, 		/* Procedure table						*/
+                photoex_initialize, 		/* Initialize proc						*/
                 "photoex",					/* Name of the device					*/
                 DEFAULT_WIDTH_10THS,		/* Default width						*/
                 DEFAULT_HEIGHT_10THS,		/* Default height						*/

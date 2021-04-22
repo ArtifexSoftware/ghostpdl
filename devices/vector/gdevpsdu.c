@@ -499,7 +499,7 @@ psdf_get_bits_rectangle(
  * compositor.
  */
 int
-psdf_create_compositor(
+psdf_composite(
     gx_device *             dev,
     gx_device **            pcdev,
     const gs_composite_t *  pct,
@@ -511,5 +511,5 @@ psdf_create_compositor(
         *pcdev = dev;
         return 0;
     }
-    return gx_default_create_compositor(dev, pcdev, pct, pgs, mem, cdev);
+    return gx_default_composite(dev, pcdev, pct, pgs, mem, cdev);
 }

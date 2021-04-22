@@ -63,33 +63,23 @@ static dev_proc_map_cmyk_color(jpegcmyk_map_cmyk_color);
 
 /* 24-bit color */
 
-static const gx_device_procs jpeg_procs =
+static int
+jpeg_initialize(gx_device *dev)
 {
-    gdev_prn_open,
-    jpeg_get_initial_matrix,	/* get_initial_matrix */
-    NULL,			/* sync_output */
-/* Since the print_page doesn't alter the device, this device can print in the background */
-    gdev_prn_bg_output_page,
-    gdev_prn_close,
-    gx_default_rgb_map_rgb_color,/* map_rgb_color */
-    gx_default_rgb_map_color_rgb,
-    NULL,			/* fill_rectangle */
-    NULL,			/* tile_rectangle */
-    NULL,			/* copy_mono */
-    NULL,			/* copy_color */
-    NULL,			/* draw_line */
-    NULL,			/* get_bits */
-    jpeg_get_params,
-    jpeg_put_params,
-    NULL,
-    NULL,			/* get_xfont_procs */
-    NULL,			/* get_xfont_device */
-    NULL,			/* map_rgb_alpha_color */
-    gx_page_device_get_page_device
-};
+    int code = gdev_prn_initialize_rgb_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_initial_matrix, jpeg_get_initial_matrix);
+    set_dev_proc(dev, get_params, jpeg_get_params);
+    set_dev_proc(dev, put_params, jpeg_put_params);
+
+    return 0;
+}
 
 const gx_device_jpeg gs_jpeg_device =
-{prn_device_std_body(gx_device_jpeg, jpeg_procs, "jpeg",
+{prn_device_std_body(gx_device_jpeg, jpeg_initialize, "jpeg",
                      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                      X_DPI, Y_DPI, 0, 0, 0, 0, 24, jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */
@@ -101,33 +91,29 @@ const gx_device_jpeg gs_jpeg_device =
 
 /* 8-bit gray */
 
-static const gx_device_procs jpeggray_procs =
+static int
+jpeggray_initialize(gx_device *dev)
 {
-    gdev_prn_open,
-    jpeg_get_initial_matrix,	/* get_initial_matrix */
-    NULL,			/* sync_output */
-/* Since the print_page doesn't alter the device, this device can print in the background */
-    gdev_prn_bg_output_page,
-    gdev_prn_close,
-    gx_default_gray_map_rgb_color,/* map_rgb_color */
-    gx_default_gray_map_color_rgb,
-    NULL,			/* fill_rectangle */
-    NULL,			/* tile_rectangle */
-    NULL,			/* copy_mono */
-    NULL,			/* copy_color */
-    NULL,			/* draw_line */
-    NULL,			/* get_bits */
-    jpeg_get_params,
-    jpeg_put_params,
-    NULL,
-    NULL,			/* get_xfont_procs */
-    NULL,			/* get_xfont_device */
-    NULL,			/* map_rgb_alpha_color */
-    gx_page_device_get_page_device
-};
+    int code = gdev_prn_initialize_gray_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_initial_matrix, jpeg_get_initial_matrix);
+    set_dev_proc(dev, get_params, jpeg_get_params);
+    set_dev_proc(dev, put_params, jpeg_put_params);
+
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 const gx_device_jpeg gs_jpeggray_device =
-{prn_device_body(gx_device_jpeg, jpeggray_procs, "jpeggray",
+{prn_device_body(gx_device_jpeg, jpeggray_initialize, "jpeggray",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI, 0, 0, 0, 0,
                  1, 8, 255, 0, 256, 0,
@@ -138,34 +124,34 @@ const gx_device_jpeg gs_jpeggray_device =
  { 0.0, 0.0 },                   /* translation 0 */
  GX_DOWNSCALER_PARAMS_DEFAULTS
 };
+
 /* 32-bit CMYK */
 
-static const gx_device_procs jpegcmyk_procs =
-{	gdev_prn_open,
-        gx_default_get_initial_matrix,
-/* Since the print_page doesn't alter the device, this device can print in the background */
-        NULL,	/* sync_output */
-        gdev_prn_bg_output_page,
-        gdev_prn_close,
-        NULL,
-        jpegcmyk_map_color_rgb,
-        NULL,	/* fill_rectangle */
-        NULL,	/* tile_rectangle */
-        NULL,	/* copy_mono */
-        NULL,	/* copy_color */
-        NULL,	/* draw_line */
-        NULL,	/* get_bits */
-        jpeg_get_params,
-        jpeg_put_params,
-        jpegcmyk_map_cmyk_color,
-        NULL,	/* get_xfont_procs */
-        NULL,	/* get_xfont_device */
-        NULL,	/* map_rgb_alpha_color */
-        gx_page_device_get_page_device	/* get_page_device */
-};
+static int
+jpegcmyk_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_initial_matrix, jpeg_get_initial_matrix);
+    set_dev_proc(dev, map_color_rgb, jpegcmyk_map_color_rgb);
+    set_dev_proc(dev, get_params, jpeg_get_params);
+    set_dev_proc(dev, put_params, jpeg_put_params);
+    set_dev_proc(dev, map_cmyk_color, jpegcmyk_map_cmyk_color);
+
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
 
 const gx_device_jpeg gs_jpegcmyk_device =
-{prn_device_std_body(gx_device_jpeg, jpegcmyk_procs, "jpegcmyk",
+{prn_device_std_body(gx_device_jpeg, jpegcmyk_initialize, "jpegcmyk",
                      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                      X_DPI, Y_DPI, 0, 0, 0, 0, 32, jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */
@@ -578,4 +564,3 @@ jpeg_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     gs_free_object(mem, in, "jpeg_print_page(in)");
     return code;
 }
-

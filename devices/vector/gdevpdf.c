@@ -220,6 +220,43 @@ static dev_proc_close_device(pdf_close);
 
 /* ---------------- Device prototype ---------------- */
 
+static int
+pdfwrite_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, pdf_open);
+    set_dev_proc(dev, get_initial_matrix, gx_upright_get_initial_matrix);
+    set_dev_proc(dev, output_page, pdf_output_page);
+    set_dev_proc(dev, close_device, pdf_close);
+    set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
+    set_dev_proc(dev, fill_rectangle, gdev_pdf_fill_rectangle);
+    set_dev_proc(dev, copy_mono, gdev_pdf_copy_mono);
+    set_dev_proc(dev, copy_color, gdev_pdf_copy_color);
+    set_dev_proc(dev, get_bits, psdf_get_bits);
+    set_dev_proc(dev, get_params, gdev_pdf_get_params);
+    set_dev_proc(dev, put_params, gdev_pdf_put_params);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, fill_path, gdev_pdf_fill_path);
+    set_dev_proc(dev, stroke_path, gdev_pdf_stroke_path);
+    set_dev_proc(dev, fill_mask, gdev_pdf_fill_mask);
+    set_dev_proc(dev, strip_tile_rectangle, gdev_pdf_strip_tile_rectangle);
+    set_dev_proc(dev, begin_typed_image, gdev_pdf_begin_typed_image);
+    set_dev_proc(dev, get_bits_rectangle, psdf_get_bits_rectangle);
+    set_dev_proc(dev, composite, gdev_pdf_composite);
+    set_dev_proc(dev, text_begin, gdev_pdf_text_begin);
+    set_dev_proc(dev, begin_transparency_group, gdev_pdf_begin_transparency_group);
+    set_dev_proc(dev, end_transparency_group, gdev_pdf_end_transparency_group);
+    set_dev_proc(dev, begin_transparency_mask ,gdev_pdf_begin_transparency_mask);
+    set_dev_proc(dev, end_transparency_mask, gdev_pdf_end_transparency_mask);
+    set_dev_proc(dev, fill_rectangle_hl_color, gdev_pdf_fill_rectangle_hl_color);
+    set_dev_proc(dev, include_color_space, gdev_pdf_include_color_space);
+    set_dev_proc(dev, fillpage, gdev_pdf_fillpage);
+    set_dev_proc(dev, dev_spec_op, gdev_pdf_dev_spec_op);
+    set_dev_proc(dev, fill_stroke_path, gdev_pdf_fill_stroke_path);
+
+    return 0;
+}
+
 #define PDF_DEVICE_NAME "pdfwrite"
 #define PDF_DEVICE_IDENT gs_pdfwrite_device
 #define PDF_DEVICE_MaxInlineImageSize 4000

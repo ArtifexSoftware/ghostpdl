@@ -940,71 +940,23 @@ gs_public_st_composite_final(st_gx_devn_prn_device, gx_devn_prn_device,
     "gx_devn_prn_device", gx_devn_prn_device_enum_ptrs, gx_devn_prn_device_reloc_ptrs,
     static_gx_devn_prn_device_finalize);
 
-/*
- * Macro definition for DeviceN procedures
- */
-#define device_procs()\
-{       spotcmyk_prn_open,\
-        gx_default_get_initial_matrix,\
-        NULL,                           /* sync_output */\
-        gdev_prn_output_page,           /* output_page */\
-        gdev_prn_close,                 /* close */\
-        NULL,                           /* map_rgb_color - not used */\
-        NULL,                           /* map_color_rgb - not used */\
-        NULL,                           /* fill_rectangle */\
-        NULL,                           /* tile_rectangle */\
-        NULL,                           /* copy_mono */\
-        NULL,                           /* copy_color */\
-        NULL,                           /* draw_line */\
-        NULL,                           /* get_bits */\
-        gx_devn_prn_get_params,         /* get_params */\
-        gx_devn_prn_put_params,         /* put_params */\
-        NULL,                           /* map_cmyk_color - not used */\
-        NULL,                           /* get_xfont_procs */\
-        NULL,                           /* get_xfont_device */\
-        NULL,                           /* map_rgb_alpha_color */\
-        gx_page_device_get_page_device, /* get_page_device */\
-        NULL,                           /* get_alpha_bits */\
-        NULL,                           /* copy_alpha */\
-        NULL,                           /* get_band */\
-        NULL,                           /* copy_rop */\
-        NULL,                           /* fill_path */\
-        NULL,                           /* stroke_path */\
-        NULL,                           /* fill_mask */\
-        NULL,                           /* fill_trapezoid */\
-        NULL,                           /* fill_parallelogram */\
-        NULL,                           /* fill_triangle */\
-        NULL,                           /* draw_thin_line */\
-        NULL,                           /* begin_image */\
-        NULL,                           /* image_data */\
-        NULL,                           /* end_image */\
-        NULL,                           /* strip_tile_rectangle */\
-        NULL,                           /* strip_copy_rop */\
-        NULL,                           /* get_clipping_box */\
-        NULL,                           /* begin_typed_image */\
-        NULL,                           /* get_bits_rectangle */\
-        NULL,                           /* map_color_rgb_alpha */\
-        NULL,                           /* create_compositor */\
-        NULL,                           /* get_hardware_params */\
-        NULL,                           /* text_begin */\
-        NULL,                           /* finish_copydevice */\
-        NULL,                           /* begin_transparency_group */\
-        NULL,                           /* end_transparency_group */\
-        NULL,                           /* begin_transparency_mask */\
-        NULL,                           /* end_transparency_mask */\
-        NULL,                           /* discard_transparency_layer */\
-        gx_devn_prn_get_color_mapping_procs,/* get_color_mapping_procs */\
-        gx_devn_prn_get_color_comp_index,/* get_color_comp_index */\
-        gx_devn_prn_encode_color,       /* encode_color */\
-        gx_devn_prn_decode_color,       /* decode_color */\
-        NULL,                           /* pattern_manage */\
-        NULL,                           /* fill_rectangle_hl_color */\
-        NULL,                           /* include_color_space */\
-        NULL,                           /* fill_linear_color_scanline */\
-        NULL,                           /* fill_linear_color_trapezoid */\
-        NULL,                           /* fill_linear_color_triangle */\
-        gx_devn_prn_update_spot_equivalent_colors,/* update_spot_equivalent_colors */\
-        gx_devn_prn_ret_devn_params     /* ret_devn_params */\
+static int
+devicen_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, spotcmyk_prn_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page);
+    set_dev_proc(dev, close_device, gdev_prn_close);
+    set_dev_proc(dev, get_params, gx_devn_prn_get_params);
+    set_dev_proc(dev, put_params, gx_devn_prn_put_params);
+    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
+    set_dev_proc(dev, get_color_mapping_procs, gx_devn_prn_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, gx_devn_prn_get_color_comp_index);
+    set_dev_proc(dev, encode_color, gx_devn_prn_encode_color);
+    set_dev_proc(dev, decode_color, gx_devn_prn_decode_color);
+    set_dev_proc(dev, update_spot_equivalent_colors, gx_devn_prn_update_spot_equivalent_colors);
+    set_dev_proc(dev, ret_devn_params, gx_devn_prn_ret_devn_params);
+
+    return 0;
 }
 
 fixed_colorant_name DeviceGrayComponents[] = {
@@ -1027,8 +979,8 @@ fixed_colorant_name DeviceCMYKComponents[] = {
         0               /* List terminator */
 };
 
-#define gx_devn_prn_device_body(procs, dname, ncomp, pol, depth, mg, mc, cn)\
-    std_device_full_body_type_extended(gx_devn_prn_device, &procs, dname,\
+#define gx_devn_prn_device_body(init, dname, ncomp, pol, depth, mg, mc, cn)\
+    std_device_full_body_type_extended(gx_devn_prn_device, init, dname,\
           &st_gx_devn_prn_device,\
           (int)((long)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10),\
           (int)((long)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10),\
@@ -1049,11 +1001,9 @@ fixed_colorant_name DeviceCMYKComponents[] = {
 /*
  * Example device with CMYK and spot color support
  */
-static const gx_device_procs spot_cmyk_procs = device_procs();
-
 const gx_devn_prn_device gs_spotcmyk_device =
 {
-    gx_devn_prn_device_body(spot_cmyk_procs, "spotcmyk", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 4, 1, 1, "DeviceCMYK"),
+    gx_devn_prn_device_body(devicen_initialize, "spotcmyk", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 4, 1, 1, "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 1,                        /* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,     /* Names of color model colorants */
@@ -1069,11 +1019,9 @@ const gx_devn_prn_device gs_spotcmyk_device =
 /*
  * Example DeviceN color device
  */
-static const gx_device_procs devicen_procs = device_procs();
-
 const gx_devn_prn_device gs_devicen_device =
 {
-    gx_devn_prn_device_body(devicen_procs, "devicen", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
+    gx_devn_prn_device_body(devicen_initialize, "devicen", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,     /* Names of color model colorants */

@@ -35,12 +35,29 @@
 static dev_proc_print_page(pcxmono_print_page);
 
 /* Use the default RGB->color map, so we get black=0, white=1. */
+
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static const gx_device_procs pcxmono_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                gx_default_map_rgb_color, gx_default_map_color_rgb);
+static int
+pcxmono_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, map_rgb_color, gx_default_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
+
 const gx_device_printer gs_pcxmono_device =
-prn_device(pcxmono_procs, "pcxmono",
+prn_device(pcxmono_initialize, "pcxmono",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -51,11 +68,25 @@ prn_device(pcxmono_procs, "pcxmono",
 static dev_proc_print_page(pcx256_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static const gx_device_procs pcxgray_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-              gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
+static int
+pcxgray_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_gray_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
+
 const gx_device_printer gs_pcxgray_device =
-{prn_device_body(gx_device_printer, pcxgray_procs, "pcxgray",
+{prn_device_body(gx_device_printer, pcxgray_initialize, "pcxgray",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -67,11 +98,28 @@ const gx_device_printer gs_pcxgray_device =
 static dev_proc_print_page(pcx16_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static const gx_device_procs pcx16_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
+static int
+pcx16_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return 0;
+
+    set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, pc_4bit_map_color_rgb);
+
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
+
 const gx_device_printer gs_pcx16_device =
-{prn_device_body(gx_device_printer, pcx16_procs, "pcx16",
+{prn_device_body(gx_device_printer, pcx16_initialize, "pcx16",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -82,11 +130,28 @@ const gx_device_printer gs_pcx16_device =
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static const gx_device_procs pcx256_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
+static int
+pcx256_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_bg(dev);
+
+    if (code < 0)
+        return 0;
+
+    set_dev_proc(dev, map_rgb_color, pc_8bit_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, pc_8bit_map_color_rgb);
+
+    /* The static init used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
+
 const gx_device_printer gs_pcx256_device =
-{prn_device_body(gx_device_printer, pcx256_procs, "pcx256",
+{prn_device_body(gx_device_printer, pcx256_initialize, "pcx256",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -98,11 +163,25 @@ const gx_device_printer gs_pcx256_device =
 static dev_proc_print_page(pcx24b_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static const gx_device_procs pcx24b_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+static int
+pcx24b_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_rgb_bg(dev);
+
+    if (code < 0)
+        return 0;
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
+
 const gx_device_printer gs_pcx24b_device =
-prn_device(pcx24b_procs, "pcx24b",
+prn_device(pcx24b_initialize, "pcx24b",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -112,32 +191,25 @@ prn_device(pcx24b_procs, "pcx24b",
 
 static dev_proc_print_page(pcxcmyk_print_page);
 
-static const gx_device_procs pcxcmyk_procs =
+static int
+pcxcmyk_initialize(gx_device *dev)
 {
-    gdev_prn_open,
-    NULL,			/* get_initial_matrix */
-    NULL,			/* sync_output */
-/* Since the print_page doesn't alter the device, this device can print in the background */
-    gdev_prn_bg_output_page,
-    gdev_prn_close,
-    NULL,			/* map_rgb_color */
-    cmyk_1bit_map_color_rgb,
-    NULL,			/* fill_rectangle */
-    NULL,			/* tile_rectangle */
-    NULL,			/* copy_mono */
-    NULL,			/* copy_color */
-    NULL,			/* draw_line */
-    NULL,			/* get_bits */
-    gdev_prn_get_params,
-    gdev_prn_put_params,
-    cmyk_1bit_map_cmyk_color,
-    NULL,			/* get_xfont_procs */
-    NULL,			/* get_xfont_device */
-    NULL,			/* map_rgb_alpha_color */
-    gx_page_device_get_page_device
-};
+    int code = gdev_prn_initialize_cmyk1_bg(dev);
+
+    if (code < 0)
+        return 0;
+
+    /* The prn macros used in previous versions of the code leave
+     * encode_color and decode_color set to NULL (which are then rewritten
+     * by the system to the default. For compatibility we do the same. */
+    set_dev_proc(dev, encode_color, NULL);
+    set_dev_proc(dev, decode_color, NULL);
+
+    return 0;
+}
+
 const gx_device_printer gs_pcxcmyk_device =
-{prn_device_body(gx_device_printer, pcxcmyk_procs, "pcxcmyk",
+{prn_device_body(gx_device_printer, pcxcmyk_initialize, "pcxcmyk",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */

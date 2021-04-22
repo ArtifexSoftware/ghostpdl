@@ -606,7 +606,7 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
         line_size = (w + 7) >> 3;
         line_width = w;
         line_x = 0;
-    } else if (copy_mono == dev_proc(&mem_mono_device, copy_mono) &&
+    } else if (copy_mono == mem_mono_copy_mono &&
                dxx > 0 && gx_dc_is_pure(pdc1) && gx_dc_is_pure(pdc0) &&
                /* We know the colors must be (0,1) or (1,0). */
                (pdc0->colors.pure ^ pdc1->colors.pure) == 1 &&

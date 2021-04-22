@@ -130,25 +130,22 @@ static dev_proc_map_color_rgb(stc_map_color_cmyk10);
 /***
  *** Table of Device-Procedures
  ***/
-static gx_device_procs stcolor_procs = {
-        stc_open,
-        gx_default_get_initial_matrix,
-        gx_default_sync_output,
-        /* Since the print_page doesn't alter the device, this device can print in the background */
-        gdev_prn_bg_output_page,
-        stc_close,
-        NULL,
-        stc_map_color_cmyk,
-        NULL,   /* fill_rectangle */
-        NULL,   /* tile_rectangle */
-        NULL,   /* copy_mono */
-        NULL,   /* copy_color */
-        NULL,   /* draw_line */
-        gx_default_get_bits,
-        stc_get_params,
-        stc_put_params,
-        stc_map_cmyk_color
-};
+static int
+stcolor_initialize(gx_device *dev)
+{
+    set_dev_proc(dev, open_device, stc_open);
+    set_dev_proc(dev, get_initial_matrix, gx_default_get_initial_matrix);
+    set_dev_proc(dev, sync_output, gx_default_sync_output);
+    set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
+    set_dev_proc(dev, close_device, stc_close);
+    set_dev_proc(dev, map_color_rgb, stc_map_color_cmyk);
+    set_dev_proc(dev, get_bits, gx_default_get_bits);
+    set_dev_proc(dev, get_params, stc_get_params);
+    set_dev_proc(dev, put_params, stc_put_params);
+    set_dev_proc(dev, map_cmyk_color, stc_map_cmyk_color);
+
+    return 0;
+}
 
 /***
  *** A local dummy-array for extvals
@@ -160,7 +157,7 @@ static float defext[] = { 0.0, 1.0 };
  *** Main device-control structure
  ***/
 stcolor_device far_data gs_stcolor_device = {
-   prn_device_body(stcolor_device, stcolor_procs, "stcolor",
+   prn_device_body(stcolor_device, stcolor_initialize, "stcolor",
       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
       X_DPI,  Y_DPI,
       STC_L_MARGIN,STC_B_MARGIN,STC_R_MARGIN,STC_T_MARGIN,

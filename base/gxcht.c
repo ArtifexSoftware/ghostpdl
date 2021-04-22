@@ -671,8 +671,8 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
 
     /*
      * If the LCM of the plane cell sizes is smaller than the rectangle
-     * being filled, compute a single tile and let tile_rectangle do the
-     * replication.
+     * being filled, compute a single tile and let strip_tile_rectangle
+     * do the replication.
      */
     if ((w > lw || h > lh) &&
         (raster = bitmap_raster(lw * depth)) <= tile_bytes / lh

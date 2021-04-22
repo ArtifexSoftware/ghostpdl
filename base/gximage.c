@@ -28,7 +28,6 @@
 /* ---------------- Generic image support ---------------- */
 
 /* Structure descriptors */
-public_st_gs_image_common();
 public_st_gs_data_image();
 public_st_gs_pixel_image();
 
@@ -109,18 +108,6 @@ gx_image_enum_common_init(gx_image_enum_common_t * piec,
     }
     for (i = 0; i < piec->num_planes; ++i)
         piec->plane_widths[i] = pic->Width;
-    return 0;
-}
-
-/* Compute the source size of an ordinary image with explicit data. */
-int
-gx_data_image_source_size(const gs_gstate * pgs,
-                          const gs_image_common_t * pim, gs_int_point * psize)
-{
-    const gs_data_image_t *pdi = (const gs_data_image_t *)pim;
-
-    psize->x = pdi->Width;
-    psize->y = pdi->Height;
     return 0;
 }
 

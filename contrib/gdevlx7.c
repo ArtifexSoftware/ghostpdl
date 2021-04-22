@@ -107,9 +107,19 @@ static dev_proc_get_params(lxm_get_params);
 static dev_proc_put_params(lxm_put_params);
 
 /* set up dispatch table.  I follow gdevdjet in using gdev_prn_output_page */
-static const gx_device_procs lxm7000m_procs =
-    prn_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-                     lxm_get_params, lxm_put_params);
+static int
+lxm7000m_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, get_params, lxm_get_params);
+    set_dev_proc(dev, put_params, lxm_put_params);
+
+    return 0;
+}
 
 /* The device descriptors */
 
@@ -140,7 +150,7 @@ typedef struct lxm_device_s { /* a sub-class of gx_device_printer */
 #define LXR_1200 2
 
 lxm_device far_data gs_lex7000_device = {
-    prn_device_std_body(lxm_device, lxm7000m_procs, "lex7000",
+    prn_device_std_body(lxm_device, lxm7000m_initialize, "lex7000",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         /* total width & height in 10x " - A4 or letter compiled in.
          * may be overriden by -sPAPERSIZE=a4 of -sPAPERSIZE=letter
@@ -163,7 +173,7 @@ lxm_device far_data gs_lex7000_device = {
 };
 
 lxm_device far_data gs_lex5700_device = {
-    prn_device_std_body(lxm_device, lxm7000m_procs, "lex5700",
+    prn_device_std_body(lxm_device, lxm7000m_initialize, "lex5700",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         /* total width & height in 10x " - A4 or letter compiled in.
          * may be overriden by -sPAPERSIZE=a4 of -sPAPERSIZE=letter
@@ -186,7 +196,7 @@ lxm_device far_data gs_lex5700_device = {
 };
 
 lxm_device far_data gs_lex3200_device = {
-    prn_device_std_body(lxm_device, lxm7000m_procs, "lex3200",
+    prn_device_std_body(lxm_device, lxm7000m_initialize, "lex3200",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         /* total width & height in 10x " - A4 or letter compiled in.
          * may be overriden by -sPAPERSIZE=a4 of -sPAPERSIZE=letter
@@ -209,7 +219,7 @@ lxm_device far_data gs_lex3200_device = {
 };
 
 lxm_device far_data gs_lex2050_device = {
-    prn_device_std_body(lxm_device, lxm7000m_procs, "lex2050",
+    prn_device_std_body(lxm_device, lxm7000m_initialize, "lex2050",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         /* total width & height in 10x " - A4 or letter compiled in.
          * may be overriden by -sPAPERSIZE=a4 of -sPAPERSIZE=letter

@@ -28,21 +28,6 @@
 #undef mdev
 #include "gxcpath.h"
 
-/* By default, implement tile_rectangle using strip_tile_rectangle. */
-int
-gx_default_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
-   int x, int y, int w, int h, gx_color_index color0, gx_color_index color1,
-                          int px, int py)
-{
-    gx_strip_bitmap tiles;
-
-    *(gx_tile_bitmap *) & tiles = *tile;
-    tiles.shift = tiles.rep_shift = 0;
-    tiles.num_planes = 1;
-    return (*dev_proc(dev, strip_tile_rectangle))
-        (dev, &tiles, x, y, w, h, color0, color1, px, py);
-}
-
 /* Implement copy_mono by filling lots of small rectangles. */
 /* This is very inefficient, but it works as a default. */
 int
@@ -530,17 +515,6 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 }
 
 int
-gx_no_copy_rop(gx_device * dev,
-             const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-               const gx_color_index * scolors,
-             const gx_tile_bitmap * texture, const gx_color_index * tcolors,
-               int x, int y, int width, int height,
-               int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    return_error(gs_error_unknownerror);	/* not implemented */
-}
-
-int
 gx_default_fill_mask(gx_device * orig_dev,
                      const byte * data, int dx, int raster, gx_bitmap_id id,
                      int x, int y, int w, int h,
@@ -644,27 +618,7 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     }
 #endif
 
-    if (dev_proc(dev, tile_rectangle) != gx_default_tile_rectangle) {
-        if (shift == 0) {	/*
-                                 * Temporarily patch the tile_rectangle procedure in the
-                                 * device so we don't get into a recursion loop if the
-                                 * device has a tile_rectangle procedure that conditionally
-                                 * calls the strip_tile_rectangle procedure.
-                                 */
-            dev_proc_tile_rectangle((*tile_proc)) =
-                dev_proc(dev, tile_rectangle);
-            int code = 0;
-
-            set_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
-            code = (*tile_proc)
-                (dev, (const gx_tile_bitmap *)tiles, x, y, w, h,
-                 color0, color1, px, py);
-            set_dev_proc(dev, tile_rectangle, tile_proc);
-            return code;
-        }
-        /* We should probably optimize this case too, for the benefit */
-        /* of window systems, but we don't yet. */
-    } {				/*
+    {				/*
                                  * Note: we can't do the following computations until after
                                  * the fit_fill_xy.
                                  */

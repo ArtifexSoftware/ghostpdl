@@ -27,10 +27,24 @@ typedef	long	off_t;
 static dev_proc_open_device(sonyfb_open);
 static dev_proc_output_page(sonyfb_output_page);
 static dev_proc_close_device(sonyfb_close);
-static gx_device_procs sonyfb_procs =
-  prn_procs(sonyfb_open, sonyfb_output_page, sonyfb_close);
+
+static int
+sonyfb_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono_bg(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, sonyfb_open);
+    set_dev_proc(dev, output_page, sonyfb_output_page);
+    set_dev_proc(dev, close_device, sonyfb_close);
+
+    return 0;
+}
+
 const gx_device_printer far_data gs_sonyfb_device =
-  prn_device(sonyfb_procs, "sonyfb",
+  prn_device(sonyfb_initialize, "sonyfb",
         102.4,				/* width_10ths */
         103.2,				/* height_10ths */
         100,				/* x_dpi */

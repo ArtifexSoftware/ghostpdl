@@ -92,10 +92,26 @@ static dev_proc_close_device(pcl3_close_device);
 static dev_proc_get_params(pcl3_get_params);
 static dev_proc_put_params(pcl3_put_params);
 
-/* Device procedure table */
-static gx_device_procs pcl3_procs = {
-  eprn_procs_initdata(pcl3_open_device, pcl3_close_device, pcl3_get_params,
-    pcl3_put_params)
+/* Device procedures */
+static int
+eprn_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, pcl3_open_device);
+    set_dev_proc(dev, get_initial_matrix, eprn_get_initial_matrix);
+    set_dev_proc(dev, close_device, pcl3_close_device);
+    set_dev_proc(dev, map_rgb_color, eprn_map_rgb_color_for_CMY_or_K);
+    set_dev_proc(dev, map_color_rgb, eprn_map_color_rgb);
+    set_dev_proc(dev, map_cmyk_color, eprn_map_cmyk_color_glob);
+    set_dev_proc(dev, get_params, pcl3_get_params);
+    set_dev_proc(dev, put_params, pcl3_put_params);
+    set_dev_proc(dev, fillpage, eprn_fillpage);
+
+    return 0;
 };
 
 /* prn procedure implementations */
@@ -129,7 +145,7 @@ static void pcl3_flag_mismatch_reporter(
   pcl3_Device gs_##dname##_device = {                           \
     eprn_device_initdata(                                       \
       pcl3_Device,      /* device type */                       \
-      pcl3_procs,       /* static device procedure table */     \
+      eprn_initialize,  /* initialize pointer */                \
       #dname,           /* device name */                       \
       300.0, 300.0,     /* horizontal and vertical resolution */\
       pcl3_print_page,  /* print page routine */                \

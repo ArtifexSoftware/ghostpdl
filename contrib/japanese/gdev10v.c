@@ -37,36 +37,8 @@ copies.  */
    No checking on resolutions are being made.
  */
 
-#if 0
-#define prn_matrix_procs(p_open, p_get_initial_matrix, p_output_page, p_close) {\
-        p_open,\
-        p_get_initial_matrix,\
-        NULL,	/* sync_output */\
-        p_output_page,\
-        p_close,\
-        gdev_prn_map_rgb_color,\
-        gdev_prn_map_color_rgb,\
-        NULL,	/* fill_rectangle */\
-        NULL,	/* tile_rectangle */\
-        NULL,	/* copy_mono */\
-        NULL,	/* copy_color */\
-        NULL,	/* draw_line */\
-        NULL,	/* get_bits */\
-        gdev_prn_get_params,\
-        gdev_prn_put_params,\
-        NULL,	/* map_cmyk_color */\
-        NULL,	/* get_xfont_procs */\
-        NULL,	/* get_xfont_device */\
-        NULL,	/* map_rgb_alpha_color */\
-        gx_page_device_get_page_device\
-}
-#endif
-
 /* The device descriptor */
 static dev_proc_print_page(bj10v_print_page);
-#if 0
-static dev_proc_get_initial_matrix(bj10v_get_initial_matrix);
-#endif
 
 static int
 bj10v_open(gx_device * pdev)
@@ -82,34 +54,6 @@ bj10v_open(gx_device * pdev)
 
 
 #if 0
-gx_device_procs prn_bj10v_procs =
-  prn_matrix_procs(gdev_prn_open, bj10v_get_initial_matrix,
-    gdev_prn_output_page, gdev_prn_close);
-#endif
-gx_device_procs prn_bj10v_procs =
-  prn_procs(bj10v_open, gdev_prn_output_page, gdev_prn_close);
-
-gx_device_printer gs_bj10v_device =
-  prn_device(prn_bj10v_procs, "bj10v",
-        DEFAULT_WIDTH_10THS,		/* width_10ths */
-        DEFAULT_HEIGHT_10THS,	/* height_10ths */
-        360,				/* x_dpi */
-        360,				/* y_dpi */
-        0.134, 0.507, 0.166, 0.867,	/* l, b, r, t margins */
-        1, bj10v_print_page);
-
-gx_device_printer gs_bj10vh_device =
-  prn_device(prn_bj10v_procs, "bj10vh",
-        DEFAULT_WIDTH_10THS,		/* width_10ths */
-        DEFAULT_HEIGHT_10THS,  	/* height_10ths */
-        360,				/* x_dpi */
-        360,				/* y_dpi */
-        0.134, 0.507, 0.166, 0.335,	/* l, b, r, t margins */
-        1, bj10v_print_page);
-
-/* ------ Internal routines ------ */
-
-#if 0
 /* Shift the origin from the top left corner of the pysical page to the
    first printable pixel, as defined by the top and left margins. */
 static void
@@ -118,7 +62,51 @@ bj10v_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
         pmat->tx -= dev_l_margin(dev) * dev->x_pixels_per_inch;
         pmat->ty -= dev_t_margin(dev) * dev->y_pixels_per_inch;
 }
+
+static int
+bj10v_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    set_dev_proc(dev, get_initial_matrix, bj10v_get_initial_matrix);
+
+    return 0;
+}
+
+#else
+
+static int
+bj10v_initialize(gx_device *dev)
+{
+    int code = gdev_prn_initialize_mono(dev);
+
+    if (code < 0)
+        return code;
+
+    set_dev_proc(dev, open_device, bj10v_open);
+
+    return 0;
+}
+
 #endif
+
+gx_device_printer gs_bj10v_device =
+  prn_device(bj10v_initialize, "bj10v",
+        DEFAULT_WIDTH_10THS,		/* width_10ths */
+        DEFAULT_HEIGHT_10THS,	/* height_10ths */
+        360,				/* x_dpi */
+        360,				/* y_dpi */
+        0.134, 0.507, 0.166, 0.867,	/* l, b, r, t margins */
+        1, bj10v_print_page);
+
+gx_device_printer gs_bj10vh_device =
+  prn_device(bj10v_initialize, "bj10vh",
+        DEFAULT_WIDTH_10THS,		/* width_10ths */
+        DEFAULT_HEIGHT_10THS,  	/* height_10ths */
+        360,				/* x_dpi */
+        360,				/* y_dpi */
+        0.134, 0.507, 0.166, 0.335,	/* l, b, r, t margins */
+        1, bj10v_print_page);
 
 /* ---- Printer output routines ---- */
 

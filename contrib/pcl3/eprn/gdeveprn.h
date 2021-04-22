@@ -646,7 +646,6 @@ extern void eprn_set_media_flags(eprn_Device *dev, ms_MediaCode desired,
 
 /*****************************************************************************/
 
-/* Device procedures */
 extern dev_proc_open_device(eprn_open_device);
 extern dev_proc_get_initial_matrix(eprn_get_initial_matrix);
 extern dev_proc_output_page(eprn_output_page);
@@ -666,84 +665,6 @@ extern dev_proc_map_cmyk_color(eprn_map_cmyk_color_max);
 extern dev_proc_map_cmyk_color(eprn_map_cmyk_color_glob);
 extern dev_proc_fillpage(eprn_fillpage);
 
-/*  Macro for initializing device procedure tables
-
-    This macro corresponds to the macro prn_params_procs() which is used when
-    basing a device directly on the prn device.
-
-    If your device does not need all of the procedures in the argument list,
-    use the following defaults:
-      p_open:		eprn_open_device
-      p_close:		eprn_close_device
-      p_get_params:	eprn_get_params
-      p_put_params:	eprn_put_params
-    On the other hand, if your driver needs its own procedure in any of these
-    cases its code must also call the appropriate default routine.
-*/
-#define eprn_procs_initdata(p_open, p_close, p_get_params, p_put_params) \
-  p_open,			/* open_device */		\
-  eprn_get_initial_matrix,	/* get_initial_matrix */	\
-  NULL,				/* sync_output */		\
-  eprn_output_page,		/* output_page */		\
-  p_close,			/* close_device */		\
-  eprn_map_rgb_color_for_CMY_or_K,  /* map_rgb_color */		\
-  eprn_map_color_rgb,		/* map_color_rgb */		\
-  NULL,				/* fill_rectangle */		\
-  NULL,				/* tile_rectangle */		\
-  NULL,				/* copy_mono */			\
-  NULL,				/* copy_color */		\
-  NULL,				/* draw_line */			\
-  NULL,				/* get_bits */			\
-  p_get_params,			/* get_params */		\
-  p_put_params,			/* put_params */		\
-  eprn_map_cmyk_color_glob,	/* map_cmyk_color */		\
-  NULL,				/* get_xfont_procs */		\
-  NULL,				/* get_xfont_device */		\
-  NULL,				/* map_rgb_alpha_color */	\
-  gx_page_device_get_page_device, /* get_page_device */         \
-  NULL,                         /* get_alpha_bits */            \
-  NULL,                         /* copy_alpha */                \
-  NULL,                         /* get_band */                  \
-  NULL,                         /* copy_rop */                  \
-  NULL,                         /* fill_path */                 \
-  NULL,                         /* stroke_path */               \
-  NULL,                         /* fill_mask */                 \
-  NULL,                         /* fill_trapezoid */            \
-  NULL,                         /* fill_parallelogram */        \
-  NULL,                         /* fill_triangle */             \
-  NULL,                         /* draw_thin_line */            \
-  NULL,                         /* begin_image */               \
-  NULL,                         /* image_data */                \
-  NULL,                         /* end_image */                 \
-  NULL,                         /* strip_tile_rectangle */      \
-  NULL,                         /* strip_copy_rop */            \
-  NULL,                         /* get_clipping_box */          \
-  NULL,                         /* begin_typed_image */         \
-  NULL,                         /* get_bits_rectangle */        \
-  NULL,                         /* map_color_rgb_alpha */       \
-  NULL,                         /* create_compositor */         \
-  NULL,                         /* get_hardware_params */       \
-  NULL,                         /* text_begin */                \
-  NULL,                         /* finish_copydevice */         \
-  NULL,                         /* begin_transparency_group */  \
-  NULL,                         /* end_transparency_group */    \
-  NULL,                         /* begin_transparency_mask */   \
-  NULL,                         /* end_transparency_mask */     \
-  NULL,                         /* discard_transparency_layer */\
-  NULL,                         /* get_color_mapping_procs */   \
-  NULL,                         /* get_color_comp_index */      \
-  NULL,                         /* encode_color */              \
-  NULL,                         /* decode_color */              \
-  NULL,                         /* pattern_manage */            \
-  NULL,                         /* fill_rectangle_hl_color */   \
-  NULL,                         /* include_color_space */       \
-  NULL,                         /* fill_linear_color_scanline */\
-  NULL,                         /* fill_linear_color_trapezoid */ \
-  NULL,                         /* fill_linear_color_triangle */\
-  NULL,                         /* update_spot_equivalent_colors */\
-  NULL,                         /* ret_devn_params */              \
-  eprn_fillpage                 /* fillpage */
-  /* The remaining fields should be NULL. */
 
 /*****************************************************************************/
 

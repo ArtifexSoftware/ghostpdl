@@ -187,95 +187,6 @@ prn_dev_proc_get_space_params(gx_default_get_space_params);
 /* BACKWARD COMPATIBILITY */
 #define gdev_prn_default_get_space_params gx_default_get_space_params
 
-/* Macro for generating procedure table */
-#define prn_procs(p_open, p_output_page, p_close)\
-  prn_color_procs_enc_dec(p_open, p_output_page, p_close, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb)
-#define prn_params_procs(p_open, p_output_page, p_close, p_get_params, p_put_params)\
-  prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, p_get_params, p_put_params, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb)
-#define prn_color_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb)\
-  prn_color_params_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, gdev_prn_get_params, gdev_prn_put_params)
-#define prn_color_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_encode_color, p_decode_color)\
-  prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, gdev_prn_get_params, gdev_prn_put_params, p_encode_color, p_decode_color)
-/* See gdev_prn_open for explanation of the NULLs below. */
-#define prn_color_params_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params) \
-  prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params, NULL, NULL)
-#define prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params, p_encode_color, p_decode_color) {\
-        p_open,\
-        NULL,	/* get_initial_matrix */\
-        NULL,	/* sync_output */\
-        p_output_page,\
-        p_close,\
-        p_map_rgb_color,\
-        p_map_color_rgb,\
-        NULL,	/* fill_rectangle */\
-        NULL,	/* tile_rectangle */\
-        NULL,	/* copy_mono */\
-        NULL,	/* copy_color */\
-        NULL,	/* draw_line */\
-        NULL,	/* get_bits */\
-        p_get_params,\
-        p_put_params,\
-        NULL,	/* map_cmyk_color */\
-        NULL,	/* get_xfont_procs */\
-        NULL,	/* get_xfont_device */\
-        NULL,	/* map_rgb_alpha_color */\
-        gx_page_device_get_page_device,\
-        NULL,	/* get_alpha_bits */\
-        NULL,	/* copy_alpha */\
-        NULL,	/* get_band */\
-        NULL,	/* copy_rop */\
-        NULL,	/* fill_path */\
-        NULL,	/* stroke_path */\
-        NULL,	/* fill_mask */\
-        NULL,	/* fill_trapezoid */\
-        NULL,	/* fill_parallelogram */\
-        NULL,	/* fill_triangle */\
-        NULL,	/* draw_thin_line */\
-        NULL,	/* begin_image */\
-        NULL,	/* image_data */\
-        NULL,	/* end_image */\
-        NULL,	/* strip_tile_rectangle */\
-        NULL,	/* strip_copy_rop, */\
-        NULL,	/* get_clipping_box */\
-        NULL,	/* begin_typed_image */\
-        NULL,	/* get_bits_rectangle */\
-        NULL,	/* map_color_rgb_alpha */\
-        NULL,	/* create_compositor */\
-        NULL,	/* get_hardware_params */\
-        NULL,	/* text_begin */\
-        NULL,	/* finish_copydevice */\
-        NULL,	/* begin_transparency_group */\
-        NULL,	/* end_transparency_group */\
-        NULL,	/* begin_transparency_mask */\
-        NULL,	/* end_transparency_mask */\
-        NULL,	/* discard_transparency_layer */\
-        NULL,  /* get_color_mapping_procs */\
-        NULL,  /* get_color_comp_index */\
-        p_encode_color,	/* encode_color */\
-        p_decode_color,	/* decode_color */\
-        NULL,  /* pattern_manage */\
-        NULL,  /* fill_rectangle_hl_color */\
-        NULL,  /* include_color_space */\
-        NULL,  /* fill_linear_color_scanline */\
-        NULL,  /* fill_linear_color_trapezoid */\
-        NULL,  /* fill_linear_color_triangle */\
-        NULL,  /* update_spot_equivalent_colors */\
-        NULL,  /* ret_devn_params */\
-        NULL,  /* fillpage */\
-        NULL,  /* push_transparency_state */\
-        NULL,  /* pop_transparency_state */\
-        NULL,  /* put_image */\
-        gdev_prn_dev_spec_op,  /* dev_spec_op */\
-        NULL,  /* copy plane */\
-        gx_default_get_profile, /* get_profile */\
-        gx_default_set_graphics_type_tag /* set_graphics_type_tag */\
-}
-
-/* The standard printer device procedures */
-/* (using gdev_prn_open/output_page/close). */
-extern const gx_device_procs prn_std_procs;
-extern const gx_device_procs prn_bg_procs;
-
 /*
  * Define macros for generating the device structure,
  * analogous to the std_device_body macros in gxdevice.h
@@ -320,8 +231,8 @@ extern const gx_device_procs prn_bg_procs;
 
 /* The Sun cc compiler won't allow \ within a macro argument list. */
 /* This accounts for the short parameter names here and below. */
-#define prn_device_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-        std_device_full_body_type(dtype, &procs, dname, &st_device_printer,\
+#define prn_device_margins_body(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+        std_device_full_body_type(dtype, init, dname, &st_device_printer,\
           (int)((float)(w10) * (xdpi) / 10 + 0.5),\
           (int)((float)(h10) * (ydpi) / 10 + 0.5),\
           xdpi, ydpi,\
@@ -331,8 +242,8 @@ extern const gx_device_procs prn_bg_procs;
           (float)((rm) * 72.0), (float)((tm) * 72.0)\
         ),\
         prn_device_body_rest_(print_page)
-#define prn_device_margins_stype_body(dtype, procs, dname, stype, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-        std_device_full_body_type(dtype, &procs, dname, stype,\
+#define prn_device_margins_stype_body(dtype, init, dname, stype, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+        std_device_full_body_type(dtype, init, dname, stype,\
           (int)((float)(w10) * (xdpi) / 10 + 0.5),\
           (int)((float)(h10) * (ydpi) / 10 + 0.5),\
           xdpi, ydpi,\
@@ -343,15 +254,15 @@ extern const gx_device_procs prn_bg_procs;
         ),\
         prn_device_body_rest_(print_page)
 
-#define prn_device_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-  prn_device_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device_body(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+  prn_device_margins_body(dtype, init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)
-#define prn_device_stype_body(dtype, procs, dname, stype, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-  prn_device_margins_stype_body(dtype, procs, dname, stype, w10, h10, xdpi, ydpi,\
+#define prn_device_stype_body(dtype, init, dname, stype, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+  prn_device_margins_stype_body(dtype, init, dname, stype, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)
 
-#define prn_device_margins_body_extended(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
-        std_device_full_body_type_extended(dtype, &procs, dname, &st_device_printer,\
+#define prn_device_margins_body_extended(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
+        std_device_full_body_type_extended(dtype, init, dname, &st_device_printer,\
           (int)((long)(w10) * (xdpi) / 10),\
           (int)((long)(h10) * (ydpi) / 10),\
           xdpi, ydpi,\
@@ -362,12 +273,12 @@ extern const gx_device_procs prn_bg_procs;
         ),\
         prn_device_body_rest_(print_page)
 
-#define prn_device_body_extended(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
-  prn_device_margins_body_extended(dtype, procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device_body_extended(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
+  prn_device_margins_body_extended(dtype, init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)
 
-#define prn_device_std_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
-        std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
+#define prn_device_std_margins_body(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
+        std_device_std_color_full_body_type(dtype,init, dname, &st_device_printer,\
           (int)((float)(w10) * (xdpi) / 10 + 0.5),\
           (int)((float)(h10) * (ydpi) / 10 + 0.5),\
           xdpi, ydpi, color_bits,\
@@ -377,12 +288,12 @@ extern const gx_device_procs prn_bg_procs;
         ),\
         prn_device_body_rest_(print_page)
 
-#define prn_device_std_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
-  prn_device_std_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device_std_body(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
+  prn_device_std_margins_body(dtype, init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, color_bits, print_page)
 
-#define prn_device_std_margins_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
-        std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
+#define prn_device_std_margins_body_copies(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
+        std_device_std_color_full_body_type(dtype, init, dname, &st_device_printer,\
           (int)((float)(w10) * (xdpi) / 10 + 0.5),\
           (int)((float)(h10) * (ydpi) / 10 + 0.5),\
           xdpi, ydpi, color_bits,\
@@ -392,28 +303,28 @@ extern const gx_device_procs prn_bg_procs;
         ),\
         prn_device_body_copies_rest_(print_page_copies)
 
-#define prn_device_std_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
-  prn_device_std_margins_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device_std_body_copies(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
+  prn_device_std_margins_body_copies(dtype, init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, color_bits, print_page_copies)
 
      /* Note that the following macros add { } around the data. */
 
-#define prn_device_margins(procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
-{ prn_device_std_margins_body(gx_device_printer, procs, dname,\
+#define prn_device_margins(init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
+{ prn_device_std_margins_body(gx_device_printer, init, dname,\
     w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
 }
 
-#define prn_device(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
-  prn_device_margins(procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device(init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
+  prn_device_margins(init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, color_bits, print_page)
 
-#define prn_device_margins_copies(procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
-{ prn_device_std_margins_body_copies(gx_device_printer, procs, dname,\
+#define prn_device_margins_copies(init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
+{ prn_device_std_margins_body_copies(gx_device_printer, init, dname,\
     w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
 }
 
-#define prn_device_copies(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
-  prn_device_margins_copies(procs, dname, w10, h10, xdpi, ydpi,\
+#define prn_device_copies(init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
+  prn_device_margins_copies(init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, color_bits, print_page_copies)
 
 /* ------ Utilities ------ */
@@ -593,5 +504,21 @@ int gdev_create_buf_device(create_buf_device_proc_t cbd_proc,
 #define gdev_prn_transpose_8x8(inp,ils,outp,ols)\
   memflip8x8(inp,ils,outp,ols)
 
+int gdev_prn_initialize(gx_device *dev);
+int gdev_prn_initialize_bg(gx_device *dev);
+int gdev_prn_initialize_mono(gx_device *dev);
+int gdev_prn_initialize_mono_bg(gx_device *dev);
+int gdev_prn_initialize_rgb(gx_device *dev);
+int gdev_prn_initialize_rgb_bg(gx_device *dev);
+int gdev_prn_initialize_gray(gx_device *dev);
+int gdev_prn_initialize_gray_bg(gx_device *dev);
+int gdev_prn_initialize_gray8(gx_device *dev);
+int gdev_prn_initialize_gray8_bg(gx_device *dev);
+int gdev_prn_initialize_cmyk1(gx_device *dev);
+int gdev_prn_initialize_cmyk1_bg(gx_device *dev);
+int gdev_prn_initialize_cmyk8(gx_device *dev);
+int gdev_prn_initialize_cmyk8_bg(gx_device *dev);
+int gdev_prn_initialize_cmyk16(gx_device *dev);
+int gdev_prn_initialize_cmyk16_bg(gx_device *dev);
 
 #endif /* gdevprn_INCLUDED */

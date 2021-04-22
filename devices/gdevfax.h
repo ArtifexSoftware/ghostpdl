@@ -56,7 +56,6 @@ typedef struct gx_device_fax_s {
 dev_proc_open_device(gdev_fax_open);
 dev_proc_get_params(gdev_fax_get_params); /* adds AdjustWidth, MinFeatureSize */
 dev_proc_put_params(gdev_fax_put_params); /* adds AdjustWidth, MinFeatureSize */
-extern const gx_device_procs gdev_fax_std_procs;
 
 /* Other procedures */
 void gdev_fax_init_state(stream_CFE_state *ss, const gx_device_fax *fdev);

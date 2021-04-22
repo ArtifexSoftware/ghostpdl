@@ -1287,7 +1287,7 @@ clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
 /* Create a compositor device. */
 int
-clist_create_compositor(gx_device * dev,
+clist_composite(gx_device * dev,
                         gx_device ** pcdev, const gs_composite_t * pcte,
                         gs_gstate * pgs, gs_memory_t * mem, gx_device *cldev)
 {
@@ -1375,7 +1375,7 @@ clist_create_compositor(gx_device * dev,
             return code;
 
         /* insert the command and compositor identifier */
-        dp[1] = cmd_opv_ext_create_compositor;
+        dp[1] = cmd_opv_ext_composite;
         dp[2] = pcte->type->comp_id;
 
         /* serialize the remainder of the compositor */
@@ -1416,7 +1416,7 @@ clist_create_compositor(gx_device * dev,
             code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_extend, size);
             if (code >= 0) {
                 size_dummy = size;
-                dp[1] = cmd_opv_ext_create_compositor;
+                dp[1] = cmd_opv_ext_composite;
                 dp[2] = pcte->type->comp_id;
                 code = pcte->type->procs.write(pcte, dp + 3, &size_dummy, cdev);
             }

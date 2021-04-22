@@ -154,48 +154,40 @@ RELOC_PTRS_END
 static int
 is_image_visible(const gs_image_common_t * pic, gs_gstate * pgs, gx_clip_path *pcpath)
 {
-    /* HACK : We need the source image size here,
-       but gs_image_common_t doesn't pass it.
-       We would like to move Width, Height to gs_image_common,
-       but gs_image2_t appears to have those fields of double type.
-     */
-    if (pic->type->begin_typed_image == gx_begin_image1) {
-        gs_image1_t *pim = (gs_image1_t *) pic;
-        gs_rect image_rect = {{0, 0}, {0, 0}};
-        gs_rect device_rect;
-        gs_int_rect device_int_rect;
-        gs_matrix mat;
-        int code;
+    gs_rect image_rect = {{0, 0}, {0, 0}};
+    gs_rect device_rect;
+    gs_int_rect device_int_rect;
+    gs_matrix mat;
+    int code;
 
-        image_rect.q.x = pim->Width;
-        image_rect.q.y = pim->Height;
-        if (pic->ImageMatrix.xx == ctm_only(pgs).xx &&
-            pic->ImageMatrix.xy == ctm_only(pgs).xy &&
-            pic->ImageMatrix.yx == ctm_only(pgs).yx &&
-            pic->ImageMatrix.yy == ctm_only(pgs).yy) {
-            /* Handle common special case separately to accept singular matrix */
-            mat.xx = mat.yy = 1.;
-            mat.yx = mat.xy = 0.;
-            mat.tx = ctm_only(pgs).tx - pic->ImageMatrix.tx;
-            mat.ty = ctm_only(pgs).ty - pic->ImageMatrix.ty;
-        } else {
-            code = gs_matrix_invert(&pic->ImageMatrix, &mat);
-            if (code < 0)
-                return code;
-            code = gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
-            if (code < 0)
-                return code;
-        }
-        code = gs_bbox_transform(&image_rect, &mat, &device_rect);
+    image_rect.q.x = pic->Width;
+    image_rect.q.y = pic->Height;
+    if (pic->ImageMatrix.xx == ctm_only(pgs).xx &&
+        pic->ImageMatrix.xy == ctm_only(pgs).xy &&
+        pic->ImageMatrix.yx == ctm_only(pgs).yx &&
+        pic->ImageMatrix.yy == ctm_only(pgs).yy) {
+        /* Handle common special case separately to accept singular matrix */
+        mat.xx = mat.yy = 1.;
+        mat.yx = mat.xy = 0.;
+        mat.tx = ctm_only(pgs).tx - pic->ImageMatrix.tx;
+        mat.ty = ctm_only(pgs).ty - pic->ImageMatrix.ty;
+    } else {
+        code = gs_matrix_invert(&pic->ImageMatrix, &mat);
         if (code < 0)
             return code;
-        device_int_rect.p.x = (int)floor(device_rect.p.x);
-        device_int_rect.p.y = (int)floor(device_rect.p.y);
-        device_int_rect.q.x = (int)ceil(device_rect.q.x);
-        device_int_rect.q.y = (int)ceil(device_rect.q.y);
-        if (!gx_cpath_rect_visible(pcpath, &device_int_rect))
-            return 0;
+        code = gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
+        if (code < 0)
+            return code;
     }
+    code = gs_bbox_transform(&image_rect, &mat, &device_rect);
+    if (code < 0)
+        return code;
+    device_int_rect.p.x = (int)floor(device_rect.p.x);
+    device_int_rect.p.y = (int)floor(device_rect.p.y);
+    device_int_rect.q.x = (int)ceil(device_rect.q.x);
+    device_int_rect.q.y = (int)ceil(device_rect.q.y);
+    if (!gx_cpath_rect_visible(pcpath, &device_int_rect))
+        return 0;
     return 1;
 }
 

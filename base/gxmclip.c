@@ -73,10 +73,13 @@ gx_mask_clip_initialize(gx_device_mask_clip * cdev,
         tile_clip_buffer_size / (bits->raster + sizeof(byte *));
 
     if (mem == NULL)
-        gx_device_init_on_stack((gx_device *)cdev, (const gx_device *)proto,
+        gx_device_init_on_stack((gx_device *)cdev,
+                                (const gx_device *)proto,
                                 tdev->memory);
     else
-        gx_device_init((gx_device *)cdev, (const gx_device *)proto, mem, true);
+        (void)gx_device_init((gx_device *)cdev,
+                             (const gx_device *)proto,
+                             mem, true);
     cdev->width = tdev->width;
     cdev->height = tdev->height;
     cdev->color_info = tdev->color_info;
