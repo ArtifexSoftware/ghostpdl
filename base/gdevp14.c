@@ -7030,11 +7030,11 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
                 "[v]pdf14_push_color_model, num_components_old = %d num_components_new = %d\n",
                 pdev->color_info.num_components,new_num_comps);
     {
-        gx_device local_device;
+        pdf14_device local_device;
 
         local_device.initialize = pdevproto->initialize;
         /* We know the initialize call can't fail! */
-        (void)local_device.initialize(&local_device);
+        (void)local_device.initialize((gx_device *)&local_device);
         set_dev_proc(pdev, get_color_mapping_procs, local_device.procs.get_color_mapping_procs);
         set_dev_proc(pdev, get_color_comp_index, local_device.procs.get_color_comp_index);
     }
