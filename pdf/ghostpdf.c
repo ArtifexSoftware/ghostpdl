@@ -1052,6 +1052,9 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     if (ctx->Trailer)
         pdfi_countdown(ctx->Trailer);
 
+    if (ctx->AcroForm)
+        pdfi_countdown(ctx->AcroForm);
+
     if(ctx->Root)
         pdfi_countdown(ctx->Root);
 

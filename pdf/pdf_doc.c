@@ -1198,6 +1198,47 @@ static int pdfi_doc_EmbeddedFiles(pdf_context *ctx)
     return 0;
 }
 
+/* Handle some bookkeeping related to AcroForm (and annotations)
+ * See pdf_main.ps/process_trailer_attrs/AcroForm
+ *
+ * Mainly we preload AcroForm and NeedAppearances in the context
+ *
+ * TODO: gs code also seems to do something to link up parents in fields/annotations (ParentField)
+ * We are going to avoid doing that for now.
+ */
+static int pdfi_doc_AcroForm(pdf_context *ctx)
+{
+    int code = 0;
+    pdf_dict *AcroForm = NULL;
+    bool boolval = false;
+
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "AcroForm", PDF_DICT, (pdf_obj **)&AcroForm);
+    if (code <= 0) goto exit;
+
+    code = pdfi_dict_get_bool(ctx, AcroForm, "NeedAppearances", &boolval);
+    if (code < 0) {
+        if (code == gs_error_undefined)
+            boolval = true;
+        else
+            goto exit;
+    }
+    ctx->NeedAppearances = boolval;
+
+    /* Save this for efficiency later */
+    ctx->AcroForm = AcroForm;
+    pdfi_countup(AcroForm);
+
+    /* TODO: Link up ParentField (but hopefully we can avoid doing this hacky mess).
+     * Also: Something to do with Bug692447.pdf?
+     */
+
+
+ exit:
+    pdfi_countdown(AcroForm);
+    return code;
+}
+
+
 /* See pdf_main.ps/process_trailer_attrs()
  * Some of this stuff is about pdfmarks, and some of it is just handling
  * random things in the trailer.
@@ -1232,8 +1273,10 @@ int pdfi_doc_trailer(pdf_context *ctx)
     /* Handle OCProperties */
     /* NOTE: Apparently already handled by pdfi_read_OptionalRoot() */
 
-    /* Handle AcroForm */
-    /* TODO: */
+    /* Handle AcroForm -- this is some bookkeeping once per doc, not rendering them yet */
+    code = pdfi_doc_AcroForm(ctx);
+    if (code < 0)
+        goto exit;
 
     /* Handle OutputIntent ICC Profile */
     code = pdfi_doc_OutputIntents(ctx);

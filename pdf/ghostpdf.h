@@ -444,6 +444,8 @@ typedef struct pdf_context_s
     pdf_dict *PagesTree;
     uint64_t num_pages;
     uint32_t *page_array; /* cache of page dict object_num's for pdfmark Dest */
+    pdf_dict *AcroForm;
+    bool NeedAppearances; /* From AcroForm, if any */
 
 
     /* Interpreter level PDF objects */
