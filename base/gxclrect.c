@@ -1647,13 +1647,13 @@ clist_strip_copy_rop2(gx_device * dev,
                         }
                         continue;
                     }
-                    if (((phase_x != re.pcls->tile_phase.x) && (tiles->rep_width > 1)) ||
-                        ((phase_y != re.pcls->tile_phase.y) && (tiles->rep_height > 1))) {
-                        code = cmd_set_tile_phase(cdev, re.pcls, phase_x,
-                                                  phase_y);
-                        if (code < 0)
-                            return code;
-                    }
+                }
+                if (((phase_x != re.pcls->tile_phase.x) && (tiles->rep_width > 1)) ||
+                    ((phase_y != re.pcls->tile_phase.y) && (tiles->rep_height > 1))) {
+                    code = cmd_set_tile_phase(cdev, re.pcls, phase_x,
+                                              phase_y);
+                    if (code < 0)
+                        return code;
                 }
             }
             /* Set the tile colors. */
