@@ -1706,7 +1706,8 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
         if (ccode >= 0) {
             ddev->initialize = clist_initialize;
             /* Hacky - we know this can't fail. */
-            clist_open((gx_device *)ddev);
+            (void)ddev->initialize((gx_device *)ddev);
+            gx_device_fill_in_procs((gx_device *)ddev);
         }
     } else {
         /* Set up as PageMode. */
