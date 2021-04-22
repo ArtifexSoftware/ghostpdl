@@ -419,6 +419,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tAn Annotation has an invalid AP entry.\n");
         if (ctx->pdf_warnings & W_PDF_BAD_NAME_ESCAPE)
             dmprintf(ctx->memory, "\tA name contained a '#' escape character but it was not a valid escape.\n");
+        if (ctx->pdf_warnings & W_PDF_TYPECHECK)
+            dmprintf(ctx->memory, "\tAn object was of the wrong type, and was ignored.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");

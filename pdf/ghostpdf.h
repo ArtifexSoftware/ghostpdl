@@ -167,6 +167,7 @@ typedef enum pdf_warning_flag_e {
     W_PDF_MASK_ERROR = W_PDF_STREAM_BAD_DECODEPARMS << 1,
     W_PDF_ANNOT_AP_ERROR = W_PDF_MASK_ERROR << 1,
     W_PDF_BAD_NAME_ESCAPE = W_PDF_ANNOT_AP_ERROR << 1,
+    W_PDF_TYPECHECK = W_PDF_BAD_NAME_ESCAPE << 1,
 } pdf_warning_flag;
 
 typedef enum pdf_crypt_filter_e {

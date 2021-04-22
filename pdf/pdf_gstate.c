@@ -1201,136 +1201,6 @@ static const char *spot_table[] = {
     "Diamond"
 };
 
-#if 0
-static int pdfi_set_halftone(pdf_context *ctx, pdf_obj *obj, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_TR)
-{
-    int code = 0;
-
-    if (obj->type == PDF_NAME) {
-            if (pdfi_name_is((const pdf_name *)obj, "Default")) {
-                goto exit;
-            } else {
-                code = gs_note_error(gs_error_rangecheck);
-                goto exit;
-            }
-    }
-
-    if (obj->type == PDF_ARRAY) {
-        if (pdfi_array_size((pdf_array *)obj) != 4) {
-            code = gs_note_error(gs_error_rangecheck);
-            goto exit;
-        } else {
-            code = pdfi_set_all_transfers(ctx, (pdf_array *)obj, page_dict, false);
-        }
-    } else
-        code = pdfi_set_gray_transfer(ctx, (pdf_dict *)obj, page_dict);
-
-exit:
-    return code;
-}
-
-int do_screen(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
-{
-    gs_screen_enum *penum = NULL;
-    gs_point pt;
-    int code;
-    gs_screen_halftone screen;
-    gx_ht_order order;
-    pdf_obj *obj = NULL;
-    double f, a;
-    float values[2] = {0, 0}, domain[2] = {-1, 1}, out;
-    gs_function_t *pfn = NULL;
-
-    memset(&screen, 0x00, sizeof(gs_screen_halftone));
-
-    code = pdfi_dict_get_number(ctx, halftone_dict, "Frequency", &f);
-    if (code < 0)
-        return code;
-
-    code = pdfi_dict_get_number(ctx, halftone_dict, "Angle", &a);
-    if (code < 0)
-        return code;
-
-    code = pdfi_dict_get(ctx, halftone_dict, "SpotFunction", &obj);
-    if (code < 0)
-        return code;
-
-    if (obj->type == PDF_NAME) {
-        if (pdfi_name_is((pdf_name *)obj, "Default")) {
-            return 0;
-        } else {
-            int i;
-
-            for (i = 0; i < sizeof(spot_table); i++){
-                if (pdfi_name_is((pdf_name *)obj, spot_table[i]))
-                    break;
-            }
-            if (i > sizeof(spot_table))
-                return gs_note_error(gs_error_rangecheck);
-            code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
-            if (code < 0)
-                goto error;
-        }
-    } else {
-        if (obj->type == PDF_DICT) {
-            code = pdfi_build_function(ctx, &pfn, (const float *)domain, 2, (pdf_dict *)obj, page_dict);
-            if (code < 0)
-                goto error;
-        } else
-            return gs_note_error(gs_error_typecheck);
-    }
-
-    screen.frequency = f;
-    screen.angle = a;
-
-    code = gs_screen_order_init_memory(&order, ctx->pgs, &screen,
-                                       gs_currentaccuratescreens(ctx->memory), ctx->memory);
-    if (code < 0)
-        goto error;
-
-    penum = gs_screen_enum_alloc(ctx->memory, "HT");
-    if (penum == 0) {
-        code = gs_error_VMerror;
-        goto error;
-    }
-
-    code = gs_screen_enum_init_memory(penum, &order, ctx->pgs, &screen, ctx->memory);
-    if (code < 0)
-        goto error;
-
-    do {
-        /* Generate x and y, the parameteric variables */
-        code = gs_screen_currentpoint(penum, &pt);
-        if (code < 0)
-            goto error;
-
-        if (code == 1)
-            break;
-
-        /* Process sample */
-        values[0] = pt.x, values[1] = pt.y;
-        code = gs_function_evaluate(pfn, (const float *)&values, &out);
-        if (code < 0)
-            goto error;
-
-        /* Store the sample */
-        code = gs_screen_next(penum, out);
-        if (code < 0)
-            goto error;
-
-    } while (1);
-    code = 0;
-
-    gs_screen_install(penum);
-
-error:
-    pdfi_countdown(obj);
-    pdfi_free_function(ctx, pfn);
-    gs_free_object(ctx->memory, penum, "HT");
-    return code;
-}
-#endif
-
 /* Dummy spot function */
 static float
 pdfi_spot1_dummy(double x, double y)
@@ -1338,16 +1208,46 @@ pdfi_spot1_dummy(double x, double y)
     return (x + y) / 2;
 }
 
+static int pdfi_evaluate_transfer(pdf_context *ctx, pdf_obj *transfer, pdf_dict *page_dict, gx_transfer_map **pmap)
+{
+    int t_ix = 0, code = 0;
+    float value, out;
+    gs_function_t *transfer_fn = NULL;
+
+    rc_alloc_struct_1(*pmap, gx_transfer_map, &st_transfer_map, ctx->memory,
+          return_error(gs_error_VMerror),
+          "pdfi process_transfer");
+    (*pmap)->proc = gs_mapped_transfer;		/* 0 => use closure */
+    (*pmap)->closure.proc = NULL;
+    (*pmap)->closure.data = NULL;
+    (*pmap)->id = gs_next_ids(ctx->memory, 1);
+
+    code = pdfi_build_function(ctx, &transfer_fn, (const float *)NULL, 1, transfer, page_dict);
+    if (code >= 0) {
+        for (t_ix = 0;t_ix < 256;t_ix++) {
+            value = (float)t_ix * 1.0f / 255.0f;
+            code = gs_function_evaluate(transfer_fn, (const float *)&value, &out);
+            if (code < 0)
+                goto error;
+            (*pmap)->values[t_ix] =  float2frac(out);
+        }
+    }
+error:
+    pdfi_free_function(ctx, transfer_fn);
+    return code;
+}
+
 static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
-    pdf_obj *obj = NULL;
+    pdf_obj *obj = NULL, *transfer = NULL;
     double f, a;
     float values[2] = {0, 0}, domain[4] = {-1, 1, -1, 1}, out;
     gs_function_t *pfn = NULL;
     gx_ht_order *order = NULL;
     gs_screen_enum *penum = NULL;
     gs_point pt;
+    gx_transfer_map *pmap = NULL;
 
     code = pdfi_dict_get_number(ctx, halftone_dict, "Frequency", &f);
     if (code < 0)
@@ -1392,6 +1292,22 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         } else {
             code = gs_note_error(gs_error_typecheck);
             goto error;
+        }
+    }
+
+    if (pdfi_dict_knownget(ctx, halftone_dict, "TransferFunction", &transfer) > 0) {
+        if (transfer->type == PDF_NAME) {
+            /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
+             * names, if it's not Identity it would be an error (which we would ignore) and if
+             * it is, it has no effect. So what's the point ?
+             */
+        } else {
+            if (transfer->type == PDF_STREAM) {
+                pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
+            } else {
+                /* should be an error, but we can just ignore it */
+                ctx->pdf_warnings |= W_PDF_TYPECHECK;
+            }
         }
     }
 
@@ -1446,14 +1362,18 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     } while (1);
     code = 0;
     *porder = penum->order;
+    (*porder).transfer = pmap;
 
 error:
+    pdfi_countdown(transfer);
     pdfi_countdown(obj);
     pdfi_free_function(ctx, pfn);
     if (code < 0 && order != NULL) {
         gs_free_object(ctx->memory, order->bit_data, "build_type1_halftone error");
         gs_free_object(ctx->memory, order->levels, "build_type1_halftone error");
     }
+    if (code < 0 && pmap != NULL)
+        rc_decrement(pmap, "pdfi process_transfer");
     gs_free_object(ctx->memory, order, "build_type1_halftone");
     gs_free_object(ctx->memory, penum, "build_type1_halftone");
     return code;
@@ -1522,25 +1442,15 @@ static int build_type10_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
     ptp->thresholds.data = NULL;
     ptp->thresholds.size = 0;
 
-    code = pdfi_dict_get_int(ctx, halftone_dict, "Width", &w);
-    if (code < 0)
-        return code;
-    ptp->width = w;
-
-    code = pdfi_dict_get_int(ctx, halftone_dict, "Height", &h);
-    if (code < 0)
-        return code;
-    ptp->height = h;
-
     code = pdfi_dict_get_int(ctx, halftone_dict, "Xsquare", &w);
     if (code < 0)
         return code;
-    ptp->width2 = w;
+    ptp->width = ptp->height = w;
 
     code = pdfi_dict_get_int(ctx, halftone_dict, "Ysquare", &h);
     if (code < 0)
         return code;
-    ptp->height2 = h;
+    ptp->width2 = ptp->height2 = h;
 
     ptp->bytes_per_sample = 1;
     ptp->transfer = 0;
@@ -1590,13 +1500,15 @@ static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
         return code;
     ptp->height = h;
 
+    w = 0;
     code = pdfi_dict_get_int(ctx, halftone_dict, "Width2", &w);
-    if (code < 0)
+    if (code < 0 && code != gs_error_undefined)
         return code;
     ptp->width2 = w;
 
+    h = 0;
     code = pdfi_dict_get_int(ctx, halftone_dict, "Height2", &h);
-    if (code < 0)
+    if (code < 0 && code != gs_error_undefined)
         return code;
     ptp->height2 = h;
 
@@ -1870,8 +1782,9 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
     gs_halftone *pht = NULL;
     gx_device_halftone *pdht = NULL;
     gs_halftone_component *phtc = NULL;
-    pdf_obj *Key = NULL, *Value = NULL;
+    pdf_obj *Key = NULL, *Value = NULL, *transfer = NULL;
     pdf_dict *halftone_dict = NULL;
+    gx_transfer_map *pmap = NULL;
 
     code = pdfi_dict_from_obj(ctx, halftone_obj, &halftone_dict);
     if (code < 0)
@@ -1962,6 +1875,28 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
 
             code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
 
+            /* Transfer function pdht->order->transfer */
+            if (pdfi_dict_knownget(ctx, ((pdf_stream *)halftone_obj)->stream_dict, "TransferFunction", &transfer) > 0) {
+                if (transfer->type == PDF_NAME) {
+                    /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
+                     * names, if it's not Identity it would be an error (which we would ignore) and if
+                     * it is, it has no effect. So what's the point ?
+                     */
+                } else {
+                    if (transfer->type == PDF_STREAM) {
+                        /* If we get an error here, we can just ignore it, and not apply the transfer */
+                        code = pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
+                        if (code >= 0) {
+                            pdht->order.transfer = pmap;
+                        }
+                    } else {
+                        /* should be an error, but we can just ignore it */
+                        ctx->pdf_warnings |= W_PDF_TYPECHECK;
+                    }
+                }
+                pdfi_countdown(transfer);
+            }
+
             code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
             if (code < 0)
                 goto error;
@@ -1992,6 +1927,28 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
 
             code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
 
+            /* Transfer function pdht->order->transfer */
+            if (pdfi_dict_knownget(ctx, ((pdf_stream *)halftone_obj)->stream_dict, "TransferFunction", &transfer) > 0) {
+                if (transfer->type == PDF_NAME) {
+                    /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
+                     * names, if it's not Identity it would be an error (which we would ignore) and if
+                     * it is, it has no effect. So what's the point ?
+                     */
+                } else {
+                    if (transfer->type == PDF_STREAM) {
+                        /* If we get an error here, we can just ignore it, and not apply the transfer */
+                        code = pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
+                        if (code >= 0) {
+                            pdht->order.transfer = pmap;
+                        }
+                    } else {
+                        /* should be an error, but we can just ignore it */
+                        ctx->pdf_warnings |= W_PDF_TYPECHECK;
+                    }
+                }
+                pdfi_countdown(transfer);
+            }
+
             code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
             if (code < 0)
                 goto error;
@@ -2021,6 +1978,28 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
 
             code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
+
+            /* Transfer function pdht->order->transfer */
+            if (pdfi_dict_knownget(ctx, ((pdf_stream *)halftone_obj)->stream_dict, "TransferFunction", &transfer) > 0) {
+                if (transfer->type == PDF_NAME) {
+                    /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
+                     * names, if it's not Identity it would be an error (which we would ignore) and if
+                     * it is, it has no effect. So what's the point ?
+                     */
+                } else {
+                    if (transfer->type == PDF_STREAM) {
+                        /* If we get an error here, we can just ignore it, and not apply the transfer */
+                        code = pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
+                        if (code >= 0) {
+                            pdht->order.transfer = pmap;
+                        }
+                    } else {
+                        /* should be an error, but we can just ignore it */
+                        ctx->pdf_warnings |= W_PDF_TYPECHECK;
+                    }
+                }
+                pdfi_countdown(transfer);
+            }
 
             code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
             if (code < 0)
