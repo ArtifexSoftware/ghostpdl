@@ -567,7 +567,11 @@ x_set_buffer(gx_device_X * xdev)
      */
     gs_memory_t *mem = gs_memory_stable(xdev->memory);
     bool buffered = xdev->space_params.MaxBitmap > 0;
-    const gx_device_procs *procs;
+    union {
+      gx_device dev;
+      gx_device_bbox bbox;
+      gx_device_X x11;
+    } tempdev;
 
  setup:
     if (buffered) {
@@ -645,7 +649,7 @@ x_set_buffer(gx_device_X * xdev)
         }
         xdev->white = gx_device_white((gx_device *)xdev);
         xdev->black = gx_device_black((gx_device *)xdev);
-        procs = &gs_bbox_device.procs;
+        tempdev.bbox = gs_bbox_device;
     } else {
         /* Not buffering.  Release the buffer and memory device. */
         gs_free_object(mem, xdev->buffer, "buffer");
@@ -656,10 +660,12 @@ x_set_buffer(gx_device_X * xdev)
         gx_device_set_target((gx_device_forward *)xdev->target, NULL);
         gx_device_set_target((gx_device_forward *)xdev, NULL);
         xdev->is_buffered = false;
-        procs = &gs_x11_device.procs;
+        tempdev.x11 = gs_x11_device;
     }
-    if (dev_proc(xdev, fill_rectangle) != procs->fill_rectangle) {
-#define COPY_PROC(p) set_dev_proc(xdev, p, procs->p)
+    /* We know this cannot fail. */
+    tempdev.dev.initialize(&tempdev.dev);
+    if (dev_proc(xdev, fill_rectangle) != tempdev.dev.procs.fill_rectangle) {
+#define COPY_PROC(p) set_dev_proc(xdev, p, tempdev.dev.procs.p)
         COPY_PROC(fill_rectangle);
         COPY_PROC(copy_mono);
         COPY_PROC(copy_color);
@@ -796,9 +802,6 @@ gdev_x_initialize(gx_device *dev)
 
     /* Reset pointer-related parameters. */
     xdev->is_buffered = false;
-    /* See x_set_buffer for why we do this: */
-    set_dev_proc(xdev, fill_rectangle,
-                 dev_proc(&gs_x11_device, fill_rectangle));
 
     return 0;
 }
