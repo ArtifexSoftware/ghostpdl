@@ -546,7 +546,6 @@ static dev_proc_put_params(x_cmyk_put_params);
 static dev_proc_map_cmyk_color(x_cmyk_map_cmyk_color);
 /* Extended device procedures */
 static dev_proc_map_color_rgb(x_cmyk_alt_map_color);
-extern dev_proc_output_page(x_output_page);
 
 static int
 x_cmyk_initialize(gx_device *dev)
@@ -554,7 +553,7 @@ x_cmyk_initialize(gx_device *dev)
     set_dev_proc(dev, open_device, x_cmyk_open);
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
     set_dev_proc(dev, sync_output, x_forward_sync_output);
-    set_dev_proc(dev, output_page, x_output_page);
+    set_dev_proc(dev, output_page, x_forward_output_page);
     set_dev_proc(dev, close_device, x_wrap_close);
     set_dev_proc(dev, map_color_rgb, x_wrap_map_color_rgb);
     set_dev_proc(dev, fill_rectangle, x_wrap_fill_rectangle);
