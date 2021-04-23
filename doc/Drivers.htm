@@ -2526,15 +2526,16 @@ follows:</p>
 </blockquote>
 
 <dl>
-<dt><code>int (*begin_image)(gx_device&nbsp;*dev,
-const&nbsp;gs_imager_state&nbsp;*pis, const&nbsp;gs_image_t&nbsp;*pim,
-gs_image_format_t&nbsp;format, gs_int_rect&nbsp;*prect,
+<dt><code>int (*begin_typed_image)(gx_device&nbsp;*dev,
+const&nbsp;gs_imager_state&nbsp;*pis, const&nbsp;gs_matrix&nbsp;*pmat,
+const&nbsp;gs_image_common_t&nbsp;*pim, gs_int_rect&nbsp;*prect,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 const&nbsp;gx_clip_path&nbsp;*pcpath, gs_memory_t&nbsp;*memory,
 gx_image_enum_common_t&nbsp;**pinfo)</code> <b><em>[OPTIONAL]</em></b></dt>
-<dd>Begin the transmission of an image.  Zero or more calls of
-<code>image_plane_data</code> will follow, and then a call of
-<code>end_image</code>.  The parameters of <code>begin_image</code>
+<dd>Begin the transmission of an image.  Zero or more calls of the
+  <code>image_plane_data</code> function supplied in the returned image
+  enumerator will follow, and then a call of
+<code>end_image</code>.  The parameters of <code>begin_typed_image</code>
 are as follows:</dd>
 
 <blockquote><table>
@@ -2543,16 +2544,19 @@ are as follows:</dd>
     <td>pointer to an imager state.  The only relevant elements of the
         imager state are the CTM (coordinate transformation matrix),
         the logical operation (<code>RasterOp</code> or
-        transparency), and the color rendering information.</td></tr>
+        transparency), and the color rendering information. For
+        mask images, if <code>pmat</code> is not NULL and the color is pure,
+        <code>pis</code> may be NULL.</td></tr>
+<tr valign="top">    <td><code>pmat</code></td>
+    <td>&nbsp;</td>
+    <td>pointer to a <code>gs_matrix</code> structure that
+        defines the image transformation matrix. If <code>pis</code> is non-NULL,
+        and <code>pmat</code> is NULL, then the <code>ctm</code> from <code>pis</code>
+        should be used.</td></tr>
 <tr valign="top">    <td><code>pim</code></td>
     <td>&nbsp;</td>
     <td>pointer to the <code>gs_image_t</code> structure that
         defines the image parameters</td></tr>
-<tr valign="top">    <td><code>format</code></td>
-    <td>&nbsp;</td>
-    <td>defines how pixels are represented for
-        <code>image_plane_data</code>.  See the description of
-        <code>image_plane_data</code> below</td></tr>
 <tr valign="top">    <td><code>prect</code></td>
     <td>&nbsp;</td>
     <td>if not <code>NULL</code>, defines a subrectangle of the
@@ -2577,12 +2581,12 @@ are as follows:</dd>
 </table></blockquote>
 
 <p>
-<code>begin_image</code> is expected to allocate a structure for its
+<code>begin_typed_image</code> is expected to allocate a structure for its
 bookkeeping needs, using the allocator defined by the memory parameter, and
-return it in <code>*pinfo</code>.  <code>begin_image</code> should not assume that
+return it in <code>*pinfo</code>.  <code>begin_typed_image</code> should not assume that
 the structures in <code>*pim</code>, <code>*prect</code>, or
 <code>*pdcolor</code> will survive the call on
-<code>begin_image</code> (except for the color space in
+<code>begin_typed_image</code> (except for the color space in
 <code>*pim-&gt;ColorSpace</code>): it should copy any necessary parts of
 them into its own bookkeeping structure.  It may, however, assume that
 <code>*pis</code>, <code>*pcpath</code>, and of course
@@ -2590,33 +2594,14 @@ them into its own bookkeeping structure.  It may, however, assume that
 is called.</p>
 
 <p>
-<code>begin_image</code> returns 0 normally, or 1 if the image does not
-need any data.  In the latter case, <code>begin_image</code> does not
+<code>begin_typed_image</code> returns 0 normally, or 1 if the image does not
+need any data.  In the latter case, <code>begin_typed_image</code> does not
 allocate an enumeration structure.</p>
 </dl>
 
-<dl>
-<dt><code>int (*begin_typed_image)(gx_device&nbsp;*dev,
-const&nbsp;gs_imager_state&nbsp;*pis, const&nbsp;gs_matrix&nbsp;*pmat,
-const&nbsp;gs_image_common_t&nbsp;*pim, gs_int_rect&nbsp;*prect,
-const&nbsp;gx_drawing_color&nbsp;*pdcolor,
-const&nbsp;gx_clip_path&nbsp;*pcpath, gs_memory_t&nbsp;*memory,
-gx_image_enum_common_t&nbsp;**pinfo)</code> <b><em>[OPTIONAL]</em></b></dt>
-<dd>This has the same function as <code>begin_image</code>, except</dd>
-<ul>
-<li>The image may be of any <code>ImageType</code>, not only
-<code>image_type_simple</code> (1);</li>
-
-<li>The image format is included in the image structure, not supplied as a
-separate argument;</li>
-
-<li>The optional <code>pmat</code> argument provides a matrix that
-substitutes for the one in the imager state;</li>
-
-<li>For mask images, if <code>pmat</code> is not <code>NULL</code>
-and the color is pure, <code>pis</code> may be <code>NULL</code>.</li>
-</ul>
-</dl>
+<p>
+The format of the image (how pixels are represented) is given by
+<code>pim-&gt;format</code>.</p>
 
 <p>
 The actual transmission of data uses the procedures in the enumeration
@@ -2693,7 +2678,7 @@ bool&nbsp;draw_last)</code></dt>
 <dd>Finish processing an image, either because all data have been supplied
 or because the caller has decided to abandon this image.
 <code>end_image</code> may be called at any time after
-<code>begin_image</code>.  It should free the info structure and any
+<code>begin_typed_image</code>.  It should free the info structure and any
 subsidiary structures.  If <code>draw_last</code> is true, it should
 finish drawing any buffered lines of the image.</dd>
 </dl>
@@ -2702,14 +2687,14 @@ finish drawing any buffered lines of the image.</dd>
 
 <p>
 While there will almost never be more than one image enumeration in
-progress -- that is, after a <code>begin_image</code>,
+progress -- that is, after a <code>begin_typed_image</code>,
 <code>end_image</code> will almost always be called before the next
-<code>begin_image</code> -- driver code should not rely on this
+<code>begin_typed_image</code> -- driver code should not rely on this
 property; in particular, it should store all information regarding the
 image in the info structure, not in the driver structure.</p>
 
 <p>
-Note that if <code>begin_[typed_]image</code> saves its parameters in
+Note that if <code>begin_typed_image</code> saves its parameters in
 the info structure, it can decide on each call whether to use its own
 algorithms or to use the default implementation.  (It may need to call
 <code>gx_default_begin</code>/<code>end_image</code> partway
