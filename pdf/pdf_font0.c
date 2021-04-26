@@ -74,10 +74,7 @@ pdfi_font0_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
 static int
 pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u, unsigned int length)
 {
-    if (glyph > GS_MIN_CID_GLYPH)
-        glyph -= GS_MIN_CID_GLYPH;
-
-    return glyph;
+    return 0;
 }
 
 int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **pfont)
