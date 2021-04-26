@@ -214,18 +214,27 @@ static dev_proc_get_params(xps_get_params);
 static dev_proc_put_params(xps_put_params);
 static dev_proc_fill_path(gdev_xps_fill_path);
 static dev_proc_stroke_path(gdev_xps_stroke_path);
-static dev_proc_initialize(xps_initialize);
+static dev_proc_initialize_device_procs(xps_initialize_device_procs);
 static dev_proc_begin_typed_image(xps_begin_typed_image);
 
 const gx_device_xps gs_xpswrite_device = {
-    xps_device_body("xpswrite", 24, xps_initialize),
+    xps_device_body("xpswrite", 24, xps_initialize_device_procs),
 };
 
 static int
-xps_initialize(gx_device *dev)
+xps_initialize_device(gx_device *dev)
 {
     gx_device_xps *xps = (gx_device_xps*)dev;
 
+    memset(xps->PrinterName, 0x00, MAXPRINTERNAME);
+
+    return 0;
+}
+
+static void
+xps_initialize_device_procs(gx_device *dev)
+{
+    set_dev_proc(dev, initialize_device, xps_initialize_device);
     set_dev_proc(dev, open_device, xps_open_device);
     set_dev_proc(dev, output_page, xps_output_page);
     set_dev_proc(dev, close_device, xps_close_device);
@@ -238,10 +247,6 @@ xps_initialize(gx_device *dev)
     set_dev_proc(dev, fill_path, gdev_xps_fill_path);
     set_dev_proc(dev, stroke_path, gdev_xps_stroke_path);
     set_dev_proc(dev, begin_typed_image, xps_begin_typed_image);
-
-    memset(xps->PrinterName, 0x00, MAXPRINTERNAME);
-
-    return 0;
 }
 
 /* Vector device procedures */

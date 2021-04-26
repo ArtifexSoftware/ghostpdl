@@ -588,8 +588,8 @@ trace_text_begin(gx_device * dev, gs_gstate * pgs,
 
 /* ---------------- The device definition ---------------- */
 
-static int
-tr_base_initialize(gx_device *dev,
+static void
+tr_base_initialize_device_procs(gx_device *dev,
                    dev_proc_map_rgb_color((*map_rgb_color)),
                    dev_proc_map_color_rgb((*map_color_rgb)),
                    dev_proc_map_cmyk_color((*map_cmyk_color)),
@@ -616,8 +616,6 @@ tr_base_initialize(gx_device *dev,
     set_dev_proc(dev, begin_typed_image, trace_begin_typed_image);
     set_dev_proc(dev, text_begin, trace_text_begin);
     set_dev_proc(dev, strip_copy_rop2, trace_strip_copy_rop2);
-
-    return 0;
 }
 
 #define TRACE_DEVICE_BODY(dname, ncomp, depth, init)\
@@ -631,41 +629,39 @@ tr_base_initialize(gx_device *dev,
                         (ncomp > 1 ? 1 << (depth / ncomp) : 1)),\
 }
 
-static init
-tr_mono_initialize(gx_device *dev)
+static void
+tr_mono_initialize_device_procs(gx_device *dev)
 {
-    return tr_base_initialize(dev,
+    tr_base_initialize_device_procs(dev,
                               gx_default_b_w_map_rgb_color,
                               gx_default_b_w_map_color_rgb, NULL, NULL);
 
 }
 
 const gx_device gs_tr_mono_device = {
-    TRACE_DEVICE_BODY("tr_mono", 1, 1, tr_mono_initialize)
+    TRACE_DEVICE_BODY("tr_mono", 1, 1, tr_mono_initialize_device_procs)
 };
 
-static int
-tr_rgb_initialize(gx_device *dev)
+static void
+tr_rgb_initialize_device_procs(gx_device *dev)
 {
-    return tr_base_initialize(dev,
+    tr_base_initialize_device_procs(dev,
                               gx_default_rgb_map_rgb_color,
                               gx_default_rgb_map_color_rgb, NULL, NULL);
 }
 
 const gx_device gs_tr_rgb_device = {
-    TRACE_DEVICE_BODY("tr_rgb", 3, 24, tr_rgb_initialize);
+    TRACE_DEVICE_BODY("tr_rgb", 3, 24, tr_rgb_initialize_device_procs)
 };
 
-static int
-tr_cmyk_initialize(gx_device *dev)
+static void
+tr_cmyk_initialize_device_procs(gx_device *dev)
 {
-    return tr_base_initialize(dev,
+    tr_base_initialize_device_procs(dev,
                               NULL, cmyk_1bit_map_color_rgb,
                               cmyk_1bit_map_cmyk_color, NULL);
 }
 
 const gx_device gs_tr_cmyk_device = {
-    TRACE_DEVICE_BODY("tr_cmyk", 4, 4,
-                      NULL, cmyk_1bit_map_color_rgb,
-                      cmyk_1bit_map_cmyk_color, NULL)
+    TRACE_DEVICE_BODY("tr_cmyk", 4, 4, tr_cmyk_initialize_device_procs)
 };

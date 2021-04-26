@@ -1015,8 +1015,8 @@ static dev_proc_strip_tile_rect_devn(null_strip_tile_rect_devn);
 static dev_proc_fill_rectangle_hl_color(null_fill_rectangle_hl_color);
 static dev_proc_dev_spec_op(null_spec_op);
 
-static int
-null_initialize(gx_device *dev)
+static void
+null_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, get_initial_matrix, gx_forward_upright_get_initial_matrix);
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
@@ -1049,35 +1049,30 @@ null_initialize(gx_device *dev)
     set_dev_proc(dev, dev_spec_op, null_spec_op);
     set_dev_proc(dev, strip_copy_rop2, null_strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rect_devn, null_strip_tile_rect_devn);
-
-    return 0;
 }
 
-static int
-nullpage_initialize(gx_device *dev)
+static void
+nullpage_initialize_device_procs(gx_device *dev)
 {
-    int code = null_initialize(dev);
-
-    if (code < 0)
-        return code;
+    null_initialize_device_procs(dev);
 
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
-
-    return 0;
 }
 
 #define NULLD_X_RES 72
 #define NULLD_Y_RES 72
 
 const gx_device_null gs_null_device = {
-    std_device_std_body_type_open(gx_device_null, null_initialize,
+    std_device_std_body_type_open(gx_device_null,
+                                  null_initialize_device_procs,
                                   "null", &st_device_null,
                                   0, 0, NULLD_X_RES, NULLD_Y_RES)
 };
 
 const gx_device_null gs_nullpage_device = {
-std_device_std_body_type_open(gx_device_null, nullpage_initialize,
+std_device_std_body_type_open(gx_device_null,
+                              nullpage_initialize_device_procs,
                               "nullpage", &st_device_null,
                               (int)((float)(DEFAULT_WIDTH_10THS * NULLD_X_RES) / 10),
                               (int)((float)(DEFAULT_HEIGHT_10THS * NULLD_Y_RES) / 10),

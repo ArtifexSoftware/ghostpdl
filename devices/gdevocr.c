@@ -50,13 +50,10 @@ struct gx_device_ocr_s {
 };
 
 /* 8-bit gray bitmap -> UTF8 OCRd text */
-static int
-ocr_initialize(gx_device *dev)
+static void
+ocr_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray_bg(dev);
 
     set_dev_proc(dev, open_device, ocr_open);
     set_dev_proc(dev, close_device, ocr_close);
@@ -68,13 +65,11 @@ ocr_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_ocr gs_ocr_device =
 {
-    prn_device_body(gx_device_ocr, ocr_initialize, "ocr",
+    prn_device_body(gx_device_ocr, ocr_initialize_device_procs, "ocr",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0,	/* margins */
@@ -83,13 +78,10 @@ const gx_device_ocr gs_ocr_device =
 };
 
 /* 8-bit gray bitmap -> HTML OCRd text */
-static int
-hocr_initialize(gx_device *dev)
+static void
+hocr_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray_bg(dev);
 
     set_dev_proc(dev, open_device, ocr_open);
     set_dev_proc(dev, close_device, hocr_close);
@@ -101,13 +93,11 @@ hocr_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_ocr gs_hocr_device =
 {
-    prn_device_body(gx_device_ocr, hocr_initialize, "hocr",
+    prn_device_body(gx_device_ocr, hocr_initialize_device_procs, "hocr",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0,	/* margins */

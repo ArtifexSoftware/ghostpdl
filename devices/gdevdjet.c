@@ -115,35 +115,25 @@ static dev_proc_get_params(hpjet_get_params);
 static dev_proc_put_params(hpjet_put_params);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-hpjet_initialize(gx_device *dev)
+static void
+hpjet_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono_bg(dev);
 
     set_dev_proc(dev, open_device, hpjet_open);
     set_dev_proc(dev, close_device, hpjet_close);
     set_dev_proc(dev, get_params, hpjet_get_params);
     set_dev_proc(dev, put_params, hpjet_put_params);
-
-    return 0;
 }
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-ljet4pjl_initialize(gx_device *dev)
+static void
+ljet4pjl_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono_bg(dev);
 
     set_dev_proc(dev, open_device, hpjet_open);
     set_dev_proc(dev, close_device, ljet4pjl_close);
-
-    return 0;
 }
 
 typedef struct gx_device_hpjet_s gx_device_hpjet;
@@ -165,91 +155,91 @@ struct gx_device_hpjet_s {
     0, false, false, false, false }
 
 const gx_device_hpjet gs_deskjet_device =
-HPJET_DEVICE(hpjet_initialize, "deskjet",
+HPJET_DEVICE(hpjet_initialize_device_procs, "deskjet",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
              0, 0, 0, 0,		/* margins filled in by hpjet_open */
              1, djet_print_page_copies);
 
 const gx_device_hpjet gs_djet500_device =
-HPJET_DEVICE(hpjet_initialize, "djet500",
+HPJET_DEVICE(hpjet_initialize_device_procs, "djet500",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
              0, 0, 0, 0,		/* margins filled in by hpjet_open */
              1, djet500_print_page_copies);
 
 const gx_device_hpjet gs_fs600_device =
-HPJET_DEVICE(hpjet_initialize, "fs600",
+HPJET_DEVICE(hpjet_initialize_device_procs, "fs600",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI2, Y_DPI2,
              0.23, 0.0, 0.23, 0.04,      /* margins */
              1, fs600_print_page_copies);
 
 const gx_device_hpjet gs_laserjet_device =
-HPJET_DEVICE(hpjet_initialize, "laserjet",
+HPJET_DEVICE(hpjet_initialize_device_procs, "laserjet",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
              0.05, 0.25, 0.55, 0.25,	/* margins */
              1, ljet_print_page_copies);
 
 const gx_device_hpjet gs_ljetplus_device =
-HPJET_DEVICE(hpjet_initialize, "ljetplus",
+HPJET_DEVICE(hpjet_initialize_device_procs, "ljetplus",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
              0.05, 0.25, 0.55, 0.25,	/* margins */
              1, ljetplus_print_page_copies);
 
 const gx_device_hpjet gs_ljet2p_device =
-HPJET_DEVICE(hpjet_initialize, "ljet2p",
+HPJET_DEVICE(hpjet_initialize_device_procs, "ljet2p",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
              0.25, 0.25, 0.25, 0.0,	/* margins */
              1, ljet2p_print_page_copies);
 
 const gx_device_hpjet gs_ljet3_device =
-HPJET_DEVICE(hpjet_initialize, "ljet3",
+HPJET_DEVICE(hpjet_initialize_device_procs, "ljet3",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
              0.20, 0.25, 0.25, 0.25,	/* margins */
              1, ljet3_print_page_copies);
 
 const gx_device_hpjet gs_ljet3d_device =
-HPJET_DEVICE(hpjet_initialize, "ljet3d",
+HPJET_DEVICE(hpjet_initialize_device_procs, "ljet3d",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
              0.20, 0.25, 0.25, 0.25,	/* margins */
              1, ljet3d_print_page_copies);
 
 const gx_device_hpjet gs_ljet4_device =
-HPJET_DEVICE(hpjet_initialize, "ljet4",
+HPJET_DEVICE(hpjet_initialize_device_procs, "ljet4",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI2, Y_DPI2,
              0, 0, 0, 0,		/* margins */
              1, ljet4_print_page_copies);
 
 const gx_device_hpjet gs_ljet4d_device =
-HPJET_DEVICE(hpjet_initialize, "ljet4d",
+HPJET_DEVICE(hpjet_initialize_device_procs, "ljet4d",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI2, Y_DPI2,
              0, 0, 0, 0,		/* margins */
              1, ljet4d_print_page_copies);
 
 const gx_device_hpjet gs_lp2563_device =
-HPJET_DEVICE(hpjet_initialize, "lp2563",
+HPJET_DEVICE(hpjet_initialize_device_procs, "lp2563",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
              0, 0, 0, 0,		/* margins */
              1, lp2563_print_page_copies);
 
 const gx_device_hpjet gs_oce9050_device =
-HPJET_DEVICE(hpjet_initialize, "oce9050",
+HPJET_DEVICE(hpjet_initialize_device_procs, "oce9050",
              24 * 10, 24 * 10,	/* 24 inch roll (can print 32" also) */
              400, 400,		/* 400 dpi */
              0, 0, 0, 0,		/* margins */
              1, oce9050_print_page_copies);
 
 const gx_device_printer gs_ljet4pjl_device =
-prn_device_copies(ljet4pjl_initialize, "ljet4pjl",
+prn_device_copies(ljet4pjl_initialize_device_procs, "ljet4pjl",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI2, Y_DPI2,
            0, 0, 0, 0,			/* margins */

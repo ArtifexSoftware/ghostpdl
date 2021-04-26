@@ -454,13 +454,10 @@ typedef struct {
 }
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-hp_colour_initialize(gx_device *dev)
+static void
+hp_colour_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, map_rgb_color, gdev_pcl_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gdev_pcl_map_color_rgb);
@@ -472,44 +469,29 @@ hp_colour_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
-static int
-cdj500_initialize(gx_device *dev)
+static void
+cdj500_initialize_device_procs(gx_device *dev)
 {
-    int code = hp_colour_initialize(dev);
-
-    if (code < 0)
-        return code;
+    hp_colour_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, dj500c_open);
-
-    return 0;
 }
 
-static int
-cdj550_initialize(gx_device *dev)
+static void
+cdj550_initialize_device_procs(gx_device *dev)
 {
-    int code = hp_colour_initialize(dev);
-
-    if (code < 0)
-        return code;
+    hp_colour_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, dj550c_open);
-
-    return 0;
 }
 
 #ifdef USE_CDJ550_CMYK
-static int
-cdj550cmyk_initialize(gx_device *dev)
+static void
+cdj550cmyk_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, open_device, dj550c_open);
     set_dev_proc(dev, get_params, cdj_get_params);
@@ -517,102 +499,67 @@ cdj550cmyk_initialize(gx_device *dev)
     set_dev_proc(dev, map_cmyk_color, gdev_cmyk_map_cmyk_color);
     set_dev_proc(dev, encode_color, gdev_cmyk_map_cmyk_color);
     set_dev_proc(dev, decode_color, gdev_cmyk_map_color_cmyk);
-
-    return 0;
 }
 #endif
 
-static int
-dj505j_initialize(gx_device *dev)
+static void
+dj505j_initialize_device_procs(gx_device *dev)
 {
-    int code = hp_colour_initialize(dev);
-
-    if (code < 0)
-        return code;
+    hp_colour_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, dj505j_open);
-
-    return 0;
 }
 
-static int
-dnj650c_initialize(gx_device *dev)
+static void
+dnj650c_initialize_device_procs(gx_device *dev)
 {
-    int code = hp_colour_initialize(dev);
-
-    if (code < 0)
-        return code;
+    hp_colour_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, dnj650c_open);
-
-    return 0;
 }
 
-static int
-lj4dith_initialize(gx_device *dev)
+static void
+lj4dith_initialize_device_procs(gx_device *dev)
 {
-    int code = hp_colour_initialize(dev);
-
-    if (code < 0)
-        return code;
+    hp_colour_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, lj4dith_open);
-
-    return 0;
 }
 
-static int
-pj_initialize(gx_device *dev)
+static void
+pj_initialize_device_procs(gx_device *dev)
 {
-    int code = hp_colour_initialize(dev);
-
-    if (code < 0)
-        return code;
+    hp_colour_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, pj_open);
     set_dev_proc(dev, get_params, gdev_prn_get_params);
     set_dev_proc(dev, put_params, pj_put_params);
-
-    return 0;
 }
 
-static int
-pjxl_initialize(gx_device *dev)
+static void
+pjxl_initialize_device_procs(gx_device *dev)
 {
-    int code = hp_colour_initialize(dev);
-
-    if (code < 0)
-        return code;
+    hp_colour_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, pjxl_open);
     set_dev_proc(dev, get_params, pjxl_get_params);
     set_dev_proc(dev, put_params, pjxl_put_params);
-
-    return 0;
 }
 
-static int
-pjxl300_initialize(gx_device *dev)
+static void
+pjxl300_initialize_device_procs(gx_device *dev)
 {
-    int code = hp_colour_initialize(dev);
-
-    if (code < 0)
-        return code;
+    hp_colour_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, pjxl300_open);
     set_dev_proc(dev, get_params, pjxl_get_params);
     set_dev_proc(dev, put_params, pjxl_put_params);
-
-    return 0;
 }
 
-static int
-bjc_initialize(gx_device *dev)
+static void
+bjc_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, open_device, bjc_open);
     set_dev_proc(dev, get_params, bjc_get_params);
@@ -620,94 +567,87 @@ bjc_initialize(gx_device *dev)
     set_dev_proc(dev, map_cmyk_color, gdev_cmyk_map_cmyk_color);
     set_dev_proc(dev, encode_color, gdev_cmyk_map_cmyk_color);
     set_dev_proc(dev, decode_color, gdev_cmyk_map_color_cmyk);
-
-    return 0;
 }
 
-static int
-escp_initialize(gx_device *dev)
+static void
+escp_initialize_device_procs(gx_device *dev)
 {
-    int code = hp_colour_initialize(dev);
-
-    if (code < 0)
-        return code;
+    hp_colour_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, escp_open);
     set_dev_proc(dev, get_params, ep_get_params);
     set_dev_proc(dev, put_params, ep_put_params);
-
-    return 0;
 }
 
 gx_device_cdj far_data gs_cdjmono_device =
-cdj_device(cdj500_initialize, "cdjmono", 300, 300, 1,
+cdj_device(cdj500_initialize_device_procs, "cdjmono", 300, 300, 1,
            dj500c_print_page, 4, 0, 1);
 
 gx_device_cdj far_data gs_cdeskjet_device =
-cdj_device(cdj500_initialize, "cdeskjet", 300, 300, 24,
+cdj_device(cdj500_initialize_device_procs, "cdeskjet", 300, 300, 24,
            dj500c_print_page, 4, 2, 1);
 
 gx_device_cdj far_data gs_cdjcolor_device =
-cdj_device(cdj500_initialize, "cdjcolor", 300, 300, 24,
+cdj_device(cdj500_initialize_device_procs, "cdjcolor", 300, 300, 24,
            dj500c_print_page, 4, 2, 1);
 
 gx_device_cdj far_data gs_cdj500_device =
-cdj_device(cdj500_initialize, "cdj500", 300, 300, BITSPERPIXEL,
+cdj_device(cdj500_initialize_device_procs, "cdj500", 300, 300, BITSPERPIXEL,
            dj500c_print_page, 4, 2, 1);
 
 gx_device_cdj far_data gs_cdj550_device =
-cdj_device(cdj550_initialize, "cdj550", 300, 300, BITSPERPIXEL,
+cdj_device(cdj550_initialize_device_procs, "cdj550", 300, 300, BITSPERPIXEL,
            dj550c_print_page, 0, 2, 1);
 
 #ifdef USE_CDJ550_CMYK
 gx_device_cdj far_data gs_cdj550cmyk_device = {
-    prn_cmyk_colour_device(cdj550cmyk_procs, "cdj550cmyk", 300, 300,
+    prn_cmyk_colour_device(cdj550cmyk_initialize_device_procs, "cdj550cmyk", 300, 300,
         BITSPERPIXEL, dj550c_print_page, 0), 2, 1
 };
 #endif
 
 gx_device_cdj far_data gs_picty180_device =
-cdj_device(cdj550_initialize, "picty180", 300, 300, BITSPERPIXEL,
+cdj_device(cdj550_initialize_device_procs, "picty180", 300, 300, BITSPERPIXEL,
            picty180_print_page, 0, 2, 1);
 
 gx_device_cdj far_data gs_dj505j_device =
-cdj_device(dj505j_initialize, "dj505j", 300, 300, 1,
+cdj_device(dj505j_initialize_device_procs, "dj505j", 300, 300, 1,
            dj505j_print_page, 4, 0, 1);
 
 gx_device_pj far_data gs_declj250_device =
-pj_device(pj_initialize, "declj250", 180, 180, BITSPERPIXEL,
+pj_device(pj_initialize_device_procs, "declj250", 180, 180, BITSPERPIXEL,
           declj250_print_page);
 
 gx_device_cdj far_data gs_dnj650c_device =
-cdj_device(dnj650c_initialize, "dnj650c", 300, 300, BITSPERPIXEL,
+cdj_device(dnj650c_initialize_device_procs, "dnj650c", 300, 300, BITSPERPIXEL,
            dnj650c_print_page, 0, 2, 1);
 
 gx_device_cdj far_data gs_lj4dith_device =
-cdj_device(lj4dith_initialize, "lj4dith", 600, 600, 8,
+cdj_device(lj4dith_initialize_device_procs, "lj4dith", 600, 600, 8,
            lj4dith_print_page, 4, 0, 1);
 
 gx_device_cdj far_data gs_lj4dithp_device =
-cdj_device(lj4dith_initialize, "lj4dithp", 600, 600, 8,
+cdj_device(lj4dith_initialize_device_procs, "lj4dithp", 600, 600, 8,
            lj4dithp_print_page, 4, 0, 1);
 
 gx_device_pj far_data gs_pj_device =
-pj_device(pj_initialize, "pj", 180, 180, BITSPERPIXEL,
+pj_device(pj_initialize_device_procs, "pj", 180, 180, BITSPERPIXEL,
           pj_print_page);
 
 gx_device_pjxl far_data gs_pjxl_device =
-pjxl_device(pjxl_initialize, "pjxl", 180, 180, BITSPERPIXEL,
+pjxl_device(pjxl_initialize_device_procs, "pjxl", 180, 180, BITSPERPIXEL,
             pjxl_print_page, 0, 0);
 
 gx_device_pjxl far_data gs_pjxl300_device =
-pjxl_device(pjxl300_initialize, "pjxl300", 300, 300, BITSPERPIXEL,
+pjxl_device(pjxl300_initialize_device_procs, "pjxl300", 300, 300, BITSPERPIXEL,
             pjxl300_print_page, 0, 0);
 
 gx_device_cdj far_data gs_escp_device =
-cdj_device(escp_initialize, "escp", 360, 360, 8,
+cdj_device(escp_initialize_device_procs, "escp", 360, 360, 8,
            escp_print_page, 0, 0, 1);
 
 gx_device_cdj far_data gs_escpc_device =
-cdj_device(escp_initialize, "escpc", 360, 360, 24,
+cdj_device(escp_initialize_device_procs, "escpc", 360, 360, 24,
            escp_print_page, 0, 0, 1);
 
 /* Args of bjc drivers are manualFeed, mediaType, printQuality, printColor,
@@ -715,7 +655,7 @@ cdj_device(escp_initialize, "escpc", 360, 360, 24,
 
 gx_device_bjc600 far_data gs_bjc600_device =
     bjc600_device(
-        bjc_initialize,
+        bjc_initialize_device_procs,
         BJC_BJC600,
         BJC600_DEFAULT_RESOLUTION,
         BJC600_DEFAULT_RESOLUTION,
@@ -734,7 +674,7 @@ gx_device_bjc600 far_data gs_bjc600_device =
 
 gx_device_bjc800 far_data gs_bjc800_device =
     bjc800_device(
-        bjc_initialize,
+        bjc_initialize_device_procs,
         BJC_BJC800,
         BJC800_DEFAULT_RESOLUTION,
         BJC800_DEFAULT_RESOLUTION,

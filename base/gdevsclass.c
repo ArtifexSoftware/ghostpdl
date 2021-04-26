@@ -842,7 +842,7 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
         rc_decrement(dev->NupControl, "finalize subclass device");
 }
 
-int default_subclass_initialize(gx_device *dev)
+void default_subclass_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, default_subclass_open_device);
     set_dev_proc(dev, get_initial_matrix, default_subclass_get_initial_matrix);
@@ -909,6 +909,4 @@ int default_subclass_initialize(gx_device *dev)
     set_dev_proc(dev, process_page, default_subclass_process_page);
     set_dev_proc(dev, transform_pixel_region, default_subclass_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, default_subclass_fill_stroke_path);
-
-    return 0;
 }

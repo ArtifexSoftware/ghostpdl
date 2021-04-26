@@ -31,7 +31,7 @@ declare_mem_procs(mem_mapped2_copy_mono, mem_mapped2_copy_color, mem_mapped2_fil
 
 /* The device descriptor. */
 const gx_device_memory mem_mapped2_device =
-    mem_device("image2", 2, 0, mem_dev_initialize);
+    mem_device("image2", 2, 0, mem_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_2 =
 {
@@ -188,7 +188,7 @@ declare_mem_procs(mem2_word_copy_mono, mem2_word_copy_color, mem2_word_fill_rect
 
 /* Here is the device descriptor. */
 const gx_device_memory mem_mapped2_word_device =
-    mem_device("image2w", 2, 0, mem_word_dev_initialize);
+    mem_device("image2w", 2, 0, mem_word_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_2w =
 {

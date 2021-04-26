@@ -267,91 +267,61 @@ static int plibk_print_page(gx_device_printer * pdev, gp_file * pstream);
 
 /* The device procedures */
 
-static int
-plib_base_initialize(gx_device *dev)
+static void
+plib_base_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, open_device, plib_open);
     set_dev_proc(dev, close_device, plib_close);
     set_dev_proc(dev, put_params, plib_put_params);
-
-    return 0;
 }
 
-static int
-plibm_initialize(gx_device *dev)
+static void
+plibm_initialize_device_procs(gx_device *dev)
 {
-    int code = plib_base_initialize(dev);
-
-    if (code < 0)
-        return code;
+    plib_base_initialize_device_procs(dev);
 
     set_dev_proc(dev, encode_color, gdev_prn_map_rgb_color);
     set_dev_proc(dev, decode_color, gdev_prn_map_color_rgb);
-
-    return 0;
 }
 
-static int
-plibg_initialize(gx_device *dev)
+static void
+plibg_initialize_device_procs(gx_device *dev)
 {
-    int code = plib_base_initialize(dev);
-
-    if (code < 0)
-        return code;
+    plib_base_initialize_device_procs(dev);
 
     set_dev_proc(dev, encode_color, plibg_encode_color);
     set_dev_proc(dev, decode_color, plibg_decode_color);
-
-    return 0;
 }
 
-static int
-plib_initialize(gx_device *dev)
+static void
+plib_initialize_device_procs(gx_device *dev)
 {
-    int code = plib_base_initialize(dev);
-
-    if (code < 0)
-        return code;
+    plib_base_initialize_device_procs(dev);
 
     set_dev_proc(dev, encode_color, gx_default_rgb_map_rgb_color);
     set_dev_proc(dev, decode_color, plib_decode_color);
-
-    return 0;
 }
 
-static int
-plibc_initialize(gx_device *dev)
+static void
+plibc_initialize_device_procs(gx_device *dev)
 {
-    int code = plib_base_initialize(dev);
-
-    if (code < 0)
-        return code;
+    plib_base_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_color_rgb, plibc_map_color_rgb);
     set_dev_proc(dev, encode_color, plibc_encode_color);
     set_dev_proc(dev, decode_color, plibc_decode_color);
-
-    return 0;
 }
 
-static int
-plibk_initialize(gx_device *dev)
+static void
+plibk_initialize_device_procs(gx_device *dev)
 {
-    int code = plib_base_initialize(dev);
-
-    if (code < 0)
-        return code;
+    plib_base_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_color_rgb, plibc_map_color_rgb);
     set_dev_proc(dev, encode_color, plibc_encode_color);
     set_dev_proc(dev, decode_color, plibc_decode_color);
-
-    return 0;
 }
 
 /* Macro for generating device descriptors. */
@@ -380,15 +350,20 @@ plibk_initialize(gx_device *dev)
 
 /* The device descriptors themselves */
 const gx_device_plib gs_plib_device =
-  plib_prn_device(plib_initialize, "plib", 3, 24, 255, 255, plib_print_page);
+  plib_prn_device(plib_initialize_device_procs, "plib",
+                  3, 24, 255, 255, plib_print_page);
 const gx_device_plib gs_plibg_device =
-  plib_prn_device(plibg_initialize, "plibg", 1, 8, 255, 0, plibg_print_page);
+  plib_prn_device(plibg_initialize_device_procs, "plibg",
+                  1, 8, 255, 0, plibg_print_page);
 const gx_device_plib gs_plibm_device =
-  plib_prn_device(plibm_initialize, "plibm", 1, 1, 1, 0, plibm_print_page);
+  plib_prn_device(plibm_initialize_device_procs, "plibm",
+                  1, 1, 1, 0, plibm_print_page);
 const gx_device_plib gs_plibk_device =
-  plib_prn_device(plibk_initialize, "plibk", 4, 4, 1, 1, plibk_print_page);
+  plib_prn_device(plibk_initialize_device_procs, "plibk",
+                  4, 4, 1, 1, plibk_print_page);
 const gx_device_plib gs_plibc_device =
-  plib_prn_device(plibc_initialize, "plibc", 4, 32, 255, 255, plibc_print_page);
+  plib_prn_device(plibc_initialize_device_procs, "plibc",
+                  4, 32, 255, 255, plibc_print_page);
 
 /* ------ Initialization ------ */
 

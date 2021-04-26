@@ -107,23 +107,18 @@ fpng_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 /* 24-bit color. */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-fpng_initialize(gx_device *dev)
+static void
+fpng_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_rgb_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_rgb_bg(dev);
 
     set_dev_proc(dev, get_params, fpng_get_params);
     set_dev_proc(dev, put_params, fpng_put_params);
     set_dev_proc(dev, dev_spec_op, fpng_dev_spec_op);
-
-    return 0;
 }
 
 const gx_device_fpng gs_fpng_device =
-{prn_device_body(gx_device_fpng, fpng_initialize, "fpng",
+{prn_device_body(gx_device_fpng, fpng_initialize_device_procs, "fpng",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */

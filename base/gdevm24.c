@@ -58,7 +58,7 @@ static dev_proc_copy_alpha(mem_true24_copy_alpha);
 
 /* The device descriptor. */
 const gx_device_memory mem_true24_device =
-    mem_device("image24", 24, 0, mem_dev_initialize);
+    mem_device("image24", 24, 0, mem_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_24 =
 {
@@ -560,7 +560,7 @@ declare_mem_procs(mem24_word_copy_mono, mem24_word_copy_color, mem24_word_fill_r
 
 /* Here is the device descriptor. */
 const gx_device_memory mem_true24_word_device =
-    mem_device("image24w", 24, 0, mem_word_dev_initialize);
+    mem_device("image24w", 24, 0, mem_word_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_24w =
 {

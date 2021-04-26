@@ -51,17 +51,12 @@ static dev_proc_print_page(ln03_print_page);
 
 /* We have to supply our own procs, since we have to intercept */
 /* output_page so we can open the printer in text mode. */
-static int
-sixel_initialize(gx_device *dev)
+static void
+sixel_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono(dev);
 
     set_dev_proc(dev, output_page, sixel_output_page);
-
-    return 0;
 }
 
 #ifdef A4
@@ -70,7 +65,7 @@ sixel_initialize(gx_device *dev)
 #  define BOTTOM_MARGIN 0.4
 #endif
 gx_device_printer gs_ln03_device =
-    prn_device(sixel_initialize, "ln03",
+    prn_device(sixel_initialize_device_procs, "ln03",
                DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                300, 300,		/* x_dpi, y_dpi */
                0, BOTTOM_MARGIN, 0, 0,	/* left, bottom, right, top margin */
@@ -107,7 +102,7 @@ ln03_print_page(gx_device_printer *pdev, gp_file *prn_stream)
  */
 static dev_proc_print_page(dl2100_print_page);
 gx_device_printer gs_dl2100_device =
-    prn_device(sixel_initialize, "dl2100",
+    prn_device(sixel_initialize_device_procs, "dl2100",
                DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                300, 300,		/* x_dpi, y_dpi */
                0, 0, 0, 0,	/* left, bottom, right, top margin */
@@ -132,7 +127,7 @@ dl2100_print_page(gx_device_printer *pdev, gp_file *prn_stream)
  */
 static dev_proc_print_page(la50_print_page);
 gx_device_printer gs_la50_device =
-    prn_device(sixel_initialize, "la50",
+    prn_device(sixel_initialize_device_procs, "la50",
                85,
                110,
                144, 72,
@@ -159,7 +154,7 @@ la50_print_page(gx_device_printer *pdev, gp_file *prn_stream)
  */
 static dev_proc_print_page(la70_print_page);
 gx_device_printer gs_la70_device =
-    prn_device(sixel_initialize, "la70",
+    prn_device(sixel_initialize_device_procs, "la70",
                85,
                110,
                144, 144,
@@ -185,7 +180,7 @@ la70_print_page(gx_device_printer *pdev, gp_file *prn_stream)
  */
 static dev_proc_print_page(la75_print_page);
 gx_device_printer gs_la75_device =
-    prn_device(sixel_initialize, "la75",
+    prn_device(sixel_initialize_device_procs, "la75",
                85,
                110,
                144, 72,
@@ -212,7 +207,7 @@ la75_print_page(gx_device_printer *pdev, gp_file *prn_stream)
  */
 static dev_proc_print_page(la75plus_print_page);
 gx_device_printer gs_la75plus_device =
-    prn_device(sixel_initialize, "la75plus",
+    prn_device(sixel_initialize_device_procs, "la75plus",
                85,
                110,
                180, 180,
@@ -246,7 +241,7 @@ la75plus_print_page(gx_device_printer *pdev, gp_file *prn_stream)
  */
 static dev_proc_print_page(sxlcrt_print_page);
 gx_device_printer gs_sxlcrt_device =
-    prn_device(sixel_initialize,
+    prn_device(sixel_initialize_device_procs,
                "sxlcrt",
                180,
                110,

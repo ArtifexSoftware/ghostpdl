@@ -1007,13 +1007,10 @@ static	const HFUNCS	htable[ MAXHTONE ] = {
 *	The definition is based on GS macros, the only real stuff that we
 *	define here are the photoex_ functions.
 */
-static int
-photoex_initialize(gx_device *dev)
+static void
+photoex_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, open_device, photoex_open);
     set_dev_proc(dev, map_rgb_color, photoex_map_rgb_color);
@@ -1022,8 +1019,6 @@ photoex_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, photoex_put_params);
     set_dev_proc(dev, encode_color, photoex_encode_color);
     set_dev_proc(dev, decode_color, photoex_decode_color);
-
-    return 0;
 }
 
 /*
@@ -1039,7 +1034,7 @@ gx_photoex_device far_data gs_photoex_device = {
         prn_device_body(
 
                 gx_photoex_device,			/* Device struct type					*/
-                photoex_initialize, 		/* Initialize proc						*/
+                photoex_initialize_device_procs, 	/* Initialize proc						*/
                 "photoex",					/* Name of the device					*/
                 DEFAULT_WIDTH_10THS,		/* Default width						*/
                 DEFAULT_HEIGHT_10THS,		/* Default height						*/

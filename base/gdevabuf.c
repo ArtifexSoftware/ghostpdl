@@ -170,10 +170,10 @@ static dev_proc_get_clipping_box(mem_abuf_get_clipping_box);
 static dev_proc_fill_rectangle_hl_color(mem_abuf_fill_rectangle_hl_color);
 
 /* The device descriptor. */
-static int
-mem_alpha_initialize(gx_device *dev)
+static void
+mem_alpha_initialize_device_procs(gx_device *dev)
 {
-    mem_initialize(dev);
+    mem_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
@@ -182,12 +182,10 @@ mem_alpha_initialize(gx_device *dev)
     set_dev_proc(dev, copy_color, gx_default_copy_color);
     set_dev_proc(dev, strip_copy_rop, gx_no_strip_copy_rop);
     set_dev_proc(dev, fill_rectangle_hl_color, mem_abuf_fill_rectangle_hl_color);
-
-    return 0;
 }
 
 static const gx_device_memory mem_alpha_buffer_device =
-   mem_device("image(alpha buffer)", 0, 1, mem_alpha_initialize);
+   mem_device("image(alpha buffer)", 0, 1, mem_alpha_initialize_device_procs);
 
 /* Make an alpha-buffer memory device. */
 /* We use abuf instead of alpha_buffer because */

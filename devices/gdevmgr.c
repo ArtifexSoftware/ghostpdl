@@ -66,13 +66,10 @@ static dev_proc_print_page(cmgrN_print_page);
 
 /* The device procedures */
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-mgr_initialize(gx_device *dev)
+static void
+mgr_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono_bg(dev);
 
     set_dev_proc(dev, open_device, gdev_mgr_open);
 
@@ -81,17 +78,12 @@ mgr_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
-static int
-mgrN_initialize(gx_device *dev)
+static void
+mgrN_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray_bg(dev);
 
     set_dev_proc(dev, open_device, gdev_mgr_open);
 
@@ -100,17 +92,12 @@ mgrN_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
-static int
-cmgr4_initialize(gx_device *dev)
+static void
+cmgr4_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, open_device, gdev_mgr_open);
     set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
@@ -121,17 +108,12 @@ cmgr4_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
-static int
-cmgr8_initialize(gx_device *dev)
+static void
+cmgr8_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, open_device, gdev_mgr_open);
     set_dev_proc(dev, map_rgb_color, mgr_8bit_map_rgb_color);
@@ -142,23 +124,21 @@ cmgr8_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 /* The device descriptors themselves */
 gx_device_mgr far_data gs_mgrmono_device =
-  mgr_prn_device( mgr_initialize,  "mgrmono", 1,  1, 1,   1,   0, 2, 0, mgr_print_page);
+  mgr_prn_device( mgr_initialize_device_procs,  "mgrmono", 1,  1, 1,   1,   0, 2, 0, mgr_print_page);
 gx_device_mgr far_data gs_mgrgray2_device =
-  mgr_prn_device(mgrN_initialize,  "mgrgray2",1,  8, 2, 255,   0, 4, 0, mgrN_print_page);
+  mgr_prn_device(mgrN_initialize_device_procs,  "mgrgray2",1,  8, 2, 255,   0, 4, 0, mgrN_print_page);
 gx_device_mgr far_data gs_mgrgray4_device =
-  mgr_prn_device(mgrN_initialize,  "mgrgray4",1,  8, 4, 255,   0,16, 0, mgrN_print_page);
+  mgr_prn_device(mgrN_initialize_device_procs,  "mgrgray4",1,  8, 4, 255,   0,16, 0, mgrN_print_page);
 gx_device_mgr far_data gs_mgrgray8_device =
-  mgr_prn_device(mgrN_initialize,  "mgrgray8",1,  8, 8, 255,   0, 0, 0, mgrN_print_page);
+  mgr_prn_device(mgrN_initialize_device_procs,  "mgrgray8",1,  8, 8, 255,   0, 0, 0, mgrN_print_page);
 gx_device_mgr far_data gs_mgr4_device =
-  mgr_prn_device(cmgr4_initialize, "mgr4",    3,  8, 4,   1,   1, 2, 2, cmgrN_print_page);
+  mgr_prn_device(cmgr4_initialize_device_procs, "mgr4",    3,  8, 4,   1,   1, 2, 2, cmgrN_print_page);
 gx_device_mgr far_data gs_mgr8_device =
-  mgr_prn_device(cmgr8_initialize, "mgr8",    3,  8, 8, 255, 255, 6, 5, cmgrN_print_page);
+  mgr_prn_device(cmgr8_initialize_device_procs, "mgr8",    3,  8, 8, 255, 255, 6, 5, cmgrN_print_page);
 
 /* ------ Internal routines ------ */
 

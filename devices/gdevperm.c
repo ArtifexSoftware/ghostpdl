@@ -57,13 +57,10 @@ struct gx_device_perm_s {
 };
 typedef struct gx_device_perm_s gx_device_perm_t;
 
-static int
-perm_initialize(gx_device *dev)
+static void
+perm_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, get_params, perm_get_params);
     set_dev_proc(dev, put_params, perm_put_params);
@@ -71,12 +68,11 @@ perm_initialize(gx_device *dev)
     set_dev_proc(dev, get_color_comp_index, perm_get_color_comp_index);
     set_dev_proc(dev, encode_color, perm_encode_color);
     set_dev_proc(dev, decode_color, perm_decode_color);
-
-    return 0;
 }
 
 const gx_device_perm_t gs_perm_device = {
-    prn_device_body_extended(gx_device_perm_t, perm_initialize, "permute",
+    prn_device_body_extended(gx_device_perm_t,
+        perm_initialize_device_procs, "permute",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, 72, 72,
         0, 0, 0, 0,
         GX_DEVICE_COLOR_MAX_COMPONENTS, 4,

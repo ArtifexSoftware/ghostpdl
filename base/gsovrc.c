@@ -407,8 +407,8 @@ static dev_proc_stroke_path(overprint_stroke_path);
 static dev_proc_text_begin(overprint_text_begin);
 static  dev_proc_dev_spec_op(overprint_dev_spec_op);
 
-static int
-nooverprint_initialize(gx_device *dev)
+static void
+nooverprint_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, overprint_open_device);
     set_dev_proc(dev, fill_rectangle, gx_forward_fill_rectangle);
@@ -424,8 +424,6 @@ nooverprint_initialize(gx_device *dev)
     set_dev_proc(dev, copy_planes, gx_forward_copy_planes);
     set_dev_proc(dev, copy_alpha_hl_color, gx_forward_copy_alpha_hl_color);
     set_dev_proc(dev, fill_stroke_path, gx_forward_fill_stroke_path);
-
-    return 0;
 }
 
 /*
@@ -462,8 +460,8 @@ static dev_proc_copy_alpha_hl_color(overprint_copy_alpha_hl_color);
 
 /* other low-level overprint_sep_* rendering methods prototypes go here */
 
-static int
-generic_overprint_initialize(gx_device *dev)
+static void
+generic_overprint_initialize_device_procs(gx_device *dev)
 {
     /* Note that we set lots of things to 'default' here. You can't
      * omit them, because the caller for this particular initialization
@@ -496,12 +494,10 @@ generic_overprint_initialize(gx_device *dev)
                                                overprint_copy_alpha_hl_color :
                                                gx_forward_copy_alpha_hl_color);
     set_dev_proc(dev, fill_stroke_path, overprint_fill_stroke_path);
-
-    return 0;
 }
 
-static int
-sep_overprint_initialize(gx_device *dev)
+static void
+sep_overprint_initialize_device_procs(gx_device *dev)
 {
     /* Note that we set lots of things to 'default' here. You can't
      * omit them, because the caller for this particular initialization
@@ -532,8 +528,6 @@ sep_overprint_initialize(gx_device *dev)
     set_dev_proc(dev, copy_planes, overprint_copy_planes);
     set_dev_proc(dev, copy_alpha_hl_color, overprint_copy_alpha_hl_color);
     set_dev_proc(dev, fill_stroke_path, overprint_fill_stroke_path);
-
-    return 0;
 }
 
 /*
@@ -1318,11 +1312,10 @@ overprint_dev_spec_op(gx_device* pdev, int dev_spec_op,
 /* complete a procedure set */
 static int
 fill_in_procs(gx_device_procs * pprocs,
-              dev_proc_initialize(initialize),
+              dev_proc_initialize_device_procs(initialize_device_procs),
               int is_planar)
 {
     gx_device_forward tmpdev;
-    int code;
 
     /*
      * gx_device_forward_fill_in_procs calls gx_device_fill_in_procs, which
@@ -1341,10 +1334,8 @@ fill_in_procs(gx_device_procs * pprocs,
      */
     tmpdev.color_info.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
     memset(&tmpdev.procs, 0, sizeof(tmpdev.procs));
-    tmpdev.initialize = initialize;
-    code = initialize((gx_device *)&tmpdev);
-    if (code < 0)
-        return code;
+    tmpdev.initialize_device_procs = initialize_device_procs;
+    initialize_device_procs((gx_device *)&tmpdev);
     gx_device_forward_fill_in_procs(&tmpdev);
     memcpy(pprocs, &tmpdev.procs, sizeof(tmpdev.procs));
 
@@ -1396,17 +1387,17 @@ c_overprint_create_default_compositor(
     if (code < 0)
         return code;
     code = fill_in_procs(&opdev->no_overprint_procs,
-                         nooverprint_initialize,
+                         nooverprint_initialize_device_procs,
                          tdev->is_planar);
     if (code < 0)
         return code;
     code = fill_in_procs(&opdev->generic_overprint_procs,
-                         generic_overprint_initialize,
+                         generic_overprint_initialize_device_procs,
                          tdev->is_planar);
     if (code < 0)
         return code;
     code = fill_in_procs(&opdev->sep_overprint_procs,
-                         sep_overprint_initialize,
+                         sep_overprint_initialize_device_procs,
                          tdev->is_planar);
     if (code < 0)
         return code;

@@ -102,7 +102,7 @@ static dev_proc_print_page(ibmpro_print_page);
 /* Standard Epson device */
 const gx_device_printer far_data gs_epson_device =
   /* The print_page proc is compatible with allowing bg printing */
-  prn_device(gdev_prn_initialize_mono_bg,
+  prn_device(gdev_prn_initialize_device_procs_mono_bg,
              "epson",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,
@@ -112,7 +112,7 @@ const gx_device_printer far_data gs_epson_device =
 /* Mid-res (interleaved, 1 pass per line) 9-pin device */
 const gx_device_printer far_data gs_eps9mid_device =
   /* The print_page proc is compatible with allowing bg printing */
-  prn_device(gdev_prn_initialize_mono_bg,
+  prn_device(gdev_prn_initialize_device_procs_mono_bg,
              "eps9mid",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, 3*Y_BASERES,
@@ -122,7 +122,7 @@ const gx_device_printer far_data gs_eps9mid_device =
 /* High-res (interleaved) 9-pin device */
 const gx_device_printer far_data gs_eps9high_device =
   /* The print_page proc is compatible with allowing bg printing */
-  prn_device(gdev_prn_initialize_mono_bg,
+  prn_device(gdev_prn_initialize_device_procs_mono_bg,
              "eps9high",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, 3*Y_BASERES,
@@ -132,7 +132,7 @@ const gx_device_printer far_data gs_eps9high_device =
 /* IBM ProPrinter device */
 const gx_device_printer far_data gs_ibmpro_device =
   /* The print_page proc is compatible with allowing bg printing */
-  prn_device(gdev_prn_initialize_mono_bg,
+  prn_device(gdev_prn_initialize_device_procs_mono_bg,
              "ibmpro",
              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
              X_DPI, Y_DPI,

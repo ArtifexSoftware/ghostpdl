@@ -50,19 +50,17 @@ dev_proc_close_device(pe_close);
 dev_proc_fill_rectangle(pe_fill_rectangle);
 dev_proc_copy_mono(pe_copy_mono);
 
-static int
-pe_initialize(gx_device *dev)
+static void
+pe_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, pe_open);
     set_dev_proc(dev, close_device, pe_close);
     set_dev_proc(dev, fill_rectangle, pe_fill_rectangle);
     set_dev_proc(dev, copy_mono, pe_copy_mono);
-
-    return 0;
 }
 
 gx_device_pe far_data gs_pe_device =
-{	std_device_std_body(gx_device_pe, pe_initialize, "pe",
+{	std_device_std_body(gx_device_pe, pe_initialize_device_procs, "pe",
           XSIZE, YSIZE, XPPI, YPPI),
          { 0 },		/* std_procs */
         DEFAULT_ADDRESS, DEFAULT_REGISTERS

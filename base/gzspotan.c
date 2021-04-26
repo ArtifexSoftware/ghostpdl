@@ -205,18 +205,17 @@ trap_is_last(const gx_san_trap *list, const gx_san_trap *t)
 
 /* The device descriptor */
 /* Many of these procedures won't be called; they are set to NULL. */
-static int
-san_initialize(gx_device *dev)
+static void
+san_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, san_open);
     set_dev_proc(dev, close_device, san_close);
     set_dev_proc(dev, fill_path, gx_default_fill_path);
     set_dev_proc(dev, get_clipping_box, san_get_clipping_box);
-
-    return 0;
 }
 static const gx_device_spot_analyzer gx_spot_analyzer_device =
-{std_device_std_body(gx_device_spot_analyzer, san_initialize, "spot analyzer",
+{std_device_std_body(gx_device_spot_analyzer,
+                     san_initialize_device_procs, "spot analyzer",
                      0, 0, 1, 1)
 };
 

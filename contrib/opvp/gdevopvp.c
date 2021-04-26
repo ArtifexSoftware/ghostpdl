@@ -296,13 +296,10 @@ gs_public_st_suffix_add0_final(
     NULL /* *docInfo */
 
 /* device procs */
-static int
-opvp_initialize(gx_device *dev)
+static void
+opvp_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, opvp_open);
     set_dev_proc(dev, get_initial_matrix, opvp_get_initial_matrix);
@@ -328,8 +325,6 @@ opvp_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 /* vector procs */
@@ -364,7 +359,7 @@ const   gx_device_opvp          gs_opvp_device =
 {
     std_device_dci_type_body(
         gx_device_opvp,
-        opvp_initialize,
+        opvp_initialize_device_procs,
         "opvp",
         &st_device_opvp,
         DEFAULT_WIDTH_10THS_A4  * X_DPI / 10,
@@ -381,13 +376,10 @@ const   gx_device_opvp          gs_opvp_device =
 };
 
 /* for inkjet */
-static int
-oprp_initialize(gx_device *dev)
+static void
+oprp_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, oprp_open);
     set_dev_proc(dev, output_page, opvp_output_page);
@@ -402,15 +394,13 @@ oprp_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_oprp gs_oprp_device =
 {
     prn_device_std_margins_body(
         gx_device_oprp,
-        oprp_initialize,
+        oprp_initialize_device_procs,
         "oprp",
         DEFAULT_WIDTH_10THS_A4,
         DEFAULT_HEIGHT_10THS_A4,

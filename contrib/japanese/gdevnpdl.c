@@ -118,24 +118,19 @@ static dev_proc_print_page_copies(npdl_print_page_copies);
 static dev_proc_put_params(npdl_put_params);
 static dev_proc_image_out(npdl_image_out);
 
-static int
-npdl_initialize(gx_device *dev)
+static void
+npdl_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono(dev);
 
     set_dev_proc(dev, open_device, npdl_open);
     set_dev_proc(dev, close_device, npdl_close);
     set_dev_proc(dev, get_params, lprn_get_params);
     set_dev_proc(dev, put_params, npdl_put_params);
-
-    return code;
 }
 
 gx_device_lprn far_data gs_npdl_device =
-lprn_duplex_device(gx_device_lprn, npdl_initialize, "npdl",
+lprn_duplex_device(gx_device_lprn, npdl_initialize_device_procs, "npdl",
             X_DPI, Y_DPI,	/* default resolution */
             0.0, 0.0, 0.0, 0.0,	/* margins */
             1, npdl_print_page_copies, npdl_image_out);

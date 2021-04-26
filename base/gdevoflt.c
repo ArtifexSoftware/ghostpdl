@@ -87,13 +87,10 @@ RELOC_PTRS_END
 
 public_st_obj_filter_device();
 
-static int
-obj_filter_initialize(gx_device *dev)
+static void
+obj_filter_initialize_device_procs(gx_device *dev)
 {
-    int code = default_subclass_initialize(dev);
-
-    if (code < 0)
-        return code;
+    default_subclass_initialize_device_procs(dev);
 
     set_dev_proc(dev, fill_rectangle, obj_filter_fill_rectangle);
     set_dev_proc(dev, fill_path, obj_filter_fill_path);
@@ -115,8 +112,6 @@ obj_filter_initialize(gx_device *dev)
     set_dev_proc(dev, strip_copy_rop2, obj_filter_strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rect_devn, obj_filter_strip_tile_rect_devn);
     set_dev_proc(dev, fill_stroke_path, obj_filter_fill_stroke_path);
-
-    return 0;
 }
 
 const
@@ -125,7 +120,8 @@ gx_device_obj_filter gs_obj_filter_device =
     /*
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
-    std_device_dci_type_body(gx_device_obj_filter, obj_filter_initialize,
+    std_device_dci_type_body(gx_device_obj_filter,
+                        obj_filter_initialize_device_procs,
                         "object_filter", &st_obj_filter_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,

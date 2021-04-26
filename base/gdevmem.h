@@ -121,9 +121,9 @@ dev_proc_transform_pixel_region(mem_transform_pixel_region);
   (rgb_depth >= 8 ? 255 : rgb_depth == 4 ? 15 : rgb_depth == 2 ? 3 :\
    rgb_depth == 1 ? 1 : (1 << gray_depth) - 1)
 
-void mem_initialize(gx_device *dev);
-int mem_dev_initialize(gx_device *dev);
-int mem_word_dev_initialize(gx_device *dev);
+void mem_initialize_device_procs(gx_device *dev);
+void mem_dev_initialize_device_procs(gx_device *dev);
+void mem_word_dev_initialize_device_procs(gx_device *dev);
 
 #define mem_device(name, rgb_depth, gray_depth, initialize)\
 {	std_device_dci_body(gx_device_memory, initialize, name,\

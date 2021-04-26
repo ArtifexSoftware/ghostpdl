@@ -60,8 +60,8 @@ static dev_proc_composite(bbox_composite);
 static dev_proc_text_begin(bbox_text_begin);
 static dev_proc_fillpage(bbox_fillpage);
 
-static int
-bbox_initialize(gx_device *dev)
+static void
+bbox_initialize_device_procs(gx_device *dev)
 {
      set_dev_proc(dev, open_device, bbox_open_device);
      set_dev_proc(dev, get_initial_matrix, gx_upright_get_initial_matrix);
@@ -91,8 +91,6 @@ bbox_initialize(gx_device *dev)
      set_dev_proc(dev, fillpage, bbox_fillpage);
      set_dev_proc(dev, strip_copy_rop2, bbox_strip_copy_rop2);
      set_dev_proc(dev, strip_tile_rect_devn, bbox_strip_tile_rect_devn);
-
-    return 0;
 }
 
 /* The device prototype */
@@ -120,7 +118,7 @@ gx_device_bbox gs_bbox_device =
     /*
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
-    std_device_dci_body(gx_device_bbox, bbox_initialize, "bbox",
+    std_device_dci_body(gx_device_bbox, bbox_initialize_device_procs, "bbox",
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
                         1, 8, 255, 0, 256, 1),

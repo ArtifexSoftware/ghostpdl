@@ -49,17 +49,12 @@ static int sixel_print_page(gx_device_printer *pdev,
 static dev_proc_output_page(sixel_output_page);
 static dev_proc_print_page(xes_print_page);
 
-static int
-sixel_initialize(gx_device *dev)
+static void
+sixel_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono(dev);
 
     set_dev_proc(dev, output_page, sixel_output_page);
-
-    return 0;
 }
 
 
@@ -72,7 +67,7 @@ sixel_initialize(gx_device *dev)
 #endif
 
 gx_device_printer gs_xes_device =
-    prn_device(sixel_initialize, "xes",
+    prn_device(sixel_initialize_device_procs, "xes",
                DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                300, 300,		/* x_dpi, y_dpi */
                0, BOTTOM_MARGIN, 0, 0,	/* left, bottom, right, top margin */

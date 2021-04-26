@@ -248,22 +248,17 @@ static dev_proc_close_device(hl7x0_close);
 static dev_proc_print_page(hl720_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-hl7x0_initialize(gx_device *dev)
+static void
+hl7x0_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono_bg(dev);
 
     set_dev_proc(dev, open_device, hl7x0_open);
     set_dev_proc(dev, close_device, hl7x0_close);
-
-    return 0;
 }
 
 const gx_device_printer far_data gs_hl7x0_device =
-  prn_device(hl7x0_initialize, "hl7x0",
+  prn_device(hl7x0_initialize_device_procs, "hl7x0",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
         0, 0, 0, 0,		/* margins filled in by hl7x0_open */

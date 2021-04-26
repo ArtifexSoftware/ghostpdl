@@ -46,7 +46,7 @@ declare_mem_procs(mem_true40_copy_mono, mem_true40_copy_color, mem_true40_fill_r
 
 /* The device descriptor. */
 const gx_device_memory mem_true40_device =
-    mem_device("image40", 40, 0, mem_dev_initialize);
+    mem_device("image40", 40, 0, mem_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_40 =
 {
@@ -425,7 +425,7 @@ declare_mem_procs(mem40_word_copy_mono, mem40_word_copy_color, mem40_word_fill_r
 
 /* Here is the device descriptor. */
 const gx_device_memory mem_true40_word_device =
-    mem_device("image40w", 40, 0, mem_word_dev_initialize);
+    mem_device("image40w", 40, 0, mem_word_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_40w =
 {

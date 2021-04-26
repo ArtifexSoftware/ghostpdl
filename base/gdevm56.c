@@ -46,7 +46,7 @@ declare_mem_procs(mem_true56_copy_mono, mem_true56_copy_color, mem_true56_fill_r
 
 /* The device descriptor. */
 const gx_device_memory mem_true56_device =
-    mem_device("image56", 56, 0, mem_dev_initialize);
+    mem_device("image56", 56, 0, mem_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_56 =
 {
@@ -449,7 +449,7 @@ declare_mem_procs(mem56_word_copy_mono, mem56_word_copy_color, mem56_word_fill_r
 
 /* Here is the device descriptor. */
 const gx_device_memory mem_true56_word_device =
-    mem_device("image56w", 56, 0, mem_word_dev_initialize);
+    mem_device("image56w", 56, 0, mem_word_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_56w =
 {

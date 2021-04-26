@@ -957,7 +957,7 @@ gx_default_composite_get_cropping(const gs_composite_t *pxcte, int *ry, int *rhe
 }
 
 int
-gx_default_initialize(gx_device *dev)
+gx_default_initialize_device(gx_device *dev)
 {
     return 0;
 }
@@ -1207,23 +1207,18 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     gx_device prototype = *pprototype;
 
     /* In the new (as of 2021) world, the prototype does not contain
-     * device procs. We need to call the 'initialize' function to
-     * properly populate the procs array. We can't write to the const
-     * prototype pointer we are passed in, so copy it to a local block,
-     * and initialize that instead, */
-    if (prototype.initialize != NULL) {
-        int code = prototype.initialize(&prototype);
+     * device procs. We need to call the 'initialize_device_procs'
+     * function to properly populate the procs array. We can't write to
+     * the const prototype pointer we are passed in, so copy it to a
+     * local block, and initialize that instead, */
+    prototype.initialize_device_procs(&prototype);
+    /* Fill in missing entries with the global defaults */
+    gx_device_fill_in_procs(&prototype);
 
-        if (code < 0)
-            return code;
+    if (dest->initialize_device_procs == NULL)
+       dest->initialize_device_procs = prototype.initialize_device_procs;
 
-        /* Fill in missing entries with the global defaults */
-        gx_device_fill_in_procs(&prototype);
-    }
-
-    if (dest->initialize == NULL)
-       dest->initialize = prototype.initialize;
-
+    set_dev_proc(dest, initialize_device, dev_proc(&prototype, initialize_device));
     set_dev_proc(dest, open_device, dev_proc(&prototype, open_device));
     set_dev_proc(dest, get_initial_matrix, dev_proc(&prototype, get_initial_matrix));
     set_dev_proc(dest, sync_output, dev_proc(&prototype, sync_output));

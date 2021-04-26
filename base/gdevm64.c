@@ -46,7 +46,7 @@ declare_mem_procs(mem_true64_copy_mono, mem_true64_copy_color, mem_true64_fill_r
 
 /* The device descriptor. */
 const gx_device_memory mem_true64_device =
-    mem_device("image64", 64, 0, mem_dev_initialize);
+    mem_device("image64", 64, 0, mem_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_64 =
 {
@@ -352,7 +352,7 @@ declare_mem_procs(mem64_word_copy_mono, mem64_word_copy_color, mem64_word_fill_r
 
 /* Here is the device descriptor. */
 const gx_device_memory mem_true64_word_device =
-    mem_device("image64w", 64, 0, mem_word_dev_initialize);
+    mem_device("image64w", 64, 0, mem_word_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_64w =
 {

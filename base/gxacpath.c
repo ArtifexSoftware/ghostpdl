@@ -55,8 +55,8 @@ RELOC_PTRS_WITH(device_cpath_accum_reloc_ptrs, gx_device_cpath_accum *pdev)
 public_st_device_cpath_accum();
 
 /* The device descriptor */
-static int
-cpath_accum_initialize(gx_device *dev)
+static void
+cpath_accum_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, accum_open_device);
     set_dev_proc(dev, close_device, accum_close);
@@ -64,14 +64,13 @@ cpath_accum_initialize(gx_device *dev)
     set_dev_proc(dev, get_clipping_box, accum_get_clipping_box);
     set_dev_proc(dev, get_color_mapping_procs, gx_default_DevGray_get_color_mapping_procs);
     set_dev_proc(dev, dev_spec_op, accum_dev_spec_op);
-
-    return 0;
 }
 
 
 /* Many of these procedures won't be called; they are set to NULL. */
 static const gx_device_cpath_accum gs_cpath_accum_device =
-{std_device_std_body(gx_device_cpath_accum, cpath_accum_initialize,
+{std_device_std_body(gx_device_cpath_accum,
+                     cpath_accum_initialize_device_procs,
                      "clip list accumulator",
                      0, 0, 1, 1)
 };

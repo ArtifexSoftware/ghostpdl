@@ -27,7 +27,7 @@ static dev_proc_print_page(bmp_cmyk_print_page);
 
 const gx_device_printer gs_bmpmono_device =
 /* The print_page proc is compatible with allowing bg printing */
-prn_device(gdev_prn_initialize_mono_bg, "bmpmono",
+prn_device(gdev_prn_initialize_device_procs_mono_bg, "bmpmono",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -37,25 +37,20 @@ prn_device(gdev_prn_initialize_mono_bg, "bmpmono",
 /* (Uses a fixed palette of 256 gray levels.) */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-bmpgray_initialize(gx_device *dev)
+static void
+bmpgray_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray_bg(dev);
 
     /* The prn macros used in previous versions of the code leave
      * encode_color and decode_color set to NULL (which are then rewritten
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_printer gs_bmpgray_device = {
-  prn_device_body(gx_device_printer, bmpgray_initialize, "bmpgray",
+  prn_device_body(gx_device_printer, bmpgray_initialize_device_procs, "bmpgray",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -65,25 +60,20 @@ const gx_device_printer gs_bmpgray_device = {
 /* 1-bit-per-plane separated CMYK color. */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-bmpsep1_initialize(gx_device *dev)
+static void
+bmpsep1_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk1_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk1_bg(dev);
 
     /* The prn macros used in previous versions of the code leave
      * encode_color and decode_color set to NULL (which are then rewritten
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_printer gs_bmpsep1_device = {
-  prn_device_body(gx_device_printer, bmpsep1_initialize, "bmpsep1",
+  prn_device_body(gx_device_printer, bmpsep1_initialize_device_procs, "bmpsep1",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
         0,0,0,0,			/* margins */
@@ -91,25 +81,20 @@ const gx_device_printer gs_bmpsep1_device = {
 };
 
 /* 8-bit-per-plane separated CMYK color. */
-static int
-bmpsep8_initialize(gx_device *dev)
+static void
+bmpsep8_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk8_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk8_bg(dev);
 
     /* The prn macros used in previous versions of the code leave
      * encode_color and decode_color set to NULL (which are then rewritten
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_printer gs_bmpsep8_device = {
-  prn_device_body(gx_device_printer, bmpsep8_initialize, "bmpsep8",
+  prn_device_body(gx_device_printer, bmpsep8_initialize_device_procs, "bmpsep8",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
         0,0,0,0,			/* margins */
@@ -119,12 +104,10 @@ const gx_device_printer gs_bmpsep8_device = {
 /* 4-bit planar (EGA/VGA-style) color. */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-bmp16_initialize(gx_device *dev)
+static void
+bmp16_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk8_bg(dev);
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk8_bg(dev);
 
     set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_4bit_map_color_rgb);
@@ -134,12 +117,10 @@ bmp16_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_printer gs_bmp16_device = {
-  prn_device_body(gx_device_printer, bmp16_initialize, "bmp16",
+  prn_device_body(gx_device_printer, bmp16_initialize_device_procs, "bmp16",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -150,12 +131,10 @@ const gx_device_printer gs_bmp16_device = {
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-bmp256_initialize(gx_device *dev)
+static void
+bmp256_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, map_rgb_color, pc_8bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_8bit_map_color_rgb);
@@ -165,12 +144,10 @@ bmp256_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_printer gs_bmp256_device = {
-  prn_device_body(gx_device_printer, bmp256_initialize, "bmp256",
+  prn_device_body(gx_device_printer, bmp256_initialize_device_procs, "bmp256",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -180,12 +157,10 @@ const gx_device_printer gs_bmp256_device = {
 /* 24-bit color. */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-bmp16m_initialize(gx_device *dev)
+static void
+bmp16m_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, map_rgb_color, bmp_map_16m_rgb_color);
     set_dev_proc(dev, map_color_rgb, bmp_map_16m_color_rgb);
@@ -195,37 +170,30 @@ bmp16m_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_printer gs_bmp16m_device =
-prn_device(bmp16m_initialize, "bmp16m",
+prn_device(bmp16m_initialize_device_procs, "bmp16m",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
            24, bmp_print_page);
 
 /* 32-bit CMYK color (outside the BMP specification). */
-static int
-bmp32b_initialize(gx_device *dev)
+static void
+bmp32b_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk8_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk8_bg(dev);
 
     /* The prn macros used in previous versions of the code leave
      * encode_color and decode_color set to NULL (which are then rewritten
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_printer gs_bmp32b_device =
-prn_device(bmp32b_initialize, "bmp32b",
+prn_device(bmp32b_initialize_device_procs, "bmp32b",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */

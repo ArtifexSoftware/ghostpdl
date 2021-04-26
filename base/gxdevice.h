@@ -318,7 +318,7 @@ dev_proc_put_image(gx_default_put_image);
 dev_proc_copy_alpha_hl_color(gx_default_no_copy_alpha_hl_color);
 dev_proc_copy_planes(gx_default_copy_planes);
 
-int gx_default_initialize(gx_device *dev);
+int gx_default_initialize_device(gx_device *dev);
 
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_composite gx_null_composite

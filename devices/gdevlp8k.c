@@ -170,7 +170,7 @@ static dev_proc_print_page(lp8000_print_page);
 
 /* The print_page proc is compatible with allowing bg printing */
 gx_device_printer far_data gs_lp8000_device =
-  prn_device(gdev_prn_initialize_mono_bg, "lp8000",
+  prn_device(gdev_prn_initialize_device_procs_mono_bg, "lp8000",
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,

@@ -29,7 +29,7 @@ static dev_proc_print_page(jj100_print_page);
 
 /* The device descriptor */
 gx_device_printer gs_jj100_device =
-  prn_device(gdev_prn_initialize_mono, "jj100",
+  prn_device(gdev_prn_initialize_device_procs_mono, "jj100",
         82,                  /* width_10ths, 8.2" = 210mm(A4) */
         115 /*113, 117*/,    /* height_10ths, 11.7" = 297mm(A4) */
         360,			/* x_dpi */

@@ -431,9 +431,9 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
                 ecode = code;
 
             if (code >= 0 || (reallocate && pass > 1)) {
-                ppdev->initialize = clist_initialize;
+                ppdev->initialize_device_procs = clist_initialize_device_procs;
                 /* Hacky - we know this can't fail. */
-                (void)ppdev->initialize((gx_device *)ppdev);
+                (void)ppdev->initialize_device_procs((gx_device *)ppdev);
                 gx_device_fill_in_procs((gx_device *)ppdev);
             }
         } else {
@@ -1396,9 +1396,9 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         dev_t_proc_dev_spec_op((*orig_dso), gx_device) = dev_proc(mdev, dev_spec_op);
         /* The following is a special hack for setting up printer devices. */
         assign_dev_procs(mdev, mdproto);
-        mdev->initialize = mdproto->initialize;
-        /* This can never fail */
-        (void)mdev->initialize((gx_device *)mdev);
+        mdev->initialize_device_procs = mdproto->initialize_device_procs;
+        mdev->initialize_device_procs((gx_device *)mdev);
+        /* We know mdev->procs.initialize_device is NULL! */
         /* Do not override the dev_spec_op! */
         dev_proc(mdev, dev_spec_op) = orig_dso;
         check_device_separable((gx_device *)mdev);
@@ -1708,8 +1708,8 @@ dmprintf4(pdev->memory, "w=%d/%d, h=%d/%d\n", old_width, new_width, old_height, 
     return code;
 }
 
-int
-gdev_prn_initialize(gx_device *dev)
+void
+gdev_prn_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, gdev_prn_open);
     set_dev_proc(dev, close_device, gdev_prn_close);
@@ -1722,214 +1722,133 @@ gdev_prn_initialize(gx_device *dev)
     set_dev_proc(dev, map_color_rgb, gdev_prn_map_color_rgb);
     set_dev_proc(dev, encode_color, gdev_prn_map_rgb_color);
     set_dev_proc(dev, decode_color, gdev_prn_map_color_rgb);
-
-    return 0;
 }
 
-int gdev_prn_initialize_bg(gx_device *dev)
+void gdev_prn_initialize_device_procs_bg(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return 0;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
-
-    return 0;
 }
 
-int
-gdev_prn_initialize_mono(gx_device *dev)
+void
+gdev_prn_initialize_device_procs_mono(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, gdev_prn_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gdev_prn_map_color_rgb);
     set_dev_proc(dev, encode_color, gdev_prn_map_rgb_color);
     set_dev_proc(dev, decode_color, gdev_prn_map_color_rgb);
-
-    return 0;
 }
 
-int gdev_prn_initialize_mono_bg(gx_device *dev)
+void gdev_prn_initialize_device_procs_mono_bg(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono(dev);
-
-    if (code < 0)
-        return 0;
+    gdev_prn_initialize_device_procs_mono(dev);
 
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
-
-    return 0;
 }
 
-int
-gdev_prn_initialize_gray(gx_device *dev)
+void
+gdev_prn_initialize_device_procs_gray(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, gx_default_gray_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_gray_map_color_rgb);
     set_dev_proc(dev, encode_color, gx_default_gray_map_rgb_color);
     set_dev_proc(dev, decode_color, gx_default_gray_map_color_rgb);
-
-    return 0;
 }
 
-int gdev_prn_initialize_gray_bg(gx_device *dev)
+void gdev_prn_initialize_device_procs_gray_bg(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray(dev);
-
-    if (code < 0)
-        return 0;
+    gdev_prn_initialize_device_procs_gray(dev);
 
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
-
-    return 0;
 }
 
-int
-gdev_prn_initialize_rgb(gx_device *dev)
+void gdev_prn_initialize_device_procs_rgb(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
     set_dev_proc(dev, encode_color, gx_default_rgb_map_rgb_color);
     set_dev_proc(dev, decode_color, gx_default_rgb_map_color_rgb);
-
-    return 0;
 }
 
-int gdev_prn_initialize_rgb_bg(gx_device *dev)
+void gdev_prn_initialize_device_procs_rgb_bg(gx_device *dev)
 {
-    int code = gdev_prn_initialize_rgb(dev);
-
-    if (code < 0)
-        return 0;
+    gdev_prn_initialize_device_procs_rgb(dev);
 
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
-
-    return 0;
 }
 
-int
-gdev_prn_initialize_gray8(gx_device *dev)
+void
+gdev_prn_initialize_device_procs_gray8(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, gx_default_8bit_map_gray_color);
     set_dev_proc(dev, map_color_rgb, gx_default_8bit_map_color_gray);
     set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
     set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
-
-    return 0;
 }
 
-int gdev_prn_initialize_gray8_bg(gx_device *dev)
+void gdev_prn_initialize_device_procs_gray8_bg(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray8(dev);
-
-    if (code < 0)
-        return 0;
+    gdev_prn_initialize_device_procs_gray8(dev);
 
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
-
-    return 0;
 }
 
-int
-gdev_prn_initialize_cmyk1(gx_device *dev)
+void gdev_prn_initialize_device_procs_cmyk1(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_cmyk_color, cmyk_1bit_map_cmyk_color);
     set_dev_proc(dev, map_color_rgb, cmyk_1bit_map_color_rgb);
     set_dev_proc(dev, encode_color, cmyk_1bit_map_cmyk_color);
     set_dev_proc(dev, decode_color, cmyk_1bit_map_color_rgb);
-
-    return 0;
 }
 
-int gdev_prn_initialize_cmyk1_bg(gx_device *dev)
+void gdev_prn_initialize_device_procs_cmyk1_bg(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk1(dev);
-
-    if (code < 0)
-        return 0;
+    gdev_prn_initialize_device_procs_cmyk1(dev);
 
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
-
-    return 0;
 }
 
-int
-gdev_prn_initialize_cmyk8(gx_device *dev)
+void gdev_prn_initialize_device_procs_cmyk8(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
     set_dev_proc(dev, map_color_rgb, cmyk_8bit_map_color_rgb);
     set_dev_proc(dev, encode_color, cmyk_8bit_map_cmyk_color);
     set_dev_proc(dev, decode_color, cmyk_8bit_map_color_rgb);
-
-    return 0;
 }
 
-int gdev_prn_initialize_cmyk8_bg(gx_device *dev)
+void gdev_prn_initialize_device_procs_cmyk8_bg(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk8(dev);
-
-    if (code < 0)
-        return 0;
+    gdev_prn_initialize_device_procs_cmyk8(dev);
 
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
-
-    return 0;
 }
 
-int
-gdev_prn_initialize_cmyk16(gx_device *dev)
+void gdev_prn_initialize_device_procs_cmyk16(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_cmyk_color, cmyk_16bit_map_cmyk_color);
     set_dev_proc(dev, map_color_rgb, cmyk_16bit_map_color_cmyk);
     set_dev_proc(dev, encode_color, cmyk_16bit_map_cmyk_color);
     set_dev_proc(dev, decode_color, cmyk_16bit_map_color_cmyk);
-
-    return 0;
 }
 
-int gdev_prn_initialize_cmyk16_bg(gx_device *dev)
+void gdev_prn_initialize_device_procs_cmyk16_bg(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk16(dev);
-
-    if (code < 0)
-        return 0;
+    gdev_prn_initialize_device_procs_cmyk16(dev);
 
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
-
-    return 0;
 }

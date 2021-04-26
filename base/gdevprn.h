@@ -504,21 +504,21 @@ int gdev_create_buf_device(create_buf_device_proc_t cbd_proc,
 #define gdev_prn_transpose_8x8(inp,ils,outp,ols)\
   memflip8x8(inp,ils,outp,ols)
 
-int gdev_prn_initialize(gx_device *dev);
-int gdev_prn_initialize_bg(gx_device *dev);
-int gdev_prn_initialize_mono(gx_device *dev);
-int gdev_prn_initialize_mono_bg(gx_device *dev);
-int gdev_prn_initialize_rgb(gx_device *dev);
-int gdev_prn_initialize_rgb_bg(gx_device *dev);
-int gdev_prn_initialize_gray(gx_device *dev);
-int gdev_prn_initialize_gray_bg(gx_device *dev);
-int gdev_prn_initialize_gray8(gx_device *dev);
-int gdev_prn_initialize_gray8_bg(gx_device *dev);
-int gdev_prn_initialize_cmyk1(gx_device *dev);
-int gdev_prn_initialize_cmyk1_bg(gx_device *dev);
-int gdev_prn_initialize_cmyk8(gx_device *dev);
-int gdev_prn_initialize_cmyk8_bg(gx_device *dev);
-int gdev_prn_initialize_cmyk16(gx_device *dev);
-int gdev_prn_initialize_cmyk16_bg(gx_device *dev);
+void gdev_prn_initialize_device_procs(gx_device *dev);
+void gdev_prn_initialize_device_procs_bg(gx_device *dev);
+void gdev_prn_initialize_device_procs_mono(gx_device *dev);
+void gdev_prn_initialize_device_procs_mono_bg(gx_device *dev);
+void gdev_prn_initialize_device_procs_rgb(gx_device *dev);
+void gdev_prn_initialize_device_procs_rgb_bg(gx_device *dev);
+void gdev_prn_initialize_device_procs_gray(gx_device *dev);
+void gdev_prn_initialize_device_procs_gray_bg(gx_device *dev);
+void gdev_prn_initialize_device_procs_gray8(gx_device *dev);
+void gdev_prn_initialize_device_procs_gray8_bg(gx_device *dev);
+void gdev_prn_initialize_device_procs_cmyk1(gx_device *dev);
+void gdev_prn_initialize_device_procs_cmyk1_bg(gx_device *dev);
+void gdev_prn_initialize_device_procs_cmyk8(gx_device *dev);
+void gdev_prn_initialize_device_procs_cmyk8_bg(gx_device *dev);
+void gdev_prn_initialize_device_procs_cmyk16(gx_device *dev);
+void gdev_prn_initialize_device_procs_cmyk16_bg(gx_device *dev);
 
 #endif /* gdevprn_INCLUDED */

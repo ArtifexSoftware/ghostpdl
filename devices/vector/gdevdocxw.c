@@ -144,8 +144,8 @@ typedef struct {
 
 private_st_textw_text_enum();
 
-static int
-docxwrite_initialize(gx_device *dev)
+static void
+docxwrite_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, docxwrite_open_device);
     set_dev_proc(dev, output_page, docxwrite_output_page);
@@ -160,14 +160,13 @@ docxwrite_initialize(gx_device *dev)
     set_dev_proc(dev, composite, gx_null_composite);
     set_dev_proc(dev, text_begin, docxwrite_text_begin);
     set_dev_proc(dev, dev_spec_op, docxwrite_dev_spec_op);
-
-    return 0;
 }
 
 const gx_device_docxwrite_t gs_docxwrite_device =
 {
     /* Define the device as 8-bit gray scale to avoid computing halftones. */
-    std_device_dci_body(gx_device_docxwrite_t, docxwrite_initialize,
+    std_device_dci_body(gx_device_docxwrite_t,
+                        docxwrite_initialize_device_procs,
                         "docxwrite",
                         DEFAULT_WIDTH_10THS * X_DPI / 10,
                         DEFAULT_HEIGHT_10THS * Y_DPI / 10,

@@ -100,7 +100,7 @@ static dev_proc_copy_alpha_hl_color(flp_copy_alpha_hl_color);
 static dev_proc_process_page(flp_process_page);
 static dev_proc_transform_pixel_region(flp_transform_pixel_region);
 static dev_proc_fill_stroke_path(flp_fill_stroke_path);
-static dev_proc_initialize(flp_initialize);
+static dev_proc_initialize_device_procs(flp_initialize_device_procs);
 
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
@@ -127,7 +127,7 @@ public_st_flp_device();
 const
 gx_device_flp gs_flp_device =
 {
-    std_device_dci_type_body(gx_device_flp, flp_initialize,
+    std_device_dci_type_body(gx_device_flp, flp_initialize_device_procs,
                         "first_lastpage", &st_flp_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
@@ -1171,13 +1171,10 @@ int flp_transform_pixel_region(gx_device *dev, transform_pixel_region_reason rea
     return 0;
 }
 
-static int
-flp_initialize(gx_device *dev)
+static void
+flp_initialize_device_procs(gx_device *dev)
 {
-    int code = default_subclass_initialize(dev);
-
-    if (code < 0)
-        return code;
+    default_subclass_initialize_device_procs(dev);
 
     set_dev_proc(dev, output_page, flp_output_page);
     set_dev_proc(dev, close_device, flp_close_device);
@@ -1222,6 +1219,4 @@ flp_initialize(gx_device *dev)
     set_dev_proc(dev, process_page, flp_process_page);
     set_dev_proc(dev, transform_pixel_region, flp_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, flp_fill_stroke_path);
-
-    return 0;
 }

@@ -94,22 +94,17 @@ static dev_proc_open_device(oki4w_open);
 static dev_proc_close_device(oki4w_close);
 static dev_proc_print_page(oki4w_print_page);
 
-static int
-oki4w_initialize(gx_device *dev)
+static void
+oki4w_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono(dev);
 
     set_dev_proc(dev, open_device, oki4w_open);
     set_dev_proc(dev, close_device, oki4w_close);
-
-    return 0;
 }
 
 gx_device_printer far_data gs_oki4w_device =
-  prn_device(oki4w_initialize, "oki4w",
+  prn_device(oki4w_initialize_device_procs, "oki4w",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
         0, 0, 0, 0,		/* margins filled in by oki4w_open */

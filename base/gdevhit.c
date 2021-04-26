@@ -28,8 +28,8 @@ const int gs_hit_detected = gs_error_hit_detected;
  * It returns e_hit whenever it is asked to actually paint any pixels.
  */
 static dev_proc_fill_rectangle(hit_fill_rectangle);
-static int
-hit_initialize(gx_device *dev)
+static void
+hit_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, fill_rectangle, hit_fill_rectangle);
     set_dev_proc(dev, composite, gx_non_imaging_composite);
@@ -51,11 +51,9 @@ hit_initialize(gx_device *dev)
     set_dev_proc(dev, get_clipping_box, gx_get_largest_clipping_box);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     set_dev_proc(dev, map_color_rgb_alpha, gx_default_map_color_rgb_alpha);
-
-    return 0;
 }
 const gx_device gs_hit_device = {
- std_device_std_body(gx_device, hit_initialize, "hit detector",
+ std_device_std_body(gx_device, hit_initialize_device_procs, "hit detector",
                      0, 0, 1, 1)
 };
 

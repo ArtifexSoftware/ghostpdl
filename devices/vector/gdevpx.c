@@ -146,10 +146,10 @@ static dev_proc_put_params(pclxl_put_params);
 static dev_proc_begin_typed_image(pclxl_begin_typed_image);
 static dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
 
-static int
-pclxl_initialize(gx_device *dev,
-                 dev_proc_map_rgb_color(map_rgb_color),
-                 dev_proc_map_color_rgb(map_color_rgb))
+static void
+pclxl_initialize_device_procs(gx_device *dev,
+                              dev_proc_map_rgb_color(map_rgb_color),
+                              dev_proc_map_color_rgb(map_color_rgb))
 {
     set_dev_proc(dev, open_device, pclxl_open_device);
     set_dev_proc(dev, output_page, pclxl_output_page);
@@ -170,32 +170,30 @@ pclxl_initialize(gx_device *dev,
     set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
     set_dev_proc(dev, begin_typed_image, pclxl_begin_typed_image);
     set_dev_proc(dev, strip_copy_rop, pclxl_strip_copy_rop);
-
-    return 0;
 }
 
-static int
-pxlmono_initialize(gx_device *dev)
+static void
+pxlmono_initialize_device_procs(gx_device *dev)
 {
-    return pclxl_initialize(dev,
-                            gx_default_gray_map_rgb_color,
-                            gx_default_gray_map_color_rgb);
+    pclxl_initialize_device_procs(dev,
+                                  gx_default_gray_map_rgb_color,
+                                  gx_default_gray_map_color_rgb);
 }
 
-static int
-pxlcolor_initialize(gx_device *dev)
+static void
+pxlcolor_initialize_device_procs(gx_device *dev)
 {
-    return pclxl_initialize(dev,
-                            gx_default_rgb_map_rgb_color,
-                            gx_default_rgb_map_color_rgb);
+    pclxl_initialize_device_procs(dev,
+                                  gx_default_rgb_map_rgb_color,
+                                  gx_default_rgb_map_color_rgb);
 }
 
 const gx_device_pclxl gs_pxlmono_device = {
-    pclxl_device_body("pxlmono", 8, pxlmono_initialize)
+    pclxl_device_body("pxlmono", 8, pxlmono_initialize_device_procs)
 };
 
 const gx_device_pclxl gs_pxlcolor_device = {
-    pclxl_device_body("pxlcolor", 24, pxlcolor_initialize)
+    pclxl_device_body("pxlcolor", 24, pxlcolor_initialize_device_procs)
 };
 
 /* ---------------- Other utilities ---------------- */

@@ -515,13 +515,10 @@ xit:
 }
 
 /* CLJ device methods */
-static int
-clj_initialize(gx_device *dev)
+static void
+clj_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, get_initial_matrix, clj_get_initial_matrix);
     set_dev_proc(dev, map_rgb_color, gdev_pcl_3bit_map_rgb_color);
@@ -532,22 +529,15 @@ clj_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
-static int
-cljet5_initialize(gx_device *dev)
+static void
+cljet5_initialize_device_procs(gx_device *dev)
 {
-    int code = clj_initialize(dev);
-
-    if (code < 0)
-        return code;
+    clj_initialize_device_procs(dev);
 
     set_dev_proc(dev, get_params, clj_get_params);
     set_dev_proc(dev, put_params, clj_put_params);
-
-    return 0;
 }
 
 /* CLJ device structure */
@@ -570,7 +560,7 @@ cljet5_initialize(gx_device *dev)
     rotated		    /* rotated - may be overridden subsequently */
 
 gx_device_clj gs_cljet5_device = {
-    CLJ_DEVICE_BODY(cljet5_initialize, "cljet5", 0 /*false*/)
+    CLJ_DEVICE_BODY(cljet5_initialize_device_procs, "cljet5", 0 /*false*/)
 };
 
 /* ---------------- Driver with page rotation ---------------- */
@@ -685,21 +675,16 @@ clj_pr_put_params(
 }
 
 /* CLJ device methods -- se above for CLJ_PROCS */
-static int
-cljet5pr_initialize(gx_device *dev)
+static void
+cljet5pr_initialize_device_procs(gx_device *dev)
 {
-    int code = clj_initialize(dev);
-
-    if (code < 0)
-        return code;
+    clj_initialize_device_procs(dev);
 
     set_dev_proc(dev, get_params, clj_pr_get_params);
     set_dev_proc(dev, put_params, clj_pr_put_params);
-
-    return 0;
 }
 
 /* CLJ device structure -- see above for CLJ_DEVICE_BODY */
 gx_device_clj gs_cljet5pr_device = {
-    CLJ_DEVICE_BODY(cljet5pr_initialize, "cljet5pr", 1 /*true*/)
+    CLJ_DEVICE_BODY(cljet5pr_initialize_device_procs, "cljet5pr", 1 /*true*/)
 };

@@ -97,8 +97,8 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
 /* for ESC/Page-Color */
 #define escv_device_body(name) \
 {\
-  escv_device_full_body(gx_device_escv, escv_initialize, name, \
-                        &st_device_escv,\
+  escv_device_full_body(gx_device_escv, escv_initialize_device_procs,\
+                        name, &st_device_escv,\
 /* width & height */    ESCPAGE_DEFAULT_WIDTH, ESCPAGE_DEFAULT_HEIGHT,\
 /* default resolution */X_DPI, Y_DPI,\
 /* color info */        3, 24, 255, 255, 256, 256,\
@@ -113,8 +113,8 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
 /* for ESC/Page (Monochrome) */
 #define esmv_device_body(name) \
 {\
-  esmv_device_full_body(gx_device_escv, esmv_initialize, name, \
-                        &st_device_escv,\
+  esmv_device_full_body(gx_device_escv, esmv_initialize_device_procs,\
+                        name, &st_device_escv,\
 /* width & height */    ESCPAGE_DEFAULT_WIDTH, ESCPAGE_DEFAULT_HEIGHT,\
 /* default resolution */X_DPI, Y_DPI,\
 /* color info */        1, 8, 255, 255, 256, 256,\
@@ -126,8 +126,8 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
   esmv_init_code\
 }
 
-static int
-esc_initialize(gx_device *dev)
+static void
+esc_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, escv_open);
     set_dev_proc(dev, output_page, escv_output_page);
@@ -145,28 +145,26 @@ esc_initialize(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
     set_dev_proc(dev, begin_typed_image, escv_begin_typed_image);
-
-    return 0;
 }
 
 /* for ESC/Page-Color */
-static int
-escv_initialize(gx_device *dev)
+static void
+escv_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
 
-    return esc_initialize(dev);
+    esc_initialize_device_procs(dev);
 }
 
 /* for ESC/Page (Monochrome) */
-static int
-esmv_initialize(gx_device *dev)
+static void
+esmv_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, map_rgb_color, gx_default_gray_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_gray_map_color_rgb);
 
-    return esc_initialize(dev);
+    esc_initialize_device_procs(dev);
 }
 
 #define	escv_init_code_common \

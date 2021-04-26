@@ -247,7 +247,7 @@ A device is represented by a structure divided into three parts:</p>
 <li>parameters that are present in all devices but may be different for
 each device or instance;</li>
 
-<li>an initialize procedure; and</li>
+<li>an initialize_device_procs procedure; and</li>
 
 <li>device-specific parameters that may be different for each instance.</li>
 </ul>
@@ -274,7 +274,7 @@ href="../base/gdevprn.h">gdevprn.h</a>.</p>
 } smurf_device;
 smurf_device gs_smurf_device = {
         <b><em>... macro for generic parameter values ...,</em></b>
-        <b><em>initialize_procedure,</em></b>
+        <b><em>initialize_device_procs,</em></b>
         <b><em>... device-specific parameter values if any ...</em></b>
 };</pre>
 </blockquote>
@@ -284,8 +284,8 @@ The device structure instance <b>must</b> have the name
 name used in <code>contrib.mak</code>.  <code>gx_device_common</code>
 is a macro consisting only of the element definitions. </p>
 <p>
-The <code>initialize_procedure</code> function pointer is called when
-the device is created. Its primary job is to initialize the entries in
+The <code>initialize_device_procs</code> function pointer is called when
+the device is created. Its sole job is to initialize the entries in
 the device procedure table. On entry, the device procedure table will
 be full of NULL pointers. On exit, any NULLs left in the table will be
 filled in with pointers to the default routines. Therefore, the routine
@@ -296,20 +296,17 @@ Devices that are (in object-oriented terms) derived from 'base' classes
 device) can call provided helper functions for setting the standard
 functions for that base class.
 <p>
-For example, if the smurf device was a printer device, its initialize
-procedure might look like:</p>
+For example, if the smurf device was a printer device, its
+<code>initialize_device_procs</code> procedure might look like:</p>
 <blockquote>
-<pre>static int smurf_initialize(gx_device *dev) {
+<pre>static void smurf_initialize_device_procs(gx_device *dev) {
   /* We are derived from a prn device, and can print in the background */
-  int code = gdev_prn_initialize_bg(dev);
-  if (code < 0) return code;
+  gdev_prn_initialize_bg(dev);
 
   /* Override functions for our specifics */
   set_dev_proc(dev, map_color_rgb, smurf_map_color_rgb);
   set_dev_proc(dev, map_rgb_color, smurf_map_rgb_color);
   ...
-
-  return 0;
 }</pre>
 </blockquote>
 <p>
@@ -317,6 +314,13 @@ The initialize procedure function pointer does not live in the in the
 device procedure table (and as such is statically initialized at compile
 time). Nonetheless, we refer to this as being a device procedure in the
 rest of the discussion here.
+<p>
+Note that the <code>initialize_device_procs</code> function may be called
+with a pointer to a <code>gx_device</code> rather than to the derived
+device class. This happens frequently when one device wants to obtain
+the prototype of another to copy device procedures around. Initialization
+of items in the device other than device procs should therefore be
+reserved for the <code>initialize_device</code> device procedure.
 <p>
 The use of the initialize procedure is new to Ghostscript 9.55. Previous
 versions used a statically initialized table of device procedures. We
@@ -1270,11 +1274,19 @@ members are added.</p>
 <h3><a name="Life_cycle"></a>Life cycle</h3>
 
 <p>
+When a device is first created, it will have an empty device procs
+table. The system will call the device's <code>initialize_device_procs</code>
+function pointer to fill out this table. This operation can never fail.</p>
+
+<p>NOTE: This operation is also used for creating temporary 'prototype'
+devices for copying device procedures from.</p>
+
+<p>
 A device instance begins life in a closed state.  In this state, no output
 operations will occur.  Only the following procedures may be called:</p>
 
 <blockquote><code>
-initialize<br>
+initialize_device<br>
 open_device<br>
 get_initial_matrix<br>
 get_params<br>
@@ -1319,12 +1331,25 @@ level at the time the instance was created.</li>
 <h3><a name="Open_close"></a>Open, close, sync, copy</h3>
 
 <dl>
-<dt><code>int (*initialize)(gx_device *dev)</code></dt> <dd>Called once
-a new device instance has been created. The function should initialize
-the device procedure tables and perform the minimum initialization required
-to any internal device state required. If the initial setup fails, this
-procedure should return an error; the new instance will be freed.
-<b>NOTE</b>: Clients should never call a device's <code>initialize</code>
+<dt><code>void (*initialize_device_procs)(gx_device *dev)</code></dt> <dd>Called
+once a new device instance has been created. The function should initialize
+the device procedure tables. This cannot fail.
+<b>NOTE</b>: Clients should rarely need to call a device's
+<code>initialize_device_procs</code> procedure: this procedure is mostly used
+by the internal device creation code. The sole exception here is when
+a device implementation wishes to copy device function pointers from another
+device; then a blank <code>gx_device</code> can be created, and
+<code>initialize_device_procs</dd> can be used to fill out the device procs
+table so it can be copied from.
+</dl>
+
+<dl>
+<dt><code>int (*initialize_device)(gx_device *dev)</code> <b><em>[OPTIONAL</em></b></dt>
+<dd>Called once a new device instance has been created and the device procs
+table has been initialized. This function should perform the minimum
+initialization to any internal device state required. If the initial setup
+fails, this procedure should return an error; the new instance will be freed.
+<b>NOTE</b>: Clients should never call a device's <code>initialize_device</code>
 procedure: this procedure is only intended for use by the internal device
 creation code.</dd>
 </dl>

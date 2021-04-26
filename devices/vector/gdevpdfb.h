@@ -27,7 +27,7 @@
 #ifdef PDF_DEVICE_NAME
 
 const gx_device_pdf PDF_DEVICE_IDENT =
-{std_device_dci_type_body(gx_device_pdf, pdfwrite_initialize,
+{std_device_dci_type_body(gx_device_pdf, pdfwrite_initialize_device_procs,
                           PDF_DEVICE_NAME,
                           &st_device_pdfwrite,
                           DEFAULT_WIDTH_10THS * X_DPI / 10,

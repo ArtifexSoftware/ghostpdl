@@ -41,7 +41,7 @@
 static dev_proc_print_page(sj48_print_page);
 /* The print_page proc is compatible with allowing bg printing */
 gx_device_printer far_data gs_sj48_device =
-  prn_device(gdev_prn_initialize_mono_bg, "sj48",
+  prn_device(gdev_prn_initialize_device_procs_mono_bg, "sj48",
         80,				/* width_10ths, 8" */
         105,				/* height_10ths, 10.5" */
         360,				/* x_dpi */

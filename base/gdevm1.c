@@ -431,7 +431,7 @@ static dev_proc_strip_tile_rectangle(mem_mono_strip_tile_rectangle);
 /* The device descriptor. */
 /* The instance is public. */
 const gx_device_memory mem_mono_device =
-    mem_device("image1", 0, 1, mem_dev_initialize);
+    mem_device("image1", 0, 1, mem_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_1 =
 {
@@ -1098,7 +1098,7 @@ static dev_proc_fill_rectangle(mem1_word_fill_rectangle);
 
 /* Here is the device descriptor. */
 const gx_device_memory mem_mono_word_device =
-    mem_device("image1w", 0, 1, mem_word_dev_initialize);
+    mem_device("image1w", 0, 1, mem_word_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_1w =
 {

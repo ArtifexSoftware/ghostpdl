@@ -65,7 +65,7 @@ static dev_proc_print_page(oki_print_page);
 
 /* The print_page proc is compatible with allowing bg printing */
 const gx_device_printer far_data gs_oki182_device =
-  prn_device(gdev_prn_initialize_mono_bg, "oki182",
+  prn_device(gdev_prn_initialize_device_procs_mono_bg, "oki182",
         80,				/* width_10ths, 8.0" */
         110,				/* height_10ths, 11" */
         72,				/* x_dpi */

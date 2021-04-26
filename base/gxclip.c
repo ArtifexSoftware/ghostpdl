@@ -50,8 +50,8 @@ static dev_proc_transform_pixel_region(clip_transform_pixel_region);
 static dev_proc_fill_stroke_path(clip_fill_stroke_path);
 
 /* The device descriptor. */
-static int
-clipper_initialize(gx_device *dev)
+static void
+clipper_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, clip_open);
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
@@ -112,11 +112,10 @@ clipper_initialize(gx_device *dev)
     set_dev_proc(dev, fill_linear_color_scanline, gx_default_fill_linear_color_scanline);
     set_dev_proc(dev, fill_linear_color_trapezoid, gx_default_fill_linear_color_trapezoid);
     set_dev_proc(dev, fill_linear_color_triangle, gx_default_fill_linear_color_triangle);
-
-    return 0;
 }
 static const gx_device_clip gs_clip_device =
-{std_device_std_body(gx_device_clip, clipper_initialize, "clipper",
+{std_device_std_body(gx_device_clip,
+                     clipper_initialize_device_procs, "clipper",
                      0, 0, 1, 1)
 };
 

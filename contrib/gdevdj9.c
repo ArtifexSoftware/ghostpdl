@@ -510,13 +510,10 @@ typedef struct
     terminate_page\
 }
 
-static int
-cdj970_initialize(gx_device *dev)
+static void
+cdj970_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, hp_colour_open);
     set_dev_proc(dev, close_device, cdj970_close);
@@ -531,8 +528,6 @@ cdj970_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 static void
@@ -549,7 +544,8 @@ static void
 cdj970_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
 const gx_device_cdj970 gs_cdj970_device =
-cdj_970_device(cdj970_initialize, "cdj970", 600, 600, 32, cdj970_print_page, 0,
+cdj_970_device(cdj970_initialize_device_procs, "cdj970",
+               600, 600, 32, cdj970_print_page, 0,
                NORMAL, PLAIN_PAPER, NONE, 4, DJ970C, 2,
                1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
                cdj970_start_raster_mode, cdj970_print_non_blank_lines,

@@ -127,8 +127,8 @@ static dev_proc_get_band(clist_get_band);
 /* Other forward declarations */
 static int clist_put_current_params(gx_device_clist_writer *cldev);
 
-int
-clist_initialize(gx_device *dev)
+void
+clist_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, clist_open);
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
@@ -179,8 +179,6 @@ clist_initialize(gx_device *dev)
     set_dev_proc(dev, copy_alpha_hl_color, clist_copy_alpha_hl_color);
     set_dev_proc(dev, process_page, clist_process_page);
     set_dev_proc(dev, fill_stroke_path, clist_fill_stroke_path);
-
-    return 0;
 }
 
 /*------------------- Choose the implementation -----------------------
@@ -1363,7 +1361,7 @@ clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, 
             return 0;
         memset(cdev, 0, sizeof(*cdev));
         cwdev->params_size = sizeof(gx_device_clist);
-        cwdev->initialize = clist_initialize;
+        cwdev->initialize_device_procs = clist_initialize_device_procs;
         cwdev->dname = dname;
         cwdev->memory = mem->stable_memory;
         cwdev->stype = &st_device_clist;
@@ -1390,8 +1388,7 @@ clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, 
         cwdev->icc_table = NULL;
         cwdev->UseCIEColor = target->UseCIEColor;
         cwdev->LockSafetyParams = true;
-        /* Hacky - we know this can't fail. */
-        (void)cwdev->initialize((gx_device *)cwdev);
+        cwdev->initialize_device_procs((gx_device *)cwdev);
         gx_device_fill_in_procs((gx_device *)cwdev);
         gx_device_copy_color_params((gx_device *)cwdev, target);
         rc_assign(cwdev->target, target, "clist_make_accum_device");

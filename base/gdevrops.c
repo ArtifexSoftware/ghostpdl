@@ -46,8 +46,8 @@ static dev_proc_copy_color(rop_texture_copy_color);
 static dev_proc_copy_planes(rop_texture_copy_planes);
 
 /* The device descriptor. */
-static int
-rop_texture_initialize(gx_device *dev)
+static void
+rop_texture_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, get_initial_matrix,gx_forward_get_initial_matrix);
     set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
@@ -81,11 +81,10 @@ rop_texture_initialize(gx_device *dev)
     set_dev_proc(dev, copy_planes, rop_texture_copy_planes);
     set_dev_proc(dev, get_profile, gx_forward_get_profile);
     set_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
-
-    return 0;
 }
 static const gx_device_rop_texture gs_rop_texture_device = {
-    std_device_std_body(gx_device_rop_texture, rop_texture_initialize,
+    std_device_std_body(gx_device_rop_texture,
+                        rop_texture_initialize_device_procs,
                         "rop source",
                         0, 0, 1, 1),
     { 0 },

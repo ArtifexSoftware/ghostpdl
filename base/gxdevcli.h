@@ -645,9 +645,13 @@ typedef struct gx_stroked_gradient_recognizer_s {
 /*
  * Define the generic device structure.
  *
- * All devices start off with no device procs. The initialize function
- * is called as soon as the device is copied from its prototype, and
- * that fills in the procs table with the device procedure pointers.
+ * All devices start off with no device procs. The initialize_device_procs
+ * function is called as soon as the device is copied from its prototype,
+ * and that fills in the procs table with the device procedure pointers.
+ * This can never fail.
+ *
+ * Next, the 'initialize_device' proc (if there is one) is called to do
+ * the minimal initialization required for a device.
  *
  * The choice of the name Margins (rather than, say, HWOffset), and the
  * specification in terms of a default device resolution rather than
@@ -707,15 +711,16 @@ typedef struct gdev_pagelist_s {
         int PagesSize;
 } gdev_pagelist;
 
-#define dev_t_proc_initialize(proc, dev_t)\
-  int proc(dev_t *dev)
-#define dev_proc_initialize(proc)\
-  dev_t_proc_initialize((proc), gx_device)
+#define dev_t_proc_initialize_device_procs(proc, dev_t)\
+  void proc(dev_t *dev)
+#define dev_proc_initialize_device_procs(proc)\
+  dev_t_proc_initialize_device_procs((proc), gx_device)
 
 #define gx_device_common\
         int params_size;		/* OBSOLETE if stype != 0: */\
                                         /* size of this structure */\
-        dev_proc_initialize(*initialize);/* initialize */\
+        dev_proc_initialize_device_procs(*initialize_device_procs);\
+                                        /* initialize_device_procs */\
         const char *dname;		/* the device name */\
         gs_memory_t *memory;		/* (0 iff static prototype) */\
         gs_memory_type_ptr_t stype;	/* memory manager structure type, */\
@@ -857,6 +862,11 @@ typedef enum FILTER_FLAGS {
  */
 
 /* Define macros for declaring device procedures. */
+
+#define dev_t_proc_initialize_device(proc, dev_t)\
+  int proc(dev_t *dev)
+#define dev_proc_initialize_device(proc)\
+  dev_t_proc_initialize_device(proc, gx_device)
 
 #define dev_t_proc_open_device(proc, dev_t)\
   int proc(dev_t *dev)
@@ -1478,6 +1488,7 @@ typedef struct {
 
 #define gx_device_proc_struct(dev_t)\
 {\
+        dev_t_proc_initialize_device((*initialize_device), dev_t);\
         dev_t_proc_open_device((*open_device), dev_t);\
         dev_t_proc_get_initial_matrix((*get_initial_matrix), dev_t);\
         dev_t_proc_sync_output((*sync_output), dev_t);\

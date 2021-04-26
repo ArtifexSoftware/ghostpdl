@@ -94,7 +94,7 @@ static dev_proc_copy_color(display_copy_color);
 static dev_proc_get_bits(display_get_bits);
 static dev_proc_get_params(display_get_params);
 static dev_proc_put_params(display_put_params);
-static dev_proc_initialize(display_initialize);
+static dev_proc_initialize_device_procs(display_initialize_device_procs);
 
 static dev_proc_get_color_mapping_procs(display_separation_get_color_mapping_procs);
 static dev_proc_get_color_comp_index(display_separation_get_color_comp_index);
@@ -133,7 +133,7 @@ RELOC_PTRS_END
 const gx_device_display gs_display_device =
 {
     std_device_std_body_type(gx_device_display,
-                             display_initialize,
+                             display_initialize_device_procs,
                              "display",
                              &st_device_display,
                              INITIAL_WIDTH, INITIAL_HEIGHT,
@@ -1145,12 +1145,24 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     return 0;
 }
 
-/* Clean up the instance after making a copy. */
-int
-display_initialize(gx_device *dev)
+static int display_initialize_device(gx_device *dev)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
 
+    /* Mark the new instance as closed. */
+    ddev->is_open = false;
+
+    /* Clear pointers */
+    ddev->pBitmap = NULL;
+    ddev->zBitmapSize = 0;
+
+    return 0;
+}
+
+static void
+display_initialize_device_procs(gx_device *dev)
+{
+    set_dev_proc(dev, initialize_device, display_initialize_device);
     set_dev_proc(dev, open_device, display_open);
     set_dev_proc(dev, get_initial_matrix, display_get_initial_matrix);
     set_dev_proc(dev, sync_output, display_sync_output);
@@ -1166,15 +1178,6 @@ display_initialize(gx_device *dev)
     set_dev_proc(dev, update_spot_equivalent_colors, display_update_spot_equivalent_colors);
     set_dev_proc(dev, ret_devn_params, display_ret_devn_params);
     set_dev_proc(dev, dev_spec_op, display_spec_op);
-
-    /* Mark the new instance as closed. */
-    ddev->is_open = false;
-
-    /* Clear pointers */
-    ddev->pBitmap = NULL;
-    ddev->zBitmapSize = 0;
-
-    return 0;
 }
 
 /*
@@ -1553,9 +1556,9 @@ display_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         dev_t_proc_dev_spec_op((*orig_dso), gx_device) = dev_proc(mdev, dev_spec_op);
         /* The following is a special hack for setting up printer devices. */
         assign_dev_procs(mdev, mdproto);
-        mdev->initialize = mdproto->initialize;
-        /* This can never fail */
-        (void)mdev->initialize((gx_device *)mdev);
+        mdev->initialize_device_procs = mdproto->initialize_device_procs;
+        mdev->initialize_device_procs((gx_device *)mdev);
+        /* We know mdev->procs.initialize_device is NULL. */
         /* Do not override the dev_spec_op! */
         dev_proc(mdev, dev_spec_op) = orig_dso;
         check_device_separable((gx_device *)mdev);
@@ -1704,9 +1707,10 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
                                       ddev->orig_procs.dev_spec_op,
                                       MIN_BUFFER_SPACE);
         if (ccode >= 0) {
-            ddev->initialize = clist_initialize;
-            /* Hacky - we know this can't fail. */
-            (void)ddev->initialize((gx_device *)ddev);
+            ddev->initialize_device_procs = clist_initialize_device_procs;
+            ddev->initialize_device_procs((gx_device *)ddev);
+            /* ddev->initialize() has already been done, and does not
+             * need to redone for the clist. */
             gx_device_fill_in_procs((gx_device *)ddev);
         }
     } else {

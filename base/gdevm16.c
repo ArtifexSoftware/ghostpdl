@@ -32,7 +32,7 @@ declare_mem_procs(mem_true16_copy_mono, mem_true16_copy_color, mem_true16_fill_r
 
 /* The device descriptor. */
 const gx_device_memory mem_true16_device =
-    mem_device("image16", 16, 0, mem_dev_initialize);
+    mem_device("image16", 16, 0, mem_dev_initialize_device_procs);
 
 const gdev_mem_functions gdev_mem_fns_16 =
 {

@@ -135,8 +135,8 @@ typedef struct xcf_device_s {
 /*
  * Macro definition for DeviceN procedures
  */
-static int
-xcf_initialize(gx_device *dev)
+static void
+xcf_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, gdev_prn_open);
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
@@ -148,16 +148,14 @@ xcf_initialize(gx_device *dev)
     set_dev_proc(dev, get_color_comp_index, xcf_get_color_comp_index);
     set_dev_proc(dev, encode_color, xcf_encode_color);
     set_dev_proc(dev, decode_color, xcf_decode_color);
-
-    return 0;
 }
 
-static int
-spot_rgb_initialize(gx_device *dev)
+static void
+spot_rgb_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, get_color_mapping_procs, get_spotrgb_color_mapping_procs);
 
-    return xcf_initialize(dev);
+    xcf_initialize_device_procs(dev);
 }
 
 /*
@@ -165,7 +163,8 @@ spot_rgb_initialize(gx_device *dev)
  */
 const xcf_device gs_xcf_device =
 {
-    prn_device_body_extended(xcf_device, spot_rgb_initialize, "xcf",
+    prn_device_body_extended(xcf_device,
+         spot_rgb_initialize_device_procs, "xcf",
          DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
          X_DPI, Y_DPI,		/* X and Y hardware resolution */
          0, 0, 0, 0,		/* margins */
@@ -185,17 +184,18 @@ const xcf_device gs_xcf_device =
     {0}				/* SeparationOrder names */
 };
 
-static int
-spot_cmyk_initialize(gx_device *dev)
+static void
+spot_cmyk_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, get_color_mapping_procs, get_xcf_color_mapping_procs);
 
-    return xcf_initialize(dev);
+    xcf_initialize_device_procs(dev);
 }
 
 const xcf_device gs_xcfcmyk_device =
 {
-    prn_device_body_extended(xcf_device, spot_cmyk_initialize, "xcfcmyk",
+    prn_device_body_extended(xcf_device,
+         spot_cmyk_initialize_device_procs, "xcfcmyk",
          DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
          X_DPI, Y_DPI,		/* X and Y hardware resolution */
          0, 0, 0, 0,		/* margins */

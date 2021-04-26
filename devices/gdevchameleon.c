@@ -59,13 +59,10 @@ struct gx_device_chameleon_s {
 };
 typedef struct gx_device_chameleon_s gx_device_chameleon;
 
-static int
-chameleon_initialize(gx_device *dev)
+static void
+chameleon_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, map_rgb_color, chameleon_rgb_encode_color);
     set_dev_proc(dev, map_color_rgb, chameleon_rgb_decode_color);
@@ -75,12 +72,11 @@ chameleon_initialize(gx_device *dev)
     set_dev_proc(dev, encode_color, chameleon_rgb_encode_color);
     set_dev_proc(dev, decode_color, chameleon_rgb_decode_color);
     set_dev_proc(dev, dev_spec_op, chameleon_spec_op);
-
-    return 0;
 }
 
 const gx_device_chameleon gs_chameleon_device =
-{prn_device_body(gx_device_chameleon, chameleon_initialize, "chameleon",
+{prn_device_body(gx_device_chameleon, chameleon_initialize_device_procs,
+                 "chameleon",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */

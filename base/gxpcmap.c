@@ -101,8 +101,8 @@ static dev_proc_fill_rectangle_hl_color(pattern_accum_fill_rectangle_hl_color);
 dev_proc_dev_spec_op(pattern_accum_dev_spec_op);
 
 /* The device descriptor */
-static int
-pattern_accum_initialize(gx_device *dev)
+static void
+pattern_accum_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, pattern_accum_open);
     set_dev_proc(dev, close_device, pattern_accum_close);
@@ -135,14 +135,14 @@ pattern_accum_initialize(gx_device *dev)
     set_dev_proc(dev, strip_tile_rect_devn, gx_default_strip_tile_rect_devn);
     set_dev_proc(dev, transform_pixel_region, gx_default_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, gx_default_fill_stroke_path);
-
-    return 0;
 }
 
 static const gx_device_pattern_accum gs_pattern_accum_device =
-{std_device_std_body_type_open(gx_device_pattern_accum, pattern_accum_initialize,
-                          "pattern accumulator", &st_device_pattern_accum,
-                          0, 0, 72, 72)
+{std_device_std_body_type_open(gx_device_pattern_accum,
+                               pattern_accum_initialize_device_procs,
+                               "pattern accumulator",
+                               &st_device_pattern_accum,
+                               0, 0, 72, 72)
 };
 
 extern dev_proc_open_device(clist_open);
