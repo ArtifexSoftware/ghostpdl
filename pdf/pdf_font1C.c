@@ -360,10 +360,10 @@ pdfi_cff_cid_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *p
 
     *pfidx = 0;
 
-    if (glyph > GS_MIN_CID_GLYPH)
-        gid = glyph - GS_MIN_CID_GLYPH;
-    else
+    if (glyph < GS_MIN_CID_GLYPH)
         gid = glyph;
+    else
+        gid = glyph - GS_MIN_CID_GLYPH;
 
     if (pdffont1->cidtogidmap.size > (gid << 1) + 1) {
         gid = pdffont1->cidtogidmap.data[gid << 1] << 8 | pdffont1->cidtogidmap.data[(gid << 1) + 1];

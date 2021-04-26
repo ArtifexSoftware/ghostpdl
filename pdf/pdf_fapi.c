@@ -545,7 +545,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         pdf_cidfont_type2 *pttfont = (pdf_cidfont_type2 *)pbfont->client_data;
         gs_glyph gid;
 
-        if (ccode > GS_MIN_CID_GLYPH)
+        if (ccode >= GS_MIN_CID_GLYPH)
             ccode = ccode - GS_MIN_CID_GLYPH;
 
         gid = ccode;
@@ -1157,7 +1157,7 @@ pdfi_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
 
     if (penum->orig_font->FontType == ft_composite) {
 
-        if (cid > GS_MIN_CID_GLYPH) {
+        if (cid >= GS_MIN_CID_GLYPH) {
             cid = cid - GS_MIN_CID_GLYPH;
         }
 
@@ -1224,7 +1224,7 @@ pdfi_fapi_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     gs_fapi_server *I;
 
     /* gs_fapi_do_char() expects the "natural" glyph, not the offset value */
-    if (glyph > GS_MIN_CID_GLYPH)
+    if (glyph >= GS_MIN_CID_GLYPH)
         glyph -= GS_MIN_CID_GLYPH;
 
     pbfont1 = (gs_font_base *)pfont;
