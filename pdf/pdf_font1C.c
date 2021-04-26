@@ -2078,6 +2078,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
 
                 pfont = (gs_font_cid0 *) cffcid->pfont;
                 pfont->cidata.FDArray = (gs_font_type1 **) gs_alloc_bytes(ctx->memory, sizeof(gs_font_type1 *), "pdfi_read_cff_font");
+                pfont->base = (gs_font *)pfont;
                 if (!pfont->cidata.FDArray) {
                     pdfi_countdown(cffcid->FDArray);
                     gs_free_object(ctx->memory, fdcfffont, "pdfi_read_cff_font");
@@ -2095,6 +2096,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
                 pfont->cidata.glyph_data = pdfi_cff_cid_glyph_data;
 
                 pfdfont->FAPI = NULL;
+                pfdfont->base = (gs_font *)pfdfont;
                 pfdfont->client_data = fdcfffont;
                 pdfi_array_put(ctx, cffcid->FDArray, 0, (pdf_obj *) fdcfffont);
 
