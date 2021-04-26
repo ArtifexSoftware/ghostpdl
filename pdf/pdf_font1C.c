@@ -1598,6 +1598,8 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                 pdfi_countup(pdffont->GlobalSubrs);
                 pdffont->CharStrings = font->CharStrings;
                 pdfi_countup(pdffont->CharStrings);
+                pt1font->data.subroutineNumberBias = subrbias(pdffont->NumSubrs);
+                pt1font->data.gsubrNumberBias = subrbias(pdffont->NumGlobalSubrs);
 
                 ptpriv->cidata.FDArray[i] = pt1font;
                 (void)pdfi_array_put(ctx, font->FDArray, i, (pdf_obj *) pdffont);
