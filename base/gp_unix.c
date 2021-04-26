@@ -497,7 +497,7 @@ void gp_enumerate_fonts_free(void *enum_state)
 
 #ifdef __MINGW32__
 int
-gp_local_arg_encoding_get_codepoint(FILE *file, const char **astr)
+gp_local_arg_encoding_get_codepoint(gp_file *file, const char **astr)
 {
     int len;
     int c;
@@ -506,7 +506,7 @@ gp_local_arg_encoding_get_codepoint(FILE *file, const char **astr)
     char utf8[4];
 
     if (file) {
-        c = fgetc(file);
+        c = gp_fgetc(file);
         if (c == EOF)
             return EOF;
     } else if (**astr) {
@@ -520,7 +520,7 @@ gp_local_arg_encoding_get_codepoint(FILE *file, const char **astr)
     arg[0] = c;
     if (IsDBCSLeadByte(c)) {
         if (file) {
-            c = fgetc(file);
+            c = gp_fgetc(file);
             if (c == EOF)
                 return EOF;
         } else if (**astr) {
