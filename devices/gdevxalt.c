@@ -117,7 +117,9 @@ x_forward_output_page(gx_device * dev, int num_copies, int flush)
 
     if ((code = get_dev_target(&tdev, dev)) < 0)
         return code;
-    return (*dev_proc(tdev, output_page)) (tdev, num_copies, flush);
+    code = (*dev_proc(tdev, output_page)) (tdev, num_copies, flush);
+    dev->PageCount = tdev->PageCount;
+    return code;
 }
 
 static int
