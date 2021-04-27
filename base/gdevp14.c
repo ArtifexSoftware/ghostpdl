@@ -5683,6 +5683,7 @@ get_pdf14_device_proto(gx_device       *dev,
         default:			/* Should not occur */
             return_error(gs_error_rangecheck);
     }
+    pdevproto->initialize_device_procs((gx_device *)pdevproto);
     pdevproto->using_blend_cs = using_blend_cs;
     pdevproto->overprint_sim = pdf14pct->params.overprint_sim_push;
     return 0;
