@@ -38,6 +38,10 @@
 #include "pdf_font.h"
 #include "pdf_text.h"
 
+/* Detect if there is a BOM at beginning of string */
+#define IS_UTF8(str) (!strcmp((char *)(str), "\xef\xbb\xbf"))
+#define IS_UTF16(str) (!strcmp((char *)(str), "\xfe\xff"))
+
 typedef int (*annot_func)(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done);
 
 typedef struct {
@@ -618,19 +622,167 @@ pdfi_annot_set_font(pdf_context *ctx, const char *font, double size)
     return code;
 }
 
+/* Get value from a field, or its Parents (recursive)
+ * If no Parent, will also check ctx->AcroForm
+ * Returns <0 on error, 0 if not found, >0 if found
+ */
+static int pdfi_form_get_inheritable(pdf_context *ctx, pdf_dict *field, const char *Key,
+                                     pdf_obj_type type, pdf_obj **o)
+{
+    int code = 0;
+    pdf_dict *Parent = NULL;
+
+    /* Check this field */
+    code = pdfi_dict_knownget_type(ctx, field, Key, type, o);
+    if (code != 0) goto exit;
+
+    /* If not found, recursively check Parent, if any */
+    code = pdfi_dict_knownget_type(ctx, field, "Parent", PDF_DICT, (pdf_obj **)&Parent);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        /* Check Parent */
+        code = pdfi_form_get_inheritable(ctx, Parent, Key, type, o);
+    } else {
+        /* No Parent, so check AcroForm, if any */
+        if (ctx->AcroForm)
+            code = pdfi_dict_knownget_type(ctx, ctx->AcroForm, Key, type, o);
+    }
+
+ exit:
+    pdfi_countdown(Parent);
+    return code;
+}
+
+/* Get int value from a field, or its Parents (recursive)
+ * Returns <0 on error, 0 if not found, >0 if found
+ */
+static int pdfi_form_get_inheritable_int(pdf_context *ctx, pdf_dict *field, const char *Key,
+                                         int64_t *val)
+{
+    int code = 0;
+    pdf_num *num = NULL;
+
+    *val = 0;
+    code = pdfi_form_get_inheritable(ctx, field, Key, PDF_INT, (pdf_obj **)&num);
+    if (code < 0) goto exit;
+
+    if (code > 0)
+        *val = num->value.i;
+
+ exit:
+    pdfi_countdown(num);
+    return code;
+}
+
+/* Scan DA to see if font size is 0, if so make a new DA with font size scaled by gs_rect */
+static int pdfi_form_modDA(pdf_context *ctx, pdf_string *DA, pdf_string **mod_DA, gs_rect *rect)
+{
+    char *token, *prev_token;
+    char *parse_str = NULL;
+    bool did_mod = false;
+    int code = 0;
+    double size;
+    char size_str[20];
+    char *last;
+    pdf_string *newDA = NULL;
+
+    /* Make a copy of the string because we are going to destructively parse it */
+    parse_str = (char *)gs_alloc_bytes(ctx->memory, DA->length+1, "pdfi_annot_display_text(strbuf)");
+    if (parse_str == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
+    memcpy(parse_str, DA->data, DA->length);
+    parse_str[DA->length] = 0; /* Null terminate */
+
+    /* find the 'Tf' token, if any */
+    token = gs_strtok(parse_str, " ", &last);
+    prev_token = NULL;
+    while (token != NULL) {
+        if (!strcmp(token, "Tf"))
+            break;
+        prev_token = token;
+        token = gs_strtok(NULL, " ", &last);
+    }
+
+    /* See if we found it */
+    if (!token)
+        goto exit;
+
+    /* See if there was a prev_token and it was "0" */
+    if (!(prev_token && !strcmp(prev_token, "0")))
+        goto exit;
+
+    /* Case with '<font> 0 Tf', need to calculate correct size */
+    size = (rect->q.y - rect->p.y) * .75; /* empirical from gs code make_tx_da */
+
+    snprintf(size_str, sizeof(size_str), "%g ", size);
+
+    /* Create a new DA and reassemble the old DA into it */
+    code = pdfi_object_alloc(ctx, PDF_STRING, DA->length+strlen(size_str)+1, (pdf_obj **)&newDA);
+    if (code < 0)
+        goto exit;
+    pdfi_countup(newDA);
+
+    strncpy((char *)newDA->data, (char *)DA->data, prev_token-parse_str);
+    strncpy((char *)newDA->data + (prev_token-parse_str), size_str, strlen(size_str)+1);
+    strncpy((char *)newDA->data + strlen((char *)newDA->data), (char *)DA->data + (token - parse_str),
+            DA->length-(token-parse_str));
+    newDA->length = strlen((char *)newDA->data);
+    did_mod = true;
+
+ exit:
+    /* If didn't need to mod it, just copy the original and get a ref */
+    if (did_mod) {
+        *mod_DA = newDA;
+    } else {
+        *mod_DA = DA;
+        pdfi_countup(DA);
+    }
+
+    if (parse_str)
+        gs_free_object(ctx->memory, parse_str, "pdfi_form_modDA(parse_str)");
+
+    return code;
+}
+
 /* Process the /DA string by either running it through the interpreter
  *  or providing a bunch of defaults
+ *
+ * According to the spec, if there is a "<fontname> <size> Tf" in the /DA,
+ * and the <size> = 0, we autosize it using the annotation's rect.  (see PDF1.7, pages 678-679)
+ *
+ * rect -- the annotation's rect, for auto-sizing the font
+ * is_form -- is this a form, so check inheritable?
  */
-static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
+static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *annot, gs_rect *rect,
+                                 bool is_form)
 {
     int code = 0;
     pdf_string *DA = NULL;
+    pdf_string *mod_DA = NULL;
 
-    code = pdfi_dict_knownget_type(ctx, annot, "DA", PDF_STRING, (pdf_obj **)&DA);
+    /* TODO -- see gs code make_tx_da, need to handle case where we need to set a UTF-16 font */
+
+    if (!page_dict)
+        page_dict = ctx->page.CurrentPageDict;
+
+    if (is_form)
+        code = pdfi_form_get_inheritable(ctx, annot, "DA", PDF_STRING, (pdf_obj **)&DA);
+    else
+        code = pdfi_dict_knownget_type(ctx, annot, "DA", PDF_STRING, (pdf_obj **)&DA);
     if (code < 0) goto exit;
     if (code > 0) {
-        code = pdfi_interpret_inner_content_string(ctx, DA, annot,
-                                                   ctx->page.CurrentPageDict, false, "DA");
+        if (is_form) {
+            code = pdfi_form_modDA(ctx, DA, &mod_DA, rect);
+            if (code < 0) goto exit;
+        } else {
+            mod_DA = DA;
+            pdfi_countup(mod_DA);
+        }
+
+        code = pdfi_interpret_inner_content_string(ctx, mod_DA, annot,
+                                                   page_dict, false, "DA");
         if (code < 0) goto exit;
         /* If no font got set, set one */
         if (pdfi_get_current_pdf_font(ctx) == NULL) {
@@ -646,7 +798,37 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
 
  exit:
     pdfi_countdown(DA);
+    pdfi_countdown(mod_DA);
     return code;
+}
+
+/* Put a string into buffer as a hexstring and return ptr to end of it
+ * Skip over any BOM that is present.
+ */
+static char *pdfi_get_hexstring(pdf_context *ctx, char *outbuf, byte *inbuf, int len)
+{
+    int i;
+    char *ptr;
+
+    i = 0;
+    /* skip over BOM if it's there */
+    if (IS_UTF16(inbuf)) {
+        i += 2; /* UTF-16 */
+    } else if (IS_UTF16(inbuf)) {
+        i += 3; /* UTF-8 */
+    }
+
+    ptr = outbuf;
+    *ptr++ = '<';
+    for ( ; i<len; i++) {
+        snprintf(ptr, 3, "%02X", *(inbuf+i));
+        ptr += 2;
+    }
+
+    *ptr++ = '>';
+    *ptr = 0;
+
+    return ptr;
 }
 
 /* Display text at current position (inside BT/ET) */
@@ -654,19 +836,14 @@ static int
 pdfi_annot_display_nexttext(pdf_context *ctx, pdf_dict *annot, pdf_string *text)
 {
     char *strbuf = NULL;
-    size_t buflen = 50 + text->length; /* 50 to account for formatting, plus the text itself */
+    size_t buflen = 50 + text->length*2; /* 50 to account for formatting, plus the text itself */
     int code = 0;
     char *ptr;
 
     strbuf = (char *)gs_alloc_bytes(ctx->memory, buflen, "pdfi_annot_display_text(strbuf)");
     if (strbuf == NULL)
         return_error(gs_error_VMerror);
-    snprintf(strbuf, buflen, "(");
-    ptr = strbuf + strlen(strbuf);
-    strncpy(ptr, (const char *)text->data, text->length);
-    ptr += text->length;
-    *ptr++ = ')';
-    *(ptr+1) = 0;
+    ptr = pdfi_get_hexstring(ctx, strbuf, text->data, text->length);
     strncpy(ptr, " Tj", buflen-strlen(strbuf));
 
     code = pdfi_interpret_inner_content_c_string(ctx, strbuf, annot,
@@ -684,19 +861,16 @@ static int
 pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double x, double y, pdf_string *text)
 {
     char *strbuf = NULL;
-    size_t buflen = 50 + text->length; /* 50 to account for formatting, plus the text itself */
+    size_t buflen = 50 + text->length*2; /* 50 to account for formatting, plus the text itself */
     int code = 0;
     char *ptr;
 
     strbuf = (char *)gs_alloc_bytes(ctx->memory, buflen, "pdfi_annot_display_text(strbuf)");
     if (strbuf == NULL)
         return_error(gs_error_VMerror);
-    snprintf(strbuf, buflen, "%g %g Td (", x, y);
+    snprintf(strbuf, buflen, "%g %g Td ", x, y);
     ptr = strbuf + strlen(strbuf);
-    strncpy(ptr, (const char *)text->data, text->length);
-    ptr += text->length;
-    *ptr++ = ')';
-    *(ptr+1) = 0;
+    ptr = pdfi_get_hexstring(ctx, ptr, text->data, text->length);
     strncpy(ptr, " Tj", buflen-strlen(strbuf));
 
     code = pdfi_interpret_inner_content_c_string(ctx, strbuf, annot,
@@ -1984,7 +2158,7 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     /* Set DA (Default Appearance)
      * This will generally set a color and font.
      */
-    code = pdfi_annot_process_DA(ctx, annot);
+    code = pdfi_annot_process_DA(ctx, NULL, annot, &annotrect, false);
     if (code < 0) goto exit;
 
     /* Draw border around text */
@@ -2972,19 +3146,12 @@ static int pdfi_annot_draw_Square(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
     return code;
 }
 
-/* Render Widget with no AP
- */
-static int pdfi_annot_render_Widget(pdf_context *ctx, pdf_dict *annot)
+static int pdfi_annot_render_MK_box(pdf_context *ctx, pdf_dict *annot, pdf_dict *MK)
 {
     int code = 0;
-    pdf_dict *MK = NULL;
     bool drawit = false;
     gs_rect rect;
     bool need_grestore = false;
-
-    code = pdfi_dict_knownget_type(ctx, annot, "MK", PDF_DICT, (pdf_obj **)&MK);
-    /* Don't try to render if no MK dict */
-    if (code <= 0) goto exit;
 
     /* Basically just render the rectangle around the widget for now */
     code = pdfi_annot_Rect(ctx, annot, &rect);
@@ -3019,6 +3186,279 @@ static int pdfi_annot_render_Widget(pdf_context *ctx, pdf_dict *annot)
  exit:
     if (need_grestore)
         (void)pdfi_grestore(ctx);
+    return code;
+}
+
+typedef enum {
+    PDFI_FORM_FF_READONLY = 1, /* Bit 1 */
+    PDFI_FORM_FF_REQUIRED = 1 << 1, /* Bit 2 */
+    PDFI_FORM_FF_NOEXPORT = 1 << 2, /* Bit 3 */
+    PDFI_FORM_FF_MULTILINE = 1 << 12, /* Bit 13 */
+    PDFI_FORM_FF_PASSWORD = 1 << 13, /* Bit 14 */
+    PDFI_FORM_FF_NOTOGGLETOOFF = 1 << 14, /* Bit 15 */
+    PDFI_FORM_FF_RADIO = 1 << 15, /* Bit 16 */
+    PDFI_FORM_FF_PUSHBUTTON = 1 << 16, /* Bit 17 */
+    PDFI_FORM_FF_COMBO = 1 << 17, /* Bit 18 */
+    PDFI_FORM_FF_EDIT = 1 << 18, /* Bit 19 */
+    PDFI_FORM_FF_SORT = 1 << 19, /* Bit 20 */
+    PDFI_FORM_FF_FILESELECT = 1 << 20, /* Bit 21 */
+    PDFI_FORM_FF_MULTISELECT = 1 << 21, /* Bit 22 */
+    PDFI_FORM_FF_DONOTSPELLCHECK = 1 << 22, /* Bit 23 */
+    PDFI_FORM_FF_DONOTSCROLL = 1 << 23, /* Bit 24 */
+    PDFI_FORM_FF_COMB = 1 << 24, /* Bit 25 */
+    PDFI_FORM_FF_RICHTEXT = 1 << 25, /* Bit 26 */ /* also PDFI_FORM_FF_RADIOSINUNISON */
+    PDFI_FORM_FF_COMMITONSELCHANGE = 1 << 26, /* Bit 27 */
+} pdfi_form_Ff;
+
+/* draw field Btn */
+static int pdfi_form_draw_Btn(pdf_context *ctx, pdf_dict *field, pdf_obj *AP)
+{
+    int code;
+    bool Radio = false;
+    bool Pushbutton = false;
+    int64_t value;
+
+    /* TODO: There can be Kids array. I think it should be handled in caller.
+     * Need an example...
+     */
+    if (AP != NULL) {
+        code = pdfi_annot_draw_AP(ctx, field, AP);
+        goto exit;
+    }
+
+    /* Get Ff field (default is 0) */
+    code = pdfi_form_get_inheritable_int(ctx, field, "Ff", &value);
+    if (code < 0) goto exit;
+
+    Radio = value & PDFI_FORM_FF_RADIO;
+    Pushbutton = value & PDFI_FORM_FF_PUSHBUTTON;
+
+    dmprintf(ctx->memory, "WARNING: AcroForm field 'Btn' with no AP not implemented.\n");
+    dmprintf2(ctx->memory, "       : Radio = %s, Pushbutton = %s.\n",
+              Radio ? "TRUE" : "FALSE", Pushbutton ? "TRUE" : "FALSE");
+ exit:
+    return 0;
+}
+
+/* Modify V from Tx widget to skip past the BOM and indicate if UTF-16 was found */
+static int pdfi_form_modV(pdf_context *ctx, pdf_string *V, pdf_string **mod_V, bool *is_UTF16)
+{
+    bool did_mod = false;
+    int code = 0;
+    int skip = 0;
+    pdf_string *newV = NULL;
+
+    *is_UTF16 = false;
+
+    if (IS_UTF8(V->data)) {
+        skip = 3;
+    } else if (IS_UTF16(V->data)) {
+        skip = 2;
+        *is_UTF16 = true;
+    }
+
+    if (skip == 0)
+        goto exit;
+
+    /* Create a new V that skips over the BOM */
+    code = pdfi_object_alloc(ctx, PDF_STRING, V->length-skip, (pdf_obj **)&newV);
+    if (code < 0)
+        goto exit;
+    pdfi_countup(newV);
+
+    memcpy(newV->data, V->data+skip, newV->length);
+    did_mod = true;
+
+ exit:
+    /* If didn't need to mod it, just copy the original and get a ref */
+    if (did_mod) {
+        *mod_V = newV;
+    } else {
+        *mod_V = V;
+        pdfi_countup(V);
+    }
+    return code;
+}
+
+/* Display text from Tx in a field or widget */
+static int pdfi_form_display_text(pdf_context *ctx, pdf_dict *annot, gs_rect *rect, pdf_string *V,
+                                  int64_t Ff, int64_t Q, int64_t MaxLen)
+{
+    int code = 0;
+    gs_rect modrect;
+    double lineheight = 0;
+    pdf_string *modV = NULL;
+    bool is_UTF16;
+    gs_rect bbox;
+    gs_point awidth;
+    double y_adjust, x_adjust;
+
+    modrect = *rect; /* structure copy */
+
+    code = pdfi_annot_get_text_height(ctx, &lineheight);
+    if (code < 0) goto exit;
+
+    /* Get modified V that skips the BOM, if any */
+    code = pdfi_form_modV(ctx, V, &modV, &is_UTF16);
+    if (code < 0) goto exit;
+
+    /* text placement adjustments */
+    y_adjust = ((rect->q.y - rect->p.y) - lineheight) / 2;
+    switch (Q) {
+    case 0: /* Left-justified */
+        x_adjust = 2; /* empirical value */
+        break;
+    case 1: /* Centered */
+        /* Get width of the string */
+        code = pdfi_string_bbox(ctx, modV, &bbox, &awidth, false);
+        if (code < 0) goto exit;
+        x_adjust = ((rect->q.x - rect->p.x) - awidth.x) / 2;
+        break;
+    case 2: /* Right-justified */
+        /* Get width of the string */
+        code = pdfi_string_bbox(ctx, modV, &bbox, &awidth, false);
+        if (code < 0) goto exit;
+        x_adjust = rect->q.x - awidth.x;
+        break;
+    }
+
+    modrect.p.x += x_adjust;
+    modrect.p.y += y_adjust;
+
+    /* TODO: MultiLine, Comb, UTF16, ... */
+    if (Ff & PDFI_FORM_FF_MULTILINE) {
+        code = pdfi_annot_display_simple_text(ctx, annot, modrect.p.x, modrect.p.y, modV);
+        if (code < 0) goto exit;
+    } else {
+        /* Empirical adjustments */
+        modrect.p.x += 2;
+        modrect.q.y -= 2;
+
+        code = pdfi_annot_display_simple_text(ctx, annot, modrect.p.x, modrect.p.y, modV);
+        if (code < 0) goto exit;
+    }
+ exit:
+    pdfi_countdown(modV);
+    return code;
+}
+
+
+/* draw field Tx */
+static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *annot, pdf_obj *AP)
+{
+    int code = 0;
+    pdf_string *V = NULL;
+    gs_rect annotrect;
+    int64_t Ff;
+    int64_t MaxLen;
+    int64_t Q;
+
+    if (AP != NULL)
+        return pdfi_annot_draw_AP(ctx, annot, AP);
+
+    code = pdfi_annot_Rect(ctx, annot, &annotrect);
+    if (code < 0) goto exit;
+
+    /* Set DA (Default Appearance)
+     * This will generally set a color and font.
+     */
+    code = pdfi_annot_process_DA(ctx, annot, annot, &annotrect, true);
+    if (code < 0) goto exit;
+
+    code = pdfi_form_get_inheritable_int(ctx, annot, "Ff", &Ff);
+    if (code < 0) goto exit;
+
+    code = pdfi_form_get_inheritable_int(ctx, annot, "MaxLen", &MaxLen);
+    if (code < 0) goto exit;
+
+    code = pdfi_form_get_inheritable_int(ctx, annot, "Q", &Q);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "V", PDF_STRING, (pdf_obj **)&V);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = pdfi_form_display_text(ctx, annot, &annotrect, V, Ff, Q, MaxLen);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    pdfi_countdown(V);
+    return code;
+}
+
+/* draw field Ch */
+static int pdfi_form_draw_Ch(pdf_context *ctx, pdf_dict *field, pdf_obj *AP)
+{
+    int code = 0;
+
+    if (!ctx->NeedAppearances && AP != NULL)
+        return pdfi_annot_draw_AP(ctx, field, AP);
+
+    dmprintf(ctx->memory, "WARNING: AcroForm field 'Ch' with no AP not implemented.\n");
+
+    return code;
+}
+
+/* draw field Sig */
+static int pdfi_form_draw_Sig(pdf_context *ctx, pdf_dict *field, pdf_obj *AP)
+{
+    int code = 0;
+
+    if (!ctx->NeedAppearances && AP != NULL)
+        return pdfi_annot_draw_AP(ctx, field, AP);
+
+    dmprintf(ctx->memory, "WARNING: AcroForm field 'Sig' with no AP not implemented.\n");
+
+    return code;
+}
+
+static int pdfi_annot_render_field(pdf_context *ctx, pdf_dict *field, pdf_name *FT, pdf_obj *AP)
+{
+    int code;
+
+    if (pdfi_name_is(FT, "Btn")) {
+        code = pdfi_form_draw_Btn(ctx, field, AP);
+    } else if (pdfi_name_is(FT, "Tx")) {
+        code = pdfi_form_draw_Tx(ctx, field, AP);
+    } else if (pdfi_name_is(FT, "Ch")) {
+        code = pdfi_form_draw_Ch(ctx, field, AP);
+    } else if (pdfi_name_is(FT, "Sig")) {
+        code = pdfi_form_draw_Sig(ctx, field, AP);
+    } else {
+        dmprintf(ctx->memory, "*** WARNING unknown field FT ignored\n");
+        /* TODO: Handle warning better */
+        code = 0;
+    }
+
+    return code;
+}
+
+/* Render Widget with no AP
+ */
+static int pdfi_annot_render_Widget(pdf_context *ctx, pdf_dict *annot)
+{
+    int code = 0;
+    pdf_dict *MK = NULL;
+    pdf_name *FT = NULL;
+
+    /* Render box around the widget using MK */
+    code = pdfi_dict_knownget_type(ctx, annot, "MK", PDF_DICT, (pdf_obj **)&MK);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = pdfi_annot_render_MK_box(ctx, annot, MK);
+        if (code < 0) goto exit;
+    }
+
+    /* Render the other contents */
+    code = pdfi_dict_knownget_type(ctx, annot, "FT", PDF_NAME, (pdf_obj **)&FT);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = pdfi_annot_render_field(ctx, annot, FT, NULL);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    pdfi_countdown(FT);
     pdfi_countdown(MK);
     return code;
 }
@@ -3729,111 +4169,8 @@ int pdfi_do_annotations(pdf_context *ctx, pdf_dict *page_dict)
     return code;
 }
 
-/* Get value from a field, or its Parents (recursive)
- * Returns <0 on error, 0 if not found, >0 if found
- */
-static int pdfi_form_get_inheritable(pdf_context *ctx, pdf_dict *field, const char *Key, pdf_obj_type type, pdf_obj **o)
-{
-    int code = 0;
-    pdf_dict *Parent = NULL;
-
-    /* Check this field */
-    code = pdfi_dict_knownget_type(ctx, field, Key, type, o);
-    if (code != 0) goto exit;
-
-    /* If not found, recursively check Parent, if any */
-    code = pdfi_dict_knownget_type(ctx, field, "Parent", PDF_DICT, (pdf_obj **)&Parent);
-    if (code <= 0) goto exit;
-    code = pdfi_form_get_inheritable(ctx, Parent, Key, type, o);
-
- exit:
-    pdfi_countdown(Parent);
-    return code;
-}
-
-/* draw field Btn */
-static int pdfi_form_draw_Btn(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_obj *AP)
-{
-    int code;
-    bool Radio = false;
-    bool Pushbutton = false;
-    pdf_num *Ff = NULL;
-    int64_t value;
-
-    /* TODO: There can be Kids array. I think it should be handled in caller.
-     * Need an example...
-     */
-    if (AP != NULL) {
-        code = pdfi_annot_draw_AP(ctx, field, AP);
-        goto exit;
-    }
-
-    /* Get Ff field (default is 0) */
-    code = pdfi_form_get_inheritable(ctx, field, "Ff", PDF_INT, (pdf_obj **)&Ff);
-    if (code < 0) goto exit;
-
-    if (code == 0)
-        value = 0;
-    else
-        value = Ff->value.i;
-    Radio = value & 0x10000; /* Bit 16 */
-    Pushbutton = value & 0x20000; /* Bit 17 */
-
-    dmprintf(ctx->memory, "WARNING: AcroForm field 'Btn' with no AP not implemented.\n");
-    dmprintf2(ctx->memory, "       : Radio = %s, Pushbutton = %s.\n",
-              Radio ? "TRUE" : "FALSE", Pushbutton ? "TRUE" : "FALSE");
- exit:
-    return 0;
-}
-
-/* draw field Tx */
-static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_obj *AP)
-{
-    int code = 0;
-
-    if (AP != NULL)
-        return pdfi_annot_draw_AP(ctx, field, AP);
-
-    dmprintf(ctx->memory, "WARNING: AcroForm field 'Tx' with no AP not implemented.\n");
-    return code;
-}
-
-/* draw field Ch */
-static int pdfi_form_draw_Ch(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_obj *AP)
-{
-    int code = 0;
-    bool NeedAppearances = false; /* TODO: Spec says default is false, gs code uses true... */
-
-    code = pdfi_dict_get_bool(ctx, AcroForm, "NeedAppearances", &NeedAppearances);
-    if (code < 0 && code != gs_error_undefined) goto exit;
-
-    if (!NeedAppearances && AP != NULL)
-        return pdfi_annot_draw_AP(ctx, field, AP);
-
-    dmprintf(ctx->memory, "WARNING: AcroForm field 'Ch' with no AP not implemented.\n");
- exit:
-    return code;
-}
-
-/* draw field Sig */
-static int pdfi_form_draw_Sig(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_obj *AP)
-{
-    int code = 0;
-    bool NeedAppearances = false; /* TODO: Spec says default is false, gs code uses true... */
-
-    code = pdfi_dict_get_bool(ctx, AcroForm, "NeedAppearances", &NeedAppearances);
-    if (code < 0 && code != gs_error_undefined) goto exit;
-
-    if (!NeedAppearances && AP != NULL)
-        return pdfi_annot_draw_AP(ctx, field, AP);
-
-    dmprintf(ctx->memory, "WARNING: AcroForm field 'Sig' with no AP not implemented.\n");
- exit:
-    return code;
-}
-
 /* draw terminal field */
-static int pdfi_form_draw_terminal(pdf_context *ctx, pdf_dict *Page, pdf_dict *AcroForm, pdf_dict *field)
+static int pdfi_form_draw_terminal(pdf_context *ctx, pdf_dict *Page, pdf_dict *field)
 {
     int code = 0;
     pdf_indirect_ref *P = NULL;
@@ -3860,6 +4197,7 @@ static int pdfi_form_draw_terminal(pdf_context *ctx, pdf_dict *Page, pdf_dict *A
     }
 
     /* Render the field */
+
     /* NOTE: The spec says the FT is inheritable, implying it might be present in
      * a Parent and not explicitly in a Child.  The gs implementation doesn't seem
      * to handle this case, but I am going to go ahead and handle it.  We will figure
@@ -3871,19 +4209,8 @@ static int pdfi_form_draw_terminal(pdf_context *ctx, pdf_dict *Page, pdf_dict *A
     code = pdfi_annot_get_NormAP(ctx, field, &AP);
     if (code < 0) goto exit;
 
-    if (pdfi_name_is(FT, "Btn")) {
-        code = pdfi_form_draw_Btn(ctx, AcroForm, field, AP);
-    } else if (pdfi_name_is(FT, "Tx")) {
-        code = pdfi_form_draw_Tx(ctx, AcroForm, field, AP);
-    } else if (pdfi_name_is(FT, "Ch")) {
-        code = pdfi_form_draw_Ch(ctx, AcroForm, field, AP);
-    } else if (pdfi_name_is(FT, "Sig")) {
-        code = pdfi_form_draw_Sig(ctx, AcroForm, field, AP);
-    } else {
-        dmprintf(ctx->memory, "*** WARNING unknown field FT ignored\n");
-        /* TODO: Handle warning better */
-        code = 0;
-    }
+    code = pdfi_annot_render_field(ctx, field, FT, AP);
+    if (code < 0) goto exit;
 
  exit:
     pdfi_countdown(FT);
@@ -3901,7 +4228,7 @@ static int pdfi_form_draw_terminal(pdf_context *ctx, pdf_dict *Page, pdf_dict *A
 %
 % The recursive enumeration of the form fields doesn't descend into widget annotations.
 */
-static int pdfi_form_draw_field(pdf_context *ctx, pdf_dict *Page, pdf_dict *AcroForm, pdf_dict *field)
+static int pdfi_form_draw_field(pdf_context *ctx, pdf_dict *Page, pdf_dict *field)
 {
     int code = 0;
     pdf_array *Kids = NULL;
@@ -3912,7 +4239,7 @@ static int pdfi_form_draw_field(pdf_context *ctx, pdf_dict *Page, pdf_dict *Acro
     code = pdfi_dict_knownget_type(ctx, field, "Kids", PDF_ARRAY, (pdf_obj **)&Kids);
     if (code < 0) goto exit;
     if (code == 0) {
-        code = pdfi_form_draw_terminal(ctx, Page, AcroForm, field);
+        code = pdfi_form_draw_terminal(ctx, Page, field);
         goto exit;
     }
 
@@ -3937,7 +4264,7 @@ static int pdfi_form_draw_field(pdf_context *ctx, pdf_dict *Page, pdf_dict *Acro
          * I think it's only relevant for Btn, and not sure if it
          * should be dealt with here or in Btn routine.
          */
-        code = pdfi_form_draw_terminal(ctx, Page, AcroForm, field);
+        code = pdfi_form_draw_terminal(ctx, Page, field);
         goto exit;
     }
 
@@ -3948,7 +4275,7 @@ static int pdfi_form_draw_field(pdf_context *ctx, pdf_dict *Page, pdf_dict *Acro
         code = pdfi_array_get_type(ctx, Kids, i, PDF_DICT, (pdf_obj **)&child);
         if (code < 0) goto exit;
 
-        code = pdfi_form_draw_field(ctx, Page, AcroForm, child);
+        code = pdfi_form_draw_field(ctx, Page, child);
         if (code < 0) goto exit;
 
         pdfi_countdown(child);
@@ -3965,7 +4292,6 @@ static int pdfi_form_draw_field(pdf_context *ctx, pdf_dict *Page, pdf_dict *Acro
 int pdfi_do_acroform(pdf_context *ctx, pdf_dict *page_dict)
 {
     int code = 0;
-    pdf_dict *AcroForm = NULL;
     pdf_array *Fields = NULL;
     pdf_dict *field = NULL;
     int i;
@@ -3973,11 +4299,10 @@ int pdfi_do_acroform(pdf_context *ctx, pdf_dict *page_dict)
     if (!ctx->args.showacroform)
         return 0;
 
-    code = pdfi_dict_knownget_type(ctx, ctx->Root, "AcroForm", PDF_DICT, (pdf_obj **)&AcroForm);
-    if (code <= 0)
-        goto exit;
+    if (!ctx->AcroForm)
+        return 0;
 
-    code = pdfi_dict_knownget_type(ctx, AcroForm, "Fields", PDF_ARRAY, (pdf_obj **)&Fields);
+    code = pdfi_dict_knownget_type(ctx, ctx->AcroForm, "Fields", PDF_ARRAY, (pdf_obj **)&Fields);
     if (code <= 0)
         goto exit;
 
@@ -3985,7 +4310,7 @@ int pdfi_do_acroform(pdf_context *ctx, pdf_dict *page_dict)
         code = pdfi_array_get_type(ctx, Fields, i, PDF_DICT, (pdf_obj **)&field);
         if (code < 0)
             continue;
-        code = pdfi_form_draw_field(ctx, page_dict, AcroForm, field);
+        code = pdfi_form_draw_field(ctx, page_dict, field);
         if (code < 0)
             goto exit;
         pdfi_countdown(field);
@@ -3995,6 +4320,5 @@ int pdfi_do_acroform(pdf_context *ctx, pdf_dict *page_dict)
  exit:
     pdfi_countdown(field);
     pdfi_countdown(Fields);
-    pdfi_countdown(AcroForm);
     return code;
 }
