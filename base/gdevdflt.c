@@ -614,7 +614,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
     fill_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
-    fill_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
     fill_dev_proc(dev, strip_copy_rop2, gx_default_strip_copy_rop2);
     fill_dev_proc(dev, strip_tile_rect_devn, gx_default_strip_tile_rect_devn);
     fill_dev_proc(dev, get_clipping_box, gx_default_get_clipping_box);
@@ -1245,7 +1244,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, fill_triangle, dev_proc(&prototype, fill_triangle));
     set_dev_proc(dest, draw_thin_line, dev_proc(&prototype, draw_thin_line));
     set_dev_proc(dest, strip_tile_rectangle, dev_proc(&prototype, strip_tile_rectangle));
-    set_dev_proc(dest, strip_copy_rop, dev_proc(&prototype, strip_copy_rop));
     set_dev_proc(dest, get_clipping_box, dev_proc(&prototype, get_clipping_box));
     set_dev_proc(dest, begin_typed_image, dev_proc(&prototype, begin_typed_image));
     set_dev_proc(dest, get_bits_rectangle, dev_proc(&prototype, get_bits_rectangle));

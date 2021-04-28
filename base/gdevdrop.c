@@ -89,28 +89,6 @@ trace_copy_rop(const char *cname, gx_device * dev,
 
 /* ---------------- Default copy_rop implementations ---------------- */
 
-/*
- * The default implementation for non-memory devices uses get_bits_rectangle
- * to read out the pixels, the memory device implementation to do the
- * operation, and copy_color to write the pixels back.
- */
-int
-gx_default_strip_copy_rop(gx_device * dev,
-                          const byte * sdata, int sourcex,
-                          uint sraster, gx_bitmap_id id,
-                          const gx_color_index * scolors,
-                          const gx_strip_bitmap * textures,
-                          const gx_color_index * tcolors,
-                          int x, int y, int width, int height,
-                          int phase_x, int phase_y,
-                          gs_logical_operation_t lop)
-{
-    return gx_default_strip_copy_rop2(dev, sdata, sourcex, sraster, id,
-                                      scolors, textures, tcolors,
-                                      x, y, width, height,
-                                      phase_x, phase_y, lop, 0);
-}
-
 int
 gx_default_strip_copy_rop2(gx_device * dev,
                            const byte * sdata, int sourcex,
@@ -139,7 +117,7 @@ gx_default_strip_copy_rop2(gx_device * dev,
 
 #ifdef DEBUG
     if (gs_debug_c('b'))
-        trace_copy_rop("gx_default_strip_copy_rop",
+        trace_copy_rop("gx_default_strip_copy_rop2",
                        dev, sdata, sourcex, sraster,
                        id, scolors, textures, tcolors,
                        x, y, width, height, phase_x, phase_y, lop);
@@ -222,23 +200,13 @@ gx_default_strip_copy_rop2(gx_device * dev,
             if (code < 0)
                 return code;
         }
-        if (planar_height == 0) {
-            code = (*dev_proc(pmdev, strip_copy_rop))
-                        ((gx_device *)pmdev,
-                         sdata + (py - y) * sraster, sourcex, sraster,
-                         gx_no_bitmap_id, scolors, textures, tcolors,
-                         0, 0, width, block_height,
-                         phase_x + x, phase_y + py,
-                         lop);
-        } else {
-            code = (*dev_proc(pmdev, strip_copy_rop2))
+        code = (*dev_proc(pmdev, strip_copy_rop2))
                         ((gx_device *)pmdev,
                          sdata + (py - y) * sraster, sourcex, sraster,
                          gx_no_bitmap_id, scolors, textures, tcolors,
                          0, 0, width, block_height,
                          phase_x + x, phase_y + py,
                          lop, planar_height);
-        }
         if (code < 0)
             break;
         if (is_planar) {
@@ -598,24 +566,8 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
  * operation, pack_from_standard to convert them back to the device
  * representation, and copy_color to write the pixels back.
  */
-int
-mem_default_strip_copy_rop2(gx_device * dev,
-                            const byte * sdata, int sourcex,
-                            uint sraster, gx_bitmap_id id,
-                            const gx_color_index * scolors,
-                            const gx_strip_bitmap * textures,
-                            const gx_color_index * tcolors,
-                            int x, int y, int width, int height,
-                            int phase_x, int phase_y,
-                            gs_logical_operation_t lop,
-                            uint planar_height)
-{
-    dmlprintf(dev->memory, "mem_default_strip_copy_rop2 should never be called!\n");
-    return_error(gs_error_Fatal);
-}
-
-int
-mem_default_strip_copy_rop(gx_device * dev,
+static int
+do_strip_copy_rop(gx_device * dev,
                            const byte * sdata, int sourcex,
                            uint sraster, gx_bitmap_id id,
                            const gx_color_index * scolors,
@@ -836,10 +788,10 @@ mem_default_strip_copy_rop(gx_device * dev,
             source_data = source_row;
             source_raster = source_row_raster;
         }
-        code = (*dev_proc(&mdev, strip_copy_rop))
+        code = (*dev_proc(&mdev, strip_copy_rop2))
             ((gx_device *)&mdev, source_data, sx, source_raster,
              gx_no_bitmap_id, real_scolors, real_texture, real_tcolors,
-             0, 0, width, loop_height, phase_x + x, phase_y + py, lop);
+             0, 0, width, loop_height, phase_x + x, phase_y + py, lop, 0);
         if (code < 0)
             break;
         /* Convert the result back to the device's format. */
@@ -863,17 +815,40 @@ out:
     return code;
 }
 
+int
+mem_default_strip_copy_rop2(gx_device * dev,
+                            const byte * sdata, int sourcex,
+                            uint sraster, gx_bitmap_id id,
+                            const gx_color_index * scolors,
+                            const gx_strip_bitmap * textures,
+                            const gx_color_index * tcolors,
+                            int x, int y, int width, int height,
+                            int phase_x, int phase_y,
+                            gs_logical_operation_t lop,
+                            uint planar_height)
+{
+    if (planar_height != 0)
+    {
+        dmlprintf(dev->memory, "mem_default_strip_copy_rop2 should never be called!\n");
+        return_error(gs_error_Fatal);
+    }
+    return do_strip_copy_rop(dev, sdata, sourcex, sraster, id, scolors,
+                             textures, tcolors, x, y, width, height,
+                             phase_x, phase_y, lop);
+}
+
 /* ------ Implementation of related functions ------ */
 
 int
-gx_strip_copy_rop_unaligned(gx_device * dev,
+gx_strip_copy_rop2_unaligned(gx_device * dev,
              const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
                             const gx_color_index * scolors,
            const gx_strip_bitmap * textures, const gx_color_index * tcolors,
                             int x, int y, int width, int height,
-                       int phase_x, int phase_y, gs_logical_operation_t lop)
+                       int phase_x, int phase_y, gs_logical_operation_t lop,
+                       uint plane_height)
 {
-    dev_proc_strip_copy_rop((*copy_rop)) = dev_proc(dev, strip_copy_rop);
+    dev_proc_strip_copy_rop2((*copy_rop2)) = dev_proc(dev, strip_copy_rop2);
     int depth = (scolors == 0 ? dev->color_info.depth : 1);
     int step = sraster & (align_bitmap_mod - 1);
 
@@ -893,9 +868,9 @@ gx_strip_copy_rop_unaligned(gx_device * dev,
     if (!step || sdata == 0 ||
         (scolors != 0 && scolors[0] == scolors[1])
         ) {                     /* No adjustment needed. */
-        return (*copy_rop) (dev, sdata, sourcex, sraster, id, scolors,
+        return (*copy_rop2)(dev, sdata, sourcex, sraster, id, scolors,
                             textures, tcolors, x, y, width, height,
-                            phase_x, phase_y, lop);
+                            phase_x, phase_y, lop, plane_height);
     }
     /* Do the transfer one scan line at a time. */
     {
@@ -908,9 +883,9 @@ gx_strip_copy_rop_unaligned(gx_device * dev,
         for (i = 0; i < height && code >= 0;
              ++i, p += sraster - step, d += dstep
             )
-            code = (*copy_rop) (dev, p, d, sraster, gx_no_bitmap_id, scolors,
+            code = (*copy_rop2)(dev, p, d, sraster, gx_no_bitmap_id, scolors,
                                 textures, tcolors, x, y + i, width, 1,
-                                phase_x, phase_y, lop);
+                                phase_x, phase_y, lop, plane_height);
         return code;
     }
 }

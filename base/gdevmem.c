@@ -933,7 +933,6 @@ void mem_dev_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, copy_mono, fns->copy_mono);
     set_dev_proc(dev, copy_color, fns->copy_color);
     set_dev_proc(dev, copy_alpha, fns->copy_alpha);
-    set_dev_proc(dev, strip_copy_rop, fns->strip_copy_rop);
     set_dev_proc(dev, strip_copy_rop2, fns->strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rectangle, fns->strip_tile_rectangle);
 }
@@ -951,7 +950,6 @@ void mem_word_dev_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, copy_mono, fns->copy_mono);
     set_dev_proc(dev, copy_color, fns->copy_color);
     set_dev_proc(dev, copy_alpha, fns->copy_alpha);
-    set_dev_proc(dev, strip_copy_rop, fns->strip_copy_rop);
     set_dev_proc(dev, strip_copy_rop2, fns->strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rectangle, fns->strip_tile_rectangle);
 }

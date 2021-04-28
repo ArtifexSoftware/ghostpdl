@@ -36,7 +36,6 @@ static dev_proc_copy_color(tile_clip_copy_color);
 static dev_proc_copy_planes(tile_clip_copy_planes);
 static dev_proc_copy_alpha(tile_clip_copy_alpha);
 static dev_proc_copy_alpha_hl_color(tile_clip_copy_alpha_hl_color);
-static dev_proc_strip_copy_rop(tile_clip_strip_copy_rop);
 static dev_proc_strip_copy_rop2(tile_clip_strip_copy_rop2);
 
 /* The device descriptor. */
@@ -58,7 +57,6 @@ tile_clipper_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, tile_clip_copy_alpha);
     set_dev_proc(dev, get_band, gx_forward_get_band);
-    set_dev_proc(dev, strip_copy_rop, tile_clip_strip_copy_rop);
     set_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
     set_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
     set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
@@ -380,34 +378,6 @@ tile_clip_copy_alpha_hl_color(gx_device * dev,
             int code = (*dev_proc(cdev->target, copy_alpha_hl_color))
             (cdev->target, data_row, sourcex + txrun - x, raster,
              gx_no_bitmap_id, txrun, ty, tx - txrun, 1, pdcolor, depth);
-
-            if (code < 0)
-                return code;
-        }
-        END_FOR_RUNS();
-    }
-    return 0;
-}
-
-/* Copy a RasterOp rectangle similarly. */
-static int
-tile_clip_strip_copy_rop(gx_device * dev,
-               const byte * data, int sourcex, uint raster, gx_bitmap_id id,
-                         const gx_color_index * scolors,
-           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-                         int x, int y, int w, int h,
-                       int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
-
-    fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
-    {
-        FOR_RUNS(data_row, txrun, tx, ty) {
-            /* Copy the run. */
-            int code = (*dev_proc(cdev->target, strip_copy_rop))
-            (cdev->target, data_row, sourcex + txrun - x, raster,
-             gx_no_bitmap_id, scolors, textures, tcolors,
-             txrun, ty, tx - txrun, 1, phase_x, phase_y, lop);
 
             if (code < 0)
                 return code;

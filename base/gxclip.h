@@ -78,8 +78,6 @@ int
                                    int xc, int yc, int xec, int yec),
     clip_call_strip_tile_rect_devn(clip_callback_data_t * pccd,
                                    int xc, int yc, int xec, int yec),
-    clip_call_strip_copy_rop(clip_callback_data_t * pccd,
-                             int xc, int yc, int xec, int yec),
     clip_call_strip_copy_rop2(clip_callback_data_t * pccd,
                               int xc, int yc, int xec, int yec),
     clip_call_fill_rectangle_hl_color(clip_callback_data_t * pccd,

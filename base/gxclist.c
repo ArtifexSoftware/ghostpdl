@@ -155,7 +155,6 @@ clist_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, clist_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, clist_fill_triangle);
     set_dev_proc(dev, strip_tile_rectangle, clist_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, clist_strip_copy_rop);
     set_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
     set_dev_proc(dev, begin_typed_image, clist_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, clist_get_bits_rectangle);

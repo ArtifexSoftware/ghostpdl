@@ -20,7 +20,7 @@
 #include "gxdevmem.h"           /* semi-public definitions */
 #include "gdevmem.h"            /* private definitions */
 
-#define mem_gray8_strip_copy_rop mem_gray8_rgb24_strip_copy_rop
+#define mem_gray8_strip_copy_rop2 mem_gray8_rgb24_strip_copy_rop2
 
 /* ================ Standard (byte-oriented) device ================ */
 
@@ -43,8 +43,7 @@ const gdev_mem_functions gdev_mem_fns_8 =
     mem_mapped8_copy_color,
     gx_default_copy_alpha,
     gx_default_strip_tile_rectangle,
-    mem_gray8_strip_copy_rop,
-    gx_default_strip_copy_rop2,
+    mem_gray8_strip_copy_rop2,
     mem_get_bits_rectangle
 };
 
@@ -352,8 +351,7 @@ const gdev_mem_functions gdev_mem_fns_8w =
     mem8_word_copy_color,
     gx_default_copy_alpha,
     gx_default_strip_tile_rectangle,
-    gx_no_strip_copy_rop,
-    gx_default_strip_copy_rop2,
+    gx_no_strip_copy_rop2,
     mem_word_get_bits_rectangle
 };
 

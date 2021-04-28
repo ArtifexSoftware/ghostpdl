@@ -180,7 +180,7 @@ mem_alpha_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_rectangle, mem_abuf_fill_rectangle);
     set_dev_proc(dev, copy_mono, mem_abuf_copy_mono);
     set_dev_proc(dev, copy_color, gx_default_copy_color);
-    set_dev_proc(dev, strip_copy_rop, gx_no_strip_copy_rop);
+    set_dev_proc(dev, strip_copy_rop2, gx_no_strip_copy_rop2);
     set_dev_proc(dev, fill_rectangle_hl_color, mem_abuf_fill_rectangle_hl_color);
 }
 

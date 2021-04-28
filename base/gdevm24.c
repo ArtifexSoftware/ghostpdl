@@ -20,7 +20,7 @@
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
 
-#define mem_true24_strip_copy_rop mem_gray8_rgb24_strip_copy_rop
+#define mem_true24_strip_copy_rop2 mem_gray8_rgb24_strip_copy_rop2
 
 /*
  * Define whether to use the library's memset.
@@ -69,8 +69,7 @@ const gdev_mem_functions gdev_mem_fns_24 =
     mem_true24_copy_color,
     mem_true24_copy_alpha,
     gx_default_strip_tile_rectangle,
-    mem_true24_strip_copy_rop,
-    gx_default_strip_copy_rop2,
+    mem_true24_strip_copy_rop2,
     mem_get_bits_rectangle
 };
 
@@ -571,8 +570,7 @@ const gdev_mem_functions gdev_mem_fns_24w =
     mem24_word_copy_color,
     gx_default_copy_alpha,
     gx_default_strip_tile_rectangle,
-    gx_no_strip_copy_rop,
-    gx_default_strip_copy_rop2,
+    gx_no_strip_copy_rop2,
     mem_word_get_bits_rectangle
 };
 

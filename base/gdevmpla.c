@@ -37,7 +37,6 @@ static dev_proc_copy_planes(mem_planar_copy_planes);
 /* Not static due to an optimized case in tile_clip_fill_rectangle_hl_color*/
 static dev_proc_strip_tile_rectangle(mem_planar_strip_tile_rectangle);
 static dev_proc_strip_tile_rect_devn(mem_planar_strip_tile_rect_devn);
-static dev_proc_strip_copy_rop(mem_planar_strip_copy_rop);
 static dev_proc_strip_copy_rop2(mem_planar_strip_copy_rop2);
 static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
 static dev_proc_fill_rectangle_hl_color(mem_planar_fill_rectangle_hl_color);
@@ -142,7 +141,6 @@ gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
         set_dev_proc(mdev, copy_color, fns->copy_color);
         set_dev_proc(mdev, copy_alpha, fns->copy_alpha);
         set_dev_proc(mdev, strip_tile_rectangle, fns->strip_tile_rectangle);
-        set_dev_proc(mdev, strip_copy_rop, fns->strip_copy_rop);
         set_dev_proc(mdev, strip_copy_rop2, fns->strip_copy_rop2);
         set_dev_proc(mdev, get_bits_rectangle, fns->get_bits_rectangle);
     } else {
@@ -176,7 +174,6 @@ gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
         set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
         set_dev_proc(mdev, strip_tile_rectangle, mem_planar_strip_tile_rectangle);
         set_dev_proc(mdev, strip_tile_rect_devn, mem_planar_strip_tile_rect_devn);
-        set_dev_proc(mdev, strip_copy_rop, mem_planar_strip_copy_rop);
         set_dev_proc(mdev, strip_copy_rop2, mem_planar_strip_copy_rop2);
         set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     }
@@ -1097,14 +1094,15 @@ mem_planar_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 }
 
 static int
-planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
-                               const byte * srow, int sourcex, uint sraster,
-                               gx_bitmap_id id, const gx_color_index * scolors,
-                               const gx_strip_bitmap * textures,
-                               const gx_color_index * tcolors,
-                               int x, int y, int width, int height,
-                               int phase_x, int phase_y,
-                               gs_logical_operation_t lop)
+planar_cmyk4bit_strip_copy_rop2(gx_device_memory * mdev,
+                                const byte * srow, int sourcex, uint sraster,
+                                gx_bitmap_id id, const gx_color_index * scolors,
+                                const gx_strip_bitmap * textures,
+                                const gx_color_index * tcolors,
+                                int x, int y, int width, int height,
+                                int phase_x, int phase_y,
+                                gs_logical_operation_t lop,
+                                uint planar_height)
 {
     gs_rop3_t rop = (gs_rop3_t)lop;
     uint draster = mdev->raster;
@@ -1116,6 +1114,8 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
     int cscolor = 0, mscolor = 0, yscolor = 0, kscolor = 0;
     int ctcolor = 0, mtcolor = 0, ytcolor = 0, ktcolor = 0;
     int constant_s = 0;
+
+    /* assert(planar_height == 0) */
 
     /* Modify the raster operation according to the source palette. */
     fit_copy(mdev, srow, sourcex, sraster, id, x, y, width, height);
@@ -1709,32 +1709,35 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
 }
 
 static int
-plane_strip_copy_rop(gx_device_memory * mdev,
-                     const byte * sdata, int sourcex, uint sraster,
-                     gx_bitmap_id id, const gx_color_index * scolors,
-                     const gx_strip_bitmap * textures,
-                     const gx_color_index * tcolors,
-                     int x, int y, int width, int height,
-                     int phase_x, int phase_y,
-                     gs_logical_operation_t lop, int plane)
+plane_strip_copy_rop2(gx_device_memory * mdev,
+                      const byte * sdata, int sourcex, uint sraster,
+                      gx_bitmap_id id, const gx_color_index * scolors,
+                      const gx_strip_bitmap * textures,
+                      const gx_color_index * tcolors,
+                      int x, int y, int width, int height,
+                      int phase_x, int phase_y,
+                      gs_logical_operation_t lop, int plane,
+                      uint planar_height)
 {
     mem_save_params_t save;
     int code;
     const gdev_mem_functions *fns;
 
+    /* assert(planar_height == 0); */
+
     MEM_SAVE_PARAMS(mdev, save);
     mdev->line_ptrs += mdev->height * plane;
     fns = gdev_mem_functions_for_bits(mdev->planes[plane].depth);
-    /* strip_copy_rop might end up calling get_bits_rectangle or fill_rectangle,
+    /* strip_copy_rop2 might end up calling get_bits_rectangle or fill_rectangle,
      * so ensure we have the right ones in there. */
     set_dev_proc(mdev, get_bits_rectangle, fns->get_bits_rectangle);
     set_dev_proc(mdev, fill_rectangle, fns->fill_rectangle);
     /* mdev->color_info.depth is restored by MEM_RESTORE_PARAMS below. */
     mdev->color_info.depth = mdev->planes[plane].depth;
-    code = fns->strip_copy_rop((gx_device *)mdev, sdata, sourcex, sraster,
-                               id, scolors, textures, tcolors,
-                               x, y, width, height,
-                               phase_x, phase_y, lop);
+    code = fns->strip_copy_rop2((gx_device *)mdev, sdata, sourcex, sraster,
+                                id, scolors, textures, tcolors,
+                                x, y, width, height,
+                                phase_x, phase_y, lop, planar_height);
     set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
     /* The following effectively does: mdev->line_ptrs -= mdev->height * plane; */
@@ -1866,22 +1869,6 @@ static byte cmykrop[256] =
     248,120,184,56,216,88,152,24,232,104,168,40,200,72,136,8,
     240,112,176,48,208,80,144,16,224,96,160,32,192,64,128,0
 };
-
-static int
-mem_planar_strip_copy_rop(gx_device * dev,
-                          const byte * sdata, int sourcex, uint sraster,
-                          gx_bitmap_id id, const gx_color_index * scolors,
-                          const gx_strip_bitmap * textures,
-                          const gx_color_index * tcolors,
-                          int x, int y, int width, int height,
-                          int phase_x, int phase_y,
-                          gs_logical_operation_t lop)
-{
-    return mem_planar_strip_copy_rop2(dev, sdata, sourcex, sraster,
-                                      id, scolors, textures, tcolors,
-                                      x, y, width, height,
-                                      phase_x, phase_y, lop, 0);
-}
 
 static int
 mem_planar_strip_copy_rop2(gx_device * dev,
@@ -2030,11 +2017,11 @@ mem_planar_strip_copy_rop2(gx_device * dev,
                     scolors2[0] = (scolors[0] >> shift) & mask;
                     scolors2[1] = (scolors[1] >> shift) & mask;
                 }
-                code = plane_strip_copy_rop(mdev, sdata, sourcex, sraster,
-                                            id, (scolors ? scolors2 : NULL),
-                                            textures, (tcolors ? tcolors2 : NULL),
-                                            x, y, width, height,
-                                            phase_x, phase_y, lop, plane);
+                code = plane_strip_copy_rop2(mdev, sdata, sourcex, sraster,
+                                             id, (scolors ? scolors2 : NULL),
+                                             textures, (tcolors ? tcolors2 : NULL),
+                                             x, y, width, height,
+                                             phase_x, phase_y, lop, plane, 0);
                 if (code < 0)
                     return code;
             }
@@ -2043,30 +2030,30 @@ mem_planar_strip_copy_rop2(gx_device * dev,
         if ((mdev->color_info.num_components == 4) && (mdev->plane_depth == 1))
         {
             lop = cmykrop[lop & 0xff] | (lop & ~0xff);
-            return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
-                                                  sraster, id, scolors,
-                                                  textures, tcolors,
-                                                  x, y, width, height,
-                                                  phase_x, phase_y,
-                                                  lop);
+            return planar_cmyk4bit_strip_copy_rop2(mdev, sdata, sourcex,
+                                                   sraster, id, scolors,
+                                                   textures, tcolors,
+                                                   x, y, width, height,
+                                                   phase_x, phase_y,
+                                                   lop, 0);
         }
     }
     if (!tcolors && !scolors &&
         (mdev->color_info.num_components == 4) && (mdev->plane_depth == 1)) {
         lop = cmykrop[lop & 0xff] | (lop & ~0xff);
-        return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
-                                              sraster, id, scolors,
-                                              textures, tcolors,
-                                              x, y, width, height,
-                                              phase_x, phase_y,
-                                              lop);
+        return planar_cmyk4bit_strip_copy_rop2(mdev, sdata, sourcex,
+                                               sraster, id, scolors,
+                                               textures, tcolors,
+                                               x, y, width, height,
+                                               phase_x, phase_y,
+                                               lop, 0);
     }
     /* Fall back to the default implementation (the only one that
      * guarantees to properly cope with D being planar). */
-    return mem_default_strip_copy_rop(dev, sdata, sourcex, sraster,
-                                      id, scolors, textures, tcolors,
-                                      x, y, width, height,
-                                      phase_x, phase_y, lop);
+    return mem_default_strip_copy_rop2(dev, sdata, sourcex, sraster,
+                                       id, scolors, textures, tcolors,
+                                       x, y, width, height,
+                                       phase_x, phase_y, lop, 0);
 }
 
 /* Copy bits back from a planar memory device. */

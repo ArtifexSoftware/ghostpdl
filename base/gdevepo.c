@@ -71,7 +71,6 @@ static dev_proc_copy_color(epo_copy_color);
 static dev_proc_get_bits(epo_get_bits);
 static dev_proc_copy_alpha(epo_copy_alpha);
 static dev_proc_strip_tile_rectangle(epo_strip_tile_rectangle);
-static dev_proc_strip_copy_rop(epo_strip_copy_rop);
 static dev_proc_strip_copy_rop2(epo_strip_copy_rop2);
 static dev_proc_copy_planes(epo_copy_planes);
 static dev_proc_copy_alpha_hl_color(epo_copy_alpha_hl_color);
@@ -456,7 +455,6 @@ void epo_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_triangle, epo_fill_triangle);
     set_dev_proc(dev, draw_thin_line, epo_draw_thin_line);
     set_dev_proc(dev, strip_tile_rectangle, epo_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, epo_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, epo_begin_typed_image);
     set_dev_proc(dev, composite, epo_composite);
     set_dev_proc(dev, text_begin, epo_text_begin);
@@ -547,19 +545,6 @@ int epo_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x
     if (code != 0)
         return code;
     return dev_proc(dev, strip_tile_rectangle)(dev, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
-}
-
-int epo_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
-    const gx_color_index *scolors,
-    const gx_strip_bitmap *textures, const gx_color_index *tcolors,
-    int x, int y, int width, int height,
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    int code = epo_handle_erase_page(dev);
-
-    if (code != 0)
-        return code;
-    return dev_proc(dev, strip_copy_rop)(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
 }
 
 int epo_strip_copy_rop2(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,

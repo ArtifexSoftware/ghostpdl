@@ -354,18 +354,6 @@ int default_subclass_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap 
     return gx_default_strip_tile_rectangle(dev, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
 }
 
-int default_subclass_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
-    const gx_color_index *scolors,
-    const gx_strip_bitmap *textures, const gx_color_index *tcolors,
-    int x, int y, int width, int height,
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    if (dev->child)
-        return dev_proc(dev->child, strip_copy_rop)(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
-    /* else */
-    return gx_default_strip_copy_rop(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
-}
-
 void default_subclass_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
 {
     if (dev->child) {
@@ -871,7 +859,6 @@ void default_subclass_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_triangle, default_subclass_fill_triangle);
     set_dev_proc(dev, draw_thin_line, default_subclass_draw_thin_line);
     set_dev_proc(dev, strip_tile_rectangle, default_subclass_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, default_subclass_strip_copy_rop);
     set_dev_proc(dev, get_clipping_box, default_subclass_get_clipping_box);
     set_dev_proc(dev, begin_typed_image, default_subclass_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, default_subclass_get_bits_rectangle);

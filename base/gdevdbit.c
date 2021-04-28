@@ -748,12 +748,13 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 }
 
 int
-gx_no_strip_copy_rop(gx_device * dev,
+gx_no_strip_copy_rop2(gx_device * dev,
              const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
                      const gx_color_index * scolors,
            const gx_strip_bitmap * textures, const gx_color_index * tcolors,
                      int x, int y, int width, int height,
-                     int phase_x, int phase_y, gs_logical_operation_t lop)
+                     int phase_x, int phase_y, gs_logical_operation_t lop,
+                     uint planar_height)
 {
     return_error(gs_error_unknownerror);	/* not implemented */
 }

@@ -75,7 +75,6 @@ static dev_proc_fill_parallelogram(flp_fill_parallelogram);
 static dev_proc_fill_triangle(flp_fill_triangle);
 static dev_proc_draw_thin_line(flp_draw_thin_line);
 static dev_proc_strip_tile_rectangle(flp_strip_tile_rectangle);
-static dev_proc_strip_copy_rop(flp_strip_copy_rop);
 static dev_proc_begin_typed_image(flp_begin_typed_image);
 static dev_proc_get_bits_rectangle(flp_get_bits_rectangle);
 static dev_proc_composite(flp_composite);
@@ -669,22 +668,6 @@ int flp_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x
     return 0;
 }
 
-int flp_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
-    const gx_color_index *scolors,
-    const gx_strip_bitmap *textures, const gx_color_index *tcolors,
-    int x, int y, int width, int height,
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    int code = SkipPage(dev);
-
-    if (code < 0)
-        return code;
-    if (!code)
-        return default_subclass_strip_copy_rop(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
-
-    return 0;
-}
-
 typedef struct flp_image_enum_s {
     gx_image_enum_common;
     int y;
@@ -1194,7 +1177,6 @@ flp_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_triangle, flp_fill_triangle);
     set_dev_proc(dev, draw_thin_line, flp_draw_thin_line);
     set_dev_proc(dev, strip_tile_rectangle, flp_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, flp_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, flp_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, flp_get_bits_rectangle);
     set_dev_proc(dev, composite, flp_composite);

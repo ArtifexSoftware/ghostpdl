@@ -41,7 +41,6 @@ static dev_proc_copy_alpha_hl_color(clip_copy_alpha_hl_color);
 static dev_proc_fill_mask(clip_fill_mask);
 static dev_proc_strip_tile_rectangle(clip_strip_tile_rectangle);
 static dev_proc_strip_tile_rect_devn(clip_strip_tile_rect_devn);
-static dev_proc_strip_copy_rop(clip_strip_copy_rop);
 static dev_proc_strip_copy_rop2(clip_strip_copy_rop2);
 static dev_proc_get_clipping_box(clip_get_clipping_box);
 static dev_proc_get_bits_rectangle(clip_get_bits_rectangle);
@@ -71,7 +70,6 @@ clipper_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_path, clip_fill_path);
     set_dev_proc(dev, fill_mask, clip_fill_mask);
     set_dev_proc(dev, strip_tile_rectangle, clip_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, clip_strip_copy_rop);
     set_dev_proc(dev, get_clipping_box, clip_get_clipping_box);
     set_dev_proc(dev, get_bits_rectangle, clip_get_bits_rectangle);
     set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
@@ -1335,35 +1333,6 @@ clip_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     ccdata.color[0] = color0, ccdata.color[1] = color1;
     ccdata.phase.x = phase_x, ccdata.phase.y = phase_y;
     return clip_enumerate(rdev, x, y, w, h, clip_call_strip_tile_rectangle, &ccdata);
-}
-
-/* Copy a rectangle with RasterOp and strip texture. */
-int
-clip_call_strip_copy_rop(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)
-{
-    return (*dev_proc(pccd->tdev, strip_copy_rop))
-        (pccd->tdev, pccd->data + (yc - pccd->y) * pccd->raster,
-         pccd->sourcex + xc - pccd->x, pccd->raster, gx_no_bitmap_id,
-         pccd->scolors, pccd->textures, pccd->tcolors,
-         xc, yc, xec - xc, yec - yc, pccd->phase.x, pccd->phase.y,
-         pccd->lop);
-}
-static int
-clip_strip_copy_rop(gx_device * dev,
-              const byte * sdata, int sourcex, uint raster, gx_bitmap_id id,
-                    const gx_color_index * scolors,
-           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-                    int x, int y, int w, int h,
-                    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    gx_device_clip *rdev = (gx_device_clip *) dev;
-    clip_callback_data_t ccdata;
-
-    ccdata.data = sdata, ccdata.sourcex = sourcex, ccdata.raster = raster;
-    ccdata.scolors = scolors, ccdata.textures = textures,
-        ccdata.tcolors = tcolors;
-    ccdata.phase.x = phase_x, ccdata.phase.y = phase_y, ccdata.lop = lop;
-    return clip_enumerate(rdev, x, y, w, h, clip_call_strip_copy_rop, &ccdata);
 }
 
 /* Copy a rectangle with RasterOp and strip texture. */

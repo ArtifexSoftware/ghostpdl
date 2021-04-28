@@ -64,7 +64,7 @@ static dev_proc_fill_mask(plane_fill_mask);
 static dev_proc_fill_parallelogram(plane_fill_parallelogram);
 static dev_proc_fill_triangle(plane_fill_triangle);
 static dev_proc_strip_tile_rectangle(plane_strip_tile_rectangle);
-static dev_proc_strip_copy_rop(plane_strip_copy_rop);
+static dev_proc_strip_copy_rop2(plane_strip_copy_rop2);
 static dev_proc_begin_typed_image(plane_begin_typed_image);
 static dev_proc_get_bits_rectangle(plane_get_bits_rectangle);
 
@@ -83,7 +83,7 @@ plane_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, plane_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, plane_fill_triangle);
     set_dev_proc(dev, strip_tile_rectangle, plane_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, plane_strip_copy_rop);
+    set_dev_proc(dev, strip_copy_rop2, plane_strip_copy_rop2);
     set_dev_proc(dev, begin_typed_image, plane_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, plane_get_bits_rectangle);
     set_dev_proc(dev, composite, gx_no_composite); /* WRONG */
@@ -103,7 +103,6 @@ plane_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, update_spot_equivalent_colors, gx_default_update_spot_equivalent_colors);
     set_dev_proc(dev, ret_devn_params, gx_default_ret_devn_params);
     set_dev_proc(dev, fillpage, gx_default_fillpage);
-    set_dev_proc(dev, strip_copy_rop2, gx_default_strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rect_devn, gx_default_strip_tile_rect_devn);
     set_dev_proc(dev, copy_alpha_hl_color, gx_default_copy_alpha_hl_color);
 }
@@ -714,12 +713,13 @@ plane_strip_tile_rectangle(gx_device *dev,
 }
 
 static int
-plane_strip_copy_rop(gx_device *dev,
+plane_strip_copy_rop2(gx_device *dev,
     const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
     const gx_color_index *scolors,
     const gx_strip_bitmap *textures, const gx_color_index *tcolors,
     int x, int y, int w, int h,
-    int phase_x, int phase_y, gs_logical_operation_t lop)
+    int phase_x, int phase_y, gs_logical_operation_t lop,
+    uint plane_height)
 {
     gx_device_plane_extract * const edev = (gx_device_plane_extract *)dev;
     gx_device * const plane_dev = edev->plane_dev;
@@ -765,9 +765,10 @@ plane_strip_copy_rop(gx_device *dev,
         code = begin_tiling(&source.state, edev, sdata, sourcex, sraster, w, y,
                             (byte *)sbuf, sizeof(sbuf), true);
         if (code < 0)
-            return gx_default_strip_copy_rop(dev, sdata, sourcex, sraster, id,
-                                             scolors, textures, tcolors,
-                                             x, y, w, h, phase_x, phase_y, rop);
+            return gx_default_strip_copy_rop2(dev, sdata, sourcex, sraster, id,
+                                              scolors, textures, tcolors,
+                                              x, y, w, h, phase_x, phase_y, rop,
+                                              plane_height);
         plane_source = source.state.buffer.data;
         plane_raster = source.state.buffer.raster;
     } else
@@ -792,10 +793,10 @@ plane_strip_copy_rop(gx_device *dev,
     do {
         if (sdata)
             extract_partial_tile(&source.state);
-        code = dev_proc(plane_dev, strip_copy_rop)
+        code = dev_proc(plane_dev, strip_copy_rop2)
             (plane_dev, plane_source, sourcex, plane_raster, gx_no_bitmap_id,
              source.colors, plane_textures, texture.colors,
-             x, y, w, h, phase_x, phase_y, rop);
+             x, y, w, h, phase_x, phase_y, rop, plane_height);
     } while (code >= 0 && sdata && next_tile(&source.state));
     if (textures)
         end_tiling(&texture.state);

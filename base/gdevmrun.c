@@ -165,7 +165,7 @@ static dev_proc_copy_color(run_copy_color);
 static dev_proc_fill_rectangle(run_fill_rectangle);
 static dev_proc_copy_alpha(run_copy_alpha);
 static dev_proc_strip_tile_rectangle(run_strip_tile_rectangle);
-static dev_proc_strip_copy_rop(run_strip_copy_rop);
+static dev_proc_strip_copy_rop2(run_strip_copy_rop2);
 static dev_proc_get_bits_rectangle(run_get_bits_rectangle);
 
 /*
@@ -211,7 +211,7 @@ gdev_run_from_mem(gx_device_run *rdev, gx_device_memory *mdev)
     REPLACE(fill_rectangle, run_fill_rectangle);
     REPLACE(copy_alpha, run_copy_alpha);
     REPLACE(strip_tile_rectangle, run_strip_tile_rectangle);
-    REPLACE(strip_copy_rop, run_strip_copy_rop);
+    REPLACE(strip_copy_rop2, run_strip_copy_rop2);
     REPLACE(get_bits_rectangle, run_get_bits_rectangle);
 #undef REPLACE
     return 0;
@@ -334,21 +334,23 @@ run_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                                                  color0, color1, px, py);
 }
 static int
-run_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
-                   uint sraster, gx_bitmap_id id,
-                   const gx_color_index * scolors,
-                   const gx_strip_bitmap * textures,
-                   const gx_color_index * tcolors,
-                   int x, int y, int w, int h, int px, int py,
-                   gs_logical_operation_t lop)
+run_strip_copy_rop2(gx_device * dev, const byte * sdata, int sourcex,
+                    uint sraster, gx_bitmap_id id,
+                    const gx_color_index * scolors,
+                    const gx_strip_bitmap * textures,
+                    const gx_color_index * tcolors,
+                    int x, int y, int w, int h, int px, int py,
+                    gs_logical_operation_t lop,
+                    uint planar_height)
 {
     gx_device_run *const rdev = (gx_device_run *)dev;
 
     run_standardize(rdev, y, h);
-    return rdev->save_procs.strip_copy_rop((gx_device *)&rdev->md,
-                                           sdata, sourcex, sraster,
-                                           id, scolors, textures, tcolors,
-                                           x, y, w, h, px, py, lop);
+    return rdev->save_procs.strip_copy_rop2((gx_device *)&rdev->md,
+                                            sdata, sourcex, sraster,
+                                            id, scolors, textures, tcolors,
+                                            x, y, w, h, px, py, lop,
+                                            planar_height);
 }
 static int
 run_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,

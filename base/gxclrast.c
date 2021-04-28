@@ -2258,18 +2258,7 @@ idata:                  data_size = 0;
                 colors[0] = colors[1] = state.colors[1];
                 log_op = state.lop;
                 pcolor = colors;
-         do_rop:if (plane_height == 0) {
-                    code = (*dev_proc(tdev, strip_copy_rop))
-                                (tdev, source, data_x, raster, gx_no_bitmap_id,
-                                 pcolor, &state_tile,
-                                 (state.tile_colors[0] == gx_no_color_index &&
-                                  state.tile_colors[1] == gx_no_color_index ?
-                                  NULL : state.tile_colors),
-                                 state.rect.x - x0, state.rect.y - y0,
-                                 state.rect.width - data_x, state.rect.height,
-                                 tile_phase.x, tile_phase.y, log_op);
-                } else {
-                    code = (*dev_proc(tdev, strip_copy_rop2))
+         do_rop:code = (*dev_proc(tdev, strip_copy_rop2))
                                 (tdev, source, data_x, raster, gx_no_bitmap_id,
                                  pcolor, &state_tile,
                                  (state.tile_colors[0] == gx_no_color_index &&
@@ -2280,7 +2269,6 @@ idata:                  data_size = 0;
                                  tile_phase.x, tile_phase.y, log_op,
                                  plane_height);
                      plane_height = 0;
-                }
                 data_x = 0;
                 break;
             case cmd_op_tile_rect >> 4:

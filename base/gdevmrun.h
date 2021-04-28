@@ -44,7 +44,7 @@ typedef struct gx_device_run_s {
         dev_proc_fill_rectangle((*fill_rectangle));
         dev_proc_copy_alpha((*copy_alpha));
         dev_proc_strip_tile_rectangle((*strip_tile_rectangle));
-        dev_proc_strip_copy_rop((*strip_copy_rop));
+        dev_proc_strip_copy_rop2((*strip_copy_rop2));
         dev_proc_get_bits_rectangle((*get_bits_rectangle));
     } save_procs;
 } gx_device_run;

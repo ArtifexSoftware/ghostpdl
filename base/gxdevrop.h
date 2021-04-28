@@ -22,6 +22,6 @@
 #include "gxdevcli.h"
 
 /* Define an unaligned implementation of [strip_]copy_rop. */
-dev_proc_strip_copy_rop(gx_strip_copy_rop_unaligned);
+dev_proc_strip_copy_rop2(gx_strip_copy_rop2_unaligned);
 
 #endif /* gxdevrop_INCLUDED */

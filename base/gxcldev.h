@@ -316,7 +316,6 @@ dev_proc_copy_color(clist_copy_color);
 dev_proc_copy_alpha(clist_copy_alpha);
 dev_proc_strip_tile_rectangle(clist_strip_tile_rectangle);
 dev_proc_strip_tile_rect_devn(clist_strip_tile_rect_devn);
-dev_proc_strip_copy_rop(clist_strip_copy_rop);
 dev_proc_strip_copy_rop2(clist_strip_copy_rop2);
 dev_proc_fill_trapezoid(clist_fill_trapezoid);
 dev_proc_fill_linear_color_trapezoid(clist_fill_linear_color_trapezoid);

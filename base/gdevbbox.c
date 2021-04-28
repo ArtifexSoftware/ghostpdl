@@ -52,7 +52,6 @@ static dev_proc_fill_parallelogram(bbox_fill_parallelogram);
 static dev_proc_fill_triangle(bbox_fill_triangle);
 static dev_proc_draw_thin_line(bbox_draw_thin_line);
 static dev_proc_strip_tile_rectangle(bbox_strip_tile_rectangle);
-static dev_proc_strip_copy_rop(bbox_strip_copy_rop);
 static dev_proc_strip_copy_rop2(bbox_strip_copy_rop2);
 static dev_proc_strip_tile_rect_devn(bbox_strip_tile_rect_devn);
 static dev_proc_begin_typed_image(bbox_begin_typed_image);
@@ -84,7 +83,6 @@ bbox_initialize_device_procs(gx_device *dev)
      set_dev_proc(dev, fill_triangle, bbox_fill_triangle);
      set_dev_proc(dev, draw_thin_line, bbox_draw_thin_line);
      set_dev_proc(dev, strip_tile_rectangle, bbox_strip_tile_rectangle);
-     set_dev_proc(dev, strip_copy_rop, bbox_strip_copy_rop);
      set_dev_proc(dev, begin_typed_image, bbox_begin_typed_image);
      set_dev_proc(dev, composite, bbox_composite);
      set_dev_proc(dev, text_begin, bbox_text_begin);
@@ -475,29 +473,6 @@ bbox_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
 }
 
 static int
-bbox_strip_copy_rop(gx_device * dev,
-                    const byte * sdata, int sourcex, uint sraster,
-                    gx_bitmap_id id,
-                    const gx_color_index * scolors,
-                    const gx_strip_bitmap * textures,
-                    const gx_color_index * tcolors,
-                    int x, int y, int w, int h,
-                    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-    /* gx_forward_strip_copy_rop doesn't exist */
-    gx_device *tdev = bdev->target;
-    int code =
-        (tdev == 0 ? 0 :
-         dev_proc(tdev, strip_copy_rop)
-         (tdev, sdata, sourcex, sraster, id, scolors,
-          textures, tcolors, x, y, w, h, phase_x, phase_y, lop));
-
-    BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
-    return code;
-}
-
-static int
 bbox_strip_copy_rop2(gx_device * dev,
                     const byte * sdata, int sourcex, uint sraster,
                     gx_bitmap_id id,
@@ -509,7 +484,7 @@ bbox_strip_copy_rop2(gx_device * dev,
                     uint planar_height)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-    /* gx_forward_strip_copy_rop doesn't exist */
+    /* gx_forward_strip_copy_rop2 doesn't exist */
     gx_device *tdev = bdev->target;
     int code =
         (tdev == 0 ? 0 :
