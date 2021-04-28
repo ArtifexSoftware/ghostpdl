@@ -195,14 +195,6 @@ int default_subclass_copy_color(gx_device *dev, const byte *data, int data_x, in
     return 0;
 }
 
-int default_subclass_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
-{
-    if (dev->child)
-        return dev_proc(dev->child, get_bits)(dev->child, y, data, actual_data);
-    /* else */
-    return gx_default_get_bits(dev, y, data, actual_data);
-}
-
 int default_subclass_get_params(gx_device *dev, gs_param_list *plist)
 {
     if (dev->child)
@@ -834,7 +826,6 @@ void default_subclass_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_rectangle, default_subclass_fill_rectangle);
     set_dev_proc(dev, copy_mono, default_subclass_copy_mono);
     set_dev_proc(dev, copy_color, default_subclass_copy_color);
-    set_dev_proc(dev, get_bits, default_subclass_get_bits);
     set_dev_proc(dev, get_params, default_subclass_get_params);
     set_dev_proc(dev, put_params, default_subclass_put_params);
     set_dev_proc(dev, map_cmyk_color, default_subclass_map_cmyk_color);

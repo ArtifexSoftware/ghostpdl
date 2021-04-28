@@ -355,6 +355,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
         int code = 0;
         gx_color_value color_cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
         int ry, lx;
+        gs_int_rect rect;
 
         fit_copy(dev, data, data_x, raster, id, x, y, width, height);
         row = data;
@@ -366,6 +367,8 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
             goto out;
         }
         (*dev_proc(dev, decode_color)) (dev, color, color_cv);
+        rect.p.x = 0;
+        rect.q.x = dev->width;
         for (ry = y; ry < y + height; row += raster, ++ry) {
             byte *line;
             int sx, rx;
@@ -374,10 +377,23 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
             int l_dbit = 0;
             byte l_dbyte = ((l_dbit) ? (byte)(*(l_dptr) & (0xff00 >> (l_dbit))) : 0);
             int l_xprev = x;
+            gs_get_bits_params_t params;
 
-            code = (*dev_proc(dev, get_bits)) (dev, ry, lin, &line);
+            params.options = (GB_ALIGN_ANY |
+                              (GB_RETURN_COPY | GB_RETURN_POINTER) |
+                              GB_OFFSET_0 |
+                              GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
+                              GB_COLORS_NATIVE | GB_ALPHA_NONE);
+            params.x_offset = 0;
+            params.raster = bitmap_raster(dev->width * dev->color_info.depth);
+            params.data[0] = lin;
+            rect.p.y = ry;
+            rect.q.y = ry+1;
+            code = (*dev_proc(dev, get_bits_rectangle))(dev, &rect,
+                                                        &params, NULL);
             if (code < 0)
                 break;
+            line = params.data[0];
             lx = x;
             for (sx = data_x, rx = x; sx < data_x + width; ++sx, ++rx) {
                 gx_color_index previous = gx_no_color_index;

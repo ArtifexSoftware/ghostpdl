@@ -68,8 +68,8 @@ static dev_proc_begin_typed_image(epo_begin_typed_image);
 static dev_proc_stroke_path(epo_stroke_path);
 static dev_proc_copy_mono(epo_copy_mono);
 static dev_proc_copy_color(epo_copy_color);
-static dev_proc_get_bits(epo_get_bits);
 static dev_proc_copy_alpha(epo_copy_alpha);
+static dev_proc_get_bits_rectangle(epo_get_bits_rectangle);
 static dev_proc_strip_tile_rectangle(epo_strip_tile_rectangle);
 static dev_proc_strip_copy_rop2(epo_strip_copy_rop2);
 static dev_proc_copy_planes(epo_copy_planes);
@@ -445,8 +445,8 @@ void epo_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_rectangle, epo_fill_rectangle);
     set_dev_proc(dev, copy_mono, epo_copy_mono);
     set_dev_proc(dev, copy_color, epo_copy_color);
-    set_dev_proc(dev, get_bits, epo_get_bits);
     set_dev_proc(dev, copy_alpha, epo_copy_alpha);
+    set_dev_proc(dev, get_bits_rectangle, epo_get_bits_rectangle);
     set_dev_proc(dev, fill_path, epo_fill_path);
     set_dev_proc(dev, stroke_path, epo_stroke_path);
     set_dev_proc(dev, fill_mask, epo_fill_mask);
@@ -516,13 +516,14 @@ int epo_copy_color(gx_device *dev, const byte *data, int data_x, int raster, gx_
     return dev_proc(dev, copy_color)(dev, data, data_x, raster, id, x, y, width, height);
 }
 
-int epo_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
+int epo_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
+                           gs_get_bits_params_t *params, gs_int_rect **unread)
 {
     int code = epo_handle_erase_page(dev);
 
     if (code != 0)
         return code;
-    return dev_proc(dev, get_bits)(dev, y, data, actual_data);
+    return dev_proc(dev, get_bits_rectangle)(dev, prect, params, unread);
 }
 
 int epo_copy_alpha(gx_device *dev, const byte *data, int data_x,

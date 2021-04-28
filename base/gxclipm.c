@@ -46,7 +46,6 @@ mask_clip_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_rectangle, mask_clip_fill_rectangle);
     set_dev_proc(dev, copy_mono, mask_clip_copy_mono);
     set_dev_proc(dev, copy_color, mask_clip_copy_color);
-    set_dev_proc(dev, get_bits, gx_forward_get_bits);
     set_dev_proc(dev, get_params, gx_forward_get_params);
     set_dev_proc(dev, put_params, gx_forward_put_params);
     set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);

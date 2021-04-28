@@ -37,6 +37,7 @@
 #include "gxcspace.h"
 #include "gsicc_manage.h"
 #include "gscms.h"
+#include "gxgetbit.h"
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
@@ -236,10 +237,27 @@ gs_copyscanlines(gx_device * dev, int start_y, byte * data, uint size,
     uint count = size / line_size;
     uint i;
     byte *dest = data;
+    gs_int_rect rect;
+    gs_get_bits_params_t params;
+
+    rect.p.x = 0;
+    rect.q.x = dev->width;
+    params.x_offset = 0;
+    params.raster = bitmap_raster(dev->width * dev->color_info.depth);
 
     for (i = 0; i < count; i++, dest += line_size) {
-        int code = (*dev_proc(dev, get_bits)) (dev, start_y + i, dest, NULL);
+        int code;
 
+        rect.p.y = start_y+i;
+        rect.q.y = start_y+i+1;
+
+        params.options = (GB_ALIGN_ANY |
+                          GB_RETURN_COPY |
+                          GB_OFFSET_0 |
+                          GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
+                          GB_COLORS_NATIVE | GB_ALPHA_NONE);
+        params.data[0] = dest;
+        code = (*dev_proc(dev, get_bits_rectangle))(dev, &rect, &params, NULL);
         if (code < 0) {
             /* Might just be an overrun. */
             if (start_y + i == dev->height)

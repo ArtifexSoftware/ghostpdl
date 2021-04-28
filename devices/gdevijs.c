@@ -437,7 +437,6 @@ static int gsijs_k_get_bits(gx_device_printer * pdev, int y, byte ** actual_data
    int y1=raster*(y-(band_height*band_number));
 
    *actual_data = ijsdev->k_band+y1;
-
    return 0;
 }
 

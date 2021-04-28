@@ -886,7 +886,6 @@ void mem_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, sync_output, gx_default_sync_output);
     set_dev_proc(dev, output_page, gx_default_output_page);
     set_dev_proc(dev, close_device, mem_close);
-    set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, get_params, gx_default_get_params);
     set_dev_proc(dev, put_params, gx_default_put_params);
     set_dev_proc(dev, map_rgb_alpha_color, gx_default_map_rgb_alpha_color);

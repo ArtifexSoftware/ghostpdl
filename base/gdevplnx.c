@@ -91,7 +91,6 @@ plane_initialize_device_procs(gx_device *dev)
     /* Ideally the following would be initialized to the defaults
      * automatically, but this does not currently work. */
     set_dev_proc(dev, close_device, gx_default_close_device);
-    set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, fill_trapezoid, gx_default_fill_trapezoid);
     set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
     set_dev_proc(dev, text_begin, gx_default_text_begin);

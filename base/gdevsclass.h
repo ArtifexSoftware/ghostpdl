@@ -38,7 +38,6 @@ dev_proc_map_color_rgb(default_subclass_map_color_rgb);
 dev_proc_fill_rectangle(default_subclass_fill_rectangle);
 dev_proc_copy_mono(default_subclass_copy_mono);
 dev_proc_copy_color(default_subclass_copy_color);
-dev_proc_get_bits(default_subclass_get_bits);
 dev_proc_get_params(default_subclass_get_params);
 dev_proc_put_params(default_subclass_put_params);
 dev_proc_map_cmyk_color(default_subclass_map_cmyk_color);

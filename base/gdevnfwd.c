@@ -65,7 +65,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     /* NOT fill_rectangle */
     /* NOT copy_mono */
     /* NOT copy_color */
-    fill_dev_proc(dev, get_bits, gx_forward_get_bits);
     fill_dev_proc(dev, get_params, gx_forward_get_params);
     fill_dev_proc(dev, put_params, gx_forward_put_params);
     fill_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
@@ -267,16 +266,6 @@ gx_forward_copy_planes(gx_device * dev, const byte * data,
         return_error(gs_error_Fatal);
     return dev_proc(tdev, copy_planes)
         (tdev, data, dx, raster, id, x, y, w, h, plane_height);
-}
-
-int
-gx_forward_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
-{
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-
-    return (tdev == 0 ? gx_default_get_bits(dev, y, data, actual_data) :
-            dev_proc(tdev, get_bits)(tdev, y, data, actual_data));
 }
 
 int
@@ -1236,7 +1225,6 @@ void gx_forward_device_initialize_procs(gx_device *dev)
     fill_dev_proc(dev, fill_rectangle, gx_forward_fill_rectangle);
     fill_dev_proc(dev, copy_mono, gx_forward_copy_mono);
     fill_dev_proc(dev, copy_color, gx_forward_copy_color);
-    fill_dev_proc(dev, get_bits, gx_forward_get_bits);
     fill_dev_proc(dev, get_params, gx_forward_get_params);
     fill_dev_proc(dev, put_params, gx_forward_put_params);
     fill_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);

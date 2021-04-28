@@ -468,17 +468,9 @@ psdf_end_binary(psdf_binary_writer * pbw)
 /* ---------------- Overprint, Get Bits ---------------- */
 
 /*
- * High level devices cannot perform get_bits or get_bits_rectangle
+ * High level devices cannot perform get_bits_rectangle
  * operations, for obvious reasons.
  */
-int
-psdf_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
-{
-    emprintf(dev->memory,
-                  "Can't set GraphicsAlphaBits or TextAlphaBits with a vector device.\n");
-    return_error(gs_error_unregistered);
-}
-
 int
 psdf_get_bits_rectangle(
     gx_device *             dev,

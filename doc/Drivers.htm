@@ -1135,8 +1135,8 @@ the same way.</p>
 <p>As from Ghostscript 9.11 onwards, a new device function, <tt>process_page</tt>
 has been introduced to solve this. A printer driver will be called via the
 <tt>print_page</tt> or <tt>print_page_copies</tt> entry point as before, but
-rather than requesting a scan line or rectangle of pixels at a time (by
-calling <tt>get_bits</tt> or <tt>get_bits_rectangle</tt> respectively), the
+rather than requesting a rectangle of pixels at a time (by
+calling <tt>get_bits_rectangle</tt>), the
 driver can now invite Ghostscript to "process the page" in whatever sized
 chunks it chooses.</p>
 
@@ -1339,8 +1339,8 @@ the device procedure tables. This cannot fail.
 by the internal device creation code. The sole exception here is when
 a device implementation wishes to copy device function pointers from another
 device; then a blank <code>gx_device</code> can be created, and
-<code>initialize_device_procs</dd> can be used to fill out the device procs
-table so it can be copied from.
+<code>initialize_device_procs</code> can be used to fill out the device procs
+table so it can be copied from.</dd>
 </dl>
 
 <dl>
@@ -3014,31 +3014,6 @@ properly.  The list is not sorted in any particular order, but the
 rectangles do not overlap.  Note that the rectangle list may cover a
 superset of the region actually obscured: for example, a lazy implementation
 could return a single rectangle that was the bounding box of the region.</p>
-</dl>
-
-<dl>
-<dt><code>int (*get_bits)(gx_device&nbsp;*dev, int&nbsp;y,
-byte&nbsp;*data, byte&nbsp;**actual_data)</code>
-<b><em>[OPTIONAL]</em></b></dt>
-<dd>Read scan line <code>y</code> of bits back from the device into the
-area starting at data.  This call is functionally equivalent to</dd>
-
-<blockquote>
-<pre>(*get_bits_rectangle)
-  (dev, {0, y, dev-&gt;width, y+1},
-   {(GB_ALIGN_ANY | (GB_RETURN_COPY | GB_RETURN_POINTER) | GB_OFFSET_0 |
-     GB_RASTER_STANDARD | GB_FORMAT_CHUNKY | GB_COLORS_NATIVE |
-     GB_ALPHA_NONE),
-    {data}})</pre></blockquote>
-
-<p>
-with the returned value of
-<code>params</code>-&gt;<code>data[0]</code> stored in
-<code>*actual_data</code>, and will in fact be implemented this way if
-the device defines a <code>get_bits_rectangle</code> procedure and does
-not define one for <code>get_bits</code>.  (If
-<code>actual_data</code> is <code>NULL</code>,
-<code>GB_RETURN_POINTER</code> is omitted from the options.)</p>
 </dl>
 
 <h3><a name="Parameters"></a>Parameters</h3>

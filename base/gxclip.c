@@ -98,7 +98,6 @@ clipper_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, output_page, gx_default_output_page);
     set_dev_proc(dev, close_device, gx_default_close_device);
     set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
-    set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, stroke_path, gx_default_stroke_path);
     set_dev_proc(dev, fill_trapezoid, gx_default_fill_trapezoid);
     set_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);

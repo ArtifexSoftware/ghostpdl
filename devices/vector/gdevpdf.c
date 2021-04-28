@@ -232,7 +232,6 @@ pdfwrite_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_rectangle, gdev_pdf_fill_rectangle);
     set_dev_proc(dev, copy_mono, gdev_pdf_copy_mono);
     set_dev_proc(dev, copy_color, gdev_pdf_copy_color);
-    set_dev_proc(dev, get_bits, psdf_get_bits);
     set_dev_proc(dev, get_params, gdev_pdf_get_params);
     set_dev_proc(dev, put_params, gdev_pdf_put_params);
     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);

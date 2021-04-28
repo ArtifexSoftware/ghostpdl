@@ -925,14 +925,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_copy_color(proc)\
   dev_t_proc_copy_color(proc, gx_device)
 
-                /* Added in release 2.4 */
-
-#define dev_t_proc_get_bits(proc, dev_t)\
-  int proc(dev_t *dev,\
-    int y, byte *data, byte **actual_data)
-#define dev_proc_get_bits(proc)\
-  dev_t_proc_get_bits(proc, gx_device)
-
                 /* Added in release 2.4, changed in 2.8, */
                 /* renamed in 2.9.6 */
 
@@ -1482,7 +1474,6 @@ typedef struct {
         dev_t_proc_fill_rectangle((*fill_rectangle), dev_t);\
         dev_t_proc_copy_mono((*copy_mono), dev_t);\
         dev_t_proc_copy_color((*copy_color), dev_t);\
-        dev_t_proc_get_bits((*get_bits), dev_t);\
         dev_t_proc_get_params((*get_params), dev_t);\
         dev_t_proc_put_params((*put_params), dev_t);\
         dev_t_proc_map_cmyk_color((*map_cmyk_color), dev_t);\

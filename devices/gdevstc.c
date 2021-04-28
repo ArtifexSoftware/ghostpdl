@@ -139,7 +139,7 @@ stcolor_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
     set_dev_proc(dev, close_device, stc_close);
     set_dev_proc(dev, map_color_rgb, stc_map_color_cmyk);
-    set_dev_proc(dev, get_bits, gx_default_get_bits);
+    set_dev_proc(dev, get_bits_rectangle, gx_default_get_bits_rectangle);
     set_dev_proc(dev, get_params, stc_get_params);
     set_dev_proc(dev, put_params, stc_put_params);
     set_dev_proc(dev, map_cmyk_color, stc_map_cmyk_color);

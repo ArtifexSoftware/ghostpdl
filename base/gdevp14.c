@@ -69,6 +69,7 @@
 #define CAL_SLOP 0
 #endif
 #include "assert_.h"
+#include "gxgetbit.h"
 
 #if RAW_DUMP
 unsigned int global_index = 0;
@@ -9576,7 +9577,6 @@ pdf14_clist_init_procs(gx_device *dev,
     set_dev_proc(dev, fill_rectangle, gx_forward_fill_rectangle);
     set_dev_proc(dev, copy_mono, gx_forward_copy_mono);
     set_dev_proc(dev, copy_color, gx_forward_copy_color);
-    set_dev_proc(dev, get_bits, gx_forward_get_bits);
     set_dev_proc(dev, get_params, gx_forward_get_params);
     set_dev_proc(dev, put_params, pdf14_put_params);
     set_dev_proc(dev, map_cmyk_color, pdf14_encode_color);
@@ -10517,6 +10517,7 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
         bool save_planar = pdev->is_planar;
         gs_devn_params *target_devn_params = dev_proc(target, ret_devn_params)(target);
         int save_num_separations;
+        gs_int_rect rect;
 
         pdev->is_planar = false;		/* so gx_device_raster is for entire chunky pixel line */
         linebuf = gs_alloc_bytes(mem, gx_device_raster((gx_device *)pdev, true), "pdf14-clist_accum pop dev");
@@ -10598,10 +10599,26 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
                                                     pgs->memory, &info);
         if (code < 0)
             goto put_accum_error;
+        rect.p.x = 0;
+        rect.q.x = tdev->width;
         for (y=0; y < tdev->height; y++) {
-            code = dev_proc(tdev, get_bits)((gx_device *)tdev, y, linebuf, &actual_data);
+            gs_get_bits_params_t params;
+
+            params.options = (GB_ALIGN_ANY |
+                              (GB_RETURN_COPY | GB_RETURN_POINTER) |
+                              GB_OFFSET_0 |
+                              GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
+                              GB_COLORS_NATIVE | GB_ALPHA_NONE);
+            params.x_offset = 0;
+            params.raster = bitmap_raster(dev->width * dev->color_info.depth);
+            params.data[0] = linebuf;
+            rect.p.y = y;
+            rect.q.y = y+1;
+            code = dev_proc(tdev, get_bits_rectangle)((gx_device *)tdev,
+                                                      &rect, &params, NULL);
             if (code < 0)
                 goto put_accum_error;
+            actual_data = params.data[0];
             planes.data = actual_data;
             planes.data_x = 0;
             planes.raster = tdev->width * tdev->color_info.num_components;

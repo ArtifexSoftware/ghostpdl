@@ -90,6 +90,7 @@ There are two compile-time options for this driver:
 
 #include "gdevprn.h" /** Printer-superclass header */
 #include "gsparam.h" /** For the Parameter-Handling (optional) */
+#include "gxgetbit.h"
 
 #include <stdlib.h>  /** for rand */
 #include <limits.h>  /** for INT_MIN */
@@ -1023,6 +1024,8 @@ upd_print_page(gx_device_printer *pdev, gp_file *out)
    const upd_p       upd   = udev->upd;
    const int *const  ints  = upd ? upd->ints : NULL;
    int error,need,yfill;
+   gs_int_rect rect;
+   gs_get_bits_params_t params;
 
 #if UPD_SIGNAL /* variables required for signal-handling only */
    void (*oldint )(int) = NULL;
@@ -1090,6 +1093,11 @@ upd_print_page(gx_device_printer *pdev, gp_file *out)
    upd->ixpass =  0;
    upd->icomp  = -1; /* Enforces initial selection */
    upd->lf     = -1; /* Enforces initial selection */
+
+   rect.p.x = 0;
+   rect.q.x = pdev->width;
+   params.x_offset = 0;
+   params.raster = bitmap_raster(pdev->width * pdev->color_info.depth);
 /*
  * Main Loop
  */
@@ -1106,14 +1114,24 @@ upd_print_page(gx_device_printer *pdev, gp_file *out)
 
          if(upd->gsheight > upd->yscnbuf)  {
 
-            if(0 > (*dev_proc(udev,get_bits))((gx_device *) udev,
-                                   upd->yscnbuf,upd->gsbuf,&upd->gsscan)) {
+            rect.p.y = upd->yscnbuf;
+            rect.q.y = upd->yscnbuf+1;
+
+            params.options = (GB_ALIGN_ANY |
+                              (GB_RETURN_COPY | GB_RETURN_POINTER) |
+                              GB_OFFSET_0 |
+                              GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
+                              GB_COLORS_NATIVE | GB_ALPHA_NONE);
+            params.data[0] = upd->gsbuf;
+            if(0 > (*dev_proc(udev,get_bits_rectangle))((gx_device *) udev,
+                                   &rect,&params,NULL)) {
 #if UPD_MESSAGES & UPD_M_WARNING
                errprintf(udev->memory, "get_bits aborted with error, yscnbuf = %4d\n",
                          upd->yscnbuf);
 #endif
                break;
             }
+            upd->gsscan = params.data[0];
          } else {
 
             memset(upd->gsscan = upd->gsbuf,0,upd->ngsbuf);
