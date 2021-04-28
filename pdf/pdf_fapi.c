@@ -543,18 +543,58 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 
     if (pbfont->FontType == ft_CID_TrueType) {
         pdf_cidfont_type2 *pttfont = (pdf_cidfont_type2 *)pbfont->client_data;
+        pdf_font_type0 *pt0font = (pdf_font_type0 *)penum->orig_font->client_data;
         gs_glyph gid;
 
         if (ccode >= GS_MIN_CID_GLYPH)
             ccode = ccode - GS_MIN_CID_GLYPH;
 
-        gid = ccode;
-        if (pttfont->cidtogidmap.size > (ccode << 1) + 1) {
-            gid = pttfont->cidtogidmap.data[ccode << 1] << 8 | pttfont->cidtogidmap.data[(ccode << 1) + 1];
+        if (pt0font->descendant_substitute == false) {
+            gid = ccode;
+            if (pttfont->cidtogidmap.size > (ccode << 1) + 1) {
+                gid = pttfont->cidtogidmap.data[ccode << 1] << 8 | pttfont->cidtogidmap.data[(ccode << 1) + 1];
+            }
+            cr->client_char_code = ccode;
+            cr->char_codes[0] = gid;
+            cr->is_glyph_index = true;
         }
-        cr->client_char_code = ccode;
-        cr->char_codes[0] = gid;
-        cr->is_glyph_index = true;
+        else { /* If the composite font has a decoding, then this is a subsituted CIDFont with a "known" ordering */
+            unsigned int cc = ccode;
+            byte uc[4];
+            int l;
+            bool is_glyph_index = true;
+
+            if (penum->text.operation & TEXT_FROM_SINGLE_CHAR) {
+                cc = penum->text.data.d_char;
+            } else if (penum->text.operation & TEXT_FROM_SINGLE_GLYPH) {
+                cc = penum->text.data.d_glyph - GS_MIN_CID_GLYPH;
+            }
+            else {
+                byte *c = (byte *)&penum->text.data.bytes[penum->index - penum->bytes_decoded];
+                int i;
+                cc = 0;
+                for (i = 0; i < penum->bytes_decoded ; i++) {
+                    cc |= c[i] << ((penum->bytes_decoded - 1) - i) * 8;
+                }
+            }
+
+            l = penum->orig_font->procs.decode_glyph((gs_font *)penum->orig_font, ccode, (gs_char)cc, (ushort *)uc, 4);
+            if (l == 2) {
+                is_glyph_index = false;
+                gid = uc[1] | uc[0] << 8;
+            }
+            else if (l == 4) {
+                is_glyph_index = false;
+                gid = uc[3] | uc[2] << 8 | uc[2] << 16 | uc[2] << 24;
+            }
+            else
+                gid = ccode;
+
+
+            cr->client_char_code = ccode;
+            cr->char_codes[0] = gid;
+            cr->is_glyph_index = is_glyph_index;
+        }
         return 0;
     }
     /* For cff based CIDFonts (and thus "Type 1" based CIDFonts, since the code

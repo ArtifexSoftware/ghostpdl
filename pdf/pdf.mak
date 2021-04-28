@@ -88,6 +88,9 @@ $(PDFOBJ)pdf_font0.$(OBJ): $(PDFSRC)pdf_font0.c $(PDFINCLUDES) $(PDF_MAK) \
                            $(gxfont_h) $(gxfont0_h) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_font0.c $(PDFO_)pdf_font0.$(OBJ)
 
+$(PDFOBJ)pdf_ciddec.$(OBJ): $(PDFSRC)pdf_ciddec.c $(PDFINCLUDES) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_ciddec.c $(PDFO_)pdf_ciddec.$(OBJ)
+
 $(PDFOBJ)pdf_font1.$(OBJ): $(PDFSRC)pdf_font1.c $(PDFINCLUDES) $(PDF_MAK) \
                            $(strmio_h) $(stream_h) $(gsgdata_h) $(gstype1_h) \
                            $(gscencs_h) $(MAKEDIRS)
@@ -243,6 +246,7 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_fapi.$(OBJ)\
     $(PDFOBJ)pdf_font.$(OBJ)\
     $(PDFOBJ)pdf_font0.$(OBJ)\
+    $(PDFOBJ)pdf_ciddec.$(OBJ)\
     $(PDFOBJ)pdf_font1.$(OBJ)\
     $(PDFOBJ)pdf_font1C.$(OBJ)\
     $(PDFOBJ)pdf_fontps.$(OBJ)\

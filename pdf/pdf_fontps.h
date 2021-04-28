@@ -67,7 +67,7 @@ typedef struct {
   int (*oper)(gs_memory_t *mem, pdf_ps_ctx_t *stack, byte *buf, byte *bufend);
 } pdf_ps_oper_list_t;
 
-#define PDF_PS_STACK_SIZE 350
+#define PDF_PS_STACK_SIZE 1024
 #define PDF_PS_STACK_GUARDS 1
 
 struct pdf_ps_ctx_s

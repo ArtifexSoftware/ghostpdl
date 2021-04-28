@@ -19,6 +19,8 @@
 #ifndef PDF_TYPE0_FONT
 #define PDF_TYPE0_FONT
 
+#include "ghostpdf.h"
+#include "pdf_types.h"
 #include "pdf_font_types.h"
 
 int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **pfont);

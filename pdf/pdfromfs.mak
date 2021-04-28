@@ -20,4 +20,4 @@ PDF_FONT_ROMFS_ARGS=
 # The -C turns "compaction" on, -B off. For debugging convenience
 # it's off just now.
 # PDF_ROMFS_ARGS=-d Resource/ -P $(PSRESDIR)$(D) -C CMap$(D)*
-PDF_ROMFS_ARGS=-d Resource/ -P $(PSRESDIR)$(D) -C CMap$(D)* -B Font$(D)* -C Init$(D)Fontmap.GS
+PDF_ROMFS_ARGS=-d Resource/ -P $(PSRESDIR)$(D) -C CMap$(D)* -B Font$(D)* CIDFSubst$(D)* -C Init$(D)Fontmap.GS

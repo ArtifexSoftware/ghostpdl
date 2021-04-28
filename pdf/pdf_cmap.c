@@ -230,6 +230,130 @@ static int cmap_endnotdefrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf
     return general_endcidrange_func(mem, s, pdficmap, &pdficmap->notdef_cmap_range);
 }
 
+static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
+{
+    pdf_cmap *pdficmap = (pdf_cmap *)s->client_data;
+    int ncodemaps, to_pop = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
+    int i, j, k;
+    pdfi_cmap_range_map_t *pdfir;
+    pdf_ps_stack_object_t *stobj;
+
+    /* increment to_pop to cover the mark object */
+    ncodemaps = to_pop++;
+    /* mapping should have 3 objects on the stack
+     */
+    while (ncodemaps % 3) ncodemaps--;
+
+    stobj = &s->cur[-ncodemaps] + 1;
+    for (i = 0; i < ncodemaps; i += 3) {
+        /* Lazy: to make the loop below simpler, put single
+           values into a one element array
+         */
+        if (pdf_ps_obj_has_type(&(stobj[i + 2]), PDF_PS_OBJ_STRING)) {
+            pdf_ps_stack_object_t *arr;
+            arr = (pdf_ps_stack_object_t *) gs_alloc_bytes(mem, sizeof(pdf_ps_stack_object_t), "cmap_endfbrange_func(pdf_ps_stack_object_t");
+            if (arr == NULL) {
+                return_error(gs_error_VMerror);
+            }
+            else {
+                memcpy(arr, &(stobj[i + 2]), sizeof(pdf_ps_stack_object_t));
+                pdf_ps_make_array(&(stobj[i + 2]), arr, 1);
+            }
+        }
+    }
+
+    stobj = &s->cur[-ncodemaps] + 1;
+
+    for (i = 0; i < ncodemaps; i += 3) {
+        int preflen, valuelen;
+
+        if (pdf_ps_obj_has_type(&(stobj[i + 2]), PDF_PS_OBJ_ARRAY)
+        &&  pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_STRING)
+        &&  pdf_ps_obj_has_type(&(stobj[i]), PDF_PS_OBJ_STRING)){
+
+            uint cidbase;
+            int srcs = 0, srce = 0;
+            int kslen = stobj[i].size;
+            for (k = 0; k < stobj[i].size; k++) {
+                srcs |= stobj[i].val.string[stobj[i].size - k - 1] << (8 * k);
+            }
+            for (k = 0; k < stobj[i + 1].size; k++) {
+                srce |= stobj[i + 1].val.string[stobj[i + 1].size - k - 1] << (8 * k);
+            }
+
+            for (k = srcs; k < srce + 1; k++) {
+                int m, size;
+                char srccode[4]; /* we only deal with up to 4 bytes */
+                char *psrccode = &(srccode[4 - kslen]);
+
+                if ((k - srcs) < stobj[i + 2].size) {
+                    if (stobj[i + 2].val.arr[k - srcs].type != PDF_PS_OBJ_STRING)
+                        continue;
+                    size = stobj[i + 2].val.arr[k - srcs].size;
+
+                    cidbase = 0;
+                    for (m = 0; m < size; m++) {
+                        cidbase |= stobj[i + 2].val.arr[k - srcs].val.string[size - m - 1];
+                    }
+                }
+                else {
+                    cidbase++;
+                }
+
+                for (m =0; m < kslen; m++) {
+                    psrccode[m] = (k >> (8 * (kslen - m - 1))) & 0xff;
+                }
+
+                /* Find how many bytes we need for the cidbase value */
+                /* We always store at least two bytes for the cidbase value */
+                for (valuelen = 16; valuelen < 32 && (cidbase >> valuelen) > 0; valuelen += 1)
+                    DO_NOTHING;
+
+                preflen = kslen > 4 ? 4 : kslen;
+
+                valuelen = ((valuelen + 7) & ~7) >> 3;
+
+                /* The prefix is already directly in the gx_cmap_lookup_range_t
+                 * We need to store the lower and upper character codes, after lopping the prefix
+                 * off them. The upper and lower codes must be the same number of bytes.
+                 */
+                j = sizeof(pdfi_cmap_range_map_t) + (kslen - preflen) + valuelen;
+
+                pdfir = (pdfi_cmap_range_map_t *)gs_alloc_bytes(mem, j, "cmap_endcidrange_func(pdfi_cmap_range_map_t)");
+                if (pdfir != NULL) {
+                    gx_cmap_lookup_range_t *gxr = &pdfir->range;
+                    pdfir->next = NULL;
+                    gxr->num_entries = 1;
+                    gxr->keys.data = (byte *)&(pdfir[1]);
+                    gxr->values.data = gxr->keys.data + (kslen - preflen);
+
+                    gxr->cmap = NULL;
+                    gxr->font_index = 0;
+                    gxr->key_is_range = false;
+                    gxr->value_type = CODE_VALUE_CID;
+                    gxr->key_prefix_size = preflen;
+                    gxr->key_size = kslen - gxr->key_prefix_size;
+                    memcpy(gxr->key_prefix, psrccode, gxr->key_prefix_size);
+
+                    memcpy(gxr->keys.data, psrccode + gxr->key_prefix_size, kslen - gxr->key_prefix_size);
+
+                    gxr->keys.size = kslen - gxr->key_prefix_size;
+                    for (j = 0; j < valuelen; j++) {
+                        gxr->values.data[j] = (cidbase >> ((valuelen - 1 - j) * 8)) & 255;
+                    }
+                    gxr->value_size = valuelen; /* I'm not sure.... */
+                    gxr->values.size = valuelen;
+                    if (cmap_insert_map(&(pdficmap->cmap_range), pdfir) < 0) break;
+                }
+                else {
+                    break;
+                }
+            }
+        }
+    }
+    return pdf_ps_stack_pop(s, to_pop);
+}
+
 static int general_endcidchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *pdficmap, pdfi_cmap_range_t *cmap_range)
 {
     int ncodemaps, to_pop = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
@@ -312,6 +436,33 @@ static int cmap_endnotdefchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf,
 {
     pdf_cmap *pdficmap = (pdf_cmap *)s->client_data;
     return general_endcidchar_func(mem, s, pdficmap, &pdficmap->notdef_cmap_range);
+}
+
+static int cmap_endbfchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
+{
+    pdf_cmap *pdficmap = (pdf_cmap *)s->client_data;
+    int ncodemaps = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
+    pdf_ps_stack_object_t *stobj;
+    int i, j;
+
+    stobj = &s->cur[-ncodemaps] + 1;
+
+    for (i = 0; i < ncodemaps; i += 2) {
+        if (pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_STRING)) {
+            byte *c = stobj[i + 1].val.string;
+            int l = stobj[i + 1].size;
+            unsigned int v = 0;
+
+            for (j = 0; j < l; j++) {
+                v += c[l - j - 1] << (8 * j);
+            }
+            pdf_ps_make_int(&(stobj[i + 1]), v);
+        }
+        else {
+            continue;
+        }
+    }
+    return general_endcidchar_func(mem, s, pdficmap, &pdficmap->cmap_range);
 }
 
 #define CMAP_NAME_AND_LEN(s) PDF_PS_OPER_NAME_AND_LEN(s)
@@ -445,10 +596,10 @@ static pdf_ps_oper_list_t cmap_oper_list[] =
   {PDF_PS_OPER_NAME_AND_LEN("begincodespacerange"), pdf_ps_pop_and_pushmark_func},
   {PDF_PS_OPER_NAME_AND_LEN("endcodespacerange"), cmap_endcodespacerange_func},
   {PDF_PS_OPER_NAME_AND_LEN("begincmap"), ps_pdf_null_oper_func},
-  {PDF_PS_OPER_NAME_AND_LEN("beginbfchar"), ps_pdf_null_oper_func},
-  {PDF_PS_OPER_NAME_AND_LEN("endbfchar"), ps_pdf_null_oper_func},
-  {PDF_PS_OPER_NAME_AND_LEN("beginbfrange"), ps_pdf_null_oper_func},
-  {PDF_PS_OPER_NAME_AND_LEN("endbfrange"), ps_pdf_null_oper_func},
+  {PDF_PS_OPER_NAME_AND_LEN("beginbfchar"), pdf_ps_pop_and_pushmark_func},
+  {PDF_PS_OPER_NAME_AND_LEN("endbfchar"), cmap_endbfchar_func},
+  {PDF_PS_OPER_NAME_AND_LEN("beginbfrange"), pdf_ps_pop_and_pushmark_func},
+  {PDF_PS_OPER_NAME_AND_LEN("endbfrange"), cmap_endfbrange_func},
   {PDF_PS_OPER_NAME_AND_LEN("begincidchar"), pdf_ps_pop_and_pushmark_func},
   {PDF_PS_OPER_NAME_AND_LEN("endcidchar"), cmap_endcidchar_func},
   {PDF_PS_OPER_NAME_AND_LEN("begincidrange"), pdf_ps_pop_and_pushmark_func},
@@ -740,6 +891,10 @@ int pdfi_free_cmap(pdf_obj *cmapo)
      * ToUnicode CMaps, we'll obviously have to rely on the context to know whether a CMap is an Encoding
      * or a ToUnicode, we cna't use the CmMapType, just as you suspected. :-(
      * See bug #696449 633_R00728_E.pdf
+     */
+    /*
+     * For now, we represent ToUnicode CMaps (CMapType 2) in the same data structures as regular CMaps
+     * (CMapType 0/1) so there is no reason (yet!) to differentiate between the two.
      */
 
     pdfi_free_cmap_contents(cmap);
