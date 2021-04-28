@@ -794,6 +794,8 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 #if CACHE_STATISTICS
             ctx->misses++;
 #endif
+            ctx->encryption.decrypt_strings = true;
+
             code = pdfi_seek(ctx, ctx->main_stream, entry->u.uncompressed.offset, SEEK_SET);
             if (code < 0)
                 goto error;
