@@ -107,21 +107,16 @@ static dev_proc_open_device(bj200_open);
 static dev_proc_print_page(bj10e_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-bj200_initialize(gx_device *dev)
+static void
+bj200_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono_bg(dev);
 
     set_dev_proc(dev, open_device, bj200_open);
-
-    return 0;
 }
 
 const gx_device_printer far_data gs_bj200_device =
-  prn_device(bj200_initialize, "bj200",
+  prn_device(bj200_initialize_device_procs, "bj200",
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
         360,				/* x_dpi */
@@ -152,21 +147,16 @@ const gx_device_printer far_data gs_bj200_device =
 
 static dev_proc_open_device(bj10e_open);
 
-static int
-bj10e_initialize(gx_device *dev)
+static void
+bj10e_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono_bg(dev);
 
     set_dev_proc(dev, open_device, bj10e_open);
-
-    return 0;
 }
 
 const gx_device_printer far_data gs_bj10e_device =
-  prn_device(bj10e_initialize, "bj10e",
+  prn_device(bj10e_initialize_device_procs, "bj10e",
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
         360,				/* x_dpi */

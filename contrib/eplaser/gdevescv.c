@@ -66,7 +66,7 @@ static dev_proc_copy_color(escv_copy_color);
 static dev_proc_put_params(escv_put_params);
 static dev_proc_get_params(escv_get_params);
 static dev_proc_fill_mask(escv_fill_mask);
-static dev_proc_begin_image(escv_begin_image);
+static dev_proc_begin_typed_image(escv_begin_typed_image);
 
 gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
                                "gx_device_escv", device_escv_enum_ptrs, device_escv_reloc_ptrs,
@@ -97,8 +97,8 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
 /* for ESC/Page-Color */
 #define escv_device_body(name) \
 {\
-  escv_device_full_body(gx_device_escv, escv_initialize, name, \
-                        &st_device_escv,\
+  escv_device_full_body(gx_device_escv, escv_initialize_device_procs,\
+                        name, &st_device_escv,\
 /* width & height */    ESCPAGE_DEFAULT_WIDTH, ESCPAGE_DEFAULT_HEIGHT,\
 /* default resolution */X_DPI, Y_DPI,\
 /* color info */        3, 24, 255, 255, 256, 256,\
@@ -113,8 +113,8 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
 /* for ESC/Page (Monochrome) */
 #define esmv_device_body(name) \
 {\
-  esmv_device_full_body(gx_device_escv, esmv_initialize, name, \
-                        &st_device_escv,\
+  esmv_device_full_body(gx_device_escv, esmv_initialize_device_procs,\
+                        name, &st_device_escv,\
 /* width & height */    ESCPAGE_DEFAULT_WIDTH, ESCPAGE_DEFAULT_HEIGHT,\
 /* default resolution */X_DPI, Y_DPI,\
 /* color info */        1, 8, 255, 255, 256, 256,\
@@ -126,8 +126,8 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
   esmv_init_code\
 }
 
-static int
-esc_initialize(gx_device *dev)
+static void
+esc_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, escv_open);
     set_dev_proc(dev, output_page, escv_output_page);
@@ -144,29 +144,27 @@ esc_initialize(gx_device *dev)
     set_dev_proc(dev, fill_trapezoid, gdev_vector_fill_trapezoid);
     set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
-    set_dev_proc(dev, begin_image, escv_begin_image);
-
-    return 0;
+    set_dev_proc(dev, begin_typed_image, escv_begin_typed_image);
 }
 
 /* for ESC/Page-Color */
-static int
-escv_initialize(gx_device *dev)
+static void
+escv_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
 
-    return esc_initialize(dev);
+    esc_initialize_device_procs(dev);
 }
 
 /* for ESC/Page (Monochrome) */
-static int
-esmv_initialize(gx_device *dev)
+static void
+esmv_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, map_rgb_color, gx_default_gray_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_gray_map_color_rgb);
 
-    return esc_initialize(dev);
+    esc_initialize_device_procs(dev);
 }
 
 #define	escv_init_code_common \
@@ -2361,23 +2359,25 @@ static const gx_image_enum_procs_t escv_image_enum_procs =
 
 /* Start processing an image. */
 static int
-escv_begin_image(gx_device * dev,
-                 const gs_gstate * pgs, const gs_image_t * pim,
-                 gs_image_format_t format, const gs_int_rect * prect,
-                 const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-                 gs_memory_t * mem, gx_image_enum_common_t **pinfo)
+escv_begin_typed_image(gx_device               *dev,
+                 const gs_gstate               *pgs,
+                 const gs_matrix               *pmat,
+                 const gs_image_common_t       *pic,
+                 const gs_int_rect             *prect,
+                 const gx_drawing_color        *pdcolor,
+                 const gx_clip_path            *pcpath,
+                       gs_memory_t             *mem,
+                       gx_image_enum_common_t **pinfo)
 {
+  const gs_image_t *pim = (const gs_image_t *)pic;
   gx_device_vector *const	vdev = (gx_device_vector *) dev;
   gx_device_escv *const	pdev = (gx_device_escv *) dev;
-  stream			*s = gdev_vector_stream((gx_device_vector *) pdev);
-  gdev_vector_image_enum_t	*pie =
-    gs_alloc_struct(mem, gdev_vector_image_enum_t, &st_vector_image_enum, "escv_begin_image");
-  const gs_color_space	*pcs = pim->ColorSpace;
+  stream			*s;
+  gdev_vector_image_enum_t	*pie;
+  const gs_color_space	*pcs;
   gs_color_space_index	index;
   int				num_components = 1;
-  bool can_do = prect == 0 &&
-    (pim->format == gs_image_format_chunky ||
-     pim->format == gs_image_format_component_planar);
+  bool can_do;
 
   gs_matrix			imat;
   int				code;
@@ -2385,10 +2385,24 @@ escv_begin_image(gx_device * dev,
 
   char		        obuf[128];
 
-  if (pie == 0) return_error(gs_error_VMerror);
+  s = gdev_vector_stream((gx_device_vector *) pdev);
+  pie = gs_alloc_struct(mem, gdev_vector_image_enum_t,
+                        &st_vector_image_enum, "escv_begin_typed_image");
+  if (pie == NULL) return_error(gs_error_VMerror);
   pie->memory = mem;
-  code = gdev_vector_begin_image(vdev, pgs, pim, format, prect,
-                                 pdcolor, pcpath, mem, &escv_image_enum_procs, pie);
+
+  /* This code can only cope with type1 images. Anything else, we need
+   * to send to the default. */
+  if (pic->type->index != 1)
+    goto fallback;
+
+  can_do = prect == NULL &&
+           (pim->format == gs_image_format_chunky ||
+            pim->format == gs_image_format_component_planar);
+  pcs = pim->ColorSpace;
+  code = gdev_vector_begin_image(vdev, pgs, pim, pim->format, prect,
+                                 pdcolor, pcpath, mem,
+                                 &escv_image_enum_procs, pie);
   if (code < 0) return code;
 
   *pinfo = (gx_image_enum_common_t *) pie;
@@ -2418,8 +2432,10 @@ escv_begin_image(gx_device * dev,
     }
   }
   if (!can_do) {
-    return gx_default_begin_image(dev, pgs, pim, format, prect,
-                                  pdcolor, pcpath, mem, &pie->default_info);
+fallback:
+    return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
+                                        pdcolor, pcpath, mem,
+                                        &pie->default_info);
   }
 
   if (pim->ImageMask || (pim->BitsPerComponent == 1 && num_components == 1)) {
@@ -2440,7 +2456,9 @@ escv_begin_image(gx_device * dev,
   if (code < 0)
       return code;
 
-  gs_matrix_multiply(&imat, &ctm_only(pgs), &imat);
+  if (pmat == NULL)
+    pmat = &ctm_only(pgs);
+  gs_matrix_multiply(&imat, pmat, &imat);
 
   ty = imat.ty;
   bx = imat.xx * pim->Width + imat.yx * pim->Height + imat.tx;

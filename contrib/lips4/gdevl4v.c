@@ -97,7 +97,7 @@ static dev_proc_copy_color(lips4v_copy_color);
 static dev_proc_put_params(lips4v_put_params);
 static dev_proc_get_params(lips4v_get_params);
 static dev_proc_fill_mask(lips4v_fill_mask);
-static dev_proc_begin_image(lips4v_begin_image);
+static dev_proc_begin_typed_image(lips4v_begin_typed_image);
 
 #define X_DPI 600
 #define Y_DPI 600
@@ -145,7 +145,8 @@ gs_public_st_suffix_add0_final(st_device_lips4v, gx_device_lips4v,
         std_device_part3_()
 
 #define lips4v_device_body\
-  lips_device_full_body(gx_device_lips4v, lips4v_initialize, "lips4v",\
+  lips_device_full_body(gx_device_lips4v,\
+                        lips4v_initialize_device_procs, "lips4v",\
                         &st_device_lips4v,\
                         DEFAULT_WIDTH_10THS * X_DPI / 10,\
                         DEFAULT_HEIGHT_10THS * Y_DPI / 10,\
@@ -156,8 +157,8 @@ gs_public_st_suffix_add0_final(st_device_lips4v, gx_device_lips4v,
                         LIPS4_RIGHT_MARGIN_DEFAULT,\
                         LIPS4_TOP_MARGIN_DEFAULT)
 
-static int
-lips4v_initialize(gx_device *dev)
+static void
+lips4v_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, lips4v_open);
     set_dev_proc(dev, get_initial_matrix, gx_upright_get_initial_matrix);
@@ -177,9 +178,7 @@ lips4v_initialize(gx_device *dev)
     set_dev_proc(dev, fill_trapezoid, gdev_vector_fill_trapezoid);
     set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
-    set_dev_proc(dev, begin_image, lips4v_begin_image);
-
-    return 0;
+    set_dev_proc(dev, begin_typed_image, lips4v_begin_typed_image);
 }
 
 gx_device_lips4v far_data gs_lips4v_device = {
@@ -2114,32 +2113,44 @@ static const gx_image_enum_procs_t lips4v_image_enum_procs = {
 
 /* Start processing an image. */
 static int
-lips4v_begin_image(gx_device * dev,
-                   const gs_gstate * pgs, const gs_image_t * pim,
-                   gs_image_format_t format, const gs_int_rect * prect,
-                   const gx_drawing_color * pdcolor,
-                   const gx_clip_path * pcpath, gs_memory_t * mem,
-                   gx_image_enum_common_t ** pinfo)
+lips4v_begin_typed_image(gx_device               *dev,
+                   const gs_gstate               *pgs,
+                   const gs_matrix               *pmat,
+                   const gs_image_common_t       *pic,
+                   const gs_int_rect             *prect,
+                   const gx_drawing_color        *pdcolor,
+                   const gx_clip_path            *pcpath,
+                         gs_memory_t             *mem,
+                         gx_image_enum_common_t **pinfo)
 {
     gx_device_vector *const vdev = (gx_device_vector *) dev;
     gx_device_lips4v *const pdev = (gx_device_lips4v *) dev;
-    gdev_vector_image_enum_t *pie =
-        gs_alloc_struct(mem, gdev_vector_image_enum_t,
-                        &st_vector_image_enum, "lips4v_begin_image");
-    const gs_color_space *pcs = pim->ColorSpace;
+    const gs_image_t *pim = (const gs_image_t *)pic;
+    gdev_vector_image_enum_t *pie;
+    const gs_color_space *pcs;
     gs_color_space_index index = 0;
     int num_components = 1;
-    bool can_do = prect == 0 &&
-        (pim->format == gs_image_format_chunky ||
-
-         pim->format == gs_image_format_component_planar);
-
+    bool can_do;
     int code;
 
+    pie = gs_alloc_struct(mem, gdev_vector_image_enum_t,
+                          &st_vector_image_enum, "lips4v_begin_typed_image");
     if (pie == 0)
         return_error(gs_error_VMerror);
     pie->memory = mem;
-    code = gdev_vector_begin_image(vdev, pgs, pim, format, prect,
+
+    /* We can only cope with type 1 images here.*/
+    if (pic->type->index != 1) {
+        *pinfo = (gx_image_enum_common_t *) pie;
+        goto fallback;
+    }
+
+    pcs = pim->ColorSpace;
+    can_do = prect == NULL &&
+        (pim->format == gs_image_format_chunky ||
+         pim->format == gs_image_format_component_planar);
+
+    code = gdev_vector_begin_image(vdev, pgs, pim, pim->format, prect,
                                    pdcolor, pcpath, mem,
                                    &lips4v_image_enum_procs, pie);
     if (code < 0)
@@ -2178,10 +2189,12 @@ lips4v_begin_image(gx_device * dev,
             }
         }
     }
-    if (!can_do)
-        return gx_default_begin_image(dev, pgs, pim, format, prect,
-                                      pdcolor, pcpath, mem,
-                                      &pie->default_info);
+    if (!can_do) {
+fallback:
+        return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
+                                            pdcolor, pcpath, mem,
+                                            &pie->default_info);
+    }
     else if (index == gs_color_space_index_DeviceGray) {
         gx_drawing_color dcolor;
 
@@ -2213,7 +2226,9 @@ lips4v_begin_image(gx_device * dev,
         if (code < 0)
             return code;
 
-        gs_matrix_multiply(&imat, &ctm_only(pgs), &imat);
+        if (pmat == NULL)
+            pmat = &ctm_only(pgs);
+        gs_matrix_multiply(&imat, pmat, &imat);
         /*
            [xx xy yx yy tx ty]
            LIPS の座標系に変換を行なう。
@@ -2294,7 +2309,7 @@ lips4v_begin_image(gx_device * dev,
             if (index == gs_color_space_index_DeviceGray)
                 lputs(s, "0");
             else {
-                if (format == gs_image_format_chunky)	/* RGBRGBRGB... */
+                if (pim->format == gs_image_format_chunky)	/* RGBRGBRGB... */
                     sputc(s, 0x3a);
                 else		/* RRR...GGG...BBB... */
                     sputc(s, 0x3b);

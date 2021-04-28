@@ -63,23 +63,18 @@ static dev_proc_map_cmyk_color(jpegcmyk_map_cmyk_color);
 
 /* 24-bit color */
 
-static int
-jpeg_initialize(gx_device *dev)
+static void
+jpeg_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_rgb_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_rgb_bg(dev);
 
     set_dev_proc(dev, get_initial_matrix, jpeg_get_initial_matrix);
     set_dev_proc(dev, get_params, jpeg_get_params);
     set_dev_proc(dev, put_params, jpeg_put_params);
-
-    return 0;
 }
 
 const gx_device_jpeg gs_jpeg_device =
-{prn_device_std_body(gx_device_jpeg, jpeg_initialize, "jpeg",
+{prn_device_std_body(gx_device_jpeg, jpeg_initialize_device_procs, "jpeg",
                      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                      X_DPI, Y_DPI, 0, 0, 0, 0, 24, jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */
@@ -91,13 +86,10 @@ const gx_device_jpeg gs_jpeg_device =
 
 /* 8-bit gray */
 
-static int
-jpeggray_initialize(gx_device *dev)
+static void
+jpeggray_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray_bg(dev);
 
     set_dev_proc(dev, get_initial_matrix, jpeg_get_initial_matrix);
     set_dev_proc(dev, get_params, jpeg_get_params);
@@ -108,12 +100,10 @@ jpeggray_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_jpeg gs_jpeggray_device =
-{prn_device_body(gx_device_jpeg, jpeggray_initialize, "jpeggray",
+{prn_device_body(gx_device_jpeg, jpeggray_initialize_device_procs, "jpeggray",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI, 0, 0, 0, 0,
                  1, 8, 255, 0, 256, 0,
@@ -127,13 +117,10 @@ const gx_device_jpeg gs_jpeggray_device =
 
 /* 32-bit CMYK */
 
-static int
-jpegcmyk_initialize(gx_device *dev)
+static void
+jpegcmyk_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, get_initial_matrix, jpeg_get_initial_matrix);
     set_dev_proc(dev, map_color_rgb, jpegcmyk_map_color_rgb);
@@ -146,12 +133,10 @@ jpegcmyk_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_jpeg gs_jpegcmyk_device =
-{prn_device_std_body(gx_device_jpeg, jpegcmyk_initialize, "jpegcmyk",
+{prn_device_std_body(gx_device_jpeg, jpegcmyk_initialize_device_procs, "jpegcmyk",
                      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                      X_DPI, Y_DPI, 0, 0, 0, 0, 32, jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */

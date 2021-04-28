@@ -63,8 +63,7 @@ static dev_proc_put_image(epo_put_image);
 static dev_proc_fillpage(epo_fillpage);
 static dev_proc_composite(epo_composite);
 static dev_proc_text_begin(epo_text_begin);
-static dev_proc_initialize(epo_initialize);
-static dev_proc_begin_image(epo_begin_image);
+static dev_proc_initialize_device_procs(epo_initialize_device_procs);
 static dev_proc_begin_typed_image(epo_begin_typed_image);
 static dev_proc_stroke_path(epo_stroke_path);
 static dev_proc_copy_mono(epo_copy_mono);
@@ -105,7 +104,7 @@ public_st_epo_device();
 const
 gx_device_epo gs_epo_device =
 {
-    std_device_dci_type_body(gx_device_epo, epo_initialize,
+    std_device_dci_type_body(gx_device_epo, epo_initialize_device_procs,
                         EPO_DEVICENAME, &st_epo_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
@@ -425,13 +424,24 @@ int epo_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
     return dev_proc(dev, text_begin)(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
 }
 
-int epo_initialize(gx_device *dev)
+static int epo_initialize_device(gx_device *dev)
 {
-    int code = default_subclass_initialize(dev);
+    /* We musn't allow the following pointers to remain shared with the from_dev
+       because we're about to tell the caller it's only allowed to copy the prototype
+       and free the attempted copy of a non-prototype. If from_dev is the prototype
+       these pointers won't be set, anyway.
+     */
+    dev->child = NULL;
+    dev->parent = NULL;
+    dev->subclass_data = NULL;
+    return 0;
+}
 
-    if (code < 0)
-        return code;
+void epo_initialize_device_procs(gx_device *dev)
+{
+    default_subclass_initialize_device_procs(dev);
 
+    set_dev_proc(dev, initialize_device, epo_initialize_device);
     set_dev_proc(dev, output_page, epo_output_page);
     set_dev_proc(dev, fill_rectangle, epo_fill_rectangle);
     set_dev_proc(dev, copy_mono, epo_copy_mono);
@@ -445,7 +455,6 @@ int epo_initialize(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, epo_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, epo_fill_triangle);
     set_dev_proc(dev, draw_thin_line, epo_draw_thin_line);
-    set_dev_proc(dev, begin_image, epo_begin_image);
     set_dev_proc(dev, strip_tile_rectangle, epo_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, epo_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, epo_begin_typed_image);
@@ -463,28 +472,6 @@ int epo_initialize(gx_device *dev)
     set_dev_proc(dev, process_page, epo_process_page);
     set_dev_proc(dev, transform_pixel_region, epo_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, epo_fill_stroke_path);
-
-    /* We musn't allow the following pointers to remain shared with the from_dev
-       because we're about to tell the caller it's only allowed to copy the prototype
-       and free the attempted copy of a non-prototype. If from_dev is the prototype
-       these pointers won't be set, anyway.
-     */
-    dev->child = NULL;
-    dev->parent = NULL;
-    dev->subclass_data = NULL;
-    return 0;
-}
-
-int epo_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_t *pim,
-    gs_image_format_t format, const gs_int_rect *prect,
-    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
-    gs_memory_t *memory, gx_image_enum_common_t **pinfo)
-{
-    int code = epo_handle_erase_page(dev);
-
-    if (code != 0)
-        return code;
-    return dev_proc(dev, begin_image)(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
 }
 
 int epo_begin_typed_image(gx_device *dev, const gs_gstate *pgs, const gs_matrix *pmat,

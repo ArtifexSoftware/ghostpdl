@@ -74,7 +74,6 @@ static dev_proc_fill_trapezoid(flp_fill_trapezoid);
 static dev_proc_fill_parallelogram(flp_fill_parallelogram);
 static dev_proc_fill_triangle(flp_fill_triangle);
 static dev_proc_draw_thin_line(flp_draw_thin_line);
-static dev_proc_begin_image(flp_begin_image);
 static dev_proc_strip_tile_rectangle(flp_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(flp_strip_copy_rop);
 static dev_proc_begin_typed_image(flp_begin_typed_image);
@@ -101,7 +100,7 @@ static dev_proc_copy_alpha_hl_color(flp_copy_alpha_hl_color);
 static dev_proc_process_page(flp_process_page);
 static dev_proc_transform_pixel_region(flp_transform_pixel_region);
 static dev_proc_fill_stroke_path(flp_fill_stroke_path);
-static dev_proc_initialize(flp_initialize);
+static dev_proc_initialize_device_procs(flp_initialize_device_procs);
 
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
@@ -128,7 +127,7 @@ public_st_flp_device();
 const
 gx_device_flp gs_flp_device =
 {
-    std_device_dci_type_body(gx_device_flp, flp_initialize,
+    std_device_dci_type_body(gx_device_flp, flp_initialize_device_procs,
                         "first_lastpage", &st_flp_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
@@ -656,21 +655,6 @@ int flp_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, fixed fy
     return 0;
 }
 
-int flp_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_t *pim,
-    gs_image_format_t format, const gs_int_rect *prect,
-    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
-    gs_memory_t *memory, gx_image_enum_common_t **pinfo)
-{
-    int code = SkipPage(dev);
-
-    if (code < 0)
-        return code;
-    if (!code)
-        return default_subclass_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
-
-    return 0;
-}
-
 int flp_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x, int y, int width, int height,
     gx_color_index color0, gx_color_index color1,
     int phase_x, int phase_y)
@@ -1187,13 +1171,10 @@ int flp_transform_pixel_region(gx_device *dev, transform_pixel_region_reason rea
     return 0;
 }
 
-static int
-flp_initialize(gx_device *dev)
+static void
+flp_initialize_device_procs(gx_device *dev)
 {
-    int code = default_subclass_initialize(dev);
-
-    if (code < 0)
-        return code;
+    default_subclass_initialize_device_procs(dev);
 
     set_dev_proc(dev, output_page, flp_output_page);
     set_dev_proc(dev, close_device, flp_close_device);
@@ -1212,7 +1193,6 @@ flp_initialize(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, flp_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, flp_fill_triangle);
     set_dev_proc(dev, draw_thin_line, flp_draw_thin_line);
-    set_dev_proc(dev, begin_image, flp_begin_image);
     set_dev_proc(dev, strip_tile_rectangle, flp_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, flp_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, flp_begin_typed_image);
@@ -1239,6 +1219,4 @@ flp_initialize(gx_device *dev)
     set_dev_proc(dev, process_page, flp_process_page);
     set_dev_proc(dev, transform_pixel_region, flp_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, flp_fill_stroke_path);
-
-    return 0;
 }

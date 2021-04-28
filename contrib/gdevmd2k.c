@@ -64,13 +64,10 @@ typedef struct gx_device_alps_s gx_device_alps;
 
 #define dev_alps ((gx_device_alps *) pdev)
 
-static int
-alps_initialize(gx_device *dev)
+static void
+alps_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, alps_open);
     set_dev_proc(dev, map_color_rgb, alps_map_color_rgb);
@@ -83,13 +80,11 @@ alps_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 #define alps_device(dname, print_page) \
 {\
-    prn_device_body(gx_device_alps, alps_initialize, dname,\
+    prn_device_body(gx_device_alps, alps_initialize_device_procs, dname,\
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,\
                     600, 600,\
                     0, 0, 0, 0, /* margin */\

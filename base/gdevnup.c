@@ -86,13 +86,10 @@ static dev_proc_dev_spec_op(nup_dev_spec_op);
 #define MAX_COORD (max_int_in_fixed - 1000)
 #define MAX_RESOLUTION 4000
 
-static int
-nup_initialize(gx_device *dev)
+static void
+nup_initialize_device_procs(gx_device *dev)
 {
-    int code = default_subclass_initialize(dev);
-
-    if (code < 0)
-        return code;
+    default_subclass_initialize_device_procs(dev);
 
     set_dev_proc(dev, get_initial_matrix, nup_get_initial_matrix);
     set_dev_proc(dev, output_page, nup_output_page);
@@ -100,8 +97,6 @@ nup_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, nup_put_params); /* to catch PageSize changes */
     set_dev_proc(dev, fillpage, nup_fillpage);
     set_dev_proc(dev, dev_spec_op, nup_dev_spec_op);
-
-    return 0;
 }
 
 const
@@ -110,7 +105,7 @@ gx_device_nup gs_nup_device =
     /*
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
-    std_device_dci_type_body(gx_device_nup, nup_initialize,
+    std_device_dci_type_body(gx_device_nup, nup_initialize_device_procs,
                         "N-up", &st_nup_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,

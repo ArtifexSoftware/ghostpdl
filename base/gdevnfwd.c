@@ -81,7 +81,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, fill_parallelogram, gx_forward_fill_parallelogram);
     fill_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
     fill_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
-    fill_dev_proc(dev, begin_image, gx_forward_begin_image);
     /* NOT strip_tile_rectangle */
     fill_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
     fill_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
@@ -482,24 +481,6 @@ gx_forward_draw_thin_line(gx_device * dev,
          dev_proc(tdev, draw_thin_line));
 
     return proc(tdev, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
-}
-
-int
-gx_forward_begin_image(gx_device * dev,
-                       const gs_gstate * pgs, const gs_image_t * pim,
-                       gs_image_format_t format, const gs_int_rect * prect,
-                       const gx_drawing_color * pdcolor,
-                       const gx_clip_path * pcpath,
-                       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
-{
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-    dev_proc_begin_image((*proc)) =
-        (tdev == 0 ? (tdev = dev, gx_default_begin_image) :
-         dev_proc(tdev, begin_image));
-
-    return proc(tdev, pgs, pim, format, prect, pdcolor, pcpath,
-                memory, pinfo);
 }
 
 int
@@ -1034,8 +1015,8 @@ static dev_proc_strip_tile_rect_devn(null_strip_tile_rect_devn);
 static dev_proc_fill_rectangle_hl_color(null_fill_rectangle_hl_color);
 static dev_proc_dev_spec_op(null_spec_op);
 
-static int
-null_initialize(gx_device *dev)
+static void
+null_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, get_initial_matrix, gx_forward_upright_get_initial_matrix);
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
@@ -1068,35 +1049,30 @@ null_initialize(gx_device *dev)
     set_dev_proc(dev, dev_spec_op, null_spec_op);
     set_dev_proc(dev, strip_copy_rop2, null_strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rect_devn, null_strip_tile_rect_devn);
-
-    return 0;
 }
 
-static int
-nullpage_initialize(gx_device *dev)
+static void
+nullpage_initialize_device_procs(gx_device *dev)
 {
-    int code = null_initialize(dev);
-
-    if (code < 0)
-        return code;
+    null_initialize_device_procs(dev);
 
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
-
-    return 0;
 }
 
 #define NULLD_X_RES 72
 #define NULLD_Y_RES 72
 
 const gx_device_null gs_null_device = {
-    std_device_std_body_type_open(gx_device_null, null_initialize,
+    std_device_std_body_type_open(gx_device_null,
+                                  null_initialize_device_procs,
                                   "null", &st_device_null,
                                   0, 0, NULLD_X_RES, NULLD_Y_RES)
 };
 
 const gx_device_null gs_nullpage_device = {
-std_device_std_body_type_open(gx_device_null, nullpage_initialize,
+std_device_std_body_type_open(gx_device_null,
+                              nullpage_initialize_device_procs,
                               "nullpage", &st_device_null,
                               (int)((float)(DEFAULT_WIDTH_10THS * NULLD_X_RES) / 10),
                               (int)((float)(DEFAULT_HEIGHT_10THS * NULLD_Y_RES) / 10),
@@ -1333,7 +1309,6 @@ void gx_forward_device_initialize_procs(gx_device *dev)
     fill_dev_proc(dev, fill_parallelogram, gx_forward_fill_parallelogram);
     fill_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
     fill_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
-    fill_dev_proc(dev, begin_image, gx_forward_begin_image);
     fill_dev_proc(dev, strip_tile_rectangle, gx_forward_strip_tile_rectangle);
     fill_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
     fill_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);

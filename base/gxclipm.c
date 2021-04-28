@@ -38,8 +38,8 @@ static dev_proc_get_clipping_box(mask_clip_get_clipping_box);
 
 /* The device descriptor. */
 
-static int
-mask_clip_initialize(gx_device *dev)
+static void
+mask_clip_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
     set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
@@ -96,15 +96,14 @@ mask_clip_initialize(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
     set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
-    set_dev_proc(dev, begin_image, gx_default_begin_image);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     set_dev_proc(dev, text_begin, gx_default_text_begin);
 
-    return 0;
  }
 
 const gx_device_mask_clip gs_mask_clip_device =
-{std_device_std_body_open(gx_device_mask_clip, mask_clip_initialize,
+{std_device_std_body_open(gx_device_mask_clip,
+                          mask_clip_initialize_device_procs,
                           "mask clipper",
                           0, 0, 1, 1)
 };

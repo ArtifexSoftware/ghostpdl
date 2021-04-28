@@ -41,24 +41,19 @@ copies.  */
 /* The device descriptors */
 static dev_proc_print_page(fmlbp_print_page);
 
-static int fmlbp_initialize(gx_device *dev)
+static void fmlbp_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono(dev);
 
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 #ifdef FMLBP_NOADJUST_MARGIN
-#define PRNFML_INIT fmlbp_initialize
+#define PRNFML_INIT fmlbp_initialize_device_procs
 #else
 /* Adjust margin for ghostscript 2.6.1 */
-#define PRNFML_INIT fmlbp_initialize_with_matrix
+#define PRNFML_INIT fmlbp_initialize_device_procs_with_matrix
 
 /* Shift the origin from the top left corner of the pysical page to the
    first printable pixel, as defined by the top and left margins. */
@@ -70,16 +65,11 @@ fmlbp_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
   pmat->ty -= (dev->t_margin * dev->y_pixels_per_inch);
 }
 
-static int fmlbp_initialize_with_matrix(gx_device *dev)
+static void fmlbp_initialize_device_procs_with_matrix(gx_device *dev)
 {
-    int code = fmlbp_initialize(dev);
-
-    if (code < 0)
-        return code;
+    fmlbp_initialize_device_procs(dev);
 
     set_dev_proc(dev, get_initial_matrix, fmlbp_get_initial_matrix);
-
-    return 0;
 }
 #endif/*FMLBP_NOADJUST_MARGIN*/
 

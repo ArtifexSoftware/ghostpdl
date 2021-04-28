@@ -433,7 +433,7 @@ extern_st(st_device_clist);
         (xclist)->writer.pinst = NULL;\
     END
 
-int clist_initialize(gx_device *dev);
+void clist_initialize_device_procs(gx_device *dev);
 
 void clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory);
 

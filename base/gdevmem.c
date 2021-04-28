@@ -880,7 +880,7 @@ mem_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, fixed fy1,
                                      adjustx, adjusty);
 }
 
-void mem_initialize(gx_device *dev)
+void mem_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, get_initial_matrix, mem_get_initial_matrix);
     set_dev_proc(dev, sync_output, gx_default_sync_output);
@@ -900,7 +900,6 @@ void mem_initialize(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
     set_dev_proc(dev, draw_thin_line, mem_draw_thin_line);
-    set_dev_proc(dev, begin_image, gx_default_begin_image);
     set_dev_proc(dev, get_clipping_box, gx_default_get_clipping_box);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     set_dev_proc(dev, map_color_rgb_alpha, gx_default_map_color_rgb_alpha);
@@ -917,7 +916,7 @@ void mem_initialize(gx_device *dev)
     set_dev_proc(dev, get_bits_rectangle, mem_get_bits_rectangle);
 }
 
-int mem_dev_initialize(gx_device *dev)
+void mem_dev_initialize_device_procs(gx_device *dev)
 {
     int depth = dev->color_info.depth;
     const gdev_mem_functions *fns;
@@ -926,7 +925,7 @@ int mem_dev_initialize(gx_device *dev)
         depth /= dev->color_info.num_components;
     fns = gdev_mem_functions_for_bits(depth);
 
-    mem_initialize(dev);
+    mem_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, fns->map_rgb_color);
     set_dev_proc(dev, map_color_rgb, fns->map_color_rgb);
@@ -937,16 +936,14 @@ int mem_dev_initialize(gx_device *dev)
     set_dev_proc(dev, strip_copy_rop, fns->strip_copy_rop);
     set_dev_proc(dev, strip_copy_rop2, fns->strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rectangle, fns->strip_tile_rectangle);
-
-    return 0;
 }
 
-int mem_word_dev_initialize(gx_device *dev)
+void mem_word_dev_initialize_device_procs(gx_device *dev)
 {
     const gdev_mem_functions *fns =
                 gdev_mem_word_functions_for_bits(dev->color_info.depth);
 
-    mem_initialize(dev);
+    mem_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, fns->map_rgb_color);
     set_dev_proc(dev, map_color_rgb, fns->map_color_rgb);
@@ -957,6 +954,4 @@ int mem_word_dev_initialize(gx_device *dev)
     set_dev_proc(dev, strip_copy_rop, fns->strip_copy_rop);
     set_dev_proc(dev, strip_copy_rop2, fns->strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rectangle, fns->strip_tile_rectangle);
-
-    return 0;
 }

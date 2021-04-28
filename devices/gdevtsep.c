@@ -72,13 +72,10 @@
 static dev_proc_print_page(tiffgray_print_page);
 
 /* FIXME: From initial analysis this is NOT safe for bg_printing, but might be fixable */
-static int
-tiffgray_initialize(gx_device *dev)
+static void
+tiffgray_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray(dev);
 
     set_dev_proc(dev, open_device, tiff_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
@@ -91,12 +88,10 @@ tiffgray_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_tiff gs_tiffgray_device = {
-    prn_device_body(gx_device_tiff, tiffgray_initialize, "tiffgray",
+    prn_device_body(gx_device_tiff, tiffgray_initialize_device_procs, "tiffgray",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0, /* Margins */
@@ -126,13 +121,10 @@ dev_proc_open_device(tiff_open_s);
 static dev_proc_print_page(tiffscaled_print_page);
 static int tiff_set_icc_color_fields(gx_device_printer *pdev);
 
-static int
-tiffscaled_initialize(gx_device *dev)
+static void
+tiffscaled_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray(dev);
 
     set_dev_proc(dev, open_device, tiff_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
@@ -145,13 +137,11 @@ tiffscaled_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_tiff gs_tiffscaled_device = {
     prn_device_body(gx_device_tiff,
-                    tiffscaled_initialize,
+                    tiffscaled_initialize_device_procs,
                     "tiffscaled",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -174,13 +164,10 @@ const gx_device_tiff gs_tiffscaled_device = {
 
 static dev_proc_print_page(tiffscaled8_print_page);
 
-static int
-tiffscaled8_initialize(gx_device *dev)
+static void
+tiffscaled8_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray(dev);
 
     set_dev_proc(dev, open_device, tiff_open_s);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
@@ -194,13 +181,11 @@ tiffscaled8_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_tiff gs_tiffscaled8_device = {
     prn_device_body(gx_device_tiff,
-                    tiffscaled8_initialize,
+                    tiffscaled8_initialize_device_procs,
                     "tiffscaled8",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -223,13 +208,10 @@ const gx_device_tiff gs_tiffscaled8_device = {
 
 static dev_proc_print_page(tiffscaled24_print_page);
 
-static int
-tiffscaled24_initialize(gx_device *dev)
+static void
+tiffscaled24_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_rgb(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_rgb(dev);
 
     set_dev_proc(dev, open_device, tiff_open_s);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
@@ -237,13 +219,11 @@ tiffscaled24_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, tiff_get_params_downscale);
     set_dev_proc(dev, put_params, tiff_put_params_downscale);
     set_dev_proc(dev, dev_spec_op, tiffscaled_spec_op);
-
-    return 0;
 }
 
 const gx_device_tiff gs_tiffscaled24_device = {
     prn_device_body(gx_device_tiff,
-                    tiffscaled24_initialize,
+                    tiffscaled24_initialize_device_procs,
                     "tiffscaled24",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -266,13 +246,10 @@ const gx_device_tiff gs_tiffscaled24_device = {
 
 static dev_proc_print_page(tiffscaled32_print_page);
 
-static int
-tiffscaled32_initialize(gx_device *dev)
+static void
+tiffscaled32_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk8(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk8(dev);
 
     set_dev_proc(dev, open_device, tiff_open_s);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
@@ -280,13 +257,11 @@ tiffscaled32_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, tiff_get_params_downscale_cmyk);
     set_dev_proc(dev, put_params, tiff_put_params_downscale_cmyk);
     set_dev_proc(dev, dev_spec_op, tiffscaled_spec_op);
-
-    return 0;
 }
 
 const gx_device_tiff gs_tiffscaled32_device = {
     prn_device_body(gx_device_tiff,
-                    tiffscaled32_initialize,
+                    tiffscaled32_initialize_device_procs,
                     "tiffscaled32",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -309,26 +284,21 @@ const gx_device_tiff gs_tiffscaled32_device = {
 
 static dev_proc_print_page(tiffscaled4_print_page);
 
-static int
-tiffscaled4_initialize(gx_device *dev)
+static void
+tiffscaled4_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk8(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk8(dev);
 
     set_dev_proc(dev, open_device, tiff_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
     set_dev_proc(dev, close_device, tiff_close);
     set_dev_proc(dev, get_params, tiff_get_params_downscale_cmyk_ets);
     set_dev_proc(dev, put_params, tiff_put_params_downscale_cmyk_ets);
-
-    return 0;
 }
 
 const gx_device_tiff gs_tiffscaled4_device = {
     prn_device_body(gx_device_tiff,
-                    tiffscaled4_initialize,
+                    tiffscaled4_initialize_device_procs,
                     "tiffscaled4",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -589,25 +559,20 @@ static dev_proc_print_page(tiffcmyk_print_page);
 
 /* 8-bit-per-plane separated CMYK color. */
 
-static int
-tiffcmyk_initialize(gx_device *dev)
+static void
+tiffcmyk_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk8(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk8(dev);
 
     set_dev_proc(dev, open_device, tiff_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
     set_dev_proc(dev, close_device, tiff_close);
     set_dev_proc(dev, get_params, tiff_get_params);
     set_dev_proc(dev, put_params, tiff_put_params);
-
-    return 0;
 }
 
 const gx_device_tiff gs_tiff32nc_device = {
-    prn_device_body(gx_device_tiff, tiffcmyk_initialize, "tiff32nc",
+    prn_device_body(gx_device_tiff, tiffcmyk_initialize_device_procs, "tiff32nc",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0, /* Margins */
@@ -624,25 +589,20 @@ const gx_device_tiff gs_tiff32nc_device = {
 
 /* 16-bit-per-plane separated CMYK color. */
 
-static int
-tiff64_initialize(gx_device *dev)
+static void
+tiff64_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk16(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk16(dev);
 
     set_dev_proc(dev, open_device, tiff_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
     set_dev_proc(dev, close_device, tiff_close);
     set_dev_proc(dev, get_params, tiff_get_params);
     set_dev_proc(dev, put_params, tiff_put_params);
-
-    return 0;
 }
 
 const gx_device_tiff gs_tiff64nc_device = {
-    prn_device_body(gx_device_tiff, tiff64_initialize, "tiff64nc",
+    prn_device_body(gx_device_tiff, tiff64_initialize_device_procs, "tiff64nc",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     X_DPI, Y_DPI,
                     0, 0, 0, 0, /* Margins */
@@ -789,13 +749,10 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
     "tiffsep_device", tiffsep_device_enum_ptrs, tiffsep_device_reloc_ptrs,
     tiffsep_device_finalize);
 
-static int
-tiffsep_initialize(gx_device *dev)
+static void
+tiffsep_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, tiffsep_prn_open);
     set_dev_proc(dev, close_device, tiffsep_prn_close);
@@ -809,24 +766,17 @@ tiffsep_initialize(gx_device *dev)
     set_dev_proc(dev, update_spot_equivalent_colors, tiffsep_update_spot_equivalent_colors);
     set_dev_proc(dev, ret_devn_params, tiffsep_ret_devn_params);
     set_dev_proc(dev, dev_spec_op, tiffsep_spec_op);
-
-    return 0;
 }
 
-static int
-tiffsep1_initialize(gx_device *dev)
+static void
+tiffsep1_initialize_device_procs(gx_device *dev)
 {
-    int code = tiffsep_initialize(dev);
-
-    if (code < 0)
-        return code;
+    tiffsep_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, tiffsep1_prn_open);
     set_dev_proc(dev, close_device, tiffsep1_prn_close);
     set_dev_proc(dev, put_params, tiffsep1_put_params);
     set_dev_proc(dev, fill_path, sep1_fill_path);
-
-    return 0;
 }
 
 #define tiffsep_devices_body(dtype, procs, dname, ncomp, pol, depth, mg, mc, sl, cn, print_page, compr)\
@@ -868,7 +818,7 @@ tiffsep1_initialize(gx_device *dev)
  */
 const tiffsep_device gs_tiffsep_device =
 {
-    tiffsep_devices_body(tiffsep_device, tiffsep_initialize, "tiffsep", ARCH_SIZEOF_GX_COLOR_INDEX, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, GX_CINFO_SEP_LIN, "DeviceCMYK", tiffsep_print_page, COMPRESSION_LZW),
+    tiffsep_devices_body(tiffsep_device, tiffsep_initialize_device_procs, "tiffsep", ARCH_SIZEOF_GX_COLOR_INDEX, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, GX_CINFO_SEP_LIN, "DeviceCMYK", tiffsep_print_page, COMPRESSION_LZW),
     /* devn_params specific parameters */
     { 8,                        /* Ignored - Bits per color */
       DeviceCMYKComponents,     /* Names of color model colorants */
@@ -885,7 +835,7 @@ const tiffsep_device gs_tiffsep_device =
 
 const tiffsep1_device gs_tiffsep1_device =
 {
-    tiffsep_devices_body(tiffsep1_device, tiffsep1_initialize, "tiffsep1", ARCH_SIZEOF_GX_COLOR_INDEX, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, GX_CINFO_SEP_LIN, "DeviceCMYK", tiffsep1_print_page, COMPRESSION_CCITTFAX4),
+    tiffsep_devices_body(tiffsep1_device, tiffsep1_initialize_device_procs, "tiffsep1", ARCH_SIZEOF_GX_COLOR_INDEX, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, GX_CINFO_SEP_LIN, "DeviceCMYK", tiffsep1_print_page, COMPRESSION_CCITTFAX4),
     /* devn_params specific parameters */
     { 8,                        /* Ignored - Bits per color */
       DeviceCMYKComponents,     /* Names of color model colorants */
@@ -3016,22 +2966,23 @@ tiff_open_s(gx_device *pdev)
         memset(&(pdev->procs), 0, sizeof(pdev->procs));
         switch (pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps) {
         case 1:
-            pdev->initialize = tiffscaled8_initialize;
+            pdev->initialize_device_procs = tiffscaled8_initialize_device_procs;
             pdev->color_info.dither_colors = 0;
             pdev->color_info.max_color = 0;
             break;
         case 3:
-            pdev->initialize = tiffscaled24_initialize;
+            pdev->initialize_device_procs = tiffscaled24_initialize_device_procs;
             pdev->color_info.dither_colors = 0;
             pdev->color_info.max_color = 0;
             break;
         case 4:
-            pdev->initialize = tiffscaled32_initialize;
+            pdev->initialize_device_procs = tiffscaled32_initialize_device_procs;
             pdev->color_info.dither_colors = 256;
             pdev->color_info.max_color = 255;
             break;
         }
-        (void)pdev->initialize(pdev);
+        pdev->initialize_device_procs(pdev);
+        /* We know pdev->procs.initialize_device is NULL */
         check_device_separable(pdev);
         gx_device_fill_in_procs(pdev);
     }

@@ -410,7 +410,7 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
     if (code < 0) {
         gs_free_object(mem, new_dev, "gs_copydevice(device)");
 #if 0 /* gs_free_object above calls gx_device_finalize,
-         which closes the device and releaszes its stype, i.e. a_std. */
+         which closes the device and releases its stype, i.e. a_std. */
         if (a_std)
             gs_free_object(dev->memory->non_gc_memory, a_std, "gs_copydevice(stype)");
 #endif
@@ -608,10 +608,11 @@ gx_device_init(gx_device * dev, const gx_device * proto, gs_memory_t * mem,
                bool internal)
 {
     memcpy(dev, proto, proto->params_size);
-    if (dev->initialize) {
-        /* A condition of devices inited in this way is that they can
-         * never fail to initialize! */
-        int code = dev->initialize(dev);
+    dev->initialize_device_procs = proto->initialize_device_procs;
+    if (dev->initialize_device_procs != NULL)
+        dev->initialize_device_procs(dev);
+    if (dev->procs.initialize_device) {
+        int code = dev->procs.initialize_device(dev);
         if (code < 0)
             return code;
     }
@@ -628,10 +629,12 @@ gx_device_init_on_stack(gx_device * dev, const gx_device * proto,
                         gs_memory_t * mem)
 {
     memcpy(dev, proto, proto->params_size);
-    if (dev->initialize) {
+    dev->initialize_device_procs = proto->initialize_device_procs;
+    dev->initialize_device_procs(dev);
+    if (dev->procs.initialize_device) {
         /* A condition of devices inited on the stack is that they can
          * never fail to initialize! */
-        (void)dev->initialize(dev);
+        (void)dev->procs.initialize_device(dev);
     }
     gx_device_fill_in_procs(dev);
     dev->memory = mem;

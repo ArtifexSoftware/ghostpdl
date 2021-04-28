@@ -718,13 +718,10 @@ prn_done:
 
 /* Finally, the device definition itself */
 
-static int
-psdcmykog_initialize(gx_device *dev)
+static void
+psdcmykog_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, open_device, cmykog_open);
     set_dev_proc(dev, close_device, cmykog_close);
@@ -736,8 +733,6 @@ psdcmykog_initialize(gx_device *dev)
     set_dev_proc(dev, decode_color, gx_devn_prn_decode_color);
     set_dev_proc(dev, ret_devn_params, gx_devn_prn_ret_devn_params);
     set_dev_proc(dev, dev_spec_op, cmykog_dev_spec_op);
-
-    return 0;
 }
 
 fixed_colorant_name DevCMYKOGComponents[] = {
@@ -774,7 +769,7 @@ fixed_colorant_name DevCMYKOGComponents[] = {
  */
 const gx_device_cmykog gs_psdcmykog_device =
 {
-  CMYKOG_DEVICE(psdcmykog_initialize, "psdcmykog", 6, GX_CINFO_POLARITY_SUBTRACTIVE, 48, 255, 255, "DeviceCMYK", 600, 600),
+  CMYKOG_DEVICE(psdcmykog_initialize_device_procs, "psdcmykog", 6, GX_CINFO_POLARITY_SUBTRACTIVE, 48, 255, 255, "DeviceCMYK", 600, 600),
   /* device specific parameters */
   { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
     DevCMYKOGComponents,      /* Names of color model colorants */

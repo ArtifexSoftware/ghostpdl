@@ -145,8 +145,8 @@ typedef struct textw_text_enum_s {
 
 private_st_textw_text_enum();
 
-static int
-txtwrite_initialize(gx_device *dev)
+static void
+txtwrite_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, txtwrite_open_device);
     set_dev_proc(dev, output_page, txtwrite_output_page);
@@ -161,14 +161,13 @@ txtwrite_initialize(gx_device *dev)
     set_dev_proc(dev, composite, gx_null_composite);
     set_dev_proc(dev, text_begin, txtwrite_text_begin);
     set_dev_proc(dev, dev_spec_op, txtwrite_dev_spec_op);
-
-    return 0;
 }
 
 const gx_device_txtwrite_t gs_txtwrite_device =
 {
     /* Define the device as 8-bit gray scale to avoid computing halftones. */
-    std_device_dci_body(gx_device_txtwrite_t, txtwrite_initialize, "txtwrite",
+    std_device_dci_body(gx_device_txtwrite_t,
+                        txtwrite_initialize_device_procs, "txtwrite",
                         DEFAULT_WIDTH_10THS * X_DPI / 10,
                         DEFAULT_HEIGHT_10THS * Y_DPI / 10,
                         X_DPI, Y_DPI,

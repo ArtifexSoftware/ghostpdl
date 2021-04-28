@@ -546,15 +546,14 @@ static dev_proc_put_params(x_cmyk_put_params);
 static dev_proc_map_cmyk_color(x_cmyk_map_cmyk_color);
 /* Extended device procedures */
 static dev_proc_map_color_rgb(x_cmyk_alt_map_color);
-extern dev_proc_output_page(x_output_page);
 
-static int
-x_cmyk_initialize(gx_device *dev)
+static void
+x_cmyk_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, x_cmyk_open);
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
     set_dev_proc(dev, sync_output, x_forward_sync_output);
-    set_dev_proc(dev, output_page, x_output_page);
+    set_dev_proc(dev, output_page, x_forward_output_page);
     set_dev_proc(dev, close_device, x_wrap_close);
     set_dev_proc(dev, map_color_rgb, x_wrap_map_color_rgb);
     set_dev_proc(dev, fill_rectangle, x_wrap_fill_rectangle);
@@ -566,13 +565,12 @@ x_cmyk_initialize(gx_device *dev)
     set_dev_proc(dev, map_cmyk_color, x_cmyk_map_cmyk_color);
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
-
-    return 0;
 }
 
 /* The instances are public. */
 const gx_device_X_wrapper gs_x11cmyk_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, x_cmyk_initialize, "x11cmyk",
+    std_device_dci_type_body(gx_device_X_wrapper,
+        x_cmyk_initialize_device_procs, "x11cmyk",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -580,7 +578,8 @@ const gx_device_X_wrapper gs_x11cmyk_device = {
     X_WRAPPER_DATA(x_cmyk_alt_map_color)
 };
 const gx_device_X_wrapper gs_x11cmyk2_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, x_cmyk_initialize, "x11cmyk2",
+    std_device_dci_type_body(gx_device_X_wrapper,
+        x_cmyk_initialize_device_procs, "x11cmyk2",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -588,7 +587,8 @@ const gx_device_X_wrapper gs_x11cmyk2_device = {
     X_WRAPPER_DATA(x_cmyk_alt_map_color)
 };
 const gx_device_X_wrapper gs_x11cmyk4_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, x_cmyk_initialize, "x11cmyk4",
+    std_device_dci_type_body(gx_device_X_wrapper,
+        x_cmyk_initialize_device_procs, "x11cmyk4",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -596,7 +596,8 @@ const gx_device_X_wrapper gs_x11cmyk4_device = {
     X_WRAPPER_DATA(x_cmyk_alt_map_color)
 };
 const gx_device_X_wrapper gs_x11cmyk8_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, x_cmyk_initialize, "x11cmyk8",
+    std_device_dci_type_body(gx_device_X_wrapper,
+        x_cmyk_initialize_device_procs, "x11cmyk8",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -676,8 +677,8 @@ x_cmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 static dev_proc_map_color_rgb(x_mono_alt_map_color);
 
 /* The device descriptor */
-static int
-x_mono_initialize(gx_device *dev)
+static void
+x_mono_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, x_wrap_open);
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
@@ -693,13 +694,12 @@ x_mono_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, x_wrap_put_params);
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
-
-    return 0;
 }
 
 /* The instance is public. */
 const gx_device_X_wrapper gs_x11mono_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, x_mono_initialize, "x11mono",
+    std_device_dci_type_body(gx_device_X_wrapper,
+        x_mono_initialize_device_procs, "x11mono",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -722,8 +722,8 @@ x_mono_alt_map_color(gx_device * dev, gx_color_index color,
 static dev_proc_map_color_rgb(x_gray_alt_map_color);
 
 /* The device descriptor */
-static int
-x_gray_initialize(gx_device *dev)
+static void
+x_gray_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, x_wrap_open);
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
@@ -740,13 +740,12 @@ x_gray_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, x_wrap_put_params);
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
-
-    return 0;
 }
 
 /* The instances are public. */
 const gx_device_X_wrapper gs_x11gray2_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, x_gray_initialize, "x11gray2",
+    std_device_dci_type_body(gx_device_X_wrapper,
+        x_gray_initialize_device_procs, "x11gray2",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -755,7 +754,8 @@ const gx_device_X_wrapper gs_x11gray2_device = {
 };
 
 const gx_device_X_wrapper gs_x11gray4_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, x_gray_initialize, "x11gray4",
+    std_device_dci_type_body(gx_device_X_wrapper,
+        x_gray_initialize_device_procs, "x11gray4",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -800,8 +800,8 @@ static dev_proc_map_color_rgb(x_rg16x_alt_map_color);
 static dev_proc_map_color_rgb(x_rg32x_alt_map_color);
 
 /* The device descriptor */
-static int
-rgbx_initialize(gx_device *dev)
+static void
+rgbx_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, x_wrap_open);
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
@@ -818,20 +818,19 @@ rgbx_initialize(gx_device *dev)
     set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
     set_dev_proc(dev, map_rgb_alpha_color, x_alpha_map_rgb_alpha_color);
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
-
-    return 0;
 }
 
-static int
-x_rg16x_initialize(gx_device *dev)
+static void
+x_rg16x_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, map_rgb_color, x_rg16x_map_rgb_color);
 
-    return rgbx_initialize(dev);
+    rgbx_initialize_device_procs(dev);
 }
 
 const gx_device_X_wrapper gs_x11rg16x_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, x_rg16x_initialize, "x11rg16x",
+    std_device_dci_type_body(gx_device_X_wrapper,
+        x_rg16x_initialize_device_procs, "x11rg16x",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
@@ -839,16 +838,17 @@ const gx_device_X_wrapper gs_x11rg16x_device = {
     X_WRAPPER_DATA(x_rg16x_alt_map_color)
 };
 
-static int
-x_rg32x_initialize(gx_device *dev)
+static void
+x_rg32x_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, map_rgb_color, x_rg32x_map_rgb_color);
 
-    return rgbx_initialize(dev);
+    rgbx_initialize_device_procs(dev);
 }
 
 const gx_device_X_wrapper gs_x11rg32x_device = {
-    std_device_dci_type_body(gx_device_X_wrapper, x_rg32x_initialize, "x11rg32x",
+    std_device_dci_type_body(gx_device_X_wrapper,
+        x_rg32x_initialize_device_procs, "x11rg32x",
         &st_device_X_wrapper,
         FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */

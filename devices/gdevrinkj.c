@@ -126,8 +126,8 @@ typedef struct rinkj_device_s {
     char setup_fn[256];
 } rinkj_device;
 
-static int
-spot_cmyk_initialize(gx_device *dev)
+static void
+spot_cmyk_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, gdev_prn_open);
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page);
@@ -140,13 +140,12 @@ spot_cmyk_initialize(gx_device *dev)
     set_dev_proc(dev, get_color_comp_index, rinkj_get_color_comp_index);
     set_dev_proc(dev, encode_color, rinkj_encode_color);
     set_dev_proc(dev, decode_color, rinkj_decode_color);
-
-    return 0;
 }
 
 const rinkj_device gs_rinkj_device =
 {
-    prn_device_body_extended(rinkj_device, spot_cmyk_initialize, "rinkj",
+    prn_device_body_extended(rinkj_device,
+         spot_cmyk_initialize_device_procs, "rinkj",
          DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
          X_DPI, Y_DPI,		/* X and Y hardware resolution */
          0, 0, 0, 0,		/* margins */

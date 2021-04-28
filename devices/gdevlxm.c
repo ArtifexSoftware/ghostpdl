@@ -40,18 +40,13 @@ static dev_proc_put_params(lxm_put_params);
 
 /* set up dispatch table.  I follow gdevdjet in using gdev_prn_output_page */
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-lxm5700m_initialize(gx_device *dev)
+static void
+lxm5700m_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono_bg(dev);
 
     set_dev_proc(dev, get_params, lxm_get_params);
     set_dev_proc(dev, put_params, lxm_put_params);
-
-    return 0;
 }
 
 /* The device descriptors */
@@ -65,7 +60,7 @@ typedef struct lxm_device_s { /* a sub-class of gx_device_printer */
 
 /* Standard lxm5700m device */
 lxm_device far_data gs_lxm5700m_device = {
-    prn_device_std_body(lxm_device, lxm5700m_initialize, "lxm5700m",
+    prn_device_std_body(lxm_device, lxm5700m_initialize_device_procs, "lxm5700m",
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         600, 600,	/* x dpi, y dpi */
         0.2, 0.0, 0.0, 0.0,			/* margins */

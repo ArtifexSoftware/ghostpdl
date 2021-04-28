@@ -83,27 +83,22 @@ out:
 }
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-cljet5c_initialize(gx_device *dev)
+static void
+cljet5c_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_rgb_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_rgb_bg(dev);
 
     /* The prn macros used in previous versions of the code leave
      * encode_color and decode_color set to NULL (which are then rewritten
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 /* the CLJ device */
 const gx_device_printer gs_cljet5c_device =
 {
-    prn_device_body(gx_device_printer, cljet5c_initialize, "cljet5c",
+    prn_device_body(gx_device_printer, cljet5c_initialize_device_procs, "cljet5c",
                     85, 110, X_DPI, Y_DPI,
                     0.167, 0.167,
                     0.167, 0.167,

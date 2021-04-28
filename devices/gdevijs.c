@@ -90,7 +90,8 @@ static dev_proc_close_device(gsijs_close);
 static dev_proc_output_page(gsijs_output_page);
 static dev_proc_get_params(gsijs_get_params);
 static dev_proc_put_params(gsijs_put_params);
-static dev_proc_initialize(gsijs_initialize);
+static dev_proc_initialize_device_procs(gsijs_initialize_device_procs);
+static dev_proc_initialize_device(gsijs_initialize_device);
 
 /* Following definitions are for krgb support. */
 static dev_proc_create_buf_device(gsijs_create_buf_device);
@@ -143,7 +144,7 @@ struct gx_device_ijs_s {
 gx_device_ijs gs_ijs_device =
 {
     prn_device_std_body(gx_device_ijs,
-                        gsijs_initialize,
+                        gsijs_initialize_device_procs,
                         "ijs",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         DEFAULT_DPI, DEFAULT_DPI,
@@ -883,23 +884,10 @@ gsijs_open(gx_device *dev)
 
 /* Finish device initialization. */
 static int
-gsijs_initialize(gx_device *dev)
+gsijs_initialize_device(gx_device *dev)
 {
-    int code;
     static const char rgb[] = "DeviceRGB";
     gx_device_ijs *ijsdev = (gx_device_ijs *)dev;
-
-    code = gx_default_initialize(dev);
-    if(code < 0)
-        return code;
-
-    set_dev_proc(dev, open_device, gsijs_open);
-    set_dev_proc(dev, output_page, gsijs_output_page);
-    set_dev_proc(dev, close_device, gsijs_close);
-    set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
-    set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
-    set_dev_proc(dev, get_params, gsijs_get_params);
-    set_dev_proc(dev, put_params, gsijs_put_params);
 
     if (!ijsdev->ColorSpace) {
         ijsdev->ColorSpace = gs_malloc(ijsdev->memory, sizeof(rgb), 1,
@@ -909,7 +897,20 @@ gsijs_initialize(gx_device *dev)
         ijsdev->ColorSpace_size = sizeof(rgb);
         memcpy(ijsdev->ColorSpace, rgb, sizeof(rgb));
     }
-    return code;
+    return 0;
+}
+
+static void
+gsijs_initialize_device_procs(gx_device *dev)
+{
+    set_dev_proc(dev, initialize_device, gsijs_initialize_device);
+    set_dev_proc(dev, open_device, gsijs_open);
+    set_dev_proc(dev, output_page, gsijs_output_page);
+    set_dev_proc(dev, close_device, gsijs_close);
+    set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
+    set_dev_proc(dev, get_params, gsijs_get_params);
+    set_dev_proc(dev, put_params, gsijs_put_params);
 }
 
 /* Close the gsijs driver */

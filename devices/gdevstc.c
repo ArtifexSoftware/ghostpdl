@@ -130,8 +130,8 @@ static dev_proc_map_color_rgb(stc_map_color_cmyk10);
 /***
  *** Table of Device-Procedures
  ***/
-static int
-stcolor_initialize(gx_device *dev)
+static void
+stcolor_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, stc_open);
     set_dev_proc(dev, get_initial_matrix, gx_default_get_initial_matrix);
@@ -143,8 +143,6 @@ stcolor_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, stc_get_params);
     set_dev_proc(dev, put_params, stc_put_params);
     set_dev_proc(dev, map_cmyk_color, stc_map_cmyk_color);
-
-    return 0;
 }
 
 /***
@@ -157,7 +155,7 @@ static float defext[] = { 0.0, 1.0 };
  *** Main device-control structure
  ***/
 stcolor_device far_data gs_stcolor_device = {
-   prn_device_body(stcolor_device, stcolor_initialize, "stcolor",
+   prn_device_body(stcolor_device, stcolor_initialize_device_procs, "stcolor",
       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
       X_DPI,  Y_DPI,
       STC_L_MARGIN,STC_B_MARGIN,STC_R_MARGIN,STC_T_MARGIN,

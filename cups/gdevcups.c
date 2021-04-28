@@ -312,8 +312,8 @@ typedef struct gx_device_cups_s
   /* Used by cups_put_params(): */
 } gx_device_cups;
 
-static int
-cups_initialize(gx_device *dev)
+static void
+cups_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, cups_open);
     set_dev_proc(dev, get_initial_matrix, cups_get_matrix);
@@ -334,8 +334,6 @@ cups_initialize(gx_device *dev)
     set_dev_proc(dev, put_params, cups_put_params);
     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
     set_dev_proc(dev, dev_spec_op, cups_spec_op);
-
-    return 0;
 }
 
 #define prn_device_body_copies(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_pages)\
@@ -373,7 +371,7 @@ cups_initialize(gx_device *dev)
 
 #define gs_xxx_device(dname, mediaclass)\
   prn_device_body_copies(gx_device_cups,/* type */\
-                         cups_initialize,/* init */\
+                         cups_initialize_device_procs,/* init */\
 			 dname,		/* device name */\
 			 85,		/* initial width */\
 			 110,		/* initial height */\

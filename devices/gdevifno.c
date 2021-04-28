@@ -81,13 +81,10 @@ gs_private_st_suffix_add1_final(st_inferno_device, inferno_device,
         "inferno_device", inferno_device_enum_ptrs, inferno_device_reloc_ptrs,
                           gx_device_finalize, st_device_printer, p9color);
 
-static int
-inferno_initialize(gx_device *dev)
+static void
+inferno_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, inferno_open);
     set_dev_proc(dev, close_device, inferno_close);
@@ -99,13 +96,11 @@ inferno_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 inferno_device far_data gs_inferno_device =
-{ prn_device_stype_body(inferno_device, inferno_initialize, "inferno",
-        &st_inferno_device,
+{ prn_device_stype_body(inferno_device, inferno_initialize_device_procs,
+        "inferno", &st_inferno_device,
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
         0,0,0,0,	/* margins */

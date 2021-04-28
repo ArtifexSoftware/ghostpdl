@@ -159,24 +159,20 @@ static dev_proc_print_page_copies(hl1250_print_page_copies);
 static dev_proc_get_params(hl1250_get_params);
 static dev_proc_put_params(hl1250_put_params);
 
-static int
-hl1250_initialize(gx_device *dev)
+static void
+hl1250_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono(dev);
 
     set_dev_proc(dev, open_device, hl1250_open);
     set_dev_proc(dev, close_device, hl1250_close);
     set_dev_proc(dev, get_params, hl1250_get_params);
     set_dev_proc(dev, put_params, hl1250_put_params);
-
-    return 0;
 }
 
 #define hl1250_device_copies(dname, xdpi, ydpi)\
-{   prn_device_std_body_copies(gx_device_hl1250, hl1250_initialize,\
+{   prn_device_std_body_copies(gx_device_hl1250,\
+                               hl1250_initialize_device_procs,\
                                dname,\
                                DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,\
                                xdpi, ydpi,\

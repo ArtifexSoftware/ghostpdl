@@ -15,7 +15,7 @@ static dev_proc_print_page(lbp310PrintPage);
 static dev_proc_print_page(lbp320PrintPage);
 
 gx_device_printer far_data gs_lbp310_device =
-        prn_device(gdev_prn_initialize_mono,
+        prn_device(gdev_prn_initialize_device_procs_mono,
         "lbp310",
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
@@ -27,7 +27,7 @@ gx_device_printer far_data gs_lbp310_device =
         1, lbp310PrintPage);
 
 gx_device_printer far_data gs_lbp320_device =
-        prn_device(gdev_prn_initialize_mono,
+        prn_device(gdev_prn_initialize_device_procs_mono,
         "lbp320",
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,

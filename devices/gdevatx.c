@@ -43,7 +43,7 @@ static dev_proc_print_page(atx24_print_page);
 static dev_proc_print_page(atx38_print_page);
 
 #define ATX_DEVICE(dname, w10, h10, dpi, lrm, btm, print_page)\
-  prn_device_margins(gdev_prn_initialize_mono, dname,\
+  prn_device_margins(gdev_prn_initialize_device_procs_mono, dname,\
                      w10, h10, dpi, dpi, 0, 0,\
                      lrm, btm, lrm, btm, 1, print_page)
 

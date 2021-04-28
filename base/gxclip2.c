@@ -40,8 +40,8 @@ static dev_proc_strip_copy_rop(tile_clip_strip_copy_rop);
 static dev_proc_strip_copy_rop2(tile_clip_strip_copy_rop2);
 
 /* The device descriptor. */
-static int
-tile_clipper_initialize(gx_device *dev)
+static void
+tile_clipper_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
     set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
@@ -94,17 +94,16 @@ tile_clipper_initialize(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
     set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
-    set_dev_proc(dev, begin_image, gx_default_begin_image);
     set_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     set_dev_proc(dev, text_begin, gx_default_text_begin);
     set_dev_proc(dev, strip_tile_rect_devn, gx_default_strip_tile_rect_devn);
-
-    return 0;
 }
 
 static const gx_device_tile_clip gs_tile_clip_device =
-{std_device_std_body_open(gx_device_tile_clip, tile_clipper_initialize, "tile clipper",
+{std_device_std_body_open(gx_device_tile_clip,
+                          tile_clipper_initialize_device_procs,
+                          "tile clipper",
                           0, 0, 1, 1)
 };
 

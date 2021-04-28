@@ -612,7 +612,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);
     fill_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
     fill_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
-    fill_dev_proc(dev, begin_image, gx_default_begin_image);
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
     fill_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
     fill_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
@@ -958,7 +957,7 @@ gx_default_composite_get_cropping(const gs_composite_t *pxcte, int *ry, int *rhe
 }
 
 int
-gx_default_initialize(gx_device *dev)
+gx_default_initialize_device(gx_device *dev)
 {
     return 0;
 }
@@ -1208,23 +1207,18 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     gx_device prototype = *pprototype;
 
     /* In the new (as of 2021) world, the prototype does not contain
-     * device procs. We need to call the 'initialize' function to
-     * properly populate the procs array. We can't write to the const
-     * prototype pointer we are passed in, so copy it to a local block,
-     * and initialize that instead, */
-    if (prototype.initialize != NULL) {
-        int code = prototype.initialize(&prototype);
+     * device procs. We need to call the 'initialize_device_procs'
+     * function to properly populate the procs array. We can't write to
+     * the const prototype pointer we are passed in, so copy it to a
+     * local block, and initialize that instead, */
+    prototype.initialize_device_procs(&prototype);
+    /* Fill in missing entries with the global defaults */
+    gx_device_fill_in_procs(&prototype);
 
-        if (code < 0)
-            return code;
+    if (dest->initialize_device_procs == NULL)
+       dest->initialize_device_procs = prototype.initialize_device_procs;
 
-        /* Fill in missing entries with the global defaults */
-        gx_device_fill_in_procs(&prototype);
-    }
-
-    if (dest->initialize == NULL)
-       dest->initialize = prototype.initialize;
-
+    set_dev_proc(dest, initialize_device, dev_proc(&prototype, initialize_device));
     set_dev_proc(dest, open_device, dev_proc(&prototype, open_device));
     set_dev_proc(dest, get_initial_matrix, dev_proc(&prototype, get_initial_matrix));
     set_dev_proc(dest, sync_output, dev_proc(&prototype, sync_output));
@@ -1250,7 +1244,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, fill_parallelogram, dev_proc(&prototype, fill_parallelogram));
     set_dev_proc(dest, fill_triangle, dev_proc(&prototype, fill_triangle));
     set_dev_proc(dest, draw_thin_line, dev_proc(&prototype, draw_thin_line));
-    set_dev_proc(dest, begin_image, dev_proc(&prototype, begin_image));
     set_dev_proc(dest, strip_tile_rectangle, dev_proc(&prototype, strip_tile_rectangle));
     set_dev_proc(dest, strip_copy_rop, dev_proc(&prototype, strip_copy_rop));
     set_dev_proc(dest, get_clipping_box, dev_proc(&prototype, get_clipping_box));

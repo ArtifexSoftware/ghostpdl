@@ -143,13 +143,13 @@ static dev_proc_get_params(pclxl_get_params);
 static dev_proc_put_params(pclxl_put_params);
 
 /*static dev_proc_draw_thin_line(pclxl_draw_thin_line); */
-static dev_proc_begin_image(pclxl_begin_image);
+static dev_proc_begin_typed_image(pclxl_begin_typed_image);
 static dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
 
-static int
-pclxl_initialize(gx_device *dev,
-                 dev_proc_map_rgb_color(map_rgb_color),
-                 dev_proc_map_color_rgb(map_color_rgb))
+static void
+pclxl_initialize_device_procs(gx_device *dev,
+                              dev_proc_map_rgb_color(map_rgb_color),
+                              dev_proc_map_color_rgb(map_color_rgb))
 {
     set_dev_proc(dev, open_device, pclxl_open_device);
     set_dev_proc(dev, output_page, pclxl_output_page);
@@ -168,34 +168,32 @@ pclxl_initialize(gx_device *dev,
     set_dev_proc(dev, fill_trapezoid, gdev_vector_fill_trapezoid);
     set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
-    set_dev_proc(dev, begin_image, pclxl_begin_image);
+    set_dev_proc(dev, begin_typed_image, pclxl_begin_typed_image);
     set_dev_proc(dev, strip_copy_rop, pclxl_strip_copy_rop);
-
-    return 0;
 }
 
-static int
-pxlmono_initialize(gx_device *dev)
+static void
+pxlmono_initialize_device_procs(gx_device *dev)
 {
-    return pclxl_initialize(dev,
-                            gx_default_gray_map_rgb_color,
-                            gx_default_gray_map_color_rgb);
+    pclxl_initialize_device_procs(dev,
+                                  gx_default_gray_map_rgb_color,
+                                  gx_default_gray_map_color_rgb);
 }
 
-static int
-pxlcolor_initialize(gx_device *dev)
+static void
+pxlcolor_initialize_device_procs(gx_device *dev)
 {
-    return pclxl_initialize(dev,
-                            gx_default_rgb_map_rgb_color,
-                            gx_default_rgb_map_color_rgb);
+    pclxl_initialize_device_procs(dev,
+                                  gx_default_rgb_map_rgb_color,
+                                  gx_default_rgb_map_color_rgb);
 }
 
 const gx_device_pclxl gs_pxlmono_device = {
-    pclxl_device_body("pxlmono", 8, pxlmono_initialize)
+    pclxl_device_body("pxlmono", 8, pxlmono_initialize_device_procs)
 };
 
 const gx_device_pclxl gs_pxlcolor_device = {
-    pclxl_device_body("pxlcolor", 24, pxlcolor_initialize)
+    pclxl_device_body("pxlcolor", 24, pxlcolor_initialize_device_procs)
 };
 
 /* ---------------- Other utilities ---------------- */
@@ -2018,30 +2016,39 @@ gs_private_st_suffix_add2(st_pclxl_image_enum, pclxl_image_enum_t,
 
 /* Start processing an image. */
 static int
-pclxl_begin_image(gx_device * dev,
-                  const gs_gstate * pgs, const gs_image_t * pim,
-                  gs_image_format_t format, const gs_int_rect * prect,
+pclxl_begin_typed_image(gx_device * dev,
+                  const gs_gstate * pgs,
+                  const gs_matrix *pmat,
+                  const gs_image_common_t * pic,
+                  const gs_int_rect * prect,
                   const gx_drawing_color * pdcolor,
                   const gx_clip_path * pcpath, gs_memory_t * mem,
                   gx_image_enum_common_t ** pinfo)
 {
     gx_device_vector *const vdev = (gx_device_vector *) dev;
     gx_device_pclxl *const xdev = (gx_device_pclxl *) dev;
-    const gs_color_space *pcs = pim->ColorSpace;
+    const gs_image_t *pim = (const gs_image_t *)pic;
+    const gs_color_space *pcs;
     pclxl_image_enum_t *pie;
     byte *row_data;
     int num_rows;
     uint row_raster;
+    int bits_per_pixel;
+    gs_matrix mat;
+    int code;
 
+    /* We only cope with image type 1 here. */
+    if (pic->type->index != 1)
+        goto use_default;
+
+    pcs = pim->ColorSpace;
     /*
      * Following should divide by num_planes, but we only handle chunky
      * images, i.e., num_planes = 1.
      */
-    int bits_per_pixel =
+    bits_per_pixel =
         (pim->ImageMask ? 1 :
          pim->BitsPerComponent * gs_color_space_num_components(pcs));
-    gs_matrix mat;
-    int code;
 
     /*
      * Check whether we can handle this image.  PCL XL 1.0 and 2.0 only
@@ -2050,7 +2057,9 @@ pclxl_begin_image(gx_device * dev,
     code = gs_matrix_invert(&pim->ImageMatrix, &mat);
     if (code < 0)
         goto use_default;
-    gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
+    if (pmat == NULL)
+        pmat = &ctm_only(pgs);
+    gs_matrix_multiply(&mat, pmat, &mat);
 
     if (pclxl_nontrivial_transfer(pgs))
         goto use_default;
@@ -2095,7 +2104,7 @@ pclxl_begin_image(gx_device * dev,
             bits_per_pixel != 8 && bits_per_pixel != 24 &&
             bits_per_pixel != 32))
           && !(pclxl_can_icctransform(pim) && xdev->iccTransform))) ||
-        format != gs_image_format_chunky || pim->Interpolate || prect)
+        pim->format != gs_image_format_chunky || pim->Interpolate || prect)
         goto use_default;
     row_raster = (bits_per_pixel * pim->Width + 7) >> 3;
     num_rows = MAX_ROW_DATA / row_raster;
@@ -2111,7 +2120,7 @@ pclxl_begin_image(gx_device * dev,
         code = gs_note_error(gs_error_VMerror);
         goto fail;
     }
-    code = gdev_vector_begin_image(vdev, pgs, pim, format, prect,
+    code = gdev_vector_begin_image(vdev, pgs, pim, pim->format, prect,
                                    pdcolor, pcpath, mem,
                                    &pclxl_image_enum_procs,
                                    (gdev_vector_image_enum_t *) pie);
@@ -2332,8 +2341,8 @@ pclxl_begin_image(gx_device * dev,
         pclxl_set_color_space(xdev, eGray);
     else
         pclxl_set_color_space(xdev, eRGB);
-    return gx_default_begin_image(dev, pgs, pim, format, prect,
-                                  pdcolor, pcpath, mem, pinfo);
+    return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
+                                        pdcolor, pcpath, mem, pinfo);
 }
 
 /* Write one strip of an image, from pie->rows.first_y to pie->y. */

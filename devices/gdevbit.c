@@ -57,13 +57,10 @@ static dev_proc_put_image(bit_put_image);
 static dev_proc_dev_spec_op(bit_dev_spec_op);
 dev_proc_get_color_comp_index(gx_default_DevRGB_get_color_comp_index);
 
-static int
-bit_initialize(gx_device *dev)
+static void
+bit_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, map_color_rgb, bit_map_color_rgb);
     set_dev_proc(dev, get_params, bit_get_params);
@@ -76,8 +73,6 @@ bit_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 /*
@@ -97,82 +92,64 @@ struct gx_device_bit_s {
 };
 typedef struct gx_device_bit_s gx_device_bit;
 
-static int
-bitmono_initialize(gx_device *dev)
+static void
+bitmono_initialize_device_procs(gx_device *dev)
 {
-    int code = bit_initialize(dev);
-
-    if (code < 0)
-        return code;
+    bit_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, bit_mono_map_color);
     set_dev_proc(dev, map_cmyk_color, bit_mono_map_color);
     set_dev_proc(dev, encode_color, bit_mono_map_color);
-
-    return 0;
 }
 
 const gx_device_bit gs_bit_device =
-{prn_device_body(gx_device_bit, bitmono_initialize, "bit",
+{prn_device_body(gx_device_bit, bitmono_initialize_device_procs, "bit",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,    /* margins */
                  1, 1, 1, 0, 2, 1, bit_print_page)
 };
 
-static int
-bitrgb_initialize(gx_device *dev)
+static void
+bitrgb_initialize_device_procs(gx_device *dev)
 {
-    int code = bit_initialize(dev);
-
-    if (code < 0)
-        return code;
+    bit_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, bitrgb_rgb_map_rgb_color);
     set_dev_proc(dev, map_cmyk_color, bitrgb_rgb_map_rgb_color);
     set_dev_proc(dev, encode_color, bitrgb_rgb_map_rgb_color);
-
-    return 0;
 }
 
 const gx_device_bit gs_bitrgb_device =
-{prn_device_body(gx_device_bit, bitrgb_initialize, "bitrgb",
+{prn_device_body(gx_device_bit, bitrgb_initialize_device_procs, "bitrgb",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
                  3, 4, 1, 1, 2, 2, bit_print_page)
 };
 
-static int
-bitcmyk_initialize(gx_device *dev)
+static void
+bitcmyk_initialize_device_procs(gx_device *dev)
 {
-    int code = bit_initialize(dev);
-
-    if (code < 0)
-        return code;
+    bit_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, bit_map_cmyk_color);
     set_dev_proc(dev, map_cmyk_color, bit_map_cmyk_color);
     set_dev_proc(dev, encode_color, bit_map_cmyk_color);
-
-    return 0;
 }
 
 const gx_device_bit gs_bitcmyk_device =
-{prn_device_body(gx_device_bit, bitcmyk_initialize, "bitcmyk",
+{prn_device_body(gx_device_bit, bitcmyk_initialize_device_procs, "bitcmyk",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
                  4, 4, 1, 1, 2, 2, bit_print_page)
 };
 
-static int
-bitrgbtags_initialize(gx_device *dev)
+static void
+bitrgbtags_initialize_device_procs(gx_device *dev)
 {
-    int code = bit_initialize(dev);
-
-    if (code < 0)
-        return code;
+    bit_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, bittag_open);
     set_dev_proc(dev, map_rgb_color, bittag_rgb_map_rgb_color);
@@ -186,14 +163,12 @@ bitrgbtags_initialize(gx_device *dev)
     set_dev_proc(dev, decode_color, bittag_map_color_rgb);
     set_dev_proc(dev, fillpage, bittag_fillpage);
     set_dev_proc(dev, put_image, bit_put_image);
-
-    return 0;
 }
 
 const gx_device_bit gs_bitrgbtags_device =
     {
         sizeof(gx_device_bit),
-        bitrgbtags_initialize,
+        bitrgbtags_initialize_device_procs,
         "bitrgbtags",
         0,                              /* memory */
         &st_device_printer,

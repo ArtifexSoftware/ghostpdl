@@ -257,13 +257,10 @@ static int print_photo_page(pagedata *gendata);
  */
 
 /* Device procedures */
-static int
-lxm3200_initialize(gx_device *dev)
+static void
+lxm3200_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, lxm3200_open);
     set_dev_proc(dev, map_rgb_color, lxm3200_map_rgb_color);
@@ -276,8 +273,6 @@ lxm3200_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 /* Define an extension (subclass) of gx_device_printer. */
@@ -326,7 +321,7 @@ struct lxm_device_s
 lxm_device far_data gs_lxm3200_device =
 {
         prn_device_body(lxm_device,
-                lxm3200_initialize,
+                lxm3200_initialize_device_procs,
                 "lxm3200",
                 DEFAULT_WIDTH_10THS,
                 DEFAULT_HEIGHT_10THS,

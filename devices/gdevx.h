@@ -227,7 +227,7 @@ dev_proc_map_rgb_color(gdev_x_map_rgb_color);  /* gdevxcmp.c */
 dev_proc_map_color_rgb(gdev_x_map_color_rgb);  /* gdevxcmp.c */
 dev_proc_get_params(gdev_x_get_params);  /* gdevxini.c */
 dev_proc_put_params(gdev_x_put_params);  /* gdevxini.c */
-dev_proc_initialize(gdev_x_initialize);  /* gdevxini.c */
+dev_proc_initialize_device_procs(gdev_x_initialize_device_procs);  /* gdevxini.c */
 dev_proc_open_device(x_open);
 dev_proc_get_initial_matrix(x_get_initial_matrix);
 dev_proc_sync_output(x_sync);

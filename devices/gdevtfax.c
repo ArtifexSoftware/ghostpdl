@@ -55,27 +55,22 @@ typedef struct gx_device_tfax_s gx_device_tfax;
 
 /* Define procedures that adjust the paper size. */
 /* FIXME: From initial analysis this is NOT safe for bg_printing, but might be fixable */
-static int
-tfax_initialize(gx_device *dev)
+static void
+tfax_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono(dev);
 
     set_dev_proc(dev, open_device, tfax_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
     set_dev_proc(dev, close_device, tfax_close);
     set_dev_proc(dev, get_params, tfax_get_params);
     set_dev_proc(dev, put_params, tfax_put_params);
-
-    return 0;
 }
 
 
 #define TFAX_DEVICE(dname, print_page, compr)\
 {\
-    FAX_DEVICE_BODY(gx_device_tfax, tfax_initialize, dname, print_page),\
+    FAX_DEVICE_BODY(gx_device_tfax, tfax_initialize_device_procs, dname, print_page),\
     TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,\
     ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,\
     false,                      /* default to not using bigtiff */\
@@ -272,7 +267,7 @@ static dev_proc_print_page(tifflzw_print_page);
 static dev_proc_print_page(tiffpack_print_page);
 
 const gx_device_tfax gs_tifflzw_device = {
-    prn_device_std_body(gx_device_tfax, tfax_initialize, "tifflzw",
+    prn_device_std_body(gx_device_tfax, tfax_initialize_device_procs, "tifflzw",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         X_DPI, Y_DPI,
                         0, 0, 0, 0, /* margins */
@@ -288,7 +283,7 @@ const gx_device_tfax gs_tifflzw_device = {
 };
 
 const gx_device_tfax gs_tiffpack_device = {
-    prn_device_std_body(gx_device_tfax, tfax_initialize, "tiffpack",
+    prn_device_std_body(gx_device_tfax, tfax_initialize_device_procs, "tiffpack",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         X_DPI, Y_DPI,
                         0, 0, 0, 0, /* margins */

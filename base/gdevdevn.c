@@ -940,8 +940,8 @@ gs_public_st_composite_final(st_gx_devn_prn_device, gx_devn_prn_device,
     "gx_devn_prn_device", gx_devn_prn_device_enum_ptrs, gx_devn_prn_device_reloc_ptrs,
     static_gx_devn_prn_device_finalize);
 
-static int
-devicen_initialize(gx_device *dev)
+static void
+devicen_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, spotcmyk_prn_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page);
@@ -955,8 +955,6 @@ devicen_initialize(gx_device *dev)
     set_dev_proc(dev, decode_color, gx_devn_prn_decode_color);
     set_dev_proc(dev, update_spot_equivalent_colors, gx_devn_prn_update_spot_equivalent_colors);
     set_dev_proc(dev, ret_devn_params, gx_devn_prn_ret_devn_params);
-
-    return 0;
 }
 
 fixed_colorant_name DeviceGrayComponents[] = {
@@ -1003,7 +1001,9 @@ fixed_colorant_name DeviceCMYKComponents[] = {
  */
 const gx_devn_prn_device gs_spotcmyk_device =
 {
-    gx_devn_prn_device_body(devicen_initialize, "spotcmyk", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 4, 1, 1, "DeviceCMYK"),
+    gx_devn_prn_device_body(devicen_initialize_device_procs, "spotcmyk",
+                            4, GX_CINFO_POLARITY_SUBTRACTIVE, 4, 1, 1,
+                            "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 1,                        /* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,     /* Names of color model colorants */
@@ -1021,7 +1021,9 @@ const gx_devn_prn_device gs_spotcmyk_device =
  */
 const gx_devn_prn_device gs_devicen_device =
 {
-    gx_devn_prn_device_body(devicen_initialize, "devicen", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
+    gx_devn_prn_device_body(devicen_initialize_device_procs, "devicen",
+                            4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255,
+                            "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,     /* Names of color model colorants */

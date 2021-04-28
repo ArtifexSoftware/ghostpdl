@@ -147,13 +147,10 @@ static dev_proc_put_params(win_pr2_put_params);
 
 static int win_pr2_set_bpp(gx_device * dev, int depth);
 
-static int
-win_pr2_initialize(gx_device *dev)
+static void
+win_pr2_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, win_pr2_open);
     set_dev_proc(dev, close_device, win_pr2_close);
@@ -167,8 +164,6 @@ win_pr2_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 #define PARENT_WINDOW  HWND_DESKTOP
@@ -217,7 +212,7 @@ struct gx_device_win_pr2_s {
 gx_device_win_pr2 far_data gs_mswinpr2_device =
 {
     prn_device_std_body(gx_device_win_pr2,
-                        win_pr2_initialize,
+                        win_pr2_initialize_device_procs,
                         "mswinpr2",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         72.0, 72.0,

@@ -46,23 +46,18 @@ static dev_proc_open_device(nwp533_open);
 static dev_proc_print_page(nwp533_print_page);
 static dev_proc_close_device(nwp533_close);
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-nwp533_initialize(gx_device *dev)
+static void
+nwp533_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono_bg(dev);
 
     set_dev_proc(dev, open_device, nwp533_open);
     set_dev_proc(dev, output_page, gdev_prn_bg_output_page_seekable);
     set_dev_proc(dev, close_device, nwp533_close);
-
-    return 0;
 }
 
 const gx_device_printer far_data gs_nwp533_device =
-  prn_device(mwp533_initialize, "nwp533",
+  prn_device(mwp533_initialize_device_procs, "nwp533",
         PAPER_XDOTS * 10.0 / DPI,	/* width_10ths */
         PAPER_YDOTS * 10.0 / DPI,	/* height_10ths */
         DPI,				/* x_dpi */

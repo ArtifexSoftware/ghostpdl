@@ -69,17 +69,12 @@ RELOC_PTRS_END
 
 public_st_pcl_mono_palette_device();
 
-static int
+static void
 pcl_mono_palette_initialize(gx_device *dev)
 {
-    int code = default_subclass_initialize(dev);
-
-    if (code < 0)
-        return code;
+    default_subclass_initialize_device_procs(dev);
 
     set_dev_proc(dev, get_color_mapping_procs, pcl_mono_palette_get_color_mapping_procs);
-
-    return 0;
 }
 
 const

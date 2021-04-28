@@ -208,94 +208,74 @@ typedef struct gx_device_mj_s gx_device_mj;
          (bpp == 32 ? 3 : 1), dns, r, g, b, k, drct, mcrwv, dtsz \
 }
 
-static int
-mj_initialize(gx_device *dev)
+static void
+mj_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, gdev_mjc_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gdev_mjc_map_color_rgb);
     set_dev_proc(dev, get_params, mj_get_params);
     set_dev_proc(dev, encode_color, gdev_mjc_encode_color);
     set_dev_proc(dev, decode_color, gdev_mjc_decode_color);
-
-    return 0;
 }
 
-static int
-mj700v2c_initialize(gx_device *dev)
+static void
+mj700v2c_initialize_device_procs(gx_device *dev)
 {
-    int code = mj_initialize(dev);
-
-    if (code < 0)
-        return code;
+    mj_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, mj700v2c_open);
     set_dev_proc(dev, put_params, mj700v2c_put_params);
-
-    return 0;
 }
 
-static int
-mj500c_initialize(gx_device *dev)
+static void
+mj500c_initialize_device_procs(gx_device *dev)
 {
-    int code = mj_initialize(dev);
-
-    if (code < 0)
-        return code;
+    mj_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, mj500c_open);
     set_dev_proc(dev, put_params, mj500c_put_params);
-
-    return 0;
 }
 
-static int
-mj6000c_initialize(gx_device *dev)
+static void
+mj6000c_initialize_device_procs(gx_device *dev)
 {
-    int code = mj_initialize(dev);
-
-    if (code < 0)
-        return code;
+    mj_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, mj6000c_open);
     set_dev_proc(dev, put_params, mj700v2c_put_params);
-
-    return 0;
 }
 
-static int
-mj8000c_initialize(gx_device *dev)
+static void
+mj8000c_initialize_device_procs(gx_device *dev)
 {
-    int code = mj_initialize(dev);
-
-    if (code < 0)
-        return code;
+    mj_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, mj8000c_open);
     set_dev_proc(dev, put_params, mj700v2c_put_params);
-
-    return 0;
 }
 
 gx_device_mj far_data gs_mj700v2c_device =
-mjcmyk_device(mj700v2c_initialize, "mj700v2c", 360, 360, BITSPERPIXEL,
-          mj700v2c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
+mjcmyk_device(mj700v2c_initialize_device_procs, "mj700v2c",
+              360, 360, BITSPERPIXEL,
+              mj700v2c_print_page,
+              1024, 1024, 1024, 1024, 1024, 0, 1, 1);
 
 gx_device_mj far_data gs_mj500c_device =
-mjcmy_device(mj500c_initialize, "mj500c", 360, 360, BITSPERPIXEL,
-          mj500c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
+mjcmy_device(mj500c_initialize_device_procs, "mj500c",
+             360, 360, BITSPERPIXEL,
+             mj500c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
 
 gx_device_mj far_data gs_mj6000c_device =
-mjcmyk_device(mj6000c_initialize, "mj6000c", 360, 360, BITSPERPIXEL,
-          mj6000c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
+mjcmyk_device(mj6000c_initialize_device_procs, "mj6000c",
+              360, 360, BITSPERPIXEL,
+              mj6000c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
 
 gx_device_mj far_data gs_mj8000c_device =
-mjcmyk_device(mj8000c_initialize, "mj8000c", 360, 360, BITSPERPIXEL,
-          mj8000c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
+mjcmyk_device(mj8000c_initialize_device_procs, "mj8000c",
+              360, 360, BITSPERPIXEL,
+              mj8000c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
 
 /* Get the paper size code, based on width and height. */
 static int

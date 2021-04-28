@@ -148,13 +148,10 @@ gs_private_st_composite_final(st_psd_device, psd_device,
     "psd_device", psd_device_enum_ptrs, psd_device_reloc_ptrs,
     psd_device_finalize);
 
-static int
-psd_initialize(gx_device *dev)
+static void
+psd_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, open_device, psd_prn_open);
     set_dev_proc(dev, close_device, psd_prn_close);
@@ -168,8 +165,6 @@ psd_initialize(gx_device *dev)
     set_dev_proc(dev, update_spot_equivalent_colors, gx_devn_prn_update_spot_equivalent_colors);
     set_dev_proc(dev, ret_devn_params, gx_devn_prn_ret_devn_params);
     set_dev_proc(dev, dev_spec_op, psd_spec_op);
-
-    return 0;
 }
 
 #define psd_device_body(procs, dname, ncomp, pol, depth, mg, mc, sl, cn)\
@@ -196,7 +191,7 @@ psd_initialize(gx_device *dev)
  */
 const psd_device gs_psdrgb_device =
 {
-    psd_device_body(psd_initialize, "psdrgb", 3, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    psd_device_body(psd_initialize_device_procs, "psdrgb", 3, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
     /* devn_params specific parameters */
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceRGBComponents,	/* Names of color model colorants */
@@ -217,7 +212,7 @@ const psd_device gs_psdrgb_device =
 
 const psd_device gs_psdrgb16_device =
 {
-    psd_device_body(psd_initialize, "psdrgb16", 3, GX_CINFO_POLARITY_ADDITIVE, 48, 65535, 65535, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    psd_device_body(psd_initialize_device_procs, "psdrgb16", 3, GX_CINFO_POLARITY_ADDITIVE, 48, 65535, 65535, GX_CINFO_SEP_LIN, "DeviceRGB"),
     /* devn_params specific parameters */
     { 16,	/* Bits per color - must match ncomp, depth, etc. above */
     DeviceRGBComponents,	/* Names of color model colorants */
@@ -239,24 +234,19 @@ const psd_device gs_psdrgb16_device =
 /*
  * PSD device with CMYK process color model and spot color support.
  */
-static int
-psdcmyk_initialize(gx_device *dev)
+static void
+psdcmyk_initialize_device_procs(gx_device *dev)
 {
-    int code = psd_initialize(dev);
-
-    if (code < 0)
-        return code;
+    psd_initialize_device_procs(dev);
 
     set_dev_proc(dev, get_params, psd_get_params_cmyk);
     set_dev_proc(dev, put_params, psd_put_params_cmyk);
     set_dev_proc(dev, get_color_mapping_procs, get_psd_color_mapping_procs);
-
-    return 0;
 }
 
 const psd_device gs_psdcmyk_device =
 {
-    psd_device_body(psdcmyk_initialize, "psdcmyk",
+    psd_device_body(psdcmyk_initialize_device_procs, "psdcmyk",
                     ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
                     GX_CINFO_POLARITY_SUBTRACTIVE,
                     ARCH_SIZEOF_GX_COLOR_INDEX * 8, /* 8 bits per component (albeit in planes) */
@@ -281,7 +271,7 @@ const psd_device gs_psdcmyk_device =
 
 const psd_device gs_psdcmyk16_device =
 {
-    psd_device_body(psdcmyk_initialize, "psdcmyk16",
+    psd_device_body(psdcmyk_initialize_device_procs, "psdcmyk16",
     ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
     GX_CINFO_POLARITY_SUBTRACTIVE,
     ARCH_SIZEOF_GX_COLOR_INDEX * 16, /* 8 bits per component (albeit in planes) */

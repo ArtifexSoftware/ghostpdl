@@ -77,16 +77,13 @@ static int planr_print_page(gx_device_printer * pdev, gp_file * pstream);
 
 /* The device procedures */
 
-static int
-plan_base_initialize(gx_device *dev,
+static void
+plan_base_initialize_device_procs(gx_device *dev,
                      dev_proc_map_color_rgb(map_color_rgb),
                      dev_proc_encode_color(encode_color),
                      dev_proc_decode_color(decode_color))
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, plan_open);
     set_dev_proc(dev, close_device, plan_close);
@@ -94,62 +91,60 @@ plan_base_initialize(gx_device *dev,
     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
     set_dev_proc(dev, encode_color, encode_color);
     set_dev_proc(dev, decode_color, decode_color);
-
-    return 0;
 }
 
-static int
-planm_initialize(gx_device *dev)
+static void
+planm_initialize_device_procs(gx_device *dev)
 {
-    return plan_base_initialize(dev,
-                                gdev_prn_map_color_rgb,
-                                gdev_prn_map_rgb_color,
-                                gdev_prn_map_color_rgb);
+    plan_base_initialize_device_procs(dev,
+                                      gdev_prn_map_color_rgb,
+                                      gdev_prn_map_rgb_color,
+                                      gdev_prn_map_color_rgb);
 }
 
-static int
-plang_initialize(gx_device *dev)
+static void
+plang_initialize_device_procs(gx_device *dev)
 {
-    return plan_base_initialize(dev,
-                                plang_decode_color,
-                                plang_encode_color,
-                                plang_decode_color);
+    plan_base_initialize_device_procs(dev,
+                                      plang_decode_color,
+                                      plang_encode_color,
+                                      plang_decode_color);
 }
 
-static int
-plan_initialize(gx_device *dev)
+static void
+plan_initialize_device_procs(gx_device *dev)
 {
-    return plan_base_initialize(dev,
-                                plan_decode_color,
-                                gx_default_rgb_map_rgb_color,
-                                plan_decode_color);
+    plan_base_initialize_device_procs(dev,
+                                      plan_decode_color,
+                                      gx_default_rgb_map_rgb_color,
+                                      plan_decode_color);
 }
 
-static int
-planc_initialize(gx_device *dev)
+static void
+planc_initialize_device_procs(gx_device *dev)
 {
-    return plan_base_initialize(dev,
-                                planc_map_color_rgb,
-                                planc_encode_color,
-                                planc_decode_color);
+    plan_base_initialize_device_procs(dev,
+                                      planc_map_color_rgb,
+                                      planc_encode_color,
+                                      planc_decode_color);
 }
 
-static int
-plank_initialize(gx_device *dev)
+static void
+plank_initialize_device_procs(gx_device *dev)
 {
-    return plan_base_initialize(dev,
-                                planc_map_color_rgb,
-                                planc_encode_color,
-                                planc_decode_color);
+    plan_base_initialize_device_procs(dev,
+                                      planc_map_color_rgb,
+                                      planc_encode_color,
+                                      planc_decode_color);
 }
 
-static int
-planr_initialize(gx_device *dev)
+static void
+planr_initialize_device_procs(gx_device *dev)
 {
-    return plan_base_initialize(dev,
-                                plan_decode_color,
-                                gx_default_rgb_map_rgb_color,
-                                plan_decode_color);
+    plan_base_initialize_device_procs(dev,
+                                      plan_decode_color,
+                                      gx_default_rgb_map_rgb_color,
+                                      plan_decode_color);
 }
 
 /* Macro for generating device descriptors. */
@@ -163,17 +158,23 @@ planr_initialize(gx_device *dev)
 
 /* The device descriptors themselves */
 const gx_device_printer gs_plan_device =
-  plan_prn_device(plan_initialize, "plan", 3, 24, 255, 255, plan_print_page);
+  plan_prn_device(plan_initialize_device_procs, "plan",
+                  3, 24, 255, 255, plan_print_page);
 const gx_device_printer gs_plang_device =
-  plan_prn_device(plang_initialize, "plang", 1, 8, 255, 0, plang_print_page);
+  plan_prn_device(plang_initialize_device_procs, "plang",
+                  1, 8, 255, 0, plang_print_page);
 const gx_device_printer gs_planm_device =
-  plan_prn_device(planm_initialize, "planm", 1, 1, 1, 0, planm_print_page);
+  plan_prn_device(planm_initialize_device_procs, "planm",
+                  1, 1, 1, 0, planm_print_page);
 const gx_device_printer gs_plank_device =
-  plan_prn_device(plank_initialize, "plank", 4, 4, 1, 1, plank_print_page);
+  plan_prn_device(plank_initialize_device_procs, "plank",
+                  4, 4, 1, 1, plank_print_page);
 const gx_device_printer gs_planc_device =
-  plan_prn_device(planc_initialize, "planc", 4, 32, 255, 255, planc_print_page);
+  plan_prn_device(planc_initialize_device_procs, "planc",
+                  4, 32, 255, 255, planc_print_page);
 const gx_device_printer gs_planr_device =
-  plan_prn_device(planr_initialize, "planr", 3, 3, 1, 1, planr_print_page);
+  plan_prn_device(planr_initialize_device_procs, "planr",
+                  3, 3, 1, 1, planr_print_page);
 
 /* ------ Initialization ------ */
 

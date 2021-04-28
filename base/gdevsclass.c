@@ -62,7 +62,7 @@
  * before overwriting it, rather than the current check for NULL.
  */
 
-/* More observations; method naems, we have text_begin, but begin_image.
+/* More observations; method naems, we have text_begin, but begin_typed_image.
  * The enumerator initialiser for images gx_image_enum_common_init doesn't initialise
  * the 'memory' member variable. The text enumerator initialiser gs_text_enum_init does.
  * The default text enum init routine increments the reference count of the device, but the image enumerator
@@ -342,17 +342,6 @@ int default_subclass_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed 
         return dev_proc(dev->child, draw_thin_line)(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
     /* else */
     return gx_default_draw_thin_line(dev, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
-}
-
-int default_subclass_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_t *pim,
-    gs_image_format_t format, const gs_int_rect *prect,
-    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
-    gs_memory_t *memory, gx_image_enum_common_t **pinfo)
-{
-    if (dev->child)
-        return dev_proc(dev->child, begin_image)(dev->child, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
-    /* else */
-    return gx_default_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
 }
 
 int default_subclass_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x, int y, int width, int height,
@@ -853,7 +842,7 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
         rc_decrement(dev->NupControl, "finalize subclass device");
 }
 
-int default_subclass_initialize(gx_device *dev)
+void default_subclass_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, default_subclass_open_device);
     set_dev_proc(dev, get_initial_matrix, default_subclass_get_initial_matrix);
@@ -881,7 +870,6 @@ int default_subclass_initialize(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, default_subclass_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, default_subclass_fill_triangle);
     set_dev_proc(dev, draw_thin_line, default_subclass_draw_thin_line);
-    set_dev_proc(dev, begin_image, default_subclass_begin_image);
     set_dev_proc(dev, strip_tile_rectangle, default_subclass_strip_tile_rectangle);
     set_dev_proc(dev, strip_copy_rop, default_subclass_strip_copy_rop);
     set_dev_proc(dev, get_clipping_box, default_subclass_get_clipping_box);
@@ -921,6 +909,4 @@ int default_subclass_initialize(gx_device *dev)
     set_dev_proc(dev, process_page, default_subclass_process_page);
     set_dev_proc(dev, transform_pixel_region, default_subclass_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, default_subclass_fill_stroke_path);
-
-    return 0;
 }

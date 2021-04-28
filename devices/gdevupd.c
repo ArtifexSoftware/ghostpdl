@@ -212,8 +212,8 @@ static int             upd_procs_map( upd_device *udev);
 #define upd_set_dev_proc(dev, p, proc) \
    ((dev)->std_procs.p = (dev)->orig_procs.p = (proc))
 
-static int
-upd_initialize(gx_device *dev)
+static void
+upd_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, upd_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page);
@@ -223,8 +223,6 @@ upd_initialize(gx_device *dev)
     set_dev_proc(dev, get_params, upd_get_params);
     set_dev_proc(dev, put_params, upd_put_params);
     set_dev_proc(dev, map_cmyk_color, gx_default_map_cmyk_color);
-
-    return 0;
 }
 
 /**
@@ -246,7 +244,7 @@ and the reader might directly skip to the section titled
 */
 
 upd_device far_data gs_uniprint_device = { /** */
-   prn_device_body(upd_device, upd_initialize, /** The Type and Init Proc */
+   prn_device_body(upd_device, upd_initialize_device_procs, /** The Type and Init Proc */
       "uniprint",                          /** External name of the Device */
       DEFAULT_WIDTH_10THS,                 /** X-Size (1/10") */
       DEFAULT_HEIGHT_10THS,                /** Y-Size (1/10") */

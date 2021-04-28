@@ -901,9 +901,10 @@ gdev_vector_begin_image(gx_device_vector * vdev,
           (pim->CombineWithColor && rop3_uses_T(pgs->log_op))) &&
          (code = gdev_vector_update_fill_color(vdev, pgs, pdcolor)) < 0) ||
         (vdev->bbox_device &&
-         (code = (*dev_proc(vdev->bbox_device, begin_image))
-          ((gx_device *) vdev->bbox_device, pgs, pim, format, prect,
-           pdcolor, pcpath, mem, &pie->bbox_info)) < 0)
+         (code = (*dev_proc(vdev->bbox_device, begin_typed_image))
+                           ((gx_device *) vdev->bbox_device, pgs, NULL,
+                            (gs_image_common_t *)pim, prect,
+                            pdcolor, pcpath, mem, &pie->bbox_info)) < 0)
         )
         return code;
     pie->memory = mem;

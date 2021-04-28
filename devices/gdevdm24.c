@@ -26,7 +26,7 @@
 static dev_proc_print_page (necp6_print_page);
 const gx_device_printer far_data gs_necp6_device =
   /* The print_page proc is compatible with allowing bg printing */
-  prn_device (gdev_prn_initialize_mono_bg, "necp6",
+  prn_device (gdev_prn_initialize_device_procs_mono_bg, "necp6",
               DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
               360, 360,
               0, 0, 0.5, 0,	/* margins */
@@ -37,7 +37,7 @@ const gx_device_printer far_data gs_necp6_device =
 static dev_proc_print_page (lq850_print_page);
 const gx_device_printer gs_lq850_device =
   /* The print_page proc is compatible with allowing bg printing */
-  prn_device (gdev_prn_initialize_mono_bg, "lq850",
+  prn_device (gdev_prn_initialize_device_procs_mono_bg, "lq850",
               DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
               360, 360,
               0, 0, 0.5, 0,	/* margins */

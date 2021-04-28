@@ -220,8 +220,8 @@ static dev_proc_close_device(pdf_close);
 
 /* ---------------- Device prototype ---------------- */
 
-static int
-pdfwrite_initialize(gx_device *dev)
+static void
+pdfwrite_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, pdf_open);
     set_dev_proc(dev, get_initial_matrix, gx_upright_get_initial_matrix);
@@ -253,8 +253,6 @@ pdfwrite_initialize(gx_device *dev)
     set_dev_proc(dev, fillpage, gdev_pdf_fillpage);
     set_dev_proc(dev, dev_spec_op, gdev_pdf_dev_spec_op);
     set_dev_proc(dev, fill_stroke_path, gdev_pdf_fill_stroke_path);
-
-    return 0;
 }
 
 #define PDF_DEVICE_NAME "pdfwrite"

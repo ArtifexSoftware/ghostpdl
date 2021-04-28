@@ -247,7 +247,7 @@ A device is represented by a structure divided into three parts:</p>
 <li>parameters that are present in all devices but may be different for
 each device or instance;</li>
 
-<li>an initialize procedure; and</li>
+<li>an initialize_device_procs procedure; and</li>
 
 <li>device-specific parameters that may be different for each instance.</li>
 </ul>
@@ -274,7 +274,7 @@ href="../base/gdevprn.h">gdevprn.h</a>.</p>
 } smurf_device;
 smurf_device gs_smurf_device = {
         <b><em>... macro for generic parameter values ...,</em></b>
-        <b><em>initialize_procedure,</em></b>
+        <b><em>initialize_device_procs,</em></b>
         <b><em>... device-specific parameter values if any ...</em></b>
 };</pre>
 </blockquote>
@@ -284,8 +284,8 @@ The device structure instance <b>must</b> have the name
 name used in <code>contrib.mak</code>.  <code>gx_device_common</code>
 is a macro consisting only of the element definitions. </p>
 <p>
-The <code>initialize_procedure</code> function pointer is called when
-the device is created. Its primary job is to initialize the entries in
+The <code>initialize_device_procs</code> function pointer is called when
+the device is created. Its sole job is to initialize the entries in
 the device procedure table. On entry, the device procedure table will
 be full of NULL pointers. On exit, any NULLs left in the table will be
 filled in with pointers to the default routines. Therefore, the routine
@@ -296,20 +296,17 @@ Devices that are (in object-oriented terms) derived from 'base' classes
 device) can call provided helper functions for setting the standard
 functions for that base class.
 <p>
-For example, if the smurf device was a printer device, its initialize
-procedure might look like:</p>
+For example, if the smurf device was a printer device, its
+<code>initialize_device_procs</code> procedure might look like:</p>
 <blockquote>
-<pre>static int smurf_initialize(gx_device *dev) {
+<pre>static void smurf_initialize_device_procs(gx_device *dev) {
   /* We are derived from a prn device, and can print in the background */
-  int code = gdev_prn_initialize_bg(dev);
-  if (code < 0) return code;
+  gdev_prn_initialize_bg(dev);
 
   /* Override functions for our specifics */
   set_dev_proc(dev, map_color_rgb, smurf_map_color_rgb);
   set_dev_proc(dev, map_rgb_color, smurf_map_rgb_color);
   ...
-
-  return 0;
 }</pre>
 </blockquote>
 <p>
@@ -317,6 +314,13 @@ The initialize procedure function pointer does not live in the in the
 device procedure table (and as such is statically initialized at compile
 time). Nonetheless, we refer to this as being a device procedure in the
 rest of the discussion here.
+<p>
+Note that the <code>initialize_device_procs</code> function may be called
+with a pointer to a <code>gx_device</code> rather than to the derived
+device class. This happens frequently when one device wants to obtain
+the prototype of another to copy device procedures around. Initialization
+of items in the device other than device procs should therefore be
+reserved for the <code>initialize_device</code> device procedure.
 <p>
 The use of the initialize procedure is new to Ghostscript 9.55. Previous
 versions used a statically initialized table of device procedures. We
@@ -1270,11 +1274,19 @@ members are added.</p>
 <h3><a name="Life_cycle"></a>Life cycle</h3>
 
 <p>
+When a device is first created, it will have an empty device procs
+table. The system will call the device's <code>initialize_device_procs</code>
+function pointer to fill out this table. This operation can never fail.</p>
+
+<p>NOTE: This operation is also used for creating temporary 'prototype'
+devices for copying device procedures from.</p>
+
+<p>
 A device instance begins life in a closed state.  In this state, no output
 operations will occur.  Only the following procedures may be called:</p>
 
 <blockquote><code>
-initialize<br>
+initialize_device<br>
 open_device<br>
 get_initial_matrix<br>
 get_params<br>
@@ -1319,12 +1331,25 @@ level at the time the instance was created.</li>
 <h3><a name="Open_close"></a>Open, close, sync, copy</h3>
 
 <dl>
-<dt><code>int (*initialize)(gx_device *dev)</code></dt> <dd>Called once
-a new device instance has been created. The function should initialize
-the device procedure tables and perform the minimum initialization required
-to any internal device state required. If the initial setup fails, this
-procedure should return an error; the new instance will be freed.
-<b>NOTE</b>: Clients should never call a device's <code>initialize</code>
+<dt><code>void (*initialize_device_procs)(gx_device *dev)</code></dt> <dd>Called
+once a new device instance has been created. The function should initialize
+the device procedure tables. This cannot fail.
+<b>NOTE</b>: Clients should rarely need to call a device's
+<code>initialize_device_procs</code> procedure: this procedure is mostly used
+by the internal device creation code. The sole exception here is when
+a device implementation wishes to copy device function pointers from another
+device; then a blank <code>gx_device</code> can be created, and
+<code>initialize_device_procs</dd> can be used to fill out the device procs
+table so it can be copied from.
+</dl>
+
+<dl>
+<dt><code>int (*initialize_device)(gx_device *dev)</code> <b><em>[OPTIONAL</em></b></dt>
+<dd>Called once a new device instance has been created and the device procs
+table has been initialized. This function should perform the minimum
+initialization to any internal device state required. If the initial setup
+fails, this procedure should return an error; the new instance will be freed.
+<b>NOTE</b>: Clients should never call a device's <code>initialize_device</code>
 procedure: this procedure is only intended for use by the internal device
 creation code.</dd>
 </dl>
@@ -2526,15 +2551,16 @@ follows:</p>
 </blockquote>
 
 <dl>
-<dt><code>int (*begin_image)(gx_device&nbsp;*dev,
-const&nbsp;gs_imager_state&nbsp;*pis, const&nbsp;gs_image_t&nbsp;*pim,
-gs_image_format_t&nbsp;format, gs_int_rect&nbsp;*prect,
+<dt><code>int (*begin_typed_image)(gx_device&nbsp;*dev,
+const&nbsp;gs_imager_state&nbsp;*pis, const&nbsp;gs_matrix&nbsp;*pmat,
+const&nbsp;gs_image_common_t&nbsp;*pim, gs_int_rect&nbsp;*prect,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 const&nbsp;gx_clip_path&nbsp;*pcpath, gs_memory_t&nbsp;*memory,
 gx_image_enum_common_t&nbsp;**pinfo)</code> <b><em>[OPTIONAL]</em></b></dt>
-<dd>Begin the transmission of an image.  Zero or more calls of
-<code>image_plane_data</code> will follow, and then a call of
-<code>end_image</code>.  The parameters of <code>begin_image</code>
+<dd>Begin the transmission of an image.  Zero or more calls of the
+  <code>image_plane_data</code> function supplied in the returned image
+  enumerator will follow, and then a call of
+<code>end_image</code>.  The parameters of <code>begin_typed_image</code>
 are as follows:</dd>
 
 <blockquote><table>
@@ -2543,16 +2569,19 @@ are as follows:</dd>
     <td>pointer to an imager state.  The only relevant elements of the
         imager state are the CTM (coordinate transformation matrix),
         the logical operation (<code>RasterOp</code> or
-        transparency), and the color rendering information.</td></tr>
+        transparency), and the color rendering information. For
+        mask images, if <code>pmat</code> is not NULL and the color is pure,
+        <code>pis</code> may be NULL.</td></tr>
+<tr valign="top">    <td><code>pmat</code></td>
+    <td>&nbsp;</td>
+    <td>pointer to a <code>gs_matrix</code> structure that
+        defines the image transformation matrix. If <code>pis</code> is non-NULL,
+        and <code>pmat</code> is NULL, then the <code>ctm</code> from <code>pis</code>
+        should be used.</td></tr>
 <tr valign="top">    <td><code>pim</code></td>
     <td>&nbsp;</td>
     <td>pointer to the <code>gs_image_t</code> structure that
         defines the image parameters</td></tr>
-<tr valign="top">    <td><code>format</code></td>
-    <td>&nbsp;</td>
-    <td>defines how pixels are represented for
-        <code>image_plane_data</code>.  See the description of
-        <code>image_plane_data</code> below</td></tr>
 <tr valign="top">    <td><code>prect</code></td>
     <td>&nbsp;</td>
     <td>if not <code>NULL</code>, defines a subrectangle of the
@@ -2577,12 +2606,12 @@ are as follows:</dd>
 </table></blockquote>
 
 <p>
-<code>begin_image</code> is expected to allocate a structure for its
+<code>begin_typed_image</code> is expected to allocate a structure for its
 bookkeeping needs, using the allocator defined by the memory parameter, and
-return it in <code>*pinfo</code>.  <code>begin_image</code> should not assume that
+return it in <code>*pinfo</code>.  <code>begin_typed_image</code> should not assume that
 the structures in <code>*pim</code>, <code>*prect</code>, or
 <code>*pdcolor</code> will survive the call on
-<code>begin_image</code> (except for the color space in
+<code>begin_typed_image</code> (except for the color space in
 <code>*pim-&gt;ColorSpace</code>): it should copy any necessary parts of
 them into its own bookkeeping structure.  It may, however, assume that
 <code>*pis</code>, <code>*pcpath</code>, and of course
@@ -2590,33 +2619,14 @@ them into its own bookkeeping structure.  It may, however, assume that
 is called.</p>
 
 <p>
-<code>begin_image</code> returns 0 normally, or 1 if the image does not
-need any data.  In the latter case, <code>begin_image</code> does not
+<code>begin_typed_image</code> returns 0 normally, or 1 if the image does not
+need any data.  In the latter case, <code>begin_typed_image</code> does not
 allocate an enumeration structure.</p>
 </dl>
 
-<dl>
-<dt><code>int (*begin_typed_image)(gx_device&nbsp;*dev,
-const&nbsp;gs_imager_state&nbsp;*pis, const&nbsp;gs_matrix&nbsp;*pmat,
-const&nbsp;gs_image_common_t&nbsp;*pim, gs_int_rect&nbsp;*prect,
-const&nbsp;gx_drawing_color&nbsp;*pdcolor,
-const&nbsp;gx_clip_path&nbsp;*pcpath, gs_memory_t&nbsp;*memory,
-gx_image_enum_common_t&nbsp;**pinfo)</code> <b><em>[OPTIONAL]</em></b></dt>
-<dd>This has the same function as <code>begin_image</code>, except</dd>
-<ul>
-<li>The image may be of any <code>ImageType</code>, not only
-<code>image_type_simple</code> (1);</li>
-
-<li>The image format is included in the image structure, not supplied as a
-separate argument;</li>
-
-<li>The optional <code>pmat</code> argument provides a matrix that
-substitutes for the one in the imager state;</li>
-
-<li>For mask images, if <code>pmat</code> is not <code>NULL</code>
-and the color is pure, <code>pis</code> may be <code>NULL</code>.</li>
-</ul>
-</dl>
+<p>
+The format of the image (how pixels are represented) is given by
+<code>pim-&gt;format</code>.</p>
 
 <p>
 The actual transmission of data uses the procedures in the enumeration
@@ -2693,7 +2703,7 @@ bool&nbsp;draw_last)</code></dt>
 <dd>Finish processing an image, either because all data have been supplied
 or because the caller has decided to abandon this image.
 <code>end_image</code> may be called at any time after
-<code>begin_image</code>.  It should free the info structure and any
+<code>begin_typed_image</code>.  It should free the info structure and any
 subsidiary structures.  If <code>draw_last</code> is true, it should
 finish drawing any buffered lines of the image.</dd>
 </dl>
@@ -2702,14 +2712,14 @@ finish drawing any buffered lines of the image.</dd>
 
 <p>
 While there will almost never be more than one image enumeration in
-progress -- that is, after a <code>begin_image</code>,
+progress -- that is, after a <code>begin_typed_image</code>,
 <code>end_image</code> will almost always be called before the next
-<code>begin_image</code> -- driver code should not rely on this
+<code>begin_typed_image</code> -- driver code should not rely on this
 property; in particular, it should store all information regarding the
 image in the info structure, not in the driver structure.</p>
 
 <p>
-Note that if <code>begin_[typed_]image</code> saves its parameters in
+Note that if <code>begin_typed_image</code> saves its parameters in
 the info structure, it can decide on each call whether to use its own
 algorithms or to use the default implementation.  (It may need to call
 <code>gx_default_begin</code>/<code>end_image</code> partway

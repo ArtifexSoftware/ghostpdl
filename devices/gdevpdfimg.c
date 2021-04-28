@@ -57,13 +57,10 @@ int PCLm_close(gx_device * pdev);
 
 
 /* ------ The pdfimage8 device ------ */
-static int
-pdfimage8_initialize(gx_device *dev)
+static void
+pdfimage8_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray(dev);
 
     set_dev_proc(dev, open_device, pdf_image_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
@@ -76,13 +73,11 @@ pdfimage8_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_pdf_image gs_pdfimage8_device = {
     prn_device_body(gx_device_pdf_image,
-                    pdfimage8_initialize,
+                    pdfimage8_initialize_device_procs,
                     "pdfimage8",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -99,13 +94,10 @@ const gx_device_pdf_image gs_pdfimage8_device = {
 };
 
 /* ------ The pdfimage24 device ------ */
-static int
-pdfimage24_initialize(gx_device *dev)
+static void
+pdfimage24_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_rgb(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_rgb(dev);
 
     set_dev_proc(dev, open_device, pdf_image_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
@@ -118,13 +110,11 @@ pdfimage24_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_pdf_image gs_pdfimage24_device = {
     prn_device_body(gx_device_pdf_image,
-                    pdfimage24_initialize,
+                    pdfimage24_initialize_device_procs,
                     "pdfimage24",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -141,13 +131,10 @@ const gx_device_pdf_image gs_pdfimage24_device = {
 };
 
 /* ------ The pdfimage32 device ------ */
-static int
-pdfimage32_initialize(gx_device *dev)
+static void
+pdfimage32_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk8(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk8(dev);
 
     set_dev_proc(dev, open_device, pdf_image_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
@@ -160,13 +147,11 @@ pdfimage32_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_pdf_image gs_pdfimage32_device = {
     prn_device_body(gx_device_pdf_image,
-                    pdfimage32_initialize,
+                    pdfimage32_initialize_device_procs,
                     "pdfimage32",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
@@ -1140,13 +1125,10 @@ pdf_image_put_params_downscale_cmyk_ets(gx_device * dev, gs_param_list * plist)
 }
 
 /* ------ The PCLm device ------ */
-static int
-PCLm_initialize(gx_device *dev)
+static void
+PCLm_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_rgb(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_rgb(dev);
 
     set_dev_proc(dev, open_device, PCLm_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
@@ -1159,15 +1141,13 @@ PCLm_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 static dev_proc_print_page(PCLm_print_page);
 
 const gx_device_pdf_image gs_PCLm_device = {
     prn_device_body(gx_device_pdf_image,
-                    PCLm_initialize,
+                    PCLm_initialize_device_procs,
                     "pclm",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */

@@ -93,7 +93,7 @@ struct gx_device_png_s {
 
 const gx_device_png gs_pngmono_device =
 { /* The print_page proc is compatible with allowing bg printing */
-  prn_device_body(gx_device_png, gdev_prn_initialize_mono_bg, "pngmono",
+  prn_device_body(gx_device_png, gdev_prn_initialize_device_procs_mono_bg, "pngmono",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -105,13 +105,10 @@ const gx_device_png gs_pngmono_device =
 /* 4-bit planar (EGA/VGA-style) color. */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-png16_initialize(gx_device *dev)
+static void
+png16_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_4bit_map_color_rgb);
@@ -121,12 +118,10 @@ png16_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_png gs_png16_device = {
-  prn_device_body(gx_device_png, png16_initialize, "png16",
+  prn_device_body(gx_device_png, png16_initialize_device_procs, "png16",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -138,13 +133,10 @@ const gx_device_png gs_png16_device = {
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-png256_initialize(gx_device *dev)
+static void
+png256_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, map_rgb_color, pc_8bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_8bit_map_color_rgb);
@@ -154,12 +146,10 @@ png256_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_png gs_png256_device = {
-  prn_device_body(gx_device_png, png256_initialize, "png256",
+  prn_device_body(gx_device_png, png256_initialize_device_procs, "png256",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -170,13 +160,10 @@ const gx_device_png gs_png256_device = {
 /* 8-bit gray */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-pnggray_initialize(gx_device *dev)
+static void
+pnggray_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray_bg(dev);
 
     set_dev_proc(dev, get_params, png_get_params_downscale);
     set_dev_proc(dev, put_params, png_put_params_downscale);
@@ -186,12 +173,10 @@ pnggray_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_png gs_pnggray_device =
-{prn_device_body(gx_device_png, pnggray_initialize, "pnggray",
+{prn_device_body(gx_device_png, pnggray_initialize_device_procs, "pnggray",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -202,13 +187,10 @@ const gx_device_png gs_pnggray_device =
 /* Monochrome (with error diffusion) */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-pngmonod_initialize(gx_device *dev)
+static void
+pngmonod_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray_bg(dev);
 
     set_dev_proc(dev, get_params, png_get_params_downscale_mfs);
     set_dev_proc(dev, put_params, png_put_params_downscale_mfs);
@@ -218,12 +200,10 @@ pngmonod_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_png gs_pngmonod_device =
-{prn_device_body(gx_device_png, pngmonod_initialize, "pngmonod",
+{prn_device_body(gx_device_png, pngmonod_initialize_device_procs, "pngmonod",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -234,13 +214,10 @@ const gx_device_png gs_pngmonod_device =
 /* 24-bit color. */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
-static int
-png16m_initialize(gx_device *dev)
+static void
+png16m_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_rgb_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_rgb_bg(dev);
 
     set_dev_proc(dev, get_params, png_get_params_downscale);
     set_dev_proc(dev, put_params, png_put_params_downscale);
@@ -250,12 +227,10 @@ png16m_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_png gs_png16m_device =
-{prn_device_body(gx_device_png, png16m_initialize, "png16m",
+{prn_device_body(gx_device_png, png16m_initialize_device_procs, "png16m",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -265,26 +240,21 @@ const gx_device_png gs_png16m_device =
 
 /* 48 bit color. */
 
-static int
-png48_initialize(gx_device *dev)
+static void
+png48_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_rgb_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_rgb_bg(dev);
 
     /* The prn macros used in previous versions of the code leave
      * encode_color and decode_color set to NULL (which are then rewritten
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
 const gx_device_png gs_png48_device =
-{prn_device_body(gx_device_png, png48_initialize, "png48",
+{prn_device_body(gx_device_png, png48_initialize_device_procs, "png48",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
@@ -308,13 +278,10 @@ struct gx_device_pngalpha_s {
     int background;
 };
 
-static int
-pngalpha_initialize(gx_device *dev)
+static void
+pngalpha_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_bg(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_bg(dev);
 
     set_dev_proc(dev, open_device, pngalpha_open);
     set_dev_proc(dev, map_rgb_color, pngalpha_encode_color);
@@ -329,12 +296,11 @@ pngalpha_initialize(gx_device *dev)
     set_dev_proc(dev, fillpage, pngalpha_fillpage);
     set_dev_proc(dev, put_image, pngalpha_put_image);
     set_dev_proc(dev, dev_spec_op, pngalpha_spec_op);
-
-    return 0;
 }
 
 const gx_device_pngalpha gs_pngalpha_device = {
-        std_device_part1_(gx_device_pngalpha, pngalpha_initialize, "pngalpha",
+        std_device_part1_(gx_device_pngalpha,
+                pngalpha_initialize_device_procs, "pngalpha",
                 &st_device_printer, open_init_closed),
         /* color_info */
         {3 /* max components */,

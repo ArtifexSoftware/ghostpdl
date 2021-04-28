@@ -63,35 +63,28 @@ bj10v_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
         pmat->ty -= dev_t_margin(dev) * dev->y_pixels_per_inch;
 }
 
-static int
-bj10v_initialize(gx_device *dev)
+static void
+bj10v_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono(dev);
+    gdev_prn_initialize_device_procs_mono(dev);
 
     set_dev_proc(dev, get_initial_matrix, bj10v_get_initial_matrix);
-
-    return 0;
 }
 
 #else
 
-static int
-bj10v_initialize(gx_device *dev)
+static void
+bj10v_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_mono(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_mono(dev);
 
     set_dev_proc(dev, open_device, bj10v_open);
-
-    return 0;
 }
 
 #endif
 
 gx_device_printer gs_bj10v_device =
-  prn_device(bj10v_initialize, "bj10v",
+  prn_device(bj10v_initialize_device_procs, "bj10v",
         DEFAULT_WIDTH_10THS,		/* width_10ths */
         DEFAULT_HEIGHT_10THS,	/* height_10ths */
         360,				/* x_dpi */
@@ -100,7 +93,7 @@ gx_device_printer gs_bj10v_device =
         1, bj10v_print_page);
 
 gx_device_printer gs_bj10vh_device =
-  prn_device(bj10v_initialize, "bj10vh",
+  prn_device(bj10v_initialize_device_procs, "bj10vh",
         DEFAULT_WIDTH_10THS,		/* width_10ths */
         DEFAULT_HEIGHT_10THS,  	/* height_10ths */
         360,				/* x_dpi */

@@ -69,8 +69,8 @@ static dev_proc_begin_typed_image(plane_begin_typed_image);
 static dev_proc_get_bits_rectangle(plane_get_bits_rectangle);
 
 /* Device prototype */
-static int
-plane_initialize(gx_device *dev)
+static void
+plane_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, plane_open_device);
     set_dev_proc(dev, fill_rectangle, plane_fill_rectangle);
@@ -94,7 +94,6 @@ plane_initialize(gx_device *dev)
     set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, fill_trapezoid, gx_default_fill_trapezoid);
     set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
-    set_dev_proc(dev, begin_image, gx_default_begin_image);
     set_dev_proc(dev, text_begin, gx_default_text_begin);
     set_dev_proc(dev, fill_rectangle_hl_color, gx_default_fill_rectangle_hl_color);
     set_dev_proc(dev, include_color_space, gx_default_include_color_space);
@@ -107,12 +106,11 @@ plane_initialize(gx_device *dev)
     set_dev_proc(dev, strip_copy_rop2, gx_default_strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rect_devn, gx_default_strip_tile_rect_devn);
     set_dev_proc(dev, copy_alpha_hl_color, gx_default_copy_alpha_hl_color);
-
-    return 0;
 }
 
 static const gx_device_plane_extract gs_plane_extract_device = {
-    std_device_std_body(gx_device_plane_extract, plane_initialize, "plane_extract",
+    std_device_std_body(gx_device_plane_extract,
+                        plane_initialize_device_procs, "plane_extract",
                         0, 0, 72, 72),
     { 0 },
     /* device-specific members */

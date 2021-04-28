@@ -211,13 +211,10 @@ static media_t media_codes[] = {
 /* ------------------------- 1 bit Monochrome ---------------------------- */
 /***************************************************************************/
 
-static int
-bjcmono_initialize(gx_device *dev)
+static void
+bjcmono_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, get_params, gdev_bjc_get_params);
     set_dev_proc(dev, put_params, gdev_bjc_put_params);
@@ -225,13 +222,11 @@ bjcmono_initialize(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, NULL);
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 
 const gx_device_bjc_printer gs_bjcmono_device =
-bjc_device(bjcmono_initialize, "bjcmono",
+bjc_device(bjcmono_initialize_device_procs, "bjcmono",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            (float)(3.4 / 25.4), (float)(7.0 / 25.4),
@@ -248,13 +243,10 @@ bjc_device(bjcmono_initialize, "bjcmono",
 /* -------------------------- 8 bit Grayscale ---------------------------- */
 /***************************************************************************/
 
-static int
-bjcgray_initialize(gx_device *dev)
+static void
+bjcgray_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_gray(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_gray(dev);
 
     set_dev_proc(dev, get_params, gdev_bjc_get_params);
     set_dev_proc(dev, put_params, gdev_bjc_put_params);
@@ -264,12 +256,10 @@ bjcgray_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_bjc_printer gs_bjcgray_device =
-bjc_device(bjcgray_initialize, "bjcgray",
+bjc_device(bjcgray_initialize_device_procs, "bjcgray",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            (float)(3.4 / 25.4), (float)(7.0 / 25.4),
@@ -286,13 +276,10 @@ bjc_device(bjcgray_initialize, "bjcgray",
 /* --------------------------- 3 bit CMYK Color -------------------------- */
 /***************************************************************************/
 
-static int
-bjccmyk_initialize(gx_device *dev)
+static void
+bjccmyk_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk1(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk1(dev);
 
     set_dev_proc(dev, get_params, gdev_bjc_get_params);
     set_dev_proc(dev, put_params, gdev_bjc_put_params);
@@ -302,12 +289,10 @@ bjccmyk_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_bjc_printer gs_bjccmyk_device =
-bjc_device(bjccmyk_initialize, "bjccmyk",
+bjc_device(bjccmyk_initialize_device_procs, "bjccmyk",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            (float)(3.4 / 25.4), (float)(7.0 / 25.4),
@@ -324,13 +309,10 @@ bjc_device(bjccmyk_initialize, "bjccmyk",
 /* --------------------------- 24 bit TrueColor -------------------------- */
 /***************************************************************************/
 
-static int
-bjc_truecolor_initialize(gx_device *dev)
+static void
+bjc_truecolor_initialize_device_procs(gx_device *dev)
 {
-    int code = gdev_prn_initialize_cmyk8(dev);
-
-    if (code < 0)
-        return code;
+    gdev_prn_initialize_device_procs_cmyk8(dev);
 
     set_dev_proc(dev, get_params, gdev_bjc_get_params);
     set_dev_proc(dev, put_params, gdev_bjc_put_params);
@@ -340,12 +322,10 @@ bjc_truecolor_initialize(gx_device *dev)
      * by the system to the default. For compatibility we do the same. */
     set_dev_proc(dev, encode_color, NULL);
     set_dev_proc(dev, decode_color, NULL);
-
-    return 0;
 }
 
 const gx_device_bjc_printer gs_bjccolor_device =
-bjc_device(bjc_truecolor_initialize, "bjccolor",
+bjc_device(bjc_truecolor_initialize_device_procs, "bjccolor",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            (float)(3.4 / 25.4), (float)(7.0 / 25.4),
