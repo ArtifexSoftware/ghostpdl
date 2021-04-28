@@ -23,7 +23,6 @@
 #include "gxdcolor.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
-#include "gxdevrop.h"
 #include "gdevmem.h"
 #include "gdevmrop.h"
 

@@ -23,7 +23,6 @@
 #include "gxdcolor.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
-#include "gxdevrop.h"
 #include "gxgetbit.h"
 #include "gdevmem.h"            /* for mem_default_strip_copy_rop prototype */
 #include "gdevmpla.h"
@@ -835,59 +834,6 @@ mem_default_strip_copy_rop2(gx_device * dev,
     return do_strip_copy_rop(dev, sdata, sourcex, sraster, id, scolors,
                              textures, tcolors, x, y, width, height,
                              phase_x, phase_y, lop);
-}
-
-/* ------ Implementation of related functions ------ */
-
-int
-gx_strip_copy_rop2_unaligned(gx_device * dev,
-             const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-                            const gx_color_index * scolors,
-           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-                            int x, int y, int width, int height,
-                       int phase_x, int phase_y, gs_logical_operation_t lop,
-                       uint plane_height)
-{
-    dev_proc_strip_copy_rop2((*copy_rop2)) = dev_proc(dev, strip_copy_rop2);
-    int depth = (scolors == 0 ? dev->color_info.depth : 1);
-    int step = sraster & (align_bitmap_mod - 1);
-
-    /* Adjust the origin. */
-    if (sdata != 0) {
-        uint offset =
-        (uint) (sdata - (const byte *)0) & (align_bitmap_mod - 1);
-
-        /* See copy_color above re the following statement. */
-        if (depth == 24)
-            offset += (offset % 3) *
-                (align_bitmap_mod * (3 - (align_bitmap_mod % 3)));
-        sdata -= offset;
-        sourcex += (offset << 3) / depth;
-    }
-    /* Adjust the raster. */
-    if (!step || sdata == 0 ||
-        (scolors != 0 && scolors[0] == scolors[1])
-        ) {                     /* No adjustment needed. */
-        return (*copy_rop2)(dev, sdata, sourcex, sraster, id, scolors,
-                            textures, tcolors, x, y, width, height,
-                            phase_x, phase_y, lop, plane_height);
-    }
-    /* Do the transfer one scan line at a time. */
-    {
-        const byte *p = sdata;
-        int d = sourcex;
-        int dstep = (step << 3) / depth;
-        int code = 0;
-        int i;
-
-        for (i = 0; i < height && code >= 0;
-             ++i, p += sraster - step, d += dstep
-            )
-            code = (*copy_rop2)(dev, p, d, sraster, gx_no_bitmap_id, scolors,
-                                textures, tcolors, x, y + i, width, 1,
-                                phase_x, phase_y, lop, plane_height);
-        return code;
-    }
 }
 
 /* ---------------- Internal routines ---------------- */
