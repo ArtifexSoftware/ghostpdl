@@ -692,10 +692,14 @@ ZSRCDIR=.\zlib
 
 !if exist("leptonica")
 LEPTONICADIR=leptonica
+# /wd4244 = Suppress casting warnings on initialisation
+LEPTSUPPRESS=/wd4244
 !endif
 !if exist("tesseract")
 TESSERACTDIR=tesseract
-TESSCXXFLAGS=-DHAVE_AVX -DHAVE_AVX2 -DHAVE_SSE4_1 -DHAVE_FMA -D__AVX__ -D__AVX2__ -D__FMA__ -D__SSE4_1__ /EHsc /std:c++17 /utf-8
+# /wd4244 = Suppress casting warnings on initialisation
+# /wd4305 = Suppress double->float truncation warnings
+TESSCXXFLAGS=-DHAVE_AVX -DHAVE_AVX2 -DHAVE_SSE4_1 -DHAVE_FMA -D__AVX__ -D__AVX2__ -D__FMA__ -D__SSE4_1__ /EHsc /std:c++17 /utf-8 /wd4244 /wd4305
 !endif
 !if defined(TESSERACTDIR) && defined(LEPTONICADIR)
 OCR_VERSION=1
