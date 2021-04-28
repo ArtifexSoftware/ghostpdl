@@ -4714,6 +4714,21 @@ currentdict /set_bc_color undef
         /K  {setcmykcolor}
       >> def
 
+      % Set some sane defaults, in case the /DA does not.
+      0 setgray
+      /Helvetica findfont
+      % re-encode the font to PDFDocEncoding
+      dup length dict begin
+      {
+        1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+      } forall
+      /Encoding /PDFDocEncoding /Encoding findresource def
+      /FontName /Helvetica-PDFDocEncoding def
+      currentdict
+      end
+      /Helvetica-PDFDocEncoding exch definefont
+      12 scalefont setfont
+
       dup /DA knownoget {
         length string /tempstr exch def
         dup /DA get tempstr copy pop
@@ -4748,21 +4763,7 @@ currentdict /set_bc_color undef
         } stopped
         {cleartomark setgstate}
         {cleartomark pop} ifelse
-      } {
-        0 setgray
-        /Helvetica findfont
-        % re-encode the font to PDFDocEncoding
-        dup length dict begin
-        {
-          1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
-        } forall
-        /Encoding /PDFDocEncoding /Encoding findresource def
-        /FontName /Helvetica-PDFDocEncoding def
-        currentdict
-        end
-        /Helvetica-PDFDocEncoding exch definefont
-        12 scalefont setfont
-      }ifelse
+      } if
 
       %% draw the border, if we don't have a border style dictionary, draw a default one.
       dup /BS knownoget
