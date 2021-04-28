@@ -66,7 +66,6 @@ clipper_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, clip_copy_alpha);
-    set_dev_proc(dev, get_band, gx_forward_get_band);
     set_dev_proc(dev, fill_path, clip_fill_path);
     set_dev_proc(dev, fill_mask, clip_fill_mask);
     set_dev_proc(dev, strip_tile_rectangle, clip_strip_tile_rectangle);

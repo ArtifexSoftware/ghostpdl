@@ -66,7 +66,6 @@ static dev_proc_get_bits(flp_get_bits);
 static dev_proc_get_params(flp_put_params);
 static dev_proc_get_alpha_bits(flp_get_alpha_bits);
 static dev_proc_copy_alpha(flp_copy_alpha);
-static dev_proc_get_band(flp_get_band);
 static dev_proc_fill_path(flp_fill_path);
 static dev_proc_stroke_path(flp_stroke_path);
 static dev_proc_fill_mask(flp_fill_mask);
@@ -543,18 +542,6 @@ int flp_copy_alpha(gx_device *dev, const byte *data, int data_x,
         return default_subclass_copy_alpha(dev, data, data_x, raster, id, x, y, width, height, color, depth);
 
     return 0;
-}
-
-int flp_get_band(gx_device *dev, int y, int *band_start)
-{
-    int code = SkipPage(dev);
-
-    if (code < 0)
-        return code;
-    if (!code)
-        return default_subclass_get_band(dev, y, band_start);
-
-    return gx_default_get_band(dev, y, band_start);
 }
 
 int flp_fill_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
@@ -1168,7 +1155,6 @@ flp_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, put_params, flp_put_params);
     set_dev_proc(dev, get_alpha_bits, flp_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, flp_copy_alpha);
-    set_dev_proc(dev, get_band, flp_get_band);
     set_dev_proc(dev, fill_path, flp_fill_path);
     set_dev_proc(dev, stroke_path, flp_stroke_path);
     set_dev_proc(dev, fill_mask, flp_fill_mask);

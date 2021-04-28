@@ -267,14 +267,6 @@ int default_subclass_copy_alpha(gx_device *dev, const byte *data, int data_x,
     return 0;
 }
 
-int default_subclass_get_band(gx_device *dev, int y, int *band_start)
-{
-    if (dev->child)
-        return dev_proc(dev->child, get_band)(dev->child, y, band_start);
-    /* else */
-    return gx_default_get_band(dev, y, band_start);
-}
-
 int default_subclass_fill_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_fill_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
@@ -850,7 +842,6 @@ void default_subclass_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_page_device, default_subclass_get_page_device);
     set_dev_proc(dev, get_alpha_bits, default_subclass_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, default_subclass_copy_alpha);
-    set_dev_proc(dev, get_band, default_subclass_get_band);
     set_dev_proc(dev, fill_path, default_subclass_fill_path);
     set_dev_proc(dev, stroke_path, default_subclass_stroke_path);
     set_dev_proc(dev, fill_mask, default_subclass_fill_mask);

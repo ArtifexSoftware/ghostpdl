@@ -54,7 +54,6 @@ mask_clip_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, mask_clip_copy_alpha);
-    set_dev_proc(dev, get_band, gx_forward_get_band);
     set_dev_proc(dev, strip_tile_rectangle, mask_clip_strip_tile_rectangle);
     set_dev_proc(dev, get_clipping_box, mask_clip_get_clipping_box);
     set_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);

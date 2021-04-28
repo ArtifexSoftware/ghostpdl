@@ -121,7 +121,6 @@ private_st_clist_icctable();
 dev_proc_open_device(clist_open);
 dev_proc_output_page(clist_output_page);
 dev_proc_close_device(clist_close);
-static dev_proc_get_band(clist_get_band);
 /* Driver procedures defined in other files are declared in gxcldev.h. */
 
 /* Other forward declarations */
@@ -147,7 +146,6 @@ clist_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, clist_copy_alpha);
-    set_dev_proc(dev, get_band, clist_get_band);
     set_dev_proc(dev, fill_path, clist_fill_path);
     set_dev_proc(dev, stroke_path, clist_stroke_path);
     set_dev_proc(dev, fill_mask, clist_fill_mask);
@@ -938,22 +936,6 @@ clist_put_current_params(gx_device_clist_writer *cldev)
 }
 
 /* ---------------- Driver interface ---------------- */
-
-static int
-clist_get_band(gx_device * dev, int y, int *band_start)
-{
-    gx_device_clist_writer * const cdev =
-        &((gx_device_clist *)dev)->writer;
-    int band_height = cdev->page_band_height;
-    int start;
-
-    if (y < 0)
-        y = 0;
-    else if (y >= dev->height)
-        y = dev->height;
-    *band_start = start = y - y % band_height;
-    return min(dev->height - start, band_height);
-}
 
 /* ICC table operations.  See gxclist.h for details */
 /* This checks the table for a hash code entry */
