@@ -883,7 +883,10 @@ pdfi_annot_display_text(pdf_context *ctx, pdf_dict *annot, double x, double y, p
     return code;
 }
 
-/* Get Text height for current font (assumes font is already set, inside BT/ET) */
+/* Get Text height for current font (assumes font is already set, inside BT/ET)
+ * TODO: See /Tform implementation that uses FontBBox and ScaleMatrix instead
+ * Maybe use this technique as a backup if those entries aren't available?
+ */
 static int
 pdfi_annot_get_text_height(pdf_context *ctx, double *height)
 {
@@ -3280,15 +3283,13 @@ static int pdfi_form_modV(pdf_context *ctx, pdf_string *V, pdf_string **mod_V, b
     return code;
 }
 
-/* Display text from Tx in a field or widget */
-static int pdfi_form_display_text(pdf_context *ctx, pdf_dict *annot, gs_rect *rect, pdf_string *V,
-                                  int64_t Ff, int64_t Q, int64_t MaxLen)
+/* Display simple text (no multiline or comb) */
+static int pdfi_form_Tx_simple(pdf_context *ctx, pdf_dict *annot, gs_rect *rect, pdf_string *V,
+                               int64_t Ff, int64_t Q, bool is_UTF16)
 {
     int code = 0;
     gs_rect modrect;
     double lineheight = 0;
-    pdf_string *modV = NULL;
-    bool is_UTF16;
     gs_rect bbox;
     gs_point awidth;
     double y_adjust, x_adjust;
@@ -3298,45 +3299,99 @@ static int pdfi_form_display_text(pdf_context *ctx, pdf_dict *annot, gs_rect *re
     code = pdfi_annot_get_text_height(ctx, &lineheight);
     if (code < 0) goto exit;
 
-    /* Get modified V that skips the BOM, if any */
-    code = pdfi_form_modV(ctx, V, &modV, &is_UTF16);
-    if (code < 0) goto exit;
-
     /* text placement adjustments */
-    y_adjust = ((rect->q.y - rect->p.y) - lineheight) / 2;
     switch (Q) {
     case 0: /* Left-justified */
         x_adjust = 2; /* empirical value */
         break;
     case 1: /* Centered */
         /* Get width of the string */
-        code = pdfi_string_bbox(ctx, modV, &bbox, &awidth, false);
+        code = pdfi_string_bbox(ctx, V, &bbox, &awidth, false);
         if (code < 0) goto exit;
         x_adjust = ((rect->q.x - rect->p.x) - awidth.x) / 2;
         break;
     case 2: /* Right-justified */
         /* Get width of the string */
-        code = pdfi_string_bbox(ctx, modV, &bbox, &awidth, false);
+        code = pdfi_string_bbox(ctx, V, &bbox, &awidth, false);
         if (code < 0) goto exit;
         x_adjust = rect->q.x - awidth.x;
         break;
     }
 
+    /* Center vertically */
+    y_adjust = ((rect->q.y - rect->p.y) - lineheight) / 2;
+
     modrect.p.x += x_adjust;
     modrect.p.y += y_adjust;
+    modrect.p.y += (lineheight + 6.) / 10.; /* empirical */
 
-    /* TODO: MultiLine, Comb, UTF16, ... */
-    if (Ff & PDFI_FORM_FF_MULTILINE) {
-        code = pdfi_annot_display_simple_text(ctx, annot, modrect.p.x, modrect.p.y, modV);
-        if (code < 0) goto exit;
+    code = pdfi_annot_display_simple_text(ctx, annot, modrect.p.x, modrect.p.y, V);
+    if (code < 0) goto exit;
+ exit:
+    return code;
+}
+
+/* Display text from Tx MULTILINE */
+static int pdfi_form_Tx_multiline(pdf_context *ctx, pdf_dict *annot, gs_rect *rect, pdf_string *V,
+                                  int64_t Ff, int64_t Q, bool is_UTF16)
+{
+    int code = 0;
+    gs_rect modrect;
+
+    modrect = *rect; /* structure copy */
+    /* empirical tweaks */
+    modrect.p.x += 2;
+    modrect.p.y += 2;
+    modrect.q.x -= 2;
+    modrect.q.y -= 2;
+
+    if (is_UTF16) {
+        /* TODO: Not supported yet */
+        code = pdfi_form_Tx_simple(ctx, annot, rect, V, Ff, Q, is_UTF16);
     } else {
-        /* Empirical adjustments */
-        modrect.p.x += 2;
-        modrect.q.y -= 2;
-
-        code = pdfi_annot_display_simple_text(ctx, annot, modrect.p.x, modrect.p.y, modV);
-        if (code < 0) goto exit;
+        code = pdfi_annot_display_formatted_text(ctx, annot, &modrect, V);
     }
+    if (code < 0) goto exit;
+
+ exit:
+    return code;
+}
+
+
+/* Display text from Tx COMB */
+static int pdfi_form_Tx_comb(pdf_context *ctx, pdf_dict *annot, gs_rect *rect, pdf_string *V,
+                             int64_t Ff, int64_t Q, int64_t MaxLen, bool is_UTF16)
+{
+    int code = 0;
+
+    /* TODO: Implement... */
+    code = pdfi_form_Tx_simple(ctx, annot, rect, V, Ff, Q, is_UTF16);
+    if (code < 0) goto exit;
+ exit:
+    return code;
+}
+
+
+/* Display text from Tx in a field or widget */
+static int pdfi_form_display_Tx(pdf_context *ctx, pdf_dict *annot, gs_rect *rect, pdf_string *V,
+                                  int64_t Ff, int64_t Q, int64_t MaxLen)
+{
+    int code = 0;
+    pdf_string *modV = NULL;
+    bool is_UTF16;
+
+    /* Get modified V that skips the BOM, if any */
+    code = pdfi_form_modV(ctx, V, &modV, &is_UTF16);
+    if (code < 0) goto exit;
+
+    if (Ff & PDFI_FORM_FF_MULTILINE) {
+        code = pdfi_form_Tx_multiline(ctx, annot, rect, modV, Ff, Q, is_UTF16);
+    } else if (Ff & PDFI_FORM_FF_COMB) {
+        code = pdfi_form_Tx_comb(ctx, annot, rect, modV, Ff, Q, MaxLen, is_UTF16);
+    } else {
+        code = pdfi_form_Tx_simple(ctx, annot, rect, modV, Ff, Q, is_UTF16);
+    }
+
  exit:
     pdfi_countdown(modV);
     return code;
@@ -3377,7 +3432,7 @@ static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *annot, pdf_obj *AP)
     code = pdfi_dict_knownget_type(ctx, annot, "V", PDF_STRING, (pdf_obj **)&V);
     if (code < 0) goto exit;
     if (code > 0) {
-        code = pdfi_form_display_text(ctx, annot, &annotrect, V, Ff, Q, MaxLen);
+        code = pdfi_form_display_Tx(ctx, annot, &annotrect, V, Ff, Q, MaxLen);
         if (code < 0) goto exit;
     }
 
