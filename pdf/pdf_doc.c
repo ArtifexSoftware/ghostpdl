@@ -201,6 +201,7 @@ void pdfi_read_OptionalRoot(pdf_context *ctx)
 {
     pdf_obj *obj = NULL;
     int code;
+    bool known;
 
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Reading other Root contents\n");
@@ -216,12 +217,27 @@ void pdfi_read_OptionalRoot(pdf_context *ctx)
             dmprintf(ctx->memory, "%% (None)\n");
     }
 
+    (void)pdfi_dict_known(ctx, ctx->Root, "Collection", &known);
+
+    if (known) {
+        if (ctx->args.pdfdebug)
+            dmprintf(ctx->memory, "%% Collection\n");
+        code = pdfi_dict_get(ctx, ctx->Root, "Collection", &ctx->Collection);
+        if (code < 0)
+            dmprintf(ctx->memory, "\n   **** Warning: Failed to read Collection information.\n");
+    }
+
 }
 
 void pdfi_free_OptionalRoot(pdf_context *ctx)
 {
     if (ctx->OCProperties) {
         pdfi_countdown(ctx->OCProperties);
+        ctx->OCProperties = NULL;
+    }
+    if (ctx->Collection) {
+        pdfi_countdown(ctx->Collection);
+        ctx->Collection = NULL;
     }
 }
 

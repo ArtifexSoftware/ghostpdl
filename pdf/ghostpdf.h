@@ -391,6 +391,7 @@ typedef struct pdf_context_s
 
     /* Optional things from Root */
     pdf_dict *OCProperties;
+    pdf_dict *Collection;
 
     /* Optional/Marked Content stuff */
     void *OFFlevels;
@@ -404,6 +405,11 @@ typedef struct pdf_context_s
     gs_font_dir * font_dir;
     /* Obviously we need a graphics state */
     gs_gstate *pgs;
+    /* set up by pdf_impl_set_device, this is the 'high water mark' for
+     * restoring back to when we close a PDF file. This ensures the device
+     * is correctly set up for any subesquent file to be run.
+     */
+    int job_gstate_level;
     /* This is currently used for Patterns, but I suspect needs to be changed to use
      * 'the enclosing context'
      */
@@ -502,6 +508,7 @@ typedef struct pdf_context_s
 #define OBJ_MEMORY(o) OBJ_CTX(o)->memory
 
 pdf_context *pdfi_create_context(gs_memory_t *pmem);
+int pdfi_clear_context(gs_memory_t *pmem, pdf_context *ctx);
 int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx);
 
 int pdfi_get_name_index(pdf_context *ctx, char *name, int len, unsigned int *returned);

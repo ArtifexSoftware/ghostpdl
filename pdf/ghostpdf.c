@@ -570,29 +570,19 @@ int pdfi_close_pdf_file(pdf_context *ctx)
         ctx->main_stream = NULL;
     }
     ctx->main_stream_length = 0;
+
+    if (ctx->filename) {
+        gs_free_object(ctx->memory, ctx->filename, "pdfi_close_pdf_file, free copy of filename");
+        ctx->filename = NULL;
+    }
+
+    pdfi_clear_context(ctx->memory, ctx);
     return 0;
 }
 
-int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
+static int pdfi_process(pdf_context *ctx)
 {
-    int code = 0, i;
-
-    code = pdfi_open_pdf_file(ctx, filename);
-    if (code < 0) {
-        goto exit;
-    }
-
-    /* Need to do this here so that ctx->writepdfmarks will be setup
-     * It is also called in pdfi_page_render()
-     * TODO: Should probably look into that..
-     */
-    pdfi_device_set_flags(ctx);
-    /* Do any custom device configuration */
-    pdfi_device_misc_config(ctx);
-
-    /* TODO: Need to handle /Collection around this point, somehow.
-     * see pdf_main.ps/pdf_collection_files()
-     */
+    int code, i;
 
     code = pdfi_doc_trailer(ctx);
 
@@ -617,9 +607,214 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
             goto exit;
         code = 0;
     }
-
  exit:
     pdfi_report_errors(ctx);
+
+    return code;
+}
+
+static int pdfi_process_collection(pdf_context *ctx)
+{
+    int code, i, NumEmbeddedFiles = 0;
+    pdf_obj *Names = NULL, *EmbeddedFiles = NULL, *FileNames = NULL;
+    pdf_obj *EF = NULL, *F = NULL;
+    char **names_array = NULL;
+
+    if (pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, &Names))
+    {
+        if(pdfi_dict_knownget_type(ctx, (pdf_dict *)Names, "EmbeddedFiles", PDF_DICT, &EmbeddedFiles))
+        {
+            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EmbeddedFiles, "Names", PDF_ARRAY, &FileNames))
+            {
+                int ix = 0, index = 0, TotalFiles = 0;
+                gp_file *scratch_file = NULL;
+                char scratch_name[gp_file_name_sizeof];
+
+                NumEmbeddedFiles = pdfi_array_size((pdf_array *)FileNames) / 2;
+
+                names_array = (char **)gs_alloc_bytes(ctx->memory, NumEmbeddedFiles * sizeof(char *), "Collection file namesarray");
+                if (names_array == NULL) {
+                    code = gs_note_error(gs_error_VMerror);
+                    goto exit;
+                }
+                memset(names_array, 0x00, NumEmbeddedFiles * sizeof(char *));
+
+                for (ix = 0;ix < NumEmbeddedFiles;ix++)
+                {
+                    pdf_obj *File = NULL;
+                    pdf_obj *Subtype = NULL;
+
+                    code = pdfi_array_get(ctx, (pdf_array *)FileNames, (ix * 2) + 1, &File);
+                    if (code < 0)
+                        break;
+
+                    if (File->type == PDF_DICT)
+                    {
+                        if (pdfi_dict_knownget_type(ctx, (pdf_dict *)File, "EF", PDF_DICT, &EF))
+                        {
+                            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EF, "F", PDF_STREAM, &F))
+                            {
+                                pdf_dict *stream_dict = NULL;
+                                pdf_c_stream *s;
+
+                                /* pdfi_dict_from_object does not increment the reference count of the stream dictionary
+                                 * so we do not need to count it down later.
+                                 */
+                                code = pdfi_dict_from_obj(ctx, F, &stream_dict);
+                                if (code >= 0) {
+                                    if (!pdfi_dict_knownget_type(ctx, stream_dict, "Subtype", PDF_NAME, &Subtype))
+                                    {
+                                        /* No Subtype, (or not a name) we can't check the Mime type, so try to read the first 2Kb
+                                         * and look for a %PDF- in that. If not present, assume its not a PDF
+                                         */
+                                        code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, (pdf_stream *)F), SEEK_SET);
+                                        if (code >= 0) {
+                                            code = pdfi_filter(ctx, (pdf_stream *)F, ctx->main_stream, &s, false);
+                                            if (code >= 0) {
+                                                char Buffer[2048];
+                                                int bytes;
+
+                                                bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 2048, s);
+                                                pdfi_countdown(s);
+                                                /* Assertion; the smallest real PDF file is at least 400 bytes */
+                                                if (bytes >= 400) {
+                                                    if (strstr(Buffer, "%PDF-") == NULL)
+                                                        code = -1;
+                                                } else
+                                                    code = -1;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!pdfi_name_is((const pdf_name *)Subtype, "application/pdf"))
+                                            code = -1;
+                                    }
+
+                                    if (code >= 0)
+                                    {
+                                        /* Appears to be a PDF file. Create a scratch file to hold it, and then
+                                         * read the file from the PDF, and write it to the scratch file. Record
+                                         * the scratch filename in the names_array for later processing.
+                                         */
+                                        scratch_file = gp_open_scratch_file(ctx->memory, "gpdf-collection-", scratch_name, "wb");
+                                        if (scratch_file != NULL) {
+                                            code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, (pdf_stream *)F), SEEK_SET);
+                                            if (code >= 0)
+                                            {
+                                                double L;
+                                                pdf_c_stream *SubFile_stream = NULL;
+
+                                                if (pdfi_dict_knownget_number(ctx, stream_dict, "Length", &L))
+                                                {
+
+                                                    code = pdfi_apply_SubFileDecode_filter(ctx, (int)L, NULL, ctx->main_stream, &SubFile_stream, false);
+                                                    if (code >= 0)
+                                                        code = pdfi_filter(ctx, (pdf_stream *)F, SubFile_stream, &s, false);
+                                                } else
+                                                    code = pdfi_filter(ctx, (pdf_stream *)F, ctx->main_stream, &s, false);
+
+                                                if (code >= 0)
+                                                {
+                                                    char Buffer[2048];
+                                                    int bytes;
+
+                                                    do {
+                                                        bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 2048, s);
+                                                        (void)gp_fwrite(Buffer, 1, bytes, scratch_file);
+                                                    } while (bytes > 0);
+
+                                                    names_array[index] = (char *)gs_alloc_bytes(ctx->memory, strlen(scratch_name) + 1, "Collection file names array entry");
+                                                    if (names_array[index] != NULL)
+                                                        strcpy(names_array[index], scratch_name);
+
+                                                    index++;
+                                                    TotalFiles++;
+                                                    pdfi_countdown(s);
+                                                }
+                                                if (SubFile_stream != NULL)
+                                                    pdfi_countdown(SubFile_stream);
+                                            }
+                                            gp_fclose(scratch_file);
+                                        } else
+                                            dmprintf(ctx->memory, "\n   **** Warning: Failed to open a scratch file.\n");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    pdfi_countdown(Subtype);
+                    Subtype = NULL;
+                    pdfi_countdown(F);
+                    F = NULL;
+                    pdfi_countdown(EF);
+                    EF = NULL;
+                    pdfi_countdown(File);
+                    File = NULL;
+                }
+                if (TotalFiles > 0)
+                {
+                    /* names_array is full of pointers to the scratch file names containing PDF files.
+                     * Now we need to run each PDF file. First we close down the current file.
+                     */
+                    (void)pdfi_close_pdf_file(ctx);
+
+                    for (ix = 0;ix < NumEmbeddedFiles;ix++) {
+                        if (names_array[ix] != NULL) {
+                            (void)pdfi_process_pdf_file(ctx, names_array[ix]);
+                            (void)pdfi_close_pdf_file(ctx);
+                        }
+                    }
+                } else
+                    /* We didn't find any PDF files in the Embedded Files. So just run the
+                     * pages in the container file (the original PDF file)
+                     */
+                    pdfi_process(ctx);
+            } else {
+                dmprintf(ctx->memory, "\n   **** Warning: Failed to read EmbeededFiles Names tree.\n");
+            }
+        } else {
+            dmprintf(ctx->memory, "\n   **** Warning: Failed to read EmbeddedFiles.\n");
+        }
+    } else {
+        dmprintf(ctx->memory, "\n   **** Warning: Failed to find Names tree.\n");
+    }
+
+exit:
+    for (i = 0; i < NumEmbeddedFiles;i++)
+        gs_free_object(ctx->memory, names_array[i], "free collection temporary filenames");
+    gs_free_object(ctx->memory, names_array, "free collection names array");
+    pdfi_countdown(F);
+    pdfi_countdown(EF);
+    pdfi_countdown(FileNames);
+    pdfi_countdown(EmbeddedFiles);
+    pdfi_countdown(Names);
+
+    return 0;
+}
+
+int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
+{
+    int code = 0;
+
+    code = pdfi_open_pdf_file(ctx, filename);
+    if (code < 0) {
+        pdfi_report_errors(ctx);
+        return code;
+    }
+
+    /* Need to do this here so that ctx->writepdfmarks will be setup
+     * It is also called in pdfi_page_render()
+     * TODO: Should probably look into that..
+     */
+    pdfi_device_set_flags(ctx);
+    /* Do any custom device configuration */
+    pdfi_device_misc_config(ctx);
+
+    if (ctx->Collection != NULL)
+        code = pdfi_process_collection(ctx);
+    else
+        code = pdfi_process(ctx);
 
     pdfi_close_pdf_file(ctx);
     return code;
@@ -1029,7 +1224,12 @@ pdfi_print_cache(pdf_context *ctx)
 #endif
 #endif /* DEBUG */
 
-int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
+/* pdfi_clear_context frees all the PDF objects associated with interpreting a given
+ * PDF file. Once we've called this we can happily run another file. This function is
+ * called by pdf_free_context (in case of errors during the file leaving state around)
+ * and by pdfi_close_pdf_file.
+ */
+int pdfi_clear_context(gs_memory_t *pmem, pdf_context *ctx)
 {
 #if CACHE_STATISTICS
     float compressed_hit_rate = 0.0, hit_rate = 0.0;
@@ -1046,23 +1246,34 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     dmprintf1(ctx->memory, "Normal object cache hit rate: %f\n", hit_rate);
     dmprintf1(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
 #endif
-    if (ctx->args.PageList)
+    if (ctx->args.PageList) {
         gs_free_object(ctx->memory, ctx->args.PageList, "pdfi_free_context");
-
-    if (ctx->Trailer)
+        ctx->args.PageList = NULL;
+    }
+    if (ctx->Trailer) {
         pdfi_countdown(ctx->Trailer);
+        ctx->Trailer = NULL;
+    }
 
-    if (ctx->AcroForm)
+    if (ctx->AcroForm) {
         pdfi_countdown(ctx->AcroForm);
+        ctx->AcroForm = NULL;
+    }
 
-    if(ctx->Root)
+    if(ctx->Root) {
         pdfi_countdown(ctx->Root);
+        ctx->Root = NULL;
+    }
 
-    if (ctx->Info)
+    if (ctx->Info) {
         pdfi_countdown(ctx->Info);
+        ctx->Info = NULL;
+    }
 
-    if (ctx->PagesTree)
+    if (ctx->PagesTree) {
         pdfi_countdown(ctx->PagesTree);
+        ctx->PagesTree = NULL;
+    }
 
     pdfi_doc_page_array_free(ctx);
 
@@ -1073,13 +1284,11 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
 
     pdfi_free_OptionalRoot(ctx);
 
-    if (ctx->stack_bot) {
+    if (ctx->stack_bot)
         pdfi_clearstack(ctx);
-        gs_free_object(ctx->memory, ctx->stack_bot, "pdfi_free_context");
-    }
 
     if (ctx->filename) {
-        /* This should already be closed, but lets make sure */
+        /* This should already be closed! */
         pdfi_close_pdf_file(ctx);
         gs_free_object(ctx->memory, ctx->filename, "pdfi_free_context, free copy of filename");
         ctx->filename = NULL;
@@ -1093,6 +1302,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
 
     if(ctx->pgs != NULL) {
         gx_pattern_cache_free(ctx->pgs->pattern_cache);
+        ctx->pgs->pattern_cache = NULL;
         if (ctx->pgs->font)
             pdfi_countdown_current_font(ctx);
 
@@ -1100,23 +1310,21 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
          * will not restore below two gstates and we want to clear the entire
          * stack of saved states, back to the initial state.
          */
-        while (ctx->pgs->saved)
+        while (ctx->pgs->level != ctx->job_gstate_level && ctx->pgs->saved)
             gs_grestore_only(ctx->pgs);
-
-        /* And here we free the initial graphics state */
-        gs_gstate_free(ctx->pgs);
-        ctx->pgs = NULL;
     }
-
-    pdfi_free_name_table(ctx);
 
     pdfi_free_DefaultQState(ctx);
     pdfi_oc_free(ctx);
 
-    if(ctx->encryption.EKey)
+    if(ctx->encryption.EKey) {
         pdfi_countdown(ctx->encryption.EKey);
-    if (ctx->encryption.Password)
+        ctx->encryption.EKey = NULL;
+    }
+    if (ctx->encryption.Password) {
         gs_free_object(ctx->memory, ctx->encryption.Password, "PDF Password from params");
+        ctx->encryption.Password = NULL;
+    }
 
     if (ctx->cache_entries != 0) {
         pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
@@ -1184,11 +1392,33 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
      * graphics library fonts are refrenced from pdf_font objects, and those may be in the cache, which means they
      * won't be freed until we empty the cache. So we can't free 'font_dir' until after the cache has been cleared.
      */
-    if (ctx->font_dir) {
+    if (ctx->font_dir)
         gx_purge_selected_cached_chars(ctx->font_dir, pdfi_fontdir_purge_all, (void *)NULL);
-        gs_free_object(ctx->memory, ctx->font_dir, "pdfi_free_context");
-    }
+
     pdfi_countdown(ctx->pdffontmap);
+    ctx->pdffontmap = NULL;
+
+    return 0;
+}
+
+int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
+{
+    pdfi_clear_context(pmem, ctx);
+
+    gs_free_object(ctx->memory, ctx->stack_bot, "pdfi_free_context");
+
+    pdfi_free_name_table(ctx);
+
+    while (ctx->pgs->saved)
+        gs_grestore_only(ctx->pgs);
+
+    /* And here we free the initial graphics state */
+    gs_gstate_free(ctx->pgs);
+    ctx->pgs = NULL;
+
+    if (ctx->font_dir)
+        gs_free_object(ctx->memory, ctx->font_dir, "pdfi_free_context");
+
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
     return 0;
 }

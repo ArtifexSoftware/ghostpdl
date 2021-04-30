@@ -189,6 +189,8 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
         gs_newpath(ctx->pgs);
         gs_fill(ctx->pgs);
     }
+
+    ctx->job_gstate_level = ctx->pgs->level;
     return 0;
 
 cleanup_halftone:
