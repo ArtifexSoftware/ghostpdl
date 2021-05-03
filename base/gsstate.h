@@ -25,8 +25,8 @@
 
 /* Initial allocation and freeing */
 gs_gstate *gs_gstate_alloc(gs_memory_t *);	/* 0 if fails */
-int gs_gstate_free(gs_gstate *);
-int gs_gstate_free_chain(gs_gstate *);
+void gs_gstate_free(gs_gstate *);
+void gs_gstate_free_chain(gs_gstate *);
 
 /* Initialization, saving, restoring, and copying */
 int gs_gsave(gs_gstate *), gs_grestore(gs_gstate *), gs_grestoreall(gs_gstate *);
