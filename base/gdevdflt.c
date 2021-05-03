@@ -1425,7 +1425,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     return 0;
 }
 
-int gx_device_unsubclass(gx_device *dev)
+void gx_device_unsubclass(gx_device *dev)
 {
     generic_subclass_data *psubclass_data;
     gx_device *parent, *child;
@@ -1434,7 +1434,7 @@ int gx_device_unsubclass(gx_device *dev)
 
     /* This should not happen... */
     if (!dev)
-        return 0;
+        return;
 
     ref_count = dev->rc.ref_count;
     child = dev->child;
@@ -1465,7 +1465,7 @@ int gx_device_unsubclass(gx_device *dev)
 
     /* If ths device has any private storage, free it now */
     if (psubclass_data)
-        gs_free_object(dev->memory->non_gc_memory, psubclass_data, "subclass memory for first-last page");
+        gs_free_object(dev->memory->non_gc_memory, psubclass_data, "gx_device_unsubclass");
 
     /* Copy the child device into ths device's memory */
     if (child) {
@@ -1477,62 +1477,67 @@ int gx_device_unsubclass(gx_device *dev)
         gs_set_object_type(child->memory, dev, b_std);
 
         dev->stype = b_std;
-        /* The reference count of the subclassing device may have been changed
-         * (eg graphics states pointing to it) after we subclassed the device. We
-         * need to ensure that we do not overwrite this when we copy back the subclassed
-         * device.
+        /* The reference count of the subclassing device may have been
+         * changed (eg graphics states pointing to it) after we subclassed
+         * the device. We need to ensure that we do not overwrite this
+         * when we copy back the subclassed device.
          */
         dev->rc.ref_count = ref_count;
 
-        /* If we have a chain of devices, make sure the chain beond the device we're unsubclassing
-         * doesn't get broken, we needd to detach the lower chain and reattach it at the new
-         * highest level
+        /* If we have a chain of devices, make sure the chain beyond the
+         * device we're unsubclassing doesn't get broken, we need to
+         * detach the lower chain and reattach it at the new highest level.
          */
         if (child->child)
             child->child->parent = dev;
         child->parent->child = child->child;
     }
 
-    /* How can we have a subclass device with no child ? Simples; when we hit the end of job
-     * restore, the devices are not freed in device chain order. To make sure we don't end up
-     * following stale pointers, when a device is freed we remove it from the chain and update
-     * any danlging poitners to NULL. When we later free the remaining devices its possible that
-     * their child pointer can then be NULL.
+    /* How can we have a subclass device with no child ? Simples; when we
+     * hit the end of job restore, the devices are not freed in device
+     * chain order. To make sure we don't end up following stale pointers,
+     * when a device is freed we remove it from the chain and update
+     * any dangling pointers to NULL. When we later free the remaining
+     * devices it's possible that their child pointer can then be NULL.
      */
     if (child) {
         if (child->icc_struct)
-            rc_decrement(child->icc_struct, "gx_unsubclass_device, icc_struct");
+            rc_decrement(child->icc_struct, "gx_device_unsubclass, icc_struct");
         if (child->PageList)
-            rc_decrement(child->PageList, "gx_unsubclass_device, PageList");
+            rc_decrement(child->PageList, "gx_device_unsubclass, PageList");
         if (child->NupControl)
-            rc_decrement(child->NupControl, "gx_unsubclass_device, NupControl");
-        /* we cannot afford to free the child device if its stype is not dynamic because
-         * we can't 'null' the finalise routine, and we cannot permit the device to be finalised
-         * because we have copied it up one level, not discarded it.
-         * (this shouldn't happen! Child devices are always created with a dynamic stype)
-         * If this ever happens garbage collecton will eventually clean up the memory.
+            rc_decrement(child->NupControl, "gx_device_unsubclass, NupControl");
+        /* We cannot afford to free the child device if its stype is not
+         * dynamic because we can't 'null' the finalise routine, and we
+         * cannot permit the device to be finalised because we have copied
+         * it up one level, not discarded it. (This shouldn't happen! Child
+         * devices are always created with a dynamic stype.) If this ever
+         * happens garbage collecton will eventually clean up the memory.
          */
         if (child->stype_is_dynamic) {
-            /* Make sure that nothing will tyr to follow the device chain, just security here */
+            /* Make sure that nothing will try to follow the device chain,
+             * just security here. */
             child->parent = NULL;
             child->child = NULL;
-            /* Make certainthe memory will be freed, zap the reference count */
+            /* Make certain the memory will be freed, zap the reference count */
             child->rc.ref_count = 0;
-            /* We *don't* want to run the finalize routine. This would free the stype and
-             * properly handle the icc_struct and PageList, but for devices with a custom
-             * finalize (eg psdcmyk) it might also free memory it had allocated, and we're
-             * still pointing at that memory in the parent.
-             * The indirection through a variable is just to get rid of const warnings.
+            /* We *don't* want to run the finalize routine. This would free
+             * the stype and properly handle the icc_struct and PageList,
+             * but for devices with a custom finalize (eg psdcmyk) it might
+             * also free memory it had allocated, and we're still pointing
+             * at that memory in the parent. The indirection through a
+             * variable is just to get rid of const warnings.
              */
             b_std = (gs_memory_struct_type_t *)child->stype;
             b_std->finalize = NULL;
-            /* Having patched the stype, we need to make sure the memory manager uses it.
-             * It keeps a copy in its own data structure, and would use that copy, which would
-             * mean it would call the finalize routine that we just patched out.
+            /* Having patched the stype, we need to make sure the memory
+             * manager uses it. It keeps a copy in its own data structure,
+             * and would use that copy, which would mean it would call the
+             * finalize routine that we just patched out.
              */
             gs_set_object_type(dev->memory->stable_memory, child, b_std);
             /* Now (finally) free the child memory */
-            gs_free_object(dev->memory->stable_memory, child, "gx_unsubclass_device(device)");
+            gs_free_object(dev->memory->stable_memory, child, "gx_device_unsubclass(device)");
             /* And the stype for it */
             gs_free_const_object(dev->memory->non_gc_memory, b_std, "gs_device_unsubclass(stype)");
             child = 0;
@@ -1552,8 +1557,6 @@ int gx_device_unsubclass(gx_device *dev)
     } else {
         dev->stype_is_dynamic = 0;
     }
-
-    return 0;
 }
 
 int gx_update_from_subclass(gx_device *dev)
