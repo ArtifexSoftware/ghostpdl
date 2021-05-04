@@ -960,10 +960,19 @@ pdfi_annot_display_centered_text(pdf_context *ctx, pdf_dict *annot, gs_rect *rec
     return code;
 }
 
-/* Display a string formatted to fit in rect (outside BT/ET) */
+/* Display a string formatted to fit in rect (outside BT/ET)
+ *
+ * TODO: I am sharing code between the FreeText and field/Tx implementation.
+ * The gs code has completely different implementations for these.
+ * I am not sure if there are some different assumptions about font encodings?
+ * The Tx field can apparently be UTF8 or UTF16, whereas the FreeText implementation just assumed
+ * it was ASCII.
+ * If you see some weird behavior with character mappings or line breaks, then
+ * this might be something to revisit.
+ */
 static int
 pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
-                                  gs_rect *rect, pdf_string *text)
+                                  gs_rect *rect, pdf_string *text, bool is_UTF16)
 {
     double x;
     double lineheight = 0;
@@ -978,13 +987,19 @@ pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
     byte ch;
     bool firstchar = true;
     bool linestart = true;
+    int charlen;
+
+    if (is_UTF16)
+        charlen = 2;
+    else
+        charlen = 1;
 
     code = pdfi_BT(ctx);
     if (code < 0)
         return code;
 
     /* Allocate a temp string to use, length 1 char */
-    code = pdfi_object_alloc(ctx, PDF_STRING, 1, (pdf_obj **)&temp_string);
+    code = pdfi_object_alloc(ctx, PDF_STRING, charlen, (pdf_obj **)&temp_string);
     if (code < 0) goto exit;
     pdfi_countup(temp_string);
 
@@ -996,18 +1011,24 @@ pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
     x_max = rect->q.x;
     x = x_start;
 
-    for (i=0; i<text->length; i++) {
+    for (i=0; i<text->length; i+=charlen) {
+        int j;
+
         if (linestart) {
             x = x_start;
         }
 
-        ch = text->data[i];
-        temp_string->data[0] = ch;
+        for (j = 0; j < charlen; j++) {
+            ch = text->data[i+j];
+            temp_string->data[j] = ch;
+        }
 
         /* If EOL character encountered, move down to next line */
-        if (ch == '\r' || ch == '\n') {
-            linestart = true;
-            continue;
+        if (charlen == 1) { /* Can only check this for ASCII font */
+            if (ch == '\r' || ch == '\n') {
+                linestart = true;
+                continue;
+            }
         }
 
         /* get size of the character */
@@ -2265,7 +2286,7 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     code = pdfi_dict_knownget_type(ctx, annot, "Contents", PDF_STRING, (pdf_obj **)&Contents);
     if (code < 0) goto exit;
     if (code > 0) {
-        code = pdfi_annot_display_formatted_text(ctx, annot, &modrect, Contents);
+        code = pdfi_annot_display_formatted_text(ctx, annot, &modrect, Contents, false);
         if (code < 0) goto exit;
     }
 
@@ -3345,12 +3366,7 @@ static int pdfi_form_Tx_multiline(pdf_context *ctx, pdf_dict *annot, gs_rect *re
     modrect.q.x -= 2;
     modrect.q.y -= 2;
 
-    if (is_UTF16) {
-        /* TODO: Not supported yet */
-        code = pdfi_form_Tx_simple(ctx, annot, rect, V, Ff, Q, is_UTF16);
-    } else {
-        code = pdfi_annot_display_formatted_text(ctx, annot, &modrect, V);
-    }
+    code = pdfi_annot_display_formatted_text(ctx, annot, &modrect, V, is_UTF16);
     if (code < 0) goto exit;
 
  exit:
@@ -3364,7 +3380,7 @@ static int pdfi_form_Tx_comb(pdf_context *ctx, pdf_dict *annot, gs_rect *rect, p
 {
     int code = 0;
 
-    /* TODO: Implement... */
+    /* TODO: Implement... Need a sample that uses COMB! */
     code = pdfi_form_Tx_simple(ctx, annot, rect, V, Ff, Q, is_UTF16);
     if (code < 0) goto exit;
  exit:
@@ -3379,6 +3395,10 @@ static int pdfi_form_display_Tx(pdf_context *ctx, pdf_dict *annot, gs_rect *rect
     int code = 0;
     pdf_string *modV = NULL;
     bool is_UTF16;
+
+    /* TODO: If we wanted to preserve this for pdfwrite, we would have to generate
+     * a stream for the AP.  See PDF1.7 spec, Variable Text (page 677).
+     */
 
     /* Get modified V that skips the BOM, if any */
     code = pdfi_form_modV(ctx, V, &modV, &is_UTF16);
@@ -3467,6 +3487,17 @@ static int pdfi_form_draw_Sig(pdf_context *ctx, pdf_dict *field, pdf_obj *AP)
     return code;
 }
 
+/* TODO: The spec handles "regenerate appearance", which it does by generating
+ * a new AP stream for the field, and then rendering it as a form.
+ * The gs code does try to handle this case.
+ * For now I am just going to generate the data inline, without building it as a Form/Stream.
+ * If we have want to preserve the AP (i.e. for pdfwrite device, generate the AP and include
+ * it in the output, rather than just rendering it into the output) then this needs to change.
+ * Currently gs doesn't try to preserve AcroForms, so we aren't losing any functionality by
+ * not doing this.  But it is a place for a future enhancement.
+ *
+ * See also, the comment on pdfi_annot_preserve_Widget().
+ */
 static int pdfi_annot_render_field(pdf_context *ctx, pdf_dict *field, pdf_name *FT, pdf_obj *AP)
 {
     int code;
@@ -4112,7 +4143,9 @@ static int pdfi_annot_preserve_Widget(pdf_context *ctx, pdf_dict *annot, pdf_nam
 %% we don't want to preserve widget annotations either, because the consumer of the new
 %% PDF won't know what values they should take. So we draw widget annotations instead. If we
 %% ever preserve AcroForms then we should alter this to preserve Widgets as well.
-    */
+     *
+     * TODO: See also, comment on pdfi_annot_render_field().
+     */
 
     return pdfi_annot_draw(ctx, annot, subtype);
 }

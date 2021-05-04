@@ -222,7 +222,7 @@ void pdfi_read_OptionalRoot(pdf_context *ctx)
     if (known) {
         if (ctx->args.pdfdebug)
             dmprintf(ctx->memory, "%% Collection\n");
-        code = pdfi_dict_get(ctx, ctx->Root, "Collection", &ctx->Collection);
+        code = pdfi_dict_get(ctx, ctx->Root, "Collection", (pdf_obj **)&ctx->Collection);
         if (code < 0)
             dmprintf(ctx->memory, "\n   **** Warning: Failed to read Collection information.\n");
     }
