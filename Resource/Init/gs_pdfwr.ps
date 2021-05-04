@@ -573,10 +573,10 @@ userdict /.pdfcvstring () put
 
 /pdfmark {		% -mark- <key> <value> ... <markname> pdfmark -
   counttomark 0 eq {
-    /pdfmark /stackunderflow signalerror
+    /pdfmark cvx /stackunderflow signalerror
   } if
   dup type /nametype eq not {
-    /pdfmark /typecheck signalerror
+    /pdfmark cvx /typecheck signalerror
   } if
   dup /SP eq {
     % A hack for synchronizing the clipping path.
@@ -873,7 +873,7 @@ currentdict /.pdf_hook_DSC_Creator undef
     //true
   }ifelse
   {
-    /setdistillerparams /undefined signalerror
+    /setdistillerparams cvx /undefined signalerror
   } if
   .setdistillerparams
 } bind odef
@@ -885,7 +885,7 @@ currentdict /.pdf_hook_DSC_Creator undef
     //true
   }ifelse
   {
-    /currentdistillerparams /undefined signalerror
+    /currentdistillerparams cvx /undefined signalerror
   } if
   .currentdistillerparams
 } bind odef
