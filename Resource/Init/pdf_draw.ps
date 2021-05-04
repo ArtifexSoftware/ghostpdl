@@ -4350,7 +4350,7 @@ currentdict /set_bc_color undef
             scale
             dup /InkList knownoget {
               { oforce
-                mark exch { oforce } forall
+                [ exch { oforce } forall ]
                 .pdfinkpath
                 stroke
               } forall
