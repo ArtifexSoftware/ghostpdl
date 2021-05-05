@@ -604,7 +604,7 @@ static int zPDFmetadata(i_ctx_t *i_ctx_p)
 static int zPDFdrawpage(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = 0;
+    int i, code = 0;
     uint64_t page = 0;
     pdfctx_t *pdfctx;
     gs_matrix mat;
@@ -625,10 +625,12 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
     if (code < 0)
         goto error;
 
-    if (pdfctx->ctx->pgs->dev_ht)
-        rc_decrement(pdfctx->ctx->pgs->dev_ht, "zPDFdrawpage");
-    pdfctx->ctx->pgs->dev_ht = igs->dev_ht;
-    rc_increment(pdfctx->ctx->pgs->dev_ht);
+    for (i = 0; i < HT_OBJTYPE_COUNT; i++) {
+        if (pdfctx->ctx->pgs->dev_ht[i])
+            rc_decrement(pdfctx->ctx->pgs->dev_ht[i], "zPDFdrawpage");
+        pdfctx->ctx->pgs->dev_ht[i] = igs->dev_ht[i];
+        rc_increment(pdfctx->ctx->pgs->dev_ht[i]);
+    }
 
     code = gx_cpath_copy(igs->clip_path, (gx_clip_path *)pdfctx->ctx->pgs->clip_path);
     if (code < 0)

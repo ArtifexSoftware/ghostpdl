@@ -23,7 +23,6 @@
 #include "gxdcolor.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
-#include "gxdevrop.h"
 #include "gdevmem.h"
 #include "gdevmrop.h"
 
@@ -47,12 +46,13 @@
 /* ---------------- RasterOp with 8-bit gray / 24-bit RGB ---------------- */
 
 int
-mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
+mem_gray8_rgb24_strip_copy_rop2(gx_device * dev,
              const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
                                const gx_color_index * scolors,
            const gx_strip_bitmap * textures, const gx_color_index * tcolors,
                                int x, int y, int width, int height,
-                       int phase_x, int phase_y, gs_logical_operation_t dirty_lop)
+                       int phase_x, int phase_y,
+                       gs_logical_operation_t dirty_lop, uint planar_height)
 {
     gx_device_memory *mdev = (gx_device_memory *) dev;
     gs_logical_operation_t lop = lop_sanitize(dirty_lop);
@@ -76,6 +76,8 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
     static int bytelen;
 #endif
 #endif
+
+    /* assert(planar_height == 0); */
 
     /* Check for constant source. */
     if (!rop3_uses_S(lop)) {
@@ -136,11 +138,11 @@ bw:         if (bw_pixel == 0x00)
         case rop3_T:
             break;
         default:
-df:         return mem_default_strip_copy_rop(dev,
-                                              sdata, sourcex, sraster, id,
-                                              scolors, textures, tcolors,
-                                              x, y, width, height,
-                                              phase_x, phase_y, lop);
+df:         return mem_default_strip_copy_rop2(dev,
+                                               sdata, sourcex, sraster, id,
+                                               scolors, textures, tcolors,
+                                               x, y, width, height,
+                                               phase_x, phase_y, lop, 0);
         }
         /* Put the updated rop back into the lop */
         lop = rop;

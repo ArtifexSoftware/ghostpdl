@@ -169,6 +169,8 @@ gs_sethalftone_prepare(gs_gstate * pgs, gs_halftone * pht,
     gx_ht_order_component *pocs = 0;
     int code = 0;
 
+    if (pht->objtype >= HT_OBJTYPE_COUNT)
+        return_error(gs_error_limitcheck);
     switch (pht->type) {
         case ht_type_colorscreen:
             {

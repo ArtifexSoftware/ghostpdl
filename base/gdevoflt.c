@@ -52,7 +52,6 @@ static dev_proc_fill_parallelogram(obj_filter_fill_parallelogram);
 static dev_proc_fill_triangle(obj_filter_fill_triangle);
 static dev_proc_draw_thin_line(obj_filter_draw_thin_line);
 static dev_proc_strip_tile_rectangle(obj_filter_strip_tile_rectangle);
-static dev_proc_strip_copy_rop(obj_filter_strip_copy_rop);
 static dev_proc_begin_typed_image(obj_filter_begin_typed_image);
 static dev_proc_text_begin(obj_filter_text_begin);
 static dev_proc_fill_rectangle_hl_color(obj_filter_fill_rectangle_hl_color);
@@ -101,7 +100,6 @@ obj_filter_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_triangle, obj_filter_fill_triangle);
     set_dev_proc(dev, draw_thin_line, obj_filter_draw_thin_line);
     set_dev_proc(dev, strip_tile_rectangle, obj_filter_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, obj_filter_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, obj_filter_begin_typed_image);
     set_dev_proc(dev, text_begin, obj_filter_text_begin);
     set_dev_proc(dev, fill_rectangle_hl_color, obj_filter_fill_rectangle_hl_color);
@@ -216,17 +214,6 @@ int obj_filter_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles
 {
     if ((dev->ObjectFilter & FILTERIMAGE) == 0)
         return default_subclass_strip_tile_rectangle(dev, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
-    return 0;
-}
-
-int obj_filter_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
-    const gx_color_index *scolors,
-    const gx_strip_bitmap *textures, const gx_color_index *tcolors,
-    int x, int y, int width, int height,
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
-        return default_subclass_strip_copy_rop(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
     return 0;
 }
 

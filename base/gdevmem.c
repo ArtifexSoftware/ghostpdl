@@ -886,13 +886,11 @@ void mem_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, sync_output, gx_default_sync_output);
     set_dev_proc(dev, output_page, gx_default_output_page);
     set_dev_proc(dev, close_device, mem_close);
-    set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, get_params, gx_default_get_params);
     set_dev_proc(dev, put_params, gx_default_put_params);
     set_dev_proc(dev, map_rgb_alpha_color, gx_default_map_rgb_alpha_color);
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
-    set_dev_proc(dev, get_band, gx_default_get_band);
     set_dev_proc(dev, fill_path, gx_default_fill_path);
     set_dev_proc(dev, stroke_path, gx_default_stroke_path);
     set_dev_proc(dev, fill_mask, gx_default_fill_mask);
@@ -933,7 +931,6 @@ void mem_dev_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, copy_mono, fns->copy_mono);
     set_dev_proc(dev, copy_color, fns->copy_color);
     set_dev_proc(dev, copy_alpha, fns->copy_alpha);
-    set_dev_proc(dev, strip_copy_rop, fns->strip_copy_rop);
     set_dev_proc(dev, strip_copy_rop2, fns->strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rectangle, fns->strip_tile_rectangle);
 }
@@ -951,7 +948,6 @@ void mem_word_dev_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, copy_mono, fns->copy_mono);
     set_dev_proc(dev, copy_color, fns->copy_color);
     set_dev_proc(dev, copy_alpha, fns->copy_alpha);
-    set_dev_proc(dev, strip_copy_rop, fns->strip_copy_rop);
     set_dev_proc(dev, strip_copy_rop2, fns->strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rectangle, fns->strip_tile_rectangle);
 }

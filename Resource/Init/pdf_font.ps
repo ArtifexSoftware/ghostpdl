@@ -1301,7 +1301,7 @@ currentdict /eexec_pdf_param_dict .undef
     /Resources 1 index /Resources knownoget {
        oforce
     } {
-       LocalResources
+      0 dict
     } ifelse def
     /FontBBox 1 index /FontBBox get cvx def
     /FontMatrix 1 index /FontMatrix oget def
@@ -1339,8 +1339,9 @@ currentdict /eexec_pdf_param_dict .undef
           0 0 0 0 0 0
           pdfopdict /d1 get exec
         }{
-          { //false resolvestream
-                % Stack: filepos stream
+          {
+            dup //false resolvestream
+                % Stack: filepos streamdict stream
                 % Don't let setgcolor set the color inside the BuildGlyph
                 % procedure, because this causes an /undefined error.
             q
@@ -1351,7 +1352,17 @@ currentdict /eexec_pdf_param_dict .undef
             %% we use 'nodict'[ to store other PDF state stuff that isn't gstate, and we
             %% probably always will, so it may well be more trouble than its worth.
             /Dummy //false gput
-            Font /Resources get exch pdfopdict
+            Font /Resources get  % Stack: filepos streamdict stream resdict
+            dup length 0 eq {
+              3 -1 roll /Resources knownoget {
+                exch pop
+                (   **** Warning: Type 3 font has resource dictionary in glyph stream.\n)
+                pdfformatwarning
+              } if
+            } {
+              3 -1 roll pop
+            } ifelse
+            exch pdfopdict
             /BuildCharDictDepth countdictstack def
             .pdfruncontext
             countdictstack BuildCharDictDepth sub
@@ -2740,7 +2751,7 @@ drawopdict begin
       {
         PDFSTOPONERROR
         {
-          /typecheck cvx signalerror
+          /typecheck signalerror
         }
         {
           % Bug 689450
@@ -2758,7 +2769,7 @@ drawopdict begin
     {
       PDFSTOPONERROR
       {
-          pop /undefined cvx signalerror
+          pop /undefined signalerror
       }
       {
         % Bug 689037

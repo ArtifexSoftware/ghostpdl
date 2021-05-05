@@ -678,7 +678,6 @@ x_set_buffer(gx_device_X * xdev)
         COPY_PROC(fill_triangle);
         COPY_PROC(draw_thin_line);
         COPY_PROC(strip_tile_rectangle);
-        COPY_PROC(strip_copy_rop);
         COPY_PROC(begin_typed_image);
         COPY_PROC(text_begin);
 #undef COPY_PROC

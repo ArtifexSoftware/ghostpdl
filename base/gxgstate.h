@@ -81,7 +81,7 @@ typedef struct gx_transfer_s {
         gs_halftone *halftone;			/* (RC) */\
         gs_int_point screen_phase[gs_color_select_count];\
                 /* dev_ht depends on halftone and device resolution. */\
-        gx_device_halftone *dev_ht;		/* (RC) */\
+        gx_device_halftone *dev_ht[HT_OBJTYPE_COUNT];		/* (RC) */\
 \
                 /* Color (device-dependent): */\
 \
@@ -139,7 +139,10 @@ typedef struct gs_gstate_color_s {
  */
 #define gs_cr_state_do_rc_ptrs(m)\
   m(halftone) \
-  m(dev_ht) \
+  m(dev_ht[HT_OBJTYPE_DEFAULT]) \
+  m(dev_ht[HT_OBJTYPE_VECTOR]) \
+  m(dev_ht[HT_OBJTYPE_IMAGE]) \
+  m(dev_ht[HT_OBJTYPE_TEXT]) \
   m(cie_render) \
   m(black_generation) \
   m(undercolor_removal) \
@@ -155,19 +158,22 @@ typedef struct gs_gstate_color_s {
 /* Enumerate the pointers in a c.r. state. */
 #define gs_cr_state_do_ptrs(m)\
   m(0,halftone) \
-  m(1,dev_ht) \
-  m(2,cie_render) \
-  m(3,black_generation) \
-  m(4,undercolor_removal) \
-  m(5,set_transfer.red) \
-  m(6,set_transfer.green) \
-  m(7,set_transfer.blue) \
-  m(8,set_transfer.gray)\
-  m(9,cie_joint_caches) \
-  m(10,pattern_cache) \
-  m(11,devicergb_cs) \
-  m(12,devicecmyk_cs)\
-  m(13,cie_joint_caches_alt)
+  m(1,dev_ht[HT_OBJTYPE_DEFAULT]) \
+  m(2, dev_ht[HT_OBJTYPE_VECTOR]) \
+  m(3, dev_ht[HT_OBJTYPE_IMAGE]) \
+  m(4, dev_ht[HT_OBJTYPE_TEXT]) \
+  m(5,cie_render) \
+  m(6,black_generation) \
+  m(7,undercolor_removal) \
+  m(8,set_transfer.red) \
+  m(9,set_transfer.green) \
+  m(10,set_transfer.blue) \
+  m(11,set_transfer.gray)\
+  m(12,cie_joint_caches) \
+  m(13,pattern_cache) \
+  m(14,devicergb_cs) \
+  m(15,devicecmyk_cs)\
+  m(16,cie_joint_caches_alt)
   /*
    * We handle effective_transfer specially in gsistate.c since its pointers
    * are not enumerated for garbage collection but they are are relocated.
@@ -176,7 +182,7 @@ typedef struct gs_gstate_color_s {
  * This count does not include the effective_transfer pointers since they
  * are not enumerated for GC.
  */
-#define st_cr_state_num_ptrs 14
+#define st_cr_state_num_ptrs 17
 
 struct gs_devicen_color_map_s {
     bool use_alt_cspace;

@@ -1828,7 +1828,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             pht->params.multiple.components = phtc;
             pht->params.multiple.num_comp = 1;
             pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
-            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
+            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs), HT_OBJTYPE_DEFAULT);
             if (code < 0)
                 goto error;
 
@@ -1844,7 +1844,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             if (code < 0)
                 goto error;
 
-            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
+            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs), HT_OBJTYPE_DEFAULT);
             if (code < 0)
                 goto error;
 
@@ -1897,7 +1897,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
                 pdfi_countdown(transfer);
             }
 
-            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
+            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs), HT_OBJTYPE_DEFAULT);
             if (code < 0)
                 goto error;
 
@@ -1949,7 +1949,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
                 pdfi_countdown(transfer);
             }
 
-            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
+            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs), HT_OBJTYPE_DEFAULT);
             if (code < 0)
                 goto error;
 
@@ -2001,7 +2001,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
                 pdfi_countdown(transfer);
             }
 
-            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
+            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs), HT_OBJTYPE_DEFAULT);
             if (code < 0)
                 goto error;
 

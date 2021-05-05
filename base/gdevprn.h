@@ -363,8 +363,8 @@ bool gdev_prn_file_is_new(const gx_device_printer *pdev);
  * not available, so we return all-1s (i.e., any color may appear) as the
  * 'or', and the entire page as the range; we may improve this someday.
  *
- * The return value is like get_band: the first Y value of the actual range
- * is stored in *range_start, and the height of the range is returned.
+ * On return the first Y value of the actual range is stored in
+ * *range_start, and the height of the range is returned.
  * If the parameters are invalid, the procedure returns -1.
  */
 int gdev_prn_color_usage(gx_device *dev, int y, int height,

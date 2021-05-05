@@ -1991,8 +1991,22 @@ static int
 getbits_chunky_line(gx_downscale_liner *liner_, void *buffer, int row)
 {
     liner_getbits_chunky *liner = (liner_getbits_chunky *)liner_;
+    gs_int_rect rect;
+    gs_get_bits_params_t params;
 
-    return (*dev_proc(liner->dev, get_bits))(liner->dev, row, buffer, NULL);
+    rect.p.x = 0;
+    rect.p.y = row;
+    rect.q.x = liner->dev->width;
+    rect.q.y = row+1;
+    params.x_offset = 0;
+    params.raster = bitmap_raster(liner->dev->width * liner->dev->color_info.depth);
+    params.options = (GB_ALIGN_ANY |
+                      GB_RETURN_COPY |
+                      GB_OFFSET_0 |
+                      GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
+                      GB_COLORS_NATIVE | GB_ALPHA_NONE);
+    params.data[0] = buffer;
+    return (*dev_proc(liner->dev, get_bits_rectangle))(liner->dev, &rect, &params, NULL);
 }
 
 static void

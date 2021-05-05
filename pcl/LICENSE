@@ -32,32 +32,3 @@
   in a file called COPYING.AFPL. If not, please contact Artifex
   Software, Inc. 1305 Grant Avenue - Suite 200, Novato, CA
   94945 USA, or visit http://www.artifex.com/
-
- ---
-
-  This software (GhostPDL and GPL Ghostscript) contains 
-  an implementation of techniques covered by US Patents 5,055,942
-  and 5,917,614, and corresponding international patents. These 
-  patents are licensed for use with this software under the following 
-  grant:
-
-  Whereas, Raph Levien (hereinafter "Inventor") has obtained patent
-  protection for related technology (hereinafter "Patented
-  Technology"), Inventor wishes to aid the the GNU Free Software
-  project in achieving its goals, and Inventor also wishes to
-  increase public awareness of Patented Technology, Inventor hereby
-  grants a fully paid up, nonexclusive, royalty free license to
-  practice the patents listed below ("the Patents") if and only if
-  practiced in conjunction with software distributed under the
-  terms of any version of the GNU General Public License as
-  published by the Free Software Foundation, 59 Temple Place, Suite
-  330, Boston, MA 02111. Inventor reserves all other rights,
-  including without limitation, licensing for software not
-  distributed under the GNU General Public License.
-
-   5055942 Photographic image reproduction device using digital 
-           halftoning to screen images allowing adjustable coarseness
-
-   5917614 Method and apparatus for error diffusion screening of 
-           images with improved smoothness in highlight and shadow 
-           regions

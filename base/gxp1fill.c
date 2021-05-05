@@ -286,20 +286,7 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
         data_tile.id = bits->id;
         data_tile.shift = data_tile.rep_shift = 0;
         data_tile.num_planes = (ptfs->num_planes > 1 ? ptfs->num_planes : 1);
-        if (source->planar_height == 0) {
-            code = (*dev_proc(ptfs->pcdev, strip_copy_rop))
-                           (ptfs->pcdev,
-                            source->sdata + (y - ptfs->y0) * source->sraster,
-                            source->sourcex + (x - ptfs->x0),
-                            source->sraster, source_id,
-                            (source->use_scolors ? source->scolors : NULL),
-                            &data_tile, NULL,
-                            x, y, w, h,
-                            imod(xoff - x, data_tile.rep_width),
-                            imod(yoff - y, data_tile.rep_height),
-                            lop);
-        } else {
-            code = (*dev_proc(ptfs->pcdev, strip_copy_rop2))
+        code = (*dev_proc(ptfs->pcdev, strip_copy_rop2))
                            (ptfs->pcdev,
                             source->sdata + (y - ptfs->y0) * source->sraster,
                             source->sourcex + (x - ptfs->x0),
@@ -311,7 +298,6 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
                             imod(yoff - y, data_tile.rep_height),
                             lop,
                             source->planar_height);
-        }
     }
     return code;
 }
@@ -393,13 +379,6 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
             code = (*dev_proc(state.pcdev, strip_tile_rectangle))
                 (state.pcdev, bits, x, y, w, h,
                  gx_no_color_index, gx_no_color_index, px, py);
-        else if (rop_source->planar_height == 0)
-            code = (*dev_proc(state.pcdev, strip_copy_rop))
-                        (state.pcdev,
-                         rop_source->sdata, rop_source->sourcex,
-                         rop_source->sraster, rop_source->id,
-                         (rop_source->use_scolors ? rop_source->scolors : NULL),
-                         bits, NULL, x, y, w, h, px, py, lop);
         else
             code = (*dev_proc(state.pcdev, strip_copy_rop2))
                         (state.pcdev,

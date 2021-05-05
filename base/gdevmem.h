@@ -101,7 +101,6 @@ dev_proc_get_bits_rectangle(mem_word_get_bits_rectangle);
 dev_proc_map_rgb_color(mem_mapped_map_rgb_color);
 dev_proc_map_color_rgb(mem_mapped_map_color_rgb);
 /* Default implementations */
-dev_proc_strip_copy_rop(mem_default_strip_copy_rop);
 dev_proc_strip_copy_rop2(mem_default_strip_copy_rop2);
 dev_proc_transform_pixel_region(mem_transform_pixel_region);
 
@@ -170,10 +169,10 @@ extern const gx_device_memory mem_planar_device;
  * We declare the RasterOp implementation procedures here because they are
  * referenced in several implementation modules.
  */
-dev_proc_strip_copy_rop(mem_mono_strip_copy_rop);
-dev_proc_strip_copy_rop(mem_mono_strip_copy_rop_dev);
-dev_proc_strip_copy_rop(mem_gray_strip_copy_rop);
-dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
+dev_proc_strip_copy_rop2(mem_mono_strip_copy_rop2);
+dev_proc_strip_copy_rop2(mem_mono_strip_copy_rop2_dev);
+dev_proc_strip_copy_rop2(mem_gray_strip_copy_rop2);
+dev_proc_strip_copy_rop2(mem_gray8_rgb24_strip_copy_rop2);
 dev_proc_copy_mono(mem_mono_copy_mono);
 dev_proc_fill_rectangle(mem_mono_fill_rectangle);
 

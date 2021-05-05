@@ -81,8 +81,8 @@ gx_device_printer far_data gs_sj48_device =
 static int
 sj48_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	int line_size = gx_device_raster((gx_device *)pdev, 0);
-        int xres = pdev->x_pixels_per_inch;
-        int yres = pdev->y_pixels_per_inch;
+        int xres = (int)pdev->x_pixels_per_inch;
+        int yres = (int)pdev->y_pixels_per_inch;
         int mode = (yres == 180 ?
                         (xres == 180 ? 39 : 40) :
                         (xres == 180 ? 71 : 72));

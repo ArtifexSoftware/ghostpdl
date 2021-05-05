@@ -1,26 +1,17 @@
-/*
- * Testbed implementation of Even Better Screening. Please see
- * http://www.artofcode.com/eventone/ for more details.
- *
- * Copyright 2001-2004 Raph Levien <raph@acm.org>
- *
- * Code in this module is covered by US Patents 5,055,942 and
- * 5,917,614, and corresponding international patents.  This version
- * of ETS is for commercial licensees and is governed by the licensing
- * agreement between artofcode LLC and the licensee. Please see
- * http://www.artofcode.com/eventone/ for information on licensing.
- *
- * Subsequent Changes: Copyright (C) 2013-2021 Artifex Software, Inc.
- *
- * All Rights Reserved.
- *
- * This software is provided AS-IS with no warranty, either express or
- * implied.
- *
- * This software is distributed under license and may not be copied,
- * modified or distributed except as expressly authorized under the terms
- * of the license contained in the file LICENSE in this distribution.
- */
+/* Copyright (C) 2013-2021 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
 
 #ifndef ets_h_INCLUDED
 #  define ets_h_INCLUDED

@@ -92,10 +92,10 @@ pdfdict begin
   exch dup length dict copy             % filepos stream fndict2
   dup /Function undef                   % filepos stream fndict2
   exch dup token not {
-    () /rangecheck cvx signalerror
+    () /rangecheck signalerror
   } if
   exch token {
-    /rangecheck cvx signalerror
+    /rangecheck signalerror
   } if
                 % Use .bind to avoid idiom recognition.
   .bind
@@ -529,7 +529,7 @@ end
       pdfformaterror
       (        Output may be incorrect.\n) pdfformaterror
       //pdfdict /.gs_warning_issued //true .forceput
-      PDFSTOPONERROR { /gs /undefined signalerror } if
+      PDFSTOPONERROR { /gs cvx /undefined signalerror } if
     } executeonly if
   } executeonly
   ifelse

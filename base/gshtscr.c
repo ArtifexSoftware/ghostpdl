@@ -627,6 +627,7 @@ gs_screen_install(gs_screen_enum * penum)
     dev_ht.rc.memory = penum->halftone.rc.memory;
     dev_ht.order = penum->order;
     dev_ht.components = 0;
+    penum->halftone.objtype = HT_OBJTYPE_DEFAULT;
     if ((code = gx_ht_install(penum->pgs, &penum->halftone, &dev_ht)) < 0)
         gx_device_halftone_release(&dev_ht, dev_ht.rc.memory);
     return code;

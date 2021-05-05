@@ -919,7 +919,7 @@ SETPDDEBUG { (Installing.) = pstack flush } if
    .currentpagedevice pop exch
    { .setdevice } stopped {
      cleartomark exch pop
-     /setpagedevice $error /errorname get
+     /setpagedevice cvx $error /errorname get
      signalerror
    } if
    pop

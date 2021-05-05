@@ -508,8 +508,7 @@ int psdf_set_color(gx_device_vector *vdev, const gx_drawing_color *pdc,
 /* Round a double value to a specified precision. */
 double psdf_round(double v, int precision, int radix);
 
-/* stubs to disable get_bits, get_bits_rectangle */
-dev_proc_get_bits(psdf_get_bits);
+/* stub to disable get_bits_rectangle */
 dev_proc_get_bits_rectangle(psdf_get_bits_rectangle);
 
 /* intercept and ignore overprint compositor creation */

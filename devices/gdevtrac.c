@@ -260,19 +260,6 @@ trace_draw_thin_line(gx_device * dev,
 }
 
 static int
-trace_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
-                     uint sraster, gx_bitmap_id id,
-                     const gx_color_index * scolors,
-                     const gx_strip_bitmap * textures,
-                     const gx_color_index * tcolors,
-                     int x, int y, int width, int height,
-                     int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    dmputs(dev->memory,"**strip_copy_rop**\n");
-    return 0;
-}
-
-static int
 trace_strip_copy_rop2(gx_device * dev, const byte * sdata, int sourcex,
                       uint sraster, gx_bitmap_id id,
                       const gx_color_index * scolors,
@@ -612,7 +599,6 @@ tr_base_initialize_device_procs(gx_device *dev,
     set_dev_proc(dev, fill_triangle, trace_fill_triangle);
     set_dev_proc(dev, draw_thin_line, trace_draw_thin_line);
     set_dev_proc(dev, strip_tile_rectangle, trace_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, trace_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, trace_begin_typed_image);
     set_dev_proc(dev, text_begin, trace_text_begin);
     set_dev_proc(dev, strip_copy_rop2, trace_strip_copy_rop2);

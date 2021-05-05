@@ -23,7 +23,6 @@
 #include "gxdcolor.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
-#include "gxdevrop.h"
 #include "gdevmem.h"
 #include "gdevmrop.h"
 
@@ -35,18 +34,21 @@
  * does everything in device space.
  */
 int
-mem_mono_strip_copy_rop(gx_device * dev, const byte * sdata,
-                        int sourcex,uint sraster, gx_bitmap_id id,
-                        const gx_color_index * scolors,
-                        const gx_strip_bitmap * textures,
-                        const gx_color_index * tcolors,
-                        int x, int y, int width, int height,
-                        int phase_x, int phase_y,
-                        gs_logical_operation_t lop)
+mem_mono_strip_copy_rop2(gx_device * dev, const byte * sdata,
+                         int sourcex,uint sraster, gx_bitmap_id id,
+                         const gx_color_index * scolors,
+                         const gx_strip_bitmap * textures,
+                         const gx_color_index * tcolors,
+                         int x, int y, int width, int height,
+                         int phase_x, int phase_y,
+                         gs_logical_operation_t lop,
+                         uint planar_height)
 {
     gx_device_memory *mdev = (gx_device_memory *) dev;
     gs_rop3_t rop = lop_sanitize(lop);	/* handle transparency */
     bool invert;
+
+    /* assert(planar_height == 0); */
 
     /* If map_rgb_color isn't the default one for monobit memory */
     /* devices, palette might not be set; set it now if needed. */
@@ -80,8 +82,8 @@ mem_mono_strip_copy_rop(gx_device * dev, const byte * sdata,
     if (invert)
         rop = byte_reverse_bits[rop & 0xff] ^ 0xff;
 
-    return mem_mono_strip_copy_rop_dev(dev, sdata, sourcex, sraster, id,
-                                       scolors, textures, tcolors, x, y,
-                                       width, height, phase_x, phase_y,
-                                       (gs_logical_operation_t)rop);
+    return mem_mono_strip_copy_rop2_dev(dev, sdata, sourcex, sraster, id,
+                                        scolors, textures, tcolors, x, y,
+                                        width, height, phase_x, phase_y,
+                                        (gs_logical_operation_t)rop, 0);
 }

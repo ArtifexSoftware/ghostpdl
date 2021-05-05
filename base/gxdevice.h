@@ -254,8 +254,6 @@ dev_proc_map_color_rgb(gx_default_w_b_map_color_rgb);
 #define gx_default_map_color_rgb gx_default_w_b_map_color_rgb
 dev_proc_copy_mono(gx_default_copy_mono);
 dev_proc_copy_color(gx_default_copy_color);
-dev_proc_get_bits(gx_no_get_bits);      /* gives error */
-dev_proc_get_bits(gx_default_get_bits);
 dev_proc_get_params(gx_default_get_params);
 dev_proc_put_params(gx_default_put_params);
 dev_proc_map_cmyk_color(gx_default_map_cmyk_color);
@@ -265,7 +263,6 @@ dev_proc_get_page_device(gx_page_device_get_page_device);       /* returns dev *
 dev_proc_get_alpha_bits(gx_default_get_alpha_bits);
 dev_proc_copy_alpha(gx_no_copy_alpha);  /* gives error */
 dev_proc_copy_alpha(gx_default_copy_alpha);
-dev_proc_get_band(gx_default_get_band);
 dev_proc_fill_path(gx_default_fill_path);
 dev_proc_stroke_path(gx_default_stroke_path);
 dev_proc_fill_mask(gx_default_fill_mask);
@@ -274,8 +271,7 @@ dev_proc_fill_parallelogram(gx_default_fill_parallelogram);
 dev_proc_fill_triangle(gx_default_fill_triangle);
 dev_proc_draw_thin_line(gx_default_draw_thin_line);
 dev_proc_strip_tile_rectangle(gx_default_strip_tile_rectangle);
-dev_proc_strip_copy_rop(gx_no_strip_copy_rop);  /* gives error */
-dev_proc_strip_copy_rop(gx_default_strip_copy_rop);
+dev_proc_strip_copy_rop2(gx_no_strip_copy_rop2);
 dev_proc_get_clipping_box(gx_default_get_clipping_box);
 dev_proc_get_clipping_box(gx_get_largest_clipping_box);
 dev_proc_begin_typed_image(gx_default_begin_typed_image);
@@ -359,7 +355,6 @@ dev_proc_map_color_rgb(gx_forward_map_color_rgb);
 dev_proc_fill_rectangle(gx_forward_fill_rectangle);
 dev_proc_copy_mono(gx_forward_copy_mono);
 dev_proc_copy_color(gx_forward_copy_color);
-dev_proc_get_bits(gx_forward_get_bits);
 dev_proc_get_params(gx_forward_get_params);
 dev_proc_put_params(gx_forward_put_params);
 dev_proc_map_cmyk_color(gx_forward_map_cmyk_color);
@@ -367,7 +362,6 @@ dev_proc_map_rgb_alpha_color(gx_forward_map_rgb_alpha_color);
 dev_proc_get_page_device(gx_forward_get_page_device);
 #define gx_forward_get_alpha_bits gx_default_get_alpha_bits
 dev_proc_copy_alpha(gx_forward_copy_alpha);
-dev_proc_get_band(gx_forward_get_band);
 dev_proc_fill_path(gx_forward_fill_path);
 dev_proc_stroke_path(gx_forward_stroke_path);
 dev_proc_fill_mask(gx_forward_fill_mask);
@@ -376,7 +370,6 @@ dev_proc_fill_parallelogram(gx_forward_fill_parallelogram);
 dev_proc_fill_triangle(gx_forward_fill_triangle);
 dev_proc_draw_thin_line(gx_forward_draw_thin_line);
 dev_proc_strip_tile_rectangle(gx_forward_strip_tile_rectangle);
-dev_proc_strip_copy_rop(gx_forward_strip_copy_rop);
 dev_proc_get_clipping_box(gx_forward_get_clipping_box);
 dev_proc_begin_typed_image(gx_forward_begin_typed_image);
 dev_proc_get_bits_rectangle(gx_forward_get_bits_rectangle);

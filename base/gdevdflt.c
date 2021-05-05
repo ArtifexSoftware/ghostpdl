@@ -596,7 +596,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     /* NOT fill_rectangle */
     fill_dev_proc(dev, copy_mono, gx_default_copy_mono);
     fill_dev_proc(dev, copy_color, gx_default_copy_color);
-    fill_dev_proc(dev, get_bits, gx_default_get_bits);
     fill_dev_proc(dev, get_params, gx_default_get_params);
     fill_dev_proc(dev, put_params, gx_default_put_params);
     /* see below for map_cmyk_color */
@@ -604,7 +603,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, get_page_device, gx_default_get_page_device);
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
     fill_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
-    fill_dev_proc(dev, get_band, gx_default_get_band);
     fill_dev_proc(dev, fill_path, gx_default_fill_path);
     fill_dev_proc(dev, stroke_path, gx_default_stroke_path);
     fill_dev_proc(dev, fill_mask, gx_default_fill_mask);
@@ -614,7 +612,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
     fill_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
-    fill_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
     fill_dev_proc(dev, strip_copy_rop2, gx_default_strip_copy_rop2);
     fill_dev_proc(dev, strip_tile_rect_devn, gx_default_strip_tile_rect_devn);
     fill_dev_proc(dev, get_clipping_box, gx_default_get_clipping_box);
@@ -848,12 +845,6 @@ gx_default_get_alpha_bits(gx_device * dev, graphics_object_type type)
 {
     return (type == go_text ? dev->color_info.anti_alias.text_bits :
             dev->color_info.anti_alias.graphics_bits);
-}
-
-int
-gx_default_get_band(gx_device * dev, int y, int *band_start)
-{
-    return 0;
 }
 
 void
@@ -1229,7 +1220,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, fill_rectangle, dev_proc(&prototype, fill_rectangle));
     set_dev_proc(dest, copy_mono, dev_proc(&prototype, copy_mono));
     set_dev_proc(dest, copy_color, dev_proc(&prototype, copy_color));
-    set_dev_proc(dest, get_bits, dev_proc(&prototype, get_bits));
     set_dev_proc(dest, get_params, dev_proc(&prototype, get_params));
     set_dev_proc(dest, put_params, dev_proc(&prototype, put_params));
     set_dev_proc(dest, map_cmyk_color, dev_proc(&prototype, map_cmyk_color));
@@ -1237,7 +1227,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, get_page_device, dev_proc(&prototype, get_page_device));
     set_dev_proc(dest, get_alpha_bits, dev_proc(&prototype, get_alpha_bits));
     set_dev_proc(dest, copy_alpha, dev_proc(&prototype, copy_alpha));
-    set_dev_proc(dest, get_band, dev_proc(&prototype, get_band));
     set_dev_proc(dest, fill_path, dev_proc(&prototype, fill_path));
     set_dev_proc(dest, stroke_path, dev_proc(&prototype, stroke_path));
     set_dev_proc(dest, fill_trapezoid, dev_proc(&prototype, fill_trapezoid));
@@ -1245,7 +1234,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, fill_triangle, dev_proc(&prototype, fill_triangle));
     set_dev_proc(dest, draw_thin_line, dev_proc(&prototype, draw_thin_line));
     set_dev_proc(dest, strip_tile_rectangle, dev_proc(&prototype, strip_tile_rectangle));
-    set_dev_proc(dest, strip_copy_rop, dev_proc(&prototype, strip_copy_rop));
     set_dev_proc(dest, get_clipping_box, dev_proc(&prototype, get_clipping_box));
     set_dev_proc(dest, begin_typed_image, dev_proc(&prototype, begin_typed_image));
     set_dev_proc(dest, get_bits_rectangle, dev_proc(&prototype, get_bits_rectangle));

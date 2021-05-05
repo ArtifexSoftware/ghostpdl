@@ -2102,15 +2102,15 @@ sep1_ht_order_to_thresholds(gx_device *pdev, const gs_gstate *pgs)
         gx_ht_order *d_order;
         threshold_array_t *dptr;
 
-        if (pgs->dev_ht == NULL) {
+        if (pgs->dev_ht[HT_OBJTYPE_DEFAULT] == NULL) {
             emprintf(mem, "sep1_order_to_thresholds: no dev_ht available\n");
             return_error(gs_error_rangecheck);  /* error condition */
         }
-        nc = pgs->dev_ht->num_comp;
+        nc = pgs->dev_ht[HT_OBJTYPE_DEFAULT]->num_comp;
         for( j=0; j<nc; j++ ) {
             int x, y;
 
-            d_order = &(pgs->dev_ht->components[j].corder);
+            d_order = &(pgs->dev_ht[HT_OBJTYPE_DEFAULT]->components[j].corder);
             dptr = &(tfdev->thresholds[j]);
             /* In order to use the function from gsht.c we need to set the color_info */
             /* values it uses to reflect the eventual 1-bit output, not contone       */

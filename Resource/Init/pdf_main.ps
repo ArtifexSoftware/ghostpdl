@@ -382,7 +382,7 @@ currentdict /runpdfstring .undef
        pop PageList
        (even) anchorsearch {
          pop length 0 gt {
-           /runpdfpagerange /syntaxerror cvx signalerror
+           /runpdfpagerange cvx /syntaxerror signalerror
          } if
            /PDFPageList pdfpagecount 1 add array def
            2 2 pdfpagecount {
@@ -395,7 +395,7 @@ currentdict /runpdfstring .undef
        } {
          (odd) anchorsearch {
            pop length 0 gt {
-             /runpdfpagerange /syntaxerror cvx signalerror
+             /runpdfpagerange cvx /syntaxerror signalerror
            } if
            /PDFPageList pdfpagecount 1 add array def
            1 2 pdfpagecount {
@@ -412,7 +412,7 @@ currentdict /runpdfstring .undef
              dup 44 eq not {
                dup 45 eq not {
                  dup 48 lt 1 index 57 gt or {
-                   /runpdfpagerange /syntaxerror cvx signalerror
+                   /runpdfpagerange cvx /syntaxerror signalerror
                  } if
                } if
              } if
@@ -1159,7 +1159,7 @@ pdfdict begin
          PDFSTOPONERROR not {
            (**** Warning: Discovered more entries in xref than declared in trailer /Size\n) pdfformatwarning
          } {
-           /readorigxref cvx /rangecheckerror signalerror
+           /readorigxref cvx /rangecheck signalerror
          } ifelse
        } if
        % We now know that the /Size was wrong. We could read the whole table
@@ -1858,7 +1858,7 @@ currentdict /xref-char-dict undef
          (\n   **** Error: Circular /Prev entry while reading xref.\n               Aborting xref read, output may be incorrect.\n)
          pdfformaterror
          PDFSTOPONERROR {
-           /readxref /syntaxerror cvx signalerror
+           /readxref cvx /syntaxerror signalerror
          } if
          pop exit                       %% [...] and then exit this loop
        } if

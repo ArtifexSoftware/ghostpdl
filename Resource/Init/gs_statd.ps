@@ -269,10 +269,10 @@ readonly def
                 % (a Level 1 operator) as accepting the values 0 and 1,
                 % so we do too.
       dup type /integertype ne {
-        /setpage /typecheck signalerror
+        /setpage cvx /typecheck signalerror
       } {
         dup 0 ne 1 index 1 ne or {
-          /setpage /rangecheck signalerror
+          /setpage cvx /rangecheck signalerror
         } {
           {/letter /note} 1 index get
           //systemdict /userdict get exch get cvx exec

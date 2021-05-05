@@ -182,6 +182,7 @@ typedef struct gs_multiple_halftone_s {
 struct gs_halftone_s {
     gs_halftone_type type;
     rc_header rc;
+    gs_HT_objtype_t objtype;
     union {
         gs_screen_halftone screen;	/* setscreen */
         gs_colorscreen_halftone colorscreen;	/* setcolorscreen */

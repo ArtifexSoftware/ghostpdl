@@ -112,7 +112,7 @@ static dev_proc_put_params(txtwrite_put_params);
 static dev_proc_fill_path(txtwrite_fill_path);
 static dev_proc_stroke_path(txtwrite_stroke_path);
 static dev_proc_text_begin(txtwrite_text_begin);
-static dev_proc_strip_copy_rop(txtwrite_strip_copy_rop);
+static dev_proc_strip_copy_rop2(txtwrite_strip_copy_rop2);
 static dev_proc_dev_spec_op(txtwrite_dev_spec_op);
 
 
@@ -157,7 +157,7 @@ txtwrite_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
     set_dev_proc(dev, fill_path, txtwrite_fill_path);
     set_dev_proc(dev, stroke_path, txtwrite_stroke_path);
-    set_dev_proc(dev, strip_copy_rop, txtwrite_strip_copy_rop);
+    set_dev_proc(dev, strip_copy_rop2, txtwrite_strip_copy_rop2);
     set_dev_proc(dev, composite, gx_null_composite);
     set_dev_proc(dev, text_begin, txtwrite_text_begin);
     set_dev_proc(dev, dev_spec_op, txtwrite_dev_spec_op);
@@ -1038,14 +1038,15 @@ txtwrite_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 }
 
 static int
-txtwrite_strip_copy_rop(gx_device * dev,
+txtwrite_strip_copy_rop2(gx_device * dev,
                     const byte * sdata, int sourcex, uint sraster,
                     gx_bitmap_id id,
                     const gx_color_index * scolors,
                     const gx_strip_bitmap * textures,
                     const gx_color_index * tcolors,
                     int x, int y, int w, int h,
-                    int phase_x, int phase_y, gs_logical_operation_t lop)
+                    int phase_x, int phase_y, gs_logical_operation_t lop,
+                    uint plane_height)
 {
     return 0;
 }*/
@@ -2085,14 +2086,15 @@ txtwrite_text_begin(gx_device * dev, gs_gstate * pgs,
 }
 
 static int
-txtwrite_strip_copy_rop(gx_device * dev,
+txtwrite_strip_copy_rop2(gx_device * dev,
                     const byte * sdata, int sourcex, uint sraster,
                     gx_bitmap_id id,
                     const gx_color_index * scolors,
                     const gx_strip_bitmap * textures,
                     const gx_color_index * tcolors,
                     int x, int y, int w, int h,
-                    int phase_x, int phase_y, gs_logical_operation_t lop)
+                    int phase_x, int phase_y, gs_logical_operation_t lop,
+                    uint plane_height)
 {
     return 0;
 }

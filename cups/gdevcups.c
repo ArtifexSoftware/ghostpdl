@@ -3947,17 +3947,17 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
     if (cups->landscape)
     {
-      width  = (pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3]) *
-               pdev->HWResolution[0] / 72.0f + 0.499f;
-      height = (pdev->MediaSize[0] - pdev->HWMargins[0] - pdev->HWMargins[2]) *
-               pdev->HWResolution[1] / 72.0f + 0.499f;
+      width  = (int)((pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3]) *
+                     pdev->HWResolution[0] / 72.0f + 0.499f);
+      height = (int)((pdev->MediaSize[0] - pdev->HWMargins[0] - pdev->HWMargins[2]) *
+                     pdev->HWResolution[1] / 72.0f + 0.499f);
     }
     else
     {
-      width  = (pdev->MediaSize[0] - pdev->HWMargins[0] - pdev->HWMargins[2]) *
-               pdev->HWResolution[0] / 72.0f + 0.499f;
-      height = (pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3]) *
-               pdev->HWResolution[1] / 72.0f + 0.499f;
+      width  = (int)((pdev->MediaSize[0] - pdev->HWMargins[0] - pdev->HWMargins[2]) *
+                     pdev->HWResolution[0] / 72.0f + 0.499f);
+      height = (int)((pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3]) *
+                     pdev->HWResolution[1] / 72.0f + 0.499f);
     }
 
     if (width <= 0 || height <= 0) {
@@ -3968,8 +3968,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 #ifdef CUPS_RASTER_SYNCv1
     if (cups->header.cupsBorderlessScalingFactor > 1.0)
     {
-      width  *= cups->header.cupsBorderlessScalingFactor;
-      height *= cups->header.cupsBorderlessScalingFactor;
+      width  = (int)(width * cups->header.cupsBorderlessScalingFactor);
+      height = (int)(height * cups->header.cupsBorderlessScalingFactor);
     }
 #endif /* CUPS_RASTER_SYNCv1 */
 
@@ -4024,8 +4024,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   * Set CUPS raster header values...
   */
 
-  cups->header.HWResolution[0] = pdev->HWResolution[0];
-  cups->header.HWResolution[1] = pdev->HWResolution[1];
+  cups->header.HWResolution[0] = (unsigned int)pdev->HWResolution[0];
+  cups->header.HWResolution[1] = (unsigned int)pdev->HWResolution[1];
 
 #ifdef CUPS_RASTER_SYNCv1
 
@@ -4037,19 +4037,23 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     if ((sf = cups->header.cupsBorderlessScalingFactor) < 1.0)
       sf = 1.0;
 
-    cups->header.PageSize[0] = (cups_mediasize[1] * sf) + 0.5;
-    cups->header.PageSize[1] = (cups_mediasize[0] * sf) + 0.5;
+    cups->header.PageSize[0] = (unsigned int)((cups_mediasize[1] * sf) + 0.5);
+    cups->header.PageSize[1] = (unsigned int)((cups_mediasize[0] * sf) + 0.5);
 
     if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
     {
-      cups->header.Margins[0] = (cups_margins[1] * sf) + 0.5;
-      cups->header.Margins[1] = (cups_margins[2] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[0] = (cups_margins[1] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[1] = (cups_margins[2] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[2] = ((cups_mediasize[1] -
-					     cups_margins[3]) * sf) + 0.5;
-      cups->header.ImagingBoundingBox[3] = ((cups_mediasize[0] -
-					     cups_margins[0]) * sf) + 0.5;
+      cups->header.Margins[0] = (unsigned int)((cups_margins[1] * sf) + 0.5);
+      cups->header.Margins[1] = (unsigned int)((cups_margins[2] * sf) + 0.5);
+      cups->header.ImagingBoundingBox[0] =
+                                (unsigned int)((cups_margins[1] * sf) + 0.5);
+      cups->header.ImagingBoundingBox[1] =
+                                (unsigned int)((cups_margins[2] * sf) + 0.5);
+      cups->header.ImagingBoundingBox[2] =
+                                (unsigned int)(((cups_mediasize[1] -
+                                                 cups_margins[3]) * sf) + 0.5);
+      cups->header.ImagingBoundingBox[3] =
+                                (unsigned int)(((cups_mediasize[0] -
+                                                 cups_margins[0]) * sf) + 0.5);
       cups->header.cupsImagingBBox[0] = cups_margins[1];
       cups->header.cupsImagingBBox[1] = cups_margins[2];
       cups->header.cupsImagingBBox[2] = cups_mediasize[1] - cups_margins[3];
@@ -4074,19 +4078,23 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     if ((sf = cups->header.cupsBorderlessScalingFactor) < 1.0)
       sf = 1.0;
 
-    cups->header.PageSize[0] = (cups_mediasize[0] * sf) + 0.5;
-    cups->header.PageSize[1] = (cups_mediasize[1] * sf) + 0.5;
+    cups->header.PageSize[0] = (unsigned int)((cups_mediasize[0] * sf) + 0.5);
+    cups->header.PageSize[1] = (unsigned int)((cups_mediasize[1] * sf) + 0.5);
 
     if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
     {
       cups->header.Margins[0] = (cups_margins[0] * sf) + 0.5;
       cups->header.Margins[1] = (cups_margins[1] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[0] = (cups_margins[0] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[1] = (cups_margins[1] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[2] = ((cups_mediasize[0] -
-					     cups_margins[2]) * sf) + 0.5;
-      cups->header.ImagingBoundingBox[3] = ((cups_mediasize[1] -
-					     cups_margins[3]) * sf) + 0.5;
+      cups->header.ImagingBoundingBox[0] =
+                               (unsigned int)((cups_margins[0] * sf) + 0.5);
+      cups->header.ImagingBoundingBox[1] =
+                               (unsigned int)((cups_margins[1] * sf) + 0.5);
+      cups->header.ImagingBoundingBox[2] =
+                               (unsigned int)(((cups_mediasize[0] -
+                                                cups_margins[2]) * sf) + 0.5);
+      cups->header.ImagingBoundingBox[3] =
+                               (unsigned int)(((cups_mediasize[1] -
+                                                cups_margins[3]) * sf) + 0.5);
       cups->header.cupsImagingBBox[0] = cups_margins[0];
       cups->header.cupsImagingBBox[1] = cups_margins[1];
       cups->header.cupsImagingBBox[2] = cups_mediasize[0] - cups_margins[2];

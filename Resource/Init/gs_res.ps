@@ -1075,7 +1075,7 @@ end
 % but it still needs to restore the stacks reliably if it fails.
 /.findfontop {
   { /Font findresource } stopped {
-    pop /findfont $error /errorname get signalerror
+    pop /findfont cvx $error /errorname get signalerror
   } if
 } bind executeonly odef
 /findfont {
@@ -1100,7 +1100,7 @@ end				% level2dict
    } forall
   /.findencoding {
     { /Encoding findresource } stopped {
-      pop /findencoding $error /errorname get signalerror
+      pop /findencoding cvx $error /errorname get signalerror
     } if
   } bind def
   /findencoding /.findencoding load def		% must be a procedure

@@ -117,7 +117,6 @@ pattern_accum_initialize_device_procs(gx_device *dev)
 
     /* It would be much nicer if gx_device_init set the following
      * defaults for us, but that doesn't work for some reason. */
-    set_dev_proc(dev, get_bits, gx_default_get_bits);
     set_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
     set_dev_proc(dev, fill_path, gx_default_fill_path);
     set_dev_proc(dev, stroke_path, gx_default_stroke_path);
@@ -127,7 +126,6 @@ pattern_accum_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_triangle, gx_default_fill_triangle);
     set_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
     set_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     set_dev_proc(dev, composite, gx_default_composite);
     set_dev_proc(dev, text_begin, gx_default_text_begin);
@@ -633,6 +631,8 @@ blank_unmasked_bits(gx_device * mask,
     int code = 0;
     byte *ptr;
     int blank = (polarity == GX_CINFO_POLARITY_ADDITIVE ? 255 : 0);
+    gs_int_rect rect;
+    gs_get_bits_params_t params;
 
     if ((p->options & required_options) != required_options)
         return_error(gs_error_rangecheck);
@@ -640,6 +640,11 @@ blank_unmasked_bits(gx_device * mask,
     min = gs_alloc_bytes(mask->memory, (w+7)>>3, "blank_unmasked_bits");
     if (min == NULL)
         return_error(gs_error_VMerror);
+
+    rect.p.x = 0;
+    rect.q.x = mask->width;
+    params.x_offset = 0;
+    params.raster = bitmap_raster(mask->width * mask->color_info.depth);
 
     if (p->options & GB_PACKING_CHUNKY)
     {
@@ -651,9 +656,20 @@ blank_unmasked_bits(gx_device * mask,
         for (y = 0; y < h; y++)
         {
             byte *mine;
-            code = dev_proc(mask, get_bits)(mask, y+y0, min, &mine);
+
+            rect.p.y = y+y0;
+            rect.q.y = y+y0+1;
+            params.options = (GB_ALIGN_ANY |
+                              (GB_RETURN_COPY | GB_RETURN_POINTER) |
+                              GB_OFFSET_0 |
+                              GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
+                              GB_COLORS_NATIVE | GB_ALPHA_NONE);
+            params.data[0] = min;
+            code = (*dev_proc(mask, get_bits_rectangle))(mask, &rect,
+                                                         &params, NULL);
             if (code < 0)
                 goto fail;
+            mine = params.data[0];
             for (x = 0; x < w; x++)
             {
                 int xx = x+x0;
@@ -694,9 +710,21 @@ blank_unmasked_bits(gx_device * mask,
         {
             int c;
             byte *mine;
-            code = dev_proc(mask, get_bits)(mask, y+y0, min, &mine);
+
+            rect.p.y = y+y0;
+            rect.q.y = y+y0+1;
+            params.options = (GB_ALIGN_ANY |
+                              (GB_RETURN_COPY | GB_RETURN_POINTER) |
+                              GB_OFFSET_0 |
+                              GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
+                              GB_COLORS_NATIVE | GB_ALPHA_NONE);
+            params.data[0] = min;
+            code = (*dev_proc(mask, get_bits_rectangle))(mask, &rect,
+                                                         &params, NULL);
             if (code < 0)
                 goto fail;
+            mine = params.data[0];
+
             for (c = 0; c < num_comps; c++)
             {
                 if (p->data[c] == NULL)

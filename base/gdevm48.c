@@ -57,8 +57,7 @@ const gdev_mem_functions gdev_mem_fns_48 =
     mem_true48_copy_color,
     gx_default_copy_alpha,
     gx_default_strip_tile_rectangle,
-    mem_default_strip_copy_rop,
-    gx_default_strip_copy_rop2,
+    mem_default_strip_copy_rop2,
     mem_get_bits_rectangle
 };
 
@@ -405,8 +404,7 @@ const gdev_mem_functions gdev_mem_fns_48w =
     mem48_word_copy_color,
     gx_default_copy_alpha,
     gx_default_strip_tile_rectangle,
-    gx_no_strip_copy_rop,
-    gx_default_strip_copy_rop2,
+    gx_no_strip_copy_rop2,
     mem_word_get_bits_rectangle
 };
 

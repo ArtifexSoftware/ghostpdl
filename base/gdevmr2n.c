@@ -23,7 +23,6 @@
 #include "gxdcolor.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
-#include "gxdevrop.h"
 #include "gdevmem.h"
 #include "gdevmrop.h"
 
@@ -65,12 +64,13 @@ mem_gray_rop_strip_tile_rectangle(gx_device * dev,
 }
 
 int
-mem_gray_strip_copy_rop(gx_device * dev,
+mem_gray_strip_copy_rop2(gx_device * dev,
              const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
                         const gx_color_index * scolors,
            const gx_strip_bitmap * textures, const gx_color_index * tcolors,
                         int x, int y, int width, int height,
-                        int phase_x, int phase_y, gs_logical_operation_t lop)
+                        int phase_x, int phase_y, gs_logical_operation_t lop,
+                        uint planar_height)
 {
     gx_color_index scolors2[2];
     const gx_color_index *real_scolors = scolors;
@@ -83,6 +83,8 @@ mem_gray_strip_copy_rop(gx_device * dev,
     int log2_depth = depth >> 1;	/* works for 2, 4 */
     gx_color_index max_pixel = ((gx_color_index)1 << depth) - 1;
     int code;
+
+    /* assert(planar_height == 0); */
 
 #ifdef DEBUG
     if (gs_debug_c('b'))
@@ -99,10 +101,10 @@ mem_gray_strip_copy_rop(gx_device * dev,
         (tcolors && (tcolors[0] != tcolors[1]))
         ) {
         /* We can't fake it: do it the slow, painful way. */
-        return mem_default_strip_copy_rop(dev, sdata, sourcex, sraster, id,
-                                          scolors, textures, tcolors,
-                                          x, y, width, height,
-                                          phase_x, phase_y, lop);
+        return mem_default_strip_copy_rop2(dev, sdata, sourcex, sraster, id,
+                                           scolors, textures, tcolors,
+                                           x, y, width, height,
+                                           phase_x, phase_y, lop, 0);
     }
     if (scolors) {		/* Must be a solid color: see above. */
         scolors2[0] = scolors2[1] = scolors[0] & 1;
@@ -154,14 +156,15 @@ mem_gray_strip_copy_rop(gx_device * dev,
         set_dev_proc(dev, strip_tile_rectangle,
                      mem_gray_rop_strip_tile_rectangle);
         dev->width <<= log2_depth;
-        code = mem_mono_strip_copy_rop(dev, sdata,
-                                       (real_scolors == NULL ?
-                                        sourcex << log2_depth : sourcex),
-                                       sraster, id, real_scolors,
-                                       real_texture, real_tcolors,
-                                       x << log2_depth, y,
-                                       width << log2_depth, height,
-                                       phase_x << log2_depth, phase_y, lop);
+        code = mem_mono_strip_copy_rop2(dev, sdata,
+                                        (real_scolors == NULL ?
+                                         sourcex << log2_depth : sourcex),
+                                        sraster, id, real_scolors,
+                                        real_texture, real_tcolors,
+                                        x << log2_depth, y,
+                                        width << log2_depth, height,
+                                        phase_x << log2_depth, phase_y,
+                                        lop, 0);
         set_dev_proc(dev, fill_rectangle, fill_rectangle);
         set_dev_proc(dev, copy_mono, copy_mono);
         set_dev_proc(dev, strip_tile_rectangle, strip_tile_rectangle);
@@ -169,9 +172,9 @@ mem_gray_strip_copy_rop(gx_device * dev,
     }
     /* If we punted, use the general procedure. */
     if (code < 0)
-        return mem_default_strip_copy_rop(dev, sdata, sourcex, sraster, id,
-                                          scolors, textures, tcolors,
-                                          x, y, width, height,
-                                          phase_x, phase_y, lop);
+        return mem_default_strip_copy_rop2(dev, sdata, sourcex, sraster, id,
+                                           scolors, textures, tcolors,
+                                           x, y, width, height,
+                                           phase_x, phase_y, lop, 0);
     return code;
 }

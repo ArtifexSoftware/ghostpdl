@@ -215,9 +215,9 @@ pdf_viewer_state_from_gs_gstate_aux(pdf_viewer_state *pvs, const gs_gstate *pgs)
     pvs->strokeconstantalpha = pgs->strokeconstantalpha;
     pvs->alphaisshape = pgs->alphaisshape;
     pvs->blend_mode = pgs->blend_mode;
-    pvs->halftone_id = (pgs->dev_ht != 0 ? pgs->dev_ht->id : 0);
-    pvs->black_generation_id = (pgs->black_generation != 0 ? pgs->black_generation->id : 0);
-    pvs->undercolor_removal_id = (pgs->undercolor_removal != 0 ? pgs->undercolor_removal->id : 0);
+    pvs->halftone_id = (pgs->dev_ht[HT_OBJTYPE_DEFAULT] != NULL ? pgs->dev_ht[HT_OBJTYPE_DEFAULT]->id : 0);
+    pvs->black_generation_id = (pgs->black_generation != NULL ? pgs->black_generation->id : 0);
+    pvs->undercolor_removal_id = (pgs->undercolor_removal != NULL ? pgs->undercolor_removal->id : 0);
     pvs->overprint_mode = 0;
     pvs->flatness = pgs->flatness;
     pvs->smoothness = pgs->smoothness;
@@ -2713,7 +2713,7 @@ pdf_update_halftone(gx_device_pdf *pdev, const gs_gstate *pgs,
                     char *hts)
 {
     const gs_halftone *pht = pgs->halftone;
-    const gx_device_halftone *pdht = pgs->dev_ht;
+    const gx_device_halftone *pdht = pgs->dev_ht[HT_OBJTYPE_DEFAULT];
     int code;
     long id;
 
@@ -2749,7 +2749,7 @@ pdf_update_halftone(gx_device_pdf *pdev, const gs_gstate *pgs,
     if (code < 0)
         return code;
     gs_sprintf(hts, "%ld 0 R", id);
-    pdev->halftone_id = pgs->dev_ht->id;
+    pdev->halftone_id = pgs->dev_ht[HT_OBJTYPE_DEFAULT]->id;
     return code;
 }
 
@@ -2988,7 +2988,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
 
         hts[0] = trs[0] = bgs[0] = ucrs[0] = 0;
         if (pdev->params.PreserveHalftoneInfo &&
-            pdev->halftone_id != pgs->dev_ht->id &&
+            pdev->halftone_id != pgs->dev_ht[HT_OBJTYPE_DEFAULT]->id &&
             !pdev->PDFX
             ) {
             code = pdf_update_halftone(pdev, pgs, hts);

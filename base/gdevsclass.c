@@ -195,14 +195,6 @@ int default_subclass_copy_color(gx_device *dev, const byte *data, int data_x, in
     return 0;
 }
 
-int default_subclass_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
-{
-    if (dev->child)
-        return dev_proc(dev->child, get_bits)(dev->child, y, data, actual_data);
-    /* else */
-    return gx_default_get_bits(dev, y, data, actual_data);
-}
-
 int default_subclass_get_params(gx_device *dev, gs_param_list *plist)
 {
     if (dev->child)
@@ -265,14 +257,6 @@ int default_subclass_copy_alpha(gx_device *dev, const byte *data, int data_x,
     if (dev->child)
         return dev_proc(dev->child, copy_alpha)(dev->child, data, data_x, raster, id, x, y, width, height, color, depth);
     return 0;
-}
-
-int default_subclass_get_band(gx_device *dev, int y, int *band_start)
-{
-    if (dev->child)
-        return dev_proc(dev->child, get_band)(dev->child, y, band_start);
-    /* else */
-    return gx_default_get_band(dev, y, band_start);
 }
 
 int default_subclass_fill_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
@@ -352,18 +336,6 @@ int default_subclass_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap 
         return dev_proc(dev->child, strip_tile_rectangle)(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
     /* else */
     return gx_default_strip_tile_rectangle(dev, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
-}
-
-int default_subclass_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
-    const gx_color_index *scolors,
-    const gx_strip_bitmap *textures, const gx_color_index *tcolors,
-    int x, int y, int width, int height,
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    if (dev->child)
-        return dev_proc(dev->child, strip_copy_rop)(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
-    /* else */
-    return gx_default_strip_copy_rop(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
 }
 
 void default_subclass_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
@@ -854,7 +826,6 @@ void default_subclass_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_rectangle, default_subclass_fill_rectangle);
     set_dev_proc(dev, copy_mono, default_subclass_copy_mono);
     set_dev_proc(dev, copy_color, default_subclass_copy_color);
-    set_dev_proc(dev, get_bits, default_subclass_get_bits);
     set_dev_proc(dev, get_params, default_subclass_get_params);
     set_dev_proc(dev, put_params, default_subclass_put_params);
     set_dev_proc(dev, map_cmyk_color, default_subclass_map_cmyk_color);
@@ -862,7 +833,6 @@ void default_subclass_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_page_device, default_subclass_get_page_device);
     set_dev_proc(dev, get_alpha_bits, default_subclass_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, default_subclass_copy_alpha);
-    set_dev_proc(dev, get_band, default_subclass_get_band);
     set_dev_proc(dev, fill_path, default_subclass_fill_path);
     set_dev_proc(dev, stroke_path, default_subclass_stroke_path);
     set_dev_proc(dev, fill_mask, default_subclass_fill_mask);
@@ -871,7 +841,6 @@ void default_subclass_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_triangle, default_subclass_fill_triangle);
     set_dev_proc(dev, draw_thin_line, default_subclass_draw_thin_line);
     set_dev_proc(dev, strip_tile_rectangle, default_subclass_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, default_subclass_strip_copy_rop);
     set_dev_proc(dev, get_clipping_box, default_subclass_get_clipping_box);
     set_dev_proc(dev, begin_typed_image, default_subclass_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, default_subclass_get_bits_rectangle);

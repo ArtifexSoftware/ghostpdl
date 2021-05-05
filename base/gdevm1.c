@@ -48,14 +48,15 @@
  * functions below. In this function, rop works in terms of device pixel
  * values, not RGB-space values. */
 int
-mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
-                            int sourcex,uint sraster, gx_bitmap_id id,
-                            const gx_color_index * scolors,
-                            const gx_strip_bitmap * textures,
-                            const gx_color_index * tcolors,
-                            int x, int y, int width, int height,
-                            int phase_x, int phase_y,
-                            gs_logical_operation_t lop)
+mem_mono_strip_copy_rop2_dev(gx_device * dev, const byte * sdata,
+                             int sourcex,uint sraster, gx_bitmap_id id,
+                             const gx_color_index * scolors,
+                             const gx_strip_bitmap * textures,
+                             const gx_color_index * tcolors,
+                             int x, int y, int width, int height,
+                             int phase_x, int phase_y,
+                             gs_logical_operation_t lop,
+                             uint planar_height)
 {
     gx_device_memory *mdev = (gx_device_memory *) dev;
     gs_rop3_t rop = (gs_rop3_t)lop;
@@ -66,6 +67,11 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
     const byte *srow;
     int ty;
     rop_run_op ropper;
+
+    if (planar_height != 0) {
+        dmlprintf(dev->memory, "mem_default_strip_copy_rop2 should never be called!\n");
+        return_error(gs_error_Fatal);
+    }
 
     /* Modify the raster operation according to the source palette. */
     if (scolors != 0) {		/* Source with palette. */
@@ -442,8 +448,7 @@ const gdev_mem_functions gdev_mem_fns_1 =
     gx_default_copy_color,
     gx_default_copy_alpha,
     mem_mono_strip_tile_rectangle,
-    mem_mono_strip_copy_rop,
-    gx_default_strip_copy_rop2,
+    mem_mono_strip_copy_rop2,
     mem_get_bits_rectangle
 };
 
@@ -624,14 +629,15 @@ mem_mono_copy_mono(gx_device * dev,
     fit_copy(dev, source_data, source_x, source_raster, id, x, y, w, h);
 #ifdef DO_COPY_MONO_BY_COPY_ROP
     if (w >= 32) {
-        return mem_mono_strip_copy_rop_dev(dev, source_data, source_x,
-                                           source_raster,
-                                           id, NULL, NULL, NULL,
-                                           x, y, w, h, 0, 0,
-                                           ((color0 == gx_no_color_index ? rop3_D :
-                                             color0 == 0 ? rop3_0 : rop3_1) & ~rop3_S) |
-                                           ((color1 == gx_no_color_index ? rop3_D :
-                                             color1 == 0 ? rop3_0 : rop3_1) & rop3_S));
+        return mem_mono_strip_copy_rop2_dev(dev, source_data, source_x,
+                                            source_raster,
+                                            id, NULL, NULL, NULL,
+                                            x, y, w, h, 0, 0,
+                                            ((color0 == gx_no_color_index ? rop3_D :
+                                              color0 == 0 ? rop3_0 : rop3_1) & ~rop3_S) |
+                                            ((color1 == gx_no_color_index ? rop3_D :
+                                              color1 == 0 ? rop3_0 : rop3_1) & rop3_S),
+                                            0);
     }
 #endif /* !DO_COPY_MONO_BY_COPY_ROP */
 #if gx_no_color_index_value != -1       /* hokey! */
@@ -874,9 +880,9 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
     if (rop == 0xAA)
         return gx_default_strip_tile_rectangle(dev, tiles, tx, y, tw, th,
                                                color0, color1, px, py);
-    return mem_mono_strip_copy_rop_dev(dev, NULL, 0, 0, tiles->id, NULL,
-                                       tiles, NULL,
-                                       tx, y, tw, th, px, py, rop);
+    return mem_mono_strip_copy_rop2_dev(dev, NULL, 0, 0, tiles->id, NULL,
+                                        tiles, NULL,
+                                        tx, y, tw, th, px, py, rop, 0);
 #else /* !USE_COPY_ROP */
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     register uint invert;
@@ -1109,8 +1115,7 @@ const gdev_mem_functions gdev_mem_fns_1w =
     gx_default_copy_color,
     gx_default_copy_alpha,
     mem1_word_strip_tile_rectangle,
-    gx_no_strip_copy_rop,
-    gx_default_strip_copy_rop2,
+    gx_no_strip_copy_rop2,
     mem_word_get_bits_rectangle
 };
 

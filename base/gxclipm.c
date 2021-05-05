@@ -32,7 +32,6 @@ static dev_proc_copy_alpha(mask_clip_copy_alpha);
 static dev_proc_copy_alpha_hl_color(mask_clip_copy_alpha_hl_color);
 static dev_proc_strip_tile_rectangle(mask_clip_strip_tile_rectangle);
 static dev_proc_strip_tile_rect_devn(mask_clip_strip_tile_rect_devn);
-static dev_proc_strip_copy_rop(mask_clip_strip_copy_rop);
 static dev_proc_strip_copy_rop2(mask_clip_strip_copy_rop2);
 static dev_proc_get_clipping_box(mask_clip_get_clipping_box);
 
@@ -47,7 +46,6 @@ mask_clip_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_rectangle, mask_clip_fill_rectangle);
     set_dev_proc(dev, copy_mono, mask_clip_copy_mono);
     set_dev_proc(dev, copy_color, mask_clip_copy_color);
-    set_dev_proc(dev, get_bits, gx_forward_get_bits);
     set_dev_proc(dev, get_params, gx_forward_get_params);
     set_dev_proc(dev, put_params, gx_forward_put_params);
     set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
@@ -55,9 +53,7 @@ mask_clip_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, mask_clip_copy_alpha);
-    set_dev_proc(dev, get_band, gx_forward_get_band);
     set_dev_proc(dev, strip_tile_rectangle, mask_clip_strip_tile_rectangle);
-    set_dev_proc(dev, strip_copy_rop, mask_clip_strip_copy_rop);
     set_dev_proc(dev, get_clipping_box, mask_clip_get_clipping_box);
     set_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
     set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
@@ -440,26 +436,6 @@ mask_clip_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
     ccdata.pdc[0] = pdcolor0, ccdata.pdc[1] = pdcolor1;
     ccdata.phase.x = phase_x, ccdata.phase.y = phase_y;
     return clip_runs_enumerate(cdev, clip_call_strip_tile_rect_devn, &ccdata);
-}
-
-static int
-mask_clip_strip_copy_rop(gx_device * dev,
-               const byte * data, int sourcex, uint raster, gx_bitmap_id id,
-                         const gx_color_index * scolors,
-           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-                         int x, int y, int w, int h,
-                       int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    gx_device_mask_clip *cdev = (gx_device_mask_clip *) dev;
-    clip_callback_data_t ccdata;
-
-    ccdata.tdev = cdev->target;
-    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
-    ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
-    ccdata.scolors = scolors, ccdata.textures = textures,
-        ccdata.tcolors = tcolors;
-    ccdata.phase.x = phase_x, ccdata.phase.y = phase_y, ccdata.lop = lop;
-    return clip_runs_enumerate(cdev, clip_call_strip_copy_rop, &ccdata);
 }
 
 static int

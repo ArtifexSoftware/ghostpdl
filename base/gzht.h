@@ -196,7 +196,14 @@ void gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cach
 int gx_gstate_dev_ht_install(gs_gstate * pgs,
                              gx_device_halftone * pdht,
                              gs_halftone_type type,
-                             const gx_device * dev);
+                             const gx_device * dev,
+                             gs_HT_objtype_t objtype);
+
+/*
+ * Copy the current dev_ht[HT_OBJTYPE_DEFAULT] to the dev_ht[] for the specified object type.
+ */
+int
+gx_gstate_dev_ht_copy_to_objtype(gs_gstate *pgs, gs_HT_objtype_t objtype);
 
 /*
  * Install a new halftone in the graphics state.  Note that we copy the top

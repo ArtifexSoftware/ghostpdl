@@ -144,7 +144,7 @@ static dev_proc_put_params(pclxl_put_params);
 
 /*static dev_proc_draw_thin_line(pclxl_draw_thin_line); */
 static dev_proc_begin_typed_image(pclxl_begin_typed_image);
-static dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
+static dev_proc_strip_copy_rop2(pclxl_strip_copy_rop2);
 
 static void
 pclxl_initialize_device_procs(gx_device *dev,
@@ -169,7 +169,7 @@ pclxl_initialize_device_procs(gx_device *dev,
     set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
     set_dev_proc(dev, begin_typed_image, pclxl_begin_typed_image);
-    set_dev_proc(dev, strip_copy_rop, pclxl_strip_copy_rop);
+    set_dev_proc(dev, strip_copy_rop2, pclxl_strip_copy_rop2);
 }
 
 static void
@@ -1971,25 +1971,27 @@ pclxl_fill_mask(gx_device * dev,
 
 /* Do a RasterOp. */
 static int
-pclxl_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
+pclxl_strip_copy_rop2(gx_device * dev, const byte * sdata, int sourcex,
                      uint sraster, gx_bitmap_id id,
                      const gx_color_index * scolors,
                      const gx_strip_bitmap * textures,
                      const gx_color_index * tcolors,
                      int x, int y, int width, int height,
-                     int phase_x, int phase_y, gs_logical_operation_t lop)
+                     int phase_x, int phase_y, gs_logical_operation_t lop,
+                     uint plane_height)
 {
     lop = lop_sanitize(lop);
     /* Improvements possible here using PXL ROP3
        for some combinations of args; use gx_default for now */
     if (!rop3_uses_D(lop))  /* gx_default() cannot cope with D ops */
-        return gx_default_strip_copy_rop(dev, sdata, sourcex,
-                                         sraster, id,
-                                         scolors,
-                                         textures,
-                                         tcolors,
-                                         x, y, width, height,
-                                         phase_x, phase_y, lop);
+        return gx_default_strip_copy_rop2(dev, sdata, sourcex,
+                                          sraster, id,
+                                          scolors,
+                                          textures,
+                                          tcolors,
+                                          x, y, width, height,
+                                          phase_x, phase_y, lop,
+                                          plane_height);
     return 0;
 }
 

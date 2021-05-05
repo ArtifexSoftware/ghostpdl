@@ -43,8 +43,7 @@ const gdev_mem_functions gdev_mem_fns_16 =
     mem_true16_copy_color,
     gx_default_copy_alpha,
     gx_default_strip_tile_rectangle,
-    mem_default_strip_copy_rop,
-    gx_default_strip_copy_rop2,
+    mem_default_strip_copy_rop2,
     mem_get_bits_rectangle
 };
 

@@ -925,14 +925,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_copy_color(proc)\
   dev_t_proc_copy_color(proc, gx_device)
 
-                /* Added in release 2.4 */
-
-#define dev_t_proc_get_bits(proc, dev_t)\
-  int proc(dev_t *dev,\
-    int y, byte *data, byte **actual_data)
-#define dev_proc_get_bits(proc)\
-  dev_t_proc_get_bits(proc, gx_device)
-
                 /* Added in release 2.4, changed in 2.8, */
                 /* renamed in 2.9.6 */
 
@@ -985,13 +977,6 @@ typedef enum FILTER_FLAGS {
     gx_color_index color, int depth)
 #define dev_proc_copy_alpha(proc)\
   dev_t_proc_copy_alpha(proc, gx_device)
-
-                /* Added in release 3.38 */
-
-#define dev_t_proc_get_band(proc, dev_t)\
-  int proc(dev_t *dev, int y, int *band_start)
-#define dev_proc_get_band(proc)\
-  dev_t_proc_get_band(proc, gx_device)
 
                 /* Added in release 3.60, changed in 3.68. */
 
@@ -1081,16 +1066,6 @@ typedef enum FILTER_FLAGS {
     int phase_x, int phase_y)
 #define dev_proc_strip_tile_rectangle(proc)\
   dev_t_proc_strip_tile_rectangle(proc, gx_device)
-
-#define dev_t_proc_strip_copy_rop(proc, dev_t)\
-  int proc(dev_t *dev,\
-    const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,\
-    const gx_color_index *scolors,\
-    const gx_strip_bitmap *textures, const gx_color_index *tcolors,\
-    int x, int y, int width, int height,\
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-#define dev_proc_strip_copy_rop(proc)\
-  dev_t_proc_strip_copy_rop(proc, gx_device)
 
                 /* Added in release 4.20 */
 
@@ -1499,7 +1474,6 @@ typedef struct {
         dev_t_proc_fill_rectangle((*fill_rectangle), dev_t);\
         dev_t_proc_copy_mono((*copy_mono), dev_t);\
         dev_t_proc_copy_color((*copy_color), dev_t);\
-        dev_t_proc_get_bits((*get_bits), dev_t);\
         dev_t_proc_get_params((*get_params), dev_t);\
         dev_t_proc_put_params((*put_params), dev_t);\
         dev_t_proc_map_cmyk_color((*map_cmyk_color), dev_t);\
@@ -1507,7 +1481,6 @@ typedef struct {
         dev_t_proc_get_page_device((*get_page_device), dev_t);\
         dev_t_proc_get_alpha_bits((*get_alpha_bits), dev_t);\
         dev_t_proc_copy_alpha((*copy_alpha), dev_t);\
-        dev_t_proc_get_band((*get_band), dev_t);\
         dev_t_proc_fill_path((*fill_path), dev_t);\
         dev_t_proc_stroke_path((*stroke_path), dev_t);\
         dev_t_proc_fill_mask((*fill_mask), dev_t);\
@@ -1516,7 +1489,6 @@ typedef struct {
         dev_t_proc_fill_triangle((*fill_triangle), dev_t);\
         dev_t_proc_draw_thin_line((*draw_thin_line), dev_t);\
         dev_t_proc_strip_tile_rectangle((*strip_tile_rectangle), dev_t);\
-        dev_t_proc_strip_copy_rop((*strip_copy_rop), dev_t);\
         dev_t_proc_get_clipping_box((*get_clipping_box), dev_t);\
         dev_t_proc_begin_typed_image((*begin_typed_image), dev_t);\
         dev_t_proc_get_bits_rectangle((*get_bits_rectangle), dev_t);\

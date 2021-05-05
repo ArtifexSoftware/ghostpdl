@@ -91,7 +91,7 @@ static dev_proc_map_color_rgb(display_map_color_rgb_bgr24);
 static dev_proc_fill_rectangle(display_fill_rectangle);
 static dev_proc_copy_mono(display_copy_mono);
 static dev_proc_copy_color(display_copy_color);
-static dev_proc_get_bits(display_get_bits);
+static dev_proc_get_bits_rectangle(display_get_bits_rectangle);
 static dev_proc_get_params(display_get_params);
 static dev_proc_put_params(display_put_params);
 static dev_proc_initialize_device_procs(display_initialize_device_procs);
@@ -813,12 +813,14 @@ display_copy_color(gx_device * dev,
 }
 
 static int
-display_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
+display_get_bits_rectangle(gx_device * dev, const gs_int_rect *rect,
+                           gs_get_bits_params_t *params,
+                           gs_int_rect ** unread)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
         return gs_error_Fatal;
-    return ddev->mutated_procs.get_bits(dev, y, str, actual_data);
+    return ddev->mutated_procs.get_bits_rectangle(dev, rect, params, unread);
 }
 
 static int
@@ -1765,7 +1767,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
         ddev->procs.fill_rectangle = display_fill_rectangle;
         ddev->procs.copy_mono = display_copy_mono;
         ddev->procs.copy_color = display_copy_color;
-        ddev->procs.get_bits = display_get_bits;
+        ddev->procs.get_bits_rectangle = display_get_bits_rectangle;
     }
 
     /* In command list mode, we've already opened the device. */

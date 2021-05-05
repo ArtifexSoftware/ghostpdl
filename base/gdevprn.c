@@ -1604,14 +1604,35 @@ gdev_prn_get_lines(gx_device_printer *pdev, int y, int height,
 int
 gdev_prn_get_bits(gx_device_printer * pdev, int y, byte * str, byte ** actual_data)
 {
-    int code = (*dev_proc(pdev, get_bits)) ((gx_device *) pdev, y, str, actual_data);
+    int code;
     uint line_size = gdev_prn_raster(pdev);
     int last_bits = -(pdev->width * pdev->color_info.depth) & 7;
+    gs_int_rect rect;
+    gs_get_bits_params_t params;
 
+    rect.p.x = 0;
+    rect.p.y = y;
+    rect.q.x = pdev->width;
+    rect.q.y = y+1;
+
+    params.options = (GB_ALIGN_ANY |
+                      GB_RETURN_COPY |
+                      GB_OFFSET_0 |
+                      GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
+                      GB_COLORS_NATIVE | GB_ALPHA_NONE);
+    if (actual_data)
+        params.options |=  GB_RETURN_POINTER;
+    params.x_offset = 0;
+    params.raster = bitmap_raster(pdev->width * pdev->color_info.depth);
+    params.data[0] = str;
+    code = (*dev_proc(pdev, get_bits_rectangle))((gx_device *)pdev, &rect,
+                                                 &params, NULL);
     if (code < 0)
         return code;
+    if (actual_data)
+        *actual_data = params.data[0];
     if (last_bits != 0) {
-        byte *dest = (actual_data != 0 ? *actual_data : str);
+        byte *dest = (actual_data != NULL ? *actual_data : str);
 
         dest[line_size - 1] &= 0xff << last_bits;
     }
