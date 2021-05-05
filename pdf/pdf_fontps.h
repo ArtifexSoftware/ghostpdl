@@ -67,15 +67,16 @@ typedef struct {
   int (*oper)(gs_memory_t *mem, pdf_ps_ctx_t *stack, byte *buf, byte *bufend);
 } pdf_ps_oper_list_t;
 
-#define PDF_PS_STACK_SIZE 1024
+#define PDF_PS_STACK_SIZE 360
 #define PDF_PS_STACK_GUARDS 1
-
+#define PDF_PS_STACK_GROW_SIZE PDF_PS_STACK_SIZE + 2 * PDF_PS_STACK_GUARDS
+#define PDF_PS_STACK_MAX PDF_PS_STACK_SIZE * 16 /* Arbitrary value.... */
 struct pdf_ps_ctx_s
 {
   pdf_context *pdfi_ctx;
   pdf_ps_stack_object_t *cur; /* current top of the stack */
   pdf_ps_stack_object_t *toplim; /* the upper limit of the stack */
-  pdf_ps_stack_object_t stack[PDF_PS_STACK_SIZE + 2 * PDF_PS_STACK_GUARDS];
+  pdf_ps_stack_object_t *stack;
   pdf_ps_oper_list_t *ops;
   void *client_data;
 };
@@ -94,7 +95,8 @@ typedef struct {
 
 int pdfi_read_ps_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, int fbuflen, ps_font_interp_private *ps_font_priv);
 
-void pdfi_pscript_stack_init(pdf_context *pdfi_ctx, pdf_ps_oper_list_t *ops, void *client_data, pdf_ps_ctx_t *s);
+int pdfi_pscript_stack_init(pdf_context *pdfi_ctx, pdf_ps_oper_list_t *ops, void *client_data, pdf_ps_ctx_t *s);
+void pdfi_pscript_stack_finit(pdf_ps_ctx_t *s);
 int pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pspdfbuf, int64_t buflen);
 
 /* Begin default operator functions */
@@ -165,8 +167,40 @@ static inline bool pdf_ps_obj_has_type(pdf_ps_stack_object_t *o, pdf_ps_obj_type
 {
     return o->type == t;
 }
+
+/* The stack can grow, but doesn't shrink, just gets destroyed
+   when we're done interpreting
+ */
 static inline int pdf_ps_stack_push(pdf_ps_ctx_t *s)
 {
+    /* Extending the stack pretty inefficient, but it shouldn't happen often
+       for valid files
+     */
+    if (s->cur + 1 >= s->toplim - 1) {
+        int i, currsize = s->toplim - s->stack - 1;
+        int newsize = currsize + PDF_PS_STACK_GROW_SIZE;
+        int newsizebytes = newsize * sizeof(pdf_ps_stack_object_t);
+        pdf_ps_stack_object_t *nstack;
+
+        if (newsize < PDF_PS_STACK_MAX) {
+            nstack = (pdf_ps_stack_object_t *)gs_alloc_bytes(s->pdfi_ctx->memory, newsizebytes, "pdf_ps_stack_push(nstack)");
+            if (nstack != NULL) {
+                for (i = 0; i < PDF_PS_STACK_GUARDS; i++)
+                    nstack[i].type = PDF_PS_OBJ_STACK_BOTTOM;
+                for (i = 0; i < PDF_PS_STACK_GUARDS; i++)
+                    nstack[newsize - PDF_PS_STACK_GUARDS + i].type = PDF_PS_OBJ_STACK_TOP;
+
+                for (i = currsize + PDF_PS_STACK_GUARDS; i < newsize - PDF_PS_STACK_GUARDS; i++) {
+                    pdf_ps_make_null(&(nstack[i]));
+                }
+                memcpy(nstack + 1, s->stack + 1, (currsize - 1) * sizeof(pdf_ps_stack_object_t));
+                gs_free_object(s->pdfi_ctx->memory, s->stack, "pdf_ps_stack_push(s->stack)");
+                s->stack = nstack;
+                s->cur = s->stack + currsize - 1;
+                s->toplim = s->stack + newsize - PDF_PS_STACK_GROW_SIZE;
+            }
+        }
+    }
     s->cur++;
     if (pdf_ps_obj_has_type(s->cur, PDF_PS_OBJ_STACK_TOP))
         return_error(gs_error_stackoverflow);

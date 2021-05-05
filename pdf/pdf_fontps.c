@@ -29,17 +29,21 @@
 
 static const char *const notdefnamestr = ".notdef";
 
-void
+int
 pdfi_pscript_stack_init(pdf_context *pdfi_ctx, pdf_ps_oper_list_t *ops, void *client_data,
                         pdf_ps_ctx_t *s)
 {
-    int i, size = (sizeof(s->stack) / sizeof(s->stack[0])) - 2;
-
+    int i, size = PDF_PS_STACK_SIZE;
+    int initsizebytes = sizeof(pdf_ps_stack_object_t) * PDF_PS_STACK_GROW_SIZE;
     s->pdfi_ctx = pdfi_ctx;
     s->ops = ops;
     s->client_data = client_data;
 
-    s->cur = &(s->stack[1]);
+    s->stack = (pdf_ps_stack_object_t *)gs_alloc_bytes(pdfi_ctx->memory, initsizebytes, "pdfi_pscript_stack_init(stack)");
+    if (s->stack == NULL)
+        return_error(gs_error_VMerror);
+
+    s->cur = s->stack + 1;
     s->toplim = s->cur + size;
 
     for (i = 0; i < PDF_PS_STACK_GUARDS; i++)
@@ -51,6 +55,18 @@ pdfi_pscript_stack_init(pdf_context *pdfi_ctx, pdf_ps_oper_list_t *ops, void *cl
     for (i = 0; i < size; i++) {
         pdf_ps_make_null(&(s->cur[i]));
     }
+    return 0;
+}
+
+void
+pdfi_pscript_stack_finit(pdf_ps_ctx_t *s)
+{
+    int stackdepth;
+
+    if ((stackdepth = pdf_ps_stack_count(s)) > 0) {
+        pdf_ps_stack_pop(s, stackdepth);
+    }
+    gs_free_object(s->pdfi_ctx->memory, s->stack, "pdfi_pscript_stack_finit(stack)");
 }
 
 int
@@ -988,9 +1004,12 @@ pdfi_read_ps_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, int fbuflen
     int code = 0;
     pdf_ps_ctx_t ps_font_ctx;
 
-    pdfi_pscript_stack_init(ctx, ps_font_oper_list, ps_font_priv, &ps_font_ctx);
+    code = pdfi_pscript_stack_init(ctx, ps_font_oper_list, ps_font_priv, &ps_font_ctx);
+    if (code < 0)
+        goto error_out;
 
     code = pdfi_pscript_interpret(&ps_font_ctx, fbuf, fbuflen);
+    pdfi_pscript_stack_finit(&ps_font_ctx);
     if (code < 0)
         goto error_out;
 

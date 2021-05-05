@@ -808,6 +808,7 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
     pdfi_pscript_stack_init(ctx, cmap_oper_list, (void *)pdfi_cmap, &cmap_ctx);
 
     code = pdfi_pscript_interpret(&cmap_ctx, buf, buflen);
+    pdfi_pscript_stack_finit(&cmap_ctx);
     if (code < 0) goto error_out;
 
     code = pdfi_make_gs_cmap(ctx->memory, pdfi_cmap);
