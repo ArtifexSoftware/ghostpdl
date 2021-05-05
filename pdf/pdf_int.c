@@ -468,6 +468,12 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
     string->indirect_num = indirect_num;
     string->indirect_gen = indirect_gen;
 
+    if (ctx->encryption.is_encrypted && ctx->encryption.decrypt_strings) {
+        code = pdfi_decrypt_string(ctx, string);
+        if (code < 0)
+            return code;
+    }
+
     code = pdfi_push(ctx, (pdf_obj *)string);
     if (code < 0)
         pdfi_free_object((pdf_obj *)string);
@@ -1892,6 +1898,9 @@ pdfi_interpret_inner_content_c_string(pdf_context *ctx, char *content_string,
                                       bool stoponerror, const char *desc)
 {
     uint32_t length = (uint32_t)strlen(content_string);
+    bool decrypt_strings;
+    int code;
+
 
     /* Underlying buffer limit is uint32, so handle the extremely unlikely case that
      * our string is too big.
@@ -1899,8 +1908,16 @@ pdfi_interpret_inner_content_c_string(pdf_context *ctx, char *content_string,
     if (length != strlen(content_string))
         return_error(gs_error_limitcheck);
 
-    return pdfi_interpret_inner_content_buffer(ctx, (byte *)content_string, length,
+    /* Since this is a constructed string content, not part of the file, it can never
+     * be encrypted. So disable decryption during this call.
+     */
+    decrypt_strings = ctx->encryption.decrypt_strings;
+    ctx->encryption.decrypt_strings = false;
+    code = pdfi_interpret_inner_content_buffer(ctx, (byte *)content_string, length,
                                                stream_dict, page_dict, stoponerror, desc);
+    ctx->encryption.decrypt_strings = decrypt_strings;
+
+    return code;
 }
 
 /* Interpret inner content from a string

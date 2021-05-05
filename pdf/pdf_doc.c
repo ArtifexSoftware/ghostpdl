@@ -90,46 +90,23 @@ int pdfi_read_Root(pdf_context *ctx)
 
 int pdfi_read_Info(pdf_context *ctx)
 {
-    pdf_obj *o, *o1;
+    pdf_dict *Info;
     int code;
 
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Reading Info dictionary\n");
 
-    code = pdfi_dict_get(ctx, ctx->Trailer, "Info", &o1);
+    code = pdfi_dict_get_type(ctx, ctx->Trailer, "Info", PDF_DICT, (pdf_obj **)&Info);
     if (code < 0)
         return code;
 
-    if (o1->type == PDF_INDIRECT) {
-        code = pdfi_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
-        pdfi_countdown(o1);
-        if (code < 0)
-            return code;
-
-        if (o->type != PDF_DICT) {
-            pdfi_countdown(o);
-            return_error(gs_error_typecheck);
-        }
-
-        code = pdfi_dict_put(ctx, ctx->Trailer, "Info", o);
-        if (code < 0) {
-            pdfi_countdown(o);
-            return code;
-        }
-        o1 = o;
-    } else {
-        if (o1->type != PDF_DICT) {
-            pdfi_countdown(o1);
-            return_error(gs_error_typecheck);
-        }
-    }
-
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n");
-    /* We don't pdfi_countdown(o1) now, because we've transferred our
+
+    /* We don't pdfi_countdown(Info) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
      */
-    ctx->Info = (pdf_dict *)o1;
+    ctx->Info = Info;
     return 0;
 }
 
