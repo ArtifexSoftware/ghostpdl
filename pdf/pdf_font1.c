@@ -236,7 +236,8 @@ push_pfb_filter(gs_memory_t * mem, byte * buf, byte * bufend)
         goto done;
     }
     memset(st, 0x00, sizeof(stream_PFBD_state));
-
+    (*s_PFBD_template.init)((stream_state *)st);
+    st->binary_to_hex = true;
     s_std_init(fs, strbuf, 4096, &s_filter_read_procs, s_mode_read);
     st->memory = mem;
     st->templat = &s_PFBD_template;
@@ -541,8 +542,9 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
     if (code >= 0) {
         fpriv.gsu.gst1.data.lenIV = 4;
         code = pdfi_read_ps_font(ctx, font_dict, fbuf, fbuflen, &fpriv);
-
         gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font");
+        if (code < 0)
+            goto error;
         code = pdfi_alloc_t1_font(ctx, &t1f, font_dict->object_num);
         if (code >= 0) {
             gs_font_type1 *pfont1 = (gs_font_type1 *) t1f->pfont;
