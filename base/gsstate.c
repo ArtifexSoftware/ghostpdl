@@ -1468,10 +1468,8 @@ gstate_free_contents(gs_gstate * pgs)
     if (pgs->client_data != 0)
         (*pgs->client_procs.free) (pgs->client_data, mem, pgs);
     pgs->client_data = 0;
-    gs_swapcolors_quick(pgs);
     cs_adjust_counts_icc(pgs, -1);
-    gs_swapcolors_quick(pgs);
-    cs_adjust_counts_icc(pgs, -1);
+    cs_adjust_swappedcounts_icc(pgs, -1);
     pgs->color[0].color_space = 0;
     pgs->color[1].color_space = 0;
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
@@ -1503,9 +1501,7 @@ gstate_copy(gs_gstate * pto, const gs_gstate * pfrom,
      * Handle references from contents.
      */
     cs_adjust_counts_icc(pto, -1);
-    gs_swapcolors_quick(pto);
-    cs_adjust_counts_icc(pto, -1);
-    gs_swapcolors_quick(pto);
+    cs_adjust_swappedcounts_icc(pto, -1);
     gx_path_assign_preserve(pto->path, pfrom->path);
     gx_cpath_assign_preserve(pto->clip_path, pfrom->clip_path);
     /*
@@ -1556,9 +1552,7 @@ gstate_copy(gs_gstate * pto, const gs_gstate * pfrom,
     }
     GSTATE_ASSIGN_PARTS(pto, &parts);
     cs_adjust_counts_icc(pto, 1);
-    gs_swapcolors_quick(pto);
-    cs_adjust_counts_icc(pto, 1);
-    gs_swapcolors_quick(pto);
+    cs_adjust_swappedcounts_icc(pto, 1);
     pto->show_gstate =
         (pfrom->show_gstate == pfrom ? pto : 0);
     return 0;
