@@ -425,7 +425,8 @@ void cs_adjust_counts_icc(gs_gstate *pgs, int delta)
     gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
 
     if (pcs) {
-        cs_adjust_counts(pgs, delta);
+        cs_adjust_color_count(pgs, delta);
+        rc_adjust_const(pcs, delta, "cs_adjust_counts_icc");
     }
 }
 
@@ -434,7 +435,8 @@ void cs_adjust_swappedcounts_icc(gs_gstate *pgs, int delta)
     gs_color_space *pcs = gs_swappedcolorspace_inline(pgs);
 
     if (pcs) {
-        cs_adjust_swappedcounts(pgs, delta);
+        cs_adjust_swappedcolor_count(pgs, delta);
+        rc_adjust_const(pcs, delta, "cs_adjust_swappedcounts_icc");
     }
 }
 
