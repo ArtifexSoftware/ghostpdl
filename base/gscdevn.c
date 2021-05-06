@@ -770,7 +770,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
 
 /* Finalize contents of a DeviceN color space. */
 static void
-gx_final_DeviceN(const gs_color_space * pcs)
+gx_final_DeviceN(gs_color_space * pcs)
 {
     gs_device_n_colorant * pnextatt, * patt = pcs->params.device_n.colorants;
     uint num_proc_names = pcs->params.device_n.num_process_names;
@@ -797,6 +797,8 @@ gx_final_DeviceN(const gs_color_space * pcs)
         rc_decrement(patt, "gx_adjust_DeviceN");
         patt = pnextatt;
     }
+    /* Ensure idempotency */
+    memset(&pcs->params.device_n, 0, sizeof(pcs->params.device_n));
 }
 
 /* ---------------- Serialization. -------------------------------- */

@@ -152,7 +152,7 @@ struct gs_color_space_type_s {
     /* Free contents of composite colorspace objects. */
 
 #define cs_proc_final(proc)\
-  void proc(const gs_color_space *)
+  void proc(gs_color_space *)
         cs_proc_final((*final));
 
     /* Adjust reference counts of indirect color components. */

@@ -615,10 +615,11 @@ gx_concretize_ICC(
  * unintuitive but otherwise legitimate state of affairs".
          */
 static void
-gx_final_ICC(const gs_color_space * pcs)
+gx_final_ICC(gs_color_space * pcs)
 {
     if (pcs->cmm_icc_profile_data != NULL) {
         gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, -1, "gx_final_ICC");
+        pcs->cmm_icc_profile_data = NULL;
     }
 }
 

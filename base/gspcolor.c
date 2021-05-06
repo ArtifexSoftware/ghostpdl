@@ -293,7 +293,7 @@ gx_set_overprint_Pattern(const gs_color_space * pcs, gs_gstate * pgs)
 
 /* Adjust the reference counts for Pattern color spaces or colors. */
 static void
-gx_final_Pattern(const gs_color_space * pcs)
+gx_final_Pattern(gs_color_space * pcs)
 {
     /* {csrc} really do nothing? */
 }
@@ -305,7 +305,7 @@ gx_adjust_color_Pattern(const gs_client_color * pcc,
     gs_pattern_instance_t *pinst = pcc->pattern;
 
     rc_adjust_only(pinst, delta, "gx_adjust_color_Pattern");
-    if (pcs && pcs->params.pattern.has_base_space)
+    if (pcs && pcs->base_space && pcs->params.pattern.has_base_space)
         (pcs->base_space->type->adjust_color_count)
             (pcc, pcs->base_space, delta);
 }

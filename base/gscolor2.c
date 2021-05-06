@@ -294,16 +294,18 @@ gx_set_overprint_Indexed(const gs_color_space * pcs, gs_gstate * pgs)
 /* Color space finalization ditto. */
 
 static void
-gx_final_Indexed(const gs_color_space * pcs)
+gx_final_Indexed(gs_color_space * pcs)
 {
     if (pcs->params.indexed.use_proc) {
         rc_adjust_const(pcs->params.indexed.lookup.map, -1,
                         "gx_adjust_Indexed");
+        pcs->params.indexed.lookup.map = NULL;
     } else {
         byte *data = (byte *)pcs->params.indexed.lookup.table.data; /* Break 'const'. */
 
         gs_free_string(pcs->rc.memory, data,
                 pcs->params.indexed.lookup.table.size, "gx_final_Indexed");
+        pcs->params.indexed.lookup.table.data = NULL;
     }
 }
 
