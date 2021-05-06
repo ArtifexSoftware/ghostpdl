@@ -136,6 +136,7 @@ rc_free_proc(rc_free_struct_only);
   BEGIN\
     IF_RC_DEBUG(rc_trace_adjust(vp, &(vp)->rc, delta, cname));\
     (vp)->rc.ref_count += (delta);\
+    (void)Memento_adjustRef((vp), delta);\
   END
 #define rc_unshare_struct(vp, typ, pstype, mem, errstat, cname)\
   BEGIN\
