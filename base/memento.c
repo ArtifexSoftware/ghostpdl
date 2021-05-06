@@ -1639,6 +1639,7 @@ void Memento_blockInfo(void *p)
 #ifdef MEMENTO_DETAILS
     MEMENTO_LOCK();
     Memento_appBlocks(&memento.used, showBlockInfo, p);
+    Memento_appBlocks(&memento.free, showBlockInfo, p);
     MEMENTO_UNLOCK();
 #endif
 }
