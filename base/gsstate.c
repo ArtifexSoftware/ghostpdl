@@ -293,6 +293,8 @@ gs_gstate_free_chain(gs_gstate * pgs)
 void
 gs_gstate_free(gs_gstate * pgs)
 {
+    if (pgs == NULL)
+        return;
     gstate_free_contents(pgs);
     gs_free_object(pgs->memory, pgs, "gs_gstate_free");
 }
