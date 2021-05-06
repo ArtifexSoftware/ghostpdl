@@ -761,16 +761,31 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *page_dict, pdf_dict
     int code = 0;
     pdf_string *DA = NULL;
     pdf_string *mod_DA = NULL;
+    pdf_dict *resource_dict = annot;  /* dict to use for resources, alias no need to refcnt */
+    pdf_dict *DR = NULL;
+    bool known;
 
     /* TODO -- see gs code make_tx_da, need to handle case where we need to set a UTF-16 font */
 
     if (!page_dict)
         page_dict = ctx->page.CurrentPageDict;
 
-    if (is_form)
+    if (is_form) {
+        code = pdfi_dict_known(ctx, annot, "DR", &known);
+        if (code < 0) goto exit;
+        /* If there is no "DR" and no Parent in the annotation, have it use the AcroForm instead
+         * This is a hack.  May need to use fancier inheritance approach.
+         */
+        if (!known) {
+            code = pdfi_dict_known(ctx, annot, "Parent", &known);
+            if (code < 0) goto exit;
+            if (!known)
+                resource_dict = ctx->AcroForm;
+        }
         code = pdfi_form_get_inheritable(ctx, annot, "DA", PDF_STRING, (pdf_obj **)&DA);
-    else
+    } else {
         code = pdfi_dict_knownget_type(ctx, annot, "DA", PDF_STRING, (pdf_obj **)&DA);
+    }
     if (code < 0) goto exit;
     if (code > 0) {
         if (is_form) {
@@ -781,7 +796,7 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *page_dict, pdf_dict
             pdfi_countup(mod_DA);
         }
 
-        code = pdfi_interpret_inner_content_string(ctx, mod_DA, annot,
+        code = pdfi_interpret_inner_content_string(ctx, mod_DA, resource_dict,
                                                    page_dict, false, "DA");
         if (code < 0) goto exit;
         /* If no font got set, set one */
@@ -797,6 +812,7 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *page_dict, pdf_dict
     }
 
  exit:
+    pdfi_countdown(DR);
     pdfi_countdown(DA);
     pdfi_countdown(mod_DA);
     return code;
