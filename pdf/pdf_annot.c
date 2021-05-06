@@ -1511,9 +1511,25 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
     if (code <= 0) goto exit;
 
     code = pdfi_dict_knownget(ctx, AP_dict, "N", (pdf_obj **)&baseAP);
-    if (code <= 0) goto exit;
+    if (code < 0) goto exit;
 
-    code = 0;
+    /* Look for /R and /D if there was no /N */
+    if (code == 0) {
+        dbgmprintf(ctx->memory, "*** Error: Annotation (AP) lacks the mandatory normal (N) appearance.\n");
+        dbgmprintf(ctx->memory, "           Output may be incorrect.\n");
+        ctx->pdf_warnings |= W_PDF_ANNOT_AP_ERROR;
+
+        code = pdfi_dict_knownget(ctx, AP_dict, "R", (pdf_obj **)&baseAP);
+        if (code < 0) goto exit;
+
+        if (code == 0) {
+            code = pdfi_dict_knownget(ctx, AP_dict, "D", (pdf_obj **)&baseAP);
+            if (code < 0) goto exit;
+        }
+    }
+
+    /* Nothing found */
+    if (code == 0) goto exit;
 
     if (baseAP->type == PDF_STREAM) {
         /* Use baseAP for the AP */
@@ -1536,8 +1552,7 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
         /* Lookup the AS in the NormAP and use that as the AP */
         code = pdfi_dict_get_by_key(ctx, (pdf_dict *)baseAP, AS, (pdf_obj **)&AP);
         if (code < 0) {
-            dbgmprintf(ctx->memory, "WARNING Annotation has non-stream AP AS key doesn't match.  Don't know what to render.\n");
-            ctx->pdf_warnings |= W_PDF_ANNOT_AP_ERROR;
+            /* Apparently this is not an error, just silently don't have an AP */
             code = 0;
             goto exit;
         }
@@ -3434,8 +3449,8 @@ static int pdfi_form_display_Tx(pdf_context *ctx, pdf_dict *annot, gs_rect *rect
 }
 
 
-/* draw field Tx */
-static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *annot, pdf_obj *AP)
+/* At least for now, Tx and Ch are handled the same */
+static int pdfi_form_draw_Tx_Ch(pdf_context *ctx, pdf_dict *annot)
 {
     int code = 0;
     pdf_string *V = NULL;
@@ -3443,9 +3458,6 @@ static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *annot, pdf_obj *AP)
     int64_t Ff;
     int64_t MaxLen;
     int64_t Q;
-
-    if (AP != NULL)
-        return pdfi_annot_draw_AP(ctx, annot, AP);
 
     code = pdfi_annot_Rect(ctx, annot, &annotrect);
     if (code < 0) goto exit;
@@ -3477,17 +3489,22 @@ static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *annot, pdf_obj *AP)
     return code;
 }
 
+/* draw field Tx */
+static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *annot, pdf_obj *AP)
+{
+    if (AP != NULL)
+        return pdfi_annot_draw_AP(ctx, annot, AP);
+
+    return pdfi_form_draw_Tx_Ch(ctx, annot);
+}
+
 /* draw field Ch */
 static int pdfi_form_draw_Ch(pdf_context *ctx, pdf_dict *field, pdf_obj *AP)
 {
-    int code = 0;
-
     if (!ctx->NeedAppearances && AP != NULL)
         return pdfi_annot_draw_AP(ctx, field, AP);
 
-    dmprintf(ctx->memory, "WARNING: AcroForm field 'Ch' with no AP not implemented.\n");
-
-    return code;
+    return pdfi_form_draw_Tx_Ch(ctx, field);
 }
 
 /* draw field Sig */
