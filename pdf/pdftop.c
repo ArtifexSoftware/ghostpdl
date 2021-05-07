@@ -634,7 +634,7 @@ pdf_impl_deallocate_interp_instance(pl_interp_implementation_t *impl)
     gs_memory_t *mem = ctx->memory;
     int code = 0;
 
-    code = pdfi_free_context(mem, ctx);
+    code = pdfi_free_context(ctx);
 
     gs_free_object(mem, instance, "pdf_impl_deallocate_interp_instance");
 

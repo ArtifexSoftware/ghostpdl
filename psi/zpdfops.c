@@ -24,6 +24,7 @@
 #endif
 
 #include "ghost.h"
+#include "gsmchunk.h"
 #include "oper.h"
 #include "igstate.h"
 #include "istack.h"
@@ -262,16 +263,24 @@ psi_pdf_end_page(pdf_context *ctx)
 static int zdopdffile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    pdf_context *ctx;
+    pdf_context *ctx = NULL;
     char pdffilename[gp_file_name_sizeof];
     int code = 0, code2 = 0;
+    gs_memory_t *cmem;
 
     check_read_type(*op, t_string);
     if (r_size(op) > gp_file_name_sizeof - 2)
         return_error(gs_error_limitcheck);
 
-    ctx = pdfi_create_context(imemory->non_gc_memory);
-    if (ctx == NULL) return_error(gs_error_VMerror);
+    code = gs_memory_chunk_wrap(&cmem, imemory->non_gc_memory);
+    if (code < 0)
+        return_error(gs_error_VMerror);
+
+    ctx = pdfi_create_context(cmem);
+    if (ctx == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
+    }
 
     code = gs_gsave(ctx->pgs);
     if (code < 0)
@@ -287,7 +296,10 @@ static int zdopdffile(i_ctx_t *i_ctx_p)
     code = pdfi_process_pdf_file(ctx, pdffilename);
     code = gs_grestore(ctx->pgs);
 done:
-    code2 = pdfi_free_context(imemory->non_gc_memory, ctx);
+    if (ctx)
+        code2 = pdfi_free_context(ctx);
+    /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
+    (void)gs_memory_chunk_unwrap(cmem);
 
     if (code == 0)
         code = code2;
@@ -326,7 +338,7 @@ pdfctx_finalize(const gs_memory_t *cmem, void *vptr)
     pdfctx_t *pdfctx = vptr;
 
     if (cmem != NULL && pdfctx->ctx != NULL)
-        (void)pdfi_free_context(cmem->non_gc_memory, pdfctx->ctx);
+        (void)pdfi_free_context(pdfctx->ctx);
 }
 
 static int zPDFstream(i_ctx_t *i_ctx_p)
@@ -399,7 +411,10 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
     pdfctx = r_ptr(op, pdfctx_t);
 
     if (pdfctx->ctx != NULL) {
-        code = pdfi_free_context(imemory, pdfctx->ctx);
+        gs_memory_t *cmem = pdfctx->ctx->memory;
+        code = pdfi_free_context(pdfctx->ctx);
+        /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
+        (void)gs_memory_chunk_unwrap(cmem);
         pdfctx->ctx = NULL;
     }
     if (pdfctx->ps_stream) {
@@ -593,7 +608,7 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
             return code;
     }
 
-    return_error(0);
+    return 0;
 }
 
 static int zPDFmetadata(i_ctx_t *i_ctx_p)
@@ -684,10 +699,17 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     pdfctx_t *pdfctx = NULL;
     pdf_context *ctx = NULL;
     int code = 0;
+    gs_memory_t *cmem;
 
-    ctx = pdfi_create_context(imemory->non_gc_memory);
-    if (ctx == NULL)
+    code = gs_memory_chunk_wrap(&cmem, imemory->non_gc_memory);
+    if (code < 0)
         return_error(gs_error_VMerror);
+
+    ctx = pdfi_create_context(cmem);
+    if (ctx == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
 
     pdfctx = gs_alloc_struct(imemory, pdfctx_t, &st_pdfctx_t, "PDFcontext");
     if (!pdfctx) {
@@ -854,8 +876,12 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     return 0;
 
 error:
-    pdfi_free_context(imemory->non_gc_memory, ctx);
-    pdfctx->ctx = NULL;
+    if (ctx)
+        pdfi_free_context(ctx);
+    /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
+    (void)gs_memory_chunk_unwrap(cmem);
+    if (pdfctx)
+        gs_free_object(imemory, pdfctx, "PDFcontext");
     return code;
 }
 #else
