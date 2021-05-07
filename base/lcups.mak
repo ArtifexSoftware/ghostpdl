@@ -30,7 +30,7 @@ LCUPSO_=$(O_)$(LIBCUPSOBJ)
 
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the cups source.
-LCUPS_CC=$(CUPS_CC) $(I_)$(LIBCUPSSRC) $(I_)$(LIBCUPSGEN)$(D)cups $(I_)$(LCUPSSRCDIR)$(D)libs
+LCUPS_CC=$(CUPS_CC) $(CUPSCFLAGS) $(I_)$(LIBCUPSSRC) $(I_)$(LIBCUPSGEN)$(D)cups $(I_)$(LCUPSSRCDIR)$(D)libs
 
 # Define the name of this makefile.
 LCUPS_MAK=$(GLSRC)lcups.mak $(TOP_MAKEFILES)
