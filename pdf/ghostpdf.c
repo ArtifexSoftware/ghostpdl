@@ -576,7 +576,7 @@ int pdfi_close_pdf_file(pdf_context *ctx)
         ctx->filename = NULL;
     }
 
-    pdfi_clear_context(ctx->memory, ctx);
+    pdfi_clear_context(ctx);
     return 0;
 }
 
@@ -1229,7 +1229,7 @@ pdfi_print_cache(pdf_context *ctx)
  * called by pdf_free_context (in case of errors during the file leaving state around)
  * and by pdfi_close_pdf_file.
  */
-int pdfi_clear_context(gs_memory_t *pmem, pdf_context *ctx)
+int pdfi_clear_context(pdf_context *ctx)
 {
 #if CACHE_STATISTICS
     float compressed_hit_rate = 0.0, hit_rate = 0.0;
@@ -1401,9 +1401,9 @@ int pdfi_clear_context(gs_memory_t *pmem, pdf_context *ctx)
     return 0;
 }
 
-int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
+int pdfi_free_context(pdf_context *ctx)
 {
-    pdfi_clear_context(pmem, ctx);
+    pdfi_clear_context(ctx);
 
     gs_free_object(ctx->memory, ctx->stack_bot, "pdfi_free_context");
 
