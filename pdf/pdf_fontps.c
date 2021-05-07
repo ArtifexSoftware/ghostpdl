@@ -50,9 +50,9 @@ pdfi_pscript_stack_init(pdf_context *pdfi_ctx, pdf_ps_oper_list_t *ops, void *cl
         s->stack[i].type = PDF_PS_OBJ_STACK_BOTTOM;
 
     for (i = 0; i < PDF_PS_STACK_GUARDS; i++)
-        s->stack[size + 1 + i].type = PDF_PS_OBJ_STACK_TOP;
+        s->stack[size - 1 + i].type = PDF_PS_OBJ_STACK_TOP;
 
-    for (i = 0; i < size; i++) {
+    for (i = 0; i < size - 1; i++) {
         pdf_ps_make_null(&(s->cur[i]));
     }
     return 0;
