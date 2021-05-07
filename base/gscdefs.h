@@ -35,9 +35,13 @@
         "GPL Ghostscript"
 #endif
 
+#ifndef GS_PRODUCT_SUFFIX
+#  define GS_PRODUCT_SUFFIX " GPDF/PDFI ALPHA RELEASE 1"
+#endif
+
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " GIT PRERELEASE"
+        GS_PRODUCTFAMILY GS_PRODUCT_SUFFIX
 #endif
 
 /* Prototypes for configuration definitions in gconfig.c. */

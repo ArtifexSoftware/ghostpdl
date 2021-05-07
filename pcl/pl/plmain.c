@@ -318,8 +318,8 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
             errprintf(mem, pl_usage, argv[0]);
 
         if (pl_characteristics(pjli)->version)
-            errprintf(mem, "Version: %s\n",
-                      pl_characteristics(pjli)->version);
+            errprintf(mem, "Version: %s %s\n",
+                      pl_characteristics(pjli)->version, GS_PRODUCT_SUFFIX);
         if (pl_characteristics(pjli)->build_date)
             errprintf(mem, "Build date: %s\n",
                       pl_characteristics(pjli)->

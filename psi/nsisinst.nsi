@@ -101,9 +101,13 @@
 !define TARGET gs899w32
 !endif
 
+!define GPDFTARGET ${TARGET}-gpdf_alpha1
+
 !ifndef VERSION
 !define VERSION 8.99
 !endif
+
+!define GPDFVERSION ${VERSION}-gpdf_alpha1
 
 ; Defaulting to 0 is the safer option
 !ifndef COMPILE_INITS
@@ -129,7 +133,7 @@ CRCCheck on
 
 !insertmacro MUI_PAGE_WELCOME
 
-Page custom OldVersionsPageCreate
+;Page custom OldVersionsPageCreate
 
 !insertmacro MUI_PAGE_LICENSE "LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY
@@ -138,28 +142,28 @@ Page custom OldVersionsPageCreate
 
 !insertmacro MUI_LANGUAGE "English"
 
-Function OldVersionsPageCreate
-  !insertmacro MUI_HEADER_TEXT "Previous Ghostscript Installations" "Optionally run the uninstallers for previous Ghostscript installations$\nClick $\"Cancel$\" to stop uninstalling previous installs"
-
-  StrCpy $0 0
-  loop:
-    EnumRegKey $1 HKLM "Software\Artifex\GPL Ghostscript" $0
-    StrCmp $1 "" done
-    IntOp $0 $0 + 1
-    MessageBox MB_YESNOCANCEL|MB_ICONQUESTION "Uninstall Ghostscript Version $1?" IDNO loop IDCANCEL done
-    Var /GLOBAL uninstexe
-    ReadRegStr $uninstexe HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript $1" "UninstallString"
-    ExecWait "$uninstexe"
-    Goto loop
-  done:
-
-FunctionEnd
+;Function OldVersionsPageCreate
+;  !insertmacro MUI_HEADER_TEXT "Previous Ghostscript Installations" "Optionally run the uninstallers for previous Ghostscript installations$\nClick $\"Cancel$\" to stop uninstalling previous installs"
+;
+;  StrCpy $0 0
+;  loop:
+;    EnumRegKey $1 HKLM "Software\Artifex\GPL Ghostscript" $0
+;    StrCmp $1 "" done
+;    IntOp $0 $0 + 1
+;    MessageBox MB_YESNOCANCEL|MB_ICONQUESTION "Uninstall Ghostscript Version $1?" IDNO loop IDCANCEL done
+;    Var /GLOBAL uninstexe
+;    ReadRegStr $uninstexe HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript $1" "UninstallString"
+;    ExecWait "$uninstexe"
+;    Goto loop
+;  done:
+;
+;FunctionEnd
 
 !searchparse /ignorecase /noerrors "${TARGET}" w WINTYPE
 !echo "Building ${WINTYPE}-bit installer"
 
 Name "GPL Ghostscript"
-OutFile "${TARGET}.exe"
+OutFile "${GPDFTARGET}.exe"
 !if "${WINTYPE}" == "64"
 Icon   obj64\gswin.ico
 UninstallIcon   obj64\gswin.ico
@@ -187,9 +191,9 @@ LicenseText "You must agree to this license before installing."
 LicenseData "LICENSE"
 
 !if "${WINTYPE}" == "64"
-InstallDir "$PROGRAMFILES64\gs\gs${VERSION}"
+InstallDir "$PROGRAMFILES64\gs\gs${GPDFVERSION}"
 !else
-InstallDir "$PROGRAMFILES\gs\gs${VERSION}"
+InstallDir "$PROGRAMFILES\gs\gs${GPDFVERSION}"
 !endif
 
 DirText "Select the directory to install GPL Ghostscript in:"
@@ -211,27 +215,31 @@ File /oname=bin\gsdll${WINTYPE}.lib .\bin\gsdll${WINTYPE}.lib
 File /oname=bin\gswin${WINTYPE}.exe .\bin\gswin${WINTYPE}.exe
 File /oname=bin\gswin${WINTYPE}c.exe .\bin\gswin${WINTYPE}c.exe
 
+File /oname=bin\gpdfdll${WINTYPE}.dll .\bin\gpdfdll${WINTYPE}.dll
+File /oname=bin\gpdfdll${WINTYPE}.lib .\bin\gpdfdll${WINTYPE}.lib
+File /oname=bin\gpdfwin${WINTYPE}.exe .\bin\gpdfwin${WINTYPE}.exe
+
 !if "${WINTYPE}" == "64"
   SetRegView 64
 !endif
 
-WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}" "GS_DLL" "$INSTDIR\bin\gsdll${WINTYPE}.dll"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${GPDFVERSION}" "GS_DLL" "$INSTDIR\bin\gsdll${WINTYPE}.dll"
 
 !if "${COMPILE_INITS}" == "0"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}" "GS_LIB" "$INSTDIR\Resource\Init;$INSTDIR\bin;$INSTDIR\lib;$INSTDIR\fonts"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${GPDFVERSION}" "GS_LIB" "$INSTDIR\Resource\Init;$INSTDIR\bin;$INSTDIR\lib;$INSTDIR\fonts"
 !else
-WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}" "GS_LIB" "$INSTDIR\bin;$INSTDIR\lib;$INSTDIR\fonts"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${GPDFVERSION}" "GS_LIB" "$INSTDIR\bin;$INSTDIR\lib;$INSTDIR\fonts"
 !endif
 
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Artifex\GPL Ghostscript\${VERSION}" "" "$INSTDIR"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "DisplayName" "GPL Ghostscript"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "UninstallString" '"$INSTDIR\uninstgs.exe"'
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "Publisher" "Artifex Software Inc."
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "HelpLink" "http://www.ghostscript.com/"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "URLInfoAbout" "http://www.ghostscript.com/"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "DisplayVersion" "${VERSION}"
-WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "NoModify" "1"
-WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "NoRepair" "1"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Artifex\GPL Ghostscript\${GPDFVERSION}" "" "$INSTDIR"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${GPDFVERSION}" "DisplayName" "GPL Ghostscript"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${GPDFVERSION}" "UninstallString" '"$INSTDIR\uninstgs.exe"'
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${GPDFVERSION}" "Publisher" "Artifex Software Inc."
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${GPDFVERSION}" "HelpLink" "http://www.ghostscript.com/"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${GPDFVERSION}" "URLInfoAbout" "http://www.ghostscript.com/"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${GPDFVERSION}" "DisplayVersion" "${GPDFVERSION}"
+WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${GPDFVERSION}" "NoModify" "1"
+WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${GPDFVERSION}" "NoRepair" "1"
 ; write out uninstaller
 WriteUninstaller "$INSTDIR\uninstgs.exe"
 SectionEnd ; end of default section
@@ -239,9 +247,9 @@ SectionEnd ; end of default section
 Function .onInstSuccess
     SetShellVarContext all
     CreateDirectory "$SMPROGRAMS\Ghostscript"
-    CreateShortCut "$SMPROGRAMS\Ghostscript\Ghostscript ${VERSION}.LNK" "$INSTDIR\bin\gswin${WINTYPE}.exe" '"-I$INSTDIR\lib;$INSTDIR\..\fonts"'
-    CreateShortCut "$SMPROGRAMS\Ghostscript\Ghostscript Readme ${VERSION}.LNK" "$INSTDIR\doc\Readme.htm"
-    CreateShortCut "$SMPROGRAMS\Ghostscript\Uninstall Ghostscript ${VERSION}.LNK" "$INSTDIR\uninstgs.exe"
+    CreateShortCut "$SMPROGRAMS\Ghostscript\Ghostscript ${GPDFVERSION}.LNK" "$INSTDIR\bin\gswin${WINTYPE}.exe" '"-I$INSTDIR\lib;$INSTDIR\..\fonts"'
+    CreateShortCut "$SMPROGRAMS\Ghostscript\Ghostscript Readme ${GPDFVERSION}.LNK" "$INSTDIR\doc\Readme.htm"
+    CreateShortCut "$SMPROGRAMS\Ghostscript\Uninstall Ghostscript ${GPDFVERSION}.LNK" "$INSTDIR\uninstgs.exe"
 FunctionEnd
 
 Function CJKGen
@@ -260,10 +268,10 @@ Function .onInit
     ${EndIf}
 !endif
 
-    System::Call 'kernel32::CreateMutexA(i 0, i 0, t "Ghostscript${VERSION}Installer") i .r1 ?e'
+    System::Call 'kernel32::CreateMutexA(i 0, i 0, t "Ghostscript${GPDFVERSION}Installer") i .r1 ?e'
     Pop $R0
     StrCmp $R0 0 +3
-    MessageBox MB_OK "The Ghostscript ${VERSION} installer is already running." /SD IDOK
+    MessageBox MB_OK "The Ghostscript ${GPDFVERSION} installer is already running." /SD IDOK
     Abort
 FunctionEnd
 
@@ -279,17 +287,17 @@ UninstallText "This will uninstall GPL Ghostscript from your system"
 Section Uninstall
 ; add delete commands to delete whatever files/registry keys/etc you installed here.
 SetShellVarContext all
-Delete   "$SMPROGRAMS\Ghostscript\Ghostscript ${VERSION}.LNK"
-Delete   "$SMPROGRAMS\Ghostscript\Ghostscript Readme ${VERSION}.LNK"
-Delete   "$SMPROGRAMS\Ghostscript\Uninstall Ghostscript ${VERSION}.LNK"
+Delete   "$SMPROGRAMS\Ghostscript\Ghostscript ${GPDFVERSION}.LNK"
+Delete   "$SMPROGRAMS\Ghostscript\Ghostscript Readme ${GPDFVERSION}.LNK"
+Delete   "$SMPROGRAMS\Ghostscript\Uninstall Ghostscript ${GPDFVERSION}.LNK"
 RMDir    "$SMPROGRAMS\Ghostscript"
 Delete   "$INSTDIR\uninstgs.exe"
 !if "${WINTYPE}" == "64"
     SetRegView 64
 !endif
-DeleteRegKey HKEY_LOCAL_MACHINE "Software\Artifex\GPL Ghostscript\${VERSION}"
-DeleteRegKey HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}"
-DeleteRegKey HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}"
+DeleteRegKey HKEY_LOCAL_MACHINE "Software\Artifex\GPL Ghostscript\${GPDFVERSION}"
+DeleteRegKey HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${GPDFVERSION}"
+DeleteRegKey HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${GPDFVERSION}"
 RMDir /r "$INSTDIR\doc"
 RMDir /r "$INSTDIR\examples"
 RMDir /r "$INSTDIR\lib"

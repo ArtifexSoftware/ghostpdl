@@ -184,7 +184,7 @@ $(PSOBJ)zwinutf8.$(OBJ) : $(PSSRC)zwinutf8.c $(OP)\
 	$(PSCCWIN) $(PSO_)zwinutf8.$(OBJ) $(C_) $(PSSRC)zwinutf8.c
 
 # -------------------- NSIS Installer -------------------------------- #
-nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_ALL) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib \
+nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_ALL) $(GS_XE) $(PDF_TARGET) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib \
       $(WININT_MAK)
 	$(MAKENSIS_XE) -NOCD -DTARGET=$(NSISTARGET) -DVERSION=$(GS_DOT_VERSION) -DCOMPILE_INITS=$(COMPILE_INITS) $(PSSRC)nsisinst.nsi
 !if defined(KEYFILE) && defined(KEYPWORD) && defined(TIMESTAMP)
