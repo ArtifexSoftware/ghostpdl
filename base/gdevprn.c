@@ -1469,6 +1469,7 @@ gx_default_size_buf_device(gx_device_buf_space_t *space, gx_device *target,
     mdev.color_info.depth =
         (render_plane && render_plane->index >= 0 ? render_plane->depth :
          target->color_info.depth);
+    mdev.color_info.num_components = target->color_info.num_components;
     mdev.width = target->width;
     mdev.is_planar = target->is_planar;
     mdev.pad = target->pad;

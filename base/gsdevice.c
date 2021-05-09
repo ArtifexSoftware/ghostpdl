@@ -808,16 +808,28 @@ gx_set_device_only(gs_gstate * pgs, gx_device * dev)
 uint
 gx_device_raster(const gx_device * dev, bool pad)
 {
-    ulong bits = (ulong) dev->width * dev->color_info.depth;
+    int depth = dev->color_info.depth;
+    ulong bits = (ulong) dev->width * depth;
     ulong raster;
     int l2align;
 
-    if (dev->is_planar)
-    {
-        int has_tags = device_encodes_tags(dev);
-        bits /= (dev->color_info.num_components + has_tags);
-    }
+    if (dev->is_planar) {
+        int num_components = dev->color_info.num_components;
+        /* bpc accounts for unused bits, e.g. depth==4, num_comp==3, or depth==8, num_comps==5 */
+        int bpc = depth / num_components;
 
+        /* depth can be <= num_components if planar and MEM_SET_PARAMS has changed it */
+        if (depth <= num_components || bpc >= 8) {
+            /* tag plane requires at least 8 bits (per component as well as tags) */
+            int has_tags = bpc >= 8 ? device_encodes_tags(dev): 0;
+
+            bits /= (num_components + has_tags);
+        }
+        else {
+            /* depth is original depth, not the plane_depth since it is > num_components */
+            bits /= (depth / bpc);
+        }
+    }
     raster = (uint)((bits + 7) >> 3);
     if (!pad)
         return raster;

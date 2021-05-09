@@ -148,7 +148,8 @@ gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
            four planes then use the high level color filling procedure.  Also
            make use of the put_image operation to go from the pdf14 device
            directly to the planar buffer. */
-        if (num_planes >= 4) {
+        /* Note this is only valid for contone (8 or more bits per component) */
+        if (num_planes >= 4 && mdev->color_info.depth/num_planes >= 8) {
             set_dev_proc(mdev, put_image, mem_planar_put_image);
         }
         set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
