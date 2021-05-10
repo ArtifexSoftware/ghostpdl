@@ -80,7 +80,7 @@ zpdfinkpath(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_array);
     count = r_size(op);
 
-    if ((count & 1) != 0 || count < 3)
+    if ((count & 1) != 0 || count < 2)
         return_error(gs_error_rangecheck);
 
     if ((code = array_get(imemory, op, 0, &lval)) < 0)
