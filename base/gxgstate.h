@@ -474,5 +474,25 @@ static inline void ensure_tag_is_set(gs_gstate *pgs, gx_device *dev, gs_graphics
     }
 }
 
+/* Adjust the color reference counts for the current space. */
+static inline void
+cs_adjust_color_count(gs_gstate *pgs, int delta)
+{
+    gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
+
+    (pcs->type->adjust_color_count)(gs_currentcolor_inline(pgs),
+                                    pcs, delta);
+}
+
+/* Adjust the color reference counts for the swapped space (i.e.
+ * the one that is not current). */
+static inline void
+cs_adjust_swappedcolor_count(gs_gstate *pgs, int delta)
+{
+    gs_color_space *pcs = gs_swappedcolorspace_inline(pgs);
+
+    (pcs->type->adjust_color_count)(gs_swappedcolor_inline(pgs),
+                                    pcs, delta);
+}
 
 #endif /* gxistate_INCLUDED */

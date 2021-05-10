@@ -277,7 +277,7 @@ gs_gstate_client_data(const gs_gstate * pgs)
 }
 
 /* Free the chain of gstates.*/
-int
+void
 gs_gstate_free_chain(gs_gstate * pgs)
 {
    gs_gstate *saved = pgs, *tmp;
@@ -287,16 +287,16 @@ gs_gstate_free_chain(gs_gstate * pgs)
        gs_gstate_free(saved);
        saved = tmp;
    }
-   return 0;
 }
 
 /* Free a graphics state. */
-int
+void
 gs_gstate_free(gs_gstate * pgs)
 {
+    if (pgs == NULL)
+        return;
     gstate_free_contents(pgs);
     gs_free_object(pgs->memory, pgs, "gs_gstate_free");
-    return 0;
 }
 
 /* Save the graphics state. */
@@ -1317,11 +1317,11 @@ typedef struct {
 
 static gs_gstate *
 gstate_clone_core(const gs_gstate               *pfrom,
+                        gs_memory_t             *mem,
                         client_name_t            cname,
                         gs_gstate_clone_data    *clone_data,
                         gs_gstate_copy_reason_t  reason)
 {
-    gs_memory_t *mem = pfrom->memory;
     gs_gstate *pgs = gstate_alloc(mem, cname, pfrom);
     void *pdata = NULL;
 
@@ -1386,8 +1386,8 @@ gstate_clone_for_gsave(gs_gstate     *pfrom,
                        client_name_t  cname)
 {
     gs_gstate_clone_data clone_data;
-    gs_gstate *pgs = gstate_clone_core(pfrom, cname, &clone_data,
-                                       copy_for_gsave);
+    gs_gstate *pgs = gstate_clone_core(pfrom, pfrom->memory, cname,
+                                       &clone_data, copy_for_gsave);
 
     if (pgs == NULL)
         return NULL;
@@ -1407,7 +1407,7 @@ gstate_clone_for_gstate(const gs_gstate     *pfrom,
                               client_name_t  cname)
 {
     gs_gstate_clone_data clone_data;
-    gs_gstate *pgs = gstate_clone_core(pfrom, cname, &clone_data,
+    gs_gstate *pgs = gstate_clone_core(pfrom, mem, cname, &clone_data,
                                        copy_for_gstate);
 
     if (pgs == NULL)
@@ -1468,10 +1468,8 @@ gstate_free_contents(gs_gstate * pgs)
     if (pgs->client_data != 0)
         (*pgs->client_procs.free) (pgs->client_data, mem, pgs);
     pgs->client_data = 0;
-    gs_swapcolors_quick(pgs);
     cs_adjust_counts_icc(pgs, -1);
-    gs_swapcolors_quick(pgs);
-    cs_adjust_counts_icc(pgs, -1);
+    cs_adjust_swappedcounts_icc(pgs, -1);
     pgs->color[0].color_space = 0;
     pgs->color[1].color_space = 0;
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
@@ -1503,9 +1501,7 @@ gstate_copy(gs_gstate * pto, const gs_gstate * pfrom,
      * Handle references from contents.
      */
     cs_adjust_counts_icc(pto, -1);
-    gs_swapcolors_quick(pto);
-    cs_adjust_counts_icc(pto, -1);
-    gs_swapcolors_quick(pto);
+    cs_adjust_swappedcounts_icc(pto, -1);
     gx_path_assign_preserve(pto->path, pfrom->path);
     gx_cpath_assign_preserve(pto->clip_path, pfrom->clip_path);
     /*
@@ -1556,9 +1552,7 @@ gstate_copy(gs_gstate * pto, const gs_gstate * pfrom,
     }
     GSTATE_ASSIGN_PARTS(pto, &parts);
     cs_adjust_counts_icc(pto, 1);
-    gs_swapcolors_quick(pto);
-    cs_adjust_counts_icc(pto, 1);
-    gs_swapcolors_quick(pto);
+    cs_adjust_swappedcounts_icc(pto, 1);
     pto->show_gstate =
         (pfrom->show_gstate == pfrom ? pto : 0);
     return 0;

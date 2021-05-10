@@ -92,6 +92,8 @@ public_st_base_color_space();
 
 /* ------ Create/copy/destroy ------ */
 
+/* Ghostscript object finalizers can be called many times and hence
+ * must be idempotent. */
 static void
 gs_cspace_final(const gs_memory_t *cmem, void *vptr)
 {
@@ -100,17 +102,20 @@ gs_cspace_final(const gs_memory_t *cmem, void *vptr)
 
     if (pcs->interpreter_free_cspace_proc != NULL) {
         (*pcs->interpreter_free_cspace_proc) ((gs_memory_t *)cmem, pcs);
+        pcs->interpreter_free_cspace_proc = NULL;
     }
     if (pcs->type->final)
         pcs->type->final(pcs);
     if_debug2m('c', cmem, "[c]cspace final "PRI_INTPTR" %d\n", (intptr_t)pcs, (int)pcs->id);
     rc_decrement_only_cs(pcs->base_space, "gs_cspace_final");
-    if (pcs->params.device_n.devn_process_space != NULL)
+    pcs->base_space = NULL;
+    if (pcs->params.device_n.devn_process_space != NULL) {
         rc_decrement_only_cs(pcs->params.device_n.devn_process_space, "gs_cspace_final");
+        pcs->params.device_n.devn_process_space = NULL;
+    }
     /* No need to decrement the ICC profile data.  It is handled
        by the finalize of the ICC space which is called above using
        pcs->type->final(pcs);  */
-
 }
 
 static gs_color_space *
@@ -425,7 +430,8 @@ void cs_adjust_counts_icc(gs_gstate *pgs, int delta)
     gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
 
     if (pcs) {
-        cs_adjust_counts(pgs, delta);
+        cs_adjust_color_count(pgs, delta);
+        rc_adjust_const(pcs, delta, "cs_adjust_counts_icc");
     }
 }
 
@@ -434,7 +440,8 @@ void cs_adjust_swappedcounts_icc(gs_gstate *pgs, int delta)
     gs_color_space *pcs = gs_swappedcolorspace_inline(pgs);
 
     if (pcs) {
-        cs_adjust_swappedcounts(pgs, delta);
+        cs_adjust_swappedcolor_count(pgs, delta);
+        rc_adjust_const(pcs, delta, "cs_adjust_swappedcounts_icc");
     }
 }
 

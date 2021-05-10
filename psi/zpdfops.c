@@ -78,38 +78,47 @@ zsetscreenphase(i_ctx_t *i_ctx_p)
 static int
 zpdfinkpath(i_ctx_t *i_ctx_p)
 {
-    os_ptr optr, op = osp;
-    uint count = ref_stack_counttomark(&o_stack);
-
-    uint i, ocount;
+    os_ptr op = osp;
+    uint i, count;
     int code;
     double x0, y0, x1, y1, x2, y2, x3, y3, xc1, yc1, xc2, yc2, xc3, yc3;
     double len1, len2, len3, k1, k2, xm1, ym1, xm2, ym2;
     double ctrl1_x, ctrl1_y, ctrl2_x, ctrl2_y;
     const double smooth_value = 1; /* from 0..1 range */
+    ref lval;
 
-    if (count == 0)
-        return_error(gs_error_unmatchedmark);
-    if ((count & 1) == 0 || count < 3)
+    check_read_type(*op, t_array);
+    count = r_size(op);
+
+    if ((count & 1) != 0 || count < 3)
         return_error(gs_error_rangecheck);
 
-    ocount = count - 1;
-    optr = op - ocount + 1;
+    if ((code = array_get(imemory, op, 0, &lval)) < 0)
+        return code;
+    if ((code = real_param(&lval, &x1)) < 0)
+        return code;
 
-    if ((code = real_param(optr, &x1)) < 0)
+    if ((code = array_get(imemory, op, 1, &lval)) < 0)
         return code;
-    if ((code = real_param(optr + 1, &y1)) < 0)
+    if ((code = real_param(&lval, &y1)) < 0)
         return code;
+
     if ((code = gs_moveto(igs, x1, y1)) < 0)
         return code;
-    if (ocount == 2)
+    if (count == 2)
           goto pop;
 
-    if ((code = real_param(optr + 2, &x2)) < 0)
+    if ((code = array_get(imemory, op, 2, &lval)) < 0)
         return code;
-    if ((code = real_param(optr + 3, &y2)) < 0)
+    if ((code = real_param(&lval, &x2)) < 0)
         return code;
-    if (ocount == 4) {
+
+    if ((code = array_get(imemory, op, 3, &lval)) < 0)
+        return code;
+    if ((code = real_param(&lval, &y2)) < 0)
+        return code;
+
+    if (count == 4) {
         if((code = gs_lineto(igs, x2, y2)) < 0)
             return code;
         goto pop;
@@ -117,11 +126,15 @@ zpdfinkpath(i_ctx_t *i_ctx_p)
     x0 = 2*x1 - x2;
     y0 = 2*y1 - y2;
 
-    for (i = 4; i <= ocount; i += 2) {
-        if (i < ocount) {
-            if ((code = real_param(optr + i, &x3)) < 0)
+    for (i = 4; i <= count; i += 2) {
+        if (i < count) {
+            if ((code = array_get(imemory, op, i, &lval)) < 0)
                 return code;
-            if ((code = real_param(optr + i + 1, &y3)) < 0)
+            if ((code = real_param(&lval, &x3)) < 0)
+                return code;
+            if ((code = array_get(imemory, op, i + 1, &lval)) < 0)
+                return code;
+            if ((code = real_param(&lval, &y3)) < 0)
                 return code;
         } else {
             x3 = 2*x2 - x1;
@@ -161,7 +174,7 @@ zpdfinkpath(i_ctx_t *i_ctx_p)
         y0 = y1, y1 = y2, y2 = y3;
     }
   pop:
-    ref_stack_pop(&o_stack, count);
+    ref_stack_pop(&o_stack, 1);
     return 0;
 }
 

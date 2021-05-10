@@ -210,11 +210,13 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
 
 /* Finalize contents of a Separation color space. */
 static void
-gx_final_Separation(const gs_color_space * pcs)
+gx_final_Separation(gs_color_space * pcs)
 {
     rc_adjust_const(pcs->params.separation.map, -1,
                     "gx_adjust_Separation");
+    pcs->params.separation.map = NULL;
     gs_free_object(pcs->params.separation.mem, pcs->params.separation.sep_name, "gx_final_Separation");
+    pcs->params.separation.sep_name = NULL;
 }
 
 /* ------ Constructors/accessors ------ */

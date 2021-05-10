@@ -1882,6 +1882,10 @@ if ( test -f $srcdir/cups/gdevcups.c ); then
             AC_MSG_WARN([USING LOCAL CUPS SOURCE])
             SHARELCUPS=0
             SHARELCUPSI=0
+            AC_CHECK_FUNCS([strlcat], [CUPSCFLAGS="$CUPSCFLAGS -DHAVE_STRLCAT=1"], [])
+            AC_CHECK_FUNCS([strlcpy], [CUPSCFLAGS="$CUPSCFLAGS -DHAVE_STRLCPY=1"], [])
+            AC_CHECK_FUNCS([snprintf], [CUPSCFLAGS="$CUPSCFLAGS -DHAVE_SNPRINTF=1"], [])
+            AC_CHECK_FUNCS([vsnprintf], [CUPSCFLAGS="$CUPSCFLAGS -DHAVE_VSNPRINTF=1"], [])
             LCUPSBUILDTYPE=linux
             LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
             LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
