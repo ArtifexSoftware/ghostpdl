@@ -309,23 +309,63 @@
 				RelativePath="..\pdf\ghostpdf.c"
 				>
 			</File>
-			<File
-				RelativePath="..\pdf\pdf_array.c"
+            <File
+                RelativePath="..\pdf\pdftop.c"
 				>
-			</File>
-			<File
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_agl.c"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_annot.c"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_array.c"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_check.c"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_ciddec.c"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_colour.c"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_deref.c"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_device.c"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_dict.c"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_doc.c"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_fapi.c"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_file.c"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_fmap.c"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_font.c"
 				>
 			</File>
@@ -338,12 +378,24 @@
 	    		>
             </File>
             <File
+                RelativePath="..\pdf\pdf_font11.c"
+                >
+            </File>
+            <File
                 RelativePath="..\pdf\pdf_font1C.c"
 	  			>
             </File>
             <File
                 RelativePath="..\pdf\pdf_font3.c"
 	    		>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_font9.c"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_fontps.c"
+                >
             </File>
             <File
                 RelativePath="..\pdf\pdf_fontTT.c"
@@ -369,7 +421,27 @@
 				RelativePath="..\pdf\pdf_loop_detect.c"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_mark.c"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_misc.c"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_obj.c"
+                >
+            </File>
+            <File
+              RelativePath="..\pdf\pdf_optcontent.c"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_page.c"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_path.c"
 				>
 			</File>
@@ -377,7 +449,11 @@
                 RelativePath="..\pdf\pdf_pattern.c"
 				>
             </File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_repair.c"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_shading.c"
 				>
 			</File>
@@ -393,13 +469,13 @@
 				RelativePath="..\pdf\pdf_trans.c"
 				>
 			</File>
-			<File
-				RelativePath="..\pdf\pdf_xref.c"
+            <File
+                RelativePath="..\pdf\pdf_utf8.c"
 				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdftop.c"
-				>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_xref.c"
+                >
 			</File>
 		</Filter>
 		<Filter
@@ -409,23 +485,55 @@
 				RelativePath="..\pdf\ghostpdf.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_agl.h"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_annot.h"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_array.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_check.h"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_cmap.h"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_colour.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_deref.h"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_device.h"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_dict.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_doc.h"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_file.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_fmap.h"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_font.h"
 				>
 			</File>
@@ -450,6 +558,14 @@
 				>
             </File>
             <File
+                RelativePath="..\pdf\pdf_fontps.h"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_font_types.h"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_func.h"
 				>
 			</File>
@@ -469,13 +585,41 @@
 				RelativePath="..\pdf\pdf_loop_detect.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_mark.h"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_misc.h"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_obj.h"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_optcontent.h"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_page.h"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_path.h"
 				>
 			</File>
             <File
                 RelativePath="..\pdf\pdf_pattern.h"
 				>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_repair.h"
+                >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_sec.h"
+                >
             </File>
             <File
 				RelativePath="..\pdf\pdf_shading.h"
@@ -497,7 +641,11 @@
 				RelativePath="..\pdf\pdf_types.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_utf8.h"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_xref.h"
 				>
 			</File>

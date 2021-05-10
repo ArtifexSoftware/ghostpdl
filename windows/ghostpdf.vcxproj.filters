@@ -33,10 +33,19 @@
     <ClCompile Include="..\pdf\pdf_font1.c">
       <Filter>pdf %28%2a.c%29</Filter>
     </ClCompile>
+    <ClCompile Include="..\pdf\pdf_font11.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
     <ClCompile Include="..\pdf\pdf_font1C.c">
       <Filter>pdf %28%2a.c%29</Filter>
     </ClCompile>
     <ClCompile Include="..\pdf\pdf_font3.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_font9.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_fontps.c">
       <Filter>pdf %28%2a.c%29</Filter>
     </ClCompile>
     <ClCompile Include="..\pdf\pdf_fontTT.c">
@@ -90,6 +99,9 @@
     <ClCompile Include="..\pdf\pdf_check.c">
       <Filter>pdf %28%2a.c%29</Filter>
     </ClCompile>
+    <ClCompile Include="..\pdf\pdf_ciddec.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
     <ClCompile Include="..\pdf\pdf_cmap.c">
       <Filter>pdf %28%2a.c%29</Filter>
     </ClCompile>
@@ -103,6 +115,9 @@
       <Filter>pdf %28%2a.c%29</Filter>
     </ClCompile>
     <ClCompile Include="..\pdf\pdf_fapi.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_fmap.c">
       <Filter>pdf %28%2a.c%29</Filter>
     </ClCompile>
     <ClCompile Include="..\pdf\pdf_mark.c">
@@ -146,6 +161,9 @@
     <ClInclude Include="..\pdf\pdf_file.h">
       <Filter>pdf %28%2a.h%29</Filter>
     </ClInclude>
+    <ClInclude Include="..\pdf\pdf_fmap.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
     <ClInclude Include="..\pdf\pdf_font.h">
       <Filter>pdf %28%2a.h%29</Filter>
     </ClInclude>
@@ -159,6 +177,9 @@
       <Filter>pdf %28%2a.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\pdf\pdf_font3.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_fontps.h">
       <Filter>pdf %28%2a.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\pdf\pdf_fontTT.h">
