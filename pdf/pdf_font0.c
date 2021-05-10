@@ -374,7 +374,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         pdf_obj *csi = NULL;
         pdf_string *reg = NULL, *ord = NULL;
         char *r = NULL, *o = NULL;
-        int rlen, olen;
+        int rlen = 0, olen = 0;
 
         if (basefont->type == PDF_NAME || basefont->type == PDF_STRING) {
             ffn = (char *)((pdf_name *)basefont)->data;
