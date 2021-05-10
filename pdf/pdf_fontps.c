@@ -273,6 +273,7 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
                         arraydepth = 0;
                 }
                 break;
+            case '.':
             case '-':
             case '+':
             case '0':
