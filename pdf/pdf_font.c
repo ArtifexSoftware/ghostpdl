@@ -32,6 +32,39 @@
 #include "pdf_font0.h"
 #include "gscencs.h"            /* For gs_c_known_encode and gs_c_glyph_name */
 
+/* These are fonts for which we have to ignore "named" encodings */
+typedef struct known_symbolic_font_name_s
+{
+    const char *name;
+    const int namelen;
+} known_symbolic_font_name_t;
+
+#define DEFINE_NAME_LEN(s) #s, sizeof(#s) - 1
+static const known_symbolic_font_name_t known_symbolic_font_names[] =
+{
+  {DEFINE_NAME_LEN(Wingdings2)},
+  {DEFINE_NAME_LEN(ZapfDingbats)},
+  {NULL , 0}
+};
+#undef DEFINE_NAME_LEN
+
+bool pdfi_font_ignore_named_encoding(pdf_obj *basefont)
+{
+    bool ignore = false;
+    int i;
+    pdf_name *nm = (pdf_name *)basefont;
+
+    if (basefont != NULL && basefont->type == PDF_NAME) {
+        for (i = 0; known_symbolic_font_names[i].name != NULL; i++) {
+            if (nm->length == known_symbolic_font_names[i].namelen
+             && !strncmp((char *)nm->data, known_symbolic_font_names[i].name, nm->length)) {
+                ignore = true;
+                break;
+            }
+        }
+    }
+    return ignore;
+}
 
 int pdfi_d0(pdf_context *ctx)
 {
