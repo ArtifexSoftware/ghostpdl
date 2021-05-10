@@ -38,10 +38,9 @@
 extern pdfi_cid_decoding_t *pdfi_cid_decoding_list[];
 
 
-static int pdfi_font0_find_ordering_to_unicode(const char *reg, const int reglen, const char *ord, const int ordlen, pdfi_cid_decoding_t **decoding)
+static void pdfi_font0_find_ordering_to_unicode(const char *reg, const int reglen, const char *ord, const int ordlen, pdfi_cid_decoding_t **decoding)
 {
     int i;
-    int code = gs_error_undefined;
     *decoding = NULL;
     /* This only makes sense for Adobe orderings */
     if (reglen == 5 && !memcmp(reg, "Adobe", 5)) {
@@ -49,12 +48,10 @@ static int pdfi_font0_find_ordering_to_unicode(const char *reg, const int reglen
             if (strlen(pdfi_cid_decoding_list[i]->s_order) == ordlen &&
                 !memcmp(pdfi_cid_decoding_list[i]->s_order, ord, ordlen)) {
                 *decoding = pdfi_cid_decoding_list[i];
-                code = 0;
                 break;
             }
         }
     }
-    return code;
 }
 
 typedef enum
@@ -405,7 +402,10 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
                     o = (char *)pcmap->csi_ord.data;
                     olen = pcmap->csi_ord.size;
                 }
-                (void)pdfi_font0_find_ordering_to_unicode(r, rlen, o, olen, &dec);
+                if (rlen > 0 && olen > 0)
+                    pdfi_font0_find_ordering_to_unicode(r, rlen, o, olen, &dec);
+                else
+                    dec = NULL;
             }
         }
         if (code < 0)
