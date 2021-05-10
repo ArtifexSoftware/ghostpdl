@@ -627,12 +627,17 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
             tmp = NULL;
 
             code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
-            if (code == 1) {
+            if (code == 1 && !(tmp->type == PDF_NAME && pdfi_font_ignore_named_encoding(basefont))) {
                 code = pdfi_create_Encoding(ctx, tmp, (pdf_obj **) & t1f->Encoding);
                 if (code >= 0)
                     code = 1;
                 pdfi_countdown(tmp);
                 tmp = NULL;
+            }
+            else {
+                pdfi_countdown(tmp);
+                tmp = NULL;
+                code = 0;
             }
 
             if (code <= 0) {

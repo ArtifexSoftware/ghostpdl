@@ -90,6 +90,7 @@ pdfi_set_font_internal(pdf_context *ctx, pdf_obj *fontobj, double point_size);
 
 int pdfi_font_set_internal_string(pdf_context *ctx, const char *fontname, double point_size);
 int pdfi_font_set_internal_name(pdf_context *ctx, pdf_name *fontname, double point_size);
+bool pdfi_font_ignore_named_encoding(pdf_obj *basefont);
 
 
 #endif
