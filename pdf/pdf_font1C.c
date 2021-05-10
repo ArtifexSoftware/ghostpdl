@@ -1999,6 +1999,20 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
                 cffcid->FDArray = cffpriv.pdfcffpriv.FDArray;
                 cffpriv.pdfcffpriv.FDArray = NULL;
 
+                cffcid->cidtogidmap.data = NULL;
+                cffcid->cidtogidmap.size = 0;
+                code = pdfi_dict_knownget(ctx, font_dict, "CIDToGIDMap", (pdf_obj **) &obj);
+                if (code > 0) {
+                    /* CIDToGIDMap can only be a stream or a name, and if it's a name
+                       it's only permitted to be "/Identity", so ignore it
+                     */
+                    if (obj->type == PDF_STREAM) {
+                        code = pdfi_stream_to_buffer(ctx, (pdf_stream *) obj, &(cffcid->cidtogidmap.data), (int64_t *) &(cffcid->cidtogidmap.size));
+                    }
+                    pdfi_countdown(obj);
+                    obj = NULL;
+                }
+
                 code = pdfi_dict_knownget_type(ctx, font_dict, "DW", PDF_INT, (pdf_obj **) &obj);
                 if (code > 0) {
                     cffcid->DW = ((pdf_num *) obj)->value.i;
