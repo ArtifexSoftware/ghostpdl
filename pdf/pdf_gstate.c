@@ -2323,12 +2323,10 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
 int pdfi_free_DefaultQState(pdf_context *ctx)
 {
-    int code = 0;
-
     if (ctx->DefaultQState)
-        code = gs_gstate_free(ctx->DefaultQState);
+        gs_gstate_free(ctx->DefaultQState);
     ctx->DefaultQState = NULL;
-    return code;
+    return 0;
 }
 
 int pdfi_set_DefaultQState(pdf_context *ctx, gs_gstate *pgs)
@@ -2358,9 +2356,7 @@ int pdfi_restore_DefaultQState(pdf_context *ctx, gs_gstate **pgs)
     int code;
 
     code = pdfi_set_DefaultQState(ctx, *pgs);
-    if (code < 0)
-        return code;
-    code = gs_gstate_free(*pgs);
+    gs_gstate_free(*pgs);
     *pgs = NULL;
     return code;
 }
