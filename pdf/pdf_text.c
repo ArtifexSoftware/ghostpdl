@@ -484,11 +484,6 @@ static int pdfi_show_Tr_0(pdf_context *ctx, gs_text_params_t *text)
 {
     int code;
     gs_text_enum_t *penum=NULL, *saved_penum=NULL;
-    pdfi_trans_state_t state;
-
-    code = pdfi_trans_setup_text(ctx, &state, true);
-    if (code < 0)
-        return code;
 
     /* just draw the text */
     text->operation |= TEXT_DO_DRAW;
@@ -502,7 +497,6 @@ static int pdfi_show_Tr_0(pdf_context *ctx, gs_text_params_t *text)
         ctx->text.current_enum = saved_penum;
     }
     text->operation &= ~TEXT_DO_DRAW;
-    (void)pdfi_trans_teardown(ctx, &state);
     return code;
 }
 
@@ -836,19 +830,19 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     if (code < 0)
         goto show_error;
 
-    if (ctx->device_state.preserve_tr_mode) {
+    code = pdfi_trans_setup_text(ctx, &state, true);
+    if (code >= 0) {
+        if (ctx->device_state.preserve_tr_mode) {
         code = pdfi_show_Tr_preserve(ctx, &text);
-    } else {
-        Trmode = gs_currenttextrenderingmode(ctx->pgs);
+        } else {
+            Trmode = gs_currenttextrenderingmode(ctx->pgs);
 
-        /* The spec says that we ignore text rendering modes other than 0 for
-         * type 3 fonts, but Acrobat also honours mode 3 (do nothing)
-         */
-        if (current_font->pdfi_font_type == e_pdf_font_type3 && Trmode != 0 && Trmode != 3)
-            Trmode = 0;
+            /* The spec says that we ignore text rendering modes other than 0 for
+             * type 3 fonts, but Acrobat also honours mode 3 (do nothing)
+             */
+            if (current_font->pdfi_font_type == e_pdf_font_type3 && Trmode != 0 && Trmode != 3)
+                Trmode = 0;
 
-        code = pdfi_trans_setup_text(ctx, &state, true);
-        if (code >= 0) {
             switch(Trmode) {
             case 0:
                 code = pdfi_show_Tr_0(ctx, &text);
@@ -877,10 +871,10 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             default:
                 break;
             }
-            code1 = pdfi_trans_teardown(ctx, &state);
-            if (code == 0)
-                code = code1;
         }
+        code1 = pdfi_trans_teardown(ctx, &state);
+        if (code == 0)
+            code = code1;
     }
 
     /* We shouldn't need to do this, but..... It turns out that if we have text rendering mode 3 set
