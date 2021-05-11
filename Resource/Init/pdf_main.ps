@@ -914,49 +914,7 @@ currentdict /EnablePageHandlerDevice undef
 } bind executeonly def
 
 /runpdf {		% <file> runpdf -
-  /NEWPDF where {/NEWPDF get not} {true} ifelse
-  {
-  %% Get the PDF filename (it *must* be a file even if it came from stdin it gets
-  %% copied to a temporary file) and store it in pdfdict. We will use this for
-  %% hashing fonts to detect if fonts with the same name are from different files.
-  %%
-  dup currentglobal exch //true setglobal .getfilename exch setglobal /InputPDFFileName exch //pdfdict 3 1 roll .forceput
-
-  //runpdfbegin exec
-  //pdf_collection_files exec
-  dup mark eq {
-    pop
-    process_trailer_attrs
-    //runpdfpagerange exec
-    //dopdfpages exec
-    //runpdfend exec
-  } {
-    //runpdfend exec
-    ]
-    (1         ) 10 string copy exch
-    {
-        dup type /filetype eq {
-          //runpdfbegin exec
-          dup /PortfolioPage exch def
-          process_trailer_attrs
-          //runpdfpagerange exec
-          //dopdfpages exec
-          //runpdfend exec
-          closefile
-        } {
-          .namestring dup (r) file
-          //runpdfbegin exec
-          /PortfolioPage 2 index def
-          process_trailer_attrs
-          //runpdfpagerange exec
-          //dopdfpages exec
-          //runpdfend exec
-          deletefile
-        } ifelse
-    } forall
-    pop
-  } ifelse
-  }
+  /NEWPDF where {/NEWPDF get} {true} ifelse
   {
     newpdf_gather_parameters    % -file- <dict>
     .PDFInit                    % -file- -pdffile-
@@ -992,6 +950,48 @@ currentdict /EnablePageHandlerDevice undef
     } ifelse
     .PDFClose
     closefile
+  }
+  {
+    %% Get the PDF filename (it *must* be a file even if it came from stdin it gets
+    %% copied to a temporary file) and store it in pdfdict. We will use this for
+    %% hashing fonts to detect if fonts with the same name are from different files.
+    %%
+    dup currentglobal exch //true setglobal .getfilename exch setglobal /InputPDFFileName exch //pdfdict 3 1 roll .forceput
+
+    //runpdfbegin exec
+    //pdf_collection_files exec
+    dup mark eq {
+      pop
+      process_trailer_attrs
+      //runpdfpagerange exec
+      //dopdfpages exec
+      //runpdfend exec
+    } {
+      //runpdfend exec
+      ]
+      (1         ) 10 string copy exch
+      {
+          dup type /filetype eq {
+            //runpdfbegin exec
+            dup /PortfolioPage exch def
+            process_trailer_attrs
+            //runpdfpagerange exec
+            //dopdfpages exec
+            //runpdfend exec
+            closefile
+          } {
+            .namestring dup (r) file
+            //runpdfbegin exec
+            /PortfolioPage 2 index def
+            process_trailer_attrs
+            //runpdfpagerange exec
+            //dopdfpages exec
+            //runpdfend exec
+            deletefile
+          } ifelse
+      } forall
+      pop
+    } ifelse
   } ifelse
 } bind executeonly odef
 
