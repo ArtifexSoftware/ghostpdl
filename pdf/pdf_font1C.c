@@ -710,7 +710,6 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                 }
                 b0 = 0x100 | *p++;
             }
-
             if (b0 == 13) {     /* UniqueID */
             }
 
@@ -1618,6 +1617,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
             }
 
             if (font->ncharstrings > 0) {
+                int maxcid = 0;
                 for (i = 0; i < font->ncharstrings; i++) {
                     int fd, g;
                     char gkey[64];
@@ -1642,9 +1642,12 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                         g = (*charset_proc) (font->cffdata + offsets.charset_off + 1, font->cffend, i - 1);
                     }
 
+                    if (g > maxcid) maxcid = g;
                     gs_snprintf(gkey, sizeof(gkey), "%d", g);
                     code = pdfi_dict_put(ctx, font->CharStrings, gkey, (pdf_obj *) charstr);
                 }
+                ptpriv->cidata.common.CIDCount = i;
+                ptpriv->cidata.common.MaxCID = maxcid;
             }
         }
     }
@@ -2110,6 +2113,8 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
 
                 pfont->procs.glyph_outline = pdfi_cff_glyph_outline;
                 pfont->cidata.glyph_data = pdfi_cff_cid_glyph_data;
+                pfont->cidata.common.CIDCount = cffpriv.pdfcffpriv.CharStrings->entries;
+                pfont->cidata.common.MaxCID = cffpriv.pdfcffpriv.CharStrings->entries;
 
                 pfdfont->FAPI = NULL;
                 pfdfont->base = (gs_font *)pfdfont;
