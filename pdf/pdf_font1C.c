@@ -253,6 +253,7 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
         l = sscanf(kbuf, "%ud", &val);
         if (l > 0)
             *pglyph = (gs_glyph) (val) + GS_MIN_CID_GLYPH;
+        *pindex = (int)i + 1;
     }
     pdfi_countdown(key);
     return code;
@@ -2009,11 +2010,13 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
                     /* CIDToGIDMap can only be a stream or a name, and if it's a name
                        it's only permitted to be "/Identity", so ignore it
                      */
+                    int64_t size = 0;
                     if (obj->type == PDF_STREAM) {
-                        code = pdfi_stream_to_buffer(ctx, (pdf_stream *) obj, &(cffcid->cidtogidmap.data), (int64_t *) &(cffcid->cidtogidmap.size));
+                        code = pdfi_stream_to_buffer(ctx, (pdf_stream *) obj, &(cffcid->cidtogidmap.data), &size);
                     }
                     pdfi_countdown(obj);
                     obj = NULL;
+                    cffcid->cidtogidmap.size = size;
                 }
 
                 code = pdfi_dict_knownget_type(ctx, font_dict, "DW", PDF_INT, (pdf_obj **) &obj);
@@ -2193,14 +2196,15 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
                     /* CIDToGIDMap can only be a stream or a name, and if it's a name
                        it's only permitted to be "/Identity", so ignore it
                      */
+                    int64_t size = 0;
                     if (obj->type == PDF_STREAM) {
-                        code = pdfi_stream_to_buffer(ctx, (pdf_stream *) obj, &(cffcid->cidtogidmap.data), (int64_t *) &(cffcid->cidtogidmap.size));
+                        code = pdfi_stream_to_buffer(ctx, (pdf_stream *) obj, &(cffcid->cidtogidmap.data), (int64_t *) &size);
                     }
                     pdfi_countdown(obj);
                     obj = NULL;
+                    cffcid->cidtogidmap.size = size;
                 }
-                else {
-                }
+
                 code = pdfi_dict_knownget_type(ctx, font_dict, "DW", PDF_INT, (pdf_obj **) &obj);
                 if (code > 0) {
                     cffcid->DW = ((pdf_num *) obj)->value.i;
