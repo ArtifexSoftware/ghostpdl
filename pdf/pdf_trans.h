@@ -34,10 +34,11 @@ typedef enum {
 } pdfi_transparency_caller_t;
 
 int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_show);
+int pdfi_trans_teardown_text(pdf_context *ctx, pdfi_trans_state_t *state);
 int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, pdfi_transparency_caller_t caller);
 int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state);
 
-int pdfi_trans_begin_simple_group(pdf_context *ctx, bool stroked_bbox, bool isolated, bool knockout);
+int pdfi_trans_begin_simple_group(pdf_context *ctx, gs_rect *bbox, bool stroked_bbox, bool isolated, bool knockout);
 int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict);
 int pdfi_trans_begin_form_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict);
 int pdfi_trans_end_group(pdf_context *ctx);

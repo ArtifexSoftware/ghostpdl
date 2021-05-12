@@ -872,7 +872,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 break;
             }
         }
-        code1 = pdfi_trans_teardown(ctx, &state);
+        code1 = pdfi_trans_teardown_text(ctx, &state);
         if (code == 0)
             code = code1;
     }

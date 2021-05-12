@@ -399,7 +399,11 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     return pdfi_gs_begin_transparency_group(ctx->pgs, &params, (const gs_rect *)bbox, group_type);
 }
 
-int pdfi_trans_begin_simple_group(pdf_context *ctx, bool stroked_bbox, bool isolated, bool knockout)
+/* Begin a simple group
+ * pathbbox -- bbox to use, but can be NULL
+ */
+int pdfi_trans_begin_simple_group(pdf_context *ctx, gs_rect *pathbbox,
+                                  bool stroked_bbox, bool isolated, bool knockout)
 {
     gs_transparency_group_params_t params;
     gs_rect bbox;
@@ -409,11 +413,14 @@ int pdfi_trans_begin_simple_group(pdf_context *ctx, bool stroked_bbox, bool isol
     params.Isolated = isolated;
     params.Knockout = knockout;
 
-    code = pdfi_get_current_bbox(ctx, &bbox, stroked_bbox);
-    if (code < 0)
-        return code;
+    if (!pathbbox) {
+        code = pdfi_get_current_bbox(ctx, &bbox, stroked_bbox);
+        if (code < 0)
+            return code;
+        pathbbox = &bbox;
+    }
 
-    code = pdfi_gs_begin_transparency_group(ctx->pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
+    code = pdfi_gs_begin_transparency_group(ctx->pgs, &params, pathbbox, PDF14_BEGIN_TRANS_GROUP);
     if (code >=  0)
         ctx->current_stream_save.group_depth++;
     return code;
@@ -645,41 +652,8 @@ static bool pdfi_trans_okOPcs(pdf_context *ctx)
     return false;
 }
 
-int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_show)
-{
-    int Trmode = gs_currenttextrenderingmode(ctx->pgs);
-    int code, code1;
-
-    code = gs_gsave(ctx->pgs);
-    if (code < 0) goto exit;
-
-    if (is_show) {
-        code = gs_clippath(ctx->pgs);
-    } else {
-        code = gs_strokepath(ctx->pgs);
-    }
-    if (code < 0) {
-        /* TODO: Need to set the path to have bbox 0,0,0,0 ? */
-        code = 0;
-    }
-    switch (Trmode) {
-    case 0:
-        code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Fill);
-        break;
-    default:
-        /* TODO: All the others */
-        code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Fill);
-        break;
-    }
-    code1 = gs_grestore(ctx->pgs);
-    if (code == 0) code = code1;
-
- exit:
-    return code;
-}
-
-int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
-                     pdfi_transparency_caller_t caller)
+static int pdfi_trans_setup_inner(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox,
+                           pdfi_transparency_caller_t caller)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     int code;
@@ -732,7 +706,7 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
     /* TODO: error handling... */
     if (need_group) {
         stroked_bbox = (caller == TRANSPARENCY_Caller_Stroke || caller == TRANSPARENCY_Caller_FillStroke);
-        code = pdfi_trans_begin_simple_group(ctx, stroked_bbox, true, false);
+        code = pdfi_trans_begin_simple_group(ctx, bbox, stroked_bbox, true, false);
         state->GroupPushed = true;
         state->saveStrokeAlpha = gs_getstrokeconstantalpha(ctx->pgs);
         state->saveFillAlpha = gs_getfillconstantalpha(ctx->pgs);
@@ -745,6 +719,59 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
         code = gs_setblendmode(ctx->pgs, BLEND_MODE_CompatibleOverprint);
     }
     return code;
+}
+
+int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_show)
+{
+    int Trmode = gs_currenttextrenderingmode(ctx->pgs);
+    int code, code1;
+    gs_rect bbox;
+
+    code = gs_gsave(ctx->pgs);
+    if (code < 0) goto exit;
+
+    if (is_show) {
+        code = gs_clippath(ctx->pgs);
+    } else {
+        code = gs_strokepath(ctx->pgs);
+    }
+    if (code >= 0)
+        code = gs_upathbbox(ctx->pgs, &bbox, false);
+    if (code < 0) {
+        /* Just set bbox to [0,0,0,0] */
+        bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0.0;
+        code = 0;
+    }
+    code1 = gs_grestore(ctx->pgs);
+    if (code == 0) code = code1;
+    if (code < 0) goto exit;
+
+    switch (Trmode) {
+    case 0:
+        code = pdfi_trans_setup_inner(ctx, state, &bbox, TRANSPARENCY_Caller_Fill);
+        break;
+    default:
+        /* TODO: All the others */
+        code = pdfi_trans_setup_inner(ctx, state, &bbox, TRANSPARENCY_Caller_Fill);
+        break;
+    }
+
+ exit:
+    return code;
+}
+
+int pdfi_trans_teardown_text(pdf_context *ctx, pdfi_trans_state_t *state)
+{
+    int code = 0;
+
+    code = pdfi_trans_teardown(ctx, state);
+
+    return code;
+}
+
+int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, pdfi_transparency_caller_t caller)
+{
+    return pdfi_trans_setup_inner(ctx, state, NULL, caller);
 }
 
 int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)

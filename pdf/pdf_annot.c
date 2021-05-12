@@ -79,7 +79,7 @@ static int pdfi_annot_start_transparency(pdf_context *ctx, pdf_dict *annot)
     code = gs_clippath(ctx->pgs);
     if (code < 0)
         return code;
-    code = pdfi_trans_begin_simple_group(ctx, false, false, false);
+    code = pdfi_trans_begin_simple_group(ctx, NULL, false, false, false);
     (void)gs_newpath(ctx->pgs);
     return code;
 }
@@ -2653,7 +2653,7 @@ static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_obj 
         if (code < 0) goto exit;
 
         if (ctx->page.has_transparency) {
-            code = pdfi_trans_begin_simple_group(ctx, false, false, false);
+            code = pdfi_trans_begin_simple_group(ctx, NULL, false, false, false);
             if (code < 0) goto exit;
 
             code = gs_setblendmode(ctx->pgs, BLEND_MODE_Multiply);
