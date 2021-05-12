@@ -30,6 +30,9 @@
 ; hand, it removes the short-cuts on Uninstall (which the Winzipse-based
 ; installer doesn't do) and also does not leave behind empty directories.
 
+; Newer nsis releases deprecate ansi encoding, require Unicode
+Unicode True
+
 ; the following is from: http://nsis.sourceforge.net/StrRep
 !define StrRep "!insertmacro StrRep"
 !macro StrRep output string old new
