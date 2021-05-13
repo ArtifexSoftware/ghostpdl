@@ -639,17 +639,25 @@ check_cmyk_color_model_comps(gx_device * dev)
     scm = get_color_mapping_procs_subclass(dev);
 
     map_cmyk_subclass(scm, frac_14, frac_0, frac_0, frac_0, out);
-    if (!check_single_comp(cyan_c, frac_14, ncomps, out))
+    if (!check_single_comp(cyan_c, frac_14, ncomps, out)) {
+        pcinfo->opmode = GX_CINFO_OPMODE_NOT;
         return 0;
+    }
     map_cmyk_subclass(scm, frac_0, frac_14, frac_0, frac_0, out);
-    if (!check_single_comp(magenta_c, frac_14, ncomps, out))
+    if (!check_single_comp(magenta_c, frac_14, ncomps, out)) {
+        pcinfo->opmode = GX_CINFO_OPMODE_NOT;
         return 0;
+    }
     map_cmyk_subclass(scm, frac_0, frac_0, frac_14, frac_0, out);
-    if (!check_single_comp(yellow_c, frac_14, ncomps, out))
-        return false;
-    map_cmyk_subclass(scm, frac_0, frac_0, frac_0, frac_14, out);
-    if (!check_single_comp(black_c, frac_14, ncomps, out))
+    if (!check_single_comp(yellow_c, frac_14, ncomps, out)) {
+        pcinfo->opmode = GX_CINFO_OPMODE_NOT;
         return 0;
+    }
+    map_cmyk_subclass(scm, frac_0, frac_0, frac_0, frac_14, out);
+    if (!check_single_comp(black_c, frac_14, ncomps, out)) {
+        pcinfo->opmode = GX_CINFO_OPMODE_NOT;
+        return 0;
+    }
 
     process_comps =  ((gx_color_index)1 << cyan_c)
                    | ((gx_color_index)1 << magenta_c)

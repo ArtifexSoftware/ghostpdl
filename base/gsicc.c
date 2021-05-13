@@ -698,6 +698,9 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
         "[overprint] gx_set_overprint_ICC. cs_ok = %d is_fill_color = %d overprint = %d stroke_overprint = %d \n",
         cs_ok, pgs->is_fill_color, pgs->overprint, pgs->stroke_overprint);
 
+    if (op && pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN) {
+        check_cmyk_color_model_comps(dev);
+    }
     if (!op || pcinfo->opmode == GX_CINFO_OPMODE_NOT) {
         return gx_set_no_overprint(pgs);
     } else if (!cs_ok) {
