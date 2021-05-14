@@ -681,8 +681,10 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
     cmm_dev_profile_t *dev_profile;
     bool gray_to_k;
     bool op = pgs->is_fill_color ? pgs->overprint : pgs->stroke_overprint;
+    gx_cm_opmsupported_t opmsupported = (op ? gx_get_opmsupported(dev) :
+                                         GX_CINFO_OPMSUPPORTED_NOT);
 
-    if (dev == 0 || pcinfo == NULL)
+    if (dev == 0 || pcinfo == NULL || opmsupported == GX_CINFO_OPMSUPPORTED_NOT)
         return gx_set_no_overprint(pgs);
 
     dev_proc(dev, get_profile)(dev, &dev_profile);
@@ -698,21 +700,15 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
         "[overprint] gx_set_overprint_ICC. cs_ok = %d is_fill_color = %d overprint = %d stroke_overprint = %d \n",
         cs_ok, pgs->is_fill_color, pgs->overprint, pgs->stroke_overprint);
 
-    if (op && pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN) {
-        check_cmyk_color_model_comps(dev);
-    }
-    if (!op || pcinfo->opmode == GX_CINFO_OPMODE_NOT) {
-        return gx_set_no_overprint(pgs);
-    } else if (!cs_ok) {
-        /* In this case, we still need to maintain any spot
-           colorant channels.  Per Table 7.14. */
-        if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
-            return gx_set_spot_only_overprint(pgs);
-        } else {
-            return gx_set_no_overprint(pgs);
-        }
-    } else
+    if (cs_ok)
         return gx_set_overprint_cmyk(pcs, pgs);
+
+    /* In this case, we still need to maintain any spot
+       colorant channels.  Per Table 7.14. */
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0))
+        return gx_set_spot_only_overprint(pgs);
+
+    return gx_set_no_overprint(pgs);
 }
 
 int

@@ -693,19 +693,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, get_profile, gx_default_get_profile);
     fill_dev_proc(dev, set_graphics_type_tag, gx_default_set_graphics_type_tag);
 
-    /*
-     * If the device is known not to support overprint mode, indicate this now.
-     * Note that we do not insist that a device be use a strict DeviceCMYK
-     * encoding; any color model that is subtractive and supports the cyan,
-     * magenta, yellow, and black color components will do. We defer a more
-     * explicit check until this information is explicitly required.
-     */
-    if ( dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN          &&
-         (dev->color_info.num_components < 4                     ||
-          dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE ||
-          dev->color_info.gray_index == GX_CINFO_COMP_NO_INDEX     )  )
-        dev->color_info.opmode = GX_CINFO_OPMODE_NOT;
-
     fill_dev_proc(dev, fill_rectangle_hl_color, gx_default_fill_rectangle_hl_color);
     fill_dev_proc(dev, include_color_space, gx_default_include_color_space);
     fill_dev_proc(dev, fill_linear_color_scanline, gx_default_fill_linear_color_scanline);

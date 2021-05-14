@@ -520,16 +520,7 @@ gx_set_spot_only_overprint(gs_gstate* pgs)
 {
     gs_overprint_params_t   params = { 0 };
     gx_device* dev = pgs->device;
-    gx_color_index drawn_comps = 0;
-    gx_device_color_info* pcinfo = (dev == 0 ? 0 : &dev->color_info);
-
-    if (dev) {
-        /* check if color model behavior must be determined */
-        if (pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN)
-            drawn_comps = check_cmyk_color_model_comps(dev);
-        else
-            drawn_comps = pcinfo->process_comps;
-    }
+    gx_color_index drawn_comps = dev == NULL ? 0 : gx_get_process_comps(dev);
 
     params.retain_any_comps = true;
     params.op_state = OP_STATE_NONE;
@@ -607,6 +598,13 @@ check_cmyk_color_model_comps(gx_device * dev)
     frac                            out[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index                  process_comps;
 
+    if (pcinfo->num_components < 4                     ||
+        pcinfo->polarity == GX_CINFO_POLARITY_ADDITIVE ||
+        pcinfo->gray_index == GX_CINFO_COMP_NO_INDEX) {
+        pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
+        return 0;
+    }
+
     /* check for the appropriate components */
     if ( ncomps < 4                                       ||
          (cyan_c = dev_proc(dev, get_color_comp_index)(
@@ -640,22 +638,22 @@ check_cmyk_color_model_comps(gx_device * dev)
 
     map_cmyk_subclass(scm, frac_14, frac_0, frac_0, frac_0, out);
     if (!check_single_comp(cyan_c, frac_14, ncomps, out)) {
-        pcinfo->opmode = GX_CINFO_OPMODE_NOT;
+        pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
         return 0;
     }
     map_cmyk_subclass(scm, frac_0, frac_14, frac_0, frac_0, out);
     if (!check_single_comp(magenta_c, frac_14, ncomps, out)) {
-        pcinfo->opmode = GX_CINFO_OPMODE_NOT;
+        pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
         return 0;
     }
     map_cmyk_subclass(scm, frac_0, frac_0, frac_14, frac_0, out);
     if (!check_single_comp(yellow_c, frac_14, ncomps, out)) {
-        pcinfo->opmode = GX_CINFO_OPMODE_NOT;
+        pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
         return 0;
     }
     map_cmyk_subclass(scm, frac_0, frac_0, frac_0, frac_14, out);
     if (!check_single_comp(black_c, frac_14, ncomps, out)) {
-        pcinfo->opmode = GX_CINFO_OPMODE_NOT;
+        pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
         return 0;
     }
 
@@ -663,7 +661,7 @@ check_cmyk_color_model_comps(gx_device * dev)
                    | ((gx_color_index)1 << magenta_c)
                    | ((gx_color_index)1 << yellow_c)
                    | ((gx_color_index)1 << black_c);
-    pcinfo->opmode = GX_CINFO_OPMODE;
+    pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED;
     pcinfo->process_comps = process_comps;
     pcinfo->black_component = black_c;
     return process_comps;
@@ -686,7 +684,7 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_gstate * pgs)
     if ( !pgs->overprint                      ||
          pgs->overprint_mode != 1             ||
          pcinfo == 0                          ||
-         pcinfo->opmode == GX_CINFO_OPMODE_NOT  )
+         pcinfo->opmsupported == GX_CINFO_OPMSUPPORTED_NOT)
         return gx_spot_colors_set_overprint(pcs, pgs);
     /* Share code with CMYK ICC case */
     return gx_set_overprint_cmyk(pcs, pgs);
@@ -710,7 +708,6 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_gstate * pgs)
 int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
 {
     gx_device *             dev = pgs->device;
-    gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
     gx_color_index          drawn_comps = 0;
     gs_overprint_params_t   params = { 0 };
     gx_device_color        *pdc;
@@ -732,11 +729,7 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile, &(output_profile),
                               &render_cond);
 
-        /* check if color model behavior must be determined */
-        if (pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN)
-            drawn_comps = check_cmyk_color_model_comps(dev);
-        else
-            drawn_comps = pcinfo->process_comps;
+        drawn_comps = gx_get_process_comps(dev);
     }
 
     if_debug1m(gs_debug_flag_overprint, pgs->memory,

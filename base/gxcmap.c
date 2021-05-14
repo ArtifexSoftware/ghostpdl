@@ -932,16 +932,12 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
 
     /* apply the transfer function(s); convert to color values */
     if (pgs->effective_transfer_non_identity_count == 0) {
-        if (dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
-            check_cmyk_color_model_comps(dev);
     } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
             cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
     else {
-        if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
-            check_cmyk_color_model_comps(dev);
-        if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
+        if (gx_get_opmsupported(dev) == GX_CINFO_OPMSUPPORTED) {  /* CMYK-like color space */
             i = dev->color_info.black_component;
             if (i < ncomps)
                 cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
@@ -973,8 +969,6 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
 
     /* apply the transfer function(s); convert to color values */
     if (pgs->effective_transfer_non_identity_count == 0) {
-        if (dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
-                check_cmyk_color_model_comps(dev);
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(cm_comps[i]);
     } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -984,9 +978,7 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
             cv[i] = frac2cv(cm_comps[i]);
         }
     else {
-        if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
-            check_cmyk_color_model_comps(dev);
-        if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
+        if (gx_get_opmsupported(dev) == GX_CINFO_OPMSUPPORTED) {  /* CMYK-like color space */
             i = dev->color_info.black_component;
             if (i < ncomps)
                 cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
@@ -2302,8 +2294,6 @@ gx_get_cmapper(gx_cmapper_t *data, const gs_gstate *pgs,
     data->select = select;
     data->devc.type = gx_dc_type_none;
     data->direct = 0;
-    if (has_transfer && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
-        check_cmyk_color_model_comps(dev);
     /* Per spec. Images with soft mask, and the mask, do not use transfer function */
     if (pgs->effective_transfer_non_identity_count == 0 ||
         (dev_proc(dev, dev_spec_op)(dev, gxdso_in_smask, NULL, 0)) > 0)
@@ -2314,7 +2304,7 @@ gx_get_cmapper(gx_cmapper_t *data, const gs_gstate *pgs,
                 data->set_color = cmapper_transfer_halftone_add;
             else
                 data->set_color = cmapper_transfer_add;
-        } else if (dev->color_info.opmode == GX_CINFO_OPMODE) {
+        } else if (gx_get_opmsupported(dev) == GX_CINFO_OPMSUPPORTED) {
             if (has_halftone)
                 data->set_color = cmapper_transfer_halftone_op;
             else
@@ -2355,8 +2345,6 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
     /* apply the transfer function(s) */
     if (has_transfer) {
         if (pgs->effective_transfer_non_identity_count == 0) {
-            if (dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
-                check_cmyk_color_model_comps(dev);
             for (i = 0; i < ncomps; i++)
                 cv_frac[i] = cv2frac(pconc[i]);
         } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
@@ -2366,10 +2354,7 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
                                     frac_value, effective_transfer[i]);
             }
         } else {
-            if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN) {
-                check_cmyk_color_model_comps(dev);
-            }
-            if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
+            if (gx_get_opmsupported(dev) == GX_CINFO_OPMSUPPORTED) {  /* CMYK-like color space */
                 uint k = dev->color_info.black_component;
                 for (i = 0; i < ncomps; i++) {
                     frac_value = cv2frac(pconc[i]);
@@ -2424,17 +2409,12 @@ cmap_transfer(gx_color_value *pconc, const gs_gstate * pgs, gx_device * dev)
 
     /* apply the transfer function(s) */
     if (pgs->effective_transfer_non_identity_count == 0) {
-        if (dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
-            check_cmyk_color_model_comps(dev);
     } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
             pconc[i] = frac2cv(gx_map_color_frac(pgs,
                                cv2frac(pconc[i]), effective_transfer[i]));
     else {
-        if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN) {
-            check_cmyk_color_model_comps(dev);
-        }
-        if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
+        if (gx_get_opmsupported(dev) == GX_CINFO_OPMSUPPORTED) {  /* CMYK-like color space */
             i = dev->color_info.black_component;
             if (i < ncomps)
                 pconc[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
@@ -2461,10 +2441,7 @@ cmap_transfer_plane(gx_color_value *pconc, const gs_gstate *pgs,
         cv_frac = gx_map_color_frac(pgs, frac_value, effective_transfer[plane]);
         pconc[0] = frac2cv(cv_frac);
     } else {
-        if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN) {
-            check_cmyk_color_model_comps(dev);
-        }
-        if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
+        if (gx_get_opmsupported(dev) == GX_CINFO_OPMSUPPORTED) {  /* CMYK-like color space */
             uint k = dev->color_info.black_component;
             if (plane == k) {
                 frac_value = cv2frac(pconc[0]);

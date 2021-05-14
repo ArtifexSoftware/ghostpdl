@@ -1381,7 +1381,7 @@ bool gx_color_info_equal(const gx_device_color_info * p1, const gx_device_color_
         return false;
     if (p1->max_components != p2->max_components)
         return false;
-    if (p1->opmode != p2->opmode)
+    if (p1->opmsupported != p2->opmsupported)
         return false;
     if (p1->polarity != p2->polarity)
         return false;
