@@ -659,6 +659,15 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
             fpriv.u.t1.Subrs = NULL;
             t1f->NumSubrs = fpriv.u.t1.NumSubrs;
 
+            t1f->blenddesignpositions = fpriv.u.t1.blenddesignpositions;
+            pdfi_countup(t1f->blenddesignpositions);
+            t1f->blenddesignmap = fpriv.u.t1.blenddesignmap;
+            pdfi_countup(t1f->blenddesignmap);
+            t1f->blendfontbbox = fpriv.u.t1.blendfontbbox;
+            pdfi_countup(t1f->blendfontbbox);
+            t1f->blendaxistypes = fpriv.u.t1.blendaxistypes;
+            pdfi_countup(t1f->blendaxistypes);
+
             code = gs_definefont(ctx->font_dir, (gs_font *) t1f->pfont);
             if (code < 0) {
                 goto error;
@@ -685,6 +694,10 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
     pdfi_countdown(tmp);
     pdfi_countdown(fpriv.u.t1.Encoding);
     pdfi_countdown(fpriv.u.t1.CharStrings);
+    pdfi_countdown(fpriv.u.t1.blenddesignpositions);
+    pdfi_countdown(fpriv.u.t1.blenddesignmap);
+    pdfi_countdown(fpriv.u.t1.blendfontbbox);
+    pdfi_countdown(fpriv.u.t1.blendaxistypes);
     if (fpriv.u.t1.Subrs) {
         int i;
 
@@ -705,6 +718,9 @@ pdfi_free_font_type1(pdf_obj * font)
     pdf_font_type1 *t1f = (pdf_font_type1 *) font;
     int i;
 
+    if (t1f->pfont->UID.xvalues != NULL) {
+        gs_free_object(OBJ_MEMORY(font), t1f->pfont->UID.xvalues, "pdfi_free_font_type1(xuid)");
+    }
     gs_free_object(OBJ_MEMORY(font), t1f->pfont, "Free Type 1 gs_font");
 
     pdfi_countdown(t1f->PDF_font);
@@ -714,6 +730,10 @@ pdfi_free_font_type1(pdf_obj * font)
     pdfi_countdown(t1f->Encoding);
     pdfi_countdown(t1f->ToUnicode);
     pdfi_countdown(t1f->CharStrings);
+    pdfi_countdown(t1f->blenddesignpositions);
+    pdfi_countdown(t1f->blenddesignmap);
+    pdfi_countdown(t1f->blendfontbbox);
+    pdfi_countdown(t1f->blendaxistypes);
 
     if (t1f->fake_glyph_names != NULL) {
         for (i = 0; i < t1f->LastChar; i++) {

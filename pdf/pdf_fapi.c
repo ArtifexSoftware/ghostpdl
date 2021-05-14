@@ -277,6 +277,147 @@ pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, uns
                 }
                 break;
             }
+        case gs_fapi_font_feature_BlendBlueValues_length:
+        case gs_fapi_font_feature_BlendOtherBlues_length:
+        case gs_fapi_font_feature_BlendOtherBlues_count:
+        case gs_fapi_font_feature_BlendBlueScale_count:
+        case gs_fapi_font_feature_BlendBlueShift_count:
+        case gs_fapi_font_feature_BlendBlueShift:
+        case gs_fapi_font_feature_BlendBlueFuzz_count:
+        case gs_fapi_font_feature_BlendBlueFuzz:
+        case gs_fapi_font_feature_BlendForceBold_count:
+        case gs_fapi_font_feature_BlendForceBold:
+        case gs_fapi_font_feature_BlendStdHW_length:
+        case gs_fapi_font_feature_BlendStdHW_count:
+        case gs_fapi_font_feature_BlendStdHW:
+        case gs_fapi_font_feature_BlendStdVW_length:
+        case gs_fapi_font_feature_BlendStdVW_count:
+        case gs_fapi_font_feature_BlendStdVW:
+        case gs_fapi_font_feature_BlendStemSnapH_length:
+        case gs_fapi_font_feature_BlendStemSnapH_count:
+        case gs_fapi_font_feature_BlendStemSnapH:
+        case gs_fapi_font_feature_BlendStemSnapV_length:
+        case gs_fapi_font_feature_BlendStemSnapV_count:
+        case gs_fapi_font_feature_BlendStemSnapV:
+            {
+                code = 0;
+                *ret = 0;
+            }
+            break;
+        case gs_fapi_font_feature_DollarBlend:
+            {
+                if (pfont->data.WeightVector.count > 0) { /* If count > 0, it's MM font, and we "have" a $Blend */
+                    *ret = 1;
+                }
+                else {
+                    *ret = 0;
+                }
+            }
+            break;
+        case gs_fapi_font_feature_DollarBlend_length:
+            {
+                /* Use the built-in boiler plate */
+                *ret = 0;
+            }
+            break;
+        case gs_fapi_font_feature_BlendAxisTypes_count:
+            {
+                pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+                if (pdffont1->blendaxistypes != NULL) {
+                    *ret = (unsigned short)pdffont1->blendaxistypes->size;
+                }
+                else {
+                    *ret = 0;
+                }
+            }
+            break;
+        case gs_fapi_font_feature_WeightVector_count:
+            {
+                *ret = (unsigned short)pfont->data.WeightVector.count;
+            }
+            break;
+        case gs_fapi_font_feature_BlendDesignPositionsArrays_count:
+            {
+                pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+                if (pdffont1->blenddesignpositions != NULL) {
+                    *ret = (unsigned short)pdffont1->blenddesignpositions->size;
+                }
+                else {
+                    *ret = 0;
+                }
+            }
+            break;
+        case gs_fapi_font_feature_BlendDesignMapArrays_count:
+            {
+                pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+                if (pdffont1->blenddesignmap != NULL) {
+                    *ret = (unsigned short)pdffont1->blenddesignmap->size;
+                }
+                else {
+                    *ret = 0;
+                }
+            }
+            break;
+        case gs_fapi_font_feature_BlendDesignMapSubArrays_count:
+            {
+                pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+                if (pdffont1->blenddesignmap != NULL) {
+                    pdf_array *suba;
+                    code = pdfi_array_get(pdffont1->ctx, pdffont1->blenddesignmap, index, (pdf_obj **)&suba);
+                    if (code < 0) {
+                        *ret = 0;
+                        break;
+                    }
+                    *ret = (unsigned short)suba->size;
+                    pdfi_countdown(suba);
+                }
+                else {
+                    *ret = 0;
+                }
+            }
+            break;
+        case gs_fapi_font_feature_BlendFontBBox_length:
+            {
+                pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+                if (pdffont1->blendfontbbox != NULL) {
+                    *ret = (unsigned short)pdffont1->blendfontbbox->size;
+                }
+                else {
+                    *ret = 0;
+                }
+            }
+            break;
+        case gs_fapi_font_feature_BlendFontBBox:
+            {
+                pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+                if (pdffont1->blendfontbbox != NULL) {
+                    pdf_array *suba;
+                    pdf_num *v;
+                    int ind, aind;
+                    ind = index % 4;
+                    aind = (index - ind) / 4;
+                    code = pdfi_array_get(pdffont1->ctx, pdffont1->blendfontbbox, aind, (pdf_obj **)&suba);
+                    if (code < 0) {
+                        *ret = 0;
+                        break;
+                    }
+                    code = pdfi_array_get(pdffont1->ctx, suba, ind, (pdf_obj **)&v);
+                    pdfi_countdown(suba);
+                    if (code < 0) {
+                        *ret = 0;
+                        break;
+                    }
+                    if (v->type == PDF_INT)
+                        *ret = (unsigned short)v->value.i;
+                    else
+                        *ret = (unsigned short)v->value.d;
+                    pdfi_countdown(v);
+                }
+                else {
+                    *ret = 0;
+                }
+            }
+            break;
         default:
             code = gs_error_undefined;
             *ret = -1;
@@ -361,6 +502,104 @@ pdfi_fapi_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, fl
                 }
                 break;
             }
+        case gs_fapi_font_feature_WeightVector:
+            {
+                gs_font_type1 *pfont1 = (gs_font_type1 *) pbfont;
+                if (index < pfont1->data.WeightVector.count) {
+                    *ret = pfont1->data.WeightVector.values[index];
+                }
+                else {
+                    *ret = 0;
+                }
+            }
+            break;
+        case gs_fapi_font_feature_BlendDesignPositionsArrayValue:
+            {
+                int array_index, subind;
+                pdf_array *suba;
+                pdf_num *v;
+                pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pbfont->client_data;
+                *ret = 0;
+
+                code = pdfi_array_get(pdffont1->ctx, pdffont1->blenddesignpositions, 0, (pdf_obj **)&suba);
+                if (code < 0)
+                    break;
+
+                /* The FAPI code assumes gs style storage - i.e. it allocates the maximum number of entries
+                   permissable by the spec, and fills in only those required.
+                   pdfi doesn't, so we unpick that here
+                 */
+                index = (index % 8) + (suba->size * index / 8);
+
+                array_index = index / suba->size;
+                subind = index % suba->size;
+                pdfi_countdown(suba);
+                code = pdfi_array_get(pdffont1->ctx, pdffont1->blenddesignpositions, array_index, (pdf_obj**)&suba);
+                if (code < 0) {
+                    code = 0;
+                    break;
+                }
+
+                code = pdfi_array_get(pdffont1->ctx, suba, subind, (pdf_obj**)&v);
+                pdfi_countdown(suba);
+                if (code < 0) {
+                    code = 0;
+                    break;
+                }
+                if (v->type == PDF_INT) {
+                    *ret = v->value.i;
+                }
+                else {
+                    *ret = (float)v->value.d;
+                }
+                pdfi_countdown(v);
+            }
+            break;
+        case gs_fapi_font_feature_BlendDesignMapArrayValue:
+            {
+                int i, j, k;
+                pdf_array *suba, *subsuba;
+                pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pbfont->client_data;
+                *ret = (float)0;
+                code = 0;
+
+                for (i = 0; i < pdffont1->blenddesignmap->size && code >= 0; i++) {
+                    code = pdfi_array_get(pdffont1->ctx, pdffont1->blenddesignmap, i, (pdf_obj **)&suba);
+                    if (code < 0)
+                        continue;
+                    for (j = 0; j < suba->size && code >= 0; j++) {
+                        code = pdfi_array_get(pdffont1->ctx, suba, i, (pdf_obj **)&subsuba);
+                        if (code < 0)
+                            continue;
+                        for (k = 0; k < subsuba->size && code >= 0; k++) {
+                            /* The FAPI code assumes gs style storage - i.e. it allocates the maximum number of entries
+                               permissable by the spec, and fills in only those required.
+                               pdfi doesn't, hence the multiplications by 64.
+                             */
+                            if ((i * 64) + (j * 64) + k  == index) {
+                                pdf_num *n;
+                                code = pdfi_array_get(pdffont1->ctx, suba, i, (pdf_obj **)&n);
+                                if (code < 0)
+                                    continue;
+                                if (n->type == PDF_INT)
+                                    *ret = (float)n->value.i;
+                                else
+                                    *ret = (float)n->value.d;
+                                pdfi_countdown(n);
+                                pdfi_countdown(subsuba);
+                                pdfi_countdown(suba);
+                                goto gotit;
+                            }
+                        }
+                        pdfi_countdown(subsuba);
+                    }
+                    pdfi_countdown(suba);
+                }
+                code = 0;
+            }
+gotit:
+            break;
+
         default:
             code = gs_error_undefined;
     }
@@ -368,27 +607,52 @@ pdfi_fapi_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, fl
     return code;
 }
 
-/* Only required for multiple masters, I believe */
+/* Only required for multiple masters, I believe. Buffer is guaranteed to exist */
 static int
 pdfi_fapi_get_name(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, char *buffer, int len)
 {
-    (void)ff;
-    (void)var_id;
-    (void)index;
-    (void)buffer;
-    (void)len;
-    return 0;
+    gs_font_base *pbfont = (gs_font_base *) ff->client_font_data2;
+    int code = 0;
+
+    switch ((int)var_id) {
+        case gs_fapi_font_feature_BlendAxisTypes:
+            {
+                pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pbfont->client_data;
+                pdf_name *n;
+                code = pdfi_array_get(pdffont1->ctx, pdffont1->blendaxistypes, index, (pdf_obj **)&n);
+                if (code < 0)
+                    break;
+                if (n->length <= len - 1) {
+                    memcpy(buffer, n->data, n->length);
+                    buffer[n->length] = '\0';
+                }
+                else
+                    code = gs_error_limitcheck;
+                pdfi_countdown(n);
+            }
+            break;
+        default:
+            code = gs_error_undefined;
+    }
+    return code;
 }
 
 /* Only required for multiple masters, I believe */
 static int
 pdfi_fapi_get_proc(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, char *buffer)
 {
-    (void)ff;
-    (void)var_id;
+    int code = 0;
+
     (void)index;
     (void)buffer;
-    return 0;
+
+    switch ((int)var_id) {
+        case gs_fapi_font_feature_DollarBlend:
+            break;
+        default:
+            code = gs_error_undefined;
+    }
+    return code;
 }
 
 static inline void

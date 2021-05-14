@@ -124,6 +124,11 @@ typedef struct pdf_font_type1_s {
     gs_string *Subrs;
     pdf_dict *CharStrings;
     int NumSubrs;
+    /* Multiple Master Support - weightvector is stored in gs_font_type1 */
+    pdf_array *blenddesignpositions;
+    pdf_array *blenddesignmap;
+    pdf_array *blendfontbbox;
+    pdf_array *blendaxistypes;
 } pdf_font_type1;
 
 typedef struct pdf_font_cff_s {
