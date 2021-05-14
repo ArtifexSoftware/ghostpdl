@@ -377,10 +377,15 @@ bbox_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                     gx_color_index color)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-
+    gx_device *tdev = bdev->target;
+    /* gx_forward_fill_rectangle exists, but does the wrong thing in
+     * the event of a NULL target, so open code it here. */
+    int code =
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color));
     if (color != bdev->transparent)
         BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
-    return gx_forward_fill_rectangle(dev, x, y, w, h, color);
+    return code;
 }
 
 static int
@@ -389,13 +394,19 @@ bbox_copy_mono(gx_device * dev, const byte * data,
                gx_color_index zero, gx_color_index one)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
+    /* gx_forward_copy_mono exists, but does the wrong thing in
+     * the event of a NULL target, so open code it here. */
+    gx_device *tdev = bdev->target;
+    int code =
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, copy_mono)
+         (tdev, data, dx, raster, id, x, y, w, h, zero, one));
 
     if ((one != gx_no_color_index && one != bdev->transparent) ||
         (zero != gx_no_color_index && zero != bdev->transparent)
         )
         BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
-    return gx_forward_copy_mono(dev, data, dx, raster, id, x, y, w, h,
-                                zero, one);
+    return code;
 }
 
 static int
@@ -403,9 +414,16 @@ bbox_copy_color(gx_device * dev, const byte * data,
             int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-    BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
+    /* gx_forward_copy_color exists, but does the wrong thing in
+     * the event of a NULL target, so open code it here. */
+    gx_device *tdev = bdev->target;
+    int code =
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, copy_color)
+         (tdev, data, dx, raster, id, x, y, w, h));
 
-    return gx_forward_copy_color(dev, data, dx, raster, id, x, y, w, h);
+    BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
+    return code;
 }
 
 static int
@@ -414,10 +432,16 @@ bbox_copy_alpha(gx_device * dev, const byte * data, int data_x,
                 gx_color_index color, int depth)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
+    /* gx_forward_copy_alpha exists, but does the wrong thing in
+     * the event of a NULL target, so open code it here. */
+    gx_device *tdev = bdev->target;
+    int code =
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, copy_alpha)
+         (tdev, data, data_x, raster, id, x, y, w, h, color, depth));
 
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
-    return gx_forward_copy_alpha(dev, data, data_x, raster,
-                                 id, x, y, w, h, color, depth);
+    return code;
 }
 
 static int
@@ -426,11 +450,14 @@ bbox_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                           int px, int py)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-
+    /* Skip the call if there is no target. */
+    gx_device *tdev = bdev->target;
+    int code =
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, strip_tile_rectangle)
+         (tdev, tiles, x, y, w, h, color0, color1, px, py));
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
-
-    return gx_forward_strip_tile_rectangle(dev, tiles, x, y, w, h,
-                                           color0, color1, px, py);
+    return code;
 }
 
 static int
@@ -439,10 +466,14 @@ bbox_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
    const gx_drawing_color *pdcolor1, int px, int py)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-
+    /* Skip the call if there is no target. */
+    gx_device *tdev = bdev->target;
+    int code =
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, strip_tile_rect_devn)
+         (tdev, tiles, x, y, w, h, pdcolor0, pdcolor1, px, py));
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
-    return gx_forward_strip_tile_rect_devn(dev, tiles, x, y, w, h,
-                                           pdcolor0, pdcolor1, px, py);
+    return code;
 }
 
 static int
@@ -457,14 +488,18 @@ bbox_strip_copy_rop2(gx_device * dev,
                     uint planar_height)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
+    /* gx_forward_strip_copy_rop2 exists, but does the wrong thing in
+     * the event of a NULL target, so open code it here. */
     gx_device *tdev = bdev->target;
+    int code =
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, strip_copy_rop2)
+         (tdev, sdata, sourcex, sraster, id, scolors,
+          textures, tcolors, x, y, w, h, phase_x, phase_y, lop,
+          planar_height));
 
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
-    return gx_forward_strip_copy_rop2(tdev, sdata, sourcex,
-                                      sraster, id, scolors,
-                                      textures, tcolors,
-                                      x, y, w, h, phase_x, phase_y, lop,
-                                      planar_height);
+    return code;
 }
 
 /* ---------------- Parameters ---------------- */
