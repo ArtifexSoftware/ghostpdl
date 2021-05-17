@@ -517,6 +517,7 @@ int pdfi_separation_name_from_index(gs_gstate *pgs, gs_separation_name index, un
 int pdfi_open_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_set_input_stream(pdf_context *ctx, stream *stm);
 int pdfi_process_pdf_file(pdf_context *ctx, char *filename);
+int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_array);
 int pdfi_close_pdf_file(pdf_context *ctx);
 
 #endif

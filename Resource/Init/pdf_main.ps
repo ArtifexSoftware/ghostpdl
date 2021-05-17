@@ -932,23 +932,42 @@ currentdict /EnablePageHandlerDevice undef
         dup mark exch           % -file- -pdffile- -mark- -pdffile-
         {
           dup .PDFInfo          % -file- -pdffile- -mark- -pdffile- <dict>
-          dup /NumPages known {
-            /NumPages get 1 sub
-            0 1 3 -1 roll
-            {
-              2 copy .PDFPageInfo
-              newpdf_set_pagesize
-              1 index exch .PDFDrawPage
-              showpage
+
+          % Check for the existence of a Collection. This will only be present if the
+          % PDF file has a /Collection entry in the document Catalog, and at least one of
+          % the embedded files has been recognised as a PDF file.
+          dup /Collection known {
+            exch
+            % We need to close the current file
+            .PDFClose
+            % The Collection key references an array of strings; the first string is the
+            % name of the temporary file holding the copy of the embedded PDF file,
+            % the second string is the 'name' of the file, as specified in the original
+            % PDF file's names tree.
+            /Collection get dup length 1 sub 0 2 3 -1 roll {
+              1 index exch get (r) file runpdf
             } for
-          } if
+            pop
+          }
+          {
+            dup /NumPages known {
+              /NumPages get 1 sub
+              0 1 3 -1 roll
+              {
+                2 copy .PDFPageInfo
+                newpdf_set_pagesize
+                1 index exch .PDFDrawPage
+                showpage
+              } for
+            } if
+          } ifelse
         } stopped
         {
             (ERROR parsing PDF contents!!\n) print showpage
         }if
         cleartomark
+        .PDFClose
     } ifelse
-    .PDFClose
     closefile
   }
   {

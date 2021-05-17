@@ -444,6 +444,8 @@ static int zPDFinfo(i_ctx_t *i_ctx_p)
     pdfctx_t *pdfctx;
     int code = 0;
     ref intref, nameref;
+    uint64_t TotalFiles = 0, ix = 0;
+    char **names_array = NULL;
 
     check_type(*(op - 1), t_pdfctx);
     pdfctx = r_ptr(op - 1, pdfctx_t);
@@ -459,6 +461,70 @@ static int zPDFinfo(i_ctx_t *i_ctx_p)
     make_int(&intref, pdfctx->ctx->num_pages);
 
     code = dict_put(op, &nameref, &intref, &i_ctx_p->dict_stack);
+    if (code < 0)
+        return code;
+
+    /* Code to process Collections. The pdfi_prep_collection() function returns an
+     * array of descriptions and filenames. Because the descriptions can contain
+     * UTF16-BE encoded data we can't sue a NULL terminated string, so the description
+     * strings are terminated with a triple-NULL sequence of bytes.
+     * We copy the contents into a PostScript array, which we store in the info
+     * dictionary using the /Collection key.
+     */
+    if (pdfctx->ctx->Collection != NULL) {
+        code = pdfi_prep_collection(pdfctx->ctx, &TotalFiles, &names_array);
+        if (code >= 0 && TotalFiles > 0) {
+            uint size;
+            ref collection, stringref;
+
+            code = ialloc_ref_array(&collection, a_all, TotalFiles * 2, "names array");
+            if (code < 0)
+                goto error;
+
+            code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"Collection", 10, &nameref, 1);
+            if (code < 0)
+                goto error;
+
+            code = dict_put(op, &nameref, &collection, &i_ctx_p->dict_stack);
+            if (code < 0)
+                goto error;
+
+            for (ix=0; ix < TotalFiles * 2; ix++) {
+                char *ptr = names_array[ix];
+                byte *sbody;
+                ref *pelement;
+
+                size = 0;
+                do {
+                    if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x00)
+                        break;
+                    ptr++;
+                    size++;
+                } while (1);
+                sbody = ialloc_string(size, "string");
+                if (sbody == 0) {
+                    code = gs_error_VMerror;
+                    goto error;
+                }
+                make_string(&stringref, a_all | icurrent_space, size, sbody);
+                memset(sbody, 0x00, size);
+                memcpy(sbody, names_array[ix], size);
+                gs_free_object(pdfctx->ctx->memory, names_array[ix], "free collection temporary filenames");
+                names_array[ix] = NULL;
+                pelement = collection.value.refs + ix;
+                ref_assign_old(&collection, pelement, &stringref, "put names string");
+            }
+        }
+        gs_free_object(pdfctx->ctx->memory, names_array, "free collection temporary filenames");
+        code = 0;
+    }
+
+    return code;
+
+error:
+    for (ix=0; ix < TotalFiles * 2; ix++)
+        gs_free_object(pdfctx->ctx->memory, names_array[ix], "free collection temporary filenames");
+    gs_free_object(pdfctx->ctx->memory, names_array, "free collection temporary filenames");
     return code;
 }
 

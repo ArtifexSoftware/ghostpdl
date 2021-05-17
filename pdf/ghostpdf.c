@@ -613,12 +613,28 @@ static int pdfi_process(pdf_context *ctx)
     return code;
 }
 
-static int pdfi_process_collection(pdf_context *ctx)
+/* This works by reading each embedded file referenced by the collection. If it
+ * has a MIME type indicating it's a PDF file, or somewhere in the first 2KB it
+ * has the PDF header (%PDF-) then we treat it as a PDF file. We read the contents
+ * of the refrenced stream and write them to disk in a scratch file.
+ *
+ * We then process each scratch file in turn. Note that we actually return an
+ * array of strings; the first string is the temporary filename, the second is
+ * the entry from the names tree. Since this can be in UTF16-BE format, it can
+ * contain embedded single byte NULL characters, so we can't use a regular C
+ * string. Instead we use a triple byte NULL termination.
+ *
+ * It ought to be possible to do all the processing without creating scratch files, by saving the
+ * current file state, and opening a new 'file' on the stream in the original PDF
+ * file. But I couldn't immediately get that to work.
+ * So this is a FIXME future enhancement.
+ */
+int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_array)
 {
     int code, i, NumEmbeddedFiles = 0;
     pdf_obj *Names = NULL, *EmbeddedFiles = NULL, *FileNames = NULL;
     pdf_obj *EF = NULL, *F = NULL;
-    char **names_array = NULL;
+    char **working_array = NULL;
 
     if (pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, &Names))
     {
@@ -626,18 +642,18 @@ static int pdfi_process_collection(pdf_context *ctx)
         {
             if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EmbeddedFiles, "Names", PDF_ARRAY, &FileNames))
             {
-                int ix = 0, index = 0, TotalFiles = 0;
+                int ix = 0, index = 0;
                 gp_file *scratch_file = NULL;
                 char scratch_name[gp_file_name_sizeof];
 
                 NumEmbeddedFiles = pdfi_array_size((pdf_array *)FileNames) / 2;
 
-                names_array = (char **)gs_alloc_bytes(ctx->memory, NumEmbeddedFiles * sizeof(char *), "Collection file namesarray");
-                if (names_array == NULL) {
+                working_array = (char **)gs_alloc_bytes(ctx->memory, NumEmbeddedFiles * 2 * sizeof(char *), "Collection file working names array");
+                if (working_array == NULL) {
                     code = gs_note_error(gs_error_VMerror);
                     goto exit;
                 }
-                memset(names_array, 0x00, NumEmbeddedFiles * sizeof(char *));
+                memset(working_array, 0x00, NumEmbeddedFiles * 2 * sizeof(char *));
 
                 for (ix = 0;ix < NumEmbeddedFiles;ix++)
                 {
@@ -695,7 +711,7 @@ static int pdfi_process_collection(pdf_context *ctx)
                                     {
                                         /* Appears to be a PDF file. Create a scratch file to hold it, and then
                                          * read the file from the PDF, and write it to the scratch file. Record
-                                         * the scratch filename in the names_array for later processing.
+                                         * the scratch filename in the working_array for later processing.
                                          */
                                         scratch_file = gp_open_scratch_file(ctx->memory, "gpdf-collection-", scratch_name, "wb");
                                         if (scratch_file != NULL) {
@@ -705,6 +721,9 @@ static int pdfi_process_collection(pdf_context *ctx)
                                                 double L;
                                                 pdf_c_stream *SubFile_stream = NULL;
 
+                                                /* Start by setting up the file to be read. Apply a SubFileDecode so that, if the input stream
+                                                 * is not compressed we will stop reading when we get to the end of the stream.
+                                                 */
                                                 if (pdfi_dict_knownget_number(ctx, stream_dict, "Length", &L))
                                                 {
 
@@ -718,18 +737,37 @@ static int pdfi_process_collection(pdf_context *ctx)
                                                 {
                                                     char Buffer[2048];
                                                     int bytes;
+                                                    pdf_string *Name = NULL;
 
+                                                    /* Read the stream contents and write them to the scratch file */
                                                     do {
                                                         bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 2048, s);
                                                         (void)gp_fwrite(Buffer, 1, bytes, scratch_file);
                                                     } while (bytes > 0);
 
-                                                    names_array[index] = (char *)gs_alloc_bytes(ctx->memory, strlen(scratch_name) + 1, "Collection file names array entry");
-                                                    if (names_array[index] != NULL)
-                                                        strcpy(names_array[index], scratch_name);
+                                                    /* Create an entry for the Description in the names array */
+                                                    code = pdfi_array_get(ctx, (pdf_array *)FileNames, ix * 2, (pdf_obj **)&Name);
+                                                    if (code >= 0) {
+                                                        if (Name->type == PDF_STRING) {
+                                                            working_array[(index * 2) + 1] = (char *)gs_alloc_bytes(ctx->memory, Name->length + 3, "Collection file names array entry");
+                                                            if (working_array[(index * 2) + 1] != NULL) {
+                                                                memset(working_array[(index * 2) + 1], 0x00, Name->length + 3);
+                                                                memcpy(working_array[(index * 2) + 1], Name->data, Name->length);
+                                                            }
+                                                        }
+                                                        pdfi_countdown(Name);
+                                                        Name = NULL;
+                                                    }
+
+                                                    /* And now the scratch file name */
+                                                    working_array[index * 2] = (char *)gs_alloc_bytes(ctx->memory, strlen(scratch_name) + 3, "Collection file names array entry");
+                                                    if (working_array[index * 2] != NULL) {
+                                                        memset(working_array[index * 2], 0x00, strlen(scratch_name) + 3);
+                                                        strcpy(working_array[index * 2], scratch_name);
+                                                    }
 
                                                     index++;
-                                                    TotalFiles++;
+                                                    (*TotalFiles)++;
                                                     pdfi_countdown(s);
                                                 }
                                                 if (SubFile_stream != NULL)
@@ -752,24 +790,6 @@ static int pdfi_process_collection(pdf_context *ctx)
                     pdfi_countdown(File);
                     File = NULL;
                 }
-                if (TotalFiles > 0)
-                {
-                    /* names_array is full of pointers to the scratch file names containing PDF files.
-                     * Now we need to run each PDF file. First we close down the current file.
-                     */
-                    (void)pdfi_close_pdf_file(ctx);
-
-                    for (ix = 0;ix < NumEmbeddedFiles;ix++) {
-                        if (names_array[ix] != NULL) {
-                            (void)pdfi_process_pdf_file(ctx, names_array[ix]);
-                            (void)pdfi_close_pdf_file(ctx);
-                        }
-                    }
-                } else
-                    /* We didn't find any PDF files in the Embedded Files. So just run the
-                     * pages in the container file (the original PDF file)
-                     */
-                    pdfi_process(ctx);
             } else {
                 dmprintf(ctx->memory, "\n   **** Warning: Failed to read EmbeededFiles Names tree.\n");
             }
@@ -781,14 +801,62 @@ static int pdfi_process_collection(pdf_context *ctx)
     }
 
 exit:
+    if (code >= 0) {
+        uint64_t ix = 0;
+
+        (*names_array) = (char **)gs_alloc_bytes(ctx->memory, *TotalFiles * 2 * sizeof(char *), "Collection file namesarray");
+        for (i = 0; i < NumEmbeddedFiles;i++) {
+            if (working_array[i * 2] != NULL && working_array[(i * 2) + 1] != NULL) {
+                (*names_array)[ix * 2] = working_array[i * 2];
+                working_array[i * 2] = NULL;
+                (*names_array)[(ix * 2) + 1] = working_array[(i * 2) + 1];
+                working_array[(i * 2) + 1] = NULL;
+                ix++;
+            }
+        }
+    }
+
     for (i = 0; i < NumEmbeddedFiles;i++)
-        gs_free_object(ctx->memory, names_array[i], "free collection temporary filenames");
-    gs_free_object(ctx->memory, names_array, "free collection names array");
+        gs_free_object(ctx->memory, working_array[i], "free collection temporary filenames");
+    gs_free_object(ctx->memory, working_array, "free collection working array");
     pdfi_countdown(F);
     pdfi_countdown(EF);
     pdfi_countdown(FileNames);
     pdfi_countdown(EmbeddedFiles);
     pdfi_countdown(Names);
+    return code;
+}
+
+static int pdfi_process_collection(pdf_context *ctx)
+{
+    int code, i;
+    uint64_t TotalFiles = 0, ix = 0;
+    char **names_array = NULL;
+
+    code = pdfi_prep_collection(ctx, &TotalFiles, &names_array);
+    if (code >= 0 && TotalFiles > 0)
+    {
+        /* names_array is full of pointers to the scratch file names containing PDF files.
+         * Now we need to run each PDF file. First we close down the current file.
+         */
+        (void)pdfi_close_pdf_file(ctx);
+
+        for (ix = 0;ix < TotalFiles * 2;ix+=2) {
+            if (names_array[ix] != NULL) {
+                (void)pdfi_process_pdf_file(ctx, names_array[ix]);
+                (void)pdfi_close_pdf_file(ctx);
+            }
+        }
+    } else
+        /* We didn't find any PDF files in the Embedded Files. So just run the
+         * pages in the container file (the original PDF file)
+         */
+        pdfi_process(ctx);
+
+exit:
+    for (i = 0; i < TotalFiles * 2;i++)
+        gs_free_object(ctx->memory, names_array[i], "free collection temporary filenames");
+    gs_free_object(ctx->memory, names_array, "free collection names array");
 
     return 0;
 }
