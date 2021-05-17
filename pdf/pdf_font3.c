@@ -39,6 +39,7 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     pdf_stream *CharProc = NULL;
     int SavedTextBlockDepth = 0;
     char Notdef[8] = {".notdef"};
+    gs_gstate *DefaultQState;
 
     font = (pdf_font_type3 *)pfont->client_data;
 
@@ -74,7 +75,7 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     OBJ_CTX(font)->text.inside_CharProc = true;
     OBJ_CTX(font)->text.CharProc_is_d1 = false;
     pdfi_gsave(OBJ_CTX(font));
-    code = pdfi_interpret_inner_content_stream(OBJ_CTX(font), CharProc, font->PDF_font, true, "CharProc");
+    pdfi_run_context(OBJ_CTX(font), CharProc, font->PDF_font, true, "CharProc");
     pdfi_grestore(OBJ_CTX(font));
     OBJ_CTX(font)->text.inside_CharProc = false;
     OBJ_CTX(font)->text.CharProc_is_d1 = false;
