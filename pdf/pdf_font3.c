@@ -39,7 +39,6 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     pdf_stream *CharProc = NULL;
     int SavedTextBlockDepth = 0;
     char Notdef[8] = {".notdef"};
-    gs_gstate *DefaultQState;
 
     font = (pdf_font_type3 *)pfont->client_data;
 
