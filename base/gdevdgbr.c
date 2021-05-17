@@ -618,6 +618,8 @@ int
 gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
                        gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
+    dev_proc_get_bits_rectangle((*save_get_bits_rectangle)) =
+                                      dev_proc(dev, get_bits_rectangle);
     int depth = dev->color_info.depth;
     gs_get_bits_options_t options = params->options;
     int code;
@@ -626,6 +628,8 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     int bits_per_pixel = depth;
     byte *row;
 
+    /* Avoid a recursion loop. */
+    set_dev_proc(dev, get_bits_rectangle, gx_no_get_bits_rectangle);
     if (options & GB_COLORS_STANDARD_ALL) {
         /*
          * Make sure the row buffer can hold the standard color
@@ -684,5 +688,6 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
         gs_free_object(dev->memory, row, "gx_default_get_bits_rectangle");
         params->data[0] = dest;
     }
+    set_dev_proc(dev, get_bits_rectangle, save_get_bits_rectangle);
     return (code < 0 ? code : 0);
 }

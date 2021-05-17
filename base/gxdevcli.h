@@ -241,10 +241,10 @@ typedef enum {
  *
  */
 typedef enum {
-    GX_CINFO_OPMODE_UNKNOWN = -1,
-    GX_CINFO_OPMODE_NOT = 0,
-    GX_CINFO_OPMODE = 1
-} gx_cm_opmode_t;
+    GX_CINFO_OPMSUPPORTED_UNKNOWN = -1,
+    GX_CINFO_OPMSUPPORTED_NOT = 0,
+    GX_CINFO_OPMSUPPORTED = 1
+} gx_cm_opmsupported_t;
 
 /* component index value used to indicate no color component.  */
 #define GX_CINFO_COMP_NO_INDEX 0xff
@@ -420,15 +420,12 @@ typedef struct gx_device_color_info_s {
      * Most such color spaces will have the name DeviceCMYK, but it is
      * also possible for DeviceN color models this behavior.
      *
-     * If opmode has the value GX_CINFO_OPMODE, the process_comps will
+     * If opmsupported has the value GX_CINFO_OPMSUPPORTED, the process_comps will
      * be a bit mask, with the (1 << i) bit set if i'th component is the
      * cyan, magenta, yellow, or black component and black_component will
      * be set to the index of a black component.
-     *
-     * A new mode GX_CINFO_OPMODE_RGB was added so that an RGB device could
-     * simulate CMYK overprinting.
      */
-    gx_cm_opmode_t opmode;
+    gx_cm_opmsupported_t opmsupported;
     gx_color_index process_comps;
     uint black_component;
     bool use_antidropout_downscaler;
@@ -459,7 +456,7 @@ static inline int colors_are_separable_and_linear(gx_device_color_info *info)
      { 0 } /* component bits */, \
      { 0 } /* component mask */, \
      cn /* process color name */, \
-     GX_CINFO_OPMODE_UNKNOWN /* opmode */, \
+     GX_CINFO_OPMSUPPORTED_UNKNOWN /* opmsupported */, \
      0  /* process_cmps */ }
 
 /*
@@ -1835,5 +1832,26 @@ bool gx_color_info_equal(const gx_device_color_info *p1, const gx_device_color_i
 
 /* Perform a callout to registered handlers from the device. */
 int gx_callout(gx_device *dev, int id, int size, void *data);
+
+static inline
+gx_cm_opmsupported_t gx_get_opmsupported(gx_device *dev)
+{
+    if (dev->color_info.opmsupported != GX_CINFO_OPMSUPPORTED_UNKNOWN)
+        return dev->color_info.opmsupported;
+
+    (void)check_cmyk_color_model_comps(dev);
+
+    return dev->color_info.opmsupported;
+}
+
+static inline
+gx_color_index gx_get_process_comps(gx_device *dev)
+{
+    if (dev->color_info.opmsupported != GX_CINFO_OPMSUPPORTED_UNKNOWN)
+        return dev->color_info.process_comps;
+
+    return check_cmyk_color_model_comps(dev);
+}
+
 
 #endif /* gxdevcli_INCLUDED */

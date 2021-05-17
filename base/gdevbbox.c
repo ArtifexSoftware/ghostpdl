@@ -378,7 +378,8 @@ bbox_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *tdev = bdev->target;
-    /* gx_forward_fill_rectangle doesn't exist */
+    /* gx_forward_fill_rectangle exists, but does the wrong thing in
+     * the event of a NULL target, so open code it here. */
     int code =
         (tdev == 0 ? 0 :
          dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color));
@@ -393,7 +394,8 @@ bbox_copy_mono(gx_device * dev, const byte * data,
                gx_color_index zero, gx_color_index one)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-    /* gx_forward_copy_mono doesn't exist */
+    /* gx_forward_copy_mono exists, but does the wrong thing in
+     * the event of a NULL target, so open code it here. */
     gx_device *tdev = bdev->target;
     int code =
         (tdev == 0 ? 0 :
@@ -412,7 +414,8 @@ bbox_copy_color(gx_device * dev, const byte * data,
             int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-    /* gx_forward_copy_color doesn't exist */
+    /* gx_forward_copy_color exists, but does the wrong thing in
+     * the event of a NULL target, so open code it here. */
     gx_device *tdev = bdev->target;
     int code =
         (tdev == 0 ? 0 :
@@ -429,7 +432,8 @@ bbox_copy_alpha(gx_device * dev, const byte * data, int data_x,
                 gx_color_index color, int depth)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-    /* gx_forward_copy_alpha doesn't exist */
+    /* gx_forward_copy_alpha exists, but does the wrong thing in
+     * the event of a NULL target, so open code it here. */
     gx_device *tdev = bdev->target;
     int code =
         (tdev == 0 ? 0 :
@@ -484,7 +488,8 @@ bbox_strip_copy_rop2(gx_device * dev,
                     uint planar_height)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-    /* gx_forward_strip_copy_rop2 doesn't exist */
+    /* gx_forward_strip_copy_rop2 exists, but does the wrong thing in
+     * the event of a NULL target, so open code it here. */
     gx_device *tdev = bdev->target;
     int code =
         (tdev == 0 ? 0 :

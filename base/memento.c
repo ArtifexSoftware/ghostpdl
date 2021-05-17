@@ -1099,6 +1099,12 @@ static void Memento_addBlockTail(Memento_Blocks    *blks,
 }
 
 typedef struct BlkCheckData {
+    /* found holds some bits:
+     * Bit 0 (1) -> At least one block has been checked.
+     * Bit 1 (2) -> We have found an "Allocated block".
+     * Bit 2 (4) -> We have found a "Freed block".
+     * Bit 3 (8) -> Trigger a breakpoint on completion.
+     */
     int found;
     int preCorrupt;
     int postCorrupt;
@@ -1972,12 +1978,11 @@ static int Memento_containsAddr(Memento_BlkHeader *b,
     return 0;
 }
 
-void Memento_info(void *addr)
+static void Memento_infoLocked(void *addr)
 {
 #ifdef MEMENTO_DETAILS
     findBlkData data;
 
-    MEMENTO_LOCK();
     data.addr  = addr;
     data.blk   = NULL;
     data.flags = 0;
@@ -1989,10 +1994,16 @@ void Memento_info(void *addr)
     Memento_appBlocks(&memento.free, Memento_containsAddr, &data);
     if (data.blk != NULL)
         showInfo(data.blk, NULL);
-    MEMENTO_UNLOCK();
 #else
     printf("Memento not compiled with details support\n");
 #endif
+}
+
+void Memento_info(void *addr)
+{
+    MEMENTO_LOCK();
+    Memento_infoLocked(addr);
+    MEMENTO_UNLOCK();
 }
 
 #ifdef MEMENTO_HAS_FORK
@@ -2166,13 +2177,16 @@ static void Memento_startFailing(void)
 
 static int Memento_event(void)
 {
+    int ret = 0;
+
     memento.sequence++;
     if ((memento.sequence >= memento.paranoidAt) && (memento.paranoidAt != 0)) {
         memento.paranoia = 1;
         memento.countdown = 1;
     }
     if (--memento.countdown == 0) {
-        Memento_checkAllMemoryLocked();
+        ret = Memento_checkAllMemoryLocked();
+        ret = (ret & 8) != 0;
         if (memento.paranoia > 0)
             memento.countdown = memento.paranoia;
         else
@@ -2187,7 +2201,7 @@ static int Memento_event(void)
         fprintf(stderr, "Breaking at event %d\n", memento.breakAt);
         return 1;
     }
-    return 0;
+    return ret;
 }
 
 int Memento_sequence(void)
@@ -2500,7 +2514,7 @@ static void do_reference(Memento_BlkHeader *blk, int event)
 #endif /* MEMENTO_DETAILS */
 }
 
-int Memento_checkPointerOrNull(void *blk)
+static int checkPointerOrNullLocked(void *blk)
 {
     if (blk == NULL)
         return 0;
@@ -2518,17 +2532,27 @@ int Memento_checkPointerOrNull(void *blk)
     fprintf(stderr, "Current backtrace:\n");
     Memento_bt();
     fprintf(stderr, "History:\n");
-    Memento_info(blk);
+    Memento_infoLocked(blk);
 #endif
+    Memento_breakpointLocked();
     return 1;
 }
 
-int Memento_checkBytePointerOrNull(void *blk)
+int Memento_checkPointerOrNull(void *blk)
+{
+    int ret;
+    MEMENTO_LOCK();
+    ret = checkPointerOrNullLocked(blk);
+    MEMENTO_UNLOCK();
+    return ret;
+}
+
+static int checkBytePointerOrNullLocked(void *blk)
 {
     unsigned char i;
     if (blk == NULL)
         return 0;
-    Memento_checkPointerOrNull(blk);
+    checkPointerOrNullLocked(blk);
 
     i = *(unsigned char *)blk;
 
@@ -2546,18 +2570,27 @@ int Memento_checkBytePointerOrNull(void *blk)
     fprintf(stderr, "Current backtrace:\n");
     Memento_bt();
     fprintf(stderr, "History:\n");
-    Memento_info(blk);
+    Memento_infoLocked(blk);
 #endif
-    Memento_breakpoint();
+    Memento_breakpointLocked();
     return 1;
 }
 
-int Memento_checkShortPointerOrNull(void *blk)
+int Memento_checkBytePointerOrNull(void *blk)
+{
+    int ret;
+    MEMENTO_LOCK();
+    ret = checkBytePointerOrNullLocked(blk);
+    MEMENTO_UNLOCK();
+    return ret;
+}
+
+static int checkShortPointerOrNullLocked(void *blk)
 {
     unsigned short i;
     if (blk == NULL)
         return 0;
-    Memento_checkPointerOrNull(blk);
+    checkPointerOrNullLocked(blk);
 
     i = *(unsigned short *)blk;
 
@@ -2575,18 +2608,27 @@ int Memento_checkShortPointerOrNull(void *blk)
     fprintf(stderr, "Current backtrace:\n");
     Memento_bt();
     fprintf(stderr, "History:\n");
-    Memento_info(blk);
+    Memento_infoLocked(blk);
 #endif
-    Memento_breakpoint();
+    Memento_breakpointLocked();
     return 1;
 }
 
-int Memento_checkIntPointerOrNull(void *blk)
+int Memento_checkShortPointerOrNull(void *blk)
+{
+    int ret;
+    MEMENTO_LOCK();
+    ret = checkShortPointerOrNullLocked(blk);
+    MEMENTO_UNLOCK();
+    return ret;
+}
+
+static int checkIntPointerOrNullLocked(void *blk)
 {
     unsigned int i;
     if (blk == NULL)
         return 0;
-    Memento_checkPointerOrNull(blk);
+    checkPointerOrNullLocked(blk);
 
     i = *(unsigned int *)blk;
 
@@ -2604,15 +2646,29 @@ int Memento_checkIntPointerOrNull(void *blk)
     fprintf(stderr, "Current backtrace:\n");
     Memento_bt();
     fprintf(stderr, "History:\n");
-    Memento_info(blk);
+    Memento_infoLocked(blk);
 #endif
-    Memento_breakpoint();
+    Memento_breakpointLocked();
     return 1;
+}
+
+int Memento_checkIntPointerOrNull(void *blk)
+{
+    int ret;
+    MEMENTO_LOCK();
+    ret = checkIntPointerOrNullLocked(blk);
+    MEMENTO_UNLOCK();
+    return ret;
 }
 
 static void *do_takeRef(void *blk)
 {
-    MEMENTO_LOCK();
+    do_reference(safe_find_block(blk), Memento_EventType_takeRef);
+    return blk;
+}
+
+static void *do_takeRefAndUnlock(void *blk)
+{
     do_reference(safe_find_block(blk), Memento_EventType_takeRef);
     MEMENTO_UNLOCK();
     return blk;
@@ -2623,14 +2679,17 @@ void *Memento_takeByteRef(void *blk)
     if (!memento.inited)
         Memento_init();
 
-    if (Memento_event()) Memento_breakpoint();
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
 
-    if (!blk)
+    if (!blk) {
+        MEMENTO_UNLOCK();
         return NULL;
+    }
 
-    (void)Memento_checkBytePointerOrNull(blk);
+    (void)checkBytePointerOrNullLocked(blk);
 
-    return do_takeRef(blk);
+    return do_takeRefAndUnlock(blk);
 }
 
 void *Memento_takeShortRef(void *blk)
@@ -2638,14 +2697,17 @@ void *Memento_takeShortRef(void *blk)
     if (!memento.inited)
         Memento_init();
 
-    if (Memento_event()) Memento_breakpoint();
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
 
-    if (!blk)
+    if (!blk) {
+        MEMENTO_UNLOCK();
         return NULL;
+    }
 
-    (void)Memento_checkShortPointerOrNull(blk);
+    (void)checkShortPointerOrNullLocked(blk);
 
-    return do_takeRef(blk);
+    return do_takeRefAndUnlock(blk);
 }
 
 void *Memento_takeIntRef(void *blk)
@@ -2653,14 +2715,17 @@ void *Memento_takeIntRef(void *blk)
     if (!memento.inited)
         Memento_init();
 
-    if (Memento_event()) Memento_breakpoint();
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
 
-    if (!blk)
+    if (!blk) {
+        MEMENTO_UNLOCK();
         return NULL;
+    }
 
-    (void)Memento_checkIntPointerOrNull(blk);
+    (void)checkIntPointerOrNullLocked(blk);
 
-    return do_takeRef(blk);
+    return do_takeRefAndUnlock(blk);
 }
 
 void *Memento_takeRef(void *blk)
@@ -2668,17 +2733,25 @@ void *Memento_takeRef(void *blk)
     if (!memento.inited)
         Memento_init();
 
-    if (Memento_event()) Memento_breakpoint();
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
 
-    if (!blk)
+    if (!blk) {
+        MEMENTO_UNLOCK();
         return NULL;
+    }
 
-    return do_takeRef(blk);
+    return do_takeRefAndUnlock(blk);
 }
 
 static void *do_dropRef(void *blk)
 {
-    MEMENTO_LOCK();
+    do_reference(safe_find_block(blk), Memento_EventType_dropRef);
+    return blk;
+}
+
+static void *do_dropRefAndUnlock(void *blk)
+{
     do_reference(safe_find_block(blk), Memento_EventType_dropRef);
     MEMENTO_UNLOCK();
     return blk;
@@ -2689,14 +2762,17 @@ void *Memento_dropByteRef(void *blk)
     if (!memento.inited)
         Memento_init();
 
-    if (Memento_event()) Memento_breakpoint();
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
 
-    if (!blk)
+    if (!blk) {
+        MEMENTO_UNLOCK();
         return NULL;
+    }
 
-    Memento_checkBytePointerOrNull(blk);
+    checkBytePointerOrNullLocked(blk);
 
-    return do_dropRef(blk);
+    return do_dropRefAndUnlock(blk);
 }
 
 void *Memento_dropShortRef(void *blk)
@@ -2704,14 +2780,17 @@ void *Memento_dropShortRef(void *blk)
     if (!memento.inited)
         Memento_init();
 
-    if (Memento_event()) Memento_breakpoint();
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
 
-    if (!blk)
+    if (!blk) {
+        MEMENTO_UNLOCK();
         return NULL;
+    }
 
-    Memento_checkShortPointerOrNull(blk);
+    checkShortPointerOrNullLocked(blk);
 
-    return do_dropRef(blk);
+    return do_dropRefAndUnlock(blk);
 }
 
 void *Memento_dropIntRef(void *blk)
@@ -2719,14 +2798,17 @@ void *Memento_dropIntRef(void *blk)
     if (!memento.inited)
         Memento_init();
 
-    if (Memento_event()) Memento_breakpoint();
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
 
-    if (!blk)
+    if (!blk) {
+        MEMENTO_UNLOCK();
         return NULL;
+    }
 
-    Memento_checkIntPointerOrNull(blk);
+    checkIntPointerOrNullLocked(blk);
 
-    return do_dropRef(blk);
+    return do_dropRefAndUnlock(blk);
 }
 
 void *Memento_dropRef(void *blk)
@@ -2734,20 +2816,29 @@ void *Memento_dropRef(void *blk)
     if (!memento.inited)
         Memento_init();
 
-    if (Memento_event()) Memento_breakpoint();
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
 
-    if (!blk)
+    if (!blk) {
+        MEMENTO_UNLOCK();
         return NULL;
+    }
 
-    return do_dropRef(blk);
+    return do_dropRefAndUnlock(blk);
 }
 
 void *Memento_adjustRef(void *blk, int adjust)
 {
-    if (Memento_event()) Memento_breakpoint();
+    if (!memento.inited)
+        Memento_init();
 
-    if (blk == NULL)
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
+
+    if (blk == NULL) {
+        MEMENTO_UNLOCK();
         return NULL;
+    }
 
     while (adjust > 0)
     {
@@ -2760,6 +2851,7 @@ void *Memento_adjustRef(void *blk, int adjust)
         adjust++;
     }
 
+    MEMENTO_UNLOCK();
     return blk;
  }
 
@@ -2830,8 +2922,7 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
         fprintf(stderr, "Attempt to %s invalid block ", action);
         showBlock(memblk, 32);
         fprintf(stderr, "\n");
-        Memento_breakpointLocked();
-        return 1;
+        return 2;
     }
 
 #ifndef MEMENTO_LEAKONLY
@@ -2843,8 +2934,7 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
         fprintf(stderr, "Attempt to %s block ", action);
         showBlock(memblk, 32);
         fprintf(stderr, "\n");
-        Memento_breakpointLocked();
-        return 1;
+        return 2;
     } else if (data.preCorrupt || data.postCorrupt) {
         fprintf(stderr, "Block ");
         showBlock(memblk, ' ');
@@ -2860,7 +2950,7 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
         if ((memblk->flags & Memento_Flag_Reported) == 0)
         {
             memblk->flags |= Memento_Flag_Reported;
-            Memento_breakpointLocked();
+            return 2;
         }
         return 1;
     }
@@ -2871,6 +2961,7 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
 static void do_free(void *blk, int eventType)
 {
     Memento_BlkHeader *memblk;
+    int ret;
 
     (void)eventType;
 
@@ -2881,8 +2972,11 @@ static void do_free(void *blk, int eventType)
 
     memblk = MEMBLK_FROMBLK(blk);
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
-    if (checkBlock(memblk, "free"))
+    ret = checkBlock(memblk, "free");
+    if (ret)
     {
+        if (ret & 2)
+            Memento_breakpoint();
         if (memento.abortOnCorruption) {
             fprintf(stderr, "*** memblk corrupted, calling abort()\n");
             abort();
@@ -2932,7 +3026,7 @@ static void *do_realloc(void *blk, size_t newsize, int type)
 {
     Memento_BlkHeader *memblk, *newmemblk;
     size_t             newsizemem;
-    int                flags;
+    int                flags, ret;
 
     if (Memento_failThisEventLocked()) {
         errno = ENOMEM;
@@ -2941,7 +3035,10 @@ static void *do_realloc(void *blk, size_t newsize, int type)
 
     memblk     = MEMBLK_FROMBLK(blk);
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
-    if (checkBlock(memblk, "realloc")) {
+    ret = checkBlock(memblk, "realloc");
+    if (ret) {
+        if (ret == 2)
+            Memento_breakpoint();
         errno = ENOMEM;
         return NULL;
     }
@@ -3071,7 +3168,7 @@ static int Memento_Internal_checkAllAlloced(Memento_BlkHeader *memblk, void *arg
         if ((memblk->flags & Memento_Flag_Reported) == 0)
         {
             memblk->flags |= Memento_Flag_Reported;
-            Memento_breakpointLocked();
+            data->found |= 8;
         }
     }
     else
@@ -3116,7 +3213,7 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
         if ((memblk->flags & Memento_Flag_Reported) == 0)
         {
             memblk->flags |= Memento_Flag_Reported;
-            Memento_breakpointLocked();
+            data->found |= 8;
         }
         VALGRIND_MAKE_MEM_NOACCESS(memblk, sizeof(Memento_BlkHeader));
         data->preCorrupt  = 0;
@@ -3151,7 +3248,7 @@ int Memento_checkAllMemory(void)
     MEMENTO_LOCK();
     ret = Memento_checkAllMemoryLocked();
     MEMENTO_UNLOCK();
-    if (ret & 6) {
+    if (ret & 8) {
         Memento_breakpoint();
         return 1;
     }
