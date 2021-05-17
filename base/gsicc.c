@@ -681,10 +681,9 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
     cmm_dev_profile_t *dev_profile;
     bool gray_to_k;
     bool op = pgs->is_fill_color ? pgs->overprint : pgs->stroke_overprint;
-    gx_cm_opmsupported_t opmsupported = (op ? gx_get_opmsupported(dev) :
-                                         GX_CINFO_OPMSUPPORTED_NOT);
 
-    if (dev == 0 || pcinfo == NULL || opmsupported == GX_CINFO_OPMSUPPORTED_NOT)
+    if (dev == 0 || pcinfo == NULL || !op ||
+        gx_get_opmsupported(dev) == GX_CINFO_OPMSUPPORTED_NOT)
         return gx_set_no_overprint(pgs);
 
     dev_proc(dev, get_profile)(dev, &dev_profile);
