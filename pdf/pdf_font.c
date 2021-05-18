@@ -304,7 +304,7 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
         if (code < 0)
             goto exit;
-    } else if (pdfi_name_is(Subtype, "Type1")) {
+    } else if (pdfi_name_is(Subtype, "Type1") || pdfi_name_is(Subtype, "MMType1")) {
         code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
         if (code < 0)
             goto exit;
