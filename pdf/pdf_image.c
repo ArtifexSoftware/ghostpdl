@@ -709,6 +709,9 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
     if (code < 0)
         return code;
 
+    /* Disable overprint mode for images */
+    gs_setoverprintmode(ctx->pgs, 0);
+
     penum = gs_image_enum_alloc(ctx->memory, "pdfi_render_image (gs_image_enum_alloc)");
     if (!penum) {
         code = gs_note_error(gs_error_VMerror);
