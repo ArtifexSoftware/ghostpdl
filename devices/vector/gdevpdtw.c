@@ -239,8 +239,7 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
     if (code < 0)
         return code;
     pprints1(s, "/Subtype/%s>>\n",
-             (pdfont->FontType == ft_TrueType ? "TrueType" :
-              pdfont->u.simple.s.type1.is_MM_instance ? "MMType1" : "Type1"));
+             (pdfont->FontType == ft_TrueType ? "TrueType" : "Type1"));
     pdf_end_separate(pdev, resourceFont);
     if (diff_id) {
         mark_font_descriptor_symbolic(pdfont);

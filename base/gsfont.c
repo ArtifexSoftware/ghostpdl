@@ -283,9 +283,16 @@ gs_font_dir_finalize(const gs_memory_t *cmem, void *vptr)
     gx_bits_cache_chunk *chunk = pdir->ccache.chunks;
     gx_bits_cache_chunk *start_chunk = chunk;
     gx_bits_cache_chunk *prev_chunk;
+    int i;
 
     if (pdir == cmem->gs_lib_ctx->font_dir) {
         cmem->gs_lib_ctx->font_dir = NULL;
+    }
+
+    for (i = 0; i < pdir->fmcache.msize; i++) {
+        if (uid_is_XUID(&pdir->fmcache.mdata[i].UID)) {
+            gs_free_object(pdir->memory->stable_memory, pdir->fmcache.mdata[i].UID.xvalues, "gs_font_dir_finalize");
+        }
     }
 
     /* free character cache machinery */

@@ -442,11 +442,12 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
                      pair->num_chars);
         }
 #endif
-        {   /* Free xvalues here because gx_add_fm_pair copied
-               them into the stable memory dir->memory. */
+        if (uid_is_XUID(&pair->UID)) {
             gs_free_object(dir->memory->stable_memory, pair->UID.xvalues, "gs_purge_fm_pair");
-            pair->UID.xvalues = 0;
+            pair->UID.id = 0;
+            pair->UID.xvalues = NULL;
         }
+
         fm_pair_set_free(pair);
         code = fm_pair_remove_from_list(dir, pair, &dir->fmcache.used);
         if (code < 0)
