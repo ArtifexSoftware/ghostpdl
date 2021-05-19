@@ -1210,8 +1210,10 @@ static int pdfi_doc_AcroForm(pdf_context *ctx)
 
     code = pdfi_dict_get_bool(ctx, AcroForm, "NeedAppearances", &boolval);
     if (code < 0) {
-        if (code == gs_error_undefined)
+        if (code == gs_error_undefined) {
             boolval = true;
+            code = 0;
+        }
         else
             goto exit;
     }

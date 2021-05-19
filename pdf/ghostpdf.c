@@ -584,8 +584,6 @@ static int pdfi_process(pdf_context *ctx)
 {
     int code, i;
 
-    code = pdfi_doc_trailer(ctx);
-
     /* Loop over each page and either render it or output the
      * required information.
      */
@@ -853,7 +851,6 @@ static int pdfi_process_collection(pdf_context *ctx)
          */
         pdfi_process(ctx);
 
-exit:
     for (i = 0; i < TotalFiles * 2;i++)
         gs_free_object(ctx->memory, names_array[i], "free collection temporary filenames");
     gs_free_object(ctx->memory, names_array, "free collection names array");
@@ -976,6 +973,10 @@ read_root:
 
     if (ctx->num_pages == 0)
         dmprintf(ctx->memory, "\n   **** Warning: PDF document has no pages.\n");
+
+    code = pdfi_doc_trailer(ctx);
+    if (code < 0)
+        goto exit;
 
     pdfi_read_OptionalRoot(ctx);
 
