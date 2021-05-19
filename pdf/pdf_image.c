@@ -1660,7 +1660,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     /* Get the Mask data either as an array or a dict, if present */
-    if (image_info.SMask == NULL && image_info.Mask != NULL) {
+    if (image_info.Mask != NULL) {
         if (image_info.Mask->type == PDF_ARRAY) {
             mask_array = (pdf_array *)image_info.Mask;
         } else if (image_info.Mask->type == PDF_STREAM) {
