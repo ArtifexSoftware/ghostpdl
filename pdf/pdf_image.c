@@ -689,7 +689,6 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
 {
     int code;
     gs_image_enum *penum = NULL;
-    //    unsigned char Buffer[1024];
     byte *buffer = NULL;
     uint64_t linelen, bytes_left;
     uint64_t bytes_used = 0;
@@ -701,9 +700,6 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_render_image BEGIN\n");
 #endif
-    code = pdfi_trans_set_params(ctx);
-    if (code < 0)
-        return code;
 
     code = pdfi_gsave(ctx);
     if (code < 0)
@@ -948,8 +944,6 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
 
     if (code >= 0)
         params.Matte_components = code;
-
-    //        params.image_with_SMask = true; /* TODO: Not sure... */
 
     code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
     if (code < 0)
