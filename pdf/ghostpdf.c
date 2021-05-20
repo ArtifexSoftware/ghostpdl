@@ -421,6 +421,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tA name contained a '#' escape character but it was not a valid escape.\n");
         if (ctx->pdf_warnings & W_PDF_TYPECHECK)
             dmprintf(ctx->memory, "\tAn object was of the wrong type, and was ignored.\n");
+        if (ctx->pdf_warnings & W_PDF_BAD_TRAILER)
+            dmprintf(ctx->memory, "\tAn entry in the Trailer dictionary was invalid, and was ignored.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");

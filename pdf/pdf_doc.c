@@ -1249,20 +1249,28 @@ int pdfi_doc_trailer(pdf_context *ctx)
     if (ctx->device_state.writepdfmarks) {
         /* Handle Outlines */
         code = pdfi_doc_Outlines(ctx);
-        if (code < 0)
-            goto exit;
+        if (code < 0) {
+            ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+            if (ctx->args.pdfstoponerror)
+                goto exit;
+        }
 
         /* Handle Info */
         code = pdfi_doc_Info(ctx);
-        if (code < 0)
-            goto exit;
+        if (code < 0) {
+            ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+            if (ctx->args.pdfstoponerror)
+                goto exit;
+        }
 
         /* Handle EmbeddedFiles */
         /* TODO: add a configuration option to embed or omit */
         code = pdfi_doc_EmbeddedFiles(ctx);
-        if (code < 0)
-            goto exit;
-
+        if (code < 0) {
+            ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+            if (ctx->args.pdfstoponerror)
+                goto exit;
+        }
     }
 
     /* Handle OCProperties */
@@ -1270,18 +1278,27 @@ int pdfi_doc_trailer(pdf_context *ctx)
 
     /* Handle AcroForm -- this is some bookkeeping once per doc, not rendering them yet */
     code = pdfi_doc_AcroForm(ctx);
-    if (code < 0)
-        goto exit;
+    if (code < 0) {
+        ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+        if (ctx->args.pdfstoponerror)
+            goto exit;
+    }
 
     /* Handle OutputIntent ICC Profile */
     code = pdfi_doc_OutputIntents(ctx);
-    if (code < 0)
-        goto exit;
+    if (code < 0) {
+        ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+        if (ctx->args.pdfstoponerror)
+            goto exit;
+    }
 
     /* Handle PageLabels */
     code = pdfi_doc_PageLabels(ctx);
-    if (code < 0)
-        goto exit;
+    if (code < 0) {
+        ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+        if (ctx->args.pdfstoponerror)
+            goto exit;
+    }
 
  exit:
     return code;
