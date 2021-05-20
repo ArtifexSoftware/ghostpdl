@@ -730,6 +730,10 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     ctx->page.CurrentPageDict = page_dict;
     pdfi_countup(ctx->page.CurrentPageDict);
 
+    /* In case we don't call pdfi_set_media_size, which sets this up.
+     * We shouldn't ever use it in that case, but best to be safe.
+     */
+    ctx->page.UserUnit = 1.0f;
     /* If we are being called from the PDF interpreter then
      * we need to set up the page  and the default graphics state
      * but if we are being called from PostScript we do *not*
