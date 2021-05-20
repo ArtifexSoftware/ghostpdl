@@ -247,10 +247,16 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
         int l;
         unsigned int val;
 
-        memcpy(kbuf, key->data, key->length);
-        kbuf[key->length] = 0;
+        if (key->length == 7 && memcmp(key->data, ".notdef", 7) != 0) {
+            memcpy(kbuf, key->data, key->length);
+            kbuf[key->length] = 0;
 
-        l = sscanf(kbuf, "%ud", &val);
+            l = sscanf(kbuf, "%ud", &val);
+        }
+        else {
+            val = 0;
+            l = 1;
+        }
         if (l > 0)
             *pglyph = (gs_glyph) (val) + GS_MIN_CID_GLYPH;
         *pindex = (int)i + 1;
