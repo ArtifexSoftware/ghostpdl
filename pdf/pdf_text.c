@@ -1000,7 +1000,7 @@ out:
 
 int pdfi_Tj(pdf_context *ctx)
 {
-    int code;
+    int code = 0;
     pdf_string *s = NULL;
     gs_matrix saved, Trm;
     gs_point initial_point, current_point, pt;

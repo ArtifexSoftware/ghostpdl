@@ -271,7 +271,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
         &&  pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_STRING)
         &&  pdf_ps_obj_has_type(&(stobj[i]), PDF_PS_OBJ_STRING)){
 
-            uint cidbase;
+            uint cidbase = 0;
             int srcs = 0, srce = 0;
             int kslen = stobj[i].size;
             for (k = 0; k < stobj[i].size; k++) {

@@ -3344,7 +3344,7 @@ static int pdfi_form_Tx_simple(pdf_context *ctx, pdf_dict *annot, gs_rect *rect,
     double lineheight = 0;
     gs_rect bbox;
     gs_point awidth;
-    double y_adjust, x_adjust;
+    double y_adjust = 0.0f, x_adjust = 0.0f;
 
     modrect = *rect; /* structure copy */
 

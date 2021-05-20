@@ -1510,7 +1510,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     pdfi_trans_state_t trans_state;
     int saved_intent;
     gs_offset_t stream_offset;
-    float save_strokeconstantalpha, save_fillconstantalpha;
+    float save_strokeconstantalpha = 0.0f, save_fillconstantalpha = 0.0f;
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image BEGIN\n");

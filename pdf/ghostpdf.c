@@ -631,7 +631,7 @@ static int pdfi_process(pdf_context *ctx)
  */
 int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_array)
 {
-    int code, i, NumEmbeddedFiles = 0;
+    int code = 0, i, NumEmbeddedFiles = 0;
     pdf_obj *Names = NULL, *EmbeddedFiles = NULL, *FileNames = NULL;
     pdf_obj *EF = NULL, *F = NULL;
     char **working_array = NULL;
