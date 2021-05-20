@@ -528,8 +528,15 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     /* Optional (apparently there is no abbreviation for "SMask"? */
     code = pdfi_dict_get(ctx, image_dict, "SMask", &info->SMask);
     if (code < 0) {
-        if (code != gs_error_undefined)
-            goto errorExit;
+        if (code != gs_error_undefined) {
+            /* Broken SMask, Warn, and ignore the SMask */
+            dmprintf(ctx->memory, "*** Warning: Image has invalid SMask.  Ignoring it.\n");
+            dmprintf(ctx->memory, "    Output may be incorrect.\n");
+            ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT; /* piggy-back on generic image error for now */
+            if (ctx->args.pdfstoponwarning)
+                goto errorExit;
+            code = 0;
+        }
     } else {
         if (info->SMask->type == PDF_NAME) {
             pdf_obj *o = NULL;
