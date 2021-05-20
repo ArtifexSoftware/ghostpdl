@@ -816,6 +816,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             pdfi_countdown(EODString);
             pdfi_close_file(ctx, SubFile_stream);
             if (code < 0) {
+                int code1 = 0;
                 if (entry->free) {
                     dmprintf2(ctx->memory, "Dereference of free object %"PRIu64", next object number as offset failed (code = %d), returning NULL object.\n", entry->object_num, code);
                     code = pdfi_object_alloc(ctx, PDF_NULL, 1, object);
@@ -824,7 +825,15 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                         goto free_obj;
                     }
                 }
-                goto error;
+                ctx->encryption.decrypt_strings = saved_decrypt_strings;
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                pdfi_pop(ctx, pdfi_count_stack(ctx) - stack_depth);
+
+                code1 = pdfi_repair_file(ctx);
+                if (code1 == 0)
+                    return pdfi_dereference(ctx, obj, gen, object);
+                /* Repair failed, just give up and return an error */
+                return code;
             }
 
             if (pdfi_count_stack(ctx) > 0 && (ctx->stack_top[-1])->object_num == obj) {

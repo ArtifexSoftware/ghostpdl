@@ -83,8 +83,8 @@ static int pdfi_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, 
 
 int pdfi_repair_file(pdf_context *ctx)
 {
-    int code;
-    gs_offset_t offset;
+    int code = 0;
+    gs_offset_t offset, saved_offset;
     uint64_t object_num = 0, generation_num = 0;
     int i;
     gs_offset_t outer_saved_offset[3];
@@ -94,6 +94,8 @@ int pdfi_repair_file(pdf_context *ctx)
         ctx->pdf_errors |= E_PDF_UNREPAIRABLE;
         return_error(gs_error_undefined);
     }
+
+    saved_offset = pdfi_unread_tell(ctx);
 
     ctx->repaired = true;
     ctx->pdf_errors |= E_PDF_REPAIRED;
@@ -114,19 +116,24 @@ int pdfi_repair_file(pdf_context *ctx)
         do {
             code = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
             if (code < 0)
-                return code;
+                goto exit;
+
             if (Buffer[index] == test[index])
                 index++;
             else
                 index = 0;
         } while (index < 4 && ctx->main_stream->eof == false);
-        if (memcmp(Buffer, test, 4) != 0)
-            return_error(gs_error_undefined);
+        if (memcmp(Buffer, test, 4) != 0) {
+            code = gs_note_error(gs_error_undefined);
+            goto exit;
+        }
         pdfi_unread(ctx, ctx->main_stream, (byte *)Buffer, 4);
         pdfi_skip_comment(ctx, ctx->main_stream);
     }
-    if (ctx->main_stream->eof == true)
-        return_error(gs_error_ioerror);
+    if (ctx->main_stream->eof == true) {
+        code = gs_note_error(gs_error_ioerror);
+        goto exit;
+    }
 
     /* First pass, identify all the objects of the form x y obj */
 
@@ -138,7 +145,7 @@ int pdfi_repair_file(pdf_context *ctx)
                 offset = pdfi_unread_tell(ctx);
                 continue;
             } else
-                return code;
+                goto exit;
         }
         offset = pdfi_unread_tell(ctx);
         outer_saved_offset[0] = outer_saved_offset[1] = outer_saved_offset[2] = 0;
@@ -154,7 +161,7 @@ int pdfi_repair_file(pdf_context *ctx)
                     offset = pdfi_unread_tell(ctx);
                     continue;
                 } else
-                    return code;
+                    goto exit;
             }
             if (pdfi_count_stack(ctx) > 0) {
                 if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
@@ -188,7 +195,7 @@ int pdfi_repair_file(pdf_context *ctx)
                             if (code < 0) {
                                 if (code != gs_error_VMerror && code != gs_error_ioerror)
                                     continue;
-                                return code;
+                                goto exit;
                             }
                             if (code == 0 && ctx->main_stream->eof)
                                 break;
@@ -217,7 +224,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                 if (k->key == TOKEN_ENDOBJ) {
                                     code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
                                     if (code < 0)
-                                        return code;
+                                        goto exit;
                                     pdfi_clearstack(ctx);
                                     break;
                                 } else {
@@ -230,7 +237,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                             if (code < 0) {
                                                 if (code != gs_error_VMerror && code != gs_error_ioerror)
                                                     continue;
-                                                return code;
+                                                goto exit;
                                             }
                                             if (Buffer[index] == test[index])
                                                 index++;
@@ -242,7 +249,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                             if (code < 0) {
                                                 if (code != gs_error_VMerror && code != gs_error_ioerror)
                                                     continue;
-                                                return code;
+                                                goto exit;
                                             }
                                             if (ctx->stack_top[-1]->type == PDF_KEYWORD){
                                                 pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
@@ -251,7 +258,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                                     if (code < 0) {
                                                         if (code != gs_error_VMerror && code != gs_error_ioerror)
                                                             break;
-                                                        return code;
+                                                        goto exit;
                                                     }
                                                     break;
                                                 }
@@ -271,7 +278,7 @@ int pdfi_repair_file(pdf_context *ctx)
                         if (k->key == TOKEN_ENDOBJ) {
                             code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
                             if (code < 0)
-                                return code;
+                                goto exit;
                             pdfi_clearstack(ctx);
                         } else
                             if (k->key == TOKEN_STARTXREF) {
@@ -279,7 +286,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                 if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
                                     continue;
                                 if (code < 0)
-                                    return code;
+                                    goto exit;
                                 pdfi_clearstack(ctx);
                             } else {
                                 if (k->key == TOKEN_TRAILER) {
@@ -311,7 +318,7 @@ int pdfi_repair_file(pdf_context *ctx)
                             offset = pdfi_unread_tell(ctx);
                             continue;
                         } else
-                            return code;
+                            goto exit;
                     }
                     offset = pdfi_unread_tell(ctx);
                 }
@@ -321,26 +328,22 @@ int pdfi_repair_file(pdf_context *ctx)
         } while (ctx->main_stream->eof == false);
     } while(ctx->main_stream->eof == false);
 
-    if (ctx->main_stream->eof && ctx->filename) {
-        sfclose(ctx->main_stream->s);
-        ctx->main_stream->s = sfopen(ctx->filename, "r", ctx->memory);
-        if (ctx->main_stream->s == NULL)
-            return_error(gs_error_ioerror);
-        ctx->main_stream->eof = false;
-    } else {
-        pdfi_seek(ctx, ctx->main_stream, 0, SEEK_SET);
-        ctx->main_stream->eof = false;
-    }
+    pdfi_seek(ctx, ctx->main_stream, 0, SEEK_SET);
+    ctx->main_stream->eof = false;
 
     /* Second pass, examine every object we have located to see if its an ObjStm */
-    if (ctx->xref_table == NULL || ctx->xref_table->xref_size < 1)
-        return_error(gs_error_syntaxerror);
+    if (ctx->xref_table == NULL || ctx->xref_table->xref_size < 1) {
+        code = gs_note_error(gs_error_syntaxerror);
+        goto exit;
+    }
 
     for (i=1;i < ctx->xref_table->xref_size;i++) {
         if (ctx->xref_table->xref[i].object_num != 0) {
             /* At this stage, all the objects we've found must be uncompressed */
-            if (ctx->xref_table->xref[i].u.uncompressed.offset > ctx->main_stream_length)
-                return_error(gs_error_rangecheck);
+            if (ctx->xref_table->xref[i].u.uncompressed.offset > ctx->main_stream_length) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto exit;
+            }
 
             pdfi_seek(ctx, ctx->main_stream, ctx->xref_table->xref[i].u.uncompressed.offset, SEEK_SET);
             do {
@@ -348,7 +351,7 @@ int pdfi_repair_file(pdf_context *ctx)
                 if (ctx->main_stream->eof == true || (code < 0 && code != gs_error_ioerror && code != gs_error_VMerror))
                     break;
                 if (code < 0)
-                    return code;
+                    goto exit;
                 if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
                     pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
 
@@ -364,7 +367,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                 code = pdfi_dict_knownget_type(ctx, d, "Type", PDF_NAME, &o);
                                 if (code < 0) {
                                     pdfi_clearstack(ctx);
-                                    return code;
+                                    goto exit;
                                 }
                                 if (code > 0) {
                                     pdf_name *n = (pdf_name *)o;
@@ -398,7 +401,7 @@ int pdfi_repair_file(pdf_context *ctx)
                         if (code < 0) {
                             if (ctx->args.pdfstoponerror || code == gs_error_VMerror) {
                                 pdfi_clearstack(ctx);
-                                return code;
+                                goto exit;
                             }
                         }
                         if (code > 0) {
@@ -436,7 +439,8 @@ int pdfi_repair_file(pdf_context *ctx)
                                                             if (obj_num < 1) {
                                                                 pdfi_close_file(ctx, compressed_stream);
                                                                 pdfi_clearstack(ctx);
-                                                                return_error(gs_error_rangecheck);
+                                                                code = gs_note_error(gs_error_rangecheck);
+                                                                goto exit;
                                                             }
                                                             ctx->xref_table->xref[obj_num].compressed = true;
                                                             ctx->xref_table->xref[obj_num].free = false;
@@ -454,7 +458,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                 if (code < 0) {
                                     if (ctx->args.pdfstoponerror || code == gs_error_VMerror) {
                                         pdfi_clearstack(ctx);
-                                        return code;
+                                        goto exit;
                                     }
                                 }
                             }
@@ -468,5 +472,8 @@ int pdfi_repair_file(pdf_context *ctx)
         }
     }
 
-    return 0;
+exit:
+    pdfi_seek(ctx, ctx->main_stream, saved_offset, SEEK_SET);
+    ctx->main_stream->eof = false;
+    return code;
 }
