@@ -1458,6 +1458,9 @@ pdfi_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
     gs_point pt;
     gs_font_base *pbfont1 = (gs_font_base *)pbfont;
     gs_matrix imat;
+    gs_matrix mat1;
+
+    mat1 = pbfont1->FontMatrix;
 
     if (penum->orig_font->FontType == ft_composite) {
 
@@ -1468,6 +1471,10 @@ pdfi_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
         if (pbfont->FontType == ft_encrypted || pbfont->FontType == ft_encrypted2) {
             gs_fapi_server *I = (gs_fapi_server *)pbfont1->FAPI;
             pbfont1 = (gs_font_base *)I->ff.client_font_data2;
+            /* The following cannot fail - if the matrix multiplication didn't work
+               we'd have errored out at a higher level
+             */
+            (void)gs_matrix_multiply(&pbfont->FontMatrix, &pbfont1->FontMatrix, &mat1);
         }
 
         code = pdfi_get_glyph_metrics((gs_font *)pbfont1, cid, widths, true);
@@ -1483,7 +1490,7 @@ pdfi_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
     /* Since we have to tranverse a few things by the inverse font matrix,
        invert the matrix once upfront.
      */
-    code2 = gs_matrix_invert(&pbfont1->FontMatrix, &imat);
+    code2 = gs_matrix_invert(&mat1, &imat);
     if (code2 < 0)
         return code2; /* By this stage, this is basically impossible */
 
