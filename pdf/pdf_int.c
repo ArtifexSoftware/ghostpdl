@@ -159,7 +159,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     bool has_exponent = false;
     unsigned short exponent_index = 0;
     pdf_num *num;
-    int code = 0, malformed = false;
+    int code = 0, malformed = false, doubleneg = false;
 
     pdfi_skip_white(ctx, s);
 
@@ -210,7 +210,19 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
             if (!(index == 0 || (has_exponent && index == exponent_index+1))) {
                 if (ctx->args.pdfstoponerror)
                     return_error(gs_error_syntaxerror);
-                malformed = true;
+                /* Acrobat weirdness. We need to know if a number starts with two - signs
+                 * because Acrobat treats real and integers defined this way differently!
+                 * Double-negated integers are treated as 0, and reals are treated as if
+                 * they had one negative sign. We can't tell whether the number is a real
+                 * or not yet, we do that below.
+                 */
+                if (Buffer[index - 1] == '-') {
+                    ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;
+                    doubleneg = true;
+                    index -= 1;
+                }
+                else
+                    malformed = true;
             }
         } else if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
             if (ctx->args.pdfstoponerror)
@@ -265,7 +277,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     if (code < 0)
         return code;
 
-    if (malformed) {
+    if (malformed || !real && doubleneg) {
         if (!(ctx->pdf_errors & E_PDF_MALFORMEDNUMBER))
             dmprintf1(ctx->memory, "Treating malformed number %s as 0.\n", Buffer);
         ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;
