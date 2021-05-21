@@ -461,8 +461,13 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
     if (fontfile != NULL) {
         code = pdfi_stream_to_buffer(ctx, (pdf_stream *) fontfile, &fbuf, &fbuflen);
         pdfi_countdown(fontfile);
+        if (fbuflen == 0) {
+            gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font(fbuf)");
+            fbuf = NULL;
+        }
     }
-    else {
+
+    if (fbuf == NULL) {
         char fontfname[gp_file_name_sizeof];
         const char *romfsprefix = "%rom%Resource/Font/";
         const int romfsprefixlen = strlen(romfsprefix);
