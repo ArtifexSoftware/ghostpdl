@@ -191,6 +191,7 @@ static int pdfi_get_media_size(pdf_context *ctx)
     gs_c_param_list list;
     int code;
     gs_param_float_array msa;
+    gs_point point = {0,0};
 
     code = pdfi_device_check_param(ctx->pgs->device, ".MediaSize", &list);
     if (code < 0) goto exit;
@@ -199,10 +200,17 @@ static int pdfi_get_media_size(pdf_context *ctx)
     code = param_read_float_array((gs_param_list *)&list, ".MediaSize", &msa);
     if (code < 0) goto exit;
 
+    /* We use the ctx->page.Size for (at least) transparency bounding boxes, but...
+     * the clipping is done in user space, ie before any x,y translation from the
+     * CTM is applied, so we need to ensure that we cater for any such offset
+     * Its possible that we ought to add the translation to the 0,0 co-ordinates
+     * as well, but that's less clear and doesn't seem to pose a problem.
+     */
+    code = gs_point_transform_inverse(0, 0, &ctm_only(ctx->pgs), &point);
     ctx->page.Size[0] = 0;
     ctx->page.Size[1] = 0;
-    ctx->page.Size[2] = msa.data[0];
-    ctx->page.Size[3] = msa.data[1];
+    ctx->page.Size[2] = msa.data[0] + point.x;
+    ctx->page.Size[3] = msa.data[1] + point.y;
 
  exit:
     gs_c_param_list_release(&list);
