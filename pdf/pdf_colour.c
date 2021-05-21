@@ -1706,6 +1706,69 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     gs_color_space *pcs = NULL, *pcs_alt = NULL;
     gs_function_t * pfn = NULL;
 
+    /* Start with the array of inks */
+    code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_ARRAY, (pdf_obj **)&inks);
+    if (code < 0)
+        goto pdfi_devicen_error;
+
+    /* Sigh, Acrobat allows this, even though its contra the spec. Convert to
+     * a /Separation space, and then return.
+     */
+    if (pdfi_array_size(inks) == 1) {
+        pdf_name *ink_name = NULL;
+        pdf_array *sep_color_array = NULL;
+        pdf_obj *obj = NULL;
+
+        code = pdfi_array_get_type(ctx, inks, 0, PDF_NAME, (pdf_obj **)&ink_name);
+        if (code < 0)
+            goto pdfi_devicen_error;
+
+        if (ink_name->length == 3 && memcmp(ink_name->data, "All", 3) == 0) {
+            code = pdfi_array_alloc(ctx, 4, &sep_color_array);
+            if (code < 0)
+                goto all_error;
+            pdfi_countup(sep_color_array);
+            code = pdfi_name_alloc(ctx, "Separation", 10, &obj);
+            if (code < 0)
+                goto all_error;
+            pdfi_countup(obj);
+            code = pdfi_array_put(ctx, sep_color_array, 0, obj);
+            if (code < 0)
+                goto all_error;
+            pdfi_countdown(obj);
+            obj = NULL;
+            code = pdfi_array_put(ctx, sep_color_array, 1, (pdf_obj *)ink_name);
+            if (code < 0)
+                goto all_error;
+            code = pdfi_array_get(ctx, color_array, index + 2, &obj);
+            if (code < 0)
+                goto all_error;
+            code = pdfi_array_put(ctx, sep_color_array, 2, obj);
+            if (code < 0)
+                goto all_error;
+            pdfi_countdown(obj);
+            obj = NULL;
+            code = pdfi_array_get(ctx, color_array, index + 3, &obj);
+            if (code < 0)
+                goto all_error;
+            code = pdfi_array_put(ctx, sep_color_array, 3, obj);
+            if (code < 0)
+                goto all_error;
+            pdfi_countdown(obj);
+            obj = NULL;
+
+            code = pdfi_create_Separation(ctx, sep_color_array, 0, stream_dict, page_dict, ppcs, inline_image);
+            if (code < 0)
+                goto all_error;
+all_error:
+            pdfi_countdown(ink_name);
+            pdfi_countdown(sep_color_array);
+            pdfi_countdown(obj);
+            pdfi_countdown(inks);
+            return code;
+        }
+    }
+
     /* Deal with alternate space */
     code = pdfi_array_get(ctx, color_array, index + 2, &o);
     if (code < 0)
@@ -1738,30 +1801,6 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     code = pdfi_build_function(ctx, &pfn, NULL, 1, transform, page_dict);
     if (code < 0)
         goto pdfi_devicen_error;
-
-    /* Finally the array of inks */
-    code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_ARRAY, (pdf_obj **)&inks);
-    if (code < 0)
-        goto pdfi_devicen_error;
-
-    /* Sigh, Acrobat allows this, even though its contra the spec. Convert to
-     * a /Separation space and go on
-     */
-    if (pdfi_array_size(inks) == 1) {
-        pdf_name *ink_name = NULL;
-
-        code = pdfi_array_get_type(ctx, inks, 0, PDF_NAME, (pdf_obj **)&ink_name);
-        if (code < 0)
-            goto pdfi_devicen_error;
-
-        if (ink_name->length == 3 && memcmp(ink_name->data, "All", 3) == 0) {
-            /* FIXME make a separation space instead (but make sure ink_name still gets freed!) */
-            code = gs_note_error(gs_error_undefined);
-        }
-        pdfi_countdown(ink_name);
-        if (code < 0)
-            goto pdfi_devicen_error;
-    }
 
     code = gs_cspace_new_DeviceN(&pcs, pdfi_array_size(inks), pcs_alt, ctx->memory);
     if (code < 0)
