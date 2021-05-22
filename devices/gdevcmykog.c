@@ -773,7 +773,7 @@ const gx_device_cmykog gs_psdcmykog_device =
   /* device specific parameters */
   { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
     DevCMYKOGComponents,      /* Names of color model colorants */
-    6,                        /* Number colorants for CMYK + OG */
+    4,                        /* Number colorants for CMYK */
     6,                        /* MaxSeparations */
     -1,                       /* PageSpotColors has not been specified */
     {0},                      /* SeparationNames */
