@@ -159,7 +159,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     bool has_exponent = false;
     unsigned short exponent_index = 0;
     pdf_num *num;
-    int code = 0, malformed = false, doubleneg = false;
+    int code = 0, malformed = false, doubleneg = false, recovered = false;
 
     pdfi_skip_white(ctx, s);
 
@@ -216,13 +216,16 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                  * they had one negative sign. We can't tell whether the number is a real
                  * or not yet, we do that below.
                  */
+                ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;
                 if (Buffer[index - 1] == '-') {
-                    ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;
                     doubleneg = true;
                     index -= 1;
                 }
-                else
+                else {
                     malformed = true;
+                    Buffer[index] = 0x00;
+                    recovered = true;
+                }
             }
         } else if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
             if (ctx->args.pdfstoponerror)
@@ -270,14 +273,14 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         }
     }
 
-    if (real && !malformed)
+    if (real && (!malformed || (malformed && recovered)))
         code = pdfi_object_alloc(ctx, PDF_REAL, 0, (pdf_obj **)&num);
     else
         code = pdfi_object_alloc(ctx, PDF_INT, 0, (pdf_obj **)&num);
     if (code < 0)
         return code;
 
-    if (malformed || !real && doubleneg) {
+    if ((malformed && !recovered) || !real && doubleneg) {
         if (!(ctx->pdf_errors & E_PDF_MALFORMEDNUMBER))
             dmprintf1(ctx->memory, "Treating malformed number %s as 0.\n", Buffer);
         ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;
