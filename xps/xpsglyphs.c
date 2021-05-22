@@ -776,8 +776,12 @@ xps_parse_glyphs(xps_context_t *ctx,
 
         if (sim_bold)
         {
-            /* widening strokes by 1% of em size */
-            gs_setlinewidth(ctx->pgs, font_size * 0.02);
+            if (!ctx->preserve_tr_mode)
+                /* widening strokes by 1% of em size */
+                gs_setlinewidth(ctx->pgs, font_size * 0.02);
+            else
+                /* Undo CTM scaling */
+                gs_setlinewidth(ctx->pgs, font_size * 0.02 * fabs(ctx->pgs->ctm.xx));
             gs_settextrenderingmode(ctx->pgs, 2);
         }
 
