@@ -237,6 +237,13 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     code = pdfi_dict_get_int(ctx, font->FontDescriptor, "Flags", &font->descflags);
     if (code < 0)
         font->descflags = 0;
+    else {
+        /* If both the symbolic and non-symbolic flag are set,
+           believe that latter.
+         */
+        if ((font->descflags & 32) != 0)
+            font->descflags = (font->descflags & ~4);
+    }
 
     /* A symbolic font should not have and Encoding, but previous experience suggests
        the presence of the encoding has an effect - still have to deal with that.
@@ -244,7 +251,8 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
      */
     code = pdfi_dict_get(ctx, font_dict, "Encoding", &obj);
     if (code < 0) {
-        code = pdfi_name_alloc(ctx, (byte *)"MacRomanEncoding", 16, (pdf_obj **)&obj);
+        static const char encstr[] = "WinAnsiEncoding";
+        code = pdfi_name_alloc(ctx, (byte *)encstr, strlen(encstr), (pdf_obj **)&obj);
         if (code >= 0)
             pdfi_countup(obj);
         else
