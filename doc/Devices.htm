@@ -322,6 +322,8 @@ page.</dd>
 </pre>
 </blockquote>
 
+<p>In commercial builds, the <code>png16m</code> device will accept a <code>-dDeskew</code> option to automatically detect/correct skew when generating output bitmaps.</p>
+
 <h3><a name="JFIF"></a>JPEG file format (JFIF)</h3>
 
 <p>
@@ -543,6 +545,9 @@ device(s) 2 additional &quot;special&quot; ratios
 are available, 32 and 34. 32 provides a 3:2 downscale (so from 300 to
 200 dpi, say). 34 produces a 3:4 upscale (so from 300 to 400 dpi, say).</p>
 
+<p>In commercial builds, with 8 bit per component output, the <code>-dDeskew</code> option
+can be used to automatically detect/correct skew when generating output bitmaps.</p>
+
 <p>The <code>tiffscaled</code> and <code>tiffscaled4</code> devices
 can optionally use Even Toned Screening, rather than simple Floyd Steinberg
 error diffusion. This patented technique gives better quality at the
@@ -605,6 +610,7 @@ The <code>tiffscaled24</code> device renders internally at the specified resolut
 (set by <code>-dDownScaleFactor</code>= described below). The compression can be set using
 -sCompression= as described below.</dd>
 
+<p>In commercial builds, the <code>-dDeskew</code> option can be used to automatically detect/correct skew when generating output bitmaps.</p>
 
 <a name="tiffscaled32"></a><dt><code>tiffscaled32</code></dt>
 <dd>
@@ -612,6 +618,8 @@ The <code>tiffscaled32</code> device renders internally at the specified resolut
 32 bit cmyk image. This is then scaled down by an integer scale factor
 (set by <code>-dDownScaleFactor</code>= described below). The compression can be set using
 -sCompression= as described below.</dd>
+
+<p>In commercial builds, the <code>-dDeskew</code> option can be used to automatically detect/correct skew when generating output bitmaps.</p>
 
 </dl>
 </blockquote>
@@ -905,6 +913,8 @@ format for the &quotOutputFile&quot (or &quot-o&quot) file name parameter (see
 to output multiple pages to a single PSD file (i.e. without the &quot%d&quot format) will
 result in an <code>ioerror</code> Postscript error.</p>
 
+<p>In commercial builds, for the <code>psdcmyk</code> and <code>psdrgb</code> devices, the <code>-dDeskew</code> option can be used to automatically detect/correct skew when generating output bitmaps.</p>
+
 <h3><a name="PDFimage"></a>PDF image output</h3>
 
 <p>
@@ -923,6 +933,7 @@ PDF files with a colour depth of 8 (Gray), 24 (RGB) or 32 (CMYK), the PCLm devic
 These are all implemented as 'downscale' devices, which means they can implement page level
 anti-aliasing using the <code>-dDownScaleFactor</code> switch.
 </p>
+
 <blockquote>
 <dl>
 <dt><code>-dDownScaleFactor=</code><b><em>integer</em></b></dt>
@@ -935,6 +946,8 @@ anti-aliasing using the <code>-dDownScaleFactor</code> switch.
 </pre>
 </blockquote>
 </blockquote>
+
+<p>In commercial builds, the <code>-dDeskew</code> option can be used to automatically detect/correct skew when generating the output file.</p>
 
 <p>
 The type of compression used for the image data can also be selected using the <code>-sCompression</code> switch.
