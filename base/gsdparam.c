@@ -1910,8 +1910,10 @@ label:\
     }
 
     switch (code = param_read_int(plist, (param_name = "BandHeight"), &sp.band.BandHeight)) {
-        CHECK_PARAM_CASES(band.BandHeight, sp.band.BandHeight < 0, bhe);
+        CHECK_PARAM_CASES(band.BandHeight, sp.band.BandHeight < -1, bhe);
     }
+    if (sp.band.BandHeight == -1)
+        sp.band.BandHeight = dev->height;	/* 1 band for the page requested */
 
     switch (code = param_read_size_t(plist, (param_name = "BandBufferSpace"), &sp.band.BandBufferSpace)) {
         CHECK_PARAM_CASES(band.BandBufferSpace, 0, bbse);
