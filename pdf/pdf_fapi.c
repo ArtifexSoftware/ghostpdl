@@ -1609,7 +1609,7 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
     gs_string fdata;
     gs_font_base *pbfont = (gs_font_base *)font->pfont;
     gs_fapi_font local_pdf_ff_stub = pdfi_ff_stub;
-    gs_fapi_ttf_cmap_request symbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{1, 0}, {3, 0}, {3, 1}, {3, 10}, {-1, -1}};
+    gs_fapi_ttf_cmap_request symbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{3, 0}, {1, 0}, {3, 1}, {3, 10}, {-1, -1}};
     gs_fapi_ttf_cmap_request nonsymbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{3, 1}, {1, 0}, {3, 0}, {-1, -1}, {-1, -1}};
     int plat, enc;
 
