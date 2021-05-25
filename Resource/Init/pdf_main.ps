@@ -731,6 +731,28 @@ currentdict /EnablePageHandlerDevice undef
     pop pop
 } bind def
 
+% This routine sets up the transparency compositor requirement, and
+% number of spot channels required (if any) in the device. This needs
+% to be done before we set the media size, so that the erasepage is
+% correct. Called with the dictionary returned from .PDFPageInfo
+/newpdf_device_setup
+{
+  2 dict                                % <<info dict>> <<page dict>>
+  exch dup                              % <<page dict>> <<info dict>> <<info dict>>
+  /UsesTransparency get                 % <<page dict>> <<info dict>> bool
+  /PageUsesTransparency exch            % <<page dict>> <<info dict>> /PageUsesTransparency bool
+  3 index 3 1 roll                      % <<page dict>> <<info dict>> <<page dict>> /PageUsesTransparency bool
+  put                                   % <<page dict>> <<info dict>>
+  1 index exch                          % <<page dict>> <<page dict>> <<info dict>>
+  /NumSpots get dup 0 gt {
+    /PageSpotColours exch               % <<page dict>> << page dict>> /PageSpotColours int
+    put                                 % <<page dict>>
+  }{
+    pop pop
+  } ifelse
+  setpagedevice
+}bind def
+
 % This routine is used to set the PostScript /PageSize from the requested Box of the
 % PDF file. Much of this is copied from the old pdfshowpage_setpage routine which
 % is used for the PDF interpreter written in PostScript.
@@ -954,6 +976,7 @@ currentdict /EnablePageHandlerDevice undef
               0 1 3 -1 roll
               {
                 2 copy .PDFPageInfo
+                dup newpdf_device_setup
                 newpdf_set_pagesize
                 1 index exch .PDFDrawPage
                 showpage
