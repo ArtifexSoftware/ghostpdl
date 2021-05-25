@@ -728,6 +728,7 @@ currentdict /EnablePageHandlerDevice undef
     gt {exch} if                        % select smallest scale factor
     pop                                 %
     dup scale                           % and scale page isomorphically
+    pop pop
 } bind def
 
 % This routine is used to set the PostScript /PageSize from the requested Box of the
@@ -756,49 +757,47 @@ currentdict /EnablePageHandlerDevice undef
     6 dict begin		% for setpagedevice
 
     % Set the page size.
-    //systemdict /NoUserUnit .knownget not { //false } if not
+    //systemdict /NoUserUnit .knownget not { //true } if not
+    3 index /UserUnit knownoget and
     {
-      2 index /UserUnit knownoget
-      {
-        /PassUserUnit /GetDeviceParam .special_op {
-          exch pop dup {
-            [ /UserUnit 4 -1 roll .pdfputparams pop pop
-          } if
-        }{
-          //false
-        }ifelse
+      /PassUserUnit /GetDeviceParam .special_op {
+        exch pop dup {
+          [ /UserUnit 4 -1 roll .pdfputparams pop pop
+        } if
+      }{
+        //false
+      }ifelse
 
-        not {
-            % The PageSize needs to be multiplied too
-            exch aload 5 1 roll % UserUnit box llx lly urx ury
-            2 index sub exch    % UserUnit box llx lly (ury - lly) urx
-            3 index sub         % UserUnit box llx lly boxheight boxwidth
-            5 index mul         % UserUnit box llx lly boxheight (Boxwidth*UserUnit)
-            exch
-            5 index mul         % UserUnit box llx lly (Boxwidth*UserUnit) (boxheight*UserUnit)
-            4 -2 roll
-            5 index mul exch    % UserUnit box (Boxwidth*UserUnit) (boxheight*UserUnit) (lly*UserUnit) llx
-            5 index mul exch    % UserUnit box (Boxwidth*UserUnit) (boxheight*UserUnit) (llx*UserUnit) (lly*UserUnit)
-            4 2 roll            % UserUnit box (llx*UserUnit) (lly*UserUnit) (Boxwidth*UserUnit) (boxheight*UserUnit)
-            6 -1 roll pop       % box (llx*UserUnit) (lly*UserUnit) (Boxwidth*UserUnit) (boxheight*UserUnit)
-            //true                  % Do rotation and CTM scaling
-        }{
-          //false             % Don't do rotation and CTM scaling
-        } ifelse
-      } {
-        /PassUserUnit /GetDeviceParam .special_op {
-          exch pop {
-            [ /UserUnit 1 .pdfputparams pop pop
-          } if
-        }if
-        % No scaling required, calculate PageSize as the widht and height of the box
-        aload 5 1 roll      % box llx lly urx ury
-        2 index sub         % box llx lly urx (ury - lly)
-        exch 3 index sub    % box llx lly (ury - lly) (urx - llx)
-        exch
-        //true             % Do rotation and CTM scaling
+      not {
+          % The PageSize needs to be multiplied too
+          exch aload 5 1 roll % UserUnit box llx lly urx ury
+          2 index sub exch    % UserUnit box llx lly (ury - lly) urx
+          3 index sub         % UserUnit box llx lly boxheight boxwidth
+          5 index mul         % UserUnit box llx lly boxheight (Boxwidth*UserUnit)
+          exch
+          5 index mul         % UserUnit box llx lly (Boxwidth*UserUnit) (boxheight*UserUnit)
+          4 -2 roll
+          5 index mul exch    % UserUnit box (Boxwidth*UserUnit) (boxheight*UserUnit) (lly*UserUnit) llx
+          5 index mul exch    % UserUnit box (Boxwidth*UserUnit) (boxheight*UserUnit) (llx*UserUnit) (lly*UserUnit)
+          4 2 roll            % UserUnit box (llx*UserUnit) (lly*UserUnit) (Boxwidth*UserUnit) (boxheight*UserUnit)
+          6 -1 roll pop       % box (llx*UserUnit) (lly*UserUnit) (Boxwidth*UserUnit) (boxheight*UserUnit)
+          //true                  % Do rotation and CTM scaling
+      }{
+        //false             % Don't do rotation and CTM scaling
       } ifelse
-    } if
+    } {
+      /PassUserUnit /GetDeviceParam .special_op {
+        exch pop {
+          [ /UserUnit 1 .pdfputparams pop pop
+        } if
+      }if
+      % No scaling required, calculate PageSize as the width and height of the box
+      aload 5 1 roll      % box llx lly urx ury
+      2 index sub         % box llx lly urx (ury - lly)
+      exch 3 index sub    % box llx lly (ury - lly) (urx - llx)
+      exch
+      //true             % Do rotation and CTM scaling
+    } ifelse
 
     {
       % handle page rotation here
