@@ -243,8 +243,12 @@ int pdfi_op_Q(pdf_context *ctx)
 
     code = pdfi_grestore(ctx);
 
-    if (code >= 0)
+    if (code >= 0) {
+        /* Put the path back, and make sure current point is properly set */
         code = gx_path_assign_preserve(ctx->pgs->path, ppath);
+        if (gx_path_position_valid(ctx->pgs->path))
+            gx_setcurrentpoint_from_path(ctx->pgs, ctx->pgs->path);
+    }
 
     gx_path_free(ppath, "temporary current path copy for Q");
 
