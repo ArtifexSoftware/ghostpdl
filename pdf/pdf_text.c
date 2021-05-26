@@ -1029,11 +1029,11 @@ int pdfi_Tj(pdf_context *ctx)
 
     gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
 
-    gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
-    gs_setmatrix(ctx->pgs, &Trm);
-
     gs_distance_transform_inverse(ctx->pgs->line_params.half_width, 0, &Trm, &pt);
     ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
+
+    gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
+    gs_setmatrix(ctx->pgs, &Trm);
 
     code = gs_moveto(ctx->pgs, 0, 0);
     if (code < 0)
