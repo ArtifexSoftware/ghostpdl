@@ -236,7 +236,10 @@ static void sjpx_info_callback(const char *msg, void *ptr)
 
 static void sjpx_warning_callback(const char *msg, void *ptr)
 {
+#ifdef DEBUG
+	/* prevent too many messages during normal build */
 	dlprintf1("openjpeg warning: %s", msg);
+#endif
 }
 
 /* initialize the stream */
