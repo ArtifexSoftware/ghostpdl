@@ -27,6 +27,13 @@
 /* Define the enumeration structure. */
 public_st_path_enum();
 
+/* Check whether current path has valid point */
+bool
+gx_path_position_valid(const gx_path *ppath)
+{
+    return path_position_valid(ppath);
+}
+
 /* Read the current point of a path. */
 int
 gx_path_current_point(const gx_path * ppath, gs_fixed_point * ppt)

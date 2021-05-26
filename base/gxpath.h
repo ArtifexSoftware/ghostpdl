@@ -201,6 +201,7 @@ typedef enum {
 /* Path accessors */
 
 gx_path *gx_current_path(const gs_gstate *);
+bool gx_path_position_valid(const gx_path *ppath);
 int gx_path_current_point(const gx_path *, gs_fixed_point *),
     gx_path_bbox(gx_path *, gs_fixed_rect *),
     gx_path_bbox_set(gx_path *, gs_fixed_rect *);
