@@ -280,7 +280,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     if (code < 0)
         return code;
 
-    if ((malformed && !recovered) || !real && doubleneg) {
+    if ((malformed && !recovered) || (!real && doubleneg)) {
         if (!(ctx->pdf_errors & E_PDF_MALFORMEDNUMBER))
             dmprintf1(ctx->memory, "Treating malformed number %s as 0.\n", Buffer);
         ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;

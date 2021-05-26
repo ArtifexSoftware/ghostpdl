@@ -190,7 +190,6 @@ static int pdfi_get_media_size(pdf_context *ctx, pdf_dict *page_dict)
 {
     pdf_array *a = NULL, *default_media = NULL;
     double d[4];
-    gs_rect bbox;
     int code = 0;
     uint64_t i;
     double userunit = 1.0;

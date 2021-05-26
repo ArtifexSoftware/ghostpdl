@@ -1728,7 +1728,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
             if (code < 0)
                 goto all_error;
             pdfi_countup(sep_color_array);
-            code = pdfi_name_alloc(ctx, "Separation", 10, &obj);
+            code = pdfi_name_alloc(ctx, (byte *)"Separation", 10, &obj);
             if (code < 0)
                 goto all_error;
             pdfi_countup(obj);
