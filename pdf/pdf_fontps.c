@@ -640,7 +640,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 if (code >= 0) {
                     pdfi_countup(pname);
 
-                    code = pdfi_create_Encoding(s->pdfi_ctx, (pdf_obj *) pname, (pdf_obj **) &new_enc);
+                    code = pdfi_create_Encoding(s->pdfi_ctx, (pdf_obj *) pname, NULL, (pdf_obj **) &new_enc);
                     if (code >= 0) {
                         pdfi_countdown(priv->u.t1.Encoding);
                         priv->u.t1.Encoding = new_enc;

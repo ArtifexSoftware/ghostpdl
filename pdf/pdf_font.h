@@ -57,7 +57,7 @@ static inline pdf_font *pdfi_get_current_pdf_font(pdf_context *ctx)
     return NULL;
 }
 
-int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Encoding);
+int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_Encoding, pdf_obj **Encoding);
 gs_glyph pdfi_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_used);
 int pdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph);
 int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr);
@@ -90,7 +90,7 @@ pdfi_set_font_internal(pdf_context *ctx, pdf_obj *fontobj, double point_size);
 
 int pdfi_font_set_internal_string(pdf_context *ctx, const char *fontname, double point_size);
 int pdfi_font_set_internal_name(pdf_context *ctx, pdf_name *fontname, double point_size);
-bool pdfi_font_ignore_named_encoding(pdf_obj *basefont);
+bool pdfi_font_known_symbolic(pdf_obj *basefont);
 
 
 #endif

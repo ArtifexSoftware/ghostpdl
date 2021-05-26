@@ -48,7 +48,7 @@ static const known_symbolic_font_name_t known_symbolic_font_names[] =
 };
 #undef DEFINE_NAME_LEN
 
-bool pdfi_font_ignore_named_encoding(pdf_obj *basefont)
+bool pdfi_font_known_symbolic(pdf_obj *basefont)
 {
     bool ignore = false;
     int i;
@@ -429,10 +429,12 @@ static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Enco
  * Create and fill in a pdf_array with an Encoding for a font. pdf_Encoding must be either
  * a name (eg StandardEncoding) or a dictionary. If its a name we use that to create the
  * entries, if its a dictionary we start by getting the BaseEncoding and using that to
- * create an array of glyph names as above. We then get the Differences array from the
- * dictionary and use that to refine the Encoding.
+ * create an array of glyph names as above, *or* for a symbolic font, we use the "predef_Encoding"
+ * which is the encoding from the font description itself (i.e. the /Encoding array
+ * from a Type 1 font. We then get the Differences array from the dictionary and use that to
+ * refine the Encoding.
  */
-int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Encoding)
+int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_Encoding, pdf_obj **Encoding)
 {
     int code = 0, i;
 
@@ -452,19 +454,34 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Enco
             pdf_obj *o = NULL;
             int offset = 0;
 
-            code = pdfi_dict_get(ctx, (pdf_dict *)pdf_Encoding, "BaseEncoding", (pdf_obj **)&n);
-            if (code < 0) {
-                code = pdfi_name_alloc(ctx, (byte *)"StandardEncoding", 16, (pdf_obj **)&n);
-                if (code < 0)
+            if (font_Encoding != NULL && font_Encoding->type == PDF_ARRAY) {
+                pdf_array *fenc = (pdf_array *)font_Encoding;
+                for (i = 0; i < pdfi_array_size(fenc) && code >= 0; i++) {
+                    code = pdfi_array_get(ctx, fenc, (uint64_t)i, &o);
+                    if (code >= 0)
+                        code = pdfi_array_put(ctx, (pdf_array *)*Encoding, (uint64_t)i, o);
+                }
+                if (code < 0) {
+                    pdfi_countdown(*Encoding);
+                    *Encoding = NULL;
                     return code;
-                pdfi_countup(n);
+                }
             }
-            code = pdfi_build_Encoding(ctx, n, (pdf_array *)*Encoding);
-            if (code < 0) {
+            else {
+                code = pdfi_dict_get(ctx, (pdf_dict *)pdf_Encoding, "BaseEncoding", (pdf_obj **)&n);
+                if (code < 0) {
+                    code = pdfi_name_alloc(ctx, (byte *)"StandardEncoding", 16, (pdf_obj **)&n);
+                    if (code < 0)
+                        return code;
+                    pdfi_countup(n);
+                }
+                code = pdfi_build_Encoding(ctx, n, (pdf_array *)*Encoding);
+                if (code < 0) {
+                    pdfi_countdown(n);
+                        return code;
+                }
                 pdfi_countdown(n);
-                    return code;
             }
-            pdfi_countdown(n);
             code = pdfi_dict_knownget_type(ctx, (pdf_dict *)pdf_Encoding, "Differences", PDF_ARRAY, (pdf_obj **)&a);
             if (code <= 0)
                 return code;

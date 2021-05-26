@@ -580,6 +580,22 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
             t1f->Name = mapname;
             pdfi_countup(mapname);
 
+            t1f->descflags = 0;
+            if (t1f->FontDescriptor != NULL) {
+                code = pdfi_dict_get_int(ctx, t1f->FontDescriptor, "Flags", &t1f->descflags);
+                if (code >= 0) {
+                    /* If both the symbolic and non-symbolic flag are set,
+                       believe that latter.
+                     */
+                    if ((t1f->descflags & 32) != 0)
+                        t1f->descflags = (t1f->descflags & ~4);
+                }
+            }
+            /* ZapfDingbats and Symbol we just have to know are symbolic */
+            if (pdfi_font_known_symbolic(basefont)) {
+                t1f->descflags |= 4;
+            }
+
             code = pdfi_dict_knownget_type(ctx, font_dict, "FirstChar", PDF_INT, &tmp);
             if (code == 1) {
                 t1f->FirstChar = ((pdf_num *) tmp)->value.i;
@@ -632,10 +648,19 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
             tmp = NULL;
 
             code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
-            if (code == 1 && !(tmp->type == PDF_NAME && pdfi_font_ignore_named_encoding(basefont))) {
-                code = pdfi_create_Encoding(ctx, tmp, (pdf_obj **) & t1f->Encoding);
-                if (code >= 0)
-                    code = 1;
+            if (code == 1) {
+                if ((tmp->type == PDF_NAME || tmp->type == PDF_DICT) && (t1f->descflags & 4) == 0) {
+                    code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & t1f->Encoding);
+                    if (code >= 0)
+                        code = 1;
+                }
+                else if (tmp->type == PDF_DICT && (t1f->descflags & 4) != 0) {
+                    code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)fpriv.u.t1.Encoding, (pdf_obj **) & t1f->Encoding);
+                    if (code >= 0)
+                        code = 1;
+                }
+                else
+                    code = gs_error_undefined;
                 pdfi_countdown(tmp);
                 tmp = NULL;
             }

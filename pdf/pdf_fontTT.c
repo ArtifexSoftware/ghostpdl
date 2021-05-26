@@ -259,7 +259,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             goto error;
     }
 
-    code = pdfi_create_Encoding(ctx, obj, (pdf_obj **)&font->Encoding);
+    code = pdfi_create_Encoding(ctx, obj, NULL, (pdf_obj **)&font->Encoding);
     if (code < 0)
         goto error;
     pdfi_countdown(obj);

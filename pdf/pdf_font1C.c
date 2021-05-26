@@ -1128,7 +1128,7 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
         code = pdfi_name_alloc(ctx, (byte *) enctouse, strlen(enctouse), (pdf_obj **) &enm);
         if (code >= 0) {
             pdfi_countup(enm);
-            code = pdfi_create_Encoding(ctx, (pdf_obj *) enm, (pdf_obj **) &font->Encoding);
+            code = pdfi_create_Encoding(ctx, (pdf_obj *) enm, NULL, (pdf_obj **) &font->Encoding);
             pdfi_countdown(enm);
         }
     }
@@ -1913,7 +1913,6 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
 
     pdf_font *ppdfont = NULL;
     pdf_obj *basefont = NULL;
-    pdf_obj *encoding = NULL;
     pdf_obj *tmp = NULL;
     pdf_obj *fontdesc = NULL;
     pdf_string *registry = NULL;
@@ -2279,11 +2278,24 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
                 cfffont->NumGlobalSubrs = cffpriv.pdfcffpriv.NumGlobalSubrs;
                 cffpriv.pdfcffpriv.GlobalSubrs = NULL;
 
-                cfffont->Encoding = cffpriv.pdfcffpriv.Encoding;
-                cffpriv.pdfcffpriv.Encoding = NULL;
-
                 cfffont->FontDescriptor = (pdf_dict *) fontdesc;
                 fontdesc = NULL;
+
+                cfffont->descflags = 0;
+                if (cfffont->FontDescriptor != NULL) {
+                    code = pdfi_dict_get_int(ctx, cfffont->FontDescriptor, "Flags", &cfffont->descflags);
+                    if (code >= 0) {
+                        /* If both the symbolic and non-symbolic flag are set,
+                           believe that latter.
+                         */
+                        if ((cfffont->descflags & 32) != 0)
+                            cfffont->descflags = (cfffont->descflags & ~4);
+                    }
+                }
+                /* ZapfDingbats and Symbol we just have to know are symbolic */
+                if (pdfi_font_known_symbolic(basefont)) {
+                    cfffont->descflags |= 4;
+                }
 
                 code = pdfi_dict_knownget_type(ctx, font_dict, "FirstChar", PDF_INT, &tmp);
                 if (code == 1) {
@@ -2344,18 +2356,30 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
                 pdfi_countdown(tmp);
 
                 tmp = NULL;
-
                 code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
                 if (code == 1) {
-                    code = pdfi_create_Encoding(ctx, tmp, (pdf_obj **) &encoding);
-                    if (code >= 0) {
-                        pdfi_countdown(cfffont->Encoding);
-                        cfffont->Encoding = (pdf_array *) encoding;
+                    if ((tmp->type == PDF_NAME || tmp->type == PDF_DICT)) {
+                        code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) &cfffont->Encoding);
+                        if (code >= 0) {
+                            pdfi_countdown(cffpriv.pdfcffpriv.Encoding);
+                            cffpriv.pdfcffpriv.Encoding = NULL;
+                            code = 1;
+                        }
                     }
+                    else
+                        code = gs_error_undefined;
+                    pdfi_countdown(tmp);
+                    tmp = NULL;
                 }
-
-                pdfi_countdown(tmp);
-                tmp = NULL;
+                else {
+                    pdfi_countdown(tmp);
+                    tmp = NULL;
+                    code = 0;
+                }
+                if (code <= 0) {
+                    cfffont->Encoding = cffpriv.pdfcffpriv.Encoding;
+                    cffpriv.pdfcffpriv.Encoding = NULL;
+                }
 
                 code = pdfi_dict_knownget(ctx, font_dict, "ToUnicode", &tmp);
                 if (code == 1) {

@@ -83,7 +83,9 @@ typedef enum pdf_font_type_e {
     pdf_font_type pdfi_font_type;   /* See above */\
     pdf_dict *PDF_font;             /* The original font dictionary from the PDF file */\
     pdf_obj *BaseFont;              /* Should be a name object, but best allow for strings as well */\
-    pdf_dict *FontDescriptor        /* For PDF up to 1.4 this may be absent for the base 14 */
+    pdf_dict *FontDescriptor;       /* For PDF up to 1.4 this may be absent for the base 14 */ \
+    int64_t descflags
+
 
 #define pdf_font_common \
     pdf_font_base;\
@@ -165,7 +167,6 @@ typedef enum {
 typedef struct pdf_font_truetype_s {
     pdf_font_common;
     gs_string sfnt;
-    int64_t descflags;
     pdfi_truetype_cmap cmap;
 } pdf_font_truetype;
 
