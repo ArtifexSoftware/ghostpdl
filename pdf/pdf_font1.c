@@ -625,6 +625,7 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
             code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, &tmp);
             if (code > 0) {
                 int i;
+                double x_scale;
                 int num_chars = t1f->LastChar - t1f->FirstChar + 1;
 
                 if (num_chars != pdfi_array_size((pdf_array *) tmp)) {
@@ -637,11 +638,19 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
                     code = gs_note_error(gs_error_VMerror);
                     goto error;
                 }
+
+                /* Widths are defined assuming a 1000x1000 design grid, but we apply
+                 * them in font space - so undo the 1000x1000 scaling, and apply
+                 * the inverse of the font's x scaling
+                 */
+                x_scale = 0.001 / hypot(pfont1->FontMatrix.xx, pfont1->FontMatrix.xy);
+
                 memset(t1f->Widths, 0x00, sizeof(double) * num_chars);
                 for (i = 0; i < num_chars; i++) {
                     code = pdfi_array_get_number(ctx, (pdf_array *) tmp, (uint64_t) i, &t1f->Widths[i]);
                     if (code < 0)
                         goto error;
+                    t1f->Widths[i] *= x_scale;
                 }
             }
             pdfi_countdown(tmp);
