@@ -39,6 +39,40 @@
 #include "pdf_fontps.h"
 #include "pdf_fontTT.h"
 
+
+/* These are fonts for which we have to ignore "named" encodings */
+typedef struct pdfi_t1_glyph_name_equivalents_s
+{
+    const char *name;
+    const char *altname;
+} pdfi_t1_glyph_name_equivalents_t;
+
+static const pdfi_t1_glyph_name_equivalents_t pdfi_t1_glyph_name_equivalents[] =
+{
+  {"Ohungarumlaut", "Odblacute"},
+  {"Uhungarumlaut", "Udblacute"},
+  {"ohungarumlaut", "odblacute"},
+  {"uhungarumlaut", "udblacute"},
+  {NULL , NULL}
+};
+
+/* The Postscript code trawls the AGL to find all the equivalents.
+   let's hope we can avoid that...
+ */
+static void pdfi_patch_charstrings_dict(pdf_dict *cstrings)
+{
+    int code;
+    pdf_obj *o;
+    const pdfi_t1_glyph_name_equivalents_t *gne = pdfi_t1_glyph_name_equivalents;
+    while(gne->name != NULL && code >= 0) {
+        code = pdfi_dict_get(cstrings->ctx, cstrings, gne->name, &o);
+        if (code >= 0) {
+            code = pdfi_dict_put(cstrings->ctx, cstrings, gne->altname, o);
+        }
+        gne++;
+    }
+}
+
 /* CALLBACKS */
 static int
 pdfi_t1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_data_t * pgd)
@@ -445,6 +479,7 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
     pdf_obj *tmp = NULL;
     pdf_font_type1 *t1f = NULL;
     ps_font_interp_private fpriv = { 0 };
+    bool embedded = true;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
 
@@ -471,6 +506,8 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
         char fontfname[gp_file_name_sizeof];
         const char *romfsprefix = "%rom%Resource/Font/";
         const int romfsprefixlen = strlen(romfsprefix);
+
+        embedded = false;
 
         code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
         if (code < 0) {
@@ -694,6 +731,9 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
             }
             t1f->CharStrings = fpriv.u.t1.CharStrings;
             pdfi_countup(t1f->CharStrings);
+            if (!embedded)
+                pdfi_patch_charstrings_dict(t1f->CharStrings);
+
             t1f->Subrs = fpriv.u.t1.Subrs;
             fpriv.u.t1.Subrs = NULL;
             t1f->NumSubrs = fpriv.u.t1.NumSubrs;
