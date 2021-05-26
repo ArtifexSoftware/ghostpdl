@@ -2095,13 +2095,18 @@ claptrap_drop(gx_downscale_liner *liner_, gs_memory_t *mem)
 }
 
 #ifdef WITH_CAL
+static unsigned char bg0[GX_DEVICE_COLOR_MAX_COMPONENTS] = {0};
+static unsigned char bg1[GX_DEVICE_COLOR_MAX_COMPONENTS] = {
+    0xFF, 0xFF, 0xFF, 0xFF };
+
 typedef struct {
     gx_downscale_liner   base;
-    cal_deskewer        *deskewer;
-    cal_deskewer_bander *bander;
+    cal_deskewer        *deskewer[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    cal_deskewer_bander *bander[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int                  height;
     int                  get_row;
     int                  got_row;
+    int                  num_planes;
     gx_downscale_liner  *chain;
 } liner_skew;
 
@@ -2117,7 +2122,7 @@ skew_line(gx_downscale_liner *liner_, void *buffer, int row)
     liner->got_row = row;
 
     while (1) {
-        code = cal_deskewer_band_pull(liner->bander, buffer);
+        code = cal_deskewer_band_pull(liner->bander[0], buffer);
         if (code == 1)
             return 0; /* We got a line! */
 
@@ -2126,7 +2131,7 @@ skew_line(gx_downscale_liner *liner_, void *buffer, int row)
                                       liner->get_row++);
         if (code < 0)
             return code;
-        code = cal_deskewer_band_push(liner->bander,
+        code = cal_deskewer_band_push(liner->bander[0],
                                       buffer);
         if (code < 0)
             return code;
@@ -2138,11 +2143,70 @@ skew_drop(gx_downscale_liner *liner_, gs_memory_t *mem)
 {
     liner_skew *liner = (liner_skew *)liner_;
     gx_downscale_liner *next;
+    int i;
 
     if (!liner)
         return;
-    cal_deskewer_band_end(liner->bander, mem);
-    cal_deskewer_fin(liner->deskewer, mem);
+    for (i = 0; i < liner->num_planes; i++) {
+        cal_deskewer_band_end(liner->bander[i], mem);
+        cal_deskewer_fin(liner->deskewer[i], mem);
+    }
+    next = liner->chain;
+    gs_free_object(mem, liner, "liner_skew");
+    if (next)
+        next->drop(next, mem);
+}
+
+static int
+planar_skew_line(gx_downscale_liner *liner_, void *params_, int row)
+{
+    liner_skew *liner = (liner_skew *)liner_;
+    int code;
+    gs_get_bits_params_t *params = (gs_get_bits_params_t *)params_;
+    int i;
+
+    if (row < liner->got_row)
+       liner->get_row = 0;
+
+    liner->got_row = row;
+
+    while (1) {
+        for (i = 0; i < liner->num_planes; i++) {
+            code = cal_deskewer_band_pull(liner->bander[i], params->data[i]);
+            if (code < 0)
+                return code;
+        }
+        if (code == 1)
+            return 0; /* We got a line! */
+
+        code = liner->chain->get_line(liner->chain,
+                                      params,
+                                      liner->get_row++);
+        if (code < 0)
+            return code;
+
+        for (i = 0; i < liner->num_planes; i++) {
+            code = cal_deskewer_band_push(liner->bander[i],
+                                          params->data[i]);
+            if (code < 0)
+                return code;
+        }
+    }
+}
+
+static void
+planar_skew_drop(gx_downscale_liner *liner_, gs_memory_t *mem)
+{
+    liner_skew *liner = (liner_skew *)liner_;
+    gx_downscale_liner *next;
+    int i;
+
+    if (!liner)
+        return;
+    for (i = 0; i < liner->num_planes; i++) {
+        cal_deskewer_band_end(liner->bander[i], mem);
+        cal_deskewer_fin(liner->deskewer[i], mem);
+    }
     next = liner->chain;
     gs_free_object(mem, liner, "liner_skew");
     if (next)
@@ -2210,6 +2274,7 @@ int gx_downscaler_init_planar_cm(gx_downscaler_t      *ds,
     ds->apply_cm_arg      = apply_cm_arg;
     ds->early_cm          = dst_bpc < src_bpc;
     ds->post_cm_num_comps = post_cm_num_comps;
+    ds->do_skew_detection = params->do_skew_detection;
 
     if (apply_cm) {
         for (i = 0; i < post_cm_num_comps; i++) {
@@ -2239,6 +2304,108 @@ int gx_downscaler_init_planar_cm(gx_downscaler_t      *ds,
         gb_liner->num_comps = num_comps;
         ds->liner = &gb_liner->base;
     }
+
+    memcpy(&ds->params, gb_params, sizeof(*gb_params));
+    ds->params.raster = span;
+    for (i = 0; i < num_comps; i++) {
+        ds->pre_cm[i] = gs_alloc_bytes(dev->memory,
+                                       (size_t)span * downfactor,
+                                       "gx_downscaler(planar_data)");
+        if (ds->pre_cm[i] == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto cleanup;
+        }
+    }
+
+#ifdef WITH_CAL
+    if (ds->do_skew_detection) {
+        /* Do a skew detection pass */
+        int j;
+        int w = ds->dev->width;
+        int h = ds->dev->height;
+        cal_skew *skew;
+
+        for (i = 0; i < num_comps; i++) {
+            ds->params.data[i] = ds->pre_cm[i];
+        }
+
+        skew = cal_skew_init(ds->dev->memory->gs_lib_ctx->core->cal_ctx,
+                             ds->dev->memory,
+                             w, h);
+        if (skew == NULL)
+            code = gs_error_VMerror;
+        for (j = 0; code >= 0 && j < h; j++) {
+            gs_get_bits_params_t params2 = ds->params;
+            code = ds->liner->get_line(ds->liner, &params2, j);
+            /* Craply turn that into "greyscale" - this assumes 8 bit. */
+            if (num_comps > 1) {
+                int i, k;
+                byte *dst = ds->params.data[0];
+                for (i = 0; i < w; i++) {
+                    int v = 0;
+                    for (k = num_comps-1; k > 0; k--)
+                        v += ((unsigned char *)params2.data[k])[i];
+                    *dst++ = (v+(num_comps>>1))/num_comps;
+                 }
+            }
+            code = cal_skew_process(skew, ds->dev->memory, ds->params.data[0]);
+        }
+        if (code >= 0) {
+            ds->skew_angle = cal_skew_detect(skew, ds->dev->memory);
+            if (ds->skew_angle < -45 || ds->skew_angle > 45)
+                ds->skew_angle = 0;
+        }
+        cal_skew_fin(skew, ds->dev->memory);
+        if (code < 0)
+            goto cleanup;
+
+        if (ds->skew_angle != 0) {
+            liner_skew *sk_liner;
+            unsigned int dw, dh;
+
+            code = alloc_liner(dev->memory,
+                               liner_skew,
+                               planar_skew_line,
+                               planar_skew_drop,
+                               &sk_liner);
+            if (code < 0)
+                goto cleanup;
+            sk_liner->chain = ds->liner;
+            sk_liner->get_row = 0;
+            sk_liner->got_row = 0;
+            sk_liner->height = dev->height;
+            sk_liner->num_planes = num_comps;
+            ds->liner = &sk_liner->base;
+            for (i = 0; i < num_comps; i++)
+            {
+                sk_liner->deskewer[i] = cal_deskewer_init(
+                             ds->dev->memory->gs_lib_ctx->core->cal_ctx,
+                             ds->dev->memory,
+                             ds->dev->width, ds->dev->height,
+                             &dw,
+                             &dh,
+                             ds->skew_angle,
+                             1, /* Keep the page size constant */
+                             1.0, 1.0, 1.0, 1.0,
+                             bg0,
+                             1);
+                if (sk_liner->deskewer[i] == NULL) {
+                    emprintf(dev->memory, "Deskewer initialisation failed");
+                    code = gs_note_error(gs_error_VMerror);
+                    goto cleanup;
+                }
+                sk_liner->bander[i] = cal_deskewer_band_begin(sk_liner->deskewer[i],
+                                                              ds->dev->memory,
+                                                              0, 0);
+                if (sk_liner->bander[i] == NULL) {
+                    emprintf(dev->memory, "Deskewer initialisation(2) failed");
+                    code = gs_note_error(gs_error_VMerror);
+                    goto cleanup;
+                }
+            }
+        }
+    }
+#endif
 
     code = check_trapping(dev->memory, params->trap_w, params->trap_h,
                           num_comps, params->trap_order);
@@ -2277,17 +2444,6 @@ int gx_downscaler_init_planar_cm(gx_downscaler_t      *ds,
         }
     }
 
-    memcpy(&ds->params, gb_params, sizeof(*gb_params));
-    ds->params.raster = span;
-    for (i = 0; i < num_comps; i++) {
-        ds->pre_cm[i] = gs_alloc_bytes(dev->memory,
-                                       (size_t)span * downfactor,
-                                       "gx_downscaler(planar_data)");
-        if (ds->pre_cm[i] == NULL) {
-            code = gs_note_error(gs_error_VMerror);
-            goto cleanup;
-        }
-    }
     if (upfactor > 1) {
         ds->scaled_data = gs_alloc_bytes(dev->memory,
                                          (size_t)ds->scaled_span * upfactor * num_comps,
@@ -2433,12 +2589,6 @@ select_8_to_8_core(int nc, int factor)
     return NULL;
 }
 
-#ifdef WITH_CAL
-static unsigned char bg0[GX_DEVICE_COLOR_MAX_COMPONENTS] = {0};
-static unsigned char bg1[GX_DEVICE_COLOR_MAX_COMPONENTS] = {
-    0xFF, 0xFF, 0xFF, 0xFF };
-#endif
-
 int
 gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
                                gx_device            *dev,
@@ -2569,8 +2719,9 @@ gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
             sk_liner->get_row = 0;
             sk_liner->got_row = 0;
             sk_liner->height = dev->height;
+            sk_liner->num_planes = 1;
             ds->liner = &sk_liner->base;
-            sk_liner->deskewer = cal_deskewer_init(
+            sk_liner->deskewer[0] = cal_deskewer_init(
                              ds->dev->memory->gs_lib_ctx->core->cal_ctx,
                              ds->dev->memory,
                              ds->dev->width, ds->dev->height,
@@ -2581,15 +2732,15 @@ gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
                              1.0, 1.0, 1.0, 1.0,
                              (ds->num_comps <= 3 ? bg1 : bg0),
                              ds->num_comps);
-            if (sk_liner->deskewer == NULL) {
+            if (sk_liner->deskewer[0] == NULL) {
                 emprintf(dev->memory, "Deskewer initialisation failed");
                 code = gs_note_error(gs_error_VMerror);
                 goto cleanup;
             }
-            sk_liner->bander = cal_deskewer_band_begin(sk_liner->deskewer,
+            sk_liner->bander[0] = cal_deskewer_band_begin(sk_liner->deskewer[0],
                                                        ds->dev->memory,
                                                        0, 0);
-            if (sk_liner->bander == NULL) {
+            if (sk_liner->bander[0] == NULL) {
                 emprintf(dev->memory, "Deskewer initialisation(2) failed");
                 code = gs_note_error(gs_error_VMerror);
                 goto cleanup;
@@ -3221,9 +3372,9 @@ int gx_downscaler_read_params(gs_param_list        *plist,
             return code;
     }
 
-    switch (code = param_read_int(plist,
-                                  (param_name = "Deskew"),
-                                  &deskew)) {
+    switch (code = param_read_bool(plist,
+                                   (param_name = "Deskew"),
+                                   &deskew)) {
         case 1:
             break;
         case 0:
@@ -3369,7 +3520,7 @@ int gx_downscaler_write_params(gs_param_list        *plist,
 
     if ((code = param_write_int(plist, "DownScaleFactor", &params->downscale_factor)) < 0)
         ecode = code;
-    if ((code = param_write_int(plist, "Deskew", &params->do_skew_detection)) < 0)
+    if ((code = param_write_bool(plist, "Deskew", &params->do_skew_detection)) < 0)
         ecode = code;
     if (features & GX_DOWNSCALER_PARAMS_MFS)
     {

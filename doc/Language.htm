@@ -1744,7 +1744,10 @@ the <code>BufferSpace</code> parameter, not <code>BandBufferSpace</code>.</p>
 <dd>The height of bands when banding.  0 means use the largest band height
 that will fit within the <code>BandBufferSpace</code> (or <code>BufferSpace</code>,
 if <code>BandBufferSpace</code> is not specified). If <code>BandHeight</code>
-is larger than the number of lines that will fit in the buffer, opening the device will fail.</dd>
+is larger than the number of lines that will fit in the buffer, opening the device will fail.
+If the value is -1, the  BandHeight will automatically be set to the page height
+(1 band for the entire page). This is primarily for developers debugging clist issues.
+</dd>
 </dl>
 
 <dl>

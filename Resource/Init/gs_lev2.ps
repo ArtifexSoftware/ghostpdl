@@ -1141,11 +1141,12 @@ def
     dup type dup /integertype eq exch /realtype eq or not {
       /setcustomcolor cvx /typecheck signalerror
     } if
+    % Bug 703869. Apparently Adobe (at least Acrobat Pro) silently clamps values
     dup 1 le not {
-      /setcustomcolor cvx /rangecheck signalerror
+      pop 1
     } if
     dup 0 ge not {
-      /setcustomcolor cvx /rangecheck signalerror
+      pop 0
     } if
 
     % The array is supposed to be the result of fundcmykcustomcolor. Our

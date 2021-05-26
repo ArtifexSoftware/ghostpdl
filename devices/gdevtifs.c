@@ -558,8 +558,6 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif,
     if (code < 0)
         return code;
 
-    if (num_comps == 4)
-        params->trap_w = params->trap_h = 1;
     if (tfdev->icclink == NULL) {
         code = gx_downscaler_init(&ds, (gx_device *)dev,
                                   8, bpc, num_comps,

@@ -3294,48 +3294,50 @@ dnl set memory manager's ptr alignment
 dnl --------------------------------------------------
 
 ALIGN_TEXT_PROG_INCS="\
-#include <stdio.h> \
-#include <stdlib.h>"
+#include <stdio.h>
+#include <stdlib.h>
+"
 
 
 ALIGN_TEXT_PROG="\
-    struct altest \
-    { \
-      char a; \
-      int b; \
-      long c; \
-      long long d; \
-      float e; \
-      double f; \
-      void *g; \
-    }; \
-    struct altest *a; \
-    struct altest d; \
-    char *b, *c, *lim; \
-    int ret = 0; \
-    c = b = malloc(64 * sizeof(struct altest)); \
-    lim = b + (64 * sizeof(struct altest)); \
-    do \
-    { \
-        b++; \
-        if ((b >= lim) || \
-            ((((unsigned int)b) & 4) == 0 && (((unsigned int)b) & 8) != 0)) \
-        { \
-          break; \
-        } \
-    } while(1); \
-    if (b >= lim) \
-    { \
-        ret = -1; \
-    } \
-    else \
-    { \
-        a = (struct altest *)b; \
-        b = a->g; \
-        ret = 0; \
-    } \
-    free(c); \
-    exit(ret);"
+    struct altest
+    {
+      char a;
+      int b;
+      long c;
+      long long d;
+      float e;
+      double f;
+      void *g;
+    };
+    struct altest *a;
+    struct altest d;
+    char *b, *c, *lim;
+    int ret = 0;
+    c = b = malloc(64 * sizeof(struct altest));
+    lim = b + (64 * sizeof(struct altest));
+    do
+    {
+        b++;
+        if ((b >= lim) ||
+            ((((unsigned int)b) & 4) == 0 && (((unsigned int)b) & 8) != 0))
+        {
+          break;
+        }
+    } while(1);
+    if (b >= lim)
+    {
+        ret = -1;
+    }
+    else
+    {
+        a = (struct altest *)b;
+        b = a->g;
+        ret = 0;
+    }
+    free(c);
+    exit(ret);
+"
 
 
 GS_MEMPTR_ALIGNMENT=
