@@ -574,7 +574,8 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
         fbuf = decodebuf;
         fbuflen = decodelen;
     }
-    else if (MAKEMAGIC(fbuf[0], fbuf[1], fbuf[2], fbuf[3]) == MAKEMAGIC(0, 1, 0, 0)) {
+    else if (MAKEMAGIC(fbuf[0], fbuf[1], fbuf[2], fbuf[3]) == MAKEMAGIC(0, 1, 0, 0)
+             || MAKEMAGIC(fbuf[0], fbuf[1], fbuf[2], fbuf[3]) == MAKEMAGIC('t', 'r', 'u', 'e')) {
         pdfi_countdown(fontdesc);
         gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font");
         return pdfi_read_truetype_font(ctx, font_dict, stream_dict, page_dict, ppfont);
