@@ -35,19 +35,29 @@
 #include "pdf_cmap.h"
 #include "pdf_deref.h"
 
-extern pdfi_cid_decoding_t *pdfi_cid_decoding_list[];
+extern const pdfi_cid_decoding_t *pdfi_cid_decoding_list[];
+extern const pdfi_cid_subst_nwp_table_t *pdfi_cid_substnwp_list[];
 
-
-static void pdfi_font0_find_ordering_to_unicode(const char *reg, const int reglen, const char *ord, const int ordlen, pdfi_cid_decoding_t **decoding)
+static void pdfi_font0_cid_subst_tables(const char *reg, const int reglen, const char *ord,
+                const int ordlen, pdfi_cid_decoding_t **decoding, pdfi_cid_subst_nwp_table_t **substnwp)
 {
     int i;
     *decoding = NULL;
+    *substnwp = NULL;
     /* This only makes sense for Adobe orderings */
     if (reglen == 5 && !memcmp(reg, "Adobe", 5)) {
         for (i = 0; pdfi_cid_decoding_list[i] != NULL; i++) {
             if (strlen(pdfi_cid_decoding_list[i]->s_order) == ordlen &&
                 !memcmp(pdfi_cid_decoding_list[i]->s_order, ord, ordlen)) {
-                *decoding = pdfi_cid_decoding_list[i];
+                *decoding = (pdfi_cid_decoding_t *)pdfi_cid_decoding_list[i];
+                break;
+            }
+        }
+        /* For now, also only for Adobe orderings */
+        for (i = 0; pdfi_cid_substnwp_list[i] != NULL; i++) {
+            if (strlen(pdfi_cid_substnwp_list[i]->ordering) == ordlen &&
+                !memcmp(pdfi_cid_substnwp_list[i]->ordering, ord, ordlen)) {
+                *substnwp = (pdfi_cid_subst_nwp_table_t *)pdfi_cid_substnwp_list[i];
                 break;
             }
         }
@@ -149,117 +159,142 @@ pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u
     uchar *unicode_return = (uchar *)u;
     pdf_cidfont_type2 *decfont;
     pdf_cmap *tounicode = (pdf_cmap *)pt0font->ToUnicode;
+    pdfi_cid_subst_nwp_table_t *substnwp = pt0font->substnwp;
 
     code = pdfi_array_get(pt0font->ctx, pt0font->DescendantFonts, 0, (pdf_obj **)&decfont);
     if (code < 0 || decfont->type != PDF_FONT)
         return gs_error_undefined;
 
     code = gs_error_undefined;
-    /* Favour the ToUnicode if one exists */
-    if (tounicode) {
-        int l = 0;
-        gs_cmap_lookups_enum_t lenum;
-        gs_cmap_lookups_enum_init((const gs_cmap_t *)tounicode->gscmap, 0, &lenum);
-        while (l == 0 && (code = gs_cmap_enum_next_lookup(font->memory, &lenum)) == 0) {
-            gs_cmap_lookups_enum_t counter = lenum;
-            while (l == 0 && (code = gs_cmap_enum_next_entry(&counter) == 0)) {
-                if (counter.entry.value_type == CODE_VALUE_CID) {
-                    unsigned int v = 0;
-                    for (i = 0; i < counter.entry.key_size; i++) {
-                        v |= (counter.entry.key[0][counter.entry.key_size - i - 1]) << (i * 8);
+    while (1) { /* Loop to make retrying with a substitute CID easier */
+        /* Favour the ToUnicode if one exists */
+        if (tounicode) {
+            int l = 0;
+            gs_cmap_lookups_enum_t lenum;
+            gs_cmap_lookups_enum_init((const gs_cmap_t *)tounicode->gscmap, 0, &lenum);
+            while (l == 0 && (code = gs_cmap_enum_next_lookup(font->memory, &lenum)) == 0) {
+                gs_cmap_lookups_enum_t counter = lenum;
+                while (l == 0 && (code = gs_cmap_enum_next_entry(&counter) == 0)) {
+                    if (counter.entry.value_type == CODE_VALUE_CID) {
+                        unsigned int v = 0;
+                        for (i = 0; i < counter.entry.key_size; i++) {
+                            v |= (counter.entry.key[0][counter.entry.key_size - i - 1]) << (i * 8);
+                        }
+                        if (ch == v) {
+                            if (counter.entry.value.size == 1) {
+                                l = 2;
+                                if (unicode_return != NULL && length >= l) {
+                                    unicode_return[0] = counter.entry.value.data[0];
+                                    unicode_return[1] = counter.entry.value.data[1];
+                                }
+                            }
+                            else if (counter.entry.value.size == 2) {
+                                l = 2;
+                                if (unicode_return != NULL && length >= l) {
+                                    unicode_return[0] = counter.entry.value.data[0];
+                                    unicode_return[1] = counter.entry.value.data[1];
+                                }
+                            }
+                            else if (counter.entry.value.size == 3) {
+                                l = 4;
+                                if (unicode_return != NULL && length >= l) {
+                                    unicode_return[0] = counter.entry.value.data[0];
+                                    unicode_return[1] = counter.entry.value.data[1];
+                                    unicode_return[2] = counter.entry.value.data[2];
+                                    unicode_return[3] = 0;
+                                }
+                            }
+                            else {
+                                l = 4;
+                                if (unicode_return != NULL && length >= l) {
+                                    unicode_return[0] = counter.entry.value.data[0];
+                                    unicode_return[1] = counter.entry.value.data[1];
+                                    unicode_return[2] = counter.entry.value.data[1];
+                                    unicode_return[3] = counter.entry.value.data[3];
+                                }
+                            }
+                        }
                     }
-                    if (ch == v) {
-                        if (counter.entry.value.size == 1) {
-                            l = 2;
-                            if (unicode_return != NULL && length >= l) {
-                                unicode_return[0] = counter.entry.value.data[0];
-                                unicode_return[1] = counter.entry.value.data[1];
-                            }
-                        }
-                        else if (counter.entry.value.size == 2) {
-                            l = 2;
-                            if (unicode_return != NULL && length >= l) {
-                                unicode_return[0] = counter.entry.value.data[0];
-                                unicode_return[1] = counter.entry.value.data[1];
-                            }
-                        }
-                        else if (counter.entry.value.size == 3) {
-                            l = 4;
-                            if (unicode_return != NULL && length >= l) {
-                                unicode_return[0] = counter.entry.value.data[0];
-                                unicode_return[1] = counter.entry.value.data[1];
-                                unicode_return[2] = counter.entry.value.data[2];
-                                unicode_return[3] = 0;
-                            }
-                        }
-                        else {
-                            l = 4;
-                            if (unicode_return != NULL && length >= l) {
-                                unicode_return[0] = counter.entry.value.data[0];
-                                unicode_return[1] = counter.entry.value.data[1];
-                                unicode_return[2] = counter.entry.value.data[1];
-                                unicode_return[3] = counter.entry.value.data[3];
-                            }
-                        }
+                    else {
+                        l = 0;
+                    }
+                }
+            }
+            if (l > 0)
+                code = l;
+            else
+                code = gs_error_undefined;
+        }
+
+        if (code == gs_error_undefined && pt0font->decoding) {
+            const int *n;
+
+            if (cc / 256 < pt0font->decoding->nranges) {
+                n = (const int *)pt0font->decoding->ranges[cc / 256][cc % 256];
+                for (i = 0; i < pt0font->decoding->val_sizes; i++) {
+                    unsigned int cmapcc;
+                    if (n[i] == -1)
+                        break;
+                    cc = n[i];
+                    cmapcc = (unsigned int)cc;
+                    if (decfont->pdfi_font_type == e_pdf_cidfont_type2)
+                        code = pdfi_fapi_check_cmap_for_GID((gs_font *)decfont->pfont, &cmapcc);
+                    else
+                        code = 0;
+                    if (code >= 0 && cmapcc != 0){
+                        code = 0;
+                        break;
+                    }
+                }
+                /* If it's a TTF derived CIDFont, we prefer a code point supported by the cmap table
+                   but if not, use the first available one
+                 */
+                if (code < 0 && n[0] != -1) {
+                    cc = n[0];
+                    code = 0;
+                }
+            }
+            if (code >= 0) {
+                if (cc > 65535) {
+                    code = 4;
+                    if (unicode_return != NULL && length >= code) {
+                        unicode_return[0] = (cc & 0xFF000000)>> 24;
+                        unicode_return[1] = (cc & 0x00FF0000) >> 16;
+                        unicode_return[2] = (cc & 0x0000FF00) >> 8;
+                        unicode_return[3] = (cc & 0x000000FF);
                     }
                 }
                 else {
-                    l = 0;
+                    code = 2;
+                    if (unicode_return != NULL && length >= code) {
+                        unicode_return[0] = (cc & 0x0000FF00) >> 8;
+                        unicode_return[1] = (cc & 0x000000FF);
+                    }
                 }
             }
         }
-        if (l > 0)
-            code = l;
-        else
-            code = gs_error_undefined;
-    }
-
-    if (code == gs_error_undefined && pt0font->decoding) {
-        const int *n;
-
-        if (cc / 256 < pt0font->decoding->nranges) {
-            n = (const int *)pt0font->decoding->ranges[cc / 256][cc % 256];
-            for (i = 0; i < pt0font->decoding->val_sizes; i++) {
-                unsigned int cmapcc;
-                if (n[i] == -1)
+        /* If we get here, and still don't have a usable code point, check for a
+           pre-defined CID substitution, and if there's one, jump back to the start
+           and try again.
+         */
+        if (code == gs_error_undefined && substnwp) {
+            for (i = 0; substnwp->subst[i].s_type != 0; i++ ) {
+                if (cc >= substnwp->subst[i].s_scid && cc <= substnwp->subst[i].e_scid) {
+                    cc = substnwp->subst[i].s_dcid + (cc - substnwp->subst[i].s_scid);
+                    substnwp = NULL;
                     break;
-                cc = n[i];
-                cmapcc = (unsigned int)cc;
-                if (decfont->pdfi_font_type == e_pdf_cidfont_type2)
-                    code = pdfi_fapi_check_cmap_for_GID((gs_font *)decfont->pfont, &cmapcc);
-                else
-                    code = 0;
-                if (code >= 0 && cmapcc != 0){
-                    code = 0;
+                }
+                if (cc >= substnwp->subst[i].s_dcid
+                 && cc <= substnwp->subst[i].s_dcid + (substnwp->subst[i].e_scid - substnwp->subst[i].s_scid)) {
+                    cc = substnwp->subst[i].s_scid + (cc - substnwp->subst[i].s_dcid);
+                    substnwp = NULL;
                     break;
                 }
             }
-            /* If it's a TTF derived CIDFont, we prefer a code point supported by the cmap table
-               but if not, use the first available one
-             */
-            if (code < 0 && n[0] != -1) {
-                cc = n[0];
-                code = 0;
-            }
+            if (substnwp == NULL)
+                continue;
         }
-        if (code >= 0) {
-            if (cc > 65535) {
-                code = 4;
-                if (unicode_return != NULL && length >= code) {
-                    unicode_return[0] = (cc & 0xFF000000)>> 24;
-                    unicode_return[1] = (cc & 0x00FF0000) >> 16;
-                    unicode_return[2] = (cc & 0x0000FF00) >> 8;
-                    unicode_return[3] = (cc & 0x000000FF);
-                }
-            }
-            else {
-                code = 2;
-                if (unicode_return != NULL && length >= code) {
-                    unicode_return[0] = (cc & 0x0000FF00) >> 8;
-                    unicode_return[1] = (cc & 0x000000FF);
-                }
-            }
-        }
+        break;
     }
     return (code < 0 ? 0 : code);
 }
@@ -284,6 +319,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pdf_font_type0 *pdft0 = NULL;
     gs_font_type0 *pfont0 = NULL;
     pdfi_cid_decoding_t *dec = NULL;
+    pdfi_cid_subst_nwp_table_t *substnwp = NULL;
     bool descendant_substitute = false;
 
     code = pdfi_dict_get(ctx, font_dict, "Encoding", &cmap);
@@ -404,9 +440,11 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
                     olen = pcmap->csi_ord.size;
                 }
                 if (rlen > 0 && olen > 0)
-                    pdfi_font0_find_ordering_to_unicode(r, rlen, o, olen, &dec);
-                else
+                    pdfi_font0_cid_subst_tables(r, rlen, o, olen, &dec, &substnwp);
+                else {
                     dec = NULL;
+                    substnwp = NULL;
+                }
             }
         }
         if (code < 0)
@@ -515,6 +553,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pdft0->FontDescriptor = NULL;
     pdft0->BaseFont = basefont;
     pdft0->decoding = dec;
+    pdft0->substnwp = substnwp;
 
     /* Ownership transferred to pdft0, if we jump to error
      * these will now be freed by counting down pdft0.

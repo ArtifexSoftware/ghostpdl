@@ -402,3 +402,119 @@ const pdfi_cid_decoding_t *pdfi_cid_decoding_list[] = {
   &korea1_unicode,
   NULL
 };
+
+/* The following values are pulled from Ghostscript's SubstNWP dictionary.
+   Defined in Resource/Init/gs_fntem.ps - as far as I can tell, there is
+   no record from where these mappings were sourced.
+   We do nothing with the source and destination types (the leading and
+   trailing char values. But in case they end up being required, they are
+   here:
+   n==narrow, w==wide, p==proportional
+   The form is: source type, <Source Start CID>, <Source End CID>, <Destination Start CID>, <Destination type>
+ */
+static const pdfi_cid_subst_nwp_table_t japan1_subst_nwp = {
+  "Japan1",
+  {
+    {'p', 1,    94,   231,  'n'},
+    {'p', 17,   26,   780,  'w'},
+    {'p', 34,   59,   790,  'w'},
+    {'p', 66,   91,   816,  'w'},
+    {'w', 842,  842,  7918, 'w'},
+    {'w', 844,  844,  7919, 'w'},
+    {'w', 846,  846,  7920, 'w'},
+    {'w', 848,  848,  7921, 'w'},
+    {'w', 850,  850,  7922, 'w'},
+    {'w', 876,  876,  7923, 'w'},
+    {'w', 908,  908,  7924, 'w'},
+    {'w', 910,  910,  7925, 'w'},
+    {'w', 912,  912,  7926, 'w'},
+    {'w', 914,  914,  7927, 'w'},
+    {'w', 925,  925,  7928, 'w'},
+    {'w', 927,  927,  7929, 'w'},
+    {'w', 929,  929,  7930, 'w'},
+    {'w', 931,  931,  7931, 'w'},
+    {'w', 933,  933,  7932, 'w'},
+    {'w', 959,  959,  7933, 'w'},
+    {'w', 991,  991,  7934, 'w'},
+    {'w', 993,  993,  7935, 'w'},
+    {'w', 995,  995,  7936, 'w'},
+    {'w', 1002, 1002, 7937, 'w'},
+    {'w', 1009, 1009, 7938, 'w'},
+    {'w', 1010, 1010, 7939, 'w'},
+    {(char)0, 0, 0, (char)0}
+  }
+};
+
+static const pdfi_cid_subst_nwp_table_t japan2_subst_nwp = {
+  "Japan2", /* Same mappings as above */
+  {
+    {'p', 1,    94,   231,  'n'},
+    {'p', 17,   26,   780,  'w'},
+    {'p', 34,   59,   790,  'w'},
+    {'p', 66,   91,   816,  'w'},
+    {'w', 842,  842,  7918, 'w'},
+    {'w', 844,  844,  7919, 'w'},
+    {'w', 846,  846,  7920, 'w'},
+    {'w', 848,  848,  7921, 'w'},
+    {'w', 850,  850,  7922, 'w'},
+    {'w', 876,  876,  7923, 'w'},
+    {'w', 908,  908,  7924, 'w'},
+    {'w', 910,  910,  7925, 'w'},
+    {'w', 912,  912,  7926, 'w'},
+    {'w', 914,  914,  7927, 'w'},
+    {'w', 925,  925,  7928, 'w'},
+    {'w', 927,  927,  7929, 'w'},
+    {'w', 929,  929,  7930, 'w'},
+    {'w', 931,  931,  7931, 'w'},
+    {'w', 933,  933,  7932, 'w'},
+    {'w', 959,  959,  7933, 'w'},
+    {'w', 991,  991,  7934, 'w'},
+    {'w', 993,  993,  7935, 'w'},
+    {'w', 995,  995,  7936, 'w'},
+    {'w', 1002, 1002, 7937, 'w'},
+    {'w', 1009, 1009, 7938, 'w'},
+    {'w', 1010, 1010, 7939, 'w'},
+    {(char)0, 0, 0, (char)0}
+  }
+};
+
+static const pdfi_cid_subst_nwp_table_t cns1_subst_nwp = {
+  "CNS1",
+  {
+    {'p', 1,  94, 13648, 'n'},
+    {'p', 17, 26, 333,   'w'},
+    {'p', 34, 59, 365,   'w'},
+    {'p', 66, 91, 391,   'w'},
+    {(char)0, 0, 0, (char)0}
+  }
+};
+
+static const pdfi_cid_subst_nwp_table_t gb1_subst_nwp = {
+  "GB1",
+  {
+    {'p', 2, 94, 814,  'n'},
+    {'p', 2, 94, 262,  'w'},
+    {'p', 1, 1,  7716, 'n'},
+    {(char)0, 0, 0, (char)0}
+  }
+};
+
+static const pdfi_cid_subst_nwp_table_t korea1_subst_nwp = {
+  "Korea1",
+  {
+    {'p',  1, 60, 8094, 'n'},
+    {'p', 62, 94, 8155, 'n'},
+    {'p',  2, 59, 264,  'w'},
+    {'p', 63, 94, 325,  'w'},
+    {(char)0, 0, 0, (char)0}
+  }
+};
+
+const pdfi_cid_subst_nwp_table_t *pdfi_cid_substnwp_list[] = {
+  &japan1_subst_nwp,
+  &japan2_subst_nwp,
+  &cns1_subst_nwp,
+  &gb1_subst_nwp,
+  &korea1_subst_nwp,
+  NULL
+};

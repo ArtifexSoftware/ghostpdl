@@ -102,14 +102,26 @@ typedef struct pdf_font_s {
 }pdf_font;
 
 /* Decoding tables are statically defined, so require no memory management */
-typedef struct pdfi_cid_decoding_s
-{
+typedef struct pdfi_cid_decoding_s {
   const char *s_order;
   const char *d_order;
   const int nranges;
   const int val_sizes;
   const int ranges[114][256][4];
 } pdfi_cid_decoding_t;
+
+struct pdfi_cid_subst_nwp_rec_s {
+    const char s_type;          /* Orig type: n==narrow, w==wide, p==proportional */
+    const unsigned int s_scid;  /* Start source CID */
+    const unsigned int e_scid;  /* End source CID */
+    const unsigned int s_dcid;  /* Start destination CID */
+    const char d_type;          /* Destination type */
+};
+
+typedef struct pdfi_cid_subst_nwp_table_s {
+    const char *ordering;
+    struct pdfi_cid_subst_nwp_rec_s subst[32];
+} pdfi_cid_subst_nwp_table_t;
 
 typedef struct pdf_font_type0_s {
     pdf_font_base;                  /* For this font type, the FontDescriptor will be NULL, as will the pfont, (we use the DescendantFont) */
@@ -118,7 +130,8 @@ typedef struct pdf_font_type0_s {
     pdf_array *DescendantFonts;     /* A single element array specifying the CIDFont dictionary */
     bool descendant_substitute;      /* Indicated that the descendant font is a substitute */
     pdf_obj *ToUnicode;             /* Name or stream (technically shoudl be a stream, but we've seen Identity names */
-    pdfi_cid_decoding_t *decoding; /* Used when substituting a non-Identity CIDFont */
+    pdfi_cid_decoding_t *decoding;  /* Used when substituting a non-Identity CIDFont */
+    pdfi_cid_subst_nwp_table_t *substnwp; /* Also used for CIDFont substitions */
 } pdf_font_type0;
 
 typedef struct pdf_font_type1_s {
