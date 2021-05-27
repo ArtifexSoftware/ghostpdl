@@ -585,8 +585,11 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
         fpriv.gsu.gst1.data.lenIV = 4;
         code = pdfi_read_ps_font(ctx, font_dict, fbuf, fbuflen, &fpriv);
         gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font");
-        if (code < 0)
+        /* If we have a full CharStrings dictionary, we probably have enough to make a font */
+        if (code < 0 && (fpriv.u.t1.CharStrings == NULL || fpriv.u.t1.CharStrings->type != PDF_DICT
+            || fpriv.u.t1.CharStrings->size != fpriv.u.t1.CharStrings->entries)) {
             goto error;
+        }
         code = pdfi_alloc_t1_font(ctx, &t1f, font_dict->object_num);
         if (code >= 0) {
             gs_font_type1 *pfont1 = (gs_font_type1 *) t1f->pfont;
