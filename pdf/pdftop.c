@@ -169,6 +169,31 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
      */
     code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
 
+    /* NOTE: Not sure what this is or when it matters, but it should match gs, which sets it to true */
+    /* TODO: Commented out because it caused a seemingly random incorrect pdfwrite output.
+     * Will try putting it back in when pdfwrite is more stable.
+     */
+    //gs_setlimitclamp(ctx->pgs, true); /* Match gs code */
+
+    /* We need to setup strokeadjust the same way gs does, which is currently based on
+     * the device resolution and the DITHERPPI arg.
+     *
+     * TODO: Ken thinks 150 dpi is too low for the cutoff, but if so it should
+     * change in both gs and here, so they match.  See gs_init.ps/.useloresscreen
+     *
+     * TODO: Currently pdfi-in-gs is not inheriting the graphics state from gs, so it
+     * will have the wrong setting at 300dpi.  That needs to be fixed.
+     * (but pdfi-in-gs never actually calls this function, it is supposed to inherit
+     * the device and graphics state from gs.  Remove this comment when that is fixed :)
+     */
+    if (pdevice->HWResolution[0] >= 150 || pdevice->HWResolution[1] >= 150 || ctx->args.ditherppi) {
+        /* false for "high resolution" devices */
+        gs_setstrokeadjust(ctx->pgs, false);
+    } else {
+        /* true for "low resolution" devices */
+        gs_setstrokeadjust(ctx->pgs, true);
+    }
+
     gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));
 
     code = gs_erasepage(ctx->pgs);
@@ -518,6 +543,11 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
         }
         if (!strncmp(param, "Printed", 7)) {
             code = plist_value_get_bool(&pvalue, &ctx->args.printed);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "DITHERPPI", 9)) {
+            code = plist_value_get_bool(&pvalue, &ctx->args.ditherppi);
             if (code < 0)
                 return code;
         }
