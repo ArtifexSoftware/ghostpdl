@@ -229,7 +229,7 @@ pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u
                     code = pdfi_fapi_check_cmap_for_GID((gs_font *)decfont->pfont, &cmapcc);
                 else
                     code = 0;
-                if (code >= 0){
+                if (code >= 0 && cmapcc != 0){
                     code = 0;
                     break;
                 }

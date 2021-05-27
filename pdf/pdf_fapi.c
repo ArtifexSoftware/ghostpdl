@@ -1673,7 +1673,8 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
 int
 pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint *c)
 {
-    if (pfont->FontType == ft_TrueType) {
+    if (pfont->FontType == ft_TrueType
+     || pfont->FontType == ft_CID_TrueType) {
         gs_font_base *pbfont = (gs_font_base *)pfont;
         gs_fapi_server *I = pbfont->FAPI;
 
