@@ -61,7 +61,7 @@ static const pdfi_t1_glyph_name_equivalents_t pdfi_t1_glyph_name_equivalents[] =
  */
 static void pdfi_patch_charstrings_dict(pdf_dict *cstrings)
 {
-    int code;
+    int code = 0;
     pdf_obj *o;
     const pdfi_t1_glyph_name_equivalents_t *gne = pdfi_t1_glyph_name_equivalents;
     while(gne->name != NULL && code >= 0) {
