@@ -578,7 +578,7 @@ int pdfi_close_pdf_file(pdf_context *ctx)
         ctx->filename = NULL;
     }
 
-    pdfi_clear_context(ctx);
+    pdfi_clear_context(ctx, true);
     return 0;
 }
 
@@ -1165,7 +1165,7 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
 /* the interpreter access to its context.                                          */
 
 /* We start with routines for creating and destroying the interpreter context */
-pdf_context *pdfi_create_context(gs_memory_t *pmem)
+pdf_context *pdfi_create_context(gs_memory_t *pmem, gs_gstate *initial_gstate)
 {
     pdf_context *ctx = NULL;
     gs_gstate *pgs = NULL;
@@ -1174,13 +1174,16 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     ctx = (pdf_context *) gs_alloc_bytes(pmem->non_gc_memory,
             sizeof(pdf_context), "pdf_create_context");
 
-    pgs = gs_gstate_alloc(pmem);
+    if (initial_gstate == NULL)
+        pgs = gs_gstate_alloc(pmem);
+    else
+        pgs = initial_gstate;
 
     if (!ctx || !pgs)
     {
         if (ctx)
             gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
-        if (pgs)
+        if (pgs && initial_gstate == NULL)
             gs_gstate_free(pgs);
         return NULL;
     }
@@ -1191,7 +1194,8 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     ctx->stack_bot = (pdf_obj **)gs_alloc_bytes(ctx->memory, INITIAL_STACK_SIZE * sizeof (pdf_obj *), "pdf_imp_allocate_interp_stack");
     if (ctx->stack_bot == NULL) {
         gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
-        gs_gstate_free(pgs);
+        if (initial_gstate == NULL)
+            gs_gstate_free(pgs);
         return NULL;
     }
     ctx->stack_size = INITIAL_STACK_SIZE;
@@ -1204,7 +1208,8 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     if (code < 0) {
         gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_create_context");
         gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
-        gs_gstate_free(pgs);
+        if (initial_gstate == NULL)
+            gs_gstate_free(pgs);
         return NULL;
     }
 
@@ -1213,19 +1218,23 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
         gs_free_object(ctx->memory, ctx->font_dir, "pdf_create_context");
         gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_create_context");
         gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
-        gs_gstate_free(pgs);
+        if (initial_gstate == NULL)
+            gs_gstate_free(pgs);
         return NULL;
     }
 
     ctx->pgs = pgs;
-    pdfi_gstate_set_client(ctx, pgs);
-    /* Declare PDL client support for high level patterns, for the benefit
-     * of pdfwrite and other high-level devices
-     */
-    ctx->pgs->have_pattern_streams = true;
-    ctx->device_state.preserve_tr_mode = 0;
-    ctx->args.notransparency = false;
+    if (initial_gstate == NULL) {
+        pdfi_gstate_set_client(ctx, pgs);
 
+        /* Declare PDL client support for high level patterns, for the benefit
+         * of pdfwrite and other high-level devices
+         */
+        ctx->pgs->have_pattern_streams = true;
+        ctx->device_state.preserve_tr_mode = 0;
+    }
+
+    ctx->args.notransparency = false;
     ctx->main_stream = NULL;
 
     /* Setup some flags that don't default to 'false' */
@@ -1242,6 +1251,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     ctx->get_glyph_name = pdfi_glyph_name;
     ctx->get_glyph_index = pdfi_glyph_index;
 
+    ctx->job_gstate_level = ctx->pgs->level;
     /* Weirdly the graphics library wants us to always have two gstates, the
      * initial state and at least one saved state. if we don't then when we
      * grestore back to the initial state, it immediately saves another one.
@@ -1300,7 +1310,7 @@ pdfi_print_cache(pdf_context *ctx)
  * called by pdf_free_context (in case of errors during the file leaving state around)
  * and by pdfi_close_pdf_file.
  */
-int pdfi_clear_context(pdf_context *ctx)
+int pdfi_clear_context(pdf_context *ctx, bool free_gstate)
 {
 #if CACHE_STATISTICS
     float compressed_hit_rate = 0.0, hit_rate = 0.0;
@@ -1371,19 +1381,19 @@ int pdfi_clear_context(pdf_context *ctx)
     }
     ctx->main_stream_length = 0;
 
-    if(ctx->pgs != NULL) {
+    if(ctx->pgs != NULL && free_gstate) {
         gx_pattern_cache_free(ctx->pgs->pattern_cache);
         ctx->pgs->pattern_cache = NULL;
         if (ctx->pgs->font)
             pdfi_countdown_current_font(ctx);
-
-        /* We use gs_grestore_only() instead of gs_grestore, because gs_grestore
-         * will not restore below two gstates and we want to clear the entire
-         * stack of saved states, back to the initial state.
-         */
-        while (ctx->pgs->level != ctx->job_gstate_level && ctx->pgs->saved)
-            gs_grestore_only(ctx->pgs);
     }
+
+    /* We use gs_grestore_only() instead of gs_grestore, because gs_grestore
+     * will not restore below two gstates and we want to clear the entire
+     * stack of saved states, back to the initial state.
+     */
+    while (ctx->pgs->level != ctx->job_gstate_level && ctx->pgs->saved)
+        gs_grestore_only(ctx->pgs);
 
     pdfi_free_DefaultQState(ctx);
     pdfi_oc_free(ctx);
@@ -1472,19 +1482,22 @@ int pdfi_clear_context(pdf_context *ctx)
     return 0;
 }
 
-int pdfi_free_context(pdf_context *ctx)
+int pdfi_free_context(pdf_context *ctx, bool free_gstate)
 {
-    pdfi_clear_context(ctx);
+    pdfi_clear_context(ctx, free_gstate);
 
     gs_free_object(ctx->memory, ctx->stack_bot, "pdfi_free_context");
 
     pdfi_free_name_table(ctx);
 
-    while (ctx->pgs->saved)
-        gs_grestore_only(ctx->pgs);
-
     /* And here we free the initial graphics state */
-    gs_gstate_free(ctx->pgs);
+    if (free_gstate) {
+        while (ctx->pgs->saved)
+            gs_grestore_only(ctx->pgs);
+
+        gs_gstate_free(ctx->pgs);
+    }
+
     ctx->pgs = NULL;
 
     if (ctx->font_dir)

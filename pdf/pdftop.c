@@ -112,7 +112,7 @@ pdf_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     if (!instance)
         return gs_error_VMerror;
 
-    ctx = pdfi_create_context(pmem);
+    ctx = pdfi_create_context(pmem, NULL);
 
     if (ctx == NULL) {
         gs_free_object(pmem, instance, "pdf_impl_allocate_interp_instance");
@@ -664,7 +664,7 @@ pdf_impl_deallocate_interp_instance(pl_interp_implementation_t *impl)
     gs_memory_t *mem = ctx->memory;
     int code = 0;
 
-    code = pdfi_free_context(ctx);
+    code = pdfi_free_context(ctx, true);
 
     gs_free_object(mem, instance, "pdf_impl_deallocate_interp_instance");
 

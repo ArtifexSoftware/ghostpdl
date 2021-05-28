@@ -289,7 +289,7 @@ static int zdopdffile(i_ctx_t *i_ctx_p)
     if (code < 0)
         return_error(gs_error_VMerror);
 
-    ctx = pdfi_create_context(cmem);
+    ctx = pdfi_create_context(cmem, igs);
     if (ctx == NULL) {
         code = gs_note_error(gs_error_VMerror);
         goto done;
@@ -310,7 +310,7 @@ static int zdopdffile(i_ctx_t *i_ctx_p)
     code = gs_grestore(ctx->pgs);
 done:
     if (ctx)
-        code2 = pdfi_free_context(ctx);
+        code2 = pdfi_free_context(ctx, false);
     /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
     (void)gs_memory_chunk_unwrap(cmem);
 
@@ -351,7 +351,7 @@ pdfctx_finalize(const gs_memory_t *cmem, void *vptr)
     pdfctx_t *pdfctx = vptr;
 
     if (cmem != NULL && pdfctx->ctx != NULL)
-        (void)pdfi_free_context(pdfctx->ctx);
+        (void)pdfi_free_context(pdfctx->ctx, false);
 }
 
 static int zPDFstream(i_ctx_t *i_ctx_p)
@@ -425,7 +425,7 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
 
     if (pdfctx->ctx != NULL) {
         gs_memory_t *cmem = pdfctx->ctx->memory;
-        code = pdfi_free_context(pdfctx->ctx);
+        code = pdfi_free_context(pdfctx->ctx, false);
         /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
         (void)gs_memory_chunk_unwrap(cmem);
         pdfctx->ctx = NULL;
@@ -784,7 +784,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     if (code < 0)
         return_error(gs_error_VMerror);
 
-    ctx = pdfi_create_context(cmem);
+    ctx = pdfi_create_context(cmem, igs);
     if (ctx == NULL) {
         code = gs_note_error(gs_error_VMerror);
         goto error;
@@ -956,7 +956,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
 
 error:
     if (ctx)
-        pdfi_free_context(ctx);
+        pdfi_free_context(ctx, false);
     /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
     (void)gs_memory_chunk_unwrap(cmem);
     if (pdfctx)

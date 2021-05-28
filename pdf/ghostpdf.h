@@ -509,9 +509,9 @@ typedef struct pdf_context_s
 #define OBJ_CTX(o) ((pdf_context *)(o->ctx))
 #define OBJ_MEMORY(o) OBJ_CTX(o)->memory
 
-pdf_context *pdfi_create_context(gs_memory_t *pmem);
-int pdfi_clear_context(pdf_context *ctx);
-int pdfi_free_context(pdf_context *ctx);
+pdf_context *pdfi_create_context(gs_memory_t *pmem, gs_gstate *initial_gstate);
+int pdfi_clear_context(pdf_context *ctx, bool free_gstate);
+int pdfi_free_context(pdf_context *ctx, bool free_gstate);
 
 int pdfi_get_name_index(pdf_context *ctx, char *name, int len, unsigned int *returned);
 int pdfi_name_from_index(pdf_context *ctx, int index, unsigned char **name, unsigned int *len);
