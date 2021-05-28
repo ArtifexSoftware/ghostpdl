@@ -813,7 +813,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         if (ccode >= GS_MIN_CID_GLYPH)
             ccode = ccode - GS_MIN_CID_GLYPH;
 
-        if (pt0font->descendant_substitute == false) {
+        if (pttfont->substitute == false) {
             gid = ccode;
             if (pttfont->cidtogidmap.size > (ccode << 1) + 1) {
                 gid = pttfont->cidtogidmap.data[ccode << 1] << 8 | pttfont->cidtogidmap.data[(ccode << 1) + 1];

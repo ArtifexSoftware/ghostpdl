@@ -73,7 +73,7 @@ pdfi_alloc_cidtype2_font(pdf_context *ctx, pdf_cidfont_type2 **font, bool is_cid
     if (ttfont == NULL)
         return_error(gs_error_VMerror);
 
-    memset(ttfont, 0x00, sizeof(pdf_font_truetype));
+    memset(ttfont, 0x00, sizeof(pdf_cidfont_type2));
     ttfont->type = PDF_FONT;
     ttfont->ctx = ctx;
     ttfont->pdfi_font_type = e_pdf_cidfont_type2;
