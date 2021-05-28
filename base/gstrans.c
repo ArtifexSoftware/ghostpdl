@@ -810,6 +810,18 @@ gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain,
     if (depth < 0)
         params.overprint_sim_push = true;
 
+    /* If we have an NCLR ICC profile, the extra spot colorants do not
+       get included in the transparency buffers. This is also true
+       for any extra colorant names listed, which go beyond the profile.
+       Finally, we could have a CMYK profile with colorants listed, that
+       go beyond CMYK. To detect, simply look at dev_profile->spotnames */
+    if (dev_profile->spotnames != NULL && dev_profile->spotnames->count > 4) {
+        /* Making an assumption here, that list is CMYK + extra. */
+        int delta = dev_profile->spotnames->count - 4;
+        params.num_spot_colors_int -= delta;
+        params.num_spot_colors -= delta;
+    }
+
     /* If we happen to be in a situation where we are going out to a device
        whose profile is CIELAB then we will need to make sure that we
        do our blending in RGB and convert to CIELAB when we do the put_image

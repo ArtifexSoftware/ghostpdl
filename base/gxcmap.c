@@ -1269,19 +1269,26 @@ cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
  *    pcolor_component_map - Map from DeviceN to the Devices colorants.
  *        A negative value indicates component is not to be mapped.
  *    plist - Pointer to list for mapped components
+ *    num_comps - num_comps that we need to zero (may be more than
+ *                is set if we are mapping values for an NCLR ICC profile
+ *                via an alternate tint transform for a sep value) --
+ *                i.e. cmyk+og values and we may have some spots that
+ *                are supported but may have reached the limit and
+ *                using the alt tint values.  Need to make sure to zero all.
  *
  * Returns:
  *    Mapped components in plist.
  */
 static inline void
 map_components_to_colorants(const frac * pcc,
-        const gs_devicen_color_map * pcolor_component_map, frac * plist)
+        const gs_devicen_color_map * pcolor_component_map, frac * plist,
+        int num_colorants)
 {
-    int i = pcolor_component_map->num_colorants - 1;
+    int i;
     int pos;
 
     /* Clear all output colorants first */
-    for (; i >= 0; i--) {
+    for (i = num_colorants - 1; i >= 0; i--) {
         plist[i] = frac_0;
     }
 
@@ -1446,7 +1453,8 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
             cm_comps[i] = comp_value;
     } else {
         /* map to the color model */
-        map_components_to_colorants(&all, &(pgs->color_component_map), cm_comps);
+        map_components_to_colorants(&all, &(pgs->color_component_map), cm_comps,
+            pgs->color_component_map.num_colorants);
     }
 
     if (devicen_has_cmyk(dev, des_profile) &&
@@ -1513,7 +1521,8 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
     }
     else {
         /* map to the color model */
-        map_components_to_colorants(&comp_value, &(pgs->color_component_map), cm_comps);
+        map_components_to_colorants(&comp_value, &(pgs->color_component_map), cm_comps,
+            pgs->color_component_map.num_colorants);
     }
 
     /* Check if we have the standard colorants.  If yes, then we will apply
@@ -1618,7 +1627,8 @@ cmap_devicen_halftoned(const frac * pcc,
     gsicc_extract_profile(dev->graphics_type_tag,
                           dev_profile, &des_profile, &render_cond);
     /* map to the color model */
-    map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps);
+    map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps,
+        pgs->color_component_map.num_colorants);
     /* See comments in cmap_devicen_direct for details on below operations */
     if (devicen_has_cmyk(dev, des_profile) &&
         des_profile->data_cs == gsCMYK &&
@@ -1667,9 +1677,10 @@ cmap_devicen_direct(const frac * pcc,
     /* map to the color model */
     if (dev_profile->spotnames != NULL && dev_profile->spotnames->equiv_cmyk_set) {
         map_components_to_colorants(pcc, dev_profile->spotnames->color_map,
-                                    cm_comps);
+                                    cm_comps, pgs->color_component_map.num_colorants);
     } else {
-        map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps);
+        map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps,
+            pgs->color_component_map.num_colorants);
     }
     /*  Check if we have the standard colorants.  If yes, then we will apply
        ICC color management to those colorants. To understand why, consider

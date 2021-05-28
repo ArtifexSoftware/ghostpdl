@@ -1586,8 +1586,15 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             char temp_str[DEFAULT_ICC_COLORANT_LENGTH+2];
 
             /* If names are already set then we do not want to set default ones */
-            if (profile_struct->spotnames != NULL)
-                return 0;
+            if (profile_struct->spotnames != NULL) {
+                /* Check if we have at least as many spot names
+                   as there are channels in the proFfile */
+                if (num_comps > profile_struct->spotnames->count) {
+                    gs_warn("ICC profile colorant names count insufficient");
+                    return_error(gs_error_rangecheck);
+                } else
+                    return 0;
+            }
 
             free_str = true;
             /* Assume first 4 are CMYK */
@@ -1933,7 +1940,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
 {
     cmm_profile_t *icc_profile;
     stream *str;
-    int code;
+    int code = 0;
 
     /* This is slightly silly, we have a device method for 'get_profile' we really ought to
      * have one for 'set_profile' as well. In its absence, make sure we are setting the profile
@@ -2047,7 +2054,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                     break;
                 default:
                     /* NCLR Profile.  Set up default colorant names */
-                    gsicc_set_device_profile_colorants(pdev, NULL);
+                    code = gsicc_set_device_profile_colorants(pdev, NULL);
                     break;
             }
             if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile data CS is %d\n",
@@ -2055,7 +2062,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
         } else
             return gs_rethrow(-1, "cannot find device profile");
     }
-    return 0;
+    return code;
 }
 
 /* Set the icc profile in the gs_color_space object */

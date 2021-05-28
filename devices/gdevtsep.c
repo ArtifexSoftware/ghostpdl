@@ -1645,45 +1645,13 @@ tiffsep_prn_open(gx_device * pdev)
     gx_device_printer *ppdev = (gx_device_printer *)pdev;
     tiffsep_device *pdev_sep = (tiffsep_device *) pdev;
     int code, k;
-    bool force_pdf, force_ps;
     cmm_dev_profile_t *profile_struct;
     gsicc_rendering_param_t rendering_params;
 
     /* Use our own warning and error message handlers in libtiff */
     tiff_set_handlers();
 
-    /* There are 2 approaches to the use of a DeviceN ICC output profile.
-       One is to simply limit our device to only output the colorants
-       defined in the output ICC profile.   The other is to use the
-       DeviceN ICC profile to color manage those N colorants and
-       to let any other separations pass through unmolested.   The define
-       LIMIT_TO_ICC sets the option to limit our device to only the ICC
-       colorants defined by -sICCOutputColors (or to the ones that are used
-       as default names if ICCOutputColors is not used).  The pass through option
-       (LIMIT_TO_ICC set to 0) makes life a bit more difficult since we don't
-       know if the page_spot_colors overlap with any spot colorants that exist
-       in the DeviceN ICC output profile. Hence we don't know how many planes
-       to use for our device.  This is similar to the issue when processing
-       a PostScript file.  So that I remember, the cases are
-       DeviceN Profile?     limit_icc       Result
-       0                    0               force_pdf 0 force_ps 0  (no effect)
-       0                    0               force_pdf 0 force_ps 0  (no effect)
-       1                    0               force_pdf 0 force_ps 1  (colorants not known)
-       1                    1               force_pdf 1 force_ps 0  (colorants known)
-       */
     code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
-    if (profile_struct->spotnames == NULL) {
-        force_pdf = false;
-        force_ps = false;
-    } else {
-#if LIMIT_TO_ICC
-            force_pdf = true;
-            force_ps = false;
-#else
-            force_pdf = false;
-            force_ps = true;
-#endif
-    }
 
     /* For the planar device we need to set up the bit depth of each plane.
        For other devices this is handled in check_device_separable where
@@ -1695,21 +1663,31 @@ tiffsep_prn_open(gx_device * pdev)
     /* With planar the depth can be more than 64.  Update the color
        info to reflect the proper depth and number of planes */
     pdev_sep->warning_given = false;
-    if ((pdev_sep->devn_params.page_spot_colors >= 0 || force_pdf) && !force_ps) {
-        if (force_pdf) {
-            /* Use the information that is in the ICC profle.  We will be here
-               anytime that we have limited ourselves to a fixed number
-               of colorants specified by the DeviceN ICC profile */
+    if (pdev_sep->devn_params.page_spot_colors >= 0) {
+
+        /* PDF case, as the page spot colors are known. */
+        if (profile_struct->spotnames != NULL) {
+
+            /* PDF case, NCLR ICC profile with spot names. The ICC spots
+               will use up some of the max_spots values. If max_spots is
+               too small to accomodate even the ICC spots, throw an error */
+            if (profile_struct->spotnames->count - 4 > pdev_sep->max_spots ||
+                profile_struct->spotnames->count < 4 ||
+                profile_struct->spotnames->count <
+                profile_struct->device_profile[0]->num_comps) {
+                gs_warn("ICC profile colorant names count error");
+                return_error(gs_error_rangecheck);
+            }
             pdev->color_info.num_components =
-                (pdev_sep->devn_params.separations.num_separations
-                 + pdev_sep->devn_params.num_std_colorant_names);
+                (profile_struct->spotnames->count
+                    + pdev_sep->devn_params.page_spot_colors);
             if (pdev->color_info.num_components > pdev->color_info.max_components)
                 pdev->color_info.num_components = pdev->color_info.max_components;
-            /* Limit us only to the ICC colorants */
-            pdev->color_info.max_components = pdev->color_info.num_components;
         } else {
-            /* Do not allow the spot count to update if we have specified the
-               colorants already */
+
+            /* Use the information that is in the page spot color. We should
+               be here if we are processing a PDF and we do not have a DeviceN
+               ICC profile specified for output */
             if (!(pdev_sep->lock_colorants)) {
                 pdev->color_info.num_components =
                     (pdev_sep->devn_params.page_spot_colors
@@ -1722,8 +1700,13 @@ tiffsep_prn_open(gx_device * pdev)
         /* We do not know how many spots may occur on the page.
            For this reason we go ahead and allocate the maximum that we
            have available.  Note, lack of knowledge only occurs in the case
-           of PS files.  With PDF we know a priori the number of spot
-           colorants.  */
+           of PS files. With PDF we know a priori the number of spot
+           colorants. However, the first time the device is opened,
+           pdev_sep->devn_params.page_spot_colors is -1 even if we are
+           dealing with a PDF file, so we will first find ourselves here,
+           which will set num_comp based upon max_spots + 4. If -dMaxSpots
+           was set (Default is GS_SOFT_MAX_SPOTS which is 10) ,
+           it is made use of here. */
         if (!(pdev_sep->lock_colorants)) {
             int num_comp = pdev_sep->max_spots + 4; /* Spots + CMYK */
             if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
