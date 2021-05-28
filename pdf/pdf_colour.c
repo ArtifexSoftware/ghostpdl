@@ -1362,20 +1362,20 @@ pdfi_seticc_cal(pdf_context *ctx, float *white, float *black, float *gamma,
            in the profile cache which is a member variable
            of the graphic state, we will want to use stable
            memory here */
-        code = gs_cspace_build_ICC(&pcs, NULL, ctx->memory);
+        code = gs_cspace_build_ICC(&pcs, NULL, ctx->pgs->memory);
         if (code < 0)
             return code;
         /* There is no alternate for this.  Perhaps we should set DeviceRGB? */
         pcs->base_space = NULL;
         /* Create the ICC profile from the CalRGB or CalGray parameters */
         cal_profile = gsicc_create_from_cal(white, black, gamma, matrix,
-                                            ctx->memory, num_colorants);
+                                            ctx->pgs->memory, num_colorants);
         if (cal_profile == NULL) {
             rc_decrement(pcs, "seticc_cal");
             return_error(gs_error_VMerror);
         }
         /* Assign the profile to this color space */
-        code = gsicc_set_gscs_profile(pcs, cal_profile, ctx->memory);
+        code = gsicc_set_gscs_profile(pcs, cal_profile, ctx->pgs->memory);
         /* profile is created with ref count of 1, gsicc_set_gscs_profile()
          * increments the ref count, so we need to decrement it here.
          */

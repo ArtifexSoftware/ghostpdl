@@ -2159,7 +2159,7 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
             Processed->value = false;
         if (igs->SMask)
             pdfi_gstate_smask_free(igs);
-        pdfi_gstate_smask_install(igs, ctx->memory, (pdf_dict *)o, ctx->pgs);
+        pdfi_gstate_smask_install(igs, ctx->pgs->memory, (pdf_dict *)o, ctx->pgs);
     }
 
  exit:
@@ -2336,7 +2336,7 @@ int pdfi_free_DefaultQState(pdf_context *ctx)
 int pdfi_set_DefaultQState(pdf_context *ctx, gs_gstate *pgs)
 {
     pdfi_free_DefaultQState(ctx);
-    ctx->DefaultQState = gs_gstate_copy(pgs, ctx->memory);
+    ctx->DefaultQState = gs_gstate_copy(pgs, ctx->pgs->memory);
     if (ctx->DefaultQState == NULL)
         return_error(gs_error_VMerror);
     return 0;
@@ -2349,7 +2349,7 @@ gs_gstate *pdfi_get_DefaultQState(pdf_context *ctx)
 
 int pdfi_copy_DefaultQState(pdf_context *ctx, gs_gstate **pgs)
 {
-    *pgs = gs_gstate_copy(ctx->DefaultQState, ctx->memory);
+    *pgs = gs_gstate_copy(ctx->DefaultQState, ctx->pgs->memory);
     if (*pgs == NULL)
         return_error(gs_error_VMerror);
     return 0;
