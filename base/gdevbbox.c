@@ -896,8 +896,9 @@ bbox_fill_mask(gx_device * dev,
                              pdcolor, depth, lop, pcpath);
         bdev->target = tdev;
     } else {
-        /* Just use the mask bounding box. */
-        BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
+        if (w > 0 && h > 0)
+            /* Just use the mask bounding box. */
+            BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     }
     return code;
 }
@@ -1084,8 +1085,9 @@ bbox_image_plane_data(gx_image_enum_common_t * info,
                                  bx2, by2, &devc, lop_default);
         bdev->target = tdev;
     } else {
-        /* Just use the bounding box. */
-        BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
+        /* Just use the bounding box if the image is not 0 width or height */
+        if (ibox.p.x != ibox.q.x && ibox.p.y != ibox.q.y)
+            BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
     }
     return code;
 }
