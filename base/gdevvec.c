@@ -643,7 +643,7 @@ gdev_vector_dopath_init(gdev_vector_dopath_state_t *state,
  */
 int
 gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
-                           gs_fixed_point vs[3])
+                           gs_fixed_point *vs)
 {
     gx_device_vector *vdev = state->vdev;
     const gs_matrix *const pmat = &state->scale_mat;
