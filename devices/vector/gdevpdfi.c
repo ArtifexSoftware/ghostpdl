@@ -80,6 +80,7 @@ typedef struct pdf_image_enum_s {
     gs_matrix mat;
     gs_color_space_index initial_colorspace;
     int JPEG_PassThrough;
+    int JPX_PassThrough;
 } pdf_image_enum;
 gs_private_st_composite(st_pdf_image_enum, pdf_image_enum, "pdf_image_enum",
   pdf_image_enum_enum_ptrs, pdf_image_enum_reloc_ptrs);
@@ -1115,6 +1116,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
          * should get the data. But lets get the simple code working first.
          */
         pdev->JPEG_PassThrough = 0;
+        pdev->JPX_PassThrough = 0;
         pdev->image_mask_is_SMask = false;
         if (pdev->CompatibilityLevel < 1.2 ||
             (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
@@ -1128,6 +1130,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 
     case IMAGE3X_IMAGETYPE:
         pdev->JPEG_PassThrough = 0;
+        pdev->JPX_PassThrough = 0;
         if (pdev->CompatibilityLevel < 1.4 ||
             (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
                        prect->q.x == ((const gs_image3x_t *)pic)->Width &&
@@ -1195,6 +1198,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                      * the image.
                      */
                     pdev->JPEG_PassThrough = 0;
+                    pdev->JPX_PassThrough = 0;
                     use_fallback = 0;
                     code = convert_type4_to_masked_image(pdev, pgs, pic, prect, pdcolor,
                                                          pcpath, mem,pinfo);
@@ -1207,6 +1211,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             }
         }
         pdev->JPEG_PassThrough = 0;
+        pdev->JPX_PassThrough = 0;
         code = convert_type4_image(pdev, pgs, pmat, pic, prect, pdcolor,
                       pcpath, mem, pinfo, context, image, pnamed);
         if (code < 0)
@@ -1447,12 +1452,16 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     if (code < 0)
         goto fail_and_fallback;
 
+    if (pdev->CompatibilityLevel < 1.5)
+        pdev->JPX_PassThrough = 0;
+
     if (!convert_to_process_colors)
     {
         gs_color_space_index csi;
 
         if (pdev->params.TransferFunctionInfo == tfi_Apply && pdev->transfer_not_identity && !is_mask) {
             pdev->JPEG_PassThrough = 0;
+            pdev->JPX_PassThrough = 0;
             csi = gs_color_space_get_index(image[0].pixel.ColorSpace);
             if (csi == gs_color_space_index_Indexed) {
                 csi = gs_color_space_get_index(image[0].pixel.ColorSpace->base_space);
@@ -1503,7 +1512,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     }
     /* If we are not preserving the colour space unchanged, then we can't pass through JPEG */
     else
-        pdev->JPEG_PassThrough = 0;
+        pdev->JPEG_PassThrough = pdev->JPX_PassThrough = 0;
 
     /* Code below here deals with setting up the multiple data stream writing.
      * We can have up to 4 stream writers, which we keep in an array. We must
@@ -1518,6 +1527,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
      */
     if (in_line) {
         pdev->JPEG_PassThrough = 0;
+        pdev->JPX_PassThrough = 0;
         code = new_setup_lossless_filters((gx_device_psdf *) pdev,
                                              &pie->writer.binary[0],
                                              &image[0].pixel, in_line, convert_to_process_colors, (gs_matrix *)pmat, (gs_gstate *)pgs);
@@ -1559,7 +1569,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         image[0].pixel.ColorSpace = pcs_device;
     }
 
-    if (pdev->JPEG_PassThrough) {
+    if (pdev->JPEG_PassThrough || pdev->JPX_PassThrough) {
 /*        if (pie->writer.alt_writer_count > 1) {
             s_close_filters(&pie->writer.binary[0].strm, uncompressed);
             memset(pie->writer.binary + 1, 0, sizeof(pie->writer.binary[1]));
@@ -1569,6 +1579,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         pie->writer.alt_writer_count = 1;
     }
     pie->JPEG_PassThrough = pdev->JPEG_PassThrough;
+    pie->JPX_PassThrough = pdev->JPX_PassThrough;
 
     if (pie->writer.alt_writer_count > 1) {
         code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
@@ -1681,6 +1692,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     /* Do the fallback */
     if (use_fallback) {
         pdev->JPEG_PassThrough = 0;
+        pdev->JPX_PassThrough = 0;
         code = gx_default_begin_typed_image
             ((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem, pinfo);
     }
@@ -1789,7 +1801,7 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
     pdf_image_enum *pie = (pdf_image_enum *) info;
     int i;
 
-    if (pie->JPEG_PassThrough) {
+    if (pie->JPEG_PassThrough || pie->JPX_PassThrough) {
         pie->rows_left -= height;
         *rows_used = height;
         return !pie->rows_left;
@@ -2868,6 +2880,29 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             break;
         case gxdso_JPEG_passthrough_end:
             pdev->JPEG_PassThrough = 0;
+            pdev->PassThroughWriter = 0;
+            return 0;
+            break;
+        case gxdso_JPX_passthrough_query:
+            pdev->JPX_PassThrough = pdev->params.PassThroughJPXImages;
+            return 1;
+            break;
+        case gxdso_JPX_passthrough_begin:
+            return 0;
+            break;
+        case gxdso_JPX_passthrough_data:
+            if (pdev->JPX_PassThrough && pdev->PassThroughWriter)
+            {
+                uint ignore;
+                if (sputs(pdev->PassThroughWriter,
+                           data, size,
+                           &ignore) < 0)
+                           return_error(gs_error_ioerror);
+            }
+            return 0;
+            break;
+        case gxdso_JPX_passthrough_end:
+            pdev->JPX_PassThrough = 0;
             pdev->PassThroughWriter = 0;
             return 0;
             break;

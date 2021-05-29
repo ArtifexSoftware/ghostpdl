@@ -41,6 +41,9 @@ typedef struct stream_block_s
 	unsigned long fill;
 } stream_block;
 
+#define JPXD_PassThrough(proc)\
+  int proc(void *d, byte *Buffer, int Size)
+
 /* Stream state for the jpx codec using openjpeg
  * We rely on our finalization call to free the
  * associated handle and pointers.
@@ -68,6 +71,14 @@ typedef struct stream_jpxd_state_s
     int *sign_comps; /* compensate for signed data (signed => unsigned) */
 
     unsigned char *row_data;
+
+    int PassThrough;                    /* 0 or 1 */
+    bool StartedPassThrough;            /* Don't signal multiple starts for the same decode */
+    JPXD_PassThrough((*PassThroughfn)); /* We don't want the stream code or
+                                         * JPEG code to have to handle devices
+                                         * so we use a function at the interpreter level
+                                         */
+    void *device;                       /* The device we need to send PassThrough data to */
 } stream_jpxd_state;
 
 extern const stream_template s_jpxd_template;

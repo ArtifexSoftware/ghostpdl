@@ -174,6 +174,7 @@ typedef struct psdf_distiller_params_s {
     int MaxSubsetPct;
     bool SubsetFonts;
     bool PassThroughJPEGImages;
+    bool PassThroughJPXImages;
     gs_param_string PSDocOptions;
     gs_param_string_array PSPageOptions;
 } psdf_distiller_params;
@@ -267,6 +268,8 @@ extern const stream_template s_zlibE_template;
 
 #define psdf_JPEGPassThrough_param_defaults\
     1           /* PassThroughJPEGImages */
+#define psdf_JPXPassThrough_param_defaults\
+    1           /* PassThroughJPXImages */
 
 #define psdf_PSOption_param_defaults\
     {0},        /* PSDocOptions */\
@@ -292,6 +295,7 @@ typedef enum {
         bool HaveCIDSystem;\
         double ParamCompatibilityLevel;\
         bool JPEG_PassThrough;\
+        bool JPX_PassThrough;\
         psdf_distiller_params params
 
 typedef struct gx_device_psdf_s {
@@ -307,12 +311,14 @@ typedef struct gx_device_psdf_s {
         false,\
         1.3,\
         0,\
+        0,\
          { psdf_general_param_defaults(ascii),\
            psdf_color_image_param_defaults,\
            psdf_gray_image_param_defaults,\
            psdf_mono_image_param_defaults,\
            psdf_font_param_defaults,\
            psdf_JPEGPassThrough_param_defaults,\
+           psdf_JPXPassThrough_param_defaults,\
            psdf_PSOption_param_defaults\
          }
 /* st_device_psdf is never instantiated per se, but we still need to */
