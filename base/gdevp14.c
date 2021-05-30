@@ -7795,6 +7795,7 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
                             dst_ptr[k * planestride] = dst2[k];
                         }
                     }
+                    dst_ptr[num_comp * planestride] = dst[num_comp];    /* alpha */
                 }
             } else {
                 if (overprint) {
@@ -8011,6 +8012,7 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
                             dst_ptr[k * planestride] = dst2[k];
                         }
                     }
+                    dst_ptr[num_comp * planestride] = dst[num_comp];    /* alpha */
                 }
             } else {
                 if (overprint) {
