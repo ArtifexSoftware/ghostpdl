@@ -571,7 +571,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
                         Buffer[index] = 0x09;
                         break;
                     case 'b':
-                        Buffer[index] = 0x07;
+                        Buffer[index] = 0x08;
                         break;
                     case 'f':
                         Buffer[index] = 0x0c;
