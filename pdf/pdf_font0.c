@@ -238,7 +238,7 @@ pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u
                     cc = n[i];
                     cmapcc = (unsigned int)cc;
                     if (decfont->pdfi_font_type == e_pdf_cidfont_type2)
-                        code = pdfi_fapi_check_cmap_for_GID((gs_font *)decfont->pfont, &cmapcc);
+                        code = pdfi_fapi_check_cmap_for_GID((gs_font *)decfont->pfont, (unsigned int)cc, &cmapcc);
                     else
                         code = 0;
                     if (code >= 0 && cmapcc != 0){

@@ -71,7 +71,7 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
                  char *file_name, byte * font_data, int font_data_len);
 
 int
-pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint *c);
+pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint c, uint *g);
 
 int
 pdfi_init_font_directory(pdf_context *ctx);

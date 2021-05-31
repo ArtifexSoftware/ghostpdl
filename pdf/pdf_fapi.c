@@ -807,7 +807,6 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 
     if (pbfont->FontType == ft_CID_TrueType) {
         pdf_cidfont_type2 *pttfont = (pdf_cidfont_type2 *)pbfont->client_data;
-        pdf_font_type0 *pt0font = (pdf_font_type0 *)penum->orig_font->client_data;
         gs_glyph gid;
 
         if (ccode >= GS_MIN_CID_GLYPH)
@@ -823,10 +822,9 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
             cr->is_glyph_index = true;
         }
         else { /* If the composite font has a decoding, then this is a subsituted CIDFont with a "known" ordering */
-            unsigned int cc = ccode;
+            unsigned int gc = 0, cc = (unsigned int)ccode;
             byte uc[4];
             int l;
-            bool is_glyph_index = true;
 
             if (penum->text.operation & TEXT_FROM_SINGLE_CHAR) {
                 cc = penum->text.data.d_char;
@@ -844,20 +842,21 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 
             l = penum->orig_font->procs.decode_glyph((gs_font *)penum->orig_font, ccode, (gs_char)cc, (ushort *)uc, 4);
             if (l == 2) {
-                is_glyph_index = false;
-                gid = uc[1] | uc[0] << 8;
+                cc = uc[1] | uc[0] << 8;
             }
             else if (l == 4) {
-                is_glyph_index = false;
-                gid = uc[3] | uc[2] << 8 | uc[2] << 16 | uc[2] << 24;
+                cc = uc[3] | uc[2] << 8 | uc[2] << 16 | uc[2] << 24;
             }
             else
-                gid = ccode;
+                cc = ccode;
 
+            code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, cc, &gc);
+            if (code < 0 || gc == 0)
+                (void)pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, 32, &gc);
 
             cr->client_char_code = ccode;
-            cr->char_codes[0] = gid;
-            cr->is_glyph_index = is_glyph_index;
+            cr->char_codes[0] = gc;
+            cr->is_glyph_index = true;
         }
         return 0;
     }
@@ -927,10 +926,10 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         int i;
         if ((ttfont->descflags & 4) != 0) {
             if (ttfont->cmap == pdfi_truetype_cmap_30) {
-                uint cc = (uint)ccode;
+                uint cc = 0;
 
                 cr->client_char_code = ccode;
-                code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, &cc);
+                code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, (uint)ccode, &cc);
                 if (code < 0 || cc == 0)
                     cr->char_codes[0] = ccode | 0xf0 << 8;
                 else
@@ -966,8 +965,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                     }
 
                     if (g != GS_NO_CHAR) {
-                        cc = g;
-                        code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, &cc);
+                        code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, (uint)g, &cc);
                     }
 
                     if (code < 0 || cc == 0) {
@@ -1671,7 +1669,7 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
 }
 
 int
-pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint *c)
+pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint cid, uint *gid)
 {
     if (pfont->FontType == ft_TrueType
      || pfont->FontType == ft_CID_TrueType) {
@@ -1679,8 +1677,10 @@ pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint *c)
         gs_fapi_server *I = pbfont->FAPI;
 
         if (I) {
+            uint c = cid;
             I->ff.server_font_data = pbfont->FAPI_font_data;
-            I->check_cmap_for_GID(I, c);
+            I->check_cmap_for_GID(I, &c);
+            *gid = c;
             return 0;
         }
     }

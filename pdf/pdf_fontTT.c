@@ -128,7 +128,7 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
     uint ID = glyph;
     int code = 0;
 
-    code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, &ID);
+    code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)glyph, &ID);
     if (code < 0)
         return code;
 
