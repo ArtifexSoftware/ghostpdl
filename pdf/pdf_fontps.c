@@ -218,6 +218,10 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
                     int len, i;
                     byte hbuf[2];
 
+                    if (pdfpsbuf < buflim && *pdfpsbuf == '<') { /* Dict opening "<<" - we don't care */
+                        pdfpsbuf++;
+                        continue;
+                    }
                     while (pdfpsbuf < buflim && *pdfpsbuf != '>')
                         pdfpsbuf++;
                     len = pdfpsbuf - s;
@@ -232,6 +236,13 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
                     code = pdf_ps_stack_push_string(cs, s, len >> 1);
                 }
                 break;
+            case '>': /* For hex strings, this should be handled above */
+                {
+                    if (pdfpsbuf < buflim && *pdfpsbuf == '>') { /* Dict closing "<<" - we still don't care */
+                        pdfpsbuf++;
+                    }
+                }
+               break;
             case '[':;         /* begin array */
             case '{':;         /* begin executable array (mainly, FontBBox) */
                 arraydepth++;
