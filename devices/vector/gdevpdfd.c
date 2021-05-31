@@ -181,6 +181,47 @@ pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
         ymin -= d;
         ymax += d;
     }
+    if (pdev->PDFA == 1) {
+        /* Check values, and decide how to proceed based on PDFACompatibilitylevel */
+        if (x0 < xmin || y0 < ymin || x1 - x0 > xmax || y1 - y0 >ymax) {
+            switch(pdev->PDFACompatibilityPolicy) {
+                case 0:
+                    emprintf(pdev->memory,
+                         "Required co-ordinate outside valid range for PDF/A-1, reverting to normal PDF output.\n");
+                    pdev->AbortPDFAX = true;
+                    pdev->PDFA = 0;
+                    break;
+                case 1:
+                    emprintf(pdev->memory,
+                         "Required co-ordinate outside valid range for PDF/A-1, clamping to valid range, output may be incorrect.\n");
+                    /*
+                     * Clamp coordinates to avoid tripping over Acrobat Reader's limit
+                     * of 32K on user coordinate values, which was adopted by the PDF/A-1 spec.
+                     */
+                    if (x0 < xmin)
+                        x0 = xmin;
+
+                    if (y0 < ymin)
+                        y0 = ymin;
+
+                    /* We used to clamp x1 and y1 here, but actually, because this is a rectangle
+                     * we don't need to do that, we need to clamp the *difference* between x0,x1
+                     * and y0,y1 to keep it inside the Acrobat 4 or 5 limits.
+                     */
+                    if (x1 - x0 > xmax)
+                        x1 = x0 + xmax;
+                    if (y1 - y0 > ymax)
+                        y1 = y0 + ymax;
+                    break;
+                default:
+                case 2:
+                    emprintf(pdev->memory,
+                         "Required co-ordinate outside valid range for PDF/A-1, aborting.\n");
+                    return_error(gs_error_limitcheck);
+                    break;
+            }
+        }
+    }
     return psdf_dorect(vdev, x0, y0, x1, y1, type);
 }
 
@@ -777,6 +818,38 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     pdev->clip_path_id = new_id;
     return pdf_remember_clip_path(pdev,
             (pdev->clip_path_id == pdev->no_clip_path_id ? NULL : pcpath));
+}
+
+/*
+ * Compute the scaling to ensure that user coordinates for a path are within
+ * PDF/A-1 valid range.  Return true if scaling was needed.  In this case, the
+ * CTM will be multiplied by *pscale, and all coordinates will be divided by
+ * *pscale.
+ */
+static bool
+make_rect_scaling(const gx_device_pdf *pdev, const gs_fixed_rect *bbox,
+                  double prescale, double *pscale)
+{
+    double bmin, bmax;
+
+    if (pdev->PDFA != 1) {
+        *pscale = 1;
+        return false;
+    }
+
+    bmin = min(bbox->p.x / pdev->scale.x, bbox->p.y / pdev->scale.y) * prescale;
+    bmax = max(bbox->q.x / pdev->scale.x, bbox->q.y / pdev->scale.y) * prescale;
+    if (bmin <= int2fixed(-MAX_USER_COORD) ||
+        bmax > int2fixed(MAX_USER_COORD)
+        ) {
+        /* Rescale the path. */
+        *pscale = max(bmin / int2fixed(-MAX_USER_COORD),
+                      bmax / int2fixed(MAX_USER_COORD));
+        return true;
+    } else {
+        *pscale = 1;
+        return false;
+    }
 }
 
 /*
@@ -1622,6 +1695,8 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
         return code;
     {
         stream *s = pdev->strm;
+        double scale;
+        gs_matrix smat, *psmat = NULL;
         gs_path_enum cenum;
         gdev_vector_dopath_state_t state;
 
@@ -1634,11 +1709,19 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
             pprintg1(s, "%g i\n", params->flatness);
             pdev->state.flatness = params->flatness;
         }
+        if (make_rect_scaling(pdev, &box1, 1.0, &scale)) {
+            gs_make_scaling(pdev->scale.x * scale, pdev->scale.y * scale,
+                            &smat);
+            pdf_put_matrix(pdev, "q ", &smat, "cm\n");
+            psmat = &smat;
+        }
         code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_fill | gx_path_type_optimize, NULL);
         if (code < 0)
             return code;
 
         stream_puts(s, (params->rule < 0 ? "f\n" : "f*\n"));
+        if (psmat != NULL)
+            stream_puts(pdev->strm, "Q\n");
     }
     return 0;
 }
@@ -1652,9 +1735,10 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_gstate * pgs,
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     stream *s;
     int code;
-    double scale;
+    double scale, path_scale;
     bool set_ctm;
     gs_matrix mat;
+    double prescale = 1;
     gs_fixed_rect bbox;
     gs_path_enum cenum;
     gdev_vector_dopath_state_t state;
@@ -1740,6 +1824,20 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_gstate * pgs,
         scale = fabs(pgs->ctm.xx + pgs->ctm.xy + pgs->ctm.yx + pgs->ctm.yy) /* Using the non-zero coeff. */
                 / sqrt(2); /* Empirically from Adobe. */
     }
+    if (set_ctm && pdev->PDFA == 1) {
+        /*
+         * We want a scaling factor that will bring the largest reasonable
+         * user coordinate within bounds.  We choose a factor based on the
+         * minor axis of the transformation.  Thanks to Raph Levien for
+         * the following formula.
+         */
+        double a = mat.xx, b = mat.xy, c = mat.yx, d = mat.yy;
+        double u = fabs(a * d - b * c);
+        double v = a * a + b * b + c * c + d * d;
+        double minor = (sqrt(v + 2 * u) - sqrt(v - 2 * u)) * 0.5;
+
+        prescale = (minor == 0 || minor > 1 ? 1 : 1 / minor);
+    }
     gx_path_bbox(ppath, &bbox);
     {
         /* Check whether a painting appears inside the clipping box.
@@ -1771,6 +1869,15 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_gstate * pgs,
         rect_intersect(stroke_bbox, clip_box);
         if (stroke_bbox.q.x < stroke_bbox.p.x || stroke_bbox.q.y < stroke_bbox.p.y)
             return 0;
+    }
+    if (make_rect_scaling(pdev, &bbox, prescale, &path_scale)) {
+        scale /= path_scale;
+        if (set_ctm)
+            gs_matrix_scale(&mat, path_scale, path_scale, &mat);
+        else {
+            gs_make_scaling(path_scale, path_scale, &mat);
+            set_ctm = true;
+        }
     }
     code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pgs, params,
                                       pdcolor, scale);
@@ -1838,7 +1945,8 @@ gdev_pdf_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     } else {
         bool set_ctm;
         gs_matrix mat;
-        double scale;
+        double scale, path_scale;
+        double prescale = 1;
         gs_fixed_rect bbox;
         gs_path_enum cenum;
         gdev_vector_dopath_state_t state;
@@ -1901,6 +2009,20 @@ gdev_pdf_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
             scale = fabs(pgs->ctm.xx + pgs->ctm.xy + pgs->ctm.yx + pgs->ctm.yy) /* Using the non-zero coeff. */
                     / sqrt(2); /* Empirically from Adobe. */
         }
+        if (pdev->PDFA == 1 && set_ctm) {
+            /*
+             * We want a scaling factor that will bring the largest reasonable
+             * user coordinate within bounds.  We choose a factor based on the
+             * minor axis of the transformation.  Thanks to Raph Levien for
+             * the following formula.
+             */
+            double a = mat.xx, b = mat.xy, c = mat.yx, d = mat.yy;
+            double u = fabs(a * d - b * c);
+            double v = a * a + b * b + c * c + d * d;
+            double minor = (sqrt(v + 2 * u) - sqrt(v - 2 * u)) * 0.5;
+
+            prescale = (minor == 0 || minor > 1 ? 1 : 1 / minor);
+        }
         gx_path_bbox(ppath, &bbox);
         {
             /* Check whether a painting appears inside the clipping box.
@@ -1932,6 +2054,15 @@ gdev_pdf_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
             rect_intersect(stroke_bbox, clip_box);
             if (stroke_bbox.q.x < stroke_bbox.p.x || stroke_bbox.q.y < stroke_bbox.p.y)
                 return 0;
+        }
+        if (make_rect_scaling(pdev, &bbox, prescale, &path_scale)) {
+            scale /= path_scale;
+            if (set_ctm)
+                gs_matrix_scale(&mat, path_scale, path_scale, &mat);
+            else {
+                gs_make_scaling(path_scale, path_scale, &mat);
+                set_ctm = true;
+            }
         }
 
         code = pdf_setfillcolor((gx_device_vector *)pdev, pgs, pdcolor_fill);
@@ -1987,6 +2118,8 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     int code;
     gs_fixed_rect box1 = *rect, box = box1;
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    double scale;
+    gs_matrix smat, *psmat = NULL;
     const bool convert_to_image = (pdev->CompatibilityLevel <= 1.2 &&
             gx_dc_is_pattern2_color(pdcolor));
 
@@ -2005,9 +2138,16 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
             rect_intersect(box1, box);
         if (box1.p.x > box1.q.x || box1.p.y > box1.q.y)
             return 0;		/* outside the clipping path */
+        if (make_rect_scaling(pdev, &box1, 1.0, &scale)) {
+            gs_make_scaling(pdev->scale.x * scale, pdev->scale.y * scale, &smat);
+            pdf_put_matrix(pdev, "q ", &smat, "cm\n");
+            psmat = &smat;
+        }
         pprintg4(pdev->strm, "%g %g %g %g re f\n",
-                fixed2float(box1.p.x), fixed2float(box1.p.y),
-                fixed2float(box1.q.x - box1.p.x) , fixed2float(box1.q.y - box1.p.y));
+                fixed2float(box1.p.x) / scale, fixed2float(box1.p.y) / scale,
+                fixed2float(box1.q.x - box1.p.x) / scale, fixed2float(box1.q.y - box1.p.y) / scale);
+        if (psmat != NULL)
+            stream_puts(pdev->strm, "Q\n");
         if (pdev->Eps2Write) {
             gs_rect *Box;
 
