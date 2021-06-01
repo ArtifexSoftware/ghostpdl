@@ -533,15 +533,19 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
         for (j = 0; j < bps; j++)
             data_ptr[bps * i + j] = (byte)(cv >> ((bps - 1 - j) * 8));	/* MSB first */
     }
-    pop(num_out);		    /* Move op to base of result values */
 
+    pop(num_out); /* Move op to base of result values */
+
+    /* From here on, we have to use ref_stack_pop() rather than pop()
+       so that it handles stack extension blocks properly, before calling
+       sampled_data_sample() which also uses the op stack.
+     */
     /* Check if we are done collecting data. */
-
     if (increment_cube_indexes(params, penum->indexes)) {
         if (stack_depth_adjust == 0)
-            pop(O_STACK_PAD);	    /* Remove spare stack space */
+            ref_stack_pop(&o_stack, O_STACK_PAD);	    /* Remove spare stack space */
         else
-            pop(stack_depth_adjust - num_out);
+            ref_stack_pop(&o_stack, stack_depth_adjust - num_out);
         /* Execute the closing procedure, if given */
         code = 0;
         if (esp_finish_proc != 0)
@@ -554,11 +558,11 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
             if ((O_STACK_PAD - stack_depth_adjust) < 0) {
                 stack_depth_adjust = -(O_STACK_PAD - stack_depth_adjust);
                 check_op(stack_depth_adjust);
-                pop(stack_depth_adjust);
+                ref_stack_pop(&o_stack, stack_depth_adjust);
             }
             else {
                 check_ostack(O_STACK_PAD - stack_depth_adjust);
-                push(O_STACK_PAD - stack_depth_adjust);
+                ref_stack_push(&o_stack, O_STACK_PAD - stack_depth_adjust);
                 for (i=0;i<O_STACK_PAD - stack_depth_adjust;i++)
                     make_null(op - i);
             }
