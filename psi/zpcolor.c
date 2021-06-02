@@ -387,6 +387,9 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
 #if 0
         dmlprintf1(imemory, "PaintProc left %d extra on operator stack!\n", o_stack_adjust);
 #endif
+        /* Take care here: if anything is added after this that may access the op stack,
+           this needs to be ref_stack_pop() rather than pop().
+         */
         pop(o_stack_adjust);
     }
     esp -= 5;

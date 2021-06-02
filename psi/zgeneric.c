@@ -450,7 +450,7 @@ zforall(i_ctx_t *i_ctx_p)
     ep[2] = *obj;
     ep[3] = *op;
     esp = cproc - 1;
-    pop(2);
+    ref_stack_pop(&o_stack, 2);
     return (*real_opproc(cproc))(i_ctx_p);
 }
 /* Continuation operator for arrays */

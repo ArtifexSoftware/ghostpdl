@@ -82,7 +82,7 @@ zsetblackgeneration(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     istate->black_generation = *op;
-    pop(1);
+    ref_stack_pop(&o_stack, 1);
     push_op_estack(zcolor_remap_color);
     return zcolor_remap_one(i_ctx_p, &istate->black_generation,
                             igs->black_generation, igs,
@@ -114,7 +114,7 @@ zsetcolortransfer(i_ctx_t *i_ctx_p)
         )
         return code;
     /* Use osp rather than op here, because zcolor_remap_one pushes. */
-    pop(4);
+    ref_stack_pop(&o_stack, 4);
     push_op_estack(zcolor_reset_transfer);
     if ((code = zcolor_remap_one(i_ctx_p,
                                  &istate->transfer_procs.red,
@@ -156,7 +156,7 @@ zsetundercolorremoval(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     istate->undercolor_removal = *op;
-    pop(1);
+    ref_stack_pop(&o_stack, 1);
     push_op_estack(zcolor_remap_color);
     return zcolor_remap_one(i_ctx_p, &istate->undercolor_removal,
                             igs->undercolor_removal, igs,

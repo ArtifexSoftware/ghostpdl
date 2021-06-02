@@ -64,7 +64,7 @@ zcshow(i_ctx_t *i_ctx_p)
         return code;
     }
     sslot = *proc_op;		/* save kerning proc */
-    pop(2);
+    ref_stack_pop(&o_stack, 2);
     return cshow_continue(i_ctx_p);
 }
 static int

@@ -557,7 +557,7 @@ bbox_finish(i_ctx_t *i_ctx_p, op_proc_t cont, op_proc_t *exec_cont)
         case 0:		/* all done */
             /* Call the continuation now. */
             if (psbpt)
-                pop(2);
+                ref_stack_pop(&o_stack, 2);
             *exec_cont = cont;
             return 0;
         case type1_result_callothersubr:	/* unknown OtherSubr */

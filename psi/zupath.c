@@ -228,7 +228,7 @@ in_path_result(i_ctx_t *i_ctx_p, int npop, int code)
     else			/* error */
         return code;
     npop--;
-    pop(npop);
+    ref_stack_pop(&o_stack, npop);
     op -= npop;
     make_bool(op, result);
     return 0;

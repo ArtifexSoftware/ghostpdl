@@ -412,7 +412,7 @@ zfilenameforall(i_ctx_t *i_ctx_p)
     ++esp;
     make_istruct(esp, 0, pfen);
     *++esp = op[-1];
-    pop(3);
+    ref_stack_pop(&o_stack, 3);
     code = file_continue(i_ctx_p);
     return (code == o_pop_estack ? o_push_estack : code);
 }

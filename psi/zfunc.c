@@ -140,7 +140,7 @@ zexecfunction(i_ctx_t *i_ctx_p)
                 if (diff > 0)
                     push(diff);	/* can't fail */
                 else if (diff < 0) {
-                    pop(-diff);
+                    ref_stack_pop(&o_stack, -diff);
                     op = osp;
                 }
                 code = make_floats(op + 1 - n, out, n);

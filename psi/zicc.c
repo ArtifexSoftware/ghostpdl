@@ -68,7 +68,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
             /* Set the color space.  We are done. */
             code = gs_setcolorspace(igs, pcs);
             /* Remove the ICC dict from the stack */
-            pop(1);
+            ref_stack_pop(&o_stack, 1);
             return code;
         }
     }
@@ -235,7 +235,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         }
     }
     /* Remove the ICC dict from the stack */
-    pop(1);
+    ref_stack_pop(&o_stack, 1);
     return code;
 }
 
