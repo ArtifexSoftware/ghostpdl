@@ -715,6 +715,12 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
+    /* TODO: Use the stroke adjust that was set by gs.  This is a hack.
+     * What we really want to do is have the pdfi use the graphics state
+     * inherited by gs, which will include this setting.
+     */
+    gs_setstrokeadjust(pdfctx->ctx->pgs, gs_currentstrokeadjust(igs));
+
     code = gs_setdevice_no_erase(pdfctx->ctx->pgs, igs->device);
     if (code < 0)
         goto error;
