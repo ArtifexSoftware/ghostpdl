@@ -721,14 +721,16 @@ pdfi_fapi_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
         }
         else {
             int leniv = (pfont->data.lenIV > 0 ? pfont->data.lenIV : 0);
-            code = pdffont1->Subrs[index].size - leniv;
-            if (buf && buf_length >= code) {
-                if (ff->need_decrypt && pfont->data.lenIV >= 0) {
-                    decode_bytes(buf, pdffont1->Subrs[index].data, code + leniv, pfont->data.lenIV);
-                }
-                else {
-                    memcpy(buf, pdffont1->Subrs[index].data, code);
-                }
+            if (pdffont1->Subrs[index].size > 0) {
+                 code = pdffont1->Subrs[index].size - leniv;
+                 if (buf && buf_length >= code) {
+                     if (ff->need_decrypt && pfont->data.lenIV >= 0) {
+                         decode_bytes(buf, pdffont1->Subrs[index].data, code + leniv, pfont->data.lenIV);
+                     }
+                     else {
+                         memcpy(buf, pdffont1->Subrs[index].data, code);
+                     }
+                 }
             }
         }
     }
@@ -743,13 +745,15 @@ pdfi_fapi_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
 
             code = pdfi_array_get(pdffont2->ctx, pdffont2->Subrs, index, (pdf_obj **)&subrstring);
             if (code >= 0) {
-                code = subrstring->length - leniv;
-                if (buf && buf_length >= code) {
-                    if (ff->need_decrypt && pfont->data.lenIV >= 0) {
-                        decode_bytes(buf, subrstring->data, code + leniv, pfont->data.lenIV);
-                    }
-                    else {
-                        memcpy(buf, subrstring->data, code);
+                if (subrstring->length > 0) {
+                    code = subrstring->length - leniv;
+                    if (buf && buf_length >= code) {
+                        if (ff->need_decrypt && pfont->data.lenIV >= 0) {
+                            decode_bytes(buf, subrstring->data, code + leniv, pfont->data.lenIV);
+                        }
+                        else {
+                            memcpy(buf, subrstring->data, code);
+                        }
                     }
                 }
                 pdfi_countdown(subrstring);
@@ -849,7 +853,9 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
             }
             else
                 cc = ccode;
-
+            /* All known cmap tables map 32 to the space glyph, so if it looks like
+               we're going to use a notdef, then substitute the glyph for the code point 32
+             */
             if (l != 0) {
                 code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, cc, &gc);
                 if (code < 0 || gc == 0)
