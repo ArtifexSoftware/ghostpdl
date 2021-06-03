@@ -2358,7 +2358,15 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
                 tmp = NULL;
                 code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
                 if (code == 1) {
-                    if ((tmp->type == PDF_NAME || tmp->type == PDF_DICT)) {
+                    if ((cfffont->descflags & 4) != 0 && tmp->type == PDF_DICT) {
+                        code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)cffpriv.pdfcffpriv.Encoding, (pdf_obj **) &cfffont->Encoding);
+                        if (code >= 0) {
+                            pdfi_countdown(cffpriv.pdfcffpriv.Encoding);
+                            cffpriv.pdfcffpriv.Encoding = NULL;
+                            code = 1;
+                        }
+                    }
+                    else if ((tmp->type == PDF_NAME || tmp->type == PDF_DICT)) {
                         code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) &cfffont->Encoding);
                         if (code >= 0) {
                             pdfi_countdown(cffpriv.pdfcffpriv.Encoding);
