@@ -685,7 +685,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
     int b0, n;
     double f;
     int i;
-    int code;
+    int code = 0;
     bool do_priv = false;
 
     memset(args, 0x00, sizeof(args));
@@ -892,39 +892,51 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
         else {
             if (b0 == 30) {
                 p = pdfi_read_cff_real(p, e, &args[n].fval);
-                if (!p)
-                    return gs_throw(-1, "corrupt dictionary operand");
+                if (!p) {
+                    dmprintf(ptpriv->memory, "\nCFF: corrupt dictionary operand\n");
+                    break;
+                }
                 args[n].ival = (int)args[n].fval;
                 n++;
             }
             else if (b0 == 28 || b0 == 29 || (b0 >= 32 && b0 <= 254)) {
+                /* If we run out of data reading an integer at the very end of the stream, don't throw an error
+                   just return.
+                 */
+                bool near_end = ((e - p) <= 4);
                 p = pdfi_read_cff_integer(p, e, b0, &args[n].ival);
-                if (!p)
-                    return gs_throw(-1, "corrupt dictionary operand");
+                if (!p) {
+                    if (!near_end)
+                        code = gs_note_error(gs_error_invalidfont);
+                    dmprintf(ptpriv->memory, "\nCFF: corrupt dictionary operand\n");
+                    break;
+                }
                 args[n].fval = (float)args[n].ival;
                 n++;
             }
             else {
-                return gs_throw1(-1, "corrupt dictionary operand (b0 = %d)", b0);
+                dmprintf1(ptpriv->memory, "CFF: corrupt dictionary operand (b0 = %d)", b0);
             }
         }
     }
 
     /* recurse for the private dictionary */
-    if (do_priv) {
-        int code;
+    if (do_priv && code >= 0) {
         byte *dend = font->cffdata + offsets->private_off + offsets->private_size;
 
         if (dend > font->cffend)
             dend = font->cffend;
 
-        code = pdfi_read_cff_dict(font->cffdata + offsets->private_off, dend, ptpriv, offsets);
+        if (p == NULL)
+            code = gs_error_invalidfont;
+        else
+            code = pdfi_read_cff_dict(font->cffdata + offsets->private_off, dend, ptpriv, offsets);
 
         if (code < 0)
-            return gs_rethrow(code, "cannot read private dictionary");
+            dmprintf(ptpriv->memory, "CFF: cannot read private dictionary");
     }
 
-    return 0;
+    return code;
 }
 
 /*
