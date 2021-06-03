@@ -998,7 +998,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                                     && !strncmp((char *)gname.data, (char *)GlyphName->data, GlyphName->length))
                                 {
                                     cr->char_codes[0] = i;
-                                    cr->is_glyph_index = false;
+                                    cr->is_glyph_index = true;
                                     break;
                                 }
                             }
