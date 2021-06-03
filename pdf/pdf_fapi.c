@@ -1061,7 +1061,10 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         }
     }
     else if (pbfont->FontType == ft_encrypted) {
-        code = pbfont->procs.glyph_name((gs_font *)pbfont, ccode, (gs_const_string *)enc_char_name);
+        /* FIXME: When the integration with the PS name table is done, and high level
+           devices supported properly, assess whether this can be the font's glyph_name method
+         */
+        code = pdfi_glyph_name((gs_font *)pbfont, ccode, (gs_const_string *)enc_char_name);
         I->ff.char_data = enc_char_name->data;
         I->ff.char_data_len = enc_char_name->size;
         cr->is_glyph_index = false;
