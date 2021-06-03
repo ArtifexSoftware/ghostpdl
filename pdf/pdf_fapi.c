@@ -861,8 +861,14 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                 if (code < 0 || gc == 0)
                     (void)pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, 32, &gc);
             }
-            else
-                gc = ccode;
+            else {
+                if (ccode == 0) {
+                    (void)pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, 32, &gc);
+                }
+                else {
+                    gc = ccode;
+                }
+            }
 
             cr->client_char_code = ccode;
             cr->char_codes[0] = gc;
