@@ -396,6 +396,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
         pdfi_countdown(tounicode);
         tounicode = NULL;
+        code = 0;
     }
 
     if (descpfont == NULL) {
