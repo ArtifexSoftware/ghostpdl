@@ -393,8 +393,13 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
             text->operation = TEXT_RETURN_WIDTH;
             if (Tc != 0) {
                 text->operation |= TEXT_ADD_TO_ALL_WIDTHS;
-                text->delta_all.x = Tc;
-                text->delta_all.y = 0;
+                if (current_font->pfont && current_font->pfont->WMode == 0) {
+                    text->delta_all.x = Tc;
+                    text->delta_all.y = 0;
+                } else {
+                    text->delta_all.y = Tc;
+                    text->delta_all.x = 0;
+                }
             }
         } else {
             gs_point pt;
@@ -439,8 +444,13 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
                and the font scale is now pickled into the text matrix, so we have to
                undo that.
              */
-            text->delta_space.x = Tw / ctx->pgs->PDFfontsize;
-            text->delta_space.y = 0;
+            if (current_font->pfont && current_font->pfont->WMode == 0) {
+                text->delta_space.x = Tw / ctx->pgs->PDFfontsize;
+                text->delta_space.y = 0;
+            } else {
+                text->delta_space.y = Tw / ctx->pgs->PDFfontsize;
+                text->delta_space.x = 0;
+            }
             text->space.s_char = 0x20;
         }
 
