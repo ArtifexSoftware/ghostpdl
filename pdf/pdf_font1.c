@@ -58,6 +58,8 @@ static const pdfi_t1_glyph_name_equivalents_t pdfi_t1_glyph_name_equivalents[] =
 
 /* The Postscript code trawls the AGL to find all the equivalents.
    let's hope we can avoid that...
+   Since none of the following show be required for a remotely valid
+   Type 1, we just ignore errors (at least for now).
  */
 static void pdfi_patch_charstrings_dict(pdf_dict *cstrings)
 {
@@ -70,6 +72,24 @@ static void pdfi_patch_charstrings_dict(pdf_dict *cstrings)
             code = pdfi_dict_put(cstrings->ctx, cstrings, gne->altname, o);
         }
         gne++;
+    }
+
+    if (code >= 0) {
+        bool key_known;
+        pdf_string *pstr;
+        byte notdefstr[] = { 0x9E, 0x35, 0xCE, 0xD7, 0xFF, 0xD3, 0x62, 0x2F, 0x09 };
+
+        code = pdfi_dict_known(cstrings->ctx, cstrings, ".notdef", &key_known);
+        if (code >=0 && key_known != true) {
+            /* Seems there are plently of invalid Type 1 fonts without a .notdef,
+               so make a fake one - a valid font will end up replacing this.
+             */
+            code = pdfi_object_alloc(cstrings->ctx, PDF_STRING, sizeof(notdefstr), (pdf_obj **) &pstr);
+            if (code >= 0) {
+                memcpy(pstr->data, notdefstr, sizeof(notdefstr));
+                (void)pdfi_dict_put(cstrings->ctx, cstrings, ".notdef", (pdf_obj *) pstr);
+            }
+        }
     }
 }
 

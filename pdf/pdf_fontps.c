@@ -1042,8 +1042,7 @@ ps_font_dict_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
         !memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("CharStrings"))) {
         int code;
         pdf_dict *d = NULL;
-        pdf_string *pstr;
-        byte notdefstr[] = { 0x9E, 0x35, 0xCE, 0xD7, 0xFF, 0xD3, 0x62, 0x2F, 0x09 };
+
 
         code = pdfi_dict_alloc(s->pdfi_ctx, s->cur[0].val.i, &d);
         if (code < 0) {
@@ -1054,20 +1053,6 @@ ps_font_dict_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
 
         priv->u.t1.CharStrings = d;
         pdfi_countup(priv->u.t1.CharStrings);
-        /* Seems there are plently of invalid Type 1 fonts without a .notdef,
-           so make a fake one - a valid font will end up replacing this.
-         */
-        code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, sizeof(notdefstr), (pdf_obj **) &pstr);
-        if (code < 0) {
-            (void)pdf_ps_stack_pop(s, 1);
-            return code;
-        }
-        memcpy(pstr->data, notdefstr, sizeof(notdefstr));
-        code = pdfi_dict_put(s->pdfi_ctx, priv->u.t1.CharStrings, ".notdef", (pdf_obj *) pstr);
-        if (code < 0) {
-            (void)pdf_ps_stack_pop(s, 1);
-            return code;
-        }
     }
     return pdf_ps_stack_pop(s, 1);
 }
@@ -1123,6 +1108,7 @@ pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 pdf_ps_obj_has_type(&s->cur[-1], PDF_PS_OBJ_NAME)) {
                 pdf_string *str = NULL;
                 pdf_obj *key = NULL;
+                bool key_known;
 
                 size = s->cur[0].val.i;
                 buf++;
@@ -1134,21 +1120,24 @@ pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 pdfi_countup(key);
 
                 if (buf + size < bufend) {
-                    code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, size, (pdf_obj **) &str);
-                    if (code < 0) {
-                        pdfi_countdown(key);
-                        (void)pdf_ps_stack_pop(s, 2);
-                        return code;
-                    }
-                    pdfi_countup(str);
-                    memcpy(str->data, buf, size);
+                    code = pdfi_dict_known_by_key(s->pdfi_ctx, priv->u.t1.CharStrings, (pdf_name *)key, &key_known);
+                    if (code >=0 && key_known != true) {
+                         code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, size, (pdf_obj **) &str);
+                         if (code < 0) {
+                             pdfi_countdown(key);
+                             (void)pdf_ps_stack_pop(s, 2);
+                             return code;
+                         }
+                         pdfi_countup(str);
+                         memcpy(str->data, buf, size);
 
-                    code = pdfi_dict_put_obj(s->pdfi_ctx, priv->u.t1.CharStrings, key, (pdf_obj *) str);
-                    if (code < 0) {
-                        pdfi_countdown(str);
-                        pdfi_countdown(key);
-                        (void)pdf_ps_stack_pop(s, 2);
-                        return code;
+                         code = pdfi_dict_put_obj(s->pdfi_ctx, priv->u.t1.CharStrings, key, (pdf_obj *) str);
+                         if (code < 0) {
+                            pdfi_countdown(str);
+                            pdfi_countdown(key);
+                            (void)pdf_ps_stack_pop(s, 2);
+                            return code;
+                        }
                     }
                 }
                 pdfi_countdown(str);

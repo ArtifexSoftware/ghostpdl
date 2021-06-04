@@ -1079,6 +1079,7 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
     gs_fapi_server *I = pbfont->FAPI;
     int code = 0;
     pdf_name *encn;
+    int cstrlen = 0;
 
     /* This should only get called for Postscript-type fonts */
     if (ff->is_type1) {
@@ -1099,11 +1100,15 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
                 pdfi_countdown(glyphname);
                 if (code < 0) {
                     code = pdfi_dict_get(pdffont1->ctx, pdffont1->CharStrings, ".notdef", (pdf_obj **)&charstring);
+                    if (code < 0) {
+                        code = gs_note_error(gs_error_invalidfont);
+                        goto done;
+                    }
                 }
-                code = charstring->length - leniv;
-                if (buf != NULL && code <= buf_length) {
+                cstrlen = charstring->length - leniv;
+                if (buf != NULL && cstrlen <= buf_length) {
                     if (ff->need_decrypt && pfont1->data.lenIV >= 0)
-                        decode_bytes(buf, charstring->data, code + leniv, leniv);
+                        decode_bytes(buf, charstring->data, cstrlen + leniv, leniv);
                     else
                         memcpy(buf, charstring->data, charstring->length);
                 }
@@ -1126,17 +1131,17 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
                    gs_c_glyph_name(enc_ind, &encstr);
                    code = pdfi_name_alloc(pdffont1->ctx, (byte *)encstr.data, encstr.size, (pdf_obj **)&encn);
                    if (code < 0)
-                       return code;
+                       goto done;
 
                    pdfi_countup(encn);
                    code = pdfi_dict_get_by_key(pdffont1->ctx, pdffont1->CharStrings, encn, (pdf_obj **)&charstring);
                    pdfi_countdown(encn);
                    if (code < 0)
-                       return code;
-                   code = charstring->length - leniv;
+                       goto done;
+                   cstrlen = charstring->length - leniv;
                    if (buf != NULL && code <= buf_length) {
                        if (ff->need_decrypt && leniv >= 0)
-                           decode_bytes(buf, charstring->data, code + leniv, leniv);
+                           decode_bytes(buf, charstring->data, cstrlen + leniv, leniv);
                        else
                            memcpy(buf, charstring->data, charstring->length);
                    }
@@ -1149,15 +1154,15 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
             int leniv = pfont->data.lenIV > 0 ? pfont->data.lenIV : 0;
 
             if (I->ff.char_data_len > 0 && I->ff.char_data != NULL) {
-                code = I->ff.char_data_len - leniv;
+                cstrlen = I->ff.char_data_len - leniv;
 
-                if (buf && buf_length >= code) {
+                if (buf && buf_length >= cstrlen) {
                     memcpy(buf, I->ff.char_data, I->ff.char_data_len);
 
                     if (ff->need_decrypt && pfont->data.lenIV >= 0)
-                        decode_bytes(buf, I->ff.char_data, code + leniv, leniv);
+                        decode_bytes(buf, I->ff.char_data, cstrlen + leniv, leniv);
                     else
-                        memcpy(buf, I->ff.char_data, code);
+                        memcpy(buf, I->ff.char_data, cstrlen);
 
                     /* Trigger the seac case below - we can do this safely
                        because I->ff.char_data points to a string managed
@@ -1187,30 +1192,33 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
                     code = pdfi_name_alloc(pdffont->ctx, (byte *)encstr.data, encstr.size, (pdf_obj **)&encn);
                 }
                 if (code < 0)
-                    return code;
+                    goto done;
 
                 pdfi_countup(encn);
                 code = pdfi_dict_get_by_key(pdffont->ctx, pdffont->CharStrings, encn, (pdf_obj **)&charstring);
                 pdfi_countdown(encn);
                 if (code < 0)
-                    return code;
-                code = charstring->length - leniv;
-                if (buf != NULL && code <= buf_length) {
+                    goto done;
+                cstrlen = charstring->length - leniv;
+                if (buf != NULL && cstrlen <= buf_length) {
                     if (ff->need_decrypt && pfont->data.lenIV >= 0)
-                        decode_bytes(buf, charstring->data, code + leniv, leniv);
+                        decode_bytes(buf, charstring->data, cstrlen + leniv, leniv);
                     else
                         memcpy(buf, charstring->data, charstring->length);
                 }
                 pdfi_countdown(charstring);
             }
 
-            return code;
         }
     }
     else {
         code = gs_error_invalidaccess;
     }
-    return code;
+done:
+    if (code < 0)
+        return code;
+
+    return cstrlen;
 }
 
 static int
