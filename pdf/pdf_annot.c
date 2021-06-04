@@ -544,6 +544,7 @@ static int pdfi_annot_draw_BS(pdf_context *ctx, pdf_dict *annot, pdf_dict *BS, b
         if (code == 0) {
             code = pdfi_array_alloc(ctx, 1, &dash);
             if (code < 0) goto exit;
+            pdfi_countup(dash);
 
             code = pdfi_array_put_int(ctx, dash, 0, 3);
             if (code < 0) goto exit;
@@ -551,8 +552,8 @@ static int pdfi_annot_draw_BS(pdf_context *ctx, pdf_dict *annot, pdf_dict *BS, b
     } else {
         /* Empty array */
         code = pdfi_array_alloc(ctx, 0, &dash);
-        pdfi_countup(dash);
         if (code < 0) goto exit;
+        pdfi_countup(dash);
     }
 
     /* At this point we have a dash array (which could be length 0) and a width */
