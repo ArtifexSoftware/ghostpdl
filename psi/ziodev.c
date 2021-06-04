@@ -293,7 +293,7 @@ sc:
         return_error(gs_error_VMerror);
     }
 
-    pop(3);
+    ref_stack_pop(&o_stack, 3);
     make_stream_file(osp, s, "r");
 
     return code;

@@ -185,7 +185,7 @@ zcheck_r6_password(i_ctx_t * i_ctx_p)
     if (r_size(UEref) < 32)
         return_error(gs_error_invalidaccess);
 
-    pop(2);
+    ref_stack_pop(&o_stack, 2);
     op = osp;
 
     PWlen = r_size(Pref);

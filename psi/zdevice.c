@@ -289,7 +289,7 @@ zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
     if (op[-1].value.pdevice == NULL)
         /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
         return_error(gs_error_undefined);
-    pop(1);
+    ref_stack_pop(&o_stack, 1);
     stack_param_list_write(&list, &o_stack, &rkeys, iimemory);
     code = gs_get_device_or_hardware_params(dev, (gs_param_list *) & list,
                                             is_hardware);
@@ -628,7 +628,7 @@ zspec_op(i_ctx_t *i_ctx_p)
     if (proc < 0)
         return_error(gs_error_undefined);
 
-    pop(1);     /* We don't need the name of the spec_op any more */
+    ref_stack_pop(&o_stack, 1);     /* We don't need the name of the spec_op any more */
     op = osp;
 
     switch(proc) {

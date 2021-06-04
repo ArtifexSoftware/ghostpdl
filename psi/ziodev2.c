@@ -75,7 +75,7 @@ zgetdevparams(i_ctx_t *i_ctx_p)
         return_error(gs_error_undefined);
     stack_param_list_write(&list, &o_stack, NULL, iimemory);
     if ((code = gs_getdevparams(iodev, plist)) < 0) {
-        ref_stack_pop(&o_stack, list.count * 2);
+        pop(list.count * 2);
         return code;
     }
     pmark = ref_stack_index(&o_stack, list.count * 2);
@@ -114,7 +114,7 @@ zputdevparams(i_ctx_t *i_ctx_p)
     iparam_list_release(&list);
     if (code < 0)
         return code;
-    ref_stack_pop(&o_stack, list.count * 2 + 2);
+    pop(list.count * 2 + 2);
     return 0;
 }
 

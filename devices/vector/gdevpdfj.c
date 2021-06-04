@@ -412,6 +412,9 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
     if (pdev->JPEG_PassThrough) {
         CHECK(cos_dict_put_c_strings(pcd, "/Filter", "/DCTDecode"));
     }
+    if (pdev->JPX_PassThrough) {
+        CHECK(cos_dict_put_c_strings(pcd, "/Filter", "/JPXDecode"));
+    }
     return code;
 }
 

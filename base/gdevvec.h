@@ -306,7 +306,7 @@ void gdev_vector_dopath_init(gdev_vector_dopath_state_t *state,
 
 /* Write a segment of a path using the default implementation. */
 int gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
-                               gs_fixed_point vs[3]);
+                               gs_fixed_point *vs);
 
 typedef struct gdev_vector_path_seg_record_s {
     int op;

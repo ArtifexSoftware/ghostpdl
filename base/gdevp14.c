@@ -3112,6 +3112,48 @@ pdf14_blend_image_mixed_buffer16(byte* buf_ptr_, int width, int height, int rows
     }
 }
 
+static pdf14_buf*
+insert_empty_planes(pdf14_ctx* ctx, pdf14_buf** src_buf, int num_new_planes, int insert_index)
+{
+    int planestride = (*src_buf)->planestride;
+    int src_n_planes = (*src_buf)->n_planes;
+    int src_n_chan = (*src_buf)->n_chan;
+    int des_n_planes = src_n_planes + num_new_planes;
+    int des_n_chan = src_n_chan + num_new_planes;
+    byte *src_ptr = (*src_buf)->data;
+    byte* des_ptr;
+    byte *des_data;
+    bool deep = ctx->deep;
+
+    des_data = gs_alloc_bytes(ctx->memory,
+        (size_t)planestride * des_n_planes + CAL_SLOP,
+        "insert_empty_planes");
+    if (des_data == NULL)
+        return NULL;
+
+    des_ptr = des_data;
+
+    /* First copy portion prior to insert point */
+    memcpy(des_ptr, src_ptr, (planestride * insert_index) << deep);
+
+    /* New planes */
+    des_ptr += (planestride * insert_index) << deep;
+    src_ptr += (planestride * insert_index) << deep;
+    memset(des_ptr, 0, (planestride * num_new_planes) << deep);
+
+    /* Extra planes (i.e. doc spots, tags) */
+    des_ptr += (planestride * num_new_planes) << deep;
+    memcpy(des_ptr, src_ptr, (planestride * (src_n_planes - insert_index)) << deep);
+
+    /* Set up buffer structure */
+    gs_free_object(ctx->memory, (*src_buf)->data, "insert_empty_planes");
+    (*src_buf)->n_planes = des_n_planes;
+    (*src_buf)->n_chan = des_n_chan;
+    (*src_buf)->data = des_data;
+
+    return *src_buf;
+}
+
 static int
 pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     gs_gstate* pgs, pdf14_buf* buf, int planestride_in,
@@ -3355,6 +3397,30 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
             tag_offset = buf->has_tags ? buf->n_chan : 0;
         }
 
+        /* We may need to pad the buffers to ensure that any additional spot
+           channels that are not created by the ICC color conversion (or
+           non-conversion if this is not an NCLR profile) get placed properly.
+           It is up to the target device to
+           handle these planes how it sees fit based upon the image data
+           and/or any tags plane during any put image call.  We *could*
+           do something here to possibly communicate through the put_image
+           call where the page related spots start, but that would/could
+           be confusing, especially for long term maintenance. Easier just
+           to have put_image hand all the data */
+        if (dev_target_profile->spotnames != NULL &&
+            dev_target_profile->spotnames->count > des_profile->num_comps) {
+            int num_new_planes = dev_target_profile->spotnames->count - des_profile->num_comps;
+            int insert_index = des_profile->num_comps;
+            pdf14_buf* result;
+
+            result = insert_empty_planes(pdev->ctx, &buf, num_new_planes, insert_index);
+            if (result == NULL)
+                return_error(gs_error_VMerror);
+
+            num_comp = buf->n_chan;
+            tag_offset = buf->has_tags ? buf->n_chan : 0;
+            buf_ptr = buf->data + (rect.p.y - buf->rect.p.y) * buf->rowstride + ((rect.p.x - buf->rect.p.x) << deep);
+        }
 #if RAW_DUMP
         /* Dump after the CS transform */
         dump_raw_buffer_be(target->memory, height, width, buf->n_planes, planestride, rowstride,
@@ -7729,6 +7795,7 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
                             dst_ptr[k * planestride] = dst2[k];
                         }
                     }
+                    dst_ptr[num_comp * planestride] = dst[num_comp];    /* alpha */
                 }
             } else {
                 if (overprint) {
@@ -7945,6 +8012,7 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
                             dst_ptr[k * planestride] = dst2[k];
                         }
                     }
+                    dst_ptr[num_comp * planestride] = dst[num_comp];    /* alpha */
                 }
             } else {
                 if (overprint) {
@@ -8567,8 +8635,11 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     p14dev->fillconstantalpha = 1.0;
     p14dev->strokeconstantalpha = 1.0;
 
-    /* Simulated overprint case.  We have to use CMYK-based profile */
-    if (p14dev->overprint_sim && icc_profile->data_cs != gsCMYK) {
+    /* Simulated overprint case.  We have to use CMYK-based profile.  Also if the target
+       profile is NCLR, we are going to use a pdf14 device that is CMYK based and
+       do the mapping to the NCLR profile when the put_image occurs */
+    if ((p14dev->overprint_sim && icc_profile->data_cs != gsCMYK) ||
+        icc_profile->data_cs == gsNCHANNEL) {
         gsicc_adjust_profile_rc(pgs->icc_manager->default_cmyk, 1, "gs_pdf14_device_push");
         gsicc_adjust_profile_rc(p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
             -1, "gs_pdf14_device_push");
@@ -9842,7 +9913,11 @@ get_pdf14_clist_device_proto(gx_device          *dev,
             /*
              * The number of components for the PDF14 device is the sum
              * of the process components and the number of spot colors
-             * for the page.
+             * for the page. If we are using an NCLR ICC profile at
+             * the output device, those spot colors are skipped. They
+             * do not appear in the transparency buffer, but appear
+             * during put image transform of the page group to the target
+             * color space.
              */
             if (num_spots >= 0) {
                 pdevproto->devn_params.page_spot_colors = num_spots;
@@ -9971,8 +10046,12 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
         &render_cond);
     if_debug0m('v', mem, "[v]pdf14_create_clist_device\n");
 
-    /* Simulated overprint case.  We have to use CMYK-based profile */
-    if (pdev->overprint_sim && icc_profile->data_cs != gsCMYK) {
+    /* Simulated overprint case.  We have to use CMYK-based profile
+       Also if the target profile is NCLR, we are going to use a pdf14
+       device that is CMYK based and do the mapping to the NCLR profile
+       when the put_image occurs */
+    if ((pdev->overprint_sim && icc_profile->data_cs != gsCMYK) ||
+         icc_profile->data_cs == gsNCHANNEL) {
         gsicc_adjust_profile_rc(pgs->icc_manager->default_cmyk, 1, "pdf14_create_clist_device");
         gsicc_adjust_profile_rc(pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
             -1, "pdf14_create_clist_device");
@@ -11602,14 +11681,16 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
      * device.
      */
     switch (pdf14pct->params.pdf14_op) {
-        case PDF14_PUSH_DEVICE:
-            /* Overprint simulation sets the profile at prototype creation. */
-            if (!p14dev->overprint_sim) {
-                gsicc_adjust_profile_rc(cl_icc_profile, 1, "c_pdf14trans_clist_read_update");
-                gsicc_adjust_profile_rc(p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
-                    -1, "c_pdf14trans_clist_read_update");
-                p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] = cl_icc_profile;
-            }
+    case PDF14_PUSH_DEVICE:
+        /* Overprint simulation sets the profile at prototype creation, as does
+           when the target profile is NCLR. Match the logic in gs_pdf14_device_push */
+        if (!((p14dev->overprint_sim && cl_icc_profile->data_cs != gsCMYK) ||
+            cl_icc_profile->data_cs == gsNCHANNEL)) {
+            gsicc_adjust_profile_rc(cl_icc_profile, 1, "c_pdf14trans_clist_read_update");
+            gsicc_adjust_profile_rc(p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+                -1, "c_pdf14trans_clist_read_update");
+            p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] = cl_icc_profile;
+        }
             /*
              * If we are blending using spot colors (i.e. the output device
              * supports spot colors) then we need to transfer

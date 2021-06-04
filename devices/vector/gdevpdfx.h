@@ -45,7 +45,13 @@
  * Acrobat 4 is now more than 20 years old, lets just drop support for it. The
  * PDF specification never had this limit, just Adobe's software.
  */
-/* #define MAX_USER_COORD 16300 */
+/* 31/05/2021 However, it transpires that the PDF/A-1 specification adopted the
+ * implementation limits of Acrobat 5 as part of the specification. So we need
+ * to handle that, but we don't need to limit ourselves to the more restrictive
+ * Acrobat 4 limit of 16384 ( MAX_USER_COORD 16300), we can use 32767. THis is only
+ * used when creating PDF/A-1 files.
+ */
+#define MAX_USER_COORD 32700
 
 /* ---------------- Statically allocated sizes ---------------- */
 /* These should really be dynamic.... */

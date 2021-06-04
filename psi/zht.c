@@ -221,7 +221,7 @@ set_screen_continue(i_ctx_t *i_ctx_p)
     code = gs_screen_next(senum, value);
     if (code < 0)
         return code;
-    pop(1);
+    ref_stack_pop(&o_stack, 1);
     return screen_sample(i_ctx_p);
 }
 /* Finish setscreen. */

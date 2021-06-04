@@ -416,6 +416,7 @@ Cells in the table below containing '=' mean that the value of the parameter is 
 <tr valign=top><td><code>UseFlateCompression</code><td><td><a href="#note_2">(2)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>UsePrologue</code><td><td><a href="#note_0">(0)</a><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>PassThroughJPEGImages</code><td><td><a href="#note_15">(15)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><code>PassThroughJPXImages</code><td><td><a href="#note_16">(16)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 </table></blockquote>
 
 <p>
@@ -555,10 +556,20 @@ The default value of <code>CompressPages</code> is <code>false</code> for ps2wri
 <a name="note_15">(note 15)</a>
 When <code>true</code> image data in the source which is encoded using the DCT (JPEG) filter will not be decompressed
 and then recompressed on output. This prevents the multiplication of JPEG artefacts caused by lossy compression.
-</code><code>PassThroughJPEGImages</code> currently only affects simple JPEG images. It has no effect on JPX (JPEG2000) encoded images,
+</code><code>PassThroughJPEGImages</code> currently only affects simple JPEG images. It has no effect on JPX (JPEG2000) encoded images (see below)
 or masked images. In addition this parameter will be ignored if the pdfwrite device needs to modify the source data. This can happen if the image
 is being downsampled, changing colour space or having transfer functions applied. Note that this parameter essentially overrides
 the 'EncodeColorImages' and 'EncodeGrayImages' parameters if they are false, the image will still be written with a DCTDecode filter. NB this
+feature currently only works with PostScript or PDF input, it does not work with PCL, PXL or XPS input.
+
+<p>
+<a name="note_16">(note 16)</a>
+When <code>true</code> image data in the source which is encoded using the JPX (JPEG 2000) filter will not be decompressed
+and then recompressed on output. This prevents the multiplication of JPEG artefacts caused by lossy compression.
+</code><code>PassThroughJPXImages</code> currently only affects simple JPX encoded images. It has no effect on JPEG encoded images (see above)
+or masked images. In addition this parameter will be ignored if the pdfwrite device needs to modify the source data. This can happen if the image
+is being downsampled, changing colour space or having transfer functions applied. Note that this parameter essentially overrides
+the 'EncodeColorImages' and 'EncodeGrayImages' parameters if they are false, the image will still be written with a JPXDecode filter. NB this
 feature currently only works with PostScript or PDF input, it does not work with PCL, PXL or XPS input.
 
 <h4><a name="Color_Conversion_and_Management"></a>Color Conversion and Management</h4>

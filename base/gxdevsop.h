@@ -328,6 +328,13 @@ enum {
     gxdso_JPEG_passthrough_begin,
     gxdso_JPEG_passthrough_data,
     gxdso_JPEG_passthrough_end,
+    /* And similarly JPX passthrough requests/control. Currently used for the pdfwrite family only.
+     */
+    gxdso_JPX_passthrough_query,
+    gxdso_JPX_passthrough_begin,
+    gxdso_JPX_passthrough_data,
+    gxdso_JPX_passthrough_end,
+
     gxdso_supports_iccpostrender,
     /* Retrieve the last device in a device chain
        (either forwarding or subclass devices).

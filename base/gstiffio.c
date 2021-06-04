@@ -30,7 +30,6 @@
 
 #include "gstiffio.h"
 
-
 #define TIFF_PRINT_BUF_LENGTH 1024
 static const char tifs_msg_truncated[] = "\n*** Previous line has been truncated.\n";
 
@@ -295,6 +294,8 @@ _TIFFmemcmp(const void* p1, const void* p2, tmsize_t c)
 
 #if !defined(HAVE_SNPRINTF) && !defined(HAVE__SNPRINTF)
 #include "gssprintf.h"
+/* gets rid of compiler warning -- could include tiffiop.h, not sure which is better */
+int _TIFF_snprintf_f(char* buf, size_t size, const char* format, ...);
 int
 _TIFF_snprintf_f(char* buf, size_t size, const char* format, ...)
 {

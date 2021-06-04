@@ -32,7 +32,7 @@ FLAG(epo_details, 5, 0, "Erasepage Optimization tracing"),
 FLAG(epo_install_only, 6, 0, "Erasepage Optimization install only (for debugging subclass)"),
 FLAG(init_details, 7, 0, "Language initialisation (detail)"),
 FLAG(overprint, 8, 0, "Overprint"),
-UNUSED(9)
+FLAG(clist_color, 9, 0, "Clist color"),
 UNUSED(10)
 UNUSED(11)
 UNUSED(12)

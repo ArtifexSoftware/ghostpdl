@@ -351,7 +351,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 
         odict = op[-1];
         odict5 = *op;
-        pop(2);
+        ref_stack_pop(&o_stack, 2);
         op = osp;
         esp += 5;
         make_mark_estack(esp - 4, es_other, sethalftone_cleanup);

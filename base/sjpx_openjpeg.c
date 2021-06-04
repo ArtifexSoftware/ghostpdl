@@ -236,7 +236,10 @@ static void sjpx_info_callback(const char *msg, void *ptr)
 
 static void sjpx_warning_callback(const char *msg, void *ptr)
 {
+#ifdef DEBUG
+	/* prevent too many messages during normal build */
 	dlprintf1("openjpeg warning: %s", msg);
+#endif
 }
 
 /* initialize the stream */
@@ -698,6 +701,14 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
 
     if (in_size > 0)
     {
+        if (state->PassThrough && state->PassThroughfn) {
+            if (state->PassThrough && state->PassThroughfn && !state->StartedPassThrough) {
+                state->StartedPassThrough = 1;
+                (state->PassThroughfn)(state->device, NULL, 1);
+            }
+            (state->PassThroughfn)(state->device, (byte *)pr->ptr + 1, (byte *)pr->limit - (byte *)pr->ptr);
+        }
+
         /* buffer available data */
         code = opj_lock(ss->memory);
         if (code < 0) return code;
@@ -773,6 +784,10 @@ s_opjd_set_defaults(stream_state * ss) {
 
     state->alpha = false;
     state->colorspace = gs_jpx_cs_rgb;
+    state->StartedPassThrough = 0;
+    state->PassThrough = 0;
+    state->PassThroughfn = NULL;
+    state->device = (void *)NULL;
 }
 
 /* stream release.
@@ -783,6 +798,10 @@ s_opjd_release(stream_state *ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
 
+    if (state->PassThrough && state->PassThroughfn && state->StartedPassThrough) {
+        state->StartedPassThrough = 0;
+        (state->PassThroughfn)(state->device, NULL, 0);
+    }
     /* empty stream or failed to accumulate */
     if (state->codec == NULL)
         return;

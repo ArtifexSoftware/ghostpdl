@@ -175,7 +175,7 @@ zpdfinkpath(i_ctx_t *i_ctx_p)
         y0 = y1, y1 = y2, y2 = y3;
     }
   pop:
-    ref_stack_pop(&o_stack, 1);
+    pop(1);
     return 0;
 }
 
@@ -196,7 +196,7 @@ zpdfFormName(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
-    ref_stack_pop(&o_stack, 1);
+    pop(1);
     return 0;
 }
 

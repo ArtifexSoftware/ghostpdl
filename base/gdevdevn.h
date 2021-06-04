@@ -21,9 +21,6 @@
 #include "gxblend.h"
 #include "gsequivc.h"
 
-/* See Comments in gdevtsep.c or gdevpsd.c as to the purpose of this */
-#define LIMIT_TO_ICC 1
-
 /*
  * Type definitions associated with the fixed color model names.
  */

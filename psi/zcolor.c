@@ -688,7 +688,7 @@ zsettransfer(i_ctx_t * i_ctx_p)
     if ((code = gs_settransfer_remap(igs, gs_mapped_transfer, false)) < 0)
         return code;
     push_op_estack(zcolor_reset_transfer);
-    pop(1);
+    ref_stack_pop(&o_stack, 1);
     return zcolor_remap_one( i_ctx_p,
                              &istate->transfer_procs.gray,
                              igs->set_transfer.gray,
@@ -1051,7 +1051,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                     *stage = 1;
                     break;
                 }
-                pop(1);
+                ref_stack_pop(&o_stack, 1);
                 *cont = 1;
                 *stage = 3;
                 code = setcolorspace_nosubst(i_ctx_p);
@@ -1075,7 +1075,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                  */
                 if (!r_has_type(op, t_boolean))
                     return_error(gs_error_typecheck);
-                pop(1);
+                ref_stack_pop(&o_stack, 1);
                 *stage = 1;
                 *cont = 1;
                 if (op->value.boolval) {
@@ -1276,7 +1276,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                     *stage = 1;
                     break;
                 }
-                pop(1);
+                ref_stack_pop(&o_stack, 1);
                 *stage = 3;
                 code = setcolorspace_nosubst(i_ctx_p);
                 if (code != 0)
@@ -1299,7 +1299,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                  */
                 if (!r_has_type(op, t_boolean))
                     return_error(gs_error_typecheck);
-                pop(1);
+                ref_stack_pop(&o_stack, 1);
                 *stage = 1;
                 *cont = 1;
                 if (op->value.boolval) {
@@ -1391,7 +1391,7 @@ static int rgbbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
 
             switch (base) {
                 case 0:
-                    pop(2);
+                    ref_stack_pop(&o_stack, 2);
                     op = osp;
                     /* If R == G == B, then this is gray, so just use it. Avoids
                      * rounding errors.
@@ -1500,7 +1500,7 @@ static int rgbbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
                     return_error(gs_error_typecheck);
             } else
                 BG = (float)op->value.intval;
-            pop(1);
+            ref_stack_pop(&o_stack, 1);
             op = osp;
             if (BG < 0)
                 BG = 0;
@@ -1628,7 +1628,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                     *stage = 1;
                     break;
                 }
-                pop(1);
+                ref_stack_pop(&o_stack, 1);
                 *stage = 3;
                 code = setcolorspace_nosubst(i_ctx_p);
                 if (code != 0)
@@ -1651,7 +1651,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                  */
                 if (!r_has_type(op, t_boolean))
                     return_error(gs_error_typecheck);
-                pop(1);
+                ref_stack_pop(&o_stack, 1);
                 *stage = 1;
                 *cont = 1;
                 if (op->value.boolval) {
@@ -1741,7 +1741,7 @@ static int cmykbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, in
 
     switch (base) {
         case 0:
-            pop(3);
+            ref_stack_pop(&o_stack, 3);
             op = osp;
             Gray = (0.3 * CMYK[0]) + (0.59 * CMYK[1]) + (0.11 * CMYK[2]) + CMYK[3];
             if (Gray > 1.0)
@@ -1752,7 +1752,7 @@ static int cmykbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, in
             break;
         case 1:
         case 2:
-            pop(1);
+            ref_stack_pop(&o_stack, 1);
             op = osp;
             RGB[0] = 1.0 - (CMYK[0] + CMYK[3]);
             if (RGB[0] < 0)
@@ -3320,7 +3320,7 @@ static int ciebasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
             break;
     }
     /* Remove teh requisite number of values */
-    pop(components);
+    ref_stack_pop(&o_stack, components);
     op = osp;
     /* Find out how many values we need to return, which
      * depends on the requested space.
@@ -3645,7 +3645,7 @@ static int sepbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
         if (!use) {
             *stage = 0;
             *cont = 0;
-            pop(1);
+            ref_stack_pop(&o_stack, 1);
             op = osp;
             switch(base) {
                 case 0:
@@ -4475,7 +4475,7 @@ static int devicenbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage,
         if (code < 0)
             return code;
         n_comp = r_size(&narray);
-        pop(n_comp);
+        ref_stack_pop(&o_stack, n_comp);
         op = osp;
         switch(base) {
         case 0:
@@ -4618,7 +4618,7 @@ indexed_cont(i_ctx_t *i_ctx_p)
             esp -= num_csme;
             return code;
         }
-        pop(m);
+        ref_stack_pop(&o_stack, m);
         op -= m;
         if (i == (int)ep[csme_hival].value.intval) {	/* All done. */
             esp -= num_csme;
@@ -4878,7 +4878,7 @@ static int indexedbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage,
                 return_error (gs_error_typecheck);
             index = op->value.intval;
             /* And remove it from the stack. */
-            pop(1);
+            ref_stack_pop(&o_stack, 1);
             op = osp;
 
             /* Make sure we have enough space on the op stack to hold
@@ -5094,7 +5094,7 @@ static int patternbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage,
          */
     }
 
-    pop(1);
+    ref_stack_pop(&o_stack, 1);
     op = osp;
     switch(base) {
         case 0:
@@ -5428,7 +5428,7 @@ static int labbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
     int i, components=1;
 
     components = 3;
-    pop(components);
+    ref_stack_pop(&o_stack, components);
     op = osp;
     components = 3;
     push(components);
@@ -5953,7 +5953,7 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                                 return code;
                             *stage = 0;
                         }
-                        pop(1);
+                        ref_stack_pop(&o_stack, 1);
                     }
                     if (code != 0)
                         return code;

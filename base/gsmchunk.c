@@ -1095,7 +1095,7 @@ chunk_free_object(gs_memory_t *mem, void *ptr, client_name_t cname)
     }
     /* finalize may change the head_**_chunk doing free of stuff */
 
-    if_debug3m('A', cmem->target, "[a-]chunk_free_object(%s) "PRI_INTPTR"(%u)\n",
+    if_debug3m('A', cmem->target, "[a-]chunk_free_object(%s) "PRI_INTPTR"(%"PRIuSIZE")\n",
                client_name_string(cname), (intptr_t)ptr, obj->size);
 
     if (SINGLE_OBJECT_CHUNK(obj->size - obj->padding)) {

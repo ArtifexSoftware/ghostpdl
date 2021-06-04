@@ -801,7 +801,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     if (dev->PageList) {
         gdev_pagelist *p = (gdev_pagelist *)dev->PageList;
-        param_string_from_string(pagelist, p->Pages);
+        param_string_from_transient_string(pagelist, p->Pages);
     } else {
         param_string_from_string(pagelist, null_str);
     }

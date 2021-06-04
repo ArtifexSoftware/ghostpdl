@@ -563,14 +563,20 @@ gx_devn_write_color(
     uchar ncomps = cdev->clist_color_info.num_components; /* Could be different than target if 1.4 device */
     gx_color_index  mask = 0x1, comp_bits = 0;
 
+    if_debug1m(gs_debug_flag_clist_color, dev->memory,
+        "[clist_color] Writing devn color, %d components [ ", ncomps);
+
     /* First find the number of non zero values */
     for (i = 0; i < ncomps; i++, mask <<= 1) {
+        if_debug1m(gs_debug_flag_clist_color, dev->memory,
+            "%d ", pdevc->colors.devn.values[i]);
         if (pdevc->colors.devn.values[i] != 0) {
             comp_bits |= mask;
             count++;
         }
     }
     mask = comp_bits;
+    if_debug0m(gs_debug_flag_clist_color, dev->memory, "]\n");
 
     num_bytes1 = sizeof(gx_color_index);
     num_bytes = num_bytes1 + count * 2 + 1; /* One for the tag byte */
@@ -706,6 +712,9 @@ gx_devn_read_color(
     pos++;
     num_bytes++;
 
+    if_debug1m(gs_debug_flag_clist_color, dev->memory,
+        "[clist_color] Reading devn color, %d components [ ", ncomps);
+
     /* Now the data */
     for (i = 0; i < ncomps; i++) {
         if (mask & 1) {
@@ -717,8 +726,11 @@ gx_devn_read_color(
         } else {
             values[i] = 0;
         }
+        if_debug1m(gs_debug_flag_clist_color, dev->memory,
+            "%d ", values[i]);
         mask >>= 1;
     }
+    if_debug0m(gs_debug_flag_clist_color, dev->memory, "]\n");
     return num_bytes;
 }
 

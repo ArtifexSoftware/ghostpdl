@@ -1460,7 +1460,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                  * is a named object it can be modified after creation. We must
                  * allow the named object code to write out the object and free it.
                  */
-                if (cos_dict_forall(pdev->local_named_objects, value, check_annot_in_named) == 0)
+                if (cos_dict_forall(pdev->local_named_objects, (void *)value,
+                                    check_annot_in_named) == 0)
                     value->contents.object->id = 0;
             }
             e = next;

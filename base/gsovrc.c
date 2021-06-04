@@ -187,8 +187,8 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
         return gs_error_rangecheck;
     }
     data[0] = flags;
-    if_debug2m('v', ((const gx_device *)cdev)->memory, "[v]c_overprint_write(%d), drawn_comps=0x%x\n",
-               flags, pparams->drawn_comps);
+    if_debug2m('v', ((const gx_device *)cdev)->memory, "[v]c_overprint_write(%d), drawn_comps=0x%"PRIx64"\n",
+               flags, (uint64_t)pparams->drawn_comps);
     return 0;
 }
 
@@ -228,7 +228,7 @@ c_overprint_read(
     }
     if_debug1m('v', mem, ", retain_any_comps=%d", params.retain_any_comps);
     if_debug1m('v', mem, ", is_fill_color=%d", params.is_fill_color);
-    if_debug1m('v', mem, ", drawn_comps=0x%x", params.drawn_comps);
+    if_debug1m('v', mem, ", drawn_comps=0x%"PRIx64, (uint64_t)params.drawn_comps);
     if_debug1m('v', mem, ", op_state=%d", params.op_state);
     if_debug0m('v', mem, "\n");
     code = gs_create_overprint(ppct, &params, mem);
@@ -650,8 +650,9 @@ update_overprint_params(
     }
 
     if_debug4m(gs_debug_flag_overprint, opdev->memory,
-        "[overprint] update_overprint_params enter. retain_any_comps = %d, idle = %d, drawn_comps = 0x%x, is_fill_color = %d\n",
-        pparams->retain_any_comps, pparams->idle, pparams->drawn_comps, pparams->is_fill_color);
+        "[overprint] update_overprint_params enter. retain_any_comps = %d, idle = %d, drawn_comps = 0x%"PRIx64", is_fill_color = %d\n",
+               pparams->retain_any_comps, pparams->idle,
+               (uint64_t)pparams->drawn_comps, pparams->is_fill_color);
 
     /* check if overprint is to be turned off */
     if (!pparams->retain_any_comps || pparams->idle) {
@@ -678,8 +679,10 @@ update_overprint_params(
         }
 
         if_debug4m(gs_debug_flag_overprint, opdev->memory,
-            "[overprint] update_overprint_params exit. drawn_comps_fill = 0x%x, drawn_comps_stroke = 0x%x, retain_none_fill = %d, retain_none_stroke = %d \n",
-            opdev->drawn_comps_fill, opdev->drawn_comps_stroke, opdev->retain_none_fill, opdev->retain_none_stroke);
+            "[overprint] update_overprint_params exit. drawn_comps_fill = 0x%"PRIx64", drawn_comps_stroke = 0x%"PRIx64", retain_none_fill = %d, retain_none_stroke = %d \n",
+                   (uint64_t)opdev->drawn_comps_fill,
+                   (uint64_t)opdev->drawn_comps_stroke,
+                   opdev->retain_none_fill, opdev->retain_none_stroke);
         return 0;
     }
 
@@ -706,8 +709,10 @@ update_overprint_params(
     }
 
     if_debug4m(gs_debug_flag_overprint, opdev->memory,
-        "[overprint] update_overprint_params exit. drawn_comps_fill = 0x%x, drawn_comps_stroke = 0x%x, retain_none_fill = %d, retain_none_stroke = %d \n",
-        opdev->drawn_comps_fill, opdev->drawn_comps_stroke, opdev->retain_none_fill, opdev->retain_none_stroke);
+        "[overprint] update_overprint_params exit. drawn_comps_fill = 0x%"PRIx64", drawn_comps_stroke = 0x%"PRIx64", retain_none_fill = %d, retain_none_stroke = %d \n",
+               (uint64_t)opdev->drawn_comps_fill,
+               (uint64_t)opdev->drawn_comps_stroke,
+               opdev->retain_none_fill, opdev->retain_none_stroke);
 
     /* if appropriate, update the retain_mask field */
     if (colors_are_separable_and_linear(&opdev->color_info))
@@ -830,8 +835,11 @@ overprint_composite(
         params.idle = pct->idle;
         /* device must already exist, so just update the parameters if settings change */
         if_debug6m(gs_debug_flag_overprint, opdev->memory,
-            "[overprint] overprint_composite test for change. params.idle = %d vs. opdev->is_idle = %d \n  params.is_fill_color = %d: params.drawn_comps = 0x%x vs. opdev->drawn_comps_fill =  0x%x OR opdev->drawn_comps_stroke = 0x%x\n",
-            params.idle, opdev->is_idle, params.is_fill_color, params.drawn_comps, opdev->drawn_comps_fill, opdev->drawn_comps_stroke);
+            "[overprint] overprint_composite test for change. params.idle = %d vs. opdev->is_idle = %d \n  params.is_fill_color = %d: params.drawn_comps = 0x%"PRIx64" vs. opdev->drawn_comps_fill =  0x%"PRIx64" OR opdev->drawn_comps_stroke = 0x%"PRIx64"\n",
+            params.idle, opdev->is_idle, params.is_fill_color,
+                   (uint64_t)params.drawn_comps,
+                   (uint64_t)opdev->drawn_comps_fill,
+                   (uint64_t)opdev->drawn_comps_stroke);
 
         if (update || params.idle != opdev->is_idle || params.op_state != OP_STATE_NONE)
             code = update_overprint_params(opdev, &params);

@@ -3116,18 +3116,38 @@ device supports those colorants.  It is also possible for these devices to
     <dt><code>-sICCOutputColors=</code><em>"Cyan, Magenta, Yellow, Black, Orange, Violet"</em></dt>
 <dd>For the psdcmyk and tiffsep separation devices, the device ICC profile can
 be an NCLR profile, which means something that includes non-traditional inks
-like Orange, Violet, etc.   In this case, the list of the colorant names in the
+like Orange, Violet, etc.   In this case, the list of the color names in the
 order that they exist in the profile must be provided with this command line
-option.   Note that if a colorant name that is specified for the profile occurs also within
-the document (e.g. "Orange" above), then these colorants will be associated with
-the same separation.  It is possible through a compile time option LIMIT_TO_ICC
-defined in gdevdevn.h to restrict the output colorants of the psdcmyk and tiffsep
-device to the colorants of the ICC profile or to allow additional spot colorants
-in the document to be created as different separations.  If restricted, the other
-spot colorants will go through the alternate tint transform and then be mapped to
-the color space defined by the NCLR profile.   If an NCLR ICC profile is specified
+option.   Note that if a color name that is specified for the profile occurs also within
+the document (e.g. "Orange" above), then these color names will be associated with
+the same separation.  Additional names beyond those of the ICC profile component count
+can be included.  In this case, those components will be installed into the tiffsep
+or psdcmyk device list of colors, following the ICC profile colors.
+The number of spot colors (those that go beyond the standard CMYK colors)
+allowed by tiffsep or psdcmyk can be set using -dMaxSpots=#.  The default
+value for this is currently set to 10 (GS_SOFT_MAX_SPOTS).
+As an example consider the case where we wish to use a 6CLR ICC profile that
+includes Orange and Violet, but
+need the device to include a specialty color component such as
+Varnish, which does not appear in the document and is not handled by the 6CLR ICC
+profile.  In addition, we desire
+to allow one more spot color of the document to come through to our device.  For
+this case using
+ <code>-sICCOutputColors=</code><em>"Cyan, Magenta, Yellow, Black, Orange, Violet, Varnish"</em>
+  <code>-dMaxSpots=</code><em>4</em>
+   <code>-sOutputICCProfile=</code><em>My_6CLR_Profile.icc</em>
+would provide the desired outcome.  Note that it is up to the device or
+through the use of -sNamedProfile (see below) to involve the setting
+of any values in the Varnish channel.  However, if an All color value is encountered
+in the document, the Varnish component will have its value
+set as will the Orange and Violet values (Likewise if a spot color named Varnish is
+encountered in the document the Varnish component will be used for the values).
+The All value is typically used
+for placing registration targets on separations.
+Finally, note that if an NCLR ICC profile is specified
 and ICCOutputColors is not used, then a set of default names will be used for
-    the extra colorants (non-CMYK) in the profile.</dd>
+the extra colorants (non-CMYK) in the profile.  These names are given as ICC_COLOR_N for
+the Nth non-CMYK channel.</dd>
 </dl>
 
 <dl>
