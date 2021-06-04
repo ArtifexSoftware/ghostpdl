@@ -826,8 +826,15 @@ currentdict /EnablePageHandlerDevice undef
       6 index /Rotate known {
         % PDF page rotation runs clockwise and must be a multiple of 90, unlike PostScript.....
         % convert Rotate into a quadrant number
-        6 index /Rotate get 90 div cvi
+        6 index /Rotate get dup == 90 div cvi
         % Make sure quadrant is 0-3
+        dup 0 lt {
+          % Negative rotation... Turn it into a positive rotation
+          % Again, limit the quadrant to -0 to -3
+          dup -4 lt {4 mod} if
+          % Adding 360 degrees results in the same positive rotation
+          4 add
+        } if
         dup 3 gt {4 mod} if
         dup 0 eq
         {
