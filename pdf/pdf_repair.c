@@ -152,7 +152,9 @@ int pdfi_repair_file(pdf_context *ctx)
         do {
             outer_saved_offset[0] = outer_saved_offset[1];
             outer_saved_offset[1] = outer_saved_offset[2];
-            outer_saved_offset[2] = pdfi_unread_tell(ctx);;
+            outer_saved_offset[2] = pdfi_unread_tell(ctx);
+
+            object_num = 0;
 
             code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
             if (code < 0) {
@@ -276,9 +278,11 @@ int pdfi_repair_file(pdf_context *ctx)
                         break;
                     } else {
                         if (k->key == TOKEN_ENDOBJ) {
-                            code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
-                            if (code < 0)
-                                goto exit;
+                            if (object_num > 0) {
+                                code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
+                                if (code < 0)
+                                    goto exit;
+                            }
                             pdfi_clearstack(ctx);
                         } else
                             if (k->key == TOKEN_STARTXREF) {
