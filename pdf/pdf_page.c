@@ -188,62 +188,56 @@ static void pdfi_set_ctm(pdf_context *ctx)
 /* Get .MediaSize from the device to setup page.Size in context */
 static int pdfi_get_media_size(pdf_context *ctx, pdf_dict *page_dict)
 {
-    gs_c_param_list list;
+    pdf_array *a = NULL, *default_media = NULL;
+    double d[4];
     int code = 0;
-    gs_param_float_array msa;
-    gs_point point = {0,0};
-    int64_t rotate = 0;
-    double f = 0.0;
+    uint64_t i;
+    double userunit = 1.0;
 
-    code = pdfi_device_check_param(ctx->pgs->device, ".MediaSize", &list);
-    if (code < 0)
-        goto exit;
-
-    gs_c_param_list_read(&list);
-    code = param_read_float_array((gs_param_list *)&list, ".MediaSize", &msa);
-    if (code < 0)
-        goto exit;
-
-    /* We use the ctx->page.Size for (at least) transparency bounding boxes, but...
-     * the clipping is done in user space, ie before any x,y translation from the
-     * CTM is applied, so we need to ensure that we cater for any such offset
-     * Its possible that we ought to add the translation to the 0,0 co-ordinates
-     * as well, but that's less clear and doesn't seem to pose a problem.
-     */
-    code = gs_point_transform_inverse(0, 0, &ctm_only(ctx->pgs), &point);
-    if (code < 0)
-        goto exit;
-
-    ctx->page.Size[0] = 0;
-    ctx->page.Size[1] = 0;
-
-    code = pdfi_dict_knownget_number(ctx, page_dict, "Rotate", &f);
-    if (code < 0)
-        goto exit;
-
-    rotate = ((int64_t)ceil(f)) % 360;
-
-    switch(rotate) {
-
-        case -90:
-        case 90:
-        case -270:
-        case 270:
-            ctx->page.Size[2] = msa.data[1] + point.x;
-            ctx->page.Size[3] = msa.data[0] + point.y;
-            break;
-
-        case 0:
-        case 360:
-        case -180:
-        case 180:
-        default:
-            ctx->page.Size[2] = msa.data[0] + point.x;
-            ctx->page.Size[3] = msa.data[1] + point.y;
-            break;
+    code = pdfi_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&default_media);
+    if (code < 0) {
+        code = gs_erasepage(ctx->pgs);
+        return 0;
     }
-exit:
-    gs_c_param_list_release(&list);
+
+    if (ctx->args.usecropbox) {
+        if (a != NULL)
+            pdfi_countdown(a);
+        (void)pdfi_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
+    }
+    if (ctx->args.useartbox) {
+        if (a != NULL)
+            pdfi_countdown(a);
+        (void)pdfi_dict_get_type(ctx, page_dict, "ArtBox", PDF_ARRAY, (pdf_obj **)&a);
+    }
+    if (ctx->args.usebleedbox) {
+        if (a != NULL)
+            pdfi_countdown(a);
+        (void)pdfi_dict_get_type(ctx, page_dict, "BleedBox", PDF_ARRAY, (pdf_obj **)&a);
+    }
+    if (ctx->args.usetrimbox) {
+        if (a != NULL)
+            pdfi_countdown(a);
+        (void)pdfi_dict_get_type(ctx, page_dict, "TrimBox", PDF_ARRAY, (pdf_obj **)&a);
+    }
+    if (a == NULL) {
+        a = default_media;
+    }
+
+    if (!ctx->args.nouserunit) {
+        (void)pdfi_dict_knownget_number(ctx, page_dict, "UserUnit", &userunit);
+    }
+    ctx->page.UserUnit = userunit;
+
+    for (i=0;i<4;i++) {
+        code = pdfi_array_get_number(ctx, a, i, &d[i]);
+        d[i] *= userunit;
+    }
+    pdfi_countdown(a);
+
+    normalize_rectangle(d);
+    memcpy(ctx->page.Size, d, 4 * sizeof(double));
+
     return code;
 }
 
