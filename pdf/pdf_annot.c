@@ -2526,9 +2526,6 @@ static int pdfi_annot_draw_line_offset(pdf_context *ctx, pdf_dict *annot, double
     if (code <0 || !drawit)
         goto exit;
 
-    code = gs_setlinecap(ctx->pgs, 1);
-    if (code < 0) goto exit;
-
     code = pdfi_dict_knownget_type(ctx, annot, "QuadPoints", PDF_ARRAY, (pdf_obj **)&QuadPoints);
     if (code <= 0) goto exit;
 
