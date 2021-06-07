@@ -150,6 +150,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     pdf_obj *fontdesc = NULL;
     pdf_obj *fontfile = NULL;
     pdf_obj *obj = NULL;
+    pdf_obj *basefont = NULL;
     double f;
 
     *ppfont = NULL;
@@ -194,9 +195,9 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     font->sfnt.size = buflen;
 
     /* Strictly speaking BaseFont is required, but we can continue without one */
-    code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, (pdf_obj **)&obj);
+    code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, (pdf_obj **)&basefont);
     if (code > 0) {
-        pdf_name *nobj = (pdf_name *)obj;
+        pdf_name *nobj = (pdf_name *)basefont;
         int nlen = nobj->length > gs_font_name_max ? gs_font_name_max : nobj->length;
 
         memcpy(font->pfont->key_name.chars, nobj->data, nlen);
@@ -208,6 +209,8 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         pdfi_countdown(obj);
         obj = NULL;
     }
+    font->BaseFont = basefont;
+    basefont = NULL;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, (pdf_obj **)&obj);
     if (code < 0)
@@ -243,6 +246,10 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
          */
         if ((font->descflags & 32) != 0)
             font->descflags = (font->descflags & ~4);
+    }
+
+    if (pdfi_font_known_symbolic(font->BaseFont)) {
+        font->descflags |= 4;
     }
 
     /* A symbolic font should not have and Encoding, but previous experience suggests
@@ -303,6 +310,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         *ppfont = (gs_font *)font->pfont;
     return code;
 error:
+    pdfi_countdown(basefont);
     pdfi_countdown(obj);
     pdfi_countdown(font);
     return code;
@@ -329,6 +337,7 @@ int pdfi_free_font_truetype(pdf_obj *font)
 
     pdfi_countdown(ttfont->FontDescriptor);
     pdfi_countdown(ttfont->Encoding);
+    pdfi_countdown(ttfont->BaseFont);
     gs_free_object(OBJ_MEMORY(ttfont), ttfont, "Free TrueType font");
 
     return 0;

@@ -43,6 +43,7 @@ typedef struct known_symbolic_font_name_s
 static const known_symbolic_font_name_t known_symbolic_font_names[] =
 {
   {DEFINE_NAME_LEN(Wingdings2)},
+  {DEFINE_NAME_LEN(Wingdings)},
   {DEFINE_NAME_LEN(ZapfDingbats)},
   {NULL , 0}
 };

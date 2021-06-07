@@ -652,7 +652,7 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
                         t1f->descflags = (t1f->descflags & ~4);
                 }
             }
-            /* ZapfDingbats and Symbol we just have to know are symbolic */
+
             if (pdfi_font_known_symbolic(basefont)) {
                 t1f->descflags |= 4;
             }
