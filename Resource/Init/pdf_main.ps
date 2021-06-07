@@ -779,9 +779,10 @@ currentdict /EnablePageHandlerDevice undef
     6 dict begin		% for setpagedevice
 
     % Set the page size.
-    //systemdict /NoUserUnit .knownget not { //true } if not
-    3 index /UserUnit knownoget and
+    //systemdict /NoUserUnit .knownget not { //false } if not
+    3 index /UserUnit known and
     {
+      3 index /UserUnit get
       /PassUserUnit /GetDeviceParam .special_op {
         exch pop dup {
           [ /UserUnit 4 -1 roll .pdfputparams pop pop
@@ -826,7 +827,7 @@ currentdict /EnablePageHandlerDevice undef
       6 index /Rotate known {
         % PDF page rotation runs clockwise and must be a multiple of 90, unlike PostScript.....
         % convert Rotate into a quadrant number
-        6 index /Rotate get dup == 90 div cvi
+        6 index /Rotate get 90 div cvi
         % Make sure quadrant is 0-3
         dup 0 lt {
           % Negative rotation... Turn it into a positive rotation
