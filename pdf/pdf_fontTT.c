@@ -26,9 +26,16 @@
 #include "pdf_deref.h"
 #include "gxfont42.h"
 
+enum {
+    CMAP_TABLE_NONE = 0,
+    CMAP_TABLE_10_PRESENT = 1,
+    CMAP_TABLE_30_PRESENT = 2,
+    CMAP_TABLE_31_PRESENT = 4,
+    CMAP_TABLE_310_PRESENT = 8
+};
+
 static int
-pdfi_ttf_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
-                  const byte ** pdata)
+pdfi_ttf_string_proc(gs_font_type42 * pfont, ulong offset, uint length, const byte ** pdata)
 {
     pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
     int code = 0;
@@ -152,6 +159,9 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     pdf_obj *obj = NULL;
     pdf_obj *basefont = NULL;
     double f;
+    int64_t descflags;
+    bool encoding_known = false;
+    bool forced_symbolic = false;
 
     *ppfont = NULL;
 
@@ -237,25 +247,10 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     pdfi_countdown(obj);
     obj = NULL;
 
-    code = pdfi_dict_get_int(ctx, font->FontDescriptor, "Flags", &font->descflags);
+    code = pdfi_dict_get_int(ctx, font->FontDescriptor, "Flags", &descflags);
     if (code < 0)
-        font->descflags = 0;
-    else {
-        /* If both the symbolic and non-symbolic flag are set,
-           believe that latter.
-         */
-        if ((font->descflags & 32) != 0)
-            font->descflags = (font->descflags & ~4);
-    }
+        descflags = 0;
 
-    if (pdfi_font_known_symbolic(font->BaseFont)) {
-        font->descflags |= 4;
-    }
-
-    /* A symbolic font should not have and Encoding, but previous experience suggests
-       the presence of the encoding has an effect - still have to deal with that.
-       Also, pdfwrite seems to expect an encoding.
-     */
     code = pdfi_dict_get(ctx, font_dict, "Encoding", &obj);
     if (code < 0) {
         static const char encstr[] = "WinAnsiEncoding";
@@ -264,6 +259,18 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             pdfi_countup(obj);
         else
             goto error;
+    }
+    else {
+        encoding_known = true;
+        /* If we have and encoding, and both the symbolic and non-symbolic flag are set,
+           believe that latter.
+         */
+        if ((descflags & 32) != 0)
+            descflags = (descflags & ~4);
+    }
+
+    if ((forced_symbolic = pdfi_font_known_symbolic(font->BaseFont)) == true) {
+        descflags |= 4;
     }
 
     code = pdfi_create_Encoding(ctx, obj, NULL, (pdf_obj **)&font->Encoding);
@@ -287,6 +294,67 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     code = pdfi_set_type42_data_procs((gs_font_type42 *)font->pfont);
     if (code < 0) {
         goto error;
+    }
+
+    /* We're probably dead in the water without cmap tables, but make sure, for safety */
+    /* This is a horrendous morass of guesses at what Acrobat does with files that contravene
+       what the spec says about symbolic fonts, cmap tables and encodings.
+     */
+    if (forced_symbolic != true && (descflags & 4) != 0 && ((gs_font_type42 *)font->pfont)->data.cmap != 0) {
+        gs_font_type42 *t42f = (gs_font_type42 *)font->pfont;
+        int numcmaps;
+        int cmaps_available = CMAP_TABLE_NONE;
+        const byte *d;
+        code = (*t42f->data.string_proc)(t42f, t42f->data.cmap + 2, 2, &d);
+        if (code < 0)
+            goto error;
+        numcmaps = d[1] | d[0] << 8;
+        for (i = 0; i < numcmaps; i++) {
+            code = (*t42f->data.string_proc)(t42f, t42f->data.cmap + 4 + i * 8, 4, &d);
+            if (code < 0)
+                goto error;
+#define CMAP_PLAT_ENC_ID(a,b,c,d) (a << 24 | b << 16 | c << 8 | d)
+            switch(CMAP_PLAT_ENC_ID(d[0], d[1], d[2], d[3])) {
+                case CMAP_PLAT_ENC_ID(0, 1, 0, 0):
+                    cmaps_available |= CMAP_TABLE_10_PRESENT;
+                    break;
+                case CMAP_PLAT_ENC_ID(0, 3, 0, 0):
+                    cmaps_available |= CMAP_TABLE_30_PRESENT;
+                    break;
+                case CMAP_PLAT_ENC_ID(0, 3, 0, 1):
+                    cmaps_available |= CMAP_TABLE_31_PRESENT;
+                    break;
+                case CMAP_PLAT_ENC_ID(0, 3, 1, 0):
+                    cmaps_available |= CMAP_TABLE_310_PRESENT;
+                    break;
+                default: /* Not one we're interested in */
+                    break;
+            }
+        }
+#undef CMAP_PLAT_ENC_ID
+        if ((cmaps_available & CMAP_TABLE_30_PRESENT) == CMAP_TABLE_30_PRESENT) {
+            font->descflags = descflags;
+        }
+        else if (encoding_known == true) {
+            static const char encstr[] = "WinAnsiEncoding";
+            font->descflags = descflags & ~4;
+            code = pdfi_name_alloc(ctx, (byte *)encstr, strlen(encstr), (pdf_obj **)&obj);
+            if (code >= 0)
+                pdfi_countup(obj);
+            else
+                goto error;
+            pdfi_countdown(font->Encoding);
+            code = pdfi_create_Encoding(ctx, obj, NULL, (pdf_obj **)&font->Encoding);
+            if (code < 0)
+                goto error;
+            pdfi_countdown(obj);
+            obj = NULL;
+        }
+        else
+            font->descflags = descflags;
+    }
+    else {
+        font->descflags = descflags;
     }
 
     code = gs_definefont(ctx->font_dir, (gs_font *)font->pfont);
