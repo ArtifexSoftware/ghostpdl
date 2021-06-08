@@ -1090,6 +1090,11 @@ int pdfi_TJ(pdf_context *ctx)
     gs_matrix saved, Trm;
     gs_point initial_point, current_point;
     double linewidth = ctx->pgs->line_params.half_width;
+    pdf_font *current_font = NULL;
+
+    current_font = pdfi_get_current_pdf_font(ctx);
+    if (current_font == NULL)
+        return_error(gs_error_invalidfont);
 
     if (ctx->text.BlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
@@ -1140,13 +1145,19 @@ int pdfi_TJ(pdf_context *ctx)
 
         if (o->type == PDF_INT) {
             dx = (double)((pdf_num *)o)->value.i / -1000;
-            code = gs_rmoveto(ctx->pgs, dx, 0);
+            if (current_font->pfont && current_font->pfont->WMode == 0)
+                code = gs_rmoveto(ctx->pgs, dx, 0);
+            else
+                code = gs_rmoveto(ctx->pgs, 0, dx);
             if (code < 0)
                 goto TJ_error;
         } else {
             if (o->type == PDF_REAL) {
                 dx = ((pdf_num *)o)->value.d / -1000;
-                code = gs_rmoveto(ctx->pgs, dx, 0);
+                if (current_font->pfont && current_font->pfont->WMode == 0)
+                    code = gs_rmoveto(ctx->pgs, dx, 0);
+                else
+                    code = gs_rmoveto(ctx->pgs, 0, dx);
                 if (code < 0)
                     goto TJ_error;
             } else {
