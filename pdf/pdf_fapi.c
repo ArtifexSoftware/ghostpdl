@@ -1005,8 +1005,8 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                         }
                     }
                     else {
-                        cr->char_codes[0] = cc;
-                        cr->is_glyph_index = true;
+                        cr->char_codes[0] = g;
+                        cr->is_glyph_index = false;
                     }
                 }
             }
