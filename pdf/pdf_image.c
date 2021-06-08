@@ -2289,7 +2289,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         goto exit;
     if (!known) {
-        code = pdfi_dict_put(ctx, sdict, "Parent", stream_dict);
+        code = pdfi_dict_put(ctx, sdict, "Parent", (pdf_obj *)stream_dict);
         if (code < 0)
             goto exit;
     }
