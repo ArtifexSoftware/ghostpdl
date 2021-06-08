@@ -2251,7 +2251,8 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     int code = 0;
     pdf_name *n = NULL;
     pdf_obj *o = NULL;
-    bool clear_loop_detect = false;
+    pdf_dict *sdict = NULL;
+    bool clear_loop_detect = false, known = false;
 
     if (pdfi_count_stack(ctx) < 1) {
         code = gs_note_error(gs_error_stackunderflow);
@@ -2277,6 +2278,20 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (o->type != PDF_STREAM && o->type != PDF_DICT) {
         code = gs_note_error(gs_error_typecheck);
         goto exit;
+    }
+
+    /* This doesn't count up the stream dictionary, so we don't need to count it down later */
+    code = pdfi_dict_from_obj(ctx, o, &sdict);
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_dict_known(ctx, sdict, "Parent", &known);
+    if (code < 0)
+        goto exit;
+    if (!known) {
+        code = pdfi_dict_put(ctx, sdict, "Parent", stream_dict);
+        if (code < 0)
+            goto exit;
     }
 
     /* NOTE: Used to have a pdfi_gsave/pdfi_grestore around this, but it actually makes
