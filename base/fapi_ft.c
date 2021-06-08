@@ -56,6 +56,7 @@
 #include FT_IMAGE_H
 #include FT_BITMAP_H
 #include FT_TRUETYPE_DRIVER_H
+#include FT_TRUETYPE_TABLES_H
 #include FT_MULTIPLE_MASTERS_H
 #include FT_TYPE1_TABLES_H
 
@@ -1381,7 +1382,8 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
             for (i = 0; i < GS_FAPI_NUM_TTF_CMAP_REQ && !cmap; i++) {
                 if (a_font->ttf_cmap_req[i].platform_id > 0) {
                     for (j = 0; j < face->ft_face->num_charmaps; j++) {
-                        if (face->ft_face->charmaps[j]->platform_id == a_font->ttf_cmap_req[i].platform_id
+                        if (FT_Get_CMap_Format(face->ft_face->charmaps[j]) >= 0
+                         && face->ft_face->charmaps[j]->platform_id == a_font->ttf_cmap_req[i].platform_id
                          && face->ft_face->charmaps[j]->encoding_id == a_font->ttf_cmap_req[i].encoding_id) {
 
                             cmap = face->ft_face->charmaps[j];
