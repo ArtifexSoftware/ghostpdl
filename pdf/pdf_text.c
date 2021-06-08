@@ -427,7 +427,7 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
                     width = current_font->Widths[s->data[i] - current_font->FirstChar];
                 /* And convert the width into an appropriate value for the current environment */
                 gs_distance_transform(width, 0, &mat, &pt);
-                x_widths[i] = pt.x;
+                x_widths[i] = hypot(pt.x, pt.y) * (width < 0 ? -1.0 : 1.0);
                 /* Add any Tc value */
                 x_widths[i] += Tc;
             }
