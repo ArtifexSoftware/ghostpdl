@@ -1678,8 +1678,14 @@ static int pdfi_annot_draw_InkList(pdf_context *ctx, pdf_dict *annot, pdf_array 
             len2 = hypot(x2 - x1, y2 - y1);
             len3 = hypot(x3 - x2, y3 - y2);
 
-            k1 = len1 / (len1 + len2);
-            k2 = len2 / (len2 + len3);
+            if ((len1 + len2) == 0)
+                k1 = 0;
+            else
+                k1 = len1 / (len1 + len2);
+            if ((len2 + len3) == 0)
+                k2 = 0;
+            else
+                k2 = len2 / (len2 + len3);
 
             xm1 = xc1 + (xc2 - xc1) * k1;
             ym1 = yc1 + (yc2 - yc1) * k1;
@@ -2088,8 +2094,22 @@ static int pdfi_annot_draw_Stamp(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
         if (Name && pdfi_name_is(Name, stamp_type->type))
             break;
     }
+
+    /* TODO: There are a bunch of Stamp Names built into AR that are not part of
+     * the spec.  Since we don't know about them, we will just display nothing.
+     * Example: the "Faces" stamps, such as FacesZippy
+     * See file tests_private/pdf/uploads/annots-noAP.pdf
+     */
     if (!stamp_type->type) {
-        stamp_type = &pdfi_annot_stamp_types[STAMP_DRAFT_INDEX];
+        char str[100];
+
+        memcpy(str, (const char *)Name->data, Name->length);
+        str[Name->length] = 0;
+        dbgmprintf1(ctx->memory, "WARNING: Annotation: No AP, unknown Stamp Name %s, omitting\n",
+                    str);
+        /* TODO: Set warning flag? */
+        code = 0;
+        goto exit;
     }
 
     /* Draw the frame */
@@ -2213,6 +2233,10 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_obj *
 
     /* Set DA (Default Appearance)
      * This will generally set a color and font.
+     *
+     * TODO: Unclear if this is supposed to also determine the color
+     * of the border box, but it seems like it does in gs, so we set the DA
+     * before drawing the border, like gs does.
      */
     code = pdfi_annot_process_DA(ctx, NULL, annot, &annotrect, false);
     if (code < 0) goto exit;
