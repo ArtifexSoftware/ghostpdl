@@ -18,6 +18,7 @@
 #include "pdf_int.h"
 #include "pdf_font.h"
 #include "pdf_fontTT.h"
+#include "pdf_font1C.h" /* OTTO support */
 #include "pdf_font_types.h"
 #include "pdf_stack.h"
 #include "pdf_file.h"
@@ -171,8 +172,26 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile2", PDF_STREAM, &fontfile);
     if (code < 0) {
+        code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile3", PDF_STREAM, &fontfile);
+        if (code < 0) {
+            pdfi_countdown(fontdesc);
+            return_error(gs_error_invalidfont);
+        }
+    }
+    code = pdfi_stream_to_buffer(ctx, (pdf_stream *)fontfile, &buf, &buflen);
+    pdfi_countdown(fontfile);
+    if (code < 0) {
         pdfi_countdown(fontdesc);
-        return_error(gs_error_invalidfont);
+        return code;
+    }
+    if (memcmp(buf, "OTTO", 4) == 0) {
+        pdf_font *ottof;
+        pdfi_countdown(fontdesc);
+        /* Ownershuo of "buf" memory passes to pdfi_read_cff_font() */
+        code = pdfi_read_cff_font(ctx, font_dict, buf, buflen, &ottof, false);
+        if (code >= 0)
+            *ppfont = (gs_font *)ottof->pfont;
+        return code;
     }
 
     if ((code = pdfi_alloc_tt_font(ctx, &font, false)) < 0) {
@@ -196,8 +215,6 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     num_chars = font->LastChar - font->FirstChar + 1;
 
-    code = pdfi_stream_to_buffer(ctx, (pdf_stream *)fontfile, &buf, &buflen);
-    pdfi_countdown(fontfile);
     if (code < 0) {
         goto error;
     }
