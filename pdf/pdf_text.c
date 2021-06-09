@@ -500,6 +500,7 @@ static int pdfi_show_Tr_0(pdf_context *ctx, gs_text_params_t *text)
 
     code = gs_text_begin(ctx->pgs, text, ctx->memory, &penum);
     if (code >= 0) {
+        penum->single_byte_space = true;
         saved_penum = ctx->text.current_enum;
         ctx->text.current_enum = penum;
         code = gs_text_process(penum);
@@ -548,6 +549,7 @@ static int pdfi_show_Tr_1(pdf_context *ctx, gs_text_params_t *text)
     if (code < 0)
         goto Tr1_error;
 
+    penum->single_byte_space = true;
     saved_penum = ctx->text.current_enum;
     ctx->text.current_enum = penum;
     code = gs_text_process(penum);
@@ -621,6 +623,7 @@ static int pdfi_show_Tr_2(pdf_context *ctx, gs_text_params_t *text)
     if (code < 0)
         goto Tr1_error;
 
+    penum->single_byte_space = true;
     saved_penum = ctx->text.current_enum;
     ctx->text.current_enum = penum;
     code = gs_text_process(penum);
@@ -664,6 +667,7 @@ static int pdfi_show_Tr_3(pdf_context *ctx, gs_text_params_t *text)
     if (code < 0)
         return code;
 
+    penum->single_byte_space = true;
     saved_penum = ctx->text.current_enum;
     ctx->text.current_enum = penum;
     code = gs_text_process(penum);
@@ -761,6 +765,7 @@ static int pdfi_show_Tr_7(pdf_context *ctx, gs_text_params_t *text)
     if (code < 0)
         goto Tr7_error;
 
+    penum->single_byte_space = true;
     saved_penum = ctx->text.current_enum;
     ctx->text.current_enum = penum;
     code = gs_text_process(penum);
