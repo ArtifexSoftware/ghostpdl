@@ -733,6 +733,17 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
                     code = gs_error_undefined;
                 pdfi_countdown(tmp);
                 tmp = NULL;
+                if (code == 1) {
+                    /* Since the underlying font stream can be shared between font descriptors,
+                       and the font descriptors can be shared between font objects, if we change
+                       the encoding, we can't share cached glyphs with other instances of this
+                       underlying font, so invalidate the UniqueID/XUID so the glyph cache won't
+                       try.
+                    */
+                    if (uid_is_XUID(&t1f->pfont->UID))
+                        uid_free(&t1f->pfont->UID, t1f->pfont->memory, "pdfi_read_type1_font");
+                    uid_set_invalid(&t1f->pfont->UID);
+                }
             }
             else {
                 pdfi_countdown(tmp);
