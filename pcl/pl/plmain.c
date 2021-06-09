@@ -2867,7 +2867,7 @@ help:
 
 /* Find default language implementation */
 static pl_interp_implementation_t *
-pl_auto_sense(pl_main_instance_t *minst, const char *name,  int buffer_length)
+pl_auto_sense(pl_main_instance_t *minst, const char *buffer,  int buffer_length)
 {
     /* Lookup this string in the auto sense field for each implementation */
     pl_interp_implementation_t **impls = minst->implementations;
@@ -2878,14 +2878,14 @@ pl_auto_sense(pl_main_instance_t *minst, const char *name,  int buffer_length)
 
     /* first check for a UEL */
     if (buffer_length >= uel_len) {
-        if (!memcmp(name, PJL_UEL, uel_len))
+        if (!memcmp(buffer, PJL_UEL, uel_len))
             return impls[0];
     }
 
     /* Defaults to language 1 (if there is one): PJL is language 0, PCL is language 1. */
     best = impls[1] ? impls[1] : impls[0];
     for (impl = impls; *impl != NULL; ++impl) {
-        int score = pl_characteristics(*impl)->auto_sense(name, buffer_length);
+        int score = pl_characteristics(*impl)->auto_sense(buffer, buffer_length);
         if (score > max_score) {
             best = *impl;
             max_score = score;
