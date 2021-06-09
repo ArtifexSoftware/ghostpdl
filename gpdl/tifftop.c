@@ -1123,5 +1123,6 @@ const pl_interp_implementation_t tiff_implementation = {
   tiff_impl_report_errors,
   tiff_impl_dnit_job,
   tiff_impl_deallocate_interp_instance,
-  NULL
+  NULL, /* tiff_impl_reset */
+  NULL  /* interp_client_data */
 };

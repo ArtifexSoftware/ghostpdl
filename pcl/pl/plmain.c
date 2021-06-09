@@ -99,6 +99,18 @@ typedef struct
 #define BUFFERED_FILE_CHUNK_SHIFT 20
 #define BUFFERED_FILE_CHUNK_SIZE (1<<BUFFERED_FILE_CHUNK_SHIFT)
 
+typedef enum {
+    /* Default: Never reset resources automatically on job changes. */
+    PL_RESET_RESOURCES_NEVER = 0,
+
+    /* Reset resources whenver we drop back to PJL. */
+    PL_RESET_RESOURCES_ON_PJL = 1,
+
+    /* Reset resources whenever we change language (other than to drop
+     * back to PJL). */
+    PL_RESET_RESOURCES_ON_LANGUAGE_CHANGE = 2
+} pl_resource_reset;
+
 /*
  * Main instance for all interpreters.
  */
@@ -144,6 +156,12 @@ struct pl_main_instance_s
     arg_list args;
     pl_interp_implementation_t **implementations;
     pl_interp_implementation_t *curr_implementation;
+
+    /* We keep track of the last (non PJL) implementation we used.
+     * This is used to conditionally reset soft fonts etc. */
+    pl_interp_implementation_t *prev_non_pjl_implementation;
+
+    pl_resource_reset reset_resources;
 
     /* When processing data via 'run_string', interpreters may not
      * completely consume the data they are passed each time. We use
@@ -362,7 +380,18 @@ revert_to_pjli(pl_main_instance_t *minst)
             return code;
         }
     }
+    minst->curr_implementation = NULL;
+    /* We may want to reset the fonts. */
+    if (minst->prev_non_pjl_implementation &&
+        minst->reset_resources == PL_RESET_RESOURCES_ON_PJL) {
+        if_debug1m('I', minst->memory, "Resetting resources (%s)\n",
+                   pl_characteristics(minst->curr_implementation)->language);
+        code = pl_reset(minst->prev_non_pjl_implementation, PL_RESET_RESOURCES);
+        if (code < 0)
+            return code;
+    }
     minst->curr_implementation = pjli;
+
     code = pl_init_job(minst->curr_implementation, minst->device);
 
     return code;
@@ -907,11 +936,26 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *prefix_commands, co
 
                 /* If the language implementation needs changing, change it. */
                 if (desired_implementation != pjli) {
+
+                    /* If we are being asked to swap to a language implementation
+                     * that is different to the last (non-PJL) implementation that
+                     * we were using, we may want to clear soft-fonts. */
+                    if (minst->prev_non_pjl_implementation &&
+                        minst->reset_resources == PL_RESET_RESOURCES_ON_LANGUAGE_CHANGE &&
+                        desired_implementation != minst->prev_non_pjl_implementation) {
+                        if_debug1m('I', mem, "Resetting resources (%s)\n",
+                                   pl_characteristics(minst->curr_implementation)->language);
+                        code = pl_reset(minst->prev_non_pjl_implementation, PL_RESET_RESOURCES);
+                        if (code < 0)
+                            goto error_fatal;
+                    }
+
                     code = pl_dnit_job(pjli);
                     minst->curr_implementation = NULL;
                     if (code >= 0)
                         code = pl_init_job(desired_implementation, minst->device);
                     minst->curr_implementation = desired_implementation;
+                    minst->prev_non_pjl_implementation = desired_implementation;
                     if (code < 0)
                         goto error_fatal;
                 }
@@ -1294,6 +1338,8 @@ pl_main_alloc_instance(gs_memory_t * mem)
     minst->pause = true;
     minst->device = 0;
     minst->implementation = NULL;
+    minst->prev_non_pjl_implementation = NULL;
+    minst->reset_resources = PL_RESET_RESOURCES_NEVER;
     minst->base_time[0] = 0;
     minst->base_time[1] = 0;
     minst->interpolate = false;
@@ -1475,6 +1521,10 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int6
         pmi->scanconverter = b;
         return 0;
     }
+    if (argcmp(arg, "RESETRESOURCES", 10)) {
+        pmi->reset_resources = b;
+        return 0;
+    }
     return 1;
 }
 
@@ -1484,7 +1534,8 @@ static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, fl
         argcmp(arg, "NOPAUSE", 7) ||
         argcmp(arg, "DOINTERPOLATE", 13) ||
         argcmp(arg, "NOCACHE", 7) ||
-        argcmp(arg, "SCANCONVERTERTYPE", 17)) {
+        argcmp(arg, "SCANCONVERTERTYPE", 17) ||
+        argcmp(arg, "RESETRESOURCES", 10)) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
@@ -1496,7 +1547,8 @@ static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_p
         argcmp(arg, "NOPAUSE", 7) ||
         argcmp(arg, "DOINTERPOLATE", 13) ||
         argcmp(arg, "NOCACHE", 7) ||
-        argcmp(arg, "SCANCONVERTERTYPE", 17)) {
+        argcmp(arg, "SCANCONVERTERTYPE", 17) ||
+        argcmp(arg, "RESETRESOURCES", 10)) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;

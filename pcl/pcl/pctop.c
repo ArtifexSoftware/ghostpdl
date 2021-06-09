@@ -568,6 +568,17 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
     return 0;
 }
 
+static int
+pcl_impl_reset(pl_interp_implementation_t *impl, pl_interp_reset_reason reason)
+{
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
+
+    if (reason != PL_RESET_RESOURCES)
+        return 0;
+
+    return pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
+}
+
 /*
  * End-of-page called back by PCL - NB now exported.
  */
@@ -598,5 +609,6 @@ pl_interp_implementation_t pcl_implementation = {
     pcl_impl_report_errors,
     pcl_impl_dnit_job,
     pcl_impl_deallocate_interp_instance,
-    NULL
+    pcl_impl_reset,
+    NULL                        /* interp_client_data */
 };

@@ -717,5 +717,6 @@ const pl_interp_implementation_t pwg_implementation = {
   pwg_impl_report_errors,
   pwg_impl_dnit_job,
   pwg_impl_deallocate_interp_instance,
-  NULL
+  NULL, /* pwg_impl_reset */
+  NULL  /* interp_client_data */
 };

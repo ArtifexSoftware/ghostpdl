@@ -608,5 +608,6 @@ const pl_interp_implementation_t jbig2_implementation = {
   jbig2_impl_report_errors,
   jbig2_impl_dnit_job,
   jbig2_impl_deallocate_interp_instance,
-  NULL
+  NULL, /* jbig2_impl_reset */
+  NULL  /* interp_client_data */
 };

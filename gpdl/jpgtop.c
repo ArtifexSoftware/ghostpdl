@@ -870,5 +870,6 @@ const pl_interp_implementation_t jpg_implementation = {
   jpg_impl_report_errors,
   jpg_impl_dnit_job,
   jpg_impl_deallocate_interp_instance,
-  NULL
+  NULL, /* jpg_impl_reset */
+  NULL  /* interp_client_data */
 };
