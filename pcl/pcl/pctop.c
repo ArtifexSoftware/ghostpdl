@@ -276,6 +276,8 @@ pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
 
     /* Return success */
     impl->interp_client_data = pcli;
+    /* Initial reset for the PCL interpreter */
+    pcl_do_resets(&pcli->pcs, pcl_reset_initial);
     return 0;
 }
 
@@ -369,9 +371,9 @@ pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to
     if ((code = gs_erasepage(pcli->pcs.pgs)) < 0)
         goto pisdEnd;
 
-    /* Initialize the PCL interpreter and parser */
+    /* Reset the PCL interpreter and parser */
     stage = Sreset;
-    if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_initial)) < 0)
+    if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_printer)) < 0)
         goto pisdEnd;
 
     if ((code = pcl_process_init(&pcli->pst, &pcli->pcs)) < 0)
@@ -518,10 +520,6 @@ pcl_impl_dnit_job(pl_interp_implementation_t * impl)       /* interp instance to
 
     /* return to original gstate */
     code = gs_grestore_only(pcli->pcs.pgs);     /* destroys gs_save stack */
-    if (code < 0)
-        return code;
-
-    code = pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
     if (code < 0)
         return code;
 
