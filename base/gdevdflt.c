@@ -127,18 +127,19 @@ static gx_color_index
 static bool
 is_like_DeviceRGB(gx_device * dev)
 {
-    subclass_color_mappings         scm;
     frac                            cm_comp_fracs[3];
     int                             i;
+    const gx_device                *cmdev;
+    const gx_cm_color_map_procs    *cmprocs;
 
     if ( dev->color_info.num_components != 3                   ||
          dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE  )
         return false;
 
-    scm = get_color_mapping_procs_subclass(dev);
+    cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
 
     /* check the values 1/4, 1/3, and 3/4 */
-    map_rgb_subclass(scm, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4,cm_comp_fracs);
+    cmprocs->map_rgb(cmdev, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4, cm_comp_fracs);
 
     /* verify results to .01 */
     cm_comp_fracs[0] -= frac_1 / 4;
@@ -159,23 +160,24 @@ is_like_DeviceRGB(gx_device * dev)
 static bool
 is_like_DeviceCMYK(gx_device * dev)
 {
-    subclass_color_mappings         scm;
     frac                            cm_comp_fracs[4];
     int                             i;
+    const gx_device                *cmdev;
+    const gx_cm_color_map_procs    *cmprocs;
 
     if ( dev->color_info.num_components != 4                      ||
          dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE  )
         return false;
-    scm = get_color_mapping_procs_subclass(dev);
 
+    cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
     /* check the values 1/4, 1/3, 3/4, and 1/8 */
 
-    map_cmyk_subclass( scm,
-                        frac_1 / 4,
-                        frac_1 / 3,
-                        3 * frac_1 / 4,
-                        frac_1 / 8,
-                        cm_comp_fracs );
+    cmprocs->map_cmyk(cmdev,
+                      frac_1 / 4,
+                      frac_1 / 3,
+                      3 * frac_1 / 4,
+                      frac_1 / 8,
+                      cm_comp_fracs);
 
     /* verify results to .01 */
     cm_comp_fracs[0] -= frac_1 / 4;

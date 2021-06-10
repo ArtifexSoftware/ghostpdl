@@ -62,6 +62,8 @@ gsicc_colorbuffer_t gscms_get_profile_data_space(gcmmhprofile_t profile,
                                                  gs_memory_t *memory);
 int gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
                           void *outputcolor, int num_bytes);
+int gscms_transform_color_const(const gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
+                          void *outputcolor, int num_bytes);
 gcmmhlink_t gscms_get_link(gcmmhprofile_t lcms_srchandle,
                            gcmmhprofile_t lcms_deshandle,
                            gsicc_rendering_param_t *rendering_params,

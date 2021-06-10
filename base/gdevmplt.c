@@ -75,6 +75,12 @@ pcl_mono_palette_initialize(gx_device *dev)
     default_subclass_initialize_device_procs(dev);
 
     set_dev_proc(dev, get_color_mapping_procs, pcl_mono_palette_get_color_mapping_procs);
+    /* We must override begin_typed_image here with the default. If
+     * we don't, then we forward down to the underlying devices own
+     * begin_typed_image, and the color calls done during that bypass
+     * the monochroming behaviour. See: page 32 of 75dpi png rendering of
+     * tests_private/pcl/pcl5ccet/15-01.BIN for an example. */
+    set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
 }
 
 const
@@ -97,76 +103,70 @@ gx_device_mplt gs_pcl_mono_palette_device =
  * to gray values
  */
 static void
-pcl_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
-{
-    pcl_mono_palette_subclass_data *psubclass_data;
-
-    while(dev && dev->child) {
-        if (strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0)
-            break;
-        dev = dev->child;
-    };
-
-    if (dev && dev->child) {
-        psubclass_data = dev->subclass_data;
-        /* just pass it along */
-        psubclass_data->device_cm_procs->map_gray(dev, gray, out);
-    } else
-        return;
-}
-
-static void
-pcl_rgb_cs_to_cm(gx_device * dev, const gs_gstate * pgs, frac r, frac g,
-                 frac b, frac out[])
-{
-    pcl_mono_palette_subclass_data *psubclass_data;
-    frac gray;
-
-    while(dev && dev->child) {
-        if (strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0)
-            break;
-        dev = dev->child;
-    };
-
-    if (dev && dev->child) {
-        psubclass_data = dev->subclass_data;
-        gray = color_rgb_to_gray(r, g, b, NULL);
-
-        psubclass_data->device_cm_procs->map_rgb(dev, pgs, gray, gray, gray, out);
-    } else
-        return;
-}
-
-static void
-pcl_cmyk_cs_to_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
-{
-    pcl_mono_palette_subclass_data *psubclass_data;
-    frac gray;
-
-    while(dev && dev->child) {
-        if (strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0)
-            break;
-        dev = dev->child;
-    };
-
-    if (dev && dev->child) {
-        psubclass_data = dev->subclass_data;
-        gray = color_cmyk_to_gray(c, m, y, k, NULL);
-
-        psubclass_data->device_cm_procs->map_cmyk(dev, gray, gray, gray, gray, out);
-    } else
-        return;
-}
-
-const gx_cm_color_map_procs *pcl_mono_palette_get_color_mapping_procs(const gx_device *dev)
+pcl_gray_cs_to_cm(const gx_device * dev, frac gray, frac out[])
 {
     pcl_mono_palette_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->device_cm_procs == 0L) {
-        psubclass_data->pcl_mono_procs.map_gray = pcl_gray_cs_to_cm;
-        psubclass_data->pcl_mono_procs.map_rgb = pcl_rgb_cs_to_cm;
-        psubclass_data->pcl_mono_procs.map_cmyk = pcl_cmyk_cs_to_cm;
-        psubclass_data->device_cm_procs = (gx_cm_color_map_procs *)dev_proc(dev->child, get_color_mapping_procs) (dev->child);
+    /* assert(strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0) - otherwise we are being
+     * called with the wrong dev! */
+
+    if (psubclass_data->device_cm) {
+        /* just pass it along */
+        psubclass_data->device_cm_procs->map_gray(psubclass_data->device_cm, gray, out);
     }
-    return &psubclass_data->pcl_mono_procs;
+}
+
+static void
+pcl_rgb_cs_to_cm(const gx_device * dev, const gs_gstate * pgs, frac r, frac g,
+                 frac b, frac out[])
+{
+    pcl_mono_palette_subclass_data *psubclass_data = dev->subclass_data;
+    frac gray;
+
+    /* assert(strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0) - otherwise we are being
+     * called with the wrong dev! */
+
+    if (psubclass_data->device_cm) {
+        gray = color_rgb_to_gray(r, g, b, NULL);
+
+        psubclass_data->device_cm_procs->map_rgb(psubclass_data->device_cm, pgs, gray, gray, gray, out);
+    }
+}
+
+static void
+pcl_cmyk_cs_to_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    pcl_mono_palette_subclass_data *psubclass_data = dev->subclass_data;
+    frac gray;
+
+    /* assert(strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0) - otherwise we are being
+     * called with the wrong dev! */
+
+    if (psubclass_data->device_cm) {
+        gray = color_cmyk_to_gray(c, m, y, k, NULL);
+
+        psubclass_data->device_cm_procs->map_cmyk(psubclass_data->device_cm, gray, gray, gray, gray, out);
+    }
+}
+
+static gx_cm_color_map_procs pcl_mono_procs =
+{
+    pcl_gray_cs_to_cm,
+    pcl_rgb_cs_to_cm,
+    pcl_cmyk_cs_to_cm
+};
+
+const gx_cm_color_map_procs *pcl_mono_palette_get_color_mapping_procs(const gx_device  *dev,
+                                                                      const gx_device **tdev)
+{
+    pcl_mono_palette_subclass_data *psubclass_data = dev->subclass_data;
+
+    /* assert(strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0) - otherwise we are being
+     * called with the wrong dev! */
+
+    *tdev = dev;
+    if (psubclass_data->device_cm_procs == NULL) {
+        psubclass_data->device_cm_procs = (gx_cm_color_map_procs *)dev_proc(dev->child, get_color_mapping_procs)(dev->child, &psubclass_data->device_cm);
+    }
+    return &pcl_mono_procs;
 }

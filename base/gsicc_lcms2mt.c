@@ -475,6 +475,13 @@ int
 gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
                              void *outputcolor, int num_bytes)
 {
+    return gscms_transform_color_const(dev, icclink, inputcolor, outputcolor, num_bytes);
+}
+
+int
+gscms_transform_color_const(const gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
+                             void *outputcolor, int num_bytes)
+{
     gsicc_lcms2mt_link_list_t *link_handle = (gsicc_lcms2mt_link_list_t *)(icclink->link_handle);
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)link_handle->hTransform;
     cmsUInt32Number dwInputFormat, dwOutputFormat;

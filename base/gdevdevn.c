@@ -38,7 +38,7 @@
 
 /* Convert a gray color space to DeviceN colorants. */
 void
-gray_cs_to_devn_cm(gx_device * dev, int * map, frac gray, frac out[])
+gray_cs_to_devn_cm(const gx_device * dev, int * map, frac gray, frac out[])
 {
     int i = dev->color_info.num_components - 1;
 
@@ -50,7 +50,7 @@ gray_cs_to_devn_cm(gx_device * dev, int * map, frac gray, frac out[])
 
 /* Convert an RGB color space to DeviceN colorants. */
 void
-rgb_cs_to_devn_cm(gx_device * dev, int * map,
+rgb_cs_to_devn_cm(const gx_device * dev, int * map,
                 const gs_gstate *pgs, frac r, frac g, frac b, frac out[])
 {
     int i = dev->color_info.num_components - 1;
@@ -71,7 +71,7 @@ rgb_cs_to_devn_cm(gx_device * dev, int * map,
 
 /* Convert a CMYK color space to DeviceN colorants. */
 void
-cmyk_cs_to_devn_cm(gx_device * dev, const int * map,
+cmyk_cs_to_devn_cm(const gx_device * dev, const int * map,
                 frac c, frac m, frac y, frac k, frac out[])
 {
     int i = dev->color_info.num_components - 1;
@@ -1053,7 +1053,7 @@ spotcmyk_prn_open(gx_device * pdev)
 /* Color mapping routines for the spotcmyk device */
 
 static void
-gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_spotcmyk_cm(const gx_device * dev, frac gray, frac out[])
 {
     int * map = ((gx_devn_prn_device *) dev)->devn_params.separation_order_map;
 
@@ -1061,7 +1061,7 @@ gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_spotcmyk_cm(const gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
     int * map = ((gx_devn_prn_device *) dev)->devn_params.separation_order_map;
@@ -1070,7 +1070,7 @@ rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 static void
-cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_spotcmyk_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     int * map = ((gx_devn_prn_device *) dev)->devn_params.separation_order_map;
 
@@ -1082,8 +1082,9 @@ static const gx_cm_color_map_procs spotCMYK_procs = {
 };
 
 const gx_cm_color_map_procs *
-gx_devn_prn_get_color_mapping_procs(const gx_device * dev)
+gx_devn_prn_get_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
 {
+    *map_dev = dev;
     return &spotCMYK_procs;
 }
 
@@ -1157,6 +1158,14 @@ gs_devn_params *
 gx_devn_prn_ret_devn_params(gx_device * dev)
 {
     gx_devn_prn_device *pdev = (gx_devn_prn_device *)dev;
+
+    return &pdev->devn_params;
+}
+
+const gs_devn_params *
+gx_devn_prn_ret_devn_params_const(const gx_device * dev)
+{
+    const gx_devn_prn_device *pdev = (const gx_devn_prn_device *)dev;
 
     return &pdev->devn_params;
 }

@@ -1324,6 +1324,8 @@ typedef struct gs_devn_params_s gs_devn_params;
   gs_devn_params * proc(dev_t *dev)
 #define dev_proc_ret_devn_params(proc)\
   dev_t_proc_ret_devn_params(proc, gx_device)
+#define dev_proc_ret_devn_params_const(proc)\
+  const dev_t_proc_ret_devn_params(proc, const gx_device)
 
 /*
  * Erase page.
@@ -1366,7 +1368,7 @@ typedef struct gs_devn_params_s gs_devn_params;
   dev_t_proc_copy_planes(proc, gx_device)
 
 #define dev_t_proc_get_profile(proc, dev_t)\
-  int proc(dev_t *dev, cmm_dev_profile_t **dev_profile)
+  int proc(const dev_t *dev, cmm_dev_profile_t **dev_profile)
 #define dev_proc_get_profile(proc)\
   dev_t_proc_get_profile(proc, gx_device)
 
@@ -1623,70 +1625,6 @@ extern_st(st_device_forward);
     "gx_device_forward", 0, device_forward_enum_ptrs,\
     device_forward_reloc_ptrs, gx_device_finalize)
 #define st_device_forward_max_ptrs (st_device_max_ptrs + 1)
-
-/* The color mapping procs were used in a way which defeats a 'pipeline'
- * approach to devices. Certain graphics library routines (eg images)
- * called the color mapping procs *directly* from the device procs of the
- * current (ie terminal) device. This prevented any pipeline approach from
- * working as earlier devices in the chain wouldn't see the call. In particular
- * this prevented the use of such a device to do 'monochrome mode' in PCL
- * (see pcpalet.c, pcl_update_mono). This macro walks back up the pipeline
- * and retrieves the uppermost device color_mapping procs.
- */
-typedef struct {
-    gx_cm_color_map_procs *procs;
-    gx_device *dev;
-} subclass_color_mappings;
-
-static inline gx_device *
-subclass_parentmost_device(gx_device *dev)
-{
-    while (dev->parent)
-        dev = dev->parent;
-    return dev;
-}
-
-extern const gx_cm_color_map_procs *default_subclass_get_color_mapping_procs(const gx_device *dev);
-
-static inline
-subclass_color_mappings get_color_mapping_procs_subclass(gx_device *dev)
-{
-    subclass_color_mappings sc;
-    gx_device *d;
-    sc.dev = NULL;
-
-    d = subclass_parentmost_device(dev);
-    while (d->procs.get_color_mapping_procs == default_subclass_get_color_mapping_procs) {
-        if (d->child)
-            d = d->child;
-        else {
-            break;
-        }
-    }
-    sc.dev = d;
-
-    sc.procs = (gx_cm_color_map_procs *)(dev_proc(sc.dev, get_color_mapping_procs) == NULL ?
-                                         NULL : dev_proc(sc.dev, get_color_mapping_procs)(sc.dev));
-    return sc;
-}
-
-static inline
-void map_rgb_subclass(const subclass_color_mappings scm, const gs_gstate *pgs, frac r, frac g, frac b, frac out[])
-{
-    scm.procs->map_rgb(scm.dev, pgs, r, g, b, out);
-}
-
-static inline
-void map_gray_subclass(const subclass_color_mappings scm, frac gray, frac out[])
-{
-    scm.procs->map_gray(scm.dev, gray, out);
-}
-
-static inline
-void map_cmyk_subclass(const subclass_color_mappings scm, frac c, frac m, frac y, frac k, frac out[])
-{
-    scm.procs->map_cmyk(scm.dev, c, m, y, k, out);
-}
 
 /* Test to see if the device wants to use tags */
 static inline bool device_encodes_tags(const gx_device *dev)

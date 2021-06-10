@@ -659,6 +659,7 @@ static dev_proc_encode_color(tiffsep_encode_color);
 static dev_proc_decode_color(tiffsep_decode_color);
 static dev_proc_update_spot_equivalent_colors(tiffsep_update_spot_equivalent_colors);
 static dev_proc_ret_devn_params(tiffsep_ret_devn_params);
+static dev_proc_ret_devn_params_const(tiffsep_ret_devn_params_const);
 static dev_proc_open_device(tiffsep1_prn_open);
 static dev_proc_close_device(tiffsep1_prn_close);
 static dev_proc_put_params(tiffsep1_put_params);
@@ -876,7 +877,7 @@ static const uint32_t bit_order[32]={
  * the color components for the tiffsep device.
  */
 static void
-tiffsep_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
+tiffsep_gray_cs_to_cm(const gx_device * dev, frac gray, frac out[])
 {
     int * map = ((tiffsep_device *) dev)->devn_params.separation_order_map;
 
@@ -884,7 +885,7 @@ tiffsep_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-tiffsep_rgb_cs_to_cm(gx_device * dev, const gs_gstate *pgs,
+tiffsep_rgb_cs_to_cm(const gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
     int * map = ((tiffsep_device *) dev)->devn_params.separation_order_map;
@@ -893,10 +894,10 @@ tiffsep_rgb_cs_to_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 static void
-tiffsep_cmyk_cs_to_cm(gx_device * dev,
+tiffsep_cmyk_cs_to_cm(const gx_device * dev,
                 frac c, frac m, frac y, frac k, frac out[])
 {
-    const gs_devn_params *devn = tiffsep_ret_devn_params(dev);
+    const gs_devn_params *devn = tiffsep_ret_devn_params_const(dev);
     const int *map = devn->separation_order_map;
     int j;
 
@@ -940,8 +941,9 @@ static const gx_cm_color_map_procs tiffsep_cm_procs = {
  * to color model conversion routines.
  */
 static const gx_cm_color_map_procs *
-tiffsep_get_color_mapping_procs(const gx_device * dev)
+tiffsep_get_color_mapping_procs(const gx_device * dev, const gx_device **tdev)
 {
+    *tdev = dev;
     return &tiffsep_cm_procs;
 }
 
@@ -1006,6 +1008,14 @@ static gs_devn_params *
 tiffsep_ret_devn_params(gx_device * dev)
 {
     tiffsep_device * pdev = (tiffsep_device *)dev;
+
+    return &pdev->devn_params;
+}
+
+static const gs_devn_params *
+tiffsep_ret_devn_params_const (const gx_device * dev)
+{
+    const tiffsep_device * pdev = (const tiffsep_device *)dev;
 
     return &pdev->devn_params;
 }

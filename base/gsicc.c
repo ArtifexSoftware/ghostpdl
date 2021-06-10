@@ -711,7 +711,7 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
 }
 
 int
-gx_default_get_profile(gx_device *dev, cmm_dev_profile_t **profile)
+gx_default_get_profile(const gx_device *dev, cmm_dev_profile_t **profile)
 {
     *profile = dev->icc_struct;
     return 0;

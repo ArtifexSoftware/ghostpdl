@@ -120,7 +120,7 @@ static int pdf14_increment_smask_color(gs_gstate * pgs, gx_device * dev);
 # define INCR(v) DO_NOTHING
 
 /* Forward prototypes */
-void pdf14_cmyk_cs_to_cmyk_cm(gx_device *, frac, frac, frac, frac, frac *);
+void pdf14_cmyk_cs_to_cmyk_cm(const gx_device *, frac, frac, frac, frac, frac *);
 static int gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
                                 gx_device ** pdev, gx_device * target,
                                 const gs_pdf14trans_t * pdf14pct);
@@ -2227,20 +2227,23 @@ static const gx_cm_color_map_procs pdf14_DeviceGrayspot_procs = {
 };
 
 static const gx_cm_color_map_procs *
-pdf14_cmykspot_get_color_mapping_procs(const gx_device * dev)
+pdf14_cmykspot_get_color_mapping_procs(const gx_device * dev, const gx_device **tdev)
 {
+    *tdev = dev;
     return &pdf14_DeviceCMYKspot_procs;
 }
 
 static const gx_cm_color_map_procs *
-pdf14_rgbspot_get_color_mapping_procs(const gx_device * dev)
+pdf14_rgbspot_get_color_mapping_procs(const gx_device * dev, const gx_device **tdev)
 {
+    *tdev = dev;
     return &pdf14_DeviceRGBspot_procs;
 }
 
 static const gx_cm_color_map_procs *
-pdf14_grayspot_get_color_mapping_procs(const gx_device * dev)
+pdf14_grayspot_get_color_mapping_procs(const gx_device * dev, const gx_device **tdev)
 {
+    *tdev = dev;
     return &pdf14_DeviceGrayspot_procs;
 }
 
@@ -8156,6 +8159,8 @@ pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
     gx_device *trans_device;
+    const gx_device *map_dev;
+    const gx_cm_color_map_procs *procs;
 
     /* If trans device is set, we need to use its procs. */
     if (pgs->trans_device != NULL) {
@@ -8166,7 +8171,8 @@ pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
     ncomps = trans_device->color_info.num_components;
 
     /* map to the color model */
-    dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_gray(trans_device, gray, cm_comps);
+    procs = dev_proc(trans_device, get_color_mapping_procs)(trans_device, &map_dev);
+    procs->map_gray(map_dev, gray, cm_comps);
 
     if (pdf14_state_opaque(trans_device, pgs)) {
         for (i = 0; i < ncomps; i++)
@@ -8200,6 +8206,8 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
     gx_device *trans_device;
+    const gx_device *map_dev;
+    const gx_cm_color_map_procs *procs;
 
     /* If trans device is set, we need to use its procs. */
     if (pgs->trans_device != NULL){
@@ -8209,7 +8217,8 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
     }
     ncomps = trans_device->color_info.num_components;
     /* map to the color model */
-    dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_rgb(trans_device, pgs, r, g, b, cm_comps);
+    procs = dev_proc(trans_device, get_color_mapping_procs)(trans_device, &map_dev);
+    procs->map_rgb(map_dev, pgs, r, g, b, cm_comps);
 
     if (pdf14_state_opaque(trans_device, pgs)) {
         for (i = 0; i < ncomps; i++)
@@ -8244,6 +8253,9 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
     gx_device *trans_device;
+    const gx_device *map_dev;
+    const gx_cm_color_map_procs *procs;
+
 
     /* If trans device is set, we need to use its procs. */
     if (pgs->trans_device != NULL){
@@ -8255,7 +8267,8 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
 
     /* Map to the color model. Transfer function is only used
        if we are drawing with an opaque color. */
-    dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_cmyk(trans_device, c, m, y, k, cm_comps);
+    procs = dev_proc(trans_device, get_color_mapping_procs)(trans_device, &map_dev);
+    procs->map_cmyk(map_dev, c, m, y, k, cm_comps);
 
     if (pdf14_state_opaque(trans_device, pgs)) {
         for (i = 0; i < ncomps; i++)
@@ -8289,6 +8302,8 @@ pdf14_cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha,	gx_device_color	
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
     gx_device *trans_device;
+    const gx_device *map_dev;
+    const gx_cm_color_map_procs *procs;
 
      /*  We may be coming from the clist writer which often forwards us the
          target device. If this occurs we actually need to get to the color
@@ -8301,7 +8316,9 @@ pdf14_cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha,	gx_device_color	
     }
     ncomps = trans_device->color_info.num_components;
     /* map to the color model */
-    dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_rgb(trans_device, pgs, r, g, b, cm_comps);
+    procs = dev_proc(trans_device, get_color_mapping_procs)(trans_device, &map_dev);
+    procs->map_rgb(map_dev, pgs, r, g, b, cm_comps);
+
     /* pre-multiply to account for the alpha weighting */
     if (alpha != frac_1) {
 #ifdef PREMULTIPLY_TOWARDS_WHITE
@@ -10199,7 +10216,7 @@ pdf14_accum_get_color_comp_index(gx_device * dev,
  * the separation color components for the pdf14_accum device.
  */
 static void
-pdf14_accum_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
+pdf14_accum_gray_cs_to_cmyk_cm(const gx_device * dev, frac gray, frac out[])
 {
     int * map =
       (int *)(&((gx_device_pdf14_accum *) dev)->devn_params.separation_order_map);
@@ -10208,7 +10225,7 @@ pdf14_accum_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-pdf14_accum_rgb_cs_to_cmyk_cm(gx_device * dev,
+pdf14_accum_rgb_cs_to_cmyk_cm(const gx_device * dev,
     const gs_gstate *pgs, frac r, frac g, frac b, frac out[])
 {
     int * map =
@@ -10218,7 +10235,7 @@ pdf14_accum_rgb_cs_to_cmyk_cm(gx_device * dev,
 }
 
 static void
-pdf14_accum_cmyk_cs_to_cmyk_cm(gx_device * dev,
+pdf14_accum_cmyk_cs_to_cmyk_cm(const gx_device * dev,
     frac c, frac m, frac y, frac k, frac out[])
 {
     const int * map =
@@ -10234,8 +10251,9 @@ static const gx_cm_color_map_procs pdf14_accum_cm_procs = {
 };
 
 static const gx_cm_color_map_procs *
-pdf14_accum_get_color_mapping_procs(const gx_device * dev)
+pdf14_accum_get_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
 {
+    *map_dev = dev;
     return &pdf14_accum_cm_procs;
 }
 

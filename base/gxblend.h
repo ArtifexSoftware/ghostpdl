@@ -367,20 +367,20 @@ gx_color_index pdf14_encode_color16_tag(gx_device *dev, const gx_color_value col
 
 int pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out);
 int pdf14_decode_color16(gx_device * dev, gx_color_index color, gx_color_value * out);
-void pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[]);
-void pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_gstate *pgs,
+void pdf14_gray_cs_to_cmyk_cm(const gx_device * dev, frac gray, frac out[]);
+void pdf14_rgb_cs_to_cmyk_cm(const gx_device * dev, const gs_gstate *pgs,
                            frac r, frac g, frac b, frac out[]);
-void pdf14_cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
+void pdf14_cmyk_cs_to_cmyk_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
 
-void pdf14_gray_cs_to_rgbspot_cm(gx_device * dev, frac gray, frac out[]);
-void pdf14_rgb_cs_to_rgbspot_cm(gx_device * dev, const gs_gstate *pgs,
+void pdf14_gray_cs_to_rgbspot_cm(const gx_device * dev, frac gray, frac out[]);
+void pdf14_rgb_cs_to_rgbspot_cm(const gx_device * dev, const gs_gstate *pgs,
     frac r, frac g, frac b, frac out[]);
-void pdf14_cmyk_cs_to_rgbspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
+void pdf14_cmyk_cs_to_rgbspot_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
 
-void pdf14_gray_cs_to_grayspot_cm(gx_device * dev, frac gray, frac out[]);
-void pdf14_rgb_cs_to_grayspot_cm(gx_device * dev, const gs_gstate *pgs,
+void pdf14_gray_cs_to_grayspot_cm(const gx_device * dev, frac gray, frac out[]);
+void pdf14_rgb_cs_to_grayspot_cm(const gx_device * dev, const gs_gstate *pgs,
     frac r, frac g, frac b, frac out[]);
-void pdf14_cmyk_cs_to_grayspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
+void pdf14_cmyk_cs_to_grayspot_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
 
 void gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride,
                                 int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf);

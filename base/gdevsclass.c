@@ -528,12 +528,13 @@ int default_subclass_discard_transparency_layer(gx_device *dev, gs_gstate *pgs)
     return 0;
 }
 
-const gx_cm_color_map_procs *default_subclass_get_color_mapping_procs(const gx_device *dev)
+const gx_cm_color_map_procs *default_subclass_get_color_mapping_procs(const gx_device *dev,
+                                                                      const gx_device **tdev)
 {
     if (dev->child)
-        return dev_proc(dev->child, get_color_mapping_procs)(dev->child);
+        return dev_proc(dev->child, get_color_mapping_procs)(dev->child, tdev);
     /* else */
-    return gx_default_DevGray_get_color_mapping_procs(dev);
+    return gx_default_DevGray_get_color_mapping_procs(dev, tdev);
 }
 
 int  default_subclass_get_color_comp_index(gx_device *dev, const char * pname, int name_size, int component_type)
@@ -693,7 +694,7 @@ int default_subclass_copy_planes(gx_device *dev, const byte *data, int data_x, i
     return 0;
 }
 
-int default_subclass_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile)
+int default_subclass_get_profile(const gx_device *dev, cmm_dev_profile_t **dev_profile)
 {
     if (dev->child) {
         return dev_proc(dev->child, get_profile)(dev->child, dev_profile);

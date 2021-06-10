@@ -1187,7 +1187,7 @@ display_initialize_device_procs(gx_device *dev)
  * the separation color components for the display device.
  */
 static void
-display_separation_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
+display_separation_gray_cs_to_cmyk_cm(const gx_device * dev, frac gray, frac out[])
 {
     int * map =
       (int *)(&((gx_device_display *) dev)->devn_params.separation_order_map);
@@ -1196,7 +1196,7 @@ display_separation_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-display_separation_rgb_cs_to_cmyk_cm(gx_device * dev,
+display_separation_rgb_cs_to_cmyk_cm(const gx_device * dev,
     const gs_gstate *pgs, frac r, frac g, frac b, frac out[])
 {
     int * map =
@@ -1206,7 +1206,7 @@ display_separation_rgb_cs_to_cmyk_cm(gx_device * dev,
 }
 
 static void
-display_separation_cmyk_cs_to_cmyk_cm(gx_device * dev,
+display_separation_cmyk_cs_to_cmyk_cm(const gx_device * dev,
     frac c, frac m, frac y, frac k, frac out[])
 {
     const int * map =
@@ -1222,8 +1222,9 @@ static const gx_cm_color_map_procs display_separation_cm_procs = {
 };
 
 static const gx_cm_color_map_procs *
-display_separation_get_color_mapping_procs(const gx_device * dev)
+display_separation_get_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
 {
+    *map_dev = dev;
     return &display_separation_cm_procs;
 }
 
@@ -1933,11 +1934,11 @@ set_color_info(gx_device_color_info * pdci, DISPLAY_MODEL model,
  */
 static void
 set_color_procs(gx_device * pdev,
-        dev_t_proc_encode_color((*encode_color), gx_device),
-        dev_t_proc_decode_color((*decode_color), gx_device),
-        dev_t_proc_get_color_mapping_procs((*get_color_mapping_procs), gx_device),
-        dev_t_proc_get_color_comp_index((*get_color_comp_index), gx_device),
-        dev_t_proc_fill_rectangle_hl_color((*fill_hl_color), gx_device))
+        dev_proc_encode_color((*encode_color)),
+        dev_proc_decode_color((*decode_color)),
+        dev_proc_get_color_mapping_procs((*get_color_mapping_procs)),
+        dev_proc_get_color_comp_index((*get_color_comp_index)),
+        dev_proc_fill_rectangle_hl_color((*fill_hl_color)))
 {
     pdev->procs.get_color_mapping_procs = get_color_mapping_procs;
     pdev->procs.get_color_comp_index = get_color_comp_index;

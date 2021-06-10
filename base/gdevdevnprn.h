@@ -54,6 +54,7 @@ dev_proc_encode_color(gx_devn_prn_encode_color);
 dev_proc_decode_color(gx_devn_prn_decode_color);
 dev_proc_update_spot_equivalent_colors(gx_devn_prn_update_spot_equivalent_colors);
 dev_proc_ret_devn_params(gx_devn_prn_ret_devn_params);
+dev_proc_ret_devn_params_const(gx_devn_prn_ret_devn_params_const);
 
 
 #endif		/* ifndef gdevdevnprn_INCLUDED */

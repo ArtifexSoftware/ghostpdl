@@ -40,7 +40,7 @@ typedef struct nocm_link_s {
     gs_memory_t *memory;
 } nocm_link_t;
 
-static void gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
+static void gsicc_nocm_transform_general(const gx_device *dev, gsicc_link_t *icclink,
                                          void *inputcolor, void *outputcolor,
                                          int num_bytes_in, int num_bytes_out);
 
@@ -51,7 +51,7 @@ static void gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
 /* At most, we have 4 input and 4 output ptrs.  Since this is used only in
    DeviceGray, DeviceRGB and DeviceCMYK cases */
 static void
-gsicc_nocm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
+gsicc_nocm_planar_to_planar(const gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -88,7 +88,7 @@ gsicc_nocm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
 
 /* This is not really used yet */
 static void
-gsicc_nocm_planar_to_chunky(gx_device *dev, gsicc_link_t *icclink,
+gsicc_nocm_planar_to_chunky(const gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -100,7 +100,7 @@ gsicc_nocm_planar_to_chunky(gx_device *dev, gsicc_link_t *icclink,
 /* This is used with the fast thresholding code when doing -dUseFastColor
    and going out to a planar device */
 static void
-gsicc_nocm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
+gsicc_nocm_chunky_to_planar(const gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -156,7 +156,7 @@ gsicc_nocm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
 }
 
 static void
-gsicc_nocm_chunky_to_chunky(gx_device *dev, gsicc_link_t *icclink,
+gsicc_nocm_chunky_to_chunky(const gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -224,7 +224,7 @@ gsicc_nocm_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
 
 /* Shared function between the single and buffer conversions */
 static void
-gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
+gsicc_nocm_transform_general(const gx_device *dev, gsicc_link_t *icclink,
                              void *inputcolor, void *outputcolor,
                              int num_bytes_in, int num_bytes_out)
 {
@@ -238,6 +238,9 @@ gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
     frac frac_in[4];
     frac frac_out[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int k;
+    const gx_device *map_dev;
+    const gx_cm_color_map_procs *procs;
+
 
     if (num_bytes_in == 2) {
         unsigned short *data = (unsigned short *) inputcolor;
@@ -253,14 +256,17 @@ gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
     /* Use the device procedures to do the mapping */
     switch (num_in) {
         case 1:
-            dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, frac_in[0], frac_out);
+            procs = dev_proc(dev, get_color_mapping_procs)(dev, &map_dev);
+            procs->map_gray(map_dev, frac_in[0], frac_out);
             break;
         case 3:
-            dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, link->pgs, frac_in[0], frac_in[1],
+            procs = dev_proc(dev, get_color_mapping_procs)(dev, &map_dev);
+            procs->map_rgb(map_dev, link->pgs, frac_in[0], frac_in[1],
                 frac_in[2], frac_out);
             break;
         case 4:
-            dev_proc(dev, get_color_mapping_procs)(dev)->map_cmyk(dev, frac_in[0], frac_in[1],
+            procs = dev_proc(dev, get_color_mapping_procs)(dev, &map_dev);
+            procs->map_cmyk(map_dev, frac_in[0], frac_in[1],
                 frac_in[2], frac_in[3], frac_out);
             break;
         default:

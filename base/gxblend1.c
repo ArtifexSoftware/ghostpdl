@@ -494,7 +494,7 @@ pdf14_decode_color16(gx_device * dev, gx_color_index color, gx_color_value * out
 }
 
 void
-pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
+pdf14_gray_cs_to_cmyk_cm(const gx_device * dev, frac gray, frac out[])
 {
     uchar num_comp = dev->color_info.num_components;
 
@@ -506,7 +506,7 @@ pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
 
 /* These three must handle rgb + spot */
 void
-pdf14_gray_cs_to_rgbspot_cm(gx_device * dev, frac gray, frac out[])
+pdf14_gray_cs_to_rgbspot_cm(const gx_device * dev, frac gray, frac out[])
 {
     uchar num_comp = dev->color_info.num_components;
 
@@ -516,7 +516,7 @@ pdf14_gray_cs_to_rgbspot_cm(gx_device * dev, frac gray, frac out[])
 }
 
 void
-pdf14_rgb_cs_to_rgbspot_cm(gx_device * dev, const gs_gstate *pgs,
+pdf14_rgb_cs_to_rgbspot_cm(const gx_device * dev, const gs_gstate *pgs,
     frac r, frac g, frac b, frac out[])
 {
     uchar num_comp = dev->color_info.num_components;
@@ -529,7 +529,7 @@ pdf14_rgb_cs_to_rgbspot_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 void
-pdf14_cmyk_cs_to_rgbspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+pdf14_cmyk_cs_to_rgbspot_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     uchar num_comp = dev->color_info.num_components;
 
@@ -540,7 +540,7 @@ pdf14_cmyk_cs_to_rgbspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, fra
 
 /* These three must handle gray + spot */
 void
-pdf14_gray_cs_to_grayspot_cm(gx_device * dev, frac gray, frac out[])
+pdf14_gray_cs_to_grayspot_cm(const gx_device * dev, frac gray, frac out[])
 {
     uchar num_comp = dev->color_info.num_components;
 
@@ -550,7 +550,7 @@ pdf14_gray_cs_to_grayspot_cm(gx_device * dev, frac gray, frac out[])
 }
 
 void
-pdf14_rgb_cs_to_grayspot_cm(gx_device * dev, const gs_gstate *pgs,
+pdf14_rgb_cs_to_grayspot_cm(const gx_device * dev, const gs_gstate *pgs,
     frac r, frac g, frac b, frac out[])
 {
     uchar num_comp = dev->color_info.num_components;
@@ -561,7 +561,7 @@ pdf14_rgb_cs_to_grayspot_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 void
-pdf14_cmyk_cs_to_grayspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+pdf14_cmyk_cs_to_grayspot_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     uchar num_comp = dev->color_info.num_components;
 
@@ -586,7 +586,7 @@ pdf14_cmyk_cs_to_grayspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, fr
  * often they are { pop 0 }.
  */
 void
-pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_gstate *pgs,
+pdf14_rgb_cs_to_cmyk_cm(const gx_device * dev, const gs_gstate *pgs,
                            frac r, frac g, frac b, frac out[])
 {
     uchar num_comp = dev->color_info.num_components;
@@ -607,7 +607,7 @@ pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 void
-pdf14_cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+pdf14_cmyk_cs_to_cmyk_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     uchar num_comp = dev->color_info.num_components;
 

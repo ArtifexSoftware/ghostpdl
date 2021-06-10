@@ -55,17 +55,17 @@
  * device color model. Any unused component will be mapped to 0.
  */
 #define cm_map_proc_gray(proc) \
-    void proc (gx_device * dev, frac gray, \
+    void proc (const gx_device * dev, frac gray, \
               frac * out)
 
 #define cm_map_proc_rgb(proc) \
-    void proc (gx_device * dev, \
+    void proc (const gx_device * dev, \
               const gs_gstate *pgs, \
               frac r, frac g, frac b, \
               frac * out)
 
 #define cm_map_proc_cmyk(proc) \
-    void proc (gx_device * dev, \
+    void proc (const gx_device * dev, \
               frac c, frac m, frac y, frac k, \
               frac * out)
 
@@ -158,7 +158,7 @@ void gx_set_cmap_procs(gs_gstate *, const gx_device *);
   color model.
  */
 #define dev_t_proc_get_color_mapping_procs(proc, dev_t) \
-    const gx_cm_color_map_procs * (proc)(const dev_t * dev)
+    const gx_cm_color_map_procs * (proc)(const dev_t * dev, const gx_device **)
 
 #define dev_proc_get_color_mapping_procs(proc) \
     dev_t_proc_get_color_mapping_procs(proc, gx_device)
@@ -262,8 +262,6 @@ frac gx_unit_frac(float fvalue);
    images */
 bool gx_device_uses_std_cmap_procs(gx_device * dev,
                                    const gs_gstate * pgs);
-bool fwd_uses_fwd_cmap_procs(gx_device * dev);
-const gx_cm_color_map_procs* fwd_get_target_cmap_procs(gx_device * dev);
 void cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
      const gs_gstate * pgs, gx_device * dev, bool has_transfer,
      bool has_halftone, gs_color_select_t select);

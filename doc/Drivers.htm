@@ -1496,19 +1496,30 @@ supported by the device.</p>
 
 <dl>
 <dt><code>const gx_cm_color_map_procs&nbsp;* get_color_mapping_procs(const
-gx_device&nbsp;* dev)</code> <b><em>[OPTIONAL]</em></b> </dt>
-<dd>This procedure returns a list of three procedures. These procedures
-are used to translate values in either Gray, RGB, or CMYK color spaces
-into device colorant values. A separate procedure is not required for the
-DeviceN and Separation color spaces since these already represent
-device colorants.</dd>
+gx_device&nbsp;* dev, const gx_device&nbsp;** tdev)</code> <b><em>[OPTIONAL]</em></b> </dt>
+<dd>This procedure returns a list of three procedures, together with the
+device to pass to them. These procedures are used to translate values in
+either Gray, RGB, or CMYK color spaces into device colorant values. A
+separate procedure is not required for the DeviceN and Separation color
+spaces since these already represent device colorants.</dd>
+
+<p>In many cases, the device returned in <code>tdev</code> will be the
+same as <code>dev</code>, but the caller should not rely on this. For
+cases where we have a chain of devices (perhaps because of a subclass
+or compositor device having been introduced internally as part of the
+rendering process), the actual device that needs to do the color mapping
+may be a child device of the original one. In such cases <code>tdev</code>
+will be returned as a different value to <code>dev</code>.
+</p>
 
 <p>
 The default procedure returns a list of procedures based upon
 <code>color_info.num_components</code>.  These procedures are appropriate
 for DeviceGray, DeviceRGB, or DeviceCMYK process color model devices. A
 procedure must be defined if another process color model is used by the
-device or spot colors are to be supported.</p>
+device or spot colors are to be supported. All these procedures take a
+<code>gx_device</code> pointer; these should be called with the value
+returned in <code>tdev</code> NOT the initial value of <code>dev</code>.</p>
 </dl>
 
 <dl>
