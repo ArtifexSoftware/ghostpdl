@@ -149,14 +149,11 @@ static int pdfi_set_type42_data_procs(gs_font_type42 *pfont)
     return 0;
 }
 
-int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **ppfont)
+int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, byte *buf, int64_t buflen, pdf_font **ppdffont)
 {
     pdf_font_truetype *font;
     int code = 0, num_chars = 0, i;
-    byte *buf = NULL;
-    int64_t buflen;
     pdf_obj *fontdesc = NULL;
-    pdf_obj *fontfile = NULL;
     pdf_obj *obj = NULL;
     pdf_obj *basefont = NULL;
     double f;
@@ -164,40 +161,19 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     bool encoding_known = false;
     bool forced_symbolic = false;
 
-    *ppfont = NULL;
+    *ppdffont = NULL;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
-    if (code <= 0)
-        return_error(gs_error_invalidfont);
-
-    code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile2", PDF_STREAM, &fontfile);
-    if (code < 0) {
-        code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile3", PDF_STREAM, &fontfile);
-        if (code < 0) {
-            pdfi_countdown(fontdesc);
-            return_error(gs_error_invalidfont);
-        }
-    }
-    code = pdfi_stream_to_buffer(ctx, (pdf_stream *)fontfile, &buf, &buflen);
-    pdfi_countdown(fontfile);
-    if (code < 0) {
-        pdfi_countdown(fontdesc);
-        return code;
-    }
-    if (memcmp(buf, "OTTO", 4) == 0) {
-        pdf_font *ottof;
-        pdfi_countdown(fontdesc);
-        /* Ownershuo of "buf" memory passes to pdfi_read_cff_font() */
-        code = pdfi_read_cff_font(ctx, font_dict, buf, buflen, &ottof, false);
-        if (code >= 0)
-            *ppfont = (gs_font *)ottof->pfont;
-        return code;
+    if (code <= 0) {
+        code = gs_note_error(gs_error_invalidfont);
+        goto error;
     }
 
     if ((code = pdfi_alloc_tt_font(ctx, &font, false)) < 0) {
-        pdfi_countdown(fontdesc);
-        return code;
+        code = gs_note_error(gs_error_invalidfont);
+        goto error;
     }
+
     font->FontDescriptor = (pdf_dict *)fontdesc;
     fontdesc = NULL;
 
@@ -220,6 +196,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
     font->sfnt.data = buf;
     font->sfnt.size = buflen;
+    buf = NULL;
 
     /* Strictly speaking BaseFont is required, but we can continue without one */
     code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, (pdf_obj **)&basefont);
@@ -392,9 +369,12 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
 
     if (font)
-        *ppfont = (gs_font *)font->pfont;
+        *ppdffont = (pdf_font *)font;
     return code;
 error:
+    if (buf != NULL)
+        gs_free_object(ctx->memory, buf, "pdfi_read_truetype_font(buf)");
+    pdfi_countdown(fontdesc);
     pdfi_countdown(basefont);
     pdfi_countdown(obj);
     pdfi_countdown(font);

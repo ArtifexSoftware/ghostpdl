@@ -149,7 +149,7 @@ pdfi_alloc_cidtype2_font(pdf_context *ctx, pdf_cidfont_type2 **font, bool is_cid
     return 0;
 }
 
-int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, byte *buf, int buflen, pdf_font **ppfont)
+int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, byte *buf, int64_t buflen, pdf_font **ppfont)
 {
     pdf_cidfont_type2 *font;
     int code = 0;

@@ -364,34 +364,6 @@ pdfi_t1_decode_pfb(pdf_context * ctx, byte * inbuf, int inlen, byte ** outbuf, i
 }
 
 static int
-pdfi_open_t1_font_file(pdf_context * ctx, char *fontfile, byte ** buf, int64_t * buflen)
-{
-    int code = 0;
-
-    /* FIXME: romfs hardcoded coded for now */
-    stream *s;
-
-    s = sfopen(fontfile, "r", ctx->memory);
-    if (s == NULL) {
-        code = gs_note_error(gs_error_undefinedfilename);
-    }
-    else {
-        sfseek(s, 0, SEEK_END);
-        *buflen = sftell(s);
-        sfseek(s, 0, SEEK_SET);
-        *buf = gs_alloc_bytes(ctx->memory, *buflen, "pdfi_open_t1_font_file(buf)");
-        if (*buf != NULL) {
-            sfread(*buf, 1, *buflen, s);
-        }
-        else {
-            code = gs_note_error(gs_error_VMerror);
-        }
-        sfclose(s);
-    }
-    return code;
-}
-
-static int
 pdfi_alloc_t1_font(pdf_context * ctx, pdf_font_type1 ** font, uint32_t obj_num)
 {
     pdf_font_type1 *t1font = NULL;
@@ -486,103 +458,19 @@ pdfi_t1_font_set_procs(pdf_context * ctx, pdf_font_type1 * font)
 }
 
 int
-pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
-                     pdf_dict * stream_dict, pdf_dict * page_dict, gs_font ** ppfont)
+pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, byte *fbuf, int64_t fbuflen, pdf_font **ppdffont)
 {
     int code;
-    byte *fbuf = NULL;
-    int64_t fbuflen = 0;
     pdf_obj *fontdesc = NULL;
-    pdf_obj *fontfile = NULL;
     pdf_obj *basefont = NULL;
     pdf_obj *mapname = NULL;
     pdf_obj *tmp = NULL;
     pdf_font_type1 *t1f = NULL;
     ps_font_interp_private fpriv = { 0 };
-    bool embedded = true;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
 
-    if (fontdesc != NULL) {
-        code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile", PDF_STREAM, &fontfile);
-
-        if (code < 0)
-            code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile2", PDF_STREAM, &fontfile);
-
-        if (code < 0)
-            code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile3", PDF_STREAM, &fontfile);
-    }
-
-    if (fontfile != NULL) {
-        code = pdfi_stream_to_buffer(ctx, (pdf_stream *) fontfile, &fbuf, &fbuflen);
-        pdfi_countdown(fontfile);
-        if (fbuflen == 0) {
-            gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font(fbuf)");
-            fbuf = NULL;
-        }
-    }
-
-    if (fbuf == NULL) {
-        char fontfname[gp_file_name_sizeof];
-        const char *romfsprefix = "%rom%Resource/Font/";
-        const int romfsprefixlen = strlen(romfsprefix);
-
-        embedded = false;
-
-        code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
-        if (code < 0) {
-            pdfi_countdown(fontdesc);
-            return_error(gs_error_invalidfont);
-        }
-        code = pdf_fontmap_lookup_font(ctx, (pdf_name *) basefont, &mapname);
-        if (code < 0) {
-            mapname = basefont;
-            pdfi_countup(mapname);
-        }
-        if (mapname->type == PDF_NAME) {
-            pdf_name *mname = (pdf_name *) mapname;
-
-            memcpy(fontfname, romfsprefix, romfsprefixlen);
-            memcpy(fontfname + romfsprefixlen, mname->data, mname->length);
-            fontfname[romfsprefixlen + mname->length] = '\0';
-        }
-        code = pdfi_open_t1_font_file(ctx, fontfname, &fbuf, &fbuflen);
-        if (code < 0) {
-            pdf_obj *defname = NULL;
-            pdf_name *mname;
-
-            pdfi_countdown(mapname);
-            code = pdfi_name_alloc(ctx, (byte *) "Helvetica", 9, &defname);
-            if (code < 0)
-                goto error;
-
-            pdfi_countup(defname);
-            code = pdf_fontmap_lookup_font(ctx, (pdf_name *) defname, &mapname);
-            pdfi_countdown(defname);
-            if (code < 0)
-                return code;    /* Done can't carry on! */
-            mname = (pdf_name *) mapname;
-            memcpy(fontfname, romfsprefix, romfsprefixlen);
-            memcpy(fontfname + romfsprefixlen, mname->data, mname->length);
-            fontfname[romfsprefixlen + mname->length] = '\0';
-            code = pdfi_open_t1_font_file(ctx, fontfname, &fbuf, &fbuflen);
-            if (code < 0)
-                return code;    /* Done can't carry on! */
-        }
-    }
-
-#define MAKEMAGIC(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
-    if (MAKEMAGIC(fbuf[0], fbuf[1], fbuf[2], 0) == MAKEMAGIC('%', '!', 'P', 0)) {
-        /* pfa */
-    }
-    else if (MAKEMAGIC(fbuf[0], fbuf[1], fbuf[2], 0) == MAKEMAGIC(1, 0, 4, 0)
-             || MAKEMAGIC(fbuf[0], fbuf[1], fbuf[2], fbuf[3]) == MAKEMAGIC('O', 'T', 'T', 'O')) {
-        /* CFF/1C etc */
-        pdfi_countdown(fontdesc);
-        gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font");
-        return pdfi_read_type1C_font(ctx, font_dict, stream_dict, page_dict, ppfont);
-    }
-    else if (MAKEMAGIC(fbuf[0], fbuf[1], 0, 0) == MAKEMAGIC(128, 1, 0, 0)) {
+    if (fbuf[0] == 128 && fbuf[1] == 1) {
         byte *decodebuf = NULL;
         int decodelen;
 
@@ -594,22 +482,25 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
         fbuf = decodebuf;
         fbuflen = decodelen;
     }
-    else if (MAKEMAGIC(fbuf[0], fbuf[1], fbuf[2], fbuf[3]) == MAKEMAGIC(0, 1, 0, 0)
-             || MAKEMAGIC(fbuf[0], fbuf[1], fbuf[2], fbuf[3]) == MAKEMAGIC('t', 'r', 'u', 'e')) {
-        pdfi_countdown(fontdesc);
-        gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font");
-        return pdfi_read_truetype_font(ctx, font_dict, stream_dict, page_dict, ppfont);
-    }
-#undef MAKEMAGIC
 
     if (code >= 0) {
         fpriv.gsu.gst1.data.lenIV = 4;
         code = pdfi_read_ps_font(ctx, font_dict, fbuf, fbuflen, &fpriv);
         gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font");
+
         /* If we have a full CharStrings dictionary, we probably have enough to make a font */
         if (code < 0 && (fpriv.u.t1.CharStrings == NULL || fpriv.u.t1.CharStrings->type != PDF_DICT
             || fpriv.u.t1.CharStrings->size != fpriv.u.t1.CharStrings->entries)) {
-            goto error;
+            bool notdefknown = false;
+            /* If we have a full CharStrings dictionary *except* a notdef, we still probably have
+               enough to make a font, because we'll add a fake notdef, if required, as we create
+               the font object.
+             */
+            if (fpriv.u.t1.CharStrings == NULL && fpriv.u.t1.CharStrings->entries == fpriv.u.t1.CharStrings->size - 1) {
+                (void)pdfi_dict_known(ctx, fpriv.u.t1.CharStrings, ".notdef", &notdefknown);
+            }
+            if (notdefknown == false)
+                goto error;
         }
         code = pdfi_alloc_t1_font(ctx, &t1f, font_dict->object_num);
         if (code >= 0) {
@@ -640,6 +531,9 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
             pdfi_countup(fontdesc);
             t1f->Name = mapname;
             pdfi_countup(mapname);
+
+            /* We want basefont, but we can live without it */
+            (void)pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
 
             t1f->descflags = 0;
             if (t1f->FontDescriptor != NULL) {
@@ -766,8 +660,7 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
             }
             t1f->CharStrings = fpriv.u.t1.CharStrings;
             pdfi_countup(t1f->CharStrings);
-            if (!embedded)
-                pdfi_patch_charstrings_dict(t1f->CharStrings);
+            pdfi_patch_charstrings_dict(t1f->CharStrings);
 
             t1f->Subrs = fpriv.u.t1.Subrs;
             fpriv.u.t1.Subrs = NULL;
@@ -797,7 +690,7 @@ pdfi_read_type1_font(pdf_context * ctx, pdf_dict * font_dict,
                 if (code < 0)
                     goto error;
             }
-            *ppfont = (gs_font *) t1f->pfont;
+            *ppdffont = (pdf_font *) t1f;
         }
     }
 

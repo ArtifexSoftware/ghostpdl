@@ -1918,8 +1918,7 @@ pdfi_init_cff_font_priv(pdf_context *ctx, pdfi_gs_cff_font_priv *cffpriv,
 }
 
 int
-pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
-                   int64_t fbuflen, pdf_font ** ppdffont, bool forcecid)
+pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, byte *pfbuf, int64_t fbuflen, bool forcecid, pdf_font **ppdffont)
 {
     int code = 0;
 
@@ -2445,31 +2444,33 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, byte *pfbuf,
                     goto error;
             }
             *ppdffont = (pdf_font *) ppdfont;
+            ppdfont = NULL;
         }
-        gs_free_object(ctx->memory, pfbuf, "pdfi_read_cff_font(fbuf)");
-        if (code == 0)
-            return 0;
     }
   error:
+    gs_free_object(ctx->memory, pfbuf, "pdfi_read_cff_font(fbuf)");
     pdfi_countdown(ppdfont);
     pdfi_countdown(fontdesc);
     pdfi_countdown(ordering);
     pdfi_countdown(registry);
-    *ppdffont = NULL;
 
-    return_error(gs_error_invalidfont);
+    if (code < 0) {
+        *ppdffont = NULL;
+        return_error(gs_error_invalidfont);
+    }
+
+    return code;
 }
 
 int
 pdfi_read_type1C_font(pdf_context *ctx, pdf_dict *font_dict,
-                      pdf_dict *stream_dict, pdf_dict *page_dict, gs_font ** ppfont)
+                      pdf_dict *stream_dict, pdf_dict *page_dict, pdf_font **ppdffont)
 {
     int code;
     pdf_obj *fontdesc = NULL;
     pdf_obj *fontfile = NULL;
     byte *fbuf;
     int64_t fbuflen;
-    pdf_font *ppdffont = NULL;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
 
@@ -2493,9 +2494,7 @@ pdfi_read_type1C_font(pdf_context *ctx, pdf_dict *font_dict,
         return_error(gs_error_invalidfont);
     }
 
-    code = pdfi_read_cff_font(ctx, font_dict, fbuf, fbuflen, &ppdffont, false);
-    if (code >= 0)
-        *ppfont = (gs_font *) ppdffont->pfont;
+    code = pdfi_read_cff_font(ctx, stream_dict, page_dict, font_dict, fbuf, fbuflen, false, ppdffont);
 
     return code;
 }

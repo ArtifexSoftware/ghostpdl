@@ -18,7 +18,8 @@
 #ifndef PDF_TYPE1_FONT
 #define PDF_TYPE1_FONT
 
-int pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **pfont);
+int pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, byte *fbuf, int64_t fbuflen, pdf_font **ppdffont);
+
 int pdfi_free_font_type1(pdf_obj *font);
 int pdfi_t1_global_glyph_code(const gs_font *pfont, gs_const_string *gstr, gs_glyph *pglyph);
 

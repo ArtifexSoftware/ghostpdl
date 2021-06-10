@@ -182,14 +182,14 @@ int pdfi_free_font_type3(pdf_obj *font)
 }
 
 
-int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **ppfont)
+int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_font **ppdffont)
 {
     int code = 0, i, num_chars = 0;
     pdf_font_type3 *font = NULL;
     pdf_obj *obj = NULL;
     double f;
 
-    *ppfont = NULL;
+    *ppdffont = NULL;
     code = alloc_type3_font(ctx, &font);
     if (code < 0)
         return code;
@@ -280,7 +280,7 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto font3_error;
 
-    *ppfont = (gs_font *)font->pfont;
+    *ppdffont = (pdf_font *)font;
 
     return code;
 

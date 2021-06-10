@@ -81,7 +81,7 @@ $(PDFOBJ)pdf_fapi.$(OBJ): $(PDFSRC)pdf_fapi.c $(PDFINCLUDES) $(PDF_MAK) \
 	$(PDFCCC) $(PDFSRC)pdf_fapi.c $(PDFO_)pdf_fapi.$(OBJ)
 
 $(PDFOBJ)pdf_font.$(OBJ): $(PDFSRC)pdf_font.c $(PDFINCLUDES) $(PDF_MAK) \
-                          $(gscencs_h) $(MAKEDIRS)
+                          $(gscencs_h) $(stream_h) $(strmio_h) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_font.c $(PDFO_)pdf_font.$(OBJ)
 
 $(PDFOBJ)pdf_font0.$(OBJ): $(PDFSRC)pdf_font0.c $(PDFINCLUDES) $(PDF_MAK) \

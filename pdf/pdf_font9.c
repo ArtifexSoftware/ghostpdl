@@ -29,7 +29,7 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 
-int pdfi_read_cidtype0_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, int fbuflen, pdf_font **ppfont)
+int pdfi_read_cidtype0_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, int fbuflen, pdf_font **ppdffont)
 {
 #if 0
     int code;
