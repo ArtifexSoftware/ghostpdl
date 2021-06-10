@@ -112,6 +112,7 @@ s_init(stream *s, gs_memory_t * mem)
     s->file_name.size = 0;
     s->close_strm = false;	/* default */
     s->close_at_eod = true;	/* default */
+    s->cbuf_string_memory = NULL;
 }
 stream *
 s_alloc(gs_memory_t * mem, client_name_t cname)
@@ -191,6 +192,7 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
     s->file = 0;
     s->file_name.data = 0;	/* in case stream is on stack */
     s->file_name.size = 0;
+    s->cbuf_string_memory = NULL;
     if (s->memory) {
         if_debug4m('s', s->memory, "[s]init "PRI_INTPTR", buf="PRI_INTPTR", len=%u, modes=%d\n",
                    (intptr_t) s, (intptr_t) ptr, len, modes);
@@ -1028,6 +1030,10 @@ static int
                            stream_cursor_write *, bool);
 
 /* Initialize a stream for reading a string. */
+/* String ownership retained by the caller, for example
+   Postscript string objects owned by the Postscript
+   interpreter
+ */
 void
 sread_string(register stream *s, const byte *ptr, uint len)
 {
@@ -1039,9 +1045,31 @@ sread_string(register stream *s, const byte *ptr, uint len)
     s_std_init(s, (byte *)ptr, len, &p, s_mode_read + s_mode_seek);
     s->cbuf_string.data = (byte *)ptr;
     s->cbuf_string.size = len;
+    s->cbuf_string_memory = NULL;
     s->end_status = EOFC;
     s->cursor.r.limit = s->cursor.w.limit;
 }
+
+/* The string ownership is transferred from caller to stream.
+   string_mem pointer must be allocator used to allocate the
+   "string" buffer.
+ */
+void
+sread_transient_string(register stream *s, gs_memory_t *string_mem, const byte *ptr, uint len)
+{
+    static const stream_procs p = {
+         s_string_available, s_string_read_seek, s_std_read_reset,
+         s_std_read_flush, s_std_null, s_string_read_process
+    };
+
+    s_std_init(s, (byte *)ptr, len, &p, s_mode_read + s_mode_seek);
+    s->cbuf_string.data = (byte *)ptr;
+    s->cbuf_string.size = len;
+    s->cbuf_string_memory = string_mem;
+    s->end_status = EOFC;
+    s->cursor.r.limit = s->cursor.w.limit;
+}
+
 /* Initialize a reusable stream for reading a string. */
 static void
 s_string_reusable_reset(stream *s)
@@ -1055,6 +1083,11 @@ s_string_reusable_flush(stream *s)
     s->cursor.r.ptr = s->cursor.r.limit = s->cbuf + s->bsize - 1;  /* just set to the end */
     return 0;
 }
+
+/* String ownership retained by the caller, for example
+   Postscript string objects owned by the Postscript
+   interpreter
+ */
 void
 sread_string_reusable(stream *s, const byte *ptr, uint len)
 {
@@ -1068,6 +1101,27 @@ sread_string_reusable(stream *s, const byte *ptr, uint len)
     };
 
     sread_string(s, ptr, len);
+    s->procs = p;
+    s->close_at_eod = false;
+}
+
+/* The string ownership is transferred from caller to stream.
+   string_mem pointer must be allocator used to allocate the
+   "string" buffer.
+ */
+void
+sread_transient_string_reusable(stream *s, gs_memory_t *string_mem, const byte *ptr, uint len)
+{
+    /*
+     * Note that s->procs.close is s_close_disable, to parallel
+     * file_close_disable.
+     */
+    static const stream_procs p = {
+         s_string_available, s_string_read_seek, s_string_reusable_reset,
+         s_string_reusable_flush, s_close_disable, s_string_read_process
+    };
+
+    sread_transient_string(s, string_mem, ptr, len);
     s->procs = p;
     s->close_at_eod = false;
 }
@@ -1243,15 +1297,23 @@ s_close_filters(stream **ps, stream *target)
     while (*ps != target) {
         stream *s = *ps;
         gs_memory_t *mem = s->state->memory;
+        gs_memory_t *cbuf_string_memory = s->cbuf_string_memory;
         byte *sbuf = s->cbuf;
+        byte *cbuf = s->cbuf_string.data;
         stream *next = s->strm;
         int status = sclose(s);
         stream_state *ss = s->state; /* sclose may set this to s */
 
         if (status < 0)
             return status;
+
+        if (s->cbuf_string_memory != NULL) { /* stream owns string buffer, so free it */
+            gs_free_object(cbuf_string_memory, cbuf, "s_close_filters(cbuf)");
+        }
+
         if (mem) {
-            gs_free_object(mem, sbuf, "s_close_filters(buf)");
+            if (sbuf != cbuf)
+                gs_free_object(mem, sbuf, "s_close_filters(buf)");
             gs_free_object(mem, s, "s_close_filters(stream)");
             if (ss != (stream_state *)s)
                 gs_free_object(mem, ss, "s_close_filters(state)");

@@ -141,6 +141,7 @@ struct stream_s {
 #define s_can_seek(s) (((s)->modes & s_mode_seek) != 0)
     gs_string cbuf_string;	/* cbuf/cbsize if cbuf is a string, */
                                 /* 0/? if not */
+    gs_memory_t *cbuf_string_memory;  /* If != NULL, stream owns the string buffer */
     gs_offset_t position;		/* file position of beginning of */
                                 /* buffer */
     stream_procs procs;
@@ -373,9 +374,23 @@ int file_close_finish(stream *);
 int file_close_disable(stream *);
 
 /* Create a stream on a string or a file. */
-void sread_string(stream *, const byte *, uint),
-    sread_string_reusable(stream *, const byte *, uint),
-    swrite_string(stream *, byte *, uint);
+/* String ownership retained by the caller, for example
+   Postscript string objects owned by the Postscript
+   interpreter
+ */
+void sread_string(stream *, const byte *, uint);
+void sread_string_reusable(stream *, const byte *, uint);
+
+/* The string ownership is transferred from caller to stream.
+   string_mem pointer must be allocator used to allocate the
+   "string" buffer.
+ */
+void
+sread_transient_string(register stream *s, gs_memory_t *string_mem, const byte *ptr, uint len);
+void
+sread_transient_string_reusable(register stream *s, gs_memory_t *string_mem, const byte *ptr, uint len);
+
+void swrite_string(stream *, byte *, uint);
 void sread_file(stream *, gp_file *, byte *, uint),
     swrite_file(stream *, gp_file *, byte *, uint);
 int  sappend_file(stream *, gp_file *, byte *, uint);

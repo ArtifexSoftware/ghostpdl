@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Resource">
@@ -288,6 +288,9 @@
     </Filter>
     <Filter Include="freetype\psnames">
       <UniqueIdentifier>{b1b6220f-bf2e-453d-aa42-86455301f13a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="extract">
+      <UniqueIdentifier>{8fa68d87-7860-4400-b23e-9b05198b3f52}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -6089,32 +6092,12 @@
     <ClCompile Include="..\base\gsicc_blacktext.c">
       <Filter>base\color\icc</Filter>
     </ClCompile>
-    <ClCompile Include="..\extract\src\alloc.c" />
-    <ClCompile Include="..\extract\src\astring.c" />
-    <ClCompile Include="..\extract\src\buffer-test.c" />
-    <ClCompile Include="..\extract\src\buffer.c" />
-    <ClCompile Include="..\extract\src\docx.c" />
-    <ClCompile Include="..\extract\src\docx_template.c" />
-    <ClCompile Include="..\extract\src\extract-exe.c" />
-    <ClCompile Include="..\extract\src\extract.c" />
-    <ClCompile Include="..\extract\src\join.c" />
-    <ClCompile Include="..\extract\src\mem.c" />
-    <ClCompile Include="..\extract\src\memento.c" />
-    <ClCompile Include="..\extract\src\misc-test.c" />
-    <ClCompile Include="..\extract\src\outf.c" />
-    <ClCompile Include="..\extract\src\xml.c" />
-    <ClCompile Include="..\extract\src\zip-test.c" />
-    <ClCompile Include="..\extract\src\zip.c" />
     <ClCompile Include="..\contrib\gdevadmp.c">
       <Filter>contrib</Filter>
     </ClCompile>
     <ClCompile Include="..\devices\gdevlj56.c">
       <Filter>devices</Filter>
     </ClCompile>
-    <ClCompile Include="..\extract\src\odt.c" />
-    <ClCompile Include="..\extract\src\odt_template.c" />
-    <ClCompile Include="..\extract\src\sys.c" />
-    <ClCompile Include="..\extract\src\text.c" />
     <ClCompile Include="..\freetype\src\autofit\afangles.c">
       <Filter>freetype\autofit</Filter>
     </ClCompile>
@@ -6609,6 +6592,66 @@
     </ClCompile>
     <ClCompile Include="..\freetype\src\type42\type42.c">
       <Filter>freetype\type42</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\alloc.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\astring.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\buffer.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\buffer-test.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\docx.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\docx_template.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\extract.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\extract-exe.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\join.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\mem.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\memento.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\misc-test.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\odt.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\odt_template.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\outf.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\sys.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\text.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\xml.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\zip.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\zip-test.c">
+      <Filter>extract</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -9552,7 +9595,6 @@
     <ClInclude Include="..\base\gsicc_blacktext.h">
       <Filter>base %28.h%29\icc %28.h%29</Filter>
     </ClInclude>
-    <ClInclude Include="..\devices\vector\doc_common.h" />
     <ClInclude Include="..\freetype\src\autofit\afangles.h">
       <Filter>freetype\autofit</Filter>
     </ClInclude>
@@ -9981,6 +10023,9 @@
     </ClInclude>
     <ClInclude Include="..\freetype\src\type42\t42types.h">
       <Filter>freetype\type42</Filter>
+    </ClInclude>
+    <ClInclude Include="..\devices\vector\doc_common.h">
+      <Filter>devices\vector</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
