@@ -968,56 +968,53 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                 return 0;
 
             if (ttfont->cmap == pdfi_truetype_cmap_10) {
-                if ((ttfont->descflags & 4) == 0) {
-                    gs_glyph g;
-                    uint cc = 0;
+                gs_glyph g;
+                uint cc = 0;
 
-                    g = gs_c_name_glyph((const byte *)GlyphName->data, GlyphName->length);
-                    if (g != GS_NO_GLYPH) {
-                        g = (gs_glyph)gs_c_decode(g, ENCODING_INDEX_MACROMAN);
-                    }
-                    else {
-                        g = GS_NO_CHAR;
-                    }
+                g = gs_c_name_glyph((const byte *)GlyphName->data, GlyphName->length);
+                if (g != GS_NO_GLYPH) {
+                    g = (gs_glyph)gs_c_decode(g, ENCODING_INDEX_MACROMAN);
+                }
+                else {
+                    g = GS_NO_CHAR;
+                }
 
-                    if (g != GS_NO_CHAR) {
-                        code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, (uint)g, &cc);
-                    }
+                if (g != GS_NO_CHAR) {
+                    code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, (uint)g, &cc);
+                }
 
-                    if (code < 0 || cc == 0) {
-                        gs_font_type42 *pfonttt = (gs_font_type42 *)pbfont;
-                        gs_string gname = {0};
+                if (code < 0 || cc == 0) {
+                    gs_font_type42 *pfonttt = (gs_font_type42 *)pbfont;
+                    gs_string gname = {0};
 
-                        /* This is a very slow implementation, we may benefit from creating a
-                         * a reverse post table upfront */
-                        for (i = 0; i < pfonttt->data.numGlyphs; i++) {
-                            code = gs_type42_find_post_name(pfonttt, (gs_glyph)i, &gname);
-                            if (code >= 0) {
-                                if (gname.data[0] == GlyphName->data[0]
-                                    && gname.size == GlyphName->length
-                                    && !strncmp((char *)gname.data, (char *)GlyphName->data, GlyphName->length))
-                                {
-                                    cr->char_codes[0] = i;
-                                    cr->is_glyph_index = true;
-                                    break;
-                                }
+                    /* This is a very slow implementation, we may benefit from creating a
+                     * a reverse post table upfront */
+                    for (i = 0; i < pfonttt->data.numGlyphs; i++) {
+                        code = gs_type42_find_post_name(pfonttt, (gs_glyph)i, &gname);
+                        if (code >= 0) {
+                            if (gname.data[0] == GlyphName->data[0]
+                                && gname.size == GlyphName->length
+                                && !strncmp((char *)gname.data, (char *)GlyphName->data, GlyphName->length))
+                            {
+                                cr->char_codes[0] = i;
+                                cr->is_glyph_index = true;
+                                break;
                             }
                         }
                     }
-                    else {
-                        cr->char_codes[0] = g;
-                        cr->is_glyph_index = false;
-                    }
+                }
+                else {
+                    cr->char_codes[0] = g;
+                    cr->is_glyph_index = false;
                 }
             }
             else if (ttfont->cmap == pdfi_truetype_cmap_31) {
-                if ((ttfont->descflags & 4) == 0) {
+                    unsigned int cc;
                     pdfi_single_glyph_list_t *sgl = (pdfi_single_glyph_list_t *)&(pdfi_SingleGlyphList);
                     /* Not to spec, but... if we get a "uni..." formatted name, use
                        the hex value from that.
                      */
                     if (GlyphName->length > 5 && !strncmp((char *)GlyphName->data, "uni", 3)) {
-                        unsigned int cc;
                         sscanf((char *)(GlyphName->data + 3), "%x", &cc);
                         cr->char_codes[0] = cc;
                     }
@@ -1029,7 +1026,17 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                                 && !strncmp((char *)sgl[i].Glyph, (char *)GlyphName->data, GlyphName->length))
                                 break;
                         }
-                        if (sgl[i].Glyph == NULL) {
+                        if (sgl[i].Glyph != NULL) {
+                            code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, (uint)sgl[i].Unicode, &cc);
+                            if (code < 0 || cc == 0)
+                                cc = 0;
+                            else
+                                cc = sgl[i].Unicode;
+                        }
+                        else
+                            cc = 0;
+
+                        if (cc == 0) {
                             gs_font_type42 *pfonttt = (gs_font_type42 *)pbfont;
                             gs_string gname = {0};
 
@@ -1050,11 +1057,10 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                             }
                         }
                         else {
-                            cr->char_codes[0] = sgl[i].Unicode;
+                            cr->char_codes[0] = cc;
                             cr->is_glyph_index = false;
                         }
                     }
-                }
             }
             pdfi_countdown(GlyphName);
             return 0;
