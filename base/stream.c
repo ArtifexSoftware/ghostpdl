@@ -1071,6 +1071,11 @@ s_string_reusable_flush(stream *s)
     s->cursor.r.ptr = s->cursor.r.limit = s->cbuf + s->bsize - 1;  /* just set to the end */
     return 0;
 }
+
+/* String ownership retained by the caller, for example
+   Postscript string objects owned by the Postscript
+   interpreter
+ */
 void
 sread_string_reusable(stream *s, const byte *ptr, uint len)
 {
@@ -1084,6 +1089,27 @@ sread_string_reusable(stream *s, const byte *ptr, uint len)
     };
 
     sread_string(s, ptr, len);
+    s->procs = p;
+    s->close_at_eod = false;
+}
+
+/* The string ownership is transferred from caller to stream.
+   string_mem pointer must be allocator used to allocate the
+   "string" buffer.
+ */
+void
+sread_transient_string_reusable(stream *s, gs_memory_t *string_mem, const byte *ptr, uint len)
+{
+    /*
+     * Note that s->procs.close is s_close_disable, to parallel
+     * file_close_disable.
+     */
+    static const stream_procs p = {
+         s_string_available, s_string_read_seek, s_string_reusable_reset,
+         s_string_reusable_flush, s_close_disable, s_string_read_process
+    };
+
+    sread_transient_string(s, string_mem, ptr, len);
     s->procs = p;
     s->close_at_eod = false;
 }

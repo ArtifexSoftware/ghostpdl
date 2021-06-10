@@ -378,14 +378,17 @@ int file_close_disable(stream *);
    interpreter
  */
 void sread_string(stream *, const byte *, uint);
+void sread_string_reusable(stream *, const byte *, uint);
+
 /* The string ownership is transferred from caller to stream.
    string_mem pointer must be allocator used to allocate the
    "string" buffer.
  */
 void
 sread_transient_string(register stream *s, gs_memory_t *string_mem, const byte *ptr, uint len);
+void
+sread_transient_string_reusable(register stream *s, gs_memory_t *string_mem, const byte *ptr, uint len);
 
-void sread_string_reusable(stream *, const byte *, uint);
 void swrite_string(stream *, byte *, uint);
 void sread_file(stream *, gp_file *, byte *, uint),
     swrite_file(stream *, gp_file *, byte *, uint);
