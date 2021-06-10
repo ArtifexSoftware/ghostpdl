@@ -570,11 +570,15 @@ static int
 pcl_impl_reset(pl_interp_implementation_t *impl, pl_interp_reset_reason reason)
 {
     pcl_interp_instance_t *pcli = impl->interp_client_data;
+    int code;
 
     if (reason != PL_RESET_RESOURCES)
         return 0;
 
-    return pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
+    code = pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
+    if (code < 0)
+        return code;
+    return pcl_do_resets(&pcli->pcs, pcl_reset_initial);
 }
 
 /*
