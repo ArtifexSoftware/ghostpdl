@@ -1129,7 +1129,7 @@ int pdfi_TJ(pdf_context *ctx)
     Trm.yx = 0;
     Trm.yy = ctx->pgs->PDFfontsize;
     Trm.tx = 0;
-    Trm.ty = 0;
+    Trm.ty = ctx->pgs->textrise;
 
     gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
 
