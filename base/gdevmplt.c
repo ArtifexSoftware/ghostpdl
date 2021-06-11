@@ -80,6 +80,28 @@ pcl_mono_dev_spec_op(gx_device *dev, int dev_spec_op, void *data, int size)
     return_error(gs_error_rangecheck);
 }
 
+static int
+pcl_mono_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
+    gs_font *font, const gx_clip_path *pcpath, gs_text_enum_t **ppte)
+{
+    int valid, ret;
+
+    /* The 'high level' version of the color has not been 'monochromized' by this
+     * device, so ensure that routines that we call (notably pdfwrite) don't
+     * think it's valid and use it. */
+    valid = pgs->color[0].dev_color->ccolor_valid;
+    pgs->color[0].dev_color->ccolor_valid = 0;
+
+    if (dev->child)
+        ret = dev_proc(dev->child, text_begin)(dev->child, pgs, text, font, pcpath, ppte);
+    else
+        ret = gx_default_text_begin(dev, pgs, text, font, pcpath, ppte);
+
+    pgs->color[0].dev_color->ccolor_valid = valid;
+
+    return ret;
+}
+
 static void
 pcl_mono_palette_initialize(gx_device *dev)
 {
@@ -93,6 +115,7 @@ pcl_mono_palette_initialize(gx_device *dev)
      * tests_private/pcl/pcl5ccet/15-01.BIN for an example. */
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     set_dev_proc(dev, dev_spec_op, pcl_mono_dev_spec_op);
+    set_dev_proc(dev, text_begin, pcl_mono_text_begin);
 }
 
 const
