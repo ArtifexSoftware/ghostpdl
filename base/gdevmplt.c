@@ -41,6 +41,7 @@
 #include "gdevsclass.h"
 #include "gdevmplt.h"
 #include "gxdcconv.h"       /* for color_rgb_to_gray and color_cmyk_to_gray */
+#include "gxdevsop.h"
 
 /* Device procedures, we only need one */
 static dev_proc_get_color_mapping_procs(pcl_mono_palette_get_color_mapping_procs);
@@ -69,6 +70,16 @@ RELOC_PTRS_END
 
 public_st_pcl_mono_palette_device();
 
+static int
+pcl_mono_dev_spec_op(gx_device *dev, int dev_spec_op, void *data, int size)
+{
+    if (dev_spec_op == gxdso_supports_hlcolor)
+        return 0;
+    if (dev->child)
+        return dev_proc(dev->child, dev_spec_op)(dev->child, dev_spec_op, data, size);
+    return_error(gs_error_rangecheck);
+}
+
 static void
 pcl_mono_palette_initialize(gx_device *dev)
 {
@@ -81,6 +92,7 @@ pcl_mono_palette_initialize(gx_device *dev)
      * the monochroming behaviour. See: page 32 of 75dpi png rendering of
      * tests_private/pcl/pcl5ccet/15-01.BIN for an example. */
     set_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
+    set_dev_proc(dev, dev_spec_op, pcl_mono_dev_spec_op);
 }
 
 const
