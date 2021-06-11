@@ -97,17 +97,30 @@ typedef struct
     int        lab;
 } Params;
 
+typedef struct
+{
+    int            width;
+    int            height;
+    int            span;
+    int            bpp;
+    int            cmyk;
+    void          *lab;
+    /* Below are the entries for handling spot colors and the	*/
+    /* CMYK equivalents (only used for PSD images currently).	*/
+    int           *num_spots;
+    unsigned char *spots;
+    /* used to map the second file colors to the same colorants	*/
+    /* as the first and issue a warning if they did not match.	*/
+    int           *color_map;
+} Image;
+
+
 typedef struct ImageReader
 {
     FILE *file;
     const char* file_name;
     void *(*read)(struct ImageReader *,
-                  int                *w,
-                  int                *h,
-                  int                *s,
-                  int                *bpp,
-                  int                *cmyk,
-                  void               **lab);
+                  Image              *);
 } ImageReader;
 
 /*
@@ -121,10 +134,6 @@ typedef void (DiffFn)(unsigned char *bmp,
                       BBox          *bbox,
                       Params        *params);
 
-/* Nasty (as if the rest of this code isn't!) global variables for holding
- * spot color details. */
-static unsigned char spots[256*4];
-static int spotfill = 0;
 
 static void *Malloc(size_t size) {
     void *block;
@@ -384,12 +393,7 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
 }
 
 static void *bmp_read(ImageReader *im,
-                      int         *width,
-                      int         *height,
-                      int         *span,
-                      int         *bpp,
-                      int         *cmyk,
-                      void       **lab)
+                      Image       *img)
 {
     int            offset;
     long           filelen, filepos;
@@ -397,8 +401,8 @@ static void *bmp_read(ImageReader *im,
     unsigned char *bmp;
 
     /* No CMYK bmp support */
-    *cmyk = 0;
-    *lab = NULL;
+    img->cmyk = 0;
+    img->lab = NULL;
 
     filepos = ftell(im->file);
     fseek(im->file, 0, SEEK_END);
@@ -415,7 +419,7 @@ static void *bmp_read(ImageReader *im,
     fread(bmp, 1, filelen, im->file);
 
     offset = getdword(bmp+10);
-    data = bmp_load_sub(bmp+14, width, height, span, bpp, offset-14, filelen);
+    data = bmp_load_sub(bmp+14, &img->width, &img->height, &img->span, &img->bpp, offset-14, filelen);
     free(bmp);
     return data;
 }
@@ -465,24 +469,19 @@ static int get_short(FILE *file, int rev)
 }
 
 static void *cups_read(ImageReader *im,
-                       int         *width,
-                       int         *height,
-                       int         *span,
-                       int         *bpp,
-                       int         *cmyk,
-                       int          rev,
-                       void       **lab)
+                       Image       *img,
+                       int          rev)
 {
     unsigned char *data, *d;
     int            c, x, y, b, bpc, bpl;
     int            colspace;
 
-    *lab = NULL;
+    img->lab = NULL;
 
     if (skip_bytes(im->file, 372) == EOF)
         return NULL;
-    *width  = get_int(im->file, rev);
-    *height = get_int(im->file, rev);
+    img->width  = get_int(im->file, rev);
+    img->height = get_int(im->file, rev);
     if (skip_bytes(im->file, 4) == EOF)
         return NULL;
     bpc  = get_int(im->file, rev);
@@ -513,14 +512,14 @@ static void *cups_read(ImageReader *im,
     if (skip_bytes(im->file, 1796-424) == EOF)
         return NULL;
 
-    data = Malloc(*width * *height * 4);
-    *span = *width * 4;
-    *bpp = 32;
-    for (y = *height; y > 0; y--) {
+    data = Malloc(img->width * img->height * 4);
+    img->span = img->width * 4;
+    img->bpp = 32;
+    for (y = img->height; y > 0; y--) {
         b = 0;
         c = 0;
-        d = data + (y - 1) * *span;
-        for (x = *width; x > 0; x--) {
+        d = data + (y - 1) * img->span;
+        for (x = img->width; x > 0; x--) {
             b >>= 1;
             if (b == 0) {
                 c = fgetc(im->file);
@@ -540,35 +539,25 @@ static void *cups_read(ImageReader *im,
                 *d++ = 0;
             }
         }
-        skip_bytes(im->file, bpl-((*width+7)>>3));
+        skip_bytes(im->file, bpl-((img->width+7)>>3));
     }
 
     /* No CMYK cups support */
-    *cmyk = 0;
+    img->cmyk = 0;
 
     return data;
 }
 
 static void *cups_read_le(ImageReader *im,
-                          int         *width,
-                          int         *height,
-                          int         *span,
-                          int         *bpp,
-                          int         *cmyk,
-                          void       **lab)
+                          Image       *img)
 {
-    return cups_read(im, width, height, span, bpp, cmyk, 0, lab);
+    return cups_read(im, img, 0);
 }
 
 static void *cups_read_be(ImageReader *im,
-                          int         *width,
-                          int         *height,
-                          int         *span,
-                          int         *bpp,
-                          int         *cmyk,
-                          void       **lab)
+                          Image       *img)
 {
-    return cups_read(im, width, height, span, bpp, cmyk, 1, lab);
+    return cups_read(im, img, 1);
 }
 
 static void skip_to_eol(FILE *file)
@@ -981,18 +970,13 @@ static int pam_header_read(FILE *file,
 }
 
 static void *pnm_read(ImageReader *im,
-                      int         *width,
-                      int         *height,
-                      int         *span,
-                      int         *bpp,
-                      int         *cmyk,
-                      void        **lab)
+                      Image       *img)
 {
     unsigned char *bmp;
     int            c, maxval;
     void          (*read)(FILE *, int, int, int, unsigned char *);
 
-    *lab = NULL;
+    img->lab = NULL;
 
     c = fgetc(im->file);
     /* Skip over any white space before the P */
@@ -1001,7 +985,7 @@ static void *pnm_read(ImageReader *im,
     }
     if (c == EOF)
         return NULL;
-    *cmyk = 0;
+    img->cmyk = 0;
     switch (get_pnm_num(im->file))
     {
         case 1:
@@ -1031,22 +1015,22 @@ static void *pnm_read(ImageReader *im,
             return NULL;
     }
     if (read == pam_read) {
-        *cmyk = pam_header_read(im->file, width, height, &maxval);
+        img->cmyk = pam_header_read(im->file, &img->width, &img->height, &maxval);
     } else {
-        *width  = get_pnm_num(im->file);
-        *height = get_pnm_num(im->file);
+        img->width  = get_pnm_num(im->file);
+        img->height = get_pnm_num(im->file);
         if (read != pbm_read)
             maxval = get_pnm_num(im->file);
         else
             maxval = 1;
     }
 
-    *span   = *width * 4;
-    *bpp = 32; /* We always convert to 32bpp */
+    img->span   = img->width * 4;
+    img->bpp = 32; /* We always convert to 32bpp */
 
-    bmp = Malloc(*width * *height * 4);
+    bmp = Malloc(img->width * img->height * 4);
 
-    read(im->file, *width, *height, maxval, bmp);
+    read(im->file, img->width, img->height, maxval, bmp);
     return bmp;
 }
 
@@ -1093,12 +1077,7 @@ static toff_t tiff_csize(thandle_t im_)
 }
 
 static void* tif_read(ImageReader* im,
-    int* im_width,
-    int* im_height,
-    int* span,
-    int* bpp,
-    int* cmyk,
-    void **lab)
+                      Image       *img)
 {
     TIFF* tif;
     uint16 compression;
@@ -1118,7 +1097,7 @@ static void* tif_read(ImageReader* im,
     cmsContext ctx;
 #endif
 
-    *lab = NULL;
+    img->lab = NULL;
 
     /* There is only one image in each file */
     if (ftell(im->file) != 0)
@@ -1222,7 +1201,7 @@ static void* tif_read(ImageReader* im,
 
         /* Do calloc just to make sure alpha value is known */
         data_lab = Calloc(height * width * 4);
-        *lab = data_lab;
+        img->lab = data_lab;
     }
 #endif
 
@@ -1287,11 +1266,11 @@ static void* tif_read(ImageReader* im,
     _TIFFfree(buf);
     TIFFClose(tif);
 
-    *im_width = width;
-    *im_height = height;
-    *span = width * 4;
-    *bpp = 32;
-    *cmyk = num_comps == 4;
+    img->width = width;
+    img->height = height;
+    img->span = width * 4;
+    img->bpp = 32;
+    img->cmyk = num_comps == 4;
 
     return data;
 }
@@ -1299,12 +1278,7 @@ static void* tif_read(ImageReader* im,
 
 #ifdef HAVE_LIBPNG
 static void *png_read(ImageReader *im,
-                      int         *width,
-                      int         *height,
-                      int         *span,
-                      int         *bpp,
-                      int         *cmyk,
-                      void        **lab)
+                      Image       *img)
 {
     png_structp png;
     png_infop info;
@@ -1313,7 +1287,7 @@ static void *png_read(ImageReader *im,
     unsigned char *data;
     int expand = 0;
 
-    *lab = NULL;
+    img->lab = NULL;
 
     /* There is only one image in each file */
     if (ftell(im->file) != 0)
@@ -1370,28 +1344,23 @@ static void *png_read(ImageReader *im,
     png_read_end(png, NULL);
     png_destroy_read_struct(&png, &info, NULL);
 
-    *width = w;
-    *height = h;
-    *span = (int) stride;
-    *bpp = (int) (stride * 8) / w;
-    *cmyk = 0;
+    img->width = w;
+    img->height = h;
+    img->span = (int) stride;
+    img->bpp = (int) (stride * 8) / w;
+    img->cmyk = 0;
     return data;
 }
 #endif
 
 static void *psd_read(ImageReader *im,
-                      int         *width,
-                      int         *height,
-                      int         *span,
-                      int         *bpp,
-                      int         *cmyk,
-                      void       **lab)
+                      Image       *img)
 {
-    int c, ir_len, w, h, n, x, y, z, N;
+    int c, ir_len, w, h, span, n, x, y, z, N;
     unsigned char *bmp, *line, *ptr;
     int bpc;
 
-    *lab = NULL;
+    img->lab = NULL;
 
     if (feof(im->file))
         return NULL;
@@ -1404,14 +1373,14 @@ static void *psd_read(ImageReader *im,
     }
 
     /* Skip zeros */
-    c = get_short(im->file, 1);
-    c = get_int(im->file, 1);
+    (void)get_short(im->file, 1);
+    (void)get_int(im->file, 1);
 
     n = get_short(im->file, 1);
-    *bpp = n * 8;
+    img->bpp = n * 8;
 
-    h = *height = get_int(im->file, 1);
-    w = *width = get_int(im->file, 1);
+    h = img->height = get_int(im->file, 1);
+    w = img->width = get_int(im->file, 1);
     bpc = get_short(im->file, 1);
     if (bpc != 8 && bpc != 16) {
         fprintf(stderr, "bmpcmp: We only support 8bpp or 16bpp psd files!\n");
@@ -1419,19 +1388,19 @@ static void *psd_read(ImageReader *im,
     }
     c = get_short(im->file, 1);
     if (c == 4) {
-        *cmyk = 1;
+        img->cmyk = 1;
         if (n < 4) {
             fprintf(stderr, "bmpcmp: Unexpected number of components (%d) in a CMYK (+spots) PSD file!\n", n);
             exit(1);
         }
     } else if (c == 3) {
-        *cmyk = 0; /* RGB */
+        img->cmyk = 0; /* RGB */
         if (n != 3) {
             fprintf(stderr, "bmpcmp: Unexpected number of components (%d) in a RGB PSD file!\n", n);
             exit(1);
         }
     } else if (c == 1) {
-        *cmyk = 0; /* Greyscale */
+        img->cmyk = 0; /* Greyscale */
         if (n != 1) {
             fprintf(stderr, "bmpcmp: Unexpected number of components (%d) in a Greyscale PSD file!\n", n);
             exit(1);
@@ -1449,64 +1418,100 @@ static void *psd_read(ImageReader *im,
     }
 
     /* Image Resources section */
-    spotfill = 0;
     ir_len = get_int(im->file, 1);
     while (ir_len > 0)
     {
-        int data_len, pad;
-        c  = fgetc(im->file)<<24; if (--ir_len == 0) break;
-        c |= fgetc(im->file)<<16; if (--ir_len == 0) break;
-        c |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
-        c |= fgetc(im->file);     if (--ir_len == 0) break;
+        int data_len;
+
+        if (ir_len < 12)	/* enough for "8BIM", short data_type (0x3ef), 2-byte pad, int data_len */
+            break;	/* not enough data */
+        c = get_int(im->file, 1);
         /* c == 8BIM */
-        c  = fgetc(im->file)<<8; if (--ir_len == 0) break;
-        c |= fgetc(im->file);    if (--ir_len == 0) break;
+        c  = get_short(im->file, 1);
         /* Skip the padded id (which will always be 00 00) */
-        pad  = fgetc(im->file);    if (--ir_len == 0) break;
-        pad |= fgetc(im->file)<<8; if (--ir_len == 0) break;
-        /* Get the data len */
-        data_len  = fgetc(im->file)<<24; if (--ir_len == 0) break;
-        data_len |= fgetc(im->file)<<16; if (--ir_len == 0) break;
-        data_len |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
-        data_len |= fgetc(im->file);     if (--ir_len == 0) break;
+        (void)get_short(im->file, 1);
+        data_len = get_int(im->file, 1);
+        ir_len -= 12;
         if (c == 0x3ef) {
-          while (data_len > 0) {
+            int spotnum = 0;
+            int i;
+
+            while (data_len > 0) {
+                unsigned char spot[4];
+
+                if (ir_len < 14)	/* enough for short colorspace, and CMYK data */
+                    break;
                 /* Read the colorspace */
-                c  = fgetc(im->file)<<8;  if (--ir_len == 0) break;
-                c |= fgetc(im->file);     if (--ir_len == 0) break;
+                c  = get_short(im->file, 1);
                 /* We only support CMYK spots! */
                 if (c != 2) {
                     fprintf(stderr, "bmpcmp: Spot color equivalent not CMYK! (%d)\n", c);
                     exit(EXIT_FAILURE);
                 }
                 /* c == 2 = COLORSPACE = CMYK */
-                /* 16 bits C, 16 bits M, 16 bits Y, 16 bits K */
-                spots[spotfill++] = 0xff - fgetc(im->file);  if (--ir_len == 0) break;
-                c = fgetc(im->file);  if (--ir_len == 0) break;
-                spots[spotfill++] = 0xff - fgetc(im->file);  if (--ir_len == 0) break;
-                c = fgetc(im->file);  if (--ir_len == 0) break;
-                spots[spotfill++] = 0xff - fgetc(im->file);  if (--ir_len == 0) break;
-                c = fgetc(im->file);  if (--ir_len == 0) break;
-                spots[spotfill++] = 0xff - fgetc(im->file);  if (--ir_len == 0) break;
-                c = fgetc(im->file);  if (--ir_len == 0) break;
+                /* 16 bits C, 16 bits M, 16 bits Y, 16 bits K, ignore the low byte */
+                spot[0] = 0xff - fgetc(im->file);	/* high byte of Cyan */
+                (void)fgetc(im->file);		/* ignore low byte */
+                spot[1] = 0xff - fgetc(im->file);	/* high byte of Magenta */
+                (void)fgetc(im->file);		/* ignore low byte */
+                spot[2] = 0xff - fgetc(im->file);	/* high byte of Yellow */
+                (void)fgetc(im->file);		/* ignore low byte */
+                spot[3] = 0xff - fgetc(im->file);	/* high byte of Black */
+                (void)fgetc(im->file);		/* ignore low byte */
                 /* 2 bytes opacity (always seems to be 0) */
-                c = fgetc(im->file);  if (--ir_len == 0) break;
-                c = fgetc(im->file);  if (--ir_len == 0) break;
+                (void)get_short(im->file, 1);
                 /* 1 byte 'kind' (0 = selected, 1 = protected) */
-                c = fgetc(im->file);  if (--ir_len == 0) break;
+                (void)fgetc(im->file);
                 /* 1 byte padding */
-                c = fgetc(im->file);  if (--ir_len == 0) break;
+                (void)fgetc(im->file);
                 data_len -= 14;
+                ir_len -= 14;
+
+                /* Check if the spot colorants were filled in by the first image and	*/
+                /* if so, fill in the color_map with the matching spot number.		*/
+                if (*(img->num_spots) == 0) {	/* num_spots not updated until finished with this file */
+                    /* Spots not seen, this must be the first image */
+                    img->spots[spotnum*4 + 0] = spot[0];
+                    img->spots[spotnum*4 + 1] = spot[1];
+                    img->spots[spotnum*4 + 2] = spot[2];
+                    img->spots[spotnum*4 + 3] = spot[3];
+                    img->color_map[spotnum + 4] = spotnum + 4;	/* default, map to self */
+                } else {
+                    /* spots were set by the first file. See if the colorant order matches */
+                    if (img->spots[spotnum*4 + 0] != spot[0] || img->spots[spotnum*4 + 1] != spot[1] ||
+                        img->spots[spotnum*4 + 2] != spot[2] || img->spots[spotnum*4 + 3] != spot[3] ) {
+                        /* This spot didn't match, issue a warning and see if we can map */
+                        fprintf(stderr, "bmpcmp: spot colorant number %d did not match.\n", spotnum);
+                        for (i=(*(img->num_spots)-1); i >= 0 ; --i) {
+                            if (img->spots[i*4 + 0] == spot[0] && img->spots[i*4 + 1] == spot[1] &&
+                                img->spots[i*4 + 2] == spot[2] && img->spots[i*4 + 3] == spot[3]) {
+                                img->color_map[spotnum + 4] = i + 4;
+                                fprintf(stderr, "bmpcmp: spot colorant %d in file 2 matches colorant %d.\n",
+                                        spotnum, i);
+                                break;
+                            }
+                        }
+                        if (i < 0) {
+                            /* a match was not found. stop */
+                            fprintf(stderr, "bmpcmp: no matching colorant found for color_map\n");
+                            exit(1);
+                        }
+                    }
+                }
+                spotnum++;
             }
+            *(img->num_spots) = spotnum;	/* save for the next image file */
+#ifdef VERBOSE
+            fprintf(stderr, "color map:");
+            for (i=0; i < 4+nimg->um_spots; i++)
+                fprintf(stderr, " %d->%d,", i, color_map[i]);
+            fprintf(stderr, "\n");
+#endif
         }
-        if (ir_len > 0)
-        {
-            while (data_len > 0)
-            {
-                c = fgetc(im->file); if (--ir_len == 0) break;
-                data_len--;
-            }
-        }
+        /* skip any remaining data */
+        ir_len -= data_len;
+        while (data_len-- > 0)
+            (void)fgetc(im->file);
     }
 
     /* Skip Layer and Mask section */
@@ -1526,10 +1531,10 @@ static void *psd_read(ImageReader *im,
     N = n;
     if (N < 4)
         N = 4;
-    *span = (w * N + 3) & ~3;
-    bmp = Malloc(*span * h);
+    img->span = span = (w * N + 3) & ~3;
+    bmp = Malloc(span * h);
     line = Malloc(w * (bpc>>3));
-    ptr = bmp + *span * (h-1);
+    ptr = bmp + span * (h-1);
     if (bpc == 8) {
         if (n == 1) {
             /* Greyscale */
@@ -1544,10 +1549,10 @@ static void *psd_read(ImageReader *im,
                     *ptr++ = val;
                     *ptr++ = 0;
                 }
-                ptr -= w*N + *span;
+                ptr -= w*N + span;
                 line -= w;
             }
-            ptr += *span * h + 1;
+            ptr += span * h + 1;
         } else if (n == 3) {
             /* RGB (reverse to get BGR) */
             ptr += 2;
@@ -1561,10 +1566,10 @@ static void *psd_read(ImageReader *im,
                         *ptr = *line++;
                         ptr += N;
                     }
-                    ptr -= w*N + *span;
+                    ptr -= w*N + span;
                     line -= w;
                 }
-                ptr += *span * h - 1;
+                ptr += span * h - 1;
             }
             ptr += 4;
             for (y = 0; y < h; y++)
@@ -1574,13 +1579,14 @@ static void *psd_read(ImageReader *im,
                     *ptr = 0;
                     ptr += N;
                 }
-                ptr -= w*N + *span;
+                ptr -= w*N + span;
             }
-            ptr += *span * h + 1;
+            ptr += span * h + 1;
         } else {
             /* CMYK + (maybe) spots */
             for (z = 0; z < n; z++)
             {
+                ptr = bmp + img->color_map[z] + span * (h-1);
                 for (y = 0; y < h; y++)
                 {
                     fread(line, 1, w, im->file);
@@ -1589,10 +1595,9 @@ static void *psd_read(ImageReader *im,
                         *ptr = 255 - *line++;
                         ptr += n;
                     }
-                    ptr -= w*n + *span;
+                    ptr -= w*n + span;
                     line -= w;
                 }
-                ptr += *span * h + 1;
             }
         }
     } else {
@@ -1611,10 +1616,10 @@ static void *psd_read(ImageReader *im,
                     *ptr++ = val;
                     *ptr++ = 0;
                 }
-                ptr -= w*N + *span;
+                ptr -= w*N + span;
                 line -= w*2;
             }
-            ptr += *span * h + 1;
+            ptr += span * h + 1;
         } else if (n == 3) {
             /* RGB (reverse to get BGR) */
             ptr += 2;
@@ -1629,10 +1634,10 @@ static void *psd_read(ImageReader *im,
                         line++;
                         ptr += N;
                     }
-                    ptr -= w*N + *span;
+                    ptr -= w*N + span;
                     line -= w*2;
                 }
-                ptr += *span * h - 1;
+                ptr += span * h - 1;
             }
             ptr += 4;
             for (y = 0; y < h; y++)
@@ -1642,26 +1647,26 @@ static void *psd_read(ImageReader *im,
                     *ptr = 0;
                     ptr += N;
                 }
-                ptr -= w*N + *span;
+                ptr -= w*N + span;
             }
-            ptr += *span * h + 1;
+            ptr += span * h + 1;
         } else {
             /* CMYK + (maybe) spots */
             for (z = 0; z < n; z++)
             {
+                ptr = bmp + img->color_map[z] + span * (h-1);
                 for (y = 0; y < h; y++)
                 {
                     fread(line, 2, w, im->file);
                     for (x = 0; x < w; x++)
                     {
                         *ptr = 255 - *line++;
-                        line++;
+                        line++;		/* skip the low byte of data */
                         ptr += n;
                     }
-                    ptr -= w*n + *span;
+                    ptr -= w*n + span;
                     line -= 2*w;
                 }
-                ptr += *span * h + 1;
             }
         }
     }
@@ -1669,13 +1674,13 @@ static void *psd_read(ImageReader *im,
 
     /* Skip over any following header */
     if (!feof(im->file))
-        c = fgetc(im->file);
+        (void)fgetc(im->file);
     if (!feof(im->file))
-        c = fgetc(im->file);
+        (void)fgetc(im->file);
     if (!feof(im->file))
-        c = fgetc(im->file);
+        (void)fgetc(im->file);
     if (!feof(im->file))
-        c = fgetc(im->file);
+        (void)fgetc(im->file);
 
     return bmp;
 }
@@ -3631,8 +3636,13 @@ static void rediff(unsigned char *map,
     *global = local;
 }
 
-static void unspot(unsigned char *bmp, int w, int h, int span, int bpp)
+static void unspot(unsigned char *bmp, Image *img)
 {
+    int w = img->width;
+    int h = img->height;
+    int span = img->span;
+    int bpp = img->bpp;
+    unsigned char *spots = img->spots;
     int x, y, z, n = bpp>>3;
     unsigned char *p = bmp;
 
@@ -3671,10 +3681,12 @@ static void unspot(unsigned char *bmp, int w, int h, int span, int bpp)
 int main(int argc, char *argv[])
 {
     int            w,  h,  s,  bpp,  cmyk;
-    int            w2, h2, s2, bpp2, cmyk2;
+    int            w2, h2;
     int            nx, ny, n;
     int            xstep, ystep;
     int            imagecount;
+    Image          im1 = { 0 };
+    Image          im2 = { 0 };
     unsigned char *bmp;
     unsigned char *bmp2;
     unsigned char *map;
@@ -3690,6 +3702,19 @@ int main(int argc, char *argv[])
     int            noDifferences = 1;
     int            can_compare = 1;
     void           *lab1, *lab2;
+
+    /* The following is for CMYK+spots (currently only PSD */
+    int           num_spots = 0;
+    unsigned char spots[256*4] = { 0 };		/* shared between both images */
+    int           color_map[256] = { 0, 1, 2, 3, 0 };
+
+    im1.spots = (unsigned char *)&spots;
+    im2.spots = (unsigned char *)&spots;
+    im1.num_spots = &num_spots;
+    im2.num_spots = &num_spots;
+    im1.color_map = (int *)&color_map;
+    im2.color_map = (int *)&color_map;
+    /* end CMYK+spots section */
 
     parseArgs(argc, argv, &params);
     if (params.window <= 1 && params.threshold == 0) {
@@ -3711,22 +3736,47 @@ int main(int argc, char *argv[])
     image_open(&image2, params.filename2);
 
     imagecount = 0;
-    while (((bmp2 = NULL,
-        bmp = image1.read(&image1, &w, &h, &s, &bpp, &cmyk, &lab1)) != NULL) &&
-        ((bmp2 = image2.read(&image2, &w2, &h2, &s2, &bpp2, &cmyk2, &lab2)) != NULL))
-    {
+    while (bmp2 == NULL) {
+        /* Reset CMYK+spots values for next image (page) in file */
+        /* NB: Probably not needed since PSD only supports one image==page */
+        num_spots = 0;
+        memset(spots, 0, sizeof(spots));
+        memset(color_map, 0, sizeof(color_map));
+        for (n=0; n < 4; n++)
+            color_map[n] = n;
+
+        if ((bmp = image1.read(&image1, &im1)) == NULL) {
+            fprintf(stderr, "Unable to read image 1, %s, image #%d\n", params.filename1, imagecount+1);
+            continue;	/* try next image??? */
+        }
+
+        if ((bmp2 = image2.read(&image2, &im2)) == NULL) {
+            fprintf(stderr, "Unable to read image 2, %s, image #%d\n", params.filename2, imagecount+1);
+            continue;	/* try next image??? */
+        }
         imagecount++;
         /* Check images are compatible */
-        if ((w != w2) || (h != h2) || (s != s2) || (bpp != bpp2) ||
-            (cmyk != cmyk2))
+        if ((im1.width != im2.width) ||
+            (im1.height != im2.height) ||
+            (im1.span != im2.span) ||
+            (im1.bpp != im2.bpp) ||
+            (im1.cmyk != im2.cmyk))
         {
             fprintf(stderr,
                 "bmpcmp: Page %d: Can't compare images "
                 "(w=%d,%d) (h=%d,%d) (s=%d,%d) (bpp=%d,%d) (cmyk=%d,%d)!\n",
-                imagecount, w, w2, h, h2, s, s2, bpp, bpp2, cmyk, cmyk2);
+                imagecount, im1.width, im2.width, im1.height, im2.height,
+                im1.span, im2.span, im1.bpp, im2.bpp, im1.cmyk, im2.cmyk);
             can_compare = 0;
             continue;
         }
+        w = im1.width;
+        h = im1.height;
+        s = im1.span;
+        bpp = im1.bpp;
+        cmyk = im1.cmyk;
+        lab1 = im1.lab;
+        lab2 = im2.lab;
 
         if (params.lab && (lab1 == NULL || lab2 == NULL)) {
             fprintf(stderr, "bmpcmp: Lab compare failed (only valid for tiffs with icc profiles)\n");
@@ -3821,10 +3871,10 @@ int main(int argc, char *argv[])
             /* bbox */
             boxlist = Malloc(sizeof(*boxlist) * nx * ny);
 
-            if (bpp >= 32)
+            if (bpp > 32)
             {
-                unspot(bmp, w, h, s, bpp);
-                unspot(bmp2, w, h, s, bpp);
+                unspot(bmp, &im1);
+                unspot(bmp2, &im2);
             }
 
             /* Now save the changed bmps */
@@ -3866,25 +3916,25 @@ int main(int argc, char *argv[])
                     default:
                         break;
                     }
-#ifdef HAVE_LIBPNG
+    #ifdef HAVE_LIBPNG
                     sprintf(str1, "%s.%05d.png", params.outroot, n);
                     sprintf(str2, "%s.%05d.png", params.outroot, n+1);
                     sprintf(str3, "%s.%05d.png", params.outroot, n+2);
                     save_png(bmp,  boxlist, s, bpp, str1);
                     save_png(bmp2, boxlist, s, bpp, str2);
-#else
+    #else
                     sprintf(str1, "%s.%05d.bmp", params.outroot, n);
                     sprintf(str2, "%s.%05d.bmp", params.outroot, n+1);
                     sprintf(str3, "%s.%05d.bmp", params.outroot, n+2);
                     save_bmp(bmp,  boxlist, s, bpp, str1);
                     save_bmp(bmp2, boxlist, s, bpp, str2);
-#endif
+    #endif
                     diff_bmp(bmp, map, boxlist, s, w);
-#ifdef HAVE_LIBPNG
+    #ifdef HAVE_LIBPNG
                     save_png(bmp, boxlist, s, bpp, str3);
-#else
+    #else
                     save_bmp(bmp, boxlist, s, bpp, str3);
-#endif
+    #endif
                     sprintf(str4, "%s.%05d.meta", params.outroot, n);
                     save_meta(boxlist, str4, w, h, imagecount, params.threshold, params.window);
                     n += 3;
