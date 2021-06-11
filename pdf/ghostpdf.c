@@ -999,7 +999,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     char *s = NULL;
     float version = 0.0;
     gs_offset_t Offset = 0;
-    int64_t bytes = 0;
+    int64_t bytes = 0, leftover = 0;
     bool found = false;
     int code;
 
@@ -1076,7 +1076,9 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Searching for 'startxerf' keyword\n");
 
+    /* Initially read min(BUF_SIZE, file_length) bytes of data to the buffer */
     bytes = Offset;
+
     do {
         byte *last_lineend = NULL;
         uint32_t read;
@@ -1094,8 +1096,25 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
             goto error;
         }
 
-        read = bytes = read + (BUF_SIZE - bytes);
+        /* When reading backwards, if we ran out of data in the last buffer while looking
+         * for a 'startxref, but we had found a linefeed, then we preserved everything
+         * from the beginning of the buffer up to that linefeed, by copying it to the end
+         * of the buffer and reducing the number of bytes to read so that it should have filled
+         * in the gap. If we didn't read enough bytes, then we have a gap between the end of
+         * the data we just read and the leftover data from teh last buffer. Move the preserved
+         * data down to meet the end of the data we just read.
+         */
+        if (bytes != read && leftover != 0)
+            memcpy(Buffer + read, Buffer + bytes, leftover);
 
+        /* As above, if we had any leftover data from the last buffer then increase the
+         * number of bytes available by that amount. We increase 'bytes' (the number of bytes
+         * to read) to the same value, which should mean we read an entire buffer's worth. Of
+         * course if we have any data left out of this buffer we'll reduce bytes again...
+         */
+        read = bytes = read + leftover;
+
+        /* Now search backwards in the buffer for the startxref token */
         while(read) {
             if (memcmp(Buffer + read - 9, "startxref", 9) == 0) {
                 found = true;
@@ -1109,16 +1128,28 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
         if (found) {
             byte *b = Buffer + read;
 
+            /* Success! stop now */
             if(sscanf((char *)b, " %ld", &ctx->startxref) != 1) {
                 dmprintf(ctx->memory, "Unable to read offset of xref from PDF file\n");
             }
             break;
         } else {
+            /* Our file read could conceivably have read back to the point where we read
+             * part of the 'startxref' token, but not all of it. So we want to preserve
+             * the data in the buffer, but not all of it obviously! The 'startxref' should be followed
+             * by a line ending, so above we keep a note of the last line ending. If we found one, then
+             * we preserve from the start of the buffer to that point. This could slow us up if the file
+             * Is broken, or has a load of junk after the EOF, because we could potentially be saving a
+             * lot of data on each pass, but that's only going to happen with bad files.
+             * Note we reduce the number of bytes to read so that it just fits into the buffer up to the
+             * beginning of the data we preserved.
+             */
             if (last_lineend) {
-                uint32_t len = last_lineend - Buffer;
-                memcpy(Buffer + bytes - len, last_lineend, len);
-                bytes -= len;
-            }
+                leftover = last_lineend - Buffer;
+                memcpy(Buffer + bytes - leftover, last_lineend, leftover);
+                bytes -= leftover;
+            } else
+                leftover = 0;
         }
 
         Offset += bytes;
