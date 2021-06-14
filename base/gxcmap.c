@@ -1693,7 +1693,7 @@ cmap_devicen_direct(const frac * pcc,
     /* map to the color model */
     if (dev_profile->spotnames != NULL && dev_profile->spotnames->equiv_cmyk_set) {
         map_components_to_colorants(pcc, dev_profile->spotnames->color_map,
-                                    cm_comps, pgs->color_component_map.num_colorants);
+                                    cm_comps, ncomps);
     } else {
         map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps,
             pgs->color_component_map.num_colorants);

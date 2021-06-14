@@ -599,9 +599,14 @@ gx_concretize_ICC(
         (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2);
     }
     /* This needs to be optimized */
-    for (k = 0; k < num_des_comps; k++){
+    for (k = 0; k < num_des_comps; k++) {
         pconc[k] = float2frac(((float) psrc_temp[k])/65535.0);
     }
+    /* We have to worry about extra colorants in the device. */
+    for (k = num_des_comps; k < dev->color_info.num_components; k++) {
+        pconc[k] = 0;
+    }
+
     /* Release the link */
     gsicc_release_link(icc_link);
     return 0;
