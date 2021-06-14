@@ -375,13 +375,10 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *p
     ulong size;
     int pi;
 
-    if (dev->is_planar)
-    {
-        int has_tags = device_encodes_tags((const gx_device *)dev);
-        num_planes = dev->color_info.num_components + has_tags;
+    if (dev->is_planar) {
+        num_planes = dev->color_info.num_components;
         planes = dev->planes;
-    }
-    else
+    } else
         planes = &plane1, plane1.depth = dev->color_info.depth, num_planes = 1;
     for (size = 0, pi = 0; pi < num_planes; ++pi)
         size += bitmap_raster_pad_align(width * planes[pi].depth, dev->pad, dev->log2_align_mod);
@@ -397,10 +394,9 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *p
 ulong
 gdev_mem_line_ptrs_size(const gx_device_memory * dev, int width, int height)
 {
-    int has_tags = device_encodes_tags((const gx_device *)dev);
     int num_planes = 1;
     if (dev->is_planar)
-        num_planes = dev->color_info.num_components + has_tags;
+        num_planes = dev->color_info.num_components;
     return (ulong)height * sizeof(byte *) * num_planes;
 }
 int

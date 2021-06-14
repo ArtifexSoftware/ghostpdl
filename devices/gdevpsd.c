@@ -57,6 +57,7 @@ static dev_proc_get_params(psd_get_params);
 static dev_proc_put_params(psd_put_params);
 static dev_proc_get_params(psd_get_params_cmyk);
 static dev_proc_put_params(psd_put_params_cmyk);
+static dev_proc_put_params(psd_put_params_cmyktag);
 static dev_proc_print_page(psd_print_page);
 static dev_proc_map_color_rgb(psd_map_color_rgb);
 static dev_proc_get_color_mapping_procs(get_psdrgb_color_mapping_procs);
@@ -69,8 +70,18 @@ typedef enum {
     psd_DEVICE_GRAY,
     psd_DEVICE_RGB,
     psd_DEVICE_CMYK,
+    psd_DEVICE_CMYKT,
     psd_DEVICE_N
 } psd_color_model;
+
+fixed_colorant_name DevCMYKTComponents[] = {
+  "Cyan",
+  "Magenta",
+  "Yellow",
+  "Black",
+  "Tags",
+  0               /* List terminator */
+};
 
 /*
  * A structure definition for a DeviceN type device
@@ -205,7 +216,7 @@ const psd_device gs_psdrgb_device =
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
     psd_DEVICE_RGB,		/* Color model */
-    GS_SOFT_MAX_SPOTS,           /* max_spots */
+    GS_SOFT_MAX_SPOTS,		/* max_spots */
     false,                      /* colorants not locked */
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
@@ -215,13 +226,13 @@ const psd_device gs_psdrgb16_device =
     psd_device_body(psd_initialize_device_procs, "psdrgb16", 3, GX_CINFO_POLARITY_ADDITIVE, 48, 65535, 65535, GX_CINFO_SEP_LIN, "DeviceRGB"),
     /* devn_params specific parameters */
     { 16,	/* Bits per color - must match ncomp, depth, etc. above */
-    DeviceRGBComponents,	/* Names of color model colorants */
-    3,			/* Number colorants for RGB */
-    0,			/* MaxSeparations has not been specified */
-    -1,			/* PageSpotColors has not been specified */
-    { 0 },			/* SeparationNames */
-    0,			/* SeparationOrder names */
-    { 0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+      DeviceRGBComponents,	/* Names of color model colorants */
+      3,			/* Number colorants for RGB */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      { 0 },			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
@@ -241,6 +252,19 @@ psdcmyk_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, get_params, psd_get_params_cmyk);
     set_dev_proc(dev, put_params, psd_put_params_cmyk);
+    set_dev_proc(dev, get_color_mapping_procs, get_psd_color_mapping_procs);
+}
+
+/*
+ * PSD device with CMYK process color model, spot color support, and tags.
+ */
+static void
+psdcmyktag_initialize_device_procs(gx_device *dev)
+{
+    psd_initialize_device_procs(dev);
+
+    set_dev_proc(dev, get_params, psd_get_params_cmyk);
+    set_dev_proc(dev, put_params, psd_put_params_cmyktag);
     set_dev_proc(dev, get_color_mapping_procs, get_psd_color_mapping_procs);
 }
 
@@ -269,26 +293,76 @@ const psd_device gs_psdcmyk_device =
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
+const psd_device gs_psdcmyktags_device =
+{
+    psd_device_body(psdcmyktag_initialize_device_procs, "psdcmyktags",
+                    ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
+                    GX_CINFO_POLARITY_SUBTRACTIVE,
+                    ARCH_SIZEOF_GX_COLOR_INDEX * 8, /* 8 bits per component (albeit in planes) */
+                    255, 255, GX_CINFO_SEP_LIN, "DeviceCMYK"),
+    /* devn_params specific parameters */
+    { 8,			/* Bits per color - must match ncomp, depth, etc. above */
+      DevCMYKTComponents,	/* Names of color model colorants */
+      4,			/* Number colorants for CMYK. Tags added to extra in DevCMYKTComponents */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      {0},			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    { true },			/* equivalent CMYK colors for spot colors */
+    /* PSD device specific parameters */
+    psd_DEVICE_CMYKT,		/* Color model */
+    GS_SOFT_MAX_SPOTS,          /* max_spots */
+    false,                      /* colorants not locked */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
+};
+
 const psd_device gs_psdcmyk16_device =
 {
     psd_device_body(psdcmyk_initialize_device_procs, "psdcmyk16",
-    ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
-    GX_CINFO_POLARITY_SUBTRACTIVE,
-    ARCH_SIZEOF_GX_COLOR_INDEX * 16, /* 8 bits per component (albeit in planes) */
-    65535, 65535, GX_CINFO_SEP_LIN, "DeviceCMYK"),
+                    ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
+                    GX_CINFO_POLARITY_SUBTRACTIVE,
+                    ARCH_SIZEOF_GX_COLOR_INDEX * 16, /* 8 bits per component (albeit in planes) */
+                    65535, 65535, GX_CINFO_SEP_LIN, "DeviceCMYK"),
     /* devn_params specific parameters */
     { 16,	/* Bits per color - must match ncomp, depth, etc. above */
-    DeviceCMYKComponents,	/* Names of color model colorants */
-    4,			/* Number colorants for CMYK */
-    0,			/* MaxSeparations has not been specified */
-    -1,			/* PageSpotColors has not been specified */
-    { 0 },			/* SeparationNames */
-    0,			/* SeparationOrder names */
-    { 0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+      DeviceCMYKComponents,	/* Names of color model colorants */
+      4,			/* Number colorants for CMYK */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      { 0 },			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
     psd_DEVICE_CMYK,		/* Color model */
+    GS_SOFT_MAX_SPOTS,          /* max_spots */
+    false,                      /* colorants not locked */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
+};
+
+const psd_device gs_psdcmyktags16_device =
+{
+    psd_device_body(psdcmyktag_initialize_device_procs, "psdcmyktags16",
+                    ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
+                    GX_CINFO_POLARITY_SUBTRACTIVE,
+                    ARCH_SIZEOF_GX_COLOR_INDEX * 16, /* 8 bits per component (albeit in planes) */
+                    65535, 65535, GX_CINFO_SEP_LIN, "DeviceCMYK"),
+    /* devn_params specific parameters */
+    { 16,	/* Bits per color - must match ncomp, depth, etc. above */
+      DevCMYKTComponents,	/* Names of color model colorants */
+      4,			/* Number colorants for CMYK. Tags added to extra in DevCMYKTComponents */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      { 0 },			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    { true },			/* equivalent CMYK colors for spot colors */
+    /* PSD device specific parameters */
+    psd_DEVICE_CMYKT,		/* Color model */
     GS_SOFT_MAX_SPOTS,          /* max_spots */
     false,                      /* colorants not locked */
     GX_DOWNSCALER_PARAMS_DEFAULTS
@@ -302,6 +376,7 @@ psd_prn_open(gx_device * pdev)
     int code;
     int k;
     cmm_dev_profile_t *profile_struct;
+    bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT);
 
 #ifdef TEST_PAD_AND_ALIGN
     pdev->pad = 5;
@@ -340,7 +415,7 @@ psd_prn_open(gx_device * pdev)
                 }
                 pdev->color_info.num_components =
                     (profile_struct->spotnames->count
-                    + pdev_psd->devn_params.page_spot_colors);
+                    + pdev_psd->devn_params.page_spot_colors + has_tags);
                 if (pdev->color_info.num_components > pdev->color_info.max_components)
                     pdev->color_info.num_components = pdev->color_info.max_components;
             } else {
@@ -351,7 +426,7 @@ psd_prn_open(gx_device * pdev)
                 if (!(pdev_psd->lock_colorants)) {
                     pdev->color_info.num_components =
                         (pdev_psd->devn_params.page_spot_colors
-                        + pdev_psd->devn_params.num_std_colorant_names);
+                        + pdev_psd->devn_params.num_std_colorant_names + has_tags);
                     if (pdev->color_info.num_components > pdev->color_info.max_components)
                         pdev->color_info.num_components = pdev->color_info.max_components;
                 }
@@ -369,7 +444,7 @@ psd_prn_open(gx_device * pdev)
                was set (Default is GS_SOFT_MAX_SPOTS which is 10),
                it is made use of here. */
             if (!(pdev_psd->lock_colorants)) {
-                int num_comp = pdev_psd->max_spots + 4; /* Spots + CMYK */
+                int num_comp = pdev_psd->max_spots + 4 + has_tags; /* Spots + CMYK */
                 if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
                     num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
                 pdev->color_info.num_components = num_comp;
@@ -471,6 +546,49 @@ rgb_cs_to_psdcmyk_cm(const gx_device * dev, const gs_gstate *pgs,
     int * map = ((psd_device *) dev)->devn_params.separation_order_map;
 
     rgb_cs_to_devn_cm(dev, map, pgs, r, g, b, out);
+}
+
+static void
+cmyk_cs_to_psdcmyktags_cm(const gx_device *dev,
+                          frac c, frac m, frac y, frac k, frac out[])
+{
+    const gs_devn_params *devn = gx_devn_prn_ret_devn_params_const(dev);
+    const int *map = devn->separation_order_map;
+    int j;
+
+    if (devn->num_separation_order_names > 0) {
+        /* This is to set only those that we are using */
+        int ncomps = dev->color_info.num_components;
+        for (j = 0; j < ncomps; j++)
+            out[j] = 0;
+        for (j = 0; j < devn->num_separation_order_names; j++) {
+            switch (map[j]) {
+            case 0:
+                out[0] = c;
+                break;
+            case 1:
+                out[1] = m;
+                break;
+            case 2:
+                out[2] = y;
+                break;
+            case 3:
+                out[3] = k;
+                break;
+            default:
+                break;
+            }
+        }
+    } else {
+        cmyk_cs_to_devn_cm(dev, map, c, m, y, k, out);
+    }
+    /* And set the tags. At this point, the color values
+       are frac representation for the range [0.0 1.0]. We
+       need to encode the graphics type, which is 0 to 255
+       accordingly, as it goes through the same mappings on
+       its way to devn and then eventually to 8 or 16 bit values */
+    if (map[4] != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[4] = byte2frac(dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
 }
 
 static void
@@ -602,6 +720,10 @@ static const gx_cm_color_map_procs psdCMYK_procs = {
     gray_cs_to_psdcmyk_cm, rgb_cs_to_psdcmyk_cm, cmyk_cs_to_psdcmyk_cm
 };
 
+static const gx_cm_color_map_procs psdCMYKtags_procs = {
+    gray_cs_to_psdcmyk_cm, rgb_cs_to_psdcmyk_cm, cmyk_cs_to_psdcmyktags_cm
+};
+
 static const gx_cm_color_map_procs psdN_procs = {
     gray_cs_to_spotn_cm, rgb_cs_to_spotn_cm, cmyk_cs_to_spotn_cm
 };
@@ -627,6 +749,8 @@ get_psd_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
         return &psdRGB_procs;
     else if (xdev->color_model == psd_DEVICE_CMYK)
         return &psdCMYK_procs;
+    else if (xdev->color_model == psd_DEVICE_CMYKT)
+        return &psdCMYKtags_procs;
     else if (xdev->color_model == psd_DEVICE_N)
         return &psdN_procs;
     else if (xdev->color_model == psd_DEVICE_GRAY)
@@ -741,6 +865,13 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 static int
 psd_put_params_cmyk(gx_device * pdev, gs_param_list * plist)
 {
+    return psd_put_params_generic(pdev, plist, 1);
+}
+
+static int
+psd_put_params_cmyktag(gx_device *pdev, gs_param_list* plist)
+{
+    pdev->graphics_type_tag |= GS_DEVICE_ENCODES_TAGS;
     return psd_put_params_generic(pdev, plist, 1);
 }
 
@@ -867,17 +998,23 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
             /* No order specified, map them alpabetically */
             /* This isn't at all speed critical -- only runs once per page and */
             /* there are never very many spot colors, so just search in a loop */
-            const char* prev = " ";
+
+            /* If the device has tags, then that goes at the end, after all the
+               spot colors */
+
+            const char *prev = " ";
             int prev_size = 1;
+            psd_device *pdev_psd = (psd_device*)dev;
+            bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT);
 
             xc->num_channels += xc->n_extra_channels;
             for (i=xc->base_num_channels; i < xc->num_channels; i++) {
                 int j;
-                const char* curr = "\377";
+                const char *curr = "\377";
                 int curr_size = 1;
                 bool compare;
 
-                for (j=xc->base_num_channels; j < xc->num_channels; j++) {
+                for (j=xc->base_num_channels; j < (xc->num_channels - has_tags); j++) {
                     devn_separation_name *separation_name;
 
                     separation_name = &(dev->devn_params.separations.names[j - xc->base_num_channels]);
@@ -948,6 +1085,34 @@ get_sep_name(gx_devn_prn_device *pdev, int n)
     return p;
 }
 
+static inline void
+psd_write_src_spot_names(psd_write_ctx *xc, gx_devn_prn_device *pdev, int chan_idx, bool has_tags)
+{
+    int sep_num;
+    const devn_separation_name *separation_name;
+
+    for (; chan_idx < xc->num_channels; chan_idx++) {
+        sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS - has_tags;
+        separation_name = &(pdev->devn_params.separations.names[sep_num]);
+        psd_write_8(xc, (byte)separation_name->size);
+        psd_write(xc, separation_name->data, separation_name->size);
+    }
+}
+
+static inline void
+psd_write_std_extra_names(psd_write_ctx *xc, gx_devn_prn_device *pdev, int chan_idx)
+{
+    for (; chan_idx < xc->num_channels; chan_idx++) {
+        int len;
+        fixed_colorant_name n = pdev->devn_params.std_colorant_names[chan_idx];
+        if (n == NULL)
+            break;
+        len = strlen(n);
+        psd_write_8(xc, (byte)len);
+        psd_write(xc, (const byte*)n, len);
+    }
+}
+
 int
 psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
 {
@@ -957,10 +1122,13 @@ psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
     int chan_idx;
     int chan_names_len = 0;
     int sep_num;
-    const devn_separation_name* separation_name;
-    cmm_dev_profile_t* profile_struct;
-    cmm_profile_t* dev_profile;
+    const devn_separation_name *separation_name;
+    cmm_dev_profile_t *profile_struct;
+    cmm_profile_t *dev_profile;
     int profile_resource_size;
+    psd_device *pdev_psd = (psd_device*)pdev;
+    bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT);
+    int extra_std_colors = 0;
 
     psd_write(xc, (const byte*)"8BPS", 4); /* Signature */
     psd_write_16(xc, 1); /* Version - Always equal to 1*/
@@ -991,15 +1159,17 @@ psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
         profile_resource_size = dev_profile->buffer_size + dev_profile->buffer_size % 2;
     }
 
-    /* Channel Names size computation */
+    /* Channel Names size computation -- this will get the "Tags" name */
     for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
         fixed_colorant_name n = pdev->devn_params.std_colorant_names[chan_idx];
         if (n == NULL)
             break;
         chan_names_len += strlen(n) + 1;
     }
+    extra_std_colors = chan_idx - NUM_CMYK_COMPONENTS;
+
     for (; chan_idx < xc->num_channels; chan_idx++) {
-        sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
+        sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS - has_tags;
         separation_name = &(pdev->devn_params.separations.names[sep_num]);
         chan_names_len += (separation_name->size + 1);
     }
@@ -1014,20 +1184,22 @@ psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
     psd_write_16(xc, 1006); /* 0x03EE */
     psd_write_16(xc, 0); /* PString */
     psd_write_32(xc, chan_names_len + (chan_names_len % 2));
-    for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
-        int len;
-        fixed_colorant_name n = pdev->devn_params.std_colorant_names[chan_idx];
-        if (n == NULL)
-            break;
-        len = strlen(n);
-        psd_write_8(xc, (byte)len);
-        psd_write(xc, (const byte *)n, len);
-    }
-    for (; chan_idx < xc->num_channels; chan_idx++) {
-        sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
-        separation_name = &(pdev->devn_params.separations.names[sep_num]);
-        psd_write_8(xc, (byte) separation_name->size);
-        psd_write(xc, separation_name->data, separation_name->size);
+
+    /* If it has tags, do the spots first (if there are any),
+       then the tags. We will need to rework this if we were
+       to add tags to psdcmykog or similar such device that
+       has pre-defined spots with the tags plane */
+    if (has_tags) {
+        chan_idx = NUM_CMYK_COMPONENTS + extra_std_colors;
+        psd_write_src_spot_names(xc, pdev, chan_idx, has_tags);
+        chan_idx = NUM_CMYK_COMPONENTS;
+        psd_write_std_extra_names(xc, pdev, chan_idx);
+
+    } else {
+        chan_idx = NUM_CMYK_COMPONENTS;
+        psd_write_std_extra_names(xc, pdev, chan_idx);
+        chan_idx = NUM_CMYK_COMPONENTS + extra_std_colors;
+        psd_write_src_spot_names(xc, pdev, chan_idx, has_tags);
     }
     if (chan_names_len % 2)
         psd_write_8(xc, 0); /* pad */

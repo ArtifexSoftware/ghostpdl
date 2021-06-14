@@ -1243,11 +1243,17 @@ $(DD)psdrgb.dev : $(psd_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 $(DD)psdcmyk.dev : $(psd_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)psdcmyk $(psd_)
 
+$(DD)psdcmyktags.dev : $(psd_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETDEV) $(DD)psdcmyktags $(psd_)
+
 $(DD)psdrgb16.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev $(GDEV)
 	$(SETDEV) $(DD)psdrgb16 $(psd_)
 
 $(DD)psdcmyk16.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev $(GDEV)
 	$(SETDEV) $(DD)psdcmyk16 $(psd_)
+
+$(DD)psdcmyktags16.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev $(GDEV)
+	$(SETDEV) $(DD)psdcmyktags16 $(psd_)
 
 $(DEVOBJ)gdevpsd.$(OBJ) : $(DEVSRC)gdevpsd.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\

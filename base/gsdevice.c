@@ -820,12 +820,8 @@ gx_device_raster(const gx_device * dev, bool pad)
 
         /* depth can be <= num_components if planar and MEM_SET_PARAMS has changed it */
         if (depth <= num_components || bpc >= 8) {
-            /* tag plane requires at least 8 bits (per component as well as tags) */
-            int has_tags = bpc >= 8 ? device_encodes_tags(dev): 0;
-
-            bits /= (num_components + has_tags);
-        }
-        else {
+            bits /= num_components;
+        } else {
             /* depth is original depth, not the plane_depth since it is > num_components */
             bits /= (depth / bpc);
         }

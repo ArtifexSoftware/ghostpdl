@@ -238,10 +238,12 @@ typedef struct mem_save_params_s {
    mdev->base = msp.base,\
    mdev->line_ptrs = msp.line_ptrs)
 
+/* Note tag_offset == 0 if there is no tag plane. Tags always follow the
+   color data, but not neccessarily right after. */
 static int
 put_image_copy_planes(gx_device * dev, const byte **base_ptr, int sourcex,
                       int sraster, gx_bitmap_id id,
-                      int x, int y, int w, int h)
+                      int x, int y, int w, int h, int tag_offset)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     int plane_depth;
@@ -249,11 +251,16 @@ put_image_copy_planes(gx_device * dev, const byte **base_ptr, int sourcex,
     const gdev_mem_functions *fns;
     int code = 0;
     uchar plane;
+    const byte *base;
+    int last_plane = mdev->color_info.num_components - 1;
 
     MEM_SAVE_PARAMS(mdev, save);
     for (plane = 0; plane < mdev->color_info.num_components; plane++)
     {
-        const byte *base = base_ptr[plane];
+        if (tag_offset && plane == last_plane)
+            base = base_ptr[tag_offset];
+        else
+            base = base_ptr[plane];
         plane_depth = mdev->planes[plane].depth;
         fns = gdev_mem_functions_for_bits(plane_depth);
         if (base == NULL) {
@@ -286,7 +293,8 @@ mem_planar_put_image(gx_device *pdev, gx_device *pmdev, const byte **buffers, in
 
     put_image_copy_planes(pdev, buffers, 0, row_stride,
                           gx_no_bitmap_id, xstart, ystart,
-                          width, height);
+                          width, height, tag_plane_index);
+
     /* we used all of the data */
     return height;
 }

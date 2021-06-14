@@ -7723,6 +7723,9 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
      * color spaces.
      */
     if (devn) {
+        if (has_tags) {
+            curr_tag = pdc->tag;
+        }
         if (additive) {
             for (j = 0; j < num_comp; j++) {
                 src[j] = ((pdc->colors.devn.values[j]) >> shift & mask);
@@ -7732,8 +7735,15 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
                 src[j] = 255 - ((pdc->colors.devn.values[j]) >> shift & mask);
             }
         }
-    } else
+    } else {
+        if (has_tags) {
+            curr_tag = (color >> (num_comp * 8)) & 0xff;
+        }
         pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
+    }
+
+    if (!has_tags)
+        tag_off = 0;
 
     src_alpha = src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
     if (has_shape) {
@@ -7741,11 +7751,7 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     } else {
         shape_off = 0;
     }
-    if (has_tags) {
-        curr_tag = (color >> (num_comp*8)) & 0xff;
-    } else {
-        tag_off = 0;
-    }
+
     if (!has_alpha_g)
         alpha_g_off = 0;
     src_alpha = 255 - src_alpha;
@@ -7841,8 +7847,6 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
                 dst_ptr[num_comp * planestride] = dst[num_comp];
             }
             if (tag_off) {
-                /* FIXME: As we are knocking out, possibly, we should be
-                 * always overwriting tag values here? */
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
                 if (src[num_comp] == 255 && tag_blend) {
@@ -7940,6 +7944,9 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
      * color spaces.
      */
     if (devn) {
+        if (has_tags) {
+            curr_tag = pdc->tag;
+        }
         if (additive) {
             for (j = 0; j < num_comp; j++) {
                 src[j] = pdc->colors.devn.values[j];
@@ -7949,8 +7956,12 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
                 src[j] = 65535 - pdc->colors.devn.values[j];
             }
         }
-    } else
+    } else {
+        if (has_tags) {
+            curr_tag = (color >> (num_comp * 16)) & 0xff;
+        }
         pdev->pdf14_procs->unpack_color16(num_comp, color, pdev, src);
+    }
 
     src_alpha = src[num_comp] = (uint16_t)floor (65535 * pdev->alpha + 0.5);
     if (has_shape) {
@@ -7958,11 +7969,11 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     } else {
         shape_off = 0;
     }
-    if (has_tags) {
-        curr_tag = (color >> (num_comp*16)) & 0xff;
-    } else {
+
+    if (!has_tags) {
         tag_off = 0;
     }
+
     if (!has_alpha_g)
         alpha_g_off = 0;
     src_alpha = 65535 - src_alpha;
