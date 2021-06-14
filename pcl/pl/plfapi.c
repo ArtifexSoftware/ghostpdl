@@ -578,7 +578,7 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
 
             if ((code = gs_text_enum_init(penum1, &null_text_procs,
                                  NULL, pgs, &text, pfont,
-                                 NULL, NULL, NULL, pfont->memory)) >= 0) {
+                                 NULL, pfont->memory)) >= 0) {
 
                 code = gs_fapi_do_char(pfont, pgs, penum1, plfont->font_file, false,
                             NULL, NULL, char_code, glyph, 0);

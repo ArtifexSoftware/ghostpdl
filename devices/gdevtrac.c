@@ -420,8 +420,7 @@ static const gs_text_enum_procs_t trace_text_procs = {
 static int
 trace_text_begin(gx_device * dev, gs_gstate * pgs,
                  const gs_text_params_t * text, gs_font * font,
-                 gx_path * path, const gx_device_color * pdcolor,
-                 const gx_clip_path * pcpath, gs_memory_t * memory,
+                 const gx_clip_path * pcpath,
                  gs_text_enum_t ** ppenum)
 {
     static const char *const tags[sizeof(text->operation) * 8] = {
@@ -436,6 +435,8 @@ trace_text_begin(gx_device * dev, gs_gstate * pgs,
     int i;
     gs_text_enum_t *pte;
     int code;
+    const gx_device_color * pdcolor = gs_currentdevicecolor_inline(pgs);
+    gx_path * path = pgs->path;
 
     dmputs(dev->memory,"text_begin(");
     for (i = 0; i < countof(tags); ++i)
@@ -499,7 +500,7 @@ trace_text_begin(gx_device * dev, gs_gstate * pgs,
     rc_alloc_struct_1(pte, gs_text_enum_t, &st_gs_text_enum, memory,
                       goto dflt, "trace_text_begin");
     code = gs_text_enum_init(pte, &trace_text_procs, dev, pgs, text, font,
-                             path, pdcolor, pcpath, memory);
+                             path, pcpath, memory);
     if (code < 0)
         goto dfree;
     if ((text->operation & (TEXT_DO_CHARWIDTH | TEXT_RETURN_WIDTH)) &&
@@ -569,8 +570,8 @@ trace_text_begin(gx_device * dev, gs_gstate * pgs,
     gs_free_object(memory, pte, "trace_text_begin");
  dflt:
     dmputs(dev->memory,") DEFAULTED\n");
-    return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
-                                 pcpath, memory, ppenum);
+    return gx_default_text_begin(dev, pgs, text, font,
+                                 pcpath, ppenum);
 }
 
 /* ---------------- The device definition ---------------- */

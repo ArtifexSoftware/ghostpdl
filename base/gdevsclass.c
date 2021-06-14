@@ -477,13 +477,13 @@ int default_subclass_get_hardware_params(gx_device *dev, gs_param_list *plist)
 }
 
 int default_subclass_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
-    gs_font *font, gx_path *path, const gx_device_color *pdcolor, const gx_clip_path *pcpath,
-    gs_memory_t *memory, gs_text_enum_t **ppte)
+    gs_font *font, const gx_clip_path *pcpath,
+    gs_text_enum_t **ppte)
 {
     if (dev->child)
-        return dev_proc(dev->child, text_begin)(dev->child, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
+        return dev_proc(dev->child, text_begin)(dev->child, pgs, text, font, pcpath, ppte);
     /* else */
-    return gx_default_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
+    return gx_default_text_begin(dev, pgs, text, font, pcpath, ppte);
 }
 
 int default_subclass_begin_transparency_group(gx_device *dev, const gs_transparency_group_params_t *ptgp,

@@ -6124,8 +6124,7 @@ pdf14_push_text_group(gx_device *dev, gs_gstate *pgs,
 static	int
 pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
                  const gs_text_params_t * text, gs_font * font,
-                 gx_path * path, const gx_device_color * pdcolor,
-                 const gx_clip_path * pcpath, gs_memory_t * memory,
+                 const gx_clip_path * pcpath,
                  gs_text_enum_t ** ppenum)
 {
     int code;
@@ -6145,10 +6144,9 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
     if (code < 0)
         return code;
 
-    if_debug0m('v', memory, "[v]pdf14_text_begin\n");
+    if_debug0m('v', pgs->memory, "[v]pdf14_text_begin\n");
     pdf14_set_marking_params(dev, pgs);
-    code = gx_default_text_begin(dev, pgs, text, font, path, pdcolor, pcpath,
-                                 memory, &penum);
+    code = gx_default_text_begin(dev, pgs, text, font, pcpath, &penum);
     if (code < 0)
         return code;
 
@@ -11290,8 +11288,7 @@ pdf14_clist_fill_stroke_path(gx_device	*dev, const gs_gstate *pgs, gx_path *ppat
 static	int
 pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
                  const gs_text_params_t * text, gs_font * font,
-                 gx_path * path, const gx_device_color * pdcolor,
-                 const gx_clip_path * pcpath, gs_memory_t * memory,
+                 const gx_clip_path * pcpath,
                  gs_text_enum_t ** ppenum)
 {
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
@@ -11306,7 +11303,7 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
     bool text_stroke = (text_mode == 1 || text_mode == 2 || text_mode == 5 || text_mode == 6);
     bool text_fill = (text_mode == 0 || text_mode == 2 || text_mode == 4 || text_mode == 6);
 
-    if_debug0m('v', memory, "[v]pdf14_clist_text_begin\n");
+    if_debug0m('v', pgs->memory, "[v]pdf14_clist_text_begin\n");
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
      * blending parameters.  This is needed since the fill_rectangle routines
@@ -11317,8 +11314,8 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
     if (code < 0)
         return code;
     /* Pass text_begin to the target */
-    code = gx_forward_text_begin(dev, pgs, text, font, path,
-                                pdcolor, pcpath, memory, &penum);
+    code = gx_forward_text_begin(dev, pgs, text, font,
+                                 pcpath, &penum);
     if (code < 0)
         return code;
 

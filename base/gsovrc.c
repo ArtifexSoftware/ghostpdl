@@ -1270,9 +1270,8 @@ overprint_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
 static int
 overprint_text_begin(gx_device* dev, gs_gstate* pgs,
     const gs_text_params_t* text, gs_font* font,
-    gx_path* path, const gx_device_color* pdcolor,
     const gx_clip_path* pcpath,
-    gs_memory_t* mem, gs_text_enum_t** ppte)
+    gs_text_enum_t** ppte)
 {
     overprint_device_t* opdev = (overprint_device_t*)dev;
     OP_FS_STATE save_op_state = opdev->op_state;
@@ -1283,7 +1282,7 @@ overprint_text_begin(gx_device* dev, gs_gstate* pgs,
     else if (pgs->text_rendering_mode == 1)
         opdev->op_state = OP_STATE_STROKE;
 
-    code = gx_default_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, mem, ppte);
+    code = gx_default_text_begin(dev, pgs, text, font, pcpath, ppte);
     opdev->op_state = save_op_state;
     return code;
 }

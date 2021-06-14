@@ -580,8 +580,7 @@ gx_forward_get_hardware_params(gx_device * dev, gs_param_list * plist)
 int
 gx_forward_text_begin(gx_device * dev, gs_gstate * pgs,
                       const gs_text_params_t * text, gs_font * font,
-                      gx_path * path, const gx_device_color * pdcolor,
-                      const gx_clip_path * pcpath, gs_memory_t * memory,
+                      const gx_clip_path * pcpath,
                       gs_text_enum_t ** ppenum)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
@@ -590,8 +589,7 @@ gx_forward_text_begin(gx_device * dev, gs_gstate * pgs,
         (tdev == 0 ? (tdev = dev, gx_default_text_begin) :
          dev_proc(tdev, text_begin));
 
-    return proc(tdev, pgs, text, font, path, pdcolor, pcpath,
-                memory, ppenum);
+    return proc(tdev, pgs, text, font, pcpath, ppenum);
 }
 
 /* Forwarding device color mapping procs. */

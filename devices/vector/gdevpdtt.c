@@ -517,20 +517,22 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
 int
 gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
                     const gs_text_params_t *text, gs_font * font,
-                    gx_path * path0, const gx_device_color * pdcolor,
                     const gx_clip_path * pcpath,
-                    gs_memory_t * mem, gs_text_enum_t ** ppte)
+                    gs_text_enum_t ** ppte)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)dev;
-    gx_path *path = path0;
+    gx_path *path0 = pgs->path;
+    gx_path *path = ((text->operation & TEXT_DO_NONE) &&
+                    !(text->operation & TEXT_RETURN_WIDTH) ? NULL : path0);
     pdf_text_enum_t *penum;
     int code, user_defined = 0;
+    gs_memory_t * mem = pgs->memory;
 
     /* should we "flatten" the font to "normal" marking operations */
     if (pdev->FlattenFonts) {
         font->dir->ccache.upper = 0;
-        return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
-                                         pcpath, mem, ppte);
+        return gx_default_text_begin(dev, pgs, text, font,
+                                     pcpath, ppte);
     }
 
     /* Track the dominant text rotation. */
@@ -588,7 +590,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
         penum->cgp = NULL;
         penum->output_char_code = GS_NO_CHAR;
         code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
-                             dev, pgs, text, font, path, pdcolor, pcpath, mem);
+                             dev, pgs, text, font, pcpath, mem);
         if (code < 0) {
             gs_free_object(mem, penum, "gdev_pdf_text_begin");
             return code;
@@ -625,11 +627,11 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
         } else if ((!(text->operation & TEXT_DO_DRAW) && pgs->text_rendering_mode != 3)
                     || path == 0 || !path_position_valid(path)
                     || pdev->type3charpath)
-            return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
-                                         pcpath, mem, ppte);
+            return gx_default_text_begin(dev, pgs, text, font,
+                                         pcpath, ppte);
         else if (text->operation & TEXT_DO_ANY_CHARPATH)
-            return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
-                                         pcpath, mem, ppte);
+            return gx_default_text_begin(dev, pgs, text, font,
+                                         pcpath, ppte);
     }
 
     if (!pdev->ForOPDFRead) {
@@ -652,7 +654,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
     penum->returned.current_glyph = GS_NO_GLYPH;
     penum->output_char_code = GS_NO_CHAR;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
-                             dev, pgs, text, font, path, pdcolor, pcpath, mem);
+                             dev, pgs, text, font, pcpath, mem);
     penum->k_text_release = 1; /* early release of black_text_state */
 
     if (code < 0) {
@@ -2450,7 +2452,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     float size;
     float c_s = 0, w_s = 0;
     int mask = 0;
-    int code = gx_path_current_point(penum->path, &cpt);
+    int code = gx_path_current_point(gs_text_enum_path(penum), &cpt);
 
     if (code < 0)
         return code;
@@ -2909,14 +2911,14 @@ pdf_default_text_begin(gs_text_enum_t *pte, const gs_text_params_t *text,
         text1.operation |= TEXT_DO_DRAW;
     }
     return gx_default_text_begin(pte->dev, pte->pgs, &text1, pte->current_font,
-                                 pte->path, pte->pdcolor, pte->pcpath,
-                                 pte->memory, ppte);
+                                 pte->pcpath, ppte);
 }
 
 static int install_PS_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte,
                              gs_text_enum_t *pte_default, pdf_text_enum_t *const penum)
 {
     int code;
+    const gx_device_color * pdcolor = gs_currentdevicecolor_inline(pte->pgs);
 
     penum->returned.current_char = pte_default->returned.current_char;
     penum->returned.current_glyph = pte_default->returned.current_glyph;
@@ -2946,7 +2948,7 @@ static int install_PS_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *
         pdev->width *= 100;
         pdev->height *= 100;
 
-        pdf_viewer_state_from_gs_gstate(pdev, pte->pgs, pte->pdcolor);
+        pdf_viewer_state_from_gs_gstate(pdev, pte->pgs, pdcolor);
         /* Set line params to unallowed values so that
            they'll synchronize with writing them out on the first use.
            Doing so because PDF viewer inherits them from the
@@ -2999,6 +3001,7 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
                              gs_text_enum_t *pte_default, pdf_text_enum_t *const penum)
 {
     int code;
+    const gx_device_color * pdcolor = gs_currentdevicecolor_inline(pte->pgs);
 
     pdev->charproc_ctm = penum->pgs->ctm;
     if ((penum->current_font->FontType == ft_user_defined ||
@@ -3019,7 +3022,7 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
         if (code < 0)
             return code;
 
-        pdf_viewer_state_from_gs_gstate(pdev, pte->pgs, pte->pdcolor);
+        pdf_viewer_state_from_gs_gstate(pdev, pte->pgs, pdcolor);
         /* Set line params to unallowed values so that
            they'll synchronize with writing them out on the first use.
            Doing so because PDF viewer inherits them from the

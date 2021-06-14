@@ -686,7 +686,7 @@ docx_update_text_state(docx_list_entry_t *ppts,
     gs_matrix smat, tmat;
     float size;
     int mask = 0;
-    int code = gx_path_current_point(penum->path, &cpt);
+    int code = gx_path_current_point(gs_text_enum_path(penum), &cpt);
 
     if (code < 0)
         return code;
@@ -1140,7 +1140,7 @@ textw_text_process(gs_text_enum_t *pte)
                 return code;
             /* Fall back to the default implementation. */
             code = gx_default_text_begin(pte->dev, pte->pgs, &pte->text, pte->current_font,
-                                 pte->path, pte->pdcolor, pte->pcpath, pte->memory, &pte_fallback);
+                                         pte->pcpath, &pte_fallback);
             if (code < 0)
                 return code;
             penum->pte_fallback = pte_fallback;
@@ -1241,13 +1241,14 @@ static const gs_text_enum_procs_t textw_text_procs = {
 static int
 docxwrite_text_begin(gx_device * dev, gs_gstate * pgs,
                 const gs_text_params_t * text, gs_font * font,
-                gx_path * path, const gx_device_color * pdcolor,
                 const gx_clip_path * pcpath,
-                gs_memory_t * mem, gs_text_enum_t ** ppenum)
+                gs_text_enum_t ** ppenum)
 {
     gx_device_docxwrite_t *const tdev = (gx_device_docxwrite_t *) dev;
     docxw_text_enum_t *penum;
     int code;
+    gx_path *path = pgs->path;
+    gs_memory_t * mem = pgs->memory;
 
     /* If this is a stringwidth, we must let the default graphics library code handle it
      * in case there is no current point (this can happen if this is the first operation
@@ -1258,8 +1259,8 @@ docxwrite_text_begin(gx_device * dev, gs_gstate * pgs,
      */
     if ((!(text->operation & TEXT_DO_DRAW) && pgs->text_rendering_mode != 3)
                     || path == 0 || !path_position_valid(path))
-            return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
-                                         pcpath, mem, ppenum);
+            return gx_default_text_begin(dev, pgs, text, font,
+                                         pcpath, ppenum);
     /* Allocate and initialize one of our text enumerators. */
     rc_alloc_struct_1(penum, docxw_text_enum_t, &st_textw_text_enum, mem,
                       return_error(gs_error_VMerror), "gdev_textw_text_begin");
@@ -1278,7 +1279,7 @@ docxwrite_text_begin(gx_device * dev, gs_gstate * pgs,
     memset(penum->text_state, 0x00, sizeof(docx_list_entry_t));
 
     code = gs_text_enum_init((gs_text_enum_t *)penum, &textw_text_procs,
-                             dev, pgs, text, font, path, pdcolor, pcpath, mem);
+                             dev, pgs, text, font, pcpath, mem);
     if (code < 0) {
         /* Belt and braces; I'm not certain this is required, but its safe */
         gs_free(tdev->memory, penum->text_state, 1, sizeof(docx_list_entry_t), "txtwrite free text state");
@@ -1287,7 +1288,7 @@ docxwrite_text_begin(gx_device * dev, gs_gstate * pgs,
         return code;
     }
 
-    code = gx_path_current_point(penum->path, &penum->origin);
+    code = gx_path_current_point(gs_text_enum_path(penum), &penum->origin);
     if (code != 0)
        return code;
 

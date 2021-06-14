@@ -1213,13 +1213,12 @@ bbox_composite(gx_device * dev,
 static int
 bbox_text_begin(gx_device * dev, gs_gstate * pgs,
                 const gs_text_params_t * text, gs_font * font,
-                gx_path * path, const gx_device_color * pdcolor,
                 const gx_clip_path * pcpath,
-                gs_memory_t * memory, gs_text_enum_t ** ppenum)
+                gs_text_enum_t ** ppenum)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-    int code = gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
-                                     pcpath, memory, ppenum);
+    int code = gx_default_text_begin(dev, pgs, text, font,
+                                     pcpath, ppenum);
 
     if (code >=0 && bdev->target != NULL) {
         /* See note on imaging_dev in gxtext.h */
