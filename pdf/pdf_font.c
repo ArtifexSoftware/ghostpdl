@@ -72,6 +72,60 @@ bool pdfi_font_known_symbolic(pdf_obj *basefont)
     return ignore;
 }
 
+static int
+pdfi_font_match_glyph_widths(pdf_font *pdfont)
+{
+    int code = 0;
+    int i;
+    int sindex, lindex;
+    gs_font_base *pbfont = pdfont->pfont;
+    double font_width = 0;
+    double fw = 0.0, ww = 0.0;
+
+    if (pdfont->FirstChar < 0 || pdfont->LastChar < 0 || pdfont->Widths == NULL)
+        return 0; /* Technically invalid - carry on, hope for the best */
+
+    /* For "best" results, restrict to what we *hope* are A-Z,a-z */
+    sindex = pdfont->FirstChar < 96 ? 96 : pdfont->FirstChar;
+    lindex = pdfont->LastChar > 122 ? 122 : pdfont->LastChar;
+
+    for (i = sindex; i < lindex; i++) {
+        gs_glyph_info_t ginfo = {0};
+
+        if (pdfont->Widths[i - pdfont->FirstChar] != 0.0) {
+            code = (*pbfont->procs.glyph_info)((gs_font *)pbfont, (gs_glyph)i, NULL, GLYPH_INFO_WIDTH0, &ginfo);
+            if (code >= 0) {
+                font_width = hypot(ginfo.width[0].x, ginfo.width[0].y);
+                if (font_width - pdfont->Widths[i - pdfont->FirstChar] > fw - ww) {
+                    fw += font_width;
+                    ww += pdfont->Widths[i];
+                }
+            }
+        }
+    }
+    /* Only reduce font width, don't expand */
+    if (ww / fw < 1.0) {
+        gs_matrix nmat, smat = {1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
+        double wscale;
+        smat.xx = smat.yy = ww/fw;
+        wscale = 1.0 / smat.xx;
+
+        gs_matrix_multiply(&pbfont->FontMatrix, &smat, &nmat);
+        memcpy(&pbfont->FontMatrix, &nmat, sizeof(pbfont->FontMatrix));
+
+        for (i = pdfont->FirstChar; i <= pdfont->LastChar; i++) {
+            pdfont->Widths[i - pdfont->FirstChar] *= wscale;
+        }
+
+        code = gs_definefont(pbfont->dir, (gs_font *)pbfont);
+        if (code >= 0)
+            code = pdfi_fapi_passfont((pdf_font *)pdfont, 0, NULL, NULL, NULL, 0);
+    }
+
+    return code;
+}
+
+
 /* Call with a CIDFont name to try to find the CIDFont on disk
    call if with ffname NULL to load the default fallback CIDFont
    substitue
@@ -213,6 +267,12 @@ static int pdfi_fonttype_picker(byte *buf, int64_t buflen)
 #undef MAKEMAGIC
 }
 
+enum {
+  font_embedded = 0,
+  font_from_file = 1,
+  font_substitute = 2
+};
+
 int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, gs_font **ppfont, bool cidfont)
 {
     int code;
@@ -225,7 +285,7 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
     int fftype = no_type_font;
     byte *fbuf = NULL;
     int64_t fbuflen;
-    bool substitute = false;
+    int substitute = font_embedded;
 
     code = pdfi_dict_get_type(ctx, font_dict, "Type", PDF_NAME, (pdf_obj **)&Type);
     if (code < 0)
@@ -330,28 +390,34 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                 }
             }
 
-            if (code < 0 && code != gs_error_VMerror && substitute == false) {
+            if (code < 0 && code != gs_error_VMerror && substitute == font_embedded) {
                 /* Font not embedded, or embedded font not usable - use a substitute */
-                if (fbuf != NULL)
+                if (fbuf != NULL) {
                     gs_free_object(ctx->memory, fbuf, "pdfi_load_font(fbuf)");
+                }
+
+                substitute = font_from_file;
 
                 if (cidfont == true) {
                     code =  pdfi_open_CIDFont_substitute_file(ctx, font_dict, fontdesc, false, &fbuf, &fbuflen);
-                    if (code < 0)
+                    if (code < 0) {
                         code =  pdfi_open_CIDFont_substitute_file(ctx, font_dict, fontdesc, true, &fbuf, &fbuflen);
+                        substitute |= font_substitute;
+                    }
 
                     if (code < 0)
                         goto exit;
                 }
                 else {
                     code = pdfi_open_font_substitute_file(ctx, font_dict, fontdesc, false, &fbuf, &fbuflen);
-                    if (code < 0)
+                    if (code < 0) {
                         code = pdfi_open_font_substitute_file(ctx, font_dict, fontdesc, true, &fbuf, &fbuflen);
+                        substitute |= font_substitute;
+                    }
 
                     if (code < 0)
                         goto exit;
                 }
-                substitute = true;
                 continue;
             }
             break;
@@ -362,7 +428,11 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
         code = gs_note_error(gs_error_invalidfont);
     else {
         if (cidfont) {
-            ((pdf_cidfont_t *)ppdffont)->substitute = substitute;
+            ((pdf_cidfont_t *)ppdffont)->substitute = (substitute != font_embedded);
+        }
+        else {
+            if ((substitute & font_substitute) == font_substitute)
+                code = pdfi_font_match_glyph_widths(ppdffont);
         }
         *ppfont = (gs_font *)ppdffont->pfont;
      }

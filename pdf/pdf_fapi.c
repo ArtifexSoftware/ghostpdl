@@ -1682,8 +1682,18 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
         return (code);
     }
 
-    fdata.data = font_data;
-    fdata.size = font_data_len;
+    if (font->pdfi_font_type == e_pdf_font_truetype) {
+        fdata.data = ((pdf_font_truetype *)font)->sfnt.data;
+        fdata.size = ((pdf_font_truetype *)font)->sfnt.size;
+    }
+    else if (font->pdfi_font_type == e_pdf_cidfont_type2) {
+        fdata.data = ((pdf_cidfont_type2 *)font)->sfnt.data;
+        fdata.size = ((pdf_cidfont_type2 *)font)->sfnt.size;
+    }
+    else {
+        fdata.data = font_data;
+        fdata.size = font_data_len;
+    }
 
     if (font->pdfi_font_type == e_pdf_font_truetype) {
         pdf_font_truetype *ttfont = (pdf_font_truetype *)font;
