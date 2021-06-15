@@ -557,6 +557,14 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_gstate * pgs)
     pcolor_component_map->cspace_id = pcs->id;
     pcolor_component_map->num_colorants = dev->color_info.num_components;
     pcolor_component_map->sep_type = SEP_OTHER;
+
+    /* If the named color profile supports the components, don't use
+       the alternate tint transform. */
+    if (gsicc_support_named_color(pcs, pgs)) {
+        pcolor_component_map->use_alt_cspace = false;
+        return 0;
+    }
+
     /*
      * Always use the alternate color space if the current device is
      * using an additive color model. The exception is if we have a separation
@@ -577,7 +585,6 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_gstate * pgs)
      * additive color space then use the alternate tint transform.
      */
 
-    non_match = false;
     for(i = 0; i < num_comp; i++ ) {
         /*
          * Get the character string and length for the component name.
