@@ -79,7 +79,6 @@ pdfi_font_match_glyph_widths(pdf_font *pdfont)
     int i;
     int sindex, lindex;
     gs_font_base *pbfont = pdfont->pfont;
-    double font_width = 0;
     double fw = 0.0, ww = 0.0;
 
     if (pdfont->FirstChar < 0 || pdfont->LastChar < 0 || pdfont->Widths == NULL)
@@ -92,19 +91,15 @@ pdfi_font_match_glyph_widths(pdf_font *pdfont)
     for (i = sindex; i < lindex; i++) {
         gs_glyph_info_t ginfo = {0};
 
-        if (pdfont->Widths[i - pdfont->FirstChar] != 0.0) {
-            code = (*pbfont->procs.glyph_info)((gs_font *)pbfont, (gs_glyph)i, NULL, GLYPH_INFO_WIDTH0, &ginfo);
-            if (code >= 0) {
-                font_width = hypot(ginfo.width[0].x, ginfo.width[0].y);
-                if (font_width - pdfont->Widths[i - pdfont->FirstChar] > fw - ww) {
-                    fw += font_width;
-                    ww += pdfont->Widths[i];
-                }
-            }
+        /* We're only interested in non-zero Widths entries for glyphs that actually exist in the font */
+        if (pdfont->Widths[i - pdfont->FirstChar] != 0.0
+          && (*pbfont->procs.glyph_info)((gs_font *)pbfont, (gs_glyph)i, NULL, GLYPH_INFO_WIDTH0, &ginfo) >= 0) {
+            fw += hypot(ginfo.width[0].x, ginfo.width[0].y);
+            ww += pdfont->Widths[i - pdfont->FirstChar];
         }
     }
     /* Only reduce font width, don't expand */
-    if (ww / fw < 1.0) {
+    if (ww != 0.0 && fw != 0.0 && ww / fw < 1.0) {
         gs_matrix nmat, smat = {1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
         double wscale;
         smat.xx = smat.yy = ww/fw;
@@ -117,7 +112,16 @@ pdfi_font_match_glyph_widths(pdf_font *pdfont)
             pdfont->Widths[i - pdfont->FirstChar] *= wscale;
         }
 
-        code = gs_definefont(pbfont->dir, (gs_font *)pbfont);
+        /* Purging a font can be expensive, but in this case, we know
+           we have no scaled instances (pdfi doesn't work that way)
+           and we know we have no fm pairs, nor glyphs to purge (we
+           *just* created the font!).
+           So "purging" the font is really just removing it from the
+           doubly linked list of font objects in the font directory
+         */
+        code = gs_purge_font((gs_font *)pbfont);
+        if (code >= 0)
+            code = gs_definefont(pbfont->dir, (gs_font *)pbfont);
         if (code >= 0)
             code = pdfi_fapi_passfont((pdf_font *)pdfont, 0, NULL, NULL, NULL, 0);
     }
@@ -174,6 +178,57 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
     return code;
 }
 
+/* Barefaced theft from mupdf! */
+static const char *pdfi_base_font_names[][10] =
+{
+  { "Courier", "CourierNew", "CourierNewPSMT", NULL },
+  { "Courier-Bold", "CourierNew,Bold", "Courier,Bold", "CourierNewPS-BoldMT", "CourierNew-Bold", NULL },
+  { "Courier-Oblique", "CourierNew,Italic", "Courier,Italic", "CourierNewPS-ItalicMT", "CourierNew-Italic", NULL },
+  { "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic", "CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", NULL },
+  { "Helvetica", "ArialMT", "Arial", NULL },
+  { "Helvetica-Bold", "Arial-BoldMT", "Arial,Bold", "Arial-Bold", "Helvetica,Bold", NULL },
+  { "Helvetica-Oblique", "Arial-ItalicMT", "Arial,Italic", "Arial-Italic", "Helvetica,Italic", "Helvetica-Italic", NULL },
+  { "Helvetica-BoldOblique", "Arial-BoldItalicMT", "Arial,BoldItalic", "Arial-BoldItalic", "Helvetica,BoldItalic", "Helvetica-BoldItalic", NULL },
+  { "Times-Roman", "TimesNewRomanPSMT", "TimesNewRoman", "TimesNewRomanPS", NULL },
+  { "Times-Bold", "TimesNewRomanPS-BoldMT", "TimesNewRoman,Bold", "TimesNewRomanPS-Bold", "TimesNewRoman-Bold", NULL },
+  { "Times-Italic", "TimesNewRomanPS-ItalicMT", "TimesNewRoman,Italic", "TimesNewRomanPS-Italic", "TimesNewRoman-Italic", NULL },
+  { "Times-BoldItalic", "TimesNewRomanPS-BoldItalicMT", "TimesNewRoman,BoldItalic", "TimesNewRomanPS-BoldItalic", "TimesNewRoman-BoldItalic", NULL },
+  { "Symbol", "Symbol,Italic", "Symbol,Bold", "Symbol,BoldItalic", "SymbolMT", "SymbolMT,Italic", "SymbolMT,Bold", "SymbolMT,BoldItalic", NULL },
+  { "ZapfDingbats", NULL }
+};
+
+static int strncmp_ignore_space(const char *a, const char *b, int64_t len)
+{
+    while (len--)
+    {
+        while (*a == ' ')
+            a++;
+        while (*b == ' ')
+            b++;
+        if (*a != *b)
+            return 1;
+        if (*a == 0)
+            return *a != *b;
+        if (*b == 0)
+            return *a != *b;
+        a++;
+        b++;
+    }
+    return 0;
+}
+
+static const char *pdfi_clean_font_name(const pdf_name *fontname)
+{
+    int i, k;
+    for (i = 0; i < (sizeof(pdfi_base_font_names)/sizeof(pdfi_base_font_names[0])); i++) {
+        for (k = 0; pdfi_base_font_names[i][k]; k++) {
+            if (!strncmp_ignore_space(pdfi_base_font_names[i][k], (const char *)fontname->data, fontname->length))
+                return pdfi_base_font_names[i][0];
+        }
+    }
+    return NULL;
+}
+
 static int
 pdfi_open_font_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte ** buf, int64_t * buflen)
 {
@@ -183,6 +238,7 @@ pdfi_open_font_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_dict 
     const int romfsprefixlen = strlen(romfsprefix);
     pdf_obj *basefont, *mapname;
     stream *s;
+    const char *fn;
 
     if (fallback == true) {
         char fbname[] = "Helvetica";
@@ -196,10 +252,19 @@ pdfi_open_font_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_dict 
     if (code < 0)
        return code;
 
+    fn = pdfi_clean_font_name((pdf_name *)basefont);
+    if (fn != NULL) {
+        pdfi_countdown(basefont);
+
+        code = pdfi_name_alloc(ctx, (byte *)fn, strlen(fn), (pdf_obj **) &basefont);
+        pdfi_countup(basefont);
+    }
+
     code = pdf_fontmap_lookup_font(ctx, (pdf_name *) basefont, &mapname);
     if (code < 0) {
         mapname = basefont;
         pdfi_countup(mapname);
+        code = 0;
     }
     if (mapname->type == PDF_NAME) {
         pdf_name *mname = (pdf_name *) mapname;
