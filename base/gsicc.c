@@ -427,8 +427,12 @@ gx_remap_ICC_with_link(const gs_client_color * pcc, const gs_color_space * pcs,
        the transfer function and potentially the halftoning */
     /* Right now we need to go from unsigned short to frac.  I really
        would like to avoid this sort of stuff.  That will come. */
-    for ( k = 0; k < num_des_comps; k++){
+    for (k = 0; k < num_des_comps; k++){
         conc[k] = ushort2frac(psrc_temp[k]);
+    }
+    /* In case there are extra components beyond the ICC ones */
+    for (k = num_des_comps; k < dev->color_info.num_components; k++) {
+        conc[k] = 0;
     }
     gx_remap_concrete_ICC(pcs, conc, pdc, pgs, dev, select, dev_profile);
 
