@@ -1515,9 +1515,12 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
     byte *pname = NULL; /* Silence compiler warning */
     uint name_size = 0; /* Silence compiler warning */
     bool is_supported;
+    bool none_colorant;
 
     /* Get the data for the named profile */
     named_profile = pgs->icc_manager->device_named;
+    if (named_profile == NULL)
+        return false;
 
     if (named_profile->buffer != NULL &&
         named_profile->profile_handle == NULL) {
@@ -1547,8 +1550,10 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
             name_size = strlen(names[i]);
         }
 
+        none_colorant = (strncmp((char*)pname, "None", name_size) == 0);
+
         /* Classify */
-        if (strncmp((char *)pname, "None", name_size) == 0 ||
+        if (none_colorant ||
             strncmp((char *)pname, "All", name_size) == 0) {
             num_other++;
         } else {
@@ -1564,12 +1569,18 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
 
         /* Check if the colorant is supported */
         is_supported = false;
-        for (k = 0; k < num_entries; k++) {
-            if (name_size == namedcolor_table->named_color[k].name_size) {
-                if (strncmp((const char *)namedcolor_table->named_color[k].colorant_name,
-                    (const char *)pname, name_size) == 0) {
-                    is_supported = true;
-                    break;
+
+        /* If we have a none colorant name in the DeviceN list, just ignore it */
+        if (none_colorant && type == gs_color_space_index_DeviceN)
+            is_supported = true;
+        else {
+            for (k = 0; k < num_entries; k++) {
+                if (name_size == namedcolor_table->named_color[k].name_size) {
+                    if (strncmp((const char*)namedcolor_table->named_color[k].colorant_name,
+                        (const char*)pname, name_size) == 0) {
+                        is_supported = true;
+                        break;
+                    }
                 }
             }
         }
