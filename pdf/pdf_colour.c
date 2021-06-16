@@ -901,7 +901,11 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
     if (ppcs!= NULL)
         *ppcs = NULL;
 
-    code = gs_cspace_build_ICC(&pcs, NULL, gs_gstate_memory(ctx->pgs));
+    /* We need to use the graphics state memory, and beyond that we need to use stable memory, because the
+     * ICC cache can persist until the end of job, and so the profile (which is stored in teh cache)
+     * must likewise persist.
+     */
+    code = gs_cspace_build_ICC(&pcs, NULL, (gs_gstate_memory(ctx->pgs))->stable_memory);
     if (code < 0)
         return code;
 
@@ -1272,7 +1276,11 @@ pdfi_seticc_lab(pdf_context *ctx, float *range_buff, gs_color_space **ppcs)
     int                     i;
 
     /* build the color space object */
-    code = gs_cspace_build_ICC(&pcs, NULL, gs_gstate_memory(ctx->pgs));
+    /* We need to use the graphics state memory, and beyond that we need to use stable memory, because the
+     * ICC cache can persist until the end of job, and so the profile (which is stored in teh cache)
+     * must likewise persist.
+     */
+    code = gs_cspace_build_ICC(&pcs, NULL, (gs_gstate_memory(ctx->pgs))->stable_memory);
     if (code < 0)
         return code;
 
@@ -1362,20 +1370,24 @@ pdfi_seticc_cal(pdf_context *ctx, float *white, float *black, float *gamma,
            in the profile cache which is a member variable
            of the graphic state, we will want to use stable
            memory here */
-        code = gs_cspace_build_ICC(&pcs, NULL, ctx->memory);
+        code = gs_cspace_build_ICC(&pcs, NULL, ctx->pgs->memory->stable_memory);
         if (code < 0)
             return code;
         /* There is no alternate for this.  Perhaps we should set DeviceRGB? */
         pcs->base_space = NULL;
         /* Create the ICC profile from the CalRGB or CalGray parameters */
+        /* We need to use the graphics state memory, in case we are running under Ghostscript. */
         cal_profile = gsicc_create_from_cal(white, black, gamma, matrix,
-                                            ctx->memory, num_colorants);
+                                            ctx->pgs->memory->stable_memory, num_colorants);
         if (cal_profile == NULL) {
             rc_decrement(pcs, "seticc_cal");
             return_error(gs_error_VMerror);
         }
         /* Assign the profile to this color space */
-        code = gsicc_set_gscs_profile(pcs, cal_profile, ctx->memory);
+        /* Apparently the memory pointer passed here here is not actually used, but we will supply
+         * the graphics state memory allocator, because that's what the colour space should be using.
+         */
+        code = gsicc_set_gscs_profile(pcs, cal_profile, ctx->pgs->memory);
         /* profile is created with ref count of 1, gsicc_set_gscs_profile()
          * increments the ref count, so we need to decrement it here.
          */

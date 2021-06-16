@@ -521,5 +521,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm);
 int pdfi_process_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_array);
 int pdfi_close_pdf_file(pdf_context *ctx);
+void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, void **saved_client_data, gs_gstate_client_procs *saved_procs);
+void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, void *client_data, const gs_gstate_client_procs *procs);
 
 #endif

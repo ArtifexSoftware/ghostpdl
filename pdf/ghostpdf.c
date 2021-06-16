@@ -1250,6 +1250,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
     ctx->pgs = pgs;
     pdfi_gstate_set_client(ctx, pgs);
+
     /* Declare PDL client support for high level patterns, for the benefit
      * of pdfwrite and other high-level devices
      */
@@ -1273,6 +1274,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     ctx->get_glyph_name = pdfi_glyph_name;
     ctx->get_glyph_index = pdfi_glyph_index;
 
+    ctx->job_gstate_level = ctx->pgs->level;
     /* Weirdly the graphics library wants us to always have two gstates, the
      * initial state and at least one saved state. if we don't then when we
      * grestore back to the initial state, it immediately saves another one.
@@ -1511,11 +1513,12 @@ int pdfi_free_context(pdf_context *ctx)
 
     pdfi_free_name_table(ctx);
 
+    /* And here we free the initial graphics state */
     while (ctx->pgs->saved)
         gs_grestore_only(ctx->pgs);
 
-    /* And here we free the initial graphics state */
     gs_gstate_free(ctx->pgs);
+
     ctx->pgs = NULL;
 
     if (ctx->font_dir)
@@ -1523,4 +1526,35 @@ int pdfi_free_context(pdf_context *ctx)
 
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
     return 0;
+}
+
+/* These routines are used from the PostScript interpreter inteerface. It is important that
+ * the 'interpreter part of the graphics state' should be a pdfi interpreter context while pdfi is running
+ * but the PostScript itnerpreter context when the PostScript interpreter is running. If we are going
+ * to inherit the PostScript graphics state for pdfi, then we need to turn it into a 'pdfi'
+ * graphics state for the duration of the interpretation, and back to a PostScript one when
+ * we return to the PostScript interpreter.
+ *
+ * Bizarrely it appears that the interpreter part of the gstate does not obey grestore, instead we copy
+ * the 'current' context to the saved context when we do a grestore. This seems wrong to me, but
+ * it seems to be what happens, so we can't rely on grestore to put back the interpreter context, but must
+ * do so ourselves.
+ *
+ * Hence the 'from_PS' routine fills in pointers with the current context and procs, wit the expectation that
+ * these will be saved and used to restore the data in the 'to_PS' routine.
+ */
+void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, void **saved_client_data, gs_gstate_client_procs *saved_procs)
+{
+    *saved_client_data = pgs->client_data;
+    *saved_procs = pgs->client_procs;
+    pdfi_gstate_set_client(ctx, pgs);
+    return;
+}
+
+void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, void *client_data, const gs_gstate_client_procs *procs)
+{
+    pgs->client_procs.free(pgs->client_data, pgs->memory, pgs);
+    pgs->client_data = NULL;
+    gs_gstate_set_client(pgs, client_data, procs, true);
+    return;
 }

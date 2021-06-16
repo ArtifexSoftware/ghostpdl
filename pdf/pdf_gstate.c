@@ -123,7 +123,8 @@ pdfi_gstate_free_cb(void *old, gs_memory_t * mem, gs_gstate *pgs)
     if (old == NULL)
         return;
     pdfi_gstate_smask_free(igs);
-    gs_free_object(mem, igs, "pdfi_gstate_free");
+    /* We need to use the graphics state memory, in case we are running under Ghostscript. */
+    gs_free_object(pgs->memory, igs, "pdfi_gstate_free");
 }
 
 static const gs_gstate_client_procs pdfi_gstate_procs = {
@@ -138,7 +139,8 @@ pdfi_gstate_set_client(pdf_context *ctx, gs_gstate *pgs)
 {
     pdfi_int_gstate *igs;
 
-    igs = pdfi_gstate_alloc_cb(ctx->memory);
+    /* We need to use the graphics state memory, in case we are running under Ghostscript. */
+    igs = pdfi_gstate_alloc_cb(pgs->memory);
     igs->ctx = ctx;
     gs_gstate_set_client(pgs, igs, &pdfi_gstate_procs, true /* TODO: client_has_pattern_streams ? */);
     return 0;
@@ -2159,7 +2161,8 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
             Processed->value = false;
         if (igs->SMask)
             pdfi_gstate_smask_free(igs);
-        pdfi_gstate_smask_install(igs, ctx->memory, (pdf_dict *)o, ctx->pgs);
+        /* We need to use the graphics state memory, in case we are running under Ghostscript. */
+        pdfi_gstate_smask_install(igs, ctx->pgs->memory, (pdf_dict *)o, ctx->pgs);
     }
 
  exit:
@@ -2336,7 +2339,8 @@ int pdfi_free_DefaultQState(pdf_context *ctx)
 int pdfi_set_DefaultQState(pdf_context *ctx, gs_gstate *pgs)
 {
     pdfi_free_DefaultQState(ctx);
-    ctx->DefaultQState = gs_gstate_copy(pgs, ctx->memory);
+    /* We need to use the graphics state memory, in case we are running under Ghostscript. */
+    ctx->DefaultQState = gs_gstate_copy(pgs, ctx->pgs->memory);
     if (ctx->DefaultQState == NULL)
         return_error(gs_error_VMerror);
     return 0;
@@ -2349,7 +2353,8 @@ gs_gstate *pdfi_get_DefaultQState(pdf_context *ctx)
 
 int pdfi_copy_DefaultQState(pdf_context *ctx, gs_gstate **pgs)
 {
-    *pgs = gs_gstate_copy(ctx->DefaultQState, ctx->memory);
+    /* We need to use the graphics state memory, in case we are running under Ghostscript. */
+    *pgs = gs_gstate_copy(ctx->DefaultQState, ctx->pgs->memory);
     if (*pgs == NULL)
         return_error(gs_error_VMerror);
     return 0;

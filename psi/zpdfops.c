@@ -425,6 +425,7 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
 
     if (pdfctx->ctx != NULL) {
         gs_memory_t *cmem = pdfctx->ctx->memory;
+
         code = pdfi_free_context(pdfctx->ctx);
         /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
         (void)gs_memory_chunk_unwrap(cmem);
@@ -692,16 +693,26 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
 
 static int zPDFmetadata(i_ctx_t *i_ctx_p)
 {
+#if 0
+    os_ptr op = osp;
+    pdfctx_t *pdfctx;
+
+    check_type(*op, t_pdfctx);
+    pdfctx = r_ptr(op, pdfctx_t);
+#endif
+
     return_error(gs_error_undefined);
 }
 
 static int zPDFdrawpage(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int i, code = 0;
+    int code = 0;
     uint64_t page = 0;
     pdfctx_t *pdfctx;
-    gs_matrix mat;
+    gs_gstate *pgs = NULL;
+    gs_gstate_client_procs procs;
+    void *client_data;
 
     check_op(2);
 
@@ -711,58 +722,37 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
     check_type(*(op - 1), t_pdfctx);
     pdfctx = r_ptr(op - 1, pdfctx_t);
 
-    code = gs_gsave(pdfctx->ctx->pgs);
+    code = gs_gsave(igs);
     if (code < 0)
         return code;
 
-    /* TODO: Use the stroke adjust that was set by gs.  This is a hack.
-     * What we really want to do is have the pdfi use the graphics state
-     * inherited by gs, which will include this setting.
-     */
-    gs_setstrokeadjust(pdfctx->ctx->pgs, gs_currentstrokeadjust(igs));
-
-    code = gs_setdevice_no_erase(pdfctx->ctx->pgs, igs->device);
-    if (code < 0)
-        goto error;
-
-    for (i = 0; i < HT_OBJTYPE_COUNT; i++) {
-        if (pdfctx->ctx->pgs->dev_ht[i])
-            rc_decrement(pdfctx->ctx->pgs->dev_ht[i], "zPDFdrawpage");
-        pdfctx->ctx->pgs->dev_ht[i] = igs->dev_ht[i];
-        rc_increment(pdfctx->ctx->pgs->dev_ht[i]);
-    }
-
-    code = gx_cpath_copy(igs->clip_path, (gx_clip_path *)pdfctx->ctx->pgs->clip_path);
-    if (code < 0)
-        return code;
-
-    code = gx_cpath_copy(igs->effective_clip_path, (gx_clip_path *)pdfctx->ctx->pgs->effective_clip_path);
-    if (code < 0)
-        return code;
-
-    code = gx_cpath_copy(igs->view_clip, (gx_clip_path *)pdfctx->ctx->pgs->view_clip);
-    if (code < 0)
-        return code;
-
-    code = gs_currentmatrix(igs, &mat);
-    if (code < 0)
-        goto error;
-
-    code = gs_setmatrix(pdfctx->ctx->pgs, &mat);
-    if (code < 0)
-        goto error;
+    pgs = pdfctx->ctx->pgs;
+    procs = igs->client_procs;
+    client_data = igs->client_data;
+    pdfi_gstate_from_PS(pdfctx->ctx, igs, &client_data, &procs);
+    pdfctx->ctx->pgs = igs;
 
     code = pdfi_page_render(pdfctx->ctx, page, false);
     if (code >= 0)
         pop(2);
 
-error:
-    code = gs_grestore(pdfctx->ctx->pgs);
+    pdfi_gstate_to_PS(pdfctx->ctx, igs, client_data, &procs);
+    code = gs_grestore(igs);
+    pdfctx->ctx->pgs = pgs;
+
     return code;
 }
 
 static int zPDFdrawannots(i_ctx_t *i_ctx_p)
 {
+#if 0
+    os_ptr op = osp;
+    pdfctx_t *pdfctx;
+
+    check_type(*op, t_pdfctx);
+    pdfctx = r_ptr(op, pdfctx_t);
+#endif
+
     return_error(gs_error_undefined);
 }
 

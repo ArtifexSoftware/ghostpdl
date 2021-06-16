@@ -463,7 +463,8 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
     }
 
-    code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat, &mat, ctx->pgs, ctx->memory);
+    /* We need to use the graphics state memory, in case we are running under Ghostscript. */
+    code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat, &mat, ctx->pgs, ctx->pgs->memory);
     if (code < 0) {
         (void) pdfi_grestore(ctx);
         goto exit;
