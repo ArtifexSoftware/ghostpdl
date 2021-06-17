@@ -85,7 +85,6 @@ gx_dc_ht_colored_save_dc(const gx_device_color * pdevc,
     memcpy( psdc->colors.colored.c_level,
             pdevc->colors.colored.c_level,
             sizeof(psdc->colors.colored.c_base) );
-    psdc->colors.colored.alpha = pdevc->colors.colored.alpha;
     psdc->phase = pdevc->phase;
 }
 
@@ -105,7 +104,6 @@ gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
 
     if (pdevc2->type != pdevc1->type ||
         pdevc1->colors.colored.c_ht != pdevc2->colors.colored.c_ht ||
-        pdevc1->colors.colored.alpha != pdevc2->colors.colored.alpha ||
         pdevc1->phase.x != pdevc2->phase.x ||
         pdevc1->phase.y != pdevc2->phase.y ||
         num_comp != pdevc2->colors.colored.num_components
@@ -133,8 +131,6 @@ gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
  */
 static const int   dc_ht_colored_has_base = 0x01;
 static const int   dc_ht_colored_has_level = 0x02;
-static const int   dc_ht_colored_has_alpha = 0x04;
-static const int   dc_ht_colored_alpha_is_max = 0x08;
 
 /*
  * Serialize a device color that uses a traditional colored halftone.
@@ -196,7 +192,6 @@ gx_dc_ht_colored_write(
     int                             num_comps = dev->color_info.num_components;
     int                             depth = dev->color_info.depth;
     gx_color_index                  plane_mask = pdevc->colors.colored.plane_mask;
-    gx_color_value                  alpha = pdevc->colors.colored.alpha;
     const gx_device_color_saved *   psdc = psdc0;
     byte *                          pdata0 = pdata;
 
@@ -245,15 +240,6 @@ gx_dc_ht_colored_write(
         for (i = 0, comp_bit = 0x1; i < num_comps; i++, comp_bit <<= 1) {
             if ((plane_mask & comp_bit) != 0)
                 req_size += enc_u_sizew(pdevc->colors.colored.c_level[i]);
-        }
-    }
-
-    if (psdc == 0 || alpha != psdc->colors.colored.alpha) {
-        if (alpha == gx_max_color_value)
-            flag_bits |= dc_ht_colored_alpha_is_max;
-        else {
-            flag_bits |= dc_ht_colored_has_alpha;
-            req_size += enc_u_sizew(alpha);
         }
     }
 
@@ -312,9 +298,6 @@ gx_dc_ht_colored_write(
                 enc_u_putw(pdevc->colors.colored.c_level[i], pdata);
         }
     }
-
-    if ((flag_bits & dc_ht_colored_has_alpha) != 0)
-        enc_u_putw(alpha, pdata);
 
     *psize = pdata - pdata0;
     return 0;
@@ -444,17 +427,6 @@ gx_dc_ht_colored_read(
             } else
                 devc.colors.colored.c_level[i] = 0;
         }
-        size -= pdata - pdata_start;
-    }
-
-    if ((flag_bits & dc_ht_colored_alpha_is_max) != 0)
-        devc.colors.colored.alpha = gx_max_color_value;
-    else if ((flag_bits & dc_ht_colored_has_alpha) != 0) {
-        const byte *    pdata_start = pdata;
-
-        if (size < 1)
-            return_error(gs_error_rangecheck);
-        enc_u_getw(devc.colors.colored.alpha, pdata);
         size -= pdata - pdata_start;
     }
 
@@ -871,9 +843,6 @@ set_ht_colors_le_4(color_values_pair_t *pvp /* only used internally */,
         set_plane_color(2, pvp, pdc, sbits, caches, max_color, invert);
     }
     if (nplanes == 3) {
-        gx_color_value alpha = pdc->colors.colored.alpha;
-
-        if (alpha == gx_max_color_value) {
 #define M(i)\
   cvalues[0] = pvp->values[(i) & 1][0];\
   cvalues[1] = pvp->values[((i) & 2) >> 1][1];\
@@ -882,14 +851,6 @@ set_ht_colors_le_4(color_values_pair_t *pvp /* only used internally */,
 
             M(0); M(1); M(2); M(3); M(4); M(5); M(6); M(7);
 #undef M
-        } else {
-#define M(i)\
-  colors[i] = dev_proc(dev, map_rgb_alpha_color)(dev, pvp->values[(i) & 1][0],\
-                                     pvp->values[((i) & 2) >> 1][1],\
-                                     pvp->values[(i) >> 2][2], alpha)
-            M(0); M(1); M(2); M(3); M(4); M(5); M(6); M(7);
-#undef M
-        }
     } else if (nplanes > 3){
         set_plane_color(3, pvp, pdc, sbits, caches, max_color, invert);
         if (nplanes > 4) {

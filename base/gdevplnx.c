@@ -185,9 +185,7 @@ reduce_drawing_color(gx_device_color *ppdc, gx_device_plane_extract *edev,
             gx_devn_reduce_colored_halftone(ppdc, (gx_device *)edev);
             ppdc->colors.pure = COLOR_PIXEL(edev, ppdc->colors.pure);
             reduced = REDUCE_PURE(edev, gx_dc_pure_color(ppdc));
-        } else if (ppdc->colors.colored.alpha != gx_max_color_value)
-            return REDUCE_FAILED; /* can't reduce */
-        else {
+        } else {
             gx_devn_reduce_colored_halftone(ppdc, (gx_device *)edev);
             ppdc->colors.binary.color[0] =
                 COLOR_PIXEL(edev, ppdc->colors.binary.color[0]);
