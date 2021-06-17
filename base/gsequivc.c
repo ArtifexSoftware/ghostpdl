@@ -368,7 +368,6 @@ typedef struct color_capture_device_s {
 static cmap_proc_gray(cmap_gray_capture_cmyk_color);
 static cmap_proc_rgb(cmap_rgb_capture_cmyk_color);
 static cmap_proc_cmyk(cmap_cmyk_capture_cmyk_color);
-static cmap_proc_rgb_alpha(cmap_rgb_alpha_capture_cmyk_color);
 static cmap_proc_separation(cmap_separation_capture_cmyk_color);
 static cmap_proc_devicen(cmap_devicen_capture_cmyk_color);
 
@@ -376,7 +375,6 @@ static const gx_color_map_procs cmap_capture_cmyk_color = {
     cmap_gray_capture_cmyk_color,
     cmap_rgb_capture_cmyk_color,
     cmap_cmyk_capture_cmyk_color,
-    cmap_rgb_alpha_capture_cmyk_color,
     cmap_separation_capture_cmyk_color,
     cmap_devicen_capture_cmyk_color
 };
@@ -423,14 +421,6 @@ cmap_cmyk_capture_cmyk_color(frac c, frac m, frac y, frac k, gx_device_color * p
     cmyk[2] = y;
     cmyk[3] = k;
     save_spot_equivalent_cmyk_color(sep_num, pparams, cmyk);
-}
-
-static void
-cmap_rgb_alpha_capture_cmyk_color(frac r, frac g, frac b, frac alpha,
-        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                         gs_color_select_t select)
-{
-    cmap_rgb_capture_cmyk_color(r, g, b, pdc, pgs, dev, select);
 }
 
 static void

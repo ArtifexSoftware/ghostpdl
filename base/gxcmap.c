@@ -508,9 +508,6 @@ static cmap_proc_rgb(cmap_rgb_direct);
 #define cmap_cmyk_halftoned cmap_cmyk_direct
 static cmap_proc_cmyk(cmap_cmyk_direct);
 
-static cmap_proc_rgb_alpha(cmap_rgb_alpha_halftoned);
-static cmap_proc_rgb_alpha(cmap_rgb_alpha_direct);
-
 /* Procedure names are only guaranteed unique to 23 characters.... */
 static cmap_proc_rgb_alpha(cmap_rgb_alpha_halftoned);
 static cmap_proc_rgb_alpha(cmap_rgb_alpha_direct);
@@ -528,7 +525,6 @@ static const gx_color_map_procs cmap_few = {
      cmap_gray_halftoned,
      cmap_rgb_halftoned,
      cmap_cmyk_halftoned,
-     cmap_rgb_alpha_halftoned,
      cmap_separation_halftoned,
      cmap_devicen_halftoned,
      cmap_halftoned_is_halftoned
@@ -537,7 +533,6 @@ static const gx_color_map_procs cmap_many = {
      cmap_gray_direct,
      cmap_rgb_direct,
      cmap_cmyk_direct,
-     cmap_rgb_alpha_direct,
      cmap_separation_direct,
      cmap_devicen_direct,
      cmap_direct_is_halftoned
@@ -1172,106 +1167,6 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
         }
     }
     return;
-}
-
-static void
-cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
-        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                         gs_color_select_t select)
-{
-    uchar i, ncomps = dev->color_info.num_components;
-    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    const gx_device *cmdev;
-    const gx_cm_color_map_procs *cmprocs;
-
-    /* map to the color model */
-    cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
-    cmprocs->map_rgb(cmdev, pgs, r, g, b, cm_comps);
-
-    /* pre-multiply to account for the alpha weighting */
-    if (alpha != frac_1) {
-#ifdef PREMULTIPLY_TOWARDS_WHITE
-        frac alpha_bias = frac_1 - alpha;
-#else
-        frac alpha_bias = 0;
-#endif
-
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = (frac)((long)cm_comps[i] * alpha) / frac_1 + alpha_bias;
-    }
-
-    /* apply the transfer function(s); convert to color values */
-    if (pgs->effective_transfer_non_identity_count != 0) {
-        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-            for (i = 0; i < ncomps; i++)
-                cm_comps[i] = gx_map_color_frac(pgs,
-                                cm_comps[i], effective_transfer[i]);
-        else
-            for (i = 0; i < ncomps; i++)
-                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
-                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
-    }
-
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
-                                        &pgs->screen_phase[select]) == 1)
-        gx_color_load_select(pdc, pgs, dev, select);
-}
-
-static void
-cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
-     const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
-{
-    uchar i, ncomps = dev->color_info.num_components;
-    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    gx_color_value cv_alpha, cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    gx_color_index color;
-    const gx_device *cmdev;
-    const gx_cm_color_map_procs *cmprocs;
-
-    /* map to the color model */
-    cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
-    cmprocs->map_rgb(cmdev, pgs, r, g, b, cm_comps);
-
-    /* pre-multiply to account for the alpha weighting */
-    if (alpha != frac_1) {
-#ifdef PREMULTIPLY_TOWARDS_WHITE
-        frac alpha_bias = frac_1 - alpha;
-#else
-        frac alpha_bias = 0;
-#endif
-
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = (frac)((long)cm_comps[i] * alpha) / frac_1 + alpha_bias;
-    }
-
-    /* apply the transfer function(s); convert to color values */
-    if (pgs->effective_transfer_non_identity_count == 0)
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(cm_comps[i]);
-    else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pgs,
-                                cm_comps[i], effective_transfer[i]));
-    else
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
-                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
-
-    /* encode as a color index */
-    if (dev_proc(dev, map_rgb_alpha_color) != gx_default_map_rgb_alpha_color &&
-         (cv_alpha = frac2cv(alpha)) != gx_max_color_value)
-        color = dev_proc(dev, map_rgb_alpha_color)(dev, cv[0], cv[1], cv[2], cv_alpha);
-    else
-        color = dev_proc(dev, encode_color)(dev, cv);
-
-    /* check if the encoding was successful; we presume failure is rare */
-    if (color != gx_no_color_index) {
-        color_set_pure(pdc, color);
-        return;
-    }
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
-                                        &pgs->screen_phase[select]) == 1)
-        gx_color_load_select(pdc, pgs, dev, select);
 }
 
 /* ------ Render Separation All color. ------ */
