@@ -84,22 +84,15 @@ static int
 pcl_mono_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
     gs_font *font, const gx_clip_path *pcpath, gs_text_enum_t **ppte)
 {
-    int valid, ret;
-
     /* The 'high level' version of the color has not been 'monochromized' by this
      * device, so ensure that routines that we call (notably pdfwrite) don't
      * think it's valid and use it. */
-    valid = pgs->color[0].dev_color->ccolor_valid;
     pgs->color[0].dev_color->ccolor_valid = 0;
 
     if (dev->child)
-        ret = dev_proc(dev->child, text_begin)(dev->child, pgs, text, font, pcpath, ppte);
+        return dev_proc(dev->child, text_begin)(dev->child, pgs, text, font, pcpath, ppte);
     else
-        ret = gx_default_text_begin(dev, pgs, text, font, pcpath, ppte);
-
-    pgs->color[0].dev_color->ccolor_valid = valid;
-
-    return ret;
+        return gx_default_text_begin(dev, pgs, text, font, pcpath, ppte);
 }
 
 static void
