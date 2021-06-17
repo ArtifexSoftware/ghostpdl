@@ -280,8 +280,6 @@ void gs_make_mem_abuf_device(gx_device_memory * adev, gs_memory_t * mem,
                              gx_device * target,
                              const gs_log2_scale_point * pscale,
                              int alpha_bits, int mapped_x, bool devn);
-void gs_make_mem_alpha_device(gx_device_memory * adev, gs_memory_t * mem,
-                              gx_device * target, int alpha_bits);
 
 /*
  * Create memory devices with copydevice.  For now the destructor is
@@ -299,8 +297,8 @@ int gs_make_mem_device_with_copydevice(gx_device_memory ** mdev,
                                        gx_device * target);
 
 /*
- * TODO replace gs_make_mem_abuf_device, gs_make_mem_alpha_device with
- * procedures that use copydevice.
+ * TODO replace gs_make_mem_abuf_device with
+ * procedure that uses copydevice.
  */
 
 /*
