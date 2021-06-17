@@ -126,9 +126,21 @@ int pdfi_ET(pdf_context *ctx)
         /* Capture the current position */
         code = gs_currentpoint(ctx->pgs, &initial_point);
         if (code >= 0) {
+            gs_point adjust;
+
+            gs_currentfilladjust(ctx->pgs, &adjust);
+            code = gs_setfilladjust(ctx->pgs, (double)0.0, (double)0.0);
+            if (code < 0)
+                return code;
+
             code = gs_clip(ctx->pgs);
             if (code >= 0)
                 copy = gx_cpath_alloc_shared(ctx->pgs->clip_path, ctx->memory, "save clip path");
+
+            code = gs_setfilladjust(ctx->pgs, adjust.x, adjust.y);
+            if (code < 0)
+                return code;
+
             pdfi_grestore(ctx);
             if (copy != NULL)
                 (void)gx_cpath_assign_free(ctx->pgs->clip_path, copy);
