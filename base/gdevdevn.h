@@ -107,12 +107,12 @@ extern fixed_colorant_name DeviceCMYKComponents[];
  * Convert standard color spaces into DeviceN colorants.
  * Note;  This routine require SeparationOrder map.
  */
-void gray_cs_to_devn_cm(gx_device * dev, int * map, frac gray, frac out[]);
+void gray_cs_to_devn_cm(const gx_device * dev, int * map, frac gray, frac out[]);
 
-void rgb_cs_to_devn_cm(gx_device * dev, int * map,
+void rgb_cs_to_devn_cm(const gx_device * dev, int * map,
                 const gs_gstate *pgs, frac r, frac g, frac b, frac out[]);
 
-void cmyk_cs_to_devn_cm(gx_device * dev, const int * map,
+void cmyk_cs_to_devn_cm(const gx_device * dev, const int * map,
                 frac c, frac m, frac y, frac k, frac out[]);
 
 /*

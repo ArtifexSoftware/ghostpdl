@@ -296,13 +296,13 @@ const gx_device_bit gs_bitrgbtags_device =
     };
 
 static void
-cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_rgb_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
 }
 
 static void
-private_rgb_cs_to_rgb_cm(gx_device * dev, const gs_gstate *pgs,
+private_rgb_cs_to_rgb_cm(const gx_device * dev, const gs_gstate *pgs,
                                   frac r, frac g, frac b, frac out[])
 {
     out[0] = r;
@@ -311,7 +311,7 @@ private_rgb_cs_to_rgb_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 static void
-gray_cs_to_rgb_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_rgb_cm(const gx_device * dev, frac gray, frac out[])
 {
     out[0] = out[1] = out[2] = gray;
 }
@@ -321,8 +321,9 @@ static const gx_cm_color_map_procs bittag_DeviceRGB_procs = {
 };
 
 static const gx_cm_color_map_procs *
-bittag_get_color_mapping_procs(const gx_device *dev)
+bittag_get_color_mapping_procs(const gx_device *dev, const gx_device **map_dev)
 {
+    *map_dev = dev;
     return &bittag_DeviceRGB_procs;
 }
 

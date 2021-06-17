@@ -797,9 +797,10 @@ cups_get_color_comp_index(gx_device * pdev, const char * pname,
  */
 
 private const gx_cm_color_map_procs *	/* O - List of device procedures */
-cups_get_color_mapping_procs(const gx_device *pdev)
+cups_get_color_mapping_procs(const gx_device *pdev, const gx_device **tdev)
 					/* I - Device info */
 {
+  *tdev = pdev;
   return (&cups_color_mapping_procs);
 }
 #endif /* dev_t_proc_encode_color */
@@ -1192,7 +1193,7 @@ cups_map_cielab(double x,		/* I - Raw color value */
  */
 
 private void
-cups_map_cmyk(gx_device *pdev,		/* I - Device info */
+cups_map_cmyk(const gx_device *pdev,		/* I - Device info */
               frac      c,		/* I - Cyan value */
 	      frac      m,		/* I - Magenta value */
 	      frac      y,		/* I - Yellow value */
@@ -1661,7 +1662,7 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
  */
 
 private void
-cups_map_gray(gx_device *pdev,		/* I - Device info */
+cups_map_gray(const gx_device *pdev,		/* I - Device info */
               frac      g,		/* I - Grayscale value */
 	      frac      *out)		/* O - Device colors */
 {
@@ -1683,7 +1684,7 @@ cups_map_gray(gx_device *pdev,		/* I - Device info */
  */
 
 private void
-cups_map_rgb(gx_device             *pdev,
+cups_map_rgb(const gx_device             *pdev,
 					/* I - Device info */
              const gs_gstate        *pgs,/* I - Device state */
              frac                  r,	/* I - Red value */

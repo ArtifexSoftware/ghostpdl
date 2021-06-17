@@ -776,7 +776,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
     gs_gstate *penum_pgs = (gs_gstate *) penum->pgs;
     int code;
     const gx_clip_path *pcpath = pgs->clip_path;
-    const gx_drawing_color *pdcolor = penum->pdcolor;
+    const gx_drawing_color *pdcolor = gs_currentdevicecolor_inline(penum->pgs);
     int rast_orig_x = rast->orig_x;
     int rast_orig_y = -rast->orig_y;
     gs_font_base *pbfont = (gs_font_base *)pfont;

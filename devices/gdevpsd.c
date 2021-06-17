@@ -398,20 +398,20 @@ psd_prn_open(gx_device * pdev)
 psdgray device
 */
 static void
-gray_cs_to_psdgray_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_psdgray_cm(const gx_device * dev, frac gray, frac out[])
 {
     out[0] = gray;
 }
 
 static void
-rgb_cs_to_psdgray_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_psdgray_cm(const gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
     out[0] = color_rgb_to_gray(r, g, b, NULL);
 }
 
 static void
-cmyk_cs_to_psdgray_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_psdgray_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     out[0] = color_cmyk_to_gray(c, m, y, k, NULL);
 }
@@ -421,7 +421,7 @@ cmyk_cs_to_psdgray_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
  * the color components for the psdrgb device.
  */
 static void
-gray_cs_to_psdrgb_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_psdrgb_cm(const gx_device * dev, frac gray, frac out[])
 {
     int i = ((psd_device *)dev)->devn_params.separations.num_separations;
 
@@ -431,7 +431,7 @@ gray_cs_to_psdrgb_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_psdrgb_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_psdrgb_cm(const gx_device * dev, const gs_gstate *pgs,
                                   frac r, frac g, frac b, frac out[])
 {
     int i = ((psd_device *)dev)->devn_params.separations.num_separations;
@@ -444,7 +444,7 @@ rgb_cs_to_psdrgb_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 static void
-cmyk_cs_to_psdrgb_cm(gx_device * dev,
+cmyk_cs_to_psdrgb_cm(const gx_device * dev,
                         frac c, frac m, frac y, frac k, frac out[])
 {
     int i = ((psd_device *)dev)->devn_params.separations.num_separations;
@@ -457,7 +457,7 @@ cmyk_cs_to_psdrgb_cm(gx_device * dev,
 /* Color mapping routines for the psdcmyk device */
 
 static void
-gray_cs_to_psdcmyk_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_psdcmyk_cm(const gx_device * dev, frac gray, frac out[])
 {
     int * map = ((psd_device *) dev)->devn_params.separation_order_map;
 
@@ -465,7 +465,7 @@ gray_cs_to_psdcmyk_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_psdcmyk_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_psdcmyk_cm(const gx_device * dev, const gs_gstate *pgs,
                            frac r, frac g, frac b, frac out[])
 {
     int * map = ((psd_device *) dev)->devn_params.separation_order_map;
@@ -474,10 +474,10 @@ rgb_cs_to_psdcmyk_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 static void
-cmyk_cs_to_psdcmyk_cm(gx_device * dev,
+cmyk_cs_to_psdcmyk_cm(const gx_device * dev,
                         frac c, frac m, frac y, frac k, frac out[])
 {
-    const gs_devn_params *devn = gx_devn_prn_ret_devn_params(dev);
+    const gs_devn_params *devn = gx_devn_prn_ret_devn_params_const(dev);
     const int *map = devn->separation_order_map;
     int j;
 
@@ -510,7 +510,7 @@ cmyk_cs_to_psdcmyk_cm(gx_device * dev,
 }
 
 static void
-cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_spotn_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     psd_device *xdev = (psd_device *)dev;
     int n = xdev->devn_params.separations.num_separations;
@@ -529,7 +529,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
         in[2] = frac2ushort(y);
         in[3] = frac2ushort(k);
 
-        gscms_transform_color(dev, link, &(in[0]),
+        gscms_transform_color_const(dev, link, &(in[0]),
                         &(tmp[0]), 2);
 
         for (i = 0; i < outn; i++)
@@ -549,13 +549,13 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 }
 
 static void
-gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_spotn_cm(const gx_device * dev, frac gray, frac out[])
 {
     cmyk_cs_to_spotn_cm(dev, 0, 0, 0, (frac)(frac_1 - gray), out);
 }
 
 static void
-rgb_cs_to_spotn_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_spotn_cm(const gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
     psd_device *xdev = (psd_device *)dev;
@@ -573,7 +573,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_gstate *pgs,
         in[1] = frac2ushort(g);
         in[2] = frac2ushort(b);
 
-        gscms_transform_color(dev, link, &(in[0]),
+        gscms_transform_color_const(dev, link, &(in[0]),
                         &(tmp[0]), 2);
 
         for (i = 0; i < outn; i++)
@@ -611,16 +611,18 @@ static const gx_cm_color_map_procs psdN_procs = {
  * to color model conversion routines.
  */
 static const gx_cm_color_map_procs *
-get_psdrgb_color_mapping_procs(const gx_device * dev)
+get_psdrgb_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
 {
+    *map_dev = dev;
     return &psdRGB_procs;
 }
 
 static const gx_cm_color_map_procs *
-get_psd_color_mapping_procs(const gx_device * dev)
+get_psd_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
 {
     const psd_device *xdev = (const psd_device *)dev;
 
+    *map_dev = dev;
     if (xdev->color_model == psd_DEVICE_RGB)
         return &psdRGB_procs;
     else if (xdev->color_model == psd_DEVICE_CMYK)

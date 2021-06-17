@@ -120,21 +120,21 @@ static const gs_text_enum_procs_t default_text_procs = {
 int
 gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
                       const gs_text_params_t * text, gs_font * font,
-                      gx_path * path, const gx_device_color * pdcolor,
                       const gx_clip_path * pcpath,
-                      gs_memory_t * mem, gs_text_enum_t ** ppte)
+                      gs_text_enum_t ** ppte)
 {
     uint operation = text->operation;
     bool propagate_charpath = (operation & TEXT_DO_DRAW) != 0;
     int code;
     gs_gstate *pgs = (gs_gstate *)pgs1;
     gs_show_enum *penum;
+    gs_memory_t * mem = pgs->memory;
 
     penum = gs_show_enum_alloc(mem, pgs, "gx_default_text_begin");
     if (!penum)
         return_error(gs_error_VMerror);
     code = gs_text_enum_init((gs_text_enum_t *)penum, &default_text_procs,
-                             dev, pgs, text, font, path, pdcolor, pcpath, mem);
+                             dev, pgs, text, font, pcpath, mem);
     if (code < 0) {
         gs_free_object(mem, penum, "gx_default_text_begin");
         return code;
@@ -210,7 +210,7 @@ gs_text_count_chars(gs_gstate * pgs, gs_text_params_t *text, gs_memory_t * mem)
 
         code = gs_text_enum_init(&tenum, &default_text_procs,
                              NULL, NULL, text, pgs->root_font,
-                             NULL, NULL, NULL, mem);
+                             NULL, mem);
         if (code < 0)
             return code;
         while ((code = (*next_proc)(&tenum, &tchr, &tglyph)) != 2) {

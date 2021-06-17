@@ -116,7 +116,7 @@ struct pdf14_group_color_s {
     uint max_color; /* Causes issues if these are not maintained */
     const gx_color_map_procs *(*get_cmap_procs)(const gs_gstate *,
                                                      const gx_device *);
-    const gx_cm_color_map_procs *(*group_color_mapping_procs)(const gx_device *);
+    const gx_cm_color_map_procs *(*group_color_mapping_procs)(const gx_device *, const gx_device **);
     gx_color_index (*encode)(gx_device *, const gx_color_value value[]);
     int (*decode)(gx_device *, gx_color_index, gx_color_value *);
     int (*group_color_comp_index)(gx_device *, const char *, int, int);

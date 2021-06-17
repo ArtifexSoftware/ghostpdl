@@ -580,8 +580,7 @@ gx_forward_get_hardware_params(gx_device * dev, gs_param_list * plist)
 int
 gx_forward_text_begin(gx_device * dev, gs_gstate * pgs,
                       const gs_text_params_t * text, gs_font * font,
-                      gx_path * path, const gx_device_color * pdcolor,
-                      const gx_clip_path * pcpath, gs_memory_t * memory,
+                      const gx_clip_path * pcpath,
                       gs_text_enum_t ** ppenum)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
@@ -590,8 +589,7 @@ gx_forward_text_begin(gx_device * dev, gs_gstate * pgs,
         (tdev == 0 ? (tdev = dev, gx_default_text_begin) :
          dev_proc(tdev, text_begin));
 
-    return proc(tdev, pgs, text, font, path, pdcolor, pcpath,
-                memory, ppenum);
+    return proc(tdev, pgs, text, font, pcpath, ppenum);
 }
 
 /* Forwarding device color mapping procs. */
@@ -600,15 +598,16 @@ gx_forward_text_begin(gx_device * dev, gs_gstate * pgs,
  * We need to forward the color mapping to the target device.
  */
 static void
-fwd_map_gray_cs(gx_device * dev, frac gray, frac out[])
+fwd_map_gray_cs(const gx_device * dev, frac gray, frac out[])
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device * tdev = fdev->target;
-    subclass_color_mappings scm;
+    const gx_device *cmdev;
+    const gx_cm_color_map_procs *cmprocs;
 
     if (tdev) {
-        scm = get_color_mapping_procs_subclass(tdev);
-        map_gray_subclass(scm, gray, out);
+        cmprocs = dev_proc(tdev, get_color_mapping_procs)(tdev, &cmdev);
+        cmprocs->map_gray(cmdev, gray, out);
     }
     else
         gray_cs_to_gray_cm(tdev, gray, out);   /* if all else fails */
@@ -618,16 +617,17 @@ fwd_map_gray_cs(gx_device * dev, frac gray, frac out[])
  * We need to forward the color mapping to the target device.
  */
 static void
-fwd_map_rgb_cs(gx_device * dev, const gs_gstate *pgs,
+fwd_map_rgb_cs(const gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device * tdev = fdev->target;
-    subclass_color_mappings scm;
+    const gx_device *cmdev;
+    const gx_cm_color_map_procs *cmprocs;
 
     if (tdev) {
-        scm = get_color_mapping_procs_subclass(tdev);
-        map_rgb_subclass(scm, pgs, r, g, b, out);
+        cmprocs = dev_proc(tdev, get_color_mapping_procs)(tdev, &cmdev);
+        cmprocs->map_rgb(cmdev, pgs, r, g, b, out);
     }
     else
         rgb_cs_to_rgb_cm(tdev, pgs, r, g, b, out);   /* if all else fails */
@@ -637,15 +637,16 @@ fwd_map_rgb_cs(gx_device * dev, const gs_gstate *pgs,
  * We need to forward the color mapping to the target device.
  */
 static void
-fwd_map_cmyk_cs(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+fwd_map_cmyk_cs(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device * tdev = fdev->target;
-    subclass_color_mappings scm;
+    const gx_device *cmdev;
+    const gx_cm_color_map_procs *cmprocs;
 
     if (tdev) {
-        scm = get_color_mapping_procs_subclass(tdev);
-        map_cmyk_subclass(scm, c, m, y, k, out);
+        cmprocs = dev_proc(tdev, get_color_mapping_procs)(tdev, &cmdev);
+        cmprocs->map_cmyk(cmdev, c, m, y, k, out);
     }
     else
         cmyk_cs_to_cmyk_cm(tdev, c, m, y, k, out);   /* if all else fails */
@@ -662,13 +663,18 @@ static const gx_cm_color_map_procs FwdDevice_cm_map_procs = {
  * device pointer).
  */
 const gx_cm_color_map_procs *
-gx_forward_get_color_mapping_procs(const gx_device * dev)
+gx_forward_get_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
 {
     const gx_device_forward * fdev = (const gx_device_forward *)dev;
     gx_device * tdev = fdev->target;
 
-    return (tdev == 0 ? gx_default_DevGray_get_color_mapping_procs(dev)
-        : &FwdDevice_cm_map_procs);
+    if (tdev)
+        return dev_proc(tdev, get_color_mapping_procs)(tdev, map_dev);
+
+    /* Testing in the cluster seems to indicate that we never get here,
+     * but we've written the code now... */
+    *map_dev = dev;
+    return &FwdDevice_cm_map_procs;
 }
 
 int
@@ -889,14 +895,14 @@ gx_forward_composite(gx_device * dev, gx_device ** pcdev,
 }
 
 int
-gx_forward_get_profile(gx_device *dev,  cmm_dev_profile_t **profile)
+gx_forward_get_profile(const gx_device *dev,  cmm_dev_profile_t **profile)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-    dev_proc_get_profile((*proc)) =
-        (tdev == 0 ? (tdev = dev, gx_default_get_profile) :
-         dev_proc(tdev, get_profile));
-    return proc(tdev, profile);
+    const gx_device *tdev = fdev->target;
+
+    if (tdev == NULL)
+        return gx_default_get_profile(dev, profile);
+    return dev_proc(tdev, get_profile)(tdev, profile);
 }
 
 void
@@ -1186,32 +1192,6 @@ null_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
     if (dev_spec_op == gxdso_is_null_device)
         return 1;
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
-}
-
-bool
-fwd_uses_fwd_cmap_procs(gx_device * dev)
-{
-    const gx_cm_color_map_procs *pprocs;
-
-    pprocs = dev_proc(dev, get_color_mapping_procs)(dev);
-    if (pprocs == &FwdDevice_cm_map_procs) {
-        return true;
-    }
-    return false;
-}
-
-const gx_cm_color_map_procs*
-fwd_get_target_cmap_procs(gx_device * dev)
-{
-    const gx_cm_color_map_procs *pprocs;
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device * const tdev = fdev->target;
-
-    pprocs = dev_proc(tdev, get_color_mapping_procs(tdev));
-    while (pprocs == &FwdDevice_cm_map_procs) {
-        pprocs = fwd_get_target_cmap_procs(tdev);
-    }
-    return pprocs;
 }
 
 void gx_forward_device_initialize_procs(gx_device *dev)

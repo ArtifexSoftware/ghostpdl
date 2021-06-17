@@ -97,8 +97,6 @@ rc_free_proc(rc_free_text_enum);
     gx_device *imaging_dev;	/* see note below */\
     gs_gstate *pgs;\
     gs_font *orig_font;\
-    gx_path *path;			/* unless DO_NONE & !RETURN_WIDTH */\
-    const gx_device_color *pdcolor;	/* if DO_DRAW */\
     const gx_clip_path *pcpath;		/* if DO_DRAW */\
     gs_memory_t *memory;\
     /* The following additional members are set at initialization. */\
@@ -175,6 +173,8 @@ struct gs_text_enum_s {
     gs_text_enum_common;
 };
 
+#define gs_text_enum_path(pte) ((pte)->pgs->path)
+
 /*
  * Notes on the imaging_dev field of device enumeration structures:
  *
@@ -227,8 +227,7 @@ int gs_text_enum_init(gs_text_enum_t *pte,
                       const gs_text_enum_procs_t *procs,
                       gx_device *dev, gs_gstate *pgs,
                       const gs_text_params_t *text,
-                      gs_font *font, gx_path *path,
-                      const gx_device_color *pdcolor,
+                      gs_font *font,
                       const gx_clip_path *pcpath,
                       gs_memory_t *mem);
 

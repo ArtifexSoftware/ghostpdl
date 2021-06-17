@@ -173,7 +173,7 @@ const rinkj_device gs_rinkj_device =
  * the color components for the spotrgb device.
  */
 static void
-gray_cs_to_spotrgb_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_spotrgb_cm(const gx_device * dev, frac gray, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     int i = ((rinkj_device *)dev)->separation_names.num_names;
@@ -184,7 +184,7 @@ gray_cs_to_spotrgb_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotrgb_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_spotrgb_cm(const gx_device * dev, const gs_gstate *pgs,
                                   frac r, frac g, frac b, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -198,7 +198,7 @@ rgb_cs_to_spotrgb_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 static void
-cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_spotrgb_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     int i = ((rinkj_device *)dev)->separation_names.num_names;
@@ -209,7 +209,7 @@ cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
 }
 
 static void
-gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_spotcmyk_cm(const gx_device * dev, frac gray, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     int i = ((rinkj_device *)dev)->separation_names.num_names;
@@ -221,7 +221,7 @@ gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_spotcmyk_cm(const gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -235,7 +235,7 @@ rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 static void
-cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_spotcmyk_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     rinkj_device *rdev = (rinkj_device *)dev;
@@ -251,7 +251,7 @@ cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out
 };
 
 static void
-cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_spotn_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     rinkj_device *rdev = (rinkj_device *)dev;
@@ -268,7 +268,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 };
 
 static void
-gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_spotn_cm(const gx_device * dev, frac gray, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
 
@@ -276,7 +276,7 @@ gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotn_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_spotn_cm(const gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -305,10 +305,11 @@ static const gx_cm_color_map_procs spotN_procs = {
  */
 
 static const gx_cm_color_map_procs *
-get_rinkj_color_mapping_procs(const gx_device * dev)
+get_rinkj_color_mapping_procs(const gx_device * dev, const gx_device **tdev)
 {
     const rinkj_device *rdev = (const rinkj_device *)dev;
 
+    *tdev = dev;
     if (rdev->color_model == RINKJ_DEVICE_RGB)
         return &spotRGB_procs;
     else if (rdev->color_model == RINKJ_DEVICE_CMYK)

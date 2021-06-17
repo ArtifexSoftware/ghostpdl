@@ -616,8 +616,9 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
     gs_fixed_point origin;
     gs_matrix m;
     int xy_index = pte->xy_index, info_flags = 0;
+    gx_path *path = gs_text_enum_path(pte);
 
-    code = gx_path_current_point(pte->path, &origin);
+    code = gx_path_current_point(path, &origin);
     if (code < 0)
         return code;
     m = ctm_only(pte->pgs);
@@ -829,6 +830,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     int accepted;
     gs_rect text_bbox = {{0, 0}, {0, 0}}, glyphs_bbox = {{10000,10000}, {0,0}};
     unsigned int operation = text->operation;
+    gx_path *path = gs_text_enum_path(penum);
 
     code = pdf_obtain_font_resource(penum, pstr, &pdfont);
     if (code < 0)
@@ -836,7 +838,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     if (pfmat == 0)
         pfmat = &font->FontMatrix;
     if (text->operation & TEXT_RETURN_WIDTH) {
-        code = gx_path_current_point(penum->path, &penum->origin);
+        code = gx_path_current_point(path, &penum->origin);
         if (code < 0)
             return code;
     }
@@ -872,7 +874,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
             gs_fixed_point origin;
             gs_point p0, p1, p2, p3;
 
-            code = gx_path_current_point(penum->path, &origin);
+            code = gx_path_current_point(path, &origin);
             if (code < 0)
                 goto done;
 
@@ -1016,7 +1018,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
             gs_fixed_point origin;
             gs_point p0, p1, p2, p3;
 
-            code = gx_path_current_point(penum->path, &origin);
+            code = gx_path_current_point(path, &origin);
             if (code < 0)
                 return code;
 

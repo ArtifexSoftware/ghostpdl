@@ -1496,19 +1496,30 @@ supported by the device.</p>
 
 <dl>
 <dt><code>const gx_cm_color_map_procs&nbsp;* get_color_mapping_procs(const
-gx_device&nbsp;* dev)</code> <b><em>[OPTIONAL]</em></b> </dt>
-<dd>This procedure returns a list of three procedures. These procedures
-are used to translate values in either Gray, RGB, or CMYK color spaces
-into device colorant values. A separate procedure is not required for the
-DeviceN and Separation color spaces since these already represent
-device colorants.</dd>
+gx_device&nbsp;* dev, const gx_device&nbsp;** tdev)</code> <b><em>[OPTIONAL]</em></b> </dt>
+<dd>This procedure returns a list of three procedures, together with the
+device to pass to them. These procedures are used to translate values in
+either Gray, RGB, or CMYK color spaces into device colorant values. A
+separate procedure is not required for the DeviceN and Separation color
+spaces since these already represent device colorants.</dd>
+
+<p>In many cases, the device returned in <code>tdev</code> will be the
+same as <code>dev</code>, but the caller should not rely on this. For
+cases where we have a chain of devices (perhaps because of a subclass
+or compositor device having been introduced internally as part of the
+rendering process), the actual device that needs to do the color mapping
+may be a child device of the original one. In such cases <code>tdev</code>
+will be returned as a different value to <code>dev</code>.
+</p>
 
 <p>
 The default procedure returns a list of procedures based upon
 <code>color_info.num_components</code>.  These procedures are appropriate
 for DeviceGray, DeviceRGB, or DeviceCMYK process color model devices. A
 procedure must be defined if another process color model is used by the
-device or spot colors are to be supported.</p>
+device or spot colors are to be supported. All these procedures take a
+<code>gx_device</code> pointer; these should be called with the value
+returned in <code>tdev</code> NOT the initial value of <code>dev</code>.</p>
 </dl>
 
 <dl>
@@ -2736,9 +2747,8 @@ optional.</p>
 <dl>
 <dt><code>int (*text_begin)(gx_device&nbsp;*dev,
 gs_imager_state&nbsp;*pis, const&nbsp;gs_text_params_t&nbsp;*text,
-gs_font&nbsp;*font, gx_path&nbsp;*path,
-const&nbsp;gx_device_color&nbsp;*pdcolor,
-const&nbsp;gx_clip_path&nbsp;*pcpath, gs_memory_t&nbsp;*memory,
+gs_font&nbsp;*font,
+const&nbsp;gx_clip_path&nbsp;*pcpath,
 gs_text_enum_t&nbsp;**ppte)</code> <b><em>[OPTIONAL]</em></b></dt>
 
 <p></p><dd>
@@ -2762,26 +2772,11 @@ follows:</dd>
 <tr valign="top">    <td><code>font</code></td>
     <td>&nbsp;</td>
     <td>Defines the font for drawing.</td></tr>
-<tr valign="top">    <td><code>path</code></td>
-    <td>&nbsp;</td>
-    <td>Defines the path where the character outline will be appended
-        (if the text operation includes <code>TEXT_DO_...PATH</code>),
-        and whose current point indicates where drawing should occur
-        and will be updated by the string width (unless the text
-        operation includes <code>TEXT_DO_NONE</code>).</td>
-<tr valign="top">    <td><code>pdcolor</code></td>
-    <td>&nbsp;</td>
-    <td>Defines the drawing color for the text.  Only relevant if
-        the text operation includes <code>TEXT_DO_DRAW</code>.</td></tr>
 <tr valign="top">    <td><code>pcpath</code></td>
     <td>&nbsp;</td>
     <td>If not <code>NULL</code>, defines an optional clipping path.
         Only relevant if the text operation includes
         <code>TEXT_DO_DRAW</code>.</td></tr>
-<tr valign="top">    <td><code>memory</code></td>
-    <td>&nbsp;</td>
-    <td>Defines the allocator to be used for allocating bookkeeping
-        information.</td></tr>
 <tr valign="top">    <td><code>ppte</code></td>
     <td>&nbsp;</td>
     <td>The implementation should return a pointer to its state
@@ -2790,10 +2785,24 @@ follows:</dd>
 
 <p>
 <code>text_begin</code> must allocate a structure for its bookkeeping
-needs, using the allocator defined by the <code>memory</code> parameter,
+needs, using the allocator used by the graphics state,
 and return it in <code>*ppte</code>.  <code>text_begin</code> may
 assume that the structures passed as parameters will survive until text
 processing is complete.</p>
+
+<p>
+If the text operation includes <code>TEXT_DO...PATH</code> then the
+character outline will be appended to the current path in the
+<code>pgs</code>. The current point of that path indicates where
+drawing should occur and will be updated by the string width
+(unless the text operation includes <code>TEXT_DO_NONE</code>).</p>
+
+<p>If the text operation includes <code>TEXT_DO_DRAW</code> then
+the text color will be taken from the current colour in the graphics
+state. (Otherwise no colour is required).</p>
+
+<p>The bookkeeping information will be allocated using the memory
+allocator from the graphics state.</p>
 
 <p>
 Clients should not call the driver <code>text_begin</code> procedure

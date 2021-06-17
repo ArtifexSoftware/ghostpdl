@@ -368,11 +368,12 @@ static const gs_text_enum_procs_t obj_filter_text_procs = {
  * up to the device, in which case we simply pass on the 'begin' method to the device.
  */
 int obj_filter_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
-    gs_font *font, gx_path *path, const gx_device_color *pdcolor, const gx_clip_path *pcpath,
-    gs_memory_t *memory, gs_text_enum_t **ppte)
+    gs_font *font, const gx_clip_path *pcpath,
+    gs_text_enum_t **ppte)
 {
     obj_filter_text_enum_t *penum;
     int code = 0;
+    gs_memory_t * memory = pgs->memory;
 
     /* We don't want to simply ignore stringwidth for 2 reasons;
      * firstly because following elelments may be positioned based on the value returned
@@ -384,16 +385,16 @@ int obj_filter_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t
          * stringwidth operation, or they won;t be able to cache the glyphs properly.
          * So always pass stringwidth operations to the child.
          */
-        return default_subclass_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
+        return default_subclass_text_begin(dev, pgs, text, font, pcpath, ppte);
 
     if ((dev->ObjectFilter & FILTERTEXT) == 0)
-        return default_subclass_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
+        return default_subclass_text_begin(dev, pgs, text, font, pcpath, ppte);
 
     rc_alloc_struct_1(penum, obj_filter_text_enum_t, &st_obj_filter_text_enum, memory,
                   return_error(gs_error_VMerror), "gdev_obj_filter_text_begin");
     penum->rc.free = rc_free_text_enum;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &obj_filter_text_procs,
-                         dev, pgs, text, font, path, pdcolor, pcpath, memory);
+                         dev, pgs, text, font, pcpath, memory);
     if (code < 0) {
         gs_free_object(memory, penum, "gdev_obj_filter_text_begin");
         return code;

@@ -477,13 +477,13 @@ int default_subclass_get_hardware_params(gx_device *dev, gs_param_list *plist)
 }
 
 int default_subclass_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
-    gs_font *font, gx_path *path, const gx_device_color *pdcolor, const gx_clip_path *pcpath,
-    gs_memory_t *memory, gs_text_enum_t **ppte)
+    gs_font *font, const gx_clip_path *pcpath,
+    gs_text_enum_t **ppte)
 {
     if (dev->child)
-        return dev_proc(dev->child, text_begin)(dev->child, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
+        return dev_proc(dev->child, text_begin)(dev->child, pgs, text, font, pcpath, ppte);
     /* else */
-    return gx_default_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
+    return gx_default_text_begin(dev, pgs, text, font, pcpath, ppte);
 }
 
 int default_subclass_begin_transparency_group(gx_device *dev, const gs_transparency_group_params_t *ptgp,
@@ -528,12 +528,13 @@ int default_subclass_discard_transparency_layer(gx_device *dev, gs_gstate *pgs)
     return 0;
 }
 
-const gx_cm_color_map_procs *default_subclass_get_color_mapping_procs(const gx_device *dev)
+const gx_cm_color_map_procs *default_subclass_get_color_mapping_procs(const gx_device *dev,
+                                                                      const gx_device **tdev)
 {
     if (dev->child)
-        return dev_proc(dev->child, get_color_mapping_procs)(dev->child);
+        return dev_proc(dev->child, get_color_mapping_procs)(dev->child, tdev);
     /* else */
-    return gx_default_DevGray_get_color_mapping_procs(dev);
+    return gx_default_DevGray_get_color_mapping_procs(dev, tdev);
 }
 
 int  default_subclass_get_color_comp_index(gx_device *dev, const char * pname, int name_size, int component_type)
@@ -693,7 +694,7 @@ int default_subclass_copy_planes(gx_device *dev, const byte *data, int data_x, i
     return 0;
 }
 
-int default_subclass_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile)
+int default_subclass_get_profile(const gx_device *dev, cmm_dev_profile_t **dev_profile)
 {
     if (dev->child) {
         return dev_proc(dev->child, get_profile)(dev->child, dev_profile);

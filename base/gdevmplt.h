@@ -29,7 +29,8 @@ void gx_device_pcl_mono_palette_init(gx_device_mplt * dev);
 typedef struct {
     subclass_common;
     gx_cm_color_map_procs pcl_mono_procs;
-    gx_cm_color_map_procs *device_cm_procs;
+    const gx_cm_color_map_procs *device_cm_procs;
+    const gx_device *device_cm;
 } pcl_mono_palette_subclass_data;
 
 extern_st(st_device_mplt);

@@ -83,13 +83,13 @@ RELOC_PTRS_END
 
 static ENUM_PTRS_WITH(text_enum_enum_ptrs, gs_text_enum_t *eptr)
 {
-    if (index == 8) {
+    if (index == 6) {
         if (eptr->pair != 0)
             ENUM_RETURN(eptr->pair - eptr->pair->index);
         else
             ENUM_RETURN(0);
     }
-    index -= 9;
+    index -= 7;
     if (index <= eptr->fstack.depth)
         ENUM_RETURN(eptr->fstack.items[index].font);
     index -= eptr->fstack.depth + 1;
@@ -97,8 +97,8 @@ static ENUM_PTRS_WITH(text_enum_enum_ptrs, gs_text_enum_t *eptr)
 }
 case 0: return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
 case 1: return ENUM_OBJ(gx_device_enum_ptr(eptr->imaging_dev));
-ENUM_PTR3(2, gs_text_enum_t, pgs, orig_font, path);
-ENUM_PTR3(5, gs_text_enum_t, pdcolor, pcpath, current_font);
+ENUM_PTR2(2, gs_text_enum_t, pgs, orig_font);
+ENUM_PTR2(4, gs_text_enum_t, pcpath, current_font);
 ENUM_PTRS_END
 
 static RELOC_PTRS_WITH(text_enum_reloc_ptrs, gs_text_enum_t *eptr)
@@ -108,8 +108,8 @@ static RELOC_PTRS_WITH(text_enum_reloc_ptrs, gs_text_enum_t *eptr)
     RELOC_USING(st_gs_text_params, &eptr->text, sizeof(eptr->text));
     eptr->dev = gx_device_reloc_ptr(eptr->dev, gcst);
     eptr->imaging_dev = gx_device_reloc_ptr(eptr->imaging_dev, gcst);
-    RELOC_PTR3(gs_text_enum_t, pgs, orig_font, path);
-    RELOC_PTR3(gs_text_enum_t, pdcolor, pcpath, current_font);
+    RELOC_PTR2(gs_text_enum_t, pgs, orig_font);
+    RELOC_PTR2(gs_text_enum_t, pcpath, current_font);
     if (eptr->pair != NULL)
         eptr->pair = (cached_fm_pair *)RELOC_OBJ(eptr->pair - eptr->pair->index) +
                              eptr->pair->index;
@@ -122,17 +122,12 @@ RELOC_PTRS_END
 int
 gx_device_text_begin(gx_device * dev, gs_gstate * pgs,
                      const gs_text_params_t * text, gs_font * font,
-                     gx_path * path,	/* unless DO_NONE & !RETURN_WIDTH */
-                     const gx_device_color * pdcolor,	/* DO_DRAW */
                      const gx_clip_path * pcpath,	/* DO_DRAW */
-                     gs_memory_t * mem, gs_text_enum_t ** ppte)
+                     gs_text_enum_t ** ppte)
 {
     if (TEXT_PARAMS_ARE_INVALID(text))
         return_error(gs_error_rangecheck);
     {
-        gx_path *tpath =
-            ((text->operation & TEXT_DO_NONE) &&
-             !(text->operation & TEXT_RETURN_WIDTH) ? 0 : path);
         const gx_clip_path *tcpath =
             (text->operation & TEXT_DO_DRAW ? pcpath : 0);
 
@@ -141,7 +136,7 @@ gx_device_text_begin(gx_device * dev, gs_gstate * pgs,
            Since the accumulation may happen while stringwidth.
            we pass the device color unconditionally. */
         return dev_proc(dev, text_begin)
-            (dev, pgs, text, font, tpath, pdcolor, tcpath, mem, ppte);
+            (dev, pgs, text, font, tcpath, ppte);
     }
 }
 
@@ -186,8 +181,8 @@ gs_text_enum_init_dynamic(gs_text_enum_t *pte, gs_font *font)
 int
 gs_text_enum_init(gs_text_enum_t *pte, const gs_text_enum_procs_t *procs,
                   gx_device *dev, gs_gstate *pgs,
-                  const gs_text_params_t *text, gs_font *font, gx_path *path,
-                  const gx_device_color *pdcolor, const gx_clip_path *pcpath,
+                  const gs_text_params_t *text, gs_font *font,
+                  const gx_clip_path *pcpath,
                   gs_memory_t *mem)
 {
     int code;
@@ -197,8 +192,6 @@ gs_text_enum_init(gs_text_enum_t *pte, const gs_text_enum_procs_t *procs,
     pte->imaging_dev = NULL;
     pte->pgs = pgs;
     pte->orig_font = font;
-    pte->path = path;
-    pte->pdcolor = pdcolor;
     pte->pcpath = pcpath;
     pte->memory = mem;
     pte->procs = procs;
@@ -406,9 +399,8 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
 
     pgs->device->sgr.stroke_stored = false;
     code = gx_device_text_begin(pgs->device, pgs,
-                                text, pgs->font, pgs->path,
-                                gs_currentdevicecolor_inline(pgs),
-                                pcpath, mem, ppte);
+                                text, pgs->font,
+                                pcpath, ppte);
 
     /* we need to know if we are doing a highlevel device.
        Also we need to know if we are doing any stroke
@@ -438,18 +430,12 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
 int
 gs_text_update_dev_color(gs_gstate * pgs, gs_text_enum_t * pte)
 {
-    /*
-     * The text enumerator holds a device color pointer, which may be a
-     * null pointer or a pointer to the same device color as the graphic
-     * state points to. In the former case the text is not to be
-     * rendered, and hence of no interest here. In the latter case the
-     * update of the graphic state color will update the text color as
-     * well.
-     */
     /* Processing a text object operation */
     ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
-    if (pte->pdcolor != 0) {
+    if (pte->text.operation & TEXT_DO_DRAW) {
+        /* FIXME: It feels bad that we're setting the dev color in
+         * pgs, rather than pte->pgs. */
         int code = gx_set_dev_color(pgs);
         if (code != 0)
             return code;

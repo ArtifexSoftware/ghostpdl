@@ -220,7 +220,7 @@ const xcf_device gs_xcfcmyk_device =
  * the color components for the spotrgb device.
  */
 static void
-gray_cs_to_spotrgb_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_spotrgb_cm(const gx_device * dev, frac gray, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     int i = ((xcf_device *)dev)->separation_names.num_names;
@@ -231,7 +231,7 @@ gray_cs_to_spotrgb_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotrgb_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_spotrgb_cm(const gx_device * dev, const gs_gstate *pgs,
                                   frac r, frac g, frac b, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -245,7 +245,7 @@ rgb_cs_to_spotrgb_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 static void
-cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_spotrgb_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     int i = ((xcf_device *)dev)->separation_names.num_names;
@@ -256,7 +256,7 @@ cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
 }
 
 static void
-gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_spotcmyk_cm(const gx_device * dev, frac gray, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     int i = ((xcf_device *)dev)->separation_names.num_names;
@@ -268,7 +268,7 @@ gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_spotcmyk_cm(const gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -282,7 +282,7 @@ rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_gstate *pgs,
 }
 
 static void
-cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_spotcmyk_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     xcf_device *xdev = (xcf_device *)dev;
@@ -298,7 +298,7 @@ cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out
 }
 
 static void
-cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_spotn_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     xcf_device *xdev = (xcf_device *)dev;
@@ -317,7 +317,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
         in[2] = frac2ushort(y);
         in[3] = frac2ushort(k);
 
-        gscms_transform_color(dev, link, &(in[0]), &(tmp[0]), 2);
+        gscms_transform_color_const(dev, link, &(in[0]), &(tmp[0]), 2);
         for (i = 0; i < outn; i++)
             out[i] = ushort2frac(tmp[i]);
         for (; i < n + 4; i++)
@@ -335,7 +335,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 }
 
 static void
-gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_spotn_cm(const gx_device * dev, frac gray, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
 
@@ -343,7 +343,7 @@ gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotn_cm(gx_device * dev, const gs_gstate *pgs,
+rgb_cs_to_spotn_cm(const gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -361,7 +361,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_gstate *pgs,
         in[1] = frac2ushort(g);
         in[2] = frac2ushort(b);
 
-        gscms_transform_color(dev, link, &(in[0]), &(tmp[0]), 2);
+        gscms_transform_color_const(dev, link, &(in[0]), &(tmp[0]), 2);
 
         for (i = 0; i < outn; i++)
             out[i] = ushort2frac(tmp[i]);
@@ -393,24 +393,27 @@ static const gx_cm_color_map_procs spotN_procs = {
  * to color model conversion routines.
  */
 static const gx_cm_color_map_procs *
-get_spotrgb_color_mapping_procs(const gx_device * dev)
+get_spotrgb_color_mapping_procs(const gx_device * dev, const gx_device **tdev)
 {
+    *tdev = dev;
     return &spotRGB_procs;
 }
 
 #if 0
 static const gx_cm_color_map_procs *
-get_spotcmyk_color_mapping_procs(const gx_device * dev)
+get_spotcmyk_color_mapping_procs(const gx_device * dev, const gx_device **tdev)
 {
+    *tdev = dev;
     return &spotCMYK_procs;
 }
 #endif
 
 static const gx_cm_color_map_procs *
-get_xcf_color_mapping_procs(const gx_device * dev)
+get_xcf_color_mapping_procs(const gx_device * dev, const gx_device **tdev)
 {
     const xcf_device *xdev = (const xcf_device *)dev;
 
+    *tdev = dev;
     if (xdev->color_model == XCF_DEVICE_RGB)
         return &spotRGB_procs;
     else if (xdev->color_model == XCF_DEVICE_CMYK)

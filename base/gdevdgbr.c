@@ -390,9 +390,10 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
     gx_color_value src_max = (1 << src_depth) - 1;
 #define v2cv(value) ((ulong)(value) * gx_max_color_value / src_max)
     gx_color_value alpha_default = src_max;
-    subclass_color_mappings scm;
+    const gx_device *cmdev;
+    const gx_cm_color_map_procs *cmprocs;
 
-    scm = get_color_mapping_procs_subclass(dev);
+    cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
 
     params->options &= ~GB_COLORS_ALL | GB_COLORS_NATIVE;
     for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
@@ -447,13 +448,13 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
 
                 switch (ncolors) {
                 case 1:
-                    map_gray_subclass(scm, sc[0], dc);
+                    cmprocs->map_gray(cmdev, sc[0], dc);
                     break;
                 case 3:
-                    map_rgb_subclass(scm, 0, sc[0], sc[1], sc[2], dc);
+                    cmprocs->map_rgb(cmdev, 0, sc[0], sc[1], sc[2], dc);
                     break;
                 case 4:
-                    map_cmyk_subclass(scm, sc[0], sc[1], sc[2], sc[3], dc);
+                    cmprocs->map_cmyk(cmdev, sc[0], sc[1], sc[2], sc[3], dc);
                     break;
                 default:
                     return_error(gs_error_rangecheck);

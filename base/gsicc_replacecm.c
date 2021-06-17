@@ -37,10 +37,11 @@ typedef struct rcm_link_s {
     gsicc_colorbuffer_t data_cs_in;
     gs_memory_t *memory;
     gx_cm_color_map_procs cm_procs;  /* for the demo */
+    const gx_device *cmdev;
     void *context;  /* For a table and or a set of procs */
 } rcm_link_t;
 
-static void gsicc_rcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
+static void gsicc_rcm_transform_general(const gx_device *dev, gsicc_link_t *icclink,
                                          void *inputcolor, void *outputcolor,
                                          int num_bytes_in, int num_bytes_out);
 
@@ -48,7 +49,7 @@ static void gsicc_rcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
    color conversions.  Just putting in something that should work
    right now */
 static void
-gsicc_rcm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
+gsicc_rcm_planar_to_planar(const gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -85,7 +86,7 @@ gsicc_rcm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
 
 /* This is not really used yet */
 static void
-gsicc_rcm_planar_to_chunky(gx_device *dev, gsicc_link_t *icclink,
+gsicc_rcm_planar_to_chunky(const gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -97,7 +98,7 @@ gsicc_rcm_planar_to_chunky(gx_device *dev, gsicc_link_t *icclink,
 /* This is used with the fast thresholding code when doing -dUseFastColor
    and going out to a planar device */
 static void
-gsicc_rcm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
+gsicc_rcm_chunky_to_planar(const gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -153,7 +154,7 @@ gsicc_rcm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
 }
 
 static void
-gsicc_rcm_chunky_to_chunky(gx_device *dev, gsicc_link_t *icclink,
+gsicc_rcm_chunky_to_chunky(const gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -223,7 +224,7 @@ gsicc_rcm_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
    negative to show the effect of what using color replacement.  We also use
    the device procs to map to the device value.  */
 static void
-gsicc_rcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
+gsicc_rcm_transform_general(const gx_device *dev, gsicc_link_t *icclink,
                              void *inputcolor, void *outputcolor,
                              int num_bytes_in, int num_bytes_out)
 {
@@ -234,7 +235,6 @@ gsicc_rcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
     frac frac_in[4];
     frac frac_out[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int k;
-    gx_device *parentmost_dev = subclass_parentmost_device(dev);
 
     /* Make the negative for the demo.... */
     if (num_bytes_in == 2) {
@@ -251,14 +251,14 @@ gsicc_rcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
     /* Use the device procedure */
     switch (num_in) {
         case 1:
-            (link->cm_procs.map_gray)(parentmost_dev, frac_in[0], frac_out);
+            (link->cm_procs.map_gray)(link->cmdev, frac_in[0], frac_out);
             break;
         case 3:
-            (link->cm_procs.map_rgb)(parentmost_dev, NULL, frac_in[0], frac_in[1],
+            (link->cm_procs.map_rgb)(link->cmdev, NULL, frac_in[0], frac_in[1],
                                  frac_in[2], frac_out);
             break;
         case 4:
-            (link->cm_procs.map_cmyk)(parentmost_dev, frac_in[0], frac_in[1], frac_in[2],
+            (link->cm_procs.map_cmyk)(link->cmdev, frac_in[0], frac_in[1], frac_in[2],
                                  frac_in[3], frac_out);
             break;
         default:
@@ -311,10 +311,10 @@ gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
     rcm_link_t *rcm_link;
     gs_memory_t *mem;
     const gx_cm_color_map_procs * cm_procs;
+    const gx_device *cmdev;
     bool pageneutralcolor = false;
     cmm_dev_profile_t *dev_profile;
     int code;
-    subclass_color_mappings scm;
 
     if (dev == NULL)
         return NULL;
@@ -328,8 +328,7 @@ gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
         pageneutralcolor = dev_profile->pageneutralcolor;
     }
 
-    scm = get_color_mapping_procs_subclass(dev);
-    cm_procs = scm.procs;
+    cm_procs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
 
     hash.rend_hash = gsCMM_REPLACE;
     hash.des_hash = dev->color_info.num_components;
@@ -368,6 +367,7 @@ gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
     rcm_link->cm_procs.map_cmyk = cm_procs->map_cmyk;
     rcm_link->cm_procs.map_rgb = cm_procs->map_rgb;
     rcm_link->cm_procs.map_gray = cm_procs->map_gray;
+    rcm_link->cmdev = cmdev;
 
     switch (data_cs) {
         case gsGRAY:

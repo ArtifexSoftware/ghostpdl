@@ -1246,7 +1246,7 @@ setglobal
   {
     3 index /CharStrings eq
     currentdict 3 index known and
-    { pstack flush pop pop }
+    { pop pop }
     { systemdict /def get exec }
     ifelse
   } bind executeonly def

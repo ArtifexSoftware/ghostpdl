@@ -427,8 +427,12 @@ gx_remap_ICC_with_link(const gs_client_color * pcc, const gs_color_space * pcs,
        the transfer function and potentially the halftoning */
     /* Right now we need to go from unsigned short to frac.  I really
        would like to avoid this sort of stuff.  That will come. */
-    for ( k = 0; k < num_des_comps; k++){
+    for (k = 0; k < num_des_comps; k++){
         conc[k] = ushort2frac(psrc_temp[k]);
+    }
+    /* In case there are extra components beyond the ICC ones */
+    for (k = num_des_comps; k < dev->color_info.num_components; k++) {
+        conc[k] = 0;
     }
     gx_remap_concrete_ICC(pcs, conc, pdc, pgs, dev, select, dev_profile);
 
@@ -599,9 +603,14 @@ gx_concretize_ICC(
         (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2);
     }
     /* This needs to be optimized */
-    for (k = 0; k < num_des_comps; k++){
+    for (k = 0; k < num_des_comps; k++) {
         pconc[k] = float2frac(((float) psrc_temp[k])/65535.0);
     }
+    /* We have to worry about extra colorants in the device. */
+    for (k = num_des_comps; k < dev->color_info.num_components; k++) {
+        pconc[k] = 0;
+    }
+
     /* Release the link */
     gsicc_release_link(icc_link);
     return 0;
@@ -711,7 +720,7 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
 }
 
 int
-gx_default_get_profile(gx_device *dev, cmm_dev_profile_t **profile)
+gx_default_get_profile(const gx_device *dev, cmm_dev_profile_t **profile)
 {
     *profile = dev->icc_struct;
     return 0;

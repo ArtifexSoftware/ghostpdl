@@ -54,10 +54,11 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
     gs_char chr, char_code = 0x0badf00d, space_char = GS_NO_CHAR;
     int buf_index = 0;
     bool return_width = (penum->text.operation & TEXT_RETURN_WIDTH);
+    gx_path *path = gs_text_enum_path(penum);
 
     str.data = buf;
     if (return_width) {
-        code = gx_path_current_point(penum->path, &penum->origin);
+        code = gx_path_current_point(path, &penum->origin);
         if (code < 0)
             return code;
     }
@@ -432,8 +433,9 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
         gs_font *subfont = NULL;
         gs_point wxy;
         bool font_change = 0;
+        gx_path *path = gs_text_enum_path(pte);
 
-        code = gx_path_current_point(pte->path, &pte->origin);
+        code = gx_path_current_point(path, &pte->origin);
         if (code < 0)
             return code;
         do {

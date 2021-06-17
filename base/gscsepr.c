@@ -456,9 +456,11 @@ check_Separation_component_name(const gs_color_space * pcs, gs_gstate * pgs)
     pcolor_component_map->sep_type = pcs->params.separation.sep_type;
     /*
      * If this is a None or All separation then we do not need to
-     * use the alternate color space.
-     */
-    if (pcs->params.separation.sep_type != SEP_OTHER) {
+     * use the alternate color space.  Also if the named color
+     * profile supports the component, don't use the alternate
+     * tint transform. */
+    if (pcs->params.separation.sep_type != SEP_OTHER ||
+        gsicc_support_named_color(pcs, pgs)) {
         pcolor_component_map->use_alt_cspace = false;
         return 0;
     }
