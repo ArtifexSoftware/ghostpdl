@@ -739,9 +739,32 @@ static int GS_OPM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
 
 static int GS_Font(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    /* TODO: Make sure to handle a NULL stream_dict when this is implemented */
-    dbgmprintf(ctx->memory, "ExtGState Font not yet implemented\n");
-    return 0;
+    pdf_array *font_array = NULL;
+    pdf_dict *font_dict = NULL;
+    int code = 0;
+    double point_size = 0.0;
+
+    code = pdfi_dict_get_type(ctx, GS, "Font", PDF_ARRAY, (pdf_obj **)&font_array);
+    if (code < 0)
+        return code;
+
+    if (pdfi_array_size(font_array) != 2)
+        return_error(gs_error_rangecheck);
+
+    code = pdfi_array_get(ctx, font_array, 0, (pdf_obj **)&font_dict);
+    if (code < 0)
+        goto GS_Font_error;
+
+    code = pdfi_array_get_number(ctx, font_array, 1, &point_size);
+    if (code < 0)
+        goto GS_Font_error;
+
+    code = pdfi_load_dict_font(ctx, stream_dict, page_dict, font_dict, point_size);
+
+GS_Font_error:
+    pdfi_countdown(font_array);
+    pdfi_countdown(font_dict);
+    return code;
 }
 
 static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict, bool is_BG)

@@ -75,6 +75,8 @@ int pdfi_init_font_directory(pdf_context *ctx);
 
 int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, gs_font **ppfont, bool cidfont);
 
+int pdfi_load_dict_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, double point_size);
+
 /* Loads a (should be!) non-embedded font by name
    Only currently works for the Type 1 font set from romfs.
  */

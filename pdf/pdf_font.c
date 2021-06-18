@@ -37,6 +37,18 @@
 #include "strmio.h"
 #include "stream.h"
 
+static int pdfi_gs_setfont(pdf_context *ctx, gs_font *pfont)
+{
+    int code = 0;
+    pdf_font *old_font = pdfi_get_current_pdf_font(ctx);
+
+    code = gs_setfont(ctx->pgs, pfont);
+    if (code >= 0)
+        pdfi_countdown(old_font);
+
+    return code;
+}
+
 /* These are fonts for which we have to ignore "named" encodings */
 typedef struct known_symbolic_font_name_s
 {
@@ -622,7 +634,38 @@ exit:
     return code;
 }
 
-static int pdfi_load_resource_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_name *fontname, gs_font **ppfont)
+int pdfi_load_dict_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, double point_size)
+{
+    int code;
+    gs_font *pfont;
+
+    if (font_dict->type == PDF_FONT) {
+        pfont = (gs_font *)((pdf_font *)font_dict)->pfont;
+        code = 0;
+    }
+    else {
+        if (font_dict->type != PDF_DICT) {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
+        code = pdfi_load_font(ctx, stream_dict, page_dict, font_dict, &pfont, false);
+    }
+    if (code < 0)
+        goto exit;
+
+    /* Everything looks good, set the font, unless it's the current font */
+    if (pfont != ctx->pgs->font)
+        code = pdfi_gs_setfont(ctx, pfont);
+
+    if (code < 0)
+        goto exit;
+
+    code = gs_setPDFfontsize(ctx->pgs, point_size);
+exit:
+    return code;
+}
+
+static int pdfi_load_resource_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_name *fontname, double point_size)
 {
     int code;
     pdf_dict *font_dict = NULL;
@@ -638,18 +681,7 @@ static int pdfi_load_resource_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_
     (void)pdfi_loop_detector_cleartomark(ctx);
     if (code < 0)
         goto exit;
-
-    if (font_dict->type == PDF_FONT) {
-        *ppfont = (gs_font *)((pdf_font *)font_dict)->pfont;
-        code = 0;
-        goto exit;
-    }
-
-    if (font_dict->type != PDF_DICT) {
-        code = gs_note_error(gs_error_typecheck);
-        goto exit;
-    }
-    code = pdfi_load_font(ctx, stream_dict, page_dict, font_dict, ppfont, false);
+    code = pdfi_load_dict_font(ctx, stream_dict, page_dict, font_dict, point_size);
 
 exit:
     if (code < 0)
@@ -793,28 +825,12 @@ d1_error:
     return code;
 }
 
-static int pdfi_gs_setfont(pdf_context *ctx, gs_font *pfont)
-{
-    int code = 0;
-    pdf_font *old_font = pdfi_get_current_pdf_font(ctx);
-
-    code = gs_setfont(ctx->pgs, pfont);
-    if (code >= 0)
-        pdfi_countdown(old_font);
-
-    return code;
-}
-
 int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     double point_size = 0;
     pdf_obj *point_arg = NULL;
     int code = 0;
-    pdf_dict *font_dict = NULL;
-    gs_font *pfont = NULL;
     pdf_name *fontname = NULL;
-    pdf_name *Type = NULL;
-    pdf_name *Subtype = NULL;
 
     if (pdfi_count_stack(ctx) < 2) {
         pdfi_clearstack(ctx);
@@ -839,30 +855,13 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             goto exit0;
         }
     }
-    code = gs_setPDFfontsize(ctx->pgs, point_size);
-    if (code < 0)
-        goto exit0;
 
-    code = pdfi_load_resource_font(ctx, stream_dict, page_dict, fontname, &pfont);
-    if (code < 0) {
-        goto exit;
-    }
+    code = pdfi_load_resource_font(ctx, stream_dict, page_dict, fontname, point_size);
 
-    /* Everything looks good, set the font, unless it's the current font */
-    if (pfont != ctx->pgs->font)
-        code = pdfi_gs_setfont(ctx, pfont);
-
-    if (code < 0)
-        goto exit;
-
- exit:
     /* If we failed to load font, try to load an internal one */
     if (code < 0 && fontname)
         code = pdfi_font_set_internal_name(ctx, fontname, point_size);
  exit0:
-    pdfi_countdown(Type);
-    pdfi_countdown(Subtype);
-    pdfi_countdown(font_dict);
     pdfi_countdown(fontname);
     pdfi_countdown(point_arg);
     return code;
