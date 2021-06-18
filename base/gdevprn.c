@@ -474,7 +474,6 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
         COPY_PROC(get_params);
         COPY_PROC(put_params);
         COPY_PROC(map_cmyk_color);
-        COPY_PROC(map_rgb_alpha_color);
         /* All printers are page devices, even if they didn't use the */
         /* standard macros for generating their procedure vectors. */
         set_dev_proc(ppdev, get_page_device, gx_page_device_get_page_device);

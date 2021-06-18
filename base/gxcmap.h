@@ -38,9 +38,6 @@
   void proc(frac, frac, frac, frac, gx_device_color *,\
             const gs_gstate *, gx_device *, gs_color_select_t,\
             const gs_color_space *)
-#define cmap_proc_rgb_alpha(proc)\
-  void proc(frac, frac, frac, frac, gx_device_color *,\
-               const gs_gstate *, gx_device *, gs_color_select_t)
 #define cmap_proc_separation(proc)\
   void proc(frac, gx_device_color *, const gs_gstate *,\
                gx_device *, gs_color_select_t, const gs_color_space *)

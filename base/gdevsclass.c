@@ -226,15 +226,6 @@ gx_color_index default_subclass_map_cmyk_color(gx_device *dev, const gx_color_va
     return gx_default_map_cmyk_color(dev, cv);
 }
 
-gx_color_index default_subclass_map_rgb_alpha_color(gx_device *dev, gx_color_value red, gx_color_value green, gx_color_value blue,
-    gx_color_value alpha)
-{
-    if (dev->child)
-        return dev_proc(dev->child, map_rgb_alpha_color)(dev->child, red, green, blue, alpha);
-    /* else */
-    return gx_default_map_rgb_alpha_color(dev, red, green, blue, alpha);
-}
-
 gx_device *default_subclass_get_page_device(gx_device *dev)
 {
     if (dev->child)
@@ -830,7 +821,6 @@ void default_subclass_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_params, default_subclass_get_params);
     set_dev_proc(dev, put_params, default_subclass_put_params);
     set_dev_proc(dev, map_cmyk_color, default_subclass_map_cmyk_color);
-    set_dev_proc(dev, map_rgb_alpha_color, default_subclass_map_rgb_alpha_color);
     set_dev_proc(dev, get_page_device, default_subclass_get_page_device);
     set_dev_proc(dev, get_alpha_bits, default_subclass_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, default_subclass_copy_alpha);

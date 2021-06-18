@@ -580,8 +580,7 @@ static void
 tr_base_initialize_device_procs(gx_device *dev,
                    dev_proc_map_rgb_color((*map_rgb_color)),
                    dev_proc_map_color_rgb((*map_color_rgb)),
-                   dev_proc_map_cmyk_color((*map_cmyk_color)),
-                   dev_proc_map_rgb_alpha_color((*map_rgb_alpha_color)))
+                   dev_proc_map_cmyk_color((*map_cmyk_color)))
 {
     set_dev_proc(dev, map_rgb_color, map_rgb_color);
     set_dev_proc(dev, map_color_rgb, map_color_rgb);
@@ -589,7 +588,6 @@ tr_base_initialize_device_procs(gx_device *dev,
     set_dev_proc(dev, copy_mono, trace_copy_mono);
     set_dev_proc(dev, copy_color, trace_copy_color);
     set_dev_proc(dev, map_cmyk_color, map_cmyk_color);
-    set_dev_proc(dev, map_rgb_alpha_color, map_rgb_alpha_color);
     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
     set_dev_proc(dev, copy_alpha, trace_copy_alpha);
     set_dev_proc(dev, fill_path, trace_fill_path);
@@ -621,7 +619,7 @@ tr_mono_initialize_device_procs(gx_device *dev)
 {
     tr_base_initialize_device_procs(dev,
                               gx_default_b_w_map_rgb_color,
-                              gx_default_b_w_map_color_rgb, NULL, NULL);
+                              gx_default_b_w_map_color_rgb, NULL);
 
 }
 
@@ -634,7 +632,7 @@ tr_rgb_initialize_device_procs(gx_device *dev)
 {
     tr_base_initialize_device_procs(dev,
                               gx_default_rgb_map_rgb_color,
-                              gx_default_rgb_map_color_rgb, NULL, NULL);
+                              gx_default_rgb_map_color_rgb, NULL);
 }
 
 const gx_device gs_tr_rgb_device = {
@@ -646,7 +644,7 @@ tr_cmyk_initialize_device_procs(gx_device *dev)
 {
     tr_base_initialize_device_procs(dev,
                               NULL, cmyk_1bit_map_color_rgb,
-                              cmyk_1bit_map_cmyk_color, NULL);
+                              cmyk_1bit_map_cmyk_color);
 }
 
 const gx_device gs_tr_cmyk_device = {

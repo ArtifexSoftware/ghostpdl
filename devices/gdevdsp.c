@@ -1745,7 +1745,6 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     COPY_PROC(get_params);
     COPY_PROC(put_params);
     COPY_PROC(map_cmyk_color);
-    COPY_PROC(map_rgb_alpha_color);
     set_dev_proc(ddev, get_page_device, gx_page_device_get_page_device);
     COPY_PROC(get_clipping_box);
     COPY_PROC(map_color_rgb_alpha);

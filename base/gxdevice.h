@@ -257,7 +257,6 @@ dev_proc_copy_color(gx_default_copy_color);
 dev_proc_get_params(gx_default_get_params);
 dev_proc_put_params(gx_default_put_params);
 dev_proc_map_cmyk_color(gx_default_map_cmyk_color);
-dev_proc_map_rgb_alpha_color(gx_default_map_rgb_alpha_color);
 dev_proc_get_page_device(gx_default_get_page_device);   /* returns NULL */
 dev_proc_get_page_device(gx_page_device_get_page_device);       /* returns dev */
 dev_proc_get_alpha_bits(gx_default_get_alpha_bits);
@@ -358,7 +357,6 @@ dev_proc_copy_color(gx_forward_copy_color);
 dev_proc_get_params(gx_forward_get_params);
 dev_proc_put_params(gx_forward_put_params);
 dev_proc_map_cmyk_color(gx_forward_map_cmyk_color);
-dev_proc_map_rgb_alpha_color(gx_forward_map_rgb_alpha_color);
 dev_proc_get_page_device(gx_forward_get_page_device);
 #define gx_forward_get_alpha_bits gx_default_get_alpha_bits
 dev_proc_copy_alpha(gx_forward_copy_alpha);

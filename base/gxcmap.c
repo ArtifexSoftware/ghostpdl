@@ -509,9 +509,6 @@ static cmap_proc_rgb(cmap_rgb_direct);
 static cmap_proc_cmyk(cmap_cmyk_direct);
 
 /* Procedure names are only guaranteed unique to 23 characters.... */
-static cmap_proc_rgb_alpha(cmap_rgb_alpha_halftoned);
-static cmap_proc_rgb_alpha(cmap_rgb_alpha_direct);
-
 static cmap_proc_separation(cmap_separation_halftoned);
 static cmap_proc_separation(cmap_separation_direct);
 
@@ -1985,15 +1982,6 @@ cmyk_16bit_map_color_cmyk(gx_device * dev, gx_color_index color,
 }
 
 /* Default mapping between RGB+alpha and RGB. */
-
-gx_color_index
-gx_default_map_rgb_alpha_color(gx_device * dev,
- gx_color_value r, gx_color_value g, gx_color_value b, gx_color_value alpha)
-{				/* Colors have been premultiplied: we don't need to do it here. */
-    gx_color_value cv[3];
-    cv[0] = r; cv[1] = g; cv[2] = b;
-    return (*dev_proc(dev, map_rgb_color))(dev, cv);
-}
 
 int
 gx_default_map_color_rgb_alpha(gx_device * dev, gx_color_index color,

@@ -37,7 +37,6 @@ hit_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, gx_default_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
     set_dev_proc(dev, map_cmyk_color, gx_default_map_cmyk_color);
-    set_dev_proc(dev, map_rgb_alpha_color, gx_default_map_rgb_alpha_color);
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
     set_dev_proc(dev, fill_path, gx_default_fill_path);
