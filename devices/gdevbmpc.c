@@ -172,11 +172,7 @@ write_bmp_header(gx_device_printer *pdev, gp_file *file)
 
         q.reserved = 0;
         for (i = 0; i != 1 << depth; i++) {
-            /* Note that the use of map_color_rgb is deprecated in
-               favor of decode_color. This should work, though, because
-               backwards compatibility is preserved. */
-            (*dev_proc(pdev, map_color_rgb))((gx_device *)pdev,
-                                             (gx_color_index)i, rgb);
+            gx_map_color_rgb((gx_device *)pdev, (gx_color_index)i, rgb);
             q.red = gx_color_value_to_byte(rgb[0]);
             q.green = gx_color_value_to_byte(rgb[1]);
             q.blue = gx_color_value_to_byte(rgb[2]);

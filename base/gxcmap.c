@@ -1994,6 +1994,50 @@ gx_unit_frac(float fvalue)
     return f;
 }
 
+static inline gx_color_value
+clamp_color_value(int i)
+{
+    if (i < 0)
+        return (gx_color_value)0;
+    if (i > gx_max_color_value)
+        return (gx_color_value)gx_max_color_value;
+    return (gx_color_value)i;
+}
+
+/* Map from a color index to an rgb value. This is not color correct, but
+ * just an approximation. */
+int
+gx_map_color_rgb(gx_device *dev, gx_color_index col, gx_color_value *rgb)
+{
+    gx_color_value comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int ret;
+    int k;
+
+    switch (dev->color_info.num_components)
+    {
+        case 1:
+            ret = dev_proc(dev, decode_color)(dev, col, rgb);
+            rgb[2] = rgb[1] = rgb[0];
+            return ret;
+        case 4:
+            ret = dev_proc(dev, decode_color)(dev, col, comps);
+            k = gx_max_color_value - comps[3];
+            rgb[0] = clamp_color_value(k - comps[0]);
+            rgb[1] = clamp_color_value(k - comps[1]);
+            rgb[2] = clamp_color_value(k - comps[2]);
+            return ret;
+        case 3:
+            return dev_proc(dev, decode_color)(dev, col, rgb);
+        default:
+            /* We are in trouble. Make something up. */
+            ret = dev_proc(dev, decode_color)(dev, col, comps);
+            rgb[0] = comps[0];
+            rgb[1] = comps[1];
+            rgb[2] = dev->color_info.num_components < 3 ? comps[2] : 0;
+            return ret;
+    }
+}
+
 static void
 cmapper_transfer_halftone_add(gx_cmapper_t *data)
 {

@@ -859,11 +859,21 @@ param_HWColorMap(gx_device * dev, byte * palette /* 3 << 8 */ )
         gx_color_value rgb[3];
         gx_color_index i;
 
-        fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
+        /* FIXME: We should be able to remove this later. */
+        if (dev_proc(dev, decode_color) == NULL) {
+            fill_dev_proc(dev, encode_color, gx_default_encode_color);
+            set_dev_proc(dev, decode_color, gx_default_decode_color);
+            if (dev->color_info.separable_and_linear == GX_CINFO_UNKNOWN_SEP_LIN) {
+                if (dev->color_info.num_components <= 3)
+                    dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+                else
+                    check_device_compatible_encoding(dev);
+            }
+        }
         for (i = 0; (i >> depth) == 0; i++) {
             int j;
 
-            if ((*dev_proc(dev, map_color_rgb)) (dev, i, rgb) < 0)
+            if (gx_map_color_rgb(dev, i, rgb) < 0)
                 return false;
             for (j = 0; j < colors; j++)
                 *p++ = gx_color_value_to_byte(rgb[j]);

@@ -264,6 +264,11 @@ void cmap_transfer(gx_color_value *pconc, const gs_gstate * pgs,
 void cmap_transfer_plane(gx_color_value *pconc, const gs_gstate *pgs,
                     gx_device *dev, int plane);
 
+/* Convert from gx_color_index to an rgb representation derived from the
+ * device space colour components. For non-rgb devices this will NOT be
+ * colour correct. */
+int gx_map_color_rgb(gx_device *dev, gx_color_index col, gx_color_value *rgb);
+
 typedef struct gx_cmapper_s gx_cmapper_t;
 
 typedef void (gx_cmapper_fn)(gx_cmapper_t *cmapper);

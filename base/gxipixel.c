@@ -1056,8 +1056,7 @@ color_draws_b_w(gx_device * dev, const gx_drawing_color * pdcolor)
     if (color_is_pure(pdcolor)) {
         gx_color_value rgb[3];
 
-        (*dev_proc(dev, map_color_rgb)) (dev, gx_dc_pure_color(pdcolor),
-                                         rgb);
+        gx_map_color_rgb(dev, gx_dc_pure_color(pdcolor), rgb);
         if (!(rgb[0] | rgb[1] | rgb[2]))
             return 0;
         if ((rgb[0] & rgb[1] & rgb[2]) == gx_max_color_value)
