@@ -178,6 +178,20 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
     return code;
 }
 
+enum
+{
+    pdfi_font_flag_none =        0x00000,
+    pdfi_font_flag_fixed =       0x00001,
+    pdfi_font_flag_serif =       0x00002,
+    pdfi_font_flag_symbolic =    0x00004,
+    pdfi_font_flag_script =      0x00008,
+    pdfi_font_flag_nonsymbolic = 0x00020,
+    pdfi_font_flag_italic =      0x00040,
+    pdfi_font_flag_allcap =      0x10000,
+    pdfi_font_flag_smallcap =    0x20000,
+    pdfi_font_flag_forcebold =   0x40000
+};
+
 /* Barefaced theft from mupdf! */
 static const char *pdfi_base_font_names[][10] =
 {
@@ -229,40 +243,123 @@ static const char *pdfi_clean_font_name(const pdf_name *fontname)
     return NULL;
 }
 
+static const char *pdfi_font_substitute_by_flags(unsigned int flags)
+{
+    bool fixed = ((flags & pdfi_font_flag_fixed) != 0);
+    bool serif = ((flags & pdfi_font_flag_serif) != 0);
+    bool italic = ((flags & pdfi_font_flag_italic) != 0);
+    bool bold = ((flags & pdfi_font_flag_forcebold) != 0);
+
+    if (fixed) {
+        if (bold) {
+            if (italic) {
+                return "Courier-BoldOblique";
+            }
+            else {
+                return "Courier-Bold";
+            }
+        }
+        else {
+            if (italic) {
+                return "Courier-Oblique";
+            }
+            else {
+                return "Courier";
+            }
+        }
+    }
+    else if (serif) {
+        if (bold) {
+            if (italic) {
+                return "Times-BoldItalic";
+            }
+            else {
+                return "Times-Bold";
+            }
+        }
+        else {
+            if (italic) {
+                return "Times-Italic";
+            }
+            else {
+                return "Times-Roman";
+            }
+        }
+    } else {
+        if (bold) {
+            if (italic) {
+                return "Helvetica-BoldOblique";
+            }
+            else {
+                return "Helvetica-Bold";
+            }
+        }
+        else {
+            if (italic) {
+                return "Helvetica-Oblique";
+            }
+            else {
+                return "Helvetica";
+            }
+        }
+    }
+    return "Helvetica"; /* Really shouldn't ever happen */
+}
+
+static void pdfi_emprint_font_name(pdf_context *ctx, pdf_name *n)
+{
+    int i;
+    for (i = 0; i < n->length; i++) {
+        dmprintf1(ctx->memory, "%c", n->data[i]);
+    }
+}
+
 static int
-pdfi_open_font_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte ** buf, int64_t * buflen)
+pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte **buf, int64_t *buflen)
 {
     int code;
     char fontfname[gp_file_name_sizeof];
     const char *romfsprefix = "%rom%Resource/Font/";
     const int romfsprefixlen = strlen(romfsprefix);
-    pdf_obj *basefont, *mapname;
+    pdf_obj *basefont = NULL, *mapname;
+    pdf_obj *fontname = NULL;
     stream *s;
     const char *fn;
 
-    if (fallback == true) {
-        char fbname[] = "Helvetica";
+    code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
+    if (code < 0)
+        fallback = true;
 
-        code = pdfi_name_alloc(ctx, (byte *)fbname, strlen(fbname), (pdf_obj **) &basefont);
-        pdfi_countup(basefont);
+    if (fallback == true) {
+        const char *fbname;
+        int64_t flags = 0;
+        if (fontdesc != NULL) {
+            code = pdfi_dict_get_int(ctx, fontdesc, "Flags", &flags);
+        }
+        fbname = pdfi_font_substitute_by_flags((int)flags);
+        code = pdfi_name_alloc(ctx, (byte *)fbname, strlen(fbname), (pdf_obj **) &fontname);
+        if (code < 0)
+            return code;
+        pdfi_countup(fontname);
     }
     else {
-        code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
+        fontname = basefont;
+        pdfi_countup(fontname);
     }
-    if (code < 0)
-       return code;
 
-    fn = pdfi_clean_font_name((pdf_name *)basefont);
+    fn = pdfi_clean_font_name((pdf_name *)fontname);
     if (fn != NULL) {
-        pdfi_countdown(basefont);
+        pdfi_countdown(fontname);
 
-        code = pdfi_name_alloc(ctx, (byte *)fn, strlen(fn), (pdf_obj **) &basefont);
-        pdfi_countup(basefont);
+        code = pdfi_name_alloc(ctx, (byte *)fn, strlen(fn), (pdf_obj **) &fontname);
+        if (code < 0)
+            return code;
+        pdfi_countup(fontname);
     }
 
-    code = pdf_fontmap_lookup_font(ctx, (pdf_name *) basefont, &mapname);
+    code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname);
     if (code < 0) {
-        mapname = basefont;
+        mapname = fontname;
         pdfi_countup(mapname);
         code = 0;
     }
@@ -278,6 +375,16 @@ pdfi_open_font_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_dict 
         code = gs_note_error(gs_error_undefinedfilename);
     }
     else {
+        if (basefont) {
+            dmprintf(ctx->memory, "Loading font ");
+            pdfi_emprint_font_name(ctx, (pdf_name *)basefont);
+            dmprintf(ctx->memory, " (or substitute) from ");
+        }
+        else {
+            dmprintf(ctx->memory, "Loading nameless font from ");
+        }
+        dmprintf1(ctx->memory, "%s.\n", fontfname);
+
         sfseek(s, 0, SEEK_END);
         *buflen = sftell(s);
         sfseek(s, 0, SEEK_SET);
@@ -293,6 +400,7 @@ pdfi_open_font_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_dict 
 
     pdfi_countdown(basefont);
     pdfi_countdown(mapname);
+    pdfi_countdown(fontname);
     return code;
 }
 
@@ -452,6 +560,10 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                         break;
                     default:
                         code = gs_note_error(gs_error_invalidfont);
+                }
+                if (code < 0 && substitute == font_embedded) {
+                    dmprintf2(ctx->memory, "**** Error: can't process embedded stream for font object %d %d.\n", font_dict->object_num, font_dict->generation_num);
+                    dmprintf(ctx->memory, "**** Attempting to load substitute font.\n");
                 }
             }
 
