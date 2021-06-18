@@ -111,12 +111,31 @@ static void pdfi_free_pattern_context(pdf_pattern_context_t *context)
     gs_free_object(context->ctx->memory, context, "Free pattern context");
 }
 
+static bool
+pdfi_pattern_purge_proc(gx_color_tile * ctile, void *proc_data)
+{
+    gs_id id = (gs_id)proc_data;
+    if (ctile->id == id)
+        return true;
+    return false;
+}
+
 void pdfi_pattern_cleanup(gs_memory_t * mem, void *p)
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)p;
     pdf_pattern_context_t *context;
+    gx_color_tile *pctile = NULL;
 
     context = (pdf_pattern_context_t *)pinst->client_data;
+
+    /* If are being called from Ghostscript, the clist pattern accumulator device (in
+       the tile cache) *can* outlast outlast our pattern instance, so if the pattern
+       instance is being freed, also remove the entry from the cache
+     */
+    if (gx_pattern_cache_get_entry(context->ctx->pgs, pinst->id, &pctile) == 0
+     && gx_pattern_tile_is_clist(pctile)) {
+        gx_pattern_cache_winnow(gstate_pattern_cache(context->ctx->pgs), pdfi_pattern_purge_proc, (void *)(pctile->id));
+    }
 
     if (context != NULL) {
         pdfi_free_pattern_context(context);
