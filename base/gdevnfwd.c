@@ -82,7 +82,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
     fill_dev_proc(dev, begin_typed_image, gx_forward_begin_typed_image);
     fill_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
-    fill_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
     fill_dev_proc(dev, composite, gx_no_composite);
     fill_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
     fill_dev_proc(dev, text_begin, gx_forward_text_begin);
@@ -542,17 +541,6 @@ gx_forward_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 }
 
 int
-gx_forward_map_color_rgb_alpha(gx_device * dev, gx_color_index color,
-                               gx_color_value prgba[4])
-{
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-
-    return (tdev == 0 ? gx_default_map_color_rgb_alpha(dev, color, prgba) :
-            dev_proc(tdev, map_color_rgb_alpha)(tdev, color, prgba));
-}
-
-int
 gx_forward_get_hardware_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
@@ -971,7 +959,6 @@ null_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, null_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, null_fill_triangle);
     set_dev_proc(dev, draw_thin_line, null_draw_thin_line);
-    set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
     set_dev_proc(dev, composite, gx_non_imaging_composite);
     set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
     set_dev_proc(dev, get_color_mapping_procs, gx_default_DevGray_get_color_mapping_procs);
@@ -1206,7 +1193,6 @@ void gx_forward_device_initialize_procs(gx_device *dev)
     fill_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
     fill_dev_proc(dev, begin_typed_image, gx_forward_begin_typed_image);
     fill_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
-    fill_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
     /* There is no forward_composite (see Drivers.htm). */
     fill_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
     fill_dev_proc(dev, text_begin, gx_forward_text_begin);

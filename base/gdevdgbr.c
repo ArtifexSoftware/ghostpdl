@@ -448,9 +448,9 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
                 }
                 mapped[pixel] = dest;
             }
-            (*dev_proc(dev, map_color_rgb_alpha)) (dev, pixel, rgba);
+            (*dev_proc(dev, map_color_rgb)) (dev, pixel, rgba);
             if (options & GB_ALPHA_FIRST)
-                *dest++ = gx_color_value_to_byte(rgba[3]);
+                *dest++ = 0xff;
             /* Convert to the requested color space. */
             if (options & GB_COLORS_RGB) {
                 dest[0] = gx_color_value_to_byte(rgba[0]);
@@ -477,7 +477,7 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
                                 / lum_all_weights);
             }
             if (options & GB_ALPHA_LAST)
-                *dest++ = gx_color_value_to_byte(rgba[3]);
+                *dest++ = 0xff;
         }
     }
     return 0;

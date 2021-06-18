@@ -56,7 +56,6 @@ tile_clipper_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, copy_alpha, tile_clip_copy_alpha);
     set_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
     set_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
-    set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
     set_dev_proc(dev, composite, gx_no_composite);
     set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
     set_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);

@@ -276,7 +276,6 @@ dev_proc_get_clipping_box(gx_get_largest_clipping_box);
 dev_proc_begin_typed_image(gx_default_begin_typed_image);
 dev_proc_get_bits_rectangle(gx_no_get_bits_rectangle);  /* gives error */
 dev_proc_get_bits_rectangle(gx_default_get_bits_rectangle);
-dev_proc_map_color_rgb_alpha(gx_default_map_color_rgb_alpha);
 dev_proc_composite(gx_no_composite);
 /* default is for ordinary "leaf" devices, null is for */
 /* devices that only care about coverage and not contents. */
@@ -371,7 +370,6 @@ dev_proc_strip_tile_rectangle(gx_forward_strip_tile_rectangle);
 dev_proc_get_clipping_box(gx_forward_get_clipping_box);
 dev_proc_begin_typed_image(gx_forward_begin_typed_image);
 dev_proc_get_bits_rectangle(gx_forward_get_bits_rectangle);
-dev_proc_map_color_rgb_alpha(gx_forward_map_color_rgb_alpha);
 /* There is no forward_composite (see Drivers.htm). */
 dev_proc_get_hardware_params(gx_forward_get_hardware_params);
 dev_proc_text_begin(gx_forward_text_begin);

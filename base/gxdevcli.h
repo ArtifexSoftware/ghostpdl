@@ -1081,12 +1081,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_get_bits_rectangle(proc)\
   dev_t_proc_get_bits_rectangle(proc, gx_device)
 
-#define dev_t_proc_map_color_rgb_alpha(proc, dev_t)\
-  int proc(dev_t *dev,\
-    gx_color_index color, gx_color_value rgba[4])
-#define dev_proc_map_color_rgb_alpha(proc)\
-  dev_t_proc_map_color_rgb_alpha(proc, gx_device)
-
 #define dev_t_proc_composite(proc, dev_t)\
   int proc(dev_t *dev,\
     gx_device **pcdev, const gs_composite_t *pcte,\
@@ -1481,7 +1475,6 @@ typedef struct {
         dev_t_proc_get_clipping_box((*get_clipping_box), dev_t);\
         dev_t_proc_begin_typed_image((*begin_typed_image), dev_t);\
         dev_t_proc_get_bits_rectangle((*get_bits_rectangle), dev_t);\
-        dev_t_proc_map_color_rgb_alpha((*map_color_rgb_alpha), dev_t);\
         dev_t_proc_composite((*composite), dev_t);\
         dev_t_proc_get_hardware_params((*get_hardware_params), dev_t);\
         dev_t_proc_text_begin((*text_begin), dev_t);\

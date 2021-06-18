@@ -1548,46 +1548,6 @@ the values in <code>color_info.depth</code> and
 </dl>
 
 <dl>
-<dt><code>gx_color_index (*map_rgb_alpha_color)(gx_device&nbsp;*,
-gx_color_value&nbsp;red, gx_color_value&nbsp;green,
-gx_color_value&nbsp;blue, gx_color_value&nbsp;alpha)</code> <b><em>[OPTIONAL]</em></b></dt>
-<dd>Map a RGB color and an opacity value to a device color.  The range of
-legal values of the RGB and alpha arguments is 0 to
-<code>gx_max_color_value</code>; <code>alpha</code> = 0 means
-transparent, <code>alpha</code> = <code>gx_max_color_value</code>
-means fully opaque.  The default is to use the
-<code>encode_color</code> procedure and ignore alpha.</dd>
-
-<p>
-Note that if a driver implements <code>map_rgb_alpha_color</code>, it
-must also implement <code>encode_color</code>, and must implement them
-in such a way that
-<code>map_rgb_alpha_color(dev,&nbsp;r,&nbsp;g,&nbsp;b,&nbsp;gx_max_color_value)</code>
-returns the same value as
-<code>encode_color(dev,&nbsp;CV)</code>. </p>
-</dl>
-
-<dl>
-<dt><code>int (*map_color_rgb_alpha)(gx_device&nbsp;*,
-gx_color_index&nbsp;color, gx_color_value&nbsp;rgba[4])</code>
-<b><em>[OPTIONAL]</em></b></dt>
-<dd>Map a device color code to RGB and alpha values.  The default
-implementation calls <code>map_color_rgb</code> and fills in
-<code>gx_max_color_value</code> for alpha.</dd>
-
-<p>
-Note that if a driver implements <code>map_color_rgb_alpha</code>, it
-must also implement <code>decode_color</code>, and must implement them
-in such a way that the first 3 values returned by
-<code>map_color_rgb_alpha</code> are the same as the values returned by
-<code>decode_color</code>.</p>
-
-<p>
-Note that only RGB devices currently support variable opacity; alpha is ignored
-on other devices. The PDF 1.4 transparency features are supported on all devices. </p>
-</dl>
-
-<dl>
 <dt><code>typedef&nbsp;enum&nbsp;{&nbsp;go_text,
 go_graphics&nbsp;}&nbsp;graphic_object_type;&nbsp;int
 (*get_alpha_bits)(gx_device&nbsp;*dev,

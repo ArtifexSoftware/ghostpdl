@@ -1981,16 +1981,6 @@ cmyk_16bit_map_color_cmyk(gx_device * dev, gx_color_index color,
     return 0;
 }
 
-/* Default mapping between RGB+alpha and RGB. */
-
-int
-gx_default_map_color_rgb_alpha(gx_device * dev, gx_color_index color,
-                               gx_color_value prgba[4])
-{
-    prgba[3] = gx_max_color_value;	/* alpha = 1 */
-    return (*dev_proc(dev, map_color_rgb)) (dev, color, prgba);
-}
-
 frac
 gx_unit_frac(float fvalue)
 {

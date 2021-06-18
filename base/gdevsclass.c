@@ -359,14 +359,6 @@ int default_subclass_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect
     return gx_default_get_bits_rectangle(dev, prect, params, unread);
 }
 
-int default_subclass_map_color_rgb_alpha(gx_device *dev, gx_color_index color, gx_color_value rgba[4])
-{
-    if (dev->child)
-        return dev_proc(dev->child, map_color_rgb_alpha)(dev->child, color, rgba);
-    /* else */
-    return gx_default_map_color_rgb_alpha(dev, color, rgba);
-}
-
 int default_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
@@ -835,7 +827,6 @@ void default_subclass_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_clipping_box, default_subclass_get_clipping_box);
     set_dev_proc(dev, begin_typed_image, default_subclass_begin_typed_image);
     set_dev_proc(dev, get_bits_rectangle, default_subclass_get_bits_rectangle);
-    set_dev_proc(dev, map_color_rgb_alpha, default_subclass_map_color_rgb_alpha);
     set_dev_proc(dev, composite, default_subclass_composite);
     set_dev_proc(dev, get_hardware_params, default_subclass_get_hardware_params);
     set_dev_proc(dev, text_begin, default_subclass_text_begin);
