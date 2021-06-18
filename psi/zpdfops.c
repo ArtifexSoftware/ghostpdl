@@ -374,8 +374,12 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
     *(pdfctx->pdf_stream) = *(pdfctx->ps_stream);
 
     code = pdfi_set_input_stream(pdfctx->ctx, pdfctx->pdf_stream);
-    if (code < 0)
+    if (code < 0) {
+        memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
+        gs_free_object(imemory, pdfctx->pdf_stream, "PDFstream copy of PS stream");
+        pdfctx->pdf_stream = NULL;
         return code;
+    }
 
     pdfctx->ctx->end_page = NULL;
     make_tav(op, t_pdfctx, icurrent_space | a_all, pstruct, (obj_header_t *)(pdfctx));
