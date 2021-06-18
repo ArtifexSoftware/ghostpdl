@@ -110,10 +110,10 @@ typedef struct gx_device_pbm_s gx_device_pbm;
 }
 
 /* For all but PBM, we need our own color mapping and alpha procedures. */
-static dev_proc_map_rgb_color(pgm_map_rgb_color);
-static dev_proc_map_rgb_color(ppm_map_rgb_color);
-static dev_proc_map_color_rgb(pgm_map_color_rgb);
-static dev_proc_map_color_rgb(ppm_map_color_rgb);
+static dev_proc_encode_color(pgm_encode_color);
+static dev_proc_encode_color(pnm_encode_color);
+static dev_proc_decode_color(pgm_decode_color);
+static dev_proc_decode_color(ppm_decode_color);
 static dev_proc_map_cmyk_color(pkm_map_cmyk_color);
 static dev_proc_map_color_rgb(pkm_map_color_rgb);
 static dev_proc_get_params(ppm_get_params);
@@ -145,14 +145,10 @@ pbm_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_mono(dev);
 
+    set_dev_proc(dev, encode_color, gx_default_b_w_gray_encode_color);
+    set_dev_proc(dev, decode_color, gx_default_b_w_gray_decode_color);
     set_dev_proc(dev, put_params, ppm_put_params);
     set_dev_proc(dev, output_page, ppm_output_page);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 static void
@@ -162,7 +158,9 @@ ppm_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, get_params, ppm_get_params);
     set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
-    set_dev_proc(dev, map_color_rgb, ppm_map_color_rgb);
+    set_dev_proc(dev, map_color_rgb, ppm_decode_color);
+    set_dev_proc(dev, encode_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, decode_color, ppm_decode_color);
     set_dev_proc(dev, open_device, ppm_open);
 }
 
@@ -171,8 +169,10 @@ pgm_initialize_device_procs(gx_device *dev)
 {
     pbm_initialize_device_procs(dev);
 
-    set_dev_proc(dev, map_rgb_color, pgm_map_rgb_color);
-    set_dev_proc(dev, map_color_rgb, pgm_map_color_rgb);
+    set_dev_proc(dev, map_rgb_color, pgm_encode_color);
+    set_dev_proc(dev, map_color_rgb, pgm_decode_color);
+    set_dev_proc(dev, encode_color, pgm_encode_color);
+    set_dev_proc(dev, decode_color, pgm_decode_color);
     set_dev_proc(dev, open_device, ppm_open);
 }
 
@@ -181,7 +181,8 @@ pnm_initialize_device_procs(gx_device *dev)
 {
     ppm_initialize_device_procs(dev);
 
-    set_dev_proc(dev, map_rgb_color, ppm_map_rgb_color);
+    set_dev_proc(dev, encode_color, pnm_encode_color);
+    set_dev_proc(dev, decode_color, ppm_decode_color);
 }
 
 static void
@@ -190,8 +191,8 @@ pkm_initialize_device_procs(gx_device *dev)
     ppm_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, NULL);
-    set_dev_proc(dev, map_color_rgb, cmyk_1bit_map_color_rgb);
-    set_dev_proc(dev, map_cmyk_color, cmyk_1bit_map_cmyk_color);
+    set_dev_proc(dev, decode_color, cmyk_1bit_map_color_rgb);
+    set_dev_proc(dev, encode_color, cmyk_1bit_map_cmyk_color);
 }
 
 static void
@@ -202,6 +203,9 @@ pam_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, NULL);
     set_dev_proc(dev, map_color_rgb, cmyk_8bit_map_color_rgb);
     set_dev_proc(dev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
+    set_dev_proc(dev, map_rgb_color, cmyk_8bit_map_cmyk_color);
+    set_dev_proc(dev, decode_color, cmyk_8bit_map_color_cmyk);
+    set_dev_proc(dev, encode_color, cmyk_8bit_map_cmyk_color);
 }
 
 static void
@@ -369,8 +373,8 @@ ppm_output_page(gx_device * pdev, int num_copies, int flush)
 /* Map an RGB color to a PGM gray value. */
 /* Keep track of whether the image is black-and-white or gray. */
 static gx_color_index
-pgm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
-{                               /* We round the value rather than truncating it. */
+pgm_encode_color(gx_device * pdev, const gx_color_value cv[])
+{
     gx_color_value gray;
     gray = cv[0] * pdev->color_info.max_gray / gx_max_color_value;
 
@@ -384,15 +388,13 @@ pgm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 
 /* Map a PGM gray value back to an RGB color. */
 static int
-pgm_map_color_rgb(gx_device * dev, gx_color_index color,
-                  gx_color_value prgb[3])
+pgm_decode_color(gx_device * dev, gx_color_index color,
+                  gx_color_value *pgray)
 {
     gx_color_value gray =
     color * gx_max_color_value / dev->color_info.max_gray;
 
-    prgb[0] = gray;
-    prgb[1] = gray;
-    prgb[2] = gray;
+    pgray[0] = gray;
     return 0;
 }
 
@@ -424,7 +426,7 @@ gx_old_default_rgb_map_rgb_color(gx_device * dev,
 /* Map an RGB color to a PPM color tuple. */
 /* Keep track of whether the image is black-and-white, gray, or colored. */
 static gx_color_index
-ppm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
+pnm_encode_color(gx_device * pdev, const gx_color_value cv[])
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
     gx_color_index color =
@@ -442,8 +444,8 @@ ppm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 
 /* Map a PPM color tuple back to an RGB color. */
 static int
-ppm_map_color_rgb(gx_device * dev, gx_color_index color,
-                  gx_color_value prgb[3])
+ppm_decode_color(gx_device * dev, gx_color_index color,
+                 gx_color_value prgb[3])
 {
     uint bitspercolor = dev->color_info.depth / 3;
     uint colormask = (1 << bitspercolor) - 1;

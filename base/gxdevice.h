@@ -250,6 +250,8 @@ dev_proc_output_page(gx_default_output_page);
 dev_proc_close_device(gx_default_close_device);
 dev_proc_map_rgb_color(gx_default_w_b_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_w_b_map_color_rgb);
+dev_proc_encode_color(gx_default_w_b_gray_encode_color);
+dev_proc_decode_color(gx_default_w_b_gray_decode_color);
 #define gx_default_map_rgb_color gx_default_w_b_map_rgb_color
 #define gx_default_map_color_rgb gx_default_w_b_map_color_rgb
 dev_proc_copy_mono(gx_default_copy_mono);
@@ -321,6 +323,8 @@ int gx_default_initialize_device(gx_device *dev);
 /* true CMYK, and 1-bit CMYK color. */
 dev_proc_map_rgb_color(gx_default_b_w_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_b_w_map_color_rgb);
+dev_proc_encode_color(gx_default_b_w_gray_encode_color);
+dev_proc_decode_color(gx_default_b_w_gray_decode_color);
 dev_proc_map_rgb_color(gx_default_gray_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_gray_map_color_rgb);
 dev_proc_map_color_rgb(gx_default_rgb_map_color_rgb);
