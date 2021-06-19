@@ -775,7 +775,7 @@ static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *pa
         for (i = 0; i < transfer_map_size; i++) {
             float v, f;
 
-            f = (1.0f / transfer_map_size) * i;
+            f = (1.0f / (transfer_map_size - 1)) * i;
 
             code = gs_function_evaluate(pfn, (const float *)&f, &v);
             if (code < 0) {
@@ -864,7 +864,7 @@ static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *
         for (i = 0; i < transfer_map_size; i++) {
             float v, f;
 
-            f = (1.0f / transfer_map_size) * i;
+            f = (1.0f / (transfer_map_size - 1)) * i;
 
             code = gs_function_evaluate(pfn, (const float *)&f, &v);
             if (code < 0) {
@@ -1007,7 +1007,7 @@ static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page
                 float v, f;
                 frac value;
 
-                f = (1.0f / transfer_map_size) * i;
+                f = (1.0f / (transfer_map_size - 1)) * i;
 
                 code = gs_function_evaluate(pfn[j], (const float *)&f, &v);
                 if (code < 0)
@@ -1058,7 +1058,7 @@ static int pdfi_set_gray_transfer(pdf_context *ctx, pdf_obj *tr_obj, pdf_dict *p
     for (i = 0; i < transfer_map_size; i++) {
         float v, f;
 
-        f = (1.0f / transfer_map_size) * i;
+        f = (1.0f / (transfer_map_size - 1)) * i;
 
         code = gs_function_evaluate(pfn, (const float *)&f, &v);
         if (code < 0) {
