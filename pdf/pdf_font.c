@@ -207,7 +207,7 @@ enum
 /* Barefaced theft from mupdf! */
 static const char *pdfi_base_font_names[][10] =
 {
-  { "Courier", "CourierNew", "CourierNewPSMT", NULL },
+  { "Courier", "CourierNew", "CourierNewPSMT", "CourierStd", NULL },
   { "Courier-Bold", "CourierNew,Bold", "Courier,Bold", "CourierNewPS-BoldMT", "CourierNew-Bold", NULL },
   { "Courier-Oblique", "CourierNew,Italic", "Courier,Italic", "CourierNewPS-ItalicMT", "CourierNew-Italic", NULL },
   { "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic", "CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", NULL },
