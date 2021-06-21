@@ -244,7 +244,6 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target, gs_memory_t *mem)
         set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
         set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
         set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
-        set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
         set_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
         set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
         set_dev_proc(dev, encode_color, gx_forward_encode_color);

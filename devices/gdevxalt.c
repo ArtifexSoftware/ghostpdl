@@ -805,21 +805,6 @@ x_gray_alt_map_color(gx_device * dev, gx_color_index color,
 
 /* Device procedures */
 
-/* We encode a complemented alpha value in the top 8 bits of the */
-/* device color. */
-static gx_color_index
-x_alpha_map_rgb_alpha_color(gx_device * dev,
- gx_color_value r, gx_color_value g, gx_color_value b, gx_color_value alpha)
-{
-    gx_color_index color;
-    gx_color_value cv[3];
-    byte abyte = alpha >> (gx_color_value_bits - 8);
-    cv[0] = r; cv[1] = g; cv[2] = b;
-    color = gx_forward_map_rgb_color(dev, cv);
-    return (abyte == 0 ? (gx_color_index)0xff << 24 :
-            ((gx_color_index) (abyte ^ 0xff) << 24) + color);
-}
-
 /* ---------------- Permuted RGB16/32 procedures ---------------- */
 
 /* Device procedures */
@@ -846,7 +831,6 @@ rgbx_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_params, x_wrap_get_params);
     set_dev_proc(dev, put_params, x_wrap_put_params);
     set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
-    set_dev_proc(dev, map_rgb_alpha_color, x_alpha_map_rgb_alpha_color);
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
 }
 

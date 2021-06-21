@@ -1026,7 +1026,6 @@ gx_complete_halftone(gx_device_color *pdevc, int num_comps, gx_device_halftone *
     pdevc->type = gx_dc_type_ht_colored;
     pdevc->colors.colored.c_ht = pdht;
     pdevc->colors.colored.num_components = num_comps;
-    pdevc->colors.colored.alpha = max_ushort;
     for (i = 0; i < num_comps; i++)
         mask |= ((pdevc->colors.colored.c_level[i] != 0 ? 1 : 0) << i);
     pdevc->colors.colored.plane_mask = mask;

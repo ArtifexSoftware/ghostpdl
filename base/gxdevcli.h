@@ -942,15 +942,6 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_map_cmyk_color(proc)\
   dev_t_proc_map_cmyk_color(proc, gx_device)
 
-                /* Added in release 2.7.1 */
-
-#define dev_t_proc_map_rgb_alpha_color(proc, dev_t)\
-  gx_color_index proc(dev_t *dev,\
-    gx_color_value red, gx_color_value green, gx_color_value blue,\
-    gx_color_value alpha)
-#define dev_proc_map_rgb_alpha_color(proc)\
-  dev_t_proc_map_rgb_alpha_color(proc, gx_device)
-
                 /* Added in release 2.8.1 */
 
 #define dev_t_proc_get_page_device(proc, dev_t)\
@@ -1089,12 +1080,6 @@ typedef enum FILTER_FLAGS {
     gs_get_bits_params_t *params, gs_int_rect **unread)
 #define dev_proc_get_bits_rectangle(proc)\
   dev_t_proc_get_bits_rectangle(proc, gx_device)
-
-#define dev_t_proc_map_color_rgb_alpha(proc, dev_t)\
-  int proc(dev_t *dev,\
-    gx_color_index color, gx_color_value rgba[4])
-#define dev_proc_map_color_rgb_alpha(proc)\
-  dev_t_proc_map_color_rgb_alpha(proc, gx_device)
 
 #define dev_t_proc_composite(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -1476,7 +1461,6 @@ typedef struct {
         dev_t_proc_get_params((*get_params), dev_t);\
         dev_t_proc_put_params((*put_params), dev_t);\
         dev_t_proc_map_cmyk_color((*map_cmyk_color), dev_t);\
-        dev_t_proc_map_rgb_alpha_color((*map_rgb_alpha_color), dev_t);\
         dev_t_proc_get_page_device((*get_page_device), dev_t);\
         dev_t_proc_get_alpha_bits((*get_alpha_bits), dev_t);\
         dev_t_proc_copy_alpha((*copy_alpha), dev_t);\
@@ -1491,7 +1475,6 @@ typedef struct {
         dev_t_proc_get_clipping_box((*get_clipping_box), dev_t);\
         dev_t_proc_begin_typed_image((*begin_typed_image), dev_t);\
         dev_t_proc_get_bits_rectangle((*get_bits_rectangle), dev_t);\
-        dev_t_proc_map_color_rgb_alpha((*map_color_rgb_alpha), dev_t);\
         dev_t_proc_composite((*composite), dev_t);\
         dev_t_proc_get_hardware_params((*get_hardware_params), dev_t);\
         dev_t_proc_text_begin((*text_begin), dev_t);\

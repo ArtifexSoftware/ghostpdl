@@ -271,7 +271,6 @@ struct gx_device_color_s {
             ushort num_components;
             byte c_base[GX_DEVICE_COLOR_MAX_COMPONENTS];
             uint c_level[GX_DEVICE_COLOR_MAX_COMPONENTS];
-            ushort /*gx_color_value */ alpha;
 #if GX_DEVICE_COLOR_MAX_COMPONENTS <= ARCH_SIZEOF_SHORT * 8
             ushort plane_mask;
 #else
@@ -371,7 +370,6 @@ struct gx_device_color_saved_s {
         struct _svcol {
             byte    c_base[GX_DEVICE_COLOR_MAX_COMPONENTS];
             uint    c_level[GX_DEVICE_COLOR_MAX_COMPONENTS];
-            ushort  alpha;
         }               colored;
         struct _svdevn {
             ushort values[GX_DEVICE_COLOR_MAX_COMPONENTS];

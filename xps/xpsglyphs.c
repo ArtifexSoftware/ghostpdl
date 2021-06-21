@@ -781,7 +781,7 @@ xps_parse_glyphs(xps_context_t *ctx,
                 gs_setlinewidth(ctx->pgs, font_size * 0.02);
             else
                 /* Undo CTM scaling */
-                gs_setlinewidth(ctx->pgs, font_size * 0.02 * fabs(ctx->pgs->ctm.xx));
+                gs_setlinewidth(ctx->pgs, font_size * 0.02 * fabs(ctx->pgs->ctm.xx) / (ctx->pgs->device->HWResolution[0] / 72.0));
             gs_settextrenderingmode(ctx->pgs, 2);
         }
 

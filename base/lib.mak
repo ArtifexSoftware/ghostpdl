@@ -1011,7 +1011,7 @@ $(GLOBJ)gsgcache.$(OBJ) : $(GLSRC)gsgcache.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gsgcache.$(OBJ) $(C_) $(GLSRC)gsgcache.c
 
 $(GLOBJ)gsht.$(OBJ) : $(GLSRC)gsht.c $(AK) $(gx_h) $(gserrors_h)\
- $(memory__h) $(string__h) $(gsstruct_h) $(gsutil_h) $(gxarith_h)\
+ $(memory__h) $(string__h) $(gsstruct_h) $(gsutil_h) $(gxarith_h) $(gxdevsop_h)\
  $(gxdevice_h) $(gzht_h) $(gzstate_h) $(gxfmap_h) $(gp_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsht.$(OBJ) $(C_) $(GLSRC)gsht.c
 

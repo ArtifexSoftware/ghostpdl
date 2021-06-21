@@ -26,6 +26,7 @@
 #include "gxarith.h"            /* for igcd */
 #include "gzstate.h"
 #include "gxdevice.h"           /* for gzht.h */
+#include "gxdevsop.h"
 #include "gzht.h"
 #include "gxfmap.h"             /* For effective transfer usage in threshold */
 #include "gp.h"
@@ -645,21 +646,52 @@ int
 gs_color_name_component_number(gx_device * dev, const char * pname,
                                 int name_size, int halftonetype)
 {
-    int num_colorant;
+    int num_colorant = -1;	/* initialize to "unknown" */
+    int color_component_type = NO_COMP_NAME_TYPE_HT;
+    bool devn = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
 
-#define check_colorant_name(dev, name) \
-    ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), NO_COMP_NAME_TYPE_HT))
+#define check_colorant_name(dev, name, component_type) \
+    ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), component_type))
 
-#define check_colorant_name_length(dev, name, length) \
-    ((*dev_proc(dev, get_color_comp_index)) (dev, name, length, NO_COMP_NAME_TYPE_HT))
+#define check_colorant_name_length(dev, name, length, component_type) \
+    ((*dev_proc(dev, get_color_comp_index)) (dev, name, length, component_type))
 
 #define check_name(str, pname, length) \
     ((strlen(str) == length) && (strncmp(pname, str, length) == 0))
 
     /*
+     * Check if this is the default component
+     */
+    if (check_name("Default", pname, name_size))
+        return GX_DEVICE_COLOR_MAX_COMPONENTS;
+
+    if (check_cmyk_color_model_comps(dev))
+        color_component_type = SEPARATION_NAME;		/* allow separations to be added */
+
+    /*
      * Check if this is a device colorant.
      */
-    num_colorant = check_colorant_name_length(dev, pname, name_size);
+    /* Halftones set by setcolorscreen, and (we think) */
+    /* Type 2, 4, and 5 halftones, are supposed to work */
+    /* for both RGB and CMYK, so we need a special check here. */
+    if (halftonetype == ht_type_colorscreen ||
+        halftonetype == ht_type_multiple_colorscreen ||
+        (halftonetype == ht_type_multiple && devn)) {
+        /* Note that Red, Green, Blue and/or Gray can be added using setcolorspace */
+        /* we just don't automatically add it as a result of sethalftone           */
+        /* The NO_COMP_NAME_TYPE_HT won't add colorants                            */
+        if (check_name("Red", pname, name_size))
+            num_colorant = check_colorant_name(dev, "Cyan", NO_COMP_NAME_TYPE_HT);
+        else if (check_name("Green", pname, name_size))
+            num_colorant = check_colorant_name(dev, "Magenta", NO_COMP_NAME_TYPE_HT);
+        else if (check_name("Blue", pname, name_size))
+            num_colorant = check_colorant_name(dev, "Yellow", NO_COMP_NAME_TYPE_HT);
+        else if (check_name("Gray", pname, name_size))
+            num_colorant = check_colorant_name(dev, "Black", NO_COMP_NAME_TYPE_HT);
+    }
+    if (num_colorant < 0)
+        num_colorant = check_colorant_name_length(dev, pname, name_size, color_component_type);
+
     if (num_colorant >= 0) {
         /*
          * The device will return GX_DEVICE_COLOR_MAX_COMPONENTS if the
@@ -672,41 +704,10 @@ gs_color_name_component_number(gx_device * dev, const char * pname,
             num_colorant = -1;
         return num_colorant;
     }
-
-    /*
-     * Check if this is the default component
-     */
-    if (check_name("Default", pname, name_size))
-        return GX_DEVICE_COLOR_MAX_COMPONENTS;
-
-    /* Halftones set by setcolorscreen, and (we think) */
-    /* Type 2 and Type 4 halftones, are supposed to work */
-    /* for both RGB and CMYK, so we need a special check here. */
-    if (halftonetype == ht_type_colorscreen ||
-        halftonetype == ht_type_multiple_colorscreen) {
-        if (check_name("Red", pname, name_size))
-            num_colorant = check_colorant_name(dev, "Cyan");
-        else if (check_name("Green", pname, name_size))
-            num_colorant = check_colorant_name(dev, "Magenta");
-        else if (check_name("Blue", pname, name_size))
-            num_colorant = check_colorant_name(dev, "Yellow");
-        else if (check_name("Gray", pname, name_size))
-            num_colorant = check_colorant_name(dev, "Black");
-        /*
-         * The device will return GX_DEVICE_COLOR_MAX_COMPONENTS if the
-         * colorant is logically present in the device but not being used
-         * because a SeparationOrder parameter is specified.  Since we are
-         * using this value to indicate 'Default', we use -1 to indicate
-         * that the colorant is not really being used.
-         */
-        if (num_colorant == GX_DEVICE_COLOR_MAX_COMPONENTS)
-            num_colorant = -1;
-
 #undef check_colorant_name
 #undef check_colorant_name_length
 #undef check_name
 
-    }
     return num_colorant;
 }
 

@@ -372,19 +372,7 @@ static gx_color_index
 pgm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {                               /* We round the value rather than truncating it. */
     gx_color_value gray;
-    /* TO_DO_DEVICEN  - Kludge to emulate pre DeviceN math errors */
-#if 1
-    gx_color_value r, g, b;
-
-    r = cv[0]; g = cv[0]; b = cv[0];
-    gray = ((r * (ulong) lum_red_weight) +
-     (g * (ulong) lum_green_weight) +
-     (b * (ulong) lum_blue_weight) +
-     (lum_all_weights / 2)) / lum_all_weights
-    * pdev->color_info.max_gray / gx_max_color_value;
-#else       /* Should be ... */
     gray = cv[0] * pdev->color_info.max_gray / gx_max_color_value;
-#endif
 
     if (!(gray == 0 || gray == pdev->color_info.max_gray)) {
         gx_device_pbm * const bdev = (gx_device_pbm *)pdev;

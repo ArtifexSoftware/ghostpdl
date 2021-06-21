@@ -550,7 +550,6 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
          * as the conditions set up in gx_compute_text_oversampling
          * preclude this function ever being called in a way that
          * will cause this else clause to be executed. */
-#ifndef ENABLE_IMPOSSIBLE_ALPHA_CODE
         static int THIS_NEVER_HAPPENS = 0;
 
         if (THIS_NEVER_HAPPENS == 0) {
@@ -561,28 +560,6 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
             THIS_NEVER_HAPPENS = 1;
         }
         return_error(gs_error_unknownerror);
-#else /* ENABLE_IMPOSSIBLE_ALPHA_CODE */
-        /* Use an alpha-buffer device to compress as we go. */
-        /* Preserve the reference counts, if any. */
-        rc_header rc;
-
-        rc = dev2->rc;
-        gs_make_mem_alpha_device(dev2, dev2->memory, NULL, depth);
-        dev2->rc = rc;
-        dev2->width = iwidth >> log2_xscale;
-        dev2->height = iheight >> log2_yscale;
-        rc = dev->rc;
-        gs_make_mem_abuf_device(dev, dev->memory, (gx_device *) dev2,
-                                pscale, depth, 0, false);
-        dev->rc = rc;
-        dev->width = iwidth;
-        dev->height = 2 << log2_yscale;
-        gdev_mem_bitmap_size(dev, &isize);	/* Assume less than max_ulong */
-        gdev_mem_bitmap_size(dev2, &isize2);	/* Assume less than max_ulong */
-        isize += isize2;	/* Assume less than max_ulong */
-        dev->HWResolution[0] = HWResolution0 * (1 >> log2_xscale);
-        dev->HWResolution[1] = HWResolution1 * (1 >> log2_yscale);
-#endif /* ENABLE_IMPOSSIBLE_ALPHA_CODE */
     }
     icdsize = isize + sizeof_cached_char;
     code = alloc_char(dir, icdsize, &cc);

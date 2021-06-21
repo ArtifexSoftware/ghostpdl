@@ -49,14 +49,12 @@ mask_clip_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_params, gx_forward_get_params);
     set_dev_proc(dev, put_params, gx_forward_put_params);
     set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
-    set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
     set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
     set_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
     set_dev_proc(dev, copy_alpha, mask_clip_copy_alpha);
     set_dev_proc(dev, strip_tile_rectangle, mask_clip_strip_tile_rectangle);
     set_dev_proc(dev, get_clipping_box, mask_clip_get_clipping_box);
     set_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
-    set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
     set_dev_proc(dev, composite, gx_no_composite);
     set_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
     set_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);

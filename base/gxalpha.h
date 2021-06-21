@@ -35,7 +35,6 @@
  * are the following:
  *      - alphaimage, if it doesn't assume premultiplication (see below)
  *      - readimage
- *      - The cmap_rgb_alpha_ procedures in gxcmap.c
  *      - [color]image, if they are supposed to use currentalpha (see below)
  *      - The compositing code in gsalphac.c
  *

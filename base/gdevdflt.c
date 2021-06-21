@@ -601,7 +601,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, get_params, gx_default_get_params);
     fill_dev_proc(dev, put_params, gx_default_put_params);
     /* see below for map_cmyk_color */
-    fill_dev_proc(dev, map_rgb_alpha_color, gx_default_map_rgb_alpha_color);
     fill_dev_proc(dev, get_page_device, gx_default_get_page_device);
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
     fill_dev_proc(dev, copy_alpha, gx_default_copy_alpha);
@@ -619,7 +618,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, get_clipping_box, gx_default_get_clipping_box);
     fill_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     fill_dev_proc(dev, get_bits_rectangle, gx_default_get_bits_rectangle);
-    fill_dev_proc(dev, map_color_rgb_alpha, gx_default_map_color_rgb_alpha);
     fill_dev_proc(dev, composite, gx_default_composite);
     fill_dev_proc(dev, get_hardware_params, gx_default_get_hardware_params);
     fill_dev_proc(dev, text_begin, gx_default_text_begin);
@@ -1212,7 +1210,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, get_params, dev_proc(&prototype, get_params));
     set_dev_proc(dest, put_params, dev_proc(&prototype, put_params));
     set_dev_proc(dest, map_cmyk_color, dev_proc(&prototype, map_cmyk_color));
-    set_dev_proc(dest, map_rgb_alpha_color, dev_proc(&prototype, map_rgb_alpha_color));
     set_dev_proc(dest, get_page_device, dev_proc(&prototype, get_page_device));
     set_dev_proc(dest, get_alpha_bits, dev_proc(&prototype, get_alpha_bits));
     set_dev_proc(dest, copy_alpha, dev_proc(&prototype, copy_alpha));
@@ -1226,7 +1223,6 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, get_clipping_box, dev_proc(&prototype, get_clipping_box));
     set_dev_proc(dest, begin_typed_image, dev_proc(&prototype, begin_typed_image));
     set_dev_proc(dest, get_bits_rectangle, dev_proc(&prototype, get_bits_rectangle));
-    set_dev_proc(dest, map_color_rgb_alpha, dev_proc(&prototype, map_color_rgb_alpha));
     set_dev_proc(dest, composite, dev_proc(&prototype, composite));
     set_dev_proc(dest, get_hardware_params, dev_proc(&prototype, get_hardware_params));
     set_dev_proc(dest, text_begin, dev_proc(&prototype, text_begin));

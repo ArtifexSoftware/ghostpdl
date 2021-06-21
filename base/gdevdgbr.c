@@ -211,11 +211,6 @@ gx_get_bits_copy_cmyk_1bit(byte *dest_line, uint dest_raster,
  * A good optimizing compiler would compile them in-line.
  */
 static int
-    gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
-                                  gs_get_bits_params_t * params,
-                              const gs_get_bits_params_t *stored,
-                              const byte * src_base, uint dev_raster,
-                              int x_offset, uint raster),
     gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
                               gs_get_bits_params_t * params,
                               const gs_get_bits_params_t *stored,
@@ -304,10 +299,7 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
             }
         } else if (options & ~stored_options & GB_COLORS_NATIVE) {
             /* Convert standard colors to native. */
-            code = gx_get_bits_std_to_native(dev, x, w, h, params, stored,
-                                             src_base, dev_raster,
-                                             x_offset, raster);
-            options = params->options;
+            return_error(gs_error_rangecheck);
         } else {
             /* Convert native colors to standard. */
             code = gx_get_bits_native_to_std(dev, x, w, h, params, stored,
@@ -362,121 +354,6 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
     } else
         return_error(gs_error_rangecheck);
     return code;
-}
-
-/*
- * Convert standard colors to native.  Note that the source
- * may have depths other than 8 bits per component.
- */
-static int
-gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
-                          gs_get_bits_params_t * params,
-                          const gs_get_bits_params_t *stored,
-                          const byte * src_base, uint dev_raster,
-                          int x_offset, uint raster)
-{
-    int depth = dev->color_info.depth;
-    int dest_bit_offset = x_offset * depth;
-    byte *dest_line = params->data[0] + (dest_bit_offset >> 3);
-    int ncolors =
-        (stored->options & GB_COLORS_RGB ? 3 :
-         stored->options & GB_COLORS_CMYK ? 4 :
-         stored->options & GB_COLORS_GRAY ? 1 : -1);
-    int ncomp = ncolors +
-        ((stored->options & (GB_ALPHA_FIRST | GB_ALPHA_LAST)) != 0);
-    int src_depth = GB_OPTIONS_DEPTH(stored->options);
-    int src_bit_offset = x * src_depth * ncomp;
-    const byte *src_line = src_base + (src_bit_offset >> 3);
-    gx_color_value src_max = (1 << src_depth) - 1;
-#define v2cv(value) ((ulong)(value) * gx_max_color_value / src_max)
-    gx_color_value alpha_default = src_max;
-    const gx_device *cmdev;
-    const gx_cm_color_map_procs *cmprocs;
-
-    cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
-
-    params->options &= ~GB_COLORS_ALL | GB_COLORS_NATIVE;
-    for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
-        int i;
-        const byte *src = src_line;
-        int sbit = src_bit_offset & 7;
-        byte *dest = dest_line;
-        int dbit = dest_bit_offset & 7;
-        byte dbyte = (dbit ? (byte)(*dest & (0xff00 >> dbit)) : 0);
-
-#define v2frac(value) ((long)(value) * frac_1 / src_max)
-
-        for (i = 0; i < w; ++i) {
-            int j;
-            uchar k;
-            frac sc[4], dc[GX_DEVICE_COLOR_MAX_COMPONENTS];
-            gx_color_value v[GX_DEVICE_COLOR_MAX_COMPONENTS];
-            gx_color_value va = alpha_default;
-            gx_color_index pixel;
-            bool do_alpha = false;
-
-            /* Fetch the source data. */
-            if (stored->options & GB_ALPHA_FIRST) {
-                if (sample_load_next16(&va, &src, &sbit, src_depth) < 0)
-                    return_error(gs_error_rangecheck);
-                va = v2cv(va);
-                do_alpha = true;
-            }
-            for (j = 0; j < ncolors; ++j) {
-                gx_color_value vj;
-
-                if (sample_load_next16(&vj, &src, &sbit, src_depth) < 0)
-                    return_error(gs_error_rangecheck);
-                sc[j] = v2frac(vj);
-            }
-            if (stored->options & GB_ALPHA_LAST) {
-                if (sample_load_next16(&va, &src, &sbit, src_depth) < 0)
-                    return_error(gs_error_rangecheck);
-                va = v2cv(va);
-                do_alpha = true;
-            }
-
-            /* Convert and store the pixel value. */
-            if (do_alpha) {
-                for (j = 0; j < ncolors; j++)
-                    v[j] = frac2cv(sc[j]);
-                if (ncolors == 1)
-                    v[2] = v[1] = v[0];
-                pixel = dev_proc(dev, map_rgb_alpha_color)
-                    (dev, v[0], v[1], v[2], va);
-            } else {
-
-                switch (ncolors) {
-                case 1:
-                    cmprocs->map_gray(cmdev, sc[0], dc);
-                    break;
-                case 3:
-                    cmprocs->map_rgb(cmdev, 0, sc[0], sc[1], sc[2], dc);
-                    break;
-                case 4:
-                    cmprocs->map_cmyk(cmdev, sc[0], sc[1], sc[2], sc[3], dc);
-                    break;
-                default:
-                    return_error(gs_error_rangecheck);
-                }
-
-                for (k = 0; k < dev->color_info.num_components; k++)
-                    v[k] = frac2cv(dc[k]);
-
-                pixel = dev_proc(dev, encode_color)(dev, v);
-            }
-            if (sizeof(pixel) > 4) {
-                if (sample_store_next64(pixel, &dest, &dbit, depth, &dbyte) < 0)
-                    return_error(gs_error_rangecheck);
-            }
-            else {
-                if (sample_store_next32(pixel, &dest, &dbit, depth, &dbyte) < 0)
-                    return_error(gs_error_rangecheck);
-            }
-        }
-        sample_store_flush(dest, dbit, dbyte);
-    }
-    return 0;
 }
 
 /*
@@ -571,9 +448,9 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
                 }
                 mapped[pixel] = dest;
             }
-            (*dev_proc(dev, map_color_rgb_alpha)) (dev, pixel, rgba);
+            (*dev_proc(dev, map_color_rgb)) (dev, pixel, rgba);
             if (options & GB_ALPHA_FIRST)
-                *dest++ = gx_color_value_to_byte(rgba[3]);
+                *dest++ = 0xff;
             /* Convert to the requested color space. */
             if (options & GB_COLORS_RGB) {
                 dest[0] = gx_color_value_to_byte(rgba[0]);
@@ -600,7 +477,7 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
                                 / lum_all_weights);
             }
             if (options & GB_ALPHA_LAST)
-                *dest++ = gx_color_value_to_byte(rgba[3]);
+                *dest++ = 0xff;
         }
     }
     return 0;

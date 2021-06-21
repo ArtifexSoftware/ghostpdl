@@ -38,9 +38,6 @@
   void proc(frac, frac, frac, frac, gx_device_color *,\
             const gs_gstate *, gx_device *, gs_color_select_t,\
             const gs_color_space *)
-#define cmap_proc_rgb_alpha(proc)\
-  void proc(frac, frac, frac, frac, gx_device_color *,\
-               const gs_gstate *, gx_device *, gs_color_select_t)
 #define cmap_proc_separation(proc)\
   void proc(frac, gx_device_color *, const gs_gstate *,\
                gx_device *, gs_color_select_t, const gs_color_space *)
@@ -110,7 +107,6 @@ struct gx_color_map_procs_s {
     cmap_proc_gray((*map_gray));
     cmap_proc_rgb((*map_rgb));
     cmap_proc_cmyk((*map_cmyk));
-    cmap_proc_rgb_alpha((*map_rgb_alpha));
     cmap_proc_separation((*map_separation));
     cmap_proc_devicen((*map_devicen));
     cmap_proc_is_halftoned((*is_halftoned));
@@ -142,8 +138,6 @@ void gx_set_cmap_procs(gs_gstate *, const gx_device *);
   ((pgs)->cmap_procs->map_rgb)(cr, cg, cb, pdc, pgs, dev, select)
 #define gx_remap_concrete_cmyk(cc, cm, cy, ck, pdc, pgs, dev, select, pcs)\
   ((pgs)->cmap_procs->map_cmyk)(cc, cm, cy, ck, pdc, pgs, dev, select, pcs)
-#define gx_remap_concrete_rgb_alpha(cr, cg, cb, ca, pdc, pgs, dev, select)\
-  ((pgs)->cmap_procs->map_rgb_alpha)(cr, cg, cb, ca, pdc, pgs, dev, select)
 #define gx_remap_concrete_separation(pcc, pdc, pgs, dev, select, pcs)\
   ((pgs)->cmap_procs->map_separation)(pcc, pdc, pgs, dev, select, pcs)
 #define gx_remap_concrete_devicen(pcc, pdc, pgs, dev, select, pcs)\

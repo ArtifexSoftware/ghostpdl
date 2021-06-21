@@ -185,9 +185,7 @@ reduce_drawing_color(gx_device_color *ppdc, gx_device_plane_extract *edev,
             gx_devn_reduce_colored_halftone(ppdc, (gx_device *)edev);
             ppdc->colors.pure = COLOR_PIXEL(edev, ppdc->colors.pure);
             reduced = REDUCE_PURE(edev, gx_dc_pure_color(ppdc));
-        } else if (ppdc->colors.colored.alpha != gx_max_color_value)
-            return REDUCE_FAILED; /* can't reduce */
-        else {
+        } else {
             gx_devn_reduce_colored_halftone(ppdc, (gx_device *)edev);
             ppdc->colors.binary.color[0] =
                 COLOR_PIXEL(edev, ppdc->colors.binary.color[0]);
@@ -874,21 +872,6 @@ plane_cmap_cmyk(frac c, frac m, frac y, frac k, gx_device_color * pdc,
                            (gx_device *)edev, select, NULL);
     reduce_drawing_color(pdc, edev, &dcolor, &lop);
 }
-static void
-plane_cmap_rgb_alpha(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
-    const gs_gstate *pgs_image, gx_device *dev, gs_color_select_t select)
-{
-    const plane_image_enum_t *ppie =
-        (const plane_image_enum_t *)pgs_image->client_data;
-    gx_device_plane_extract * const edev =
-        (gx_device_plane_extract *)ppie->dev;
-    gs_logical_operation_t lop = gs_current_logical_op_inline(pgs_image);
-    gx_device_color dcolor;
-
-    gx_remap_concrete_rgb_alpha(r, g, b, alpha, &dcolor, ppie->pgs,
-                                (gx_device *)edev, select);
-    reduce_drawing_color(pdc, edev, &dcolor, &lop);
-}
 static bool
 plane_cmap_is_halftoned(const gs_gstate *pgs_image, gx_device *dev)
 {
@@ -896,7 +879,7 @@ plane_cmap_is_halftoned(const gs_gstate *pgs_image, gx_device *dev)
 }
 
 static const gx_color_map_procs plane_color_map_procs = {
-    plane_cmap_gray, plane_cmap_rgb, plane_cmap_cmyk, plane_cmap_rgb_alpha,
+    plane_cmap_gray, plane_cmap_rgb, plane_cmap_cmyk,
     NULL, NULL, plane_cmap_is_halftoned
 };
 static const gx_color_map_procs *
