@@ -989,6 +989,7 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
                     code = pdfi_array_get(ctx, fenc, (uint64_t)i, &o);
                     if (code >= 0)
                         code = pdfi_array_put(ctx, (pdf_array *)*Encoding, (uint64_t)i, o);
+                    pdfi_countdown(o);
                 }
                 if (code < 0) {
                     pdfi_countdown(*Encoding);
