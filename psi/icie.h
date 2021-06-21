@@ -53,7 +53,7 @@ int dict_proc_array_param(const gs_memory_t *mem, const ref *pdict,
 
 /* Get 3 procedures from a dictionary. */
 int dict_proc3_param(const gs_memory_t *mem, const ref *pdref,
-                     const char *kstr, ref proc3[3]);
+                     const char *kstr, ref *proc3);
 
 /* Get WhitePoint and BlackPoint values. */
 int cie_points_param(const gs_memory_t *mem,
