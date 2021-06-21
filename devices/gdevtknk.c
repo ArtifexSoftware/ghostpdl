@@ -39,12 +39,8 @@ tekink_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, map_rgb_color, tekink_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, tekink_map_color_rgb);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, tekink_map_rgb_color);
+    set_dev_proc(dev, decode_color, tekink_map_color_rgb);
 }
 
 /*

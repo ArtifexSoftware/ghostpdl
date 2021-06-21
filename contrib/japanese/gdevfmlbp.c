@@ -44,9 +44,6 @@ static dev_proc_print_page(fmlbp_print_page);
 static void fmlbp_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_mono(dev);
-
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 #ifdef FMLBP_NOADJUST_MARGIN

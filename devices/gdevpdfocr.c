@@ -152,12 +152,8 @@ pdfocr8_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, pdf_ocr_close);
     set_dev_proc(dev, get_params, pdfocr_get_params_downscale);
     set_dev_proc(dev, put_params, pdfocr_put_params_downscale);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_pdf_image gs_pdfocr8_device = {
@@ -189,12 +185,6 @@ pdfocr24_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, pdf_ocr_close);
     set_dev_proc(dev, get_params, pdfocr_get_params_downscale);
     set_dev_proc(dev, put_params, pdfocr_put_params_downscale);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 const gx_device_pdf_image gs_pdfocr24_device = {
@@ -226,6 +216,8 @@ pdfocr32_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, pdf_ocr_close);
     set_dev_proc(dev, get_params, pdfocr_get_params_downscale_cmyk);
     set_dev_proc(dev, put_params, pdfocr_put_params_downscale_cmyk);
+    set_dev_proc(dev, decode_color, cmyk_8bit_map_color_cmyk);
+    set_dev_proc(dev, encode_color, cmyk_8bit_map_cmyk_color);
 }
 
 const gx_device_pdf_image gs_pdfocr32_device = {

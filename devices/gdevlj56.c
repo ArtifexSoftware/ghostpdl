@@ -66,12 +66,8 @@ lj5gray_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, open_device, ljet5_open);
     set_dev_proc(dev, close_device, ljet5_close);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_gray_encode_color);
+    set_dev_proc(dev, decode_color, gx_default_gray_decode_color);
 }
 
 const gx_device_printer gs_lj5gray_device = {
