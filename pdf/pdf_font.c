@@ -640,6 +640,7 @@ int pdfi_load_dict_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_
     gs_font *pfont;
 
     if (font_dict->type == PDF_FONT) {
+        pdfi_countup(font_dict);
         pfont = (gs_font *)((pdf_font *)font_dict)->pfont;
         code = 0;
     }
@@ -654,8 +655,13 @@ int pdfi_load_dict_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_
         goto exit;
 
     /* Everything looks good, set the font, unless it's the current font */
-    if (pfont != ctx->pgs->font)
+    if (pfont != ctx->pgs->font) {
         code = pdfi_gs_setfont(ctx, pfont);
+    }
+    else {
+        pdf_font *pdfif = (pdf_font *)pfont->client_data;
+        pdfi_countdown(pdfif);
+    }
 
     if (code < 0)
         goto exit;
@@ -684,8 +690,7 @@ static int pdfi_load_resource_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_
     code = pdfi_load_dict_font(ctx, stream_dict, page_dict, font_dict, point_size);
 
 exit:
-    if (code < 0)
-        pdfi_countdown(font_dict);
+    pdfi_countdown(font_dict);
     return code;
 }
 
