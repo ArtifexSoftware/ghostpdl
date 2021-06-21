@@ -613,8 +613,10 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
         }
     }
 
-    if (ppdffont == NULL)
+    if (ppdffont == NULL || code < 0) {
+        *ppfont = NULL;
         code = gs_note_error(gs_error_invalidfont);
+    }
     else {
         if (cidfont) {
             ((pdf_cidfont_t *)ppdffont)->substitute = (substitute != font_embedded);
