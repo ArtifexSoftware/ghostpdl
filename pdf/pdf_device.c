@@ -51,8 +51,10 @@ bool pdfi_device_check_param_bool(gx_device *dev, const char *param)
     code = param_read_bool((gs_param_list *)&list,
                            param,
                            &value);
+    if (code < 0)
+        value = false;
     gs_c_param_list_release(&list);
-    return value;
+    return (bool)value;
 }
 
 /* Set value of string device parameter */
