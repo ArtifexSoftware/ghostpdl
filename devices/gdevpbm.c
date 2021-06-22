@@ -196,22 +196,33 @@ pkm_initialize_device_procs(gx_device *dev)
 }
 
 static void
-pam_initialize_device_procs(gx_device *dev)
+pam32_initialize_device_procs(gx_device *dev)
 {
     ppm_initialize_device_procs(dev);
 
     set_dev_proc(dev, map_rgb_color, NULL);
     set_dev_proc(dev, map_color_rgb, cmyk_8bit_map_color_rgb);
     set_dev_proc(dev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
-    set_dev_proc(dev, map_rgb_color, cmyk_8bit_map_cmyk_color);
     set_dev_proc(dev, decode_color, cmyk_8bit_map_color_cmyk);
     set_dev_proc(dev, encode_color, cmyk_8bit_map_cmyk_color);
 }
 
 static void
+pam4_initialize_device_procs(gx_device *dev)
+{
+    ppm_initialize_device_procs(dev);
+
+    set_dev_proc(dev, map_rgb_color, NULL);
+    set_dev_proc(dev, map_color_rgb, NULL);
+    set_dev_proc(dev, map_cmyk_color, cmyk_1bit_map_cmyk_color);
+    set_dev_proc(dev, decode_color, cmyk_1bit_map_color_cmyk);
+    set_dev_proc(dev, encode_color, cmyk_1bit_map_cmyk_color);
+}
+
+static void
 pnmcmyk_initialize_device_procs(gx_device *dev)
 {
-    pam_initialize_device_procs(dev);
+    pam32_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, pnmcmyk_open);
 }
@@ -260,17 +271,17 @@ const gx_device_pbm gs_pksmraw_device =
 pbm_prn_device(pkm_initialize_device_procs, "pksmraw", '4', 1, 4, 4, 1, 1, 0,
                X_DPI, Y_DPI, psm_print_page);
 const gx_device_pbm gs_pamcmyk32_device =
-pbm_prn_device(pam_initialize_device_procs, "pamcmyk32", '7', 1, 4, 32, 255, 255, 0,
+pbm_prn_device(pam32_initialize_device_procs, "pamcmyk32", '7', 1, 4, 32, 255, 255, 0,
                X_DPI, Y_DPI, pam_print_page);
 const gx_device_pbm gs_pnmcmyk_device =
 pbm_prn_device(pnmcmyk_initialize_device_procs, "pnmcmyk", '7', 1, 4, 32, 255, 255, 0, /* optimize false since this relies on GrayDetection */
                X_DPI, Y_DPI, pnmcmyk_print_page);	/* May output PGM, magic = 5 */
 const gx_device_pbm gs_pamcmyk4_device =
-pbm_prn_device(pam_initialize_device_procs, "pamcmyk4", '7', 1, 4, 4, 1, 1, 0,
+pbm_prn_device(pam4_initialize_device_procs, "pamcmyk4", '7', 1, 4, 4, 1, 1, 0,
                X_DPI, Y_DPI, pam4_print_page);
 /* Also keep the old device name so anyone using it won't be surprised */
 const gx_device_pbm gs_pam_device =
-pbm_prn_device(pam_initialize_device_procs, "pam", '7', 1, 4, 32, 255, 255, 0,
+pbm_prn_device(pam32_initialize_device_procs, "pam", '7', 1, 4, 32, 255, 255, 0,
                X_DPI, Y_DPI, pam_print_page);
 
 /* Plan 9 bitmaps default to 100 dpi. */
