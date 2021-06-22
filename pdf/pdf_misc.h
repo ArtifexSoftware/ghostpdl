@@ -30,4 +30,8 @@ int pdfi_setrenderingintent(pdf_context *ctx, pdf_name *n);
 
 void normalize_rectangle(double *d);
 
+void pdfi_free_cstring_array(pdf_context *ctx, char ***pstrlist);
+int pdfi_parse_name_cstring_array(pdf_context *ctx, char *data, uint64_t size, char ***pstrlist);
+
+
 #endif

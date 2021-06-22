@@ -232,8 +232,10 @@ typedef struct cmd_args_s {
     bool printed;
     bool showacroform;
     bool showannots;
+    char **showannottypes; /* Null terminated array of strings, NULL if none */
     bool dopdfmarks;
     bool preserveannots;
+    char **preserveannottypes; /* Null terminated array of strings, NULL if none */
     bool nouserunit;
     bool renderttnotdef;
     bool pdfinfo;

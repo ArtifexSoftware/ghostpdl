@@ -3789,8 +3789,22 @@ static bool pdfi_annot_visible(pdf_context *ctx, pdf_dict *annot, pdf_name *subt
  */
 static bool pdfi_annot_check_type(pdf_context *ctx, pdf_name *subtype)
 {
-    /* TODO: Need to implement */
-    return true;
+    char **ptr;
+
+    /* True if no list */
+    if (!ctx->args.showannottypes)
+        return true;
+
+    /* Null terminated list, return true if subtype is on the list */
+    ptr = ctx->args.showannottypes;
+    while (*ptr) {
+        char *str = *ptr;
+        if (pdfi_name_is(subtype, str))
+            return true;
+        ptr ++;
+    }
+    /* List exists, but subtype is not on it */
+    return false;
 }
 
 /* Check to see if subtype is on the PreserveAnnotTypes list
@@ -3798,8 +3812,22 @@ static bool pdfi_annot_check_type(pdf_context *ctx, pdf_name *subtype)
  */
 static bool pdfi_annot_preserve_type(pdf_context *ctx, pdf_name *subtype)
 {
-    /* TODO: Need to implement */
-    return true;
+    char **ptr;
+
+    /* True if no list */
+    if (!ctx->args.preserveannottypes)
+        return true;
+
+    /* Null terminated list, return true if subtype is on the list */
+    ptr = ctx->args.preserveannottypes;
+    while (*ptr) {
+        char *str = *ptr;
+        if (pdfi_name_is(subtype, str))
+            return true;
+        ptr ++;
+    }
+    /* List exists, but subtype is not on it */
+    return false;
 }
 
 static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)

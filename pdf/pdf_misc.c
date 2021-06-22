@@ -184,3 +184,119 @@ void normalize_rectangle(double *d)
         d[i] = d1[i];
     }
 }
+
+/* Free an array of cstrings, sets the pointer to null */
+void pdfi_free_cstring_array(pdf_context *ctx, char ***pstrlist)
+{
+    char **ptr = *pstrlist;
+
+    if (ptr == NULL)
+        return;
+
+    while (*ptr) {
+        gs_free_object(ctx->memory, *ptr, "pdfi_free_cstring_array(item)");
+        ptr ++;
+    }
+    gs_free_object(ctx->memory, *pstrlist, "pdfi_free_cstring_array(array)");
+    *pstrlist = NULL;
+}
+
+/* Parse an argument string of names into an array of cstrings */
+/* Format: /Item1,/Item2,/Item3 (no white space) */
+int pdfi_parse_name_cstring_array(pdf_context *ctx, char *data, uint64_t size, char ***pstrlist)
+{
+    char **strlist = NULL;
+    char **templist = NULL;
+    int numitems, item;
+    int strnum;
+    uint64_t i;
+    char *strptr;
+    int code = 0;
+
+    /* Free it if it already exists */
+    if (*pstrlist != NULL)
+        pdfi_free_cstring_array(ctx, pstrlist);
+
+    /* find out how many '/' characters there are -- this is the max possible number
+     * of items in the list
+     */
+    for (i=0, strptr = data; i<size; i++,strptr++) {
+        if (*strptr == '/')
+            numitems ++;
+        /* early exit if we hit a null */
+        if (*strptr == 0)
+            break;
+    }
+
+    /* Allocate space for the array of char * (plus one extra for null termination) */
+    strlist = (char **)gs_alloc_bytes(ctx->memory, (numitems+1)*sizeof(char *),
+                                       "pdfi_parse_cstring_array(strlist)");
+    if (strlist == NULL)
+        return_error(gs_error_VMerror);
+
+    memset(strlist, 0, (numitems+1)*sizeof(char *));
+
+    /* Allocate a temp array */
+    templist = (char **)gs_alloc_bytes(ctx->memory, (numitems+1)*sizeof(char *),
+                                       "pdfi_parse_cstring_array(templist)");
+    if (templist == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
+
+    memset(templist, 0, (numitems+1)*sizeof(char *));
+
+    /* Find start ptr of each string */
+    item = 0;
+    for (i=0, strptr = data; i<size; i++,strptr++) {
+        if (*strptr == '/') {
+            templist[item] = strptr+1;
+            item++;
+        }
+    }
+
+    /* Find each substring, alloc, copy into string array */
+    strnum = 0;
+    for (i=0; i<numitems; i++) {
+        char *curstr, *nextstr;
+        int length;
+        char *newstr;
+
+        curstr = templist[i];
+        nextstr = templist[i+1];
+        if (!curstr)
+            break;
+        if (*curstr == '/' || *curstr == ',') {
+            /* Empty string, skip it */
+            continue;
+        }
+        if (nextstr == NULL) {
+            length = size-(curstr-data);
+        } else {
+            length = nextstr - curstr - 1;
+        }
+        if (curstr[length-1] == ',')
+            length --;
+
+        /* Allocate the string and copy it */
+        newstr = (char *)gs_alloc_bytes(ctx->memory, length+1,
+                                       "pdfi_parse_cstring_array(newstr)");
+        if (newstr == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto exit;
+        }
+        memcpy(newstr, curstr, length);
+        newstr[length+1] = 0; /* Null terminate */
+        strlist[strnum] = newstr;
+        strnum ++;
+    }
+
+    *pstrlist = strlist;
+
+ exit:
+    if (code < 0)
+        pdfi_free_cstring_array(ctx, &strlist);
+    if (templist)
+        gs_free_object(ctx->memory, templist, "pdfi_parse_cstring_array(templist(array))");
+    return code;
+}

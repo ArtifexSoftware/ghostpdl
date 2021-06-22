@@ -21,6 +21,7 @@
 #include "pdf_page.h"
 #include "gzht.h"
 #include "gsrefct.h"
+#include "pdf_misc.h"
 #endif
 
 #include "ghost.h"
@@ -771,6 +772,20 @@ static int zpdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph)
     return 0;
 }
 
+static int param_value_get_namelist(pdf_context *ctx, ref *pvalueref, char ***pstrlist)
+{
+    char *data;
+    uint size;
+
+    if (!r_has_type(pvalueref, t_string))
+        return_error(gs_error_typecheck);
+
+    data = (char *)pvalueref->value.bytes;
+    size = pvalueref->tas.rsize;
+
+    return pdfi_parse_name_cstring_array(ctx, data, size, pstrlist);
+}
+
 static int zPDFInit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -945,6 +960,18 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
             pdfctx->ctx->args.pdfinfo = pvalueref->value.boolval;
+        }
+        if (dict_find_string(pdictref, "SHOWANNOTTYPES", &pvalueref) > 0) {
+            code = param_value_get_namelist(pdfctx->ctx, pvalueref,
+                                            &pdfctx->ctx->args.showannottypes);
+            if (code < 0)
+                goto error;
+        }
+        if (dict_find_string(pdictref, "PRESERVEANNOTTYPES", &pvalueref) > 0) {
+            code = param_value_get_namelist(pdfctx->ctx, pvalueref,
+                                            &pdfctx->ctx->args.preserveannottypes);
+            if (code < 0)
+                goto error;
         }
         code = 0;
         pop(1);

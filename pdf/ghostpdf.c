@@ -1351,7 +1351,7 @@ int pdfi_clear_context(pdf_context *ctx)
     dmprintf1(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
 #endif
     if (ctx->args.PageList) {
-        gs_free_object(ctx->memory, ctx->args.PageList, "pdfi_free_context");
+        gs_free_object(ctx->memory, ctx->args.PageList, "pdfi_clear_context");
         ctx->args.PageList = NULL;
     }
     if (ctx->Trailer) {
@@ -1379,6 +1379,9 @@ int pdfi_clear_context(pdf_context *ctx)
         ctx->PagesTree = NULL;
     }
 
+    pdfi_free_cstring_array(ctx, &ctx->args.showannottypes);
+    pdfi_free_cstring_array(ctx, &ctx->args.preserveannottypes);
+
     pdfi_doc_page_array_free(ctx);
 
     if (ctx->xref_table) {
@@ -1394,12 +1397,12 @@ int pdfi_clear_context(pdf_context *ctx)
     if (ctx->filename) {
         /* This should already be closed! */
         pdfi_close_pdf_file(ctx);
-        gs_free_object(ctx->memory, ctx->filename, "pdfi_free_context, free copy of filename");
+        gs_free_object(ctx->memory, ctx->filename, "pdfi_clear_context, free copy of filename");
         ctx->filename = NULL;
     }
 
     if (ctx->main_stream) {
-        gs_free_object(ctx->memory, ctx->main_stream, "pdfi_free_context, free main PDF stream");
+        gs_free_object(ctx->memory, ctx->main_stream, "pdfi_clear_context, free main PDF stream");
         ctx->main_stream = NULL;
     }
     ctx->main_stream_length = 0;
@@ -1461,7 +1464,7 @@ int pdfi_clear_context(pdf_context *ctx)
                     if (next)
                         next->previous = prev;
                     ctx->cache_entries--;
-                    gs_free_object(ctx->memory, entry, "pdfi_free_context, free LRU");
+                    gs_free_object(ctx->memory, entry, "pdfi_clear_context, free LRU");
                 }
                 entry = next;
             }
@@ -1481,7 +1484,7 @@ int pdfi_clear_context(pdf_context *ctx)
             next = entry->next;
             pdfi_countdown(entry->o);
             ctx->cache_entries--;
-            gs_free_object(ctx->memory, entry, "pdfi_free_context, free LRU");
+            gs_free_object(ctx->memory, entry, "pdfi_clear_context, free LRU");
             entry = next;
 #if REFCNT_DEBUG
             ctx->cache_LRU = entry;

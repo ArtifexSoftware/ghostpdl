@@ -28,6 +28,7 @@
 #include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
 #include "gsht1.h"
 #include "pdf_device.h"
+#include "pdf_misc.h"
 
 static int pdfi_install_halftone(pdf_context *ctx, gx_device *pdevice);
 
@@ -386,6 +387,23 @@ static int plist_value_get_string_or_name(pdf_context *ctx, gs_param_typed_value
     return 0;
 }
 
+/* Get the value for a list of names as c-strings, (null terminated) */
+/* Format: -s/Item1,/Item2,/Item3 (no white space) */
+static int plist_value_get_namelist(pdf_context *ctx, gs_param_typed_value *pvalue,
+                                    char ***pstrlist)
+{
+    char *data;
+    uint size;
+
+    if (pvalue->type != gs_param_type_string)
+        return_error(gs_error_typecheck);
+
+    data = (char *)pvalue->value.s.data;
+    size = pvalue->value.s.size;
+
+    return pdfi_parse_name_cstring_array(ctx, data, size, pstrlist);
+}
+
 static int plist_value_get_int(gs_param_typed_value *pvalue, int *pint)
 {
     if (pvalue->type == gs_param_type_int) {
@@ -561,8 +579,18 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
+        if (!strncmp(param, "SHOWANNOTTYPES", 14)) {
+            code = plist_value_get_namelist(ctx, &pvalue, &ctx->args.showannottypes);
+            if (code < 0)
+                return code;
+        }
         if (!strncmp(param, "PreserveAnnots", 14)) {
             code = plist_value_get_bool(&pvalue, &ctx->args.preserveannots);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "PRESERVEANNOTTYPES", 18)) {
+            code = plist_value_get_namelist(ctx, &pvalue, &ctx->args.preserveannottypes);
             if (code < 0)
                 return code;
         }
