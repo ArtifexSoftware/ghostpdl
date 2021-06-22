@@ -804,6 +804,8 @@ gx_final_DeviceN(gs_color_space * pcs)
         rc_decrement(patt, "gx_adjust_DeviceN");
         patt = pnextatt;
     }
+    if (pcs->params.device_n.devn_process_space)
+        rc_decrement_only(pcs->params.device_n.devn_process_space, "gx_final_DeviceN");
     /* Ensure idempotency */
     memset(&pcs->params.device_n, 0, sizeof(pcs->params.device_n));
 }
