@@ -473,19 +473,19 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
     int len;
 
     param_init_enumerator(&enumerator);
-    while ((code = param_get_next_key(plist, &enumerator, &key)) == 0) {
+    if ((code = param_get_next_key(plist, &enumerator, &key)) == 0) {
         char param[256];	/* big enough for any reasonable key */
         gs_param_typed_value pvalue;
 
         if (key.size > sizeof(param) - 1) {
             code = gs_note_error(gs_error_rangecheck);
-            break;
+            goto exit;
         }
         memcpy(param, key.data, key.size);
         param[key.size] = 0;
         if ((code = param_read_typed(plist, param, &pvalue)) != 0) {
             code = (code > 0 ? gs_note_error(gs_error_unknownerror) : code);
-            break;
+            goto exit;
         }
 
         if (!strncmp(param, "FirstPage", 9)) {
@@ -646,7 +646,9 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
                 return code;
         }
     }
-    return 0;
+
+ exit:
+    return code;
 }
 
 static int
