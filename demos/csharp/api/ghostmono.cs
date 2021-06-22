@@ -1003,8 +1003,38 @@ namespace GhostMono
 		}
 
 		/* Launch a thread rendering all the pages with the display device
+		 * to collect thumbnail images via init_with_args.   */
+		public gsStatus DisplayDeviceRenderThumbs(String fileName, double zoom, bool aa)
+		{
+			gsParamState_t gsparams = new gsParamState_t();
+			int format = (gsConstants.DISPLAY_COLORS_RGB |
+							gsConstants.DISPLAY_DEPTH_8 |
+							gsConstants.DISPLAY_LITTLEENDIAN);
+			int resolution = (int)(72.0 * zoom + 0.5);
+			GS_Task_t task = GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF;
+
+			gsparams.args = new List<string>();
+			gsparams.args.Add("gs");
+			gsparams.args.Add("-dFirstPage=1"); /* To ensure gdevflp is setup */
+			gsparams.args.Add("-r" + resolution);
+			if (aa)
+			{
+				gsparams.args.Add("-dTextAlphaBits=4");
+				gsparams.args.Add("-dGraphicsAlphaBits=4");
+			}
+			gsparams.args.Add("-sDEVICE=display");
+			gsparams.args.Add("-dDisplayFormat=" + format);
+			gsparams.args.Add("-f");
+			gsparams.args.Add(fileName);
+			gsparams.task = task;
+			gsparams.currpage = 0;
+            m_params.currpage = 0;
+			return RunGhostscriptAsync(gsparams);
+		}
+
+		/* Launch a thread rendering all the pages with the display device
 		 * to collect thumbnail images or full resolution.   */
-		public gsStatus gsDisplayDeviceRenderAll(String fileName, double zoom, bool aa, GS_Task_t task)
+		public gsStatus DisplayDeviceRenderAll(String fileName, double zoom, bool aa, GS_Task_t task)
 		{
 			gsParamState_t gsparams = new gsParamState_t();
 			int format = (gsConstants.DISPLAY_COLORS_RGB |
@@ -1036,7 +1066,7 @@ namespace GhostMono
 
 		/* Launch a thread rendering a set of pages with the display device.  For use with languages
 		   that can be indexed via pages which include PDF and XPS */
-		public gsStatus gsDisplayDeviceRenderPages(String fileName, int first_page, int last_page, double zoom)
+		public gsStatus DisplayDeviceRenderPages(String fileName, int first_page, int last_page, double zoom)
 		{
 			gsParamState_t gsparams = new gsParamState_t();
 			int format = (gsConstants.DISPLAY_COLORS_RGB |

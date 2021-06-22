@@ -99,8 +99,8 @@ namespace gs_mono_example
             AddProgressBar("Rendering Thumbs");
             m_ghostscript.PageRenderedCallBack +=
                 new GSMONO.PageRendered(gsThumbRendered);
-            m_ghostscript.gsDisplayDeviceRenderAll(m_currfile,
-                Constants.SCALE_THUMB, false, GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF);
+            m_ghostscript.DisplayDeviceRenderThumbs(m_currfile,
+                Constants.SCALE_THUMB, false);
 		}
 	}
 }

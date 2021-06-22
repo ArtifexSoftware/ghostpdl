@@ -1753,6 +1753,21 @@ gx_default_w_b_map_color_rgb(gx_device * dev, gx_color_index color,
     return 0;
 }
 
+gx_color_index
+gx_default_w_b_gray_encode_color(gx_device *dev, const gx_color_value cv[])
+{
+    return cv[0] > gx_max_color_value / 2 ? (gx_color_index)1
+                                          : (gx_color_index)0;
+}
+
+int
+gx_default_w_b_gray_decode_color(gx_device * dev, gx_color_index color,
+                                 gx_color_value pgray[1])
+{				/* Map 0 to max_value, 1 to 0. */
+    pgray[0] = -(gx_color_value) color;
+    return 0;
+}
+
 /* Black-on-white */
 gx_color_index
 gx_default_b_w_map_rgb_color(gx_device * dev, const gx_color_value cv[])
@@ -1771,6 +1786,21 @@ gx_default_b_w_map_color_rgb(gx_device * dev, gx_color_index color,
                              gx_color_value prgb[3])
 {				/* Map 0 to max_value, 1 to 0. */
     prgb[0] = prgb[1] = prgb[2] = -((gx_color_value) color ^ 1);
+    return 0;
+}
+
+gx_color_index
+gx_default_b_w_gray_encode_color(gx_device *dev, const gx_color_value cv[])
+{
+    return cv[0] > gx_max_color_value / 2 ? (gx_color_index)0
+                                          : (gx_color_index)1;
+}
+
+int
+gx_default_b_w_gray_decode_color(gx_device * dev, gx_color_index color,
+                                 gx_color_value pgray[1])
+{				/* Map 0 to max_value, 1 to 0. */
+    pgray[0] = -((gx_color_value) color ^ 1);
     return 0;
 }
 
