@@ -112,12 +112,8 @@ png16_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_4bit_map_color_rgb);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, pc_4bit_map_rgb_color);
+    set_dev_proc(dev, decode_color, pc_4bit_map_color_rgb);
 }
 
 const gx_device_png gs_png16_device = {
@@ -140,12 +136,8 @@ png256_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, map_rgb_color, pc_8bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_8bit_map_color_rgb);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, pc_8bit_map_rgb_color);
+    set_dev_proc(dev, decode_color, pc_8bit_map_color_rgb);
 }
 
 const gx_device_png gs_png256_device = {
@@ -167,12 +159,8 @@ pnggray_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, get_params, png_get_params_downscale);
     set_dev_proc(dev, put_params, png_put_params_downscale);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_png gs_pnggray_device =
@@ -194,12 +182,8 @@ pngmonod_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, get_params, png_get_params_downscale_mfs);
     set_dev_proc(dev, put_params, png_put_params_downscale_mfs);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_png gs_pngmonod_device =
@@ -225,8 +209,8 @@ png16m_initialize_device_procs(gx_device *dev)
     /* The prn macros used in previous versions of the code leave
      * encode_color and decode_color set to NULL (which are then rewritten
      * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, decode_color, gx_default_rgb_map_color_rgb);
 }
 
 const gx_device_png gs_png16m_device =
@@ -248,8 +232,8 @@ png48_initialize_device_procs(gx_device *dev)
     /* The prn macros used in previous versions of the code leave
      * encode_color and decode_color set to NULL (which are then rewritten
      * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, decode_color, gx_default_rgb_map_color_rgb);
 }
 
 /* Since the print_page doesn't alter the device, this device can print in the background */

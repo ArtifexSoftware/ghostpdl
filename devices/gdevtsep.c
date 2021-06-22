@@ -82,12 +82,8 @@ tiffgray_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, tiff_close);
     set_dev_proc(dev, get_params, tiff_get_params);
     set_dev_proc(dev, put_params, tiff_put_params);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_tiff gs_tiffgray_device = {
@@ -131,12 +127,8 @@ tiffscaled_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, tiff_close);
     set_dev_proc(dev, get_params, tiff_get_params_downscale);
     set_dev_proc(dev, put_params, tiff_put_params_downscale);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_tiff gs_tiffscaled_device = {
@@ -175,12 +167,8 @@ tiffscaled8_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_params, tiff_get_params_downscale);
     set_dev_proc(dev, put_params, tiff_put_params_downscale);
     set_dev_proc(dev, dev_spec_op, tiffscaled_spec_op);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_tiff gs_tiffscaled8_device = {
@@ -219,6 +207,8 @@ tiffscaled24_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_params, tiff_get_params_downscale);
     set_dev_proc(dev, put_params, tiff_put_params_downscale);
     set_dev_proc(dev, dev_spec_op, tiffscaled_spec_op);
+    set_dev_proc(dev, encode_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, decode_color, gx_default_rgb_map_color_rgb);
 }
 
 const gx_device_tiff gs_tiffscaled24_device = {
@@ -257,6 +247,8 @@ tiffscaled32_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_params, tiff_get_params_downscale_cmyk);
     set_dev_proc(dev, put_params, tiff_put_params_downscale_cmyk);
     set_dev_proc(dev, dev_spec_op, tiffscaled_spec_op);
+    set_dev_proc(dev, encode_color, cmyk_8bit_map_cmyk_color);
+    set_dev_proc(dev, decode_color, cmyk_8bit_map_color_cmyk);
 }
 
 const gx_device_tiff gs_tiffscaled32_device = {
