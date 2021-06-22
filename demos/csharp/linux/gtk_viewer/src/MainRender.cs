@@ -122,7 +122,7 @@ namespace gs_mono_example
             m_busy_render = true;
             m_ghostscript.PageRenderedCallBack += new GSMONO.PageRendered(gsPageRendered);
             AddProgressBar("Rendering Pages");
-            m_ghostscript.gsDisplayDeviceRenderAll(m_currfile, m_doczoom, m_aa, GS_Task_t.DISPLAY_DEV_NON_PDF);
+            m_ghostscript.DisplayDeviceRenderAll(m_currfile, m_doczoom, m_aa, GS_Task_t.DISPLAY_DEV_NON_PDF);
 		}
 
 		/* Render all, but only if not already busy,  called via zoom or aa changes */
