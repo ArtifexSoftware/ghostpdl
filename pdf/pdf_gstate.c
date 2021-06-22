@@ -1266,7 +1266,7 @@ error:
     return code;
 }
 
-static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
+static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len, int comp_num)
 {
     int code;
     pdf_obj *obj = NULL, *transfer = NULL;
@@ -1351,7 +1351,10 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     if (code < 0)
         goto error;
 
-    phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
+    if (comp_num == -1)
+        phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
+    else
+        phtc->comp_number = comp_num;
 
     code = gs_screen_order_init_memory(order, ctx->pgs, &phtc->params.spot.screen,
                                        gs_currentaccuratescreens(ctx->memory), ctx->memory);
@@ -1723,7 +1726,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
 
                     switch(type) {
                         case 1:
-                            code = build_type1_halftone(ctx, (pdf_dict *)Value, page_dict, porder1, phtc1, str, str_len);
+                            code = build_type1_halftone(ctx, (pdf_dict *)Value, page_dict, porder1, phtc1, str, str_len, comp_number);
                             if (code < 0)
                                 goto error;
                             break;
@@ -1849,7 +1852,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
                 goto error;
             }
 
-            code = build_type1_halftone(ctx, halftone_dict, page_dict, &pdht->order, phtc, (char *)"Default", 7);
+            code = build_type1_halftone(ctx, halftone_dict, page_dict, &pdht->order, phtc, (char *)"Default", 7, -1);
             if (code < 0)
                 goto error;
 
