@@ -207,7 +207,7 @@ int pdfi_parse_name_cstring_array(pdf_context *ctx, char *data, uint64_t size, c
 {
     char **strlist = NULL;
     char **templist = NULL;
-    int numitems, item;
+    int numitems = 0, item;
     int strnum;
     uint64_t i;
     char *strptr;
