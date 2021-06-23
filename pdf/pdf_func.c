@@ -789,7 +789,7 @@ int pdfi_build_halftone_function(pdf_context *ctx, gs_function_t ** ppfn, byte *
 
     memcpy(stream_buffer, Buffer, Length);
 
-    code = pdfi_open_memory_stream_from_memory(ctx, Length, stream_buffer, &function_stream);
+    code = pdfi_open_memory_stream_from_memory(ctx, Length, stream_buffer, &function_stream, true);
     if (code < 0)
         goto halftone_function_error;
 

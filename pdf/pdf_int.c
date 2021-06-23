@@ -1890,7 +1890,7 @@ pdfi_interpret_inner_content_buffer(pdf_context *ctx, byte *content_data,
     pdf_stream *stream_obj = NULL;
 
     code = pdfi_open_memory_stream_from_memory(ctx, content_length,
-                                               content_data, &stream);
+                                               content_data, &stream, true);
     if (code < 0)
         goto exit;
 

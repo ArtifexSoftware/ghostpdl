@@ -1237,7 +1237,7 @@ int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *s
                 if (code >= 0) {
                     *Buffer = decompressed_Buffer;
                     code = pdfi_open_memory_stream_from_memory(ctx, (unsigned int)decompressed_length,
-                                                               *Buffer, new_pdf_stream);
+                                                               *Buffer, new_pdf_stream, retain_ownership);
                 } else {
                     *Buffer = NULL;
                     *new_pdf_stream = NULL;
@@ -1267,7 +1267,7 @@ int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *s
     return decompressed_length;
 }
 
-int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size, byte *Buffer, pdf_c_stream **new_pdf_stream)
+int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size, byte *Buffer, pdf_c_stream **new_pdf_stream, bool retain_ownership)
 {
     int code;
     stream *new_stream;
@@ -1276,7 +1276,10 @@ int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size, byt
     if (new_stream == NULL)
         return_error(gs_error_VMerror);
     new_stream->close_at_eod = false;
-    sread_string(new_stream, Buffer, size);
+    if (retain_ownership)
+        sread_string(new_stream, Buffer, size);
+    else
+        sread_transient_string(new_stream, ctx->memory, Buffer, size);
 
     code = pdfi_alloc_stream(ctx, new_stream, NULL, new_pdf_stream);
     if (code < 0) {

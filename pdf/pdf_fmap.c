@@ -105,7 +105,7 @@ pdf_make_fontmap(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    code = pdfi_open_memory_stream_from_memory(ctx, fmapbuflen, fmapbuf, &fmapstr);
+    code = pdfi_open_memory_stream_from_memory(ctx, fmapbuflen, fmapbuf, &fmapstr, true);
     if (code >= 0) {
         int stacksize = pdfi_count_stack(ctx);
 

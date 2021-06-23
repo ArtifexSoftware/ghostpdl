@@ -273,7 +273,7 @@ static int check_user_password_R5(pdf_context *ctx, char *Password, int Len, int
     memcpy(Key->data, Buffer, 32);
 
     /* Now apply AESDecode to the padded UE string, using the SHA from above as the key */
-    code = pdfi_open_memory_stream_from_memory(ctx, 48, (byte *)UEPadded, &stream);
+    code = pdfi_open_memory_stream_from_memory(ctx, 48, (byte *)UEPadded, &stream, true);
     if (code < 0)
         goto error;
 
@@ -450,7 +450,7 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
              * encryption function, using the key from the preceding step.
              */
 
-            code = pdfi_open_memory_stream_from_memory(ctx, 32, (byte *)PadString, &stream);
+            code = pdfi_open_memory_stream_from_memory(ctx, 32, (byte *)PadString, &stream, true);
             if (code < 0)
                 goto error;
 
@@ -506,7 +506,7 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
              * Encrypt the 16-byte result of the hash using an RC4 encryption function with
              * the encryption key from step 1 (of Algorithm 3.5).
              */
-            code = pdfi_open_memory_stream_from_memory(ctx, 16, (byte *)Hash, &stream);
+            code = pdfi_open_memory_stream_from_memory(ctx, 16, (byte *)Hash, &stream, true);
             if (code < 0)
                 goto error;
 
@@ -535,7 +535,7 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
              */
             for (i=1;i < 20;i++) {
                 memcpy(Hash, Buffer, 16);
-                code = pdfi_open_memory_stream_from_memory(ctx, 16, (byte *)Hash, &stream);
+                code = pdfi_open_memory_stream_from_memory(ctx, 16, (byte *)Hash, &stream, true);
                 if (code < 0)
                     goto error;
 
@@ -672,7 +672,7 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
     memcpy(Key->data, Buffer, 32);
 
     /* Now apply AESDecode to the padded UE string, using the SHA from above as the key */
-    code = pdfi_open_memory_stream_from_memory(ctx, 48, (byte *)OEPadded, &stream);
+    code = pdfi_open_memory_stream_from_memory(ctx, 48, (byte *)OEPadded, &stream, true);
     if (code < 0)
         goto error;
 
@@ -773,7 +773,7 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
          */
         for (i=0; i<20; i++) {
             memcpy(Arc4Source, Buffer, 32);
-            code = pdfi_open_memory_stream_from_memory(ctx, 32, (byte *)Arc4Source, &stream);
+            code = pdfi_open_memory_stream_from_memory(ctx, 32, (byte *)Arc4Source, &stream, true);
             if (code < 0)
                 goto error;
             for(j=0;j< KeyLenBytes;j++){
@@ -794,7 +794,7 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
         memcpy(EKey->data, Key, 5);
 
         /* Algorithm 3.7, step 2 (R == 2) Use RC4 with the computed key to decrypt the O entry of the crypt dict */
-        code = pdfi_open_memory_stream_from_memory(ctx, 32, (byte *)ctx->encryption.O, &stream);
+        code = pdfi_open_memory_stream_from_memory(ctx, 32, (byte *)ctx->encryption.O, &stream, true);
         if (code < 0)
             goto error;
 
@@ -927,7 +927,7 @@ int pdfi_decrypt_string(pdf_context *ctx, pdf_string *string)
         if (code < 0)
             goto error;
 
-        code = pdfi_open_memory_stream_from_memory(ctx, string->length, (byte *)string->data, &stream);
+        code = pdfi_open_memory_stream_from_memory(ctx, string->length, (byte *)string->data, &stream, true);
         if (code < 0)
             goto error;
 

@@ -95,7 +95,7 @@ int pdfi_open_memory_stream(pdf_context *ctx, unsigned int size, byte **Buffer, 
 int pdfi_close_memory_stream(pdf_context *ctx, byte *Buffer, pdf_c_stream *source);
 int pdfi_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size, byte **Buffer, pdf_c_stream *source, pdf_c_stream **new_pdf_stream, bool retain_ownership);
 int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *stream_dict, unsigned int size, byte **Buffer, pdf_c_stream *source, pdf_c_stream **new_pdf_stream, bool retain_ownership);
-int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size, byte *Buffer, pdf_c_stream **new_pdf_stream);
+int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size, byte *Buffer, pdf_c_stream **new_pdf_stream, bool retain_ownership);
 int pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_dict, byte **buf, int64_t *bufferlen);
 
 int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_c_stream *source, pdf_c_stream **new_stream);
