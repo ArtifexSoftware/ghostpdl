@@ -310,9 +310,7 @@ pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
     if (code < 0)
         return code;
 
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, function_obj, (unsigned int)Length,
-                                                        &data_source_buffer, ctx->main_stream,
-                                                        &function_stream);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, function_obj, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream, false);
     if (code < 0)
         goto function_4_error;
 
@@ -396,9 +394,7 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
     savedoffset = pdfi_tell(ctx->main_stream);
     pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, function_obj), SEEK_SET);
 
-    Length = pdfi_open_memory_stream_from_filtered_stream(ctx, function_obj, (unsigned int)Length,
-                                                          &data_source_buffer, ctx->main_stream,
-                                                          &function_stream);
+    Length = pdfi_open_memory_stream_from_filtered_stream(ctx, function_obj, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream, false);
     if (Length < 0) {
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return Length;

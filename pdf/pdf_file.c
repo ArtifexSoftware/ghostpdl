@@ -1122,9 +1122,10 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *
  * purely in the PostScript interpreter. So instead we make a temporary stream from a
  * memory buffer. Its icky (we can end up with the same data in memory multiple times)
  * but it works, and is used elsewhere in Ghostscript.
- * The calling function is responsible for the stream and buffer pointer lifetimes.
+ * If retain_ownership is true then the calling function is responsible for buffer pointer lifetime.
+ * Otherwise the buffer will be freed when the stream is closed.
  */
-int pdfi_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size, byte **Buffer, pdf_c_stream *source, pdf_c_stream **new_pdf_stream)
+int pdfi_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size, byte **Buffer, pdf_c_stream *source, pdf_c_stream **new_pdf_stream, bool retain_ownership)
 {
     stream *new_stream;
     int code;
@@ -1145,7 +1146,10 @@ int pdfi_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size, byt
         return code;
     }
 
-    sread_string_reusable(new_stream, *Buffer, size);
+    if (retain_ownership)
+        sread_string_reusable(new_stream, *Buffer, size);
+    else
+        sread_transient_string_reusable(new_stream, ctx->memory, *Buffer, size);
 
     code = pdfi_alloc_stream(ctx, new_stream, source->s, new_pdf_stream);
     if (code < 0) {
@@ -1167,7 +1171,7 @@ int pdfi_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size, byt
  */
 int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *stream_obj,
                                                  unsigned int size, byte **Buffer, pdf_c_stream *source,
-                                                 pdf_c_stream **new_pdf_stream)
+                                                 pdf_c_stream **new_pdf_stream, bool retain_ownership)
 {
     int code;
     pdf_dict *dict = NULL;
@@ -1176,7 +1180,7 @@ int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *s
     pdf_c_stream *compressed_stream = NULL, *decompressed_stream = NULL;
     bool known = false;
 
-    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)size, Buffer, source, new_pdf_stream);
+    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)size, Buffer, source, new_pdf_stream, retain_ownership);
     if (code < 0) {
         pdfi_close_memory_stream(ctx, *Buffer, *new_pdf_stream);
         *Buffer = NULL;

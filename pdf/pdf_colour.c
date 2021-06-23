@@ -1075,7 +1075,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *c
      * implemented in PostScript (!) so we can't use it. What we can do is create a
      * string sourced stream in memory, which is at least seekable.
      */
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, ICC_obj, Length, &profile_buffer, ctx->main_stream, &profile_stream);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, ICC_obj, Length, &profile_buffer, ctx->main_stream, &profile_stream, true);
     if (code < 0) {
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
@@ -2412,8 +2412,7 @@ pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_c_stream *stream, g
      * implemented in PostScript (!) so we can't use it. What we can do is create a
      * string sourced stream in memory, which is at least seekable.
      */
-    code = pdfi_open_memory_stream_from_stream(ctx, length, &profile_buffer,
-                                               stream, &profile_stream);
+    code = pdfi_open_memory_stream_from_stream(ctx, length, &profile_buffer, stream, &profile_stream, true);
     if (code < 0) {
         return code;
     }
@@ -2709,9 +2708,7 @@ int pdfi_color_setoutputintent(pdf_context *ctx, pdf_dict *intent_dict, pdf_stre
      * implemented in PostScript (!) so we can't use it. What we can do is create a
      * string sourced stream in memory, which is at least seekable.
      */
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, profile, Length,
-                                                        &profile_buffer, ctx->main_stream,
-                                                        &profile_stream);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, profile, Length, &profile_buffer, ctx->main_stream, &profile_stream, true);
     if (code < 0)
         goto exit;
 

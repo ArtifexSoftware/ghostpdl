@@ -297,9 +297,7 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
     if (code < 0)
         return code;
 
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, (pdf_stream *)Shading, Length,
-                                                        &data_source_buffer, ctx->main_stream,
-                                                        &shading_stream);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, (pdf_stream *)Shading, Length, &data_source_buffer, ctx->main_stream, &shading_stream, false);
     if (code < 0) {
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
