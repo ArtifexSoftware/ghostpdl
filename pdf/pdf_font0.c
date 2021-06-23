@@ -74,13 +74,15 @@ pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u
     pdf_font_type0 *pt0font = (pdf_font_type0 *)font->client_data;
     int code = gs_error_undefined, i;
     uchar *unicode_return = (uchar *)u;
-    pdf_cidfont_type2 *decfont;
+    pdf_cidfont_type2 *decfont = NULL;
     pdf_cmap *tounicode = (pdf_cmap *)pt0font->ToUnicode;
     pdfi_cid_subst_nwp_table_t *substnwp = pt0font->substnwp;
 
     code = pdfi_array_get(pt0font->ctx, pt0font->DescendantFonts, 0, (pdf_obj **)&decfont);
-    if (code < 0 || decfont->type != PDF_FONT)
+    if (code < 0 || decfont->type != PDF_FONT) {
+        pdfi_countdown(decfont);
         return gs_error_undefined;
+    }
 
     code = gs_error_undefined;
     while (1) { /* Loop to make retrying with a substitute CID easier */
@@ -213,6 +215,7 @@ pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u
         }
         break;
     }
+    pdfi_countdown(decfont);
     return (code < 0 ? 0 : code);
 }
 
