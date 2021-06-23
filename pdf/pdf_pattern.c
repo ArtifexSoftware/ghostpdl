@@ -132,7 +132,8 @@ void pdfi_pattern_cleanup(gs_memory_t * mem, void *p)
        the tile cache) *can* outlast outlast our pattern instance, so if the pattern
        instance is being freed, also remove the entry from the cache
      */
-    if (gx_pattern_cache_get_entry(context->ctx->pgs, pinst->id, &pctile) == 0
+    if (context->ctx->pgs->pattern_cache != NULL
+     && gx_pattern_cache_get_entry(context->ctx->pgs, pinst->id, &pctile) == 0
      && gx_pattern_tile_is_clist(pctile)) {
         gx_pattern_cache_winnow(gstate_pattern_cache(context->ctx->pgs), pdfi_pattern_purge_proc, (void *)(pctile->id));
     }
