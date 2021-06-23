@@ -3199,7 +3199,7 @@ currentdict /PDF2PS_matrix_key undef
          dup //null ne {
            /AP knownoget {	% Get appearance dict for the annoation
              /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
-               4 dict exch resourceusesoverprint { pop pop //true exit } if
+               4 dict exch resourceusesoverprint { not exit } if
              } if
            } if  			% If AP dict known
          } {
