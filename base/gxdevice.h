@@ -328,6 +328,8 @@ dev_proc_decode_color(gx_default_b_w_mono_decode_color);
 dev_proc_map_rgb_color(gx_default_gray_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_gray_map_color_rgb);
 dev_proc_map_color_rgb(gx_default_rgb_map_color_rgb);
+dev_proc_encode_color(gx_default_gray_encode_color);
+dev_proc_decode_color(gx_default_gray_decode_color);
 #define gx_default_cmyk_map_cmyk_color cmyk_8bit_map_cmyk_color /*see below*/
 /*
  * The following are defined as "standard" color mapping procedures
