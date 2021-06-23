@@ -223,9 +223,9 @@ static const char *pdfi_base_font_names[][10] =
   { "ZapfDingbats", NULL }
 };
 
-static int strncmp_ignore_space(const char *a, const char *b, int64_t len)
+static int strncmp_ignore_space(const char *a, const char *b)
 {
-    while (len--)
+    while (1)
     {
         while (*a == ' ')
             a++;
@@ -240,15 +240,15 @@ static int strncmp_ignore_space(const char *a, const char *b, int64_t len)
         a++;
         b++;
     }
-    return 0;
+    return 0; /* Shouldn't happen */
 }
 
-static const char *pdfi_clean_font_name(const pdf_name *fontname)
+static const char *pdfi_clean_font_name(const char *fontname)
 {
     int i, k;
     for (i = 0; i < (sizeof(pdfi_base_font_names)/sizeof(pdfi_base_font_names[0])); i++) {
         for (k = 0; pdfi_base_font_names[i][k]; k++) {
-            if (!strncmp_ignore_space(pdfi_base_font_names[i][k], (const char *)fontname->data, fontname->length))
+            if (!strncmp_ignore_space(pdfi_base_font_names[i][k], (const char *)fontname))
                 return pdfi_base_font_names[i][0];
         }
     }
@@ -359,16 +359,19 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
         pdfi_countup(fontname);
     }
 
-    fn = pdfi_clean_font_name((pdf_name *)fontname);
-    if (fn != NULL) {
-        pdfi_countdown(fontname);
+    if (((pdf_name *)fontname)->length < gp_file_name_sizeof) {
+        memcpy(fontfname, ((pdf_name *)fontname)->data, ((pdf_name *)fontname)->length);
+        fontfname[((pdf_name *)fontname)->length] = '\0';
+        fn = pdfi_clean_font_name(fontfname);
+        if (fn != NULL) {
+            pdfi_countdown(fontname);
 
-        code = pdfi_name_alloc(ctx, (byte *)fn, strlen(fn), (pdf_obj **) &fontname);
-        if (code < 0)
-            return code;
-        pdfi_countup(fontname);
+            code = pdfi_name_alloc(ctx, (byte *)fn, strlen(fn), (pdf_obj **) &fontname);
+            if (code < 0)
+                return code;
+            pdfi_countup(fontname);
+        }
     }
-
     code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname);
     if (code < 0) {
         mapname = fontname;
