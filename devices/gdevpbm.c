@@ -145,8 +145,8 @@ pbm_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_mono(dev);
 
-    set_dev_proc(dev, encode_color, gx_default_b_w_gray_encode_color);
-    set_dev_proc(dev, decode_color, gx_default_b_w_gray_decode_color);
+    set_dev_proc(dev, encode_color, gx_default_b_w_mono_encode_color);
+    set_dev_proc(dev, decode_color, gx_default_b_w_mono_decode_color);
     set_dev_proc(dev, put_params, ppm_put_params);
     set_dev_proc(dev, output_page, ppm_output_page);
 }
