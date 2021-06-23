@@ -377,7 +377,11 @@ static int plist_value_get_string_or_name(pdf_context *ctx, gs_param_typed_value
         return_error(gs_error_typecheck);
     }
 
-    *pstr = (char *)gs_alloc_bytes(ctx->memory, size + 1, "string from param list");
+    /* Free any previous value, for example if param appears more than once */
+    if (*pstr)
+        gs_free_object(ctx->memory, *pstr, "plist_value_get_string_or_name()");
+
+    *pstr = (char *)gs_alloc_bytes(ctx->memory, size + 1, "plist_value_get_string_or_name()");
     if (*pstr == NULL)
         return_error(gs_error_VMerror);
 
