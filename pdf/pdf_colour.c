@@ -412,12 +412,18 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
 
 int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
 {
-    /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
-    if (ctx->text.inside_CharProc && ctx->text.CharProc_is_d1)
-        return 0;
+    /* If the target colour space is already the current colour space, don't
+     * bother to do anything.
+     */
+    if (ctx->pgs->color[0].color_space->id != pcs->id) {
+        /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
+        if (ctx->text.inside_CharProc && ctx->text.CharProc_is_d1)
+            return 0;
 
-    pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
-    return gs_setcolorspace(ctx->pgs, pcs);
+        pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
+        return gs_setcolorspace(ctx->pgs, pcs);
+    }
+    return 0;
 }
 
 /* Start with the simple cases, where we set the colour space and colour in a single operation */

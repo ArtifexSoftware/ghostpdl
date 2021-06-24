@@ -1887,7 +1887,7 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *xobje
 
     /* Override the colorspace if specified */
     if (pcs) {
-        code = gs_setcolorspace(ctx->pgs, pcs);
+        code = pdfi_gs_setcolorspace(ctx, pcs);
         if (code < 0)
             goto exit2;
     }
