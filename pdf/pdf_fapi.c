@@ -808,6 +808,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 {
     gs_fapi_server *I = pbfont->FAPI;
     int code = 0;
+    pdf_context *ctx = (pdf_context *) ((pdf_font *)pbfont->client_data)->ctx;
 
     if (pbfont->FontType == ft_CID_TrueType) {
         pdf_cidfont_type2 *pttfont = (pdf_cidfont_type2 *)pbfont->client_data;
@@ -911,8 +912,15 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         pdf_font_cff *cfffont = (pdf_font_cff *)pbfont->client_data;
         pdf_name *glyphname = NULL;
         pdf_string *charstring = NULL;
+        gs_const_string gname;
 
-        code = pdfi_array_get(cfffont->ctx, cfffont->Encoding, (uint64_t)ccode, (pdf_obj **)&glyphname);
+        code = (*ctx->get_glyph_name)((gs_font *)pbfont, ccode, &gname);
+        if (code >= 0) {
+            code = pdfi_name_alloc(ctx, (byte *) gname.data, gname.size, (pdf_obj **) &glyphname);
+            if (code >= 0)
+                pdfi_countup(glyphname);
+        }
+
         if (code < 0) {
             pdfi_countdown(glyphname);
             return code;
@@ -939,12 +947,13 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         /* I'm not clear if the heavy lifting should be here or in pdfi_tt_encode_char() */
         pdf_font_truetype *ttfont = (pdf_font_truetype *)pbfont->client_data;
         pdf_name *GlyphName = NULL;
+        gs_const_string gname;
         int i;
         if ((ttfont->descflags & 4) != 0) {
             if (ttfont->cmap == pdfi_truetype_cmap_30) {
                 uint cc = 0;
 
-                cr->client_char_code = ccode;
+                ccode = cr->client_char_code;
                 code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, (uint)ccode, &cc);
                 if (code < 0 || cc == 0)
                     cr->char_codes[0] = ccode | 0xf0 << 8;
@@ -960,9 +969,14 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         }
         else {
 
-            code = pdfi_array_get(ttfont->ctx, ttfont->Encoding, (uint64_t)ccode, (pdf_obj **)&GlyphName);
+            code = (*ctx->get_glyph_name)((gs_font *)pbfont, ccode, &gname);
+            if (code >= 0) {
+                code = pdfi_name_alloc(ctx, (byte *) gname.data, gname.size, (pdf_obj **) &GlyphName);
+                if (code >= 0)
+                    pdfi_countup(GlyphName);
+            }
 
-            cr->client_char_code = ccode;
+            cr->char_codes[0] = cr->client_char_code;
             cr->is_glyph_index = false;
             if (code < 0)
                 return 0;
@@ -1067,12 +1081,10 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         }
     }
     else if (pbfont->FontType == ft_encrypted) {
-        /* FIXME: When the integration with the PS name table is done, and high level
-           devices supported properly, assess whether this can be the font's glyph_name method
-         */
-        code = pdfi_glyph_name((gs_font *)pbfont, ccode, (gs_const_string *)enc_char_name);
-        I->ff.char_data = enc_char_name->data;
-        I->ff.char_data_len = enc_char_name->size;
+        gs_const_string gname;
+        code = (*ctx->get_glyph_name)((gs_font *)pbfont, ccode, &gname);
+        I->ff.char_data = enc_char_name->data = (byte *)gname.data;
+        I->ff.char_data_len = enc_char_name->size = gname.size;
         cr->is_glyph_index = false;
     }
     return code;

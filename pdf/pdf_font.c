@@ -102,10 +102,12 @@ pdfi_font_match_glyph_widths(pdf_font *pdfont)
 
     for (i = sindex; i < lindex; i++) {
         gs_glyph_info_t ginfo = {0};
+        gs_glyph g;
+        g = pbfont->procs.encode_char((gs_font *)pbfont, i, GLYPH_SPACE_NAME);
 
         /* We're only interested in non-zero Widths entries for glyphs that actually exist in the font */
-        if (pdfont->Widths[i - pdfont->FirstChar] != 0.0
-          && (*pbfont->procs.glyph_info)((gs_font *)pbfont, (gs_glyph)i, NULL, GLYPH_INFO_WIDTH0, &ginfo) >= 0) {
+        if (g != GS_NO_GLYPH && pdfont->Widths[i - pdfont->FirstChar] != 0.0
+          && (*pbfont->procs.glyph_info)((gs_font *)pbfont, g, NULL, GLYPH_INFO_WIDTH0, &ginfo) >= 0) {
             fw += hypot(ginfo.width[0].x, ginfo.width[0].y);
             ww += pdfont->Widths[i - pdfont->FirstChar];
         }
@@ -1052,13 +1054,31 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
     return 0;
 }
 
-/*
- * Only suitable for simple fonts, I think, we just return the character code as a
- * glyph ID.
- */
 gs_glyph pdfi_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_used)
 {
-    return chr;
+    int code;
+    unsigned int nindex = 0;
+    gs_glyph g = GS_NO_GLYPH;
+
+    if (pfont->FontType == ft_encrypted || pfont->FontType == ft_encrypted2
+     || pfont->FontType == ft_user_defined || pfont->FontType == ft_TrueType
+     || pfont->FontType == ft_PDF_user_defined) {
+        pdf_font *font = (pdf_font *)pfont->client_data;
+        pdf_context *ctx = (pdf_context *)font->ctx;
+
+        if (font->Encoding != NULL) { /* safety */
+            pdf_name *GlyphName = NULL;
+            code = pdfi_array_get(ctx, font->Encoding, (uint64_t)chr, (pdf_obj **)&GlyphName);
+            if (code >= 0) {
+                code = (*ctx->get_glyph_index)(pfont, (byte *)GlyphName->data, GlyphName->length, &nindex);
+                pdfi_countdown(GlyphName);
+                if (code >= 0)
+                    g = (gs_glyph)nindex;
+            }
+        }
+    }
+
+    return g;
 }
 
 /* Get the unicode valude for a glyph FIXME - not written yet
@@ -1071,63 +1091,25 @@ int pdfi_decode_glyph(gs_font * font, gs_glyph glyph, int ch, ushort *unicode_re
 int pdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph)
 {
     int code = 0;
-    pdf_font *font;
+    pdf_font *font = (pdf_font *)pfont->client_data;
 
-    font = (pdf_font *)pfont->client_data;
     code = pdfi_get_name_index(font->ctx, (char *)str, size, glyph);
+
     return code;
 }
 
-/*
- * For simple fonts (ie not CIDFonts), given a character code, look up the
- * Encoding array and return the glyph name
- */
 int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
 {
-    int code = 0;
-    unsigned int index = 0;
-    pdf_font *font;
-    pdf_name *GlyphName = NULL;
+    int code = gs_error_invalidfont;
 
-    font = (pdf_font *)pfont->client_data;
+    if (pfont->FontType == ft_encrypted || pfont->FontType == ft_encrypted2
+     || pfont->FontType == ft_user_defined || pfont->FontType == ft_TrueType
+     || pfont->FontType == ft_PDF_user_defined) {
+        pdf_font *font = (pdf_font *)pfont->client_data;
 
-    if (glyph > gs_c_min_std_encoding_glyph && glyph < GS_MIN_CID_GLYPH) {
-        code = gs_c_glyph_name(glyph, pstr);
+        code = pdfi_name_from_index(font->ctx, glyph, (unsigned char **)&pstr->data, &pstr->size);
     }
-    else {
-        if (font->Encoding != NULL)
-            code = pdfi_array_get(font->ctx, font->Encoding, (uint64_t)glyph, (pdf_obj **)&GlyphName);
-        if (code < 0 && !font->fake_glyph_names)
-            return code;
-        /* For the benefit of the vector devices, if a glyph index is outside the encoding, we create a fake name */
-        if (GlyphName == NULL || GlyphName->type == PDF_NULL) {
-            int i;
-            char cid_name[5 + sizeof(gs_glyph) * 3 + 1];
-            for (i = 0; i < font->LastChar; i++)
-                if (font->fake_glyph_names[i].data == NULL) break;
 
-             if (i == font->LastChar) return_error(gs_error_invalidfont);
-
-             gs_sprintf(cid_name, "glyph%lu", (ulong) glyph);
-
-             pstr->data = font->fake_glyph_names[i].data =
-                           gs_alloc_bytes(OBJ_MEMORY(font), strlen(cid_name) + 1, "pdfi_glyph_name: fake name");
-             if (font->fake_glyph_names[i].data == NULL)
-                 return_error(gs_error_VMerror);
-             pstr->size = font->fake_glyph_names[i].size = strlen(cid_name);
-             memcpy(font->fake_glyph_names[i].data, cid_name, strlen(cid_name) + 1);
-             return 0;
-        }
-
-        code = pdfi_get_name_index(font->ctx, (char *)GlyphName->data, GlyphName->length, &index);
-        if (code < 0) {
-            pdfi_countdown(GlyphName);
-            return code;
-        }
-
-        code = pdfi_name_from_index(font->ctx, index, (unsigned char **)&pstr->data, &pstr->size);
-        pdfi_countdown(GlyphName);
-    }
     return code;
 }
 

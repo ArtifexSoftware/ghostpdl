@@ -51,6 +51,58 @@ pdfi_ttf_string_proc(gs_font_type42 * pfont, ulong offset, uint length, const by
     return code;
 }
 
+static gs_glyph pdfi_ttf_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t sp)
+{
+    pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
+    gs_glyph g = GS_NO_GLYPH;
+
+    if ((ttfont->descflags & 4) != 0) {
+        uint ID;
+        int code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)chr, &ID);
+        if (code < 0 || ID == 0)
+            code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)(chr | 0xf0 << 8), &ID);
+        g = (gs_glyph)ID;
+    }
+    else {
+        g = pdfi_encode_char(pfont, chr, sp);
+    }
+    return g;
+}
+
+static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
+{
+    return (uint)glyph;
+}
+
+static int pdfi_ttf_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
+{
+    pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
+    pdf_context *ctx = (pdf_context *)ttfont->ctx;
+    uint ID = 0;
+    int code = -1;
+
+    if ((ttfont->descflags & 4) != 0) {
+        code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)glyph, &ID);
+        if (code < 0 || ID == 0)
+            code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)(glyph | 0xf0 << 8), &ID);
+
+        code = gs_type42_find_post_name((gs_font_type42 *)pfont, (gs_glyph)ID, (gs_string *)pstr);
+        if (code < 0)
+            return -1; /* No name, trigger pdfwrite Type 3 fallback */
+
+        code = (*ctx->get_glyph_index)(pfont, (byte *)pstr->data, pstr->size, &ID);
+        if (code < 0)
+            return -1; /* No name, trigger pdfwrite Type 3 fallback */
+
+        code = (*ctx->get_glyph_name)(pfont, ID, pstr);
+        if (code < 0)
+            return -1; /* No name, trigger pdfwrite Type 3 fallback */
+    }
+
+    return code;
+
+}
+
 static int
 pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
 {
@@ -109,9 +161,9 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
     uid_set_UniqueID(&pfont->UID, pfont->id);
     /* The buildchar proc will be filled in by FAPI -
        we won't worry about working without FAPI */
-    pfont->procs.encode_char = pdfi_encode_char;
+    pfont->procs.encode_char = pdfi_ttf_encode_char;
     pfont->data.string_proc = pdfi_ttf_string_proc;
-    pfont->procs.glyph_name = pdfi_glyph_name;
+    pfont->procs.glyph_name = pdfi_ttf_glyph_name;
     pfont->procs.decode_glyph = pdfi_decode_glyph;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;
@@ -129,18 +181,6 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
 
     *font = ttfont;
     return 0;
-}
-
-static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
-{
-    uint ID = glyph;
-    int code = 0;
-
-    code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)glyph, &ID);
-    if (code < 0)
-        return code;
-
-    return ID;
 }
 
 static int pdfi_set_type42_data_procs(gs_font_type42 *pfont)

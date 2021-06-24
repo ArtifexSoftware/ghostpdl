@@ -116,37 +116,32 @@ pdfi_cff_glyph_data(gs_font_type1 *pfont, gs_glyph glyph, gs_glyph_data_t *pgd)
 {
     int code = 0;
     pdf_font_cff *cfffont = (pdf_font_cff *) pfont->client_data;
+    pdf_context *ctx = (pdf_context *) cfffont->ctx;
     pdf_name *glyphname = NULL;
     pdf_string *charstring = NULL;
 
     /* Getting here with Encoding == NULL means it's a subfont from an FDArray
-    ]so we index directly by gid
+       so we index directly by gid
      */
     if (cfffont->Encoding == NULL) {
         char indstring[33];
         int l = gs_snprintf(indstring, 32, "%u", (unsigned int)glyph);
 
-        code = pdfi_name_alloc(cfffont->ctx, (byte *) indstring, l, (pdf_obj **) &glyphname);
+        code = pdfi_name_alloc(ctx, (byte *) indstring, l, (pdf_obj **) &glyphname);
         if (code >= 0)
             pdfi_countup(glyphname);
     }
     else {
-        if (glyph >= gs_c_min_std_encoding_glyph) {
-            gs_const_string str;
-
-            code = gs_c_glyph_name(glyph, &str);
-            if (code >= 0) {
-                code = pdfi_name_alloc(cfffont->ctx, (byte *) str.data, str.size, (pdf_obj **) &glyphname);
-                if (code >= 0)
-                    pdfi_countup(glyphname);
-            }
-        }
-        else {
-            code = pdfi_array_get(cfffont->ctx, cfffont->Encoding, (uint64_t) glyph, (pdf_obj **) &glyphname);
+        gs_const_string gname;
+        code = (*ctx->get_glyph_name)((gs_font *)pfont, glyph, &gname);
+        if (code >= 0) {
+            code = pdfi_name_alloc(ctx, (byte *) gname.data, gname.size, (pdf_obj **) &glyphname);
+            if (code >= 0)
+                pdfi_countup(glyphname);
         }
     }
     if (code >= 0) {
-        code = pdfi_dict_get_by_key(cfffont->ctx, cfffont->CharStrings, glyphname, (pdf_obj **) &charstring);
+        code = pdfi_dict_get_by_key(ctx, cfffont->CharStrings, glyphname, (pdf_obj **) &charstring);
         if (code >= 0)
             gs_glyph_data_from_bytes(pgd, charstring->data, 0, charstring->length, NULL);
     }
@@ -180,10 +175,32 @@ pdfi_cff_subr_data(gs_font_type1 *pfont, int index, bool global, gs_glyph_data_t
 }
 
 static int
-pdfi_cff_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
-                   gs_const_string *gstr, gs_glyph_data_t *pgd)
+pdfi_cff_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph, gs_const_string *gstr, gs_glyph_data_t *pgd)
 {
-    return_error(gs_error_rangecheck);
+    int code = 0;
+    pdf_font_cff *cfffont = (pdf_font_cff *) pfont->client_data;
+    pdf_context *ctx = (pdf_context *) cfffont->ctx;
+    gs_glyph glyph = gs_c_known_encode((gs_char)ccode, ENCODING_INDEX_STANDARD);
+
+    if (glyph == GS_NO_GLYPH)
+        return_error(gs_error_rangecheck);
+
+    code = gs_c_glyph_name(glyph, gstr);
+    if (code >= 0) {
+        pdf_name *glyphname = NULL;
+        pdf_string *charstring = NULL;
+        code = pdfi_name_alloc(ctx, (byte *) gstr->data, gstr->size, (pdf_obj **) &glyphname);
+        if (code >= 0) {
+            pdfi_countup(glyphname);
+            code = pdfi_dict_get_by_key(ctx, cfffont->CharStrings, glyphname, (pdf_obj **)&charstring);
+            pdfi_countdown(glyphname);
+            if (code >= 0)
+                gs_glyph_data_from_bytes(pgd, charstring->data, 0, charstring->length, NULL);
+                pdfi_countdown(charstring);
+            }
+    }
+
+    return code;
 }
 
 /* push/pop are null ops here */
@@ -212,6 +229,7 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
     uint64_t i = (uint64_t) *pindex;
     pdf_dict *cstrings;
     pdf_font *pdffont = (pdf_font *) pfont->client_data;
+    pdf_context *ctx = (pdf_context *) pdffont->ctx;
 
     (void)glyph_space;
 
@@ -231,16 +249,17 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
     else
         code = pdfi_dict_key_next(pdffont->ctx, cstrings, (pdf_obj **) &key, &i);
     if (code < 0) {
-        *pindex = 0;
+        i = 0;
         code = gs_note_error(gs_error_undefined);
     }
     /* If Encoding == NULL, it's an FDArray subfont */
     else if (pdffont->pdfi_font_type != e_pdf_cidfont_type0 && pdffont->Encoding != NULL) {
-        *pglyph = gs_c_name_glyph((const byte *)key->data, key->length);
-        if (*pglyph == GS_NO_GLYPH)
-            *pglyph = (gs_glyph) *pindex;
-
-        *pindex = (int)i + 1;
+        unsigned int nindex;
+        code = (*ctx->get_glyph_index)(pfont, key->data, key->length, &nindex);
+        if (code < 0)
+            *pglyph = GS_NO_GLYPH;
+        else
+            *pglyph = (gs_glyph)nindex;
     }
     else {
         char kbuf[32];
@@ -259,8 +278,8 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
         }
         if (l > 0)
             *pglyph = (gs_glyph) (val) + GS_MIN_CID_GLYPH;
-        *pindex = (int)i + 1;
     }
+    *pindex = (int)i;
     pdfi_countdown(key);
     return code;
 }
@@ -1355,6 +1374,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
     byte *e = font->cffend;
     byte *dictp, *dicte;
     byte *strp, *stre;
+    byte *nms, *nmp, *nme;
     int count;
     int i, code = 0;
     cff_font_offsets offsets = { 0 };
@@ -1377,11 +1397,22 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
     p += hdrsize;
 
     /* Name INDEX */
+    nms = p;
     p = pdfi_count_cff_index(p, e, &count);
     if (!p)
         return gs_throw(gs_error_invalidfont, "cannot read name index");
     if (count != 1)
         return gs_throw(gs_error_invalidfont, "file did not contain exactly one font");
+
+    nms = pdfi_find_cff_index(nms, e, 0, &nmp, &nme);
+    if (!nms)
+        return gs_throw(gs_error_invalidfont, "cannot read names index");
+    else {
+        int len = nme - nmp < sizeof(ptpriv->key_name.chars) ? nme - nmp : sizeof(ptpriv->key_name.chars);
+        memcpy(ptpriv->key_name.chars, nmp, len);
+        memcpy(ptpriv->font_name.chars, nmp, len);
+        ptpriv->key_name.size = ptpriv->font_name.size = len;
+    }
 
     /* Top Dict INDEX */
     p = pdfi_find_cff_index(p, e, 0, &dictp, &dicte);
@@ -1736,7 +1767,7 @@ pdfi_alloc_cff_cidfont(pdf_context *ctx, pdf_cidfont_type0 ** font, uint32_t obj
     /* The buildchar proc will be filled in by FAPI -
        we won't worry about working without FAPI */
     pfont->procs.encode_char = pdfi_encode_char;
-    pfont->procs.glyph_name = pdfi_glyph_name;
+    pfont->procs.glyph_name = ctx->get_glyph_name;
     pfont->procs.decode_glyph = pdfi_decode_glyph;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;
