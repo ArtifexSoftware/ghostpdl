@@ -772,6 +772,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                 str.data = scan.text.data.bytes;
                 pdsubf = pdsubf0;
                 pte->text.operation = save_op;
+                pte->text.data.glyphs = save_data;
             }
             pte->current_font = subfont0;
             if (!subfont0 || !pdsubf0)
