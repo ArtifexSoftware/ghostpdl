@@ -241,7 +241,7 @@ unpack_colors_to_standard(gx_device * dev, gx_color_index real_colors[2],
         gx_color_value rgb[3];
         gx_color_index pixel;
 
-        (*dev_proc(dev, decode_color)) (dev, colors[i], rgb);
+        (*dev_proc(dev, map_color_rgb)) (dev, colors[i], rgb);
         pixel = gx_color_value_to_byte(rgb[0]);
         if (depth > 8) {
             pixel = (pixel << 16) +
