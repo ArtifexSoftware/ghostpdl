@@ -2011,6 +2011,24 @@ cmyk_16bit_map_color_cmyk(gx_device * dev, gx_color_index color,
     return 0;
 }
 
+int
+cmyk_16bit_map_color_rgb(gx_device * dev, gx_color_index color,
+                         gx_color_value prgb[3])
+{
+    gx_color_value c     = ((color >> 24) >> 24) & 0xffff;
+    gx_color_value m     = ((color >> 16) >> 16) & 0xffff;
+    gx_color_value y     = ( color        >> 16) & 0xffff;
+    gx_color_value not_k = (~color             ) & 0xffff;
+    int r     = not_k - c;
+    int g     = not_k - m;
+    int b     = not_k - y;
+
+    prgb[0] = (r < 0 ? 0 : r);
+    prgb[1] = (g < 0 ? 0 : g);
+    prgb[2] = (b < 0 ? 0 : b);
+    return 0;
+}
+
 frac
 gx_unit_frac(float fvalue)
 {
