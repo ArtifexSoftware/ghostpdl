@@ -1722,6 +1722,7 @@ plane_strip_copy_rop2(gx_device_memory * mdev,
     mem_save_params_t save;
     int code;
     const gdev_mem_functions *fns;
+    int n;
 
     /* assert(planar_height == 0); */
 
@@ -1734,10 +1735,13 @@ plane_strip_copy_rop2(gx_device_memory * mdev,
     set_dev_proc(mdev, fill_rectangle, fns->fill_rectangle);
     /* mdev->color_info.depth is restored by MEM_RESTORE_PARAMS below. */
     mdev->color_info.depth = mdev->planes[plane].depth;
+    n = mdev->color_info.num_components;
+    mdev->color_info.num_components = 1;
     code = fns->strip_copy_rop2((gx_device *)mdev, sdata, sourcex, sraster,
                                 id, scolors, textures, tcolors,
                                 x, y, width, height,
                                 phase_x, phase_y, lop, planar_height);
+    mdev->color_info.num_components = n;
     set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
     /* The following effectively does: mdev->line_ptrs -= mdev->height * plane; */
