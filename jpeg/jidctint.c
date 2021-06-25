@@ -4956,6 +4956,8 @@ jpeg_idct_4x8 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
      */
 
     z2 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    if (ctr == 4)
+      CLAMP_DC(z2);
     z3 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
     z2 <<= CONST_BITS;
     z3 <<= CONST_BITS;
