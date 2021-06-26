@@ -506,6 +506,15 @@ lpdict begin
 
 % Iterate through the file.
    lpline
+   % First handle new-lines in the initial string (--detect mode)
+   (\n) search {
+     showline	% output up to the first new-line
+     pop pop	% done with that string and the new-line
+     (\n) search {
+       showline	% output the second new-line
+       pop pop	% done
+     } if
+   } if
     { dup length /pos exch def
       lbuf exch 0 exch putinterval
        { lpfile lbuf pos lbuf length pos sub getinterval readline } stopped
