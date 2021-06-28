@@ -280,15 +280,15 @@ namespace GhostMono
             IntPtr data, gsParamState_t state);
         internal event PageRendered PageRenderedCallBack;
 
-        /* From my understanding you cannot pin delegates.  These need to be declared
+		/* From my understanding you cannot pin delegates.  These need to be declared
 		 * as members to keep a reference to the delegates and avoid their possible GC. 
 		 * since the C# GC has no idea that GS has a reference to these items.  For some
 		 * reason the Mono compiler throws a CS0414 warning about these not being assigned
 		 * even though they are */
 #pragma warning disable 0414
-        readonly gs_stdio_handler raise_stdin;
-        readonly gs_stdio_handler raise_stdout;
-        readonly gs_stdio_handler raise_stderr;
+		GSAPI.gs_stdio_handler raise_stdin;
+		GSAPI.gs_stdio_handler raise_stdout;
+		GSAPI.gs_stdio_handler raise_stderr;
 #pragma warning restore 0414
 
         /* Ghostscript display callback struct */
@@ -1092,6 +1092,72 @@ namespace GhostMono
             m_params.currpage = first_page - 1;
 
             return RunGhostscriptAsync(gsparams);
+		}
+
+		/* Set up the display device ahead of time */
+		public gsParamState_t DisplayDeviceOpen()
+		{
+			int code;
+			gsParamState_t gsparams = new gsParamState_t();
+			gsparams.result = GS_Result_t.gsOK;
+
+			if (dispInstance != IntPtr.Zero)
+				return gsparams;
+
+			try
+			{
+				code = GSAPI.gsapi_new_instance(out dispInstance, IntPtr.Zero);
+				if (code < 0)
+				{
+					throw new GhostscriptException("DisplayDeviceOpen: gsapi_new_instance error");
+				}
+
+				code = GSAPI.gsapi_set_stdio(dispInstance, raise_stdin, raise_stdout, raise_stderr);
+				if (code < 0)
+				{
+					throw new GhostscriptException("DisplayDeviceOpen: gsapi_set_stdio error");
+				}
+
+				code = GSAPI.gsapi_set_arg_encoding(dispInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+				if (code < 0)
+				{
+					throw new GhostscriptException("DisplayDeviceOpen: gsapi_set_arg_encoding error");
+				}
+
+				code = GSAPI.gsapi_set_display_callback(dispInstance, ptr_display_struct);
+				if (code < 0)
+				{
+					throw new GhostscriptException("DisplayDeviceOpen: gsapi_set_display_callback error");
+				}
+			}
+
+			catch (DllNotFoundException except)
+			{
+				DLLProblemCallBack("Exception: " + except.Message);
+				gsparams.result = GS_Result_t.gsFAILED;
+			}
+			catch (BadImageFormatException except)
+			{
+				DLLProblemCallBack("Exception: " + except.Message);
+				gsparams.result = GS_Result_t.gsFAILED;
+			}
+			catch (GhostscriptException except)
+			{
+				DLLProblemCallBack("Exception: " + except.Message);
+				gsparams.result = GS_Result_t.gsFAILED;
+				if (dispInstance != IntPtr.Zero)
+					GSAPI.gsapi_delete_instance(dispInstance);
+				dispInstance = IntPtr.Zero;
+			}
+			catch (Exception except)
+			{
+				DLLProblemCallBack("Exception: " + except.Message);
+				gsparams.result = GS_Result_t.gsFAILED;
+				if (dispInstance != IntPtr.Zero)
+					GSAPI.gsapi_delete_instance(dispInstance);
+				dispInstance = IntPtr.Zero;
+			}
+			return gsparams;
 		}
 
 		/* Close the display device and delete the instance */
