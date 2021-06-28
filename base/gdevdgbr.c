@@ -448,7 +448,7 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
                 }
                 mapped[pixel] = dest;
             }
-            (*dev_proc(dev, decode_color)) (dev, pixel, rgba);
+            (*dev_proc(dev, map_color_rgb)) (dev, pixel, rgba);
             if (options & GB_ALPHA_FIRST)
                 *dest++ = 0xff;
             /* Convert to the requested color space. */
