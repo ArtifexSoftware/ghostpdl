@@ -1845,7 +1845,7 @@ void gdev_prn_initialize_device_procs_cmyk8(gx_device *dev)
     set_dev_proc(dev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
     set_dev_proc(dev, map_color_rgb, cmyk_8bit_map_color_rgb);
     set_dev_proc(dev, encode_color, cmyk_8bit_map_cmyk_color);
-    set_dev_proc(dev, decode_color, cmyk_8bit_map_color_rgb);
+    set_dev_proc(dev, decode_color, cmyk_8bit_map_color_cmyk);
 }
 
 void gdev_prn_initialize_device_procs_cmyk8_bg(gx_device *dev)
