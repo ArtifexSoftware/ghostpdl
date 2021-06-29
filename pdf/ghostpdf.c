@@ -287,142 +287,282 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
     return 0;
 }
 
+/* Error and warning string tables. There should be a string for each error and warning
+ * defined in the error (pdf_error_e) and warning (pdf_warning_e) enumerators. Having
+ * more strings is harmless, having too few may cause crashes. These need to be kept in sync.
+ *
+ * The Ghostscript graphics library errors should be kept up to date, but this is less critical
+ * if the error code is greater than the last error we know about we just print a generic
+ * 'unknown' message.
+ */
+char *pdf_error_strings[] = {
+    "no error",
+    "no header detected",
+    "header lacks a version number",
+    "no startxref token found",
+    "startxref offset invalid",
+    "couldn't read hybrid file's XrefStm",
+    "error in xref table",
+    "too few entries in xref table",
+    "content stream lacks endstream",
+    "request for unknown filter",
+    "missing white space after number",
+    "malformed number",
+    "invalid unescaped character '(' in string",
+    "invalid object number",
+    "object lacks an endobj",
+    "error executing PDF token",
+    "potential token is too long",
+    "Page object doe snot have /Page type",
+    "circular reference to indirect object",
+    "couldn't repair PDF file",
+    "PDF file was repaired",
+    "error reading a stream",
+    "obj token missing",
+    "error in Page dictionary",
+    "out of memory",
+    "error reading page dictionary",
+    "stack underflow",
+    "error in stream dictionary",
+    "stream inherited a resource",
+    "counting down reference to freed object",
+    "error in transparency XObject",
+    "object lcks a required Subtype",
+    "error in image colour",
+    ""                                          /* last error, should not be used */
+};
+
+char *pdf_warning_strings[] = {
+    "incorrect xref size",
+    "used inline filter name inappropriately",
+    "used inline colous space inappropriately",
+    "used inline image key inappropriately",
+    "recoverable image error",
+    "recoverable error in image dictionary",
+    "encountered more Q than q",
+    "encountered more q than Q",
+    "garbage left on stack",
+    "stack underflow",
+    "error in group definition",
+    "invalid operator used in text block",
+    "used invalid operator in CharProc",
+    "BT found inside a text block",
+    "ET found outside text block",
+    "text operator outside text block",
+    "degenerate text matrix",
+    "bad ICC colour profile, using alternate",
+    "bad ICC vs number components, using components",
+    "bad value for text rendering mode",
+    "error in shading",
+    "error in pattern",
+    "non standard operator found - ignoring",
+    "number uses illegal exponent form",
+    "Stream has inappropriate /Contents entry",
+    "bad DecodeParms",
+    "error in Mask",
+    "error in annotation Appearance",
+    "badly escaped name",
+    "typecheck error",
+    "bad trailer dictionary",
+    ""                                                  /* Last warning shuld not be used */
+};
+
+char *gs_error_strings[] = {
+    "unknownerror",
+    "dictfull",
+    "dictstackoverflow",
+    "dictstackunderflow",
+    "execstackoverflow",
+    "interrupt",
+    "invalidaccess",
+    "invalidexit",
+    "invalidfileaccess",
+    "invalidfont",
+    "invalidrestore",
+    "ioerror",
+    "limitcheck",
+    "nocurrentpoint",
+    "rangecheck",
+    "stackoverflow",
+    "stackunderflow",
+    "syntaxerror",
+    "timeout",
+    "typecheck",
+    "undefined",
+    "undefinedfilename",
+    "undefinedresult",
+    "unmatchedmark",
+    "VMerror",
+    "configurationerror",
+    "undefinedresource",
+    "unregistered",
+    "invalidid",
+};
+
+char *gs_internal_error_strings[] = {
+    "error hit",
+    "fatal error",
+    "quit",
+    "interpreter exit",
+    "remap color",
+    "exec stack underflow",
+    "VMreclaim",
+    "Need input",
+    "need file",
+    "error info",
+    "handled",
+    "circular reference"
+};
+#define LASTNORMALGSERROR gs_error_invalidid * -1
+#define FIRSTINTERNALERROR gs_error_hit_detected * -1
+#define LASTGSERROR gs_error_circular_reference * -1
+
+void pdfi_verbose_error(pdf_context *ctx, int gs_error, char *gs_lib_function, int pdfi_error, char *pdfi_function_name, char *extra_info)
+{
+    char fallback[] = "unknown graphics library error";
+
+    if (ctx->verbose_errors && !ctx->args.QUIET) {
+        if (gs_error != 0) {
+            char *error_string;
+            unsigned int code = gs_error * -1;
+
+            if (code > LASTGSERROR)
+                error_string = fallback;
+            else {
+                if (code > LASTNORMALGSERROR) {
+                    if (code < FIRSTINTERNALERROR)
+                        error_string = fallback;
+                    else
+                        error_string = gs_internal_error_strings[code - FIRSTINTERNALERROR];
+                } else
+                    error_string = gs_error_strings[code];
+            }
+            errprintf(ctx->memory, "Graphics library error %d (%s) in function '%s'", gs_error, error_string, pdfi_function_name);
+            if (gs_lib_function != NULL)
+                errprintf(ctx->memory, " from lib routine '%s'.\n", gs_lib_function);
+            else
+                errprintf(ctx->memory, ".\n");
+
+            if (pdfi_error != 0)
+                errprintf(ctx->memory, "\tSetting pdfi error %d - %s.\n", pdfi_error, pdf_error_strings[pdfi_error]);
+            if (extra_info != NULL)
+                errprintf(ctx->memory, "\t%s\n", extra_info);
+        } else {
+            if (pdfi_error != 0) {
+                errprintf(ctx->memory, "Function '%s' set pdfi error %d - %s.\n", pdfi_function_name, pdfi_error, pdf_error_strings[pdfi_error]);
+                if (extra_info != NULL)
+                    errprintf(ctx->memory, "\t%s\n", extra_info);
+            } else {
+                if (extra_info != NULL)
+                    errprintf(ctx->memory, "%s\n", extra_info);
+            }
+        }
+    }
+}
+
+void pdfi_verbose_warning(pdf_context *ctx, int gs_error, char *gs_lib_function, int pdfi_warning, char *pdfi_function_name, char *extra_info)
+{
+    char fallback[] = "unknown graphics library error";
+
+    if (ctx->verbose_warnings && !ctx->args.QUIET) {
+        if (gs_error != 0) {
+            char *error_string;
+            unsigned int code = gs_error * -1;
+
+            if (code > LASTGSERROR)
+                error_string = fallback;
+            else {
+                if (code > LASTNORMALGSERROR) {
+                    if (code < FIRSTINTERNALERROR)
+                        error_string = fallback;
+                    else
+                        error_string = gs_internal_error_strings[code - FIRSTINTERNALERROR];
+                } else
+                    error_string = gs_error_strings[code];
+            }
+            outprintf(ctx->memory, "Graphics library error %d (%s) in function '%s'", gs_error, error_string, pdfi_function_name);
+            if (gs_lib_function != NULL)
+                outprintf(ctx->memory, " from lib routine '%s'.\n", gs_lib_function);
+            else
+                outprintf(ctx->memory, ".\n");
+
+            if (pdfi_warning != 0)
+                outprintf(ctx->memory, "\tsetting pdfi warning %d - %s.\n", pdfi_warning, pdf_warning_strings[pdfi_warning]);
+            if (extra_info != NULL)
+                outprintf(ctx->memory, "\t%s\n", extra_info);
+        } else {
+            if (pdfi_warning != 0) {
+                outprintf(ctx->memory, "Function '%s' set pdfi warning %d - %s.\n", pdfi_function_name, pdfi_warning, pdf_warning_strings[pdfi_warning]);
+                if (extra_info != NULL)
+                    errprintf(ctx->memory, "\t%s\n", extra_info);
+            } else {
+                if (extra_info != NULL)
+                    errprintf(ctx->memory, "\t%s\n", extra_info);
+            }
+        }
+    }
+}
+
+void pdfi_log_info(pdf_context *ctx, char *pdfi_function, char *info)
+{
+#if DEBUG
+    if (!ctx->args.QUIET)
+        outprintf(ctx->memory, info);
+#endif
+}
+
 static void
 pdfi_report_errors(pdf_context *ctx)
 {
-    int code;
+    int code, i, j;
+    bool warnings_exist = false, errors_exist = false;
 
-    if (ctx->pdf_errors == E_PDF_NOERROR && ctx->pdf_warnings == W_PDF_NOWARNING)
+    if (ctx->args.QUIET)
         return;
 
-    if (ctx->pdf_errors != E_PDF_NOERROR) {
-        dmprintf(ctx->memory, "The following errors were encountered at least once while processing this file:\n");
-        if (ctx->pdf_errors & E_PDF_NOHEADER)
-            dmprintf(ctx->memory, "\tThe file does not have a valid PDF header.\n");
-        if (ctx->pdf_errors & E_PDF_NOHEADERVERSION)
-            dmprintf(ctx->memory, "\tThe file header does not contain a version number.\n");
-        if (ctx->pdf_errors & E_PDF_NOSTARTXREF)
-            dmprintf(ctx->memory, "\tThe file does not contain a 'startxref' token.\n");
-        if (ctx->pdf_errors & E_PDF_BADSTARTXREF)
-            dmprintf(ctx->memory, "\tThe file contain a 'startxref' token, but it does not point to an xref table.\n");
-        if (ctx->pdf_errors & E_PDF_BADXREFSTREAM)
-            dmprintf(ctx->memory, "\tThe file uses an XRefStm, but the stream is invalid.\n");
-        if (ctx->pdf_errors & E_PDF_BADXREF)
-            dmprintf(ctx->memory, "\tThe file uses an xref table, but the table is invalid.\n");
-        if (ctx->pdf_errors & E_PDF_SHORTXREF)
-            dmprintf(ctx->memory, "\tThe file uses an xref table, but the table has ferwer entires than expected.\n");
-        if (ctx->pdf_errors & E_PDF_MISSINGENDSTREAM)
-            dmprintf(ctx->memory, "\tA content stream is missing an 'endstream' token.\n");
-        if (ctx->pdf_errors & E_PDF_MISSINGENDOBJ)
-            dmprintf(ctx->memory, "\tAn object is missing an 'endobj' token.\n");
-        if (ctx->pdf_errors & E_PDF_UNKNOWNFILTER)
-            dmprintf(ctx->memory, "\tThe file attempted to use an unrecognised decompression filter.\n");
-        if (ctx->pdf_errors & E_PDF_MISSINGWHITESPACE)
-            dmprintf(ctx->memory, "\tA missing white space was detected while trying to read a number.\n");
-        if (ctx->pdf_errors & E_PDF_MALFORMEDNUMBER)
-            dmprintf(ctx->memory, "\tA malformed number was detected.\n");
-        if (ctx->pdf_errors & E_PDF_UNESCAPEDSTRING)
-            dmprintf(ctx->memory, "\tA string used a '(' character without an escape.\n");
-        if (ctx->pdf_errors & E_PDF_BADOBJNUMBER)
-            dmprintf(ctx->memory, "\tThe file contained a reference to an object number larger than the number of xref entries.\n");
-        if (ctx->pdf_errors & E_PDF_TOKENERROR)
-            dmprintf(ctx->memory, "\tAn operator in a content stream returned an error.\n");
-        if (ctx->pdf_errors & E_PDF_KEYWORDTOOLONG)
-            dmprintf(ctx->memory, "\tA keyword (outside a content stream) was too long (> 255).\n");
-        if (ctx->pdf_errors & E_PDF_BADPAGETYPE)
-            dmprintf(ctx->memory, "\tAn entry in the Pages array was a dictionary with a /Type key whose value was not /Page.\n");
-        if (ctx->pdf_errors & E_PDF_CIRCULARREF)
-            dmprintf(ctx->memory, "\tAn indirect object caused a circular reference to itself.\n");
-        if (ctx->pdf_errors & E_PDF_UNREPAIRABLE)
-            dmprintf(ctx->memory, "\tFile could not be repaired.\n");
-        if (ctx->pdf_errors & E_PDF_REPAIRED)
-            dmprintf(ctx->memory, "\tFile had an error that needed to be repaired.\n");
-        if (ctx->pdf_errors & E_PDF_BADSTREAM)
-            dmprintf(ctx->memory, "\tFile had an error in a stream.\n");
-        if (ctx->pdf_errors & E_PDF_MISSINGOBJ)
-            dmprintf(ctx->memory, "\tThe file contained a reference to an object number that is missing.\n");
-        if (ctx->pdf_errors & E_PDF_BADPAGEDICT)
-            dmprintf(ctx->memory, "\tThe file contained a bad Pages dictionary.  Couldn't process it.\n");
-        if (ctx->pdf_errors & E_PDF_OUTOFMEMORY)
-            dmprintf(ctx->memory, "\tThe interpeter ran out of memory while processing this file.\n");
-        if (ctx->pdf_errors & E_PDF_PAGEDICTERROR)
-            dmprintf(ctx->memory, "\tA page had a bad Page dict and was skipped.\n");
-        if (ctx->pdf_errors & E_PDF_STACKUNDERFLOWERROR)
-            dmprintf(ctx->memory, "\tToo few operands for an operator, operator was skipped.\n");
-        if (ctx->pdf_errors & E_PDF_BADSTREAMDICT)
-            dmprintf(ctx->memory, "\tA stream dictionary was not followed by a 'stream' keyword.\n");
-        if (ctx->pdf_errors & E_PDF_DEREF_FREE_OBJ)
-            dmprintf(ctx->memory, "\tAn attempt was made to access an object marked as free in the xref.\n");
-        if (ctx->pdf_errors & E_PDF_INVALID_TRANS_XOBJECT)
-            dmprintf(ctx->memory, "\tAn invalid transparency group XObject was ignored.\n");
-        if (ctx->pdf_errors & E_PDF_NO_SUBTYPE)
-            dmprintf(ctx->memory, "\tAn object was missing the required /Subtype.\n");
-        if (ctx->pdf_errors & E_PDF_IMAGECOLOR_ERROR)
-            dmprintf(ctx->memory, "\tAn image had an unknown or invalid colorspace.\n");
+    for (i = 0; i < (E_PDF_MAX_ERROR - 2) / (sizeof(char) * 8) + ((E_PDF_MAX_ERROR - 2) % (sizeof(char) * 8) ? 1 : 0); i++) {
+        if (ctx->pdf_errors[i] != 0)
+            errors_exist = true;
     }
 
-    if (ctx->pdf_warnings != W_PDF_NOWARNING) {
-        dmprintf(ctx->memory, "The following warnings were encountered at least once while processing this file:\n");
-        if (ctx->pdf_warnings & W_PDF_BAD_XREF_SIZE)
-            dmprintf(ctx->memory, "\tThe file contains an xref with more entries than the declared /Size in the trailer dictionary.\n");
-        if (ctx->pdf_warnings & W_PDF_BAD_INLINEFILTER)
-            dmprintf(ctx->memory, "\tThe file attempted to use an inline decompression filter other than on an inline image.\n");
-        if (ctx->pdf_warnings & W_PDF_BAD_INLINECOLORSPACE)
-            dmprintf(ctx->memory, "\tThe file attempted to use an inline image color space other than on an inline image.\n");
-        if (ctx->pdf_warnings & W_PDF_BAD_INLINEIMAGEKEY)
-            dmprintf(ctx->memory, "\tThe file attempted to use an inline image dictionary key with an image XObject.\n");
-        if (ctx->pdf_warnings & W_PDF_IMAGE_ERROR)
-            dmprintf(ctx->memory, "\tThe file has an error when rendering an image.\n");
-        if (ctx->pdf_warnings & W_PDF_BAD_IMAGEDICT)
-            dmprintf(ctx->memory, "\tThe file attempted to use an image with a bad value in the image dict.\n");
-        if (ctx->pdf_warnings & W_PDF_TOOMANYQ)
-            dmprintf(ctx->memory, "\tA content stream had unmatched q/Q operations (too many Q's).\n");
-        if (ctx->pdf_warnings & W_PDF_TOOMANYq)
-            dmprintf(ctx->memory, "\tA content stream had unmatched q/Q operations (too many q's).\n");
-        if (ctx->pdf_warnings & W_PDF_STACKGARBAGE)
-            dmprintf(ctx->memory, "\tA content stream left entries on the stack.\n");
-        if (ctx->pdf_warnings & W_PDF_STACKUNDERFLOW)
-            dmprintf(ctx->memory, "\tA content stream consumed too many arguments (stack underflow).\n");
-        if (ctx->pdf_warnings & W_PDF_GROUPERROR)
-            dmprintf(ctx->memory, "\tA transparency group was not terminated.\n");
-        if (ctx->pdf_warnings & W_PDF_OPINVALIDINTEXT)
-            dmprintf(ctx->memory, "\tAn operator (eg q/Q) was used in a text block where it is not permitted.\n");
-        if (ctx->pdf_warnings & W_PDF_NOTINCHARPROC)
-            dmprintf(ctx->memory, "\tA d0 or d1 operator was encountered outside a CharProc.\n");
-        if (ctx->pdf_warnings & W_PDF_NESTEDTEXTBLOCK)
-            dmprintf(ctx->memory, "\tEncountered a BT while already in a text block.\n");
-        if (ctx->pdf_warnings & W_PDF_ETNOTEXTBLOCK)
-            dmprintf(ctx->memory, "\tEncountered an ET while not in a text block.\n");
-        if (ctx->pdf_warnings & W_PDF_TEXTOPNOBT)
-            dmprintf(ctx->memory, "\tEncountered a text position or show operator without a prior BT operator.\n");
-        if (ctx->pdf_warnings & W_PDF_BADICC_USE_ALT)
-            dmprintf(ctx->memory, "\tCouldn't set ICC profile space, used Alternate space instead.\n");
-        if (ctx->pdf_warnings & W_PDF_BADICC_USECOMPS)
-            dmprintf(ctx->memory, "\tCouldn't set ICC profile space, used number of profile components to select a space.\n");
-        if (ctx->pdf_warnings & W_PDF_BADTRSWITCH)
-            dmprintf(ctx->memory, "\tSwitching from a text rendering mode including clip, to a mode which does not, is invalid.\n");
-        if (ctx->pdf_warnings & W_PDF_BADSHADING)
-            dmprintf(ctx->memory, "\tThe file has an error when interpreting a Shading object.\n");
-        if (ctx->pdf_warnings & W_PDF_BADPATTERN)
-            dmprintf(ctx->memory, "\tThe file has an error when interpreting a Pattern object.\n");
-        if (ctx->pdf_warnings & W_PDF_NONSTANDARD_OP)
-            dmprintf(ctx->memory, "\tThe file uses a non-standard PDF operator.\n");
-        if (ctx->pdf_warnings & W_PDF_NUM_EXPONENT)
-            dmprintf(ctx->memory, "\tThe file uses numbers with exponents, which is not standard PDF.\n");
-        if (ctx->pdf_warnings & W_PDF_STREAM_HAS_CONTENTS)
-            dmprintf(ctx->memory, "\tA stream dictionary has no stream and instead uses a /Contents entry, which is invalid.\n");
-        if (ctx->pdf_warnings & W_PDF_STREAM_BAD_DECODEPARMS)
-            dmprintf(ctx->memory, "\tA stream dictionary has an invalid /DecodeParms entry\n");
-        if (ctx->pdf_warnings & W_PDF_MASK_ERROR)
-            dmprintf(ctx->memory, "\tAn image dictionary has an invalid /Mask entry\n");
-        if (ctx->pdf_warnings & W_PDF_ANNOT_AP_ERROR)
-            dmprintf(ctx->memory, "\tAn Annotation has an invalid AP entry.\n");
-        if (ctx->pdf_warnings & W_PDF_BAD_NAME_ESCAPE)
-            dmprintf(ctx->memory, "\tA name contained a '#' escape character but it was not a valid escape.\n");
-        if (ctx->pdf_warnings & W_PDF_TYPECHECK)
-            dmprintf(ctx->memory, "\tAn object was of the wrong type, and was ignored.\n");
-        if (ctx->pdf_warnings & W_PDF_BAD_TRAILER)
-            dmprintf(ctx->memory, "\tAn entry in the Trailer dictionary was invalid, and was ignored.\n");
+    for (i = 0; i < (W_PDF_MAX_WARNING - 2) / (sizeof(char) * 8) + ((W_PDF_MAX_WARNING - 2) % (sizeof(char) * 8) ? 1 : 0); i++) {
+        if (ctx->pdf_warnings[i] != 0)
+            warnings_exist = true;
+    }
+
+    if (!errors_exist && !warnings_exist)
+        return;
+
+    if (errors_exist)
+    {
+        dmprintf(ctx->memory, "\nThe following errors were encountered at least once while processing this file:\n");
+        for (i = 0; i < (E_PDF_MAX_ERROR - 2) / (sizeof(char) * 8) + ((E_PDF_MAX_ERROR - 2) % (sizeof(char) * 8) ? 1 : 0); i++) {
+            if (ctx->pdf_errors[i] != 0) {
+                for (j=0;j < sizeof(char) * 8; j++) {
+                    if (ctx->pdf_errors[i] & 1 << j) {
+                        int error_num = (i * sizeof(char) * 8) + j;
+
+                        errprintf(ctx->memory, "\t%s\n", pdf_error_strings[error_num]);
+                    }
+                }
+            }
+        }
+    }
+
+    if (warnings_exist)
+    {
+        dmprintf(ctx->memory, "\nThe following warnings were encountered at least once while processing this file:\n");
+        for (i = 0; i < (W_PDF_MAX_WARNING - 2) / (sizeof(char) * 8) + ((W_PDF_MAX_WARNING - 2) % (sizeof(char) * 8) ? 1 : 0); i++) {
+            if (ctx->pdf_warnings[i] != 0) {
+                for (j=0;j < sizeof(char) * 8; j++) {
+                    if (ctx->pdf_warnings[i] & 1 << j) {
+                        int warning_num = (i * sizeof(char) * 8) + j;
+
+                        outprintf(ctx->memory, "\t%s\n", pdf_warning_strings[warning_num]);
+                    }
+                }
+            }
+        }
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
@@ -898,7 +1038,7 @@ static int pdfi_init_file(pdf_context *ctx)
             /* If its a hybrid file, and we failed to read the XrefStm, try
              * again, but this time read the xref table instead.
              */
-            ctx->pdf_errors |= E_PDF_BADXREFSTREAM;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "pdf_init_file", NULL);
             pdfi_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             ctx->prefer_xrefstm = false;
@@ -906,7 +1046,7 @@ static int pdfi_init_file(pdf_context *ctx)
             if (code < 0)
                 goto exit;
         } else {
-            ctx->pdf_errors |= E_PDF_BADXREF;
+            pdfi_set_error(ctx, code, NULL, E_PDF_BADXREFSTREAM, "pdf_init_file", NULL);
             goto exit;
         }
     }
@@ -930,13 +1070,13 @@ read_root:
              * from a hybrid file, then try again, but this time use the xref table
              */
             if (code == gs_error_undefined && ctx->is_hybrid && ctx->prefer_xrefstm) {
-                ctx->pdf_errors |= E_PDF_BADXREFSTREAM;
+                pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "pdf_init_file", NULL);
                 pdfi_countdown(ctx->xref_table);
                 ctx->xref_table = NULL;
                 ctx->prefer_xrefstm = false;
                 code = pdfi_read_xref(ctx);
                 if (code < 0) {
-                    ctx->pdf_errors |= E_PDF_BADXREF;
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREF, "pdf_init_file", NULL);
                     goto exit;
                 }
                 code = pdfi_read_Root(ctx);
@@ -989,6 +1129,8 @@ read_root:
     }
 
 exit:
+    if (code < 0)
+        pdfi_set_error(ctx, code, NULL, 0, "pdf_init_file", NULL);
     pdfi_countdown(o);
     return code;
 }
@@ -1048,20 +1190,19 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     /* First check for existence of header */
     s = strstr((char *)Buffer, "%PDF");
     if (s == NULL) {
-        if (ctx->args.pdfdebug) {
-            if (ctx->filename)
-                dmprintf1(ctx->memory, "%% File %s does not appear to be a PDF file (no %%PDF in first 2Kb of file)\n", ctx->filename);
-            else
-                dmprintf1(ctx->memory, "%% File %s does not appear to be a PDF stream (no %%PDF in first 2Kb of stream)\n", ctx->filename);
-        }
-        ctx->pdf_errors |= E_PDF_NOHEADER;
+        char extra_info[gp_file_name_sizeof];
+
+        if (ctx->filename)
+            gs_sprintf(extra_info, "%% File %s does not appear to be a PDF file (no %%PDF in first 2Kb of file)\n", ctx->filename);
+        else
+            gs_sprintf(extra_info, "%% File does not appear to be a PDF stream (no %%PDF in first 2Kb of stream)\n");
+
+        pdfi_set_error(ctx, 0, NULL, E_PDF_NOHEADER, "pdfi_set_input_stream", extra_info);
     } else {
         /* Now extract header version (may be overridden later) */
         if (sscanf(s + 5, "%f", &version) != 1) {
-            if (ctx->args.pdfdebug)
-                dmprintf(ctx->memory, "%% Unable to read PDF version from header\n");
             ctx->HeaderVersion = 0;
-            ctx->pdf_errors |= E_PDF_NOHEADERVERSION;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_NOHEADERVERSION, "pdfi_set_input_stream", "%% Unable to read PDF version from header\n");
         }
         else {
             ctx->HeaderVersion = version;
@@ -1156,7 +1297,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     } while(Offset < ctx->main_stream_length);
 
     if (!found)
-        ctx->pdf_errors |= E_PDF_NOSTARTXREF;
+        pdfi_set_error(ctx, 0, NULL, E_PDF_NOSTARTXREF, "pdfi_set_input_stream", NULL);
 
     code = pdfi_init_file(ctx);
 
@@ -1288,6 +1429,9 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     ctx->misses = 0;
     ctx->compressed_hits = 0;
     ctx->compressed_misses = 0;
+#endif
+#if DEBUG
+    ctx->verbose_errors = ctx->verbose_warnings = 1;
 #endif
     return ctx;
 }

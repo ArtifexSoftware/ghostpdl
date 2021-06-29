@@ -433,7 +433,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 #if DEBUG_PATTERN
         dbgmprintf(ctx->memory, "PATTERN: Missing Resources in Pattern dict\n");
 #endif
-        ctx->pdf_warnings |= W_PDF_BADPATTERN;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BADPATTERN, "pdfi_setpattern_type1", NULL);
         code = 0;
     }
 

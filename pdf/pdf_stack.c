@@ -29,7 +29,7 @@ int pdfi_pop(pdf_context *ctx, int num)
     if (pdfi_count_stack(ctx) < num) {
         code = gs_note_error(gs_error_stackunderflow);
         num = pdfi_count_stack(ctx);
-        ctx->pdf_warnings |= W_PDF_STACKUNDERFLOW;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_STACKUNDERFLOW, "pdfi_pop", NULL);
     }
     while(num) {
         pdfi_countdown(ctx->stack_top[-1]);

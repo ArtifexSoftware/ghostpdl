@@ -83,8 +83,9 @@ bool pdfi_loop_detector_check_object(pdf_context *ctx, uint64_t object)
 
     for (i=0;i < ctx->loop_detection_entries;i++) {
         if (ctx->loop_detection[i] == object) {
-            dbgmprintf1(ctx->memory, "Error! circular reference to object %"PRIu64" detected.\n", object);
-            ctx->pdf_errors |= E_PDF_CIRCULARREF;
+            char info_string[256];
+            gs_sprintf(info_string, "Error! circular reference to object %"PRIu64" detected.\n", object);
+            pdfi_set_error(ctx, 0, NULL, E_PDF_CIRCULARREF, "pdfi_loop_detector_check_object", info_string);
             return true;
         }
     }

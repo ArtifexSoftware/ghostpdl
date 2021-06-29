@@ -832,7 +832,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return_error(gs_error_stackunderflow);
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_shading", NULL);
 
     if (pdfi_oc_is_off(ctx))
         return 0;
@@ -876,8 +876,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
     code = gs_shfill(ctx->pgs, psh);
     if (code < 0) {
-        dbgmprintf(ctx->memory, "ERROR: ignoring invalid smooth shading object, output may be incorrect\n");
-        ctx->pdf_warnings |= W_PDF_BADSHADING;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BADSHADING, "pdfi_rectpath", "ERROR: ignoring invalid smooth shading object, output may be incorrect");
         code = 0;
     }
 

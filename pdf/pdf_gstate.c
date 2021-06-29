@@ -161,7 +161,7 @@ int pdfi_concat(pdf_context *ctx)
     }
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_concat", NULL);
 
     for (i=0;i < 6;i++){
         num = (pdf_num *)ctx->stack_top[i - 6];
@@ -221,8 +221,7 @@ int pdfi_op_Q(pdf_context *ctx)
 #endif
     if (ctx->pgs->level <= ctx->current_stream_save.gsave_level) {
         /* We don't throw an error here, we just ignore it and continue */
-        ctx->pdf_warnings |= W_PDF_TOOMANYQ;
-        dbgmprintf(ctx->memory, "WARNING: Too many q/Q (too many Q's) -- ignoring Q\n");
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TOOMANYQ, "pdfi_op_Q", "ignoring Q");
         return 0;
     }
     if (ctx->page.has_transparency) {
@@ -305,8 +304,7 @@ int pdfi_grestore(pdf_context *ctx)
             return 0;
     } else {
         /* We don't throw an error here, we just ignore it and continue */
-        ctx->pdf_warnings |= W_PDF_TOOMANYQ;
-        dbgmprintf(ctx->memory, "WARNING: pdfi_grestore() Too many q/Q (too many Q's)\n");
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TOOMANYQ, "pdfi_grestore", "ignoring q");
     }
     return 0;
 }
@@ -1335,7 +1333,7 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                 pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
             } else {
                 /* should be an error, but we can just ignore it */
-                ctx->pdf_warnings |= W_PDF_TYPECHECK;
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_TYPECHECK, "build_type1_halftone", NULL);
             }
         }
     }
@@ -1923,7 +1921,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
                         }
                     } else {
                         /* should be an error, but we can just ignore it */
-                        ctx->pdf_warnings |= W_PDF_TYPECHECK;
+                        pdfi_set_warning(ctx, 0, NULL, W_PDF_TYPECHECK, "do_halftone", NULL);
                     }
                 }
                 pdfi_countdown(transfer);
@@ -1975,7 +1973,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
                         }
                     } else {
                         /* should be an error, but we can just ignore it */
-                        ctx->pdf_warnings |= W_PDF_TYPECHECK;
+                        pdfi_set_warning(ctx, 0, NULL, W_PDF_TYPECHECK, "do_halftone", NULL);
                     }
                 }
                 pdfi_countdown(transfer);
@@ -2027,7 +2025,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
                         }
                     } else {
                         /* should be an error, but we can just ignore it */
-                        ctx->pdf_warnings |= W_PDF_TYPECHECK;
+                        pdfi_set_warning(ctx, 0, NULL, W_PDF_TYPECHECK, "do_halftone", NULL);
                     }
                 }
                 pdfi_countdown(transfer);

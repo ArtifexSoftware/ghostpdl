@@ -254,14 +254,18 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 
     code = pdfi_dict_get_int(ctx, (pdf_dict *)stream_obj->stream_dict, "Length", &i);
     if (code < 0) {
-        dmprintf1(ctx->memory, "Stream object %u missing mandatory keyword /Length, unable to verify the stream length.\n", objnum);
-        ctx->pdf_errors |= E_PDF_BADSTREAM;
+        char extra_info[gp_file_name_sizeof];
+
+        gs_sprintf(extra_info, "Stream object %u missing mandatory keyword /Length, unable to verify the stream length.\n", objnum);
+        pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_read_stream_object", extra_info);
         return 0;
     }
 
     if (i < 0 || (i + offset)> ctx->main_stream_length) {
-        dmprintf1(ctx->memory, "Stream object %u has /Length which, when added to offset of object, exceeds file size.\n", objnum);
-        ctx->pdf_errors |= E_PDF_BADSTREAM;
+        char extra_info[gp_file_name_sizeof];
+
+        gs_sprintf(extra_info, "Stream object %u has /Length which, when added to offset of object, exceeds file size.\n", objnum);
+        pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_read_stream_object", extra_info);
     } else {
         code = pdfi_seek(ctx, ctx->main_stream, i, SEEK_CUR);
         if (code < 0) {
@@ -274,16 +278,24 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 
         code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
         if (pdfi_count_stack(ctx) < 2) {
-            dmprintf1(ctx->memory, "Failed to find a valid object at end of stream object %u.\n", objnum);
+            char extra_info[gp_file_name_sizeof];
+
+            gs_sprintf(extra_info, "Failed to find a valid object at end of stream object %u.\n", objnum);
+            pdfi_log_info(ctx, "pdfi_read_stream_object", extra_info);
         }
         else {
             if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-                dmprintf1(ctx->memory, "Failed to find 'endstream' keyword at end of stream object %u.\n", objnum);
-                ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
+                char extra_info[gp_file_name_sizeof];
+
+                gs_sprintf(extra_info, "Failed to find 'endstream' keyword at end of stream object %u.\n", objnum);
+                pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", extra_info);
             } else {
                 keyword = ((pdf_keyword *)ctx->stack_top[-1]);
                 if (keyword->key != TOKEN_ENDSTREAM) {
-                    dmprintf2(ctx->memory, "Stream object %u has an incorrect /Length of %"PRIu64"\n", objnum, i);
+                    char extra_info[gp_file_name_sizeof];
+
+                    gs_sprintf(extra_info, "Stream object %u has an incorrect /Length of %"PRIu64"\n", objnum, i);
+                    pdfi_log_info(ctx, "pdfi_read_stream_object", extra_info);
                 } else {
                     /* Cache the Length in the stream object and mark it valid */
                     stream_obj->Length = i;
@@ -347,7 +359,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
             /* Something went wrong looking for endobj, but we found endstream, so assume
              * for now that will suffice.
              */
-            ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", NULL);
         return 0;
     }
 
@@ -358,7 +370,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         pdfi_pop(ctx, 1);
         if (ctx->args.pdfstoponerror)
             return_error(gs_error_typecheck);
-        ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
+        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", NULL);
         /* Didn't find an endobj, but we have an endstream, so assume
          * for now that will suffice
          */
@@ -429,7 +441,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
     if (keyword->key == TOKEN_OBJ) {
         pdf_obj *o;
 
-        ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
+        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", NULL);
 
         /* 4 for; the object we want, the object number, generation number and 'obj' keyword */
         if (pdfi_count_stack(ctx) < 4)
@@ -451,7 +463,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
     if (!ctx->args.pdfstoponerror) {
         pdf_obj *o;
 
-        ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
+        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", NULL);
 
         if (pdfi_count_stack(ctx) < 2)
             return_error(gs_error_stackunderflow);
@@ -742,8 +754,10 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
         return_error(gs_error_typecheck);
 
     if (obj >= ctx->xref_table->xref_size) {
-        dmprintf1(ctx->memory, "Error, attempted to dereference object %"PRIu64", which is not present in the xref table\n", obj);
-        ctx->pdf_errors |= E_PDF_BADOBJNUMBER;
+        char extra_info[gp_file_name_sizeof];
+
+        gs_sprintf(extra_info, "Error, attempted to dereference object %"PRIu64", which is not present in the xref table\n", obj);
+        pdfi_set_error(ctx, 0, NULL, E_PDF_BADOBJNUMBER, "pdfi_dereference", extra_info);
 
         if(ctx->args.pdfstoponerror)
             return_error(gs_error_rangecheck);
@@ -760,8 +774,10 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
         return_error(gs_error_undefined);
 
     if (entry->free) {
-        dmprintf1(ctx->memory, "Attempt to dereference free object %"PRIu64", trying next object number as offset.\n", entry->object_num);
-        ctx->pdf_errors |= E_PDF_DEREF_FREE_OBJ;
+        char extra_info[gp_file_name_sizeof];
+
+        gs_sprintf(extra_info, "Attempt to dereference free object %"PRIu64", trying next object number as offset.\n", entry->object_num);
+        pdfi_set_error(ctx, 0, NULL, E_PDF_DEREF_FREE_OBJ, "pdfi_dereference", extra_info);
     }
 
     if (ctx->loop_detection) {

@@ -748,7 +748,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
 
     if (pdfi_name_is(n, "AHx")) {
         if (!inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -757,7 +757,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "A85")) {
         if (!inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -766,7 +766,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "LZW")) {
         if (!inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -775,7 +775,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "CCF")) {
         if (!inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -784,7 +784,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "DCT")) {
         if (!inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -793,7 +793,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "Fl")) {
         if (!inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -802,7 +802,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "RL")) {
         if (!inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -810,7 +810,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         return code;
     }
 
-    ctx->pdf_errors |= E_PDF_UNKNOWNFILTER;
+    pdfi_set_error(ctx, 0, NULL, E_PDF_UNKNOWNFILTER, "pdfi_apply_filter", NULL);
     return_error(gs_error_undefined);
 }
 
@@ -879,7 +879,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
             if (pdfi_array_size(DecodeParams) == 0 || pdfi_array_size(DecodeParams) != pdfi_array_size(filter_array)) {
                 pdfi_countdown(DecodeParams);
                 DecodeParams = NULL;
-                ctx->pdf_warnings |= W_PDF_STREAM_BAD_DECODEPARMS;
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_STREAM_BAD_DECODEPARMS, "pdfi_filter_no_decryption", NULL);
             } else {
                 if (pdfi_array_size(DecodeParams) != pdfi_array_size(filter_array)) {
                     code = gs_note_error(gs_error_typecheck);
@@ -913,8 +913,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
             pdfi_countdown(o);
             o = NULL;
             if (duplicates > 2) {
-                ctx->pdf_errors |= E_PDF_BADSTREAM;
-                dmprintf(ctx->memory, "**** ERROR Detected possible filter bomb (duplicate Filters).  Aborting processing.\n");
+                pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_filter_nodecryption", "**** ERROR Detected possible filter bomb (duplicate Filters).  Aborting processing");
                 code = gs_note_error(gs_error_syntaxerror);
                 goto exit;
             }
@@ -933,7 +932,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
             if (decode && decode->type != PDF_NULL && decode->type != PDF_DICT) {
                 pdfi_countdown(decode);
                 decode = NULL;
-                ctx->pdf_warnings |= W_PDF_STREAM_BAD_DECODEPARMS;
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_STREAM_BAD_DECODEPARMS, "pdfi_filter_no_decryption", NULL);
             }
 
             code = pdfi_apply_filter(ctx, stream_dict, (pdf_name *)o,
@@ -1405,7 +1404,7 @@ int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t coun
         if (code == EOFC) {
             s->eof = true;
         } else if (code == gs_error_ioerror) {
-            ctx->pdf_errors |= E_PDF_BADSTREAM;
+            pdfi_set_error(ctx, code, "sgets", E_PDF_BADSTREAM, "pdfi_read_bytes", NULL);
             s->eof = true;
         } else if(code == ERRC) {
             bytes = ERRC;

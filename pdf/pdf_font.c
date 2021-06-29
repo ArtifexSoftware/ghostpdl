@@ -705,7 +705,7 @@ int pdfi_d0(pdf_context *ctx)
     double width[2];
 
     if (ctx->text.inside_CharProc == false)
-        ctx->pdf_warnings |= W_PDF_NOTINCHARPROC;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_NOTINCHARPROC, "pdfi_d0", NULL);
 
     if (pdfi_count_stack(ctx) < 2) {
         code = gs_note_error(gs_error_stackunderflow);
@@ -785,7 +785,7 @@ int pdfi_d1(pdf_context *ctx)
     double wbox[6];
 
     if (ctx->text.inside_CharProc == false)
-        ctx->pdf_warnings |= W_PDF_NOTINCHARPROC;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_NOTINCHARPROC, "pdfi_d1", NULL);
 
     ctx->text.CharProc_is_d1 = true;
 

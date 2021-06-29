@@ -131,10 +131,10 @@ int pdfi_read_Pages(pdf_context *ctx)
 
         if (o->type != PDF_DICT) {
             pdfi_countdown(o);
-            ctx->pdf_errors |= E_PDF_BADPAGEDICT;
-            dmprintf(ctx->memory, "*** Error: Something is wrong with the Pages dictionary.  Giving up.\n");
             if (o->type == PDF_INDIRECT)
-                dmprintf(ctx->memory, "           Double indirect reference.  Loop in Pages tree?\n");
+                pdfi_set_error(ctx, 0, NULL, E_PDF_BADPAGEDICT, "pdfi_read_Pages", "*** Error: Something is wrong with the Pages dictionary.  Giving up.");
+            else
+                pdfi_set_error(ctx, 0, NULL, E_PDF_BADPAGEDICT, "pdfi_read_Pages", "*** Error: Something is wrong with the Pages dictionary.  Giving up.\n           Double indirect reference.  Loop in Pages tree?");
             return_error(gs_error_typecheck);
         }
 
@@ -275,7 +275,7 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
         } else {
             /* Bizarrely, one of the QL FTS files (FTS_07_0704.pdf) has a page diciotnary with a /Type of /Template */
             if (!pdfi_name_is(Type, "Page"))
-                ctx->pdf_errors |= E_PDF_BADPAGETYPE;
+                pdfi_set_error(ctx, 0, NULL, E_PDF_BADPAGETYPE, "pdfi_get_child", NULL);
             /* Make a 'PageRef' entry (just stores an indirect reference to the actual page)
              * and store that in the Kids array for future reference. But pass on the
              * dereferenced Page dictionary, in case this is the target page.
@@ -470,7 +470,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                     }
                 } else {
                     if (!pdfi_name_is(Type, "Page"))
-                        ctx->pdf_errors |= E_PDF_BADPAGETYPE;
+                        pdfi_set_error(ctx, 0, NULL, E_PDF_BADPAGETYPE, "pdfi_get_page_dict", NULL);
                     if ((*page_offset) == page_num) {
                         code = pdfi_merge_dicts(ctx, child, inheritable);
                         *target = child;
@@ -622,8 +622,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
                 goto exit;
             if (code > 0) {
                 code = pdfi_dict_get_no_store_R_key(ctx, typedict, name, o);
-                dmprintf(ctx->memory, "Couldn't find named resource in suppled dictionary, or Parents, or Pages, matching name located in earlier stream Resource\n");
-                ctx->pdf_errors |= E_PDF_INHERITED_STREAM_RESOURCE;
+                pdfi_set_error(ctx, 0, NULL, E_PDF_INHERITED_STREAM_RESOURCE, "pdfi_find_resource", "Couldn't find named resource in suppled dictionary, or Parents, or Pages, matching name located in earlier stream Resource");
                 goto exit;
             }
             pdfi_countdown(typedict);
@@ -1250,7 +1249,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
         /* Handle Outlines */
         code = pdfi_doc_Outlines(ctx);
         if (code < 0) {
-            ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
             if (ctx->args.pdfstoponerror)
                 goto exit;
         }
@@ -1258,7 +1257,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
         /* Handle Info */
         code = pdfi_doc_Info(ctx);
         if (code < 0) {
-            ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
             if (ctx->args.pdfstoponerror)
                 goto exit;
         }
@@ -1267,7 +1266,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
         /* TODO: add a configuration option to embed or omit */
         code = pdfi_doc_EmbeddedFiles(ctx);
         if (code < 0) {
-            ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
             if (ctx->args.pdfstoponerror)
                 goto exit;
         }
@@ -1279,7 +1278,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
     /* Handle AcroForm -- this is some bookkeeping once per doc, not rendering them yet */
     code = pdfi_doc_AcroForm(ctx);
     if (code < 0) {
-        ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
         if (ctx->args.pdfstoponerror)
             goto exit;
     }
@@ -1287,7 +1286,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
     /* Handle OutputIntent ICC Profile */
     code = pdfi_doc_OutputIntents(ctx);
     if (code < 0) {
-        ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
         if (ctx->args.pdfstoponerror)
             goto exit;
     }
@@ -1295,7 +1294,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
     /* Handle PageLabels */
     code = pdfi_doc_PageLabels(ctx);
     if (code < 0) {
-        ctx->pdf_warnings |= W_PDF_BAD_TRAILER;
+        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
         if (ctx->args.pdfstoponerror)
             goto exit;
     }

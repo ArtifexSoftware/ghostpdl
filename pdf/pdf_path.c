@@ -30,7 +30,7 @@ int pdfi_moveto (pdf_context *ctx)
     double x, y;
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_moveto", NULL);
 
     if (pdfi_count_stack(ctx) < 2) {
         pdfi_clearstack(ctx);
@@ -82,7 +82,7 @@ int pdfi_lineto (pdf_context *ctx)
     double x, y;
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_lineto", NULL);
 
     if (pdfi_count_stack(ctx) < 2) {
         pdfi_clearstack(ctx);
@@ -133,7 +133,7 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
     pdfi_trans_state_t state;
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_fill_inner", NULL);
 
     if (pdfi_oc_is_off(ctx))
         goto exit;
@@ -180,7 +180,7 @@ int pdfi_stroke(pdf_context *ctx)
     pdfi_trans_state_t state;
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_stroke", NULL);
 
     if (pdfi_oc_is_off(ctx))
         goto exit;
@@ -215,7 +215,7 @@ int pdfi_closepath_stroke(pdf_context *ctx)
     int code;
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_closepath_stroke", NULL);
 
     code = gs_closepath(ctx->pgs);
     if (code == 0)
@@ -237,7 +237,7 @@ int pdfi_curveto(pdf_context *ctx)
         if (ctx->args.pdfstoponerror)
             return_error(gs_error_stackunderflow);
         else {
-            ctx->pdf_errors |= E_PDF_STACKUNDERFLOWERROR;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_STACKUNDERFLOWERROR, "pdfi_curveto", NULL);
             return 0;
         }
     }
@@ -259,7 +259,7 @@ int pdfi_curveto(pdf_context *ctx)
     }
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_curveto", NULL);
 
     code = gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[4], Values[5]);
     pdfi_pop(ctx, 6);
@@ -301,7 +301,7 @@ int pdfi_v_curveto(pdf_context *ctx)
     }
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_v_curveto", NULL);
 
     code = gs_currentpoint(ctx->pgs, &pt);
     if (code < 0) {
@@ -351,7 +351,7 @@ int pdfi_y_curveto(pdf_context *ctx)
     }
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_y_curveto", NULL);
 
     code = gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[2], Values[3]);
     pdfi_pop(ctx, 4);
@@ -366,7 +366,7 @@ int pdfi_closepath(pdf_context *ctx)
     int code = gs_closepath(ctx->pgs);
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_closepath", NULL);
 
     if(code < 0 && ctx->args.pdfstoponerror)
         return code;
@@ -393,7 +393,7 @@ int pdfi_newpath(pdf_context *ctx)
     if (code == 0) code = code1;
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_newpath", NULL);
 
     if (code < 0 && ctx->args.pdfstoponerror)
         return code;
@@ -406,7 +406,7 @@ int pdfi_b(pdf_context *ctx)
     int code;
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_b", NULL);
 
     code = gs_closepath(ctx->pgs);
     if (code >= 0)
@@ -422,7 +422,7 @@ int pdfi_b_star(pdf_context *ctx)
     int code;
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_b_star", NULL);
 
     code = gs_closepath(ctx->pgs);
     if (code >= 0)
@@ -440,7 +440,7 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
     pdfi_trans_state_t state;
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_B_inner", NULL);
 
     if (pdfi_oc_is_off(ctx))
         goto exit;
@@ -486,7 +486,7 @@ int pdfi_clip(pdf_context *ctx)
     int code = gs_clip(ctx->pgs);
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_B_clip", NULL);
 
     if(code < 0 && ctx->args.pdfstoponerror)
         return code;
@@ -499,7 +499,7 @@ int pdfi_eoclip(pdf_context *ctx)
     int code = gs_eoclip(ctx->pgs);
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_eoclip", NULL);
 
     if(code < 0 && ctx->args.pdfstoponerror)
         return code;
@@ -538,7 +538,7 @@ int pdfi_rectpath(pdf_context *ctx)
     }
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_rectpath", NULL);
 
     code = gs_moveto(ctx->pgs, Values[0], Values[1]);
     if (code == 0) {

@@ -1516,9 +1516,7 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
 
     /* Look for /R and /D if there was no /N */
     if (code == 0) {
-        dbgmprintf(ctx->memory, "*** Error: Annotation (AP) lacks the mandatory normal (N) appearance.\n");
-        dbgmprintf(ctx->memory, "           Output may be incorrect.\n");
-        ctx->pdf_warnings |= W_PDF_ANNOT_AP_ERROR;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_AP_ERROR, "pdfi_annot_get_NormAP", "*** Error: Annotation (AP) lacks the mandatory normal (N) appearance");
 
         code = pdfi_dict_knownget(ctx, AP_dict, "R", (pdf_obj **)&baseAP);
         if (code < 0) goto exit;
@@ -1545,8 +1543,7 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
         code = pdfi_dict_knownget_type(ctx, annot, "AS", PDF_NAME, (pdf_obj **)&AS);
         if (code < 0) goto exit;
         if (code == 0) {
-            dbgmprintf(ctx->memory, "WARNING Annotation has non-stream AP but no AS.  Don't know what to render.\n");
-            ctx->pdf_warnings |= W_PDF_ANNOT_AP_ERROR;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_AP_ERROR, "pdfi_annot_get_NormAP", "WARNING Annotation has non-stream AP but no AS.  Don't know what to render");
             goto exit;
         }
 

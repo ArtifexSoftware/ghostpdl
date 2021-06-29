@@ -201,7 +201,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                     return_error(gs_error_syntaxerror);
                 malformed = true;
             } else {
-                ctx->pdf_warnings |= W_PDF_NUM_EXPONENT;
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_NUM_EXPONENT, "pdfi_read_num", NULL);
                 has_exponent = true;
                 exponent_index = index;
                 real = true;
@@ -216,7 +216,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                  * they had one negative sign. We can't tell whether the number is a real
                  * or not yet, we do that below.
                  */
-                ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;
+                pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL);
                 if (Buffer[index - 1] == '-') {
                     doubleneg = true;
                     index -= 1;
@@ -228,11 +228,9 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                 }
             }
         } else if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
+            pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGWHITESPACE, "pdfi_read_num", "Ignoring missing white space while parsing number");
             if (ctx->args.pdfstoponerror)
                 return_error(gs_error_syntaxerror);
-            if (!(ctx->pdf_errors & E_PDF_MISSINGWHITESPACE))
-                dmprintf(ctx->memory, "Ignoring missing white space while parsing number\n");
-            ctx->pdf_errors |= E_PDF_MISSINGWHITESPACE;
             pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
             Buffer[index] = 0x00;
             break;
@@ -281,9 +279,10 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         return code;
 
     if ((malformed && !recovered) || (!real && doubleneg)) {
-        if (!(ctx->pdf_errors & E_PDF_MALFORMEDNUMBER))
-            dmprintf1(ctx->memory, "Treating malformed number %s as 0.\n", Buffer);
-        ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;
+        char extra_info[gp_file_name_sizeof];
+
+        gs_sprintf(extra_info, "Treating malformed number %s as 0", Buffer);
+        pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", extra_info);
         num->value.i = 0;
     } else {
         if (real) {
@@ -360,7 +359,7 @@ static int pdfi_read_name(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_n
 
             bytes = pdfi_read_bytes(ctx, (byte *)&NumBuf, 1, 2, s);
             if (bytes < 2 || (!ishex(NumBuf[0]) || !ishex(NumBuf[1]))) {
-                ctx->pdf_warnings |= W_PDF_BAD_NAME_ESCAPE;
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_NAME_ESCAPE, "pdfi_read_name", NULL);
                 pdfi_unread(ctx, s, (byte *)NumBuf, bytes);
             }
             else
@@ -636,7 +635,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
                     escape = true;
                     continue;
                 case '(':
-                    ctx->pdf_errors |= E_PDF_UNESCAPEDSTRING;
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_UNESCAPEDSTRING, "pdfi_read_string", NULL);
                     nesting++;
                     break;
                 default:
@@ -695,8 +694,10 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
     }
 
     code = pdfi_push(ctx, (pdf_obj *)string);
-    if (code < 0)
+    if (code < 0) {
         pdfi_free_object((pdf_obj *)string);
+        pdfi_set_error(ctx, code, NULL, 0, "pdfi_read_string", NULL);
+    }
 
     return code;
 }
@@ -1298,7 +1299,7 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
     code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
 
 error_exit:
-    ctx->pdf_errors |= E_PDF_TOKENERROR;
+    pdfi_set_error(ctx, 0, NULL, E_PDF_TOKENERROR, "split_bogus_operator", NULL);
     pdfi_countdown(key1);
     pdfi_countdown(key2);
     pdfi_clearstack(ctx);
@@ -1669,14 +1670,14 @@ void cleanup_context_interpretation(pdf_context *ctx, stream_save *local_save)
      * grestore. Therefore we need to do this before we check the saved gstate depth
      */
     if (ctx->current_stream_save.group_depth != local_save->group_depth) {
-        ctx->pdf_warnings |= W_PDF_GROUPERROR;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_GROUPERROR, "pdfi_cleanup_context_interpretation", NULL);
         while (ctx->current_stream_save.group_depth > local_save->group_depth)
             pdfi_trans_end_group(ctx);
     }
     if (ctx->pgs->level > ctx->current_stream_save.gsave_level)
-        ctx->pdf_warnings |= W_PDF_TOOMANYq;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TOOMANYq, "pdfi_cleanup_context_interpretation", NULL);
     if (pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
-        ctx->pdf_warnings |= W_PDF_STACKGARBAGE;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_STACKGARBAGE, "pdfi_cleanup_context_interpretation", NULL);
     while (ctx->pgs->level > ctx->current_stream_save.gsave_level)
         pdfi_grestore(ctx);
     pdfi_clearstack(ctx);
@@ -1988,11 +1989,9 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
         if (code < 0) {
             if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->args.pdfstoponerror) {
                 if (code == gs_error_ioerror) {
-                    ctx->pdf_errors |= E_PDF_BADSTREAM;
-                    dmprintf(ctx->memory, "**** Error reading a content stream.  The page may be incomplete.\n");
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_interpret_content_stream", "**** Error reading a content stream.  The page may be incomplete");
                 } else if (code == gs_error_VMerror) {
-                    ctx->pdf_errors |= E_PDF_OUTOFMEMORY;
-                    dmprintf(ctx->memory, "**** Error ran out of memory reading a content stream.  The page may be incomplete.\n");
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_OUTOFMEMORY, "pdfi_interpret_content_stream", "**** Error ran out of memory reading a content stream.  The page may be incomplete");
                 }
                 goto exit;
             }
@@ -2015,7 +2014,7 @@ repaired_keyword:
                     break;
                 case TOKEN_ENDOBJ:
                     pdfi_clearstack(ctx);
-                    ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDSTREAM, "pdfi_interpret_content_stream", NULL);
                     if (ctx->args.pdfstoponerror)
                         code = gs_note_error(gs_error_syntaxerror);
                     goto exit;
@@ -2033,7 +2032,7 @@ repaired_keyword:
                             goto repaired_keyword;
 
                         if (code < 0) {
-                            ctx->pdf_errors |= E_PDF_TOKENERROR;
+                            pdfi_set_error(ctx, code, NULL, E_PDF_TOKENERROR, "pdf_interpret_content_stream", NULL);
                             if (ctx->args.pdfstoponerror) {
                                 pdfi_clearstack(ctx);
                                 goto exit;
@@ -2042,11 +2041,11 @@ repaired_keyword:
                     }
                     break;
                 case TOKEN_INVALID_KEY:
-                    ctx->pdf_errors |= E_PDF_KEYWORDTOOLONG;
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_KEYWORDTOOLONG, "pdfi_interpret_content_stream", NULL);
                     pdfi_clearstack(ctx);
                     break;
                 default:
-                    ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDSTREAM, "pdfi_interpret_content_stream", NULL);
                     pdfi_clearstack(ctx);
                     code = gs_note_error(gs_error_typecheck);
                     goto exit;

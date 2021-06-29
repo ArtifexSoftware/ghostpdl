@@ -93,83 +93,84 @@
 /*
  * The interpreter context.
  */
-
 /* Warnings and errors. The difference between a warning and an error is that we use a warning where
  * the file is technically illegal but we can be certain as to the real intent. At the time of writing
  * the only case is also a perfect example; the use of an inline image filter abbreviation (eg A85)
  * on a stream or object which is not an inline image. Although technically incorrect, its obvious
  * how to deal with this.
  */
-typedef enum pdf_error_flag_e {
-    E_PDF_NOERROR = 0,
-    E_PDF_NOHEADER = 1,
-    E_PDF_NOHEADERVERSION = E_PDF_NOHEADER << 1,
-    E_PDF_NOSTARTXREF = E_PDF_NOHEADER << 2,
-    E_PDF_BADSTARTXREF = E_PDF_NOHEADER << 3,
-    E_PDF_BADXREFSTREAM = E_PDF_NOHEADER << 4,
-    E_PDF_BADXREF = E_PDF_NOHEADER << 5,
-    E_PDF_SHORTXREF = E_PDF_NOHEADER << 6,
-    E_PDF_MISSINGENDSTREAM = E_PDF_NOHEADER << 7,
-    E_PDF_UNKNOWNFILTER = E_PDF_NOHEADER << 8,
-    E_PDF_MISSINGWHITESPACE = E_PDF_NOHEADER << 9,
-    E_PDF_MALFORMEDNUMBER = E_PDF_NOHEADER << 10,
-    E_PDF_UNESCAPEDSTRING = E_PDF_NOHEADER << 11,
-    E_PDF_BADOBJNUMBER = E_PDF_NOHEADER << 12,
-    E_PDF_MISSINGENDOBJ = E_PDF_NOHEADER << 13,
-    E_PDF_TOKENERROR = E_PDF_NOHEADER << 14,
-    E_PDF_KEYWORDTOOLONG = E_PDF_NOHEADER << 15,
-    E_PDF_BADPAGETYPE = E_PDF_NOHEADER << 16,
-    E_PDF_CIRCULARREF = E_PDF_NOHEADER << 17,
-    E_PDF_UNREPAIRABLE = E_PDF_NOHEADER << 18,
-    E_PDF_REPAIRED = E_PDF_NOHEADER << 19,
-    E_PDF_BADSTREAM = E_PDF_NOHEADER << 20,
-    E_PDF_MISSINGOBJ = E_PDF_NOHEADER << 21,
-    E_PDF_BADPAGEDICT = E_PDF_NOHEADER << 22,
-    E_PDF_OUTOFMEMORY = E_PDF_NOHEADER << 23,
-    E_PDF_PAGEDICTERROR = E_PDF_NOHEADER << 24,
-    E_PDF_STACKUNDERFLOWERROR = E_PDF_NOHEADER << 25,
-    E_PDF_BADSTREAMDICT = E_PDF_NOHEADER << 26,
-    E_PDF_INHERITED_STREAM_RESOURCE = E_PDF_NOHEADER << 27,
-    E_PDF_DEREF_FREE_OBJ = E_PDF_NOHEADER << 28,
-    E_PDF_INVALID_TRANS_XOBJECT = E_PDF_NOHEADER << 29,
-    E_PDF_NO_SUBTYPE = E_PDF_NOHEADER << 30,
-    E_PDF_IMAGECOLOR_ERROR = E_PDF_NOHEADER << 31
-} pdf_error_flag;
+typedef enum pdf_error_e {
+    E_PDF_NOERROR,
+    E_PDF_NOHEADER,
+    E_PDF_NOHEADERVERSION,
+    E_PDF_NOSTARTXREF,
+    E_PDF_BADSTARTXREF,
+    E_PDF_BADXREFSTREAM,
+    E_PDF_BADXREF,
+    E_PDF_SHORTXREF,
+    E_PDF_MISSINGENDSTREAM,
+    E_PDF_UNKNOWNFILTER,
+    E_PDF_MISSINGWHITESPACE,
+    E_PDF_MALFORMEDNUMBER,
+    E_PDF_UNESCAPEDSTRING,
+    E_PDF_BADOBJNUMBER,
+    E_PDF_MISSINGENDOBJ,
+    E_PDF_TOKENERROR,
+    E_PDF_KEYWORDTOOLONG,
+    E_PDF_BADPAGETYPE,
+    E_PDF_CIRCULARREF,
+    E_PDF_UNREPAIRABLE,
+    E_PDF_REPAIRED,
+    E_PDF_BADSTREAM,
+    E_PDF_MISSINGOBJ,
+    E_PDF_BADPAGEDICT,
+    E_PDF_OUTOFMEMORY,
+    E_PDF_PAGEDICTERROR,
+    E_PDF_STACKUNDERFLOWERROR,
+    E_PDF_BADSTREAMDICT,
+    E_PDF_INHERITED_STREAM_RESOURCE,
+    E_PDF_DEREF_FREE_OBJ,
+    E_PDF_INVALID_TRANS_XOBJECT,
+    E_PDF_NO_SUBTYPE,
+    E_PDF_IMAGECOLOR_ERROR,
+    E_PDF_MAX_ERROR                     /* Must be last entry, add new errors immediately before this and update pdf_error_strings in ghostpdf.c */
+}pdf_error;
 
-typedef enum pdf_warning_flag_e {
-    W_PDF_NOWARNING = 0,
-    W_PDF_BAD_XREF_SIZE = 1,
-    W_PDF_BAD_INLINEFILTER = W_PDF_BAD_XREF_SIZE << 1,
-    W_PDF_BAD_INLINECOLORSPACE = W_PDF_BAD_INLINEFILTER << 1,
-    W_PDF_BAD_INLINEIMAGEKEY = W_PDF_BAD_INLINECOLORSPACE << 1,
-    W_PDF_IMAGE_ERROR = W_PDF_BAD_INLINEIMAGEKEY << 1,
-    W_PDF_BAD_IMAGEDICT = W_PDF_IMAGE_ERROR << 1,
-    W_PDF_TOOMANYQ = W_PDF_BAD_IMAGEDICT << 1,
-    W_PDF_TOOMANYq = W_PDF_TOOMANYQ << 1,
-    W_PDF_STACKGARBAGE = W_PDF_TOOMANYq << 1,
-    W_PDF_STACKUNDERFLOW = W_PDF_STACKGARBAGE << 1,
-    W_PDF_GROUPERROR = W_PDF_STACKUNDERFLOW << 1,
-    W_PDF_OPINVALIDINTEXT = W_PDF_GROUPERROR << 1,
-    W_PDF_NOTINCHARPROC = W_PDF_GROUPERROR << 1,
-    W_PDF_NESTEDTEXTBLOCK = W_PDF_NOTINCHARPROC << 1,
-    W_PDF_ETNOTEXTBLOCK = W_PDF_NESTEDTEXTBLOCK << 1,
-    W_PDF_TEXTOPNOBT = W_PDF_ETNOTEXTBLOCK  << 1,
-    W_PDF_DEGENERATETM = W_PDF_TEXTOPNOBT << 1,
-    W_PDF_BADICC_USE_ALT = W_PDF_DEGENERATETM << 1,
-    W_PDF_BADICC_USECOMPS = W_PDF_BADICC_USE_ALT << 1,
-    W_PDF_BADTRSWITCH = W_PDF_BADICC_USECOMPS << 1,
-    W_PDF_BADSHADING = W_PDF_BADTRSWITCH << 1,
-    W_PDF_BADPATTERN = W_PDF_BADSHADING << 1,
-    W_PDF_NONSTANDARD_OP = W_PDF_BADPATTERN << 1,
-    W_PDF_NUM_EXPONENT = W_PDF_NONSTANDARD_OP << 1,
-    W_PDF_STREAM_HAS_CONTENTS = W_PDF_NUM_EXPONENT << 1,
-    W_PDF_STREAM_BAD_DECODEPARMS = W_PDF_STREAM_HAS_CONTENTS << 1,
-    W_PDF_MASK_ERROR = W_PDF_STREAM_BAD_DECODEPARMS << 1,
-    W_PDF_ANNOT_AP_ERROR = W_PDF_MASK_ERROR << 1,
-    W_PDF_BAD_NAME_ESCAPE = W_PDF_ANNOT_AP_ERROR << 1,
-    W_PDF_TYPECHECK = W_PDF_BAD_NAME_ESCAPE << 1,
-    W_PDF_BAD_TRAILER = W_PDF_TYPECHECK << 1,
-} pdf_warning_flag;
+typedef enum pdf_warning_e {
+    W_PDF_NOWARNING,
+    W_PDF_BAD_XREF_SIZE,
+    W_PDF_BAD_INLINEFILTER,
+    W_PDF_BAD_INLINECOLORSPACE,
+    W_PDF_BAD_INLINEIMAGEKEY,
+    W_PDF_IMAGE_ERROR,
+    W_PDF_BAD_IMAGEDICT,
+    W_PDF_TOOMANYQ,
+    W_PDF_TOOMANYq,
+    W_PDF_STACKGARBAGE,
+    W_PDF_STACKUNDERFLOW,
+    W_PDF_GROUPERROR,
+    W_PDF_OPINVALIDINTEXT,
+    W_PDF_NOTINCHARPROC,
+    W_PDF_NESTEDTEXTBLOCK,
+    W_PDF_ETNOTEXTBLOCK,
+    W_PDF_TEXTOPNOBT,
+    W_PDF_DEGENERATETM,
+    W_PDF_BADICC_USE_ALT,
+    W_PDF_BADICC_USECOMPS,
+    W_PDF_BADTRSWITCH,
+    W_PDF_BADSHADING,
+    W_PDF_BADPATTERN,
+    W_PDF_NONSTANDARD_OP,
+    W_PDF_NUM_EXPONENT,
+    W_PDF_STREAM_HAS_CONTENTS,
+    W_PDF_STREAM_BAD_DECODEPARMS,
+    W_PDF_MASK_ERROR,
+    W_PDF_ANNOT_AP_ERROR,
+    W_PDF_BAD_NAME_ESCAPE,
+    W_PDF_TYPECHECK,
+    W_PDF_BAD_TRAILER,
+    W_PDF_MAX_WARNING               /* Must be last entry, add new warnings immediately before this and update pdf_warning_strings in ghostpdf.c */
+} pdf_warning;
 
 typedef enum pdf_crypt_filter_e {
     CRYPT_NONE,     /* Not an encrypted file */
@@ -245,6 +246,7 @@ typedef struct cmd_args_s {
     char *UseOutputIntent;
     pdf_overprint_control_t overprint_control;     /* Overprint -- enabled, disabled, simulated */
     char *PageList;
+    bool QUIET;
 } cmd_args_t;
 
 typedef struct encryption_state_s {
@@ -402,8 +404,10 @@ typedef struct pdf_context_s
     uint64_t BMClevel;
 
     /* Bitfields recording whether any errors or warnings were encountered */
-    pdf_error_flag pdf_errors;
-    pdf_warning_flag pdf_warnings;
+    bool verbose_errors;
+    bool verbose_warnings;
+    char pdf_errors[(E_PDF_MAX_ERROR - 2) / (sizeof(char) * 8) + ((E_PDF_MAX_ERROR - 2) % (sizeof(char) * 8) ? 1 : 0)];
+    char pdf_warnings[(W_PDF_MAX_WARNING - 2) / (sizeof(char) * 8) + ((W_PDF_MAX_WARNING - 2) % (sizeof(char) * 8) ? 1 : 0)];
 
     /* We need a gs_font_dir for gs_definefotn() */
     gs_font_dir * font_dir;
@@ -525,5 +529,23 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
 int pdfi_close_pdf_file(pdf_context *ctx);
 void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, void **saved_client_data, gs_gstate_client_procs *saved_procs);
 void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, void *client_data, const gs_gstate_client_procs *procs);
+
+void pdfi_verbose_error(pdf_context *ctx, int gs_error, char *gs_lib_function, int pdfi_error, char *pdfi_function_name, char *extra_info);
+void pdfi_verbose_warning(pdf_context *ctx, int gs_error, char *gs_lib_function, int pdfi_warning, char *pdfi_function_name, char *extra_info);
+
+static inline void pdfi_set_error(pdf_context *ctx, int gs_error, char*gs_lib_function, pdf_error pdfi_error, char *pdfi_function_name, char *extra_info)
+{
+    if (pdfi_error != 0)
+        ctx->pdf_errors[pdfi_error / (sizeof(char) * 8)] |= 1 << pdfi_error % (sizeof(char) * 8);
+    if (ctx->verbose_errors)
+        pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
+}
+
+static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, char*gs_lib_function, pdf_warning pdfi_warning, char *pdfi_function_name, char *extra_info)
+{
+    ctx->pdf_warnings[pdfi_warning / (sizeof(char) * 8)] |= 1 << pdfi_warning % (sizeof(char) * 8);
+    if (ctx->verbose_warnings)
+        pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
+}
 
 #endif

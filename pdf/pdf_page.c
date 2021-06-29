@@ -729,9 +729,11 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
     code = pdfi_page_get_dict(ctx, page_num, &page_dict);
     if (code < 0) {
+        char extra_info[256];
+
         page_dict_error = true;
-        ctx->pdf_errors |= E_PDF_PAGEDICTERROR;
-        dmprintf1(ctx->memory, "*** ERROR: Page %ld has invalid Page dict, skipping\n", page_num+1);
+        gs_sprintf(extra_info, "*** ERROR: Page %ld has invalid Page dict, skipping\n", page_num+1);
+        pdfi_set_error(ctx, 0, NULL, E_PDF_PAGEDICTERROR, "pdfi_page_render", extra_info);
         if (code != gs_error_VMerror && !ctx->args.pdfstoponerror)
             code = 0;
         goto exit2;

@@ -40,7 +40,7 @@ int pdfi_BT(pdf_context *ctx)
     bool illegal_BT = false;
 
     if (ctx->text.BlockDepth != 0) {
-        ctx->pdf_warnings |= W_PDF_NESTEDTEXTBLOCK;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_NESTEDTEXTBLOCK, "pdfi_BT", NULL);
         illegal_BT = true;
     }
 
@@ -105,7 +105,7 @@ int pdfi_ET(pdf_context *ctx)
     gx_clip_path *copy = NULL;
 
     if (ctx->text.BlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_ETNOTEXTBLOCK;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_ETNOTEXTBLOCK, "pdfi_ET", NULL);
         return_error(gs_error_syntaxerror);
     }
 
@@ -161,7 +161,7 @@ int pdfi_T_star(pdf_context *ctx)
     gs_matrix m, mat;
 
     if (ctx->text.BlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TEXTOPNOBT, "pdfi_T_star", NULL);
     }
 
     gs_make_identity(&m);
@@ -247,7 +247,7 @@ int pdfi_Td(pdf_context *ctx)
     }
 
     if (ctx->text.BlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TEXTOPNOBT, "pdfi_Td", NULL);
 
         gs_make_identity(&mat);
         code = gs_settextmatrix(ctx->pgs, &mat);
@@ -318,7 +318,7 @@ int pdfi_TD(pdf_context *ctx)
     }
 
     if (ctx->text.BlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TEXTOPNOBT, "pdfi_TD", NULL);
 
         gs_make_identity(&mat);
         code = gs_settextmatrix(ctx->pgs, &mat);
@@ -837,7 +837,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     pdfi_trans_state_t state;
 
     if (ctx->text.BlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TEXTOPNOBT, "pdfi_show", NULL);
     }
 
     if (hypot(ctx->pgs->ctm.xx, ctx->pgs->ctm.xy) == 0.0
@@ -1114,7 +1114,7 @@ int pdfi_TJ(pdf_context *ctx)
         return_error(gs_error_invalidfont);
 
     if (ctx->text.BlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TEXTOPNOBT, "pdfi_TJ", NULL);
     }
 
     if (pdfi_count_stack(ctx) < 1)
@@ -1275,7 +1275,7 @@ int pdfi_Tm(pdf_context *ctx)
     pdfi_pop(ctx, 6);
 
     if (ctx->text.BlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TEXTOPNOBT, "pdfi_Tm", NULL);
 
         gs_make_identity(&mat);
         code = gs_settextmatrix(ctx->pgs, &mat);
@@ -1288,7 +1288,7 @@ int pdfi_Tm(pdf_context *ctx)
     }
 
     if (hypot(m[0], m[1]) == 0.0 || hypot(m[3], m[2]) == 0.0)
-        ctx->pdf_warnings |= W_PDF_DEGENERATETM;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_DEGENERATETM, "pdfi_Tm", NULL);
 
     code = gs_settextmatrix(ctx->pgs, (gs_matrix *)&m);
     if (code < 0)
@@ -1337,7 +1337,7 @@ int pdfi_Tr(pdf_context *ctx)
              * mode, this is defined as invalid in the spec.
              */
             if (gs_currenttextrenderingmode(ctx->pgs) > 3 && mode < 4 && ctx->text.BlockDepth != 0)
-                ctx->pdf_warnings |= W_PDF_BADTRSWITCH;
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_BADTRSWITCH, "pdfi_Tr", NULL);
 
             if (gs_currenttextrenderingmode(ctx->pgs) < 4 && mode >= 4 && ctx->text.BlockDepth != 0) {
                 /* If we are switching from a non-clip text rendering mode to a
@@ -1465,7 +1465,7 @@ int pdfi_singlequote(pdf_context *ctx)
     int code;
 
     if (ctx->text.BlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TEXTOPNOBT, "pdfi_singlequote", NULL);
     }
 
     if (pdfi_count_stack(ctx) < 1) {
@@ -1487,7 +1487,7 @@ int pdfi_doublequote(pdf_context *ctx)
     pdf_num *Tw, *Tc;
 
     if (ctx->text.BlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TEXTOPNOBT, "pdfi_T_doublequote", NULL);
     }
 
     if (pdfi_count_stack(ctx) < 3) {

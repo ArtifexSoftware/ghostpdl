@@ -485,7 +485,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s)
                         if (code < 0) {
                             /* TODO: Not positive this will actually have a length -- just use 0 */
                             dmprintf1(ctx->memory, "Xref Stream object %u missing mandatory keyword /Length\n", obj_num);
-                            ctx->pdf_errors |= E_PDF_BADSTREAM;
+                            pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_read_xref_stream_dict", "Xref Stream object %u missing mandatory keyword /Length");
                             code = 0;
                             Length = 0;
                         }
@@ -938,7 +938,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
         return code;
     }
     if (max_obj > num)
-        ctx->pdf_warnings |= W_PDF_BAD_XREF_SIZE;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_XREF_SIZE, "read_xref", NULL);
 
     code = pdfi_dict_get_int(ctx, d, "Prev", &num);
     if (code < 0) {
@@ -997,8 +997,7 @@ int pdfi_read_xref(pdf_context *ctx)
             dmprintf(ctx->memory, "%% Trying to read 'xref' token for xref table, or 'int int obj' for an xref stream\n");
 
         if (ctx->startxref > ctx->main_stream_length - 5) {
-            dmprintf(ctx->memory, "startxref offset is beyond end of file.\n");
-            ctx->pdf_errors |= E_PDF_BADSTARTXREF;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTARTXREF, "pdfi_read_xref", "startxref offset is beyond end of file");
             do_repair = true;
             goto exit;
         }
@@ -1009,8 +1008,7 @@ int pdfi_read_xref(pdf_context *ctx)
 
         code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
         if (code < 0) {
-            dmprintf(ctx->memory, "Failed to read any token at the startxref location\n");
-            ctx->pdf_errors |= E_PDF_BADSTARTXREF;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTARTXREF, "pdfi_read_xref", "Failed to read any token at the startxref location");
             do_repair = true;
             goto exit;
         }

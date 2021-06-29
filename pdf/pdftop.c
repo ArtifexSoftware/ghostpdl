@@ -492,6 +492,11 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             goto exit;
         }
 
+        if (!strncmp(param, "QUIET", 5)) {
+            code = plist_value_get_bool(&pvalue, &ctx->args.QUIET);
+            if (code < 0)
+                return code;
+        }
         if (!strncmp(param, "FirstPage", 9)) {
             code = plist_value_get_int(&pvalue, &ctx->args.first_page);
             if (code < 0)
@@ -503,6 +508,16 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
                 return code;
         }
         /* PDF interpreter flags */
+        if (!strncmp(param, "VerboseErrors", 13)) {
+            code = plist_value_get_bool(&pvalue, &ctx->verbose_errors);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "VerboseWarnings", 15)) {
+            code = plist_value_get_bool(&pvalue, &ctx->verbose_warnings);
+            if (code < 0)
+                return code;
+        }
         if (!strncmp(param, "PDFDEBUG", 8)) {
             code = plist_value_get_bool(&pvalue, &ctx->args.pdfdebug);
             if (code < 0)

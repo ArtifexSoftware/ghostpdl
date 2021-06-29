@@ -41,7 +41,7 @@
 int pdfi_BI(pdf_context *ctx)
 {
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_BI", NULL);
 
     return pdfi_mark_stack(ctx, PDF_DICT_MARK);
 }
@@ -459,7 +459,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     /* This is bonkers, but... Bug695872.pdf has /W and /H which are real numbers */
     info->Height = (int)temp_f;
     if ((int)temp_f != (int)(temp_f+.5)) {
-        ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
         if (ctx->args.pdfstoponwarning) {
             code = gs_note_error(gs_error_rangecheck);
             goto errorExit;
@@ -472,7 +472,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
         goto errorExit;
     info->Width = (int)temp_f;
     if ((int)temp_f != (int)(temp_f+.5)) {
-        ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
         if (ctx->args.pdfstoponwarning) {
             code = gs_note_error(gs_error_rangecheck);
             goto errorExit;
@@ -519,7 +519,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
          * GS implementation does.
          */
         if (code != gs_error_undefined) {
-           ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
            if (ctx->args.pdfstoponwarning)
                 goto errorExit;
         }
@@ -530,9 +530,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     if (code < 0) {
         if (code != gs_error_undefined) {
             /* Broken SMask, Warn, and ignore the SMask */
-            dmprintf(ctx->memory, "*** Warning: Image has invalid SMask.  Ignoring it.\n");
-            dmprintf(ctx->memory, "    Output may be incorrect.\n");
-            ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT; /* piggy-back on generic image error for now */
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", "*** Warning: Image has invalid SMask.  Ignoring it");
             if (ctx->args.pdfstoponwarning)
                 goto errorExit;
             code = 0;
@@ -680,7 +678,7 @@ static int pdfi_check_inline_image_keys(pdf_context *ctx, pdf_dict *image_dict)
     return 0;
 
 error_inline_check:
-    ctx->pdf_warnings |= W_PDF_BAD_INLINEIMAGEKEY;
+    pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINEIMAGEKEY, "pdfi_check_inline_image_keys", NULL);
     if (ctx->args.pdfstoponwarning)
         return_error(gs_error_syntaxerror);
     return 0;
@@ -1105,12 +1103,10 @@ pdfi_image_setup_type4(pdf_context *ctx, pdfi_image_info_t *image_info,
 
  exit:
     if (had_float_error) {
-        dmprintf(ctx->memory, "*** Error: Some elements of Mask array are not integers\n");
-        ctx->pdf_warnings |= W_PDF_IMAGE_ERROR;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_IMAGE_ERROR, "pdfi_image_setup_type4", "*** Error: Some elements of Mask array are not integers");
     }
     if (had_range_error) {
-        dmprintf(ctx->memory, "*** Error: Some elements of Mask array are out of range\n");
-        ctx->pdf_warnings |= W_PDF_IMAGE_ERROR;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_IMAGE_ERROR, "pdfi_image_setup_type4", "*** Error: Some elements of Mask array are out of range");
     }
     return code;
 }
@@ -1308,11 +1304,13 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                     color_str = (char *)"rommRGBICC";
                     break;
                 default:
-                    /* TODO: Could try DeviceRGB instead of erroring out? */
-                    dmprintf1(ctx->memory,
-                              "**** Error: JPXDecode: Unsupported EnumCS %d\n", jpx_info->cs_enum);
-                    ctx->pdf_warnings |= E_PDF_IMAGECOLOR_ERROR;
-                    goto cleanupExit;
+                    {
+                        char extra_info[gp_file_name_sizeof];
+                        /* TODO: Could try DeviceRGB instead of erroring out? */
+                        gs_sprintf(extra_info, "**** Error: JPXDecode: Unsupported EnumCS %d\n", jpx_info->cs_enum);
+                        pdfi_set_error(ctx, 0, NULL, E_PDF_IMAGECOLOR_ERROR, "pdfi_image_get_color", extra_info);
+                        goto cleanupExit;
+                    }
                 }
 
                 /* Make a ColorSpace for the name */
@@ -1326,8 +1324,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
             }
         } else {
             /* Assume DeviceRGB colorspace */
-            dmprintf(ctx->memory, "**** Error: image has no /ColorSpace key; assuming /DeviceRGB.\n");
-            ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_image_get_color", "**** Error: image has no /ColorSpace key; assuming /DeviceRGB");
             code = pdfi_name_alloc(ctx, (byte *)"DeviceRGB", strlen("DeviceRGB"), &ColorSpace);
             if (code < 0)
                 goto cleanupExit;
@@ -1370,11 +1367,11 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                                           pcs, image_info->inline_image);
 
             if (code < 0) {
-                ctx->pdf_warnings |= E_PDF_IMAGECOLOR_ERROR;
+                pdfi_set_error(ctx, 0, NULL, E_PDF_IMAGECOLOR_ERROR, "pdfi_image_get_color", NULL);
                 goto cleanupExit;
             }
         } else {
-            ctx->pdf_warnings |= E_PDF_IMAGECOLOR_ERROR;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_IMAGECOLOR_ERROR, "pdfi_image_get_color", NULL);
             goto cleanupExit;
         }
     }
@@ -1673,7 +1670,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         } else {
             pdfi_countdown(image_info.Mask);
             image_info.Mask = NULL;
-            ctx->pdf_warnings |= W_PDF_MASK_ERROR;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_MASK_ERROR, "pdfi_do_image", NULL);
         }
     }
 
@@ -1786,7 +1783,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
  cleanupExit:
     if (code < 0)
-        ctx->pdf_warnings |= W_PDF_IMAGE_ERROR;
+        pdfi_set_warning(ctx, code, NULL, W_PDF_IMAGE_ERROR, "pdfi_do_image", NULL);
 
     code = 0;  /* suppress errors */
 
@@ -1830,7 +1827,7 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_c_
     pdf_stream *image_stream;
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_ID", NULL);
 
     /* we want to have the indirect_num and indirect_gen of the created dictionary
      * be 0, because we are reading from a stream, and the stream has already
@@ -1862,7 +1859,7 @@ error:
 int pdfi_EI(pdf_context *ctx)
 {
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_EI", NULL);
 
 /*    pdfi_clearstack(ctx);*/
     return 0;
@@ -2027,19 +2024,19 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
         code = pdfi_dict_knownget_type(ctx, form_dict, "Contents", PDF_STREAM,
                                        (pdf_obj **)&stream_obj);
         if (code < 0 || stream_obj == NULL) {
-            ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
             code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
         code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
         if (code < 0) {
-            ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
             goto exit;
         }
-        ctx->pdf_warnings |= W_PDF_STREAM_HAS_CONTENTS;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_STREAM_HAS_CONTENTS, "pdfi_form_stream_hack", NULL);
         code = pdfi_merge_dicts(ctx, stream_dict, form_dict);
     } else {
-        ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
+        pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
         code = gs_note_error(gs_error_typecheck);
     }
     if (code == 0) {
@@ -2209,7 +2206,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
              */
             code = pdfi_name_alloc(ctx, (byte *)"Form", 4, (pdf_obj **)&n);
             pdfi_countup(n);
-            ctx->pdf_errors |= E_PDF_NO_SUBTYPE;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_NO_SUBTYPE, "pdfi_do_image_or_form", NULL);
         }
         else
             goto exit;
@@ -2265,7 +2262,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     }
 
     if (ctx->text.BlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_Do", NULL);
 
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)

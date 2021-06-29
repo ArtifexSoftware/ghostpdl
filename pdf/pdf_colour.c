@@ -544,8 +544,7 @@ int pdfi_setrgbfill_array(pdf_context *ctx)
     int code;
     pdf_array *array = NULL;
 
-    ctx->pdf_warnings |= W_PDF_NONSTANDARD_OP;
-    dmprintf(ctx->memory, "WARNING: Non-standard 'r' operator\n");
+    pdfi_set_warning(ctx, 0, NULL, W_PDF_NONSTANDARD_OP, "pdfi_setrgbfill_array", "WARNING: Non-standard 'r' operator");
 
     if (pdfi_count_stack(ctx) < 1) {
         if (ctx->args.pdfstoponerror)
@@ -831,8 +830,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         pdfi_pop(ctx, 1);
         if (code < 0) {
             /* Ignore the pattern if we failed to set it */
-            dbgmprintf(ctx->memory, "PATTERN: Error setting pattern\n");
-            ctx->pdf_warnings |= W_PDF_BADPATTERN;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BADPATTERN, "pdfi_setcolorN", "PATTERN: Error setting pattern");
             code = 0;
             goto cleanupExit;
         }
@@ -1225,12 +1223,12 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
                                                       page_dict, ppcs, inline_image);
             pdfi_countdown(Alternate);
             if (code == 0) {
-                ctx->pdf_warnings |= W_PDF_BADICC_USE_ALT;
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_BADICC_USE_ALT, "pdfi_create_iccbased", NULL);
                 goto done;
             }
         }
         /* Use the number of components *from the profile* to set a space.... */
-        ctx->pdf_warnings |= W_PDF_BADICC_USECOMPS;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BADICC_USECOMPS, "pdfi_create_iccbased", NULL);
         switch(N) {
             case 1:
                 pcs = gs_cspace_new_DeviceGray(ctx->memory);
@@ -2272,14 +2270,14 @@ pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int in
     code = 0;
     if (pdfi_name_is(space, "G") || pdfi_name_is(space, "DeviceGray")) {
         if (pdfi_name_is(space, "G") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINECOLORSPACE, "pdfi_create_colorspace_by_array", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceGray(ctx, ppcs);
     } else if (pdfi_name_is(space, "I") || pdfi_name_is(space, "Indexed")) {
         if (pdfi_name_is(space, "I") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINECOLORSPACE, "pdfi_create_colorspace_by_array", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -2288,14 +2286,14 @@ pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int in
         code = pdfi_create_Lab(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "RGB") || pdfi_name_is(space, "DeviceRGB")) {
         if (pdfi_name_is(space, "RGB") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINECOLORSPACE, "pdfi_create_colorspace_by_array", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceRGB(ctx, ppcs);
     } else if (pdfi_name_is(space, "CMYK") || pdfi_name_is(space, "DeviceCMYK")) {
         if (pdfi_name_is(space, "CMYK") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINECOLORSPACE, "pdfi_create_colorspace_by_array", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -2345,21 +2343,21 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
 
     if (pdfi_name_is(name, "G") || pdfi_name_is(name, "DeviceGray")) {
         if (pdfi_name_is(name, "G") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINECOLORSPACE, "pdfi_create_colorspace_by_name", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceGray(ctx, ppcs);
     } else if (pdfi_name_is(name, "RGB") || pdfi_name_is(name, "DeviceRGB")) {
         if (pdfi_name_is(name, "RGB") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINECOLORSPACE, "pdfi_create_colorspace_by_name", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceRGB(ctx, ppcs);
     } else if (pdfi_name_is(name, "CMYK") || pdfi_name_is(name, "DeviceCMYK")) {
         if (pdfi_name_is(name, "CMYK") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINECOLORSPACE, "pdfi_create_colorspace_by_name", NULL);
             if (ctx->args.pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
