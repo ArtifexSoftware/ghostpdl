@@ -149,7 +149,6 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
     byte c;
     char TokenBuffer[16];
     unsigned int Size, IsReal;
-//    bool clause = false;
     byte *clause = NULL;
     byte *p = (ops ? ops + *size : NULL);
 
