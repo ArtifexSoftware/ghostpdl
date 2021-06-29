@@ -1194,8 +1194,19 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
                 else {
                     gs_const_string encstr;
                     gs_glyph enc_ind = gs_c_known_encode(char_code, ENCODING_INDEX_STANDARD);
-                    gs_c_glyph_name(enc_ind, &encstr);
-                    code = pdfi_name_alloc(pdffont->ctx, (byte *)encstr.data, encstr.size, (pdf_obj **)&encn);
+
+                    /* Nonsense values for char_code should probably trigger an error (as above)
+                       but other consumers seem tolerant, so....
+                     */
+                    if (enc_ind == GS_NO_GLYPH)
+                        enc_ind = gs_c_known_encode(0, ENCODING_INDEX_STANDARD);
+
+                    code = gs_c_glyph_name(enc_ind, &encstr);
+
+                    if (code < 0)
+                        code = pdfi_name_alloc(pdffont->ctx, (byte *)".notdef", 7, (pdf_obj **)&encn);
+                    else
+                        code = pdfi_name_alloc(pdffont->ctx, (byte *)encstr.data, encstr.size, (pdf_obj **)&encn);
                 }
                 if (code < 0)
                     goto done;
