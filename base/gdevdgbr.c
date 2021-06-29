@@ -486,86 +486,8 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
 /* ------ Default implementations of get_bits_rectangle ------ */
 
 int
-gx_no_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                       gs_get_bits_params_t * params, gs_int_rect ** unread)
-{
-    return_error(gs_error_unknownerror);
-}
-
-int
 gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
                        gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
-    dev_proc_get_bits_rectangle((*save_get_bits_rectangle)) =
-                                      dev_proc(dev, get_bits_rectangle);
-    int depth = dev->color_info.depth;
-    gs_get_bits_options_t options = params->options;
-    int code;
-    /* Do the transfer row-by-row using a buffer. */
-    int x = prect->p.x, w = prect->q.x - x;
-    int bits_per_pixel = depth;
-    byte *row;
-
-    /* Avoid a recursion loop. */
-    set_dev_proc(dev, get_bits_rectangle, gx_no_get_bits_rectangle);
-    if (options & GB_COLORS_STANDARD_ALL) {
-        /*
-         * Make sure the row buffer can hold the standard color
-         * representation, in case the device decides to use it.
-         */
-        int bpc = GB_OPTIONS_MAX_DEPTH(options);
-        int nc = (options & GB_COLORS_CMYK ? 4 :
-                  options & GB_COLORS_RGB ? 3 : 1) +
-                 (options & (GB_ALPHA_ALL - GB_ALPHA_NONE) ? 1 : 0);
-        int bpp = bpc * nc;
-
-        if (bpp > bits_per_pixel)
-            bits_per_pixel = bpp;
-    }
-    row = gs_alloc_bytes(dev->memory, (bits_per_pixel * w + 7) >> 3,
-                         "gx_default_get_bits_rectangle");
-    if (row == NULL) {
-        code = gs_note_error(gs_error_VMerror);
-    } else {
-        uint dev_raster = gx_device_raster(dev, true);
-        uint raster =
-               (options & GB_RASTER_SPECIFIED ? params->raster :
-                options & GB_ALIGN_STANDARD ? bitmap_raster(depth * w) :
-                (depth * w + 7) >> 3);
-        gs_int_rect rect;
-        gs_get_bits_params_t copy_params;
-        gs_get_bits_options_t copy_options =
-                (GB_ALIGN_STANDARD | GB_ALIGN_ANY) |
-                (GB_RETURN_COPY | GB_RETURN_POINTER) |
-                (GB_OFFSET_0 | GB_OFFSET_ANY) |
-                (GB_RASTER_STANDARD | GB_RASTER_ANY) | GB_PACKING_CHUNKY |
-                GB_COLORS_NATIVE | (options & (GB_DEPTH_ALL | GB_COLORS_ALL)) |
-                GB_ALPHA_ALL;
-        byte *dest = params->data[0];
-        int y;
-
-        rect.p.x = x, rect.q.x = x + w;
-        code = 0;
-        for (y = prect->p.y; y < prect->q.y; ++y) {
-            rect.p.y = y, rect.q.y = y + 1;
-            copy_params.options = copy_options;
-            copy_params.data[0] = row;
-            code = (*dev_proc(dev, get_bits_rectangle))
-                    (dev, &rect, &copy_params, NULL);
-            if (code < 0)
-                break;
-            if (copy_params.options & GB_OFFSET_0)
-                copy_params.x_offset = 0;
-            params->data[0] = dest + (y - prect->p.y) * raster;
-            code = gx_get_bits_copy(dev, copy_params.x_offset, w, 1,
-                                    params, &copy_params,
-                                    copy_params.data[0], dev_raster);
-            if (code < 0)
-                break;
-        }
-        gs_free_object(dev->memory, row, "gx_default_get_bits_rectangle");
-        params->data[0] = dest;
-    }
-    set_dev_proc(dev, get_bits_rectangle, save_get_bits_rectangle);
-    return (code < 0 ? code : 0);
+    return_error(gs_error_unknownerror);
 }
