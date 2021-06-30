@@ -34,7 +34,7 @@ pdfi_pscript_stack_init(pdf_context *pdfi_ctx, pdf_ps_oper_list_t *ops, void *cl
                         pdf_ps_ctx_t *s)
 {
     int i, size = PDF_PS_STACK_SIZE;
-    int initsizebytes = sizeof(pdf_ps_stack_object_t) * PDF_PS_STACK_GROW_SIZE;
+    int initsizebytes = sizeof(pdf_ps_stack_object_t) * PDF_PS_STACK_SIZE;
     s->pdfi_ctx = pdfi_ctx;
     s->ops = ops;
     s->client_data = client_data;
