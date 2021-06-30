@@ -464,7 +464,7 @@ enum {
 int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, gs_font **ppfont, bool cidfont)
 {
     int code;
-    pdf_font *ppdffont;
+    pdf_font *ppdffont = NULL;
     pdf_name *Type = NULL;
     pdf_name *Subtype = NULL;
     pdf_dict *fontdesc = NULL;
