@@ -306,7 +306,6 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1param
 	}
 
 	jboolean copy = false;
-	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(param, &copy);
 
 	callbacks::setJNIEnv(env);
@@ -326,7 +325,6 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param
 	}
 
 	jboolean copy = false;
-	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(param, &copy);
 
 	int ret = gsapi_get_param((void *)instance, cstring, (void *)value, (gs_set_param_type)paramType);
@@ -338,14 +336,13 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param_1once
 	(JNIEnv *env, jclass, jlong instance, jbyteArray param, jobject value, jint paramType)
 {
 	jboolean copy = false;
-	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(param, &copy);
 
 	int bytes = gsapi_get_param((void *)instance, cstring, NULL, (gs_set_param_type)paramType);
 	if (bytes < 0)
 		return bytes;
 
-	void *data = new char[bytes];
+	char *data = new char[bytes];
 	int code = gsapi_get_param((void *)instance, cstring, data, (gs_set_param_type)paramType);
 	if (code < 0)
 	{

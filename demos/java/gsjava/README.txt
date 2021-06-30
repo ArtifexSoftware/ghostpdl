@@ -1,9 +1,3 @@
-Required libraries for this library:
-gpdldll64.dll
-gs_jni.dll
-
-Java Library:
-
 This library contains direct bindings to Ghostscript as
 well as several utility methods to make using the
 Ghostscript calls easier.
@@ -71,60 +65,9 @@ public static void main(String[] args) {
 	GSAPI.gsapi_delete_instance(instance);
 }
 
-C++ Library:
-
-This library builds to gs_jni.dll and uses the
-Java Native Interface (JNI) to bind the functions in
-the GSAPI class to Ghoscript as well as handling callbacks,
-exceptions, and references.
-
-The bindings in GSAPI are in the header com_artifex_gsjava_GSJAVA.h
-and the implementations are in com_artifex_gsjava_GSJAVA.cpp.
-
-Utility methods for throwing exceptions, setting fields, calling
-Java methods, and using the Reference<T> class are declared
-in jni_util.h.
-
-Example method explaining the implementation for
-gsapi_run_string_begin:
-
-
-/* JNIEnv *env - Provided the JNI. Allows interfacing into calling Java methods,
- * setting Java fields, etc. Different threads have different JNIEnv objects.
- *
- * jclass - Provided by the JNI. It represents the class calling this method.
- *
- * jlong instance - Instance to be passed to gsapi_run_string_begin
- *
- * jint userErrors - User errors to be passed to gsapi_run_string_begin
- *
- * jobject pExitCode - A Reference<Integer> object. This is always the case as the Java
- * code will not allow anything else to be passed. The value which Ghostscript returns
- * in the pExitCode parameter will be placed into here.
- */
-JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1begin
-	(JNIEnv *env, jclass, jlong instance, jint userErrors, jobject pExitCode)
-{
-	// Declares the exitCode parameter which will be passed as a pointer
-	// to gsapi_run_string_begin
-	int exitCode;
-
-	// Different threads have different JNIEnv objects, so each time a JNI method
-	// is called, this must be set so the Java callback methods can be called.
-	callbacks::setJNIEnv(env);
-
-	// Calls the Ghoscript call gsapi_run_string_begin
-	int code = gsapi_run_string_begin((void *)instance, userErrors, &exitCode);
-
-	// If the reference is not NULL, set the value of the reference to the exitCode returned
-	// from Ghoscript. It must be converted to the wrapper type java.lang.Integer as Java does not support
-	// primitive generic arguments (i.e. int, float, char, etc.)
-	if (pExitCode)
-		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
-
-	// Return the error code returned by Ghostscript
-	return code;
-}
+To build the library, build.sh can be used on Linux and build.bat on Windows.
+Both of these scripts do not compile Ghostscript. However, build.sh will
+compile the C++ library unlike build.bat.
 
 Viewer:
 

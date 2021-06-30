@@ -11,6 +11,9 @@ import com.artifex.gsjava.callbacks.IStdOutFunction;
 import com.artifex.gsjava.util.Reference;
 import com.artifex.gsjava.util.StringUtil;
 
+import java.io.File;
+import com.artifex.gsjava.util.BytePointer;
+
 /**
  * Class which contains native bindings to Ghostscript via the JNI.
  *
@@ -27,7 +30,14 @@ public class GSAPI {
 	 * Registers the needed native libraries.
 	 */
 	private static void registerLibraries() {
-		System.loadLibrary("gs_jni");
+		if (System.getProperty("os.name").equalsIgnoreCase("Linux")) {
+			File libgpdl = new File("libgpdl.so");
+			System.load(libgpdl.getAbsolutePath());
+			File gsjni = new File("gs_jni.so");
+			System.load(gsjni.getAbsolutePath());
+		} else {
+			System.loadLibrary("gs_jni");
+		}
 	}
 
 	/**
