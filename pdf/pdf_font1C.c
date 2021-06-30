@@ -1693,7 +1693,6 @@ pdfi_alloc_cff_cidfont(pdf_context *ctx, pdf_cidfont_type0 ** font, uint32_t obj
     cffcidfont->pdfi_font_type = e_pdf_cidfont_type0;
 
 #if REFCNT_DEBUG
-    cffcidfont->refcnt_ctx = (void *)ctx;
     cffcidfont->UID = ctx->UID++;
     dmprintf2(ctx->memory, "Allocated object of type %c with UID %" PRIi64 "\n", cffcidfont->type,
               cffcidfont->UID);
@@ -1778,7 +1777,6 @@ pdfi_alloc_cff_font(pdf_context *ctx, pdf_font_cff ** font, uint32_t obj_num, bo
     cfffont->pdfi_font_type = e_pdf_font_cff;
 
 #if REFCNT_DEBUG
-    cfffont->refcnt_ctx = (void *)ctx;
     cfffont->UID = ctx->UID++;
     dmprintf2(ctx->memory, "Allocated object of type %c with UID %" PRIi64 "\n", cfffont->type,
               cfffont->UID);
