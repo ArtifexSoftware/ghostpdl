@@ -247,6 +247,8 @@ typedef struct cmd_args_s {
     pdf_overprint_control_t overprint_control;     /* Overprint -- enabled, disabled, simulated */
     char *PageList;
     bool QUIET;
+    bool verbose_errors;
+    bool verbose_warnings;
 } cmd_args_t;
 
 typedef struct encryption_state_s {
@@ -404,8 +406,6 @@ typedef struct pdf_context_s
     uint64_t BMClevel;
 
     /* Bitfields recording whether any errors or warnings were encountered */
-    bool verbose_errors;
-    bool verbose_warnings;
     char pdf_errors[(E_PDF_MAX_ERROR - 2) / (sizeof(char) * 8) + ((E_PDF_MAX_ERROR - 2) % (sizeof(char) * 8) ? 1 : 0)];
     char pdf_warnings[(W_PDF_MAX_WARNING - 2) / (sizeof(char) * 8) + ((W_PDF_MAX_WARNING - 2) % (sizeof(char) * 8) ? 1 : 0)];
 
@@ -537,14 +537,14 @@ static inline void pdfi_set_error(pdf_context *ctx, int gs_error, char*gs_lib_fu
 {
     if (pdfi_error != 0)
         ctx->pdf_errors[pdfi_error / (sizeof(char) * 8)] |= 1 << pdfi_error % (sizeof(char) * 8);
-    if (ctx->verbose_errors)
+    if (ctx->args.verbose_errors)
         pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
 }
 
 static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, char*gs_lib_function, pdf_warning pdfi_warning, char *pdfi_function_name, char *extra_info)
 {
     ctx->pdf_warnings[pdfi_warning / (sizeof(char) * 8)] |= 1 << pdfi_warning % (sizeof(char) * 8);
-    if (ctx->verbose_warnings)
+    if (ctx->args.verbose_warnings)
         pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
 }
 

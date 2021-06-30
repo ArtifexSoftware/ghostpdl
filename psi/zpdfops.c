@@ -845,6 +845,24 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
             pdfctx->ctx->args.notransparency = pvalueref->value.boolval;
         }
 
+        if (dict_find_string(pdictref, "QUIET", &pvalueref) > 0) {
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->args.QUIET = pvalueref->value.boolval;
+        }
+
+        if (dict_find_string(pdictref, "VerboseErrors", &pvalueref) > 0) {
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->args.VerboseErrors = pvalueref->value.boolval;
+        }
+
+        if (dict_find_string(pdictref, "VerboseWarnings", &pvalueref) > 0) {
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->args.VerboseWarnings = pvalueref->value.boolval;
+        }
+
         if (dict_find_string(pdictref, "PDFPassword", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_string))
                 goto error;

@@ -421,7 +421,7 @@ void pdfi_verbose_error(pdf_context *ctx, int gs_error, char *gs_lib_function, i
 {
     char fallback[] = "unknown graphics library error";
 
-    if (ctx->verbose_errors && !ctx->args.QUIET) {
+    if (ctx->args.verbose_errors && !ctx->args.QUIET) {
         if (gs_error != 0) {
             char *error_string;
             unsigned int code = gs_error * -1;
@@ -464,7 +464,7 @@ void pdfi_verbose_warning(pdf_context *ctx, int gs_error, char *gs_lib_function,
 {
     char fallback[] = "unknown graphics library error";
 
-    if (ctx->verbose_warnings && !ctx->args.QUIET) {
+    if (ctx->args.verbose_warnings && !ctx->args.QUIET) {
         if (gs_error != 0) {
             char *error_string;
             unsigned int code = gs_error * -1;
@@ -1431,7 +1431,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     ctx->compressed_misses = 0;
 #endif
 #if DEBUG
-    ctx->verbose_errors = ctx->verbose_warnings = 1;
+    ctx->args.verbose_errors = ctx->args.verbose_warnings = 1;
 #endif
     return ctx;
 }

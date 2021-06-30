@@ -509,12 +509,12 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
         }
         /* PDF interpreter flags */
         if (!strncmp(param, "VerboseErrors", 13)) {
-            code = plist_value_get_bool(&pvalue, &ctx->verbose_errors);
+            code = plist_value_get_bool(&pvalue, &ctx->args.verbose_errors);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "VerboseWarnings", 15)) {
-            code = plist_value_get_bool(&pvalue, &ctx->verbose_warnings);
+            code = plist_value_get_bool(&pvalue, &ctx->args.verbose_warnings);
             if (code < 0)
                 return code;
         }
