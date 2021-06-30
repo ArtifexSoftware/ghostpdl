@@ -491,3 +491,33 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 {
     return_error(gs_error_unknownerror);
 }
+
+int gx_blank_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
+                                gs_get_bits_params_t *params, gs_int_rect **unread)
+{
+    int supported = GB_COLORS_NATIVE |
+                    GB_ALPHA_NONE |
+                    GB_DEPTH_8 |
+                    GB_PACKING_CHUNKY |
+                    GB_RETURN_COPY |
+                    GB_ALIGN_STANDARD |
+                    GB_OFFSET_0 |
+                    GB_RASTER_STANDARD;
+    unsigned char *ptr = params->data[0];
+    int bytes = (prect->q.x - prect->p.x) * dev->color_info.num_components;
+    int col = dev->color_info.num_components > 3 ? 0 : 0xff;
+    int raster = bitmap_raster(dev->width * dev->color_info.num_components);
+    int y;
+
+    if ((params->options & supported) != supported)
+        return_error(gs_error_unknownerror);
+
+    params->options = supported;
+
+    for (y = prect->p.y; y < prect->q.y; y++) {
+        memset(ptr, col, bytes);
+        ptr += raster;
+    }
+
+    return 0;
+}

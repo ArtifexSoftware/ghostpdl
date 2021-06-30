@@ -277,6 +277,7 @@ dev_proc_get_clipping_box(gx_default_get_clipping_box);
 dev_proc_get_clipping_box(gx_get_largest_clipping_box);
 dev_proc_begin_typed_image(gx_default_begin_typed_image);
 dev_proc_get_bits_rectangle(gx_default_get_bits_rectangle); /* just returns error */
+dev_proc_get_bits_rectangle(gx_blank_get_bits_rectangle);
 dev_proc_composite(gx_no_composite);
 /* default is for ordinary "leaf" devices, null is for */
 /* devices that only care about coverage and not contents. */

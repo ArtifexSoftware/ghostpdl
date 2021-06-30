@@ -179,6 +179,7 @@ lips4v_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_parallelogram, gdev_vector_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
     set_dev_proc(dev, begin_typed_image, lips4v_begin_typed_image);
+    set_dev_proc(dev, get_bits_rectangle, gx_blank_get_bits_rectangle);
 }
 
 gx_device_lips4v far_data gs_lips4v_device = {
@@ -2090,6 +2091,18 @@ lips4v_fill_mask(gx_device * dev,
         byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
                                    "lips4v_fill_mask(buf)");
 
+        /* This code seems suspect to me; we allocate a buffer
+         * rounding each line up to a multiple of 4, and then
+         * fill it without reference to this rounding. I suspect
+         * that each line should be padded, rather than all the
+         * data being crammed at the start, but I can't make that
+         * change in the absence of any way to test this. I will
+         * make do by adding the memset here so that any untouched
+         * bytes are at least consistently set to 0 to avoid
+         * indeterminisms (and valgrind errors). RJW */
+        if (width_bytes * h < num_bytes) {
+            memset(buf + width_bytes * h, 0, num_bytes - width_bytes * h);
+        }
         for (i = 0; i < h; ++i) {
             memcpy(buf + i * width_bytes, data + (data_x >> 3) + i * raster,
                    width_bytes);
