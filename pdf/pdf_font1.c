@@ -490,17 +490,9 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
         gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font");
 
         /* If we have a full CharStrings dictionary, we probably have enough to make a font */
-        if (code < 0 && (fpriv.u.t1.CharStrings == NULL || fpriv.u.t1.CharStrings->type != PDF_DICT
-            || fpriv.u.t1.CharStrings->size != fpriv.u.t1.CharStrings->entries)) {
-            bool notdefknown = false;
-            /* If we have a full CharStrings dictionary *except* a notdef, we still probably have
-               enough to make a font, because we'll add a fake notdef, if required, as we create
-               the font object.
-             */
-            if (fpriv.u.t1.CharStrings == NULL && fpriv.u.t1.CharStrings->entries == fpriv.u.t1.CharStrings->size - 1) {
-                (void)pdfi_dict_known(ctx, fpriv.u.t1.CharStrings, ".notdef", &notdefknown);
-            }
-            if (notdefknown == false)
+        if (code < 0 || (fpriv.u.t1.CharStrings == NULL || fpriv.u.t1.CharStrings->type != PDF_DICT
+            || fpriv.u.t1.CharStrings->entries == 0)) {
+                code = gs_note_error(gs_error_invalidfont);
                 goto error;
         }
         code = pdfi_alloc_t1_font(ctx, &t1f, font_dict->object_num);

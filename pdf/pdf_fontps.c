@@ -1212,8 +1212,12 @@ pdfi_read_ps_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, int fbuflen
 
     code = pdfi_pscript_interpret(&ps_font_ctx, fbuf, fbuflen);
     pdfi_pscript_stack_finit(&ps_font_ctx);
-    if (code < 0)
-        goto error_out;
+    /* We have several files that have a load of garbage data in the stream after the font is defined,
+       and that can end up in a stackoverflow error, even though we have a complete font. Override it
+       and let the Type 1 specific code decide for itself if it can use the font.
+     */
+    if (code == gs_error_stackoverflow)
+        code = 0;
 
     return code;
   error_out:
