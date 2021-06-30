@@ -170,12 +170,6 @@ static void
 pcxcmyk_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_cmyk1_bg(dev);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 const gx_device_printer gs_pcxcmyk_device =

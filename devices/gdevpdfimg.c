@@ -141,12 +141,6 @@ pdfimage32_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, pdf_image_close);
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale_cmyk);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale_cmyk);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 const gx_device_pdf_image gs_pdfimage32_device = {
