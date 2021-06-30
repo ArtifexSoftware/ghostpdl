@@ -1578,7 +1578,7 @@ gdev_prn_get_lines(gx_device_printer *pdev, int y, int height,
     params.x_offset = 0;
     params.raster = bytes_per_line;
     code = dev_proc(pdev, get_bits_rectangle)
-        ((gx_device *)pdev, &rect, &params, NULL);
+        ((gx_device *)pdev, &rect, &params);
     if (code < 0 && actual_buffer) {
         /*
          * RETURN_POINTER might not be implemented for this
@@ -1587,7 +1587,7 @@ gdev_prn_get_lines(gx_device_printer *pdev, int y, int height,
         params.options &= ~(GB_RETURN_POINTER | GB_RASTER_ALL);
         params.options |= GB_RETURN_COPY | GB_RASTER_SPECIFIED;
         code = dev_proc(pdev, get_bits_rectangle)
-            ((gx_device *)pdev, &rect, &params, NULL);
+            ((gx_device *)pdev, &rect, &params);
     }
     if (code < 0)
         return code;
@@ -1624,7 +1624,7 @@ gdev_prn_get_bits(gx_device_printer * pdev, int y, byte * str, byte ** actual_da
     params.raster = bitmap_raster(pdev->width * pdev->color_info.depth);
     params.data[0] = str;
     code = (*dev_proc(pdev, get_bits_rectangle))((gx_device *)pdev, &rect,
-                                                 &params, NULL);
+                                                 &params);
     if (code < 0)
         return code;
     if (actual_data)

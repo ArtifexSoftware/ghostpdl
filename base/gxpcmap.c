@@ -666,7 +666,7 @@ blank_unmasked_bits(gx_device * mask,
                               GB_COLORS_NATIVE | GB_ALPHA_NONE);
             params.data[0] = min;
             code = (*dev_proc(mask, get_bits_rectangle))(mask, &rect,
-                                                         &params, NULL);
+                                                         &params);
             if (code < 0)
                 goto fail;
             mine = params.data[0];
@@ -720,7 +720,7 @@ blank_unmasked_bits(gx_device * mask,
                               GB_COLORS_NATIVE | GB_ALPHA_NONE);
             params.data[0] = min;
             code = (*dev_proc(mask, get_bits_rectangle))(mask, &rect,
-                                                         &params, NULL);
+                                                         &params);
             if (code < 0)
                 goto fail;
             mine = params.data[0];
@@ -755,7 +755,7 @@ fail:
 /****** SHOULD USE MASK TO DEFINE UNREAD AREA *****/
 static int
 pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                       gs_get_bits_params_t * params, gs_int_rect ** unread)
+                       gs_get_bits_params_t * params)
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
     int code;
@@ -765,7 +765,7 @@ pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
         if (padev->mask)
             params2.options &= ~GB_RETURN_POINTER;
         code = (*dev_proc(padev->target, get_bits_rectangle))
-            (padev->target, prect, &params2, unread);
+            (padev->target, prect, &params2);
         /* If we have a mask, then unmarked pixels of the bits
          * will be undefined. Strictly speaking it makes no
          * sense for us to return any value here, but the only

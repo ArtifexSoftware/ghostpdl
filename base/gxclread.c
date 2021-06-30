@@ -590,7 +590,7 @@ clist_render_init(gx_device_clist *dev)
 /* Copy a rasterized rectangle to the client, rasterizing if needed. */
 int
 clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
-                         gs_get_bits_params_t *params, gs_int_rect **unread)
+                         gs_get_bits_params_t *params)
 {
     gx_device_clist *cldev = (gx_device_clist *)dev;
     gx_device_clist_reader *crdev = &cldev->reader;
@@ -631,8 +631,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
         for (i = 0; i < num_planes; ++i)
             if (params->data[i]) {
                 if (plane_index >= 0)  /* >1 plane requested */
-                    return gx_default_get_bits_rectangle(dev, prect, params,
-                                                         unread);
+                    return gx_default_get_bits_rectangle(dev, prect, params);
                 plane_index = i;
             }
     }
@@ -655,7 +654,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
         band_rect.p.y = my;
         band_rect.q.y = my + lines_rasterized;
         code = dev_proc(bdev, get_bits_rectangle)
-            (bdev, &band_rect, params, unread);
+            (bdev, &band_rect, params);
     }
     cdev->buf_procs.destroy_buf_device(bdev);
     if (code < 0 || lines_rasterized == line_count)
@@ -668,7 +667,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
      * rectangles, punt.
      */
     if (!(options & GB_RETURN_COPY) || code > 0)
-        return gx_default_get_bits_rectangle(dev, prect, params, unread);
+        return gx_default_get_bits_rectangle(dev, prect, params);
     options = params->options;
     if (!(options & GB_RETURN_COPY)) {
         /* Redo the first piece with copying. */
@@ -703,7 +702,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
             band_rect.p.y = my;
             band_rect.q.y = my + lines_rasterized;
             code = dev_proc(bdev, get_bits_rectangle)
-                (bdev, &band_rect, &band_params, unread);
+                (bdev, &band_rect, &band_params);
             if (code < 0)
                 break;
             params->options = options = band_params.options;

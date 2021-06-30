@@ -2006,7 +2006,7 @@ getbits_chunky_line(gx_downscale_liner *liner_, void *buffer, int row)
                       GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
                       GB_COLORS_NATIVE | GB_ALPHA_NONE);
     params.data[0] = buffer;
-    return (*dev_proc(liner->dev, get_bits_rectangle))(liner->dev, &rect, &params, NULL);
+    return (*dev_proc(liner->dev, get_bits_rectangle))(liner->dev, &rect, &params);
 }
 
 static void
@@ -2044,7 +2044,7 @@ getbits_planar_line(gx_downscale_liner *liner_, void *output, int row)
 
     params2 = *params;
 
-    code = (*dev_proc(liner->dev, get_bits_rectangle))(liner->dev, &rect, &params2, NULL);
+    code = (*dev_proc(liner->dev, get_bits_rectangle))(liner->dev, &rect, &params2);
 
     /* get_bits_rectangle doesn't like doing planar copies, only return
      * pointers. This is a problem for us, so fudge it here. */
@@ -3216,7 +3216,7 @@ static int downscaler_process_fn(void *arg_, gx_device *dev, gx_device *bdev, co
 
     /* Where do we get the data from? */
     params.options = GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_PACKING_CHUNKY | GB_RETURN_POINTER | GB_ALIGN_ANY | GB_OFFSET_0 | GB_RASTER_ANY;
-    code = dev_proc(bdev, get_bits_rectangle)(bdev, &in_rect, &params, NULL);
+    code = dev_proc(bdev, get_bits_rectangle)(bdev, &in_rect, &params);
     if (code < 0)
         return code;
     raster_in = params.raster;
@@ -3224,7 +3224,7 @@ static int downscaler_process_fn(void *arg_, gx_device *dev, gx_device *bdev, co
 
     /* Where do we write it to? */
     if (buffer->bdev) {
-        code = dev_proc(bdev, get_bits_rectangle)(buffer->bdev, &out_rect, &params, NULL);
+        code = dev_proc(bdev, get_bits_rectangle)(buffer->bdev, &out_rect, &params);
         if (code < 0)
             return code;
         raster_out = params.raster;

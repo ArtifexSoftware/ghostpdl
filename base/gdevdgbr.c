@@ -487,13 +487,13 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
 
 int
 gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                       gs_get_bits_params_t * params, gs_int_rect ** unread)
+                       gs_get_bits_params_t * params)
 {
     return_error(gs_error_unknownerror);
 }
 
 int gx_blank_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
-                                gs_get_bits_params_t *params, gs_int_rect **unread)
+                                gs_get_bits_params_t *params)
 {
     int supported = GB_COLORS_NATIVE |
                     GB_ALPHA_NONE |

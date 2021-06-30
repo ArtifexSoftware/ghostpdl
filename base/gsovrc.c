@@ -984,7 +984,7 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
                         gb_params.data[j] = 0;
                     gb_params.data[k] = gb_buff + k * raster;
                     code = dev_proc(tdev, get_bits_rectangle) (tdev, &gb_rect,
-                                                               &gb_params, 0);
+                                                               &gb_params);
                     if (code < 0) {
                         gs_free_object(mem, gb_buff, "overprint_copy_planes" );
                         return code;
@@ -1108,7 +1108,7 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
                 gb_params.data[j] = 0;
             gb_params.data[k] = gb_buff + k * raster;
             code = dev_proc(tdev, get_bits_rectangle) (tdev, &gb_rect,
-                                                       &gb_params, 0);
+                                                       &gb_params);
             if (code < 0) {
                 gs_free_object(mem, gb_buff,
                                "overprint_fill_rectangle_hl_color" );

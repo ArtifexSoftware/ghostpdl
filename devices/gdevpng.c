@@ -1023,7 +1023,7 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
                               GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
                               GB_COLORS_NATIVE | GB_ALPHA_NONE);
             params.data[0] = lin;
-            code = (*dev_proc(dev, get_bits_rectangle))(dev, &rect, &params, NULL);
+            code = (*dev_proc(dev, get_bits_rectangle))(dev, &rect, &params);
             if (code < 0)
                 break;
             line = params.data[0];

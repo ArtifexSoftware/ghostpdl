@@ -655,7 +655,7 @@ mem_close(gx_device * dev)
 #define chunk byte
 int
 mem_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                       gs_get_bits_params_t * params, gs_int_rect ** unread)
+                       gs_get_bits_params_t * params)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     gs_get_bits_options_t options = params->options;
@@ -751,7 +751,7 @@ mem_swap_byte_rect(byte * base, uint raster, int x, int w, int h, bool store)
 /* Copy a word-oriented rectangle to the client, swapping bytes as needed. */
 int
 mem_word_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                       gs_get_bits_params_t * params, gs_int_rect ** unread)
+                       gs_get_bits_params_t * params)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *src;
@@ -767,8 +767,7 @@ mem_word_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     if (w <= 0 || h <= 0) {
         /*
          * It's easiest to just keep going with an empty rectangle.
-         * We pass the original rectangle to mem_get_bits_rectangle,
-         * so unread will be filled in correctly.
+         * We pass the original rectangle to mem_get_bits_rectangle.
          */
         x = y = w = h = 0;
     }
@@ -780,7 +779,7 @@ mem_word_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 
     src = scan_line_base(mdev, y);
     mem_swap_byte_rect(src, dev_raster, bit_x, bit_w, h, false);
-    code = mem_get_bits_rectangle(dev, prect, params, unread);
+    code = mem_get_bits_rectangle(dev, prect, params);
     mem_swap_byte_rect(src, dev_raster, bit_x, bit_w, h, false);
     return code;
 }

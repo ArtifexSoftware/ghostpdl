@@ -1437,29 +1437,17 @@ clip_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 /* Get bits back from the device. */
 static int
 clip_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                        gs_get_bits_params_t * params, gs_int_rect ** unread)
+                        gs_get_bits_params_t * params)
 {
     gx_device_clip *rdev = (gx_device_clip *) dev;
     gx_device *tdev = rdev->target;
     int tx = rdev->translation.x, ty = rdev->translation.y;
     gs_int_rect rect;
-    int code;
 
     rect.p.x = prect->p.x - tx, rect.p.y = prect->p.y - ty;
     rect.q.x = prect->q.x - tx, rect.q.y = prect->q.y - ty;
-    code = (*dev_proc(tdev, get_bits_rectangle))
-        (tdev, &rect, params, unread);
-    if (code > 0) {
-        /* Adjust unread rectangle coordinates */
-        gs_int_rect *list = *unread;
-        int i;
-
-        for (i = 0; i < code; ++list, ++i) {
-            list->p.x += tx, list->p.y += ty;
-            list->q.x += tx, list->q.y += ty;
-        }
-    }
-    return code;
+    return (*dev_proc(tdev, get_bits_rectangle))
+                     (tdev, &rect, params);
 }
 
 static int

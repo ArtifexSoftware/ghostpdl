@@ -515,7 +515,7 @@ plan_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
     else
         options |= GB_PACKING_PLANAR;
     for (lnum = 0; lnum < pdev->height; lnum++) {
-        gs_int_rect *unread, rect;
+        gs_int_rect rect;
         gs_get_bits_params_t params;
 
         rect.p.x = 0;
@@ -525,7 +525,7 @@ plan_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
         memset(&params, 0, sizeof(params));
         params.options = options;
         params.x_offset = 0;
-        code = (*dev_proc(pdev, get_bits_rectangle))((gx_device *)pdev, &rect, &params,&unread);
+        code = (*dev_proc(pdev, get_bits_rectangle))((gx_device *)pdev, &rect, &params);
         if (code < 0)
             break;
 #ifdef DEBUG_DUMP

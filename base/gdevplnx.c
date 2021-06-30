@@ -1001,7 +1001,7 @@ plane_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
 static int
 plane_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                         gs_get_bits_params_t * params, gs_int_rect ** unread)
+                         gs_get_bits_params_t * params)
 {
     gx_device_plane_extract * const edev = (gx_device_plane_extract *)dev;
     gx_device * const plane_dev = edev->plane_dev;
@@ -1019,11 +1019,11 @@ plane_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
      */
     if ((options & GB_PACKING_PLANAR) && (options & GB_SELECT_PLANES)) {
         if (params->data[plane_index] == 0)
-            return gx_default_get_bits_rectangle(dev, prect, params, unread);
+            return gx_default_get_bits_rectangle(dev, prect, params);
         /* If the caller wants any other plane(s), punt. */
         for (plane = 0; plane < dev->color_info.num_components; ++plane)
             if (plane != plane_index && params->data[plane] != 0)
-                return gx_default_get_bits_rectangle(dev, prect, params, unread);
+                return gx_default_get_bits_rectangle(dev, prect, params);
         /* Pass the request on to the plane device. */
         plane_params = *params;
         plane_params.options =
@@ -1031,7 +1031,7 @@ plane_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
             GB_PACKING_CHUNKY;
         plane_params.data[0] = params->data[plane_index];
         code = dev_proc(plane_dev, get_bits_rectangle)
-            (plane_dev, prect, &plane_params, unread);
+            (plane_dev, prect, &plane_params);
         if (code >= 0) {
             *params = plane_params;
             params->options = (params->options & ~GB_PACKING_ALL) |
@@ -1069,7 +1069,7 @@ plane_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
              (GB_RASTER_STANDARD | GB_RASTER_ANY));
         plane_params.raster = gx_device_raster(plane_dev, true);
         code = dev_proc(plane_dev, get_bits_rectangle)
-            (plane_dev, prect, &plane_params, unread);
+            (plane_dev, prect, &plane_params);
         if (code >= 0) {
             /* Success, expand the plane into pixels. */
             source.data.read = plane_params.data[0];
@@ -1081,6 +1081,6 @@ plane_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
         }
         params->options = (options & ~GB_RETURN_POINTER) | GB_RETURN_COPY;
     } else
-        return gx_default_get_bits_rectangle(dev, prect, params, unread);
+        return gx_default_get_bits_rectangle(dev, prect, params);
     return code;
 }

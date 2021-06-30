@@ -2063,8 +2063,7 @@ mem_planar_strip_copy_rop2(gx_device * dev,
 /* Copy bits back from a planar memory device. */
 static int
 mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                              gs_get_bits_params_t * params,
-                              gs_int_rect ** unread)
+                              gs_get_bits_params_t * params)
 {
     /* This duplicates most of mem_get_bits_rectangle.  Tant pgs. */
     gx_device_memory * const mdev = (gx_device_memory *)dev;
@@ -2158,8 +2157,7 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
                 MEM_SAVE_PARAMS(mdev, save);
                 mdev->line_ptrs += mdev->height * plane;
                 MEM_SET_PARAMS(mdev, mdev->planes[plane].depth);
-                code = mem_get_bits_rectangle(dev, prect, &copy_params,
-                                              unread);
+                code = mem_get_bits_rectangle(dev, prect, &copy_params);
                 MEM_RESTORE_PARAMS(mdev, save);
                 if (code >= 0) {
                     params->data[plane] = copy_params.data[0];

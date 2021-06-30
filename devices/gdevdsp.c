@@ -361,7 +361,7 @@ display_output_page(gx_device * dev, int copies, int flush)
             params.original_y = oy;
             params.raster = raster;
             code = dev_proc(ddev, get_bits_rectangle)((gx_device *)ddev,
-                                                      &rect, &params, NULL);
+                                                      &rect, &params);
             if (code < 0)
                 break;
         }
@@ -814,13 +814,12 @@ display_copy_color(gx_device * dev,
 
 static int
 display_get_bits_rectangle(gx_device * dev, const gs_int_rect *rect,
-                           gs_get_bits_params_t *params,
-                           gs_int_rect ** unread)
+                           gs_get_bits_params_t *params)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
         return gs_error_Fatal;
-    return ddev->mutated_procs.get_bits_rectangle(dev, rect, params, unread);
+    return ddev->mutated_procs.get_bits_rectangle(dev, rect, params);
 }
 
 static int

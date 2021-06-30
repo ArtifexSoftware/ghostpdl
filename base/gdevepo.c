@@ -517,13 +517,13 @@ int epo_copy_color(gx_device *dev, const byte *data, int data_x, int raster, gx_
 }
 
 int epo_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
-                           gs_get_bits_params_t *params, gs_int_rect **unread)
+                           gs_get_bits_params_t *params)
 {
     int code = epo_handle_erase_page(dev);
 
     if (code != 0)
         return code;
-    return dev_proc(dev, get_bits_rectangle)(dev, prect, params, unread);
+    return dev_proc(dev, get_bits_rectangle)(dev, prect, params);
 }
 
 int epo_copy_alpha(gx_device *dev, const byte *data, int data_x,

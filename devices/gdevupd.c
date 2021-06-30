@@ -1124,7 +1124,7 @@ upd_print_page(gx_device_printer *pdev, gp_file *out)
                               GB_COLORS_NATIVE | GB_ALPHA_NONE);
             params.data[0] = upd->gsbuf;
             if(0 > (*dev_proc(udev,get_bits_rectangle))((gx_device *) udev,
-                                   &rect,&params,NULL)) {
+                                   &rect,&params)) {
 #if UPD_MESSAGES & UPD_M_WARNING
                errprintf(udev->memory, "get_bits aborted with error, yscnbuf = %4d\n",
                          upd->yscnbuf);

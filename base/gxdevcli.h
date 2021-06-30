@@ -1077,7 +1077,7 @@ typedef enum FILTER_FLAGS {
 
 #define dev_t_proc_get_bits_rectangle(proc, dev_t)\
   int proc(dev_t *dev, const gs_int_rect *prect,\
-    gs_get_bits_params_t *params, gs_int_rect **unread)
+    gs_get_bits_params_t *params)
 #define dev_proc_get_bits_rectangle(proc)\
   dev_t_proc_get_bits_rectangle(proc, gx_device)
 

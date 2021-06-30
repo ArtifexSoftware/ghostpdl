@@ -522,7 +522,7 @@ cmykog_process(void *arg_, gx_device *dev_, gx_device *bdev, const gs_int_rect *
   my_rect.p.y = 0;
   my_rect.q.x = w;
   my_rect.q.y = h;
-  code = dev_proc(bdev, get_bits_rectangle)(bdev, &my_rect, &buffer->params, NULL);
+  code = dev_proc(bdev, get_bits_rectangle)(bdev, &my_rect, &buffer->params);
   if (code < 0)
     return code;
 

@@ -189,7 +189,7 @@ gx_default_strip_copy_rop2(gx_device * dev,
             bit_params.data[0] = row;
             bit_params.x_offset = 0;
             code = (*dev_proc(dev, get_bits_rectangle))
-                (dev, &rect, &bit_params, NULL);
+                (dev, &rect, &bit_params);
             if (code < 0)
                 break;
             code = (*dev_proc(pmdev, copy_color))
@@ -774,7 +774,7 @@ do_strip_copy_rop(gx_device * dev,
             bit_params.x_offset = 0;
             bit_params.raster = mdev.raster;
             code = (*dev_proc(dev, get_bits_rectangle))
-                (dev, &rect, &bit_params, NULL);
+                (dev, &rect, &bit_params);
             if (code < 0)
                 break;
         }

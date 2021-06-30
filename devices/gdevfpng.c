@@ -256,7 +256,7 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
     my_rect.p.y = 0;
     my_rect.q.x = w;
     my_rect.q.y = h;
-    code = dev_proc(bdev, get_bits_rectangle)(bdev, &my_rect, &params, NULL);
+    code = dev_proc(bdev, get_bits_rectangle)(bdev, &my_rect, &params);
     if (code < 0)
         return code;
 

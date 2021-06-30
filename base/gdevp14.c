@@ -10663,7 +10663,7 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
             rect.p.y = y;
             rect.q.y = y+1;
             code = dev_proc(tdev, get_bits_rectangle)((gx_device *)tdev,
-                                                      &rect, &params, NULL);
+                                                      &rect, &params);
             if (code < 0)
                 goto put_accum_error;
             actual_data = params.data[0];

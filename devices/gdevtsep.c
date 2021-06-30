@@ -2796,7 +2796,7 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
             /* We have to reset the pointers since get_bits_rect will have moved them */
             for (comp_num = 0; comp_num < num_comp; comp_num++)
                 params.data[comp_num] = planes[comp_num];
-            code = (*dev_proc(pdev, get_bits_rectangle))((gx_device *)pdev, &rect, &params, NULL);
+            code = (*dev_proc(pdev, get_bits_rectangle))((gx_device *)pdev, &rect, &params);
             if (code < 0)
                 break;
 
