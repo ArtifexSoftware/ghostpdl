@@ -804,7 +804,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                         if (pdfi_dict_knownget_type(ctx, (pdf_dict *)File, "EF", PDF_DICT, &EF)) {
                             if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EF, "F", PDF_STREAM, &F)) {
                                 pdf_dict *stream_dict = NULL;
-                                pdf_c_stream *s;
+                                pdf_c_stream *s = NULL;
 
                                 /* pdfi_dict_from_object does not increment the reference count of the stream dictionary
                                  * so we do not need to count it down later.
@@ -823,7 +823,8 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                                 int bytes;
 
                                                 bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 2048, s);
-                                                pdfi_countdown(s);
+                                                pdfi_close_file(ctx, s);
+                                                s = NULL;
                                                 /* Assertion; the smallest real PDF file is at least 400 bytes */
                                                 if (bytes >= 400) {
                                                     if (strstr(Buffer, "%PDF-") == NULL)
@@ -894,10 +895,12 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
 
                                                     index++;
                                                     (*TotalFiles)++;
-                                                    pdfi_countdown(s);
+                                                    pdfi_close_file(ctx, s);
+                                                    s = NULL;
                                                 }
                                                 if (SubFile_stream != NULL)
-                                                    pdfi_countdown(SubFile_stream);
+                                                    pdfi_close_file(ctx, SubFile_stream);
+                                                SubFile_stream = NULL;
                                             }
                                             gp_fclose(scratch_file);
                                         } else
