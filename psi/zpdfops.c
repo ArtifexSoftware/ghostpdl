@@ -854,13 +854,13 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
         if (dict_find_string(pdictref, "VerboseErrors", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->args.VerboseErrors = pvalueref->value.boolval;
+            pdfctx->ctx->args.verbose_errors = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "VerboseWarnings", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
-            pdfctx->ctx->args.VerboseWarnings = pvalueref->value.boolval;
+            pdfctx->ctx->args.verbose_warnings = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "PDFPassword", &pvalueref) > 0) {

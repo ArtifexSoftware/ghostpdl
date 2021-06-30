@@ -776,12 +776,9 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
     pdf_obj *EF = NULL, *F = NULL;
     char **working_array = NULL;
 
-    if (pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, &Names))
-    {
-        if(pdfi_dict_knownget_type(ctx, (pdf_dict *)Names, "EmbeddedFiles", PDF_DICT, &EmbeddedFiles))
-        {
-            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EmbeddedFiles, "Names", PDF_ARRAY, &FileNames))
-            {
+    if (pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, &Names)) {
+        if(pdfi_dict_knownget_type(ctx, (pdf_dict *)Names, "EmbeddedFiles", PDF_DICT, &EmbeddedFiles)) {
+            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EmbeddedFiles, "Names", PDF_ARRAY, &FileNames)) {
                 int ix = 0, index = 0;
                 gp_file *scratch_file = NULL;
                 char scratch_name[gp_file_name_sizeof];
@@ -795,8 +792,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                 }
                 memset(working_array, 0x00, NumEmbeddedFiles * 2 * sizeof(char *));
 
-                for (ix = 0;ix < NumEmbeddedFiles;ix++)
-                {
+                for (ix = 0;ix < NumEmbeddedFiles;ix++) {
                     pdf_obj *File = NULL;
                     pdf_obj *Subtype = NULL;
 
@@ -804,12 +800,9 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                     if (code < 0)
                         break;
 
-                    if (File->type == PDF_DICT)
-                    {
-                        if (pdfi_dict_knownget_type(ctx, (pdf_dict *)File, "EF", PDF_DICT, &EF))
-                        {
-                            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EF, "F", PDF_STREAM, &F))
-                            {
+                    if (File->type == PDF_DICT) {
+                        if (pdfi_dict_knownget_type(ctx, (pdf_dict *)File, "EF", PDF_DICT, &EF)) {
+                            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EF, "F", PDF_STREAM, &F)) {
                                 pdf_dict *stream_dict = NULL;
                                 pdf_c_stream *s;
 
@@ -818,8 +811,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                  */
                                 code = pdfi_dict_from_obj(ctx, F, &stream_dict);
                                 if (code >= 0) {
-                                    if (!pdfi_dict_knownget_type(ctx, stream_dict, "Subtype", PDF_NAME, &Subtype))
-                                    {
+                                    if (!pdfi_dict_knownget_type(ctx, stream_dict, "Subtype", PDF_NAME, &Subtype)) {
                                         /* No Subtype, (or not a name) we can't check the Mime type, so try to read the first 2Kb
                                          * and look for a %PDF- in that. If not present, assume its not a PDF
                                          */
@@ -840,15 +832,12 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                                     code = -1;
                                             }
                                         }
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         if (!pdfi_name_is((const pdf_name *)Subtype, "application/pdf"))
                                             code = -1;
                                     }
 
-                                    if (code >= 0)
-                                    {
+                                    if (code >= 0) {
                                         /* Appears to be a PDF file. Create a scratch file to hold it, and then
                                          * read the file from the PDF, and write it to the scratch file. Record
                                          * the scratch filename in the working_array for later processing.
@@ -856,16 +845,14 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                         scratch_file = gp_open_scratch_file(ctx->memory, "gpdf-collection-", scratch_name, "wb");
                                         if (scratch_file != NULL) {
                                             code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, (pdf_stream *)F), SEEK_SET);
-                                            if (code >= 0)
-                                            {
+                                            if (code >= 0) {
                                                 double L;
                                                 pdf_c_stream *SubFile_stream = NULL;
 
                                                 /* Start by setting up the file to be read. Apply a SubFileDecode so that, if the input stream
                                                  * is not compressed we will stop reading when we get to the end of the stream.
                                                  */
-                                                if (pdfi_dict_knownget_number(ctx, stream_dict, "Length", &L))
-                                                {
+                                                if (pdfi_dict_knownget_number(ctx, stream_dict, "Length", &L)) {
 
                                                     code = pdfi_apply_SubFileDecode_filter(ctx, (int)L, NULL, ctx->main_stream, &SubFile_stream, false);
                                                     if (code >= 0)
@@ -873,8 +860,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                                 } else
                                                     code = pdfi_filter(ctx, (pdf_stream *)F, ctx->main_stream, &s, false);
 
-                                                if (code >= 0)
-                                                {
+                                                if (code >= 0) {
                                                     char Buffer[2048];
                                                     int bytes;
                                                     pdf_string *Name = NULL;
