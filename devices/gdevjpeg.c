@@ -50,6 +50,7 @@ static dev_proc_put_params(jpeg_put_params);
 static dev_proc_print_page(jpeg_print_page);
 static dev_proc_map_color_rgb(jpegcmyk_map_color_rgb);
 static dev_proc_map_cmyk_color(jpegcmyk_map_cmyk_color);
+static dev_proc_decode_color(jpegcmyk_decode_color);
 
 /* ------ The device descriptors ------ */
 
@@ -94,12 +95,8 @@ jpeggray_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_initial_matrix, jpeg_get_initial_matrix);
     set_dev_proc(dev, get_params, jpeg_get_params);
     set_dev_proc(dev, put_params, jpeg_put_params);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_jpeg gs_jpeggray_device =
@@ -128,11 +125,8 @@ jpegcmyk_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, put_params, jpeg_put_params);
     set_dev_proc(dev, map_cmyk_color, jpegcmyk_map_cmyk_color);
 
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, jpegcmyk_map_cmyk_color);
+    set_dev_proc(dev, decode_color, jpegcmyk_decode_color);
 }
 
 const gx_device_jpeg gs_jpegcmyk_device =
@@ -174,6 +168,19 @@ jpegcmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
         ((uint)gx_color_value_to_byte(cv[0]) << 24));
 
     return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+static int
+jpegcmyk_decode_color(gx_device * dev, gx_color_index color,
+                      gx_color_value cv[4])
+{
+    color = ~color;
+    cv[0] = gx_color_value_from_byte(0xff & (color>>24));
+    cv[1] = gx_color_value_from_byte(0xff & (color>>16));
+    cv[2] = gx_color_value_from_byte(0xff & (color>>8));
+    cv[3] = gx_color_value_from_byte(0xff & color);
+
+    return 0;
 }
 
 /* Get parameters. */

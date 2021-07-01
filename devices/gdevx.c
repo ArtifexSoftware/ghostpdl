@@ -664,7 +664,7 @@ x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 /* Read bits back from the screen. */
 int
 x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                     gs_get_bits_params_t * params, gs_int_rect ** unread)
+                     gs_get_bits_params_t * params)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
     int depth = dev->color_info.depth;
@@ -696,7 +696,7 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
         !(options & GB_RASTER_ALL)
         )
         return
-            gx_default_get_bits_rectangle(dev, prect, params, unread);
+            gx_default_get_bits_rectangle(dev, prect, params);
     params->options =
         GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_PACKING_CHUNKY |
         GB_RETURN_COPY | GB_OFFSET_0 |
@@ -715,22 +715,6 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
         flush_text(xdev);
     } else
         update_do_flush(xdev);
-    /*
-     * If we want a list of unread rectangles, turn on graphics
-     * exposures, and accept exposure events.
-     */
-        /******
-         ****** FOLLOWING IS WRONG.  XGetImage DOES NOT GENERATE
-         ****** EXPOSURE EVENTS.
-         ******/
-#if GET_IMAGE_EXPOSURES
-    if (unread) {
-        XSetGraphicsExposures(xdev->dpy, xdev->gc, True);
-        XGetWindowAttributes(xdev->dpy, xdev->win, &attributes);
-        XSelectInput(xdev->dpy, xdev->win,
-                     attributes.your_event_mask | ExposureMask);
-    }
-#endif /* GET_IMAGE_EXPOSURES */
     /*
      * The X library doesn't provide any way to specify the desired
      * bit or byte ordering for the result, so we may have to swap the
@@ -808,49 +792,6 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
             }
         }
         XDestroyImage(image);
-    }
-    if (unread) {
-#if GET_IMAGE_EXPOSURES
-        XEvent event;
-#endif /* GET_IMAGE_EXPOSURES */
-
-        *unread = 0;
-#if GET_IMAGE_EXPOSURES
-        /* Read any exposure events. */
-        XWindowEvent(xdev->dpy, xdev->win, ExposureMask, &event);
-        if (event.type == GraphicsExpose) {
-            gs_int_rect *rects = (gs_int_rect *)
-                gs_alloc_bytes(dev->memory, sizeof(gs_int_rect),
-                               "x_get_bits_rectangle");
-            int num_rects = 0;
-
-            for (;;) {
-                if (rects == 0) {
-                    code = gs_note_error(gs_error_VMerror);
-                    break;
-                }
-#define xevent (*(XGraphicsExposeEvent *)&event)
-                rects[num_rects].q.x = xevent.width +
-                    (rects[num_rects].p.x = xevent.x);
-                rects[num_rects].q.y = xevent.height +
-                    (rects[num_rects].p.y = xevent.y);
-                ++num_rects;
-                if (!xevent.count)
-                    break;
-#undef xevent
-                rects = gs_resize_object(dev->memory, rects,
-                                         (num_rects + 1) * sizeof(gs_int_rect),
-                                         "x_get_bits_rectangle");
-            }
-            if (code >= 0) {
-                *unread = rects;
-                code = num_rects;
-            }
-        }
-        /* Restore the window state. */
-        XSetGraphicsExposures(xdev->dpy, xdev->gc, False);
-        XSelectInput(xdev->dpy, xdev->win, attributes.your_event_mask);
-#endif /* GET_IMAGE_EXPOSURES */
     }
     return code;
 }

@@ -150,12 +150,8 @@ epson_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, map_rgb_color, epson_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, epson_map_color_rgb);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, epson_map_rgb_color);
+    set_dev_proc(dev, decode_color, epson_map_color_rgb);
 }
 
 const gx_device_printer far_data gs_epsonc_device =

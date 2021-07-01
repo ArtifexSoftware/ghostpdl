@@ -351,12 +351,12 @@ int default_subclass_begin_typed_image(gx_device *dev, const gs_gstate *pgs, con
 }
 
 int default_subclass_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
-    gs_get_bits_params_t *params, gs_int_rect **unread)
+    gs_get_bits_params_t *params)
 {
     if (dev->child)
-        return dev_proc(dev->child, get_bits_rectangle)(dev->child, prect, params, unread);
+        return dev_proc(dev->child, get_bits_rectangle)(dev->child, prect, params);
     /* else */
-    return gx_default_get_bits_rectangle(dev, prect, params, unread);
+    return gx_default_get_bits_rectangle(dev, prect, params);
 }
 
 int default_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,

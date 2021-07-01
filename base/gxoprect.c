@@ -308,8 +308,7 @@ gx_overprint_generic_fill_rectangle(
         gb_rect.q.y = y;
         code = dev_proc(tdev, get_bits_rectangle)( tdev,
                                                    &gb_rect,
-                                                   &gb_params,
-                                                   0 );
+                                                   &gb_params );
         if (code < 0)
             break;
         unpack_proc(pcolor_buff, gb_buff, 0, w, depth);
@@ -496,8 +495,7 @@ gx_overprint_sep_fill_rectangle_1(
         gb_rect.q.y = y;
         code = dev_proc(tdev, get_bits_rectangle)( tdev,
                                                    &gb_rect,
-                                                   &gb_params,
-                                                   0 );
+                                                   &gb_params );
         if (code < 0)
             break;
         bits_fill_rectangle_masked( gb_buff,
@@ -586,8 +584,7 @@ gx_overprint_sep_fill_rectangle_2(
         gb_rect.q.y = y;
         code = dev_proc(tdev, get_bits_rectangle)( tdev,
                                                    &gb_rect,
-                                                   &gb_params,
-                                                   0 );
+                                                   &gb_params );
         if (code < 0)
             break;
         for (i = 0, j = 0; i < byte_w; i++, cp++) {

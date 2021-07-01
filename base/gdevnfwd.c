@@ -529,7 +529,7 @@ gx_forward_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
 
 int
 gx_forward_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                       gs_get_bits_params_t * params, gs_int_rect ** unread)
+                       gs_get_bits_params_t * params)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
@@ -537,7 +537,7 @@ gx_forward_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
         (tdev == 0 ? (tdev = dev, gx_default_get_bits_rectangle) :
          dev_proc(tdev, get_bits_rectangle));
 
-    return proc(tdev, prect, params, unread);
+    return proc(tdev, prect, params);
 }
 
 int

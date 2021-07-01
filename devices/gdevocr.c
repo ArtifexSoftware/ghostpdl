@@ -59,12 +59,8 @@ ocr_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, ocr_close);
     set_dev_proc(dev, get_params, ocr_get_params);
     set_dev_proc(dev, put_params, ocr_put_params);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_ocr gs_ocr_device =
@@ -87,12 +83,8 @@ hocr_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, hocr_close);
     set_dev_proc(dev, get_params, ocr_get_params);
     set_dev_proc(dev, put_params, ocr_put_params);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_ocr gs_hocr_device =

@@ -222,7 +222,7 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
     rect.q.y = rect.p.y + h;
     params.options = options;
     params.data[0] = op->value.bytes;
-    code = (*dev_proc(dev, get_bits_rectangle))(dev, &rect, &params, NULL);
+    code = (*dev_proc(dev, get_bits_rectangle))(dev, &rect, &params);
     if (code < 0)
         return code;
     make_int(op - 7, h);

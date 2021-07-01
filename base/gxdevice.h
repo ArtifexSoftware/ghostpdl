@@ -277,6 +277,7 @@ dev_proc_get_clipping_box(gx_default_get_clipping_box);
 dev_proc_get_clipping_box(gx_get_largest_clipping_box);
 dev_proc_begin_typed_image(gx_default_begin_typed_image);
 dev_proc_get_bits_rectangle(gx_default_get_bits_rectangle); /* just returns error */
+dev_proc_get_bits_rectangle(gx_blank_get_bits_rectangle);
 dev_proc_composite(gx_no_composite);
 /* default is for ordinary "leaf" devices, null is for */
 /* devices that only care about coverage and not contents. */
@@ -327,6 +328,8 @@ dev_proc_decode_color(gx_default_b_w_mono_decode_color);
 dev_proc_map_rgb_color(gx_default_gray_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_gray_map_color_rgb);
 dev_proc_map_color_rgb(gx_default_rgb_map_color_rgb);
+dev_proc_encode_color(gx_default_gray_encode_color);
+dev_proc_decode_color(gx_default_gray_decode_color);
 #define gx_default_cmyk_map_cmyk_color cmyk_8bit_map_cmyk_color /*see below*/
 /*
  * The following are defined as "standard" color mapping procedures

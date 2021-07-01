@@ -257,7 +257,7 @@ gs_copyscanlines(gx_device * dev, int start_y, byte * data, uint size,
                           GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
                           GB_COLORS_NATIVE | GB_ALPHA_NONE);
         params.data[0] = dest;
-        code = (*dev_proc(dev, get_bits_rectangle))(dev, &rect, &params, NULL);
+        code = (*dev_proc(dev, get_bits_rectangle))(dev, &rect, &params);
         if (code < 0) {
             /* Might just be an overrun. */
             if (start_y + i == dev->height)

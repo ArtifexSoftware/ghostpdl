@@ -660,11 +660,8 @@ pdf14_accum_Gray_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_gray8(dev);
 
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_pdf14_accum pdf14_accum_Gray = {
@@ -686,12 +683,6 @@ static void
 pdf14_accum_RGB_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_rgb(dev);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 const gx_device_pdf14_accum pdf14_accum_RGB = {
@@ -714,11 +705,8 @@ pdf14_accum_CMYK_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_cmyk8(dev);
 
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, cmyk_8bit_map_cmyk_color);
+    set_dev_proc(dev, decode_color, cmyk_8bit_map_color_cmyk);
 }
 
 const gx_device_pdf14_accum pdf14_accum_CMYK = {
@@ -10663,7 +10651,7 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
             rect.p.y = y;
             rect.q.y = y+1;
             code = dev_proc(tdev, get_bits_rectangle)((gx_device *)tdev,
-                                                      &rect, &params, NULL);
+                                                      &rect, &params);
             if (code < 0)
                 goto put_accum_error;
             actual_data = params.data[0];

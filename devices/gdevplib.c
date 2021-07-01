@@ -601,7 +601,7 @@ plib_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
 
 static int
 plib_get_bits_rectangle_mem(gx_device *pdev, const gs_int_rect *prect,
-                            gs_get_bits_params_t *params, gs_int_rect **pprect)
+                            gs_get_bits_params_t *params)
 {
     gx_device_memory *mdev = (gx_device_memory *)pdev;
     int x = prect->p.x, y = prect->p.y, h = prect->q.y - y;
@@ -623,7 +623,7 @@ plib_get_bits_rectangle_mem(gx_device *pdev, const gs_int_rect *prect,
         if (code >= 0)
             return code;
     }
-    return mem_get_bits_rectangle(pdev, prect, params, pprect);
+    return mem_get_bits_rectangle(pdev, prect, params);
 }
 
 static int
@@ -871,7 +871,7 @@ plib_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
     dump_start(pdev->width, pdev->height, numComps, log2bits, pstream);
 #endif
     for (lnum = 0; lnum < pdev->height; lnum += bandHeight) {
-        gs_int_rect *unread, rect;
+        gs_int_rect rect;
         gs_get_bits_params_t params;
 
         rect.p.x = 0;
@@ -889,7 +889,7 @@ plib_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
                          GB_COLORS_NATIVE |
                          GB_ALPHA_NONE;
         params.x_offset = 0;
-        code = (*dev_proc(pdev, get_bits_rectangle))((gx_device *)pdev, &rect, &params,&unread);
+        code = (*dev_proc(pdev, get_bits_rectangle))((gx_device *)pdev, &rect, &params);
         if (code < 0)
             break;
 #ifdef DEBUG_DUMP

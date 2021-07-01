@@ -732,16 +732,16 @@ int flp_begin_typed_image(gx_device *dev, const gs_gstate *pgs, const gs_matrix 
 }
 
 int flp_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
-    gs_get_bits_params_t *params, gs_int_rect **unread)
+    gs_get_bits_params_t *params)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_get_bits_rectangle(dev, prect, params, unread);
+        return default_subclass_get_bits_rectangle(dev, prect, params);
 
-    return gx_default_get_bits_rectangle(dev->child, prect, params, unread);
+    return gx_default_get_bits_rectangle(dev->child, prect, params);
 }
 
 int flp_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,

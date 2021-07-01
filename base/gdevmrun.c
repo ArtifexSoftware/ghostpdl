@@ -354,13 +354,13 @@ run_strip_copy_rop2(gx_device * dev, const byte * sdata, int sourcex,
 }
 static int
 run_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-                       gs_get_bits_params_t * params, gs_int_rect **unread)
+                       gs_get_bits_params_t * params)
 {
     gx_device_run *const rdev = (gx_device_run *)dev;
 
     run_standardize(rdev, prect->p.y, prect->q.y - prect->p.y);
     return rdev->save_procs.get_bits_rectangle((gx_device *)&rdev->md,
-                                               prect, params, unread);
+                                               prect, params);
 }
 
 /* Finish initializing a line.  This is a separate procedure only */

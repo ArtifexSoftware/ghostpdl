@@ -2851,8 +2851,7 @@ if the glyph can't be translated to Unicode.</p>
 
 <dl>
 <dt><code>int (*get_bits_rectangle)(gx_device&nbsp;*dev,
-const&nbsp;gs_int_rect&nbsp;*prect, gs_get_bits_params_t&nbsp;*params,
-gs_int_rect&nbsp;**unread)</code> <b><em>[OPTIONAL]</em></b></dt>
+const&nbsp;gs_int_rect&nbsp;*prect, gs_get_bits_params_t&nbsp;*params)</code> <b><em>[OPTIONAL]</em></b></dt>
 
 <p><dd>
 Read a rectangle of bits back from the device.  The <code>params</code>
@@ -2966,24 +2965,6 @@ are unpredictable.  data need not be aligned in any way.  If
 in each scan line are undefined.  If the implementation returns pointers to
 the data, it stores them into <code>data[0]</code> or
 <code>data[</code><b><em>0..N-1</em></b><code>]</code>.</p>
-
-<p>
-If not all the source data are available (for example, because the source
-was a partially obscured window and backing store was not available or not
-used), or if the rectangle does not fall completely within the device's
-coordinate system, any unread bits are undefined, and the value returned
-depends on whether unread is <code>NULL</code>.  If unread is
-<code>NULL</code>, return <code>gs_error_ioerror</code>; in this case,
-some bits may or may not have been read.  If unread is not
-<code>NULL</code>, allocate (using <code>dev</code>-&gt;memory) and
-fill in a list of rectangles that could not be read, store the pointer to
-the list in <code>*unread</code>, and return the number of rectangles; in
-this case, all bits not listed in the rectangle list have been read back
-properly.  The list is not sorted in any particular order, but the
-rectangles do not overlap.  Note that the rectangle list may cover a
-superset of the region actually obscured: for example, a lazy implementation
-could return a single rectangle that was the bounding box of the region.</p>
-</dl>
 
 <h3><a name="Parameters"></a>Parameters</h3>
 

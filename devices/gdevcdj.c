@@ -253,6 +253,8 @@ static dev_proc_map_rgb_color (gdev_cmyk_map_rgb_color);
 static dev_proc_map_rgb_color (gdev_pcl_map_rgb_color);
 static dev_proc_map_color_rgb (gdev_pcl_map_color_rgb);
 static dev_proc_decode_color  (gdev_cmyk_map_color_cmyk);
+static dev_proc_encode_color  (gdev_pcl_map_gray_color);
+static dev_proc_decode_color  (gdev_pcl_map_color_gray);
 
 /* Print-page, parameters and miscellaneous procedures */
 static dev_proc_open_device(dj500c_open);
@@ -464,11 +466,13 @@ hp_colour_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, get_params, cdj_get_params);
     set_dev_proc(dev, put_params, cdj_put_params);
 
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    if (dev->color_info.num_components == 1) {
+        set_dev_proc(dev, encode_color, gdev_pcl_map_gray_color);
+        set_dev_proc(dev, decode_color, gdev_pcl_map_color_gray);
+    } else {
+        set_dev_proc(dev, encode_color, gdev_pcl_map_rgb_color);
+        set_dev_proc(dev, decode_color, gdev_pcl_map_color_rgb);
+    }
 }
 
 static void
@@ -3061,6 +3065,96 @@ gdev_pcl_map_color_rgb(gx_device *pdev, gx_color_index color,
       prgb[0] = w - gx_color_value_from_byte((color >> 16) & 0xff);
       prgb[1] = w - gx_color_value_from_byte((color >> 8) & 0xff);
       prgb[2] = w - gx_color_value_from_byte(color & 0xff);
+    }
+    break;
+  }
+  return 0;
+}
+
+static gx_color_index
+gdev_pcl_map_gray_color(gx_device *pdev, const gx_color_value cv[])
+{
+  gx_color_value r = cv[0];
+  if (gx_color_value_to_byte(r) == 0xff)
+    return (gx_color_index)0;         /* white */
+  else {
+    int correction = cprn_device->correction;
+    gx_color_value c = gx_max_color_value - r;
+    gx_color_value m = gx_max_color_value - r;
+
+    /* Colour correction for better blacks when using the colour ink
+     * cartridge (on the DeskJet 500C only). We reduce the cyan component
+     * by some fraction (eg. 4/5) to correct the slightly greenish cast
+     * resulting from an equal mix of the three inks */
+    if (correction && c > 0) {
+        c = ((c >> shift) * (c * correction)) /
+             ((c * (correction + 1)) >> shift);
+    }
+
+    switch (pdev->color_info.depth) {
+    case 1:
+      return (c > gx_max_color_value / 2 ?
+              (gx_color_index)1 : (gx_color_index)0);
+    case 8:
+      if (pdev->color_info.num_components >= 3)
+        return (gx_color_value_to_1bit(c) +
+                (gx_color_value_to_1bit(c) << 1) +
+                (gx_color_value_to_1bit(c) << 2));
+      else
+        return ((((ulong)c * red_weight +
+                  (ulong)m * (green_weight + blue_weight))
+                 >> (gx_color_value_bits + 2)));
+    case 16:
+        /* FIXME: Simple truncation is not ideal. Should round really. */
+      return (gx_color_value_to_5bits(c) +
+              (gx_color_value_to_6bits(c) << 5) +
+              (gx_color_value_to_5bits(c) << 11));
+    case 24:
+      return (gx_color_value_to_byte(c) +
+              (gx_color_value_to_byte(c) << 8) +
+              ((ulong)gx_color_value_to_byte(c) << 16));
+    case 32:
+      return ((ulong)gx_color_value_to_byte(c) << 24);
+    }
+  }
+  return (gx_color_index)0;   /* This never happens */
+}
+
+static int
+gdev_pcl_map_color_gray(gx_device *pdev, gx_color_index color,
+                        gx_color_value *cv)
+{
+  /* For the moment, we simply ignore any black correction */
+  switch (pdev->color_info.depth) {
+  case 1:
+    cv[0] = -((gx_color_value)color ^ 1);
+    break;
+  case 8:
+      if (pdev->color_info.num_components >= 3)
+        { gx_color_value c = (gx_color_value)color ^ 7;
+          cv[0] = -(c & 1);
+        }
+      else
+        { gx_color_value value = (gx_color_value)color ^ 0xff;
+          cv[0] = (value << 8) + value;
+        }
+    break;
+  case 16:
+    { gx_color_value c = (gx_color_value)color ^ 0xffff;
+      gx_color_value value = (c >> 6) & 0x3f;
+      cv[0] = ((value << 10) + (value << 4) + (value >> 2))
+        >> (16 - gx_color_value_bits);
+    }
+    break;
+  case 24:
+    { gx_color_index c = color ^ 0xffffff;
+      cv[0] = gx_color_value_from_byte((gx_color_value)(c >> 16));
+    }
+    break;
+  case 32:
+#define  gx_maxcol gx_color_value_from_byte(gx_color_value_to_byte(gx_max_color_value))
+    { gx_color_value w = gx_maxcol - gx_color_value_from_byte(color >> 24);
+      cv[0] = w;
     }
     break;
   }

@@ -1616,22 +1616,22 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
             pi.saved = pgs2;
             code = gx_path_bbox(ppath, &bbox);
             if (code < 0)
-                return code;
+                goto image_exit;
             rect_intersect(bbox, box);
             code = gx_dc_pattern2_get_bbox(pdcolor, &bbox1);
             if (code < 0)
-                return code;
+                goto image_exit;
             if (code)
                 rect_intersect(bbox, bbox1);
             if (bbox.p.x >= bbox.q.x || bbox.p.y >= bbox.q.y)
-                return 0;
+                goto image_exit;
             sx = fixed2int(bbox.p.x);
             sy = fixed2int(bbox.p.y);
             gs_make_identity(&m);
             rect_size.x = fixed2int(bbox.q.x + fixed_half) - sx;
             rect_size.y = fixed2int(bbox.q.y + fixed_half) - sy;
             if (rect_size.x == 0 || rect_size.y == 0)
-                return 0;
+                goto image_exit;
             m.tx = (float)sx;
             m.ty = (float)sy;
             cvd.path_offset.x = sx;
@@ -1687,6 +1687,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
             stream_puts(pdev->strm, "Q Q\n");
             pdf_remove_masked_image_converter(pdev, &cvd, need_mask);
             gs_setmatrix((gs_gstate *)pgs, &save_ctm);
+image_exit:
             gs_gstate_free(pgs2);
             return code;
         }

@@ -44,11 +44,8 @@ pcxmono_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, map_rgb_color, gx_default_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_map_rgb_color);
+    set_dev_proc(dev, decode_color, gx_default_map_color_rgb);
 }
 
 const gx_device_printer gs_pcxmono_device =
@@ -67,12 +64,8 @@ static void
 pcxgray_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_gray_bg(dev);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_printer gs_pcxgray_device =
@@ -95,12 +88,8 @@ pcx16_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, map_rgb_color, pc_4bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_4bit_map_color_rgb);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, pc_4bit_map_rgb_color);
+    set_dev_proc(dev, decode_color, pc_4bit_map_color_rgb);
 }
 
 const gx_device_printer gs_pcx16_device =
@@ -122,12 +111,8 @@ pcx256_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, map_rgb_color, pc_8bit_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, pc_8bit_map_color_rgb);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, pc_8bit_map_rgb_color);
+    set_dev_proc(dev, decode_color, pc_8bit_map_color_rgb);
 }
 
 const gx_device_printer gs_pcx256_device =
@@ -147,12 +132,6 @@ static void
 pcx24b_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_rgb_bg(dev);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 const gx_device_printer gs_pcx24b_device =
@@ -170,12 +149,6 @@ static void
 pcxcmyk_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_cmyk1_bg(dev);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 const gx_device_printer gs_pcxcmyk_device =

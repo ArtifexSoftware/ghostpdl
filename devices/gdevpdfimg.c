@@ -67,12 +67,8 @@ pdfimage8_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, pdf_image_close);
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
 
 const gx_device_pdf_image gs_pdfimage8_device = {
@@ -104,12 +100,6 @@ pdfimage24_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, pdf_image_close);
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 const gx_device_pdf_image gs_pdfimage24_device = {
@@ -141,12 +131,6 @@ pdfimage32_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, pdf_image_close);
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale_cmyk);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale_cmyk);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 const gx_device_pdf_image gs_pdfimage32_device = {
@@ -1135,12 +1119,6 @@ PCLm_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, PCLm_close);
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
-
-    /* The prn macros used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 static dev_proc_print_page(PCLm_print_page);

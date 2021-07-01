@@ -1578,7 +1578,7 @@ gdev_prn_get_lines(gx_device_printer *pdev, int y, int height,
     params.x_offset = 0;
     params.raster = bytes_per_line;
     code = dev_proc(pdev, get_bits_rectangle)
-        ((gx_device *)pdev, &rect, &params, NULL);
+        ((gx_device *)pdev, &rect, &params);
     if (code < 0 && actual_buffer) {
         /*
          * RETURN_POINTER might not be implemented for this
@@ -1587,7 +1587,7 @@ gdev_prn_get_lines(gx_device_printer *pdev, int y, int height,
         params.options &= ~(GB_RETURN_POINTER | GB_RASTER_ALL);
         params.options |= GB_RETURN_COPY | GB_RASTER_SPECIFIED;
         code = dev_proc(pdev, get_bits_rectangle)
-            ((gx_device *)pdev, &rect, &params, NULL);
+            ((gx_device *)pdev, &rect, &params);
     }
     if (code < 0)
         return code;
@@ -1624,7 +1624,7 @@ gdev_prn_get_bits(gx_device_printer * pdev, int y, byte * str, byte ** actual_da
     params.raster = bitmap_raster(pdev->width * pdev->color_info.depth);
     params.data[0] = str;
     code = (*dev_proc(pdev, get_bits_rectangle))((gx_device *)pdev, &rect,
-                                                 &params, NULL);
+                                                 &params);
     if (code < 0)
         return code;
     if (actual_data)
@@ -1828,7 +1828,7 @@ void gdev_prn_initialize_device_procs_cmyk1(gx_device *dev)
     set_dev_proc(dev, map_cmyk_color, cmyk_1bit_map_cmyk_color);
     set_dev_proc(dev, map_color_rgb, cmyk_1bit_map_color_rgb);
     set_dev_proc(dev, encode_color, cmyk_1bit_map_cmyk_color);
-    set_dev_proc(dev, decode_color, cmyk_1bit_map_color_rgb);
+    set_dev_proc(dev, decode_color, cmyk_1bit_map_color_cmyk);
 }
 
 void gdev_prn_initialize_device_procs_cmyk1_bg(gx_device *dev)

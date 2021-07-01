@@ -158,12 +158,8 @@ win_pr2_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, map_color_rgb, win_pr2_map_color_rgb);
     set_dev_proc(dev, get_params, win_pr2_get_params);
     set_dev_proc(dev, put_params, win_pr2_put_params);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, win_pr2_map_rgb_color);
+    set_dev_proc(dev, decode_color, win_pr2_map_color_rgb);
 }
 
 #define PARENT_WINDOW  HWND_DESKTOP

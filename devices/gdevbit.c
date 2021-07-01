@@ -43,12 +43,14 @@ static dev_proc_put_params(bittag_put_params);
 static dev_proc_create_buf_device(bittag_create_buf_device);
 static dev_proc_fillpage(bittag_fillpage);
 static dev_proc_map_rgb_color(bit_mono_map_color);
+static dev_proc_decode_color(bit_mono_decode_color);
 #if 0 /* unused */
 static dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
 #endif
 static dev_proc_map_rgb_color(bitrgb_rgb_map_rgb_color);
 static dev_proc_map_color_rgb(bit_map_color_rgb);
 static dev_proc_map_cmyk_color(bit_map_cmyk_color);
+static dev_proc_decode_color(bit_map_color_cmyk);
 static dev_proc_get_params(bit_get_params);
 static dev_proc_put_params(bit_put_params);
 static dev_proc_print_page(bit_print_page);
@@ -65,14 +67,7 @@ bit_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, map_color_rgb, bit_map_color_rgb);
     set_dev_proc(dev, get_params, bit_get_params);
     set_dev_proc(dev, put_params, bit_put_params);
-    set_dev_proc(dev, decode_color, bit_map_color_rgb);
     set_dev_proc(dev, dev_spec_op, bit_dev_spec_op);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
 }
 
 /*
@@ -100,6 +95,7 @@ bitmono_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, bit_mono_map_color);
     set_dev_proc(dev, map_cmyk_color, bit_mono_map_color);
     set_dev_proc(dev, encode_color, bit_mono_map_color);
+    set_dev_proc(dev, decode_color, bit_mono_decode_color);
 }
 
 const gx_device_bit gs_bit_device =
@@ -118,6 +114,7 @@ bitrgb_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, bitrgb_rgb_map_rgb_color);
     set_dev_proc(dev, map_cmyk_color, bitrgb_rgb_map_rgb_color);
     set_dev_proc(dev, encode_color, bitrgb_rgb_map_rgb_color);
+    set_dev_proc(dev, decode_color, bit_map_color_rgb);
 }
 
 const gx_device_bit gs_bitrgb_device =
@@ -136,6 +133,7 @@ bitcmyk_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, map_rgb_color, bit_map_cmyk_color);
     set_dev_proc(dev, map_cmyk_color, bit_map_cmyk_color);
     set_dev_proc(dev, encode_color, bit_map_cmyk_color);
+    set_dev_proc(dev, decode_color, bit_map_color_cmyk);
 }
 
 const gx_device_bit gs_bitcmyk_device =
@@ -369,6 +367,19 @@ bit_mono_map_color(gx_device * dev, const gx_color_value cv[])
     return (bpc == 1 ? gx_max_color_value - gray : gray) >> drop;
 }
 
+static int
+bit_mono_decode_color(gx_device * dev, gx_color_index color, gx_color_value *cv)
+{
+    int bpc = dev->color_info.depth;
+    int max = (1<<bpc)-1;
+
+    if (bpc == 1)
+        cv[0] = -((gx_color_value)color ^ 1);
+    else
+        cv[0] = color * gx_max_color_value / max;
+    return 0;
+}
+
 #if 0 /* unused */
 /* Map RGB to gray shade. */
 /* Only used in CMYK mode when put_params has set ForceMono=1 */
@@ -476,6 +487,19 @@ bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
     (cv[3] >> drop);
 
     return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+static int
+bit_map_color_cmyk(gx_device * dev, gx_color_index color, gx_color_value *cv)
+{
+    int bpc = dev->color_info.depth / 4;
+    int max = (1<<bpc)-1;
+
+    cv[0] = (color>>(3*bpc)) * gx_max_color_value / max;
+    cv[1] = (color>>(2*bpc)) * gx_max_color_value / max;
+    cv[2] = (color>>(1*bpc)) * gx_max_color_value / max;
+    cv[3] = (color>>(0*bpc)) * gx_max_color_value / max;
+    return 0;
 }
 
 static int

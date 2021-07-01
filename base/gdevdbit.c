@@ -226,7 +226,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                 gb_params.data[j] = 0;
             gb_params.data[k] = gb_buff + k * out_raster;
             code = dev_proc(dev, get_bits_rectangle) (dev, &gb_rect,
-                                                      &gb_params, 0);
+                                                      &gb_params);
             src_planes[k] = gb_params.data[k];
             if (code < 0) {
                 gs_free_object(mem, gb_buff, "copy_alpha_hl_color");
@@ -390,7 +390,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
             rect.p.y = ry;
             rect.q.y = ry+1;
             code = (*dev_proc(dev, get_bits_rectangle))(dev, &rect,
-                                                        &params, NULL);
+                                                        &params);
             if (code < 0)
                 break;
             line = params.data[0];

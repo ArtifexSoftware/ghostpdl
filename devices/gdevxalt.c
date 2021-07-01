@@ -299,19 +299,19 @@ x_forward_copy_color(gx_device * dev, const byte * base, int sourcex,
 
 static int
 x_forward_get_bits_rectangle(gx_device * dev, const gs_int_rect *prect,
-                             gs_get_bits_params_t *params, gs_int_rect **unused)
+                             gs_get_bits_params_t *params)
 {
     gx_device *tdev;
     int code;
 
     if ((code = get_dev_target(&tdev, dev)) < 0)
         return code;
-    return (*dev_proc(tdev, get_bits_rectangle)) (tdev, prect, params, unused);
+    return (*dev_proc(tdev, get_bits_rectangle)) (tdev, prect, params);
 }
 
 static int
 x_wrap_get_bits_rectangle(gx_device * dev, const gs_int_rect *prect,
-                          gs_get_bits_params_t *params, gs_int_rect **unused)
+                          gs_get_bits_params_t *params)
 {
     int depth = dev->color_info.depth;
     gx_device *tdev;
@@ -371,7 +371,7 @@ x_wrap_get_bits_rectangle(gx_device * dev, const gs_int_rect *prect,
         lparams.raster = 0;
         lparams.data[0] = row;
         lparams.x_offset = 0;
-        code = (*dev_proc(tdev, get_bits_rectangle))(tdev, &rect, &lparams, NULL);
+        code = (*dev_proc(tdev, get_bits_rectangle))(tdev, &rect, &lparams);
         if (code < 0)
             break;
         base = lparams.data[0];

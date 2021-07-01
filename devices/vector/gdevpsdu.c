@@ -475,8 +475,7 @@ int
 psdf_get_bits_rectangle(
     gx_device *             dev,
     const gs_int_rect *     prect,
-    gs_get_bits_params_t *  params,
-    gs_int_rect **          unread )
+    gs_get_bits_params_t *  params )
 {
     emprintf(dev->memory,
                   "Can't set GraphicsAlphaBits or TextAlphaBits with a vector device.\n");

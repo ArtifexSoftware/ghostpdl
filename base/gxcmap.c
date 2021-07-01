@@ -1834,6 +1834,26 @@ gx_default_gray_map_color_rgb(gx_device * dev, gx_color_index color,
 }
 
 gx_color_index
+gx_default_gray_encode_color(gx_device * dev, const gx_color_value cv[])
+{
+    gx_color_value gray = (cv[0] * dev->color_info.max_gray +
+                           (gx_max_color_value / 2)) / gx_max_color_value;
+
+    return gray;
+}
+
+int
+gx_default_gray_decode_color(gx_device * dev, gx_color_index color,
+                             gx_color_value *cv)
+{
+    gx_color_value gray = (gx_color_value)
+        (color * gx_max_color_value / dev->color_info.max_gray);
+
+    cv[0] = gray;
+    return 0;
+}
+
+gx_color_index
 gx_default_8bit_map_gray_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_color_index color = gx_color_value_to_byte(cv[0]);

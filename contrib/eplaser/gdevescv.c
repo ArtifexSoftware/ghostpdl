@@ -153,6 +153,8 @@ escv_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, map_rgb_color, gx_default_rgb_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
+    set_dev_proc(dev, encode_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, decode_color, gx_default_rgb_map_color_rgb);
 
     esc_initialize_device_procs(dev);
 }
@@ -163,6 +165,8 @@ esmv_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, map_rgb_color, gx_default_gray_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_gray_map_color_rgb);
+    set_dev_proc(dev, encode_color, gx_default_gray_encode_color);
+    set_dev_proc(dev, decode_color, gx_default_gray_decode_color);
 
     esc_initialize_device_procs(dev);
 }

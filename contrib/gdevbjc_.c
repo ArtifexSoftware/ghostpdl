@@ -218,10 +218,10 @@ bjcmono_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, get_params, gdev_bjc_get_params);
     set_dev_proc(dev, put_params, gdev_bjc_put_params);
-    set_dev_proc(dev, map_color_rgb, NULL);
-    set_dev_proc(dev, map_rgb_color, NULL);
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, map_color_rgb, gx_default_w_b_map_color_rgb);
+    set_dev_proc(dev, map_rgb_color, gx_default_gray_fast_encode);
+    set_dev_proc(dev, encode_color, gx_default_gray_fast_encode);
+    set_dev_proc(dev, decode_color, gx_default_w_b_map_color_rgb);
 }
 
 
