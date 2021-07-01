@@ -39,6 +39,10 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
     int i, code = 0;
     pdf_obj *o, *o1;
 
+#if PURGE_CACHE_PER_PAGE
+    pdfi_purge_obj_cache(ctx);
+#endif
+
     code = pdfi_dict_get(ctx, page_dict, "Contents", &o);
     if (code == gs_error_undefined)
         /* Don't throw an error if there are no contents, just render nothing.... */

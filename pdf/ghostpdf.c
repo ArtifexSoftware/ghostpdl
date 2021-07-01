@@ -1461,6 +1461,32 @@ pdfi_print_cache(pdf_context *ctx)
 #endif
 #endif /* DEBUG */
 
+#if PURGE_CACHE_PER_PAGE
+void
+pdfi_purge_obj_cache(pdf_context *ctx)
+{
+    if (ctx->cache_entries != 0) {
+        pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
+
+        while(entry) {
+            next = entry->next;
+            if (entry->o->object_num != 0) {
+                ctx->xref_table->xref[entry->o->object_num].cache = NULL;
+            }
+            pdfi_countdown(entry->o);
+            ctx->cache_entries--;
+            gs_free_object(ctx->memory, entry, "pdfi_clear_context, free LRU");
+            entry = next;
+#if REFCNT_DEBUG
+            ctx->cache_LRU = entry;
+#endif
+        }
+        ctx->cache_LRU = ctx->cache_MRU = NULL;
+        ctx->cache_entries = 0;
+    }
+}
+#endif
+
 /* pdfi_clear_context frees all the PDF objects associated with interpreting a given
  * PDF file. Once we've called this we can happily run another file. This function is
  * called by pdf_free_context (in case of errors during the file leaving state around)

@@ -548,4 +548,10 @@ static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, char*gs_lib_
         pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
 }
 
+#define PURGE_CACHE_PER_PAGE 0
+
+#if PURGE_CACHE_PER_PAGE
+void pdfi_purge_obj_cache(pdf_context *ctx);
+#endif
+
 #endif
