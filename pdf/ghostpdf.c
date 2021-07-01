@@ -333,6 +333,7 @@ const char *pdf_error_strings[] = {
 };
 
 const char *pdf_warning_strings[] = {
+    "no warning",
     "incorrect xref size",
     "used inline filter name inappropriately",
     "used inline colous space inappropriately",
@@ -417,7 +418,7 @@ const char *gs_internal_error_strings[] = {
 #define FIRSTINTERNALERROR gs_error_hit_detected * -1
 #define LASTGSERROR gs_error_circular_reference * -1
 
-void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, char *extra_info)
+void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, const char *extra_info)
 {
     char fallback[] = "unknown graphics library error";
 
@@ -460,7 +461,7 @@ void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_funct
     }
 }
 
-void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, char *extra_info)
+void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, const char *extra_info)
 {
     char fallback[] = "unknown graphics library error";
 
@@ -503,11 +504,11 @@ void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_fun
     }
 }
 
-void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, char *info)
+void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, const char *info)
 {
 #ifdef DEBUG
     if (!ctx->args.QUIET)
-        outprintf(ctx->memory, info);
+        outprintf(ctx->memory, "%s", info);
 #endif
 }
 
@@ -520,12 +521,12 @@ pdfi_report_errors(pdf_context *ctx)
     if (ctx->args.QUIET)
         return;
 
-    for (i = 0; i < (E_PDF_MAX_ERROR - 2) / (sizeof(char) * 8) + ((E_PDF_MAX_ERROR - 2) % (sizeof(char) * 8) ? 1 : 0); i++) {
+    for (i = 0; i < PDF_ERROR_BYTE_SIZE; i++) {
         if (ctx->pdf_errors[i] != 0)
             errors_exist = true;
     }
 
-    for (i = 0; i < (W_PDF_MAX_WARNING - 2) / (sizeof(char) * 8) + ((W_PDF_MAX_WARNING - 2) % (sizeof(char) * 8) ? 1 : 0); i++) {
+    for (i = 0; i < PDF_WARNING_BYTE_SIZE; i++) {
         if (ctx->pdf_warnings[i] != 0)
             warnings_exist = true;
     }
@@ -536,7 +537,7 @@ pdfi_report_errors(pdf_context *ctx)
     if (errors_exist)
     {
         dmprintf(ctx->memory, "\nThe following errors were encountered at least once while processing this file:\n");
-        for (i = 0; i < (E_PDF_MAX_ERROR - 2) / (sizeof(char) * 8) + ((E_PDF_MAX_ERROR - 2) % (sizeof(char) * 8) ? 1 : 0); i++) {
+        for (i = 0; i < PDF_ERROR_BYTE_SIZE; i++) {
             if (ctx->pdf_errors[i] != 0) {
                 for (j=0;j < sizeof(char) * 8; j++) {
                     if (ctx->pdf_errors[i] & 1 << j) {
@@ -552,7 +553,7 @@ pdfi_report_errors(pdf_context *ctx)
     if (warnings_exist)
     {
         dmprintf(ctx->memory, "\nThe following warnings were encountered at least once while processing this file:\n");
-        for (i = 0; i < (W_PDF_MAX_WARNING - 2) / (sizeof(char) * 8) + ((W_PDF_MAX_WARNING - 2) % (sizeof(char) * 8) ? 1 : 0); i++) {
+        for (i = 0; i < PDF_WARNING_BYTE_SIZE; i++) {
             if (ctx->pdf_warnings[i] != 0) {
                 for (j=0;j < sizeof(char) * 8; j++) {
                     if (ctx->pdf_warnings[i] & 1 << j) {

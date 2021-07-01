@@ -172,6 +172,9 @@ typedef enum pdf_warning_e {
     W_PDF_MAX_WARNING               /* Must be last entry, add new warnings immediately before this and update pdf_warning_strings in ghostpdf.c */
 } pdf_warning;
 
+#define PDF_ERROR_BYTE_SIZE ((E_PDF_MAX_ERROR - 1) / (sizeof(char) * 8) + 1)
+#define PDF_WARNING_BYTE_SIZE ((W_PDF_MAX_WARNING - 1) / (sizeof(char) * 8) + 1)
+
 typedef enum pdf_crypt_filter_e {
     CRYPT_NONE,     /* Not an encrypted file */
     CRYPT_IDENTITY, /* Encrypted file, but no encryption on this object type */
@@ -406,8 +409,8 @@ typedef struct pdf_context_s
     uint64_t BMClevel;
 
     /* Bitfields recording whether any errors or warnings were encountered */
-    char pdf_errors[(E_PDF_MAX_ERROR - 2) / (sizeof(char) * 8) + ((E_PDF_MAX_ERROR - 2) % (sizeof(char) * 8) ? 1 : 0)];
-    char pdf_warnings[(W_PDF_MAX_WARNING - 2) / (sizeof(char) * 8) + ((W_PDF_MAX_WARNING - 2) % (sizeof(char) * 8) ? 1 : 0)];
+    char pdf_errors[PDF_ERROR_BYTE_SIZE];
+    char pdf_warnings[PDF_WARNING_BYTE_SIZE];
 
     /* We need a gs_font_dir for gs_definefotn() */
     gs_font_dir * font_dir;
@@ -530,11 +533,11 @@ int pdfi_close_pdf_file(pdf_context *ctx);
 void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, void **saved_client_data, gs_gstate_client_procs *saved_procs);
 void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, void *client_data, const gs_gstate_client_procs *procs);
 
-void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, char *extra_info);
-void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, char *extra_info);
-void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, char *info);
+void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, const char *extra_info);
+void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, const char *extra_info);
+void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, const char *info);
 
-static inline void pdfi_set_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, char *extra_info)
+static inline void pdfi_set_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *extra_info)
 {
     if (pdfi_error != 0)
         ctx->pdf_errors[pdfi_error / (sizeof(char) * 8)] |= 1 << pdfi_error % (sizeof(char) * 8);
@@ -542,7 +545,7 @@ static inline void pdfi_set_error(pdf_context *ctx, int gs_error, const char *gs
         pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
 }
 
-static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, char *extra_info)
+static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *extra_info)
 {
     ctx->pdf_warnings[pdfi_warning / (sizeof(char) * 8)] |= 1 << pdfi_warning % (sizeof(char) * 8);
     if (ctx->args.verbose_warnings)
