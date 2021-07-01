@@ -1782,7 +1782,8 @@ all_error:
             pdfi_countdown(obj);
             pdfi_countdown(inks);
             return code;
-        }
+        } else
+            pdfi_countdown(ink_name);
     }
 
     /* Deal with alternate space */
