@@ -544,7 +544,7 @@ int pdfi_setrgbfill_array(pdf_context *ctx)
     int code;
     pdf_array *array = NULL;
 
-    pdfi_set_warning(ctx, 0, NULL, W_PDF_NONSTANDARD_OP, "pdfi_setrgbfill_array", "WARNING: Non-standard 'r' operator");
+    pdfi_set_warning(ctx, 0, NULL, W_PDF_NONSTANDARD_OP, "pdfi_setrgbfill_array", (char *)"WARNING: Non-standard 'r' operator");
 
     if (pdfi_count_stack(ctx) < 1) {
         if (ctx->args.pdfstoponerror)
@@ -830,7 +830,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         pdfi_pop(ctx, 1);
         if (code < 0) {
             /* Ignore the pattern if we failed to set it */
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BADPATTERN, "pdfi_setcolorN", "PATTERN: Error setting pattern");
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BADPATTERN, "pdfi_setcolorN", (char *)"PATTERN: Error setting pattern");
             code = 0;
             goto cleanupExit;
         }

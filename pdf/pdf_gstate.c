@@ -221,7 +221,7 @@ int pdfi_op_Q(pdf_context *ctx)
 #endif
     if (ctx->pgs->level <= ctx->current_stream_save.gsave_level) {
         /* We don't throw an error here, we just ignore it and continue */
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_TOOMANYQ, "pdfi_op_Q", "ignoring Q");
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TOOMANYQ, "pdfi_op_Q", (char *)"ignoring Q");
         return 0;
     }
     if (ctx->page.has_transparency) {
@@ -304,7 +304,7 @@ int pdfi_grestore(pdf_context *ctx)
             return 0;
     } else {
         /* We don't throw an error here, we just ignore it and continue */
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_TOOMANYQ, "pdfi_grestore", "ignoring q");
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_TOOMANYQ, "pdfi_grestore", (char *)"ignoring q");
     }
     return 0;
 }

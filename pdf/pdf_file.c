@@ -913,7 +913,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
             pdfi_countdown(o);
             o = NULL;
             if (duplicates > 2) {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_filter_nodecryption", "**** ERROR Detected possible filter bomb (duplicate Filters).  Aborting processing");
+                pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_filter_nodecryption", (char *)"**** ERROR Detected possible filter bomb (duplicate Filters).  Aborting processing");
                 code = gs_note_error(gs_error_syntaxerror);
                 goto exit;
             }

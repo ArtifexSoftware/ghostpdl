@@ -295,7 +295,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
  * if the error code is greater than the last error we know about we just print a generic
  * 'unknown' message.
  */
-char *pdf_error_strings[] = {
+const char *pdf_error_strings[] = {
     "no error",
     "no header detected",
     "header lacks a version number",
@@ -332,7 +332,7 @@ char *pdf_error_strings[] = {
     ""                                          /* last error, should not be used */
 };
 
-char *pdf_warning_strings[] = {
+const char *pdf_warning_strings[] = {
     "incorrect xref size",
     "used inline filter name inappropriately",
     "used inline colous space inappropriately",
@@ -367,7 +367,7 @@ char *pdf_warning_strings[] = {
     ""                                                  /* Last warning shuld not be used */
 };
 
-char *gs_error_strings[] = {
+const char *gs_error_strings[] = {
     "unknownerror",
     "dictfull",
     "dictstackoverflow",
@@ -399,7 +399,7 @@ char *gs_error_strings[] = {
     "invalidid",
 };
 
-char *gs_internal_error_strings[] = {
+const char *gs_internal_error_strings[] = {
     "error hit",
     "fatal error",
     "quit",
@@ -417,7 +417,7 @@ char *gs_internal_error_strings[] = {
 #define FIRSTINTERNALERROR gs_error_hit_detected * -1
 #define LASTGSERROR gs_error_circular_reference * -1
 
-void pdfi_verbose_error(pdf_context *ctx, int gs_error, char *gs_lib_function, int pdfi_error, char *pdfi_function_name, char *extra_info)
+void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, char *extra_info)
 {
     char fallback[] = "unknown graphics library error";
 
@@ -433,9 +433,9 @@ void pdfi_verbose_error(pdf_context *ctx, int gs_error, char *gs_lib_function, i
                     if (code < FIRSTINTERNALERROR)
                         error_string = fallback;
                     else
-                        error_string = gs_internal_error_strings[code - FIRSTINTERNALERROR];
+                        error_string = (char *)gs_internal_error_strings[code - FIRSTINTERNALERROR];
                 } else
-                    error_string = gs_error_strings[code];
+                    error_string = (char *)gs_error_strings[code];
             }
             errprintf(ctx->memory, "Graphics library error %d (%s) in function '%s'", gs_error, error_string, pdfi_function_name);
             if (gs_lib_function != NULL)
@@ -460,7 +460,7 @@ void pdfi_verbose_error(pdf_context *ctx, int gs_error, char *gs_lib_function, i
     }
 }
 
-void pdfi_verbose_warning(pdf_context *ctx, int gs_error, char *gs_lib_function, int pdfi_warning, char *pdfi_function_name, char *extra_info)
+void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, char *extra_info)
 {
     char fallback[] = "unknown graphics library error";
 
@@ -476,9 +476,9 @@ void pdfi_verbose_warning(pdf_context *ctx, int gs_error, char *gs_lib_function,
                     if (code < FIRSTINTERNALERROR)
                         error_string = fallback;
                     else
-                        error_string = gs_internal_error_strings[code - FIRSTINTERNALERROR];
+                        error_string = (char *)gs_internal_error_strings[code - FIRSTINTERNALERROR];
                 } else
-                    error_string = gs_error_strings[code];
+                    error_string = (char *)gs_error_strings[code];
             }
             outprintf(ctx->memory, "Graphics library error %d (%s) in function '%s'", gs_error, error_string, pdfi_function_name);
             if (gs_lib_function != NULL)
@@ -503,9 +503,9 @@ void pdfi_verbose_warning(pdf_context *ctx, int gs_error, char *gs_lib_function,
     }
 }
 
-void pdfi_log_info(pdf_context *ctx, char *pdfi_function, char *info)
+void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, char *info)
 {
-#if DEBUG
+#ifdef DEBUG
     if (!ctx->args.QUIET)
         outprintf(ctx->memory, info);
 #endif
@@ -1191,7 +1191,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
         /* Now extract header version (may be overridden later) */
         if (sscanf(s + 5, "%f", &version) != 1) {
             ctx->HeaderVersion = 0;
-            pdfi_set_error(ctx, 0, NULL, E_PDF_NOHEADERVERSION, "pdfi_set_input_stream", "%% Unable to read PDF version from header\n");
+            pdfi_set_error(ctx, 0, NULL, E_PDF_NOHEADERVERSION, "pdfi_set_input_stream", (char *)"%% Unable to read PDF version from header\n");
         }
         else {
             ctx->HeaderVersion = version;
@@ -1419,7 +1419,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     ctx->compressed_hits = 0;
     ctx->compressed_misses = 0;
 #endif
-#if DEBUG
+#ifdef DEBUG
     ctx->args.verbose_errors = ctx->args.verbose_warnings = 1;
 #endif
     return ctx;

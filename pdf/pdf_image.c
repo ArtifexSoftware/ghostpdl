@@ -530,7 +530,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     if (code < 0) {
         if (code != gs_error_undefined) {
             /* Broken SMask, Warn, and ignore the SMask */
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", "*** Warning: Image has invalid SMask.  Ignoring it");
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", (char *)"*** Warning: Image has invalid SMask.  Ignoring it");
             if (ctx->args.pdfstoponwarning)
                 goto errorExit;
             code = 0;
@@ -1103,10 +1103,10 @@ pdfi_image_setup_type4(pdf_context *ctx, pdfi_image_info_t *image_info,
 
  exit:
     if (had_float_error) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_IMAGE_ERROR, "pdfi_image_setup_type4", "*** Error: Some elements of Mask array are not integers");
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_IMAGE_ERROR, "pdfi_image_setup_type4", (char *)"*** Error: Some elements of Mask array are not integers");
     }
     if (had_range_error) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_IMAGE_ERROR, "pdfi_image_setup_type4", "*** Error: Some elements of Mask array are out of range");
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_IMAGE_ERROR, "pdfi_image_setup_type4", (char *)"*** Error: Some elements of Mask array are out of range");
     }
     return code;
 }
@@ -1324,7 +1324,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
             }
         } else {
             /* Assume DeviceRGB colorspace */
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_image_get_color", "**** Error: image has no /ColorSpace key; assuming /DeviceRGB");
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_image_get_color", (char *)"**** Error: image has no /ColorSpace key; assuming /DeviceRGB");
             code = pdfi_name_alloc(ctx, (byte *)"DeviceRGB", strlen("DeviceRGB"), &ColorSpace);
             if (code < 0)
                 goto cleanupExit;

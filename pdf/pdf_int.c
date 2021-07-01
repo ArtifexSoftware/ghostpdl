@@ -228,7 +228,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                 }
             }
         } else if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
-            pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGWHITESPACE, "pdfi_read_num", "Ignoring missing white space while parsing number");
+            pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGWHITESPACE, "pdfi_read_num", (char *)"Ignoring missing white space while parsing number");
             if (ctx->args.pdfstoponerror)
                 return_error(gs_error_syntaxerror);
             pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
@@ -1989,9 +1989,9 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
         if (code < 0) {
             if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->args.pdfstoponerror) {
                 if (code == gs_error_ioerror) {
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_interpret_content_stream", "**** Error reading a content stream.  The page may be incomplete");
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_interpret_content_stream", (char *)"**** Error reading a content stream.  The page may be incomplete");
                 } else if (code == gs_error_VMerror) {
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_OUTOFMEMORY, "pdfi_interpret_content_stream", "**** Error ran out of memory reading a content stream.  The page may be incomplete");
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_OUTOFMEMORY, "pdfi_interpret_content_stream", (char *)"**** Error ran out of memory reading a content stream.  The page may be incomplete");
                 }
                 goto exit;
             }

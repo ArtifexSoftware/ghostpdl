@@ -90,7 +90,7 @@ int pdfi_repair_file(pdf_context *ctx)
     gs_offset_t outer_saved_offset[3];
 
     if (ctx->repaired) {
-        pdfi_set_error(ctx, 0, NULL, E_PDF_UNREPAIRABLE, "pdfi_repair_file", "%% Trying to repair file for second time -- unrepairable");
+        pdfi_set_error(ctx, 0, NULL, E_PDF_UNREPAIRABLE, "pdfi_repair_file", (char *)"%% Trying to repair file for second time -- unrepairable");
         return_error(gs_error_undefined);
     }
 

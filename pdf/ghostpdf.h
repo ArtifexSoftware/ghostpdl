@@ -530,10 +530,11 @@ int pdfi_close_pdf_file(pdf_context *ctx);
 void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, void **saved_client_data, gs_gstate_client_procs *saved_procs);
 void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, void *client_data, const gs_gstate_client_procs *procs);
 
-void pdfi_verbose_error(pdf_context *ctx, int gs_error, char *gs_lib_function, int pdfi_error, char *pdfi_function_name, char *extra_info);
-void pdfi_verbose_warning(pdf_context *ctx, int gs_error, char *gs_lib_function, int pdfi_warning, char *pdfi_function_name, char *extra_info);
+void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, char *extra_info);
+void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, char *extra_info);
+void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, char *info);
 
-static inline void pdfi_set_error(pdf_context *ctx, int gs_error, char*gs_lib_function, pdf_error pdfi_error, char *pdfi_function_name, char *extra_info)
+static inline void pdfi_set_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, char *extra_info)
 {
     if (pdfi_error != 0)
         ctx->pdf_errors[pdfi_error / (sizeof(char) * 8)] |= 1 << pdfi_error % (sizeof(char) * 8);
@@ -541,7 +542,7 @@ static inline void pdfi_set_error(pdf_context *ctx, int gs_error, char*gs_lib_fu
         pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
 }
 
-static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, char*gs_lib_function, pdf_warning pdfi_warning, char *pdfi_function_name, char *extra_info)
+static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, char *extra_info)
 {
     ctx->pdf_warnings[pdfi_warning / (sizeof(char) * 8)] |= 1 << pdfi_warning % (sizeof(char) * 8);
     if (ctx->args.verbose_warnings)
