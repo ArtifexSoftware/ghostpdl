@@ -336,7 +336,7 @@ const char *pdf_warning_strings[] = {
     "no warning",
     "incorrect xref size",
     "used inline filter name inappropriately",
-    "used inline colous space inappropriately",
+    "used inline colour space inappropriately",
     "used inline image key inappropriately",
     "recoverable image error",
     "recoverable error in image dictionary",
@@ -365,6 +365,7 @@ const char *pdf_warning_strings[] = {
     "badly escaped name",
     "typecheck error",
     "bad trailer dictionary",
+    "error in annotation",
     ""                                                  /* Last warning shuld not be used */
 };
 
