@@ -942,6 +942,7 @@ chunk_obj_alloc(gs_memory_t *mem, size_t size, gs_memory_type_ptr_t type, client
         memset((byte *)(obj) + SIZEOF_ROUND_ALIGN(chunk_obj_node_t), 0xac, size);
     }
 
+    cmem->used += newsize;
     obj->size = newsize; /* actual size */
     obj->padding = newsize - size; /* actual size - client requested size */
     obj->type = type;    /* and client desired type */
@@ -1097,6 +1098,8 @@ chunk_free_object(gs_memory_t *mem, void *ptr, client_name_t cname)
 
     if_debug3m('A', cmem->target, "[a-]chunk_free_object(%s) "PRI_INTPTR"(%"PRIuSIZE")\n",
                client_name_string(cname), (intptr_t)ptr, obj->size);
+
+    cmem->used -= obj->size;
 
     if (SINGLE_OBJECT_CHUNK(obj->size - obj->padding)) {
         gs_free_object(cmem->target, obj, "chunk_free_object(single object)");
