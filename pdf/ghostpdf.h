@@ -90,6 +90,14 @@
 
 #include "pdf_types.h"
 
+#if defined(MEMENTO)
+#define PDFI_LEAK_CHECK 1
+#endif
+
+#ifndef PDFI_LEAK_CHECK
+#define PDFI_LEAK_CHECK 1
+#endif
+
 /*
  * The interpreter context.
  */
@@ -513,6 +521,9 @@ typedef struct pdf_context_s
     uint64_t misses;
     uint64_t compressed_hits;
     uint64_t compressed_misses;
+#endif
+#if PDFI_LEAK_CHECK
+    gs_memory_status_t memstat;
 #endif
 }pdf_context;
 

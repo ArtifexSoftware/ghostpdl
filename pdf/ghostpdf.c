@@ -40,6 +40,10 @@
 #include "pdf_xref.h"
 #include "pdf_device.h"
 
+#if PDFI_LEAK_CHECK
+#include "gsmchunk.h"
+#endif
+
 /*
  * Convenience routine to check if a given string exists in a dictionary
  * verify its contents and print it in a particular fashion to stdout. This
@@ -1328,32 +1332,43 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
 /* the interpreter access to its context.                                          */
 
 /* We start with routines for creating and destroying the interpreter context */
-pdf_context *pdfi_create_context(gs_memory_t *pmem)
+pdf_context *pdfi_create_context(gs_memory_t *mem)
 {
     pdf_context *ctx = NULL;
     gs_gstate *pgs = NULL;
     int code = 0;
+    gs_memory_t *pmem = mem->non_gc_memory;
+#if PDFI_LEAK_CHECK
+    gs_memory_status_t mstat;
+    code = gs_memory_chunk_wrap(&pmem, mem->non_gc_memory);
+    if (code < 0)
+        return NULL;
+    gs_memory_status(pmem, &mstat);
+#endif
 
-    ctx = (pdf_context *) gs_alloc_bytes(pmem->non_gc_memory,
-            sizeof(pdf_context), "pdf_create_context");
+    ctx = (pdf_context *) gs_alloc_bytes(pmem, sizeof(pdf_context), "pdf_create_context");
+
+#if PDFI_LEAK_CHECK
+    ctx->memstat = mstat;
+#endif
 
     pgs = gs_gstate_alloc(pmem);
 
     if (!ctx || !pgs)
     {
         if (ctx)
-            gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
+            gs_free_object(pmem, ctx, "pdf_create_context");
         if (pgs)
             gs_gstate_free(pgs);
         return NULL;
     }
 
     memset(ctx, 0, sizeof(pdf_context));
-    ctx->memory = pmem->non_gc_memory;
+    ctx->memory = pmem;
 
     ctx->stack_bot = (pdf_obj **)gs_alloc_bytes(ctx->memory, INITIAL_STACK_SIZE * sizeof (pdf_obj *), "pdf_imp_allocate_interp_stack");
     if (ctx->stack_bot == NULL) {
-        gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
+        gs_free_object(pmem, ctx, "pdf_create_context");
         gs_gstate_free(pgs);
         return NULL;
     }
@@ -1365,8 +1380,8 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
     code = pdfi_init_font_directory(ctx);
     if (code < 0) {
-        gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_create_context");
-        gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
+        gs_free_object(pmem, ctx->stack_bot, "pdf_create_context");
+        gs_free_object(pmem, ctx, "pdf_create_context");
         gs_gstate_free(pgs);
         return NULL;
     }
@@ -1374,8 +1389,8 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     code = gsicc_init_iccmanager(pgs);
     if (code < 0) {
         gs_free_object(ctx->memory, ctx->font_dir, "pdf_create_context");
-        gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_create_context");
-        gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
+        gs_free_object(pmem, ctx->stack_bot, "pdf_create_context");
+        gs_free_object(pmem, ctx, "pdf_create_context");
         gs_gstate_free(pgs);
         return NULL;
     }
@@ -1671,6 +1686,10 @@ int pdfi_clear_context(pdf_context *ctx)
 
 int pdfi_free_context(pdf_context *ctx)
 {
+#if PDFI_LEAK_CHECK
+    gs_memory_status_t mstat, ctxmstat = ctx->memstat;
+    gs_memory_t *mem = ctx->memory;
+#endif
     pdfi_clear_context(ctx);
 
     gs_free_object(ctx->memory, ctx->stack_bot, "pdfi_free_context");
@@ -1689,6 +1708,12 @@ int pdfi_free_context(pdf_context *ctx)
         gs_free_object(ctx->memory, ctx->font_dir, "pdfi_free_context");
 
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
+#if PDFI_LEAK_CHECK
+    gs_memory_status(mem, &mstat);
+    if (mstat.allocated > ctxmstat.allocated)
+        errprintf(mem, "\nMemory Leak Detected: Pre %d, Post %d\n", (int)ctxmstat.allocated, (int)mstat.allocated);
+    (void)gs_memory_chunk_unwrap(mem);
+#endif
     return 0;
 }
 

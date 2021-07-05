@@ -710,7 +710,7 @@ pdf_impl_deallocate_interp_instance(pl_interp_implementation_t *impl)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
-    gs_memory_t *mem = ctx->memory;
+    gs_memory_t *mem = instance->memory;
     int code = 0;
 
     code = pdfi_free_context(ctx);
