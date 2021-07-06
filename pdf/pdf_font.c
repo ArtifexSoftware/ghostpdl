@@ -1234,5 +1234,8 @@ int pdfi_font_set_internal_string(pdf_context *ctx, const char *fontname, double
 
 int pdfi_font_set_internal_name(pdf_context *ctx, pdf_name *fontname, double point_size)
 {
-    return pdfi_font_set_internal_inner(ctx, fontname->data, fontname->length, point_size);
+    if (fontname == NULL || fontname->type != PDF_NAME)
+        return_error(gs_error_typecheck);
+    else
+        return pdfi_font_set_internal_inner(ctx, fontname->data, fontname->length, point_size);
 }
