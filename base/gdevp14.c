@@ -8425,6 +8425,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
 {
     pdf14_device * p14dev = (pdf14_device *)pdev;
 
+    if (dev_spec_op == gxdso_supports_pattern_transparency)
+        return 1;
     if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path)
         return 1;
     if (dev_spec_op == gxdso_is_pdf14_device) {
