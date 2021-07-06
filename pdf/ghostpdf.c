@@ -778,18 +778,19 @@ static int pdfi_process(pdf_context *ctx)
 int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_array)
 {
     int code = 0, i, NumEmbeddedFiles = 0;
-    pdf_obj *Names = NULL, *EmbeddedFiles = NULL, *FileNames = NULL;
+    pdf_obj *Names = NULL, *EmbeddedFiles = NULL;
+    pdf_array *FileNames = NULL;
     pdf_obj *EF = NULL, *F = NULL;
     char **working_array = NULL;
 
     if (pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, &Names)) {
         if(pdfi_dict_knownget_type(ctx, (pdf_dict *)Names, "EmbeddedFiles", PDF_DICT, &EmbeddedFiles)) {
-            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EmbeddedFiles, "Names", PDF_ARRAY, &FileNames)) {
+            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EmbeddedFiles, "Names", PDF_ARRAY, (pdf_obj **)&FileNames)) {
                 int ix = 0, index = 0;
                 gp_file *scratch_file = NULL;
                 char scratch_name[gp_file_name_sizeof];
 
-                NumEmbeddedFiles = pdfi_array_size((pdf_array *)FileNames) / 2;
+                NumEmbeddedFiles = pdfi_array_size(FileNames) / 2;
 
                 working_array = (char **)gs_alloc_bytes(ctx->memory, NumEmbeddedFiles * 2 * sizeof(char *), "Collection file working names array");
                 if (working_array == NULL) {
@@ -802,9 +803,9 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                     pdf_obj *File = NULL;
                     pdf_obj *Subtype = NULL;
 
-                    code = pdfi_array_get(ctx, (pdf_array *)FileNames, (ix * 2) + 1, &File);
+                    code = pdfi_array_get(ctx, FileNames, (ix * 2) + 1, &File);
                     if (code < 0)
-                        break;
+                        goto exit;
 
                     if (File->type == PDF_DICT) {
                         if (pdfi_dict_knownget_type(ctx, (pdf_dict *)File, "EF", PDF_DICT, &EF)) {
@@ -879,7 +880,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                                     } while (bytes > 0);
 
                                                     /* Create an entry for the Description in the names array */
-                                                    code = pdfi_array_get(ctx, (pdf_array *)FileNames, ix * 2, (pdf_obj **)&Name);
+                                                    code = pdfi_array_get(ctx, FileNames, ix * 2, (pdf_obj **)&Name);
                                                     if (code >= 0) {
                                                         if (Name->type == PDF_STRING) {
                                                             working_array[(index * 2) + 1] = (char *)gs_alloc_bytes(ctx->memory, Name->length + 3, "Collection file names array entry");
@@ -934,6 +935,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
     } else {
         dmprintf(ctx->memory, "\n   **** Warning: Failed to find Names tree.\n");
     }
+    code = 0;
 
 exit:
     if (code >= 0) {
