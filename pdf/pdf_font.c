@@ -341,7 +341,7 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
     const char *fn;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
-    if (code < 0)
+    if (code < 0 || ((pdf_name *)basefont)->length == 0)
         fallback = true;
 
     if (fallback == true) {
@@ -683,8 +683,10 @@ static int pdfi_load_resource_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_
     int code;
     pdf_dict *font_dict = NULL;
 
-    if (fontname->type != PDF_NAME)
-        return_error(gs_error_typecheck);
+    if (fontname->type != PDF_NAME) {
+        /* Passing empty string here should fall back to a default font */
+        return pdfi_font_set_internal_string(ctx, "", point_size);
+    }
 
     /* Look fontname up in the resources */
     code = pdfi_loop_detector_mark(ctx);
@@ -981,8 +983,11 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
 
     if (pdf_Encoding->type == PDF_NAME) {
         code = pdfi_build_Encoding(ctx, (pdf_name *)pdf_Encoding, (pdf_array *)*Encoding);
-        if (code < 0)
+        if (code < 0) {
+            pdfi_countdown(*Encoding);
+            *Encoding = NULL;
             return code;
+        }
     } else {
         if (pdf_Encoding->type == PDF_DICT) {
             pdf_name *n = NULL;
@@ -1008,20 +1013,31 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
                 code = pdfi_dict_get(ctx, (pdf_dict *)pdf_Encoding, "BaseEncoding", (pdf_obj **)&n);
                 if (code < 0) {
                     code = pdfi_name_alloc(ctx, (byte *)"StandardEncoding", 16, (pdf_obj **)&n);
-                    if (code < 0)
+                    if (code < 0) {
+                        pdfi_countdown(*Encoding);
+                        *Encoding = NULL;
                         return code;
+                    }
                     pdfi_countup(n);
                 }
                 code = pdfi_build_Encoding(ctx, n, (pdf_array *)*Encoding);
                 if (code < 0) {
+                    pdfi_countdown(*Encoding);
+                    *Encoding = NULL;
                     pdfi_countdown(n);
-                        return code;
+                    return code;
                 }
                 pdfi_countdown(n);
             }
             code = pdfi_dict_knownget_type(ctx, (pdf_dict *)pdf_Encoding, "Differences", PDF_ARRAY, (pdf_obj **)&a);
-            if (code <= 0)
+            if (code <= 0) {
+                if (code < 0) {
+                    pdfi_countdown(*Encoding);
+                    *Encoding = NULL;
+                }
                 return code;
+            }
+
             for (i=0;i < pdfi_array_size(a);i++) {
                 code = pdfi_array_get(ctx, a, (uint64_t)i, &o);
                 if (code < 0)
@@ -1045,9 +1061,14 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
                 }
             }
             pdfi_countdown(a);
-            if (code < 0)
+            if (code < 0) {
+                pdfi_countdown(*Encoding);
+                *Encoding = NULL;
                 return code;
+            }
         } else {
+            pdfi_countdown(*Encoding);
+            *Encoding = NULL;
             return gs_note_error(gs_error_typecheck);
         }
     }
