@@ -529,6 +529,7 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             memcpy(&pfont1->font_name, &fpriv.gsu.gst1.font_name, sizeof(pfont1->font_name));
             if (fpriv.gsu.gst1.UID.id != 0)
                 memcpy(&pfont1->UID, &fpriv.gsu.gst1.UID, sizeof(pfont1->UID));
+            fpriv.gsu.gst1.UID.xvalues = NULL; /* In case of error */
             pfont1->WMode = fpriv.gsu.gst1.WMode;
             pfont1->PaintType = fpriv.gsu.gst1.PaintType;
             pfont1->StrokeWidth = fpriv.gsu.gst1.StrokeWidth;
@@ -717,6 +718,9 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
     pdfi_countdown(fpriv.u.t1.blenddesignmap);
     pdfi_countdown(fpriv.u.t1.blendfontbbox);
     pdfi_countdown(fpriv.u.t1.blendaxistypes);
+    if (fpriv.gsu.gst1.UID.xvalues != NULL) {
+        gs_free_object(ctx->memory, fpriv.gsu.gst1.UID.xvalues, "pdfi_read_type1_font(xuid)");
+    }
     if (fpriv.u.t1.Subrs) {
         int i;
 
