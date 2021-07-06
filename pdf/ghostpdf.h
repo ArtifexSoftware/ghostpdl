@@ -91,7 +91,7 @@
 #include "pdf_types.h"
 
 #if defined(MEMENTO)
-#define PDFI_LEAK_CHECK 1
+#define PDFI_LEAK_CHECK 0
 #endif
 
 #ifndef PDFI_LEAK_CHECK
