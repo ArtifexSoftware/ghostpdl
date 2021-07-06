@@ -986,6 +986,14 @@ ps_font_array_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
         !memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("Subrs"))) {
 
         if (s->cur[0].val.i > 0) {
+            if (priv->u.t1.Subrs != NULL) {
+                int i;
+                for (i = 0; i < priv->u.t1.NumSubrs; i++) {
+                    gs_free_object(mem, priv->u.t1.Subrs[i].data, "ps_font_array_func(Subrs[i])");
+                }
+                gs_free_object(mem, priv->u.t1.Subrs, "ps_font_array_func(Subrs)");
+            }
+
             priv->u.t1.Subrs = (gs_string *) gs_alloc_bytes(mem, s->cur[0].val.i *sizeof(gs_string), "ps_font_array_func(Subrs)");
             if (priv->u.t1.Subrs == NULL) {
                 return_error(gs_error_VMerror);
