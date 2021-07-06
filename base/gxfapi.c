@@ -33,6 +33,7 @@
 #include "gsimage.h"
 #include "gsbittab.h"
 #include "gzpath.h"
+#include "gxdevsop.h"
 
 #include "gxfapi.h"
 
@@ -261,9 +262,7 @@ using_transparency_pattern(gs_gstate *pgs)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
 
-    return ((!gs_color_writes_pure(pgs))
-            && dev_proc(dev, begin_transparency_group) != gx_default_begin_transparency_group
-            && dev_proc(dev, end_transparency_group) != gx_default_end_transparency_group);
+    return ((!gs_color_writes_pure(pgs)) && dev_proc(dev, dev_spec_op)(dev, gxdso_supports_pattern_transparency, NULL, 0));
 }
 
 static inline bool

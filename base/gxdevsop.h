@@ -227,6 +227,8 @@ enum {
      */
     gxdso_is_pdf14_device,
 
+    gxdso_supports_pattern_transparency,
+
     /* gxdso_device_child:
      *      data = pointer to gxdso_device_child_request struct
      *      size = sizeof(gxdso_device_child_request)
