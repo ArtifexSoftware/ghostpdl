@@ -1347,10 +1347,10 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
                     if (code < 0) {
                         return code;
                     }
-                    pdfi_countup(gname);
                 }
-
+                pdfi_countup(gname);
                 code = pdfi_array_put(ctx, font->Encoding, (int64_t) charcode, gname);
+                pdfi_countdown(gname);
             }
         }
     }
@@ -1985,8 +1985,9 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 break;
             }
         }
-        if (toffs == 0 || tlen == 0 || toffs + tlen > fbuflen)
+        if (toffs == 0 || tlen == 0 || toffs + tlen > fbuflen) {
             return_error(gs_error_invalidfont);
+        }
         fbuf += toffs;
         fbuflen = tlen;
     }
