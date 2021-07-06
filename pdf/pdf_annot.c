@@ -2135,6 +2135,7 @@ static int pdfi_annot_draw_Stamp(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     if (code >= 0)
         code = code1;
  exit1:
+    pdfi_countdown(Name);
     *render_done = true;
     return code;
 }
