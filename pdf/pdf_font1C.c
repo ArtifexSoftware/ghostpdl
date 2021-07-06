@@ -1564,7 +1564,8 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
         }
         else {
             pdfi_countup(font->FDArray);
-            for (i = 0; i < fdarray_size; i++) {
+            code = 0;
+            for (i = 0; i < fdarray_size && code == 0; i++) {
                 byte *fddictp, *fddicte;
                 pdfi_gs_cff_font_priv fdptpriv = { 0 };
                 pdf_font_cff *pdffont = NULL;
@@ -1577,6 +1578,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                 p = pdfi_find_cff_index(font->cffdata + offsets.fdarray_off, e, i, &fddictp, &fddicte);
                 if (!p) {
                     ptpriv->cidata.FDArray[i] = NULL;
+                    code = gs_note_error(gs_error_invalidfont);
                     continue;
                 }
                 if (fddicte > font->cffend)
@@ -1585,11 +1587,13 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                 code = pdfi_read_cff_dict(fddictp, fddicte, &fdptpriv, &offsets);
                 if (code < 0) {
                     ptpriv->cidata.FDArray[i] = NULL;
+                    code = gs_note_error(gs_error_invalidfont);
                     continue;
                 }
                 code = pdfi_alloc_cff_font(ctx, &pdffont, 0, true);
                 if (code < 0) {
                     ptpriv->cidata.FDArray[i] = NULL;
+                    code = gs_note_error(gs_error_invalidfont);
                     continue;
                 }
                 pt1font = (gs_font_type1 *) pdffont->pfont;
@@ -1654,50 +1658,58 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                 (void)pdfi_array_put(ctx, font->FDArray, i, (pdf_obj *) pdffont);
                 pdfi_countdown(pdffont);
             }
-
-            switch ((int)font->cffdata[offsets.fdselect_off]) {
-                case 0:
-                    fdselect_proc = format0_fdselect_proc;
-                    break;
-                case 3:
-                    fdselect_proc = format3_fdselect_proc;
-                    break;
-                default:
-                    return_error(gs_error_rangecheck);
-            }
-
-            if (font->ncharstrings > 0) {
-                int maxcid = 0;
-                for (i = 0; i < font->ncharstrings; i++) {
-                    int fd, g;
-                    char gkey[64];
-                    pdf_string *charstr;
-
-                    fd = fdarray_size <= 1 ? 0 : (*fdselect_proc) (font->cffdata + offsets.fdselect_off + 1, font->cffend, i);
-
-                    p = pdfi_find_cff_index(font->charstrings, font->cffend, i, &strp, &stre);
-                    if (!p)
-                        continue;
-
-                    code = pdfi_object_alloc(ctx, PDF_STRING, (stre - strp) + 1, (pdf_obj **) &charstr);
-                    if (code < 0)
-                        continue;
-                    charstr->data[0] = (byte) fd;
-                    memcpy(charstr->data + 1, strp, charstr->length - 1);
-
-                    if (i == 0) {
-                        g = 0;
-                    }
-                    else {
-                        g = (*charset_proc) (font->cffdata + offsets.charset_off + 1, font->cffend, i - 1);
-                    }
-
-                    if (g > maxcid) maxcid = g;
-                    gs_snprintf(gkey, sizeof(gkey), "%d", g);
-                    code = pdfi_dict_put(ctx, font->CharStrings, gkey, (pdf_obj *) charstr);
+            if (code < 0) {
+                pdfi_countdown(font->FDArray);
+                font->FDArray = NULL;
+                for (i = 0; i < ptpriv->cidata.FDArray_size; i++) {
+                    ptpriv->cidata.FDArray[i] = NULL;
                 }
-                ptpriv->cidata.common.CIDCount = i;
-                ptpriv->cidata.common.MaxCID = maxcid;
+            }
+            else {
+                switch ((int)font->cffdata[offsets.fdselect_off]) {
+                    case 0:
+                        fdselect_proc = format0_fdselect_proc;
+                        break;
+                    case 3:
+                        fdselect_proc = format3_fdselect_proc;
+                        break;
+                    default:
+                        return_error(gs_error_rangecheck);
+                }
+
+                if (font->ncharstrings > 0) {
+                    int maxcid = 0;
+                    for (i = 0; i < font->ncharstrings; i++) {
+                        int fd, g;
+                        char gkey[64];
+                        pdf_string *charstr;
+
+                        fd = fdarray_size <= 1 ? 0 : (*fdselect_proc) (font->cffdata + offsets.fdselect_off + 1, font->cffend, i);
+
+                        p = pdfi_find_cff_index(font->charstrings, font->cffend, i, &strp, &stre);
+                        if (!p)
+                            continue;
+
+                        code = pdfi_object_alloc(ctx, PDF_STRING, (stre - strp) + 1, (pdf_obj **) &charstr);
+                        if (code < 0)
+                            continue;
+                        charstr->data[0] = (byte) fd;
+                        memcpy(charstr->data + 1, strp, charstr->length - 1);
+
+                        if (i == 0) {
+                            g = 0;
+                        }
+                        else {
+                            g = (*charset_proc) (font->cffdata + offsets.charset_off + 1, font->cffend, i - 1);
+                        }
+
+                        if (g > maxcid) maxcid = g;
+                        gs_snprintf(gkey, sizeof(gkey), "%d", g);
+                        code = pdfi_dict_put(ctx, font->CharStrings, gkey, (pdf_obj *) charstr);
+                    }
+                    ptpriv->cidata.common.CIDCount = i;
+                    ptpriv->cidata.common.MaxCID = maxcid;
+                }
             }
         }
     }
