@@ -331,7 +331,7 @@ const char *pdf_error_strings[] = {
     "stream inherited a resource",
     "counting down reference to freed object",
     "error in transparency XObject",
-    "object lcks a required Subtype",
+    "object lacks a required Subtype",
     "error in image colour",
     ""                                          /* last error, should not be used */
 };
