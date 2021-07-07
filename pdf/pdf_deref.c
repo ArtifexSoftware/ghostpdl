@@ -441,7 +441,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
     if (keyword->key == TOKEN_OBJ) {
         pdf_obj *o;
 
-        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", NULL);
+        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_bare_object", NULL);
 
         /* 4 for; the object we want, the object number, generation number and 'obj' keyword */
         if (pdfi_count_stack(ctx) < 4)
@@ -463,7 +463,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
     if (!ctx->args.pdfstoponerror) {
         pdf_obj *o;
 
-        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", NULL);
+        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_bare_object", NULL);
 
         if (pdfi_count_stack(ctx) < 2)
             return_error(gs_error_stackunderflow);
