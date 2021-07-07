@@ -761,6 +761,7 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
             code = pdfi_dict_knownget(ctx, cmap_dict, "UseCMap", &ucmap);
             if (code > 0) {
                 code = pdfi_read_cmap(ctx, ucmap, &upcmap);
+                pdfi_countdown(ucmap);
                 if (code >= 0) {
                     gx_code_space_range_t * ranges =
                          (gx_code_space_range_t *)gs_alloc_byte_array(ctx->memory, upcmap->code_space.num_ranges,
