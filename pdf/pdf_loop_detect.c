@@ -115,6 +115,12 @@ int pdfi_loop_detector_cleartomark(pdf_context *ctx)
     while (ctx->loop_detection[--ctx->loop_detection_entries] != 0) {
         ctx->loop_detection[ctx->loop_detection_entries] = 0;
     }
+    /* FIXME - potential optimisation
+     * Instead of freeing the loop detection array every tiome we are done with it
+     * and then reallocating a new one next time we need one, we could just keep
+     * the existing (empty) array. I suspect this would provide a small performance
+     * improvement.
+     */
     if (ctx->loop_detection_entries == 0)
         pdfi_free_loop_detector(ctx);
     return 0;

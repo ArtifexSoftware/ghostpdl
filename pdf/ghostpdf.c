@@ -1709,6 +1709,14 @@ int pdfi_free_context(pdf_context *ctx)
     if (ctx->font_dir)
         gs_free_object(ctx->memory, ctx->font_dir, "pdfi_free_context");
 
+    /* Currently this should never happen, but in future it might if we choose
+     * not to keep freeing and reallocating the array.
+     */
+    if (ctx->loop_detection != NULL) {
+        dbgmprintf(ctx->memory, "Loop detection array exists at EOJ\n");
+        gs_free_object(ctx->memory, ctx->loop_detection, "pdfi_free_context");
+    }
+
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
 #if PDFI_LEAK_CHECK
     gs_memory_status(mem, &mstat);

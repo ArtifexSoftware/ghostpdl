@@ -878,7 +878,7 @@ free_obj:
         (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     }
 
-    if (ctx->loop_detection) {
+    if (ctx->loop_detection && (*object)->object_num != 0) {
         code = pdfi_loop_detector_add_object(ctx, (*object)->object_num);
         if (code < 0) {
             ctx->encryption.decrypt_strings = saved_decrypt_strings;
