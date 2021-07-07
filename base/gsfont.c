@@ -289,7 +289,7 @@ gs_font_dir_finalize(const gs_memory_t *cmem, void *vptr)
         cmem->gs_lib_ctx->font_dir = NULL;
     }
 
-    for (i = 0; i < pdir->fmcache.msize; i++) {
+    for (i = 0; i < pdir->fmcache.mmax; i++) {
         if (uid_is_XUID(&pdir->fmcache.mdata[i].UID)) {
             gs_free_object(pdir->memory->stable_memory, pdir->fmcache.mdata[i].UID.xvalues, "gs_font_dir_finalize");
         }
