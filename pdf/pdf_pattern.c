@@ -620,6 +620,7 @@ pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
          * Seems like a corrupted file, but this prevents crash
          */
         dbgmprintf(ctx->memory, "ERROR: Pattern found in resources is neither a stream or dict\n");
+        pdfi_countdown(pattern_obj);
         return code;
     }
 

@@ -756,6 +756,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
 
 transparency_exit:
     pdfi_countdown(Key);
+    pdfi_countdown(Value);
     pdfi_countdown(instance_dict);
 
 error1:
