@@ -1233,9 +1233,15 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
                     goto error_exit;
             }
         }
-        if (code <= 0)
+        if (code < 0)
             goto error_exit;
+        if (code > 0)
+            goto match;
     }
+    pdfi_countdown(key1);
+    pdfi_countdown(key2);
+    key1 = NULL;
+    key2 = NULL;
 
     if (keyword->length > 5 || keyword->length < 2)
         goto error_exit;
@@ -1258,9 +1264,15 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
             default:
                 goto error_exit;
         }
-        if (code <= 0)
+        if (code < 0)
             goto error_exit;
+        if (code > 0)
+            goto match;
     }
+    pdfi_countdown(key1);
+    pdfi_countdown(key2);
+    key1 = NULL;
+    key2 = NULL;
 
     if (keyword->length > 4)
         goto error_exit;
@@ -1285,8 +1297,15 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
         }
         if (code <= 0)
             goto error_exit;
+        if (code > 0)
+            goto match;
     }
+    pdfi_countdown(key1);
+    pdfi_countdown(key2);
+    key1 = NULL;
+    key2 = NULL;
 
+match:
     /* If we get here, we have two PDF_KEYWORD objects. We push them on the stack
      * one at a time, and execute them.
      */
