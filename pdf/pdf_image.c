@@ -2287,7 +2287,10 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     code = pdfi_dict_known(ctx, sdict, "Parent", &known);
     if (code < 0)
         goto exit;
-    if (!known) {
+    /* Add a Parent ref, unless it happens to be a circular reference
+     * (sample Bug298226.pdf -- has a circular ref and adding the Parent caused memory leak)
+     */
+    if (!known && sdict->object_num != stream_dict->object_num) {
         code = pdfi_dict_put(ctx, sdict, "Parent", (pdf_obj *)stream_dict);
         if (code < 0)
             goto exit;
