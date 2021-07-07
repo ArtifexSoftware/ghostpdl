@@ -25,7 +25,9 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_deref.h"
+#include "pdf_agl.h"
 #include "gxfont42.h"
+#include "gscencs.h"
 
 enum {
     CMAP_TABLE_NONE = 0,
@@ -55,36 +57,182 @@ static gs_glyph pdfi_ttf_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space
 {
     pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
     gs_glyph g = GS_NO_GLYPH;
+    uint ID;
+    int code;
 
     if ((ttfont->descflags & 4) != 0) {
-        uint ID;
-        int code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)chr, &ID);
+        int code = pdfi_fapi_check_cmap_for_GID(pfont, (uint)chr, &ID);
         if (code < 0 || ID == 0)
-            code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)(chr | 0xf0 << 8), &ID);
+            code = pdfi_fapi_check_cmap_for_GID(pfont, (uint)(chr | 0xf0 << 8), &ID);
         g = (gs_glyph)ID;
     }
     else {
-        g = pdfi_encode_char(pfont, chr, sp);
+        pdf_context *ctx = (pdf_context *)ttfont->ctx;
+
+        if (ttfont->Encoding != NULL) { /* safety */
+            pdf_name *GlyphName = NULL;
+            code = pdfi_array_get(ctx, ttfont->Encoding, (uint64_t)chr, (pdf_obj **)&GlyphName);
+            if (code >= 0) {
+                code = (*ctx->get_glyph_index)(pfont, (byte *)GlyphName->data, GlyphName->length, &ID);
+                pdfi_countdown(GlyphName);
+                if (code >= 0)
+                    g = (gs_glyph)ID;
+            }
+        }
     }
+
     return g;
 }
 
+extern pdfi_single_glyph_list_t *pdfi_SingleGlyphList;
+
 static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
 {
-    return (uint)glyph;
+    pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
+    uint gind = 0;
+    uint cc = 0;
+    int i, code = 0;
+
+    if (glyph >= GS_MIN_GLYPH_INDEX)
+        glyph -= GS_MIN_GLYPH_INDEX;
+
+    if ((ttfont->descflags & 4) != 0) {
+        gind = (uint)glyph;
+    }
+    else {
+        pdf_context *ctx = (pdf_context *)ttfont->ctx;
+        gs_const_string gname;
+
+        code = (*ctx->get_glyph_name)((gs_font *)pfont, glyph, &gname);
+        if (code < 0 || gname.data == NULL) {
+            return (uint)glyph;
+        }
+        if (gname.size == 7 && gname.data[0] == '.' && strncmp((char *)gname.data, ".notdef", 7) == 0) {
+            return 0; /* .notdef is GID 0, so short cut the rest of the function */
+        }
+
+        if (ttfont->cmap == pdfi_truetype_cmap_10) {
+            gs_string postname = {0};
+            gs_glyph g;
+
+            g = gs_c_name_glyph((const byte *)gname.data, gname.size);
+            if (g != GS_NO_GLYPH) {
+                g = (gs_glyph)gs_c_decode(g, ENCODING_INDEX_MACROMAN);
+            }
+            else {
+                g = GS_NO_CHAR;
+            }
+
+            if (g != GS_NO_CHAR) {
+                code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)g, &cc);
+            }
+
+            if (cc == 0) {
+                /* This is a very slow implementation, we may benefit from creating a
+                 * a reverse post table upfront */
+                for (i = 0; i < pfont->data.numGlyphs; i++) {
+                    code = gs_type42_find_post_name(pfont, (gs_glyph)i, &postname);
+                    if (code >= 0) {
+                        if (gname.data[0] == postname.data[0]
+                            && gname.size == postname.size
+                            && !strncmp((char *)gname.data, (char *)postname.data, postname.size))
+                        {
+                            cc = i;
+                            break;
+                        }
+                    }
+                }
+           }
+        }
+        else if (ttfont->cmap == pdfi_truetype_cmap_31) {
+            pdfi_single_glyph_list_t *sgl = (pdfi_single_glyph_list_t *)&(pdfi_SingleGlyphList);
+            /* Not to spec, but... if we get a "uni..." formatted name, use
+               the hex value from that.
+             */
+            if (gname.size > 5 && !strncmp((char *)gname.data, "uni", 3)) {
+                sscanf((char *)(gname.data + 3), "%x", &gind);
+                (void)pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)gind, &cc);
+            }
+            else {
+                /* Slow linear search, we could binary chop it */
+                for (i = 0; sgl[i].Glyph != 0x00; i++) {
+                    if (sgl[i].Glyph[0] == gname.data[0]
+                        && strlen(sgl[i].Glyph) == gname.size
+                        && !strncmp((char *)sgl[i].Glyph, (char *)gname.data, gname.size))
+                        break;
+                }
+                if (sgl[i].Glyph != NULL) {
+                    code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)sgl[i].Unicode, &cc);
+                    if (code < 0 || cc == 0)
+                        cc = 0;
+                }
+                else
+                    cc = 0;
+
+                if (cc == 0) {
+                    gs_string postname = {0};
+
+                    /* This is a very slow implementation, we may benefit from creating a
+                     * a reverse post table upfront */
+                    for (i = 0; i < pfont->data.numGlyphs; i++) {
+                        code = gs_type42_find_post_name(pfont, (gs_glyph)i, &postname);
+                        if (code >= 0) {
+                            if (postname.data[0] == gname.data[0]
+                                && postname.size == gname.size
+                                && !strncmp((char *)postname.data, (char *)gname.data, gname.size))
+                            {
+                                cc = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        gind = cc;
+    }
+    return gind;
 }
 
-static int pdfi_ttf_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
+static int
+pdfi_ttf_enumerate_glyph(gs_font *font, int *pindex, gs_glyph_space_t glyph_space, gs_glyph *pglyph)
+{
+    if (glyph_space == GLYPH_SPACE_INDEX) {
+        return gs_type42_enumerate_glyph(font, pindex, glyph_space, pglyph);
+    }
+    else if (glyph_space == GLYPH_SPACE_NAME) {
+        pdf_font_truetype *ttfont = (pdf_font_truetype *)font->client_data;
+
+        if ((ttfont->descflags & 4) == 0) {
+            if (*pindex <= 0) {
+                *pindex = 0;
+            }
+            *pglyph = (*font->procs.encode_char)(font, (gs_char)*pindex, glyph_space);
+            if (*pglyph == GS_NO_GLYPH)
+                *pindex = 0;
+            else
+                (*pindex)++;
+        }
+    }
+    else
+        *pindex = 0;
+    return 0;
+}
+
+static int pdfi_ttf_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string * pstr)
 {
     pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
     pdf_context *ctx = (pdf_context *)ttfont->ctx;
     uint ID = 0;
     int code = -1;
 
+    if (glyph >= GS_MIN_GLYPH_INDEX)
+        glyph -= GS_MIN_GLYPH_INDEX;
+
     if ((ttfont->descflags & 4) != 0) {
-        code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)glyph, &ID);
+        code = pdfi_fapi_check_cmap_for_GID(pfont, (uint)glyph, &ID);
         if (code < 0 || ID == 0)
-            code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)(glyph | 0xf0 << 8), &ID);
+            code = pdfi_fapi_check_cmap_for_GID(pfont, (uint)(glyph | 0xf0 << 8), &ID);
 
         code = gs_type42_find_post_name((gs_font_type42 *)pfont, (gs_glyph)ID, (gs_string *)pstr);
         if (code < 0)
@@ -94,11 +242,15 @@ static int pdfi_ttf_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string 
         if (code < 0)
             return -1; /* No name, trigger pdfwrite Type 3 fallback */
 
-        code = (*ctx->get_glyph_name)(pfont, ID, pstr);
+        code = (*ctx->get_glyph_name)(pfont, (gs_glyph)ID, pstr);
         if (code < 0)
             return -1; /* No name, trigger pdfwrite Type 3 fallback */
     }
-
+    else {
+        code = (*ctx->get_glyph_name)(pfont, glyph, pstr);
+        if (code < 0)
+            return -1; /* No name, trigger pdfwrite Type 3 fallback */
+    }
     return code;
 
 }
@@ -174,8 +326,8 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
     pfont->procs.same_font = gs_default_same_font;
     pfont->procs.enumerate_glyph = gs_no_enumerate_glyph;
 
-    pfont->encoding_index = 1;          /****** WRONG ******/
-    pfont->nearest_encoding_index = 1;          /****** WRONG ******/
+    pfont->encoding_index = -1;          /****** WRONG ******/
+    pfont->nearest_encoding_index = -1;          /****** WRONG ******/
 
     pfont->client_data = (void *)ttfont;
 
@@ -186,6 +338,7 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
 static int pdfi_set_type42_data_procs(gs_font_type42 *pfont)
 {
     pfont->data.get_glyph_index = pdfi_type42_get_glyph_index;
+    pfont->procs.enumerate_glyph = pdfi_ttf_enumerate_glyph;
     return 0;
 }
 
