@@ -2214,8 +2214,10 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     if (pdfi_name_is(n, "Image")) {
         gs_offset_t savedoffset;
 
-        if (xobject_obj->type != PDF_STREAM)
-            return_error(gs_error_typecheck);
+        if (xobject_obj->type != PDF_STREAM) {
+            gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
         savedoffset = pdfi_tell(ctx->main_stream);
         code = pdfi_do_image(ctx, page_dict, stream_dict, (pdf_stream *)xobject_obj,
                              ctx->main_stream, false);
