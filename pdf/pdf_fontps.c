@@ -1053,16 +1053,17 @@ ps_font_dict_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
         int code;
         pdf_dict *d = NULL;
 
+        if (priv->u.t1.CharStrings == NULL) {
+            code = pdfi_dict_alloc(s->pdfi_ctx, s->cur[0].val.i, &d);
+            if (code < 0) {
+                priv->u.t1.CharStrings = NULL;
+                (void)pdf_ps_stack_pop(s, 1);
+                return code;
+            }
 
-        code = pdfi_dict_alloc(s->pdfi_ctx, s->cur[0].val.i, &d);
-        if (code < 0) {
-            priv->u.t1.CharStrings = NULL;
-            (void)pdf_ps_stack_pop(s, 1);
-            return code;
+            priv->u.t1.CharStrings = d;
+            pdfi_countup(priv->u.t1.CharStrings);
         }
-
-        priv->u.t1.CharStrings = d;
-        pdfi_countup(priv->u.t1.CharStrings);
     }
     return pdf_ps_stack_pop(s, 1);
 }
