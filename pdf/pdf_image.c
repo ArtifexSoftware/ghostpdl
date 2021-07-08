@@ -2035,6 +2035,12 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
         }
         pdfi_set_warning(ctx, 0, NULL, W_PDF_STREAM_HAS_CONTENTS, "pdfi_form_stream_hack", NULL);
         code = pdfi_merge_dicts(ctx, stream_dict, form_dict);
+        /* Having merged the dictionaries, we don't want the Contents key in the stream dict.
+         * We do want to leave it in the form dictionary, in case we use this form again.
+         * Leaving the reference in the stream dicttionary leads to a reference counting problem
+         * because stream_dict is contained in stream_obj so stream_obj becomes self-referencing.
+         */
+        pdfi_dict_delete(ctx, stream_dict, "Contents");
     } else {
         pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
         code = gs_note_error(gs_error_typecheck);
