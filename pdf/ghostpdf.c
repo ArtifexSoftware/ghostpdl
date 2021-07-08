@@ -374,6 +374,7 @@ const char *pdf_warning_strings[] = {
 };
 
 const char *gs_error_strings[] = {
+    "no error",
     "unknownerror",
     "dictfull",
     "dictstackoverflow",
@@ -1035,7 +1036,7 @@ static int pdfi_init_file(pdf_context *ctx)
             /* If its a hybrid file, and we failed to read the XrefStm, try
              * again, but this time read the xref table instead.
              */
-            pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "pdf_init_file", NULL);
+            pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "pdfi_init_file", NULL);
             pdfi_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             ctx->prefer_xrefstm = false;
@@ -1043,7 +1044,7 @@ static int pdfi_init_file(pdf_context *ctx)
             if (code < 0)
                 goto exit;
         } else {
-            pdfi_set_error(ctx, code, NULL, E_PDF_BADXREFSTREAM, "pdf_init_file", NULL);
+            pdfi_set_error(ctx, code, NULL, E_PDF_BADXREFSTREAM, "pdfi_init_file", NULL);
             goto exit;
         }
     }
@@ -1067,13 +1068,13 @@ read_root:
              * from a hybrid file, then try again, but this time use the xref table
              */
             if (code == gs_error_undefined && ctx->is_hybrid && ctx->prefer_xrefstm) {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "pdf_init_file", NULL);
+                pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "pdfi_init_file", NULL);
                 pdfi_countdown(ctx->xref_table);
                 ctx->xref_table = NULL;
                 ctx->prefer_xrefstm = false;
                 code = pdfi_read_xref(ctx);
                 if (code < 0) {
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREF, "pdf_init_file", NULL);
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREF, "pdfi_init_file", NULL);
                     goto exit;
                 }
                 code = pdfi_read_Root(ctx);
@@ -1127,7 +1128,7 @@ read_root:
 
 exit:
     if (code < 0)
-        pdfi_set_error(ctx, code, NULL, 0, "pdf_init_file", NULL);
+        pdfi_set_error(ctx, code, NULL, 0, "pdfi_init_file", NULL);
     pdfi_countdown(o);
     return code;
 }

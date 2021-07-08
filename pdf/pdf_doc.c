@@ -154,10 +154,17 @@ int pdfi_read_Pages(pdf_context *ctx)
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n");
 
-    /* Acrobat allows the Pages Count to be a flaoting point nuber (!) */
+    /* Acrobat allows the Pages Count to be a floating point number (!) */
+    /* TODO: sample w_a.PDF from Bug688419 (not on the cluster, maybe it should be?) has no /Count entry.
+     * gs recovers with an error "**** Warning:  No /Pages node. The document /Root points directly to a page."
+     * AR also is able to read it.
+     * We should deal with this, emit warning, and do something sane.
+     */
     code = pdfi_dict_get_number(ctx, (pdf_dict *)o1, "Count", &d);
-    if (code < 0)
+    if (code < 0) {
+        pdfi_countdown(o1);
         return code;
+    }
 
     if (floor(d) != d) {
         pdfi_countdown(o1);
