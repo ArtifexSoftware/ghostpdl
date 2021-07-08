@@ -76,6 +76,9 @@ s_pngp_init(stream_state * st, bool need_prev)
     if (ss->Colors > s_PNG_max_Colors)
         return ERRC; /* Too many colorants */
 
+    if (bits_per_row < 1)
+        return ERRC;
+
     ss->bpp = (bits_per_pixel + 7) >> 3;
     if (need_prev) {
         prev_row = gs_alloc_bytes(st->memory, ss->bpp + ss->row_count,
