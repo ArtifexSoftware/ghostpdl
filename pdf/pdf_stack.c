@@ -95,9 +95,12 @@ int pdfi_count_to_mark(pdf_context *ctx, uint64_t *count)
 {
     pdf_obj *o = ctx->stack_top[- 1];
     int index = -1;
+    pdf_obj **save_bot = NULL;
+
+    save_bot = ctx->stack_bot + ctx->current_stream_save.stack_count;
 
     *count = 0;
-    while (&ctx->stack_top[index] >= ctx->stack_bot) {
+    while (&ctx->stack_top[index] >= save_bot) {
         if (o->type == PDF_ARRAY_MARK || o->type == PDF_DICT_MARK)
             return 0;
         o = ctx->stack_top[--index];
