@@ -641,6 +641,7 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                 goto exit;
             temp_obj = ctx->stack_top[-1];
             if (temp_obj->type != PDF_INT) {
+                code = gs_note_error(gs_error_typecheck);
                 pdfi_pop(ctx, 1);
                 goto exit;
             }
@@ -802,7 +803,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             ctx->encryption.decrypt_strings = false;
 
             code = pdfi_deref_compressed(ctx, obj, gen, object, entry);
-            if (code < 0)
+            if (code < 0 || *object == NULL)
                 goto error;
         } else {
             pdf_c_stream *SubFile_stream = NULL;
