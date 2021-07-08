@@ -196,9 +196,12 @@ static int pdfi_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, 
             ppds.Colors = (int)Colors;
             ppds.BitsPerComponent = (int)BPC;
             ppds.Columns = (int)Columns;
-            pdfi_filter_open(min_size, &s_filter_read_procs,
+            code = pdfi_filter_open(min_size, &s_filter_read_procs,
                              (const stream_template *)&s_PDiffD_template,
                              (const stream_state *)&ppds, ctx->memory->non_gc_memory, new_stream);
+            if (code < 0)
+                return code;
+
             (*new_stream)->strm = source;
             break;
         default:
@@ -207,9 +210,12 @@ static int pdfi_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, 
             pps.BitsPerComponent = (int)BPC;
             pps.Columns = (uint)Columns;
             pps.Predictor = Predictor;
-            pdfi_filter_open(min_size, &s_filter_read_procs,
+            code = pdfi_filter_open(min_size, &s_filter_read_procs,
                              (const stream_template *)&s_PNGPD_template,
                              (const stream_state *)&pps, ctx->memory->non_gc_memory, new_stream);
+            if (code < 0)
+                return code;
+
             (*new_stream)->strm = source;
             break;
     }
@@ -293,8 +299,8 @@ static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stre
     source = *new_stream;
 
     if (d && d->type == PDF_DICT)
-        pdfi_Predictor_filter(ctx, d, source, new_stream);
-    return 0;
+        code = pdfi_Predictor_filter(ctx, d, source, new_stream);
+    return code;
 }
 
 static int
