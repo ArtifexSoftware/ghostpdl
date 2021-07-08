@@ -779,7 +779,7 @@ static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *page_dict, pdf_dict
         if (!known) {
             code = pdfi_dict_known(ctx, annot, "Parent", &known);
             if (code < 0) goto exit;
-            if (!known)
+            if (!known && ctx->AcroForm != NULL)
                 resource_dict = ctx->AcroForm;
         }
         code = pdfi_form_get_inheritable(ctx, annot, "DA", PDF_STRING, (pdf_obj **)&DA);
