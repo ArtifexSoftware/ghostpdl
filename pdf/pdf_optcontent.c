@@ -203,6 +203,8 @@ pdfi_oc_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
             }
             break;
         }
+        pdfi_countdown(val);
+        val = NULL;
     }
 
  cleanup:
