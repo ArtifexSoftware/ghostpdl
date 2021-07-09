@@ -150,21 +150,23 @@ s_CFE_init(register stream_state * st)
 /****** WRONG ******/
     /* Because skip_white_pixels can look as many as 4 bytes ahead, */
     /* we need to allow 4 extra bytes at the end of the row buffers. */
-    ss->lbuf = gs_alloc_bytes(st->memory, raster + 4, "CFE lbuf");
+    ss->lbufstart = gs_alloc_bytes(st->memory, raster + 8, "CFE lbuf");
     ss->lcode = gs_alloc_bytes(st->memory, code_bytes, "CFE lcode");
-    if (ss->lbuf == 0 || ss->lcode == 0) {
+    if (ss->lbufstart == 0 || ss->lcode == 0) {
         s_CFE_release(st);
         return ERRC;
 /****** WRONG ******/
     }
+    ss->lbuf = ss->lbufstart + 4;
     memset(ss->lbuf + raster, 0, 4); /* to pacify Valgrind */
     if (ss->K != 0) {
-        ss->lprev = gs_alloc_bytes(st->memory, raster + 4, "CFE lprev");
-        if (ss->lprev == 0) {
+        ss->lprevstart = gs_alloc_bytes(st->memory, raster + 8, "CFE lprev");
+        if (ss->lprevstart == 0) {
             s_CFE_release(st);
             return ERRC;
 /****** WRONG ******/
         }
+        ss->lprev = ss->lprevstart + 4;
         /* Clear the initial reference line for 2-D encoding. */
         /* Make sure it is terminated properly. */
         memset(ss->lprev, (ss->BlackIs1 ? 0 : 0xff), raster + 4); /* +4 to pacify Valgrind */
@@ -186,9 +188,9 @@ s_CFE_release(stream_state * st)
 {
     stream_CFE_state *const ss = (stream_CFE_state *) st;
 
-    gs_free_object(st->memory, ss->lprev, "CFE lprev(close)");
+    gs_free_object(st->memory, ss->lprevstart, "CFE lprev(close)");
     gs_free_object(st->memory, ss->lcode, "CFE lcode(close)");
-    gs_free_object(st->memory, ss->lbuf, "CFE lbuf(close)");
+    gs_free_object(st->memory, ss->lbufstart, "CFE lbuf(close)");
 }
 
 /* Flush the buffer */
@@ -206,6 +208,10 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
     int raster = ss->raster;
     byte end_mask = 1 << (-ss->Columns & 7);
     int status = 0;
+
+    /* Update the pointers we actually use, in case GC moved the buffer */
+    ss->lbuf = ss->lbufstart + 4;
+    ss->lprev = ss->lprevstart + 4;
 
     for (;;) {
         stream_cursor_write w;
@@ -326,9 +332,12 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
         if (ss->K != 0) {
             /* In 2-D modes, swap the current and previous scan lines. */
             byte *temp = ss->lbuf;
+            byte *temp1 = ss->lbufstart;
 
             ss->lbuf = ss->lprev;
+            ss->lbufstart = ss->lprevstart;
             ss->lprev = temp;
+            ss->lprevstart = temp1;
         }
         /* Note that the input buffer needs refilling. */
         ss->read_count = raster;
