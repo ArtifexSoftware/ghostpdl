@@ -40,9 +40,11 @@
         int DecodedByteAlign;\
                 /* The init procedure sets the following. */\
         uint raster;\
+        byte *lbufstart; /* current line buffer, including pre-buffer slop to prevent underruns */\
         byte *lbuf;		/* current scan line buffer */\
                                 /* (only if decoding or 2-D encoding) */\
         byte *lprev;		/* previous scan line buffer (only if 2-D) */\
+        byte *lprevstart; /* current line buffer, including pre-buffer slop to prevent underruns */\
                 /* The following are updated dynamically. */\
         int k_left		/* number of next rows to encode in 2-D */\
                                 /* (only if K > 0) */
@@ -67,7 +69,7 @@ typedef struct stream_CF_state_s {
    (ss)->DecodedByteAlign = 1,\
    (ss)->ErrsAsEOD = false,\
         /* Clear pointers */\
-   (ss)->lbuf = 0, (ss)->lprev = 0,\
+   (ss)->lbuf = (ss)->lbufstart = 0, (ss)->lprev = (ss)->lprevstart = 0,\
         /* Clear errors */\
    (ss)->error_string[0] = 0)
 
@@ -85,7 +87,7 @@ typedef struct stream_CFE_state_s {
 
 #define private_st_CFE_state()	/* in scfe.c */\
   gs_private_st_ptrs3(st_CFE_state, stream_CFE_state, "CCITTFaxEncode state",\
-    cfe_enum_ptrs, cfe_reloc_ptrs, lbuf, lprev, lcode)
+    cfe_enum_ptrs, cfe_reloc_ptrs, lbufstart, lprevstart, lcode)
 #define s_CFE_set_defaults_inline(ss)\
   (s_CF_set_defaults_inline(ss), (ss)->lcode = 0)
 extern const stream_template s_CFE_template;
@@ -121,7 +123,7 @@ typedef struct stream_CFD_state_s {
 
 #define private_st_CFD_state()	/* in scfd.c */\
   gs_private_st_ptrs2(st_CFD_state, stream_CFD_state, "CCITTFaxDecode state",\
-    cfd_enum_ptrs, cfd_reloc_ptrs, lbuf, lprev)
+    cfd_enum_ptrs, cfd_reloc_ptrs, lbufstart, lprevstart)
 #define s_CFD_set_defaults_inline(ss)\
   s_CF_set_defaults_inline(ss)
 extern const stream_template s_CFD_template;

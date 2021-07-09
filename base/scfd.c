@@ -62,20 +62,24 @@ s_CFD_init(stream_state * st)
     s_hcd_init_inline(ss);
     /* Because skip_white_pixels can look as many as 4 bytes ahead, */
     /* we need to allow 4 extra bytes at the end of the row buffers. */
-    ss->lbuf = gs_alloc_bytes(st->memory, raster + CFD_BUFFER_SLOP, "CFD lbuf");
+    ss->lbufstart = gs_alloc_bytes(st->memory, raster + CFD_BUFFER_SLOP * 2, "CFD lbuf");
     ss->lprev = 0;
-    if (ss->lbuf == 0)
+    if (ss->lbufstart == 0)
         return ERRC;		/****** WRONG ******/
+    ss->lbuf = ss->lbufstart + CFD_BUFFER_SLOP;
+    memset(ss->lbufstart, 0xaa, CFD_BUFFER_SLOP);
     memset(ss->lbuf, white, raster);
     memset(ss->lbuf + raster, 0xaa, CFD_BUFFER_SLOP);  /* for Valgrind */
     if (ss->K != 0) {
-        ss->lprev = gs_alloc_bytes(st->memory, raster + CFD_BUFFER_SLOP, "CFD lprev");
-        if (ss->lprev == 0)
+        ss->lprevstart = gs_alloc_bytes(st->memory, raster + CFD_BUFFER_SLOP * 2, "CFD lprev");
+        if (ss->lprevstart == 0)
             return ERRC;	/****** WRONG ******/
+        ss->lprev = ss->lprevstart + CFD_BUFFER_SLOP;
         /* Clear the initial reference line for 2-D encoding. */
         memset(ss->lprev, white, raster);
         /* Ensure that the scan of the reference line will stop. */
         memset(ss->lprev + raster, 0xaa, CFD_BUFFER_SLOP);
+        memset(ss->lprevstart, 0xaa, CFD_BUFFER_SLOP);
     }
     ss->k_left = min(ss->K, 0);
     ss->run_color = 0;
@@ -98,8 +102,8 @@ s_CFD_release(stream_state * st)
 {
     stream_CFD_state *const ss = (stream_CFD_state *) st;
 
-    gs_free_object(st->memory, ss->lprev, "CFD lprev(close)");
-    gs_free_object(st->memory, ss->lbuf, "CFD lbuf(close)");
+    gs_free_object(st->memory, ss->lprevstart, "CFD lprev(close)");
+    gs_free_object(st->memory, ss->lbufstart, "CFD lbuf(close)");
 }
 
 /* Declare the variables that hold the state. */
@@ -211,7 +215,7 @@ static inline int invert_data(stream_CFD_state *ss, stream_cursor_read *pr, int 
     cfd_load_state();
     (void)rlimit;
 
-    if (q >= ss->lbuf + ss->raster + CFD_BUFFER_SLOP) {
+    if (q >= ss->lbuf + ss->raster + CFD_BUFFER_SLOP || q < ss->lbufstart) {
         return(-1);
     }
 
@@ -300,7 +304,11 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
 
 #endif
 
-  top:
+    /* Update the pointers we actually use, in case GC moved the buffer */
+    ss->lbuf = ss->lbufstart + CFD_BUFFER_SLOP;
+    ss->lprev = ss->lprevstart + CFD_BUFFER_SLOP;
+
+top:
 #ifdef DEBUG
     {
         hcd_declare_state;
@@ -370,9 +378,12 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
             goto ck_eol;	/* handle EOD if it is present */
         if (ss->K != 0) {
             byte *prev_bits = ss->lprev;
+            byte *prev_start = ss->lprevstart;
 
             ss->lprev = ss->lbuf;
+            ss->lprevstart = ss->lbufstart;
             ss->lbuf = prev_bits;
+            ss->lbufstart = prev_start;
             if (ss->K > 0)
                 k_left = (k_left == 0 ? ss->K : k_left) - 1;
         }
