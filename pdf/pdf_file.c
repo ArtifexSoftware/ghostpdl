@@ -298,8 +298,11 @@ static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stre
     (*new_stream)->strm = source;
     source = *new_stream;
 
-    if (d && d->type == PDF_DICT)
+    if (d && d->type == PDF_DICT) {
         code = pdfi_Predictor_filter(ctx, d, source, new_stream);
+        if (code < 0)
+            pdfi_close_filter_chain(ctx, source, NULL);
+    }
     return code;
 }
 
