@@ -341,8 +341,13 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
 
             if (start + end >= ctx->xref_table->xref_size) {
                 code = resize_xref(ctx, start + end);
-                if (code < 0)
+                if (code < 0) {
+                    pdfi_countdown(a);
+                    pdfi_close_file(ctx, XRefStrm);
+                    pdfi_countdown(ctx->xref_table);
+                    ctx->xref_table = NULL;
                     return code;
+                }
             }
 
             code = read_xref_stream_entries(ctx, XRefStrm, start, start + end - 1, (uint64_t *)W);
