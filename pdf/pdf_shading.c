@@ -312,12 +312,12 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
 
     code = pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
     if (code < 0)
-        return code;
+        goto build_mesh_shading_error;
 
     code = pdfi_build_shading_function(ctx, &params->Function, (const float *)NULL, 1,
                                        shading_dict, page_dict);
     if (code < 0 && code != gs_error_undefined)
-        return code;
+        goto build_mesh_shading_error;
 
     code = pdfi_dict_get_int(ctx, shading_dict, "BitsPerCoordinate", &i);
     if (code < 0)
