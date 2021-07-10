@@ -576,6 +576,34 @@ int pdfi_page_get_dict(pdf_context *ctx, uint64_t page_num, pdf_dict **dict)
     if (code < 0)
         return code;
 
+    if (ctx->PagesTree == NULL) {
+        pdf_obj *o = NULL;
+        pdf_name *n = NULL;
+        /* The only way this should be true is if the Pages entry in the Root dictionary
+         * points to a single instance of a Page dictionary, instead of to a Pages dictionary.
+         * in which case, simply retrieve that dictionary and return.
+         */
+        code = pdfi_dict_get(ctx, ctx->Root, "Pages", &o);
+        if (code < 0)
+            goto page_error;
+        if (o->type != PDF_DICT) {
+            code = gs_note_error(gs_error_typecheck);
+            goto page_error;
+        }
+        code = pdfi_dict_get_type(ctx, (pdf_dict *)o, "Type", PDF_NAME, (pdf_obj **)&n);
+        if (code == 0) {
+            if(pdfi_name_is(n, "Page")) {
+                *dict = (pdf_dict *)o;
+                pdfi_countup(*dict);
+            } else
+                code = gs_note_error(gs_error_undefined);
+        }
+page_error:
+        pdfi_countdown(o);
+        pdfi_countdown(n);
+        return code;
+    }
+
     code = pdfi_loop_detector_add_object(ctx, ctx->PagesTree->object_num);
     if (code < 0)
         goto exit;

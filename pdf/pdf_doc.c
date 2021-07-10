@@ -155,13 +155,31 @@ int pdfi_read_Pages(pdf_context *ctx)
         dmprintf(ctx->memory, "\n");
 
     /* Acrobat allows the Pages Count to be a floating point number (!) */
-    /* TODO: sample w_a.PDF from Bug688419 (not on the cluster, maybe it should be?) has no /Count entry.
-     * gs recovers with an error "**** Warning:  No /Pages node. The document /Root points directly to a page."
-     * AR also is able to read it.
-     * We should deal with this, emit warning, and do something sane.
+    /* sample w_a.PDF from Bug688419 (not on the cluster, maybe it should be?) has no /Count entry because
+     * The Root dictionary Pages key points directly to a single dictionary of type /Page. This is plainly
+     * illegal but Acrobat can deal with it. We do so by ignoring the error her, and adding logic in
+     * pdfi_get_page_dict() which notes that ctx->PagesTree is NULL and tries to get the single Page
+     * dictionary from the Root instead of using the PagesTree.
      */
     code = pdfi_dict_get_number(ctx, (pdf_dict *)o1, "Count", &d);
     if (code < 0) {
+        if (code == gs_error_undefined) {
+            pdf_name *n = NULL;
+            /* It may be that the Root dictionary Pages entry points directly to a sinlge Page dictionary
+             * See if the dictionary has a Type of /Page, if so don't throw an error and the pdf_page.c
+             * logic in pdfi_get_page_dict() logic will take care of it.
+             */
+            code = pdfi_dict_get_type(ctx, (pdf_dict *)o1, "Type", PDF_NAME, (pdf_obj **)&n);
+            if (code == 0) {
+                if(pdfi_name_is(n, "Page")) {
+                    ctx->num_pages = 1;
+                    code = 0;
+                }
+                else
+                    code = gs_error_undefined;
+                pdfi_countdown(n);
+            }
+        }
         pdfi_countdown(o1);
         return code;
     }
