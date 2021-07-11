@@ -968,12 +968,12 @@ currentdict dup /Dpush .undef /Dpop .undef
   n
 } bind executeonly def
 /b { closepath B* } bind executeonly def
-/n { end { currentpoint } stopped not { pop pop clip } if newpath } bind executeonly def
+/n { end .currentpoint_valid { clip } if newpath } bind executeonly def
 end readonly def
 /W { //Wdict begin } bind executeonly def
 /W*dict 8 dict dup begin
 Wdict { def } forall
-/n { end { currentpoint } stopped not { pop pop eoclip } if newpath } bind executeonly def
+/n { end .currentpoint_valid { eoclip } if newpath } bind executeonly def
 end readonly def
 /W* { //W*dict begin } bind executeonly def
 % ---------------- Text control ---------------- %
@@ -1064,7 +1064,8 @@ end readonly def
 /settextposition {
                 % Update the TextMatrix translation.
   gsave TextSaveMatrix setmatrix
-  {currentpoint} stopped not {
+  .currentpoint_valid {
+    currentpoint
     .currenttextrise
     sub
     matrix .currenttextmatrix
@@ -1112,6 +1113,9 @@ end readonly def
 } bind executeonly odef
 
 /BT {
+  % Bug 703996 has a path defined before BT, then stroked afterwards
+  .currentpoint_valid { //false upath } { //null } ifelse
+  /BT_upath gput
   //false /illegal_BT gput
   currentdict /TextSaveMatrix known {
     (   **** Error: illegal nested BT operator detected.\n)
@@ -1160,10 +1164,8 @@ end readonly def
 
 /clip_if_required {
     .currenttextrenderingmode 4 ge
-    {currentpoint} //.internalstopped exec
-    {//false}
-    {pop pop //true}
-    ifelse and
+    .currentpoint_valid
+    and
     { .currentfilladjust2 0 dup .setfilladjust2 clip .setfilladjust2} if
     newpath
 } bind def
@@ -1190,6 +1192,7 @@ end readonly def
   %% in a nested text block (inside a gsave).
   currentdict /qTextSaveMatrix known not {
     switch_to_normal_marking_ops
+    currentdict /BT_upath get dup //null eq { pop } { newpath uappend } ifelse
   } if
 } bind executeonly def
 

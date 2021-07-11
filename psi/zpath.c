@@ -52,6 +52,19 @@ zcurrentpoint(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* - .currentpoint_valid <bool> */
+static int
+zcurrentpoint_valid(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_point pt;
+    int code = gs_currentpoint(igs, &pt);
+
+    push(1);
+    make_bool(op, code == 0);
+    return 0;
+}
+
 /* <x> <y> moveto - */
 int
 zmoveto(i_ctx_t *i_ctx_p)
@@ -163,6 +176,7 @@ const op_def zpath_op_defs[] =
     {"0clip", zclip},
     {"0closepath", zclosepath},
     {"0currentpoint", zcurrentpoint},
+    {"0.currentpoint_valid", zcurrentpoint_valid},
     {"6curveto", zcurveto},
     {"0eoclip", zeoclip},
     {"0initclip", zinitclip},
