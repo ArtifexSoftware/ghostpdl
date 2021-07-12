@@ -768,23 +768,39 @@ static void
 static void
      cdnj500_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
+/* This decoding to RGB and conversion to CMYK simulates what */
+/* gx_default_decode_color does without calling the map_color_rgb method. */
+static int
+cdj670_compatible_cmyk_decode_color(gx_device *dev, gx_color_index color, gx_color_value cv[4])
+{
+    int i, code = gdev_cmyk_map_color_rgb(dev, color, cv);
+    gx_color_value min_val = gx_max_color_value;
+
+    for (i = 0; i < 3; i++) {
+        if ((cv[i] = gx_max_color_value - cv[i]) < min_val)
+            min_val = cv[i];
+    }
+    for (i = 0; i < 3; i++)
+        cv[i] -= min_val;
+    cv[3] = min_val;
+
+    return code;
+}
+
+
 static void
 cdj670_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs(dev);
 
     set_dev_proc(dev, open_device, hp_colour_open);
-    set_dev_proc(dev, map_rgb_color, NULL);
+    set_dev_proc(dev, map_rgb_color, gx_error_encode_color);
     set_dev_proc(dev, map_color_rgb, gdev_cmyk_map_color_rgb);
     set_dev_proc(dev, get_params, cdj850_get_params);
     set_dev_proc(dev, put_params, cdj850_put_params);
     set_dev_proc(dev, map_cmyk_color, gdev_cmyk_map_cmyk_color);
-
-    /* The static init used in previous versions of the code leaves
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gdev_cmyk_map_cmyk_color);
+    set_dev_proc(dev, decode_color, cdj670_compatible_cmyk_decode_color);
 }
 
 static void
@@ -797,13 +813,9 @@ cdj1600_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, map_color_rgb, gdev_pcl_map_color_rgb);
     set_dev_proc(dev, get_params, cdj850_get_params);
     set_dev_proc(dev, put_params, cdj850_put_params);
-    set_dev_proc(dev, map_cmyk_color, NULL);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, map_cmyk_color, gx_error_encode_color);
+    set_dev_proc(dev, encode_color, gdev_pcl_map_rgb_color);
+    set_dev_proc(dev, decode_color, gdev_pcl_map_color_rgb);
 }
 
 static void
@@ -816,13 +828,9 @@ chp2200_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, map_color_rgb, gx_default_rgb_map_color_rgb);
     set_dev_proc(dev, get_params, cdj850_get_params);
     set_dev_proc(dev, put_params, cdj850_put_params);
-    set_dev_proc(dev, map_cmyk_color, NULL);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, map_cmyk_color, gx_error_encode_color);
+    set_dev_proc(dev, encode_color, gx_default_rgb_map_rgb_color);
+    set_dev_proc(dev, decode_color, gx_default_rgb_map_color_rgb);
 }
 
 const gx_device_cdj850 gs_cdj670_device =
