@@ -33,14 +33,26 @@
 int pdfi_read_Root(pdf_context *ctx)
 {
     pdf_obj *o, *o1;
+    pdf_dict *d;
     int code;
 
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Reading Root dictionary\n");
 
-    code = pdfi_dict_get(ctx, ctx->Trailer, "Root", &o1);
-    if (code < 0)
+    /* Unusual code. This is because if the entry in the trailer dictionary causes
+     * us to repair the file, the Trailer dictionary in the context can be replaced.
+     * This counts it down and frees it, potentially while pdfi_dict_get is still
+     * using it! Rather than countup and down in the dict_get routine, which is
+     * normally unnecessary, count it up and down round the access here.
+     */
+    d = ctx->Trailer;
+    pdfi_countup(d);
+    code = pdfi_dict_get(ctx, d, "Root", &o1);
+    if (code < 0) {
+        pdfi_countdown(d);
         return code;
+    }
+    pdfi_countdown(d);
 
     if (o1->type == PDF_INDIRECT) {
         code = pdfi_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
