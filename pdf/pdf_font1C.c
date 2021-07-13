@@ -376,7 +376,7 @@ static int
 pdfi_cff_cid_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd, int *pfidx)
 {
     int code = 0;
-    pdf_cidfont_type0 *pdffont1 = (pdf_cidfont_type0 *) pbfont->client_data;
+    pdf_cidfont_type0 *pdffont9 = (pdf_cidfont_type0 *) pbfont->client_data;
     gs_font_cid0 *gscidfont = (gs_font_cid0 *) pbfont;
     pdf_name *glyphname = NULL;
     pdf_string *charstring = NULL;
@@ -391,16 +391,16 @@ pdfi_cff_cid_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *p
     else
         gid = glyph - GS_MIN_CID_GLYPH;
 
-    if (pdffont1->cidtogidmap.size > (gid << 1) + 1) {
-        gid = pdffont1->cidtogidmap.data[gid << 1] << 8 | pdffont1->cidtogidmap.data[(gid << 1) + 1];
+    if (pdffont9->cidtogidmap.size > (gid << 1) + 1) {
+        gid = pdffont9->cidtogidmap.data[gid << 1] << 8 | pdffont9->cidtogidmap.data[(gid << 1) + 1];
     }
 
     l = snprintf(nbuf, 64, "%" PRId64, gid);
 
-    code = pdfi_name_alloc(pdffont1->ctx, (byte *) nbuf, l, (pdf_obj **) &glyphname);
+    code = pdfi_name_alloc(pdffont9->ctx, (byte *) nbuf, l, (pdf_obj **) &glyphname);
     if (code >= 0) {
         pdfi_countup(glyphname);
-        code = pdfi_dict_get_by_key(pdffont1->ctx, pdffont1->CharStrings, glyphname, (pdf_obj **) &charstring);
+        code = pdfi_dict_get_by_key(pdffont9->ctx, pdffont9->CharStrings, glyphname, (pdf_obj **) &charstring);
         if (code >= 0 && charstring->length > 1) {
             if (gscidfont->cidata.FDBytes == 0)
                 *pfidx = 0;
@@ -413,6 +413,52 @@ pdfi_cff_cid_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *p
     pdfi_countdown(charstring);
     pdfi_countdown(glyphname);
 
+    return code;
+}
+
+static int
+pdfi_cidtype2_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+                     int members, gs_glyph_info_t *info)
+{
+    int code;
+    pdf_cidfont_type0 *pdffont9 = (pdf_cidfont_type0 *)font->client_data;
+    code = (*pdffont9->orig_glyph_info)(font, glyph, pmat, members, info);
+    if (code < 0)
+        return code;
+
+    if ((members & GLYPH_INFO_WIDTHS) != 0
+      && glyph > GS_MIN_CID_GLYPH
+      && glyph < GS_MIN_GLYPH_INDEX) {
+        double widths[6] = {0};
+        code = pdfi_get_cidfont_glyph_metrics(font, (glyph - GS_MIN_CID_GLYPH), widths, true);
+        if (code >= 0) {
+            if (pmat == NULL) {
+                info->width[0].x = widths[GLYPH_W0_WIDTH_INDEX] / 1000.0;
+                info->width[0].y = widths[GLYPH_W0_HEIGHT_INDEX] / 1000.0;
+            }
+            else {
+                code = gs_point_transform(widths[GLYPH_W0_WIDTH_INDEX] / 1000.0, widths[GLYPH_W0_HEIGHT_INDEX] / 1000.0, pmat, &info->width[0]);
+                if (code < 0)
+                    return code;
+            }
+            info->members |= GLYPH_INFO_WIDTH0;
+
+            if ((members & GLYPH_INFO_WIDTH1) != 0
+                && (widths[GLYPH_W1_WIDTH_INDEX] != 0
+                || widths[GLYPH_W1_HEIGHT_INDEX] != 0)) {
+                if (pmat == NULL) {
+                    info->width[1].x = widths[GLYPH_W1_WIDTH_INDEX] / 1000.0;
+                    info->width[1].y = widths[GLYPH_W1_HEIGHT_INDEX] / 1000.0;
+                }
+                else {
+                    code = gs_point_transform(widths[GLYPH_W1_WIDTH_INDEX] / 1000.0, widths[GLYPH_W1_HEIGHT_INDEX] / 1000.0, pmat, &info->width[1]);
+                    if (code < 0)
+                        return code;
+                }
+                info->members |= GLYPH_INFO_WIDTH1;
+            }
+        }
+    }
     return code;
 }
 
@@ -2025,6 +2071,9 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 pfont->procs.glyph_outline = pdfi_cff_glyph_outline;
                 pfont->cidata.glyph_data = pdfi_cff_cid_glyph_data;
 
+                cffcid->orig_glyph_info = pfont->procs.glyph_info;
+                pfont->procs.glyph_info = pdfi_cidtype2_glyph_info;
+
                 pfont->cidata.proc_data = NULL;
                 pfont->FAPI = NULL;
                 pfont->base = (gs_font *) cffcid->pfont;
@@ -2178,6 +2227,10 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 pfont->cidata.glyph_data = pdfi_cff_cid_glyph_data;
                 pfont->cidata.common.CIDCount = cffpriv.pdfcffpriv.CharStrings->entries;
                 pfont->cidata.common.MaxCID = cffpriv.pdfcffpriv.CharStrings->entries;
+
+                cffcid->orig_glyph_info = pfont->procs.glyph_info;
+                pfont->procs.glyph_info = pdfi_cidtype2_glyph_info;
+
 
                 pfdfont->FAPI = NULL;
                 pfdfont->base = (gs_font *)pfdfont;

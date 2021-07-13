@@ -29,8 +29,7 @@
 #include "gxfont42.h"
 #include "gxfcid.h"
 
-static int
-pdfi_cidtype2_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
+static int pdfi_cidtype2_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
                   const byte ** pdata)
 {
     pdf_cidfont_type2 *ttfont = (pdf_cidfont_type2 *)pfont->client_data;
@@ -46,19 +45,134 @@ pdfi_cidtype2_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
     return code;
 }
 
-static int
-pdfi_cidtype2_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
+static int pdfi_cidtype2_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 {
-    return (int)(glyph - GS_MIN_CID_GLYPH);
+    pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)pfont->client_data;
+    uint gid = glyph - GS_MIN_CID_GLYPH;
+
+    if (pdffont11->cidtogidmap.size > (gid << 1) + 1) {
+        gid = pdffont11->cidtogidmap.data[gid << 1] << 8 | pdffont11->cidtogidmap.data[(gid << 1) + 1];
+    }
+
+    return (int)gid;
 }
 
-/* This should replace the glyph metrics with the ones from the PDF */
+static uint pdfi_cidtype2_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
+{
+    pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)pfont->client_data;
+    uint gid;
+
+    if (glyph < GS_MIN_CID_GLYPH) {
+        gid = 0;
+    }
+    else {
+        if (glyph < GS_MIN_GLYPH_INDEX) {
+            gid = glyph - GS_MIN_CID_GLYPH;
+            if (pdffont11->cidtogidmap.size > 0) {
+                gid = pdffont11->cidtogidmap.data[gid << 1] << 8 | pdffont11->cidtogidmap.data[(gid << 1) + 1];
+            }
+        }
+        else {
+            gid = (uint)(glyph - GS_MIN_GLYPH_INDEX);
+        }
+    }
+
+    return gid;
+}
+
 static int
 pdfi_cidtype2_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
-                     int members, gs_glyph_info_t *info) {
+                     int members, gs_glyph_info_t *info)
+{
     int code;
     pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)font->client_data;
     code = (*pdffont11->orig_glyph_info)(font, glyph, pmat, members, info);
+    if (code < 0)
+        return code;
+
+    if ((members & GLYPH_INFO_WIDTHS) != 0
+      && glyph > GS_MIN_CID_GLYPH
+      && glyph < GS_MIN_GLYPH_INDEX) {
+        double widths[6] = {0};
+        code = pdfi_get_cidfont_glyph_metrics(font, (glyph - GS_MIN_CID_GLYPH), widths, true);
+        if (code >= 0) {
+            if (pmat == NULL) {
+                info->width[0].x = widths[GLYPH_W0_WIDTH_INDEX] / 1000.0;
+                info->width[0].y = widths[GLYPH_W0_HEIGHT_INDEX] / 1000.0;
+            }
+            else {
+                code = gs_point_transform(widths[GLYPH_W0_WIDTH_INDEX] / 1000.0, widths[GLYPH_W0_HEIGHT_INDEX] / 1000.0, pmat, &info->width[0]);
+                if (code < 0)
+                    return code;
+            }
+            info->members |= GLYPH_INFO_WIDTH0;
+
+            if ((members & GLYPH_INFO_WIDTH1) != 0
+                && (widths[GLYPH_W1_WIDTH_INDEX] != 0
+                || widths[GLYPH_W1_HEIGHT_INDEX] != 0)) {
+                if (pmat == NULL) {
+                    info->width[1].x = widths[GLYPH_W1_WIDTH_INDEX] / 1000.0;
+                    info->width[1].y = widths[GLYPH_W1_HEIGHT_INDEX] / 1000.0;
+                }
+                else {
+                    code = gs_point_transform(widths[GLYPH_W1_WIDTH_INDEX] / 1000.0, widths[GLYPH_W1_HEIGHT_INDEX] / 1000.0, pmat, &info->width[1]);
+                    if (code < 0)
+                        return code;
+                }
+                info->members |= GLYPH_INFO_WIDTH1;
+            }
+        }
+    }
+    return code;
+}
+
+static int
+pdfi_cidtype2_enumerate_glyph(gs_font *font, int *pindex,
+                         gs_glyph_space_t glyph_space, gs_glyph *pglyph)
+{
+    int code = 0;
+    gs_font_cid2 *cid2 = (gs_font_cid2 *)font;
+    pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)font->client_data;
+    *pglyph = 0;
+
+    if (*pindex <= 0)
+        *pindex = 0;
+
+    if (pdffont11->cidtogidmap.size > 0) {
+        do {
+            *pglyph = pdffont11->cidtogidmap.data[(*pindex) << 1] << 8 | pdffont11->cidtogidmap.data[((*pindex) << 1) + 1];
+            (*pindex)++;
+            if (*pglyph == 0 && *pindex == 1) /* notdef - special case */
+                break;
+        } while (*pglyph == 0 && ((*pindex) << 1) < pdffont11->cidtogidmap.size);
+
+        if (((*pindex) << 1) >= pdffont11->cidtogidmap.size) {
+            *pindex = 0;
+        }
+        else {
+            if (*pglyph != 0 || (*pglyph == 0 && *pindex == 1)) {
+                if (glyph_space == GLYPH_SPACE_INDEX) {
+                    *pglyph += GS_MIN_GLYPH_INDEX;
+                }
+                else {
+                    *pglyph = (*pindex) + GS_MIN_CID_GLYPH;
+                }
+            }
+        }
+    }
+    else {
+        if (*pindex < cid2->cidata.common.CIDCount) {
+           if (glyph_space == GLYPH_SPACE_INDEX) {
+               *pglyph = *pindex + GS_MIN_GLYPH_INDEX;
+           }
+           else {
+               *pglyph = (*pindex) + GS_MIN_CID_GLYPH;
+           }
+        }
+        else {
+            *pindex = 0;
+        }
+    }
 
     return code;
 }
@@ -155,6 +269,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     int code = 0;
     pdf_obj *fontdesc = NULL;
     pdf_obj *obj = NULL;
+    gs_font_cid2 *cid2;
 
     *ppfont = NULL;
 
@@ -254,8 +369,26 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
     font->orig_glyph_info = font->pfont->procs.glyph_info;
     font->pfont->procs.glyph_info = pdfi_cidtype2_glyph_info;
+    font->pfont->procs.enumerate_glyph = pdfi_cidtype2_enumerate_glyph;
 
-    ((gs_font_type42 *)font->pfont)->data.substitute_glyph_index_vertical = gs_type42_substitute_glyph_index_vertical;
+    cid2 = (gs_font_cid2 *)font->pfont;
+    if (font->cidtogidmap.size > 0) {
+        gs_font_cid2 *cid2 = (gs_font_cid2 *)font->pfont;
+        if (cid2->data.numGlyphs > font->cidtogidmap.size >> 1)
+            cid2->cidata.common.CIDCount = cid2->data.numGlyphs;
+        else {
+            cid2->cidata.common.CIDCount = font->cidtogidmap.size >> 1;
+        }
+        cid2->cidata.common.MaxCID = cid2->cidata.common.CIDCount;
+    }
+    else {
+        gs_font_cid2 *cid2 = (gs_font_cid2 *)font->pfont;
+        cid2->cidata.common.CIDCount = cid2->data.numGlyphs;
+        cid2->cidata.common.MaxCID = cid2->cidata.common.CIDCount;
+    }
+    cid2->data.substitute_glyph_index_vertical = gs_type42_substitute_glyph_index_vertical;
+    cid2->cidata.orig_procs.get_outline = cid2->data.get_outline;
+    cid2->data.get_glyph_index = pdfi_cidtype2_get_glyph_index;
 
     code = gs_definefont(ctx->font_dir, (gs_font *)font->pfont);
     if (code < 0) {

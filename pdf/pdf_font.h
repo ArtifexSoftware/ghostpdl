@@ -92,4 +92,14 @@ int pdfi_font_set_internal_name(pdf_context *ctx, pdf_name *fontname, double poi
 bool pdfi_font_known_symbolic(pdf_obj *basefont);
 
 
+enum {
+  GLYPH_W0_WIDTH_INDEX = 0,
+  GLYPH_W0_HEIGHT_INDEX = 1,
+  GLYPH_W1_WIDTH_INDEX = 2,
+  GLYPH_W1_HEIGHT_INDEX = 3,
+  GLYPH_W1_V_X_INDEX = 4,
+  GLYPH_W1_V_Y_INDEX = 5
+};
+
+int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths, bool vertical);
 #endif
