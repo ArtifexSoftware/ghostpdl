@@ -2307,9 +2307,9 @@ stc_cmyk_map_color_rgb(gx_device *pdev, gx_color_index color, gx_color_value cv[
    c = stc_expand(sd,0, color & l);
 
    k = gx_max_color_value - k;
-   c = k - c; if (c < 0) c = 0;
-   m = k - m; if (m < 0) c = 0;
-   y = k - c; if (y < 0) c = 0;
+   c = (k < c) ? 0 : k - c;
+   m = (k < m) ? 0 : k - m;
+   y = (k < c) ? 0 : k - c;
 
    cv[0] = c;
    cv[1] = m;
