@@ -196,8 +196,8 @@ typedef struct
  */
 
 
-#define MIN_CLIP_LIMIT (fixed2int(min_fixed)/2)
-#define MAX_CLIP_LIMIT (fixed2int(max_fixed)/2)
+#define MIN_CLIP_LIMIT ((int)(fixed2int(min_fixed)/2))
+#define MAX_CLIP_LIMIT ((int)(fixed2int(max_fixed)/2))
 
 static int not_clipped_away(const gs_point *p)
 {
