@@ -1801,11 +1801,14 @@ all_error:
         if (o->type == PDF_ARRAY) {
             ArrayAlternate = (pdf_array *)o;
             code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt, inline_image);
-            if (code < 0)
+            if (code < 0) {
+                pdfi_countdown(o);
                 goto pdfi_devicen_error;
+            }
         }
         else {
             code = gs_error_typecheck;
+            pdfi_countdown(o);
             goto pdfi_devicen_error;
         }
     }
