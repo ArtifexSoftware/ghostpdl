@@ -943,6 +943,14 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
     dbgmprintf(ctx->memory, "pdfi_do_image_smask BEGIN\n");
 #endif
 
+    pdfi_loop_detector_mark(ctx);
+
+    if (image_info->SMask->object_num != 0) {
+        if (pdfi_loop_detector_check_object(ctx, image_info->SMask->object_num))
+            return gs_note_error(gs_error_circular_reference);
+        pdfi_loop_detector_add_object(ctx, image_info->SMask->object_num);
+    }
+
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
 
     code = pdfi_image_get_matte(ctx, image_info->SMask, params.Matte, GS_CLIENT_COLOR_MAX_COMPONENTS);
@@ -997,6 +1005,7 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image_smask END\n");
 #endif
+    pdfi_loop_detector_cleartomark(ctx);
     return code;
 }
 
