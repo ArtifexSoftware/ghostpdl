@@ -82,7 +82,12 @@ int pdfi_mark_stack(pdf_context *ctx, pdf_obj_type type)
         return_error(gs_error_typecheck);
 
     code = pdfi_object_alloc(ctx, type, 0, &o);
+    if (code < 0)
+        return code;
+
     code = pdfi_push(ctx, o);
+    if (code < 0)
+        pdfi_free_object(o);
     return code;
 }
 
