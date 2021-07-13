@@ -612,22 +612,35 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     gs_function_params_t params;
     pdf_dict *stream_dict;
 
+    params.Range = params.Domain = NULL;
+
+    pdfi_loop_detector_mark(ctx);
+
+    if (stream_obj->object_num != 0) {
+        if (pdfi_loop_detector_check_object(ctx, stream_obj->object_num))
+            return gs_note_error(gs_error_circular_reference);
+        pdfi_loop_detector_add_object(ctx, stream_obj->object_num);
+    }
+
     code = pdfi_dict_from_obj(ctx, stream_obj, &stream_dict);
     if (code < 0)
-        return code;
+        goto sub_function_error;
 
     code = pdfi_dict_get_int(ctx, stream_dict, "FunctionType", &Type);
     if (code < 0)
-        return code;
-    if (Type < 0 || Type > 4 || Type == 1)
-        return_error(gs_error_rangecheck);
+        goto sub_function_error;
+
+    if (Type < 0 || Type > 4 || Type == 1) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto sub_function_error;
+    }
 
     memset(&params, 0x00, sizeof(gs_function_params_t));
 
     /* First gather all the entries common to all functions */
     code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Domain, stream_dict, "Domain");
     if (code < 0)
-        return code;
+        goto sub_function_error;
 
     if (code & 1) {
         code = gs_error_rangecheck;
@@ -689,11 +702,13 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
         default:
             break;
     }
+    pdfi_loop_detector_cleartomark(ctx);
     return 0;
 
 sub_function_error:
     gs_free_const_object(ctx->memory, params.Domain, "pdfi_build_sub_function (Domain) error exit\n");
     gs_free_const_object(ctx->memory, params.Range, "pdfi_build_sub_function(Range) error exit\n");
+    pdfi_loop_detector_cleartomark(ctx);
     return code;
 }
 
