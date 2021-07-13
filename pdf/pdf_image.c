@@ -1860,9 +1860,7 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_c_
 error:
     pdfi_countdown(image_stream);
     pdfi_countdown(d);
-    if (code < 0 && ctx->args.pdfstoponerror)
-        return code;
-    return 0;
+    return code;
 }
 
 int pdfi_EI(pdf_context *ctx)
@@ -2255,9 +2253,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image_or_form END\n");
 #endif
-    if (code < 0 && ctx->args.pdfstoponerror)
-        return code;
-    return 0;
+    return code;
 }
 
 int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
@@ -2338,7 +2334,5 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     /* No need to countdown 'n' because that points to the stack object, and we're going to pop that */
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);
-    if (code < 0 && ctx->args.pdfstoponerror)
-        return code;
-    return 0;
+    return code;
 }

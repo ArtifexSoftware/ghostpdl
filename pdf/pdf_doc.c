@@ -1222,9 +1222,7 @@ static int pdfi_doc_EmbeddedFiles(pdf_context *ctx)
     pdfi_countdown(Names);
     pdfi_countdown(EmbeddedFiles);
     pdfi_countdown(Names_array);
-    if (code < 0 && ctx->args.pdfstoponerror)
-        return code;
-    return 0;
+    return code;
 }
 
 /* Handle some bookkeeping related to AcroForm (and annotations)
