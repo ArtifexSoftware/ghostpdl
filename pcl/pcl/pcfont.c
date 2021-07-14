@@ -678,7 +678,6 @@ pcl_unload_resident_fonts(pcl_state_t * pcs)
 static int
 pcfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
-    int code;
 
     if ((type & pcl_reset_initial) != 0) {
         pcs->font_dir = gs_font_dir_alloc(pcs->memory);
@@ -686,12 +685,6 @@ pcfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             return_error(gs_error_VMerror);
         if (pcs->nocache)
             gs_setcachelimit(pcs->font_dir, 0);
-        /* disable hinting at high res */
-        if (gs_currentdevice(pcs->pgs)->HWResolution[0] >= 300) {
-            code = gs_setgridfittt(pcs->font_dir, 0);
-            if (code < 0)
-                return code;
-        }
         pcs->font = 0;
         pcs->font_selection[0].font = pcs->font_selection[1].font = 0;
         pcs->font_selected = primary;
