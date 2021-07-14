@@ -599,6 +599,7 @@ int pdfi_page_get_dict(pdf_context *ctx, uint64_t page_num, pdf_dict **dict)
                 code = gs_note_error(gs_error_undefined);
         }
 page_error:
+        pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
         pdfi_countdown(n);
         return code;

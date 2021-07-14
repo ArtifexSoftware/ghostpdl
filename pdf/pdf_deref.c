@@ -1021,9 +1021,8 @@ int pdfi_resolve_indirect_loop_detect(pdf_context *ctx, pdf_obj *parent, pdf_obj
         if (code < 0) goto exit;
     }
     code = pdfi_resolve_indirect(ctx, value, false);
-    if (code < 0) goto exit;
-    (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
 
  exit:
+    (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
     return code;
 }

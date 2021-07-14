@@ -355,9 +355,8 @@ int pdfi_mark_object(pdf_context *ctx, pdf_obj *object, const char *cmd)
         goto exit;
 
     code = pdfi_mark_write_string(ctx, &param_string, cmd);
-    if (code < 0)
-        goto exit;
- exit:
+
+exit:
     if (param_string.data != NULL)
         gs_free_object(ctx->memory, (byte *)param_string.data, "free data transferred to param_string in pdfi_mark_object\n");
     return code;

@@ -1520,7 +1520,7 @@ static void pdfi_free_halftone(gs_memory_t *memory, void *data, client_name_t cn
 
 static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone *pht)
 {
-    int code, str_len, comp_number;
+    int code, code1, str_len, comp_number;
     int64_t type;
     char *str = NULL;
     bool known = false;
@@ -1544,13 +1544,17 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         return code;
     }
 
-    if (ctx->loop_detection)
-        pdfi_loop_detector_mark(ctx);
-    code = pdfi_dict_first(ctx, halftone_dict, &Key, &Value, &index);
-    if (ctx->loop_detection)
-        pdfi_loop_detector_cleartomark(ctx);
+    code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         goto error;
+    code = pdfi_dict_first(ctx, halftone_dict, &Key, &Value, &index);
+    code1 = pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0)
+        goto error;
+    if (code1 < 0) {
+        code = code1;
+        goto error;
+    }
 
     /* First establish the number of components from the halftone which we will use.
      * If the component number is GX_DEVICE_COLOR_MAX_COMPONENTS then its the default,
@@ -1580,14 +1584,18 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         pdfi_countdown(Key);
         pdfi_countdown(Value);
         Key = Value = NULL;
-        if (ctx->loop_detection)
-            pdfi_loop_detector_mark(ctx);
 
-        code = pdfi_dict_next(ctx, halftone_dict, &Key, &Value, &index);
-        if (ctx->loop_detection)
-            pdfi_loop_detector_cleartomark(ctx);
-        if (code < 0 && code != gs_error_undefined)
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
             goto error;
+        code = pdfi_dict_next(ctx, halftone_dict, &Key, &Value, &index);
+        code1 = pdfi_loop_detector_cleartomark(ctx);
+        if (code < 0  && code != gs_error_undefined)
+            goto error;
+        else if (code1 < 0) {
+            code = code1;
+            goto error;
+        }
     } while (code >= 0);
 
     if (NumComponents > 0) {
@@ -1609,13 +1617,17 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         }
     }
 
-    if (ctx->loop_detection)
-        pdfi_loop_detector_mark(ctx);
-    code = pdfi_dict_first(ctx, halftone_dict, &Key, &Value, &index);
-    if (ctx->loop_detection)
-        pdfi_loop_detector_cleartomark(ctx);
+    code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         goto error;
+    code = pdfi_dict_first(ctx, halftone_dict, &Key, &Value, &index);
+    code1 = pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0)
+        goto error;
+    else if (code1 < 0) {
+        code = code1;
+        goto error;
+    }
 
     ix = 0;
     do {
@@ -1700,14 +1712,18 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         pdfi_countdown(Key);
         pdfi_countdown(Value);
         Key = Value = NULL;
-        if (ctx->loop_detection)
-            pdfi_loop_detector_mark(ctx);
 
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            goto error;
         code = pdfi_dict_next(ctx, halftone_dict, &Key, &Value, &index);
-        if (ctx->loop_detection)
-            pdfi_loop_detector_cleartomark(ctx);
+        code1 = pdfi_loop_detector_cleartomark(ctx);
         if (code < 0 && code != gs_error_undefined)
             goto error;
+        else if (code1 < 0) {
+            code = code1;
+            goto error;
+        }
     } while (code >= 0);
     code = 0;
 
@@ -2238,7 +2254,7 @@ int pdfi_set_ExtGState(pdf_context *ctx, pdf_dict *stream_dict,
 int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_name *n;
-    pdf_obj *o;
+    pdf_obj *o = NULL;
     int code=0, code1 = 0;
 
     code = pdfi_loop_detector_mark(ctx);
@@ -2246,31 +2262,30 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return code;
 
     if (pdfi_count_stack(ctx) < 1) {
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        return_error(gs_error_stackunderflow);
+        code = gs_note_error(gs_error_stackunderflow);
+        goto setgstate_error;
     }
     n = (pdf_name *)ctx->stack_top[-1];
     if (n->type != PDF_NAME) {
         pdfi_pop(ctx, 1);
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        return_error(gs_error_typecheck);
+        code = gs_note_error(gs_error_typecheck);
+        goto setgstate_error;
     }
 
     code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", n, (pdf_dict *)stream_dict,
                               page_dict, &o);
     pdfi_pop(ctx, 1);
-    if (code < 0) {
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        return code;
-    }
+    if (code < 0)
+        goto setgstate_error;
+
     if (o->type != PDF_DICT) {
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        pdfi_countdown(o);
-        return_error(gs_error_typecheck);
+        code = gs_note_error(gs_error_typecheck);
+        goto setgstate_error;
     }
 
     code = pdfi_set_ExtGState(ctx, stream_dict, page_dict, (pdf_dict *)o);
 
+setgstate_error:
     code1 = pdfi_loop_detector_cleartomark(ctx);
     if (code == 0) code = code1;
 

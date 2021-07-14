@@ -943,7 +943,9 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
     dbgmprintf(ctx->memory, "pdfi_do_image_smask BEGIN\n");
 #endif
 
-    pdfi_loop_detector_mark(ctx);
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
 
     if (image_info->SMask->object_num != 0) {
         if (pdfi_loop_detector_check_object(ctx, image_info->SMask->object_num))
@@ -2262,16 +2264,16 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdf_name *n = NULL;
     pdf_obj *o = NULL;
     pdf_dict *sdict = NULL;
-    bool clear_loop_detect = false, known = false;
+    bool known = false;
 
     if (pdfi_count_stack(ctx) < 1) {
         code = gs_note_error(gs_error_stackunderflow);
-        goto exit;
+        goto exit1;
     }
     n = (pdf_name *)ctx->stack_top[-1];
     if (n->type != PDF_NAME) {
         code = gs_note_error(gs_error_typecheck);
-        goto exit;
+        goto exit1;
     }
 
     if (ctx->text.BlockDepth != 0)
@@ -2279,8 +2281,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
-        goto exit;
-    clear_loop_detect = true;
+        goto exit1;
     code = pdfi_find_resource(ctx, (unsigned char *)"XObject", n, (pdf_dict *)stream_dict, page_dict, &o);
     if (code < 0)
         goto exit;
@@ -2325,12 +2326,11 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit;
 
  exit:
-    if (clear_loop_detect) {
-        if (code < 0)
-            (void)pdfi_loop_detector_cleartomark(ctx);
-        else
-            code = pdfi_loop_detector_cleartomark(ctx);
-    }
+    if (code < 0)
+        (void)pdfi_loop_detector_cleartomark(ctx);
+    else
+        code = pdfi_loop_detector_cleartomark(ctx);
+exit1:
     /* No need to countdown 'n' because that points to the stack object, and we're going to pop that */
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);

@@ -614,7 +614,9 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
 
     params.Range = params.Domain = NULL;
 
-    pdfi_loop_detector_mark(ctx);
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
 
     if (stream_obj->object_num != 0) {
         if (pdfi_loop_detector_check_object(ctx, stream_obj->object_num))
