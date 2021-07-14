@@ -267,12 +267,9 @@ lxm3200_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, map_color_rgb, lxm3200_map_color_rgb);
     set_dev_proc(dev, get_params, lxm3200_get_params);
     set_dev_proc(dev, put_params, lxm3200_put_params);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, map_cmyk_color, gx_error_encode_color);
+    set_dev_proc(dev, encode_color, lxm3200_map_rgb_color);
+    set_dev_proc(dev, decode_color, lxm3200_map_color_rgb);
 }
 
 /* Define an extension (subclass) of gx_device_printer. */

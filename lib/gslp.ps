@@ -38,10 +38,13 @@
 %	--detect
 %		treat the file as PostScript if it starts with %!
 %	--first-page <n>
-%     --duplex(|-long-edge|-short-edge)
-%             use duplex if available; if not specified, select long edge
-%             for portrait printing, short edge for landscape
+%	--duplex(|-long-edge|-short-edge)
+%		use duplex if available; if not specified, select long edge
+%		for portrait printing, short edge for landscape
 %		start printing at page <n>
+%	--encoding <encodingname>	default ISOLatin1Encoding
+%		Note this only takes effect during -f or -F option thus the
+%		body text and header text can use different encodings.
 %	--kern <file.afm>
 %		kern using information from the given .AFM file
 %	--last-page <n>
@@ -60,17 +63,26 @@
 /lpdict 150 dict def
 lpdict begin
 
-% build iso-latin-1 version of a font
-/font-to-iso-latin-1 {	% <font> font-to-iso-latin-1 <font>
+/encoding /ISOLatin1Encoding def	% the default encoding
+
+% build a version of the font with the requested encoding (default ISOLatin1)
+/font-to-encoding {	% <font> font-to-encoding <font>
     %% reencode for iso latin1; from the 2nd edition red book, sec 5.6.1
     dup length dict begin {1 index /FID ne {def} {pop pop} ifelse} forall
-    /Encoding ISOLatin1Encoding def currentdict end
-    dup /FontName get 80 string cvs (-ISOLatin1) concatstrings cvn
+    /Encoding encoding /Encoding findresource readonly def
+    currentdict end
+    % strip off the "Encoding" part of the encoding (if present)
+    dup /FontName get 80 string cvs
+    encoding 256 string cvs (Encoding) search {
+      exch pop exch pop
+    } if
+    exch (-) concatstrings exch
+    concatstrings cvn
     exch definefont
 } def
 
 /find-latin-font {	% <name> find-latin-font <font>
-  findfont font-to-iso-latin-1
+  findfont font-to-encoding
 } def
 
 % Define the initial values of the printing parameters.
@@ -409,9 +421,9 @@ lpdict begin
   /S {currentfile =string readline pop show} lpdef
   /RE {		% <isoname> <fontname> RE <font>
     findfont
-        %% reencode for iso latin1; from the 2nd edition red book, sec 5.6.1
+        %% reencode for current 'encoding' from the 2nd edition red book, sec 5.6.1
     dup length dict begin {1 index /FID ne {def} {pop pop} ifelse} forall
-    /Encoding ISOLatin1Encoding def currentdict end
+    /Encoding encoding def currentdict end
     definefont
   } lpdef
 } def
@@ -597,6 +609,7 @@ lpdict begin
 /--duplex { /Duplex {Landscape} def } def
 /--duplex-long-edge { /Duplex false def } def
 /--duplex-short-edge { /Duplex true def } def
+/--encoding { cvn /encoding exch def } def
 /--first-page { cvi /PageFirst exch def } def
 /--footing-center { /FootingCenter exch def   /Footers true def } def
 /--footing-left { /FootingLeft exch def   /Footers true def } def

@@ -510,6 +510,25 @@ typedef struct
     terminate_page\
 }
 
+/* This decoding to RGB and conversion to CMYK simulates what */
+/* gx_default_decode_color does without calling the map_color_rgb method. */
+static int
+cdj970_compatible_cmyk_decode_color(gx_device *dev, gx_color_index color, gx_color_value cv[4])
+{
+    int i, code = gdev_cmyk_map_color_rgb(dev, color, cv);
+    gx_color_value min_val = gx_max_color_value;
+
+    for (i = 0; i < 3; i++) {
+        if ((cv[i] = gx_max_color_value - cv[i]) < min_val)
+            min_val = cv[i];
+    }
+    for (i = 0; i < 3; i++)
+        cv[i] -= min_val;
+    cv[3] = min_val;
+
+    return code;
+}
+
 static void
 cdj970_initialize_device_procs(gx_device *dev)
 {
@@ -517,17 +536,13 @@ cdj970_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, open_device, hp_colour_open);
     set_dev_proc(dev, close_device, cdj970_close);
-    set_dev_proc(dev, map_rgb_color, NULL);
+    set_dev_proc(dev, map_rgb_color, gx_error_encode_color);
     set_dev_proc(dev, map_color_rgb, gdev_cmyk_map_color_rgb);
     set_dev_proc(dev, get_params, cdj970_get_params);
     set_dev_proc(dev, put_params, cdj970_put_params);
     set_dev_proc(dev, map_cmyk_color, gdev_cmyk_map_cmyk_color);
-
-    /* The static init used in previous versions of the code leave
-     * encode_color and decode_color set to NULL (which are then rewritten
-     * by the system to the default. For compatibility we do the same. */
-    set_dev_proc(dev, encode_color, NULL);
-    set_dev_proc(dev, decode_color, NULL);
+    set_dev_proc(dev, encode_color, gdev_cmyk_map_cmyk_color);
+    set_dev_proc(dev, decode_color, cdj970_compatible_cmyk_decode_color);
 }
 
 static void

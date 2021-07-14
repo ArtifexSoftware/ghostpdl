@@ -175,6 +175,165 @@ typedef struct A_fill_state_s {
 
 /* Note t0 and t1 vary over [0..1], not the Domain. */
 
+typedef struct
+{
+    patch_curve_t curve[4];
+    gs_point corners[4];
+} corners_and_curves;
+
+/* Ghostscript cannot possibly render any patch whose bounds aren't
+ * representable in fixed's. In fact, this is a larger limit than
+ * we need. We notionally have an area defined by coordinates
+ * that can be represented in fixed point with at least 1 bit to
+ * spare.
+ *
+ * Any patch that lies completely outside this region can be clipped
+ * away. Any patch that isn't representable by fixed points can be
+ * subdivided into 4.
+ *
+ * This avoids us subdividing patches huge numbers of times because
+ * one side is just outside the region we will accept.
+ */
+
+
+#define MIN_CLIP_LIMIT ((int)(fixed2int(min_fixed)/2))
+#define MAX_CLIP_LIMIT ((int)(fixed2int(max_fixed)/2))
+
+static int not_clipped_away(const gs_point *p)
+{
+    if (p[0].x < MIN_CLIP_LIMIT &&
+        p[1].x < MIN_CLIP_LIMIT &&
+        p[2].x < MIN_CLIP_LIMIT &&
+        p[3].x < MIN_CLIP_LIMIT)
+        return 0; /* Clipped away! */
+    if (p[0].x > MAX_CLIP_LIMIT &&
+        p[1].x > MAX_CLIP_LIMIT &&
+        p[2].x > MAX_CLIP_LIMIT &&
+        p[3].x > MAX_CLIP_LIMIT)
+        return 0; /* Clipped away! */
+    if (p[0].y < MIN_CLIP_LIMIT &&
+        p[1].y < MIN_CLIP_LIMIT &&
+        p[2].y < MIN_CLIP_LIMIT &&
+        p[3].y < MIN_CLIP_LIMIT)
+        return 0; /* Clipped away! */
+    if (p[0].y > MAX_CLIP_LIMIT &&
+        p[1].y > MAX_CLIP_LIMIT &&
+        p[2].y > MAX_CLIP_LIMIT &&
+        p[3].y > MAX_CLIP_LIMIT)
+        return 0; /* Clipped away! */
+    return 1;
+}
+
+#define f_fits_in_fixed(f) f_fits_in_bits(f, fixed_int_bits)
+
+static int
+A_fill_region_floats(patch_fill_state_t *pfs1, corners_and_curves *cc, int depth)
+{
+    corners_and_curves sub[4];
+    int code;
+
+    if (depth == 32)
+        return gs_error_limitcheck;
+
+    if (depth > 0 &&
+        f_fits_in_fixed(cc->corners[0].x) &&
+        f_fits_in_fixed(cc->corners[0].y) &&
+        f_fits_in_fixed(cc->corners[1].x) &&
+        f_fits_in_fixed(cc->corners[1].y) &&
+        f_fits_in_fixed(cc->corners[2].x) &&
+        f_fits_in_fixed(cc->corners[2].y) &&
+        f_fits_in_fixed(cc->corners[3].x) &&
+        f_fits_in_fixed(cc->corners[3].y))
+    {
+        cc->curve[0].vertex.p.x = float2fixed(cc->corners[0].x);
+        cc->curve[0].vertex.p.y = float2fixed(cc->corners[0].y);
+        cc->curve[1].vertex.p.x = float2fixed(cc->corners[1].x);
+        cc->curve[1].vertex.p.y = float2fixed(cc->corners[1].y);
+        cc->curve[2].vertex.p.x = float2fixed(cc->corners[2].x);
+        cc->curve[2].vertex.p.y = float2fixed(cc->corners[2].y);
+        cc->curve[3].vertex.p.x = float2fixed(cc->corners[3].x);
+        cc->curve[3].vertex.p.y = float2fixed(cc->corners[3].y);
+        cc->curve[0].vertex.cc[1] = cc->curve[1].vertex.cc[1] =
+                                    cc->curve[2].vertex.cc[1] =
+                                    cc->curve[3].vertex.cc[1] = 0;
+        make_other_poles(cc->curve);
+        return patch_fill(pfs1, cc->curve, NULL, NULL);
+    }
+
+    /* We have patches with corners:
+     *  0  1
+     *  3  2
+     * We subdivide these into 4 smaller patches:
+     *
+     *  0   10   1     Where 0123 are corners
+     *   [0]  [1]      [0][1][2][3] are patches.
+     *  3   23   2
+     *  0   10   1
+     *   [3]  [2]
+     *  3   23   2
+     */
+
+    sub[0].corners[0].x = cc->corners[0].x;
+    sub[0].corners[0].y = cc->corners[0].y;
+    sub[1].corners[1].x = cc->corners[1].x;
+    sub[1].corners[1].y = cc->corners[1].y;
+    sub[2].corners[2].x = cc->corners[2].x;
+    sub[2].corners[2].y = cc->corners[2].y;
+    sub[3].corners[3].x = cc->corners[3].x;
+    sub[3].corners[3].y = cc->corners[3].y;
+    sub[1].corners[0].x = sub[0].corners[1].x = (cc->corners[0].x + cc->corners[1].x)/2;
+    sub[1].corners[0].y = sub[0].corners[1].y = (cc->corners[0].y + cc->corners[1].y)/2;
+    sub[3].corners[2].x = sub[2].corners[3].x = (cc->corners[2].x + cc->corners[3].x)/2;
+    sub[3].corners[2].y = sub[2].corners[3].y = (cc->corners[2].y + cc->corners[3].y)/2;
+    sub[3].corners[0].x = sub[0].corners[3].x = (cc->corners[0].x + cc->corners[3].x)/2;
+    sub[3].corners[0].y = sub[0].corners[3].y = (cc->corners[0].y + cc->corners[3].y)/2;
+    sub[2].corners[1].x = sub[1].corners[2].x = (cc->corners[1].x + cc->corners[2].x)/2;
+    sub[2].corners[1].y = sub[1].corners[2].y = (cc->corners[1].y + cc->corners[2].y)/2;
+    sub[0].corners[2].x = sub[1].corners[3].x =
+                          sub[2].corners[0].x =
+                          sub[3].corners[1].x = (sub[0].corners[3].x + sub[1].corners[2].x)/2;
+    sub[0].corners[2].y = sub[1].corners[3].y =
+                          sub[2].corners[0].y =
+                          sub[3].corners[1].y = (sub[0].corners[3].y + sub[1].corners[2].y)/2;
+    sub[0].curve[0].vertex.cc[0] = sub[0].curve[3].vertex.cc[0] =
+                                   sub[3].curve[0].vertex.cc[0] =
+                                   sub[3].curve[3].vertex.cc[0] = cc->curve[0].vertex.cc[0];
+    sub[1].curve[1].vertex.cc[0] = sub[1].curve[2].vertex.cc[0] =
+                                   sub[2].curve[1].vertex.cc[0] =
+                                   sub[2].curve[2].vertex.cc[0] = cc->curve[1].vertex.cc[0];
+    sub[0].curve[1].vertex.cc[0] = sub[0].curve[2].vertex.cc[0] =
+                                   sub[1].curve[0].vertex.cc[0] =
+                                   sub[1].curve[3].vertex.cc[0] =
+                                   sub[2].curve[0].vertex.cc[0] =
+                                   sub[2].curve[3].vertex.cc[0] =
+                                   sub[3].curve[1].vertex.cc[0] =
+                                   sub[3].curve[2].vertex.cc[0] = (cc->curve[0].vertex.cc[0] + cc->curve[1].vertex.cc[0])/2;
+
+    depth++;
+    if (not_clipped_away(sub[0].corners)) {
+        code = A_fill_region_floats(pfs1, &sub[0], depth);
+        if (code < 0)
+            return code;
+    }
+    if (not_clipped_away(sub[1].corners)) {
+        code = A_fill_region_floats(pfs1, &sub[1], depth);
+        if (code < 0)
+            return code;
+    }
+    if (not_clipped_away(sub[2].corners)) {
+        code = A_fill_region_floats(pfs1, &sub[2], depth);
+        if (code < 0)
+            return code;
+    }
+    if (not_clipped_away(sub[3].corners)) {
+        code = A_fill_region_floats(pfs1, &sub[3], depth);
+        if (code < 0)
+            return code;
+    }
+
+    return 0;
+}
+
 static int
 A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
 {
@@ -184,31 +343,60 @@ A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
     double x1 = psh->params.Coords[0] + pfs->delta.x * pfs->v1;
     double y1 = psh->params.Coords[1] + pfs->delta.y * pfs->v1;
     double h0 = pfs->u0, h1 = pfs->u1;
-    patch_curve_t curve[4];
+    corners_and_curves cc;
     int code;
 
-    code = gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
+    double dx0 = pfs->delta.x * h0;
+    double dy0 = pfs->delta.y * h0;
+    double dx1 = pfs->delta.x * h1;
+    double dy1 = pfs->delta.y * h1;
+
+    cc.curve[0].vertex.cc[0] = pfs->t0; /* The element cc[1] is set to a dummy value against */
+    cc.curve[1].vertex.cc[0] = pfs->t1; /* interrupts while an idle priocessing in gxshade.6.c .  */
+    cc.curve[2].vertex.cc[0] = pfs->t1;
+    cc.curve[3].vertex.cc[0] = pfs->t0;
+    cc.curve[0].vertex.cc[1] = 0; /* The element cc[1] is set to a dummy value against */
+    cc.curve[1].vertex.cc[1] = 0; /* interrupts while an idle priocessing in gxshade.6.c .  */
+    cc.curve[2].vertex.cc[1] = 0;
+    cc.curve[3].vertex.cc[1] = 0;
+    cc.corners[0].x = x0 + dy0;
+    cc.corners[0].y = y0 - dx0;
+    cc.corners[1].x = x1 + dy0;
+    cc.corners[1].y = y1 - dx0;
+    cc.corners[2].x = x1 + dy1;
+    cc.corners[2].y = y1 - dx1;
+    cc.corners[3].x = x0 + dy1;
+    cc.corners[3].y = y0 - dx1;
+    code = gs_point_transform2fixed(&pfs1->pgs->ctm, cc.corners[0].x, cc.corners[0].y, &cc.curve[0].vertex.p);
+    if (code < 0)
+        goto fail;
+    code = gs_point_transform2fixed(&pfs1->pgs->ctm, cc.corners[1].x, cc.corners[1].y, &cc.curve[1].vertex.p);
+    if (code < 0)
+        goto fail;
+    code = gs_point_transform2fixed(&pfs1->pgs->ctm, cc.corners[2].x, cc.corners[2].y, &cc.curve[2].vertex.p);
+    if (code < 0)
+        goto fail;
+    code = gs_point_transform2fixed(&pfs1->pgs->ctm, cc.corners[3].x, cc.corners[3].y, &cc.curve[3].vertex.p);
+    if (code < 0)
+        goto fail;
+    make_other_poles(cc.curve);
+    return patch_fill(pfs1, cc.curve, NULL, NULL);
+fail:
+    if (code != gs_error_limitcheck)
+        return code;
+    code = gs_point_transform(cc.corners[0].x, cc.corners[0].y, (const gs_matrix *)&pfs1->pgs->ctm, &cc.corners[0]);
     if (code < 0)
         return code;
-    code = gs_point_transform2fixed(&pfs1->pgs->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
+    code = gs_point_transform(cc.corners[1].x, cc.corners[1].y, (const gs_matrix *)&pfs1->pgs->ctm, &cc.corners[1]);
     if (code < 0)
         return code;
-    code = gs_point_transform2fixed(&pfs1->pgs->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
+    code = gs_point_transform(cc.corners[2].x, cc.corners[2].y, (const gs_matrix *)&pfs1->pgs->ctm, &cc.corners[2]);
     if (code < 0)
         return code;
-    code = gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
+    code = gs_point_transform(cc.corners[3].x, cc.corners[3].y, (const gs_matrix *)&pfs1->pgs->ctm, &cc.corners[3]);
     if (code < 0)
         return code;
-    curve[0].vertex.cc[0] = pfs->t0; /* The element cc[1] is set to a dummy value against */
-    curve[1].vertex.cc[0] = pfs->t1; /* interrupts while an idle priocessing in gxshade.6.c .  */
-    curve[2].vertex.cc[0] = pfs->t1;
-    curve[3].vertex.cc[0] = pfs->t0;
-    curve[0].vertex.cc[1] = 0; /* The element cc[1] is set to a dummy value against */
-    curve[1].vertex.cc[1] = 0; /* interrupts while an idle priocessing in gxshade.6.c .  */
-    curve[2].vertex.cc[1] = 0;
-    curve[3].vertex.cc[1] = 0;
-    make_other_poles(curve);
-    return patch_fill(pfs1, curve, NULL, NULL);
+    return A_fill_region_floats(pfs1, &cc, 0);
 }
 
 static inline int

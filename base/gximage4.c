@@ -66,7 +66,7 @@ gx_begin_image4(gx_device * dev,
                 const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                 gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
-    gx_image_enum *penum;
+    gx_image_enum *penum = NULL;
     const gs_image4_t *pim = (const gs_image4_t *)pic;
     int code = gx_image_enum_alloc(pic, prect, mem, &penum);
 
@@ -109,6 +109,7 @@ gx_begin_image4(gx_device * dev,
     if (code >= 0)
         *pinfo = (gx_image_enum_common_t *)penum;
     else {
+        gs_free_object(mem, penum, "gx_begin_image4");
         *pinfo = NULL;
     }
     return code;
