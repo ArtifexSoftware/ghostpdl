@@ -453,7 +453,8 @@ ref_stack_pop(ref_stack_t *pstack, uint count)
 {
     uint used;
 
-    while ((used = pstack->p + 1 - pstack->bot) < count) {
+    while ((used = pstack->p + 1 - pstack->bot) <= count &&
+            pstack->extension_used > 0) {
         count -= used;
         pstack->p = pstack->bot - 1;
         ref_stack_pop_block(pstack);
