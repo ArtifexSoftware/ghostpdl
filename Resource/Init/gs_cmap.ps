@@ -366,7 +366,7 @@
     4 -1 roll           % <prefix> <param'> <key> <cid>
     .endmapvalue        % <prefix> <param'> <key> <hex_cid> <font_idx>
     % prefix params keys value fontindex
-    counttomark 5 gt { % 2 (or more) ranges (1 range = 5 item)
+    counttomark 9 gt { % 2 (or more) ranges (1 range = 5 item)
        4 index 10 index eq      % compare prefix
        4 index 10 index eq and  % compare params
        1 index 7 index eq and   % compare fontindex
@@ -479,7 +479,7 @@
                 % See if we can merge with the previous value.
                 % The prefix, params, and font index must match.
     % prefix params keys value fontindex
-    counttomark 5 gt { % 2 (or more) ranges (1 range = 5 item)
+    counttomark 9 gt { % 2 (or more) ranges (1 range = 5 item)
        4 index 10 index eq	% compare prefix
        4 index 10 index eq and	% compare params
        1 index 7 index eq and	% compare fontindex
