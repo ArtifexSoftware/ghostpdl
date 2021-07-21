@@ -388,6 +388,21 @@ static int pdfi_LZW_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream
     return 0;
 }
 
+static int PS_JPXD_PassThrough(void *d, byte *Buffer, int Size)
+{
+    gx_device *dev = (gx_device *)d;
+
+    if (Buffer == NULL) {
+        if (Size == 0)
+            dev_proc(dev, dev_spec_op)(dev, gxdso_JPX_passthrough_end, NULL, 0);
+        else
+            dev_proc(dev, dev_spec_op)(dev, gxdso_JPX_passthrough_begin, NULL, 0);
+    } else {
+        dev_proc(dev, dev_spec_op)(dev, gxdso_JPX_passthrough_data, Buffer, Size);
+    }
+    return 0;
+}
+
 /*
  * dict -- the dict that contained the decoder (i.e. the image dict)
  * decode -- the decoder dict
@@ -402,6 +417,7 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
     pdf_obj *csobj = NULL;
     pdf_name *csname = NULL;
     bool alpha;
+    gx_device *dev = gs_currentdevice(ctx->pgs);
 
     state.memory = ctx->memory->non_gc_memory;
     if (s_jpxd_template.set_defaults)
@@ -490,6 +506,17 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
     if (csname)
         pdfi_countdown(csname);
 
+
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_JPX_passthrough_query, NULL, 0) > 0) {
+        state.StartedPassThrough = 0;
+        state.PassThrough = 1;
+        state.PassThroughfn = (PS_JPXD_PassThrough);
+        state.device = (void *)dev;
+    }
+    else {
+        state.PassThrough = 0;
+        state.device = (void *)NULL;
+    }
 
     code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_jpxd_template,
                             (const stream_state *)&state, ctx->memory->non_gc_memory, new_stream);
