@@ -1030,7 +1030,12 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                        the hex value from that.
                      */
                     if (GlyphName->length > 5 && !strncmp((char *)GlyphName->data, "uni", 3)) {
-                        sscanf((char *)(GlyphName->data + 3), "%x", &cc);
+                        char gnbuf[64];
+                        int l = (GlyphName->length - 3) > 63 ? 63 : GlyphName->length - 3;
+
+                        memcpy(gnbuf, GlyphName->data + 3, l);
+                        gnbuf[l] = '\0';
+                        sscanf(gnbuf, "%x", &cc);
                         cr->char_codes[0] = cc;
                     }
                     else {

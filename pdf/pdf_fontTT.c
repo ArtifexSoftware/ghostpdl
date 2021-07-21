@@ -150,7 +150,12 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
                the hex value from that.
              */
             if (gname.size > 5 && !strncmp((char *)gname.data, "uni", 3)) {
-                sscanf((char *)(gname.data + 3), "%x", &gind);
+                char gnbuf[64];
+                int l = (gname.size - 3) > 63 ? 63 : gname.size - 3;
+
+                memcpy(gnbuf, gname.data + 3, l);
+                gnbuf[l] = '\0';
+                sscanf(gnbuf, "%x", &gind);
                 (void)pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)gind, &cc);
             }
             else {
