@@ -712,7 +712,7 @@ static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *pa
             }
         }
     } else {
-        if (obj->type != PDF_DICT)
+        if (obj->type != PDF_DICT && obj->type != PDF_STREAM)
             return_error(gs_error_typecheck);
 
         code = pdfi_build_function(ctx, &pfn, NULL, 1, obj, page_dict);
@@ -801,7 +801,7 @@ static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *
             }
         }
     } else {
-        if (obj->type != PDF_DICT)
+        if (obj->type != PDF_DICT && obj->type != PDF_STREAM)
             return_error(gs_error_typecheck);
 
         code = pdfi_build_function(ctx, &pfn, NULL, 1, obj, page_dict);
