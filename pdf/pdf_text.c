@@ -501,14 +501,10 @@ text_params_error:
  * is why we reset the TEXT_DO_ fields after use.
  */
 
-/* Mode 0 - fill */
-static int pdfi_show_Tr_0(pdf_context *ctx, gs_text_params_t *text)
+static int pdfi_show_simple(pdf_context *ctx, gs_text_params_t *text)
 {
-    int code;
+    int code = 0;
     gs_text_enum_t *penum=NULL, *saved_penum=NULL;
-
-    /* just draw the text */
-    text->operation |= TEXT_DO_DRAW;
 
     code = gs_text_begin(ctx->pgs, text, ctx->memory, &penum);
     if (code >= 0) {
@@ -519,6 +515,19 @@ static int pdfi_show_Tr_0(pdf_context *ctx, gs_text_params_t *text)
         gs_text_release(ctx->pgs, penum, "pdfi_Tj");
         ctx->text.current_enum = saved_penum;
     }
+    return code;
+}
+
+/* Mode 0 - fill */
+static int pdfi_show_Tr_0(pdf_context *ctx, gs_text_params_t *text)
+{
+    int code;
+
+    /* just draw the text */
+    text->operation |= TEXT_DO_DRAW;
+
+    code = pdfi_show_simple(ctx, text);
+
     text->operation &= ~TEXT_DO_DRAW;
     return code;
 }
@@ -809,8 +818,10 @@ static int pdfi_show_Tr_preserve(pdf_context *ctx, gs_text_params_t *text)
         else
             text->operation = TEXT_FROM_BYTES | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
     }
+    else
+        text->operation |= TEXT_DO_DRAW;
 
-    code = pdfi_show_Tr_0(ctx, text);
+    code = pdfi_show_simple(ctx, text);
     if (code < 0)
         return code;
 
