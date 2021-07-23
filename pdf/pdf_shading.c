@@ -71,7 +71,11 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
             goto build_shading_function_error;
 
         for (i = 0; i < size; ++i) {
-            code = pdfi_array_get_type(ctx, (pdf_array *)o, i, PDF_DICT, &rsubfn);
+            code = pdfi_array_get(ctx, (pdf_array *)o, i, &rsubfn);
+            if (code == 0) {
+                if (rsubfn->type != PDF_DICT && rsubfn->type != PDF_STREAM)
+                    code = gs_note_error(gs_error_typecheck);
+            }
             if (code < 0) {
                 int j;
 
