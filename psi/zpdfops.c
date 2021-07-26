@@ -326,8 +326,10 @@ done:
  * as a t_struct.
  */
 typedef struct pdfctx_s {
-    pdf_context *ctx;
+    pdf_context *ctx;               /* Not exposed to garbager */
     stream *ps_stream;
+    gs_memory_t *pdf_memory;        /* The 'wrapped' memory allocator used by the PDF interpreter. Not exposed to garbager */
+    gs_memory_t *pdf_stream_memory; /* The memory allocator used to copy the PostScript stream to pdf_stream. Not exposed to garbager */
     stream *pdf_stream;
 } pdfctx_t;
 
@@ -350,9 +352,33 @@ static void
 pdfctx_finalize(const gs_memory_t *cmem, void *vptr)
 {
     pdfctx_t *pdfctx = vptr;
+    /* Finalize methods have to cope with the possibility of being called multiple times
+     *  on the same object - hence we null the entries.
+     */
 
-    if (cmem != NULL && pdfctx->ctx != NULL)
-        (void)pdfi_free_context(pdfctx->ctx);
+    if (cmem != NULL) {
+        if (pdfctx->ctx != NULL) {
+            if (pdfctx->pdf_stream) {
+                 memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
+                 gs_free_object(pdfctx->pdf_stream_memory, pdfctx->pdf_stream, "free PDF copy of stream");
+                 pdfctx->pdf_stream = NULL;
+            }
+
+            if (pdfctx->ps_stream) {
+                /* Detach the PostScript stream from the PDF context, otherwise the
+                 * free_context code will close the main stream.
+                 */
+                pdfctx->ctx->main_stream = NULL;
+            }
+            (void)pdfi_free_context(pdfctx->ctx);
+            pdfctx->ctx = NULL;
+        }
+        if (pdfctx->pdf_memory != NULL) {
+            /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
+            (void)gs_memory_chunk_unwrap(pdfctx->pdf_memory);
+            pdfctx->pdf_memory = NULL;
+        }
+    }
 }
 
 static int zPDFstream(i_ctx_t *i_ctx_p)
@@ -365,13 +391,21 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
     check_op(2);
 
     check_read_file(i_ctx_p, s, op - 1);
-    s->close_at_eod = false;
 
     check_type(*op, t_pdfctx);
     pdfctx = r_ptr(op, pdfctx_t);
 
+    /* If the supplied context already has a file open, signal an error */
+    if (pdfctx->ps_stream != NULL)
+        return_error(gs_error_ioerror);
+
+    s->close_at_eod = false;
     pdfctx->ps_stream = s;
     pdfctx->pdf_stream = s_alloc_immovable(imemory, "PDFstream copy of PS stream");
+    pdfctx->pdf_stream_memory = imemory;
+    if (pdfctx->pdf_stream == NULL)
+        return_error(gs_error_VMerror);
+
     *(pdfctx->pdf_stream) = *(pdfctx->ps_stream);
 
     code = pdfi_set_input_stream(pdfctx->ctx, pdfctx->pdf_stream);
@@ -379,6 +413,7 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
         memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
         gs_free_object(imemory, pdfctx->pdf_stream, "PDFstream copy of PS stream");
         pdfctx->pdf_stream = NULL;
+        pdfctx->ps_stream = NULL;
         return code;
     }
 
@@ -405,6 +440,10 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
     if (r_size(op - 1) > gp_file_name_sizeof - 2)
         return_error(gs_error_limitcheck);
 
+    /* If the supplied context already has a file open, signal an error */
+    if (pdfctx->ps_stream != NULL)
+        return_error(gs_error_ioerror);
+
     pdfctx->ps_stream = NULL;
 
     memcpy(pdffilename, (op - 1)->value.bytes, r_size(op - 1));
@@ -429,17 +468,22 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
     pdfctx = r_ptr(op, pdfctx_t);
 
     if (pdfctx->ctx != NULL) {
-        gs_memory_t *cmem = pdfctx->ctx->memory;
-
+        if (pdfctx->ps_stream) {
+            /* Detach the PostScript stream from the PDF context, otherwise the
+             * close code will close the main stream
+             */
+            pdfctx->ctx->main_stream = NULL;
+        }
         code = pdfi_free_context(pdfctx->ctx);
-        /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
-        (void)gs_memory_chunk_unwrap(cmem);
         pdfctx->ctx = NULL;
     }
-    if (pdfctx->ps_stream) {
-        *(pdfctx->ps_stream) = *(pdfctx->pdf_stream);
+    if (pdfctx->pdf_stream) {
         memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
+        gs_free_object(imemory, pdfctx->pdf_stream, "free copy of PostScript stream");
+        pdfctx->pdf_stream = NULL;
     }
+    if (pdfctx->ps_stream)
+        pdfctx->ps_stream = NULL;
     pop(1);
     return code;
 }
@@ -453,8 +497,8 @@ static int zPDFinfo(i_ctx_t *i_ctx_p)
     uint64_t TotalFiles = 0, ix = 0;
     char **names_array = NULL;
 
-    check_type(*(op - 1), t_pdfctx);
-    pdfctx = r_ptr(op - 1, pdfctx_t);
+    check_type(*(op), t_pdfctx);
+    pdfctx = r_ptr(op, pdfctx_t);
 
     code = dict_create(4, op);
     if (code < 0)
@@ -742,7 +786,10 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
         pop(2);
 
     pdfi_gstate_to_PS(pdfctx->ctx, igs, client_data, &procs);
-    code = gs_grestore(igs);
+    if (code == 0)
+        code = gs_grestore(igs);
+    else
+        (void)gs_grestore(igs);
     pdfctx->ctx->pgs = pgs;
 
     return code;
@@ -799,21 +846,24 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     if (code < 0)
         return_error(gs_error_VMerror);
 
+    pdfctx = gs_alloc_struct(imemory, pdfctx_t, &st_pdfctx_t, "PDFcontext");
+    if (!pdfctx) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+    pdfctx->pdf_memory = cmem;
+    pdfctx->ctx = NULL;
+    pdfctx->ps_stream = NULL;
+    pdfctx->pdf_stream = NULL;
+    pdfctx->pdf_stream_memory = NULL;
+
     ctx = pdfi_create_context(cmem);
     if (ctx == NULL) {
         code = gs_note_error(gs_error_VMerror);
         goto error;
     }
 
-    pdfctx = gs_alloc_struct(imemory, pdfctx_t, &st_pdfctx_t, "PDFcontext");
-    if (!pdfctx) {
-        code = gs_note_error(gs_error_VMerror);
-        goto error;
-    }
-
     pdfctx->ctx = ctx;
-    pdfctx->ps_stream = NULL;
-    pdfctx->pdf_stream = NULL;
     get_zfont_glyph_name((void **)&pdfctx->ctx->get_glyph_name);
     pdfctx->ctx->get_glyph_index = zpdfi_glyph_index;
 
@@ -1004,8 +1054,10 @@ error:
         pdfi_free_context(ctx);
     /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
     (void)gs_memory_chunk_unwrap(cmem);
-    if (pdfctx)
+    if (pdfctx) {
+        pdfctx->pdf_memory = NULL;
         gs_free_object(imemory, pdfctx, "PDFcontext");
+    }
     return code;
 }
 #else
