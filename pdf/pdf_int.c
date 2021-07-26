@@ -2066,8 +2066,6 @@ repaired_keyword:
                 default:
                     pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDSTREAM, "pdfi_interpret_content_stream", NULL);
                     pdfi_clearstack(ctx);
-                    code = gs_note_error(gs_error_typecheck);
-                    goto exit;
                     break;
             }
         }
