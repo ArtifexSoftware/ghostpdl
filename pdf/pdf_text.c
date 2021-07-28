@@ -1040,7 +1040,7 @@ int pdfi_Tj(pdf_context *ctx)
 {
     int code = 0;
     pdf_string *s = NULL;
-    gs_matrix saved, Trm, *matrix;
+    gs_matrix saved, Trm;
     gs_point initial_point, current_point, pt;
     double linewidth = ctx->pgs->line_params.half_width;
 
@@ -1076,7 +1076,7 @@ int pdfi_Tj(pdf_context *ctx)
          * the disconnect between pdfwrite and the interpreter, we also have to
          * remove the scaling due ot the resolution.
          */
-        gs_matrix devmatrix, ctm, matrix;
+        gs_matrix devmatrix, matrix;
         gx_device *device = gs_currentdevice(ctx->pgs);
 
         devmatrix.xx = 72.0 / device->HWResolution[0];
