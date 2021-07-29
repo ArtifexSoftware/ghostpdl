@@ -1529,7 +1529,6 @@ currentdict /EnablePageHandlerDevice undef
     %% hashing fonts to detect if fonts with the same name are from different files.
     %%
     dup currentglobal exch //true setglobal .getfilename exch setglobal /InputPDFFileName exch //pdfdict 3 1 roll .forceput
-
     //runpdfbegin exec
     //pdf_collection_files exec
     dup mark eq {
@@ -2003,6 +2002,11 @@ currentdict /xref-char-dict undef
 
 % Open a PDF file and read the header, trailer, and cross-reference.
 /pdfopen {        % <file> pdfopen <dict>
+  /NEWPDF where {/NEWPDF get} {//true} ifelse
+  {
+    newpdf_pdfopen
+  }
+  {
         % Color space substitution in PDF is handled somewhat differently
         % than in PostScript. A given device color space will be substituted
         % if the corresponding "Default..." entry exists in the Page's
@@ -2018,17 +2022,18 @@ currentdict /xref-char-dict undef
         % respectively. This is not done if UseCIEColor is true by default,
         % as in that case color substitution is presumably desired even
         % if the file does not request it.
-   currentpagedevice /UseCIEColor .knownget dup { pop } if not
+    currentpagedevice /UseCIEColor .knownget dup { pop } if not
     { .currentglobal //false .setglobal
       /DefaultGray { /DeviceGray } cvlit /ColorSpace defineresource pop
       /DefaultRGB { /DeviceRGB } cvlit /ColorSpace defineresource pop
       /DefaultCMYK { /DeviceCMYK } cvlit /ColorSpace defineresource pop
       .setglobal
     }
-   if
-  pdfopenfile dup begin
-  pdfopencache
-  currentdict end
+    if
+    pdfopenfile begin
+    pdfopencache
+    currentdict end
+  } ifelse
 } bind executeonly def
 
 /process_trailer_attrs {  % - process_trailer_attrs -
