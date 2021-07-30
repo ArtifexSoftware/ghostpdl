@@ -2310,6 +2310,7 @@ xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     /* Add the image relationship */
     code = xps_add_image_relationship(pie);
 
+    gs_free_object(pie->memory, pie, "xps_image_end_image");
 exit:
     return code;
 }

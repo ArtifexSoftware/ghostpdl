@@ -291,9 +291,6 @@ pxl_impl_init_job(pl_interp_implementation_t * impl,
 
     /* Do inits of gstate that may be reset by setdevice */
     gs_setaccuratecurves(pxli->pgs, true);      /* All H-P languages want accurate curves. */
-    /* disable hinting at high res */
-    if (gs_currentdevice(pxli->pgs)->HWResolution[0] >= 300)
-        gs_setgridfittt(pxs->font_dir, 0);
 
     /* gsave and grestore (among other places) assume that */
     /* there are at least 2 gstates on the graphics stack. */
