@@ -25,6 +25,7 @@
 #include "stream.h"
 #include "strimpl.h"
 #include "strmio.h"
+#include "simscale.h"   /* SIMScaleDecode */
 #include "szlibx.h"     /* Flate */
 #include "spngpx.h"     /* PNG Predictor */
 #include "spdiffx.h"    /* Horizontal differencing predictor */
@@ -279,6 +280,33 @@ int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_c_stream *source, pdf_c_strea
     return code;
 }
 #endif
+
+int pdfi_apply_imscale_filter(pdf_context *ctx, pdf_string *Key, int width, int height, pdf_c_stream *source, pdf_c_stream **new_stream)
+{
+    int code = 0;
+    stream_imscale_state state;
+    stream *new_s;
+
+    state.params.spp_decode = 1;
+    state.params.spp_interp = 1;
+    state.params.BitsPerComponentIn = 1;
+    state.params.MaxValueIn = 1;
+    state.params.WidthIn = width;
+    state.params.HeightIn = height;
+    state.params.BitsPerComponentOut = 1;
+    state.params.MaxValueOut = 1;
+    state.params.WidthOut = width << 2;
+    state.params.HeightOut = height << 2;
+
+    code = pdfi_filter_open(2048, &s_filter_read_procs, (const stream_template *)&s_imscale_template, (const stream_state *)&state, ctx->memory->non_gc_memory, &new_s);
+
+    if (code < 0)
+        return code;
+
+    code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
+    new_s->strm = source->s;
+    return code;
+}
 
 static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
 {

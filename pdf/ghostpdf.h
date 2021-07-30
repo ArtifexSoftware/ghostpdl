@@ -372,6 +372,7 @@ typedef struct device_state_s {
     bool preserve_smask;
     bool ForOPDFRead;
     bool pdfmark;
+    bool HighLevelDevice;
     /* These are derived from the device parameters rather than extracted from the device */
     /* But this is a convenient place to keep them. */
     /* Does current output device handle pdfmark */

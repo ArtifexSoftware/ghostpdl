@@ -130,6 +130,7 @@ void pdfi_device_set_flags(pdf_context *ctx)
     /* PreserveTrMode is for pdfwrite device */
     ctx->device_state.preserve_tr_mode = pdfi_device_check_param_bool(dev, "PreserveTrMode");
     ctx->device_state.preserve_smask = pdfi_device_check_param_bool(dev, "PreserveSMask");
+    ctx->device_state.HighLevelDevice = pdfi_device_check_param_bool(dev, "HighLevelDevice");
 
     /* See if it is a DeviceN (spot capable) */
     ctx->device_state.spot_capable = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);

@@ -100,6 +100,7 @@ int pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_dict, byte **buf,
 
 int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_c_stream *source, pdf_c_stream **new_stream);
 int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_padding, pdf_c_stream *source, pdf_c_stream **new_stream);
+int pdfi_apply_imscale_filter(pdf_context *ctx, pdf_string *Key, int width, int height, pdf_c_stream *source, pdf_c_stream **new_stream);
 
 #ifdef UNUSED_FILTER
 int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_c_stream *source, pdf_c_stream **new_stream);

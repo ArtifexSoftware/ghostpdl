@@ -1775,6 +1775,60 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (code < 0)
         goto cleanupExit;
 
+    /* This duplicates the code in gs_img.ps; if we have an imagemask, with 1 bit per component (is there any other kind ?)
+     * and the image is to be interpolated, and we are nto sending it to a high level device. Then check the scaling.
+     * If we are scaling up (in device space) by afactor of more than 2, then we install the ImScaleDecode filter,
+     * which interpolates the input data by a factor of 4.
+     * The scaling of 2 is arbitrary (says so in gs_img.ps) but we use it for consistency. The scaling of the input
+     * by 4 is just a magic number, the scaling is always by 4, and we need to know it so we can adjust the Image Matrix
+     * and Width and Height values.
+     */
+    if (image_info.ImageMask == 1 && image_info.BPC == 1 && image_info.Interpolate == 1 && !ctx->device_state.HighLevelDevice)
+    {
+        pdf_c_stream *s = new_stream;
+        gs_matrix mat4 = {4, 0, 0, 4, 0, 0}, inverseIM;
+        gs_point pt, pt1;
+        float s1, s2;
+
+        code = gs_matrix_invert(&pim->ImageMatrix, &inverseIM);
+        if (code < 0)
+            goto cleanupExit;
+
+        code = gs_distance_transform(0, 1, &inverseIM, &pt);
+        if (code < 0)
+            goto cleanupExit;
+
+        code = gs_distance_transform(pt.x, pt.y, &ctm_only(ctx->pgs), &pt1);
+        if (code < 0)
+            goto cleanupExit;
+
+        s1 = sqrt(pt1.x * pt1.x + pt1.y * pt1.y);
+
+        code = gs_distance_transform(1, 0, &inverseIM, &pt);
+        if (code < 0)
+            goto cleanupExit;
+
+        code = gs_distance_transform(pt.x, pt.y, &ctm_only(ctx->pgs), &pt1);
+        if (code < 0)
+            goto cleanupExit;
+
+        s2 = sqrt(pt1.x * pt1.x + pt1.y * pt1.y);
+
+        if (s1 > 2.0 || s2 > 2.0) {
+            code = pdfi_apply_imscale_filter(ctx, 0, image_info.Width, image_info.Height, s, &new_stream);
+            if (code < 0)
+                goto cleanupExit;
+
+            image_info.Width *= 4;
+            image_info.Height *= 4;
+            pim->Width *= 4;
+            pim->Height *= 4;
+            code = gs_matrix_multiply(&pim->ImageMatrix, &mat4, &pim->ImageMatrix);
+            if (code < 0)
+                goto cleanupExit;
+        }
+    }
+
     code = pdfi_image_setup_trans(ctx, &trans_state);
     if (code < 0)
         goto cleanupExit;
