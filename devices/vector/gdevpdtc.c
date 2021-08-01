@@ -451,6 +451,8 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
             break_xy_index = scan.xy_index;
             code = font->procs.next_char_glyph(&scan, &chr, &glyph);
             if (code == 2) {		/* end of string */
+                if (subfont == NULL)
+                    subfont = scan.fstack.items[scan.fstack.depth].font;
                 done = true;
                 break;
             }
