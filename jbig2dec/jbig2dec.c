@@ -98,7 +98,10 @@ static void *jbig2dec_alloc(Jbig2Allocator *allocator_, size_t size)
 
     if (size == 0)
         return NULL;
-    if (size > allocator->memory_limit - ALIGNMENT - allocator->memory_used)
+    if (size > SIZE_MAX - ALIGNMENT)
+        return NULL;
+
+    if (size + ALIGNMENT > allocator->memory_limit - allocator->memory_used)
         return NULL;
 
     ptr = malloc(size + ALIGNMENT);
@@ -136,42 +139,32 @@ static void jbig2dec_free(Jbig2Allocator *allocator_, void *p)
 static void *jbig2dec_realloc(Jbig2Allocator *allocator_, void *p, size_t size)
 {
     jbig2dec_allocator_t *allocator = (jbig2dec_allocator_t *) allocator_;
-    unsigned char *oldp = p ? (unsigned char *) p - ALIGNMENT : NULL;
+    unsigned char *oldp;
+    size_t oldsize;
 
+    if (p == NULL)
+        return jbig2dec_alloc(allocator_, size);
+    if (p < (void *) ALIGNMENT)
+        return NULL;
+
+    if (size == 0) {
+        jbig2dec_free(allocator_, p);
+        return NULL;
+    }
     if (size > SIZE_MAX - ALIGNMENT)
         return NULL;
 
-    if (oldp == NULL)
-    {
-        if (size == 0)
-            return NULL;
-        if (size > allocator->memory_limit - ALIGNMENT - allocator->memory_used)
-            return NULL;
+    oldp = (unsigned char *) p - ALIGNMENT;
+    memcpy(&oldsize, oldp, sizeof(oldsize));
 
-        p = malloc(size + ALIGNMENT);
-    }
-    else
-    {
-        size_t oldsize;
-        memcpy(&oldsize, oldp, sizeof(oldsize));
+    if (size + ALIGNMENT > allocator->memory_limit - allocator->memory_used + oldsize + ALIGNMENT)
+        return NULL;
 
-        if (size == 0)
-        {
-            allocator->memory_used -= oldsize + ALIGNMENT;
-            free(oldp);
-            return NULL;
-        }
+    p = realloc(oldp, size + ALIGNMENT);
+    if (p == NULL)
+        return NULL;
 
-        if (size > allocator->memory_limit - allocator->memory_used + oldsize)
-            return NULL;
-
-        p = realloc(oldp, size + ALIGNMENT);
-        if (p == NULL)
-            return NULL;
-
-        allocator->memory_used -= oldsize + ALIGNMENT;
-    }
-
+    allocator->memory_used -= oldsize + ALIGNMENT;
     memcpy(p, &size, sizeof(size));
     allocator->memory_used += size + ALIGNMENT;
 
