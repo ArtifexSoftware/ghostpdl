@@ -826,11 +826,6 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
             return code1;
         if (info0.num_pieces != info1.num_pieces)
             return 0;
-        if (info0.width[WMode].x != info1.width[WMode].x ||
-            info0.width[WMode].y != info1.width[WMode].y)
-            return 0;
-        if (WMode && (info0.v.x != info1.v.x || info0.v.y != info1.v.y))
-            return 0;
         if (info0.num_pieces > 0) {
             if(level > 5)
                 return_error(gs_error_rangecheck); /* abnormal glyph recursion */
