@@ -352,6 +352,15 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     pdev->pdf_font_dir->global_glyph_code = font->dir->global_glyph_code;
 
     pbfont->copied->dir = pbfont->complete->dir = pdev->pdf_font_dir;
+
+    if (pbfont->copied->FontType == ft_CID_encrypted) {
+        gs_font_cid0 *copied0 = (gs_font_cid0 *)pbfont->copied;
+        int i;
+        for (i = 0; i < copied0->cidata.FDArray_size; ++i) {
+            ((gs_font *)copied0->cidata.FDArray[i])->dir = pdev->pdf_font_dir;
+        }
+    }
+
     pbfont->is_standard = is_standard;
     if (pfname->size > 0) {
         font_name.data = pfname->chars;
