@@ -237,7 +237,7 @@ pdfi_alloc_cidtype2_font(pdf_context *ctx, pdf_cidfont_type2 **font, bool is_cid
        we won't worry about working without FAPI */
     pfont->procs.encode_char = pdfi_encode_char;
     pfont->data.string_proc = pdfi_cidtype2_string_proc;
-    pfont->procs.glyph_name = pdfi_glyph_name;
+    pfont->procs.glyph_name = ctx->get_glyph_name;
     pfont->procs.decode_glyph = pdfi_decode_glyph;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;

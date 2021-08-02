@@ -134,7 +134,7 @@ static int alloc_type3_font(pdf_context *ctx, pdf_font_type3 **font)
     t3font->pfont->procs.next_char_glyph = gs_default_next_char_glyph;
     t3font->pfont->FAPI = NULL;
     t3font->pfont->FAPI_font_data = NULL;
-    t3font->pfont->procs.glyph_name = pdfi_glyph_name;
+    t3font->pfont->procs.glyph_name = ctx->get_glyph_name;
     t3font->pfont->procs.decode_glyph = pdfi_decode_glyph;
     t3font->pfont->procs.define_font = gs_no_define_font;
     t3font->pfont->procs.make_font = gs_no_make_font;
