@@ -59,6 +59,7 @@ typedef struct known_symbolic_font_name_s
 #define DEFINE_NAME_LEN(s) #s, sizeof(#s) - 1
 static const known_symbolic_font_name_t known_symbolic_font_names[] =
 {
+  {DEFINE_NAME_LEN(Symbol)},
   {DEFINE_NAME_LEN(Wingdings2)},
   {DEFINE_NAME_LEN(Wingdings)},
   {DEFINE_NAME_LEN(ZapfDingbats)},
