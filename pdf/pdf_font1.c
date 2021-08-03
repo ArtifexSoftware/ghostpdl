@@ -72,6 +72,8 @@ static void pdfi_patch_charstrings_dict(pdf_dict *cstrings)
             code = pdfi_dict_put(cstrings->ctx, cstrings, gne->altname, o);
             pdfi_countdown(o);
         }
+        if (code == gs_error_undefined)
+            code = 0;
         gne++;
     }
 
