@@ -186,6 +186,14 @@ pdfi_cff_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph, gs_const_s
         return_error(gs_error_rangecheck);
 
     code = gs_c_glyph_name(glyph, gstr);
+
+    if (code >= 0) {
+        unsigned int nindex;
+        code = (*ctx->get_glyph_index)((gs_font *)pfont, (byte *)gstr->data, gstr->size, &nindex);
+        if (pglyph != NULL)
+            *pglyph = (gs_glyph)nindex;
+    }
+
     if (code >= 0) {
         pdf_name *glyphname = NULL;
         pdf_string *charstring = NULL;
@@ -195,7 +203,8 @@ pdfi_cff_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph, gs_const_s
             code = pdfi_dict_get_by_key(ctx, cfffont->CharStrings, glyphname, (pdf_obj **)&charstring);
             pdfi_countdown(glyphname);
             if (code >= 0)
-                gs_glyph_data_from_bytes(pgd, charstring->data, 0, charstring->length, NULL);
+                if (pgd != NULL)
+                    gs_glyph_data_from_bytes(pgd, charstring->data, 0, charstring->length, NULL);
                 pdfi_countdown(charstring);
             }
     }
@@ -224,7 +233,7 @@ static int
 pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
                          gs_glyph_space_t glyph_space, gs_glyph *pglyph)
 {
-    int code;
+    int code, j;
     pdf_name *key = NULL;
     uint64_t i = (uint64_t) *pindex;
     pdf_dict *cstrings;
@@ -233,9 +242,14 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
 
     (void)glyph_space;
 
-    if (pdffont->pdfi_font_type == e_pdf_cidfont_type0) {
+    /* Slightly naff: if build_char is NULL, this is an FDArray subfont */
+    if (pfont->procs.build_char == NULL) {
+        *pindex = 0;
+        *pglyph = GS_NO_GLYPH;
+        return 0;
+    }
+    else if (pdffont->pdfi_font_type == e_pdf_cidfont_type0) {
         pdf_cidfont_type0 *cffcidfont = (pdf_cidfont_type0 *) pdffont;
-
         cstrings = cffcidfont->CharStrings;
     }
     else {
@@ -243,7 +257,6 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
 
         cstrings = cfffont->CharStrings;
     }
-
     if (*pindex <= 0)
         code = pdfi_dict_key_first(pdffont->ctx, cstrings, (pdf_obj **) &key, &i);
     else
@@ -265,19 +278,31 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
         char kbuf[32];
         int l;
         unsigned int val;
-
-        if (key->length == 7 && memcmp(key->data, ".notdef", 7) != 0) {
+        /* If this font started life as a CFF font that we've force to
+           act like a CIDFont, we can end up with a ".notdef" glyph name
+         */
+        if (key->length == 7 && memcmp(key->data, ".notdef", 7) == 0) {
+            val = 0;
+            l = 1;
+        }
+        else {
             memcpy(kbuf, key->data, key->length);
             kbuf[key->length] = 0;
 
             l = sscanf(kbuf, "%ud", &val);
         }
-        else {
-            val = 0;
-            l = 1;
-        }
-        if (l > 0)
+        if (l > 0) {
+            pdf_cidfont_type0 *cffcidfont = (pdf_cidfont_type0 *) pdffont;
+            if (cffcidfont->cidtogidmap.size > 0) {
+                for (j = (cffcidfont->cidtogidmap.size >> 1) - 1; j >= 0; j--) {
+                    if (val == (cffcidfont->cidtogidmap.data[j << 1] << 8 | cffcidfont->cidtogidmap.data[(j << 1) + 1])) {
+                        val = j;
+                        break;
+                    }
+                }
+            }
             *pglyph = (gs_glyph) (val) + GS_MIN_CID_GLYPH;
+        }
     }
     *pindex = (int)i;
     pdfi_countdown(key);
@@ -357,6 +382,14 @@ pdfi_cff_glyph_outline(gs_font *pfont, int WMode, gs_glyph glyph,
     }
     return code;
 }
+static int
+pdfi_cff_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat, int members, gs_glyph_info_t *info)
+{
+    if ((members & GLYPH_INFO_OUTLINE_WIDTHS) == 0)
+        return gs_type1_glyph_info(font, glyph, pmat, members, info);
+
+    return gs_default_glyph_info(font, glyph, pmat, members, info);
+}
 
 static int
 pdfi_cff_fdarray_glyph_data(gs_font_type1 *pfont, gs_glyph glyph, gs_glyph_data_t *pgd)
@@ -417,10 +450,11 @@ pdfi_cff_cid_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *p
 }
 
 static int
-pdfi_cidtype2_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+pdfi_cff_cidfont_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
                      int members, gs_glyph_info_t *info)
 {
     int code;
+    gs_font_cid0 *pcidfont = (gs_font_cid0 *)font;
     pdf_cidfont_type0 *pdffont9 = (pdf_cidfont_type0 *)font->client_data;
     code = (*pdffont9->orig_glyph_info)(font, glyph, pmat, members, info);
     if (code < 0)
@@ -430,32 +464,45 @@ pdfi_cidtype2_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
       && glyph > GS_MIN_CID_GLYPH
       && glyph < GS_MIN_GLYPH_INDEX) {
         double widths[6] = {0};
-        code = pdfi_get_cidfont_glyph_metrics(font, (glyph - GS_MIN_CID_GLYPH), widths, true);
+        int fidx;
+        gs_matrix imat;
+        gs_matrix mat1 = font->FontMatrix;
+        gs_glyph g = glyph - GS_MIN_CID_GLYPH;
+
+        code = (*pcidfont->cidata.glyph_data) ((gs_font_base *)font, g + GS_MIN_CID_GLYPH, NULL, &fidx);
+        if (code < 0)
+            return code;
+        if (fidx < pcidfont->cidata.FDArray_size) {
+            gs_font_type1 *pfdfont = pcidfont->cidata.FDArray[fidx];
+            /* The following cannot fail - if the matrix multiplication didn't work
+               we'd have errored out at a higher level
+             */
+            (void)gs_matrix_multiply(&font->FontMatrix, &pfdfont->FontMatrix, &mat1);
+        }
+        code = gs_matrix_invert(&mat1, &imat);
+        if (code < 0)
+            return code; /* By this stage, this should be impossible */
+        if (pmat) {
+            gs_matrix_multiply(&imat, pmat, &mat1);
+        }
+        else {
+            mat1 = imat;
+        }
+
+        code = pdfi_get_cidfont_glyph_metrics(font, g, widths, true);
         if (code >= 0) {
-            if (pmat == NULL) {
-                info->width[0].x = widths[GLYPH_W0_WIDTH_INDEX] / 1000.0;
-                info->width[0].y = widths[GLYPH_W0_HEIGHT_INDEX] / 1000.0;
-            }
-            else {
-                code = gs_point_transform(widths[GLYPH_W0_WIDTH_INDEX] / 1000.0, widths[GLYPH_W0_HEIGHT_INDEX] / 1000.0, pmat, &info->width[0]);
-                if (code < 0)
-                    return code;
-            }
+            code = gs_point_transform(widths[GLYPH_W0_WIDTH_INDEX] / 1000.0, widths[GLYPH_W0_HEIGHT_INDEX] / 1000.0, &mat1, &info->width[0]);
+            if (code < 0)
+                return code;
             info->members |= GLYPH_INFO_WIDTH0;
 
-            if ((members & GLYPH_INFO_WIDTH1) != 0
-                && (widths[GLYPH_W1_WIDTH_INDEX] != 0
-                || widths[GLYPH_W1_HEIGHT_INDEX] != 0)) {
-                if (pmat == NULL) {
-                    info->width[1].x = widths[GLYPH_W1_WIDTH_INDEX] / 1000.0;
-                    info->width[1].y = widths[GLYPH_W1_HEIGHT_INDEX] / 1000.0;
-                }
-                else {
-                    code = gs_point_transform(widths[GLYPH_W1_WIDTH_INDEX] / 1000.0, widths[GLYPH_W1_HEIGHT_INDEX] / 1000.0, pmat, &info->width[1]);
-                    if (code < 0)
-                        return code;
-                }
+            if ((members & GLYPH_INFO_WIDTH1) != 0 && (widths[GLYPH_W1_WIDTH_INDEX] != 0 || widths[GLYPH_W1_HEIGHT_INDEX] != 0)) {
+                code = gs_point_transform(widths[GLYPH_W1_WIDTH_INDEX] / 1000.0, widths[GLYPH_W1_HEIGHT_INDEX] / 1000.0, &mat1, &info->width[1]);
                 info->members |= GLYPH_INFO_WIDTH1;
+            }
+            if ((members & GLYPH_INFO_VVECTOR1) != 0) {
+                code = gs_point_transform(widths[GLYPH_W1_V_X_INDEX] / 1000.0, widths[GLYPH_W1_V_Y_INDEX] / 1000.0, &mat1, &info->v);
+                info->members |= GLYPH_INFO_VVECTOR1;
             }
         }
     }
@@ -888,27 +935,35 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                 ptpriv->type1data.initialRandomSeed = args[0].ival;
 
             if (b0 == 6) {
-                ptpriv->type1data.BlueValues.count = n / 2;
-                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-                    ptpriv->type1data.BlueValues.values[i] = f;
+                ptpriv->type1data.BlueValues.count = n;
+                ptpriv->type1data.BlueValues.values[0] = args[0].fval;
+                for (i = 1; i < n; i++) {
+                    ptpriv->type1data.BlueValues.values[i] = ptpriv->type1data.BlueValues.values[i - 1] + args[i].fval;
+                }
             }
 
             if (b0 == 7) {
-                ptpriv->type1data.OtherBlues.count = n / 2;
-                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-                    ptpriv->type1data.OtherBlues.values[i] = f;
+                ptpriv->type1data.OtherBlues.count = n;
+                ptpriv->type1data.OtherBlues.values[0] = args[0].fval;
+                for (i = 1; i < n; i++) {
+                    ptpriv->type1data.OtherBlues.values[i] = ptpriv->type1data.OtherBlues.values[i - 1] + args[i].fval;
+                }
             }
 
             if (b0 == 8) {
-                ptpriv->type1data.FamilyBlues.count = n / 2;
-                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-                    ptpriv->type1data.FamilyBlues.values[i] = f;
+                ptpriv->type1data.FamilyBlues.count = n;
+                ptpriv->type1data.FamilyBlues.values[0] = args[0].fval;
+                for (i = 1; i < n; i++) {
+                    ptpriv->type1data.FamilyBlues.values[i] = ptpriv->type1data.FamilyBlues.values[i - 1] + args[i].fval;
+                }
             }
 
             if (b0 == 9) {
-                ptpriv->type1data.FamilyOtherBlues.count = n / 2;
-                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-                    ptpriv->type1data.FamilyOtherBlues.values[i] = f;
+                ptpriv->type1data.FamilyOtherBlues.count = n;
+                ptpriv->type1data.FamilyOtherBlues.values[0] = args[0].fval;
+                for (i = 1; i < n; i++) {
+                    ptpriv->type1data.FamilyOtherBlues.values[i] = ptpriv->type1data.FamilyOtherBlues.values[i - 1] + args[i].fval;
+                }
             }
 
             if (b0 == 10) {
@@ -1753,8 +1808,8 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                         gs_snprintf(gkey, sizeof(gkey), "%d", g);
                         code = pdfi_dict_put(ctx, font->CharStrings, gkey, (pdf_obj *) charstr);
                     }
-                    ptpriv->cidata.common.CIDCount = i;
-                    ptpriv->cidata.common.MaxCID = maxcid;
+                    if (maxcid > ptpriv->pdfcffpriv.cidcount - 1)
+                        ptpriv->pdfcffpriv.cidcount = maxcid + 1;
                 }
             }
         }
@@ -1820,7 +1875,7 @@ pdfi_alloc_cff_cidfont(pdf_context *ctx, pdf_cidfont_type0 ** font, uint32_t obj
     pfont->TransformedChar = fbit_use_outlines;
     /* We may want to do something clever with an XUID here */
     pfont->id = gs_next_ids(ctx->memory, 1);
-    uid_set_UniqueID(&pfont->UID, pfont->id);
+    uid_set_invalid(&pfont->UID);
 
     /* The buildchar proc will be filled in by FAPI -
        we won't worry about working without FAPI */
@@ -1904,7 +1959,7 @@ pdfi_alloc_cff_font(pdf_context *ctx, pdf_font_cff ** font, uint32_t obj_num, bo
     pfont->TransformedChar = fbit_use_outlines;
     /* We may want to do something clever with an XUID here */
     pfont->id = gs_next_ids(ctx->memory, 1);
-    uid_set_UniqueID(&pfont->UID, pfont->id);
+    uid_set_invalid(&pfont->UID);
 
     /* The buildchar proc will be filled in by FAPI -
        we won't worry about working without FAPI */
@@ -1954,6 +2009,7 @@ pdfi_init_cff_font_priv(pdf_context *ctx, pdfi_gs_cff_font_priv *cffpriv,
     cffpriv->pdfcffpriv.refcnt = 0xf0f0f0f0;
     cffpriv->pdfcffpriv.cffdata = buf;
     cffpriv->pdfcffpriv.cffend = buf + buflen;
+    cffpriv->pdfcffpriv.cidcount = 8720;
 
     memcpy(&cffpriv->orig_FontMatrix, defmat, sizeof(*defmat));
     memcpy(&cffpriv->FontMatrix, defmat, sizeof(*defmat));
@@ -1976,7 +2032,8 @@ pdfi_init_cff_font_priv(pdf_context *ctx, pdfi_gs_cff_font_priv *cffpriv,
     cffpriv->TransformedChar = fbit_use_outlines;
     /* We may want to do something clever with an XUID here */
     cffpriv->id = gs_next_ids(ctx->memory, 1);
-    uid_set_UniqueID(&cffpriv->UID, cffpriv->id);
+    uid_set_invalid(&cffpriv->UID);
+
 
     /* The buildchar proc will be filled in by FAPI -
        we won't worry about working without FAPI */
@@ -2072,7 +2129,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 pfont->cidata.glyph_data = pdfi_cff_cid_glyph_data;
 
                 cffcid->orig_glyph_info = pfont->procs.glyph_info;
-                pfont->procs.glyph_info = pdfi_cidtype2_glyph_info;
+                pfont->procs.glyph_info = pdfi_cff_cidfont_glyph_info;
 
                 pfont->cidata.proc_data = NULL;
                 pfont->FAPI = NULL;
@@ -2113,6 +2170,8 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffcid->FDArray = cffpriv.pdfcffpriv.FDArray;
                 cffpriv.pdfcffpriv.FDArray = NULL;
 
+                pfont->cidata.common.CIDCount = cffpriv.pdfcffpriv.cidcount;
+
                 cffcid->cidtogidmap.data = NULL;
                 cffcid->cidtogidmap.size = 0;
                 code = pdfi_dict_knownget(ctx, font_dict, "CIDToGIDMap", (pdf_obj **) &obj);
@@ -2127,7 +2186,12 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     pdfi_countdown(obj);
                     obj = NULL;
                     cffcid->cidtogidmap.size = size;
+
+                    if (size > 0) {
+                        pfont->cidata.common.CIDCount = size >> 1;
+                    }
                 }
+                pfont->cidata.common.MaxCID = pfont->cidata.common.CIDCount - 1;
 
                 code = pdfi_dict_knownget_type(ctx, font_dict, "DW", PDF_INT, (pdf_obj **) &obj);
                 if (code > 0) {
@@ -2226,10 +2290,10 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 pfont->procs.glyph_outline = pdfi_cff_glyph_outline;
                 pfont->cidata.glyph_data = pdfi_cff_cid_glyph_data;
                 pfont->cidata.common.CIDCount = cffpriv.pdfcffpriv.CharStrings->entries;
-                pfont->cidata.common.MaxCID = cffpriv.pdfcffpriv.CharStrings->entries;
+                pfont->cidata.common.MaxCID = pfont->cidata.common.CIDCount - 1;
 
                 cffcid->orig_glyph_info = pfont->procs.glyph_info;
-                pfont->procs.glyph_info = pdfi_cidtype2_glyph_info;
+                pfont->procs.glyph_info = pdfi_cff_cidfont_glyph_info;
 
 
                 pfdfont->FAPI = NULL;
@@ -2316,7 +2380,11 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     pdfi_countdown(obj);
                     obj = NULL;
                     cffcid->cidtogidmap.size = size;
+                    if (size > 0) {
+                        pfont->cidata.common.CIDCount = size >> 1;
+                    }
                 }
+                pfont->cidata.common.MaxCID = pfont->cidata.common.CIDCount - 1;
 
                 code = pdfi_dict_knownget_type(ctx, font_dict, "DW", PDF_INT, (pdf_obj **) &obj);
                 if (code > 0) {
@@ -2365,6 +2433,8 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 pfont->FAPI = NULL;
                 pfont->client_data = cfffont;
                 pfont->base = (gs_font *) cfffont->pfont;
+
+                pfont->procs.glyph_info = pdfi_cff_glyph_info;
 
                 cfffont->object_num = font_dict->object_num;
                 cfffont->generation_num = font_dict->generation_num;

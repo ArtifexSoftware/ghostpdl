@@ -153,6 +153,13 @@ pdfi_t1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph, gs_const_st
 
     code = gs_c_glyph_name(glyph, gstr);
     if (code >= 0) {
+        unsigned int nindex;
+        code = (*ctx->get_glyph_index)((gs_font *)pfont, (byte *)gstr->data, gstr->size, &nindex);
+        if (pglyph != NULL)
+            *pglyph = (gs_glyph)nindex;
+    }
+
+    if (code >= 0) {
         pdf_name *glyphname = NULL;
         pdf_string *charstring = NULL;
         code = pdfi_name_alloc(ctx, (byte *) gstr->data, gstr->size, (pdf_obj **) &glyphname);
@@ -161,7 +168,8 @@ pdfi_t1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph, gs_const_st
             code = pdfi_dict_get_by_key(ctx, pdffont1->CharStrings, glyphname, (pdf_obj **)&charstring);
             pdfi_countdown(glyphname);
             if (code >= 0)
-                gs_glyph_data_from_bytes(pgd, charstring->data, 0, charstring->length, NULL);
+                if (pgd != NULL)
+                    gs_glyph_data_from_bytes(pgd, charstring->data, 0, charstring->length, NULL);
                 pdfi_countdown(charstring);
             }
     }
@@ -204,7 +212,7 @@ pdfi_t1_enumerate_glyph(gs_font *pfont, int *pindex,
         code = pdfi_dict_key_next(ctx, t1font->CharStrings, (pdf_obj **) & key, &i);
     if (code < 0) {
         *pindex = 0;
-        code = gs_note_error(gs_error_undefined);
+        code = 0;
     }
     else {
         uint dummy = GS_NO_GLYPH;
@@ -281,6 +289,15 @@ pdfi_t1_glyph_outline(gs_font *pfont, int WMode, gs_glyph glyph,
         }
     }
     return code;
+}
+
+static int
+pdfi_t1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat, int members, gs_glyph_info_t *info)
+{
+    if ((members & GLYPH_INFO_OUTLINE_WIDTHS) == 0)
+        return gs_type1_glyph_info(font, glyph, pmat, members, info);
+
+    return gs_default_glyph_info(font, glyph, pmat, members, info);
 }
 
 /* END CALLBACKS */
@@ -466,7 +483,7 @@ pdfi_t1_font_set_procs(pdf_context *ctx, pdf_font_type1 *font)
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;
     pfont->procs.font_info = gs_default_font_info;
-    pfont->procs.glyph_info = gs_default_glyph_info;
+    pfont->procs.glyph_info = pdfi_t1_glyph_info;
     pfont->procs.glyph_outline = pdfi_t1_glyph_outline;
     pfont->procs.same_font = gs_default_same_font;
     pfont->procs.enumerate_glyph = pdfi_t1_enumerate_glyph;

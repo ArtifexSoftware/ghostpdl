@@ -121,6 +121,18 @@ pdfi_cidtype2_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
                 }
                 info->members |= GLYPH_INFO_WIDTH1;
             }
+            if ((members & GLYPH_INFO_VVECTOR1) != 0) {
+                if (pmat == NULL) {
+                    info->v.x = widths[GLYPH_W1_V_X_INDEX] / 1000.0;
+                    info->v.y = widths[GLYPH_W1_V_Y_INDEX] / 1000.0;
+                }
+                else {
+                    code = gs_point_transform(widths[GLYPH_W1_V_X_INDEX] / 1000.0, widths[GLYPH_W1_V_Y_INDEX] / 1000.0, pmat, &info->v);
+                    if (code < 0)
+                        return code;
+                }
+                info->members |= GLYPH_INFO_VVECTOR1;
+            }
         }
     }
     return code;
