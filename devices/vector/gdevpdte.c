@@ -1624,6 +1624,20 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
             if (code < 0)
                 return_error(gs_error_unregistered);
             gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pgs), &wanted);
+
+            gs_distance_transform(((font->WMode && !cw.ignore_wmode) ? 0 : ppts->values.character_spacing),
+                                  ((font->WMode && !cw.ignore_wmode) ? ppts->values.character_spacing : 0),
+                                  &ppts->values.matrix, &tpt);
+            wanted.x += tpt.x;
+            wanted.y += tpt.y;
+
+            if (chr == space_char && (!pte->single_byte_space || decoded_bytes == 1)) {
+                gs_distance_transform(((font->WMode && !cw.ignore_wmode)? 0 : ppts->values.word_spacing),
+                                      ((font->WMode && !cw.ignore_wmode) ? ppts->values.word_spacing : 0),
+                                      &ppts->values.matrix, &tpt);
+                wanted.x += tpt.x;
+                wanted.y += tpt.y;
+            }
         } else {
             pdev->text->text_state->can_use_TJ = true;
             gs_distance_transform(cw.real_width.xy.x * ppts->values.size,
