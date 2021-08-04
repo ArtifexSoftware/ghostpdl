@@ -1115,7 +1115,7 @@ PCLm_initialize_device_procs(gx_device *dev)
     gdev_prn_initialize_device_procs_rgb(dev);
 
     set_dev_proc(dev, open_device, PCLm_open);
-    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, output_page, gdev_prn_output_page);
     set_dev_proc(dev, close_device, PCLm_close);
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
@@ -1253,7 +1253,7 @@ PCLm_open(gx_device *pdev)
             gx_copy_device_procs(pdev->parent, pdev, &gs_flp_device);
     }
     if (ppdev->OpenOutputFile)
-        code = gdev_prn_open_printer_seekable(pdev, 1, true);
+        code = gdev_prn_open_printer(pdev, 1);
 
     if(code < 0)
         return code;
