@@ -287,14 +287,17 @@ lpdict begin
 /StringTAB (\t) def
 /CharTAB StringTAB 0 get def
 
-/showline		% line -> leftover_line (handles \f)
- {  { showline1 dup length 0 eq { exit } if
-      dup 0 get CharFF ne { exit } if
+/showline {		% line -> leftover_line (handles \f)
+   { showline1 dup length 0 eq { exit } if
+      dup 0 get CharFF ne {
+         Truncate { pop () } if
+         exit
+      } if
       EjectFF { endpage beginpage } { endcolumn } ifelse
       skip1
-    }
+   }
    loop
- } def
+} def
 
 /showline1		% line -> leftover_line (handles page break)
  { lindex llength eq { endpage beginpage } if
@@ -527,24 +530,22 @@ lpdict begin
        pop pop	% done
      } if
    } if
-    { dup length /pos exch def
-      lbuf exch 0 exch putinterval
-       { lpfile lbuf pos lbuf length pos sub getinterval readline } stopped
-       {	% Filled the line before a CR or EOF.
-         exch pop showline
-       }
-       {	% Reached CR and/or EOF first.
+   { dup length /pos exch def
+     lbuf exch 0 exch putinterval
+      { lpfile lbuf pos lbuf length pos sub getinterval readline } stopped
+      {	% Filled the line before a CR or EOF.
+        exch pop showline
+      }
+      {	% Reached CR and/or EOF first.
          exch length pos add lbuf exch 0 exch getinterval
          1 index { showline } if		% omit final empty line
-          { dup length 0 eq Truncate or { pop () exit } if
+         { dup length 0 eq { pop () exit } if
             showline
-          }
-         loop
+         } loop
          exch not { exit } if
-       }
-      ifelse
+      } ifelse
       pindex PageLast gt { exit } if
-    } loop
+   } loop
    pop
 
 % Wrap up.
