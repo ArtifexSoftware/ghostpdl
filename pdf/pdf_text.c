@@ -1074,7 +1074,7 @@ int pdfi_Tj(pdf_context *ctx)
         /* We have to adjust the stroke width for pdfwrite so that we take into
          * account the CTM, but we do not spply the font scaling. Because of
          * the disconnect between pdfwrite and the interpreter, we also have to
-         * remove the scaling due ot the resolution.
+         * remove the scaling due to the resolution.
          */
         gs_matrix devmatrix, matrix;
         gx_device *device = gs_currentdevice(ctx->pgs);
@@ -1180,8 +1180,32 @@ int pdfi_TJ(pdf_context *ctx)
 
     gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
 
-    gs_distance_transform_inverse(ctx->pgs->line_params.half_width, 0, &Trm, &pt);
-    ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
+    if (!ctx->device_state.preserve_tr_mode) {
+        gs_distance_transform_inverse(ctx->pgs->line_params.half_width, 0, &Trm, &pt);
+        ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
+    } else {
+        /* We have to adjust the stroke width for pdfwrite so that we take into
+         * account the CTM, but we do not spply the font scaling. Because of
+         * the disconnect between pdfwrite and the interpreter, we also have to
+         * remove the scaling due to the resolution.
+         */
+        gs_matrix devmatrix, matrix;
+        gx_device *device = gs_currentdevice(ctx->pgs);
+
+        devmatrix.xx = 72.0 / device->HWResolution[0];
+        devmatrix.xy = 0;
+        devmatrix.yx = 0;
+        devmatrix.yy = 72.0 / device->HWResolution[1];
+        devmatrix.tx = 0;
+        devmatrix.ty = 0;
+
+        code = gs_matrix_multiply(&saved, &devmatrix, &matrix);
+        if (code < 0)
+            goto exit;
+
+        gs_distance_transform(ctx->pgs->line_params.half_width, 0, &matrix, &pt);
+        ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
+    }
 
     gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
     gs_setmatrix(ctx->pgs, &Trm);
