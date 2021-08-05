@@ -144,7 +144,10 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
                 }
            }
         }
-        else if (ttfont->cmap == pdfi_truetype_cmap_31) {
+        else {
+            /* In theory, this should be 3,1 cmap, but we have examples that use 0,1 or other
+               Unicode "platform" cmap tables, so "hail mary" just try it
+             */
             pdfi_single_glyph_list_t *sgl = (pdfi_single_glyph_list_t *)&(pdfi_SingleGlyphList);
             /* Not to spec, but... if we get a "uni..." formatted name, use
                the hex value from that.
