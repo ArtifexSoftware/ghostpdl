@@ -63,7 +63,7 @@ pdfimage8_initialize_device_procs(gx_device *dev)
     gdev_prn_initialize_device_procs_gray(dev);
 
     set_dev_proc(dev, open_device, pdf_image_open);
-    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, output_page, gdev_prn_output_page);
     set_dev_proc(dev, close_device, pdf_image_close);
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
@@ -96,7 +96,7 @@ pdfimage24_initialize_device_procs(gx_device *dev)
     gdev_prn_initialize_device_procs_rgb(dev);
 
     set_dev_proc(dev, open_device, pdf_image_open);
-    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, output_page, gdev_prn_output_page);
     set_dev_proc(dev, close_device, pdf_image_close);
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
@@ -127,7 +127,7 @@ pdfimage32_initialize_device_procs(gx_device *dev)
     gdev_prn_initialize_device_procs_cmyk8(dev);
 
     set_dev_proc(dev, open_device, pdf_image_open);
-    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
+    set_dev_proc(dev, output_page, gdev_prn_output_page);
     set_dev_proc(dev, close_device, pdf_image_close);
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale_cmyk);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale_cmyk);
@@ -290,10 +290,11 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
             current = current->next;
         current->next = page;
     }
-    page->ImageObjectNumber = (pdf_dev->NumPages * 4) + PDFIMG_STATIC_OBJS + pdf_dev->ocr.file_objects;
+    page->ImageObjectNumber = (pdf_dev->NumPages * PDFIMG_OBJS_PER_PAGE) + PDFIMG_STATIC_OBJS + pdf_dev->ocr.file_objects;
     page->LengthObjectNumber = page->ImageObjectNumber + 1;
     page->PageStreamObjectNumber = page->LengthObjectNumber + 1;
     page->PageDictObjectNumber = page->PageStreamObjectNumber + 1;
+    page->PageLengthObjectNumber = page->PageDictObjectNumber + 1;
     page->ImageOffset = stell(pdf_dev->strm);
     pdf_dev->StripHeight = pdf_dev->height;
 
@@ -446,6 +447,7 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
     pdfimage_page *page = pdf_dev->Pages;
     char Buffer[1024];
     stream *s = pdf_dev->strm;
+    gs_offset_t len;
 
     if (page == NULL)
         return_error(gs_error_undefined);
@@ -578,7 +580,7 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
 
     page->PageStreamOffset = stell(pdf_dev->strm);
     pprintd1(pdf_dev->strm, "%d 0 obj\n", page->PageStreamObjectNumber);
-    stream_puts(pdf_dev->strm, "<<\n/Filter/FlateDecode/Length           \n>>\nstream\n");
+    pprintd1(pdf_dev->strm, "<<\n/Filter/FlateDecode/Length %d 0 R\n>>\nstream\n", page->PageLengthObjectNumber);
     stream_pos = stell(pdf_dev->strm);
     encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_zlibE_template, pdf_dev->memory->non_gc_memory);
     if (pdf_dev->ocr.end_page)
@@ -591,14 +593,11 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
         pdf_dev->ocr.end_page(pdf_dev);
     }
     s_close_filters(&pdf_dev->strm, s);
-    {
-        gs_offset_t pos = stell(pdf_dev->strm);
-        gs_offset_t len = pos - stream_pos;
-        sseek(pdf_dev->strm, stream_pos - 21);
-        pprintd1(pdf_dev->strm, "%d", (int)len);
-        sseek(pdf_dev->strm, pos);
-    }
+    len = stell(pdf_dev->strm) - stream_pos;
     stream_puts(pdf_dev->strm, "\nendstream\nendobj\n");
+
+    page->PageLengthOffset = stell(pdf_dev->strm);
+    pprintd2(pdf_dev->strm, "%d 0 obj\n%d\nendobj\n", page->PageLengthObjectNumber, len);
 
     page->PageDictOffset = stell(pdf_dev->strm);
     pprintd1(pdf_dev->strm, "%d 0 obj\n", page->PageDictObjectNumber);
@@ -776,7 +775,7 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
         if (PCLm)
             pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", pdf_dev->NextObject);
         else
-            pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", (pdf_dev->NumPages * 4) + PDFIMG_STATIC_OBJS + pdf_dev->ocr.file_objects);
+            pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", (pdf_dev->NumPages * PDFIMG_OBJS_PER_PAGE) + PDFIMG_STATIC_OBJS + pdf_dev->ocr.file_objects);
         write_xref_entry(pdf_dev->strm, pdf_dev->RootOffset);
         write_xref_entry(pdf_dev->strm, pdf_dev->PagesOffset);
         write_xref_entry(pdf_dev->strm, pdf_dev->InfoOffset);
@@ -795,9 +794,10 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
                 write_xref_entry(pdf_dev->strm, page->LengthOffset);
                 write_xref_entry(pdf_dev->strm, page->PageStreamOffset);
                 write_xref_entry(pdf_dev->strm, page->PageDictOffset);
+                write_xref_entry(pdf_dev->strm, page->PageLengthOffset);
                 page = page->next;
             }
-            pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Root 1 0 R\n/ID [", (pdf_dev->NumPages * 4) + PDFIMG_STATIC_OBJS + pdf_dev->ocr.file_objects);
+            pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Root 1 0 R\n/ID [", (pdf_dev->NumPages * PDFIMG_OBJS_PER_PAGE) + PDFIMG_STATIC_OBJS + pdf_dev->ocr.file_objects);
             pdf_compute_fileID(pdf_dev, fileID, CreationDate, Title, Producer);
             write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
             write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
@@ -928,7 +928,7 @@ pdf_image_open(gx_device *pdev)
             gx_copy_device_procs(pdev->parent, pdev, &gs_flp_device);
     }
     if (ppdev->OpenOutputFile)
-        code = gdev_prn_open_printer_seekable(pdev, 1, true);
+        code = gdev_prn_open_printer(pdev, 1);
 
     return code;
 }
