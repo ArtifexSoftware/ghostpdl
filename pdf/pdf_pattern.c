@@ -606,6 +606,10 @@ pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
     int code;
     int64_t patternType;
 
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
     memset(cc, 0, sizeof(*cc));
     code = pdfi_find_resource(ctx, (unsigned char *)"Pattern", pname, (pdf_dict *)stream_dict,
                               page_dict, (pdf_obj **)&pattern_obj);
@@ -620,8 +624,7 @@ pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
          * Seems like a corrupted file, but this prevents crash
          */
         dbgmprintf(ctx->memory, "ERROR: Pattern found in resources is neither a stream or dict\n");
-        pdfi_countdown(pattern_obj);
-        return code;
+        goto exit;
     }
 
 #if DEBUG_PATTERN
@@ -646,6 +649,10 @@ pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
 
  exit:
     pdfi_countdown(pattern_obj);
+    if (code < 0)
+        (void)pdfi_loop_detector_cleartomark(ctx);
+    else
+        code = pdfi_loop_detector_cleartomark(ctx);
     return code;
 }
 
