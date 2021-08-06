@@ -950,9 +950,9 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         pdf_name *GlyphName = NULL;
         gs_const_string gname;
         int i;
+        uint cc = 0;
         if ((ttfont->descflags & 4) != 0) {
             if (ttfont->cmap == pdfi_truetype_cmap_30) {
-                uint cc = 0;
 
                 ccode = cr->client_char_code;
                 code = pdfi_fapi_check_cmap_for_GID((gs_font *)pbfont, (uint)ccode, &cc);
@@ -963,8 +963,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                 cr->is_glyph_index = false;
             }
             else {
-                cr->client_char_code = ccode;
-                cr->char_codes[0] = ccode;
+                cr->char_codes[0] = cr->client_char_code;
                 cr->is_glyph_index = false;
             }
         }
@@ -984,7 +983,6 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 
             if (ttfont->cmap == pdfi_truetype_cmap_10) {
                 gs_glyph g;
-                uint cc = 0;
 
                 g = gs_c_name_glyph((const byte *)GlyphName->data, GlyphName->length);
                 if (g != GS_NO_GLYPH) {
