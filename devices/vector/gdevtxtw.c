@@ -1982,16 +1982,26 @@ textw_text_release(gs_text_enum_t *pte, client_name_t cname)
     gx_device_txtwrite_t *const tdev = (gx_device_txtwrite_t *) pte->dev;
 
     /* Free the working buffer where the Unicode was assembled from the enumerated text */
-    if (penum->TextBuffer)
+    if (penum->TextBuffer) {
         gs_free(tdev->memory, penum->TextBuffer, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
-    if (penum->Widths)
+        penum->TextBuffer = NULL;
+    }
+    if (penum->Widths) {
         gs_free(tdev->memory, penum->Widths, sizeof(float), pte->text.size, "txtwrite free temporary widths array");
-    if (penum->Advs)
+        penum->Widths = NULL;
+    }
+    if (penum->Advs) {
         gs_free(tdev->memory, penum->Advs, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
-    if (penum->GlyphWidths)
+        penum->Advs = NULL;
+    }
+    if (penum->GlyphWidths) {
         gs_free(tdev->memory, penum->GlyphWidths, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
-    if (penum->SpanDeltaX)
+        penum->GlyphWidths = NULL;
+    }
+    if (penum->SpanDeltaX) {
         gs_free(tdev->memory, penum->SpanDeltaX, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
+        penum->SpanDeltaX = NULL;
+    }
     /* If this is copied away when we complete the text enumeration succesfully, then
      * we set the pointer to NULL, if we get here with it non-NULL , then there was
      * an error.
@@ -2008,6 +2018,7 @@ textw_text_release(gs_text_enum_t *pte, client_name_t cname)
         if (penum->text_state->FontName)
             gs_free(tdev->memory, penum->text_state->FontName, 1, penum->TextBufferIndex, "txtwrite free temporary font name copy");
         gs_free(tdev->memory, penum->text_state, 1, sizeof(penum->text_state), "txtwrite free text state");
+        penum->text_state = NULL;
     }
 }
 
