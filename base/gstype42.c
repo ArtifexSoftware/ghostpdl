@@ -748,7 +748,9 @@ mac_glyph_ordering_t MacintoshOrdering[] =
 int
 gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gname)
 {
-    int code = 0;
+    /* READ_SFNTS() uses "code" in the macro, so we need code2 to keep track here */
+    int code, code2 = gs_error_undefined;
+
     if (pfont->FontType == ft_TrueType) {
         if (pfont->data.post_offset != 0) {
             byte ver[4];
@@ -760,6 +762,7 @@ gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gnam
                 if (glyph > 257) glyph = 0;
                 gname->data = (byte *)MacintoshOrdering[glyph].name;
                 gname->size = strlen(MacintoshOrdering[glyph].name);
+                code2 = 0;
             }
             else if (!memcmp(ver, ver20, 4)) {
                 byte val[2];
@@ -769,6 +772,7 @@ gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gnam
                 if (gind < 258) {
                     gname->data = (byte *)MacintoshOrdering[gind].name;
                     gname->size = strlen(MacintoshOrdering[gind].name);
+                    code2 = 0;
                 }
                 else {
                     int i;
@@ -784,8 +788,8 @@ gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gnam
                        for (i = 0; i < numglyphs; i++) {
                            if (i == gind) {
                                READ_SFNTS(pfont, offs, 1, val);
-                               code = pfont->data.string_proc(pfont, offs + 1, (uint)val[0], (const byte **)&(gname->data));
-                               if (code >= 0)
+                               code2 = pfont->data.string_proc(pfont, offs + 1, (uint)val[0], (const byte **)&(gname->data));
+                               if (code2 >= 0)
                                    gname->size = val[0];
                                break;
                            }
@@ -795,24 +799,14 @@ gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gnam
                            }
                        }
                     }
-                    else {
-                        gname->data = (byte *)MacintoshOrdering[0].name;
-                        gname->size = strlen(MacintoshOrdering[0].name);
-                    }
                 }
             }
-            else {
-                gname->data = (byte *)MacintoshOrdering[0].name;
-                gname->size = strlen(MacintoshOrdering[0].name);
-            }
-        }
-        else {
-            gname->data = (byte *)MacintoshOrdering[0].name;
-            gname->size = strlen(MacintoshOrdering[0].name);
         }
     }
     else
-        code = gs_note_error(gs_error_invalidfont);
+        code2 = gs_error_invalidfont;
+
+    if (code2 < 0) code = gs_note_error(code2);
     return code;
 }
 
