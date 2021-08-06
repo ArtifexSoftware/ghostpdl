@@ -1341,7 +1341,7 @@ static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
         stream_puts(pdf_dev->strm, "%PDF-1.3\n");
         stream_puts(pdf_dev->strm, "%PCLm 1.0\n");
         pdf_dev->Pages = page;
-        pdf_dev->NextObject = 3;
+        pdf_dev->NextObject = 4;
     } else {
         pdfimage_page *current = pdf_dev->Pages;
         while(current->next)
