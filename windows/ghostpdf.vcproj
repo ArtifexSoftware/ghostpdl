@@ -334,6 +334,10 @@
                 >
             </File>
             <File
+                RelativePath="..\pdf\pdf_cidcmap.c"
+                >
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_colour.c"
 				>
 			</File>
@@ -452,6 +456,10 @@
             <File
                 RelativePath="..\pdf\pdf_repair.c"
                 >
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_sec.c"
+                  >
             </File>
             <File
 				RelativePath="..\pdf\pdf_shading.c"
