@@ -238,15 +238,16 @@ static int pdfi_ttf_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *
         glyph -= GS_MIN_GLYPH_INDEX;
 
     if ((ttfont->descflags & 4) != 0) {
-        code = pdfi_fapi_check_cmap_for_GID(pfont, (uint)glyph, &ID);
-        if (code < 0 || ID == 0)
-            code = pdfi_fapi_check_cmap_for_GID(pfont, (uint)(glyph | 0xf0 << 8), &ID);
-
-        code = gs_type42_find_post_name((gs_font_type42 *)pfont, (gs_glyph)ID, (gs_string *)pstr);
-        if (code < 0)
-            return -1; /* No name, trigger pdfwrite Type 3 fallback */
-
-        code = (*ctx->get_glyph_index)(pfont, (byte *)pstr->data, pstr->size, &ID);
+        code = gs_type42_find_post_name((gs_font_type42 *)pfont, glyph, (gs_string *)pstr);
+        if (code < 0) {
+            char buf[64];
+            int l;
+            l = gs_sprintf(buf, "~gs~gName~%04x", (uint)glyph);
+            code = (*ctx->get_glyph_index)(pfont, (byte *)buf, l, &ID);
+        }
+        else {
+            code = (*ctx->get_glyph_index)(pfont, (byte *)pstr->data, pstr->size, &ID);
+        }
         if (code < 0)
             return -1; /* No name, trigger pdfwrite Type 3 fallback */
 
