@@ -89,7 +89,10 @@ dev_proc_copy_alpha_hl_color(default_subclass_copy_alpha_hl_color);
 dev_proc_process_page(default_subclass_process_page);
 dev_proc_transform_pixel_region(default_subclass_transform_pixel_region);
 dev_proc_fill_stroke_path(default_subclass_fill_stroke_path);
-
+dev_page_proc_install(default_subclass_install);
+dev_page_proc_begin_page(default_subclass_begin_page);
+dev_page_proc_end_page(default_subclass_end_page);
 
 void default_subclass_finalize(const gs_memory_t *cmem, void *vptr);
-#endif /* gdev_obj_filter_INCLUDED */
+
+#endif /* gdev_default_subclass_INCLUDED */
