@@ -2,7 +2,7 @@
 
 #include <exception>
 #include <string.h>
-#include <varargs.h>
+#include <stdarg.h>
 #include <string>
 
 using namespace util;
@@ -451,7 +451,8 @@ jint util::throwNoClassDefError(JNIEnv *env, const char *message)
 
     exClass = env->FindClass(className);
     if (exClass == NULL)
-        throw std::exception("Failed to find java.lang.NoClassDefFoundError");
+        return -2;
+        //throw std::exception("Failed to find java.lang.NoClassDefFoundError");
 
     return env->ThrowNew(exClass, message);
 }
@@ -558,7 +559,7 @@ void util::freeClassName(const char *className)
     delete[] className;
 }
 
-util::Reference::Reference(JNIEnv *env) : Reference(m_env, NULL)
+util::Reference::Reference(JNIEnv *env) : Reference(env, NULL)
 {
 }
 

@@ -47,7 +47,7 @@ JNIEXPORT jbyte JNICALL Java_com_artifex_gsjava_util_NativePointer_byteAtNative
 JNIEXPORT void JNICALL Java_com_artifex_gsjava_util_NativePointer_setByteNative
 (JNIEnv *, jclass, jlong address, jlong index, jbyte value)
 {
-	((jbyte *)address)[index];
+	((jbyte *)address)[index] = value;
 }
 
 JNIEXPORT jcharArray JNICALL Java_com_artifex_gsjava_util_NativePointer_charArrayNative

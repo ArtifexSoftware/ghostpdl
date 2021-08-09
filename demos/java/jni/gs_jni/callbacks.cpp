@@ -174,7 +174,7 @@ int callbacks::display::displayOpenFunction(void *handle, void *device)
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayOpen", DISPLAY_OPEN_SIG, (jlong)handle, (jlong)device);
 		CHECK_AND_RETURN(g_env);
 	}
-	return 0;
+	return code;
 }
 
 int callbacks::display::displayPrecloseFunction(void *handle, void *device)

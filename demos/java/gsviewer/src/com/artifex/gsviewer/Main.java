@@ -7,6 +7,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import com.artifex.gsviewer.gui.ViewerWindow;
+import com.artifex.gsjava.util.BytePointer;
 
 public class Main {
 
