@@ -898,7 +898,7 @@ pdf_image_print_page(gx_device_printer * pdev, gp_file * file)
 int
 pdf_image_open(gx_device *pdev)
 {
-    gx_device_pdf_image *ppdev = (gx_device_pdf_image *)pdev;
+    gx_device_pdf_image *ppdev;
     int code;
     bool update_procs = false;
 
@@ -909,6 +909,7 @@ pdf_image_open(gx_device *pdev)
     while(pdev->child)
         pdev = pdev->child;
 
+    ppdev = (gx_device_pdf_image *)pdev;
     ppdev->file = NULL;
     ppdev->Pages = NULL;
     ppdev->NumPages = 0;
@@ -1222,7 +1223,7 @@ PCLm_open_temp_stream(gx_device_pdf_image *pdev, PCLm_temp_file_t *ptf)
 int
 PCLm_open(gx_device *pdev)
 {
-    gx_device_pdf_image *ppdev = (gx_device_pdf_image *)pdev;
+    gx_device_pdf_image *ppdev;
     int code;
     bool update_procs = false;
 
@@ -1233,6 +1234,7 @@ PCLm_open(gx_device *pdev)
     while(pdev->child)
         pdev = pdev->child;
 
+    ppdev = (gx_device_pdf_image *)pdev;
     memset(&ppdev->ocr, 0, sizeof(ppdev->ocr));
     ppdev->file = NULL;
     ppdev->Pages = NULL;
