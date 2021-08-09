@@ -273,10 +273,10 @@
   /runEPS_save save def
   /runEPS_dict_count countdictstack def
   /runEPS_op_count count 2 sub def
-  /runEPS_page_count currentpagedevice /PageCount get def
+  /runEPS_page_count .currentshowpagecount not {0} if def
   0 EPSBoundingBoxSetState
   //.runNoEPS
-  currentpagedevice /PageCount get runEPS_page_count sub 0 eq
+  .currentshowpagecount not {0} if runEPS_page_count sub 0 eq
   { /showpage load exec } if
   count runEPS_op_count sub {pop} repeat
   countdictstack runEPS_dict_count sub {end} repeat
