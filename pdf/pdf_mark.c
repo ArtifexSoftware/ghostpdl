@@ -76,7 +76,7 @@ static int pdfi_mark_ctm_str(pdf_context *ctx, gs_matrix *ctm, byte **data, int 
     buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_mark_ctm_str(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
-    snprintf(buf, size, "[%.4f %.4f %.4f %.4f %.4f%.4f]",
+    snprintf(buf, size, "[%.4f %.4f %.4f %.4f %.4f %.4f]",
              ctm->xx, ctm->xy, ctm->yx, ctm->yy, ctm->tx, ctm->ty);
     *data = (byte *)buf;
     *len = strlen(buf);
