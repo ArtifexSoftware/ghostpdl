@@ -29,6 +29,14 @@
 #include "gsccode.h"        /* For the Encoding indices */
 #include "gsuid.h"          /* For no_UniqueID */
 
+static void pdfi_type3_copy_color(gs_gstate_color *src, gs_gstate_color *dest)
+{
+    *dest->ccolor = *src->ccolor;
+    *dest->dev_color = *src->dev_color;
+    dest->color_space = src->color_space;
+    dest->effective_opm = src->effective_opm;
+}
+
 static int
 pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                      gs_char chr, gs_glyph glyph)
@@ -73,9 +81,43 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     OBJ_CTX(font)->text.BlockDepth = 0;
     OBJ_CTX(font)->text.inside_CharProc = true;
     OBJ_CTX(font)->text.CharProc_is_d1 = false;
-    pdfi_gsave(OBJ_CTX(font));
-    pdfi_run_context(OBJ_CTX(font), CharProc, font->PDF_font, true, "CharProc");
-    pdfi_grestore(OBJ_CTX(font));
+
+    {
+        /* It turns out that if a type 3 font uses a stroke to draw, and does not
+         * acrually set the stroke colour, then we must use the fill colour instead.
+         * In effect we start a type 3 BuildChar with stroke colour = fill colour.
+         * That is annoyingly difficult to set up. We need to copy the existing
+         * colour values from the structures in the gs_gstate_color structures into
+         * temporary copies and copy the colour space pointer (and keep its reference
+         * count correct). Then copy the fill colour values and ponter to the stroke
+         * structures. Finally, after drawing the character, copy the temporary
+         * saved copies back again.
+         */
+        gs_gstate_color tmp_color;
+        gs_client_color tmp_cc;
+        gx_device_color tmp_dc;
+
+        /* Set up the pointers in the gs_gstate_color structure to point to
+         * the temporary structures we have on the stack.
+         */
+        tmp_color.ccolor = &tmp_cc;
+        tmp_color.dev_color = &tmp_dc;
+
+        /* Use the utility routine above to copy the stroke colour to the temporary copy */
+        pdfi_type3_copy_color(&OBJ_CTX(font)->pgs->color[1], &tmp_color);
+        rc_increment_cs(tmp_color.color_space);
+        /* Use the utility routine above to copy the fill colour to the stroke colour */
+        pdfi_type3_copy_color(&OBJ_CTX(font)->pgs->color[0], &OBJ_CTX(font)->pgs->color[1]);
+
+        pdfi_gsave(OBJ_CTX(font));
+        pdfi_run_context(OBJ_CTX(font), CharProc, font->PDF_font, true, "CharProc");
+        pdfi_grestore(OBJ_CTX(font));
+
+        /* Use the utility routine above to copy the temporary copy to the stroke colour */
+        pdfi_type3_copy_color(&tmp_color, &OBJ_CTX(font)->pgs->color[1]);
+        rc_decrement_cs(tmp_color.color_space, "pdfi_type3_build_char");
+    }
+
     OBJ_CTX(font)->text.inside_CharProc = false;
     OBJ_CTX(font)->text.CharProc_is_d1 = false;
     OBJ_CTX(font)->text.BlockDepth = SavedTextBlockDepth;
