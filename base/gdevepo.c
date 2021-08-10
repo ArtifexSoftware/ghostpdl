@@ -202,6 +202,10 @@ epo_check_and_install(gx_device *dev)
         return code;
     }
 
+    /* Always install us as low down the chain as possible. */
+    while (dev->child)
+            dev = dev->child;
+
     /* Install subclass for optimization */
     code = gx_device_subclass(dev, (gx_device *)&gs_epo_device, sizeof(erasepage_subclass_data));
     if (code < 0) {
