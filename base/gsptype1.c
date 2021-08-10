@@ -779,7 +779,7 @@ gs_pattern1_set_color(const gs_client_color * pcc, gs_gstate * pgs)
         params.retain_any_comps = false;
         params.effective_opm = pgs->color[0].effective_opm = 0;
         params.op_state = OP_STATE_NONE;
-        params.is_fill_color = false;
+        params.is_fill_color = pgs->is_fill_color;
         params.idle = false;
 
         return gs_gstate_update_overprint(pgs, &params);
