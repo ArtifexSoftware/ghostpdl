@@ -83,7 +83,7 @@ cmd_uncount_op(int op, uint size)
 #endif
 
 /* Print statistics. */
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#if defined(DEBUG_CLIST_STATS) && !defined(GS_THREADSAFE)
 void
 cmd_print_stats(const gs_memory_t *mem)
 {
