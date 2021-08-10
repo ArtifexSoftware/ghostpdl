@@ -821,6 +821,31 @@ static int pdfi_show_Tr_preserve(pdf_context *ctx, gs_text_params_t *text)
     else
         text->operation |= TEXT_DO_DRAW;
 
+    /* If we're preserving the text rendering mode, then we don't run a separate
+     * stroke operation, we do effectively run a fill. The fill setup loads the
+     * fill device colour whch, for patterns, creates the pattern tile.
+     * But, because we never load the stroke colour into a device colour, the
+     * pattern tile never gets loaded, so we get an error trying to draw the
+     * text.
+     * We could load the stroke colour in gs_text_begin, but that's potentially
+     * wasteful given that most of the time we won't be using the stroke colour
+     * os I've chosen to load the stroke device colour explicitly here.
+     * But, obviously, only when preserving a stroking text rendering mode.
+     */
+    if (Trmode == 1 || Trmode == 2 || Trmode == 5 || Trmode == 6) {
+        gs_swapcolors_quick(ctx->pgs);
+
+        code = gx_set_dev_color(ctx->pgs);
+        if (code != 0)
+            return code;
+
+        code = gs_gstate_color_load(ctx->pgs);
+        if (code < 0)
+            return code;
+
+        gs_swapcolors_quick(ctx->pgs);
+    }
+
     code = pdfi_show_simple(ctx, text);
     if (code < 0)
         return code;
