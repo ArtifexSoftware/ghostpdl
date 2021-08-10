@@ -29,7 +29,8 @@ typedef struct gx_device_s gx_device_epo;
 
 typedef struct {
     subclass_common;
-    gx_color_index last_color; // Pure color only
+    gx_color_index last_color; /* Pure color only */
+    int queued;                /* We have a fillpage queued */
 } erasepage_subclass_data;
 
 /* Check if epo subclass device installed, and install it if not */
