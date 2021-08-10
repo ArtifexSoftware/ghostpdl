@@ -350,7 +350,18 @@ int callbacks::display::displayRectangleRequestFunction(void *handle, void *devi
 		Reference hRef = Reference(g_env, toWrapperType(g_env, (jint)*h));
 
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayRectangleRequest", DISPLAY_RECTANGLE_REQUEST,
-			(jlong)handle, (jlong)device, memoryRef, oxRef, oyRef, rasterRef, planeRasterRef, xRef, yRef, wRef, hRef);
+			(jlong)handle,
+			(jlong)device,
+			memoryRef.object(),
+			oxRef.object(),
+			oyRef.object(),
+			rasterRef.object(),
+			planeRasterRef.object(),
+			xRef.object(),
+			yRef.object(),
+			wRef.object(),
+			hRef.object()
+		);
 
 		*memory = (void *)memoryRef.longValue();
 		*ox = oxRef.intValue();
