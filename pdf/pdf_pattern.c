@@ -154,9 +154,20 @@ pdfi_pattern_paint_stream(pdf_context *ctx, const gs_client_color *pcc)
     pdf_dict *page_dict = context->page_dict;
     pdf_stream *pat_stream = (pdf_stream *)context->pat_obj;
     int code = 0;
+    int SavedBlockDepth = 0;
+
+    /* In case we are setting up a pattern for filling or stroking text, we need
+     * to reset the BlockDepth so that we don't detect the Pattern content as being
+     * 'inside' a text block, where some operations (eg path contstruction) are
+     * not permitted.
+     */
+    SavedBlockDepth = ctx->text.BlockDepth;
+    ctx->text.BlockDepth = 0;
 
     /* Interpret inner stream */
     code = pdfi_run_context(ctx, pat_stream, page_dict, true, "PATTERN");
+
+    ctx->text.BlockDepth = SavedBlockDepth;
 
     return code;
 }
