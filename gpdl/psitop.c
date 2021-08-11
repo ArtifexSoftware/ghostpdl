@@ -663,5 +663,6 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_report_errors,
   ps_impl_dnit_job,
   ps_impl_deallocate_interp_instance,
-  NULL
+  NULL, /* ps_impl_reset */
+  NULL  /* interp_client_data */
 };

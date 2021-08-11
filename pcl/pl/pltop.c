@@ -217,3 +217,10 @@ pl_deallocate_interp_instance(pl_interp_implementation_t * impl)   /* instance t
         return 0;
     return impl->proc_deallocate_interp_instance(impl);
 }
+
+int pl_reset(pl_interp_implementation_t *impl, pl_interp_reset_reason reason)
+{
+    if (impl->reset == NULL)
+        return 0;
+    return impl->reset(impl, reason);
+}

@@ -721,5 +721,6 @@ const pl_interp_implementation_t jp2k_implementation = {
   jp2k_impl_report_errors,
   jp2k_impl_dnit_job,
   jp2k_impl_deallocate_interp_instance,
-  NULL
+  NULL, /* jp2k_impl_reset */
+  NULL  /* interp_client_data */
 };

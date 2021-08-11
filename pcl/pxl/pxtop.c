@@ -566,7 +566,8 @@ pl_interp_implementation_t pxl_implementation = {
     pxl_impl_report_errors,
     pxl_impl_dnit_job,
     pxl_impl_deallocate_interp_instance,
-    NULL
+    NULL,                       /* pxl_impl_reset */
+    NULL                        /* interp_client_data */
 };
 
 /* ---------- Utility Procs ----------- */

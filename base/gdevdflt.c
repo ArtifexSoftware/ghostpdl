@@ -1361,6 +1361,9 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     if (dev_to_subclass->NupControl)
         rc_increment(dev_to_subclass->NupControl);
 
+    dev_to_subclass->page_procs = new_prototype->page_procs;
+    gx_subclass_fill_in_page_procs(dev_to_subclass);
+
     /* In case the new device we're creating has already been initialised, copy
      * its additional data.
      */
@@ -1593,7 +1596,7 @@ int gx_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_
     int code = 0;
 
     p14dev = (pdf14_clist_device *)dev;
-    psubclass_data = p14dev->target->subclass_data;
+    psubclass_data = (generic_subclass_data *)p14dev->target->subclass_data;
 
     set_dev_proc(dev, composite, psubclass_data->saved_compositor_method);
 

@@ -276,6 +276,8 @@ pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
 
     /* Return success */
     impl->interp_client_data = pcli;
+    /* Initial reset for the PCL interpreter */
+    pcl_do_resets(&pcli->pcs, pcl_reset_initial);
     return 0;
 }
 
@@ -369,9 +371,9 @@ pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to
     if ((code = gs_erasepage(pcli->pcs.pgs)) < 0)
         goto pisdEnd;
 
-    /* Initialize the PCL interpreter and parser */
+    /* Reset the PCL interpreter and parser */
     stage = Sreset;
-    if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_initial)) < 0)
+    if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_printer)) < 0)
         goto pisdEnd;
 
     if ((code = pcl_process_init(&pcli->pst, &pcli->pcs)) < 0)
@@ -521,10 +523,6 @@ pcl_impl_dnit_job(pl_interp_implementation_t * impl)       /* interp instance to
     if (code < 0)
         return code;
 
-    code = pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
-    if (code < 0)
-        return code;
-
     if (pcs->raster_state.graphics_mode)
         code = pcl_end_graphics_mode(pcs);
 
@@ -568,6 +566,21 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
     return 0;
 }
 
+static int
+pcl_impl_reset(pl_interp_implementation_t *impl, pl_interp_reset_reason reason)
+{
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
+    int code;
+
+    if (reason != PL_RESET_RESOURCES)
+        return 0;
+
+    code = pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
+    if (code < 0)
+        return code;
+    return pcl_do_resets(&pcli->pcs, pcl_reset_initial);
+}
+
 /*
  * End-of-page called back by PCL - NB now exported.
  */
@@ -598,5 +611,6 @@ pl_interp_implementation_t pcl_implementation = {
     pcl_impl_report_errors,
     pcl_impl_dnit_job,
     pcl_impl_deallocate_interp_instance,
-    NULL
+    pcl_impl_reset,
+    NULL                        /* interp_client_data */
 };

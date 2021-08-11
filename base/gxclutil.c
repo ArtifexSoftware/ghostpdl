@@ -83,7 +83,7 @@ cmd_uncount_op(int op, uint size)
 #endif
 
 /* Print statistics. */
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#if defined(DEBUG_CLIST_STATS) && !defined(GS_THREADSAFE)
 void
 cmd_print_stats(const gs_memory_t *mem)
 {
@@ -287,7 +287,7 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
     VALGRIND_MAKE_MEM_UNDEFINED(cldev->cbuf, cldev->cend - cldev->cbuf);
 #endif
     cldev->ccl = 0;
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#if defined(DEBUG_CLIST_STATS) && !defined(GS_THREADSAFE)
     if (gs_debug_c('l'))
         cmd_print_stats(cldev->memory);
 #endif

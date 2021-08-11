@@ -118,7 +118,7 @@
         { x_dpi, y_dpi }/*HWResolution*/
 
 /* offsets and margins go here */
-#define std_device_part3_()\
+#define std_device_part3_sc(ins, bp, ep)\
         0/*FirstPage*/, 0/*LastPage*/, 0/*PageHandlerPushed*/, 0/*DisablePageHandler*/,\
         0/* Object Filter*/, 0/*ObjectHandlerPushed*/,\
         0, /* NupControl */ 0, /* NupHandlerPushed */\
@@ -135,7 +135,10 @@
         0/*Profile Array*/,\
         0/* graphics_type_tag default GS_UNTOUCHED_TAG */,\
         1/* interpolate_control default 1, uses image /Interpolate flag, full device resolution */,\
-        { gx_default_install, gx_default_begin_page, gx_default_end_page }
+        { ins, bp, ep }
+#define std_device_part3_()\
+        std_device_part3_sc(gx_default_install, gx_default_begin_page, gx_default_end_page)
+
 /*
  * We need a number of different variants of the std_device_ macro simply
  * because we can't pass the color_info or offsets/margins
@@ -198,10 +201,20 @@
         std_device_part2_(w, h, xdpi, ydpi),\
         offset_margin_values(0, 0, 0, 0, 0, 0),\
         std_device_part3_()
+#define std_device_dci_alpha_type_body_sc(dtype, init, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, ta, ga, ins, bp, ep)\
+        std_device_part1_(dtype, init, dname, stype, open_init_closed),\
+        dci_alpha_values(ncomp, depth, mg, mc, dg, dc, ta, ga),\
+        std_device_part2_(w, h, xdpi, ydpi),\
+        offset_margin_values(0, 0, 0, 0, 0, 0),\
+        std_device_part3_sc(ins, bp, ep)
 
 #define std_device_dci_type_body(dtype, init, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)\
         std_device_dci_alpha_type_body(dtype, init, dname, stype, w, h,\
           xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, 1, 1)
+
+#define std_device_dci_type_body_sc(dtype, init, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, ins, bp, ep)\
+        std_device_dci_alpha_type_body_sc(dtype, init, dname, stype, w, h,\
+          xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, 1, 1, ins, bp, ep)
 
 #define std_device_dci_body(dtype, init, dname, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)\
         std_device_dci_type_body(dtype, init, dname, 0,\
@@ -658,13 +671,12 @@ typedef struct {
     gx_device_forward *forwarding_dev;
 } generic_subclass_data;
 
-
 int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device *prototype);
 int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size);
 void gx_device_unsubclass(gx_device *dev);
 int gx_update_from_subclass(gx_device *dev);
 int gx_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
-
+void gx_subclass_fill_in_page_procs(gx_device *dev);
 
 #endif /* gxdevice_INCLUDED */

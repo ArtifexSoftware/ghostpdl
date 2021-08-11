@@ -103,11 +103,11 @@ public_st_epo_device();
 const
 gx_device_epo gs_epo_device =
 {
-    std_device_dci_type_body(gx_device_epo, epo_initialize_device_procs,
+    std_device_dci_type_body_sc(gx_device_epo, epo_initialize_device_procs,
                         EPO_DEVICENAME, &st_epo_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
-                        1, 8, 255, 0, 256, 1)
+                        1, 8, 255, 0, 256, 1, NULL, NULL, NULL)
 };
 
 #undef MAX_COORD

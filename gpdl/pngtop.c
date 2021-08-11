@@ -795,5 +795,6 @@ const pl_interp_implementation_t png_implementation = {
   png_impl_report_errors,
   png_impl_dnit_job,
   png_impl_deallocate_interp_instance,
-  NULL
+  NULL, /* png_impl_reset */
+  NULL  /* interp_client_data */
 };

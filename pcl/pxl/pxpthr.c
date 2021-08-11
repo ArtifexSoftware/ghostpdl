@@ -155,12 +155,7 @@ pxPassthrough_init(px_state_t * pxs)
         }
     }
 
-    /* do an initial reset to set up a permanent reset.  The
-       motivation here is to avoid tracking down a slew of memory
-       leaks */
     pxs->pcs->xfm_state.paper_size = pcl_get_default_paper(pxs->pcs);
-    pcl_do_resets(pxs->pcs, pcl_reset_initial);
-    pcl_do_resets(pxs->pcs, pcl_reset_permanent);
 
     /* initialize pcl and install xl's page device in pcl's state */
     pcl_init_state(pxs->pcs, pxs->memory);
@@ -170,7 +165,7 @@ pxPassthrough_init(px_state_t * pxs)
 
     /* yet another reset with the new page device */
     pxs->pcs->xfm_state.paper_size = pcl_get_default_paper(pxs->pcs);
-    pcl_do_resets(pxs->pcs, pcl_reset_initial);
+
     /* set the parser state and initialize the pcl parser */
     pxs->pcl_parser_state.definitions = pxs->pcs->pcl_commands;
     pxs->pcl_parser_state.hpgl_parser_state = &pxs->gl_parser_state;
@@ -323,7 +318,6 @@ pxpcl_release(px_state_t * pxs)
         pcl_grestore(pxs->pcs);
         gs_grestore_only(pxs->pcs->pgs);
         gs_nulldevice(pxs->pcs->pgs);
-        pcl_do_resets(pxs->pcs, pcl_reset_permanent);
         pxs->pcs->end_page = pcl_end_page_top;        /* pcl_end_page handling */
         pxpcl_pagestatereset(pxs);
         pxs->pcs = NULL;

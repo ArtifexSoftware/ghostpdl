@@ -105,11 +105,11 @@ gx_device_nup gs_nup_device =
     /*
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
-    std_device_dci_type_body(gx_device_nup, nup_initialize_device_procs,
+    std_device_dci_type_body_sc(gx_device_nup, nup_initialize_device_procs,
                         "N-up", &st_nup_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
-                        1, 8, 255, 0, 256, 1)
+                        1, 8, 255, 0, 256, 1, NULL, NULL, NULL)
 };
 
 #undef MAX_COORD
@@ -457,11 +457,19 @@ nup_output_page(gx_device *dev, int num_copies, int flush)
     }
 
     /* FIXME: Handle num_copies > 1 */
+
+    /* pNup_data holds the number of 'sub pages' we have produced,
+     * so update that. dev->PageCount holds the number of 'actual'
+     * pages we've output, so only increment that if we really
+     * do an output. */
     pNup_data->PageCount++;
-    dev->PageCount++;
     dev->ShowpageCount = dev->child->ShowpageCount;
-    if (pNup_data->PageCount >= pNup_data->PagesPerNest)
+    if (pNup_data->PageCount >= pNup_data->PagesPerNest) {
         code = nup_flush_nest_to_output(dev, pNup_data, flush);
+        /* Increment this afterwards, in case the child accesses
+         * the value to fill in a %d in the filename. */
+        dev->PageCount++;
+    }
 
     return code;
 }

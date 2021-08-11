@@ -118,12 +118,12 @@ gx_device_obj_filter gs_obj_filter_device =
     /*
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
-    std_device_dci_type_body(gx_device_obj_filter,
+    std_device_dci_type_body_sc(gx_device_obj_filter,
                         obj_filter_initialize_device_procs,
                         "object_filter", &st_obj_filter_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
-                        1, 8, 255, 0, 256, 1)
+                        1, 8, 255, 0, 256, 1, NULL, NULL, NULL)
 };
 
 #undef MAX_COORD

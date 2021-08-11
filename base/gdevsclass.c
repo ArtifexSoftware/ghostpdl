@@ -861,3 +861,34 @@ void default_subclass_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, transform_pixel_region, default_subclass_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, default_subclass_fill_stroke_path);
 }
+
+int
+default_subclass_install(gx_device *dev, gs_gstate *pgs)
+{
+    dev = dev->child;
+    return dev->page_procs.install(dev, pgs);
+}
+
+int
+default_subclass_begin_page(gx_device *dev, gs_gstate *pgs)
+{
+    dev = dev->child;
+    return dev->page_procs.begin_page(dev, pgs);
+}
+
+int
+default_subclass_end_page(gx_device *dev, int reason, gs_gstate *pgs)
+{
+    dev = dev->child;
+    return dev->page_procs.end_page(dev, reason, pgs);
+}
+
+void gx_subclass_fill_in_page_procs(gx_device *dev)
+{
+    if (dev->page_procs.install == NULL)
+        dev->page_procs.install = default_subclass_install;
+    if (dev->page_procs.begin_page == NULL)
+        dev->page_procs.begin_page = default_subclass_begin_page;
+    if (dev->page_procs.end_page == NULL)
+        dev->page_procs.end_page = default_subclass_end_page;
+}
