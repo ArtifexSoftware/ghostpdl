@@ -23,7 +23,6 @@
 #include "plmain.h"
 
 #include "plparse.h" /* for e_ExitLanguage */
-#include "plmain.h"
 #include "gxdevice.h" /* so we can include gxht.h below */
 #include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
 #include "gsht1.h"

@@ -16,12 +16,11 @@
 /* code for type 1 font handling */
 #include "pdf_int.h"
 
-#include "strmio.h"
-#include "stream.h"
 #include "gsgdata.h"
 #include "gstype1.h"
 #include "gscencs.h"
 
+#include "strmio.h"
 #include "strimpl.h"
 #include "stream.h"
 #include "sfilter.h"
