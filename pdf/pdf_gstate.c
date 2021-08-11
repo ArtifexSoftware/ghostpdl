@@ -1524,7 +1524,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     int64_t type;
     char *str = NULL;
     bool known = false;
-    gs_halftone_component *phtc = NULL, dummy_htc, *phtc1;
+    gs_halftone_component *phtc = NULL, *phtc1;
     gx_ht_order_component *pocs = 0;
     pdf_obj *Key = NULL, *Value = NULL;
     uint64_t index = 0, ix = 0;
@@ -1575,7 +1575,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
 
             comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)str, str_len,
                                         ht_type_multiple);
-            if (comp_number != GX_DEVICE_COLOR_MAX_COMPONENTS && comp_number >= 0)
+            if (comp_number >= 0)
                 NumComponents++;
             gs_free_object(ctx->memory, str, "pdfi_string_from_name");
             str = NULL;
@@ -1609,7 +1609,6 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         memset(pocs, 0x00, NumComponents * sizeof(gx_ht_order_component));
         pdht->components = pocs;
         pdht->num_comp = NumComponents;
-
         phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component) * NumComponents, "pdfi_do_halftone");
         if (phtc == 0) {
             code = gs_note_error(gs_error_VMerror);
@@ -1629,7 +1628,11 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         goto error;
     }
 
-    ix = 0;
+    /* index 0 in the component array is reserved for the Default, we can't get here without
+     * having a /Default, so we just leave room for it and start filing the other inks from
+     * index 1.
+     */
+    ix = 1;
     do {
         if (Key->type != PDF_NAME) {
             code = gs_note_error(gs_error_typecheck);
@@ -1648,15 +1651,21 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                 comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)str, str_len,
                                             ht_type_multiple);
                 if (comp_number >= 0) {
+                    /* If comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS then it is the /Default
+                     * In that case we want to store it in index 0 of the halftone components array
+                     */
                     if (comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
-                        porder1 = &pdht->order;
-                        phtc1 = &dummy_htc;
+                        phtc[0].comp_number = comp_number;
+                        porder1 = &(pdht->components[0].corder);
+                        pdht->components[0].comp_number = comp_number;
+                        phtc1 = &phtc[0];
                     } else {
-                        porder1 = &(pdht->components[ix].corder);
                         phtc[ix].comp_number = comp_number;
+                        porder1 = &(pdht->components[ix].corder);
                         pdht->components[ix].comp_number = phtc[ix].comp_number;
                         phtc1 = &phtc[ix++];
                     }
+
                     code = pdfi_dict_get_int(ctx, subdict, "HalftoneType", &type);
                     if (code < 0)
                         goto error;
@@ -1726,6 +1735,21 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         }
     } while (code >= 0);
     code = 0;
+
+    /* If we only had one component, it must be the Default, in which case we
+     * do not need the components array. So we can copy the order from the 0th
+     * index of the components array (Default is stored at index 0) to the
+     * device halftone order, and free the components array.
+     */
+    if (ix == 1) {
+        pdht->order = pdht->components[0].corder;
+        gs_free_object(ctx->memory, pocs, "pdfi_build_type5_halftone");
+        pdht->components = 0;
+        pdht->num_comp = 0;
+    } else {
+        pdht->components = pocs;
+        pdht->num_comp = ix;
+    }
 
     pht->type = ht_type_multiple;
     pht->params.multiple.components = phtc;
