@@ -33,7 +33,7 @@
  * but don't use the autoconf detection
  */
 #ifndef HAVE_STDINT_H
-# ifdef __MACOS__
+# if defined(__MACOS__) || (defined(__APPLE__) && defined(__MACH__))
 #   define HAVE_STDINT_H
 # endif
 #endif
