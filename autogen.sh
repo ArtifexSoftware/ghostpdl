@@ -29,9 +29,6 @@ rm -rf autom4te.cache
 
 echo "Generating configuration files for $package, please wait...."
 
-echo "  running autoreconf"
-autoreconf || exit 1
-
 if test ! -x config.guess -o ! -x config.sub ; then
   rm -f config.guess config.sub
   cp `automake --print-libdir`/config.guess . || exit 1
@@ -42,6 +39,10 @@ if test ! -x install-sh ; then
   rm -f install-sh
   cp `automake --print-libdir`/install-sh . || exit 1
 fi
+
+echo "  running autoreconf"
+autoreconf || exit 1
+
 
 if test -z "$*"; then
         echo "I am going to run ./configure with no arguments - if you wish "
