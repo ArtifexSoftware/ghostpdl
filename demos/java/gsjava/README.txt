@@ -65,8 +65,10 @@ public static void main(String[] args) {
 	GSAPI.gsapi_delete_instance(instance);
 }
 
-To build the library, build.sh can be used on Linux and build.bat on Windows.
-Both of these scripts do not compile Ghostscript. However, build.sh will
+To build the library, build.sh can be used on Linux, build_darwin.sh can
+be used on Mac OS X, and build.bat on Windows.
+
+All of these scripts do not compile Ghostscript. However, build.sh will
 compile the C++ library unlike build.bat.
 
 Viewer:

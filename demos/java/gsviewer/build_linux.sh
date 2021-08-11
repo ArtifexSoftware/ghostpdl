@@ -3,7 +3,7 @@
 # build gsjava
 cd ../gsjava
 
-bash build.sh
+bash build_linux.sh
 
 cd ../gsviewer
 

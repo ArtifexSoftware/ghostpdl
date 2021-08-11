@@ -38,6 +38,11 @@ public class NativePointer {
 			System.load(libgpdl.getAbsolutePath());
 			File gsjni = new File("gs_jni.so");
 			System.load(gsjni.getAbsolutePath());
+        } else if (System.getProperty("os.name").equalsIgnoreCase("Mac OS X")) {
+            File libgpdl = new File("libgpdl.dylib");
+            System.load(libgpdl.getAbsolutePath());
+            File gsjni = new File("gs_jni.dylib");
+            System.load(gsjni.getAbsolutePath());
 		} else {
 			System.loadLibrary("gs_jni");
 		}
