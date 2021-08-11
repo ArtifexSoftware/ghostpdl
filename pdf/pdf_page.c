@@ -921,7 +921,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     release_page_DefaultSpaces(ctx);
 
     if (code == 0 || (!ctx->args.pdfstoponerror && code != gs_error_stackoverflow))
-        if (!page_dict_error && ctx->end_page != NULL)
-            code = ctx->end_page(ctx);
+        if (!page_dict_error && ctx->finish_page != NULL)
+            code = ctx->finish_page(ctx);
     return code;
 }

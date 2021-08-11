@@ -269,7 +269,7 @@ zsaslprep(i_ctx_t *i_ctx_p)
 
 #if defined(BUILD_PDF) && BUILD_PDF == 1
 static int
-psi_pdf_end_page(pdf_context *ctx)
+psi_pdf_finish_page(pdf_context *ctx)
 {
     return 0;
 }
@@ -304,7 +304,7 @@ static int zdopdffile(i_ctx_t *i_ctx_p)
         goto done;
 
 
-    ctx->end_page = psi_pdf_end_page;
+    ctx->finish_page = psi_pdf_finish_page;
     memcpy(pdffilename, op->value.bytes, r_size(op));
     pdffilename[r_size(op)] = 0;
     code = pdfi_process_pdf_file(ctx, pdffilename);
@@ -417,7 +417,7 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
         return code;
     }
 
-    pdfctx->ctx->end_page = NULL;
+    pdfctx->ctx->finish_page = NULL;
     make_tav(op, t_pdfctx, icurrent_space | a_all, pstruct, (obj_header_t *)(pdfctx));
 
     pop(2);
@@ -452,7 +452,7 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
-    pdfctx->ctx->end_page = NULL;
+    pdfctx->ctx->finish_page = NULL;
 
     pop(2);
     return 0;

@@ -94,7 +94,7 @@ pdf_set_icc_user_params(pl_interp_implementation_t *impl, gs_gstate *pgs)
 #endif
 
 static int
-pdf_impl_end_page(pdf_context *ctx)
+pdf_impl_finish_page(pdf_context *ctx)
 {
     return pl_finish_page(ctx->memory->gs_lib_ctx->top_of_system, ctx->pgs, 1, true);
 }
@@ -120,7 +120,7 @@ pdf_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
         return gs_error_VMerror;
     }
 
-    ctx->end_page = pdf_impl_end_page;
+    ctx->finish_page = pdf_impl_finish_page;
 
     ctx->instance = instance;
     instance->ctx = ctx;

@@ -14,7 +14,7 @@
 */
 
 
-/* combined internal header for the XPS interpreter */
+/* combined internal header for the PDF interpreter */
 
 #include "memory_.h"
 #include "math_.h"
@@ -510,7 +510,7 @@ typedef struct pdf_context_s
      * PostScript functionality when running inside the Ghostscript PostScript
      * interpreter.
      */
-    int (*end_page) (struct pdf_context_s *ctx);
+    int (*finish_page) (struct pdf_context_s *ctx);
     int (*get_glyph_name)(gs_font *font, gs_glyph index, gs_const_string *pstr);
     int (*get_glyph_index)(gs_font *font, byte *str, uint size, uint *glyph);
 
