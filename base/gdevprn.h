@@ -242,6 +242,17 @@ prn_dev_proc_get_space_params(gx_default_get_space_params);
           (float)((rm) * 72.0), (float)((tm) * 72.0)\
         ),\
         prn_device_body_rest_(print_page)
+#define prn_device_margins_body_duplex(dtype, init, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+        std_device_full_body_type(dtype, init, dname, &st_device_printer,\
+          (int)((float)(w10) * (xdpi) / 10 + 0.5),\
+          (int)((float)(h10) * (ydpi) / 10 + 0.5),\
+          xdpi, ydpi,\
+          ncomp, depth, mg, mc, dg, dc,\
+          (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
+          (float)((lm) * 72.0), (float)((bm) * 72.0),\
+          (float)((rm) * 72.0), (float)((tm) * 72.0)\
+        ),\
+        prn_device_body_rest2_(print_page, gx_default_print_page_copies, 0)
 #define prn_device_margins_stype_body(dtype, init, dname, stype, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
         std_device_full_body_type(dtype, init, dname, stype,\
           (int)((float)(w10) * (xdpi) / 10 + 0.5),\
@@ -256,6 +267,9 @@ prn_dev_proc_get_space_params(gx_default_get_space_params);
 
 #define prn_device_body(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
   prn_device_margins_body(dtype, init, dname, w10, h10, xdpi, ydpi,\
+    lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)
+#define prn_device_body_duplex(dtype, init, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+  prn_device_margins_body_duplex(dtype, init, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)
 #define prn_device_stype_body(dtype, init, dname, stype, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
   prn_device_margins_stype_body(dtype, init, dname, stype, w10, h10, xdpi, ydpi,\

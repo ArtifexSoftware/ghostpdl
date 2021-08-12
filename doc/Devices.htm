@@ -956,13 +956,24 @@ and <code>RLE</code>.Note that LZW is not supported on PCLm (not valid) and None
 on PCLm for debugging purposes.
 </p>
 <p>
-Finally, the PCLm device supports the <code>-dStripHeight</code> switch to set the vertical height
-of the strips of image content, as required by the specification.
-</p>
-
-<p>
 For JPEG compression the devices support both the JPEGQ and QFactor switches as documented for the <a href="#JFIF">JPEG</a> file format device.
 </p>
+<p>
+In addition, the PCLm device supports some other parameters. Firstly, the
+<code>-dStripHeight</code> switch to set the vertical height
+of the strips of image content, as required by the specification.
+</p>
+<p>Secondly, the standard postscript <code>-dDuplex</code> and
+<code>-dTumble</code>switches are supported, in that if both are
+set to true, every verso page (i.e. all even pages) will be
+rotated by 180 degrees.</p>
+
+<p>As an extension to this, a <code>-dTumble2</code> parameter is
+also supported that will add an additional X-axis flip for every
+verso page. Thus <code>-dDuplex=true -dTumble=false -dTumble2=true</code>
+will result in verso pages being flipped horizontally, and
+<code>-dDuplex=true -dTumble=true -dTumble2=true</code> will result
+in verso pages being flipped vertically.</p>
 
 <hr>
 

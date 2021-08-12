@@ -984,6 +984,12 @@ pdf_image_get_some_params(gx_device * dev, gs_param_list * plist, int which)
     if (ecode < 0)
         return ecode;
 
+    ecode = param_write_bool(plist, "Tumble", &pdf_dev->Tumble);
+    if (ecode < 0)
+        return ecode;
+    ecode = param_write_bool(plist, "Tumble2", &pdf_dev->Tumble2);
+    if (ecode < 0)
+        return ecode;
     ecode = param_write_int(plist, "StripHeight", &pdf_dev->StripHeight);
     if (ecode < 0)
         return ecode;
@@ -1035,6 +1041,18 @@ pdf_image_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     gs_param_string comprstr;
     const char *param_name;
 
+    code = param_read_bool(plist, param_name = "Tumble", &pdf_dev->Tumble);
+    if (code < 0) {
+        errprintf(pdf_dev->memory, "Invalid Tumble setting\n");
+        param_signal_error(plist, param_name, ecode);
+        return code;
+    }
+    code = param_read_bool(plist, param_name = "Tumble2", &pdf_dev->Tumble2);
+    if (code < 0) {
+        errprintf(pdf_dev->memory, "Invalid Tumble2 setting\n");
+        param_signal_error(plist, param_name, ecode);
+        return code;
+    }
     code = param_read_int(plist, param_name = "StripHeight", &pdf_dev->StripHeight);
     if (code < 0) {
         errprintf(pdf_dev->memory, "Invalid StripHeight setting\n");
@@ -1109,6 +1127,41 @@ pdf_image_put_params_downscale_cmyk_ets(gx_device * dev, gs_param_list * plist)
     return pdf_image_put_some_params(dev, plist, 7);
 }
 
+void
+PCLm_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
+{
+    gx_device_pdf_image *pdev = (gx_device_pdf_image *)dev;
+
+    gx_default_get_initial_matrix(dev, pmat);
+
+    if (pdev->Duplex && (pdev->NumPages & 1)) {
+        /* Duplexing and we are on the back of the page. */
+        if (pdev->Tumble) {
+            if (pdev->Tumble2) {
+                /* Rotate by 180 degrees and flip on X. */
+                pmat->xx = pmat->xx;
+                pmat->xy = -pmat->xy;
+                pmat->yx = -pmat->yx;
+                pmat->yy = -pmat->yy;
+                pmat->ty = pdev->height - pmat->ty;
+            } else {
+                /* Rotate by 180 degrees */
+                pmat->xx = -pmat->xx;
+                pmat->xy = -pmat->xy;
+                pmat->yx = -pmat->yx;
+                pmat->yy = -pmat->yy;
+                pmat->tx = pdev->width - pmat->tx;
+                pmat->ty = pdev->height - pmat->ty;
+            }
+        } else if (pdev->Tumble2) {
+            /* Flip on X */
+            pmat->xx = -pmat->xx;
+            pmat->yx = -pmat->yx;
+            pmat->tx = pdev->width - pmat->tx;
+        }
+    }
+}
+
 /* ------ The PCLm device ------ */
 static void
 PCLm_initialize_device_procs(gx_device *dev)
@@ -1117,6 +1170,7 @@ PCLm_initialize_device_procs(gx_device *dev)
 
     set_dev_proc(dev, open_device, PCLm_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page);
+    set_dev_proc(dev, get_initial_matrix, PCLm_get_initial_matrix);
     set_dev_proc(dev, close_device, PCLm_close);
     set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
@@ -1125,17 +1179,17 @@ PCLm_initialize_device_procs(gx_device *dev)
 static dev_proc_print_page(PCLm_print_page);
 
 const gx_device_pdf_image gs_PCLm_device = {
-    prn_device_body(gx_device_pdf_image,
-                    PCLm_initialize_device_procs,
-                    "pclm",
-                    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-                    600, 600,   /* 600 dpi by default */
-                    0, 0, 0, 0, /* Margins */
-                    3,          /* num components */
-                    24,         /* bits per sample */
-                    255, 255, 256, 256,
-                    PCLm_print_page),
-                    3,
+    prn_device_body_duplex(gx_device_pdf_image,
+                           PCLm_initialize_device_procs,
+                           "pclm",
+                           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                           600, 600,   /* 600 dpi by default */
+                           0, 0, 0, 0, /* Margins */
+                           3,          /* num components */
+                           24,         /* bits per sample */
+                           255, 255, 256, 256,
+                           PCLm_print_page),
+    3,
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     16, /* StripHeight */
     0.0, /* QFactor */

@@ -74,6 +74,9 @@ typedef struct gx_device_pdf_image_s {
     PCLm_temp_file_t temp_stream;
     int NextObject;
 
+    int Tumble;
+    int Tumble2;
+
     /* OCR data */
     struct {
         char language[1024];

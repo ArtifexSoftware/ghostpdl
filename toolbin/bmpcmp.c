@@ -3678,6 +3678,17 @@ static void unspot(unsigned char *bmp, Image *img)
     }
 }
 
+static int
+is_eof(FILE *file)
+{
+    int c = fgetc(file);
+
+    if (c == EOF)
+        return 1;
+    ungetc(c, file);
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     int            w,  h,  s,  bpp,  cmyk;
@@ -3736,7 +3747,7 @@ int main(int argc, char *argv[])
     image_open(&image2, params.filename2);
 
     imagecount = 0;
-    while (bmp2 == NULL) {
+    while (!is_eof(image1.file) && !is_eof(image2.file)) {
         /* Reset CMYK+spots values for next image (page) in file */
         /* NB: Probably not needed since PSD only supports one image==page */
         num_spots = 0;
@@ -3745,14 +3756,15 @@ int main(int argc, char *argv[])
         for (n=0; n < 4; n++)
             color_map[n] = n;
 
+        bmp2 = NULL;
         if ((bmp = image1.read(&image1, &im1)) == NULL) {
             fprintf(stderr, "Unable to read image 1, %s, image #%d\n", params.filename1, imagecount+1);
-            continue;	/* try next image??? */
+            break;
         }
 
         if ((bmp2 = image2.read(&image2, &im2)) == NULL) {
             fprintf(stderr, "Unable to read image 2, %s, image #%d\n", params.filename2, imagecount+1);
-            continue;	/* try next image??? */
+            break;
         }
         imagecount++;
         /* Check images are compatible */
