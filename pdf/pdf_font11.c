@@ -28,6 +28,7 @@
 #include "pdf_deref.h"
 #include "gxfont42.h"
 #include "gxfcid.h"
+#include "gsutil.h"        /* For gs_next_ids() */
 
 static int pdfi_cidtype2_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
                   const byte ** pdata)

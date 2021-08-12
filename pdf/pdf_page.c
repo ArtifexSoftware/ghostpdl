@@ -34,6 +34,11 @@
 #include "pdf_annot.h"
 #include "pdf_check.h"
 
+#include "gscoord.h"        /* for gs_concat() and others */
+#include "gspaint.h"        /* For gs_erasepage() */
+#include "gsstate.h"        /* For gs_initgraphics() */
+#include "gspath2.h"        /* For gs_rectclip() */
+
 static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
 {
     int i, code = 0;

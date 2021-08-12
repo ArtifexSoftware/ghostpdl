@@ -38,6 +38,8 @@
 #include "pdf_fontps.h"
 #include "pdf_fontTT.h"
 
+#include "gxtype1.h"        /* for gs_type1_state_s */
+#include "gsutil.h"        /* For gs_next_ids() */
 
 /* These are fonts for which we have to ignore "named" encodings */
 typedef struct pdfi_t1_glyph_name_equivalents_s

@@ -28,6 +28,10 @@
 #include "pdf_func.h"
 
 #include "gstparam.h"
+#include "gsicc_manage.h"       /* For gs_currentoverrideicc() */
+#include "gscoord.h"            /* For gs_setmatrix()*/
+#include "gsstate.h"            /* For gs_currentstrokeoverprint() and others */
+#include "gspath.h"             /* For gs_clippath() */
 
 /* Implement the TransferFunction using a Function. */
 static int

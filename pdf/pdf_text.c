@@ -30,6 +30,8 @@
 #include "gsstate.h"
 #include "gsmatrix.h"
 #include "gdevbbox.h"
+#include "gspaint.h"        /* For gs_fill() and friends */
+#include "gscoord.h"        /* For gs_setmatrix() */
 
 static int pdfi_set_TL(pdf_context *ctx, double TL);
 

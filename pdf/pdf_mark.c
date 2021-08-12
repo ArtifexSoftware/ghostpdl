@@ -28,6 +28,8 @@
 #include "pdf_page.h"
 #include "pdf_deref.h"
 
+#include "gscoord.h"         /* For gs_currentmatrix */
+
 static int pdfi_mark_setparam_obj(pdf_context *ctx, pdf_obj *obj, gs_param_string *entry)
 {
     int code = 0;

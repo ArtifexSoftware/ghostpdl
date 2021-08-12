@@ -18,6 +18,8 @@
 #ifndef PDF_FONTPS_H
 #define PDF_FONTPS_H
 
+#include "gxfont1.h"        /* for gs_font_type1_s */
+
 typedef enum
 {
   PDF_PS_OBJ_NULL,

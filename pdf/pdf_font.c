@@ -36,6 +36,7 @@
 
 #include "strmio.h"
 #include "stream.h"
+#include "gsstate.h"            /* For gs_setPDFfontsize() */
 
 static int pdfi_gs_setfont(pdf_context *ctx, gs_font *pfont)
 {

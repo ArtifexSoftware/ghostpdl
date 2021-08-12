@@ -37,6 +37,10 @@
 #include "gsipar3x.h"
 #include "gsform1.h"
 #include "gstrans.h"
+#include "gxdevsop.h"               /* For special ops */
+#include "gspath.h"         /* For gs_moveto() and friends */
+#include "gsstate.h"        /* For gs_setoverprintmode() */
+#include "gscoord.h"        /* for gs_concat() and others */
 
 int pdfi_BI(pdf_context *ctx)
 {

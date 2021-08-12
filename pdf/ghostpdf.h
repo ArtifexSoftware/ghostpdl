@@ -14,77 +14,11 @@
 */
 
 
-/* combined internal header for the PDF interpreter */
-
-#include "memory_.h"
-#include "math_.h"
-#include "string_.h"
-#include <stdlib.h>
-#include <ctype.h> /* for toupper() */
-
-/* Include zlib early to avoid offsetof redef problems on windows */
-#include "zlib.h"
-
-#include "stdint_.h"
-
-#include "gp.h"
-
-#include "gsgc.h"
-#include "gstypes.h"
-#include "gsstate.h"
-#include "gsmatrix.h"
-#include "gscoord.h"
-#include "gsmemory.h"
-#include "gsparam.h"
-#include "gsdevice.h"
-#include "scommon.h"
-#include "gdebug.h"
-#include "gserrors.h"
-#include "gspaint.h"
-#include "gspath.h"
-#include "gsimage.h"
-#include "gscspace.h"
-#include "gsptype1.h"
-#include "gscolor2.h"
-#include "gscolor3.h"
-#include "gsutil.h"
-#include "gsicc.h"
-
-#include "gstrans.h"
-
-#include "gxpath.h"     /* gsshade.h depends on it */
-#include "gxfixed.h"    /* gsshade.h depends on it */
-#include "gxmatrix.h"   /* gxtype1.h depends on it */
-#include "gsshade.h"
-#include "gsfunc.h"
-#include "gsfunc3.h"    /* we use stitching and exponential interp */
-
-#include "gxfont.h"
-#include "gxchar.h"
-#include "gxcolor2.h" /* Required for definition of gs_pattern1_instance_t */
-#include "gxtype1.h"
-#include "gxfont1.h"
-#include "gxfont42.h"
-#include "gxfcache.h"
-#include "gxgstate.h"
-
-#include "gzstate.h"
-#include "gzpath.h"
-#include "gzcpath.h"
-
-#include "gsicc_manage.h"
-#include "gscms.h"
-#include "gsicc_cache.h"
-#include "gxpcolor.h"
-#include "gxdevsop.h"       /* For special ops */
-#include "gstext.h"         /* for gs_text_enum_t */
-
-#include "gxtmap.h"
-#include "gxfmap.h"
-#include "gspath2.h"        /* for gs_rectclip */
-
 #ifndef PDF_CONTEXT
 #define PDF_CONTEXT
+
+#include "gserrors.h"   /* Most files use this to set errors of the gs_error_ form */
+#include "gxgstate.h"
 
 #define BUF_SIZE 2048
 

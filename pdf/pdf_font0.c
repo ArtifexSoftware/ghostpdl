@@ -32,6 +32,8 @@
 #include "pdf_cmap.h"
 #include "pdf_deref.h"
 
+#include "gsutil.h"        /* For gs_next_ids() */
+
 extern const pdfi_cid_decoding_t *pdfi_cid_decoding_list[];
 extern const pdfi_cid_subst_nwp_table_t *pdfi_cid_substnwp_list[];
 

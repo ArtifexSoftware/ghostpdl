@@ -31,6 +31,7 @@
 #include "pdf_colour.h"
 #include "pdf_trans.h"
 
+#include "gsstate.h"        /* For gs_gstate */
 #include "gsmatrix.h"
 #include "gslparam.h"
 #include "gstparam.h"
@@ -39,6 +40,9 @@
 #include "gxht.h"
 #include "gzht.h"
 #include "gsht.h"
+#include "gscoord.h"        /* For gs_concat() */
+#include "gsutil.h"         /* For gs_next_ids() */
+#include "gscolor3.h"       /* For gs_setsmoothness() */
 
 static const char *blend_mode_names[] = {
     GS_BLEND_MODE_NAMES, 0

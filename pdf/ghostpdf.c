@@ -40,6 +40,9 @@
 #include "pdf_xref.h"
 #include "pdf_device.h"
 
+#include "gsstate.h"        /* For gs_gstate */
+#include "gsicc_manage.h"  /* For gsicc_init_iccmanager() */
+
 #if PDFI_LEAK_CHECK
 #include "gsmchunk.h"
 #endif

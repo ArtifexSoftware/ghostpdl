@@ -31,12 +31,19 @@
 #include "pdf_annot.h"
 #include "pdf_colour.h"
 #include "pdf_deref.h"
-#include "gspath2.h"
 #include "pdf_image.h"
-#include "gxfarith.h"
 #include "pdf_mark.h"
 #include "pdf_font.h"
 #include "pdf_text.h"
+
+#include "gspath2.h"
+#include "gxfarith.h"
+#include "gxdevsop.h"               /* For special ops */
+#include "gsstrtok.h"               /* For gs_strtok */
+#include "gscoord.h"        /* for gs_concat() and others */
+#include "gsline.h"         /* For gs_setlinejoin() and friends */
+#include "gsutil.h"        /* For gs_next_ids() */
+#include "gspaint.h"        /* For gs_fill() and friends */
 
 /* Detect if there is a BOM at beginning of string */
 #define IS_UTF8(str) (!strcmp((char *)(str), "\xef\xbb\xbf"))

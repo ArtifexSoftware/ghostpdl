@@ -37,6 +37,9 @@
 #include "strmio.h"
 #include "gscdevn.h"
 #include "gxcdevn.h"
+#include "gscolor.h"    /* For gs_setgray() and friends */
+#include "gsicc.h"      /* For gs_cspace_build_ICC() */
+#include "gsstate.h"    /* For gs_gdsvae() and gs_grestore() */
 
 /* Forward definitions for a routine we need */
 static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index,

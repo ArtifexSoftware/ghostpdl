@@ -22,6 +22,8 @@
 #include "pdf_trans.h"
 #include "gstypes.h"
 #include "pdf_optcontent.h"
+#include "gspath.h"         /* For gs_moveto() and friends */
+#include "gspaint.h"        /* For gs_fill() and friends */
 
 int pdfi_moveto (pdf_context *ctx)
 {

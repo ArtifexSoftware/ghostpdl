@@ -19,6 +19,7 @@
 #include "pdf_stack.h"
 #include "pdf_device.h"
 #include "gdevvec.h" /* for gs_device_vector */
+#include "gxdevsop.h"               /* For special ops : dev_param_req_t */
 
 int pdfi_device_check_param(gx_device *dev, const char *param, gs_c_param_list *list)
 {

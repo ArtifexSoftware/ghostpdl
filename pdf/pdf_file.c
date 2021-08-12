@@ -41,6 +41,7 @@
 #include "sarc4.h"      /* Arc4Decode */
 #include "saes.h"       /* AESDecode */
 #include "ssha2.h"      /* SHA256Encode */
+#include "gxdevsop.h"       /* For special ops */
 
 #ifdef USE_LDF_JB2
 #include "sjbig2_luratech.h"

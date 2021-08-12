@@ -28,6 +28,7 @@
 #include "pdf_agl.h"
 #include "gxfont42.h"
 #include "gscencs.h"
+#include "gsutil.h"        /* For gs_next_ids() */
 
 enum {
     CMAP_TABLE_NONE = 0,

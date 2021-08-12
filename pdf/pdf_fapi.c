@@ -38,6 +38,8 @@
 #include "pdf_font.h"
 #include "pdf_agl.h"
 #include "gscencs.h"
+#include "gxfont1.h"        /* for gs_font_type1_s */
+#include "gscrypt1.h"       /* for crypt_c1 */
 
 /* forward declarations for the pdfi_ff_stub definition */
 static int

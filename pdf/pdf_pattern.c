@@ -22,21 +22,23 @@
 #include "pdf_stack.h"
 #include "pdf_array.h"
 #include "pdf_gstate.h"
-#include "gsicc_manage.h"
-#include "gsicc_profilecache.h"
-#include "gsicc_create.h"
-#include "gsptype2.h"
-
 #include "pdf_file.h"
 #include "pdf_dict.h"
 #include "pdf_loop_detect.h"
 #include "pdf_func.h"
 #include "pdf_shading.h"
 #include "pdf_check.h"
+
+#include "gsicc_manage.h"
+#include "gsicc_profilecache.h"
+#include "gsicc_create.h"
+#include "gsptype2.h"
+#include "gxdevsop.h"               /* For special ops : pattern_accum_param_s */
 #include "gscsepr.h"
 #include "stream.h"
 #include "strmio.h"
 #include "gscdevn.h"
+#include "gscoord.h"                /* For gs_setmatrix() */
 
 typedef struct {
     pdf_context *ctx;

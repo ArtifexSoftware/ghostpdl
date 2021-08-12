@@ -22,12 +22,16 @@
 #include "pltop.h"
 #include "plmain.h"
 
-#include "plparse.h" /* for e_ExitLanguage */
-#include "gxdevice.h" /* so we can include gxht.h below */
-#include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
+#include "plparse.h"        /* for e_ExitLanguage */
+#include "gxdevice.h"       /* so we can include gxht.h below */
+#include "gxht.h"           /* gsht1.h is incomplete, we need storage size of gs_halftone */
 #include "gsht1.h"
 #include "pdf_device.h"
 #include "pdf_misc.h"
+
+#include "gsstate.h"        /* For gs_sethalftonephase() */
+#include "gspaint.h"        /* For gs_erasepage() */
+#include "gscolor3.h"       /* For gs_setsmoothness() */
 
 static int pdfi_install_halftone(pdf_context *ctx, gx_device *pdevice);
 

@@ -19,6 +19,9 @@
 #include "pdf_stack.h"
 #include "pdf_misc.h"
 #include "pdf_gstate.h"
+#include "gspath.h"             /* For gs_strokepath() */
+#include "gsicc_manage.h"       /* For gsicc_get_default_type() */
+#include "gsstate.h"            /* for gs_setrenderingintent() */
 
 /* Get current bbox, possibly from stroking current path (utility function) */
 int pdfi_get_current_bbox(pdf_context *ctx, gs_rect *bbox, bool stroked)

@@ -32,6 +32,9 @@
 #include "pdf_file.h"
 #include "pdf_array.h"
 
+#include "gxtype1.h"        /* for gs_type1_state_s */
+#include "gsutil.h"        /* For gs_next_ids() */
+
 static byte *
 pdfi_find_cff_index(byte *p, byte *e, int idx, byte **pp, byte **ep);
 

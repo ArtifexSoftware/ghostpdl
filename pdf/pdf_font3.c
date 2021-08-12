@@ -28,6 +28,7 @@
 #include "gscedata.h"       /* For the encoding arrays */
 #include "gsccode.h"        /* For the Encoding indices */
 #include "gsuid.h"          /* For no_UniqueID */
+#include "gsutil.h"        /* For gs_next_ids() */
 
 static void pdfi_type3_copy_color(gs_gstate_color *src, gs_gstate_color *dest)
 {
