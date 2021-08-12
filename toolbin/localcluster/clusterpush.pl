@@ -174,7 +174,7 @@ if (!$product) {
   } elsif ($directory eq 'extract') {
     $product='extract';
   } else {
-    $product='gs pcl xps gpdl'
+    $product='gs pcl xps gpdl gpdf'
   }
 }
 
