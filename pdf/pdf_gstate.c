@@ -1741,8 +1741,8 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
      * index of the components array (Default is stored at index 0) to the
      * device halftone order, and free the components array.
      */
+    pdht->order = pdht->components[0].corder;
     if (ix == 1) {
-        pdht->order = pdht->components[0].corder;
         gs_free_object(ctx->memory, pocs, "pdfi_build_type5_halftone");
         pdht->components = 0;
         pdht->num_comp = 0;
