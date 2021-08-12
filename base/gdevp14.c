@@ -1267,7 +1267,7 @@ pdf14_ctx_free(pdf14_ctx *ctx)
  * if backdrop is fully transparent.
  **/
 static	pdf14_buf *
-pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
+pdf14_find_backdrop_buf(gx_device* dev, pdf14_ctx *ctx, bool *is_backdrop)
 {
     /* Our new buffer is buf */
     pdf14_buf *buf = ctx->stack;
@@ -1503,7 +1503,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         return 0;
     if (idle)
         return 0;
-    pdf14_backdrop = pdf14_find_backdrop_buf(ctx, &is_backdrop);
+    pdf14_backdrop = pdf14_find_backdrop_buf(dev, ctx, &is_backdrop);
 
     /* Initializes buf->data with the backdrop or as opaque */
     if (pdf14_backdrop == NULL || (is_backdrop && pdf14_backdrop->backdrop == NULL)) {
@@ -12200,8 +12200,8 @@ dump_mask_stack(pdf14_mask_t *mask_stack)
 
     while (curr_mask != NULL) {
         if_debug1m('v', curr_mask->memory, "[v]mask_level, %d\n", level);
-        if_debug1m('v', curr_mask->memory, "[v]mask_buf, %x\n", curr_mask->rc_mask->mask_buf);
-        if_debug1m('v', curr_mask->memory, "[v]rc_count, %d\n", curr_mask->rc_mask->rc);
+        if_debug1m('v', curr_mask->memory, "[v]mask_buf, %p\n", curr_mask->rc_mask->mask_buf);
+        if_debug1m('v', curr_mask->memory, "[v]rc_count, %ld\n", curr_mask->rc_mask->rc.ref_count);
         level++;
         curr_mask = curr_mask->previous;
     }
@@ -12211,13 +12211,13 @@ dump_mask_stack(pdf14_mask_t *mask_stack)
 static void
 pdf14_debug_mask_stack_state(pdf14_ctx *ctx)
 {
-    if_debug1m('v', ctx->memory, "[v]ctx_maskstack, %x\n", ctx->mask_stack);
+    if_debug1m('v', ctx->memory, "[v]ctx_maskstack, %p\n", ctx->mask_stack);
     if (ctx->mask_stack != NULL) {
         dump_mask_stack(ctx->mask_stack);
     }
-    if_debug1m('v', ctx->memory, "[v]ctx_stack, %x\n", ctx->stack);
+    if_debug1m('v', ctx->memory, "[v]ctx_stack, %p\n", ctx->stack);
     if (ctx->stack != NULL) {
-        if_debug1m('v', ctx->memory, "[v]ctx_stack_maskstack, %x\n", ctx->stack->mask_stack);
+        if_debug1m('v', ctx->memory, "[v]ctx_stack_maskstack, %p\n", ctx->stack->mask_stack);
         if (ctx->stack->mask_stack != NULL) {
             dump_mask_stack(ctx->stack->mask_stack);
         }

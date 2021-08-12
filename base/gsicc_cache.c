@@ -870,6 +870,7 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
 {
     gs_memory_t *cache_mem = icc_link_cache->memory;
     gsicc_link_t *link;
+    int retries = 0;
 
     *ret_link = NULL;
     /* First see if we can add a link */
@@ -908,6 +909,10 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
                 return true;
 
             gx_monitor_enter(icc_link_cache->lock);	    /* restore the lock */
+            /* we will re-test the num_links above while locked to insure */
+            /* that some other thread didn't grab the slot and max us out */
+            if (retries++ > 10)
+                return false;
         } else {
             /* Remove the zero ref_count link profile we found.		*/
             /* Even if we remove this link, we may still be maxed out so*/

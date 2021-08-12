@@ -122,8 +122,6 @@ struct pl_main_instance_s
     long base_time[2];          /* starting time */
     int error_report;           /* -E# */
     bool pause;                 /* -dNOPAUSE => false */
-    int first_page;             /* -dFirstPage= */
-    int last_page;              /* -dLastPage= */
     gx_device *device;
     gs_gc_root_t *device_root;
     pl_main_get_codepoint_t *get_codepoint;

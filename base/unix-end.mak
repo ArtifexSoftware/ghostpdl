@@ -43,6 +43,12 @@ gxps: .xpssubtarget $(UNIX_END_MAK)
 gxpsclean: cleansub
 	$(NO_OP)
 
+gpdf: .pdfsubtarget $(UNIX_END_MAK)
+	$(NO_OP)
+
+gpdfclean: cleansub
+	$(NO_OP)
+
 gpdl: .gpdlsubtarget $(UNIX_END_MAK)
 	$(NO_OP)
 
@@ -102,6 +108,12 @@ gxpspg:
 gxpspgclean:
 	$(MAKE) $(PROFILEMAKEOPTS) cleansub
 
+gpdfpg:
+	$(MAKE) $(PROFILEMAKEOPTS) .pdfsubtarget
+
+gpdfpgclean:
+	$(MAKE) $(PROFILEMAKEOPTS) cleansub
+
 gpdlpg:
 	$(MAKE) $(PROFILEMAKEOPTS) .gpdlsubtarget
 
@@ -143,6 +155,12 @@ gxpsdebug:
 #	$(MAKE) $(DEBUGMAKEOPTS) apitest
 
 gxpsdebugclean:
+	$(MAKE) $(DEBUGMAKEOPTS) cleansub
+
+gpdfdebug:
+	$(MAKE) $(DEBUGMAKEOPTS) .pdfsubtarget
+
+gpdfdebugclean:
 	$(MAKE) $(DEBUGMAKEOPTS) cleansub
 
 gpdldebug:
@@ -188,6 +206,9 @@ gpcl6memento:
 gxpsmemento:
 	$(MAKE) $(MEMENTOMAKEOPTS) .xpssubtarget
 
+gpdfmemento:
+	$(MAKE) $(MEMENTOMAKEOPTS) .pdfsubtarget
+
 gpdlmemento:
 	$(MAKE) $(MEMENTOMAKEOPTS) .gpdlsubtarget
 
@@ -218,6 +239,9 @@ gxpsmementovg:
 gpdlmementovg:
 	$(MAKE) $(MEMENTOVGMAKEOPTS) .gpdlsubtarget
 
+gpdfmementovg:
+	$(MAKE) $(MEMENTOVGMAKEOPTS) .pdfsubtarget
+
 mementovgclean:
 	$(MAKE) $(MEMENTOVGMAKEOPTS) cleansub
 
@@ -243,6 +267,9 @@ gpcl6sanitize:
 
 gxpssanitize:
 	$(MAKE) $(SANITIZEMAKEOPTS) .xpssubtarget
+
+gpdfsanitize:
+	$(MAKE) $(SANITIZEMAKEOPTS) .pdfsubtarget
 
 gpdlsanitize:
 	$(MAKE) $(SANITIZEMAKEOPTS) .gpdlsubtarget
@@ -273,6 +300,9 @@ gxpsvg:
 gpdlvg:
 	$(MAKE) $(VGMAKEOPTS) .gpdlsubtarget
 
+gpdfvg:
+	$(MAKE) $(VGMAKEOPTS) .pdfsubtarget
+
 vgclean:
 	$(MAKE) $(VGMAKEOPTS) cleansub
 
@@ -299,6 +329,9 @@ gxpsdebugvg:
 
 gpdldebugvg:
 	$(MAKE) $(DEBUGVGMAKEOPTS) .gpdlsubtarget
+
+gpdfdebugvg:
+	$(MAKE) $(DEBUGVGMAKEOPTS) .pdfsubtarget
 
 debugvgclean:
 	$(MAKE) $(DEBUGVGMAKEOPTS) cleansub

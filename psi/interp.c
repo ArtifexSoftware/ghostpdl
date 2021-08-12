@@ -1158,7 +1158,8 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
   case lit(t_shortarray): case nox(t_shortarray):\
   case plain(t_device): case plain_exec(t_device):\
   case plain(t_struct): case plain_exec(t_struct):\
-  case plain(t_astruct): case plain_exec(t_astruct)
+  case plain(t_astruct): case plain_exec(t_astruct):\
+  case plain(t_pdfctx): case plain_exec(t_pdfctx)
             /* Executable arrays are treated as literals in direct execution. */
 #define cases_lit_array()\
   case exec(t_array): case exec(t_mixedarray): case exec(t_shortarray)

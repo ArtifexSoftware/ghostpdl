@@ -237,7 +237,7 @@ if test x"$host" != x"$build" ; then
   fi
 fi
 
-dnl --------------------------------------------------  
+dnl --------------------------------------------------
 dnl Allow excluding the contributed drivers
 dnl --------------------------------------------------
 
@@ -2485,6 +2485,32 @@ AC_SUBST(XPS_TARGET)
 AC_SUBST(XPS_MAK)
 AC_SUBST(XPSROMFS_MAK)
 
+GPDF_DEV=
+PDF=
+PDF_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+PDFROMFS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+
+if test x"$with_pdf" != x"no" ; then
+  if test -f $srcdir/pdf/pdf.mak; then
+    AC_ARG_WITH([pdf], AC_HELP_STRING([--with-pdf=NAME],
+        [name of the Ghostpdf executible (if the source is available, ignored otherwise) [[gpdf]]]),
+        [PDF="$with_pdf"],[PDF='gpdf'])
+
+    PDF_TARGET=gpdf
+    CFLAGS="-DBUILD_PDF=1 -I$srcdir/pdf $CFLAGS"
+    GPDF_DEV="\$(PDFOBJDIR)\$(D)pdfi.dev"
+    PDF_MAK="\$(PDFSRCDIR)\$(D)pdf.mak"
+    PDFROMFS_MAK="\$(PDFSRCDIR)\$(D)pdfromfs.mak"
+  fi
+fi
+AC_SUBST(PDF)
+AC_SUBST(PDF_TARGET)
+
+AC_SUBST(PDF_MAK)
+AC_SUBST(GPDF_DEV)
+AC_SUBST(PDFROMFS_MAK)
+
+
 GPDL=no_gpdl
 GPDL_TARGET=
 GPDL_TARGET_VAR=
@@ -2900,6 +2926,11 @@ PCL_SONAME_MAJOR_MINOR="lib\$(PCL${libname3}"
 XPS_SONAME="lib\$(XPS${libname1}"
 XPS_SONAME_MAJOR="lib\$(XPS${libname2}"
 XPS_SONAME_MAJOR_MINOR="lib\$(XPS${libname3}"
+
+PDF_SONAME="lib\$(PDF${libname1}"
+PDF_SONAME_MAJOR="lib\$(PDF${libname2}"
+PDF_SONAME_MAJOR_MINOR="lib\$(PDF${libname3}"
+
 GPDL_SONAME="lib\$(GPDL${libname1}"
 GPDL_SONAME_MAJOR="lib\$(GPDL${libname2}"
 GPDL_SONAME_MAJOR_MINOR="lib\$(GPDL${libname3}"
@@ -2926,6 +2957,7 @@ case $host in
       PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
       XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
       PDL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
+      PDF_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PDF_SONAME_MAJOR)"
       if test $GCC = yes; then
         # GCC high level flag
         DYNAMIC_LIBS="-rdynamic"
@@ -2959,6 +2991,9 @@ case $host in
       XPS_SONAME="lib\$(XPS${libname1}"
       XPS_SONAME_MAJOR="lib\$(XPS${libname3}"
       XPS_SONAME_MAJOR_MINOR="lib\$(XPS${libname2}"
+      PDF_SONAME="lib\$(PDF${libname1}"
+      PDF_SONAME_MAJOR="lib\$(PDF${libname3}"
+      PDF_SONAME_MAJOR_MINOR="lib\$(PDF${libname2}"
       GPDL_SONAME="lib\$(GPDL${libname1}"
       GPDL_SONAME_MAJOR="lib\$(GPDL${libname3}"
       GPDL_SONAME_MAJOR_MINOR="lib\$(GPDL${libname2}"
@@ -2995,6 +3030,7 @@ case $host in
       PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
       XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
       PDL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
+      PDF_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PDF_SONAME_MAJOR)"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".so"
     ;;
@@ -3004,6 +3040,7 @@ case $host in
       PCL_DYNAMIC_LDFLAGS="-dynamiclib -install_name $DARWIN_LDFLAGS_SO_PREFIX\$(PCL_SONAME_MAJOR_MINOR)"
       XPS_DYNAMIC_LDFLAGS="-dynamiclib -install_name $DARWIN_LDFLAGS_SO_PREFIX\$(XPS_SONAME_MAJOR_MINOR)"
       PDL_DYNAMIC_LDFLAGS="-dynamiclib -install_name $DARWIN_LDFLAGS_SO_PREFIX\$(GPDL_SONAME_MAJOR_MINOR)"
+      PDF_DYNAMIC_LDFLAGS="-dynamiclib -install_name $DARWIN_LDFLAGS_SO_PREFIX\$(PDF_SONAME_MAJOR_MINOR)"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".dylib"
     ;;
@@ -3023,6 +3060,7 @@ case $host in
       PCL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR) $_ldflags"
       XPS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR) $_ldflags"
       PDL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR) $_ldflags"
+      PDF_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PDF_SONAME_MAJOR)"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".so"
     ;;
@@ -3034,12 +3072,15 @@ case $host in
         PCL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
         XPS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
         PDL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+        PDF_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
       else
         DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS"
         GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
         GS_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
         PCL_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
         XPS_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
+        PDL_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
+        PDF_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
       fi
       SO_LIB_EXT=".so"
       ;;
@@ -3067,6 +3108,11 @@ AC_SUBST(PCL_SONAME_MAJOR_MINOR)
 AC_SUBST(XPS_SONAME)
 AC_SUBST(XPS_SONAME_MAJOR)
 AC_SUBST(XPS_SONAME_MAJOR_MINOR)
+
+AC_SUBST(PDF_SONAME)
+AC_SUBST(PDF_SONAME_MAJOR)
+AC_SUBST(PDF_SONAME_MAJOR_MINOR)
+
 AC_SUBST(GPDL_SONAME)
 AC_SUBST(GPDL_SONAME_MAJOR)
 AC_SUBST(GPDL_SONAME_MAJOR_MINOR)
@@ -3122,6 +3168,7 @@ AC_SUBST(GS_DYNAMIC_LDFLAGS)
 AC_SUBST(PCL_DYNAMIC_LDFLAGS)
 AC_SUBST(XPS_DYNAMIC_LDFLAGS)
 AC_SUBST(PDL_DYNAMIC_LDFLAGS)
+AC_SUBST(PDF_DYNAMIC_LDFLAGS)
 AC_SUBST(DYNAMIC_LIBS)
 AC_SUBST(INSTALL_SHARED)
 AC_SUBST(X11_DEVS)

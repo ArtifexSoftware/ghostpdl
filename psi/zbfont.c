@@ -144,6 +144,14 @@ zfont_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
     return 0;
 }
 
+#define font_proc_glyph_name1\
+  int (gs_font *font, gs_glyph glyph, gs_const_string *pstr)
+
+void get_zfont_glyph_name( void **proc)
+{
+    *proc = zfont_glyph_name;
+}
+
 static gs_char
 gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph, ushort *u, unsigned int length)
 {

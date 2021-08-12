@@ -31,6 +31,8 @@ extern pl_interp_implementation_t pxl_implementation;
 
 extern pl_interp_implementation_t xps_implementation;
 
+extern pl_interp_implementation_t pdf_implementation;
+
 extern pl_interp_implementation_t svg_implementation;
 
 extern pl_interp_implementation_t ps_implementation;
@@ -61,6 +63,9 @@ pl_interp_implementation_t *pdl_implementations[] = {
 #endif
 #ifdef PSI_INCLUDED
     &ps_implementation,
+#endif
+#ifdef PDF_INCLUDED
+    &pdf_implementation,
 #endif
 #ifdef URF_INCLUDED
     &urf_implementation,

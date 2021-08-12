@@ -209,7 +209,7 @@ struct gs_fapi_font_s
     int (*get_glyphname_or_cid) (gs_text_enum_t *penum, gs_font_base *pbfont,
                                  gs_string *charstring, gs_string *name,
                                  gs_glyph ccode, gs_string *enc_char_name,
-                                 char *font_file_path, gs_fapi_char_ref *cr,
+                                  char *font_file_path, gs_fapi_char_ref *cr,
                                  bool bCID);
 
     int (*fapi_get_metrics) (gs_fapi_font *ff, gs_string *char_name, gs_glyph cid, double *m, bool vertical);

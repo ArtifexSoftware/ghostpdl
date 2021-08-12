@@ -85,5 +85,6 @@ gs_glyph zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored
 int gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, unsigned short *unicode_return, unsigned int length);
 const ref *zfont_get_to_unicode_map(gs_font_dir *dir);
 void get_GlyphNames2Unicode(i_ctx_t *i_ctx_p, gs_font *pfont, ref *pdref);
+void get_zfont_glyph_name( void **proc);
 
 #endif /* bfont_INCLUDED */

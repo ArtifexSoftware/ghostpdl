@@ -55,6 +55,10 @@ XPSSRCDIR=@srcdir@/xps
 XPSGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
 XPSOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
 
+PDFSRCDIR=@srcdir@/pdf
+PDFGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+PDFOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+
 GPDLSRCDIR=@srcdir@/gpdl
 GPDLGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
 GPDLOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
@@ -197,6 +201,12 @@ XPS_SONAME=@XPS_SONAME@
 XPS_SONAME_MAJOR=@XPS_SONAME_MAJOR@
 XPS_SONAME_MAJOR_MINOR=@XPS_SONAME_MAJOR_MINOR@
 
+PDF=@PDF@
+PDF_SO_BASE=@PDF@
+PDF_SONAME=@PDF_SONAME@
+PDF_SONAME_MAJOR=@PDF_SONAME_MAJOR@
+PDF_SONAME_MAJOR_MINOR=@PDF_SONAME_MAJOR_MINOR@
+
 GPDL=@GPDL@
 GPDL_SO_BASE=@GPDL@
 GPDL_SONAME=@GPDL_SONAME@
@@ -208,9 +218,10 @@ XEAUX=@AUXEXEEXT@
 
 PCL_TARGET=@PCL_TARGET@
 XPS_TARGET=@XPS_TARGET@
+PDF_TARGET=@PDF_TARGET@
 GPDL_TARGET=@GPDL_TARGET@
 
-PCL_XPS_PDL_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(GPDL_TARGET)
+PCL_XPS_PDL_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(GPDL_TARGET) $(PDF_TARGET)
 
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.
@@ -471,11 +482,13 @@ GS_LDFLAGS=$(LDFLAGS)
 PCL_LDFLAGS=$(LDFLAGS)
 XPS_LDFLAGS=$(LDFLAGS)
 PDL_LDFLAGS=$(LDFLAGS)
+PDF_LDFLAGS=$(LDFLAGS)
 
 GS_LDFLAGS_SO=@GS_DYNAMIC_LDFLAGS@
 PCL_LDFLAGS_SO=@PCL_DYNAMIC_LDFLAGS@
 XPS_LDFLAGS_SO=@XPS_DYNAMIC_LDFLAGS@
 PDL_LDFLAGS_SO=@PDL_DYNAMIC_LDFLAGS@
+PDF_LDFLAGS_SO=@PDF_DYNAMIC_LDFLAGS@
 
 # Define any extra libraries to link into the executable.
 # ISC Unix 2.2 wants -linet.
@@ -557,7 +570,7 @@ MKROMFS_FLAGS=@MKROMFS_FLAGS@
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 # if it's included, $(PSD)gs_pdfwr.dev should always be one of the last in the list
-PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
+PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev @GPDF_DEV@ $(PSD)epsf.dev $(PSD)ttfont.dev \
                  @UTF8DEVS@ $(PSD)fapi_ps.dev $(PSD)jpx.dev $(PSD)jbig2.dev $(PSD)gs_pdfwr.dev
 
 
@@ -565,6 +578,8 @@ PCL_FEATURE_DEVS=$(PLOBJDIR)/pl.dev $(PLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(P
              $(PCL5OBJDIR)/hpgl2c.dev
 
 XPS_FEATURE_DEVS=$(XPSOBJDIR)/pl.dev $(XPSOBJDIR)/xps.dev
+
+PDF_FEATURE_DEVS=$(XPSOBJDIR)/pl.dev $(XPSOBJDIR)/gpdf.dev
 
 FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev $(GLD)psl2lib.dev \
              $(GLD)dps2lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)psl2cs.dev $(GLD)rld.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev\
@@ -726,6 +741,7 @@ include $(GLSRCDIR)/gs.mak
 # *romfs.mak must precede lib.mak
 include @PLROMFS_MAK@   # plromfs.mak
 include @XPSROMFS_MAK@ # xpsromfs.mak
+include @PDFROMFS_MAK@ # pdfromfs.mak
 
 include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
@@ -739,6 +755,8 @@ include @PXL_MAK@ # pxl.mak
 include @XPS_MAK@ # xps.mak
 
 include $(GLSRCDIR)/jpeg.mak
+
+include @PDF_MAK@ # pdf.mak
 
 include @GPDL_MAK@ # gpdl.mak
 

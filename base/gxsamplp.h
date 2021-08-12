@@ -325,4 +325,3 @@ TEMPLATE_sample_unpack_8(byte * bptr, int *pdata_x, const byte * data, int data_
 #else
 int dummy;
 #endif
-

@@ -236,6 +236,18 @@ XPSGENDIR=$(GLGENDIR)
 XPSOBJDIR=$(GLOBJDIR)
 !endif
 
+!ifndef PDFSRCDIR
+PDFSRCDIR=.\pdf
+!endif
+
+!ifndef PDFGENDIR
+PDFGENDIR=$(GLGENDIR)
+!endif
+
+!ifndef PDFOBJDIR
+PDFOBJDIR=$(GLOBJDIR)
+!endif
+
 !ifndef GPDLSRCDIR
 GPDLSRCDIR=.\gpdl
 !endif
@@ -268,7 +280,7 @@ IMGOBJDIR=$(GLOBJDIR)
 
 CONTRIBDIR=.\contrib
 
-# Can we build PCL and XPS
+# Can we build PCL and XPS and PDF
 !ifndef BUILD_PCL
 BUILD_PCL=0
 !if exist ("$(PLSRCDIR)\pl.mak")
@@ -283,6 +295,15 @@ BUILD_XPS=1
 !endif
 !endif
 
+!ifndef BUILD_PDF
+BUILD_PDF=0
+GPDF_DEV=
+!if exist ("$(PDFSRCDIR)\pdf.mak")
+BUILD_PDF=1
+GPDF_DEV=$(PDFOBJDIR)\pdfi.dev
+!endif
+!endif
+
 !ifndef BUILD_GPDL
 BUILD_GPDL=0
 !if exist ("$(GPDLSRCDIR)\gpdl.mak")
@@ -292,6 +313,7 @@ BUILD_GPDL=1
 
 PCL_TARGET=
 XPS_TARGET=
+PDF_TARGET=
 
 !if $(BUILD_PCL)
 PCL_TARGET=gpcl6
@@ -301,11 +323,15 @@ PCL_TARGET=gpcl6
 XPS_TARGET=gxps
 !endif
 
+!if $(BUILD_PDF)
+PDF_TARGET=gpdf
+!endif
+
 !if $(BUILD_GPDL)
 GPDL_TARGET=gpdl
 !endif
 
-PCL_XPS_PDL_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(GPDL_TARGET)
+PCL_XPS_PDL_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(GPDL_TARGET) $(PDF_TARGET)
 
 # Define the root directory for Ghostscript installation.
 
@@ -471,17 +497,20 @@ GS=gswin64
 PCL=gpcl6win64
 XPS=gxpswin64
 GPDL=gpdlwin64
+PDF=gpdfwin64
 !else
 !ifdef ARM
 GS=gswinARM
 PCL=gpcl6winARM
 XPS=gxpswinARM
 GPDL=gpdlwinARM
+PDF=gpdfwinARM
 !else
 GS=gswin32
 PCL=gpcl6win32
 XPS=gxpswin32
 GPDL=gpdlwin32
+PDF=gpdfwin32
 !endif
 !endif
 !endif
@@ -545,6 +574,26 @@ GXPSDLL=gxpsdll32metro
 GXPSDLL=gxpsdll64
 !else
 GXPSDLL=gxpsdll32
+!endif
+!endif
+!endif
+
+!ifndef GPDFDLL
+!ifdef METRO
+!ifdef WIN64
+GPDFDLL=gpdfdll64metro
+!else
+!ifdef ARM
+GPDFDLL=gpfddllARM32metro
+!else
+GPDFDLL=gpdfdll32metro
+!endif
+!endif
+!else
+!ifdef WIN64
+GPDFDLL=gpdfdll64
+!else
+GPDFDLL=gpdfdll32
 !endif
 !endif
 !endif
@@ -739,6 +788,8 @@ EXTRACT_DIR=extract
 !       error Cannot find extract directory: $(EXTRACT_DIR)
 !   endif
 EXTRACT_DEVS=$(DD)docxwrite.dev
+!else
+!   message Not building with extract: $(EXTRACT_DIR)
 !endif
 
 # Alternatively, you can build a separate DLL
@@ -848,6 +899,10 @@ CFLAGS=$(CFLAGS) -DMETRO -DWINAPI_FAMILY=WINAPI_PARTITION_APP -DTIF_PLATFORM_CON
 # WinRT doesn't allow ExitProcess() so we have to suborn it here.
 # it shouldn't matter since we actually rely on setjmp()/longjmp() for error handling in libtiff
 PNG_CFLAGS=/DExitProcess=exit
+!endif
+
+!if $(BUILD_PDF)
+CFLAGS=/DBUILD_PDF=1 /I$(PDFSRCDIR) /I$(ZSRCDIR) $(CFLAGS)
 !endif
 
 CFLAGS=$(CFLAGS) $(XCFLAGS)
@@ -1623,7 +1678,7 @@ JPX_CFLAGS = $JPX_CFLAGS -DUSE_JPIP -DUSE_OPENJPEG_JP2 -DOPJ_STATIC
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 # if it's included, $(PSD)gs_pdfwr.dev should always be one of the last in the list
-PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
+PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(GPDF_DEV) $(PSD)epsf.dev $(PSD)ttfont.dev \
                  $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)fapi_ps.dev $(GLD)winutf8.dev $(PSD)gs_pdfwr.dev
 
 
@@ -1631,6 +1686,8 @@ PCL_FEATURE_DEVS=$(PLOBJDIR)/pl.dev $(PLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(P
              $(PCL5OBJDIR)/hpgl2c.dev
 
 XPS_FEATURE_DEVS=$(XPSOBJDIR)/pl.dev $(XPSOBJDIR)/xps.dev
+
+PDF_FEATURE_DEVS=$(PDFOBJDIR)/pl.dev $(PDFOBJDIR)/gpdf.dev
 
 FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev $(GLD)psl2lib.dev \
              $(GLD)dps2lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)psl2cs.dev $(GLD)rld.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev\
@@ -1757,6 +1814,10 @@ BEGINFILES2=$(BEGINFILES2) $(BSCFILE)
 !include $(XPSSRCDIR)\xpsromfs.mak
 !endif
 
+!if $(BUILD_PDF)
+!include $(PDFSRCDIR)\pdfromfs.mak
+!endif
+
 !include $(GLSRCDIR)\winlib.mak
 
 !if $(BUILD_PCL)
@@ -1768,6 +1829,10 @@ BEGINFILES2=$(BEGINFILES2) $(BSCFILE)
 
 !if $(BUILD_XPS)
 !include $(XPSSRCDIR)\xps.mak
+!endif
+
+!if $(BUILD_PDF)
+!include $(PDFSRCDIR)\pdf.mak
 !endif
 
 !if $(BUILD_GPDL)
@@ -1785,6 +1850,7 @@ GSDLL_OBJS=$(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_msdll.$(OBJ)
 
 GPCL6DLL_DLL=$(BINDIR)\$(GPCL6DLL).dll
 GXPSDLL_DLL=$(BINDIR)\$(GXPSDLL).dll
+GPDFDLL_DLL=$(BINDIR)\$(GPDFDLL).dll
 GPDLDLL_DLL=$(BINDIR)\$(GPDLDLL).dll
 
 INT_ARCHIVE_SOME=$(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
@@ -1850,6 +1916,27 @@ $(XPSGEN)xpslib.rsp: $(TOP_MAKEFILES)
 	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(XPSGEN)xpslib.rsp
 !else
 	echo LIBCMT.lib >> $(XPSGEN)xpslib.rsp
+!endif
+!endif
+
+!if $(TDEBUG) != 0
+
+$(PDFGEN)pdflib.rsp: $(TOP_MAKEFILES)
+	echo /NODEFAULTLIB:LIBC.lib > $(PDFGEN)pdflib.rsp
+	echo /NODEFAULTLIB:LIBCMT.lib >> $(PDFGEN)pdflib.rsp
+!ifdef METRO
+	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PDFGEN)pdflib.rsp
+!else
+	echo LIBCMTD.lib >> $(PDFGEN)pdflib.rsp
+!endif
+!else
+$(PDFGEN)pdflib.rsp: $(TOP_MAKEFILES)
+	echo /NODEFAULTLIB:LIBC.lib > $(PDFGEN)pdflib.rsp
+	echo /NODEFAULTLIB:LIBCMTD.lib >> $(PDFGEN)pdflib.rsp
+!ifdef METRO
+	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PDFGEN)pdflib.rsp
+!else
+	echo LIBCMT.lib >> $(PDFGEN)pdflib.rsp
 !endif
 !endif
 
@@ -2000,6 +2087,32 @@ $(GXPS_XE): $(GXPSDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
 	$(LINK) $(LCT) @$(XPSGEN)gxpswin.rsp $(DWMAINOBJS) $(BINDIR)\$(GXPSDLL).lib $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res
 	del $(XPSGEN)gxpswin.rsp
 
+$(GPDFDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PDF_DEVS_ALL) $(PDFGEN)pdflib.rsp \
+                $(PDFOBJ)pdfromfs$(COMPILE_INITS).$(OBJ) $(ld_tr) $(pdf_tr) $(MAIN_OBJ) $(PDF_TOP_OBJS) \
+                $(XOBJS) $(INT_ARCHIVE_SOME) $(TOP_MAKEFILES)
+	echo Linking $(GPDFDLL)  $(GPDFDLL_DLL) $(METRO)
+	copy $(pdfld_tr) $(PDFGEN)gpdfwin.tr
+	echo $(MAIN_OBJ) $(PDF_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(PDFGEN)gpdfwin.tr
+	echo $(PCLOBJ)pdfromfs$(COMPILE_INITS).$(OBJ) >> $(PDFGEN)gpdfwin.tr
+	echo /DLL /DEF:$(PLSRCDIR)\$(GPDFDLL).def /OUT:$(GPDFDLL_DLL) > $(PDFGEN)gpdfwin.rsp
+!if "$(PROFILE)"=="1"
+	echo /PROFILE >> $(PDFGEN)gpdfwin.rsp
+!endif
+	$(LINK) $(LCT) @$(PDFGEN)gpdfwin.rsp $(GPDFDLL_OBJS) @$(PDFGEN)gpdfwin.tr @$(PDFGEN)pdflib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
+	del $(PCLGEN)gpdfwin.rsp
+
+$(GPDF_XE): $(GPDFDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
+	echo /SUBSYSTEM:CONSOLE > $(PDFGEN)gpdfwin.rsp
+!if "$(PROFILE)"=="1"
+	echo /PROFILE >> $(PDFGEN)gpdfwin.rsp
+!endif
+!ifdef WIN64
+	echo  /OUT:$(GPDF_XE) >> $(PDFGEN)gpdfwin.rsp
+!else
+	echo  /OUT:$(GPDF_XE) >> $(PDFGEN)gpdfwin.rsp
+!endif
+	$(LINK) $(LCT) @$(PDFGEN)gpdfwin.rsp $(DWMAINOBJS) $(BINDIR)\$(GPDFDLL).lib $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res
+	del $(PDFGEN)gpdfwin.rsp
 
 
 $(GPDLDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_ALL) $(XPS_DEVS_ALL) $(GS_ALL) \
@@ -2132,6 +2245,19 @@ $(GXPS_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(X
         del $(XPSGEN)xpswin.rsp
         del $(XPSGEN)gxpswin.tr
 
+$(GPDF_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(PDF_DEVS_ALL) $(PDFGEN)pdflib.rsp \
+                $(PDF_TOP_OBJS) $(PDFOBJ)pdfromfs$(COMPILE_INITS).$(OBJ) \
+		$(ld_tr) $(pdf_tr) $(MAIN_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) \
+                $(TOP_MAKEFILES)
+	copy $(pdfld_tr) $(PDFGEN)gpdfwin.tr
+	echo $(WINMAINOBJS) $(MAIN_OBJ) $(PDF_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(PDFGEN)gpdfwin.tr
+	echo $(PCLOBJ)pdfromfs$(COMPILE_INITS).$(OBJ) >> $(PDFGEN)gpdfwin.tr
+	echo /SUBSYSTEM:CONSOLE > $(PDFGEN)pdfwin.rsp
+        echo /OUT:$(GPDF_XE) >> $(XPSGEN)pdfwin.rsp
+	$(LINK) $(LCT) @$(PDFGEN)pdfwin.rsp @$(PDFGEN)gpdfwin.tr $(LINKLIBPATH) @$(LIBCTR) @$(PDFGEN)pdflib.rsp
+        del $(XPSGEN)pdfwin.rsp
+        del $(XPSGEN)gpdfwin.tr
+
 $(GPDL_XE): $(ECHOGS_XE) $(ld_tr) $(gpdl_tr) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(PCL_DEVS_ALL) $(GS_ALL) \
                 $(GPDLGEN)gpdllib.rsp $(GPDLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) \
                 $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) \
@@ -2185,6 +2311,9 @@ gpcl6debug:
 gxpsdebug:
 	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
 
+gpdfdebug:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gpdf
+
 gpdldebug:
 	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
 
@@ -2210,6 +2339,9 @@ gpcl6memento:
 
 gxpsmemento:
 	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+
+gpdfmemento:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gpdf
 
 gpdlmemento:
 	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
@@ -2237,6 +2369,9 @@ gpcl6profile:
 
 gxpsprofile:
 	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+
+gpdfprofile:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) gpdf
 
 gpdlprofile:
 	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
@@ -2310,8 +2445,8 @@ ufst-lib:
 ufst-debug: ufst-lib
 	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)"
 
-gpcl6-ufst-debug: ufst-lib
-	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" gpcl6
+ufst-debug-pcl: ufst-lib
+	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" pcl
 
 ufst-debugclean: ufst-lib
 	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" clean
@@ -2322,8 +2457,8 @@ ufst-debugbsc: ufst-lib
 ufst: ufst-lib
 	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)"
 
-gpcl6-ufst: ufst-lib
-	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" gpcl6
+ufst-pcl: ufst-lib
+	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" pcl
 
 ufst-clean: ufst-lib
 	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" clean
@@ -2339,6 +2474,9 @@ gpcl6:$(GPCL_XE)
 	$(NO_OP)
 
 gxps:$(GXPS_XE)
+	$(NO_OP)
+
+gpdf:$(GPDF_XE)
 	$(NO_OP)
 
 gpdl:$(GPDL_XE)

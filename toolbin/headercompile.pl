@@ -99,7 +99,7 @@ sub pcompare($$)
     return $v;
 }
 
-# main: Work starts here 
+# main: Work starts here
 
 readdeps("base");
 readdeps("psi");
@@ -267,7 +267,7 @@ for (my $ui=$mx-1; $ui >= 0; $ui--) {
     if (!exists $dirs{$f}) {
         next;
     }
-    
+
     $h = $dirs{$f}."/".$f;
 
     my $ret = system("cc -DHAVE_INTTYPES_H -Ibase -Ipsi -Ilcms2mt -Ilcms2 -Iopenjpeg/src/lib/openjp2 -Ijpeg -Ijbig2dec   -Iobj -o tmp.o $h > tmp.err 2>&1");
@@ -385,9 +385,9 @@ sub rewrite_make($)
     open(F, "$f") || die "WTF?";
     while (<F>) {
         $_ =~ s/[\r\n]*$//;
-	if ($_ =~ m/^\# Dependencies:/) {
-	    last;
-	}
+    if ($_ =~ m/^\# Dependencies:/) {
+        last;
+    }
         if ($_ =~ m/^([a-z0-9_\-]+_h)=/) {
             my $f = $1;
             # Gather up the line, allowing for continuations
@@ -406,7 +406,7 @@ sub rewrite_make($)
                 }
                 $_ = $block;
             }
-            
+
             my $makefile = 0;
             if ($_ =~ m/\$\(MAKEFILE\)/) {
                 $makefile = 1;
