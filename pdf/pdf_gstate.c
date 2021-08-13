@@ -1232,11 +1232,11 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         if (pdfi_name_is((pdf_name *)obj, "Default")) {
             i = 0;
         } else {
-            for (i = 0; i < sizeof(spot_table); i++){
+            for (i = 0; i < sizeof(spot_table) - 1; i++){
                 if (pdfi_name_is((pdf_name *)obj, spot_table[i]))
                     break;
             }
-            if (i > sizeof(spot_table))
+            if (i >= sizeof(spot_table))
                 return gs_note_error(gs_error_rangecheck);
         }
         code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
@@ -1344,7 +1344,7 @@ static int build_type6_halftone(pdf_context *ctx, pdf_stream *halftone_stream, p
                                 gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
-    int64_t w, h;
+    int64_t w, h, length;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
     pdf_dict *halftone_dict = NULL;
 
@@ -1379,10 +1379,17 @@ static int build_type6_halftone(pdf_context *ctx, pdf_stream *halftone_stream, p
     phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
 
     code = pdfi_stream_to_buffer(ctx, halftone_stream,
-                                 (byte **)&ptp->thresholds.data, (int64_t *)&ptp->thresholds.size);
+                                 (byte **)&ptp->thresholds.data, &length);
     if (code < 0)
         goto error;
 
+    /* Guard against a returned buffer larger than a gs_const_bytestring can hold */
+    if (length > max_uint) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto error;
+    }
+
+    ptp->thresholds.size = length;
     phtc->type = ht_type_threshold2;
     return code;
 
@@ -1394,7 +1401,7 @@ error:
 static int build_type10_halftone(pdf_context *ctx, pdf_stream *halftone_stream, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
-    int64_t w, h;
+    int64_t w, h, length;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
     pdf_dict *halftone_dict = NULL;
 
@@ -1425,10 +1432,17 @@ static int build_type10_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
     phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
 
     code = pdfi_stream_to_buffer(ctx, halftone_stream,
-                                 (byte **)&ptp->thresholds.data, (int64_t *)&ptp->thresholds.size);
+                                 (byte **)&ptp->thresholds.data, &length);
     if (code < 0)
         goto error;
 
+    /* Guard against a returned buffer larger than a gs_const_bytestring can hold */
+    if (length > max_uint) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto error;
+    }
+
+    ptp->thresholds.size = length;
     phtc->type = ht_type_threshold2;
     return code;
 
@@ -1440,7 +1454,7 @@ error:
 static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
-    int64_t w, h;
+    int64_t w, h, length;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
     pdf_dict *halftone_dict = NULL;
 
@@ -1485,10 +1499,17 @@ static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
     phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
 
     code = pdfi_stream_to_buffer(ctx, halftone_stream,
-                                 (byte **)&ptp->thresholds.data, (int64_t *)&ptp->thresholds.size);
+                                 (byte **)&ptp->thresholds.data, &length);
     if (code < 0)
         goto error;
 
+    /* Guard against a returned buffer larger than a gs_const_bytestring can hold */
+    if (length > max_uint) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto error;
+    }
+
+    ptp->thresholds.size = length;
     phtc->type = ht_type_threshold2;
     return code;
 
@@ -1602,22 +1623,25 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         }
     } while (code >= 0);
 
-    if (NumComponents > 0) {
-        pocs = gs_alloc_struct_array(ctx->memory, NumComponents,
-                                     gx_ht_order_component,
-                                     &st_ht_order_component_element,
-                                     "gs_sethalftone");
-        if (pocs == NULL)
-            goto error;
+    if (NumComponents == 0) {
+        code = gs_note_error(gs_error_syntaxerror);
+        goto error;
+    }
 
-        memset(pocs, 0x00, NumComponents * sizeof(gx_ht_order_component));
-        pdht->components = pocs;
-        pdht->num_comp = NumComponents;
-        phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component) * NumComponents, "pdfi_do_halftone");
-        if (phtc == 0) {
-            code = gs_note_error(gs_error_VMerror);
-            goto error;
-        }
+    pocs = gs_alloc_struct_array(ctx->memory, NumComponents,
+                                 gx_ht_order_component,
+                                 &st_ht_order_component_element,
+                                 "gs_sethalftone");
+    if (pocs == NULL)
+        goto error;
+
+    memset(pocs, 0x00, NumComponents * sizeof(gx_ht_order_component));
+    pdht->components = pocs;
+    pdht->num_comp = NumComponents;
+    phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component) * NumComponents, "pdfi_do_halftone");
+    if (phtc == 0) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
     }
 
     code = pdfi_loop_detector_mark(ctx);
