@@ -448,20 +448,16 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         nlen = nobj->length > gs_font_name_max ? gs_font_name_max : nobj->length;
 
         memcpy(pfont0->key_name.chars, nobj->data, nlen);
-        pfont0->key_name.chars[nlen] = 0;
         pfont0->key_name.size = nlen;
         memcpy(pfont0->font_name.chars, nobj->data, nlen);
-        pfont0->font_name.chars[nlen] = 0;
         pfont0->font_name.size = nlen;
     }
     else {
         nlen = descpfont->pfont->key_name.size > gs_font_name_max ? gs_font_name_max : descpfont->pfont->key_name.size;
 
         memcpy(pfont0->key_name.chars, descpfont->pfont->key_name.chars, nlen);
-        pfont0->key_name.chars[nlen] = 0;
         pfont0->key_name.size = nlen;
         memcpy(pfont0->font_name.chars, descpfont->pfont->font_name.chars, nlen);
-        pfont0->font_name.chars[nlen] = 0;
         pfont0->font_name.size = nlen;
     }
     if (pcmap->name.size > 0) {
@@ -469,11 +465,9 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
             memcpy(pfont0->key_name.chars + pfont0->key_name.size, "-", 1);
             memcpy(pfont0->key_name.chars + pfont0->key_name.size + 1, pcmap->name.data, pcmap->name.size);
             pfont0->key_name.size += pcmap->name.size + 1;
-            pfont0->key_name.chars[pfont0->key_name.size] = 0;
             memcpy(pfont0->font_name.chars + pfont0->font_name.size, "-", 1);
             memcpy(pfont0->font_name.chars + pfont0->font_name.size + 1, pcmap->name.data, pcmap->name.size);
             pfont0->font_name.size += pcmap->name.size + 1;
-            pfont0->font_name.chars[pfont0->key_name.size] = 0;
         }
     }
     pfont0->procs.define_font = gs_no_define_font;
