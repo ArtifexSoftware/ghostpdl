@@ -368,9 +368,12 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
            it's only permitted to be "/Identity", so ignore it
          */
         if (obj->type == PDF_STREAM) {
-            code = pdfi_stream_to_buffer(ctx, (pdf_stream *)obj,
-                        &(font->cidtogidmap.data),
-                        (int64_t *)&(font->cidtogidmap.size));
+            int64_t sz;
+            code = pdfi_stream_to_buffer(ctx, (pdf_stream *)obj, &(font->cidtogidmap.data), &sz);
+            if (code < 0) {
+                goto error;
+            }
+            font->cidtogidmap.size = (uint)sz;
         }
         pdfi_countdown(obj);
         obj = NULL;
@@ -420,7 +423,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             goto error;
     }
 
-    if (font)
+    if (font != NULL && ppfont != NULL)
         *ppfont = (pdf_font *)font;
     return code;
 error:
