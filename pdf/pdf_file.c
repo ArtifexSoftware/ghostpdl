@@ -362,6 +362,8 @@ pdfi_JBIG2Decode_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
             if (code == 0) {
                 code = s_jbig2decode_make_global_data(ctx->memory->non_gc_memory,
                                                       buf, buflen, &globalctx);
+                if (code < 0)
+                    goto cleanupExit;
 
                 s_jbig2decode_set_global_data((stream_state*)&state, NULL, globalctx);
 
