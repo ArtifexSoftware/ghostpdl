@@ -1189,9 +1189,11 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     if (ppcs!= NULL)
         *ppcs = pcs;
     else {
-        code = pdfi_gs_setcolorspace(ctx, pcs);
-        /* release reference from construction */
-        rc_decrement_only_cs(pcs, "setseparationspace");
+        if (pcs != NULL) {
+            code = pdfi_gs_setcolorspace(ctx, pcs);
+            /* release reference from construction */
+            rc_decrement_only_cs(pcs, "setseparationspace");
+        }
     }
 
 
@@ -2019,8 +2021,6 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
         goto exit;
 
     (void)pcs_base->type->install_cspace(pcs_base, ctx->pgs);
-    if (code < 0)
-        goto exit;
 
     base_type = gs_color_space_get_index(pcs_base);
 
@@ -2116,7 +2116,8 @@ static int pdfi_create_DeviceGray(pdf_context *ctx, gs_color_space **ppcs)
                     *ppcs = NULL;
                 }
             }
-            pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
+            if (*ppcs != NULL)
+                pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
         }
     } else {
         code = pdfi_gs_setgray(ctx, 0);
@@ -2143,7 +2144,8 @@ static int pdfi_create_DeviceRGB(pdf_context *ctx, gs_color_space **ppcs)
                     *ppcs = NULL;
                 }
             }
-            pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
+            if (*ppcs != NULL)
+                pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
         }
     } else {
         code = pdfi_gs_setrgbcolor(ctx, 0, 0, 0);
@@ -2170,7 +2172,8 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
                     *ppcs = NULL;
                 }
             }
-            pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
+            if (*ppcs != NULL)
+                pdfi_set_colour_callback(*ppcs, ctx, pdfi_cspace_free_callback);
         }
     } else {
         code = pdfi_gs_setcmykcolor(ctx, 0, 0, 0, 1);
