@@ -487,7 +487,7 @@ void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_fun
                     if (code < FIRSTINTERNALERROR)
                         error_string = fallback;
                     else
-                        error_string = (char *)gs_internal_error_strings[code - FIRSTINTERNALERROR];
+                        error_string = (char *)gs_internal_error_strings[code - FIRSTINTERNALERROR - 1];
                 } else
                     error_string = (char *)gs_error_strings[code];
             }
