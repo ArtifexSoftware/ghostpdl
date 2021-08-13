@@ -419,6 +419,8 @@ const char *gs_internal_error_strings[] = {
     "exec stack underflow",
     "VMreclaim",
     "Need input",
+    "No defined error",
+    "No defined error (2)",
     "need file",
     "error info",
     "handled",
@@ -444,7 +446,7 @@ void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_funct
                     if (code < FIRSTINTERNALERROR)
                         error_string = fallback;
                     else
-                        error_string = (char *)gs_internal_error_strings[code - FIRSTINTERNALERROR - 1];
+                        error_string = (char *)gs_internal_error_strings[code - FIRSTINTERNALERROR];
                 } else
                     error_string = (char *)gs_error_strings[code];
             }
@@ -487,7 +489,7 @@ void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_fun
                     if (code < FIRSTINTERNALERROR)
                         error_string = fallback;
                     else
-                        error_string = (char *)gs_internal_error_strings[code - FIRSTINTERNALERROR - 1];
+                        error_string = (char *)gs_internal_error_strings[code - FIRSTINTERNALERROR];
                 } else
                     error_string = (char *)gs_error_strings[code];
             }
