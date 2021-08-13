@@ -1000,6 +1000,8 @@ static int pdfi_doc_Info(pdf_context *ctx)
             pdfi_name_is(Key, "Title") || pdfi_name_is(Key, "Subject") ||
             pdfi_name_is(Key, "Keywords")) {
             code = pdfi_dict_put_obj(ctx, tempdict, (pdf_obj *)Key, Value);
+            if (code < 0)
+                goto exit;
         }
         pdfi_countdown(Key);
         Key = NULL;
