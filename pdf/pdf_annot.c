@@ -1653,6 +1653,8 @@ static int pdfi_annot_draw_InkList(pdf_context *ctx, pdf_dict *annot, pdf_array 
         if (code < 0) goto exit;
         if (num_points == 4) {
             code = gs_lineto(ctx->pgs, x2, y2);
+            if (code < 0)
+                goto exit;
             goto stroke;
         }
 
@@ -2945,7 +2947,7 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     rect2.q.x = rect.q.x;
     rect2.q.y = rect.p.y + (rect.q.y - rect.p.y);
 
-    gs_rectfill(ctx->pgs, &rect2, 1);
+    code = gs_rectfill(ctx->pgs, &rect2, 1);
     if (code < 0) goto exit;
     pdfi_gs_setgray(ctx, 0);
     if (code < 0) goto exit;
@@ -3244,7 +3246,7 @@ static int pdfi_annot_render_MK_box(pdf_context *ctx, pdf_dict *annot, pdf_dict 
     code = pdfi_grestore(ctx);
     if (code < 0) goto exit;
 
-    pdfi_gsave(ctx);
+    code = pdfi_gsave(ctx);
     if (code < 0) goto exit;
     need_grestore = true;
     code = pdfi_annot_setcolor_key(ctx, MK, "BC", false, &drawit);
@@ -3433,8 +3435,6 @@ static int pdfi_form_Tx_comb(pdf_context *ctx, pdf_dict *annot, gs_rect *rect, p
 
     /* TODO: Implement... Need a sample that uses COMB! */
     code = pdfi_form_Tx_simple(ctx, annot, rect, V, Ff, Q, is_UTF16);
-    if (code < 0) goto exit;
- exit:
     return code;
 }
 
