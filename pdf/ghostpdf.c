@@ -957,9 +957,11 @@ exit:
         }
     }
 
-    for (i = 0; i < NumEmbeddedFiles;i++)
-        gs_free_object(ctx->memory, working_array[i], "free collection temporary filenames");
-    gs_free_object(ctx->memory, working_array, "free collection working array");
+    if (working_array != NULL) {
+        for (i = 0; i < NumEmbeddedFiles;i++)
+            gs_free_object(ctx->memory, working_array[i], "free collection temporary filenames");
+        gs_free_object(ctx->memory, working_array, "free collection working array");
+    }
     pdfi_countdown(F);
     pdfi_countdown(EF);
     pdfi_countdown(FileNames);
