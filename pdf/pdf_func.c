@@ -147,7 +147,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
 {
     int code;
     byte c;
-    char TokenBuffer[16];
+    char TokenBuffer[17];
     unsigned int Size, IsReal;
     byte *clause = NULL;
     byte *p = (ops ? ops + *size : NULL);
@@ -262,7 +262,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                         if (Op->length > Size)
                             return_error(gs_error_undefined);
 
-                        if (memcmp(Op->op, TokenBuffer, Size) == 0)
+                        if (memcmp(Op->op, TokenBuffer, Size - 1) == 0)
                             break;
                     }
                     if (i > NumOps)
