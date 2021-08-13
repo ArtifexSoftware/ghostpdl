@@ -277,7 +277,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         stream_obj->length_valid = false;
 
         code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
-        if (pdfi_count_stack(ctx) < 2) {
+        if (code < 0 || pdfi_count_stack(ctx) < 2) {
             char extra_info[gp_file_name_sizeof];
 
             gs_sprintf(extra_info, "Failed to find a valid object at end of stream object %u.\n", objnum);
