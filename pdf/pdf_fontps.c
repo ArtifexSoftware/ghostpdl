@@ -496,16 +496,18 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                                     else {
                                         code = pdfi_object_alloc(s->pdfi_ctx, PDF_INT, 0, (pdf_obj **)&n);
                                         if (code >= 0)
-                                            n->value.d = 0;
+                                            n->value.i = 0;
                                     }
                                     if (code < 0)
-                                        continue;
+                                        break;
                                     pdfi_countup(n);
                                     code = pdfi_array_put(s->pdfi_ctx, parr, j, (pdf_obj *)n);
                                     pdfi_countdown(n);
+                                    if (code < 0) break;
                                 }
                             }
-                            code = pdfi_array_put(s->pdfi_ctx, priv->u.t1.blendfontbbox, i, (pdf_obj *)parr);
+                            if (code >= 0)
+                                code = pdfi_array_put(s->pdfi_ctx, priv->u.t1.blendfontbbox, i, (pdf_obj *)parr);
                             pdfi_countdown(parr);
                         }
                     }
