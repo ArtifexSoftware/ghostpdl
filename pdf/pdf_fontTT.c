@@ -128,7 +128,7 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
                 code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)g, &cc);
             }
 
-            if (cc == 0) {
+            if (code < 0 || cc == 0) {
                 /* This is a very slow implementation, we may benefit from creating a
                  * a reverse post table upfront */
                 for (i = 0; i < pfont->data.numGlyphs; i++) {
@@ -159,19 +159,23 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
 
                 memcpy(gnbuf, gname.data + 3, l);
                 gnbuf[l] = '\0';
-                sscanf(gnbuf, "%x", &gind);
-                (void)pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)gind, &cc);
+                l = sscanf(gnbuf, "%x", &gind);
+                if (l > 0)
+                    (void)pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)gind, &cc);
+                else
+                    cc = 0;
             }
             else {
-                /* Slow linear search, we could binary chop it */
-                for (i = 0; sgl[i].Glyph != 0x00; i++) {
-                    if (sgl[i].Glyph[0] == gname.data[0]
-                        && strlen(sgl[i].Glyph) == gname.size
-                        && !strncmp((char *)sgl[i].Glyph, (char *)gname.data, gname.size))
+                /* Slow linear search */
+                for (i = 0; sgl->Glyph != 0x00; i++) {
+                    if (sgl->Glyph[0] == gname.data[0]
+                        && strlen(sgl->Glyph) == gname.size
+                        && !strncmp((char *)sgl->Glyph, (char *)gname.data, gname.size))
                         break;
+                    sgl++;
                 }
-                if (sgl[i].Glyph != NULL) {
-                    code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)sgl[i].Unicode, &cc);
+                if (sgl->Glyph != NULL) {
+                    code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (uint)sgl->Unicode, &cc);
                     if (code < 0 || cc == 0)
                         cc = 0;
                 }
@@ -394,9 +398,6 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     num_chars = font->LastChar - font->FirstChar + 1;
 
-    if (code < 0) {
-        goto error;
-    }
     font->sfnt.data = buf;
     font->sfnt.size = buflen;
     buf = NULL;
@@ -571,7 +572,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             goto error;
     }
 
-    if (font)
+    if (font != NULL && ppdffont != NULL)
         *ppdffont = (pdf_font *)font;
     return code;
 error:
