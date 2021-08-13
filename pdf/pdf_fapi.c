@@ -1035,8 +1035,11 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 
                         memcpy(gnbuf, GlyphName->data + 3, l);
                         gnbuf[l] = '\0';
-                        sscanf(gnbuf, "%x", &cc);
-                        cr->char_codes[0] = cc;
+                        l = sscanf(gnbuf, "%x", &cc);
+                        if (l > 0)
+                            cr->char_codes[0] = cc;
+                        else
+                            cr->char_codes[0] = 0;
                     }
                     else {
                         /* Slow linear search, we could binary chop it */
