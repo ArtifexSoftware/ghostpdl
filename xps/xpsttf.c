@@ -424,7 +424,9 @@ xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
         p42->data.string_proc = xps_true_callback_string_proc;
         p42->data.proc_data = font;
 
-        gs_type42_font_init(p42, font->subfontid);
+        code = gs_type42_font_init(p42, font->subfontid);
+        if (code < 0)
+            return code;
         p42->data.get_glyph_index = xps_true_get_glyph_index;
     }
 
