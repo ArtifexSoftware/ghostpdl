@@ -95,7 +95,7 @@ pdfi_font_match_glyph_widths(pdf_font *pdfont)
     gs_font_base *pbfont = pdfont->pfont;
     double fw = 0.0, ww = 0.0;
 
-    if (pdfont->FirstChar < 0 || pdfont->LastChar < 0 || pdfont->Widths == NULL)
+    if (pdfont->LastChar <  pdfont->FirstChar || pdfont->Widths == NULL)
         return 0; /* Technically invalid - carry on, hope for the best */
 
     /* For "best" results, restrict to what we *hope* are A-Z,a-z */
@@ -314,9 +314,6 @@ static const char *pdfi_font_substitute_by_flags(unsigned int flags)
             if (italic) {
                 return "Helvetica-Oblique";
             }
-            else {
-                return "Helvetica";
-            }
         }
     }
     return "Helvetica"; /* Really shouldn't ever happen */
@@ -350,7 +347,7 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
         const char *fbname;
         int64_t flags = 0;
         if (fontdesc != NULL) {
-            code = pdfi_dict_get_int(ctx, fontdesc, "Flags", &flags);
+            (void)pdfi_dict_get_int(ctx, fontdesc, "Flags", &flags);
         }
         fbname = pdfi_font_substitute_by_flags((int)flags);
         code = pdfi_name_alloc(ctx, (byte *)fbname, strlen(fbname), (pdf_obj **) &fontname);
@@ -384,9 +381,14 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
     }
     if (mapname->type == PDF_NAME) {
         pdf_name *mname = (pdf_name *) mapname;
-        memcpy(fontfname, romfsprefix, romfsprefixlen);
-        memcpy(fontfname + romfsprefixlen, mname->data, mname->length);
-        fontfname[romfsprefixlen + mname->length] = '\0';
+        if (romfsprefixlen + mname->length + 1 < gp_file_name_sizeof) {
+            memcpy(fontfname, romfsprefix, romfsprefixlen);
+            memcpy(fontfname + romfsprefixlen, mname->data, mname->length);
+            fontfname[romfsprefixlen + mname->length] = '\0';
+        }
+        else {
+            return_error(gs_error_invalidfileaccess);
+        }
     }
 
     s = sfopen(fontfname, "r", ctx->memory);
@@ -817,10 +819,6 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
                 code = gs_note_error(gs_error_typecheck);
                 goto cleanup;
             }
-            pdfi_countdown(c);
-            pdfi_countdown(o);
-            o = NULL;
-            c = NULL;
         }
         pdfi_countdown(c2);
         pdfi_countdown(c);
@@ -1151,7 +1149,7 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     code = pdfi_load_resource_font(ctx, stream_dict, page_dict, fontname, point_size);
 
     /* If we failed to load font, try to load an internal one */
-    if (code < 0 && fontname)
+    if (code < 0)
         code = pdfi_font_set_internal_name(ctx, fontname, point_size);
  exit0:
     pdfi_countdown(fontname);
@@ -1533,7 +1531,7 @@ int pdfi_font_set_internal_string(pdf_context *ctx, const char *fontname, double
 
 int pdfi_font_set_internal_name(pdf_context *ctx, pdf_name *fontname, double point_size)
 {
-    if (fontname == NULL || fontname->type != PDF_NAME)
+    if (fontname->type != PDF_NAME)
         return_error(gs_error_typecheck);
     else
         return pdfi_font_set_internal_inner(ctx, fontname->data, fontname->length, point_size);
