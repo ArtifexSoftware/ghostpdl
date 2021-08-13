@@ -406,6 +406,7 @@ const char *gs_error_strings[] = {
     "configurationerror",
     "undefinedresource",
     "unregistered",
+    "invalidcontext",
     "invalidid",
 };
 
