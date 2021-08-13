@@ -1382,7 +1382,7 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
         return NULL;
     }
     ctx->stack_size = INITIAL_STACK_SIZE;
-    ctx->stack_top = ctx->stack_bot - sizeof(pdf_obj *);
+    ctx->stack_top = ctx->stack_bot - 1;
     code = sizeof(pdf_obj *);
     code *= ctx->stack_size;
     ctx->stack_limit = ctx->stack_bot + ctx->stack_size;
