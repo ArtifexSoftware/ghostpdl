@@ -735,7 +735,7 @@ int pdfi_close_pdf_file(pdf_context *ctx)
 
 static int pdfi_process(pdf_context *ctx)
 {
-    int code, i;
+    int code = 0, i;
 
     /* Loop over each page and either render it or output the
      * required information.
