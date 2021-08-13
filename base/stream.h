@@ -386,9 +386,9 @@ void sread_string_reusable(stream *, const byte *, uint);
    "string" buffer.
  */
 void
-sread_transient_string(register stream *s, gs_memory_t *string_mem, const byte *ptr, uint len);
+sread_transient_string(stream *s, gs_memory_t *string_mem, const byte *ptr, uint len);
 void
-sread_transient_string_reusable(register stream *s, gs_memory_t *string_mem, const byte *ptr, uint len);
+sread_transient_string_reusable(stream *s, gs_memory_t *string_mem, const byte *ptr, uint len);
 
 void swrite_string(stream *, byte *, uint);
 void sread_file(stream *, gp_file *, byte *, uint),
