@@ -112,7 +112,7 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
 #  else
         file = mkstemp(fname);
 #  endif
-        if (file < -1) {
+        if (file < 0) {
             emprintf1(mem, "**** Could not open temporary file %s\n", ofname);
             return NULL;
         }
