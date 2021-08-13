@@ -48,6 +48,9 @@ static int cmap_usecmap_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte 
         else if (pdf_ps_obj_has_type(&(s->cur[0]), PDF_PS_OBJ_STRING)) {
             nstr = s->cur[0].val.string;
         }
+        else {
+            return_error(gs_error_typecheck);
+        }
         code = pdfi_name_alloc(pdficmap->ctx, nstr, len, (pdf_obj **)&n);
         if (code >= 0) {
             pdfi_countup(n);
@@ -274,6 +277,12 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
             uint cidbase = 0;
             int srcs = 0, srce = 0;
             int kslen = stobj[i].size;
+
+            if (kslen > 4) {
+                dprintf("CMap: value out of range\n");
+                continue;
+            }
+
             for (k = 0; k < stobj[i].size; k++) {
                 srcs |= stobj[i].val.string[stobj[i].size - k - 1] << (8 * k);
             }
@@ -300,7 +309,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
                     cidbase++;
                 }
 
-                for (m =0; m < kslen; m++) {
+                for (m = 0; m < kslen; m++) {
                     psrccode[m] = (k >> (8 * (kslen - m - 1))) & 0xff;
                 }
 
@@ -728,7 +737,6 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
     int code = 0;
     pdf_cmap pdficm[3] = {0};
     pdf_cmap *pdfi_cmap = &(pdficm[1]);
-    stream *cmap_str = NULL;
     byte *buf = NULL;
     int64_t buflen;
     pdf_ps_ctx_t cmap_ctx;
@@ -742,11 +750,6 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
         code = pdf_cmap_open_file(ctx, &cmname, &buf, &buflen);
         if (code < 0)
             goto error_out;
-#if 0
-        for (code = 0; code < buflen; code++) {
-            dprintf1("%c", buf[code]);
-        }
-#endif
     }
     else {
         if (cmap->type == PDF_STREAM) {
@@ -832,13 +835,9 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
             }
         }
     }
-    if (cmap_str)
-        sfclose(cmap_str);
     return 0;
 
 error_out:
-    if (cmap_str)
-        sfclose(cmap_str);
     pdfi_free_cmap_contents(pdfi_cmap);
     memset(pdfi_cmap, 0x00, sizeof(pdf_cmap));
     return code;
