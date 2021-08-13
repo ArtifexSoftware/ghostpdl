@@ -1129,7 +1129,6 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
 int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
 {
     int code;
-    bool uses_transparency = false;
     int spots = 0;
     pdfi_check_tracker_t tracker;
 
@@ -1167,11 +1166,8 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
         if (code > 0) {
             /* The device was closed, we need to reopen it */
             code = gs_setdevice_no_erase(ctx->pgs, ctx->pgs->device);
-            if (code < 0) {
-                if (uses_transparency)
-                    (void)gs_abort_pdf14trans_device(ctx->pgs);
+            if (code < 0)
                 goto exit;
-            }
             gs_erasepage(ctx->pgs);
         }
     }
