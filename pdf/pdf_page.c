@@ -391,15 +391,15 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
             break;
     }
 
-    bbox.p.x = d_crop[0] - d[0];
-    bbox.p.y = d_crop[1] - d[1];
-    bbox.q.x = d_crop[2] - d[0];
-    bbox.q.y = d_crop[3] - d[1];
-
     if (do_crop) {
+        bbox.p.x = d_crop[0] - d[0];
+        bbox.p.y = d_crop[1] - d[1];
+        bbox.q.x = d_crop[2] - d[0];
+        bbox.q.y = d_crop[3] - d[1];
+
         code = gs_rectclip(ctx->pgs, &bbox, 1);
         if (code < 0)
-            return code;;
+            return code;
     }
 
     gs_translate(ctx->pgs, d[0] * -1, d[1] * -1);
@@ -843,7 +843,9 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     pdfi_trans_set_needs_OP(ctx);
     pdfi_oc_init(ctx);
 
-    pdfi_gsave(ctx);
+    code = pdfi_gsave(ctx);
+    if (code < 0)
+        goto exit2;
 
     /* Figure out if pdf14 device is needed.
      * This can be either for normal transparency deviceN, or because we are using
@@ -861,27 +863,19 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         }
     }
     if (need_pdf14) {
+        /* We don't retain the PDF14 device */
+        code = gs_push_pdf14trans_device(ctx->pgs, false, false, trans_depth, ctx->page.num_spots);
         if (code >= 0) {
-            /* We don't retain the PDF14 device */
-            code = gs_push_pdf14trans_device(ctx->pgs, false, false, trans_depth, ctx->page.num_spots);
-            if (code >= 0) {
-                if (page_group_known) {
-                    code = pdfi_trans_begin_page_group(ctx, page_dict, group_dict);
-                    /* If setting the page group failed for some reason, abandon the page group,
-                     *  but continue with the page
-                     */
-                    if (code < 0)
-                        page_group_known = false;
-                }
-            } else {
-                /* Couldn't push the transparency compositor.
-                 * This is probably fatal, but attempt to recover by abandoning transparency
+            if (page_group_known) {
+                code = pdfi_trans_begin_page_group(ctx, page_dict, group_dict);
+                /* If setting the page group failed for some reason, abandon the page group,
+                 *  but continue with the page
                  */
-                ctx->page.has_transparency = false;
-                need_pdf14 = false;
+                if (code < 0)
+                    page_group_known = false;
             }
         } else {
-            /* Couldn't gsave round the transparency compositor.
+            /* Couldn't push the transparency compositor.
              * This is probably fatal, but attempt to recover by abandoning transparency
              */
             ctx->page.has_transparency = false;
