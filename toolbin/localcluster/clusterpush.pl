@@ -28,6 +28,7 @@ my %products=('abort' =>1,
               'runtests'=>1,
               'extract'=>1,
               'extractmu'=>1,
+              'muwasm'=>1,
               'extractgs'=>1);
 
 my $user;
