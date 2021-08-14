@@ -1060,7 +1060,7 @@ pdfi_image_setup_type4(pdf_context *ctx, pdfi_image_info_t *image_info,
      */
     bool indexed_case = (pcs && pcs->type == &gs_color_space_type_Indexed && bpc == 1);
 
-    memset(t4image, 0, sizeof(t4image));
+    memset(t4image, 0, sizeof(gs_image4_t));
     gs_image4_t_init(t4image, NULL);
 
     if (pdfi_array_size(mask_array) > GS_IMAGE_MAX_COMPONENTS * 2) {
