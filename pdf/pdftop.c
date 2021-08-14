@@ -456,10 +456,10 @@ pdfi_get_overprint_param(pdf_context *ctx, gs_param_typed_value *pvalue)
         return code;
 
     ctx->args.overprint_control = PDF_OVERPRINT_ENABLE;
-    if (!strncmp(val, "disable", len)) {
+    if (val != NULL && !strncmp(val, "disable", len)) {
         ctx->args.overprint_control = PDF_OVERPRINT_DISABLE;
     }
-    if (!strncmp(val, "simulate", len)) {
+    if (val != NULL && !strncmp(val, "simulate", len)) {
         ctx->args.overprint_control = PDF_OVERPRINT_SIMULATE;
     }
 
