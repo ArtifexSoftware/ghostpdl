@@ -802,7 +802,9 @@ pdfi_shading_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state, pdf_obj *S
 
     code = pdfi_dict_knownget_type(ctx, shading_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
     if (code > 0) {
-        pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+        code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+        if (code < 0)
+            goto exit;
         code = gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
         if (code < 0)
             goto exit;
@@ -816,7 +818,8 @@ pdfi_shading_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state, pdf_obj *S
     } else {
         code = gs_clippath(ctx->pgs);
     }
-
+    if (code < 0)
+        goto exit;
 
     code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Other);
  exit:
