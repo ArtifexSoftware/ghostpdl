@@ -33,8 +33,15 @@ editing the "accessibility.properties" file. This is located at:
 
 /etc/java-8-openjdk/accessibility.properties
 
-Additionally, to start the application, start.sh should be executed as it
+Additionally, to start the application, start_linux.sh should be executed as it
 sets up the shared library paths.
+
+
+-= MAC =-
+
+Same as Linux, except with .dylib extensions on all shared objects.
+
+start_darwin.sh should be used to start the application.
 
 
 Building:
@@ -42,14 +49,21 @@ Building:
 -= WINDOWS =-
 
 Ensure both gs_jni.dll, gpdldll64.dll, and gsjava.jar have been built. Then,
-run the build.bat script. To run, open gsviewer.jar either through File
+run the build_win32.bat script. To run, open gsviewer.jar either through File
 Explorer or in the command line through the following command:
 
 java -jar gsviewer.jar
 
 -= LINUX =-
 
-Ensure Ghoscript has been built.
-Run the build.sh script. This automatically will build the
-gs_jni.co, gsjava.jar, and copy the files to the needed
+Ensure Ghostscript has been built.
+Run the build_linux.sh script. This will automatically build
+gs_jni.so, gsjava.jar, and copy the files to the needed
 directories. gsviewer.jar will be outputted in this directory.
+
+-= MAC =-
+
+Ensure Ghostscript has been built.
+Run the build_darwin.sh script. This will automatically build
+gs_jni.dylib, gsjava.jar, and copy the files to the needed
+directories. gsviewer.jar will be outputed in this directory.

@@ -5,4 +5,4 @@ inside the installation folder is added to the PATH environment
 variable. This exposes command line programs to build Java
 applications.
 
-On Linux, OpenJDK 8 is used.
+On Linux and Mac, OpenJDK 8 is used.

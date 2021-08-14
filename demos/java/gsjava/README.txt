@@ -65,11 +65,12 @@ public static void main(String[] args) {
 	GSAPI.gsapi_delete_instance(instance);
 }
 
-To build the library, build.sh can be used on Linux, build_darwin.sh can
-be used on Mac OS X, and build.bat on Windows.
+To build the library, build_linux.sh can be used on Linux,
+build_darwin.sh can be used on Mac, and build_win32.bat on Windows.
 
-All of these scripts do not compile Ghostscript. However, build.sh will
-compile the C++ library unlike build.bat.
+All of these scripts do not compile Ghostscript. However,
+build_linux.sh and build_darwin.sh will compile the C++
+library unlike build_win32.bat.
 
 Viewer:
 
@@ -84,7 +85,7 @@ a PDF document to be opened.
 
 When the document is first loaded, every page is rendered at
 a low resolution. These will be displayed as thumbnails on the
-left side. All loadingg is done in the com.artifex.gsjava.Document
+left side. All loading is done in the com.artifex.gsjava.Document
 class. As the user changes the position of the viewport, the
 viewer will dynamically load high resolution images based on
 what page the user is viewing. This is done in the

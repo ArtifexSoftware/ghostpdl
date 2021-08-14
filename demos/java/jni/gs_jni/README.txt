@@ -25,14 +25,22 @@ jni_md.h:
 C:\Program Files\Java\<JDK Install>\include\win32\jni_md.h
 
 
-For Linux (using OpenJDK):
+For Linux:
 
 jni.h:
 /lib/jvm/<JDK Install>/include/jni.h
 
 jni_md.h:
-/lib/jvm/<JDK Install>/include/jni_md.h
+/lib/jvm/<JDK Install>/include/linux/jni_md.h
 
+
+For Mac:
+
+jni.h:
+/Library/Java/JavaVirtualMachines/<JDK Install>/Contents/Home/include/jni.h
+
+jni_md.h:
+/Library/Java/JavaVirtualMachines/<JDK Install>/Contents/Home/include/darwin/jni_md.h
 
 So, a setup fully capable of building for any system should have an
 include directory resembling this, where each copy of jni_md.h comes
@@ -41,6 +49,7 @@ from its respective system:
 * jni.h
 * win32\jni_md.h
 * linux/jni_md.h
+* darwin/jni_md.h
 
 To build on Windows,
 Ensure Ghostscript has already been built, and then open
@@ -52,7 +61,11 @@ can be placed in the working directory, next to gsjava.jar (see
 
 To build on Linux,
 Ensure Ghostscript has already been built, and then run
-the build.sh script.
+the build_linux.sh script.
+
+To build on Mac,
+Ensure Ghostscript has already been builtm and then run
+the build_darwin.sh script.
 
 Notes on function implementations and a brief introduction on
 how to use the JNI:
