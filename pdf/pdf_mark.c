@@ -253,10 +253,12 @@ static int pdfi_mark_from_dict_withlabel(pdf_context *ctx, pdf_indirect_ref *lab
     pdfi_countdown(Key);
     pdfi_countdown(Value);
     pdfi_countdown(tempobj);
-    /* Free the param data except the last two which are handled separately */
-    for (i=0; i<size-2; i++) {
-        if (parray[i].data)
-            gs_free_object(ctx->memory, (byte *)parray[i].data, "pdfi_mark_from_dict(parray)");
+    if (parray != NULL) {
+        /* Free the param data except the last two which are handled separately */
+        for (i=0; i<size-2; i++) {
+            if (parray[i].data)
+                gs_free_object(ctx->memory, (byte *)parray[i].data, "pdfi_mark_from_dict(parray)");
+        }
     }
     if (ctm_data)
         gs_free_object(ctx->memory, ctm_data, "pdfi_mark_from_dict(ctm_data)");
@@ -323,8 +325,10 @@ static int pdfi_mark_from_objarray(pdf_context *ctx, pdf_obj **objarray, int len
     code = pdfi_mark_write_array(ctx, &array_list, "pdfmark");
 
  exit:
-    for (i=0; i<len; i++) {
-        gs_free_object(ctx->memory, (byte *)parray[i].data, "pdfi_mark_from_objarray(parray)");
+    if (parray != NULL) {
+        for (i=0; i<len; i++) {
+            gs_free_object(ctx->memory, (byte *)parray[i].data, "pdfi_mark_from_objarray(parray)");
+        }
     }
     if (ctm_data)
         gs_free_object(ctx->memory, ctm_data, "pdfi_mark_from_objarray(ctm_data)");
@@ -345,8 +349,13 @@ int pdfi_mark_object(pdf_context *ctx, pdf_obj *object, const char *cmd)
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         goto exit;
-    if (object->object_num != 0)
+    if (object->object_num != 0) {
         code = pdfi_loop_detector_add_object(ctx, object->object_num);
+        if (code < 0) {
+            (void)pdfi_loop_detector_cleartomark(ctx);
+            goto exit;
+        }
+    }
     code = pdfi_resolve_indirect(ctx, object, true);
     (void)pdfi_loop_detector_cleartomark(ctx);
     if (code < 0)
