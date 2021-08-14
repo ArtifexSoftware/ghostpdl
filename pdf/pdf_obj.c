@@ -814,6 +814,8 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
     /* Handle empty dict specially */
     if (dictsize == 0) {
         code = pdfi_bufstream_write(ctx, &bufstream, (byte *)"<< >>", 5);
+        if (code < 0)
+            goto exit;
         goto exit_copy;
     }
 
