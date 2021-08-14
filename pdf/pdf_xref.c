@@ -564,6 +564,7 @@ static int read_xref_entry_slow(pdf_context *ctx, pdf_c_stream *s, gs_offset_t *
     byte Buffer[20];
     int code, read = 0, bytes;
 
+    memset(Buffer, 0x00, 20);
     /* First off, find a number. If we don't find one, and read 20 bytes, throw an error */
     code = skip_to_digit(ctx, s, 20);
     if (code < 0)
