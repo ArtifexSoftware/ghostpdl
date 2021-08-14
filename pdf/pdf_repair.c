@@ -141,7 +141,6 @@ int pdfi_repair_file(pdf_context *ctx)
         if (code < 0) {
             if (code != gs_error_VMerror && code != gs_error_ioerror) {
                 pdfi_clearstack(ctx);
-                offset = pdfi_unread_tell(ctx);
                 continue;
             } else
                 goto exit;
@@ -277,11 +276,6 @@ int pdfi_repair_file(pdf_context *ctx)
                         break;
                     } else {
                         if (k->key == TOKEN_ENDOBJ) {
-                            if (object_num > 0) {
-                                code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
-                                if (code < 0)
-                                    goto exit;
-                            }
                             pdfi_clearstack(ctx);
                         } else
                             if (k->key == TOKEN_STARTXREF) {
