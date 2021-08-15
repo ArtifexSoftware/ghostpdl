@@ -954,7 +954,9 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
     if (image_info->SMask->object_num != 0) {
         if (pdfi_loop_detector_check_object(ctx, image_info->SMask->object_num))
             return gs_note_error(gs_error_circular_reference);
-        pdfi_loop_detector_add_object(ctx, image_info->SMask->object_num);
+        code = pdfi_loop_detector_add_object(ctx, image_info->SMask->object_num);
+        if (code < 0)
+            goto exit;
     }
 
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
@@ -1148,8 +1150,6 @@ pdfi_image_setup_type3x(pdf_context *ctx, pdfi_image_info_t *image_info,
         mask->has_Matte = true;
 
     code = pdfi_data_image_params(ctx, smask_info, &mask->MaskDict, comps, NULL);
-    if (code < 0)
-        goto exit;
  exit:
     return code;
 }
