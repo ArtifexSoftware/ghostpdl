@@ -41,6 +41,9 @@ fn_free_functions(const gs_function_t *const * Functions, int count,
 {
     int i;
 
+    if (Functions == NULL)
+        return 0;
+
     for (i = count; --i >= 0;)
         if (Functions[i])
             gs_function_free((gs_function_t *)Functions[i], true, mem);
