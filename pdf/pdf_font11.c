@@ -284,6 +284,9 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     pdf_obj *obj = NULL;
     gs_font_cid2 *cid2;
 
+    if (ppfont == NULL)
+        return_error(gs_error_invalidaccess);
+
     *ppfont = NULL;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
@@ -423,7 +426,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             goto error;
     }
 
-    if (font != NULL && ppfont != NULL)
+    if (font != NULL)
         *ppfont = (pdf_font *)font;
     return code;
 error:
