@@ -368,6 +368,9 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     bool encoding_known = false;
     bool forced_symbolic = false;
 
+    if (ppdffont == NULL)
+        return_error(gs_error_invalidaccess);
+
     *ppdffont = NULL;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
@@ -572,7 +575,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             goto error;
     }
 
-    if (font != NULL && ppdffont != NULL)
+    if (font != NULL)
         *ppdffont = (pdf_font *)font;
     return code;
 error:
