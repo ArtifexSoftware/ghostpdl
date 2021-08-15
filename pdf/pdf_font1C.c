@@ -1452,7 +1452,11 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
                     char buf[40];
                     int len = gs_sprintf(buf, "sid-%d", sid);
 
-                    code = pdfi_name_alloc(ctx, (byte *) buf, len, &gname);
+                    if (len > 0)
+                        code = pdfi_name_alloc(ctx, (byte *) buf, len, &gname);
+                    else
+                        code = 0;
+
                     if (code < 0)
                         continue;
                 }
