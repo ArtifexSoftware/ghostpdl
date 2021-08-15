@@ -158,7 +158,6 @@ int pdfi_repair_file(pdf_context *ctx)
             if (code < 0) {
                 if (code != gs_error_VMerror && code != gs_error_ioerror) {
                     pdfi_clearstack(ctx);
-                    offset = pdfi_unread_tell(ctx);
                     continue;
                 } else
                     goto exit;
@@ -312,12 +311,10 @@ int pdfi_repair_file(pdf_context *ctx)
                     if (code < 0) {
                         if (code != gs_error_VMerror && code != gs_error_ioerror) {
                             pdfi_clearstack(ctx);
-                            offset = pdfi_unread_tell(ctx);
                             continue;
                         } else
                             goto exit;
                     }
-                    offset = pdfi_unread_tell(ctx);
                 }
                 if (pdfi_count_stack(ctx) > 0 && ctx->stack_top[-1]->type != PDF_INT)
                     pdfi_clearstack(ctx);
