@@ -2949,9 +2949,9 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
 
     code = gs_rectfill(ctx->pgs, &rect2, 1);
     if (code < 0) goto exit;
-    pdfi_gs_setgray(ctx, 0);
+    code = pdfi_gs_setgray(ctx, 0);
     if (code < 0) goto exit;
-    gs_rectstroke(ctx->pgs, &rect2, 1, NULL);
+    code = gs_rectstroke(ctx->pgs, &rect2, 1, NULL);
     if (code < 0) goto exit;
 
     /* Display /T in Helvetica */
