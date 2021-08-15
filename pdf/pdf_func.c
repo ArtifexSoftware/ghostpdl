@@ -621,7 +621,9 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     if (stream_obj->object_num != 0) {
         if (pdfi_loop_detector_check_object(ctx, stream_obj->object_num))
             return gs_note_error(gs_error_circular_reference);
-        pdfi_loop_detector_add_object(ctx, stream_obj->object_num);
+        code = pdfi_loop_detector_add_object(ctx, stream_obj->object_num);
+        if (code < 0)
+            goto sub_function_error;
     }
 
     code = pdfi_dict_from_obj(ctx, stream_obj, &stream_dict);
