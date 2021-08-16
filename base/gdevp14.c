@@ -1267,7 +1267,7 @@ pdf14_ctx_free(pdf14_ctx *ctx)
  * if backdrop is fully transparent.
  **/
 static	pdf14_buf *
-pdf14_find_backdrop_buf(gx_device* dev, pdf14_ctx *ctx, bool *is_backdrop)
+pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
 {
     /* Our new buffer is buf */
     pdf14_buf *buf = ctx->stack;
@@ -1503,7 +1503,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         return 0;
     if (idle)
         return 0;
-    pdf14_backdrop = pdf14_find_backdrop_buf(dev, ctx, &is_backdrop);
+    pdf14_backdrop = pdf14_find_backdrop_buf(ctx, &is_backdrop);
 
     /* Initializes buf->data with the backdrop or as opaque */
     if (pdf14_backdrop == NULL || (is_backdrop && pdf14_backdrop->backdrop == NULL)) {
