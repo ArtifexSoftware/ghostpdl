@@ -1150,7 +1150,6 @@ pdfi_image_setup_type3x(pdf_context *ctx, pdfi_image_info_t *image_info,
         mask->has_Matte = true;
 
     code = pdfi_data_image_params(ctx, smask_info, &mask->MaskDict, comps, NULL);
- exit:
     return code;
 }
 
