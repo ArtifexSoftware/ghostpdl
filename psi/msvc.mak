@@ -788,8 +788,6 @@ EXTRACT_DIR=extract
 !       error Cannot find extract directory: $(EXTRACT_DIR)
 !   endif
 EXTRACT_DEVS=$(DD)docxwrite.dev
-!else
-!   message Not building with extract: $(EXTRACT_DIR)
 !endif
 
 # Alternatively, you can build a separate DLL
