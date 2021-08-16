@@ -42,7 +42,7 @@ fn_free_functions(const gs_function_t *const * Functions, int count,
     int i;
 
     if (Functions == NULL)
-        return 0;
+        return;
 
     for (i = count; --i >= 0;)
         if (Functions[i])
