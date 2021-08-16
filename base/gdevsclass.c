@@ -892,3 +892,21 @@ void gx_subclass_fill_in_page_procs(gx_device *dev)
     if (dev->page_procs.end_page == NULL)
         dev->page_procs.end_page = default_subclass_end_page;
 }
+
+int
+gx_device_upcall(gx_device *dev, void *data, size_t size)
+{
+    int error;
+
+    /* Rewind to top device in chain */
+    while(dev->parent)
+        dev = dev->parent;
+
+    error = dev->procs.dev_spec_op(dev, gxdso_upcall, data, size);
+
+    /* Hide any 'undefined' errors due to the device not supporting this. */
+    if (error == gs_error_undefined)
+        error = 0;
+
+    return error;
+}

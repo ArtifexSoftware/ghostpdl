@@ -678,5 +678,6 @@ int gx_update_from_subclass(gx_device *dev);
 int gx_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
 void gx_subclass_fill_in_page_procs(gx_device *dev);
+int gx_device_upcall(gx_device *dev, void *data, size_t size);
 
 #endif /* gxdevice_INCLUDED */
