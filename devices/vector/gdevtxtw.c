@@ -2068,6 +2068,9 @@ txtwrite_text_begin(gx_device * dev, gs_gstate * pgs,
     penum->TextBuffer = NULL;
     penum->TextBufferIndex = 0;
     penum->Widths = NULL;
+    penum->Advs = NULL;
+    penum->GlyphWidths = NULL;
+    penum->SpanDeltaX = NULL;
     penum->pte_fallback = NULL;
     penum->d1_width = 0;
     penum->d1_width_set = false;
