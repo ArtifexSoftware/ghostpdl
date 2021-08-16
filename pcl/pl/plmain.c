@@ -1519,7 +1519,7 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int6
         pmi->scanconverter = b;
         return 0;
     }
-    if (argcmp(arg, "RESETRESOURCES", 10)) {
+    if (argcmp(arg, "RESETRESOURCES", 14)) {
         pmi->reset_resources = b;
         return 0;
     }
@@ -1533,7 +1533,7 @@ static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, fl
         argcmp(arg, "DOINTERPOLATE", 13) ||
         argcmp(arg, "NOCACHE", 7) ||
         argcmp(arg, "SCANCONVERTERTYPE", 17) ||
-        argcmp(arg, "RESETRESOURCES", 10)) {
+        argcmp(arg, "RESETRESOURCES", 14)) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
@@ -1546,7 +1546,7 @@ static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_p
         argcmp(arg, "DOINTERPOLATE", 13) ||
         argcmp(arg, "NOCACHE", 7) ||
         argcmp(arg, "SCANCONVERTERTYPE", 17) ||
-        argcmp(arg, "RESETRESOURCES", 10)) {
+        argcmp(arg, "RESETRESOURCES", 14)) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
