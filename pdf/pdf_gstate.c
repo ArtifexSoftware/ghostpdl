@@ -1232,11 +1232,11 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         if (pdfi_name_is((pdf_name *)obj, "Default")) {
             i = 0;
         } else {
-            for (i = 0; i < sizeof(spot_table) - 1; i++){
+            for (i = 0; i < (sizeof(spot_table) / sizeof (char *)); i++){
                 if (pdfi_name_is((pdf_name *)obj, spot_table[i]))
                     break;
             }
-            if (i >= sizeof(spot_table))
+            if (i >= (sizeof(spot_table) / sizeof (char *)))
                 return gs_note_error(gs_error_rangecheck);
         }
         code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
