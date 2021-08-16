@@ -229,7 +229,7 @@ nup_set_children_MediaSize(gx_device *dev, float PageW, float PageH)
 }
 
 static int
-nup_flush_nest_to_output(gx_device *dev, Nup_device_subclass_data *pNup_data, bool flush)
+nup_flush_nest_to_output(gx_device *dev, Nup_device_subclass_data *pNup_data)
 {
     int code = 0;
 
@@ -253,7 +253,7 @@ nup_close_device(gx_device *dev)
         return code;
 
     if (pNup_data->PageCount > 0)
-        acode = nup_flush_nest_to_output(dev, pNup_data, true);
+        acode = nup_flush_nest_to_output(dev, pNup_data);
 
     /* Reset the Nup control data */
     /* NB: the data will be freed from non_gc_memory by the finalize function */
@@ -370,7 +370,7 @@ gs_param_list_dump(plist_orig);
             (strncmp(dev->NupControl->nupcontrol_str, (const char *)nuplist.data, nuplist.size) != 0))) {
             /* If we have accumulated a nest when the NupControl changes, flush the nest */
             if (pNup_data->PagesPerNest > 1 && pNup_data->PageCount > 0)
-                code = nup_flush_nest_to_output(dev, pNup_data, true);
+                code = nup_flush_nest_to_output(dev, pNup_data);
             if (code < 0)
                 ecode = code;
             /* There was a NupControl, but this one is different -- no longer use the old one */
@@ -454,7 +454,7 @@ gs_param_list_dump(plist_orig);
         if (msa.data[0] != pNup_data->NestedPageW || msa.data[1] != pNup_data->NestedPageH) {
             /* If needed, flush previous nest before changing */
             if (pNup_data->PageCount > 0 && pNup_data->PagesPerNest > 1) {
-                code = nup_flush_nest_to_output(dev, pNup_data, true);
+                code = nup_flush_nest_to_output(dev, pNup_data);
                 if (code < 0)
                     goto fail;
             }
@@ -504,7 +504,7 @@ nup_output_page(gx_device *dev, int num_copies, int flush)
     pNup_data->PageCount++;
     dev->ShowpageCount = dev->child->ShowpageCount;
     if (pNup_data->PageCount >= pNup_data->PagesPerNest) {
-        code = nup_flush_nest_to_output(dev, pNup_data, flush);
+        code = nup_flush_nest_to_output(dev, pNup_data);
         /* Increment this afterwards, in case the child accesses
          * the value to fill in a %d in the filename. */
         dev->PageCount++;
