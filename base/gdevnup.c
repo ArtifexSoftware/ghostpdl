@@ -265,34 +265,6 @@ nup_close_device(gx_device *dev)
     return min(code, acode);
 }
 
-    /*
-     * Template:
-     *   BEGIN_ARRAY_PARAM(param_read_xxx_array, "pname", pxxa, size, pxxe) {
-     *     ... check value if desired ...
-     *     if (success)
-     *       break;
-     *     ... set ecode ...
-     *   } END_ARRAY_PARAM(pxxa, pxxe);
-     */
-
-#define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
-    BEGIN\
-    switch (code = pread(plist, (param_name = pname), &(pa))) {\
-      case 0:\
-        if ((pa).size != psize) {\
-          ecode = gs_note_error(gs_error_rangecheck);\
-          (pa).data = 0;	/* mark as not filled */\
-        } else
-#define END_ARRAY_PARAM(pa, e)\
-        goto e;\
-      default:\
-        ecode = code;\
-e:	param_signal_error(plist, param_name, ecode);\
-      case 1:\
-        (pa).data = 0;		/* mark as not filled */\
-    }\
-    END
-
 /* Read .MediaSize or, if supported as a synonym, PageSize. */
 static int
 param_MediaSize(gs_param_list * plist, gs_param_name pname,
@@ -302,26 +274,38 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
     int ecode = 0;
     int code;
 
-    BEGIN_ARRAY_PARAM(param_read_float_array, pname, *pa, 2, mse) {
-        float width_new = pa->data[0] * res[0] / 72;
-        float height_new = pa->data[1] * res[1] / 72;
+    switch (code = param_read_float_array(plist, (param_name = pname), pa)) {\
+    case 0:\
+        if (pa->size != 2) {\
+          ecode = gs_note_error(gs_error_rangecheck);\
+          pa->data = 0;	/* mark as not filled */\
+        } else {
+            float width_new = pa->data[0] * res[0] / 72;
+            float height_new = pa->data[1] * res[1] / 72;
 
-        if (width_new < 0 || height_new < 0)
-            ecode = gs_note_error(gs_error_rangecheck);
+            if (width_new < 0 || height_new < 0)
+                ecode = gs_note_error(gs_error_rangecheck);
 #define max_coord (max_fixed / fixed_1)
 #if max_coord < max_int
-        else if (width_new > (long)max_coord || height_new > (long)max_coord)
-            ecode = gs_note_error(gs_error_limitcheck);
+            else if (width_new > (long)max_coord || height_new > (long)max_coord)
+                ecode = gs_note_error(gs_error_limitcheck);
 #endif
 #undef max_coord
-        else
-            break;
-    } END_ARRAY_PARAM(*pa, mse);
+            else
+                break;
+        }
+        goto err;
+    default:
+        ecode = code;
+err:	param_signal_error(plist, param_name, ecode);
+    case 1:
+        pa->data = 0;		/* mark as not filled */
+    }
     return ecode;
 }
 
 static int
-nup_put_params(gx_device *dev, gs_param_list * plist)
+nup_put_params(gx_device *dev, gs_param_list * plist_orig)
 {
     int code, ecode = 0;
     gs_param_float_array msa;
@@ -330,10 +314,52 @@ nup_put_params(gx_device *dev, gs_param_list * plist)
     gs_param_string nuplist;
     Nup_device_subclass_data* pNup_data = dev->subclass_data;
     gx_device *next_dev;
+    gs_c_param_list *plist_c;
+    gs_param_list *plist;
+    gs_param_enumerator_t penum;
+    gs_param_key_t key;
 
 #if 0000
-gs_param_list_dump(plist);
+gs_param_list_dump(plist_orig);
 #endif
+
+    plist_c = gs_c_param_list_alloc(dev->memory->non_gc_memory, "nup_put_params");
+    plist = (gs_param_list *)plist_c;
+    if (plist == NULL)
+        return_error(gs_error_VMerror);
+    gs_c_param_list_write(plist_c, dev->memory->non_gc_memory);
+
+    param_init_enumerator(&penum);
+
+    while ((code = param_get_next_key(plist_orig, &penum, &key)) == 0) {
+        char *string_key;
+        gs_param_typed_value value;
+
+        string_key = (char *)gs_alloc_bytes(dev->memory->non_gc_memory, key.size+1, "nup_put_params");
+        if (string_key == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto fail;
+        }
+        memcpy(string_key, key.data, key.size);
+        string_key[key.size] = 0;
+        if ((code = param_read_typed(plist_orig, string_key, &value)) != 0) {
+            if (code > 0)
+                code = gs_note_error(gs_error_unknownerror);
+            break;
+        }
+
+        /* Rewrite any occurrences of PageUsesTransparency to be true. */
+        if (strcmp(string_key, "PageUsesTransparency") == 0)
+            value.value.b = 1;
+
+        code = param_write_typed(plist, string_key, &value);
+        if (code < 0)
+            break;
+    }
+    if (code < 0)
+        goto fail;
+
+    gs_c_param_list_read(plist_c);
 
     code = param_read_string(plist, "NupControl", &nuplist);
     if (code < 0)
@@ -354,15 +380,18 @@ gs_param_list_dump(plist);
         if (dev->NupControl == NULL && nuplist.size > 0) {
             dev->NupControl = (gdev_nupcontrol *)gs_alloc_bytes(dev->memory->non_gc_memory,
                                                               sizeof(gdev_nupcontrol), "structure to hold nupcontrol_str");
-            if (dev->NupControl == NULL)
-                return gs_note_error(gs_error_VMerror);
+            if (dev->NupControl == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto fail;
+            }
             dev->NupControl->nupcontrol_str = (void *)gs_alloc_bytes(dev->memory->non_gc_memory,
                                                                      nuplist.size + 1, "nupcontrol string");
             if (dev->NupControl->nupcontrol_str == NULL){
                 gs_free(dev->memory->non_gc_memory, dev->NupControl, 1, sizeof(gdev_nupcontrol),
                         "free structure to hold nupcontrol string");
                 dev->NupControl = 0;
-                return gs_note_error(gs_error_VMerror);
+                code = gs_note_error(gs_error_VMerror);
+                goto fail;
             }
             memset(dev->NupControl->nupcontrol_str, 0x00, nuplist.size + 1);
             memcpy(dev->NupControl->nupcontrol_str, nuplist.data, nuplist.size);
@@ -384,17 +413,21 @@ gs_param_list_dump(plist);
             rc_increment(next_dev->NupControl);
             next_dev = next_dev->parent;
         }
-        if (ecode < 0)
-            return ecode;
+        if (ecode < 0) {
+            code = ecode;
+            goto fail;
+        }
     }
 
     code = ParseNupControl(dev, pNup_data);		/* update the nesting params */
     if (code < 0)
-        return code;
+        goto fail;
 
     /* If nesting is now off, just pass params on to children devices */
-    if (pNup_data->PagesPerNest == 1)
-        return default_subclass_put_params(dev, plist);
+    if (pNup_data->PagesPerNest == 1) {
+        code = default_subclass_put_params(dev, plist);
+        goto fail; /* Not actually failing! */
+    }
 
     /* .MediaSize takes precedence over PageSize, so we read PageSize first. */
     code = param_MediaSize(plist, "PageSize", res, &msa);
@@ -406,13 +439,15 @@ gs_param_list_dump(plist);
     code = param_MediaSize(plist, ".MediaSize", res, &msa);
     if (code < 0)
         ecode = code;
-    else if (msa.data == 0)
+    else if (msa.data == NULL)
         msa.data = data;
-    if (ecode < 0)
-        return ecode;
+    if (ecode < 0) {
+        code = ecode;
+        goto fail;
+    }
 
     /* If there was PageSize or .MediaSize, update the NestedPage size */
-    if (msa.data != 0) {
+    if (msa.data != NULL) {
         Nup_device_subclass_data *pNup_data = dev->subclass_data;
 
         /* FIXME: Handle changing size (if previous value was non-zero) */
@@ -421,19 +456,23 @@ gs_param_list_dump(plist);
             if (pNup_data->PageCount > 0 && pNup_data->PagesPerNest > 1) {
                 code = nup_flush_nest_to_output(dev, pNup_data, true);
                 if (code < 0)
-                    return code;
+                    goto fail;
             }
             pNup_data->NestedPageW = msa.data[0];
             pNup_data->NestedPageH = msa.data[1];
             /* And update the Nup parameters based on the updated PageSize */
             code = ParseNupControl(dev, pNup_data);
             if (code < 0)
-                return code;
+                goto fail;
         }
     }
 
     /* now that we've intercepted PageSize and/or MediaSize, pass the rest along */
     code = default_subclass_put_params(dev, plist);
+
+fail:
+    gs_c_param_list_release(plist_c);
+
     return code;
 }
 

@@ -2776,7 +2776,7 @@ The only option strings are as follows:
     to the leftmost place on the next row until the nest is complete.
     <p>
     A partially filled nest will be output when the <code>-sNupControl=</code> string is changed,
-    or when Ghostscript exits.
+    when Ghostscript exits, or when the page size changes.
     <p>
     Pages are scaled to fit the requested number horizontally and vertically, maintaining the
     aspect ratio. If the scaling selected for fitting the nested pages leaves space horizontally
@@ -2790,6 +2790,14 @@ The only option strings are as follows:
     the partially filled master page will be output.
     </li>
     </ul>
+<p>Printer devices typically reallocate their memory whenever the transparency use
+of a page changes (from one page having transparency, to the next page not having
+transparency, or vice versa). This would cause problems with Nup, possibly leading
+to lost or corrupt pages in the output. To avoid this, the Nup device changes
+the parameters of the page to always set the PageUsesTransparency flag. While this
+should be entirely transparent for the user and not cause extra transparency blending
+operations during the standard rendering processes for most devices, it may cause
+devices to use the clist rather than PageMode.
 </dd>
 </dl>
 
