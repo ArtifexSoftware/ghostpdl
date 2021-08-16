@@ -585,6 +585,9 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     int page = 0, code = 0, i;
     pdfctx_t *pdfctx;
     pdf_info_t info;
+    gs_gstate *pgs = NULL;
+    gs_gstate_client_procs procs;
+    void *client_data;
 
     check_op(2);
 
@@ -594,7 +597,21 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     check_type(*(op - 1), t_pdfctx);
     pdfctx = r_ptr(op - 1, pdfctx_t);
 
+    pgs = pdfctx->ctx->pgs;
+    procs = igs->client_procs;
+    client_data = igs->client_data;
+    pdfi_gstate_from_PS(pdfctx->ctx, igs, &client_data, &procs);
+    pdfctx->ctx->pgs = igs;
+
     code = pdfi_page_info(pdfctx->ctx, (uint64_t)page, &info);
+
+    pdfi_gstate_to_PS(pdfctx->ctx, igs, client_data, &procs);
+    if (code == 0)
+        code = gs_grestore(igs);
+    else
+        (void)gs_grestore(igs);
+    pdfctx->ctx->pgs = pgs;
+
     if (code < 0)
         return code;
 

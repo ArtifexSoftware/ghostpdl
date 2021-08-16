@@ -1135,6 +1135,12 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     ctx->page.num_spots = 0;
     ctx->page.has_transparency = false;
 
+    /* Need to do this here so that pdfi_check_init_tracker will be setup
+     * for spot colours, if the device i s spot colour capable.
+     * It is also called in pdfi_page_render() and pdfi_process_pdf_file()
+     * TODO: Should probably look into that..
+     */
+    pdfi_device_set_flags(ctx);
     code = pdfi_check_init_tracker(ctx, &tracker);
 
     /* Check for spots and transparency in this page */

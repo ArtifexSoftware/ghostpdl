@@ -341,13 +341,10 @@ systemdict /NEWPDF known not {/NEWPDF //false def} if
   /PageUsesTransparency exch            % << >> <<page dict>> /PageUsesTransparency bool
   3 index 3 1 roll                      % << >> <<page dict>> <<info dict>> << >> /PageUsesTransparency bool
   put                                   % <</PageUsesTransparency bool>> <<page dict>>
-  /NumSpots get dup 0 gt {
-    /PageSpotColours exch               % <</PageUsesTransparency bool>> /PageSpotColours int
-    2 index 3 1 roll                    % <</PageUsesTransparency bool>> <</PageUsesTransparency bool>> /PageSpotColours int
-    put                                 % <</PageUsesTransparency bool /PageSpotColours int>>
-  }{
-    pop                                 % <</PageUsesTransparency bool>>
-  } ifelse
+  /NumSpots get                         % <</PageUsesTransparency bool>> int
+  /PageSpotColors exch                  % <</PageUsesTransparency bool>> /PageSpotColors int
+  2 index 3 1 roll                      % <</PageUsesTransparency bool>> <<page dict>> /PageSpotColors int
+  put                                   % <</PageUsesTransparency bool /PageSpotColors int >>
   setpagedevice
 }bind def
 
