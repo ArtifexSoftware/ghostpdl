@@ -318,7 +318,7 @@ not_fast_halftoning:
     return 0;
 }
 
-#define USE_SET_GRAY_FUNCTION 1
+#define USE_SET_GRAY_FUNCTION 0
 #if USE_SET_GRAY_FUNCTION
 /* Temporary function to make it easier to debug the uber-macro below */
 static inline int
