@@ -257,7 +257,7 @@ static int inline sample_store_next8(uint value, byte **dptr, int *dbit, int dbp
             if ( *dbit ^= 4 )
                 *dbbyte = (byte)(value << 4);
             else
-                *(*dptr)++ = *dbbyte | ((byte)value);\
+                *(*dptr)++ = *dbbyte | ((byte)value);
             break;
         case 2:
             *(*dptr)++ = (byte)value;
