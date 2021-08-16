@@ -1278,6 +1278,13 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     if (dev_proc(src, copy_alpha_hl_color) != gx_default_no_copy_alpha_hl_color)
         set_dev_proc(dest, copy_alpha_hl_color, dev_proc(&prototype, copy_alpha_hl_color));
 
+    if (prototype.page_procs.install != NULL)
+        dest->page_procs.install = prototype.page_procs.install;
+    if (prototype.page_procs.begin_page != NULL)
+        dest->page_procs.begin_page = prototype.page_procs.begin_page;
+    if (prototype.page_procs.end_page != NULL)
+        dest->page_procs.end_page = prototype.page_procs.end_page;
+
     return 0;
 }
 
@@ -1351,6 +1358,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     }
     memset(psubclass_data, 0x00, private_data_size);
 
+    dev_to_subclass->page_procs = new_prototype->page_procs;
     gx_copy_device_procs(dev_to_subclass, child_dev, new_prototype);
     dev_to_subclass->finalize = new_prototype->finalize;
     dev_to_subclass->dname = new_prototype->dname;
@@ -1361,7 +1369,6 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     if (dev_to_subclass->NupControl)
         rc_increment(dev_to_subclass->NupControl);
 
-    dev_to_subclass->page_procs = new_prototype->page_procs;
     gx_subclass_fill_in_page_procs(dev_to_subclass);
 
     /* In case the new device we're creating has already been initialised, copy
