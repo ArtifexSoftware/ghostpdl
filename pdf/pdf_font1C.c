@@ -1622,7 +1622,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
     /* Check the charstrings index */
     if (font->charstrings) {
         p = pdfi_count_cff_index(font->charstrings, e, &font->ncharstrings);
-        if (!p)
+        if (!p || font->ncharstrings > 65535)
             return gs_rethrow(-1, "cannot read charstrings index");
     }
     code = pdfi_object_alloc(ctx, PDF_DICT, font->ncharstrings, (pdf_obj **) &font->CharStrings);
