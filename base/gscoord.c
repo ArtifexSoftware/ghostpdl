@@ -130,13 +130,147 @@ gs_defaultmatrix(const gs_gstate * pgs, gs_matrix * pmat)
 int
 gs_setdefaultmatrix(gs_gstate * pgs, const gs_matrix * pmat)
 {
-    if (pmat == NULL)
+    if (pmat == NULL) {
         pgs->ctm_default_set = false;
-    else {
+        pgs->ctm_initial_set = false;
+    } else {
+        gx_device *dev;
+
         pgs->ctm_default = *pmat;
         pgs->ctm_default_set = true;
+
+        /* We also store the current 'initial' matrix, so we can spot
+         * changes in this in future. */
+        dev = gs_currentdevice_inline(pgs);
+        gs_deviceinitialmatrix(dev, &pgs->ctm_initial);
+        pgs->ctm_initial_set = 1;
     }
     return 0;
+}
+
+int
+gs_updatematrices(gs_gstate *pgs)
+{
+    gx_device *dev;
+    gs_matrix newdefault, init, t, inv, newctm;
+    int code;
+#ifdef DEBUG
+    gs_matrix *mat;
+#endif
+
+    /* Read the current device initial matrix. */
+    dev = gs_currentdevice_inline(pgs);
+    gs_deviceinitialmatrix(dev, &init);
+
+#ifdef DEBUG
+    if (gs_debug_c('x'))
+        dlprintf("[x]updatematrices\n");
+#endif
+
+    if (pgs->ctm_default_set == 0 ||
+        pgs->ctm_initial_set == 0) {
+        /* If neither default or initial are set, then store them for the
+         * first time. */
+        pgs->ctm_initial = init;
+        pgs->ctm_initial_set = 1;
+        pgs->ctm_default = init;
+        pgs->ctm_default_set = 1;
+#ifdef DEBUG
+        if (gs_debug_c('x')) {
+            mat = &pgs->ctm_initial;
+            dlprintf6("storing initial/default = %g %g %g %g %g %g\n", mat->xx, mat->xy, mat->yx, mat->yy, mat->tx, mat->ty);
+        }
+#endif
+        return 0;
+    }
+
+#ifdef DEBUG
+    if (gs_debug_c('x')) {
+        mat = &init;
+        dlprintf6("initial        = %g %g %g %g %g %g\n", mat->xx, mat->xy, mat->yx, mat->yy, mat->tx, mat->ty);
+        mat = &pgs->ctm_default;
+        dlprintf6("default        = %g %g %g %g %g %g\n", mat->xx, mat->xy, mat->yx, mat->yy, mat->tx, mat->ty);
+        mat = (gs_matrix *)&pgs->ctm;
+        dlprintf6("ctm            = %g %g %g %g %g %g\n", mat->xx, mat->xy, mat->yx, mat->yy, mat->tx, mat->ty);
+        mat = &pgs->ctm_initial;
+        dlprintf6("stored initial = %g %g %g %g %g %g\n", mat->xx, mat->xy, mat->yx, mat->yy, mat->tx, mat->ty);
+    }
+#endif
+    /* If no change, then nothing else to do here. */
+    if (init.xx == pgs->ctm_initial.xx &&
+        init.xy == pgs->ctm_initial.xy &&
+        init.yx == pgs->ctm_initial.yx &&
+        init.yy == pgs->ctm_initial.yy &&
+        init.tx == pgs->ctm_initial.tx &&
+        init.ty == pgs->ctm_initial.ty)
+        return 0;
+
+    /* So, the initial matrix has changed from what it was
+     * the last time the default matrix was set. The default
+     * matrix is some modification of the initial matrix
+     * (typically a scale, or a translation, or a flip or
+     * some combination thereof). Now the initial matrix
+     * has changed (possibly because of Nup, or because of
+     * a device doing Duplex etc), the default matrix is
+     * almost certainly wrong. We therefore adjust it here.*/
+
+    /* So originally: old_default = modification.old_init
+     * and we want:   new_default = modification.new_init
+     *
+     * So: modification = old_default.INV(old_init)
+     *     new_default  = old_default.INV(old_init).new_init
+     */
+    code = gs_matrix_invert(&pgs->ctm_initial, &inv);
+    if (code < 0)
+        return code;
+    code = gs_matrix_multiply(&pgs->ctm_default, &inv, &t);
+    if (code < 0)
+        return code;
+    code = gs_matrix_multiply(&t, &init, &newdefault);
+    if (code < 0)
+        return code;
+
+    /* Now, the current ctm is similarly derived from the
+     * old default. We want to update it to be derived (in the
+     * same way) from the new default.
+     *
+     * So:  old_ctm = modification.old_default
+     *      old_ctm.INV(old_default) = modification
+     * And: new_ctm = modification.new_default
+     *              = old_ctm.INV(old_default).new_default
+     */
+    code = gs_matrix_invert(&pgs->ctm_default, &inv);
+    if (code < 0)
+        return code;
+    code = gs_matrix_multiply((gs_matrix *)&pgs->ctm, &inv, &t);
+    if (code < 0)
+        return code;
+    code = gs_matrix_multiply(&t, &newdefault, &newctm);
+    if (code < 0)
+        return code;
+
+    pgs->ctm_initial = init;
+    pgs->ctm_default = newdefault;
+    gs_setmatrix(pgs, &newctm);
+
+#ifdef DEBUG
+    if (gs_debug_c('x')) {
+        mat = &pgs->ctm_default;
+        dlprintf6("new default    = %g %g %g %g %g %g\n", mat->xx, mat->xy, mat->yx, mat->yy, mat->tx, mat->ty);
+        mat = (gs_matrix *)&pgs->ctm;
+        dlprintf6("new ctm        = %g %g %g %g %g %g\n", mat->xx, mat->xy, mat->yx, mat->yy, mat->tx, mat->ty);
+    }
+#endif
+
+    /* This is a bit nasty. This resets the clipping box to the page.
+     * We need to do this, because otherwise the clipping box is
+     * not updated with the ctm, and (typically) the entire contents
+     * of the page end up clipped away. This will break usages where
+     * we run 1 file (or set of postscript commands) to set the clipping
+     * box, and then another file to actually draw stuff to be clipped.
+     * Given this will only go wrong in the case where the device is
+     * Nupping or Duplexing, we'll live with this for now. */
+    return gs_initclip(pgs);
 }
 
 int

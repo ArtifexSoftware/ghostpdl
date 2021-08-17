@@ -285,6 +285,9 @@ struct gs_gstate_s {
     gs_matrix ctm_default;
     bool ctm_default_set;       /* if true, use ctm_default; */
                                 /* if false, ask device */
+    gs_matrix ctm_initial;  /* The value of the device initial matrix at the time the default was set. */
+    bool ctm_initial_set;   /* if true, modification set. If not, assume identity. */
+
     /* Paths: */
 
     gx_path *path;

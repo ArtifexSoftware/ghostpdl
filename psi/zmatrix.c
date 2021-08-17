@@ -467,6 +467,12 @@ zsettextmatrix(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+static int
+zupdatematrices(i_ctx_t *i_ctx_p)
+{
+    return gs_updatematrices(igs);
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zmatrix_op_defs[] =
@@ -496,5 +502,6 @@ const op_def zmatrix2_op_defs[] =
     {"1.settextlinematrix", zsettextlinematrix},
     {"1.currenttextmatrix", zcurrenttextmatrix},
     {"1.settextmatrix", zsettextmatrix},
+    {"1.updatematrices", zupdatematrices},
     op_def_end(0)
 };

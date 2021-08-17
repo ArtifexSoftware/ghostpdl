@@ -476,6 +476,7 @@ userdict /#copies 1 put
 % We have to guard against the BeginPage procedure not popping its operand.
 % This is really stupid, but the Genoa CET does it.
 /.beginpage {		% - .beginpage -
+  .updatematrices
   .currentshowpagecount {
     .currentpagedevice pop
     dup //null ne { /BeginPage .knownget } { pop //false } ifelse {
@@ -491,6 +492,7 @@ userdict /#copies 1 put
 
 % Guard similarly against EndPage not popping its operand.
 /.endpage {		% <reason> .endpage <print_bool>
+  .updatematrices
   .currentshowpagecount {
     1 index .currentpagedevice pop
     dup //null ne { /EndPage .knownget } { pop //false } ifelse {
@@ -2415,7 +2417,7 @@ currentdict /.locksafeglobal .undef
   [
   /.bitadd /.charboxpath /.cond /.runandhide /.popdevicefilter
   /.execfile /.filenamesplit /.file_name_parent
-  /.setdefaultmatrix /.isprocfilter /.unread /.psstringencode
+  /.setdefaultmatrix /.updatematrices /.isprocfilter /.unread /.psstringencode
   /.buildsampledfunction /.isencapfunction /.currentaccuratecurves /.currentcurvejoin /.currentdashadapt /.currentdotlength
   /.currentlimitclamp /.dotorientation /.setaccuratecurves /.setcurvejoin /.setdashadapt /.setdotorientation
   /.setlimitclamp /.currentscreenlevels /.dashpath /.pathbbox /.identeq /.identne /.tokenexec /.forgetsave /.pantonecallback
