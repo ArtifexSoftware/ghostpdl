@@ -330,7 +330,7 @@ PDF_OBJS=\
 $(PDFOBJ)pdfi.dev: $(ECHOGS_XE) $(PDF_OBJS) \
                   $(PDFGEN)func4lib.dev \
                   $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)ssha2.dev $(PDFGEN)sjpx.dev $(PDFGEN)psfilters.dev \
-                  $(PDFGEN)sdct.dev \
+                  $(PDFGEN)sdct.dev $(PDFGEN)simscale.dev \
                   $(PDF_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PDFOBJ)pdfi $(PDF_OBJS)
 	$(ADDMOD) $(PDFOBJ)pdfi -include $(PDFGEN)func4lib.dev
