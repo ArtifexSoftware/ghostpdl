@@ -460,11 +460,14 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         memcpy(pfont0->font_name.chars, descpfont->pfont->font_name.chars, nlen);
         pfont0->font_name.size = nlen;
     }
+
     if (pcmap->name.size > 0) {
         if (pfont0->key_name.size + pcmap->name.size + 1 < gs_font_name_max) {
             memcpy(pfont0->key_name.chars + pfont0->key_name.size, "-", 1);
             memcpy(pfont0->key_name.chars + pfont0->key_name.size + 1, pcmap->name.data, pcmap->name.size);
             pfont0->key_name.size += pcmap->name.size + 1;
+        }
+        if (pfont0->font_name.size + pcmap->name.size + 1 < gs_font_name_max) {
             memcpy(pfont0->font_name.chars + pfont0->font_name.size, "-", 1);
             memcpy(pfont0->font_name.chars + pfont0->font_name.size + 1, pcmap->name.data, pcmap->name.size);
             pfont0->font_name.size += pcmap->name.size + 1;
