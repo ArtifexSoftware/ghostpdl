@@ -38,7 +38,8 @@ int gs_initmatrix(gs_gstate *),
 int gs_setdefaultmatrix(gs_gstate *, const gs_matrix *),
     gs_currentcharmatrix(gs_gstate *, gs_matrix *, bool),
     gs_setcharmatrix(gs_gstate *, const gs_matrix *),
-    gs_settocharmatrix(gs_gstate *);
+    gs_settocharmatrix(gs_gstate *),
+    gs_updatematrices(gs_gstate *);
 
 /* Coordinate transformation */
 int gs_transform(gs_gstate *, double, double, gs_point *),
