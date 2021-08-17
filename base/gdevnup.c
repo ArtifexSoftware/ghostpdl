@@ -274,11 +274,11 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
     int ecode = 0;
     int code;
 
-    switch (code = param_read_float_array(plist, (param_name = pname), pa)) {\
-    case 0:\
-        if (pa->size != 2) {\
-          ecode = gs_note_error(gs_error_rangecheck);\
-          pa->data = 0;	/* mark as not filled */\
+    switch (code = param_read_float_array(plist, (param_name = pname), pa)) {
+    case 0:
+        if (pa->size != 2) {
+          ecode = gs_note_error(gs_error_rangecheck);
+          pa->data = 0;	/* mark as not filled */
         } else {
             float width_new = pa->data[0] * res[0] / 72;
             float height_new = pa->data[1] * res[1] / 72;
