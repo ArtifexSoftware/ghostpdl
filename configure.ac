@@ -632,11 +632,11 @@ dnl the flags we care about
 if test "$ac_cv_c_const" != yes; then
         GCFLAGS="$GCFLAGS -Dconst="
 fi
-if test "x$ac_cv_header_stdint_h" = xyes; then
+if test "x$ac_cv_header_stdint_h" = "xyes"; then
         GCFLAGS="$GCFLAGS -DHAVE_STDINT_H=1"
 fi
 
-if test "x$ac_cv_header_dirent_h" = xyes; then
+if test "x$ac_cv_header_dirent_h" = "xyes"; then
         GCFLAGS="$GCFLAGS -DHAVE_DIRENT_H=1"
 fi
 
@@ -644,23 +644,23 @@ if test "x$ac_cv_header_ndir_h" = xyes; then
         GCFLAGS="$GCFLAGS -DHAVE_NDIR_H=1"
 fi
 
-if test "x$ac_cv_header_sys_dir_h" = xyes; then
+if test "x$ac_cv_header_sys_dir_h" = "xyes"; then
         GCFLAGS="$GCFLAGS -DHAVE_SYS_DIR_H=1"
 fi
 
-if test "x$ac_cv_header_sys_ndir_h" = xyes; then
+if test "x$ac_cv_header_sys_ndir_h" = "xyes"; then
         GCFLAGS="$GCFLAGS -DHAVE_SYS_NDIR_H=1"
 fi
 
-if test "x$ac_cv_header_sys_time_h" = xyes; then
+if test "x$ac_cv_header_sys_time_h" = "xyes"; then
         GCFLAGS="$GCFLAGS -DHAVE_SYS_TIME_H=1"
 fi
 
-if test "x$ac_cv_header_sys_times_h" = xyes; then
+if test "x$ac_cv_header_sys_times_h" = "xyes"; then
         GCFLAGS="$GCFLAGS -DHAVE_SYS_TIMES_H=1"
 fi
 
-if test "x$ac_cv_header_inttypes_h" = xyes; then
+if test "x$ac_cv_header_inttypes_h" = "xyes"; then
         GCFLAGS="$GCFLAGS -DHAVE_INTTYPES_H=1"
 fi
 
