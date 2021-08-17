@@ -131,7 +131,7 @@ class gsapi_revision_t:
 
 def gsapi_revision():
     '''
-    Returns (e, r) where <r> is a gsapi_revision_t.
+    Returns a gsapi_revision_t.
     '''
     # [unicode: we assume that underlying gsapi_revision() returns utf-8
     # strings.]
@@ -148,9 +148,14 @@ def gsapi_revision():
     return r
 
 
-def gsapi_new_instance(caller_handle):
+def gsapi_new_instance(caller_handle=None):
     '''
-    Returns (e, instance).
+    Returns an <instance> to be used with other gsapi_*() functions.
+
+    caller_handle:
+        Typically unused, but is passed to callbacks e.g. via
+        gsapi_set_stdio(). Must be convertable to a C void*, so None or an
+        integer is ok but other types such as strings will fail.
     '''
     instance = ctypes.c_void_p()
     e = _libgs.gsapi_new_instance(
@@ -171,8 +176,11 @@ def gsapi_delete_instance(instance):
 def gsapi_set_stdio(instance, stdin_fn, stdout_fn, stderr_fn):
     '''
     stdin_fn:
-        If not None, will be called with (caller_handle, text, len_)
-        where <text> is a ctypes.LP_c_char of length <len_>.
+        If not None, will be called with (caller_handle, text, len_):
+            caller_handle:
+                As passed originally to gsapi_new_instance().
+            text:
+                A ctypes.LP_c_char of length <len_>.
 
         [todo: wrap this to be easier to use from Python?]
 
@@ -214,6 +222,12 @@ def gsapi_set_stdio(instance, stdin_fn, stdout_fn, stderr_fn):
 
 
 def gsapi_set_poll(instance, poll_fn):
+    '''
+    poll_fn:
+        Will be called with (caller_handle) where <caller_handle> is as passed
+        to gsapi_new_instance().
+    Not tested.
+    '''
     poll_fn2 = _poll_fn(poll_fn)
     e = _libgs.gsapi_set_poll(instance, poll_fn2)
     if e < 0:
@@ -256,6 +270,10 @@ class display_callback:
 
 
 def gsapi_set_display_callback(instance, callback):
+    '''
+    callback:
+        Must be a <display_callback> instance.
+    '''
     assert isinstance(callback, display_callback)
     callback2 = _display_callback()
     callback2.size = ctypes.sizeof(callback2)
@@ -276,6 +294,10 @@ def gsapi_set_display_callback(instance, callback):
 
 
 def gsapi_set_default_device_list(instance, list_):
+    '''
+    list_:
+        Must be a string.
+    '''
     # [unicode: we assume that underlying gsapi_set_default_device_list() is
     # expecting list_ to be in utf-8 encoding.]
     assert isinstance(list_, str)
@@ -287,7 +309,7 @@ def gsapi_set_default_device_list(instance, list_):
 
 def gsapi_get_default_device_list(instance):
     '''
-    Returns (e, list) where <list> is a string.
+    Returns a string.
     '''
     # [unicode: we assume underlying gsapi_get_default_device_list() returns
     # strings encoded as latin-1.]
@@ -309,6 +331,13 @@ GS_ARG_ENCODING_UTF16LE = 2
 
 
 def gsapi_set_arg_encoding(instance, encoding):
+    '''
+    encoding:
+        Must be one of:
+            GS_ARG_ENCODING_LOCAL
+            GS_ARG_ENCODING_UTF8
+            GS_ARG_ENCODING_UTF16LE
+    '''
     assert encoding in (
             GS_ARG_ENCODING_LOCAL,
             GS_ARG_ENCODING_UTF8,
@@ -327,6 +356,10 @@ def gsapi_set_arg_encoding(instance, encoding):
 
 
 def gsapi_init_with_args(instance, args):
+    '''
+    args:
+        A list/tuple of strings.
+    '''
     # [unicode: we assume that underlying gsapi_init_with_args()
     # expects strings in args[] to be encoded in encoding set by
     # gsapi_set_arg_encoding().]
@@ -346,7 +379,7 @@ def gsapi_init_with_args(instance, args):
 
 def gsapi_run_string_begin(instance, user_errors):
     '''
-    Returns (e, exit_code).
+    Returns <exit_code>.
     '''
     pexit_code = ctypes.c_int()
     e = _libgs.gsapi_run_string_begin(instance, user_errors, ctypes.byref(pexit_code))
@@ -362,7 +395,7 @@ def gsapi_run_string_continue(instance, str_, user_errors):
 
     We don't raise exception for gs_error_NeedInput.
 
-    Returns exit_code.
+    Returns <exit_code>.
     '''
     if isinstance(str_, str):
         str_ = str_.encode('utf-8')
@@ -385,7 +418,7 @@ def gsapi_run_string_continue(instance, str_, user_errors):
 
 def gsapi_run_string_end(instance, user_errors):
     '''
-    Returns (e, exit_code).
+    Returns <exit_code>.
     '''
     pexit_code = ctypes.c_int()
     e = _libgs.gsapi_run_string_end(
@@ -403,11 +436,9 @@ def gsapi_run_string_with_length(instance, str_, length, user_errors):
     <str_> should be either a python string or a bytes object. If the former,
     it is converted into a bytes object using utf-8 encoding.
 
-    Returns (e, exit_code).
+    Returns <exit_code>.
     '''
-    e = gsapi_run_string(instance, str_[:length], user_errors)
-    if e < 0:
-        raise GSError(e)
+    return gsapi_run_string(instance, str_[:length], user_errors)
 
 
 def gsapi_run_string(instance, str_, user_errors):
@@ -415,7 +446,7 @@ def gsapi_run_string(instance, str_, user_errors):
     <str_> should be either a python string or a bytes object. If the former,
     it is converted into a bytes object using utf-8 encoding.
 
-    Returns (e, exit_code).
+    Returns <exit_code>.
     '''
     if isinstance(str_, str):
         str_ = str_.encode('utf-8')
@@ -436,7 +467,7 @@ def gsapi_run_string(instance, str_, user_errors):
 
 def gsapi_run_file(instance, filename, user_errors):
     '''
-    Returns (e, exit_code).
+    Returns <exit_code>.
     '''
     # [unicode: we assume that underlying gsapi_run_file() expects <filename>
     # to be encoded in encoding set by gsapi_set_arg_encoding().]
@@ -971,7 +1002,7 @@ if __name__ == '__main__':
     revision  = gsapi_revision()
     print('libgs.gsapi_revision() ok: %s' % revision)
 
-    instance = gsapi_new_instance(1)
+    instance = gsapi_new_instance()
     print('gsapi_new_instance() ok: %s' % instance)
 
     gsapi_set_arg_encoding(instance, GS_ARG_ENCODING_UTF8)
