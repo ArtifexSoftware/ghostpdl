@@ -298,6 +298,7 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
     default:
         ecode = code;
 err:	param_signal_error(plist, param_name, ecode);
+        /* fall through */
     case 1:
         pa->data = 0;		/* mark as not filled */
     }
