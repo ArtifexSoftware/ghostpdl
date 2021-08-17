@@ -23,19 +23,22 @@
  */
 
 #include "ghostpdf.h"
+#include "pdf_utf8.h"
 #include "pdf_types.h"
 #include "pdf_stack.h"
 
 #ifdef HAVE_LIBIDN
 #  include <stringprep.h>
+#  include <errno.h>
 /* Convert a string from the current locale's character set to UTF-8.
  * <string> .locale_to_utf8 <string> */
 int
 locale_to_utf8(pdf_context *ctx, pdf_string *input, pdf_string **output)
 {
     char *out = NULL;
+    int code;
 
-    out = stringprep_locale_to_utf8(input->data);
+    out = stringprep_locale_to_utf8((const char *)input->data);
     if (out == NULL) {
         /* This function is intended to be used on strings whose
          * character set is unknown, so it's not an error if the

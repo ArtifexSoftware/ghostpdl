@@ -166,8 +166,20 @@ $(PDFOBJ)pdf_sec.$(OBJ): $(PDFSRC)pdf_sec.c $(PDFINCLUDES) \
     $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_sec.c $(PDFO_)pdf_sec.$(OBJ)
 
-$(PDFOBJ)pdf_utf8.$(OBJ): $(PDFSRC)pdf_utf8.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC_WIN) $(PDFSRC)pdf_utf8.c $(PDFO_)pdf_utf8.$(OBJ)
+$(PDFOBJ)pdf_utf8_mswin32_.$(OBJ): $(PDFSRC)pdf_utf8.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC_WIN) $(PDFSRC)pdf_utf8.c $(PDFO_)pdf_utf8_mswin32_.$(OBJ)
+
+$(PDFOBJ)pdf_utf8_metro_.$(OBJ): $(PDFOBJ)pdf_utf8_mswin32_.$(OBJ) $(PDF_MAK) $(MAKEDIRS)
+	$(CP_) $(PDFOBJ)pdf_utf8_mswin32_.$(OBJ) $(PDFOBJ)pdf_utf8_metro.$(OBJ)
+
+$(PDFOBJ)pdf_utf8_unix_.$(OBJ): $(PDFSRC)pdf_utf8.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_utf8.c $(PDFO_)pdf_utf8_unix_.$(OBJ)
+
+$(PDFOBJ)pdf_utf8_openvms_.$(OBJ): $(PDFOBJ)pdf_utf8_unix_.$(OBJ) $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(CP_) $(PDFOBJ)pdf_utf8_unix_.$(OBJ) $(PDFOBJ)pdf_utf8_openvms_.$(OBJ)
+
+$(PDFOBJ)pdf_utf8.$(OBJ): $(PDFOBJ)pdf_utf8_$(GSPLATFORM).$(OBJ) $(PDF_MAK) $(MAKEDIRS)
+	$(CP_) $(PDFOBJ)pdf_utf8_$(GSPLATFORM).$(OBJ) $(PDFOBJ)pdf_utf8.$(OBJ)
 
 $(PDFOBJ)pdf_stack.$(OBJ): $(PDFSRC)pdf_stack.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_stack.c $(PDFO_)pdf_stack.$(OBJ)
