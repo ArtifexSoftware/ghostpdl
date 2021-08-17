@@ -102,6 +102,7 @@
 <li><a href="#GlyphNames2Unicode">GlyphNames2Unicode</a></li>
 <li><a href="#MultipleResourceDirectories">Multiple Resource directories</a></li>
 </ul>
+<li><a href="#PDF_scripting">Scripting the PDF interpreter</a></li>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -2044,6 +2045,159 @@ specifying an absolute path. The default value for
 a default invocation with a PostScript installer
 will install resource files into <code>/gs/Resource</code>.</p>
 
+<h2><a name="PDF_scripting"></a>Scripting the PDF interpreter</h2>
+
+<p>We have not previously documented the internals of the Ghostscript PDF interpreter, but we have, on
+occasion, provided solutions that rely upon scripting the interpreter from PostScript. This was
+possible because the interpreter was written in PostScript.</p>
+
+<p>From release 9.55.0 Ghostscript comes supplied with two PDF interpreters, the original written in PostScript
+and a brand-new interpreter written in C. While the new interpreter can be run as part of the GhostPDL family
+it has also been integrated into Ghostscript, and can be run from the PostScript environment in a similar fashion
+to the old interpreter. Eventually we plan to drop the old interpreter and carry on with the new one.</p>
+
+<p>Because we have supplied solutions in the past based on the old interpreter, we have had to implement
+the same capabilities in the integration of the new interpreter. Since this has meant discovering which internal
+portions were being used, working out how those function, and duplicating them anew, it seemed a good time to
+document these officially, so that in future the functionality would be available to all.</p>
+
+<p>The following functions existed in the original PDF interpreter and have been replicated for the new
+interpreter. It should be possible to use these for the forseeable future.</p>
+
+<dt><code>&ltfile&gt runpdf - </code></dt>
+<dd>     Called from the modified PostScript run operator (which copies stdin to a temp
+     file if required). Checks for PDF collections, processes all requested pages.</dd>
+
+<p><dt><code>&ltfile&gt runpdfbegin -</code></dt>
+<dd>     This must be called before performing any further operations. Its exact action depends on which
+interpreter is being used, but it essentially sets up the environment to process the file as a PDF</dd></p>
+
+<p><dt><code>&ltint&gt pdfgetpage &ltpagedict&gt | &ltnull&gt</code></dt>
+<dd>     int is a number from 1 to N indicating the desired page number from
+     the PDF file. Returns the a dictionary containing various informational key/value pairs.
+     If this fails, returns a null object.</dd></p>
+
+<p><dt><code> - pdfshowpage_init -</code></dt>
+<dd>     In the PostScript PDF interpreter This simply adds 1 to the /DSCPageCount value in a dictionary.
+It has no effect in the new PDF interpreter but is maintained for backwards compatibility.</dd></p>
+
+<p><dt><code>&ltpagedict&gt pdfshowpage_setpage &ltpagedict&gt</code></dt>
+<dd>     Takes a dictionary as returned from pdfgetpage, extracts various
+     parameters from it, and sets the media size for the page, taking into
+     account the boxes, and requested Box, Rotate value and PDFFitPage.</dd></p>
+
+<p><dt><code>&ltpagedict&gt pdfshowpage_finish -</code></dt>
+<dd>     Takes a dictionary as returned from pdfgetpage, renders the page content
+     executes showpage to transfer the rendered content to the device.</dd></p>
+
+<p><dt><code>- runpdfend        -</code></dt>
+<dd>     Terminates the PDF processing, executes restore and various cleanup activities.</dd></p>
+
+<p><dt><code>&ltfile&gt pdfopen &ltdict&gt</code></dt>
+<dd>     Open a PDF file and read the header, trailer
+     and cross-reference.</dd></p>
+
+<p><dt><code>&ltdict&gt pdfclose -</code></dt>
+<dd>     Terminates processing the original PDF file object. The dictionary parameter
+ should be the one returned from pdfopen</dd></p>
+
+<p><dt><code>&ltpagedict&gt pdfshowpage -</code></dt>
+<dd>     Takes a dictionary returned from pdfgetpage and calls the pdfshowpage_init
+     pdfshowpage_setpage, pdfshowpage_finish trio to start the page, set up the
+     media and render the page.</dd></p>
+
+<p><dt><code>&ltint&gt &ltint&gt dopdfpages -</code></dt>
+<dd>     The integers are the first and last pages to be run from the file. Runs a loop from
+     the fist integer to the last. NOTE! If the current dictionary contains a PDFPageList
+     array then we 'get' the entry from the array corresponding to the current loop
+     index, and use that to determine whether we should draw the page. Otherwise we
+     simply draw the page. Uses pdfshowpage to actually render the page.</dd></p>
+
+<p><dt><code>- runpdfpagerange &ltint&gt &ltint&gt</code></dt>
+<dd>     Processes the PostScript /FirstPage, /LastPage and /PageList parameters to build an array
+     of page numbers to run (if PageList is present) and a FirstPage and LastPage value.</dd></p>
+
+<p>Normal operation simply calls runpdf with an opened-for-read PostScript file object. The table below shows the normal
+calling sequence</p>
+
+<blockquote><table>
+<tr valign="bottom">
+    <th align="left">Function</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Calls</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Calls</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Calls</th></tr>
+<tr valign="top">
+    <td>runpdf</td>
+    <td>&nbsp;</td>
+    <td>runpdfbegin</td>
+    <td>&nbsp;</td>
+    <td>pdfopen</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>process_trailer_attrs</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>runpdfpagerange</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>dopdfpages</td>
+    <td>&nbsp;</td>
+    <td>pdfgetpage</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>pdfshowpage</td>
+    <td>&nbsp;</td>
+    <td>pdfshowpage_init</td></tr>
+<tr valign="top">
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>pdfshowpage_setpage</td></tr>
+<tr valign="top">
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>pdfshowpage_finish</td></tr>
+<tr valign="top">
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>runpdfend</td>
+    <td>&nbsp;</td>
+    <td>pdfclose</td>
+    <td>&nbsp;</td></tr>
+</table></blockquote>
+
+<p>It is important to get the number of spots and the presence of transparency correct when
+rendering. Failure to do so will lead to odd output, and potentially crahses. This can be important in situations
+such as N-up ordering.</p>
+<p>As an example, if we have 2 A4 pages and want to render them side-by-side on A3 media, we might set up
+the media size to A3, draw the first page contents, translate the origin, draw the second page contents
+and then render the final content. If the first PDF page did not contain transparency, but the second did, it
+would be necessary to set /PageHasTransparency before drawing the first PDF page.</p>
 <!-- [2.0 end contents] ==================================================== -->
 
 <!-- [3.0 begin visible trailer] =========================================== -->

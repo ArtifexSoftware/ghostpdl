@@ -77,26 +77,33 @@ There are various products in the Ghostscript family; this document describes wh
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Ghostscript/GhostPDF"></a>Ghostscript/GhostPDF</h2>
+<h2><a name="Ghostscript"></a>Ghostscript</h2>
 
 <p>Ghostscript is an interpreter for PostScript<a href="#foot1">&#174;</a> and Portable Document Format (PDF) files.</p>
 
 <p>Ghostscript consists of a PostScript interpreter layer, and a graphics library. The graphics library is shared with all the other products in the Ghostscript family, so all of these technologies are sometimes referred to as Ghostscript, rather than the more correct GhostPDL.</p>
 
-<p>GhostPDF is an interpreter built on top of Ghostscript to handle PDF files.
-Currently GhostPDF relies on extensions to the PostScript language/imaging model,
-and so cannot be used independently of the Ghostscript PostScript interpreter
-component. As such GhostPDF is an umbrella term used to refer to both these
-extensions and the interpreter code.</p>
-
-<p>Many people (including the authors) frequently just refer to Ghostscript
-as supporting PDF and only specifically mention GhostPDF when wanting to make
-the distinction between the PostScript and PDF support.</p>
-
-<p>Binaries for Ghostscript and GhostPDF (included in the Ghostscript binaries) for various systems can be downloaded from <a href="http://www.ghostscript.com/download">here</a>.
+<p>Binaries for Ghostscript and (seel below) GhostPDF (included in the Ghostscript binaries) for various systems can be downloaded from <a href="http://www.ghostscript.com/download">here</a>.
 The source can be found in both the Ghostscript and GhostPDL downloads from
 the same site.</p>
 <hr>
+
+<h2><a name="GhostPDF"></a>GhostPDF</h2>
+
+<p>Prior to release 9.55.0 GhostPDF was an interpreter for the PDF page description language
+built on top of Ghostscript, and written in the PostScript programming language. From 9.55.0
+onwards there is a new GhostPDF executable, separate from Ghostscript and written in C
+rather than PostScript.</p>
+
+<p>This new interpreter has also been integrated into Ghostscript itself, in order to
+preserve the PDF functionality of that interpreter. For now, the old PostScript-based
+interpreter remains the default, but the new interpreter is built-in alongside it.</p>
+
+<p>The intention is that the new interpreter will replace the old one, which will be withdrawn.</p>
+
+<p>It is possible to control which interpreter is used with the NEWPDF command-line switch. When
+this is false (the current default) the old PostScript-based interpreter is used, when NEWPDF
+is true then the new C-based interpreter is used.</p>
 
 <h2><a name="GhostPDL"></a>GhostPDL</h2>
 

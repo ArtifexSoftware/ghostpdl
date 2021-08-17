@@ -619,6 +619,20 @@ Ghostscript is normally built to interpret both PostScript and PDF files, examin
 <p>Here are some command line options specific to PDF</p>
 
  <dl>
+<dt><code>-dNEWPDF</code></dt>
+<dd>From release 9.55.0 Ghostscript incorporates two complete PDF interpreters; the original
+long-standing interpreter is written in PostScript but there is now a new interpreter written
+in C.
+<p>At present the old PostScript-based interpreter remains the default, in future releases the
+new C-based interpreter will become the default, though we would encourage people to experiment
+with the new interpreter and send us feedback. While there are two interpreters the command-line
+switch NEWPDF will allow selection of the existing interpreter when false and the new interpreter
+when true.</p>
+
+</dd>
+</dl>
+
+ <dl>
 <dt><code>-dPDFFitPage</code></dt>
 <dd>Rather than selecting a PageSize given by the PDF MediaBox, BleedBox (see -dUseBleedBox),
 TrimBox (see -dUseTrimBox), ArtBox (see -dUseArtBox), or CropBox (see -dUseCropBox),
