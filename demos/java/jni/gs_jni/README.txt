@@ -1,6 +1,6 @@
 This library builds to gs_jni.dll and uses the
 Java Native Interface (JNI) to bind the functions in
-the GSAPI class to Ghoscript as well as handling callbacks,
+the GSAPI class to Ghostscript as well as handling callbacks,
 exceptions, and references.
 
 The bindings in GSAPI are in the header com_artifex_gsjava_GSJAVA.h
@@ -64,7 +64,7 @@ Ensure Ghostscript has already been built, and then run
 the build_linux.sh script.
 
 To build on Mac,
-Ensure Ghostscript has already been builtm and then run
+Ensure Ghostscript has already been built, and then run
 the build_darwin.sh script.
 
 Notes on function implementations and a brief introduction on
@@ -98,11 +98,11 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1begin
 	// is called, this must be set so the Java callback methods can be called.
 	callbacks::setJNIEnv(env);
 
-	// Calls the Ghoscript call gsapi_run_string_begin
+	// Calls the Ghostscript call gsapi_run_string_begin
 	int code = gsapi_run_string_begin((void *)instance, userErrors, &exitCode);
 
 	// If the reference is not NULL, set the value of the reference to the exitCode returned
-	// from Ghoscript. It must be converted to the wrapper type java.lang.Integer as Java does not support
+	// from Ghostscript. It must be converted to the wrapper type java.lang.Integer as Java does not support
 	// primitive generic arguments (i.e. int, float, char, etc.)
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
