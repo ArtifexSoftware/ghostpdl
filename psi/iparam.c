@@ -526,7 +526,8 @@ static const gs_param_list_procs ref_read_procs =
     NULL,			/* requested */
     ref_param_read_get_policy,
     ref_param_read_signal_error,
-    ref_param_read_commit
+    ref_param_read_commit,
+    NULL
 };
 static int ref_param_read(iparam_list *, gs_param_name,
                            iparam_loc *, int);
