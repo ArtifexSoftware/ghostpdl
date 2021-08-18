@@ -475,8 +475,12 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
 
     code = pdfi_create_Encoding(ctx, obj, NULL, (pdf_obj **)&font->Encoding);
-    if (code < 0)
+    /* If we get an error, and the font is non-symbolic, return the error */
+    if (code < 0 && (descflags & 4) == 0)
         goto error;
+    /* If we get an error, and the font is symbolic, pretend we never saw an /Encoding */
+    if (code < 0)
+        encoding_known = false;
     pdfi_countdown(obj);
     obj = NULL;
 
