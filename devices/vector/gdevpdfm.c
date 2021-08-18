@@ -879,6 +879,8 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                 i = 2;
                 if (Dest.size > 5 && Dest.data[2] == 0x00 && Dest.data[3] == 0x00)
                     i += 2;
+                /* If it has preceeding NULLs, then it has a terminating NULL as well, get rid of that too */
+                Dest.size--;
             }
 
             if (Dest.data[i] == '/') {
