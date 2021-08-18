@@ -547,16 +547,6 @@ nup_dev_spec_op(gx_device *dev, int dev_spec_op, void *data, int size)
         return default_subclass_dev_spec_op(dev, dev_spec_op, data, size);
 
     switch (dev_spec_op) {
-        case gxdso_upcall:
-            if (*(int *)data == gx_upcall_device_realloc) {
-                /* The device is about to realloc itself. */
-                if (pNup_data->PageCount > 0) {
-                    code = nup_flush_nest_to_output(dev, pNup_data);
-                    if (code < 0)
-                        return code;
-                }
-            }
-            return default_subclass_dev_spec_op(dev, dev_spec_op, data, size);
         case gxdso_set_HWSize:
             /* Call ParseNupControl since that will set the PageW and PageH from the	*/
             /* dev->width, dev->height as the size for the page on which we are placing	*/

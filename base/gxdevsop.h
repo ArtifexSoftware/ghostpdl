@@ -442,28 +442,8 @@ enum {
     /* Determine if a given device is a null device. Returns 1 if it is. */
     gxdso_is_null_device,
 
-    /* Generic upcall handler. Inform parent devices about events lower
-     * down the device chain.
-     *     data = pointer to upcall specific block. The first int of
-     *            which is always the reason code.
-     *     size = size of data block.
-     * Any return value other than gs_error_undefined is taken to be
-     * a genuine return value from the upcall.
-     */
-    gxdso_upcall,
-
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
-};
-
-enum
-{
-    /* Called when the device is about to realloc itself.
-     *   data block: Offset 0: (int) reason code.
-     *   size = sizeof(int).
-     * Cannot be claimed, or stopped.
-     */
-    gx_upcall_device_realloc = 0
 };
 
 #endif /* gxdevsop_INCLUDED */

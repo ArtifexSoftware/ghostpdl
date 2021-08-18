@@ -282,13 +282,6 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
         (ppdev->buffer_memory == 0 ? pdev->memory->non_gc_memory :
          ppdev->buffer_memory);
     bool deep = device_is_deep(pdev);
-    int upcall_reason = gx_upcall_device_realloc;
-
-    /* Warn devices higher up the stack that we are about to realloc. */
-    /* e.g. the Nup device may want to flush. */
-    ecode = gx_device_upcall(pdev, &upcall_reason, sizeof(upcall_reason));
-    if (ecode < 0)
-        return ecode;
 
     /* If reallocate, find allocated memory & tear down buffer device */
     if (reallocate)
