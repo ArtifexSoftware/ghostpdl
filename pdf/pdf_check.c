@@ -27,6 +27,7 @@
 #include "pdf_gstate.h"
 #include "pdf_misc.h"
 #include "pdf_check.h"
+#include "pdf_device.h"
 #include "gspaint.h"        /* For gs_erasepage() */
 
 /* For performance and resource reasons we do not want to install the transparency blending
