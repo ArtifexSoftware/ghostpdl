@@ -305,6 +305,138 @@ err:	param_signal_error(plist, param_name, ecode);
     return ecode;
 }
 
+/* Horrible hacked version of param_list_copy from gsparamx.c.
+ * Copy one parameter list to another, recursively if necessary,
+ * rewriting PageUsesTransparency to be true if it occurs. */
+static int
+copy_and_modify_sub(gs_param_list *plto, gs_param_list *plfrom, int *present)
+{
+    gs_param_enumerator_t key_enum;
+    gs_param_key_t key;
+    bool copy_persists;
+    int code;
+
+    if (present)
+        *present = 0;
+    if (plfrom == NULL)
+        return 0;
+
+    /* If plfrom and plto use different allocators, we must copy
+     * aggregate values even if they are "persistent". */
+    copy_persists = plto->memory == plfrom->memory;
+
+    param_init_enumerator(&key_enum);
+    while ((code = param_get_next_key(plfrom, &key_enum, &key)) == 0) {
+        char string_key[256];	/* big enough for any reasonable key */
+        gs_param_typed_value value;
+        gs_param_collection_type_t coll_type;
+        gs_param_typed_value copy;
+
+        if (key.size > sizeof(string_key) - 1) {
+            code = gs_note_error(gs_error_rangecheck);
+            break;
+        }
+        memcpy(string_key, key.data, key.size);
+        string_key[key.size] = 0;
+        if ((code = param_read_typed(plfrom, string_key, &value)) != 0) {
+            code = (code > 0 ? gs_note_error(gs_error_unknownerror) : code);
+            break;
+        }
+        gs_param_list_set_persistent_keys(plto, key.persistent);
+        switch (value.type) {
+        case gs_param_type_dict:
+            coll_type = gs_param_collection_dict_any;
+            goto cc;
+        case gs_param_type_dict_int_keys:
+            coll_type = gs_param_collection_dict_int_keys;
+            goto cc;
+        case gs_param_type_array:
+            coll_type = gs_param_collection_array;
+        cc:
+            copy.value.d.size = value.value.d.size;
+            if (copy.value.d.size == 0)
+                break;
+            if ((code = param_begin_write_collection(plto, string_key,
+                                                     &copy.value.d,
+                                                     coll_type)) < 0 ||
+                (code = copy_and_modify_sub(copy.value.d.list,
+                                            value.value.d.list,
+                                            NULL)) < 0 ||
+                (code = param_end_write_collection(plto, string_key,
+                                                   &copy.value.d)) < 0)
+                break;
+            code = param_end_read_collection(plfrom, string_key,
+                                             &value.value.d);
+            break;
+        case gs_param_type_bool:
+            if (strcmp(string_key, "PageUsesTransparency") == 0 && present != NULL)
+            {
+                value.value.b = 1;
+                *present = 1;
+            }
+            goto ca;
+        case gs_param_type_string:
+            value.value.s.persistent &= copy_persists; goto ca;
+        case gs_param_type_name:
+            value.value.n.persistent &= copy_persists; goto ca;
+        case gs_param_type_int_array:
+            value.value.ia.persistent &= copy_persists; goto ca;
+        case gs_param_type_float_array:
+            value.value.fa.persistent &= copy_persists; goto ca;
+        case gs_param_type_string_array:
+            value.value.sa.persistent &= copy_persists;
+            /* fall through */
+        ca:
+        default:
+            code = param_write_typed(plto, string_key, &value);
+        }
+        if (code < 0)
+            break;
+    }
+    return code;
+}
+
+static int
+param_list_copy_and_modify(gs_param_list *plto, gs_param_list *plfrom)
+{
+    int found_put;
+    int code = copy_and_modify_sub(plto, plfrom, &found_put);
+
+    if (code >= 0 && !found_put) {
+        gs_param_typed_value value;
+        value.type = gs_param_type_bool;
+        value.value.b = 1;
+        code = param_write_typed(plto, "PageUsesTransparency", &value);
+    }
+
+    return code;
+}
+
+static int
+promote_errors(gs_param_list * plist_orig, gs_param_list * plist)
+{
+    gs_param_enumerator_t key_enum;
+    gs_param_key_t key;
+    int code;
+    int error;
+
+    param_init_enumerator(&key_enum);
+    while ((code = param_get_next_key(plist_orig, &key_enum, &key)) == 0) {
+        char string_key[256];	/* big enough for any reasonable key */
+
+        if (key.size > sizeof(string_key) - 1) {
+            code = gs_note_error(gs_error_rangecheck);
+            break;
+        }
+        memcpy(string_key, key.data, key.size);
+        string_key[key.size] = 0;
+        error = param_read_signalled_error(plist, string_key);
+        param_signal_error(plist_orig, string_key, error);
+    }
+
+    return code;
+}
+
 static int
 nup_put_params(gx_device *dev, gs_param_list * plist_orig)
 {
@@ -317,8 +449,6 @@ nup_put_params(gx_device *dev, gs_param_list * plist_orig)
     gx_device *next_dev;
     gs_c_param_list *plist_c;
     gs_param_list *plist;
-    gs_param_enumerator_t penum;
-    gs_param_key_t key;
 
 #if 0000
 gs_param_list_dump(plist_orig);
@@ -329,34 +459,12 @@ gs_param_list_dump(plist_orig);
     if (plist == NULL)
         return_error(gs_error_VMerror);
     gs_c_param_list_write(plist_c, dev->memory->non_gc_memory);
+    gs_param_list_set_persistent_keys((gs_param_list *)plist_c, false);
 
-    param_init_enumerator(&penum);
-
-    while ((code = param_get_next_key(plist_orig, &penum, &key)) == 0) {
-        char *string_key;
-        gs_param_typed_value value;
-
-        string_key = (char *)gs_alloc_bytes(dev->memory->non_gc_memory, key.size+1, "nup_put_params");
-        if (string_key == NULL) {
-            code = gs_note_error(gs_error_VMerror);
-            goto fail;
-        }
-        memcpy(string_key, key.data, key.size);
-        string_key[key.size] = 0;
-        if ((code = param_read_typed(plist_orig, string_key, &value)) != 0) {
-            if (code > 0)
-                code = gs_note_error(gs_error_unknownerror);
-            break;
-        }
-
-        /* Rewrite any occurrences of PageUsesTransparency to be true. */
-        if (strcmp(string_key, "PageUsesTransparency") == 0)
-            value.value.b = 1;
-
-        code = param_write_typed(plist, string_key, &value);
-        if (code < 0)
-            break;
-    }
+    /* Bulk copy the whole list. Can't enumerate and copy without it
+     * becoming an absolute nightmare due to the stupid way we handle
+     * 'collection' objects on writing. */
+    code = param_list_copy_and_modify((gs_param_list *)plist_c, plist_orig);
     if (code < 0)
         goto fail;
 
@@ -471,8 +579,16 @@ gs_param_list_dump(plist_orig);
     /* now that we've intercepted PageSize and/or MediaSize, pass the rest along */
     code = default_subclass_put_params(dev, plist);
 
+    /* Now promote errors from the copied list to the original list. */
+    {
+        int ecode = promote_errors(plist_orig, plist);
+        if (code == 0)
+            code = ecode;
+    }
+
 fail:
     gs_c_param_list_release(plist_c);
+    gs_free_object(dev->memory->non_gc_memory, plist_c, "nup_put_params");
 
     return code;
 }
@@ -576,4 +692,37 @@ nup_dev_spec_op(gx_device *dev, int dev_spec_op, void *data, int size)
             break;
     }
     return default_subclass_dev_spec_op(dev, dev_spec_op, data, size);
+}
+
+int gx_device_nup_device_install(gx_device *dev)
+{
+    gs_param_typed_value value;
+    gs_c_param_list *plist_c;
+    int code;
+
+    code = gx_device_subclass(dev, (gx_device *)&gs_nup_device, sizeof(Nup_device_subclass_data));
+    if (code < 0)
+        return code;
+
+    /* Ensure that PageUsesTransparency is set. */
+    plist_c = gs_c_param_list_alloc(dev->memory->non_gc_memory, "nup_open_device");
+    if (plist_c == NULL)
+        return_error(gs_error_VMerror);
+    gs_c_param_list_write(plist_c, dev->memory->non_gc_memory);
+    gs_param_list_set_persistent_keys((gs_param_list *)plist_c, false);
+
+    value.type = gs_param_type_bool;
+    value.value.b = 1;
+    code = param_write_typed((gs_param_list *)plist_c, "PageUsesTransparency", &value);
+    if (code >= 0) {
+        gs_c_param_list_read(plist_c);
+
+        code = default_subclass_put_params(dev, (gs_param_list *)plist_c);
+        if (code >= 0)
+            code = default_subclass_open_device(dev->child);
+    }
+    gs_c_param_list_release(plist_c);
+    gs_free_object(dev->memory->non_gc_memory, plist_c, "nup_open_device");
+
+    return code;
 }

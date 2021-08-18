@@ -156,6 +156,8 @@ param_list_copy(gs_param_list *plto, gs_param_list *plfrom)
             coll_type = gs_param_collection_array;
         cc:
             copy.value.d.size = value.value.d.size;
+            /* FIXME: RJW: I suspect that this will go wrong, if size == 0.
+             * We should probably spot size == 0 and break. */
             if ((code = param_begin_write_collection(plto, string_key,
                                                      &copy.value.d,
                                                      coll_type)) < 0 ||

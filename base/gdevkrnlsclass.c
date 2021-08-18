@@ -39,7 +39,7 @@ int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded)
 #else
     if (!dev->NupHandlerPushed && dev->NupControl != 0) {
 #endif
-        code = gx_device_subclass(dev, (gx_device *)&gs_nup_device, sizeof(Nup_device_subclass_data));
+        code = gx_device_nup_device_install(dev);
         if (code < 0)
             return code;
 

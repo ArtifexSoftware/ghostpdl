@@ -845,8 +845,19 @@ devn_printer_put_params(gx_device * pdev, gs_param_list * plist,
         !devn_params_equal(pdevn_params, &saved_devn_params) ||
         (pequiv_colors != NULL &&
             compare_equivalent_cmyk_color_params(pequiv_colors, &saved_equiv_colors))) {
-        gs_closedevice(pdev);
-        /* Reset the sparable and linear shift, masks, bits. */
+        gx_device *parent_dev = pdev;
+        gx_device_color_info resave_info = pdev->color_info;
+
+        while (parent_dev->parent != NULL)
+            parent_dev = parent_dev->parent;
+
+        /* Temporarily restore the old color_info, so the close happens with
+         * the old version. In particular this allows Nup to flush properly. */
+        pdev->color_info = save_info;
+        gs_closedevice(parent_dev);
+        /* Then put the shiny new color_info back in. */
+        pdev->color_info = resave_info;
+        /* Reset the separable and linear shift, masks, bits. */
         set_linear_color_bits_mask_shift(pdev);
     }
     /*
@@ -1841,7 +1852,7 @@ devn_pcx_write_page(gx_device_printer * pdev, gp_file * infile, int linesize, gp
         /* If needed, convert to rgb */
         if (convert_to_rgb) {
             int i;
-			byte *row_in = line;
+            byte *row_in = line;
 
             /* Transform the data. */
             row = rgb_buff;	/* adjust to converted output buffer */

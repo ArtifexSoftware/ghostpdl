@@ -53,6 +53,7 @@ struct gs_c_param_s {
     gs_c_param_value value;
     gs_param_type type;
     void *alternate_typed_data;
+    int error;
 };
 
 /* GC descriptor and procedures */
@@ -261,6 +262,7 @@ c_param_add(gs_c_param_list * plist, gs_param_name pkey)
     }
     pparam->key.size = len;
     pparam->alternate_typed_data = 0;
+    pparam->error = 0;
     return pparam;
 }
 
@@ -450,6 +452,7 @@ static param_proc_xmit_typed(c_param_read_typed);
 static param_proc_next_key(c_param_get_next_key);
 static param_proc_get_policy(c_param_read_get_policy);
 static param_proc_signal_error(c_param_read_signal_error);
+static param_proc_read_signalled_error(c_param_read_signalled_error);
 static param_proc_commit(c_param_read_commit);
 static const gs_param_list_procs c_read_procs =
 {
@@ -461,7 +464,8 @@ static const gs_param_list_procs c_read_procs =
     NULL,			/* requested, N/A */
     c_param_read_get_policy,
     c_param_read_signal_error,
-    c_param_read_commit
+    c_param_read_commit,
+    c_param_read_signalled_error
 };
 
 /* Switch a list from writing to reading. */
@@ -596,10 +600,24 @@ c_param_read_get_policy(gs_param_list * plist, gs_param_name pkey)
 static int
 c_param_read_signal_error(gs_param_list * plist, gs_param_name pkey, int code)
 {
-    return code;
+    gs_c_param_list *const cplist = (gs_c_param_list *)plist;
+    gs_c_param *pparam = c_param_find(cplist, pkey, false);
+
+    if (pparam)
+        pparam->error = code;
+
+    return 0;
 }
 static int
 c_param_read_commit(gs_param_list * plist)
 {
     return 0;
+}
+static int
+c_param_read_signalled_error(gs_param_list * plist, gs_param_name pkey)
+{
+    gs_c_param_list *const cplist = (gs_c_param_list *)plist;
+    gs_c_param *pparam = c_param_find(cplist, pkey, false);
+
+    return (pparam ? pparam->error : 0);
 }

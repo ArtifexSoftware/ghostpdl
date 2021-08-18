@@ -23,8 +23,7 @@
 
 typedef struct gx_device_s gx_device_nup;
 
-/* Initialize device. */
-void gx_device_nup_device_init(gx_device_nup * dev);
+int gx_device_nup_device_install(gx_device *dev);
 
 typedef struct {
     subclass_common;

@@ -229,6 +229,7 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
         *the_memory = ppdev->buf;
         ppdev->buf = 0;
         ppdev->buffer_space = 0;
+        pmemdev->base = 0;		/* in case finalize tries to free this */
         was_command_list = true;
 
         prn_finish_bg_print(ppdev);

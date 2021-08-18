@@ -374,6 +374,15 @@ typedef struct gs_param_list_procs_s {
 #define param_commit(plist)\
          (*(plist)->procs->commit)(plist)
 
+         /*
+          * Read the value of a previously signalled error.  (Only used when reading.)
+          */
+#define param_proc_read_signalled_error(proc)\
+         int proc(gs_param_list *, gs_param_name)
+         param_proc_read_signalled_error((*read_signalled_error));
+#define param_read_signalled_error(plist, pkey)\
+         (*(plist)->procs->read_signalled_error)(plist, pkey)
+
 } gs_param_list_procs;
 
 /* Transmit typed parameters. */

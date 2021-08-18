@@ -317,7 +317,7 @@ epo_handle_erase_page(gx_device *dev)
     DPRINTF1(dev->memory, "Do fillpage, Uninstall erasepage, device %s\n", dev->dname);
 
     /* Just do a fill_rectangle (using saved color) */
-    if (dev->child && data->queued) {
+    if (dev->child && dev->child->is_open && data->queued) {
         code = dev_proc(dev->child, fill_rectangle)(dev->child,
                                                     0, 0,
                                                     dev->child->width,
