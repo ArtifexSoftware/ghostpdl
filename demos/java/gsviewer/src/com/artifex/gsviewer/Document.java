@@ -579,8 +579,8 @@ public class Document implements List<Page> {
 				gsInstance.set_param("TextAlphaBits", 4, GS_SPT_INT);
 				gsInstance.set_param("GraphicsAlphaBits", 4, GS_SPT_INT);
 			} else {
-				gsInstance.set_param("TextAlphaBits", 0, GS_SPT_INT);
-				gsInstance.set_param("GraphicsAlphaBits", 0, GS_SPT_INT);
+				gsInstance.set_param("TextAlphaBits", 1, GS_SPT_INT);
+				gsInstance.set_param("GraphicsAlphaBits", 1, GS_SPT_INT);
 			}
 
 			this.pages = new ArrayList<>(documentLoader.images.size());
