@@ -558,9 +558,15 @@ gs_param_list_dump(plist_orig);
     /* If there was PageSize or .MediaSize, update the NestedPage size */
     if (msa.data != NULL) {
         Nup_device_subclass_data *pNup_data = dev->subclass_data;
+        /* Calculate the page sizes as ints to allow for tiny changes
+         * of width that don't actually make a difference. */
+        int w1 = (int)(pNup_data->NestedPageW * dev->HWResolution[0] / 72.0f + 0.5f);
+        int w2 = (int)(msa.data[0]            * dev->HWResolution[0] / 72.0f + 0.5f);
+        int h1 = (int)(pNup_data->NestedPageH * dev->HWResolution[1] / 72.0f + 0.5f);
+        int h2 = (int)(msa.data[1]            * dev->HWResolution[1] / 72.0f + 0.5f);
 
         /* FIXME: Handle changing size (if previous value was non-zero) */
-        if (msa.data[0] != pNup_data->NestedPageW || msa.data[1] != pNup_data->NestedPageH) {
+        if (w1 != w2 || h1 != h2) {
             /* If needed, flush previous nest before changing */
             if (pNup_data->PageCount > 0 && pNup_data->PagesPerNest > 1) {
                 code = nup_flush_nest_to_output(dev, pNup_data);
