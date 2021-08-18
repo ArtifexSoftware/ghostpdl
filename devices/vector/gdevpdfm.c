@@ -1933,6 +1933,31 @@ pdfmark_PAGELABEL(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     return 0;
 }
 
+static int is_XMP_Key(gs_param_string *param)
+{
+    if (pdf_key_eq(param, "/Title"))
+        return 1;
+    if (pdf_key_eq(param, "/Author"))
+        return 1;
+    if (pdf_key_eq(param, "/Subject"))
+        return 1;
+    if (pdf_key_eq(param, "/Keywords"))
+        return 1;
+    if (pdf_key_eq(param, "/Creator"))
+        return 1;
+    if (pdf_key_eq(param, "/Producer"))
+        return 1;
+    /* These two aren't string data types and so won't affect anything
+     * in the DOCINFO pdfmark, which is the only client for this code currently
+     * but we may want to use this in future for other purposed.
+     */
+    if (pdf_key_eq(param, "/CreationDate"))
+        return 1;
+    if (pdf_key_eq(param, "/ModDate"))
+        return 1;
+    return 0;
+}
+
 /* DOCINFO pdfmark */
 static int
 pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
@@ -1956,7 +1981,7 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                 continue;
         }
 
-        if (pdev->PDFA !=0) {
+        if (pdev->PDFA !=0 && is_XMP_Key(pair)) {
             const gs_param_string *p = pairs + i + 1;
             bool abort = false;
 
