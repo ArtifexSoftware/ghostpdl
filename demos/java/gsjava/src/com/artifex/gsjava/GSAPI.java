@@ -272,13 +272,13 @@ public class GSAPI {
 		return gsapi_run_file(instance, StringUtil.toNullTerminatedByteArray(fileName), userErrors, pExitCode);
 	}
 
-	public static int gsapi_set_param(long instnace, String param, String value, int paramType) {
-		return gsapi_set_param(instnace, StringUtil.toNullTerminatedByteArray(param),
+	public static int gsapi_set_param(long instance, String param, String value, int paramType) {
+		return gsapi_set_param(instance, StringUtil.toNullTerminatedByteArray(param),
 				StringUtil.toNullTerminatedByteArray(value), paramType);
 	}
 
-	public static int gsapi_set_param(long instnace, String param, Object value, int paramType) {
-		return gsapi_set_param(instnace, StringUtil.toNullTerminatedByteArray(param), value, paramType);
+	public static int gsapi_set_param(long instance, String param, Object value, int paramType) {
+		return gsapi_set_param(instance, StringUtil.toNullTerminatedByteArray(param), value, paramType);
 	}
 
 	public static int gsapi_get_param(long instance, String param, long value, int paramType) {
