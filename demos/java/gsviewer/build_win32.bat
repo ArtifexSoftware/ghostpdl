@@ -1,5 +1,17 @@
 @echo off
 
+echo Build gsjava
+
+cd "..\gsjava"
+
+call build_win32
+
+cd "..\gsviewer"
+
+copy "..\gsjava\gsjava.jar" ".\gsjava.jar"
+
+echo Build gsviewer
+
 if not exist bin mkdir bin
 
 echo Compiling Java source...
@@ -25,6 +37,6 @@ javac -sourcepath src\ -d bin\^
 cd bin
 
 echo Packing JAR file...
-jar cfm "..\gsviewer.jar" "..\Manifest.txt" "com"
+jar cfm "..\gsviewer.jar" "..\Manifest.md" com\
 
 cd..

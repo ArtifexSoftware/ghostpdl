@@ -34,8 +34,4 @@ javac -sourcepath src/ -d bin/ \
 cd bin
 
 echo "Packing gsviewer JAR file..."
-jar cfm "../gsviewer.jar" "../Manifest.txt" "com/"
-
-#com.artifex.gsviewer.Main \
-#	-cf ../gsviewer.jar \
-#	"com/"
+jar cfm "../gsviewer.jar" "../Manifest.md" "com/"

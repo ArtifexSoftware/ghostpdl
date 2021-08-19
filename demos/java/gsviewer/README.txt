@@ -48,9 +48,10 @@ Building:
 
 -= WINDOWS =-
 
-Ensure both gs_jni.dll, gpdldll64.dll, and gsjava.jar have been built. Then,
-run the build_win32.bat script. To run, open gsviewer.jar either through File
-Explorer or in the command line through the following command:
+Ensure both gs_jni.dll and gpdldll64.dll. Then, run the build_win32.bat script.
+This will automatically build and copy gsjava.jar to this directory. To run,
+open gsviewer.jar either through File Explorer or in the command line through
+the following command:
 
 java -jar gsviewer.jar
 

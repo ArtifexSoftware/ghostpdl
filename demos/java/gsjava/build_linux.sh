@@ -57,6 +57,6 @@ javac -sourcepath src/ -d bin/ \
 cd bin
 
 echo "Packing gsjava JAR file..."
-jar cfm "../gsjava.jar" "../Manifest.txt" "com/"
+jar cfm "../gsjava.jar" "../Manifest.md" "com/"
 
 cd ..
