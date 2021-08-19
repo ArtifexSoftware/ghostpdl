@@ -427,7 +427,14 @@ gs_fapi_prepare_font(gs_font *pfont, gs_fapi_server *I, int subfont, const char 
         < 0)
         return code;
     pbfont->FAPI_font_data = I->ff.server_font_data;    /* Save it back to GS font. */
-    if (I->ff.server_font_data != 0) {
+
+    /* We only want to "refine" the FontBBox for fonts where we allow FAPI to be
+       treated as a "black box", handing over the entire font to the FAPI server.
+       That is, fonts where we give the server either the file, or a buffer with
+       the entire font description in it.
+     */
+    if (I->ff.server_font_data != 0
+        && (font_file_path != NULL || full_font_buf != NULL)) {
         if ((code =
              gs_fapi_renderer_retcode(mem, I,
                                       I->get_font_bbox(I, &I->ff,
