@@ -629,12 +629,12 @@ gx_device_init(gx_device * dev, const gx_device * proto, gs_memory_t * mem,
     dev->initialize_device_procs = proto->initialize_device_procs;
     if (dev->initialize_device_procs != NULL)
         dev->initialize_device_procs(dev);
+    dev->memory = mem;		/* must precede initialize_device call so devices can use it */
     if (dev->procs.initialize_device) {
         int code = dev->procs.initialize_device(dev);
         if (code < 0)
             return code;
     }
-    dev->memory = mem;
     dev->retained = !internal;
     rc_init(dev, mem, (internal ? 0 : 1));
     rc_increment(dev->icc_struct);
