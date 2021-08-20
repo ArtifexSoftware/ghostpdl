@@ -30,6 +30,8 @@
 #include "plwimg.h"
 #include "plapi.h"
 
+#define PJL_UEL "\033%-12345X"
+
 #if 0
 /* FIXME: this is purely because the gsdll.h requires psi/iapi.h and
  * we don't want that required here. But as a couple of Windows specific
@@ -341,6 +343,8 @@ main_utf8(int argc, char *argv[])
     char **nargv;
     char dformat[64];
     char ddpi[64];
+    size_t uel_len = strlen(PJL_UEL);
+    int dummy;
 
     /* Mark us as being 'system dpi aware' to avoid horrid scaling */
     avoid_windows_scale();
@@ -421,6 +425,14 @@ main_utf8(int argc, char *argv[])
         memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
 #endif
         code = gsapi_init_with_args(instance, nargc, nargv);
+        if (code >= 0)
+            code = gsapi_run_string_begin(instance, 0, &dummy);
+        if (code >= 0)
+            code = gsapi_run_string_continue(instance, PJL_UEL, uel_len, 0, &dummy);
+        if (code >= 0)
+            code = gsapi_run_string_end(instance, 0, &dummy);
+        if (code == gs_error_InterpreterExit)
+            code = 0;
         code1 = gsapi_exit(instance);
         if (code == 0 || (code == gs_error_Quit && code1 != 0))
             code = code1;
