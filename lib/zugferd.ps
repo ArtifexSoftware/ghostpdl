@@ -1,3 +1,5 @@
+%!PS
+
 % Copyright (C) 2001-2021 Artifex Software, Inc.
 % All Rights Reserved.
 %
@@ -12,38 +14,68 @@
 % Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
 % CA 94945, U.S.A., +1(415)492-9861, for further information.
 %
-% zugferd.ps
-% This program will create an (unsigned) ZUGFeRD compliant PDF file. In
-% order to do so the user must provide certain information, or edit this program.
+% ZUGFeRD.ps
+% This program will create an (unsigned) ZUGFeRD compliant PDF file.
+% In order to do so the user must provide certain information, or edit
+% this program.
 %
-% Required information is the path to the XML file containing the invoice data,
-% and the path to an ICC profile appropriate for the chosen ColorConversionStrategy.
-% -sZUGFeRDXMLFile defines a path to the XML invoice file and -sZUGFeRDProfile
-% defines the path to the ICC profile.
+% Required information is the path to the XML file containing the invoice
+% data, and the path to an ICC profile appropriate for the chosen
+% ColorConversionStrategy.
 %
-% The user must additionally set -dPDFA=3 and -sColorConversionStrategy on the
-% Ghostscript command line, and set the permissions for Ghostscript to read
-% both these files. It is simplest to put the files in a directory and then
-% permit reading of the entire directory.
+% -sZUGFeRDXMLFile defines a path to the XML invoice file.
+%
+% -sZUGFeRDProfile defines the path to the ICC profile.
+%
+% -sZUGFeRDVersion defines the version of the ZUGFeRD standard to be used.
+% Missing or invalid values would be silently replaced by the default ("2p1").
+%
+% -sZUGFeRDConformanceLevel defines the level of conformance.
+% Missing or invalid values would be silently replaced by the default ("BASIC").
+%
+% Note that the ZUGFeRD standard states:
+%
+%   The content of the field fx:ConformanceLevel has to be picked from
+%   the content of the element "GuidelineSpecifiedDocumentContextParameter"
+%   (specification identifier BT-24) of the XML instance file.
+%
+% The user must additionally set -dPDFA=3 and -sColorConversionStrategy
+% on the Ghostscript command line, and set the permissions for Ghostscript
+% to read both these files. It is simplest to put the files in a directory
+% and then permit reading of the entire directory.
 %
 % Example command line :
 %
-% gs --permit-file-read=/usr/home/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3 -sColorConversionStrategy=RGB \
-%    -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml  -sZUGFeRDProfile=/usr/home/me/rgb.icc \
-%    -o /usr/home/me/zugferd/zugferd.pdf /usr/home/me/zugferd/zugferd.ps /usr/home/me/zugferd/original.pdf
+% gs --permit-file-read=/usr/home/me/zugferd/          \
+%    -sDEVICE=pdfwrite                                 \
+%    -dPDFA=3                                          \
+%    -sColorConversionStrategy=RGB                     \
+%    -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml \
+%    -sZUGFeRDProfile=/usr/home/me/zugferd/rgb.icc     \
+%    -sZUGFeRDVersion=2p1                              \
+%    -sZUGFeRDConformanceLevel=BASIC                   \
+%    -o /usr/home/me/zugferd/zugferd.pdf               \
+%    /usr/home/me/zugferd/zugferd.ps                   \
+%    /usr/home/me/zugferd/original.pdf
 %
-% Much of this program results from a Ghostscript bug report, the thread can be found at
-% https://bugs.ghostscript.com/show_bug.cgi?id=696472 Portions of the code below were
-% supplied by Reinhard Nissl and I'm indebted to him for his efforts in helping me create
-% a solution for this problem as well as for the code he supplied, particularly for the
+% Much of this program results from a Ghostscript bug report, the thread
+% can be found at
+%   https://bugs.ghostscript.com/show_bug.cgi?id=696472
+% Portions of the code below were supplied by Reinhard Nissl and
+% I'm indebted to him for his efforts in helping me create a solution for
+% this problem as well as for the code he supplied, particularly for the
 % SimpleUTF16BE routine.
 %
-% It should not be necessary to modify this program, the comments in the code are there purely for information,
-% but there are two areas which might reasonably be altered. The section with the --8<-- lines could be replaced
-% with a simpler /N 3 or /N 4 if you always intend to produce the same kind of files; RGB or CMYK.
-% In step 7, the large XML string will need to be replaced if you want to produce a ZUGFeRD 2.1
-% file, and in future may require similar modification for later versions.
+% The program was further refined and expanded by Adrian Devries in :
+%   https://bugs.ghostscript.com/show_bug.cgi?id=703862
 %
+% It should not be necessary to modify this program, the comments in the
+% code are there purely for information, but there is one area which
+% might reasonably be altered. The section with the --8<-- lines could be
+% replaced with a simpler /N 3 or /N 4 if you always intend to produce
+% the same kind of files; RGB or CMYK.
+%
+% Remaining tasks have been marked with "TODO".
 
 % istring SimpleUTF16BE ostring
 /SimpleUTF16BE
@@ -52,13 +84,11 @@
     1 add
     2 mul
     string
-
     % istring ostring
     dup 0 16#FE put
     dup 1 16#FF put
     2
     3 -1 roll
-
     % ostring index istring
     {
         % ostring index ichar
@@ -74,11 +104,245 @@
         % ostring index
     }
     forall
-
     % ostring index
     pop
 }
 bind def
+
+% Cf. https://en.wikibooks.org/wiki/PostScript_FAQ#How_to_concatenate_strings%3F
+/concatstringarray { % [(a) (b) ... (z)] --> (ab...z)
+  0 1 index {
+    length add
+  } forall
+  string
+  0 3 2 roll {
+    3 copy putinterval
+    length add
+  } forall
+  pop
+} bind def
+
+/ZUGFeRDVersion where {
+  pop % Discard the dictionary
+  ZUGFeRDVersion (rc) ne {
+    ZUGFeRDVersion (1p0) ne {
+      ZUGFeRDVersion (2p0) ne {
+        ZUGFeRDVersion (2p1) ne {
+          /ZUGFeRDVersion (2p1) def
+        } if
+      } if
+    } if
+  } if
+}{
+  /ZUGFeRDVersion (2p1) def
+} ifelse
+
+/ZUGFeRDConformanceLevel where {
+  pop % Discard the dictionary
+  ZUGFeRDVersion (rc)  eq
+  ZUGFeRDVersion (1p0) eq or {
+    ZUGFeRDConformanceLevel (BASIC) ne {
+      ZUGFeRDConformanceLevel (COMFORT) ne {
+        ZUGFeRDConformanceLevel (EXTENDED) ne {
+          /ZUGFeRDConformanceLevel (BASIC) def
+        } if
+      } if
+    } if
+  } if
+  ZUGFeRDVersion (2p0) eq
+  ZUGFeRDVersion (2p1) eq or {
+    ZUGFeRDConformanceLevel (MINIMUM) ne {
+      ZUGFeRDConformanceLevel (BASIC WL) ne {
+        ZUGFeRDConformanceLevel (BASIC) ne {
+          ZUGFeRDConformanceLevel (EN 16931) ne {
+            ZUGFeRDConformanceLevel (EXTENDED) ne {
+              ZUGFeRDConformanceLevel (XRECHNUNG) ne {
+                /ZUGFeRDConformanceLevel (BASIC) def
+              } if
+            } if
+          } if
+        } if
+      } if
+    } if
+  } if
+}{
+  /ZUGFeRDConformanceLevel (BASIC) def
+} ifelse
+
+% ZUGFeRDSchema
+/ZUGFeRDSchema () def
+ZUGFeRDVersion (rc)  eq
+ZUGFeRDVersion (1p0) eq or
+ZUGFeRDVersion (2p0) eq or {
+  /ZUGFeRDSchema (ZUGFeRD PDFA Extension Schema) def
+} if
+ZUGFeRDVersion (2p1) eq {
+  /ZUGFeRDSchema (Factur-X PDFA Extension Schema) def
+} if
+
+% ZUGFeRDNamespaceURI
+/ZUGFeRDNamespaceURI () def
+ZUGFeRDVersion (rc)  eq {
+  /ZUGFeRDNamespaceURI (urn:ferd:pdfa:invoice:rc#) def
+} if
+ZUGFeRDVersion (1p0) eq {
+  /ZUGFeRDNamespaceURI (urn:ferd:pdfa:CrossIndustryDocument:invoice:1p0#) def
+} if
+ZUGFeRDVersion (2p0) eq {
+  /ZUGFeRDNamespaceURI (urn:zugferd:pdfa:CrossIndustryDocument:invoice:2p0#) def
+} if
+ZUGFeRDVersion (2p1) eq {
+  /ZUGFeRDNamespaceURI (urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#) def
+} if
+
+% ZUGFeRDPrefix
+/ZUGFeRDPrefix () def
+ZUGFeRDVersion (rc)  eq
+ZUGFeRDVersion (1p0) eq or
+ZUGFeRDVersion (2p0) eq or {
+  /ZUGFeRDPrefix (zf) def
+} if
+ZUGFeRDVersion (2p1) eq {
+  /ZUGFeRDPrefix (fx) def
+} if
+
+% ZUGFeRDVersionDescription
+/ZUGFeRDVersionDescription () def
+ZUGFeRDVersion (rc)  eq
+ZUGFeRDVersion (1p0) eq or
+ZUGFeRDVersion (2p0) eq or {
+  /ZUGFeRDVersionDescription (The actual version of the ZUGFeRD XML schema) def
+} if
+ZUGFeRDVersion (2p1) eq {
+  /ZUGFeRDVersionDescription (The actual version of the Factur-X XML schema) def
+} if
+
+% ZUGFeRDConformanceLevelDescription
+/ZUGFeRDConformanceLevelDescription () def
+ZUGFeRDVersion (rc)  eq
+ZUGFeRDVersion (1p0) eq or
+ZUGFeRDVersion (2p0) eq or {
+  /ZUGFeRDConformanceLevelDescription (The conformance level of the embedded ZUGFeRD data) def
+} if
+ZUGFeRDVersion (2p1) eq {
+  /ZUGFeRDConformanceLevelDescription (The conformance level of the embedded Factur-X data) def
+} if
+
+% ZUGFeRDDocumentFileName
+/ZUGFeRDDocumentFileName () def
+ZUGFeRDVersion (rc)  eq {
+  /ZUGFeRDDocumentFileName (ZUGFeRD-invoice.xml) def
+} if
+ZUGFeRDVersion (1p0) eq {
+  /ZUGFeRDDocumentFileName (ZUGFeRD-invoice.xml) def
+} if
+ZUGFeRDVersion (2p0) eq {
+  ZUGFeRDConformanceLevel (XRECHNUNG) ne {
+    /ZUGFeRDDocumentFileName (zugferd-invoice.xml) def
+  }{
+    /ZUGFeRDDocumentFileName (xrechnung.xml) def
+  } ifelse
+} if
+ZUGFeRDVersion (2p1) eq {
+  ZUGFeRDConformanceLevel (XRECHNUNG) ne {
+    /ZUGFeRDDocumentFileName (factur-x.xml) def
+  }{
+    /ZUGFeRDDocumentFileName (xrechnung.xml) def
+  } ifelse
+} if
+
+% ZUGFeRDVersionData
+/ZUGFeRDVersionData () def
+ZUGFeRDVersion (rc)  eq {
+  /ZUGFeRDVersionData (RC) def
+} if
+ZUGFeRDVersion (1p0) eq {
+  /ZUGFeRDVersionData (1.0) def
+} if
+ZUGFeRDVersion (2p0) eq {
+  ZUGFeRDConformanceLevel (XRECHNUNG) ne {
+    /ZUGFeRDVersionData (2p0) def
+  }{
+    /ZUGFeRDVersionData (1p2) def
+  } ifelse
+} if
+ZUGFeRDVersion (2p1) eq {
+  ZUGFeRDConformanceLevel (XRECHNUNG) ne {
+    /ZUGFeRDVersionData (1.0) def
+  }{
+    /ZUGFeRDVersionData (1p2) def
+  } ifelse
+} if
+
+/ZUGFeRDMetadata [
+(
+<rdf:Description)
+( xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/")
+( xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#")
+( xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#")
+( rdf:about="">
+  <pdfaExtension:schemas>
+    <rdf:Bag>
+      <rdf:li rdf:parseType="Resource">
+        <pdfaSchema:schema>)ZUGFeRDSchema(</pdfaSchema:schema>
+        <pdfaSchema:namespaceURI>)ZUGFeRDNamespaceURI(</pdfaSchema:namespaceURI>
+        <pdfaSchema:prefix>)ZUGFeRDPrefix(</pdfaSchema:prefix>
+        <pdfaSchema:property>
+          <rdf:Seq>
+            <rdf:li rdf:parseType="Resource">
+              <pdfaProperty:name>DocumentFileName</pdfaProperty:name>
+              <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+              <pdfaProperty:category>external</pdfaProperty:category>
+              <pdfaProperty:description>Name of the embedded XML invoice file</pdfaProperty:description>
+            </rdf:li>
+            <rdf:li rdf:parseType="Resource">
+              <pdfaProperty:name>DocumentType</pdfaProperty:name>
+              <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+              <pdfaProperty:category>external</pdfaProperty:category>
+              <pdfaProperty:description>INVOICE</pdfaProperty:description>
+            </rdf:li>
+            <rdf:li rdf:parseType="Resource">
+              <pdfaProperty:name>Version</pdfaProperty:name>
+              <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+              <pdfaProperty:category>external</pdfaProperty:category>
+              <pdfaProperty:description>)ZUGFeRDVersionDescription(</pdfaProperty:description>
+            </rdf:li>
+            <rdf:li rdf:parseType="Resource">
+              <pdfaProperty:name>ConformanceLevel</pdfaProperty:name>
+              <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+              <pdfaProperty:category>external</pdfaProperty:category>
+              <pdfaProperty:description>)ZUGFeRDConformanceLevelDescription(</pdfaProperty:description>
+            </rdf:li>
+          </rdf:Seq>
+        </pdfaSchema:property>
+      </rdf:li>
+    </rdf:Bag>
+  </pdfaExtension:schemas>
+</rdf:Description>
+<rdf:Description xmlns:)ZUGFeRDPrefix(=")ZUGFeRDNamespaceURI(" rdf:about="">
+  <)ZUGFeRDPrefix(:ConformanceLevel>)ZUGFeRDConformanceLevel(</)ZUGFeRDPrefix(:ConformanceLevel>
+  <)ZUGFeRDPrefix(:DocumentFileName>)ZUGFeRDDocumentFileName(</)ZUGFeRDPrefix(:DocumentFileName>
+  <)ZUGFeRDPrefix(:DocumentType>INVOICE</)ZUGFeRDPrefix(:DocumentType>
+  <)ZUGFeRDPrefix(:Version>)ZUGFeRDVersionData(</)ZUGFeRDPrefix(:Version>
+</rdf:Description>
+)
+  ] concatstringarray def
+
+/Usage {
+  (example usage:                                               \n) print
+  (      gs --permit-file-read=/usr/home/me/zugferd/          \\\n) print
+  (         -sDEVICE=pdfwrite                                 \\\n) print
+  (         -dPDFA=3                                          \\\n) print
+  (         -sColorConversionStrategy=RGB                     \\\n) print
+  (         -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml \\\n) print
+  (         -sZUGFeRDProfile=/usr/home/me/zugferd\rgb.icc     \\\n) print
+  (         -sZUGFeRDVersion=2p1                              \\\n) print
+  (         -sZUGFeRDConformanceLevel=BASIC                   \\\n) print
+  (         -o /usr/home/me/zugferd/zugferd.pdf               \\\n) print
+  (         /usr/home/me/zugferd/zugferd.ps                   \\\n) print
+  (         /usr/home/me/zugferd/original.pdf                   \n) print
+  flush
+} def
 
 % First check that the user has defined the XML invoice file on the command line
 %
@@ -90,7 +354,9 @@ bind def
   /ZUGFeRDProfile where {
     pop % Discard the dictionary
 
-    % Step 1, add the required PDF/A boilerplate. This is mostly copied from lib/pdfa_de.ps
+    % Step 1, add the required PDF/A boilerplate.
+    % This is mostly copied from lib/pdfa_def.ps
+
     % Create a PDF stream object to hold the ICC profile.
     [ /_objdef {icc_PDFA} /type /stream /OBJ pdfmark
 
@@ -157,45 +423,43 @@ bind def
         /Type /OutputIntent
         /S /GTS_PDFA1                       % Required for PDF/A.
         /DestOutputProfile {icc_PDFA}       % The actual profile.
-        /OutputConditionIdentifier (Custom) % A better solution is a string from the ICC Registry, but Custom is always valid.
+        /OutputConditionIdentifier (Custom) % TODO: A better solution is a
+                                            %       a string from the ICC
+                                            %       Registry, but Custom
+                                            %       is always valid.
       >> /PUT pdfmark
 
     % And now add the OutputIntent to the Catalog dictionary
     [ {Catalog} << /OutputIntents [ {OutputIntent_PDFA} ]>> /PUT pdfmark
 
-
     % Step 2, define the XML file and read it into the PDF
     % First we define the PDF stream to contain the XML invoice
     [ /_objdef {InvoiceStream} /type /stream /OBJ pdfmark
-
     % Fill in the dictionary elements we need. We believe the
     % ModDate is not useful so it's just set to a valid value.
     [ {InvoiceStream} <<
-        /Type        /EmbeddedFile
-        /Subtype    (text/xml) cvn
+        /Type /EmbeddedFile
+        /Subtype (text/xml) cvn
+        % TODO: Determine file length, and add /Length entry
         /Params <<
-          /ModDate    (D:20130121081433+01’00’)
+          /ModDate (D:20130121081433+01'00') % TODO: Determine file date.
         >>
       >> /PUT pdfmark
-
     % Now read the data from the file and store it in the stream
     [ {InvoiceStream} ZUGFeRDXMLFile (r) file /PUT pdfmark
-
     % and close the stream
     [ {InvoiceStream} /CLOSE pdfmark
-
 
     % Step 3 create the File Specification dictionary for the embedded file
     % Create the dictionary
     [ /_objdef {FSDict} /type /dict /OBJ pdfmark
-
     % Fill in the required dictionary elements
     [ {FSDict}    <<
       /Type /FileSpec
-      /F ZUGFeRDXMLFile
-      /UF ZUGFeRDXMLFile SimpleUTF16BE
+      /F ZUGFeRDDocumentFileName
+      /UF ZUGFeRDDocumentFileName SimpleUTF16BE
       /Desc (ZUGFeRD electronic invoice)
-      /AFRelationship    /Alternative
+      /AFRelationship /Alternative
       /EF <<
           /F {InvoiceStream}
           /UF {InvoiceStream}
@@ -203,114 +467,38 @@ bind def
       >>
     /PUT pdfmark
 
-
     % Step 4 Create the Associated Files dictionary to hold the FS dict
     % Create the dictionary
     [ /_objdef {AFArray} /type /array /OBJ pdfmark
-
     % Put (append) the FS dictionary into the Associated Files array
     [ {AFArray} {FSDict} /APPEND pdfmark
-
 
     % Step 5 Add an entry in the Catalog dictionary containing the AF array
     [ {Catalog} << /AF {AFArray} >> /PUT pdfmark
 
-
     % Step 6 use the EMBED pdfmark to add the XML file and FS dictionary to the PDF name tree
-    [ /Name ZUGFeRDXMLFile /FS {FSDict} /EMBED pdfmark
-
+    [ /Name ZUGFeRDDocumentFileName /FS {FSDict} /EMBED pdfmark
 
     % Step 7 Add the extra ZUGFeRD XML data to the Metadata
-    [ /XML
-(
-    <!-- XMP extension schema container for the zugferd schema -->
-    <rdf:Description rdf:about=""
-    xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/"
-    xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#"
-    xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#">
-
-    <!-- Container for all embedded extension schema descriptions -->
-    <pdfaExtension:schemas>
-        <rdf:Bag>
-        <rdf:li rdf:parseType="Resource">
-            <!-- Optional description of schema -->
-            <pdfaSchema:schema>ZUGFeRD PDFA Extension Schema</pdfaSchema:schema>
-            <!-- Schema namespace URI -->
-            <pdfaSchema:namespaceURI>urn:ferd:pdfa:invoice:rc#</pdfaSchema:namespaceURI>
-            <!-- Preferred schema namespace prefix -->
-            <pdfaSchema:prefix>zf</pdfaSchema:prefix>
-
-            <!-- Description of schema properties -->
-            <pdfaSchema:property>
-            <rdf:Seq>!
-                <rdf:li rdf:parseType="Resource">
-                <!-- DocumentFileName: Name of the embedded file;
-                    must be equal with the value of the /F tag in the /EF
-                    structure -->
-                <pdfaProperty:name>DocumentFileName</pdfaProperty:name>
-                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
-                <pdfaProperty:category>external</pdfaProperty:category>
-                <pdfaProperty:description>name of the embedded xml invoice file</pdfaProperty:description>
-                </rdf:li>
-                <rdf:li rdf:parseType="Resource">
-                <!-- DocumentType: INVOICE -->
-                <pdfaProperty:name>DocumentType</pdfaProperty:name>
-                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
-                <pdfaProperty:category>external</pdfaProperty:category>
-                <pdfaProperty:description>INVOICE</pdfaProperty:description>
-                </rdf:li>
-                <rdf:li rdf:parseType="Resource">
-                <!-- Version: The actual version of the
-                    ZUGFeRD standard -->
-                <pdfaProperty:name>Version</pdfaProperty:name>
-                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
-                <pdfaProperty:category>external</pdfaProperty:category>
-                <pdfaProperty:description>The actual version of the ZUGFeRD data</pdfaProperty:description>
-                </rdf:li>
-                <rdf:li rdf:parseType="Resource">
-                <!-- ConformanceLevel: The actual conformance
-                    level of the ZUGFeRD standard,
-                    e.g. BASIC, COMFORT, EXTENDED -->
-                <pdfaProperty:name>ConformanceLevel</pdfaProperty:name>
-                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
-                <pdfaProperty:category>external</pdfaProperty:category>
-                <pdfaProperty:description>The conformance level of the ZUGFeRD data</pdfaProperty:description>
-                </rdf:li>
-            </rdf:Seq>
-            </pdfaSchema:property>
-        </rdf:li>
-        </rdf:Bag>
-    </pdfaExtension:schemas>
-    </rdf:Description>
-
-    <rdf:Description rdf:about="" xmlns:zf="urn:ferd:pdfa:invoice:rc#">
-    <zf:DocumentType>INVOICE</zf:DocumentType>
-    <zf:DocumentFileName>ZUGFeRD-invoice.xml</zf:DocumentFileName>
-    <zf:Version>RC</zf:Version>
-    <zf:ConformanceLevel>BASIC</zf:ConformanceLevel>
-    </rdf:Description>
-) /Ext_Metadata pdfmark
+    [ /XML ZUGFeRDMetadata /Ext_Metadata pdfmark
   }
   {
-    % No ICC Profile definition on the command line; chide the user and give them an example
-    %
-    (\nERROR - ZUGFeRDProfile has not been supplied, you must supply an ICC profile\n) print
-    (        Producing a potentially invalid PDF/A file!!\n) print
-    (example usage -  gs --permit-file-read=/usr/home/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3\\\n) print
-    (         -sColorConversionStrategy=RGB -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml\\\n) print
-    (         -sZUGFeRDProfile=/usr/home/me/rgb.icc -o /usr/home/me/zugferd/zugferd.pdf\\\n) print
-    (         /usr/home/me/zugferd/zugferd.ps /usr/home/me/zugferd/original.pdf\n\n) print flush
+    % No ICC Profile definition on the command line;
+    % chide the user and give them an example
+    (\nERROR - ZUGFeRDProfile has not been supplied, you must supply an ICC profile) print
+    (\n        Producing a potentially INVALID PDF/A file.                       \n) print
+    Usage
   } ifelse
 }
 {
-  % No XML invoice definition on the command line; chide the user and give them an example
-  %
-  (\nERROR - ZUGFeRDXMLFile has not been supplied, you must supply an XML invoice file\n) print
-  (        Producing a PDF/A file not a ZUGFeRD file.\n) print
-  (example usage -  gs --permit-file-read=/usr/home/me/zugferd/ -sDEVICE=pdfwrite -dPDFA=3\\\n) print
-  (         -sColorConversionStrategy=RGB -sZUGFeRDXMLFile=/usr/home/me/zugferd/invoice.xml\\\n) print
-  (         -sZUGFeRDProfile=/usr/home/me/rgb.icc -o /usr/home/me/zugferd/zugferd.pdf\\\n) print
-  (         /usr/home/me/zugferd/zugferd.ps /usr/home/me/zugferd/original.pdf\n\n) print flush
+  % No XML invoice definition on the command line;
+  % chide the user and give them an example
+  (\nERROR - ZUGFeRDXMLFile has not been supplied, you must supply a XML invoice file) print
+  (\n        Producing a PDF/A file, NOT a ZUGFeRD file.                           \n) print
+  Usage
 } ifelse
 
-% That's all the ZUGFeRD and PDF/A-3 setup completed, all that remains now is to run the input file
+% That's all the ZUGFeRD and PDF/A-3 setup completed,
+% all that remains now is to run the input file
+
+%%EOF
