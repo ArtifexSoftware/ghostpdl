@@ -704,9 +704,9 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 
         for (x = 0; x < width; ++x) {
             row[(x << 2)] = buf_ptr[x];
-            row[(x << 2) + 1] = buf_ptr[x + planestride];
-            row[(x << 2) + 2] = buf_ptr[x + planestride * 2];
-            row[(x << 2) + 3] = buf_ptr[x + planestride * 3];
+            row[(x << 2) + 1] = buf_ptr[x + (uint64_t)(planestride)];
+            row[(x << 2) + 2] = buf_ptr[x + (uint64_t)(planestride * 2)];
+            row[(x << 2) + 3] = buf_ptr[x + (uint64_t)(planestride * 3)];
         }
         png_write_row(png_ptr, row);
         buf_ptr += rowstride;
@@ -822,18 +822,18 @@ gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
         position = y * rowstride;
         for (x = 0; x < width; x++) {
             /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-            a = buf_ptr[position + planestride * num_comp];
+            a = buf_ptr[position + (uint64_t)(planestride * num_comp)];
             if ((a + 1) & 0xfe) {
                 a ^= 0xff;
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp  = buf_ptr[position + planestride * comp_num];
+                    comp  = buf_ptr[position + (uint64_t)(planestride * comp_num)];
                     tmp = ((bg - comp) * a) + 0x80;
                     comp += (tmp + (tmp >> 8)) >> 8;
-                    buf_ptr[position + planestride * comp_num] = comp;
+                    buf_ptr[position + (uint64_t)(planestride * comp_num)] = comp;
                 }
             } else if (a == 0) {
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    buf_ptr[position + planestride * comp_num] = bg;
+                    buf_ptr[position + (uint64_t)(planestride * comp_num)] = bg;
                 }
             }
             position+=1;
@@ -865,19 +865,19 @@ gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
         position = y * rowstride;
         for (x = 0; x < width; x++) {
             /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-            a = buf_ptr[position + planestride * num_comp];
+            a = buf_ptr[position + (uint64_t)(planestride * num_comp)];
             if (a == 0) {
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    buf_ptr[position + planestride * comp_num] = bebg;
+                    buf_ptr[position + (uint64_t)(planestride * comp_num)] = bebg;
                 }
             } else if (a == 0xffff) {
 #if ARCH_IS_BIG_ENDIAN
 #else
                 if (!keep_native) {
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                        comp = buf_ptr[position + planestride * comp_num];
-                        ((byte *)&buf_ptr[position + planestride * comp_num])[0] = comp >> 8;
-                        ((byte *)&buf_ptr[position + planestride * comp_num])[1] = comp;
+                        comp = buf_ptr[position + (uint64_t)(planestride * comp_num)];
+                        ((byte *)&buf_ptr[position + (uint64_t)(planestride * comp_num)])[0] = comp >> 8;
+                        ((byte *)&buf_ptr[position + (uint64_t)(planestride * comp_num)])[1] = comp;
                     }
                 }
 #endif
@@ -886,12 +886,12 @@ gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
                 a += a>>15; /* a is now 0 to 0x10000 */
                 a >>= 1; /* We can only use 15 bits as bg-comp has a sign bit we can't lose */
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp  = buf_ptr[position + planestride * comp_num];
+                    comp  = buf_ptr[position + (uint64_t)(planestride * comp_num)];
                     tmp = (((int)bg - comp) * a) + 0x4000;
                     comp += (tmp >> 15); /* Errors in bit 16 upwards will be ignored */
                     /* Store as big endian */
-                    ((byte *)&buf_ptr[position + planestride * comp_num])[0] = comp>>8;
-                    ((byte *)&buf_ptr[position + planestride * comp_num])[1] = comp;
+                    ((byte *)&buf_ptr[position + (uint64_t)(planestride * comp_num)])[0] = comp>>8;
+                    ((byte *)&buf_ptr[position + (uint64_t)(planestride * comp_num)])[1] = comp;
                 }
             }
             position+=1;
@@ -913,26 +913,26 @@ gx_blend_image_buffer8to16(const byte *buf_ptr_in, unsigned short *buf_ptr_out, 
         position = y * rowstride;
         for (x = 0; x < width; x++) {
             /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-            a = buf_ptr_in[position + planestride * num_comp];
+            a = buf_ptr_in[position + (uint64_t)(planestride * num_comp)];
             if (a == 0xff) {
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp = buf_ptr_in[position + planestride * comp_num];
-                    buf_ptr_out[position + planestride * comp_num] = (comp + (comp << 8));
+                    comp = buf_ptr_in[position + (uint64_t)(planestride * comp_num)];
+                    buf_ptr_out[position + (uint64_t)(planestride * comp_num)] = (comp + (comp << 8));
                 }
             } else if (a == 0) {
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    buf_ptr_out[position + planestride * comp_num] = bg_out;
+                    buf_ptr_out[position + (uint64_t)(planestride * comp_num)] = bg_out;
                 }
             } else {
                 a ^= 0xff;
                 a += (a << 8);
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp = buf_ptr_in[position + planestride * comp_num];
+                    comp = buf_ptr_in[position + (uint64_t)(planestride * comp_num)];
                     comp += (comp << 8);
                     tmp = ((bg_out - comp) * a) + 0x8000;
                     comp += (tmp + (tmp >> 16)) >> 16;
                     comp = ((comp & 0xff) << 8) + ((comp & 0xff00) >> 8);
-                    buf_ptr_out[position + planestride * comp_num] = comp;
+                    buf_ptr_out[position + (uint64_t)(planestride * comp_num)] = comp;
                 }
             }
             position += 1;
@@ -960,7 +960,7 @@ gx_put_blended_image_custom(gx_device *target, byte *buf_ptr_,
 
                 /* composite CMYKA, etc. pixel with over solid background */
 #define GET16(v) (*((uint16_t *)(void *)&(v)))
-                uint16_t a = GET16(buf_ptr[x + planestride * num_comp]);
+                uint16_t a = GET16(buf_ptr[x + (uint64_t)(planestride * num_comp)]);
 
                 if (a == 0) {
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
@@ -968,13 +968,13 @@ gx_put_blended_image_custom(gx_device *target, byte *buf_ptr_,
                     }
                 } else if (a == 0xffff) {
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                        comp = buf_ptr[x + planestride * comp_num];
+                        comp = buf_ptr[x + (uint64_t)(planestride * comp_num)];
                         cv[comp_num] = comp;
                     }
                 } else {
                     a ^= 0xffff;
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                        comp  = GET16(buf_ptr[x + planestride * comp_num]);
+                        comp  = GET16(buf_ptr[x + (uint64_t)(planestride * comp_num)]);
                         tmp = ((bg - comp) * a) + 0x8000;
                         cv[comp_num] = comp + ((tmp + (tmp>>16))>>16);
                     }
@@ -994,12 +994,12 @@ gx_put_blended_image_custom(gx_device *target, byte *buf_ptr_,
             for (x = 0; x < width; x++) {
 
                 /* composite CMYKA, etc. pixel with over solid background */
-                byte a = buf_ptr[x + planestride * num_comp];
+                byte a = buf_ptr[x + (uint64_t)(planestride * num_comp)];
 
                 if ((a + 1) & 0xfe) {
                     a ^= 0xff;
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                        comp  = buf_ptr[x + planestride * comp_num];
+                        comp  = buf_ptr[x + (uint64_t)(planestride * comp_num)];
                         tmp = ((bg - comp) * a) + 0x80;
                         comp += tmp + (tmp >> 8);
                         cv[comp_num] = comp;
@@ -1010,7 +1010,7 @@ gx_put_blended_image_custom(gx_device *target, byte *buf_ptr_,
                     }
                 } else {
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                        comp = buf_ptr[x + planestride * comp_num];
+                        comp = buf_ptr[x + (uint64_t)(planestride * comp_num)];
                         cv[comp_num] = (comp << 8) + comp;
                     }
                 }
