@@ -387,6 +387,9 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
     int code = 0;
     stream *s;
     pdfctx_t *pdfctx;
+    gs_gstate *pgs = NULL;
+    gs_gstate_client_procs procs;
+    void *client_data;
 
     check_op(2);
 
@@ -408,7 +411,21 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
 
     *(pdfctx->pdf_stream) = *(pdfctx->ps_stream);
 
+    pgs = pdfctx->ctx->pgs;
+    procs = igs->client_procs;
+    client_data = igs->client_data;
+    pdfi_gstate_from_PS(pdfctx->ctx, igs, &client_data, &procs);
+    pdfctx->ctx->pgs = igs;
+
     code = pdfi_set_input_stream(pdfctx->ctx, pdfctx->pdf_stream);
+
+    pdfi_gstate_to_PS(pdfctx->ctx, igs, client_data, &procs);
+    if (code == 0)
+        code = gs_grestore(igs);
+    else
+        (void)gs_grestore(igs);
+    pdfctx->ctx->pgs = pgs;
+
     if (code < 0) {
         memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
         gs_free_object(imemory, pdfctx->pdf_stream, "PDFstream copy of PS stream");
@@ -430,6 +447,9 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
     pdfctx_t *pdfctx;
     char pdffilename[gp_file_name_sizeof];
     int code = 0;
+    gs_gstate *pgs = NULL;
+    gs_gstate_client_procs procs;
+    void *client_data;
 
     check_op(2);
 
@@ -448,7 +468,22 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
 
     memcpy(pdffilename, (op - 1)->value.bytes, r_size(op - 1));
     pdffilename[r_size(op - 1)] = 0;
+
+    pgs = pdfctx->ctx->pgs;
+    procs = igs->client_procs;
+    client_data = igs->client_data;
+    pdfi_gstate_from_PS(pdfctx->ctx, igs, &client_data, &procs);
+    pdfctx->ctx->pgs = igs;
+
     code = pdfi_open_pdf_file(pdfctx->ctx, pdffilename);
+
+    pdfi_gstate_to_PS(pdfctx->ctx, igs, client_data, &procs);
+    if (code == 0)
+        code = gs_grestore(igs);
+    else
+        (void)gs_grestore(igs);
+    pdfctx->ctx->pgs = pgs;
+
     if (code < 0)
         return code;
 
