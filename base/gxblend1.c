@@ -201,9 +201,9 @@ copy_extra_planes(byte *des_buf, pdf14_buf *des_info, byte *src_buf,
                   pdf14_buf *src_info, int width, int height)
 {
     /* alpha_g and shape do not copy */
-    des_buf += des_info->planestride * ((des_info->has_shape ? 1 : 0) +
+    des_buf += des_info->planestride * (size_t)((des_info->has_shape ? 1 : 0) +
                                         (des_info->has_alpha_g ? 1 : 0));
-    src_buf += src_info->planestride * ((src_info->has_shape ? 1 : 0) +
+    src_buf += src_info->planestride * (size_t)((src_info->has_shape ? 1 : 0) +
                                         (src_info->has_alpha_g ? 1 : 0));
     /* tags plane does copy */
     if (des_info->has_tags) {
@@ -261,20 +261,20 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
         } else {
             if (knockout_buff) {
                 buf_plane = buf->backdrop + ((x0 - buf->rect.p.x)<<deep) +
-                        (y0 - buf->rect.p.y) * buf->rowstride;
+                        (y0 - buf->rect.p.y) * (size_t)buf->rowstride;
                 tos_plane = tos->backdrop + ((x0 - tos->rect.p.x)<<deep) +
-                        (y0 - tos->rect.p.y) * tos->rowstride;
-                memset(buf->backdrop, 0, buf->n_chan * buf->planestride<<deep);
+                        (y0 - tos->rect.p.y) * (size_t)tos->rowstride;
+                memset(buf->backdrop, 0, buf->n_chan * ((size_t)buf->planestride)<<deep);
             } else {
                 buf_plane = buf->data + ((x0 - buf->rect.p.x)<<deep) +
-                        (y0 - buf->rect.p.y) * buf->rowstride;
+                        (y0 - buf->rect.p.y) * (size_t)buf->rowstride;
                 tos_plane = tos->data + ((x0 - tos->rect.p.x)<<deep) +
-                        (y0 - tos->rect.p.y) * tos->rowstride;
+                        (y0 - tos->rect.p.y) * (size_t)tos->rowstride;
                 /* First clear out everything. There are cases where the incoming buf
                    has a region outside the existing tos group.  Need to check if this
                    is getting clipped in which case we need to fix the allocation of
                    the buffer to be smaller */
-                memset(buf->data, 0, buf->n_planes * buf->planestride<<deep);
+                memset(buf->data, 0, buf->n_planes * ((size_t)buf->planestride)<<deep);
             }
             /* Set up the buffer descriptors. */
             gsicc_init_buffer(&input_buff_desc, tos_profile->num_comps, 1<<deep, false,
@@ -291,8 +291,8 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
                 return gs_throw(gs_error_unknownerror, "ICC transform failed.  Trans backdrop");
         }
         /* Copy the alpha data */
-        buf_plane += buf->planestride * (buf->n_chan - 1);
-        tos_plane += tos->planestride * (tos->n_chan - 1);
+        buf_plane += (buf->planestride) * (size_t)(buf->n_chan - 1);
+        tos_plane += (tos->planestride) * (size_t)(tos->n_chan - 1);
         copy_plane_part(buf_plane, buf->rowstride, tos_plane, tos->rowstride, width,
                         height, deep);
         buf_plane += buf->planestride;
@@ -304,7 +304,7 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
 #if RAW_DUMP
     if (x0 < x1 && y0 < y1) {
         byte *buf_plane = buf->data + ((x0 - buf->rect.p.x)<<deep) +
-            (y0 - buf->rect.p.y) * buf->rowstride;
+            (y0 - buf->rect.p.y) * (size_t)buf->rowstride;
         dump_raw_buffer(dev->memory, y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
                         buf->rowstride, "BackDropInit_CM", buf_plane, deep);
         global_index++;
@@ -349,7 +349,7 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool from_backdrop
             y0 > buf->rect.p.y || y1 < buf->rect.q.y) {
             /* FIXME: There is potential for more optimisation here,
              * but I don't know how often we hit this case. */
-            memset(buf_plane, 0, (size_t)n_planes * buf->planestride);
+            memset(buf_plane, 0, n_planes * (size_t)buf->planestride);
         } else if (n_planes > tos->n_chan) {
             /* The next planes are alpha_g, shape, tags. We need to clear
              * alpha_g and shape, but don't need to clear the tag plane
@@ -358,12 +358,12 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool from_backdrop
             if (!from_backdrop && n_planes > tag_plane_num)
                 n_planes = tag_plane_num;
             if (n_planes > tos->n_chan)
-                memset(buf->data + (size_t)tos->n_chan * buf->planestride, 0,
-                       (size_t)(n_planes - tos->n_chan) * buf->planestride);
+                memset(buf->data + tos->n_chan * (size_t)buf->planestride, 0,
+                       (n_planes - tos->n_chan) * (size_t)buf->planestride);
         }
-        buf_plane += (y0 - buf->rect.p.y) * buf->rowstride +
+        buf_plane += (y0 - buf->rect.p.y) * (size_t)buf->rowstride +
                      ((x0 - buf->rect.p.x)<<deep);
-        tos_plane += (y0 - tos->rect.p.y) * tos->rowstride +
+        tos_plane += (y0 - tos->rect.p.y) * (size_t)tos->rowstride +
                      ((x0 - tos->rect.p.x)<<deep);
         /* Color and alpha plane */
         for (i = 0; i < tos->n_chan; i++) {
@@ -380,7 +380,7 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool from_backdrop
         byte *buf_plane = (from_backdrop ? buf->backdrop : buf->data);
         if (buf_plane != NULL) {
             buf_plane += ((x0 - buf->rect.p.x) << buf->deep) +
-                (y0 - buf->rect.p.y) * buf->rowstride;
+                (y0 - buf->rect.p.y) * (size_t)buf->rowstride;
             dump_raw_buffer(mem, y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
                 buf->rowstride, "BackDropInit", buf_plane, buf->deep);
             global_index++;
@@ -624,14 +624,14 @@ pdf14_cmyk_cs_to_cmyk_cm(const gx_device * dev, frac c, frac m, frac y, frac k, 
 static	int
 dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 {
-    int rowstride = pbuf->rowstride, planestride = pbuf->planestride;
+    size_t rowstride = pbuf->rowstride, planestride = pbuf->planestride;
     int rowbytes = width << 2;
     gs_int_rect rect = buf->rect;
     int x1 = min(pdev->width, rect.q.x);
     int y1 = min(pdev->height, rect.q.y);
     int width = x1 - rect.p.x;
     int height = y1 - rect.p.y;
-    byte *buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
+    byte *buf_ptr = buf->data + rect.p.y * (size_t)buf->rowstride + rect.p.x;
     byte *row = gs_malloc(mem, rowbytes, 1, "png raster buffer");
     png_struct *png_ptr =
     png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -704,9 +704,9 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 
         for (x = 0; x < width; ++x) {
             row[(x << 2)] = buf_ptr[x];
-            row[(x << 2) + 1] = buf_ptr[x + (uint64_t)(planestride)];
-            row[(x << 2) + 2] = buf_ptr[x + (uint64_t)(planestride * 2)];
-            row[(x << 2) + 3] = buf_ptr[x + (uint64_t)(planestride * 3)];
+            row[(x << 2) + 1] = buf_ptr[x + planestride];
+            row[(x << 2) + 2] = buf_ptr[x + planestride * (size_t)2];
+            row[(x << 2) + 3] = buf_ptr[x + planestride * (size_t)3];
         }
         png_write_row(png_ptr, row);
         buf_ptr += rowstride;
@@ -729,7 +729,7 @@ void
 gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride,
                            int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf)
 {
-    int inc = planestride * num_comp;
+    size_t inc = planestride * (size_t)num_comp;
 
     buf_ptr += inc - 1;
     for (; width > 0; width--) {
@@ -767,12 +767,12 @@ gx_build_blended_image_row16(const byte *gs_restrict buf_ptr_, int planestride,
                              int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf)
 {
     const uint16_t *gs_restrict buf_ptr = (const uint16_t *)(const void *)buf_ptr_;
-    int inc;
+    size_t inc;
 
     /* Note that we read in in native endian and blend,
      * then store out in big endian. */
     planestride >>= 1; /* Array indexing, not byte indexing */
-    inc = planestride * num_comp;
+    inc = planestride * (size_t)num_comp;
     buf_ptr += inc - 1;
     for (; width > 0; width--) {
         /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
@@ -822,18 +822,18 @@ gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
         position = y * rowstride;
         for (x = 0; x < width; x++) {
             /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-            a = buf_ptr[position + (uint64_t)(planestride * num_comp)];
+            a = buf_ptr[position + planestride * (size_t)num_comp];
             if ((a + 1) & 0xfe) {
                 a ^= 0xff;
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp  = buf_ptr[position + (uint64_t)(planestride * comp_num)];
+                    comp  = buf_ptr[position + planestride * (size_t)comp_num];
                     tmp = ((bg - comp) * a) + 0x80;
                     comp += (tmp + (tmp >> 8)) >> 8;
-                    buf_ptr[position + (uint64_t)(planestride * comp_num)] = comp;
+                    buf_ptr[position + planestride * (size_t)comp_num] = comp;
                 }
             } else if (a == 0) {
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    buf_ptr[position + (uint64_t)(planestride * comp_num)] = bg;
+                    buf_ptr[position + planestride * (size_t)comp_num] = bg;
                 }
             }
             position+=1;
@@ -865,19 +865,19 @@ gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
         position = y * rowstride;
         for (x = 0; x < width; x++) {
             /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-            a = buf_ptr[position + (uint64_t)(planestride * num_comp)];
+            a = buf_ptr[position + planestride * (size_t)num_comp];
             if (a == 0) {
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    buf_ptr[position + (uint64_t)(planestride * comp_num)] = bebg;
+                    buf_ptr[position + planestride * (size_t)comp_num] = bebg;
                 }
             } else if (a == 0xffff) {
 #if ARCH_IS_BIG_ENDIAN
 #else
                 if (!keep_native) {
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                        comp = buf_ptr[position + (uint64_t)(planestride * comp_num)];
-                        ((byte *)&buf_ptr[position + (uint64_t)(planestride * comp_num)])[0] = comp >> 8;
-                        ((byte *)&buf_ptr[position + (uint64_t)(planestride * comp_num)])[1] = comp;
+                        comp = buf_ptr[position + planestride * (size_t)comp_num];
+                        ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[0] = comp >> 8;
+                        ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[1] = comp;
                     }
                 }
 #endif
@@ -886,12 +886,12 @@ gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
                 a += a>>15; /* a is now 0 to 0x10000 */
                 a >>= 1; /* We can only use 15 bits as bg-comp has a sign bit we can't lose */
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp  = buf_ptr[position + (uint64_t)(planestride * comp_num)];
+                    comp  = buf_ptr[position + planestride * (size_t)comp_num];
                     tmp = (((int)bg - comp) * a) + 0x4000;
                     comp += (tmp >> 15); /* Errors in bit 16 upwards will be ignored */
                     /* Store as big endian */
-                    ((byte *)&buf_ptr[position + (uint64_t)(planestride * comp_num)])[0] = comp>>8;
-                    ((byte *)&buf_ptr[position + (uint64_t)(planestride * comp_num)])[1] = comp;
+                    ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[0] = comp>>8;
+                    ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[1] = comp;
                 }
             }
             position+=1;
@@ -913,26 +913,26 @@ gx_blend_image_buffer8to16(const byte *buf_ptr_in, unsigned short *buf_ptr_out, 
         position = y * rowstride;
         for (x = 0; x < width; x++) {
             /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-            a = buf_ptr_in[position + (uint64_t)(planestride * num_comp)];
+            a = buf_ptr_in[position + planestride * (size_t)num_comp];
             if (a == 0xff) {
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp = buf_ptr_in[position + (uint64_t)(planestride * comp_num)];
-                    buf_ptr_out[position + (uint64_t)(planestride * comp_num)] = (comp + (comp << 8));
+                    comp = buf_ptr_in[position + planestride * (size_t)comp_num];
+                    buf_ptr_out[position + planestride * (size_t)comp_num] = (comp + (comp << 8));
                 }
             } else if (a == 0) {
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    buf_ptr_out[position + (uint64_t)(planestride * comp_num)] = bg_out;
+                    buf_ptr_out[position + planestride * (size_t)comp_num] = bg_out;
                 }
             } else {
                 a ^= 0xff;
                 a += (a << 8);
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp = buf_ptr_in[position + (uint64_t)(planestride * comp_num)];
+                    comp = buf_ptr_in[position + planestride * (size_t)comp_num];
                     comp += (comp << 8);
                     tmp = ((bg_out - comp) * a) + 0x8000;
                     comp += (tmp + (tmp >> 16)) >> 16;
                     comp = ((comp & 0xff) << 8) + ((comp & 0xff00) >> 8);
-                    buf_ptr_out[position + (uint64_t)(planestride * comp_num)] = comp;
+                    buf_ptr_out[position + planestride * (size_t)comp_num] = comp;
                 }
             }
             position += 1;
@@ -960,7 +960,7 @@ gx_put_blended_image_custom(gx_device *target, byte *buf_ptr_,
 
                 /* composite CMYKA, etc. pixel with over solid background */
 #define GET16(v) (*((uint16_t *)(void *)&(v)))
-                uint16_t a = GET16(buf_ptr[x + (uint64_t)(planestride * num_comp)]);
+                uint16_t a = GET16(buf_ptr[x + planestride * (size_t)num_comp]);
 
                 if (a == 0) {
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
@@ -968,13 +968,13 @@ gx_put_blended_image_custom(gx_device *target, byte *buf_ptr_,
                     }
                 } else if (a == 0xffff) {
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                        comp = buf_ptr[x + (uint64_t)(planestride * comp_num)];
+                        comp = buf_ptr[x + planestride * (size_t)comp_num];
                         cv[comp_num] = comp;
                     }
                 } else {
                     a ^= 0xffff;
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                        comp  = GET16(buf_ptr[x + (uint64_t)(planestride * comp_num)]);
+                        comp  = GET16(buf_ptr[x + planestride * (size_t)comp_num]);
                         tmp = ((bg - comp) * a) + 0x8000;
                         cv[comp_num] = comp + ((tmp + (tmp>>16))>>16);
                     }
@@ -994,12 +994,12 @@ gx_put_blended_image_custom(gx_device *target, byte *buf_ptr_,
             for (x = 0; x < width; x++) {
 
                 /* composite CMYKA, etc. pixel with over solid background */
-                byte a = buf_ptr[x + (uint64_t)(planestride * num_comp)];
+                byte a = buf_ptr[x + planestride * (size_t)num_comp];
 
                 if ((a + 1) & 0xfe) {
                     a ^= 0xff;
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                        comp  = buf_ptr[x + (uint64_t)(planestride * comp_num)];
+                        comp  = buf_ptr[x + planestride * (size_t)comp_num];
                         tmp = ((bg - comp) * a) + 0x80;
                         comp += tmp + (tmp >> 8);
                         cv[comp_num] = comp;
@@ -1010,7 +1010,7 @@ gx_put_blended_image_custom(gx_device *target, byte *buf_ptr_,
                     }
                 } else {
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                        comp = buf_ptr[x + (uint64_t)(planestride * comp_num)];
+                        comp = buf_ptr[x + planestride * (size_t)comp_num];
                         cv[comp_num] = (comp << 8) + comp;
                     }
                 }
