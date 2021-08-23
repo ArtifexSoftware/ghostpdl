@@ -89,9 +89,6 @@ jbig2_detect_language(const char *s, int len)
 static const pl_interp_characteristics_t jbig2_characteristics = {
     "JBIG2",
     jbig2_detect_language,
-    "Artifex",
-    "0.01",
-    "18 Nov 2019"
 };
 
 /* Get implementation's characteristics */

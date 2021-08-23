@@ -76,6 +76,10 @@ extern_gs_lib_device_list();
 /* pcimpl.c (PCL only), or pximpl (XL only) depending on make configuration.*/
 extern pl_interp_implementation_t *pdl_implementations[];    /* zero-terminated list */
 
+#define _STRING_IT(s) #s
+#define STRING_IT(s) _STRING_IT(s)
+#define PJL_VERSION_STRING STRING_IT(PJLVERSION)
+
 /* Define the usage message. */
 static const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
@@ -335,13 +339,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
         if (code != gs_error_Info)
             errprintf(mem, pl_usage, argv[0]);
 
-        if (pl_characteristics(pjli)->version)
-            errprintf(mem, "Version: %s\n",
-                      pl_characteristics(pjli)->version);
-        if (pl_characteristics(pjli)->build_date)
-            errprintf(mem, "Build date: %s\n",
-                      pl_characteristics(pjli)->
-                      build_date);
+        errprintf(mem, "Version: %s\n", PJL_VERSION_STRING);
         errprintf(mem, "Languages:");
         for (i = 0; inst->implementations[i] != NULL; i++) {
             if (((i + 1)) % 9 == 0)
@@ -2769,9 +2767,7 @@ help:
                 code = pl_main_set_param(pmi, "QUIET");
                 break;
             case 'v':               /* print revision */
-                if (pl_characteristics(pjli)->version)
-                    errprintf(pmi->memory, "%s\n",
-                              pl_characteristics(pjli)->version);
+                errprintf(pmi->memory, "%s\n", PJL_VERSION_STRING);
                 arg_finit(pal);
                 gs_c_param_list_release(params);
                 return 0;

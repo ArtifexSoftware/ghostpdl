@@ -114,9 +114,6 @@ tiff_detect_language(const char *s, int len)
 static const pl_interp_characteristics_t tiff_characteristics = {
     "TIFF",
     tiff_detect_language,
-    "Artifex",
-    "0.01",
-    "18 Nov 2019"
 };
 
 /* Get implementation's characteristics */

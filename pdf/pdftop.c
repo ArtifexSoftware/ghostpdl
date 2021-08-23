@@ -48,10 +48,6 @@ typedef struct pdf_interp_instance_s
     char scratch_name[gp_file_name_sizeof];
 }pdf_interp_instance_t;
 
-/* version and build date are not currently used */
-#define PDF_VERSION NULL
-#define PDF_BUILD_DATE NULL
-
 static int
 pdf_detect_language(const char *s, int len)
 {
@@ -67,9 +63,6 @@ pdf_impl_characteristics(const pl_interp_implementation_t *pimpl)
     {
         "PDF",
         pdf_detect_language,
-        "Artifex",
-        PDF_VERSION,
-        PDF_BUILD_DATE
     };
     return &pdf_characteristics;
 }

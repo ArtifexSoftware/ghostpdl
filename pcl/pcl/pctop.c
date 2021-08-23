@@ -199,14 +199,9 @@ pcl_detect_language(const char *s, int length)
 static const pl_interp_characteristics_t *      /* always returns a descriptor */
 pcl_impl_characteristics(const pl_interp_implementation_t * impl)        /* implementation of interpreter to alloc */
 {
-#define PCLVERSION NULL
-#define PCLBUILDDATE NULL
     static pl_interp_characteristics_t pcl_characteristics = {
         "PCL",
         pcl_detect_language,
-        "Artifex",
-        PCLVERSION,
-        PCLBUILDDATE
     };
     return &pcl_characteristics;
 }

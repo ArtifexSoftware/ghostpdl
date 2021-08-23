@@ -353,7 +353,7 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(std_h) $(ctype__h) $(string__h)\
  $(plmain_h) $(pltop_h) $(stream_h) $(strmio_h) $(gsargs_h) $(dwtrace_h) $(vdtrace_h)\
  $(gxclpage_h) $(gdevprn_h) $(gxiodev_h) $(assert__h) $(gserrors_h)\
  $(PL_MAK) $(MAKEDIRS)
-	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
+	$(PLCCC) $(D_)PJLVERSION=$(PJLVERSION)$(_D) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
 
 # Real top level; provides main that just calls pl_main
 # On Windows this also sets up the display device so that we

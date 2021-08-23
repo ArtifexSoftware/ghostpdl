@@ -158,9 +158,6 @@ pxl_impl_characteristics(const pl_interp_implementation_t * impl)        /* impl
     static pl_interp_characteristics_t pxl_characteristics = {
         "PCLXL",
         pxl_detect_language,
-        "Artifex",
-        PXLVERSION,
-        PXLBUILDDATE
     };
     return &pxl_characteristics;
 }

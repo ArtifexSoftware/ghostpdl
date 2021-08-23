@@ -302,17 +302,10 @@ static const pl_interp_characteristics_t * /* always returns a descriptor */
 ps_impl_characteristics(const pl_interp_implementation_t *impl)     /* implementation of interpreter to alloc */
 {
     /* version and build date are not currently used */
-#define PSVERSION NULL
-#define PSBUILDDATE NULL
   static const pl_interp_characteristics_t ps_characteristics = {
     "POSTSCRIPT",
     ps_detect_language,
-    "Artifex",
-    PSVERSION,
-    PSBUILDDATE
   };
-#undef PSVERSION
-#undef PSBUILDDATE
 
   return &ps_characteristics;
 }

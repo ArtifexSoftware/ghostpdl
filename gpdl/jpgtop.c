@@ -118,9 +118,6 @@ jpg_detect_language(const char *s, int len)
 static const pl_interp_characteristics_t jpg_characteristics = {
     "JPG",
     jpg_detect_language,
-    "Artifex",
-    "0.01",
-    "11 Nov 2019"
 };
 
 /* GS's fakakta jpeg integration insists on putting a

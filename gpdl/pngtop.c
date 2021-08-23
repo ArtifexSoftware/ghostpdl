@@ -110,9 +110,6 @@ png_detect_language(const char *s, int len)
 static const pl_interp_characteristics_t png_characteristics = {
     "PNG",
     png_detect_language,
-    "Artifex",
-    "0.01",
-    "11 Nov 2019"
 };
 
 /* Get implementation's characteristics */

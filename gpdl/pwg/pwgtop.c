@@ -99,9 +99,6 @@ pwg_detect_language(const char *s, int len)
 static const pl_interp_characteristics_t pwg_characteristics = {
     "PWG",
     pwg_detect_language,
-    "Artifex",
-    "0.01",
-    "13 Nov 2019",
     1 /* minimum input size */
 };
 

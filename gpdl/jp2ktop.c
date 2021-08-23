@@ -113,9 +113,6 @@ jp2k_detect_language(const char *s_, int len)
 static const pl_interp_characteristics_t jp2k_characteristics = {
     "JP2K",
     jp2k_detect_language,
-    "Artifex",
-    "0.01",
-    "22 Nov 2019"
 };
 
 /* Get implementation's characteristics */

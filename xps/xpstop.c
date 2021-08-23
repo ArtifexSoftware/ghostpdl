@@ -54,10 +54,6 @@ struct xps_interp_instance_s
     char scratch_name[gp_file_name_sizeof];
 };
 
-/* version and build date are not currently used */
-#define XPS_VERSION NULL
-#define XPS_BUILD_DATE NULL
-
 static int
 xps_detect_language(const char *s, int len)
 {
@@ -75,9 +71,6 @@ xps_impl_characteristics(const pl_interp_implementation_t *pimpl)
     {
         "XPS",
         xps_detect_language,
-        "Artifex",
-        XPS_VERSION,
-        XPS_BUILD_DATE
     };
     return &xps_characteristics;
 }
