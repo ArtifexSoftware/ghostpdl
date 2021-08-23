@@ -1120,5 +1120,8 @@ void _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32N
 
 cmsUInt32Number _cmsAdjustReferenceCount(cmsUInt32Number *rc, int delta);
 
+// thread-safe gettime
+cmsBool _cmsGetTime(struct tm* ptr_time);
+
 #define _lcms_internal_H
 #endif

@@ -29,6 +29,14 @@
 #include "tiffio.h"
 #include "utils.h"
 
+// Fix broken libtiff 4.3.0, thanks to Bob Friesenhahn for uncovering this
+
+#if defined(HAVE_STDINT_H) && (TIFFLIB_VERSION >= 20201219)
+#  undef uint16
+#  define uint16 uint16_t
+#  undef uint32
+#  define uint32 uint32_t
+#endif /* TIFFLIB_VERSION */
 
 // Flags
 
@@ -57,16 +65,15 @@ static const char* SaveEmbedded = NULL;
 static
 void ConsoleWarningHandler(const char* module, const char* fmt, va_list ap)
 {
-    char e[512] = { '\0' };
-    if (module != NULL)
-        strcat(strcpy(e, module), ": ");
-
-    vsprintf(e+strlen(e), fmt, ap);
-    strcat(e, ".");
     if (Verbose) {
 
-        fprintf(stderr, "\nWarning");
-        fprintf(stderr, " %s\n", e);
+        fprintf(stderr, "Warning: ");
+
+        if (module != NULL)
+            fprintf(stderr, "[%s] ", module);
+
+        vfprintf(stderr, fmt, ap);
+        fprintf(stderr, "\n");
         fflush(stderr);
     }
 }
@@ -74,18 +81,18 @@ void ConsoleWarningHandler(const char* module, const char* fmt, va_list ap)
 static
 void ConsoleErrorHandler(const char* module, const char* fmt, va_list ap)
 {
-    char e[512] = { '\0' };
+    if (Verbose) {
 
-    if (module != NULL) {
-        if (strlen(module) < 500)
-               strcat(strcpy(e, module), ": ");
+        fprintf(stderr, "Error: ");
+
+        if (module != NULL)
+            fprintf(stderr, "[%s] ", module);
+
+        vfprintf(stderr, fmt, ap);
+        fprintf(stderr, "\n");
+        fflush(stderr);
     }
 
-    vsprintf(e+strlen(e), fmt, ap);
-    strcat(e, ".");
-    fprintf(stderr, "\nError");
-    fprintf(stderr, " %s\n", e);
-    fflush(stderr);
 }
 
 
@@ -96,7 +103,7 @@ void Warning(const char *frm, ...)
     va_list args;
 
     va_start(args, frm);
-    ConsoleWarningHandler("[tificc]", frm, args);
+    ConsoleWarningHandler("tificc", frm, args);
     va_end(args);
 }
 
@@ -304,6 +311,8 @@ cmsUInt32Number GetInputPixelType(TIFF *Bank)
 
     case PHOTOMETRIC_RGB:
         pt = PT_RGB;
+        if (ColorChannels < 3)
+            FatalError("Sorry, RGB needs at least 3 samples per pixel");
         break;
 
 
@@ -312,7 +321,6 @@ cmsUInt32Number GetInputPixelType(TIFF *Bank)
          break;
 
      case PHOTOMETRIC_SEPARATED:
-
          pt = PixelTypeFromChanCount(ColorChannels);
          break;
 
@@ -409,6 +417,9 @@ int TileBasedXform(cmsContext ContextID, cmsHTRANSFORM hXForm, TIFF* in, TIFF* o
                 BufferIn + (j*BufSizeIn), BufSizeIn) < 0)   goto cleanup;
         }
 
+        if (PixelCount < 0)
+            FatalError("TIFF is corrupted");
+
         cmsDoTransform(ContextID, hXForm, BufferIn, BufferOut, PixelCount);
 
         for (j=0; j < nPlanes; j++) {
@@ -476,6 +487,9 @@ int StripBasedXform(cmsContext ContextID, cmsHTRANSFORM hXForm, TIFF* in, TIFF* 
 
         PixelCount = (int) sw * (iml < sl ? iml : sl);
         iml -= sl;
+
+        if (PixelCount < 0)
+            FatalError("TIFF is corrupted");
 
         cmsDoTransform(ContextID, hXForm, BufferIn, BufferOut, PixelCount);
 
@@ -1141,8 +1155,8 @@ int main(int argc, char* argv[])
     TIFF *in, *out;
 
 
-    fprintf(stderr, "Little CMS ICC profile applier for TIFF - v6.3 [LittleCMS %2.2f]\n\n", LCMS_VERSION / 1000.0);
-    fprintf(stderr, "Copyright (c) 1998-2020 Marti Maria Saguer. See COPYING file for details.\n");
+    fprintf(stderr, "Little CMS ICC profile applier for TIFF - v6.4 [LittleCMS %2.2f]\n\n", LCMS_VERSION / 1000.0);
+    fprintf(stderr, "Copyright (c) 1998-2021 Marti Maria Saguer. See COPYING file for details.\n");
     fflush(stderr);
 
     ContextID = cmsCreateContext(NULL, NULL);

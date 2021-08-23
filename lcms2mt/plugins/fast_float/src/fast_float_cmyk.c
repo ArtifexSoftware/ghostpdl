@@ -62,7 +62,7 @@ cmsINLINE cmsFloat32Number LinearInterpInt(cmsFloat32Number a, cmsFloat32Number 
 // To prevent out of bounds indexing
 cmsINLINE cmsFloat32Number fclamp100(cmsFloat32Number v)
 {
-       return v < 0.0f ? 0.0f : (v > 100.0f ? 100.0f : v);
+       return ((v < 1.0e-9f) || isnan(v)) ? 0.0f : (v > 100.0f ? 100.0f : v);
 }
 
 
@@ -331,7 +331,6 @@ cmsBool OptimizeCLUTCMYKTransform(cmsContext ContextID,
     int nGridPoints;
     cmsPipeline* OptimizedLUT = NULL;
     cmsStage* OptimizedCLUTmpe;
-    cmsStage* mpe;
     FloatCMYKData* pcmyk;
     _cmsStageCLutData* data;
 
@@ -348,13 +347,6 @@ cmsBool OptimizeCLUTCMYKTransform(cmsContext ContextID,
     if (T_COLORSPACE(*InputFormat)  != PT_CMYK) return FALSE;
 
     OriginalLut = *Lut;
-
-   // Named color pipelines cannot be optimized either
-   for (mpe = cmsPipelineGetPtrToFirstStage(ContextID, OriginalLut);
-         mpe != NULL;
-         mpe = cmsStageNext(ContextID, mpe)) {
-            if (cmsStageType(ContextID, mpe) == cmsSigNamedColorElemType) return FALSE;
-    }
 
     nGridPoints = _cmsReasonableGridpointsByColorspace(cmsSigRgbData, *dwFlags);
 

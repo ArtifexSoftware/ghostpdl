@@ -33,6 +33,7 @@ AM_INIT_AUTOMAKE([foreign 1.9 tar-ustar no-define dist-zip subdir-objects])
 AC_PROG_CC_STDC
 AC_PROG_CPP
 AC_PROG_CXX
+LT_INIT
 
 #AM_PROG_LD
 #AC_SUBST(LD)
@@ -79,6 +80,9 @@ AX_APPEND_COMPILE_FLAGS(["-fvisibility=hidden"])
 # If words are stored with the most significant byte first (like
 # Motorola and SPARC CPUs), define `WORDS_BIGENDIAN'.
 AC_C_BIGENDIAN
+
+# Check for functions that some compilers lack (or name differently)
+AC_CHECK_FUNCS([gmtime_r _gmtime64_s])
 
 # Point to JPEG installed in DIR or disable JPEG with --without-jpeg.
 AC_ARG_WITH(jpeg,
@@ -127,12 +131,15 @@ AC_ARG_WITH(fastfloat,
             AS_HELP_STRING([--with-fastfloat],
                            [build and install fast_float plugin, use only if GPL 3.0 is acceptable]),
             [
-                with_fastfloat='yes'
-                LIB_PLUGINS="$LIB_PLUGINS -llcms2_fast_float"
+                with_fastfloat=$withval
             ],
             [
                 with_fastfloat='no'
             ])
+if test "$with_fastfloat" == "yes"
+then
+            LIB_PLUGINS="$LIB_PLUGINS -llcms2_fast_float"
+fi
 
 #
 # Determine POSIX threads settings
@@ -171,6 +178,19 @@ then
   fi
 fi
 
+# check if compiler supports SSE2 intrinsics
+AC_LANG_PUSH([C])
+
+AC_MSG_CHECKING([whether compiler supports SSE2])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+    #include <emmintrin.h>
+    main() { __m128i n = _mm_set1_epi8(42); }]])],
+  [ac_compiler_supports_sse2=yes], [ac_compiler_supports_sse2=no])
+AC_MSG_RESULT([$ac_compiler_supports_sse2])
+AS_IF([test "x$ac_compiler_supports_sse2" != "xyes"],
+  [AC_DEFINE([CMS_DONT_USE_SSE2], [1], [Define if compiler does not support SSE2 intrinsics])])
+
+AC_LANG_POP([C])
 
 #
 # Find math library
