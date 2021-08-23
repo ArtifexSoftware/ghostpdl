@@ -658,39 +658,31 @@ $(DEVOBJ)gdevpsdu.$(OBJ) : $(DEVVECSRC)gdevpsdu.c $(GXERR)\
 
 # Plain text writer
 
-gdevagl_h=$(DEVVECSRC)gdevagl.h
-
-txtwrite_=$(DEVOBJ)gdevtxtw.$(OBJ) $(DEVOBJ)gdevagl.$(OBJ) $(DEVOBJ)doc_common.$(OBJ)
+txtwrite_=$(DEVOBJ)gdevtxtw.$(OBJ) $(DEVOBJ)doc_common.$(OBJ)
 
 $(DD)txtwrite.dev : $(ECHOGS_XE) $(txtwrite_) $(GDEV)\
- $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gsagl_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV2) $(DD)txtwrite $(txtwrite_)
 
 $(DEVOBJ)gdevtxtw.$(OBJ) : $(DEVVECSRC)gdevtxtw.c $(GDEV) $(gdevkrnlsclass_h) \
   $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
   $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
-  $(gxgstate_h) $(gxpath_h) $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS) $(DEVVECSRC)doc_common.h
+  $(gxgstate_h) $(gxpath_h) $(gsagl_h) $(DEVS_MAK) $(MAKEDIRS) $(DEVVECSRC)doc_common.h
 	$(DEVCC) $(DEVO_)gdevtxtw.$(OBJ) $(C_) $(DEVVECSRC)gdevtxtw.c
-
-$(DEVOBJ)gdevagl.$(OBJ) : $(DEVVECSRC)gdevagl.c $(GDEV)\
- $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevagl.$(OBJ) $(C_) $(DEVVECSRC)gdevagl.c
-
 
 # Docx writer
 
-gdevagl_h=$(DEVVECSRC)gdevagl.h
+docxwrite_=$(DEVOBJ)gdevdocxw.$(OBJ) $(DEVOBJ)doc_common.$(OBJ)
 
-docxwrite_=$(DEVOBJ)gdevdocxw.$(OBJ) $(DEVOBJ)gdevagl.$(OBJ) $(DEVOBJ)doc_common.$(OBJ)
-
-$(DD)docxwrite.dev : $(ECHOGS_XE) $(docxwrite_) $(GDEV)\
- $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS) $(EXTRACT_OBJS)
+$(DD)docxwrite.dev : $(ECHOGS_XE) $(docxwrite_) $(GLD)gsagl.dev $(GDEV)\
+ $(gsagl_h) $(DEVS_MAK) $(MAKEDIRS) $(EXTRACT_OBJS)
 	$(SETDEV2) $(DD)docxwrite $(docxwrite_) $(EXTRACT_OBJS)
+	$(ADDMOD) $(DD)docxwrite -include $(GLD)gsagl
 
 $(DEVOBJ)gdevdocxw.$(OBJ) : $(DEVVECSRC)gdevdocxw.c $(GDEV) $(gdevkrnlsclass_h) \
   $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
   $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
-  $(gxgstate_h) $(gxpath_h) $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS) \
+  $(gxgstate_h) $(gxpath_h) $(gsagl_h) $(DEVS_MAK) $(MAKEDIRS) \
   $(DEVVECSRC)doc_common.h
 	$(DEVCC) $(DEVO_)gdevdocxw.$(OBJ) $(C_) $(DEVVECSRC)gdevdocxw.c
 
@@ -699,7 +691,7 @@ $(DEVOBJ)gdevdocxw.$(OBJ) : $(DEVVECSRC)gdevdocxw.c $(GDEV) $(gdevkrnlsclass_h) 
 $(DEVOBJ)doc_common.$(OBJ) : $(DEVVECSRC)doc_common.c $(GDEV) $(gdevkrnlsclass_h) \
   $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
   $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
-  $(gxgstate_h) $(gxpath_h) $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS) $(DEVVECSRC)doc_common.h
+  $(gxgstate_h) $(gxpath_h) $(gsagl_h) $(DEVS_MAK) $(MAKEDIRS) $(DEVVECSRC)doc_common.h
 	$(DEVCC) $(DEVO_)doc_common.$(OBJ) $(C_) $(DEVVECSRC)doc_common.c
 
 
@@ -713,7 +705,7 @@ pdfwrite4_=$(DEVOBJ)gdevpdfi.$(OBJ) $(DEVOBJ)gdevpdfj.$(OBJ) $(DEVOBJ)gdevpdfk.$
 pdfwrite5_=$(DEVOBJ)gdevpdfm.$(OBJ)
 pdfwrite6_=$(DEVOBJ)gdevpdfo.$(OBJ) $(DEVOBJ)gdevpdfp.$(OBJ) $(DEVOBJ)gdevpdft.$(OBJ)
 pdfwrite7_=$(DEVOBJ)gdevpdfr.$(OBJ)
-pdfwrite8_=$(DEVOBJ)gdevpdfu.$(OBJ) $(DEVOBJ)gdevpdfv.$(OBJ) $(DEVOBJ)gdevagl.$(OBJ)
+pdfwrite8_=$(DEVOBJ)gdevpdfu.$(OBJ) $(DEVOBJ)gdevpdfv.$(OBJ)
 pdfwrite9_=$(DEVOBJ)gsflip.$(OBJ)
 pdfwrite10_=$(DEVOBJ)scantab.$(OBJ) $(DEVOBJ)sfilter2.$(OBJ)
 pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
@@ -743,7 +735,7 @@ $(DD)eps2write.dev : $(DD)pdfwrite.dev $(GDEV) \
 $(DD)pdfwrite.dev : $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
- $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)sarc4.dev $(DD)pdtext.dev $(GDEV) \
+ $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)gsagl.dev $(GLD)sarc4.dev $(DD)pdtext.dev $(GDEV) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
@@ -759,7 +751,7 @@ $(DD)pdfwrite.dev : $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)cmyklib $(GLD)cfe $(GLD)lzwe
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)smd5 $(GLD)szlibe $(GLD)sarc4.dev
-	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf
+	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf $(GLD)gsagl
 	$(ADDMOD) $(DD)pdfwrite -include $(DD)pdtext
 
 gdevpdfb_h=$(DEVVECSRC)gdevpdfb.h
@@ -875,7 +867,7 @@ $(DEVOBJ)gdevpdfu.$(OBJ) : $(DEVVECSRC)gdevpdfu.c $(GXERR)\
  $(sa85x_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
  $(srlx_h) $(sarc4_h) $(smd5_h) $(sstring_h) $(strimpl_h) $(szlibx_h)\
  $(strmio_h) \
- $(opdfread_h) $(gdevagl_h) $(gs_mro_e_h) $(gs_mgl_e_h) \
+ $(opdfread_h) $(gsagl_h) $(gs_mro_e_h) $(gs_mgl_e_h) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(GDEVLWFJB2JPXCC) $(DEVO_)gdevpdfu.$(OBJ) $(C_) $(DEVVECSRC)gdevpdfu.c
 

@@ -36,8 +36,8 @@
 #include "pdf_array.h"
 #include "pdf_font.h"
 #include "pdf_font.h"
-#include "pdf_agl.h"
 #include "gscencs.h"
+#include "gsagl.h"
 #include "gxfont1.h"        /* for gs_font_type1_s */
 #include "gscrypt1.h"       /* for crypt_c1 */
 
@@ -802,7 +802,7 @@ pdfi_fapi_get_charstring_name(gs_fapi_font *ff, int index, byte *buf, ushort buf
     return 0;
 }
 
-extern pdfi_single_glyph_list_t *pdfi_SingleGlyphList;
+extern single_glyph_list_t SingleGlyphList[];
 
 static int
 pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
@@ -1025,7 +1025,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
             }
             else if (ttfont->cmap == pdfi_truetype_cmap_31) {
                     unsigned int cc;
-                    pdfi_single_glyph_list_t *sgl = (pdfi_single_glyph_list_t *)&(pdfi_SingleGlyphList);
+                    single_glyph_list_t *sgl = (single_glyph_list_t *)&(SingleGlyphList);
                     /* Not to spec, but... if we get a "uni..." formatted name, use
                        the hex value from that.
                      */

@@ -72,12 +72,10 @@ $(PDFOBJ)pdf_array.$(OBJ): $(PDFSRC)pdf_array.c $(PDFINCLUDES) $(PDF_MAK) $(MAKE
 $(PDFOBJ)pdf_xref.$(OBJ): $(PDFSRC)pdf_xref.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_xref.c $(PDFO_)pdf_xref.$(OBJ)
 
-$(PDFOBJ)pdf_agl.$(OBJ): $(PDFSRC)pdf_agl.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_agl.c $(PDFO_)pdf_agl.$(OBJ)
-
 $(PDFOBJ)pdf_fapi.$(OBJ): $(PDFSRC)pdf_fapi.c $(PDFINCLUDES) \
     $(memory__h) $(gsmemory_h) $(gserrors_h) $(gxdevice_h) $(gxfont_h) $(gxfcid_h) \
     $(gzstate_h) $(gxchar_h) $(gdebug_h) $(gxfapi_h) $(gscoord_h) $(gspath_h) $(gscencs_h) \
+    $(gsagl_h) \
     $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_fapi.c $(PDFO_)pdf_fapi.$(OBJ)
 
@@ -112,7 +110,7 @@ $(PDFOBJ)pdf_font3.$(OBJ): $(PDFSRC)pdf_font3.c $(PDFINCLUDES) \
 	$(PDFCCC) $(PDFSRC)pdf_font3.c $(PDFO_)pdf_font3.$(OBJ)
 
 $(PDFOBJ)pdf_fontTT.$(OBJ): $(PDFSRC)pdf_fontTT.c $(PDFINCLUDES) \
-	$(gxfont42_h) $(gscencs_h) $(PDF_MAK) $(MAKEDIRS)
+	$(gxfont42_h) $(gscencs_h) $(gsagl_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_fontTT.c $(PDFO_)pdf_fontTT.$(OBJ)
 
 $(PDFOBJ)pdf_font9.$(OBJ): $(PDFSRC)pdf_font9.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
@@ -294,7 +292,6 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_page.$(OBJ)\
     $(PDFOBJ)pdf_annot.$(OBJ)\
     $(PDFOBJ)pdf_mark.$(OBJ)\
-    $(PDFOBJ)pdf_agl.$(OBJ) \
     $(PDFOBJ)pdf_fapi.$(OBJ)\
     $(PDFOBJ)pdf_font.$(OBJ)\
     $(PDFOBJ)pdf_font0.$(OBJ)\
@@ -328,12 +325,12 @@ PDF_OBJS=\
 # required and shouldn't be and PLOBJ==PDFGEN is required.
 
 $(PDFOBJ)pdfi.dev: $(ECHOGS_XE) $(PDF_OBJS) \
-                  $(PDFGEN)func4lib.dev \
-                  $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)ssha2.dev $(PDFGEN)sjpx.dev $(PDFGEN)psfilters.dev \
-                  $(PDFGEN)sdct.dev $(PDFGEN)simscale.dev \
-                  $(PDF_MAK) $(MAKEDIRS)
+		$(PDFGEN)func4lib.dev \
+		$(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)ssha2.dev $(PDFGEN)sjpx.dev $(PDFGEN)psfilters.dev \
+		$(PDFGEN)sdct.dev $(PDFGEN)simscale.dev $(GLD)gsagl.dev \
+		$(PDF_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PDFOBJ)pdfi $(PDF_OBJS)
-	$(ADDMOD) $(PDFOBJ)pdfi -include $(PDFGEN)func4lib.dev
+	$(ADDMOD) $(PDFOBJ)pdfi -include $(PDFGEN)func4lib.dev $(GLD)gsagl.dev
 	$(ADDMOD) $(PDFOBJ)pdfi -include $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)sjpx.dev
 	$(ADDMOD) $(PDFOBJ)pdfi -include $(PDFGEN)ssha2.dev $(PDFGEN)psfilters.dev $(PDFGEN)sdct.dev $(PDFGEN)simscale.dev
 

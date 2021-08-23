@@ -1051,6 +1051,7 @@
     <ClCompile Include="..\base\gp_wpapr.c" />
     <ClCompile Include="..\base\gp_wsync.c" />
     <ClCompile Include="..\base\gp_wutf8.c" />
+    <ClCompile Include="..\base\gsagl.c" />
     <ClCompile Include="..\base\gsalloc.c" />
     <ClCompile Include="..\base\gsargs.c" />
     <ClCompile Include="..\base\gsbitcom.c" />
@@ -1561,7 +1562,6 @@
     <ClCompile Include="..\devices\rinkj\rinkj-dither.c" />
     <ClCompile Include="..\devices\rinkj\rinkj-epson870.c" />
     <ClCompile Include="..\devices\rinkj\rinkj-screen-eb.c" />
-    <ClCompile Include="..\devices\vector\gdevagl.c" />
     <ClCompile Include="..\devices\vector\gdevlj56.c" />
     <ClCompile Include="..\devices\vector\gdevpdf.c" />
     <ClCompile Include="..\devices\vector\gdevpdfb.c" />
@@ -2713,6 +2713,7 @@
     <ClInclude Include="..\base\gpsync.h" />
     <ClInclude Include="..\base\gp_mswin.h" />
     <ClInclude Include="..\base\gp_os2.h" />
+    <ClInclude Include="..\base\gsagl.h" />
     <ClInclude Include="..\base\gsalloc.h" />
     <ClInclude Include="..\base\gsargs.h" />
     <ClInclude Include="..\base\gsbitmap.h" />
@@ -3132,7 +3133,6 @@
     <ClInclude Include="..\devices\rinkj\rinkj-epson870.h" />
     <ClInclude Include="..\devices\rinkj\rinkj-screen-eb.h" />
     <ClInclude Include="..\devices\vector\doc_common.h" />
-    <ClInclude Include="..\devices\vector\gdevagl.h" />
     <ClInclude Include="..\devices\vector\gdevpdfb.h" />
     <ClInclude Include="..\devices\vector\gdevpdfc.h" />
     <ClInclude Include="..\devices\vector\gdevpdfg.h" />

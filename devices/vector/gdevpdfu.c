@@ -39,9 +39,9 @@
 #include "sstring.h"
 #include "strmio.h"
 #include "szlibx.h"
+#include "gsagl.h"
 
 #include "opdfread.h"
-#include "gdevagl.h"
 #include "gs_mgl_e.h"
 #include "gs_mro_e.h"
 

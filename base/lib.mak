@@ -434,6 +434,7 @@ gsccolor_h=$(GLSRC)gsccolor.h
 # gscedata.[ch] are generated automatically by lib/encs2c.ps.
 gscedata_h=$(GLSRC)gscedata.h
 gscencs_h=$(GLSRC)gscencs.h
+gsagl_h=$(GLSRC)gsagl.h
 gsclipsr_h=$(GLSRC)gsclipsr.h
 gscsel_h=$(GLSRC)gscsel.h
 gscolor1_h=$(GLSRC)gscolor1.h
@@ -3752,6 +3753,16 @@ $(GLOBJ)gp_msdos.$(OBJ) : $(GLSRC)gp_msdos.c $(AK)\
 $(GLOBJ)gp_nxpsprn.$(OBJ) : $(GLSRC)gp_nxpsprn.c $(gp_h) $(std_h) $(LIB_MAK) \
  $(AK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_nxpsprn.$(OBJ) $(C_) $(GLSRC)gp_nxpsprn.c
+
+# ================ Adobe Glyph List ================ #
+
+gsagl_=$(GLOBJ)gsagl.$(OBJ)
+$(GLD)gsagl.dev : $(LIB_MAK) $(ECHOGS_XE) $(gsagl_) $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)gsagl $(gsagl_)
+
+$(GLOBJ)gsagl.$(OBJ) : $(GLSRC)gsagl.c $(GDEV)\
+ $(gsagl_h) $(DEVS_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsagl.$(OBJ) $(C_) $(GLSRC)gsagl.c
 
 # ================ Dependencies for auxiliary programs ================ #
 

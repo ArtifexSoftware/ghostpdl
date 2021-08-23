@@ -30,7 +30,7 @@
 #include "gxfcid.h"
 #include "gxgstate.h"
 #include "gxpath.h"
-#include "gdevagl.h"
+#include "gsagl.h"
 #include "gxdevsop.h"
 #include "gzpath.h"
 #include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */

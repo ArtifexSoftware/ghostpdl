@@ -3,7 +3,7 @@
 #include "gxfont.h"
 #include "gserrors.h"
 #include "gxfcid.h"
-#include "gdevagl.h"
+#include "gsagl.h"
 #include "gxdevcli.h"
 #include "gxgstate.h"
 

@@ -716,6 +716,7 @@
     <ClCompile Include="..\base\gxblend.c" />
     <ClCompile Include="..\base\gxblend1.c" />
     <ClCompile Include="..\base\gdevdevn.c" />
+    <ClCompile Include="..\base\gsagl.c" />
     <ClCompile Include="..\base\gscdevn.c" />
     <ClCompile Include="..\base\gscie.c" />
     <ClCompile Include="..\base\gsciemap.c" />
@@ -1456,7 +1457,6 @@
     <ClCompile Include="..\devices\gdevxres.c" />
     <ClCompile Include="..\devices\gxfcopy.c" />
     <ClCompile Include="..\devices\minftrsz.c" />
-    <ClCompile Include="..\devices\vector\gdevagl.c" />
     <ClCompile Include="..\devices\vector\gdevlj56.c" />
     <ClCompile Include="..\devices\vector\gdevpdf.c" />
     <ClCompile Include="..\devices\vector\gdevpdfb.c" />
@@ -1669,6 +1669,7 @@
     <ClInclude Include="..\base\gs_dll_call.h" />
     <ClInclude Include="..\base\gs_mgl_e.h" />
     <ClInclude Include="..\base\gs_mro_e.h" />
+    <ClInclude Include="..\base\gsagl.h" />
     <ClInclude Include="..\base\gsalloc.h" />
     <ClInclude Include="..\base\gsalpha.h" />
     <ClInclude Include="..\base\gsargs.h" />
@@ -2174,7 +2175,6 @@
     <ClInclude Include="..\devices\gxfcopy.h" />
     <ClInclude Include="..\devices\minftrsz.h" />
     <ClInclude Include="..\devices\vector\doc_common.h" />
-    <ClInclude Include="..\devices\vector\gdevagl.h" />
     <ClInclude Include="..\devices\vector\gdevpdfb.h" />
     <ClInclude Include="..\devices\vector\gdevpdfc.h" />
     <ClInclude Include="..\devices\vector\gdevpdfg.h" />

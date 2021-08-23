@@ -1994,6 +1994,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\gsagl.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\gsalloc.c"
 				>
 			</File>
@@ -3415,6 +3419,10 @@
 			</File>
 			<File
 				RelativePath="..\base\gs_mro_e.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\gsagl.h"
 				>
 			</File>
 			<File
@@ -5993,10 +6001,6 @@
 				Name="vector"
 				>
 				<File
-					RelativePath="..\devices\vector\gdevagl.c"
-					>
-				</File>
-				<File
 					RelativePath="..\devices\vector\gdevlj56.c"
 					>
 				</File>
@@ -6322,10 +6326,6 @@
 				>
 				<File
 					RelativePath="..\devices\vector\doc_common.h"
-					>
-				</File>
-				<File
-					RelativePath="..\devices\vector\gdevagl.h"
 					>
 				</File>
 				<File

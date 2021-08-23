@@ -12,7 +12,7 @@
    Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
-#include "gdevagl.h"
+#include "gsagl.h"
 
 single_glyph_list_t SingleGlyphList[] = {
 {"A", 0x0041},

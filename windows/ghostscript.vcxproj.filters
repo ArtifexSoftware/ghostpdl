@@ -1688,6 +1688,9 @@
     <ClCompile Include="..\base\gpmisc.c">
       <Filter>base</Filter>
     </ClCompile>
+    <ClCompile Include="..\base\gsagl.c">
+      <Filter>base</Filter>
+    </ClCompile>
     <ClCompile Include="..\base\gsalloc.c">
       <Filter>base</Filter>
     </ClCompile>
@@ -2438,6 +2441,7 @@
     <ClCompile Include="..\base\gdevdevn.c">
       <Filter>base\color</Filter>
     </ClCompile>
+
     <ClCompile Include="..\base\gscdevn.c">
       <Filter>base\color</Filter>
     </ClCompile>
@@ -3301,9 +3305,6 @@
     </ClCompile>
     <ClCompile Include="..\devices\minftrsz.c">
       <Filter>devices</Filter>
-    </ClCompile>
-    <ClCompile Include="..\devices\vector\gdevagl.c">
-      <Filter>devices\vector</Filter>
     </ClCompile>
     <ClCompile Include="..\devices\vector\gdevlj56.c">
       <Filter>devices\vector</Filter>
@@ -6745,7 +6746,10 @@
     <ClInclude Include="..\base\gs_mro_e.h">
       <Filter>base %28.h%29</Filter>
     </ClInclude>
-    <ClInclude Include="..\base\gsalloc.h">
+    <ClInclude Include="..\devices\vector\gsagl.h">
+      <Filter>base %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\a">
       <Filter>base %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\base\gsargs.h">
@@ -8016,9 +8020,6 @@
     </ClInclude>
     <ClInclude Include="..\devices\minftrsz.h">
       <Filter>devices %28.h%29</Filter>
-    </ClInclude>
-    <ClInclude Include="..\devices\vector\gdevagl.h">
-      <Filter>devices %28.h%29\vector %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\devices\vector\gdevpdfb.h">
       <Filter>devices %28.h%29\vector %28.h%29</Filter>

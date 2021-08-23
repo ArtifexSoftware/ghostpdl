@@ -25,9 +25,9 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_deref.h"
-#include "pdf_agl.h"
 #include "gxfont42.h"
 #include "gscencs.h"
+#include "gsagl.h"
 #include "gsutil.h"        /* For gs_next_ids() */
 
 enum {
@@ -85,7 +85,7 @@ static gs_glyph pdfi_ttf_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space
     return g;
 }
 
-extern pdfi_single_glyph_list_t *pdfi_SingleGlyphList;
+extern single_glyph_list_t SingleGlyphList[];
 
 static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
 {
@@ -149,7 +149,7 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
             /* In theory, this should be 3,1 cmap, but we have examples that use 0,1 or other
                Unicode "platform" cmap tables, so "hail mary" just try it
              */
-            pdfi_single_glyph_list_t *sgl = (pdfi_single_glyph_list_t *)&(pdfi_SingleGlyphList);
+            single_glyph_list_t *sgl = (single_glyph_list_t *)&(SingleGlyphList);
             /* Not to spec, but... if we get a "uni..." formatted name, use
                the hex value from that.
              */

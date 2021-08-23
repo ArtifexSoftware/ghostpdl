@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2021 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -16,22 +16,27 @@
  * Unicode code points.
  */
 
-typedef struct pdfi_single_glyph_list_s {
+#ifndef gsagl_h_INCLUDED
+#define gsagl_h_INCLUDED
+
+typedef struct single_glyph_list_s {
   const char *Glyph;
   unsigned short Unicode;
-} pdfi_single_glyph_list_t;
+} single_glyph_list_t;
 
-typedef struct pdfi_double_glyph_list_s {
+typedef struct double_glyph_list_s {
   const char *Glyph;
   unsigned short Unicode[2];
-} pdfi_double_glyph_list_t;
+} double_glyph_list_t;
 
-typedef struct pdfi_treble_glyph_list_s {
+typedef struct treble_glyph_list_s {
   const char *Glyph;
   unsigned short Unicode[3];
-} pdfi_treble_glyph_list_t;
+} treble_glyph_list_t;
 
-typedef struct pdfi_quad_glyph_list_s {
+typedef struct quad_glyph_list_s {
   const char *Glyph;
-  short Unicode[4];
-} pdfi_quad_glyph_list_t;
+  unsigned short Unicode[4];
+} quad_glyph_list_t;
+
+#endif
