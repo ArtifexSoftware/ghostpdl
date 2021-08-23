@@ -950,6 +950,42 @@ int pdfi_mark_embed_filespec(pdf_context *ctx, pdf_string *name, pdf_dict *files
 }
 
 /*
+ * Create and emit a /DOCINFO pdfmark for any and all of Title,
+ * Author, Subject, Keywords and Creator
+ */
+void pdfi_write_docinfo_pdfmark(pdf_context *ctx, pdf_dict *info_dict)
+{
+    int i, code = 0;
+    pdf_dict *Info = NULL;
+    pdf_obj *o = NULL;
+    /* We don't preserve the Producer, we are the Producer */
+    const char *KeyNames[] = {
+        "Title", "Author", "Subject", "Keywords", "Creator"
+    };
+
+    if (!ctx->device_state.writepdfmarks)
+        return;
+
+    code = pdfi_dict_alloc(ctx, 5, &Info);
+    if (code < 0)
+        goto exit;
+
+    for (i=0;i<5;i++)
+    {
+        if (pdfi_dict_knownget(ctx, info_dict, KeyNames[i], &o))
+        {
+            (void)pdfi_dict_put(ctx, Info, KeyNames[i], (pdf_obj *)o);
+            pdfi_countdown(o);
+        }
+    }
+
+    code = pdfi_mark_from_dict(ctx, Info, NULL, "DOCINFO");
+exit:
+    pdfi_countdown(Info);
+    return;
+}
+
+/*
  * Create and emit a /PAGE pdfmark for any and all of
  * CropBox, TrimBox, Artbox and BleedBox. If the interpreter
  * has used something other than the MediaBox as the media size, then
@@ -967,7 +1003,7 @@ void pdfi_write_boxes_pdfmark(pdf_context *ctx, pdf_dict *page_dict)
     pdf_obj *o = NULL;
     gx_device *device = gs_currentdevice(ctx->pgs);
     gs_matrix scale, m, ctm;
-    char *BoxNames[] = {
+    const char *BoxNames[] = {
         "CropBox", "BleedBox", "TrimBox", "ArtBox"
     };
 
@@ -1006,7 +1042,6 @@ void pdfi_write_boxes_pdfmark(pdf_context *ctx, pdf_dict *page_dict)
         /* Check each Bos name in turn */
         if (pdfi_dict_knownget(ctx, page_dict, BoxNames[i], &o)){
             gs_rect box;
-            int j;
             pdf_array *new_array = NULL;
 
             /* Box is present in page dicitonayr, check it's an array */

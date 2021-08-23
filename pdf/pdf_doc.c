@@ -29,6 +29,7 @@
 #include "pdf_doc.h"
 #include "pdf_mark.h"
 #include "pdf_colour.h"
+#include "pdf_device.h"
 
 int pdfi_read_Root(pdf_context *ctx)
 {
@@ -114,6 +115,9 @@ int pdfi_read_Info(pdf_context *ctx)
 
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n");
+
+    pdfi_device_set_flags(ctx);
+    pdfi_write_docinfo_pdfmark(ctx, Info);
 
     /* We don't pdfi_countdown(Info) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
