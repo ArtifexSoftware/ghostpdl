@@ -26,5 +26,6 @@ int pdfi_mark_stream(pdf_context *ctx, pdf_stream *stream);
 int pdfi_mark_dict(pdf_context *ctx, pdf_dict *dict);
 int pdfi_mark_embed_filespec(pdf_context *ctx, pdf_string *name, pdf_dict *filespec);
 int pdfi_mark_get_objlabel(pdf_context *ctx, pdf_obj *obj, char **label);
+void pdfi_write_boxes_pdfmark(pdf_context *ctx, pdf_dict *page_dict);
 
 #endif

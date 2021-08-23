@@ -33,6 +33,7 @@
 #include "pdf_device.h"
 #include "pdf_annot.h"
 #include "pdf_check.h"
+#include "pdf_mark.h"
 
 #include "gscoord.h"        /* for gs_concat() and others */
 #include "gspaint.h"        /* For gs_erasepage() */
@@ -778,6 +779,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     }
 
     pdfi_device_set_flags(ctx);
+
     code = pdfi_check_page(ctx, page_dict, init_graphics);
     if (code < 0)
         goto exit2;
@@ -830,6 +832,9 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
          */
         pdfi_get_media_size(ctx, page_dict);
     }
+
+    /* Write the various CropBox, TrimBox etc to the device */
+    pdfi_write_boxes_pdfmark(ctx, page_dict);
 
     code = setup_page_DefaultSpaces(ctx, page_dict);
     if (code < 0)

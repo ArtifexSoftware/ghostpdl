@@ -37,6 +37,7 @@ bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *, int *index);
 
 void pdfi_normalize_rect(pdf_context *ctx, gs_rect *rect);
 int pdfi_array_to_gs_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect);
+int pdfi_gs_rect_to_array(pdf_context *ctx, gs_rect *rect, pdf_array **new_array);
 int pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *matrix);
 int pdfi_array_to_num_array(pdf_context *ctx, pdf_array *array, double *out, int start, int size);
 void pdfi_bbox_transform(pdf_context *ctx, gs_rect *bbox, gs_matrix *matrix);

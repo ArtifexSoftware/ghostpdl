@@ -166,6 +166,32 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
     return 0;
 }
 
+/* Create a PDF number object from a numeric value. Attempts to create
+ * either a REAL or INT as appropriate. As usual for the alloc functions
+ * this returns an object with a reference count of 0.
+ */
+int pdfi_num_alloc(pdf_context *ctx, double d, pdf_num **num)
+{
+    uint64_t test = 0;
+    int code = 0;
+
+    test = (uint64_t)floor(d);
+    if (d == test) {
+        code = pdfi_object_alloc(ctx, PDF_INT, 0, (pdf_obj **)num);
+        if (code < 0)
+            return code;
+        (*num)->value.i = test;
+    }
+    else {
+        code = pdfi_object_alloc(ctx, PDF_REAL, 0, (pdf_obj **)num);
+        if (code < 0)
+            return code;
+        (*num)->value.d = d;
+    }
+
+    return 0;
+}
+
 /***********************************************************************************/
 /* Functions to free the various kinds of 'PDF objects'.                           */
 /* All objects are reference counted, newly allocated objects, as noted above have */

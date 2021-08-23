@@ -23,5 +23,6 @@ int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **strea
 int pdfi_obj_charstr_to_string(pdf_context *ctx, const char *charstr, pdf_string **string);
 int pdfi_obj_charstr_to_name(pdf_context *ctx, const char *charstr, pdf_name **name);
 int pdfi_obj_get_label(pdf_context *ctx, pdf_obj *obj, char **label);
+int pdfi_num_alloc(pdf_context *ctx, double d, pdf_num **num);
 
 #endif

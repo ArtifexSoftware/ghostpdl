@@ -390,6 +390,59 @@ int pdfi_array_to_gs_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect)
     return code;
 }
 
+/* Create a new PDF array object with 4 entires, and store the values from a
+ * gs_rect to it.
+ */
+int pdfi_gs_rect_to_array(pdf_context *ctx, gs_rect *rect, pdf_array **new_array)
+{
+    pdf_num *num = NULL;
+    int code = 0;
+
+    code = pdfi_array_alloc(ctx, 4, new_array);
+    if (code < 0)
+        return code;
+
+    pdfi_countup(*new_array);
+
+    code = pdfi_num_alloc(ctx, rect->p.x, &num);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_array_put(ctx, *new_array, 0, (pdf_obj *)num);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_num_alloc(ctx, rect->p.y, &num);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_array_put(ctx, *new_array, 1, (pdf_obj *)num);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_num_alloc(ctx, rect->q.x, &num);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_array_put(ctx, *new_array, 2, (pdf_obj *)num);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_num_alloc(ctx, rect->q.y, &num);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_array_put(ctx, *new_array, 3, (pdf_obj *)num);
+    if (code < 0)
+        goto error;
+
+    return 0;
+
+error:
+    pdfi_countdown(new_array);
+    return code;
+}
+
 /* Turn a /Matrix Array into a gs_matrix.  If Array is NULL, makes an identity matrix */
 int pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
 {

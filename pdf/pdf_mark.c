@@ -948,3 +948,102 @@ int pdfi_mark_embed_filespec(pdf_context *ctx, pdf_string *name, pdf_dict *files
  exit:
     return code;
 }
+
+/*
+ * Create and emit a /PAGE pdfmark for any and all of
+ * CropBox, TrimBox, Artbox and BleedBox. If the interpreter
+ * has used something other than the MediaBox as the media size, then
+ * we don't send these, they are almost certainly incorrect.
+ *
+ * Because we will have used the MediaBox to create the media size, and
+ * will have accounted for any rotation or scaling, we can use the CTM
+ * to adjust the various Box entries (note this routine must be called
+ * early!).
+ */
+void pdfi_write_boxes_pdfmark(pdf_context *ctx, pdf_dict *page_dict)
+{
+    int i, code = 0;
+    pdf_dict *BoxDict = NULL;
+    pdf_obj *o = NULL;
+    gx_device *device = gs_currentdevice(ctx->pgs);
+    gs_matrix scale, m, ctm;
+    char *BoxNames[] = {
+        "CropBox", "BleedBox", "TrimBox", "ArtBox"
+    };
+
+    /* If the device doesn't support pdfmar, exit now */
+    if (!ctx->device_state.writepdfmarks)
+        return;
+
+    /* If we are using somethign other than the MediaBox, don't send these */
+    if (ctx->args.usecropbox || ctx->args.usebleedbox ||
+        ctx->args.usetrimbox || ctx->args.useartbox)
+        return;
+
+    code = pdfi_dict_alloc(ctx, 4, &BoxDict);
+    if (code < 0)
+        goto exit;
+
+    pdfi_countup(BoxDict);
+
+    /* Undo the resolution scaling from the CTM, we don't want to apply that */
+    scale.xx = 72.0 / device->HWResolution[0];
+    scale.xy = 0;
+    scale.yx = 0;
+    scale.yy = 72.0 / device->HWResolution[1];
+    scale.tx = 0;
+    scale.ty = 0;
+
+    /* And multiply that by the CTM to get a matrix which represents the
+     * scaling/rotation used to set the conetnt to the media.
+     */
+    gs_currentmatrix(ctx->pgs, &ctm);
+    code = gs_matrix_multiply(&ctm, &scale, &m);
+    if (code < 0) goto exit;
+
+    for (i=0;i<4;i++)
+    {
+        /* Check each Bos name in turn */
+        if (pdfi_dict_knownget(ctx, page_dict, BoxNames[i], &o)){
+            gs_rect box;
+            int j;
+            pdf_array *new_array = NULL;
+
+            /* Box is present in page dicitonayr, check it's an array */
+            if (o->type != PDF_ARRAY) {
+                pdfi_countdown(o);
+                continue;
+            }
+
+            /* Turn the contents into a gs_rect */
+            code = pdfi_array_to_gs_rect(ctx, (pdf_array *)o, &box);
+            pdfi_countdown(o);
+            if (code < 0)
+                continue;
+
+            /* Rectangles in PDF need not be llx,lly,urx,ury, they can be any
+             * two opposite corners. Turn that into the usual format.
+             */
+            pdfi_normalize_rect(ctx, &box);
+
+            /* Transform the resulting box by the calculated matrix */
+            pdfi_bbox_transform(ctx, &box, &m);
+
+            /* Get a new array created from the box values */
+            code = pdfi_gs_rect_to_array(ctx, &box, &new_array);
+            if (code < 0)
+                continue;
+
+            /* And store it in the working dictionary */
+            (void)pdfi_dict_put(ctx, BoxDict, BoxNames[i], (pdf_obj *)new_array);
+            pdfi_countdown(new_array);
+        }
+    }
+
+    /* Send all the Box entries to the device */
+    (void)pdfi_mark_from_dict(ctx, BoxDict, NULL, "PAGE");
+
+exit:
+    pdfi_countdown(BoxDict);
+    return;
+}
