@@ -426,8 +426,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             goto error;
     }
 
-    if (font != NULL)
-        *ppfont = (pdf_font *)font;
+    *ppfont = (pdf_font *)font;
     return code;
 error:
 

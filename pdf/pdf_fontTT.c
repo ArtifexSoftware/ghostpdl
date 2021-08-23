@@ -579,8 +579,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             goto error;
     }
 
-    if (font != NULL)
-        *ppdffont = (pdf_font *)font;
+    *ppdffont = (pdf_font *)font;
     return code;
 error:
     if (buf != NULL)
