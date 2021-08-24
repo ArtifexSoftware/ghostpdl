@@ -869,6 +869,16 @@ pcl_show_chars_slow(pcl_state_t * pcs,
                     if (code < 0)
                         return code;
                     code = pcl_do_LF(pcs);
+                    /* A LF can cause a page feed which in turn can
+                     * change the CTM, reapply the current font
+                     * scaling */
+                    if (pcl_page_marked(pcs) == false) {
+                        gs_point scale;
+                        pcl_set_ctm(pcs, true);
+                        pcl_font_scale(pcs, &scale);
+                        gs_scale(pgs, scale.x, scale.y);
+                    }
+
                     if (code < 0)
                         return code;
                     use_rmargin = true;
