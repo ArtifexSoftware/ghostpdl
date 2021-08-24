@@ -1078,7 +1078,7 @@ pcl_text(const byte * str, uint size, pcl_state_t * pcs, bool literal)
     else
         pcs->font->allow_vertical_substitutes = false;
 
-    /* Print remaining characters, restore the ctm */
+    /* Print the characters. */
     code = pcl_show_chars_slow(pcs, &scale, str, size, literal);
     if (code > 0)               /* shouldn't happen */
         code = gs_note_error(gs_error_invalidfont);
