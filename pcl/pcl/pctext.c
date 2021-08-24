@@ -824,12 +824,9 @@ pcl_show_chars_slow(pcl_state_t * pcs,
     gs_char chr, orig_chr;
     int code = 0;
     double width;
-    gs_point cpt;
     gs_point advance_vector;
     bool unstyled_substitution;
 
-    cpt.x = pcs->cap.x;
-    cpt.y = pcs->cap.y;
     width = pcs->last_width;
 
     while (get_next_char(pcs, &str, &size, &chr,
@@ -866,31 +863,21 @@ pcl_show_chars_slow(pcl_state_t * pcs,
          */
         if (!pcs->last_was_BS) {
             if (wrap) {
-                if ((use_rmargin && (cpt.x + width > rmargin)) ||
-                    (cpt.x + width > page_size)) {
-                    /* update the current position for the benefit of
-                       CR so it knows where to draw underlines if
-                       needed then restore the position.  NB don't
-                       like this business of mixing floats and ints -
-                       (pcs->cap and cpt). throughout this
-                       function. */
-                    pcs->cap.x = (coord) cpt.x;
-                    pcs->cap.y = (coord) cpt.y;
+                if ((use_rmargin && (pcs->cap.x + width > rmargin)) ||
+                    (pcs->cap.x + width > page_size)) {
                     code = pcl_do_CR(pcs);
                     if (code < 0)
                         return code;
                     code = pcl_do_LF(pcs);
                     if (code < 0)
                         return code;
-                    cpt.x = pcs->cap.x;
-                    cpt.y = pcs->cap.y;
                     use_rmargin = true;
                 }
             } else {
-                if (use_rmargin && (cpt.x == rmargin))
+                if (use_rmargin && (pcs->cap.x == rmargin))
                     break;
-                else if (cpt.x >= page_size) {
-                    cpt.x = page_size;
+                else if (pcs->cap.x >= page_size) {
+                    pcs->cap.x = page_size;
                     break;
                 }
             }
@@ -902,7 +889,7 @@ pcl_show_chars_slow(pcl_state_t * pcs,
          * the character is printed, the current point is returned to the
          * prior point.
          */
-        tmp_x = cpt.x;
+        tmp_x = pcs->cap.x;
         if (pcs->last_was_BS) {
             /* hack alert.  It seems if the last width is large, we
                use the horizontal dimension of the page as a guess, the
@@ -916,7 +903,7 @@ pcl_show_chars_slow(pcl_state_t * pcs,
             else
                 tmp_x += (pcs->last_width - width) / 2;
         }
-        code = gs_moveto(pgs, tmp_x / pscale->x, cpt.y / pscale->y);
+        code = gs_moveto(pgs, tmp_x / pscale->x, pcs->cap.y / pscale->y);
         if (code < 0)
             return code;
 
@@ -947,18 +934,18 @@ pcl_show_chars_slow(pcl_state_t * pcs,
          * this is the case, go back to the original position.
          */
         if (pcs->last_was_BS) {
-            cpt.x += pcs->last_width;
+            pcs->cap.x += pcs->last_width;
             pcs->last_was_BS = false;
         } else
-            cpt.x += width;
+            pcs->cap.x += width;
 
         /* check for going beyond the margin if not wrapping */
         if (!wrap) {
-            if (use_rmargin && (cpt.x > rmargin)) {
-                cpt.x = rmargin;
+            if (use_rmargin && (pcs->cap.x > rmargin)) {
+                pcs->cap.x = rmargin;
                 break;
-            } else if (cpt.x >= page_size) {
-                cpt.x = page_size;
+            } else if (pcs->cap.x >= page_size) {
+                pcs->cap.x = page_size;
                 break;
             }
         }
@@ -973,10 +960,6 @@ pcl_show_chars_slow(pcl_state_t * pcs,
 
     /* record the last width */
     pcs->last_width = width;
-
-    /* update the current position */
-    pcs->cap.x = (coord) cpt.x;
-    pcs->cap.y = (coord) cpt.y;
 
     return code;
 }
