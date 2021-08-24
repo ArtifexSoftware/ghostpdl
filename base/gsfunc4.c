@@ -555,19 +555,22 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
         }
     }
  fin:
-
-    if (vsp != vstack + pfn->params.n)
-        return_error(gs_error_rangecheck);
-    for (i = 0; i < pfn->params.n; ++i) {
-        switch (vstack[i + 1].type) {
-        case CVT_INT:
-            out[i] = (float)vstack[i + 1].value.i;
-            break;
-        case CVT_FLOAT:
-            out[i] = vstack[i + 1].value.f;
-            break;
-        default:
-            return_error(gs_error_typecheck);
+    {   /* Following Acrobat, take the desired number of parameters */
+        /* from the top of stack and ignore the rest. Bug 702950. */
+        int extra_ops = vsp - vstack - pfn->params.n;
+        if (extra_ops < 0)
+            return_error(gs_error_rangecheck);
+        for (i = 0; i < pfn->params.n; ++i) {
+            switch (vstack[i + 1 + extra_ops].type) {
+            case CVT_INT:
+                out[i] = (float)vstack[i + 1 + extra_ops].value.i;
+                break;
+            case CVT_FLOAT:
+                out[i] = vstack[i + 1 + extra_ops].value.f;
+                break;
+            default:
+                return_error(gs_error_typecheck);
+            }
         }
     }
     return 0;
