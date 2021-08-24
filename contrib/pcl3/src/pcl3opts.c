@@ -754,6 +754,7 @@ static int action_CRD(gp_file *in, const pcl_Command *cmd, void *i) /* NLS: 30 *
        for the reliability of the program! */
     if (2 + buffer[1]*6 != cmd->i) {
       emessage(30, "Illegal field length in Configure Raster Data command.\n");
+      free(buffer);
       return -1;
     }
 
