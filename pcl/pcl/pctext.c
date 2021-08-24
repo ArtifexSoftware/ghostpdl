@@ -1037,7 +1037,6 @@ int
 pcl_text(const byte * str, uint size, pcl_state_t * pcs, bool literal)
 {
     gs_gstate *pgs = pcs->pgs;
-    gs_matrix user_ctm;
     gs_point scale;
     int code;
 
@@ -1062,7 +1061,6 @@ pcl_text(const byte * str, uint size, pcl_state_t * pcs, bool literal)
         return code;
     set_gs_font(pcs);
 
-    gs_currentmatrix(pgs, &user_ctm);
     pcl_font_scale(pcs, &scale);
     gs_scale(pgs, scale.x, scale.y);
 
@@ -1089,7 +1087,6 @@ pcl_text(const byte * str, uint size, pcl_state_t * pcs, bool literal)
 
     /* Print remaining characters, restore the ctm */
     code = pcl_show_chars_slow(pcs, &scale, str, size, literal);
-    gs_setmatrix(pgs, &user_ctm);
     if (code > 0)               /* shouldn't happen */
         code = gs_note_error(gs_error_invalidfont);
     return code;
