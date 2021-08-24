@@ -1,5 +1,4 @@
 TESSINCLUDES=\
-	$(I_)$(TESSERACTDIR)$(_I)\
 	$(I_)$(TESSERACTDIR)/include$(_I)\
 	$(I_)$(TESSERACTDIR)/src/api$(_I)\
 	$(I_)$(TESSERACTDIR)/src/arch$(_I)\
