@@ -703,6 +703,24 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 }
 
 /*
+ * Set color and ctm for a font
+ */
+static int
+pcl_set_gstate_for_font(pcl_state_t *pcs, const gs_point *scale)
+{
+    int code;
+    code = pcl_set_drawing_color(pcs,
+                                 pcs->pattern_type,
+                                 pcs->current_pattern_id, false);
+    if (code >= 0)
+        code = pcl_set_graphics_state(pcs);
+    if (code < 0)
+        return code;
+    set_gs_font(pcs);
+    return gs_scale(pcs->pgs, scale->x, scale->y);
+}
+
+/*
  * get the advance width.
  */
 static int
@@ -869,18 +887,16 @@ pcl_show_chars_slow(pcl_state_t * pcs,
                     if (code < 0)
                         return code;
                     code = pcl_do_LF(pcs);
+                    if (code < 0)
+                        return code;
                     /* A LF can cause a page feed which in turn can
                      * change the CTM, reapply the current font
                      * scaling */
                     if (pcl_page_marked(pcs) == false) {
-                        gs_point scale;
-                        pcl_set_ctm(pcs, true);
-                        pcl_font_scale(pcs, &scale);
-                        gs_scale(pgs, scale.x, scale.y);
+                        code = pcl_set_gstate_for_font(pcs, pscale);
+                        if (code < 0)
+                            return code;
                     }
-
-                    if (code < 0)
-                        return code;
                     use_rmargin = true;
                 }
             } else {
@@ -1029,7 +1045,6 @@ pcl_font_scale(pcl_state_t * pcs, gs_point * pscale)
 int
 pcl_text(const byte * str, uint size, pcl_state_t * pcs, bool literal)
 {
-    gs_gstate *pgs = pcs->pgs;
     gs_point scale;
     int code;
 
@@ -1044,18 +1059,10 @@ pcl_text(const byte * str, uint size, pcl_state_t * pcs, bool literal)
             return gs_rethrow_code(code);
     }
 
-    /* set up the graphic state */
-    code = pcl_set_drawing_color(pcs,
-                                 pcs->pattern_type,
-                                 pcs->current_pattern_id, false);
-    if (code >= 0)
-        code = pcl_set_graphics_state(pcs);
+    pcl_font_scale(pcs, &scale);
+    code = pcl_set_gstate_for_font(pcs, &scale);
     if (code < 0)
         return code;
-    set_gs_font(pcs);
-
-    pcl_font_scale(pcs, &scale);
-    gs_scale(pgs, scale.x, scale.y);
 
     /*
      * If floating underline is on, since we're about to print a real
