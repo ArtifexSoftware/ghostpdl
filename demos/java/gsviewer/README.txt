@@ -1,10 +1,10 @@
-This project is a viewer is designed to load PDF documents, but
-can also load other files like PostScript files and distill them
-into a PDF document to be opened.
+This project is a viewer designed to load PDF documents,
+but will also view other file types (like PostScript, XPS or PCL)
+by distilling them into PDF documents first.
 
 When the document is first loaded, every page is rendered at
 a low resolution. These will be displayed as thumbnails on the
-left side. All loadingg is done in the com.artifex.gsjava.Document
+left side. All loading is done in the com.artifex.gsjava.Document
 class. As the user changes the position of the viewport, the
 viewer will dynamically load high resolution images based on
 what page the user is viewing. This is done in the
@@ -13,18 +13,18 @@ also handles rendering zoomed images if necessary. Only pages
 which need to be loaded at a high resolution are loaded, and
 zoomed pages are unloaded when no longer necessary to save memory.
 
-Required libraries in this directory for the library to work:
+Required libraries in this directory for the viewer to work:
 
 -= WINDOWS =-
 
 gpdldll64.dll
-gs_gni.dll
+gs_jni.dll
 
 
 -= LINUX =-
 
 libgpdl.so (this would have been built as a link to another file, so
-it shoud be copied into this directory and renamed to libgpdl.so)
+it should be copied into this directory and renamed to libgpdl.so)
 gs_jni.so
 
 On Linux, when using OpenJDK, the property "assistive_technologies" may
