@@ -929,6 +929,11 @@ pdfi_annot_get_text_height(pdf_context *ctx, double *height)
     gs_rect bbox;
     gs_point awidth;
 
+    if (ctx->pgs->PDFfontsize == 0) {
+        *height = 0;
+        return 0;
+    }
+
     code = pdfi_obj_charstr_to_string(ctx, "Hy", &temp_string);
     if (code < 0)
         goto exit;
@@ -1027,6 +1032,9 @@ pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
         charlen = 2;
     else
         charlen = 1;
+
+    if (ctx->pgs->PDFfontsize == 0)
+        return 0;
 
     code = pdfi_BT(ctx);
     if (code < 0)
