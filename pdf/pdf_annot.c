@@ -188,8 +188,7 @@ static int pdfi_annot_Rect(pdf_context *ctx, pdf_dict *annot, gs_rect *rect)
     return code;
 }
 
-/* See pdf_draw.ps/drawwidget (draws the AP for any type of thingy) */
-static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP)
+static int pdfi_annot_position_AP(pdf_context *ctx, pdf_dict *annot, pdf_stream *AP)
 {
     int code = 0;
     gs_rect rect;
@@ -200,16 +199,7 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP
     double xscale, yscale;
     pdf_dict *Annot_dict;
 
-    if (NormAP == NULL)
-        return 0;
-    if (NormAP->type != PDF_STREAM)
-        return_error(gs_error_typecheck);
-
-    code = pdfi_dict_from_obj(ctx, NormAP, &Annot_dict);
-    if (code < 0)
-        return code;
-
-    code = pdfi_op_q(ctx);
+    code = pdfi_dict_from_obj(ctx, (pdf_obj *)AP, &Annot_dict);
     if (code < 0)
         return code;
 
@@ -266,14 +256,35 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP
         if (code < 0) goto exit;
     }
 
-    /* Render the annotation */
-    code = pdfi_do_image_or_form(ctx, NULL, ctx->page.CurrentPageDict, NormAP);
-    if (code < 0) goto exit;
-
  exit:
-    (void)pdfi_op_Q(ctx);
     pdfi_countdown(BBox);
     pdfi_countdown(Matrix);
+    return code;
+}
+
+/* See pdf_draw.ps/drawwidget (draws the AP for any type of thingy) */
+static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP)
+{
+    int code = 0;
+
+    if (NormAP == NULL)
+        return 0;
+    if (NormAP->type != PDF_STREAM)
+        return_error(gs_error_typecheck);
+
+    code = pdfi_op_q(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_annot_position_AP(ctx, annot, (pdf_stream *)NormAP);
+    if (code < 0)
+        goto exit;
+
+    /* Render the annotation */
+    code = pdfi_do_image_or_form(ctx, NULL, ctx->page.CurrentPageDict, NormAP);
+
+exit:
+    (void)pdfi_op_Q(ctx);
     return code;
 }
 
@@ -4030,8 +4041,14 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
             code = (*dev_proc(device, dev_spec_op))
                 (device, gxdso_pdf_form_name, labeldata, labellen);
 
+            code = pdfi_op_q(ctx);
+            if (code < 0)
+                goto exit;
+
+            code = pdfi_annot_position_AP(ctx, annot, (pdf_stream *)object);
             /* Draw the high-level form */
             code = pdfi_do_highlevel_form(ctx, ctx->page.CurrentPageDict, (pdf_stream *)object);
+            (void)pdfi_op_Q(ctx);
             if (code < 0) goto exit;
 
             /* Get the object number (form_id) of the high level form */
