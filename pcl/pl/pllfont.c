@@ -395,12 +395,13 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
     fco_start = fco = (char *)pl_fapi_ufst_get_fco_list(mem);
     fco_lim = fco_start + strlen(fco_start) + 1;
 
-    for (k = 0; strlen(fco) > 0 && fco < fco_lim; k++) {
+    for (k = 0; fco < fco_lim && strlen(fco) > 0; k++) {
         status = 0;
         /* build and open (get handle) for the k'th fco file name */
         gs_strlcpy((char *)pthnm, ufst_root_dir, sizeof pthnm);
 
-        for (i = 2; fco[i] != gp_file_name_list_separator && (&fco[i]) < fco_lim; i++);
+        for (i = 2; fco[i] != gp_file_name_list_separator && (&fco[i]) < fco_lim - 1; i++)
+            ;
 
         strncat(pthnm, fco, i);
         fco += (i + 1);
