@@ -760,6 +760,7 @@ tiffsep1_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, close_device, tiffsep1_prn_close);
     set_dev_proc(dev, encode_color, tiffsep1_encode_color);
     set_dev_proc(dev, decode_color, tiffsep1_decode_color);
+    set_dev_proc(dev, map_color_rgb, cmyk_1bit_map_color_rgb);
 }
 
 #define tiffsep_devices_body(dtype, procs, dname, ncomp, pol, depth, mg, mc, sl, cn, print_page, compr, bpc)\
