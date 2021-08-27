@@ -352,7 +352,7 @@ void NullFloatXFORM(cmsContext ContextID, _cmsTRANSFORM* p,
     }
 }
 
-static inline int mul255(cmsUInt32Number a, cmsUInt32Number b)
+cmsINLINE int mul255(cmsUInt32Number a, cmsUInt32Number b)
 {
 	/* see Jim Blinn's book "Dirty Pixels" for how this works */
 	cmsUInt32Number x = a * b + 128;
@@ -360,7 +360,7 @@ static inline int mul255(cmsUInt32Number a, cmsUInt32Number b)
 	return x >> 8;
 }
 
-static inline cmsUInt32Number mul65535(cmsUInt32Number a, cmsUInt32Number b)
+cmsINLINE cmsUInt32Number mul65535(cmsUInt32Number a, cmsUInt32Number b)
 {
 	/* see Jim Blinn's book "Dirty Pixels" for how this works */
 	cmsUInt32Number x = a * b + 0x8000;
