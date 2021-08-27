@@ -880,8 +880,23 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
             minval = 0.0;
             maxval = (float)((1 << info->BPC) - 1);
         } else {
-            minval = 0.0;
-            maxval = 1.0;
+            bool islab = false;
+
+            if (pcs && pcs->cmm_icc_profile_data != NULL)
+                islab = pcs->cmm_icc_profile_data->islab;
+
+            if(islab) {
+                pim->Decode[0] = 0.0;
+                pim->Decode[1] = 100.0;
+                pim->Decode[2] = pcs->cmm_icc_profile_data->Range.ranges[1].rmin;
+                pim->Decode[3] = pcs->cmm_icc_profile_data->Range.ranges[1].rmax;
+                pim->Decode[4] = pcs->cmm_icc_profile_data->Range.ranges[2].rmin;
+                pim->Decode[5] = pcs->cmm_icc_profile_data->Range.ranges[2].rmax;
+                return 0;
+            } else {
+                minval = 0.0;
+                maxval = 1.0;
+            }
         }
         for (i=0; i<comps*2; i+=2) {
             pim->Decode[i] = minval;
