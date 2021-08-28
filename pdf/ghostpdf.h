@@ -112,6 +112,7 @@ typedef enum pdf_warning_e {
     W_PDF_TYPECHECK,
     W_PDF_BAD_TRAILER,
     W_PDF_ANNOT_ERROR,
+    W_PDF_BAD_ICC_PROFILE_LINK,
     W_PDF_MAX_WARNING               /* Must be last entry, add new warnings immediately before this and update pdf_warning_strings in ghostpdf.c */
 } pdf_warning;
 

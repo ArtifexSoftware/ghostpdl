@@ -373,6 +373,7 @@ const char *pdf_warning_strings[] = {
     "typecheck error",
     "bad trailer dictionary",
     "error in annotation",
+    "failed to create ICC profile link",
     ""                                                  /* Last warning shuld not be used */
 };
 

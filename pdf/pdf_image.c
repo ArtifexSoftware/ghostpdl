@@ -1684,6 +1684,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
             code = gx_set_dev_color(ctx->pgs);
             if (code < 0) {
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_ICC_PROFILE_LINK, "pdfi_do_image", "Attempting to use profile /N to create a device colour space");
                 /* Possibly we couldn't create a link profile, soemthing wrong with the ICC profile, try to use a device space */
                 switch(pcs1->cmm_icc_profile_data->num_comps) {
                     case 1:
