@@ -30,6 +30,7 @@
 #include "pdf_misc.h"
 #include "pdf_optcontent.h"
 #include "stream.h"     /* for stell() */
+#include "gsicc_cache.h"
 
 #include "gspath2.h"
 #include "gsiparm4.h"
@@ -1646,9 +1647,83 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     /* Set the colorspace */
     if (pcs) {
+        gs_color_space  *pcs1 = pcs;
+
         code = pdfi_gs_setcolorspace(ctx, pcs);
         if (code < 0)
             goto cleanupExit;
+
+        if (pcs->type->index == gs_color_space_index_Indexed)
+            pcs1 = pcs->base_space;
+
+        /* It is possible that we get no error returned from setting an
+         * ICC space, but that we are not able when rendering to create a link
+         * between the ICC space and the output device profile.
+         * The PostScript PDF interpreter sets the colour after setting the space, which
+         * (eventually) causes us to set the device colour, and that actually creates the
+         * link. This is apparntly the only way we can detect this error. Otherwise we
+         * would carry on until we tried to render the image, and that would fail with
+         * a not terribly useful error of -1. So here we try to set the device colour,
+         * for images in an ICC profile space. If that fails then we try to manufacture
+         * a Device space from the number of components in the profile.
+         * I do feel this is something we should be able to handle better!
+         */
+        if (pcs1->type->index == gs_color_space_index_ICC)
+        {
+            gs_client_color         cc;
+            int comp = 0;
+            pdf_obj *ColorSpace = NULL;
+
+            cc.pattern = 0;
+            for (comp = 0; comp < pcs1->cmm_icc_profile_data->num_comps;comp++)
+                cc.paint.values[comp] = 0;
+
+            code = gs_setcolor(ctx->pgs, &cc);
+            if (code < 0)
+                goto cleanupExit;
+
+            code = gx_set_dev_color(ctx->pgs);
+            if (code < 0) {
+                /* Possibly we couldn't create a link profile, soemthing wrong with the ICC profile, try to use a device space */
+                switch(pcs1->cmm_icc_profile_data->num_comps) {
+                    case 1:
+                        code = pdfi_name_alloc(ctx, (byte *)"DeviceGray", 10, &ColorSpace);
+                        if (code < 0)
+                            goto cleanupExit;
+                        pdfi_countup(ColorSpace);
+                        break;
+                    case 3:
+                        code = pdfi_name_alloc(ctx, (byte *)"DeviceRGB", 9, &ColorSpace);
+                        if (code < 0)
+                            goto cleanupExit;
+                        pdfi_countup(ColorSpace);
+                        break;
+                    case 4:
+                        code = pdfi_name_alloc(ctx, (byte *)"DeviceCMYK", 10, &ColorSpace);
+                        if (code < 0)
+                            goto cleanupExit;
+                        pdfi_countup(ColorSpace);
+                        break;
+                    default:
+                        code = gs_error_unknownerror;
+                        goto cleanupExit;
+                        break;
+                }
+                if (pcs != NULL)
+                    rc_decrement_only_cs(pcs, "pdfi_do_image");
+                /* At this point ColorSpace is either a string we just made, or the one from the Image */
+                code = pdfi_create_colorspace(ctx, ColorSpace,
+                                  image_info.stream_dict, image_info.page_dict,
+                                  &pcs, image_info.inline_image);
+                pdfi_countdown(ColorSpace);
+                if (code < 0)
+                    goto cleanupExit;
+
+                code = pdfi_gs_setcolorspace(ctx, pcs);
+                if (code < 0)
+                    goto cleanupExit;
+            }
+        }
     }
 
     /* Make a fake SMask dict if needed for JPXDecode */
