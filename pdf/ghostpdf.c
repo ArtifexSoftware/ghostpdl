@@ -374,6 +374,8 @@ const char *pdf_warning_strings[] = {
     "bad trailer dictionary",
     "error in annotation",
     "failed to create ICC profile link",
+    "overflowed a real reading a number, assuming 0"
+    "failed to read a valid number, assuming 0"
     ""                                                  /* Last warning shuld not be used */
 };
 

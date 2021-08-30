@@ -287,13 +287,49 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     } else {
         if (real) {
             float tempf;
-            if (sscanf((const char *)Buffer, "%f", &tempf) == 0) {
+            char *dot = NULL, mfloat[256];   /* We limit numbers to 255 above so it can't exceed this */
+
+            /* Check for overflow */
+            gs_sprintf(mfloat, "%f", MAX_FLOAT);
+            dot = strstr(mfloat, ".");
+            *dot = 0x00;
+
+            dot = strstr((char *)Buffer, ".");
+            if (dot != NULL)
+                *dot = 0x00;
+            if (strlen((char *)Buffer) > strlen(mfloat)) {
+                if (dot != NULL)
+                    *dot = '.';
                 if (ctx->args.pdfdebug)
-                    dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
-                gs_free_object(OBJ_MEMORY(num), num, "pdfi_read_num error");
-                return_error(gs_error_syntaxerror);
+                    dmprintf1(ctx->memory, "overflow reading real number : %s\n", Buffer);
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_OVERFLOW_REAL, "pdfi_read_num", NULL);
+                num->value.d = 0.0;
             }
-            num->value.d = tempf;
+            else {
+                if (strlen((char *)Buffer) == strlen(mfloat)) {
+                    int fi = 0;
+
+                    for (fi = 0;fi < strlen(Buffer);fi++) {
+                        if (Buffer[fi] > mfloat[fi]) {
+                            if (dot != NULL)
+                                *dot = '.';
+                            if (ctx->args.pdfdebug)
+                                dmprintf1(ctx->memory, "overflow reading real number : %s\n", Buffer);
+                            pdfi_set_warning(ctx, 0, NULL, W_PDF_OVERFLOW_REAL, "pdfi_read_num", NULL);
+                            num->value.d = 0.0;
+                        }
+                    }
+                }
+                if (dot != NULL)
+                    *dot = '.';
+                if (sscanf((const char *)Buffer, "%f", &tempf) == 0) {
+                    if (ctx->args.pdfdebug)
+                        dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_REAL, "pdfi_read_num", NULL);
+                    num->value.d = 0.0;
+                }
+                num->value.d = tempf;
+            }
         } else {
             int tempi;
             if (sscanf((const char *)Buffer, "%d", &tempi) == 0) {
