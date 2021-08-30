@@ -571,7 +571,7 @@ cmsBool CMSEXPORT cmsPlugin(cmsContext id, void* Plug_in)
 
             if (Plugin ->ExpectedVersion < LCMS2MT_VERSION_MIN ||
                 Plugin ->ExpectedVersion > LCMS2MT_VERSION_MAX) {
-                cmsSignalError(id, cmsERROR_UNKNOWN_EXTENSION, "plugin version %d not in acceptable version range. LCMS2.art cannot use LCMS2 plugins!",
+                cmsSignalError(id, cmsERROR_UNKNOWN_EXTENSION, "plugin version %d not in acceptable version range. LCMS2MT cannot use LCMS2 plugins!",
                     Plugin ->ExpectedVersion);
                 return FALSE;
             }
