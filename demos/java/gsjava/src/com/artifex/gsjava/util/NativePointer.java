@@ -33,18 +33,26 @@ public class NativePointer {
 	 * Registers the needed native libraries.
 	 */
 	private static void registerLibraries() {
-		if (System.getProperty("os.name").equalsIgnoreCase("Linux")) {
-			File libgpdl = new File("libgpdl.so");
-			System.load(libgpdl.getAbsolutePath());
-			File gsjni = new File("gs_jni.so");
-			System.load(gsjni.getAbsolutePath());
-        } else if (System.getProperty("os.name").equalsIgnoreCase("Mac OS X")) {
-            File libgpdl = new File("libgpdl.dylib");
-            System.load(libgpdl.getAbsolutePath());
-            File gsjni = new File("gs_jni.dylib");
-            System.load(gsjni.getAbsolutePath());
-		} else {
+		try {
+			// Try loading normally
 			System.loadLibrary("gs_jni");
+		} catch (UnsatisfiedLinkError e) {
+			// Load using absolute paths
+			if (System.getProperty("os.name").equalsIgnoreCase("Linux")) {
+				// Load on Linux
+				File libgpdl = new File("libgpdl.so");
+				System.load(libgpdl.getAbsolutePath());
+				File gsjni = new File("gs_jni.so");
+				System.load(gsjni.getAbsolutePath());
+			} else if (System.getProperty("os.name").equalsIgnoreCase("Mac OS X")) {
+				// Load on Mac
+				File libgpdl = new File("libgpdl.dylib");
+				System.load(libgpdl.getAbsolutePath());
+				File gsjni = new File("gs_jni.dylib");
+				System.load(gsjni.getAbsolutePath());
+			} else {
+				throw e;
+			}
 		}
 	}
 
