@@ -969,6 +969,7 @@ void pdfi_write_docinfo_pdfmark(pdf_context *ctx, pdf_dict *info_dict)
     code = pdfi_dict_alloc(ctx, 5, &Info);
     if (code < 0)
         goto exit;
+    pdfi_countup(Info);
 
     for (i=0;i<5;i++)
     {
