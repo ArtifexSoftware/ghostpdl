@@ -853,7 +853,34 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
                 }
             }
         } else {
-            xc->num_channels += dev->devn_params.separations.num_separations;
+            /* No order specified, map them alpabetically */
+            /* This isn't at all speed critical -- only runs once per page and */
+            /* there are never very many spot colors, so just search in a loop */
+            byte *prev = " ";
+            int prev_size = 1;
+
+            xc->num_channels += xc->n_extra_channels;
+            for (i=xc->base_num_channels; i < xc->num_channels; i++) {
+                int j;
+                byte* curr = "\377";
+                int curr_size = 1;
+
+                for (j=xc->base_num_channels; j < xc->num_channels; j++) {
+                    const devn_separation_name *separation_name;
+
+                    separation_name = &(dev->devn_params.separations.names[j - xc->base_num_channels]);
+                    if (strncmp(separation_name->data, curr, min(curr_size, separation_name->size)) < 0) {
+                        if (strncmp(separation_name->data, prev, min(prev_size, separation_name->size)) > 0) {
+                            xc->chnl_to_position[i] = j;
+                            xc->chnl_to_orig_sep[i] = j;
+                            curr = separation_name->data;
+                            curr_size = separation_name->size;
+                        }
+                    }
+                }
+                prev = curr;		/* next color has to sort after this one */
+                prev_size = curr_size;
+            }
         }
     }
     return 0;
@@ -1172,7 +1199,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
                 code = gs_note_error(gs_error_ioerror);
                 goto cleanup;
             }
-	}
+        }
     }
 
 cleanup:

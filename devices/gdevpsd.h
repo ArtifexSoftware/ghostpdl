@@ -31,7 +31,6 @@ typedef struct {
     int chnl_to_orig_sep[GX_DEVICE_COLOR_MAX_COMPONENTS];
     /* Map output channel number to gx_color_index position. */
     int chnl_to_position[GX_DEVICE_COLOR_MAX_COMPONENTS];
-
     /* byte offset of image data */
     int image_data_off;
 } psd_write_ctx;
