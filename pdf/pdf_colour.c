@@ -1665,8 +1665,23 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     if (code < 0)
         goto pdfi_devicen_error;
 
+    for (ix = 0;ix < pdfi_array_size(inks);ix++) {
+        pdf_name *ink_name = NULL;
+
+        code = pdfi_array_get_type(ctx, inks, ix, PDF_NAME, (pdf_obj **)&ink_name);
+        if (code < 0)
+            return code;
+
+        if (ink_name->length == 3 && memcmp(ink_name->data, "All", 3) == 0) {
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_DEVICEN_USES_ALL, "pdfi_create_DeviceN", (char *)"WARNING: DeviceN space using /All ink name");
+        }
+        pdfi_countdown(ink_name);
+        ink_name = NULL;
+    }
+
     /* Sigh, Acrobat allows this, even though its contra the spec. Convert to
-     * a /Separation space, and then return.
+     * a /Separation space, and then return. Actually Acrobat does not always permit this, see
+     * tests_private/comparefiles/Testform.v1.0.2.pdf.
      */
     if (pdfi_array_size(inks) == 1) {
         pdf_name *ink_name = NULL;
