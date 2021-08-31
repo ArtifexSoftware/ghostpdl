@@ -677,9 +677,28 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle, gcmmhprofile_t lcms_deshandle,
                                                     rendering_params->rendering_intent,
                                                     flag | cmm_flags);
     if (link_handle->hTransform == NULL) {
+
+        int k;
         gs_free_object(memory, link_handle, "gscms_get_link");
+        return NULL;
+
+        /* Add a bit of robustness here. Some profiles are ill-formed and
+           do not have all the intents.  If we failed due to a missing
+           intent, lets go ahead and try each and see if we can get something
+           that works. */
+        for (k = 0; k <= gsABSOLUTECOLORIMETRIC; k++) {
+            link_handle->hTransform = cmsCreateTransform(ctx, lcms_srchandle, src_data_type,
+                lcms_deshandle, des_data_type, k, flag | cmm_flags);
+            if (link_handle->hTransform != NULL)
+                break;
+        }
+
+        if (link_handle->hTransform == NULL) {
+            gs_free_object(memory, link_handle, "gscms_get_link");
             return NULL;
+        }
     }
+
     link_handle->next = NULL;
     link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, no endian swap */
                                           sizeof(gx_color_value), sizeof(gx_color_value));

@@ -1585,6 +1585,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     bool overprint = pdev->overprint;
     gx_color_index drawn_comps = pdev->drawn_comps_stroke | pdev->drawn_comps_fill;
     bool has_matte = false;
+    int code = 0;
 
 #ifdef DEBUG
     pdf14_debug_mask_stack_state(ctx);
@@ -1619,8 +1620,10 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     if (nos == NULL && maskbuf != NULL) {
         nos = pdf14_buf_new(&(tos->rect), ctx->has_tags, !tos->isolated, tos->has_shape,
             tos->idle, tos->n_chan, tos->num_spots, ctx->memory, ctx->deep);
-        if (nos == NULL)
-            return gs_error_VMerror;
+        if (nos == NULL) {
+            code = gs_error_VMerror;
+            goto exit;
+        }
 
         if_debug4m('v', ctx->memory,
             "[v] special buffer for softmask application: %d x %d, %d color channels, %d planes\n",
@@ -1720,8 +1723,11 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
                     tos->rect.p.x, tos->rect.p.y, tos->rect.q.x - tos->rect.p.x,
                     tos->rect.q.y - tos->rect.p.y, &did_alloc, tos->deep, false);
             }
-            if (result == NULL)
-                return_error(gs_error_unknownerror);  /* transform failed */
+            if (result == NULL) {
+                /* Clean up and return error code */
+                code = gs_error_unknownerror;
+                goto exit;
+            }
 
 #if RAW_DUMP
             /* Dump the current buffer to see what we have. */
@@ -1757,6 +1763,8 @@ exit:
     }
     if_debug1m('v', ctx->memory, "[v]pop buf, idle=%d\n", tos->idle);
     pdf14_buf_free(tos);
+    if (code < 0)
+        return_error(code);
     return 0;
 }
 
@@ -6875,6 +6883,8 @@ pdf14_end_transparency_group(gx_device* dev, gs_gstate* pgs)
 
     code = pdf14_pop_transparency_group(pgs, pdev->ctx, pdev->blend_procs,
         pdev->color_info.num_components, group_profile, (gx_device*)pdev);
+    if (code < 0)
+        return code;
 #ifdef DEBUG
     pdf14_debug_mask_stack_state(pdev->ctx);
 #endif
