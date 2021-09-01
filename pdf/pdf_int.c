@@ -1768,6 +1768,9 @@ static int setup_stream_DefaultSpaces(pdf_context *ctx, pdf_dict *stream_dict)
      * spaces.
      */
 
+    if (ctx->args.NOSUBSTDEVICECOLORS)
+        return 0;
+
     code = pdfi_dict_knownget(ctx, stream_dict, "Resources", (pdf_obj **)&resources_dict);
     if (code > 0) {
         code = pdfi_dict_knownget(ctx, resources_dict, "ColorSpace", (pdf_obj **)&colorspaces_dict);

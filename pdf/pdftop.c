@@ -655,6 +655,11 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
+        if (!strncmp(param, "NOSUBSTDEVICECOLORS", strlen("NOSUBSTDEVICECOLORS"))) {
+            code = plist_value_get_bool(&pvalue, &ctx->args.NOSUBSTDEVICECOLORS);
+            if (code < 0)
+                return code;
+        }
         if (!strncmp(param, "UseOutputIntent", strlen("UseOutputIntent"))) {
             code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->args.UseOutputIntent, &len);
             if (code < 0)

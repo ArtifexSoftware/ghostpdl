@@ -692,6 +692,9 @@ static int setup_page_DefaultSpaces(pdf_context *ctx, pdf_dict *page_dict)
     /* First off, discard any dangling Default* colour spaces, just in case. */
     release_page_DefaultSpaces(ctx);
 
+    if (ctx->args.NOSUBSTDEVICECOLORS)
+        return 0;
+
     /* Create any required DefaultGray, DefaultRGB or DefaultCMYK
      * spaces.
      */

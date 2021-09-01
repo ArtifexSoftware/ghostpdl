@@ -191,6 +191,7 @@ typedef struct cmd_args_s {
     bool renderttnotdef;
     bool pdfinfo;
     bool UsePDFX3Profile;
+    bool NOSUBSTDEVICECOLORS;
     bool ditherppi;
     int PDFX3Profile_num;
     char *UseOutputIntent;
