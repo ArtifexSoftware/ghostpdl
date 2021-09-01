@@ -376,7 +376,7 @@ const char *pdf_warning_strings[] = {
     "failed to create ICC profile link",
     "overflowed a real reading a number, assuming 0",
     "failed to read a valid number, assuming 0",
-    "A DeviceN space used the /All ink name."
+    "A DeviceN space used the /All ink name.",
     ""                                                  /* Last warning shuld not be used */
 };
 
