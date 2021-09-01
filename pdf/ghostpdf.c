@@ -377,6 +377,7 @@ const char *pdf_warning_strings[] = {
     "overflowed a real reading a number, assuming 0",
     "failed to read a valid number, assuming 0",
     "A DeviceN space used the /All ink name.",
+    "Couldn't retrieve MediaBox for page, using current media size",
     ""                                                  /* Last warning shuld not be used */
 };
 

@@ -116,6 +116,7 @@ typedef enum pdf_warning_e {
     W_PDF_OVERFLOW_REAL,
     W_PDF_INVALID_REAL,
     W_PDF_DEVICEN_USES_ALL,
+    W_PDF_BAD_MEDIABOX,
     W_PDF_MAX_WARNING               /* Must be last entry, add new warnings immediately before this and update pdf_warning_strings in ghostpdf.c */
 } pdf_warning;
 

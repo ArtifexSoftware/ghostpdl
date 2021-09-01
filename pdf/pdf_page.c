@@ -206,6 +206,7 @@ static int pdfi_get_media_size(pdf_context *ctx, pdf_dict *page_dict)
 
     code = pdfi_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&default_media);
     if (code < 0) {
+        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_MEDIABOX, "pdfi_get_media_size", NULL);
         code = gs_erasepage(ctx->pgs);
         return 0;
     }
@@ -266,6 +267,7 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
 
     code = pdfi_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&default_media);
     if (code < 0) {
+        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_MEDIABOX, "pdfi_get_media_size", NULL);
         code = gs_erasepage(ctx->pgs);
         return 0;
     }
@@ -493,17 +495,18 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
     info->boxes = BOX_NONE;
     code = pdfi_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code < 0)
-        goto done;
-    code = store_box(ctx, (float *)&info->MediaBox, a);
-    if (code < 0)
-        goto done;
-    info->boxes |= MEDIA_BOX;
-    pdfi_countdown(a);
-    a = NULL;
+        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_MEDIABOX, "pdfi_page_info", NULL);
+
+    if (code >= 0) {
+        code = store_box(ctx, (float *)&info->MediaBox, a);
+        if (code < 0)
+            goto done;
+        info->boxes |= MEDIA_BOX;
+        pdfi_countdown(a);
+        a = NULL;
+    }
 
     code = pdfi_dict_get_type(ctx, page_dict, "ArtBox", PDF_ARRAY, (pdf_obj **)&a);
-    if (code < 0 && code != gs_error_undefined)
-        goto done;
     if (code >= 0) {
         code = store_box(ctx, (float *)&info->ArtBox, a);
         if (code < 0)
@@ -514,8 +517,6 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
     }
 
     code = pdfi_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
-    if (code < 0 && code != gs_error_undefined)
-        goto done;
     if (code >= 0) {
         code = store_box(ctx, (float *)&info->CropBox, a);
         if (code < 0)
@@ -526,8 +527,6 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
     }
 
     code = pdfi_dict_get_type(ctx, page_dict, "TrimBox", PDF_ARRAY, (pdf_obj **)&a);
-    if (code < 0 && code != gs_error_undefined)
-        goto done;
     if (code >= 0) {
         code = store_box(ctx, (float *)&info->TrimBox, a);
         if (code < 0)
@@ -538,8 +537,6 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
     }
 
     code = pdfi_dict_get_type(ctx, page_dict, "BleedBox", PDF_ARRAY, (pdf_obj **)&a);
-    if (code < 0 && code != gs_error_undefined)
-        goto done;
     if (code >= 0) {
         code = store_box(ctx, (float *)&info->BleedBox, a);
         if (code < 0)
@@ -550,17 +547,13 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
     }
     code = 0;
 
-    info->Rotate = 0;
+    dbl = info->Rotate = 0;
     code = pdfi_dict_get_number(ctx, page_dict, "Rotate", &dbl);
-    if (code < 0 && code != gs_error_undefined)
-        goto done;
     code = 0;
     info->Rotate = dbl;
 
     dbl = info->UserUnit = 1;
     code = pdfi_dict_get_number(ctx, page_dict, "UserUnit", &dbl);
-    if (code < 0 && code != gs_error_undefined)
-        goto done;
     code = 0;
     info->UserUnit = dbl;
 
