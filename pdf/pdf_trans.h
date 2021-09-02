@@ -35,7 +35,8 @@ typedef enum {
 
 int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_show);
 int pdfi_trans_teardown_text(pdf_context *ctx, pdfi_trans_state_t *state);
-int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, pdfi_transparency_caller_t caller);
+int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox, pdfi_transparency_caller_t caller);
+
 int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state);
 
 int pdfi_trans_begin_simple_group(pdf_context *ctx, gs_rect *bbox, bool stroked_bbox, bool isolated, bool knockout);

@@ -654,7 +654,7 @@ static bool pdfi_trans_okOPcs(pdf_context *ctx)
     return false;
 }
 
-static int pdfi_trans_setup_inner(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox,
+int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox,
                            pdfi_transparency_caller_t caller)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
@@ -708,7 +708,9 @@ static int pdfi_trans_setup_inner(pdf_context *ctx, pdfi_trans_state_t *state, g
     /* TODO: error handling... */
     if (need_group) {
         stroked_bbox = (caller == TRANSPARENCY_Caller_Stroke || caller == TRANSPARENCY_Caller_FillStroke);
-        code = pdfi_trans_begin_simple_group(ctx, bbox, stroked_bbox, true, false);
+        /* When changing to compatible overprint bm, the group pushed must be non-isolated. The exception
+           is if we have a softmask.  See /setupOPtrans in pdf_ops.ps */
+        code = pdfi_trans_begin_simple_group(ctx, bbox, stroked_bbox, igs->SMask != NULL, false);
         state->GroupPushed = true;
         state->saveStrokeAlpha = gs_getstrokeconstantalpha(ctx->pgs);
         state->saveFillAlpha = gs_getfillconstantalpha(ctx->pgs);
@@ -750,11 +752,11 @@ int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_s
 
     switch (Trmode) {
     case 0:
-        code = pdfi_trans_setup_inner(ctx, state, &bbox, TRANSPARENCY_Caller_Fill);
+        code = pdfi_trans_setup(ctx, state, &bbox, TRANSPARENCY_Caller_Fill);
         break;
     default:
         /* TODO: All the others */
-        code = pdfi_trans_setup_inner(ctx, state, &bbox, TRANSPARENCY_Caller_Fill);
+        code = pdfi_trans_setup(ctx, state, &bbox, TRANSPARENCY_Caller_Fill);
         break;
     }
 
@@ -769,11 +771,6 @@ int pdfi_trans_teardown_text(pdf_context *ctx, pdfi_trans_state_t *state)
     code = pdfi_trans_teardown(ctx, state);
 
     return code;
-}
-
-int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, pdfi_transparency_caller_t caller)
-{
-    return pdfi_trans_setup_inner(ctx, state, NULL, caller);
 }
 
 int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)

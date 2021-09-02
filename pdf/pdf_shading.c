@@ -788,43 +788,58 @@ static int
 pdfi_shading_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state, pdf_obj *Shading)
 {
     int code;
-    gs_rect bbox;
+    gs_rect bbox, *box = NULL;
     pdf_array *BBox = NULL;
     pdf_dict *shading_dict;
-
-    code = pdfi_gsave(ctx);
-    if (code < 0)
-        return code;
 
     code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
     if (code < 0)
         return code;
 
     code = pdfi_dict_knownget_type(ctx, shading_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
-    if (code > 0) {
-        code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
-        if (code < 0)
-            goto exit;
-        code = gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
-        if (code < 0)
-            goto exit;
-        code = gs_lineto(ctx->pgs, bbox.q.x, 0.);
-        if (code < 0)
-            goto exit;
-        code = gs_lineto(ctx->pgs, 0., bbox.q.y);
-        if (code < 0)
-            goto exit;
-        code = gs_closepath(ctx->pgs);
-    } else {
-        code = gs_clippath(ctx->pgs);
-    }
     if (code < 0)
         goto exit;
 
-    code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Other);
+    if (code > 0) {
+        code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+        if (code >= 0)
+            box = &bbox;
+    }
+
+    /* If we didn't get a BBox for the shading, then we need to create one, in order to
+     * pass it to the transparency setup, which (potentially, at least, uses it to set
+     * up a transparency group.
+     * In the basence of anything better, we take the currnet clip, turn that into a path
+     * and then get the bounding box of that path. Obviously we don't want to disturb the
+     * current path in the graphics state, so we do a gsave/grestore round it.
+     */
+    if (box == NULL) {
+        code = pdfi_gsave(ctx);
+        if (code < 0)
+            goto exit;
+
+        code = gs_newpath(ctx->pgs);
+        if (code < 0)
+            goto bbox_error;
+
+        code = gs_clippath(ctx->pgs);
+        if (code < 0)
+            goto bbox_error;
+
+        code = pdfi_get_current_bbox(ctx, &bbox, false);
+
+bbox_error:
+        pdfi_grestore(ctx);
+
+        if (code < 0)
+            goto exit;
+
+        box = &bbox;
+    }
+    code = pdfi_trans_setup(ctx, state, box, TRANSPARENCY_Caller_Other);
+
  exit:
     pdfi_countdown(BBox);
-    pdfi_grestore(ctx);
     return code;
 }
 

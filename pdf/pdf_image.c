@@ -1039,19 +1039,36 @@ static int
 pdfi_image_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state)
 {
     int code;
+    gs_rect bbox;
 
+    /* We need to create a bbox in order to pass it to the transparency setup,
+     * which (potentially, at least, uses it to set up a transparency group.
+     * Setting up a 1x1 path, and establishing it's BBox will work, because
+     * the image scaling is already in place. We don't want to disturb the
+     * graphics state, so do this inside a gsave/grestore pair.
+     */
     code = pdfi_gsave(ctx);
     if (code < 0)
         return code;
+
+    code = gs_newpath(ctx->pgs);
+    if (code < 0)
+        goto exit;
     code = gs_moveto(ctx->pgs, 1.0, 1.0);
     if (code < 0)
         goto exit;
     code = gs_lineto(ctx->pgs, 0., 0.);
     if (code < 0)
         goto exit;
-    code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Image);
- exit:
+
+    code = pdfi_get_current_bbox(ctx, &bbox, false);
+    if (code < 0)
+        goto exit;
+
     pdfi_grestore(ctx);
+
+    code = pdfi_trans_setup(ctx, state, &bbox, TRANSPARENCY_Caller_Image);
+ exit:
     return code;
 }
 
