@@ -309,7 +309,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                 if (strlen((char *)Buffer) == strlen(mfloat)) {
                     int fi = 0;
 
-                    for (fi = 0;fi < strlen(Buffer);fi++) {
+                    for (fi = 0;fi < strlen((const char *)Buffer);fi++) {
                         if (Buffer[fi] > mfloat[fi]) {
                             if (dot != NULL)
                                 *dot = '.';
