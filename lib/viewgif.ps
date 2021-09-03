@@ -42,7 +42,9 @@
    GlobalColor
     { PaletteSize 3 mul string readstring pop
       /GlobalPalette exch def
-    } if
+    } {
+      pop
+    } ifelse
    currentdict end
  } bind def
 
