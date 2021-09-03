@@ -47,6 +47,7 @@
 #include "gsmchunk.h"
 #endif
 
+extern const char gp_file_name_list_separator;
 /*
  * Convenience routine to check if a given string exists in a dictionary
  * verify its contents and print it in a particular fashion to stdout. This
@@ -1339,6 +1340,169 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
     return code;
 }
 
+static size_t pdfi_grdir_path_string_match(const byte *str, size_t sl0, byte *pat, size_t pl)
+{
+    bool found = false;
+    size_t sl = sl0;
+
+    while (found == false) {
+        if (pl > sl)
+            break;
+        if (*str == *pat && memcmp(str, pat, pl) == 0)
+            found = true;
+        else {
+            str++;
+            sl--;
+        }
+    }
+    if (found)
+        return (sl0 - sl) + pl;
+    else
+        return 0;
+}
+
+int pdfi_add_paths_to_search_paths(pdf_context *ctx, const char *ppath, int l, bool fontpath)
+{
+    int i, slen, npaths = (l > 0);
+    const char *p = ppath;
+    char *ps;
+    const char *pe = p + l + 1;
+    int code = 0;
+    static const char *resstr = "Resource";
+    const int restrlen = strlen(resstr);
+    const char *dirsepstr = gp_file_name_directory_separator();
+    const int dirsepstrlen = strlen(dirsepstr);
+    char genresstr[64];
+
+    for (ps = (char *)p; ps < pe; ps++) {
+        if (*ps == gp_file_name_list_separator)
+           npaths++;
+    }
+
+    if (npaths > 0) {
+        gs_param_string *pathstrings;
+        int new_npaths = ctx->search_paths.num_resource_paths + npaths;
+
+        if (fontpath != true) {
+            pathstrings = (gs_param_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_param_string) * new_npaths, "array of paths");
+            if (pathstrings == NULL)
+                return_error(gs_error_VMerror);
+
+            memset(pathstrings, 0x00, sizeof(gs_param_string) * new_npaths);
+
+            for (i = 1; i <= ctx->search_paths.num_init_resource_paths; i++) {
+                pathstrings[new_npaths - i] = ctx->search_paths.resource_paths[ctx->search_paths.num_resource_paths - i];
+            }
+
+            for (i = 0; i < ctx->search_paths.num_resource_paths - ctx->search_paths.num_init_resource_paths; i++) {
+                pathstrings[i] = ctx->search_paths.resource_paths[i];
+            }
+            /* NO NOT CHANGE "i" BETWEEN HERE....... */
+            gs_free_object(ctx->memory, ctx->search_paths.resource_paths, "old array of paths");
+            ctx->search_paths.resource_paths = pathstrings;
+            ctx->search_paths.num_resource_paths += npaths;
+
+            /* .....AND HERE */
+            for (ps = (char *)p; ps < pe; ps++) {
+                if (*ps == gp_file_name_list_separator || ps == pe - 1) {
+                    if (*p == gp_file_name_list_separator) p++; /* move past the separator */
+                    slen = ps - p;
+                    pathstrings[i].data = (byte *)gs_alloc_bytes(ctx->memory, slen, "path string body");
+
+                    if (pathstrings[i].data == NULL) {
+                        code = gs_note_error(gs_error_VMerror);
+                        break;
+                    }
+
+                    memcpy((char *)pathstrings[i].data, p, slen);
+                    pathstrings[i].size = slen;
+                    pathstrings[i].persistent = false;
+                    i++;
+                    p = ps++;
+                }
+            }
+            if ((restrlen + 2 * dirsepstrlen) < 64) {
+                size_t grdlen;
+
+                memcpy(genresstr, resstr, restrlen  +1); /* +1 So we get the null terminator */
+                strncat(genresstr, dirsepstr, dirsepstrlen);
+
+                for (i = 0; i < ctx->search_paths.num_resource_paths; i++) {
+                    if ((grdlen = pdfi_grdir_path_string_match(ctx->search_paths.resource_paths[i].data, ctx->search_paths.resource_paths[i].size, (byte *)genresstr, restrlen + dirsepstrlen)) > 0) {
+                        ctx->search_paths.genericresourcedir.data = ctx->search_paths.resource_paths[i].data;
+                        ctx->search_paths.genericresourcedir.size = grdlen;
+                        ctx->search_paths.genericresourcedir.persistent = true;
+                        break;
+                    }
+                }
+            }
+        }
+        else {
+            p = ppath;
+            pathstrings = (gs_param_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_param_string) * (npaths + ctx->search_paths.num_font_paths), "array of font paths");
+            if (pathstrings == NULL)
+                return_error(gs_error_VMerror);
+
+            memset(pathstrings, 0x00, sizeof(gs_param_string) * (npaths + ctx->search_paths.num_font_paths));
+
+            for (i = 0; i < ctx->search_paths.num_font_paths; i++) {
+                pathstrings[ctx->search_paths.num_font_paths + i] = ctx->search_paths.font_paths[i];
+            }
+            gs_free_object(ctx->memory, ctx->search_paths.font_paths, "old array of paths");
+            ctx->search_paths.font_paths = pathstrings;
+            ctx->search_paths.num_font_paths += npaths;
+
+            i = 0;
+            for (ps = (char *)p; ps < pe; ps++) {
+                if (*ps == gp_file_name_list_separator || ps == pe - 1) {
+                    slen = ps - p;
+                    pathstrings[i].data = (byte *)gs_alloc_bytes(ctx->memory, slen, "path string body");
+
+                    if (pathstrings[i].data == NULL) {
+                        code = gs_note_error(gs_error_VMerror);
+                        break;
+                    }
+
+                    memcpy((char *)pathstrings[i].data, p, slen);
+                    pathstrings[i].size = slen;
+                    pathstrings[i].persistent = false;
+                    i++;
+                    p = ps++;
+                }
+            }
+        }
+    }
+
+    return code;
+}
+
+int pdfi_add_initial_paths_to_search_paths(pdf_context *ctx, const char *ppath, int l)
+{
+    int code;
+    if (ctx->search_paths.num_resource_paths != 0)
+        return_error(gs_error_invalidaccess);
+
+    code = pdfi_add_paths_to_search_paths(ctx, ppath, l, false);
+    ctx->search_paths.num_init_resource_paths = ctx->search_paths.num_resource_paths;
+
+    return code;
+}
+
+static void pdfi_free_search_paths(pdf_context *ctx)
+{
+    int i;
+    for (i = 0; i < ctx->search_paths.num_resource_paths; i++) {
+        if (ctx->search_paths.resource_paths[i].persistent == false)
+            gs_free_object(ctx->memory, (byte *)ctx->search_paths.resource_paths[i].data, "path string body");
+    }
+    for (i = 0; i < ctx->search_paths.num_font_paths; i++) {
+        if (ctx->search_paths.font_paths[i].persistent == false)
+            gs_free_object(ctx->memory, (byte *)ctx->search_paths.font_paths[i].data, "path string body");
+    }
+    gs_free_object(ctx->memory, (byte *)ctx->search_paths.resource_paths, "array of paths");
+    gs_free_object(ctx->memory, (byte *)ctx->search_paths.font_paths, "array of font paths");
+}
+
 /***********************************************************************************/
 /* Highest level functions. The context we create here is returned to the 'PL'     */
 /* implementation, in future we plan to return it to PostScript by wrapping a      */
@@ -1730,6 +1894,8 @@ int pdfi_free_context(pdf_context *ctx)
         dbgmprintf(ctx->memory, "Loop detection array exists at EOJ\n");
         gs_free_object(ctx->memory, ctx->loop_detection, "pdfi_free_context");
     }
+
+    pdfi_free_search_paths(ctx);
 
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
 #if PDFI_LEAK_CHECK

@@ -209,7 +209,7 @@ $(PDFOBJ)pdf_int.$(OBJ): $(PDFSRC)pdf_int.c $(PDFINCLUDES) $(plmain_h) \
 	$(PDFCCC) $(PDFSRC)pdf_int.c $(PDFO_)pdf_int.$(OBJ)
 
 $(PDFOBJ)pdf_file_luratech.$(OBJ): $(PDFSRC)pdf_file.c $(sjpeg_h) $(stream_h) $(strimpl_h) \
-	$(strmio_h) $(simscale_h) $(szlibx_h) $(spngx_h) $(spdiffx_h) $(slzw_h) $(sstring_h) \
+	$(strmio_h) $(gpmisc_h) $(simscale_h) $(szlibx_h) $(spngx_h) $(spdiffx_h) $(slzw_h) $(sstring_h) \
 	$(sa85d_h) $(scfx_h) $(srlx_h) $(jpeglib__h) $(sdct_h) $(sjpeg_h) $(sfilter_h) $(sarc4_h) \
 	$(saes_h) $(ssha2_h) $(sjbig2_luratech_h) $(sjpx_luratech_h) \
 	$(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
@@ -273,7 +273,7 @@ $(PDF_TOP_OBJ): $(PDFSRC)pdftop.c $(plmain_h) $(pltop_h) $(PDFINCLUDES) \
     $(GLGEN)gconfig.$(OBJ) $(pltop_h) $(plmain_h) $(plparse_h) $(gxdevice_h) \
     $(gxht_h) $(gsht1_h) $(pconfig_h) \
      $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdftop.c $(PDFO_)pdftop.$(OBJ)
+	$(PDFCCC) $(D_)GS_LIB_DEFAULT=$(GS_LIB_DEFAULT)$(_D) $(D_)COMPILE_INITS=$(COMPILE_INITS)$(_D) $(PDFSRC)pdftop.c $(PDFO_)pdftop.$(OBJ)
 
 PDF_OBJS=\
     $(PDFOBJ)pdf_loop_detect.$(OBJ)\

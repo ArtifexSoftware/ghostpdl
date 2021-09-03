@@ -633,19 +633,15 @@ static int
 pdf_cmap_open_file(pdf_context *ctx, gs_string *cmap_name, byte **buf, int64_t *buflen)
 {
     int code = 0;
-    /* FIXME: romfs hardcoded coded for now */
     stream *s;
     char fname[gp_file_name_sizeof];
-    const char *path_pfx = "%rom%Resource/CMap/";
+    const char *path_pfx = "CMap/";
     fname[0] = '\0';
 
     strncat(fname, path_pfx, strlen(path_pfx));
     strncat(fname, (char *)cmap_name->data, cmap_name->size);
-    s = sfopen(fname, "r", ctx->memory);
-    if (s == NULL) {
-        code = gs_note_error(gs_error_undefinedfilename);
-    }
-    else {
+    code = pdfi_open_resource_file(ctx, (const char *)fname, (const int)strlen(fname), &s);
+    if (code >= 0) {
         sfseek(s, 0, SEEK_END);
         *buflen = sftell(s);
         sfseek(s, 0, SEEK_SET);

@@ -1812,7 +1812,7 @@ $(PSD)pdfops.dev : $(ECHOGS_XE) $(zpdfops_) $(INT_MAK) $(MAKEDIRS)
 $(PSOBJ)zpdfops.$(OBJ) : $(PSSRC)zpdfops.c $(OP) $(MAKEFILE)\
  $(ghost_h) $(gsmchunk_h) $(oper_h) \
  $(igstate_h) $(istack_h) $(iutil_h) $(gspath_h) $(math__h) $(ialloc_h)\
- $(string__h) $(store_h) $(INT_MAK) $(MAKEDIRS)
+ $(string__h) $(store_h) $(iminst_h) $(idstack_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zpdfops.$(OBJ) $(C_) $(PSSRC)zpdfops.c
 
 zutf8_=$(PSOBJ)zutf8.$(OBJ)

@@ -22,6 +22,9 @@
 #include "gzht.h"
 #include "gsrefct.h"
 #include "pdf_misc.h"
+
+#include "iminst.h"
+#include "dstack.h"
 #endif
 
 #include "ghost.h"
@@ -268,6 +271,53 @@ zsaslprep(i_ctx_t *i_ctx_p)
 #endif
 
 #if defined(BUILD_PDF) && BUILD_PDF == 1
+
+/*
+   This cannot fail. If gs doesn't have these settings it will never reach here.
+   Because the lives of the string values here are all tied to the Postscript
+   context, and the Postscript context *must* outlast the pdfi context, we can
+   safely just take references, marking the strings as "persistent" so destroying
+   the pdfi context doesn't try to free the string bodies.
+ */
+static void zpdfi_populate_search_paths(i_ctx_t *i_ctx_p, pdf_context *ctx)
+{
+    /* This should only be called once per pdfi context
+       if the paths are already populated, just skip it.
+     */
+    if (ctx->search_paths.resource_paths == NULL) {
+        ref *l2dictref, *grdref, *fpathref;
+        int code, i;
+        const gs_file_path *pfpath = i_ctx_p->lib_path;
+        gs_main_instance *minst = get_minst_from_memory(imemory);
+        code = dict_find_string(systemdict, "pssystemparams", &l2dictref);
+        if (code >= 0 && r_has_type(l2dictref, t_dictionary)) {
+            code = dict_find_string(l2dictref, "GenericResourceDir", &grdref);
+            if (code >= 0 && r_has_type(grdref, t_string)) {
+                ctx->search_paths.genericresourcedir.data = grdref->value.const_bytes;
+                ctx->search_paths.genericresourcedir.size = r_size(grdref);
+                ctx->search_paths.genericresourcedir.persistent = true;
+            }
+        }
+        ctx->search_paths.resource_paths = (gs_param_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_param_string) * r_size(&pfpath->list), "array of paths");
+        ctx->search_paths.num_resource_paths = r_size(&pfpath->list);
+        for (i = 0; i < r_size(&pfpath->list); i++) {
+            const ref *prdir = pfpath->list.value.refs + i; /* By nature, this cannot be a short/mixed array, only a "normal" array */
+            ctx->search_paths.resource_paths[i].data = prdir->value.const_bytes;
+            ctx->search_paths.resource_paths[i].size = r_size(prdir);
+            ctx->search_paths.resource_paths[i].persistent = true;
+        }
+        code = dict_find_string(systemdict, "FONTPATH", &fpathref);
+        ctx->search_paths.font_paths = (gs_param_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_param_string) * r_size(fpathref), "array of font paths");
+        ctx->search_paths.num_font_paths = r_size(fpathref);
+        for (i = 0; i < r_size(fpathref); i++) {
+            const ref *prdir = pfpath->list.value.refs + i; /* By nature, this cannot be a short/mixed array, only a "normal" array */
+            ctx->search_paths.resource_paths[i].data = prdir->value.const_bytes;
+            ctx->search_paths.resource_paths[i].size = r_size(prdir);
+            ctx->search_paths.resource_paths[i].persistent = true;
+        }
+        ctx->search_paths.search_here_first = minst->search_here_first;
+    }
+}
 
 /*
  * Declare the structure we use to represent an instance of the PDF parser
@@ -1044,6 +1094,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
         code = 0;
         pop(1);
     }
+    zpdfi_populate_search_paths(i_ctx_p, ctx);
     op = osp;
     push(1);
     make_tav(op, t_pdfctx, icurrent_space | a_all, pstruct, (obj_header_t *)(pdfctx));

@@ -33,7 +33,10 @@
 #include "gspaint.h"        /* For gs_erasepage() */
 #include "gscolor3.h"       /* For gs_setsmoothness() */
 
+extern const char gp_file_name_list_separator;
+
 static int pdfi_install_halftone(pdf_context *ctx, gx_device *pdevice);
+static int pdf_impl_add_path(pl_interp_implementation_t *impl, const char *path);
 
 /*
  * The PDF interpreter instance is derived from pl_interp_implementation_t.
@@ -47,6 +50,12 @@ typedef struct pdf_interp_instance_s
     gp_file *scratch_file;
     char scratch_name[gp_file_name_sizeof];
 }pdf_interp_instance_t;
+
+extern const char gp_file_name_list_separator;
+
+#define _PDFI_STRING_IT(s) #s
+#define PDFI_STRING_IT(s) _PDFI_STRING_IT(s)
+#define GS_LIB_DEFAULT_STRING PDFI_STRING_IT(GS_LIB_DEFAULT)
 
 static int
 pdf_detect_language(const char *s, int len)
@@ -102,6 +111,10 @@ pdf_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
 {
     pdf_interp_instance_t *instance;
     pdf_context *ctx;
+    int code;
+    const char *rompathstr = "%rom%Resource/Init";
+    const char *deflibstr = GS_LIB_DEFAULT_STRING;
+    char *newpathsstr = (char *)deflibstr;
 
     instance = (pdf_interp_instance_t *) gs_alloc_bytes(pmem,
             sizeof(pdf_interp_instance_t), "pdf_impl_allocate_interp_instance");
@@ -125,8 +138,28 @@ pdf_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     instance->memory = pmem;
 
     impl->interp_client_data = instance;
+    if (COMPILE_INITS == 1) {
+        newpathsstr = (char *)gs_alloc_bytes(ctx->memory, strlen(rompathstr) + strlen(GS_LIB_DEFAULT_STRING) + 2, "temp paths string");
+        if (newpathsstr == NULL) {
+            newpathsstr = (char *)rompathstr;
+        }
+        else {
+            char sepstr[2];
 
-    return 0;
+            sepstr[0] = gp_file_name_list_separator;
+            sepstr[1] = '\0';
+
+            memcpy(newpathsstr, rompathstr, strlen(rompathstr) + 1);
+            strncat(newpathsstr, sepstr, strlen(sepstr));
+            strncat(newpathsstr, GS_LIB_DEFAULT_STRING, strlen(GS_LIB_DEFAULT_STRING));
+        }
+    }
+
+    code = pdfi_add_initial_paths_to_search_paths(ctx, newpathsstr, strlen(newpathsstr));
+    if (newpathsstr != deflibstr && newpathsstr != rompathstr) {
+        gs_free_object(ctx->memory, newpathsstr, "temp paths string");
+    }
+    return code;
 }
 
 static int
@@ -665,10 +698,27 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
+        if (!strncmp(param, "FONTPATH", 11)) {
+            char *s = NULL;
+            int slen;
+            code = plist_value_get_string_or_name(ctx, &pvalue, &s , &slen);
+            if (code < 0)
+                return code;
+            code = pdfi_add_paths_to_search_paths(ctx, (const char *)s, slen, true);
+        }
     }
 
  exit:
     return code;
+}
+
+static int
+pdf_impl_add_path(pl_interp_implementation_t *impl, const char *path)
+{
+    pdf_interp_instance_t *instance = impl->interp_client_data;
+    pdf_context *ctx = instance->ctx;
+
+    return pdfi_add_paths_to_search_paths(ctx, path, strlen(path), false);
 }
 
 static int
@@ -728,7 +778,7 @@ pl_interp_implementation_t pdf_implementation =
     pdf_impl_allocate_interp_instance,
     pdf_impl_get_device_memory,
     pdf_impl_set_param,
-    NULL,                               /* add_path */
+    pdf_impl_add_path,
     pdf_impl_post_args_init,
     pdf_impl_init_job,
     NULL,                               /* run_prefix_commands */

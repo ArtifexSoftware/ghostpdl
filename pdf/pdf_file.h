@@ -106,4 +106,7 @@ int pdfi_apply_imscale_filter(pdf_context *ctx, pdf_string *Key, int width, int 
 int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_c_stream *source, pdf_c_stream **new_stream);
 #endif
 
+int pdfi_open_resource_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s);
+int pdfi_open_font_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s);
+
 #endif /* PDF_FILES */

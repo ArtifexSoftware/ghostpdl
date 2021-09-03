@@ -25,6 +25,7 @@
 #include "stream.h"
 #include "strimpl.h"
 #include "strmio.h"
+#include "gpmisc.h"
 #include "simscale.h"   /* SIMScaleDecode */
 #include "szlibx.h"     /* Flate */
 #include "spngpx.h"     /* PNG Predictor */
@@ -1560,4 +1561,140 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
     *buf = Buffer;
     *bufferlen = buflen;
     return code;
+}
+
+int pdfi_open_resource_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s)
+{
+    int code = 0;
+    if (fname == NULL || fnamelen == 0)
+        *s = NULL;
+    else if (gp_file_name_is_absolute(fname, fnamelen) || fname[0] == '%') {
+        /* If it's an absolute path or an explicit PS style device, just try to open it */
+        *s = sfopen(fname, "r", ctx->memory);
+    }
+    else {
+        char fnametotry[gp_file_name_sizeof];
+        uint fnlen;
+        gs_parsed_file_name_t pname;
+        gp_file_name_combine_result r;
+        int i, total;
+
+        *s = NULL;
+        i = 0;
+        total = ctx->search_paths.num_resource_paths - ctx->search_paths.num_init_resource_paths - 1;
+retry:
+        for (; i < total; i++) {
+            gs_param_string *ss = &ctx->search_paths.resource_paths[i];
+
+            if (ss->data[0] == '%') {
+                code = gs_parse_file_name(&pname, (char *)ss->data, ss->size, ctx->memory);
+                if (code < 0 || (pname.len + fnamelen >= gp_file_name_sizeof)) {
+                    continue;
+                }
+                memcpy(fnametotry, pname.fname, pname.len);
+                memcpy(fnametotry + pname.len, fname, fnamelen);
+                code = pname.iodev->procs.open_file(pname.iodev, fnametotry, pname.len + fnamelen, "r", s, ctx->memory);
+                if (code < 0) {
+                    continue;
+                }
+                break;
+            }
+            else {
+                fnlen = gp_file_name_sizeof;
+                r = gp_file_name_combine((char *)ss->data, ss->size, fname, fnamelen, false, fnametotry, &fnlen);
+                if (r != gp_combine_success || fnlen > gp_file_name_sizeof - 1)
+                    continue;
+                fnametotry[fnlen] = '\0';
+                *s = sfopen(fnametotry, "r", ctx->memory);
+                if (*s != NULL)
+                    break;
+            }
+        }
+        if (*s == NULL && i < ctx->search_paths.num_resource_paths) {
+            gs_param_string *ss = &ctx->search_paths.genericresourcedir;
+            fnlen = gp_file_name_sizeof;
+            r = gp_file_name_combine((char *)ss->data, ss->size, fname, fnamelen, false, fnametotry, &fnlen);
+            if (r == gp_combine_success || fnlen < gp_file_name_sizeof) {
+                fnametotry[fnlen] = '\0';
+                *s = sfopen(fnametotry, "r", ctx->memory);
+            }
+        }
+        if (*s == NULL && i < ctx->search_paths.num_resource_paths) {
+            total = ctx->search_paths.num_resource_paths;
+            goto retry;
+        }
+    }
+    if (*s == NULL)
+        return_error(gs_error_invalidfileaccess);
+
+    return 0;
+}
+
+int pdfi_open_font_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s)
+{
+    int code = 0;
+    const char *fontdirstr = "Font/";
+    const int fontdirstrlen = strlen(fontdirstr);
+
+    if (fname == NULL || fnamelen == 0)
+        *s = NULL;
+    else if (gp_file_name_is_absolute(fname, fnamelen) || fname[0] == '%') {
+        /* If it's an absolute path or an explicit PS style device, just try to open it */
+        *s = sfopen(fname, "r", ctx->memory);
+    }
+    else {
+        char fnametotry[gp_file_name_sizeof];
+        uint fnlen;
+        gs_parsed_file_name_t pname;
+        gp_file_name_combine_result r;
+        int i;
+
+        *s = NULL;
+        for (i = 0; i < ctx->search_paths.num_font_paths; i++) {
+            gs_param_string *ss = &ctx->search_paths.font_paths[i];
+
+            if (ss->data[0] == '%') {
+                code = gs_parse_file_name(&pname, (char *)ss->data, ss->size, ctx->memory);
+                if (code < 0 || (pname.len + fnamelen >= gp_file_name_sizeof)) {
+                    continue;
+                }
+                memcpy(fnametotry, pname.fname, pname.len);
+                memcpy(fnametotry + pname.len, fname, fnamelen);
+                code = pname.iodev->procs.open_file(pname.iodev, fnametotry, pname.len + fnamelen, "r", s, ctx->memory);
+                if (code < 0) {
+                    continue;
+                }
+                break;
+            }
+            else {
+                fnlen = gp_file_name_sizeof;
+                r = gp_file_name_combine((char *)ss->data, ss->size, fname, fnamelen, false, fnametotry, &fnlen);
+                if (r != gp_combine_success || fnlen > gp_file_name_sizeof - 1)
+                    continue;
+                fnametotry[fnlen] = '\0';
+                *s = sfopen(fnametotry, "r", ctx->memory);
+                if (*s != NULL)
+                    break;
+            }
+        }
+        if (*s == NULL && i < ctx->search_paths.num_resource_paths) {
+            gs_param_string *ss = &ctx->search_paths.genericresourcedir;
+            char fstr[gp_file_name_sizeof];
+
+            fnlen = gp_file_name_sizeof;
+
+            memcpy(fstr, fontdirstr, fontdirstrlen);
+            memcpy(fstr + fontdirstrlen, fname, fnamelen);
+
+            r = gp_file_name_combine((char *)ss->data, ss->size, fstr, fontdirstrlen + fnamelen, false, fnametotry, &fnlen);
+            if (r == gp_combine_success || fnlen < gp_file_name_sizeof) {
+                fnametotry[fnlen] = '\0';
+                *s = sfopen(fnametotry, "r", ctx->memory);
+            }
+        }
+    }
+    if (*s == NULL)
+        return pdfi_open_resource_file(ctx, fname, fnamelen, s);
+
+    return 0;
 }

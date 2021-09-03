@@ -41,10 +41,9 @@ static int
 pdf_fontmap_open_file(pdf_context *ctx, byte **buf, int *buflen)
 {
     int code = 0;
-    /* FIXME: romfs/filename hardcoded coded for now */
     stream *s;
     char fname[gp_file_name_sizeof];
-    const char *path_pfx = "%rom%Resource/Init/";
+    const char *path_pfx = "Init/";
     const char *fmap_default = "Fontmap.GS";
     const char *prestring = "<<\n";
     const char *poststring = ">>\nendstream\n";
@@ -55,13 +54,14 @@ pdf_fontmap_open_file(pdf_context *ctx, byte **buf, int *buflen)
     if (strlen(path_pfx) + strlen(fmap_default) + 1 > gp_file_name_sizeof)
         return_error(gs_error_invalidfileaccess);
 
-    strncat(fname, path_pfx, strlen(path_pfx));
-    strncat(fname, (char *)fmap_default, strlen(fmap_default));
-    s = sfopen(fname, "r", ctx->memory);
-    if (s == NULL) {
-        code = gs_note_error(gs_error_undefinedfilename);
+    code = pdfi_open_resource_file(ctx, fmap_default, strlen(fmap_default), &s);
+    if (code < 0) {
+        strncat(fname, path_pfx, strlen(path_pfx));
+        strncat(fname, (char *)fmap_default, strlen(fmap_default));
+        code = pdfi_open_resource_file(ctx, fname, strlen(fname), &s);
     }
-    else {
+
+    if (code >= 0) {
         int i;
         sfseek(s, 0, SEEK_END);
         *buflen = sftell(s);

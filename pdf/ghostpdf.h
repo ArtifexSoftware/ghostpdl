@@ -321,6 +321,25 @@ typedef struct device_state_s {
     bool annotations_preserved;
 } device_state_t;
 
+/*
+ * resource_paths: for CMaps, iccprofiles, fonts... mainly build time settings and from
+ * "-I" command line options.
+ * font_paths: Specific to fonts: from the -sFONTPATH=<> option
+ * We keep a running count (num_resource_paths) of all, and a one off count of paths that
+ * came from the build (num_init_resource_paths) so we can keep the (weird) search order
+ * that gs uses.
+ */
+typedef struct search_paths_s
+{
+    gs_param_string *resource_paths;
+    int             num_resource_paths; /* total */
+    int             num_init_resource_paths; /* number of paths that came from the build */
+    gs_param_string *font_paths;
+    int             num_font_paths;
+    gs_param_string genericresourcedir;
+    bool search_here_first;
+} search_paths_t;
+
 typedef struct pdf_context_s
 {
     void *instance;
@@ -444,6 +463,7 @@ typedef struct pdf_context_s
     /* A name table :-( */
     pdfi_name_entry_t *name_table;
 
+    search_paths_t search_paths;
     pdf_dict *pdffontmap;
 
     /* These function pointers can be replaced by ones intended to replicate
@@ -470,6 +490,9 @@ typedef struct pdf_context_s
 
 #define OBJ_CTX(o) ((pdf_context *)(o->ctx))
 #define OBJ_MEMORY(o) OBJ_CTX(o)->memory
+
+int pdfi_add_paths_to_search_paths(pdf_context *ctx, const char *ppath, int l, bool fontpath);
+int pdfi_add_initial_paths_to_search_paths(pdf_context *ctx, const char *ppath, int l);
 
 pdf_context *pdfi_create_context(gs_memory_t *pmem);
 int pdfi_clear_context(pdf_context *ctx);
