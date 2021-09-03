@@ -161,7 +161,7 @@
  } bind def
 
 % This lets you do stuff on the command line like:
-% gs -sDEVICE=pdfwrite -o stuff%03d.pdf viewgif.ps -c "(image.gif) << /PageSize 2 index viewGIFgetsize 2 array astore  >> setpagedevice viewGIF"
+% gs -sDEVICE=pdfwrite -o stuff%03d.pdf viewgif.ps -c "(image.gif) << /PageSize 2 index viewGIFgetsize 2 array astore /HWResolution [ 72 72 ] >> setpagedevice viewGIF"
 % so the output size is influenced by the original image.
 /viewGIFgetsize		% <file|string> ==> [width height]
 {
