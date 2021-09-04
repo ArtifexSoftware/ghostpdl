@@ -2160,6 +2160,10 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffcid->supplement = cffpriv.pdfcffpriv.supplement;
                 cffcid->FontDescriptor = (pdf_dict *) fontdesc;
                 fontdesc = NULL;
+
+                cffcid->PDF_font = font_dict;
+                pdfi_countup(font_dict);
+
                 cffcid->cidtogidmap.data = NULL;
                 cffcid->cidtogidmap.size = 0;
 
@@ -2246,6 +2250,9 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 else {
                     cffcid->W2 = NULL;
                 }
+                code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, (gs_font_base *)cffcid->pfont);
+                if (code < 0)
+                    uid_set_invalid(&cffcid->pfont->UID);
             }
             else if (forcecid) {
                 pdf_obj *obj;
@@ -2315,7 +2322,6 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffcid->orig_glyph_info = pfont->procs.glyph_info;
                 pfont->procs.glyph_info = pdfi_cff_cidfont_glyph_info;
 
-
                 pfdfont->FAPI = NULL;
                 pfdfont->base = (gs_font *)pfdfont;
                 pfdfont->client_data = fdcfffont;
@@ -2349,6 +2355,9 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
 
                 cffcid->FontDescriptor = (pdf_dict *) fontdesc;
                 fontdesc = NULL;
+
+                cffcid->PDF_font = font_dict;
+                pdfi_countup(font_dict);
 
                 cffcid->registry = registry;
                 cffcid->ordering = ordering;
@@ -2439,6 +2448,11 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 else {
                     cffcid->W2 = NULL;
                 }
+
+                code = pdfi_font_generate_pseudo_XUID(ctx, cffcid->PDF_font, ppdfont->pfont);
+                if (code < 0)
+                    goto error;
+
             }
             else {
                 pdf_font_cff *cfffont;
@@ -2478,6 +2492,9 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
 
                 cfffont->FontDescriptor = (pdf_dict *) fontdesc;
                 fontdesc = NULL;
+
+                cfffont->PDF_font = font_dict;
+                pdfi_countup(font_dict);
 
                 cfffont->descflags = 0;
                 if (cfffont->FontDescriptor != NULL) {

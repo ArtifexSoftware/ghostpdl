@@ -422,6 +422,8 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
     font->BaseFont = basefont;
     basefont = NULL;
+    font->PDF_font = font_dict;
+    pdfi_countup(font_dict);
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, (pdf_obj **)&obj);
     if (code < 0)
