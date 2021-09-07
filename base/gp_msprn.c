@@ -168,8 +168,16 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     uintptr_t *ptid = &((tid_t *)(iodev->state))->tid;
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
+    const size_t preflen = strlen(iodev->dname);
+    const size_t nlen = strlen(fname);
 
-    if (gp_validate_path(mem, fname, access) != 0)
+    if (preflen + nlen >= gp_file_name_sizeof)
+        return_error(gs_error_invalidaccess);
+
+    memcpy(pname, iodev->dname, preflen);
+    memcpy(pname + preflen, fname, nlen + 1);
+
+    if (gp_validate_path(mem, pname, access) != 0)
         return gs_error_invalidfileaccess;
 
     /* First we try the open_printer method. */

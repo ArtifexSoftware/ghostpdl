@@ -72,8 +72,28 @@ pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
 #else
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
+    /* The pipe device can be reached in two ways, explicltly with %pipe%
+       or implicitly with "|", so we have to check for both
+     */
+    char f[gp_file_name_sizeof];
+    const char *pipestr = "|";
+    const size_t pipestrlen = strlen(pipestr);
+    const size_t preflen = strlen(iodev->dname);
+    const size_t nlen = strlen(fname);
+    int code1;
 
-    if (gp_validate_path(mem, fname, access) != 0)
+    if (preflen + nlen >= gp_file_name_sizeof)
+        return_error(gs_error_invalidaccess);
+
+    memcpy(f, iodev->dname, preflen);
+    memcpy(f + preflen, fname, nlen + 1);
+
+    code1 = gp_validate_path(mem, f, access);
+
+    memcpy(f, pipestr, pipestrlen);
+    memcpy(f + pipestrlen, fname, nlen + 1);
+
+    if (code1 != 0 && gp_validate_path(mem, f, access) != 0 )
         return gs_error_invalidfileaccess;
 
     /*

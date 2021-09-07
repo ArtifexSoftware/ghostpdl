@@ -95,8 +95,17 @@ mswin_handle_fopen(gx_io_device * iodev, const char *fname, const char *access,
     long hfile;	/* Correct for Win32, may be wrong for Win64 */
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
+    char f[gp_file_name_sizeof];
+    const size_t preflen = strlen(iodev->dname);
+    const size_t nlen = strlen(fname);
 
-    if (gp_validate_path(mem, fname, access) != 0)
+    if (preflen + nlen >= gp_file_name_sizeof)
+        return_error(gs_error_invalidaccess);
+
+    memcpy(f, iodev->dname, preflen);
+    memcpy(f + preflen, fname, nlen + 1);
+
+    if (gp_validate_path(mem, f, access) != 0)
         return gs_error_invalidfileaccess;
 
     /* First we try the open_handle method. */

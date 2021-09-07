@@ -107,9 +107,20 @@ os2_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
            FILE ** pfile, char *rfname, uint rnamelen)
 {
     os2_printer_t *pr = (os2_printer_t *)iodev->state;
-    char driver_name[256];
+    char driver_name[gp_file_name_sizeof];
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
+    const size_t preflen = strlen(iodev->dname);
+    const int size_t = strlen(fname);
+
+    if (preflen + nlen >= gp_file_name_sizeof)
+        return_error(gs_error_invalidaccess);
+
+    memcpy(driver_name, iodev->dname, preflen);
+    memcpy(driver_name + preflen, fname, nlen + 1);
+
+    if (gp_validate_path(mem, driver_name, access) != 0)
+        return gs_error_invalidfileaccess;
 
     /* First we try the open_printer method. */
     /* Note that the loop condition here ensures we don't
