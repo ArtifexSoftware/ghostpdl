@@ -169,7 +169,7 @@ shade_next_curve(shade_coord_stream_t * cs, patch_curve_t * curve)
  */
 static int
 shade_next_patch(shade_coord_stream_t * cs, int BitsPerFlag,
-        patch_curve_t curve[4], gs_fixed_point interior[4] /* 0 for Coons patch */ )
+        patch_curve_t curve[4], gs_fixed_point interior[4] /* 0 for Coons patch */)
 {
     int flag = shade_next_flag(cs, BitsPerFlag);
     int num_colors, code;
@@ -179,6 +179,10 @@ shade_next_patch(shade_coord_stream_t * cs, int BitsPerFlag,
             return_error(gs_error_rangecheck);
         return 1;               /* no more data */
     }
+    if (cs->first_patch && (flag & 3) != 0) {
+        return_error(gs_error_rangecheck);
+    }
+    cs->first_patch = 0;
     switch (flag & 3) {
         default:
             return_error(gs_error_rangecheck);  /* not possible */

@@ -87,6 +87,7 @@ shade_next_init(shade_coord_stream_t * cs,
     cs->is_eod = cs_eod;
     cs->left = 0;
     cs->ds_EOF = false;
+    cs->first_patch = 1;
 }
 
 /* Check for the End-Of-Data state form a stream. */

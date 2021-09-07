@@ -122,6 +122,7 @@ struct shade_coord_stream_s {
                        const float decode[2], float *pvalue);
     void (*align)(shade_coord_stream_t *cs, int radix);
     bool (*is_eod)(const shade_coord_stream_t *cs);
+    int first_patch;            /* True, if we have not read a patch yet */
 };
 
 /* Define one vertex of a mesh. */
