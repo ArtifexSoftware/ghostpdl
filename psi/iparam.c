@@ -454,7 +454,7 @@ dict_param_enumerate(iparam_list * plist, gs_param_enumerator_t * penum,
     index = dict_next(&pdlist->dict, index, elt);
     if (index < 0)
         return 1;
-    *type = r_type(&elt[1]);
+    *type = r_type(&elt[0]);
     code = ref_to_key(&elt[0], key, plist);
     penum->intval = index;
     return code;
