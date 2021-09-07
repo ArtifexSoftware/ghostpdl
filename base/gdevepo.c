@@ -512,8 +512,7 @@ int epo_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
 
     if (code != 0)
         return code;
-    dev = dev->child;
-    return dev_proc(dev, composite)(dev, pcdev, pcte, pgs, memory, cdev);
+    return default_subclass_composite(dev, pcdev, pcte, pgs, memory, cdev);
 }
 
 int epo_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
