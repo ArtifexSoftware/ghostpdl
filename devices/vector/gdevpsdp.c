@@ -906,12 +906,12 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
      * Since this procedure can be called before the device is open,
      * we must use pdev->memory rather than pdev->v_memory.
      */
-    gs_memory_t *mem = pdev->memory;
+    gs_memory_t *mem = gs_memory_stable(pdev->memory);
     gs_param_name pname;
     /* Skip AutoFilter for mono images. */
     const gs_param_item_t *items =
         (pnames->items[0].key == 0 ? pnames->items + 1 : pnames->items);
-    int code = gs_param_read_items(plist, params, items);
+    int code = gs_param_read_items(plist, params, items, mem);
     if (code < 0)
         ecode = code;
 
@@ -1125,7 +1125,7 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 
     /* General parameters. */
 
-    code = gs_param_read_items(plist, &params, psdf_param_items);
+    code = gs_param_read_items(plist, &params, psdf_param_items, NULL);
     if (code < 0)
         return code;
 

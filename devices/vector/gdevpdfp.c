@@ -595,28 +595,13 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         case 1:
             break;
     }
-    {   /* HACK : gs_param_list_s::memory is documented in gsparam.h as
-           "for allocating coerced arrays". Not sure why zputdeviceparams
-           sets it to the current memory space, while the device
-           assumes to store them in the device's memory space.
-           As a hackish workaround we temporary replace it here.
-           Doing so because we don't want to change the global code now
-           because we're unable to test it with all devices.
-           Bug 688531 "Segmentation fault running pdfwrite from 219-01.ps".
-
-           This solution to be reconsidered after fixing
-           the bug 688533 "zputdeviceparams specifies a wrong memory space.".
-        */
-        gs_memory_t *mem = plist->memory;
-
-        plist->memory = pdev->pdf_memory;
-        code = gs_param_read_items(plist, pdev, pdf_param_items);
+    {
+        code = gs_param_read_items(plist, pdev, pdf_param_items, pdev->pdf_memory);
         if (code < 0 || (code = param_read_bool(plist, "ForOPDFRead", &ForOPDFRead)) < 0)
         {
         }
         if (code == 0 && !pdev->is_ps2write && !(locked && pdev->params.LockDistillerParams))
             pdev->ForOPDFRead = ForOPDFRead;
-        plist->memory = mem;
     }
     if (code < 0)
         ecode = code;
