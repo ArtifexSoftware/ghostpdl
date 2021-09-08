@@ -196,7 +196,7 @@ s_DCTE_put_params(gs_param_list * plist, stream_DCT_state * pdct)
      * Required parameters for DCTEncode.
      * (DCTDecode gets the equivalent info from the SOF marker.)
      */
-    code = gs_param_read_items(plist, &params, s_DCTE_param_items);
+    code = gs_param_read_items(plist, &params, s_DCTE_param_items, NULL);
     if (code < 0)
         return code;
     if (params.Columns <= 0 || params.Columns > 0xffff ||
@@ -277,6 +277,8 @@ s_DCTE_put_params(gs_param_list * plist, stream_DCT_state * pdct)
             break;
     }
     /* Optional encoding-only parameters */
+    /* FIXME: This relies on the 'Markers' value in the param list
+     * being persistent enough. */
     pdct->Markers.data = params.Markers.data;
     pdct->Markers.size = params.Markers.size;
     pdct->NoMarker = params.NoMarker;

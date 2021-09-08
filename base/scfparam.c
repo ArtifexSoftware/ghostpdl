@@ -73,7 +73,7 @@ s_CF_put_params(gs_param_list * plist, stream_CF_state * ss)
     int code;
 
     state = *ss;
-    code = gs_param_read_items(plist, (void *)&state, s_CF_param_items);
+    code = gs_param_read_items(plist, (void *)&state, s_CF_param_items, NULL);
     if (code >= 0 &&
         (state.K < -cf_max_height || state.K > cf_max_height ||
          state.Columns < 0 || state.Columns > cfe_max_width ||

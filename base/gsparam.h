@@ -486,7 +486,8 @@ typedef struct gs_param_item_s {
  * the optional default_obj, the item isn't transferred.
  */
 int gs_param_read_items(gs_param_list * plist, void *obj,
-                        const gs_param_item_t * items);
+                        const gs_param_item_t * items,
+                        gs_memory_t *mem);
 int gs_param_write_items(gs_param_list * plist, const void *obj,
                          const void *default_obj,
                          const gs_param_item_t * items);

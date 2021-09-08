@@ -102,7 +102,8 @@ static const byte xfer_item_sizes[] = {
 };
 int
 gs_param_read_items(gs_param_list * plist, void *obj,
-                    const gs_param_item_t * items)
+                    const gs_param_item_t * items,
+                    gs_memory_t *mem)
 {
     const gs_param_item_t *pi;
     int ecode = 0;
@@ -123,8 +124,128 @@ gs_param_read_items(gs_param_list * plist, void *obj,
             case 0:
                 if (typed.type != pi->type)	/* shouldn't happen! */
                     ecode = gs_note_error(gs_error_typecheck);
-                else
-                    memcpy(pvalue, &typed.value, xfer_item_sizes[pi->type]);
+                else {
+                    switch(typed.type)
+                    {
+                    case gs_param_type_dict:
+                    case gs_param_type_dict_int_keys:
+                    case gs_param_type_array:
+                        return_error(gs_error_rangecheck);
+                    case gs_param_type_string:
+                    case gs_param_type_name:
+                    {
+                        void *copy;
+                        gs_string *s;
+                        if (mem == NULL) {
+                            /* Return pointers to the data in the param list. This
+                             * means that if the caller wants to keep it around it
+                             * needs to copy it itself, or run the risk of the
+                             * param list going away. */
+                            goto copy_pointer;
+                        }
+                        /* Free any existing data before copying into it. */
+                        s = ((gs_string *)pvalue);
+                        if (typed.value.s.size != s->size) {
+                            gs_free_string(mem, s->data, s->size, "gs_param_read_items");
+                            s->data = NULL;
+                            s->size = 0;
+                            copy = gs_alloc_string(mem, typed.value.s.size, "gs_param_read_items");
+                            if (copy == NULL)
+                                return_error(gs_error_VMerror);
+                            s->size = typed.value.s.size;
+                        } else {
+                            copy = s->data;
+                        }
+                        memcpy(copy, typed.value.s.data, typed.value.s.size);
+                        s->data = copy;
+                        ((gs_param_string *)pvalue)->persistent = 0; /* 0 => We own this copy */
+                        break;
+                    }
+                    case gs_param_type_int_array:
+                    case gs_param_type_float_array:
+                    case gs_param_type_string_array:
+                    case gs_param_type_name_array:
+                    {
+                        int eltsize;
+                        gs_param_string_array *sa;
+                        if (mem == NULL) {
+                            /* Return pointers to the data in the param list. This
+                             * means that if the caller wants to keep it around it
+                             * needs to copy it itself, or run the risk of the
+                             * param list going away. */
+                            goto copy_pointer;
+                        }
+                        /* Free any existing data before copying into it. */
+                        eltsize = gs_param_type_base_sizes[typed.type];
+                        sa = ((gs_param_string_array *)pvalue);
+                        if (typed.value.ia.size != sa->size) {
+                            void *copy;
+                            if (typed.type == gs_param_type_name_array ||
+                                typed.type == gs_param_type_string_array) {
+                                /* Free the strings. */
+                                int i;
+                                gs_param_string *arr;
+                                union { const gs_param_string *cs; gs_param_string *s; } u;
+                                u.cs = sa->data;
+                                arr = u.s; /* Hideous dodge to avoid the const. */
+                                for (i = 0; i < typed.value.sa.size; i++) {
+                                    /* Hideous hackery to get around the const nature of gs_param_strings. */
+                                    gs_string *arr_non_const = (gs_string *)(void *)(&arr[i]);
+                                    if (arr[i].persistent == 0)
+                                        gs_free_string(mem, arr_non_const->data, arr_non_const->size, "gs_param_read_items");
+                                    arr_non_const->data = NULL;
+                                    arr_non_const->size = 0;
+                                }
+                            }
+                            gs_free_const_object(mem, sa->data, "gs_param_read_items");
+                            sa->data = NULL;
+                            sa->size = 0;
+                            copy = gs_alloc_bytes(mem, eltsize * typed.value.s.size, "gs_param_read_items");
+                            if (copy == NULL)
+                                return_error(gs_error_VMerror);
+                            memset(copy, 0, eltsize * typed.value.s.size);
+                            sa->size = typed.value.s.size;
+                            sa->data = copy;
+                        }
+                        /* Now copy the elements of the arrays. */
+                        if (typed.type == gs_param_type_name_array ||
+                            typed.type == gs_param_type_string_array) {
+                            /* Free the strings. */
+                            int i;
+                            const gs_param_string *src = typed.value.sa.data;
+                            gs_param_string *dst;
+                            union { const gs_param_string *cs; gs_param_string *s; } u;
+                            u.cs = sa->data;
+                            dst = u.s; /* Hideous dodge to avoid the const. */
+                            for (i = 0; i < typed.value.sa.size; i++) {
+                                /* Hideous hackery to get around the const nature of gs_param_strings. */
+                                gs_string *dst_non_const = (gs_string *)(void *)(&dst[i]);
+                                if (dst[i].persistent == 0)
+                                    gs_free_string(mem, dst_non_const->data, dst_non_const->size, "gs_param_read_items");
+                                dst_non_const->data = NULL;
+                                dst_non_const->size = 0;
+                            }
+                            /* Copy values */
+                            for (i = 0; i < sa->size; i++) {
+                                dst[i].data = gs_alloc_string(mem, src[i].size, "gs_param_read_items");
+                                if (dst[i].data == NULL)
+                                    return_error(gs_error_VMerror);
+                                dst[i].size = src[i].size;
+                                dst[i].persistent = 0; /* 0 => We own this copy */
+                            }
+                        } else {
+                            /* Hideous hackery to get around the const nature of gs_param_strings. */
+                            gs_string *s = (gs_string *)(void *)sa;
+                            memcpy(s->data, typed.value.s.data, eltsize * typed.value.s.size);
+                        }
+                        ((gs_param_string *)pvalue)->persistent = 0; /* 0 => We own this copy */
+                        break;
+                    }
+                    default:
+    copy_pointer:
+                        memcpy(pvalue, &typed.value, xfer_item_sizes[pi->type]);
+                    }
+                }
         }
     }
     return ecode;
@@ -150,6 +271,8 @@ gs_param_write_items(gs_param_list * plist, const void *obj,
             continue;
         memcpy(&typed.value, pvalue, size);
         typed.type = pi->type;
+        /* Ensure the list doesn't end up keeping a pointer to our values. */
+        typed.value.s.persistent = 0;
         code = (*plist->procs->xmit_typed) (plist, key, &typed);
         if (code < 0)
             ecode = code;

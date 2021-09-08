@@ -434,11 +434,11 @@ int
 s_DCT_put_params(gs_param_list * plist, stream_DCT_state * pdct)
 {
     int code =
-    gs_param_read_items(plist, pdct, s_DCT_param_items);
+    gs_param_read_items(plist, pdct, s_DCT_param_items, NULL);
 
     if (code < 0)
         return code;
-    code = gs_param_read_items(plist, pdct->data.common, jsd_param_items);
+    code = gs_param_read_items(plist, pdct->data.common, jsd_param_items, NULL);
     if (code < 0)
         return code;
     if (pdct->data.common->Picky < 0 || pdct->data.common->Picky > 1 ||
