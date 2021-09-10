@@ -37,7 +37,7 @@
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " GIT PRERELEASE"
+        GS_PRODUCTFAMILY ""
 #endif
 
 /* Prototypes for configuration definitions in gconfig.c. */
