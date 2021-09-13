@@ -439,8 +439,44 @@ static void pdfi_print_string(pdf_context *ctx, const char *str)
         (void)outwrite(ctx->memory, str, strlen(str));
 }
 
+enum {
+  no_type_font = -1,
+  type0_font = 0,
+  type1_font = 1,
+  cff_font = 2,
+  type3_font = 3,
+  tt_font = 42
+};
+
+static int pdfi_fonttype_picker(byte *buf, int64_t buflen)
+{
+#define MAKEMAGIC(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
+
+    if (buflen >= 4) {
+        if (MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC(0, 1, 0, 0)
+            || MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC('t', 'r', 'u', 'e')
+            || MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC('t', 't', 'c', 'f')) {
+            return tt_font;
+        }
+        else if (MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC('O', 'T', 'T', 'O')) {
+            return cff_font; /* OTTO will end up as CFF */
+        }
+        else if (MAKEMAGIC(buf[0], buf[1], buf[2], 0) == MAKEMAGIC('%', '!', 'P', 0)) {
+            return type1_font; /* pfa */
+        }
+        else if (MAKEMAGIC(buf[0], buf[1], buf[2], 0) == MAKEMAGIC(1, 0, 4, 0)) {
+            return cff_font; /* 1C/CFF */
+        }
+        else if (MAKEMAGIC(buf[0], buf[1], 0, 0) == MAKEMAGIC(128, 1, 0, 0)) {
+            return type1_font; /* pfb */
+        }
+    }
+    return no_type_font;
+#undef MAKEMAGIC
+}
+
 static int
-pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte **buf, int64_t *buflen)
+pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte **buf, int64_t *buflen, int *findex)
 {
     int code;
     char fontfname[gp_file_name_sizeof];
@@ -483,13 +519,13 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
             pdfi_countup(fontname);
         }
     }
-    code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname);
+    code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname, findex);
     if (code < 0) {
         mapname = fontname;
         pdfi_countup(mapname);
         code = 0;
     }
-    if (mapname->type == PDF_NAME) {
+    if (mapname->type == PDF_NAME || mapname->type == PDF_STRING) {
         pdf_name *mname = (pdf_name *) mapname;
         if (mname->length + 1 < gp_file_name_sizeof) {
             memcpy(fontfname, mname->data, mname->length);
@@ -542,42 +578,6 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
 }
 
 enum {
-  no_type_font = -1,
-  type0_font = 0,
-  type1_font = 1,
-  cff_font = 2,
-  type3_font = 3,
-  tt_font = 42
-};
-
-static int pdfi_fonttype_picker(byte *buf, int64_t buflen)
-{
-#define MAKEMAGIC(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
-
-    if (buflen >= 4) {
-        if (MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC(0, 1, 0, 0)
-            || MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC('t', 'r', 'u', 'e')
-            || MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC('t', 't', 'c', 'f')) {
-            return tt_font;
-        }
-        else if (MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC('O', 'T', 'T', 'O')) {
-            return cff_font; /* OTTO will end up as CFF */
-        }
-        else if (MAKEMAGIC(buf[0], buf[1], buf[2], 0) == MAKEMAGIC('%', '!', 'P', 0)) {
-            return type1_font; /* pfa */
-        }
-        else if (MAKEMAGIC(buf[0], buf[1], buf[2], 0) == MAKEMAGIC(1, 0, 4, 0)) {
-            return cff_font; /* 1C/CFF */
-        }
-        else if (MAKEMAGIC(buf[0], buf[1], 0, 0) == MAKEMAGIC(128, 1, 0, 0)) {
-            return type1_font; /* pfb */
-        }
-    }
-    return no_type_font;
-#undef MAKEMAGIC
-}
-
-enum {
   font_embedded = 0,
   font_from_file = 1,
   font_substitute = 2
@@ -596,6 +596,7 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
     byte *fbuf = NULL;
     int64_t fbuflen;
     int substitute = font_embedded;
+    int findex = -1;
 
     code = pdfi_dict_get_type(ctx, font_dict, "Type", PDF_NAME, (pdf_obj **)&Type);
     if (code < 0)
@@ -691,7 +692,7 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                             if (cidfont)
                                 code = pdfi_read_cidtype2_font(ctx, font_dict, stream_dict, page_dict, fbuf, fbuflen, &ppdffont);
                             else
-                                code = pdfi_read_truetype_font(ctx, font_dict, stream_dict, page_dict, fbuf, fbuflen, &ppdffont);
+                                code = pdfi_read_truetype_font(ctx, font_dict, stream_dict, page_dict, fbuf, fbuflen, findex, &ppdffont);
                             fbuf = NULL;
                         }
                         break;
@@ -724,9 +725,9 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                         goto exit;
                 }
                 else {
-                    code = pdfi_open_font_substitute_file(ctx, font_dict, fontdesc, false, &fbuf, &fbuflen);
+                    code = pdfi_open_font_substitute_file(ctx, font_dict, fontdesc, false, &fbuf, &fbuflen, &findex);
                     if (code < 0) {
-                        code = pdfi_open_font_substitute_file(ctx, font_dict, fontdesc, true, &fbuf, &fbuflen);
+                        code = pdfi_open_font_substitute_file(ctx, font_dict, fontdesc, true, &fbuf, &fbuflen, &findex);
                         substitute |= font_substitute;
                     }
 

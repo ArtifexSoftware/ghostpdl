@@ -541,7 +541,6 @@ u32(const byte *p)
 }
 
 
-
 static int
 subrbias(int count)
 {
