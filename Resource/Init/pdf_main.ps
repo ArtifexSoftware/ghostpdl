@@ -969,6 +969,7 @@ systemdict /NEWPDF known not {/NEWPDF //false def} if
 
 /newpdf_pdfshowpage_init
 {
+    gsave
 } bind def
 
 /newpdf_pdfshowpage_setpage
@@ -986,6 +987,7 @@ systemdict /NEWPDF known not {/NEWPDF //false def} if
     (               Output may be incorrect.\n) newpdf_pdfformaterror
   } if
   showpage
+  grestore
 } bind def
 
 /newpdf_pdfshowpage
@@ -3947,9 +3949,9 @@ currentdict /PDF2PS_matrix_key undef
         not
         and
         //systemdict /PreserveAnnots .knownget not {//true} if and {
-            mark exch {preserveannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark
+            mark exch {preserveannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse {cleartomark} stopped pop
           }{
-            mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark
+            mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse {cleartomark} stopped pop
           } ifelse
         } {
           pop
