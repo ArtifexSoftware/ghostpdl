@@ -28,6 +28,7 @@
 #include "pdf_trans.h"
 #include "pdf_optcontent.h"
 #include "pdf_doc.h"
+#include "pdf_misc.h"
 
 #include "gsfunc3.h"    /* for gs_function_Ad0t_params_t */
 #include "gxshade.h"
