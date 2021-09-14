@@ -103,6 +103,10 @@
 <li><a href="#MultipleResourceDirectories">Multiple Resource directories</a></li>
 </ul>
 <li><a href="#PDF_scripting">Scripting the PDF interpreter</a></li>
+<ul>
+<li><a href="#PS_functions">PostScript functions</a></li>
+<li><a href="#PDF_PS_operators">PostScript operators</a></li>
+</ul>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -2047,6 +2051,8 @@ will install resource files into <code>/gs/Resource</code>.</p>
 
 <h2><a name="PDF_scripting"></a>Scripting the PDF interpreter</h2>
 
+<h3><a name="PS_functions"></a>PostScript functions</h3>
+
 <p>We have not previously documented the internals of the Ghostscript PDF interpreter, but we have, on
 occasion, provided solutions that rely upon scripting the interpreter from PostScript. This was
 possible because the interpreter was written in PostScript.</p>
@@ -2054,7 +2060,7 @@ possible because the interpreter was written in PostScript.</p>
 <p>From release 9.55.0 Ghostscript comes supplied with two PDF interpreters, the original written in PostScript
 and a brand-new interpreter written in C. While the new interpreter can be run as part of the GhostPDL family
 it has also been integrated into Ghostscript, and can be run from the PostScript environment in a similar fashion
-to the old interpreter. Eventually we plan to drop the old interpreter and carry on with the new one.</p>
+to the old interpreter. We plan to deprecate, and eventually remove, the old interpreter and carry on with the new one.</p>
 
 <p>Because we have supplied solutions in the past based on the old interpreter, we have had to implement
 the same capabilities in the integration of the new interpreter. Since this has meant discovering which internal
@@ -2078,7 +2084,7 @@ interpreter is being used, but it essentially sets up the environment to process
      If this fails, returns a null object.</dd></p>
 
 <p><dt><code> - pdfshowpage_init -</code></dt>
-<dd>     In the PostScript PDF interpreter This simply adds 1 to the /DSCPageCount value in a dictionary.
+<dd>     In the PostScript PDF interpreter this simply adds 1 to the /DSCPageCount value in a dictionary.
 It has no effect in the new PDF interpreter but is maintained for backwards compatibility.</dd></p>
 
 <p><dt><code>&ltpagedict&gt pdfshowpage_setpage &ltpagedict&gt</code></dt>
@@ -2114,8 +2120,9 @@ It has no effect in the new PDF interpreter but is maintained for backwards comp
      simply draw the page. Uses pdfshowpage to actually render the page.</dd></p>
 
 <p><dt><code>- runpdfpagerange &ltint&gt &ltint&gt</code></dt>
-<dd>     Processes the PostScript /FirstPage, /LastPage and /PageList parameters to build an array
-     of page numbers to run (if PageList is present) and a FirstPage and LastPage value.</dd></p>
+<dd>     Processes the PostScript /FirstPage, /LastPage and /PageList parameters. These are used together to build an internal array
+     of page numbers to run, which is used by dopdfpages to actually process the pages if PageList is present,
+     and a FirstPage and LastPage value. Despite the name this function does not actually 'run' any pages at all.</dd></p>
 
 <p>Normal operation simply calls runpdf with an opened-for-read PostScript file object. The table below shows the normal
 calling sequence</p>
@@ -2198,6 +2205,91 @@ such as N-up ordering.</p>
 the media size to A3, draw the first page contents, translate the origin, draw the second page contents
 and then render the final content. If the first PDF page did not contain transparency, but the second did, it
 would be necessary to set /PageHasTransparency before drawing the first PDF page.</p>
+
+<h3><a name="PDF_PS_operators"></a>PostScript operators interfacing to the PDF interpreter</h3>
+<p>The PostScript functions documented above must somehow interface with the actual PDF interpreter, and this is done
+using a small number of custom PostScript operators. These operators do not exist in standard PostScript; they
+are specific to the Ghostscript implementation. These operators are documented here for the benefit of any
+developers wishing to use them directly.</p>
+
+<p><dt><code>dict .PDFInit &ltPDFContext&gt</code></dt>
+<dd>     Initialises an instance of the PDF interpreter. dict is an optional dictionary that contains any interpreter-level
+switches, such as PDFDEBUG, this is used to set the initial state of the PDF interpreter.
+The return value is a PDFcontext object which is an opaque object to be used with the other PDF operators.</dd></p>
+
+<p><dt><code>filename PDFcontext .PDFFile -</code></dt>
+<dd>     Opens a named file and associates it with the instance of the PDF interpreter.
+Filename is a string containing a fully qualified path to the PDF file to open, this file must have been made accesible
+by setting --permit-file-read.
+</dd></p>
+
+<p><dt><code>file PDFcontext .PDFStream -</code></dt>
+<dd>     Takes an already open (disk-based) file and associates it with the instance of the PDF interpreter.
+</dd></p>
+
+<p><dt><code>PDFcontext .PDFClose -</code></dt>
+<dd>     If the context contains an open PDF file which was opened via the .PDFfile operator, this closes the file.
+Files associated with the context by the .PDFStream operator are unaffected. Regardless of the source it then shuts down the PDF interpreter and frees the associated memory.
+</dd></p>
+
+<p><dt><code>PDFcontext .PDFInfo dict</code></dt>
+<dd>     PDFcontext is a PDFcontext object returned from a previous call to .PDFInit.
+The returned dictionary contains various key/value pairs with useful file level information:
+<blockquote>
+    <code>/NumPages</code> int<br>
+	<code>/Creator</code> string<br>
+	<code>/Producer</code> string<br>
+	<code>/IsEncrypted</code> boolean<br>
+</blockquote>
+</dd></p>
+
+<p><dt><code>PDFcontext .PDFMetadata -</code></dt>
+<dd>     PDFcontext is a PDFcontext object returned from a previous call to .PDFInit.
+For the benefit of high level devices, this is a replacement for 'process_trailer_attrs' which is a seriously misnamed function now.
+This function needs to write any required output intents, load and send Outlines to the device, copy the Author, Creator, Title, Subject
+and Keywords from the Info dict to the output device, copy Optional Content Properties (OCProperties) to the output device.
+If an AcroForm is present send all its fields and link widget annotations to fields, and finally copy the PageLabels. If we add support for anything else, it will be here too..
+</dd></p>
+
+<p><dt><code>PDFcontext int .PDFPageInfo -</code></dt>
+<dd>     The integer argument is the page number to retrieve information for.
+Returns a dictionary with the following key/value pairs:
+<blockquote>
+    <code>/UsesTransparency</code> true|false<br>
+	<code>/SpotColours</code> array of names, may be empty|<br>
+	<code>/MediaBox</code> [llx lly urx ury]<br>
+	<code>/HasAnnots</code> true|false<br>
+	<code>/FontsUsed</code> array of names, may be empty.<br>
+</blockquote>
+May also contain (if they are present in the Page dictionary)
+<blockquote>
+	<code>/ArtBox</code> [llx lly urx ury]<br>
+	<code>/CropBox</code> [llx lly urx ury]<br>
+	<code>/BleedBox</code> [llx lly urx ury]<br>
+	<code>/TrimBox</code> [llx lly urx ury]<br>
+	<code>/UserUnit</code> int<br>
+</blockquote>
+</dd></p>
+
+<p><dt><code>PDFcontext int .PDFDrawPage -</code></dt>
+<dd>     PDFcontext is a PDFcontext object returned from a previous call to .PDFInit.
+The integer argument is the page number to be processed.
+Interprets the page content stream(s) of the specified page using the current graphics state.
+</dd></p>
+
+<p><dt><code>PDFcontext int .PDFDrawAnnots -</code></dt>
+<dd>     PDFcontext is a PDFcontext object returned from a previous call to .PDFInit.
+The integer argument is the page number to be processed.
+Renders the Annotations (if any) of the specified page using the current graphics state
+For correct results, the graphics state when this operator is run should be the same as when
+PDFDrawPage is executed.
+</dd></p>
+
+<p>Note: The PDFcontext object created by PDFInit must (clearly) have a PDF file associated
+with it before you can usefully use it. Attempting to use a PDFcontext with
+any of the processing operators (eg .PDFDrawPage) before using either .PDFStream of .PDFFile
+to associate a file with the context will result in an error.
+</p>
 <!-- [2.0 end contents] ==================================================== -->
 
 <!-- [3.0 begin visible trailer] =========================================== -->
