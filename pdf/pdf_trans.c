@@ -526,14 +526,14 @@ int pdfi_trans_end_simple_group(pdf_context *ctx)
 }
 
 
-int pdfi_trans_begin_isolated_group(pdf_context *ctx, bool image_with_SMask)
+int pdfi_trans_begin_isolated_group(pdf_context *ctx, bool image_with_SMask, gs_color_space *pcs)
 {
     gs_transparency_group_params_t params;
     gs_rect bbox;
 
     gs_trans_group_params_init(&params, 1.0);
 
-    params.ColorSpace = NULL;
+    params.ColorSpace = pcs;
     params.Isolated = true;
     params.Knockout = false;
     params.image_with_SMask = image_with_SMask;
