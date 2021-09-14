@@ -1623,8 +1623,10 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                 goto image_exit;
             if (code)
                 rect_intersect(bbox, bbox1);
-            if (bbox.p.x >= bbox.q.x || bbox.p.y >= bbox.q.y)
+            if (bbox.p.x >= bbox.q.x || bbox.p.y >= bbox.q.y) {
+                code = 0;
                 goto image_exit;
+            }
             sx = fixed2int(bbox.p.x);
             sy = fixed2int(bbox.p.y);
             gs_make_identity(&m);
