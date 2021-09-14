@@ -912,7 +912,7 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
 
 /* Returns number of components in Matte array or 0 if not found, <0 if error */
 static int
-pdfi_image_get_matte(pdf_context *ctx, pdf_obj *smask_obj, float *vals, int size)
+pdfi_image_get_matte(pdf_context *ctx, pdf_obj *smask_obj, float *vals, int size, bool *has_Matte)
 {
     int i;
     pdf_array *Matte = NULL;
@@ -920,6 +920,7 @@ pdfi_image_get_matte(pdf_context *ctx, pdf_obj *smask_obj, float *vals, int size
     double f;
     pdf_dict *smask_dict = NULL;
 
+    *has_Matte = false;
     code = pdfi_dict_from_obj(ctx, smask_obj, &smask_dict);
     if (code < 0)
         goto exit;
@@ -929,6 +930,7 @@ pdfi_image_get_matte(pdf_context *ctx, pdf_obj *smask_obj, float *vals, int size
     if (code <= 0)
         goto exit;
 
+    *has_Matte = true;
     if (pdfi_array_size(Matte) > size) {
         code = gs_note_error(gs_error_rangecheck);
         goto exit;
@@ -950,7 +952,7 @@ pdfi_image_get_matte(pdf_context *ctx, pdf_obj *smask_obj, float *vals, int size
 
 /* See ztrans.c/zbegintransparencymaskimage() and pdf_draw.ps/doimagesmask */
 static int
-pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *image_info)
+pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *image_info, bool *has_Matte)
 {
     gs_rect bbox = { { 0, 0} , { 1, 1} };
     gs_transparency_mask_params_t params;
@@ -977,7 +979,7 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
 
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
 
-    code = pdfi_image_get_matte(ctx, image_info->SMask, params.Matte, GS_CLIENT_COLOR_MAX_COMPONENTS);
+    code = pdfi_image_get_matte(ctx, image_info->SMask, params.Matte, GS_CLIENT_COLOR_MAX_COMPONENTS, has_Matte);
 
     if (code >= 0)
         params.Matte_components = code;
@@ -1178,9 +1180,9 @@ pdfi_image_setup_type3x(pdf_context *ctx, pdfi_image_info_t *image_info,
         mask = &t3ximage->Opacity;
     mask->InterleaveType = 3;
 
-    code = pdfi_image_get_matte(ctx, image_info->SMask, mask->Matte, GS_CLIENT_COLOR_MAX_COMPONENTS);
-    if (code > 0)
-        mask->has_Matte = true;
+    code = pdfi_image_get_matte(ctx, image_info->SMask, mask->Matte, GS_CLIENT_COLOR_MAX_COMPONENTS, &mask->has_Matte);
+    if (code < 0)
+        return code;
 
     code = pdfi_data_image_params(ctx, smask_info, &mask->MaskDict, comps, NULL);
     return code;
@@ -1752,21 +1754,26 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     if (ctx->page.has_transparency == true && image_info.SMask != NULL) {
+        bool has_Matte = false;
+
         /* If this flag is set, then device will process the SMask and we need do nothing
          * here (e.g. pdfwrite).
          */
         if (!ctx->device_state.preserve_smask) {
-            code = pdfi_do_image_smask(ctx, source, &image_info);
+            code = pdfi_do_image_smask(ctx, source, &image_info, &has_Matte);
             if (code < 0)
                 goto cleanupExit;
             need_smask_cleanup = true;
         }
-        code = pdfi_trans_begin_isolated_group(ctx, true);
+        if (has_Matte)
+            code = pdfi_trans_begin_isolated_group(ctx, true, pcs);
+        else
+            code = pdfi_trans_begin_isolated_group(ctx, true, NULL);
         if (code < 0)
             goto cleanupExit;
         transparency_group = true;
     } else if (igs->SMask) {
-        code = pdfi_trans_begin_isolated_group(ctx, false);
+        code = pdfi_trans_begin_isolated_group(ctx, false, NULL);
         if (code < 0)
             goto cleanupExit;
         transparency_group = true;
