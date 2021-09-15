@@ -15,7 +15,6 @@
 
 /* Top level PDF access routines */
 #include "ghostpdf.h"
-#include "plmain.h"
 #include "pdf_types.h"
 #include "pdf_dict.h"
 #include "pdf_array.h"
