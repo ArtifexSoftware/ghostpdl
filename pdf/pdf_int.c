@@ -1706,6 +1706,12 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source
                 break;
        }
     }
+    /* We use a return value of 1 to indicate a repaired keyword (a pair of operators
+     * was concatenated, and we split them up). We must not return a value > 0 from here
+     * to avoid tripping that test.
+     */
+    if (code > 0)
+        code = 0;
     return code;
 }
 
