@@ -1558,6 +1558,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     uint64_t mask_size = 0;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     bool transparency_group = false;
+    bool op_blend_mode = false;
+    int blend_mode;
     bool need_smask_cleanup = false;
     bool maybe_jpxdecode = false;
     pdfi_trans_state_t trans_state;
@@ -1765,6 +1767,21 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 goto cleanupExit;
             need_smask_cleanup = true;
         }
+
+        /* If we are in an overprint situation this group will need
+           to have its blend mode set to compatible overprint. */
+        if (ctx->page.needs_OP) {
+            if (pdfi_trans_okOPcs(ctx)) {
+                if (gs_currentfilloverprint(ctx->pgs)) {
+                    blend_mode = gs_currentblendmode(ctx->pgs);
+                    code = gs_setblendmode(ctx->pgs, BLEND_MODE_CompatibleOverprint);
+                    op_blend_mode = true;
+                    if (code < 0)
+                        goto cleanupExit;
+                }
+            }
+        }
+
         if (has_Matte)
             code = pdfi_trans_begin_isolated_group(ctx, true, pcs);
         else
@@ -1978,6 +1995,10 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         pdfi_trans_end_isolated_group(ctx);
         if (need_smask_cleanup)
             pdfi_trans_end_smask_notify(ctx);
+    }
+
+    if (op_blend_mode) {
+        code = gs_setblendmode(ctx->pgs, blend_mode);
     }
 
     if (new_stream)

@@ -33,6 +33,7 @@ typedef enum {
     TRANSPARENCY_Caller_FillStroke /* Also includes EOFillStroke */
 } pdfi_transparency_caller_t;
 
+bool pdfi_trans_okOPcs(pdf_context* ctx);
 int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_show);
 int pdfi_trans_teardown_text(pdf_context *ctx, pdfi_trans_state_t *state);
 int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox, pdfi_transparency_caller_t caller);

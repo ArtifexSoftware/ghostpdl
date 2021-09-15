@@ -624,7 +624,7 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
 }
 
 /* Figures out if current colorspace is okay for Overprint (see pdf_ops.ps/okOPcs and setupOPtrans) */
-static bool pdfi_trans_okOPcs(pdf_context *ctx)
+bool pdfi_trans_okOPcs(pdf_context *ctx)
 {
     gs_color_space_index csi;
 
