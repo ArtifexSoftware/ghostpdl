@@ -680,8 +680,8 @@ end
 } def
 /Dpop { //OPsaveDstack begin previous { def } forall end } def
 
-% colorspaces that don't require special overprint transparency handling
-/okOPcs mark /DeviceGray 0 /DeviceCMYK 1 /DeviceN 2 /Separation 3 .dicttomark def
+% colorspaces that require special overprint transparency handling
+/specialOPcs mark /DeviceGray 0 /DeviceCMYK 1 /DeviceN 2 /Separation 3 .dicttomark def
 
 % Take care of pushing a transparency group if we need it for SMask or for Overprint..
 % After pushing the group, we save the ca and CA and change them
@@ -696,7 +696,7 @@ end
   //OPsaveDstack begin
   //Dpush exec			% push the current OPsaveDstack values into 'previous'
   /SupportsDevn .special_op
-  okOPcs currentcolorspace 0 get dup /Indexed eq {
+  specialOPcs currentcolorspace 0 get dup /Indexed eq {
     pop currentcolorspace 1 get	% use the base space
   } if
   known or {
