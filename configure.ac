@@ -2497,8 +2497,9 @@ if test x"$with_pdf" != x"no" ; then
     AC_ARG_WITH([pdf], AS_HELP_STRING([--with-pdf=NAME],
         [name of the Ghostpdf executible (if the source is available, ignored otherwise) [[gpdf]]]),
         [PDF="$with_pdf"],[PDF='gpdf'])
-
-    PDF_TARGET=gpdf
+    if test -f $srcdir/pcl/pl/pl.mak; then
+        PDF_TARGET=gpdf
+    fi
     CFLAGS="-DBUILD_PDF=1 -I$srcdir/pdf $CFLAGS"
     GPDF_DEV="\$(PDFOBJDIR)\$(D)pdfi.dev"
     PDF_MAK="\$(PDFSRCDIR)\$(D)pdf.mak"
