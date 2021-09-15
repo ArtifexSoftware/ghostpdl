@@ -324,7 +324,9 @@ XPS_TARGET=gxps
 !endif
 
 !if $(BUILD_PDF)
+!if exist ("$(PLSRCDIR)\pl.mak")
 PDF_TARGET=gpdf
+!endif
 !endif
 
 !if $(BUILD_GPDL)
