@@ -16,7 +16,6 @@
 /* Annotation handling for the PDF interpreter */
 
 #include "pdf_int.h"
-#include "plmain.h"
 #include "pdf_stack.h"
 #include "pdf_annot.h"
 #include "pdf_file.h"

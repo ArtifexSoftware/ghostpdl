@@ -16,7 +16,6 @@
 /* Page-level operations for the PDF interpreter */
 
 #include "pdf_int.h"
-#include "plmain.h"
 #include "pdf_stack.h"
 #include "pdf_doc.h"
 #include "pdf_deref.h"

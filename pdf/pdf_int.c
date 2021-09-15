@@ -15,7 +15,6 @@
 
 /* The PDF interpreter written in C */
 
-#include "plmain.h"
 #include "pdf_int.h"
 #include "pdf_file.h"
 #include "strmio.h"
