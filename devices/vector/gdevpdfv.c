@@ -250,6 +250,9 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     } else {
         smat = smat2;
     }
+    if ((smat.xx == 0.0 && smat.yy == 0.0) && (smat.xy == 0.0 && smat.yx == 0.0))
+        return_error(gs_error_undefinedresult);
+
     if (pdev->ForOPDFRead) {
         if (pdev->PatternDepth) {
             gs_matrix_multiply(&smat, &pdev->AccumulatedPatternMatrix, &smat2);
