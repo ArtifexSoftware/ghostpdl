@@ -10410,6 +10410,7 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
                 pdf14_decrement_smask_color(pgs, dev);
                 /* Restore the color_info for the clist device */
                 clistdev->color_info = pdev->saved_target_color_info;
+                ((gx_device_clist_writer*)clistdev)->clist_color_info = clistdev->color_info;	/* also reset for writer */
                 set_dev_proc(clistdev, encode_color, pdev->saved_target_encode_color);
                 set_dev_proc(clistdev, decode_color, pdev->saved_target_decode_color);
                 set_dev_proc(clistdev, get_color_mapping_procs, pdev->saved_target_get_color_mapping_procs);
