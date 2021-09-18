@@ -2496,9 +2496,13 @@ if test x"$with_pdf" != x"no" ; then
   if test -f $srcdir/pdf/pdf.mak; then
     AC_ARG_WITH([pdf], AS_HELP_STRING([--with-pdf=NAME],
         [name of the Ghostpdf executible (if the source is available, ignored otherwise) [[gpdf]]]),
-        [PDF="$with_pdf"],[PDF='gpdf'])
-    if test -f $srcdir/pcl/pl/pl.mak; then
+        [PDFEXE="$with_pdf"],[PDFEXE='gpdf'])
+
+    if test -f $srcdir/pcl/pl/pl.mak && test x"$PCL_TARGET" != x"" ; then
         PDF_TARGET=gpdf
+        PDF=$PDFEXE
+    else
+        PDF=no_gpdf
     fi
     CFLAGS="-DBUILD_PDF=1 -I$srcdir/pdf $CFLAGS"
     GPDF_DEV="\$(PDFOBJDIR)\$(D)pdfi.dev"
