@@ -787,20 +787,25 @@ bbox_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
          * If the path lies within the already accumulated box, just draw
          * on the target.
          */
-        if (fill_path == NULL)
-            return 0;
-        if (BBOX_IN_RECT(bdev, &ibox))
+        if (BBOX_IN_RECT(bdev, &ibox)) {
+            /* If we have no target device, just exit */
+            if (fill_path == NULL)
+                return 0;
             return fill_path(tdev, pgs, ppath, params, pdevc, pcpath);
-        /*
-         * If the target uses the default algorithm, just draw on the
-         * bbox device.
-         */
-        if (tdev != 0 && fill_path == gx_default_fill_path)
-            return fill_path(dev, pgs, ppath, params, pdevc, pcpath);
-        /* Draw on the target now. */
-        code = fill_path(tdev, pgs, ppath, params, pdevc, pcpath);
-        if (code < 0)
-            return code;
+        }
+        if (tdev != 0) {
+            /*
+             * If the target uses the default algorithm, just draw on the
+             * bbox device.
+             */
+            if (fill_path == gx_default_fill_path)
+                return fill_path(dev, pgs, ppath, params, pdevc, pcpath);
+            /* Draw on the target now. */
+            code = fill_path(tdev, pgs, ppath, params, pdevc, pcpath);
+            if (code < 0)
+                return code;
+        }
+
         /* Previously we would use the path bbox above usually, but that bbox is
          * inaccurate for curves, because it considers the control points of the
          * curves to be included whcih of course they are not. Now we scan-convert
