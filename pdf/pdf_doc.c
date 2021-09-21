@@ -496,15 +496,15 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
             } else {
                 if (pdfi_name_is(Type, "PageRef")) {
                     if ((*page_offset) == page_num) {
-                        pdf_dict *d = NULL;
+                        pdf_dict *page_dict = NULL;
 
-                        code = pdfi_dict_get(ctx, child, "PageRef", (pdf_obj **)&d);
+                        code = pdfi_dict_get(ctx, child, "PageRef", (pdf_obj **)&page_dict);
                         if (code < 0)
                             goto exit;
-                        code = pdfi_merge_dicts(ctx, d, inheritable);
-                        *target = d;
+                        code = pdfi_merge_dicts(ctx, page_dict, inheritable);
+                        *target = page_dict;
                         pdfi_countup(*target);
-                        pdfi_countdown(d);
+                        pdfi_countdown(page_dict);
                         goto exit;
                     } else {
                         *page_offset += 1;
