@@ -139,18 +139,20 @@ def run_string():
     gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
     gsapi.gsapi_init_with_args(instance, params)
 
-    exitcode = gsapi.gsapi_run_string_begin(instance, 0)
+    gsapi.gsapi_run_string_begin(instance, 0)
 
     with open(in_filename,"rb") as f:
         while True:
             data = f.read(size)
             if not data:
                 break
-            exitcode = gsapi.gsapi_run_string_continue(instance, data, 0)
+            gsapi.gsapi_run_string_continue(instance, data, 0)
 
     exitcode = gsapi.gsapi_run_string_end(instance, 0)
 
     end_gpdl(instance)
+
+    return exitcode
 
 
 # Examples
