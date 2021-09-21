@@ -914,7 +914,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
     else if (pbfont->FontType == ft_encrypted2) {
         pdf_font_cff *cfffont = (pdf_font_cff *)pbfont->client_data;
         pdf_name *glyphname = NULL;
-        pdf_string *charstring = NULL;
+        pdf_string *charstr = NULL;
         gs_const_string gname;
 
         code = (*ctx->get_glyph_name)((gs_font *)pbfont, ccode, &gname);
@@ -928,22 +928,22 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
             pdfi_countdown(glyphname);
             return code;
         }
-        code = pdfi_dict_get_by_key(cfffont->ctx, cfffont->CharStrings, glyphname, (pdf_obj **)&charstring);
+        code = pdfi_dict_get_by_key(cfffont->ctx, cfffont->CharStrings, glyphname, (pdf_obj **)&charstr);
         pdfi_countdown(glyphname);
         if (code < 0) {
-            code = pdfi_dict_get(cfffont->ctx, cfffont->CharStrings, ".notdef", (pdf_obj **)&charstring);
+            code = pdfi_dict_get(cfffont->ctx, cfffont->CharStrings, ".notdef", (pdf_obj **)&charstr);
         }
         if (code < 0)
             return code;
 
-        I->ff.char_data = charstring->data;
-        I->ff.char_data_len = charstring->length;
+        I->ff.char_data = charstr->data;
+        I->ff.char_data_len = charstr->length;
 
         cr->client_char_code = 0;
         cr->char_codes[0] = 0;
         cr->is_glyph_index = true;
 
-        pdfi_countdown(charstring);
+        pdfi_countdown(charstr);
         return code;
     }
     else if (pbfont->FontType == ft_TrueType) {
