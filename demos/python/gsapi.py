@@ -343,6 +343,7 @@ def gsapi_set_arg_encoding(instance, encoding):
             GS_ARG_ENCODING_UTF8,
             GS_ARG_ENCODING_UTF16LE,
             )
+    global _encoding
     e = _libgs.gsapi_set_arg_encoding(instance, encoding)
     if e < 0:
         raise GSError(e)
@@ -377,7 +378,7 @@ def gsapi_init_with_args(instance, args):
         raise GSError(e)
 
 
-def gsapi_run_string_begin(instance, user_errors):
+def gsapi_run_string_begin(instance, user_errors=0):
     '''
     Returns <exit_code>.
     '''
@@ -388,7 +389,7 @@ def gsapi_run_string_begin(instance, user_errors):
     return pexit_code.value
 
 
-def gsapi_run_string_continue(instance, str_, user_errors):
+def gsapi_run_string_continue(instance, str_, user_errors=0):
     '''
     <str_> should be either a python string or a bytes object. If the former,
     it is converted into a bytes object using utf-8 encoding.
@@ -416,7 +417,7 @@ def gsapi_run_string_continue(instance, str_, user_errors):
     return pexit_code.value
 
 
-def gsapi_run_string_end(instance, user_errors):
+def gsapi_run_string_end(instance, user_errors=0):
     '''
     Returns <exit_code>.
     '''
@@ -431,17 +432,17 @@ def gsapi_run_string_end(instance, user_errors):
     return pexit_code.value
 
 
-def gsapi_run_string_with_length(instance, str_, length, user_errors):
+def gsapi_run_string_with_length(instance, str_, length, user_errors=0):
     '''
     <str_> should be either a python string or a bytes object. If the former,
     it is converted into a bytes object using utf-8 encoding.
 
     Returns <exit_code>.
     '''
-    return gsapi_run_string(instance, str_[:length], user_errors)
+    return gsapi_run_string(instance, str_[:length], user_errors=0)
 
 
-def gsapi_run_string(instance, str_, user_errors):
+def gsapi_run_string(instance, str_, user_errors=0):
     '''
     <str_> should be either a python string or a bytes object. If the former,
     it is converted into a bytes object using utf-8 encoding.
@@ -465,7 +466,7 @@ def gsapi_run_string(instance, str_, user_errors):
     return pexit_code.value
 
 
-def gsapi_run_file(instance, filename, user_errors):
+def gsapi_run_file(instance, filename, user_errors=0):
     '''
     Returns <exit_code>.
     '''
@@ -558,8 +559,7 @@ def gsapi_set_param(instance, param, value, type_=None):
 
     if type_ is None:
         # Choose a gs_spt_* that matches the Python type of <value>.
-        if 0: pass
-        elif value is None:
+        if value is None:
             type_ = gs_spt_null
         elif isinstance(value, bool):
             type_ = gs_spt_bool
@@ -589,8 +589,7 @@ def gsapi_set_param(instance, param, value, type_=None):
     else:
         # Bool/int/float.
         type2 = None
-        if 0: pass
-        elif type_ == gs_spt_bool:
+        if type_ == gs_spt_bool:
             type2 = ctypes.c_int
         elif type_ == gs_spt_int:
             type2 = ctypes.c_int
@@ -1104,7 +1103,6 @@ if __name__ == '__main__':
         pass
     else:
         assert 0
-    if 0: assert gsapi_get_param(instance, "foo") is None
 
     # Enumerate all params and print name/value.
     print('gsapi_enumerate_params():')
