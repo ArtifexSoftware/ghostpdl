@@ -390,7 +390,7 @@ gx_ht_alloc_threshold_order(gx_ht_order * porder, uint width, uint height,
 {
     gx_ht_order order;
 
-    unsigned long num_bits = bitmap_raster(width) * 8 * height;
+    unsigned long num_bits = bitmap_raster(width) * (unsigned long)8 * height;
     const gx_ht_order_procs_t *procs;
     int code;
 

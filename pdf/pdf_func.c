@@ -459,7 +459,7 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
         for (i=0;i<params.m;i++) {
             inputs *= params.Size[i];
         }
-        samples = params.n * params.BitsPerSample;
+        samples = params.n * (uint64_t)params.BitsPerSample;
         samples *= inputs;
         samples = samples >> 3;
         if (samples > Length) {
