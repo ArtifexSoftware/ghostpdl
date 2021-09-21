@@ -934,6 +934,7 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
 
     /* apply the transfer function(s); convert to color values */
     if (pgs->effective_transfer_non_identity_count == 0) {
+        /* No transfer function to apply */
     } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
             cm_comps[i] = gx_map_color_frac(pgs,
@@ -2377,6 +2378,7 @@ cmap_transfer(gx_color_value *pconc, const gs_gstate * pgs, gx_device * dev)
 
     /* apply the transfer function(s) */
     if (pgs->effective_transfer_non_identity_count == 0) {
+        /* No transfer function to apply */
     } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
             pconc[i] = frac2cv(gx_map_color_frac(pgs,

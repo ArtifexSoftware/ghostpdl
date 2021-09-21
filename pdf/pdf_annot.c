@@ -1076,8 +1076,7 @@ pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
         code = pdfi_string_bbox(ctx, temp_string, &bbox, &awidth, false);
         if (code < 0) goto exit;
 
-        if (linestart || ((x + awidth.x) <= x_max)) {
-        } else {
+        if (!linestart && ((x + awidth.x) > x_max)) {
             x = x_start;
             linestart = true;
         }
