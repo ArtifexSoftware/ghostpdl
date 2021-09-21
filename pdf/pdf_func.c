@@ -240,7 +240,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                     /* parse an operator */
                     Size = 1;
                     TokenBuffer[0] = c;
-                    do {
+                    while (1) {
                         code = pdfi_read_bytes(ctx, &c, 1, 1, function_stream);
                         if (code < 0)
                             return code;
@@ -251,7 +251,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                         TokenBuffer[Size++] = c;
                         if (Size > OPTOKENSIZE)
                             return_error(gs_error_syntaxerror);
-                    } while(code >= 0);
+                    }
                     TokenBuffer[Size] = 0x00;
                     pdfi_unread(ctx, function_stream, &c, 1);
                     for (i=0;i < NumOps;i++) {

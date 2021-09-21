@@ -705,8 +705,7 @@ pdfi_shading_build(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
         goto shading_error;
 
     pdfi_countdown(cspace);
-    if (code >= 0)
-        *ppsh = psh;
+    *ppsh = psh;
     return code;
 
  shading_error:

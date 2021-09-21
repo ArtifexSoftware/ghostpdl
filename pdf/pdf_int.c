@@ -117,7 +117,7 @@ int pdfi_skip_white(pdf_context *ctx, pdf_c_stream *s)
         if (bytes == 0)
             return 0;
         read += bytes;
-    } while (bytes != 0 && iswhite(c));
+    } while (iswhite(c));
 
     if (read > 0)
         pdfi_unread(ctx, s, &c, 1);
@@ -1316,29 +1316,21 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
     if (code <= 0)
         goto error_exit;
 
-    if (code > 0) {
-        switch(keyword->length - 1) {
-            case 1:
-                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
-                break;
-            case 2:
-                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
-                break;
-            case 3:
-                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
-                break;
-            default:
-                goto error_exit;
-        }
-        if (code <= 0)
+    switch(keyword->length - 1) {
+        case 1:
+            code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+            break;
+        case 2:
+            code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+            break;
+        case 3:
+            code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+            break;
+        default:
             goto error_exit;
-        if (code > 0)
-            goto match;
     }
-    pdfi_countdown(key1);
-    pdfi_countdown(key2);
-    key1 = NULL;
-    key2 = NULL;
+    if (code <= 0)
+        goto error_exit;
 
 match:
     /* If we get here, we have two PDF_KEYWORD objects. We push them on the stack

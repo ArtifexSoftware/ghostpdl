@@ -1236,6 +1236,8 @@ static int check_password_R5(pdf_context *ctx, char *Password, int PasswordLen, 
     int code;
 
     if (PasswordLen != 0) {
+        pdf_string *P = NULL, *P_UTF8 = NULL;
+
         code = check_user_password_R5(ctx, Password, PasswordLen, KeyLen);
         if (code >= 0)
             return 0;
@@ -1247,33 +1249,28 @@ static int check_password_R5(pdf_context *ctx, char *Password, int PasswordLen, 
         /* If the supplied Password fails as the user *and* owner password, maybe its in
          * the locale, not UTF-8, try converting to UTF-8
          */
+        code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->encryption.Password), (pdf_obj **)&P);
+        if (code < 0)
+            return code;
+        memcpy(P->data, Password, PasswordLen);
+        pdfi_countup(P);
+        code = locale_to_utf8(ctx, P, &P_UTF8);
         if (code < 0) {
-            pdf_string *P = NULL, *P_UTF8 = NULL;
-
-            code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->encryption.Password), (pdf_obj **)&P);
-            if (code < 0) {
-                return code;
-            }
-            memcpy(P->data, Password, PasswordLen);
-            pdfi_countup(P);
-            code = locale_to_utf8(ctx, P, &P_UTF8);
-            if (code < 0) {
-                pdfi_countdown(P);
-                return code;
-            }
-            code = check_user_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen);
-            if (code >= 0) {
-                pdfi_countdown(P);
-                pdfi_countdown(P_UTF8);
-                return code;
-            }
-
-            code = check_owner_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen);
+            pdfi_countdown(P);
+            return code;
+        }
+        code = check_user_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen);
+        if (code >= 0) {
             pdfi_countdown(P);
             pdfi_countdown(P_UTF8);
-            if (code >= 0)
-                return code;
+            return code;
         }
+
+        code = check_owner_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen);
+        pdfi_countdown(P);
+        pdfi_countdown(P_UTF8);
+        if (code >= 0)
+            return code;
     }
     code = check_user_password_R5(ctx, (char *)"", 0, KeyLen);
     if (code >= 0)
@@ -1287,6 +1284,8 @@ static int check_password_R6(pdf_context *ctx, char *Password, int PasswordLen, 
     int code;
 
     if (PasswordLen != 0) {
+        pdf_string *P = NULL, *P_UTF8 = NULL;
+
         code = check_user_password_R6(ctx, Password, PasswordLen, KeyLen);
         if (code >= 0)
             return 0;
@@ -1297,32 +1296,28 @@ static int check_password_R6(pdf_context *ctx, char *Password, int PasswordLen, 
         /* If the supplied Password fails as the user *and* owner password, maybe its in
          * the locale, not UTF-8, try converting to UTF-8
          */
+        code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->encryption.Password), (pdf_obj **)&P);
+        if (code < 0)
+            return code;
+        memcpy(P->data, Password, PasswordLen);
+        pdfi_countup(P);
+        code = locale_to_utf8(ctx, P, &P_UTF8);
         if (code < 0) {
-            pdf_string *P = NULL, *P_UTF8 = NULL;
-
-            code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->encryption.Password), (pdf_obj **)&P);
-            if (code < 0)
-                return code;
-            memcpy(P->data, Password, PasswordLen);
-            pdfi_countup(P);
-            code = locale_to_utf8(ctx, P, &P_UTF8);
-            if (code < 0) {
-                pdfi_countdown(P);
-                return code;
-            }
-            code = check_user_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen);
-            if (code >= 0) {
-                pdfi_countdown(P);
-                pdfi_countdown(P_UTF8);
-                return code;
-            }
-
-            code = check_owner_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen);
+            pdfi_countdown(P);
+            return code;
+        }
+        code = check_user_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen);
+        if (code >= 0) {
             pdfi_countdown(P);
             pdfi_countdown(P_UTF8);
-            if (code >= 0)
-                return code;
+            return code;
         }
+
+        code = check_owner_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen);
+        pdfi_countdown(P);
+        pdfi_countdown(P_UTF8);
+        if (code >= 0)
+            return code;
     }
     code = check_user_password_R6(ctx, (char *)"", 0, KeyLen);
     if (code >= 0)
