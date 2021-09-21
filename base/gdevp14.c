@@ -10214,33 +10214,31 @@ pdf14_accum_get_color_mapping_procs(const gx_device * dev, const gx_device **map
  *  Device proc for updating the equivalent CMYK color for spot colors.
  */
 static int
-pdf14_accum_update_spot_equivalent_colors(gx_device * dev, const gs_gstate * pgs)
+pdf14_accum_update_spot_equivalent_colors(gx_device * dev, const gs_gstate * pgs, const gs_color_space *pcs)
 {
     gx_device_pdf14_accum *pdev = (gx_device_pdf14_accum *)dev;
     gx_device *tdev = ((pdf14_device *)(pdev->save_p14dev))->target;
-    int code = update_spot_equivalent_cmyk_colors(dev, pgs, &pdev->devn_params,
+    int code = update_spot_equivalent_cmyk_colors(dev, pgs, pcs, &pdev->devn_params,
                                               &pdev->equiv_cmyk_colors);
 
     if (code >= 0 && tdev != NULL)
-        code = dev_proc(tdev, update_spot_equivalent_colors)(tdev, pgs);
+        code = dev_proc(tdev, update_spot_equivalent_colors)(tdev, pgs, pcs);
     return code;
 }
 
 /* Used when doing overprint simulation and have spot colors */
 static int
-pdf14_update_spot_equivalent_colors(gx_device *dev, const gs_gstate *pgs)
+pdf14_update_spot_equivalent_colors(gx_device *dev, const gs_gstate *pgs, const gs_color_space *pcs)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    const gs_color_space *pcs;
     int code;
 
     /* Make sure we are not All or None */
-    pcs = gs_currentcolorspace_inline(pgs);
     if (pcs != NULL && pcs->type->index == gs_color_space_index_Separation &&
         pcs->params.separation.sep_type != SEP_OTHER)
             return 0;
 
-    code = update_spot_equivalent_cmyk_colors(dev, pgs, &pdev->devn_params,
+    code = update_spot_equivalent_cmyk_colors(dev, pgs, pcs, &pdev->devn_params,
         &pdev->op_pequiv_cmyk_colors);
     return code;
 }

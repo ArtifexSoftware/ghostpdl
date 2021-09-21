@@ -956,11 +956,11 @@ tiffsep_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out
  *  Device proc for updating the equivalent CMYK color for spot colors.
  */
 static int
-tiffsep_update_spot_equivalent_colors(gx_device * dev, const gs_gstate * pgs)
+tiffsep_update_spot_equivalent_colors(gx_device * dev, const gs_gstate * pgs, const gs_color_space *pcs)
 {
     tiffsep_device * pdev = (tiffsep_device *)dev;
 
-    update_spot_equivalent_cmyk_colors(dev, pgs,
+    update_spot_equivalent_cmyk_colors(dev, pgs, pcs,
                     &pdev->devn_params, &pdev->equiv_cmyk_colors);
     return 0;
 }

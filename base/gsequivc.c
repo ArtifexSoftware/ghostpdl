@@ -283,10 +283,10 @@ static bool check_all_colors_known(int num_spot,
 
 /* If possible, update the equivalent CMYK color for a spot color */
 int
-update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_gstate * pgs,
+update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_gstate * pgs, const gs_color_space * pcs_in,
     gs_devn_params * pdevn_params, equivalent_cmyk_color_params * pparams)
 {
-    const gs_color_space * pcs;
+    gs_color_space * pcs = pcs_in;
     cmm_dev_profile_t *dev_profile;
     int code;
 
@@ -303,12 +303,16 @@ update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_gstate * pgs,
         pparams->all_color_info_valid = true;
         return 0;
     }
+
+    /* If the caller apssed in NULL for the colour space, use the current colour space */
+    if (pcs_in == NULL)
+        pcs = gs_currentcolorspace_inline(pgs);
+
     /*
      * Verify that the given color space is a Separation or a DeviceN color
      * space.  If so then when check if the color space contains a separation
      * color for which we need a CMYK equivalent.
      */
-    pcs = gs_currentcolorspace_inline(pgs);
     if (pcs != NULL) {
         if (pcs->type->index == gs_color_space_index_Separation) {
             update_Separation_spot_equivalent_cmyk_colors(pdev, pgs, pcs,

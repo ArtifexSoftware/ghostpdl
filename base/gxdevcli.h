@@ -1295,7 +1295,7 @@ typedef struct gs_fill_attributes_s {
  * start of src/gsequivc.c.
  */
 #define dev_t_proc_update_spot_equivalent_colors(proc, dev_t)\
-  int proc(dev_t *dev, const gs_gstate * pgs)
+  int proc(dev_t *dev, const gs_gstate * pgs, const gs_color_space *pcs)
 #define dev_proc_update_spot_equivalent_colors(proc)\
   dev_t_proc_update_spot_equivalent_colors(proc, gx_device)
 

@@ -809,14 +809,14 @@ gx_forward_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *
 }
 
 int
-gx_forward_update_spot_equivalent_colors(gx_device *dev, const gs_gstate * pgs)
+gx_forward_update_spot_equivalent_colors(gx_device *dev, const gs_gstate * pgs, const gs_color_space *pcs)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
     int code = 0;
 
     if (tdev != NULL)
-        code = dev_proc(tdev, update_spot_equivalent_colors)(tdev, pgs);
+        code = dev_proc(tdev, update_spot_equivalent_colors)(tdev, pgs, pcs);
     return code;
 }
 

@@ -172,7 +172,7 @@ gx_install_Separation(gs_color_space * pcs, gs_gstate * pgs)
          */
         if (dev_proc(pgs->device, update_spot_equivalent_colors))
            code = dev_proc(pgs->device, update_spot_equivalent_colors)
-                                                        (pgs->device, pgs);
+                                                        (pgs->device, pgs, pcs);
     }
     return code;
 }

@@ -1027,7 +1027,7 @@ gx_default_include_color_space(gx_device *pdev, gs_color_space *cspace,
  * src/gsequivc.c.
  */
 int
-gx_default_update_spot_equivalent_colors(gx_device *pdev, const gs_gstate * pgs)
+gx_default_update_spot_equivalent_colors(gx_device *pdev, const gs_gstate * pgs, const gs_color_space *pcs)
 {
     return 0;
 }

@@ -1546,7 +1546,7 @@ gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_gstate * pgs,
         return gs_throw(gs_error_VMerror, "Insufficient memory for devn equiv colors");
     pcspace->cmm_icc_profile_data = profile;
     temp_state.color[0].color_space = pcspace;
-    return dev_proc(dev, update_spot_equivalent_colors)(dev, &temp_state);
+    return dev_proc(dev, update_spot_equivalent_colors)(dev, &temp_state, pcspace);
 }
 
 #define DEFAULT_ICC_PROCESS "Cyan, Magenta, Yellow, Black,"

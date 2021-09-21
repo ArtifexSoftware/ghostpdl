@@ -1276,12 +1276,12 @@ display_separation_decode_color(gx_device * dev, gx_color_index color,
  *  Device proc for updating the equivalent CMYK color for spot colors.
  */
 static int
-display_update_spot_equivalent_colors(gx_device * dev, const gs_gstate * pgs)
+display_update_spot_equivalent_colors(gx_device * dev, const gs_gstate * pgs, const gs_color_space *pcs)
 {
     gx_device_display * ddev = (gx_device_display *)dev;
 
     if ((ddev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION)
-        update_spot_equivalent_cmyk_colors(dev, pgs,
+        update_spot_equivalent_cmyk_colors(dev, pgs, pcs,
                     &ddev->devn_params, &ddev->equiv_cmyk_colors);
     return 0;
 }

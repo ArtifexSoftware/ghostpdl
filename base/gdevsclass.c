@@ -596,10 +596,10 @@ int default_subclass_fill_linear_color_triangle(gx_device *dev, const gs_fill_at
     return gx_default_fill_linear_color_triangle(dev, fa, p0, p1, p2, c0, c1, c2);
 }
 
-int default_subclass_update_spot_equivalent_colors(gx_device *dev, const gs_gstate * pgs)
+int default_subclass_update_spot_equivalent_colors(gx_device *dev, const gs_gstate * pgs, const gs_color_space *pcs)
 {
     if (dev->child)
-        return dev_proc(dev->child, update_spot_equivalent_colors)(dev->child, pgs);
+        return dev_proc(dev->child, update_spot_equivalent_colors)(dev->child, pgs, pcs);
 
     return 0;
 }
