@@ -667,7 +667,7 @@ $(DD)txtwrite.dev : $(ECHOGS_XE) $(txtwrite_) $(GDEV)\
 $(DEVOBJ)gdevtxtw.$(OBJ) : $(DEVVECSRC)gdevtxtw.c $(GDEV) $(gdevkrnlsclass_h) \
   $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
   $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
-  $(gxgstate_h) $(gxpath_h) $(gsagl_h) $(DEVS_MAK) $(MAKEDIRS) $(DEVVECSRC)doc_common.h
+  $(gxgstate_h) $(gxpath_h) $(gsagl_h) $(DEVS_MAK) $(DEVVECSRC)doc_common.h $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevtxtw.$(OBJ) $(C_) $(DEVVECSRC)gdevtxtw.c
 
 # Docx writer
@@ -675,15 +675,15 @@ $(DEVOBJ)gdevtxtw.$(OBJ) : $(DEVVECSRC)gdevtxtw.c $(GDEV) $(gdevkrnlsclass_h) \
 docxwrite_=$(DEVOBJ)gdevdocxw.$(OBJ) $(DEVOBJ)doc_common.$(OBJ)
 
 $(DD)docxwrite.dev : $(ECHOGS_XE) $(docxwrite_) $(GLD)gsagl.dev $(GDEV)\
- $(gsagl_h) $(DEVS_MAK) $(MAKEDIRS) $(EXTRACT_OBJS)
+ $(gsagl_h) $(DEVS_MAK) $(EXTRACT_OBJS) $(MAKEDIRS)
 	$(SETDEV2) $(DD)docxwrite $(docxwrite_) $(EXTRACT_OBJS)
 	$(ADDMOD) $(DD)docxwrite -include $(GLD)gsagl
 
 $(DEVOBJ)gdevdocxw.$(OBJ) : $(DEVVECSRC)gdevdocxw.c $(GDEV) $(gdevkrnlsclass_h) \
   $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
   $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
-  $(gxgstate_h) $(gxpath_h) $(gsagl_h) $(DEVS_MAK) $(MAKEDIRS) \
-  $(DEVVECSRC)doc_common.h
+  $(gxgstate_h) $(gxpath_h) $(gsagl_h) $(DEVS_MAK) \
+  $(DEVVECSRC)doc_common.h  $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevdocxw.$(OBJ) $(C_) $(DEVVECSRC)gdevdocxw.c
 
 # Shared code used by txtwrite and docxwrite.
@@ -691,7 +691,7 @@ $(DEVOBJ)gdevdocxw.$(OBJ) : $(DEVVECSRC)gdevdocxw.c $(GDEV) $(gdevkrnlsclass_h) 
 $(DEVOBJ)doc_common.$(OBJ) : $(DEVVECSRC)doc_common.c $(GDEV) $(gdevkrnlsclass_h) \
   $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
   $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
-  $(gxgstate_h) $(gxpath_h) $(gsagl_h) $(DEVS_MAK) $(MAKEDIRS) $(DEVVECSRC)doc_common.h
+  $(gxgstate_h) $(gxpath_h) $(gsagl_h) $(DEVS_MAK) $(DEVVECSRC)doc_common.h $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)doc_common.$(OBJ) $(C_) $(DEVVECSRC)doc_common.c
 
 
