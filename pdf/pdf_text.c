@@ -1449,9 +1449,13 @@ int pdfi_Tr(pdf_context *ctx)
                      * accumulated text to a clip, then set the text rendering mode
                      * to the non-clip mode, and perform an implicit BT.
                      */
-                    pdfi_ET(ctx);
+                    code = pdfi_ET(ctx);
+                    if (code < 0)
+                        return code;
                     gs_settextrenderingmode(ctx->pgs, mode);
-                    pdfi_BT(ctx);
+                    code = pdfi_BT(ctx);
+                    if (code < 0)
+                        return code;
                 }
                 else
                     gs_settextrenderingmode(ctx->pgs, mode);
