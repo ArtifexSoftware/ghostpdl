@@ -232,7 +232,7 @@ int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_c_stream *sour
     stream *new_s;
     int min_size = 2048;
 
-    s_arcfour_set_key(&state, (const unsigned char *)Key->data, Key->length);
+    s_arcfour_set_key(&state, (const unsigned char *)Key->data, Key->length); /* lgtm [cpp/weak-cryptographic-algorithm] */
 
     code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_arcfour_template, (const stream_state *)&state, ctx->memory->non_gc_memory, &new_s);
     if (code < 0)

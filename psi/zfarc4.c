@@ -51,7 +51,8 @@ z_arcfour_d(i_ctx_t * i_ctx_p)
     if (!r_has_type(sop, t_string))
     	return_error(gs_error_typecheck);
 
-    if ((code = s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop))) < 0)
+    code = s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop)); /* lgtm [cpp/weak-cryptographic-algorithm] */
+    if (code < 0)
         return code;
 
     /* we pass npop=0, since we've no arguments left to consume */
