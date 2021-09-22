@@ -1283,11 +1283,13 @@ int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *s
         return code;
     }
     do {
-        byte b;
-        code = pdfi_read_bytes(ctx, &b, 1, 1, decompressed_stream);
+        byte b[512];
+        code = pdfi_read_bytes(ctx, (byte *)&b, 1, 512, decompressed_stream);
         if (code <= 0)
             break;
-        decompressed_length++;
+        decompressed_length+=code;
+        if (code < 512)
+            break;
     } while (true);
     pdfi_close_file(ctx, decompressed_stream);
 
