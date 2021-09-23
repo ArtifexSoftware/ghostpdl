@@ -1,0 +1,340 @@
+* {
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, tt, var,
+b, u, i, center,
+ ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+}
+
+
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+
+html, body {
+    position: relative;
+    height: 100%;
+}
+
+body {
+    -webkit-touch-callout: none;        /* prevent callout to copy image, etc when tap to hold */
+    -webkit-text-size-adjust: none;     /* prevent webkit from resizing text to fit */
+    -webkit-user-select: text;          /* prevent copy paste, to allow, change 'none' to 'text' */
+    color:black;
+    background:#ffffff;
+    font-family:"Source Sans Pro", sans-serif; /* 200 = ExtraLight, 300 = Light, 400 = regular, 600 = semi-bold, 700 = bold, 900 = black */
+    font-weight:400;
+    font-size:16px;
+    margin:0px;
+    padding:0px;
+    display: grid;
+}
+
+header {
+    width: 100%;
+    height:50px;
+    background: #0075cf url(language-bindings/images/ghostscript.png) 10px center no-repeat;
+    background-size: 30px 30px;
+    color: #fff;
+    line-height: 50px;
+    text-indent: 50px;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    grid-row: 1;
+}
+
+header .search {
+	width: 50px;
+	height:50px;
+    background: #0075cf url(images/icon-search.png) center center no-repeat;
+    background-size: 50px 50px;
+}
+
+main {
+	grid-row: 2;
+	overflow-y: scroll;
+}
+
+main .outer {
+    max-width: 1280px;
+    margin: 0px auto 100px;
+}
+
+main .inner {
+    padding: 20px;
+}
+
+a {
+    text-decoration: none;
+    color: #0075cf;
+}
+
+i {
+    font-style: italic;
+}
+
+p {
+    line-height: 24px;
+    margin-bottom: 20px;
+}
+
+hr {
+	width: 100%;
+	margin: 50px auto;
+}
+
+/* Number the h2/h3 -- doesn't work on v4/5 browsers */
+h2 {
+    counter-increment: h2-count;
+    counter-reset:     h3-count;
+}
+
+h2 a:after {
+    font-size:30px;
+    content: counter(h2-count) "";
+}
+
+h3 {
+    counter-increment: h3-count;
+}
+
+h3 a:after {
+	font-size:22px;
+    content: counter(h2-count) "." counter(h3-count) "";
+}
+
+h2 a:after, h3 a:after {
+	background-color: black;
+	padding: 0px 10px;
+	margin-right: 5px;
+	border-radius: 5px;
+	color: white;
+}
+
+header h1 {
+    font-size:24px;
+    font-weight:600;
+    color: #fff;
+    text-decoration: none;
+}
+
+header a h1 {
+	color: #fff;
+}
+
+h1 {
+    font-size:40px;
+    font-weight:600;
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-weight:600;
+    font-size:26px;
+    margin-bottom: 20px;
+}
+
+h3 {
+    font-weight:600;
+    font-size:20px;
+    margin-bottom: 10px;
+}
+
+h4 {
+    font-weight:600;
+    font-size:16px;
+    margin-bottom: 10px;
+}
+
+code {
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: monospace;
+}
+
+pre {
+    font-family: monospace;
+}
+
+pre>code {
+    padding:0;
+    margin:0;
+    font-size:100%;
+    word-break:normal;
+    white-space:pre;
+    background:transparent;
+    border:0;
+}
+
+pre code, pre tt {
+    display:inline;
+    padding:0;
+    margin:0;
+    overflow:visible;
+    line-height:inherit;
+    word-wrap:normal;
+    background-color:transparent;
+    border:0
+}
+
+pre code::before,
+pre code::after,
+pre tt::before,
+pre tt::after {
+    content:normal
+}
+
+ul {
+	margin: 0 0 0 20px;
+}
+
+li {
+    margin: 10px;
+}
+
+table {
+    margin: 20px 0;
+    border-collapse: collapse;
+    table-layout:fixed;
+    width: 100%;
+    border: 1px solid #c0c0c0;
+}
+
+th {
+    font-weight: bold;
+    background-color:#666;
+    color: #fff;
+    border-bottom: 1px solid #c0c0c0;
+    border-right: 1px solid #c0c0c0;
+}
+
+tr {
+    text-overflow:clip;
+}
+
+th, td {
+    text-align: left;
+    padding:14px;
+    word-wrap:break-word;
+}
+
+td {
+    border-right: 1px solid #c0c0c0;
+}
+
+em {
+    font-style: italic;
+}
+
+ul.toc {
+	list-style-type:none;
+}
+
+ul.toc li ul {
+	list-style-type:none;
+	margin-left: 20px;
+}
+
+blockquote {
+    background-color:transparent;
+    width: 100%;
+    height: auto;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 0 0 20px 0;
+    border: 1px solid #666;
+}
+
+blockquote strong {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+table {
+    color: #000;
+}
+
+table code {
+    color: #000;
+}
+
+table tr {
+    background-color: #fff;
+    border-bottom: 1px solid #c0c0c0;
+}
+
+table tr:nth-child(2n) {
+    background-color: #ddd;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+
+    body {
+        background-color: #000;
+        color: white;
+    }
+
+    a {
+	    text-decoration: none;
+	    color: #289df6;
+	}
+
+	h2 a:after, h3 a:after {
+		background-color: white;
+		color: black;
+	}
+
+	blockquote {
+	    border: 1px solid #efefef;
+	}
+
+	table {
+        color: #fff;
+    }
+
+    table code {
+        color: #fff;
+    }
+
+    table tr {
+        background-color: #000;
+    }
+
+    table tr:nth-child(2n) {
+        background-color: #222;
+    }
+
+}
+
+/* < phone portrait */
+@media all and (max-width : 399px)  {
+
+	header h1 {
+	    font-size:18px;
+	}
+
+}
