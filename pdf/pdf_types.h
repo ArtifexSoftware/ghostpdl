@@ -56,7 +56,13 @@ typedef enum pdf_obj_type_e {
     PDF_ARRAY_MARK = '[',
     PDF_DICT_MARK = '<',
     PDF_PROC_MARK = '{',
-    PDF_CMAP = 'C'
+    PDF_CMAP = 'C',
+    /* Lastly, for the benefit of duplicate colour space identification, we store either
+     * a name for a colour space, or if there is no name, the context (we can get the
+     * context from the name object if there is one). We need to be able to tell if a
+     * pdf_obj is a name or a context.
+     */
+    PDF_CTX = 'c'
 } pdf_obj_type;
 
 #if REFCNT_DEBUG

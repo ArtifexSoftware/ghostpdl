@@ -342,6 +342,7 @@ typedef struct search_paths_s
 
 typedef struct pdf_context_s
 {
+    pdf_obj_common;
     void *instance;
     gs_memory_t *memory;
 
@@ -435,6 +436,7 @@ typedef struct pdf_context_s
 
 
     /* Interpreter level PDF objects */
+    pdf_name *currentSpace;
 
     /* The interpreter operand stack */
     uint32_t stack_size;

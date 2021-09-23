@@ -1544,6 +1544,10 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
 
     memset(ctx, 0, sizeof(pdf_context));
     ctx->memory = pmem;
+    ctx->type = PDF_CTX;
+    ctx->flags = 0;
+    ctx->refcnt = 1;
+    ctx->ctx = ctx;
 
     ctx->stack_bot = (pdf_obj **)gs_alloc_bytes(ctx->memory, INITIAL_STACK_SIZE * sizeof (pdf_obj *), "pdf_imp_allocate_interp_stack");
     if (ctx->stack_bot == NULL) {

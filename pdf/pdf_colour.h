@@ -20,11 +20,40 @@
 
 #include "gscolor1.h"
 #include "gscspace.h"
+#include "pdf_stack.h"
 
 static inline void pdfi_set_colour_callback(gs_color_space *pcs, pdf_context *ctx, gs_cspace_free_proc_t pdfi_cspace_free_callback)
 {
-    pcs->interpreter_data = ctx;
+    if (pcs->interpreter_data != NULL) {
+        pdf_obj *o = (pdf_obj *)(pcs->interpreter_data);
+        if (ctx->currentSpace != NULL && o->type == PDF_NAME) {
+            pdfi_countdown(o);
+            pcs->interpreter_data = NULL;
+        }
+    }
+
+    if (ctx->currentSpace != NULL) {
+        pcs->interpreter_data = ctx->currentSpace;
+        pdfi_countup(ctx->currentSpace);
+    } else {
+        if (pcs->interpreter_data == NULL)
+            pcs->interpreter_data = ctx;
+    }
     pcs->interpreter_free_cspace_proc = pdfi_cspace_free_callback;
+}
+
+static inline int check_same_current_space(pdf_context *ctx, pdf_name *n)
+{
+    pdf_obj *o = (pdf_obj *)(ctx->pgs->color[0].color_space->interpreter_data);
+
+    if (o == NULL || o->type != PDF_NAME)
+        return 0;
+
+    if (pdfi_name_cmp(n, (pdf_name *)o) == 0) {
+        if (n->object_num == o->object_num && n->indirect_num == o->indirect_num)
+            return 1;
+    }
+    return 0;
 }
 
 int pdfi_setgraystroke(pdf_context *ctx);

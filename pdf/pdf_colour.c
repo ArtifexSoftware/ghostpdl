@@ -305,8 +305,14 @@ int pdfi_ri(pdf_context *ctx)
 static void pdfi_cspace_free_callback(gs_memory_t * mem, void *cs)
 {
     gs_color_space *pcs = (gs_color_space *)cs;
-    pdf_context *ctx = (pdf_context *)pcs->interpreter_data;
+    pdf_obj *o = (pdf_obj *)pcs->interpreter_data;
+    pdf_context *ctx = NULL;
     gs_function_t *pfn;
+
+    if (o == NULL)
+        return;
+
+    ctx = o->ctx;
 
     if (gs_color_space_get_index(pcs) == gs_color_space_index_Separation) {
         /* Handle cleanup of Separation functions if applicable */
@@ -321,6 +327,8 @@ static void pdfi_cspace_free_callback(gs_memory_t * mem, void *cs)
         if (pfn)
             pdfi_free_function(ctx, pfn);
     }
+    if (o->type == PDF_NAME)
+        pdfi_countdown(o);
 }
 
 int pdfi_gs_setgray(pdf_context *ctx, double d)
@@ -1153,11 +1161,15 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         /* Failed to set the ICCBased space, attempt to use the Alternate */
         code = pdfi_dict_knownget(ctx, dict, "Alternate", &Alternate);
         if (code > 0) {
+            pdf_name *Saved = ctx->currentSpace;
+            ctx->currentSpace = NULL;
+
             /* The Alternate should be one of the device spaces, therefore a Name object. If its not, fallback to using /N */
             if (Alternate->type == PDF_NAME)
                 code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict,
                                                       page_dict, ppcs, inline_image);
             pdfi_countdown(Alternate);
+            ctx->currentSpace = Saved;
             if (code == 0) {
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_BADICC_USE_ALT, "pdfi_create_iccbased", NULL);
                 goto done;
@@ -1186,8 +1198,10 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
                 break;
         }
     }
-    if (ppcs!= NULL)
+    if (ppcs!= NULL) {
         *ppcs = pcs;
+        pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
+    }
     else {
         if (pcs != NULL) {
             code = pdfi_gs_setcolorspace(ctx, pcs);
@@ -1351,6 +1365,7 @@ pdfi_seticc_cal(pdf_context *ctx, float *white, float *black, float *gamma,
 
     if (ppcs!= NULL){
         *ppcs = pcs;
+        pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setcolorspace(ctx, pcs);
         rc_decrement_only_cs(pcs, "pdfi_seticc_cal");
@@ -1579,8 +1594,12 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
 
     } else {
         if (o->type == PDF_ARRAY) {
+            pdf_name *Saved = ctx->currentSpace;
+            ctx->currentSpace = NULL;
+
             ArrayAlternate = (pdf_array *)o;
             code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt, inline_image);
+            ctx->currentSpace = Saved;
             if (code < 0)
                 goto pdfi_separation_error;
         }
@@ -1621,6 +1640,7 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
          */
         code = pdfi_gs_setcolorspace(ctx, pcs);
         *ppcs = pcs;
+        pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setcolorspace(ctx, pcs);
         /* release reference from construction */
@@ -1752,8 +1772,12 @@ all_error:
 
     } else {
         if (o->type == PDF_ARRAY) {
+            pdf_name *Saved = ctx->currentSpace;
+            ctx->currentSpace = NULL;
+
             ArrayAlternate = (pdf_array *)o;
             code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt, inline_image);
+            ctx->currentSpace = Saved;
             if (code < 0) {
                 pdfi_countdown(o);
                 goto pdfi_devicen_error;
@@ -2337,8 +2361,14 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
         if (code < 0)
             return code;
 
+        if (ppcs == NULL && check_same_current_space(ctx, name) == 1) {
+            return 0;
+        }
+
+        ctx->currentSpace = name;
         /* recursion */
         code = pdfi_create_colorspace(ctx, ref_space, stream_dict, page_dict, ppcs, inline_image);
+        ctx->currentSpace = NULL;
         pdfi_countdown(ref_space);
         return code;
     }
