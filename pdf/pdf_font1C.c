@@ -2178,8 +2178,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffcid->generation_num = font_dict->generation_num;
                 cffcid->indirect_num = font_dict->indirect_num;
                 cffcid->indirect_gen = font_dict->indirect_gen;
-                cffcid->PDF_font = font_dict;
-                pdfi_countup(font_dict);
+
                 cffcid->CharStrings = cffpriv.pdfcffpriv.CharStrings;
                 cffpriv.pdfcffpriv.CharStrings = NULL;
 
@@ -2329,8 +2328,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
 
                 fdcfffont->object_num = 0;
                 fdcfffont->generation_num = 0;
-                fdcfffont->PDF_font = font_dict;
-                pdfi_countup(font_dict);
+
                 (void)pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
                 fdcfffont->BaseFont = basefont;
                 fdcfffont->Name = basefont;
@@ -2472,8 +2470,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
 
                 cfffont->object_num = font_dict->object_num;
                 cfffont->generation_num = font_dict->generation_num;
-                cfffont->PDF_font = font_dict;
-                pdfi_countup(font_dict);
+
                 (void)pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
                 cfffont->BaseFont = basefont;
                 cfffont->Name = basefont;
