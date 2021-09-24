@@ -2090,7 +2090,7 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
 
     num_values = (hival+1) * cs_num_components(pcs_base);
     if (num_values > lookup_length) {
-        dmprintf2(ctx->memory, "WARNING: pdfi_create_indexed() got %ld values, expected at least %d values\n",
+        dmprintf2(ctx->memory, "WARNING: pdfi_create_indexed() got %"PRIi64" values, expected at least %d values\n",
                   lookup_length, num_values);
         code = gs_note_error(gs_error_rangecheck);
         goto exit;

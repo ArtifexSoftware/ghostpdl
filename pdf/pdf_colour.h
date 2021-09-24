@@ -20,7 +20,8 @@
 
 #include "gscolor1.h"
 #include "gscspace.h"
-#include "pdf_stack.h"
+#include "pdf_stack.h"  /* for pdfi_countup/countdown */
+#include "pdf_misc.h"   /* for pdf_name_cmp */
 
 static inline void pdfi_set_colour_callback(gs_color_space *pcs, pdf_context *ctx, gs_cspace_free_proc_t pdfi_cspace_free_callback)
 {
