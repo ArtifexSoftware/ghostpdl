@@ -189,6 +189,14 @@ gs_font_finalize(const gs_memory_t *cmem, void *vptr)
             prev->next = next;
     } else if (ppfirst != 0 && *ppfirst == pfont)
         *ppfirst = next;
+
+    if (pfont->FontType != ft_composite) {
+        gs_font_base *pbfont = (gs_font_base *)pfont;
+        if (uid_is_XUID(&pbfont->UID)) {
+            uid_free(&pbfont->UID, pbfont->memory, "gs_font_finalize");
+        }
+    }
+
     gs_notify_release(&pfont->notify_list);
 }
 static

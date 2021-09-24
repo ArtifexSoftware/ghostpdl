@@ -761,9 +761,6 @@ pdfi_free_font_type1(pdf_obj *font)
     pdf_font_type1 *t1f = (pdf_font_type1 *) font;
     int i;
 
-    if (t1f->pfont->UID.xvalues != NULL) {
-        gs_free_object(OBJ_MEMORY(font), t1f->pfont->UID.xvalues, "pdfi_free_font_type1(xuid)");
-    }
     gs_free_object(OBJ_MEMORY(font), t1f->pfont, "Free Type 1 gs_font");
 
     pdfi_countdown(t1f->PDF_font);
