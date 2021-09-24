@@ -615,6 +615,7 @@ int pdfi_free_font_truetype(pdf_obj *font)
     pdfi_countdown(ttfont->FontDescriptor);
     pdfi_countdown(ttfont->Encoding);
     pdfi_countdown(ttfont->BaseFont);
+    pdfi_countdown(ttfont->PDF_font);
     gs_free_object(OBJ_MEMORY(ttfont), ttfont, "Free TrueType font");
 
     return 0;
