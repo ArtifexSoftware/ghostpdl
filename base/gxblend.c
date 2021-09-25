@@ -5131,6 +5131,12 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int first_blend_spot = num_comp;
     pdf14_mark_fill_rect_fn fn;
 
+    /* If we are going out to a CMYK or CMYK + spots pdf14 device (i.e.
+       subtractive) and we are doing overprint with drawn_comps == 0
+       then this is a no-operation */
+    if (overprint && drawn_comps == 0 && !buf->group_color_info->isadditive)
+        return 0;
+
     /* This is a fix to handle the odd case where overprint is active
        but drawn comps is zero due to the colorants that are present
        in the sep or devicen color space.  For example, if the color
@@ -5766,6 +5772,12 @@ do_mark_fill_rectangle16(gx_device * dev, int x, int y, int w, int h,
     int num_spots = buf->num_spots;
     int first_blend_spot = num_comp;
     pdf14_mark_fill_rect16_fn fn;
+
+   /* If we are going out to a CMYK or CMYK + spots pdf14 device (i.e.
+   subtractive) and we are doing overprint with drawn_comps == 0
+   then this is a no-operation */
+    if (overprint && drawn_comps == 0 && !buf->group_color_info->isadditive)
+        return 0;
 
   /* This is a fix to handle the odd case where overprint is active
    but drawn comps is zero due to the colorants that are present

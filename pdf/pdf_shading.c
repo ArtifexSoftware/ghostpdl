@@ -888,6 +888,11 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         goto exit2;
 
+    /* Shadings fills can't use overprint mode */
+    code = gs_setoverprintmode(ctx->pgs, 0);
+    if (code < 0)
+        goto exit2;
+
     code = pdfi_shading_build(ctx, stream_dict, page_dict, Shading, &psh);
     if (code < 0)
         goto exit2;

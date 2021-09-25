@@ -6843,6 +6843,7 @@ pdf14_pop_color_model(gx_device* dev, pdf14_group_color_t* group_color)
         pdev->blend_procs = group_color->blend_procs;
         pdev->ctx->additive = group_color->isadditive;
         pdev->pdf14_procs = group_color->unpack_procs;
+        pdev->color_info.opmsupported = GX_CINFO_OPMSUPPORTED_UNKNOWN;
         pdev->color_info.depth = group_color->depth;
         pdev->color_info.max_color = group_color->max_color;
         pdev->color_info.max_gray = group_color->max_gray;
@@ -7087,6 +7088,7 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
     group_color->polarity = pdev->color_info.polarity = new_polarity;
     group_color->num_components = pdev->color_info.num_components = new_num_comps;
     group_color->isadditive = pdev->ctx->additive = new_additive;
+    pdev->color_info.opmsupported = GX_CINFO_OPMSUPPORTED_UNKNOWN;
     group_color->unpack_procs = pdev->pdf14_procs = new_14procs;
     pdev->color_info.depth = new_num_comps * (8<<deep);
     memset(&(pdev->color_info.comp_bits), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
@@ -7378,6 +7380,7 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     memcpy(&(pdev->color_info.comp_bits), comp_bits, new_num_comps);
     memcpy(&(pdev->color_info.comp_shift), comp_shift, new_num_comps);
     pdev->color_info.comp_shift[new_num_comps] = new_depth - 8;	/* in case we has_tags is set */
+    pdev->color_info.opmsupported = GX_CINFO_OPMSUPPORTED_UNKNOWN;
 
     /* If we have a compressed color codec, and we are doing a soft mask
        push operation then go ahead and update the color encode and
@@ -7388,6 +7391,7 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
        we add it in to catch for future use. */
     cldev->clist_color_info.depth = pdev->color_info.depth;
     cldev->clist_color_info.polarity = pdev->color_info.polarity;
+    cldev->clist_color_info.opmsupported = GX_CINFO_OPMSUPPORTED_UNKNOWN;
     cldev->clist_color_info.num_components = pdev->color_info.num_components;
     cldev->clist_color_info.max_color = pdev->color_info.max_color;
     cldev->clist_color_info.max_gray = pdev->color_info.max_gray;
@@ -7431,6 +7435,7 @@ pdf14_clist_pop_color_model(gx_device *dev, gs_gstate *pgs)
         set_dev_proc(pdev, get_color_mapping_procs, group_color->group_color_mapping_procs);
         set_dev_proc(pdev, get_color_comp_index, group_color->group_color_comp_index);
         pdev->color_info.polarity = group_color->polarity;
+        pdev->color_info.opmsupported = GX_CINFO_OPMSUPPORTED_UNKNOWN;
         pdev->color_info.depth = group_color->depth;
         pdev->color_info.num_components = group_color->num_components;
         pdev->blend_procs = group_color->blend_procs;
@@ -7443,11 +7448,13 @@ pdf14_clist_pop_color_model(gx_device *dev, gs_gstate *pgs)
                             GX_DEVICE_COLOR_MAX_COMPONENTS);
         memcpy(&(pdev->color_info.comp_shift),&(group_color->comp_shift),
                             GX_DEVICE_COLOR_MAX_COMPONENTS);
+
         /* clist writer fill rect has no access to gs_gstate */
         /* and it forwards the target device.  this information */
         /* is passed along to use in this case */
         cldev->clist_color_info.depth = pdev->color_info.depth;
         cldev->clist_color_info.polarity = pdev->color_info.polarity;
+        cldev->clist_color_info.opmsupported = GX_CINFO_OPMSUPPORTED_UNKNOWN;
         cldev->clist_color_info.num_components = pdev->color_info.num_components;
         cldev->clist_color_info.max_color = pdev->color_info.max_color;
         cldev->clist_color_info.max_gray = pdev->color_info.max_gray;
@@ -7616,6 +7623,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
             set_dev_proc(pdev, get_color_mapping_procs, group_color->group_color_mapping_procs);
             set_dev_proc(pdev, get_color_comp_index, group_color->group_color_comp_index);
             pdev->color_info.polarity = group_color->polarity;
+            pdev->color_info.opmsupported = GX_CINFO_OPMSUPPORTED_UNKNOWN;
             pdev->color_info.num_components = group_color->num_components;
             pdev->color_info.depth = group_color->depth;
             pdev->blend_procs = group_color->blend_procs;
@@ -7680,6 +7688,12 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
         pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
     bool has_backdrop = buf->backdrop != NULL;
+
+    /* If we are going out to a CMYK or CMYK + spots pdf14 device (i.e.
+       subtractive) and we are doing overprint with drawn_comps == 0
+       then this is a no-operation */
+    if (overprint && drawn_comps == 0 && !buf->group_color_info->isadditive)
+        return 0;
 
     if (buf->data == NULL)
         return 0;
@@ -7891,6 +7905,12 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
         pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
     bool has_backdrop = buf->backdrop != NULL;
+
+    /* If we are going out to a CMYK or CMYK + spots pdf14 device (i.e.
+       subtractive) and we are doing overprint with drawn_comps == 0
+       then this is a no-operation */
+    if (overprint && drawn_comps == 0 && !buf->group_color_info->isadditive)
+        return 0;
 
     if (buf->data == NULL)
         return 0;
