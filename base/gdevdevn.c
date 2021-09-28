@@ -642,7 +642,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             pdev->color_info.num_components = (num_order)
                 ? num_order
                 : (page_spot_colors >= 0)
-                    ? npcmcolors + num_spot + page_spot_colors
+                    ? npcmcolors + page_spot_colors
                     : pdev->color_info.max_components;
 
             if (pdev->color_info.num_components >

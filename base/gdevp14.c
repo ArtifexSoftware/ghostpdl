@@ -3787,6 +3787,9 @@ pdf14_output_page(gx_device * dev, int num_copies, int flush)
  * parameters related to page size and resolution, but not any of the
  * color-related parameters, as the pdf14 device retains its own color
  * handling. This routine is parallel to gx_device_copy_params().
+ * Note that it DOES copy the devn_params since these are required to
+ * keep agreement with colorant name->number mapping, and don't change
+ * with the pdf14 color handling.
  */
 static	void
 gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
@@ -5720,7 +5723,6 @@ get_pdf14_device_proto(gx_device       *dev,
              * for the page.
              */
             if (num_spots >= 0) {
-                pdevproto->devn_params.page_spot_colors = num_spots;
                 pdevproto->color_info.num_components =
                     pdevproto->devn_params.num_std_colorant_names + num_spots;
                 if (pdevproto->color_info.num_components > GS_CLIENT_COLOR_MAX_COMPONENTS)
@@ -8680,7 +8682,14 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         p14dev->color_info.comp_shift[p14dev->color_info.num_components] = p14dev->color_info.depth;
         p14dev->color_info.depth += 8;
     }
-
+    /* if the device has separations already defined (by SeparationOrderNames) */
+    /* we need to copy them (allocating new names) so the colorants are in the */
+    /* same order as the target device.                                        */
+    if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
+        code = devn_copy_params(target, (gx_device *)p14dev);
+        if (code < 0)
+            return code;
+    }
     /* by definition pdf14_encode _is_ standard */
     p14dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
     gx_device_fill_in_procs((gx_device *)p14dev);
@@ -8762,7 +8771,14 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
 
         new_target->PageHandlerPushed = true;
         new_target->ObjectHandlerPushed = true;
-
+        /* if the device has separations already defined (by SeparationOrderNames) */
+        /* we need to copy them (allocating new names) so the colorants are in the */
+        /* same order as the target device.                                        */
+        if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
+            code = devn_copy_params(target, (gx_device *)pdev);
+            if (code < 0)
+                return code;
+        }
         /* UsePlanarBuffer is true in case this is CMYKspot */
         if ((code = gdev_prn_open_planar(new_target, UsePlanarBuffer)) < 0 ||
              !PRINTER_IS_CLIST((gx_device_printer *)new_target)) {
@@ -9322,9 +9338,9 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
                 code = 1;
             break;
         default:
-	    /* No other compositor actions are allowed if this isn't a pdf14 compositor */
+            /* No other compositor actions are allowed if this isn't a pdf14 compositor */
             *pp14dev = NULL;
-	    return_error(gs_error_unregistered);
+            return_error(gs_error_unregistered);
     }
     return code;
 }
@@ -9667,7 +9683,7 @@ pdf14_clist_init_procs(gx_device *dev,
     set_dev_proc(dev, decode_color, pdf14_decode_color);
     set_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
     set_dev_proc(dev, update_spot_equivalent_colors, gx_forward_update_spot_equivalent_colors);
-    set_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
+    set_dev_proc(dev, ret_devn_params, pdf14_ret_devn_params);
     set_dev_proc(dev, fillpage, gx_forward_fillpage);
     set_dev_proc(dev, push_transparency_state, pdf14_push_transparency_state);
     set_dev_proc(dev, pop_transparency_state, pdf14_pop_transparency_state);
@@ -10063,7 +10079,14 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
         pdev->target_support_devn = pdev->icc_struct->supports_devn;
         pdev->icc_struct->supports_devn = true;  /* Reset when pdf14 device is disabled */
     }
-
+    /* if the device has separations already defined (by SeparationOrderNames) */
+    /* we need to copy them (allocating new names) so the colorants are in the */
+    /* same order as the target device.                                        */
+    if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
+        code = devn_copy_params(target, (gx_device *)pdev);
+        if (code < 0)
+            return code;
+    }
     pdev->my_encode_color = dev_proc(pdev, encode_color);
     pdev->my_decode_color = dev_proc(pdev, decode_color);
     pdev->my_get_color_mapping_procs = dev_proc(pdev, get_color_mapping_procs);

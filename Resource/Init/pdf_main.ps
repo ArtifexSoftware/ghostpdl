@@ -3567,11 +3567,9 @@ currentdict /PDF2PS_matrix_key undef
   % the pages resources.  It may be high if a spot color is in a resource but
   % is not actually used on the page.
   currentpagedevice /PageSpotColors known {
-    /PageSpotColors 2 index countspotcolors
-    userdict /PageSpotColors 2 index put
-    def
+    /PageSpotColors 2 index countspotcolors def
+    /SeparationColorNames userdict 1 index get def
   } if
-
   % If the user told us to use a named OutputIntent
   systemdict /UseOutputIntent .knownget {
     cvn
@@ -3640,7 +3638,7 @@ currentdict /PDF2PS_matrix_key undef
     % Overprint is /enable, so the device might need the overprint compositor
     % if it does not support spot colors, thus check if overprint is used so
     % overprint simulation can be done with the pdf14 compositor
-    1 index countspotcolors userdict exch /PageSpotColors exch put    % save it in a known place
+    1 index countspotcolors pop
     1 index pageusesoverprint
     1 index /ProcessColorModel get /DeviceCMYK eq {
       PageSpotColors 0 gt    % count of colorants NOT including CMYK
@@ -4499,11 +4497,22 @@ currentdict /PDF2PS_matrix_key undef
 % Note:  This count does not include Cyan, Magenta, Yellow, or Black
 /countspotcolors {        % <pagedict> countspotcolors <count>
   pagespotcolors        % Get dict with all spot colors
-  dup length            % spot color dict length
   % Remove CMYK from the spot color count.
   [ /Cyan /Magenta /Yellow /Black ]
-  { 2 index exch known { 1 sub } if } forall
-  exch pop            % Remove spot color dict
+  {
+    dup 2 index exch known {
+      1 index exch undef
+    } {
+      pop
+    } ifelse
+  } forall
+  dup length dup
+  userdict exch /PageSpotColors exch put % save it in a known place
+  exch
+  userdict /SeparationColorNames 2 index
+  [ exch { pop } forall ]
+  put  % and save the SpotColorNames array in a known place
+  pop		% done with spot color dict
 } bind executeonly def
 
 % ------ ColorSpace substitution support ------ %
