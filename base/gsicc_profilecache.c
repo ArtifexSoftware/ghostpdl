@@ -74,7 +74,7 @@ rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname
     while (curr != NULL ){
         next = curr->next;
         rc_decrement(curr->color_space, "rc_gsicc_profile_cache_free");
-        gs_free_object(mem->stable_memory, curr,
+        gs_free_object(profile_cache->memory->stable_memory, curr,
                        "rc_gsicc_profile_cache_free");
         profile_cache->num_entries--;
         curr = next;
@@ -84,7 +84,7 @@ rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname
         emprintf1(mem,"gsicc_profile_cache_free, num_entries is %d (should be 0).\n",
                   profile_cache->num_entries);
 #endif
-    gs_free_object(mem->stable_memory, profile_cache,
+    gs_free_object(profile_cache->memory->stable_memory, profile_cache,
                    "rc_gsicc_profile_cache_free");
 }
 
@@ -93,7 +93,7 @@ gsicc_add_cs(gs_gstate * pgs, gs_color_space * colorspace, uint64_t dictkey)
 {
     gsicc_profile_entry_t *result;
     gsicc_profile_cache_t *profile_cache = pgs->icc_profile_cache;
-    gs_memory_t *memory =  pgs->memory;
+    gs_memory_t *memory =  profile_cache->memory;
 
     if (dictkey == 0)
         return;
