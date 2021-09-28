@@ -25,6 +25,7 @@
 
 #include "iminst.h"
 #include "dstack.h"
+#include "gsicc_profilecache.h"
 #endif
 
 #include "ghost.h"
@@ -329,7 +330,43 @@ typedef struct pdfctx_s {
     gs_memory_t *pdf_memory;        /* The 'wrapped' memory allocator used by the PDF interpreter. Not exposed to garbager */
     gs_memory_t *pdf_stream_memory; /* The memory allocator used to copy the PostScript stream to pdf_stream. Not exposed to garbager */
     stream *pdf_stream;
+    gsicc_profile_cache_t *profile_cache;
+    gs_memory_t *cache_memory;      /* The memory allocator used to allocate the working (GC'ed) profile cache */
 } pdfctx_t;
+
+/* There is some unfortunately necessary complication in the structure above regarding the ICC profile cache.
+ * Initially the problem was due to adding the colour space name to the 'interpreter data' part of the colour
+ * space, in order to be able to identify the case where we switch to the current colour space.
+ *
+ * This caused problems with ICC spaces, because these maintain a reference to the colour space. If the profile
+ * was stored in the PostScript profile cache (which it would be, because the profile cache is stored in the
+ * grapchis state, which we inherit from the PostScript interpreter) then it would outlive the PDF interpreter,
+ *  and when we came to free the cache it would try to free the colour space, which would try to free the PDF
+ * name object, which had already been freed.
+ *
+ * To work around this we replaced the profile cache in the graphics state with the profile cache from the PDF
+ * interpreter. Now when we free the PDF profile cache, it frees the colour spaces, and the PDF names, while they
+ * are still valid.
+ *
+ * However, we then discovered that the garbage collector could reclaim the colour spaces. This happens because
+ * no GC-visible object declares it has a reference to the colour space. It doesn't matter that the colour
+ * space has been counted up, the GC frees it. Now the profile cache in pdfi is pointing to a colour space which
+ * has gone away....
+ *
+ * To get round this, we create a brand-new profile cache, using GC'ed memory (well actually the interpreter
+ * allocator, which is GC'ed for Ghostscript). When we switch to pdfi we replace the graphics state pdfi is
+ * using with the one from the PostScript environment, and at the same time we swap out the profile cache
+ * being used by that graphics state, so it uses our new one. On return to PostScript we swap them back.
+ * This allows the lifetime of the profiles in the profile cache to be correct, because they are visible to the
+ * garbage collector (the PDF context is a GC-visible object and enumerates it's member profile cache)
+ * When we finalize the PDF context we count down the profile cache which dereferences all its entries. This
+ * effectively frees the colour space (the memory may not be reclaimed yet) which calls the interpreter
+ * specific cleanup, which frees the (still valid at this point) PDF name object and sets the pointer to NULL.
+ *
+ * The net result is that we have the profiles visible to the garbage collector during their lifetime, but
+ * still have control over the cache, so we can empty it of the profiles created for pdfi when we close the
+ * PDF interpreter.
+ */
 
 /* Structure descriptors */
 static void pdfctx_finalize(const gs_memory_t *cmem, void *vptr);
@@ -339,11 +376,11 @@ gs_private_st_composite_final(st_pdfctx_t, pdfctx_t, "pdfctx_struct",\
 
 static
 ENUM_PTRS_BEGIN(pdfctx_enum_ptrs) return 0;
-ENUM_PTR2(0, pdfctx_t, ps_stream, pdf_stream);
+ENUM_PTR3(0, pdfctx_t, ps_stream, pdf_stream, profile_cache);
 ENUM_PTRS_END
 
 static RELOC_PTRS_BEGIN(pdfctx_reloc_ptrs);
-RELOC_PTR2(pdfctx_t, ps_stream, pdf_stream);
+RELOC_PTR3(pdfctx_t, ps_stream, pdf_stream, profile_cache);
 RELOC_PTRS_END
 
 static void
@@ -354,6 +391,10 @@ pdfctx_finalize(const gs_memory_t *cmem, void *vptr)
      *  on the same object - hence we null the entries.
      */
 
+    if (pdfctx->profile_cache != NULL) {
+        rc_decrement(pdfctx->profile_cache, "free the working profile cache");
+        pdfctx->profile_cache = NULL;
+    }
     if (cmem != NULL) {
         if (pdfctx->ctx != NULL) {
             if (pdfctx->pdf_stream) {
@@ -385,9 +426,7 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
     int code = 0;
     stream *s;
     pdfctx_t *pdfctx;
-    gs_gstate *pgs = NULL;
-    gs_gstate_client_procs procs;
-    void *client_data;
+    pdfi_switch_t i_switch;
 
     check_op(2);
 
@@ -409,20 +448,11 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
 
     *(pdfctx->pdf_stream) = *(pdfctx->ps_stream);
 
-    pgs = pdfctx->ctx->pgs;
-    procs = igs->client_procs;
-    client_data = igs->client_data;
-    pdfi_gstate_from_PS(pdfctx->ctx, igs, &client_data, &procs);
-    pdfctx->ctx->pgs = igs;
+    pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
     code = pdfi_set_input_stream(pdfctx->ctx, pdfctx->pdf_stream);
 
-    pdfi_gstate_to_PS(pdfctx->ctx, igs, client_data, &procs);
-    if (code == 0)
-        code = gs_grestore(igs);
-    else
-        (void)gs_grestore(igs);
-    pdfctx->ctx->pgs = pgs;
+    pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
 
     if (code < 0) {
         memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
@@ -445,9 +475,7 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
     pdfctx_t *pdfctx;
     char pdffilename[gp_file_name_sizeof];
     int code = 0;
-    gs_gstate *pgs = NULL;
-    gs_gstate_client_procs procs;
-    void *client_data;
+    pdfi_switch_t i_switch;
 
     check_op(2);
 
@@ -467,20 +495,11 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
     memcpy(pdffilename, (op - 1)->value.bytes, r_size(op - 1));
     pdffilename[r_size(op - 1)] = 0;
 
-    pgs = pdfctx->ctx->pgs;
-    procs = igs->client_procs;
-    client_data = igs->client_data;
-    pdfi_gstate_from_PS(pdfctx->ctx, igs, &client_data, &procs);
-    pdfctx->ctx->pgs = igs;
+    pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
     code = pdfi_open_pdf_file(pdfctx->ctx, pdffilename);
 
-    pdfi_gstate_to_PS(pdfctx->ctx, igs, client_data, &procs);
-    if (code == 0)
-        code = gs_grestore(igs);
-    else
-        (void)gs_grestore(igs);
-    pdfctx->ctx->pgs = pgs;
+    pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
 
     if (code < 0)
         return code;
@@ -618,9 +637,7 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     int page = 0, code = 0, i;
     pdfctx_t *pdfctx;
     pdf_info_t info;
-    gs_gstate *pgs = NULL;
-    gs_gstate_client_procs procs;
-    void *client_data;
+    pdfi_switch_t i_switch;
 
     check_op(2);
 
@@ -630,20 +647,11 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     check_type(*(op - 1), t_pdfctx);
     pdfctx = r_ptr(op - 1, pdfctx_t);
 
-    pgs = pdfctx->ctx->pgs;
-    procs = igs->client_procs;
-    client_data = igs->client_data;
-    pdfi_gstate_from_PS(pdfctx->ctx, igs, &client_data, &procs);
-    pdfctx->ctx->pgs = igs;
+    pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
     code = pdfi_page_info(pdfctx->ctx, (uint64_t)page, &info);
 
-    pdfi_gstate_to_PS(pdfctx->ctx, igs, client_data, &procs);
-    if (code == 0)
-        code = gs_grestore(igs);
-    else
-        (void)gs_grestore(igs);
-    pdfctx->ctx->pgs = pgs;
+    pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
 
     if (code < 0)
         return code;
@@ -809,9 +817,7 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
     int code = 0;
     uint64_t page = 0;
     pdfctx_t *pdfctx;
-    gs_gstate *pgs = NULL;
-    gs_gstate_client_procs procs;
-    void *client_data;
+    pdfi_switch_t i_switch;
 
     check_op(2);
 
@@ -825,22 +831,17 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
-    pgs = pdfctx->ctx->pgs;
-    procs = igs->client_procs;
-    client_data = igs->client_data;
-    pdfi_gstate_from_PS(pdfctx->ctx, igs, &client_data, &procs);
-    pdfctx->ctx->pgs = igs;
+    pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
     code = pdfi_page_render(pdfctx->ctx, page, false);
     if (code >= 0)
         pop(2);
 
-    pdfi_gstate_to_PS(pdfctx->ctx, igs, client_data, &procs);
+    pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
     if (code == 0)
         code = gs_grestore(igs);
     else
         (void)gs_grestore(igs);
-    pdfctx->ctx->pgs = pgs;
 
     return code;
 }
@@ -906,6 +907,12 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     pdfctx->ps_stream = NULL;
     pdfctx->pdf_stream = NULL;
     pdfctx->pdf_stream_memory = NULL;
+    pdfctx->profile_cache = gsicc_profilecache_new(imemory);
+    if (pdfctx->profile_cache == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+    pdfctx->cache_memory = imemory;
 
     ctx = pdfi_create_context(cmem);
     if (ctx == NULL) {
@@ -1101,6 +1108,10 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     return 0;
 
 error:
+    if (pdfctx->profile_cache != NULL) {
+        gs_free_object(imemory, pdfctx->profile_cache, "discard temporary profile cache");
+        pdfctx->profile_cache = NULL;
+    }
     if (ctx)
         pdfi_free_context(ctx);
     /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */

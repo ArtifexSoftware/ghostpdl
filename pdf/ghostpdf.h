@@ -32,6 +32,17 @@
 #define PDFI_LEAK_CHECK 0
 #endif
 
+/* A structure for setting/resetting the interpreter graphics state
+ * and some graphics state content when switching between Ghostscript
+ * and pdfi, when running under GS.
+ */
+typedef struct pdf_context_switch {
+    gs_gstate *pgs;
+    gs_gstate_client_procs procs;
+    void *client_data;
+    void *profile_cache;
+} pdfi_switch_t;
+
 /*
  * The interpreter context.
  */
@@ -508,8 +519,8 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm);
 int pdfi_process_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_array);
 int pdfi_close_pdf_file(pdf_context *ctx);
-void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, void **saved_client_data, gs_gstate_client_procs *saved_procs);
-void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, void *client_data, const gs_gstate_client_procs *procs);
+void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch, gsicc_profile_cache_t *profile_cache);
+void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch);
 
 void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, const char *extra_info);
 void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, const char *extra_info);

@@ -327,8 +327,10 @@ static void pdfi_cspace_free_callback(gs_memory_t * mem, void *cs)
         if (pfn)
             pdfi_free_function(ctx, pfn);
     }
-    if (o->type == PDF_NAME)
+    if (o->type != PDF_CTX) {
         pdfi_countdown(o);
+        pcs->interpreter_data = NULL;
+    }
 }
 
 int pdfi_gs_setgray(pdf_context *ctx, double d)

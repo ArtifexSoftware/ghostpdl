@@ -1922,21 +1922,30 @@ int pdfi_free_context(pdf_context *ctx)
  * it seems to be what happens, so we can't rely on grestore to put back the interpreter context, but must
  * do so ourselves.
  *
- * Hence the 'from_PS' routine fills in pointers with the current context and procs, wit the expectation that
+ * Hence the 'from_PS' routine fills in pointers with the current context and procs, with the expectation that
  * these will be saved and used to restore the data in the 'to_PS' routine.
  */
-void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, void **saved_client_data, gs_gstate_client_procs *saved_procs)
+/* NOTE see the comments in zpdfops.c just under the declaration of the pdfi_switch_t strcuture regarding
+ * complications with the ICC profile cache.
+ */
+
+void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch, gsicc_profile_cache_t *profile_cache)
 {
-    *saved_client_data = pgs->client_data;
-    *saved_procs = pgs->client_procs;
+    i_switch->pgs = ctx->pgs;
+    i_switch->procs = pgs->client_procs;
+    i_switch->client_data = (void *)pgs->client_data;
+    i_switch->profile_cache = pgs->icc_profile_cache;
+    pgs->icc_profile_cache = profile_cache;
     pdfi_gstate_set_client(ctx, pgs);
+    ctx->pgs = pgs;
     return;
 }
 
-void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, void *client_data, const gs_gstate_client_procs *procs)
+void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch)
 {
     pgs->client_procs.free(pgs->client_data, pgs->memory, pgs);
     pgs->client_data = NULL;
-    gs_gstate_set_client(pgs, client_data, procs, true);
-    return;
+    pgs->icc_profile_cache = i_switch->profile_cache;
+    gs_gstate_set_client(pgs, i_switch->client_data, &i_switch->procs, true);
+    ctx->pgs = i_switch->pgs;
 }
