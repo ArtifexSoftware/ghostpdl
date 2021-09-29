@@ -35,6 +35,7 @@
 #include "gsptype2.h"
 #include "gsfunc0.h"    /* For gs_function */
 #include "gscolor3.h"   /* For gs_shfill() */
+#include "gsstate.h"    /* For gs_setoverprintmode */
 
 static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, const float *shading_domain, int num_inputs, pdf_dict *shading_dict, pdf_dict *page_dict)
 {
