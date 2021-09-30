@@ -120,21 +120,27 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
     if (pdfi_oc_is_off(ctx))
         goto exit;
 
-    code = pdfi_gsave(ctx);
-    if (code < 0) goto exit;
-
     code = pdfi_trans_setup(ctx, &state, NULL, TRANSPARENCY_Caller_Fill);
     if (code == 0) {
+        /* If we don't gsave/grestore round the fill, then the file
+         * /tests_private/pdf/sumatra/954_-_dashed_lines_hardly_visible.pdf renders
+         * incorrectly. However we must not gsave/grestore round the trans_setup
+         * trans_teardown, because that might set pgs->soft_mask_id and if we restore
+         * back to a point where that is not set then pdfwrite doesn't work properly.
+         */
+        code = pdfi_gsave(ctx);
+        if (code < 0) goto exit;
+
         if (use_eofill)
             code = gs_eofill(ctx->pgs);
         else
             code = gs_fill(ctx->pgs);
+        code1 = pdfi_grestore(ctx);
+        if (code == 0) code = code1;
+
         code1 = pdfi_trans_teardown(ctx, &state);
         if (code == 0) code = code1;
     }
-
-    code1 = pdfi_grestore(ctx);
-    if (code == 0) code = code1;
 
  exit:
     code1 = pdfi_newpath(ctx);
@@ -164,20 +170,27 @@ int pdfi_stroke(pdf_context *ctx)
     if (pdfi_oc_is_off(ctx))
         goto exit;
 
-    code = pdfi_gsave(ctx);
-    if (code < 0) goto exit;
+/*    code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;*/
 
     gs_swapcolors_quick(ctx->pgs);
     code = pdfi_trans_setup(ctx, &state, NULL, TRANSPARENCY_Caller_Stroke);
     if (code == 0) {
+        code = pdfi_gsave(ctx);
+        if (code < 0) goto exit;
+
         code = gs_stroke(ctx->pgs);
+
+        code1 = pdfi_grestore(ctx);
+        if (code == 0) code = code1;
+
         code1 = pdfi_trans_teardown(ctx, &state);
         if (code == 0) code = code1;
     }
     gs_swapcolors_quick(ctx->pgs);
 
-    code1 = pdfi_grestore(ctx);
-    if (code == 0) code = code1;
+/*    code1 = pdfi_grestore(ctx);
+    if (code == 0) code = code1;*/
 
  exit:
     code1 = pdfi_newpath(ctx);
@@ -378,21 +391,22 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
     if (pdfi_oc_is_off(ctx))
         goto exit;
 
-    code = pdfi_gsave(ctx);
-    if (code < 0) goto exit;
-
     code = pdfi_trans_setup(ctx, &state, NULL, TRANSPARENCY_Caller_FillStroke);
     if (code == 0) {
+        code = pdfi_gsave(ctx);
+        if (code < 0) goto exit;
+
         if (use_eofill)
             code = gs_eofillstroke(ctx->pgs, &code1);
         else
             code = gs_fillstroke(ctx->pgs, &code1);
+
+        code1 = pdfi_grestore(ctx);
+        if (code == 0) code = code1;
+
         code1 = pdfi_trans_teardown(ctx, &state);
         if (code >= 0) code = code1;
     }
-
-    code1 = pdfi_grestore(ctx);
-    if (code == 0) code = code1;
 
  exit:
     code1 = pdfi_newpath(ctx);
