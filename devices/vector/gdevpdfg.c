@@ -3046,6 +3046,34 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
         if (!pdev->PDFX) {
             gs_currentscreenphase(pgs, &phase, 0);
             gs_currentscreenphase(&pdev->state, &dev_phase, 0);
+            if (dev_phase.x != phase.x || dev_phase.y != phase.y && pdev->PDFA != 0) {
+                switch (pdev->PDFACompatibilityPolicy) {
+                    case 0:
+                        emprintf(pdev->memory,
+                             "\nSetting Halftone Phase or Halftone Offset\n not permitted in PDF/A, reverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                    case 1:
+                        emprintf(pdev->memory,
+                             "\nSetting Halftone Phase or Halftone Offset\n not permitted in PDF/A, values not set\n\n");
+                        /* Deliberately breaking const here in order to force the graphics state overprint mode to be unchanged */
+                        dev_phase.x = phase.x;
+                        dev_phase.y = phase.y;
+                        break;
+                    case 2:
+                        emprintf(pdev->memory,
+                             "\nSetting Halftone Phase or Halftone Offset\n not permitted in PDF/A, aborting conversion\n");
+                        return_error(gs_error_undefined);
+                        break;
+                    default:
+                        emprintf(pdev->memory,
+                             "\nSetting Overprint Mode to 1\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                }
+            }
             if (dev_phase.x != phase.x || dev_phase.y != phase.y) {
                 char buf[sizeof(int) * 3 + 5];
 
@@ -3053,7 +3081,10 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
                 if (code < 0)
                     return code;
                 gs_sprintf(buf, "[%d %d]", phase.x, phase.y);
-                code = cos_dict_put_string_copy(resource_dict(*ppres), "/HTP", buf);
+                if (pdev->CompatibilityLevel >= 1.999)
+                    code = cos_dict_put_string_copy(resource_dict(*ppres), "/HTO", buf);
+                else
+                    code = cos_dict_put_string_copy(resource_dict(*ppres), "/HTP", buf);
                 if (code < 0)
                     return code;
                 gx_gstate_setscreenphase(&pdev->state, phase.x, phase.y,
