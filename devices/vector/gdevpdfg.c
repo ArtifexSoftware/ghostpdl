@@ -3046,7 +3046,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
         if (!pdev->PDFX) {
             gs_currentscreenphase(pgs, &phase, 0);
             gs_currentscreenphase(&pdev->state, &dev_phase, 0);
-            if (dev_phase.x != phase.x || dev_phase.y != phase.y && pdev->PDFA != 0) {
+            if ((dev_phase.x != phase.x || dev_phase.y != phase.y) && pdev->PDFA != 0) {
                 switch (pdev->PDFACompatibilityPolicy) {
                     case 0:
                         emprintf(pdev->memory,
