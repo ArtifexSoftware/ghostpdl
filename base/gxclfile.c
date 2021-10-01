@@ -532,7 +532,10 @@ clist_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *ignore_fnam
         res = gp_fseek(ifile->f, offset, mode);
     }
     /* NB: if gp_can_share_fdesc, we don't actually seek */
-    if (res >= 0) {
+    /* The following lgtm tag is required because on some platforms
+     * !gp_can_share_fdesc() is always true, so the value of res is
+     * known. On other platforms though, this is NOT true. */
+    if (res >= 0) { /* lgtm [cpp/constant-comparison] */
         /* Update the ifile->pos */
         switch (mode) {
             case SEEK_SET:

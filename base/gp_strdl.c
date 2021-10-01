@@ -21,7 +21,7 @@
 #include "gp.h"
 
 int
-gp_readline_init(void **preadline_data, gs_memory_t * mem) /* lgtm [cpp/useless-expression] */
+gp_readline_init(void **preadline_data, gs_memory_t * mem)
 {
     return 0;
 }

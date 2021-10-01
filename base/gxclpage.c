@@ -781,7 +781,7 @@ gx_saved_pages_list_print(gx_device_printer *pdev, gx_saved_pages_list *list,
                             break;
                         curr_elem = curr_elem->prev;
                         /* Below is not needed since we never print reverse even/odd */
-                        if (page_skip < -1)
+                        if (page_skip < -1) /* lgtm [cpp/constant-comparison] */
                             curr_elem = curr_elem->prev;
                     }
                     if (curr_elem == NULL) {

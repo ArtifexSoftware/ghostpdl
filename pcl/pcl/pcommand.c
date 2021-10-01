@@ -224,7 +224,7 @@ pcl_do_resets(pcl_state_t * pcs, pcl_reset_type_t type)
         return pcl_do_resets_permanent(pcs);
     }
 
-    for (; *init && code >= 0; ++init) {
+    for (; *init; ++init) {
         if ((*init)->do_reset) {
             code = (*(*init)->do_reset) (pcs, type);
             if (code < 0)

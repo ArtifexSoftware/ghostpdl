@@ -422,9 +422,13 @@ gx_join_path_and_reverse(gx_path * path, gx_path * rpath)
  * what is wanted.
  */
 static int
-gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
-               const gs_gstate * pgs, const gx_stroke_params * params,
-                 const gx_device_color * pdevc, const gx_clip_path * pcpath)
+gx_stroke_path_only_aux(gx_path          *ppath, /* lgtm[cpp/use-of-goto] */
+                        gx_path          *to_path,
+                        gx_device        *pdev,
+                  const gs_gstate        *pgs,
+                  const gx_stroke_params *params,
+                  const gx_device_color  *pdevc,
+                  const gx_clip_path     *pcpath)
 {
     bool CPSI_mode = gs_currentcpsimode(pgs->memory);
     bool traditional = CPSI_mode | params->traditional;

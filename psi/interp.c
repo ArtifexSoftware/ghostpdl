@@ -910,7 +910,8 @@ gs_errorinfo_put_string(i_ctx_t *i_ctx_p, const char *str)
 /* If an error occurs, leave the current object in *perror_object */
 /* and return a (negative) error code. */
 static int
-interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
+interp(/* lgtm [cpp/use-of-goto] */
+       i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
        const ref * pref /* object to interpret */,
        ref * perror_object)
 {

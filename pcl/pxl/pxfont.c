@@ -248,7 +248,7 @@ px_define_font(px_font_t * pxfont, byte * header, ulong size, gs_id id,
 
     if (header[4] == plfst_TrueType) {
         pxfont->is_xl_format = true;
-        pl_prepend_xl_dummy_header(mem, &header);
+        pl_prepend_xl_dummy_header(mem, &header); /* lgtm [cpp/useless-expression] */
         pxfont->header = header;
         pxfont->header_size = gs_object_size(mem, header);
     } else {

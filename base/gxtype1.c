@@ -346,7 +346,7 @@ type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4])
  * This is exported only for the benefit of font copying.
  */
 int
-gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
+gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont, /* lgtm[cpp/use-of-goto] */
                      const gs_glyph_data_t *pgd, gs_char *chars)
 {
     gs_type1_data *const pdata = &pfont->data;

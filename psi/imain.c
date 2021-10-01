@@ -531,7 +531,7 @@ gs_main_init2(gs_main_instance * minst)
     if (code >= 0) {
         if (gs_debug_c(':'))
             print_resource_usage(minst, &gs_imemory, "Start");
-        gp_readline_init(&minst->readline_data, minst->heap);
+        gp_readline_init(&minst->readline_data, minst->heap); /* lgtm [cpp/useless-expression] */
     }
 
 fail:

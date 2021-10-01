@@ -204,7 +204,9 @@ fs_file_open_printer(const gs_memory_t *mem, void *secret, const char *fname, in
         *file = NULL;
         return gs_error_invalidfileaccess;
     }
-    gp_setmode_binary_impl(f, binary_mode);
+    /* The lgtm comment below is required because on some platforms that function
+     * does nothing. */
+    gp_setmode_binary_impl(f, binary_mode); /* lgtm [cpp/useless-expression] */
 
     return 0;
 }
