@@ -3449,7 +3449,8 @@ pdf_text_process(gs_text_enum_t *pte)
                 /* We need a special 'initial matrix' method for stick fonts,
                  * See pdf_type3_get_initial_matrix above.
                  */
-                pdev->procs.get_initial_matrix = pdf_type3_get_initial_matrix;
+                if (penum->current_font->FontType != ft_PDF_user_defined)
+                    pdev->procs.get_initial_matrix = pdf_type3_get_initial_matrix;
 
                 pdev->pte = (gs_text_enum_t *)penum; /* CAUTION: See comment in gdevpdfx.h . */
                 /* In case of error, text_process will restore back to the enumerator 'level'
