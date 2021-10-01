@@ -462,7 +462,7 @@ int
 gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
                              void *outputcolor, int num_bytes)
 {
-    return gscms_transformm_color_const(dev, icclink, inputcolor, outputcolor, num_bytes);
+    return gscms_transform_color_const(dev, icclink, inputcolor, outputcolor, num_bytes);
 }
 
 int
