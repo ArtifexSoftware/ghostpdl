@@ -288,7 +288,8 @@ trace_array_data(const gs_memory_t * mem, const char *label,
 
 /* Process a buffer of PCL XL commands. */
 int
-px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
+px_process(px_parser_state_t * st, /* lgtm [cpp/use-of-goto] */
+           px_state_t * pxs, stream_cursor_read * pr)
 {
     const byte *orig_p = pr->ptr;
     const byte *next_p = orig_p;        /* start of data not copied to saved */

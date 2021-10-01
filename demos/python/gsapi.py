@@ -976,7 +976,7 @@ if 0:
     #   gsapi_add_fs()
     #   gsapi_remove_fs()
     #
-    class gsapi_fs_t(ctypes.Structure):
+    class gsapi_fs_t(ctypes.Structure): # lgtm [py/unreachable-statement]
         _fields_ = [
                 ('open_file',
                         ctypes.CFUNCTYPE(ctypes.c_int,
