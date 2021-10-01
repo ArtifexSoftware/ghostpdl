@@ -821,6 +821,7 @@ pngalpha_create_buf_device(gx_device **pbdev, gx_device *target, int y,
 
     ptarget= (gx_device_printer *)target;
     set_dev_proc(*pbdev, copy_alpha, ptarget->orig_procs.copy_alpha);
+    set_dev_proc(*pbdev, dev_spec_op, ptarget->orig_procs.dev_spec_op);
     set_dev_proc(*pbdev, fillpage, pngalpha_fillpage);
     return code;
 }
