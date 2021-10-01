@@ -784,7 +784,7 @@ The <code>tiffscaled</code>, <code>tiffscaled4</code>, <code>tiffscaled8</code>,
 drivers also provide the following two parameters:</p>
 
 <blockquote><dl>
-<dt><code>-dDownScaleFactor=<em>factor</em></code> (small non-negative integer; default = 1)</dt>
+<dt><code>-dDownScaleFactor=<em>factor</em></code> (integer <= 8; default = 1)</dt>
 <dd>If this option set then the page is downscaled by the given factor on both
 axes before error diffusion takes place. For example rendering with
 <code>-r600</code> and then specifying <code>-dDownScaleFactor=3</code> will produce
