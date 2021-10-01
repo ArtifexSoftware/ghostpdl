@@ -231,6 +231,14 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     bbox[1] = t->BBox.p.y;
     bbox[2] = t->BBox.q.x;
     bbox[3] = t->BBox.q.y;
+    if (pdev->accumulating_charproc) {
+        /* Assume here we can only be installing a pattern while acumulating a
+         * charproc if the font is a coloured type 3 font. In this case we will
+         * have set the CTM to be the identity scaled by 100 (!). See gdevpdtt.c
+         * install_PS_charproc_accumulator() for details.
+         */
+        gs_make_identity(&smat2);
+    }
     /* The graphics library assumes a shifted origin to provide
        positive bitmap pixel indices. Compensate it now. */
     smat2.tx += pinst->step_matrix.tx;
@@ -242,7 +250,7 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
      * form is nested inside a form, the default space is the space of the
      * first form, and therefore we do *not* remove the resolution scaling.
      */
-    if (pdev->FormDepth == 0 || (pdev->FormDepth > 0 && pdev->PatternsSinceForm > 0)) {
+    if ((pdev->FormDepth == 0 || (pdev->FormDepth > 0 && pdev->PatternsSinceForm > 0)) && !pdev->accumulating_charproc) {
         gs_matrix scaled;
 
         gs_make_scaling(1 / scale_x, 1 / scale_y, &scaled);
