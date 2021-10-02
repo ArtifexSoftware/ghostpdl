@@ -1202,7 +1202,8 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     }
     if (ppcs!= NULL) {
         *ppcs = pcs;
-        pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
+        if (pcs != NULL)
+            pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
     }
     else {
         if (pcs != NULL) {

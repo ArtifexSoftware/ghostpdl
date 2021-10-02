@@ -1108,15 +1108,15 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     return 0;
 
 error:
-    if (pdfctx->profile_cache != NULL) {
-        gs_free_object(imemory, pdfctx->profile_cache, "discard temporary profile cache");
-        pdfctx->profile_cache = NULL;
-    }
-    if (ctx)
+    if (ctx != NULL)
         pdfi_free_context(ctx);
     /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
     (void)gs_memory_chunk_unwrap(cmem);
-    if (pdfctx) {
+    if (pdfctx != NULL) {
+        if (pdfctx->profile_cache != NULL) {
+            gs_free_object(imemory, pdfctx->profile_cache, "discard temporary profile cache");
+            pdfctx->profile_cache = NULL;
+        }
         pdfctx->pdf_memory = NULL;
         gs_free_object(imemory, pdfctx, "PDFcontext");
     }
