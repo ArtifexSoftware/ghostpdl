@@ -184,6 +184,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {{0, 0}, {0, 0}},  /* Charproc BBox */
  0,				/* charproc_just_accumulated */
  1,             /* PS_accumulator */
+ 0,             /* Scaled_accumulator */
  0,				/* accumulating_a_global_object */
  0,				/* cgp */
  0,				/* substituted_pattern_count */

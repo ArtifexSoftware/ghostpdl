@@ -114,7 +114,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
          * NOT the identity, but we want the cache device values to be in
          * font co-ordinate space, so we need to undo that scale here.
          */
-        if (pdev->PS_accumulator){
+        if (pdev->PS_accumulator || pdev->Scaled_accumulator){
             gs_matrix_scale(&ctm_only(pte->pgs), .01, .01, &m);
             gs_distance_transform(pw[0], pw[1], &m, &pdev->char_width);
         } else {
@@ -133,7 +133,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
          * NOT the identity, but we want the cache device values to be in
          * font co-ordinate space, so we need to undo that scale here.
          */
-        if (pdev->PS_accumulator){
+        if (pdev->PS_accumulator || pdev->Scaled_accumulator){
             gs_matrix_scale(&ctm_only(pte->pgs), .01, .01, &m);
             gs_distance_transform(pw[0], pw[1], &m, &pdev->char_width);
         } else {
@@ -214,7 +214,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
              * needs to be in the 100x100 space so that it doesn't clip
              * out marking operations.
              */
-            if (pdev->PS_accumulator)
+            if (pdev->PS_accumulator || pdev->Scaled_accumulator)
                 gs_matrix_scale(&ctm_only(penum_s->pgs), .01, .01, &m);
             else
                 m = ctm_only(penum_s->pgs);
@@ -225,7 +225,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
                 pw1[i] = p.x;
                 pw1[i + 1] = p.y;
             }
-            if (!pdev->PS_accumulator)
+            if (!pdev->PS_accumulator && !pdev->Scaled_accumulator)
                 code = pdf_set_charproc_attrs(pdev, pte->current_font,
                         pw1, narg, control, penum->returned.current_char, false);
             else
@@ -3041,6 +3041,12 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
            executed gsave, so we are safe to change CTM now.
            Note that BuildChar may change CTM before calling setcachedevice. */
         gs_make_identity(&m);
+        if (penum->current_font->FontType == ft_PDF_user_defined) {
+            pdev->width *= 100;
+            pdev->height *= 100;
+            gs_matrix_scale(&m, 100, 100, &m);
+            pdev->Scaled_accumulator = 1;
+        }
         gs_matrix_fixed_from_matrix(&penum->pgs->ctm, &m);
 
         /* Choose a character code to use with the charproc. */
@@ -3109,12 +3115,13 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
             stream_puts(pdev->strm, "0 0 0 0 0 0 d1\n");
     }
 
-    if (was_PS_type3) {
+    if (was_PS_type3 || pdev->Scaled_accumulator) {
         /* See below, we scaled the device height and width to prevent
          * clipping of the CharProc operations, now we need to undo that.
          */
         pdev->width /= 100;
         pdev->height /= 100;
+        pdev->Scaled_accumulator = 0;
     }
     code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp,
                 pte_default->returned.current_glyph, penum->output_char_code, &gnstr);
