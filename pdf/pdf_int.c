@@ -2023,6 +2023,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
     int code;
     pdf_c_stream *stream;
     pdf_keyword *keyword;
+    pdf_stream *s = ctx->current_stream;
 
     if (content_stream != NULL) {
         stream = content_stream;
@@ -2034,6 +2035,23 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
         code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
         if (code < 0)
             return code;
+    }
+
+    /* Check this stream, and all the streams currently being executed, to see
+     * if the stream we've been given is already in train. If it is, then we
+     * have encountered recursion. This can happen if a non-page stream such
+     * as a Form or Pattern uses a Resource, but does not declare it in it's
+     * Resources, and instead inherits it from the parent. We cannot detect that
+     * before the Resource is used, so all we can do is check here.
+     */
+    while (s != NULL && s->type == PDF_STREAM) {
+        if (s->object_num > 0) {
+            if (s->object_num == stream_obj->object_num) {
+                pdfi_set_error(ctx, 0, NULL, E_PDF_CIRCULARREF, "pdfi_interpret_content_stream", "Aborting stream");
+                return_error(gs_error_circular_reference);
+            }
+        }
+        s = (pdf_stream *)s->parent_obj;
     }
 
     pdfi_set_stream_parent(ctx, stream_obj, ctx->current_stream);
