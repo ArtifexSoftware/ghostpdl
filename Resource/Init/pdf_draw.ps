@@ -1198,41 +1198,90 @@ currentdict end readonly def
 %% finished running the PaintProc.
 
 /.actual_pdfpaintproc {         % <patdict> <resdict> .pdfpaintproc -
-  PDFDEBUG { //pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%Begin PaintProc) print dup === flush } if } if
-  PDFfile fileposition 3 1 roll
-  q
-  1 index /PaintType oget 1 eq {
-    % For colored patterns, set default fill and stroke colors.
-    0 g 0 G
-  } {
-    % For uncolored patterns, we have to unbind the current
-    % color and color space before running the PaintProc.
-    % Not true since moving the ExtGState parameters into the gstate.
-    %    //null sc1 //null SC1
+  % Check the object number of the pattern, from the pattern dictionary. Somehow
+  % there is a means to get here with no object number set, I have no idea how
+  % but this solves the immediate problem. Hopefully good enough until we drop
+  % this code. Fixes bug #704487 which is recursion caused by a pattern
+  % referenced via resolving a name from a Page as it is not defined in the Form
+  % which uses it.
+  1 index /.gs.pdfobj# known {
+    1 index /.gs.pdfobj# get
+  }
+  {
+    0
   } ifelse
+  3 1 roll
+  NestedPatterns 3 index known 3 index 0 ne and
+  {
+    PDFSTOPONERROR not {
+      (   **** Error:  Attempting to run a Pattern while already executing that Pattern.\n                Ignoring this pattern, output may be incorrect.\n) pdfformaterror
+      pop pop pop
+    }
+    {
+      /PaintProc cvx /circular_reference signalerror
+    } ifelse
+  }
+  {
+    % Store the currnet object number in the dictionary just so we can find it later.
+    NestedPatterns 3 index null put
+    PDFDEBUG { //pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%Begin PaintProc) print dup === flush } if } if
+    PDFfile fileposition 3 1 roll
+    q
+    1 index /PaintType oget 1 eq {
+      % For colored patterns, set default fill and stroke colors.
+      0 g 0 G
+    } {
+      % For uncolored patterns, we have to unbind the current
+      % color and color space before running the PaintProc.
+      % Not true since moving the ExtGState parameters into the gstate.
+      %    //null sc1 //null SC1
+    } ifelse
 
-  % Save old values on opstack, set pdfemptycount to new value.
-  pdfemptycount countdictstack mark
+    % Save old values on opstack, set pdfemptycount to new value.
+    pdfemptycount countdictstack mark
 
-  %% We can't simply 'def' into the dictionary saved by 'q' above, we need to
-  %% call gput to copy it and store inside it. Stupid or what....
-  /pdfemptycount count 3 sub gput 5 3 roll
-  %
-  % Stack: ... <old emptycount> <dictcount> mark <patdict> <resdict>
-  %                                                  |
-  %           New empty count points here -----------+
+    %% We can't simply 'def' into the dictionary saved by 'q' above, we need to
+    %% call gput to copy it and store inside it. Stupid or what....
+    /pdfemptycount count 3 sub gput 5 3 roll
+    %
+    % Stack: ... <old emptycount> <dictcount> mark <patdict> <resdict>
+    %                                                  |
+    %           New empty count points here -----------+
 
-  exch //false resolvestream pdfopdict .pdfruncontext
-  cleartomark
+    exch //false resolvestream pdfopdict .pdfruncontext
+    cleartomark
 
-  //false
-  { countdictstack
-    2 index le { exit } if
-    currentdict /n known not or
-    currentdict /n known currentdict /self known or{
-      Q
-    }{
-      (\n   **** Error: File has unbalanced q/Q operators \(too many Q's\)\n               Output may be incorrect.\n)
+    //false
+    { countdictstack
+      2 index le { exit } if
+      currentdict /n known not or
+      currentdict /n known currentdict /self known or{
+        Q
+      }{
+        (\n   **** Error: File has unbalanced q/Q operators \(too many Q's\)\n               Output may be incorrect.\n)
+        //pdfdict /.Qqwarning_issued .knownget
+        {
+          {
+            pop
+          }
+          {
+            currentglobal //pdfdict gcheck .setglobal
+            //pdfdict /.Qqwarning_issued //true .forceput
+            .setglobal
+            pdfformaterror
+          } executeonly ifelse
+        } executeonly
+        {
+          currentglobal //pdfdict gcheck .setglobal
+          //pdfdict /.Qqwarning_issued //true .forceput
+          .setglobal
+          pdfformaterror
+        } executeonly ifelse
+        end
+      } executeonly ifelse
+    } executeonly loop
+    {
+      (\n   **** Error: File has unbalanced q/Q operators \(too many q's\)\n               Output may be incorrect.\n)
       //pdfdict /.Qqwarning_issued .knownget
       {
         {
@@ -1251,38 +1300,17 @@ currentdict end readonly def
         .setglobal
         pdfformaterror
       } executeonly ifelse
-      end
-    } executeonly ifelse
-  } executeonly loop
-  {
-    (\n   **** Error: File has unbalanced q/Q operators \(too many q's\)\n               Output may be incorrect.\n)
-    //pdfdict /.Qqwarning_issued .knownget
-    {
-      {
-        pop
-      }
-      {
-        currentglobal //pdfdict gcheck .setglobal
-        //pdfdict /.Qqwarning_issued //true .forceput
-        .setglobal
-        pdfformaterror
-      } executeonly ifelse
-    } executeonly
-    {
-      currentglobal //pdfdict gcheck .setglobal
-      //pdfdict /.Qqwarning_issued //true .forceput
-      .setglobal
-      pdfformaterror
-    } executeonly ifelse
-  } executeonly if
-  pop
+    } executeonly if
+    pop
 
-  % restore pdfemptycount
-  /pdfemptycount exch def
+    % restore pdfemptycount
+    /pdfemptycount exch def
 
-  Q
-  PDFDEBUG { //pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%End PaintProc) print dup === flush } if } if
-  PDFfile exch setfileposition
+    Q
+    PDFDEBUG { //pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%End PaintProc) print dup === flush } if } if
+    PDFfile exch setfileposition
+    NestedPatterns exch undef
+  }ifelse
 } bind executeonly odef
 
 /.pdfpaintproc {
