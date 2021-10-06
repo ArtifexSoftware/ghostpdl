@@ -3949,9 +3949,11 @@ currentdict /PDF2PS_matrix_key undef
         not
         and
         //systemdict /PreserveAnnots .knownget not {//true} if and {
-            mark exch {preserveannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse {cleartomark} stopped pop
+            mark exch {preserveannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse {cleartomark} stopped
+            {(Error: Failed to clean up after annotation, output may be incorrect.\n) pdfformaterror}if
           }{
-            mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse {cleartomark} stopped pop
+            mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse {cleartomark} stopped
+            {(Error: Failed to clean up after annotation, output may be incorrect.\n) pdfformaterror}if
           } ifelse
         } {
           pop
