@@ -1856,6 +1856,8 @@ static const gs_fapi_server freetypeserver = {
     {0},
     0,
     false,
+    false,
+    {1, 0, 0, 1, 0, 0},
     1,
     {1, 0, 0, 1, 0, 0},
     gs_fapi_ft_ensure_open,

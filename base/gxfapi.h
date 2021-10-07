@@ -329,6 +329,8 @@ struct gs_fapi_server_s
     gs_fapi_font ff;
     int max_bitmap;
     bool use_outline;
+    bool transform_outline;
+    gs_matrix outline_mat;
     uint grid_fit;
     gs_matrix initial_FontMatrix;       /* Font Matrix at the time the font is defined */
     /* Used to use the stored 'OrigFont' entry but */

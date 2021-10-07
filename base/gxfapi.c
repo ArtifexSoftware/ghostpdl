@@ -56,6 +56,7 @@ gs_fapi_renderer_retcode(gs_memory_t *mem, gs_fapi_server *I,
 
 typedef struct gs_fapi_outline_handler_s
 {
+    gs_fapi_server *fserver;
     struct gx_path_s *path;
     fixed x0;
     fixed y0;
@@ -98,29 +99,33 @@ add_move(gs_fapi_path *I, int64_t x, int64_t y)
 {
     gs_fapi_outline_handler *olh = (gs_fapi_outline_handler *) I->olh;
 
-    x = import_shift(x, I->shift) + olh->x0;
-    y = -import_shift(y, I->shift) + olh->y0;
-
-    if (x > (int64_t) max_fixed) {
-        x = (int64_t) max_fixed;
+    x = import_shift(x, I->shift);
+    y = -import_shift(y, I->shift);
+    if (olh->fserver->transform_outline) {
+        gs_point pt;
+        I->gs_error = gs_distance_transform((double)fixed2float((float)x), (double)fixed2float((float)y), &olh->fserver->outline_mat, &pt);
+        if (I->gs_error < 0)
+            return I->gs_error;
+        x = float2fixed(pt.x);
+        y = float2fixed(pt.y);
     }
-    else if (x < (int64_t) min_fixed) {
-        x = (int64_t) min_fixed;
-    }
+    x += olh->x0;
+    y += olh->y0;
 
-    if (y > (int64_t) max_fixed) {
-        y = (int64_t) max_fixed;
+    if (x > (int64_t) max_coord_fixed || x < (int64_t) min_coord_fixed
+     || y > (int64_t) max_coord_fixed || y < (int64_t) min_coord_fixed) {
+         I->gs_error = gs_error_undefinedresult;
     }
-    else if (y < (int64_t) min_fixed) {
-        y = (int64_t) min_fixed;
+    else {
+
+        if (olh->need_close && olh->close_path)
+            if ((I->gs_error = add_closepath(I)) < 0)
+                return (I->gs_error);
+        olh->need_close = false;
+
+/*        dprintf2("%f %f moveto\n", fixed2float(x), fixed2float(y)); */
+        I->gs_error = gx_path_add_point(olh->path, (fixed) x, (fixed) y);
     }
-
-    if (olh->need_close && olh->close_path)
-        if ((I->gs_error = add_closepath(I)) < 0)
-            return (I->gs_error);
-    olh->need_close = false;
-    I->gs_error = gx_path_add_point(olh->path, (fixed) x, (fixed) y);
-
     return (I->gs_error);
 }
 
@@ -129,24 +134,29 @@ add_line(gs_fapi_path *I, int64_t x, int64_t y)
 {
     gs_fapi_outline_handler *olh = (gs_fapi_outline_handler *) I->olh;
 
-    x = import_shift(x, I->shift) + olh->x0;
-    y = -import_shift(y, I->shift) + olh->y0;
-    if (x > (int64_t) max_fixed) {
-        x = (int64_t) max_fixed;
+    x = import_shift(x, I->shift);
+    y = -import_shift(y, I->shift);
+    if (olh->fserver->transform_outline) {
+        gs_point pt;
+        I->gs_error = gs_distance_transform((double)fixed2float((float)x), (double)fixed2float((float)y), &olh->fserver->outline_mat, &pt);
+        if (I->gs_error < 0)
+            return I->gs_error;
+        x = float2fixed(pt.x);
+        y = float2fixed(pt.y);
     }
-    else if (x < (int64_t) min_fixed) {
-        x = (int64_t) min_fixed;
-    }
+    x += olh->x0;
+    y += olh->y0;
 
-    if (y > (int64_t) max_fixed) {
-        y = (int64_t) max_fixed;
+    if (x > (int64_t) max_coord_fixed || x < (int64_t) min_coord_fixed
+     || y > (int64_t) max_coord_fixed || y < (int64_t) min_coord_fixed) {
+         I->gs_error = gs_error_undefinedresult;
     }
-    else if (y < (int64_t) min_fixed) {
-        y = (int64_t) min_fixed;
-    }
+    else {
+        olh->need_close = true;
 
-    olh->need_close = true;
-    I->gs_error = gx_path_add_line_notes(olh->path, (fixed) x, (fixed) y, 0);
+/*        dprintf2("%f %f lineto\n", fixed2float(x), fixed2float(y)); */
+        I->gs_error = gx_path_add_line_notes(olh->path, (fixed) x, (fixed) y, 0);
+    }
     return (I->gs_error);
 }
 
@@ -156,57 +166,53 @@ add_curve(gs_fapi_path *I, int64_t x0, int64_t y0, int64_t x1, int64_t y1,
 {
     gs_fapi_outline_handler *olh = (gs_fapi_outline_handler *) I->olh;
 
-    x0 = import_shift(x0, I->shift) + olh->x0;
-    y0 = -import_shift(y0, I->shift) + olh->y0;
-    x1 = import_shift(x1, I->shift) + olh->x0;
-    y1 = -import_shift(y1, I->shift) + olh->y0;
-    x2 = import_shift(x2, I->shift) + olh->x0;
-    y2 = -import_shift(y2, I->shift) + olh->y0;
+    x0 = import_shift(x0, I->shift);
+    y0 = -import_shift(y0, I->shift);
+    x1 = import_shift(x1, I->shift);
+    y1 = -import_shift(y1, I->shift);
+    x2 = import_shift(x2, I->shift);
+    y2 = -import_shift(y2, I->shift);
 
-    if (x0 > (int64_t) max_fixed) {
-        x0 = (int64_t) max_fixed;
+    if (olh->fserver->transform_outline) {
+        gs_point pt;
+        I->gs_error = gs_distance_transform((double)fixed2float((float)x0), (double)fixed2float((float)y0), &olh->fserver->outline_mat, &pt);
+        if (I->gs_error < 0)
+            return I->gs_error;
+        x0 = float2fixed(pt.x);
+        y0 = float2fixed(pt.y);
+        I->gs_error = gs_distance_transform((double)fixed2float((float)x1), (double)fixed2float((float)y1), &olh->fserver->outline_mat, &pt);
+        if (I->gs_error < 0)
+            return I->gs_error;
+        x1 = float2fixed(pt.x);
+        y1 = float2fixed(pt.y);
+        I->gs_error = gs_distance_transform((double)fixed2float((float)x2), (double)fixed2float((float)y2), &olh->fserver->outline_mat, &pt);
+        if (I->gs_error < 0)
+            return I->gs_error;
+        x2 = float2fixed(pt.x);
+        y2 = float2fixed(pt.y);
     }
-    else if (x0 < (int64_t) min_fixed) {
-        x0 = (int64_t) min_fixed;
-    }
+    x0 += olh->x0;
+    y0 += olh->y0;
+    x1 += olh->x0;
+    y1 += olh->y0;
+    x2 += olh->x0;
+    y2 += olh->y0;
 
-    if (y0 > (int64_t) max_fixed) {
-        y0 = (int64_t) max_fixed;
+    if (x0 > (int64_t) max_coord_fixed || x0 < (int64_t) min_coord_fixed
+     || y0 > (int64_t) max_coord_fixed || y0 < (int64_t) min_coord_fixed
+     || x1 > (int64_t) max_coord_fixed || x1 < (int64_t) min_coord_fixed
+     || y1 > (int64_t) max_coord_fixed || y1 < (int64_t) min_coord_fixed
+     || x2 > (int64_t) max_coord_fixed || x2 < (int64_t) min_coord_fixed
+     || y2 > (int64_t) max_coord_fixed || y2 < (int64_t) min_coord_fixed)
+    {
+        I->gs_error = gs_error_undefinedresult;
     }
-    else if (y0 < (int64_t) min_fixed) {
-        y0 = (int64_t) min_fixed;
-    }
-    if (x1 > (int64_t) max_fixed) {
-        x1 = (int64_t) max_fixed;
-    }
-    else if (x1 < (int64_t) min_fixed) {
-        x1 = (int64_t) min_fixed;
-    }
+    else {
+        olh->need_close = true;
 
-    if (y1 > (int64_t) max_fixed) {
-        y1 = (int64_t) max_fixed;
+/*        dprintf6("%f %f %f %f %f %f curveto\n", fixed2float(x0), fixed2float(y0), fixed2float(x1), fixed2float(y1), fixed2float(x2), fixed2float(y2));*/
+        I->gs_error = gx_path_add_curve_notes(olh->path, (fixed) x0, (fixed) y0, (fixed) x1, (fixed) y1, (fixed) x2, (fixed) y2, 0);
     }
-    else if (y1 < (int64_t) min_fixed) {
-        y1 = (int64_t) min_fixed;
-    }
-    if (x2 > (int64_t) max_fixed) {
-        x2 = (int64_t) max_fixed;
-    }
-    else if (x2 < (int64_t) min_fixed) {
-        x2 = (int64_t) min_fixed;
-    }
-
-    if (y2 > (int64_t) max_fixed) {
-        y2 = (int64_t) max_fixed;
-    }
-    else if (y2 < (int64_t) min_fixed) {
-        y2 = (int64_t) min_fixed;
-    }
-
-    olh->need_close = true;
-    I->gs_error =
-        gx_path_add_curve_notes(olh->path, (fixed) x0, (fixed) y0, (fixed) x1,
-                                (fixed) y1, (fixed) x2, (fixed) y2, 0);
     return (I->gs_error);
 }
 
@@ -567,10 +573,14 @@ outline_char(gs_memory_t *mem, gs_fapi_server *I, int import_shift_v,
 {
     gs_fapi_path path_interface = path_interface_stub;
     gs_fapi_outline_handler olh;
-    int code;
+    int code = 0;
     gs_gstate *pgs = penum_s->pgs;
+    struct gx_path_s path1;
 
-    olh.path = path;
+    (void)gx_path_init_local(&path1, mem);
+
+    olh.fserver = I;
+    olh.path = &path1;
     olh.x0 = pgs->ctm.tx_fixed - float2fixed(penum_s->fapi_glyph_shift.x);
     olh.y0 = pgs->ctm.ty_fixed - float2fixed(penum_s->fapi_glyph_shift.y);
     olh.close_path = close_path;
@@ -582,15 +592,22 @@ outline_char(gs_memory_t *mem, gs_fapi_server *I, int import_shift_v,
                                   I->get_char_outline(I,
                                                       &path_interface))) < 0
         || path_interface.gs_error != 0) {
-        if (path_interface.gs_error != 0)
-            return path_interface.gs_error;
-        else
-            return code;
+        if (path_interface.gs_error != 0) {
+            code = path_interface.gs_error;
+            goto done;
+        }
+        else {
+            goto done;
+        }
     }
     if (olh.need_close && olh.close_path)
         if ((code = add_closepath(&path_interface)) < 0)
-            return code;
-    return 0;
+            goto done;
+    code = gx_path_copy(&path1, path);
+done:
+    code = code >= 0 || code == gs_error_undefinedresult ? 0 : code;
+    gx_path_free(&path1, "outline_char");
+    return code;
 }
 
 static void
@@ -1234,6 +1251,7 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
         return 0;
 
     I->use_outline = false;
+    I->transform_outline = false;
 
     if (penum == 0)
         return_error(gs_error_undefined);
@@ -1302,7 +1320,7 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
     }
 
    scale = 1 << I->frac_shift;
-  retry_oversampling:
+retry_oversampling:
     if (I->face.font_id != pbfont->id ||
         !MTX_EQ((&I->face.ctm), ctm) ||
         I->face.log2_scale.x != log2_scale.x ||
@@ -1316,10 +1334,9 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
         , {1, 1}
         , true
         };
-        gs_matrix scale_mat, scale_ctm;
 
+        gs_matrix lctm, scale_mat, scale_ctm;
         I->face.font_id = pbfont->id;
-        I->face.ctm = *ctm;
         I->face.log2_scale = log2_scale;
         I->face.align_to_pixels = align_to_pixels;
         I->face.HWResolution[0] = dev->HWResolution[0];
@@ -1332,7 +1349,9 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
         /* We apply the entire transform to the glyph (that is ctm x FontMatrix)
          * at render time.
          */
-
+        lctm = *ctm;
+retry_scaling:
+        I->face.ctm = lctm;
         memset(&scale_ctm, 0x00, sizeof(gs_matrix));
         scale_ctm.xx = dev->HWResolution[0] / 72;
         scale_ctm.yy = dev->HWResolution[1] / 72;
@@ -1340,7 +1359,7 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
         if ((code = gs_matrix_invert((const gs_matrix *)&scale_ctm, &scale_ctm)) < 0)
             return code;
 
-        if ((code = gs_matrix_multiply(ctm, &scale_ctm, &scale_mat)) < 0)  /* scale_mat ==  CTM - resolution scaling */
+        if ((code = gs_matrix_multiply(&lctm, &scale_ctm, &scale_mat)) < 0)  /* scale_mat ==  CTM - resolution scaling */
             return code;
 
         if ((code = I->get_fontmatrix(I, &scale_ctm)) < 0)
@@ -1352,18 +1371,37 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
         if ((code = gs_matrix_multiply(&scale_mat, &scale_ctm, &scale_mat)) < 0)  /* scale_mat ==  CTM - resolution scaling - FontMatrix scaling */
             return code;
 
-        font_scale.matrix[0] =
-            (fracint) (scale_mat.xx * FontMatrix_div * scale + 0.5);
-        font_scale.matrix[1] =
-            -(fracint) (scale_mat.xy * FontMatrix_div * scale + 0.5);
-        font_scale.matrix[2] =
-            (fracint) (scale_mat.yx * FontMatrix_div * scale + 0.5);
-        font_scale.matrix[3] =
-            -(fracint) (scale_mat.yy * FontMatrix_div * scale + 0.5);
-        font_scale.matrix[4] =
-            (fracint) (scale_mat.tx * FontMatrix_div * scale + 0.5);
-        font_scale.matrix[5] =
-            (fracint) (scale_mat.ty * FontMatrix_div * scale + 0.5);
+        if (((int64_t)(scale_mat.xx * FontMatrix_div * scale + 0.5)) != ((int32_t)(scale_mat.xx * FontMatrix_div * scale + 0.5))
+        ||  ((int64_t)(scale_mat.xy * FontMatrix_div * scale + 0.5)) != ((int32_t)(scale_mat.xy * FontMatrix_div * scale + 0.5))
+        ||  ((int64_t)(scale_mat.yx * FontMatrix_div * scale + 0.5)) != ((int32_t)(scale_mat.yx * FontMatrix_div * scale + 0.5))
+        ||  ((int64_t)(scale_mat.yy * FontMatrix_div * scale + 0.5)) != ((int32_t)(scale_mat.yy * FontMatrix_div * scale + 0.5))) {
+            /* Overflow
+               If the scaling is large enough to overflow the 16.16 representation, we forcibly produce an outline
+               unscaled except for the resolution. And then scale the points as we create the Ghostscript path outline_char().
+               If the glyph is this large, we're really not worried about hinting or dropout detection etc.
+             */
+
+            memset(&lctm, 0x00, sizeof(gs_matrix));
+            lctm.xx = dev->HWResolution[0];
+            lctm.yy = dev->HWResolution[1];
+            I->transform_outline = true;
+            I->use_outline = true;
+            if ((code = gs_matrix_invert((const gs_matrix *)&lctm, &scale_ctm)) < 0)
+                 return code;
+            if ((code = gs_matrix_multiply(ctm, &scale_ctm, &scale_mat)) < 0)  /* scale_mat ==  CTM - resolution scaling */
+                return code;
+
+            I->outline_mat = scale_mat;
+            goto retry_scaling;
+        }
+        else {
+            font_scale.matrix[0] = (fracint) (scale_mat.xx * FontMatrix_div * scale + 0.5);
+            font_scale.matrix[1] = -(fracint) (scale_mat.xy * FontMatrix_div * scale + 0.5);
+            font_scale.matrix[2] = (fracint) (scale_mat.yx * FontMatrix_div * scale + 0.5);
+            font_scale.matrix[3] = -(fracint) (scale_mat.yy * FontMatrix_div * scale + 0.5);
+            font_scale.matrix[4] = (fracint) (scale_mat.tx * FontMatrix_div * scale + 0.5);
+            font_scale.matrix[5] = (fracint) (scale_mat.ty * FontMatrix_div * scale + 0.5);
+        }
 
         /* Note: the ctm mapping here is upside down. */
         font_scale.HWResolution[0] =
