@@ -379,7 +379,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
             int l_xprev = x;
             gs_get_bits_params_t params;
 
-            params.options = (GB_ALIGN_ANY |
+            params.options = (GB_ALIGN_STANDARD |
                               (GB_RETURN_COPY | GB_RETURN_POINTER) |
                               GB_OFFSET_0 |
                               GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
