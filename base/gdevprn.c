@@ -1414,8 +1414,16 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
 #endif
         gx_device_fill_in_procs((gx_device *)mdev);
     } else {
-        gs_make_mem_device(mdev, mdproto, mem, (color_usage == NULL ? 1 : 0),
-                           target);
+        gs_devn_params* pdevn_params;
+
+        gs_make_mem_device(mdev, mdproto, mem, (color_usage == NULL ? 1 : 0), target);
+        /* mem devices may need to refer to the target's devn_params struct */
+        /* if the device has separations already defined (by SeparationOrderNames), we   */
+        /* need to use them so the colorants are in the same order as the target device. */
+        pdevn_params = dev_proc(target, ret_devn_params)(target);
+        if (pdevn_params != NULL) {
+            mdev->procs.ret_devn_params = gx_forward_ret_devn_params;
+        }
     }
     mdev->width = target->width;
     mdev->band_y = y;

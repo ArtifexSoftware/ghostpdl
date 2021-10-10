@@ -608,7 +608,6 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
          options & GB_PACKING_BIT_PLANAR ? dev->color_info.depth :
          0 /****** NOT POSSIBLE ******/);
     gx_render_plane_t render_plane;
-    gs_devn_params *pdevn_params;
     int plane_index;
     int my;
     int code;
@@ -647,13 +646,6 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
                                   &(crdev->color_usage_array[y/crdev->page_band_height]));
     if (code < 0)
         return code;
-
-    /* if the device has separations already defined (by SeparationOrderNames), we   */
-    /* need to use them so the colorants are in the same order as the target device. */
-    pdevn_params = dev_proc(dev, ret_devn_params)(dev);
-    if (pdevn_params != NULL) {
-        bdev->procs.ret_devn_params = gx_forward_ret_devn_params;
-    }
     code = clist_rasterize_lines(dev, y, line_count, bdev, &render_plane, &my);
     if (code >= 0) {
         lines_rasterized = min(code, line_count);
