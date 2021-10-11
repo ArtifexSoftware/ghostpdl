@@ -127,7 +127,6 @@ def trans_ps():
 # Run string to feed chunks
 def run_string():
 
-    f = None
     size = 1024;
     in_filename = '%s/examples/tiger.eps' % ghostpdl_root
     out_filename = 'tiger_byte_fed.png'
