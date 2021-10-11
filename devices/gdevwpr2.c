@@ -1080,11 +1080,11 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     DocumentProperties(NULL, hprinter, device, podevmode, NULL, DM_OUT_BUFFER);
 
     /* now find out what paper sizes are available */
-    devcapsize = DeviceCapabilities(device, output, DC_PAPERSIZE, NULL, NULL);
+    devcapsize = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERSIZE, NULL, NULL);
     devcapsize *= sizeof(POINT);
     if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
         return FALSE;
-    n = DeviceCapabilities(device, output, DC_PAPERSIZE, devcap, NULL);
+    n = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERSIZE, devcap, NULL);
     paperwidth = (int)(wdev->MediaSize[0] * 254 / 72);
     paperheight = (int)(wdev->MediaSize[1] * 254 / 72);
     papername[0] = '\0';
@@ -1119,21 +1119,21 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
     /* get the dmPaperSize */
-    devcapsize = DeviceCapabilities(device, output, DC_PAPERS, NULL, NULL);
+    devcapsize = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERS, NULL, NULL);
     devcapsize *= sizeof(WORD);
     if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
         return FALSE;
-    n = DeviceCapabilities(device, output, DC_PAPERS, devcap, NULL);
+    n = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERS, devcap, NULL);
     if ((paperindex >= 0) && (paperindex < n))
         papersize = ((WORD *) devcap)[paperindex];
     gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
     /* get the paper name */
-    devcapsize = DeviceCapabilities(device, output, DC_PAPERNAMES, NULL, NULL);
+    devcapsize = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERNAMES, NULL, NULL);
     devcapsize *= 64;
     if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
         return FALSE;
-    n = DeviceCapabilities(device, output, DC_PAPERNAMES, devcap, NULL);
+    n = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERNAMES, devcap, NULL);
     if ((paperindex >= 0) && (paperindex < n))
         strcpy(papername, devcap + paperindex * 64);
     gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
@@ -1175,7 +1175,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         wdev->user_media_size[1] = paperheight / 254.0 * 72.0;
     }
 
-    if (DeviceCapabilities(device, output, DC_DUPLEX, NULL, NULL)) {
+    if (DeviceCapabilities(podevmode->dmDeviceName, output, DC_DUPLEX, NULL, NULL)) {
         wdev->Duplex_set = 1;
     }
 
@@ -1186,7 +1186,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     ClosePrinter(hprinter);
 
     /* now get a DC */
-    wdev->hdcprn = CreateDC(driver, device, NULL, podevmode);
+    wdev->hdcprn = CreateDC(driver, podevmode->dmDeviceName, NULL, podevmode);
 
     if (wdev->win32_hdevmode == NULL)
         wdev->win32_hdevmode = GlobalAlloc(0, devmode_size);
