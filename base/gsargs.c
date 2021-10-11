@@ -334,10 +334,31 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                     errprintf(errmem, "Command too long: %s\n", cstr);
                     return_error(gs_error_Fatal);
                 }
-                /* Allow quotes to protect whitespace. */
-                /* (special cases have already been handled and don't reach this point) */
-                if (c == '"')
-                    in_quote = !in_quote;
+                /* Now, some (slightly hairy) code to allow quotes to protect whitespace.
+                 * We only allow for double-quote quoting within @files, as a) command-
+                 * line args passed via argv are zero terminated so we should have no
+                 * confusion with whitespace, and b) callers using the command line will
+                 * have to have carefully quoted double-quotes to make them survive the
+                 * shell anyway! */
+                if (c == '"' && pal->depth > 0) {
+                    if (i == 0 && !in_quote)
+                        in_quote = true;
+                    else if (in_quote) {
+                        /* Need to check the next char to see if we're closing at the end */
+                        c = get_codepoint(pal, pas);
+                        if (c > 0 && c < 256 && isspace(c)) {
+                            /* Reading from an @file, we've hit a space char. That's good, this
+                             * was a close quote. */
+                            cstr[i] = 0;
+                            break;
+                        }
+                        /* Not a close quote, just a literal quote. */
+                        i += codepoint_to_utf8(&cstr[i], '"');
+                        eol = false;
+                        continue; /* Jump to the start of the loop without reading another char. */
+                    } else
+                        i += codepoint_to_utf8(&cstr[i], c);
+                }
                 else
                     i += codepoint_to_utf8(&cstr[i], c);
                 eol = is_eol(c);
