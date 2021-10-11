@@ -1418,6 +1418,7 @@ retry_scaling:
                       (double)font_scale.matrix[3]) == 0.0)) {
 
             /* If the matrix is degenerate, force a scale to 1 unit. */
+            memset(&font_scale.matrix, 0x00, sizeof(font_scale.matrix));
             if (!font_scale.matrix[0])
                 font_scale.matrix[0] = 1;
             if (!font_scale.matrix[3])

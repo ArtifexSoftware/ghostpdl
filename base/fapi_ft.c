@@ -1072,8 +1072,8 @@ transform_decompose(FT_Matrix * a_transform, FT_UInt * xresp, FT_UInt * yresp,
      * scalex/y we calculate will be >64 after rounding.
      */
 
-    if (scalex < 10.0) {
-        fact = 10.016 / scalex;
+    if (scalex < 1.0) {
+        fact = 1.016 / scalex;
         scalex = scalex * fact;
         scaley = scaley * fact;
     }
