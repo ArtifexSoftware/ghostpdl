@@ -1368,7 +1368,9 @@ copy_separation_name(tiffsep_device * pdev,
 {
     int sep_size = pdev->devn_params.separations.names[sep_num].size;
     const byte *p = pdev->devn_params.separations.names[sep_num].data;
-    int r, w;
+    int r, w, use_sep_num = 0;
+    const char *stdnames[4] = {"CYAN", "MAGENTA", "YELLOW", "BLACK"};
+    char sep_num_str[16] = "";
 
     /* Previously the code here would simply replace any char that wasn't
      * passed by gp_file_name_good_char (and %) with '_'. The grounds for
@@ -1378,13 +1380,28 @@ copy_separation_name(tiffsep_device * pdev,
      * the file handling routines as they assume the filenames are in
      * utf-8 format. */
 
+    for (r=0;r<4;r++)
+    {
+        if (strlen(stdnames[r]) == pdev->devn_params.separations.names[sep_num].size) {
+            use_sep_num = 1;
+            for (w=0;w<strlen(stdnames[r]);w++) {
+                if (toupper(pdev->devn_params.separations.names[sep_num].data[w]) != stdnames[r][w]) {
+                    use_sep_num = 0;
+                    break;
+                }
+            }
+        }
+    }
+    if (use_sep_num != 0)
+        gs_sprintf(sep_num_str, "%d", sep_num);
+
     /* New code: Copy the name, escaping non gp_file_name_good_char chars,
      * % and top bit set chars using %02x format. In addition, if 'escape'
      * is set, output % as %% to allow for printf later.
      */
     r = 0;
     w = 0;
-    while (r < sep_size && w < max_size-1)
+    while (r < sep_size && w < max_size-1 - strlen(sep_num_str))
     {
         int c = p[r++];
         if (c >= 127 ||
@@ -1393,7 +1410,7 @@ copy_separation_name(tiffsep_device * pdev,
         {
             /* Top bit set, backspace, or char we can't represent on the
              * filesystem. */
-            if (w + 2 + escape >= max_size-1)
+            if (w + 2 + escape >= max_size-1 - strlen(sep_num_str))
                 break;
             buffer[w++] = '%';
             if (escape)
@@ -1405,6 +1422,10 @@ copy_separation_name(tiffsep_device * pdev,
         {
             buffer[w++] = c;
         }
+    }
+    if (use_sep_num) {
+        for (r = 0;r < strlen(sep_num_str);r++)
+            buffer[w++] = sep_num_str[r];
     }
     buffer[w] = 0;       /* Terminate string */
 }
@@ -2066,7 +2087,6 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
     int num_comp, comp_num, code = 0, code1 = 0;
     cmyk_composite_map cmyk_map[GX_DEVICE_COLOR_MAX_COMPONENTS];
     char *name = NULL;
-    bool double_f = false;
     int save_depth = pdev->color_info.depth;
     int save_numcomps = pdev->color_info.num_components;
     const char *fmt;
