@@ -38,6 +38,10 @@ profobj64
 debugaux
 cscope.*
 autom4te.cache
+sobin
+sodebugbin
+soobj
+sodebugobj
 
 gs/Makefile
 gs/Makefile.in
