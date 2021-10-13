@@ -1810,6 +1810,10 @@ display_set_separations(gx_device_display *dev)
         int sep_num;
         int sep_name_size;
         unsigned int c, m, y, k;
+        gx_device_display *head = dev;
+
+        while(head->parent)
+            head = (gx_device_display *)head->parent;
 
         /* Map the separation numbers to component numbers */
         memset(comp_map, 0, sizeof(comp_map));
@@ -1858,10 +1862,7 @@ display_set_separations(gx_device_display *dev)
                            * 65535 / frac_1;
                 }
             }
-            while(dev->parent)
-                dev = (gx_device_display *)dev->parent;
-
-            (*dev->callback->display_separation)(dev->pHandle, dev,
+            (*head->callback->display_separation)(dev->pHandle, head,
                 comp_num, name,
                 (unsigned short)c, (unsigned short)m,
                 (unsigned short)y, (unsigned short)k);
