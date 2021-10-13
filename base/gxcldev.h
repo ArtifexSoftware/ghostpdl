@@ -73,49 +73,157 @@ int cmd_write_pseudo_band(gx_device_clist_writer *cldev, unsigned char *pbuf,
  *         and/or previous operands.
  */
 typedef enum {
-    cmd_op_misc = 0x00,		/* (see below) */
-    cmd_opv_end_run = 0x00,	/* (nothing) */
-    cmd_opv_set_tile_size = 0x01,   /* rs?(1)nry?(1)nrx?(1)depth(5, encoded), */
-                                /* rep_width#, rep_height#, */
-                                /* [, nreps_x#][, nreps_y #] */
-                                /* [, rep_shift#] */
-    cmd_opv_set_tile_phase = 0x02,	/* x#, y# */
-    cmd_opv_set_tile_bits = 0x03,	/* index#, offset#, <bits> */
-    cmd_opv_set_bits = 0x04,	/* depth*4+compress, width#, height#, */
-                                /* index#, offset#, <bits> */
-    cmd_opv_set_tile_color = 0x05,	/* (nothing; next set/delta_color */
-                                /* refers to tile) */
-    cmd_opv_set_misc = 0x06,
-#define cmd_set_misc_lop (0 << 6)	/* 00: lop_lsb(6), lop_msb# */
-#define cmd_set_misc_data_x (1 << 6)	/* 01: more(1)dx_lsb(5)[, dx_msb#] */
-#define cmd_set_misc_map (2 << 6)	/* 10: contents(2)map_index(4) */
-    /* [, n x frac] */
-#define cmd_set_misc_halftone (3 << 6)	/* 11: type(6), num_comp# */
-    cmd_opv_enable_lop = 0x07,	/* (nothing) */
-    cmd_opv_disable_lop = 0x08,	/* (nothing) */
-    cmd_opv_end_page = 0x0b,	/* (nothing) */
-    cmd_opv_delta_color0 = 0x0c,	/* See cmd_put_color in gxclutil.c */
-    cmd_opv_delta_color1 = 0x0d,	/* <<same as color0>> */
-    cmd_opv_set_copy_color = 0x0e,	/* (nothing) */
-    cmd_opv_set_copy_alpha = 0x0f,	/* (nothing) */
-    cmd_op_set_color0 = 0x10,	/* +n = number of low order zero bytes | */
-#define cmd_no_color_index 15	/* +15 = transparent - "no color" */
-    cmd_op_set_color1 = 0x20,	/* <<same as color0>> */
-    cmd_op_fill_rect = 0x30,	/* +dy2dh2, x#, w# | +0, rect# */
-    cmd_op_fill_rect_short = 0x40,	/* +dh, dx, dw | +0, rect_short */
-    cmd_op_fill_rect_tiny = 0x50,	/* +dw+0, rect_tiny | +dw+8 */
-    cmd_op_tile_rect = 0x60,	/* +dy2dh2, x#, w# | +0, rect# */
-    cmd_op_tile_rect_short = 0x70,	/* +dh, dx, dw | +0, rect_short */
-    cmd_op_tile_rect_tiny = 0x80,	/* +dw+0, rect_tiny | +dw+8 */
-    cmd_op_copy_mono_planes = 0x90,	/* +compress, plane_height, x#, y#, (w+data_x)#, */
-                                        /* h#, <bits> | */
-#define cmd_copy_use_tile 8             /* +8 (use tile), x#, y# | */
-    cmd_op_copy_color_alpha = 0xa0,	/* (same as copy_mono, except: */
-                                /* if color, ignore ht_color; */
-                                /* if alpha & !use_tile, depth is */
-                                /*   first operand) */
-    cmd_op_delta_tile_index = 0xb0,	/* +delta+8 */
-    cmd_op_set_tile_index = 0xc0	/* +index[11:8], index[7:0] */
+    cmd_op_misc              = 0x00, /* (see below) */
+    cmd_opv_end_run          = 0x00, /* (nothing) */
+    cmd_opv_set_tile_size    = 0x01, /* rs?(1)nry?(1)nrx?(1)depth(5, encoded), */
+                                     /* rep_width#, rep_height#, */
+                                     /* [, nreps_x#][, nreps_y #] */
+                                     /* [, rep_shift#] */
+    cmd_opv_set_tile_phase   = 0x02, /* x#, y# */
+    cmd_opv_set_tile_bits    = 0x03, /* index#, offset#, <bits> */
+    cmd_opv_set_bits         = 0x04, /* depth*4+compress, width#, height#, */
+                                     /* index#, offset#, <bits> */
+    cmd_opv_set_tile_color   = 0x05, /* (nothing; next set/delta_color */
+                                     /* refers to tile) */
+    cmd_opv_set_misc         = 0x06,
+#define cmd_set_misc_lop      (0 << 6) /* 00: lop_lsb(6), lop_msb# */
+#define cmd_set_misc_data_x   (1 << 6) /* 01: more(1)dx_lsb(5)[, dx_msb#] */
+#define cmd_set_misc_map      (2 << 6) /* 10: contents(2)map_index(4) */
+                                       /* [, n x frac] */
+#define cmd_set_misc_halftone (3 << 6) /* 11: type(6), num_comp# */
+    cmd_opv_enable_lop       = 0x07, /* (nothing) */
+    cmd_opv_disable_lop      = 0x08, /* (nothing) */
+    /* UNUSED 0x09 */
+    /* UNUSED 0x0a */
+    cmd_opv_end_page         = 0x0b, /* (nothing) */
+    cmd_opv_delta_color0     = 0x0c, /* See cmd_put_color in gxclutil.c */
+    cmd_opv_delta_color1     = 0x0d, /* <<same as color0>> */
+    cmd_opv_set_copy_color   = 0x0e, /* (nothing) */
+    cmd_opv_set_copy_alpha   = 0x0f, /* (nothing) */
+    cmd_op_set_color0        = 0x10, /* +n = number of low order zero bytes | */
+#define cmd_no_color_index 15        /* +15 = transparent - "no color" */
+    cmd_op_set_color1        = 0x20, /* <<same as color0>> */
+    cmd_op_fill_rect         = 0x30, /* +dy2dh2, x#, w# | +0, rect# */
+    cmd_op_fill_rect_short   = 0x40, /* +dh, dx, dw | +0, rect_short */
+    cmd_op_fill_rect_tiny    = 0x50, /* +dw+0, rect_tiny | +dw+8 */
+    cmd_op_tile_rect         = 0x60, /* +dy2dh2, x#, w# | +0, rect# */
+    cmd_op_tile_rect_short   = 0x70, /* +dh, dx, dw | +0, rect_short */
+    cmd_op_tile_rect_tiny    = 0x80, /* +dw+0, rect_tiny | +dw+8 */
+    cmd_op_copy_mono_planes  = 0x90, /* +compress, plane_height, x#, y#, (w+data_x)#, */
+                                     /* h#, <bits> | */
+#define cmd_copy_use_tile 8          /* +8 (use tile), x#, y# | */
+    cmd_op_copy_color_alpha  = 0xa0, /* (same as copy_mono, except: */
+                                     /* if color, ignore ht_color; */
+                                     /* if alpha & !use_tile, depth is */
+                                     /*   first operand) */
+    cmd_op_delta_tile_index  = 0xb0, /* +delta+8 */
+    cmd_op_set_tile_index    = 0xc0, /* +index[11:8], index[7:0] */
+    cmd_op_misc2             = 0xd0, /* (see below) */
+    cmd_op_fill_rect_hl      = 0xd1, /* rect fill with devn color */
+    cmd_opv_set_fill_adjust  = 0xd2, /* adjust_x/y(fixed) */
+    cmd_opv_set_ctm          = 0xd3, /* [per sput/sget_matrix] */
+    cmd_opv_set_color_space  = 0xd4, /* base(4)Indexed?(2)0(2) */
+                                     /* [, hival#, table|map] */
+    /*
+     * cmd_opv_set_misc2_value is followed by a mask (a variable-length
+     * integer), and then by parameter values for the parameters selected
+     * by the mask.  See gxclpath.h for the "known" mask values.
+     */
+    /* cap_join:      0(2)cap(3)join(3) */
+    /* cj_ac_sa:      0(3)curve_join+1(3)acc.curves(1)stroke_adj(1) */
+    /* flatness:      (float) */
+    /* line width:    (float) */
+    /* miter limit:   (float) */
+    /* op_bm_tk:      blend mode(5)text knockout(1)o.p.mode(1)o.p.(1) */
+    /* segment notes: (byte) */
+    /* opacity/shape: alpha(float)mask(TBD) */
+    /* alpha:         <<verbatim copy from gs_gstate>> */
+    cmd_opv_set_misc2        = 0xd5, /* mask#, selected parameters */
+    cmd_opv_set_dash         = 0xd6, /* adapt(1)abs.dot(1)n(6), dot */
+                                     /* length(float), offset(float), */
+                                     /* n x (float) */
+    cmd_opv_enable_clip      = 0xd7, /* (nothing) */
+    cmd_opv_disable_clip     = 0xd8, /* (nothing) */
+    cmd_opv_begin_clip       = 0xd9, /* (nothing) */
+    cmd_opv_end_clip         = 0xda, /* (nothing) */
+    cmd_opv_begin_image_rect = 0xdb, /* same as begin_image, followed by */
+                                     /* x0#, w-x1#, y0#, h-y1# */
+    cmd_opv_begin_image      = 0xdc, /* image_type_table index, */
+                                     /* [per image type] */
+    cmd_opv_image_data       = 0xdd, /* height# (premature EOD if 0), */
+                                     /* raster#, <data> */
+    cmd_opv_image_plane_data = 0xde, /* height# (premature EOD if 0), */
+                                     /* flags# (0 = same raster & data_x, */
+                                     /* 1 = new raster & data_x, lsb first), */
+                                     /* [raster#, [data_x#,]]* <data> */
+    cmd_opv_extend           = 0xdf, /* command, varies (see gx_cmd_ext_op below) */
+
+
+#define cmd_misc2_op_name_strings\
+  "?d0?", "fill_hl_color", \
+  "set_fill_adjust", "set_ctm",\
+  "set_color_space", "set_misc2", "set_dash", "enable_clip",\
+  "disable_clip", "begin_clip", "end_clip", "begin_image_rect",\
+  "begin_image", "image_data", "image_plane_data", "extended"
+
+    cmd_op_segment           = 0xe0, /* (see below) */
+    cmd_opv_rmoveto          = 0xe0, /* dx%, dy% */
+    cmd_opv_rlineto          = 0xe1, /* dx%, dy% */
+    cmd_opv_hlineto          = 0xe2, /* dx% */
+    cmd_opv_vlineto          = 0xe3, /* dy% */
+    cmd_opv_rmlineto         = 0xe4, /* dx1%,dy1%, dx2%,dy2% */
+    cmd_opv_rm2lineto        = 0xe5, /* dx1%,dy1%, dx2%,dy2%, dx3%,dy3% */
+    cmd_opv_rm3lineto        = 0xe6, /* dx1%,dy1%, dx2%,dy2%, dx3%,dy3%, */
+                                     /* [-dx2,-dy2 implicit] */
+    cmd_opv_rrcurveto        = 0xe7, /* dx1%,dy1%, dx2%,dy2%, dx3%,dy3% */
+    cmd_opv_min_curveto = cmd_opv_rrcurveto,
+    cmd_opv_hvcurveto        = 0xe8, /* dx1%, dx2%,dy2%, dy3% */
+    cmd_opv_vhcurveto        = 0xe9, /* dy1%, dx2%,dy2%, dx3% */
+    cmd_opv_nrcurveto        = 0xea, /* dx2%,dy2%, dx3%,dy3% */
+    cmd_opv_rncurveto        = 0xeb, /* dx1%,dy1%, dx2%,dy2% */
+    cmd_opv_vqcurveto        = 0xec, /* dy1%, dx2%[,dy2=dx2 with sign */
+                                     /* of dy1, dx3=dy1 with sign of dx2] */
+    cmd_opv_hqcurveto        = 0xed, /* dx1%, [dx2=dy2 with sign */
+                                     /* of dx1,]%dy2, [dy3=dx1 with sign */
+                                     /* of dy2] */
+    cmd_opv_scurveto         = 0xee, /* all implicit: previous op must have been */
+                                     /* *curveto with one or more of dx/y1/3 = 0. */
+                                     /* If h*: -dx3,dy3, -dx2,dy2, -dx1,dy1. */
+                                     /* If v*: dx3,-dy3, dx2,-dy2, dx1,-dy1. */
+    cmd_opv_max_curveto = cmd_opv_scurveto,
+    cmd_opv_closepath        = 0xef, /* (nothing) */
+
+#define cmd_segment_op_name_strings\
+  "rmoveto", "rlineto", "hlineto", "vlineto",\
+  "rmlineto", "rm2lineto", "rm3lineto", "rrcurveto",\
+  "hvcurveto", "vhcurveto", "nrcurveto", "rncurveto",\
+  "vqcurveto", "hqcurveto", "scurveto", "closepath"
+
+    cmd_op_path              = 0xf0, /* (see below) */
+    cmd_opv_fill             = 0xf0,
+    cmd_opv_rgapto           = 0xf1, /* dx%, dy% */
+    /* UNUSED 0xf2 */
+    cmd_opv_eofill           = 0xf3,
+    cmd_opv_fill_stroke      = 0xf4,
+    cmd_opv_eofill_stroke    = 0xf5,
+    cmd_opv_stroke           = 0xf6,
+    /* UNUSED 0xf7 */
+    /* UNUSED 0xf8 */
+    cmd_opv_polyfill         = 0xf9,
+    /* UNUSED 0xfa */
+    /* UNUSED 0xfb */
+    cmd_opv_fill_trapezoid   = 0xfc
+    /* UNUSED 0xfd */
+    /* UNUSED 0xfe */
+    /* UNUSED 0xff */
+
+#define cmd_path_op_name_strings\
+  "fill", "rgapto", "?f2?", "eofill",\
+  "fill_stroke", "eofill_stroke", "stroke", "?f7?",\
+  "?f8?", "polyfill", "?fa?", "?fb?",\
+  "fill_trapezoid", "?fd?", "?fe?", "?ff?"
+
+/* unused cmd_op values: 0xd0, 0xf2, 0xf7, 0xf8, 0xfa, 0xfb, 0xfd, 0xfe, 0xff */
 } gx_cmd_op;
 
 #define cmd_op_name_strings\

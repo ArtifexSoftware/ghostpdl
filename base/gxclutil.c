@@ -48,6 +48,9 @@ const char *const *const cmd_sub_op_names[16] =
  0, 0, 0, 0,
  0, cmd_misc2_op_names, cmd_segment_op_names, cmd_path_op_names
 };
+const char *cmd_extend_op_names[256] =
+{cmd_extend_op_name_strings};
+
 #ifndef GS_THREADSAFE
 struct stats_cmd_s {
     ulong op_counts[256];

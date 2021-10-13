@@ -713,7 +713,13 @@ in:                             /* Initialize for a new page. */
             const char *const *sub = cmd_sub_op_names[op >> 4];
             long offset = (long)clist_file_offset(st, cbp - 1 - cbuf.data);
 
-            if (sub)
+            if (op == cmd_opv_extend) {
+                unsigned char op2 = *cbp;
+                if (cmd_extend_op_names[op2])
+                    dmlprintf1(mem, "[L]%s", cmd_extend_op_names[op2]);
+                else
+                    dmlprintf1(mem, "[L]?0x%02x?", (int)op2);
+            } else if (sub)
                 dmlprintf1(mem, "[L]%s", sub[op & 0xf]);
             else
                 dmlprintf2(mem, "[L]%s %d", cmd_op_names[op >> 4], op & 0xf);
