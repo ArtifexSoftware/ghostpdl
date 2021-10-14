@@ -1367,15 +1367,14 @@ clist_composite(gx_device * dev,
     if (cropping_op == ALLBANDS) {
         /* overprint applies to all bands */
         size_dummy = size;
-        code = set_cmd_put_all_op(& dp,
+        code = set_cmd_put_all_extended_op(& dp,
                                    (gx_device_clist_writer *)dev,
-                                   cmd_opv_extend,
+                                   cmd_opv_ext_composite,
                                    size );
         if (code < 0)
             return code;
 
-        /* insert the command and compositor identifier */
-        dp[1] = cmd_opv_ext_composite;
+        /* insert the compositor identifier */
         dp[2] = pcte->type->comp_id;
 
         /* serialize the remainder of the compositor */
@@ -1413,10 +1412,9 @@ clist_composite(gx_device * dev,
         RECT_ENUM_INIT(re, temp_cropping_min, temp_cropping_max - temp_cropping_min);
         do {
             RECT_STEP_INIT(re);
-            code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_extend, size);
+            code = set_cmd_put_extended_op(&dp, cdev, re.pcls, cmd_opv_ext_composite, size);
             if (code >= 0) {
                 size_dummy = size;
-                dp[1] = cmd_opv_ext_composite;
                 dp[2] = pcte->type->comp_id;
                 code = pcte->type->procs.write(pcte, dp + 3, &size_dummy, cdev);
             }
@@ -1502,9 +1500,8 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
     req_size = 2 + enc_u_sizew(ht_size);
 
     /* output the "put halftone" command */
-    if ((code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend, req_size)) < 0)
+    if ((code = set_cmd_put_all_extended_op(&dp, cldev, cmd_opv_ext_put_halftone, req_size)) < 0)
         return code;
-    dp[1] = cmd_opv_ext_put_halftone;
     dp += 2;
     enc_u_putw(ht_size, dp);
 
@@ -1518,11 +1515,10 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
     } else {
         /* send the only segment command */
         req_size += ht_size;
-        code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend, req_size);
+        code = set_cmd_put_all_extended_op(&dp, cldev, cmd_opv_ext_put_ht_seg, req_size);
         if (code < 0)
             return code;
         dp0 = dp;
-        dp[1] = cmd_opv_ext_put_ht_seg;
         dp += 2;
         enc_u_putw(ht_size, dp);
         pht_buff = dp;
@@ -1559,9 +1555,8 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
             seg_size = ( ht_size > cbuf_ht_seg_max_size ? cbuf_ht_seg_max_size
                                                         : ht_size );
             tmp_size = 2 + enc_u_sizew(seg_size) + seg_size;
-            code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend, tmp_size);
+            code = set_cmd_put_all_extended_op(&dp, cldev, cmd_opv_ext_put_ht_seg, tmp_size);
             if (code >= 0) {
-                dp[1] = cmd_opv_ext_put_ht_seg;
                 dp += 2;
                 enc_u_putw(seg_size, dp);
                 memcpy(dp, pbuff, seg_size);
