@@ -69,7 +69,7 @@ cmd_write_rect_hl_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     }
     if (code < 0)
         return code;
-    if_debug5m('L', cldev->memory, "rect hl r%d:%d,%d,%d,%d\n",
+    if_debug5m('L', cldev->memory, "[L]  rect hl r%d:%d,%d,%d,%d\n",
                rcsize - 1, pcls->rect.x, pcls->rect.y,
                pcls->rect.width, pcls->rect.height);
     cmd_put_rect(&pcls->rect, dp);
@@ -157,7 +157,7 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         code = set_cmd_put_op(&dp, cldev, pcls, op, rcsize);
         if (code < 0)
             return code;
-        if_debug5m('L', cldev->memory, "    r%d:%d,%d,%d,%d\n",
+        if_debug5m('L', cldev->memory, "[L]  r%d:%d,%d,%d,%d\n",
                    rcsize - 1, dx, dwidth, dy, dheight);
         cmd_put_rect(&pcls->rect, dp + 1);
     }

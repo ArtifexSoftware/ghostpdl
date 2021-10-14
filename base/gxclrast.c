@@ -713,17 +713,17 @@ in:                             /* Initialize for a new page. */
             const char *const *sub = cmd_sub_op_names[op >> 4];
             long offset = (long)clist_file_offset(st, cbp - 1 - cbuf.data);
 
+            dmlprintf1(mem, "[L] %ld: ", offset);
             if (op == cmd_opv_extend) {
                 unsigned char op2 = *cbp;
                 if (cmd_extend_op_names[op2])
-                    dmlprintf1(mem, "[L]%s", cmd_extend_op_names[op2]);
+                    dmlprintf1(mem, "%s", cmd_extend_op_names[op2]);
                 else
-                    dmlprintf1(mem, "[L]?0x%02x?", (int)op2);
+                    dmlprintf1(mem, "?0x%02x?", (int)op2);
             } else if (sub)
-                dmlprintf1(mem, "[L]%s", sub[op & 0xf]);
+                dmlprintf1(mem, "%s", sub[op & 0xf]);
             else
-                dmlprintf2(mem, "[L]%s %d", cmd_op_names[op >> 4], op & 0xf);
-            dmlprintf1(mem, "(offset=%ld):", offset);
+                dmlprintf2(mem, "%s %d", cmd_op_names[op >> 4], op & 0xf);
         }
 #endif
         switch (op >> 4) {
@@ -2730,17 +2730,18 @@ read_set_misc2(command_buf_t *pcb, gs_gstate *pgs, segment_notes *pnotes)
     const byte *cbp = pcb->ptr;
     uint mask, cb;
 
+    if_debug0m('L', pgs->memory, "\n");
     cmd_getw(mask, cbp);
     if (mask & cap_join_known) {
         cb = *cbp++;
         pgs->line_params.start_cap = (gs_line_cap)((cb >> 3) & 7);
         pgs->line_params.join = (gs_line_join)(cb & 7);
-        if_debug2m('L', pgs->memory, " start_cap=%d join=%d\n",
+        if_debug2m('L', pgs->memory, "[L]      start_cap=%d join=%d\n",
                    pgs->line_params.start_cap, pgs->line_params.join);
         cb = *cbp++;
         pgs->line_params.end_cap = (gs_line_cap)((cb >> 3) & 7);
         pgs->line_params.dash_cap = (gs_line_cap)(cb & 7);
-        if_debug2m('L', pgs->memory, "end_cap=%d dash_cap=%d\n",
+        if_debug2m('L', pgs->memory, "[L]      end_cap=%d dash_cap=%d\n",
                    pgs->line_params.end_cap, pgs->line_params.dash_cap);
     }
     if (mask & cj_ac_sa_known) {
@@ -2748,26 +2749,26 @@ read_set_misc2(command_buf_t *pcb, gs_gstate *pgs, segment_notes *pnotes)
         pgs->line_params.curve_join = ((cb >> 2) & 7) - 1;
         pgs->accurate_curves = (cb & 2) != 0;
         pgs->stroke_adjust = cb & 1;
-        if_debug3m('L', pgs->memory, " CJ=%d AC=%d SA=%d\n",
+        if_debug3m('L', pgs->memory, "[L]      CJ=%d AC=%d SA=%d\n",
                    pgs->line_params.curve_join, pgs->accurate_curves,
                    pgs->stroke_adjust);
     }
     if (mask & flatness_known) {
         cmd_get_value(pgs->flatness, cbp);
-        if_debug1m('L', pgs->memory, " flatness=%g\n", pgs->flatness);
+        if_debug1m('L', pgs->memory, "[L]      flatness=%g\n", pgs->flatness);
     }
     if (mask & line_width_known) {
         float width;
 
         cmd_get_value(width, cbp);
-        if_debug1m('L', pgs->memory, " line_width=%g\n", width);
+        if_debug1m('L', pgs->memory, "[L]      line_width=%g\n", width);
         gx_set_line_width(&pgs->line_params, width);
     }
     if (mask & miter_limit_known) {
         float limit;
 
         cmd_get_value(limit, cbp);
-        if_debug1m('L', pgs->memory, " miter_limit=%g\n", limit);
+        if_debug1m('L', pgs->memory, "[L]      miter_limit=%g\n", limit);
         gx_set_miter_limit(&pgs->line_params, limit);
     }
     if (mask & op_bm_tk_known) {
@@ -2781,26 +2782,26 @@ read_set_misc2(command_buf_t *pcb, gs_gstate *pgs, segment_notes *pnotes)
         pgs->overprint = cb & 1;
         cb = *cbp++;
         pgs->renderingintent = cb;
-        if_debug6m('L', pgs->memory, " BM=%d TK=%d OPM=%d OP=%d op=%d RI=%d\n",
+        if_debug6m('L', pgs->memory, "[L]      BM=%d TK=%d OPM=%d OP=%d op=%d RI=%d\n",
                    pgs->blend_mode, pgs->text_knockout, pgs->overprint_mode,
                    pgs->stroke_overprint, pgs->overprint, pgs->renderingintent);
     }
     if (mask & segment_notes_known) {
         cb = *cbp++;
         *pnotes = (segment_notes)(cb & 0x3f);
-        if_debug1m('L', pgs->memory, " notes=%d\n", *pnotes);
+        if_debug1m('L', pgs->memory, "[L]      notes=%d\n", *pnotes);
     }
     if (mask & ais_known) {
         cmd_get_value(pgs->alphaisshape, cbp);
-        if_debug1m('L', pgs->memory, " alphaisshape=%d\n", pgs->alphaisshape);
+        if_debug1m('L', pgs->memory, "[L]      alphaisshape=%d\n", pgs->alphaisshape);
     }
     if (mask & stroke_alpha_known) {
         cmd_get_value(pgs->strokeconstantalpha, cbp);
-        if_debug1m('L', pgs->memory, " strokeconstantalpha=%g\n", pgs->strokeconstantalpha);
+        if_debug1m('L', pgs->memory, "[L]      strokeconstantalpha=%g\n", pgs->strokeconstantalpha);
     }
     if (mask & fill_alpha_known) {
         cmd_get_value(pgs->fillconstantalpha, cbp);
-        if_debug1m('L', pgs->memory, " fillconstantalpha=%u\n", (uint)(pgs->fillconstantalpha));
+        if_debug1m('L', pgs->memory, "[L]      fillconstantalpha=%u\n", (uint)(pgs->fillconstantalpha));
     }
     pcb->ptr = cbp;
     return 0;
