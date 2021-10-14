@@ -517,6 +517,8 @@ clist_reset(gx_device * dev)
     cdev->band_range_list->head = cdev->band_range_list->tail = 0;
     cdev->band_range_min = 0;
     cdev->band_range_max = nbands - 1;
+    if_debug2m('L', cdev->memory, "[L]Resetting: Band range(%d,%d)\n",
+               cdev->band_range_min, cdev->band_range_max);
     {
         int band;
         gx_clist_state *states = cdev->states;
@@ -845,6 +847,8 @@ clist_end_page(gx_device_clist_writer * cldev)
             memset(&cb, 0, sizeof(cb)); /* Zero the block, including any padding */
             cb.band_min = cb.band_max = cmd_band_end;
             cb.pos = (cldev->page_cfile == 0 ? 0 : cldev->page_info.io_procs->ftell(cldev->page_cfile));
+            if_debug3m('l', cldev->memory, "[l]writing end for bands (%d,%d) at %"PRId64"\n",
+                       cb.band_min, cb.band_max, cb.pos);
             code = cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), cldev->page_bfile);
             if (code > 0)
                 code = 0;
