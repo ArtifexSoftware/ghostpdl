@@ -200,6 +200,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     }
 
     do {
+        int extop;
         prefix_size = 2 + 1 + (offset > 0 ? enc_u_sizew(offset) : 0);
         req_size = left + prefix_size + enc_u_sizew(left);
         CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
@@ -212,29 +213,29 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         if (req_size_final > buffer_space)
             return_error(gs_error_unregistered); /* Must not happen. */
         CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
+        switch (devn_type) {
+            case devn_not_tile_fill:
+                extop = cmd_opv_ext_put_fill_dcolor;
+                break;
+            case devn_not_tile_stroke:
+                extop = cmd_opv_ext_put_stroke_dcolor;
+                break;
+            case devn_tile0:
+                extop = cmd_opv_ext_put_tile_devn_color0;
+                break;
+            case devn_tile1:
+                extop = cmd_opv_ext_put_tile_devn_color1;
+                break;
+            default:
+                extop = cmd_opv_ext_put_fill_dcolor;
+        }
         if (all_bands)
-            code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend, req_size_final);
+            code = set_cmd_put_all_extended_op(&dp, cldev, extop, req_size_final);
         else
-            code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_extend, req_size_final);
+            code = set_cmd_put_extended_op(&dp, cldev, pcls, extop, req_size_final);
         if (code < 0)
             return code;
         dp0 = dp;
-        switch (devn_type) {
-            case devn_not_tile_fill:
-                dp[1] = cmd_opv_ext_put_fill_dcolor;
-                break;
-            case devn_not_tile_stroke:
-                dp[1] = cmd_opv_ext_put_stroke_dcolor;
-                break;
-            case devn_tile0:
-                dp[1] = cmd_opv_ext_put_tile_devn_color0;
-                break;
-            case devn_tile1:
-                dp[1] = cmd_opv_ext_put_tile_devn_color1;
-                break;
-            default:
-                dp[1] = cmd_opv_ext_put_fill_dcolor;
-        }
         dp += 2;
         *dp++ = di | (offset > 0 ? 0x80 : 0);
         if (offset > 0)

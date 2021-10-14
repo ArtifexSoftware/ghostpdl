@@ -459,11 +459,13 @@ int cmd_put_params(gx_device_clist_writer *, gs_param_list *);
 /* Conditionally keep command statistics. */
 #if defined(DEBUG) && !defined(GS_THREADSAFE)
 int cmd_count_op(int op, uint size, const gs_memory_t *mem);
+int cmd_count_extended_op(int op, uint size, const gs_memory_t *mem);
 void cmd_uncount_op(int op, uint size);
 void cmd_print_stats(const gs_memory_t *);
 #  define cmd_count_add1(v) (v++)
 #else
 #  define cmd_count_op(op, size, mem) (op)
+#  define cmd_count_extended_op(op, size, mem) (op)
 #  define cmd_uncount_op(op, size) DO_NOTHING
 #  define cmd_count_add1(v) DO_NOTHING
 #endif
@@ -471,6 +473,10 @@ void cmd_print_stats(const gs_memory_t *);
 /* Add a command to the appropriate band list, */
 /* and allocate space for its data. */
 byte *cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size);
+
+/* Add a extended op command to the appropriate band list, */
+/* and allocate space for its data. */
+byte *cmd_put_list_extended_op(gx_device_clist_writer * cldev, cmd_list * pcl, int op, uint size);
 
 /* Request a space in the buffer.
    Writes out the buffer if necessary.
@@ -482,12 +488,36 @@ byte *cmd_put_op(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint siz
 #else
 #  define cmd_put_op(cldev, pcls, size)\
      cmd_put_list_op(cldev, &(pcls)->list, size)
+#  define cmd_put_extended_op(cldev, pcls, op, size)\
+     cmd_put_list_extended_op(cldev, &(pcls)->list, op, size)
 #endif
 /* Call cmd_put_op and update stats if no error occurs. */
-#define set_cmd_put_op(dp, cldev, pcls, op, csize)\
-  ( (*dp = cmd_put_op(cldev, pcls, csize)) == NULL ?\
-      (cldev)->error_code :\
-    (**dp = cmd_count_op(op, csize, cldev->memory), 0) )
+static inline int
+set_cmd_put_op(byte **dp, gx_device_clist_writer * cldev,
+               gx_clist_state * pcls, int op, uint csize)
+{
+    *dp = cmd_put_op(cldev, pcls, csize);
+
+    if (*dp == NULL)
+        return (cldev)->error_code;
+    **dp = cmd_count_op(op, csize, cldev->memory);
+
+    return 0;
+}
+/* Call cmd_put_extended_op and update stats if no error occurs. */
+static inline int
+set_cmd_put_extended_op(byte **dp, gx_device_clist_writer * cldev,
+                        gx_clist_state * pcls, int op, uint csize)
+{
+    *dp = cmd_put_op(cldev, pcls, csize);
+
+    if (*dp == NULL)
+        return (cldev)->error_code;
+    **dp = cmd_opv_extend;
+    (*dp)[1] = cmd_count_extended_op(op, csize, cldev->memory);
+
+    return 0;
+}
 
 /* Add a command for all bands or a range of bands. */
 byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
@@ -496,12 +526,33 @@ byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
 #define cmd_put_all_op(cldev, size)\
   cmd_put_range_op(cldev, 0, (cldev)->nbands - 1, size)
 /* Call cmd_put_all/range_op and update stats if no error occurs. */
-#define set_cmd_put_range_op(dp, cldev, op, bmin, bmax, csize)\
-  ( (*dp = cmd_put_range_op(cldev, bmin, bmax, csize)) == NULL ?\
-      (cldev)->error_code :\
-    (**dp = cmd_count_op(op, csize, (cldev)->memory), 0) )
+static inline int
+set_cmd_put_range_op(byte **dp, gx_device_clist_writer * cldev,
+                     int op, int bmin, int bmax, uint csize)
+{
+    *dp = cmd_put_range_op(cldev, bmin, bmax, csize);
+    if (*dp == NULL)
+        return (cldev)->error_code;
+    **dp = cmd_count_op(op, csize, (cldev)->memory);
+
+    return 0;
+}
 #define set_cmd_put_all_op(dp, cldev, op, csize)\
   set_cmd_put_range_op(dp, cldev, op, 0, (cldev)->nbands - 1, csize)
+static inline int
+set_cmd_put_range_extended_op(byte **dp, gx_device_clist_writer * cldev,
+                     int op, int bmin, int bmax, uint csize)
+{
+    *dp = cmd_put_range_op(cldev, bmin, bmax, csize);
+    if (*dp == NULL)
+        return (cldev)->error_code;
+    **dp = cmd_opv_extend;
+    (*dp)[1] = cmd_count_extended_op(op, csize, (cldev)->memory);
+
+    return 0;
+}
+#define set_cmd_put_all_extended_op(dp, cldev, op, csize)\
+  set_cmd_put_range_extended_op(dp, cldev, op, 0, (cldev)->nbands - 1, csize)
 
 /* Shorten the last allocated command. */
 /* Note that this does not adjust the statistics. */

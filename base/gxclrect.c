@@ -60,8 +60,7 @@ cmd_write_rect_hl_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     cmd_set_rect(pcls->rect);
     if (extended_command) {
         rcsize = 2 + cmd_size_rect(&pcls->rect);
-        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_extend, rcsize);
-        dp[1] = op;
+        code = set_cmd_put_extended_op(&dp, cldev, pcls, op, rcsize);
         dp += 2;
     } else {
         rcsize = 1 + cmd_size_rect(&pcls->rect);
@@ -1222,8 +1221,7 @@ clist_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
         if (!re.pcls->color_is_devn) {
             byte *dp;
 
-            code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_extend, 2);
-            dp[1] = cmd_opv_ext_set_color_is_devn;
+            code = set_cmd_put_extended_op(&dp, cdev, re.pcls, cmd_opv_ext_set_color_is_devn, 2);
             dp += 2;
             if (code < 0)
                   return code;
@@ -1350,12 +1348,10 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
         if (re.pcls->color_is_devn) {
             byte *dp;
 
-            code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_extend, 1);
-            if (code >= 0)
-                code = set_cmd_put_op(&dp, cdev, re.pcls,
-                                      cmd_opv_ext_unset_color_is_devn, 1);
+            code = set_cmd_put_extended_op(&dp, cdev, re.pcls, cmd_opv_ext_unset_color_is_devn, 1);
             if (code < 0)
                 return code;
+            dp++;
             re.pcls->color_is_alpha = 1;
         }
         if (color != re.pcls->colors[1]) {

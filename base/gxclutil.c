@@ -53,8 +53,8 @@ const char *cmd_extend_op_names[256] =
 
 #ifndef GS_THREADSAFE
 struct stats_cmd_s {
-    ulong op_counts[256];
-    ulong op_sizes[256];
+    ulong op_counts[512];
+    ulong op_sizes[512];
     ulong tile_reset, tile_found, tile_added;
     ulong same_band, other_band;
 } stats_cmd;
@@ -71,6 +71,25 @@ cmd_count_op(int op, uint size,const gs_memory_t *mem)
             dmlprintf2(mem, ", %s(%u)\n", sub[op & 0xf], size);
         else
             dmlprintf3(mem, ", %s %d(%u)\n", cmd_op_names[op >> 4], op & 0xf,
+                      size);
+        dmflush(mem);
+    }
+    return op;
+}
+int
+cmd_count_extended_op(int op, uint size,const gs_memory_t *mem)
+{
+    stats_cmd.op_counts[cmd_opv_extend]++;
+    stats_cmd.op_sizes[cmd_opv_extend] += size;
+    stats_cmd.op_counts[256+op]++;
+    stats_cmd.op_sizes[256+op] += size;
+    if (gs_debug_c('L')) {
+        const char *ext = cmd_extend_op_names[op];
+
+        if (ext)
+            dmlprintf2(mem, ", %s(%u)\n", ext, size);
+        else
+            dmlprintf3(mem, ", ?0x%02x?(%u)\n", op, op & 0xf,
                       size);
         dmflush(mem);
     }
@@ -125,6 +144,20 @@ cmd_print_stats(const gs_memory_t *mem)
                 else
                     dmprintf2(mem, " %lu(%lu)", stats_cmd.op_counts[cj],
                              stats_cmd.op_sizes[cj]);
+        }
+        dmputs(mem, "\n");
+    }
+    for (ci = 0x100; ci < 0x200; ci ++) {
+        const char *ext = cmd_extend_op_names[ci-0x100];
+
+        if (ext != NULL) {
+            dmprintf3(mem, "[l] %s (%lu,%lu)\n",
+                         ext,
+                         stats_cmd.op_counts[ci], stats_cmd.op_sizes[ci]);
+        } else if (stats_cmd.op_counts[ci] || stats_cmd.op_sizes[ci]) {
+            dmprintf3(mem, "[l] ?0x%02x? (%lu,%lu)\n",
+                      ci-0x100,
+                      stats_cmd.op_counts[ci], stats_cmd.op_sizes[ci]);
         }
         dmputs(mem, "\n");
     }
@@ -356,10 +389,20 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
         cldev->ccl = pcl;
         cp->size = size;
         cp->id = cldev->ins_count;
-        if_debug1m('L', cldev->memory, ", id=%ld ", cldev->ins_count);
+        if_debug1m('L', cldev->memory, ", id=%ld", cldev->ins_count);
         cldev->ins_count++;
     }
     cldev->cnext = dp + size;
+    return dp;
+}
+
+byte *
+cmd_put_list_extended_op(gx_device_clist_writer *cldev, cmd_list *pcl, int op, uint size)
+{
+    byte *dp = cmd_put_list_op(cldev, pcl, size);
+
+    if (dp)
+        dp[1] = op;
     return dp;
 }
 
@@ -780,14 +823,13 @@ cmd_put_params(gx_device_clist_writer *cldev,
         gs_param_list_serialize(param_list, local_buf, sizeof(local_buf));
     if (param_length > 0) {
         /* Get cmd buffer space for serialized */
-        code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend,
+        code = set_cmd_put_all_extended_op(&dp, cldev, cmd_opv_ext_put_params,
                                   2 + sizeof(unsigned) + param_length);
         if (code < 0)
             return code;
 
         /* write param list to cmd list: needs to all fit in cmd buffer */
         if_debug1m('l', cldev->memory, "[l]put_params, length=%d\n", param_length);
-        dp[1] = cmd_opv_ext_put_params;
         dp += 2;
         memcpy(dp, &param_length, sizeof(unsigned));
         dp += sizeof(unsigned);
