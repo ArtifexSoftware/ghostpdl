@@ -12,6 +12,6 @@ if %GS/==/ set GS=gswin32
 
 if NOT %GSC%/==/ goto :gscset
 if EXIST %~dp0..\bin\gswin32c.exe set GSC=%~dp0..\bin\gswin32c
-if EXIST %~dp0..\bin\gswin64c.exe set GS=%~dp0..\bin\gswin64c
+if EXIST %~dp0..\bin\gswin64c.exe set GSC=%~dp0..\bin\gswin64c
 if %GSC%/==/ set GSC=gswin32c
 :gscset
