@@ -812,7 +812,18 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
     if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE
         && strcmp(dev->dname, "psdcmykog") != 0) {
         if (dev->devn_params.num_separation_order_names == 0) {
-            xc->n_extra_channels = dev->devn_params.separations.num_separations;
+            /* Page spot colors has been truncated to ensure max
+               colorants of the target device is not exceeded. This
+               is set if PDF file was encountered and should be used.
+               Also make sure PS file does not exceed limit of device. */
+            if (dev->devn_params.page_spot_colors > 0)
+                xc->n_extra_channels = dev->devn_params.page_spot_colors;
+            else {
+                if (dev->devn_params.separations.num_separations <= (dev->color_info.max_components - NUM_CMYK_COMPONENTS))
+                    xc->n_extra_channels = dev->devn_params.separations.num_separations;
+                else
+                    xc->n_extra_channels = dev->color_info.max_components - NUM_CMYK_COMPONENTS;
+            }
         } else {
             /* Have to figure out how many in the order list were not std
                colorants */
@@ -856,24 +867,24 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
             /* No order specified, map them alpabetically */
             /* This isn't at all speed critical -- only runs once per page and */
             /* there are never very many spot colors, so just search in a loop */
-            byte *prev = " ";
+            const char* prev = " ";
             int prev_size = 1;
 
             xc->num_channels += xc->n_extra_channels;
             for (i=xc->base_num_channels; i < xc->num_channels; i++) {
                 int j;
-                byte* curr = "\377";
+                const char* curr = "\377";
                 int curr_size = 1;
 
                 for (j=xc->base_num_channels; j < xc->num_channels; j++) {
-                    const devn_separation_name *separation_name;
+                    devn_separation_name *separation_name;
 
                     separation_name = &(dev->devn_params.separations.names[j - xc->base_num_channels]);
-                    if (strncmp(separation_name->data, curr, min(curr_size, separation_name->size)) < 0) {
-                        if (strncmp(separation_name->data, prev, min(prev_size, separation_name->size)) > 0) {
+                    if (strncmp((const char*) separation_name->data, curr, min(curr_size, separation_name->size)) < 0) {
+                        if (strncmp((const char*) separation_name->data, prev, min(prev_size, separation_name->size)) > 0) {
                             xc->chnl_to_position[i] = j;
                             xc->chnl_to_orig_sep[i] = j;
-                            curr = separation_name->data;
+                            curr = (const char*) separation_name->data;
                             curr_size = separation_name->size;
                         }
                     }
