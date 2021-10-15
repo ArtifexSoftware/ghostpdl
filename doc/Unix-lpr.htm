@@ -1,79 +1,50 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
-<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">
-<title>Setting Up a Unix 1pr Filter for Ghostscript</title>
-    <!-- Originally: unix-lpr.txt -->
-<link href="style.css" rel="stylesheet" type="text/css">
-<link href="gs-style.css" rel="stylesheet" type="text/css">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <title>Setting Up a Unix 1pr Filter for Ghostscript</title>
+    <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
+    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <main>
+        <article>
+            <div class="outer">
 
-    <div class="header">
-    <div class="row">
-        <div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
-        <div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
-        <div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
-        <div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
-    </div>
-    </div>
-    </div>
-
-    <div class="banner">
-    <div class="row">
-        <div class="col-12">Setting Up a Unix 1pr Filter for Ghostscript</div>
-    </div>
-    </div>
-
-    <div class="main">
-    <div class="row">
-    <div id="sidebar">
-    <div class="sidebar-item"></div>
-    <div class="col-2 leftnav">
-<ul>
-            <li><a href="https://www.ghostscript.com/">Home</a></li>
-            <li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
-            <li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
-            <li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
-            <li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
-            <li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
-            <li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
-            <li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
-            <li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
-            <li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
-        </ul>
-    </div>
-    </div>
-    <div class="col-10 page">
-
+                <div class="inner">
 <!--START EDITING HERE-->
 
-<h2>Table of contents</h2>
+<h1>Setting Up a Unix 1pr Filter for Ghostscript</h1>
 
-<blockquote><ul>
-<li><a href="#Overview">Overview</a></li>
-<li><a href="#What_it_can_do">What it can do</a></li>
-<li><a href="#Setting_up">Setting it up</a></li>
-<ul>
-<li><a href="#Editing_device_list">Editing the device list <code>DEVICES</code></a></li>
-<ul>
-<li><a href="#Field_bpp">Field 1: bits per pixel</a></li>
-<li><a href="#Field_colours">Field 2: colours</a></li>
-<li><a href="#Field_dq">Field 3: dual queues</a></li>
-<li><a href="#Device_example">Example definition of <code>DEVICES</code></a></li>
+<h2><a name="toc"></a>Table of contents</h2>
+<ul class="toc">
+    <li><a href="#Overview">Overview</a></li>
+    <li><a href="#What_it_can_do">What it can do</a></li>
+    <li><a href="#Setting_up">Setting it up</a></li>
+    <li>
+        <ul>
+            <li><a href="#Editing_device_list">Editing the device list <code>DEVICES</code></a></li>
+            <li>
+                <ul>
+                    <li><a href="#Field_bpp">Field 1: bits per pixel</a></li>
+                    <li><a href="#Field_colours">Field 2: colours</a></li>
+                    <li><a href="#Field_dq">Field 3: dual queues</a></li>
+                    <li><a href="#Device_example">Example definition of <code>DEVICES</code></a></li>
+                </ul>
+            </li>
+            <li><a href="#Editing_filter_list">Editing the filter list</a></li>
+            <li><a href="#Editing_printer_port">Editing the printer port and type</a></li>
+            <li><a href="#Modifying_printcap_insert">Modifying <code>printcap.insert</code></a></li>
+            <li><a href="#Multiple_queues">Single or dual queues</a></li>
+        </ul>
+    </li>
+    <li><a href="#Bugs">Bugs</a></li>
+    <li><a href="#Authors">Authors</a></li>
 </ul>
-<li><a href="#Editing_filter_list">Editing the filter list</a></li>
-<li><a href="#Editing_printer_port">Editing the printer port and type</a></li>
-<li><a href="#Modifying_printcap_insert">Modifying <code>printcap.insert</code></a></li>
-<li><a href="#Multiple_queues">Single or dual queues</a></li>
-</ul>
-<li><a href="#Bugs">Bugs</a></li>
-<li><a href="#Authors">Authors</a></li>
-</ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
 
@@ -298,37 +269,11 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
-
 <!--FINISH EDITING HERE-->
-
-    </div>
-    </div>
-    </div>
-
-    <div class="footer">
-    <div class="row">
-        <div class="col-7 footleft">
-        <ul>
-            <li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
-            <li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
-            <li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
-        </ul>
-        </div>
-        <div class="col-1 footcenter">
-         <ul>
-           <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
-           <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
-           <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
-           </ul>
-        </div>
-        <div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
-              © Copyright 2019-2021 Artifex Software, Inc. <br>
-            All rights reserved.
-        </div>
-          </div>
-    </div>
-
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-    <script src="index.js"></script>
+          </div><!-- close inner -->
+        </div><!-- close outer -->
+      </article>
+    </main>
+    <script src="site.js"></script>
 </body>
 </html>

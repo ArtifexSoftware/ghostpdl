@@ -1,151 +1,150 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
-<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">
-<title>Deprecated Ghostscript Features</title>
-<link href="style.css" rel="stylesheet" type="text/css">
-<link href="gs-style.css" rel="stylesheet" type="text/css">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <title>Deprecated Ghostscript Features</title>
+    <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-
-    <div class="header">
-    <div class="row">
-        <div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
-        <div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
-        <div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
-        <div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
-    </div>
-    </div>
-    </div>
-
-    <div class="banner">
-    <div class="row">
-        <div class="col-12">Deprecated Ghostscript Options and Output Devices</div>
-    </div>
-    </div>
-
-    <div class="main">
-    <div class="row">
-    <div id="sidebar">
-    <div class="sidebar-item"></div>
-    <div class="col-2 leftnav">
-<ul>
-            <li><a href="https://www.ghostscript.com/">Home</a></li>
-            <li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
-            <li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
-            <li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
-            <li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
-            <li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
-            <li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
-            <li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
-            <li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
-            <li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
-        </ul>
-    </div>
-    </div>
-    <div class="col-10 page">
-
+    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <main>
+        <article>
+            <div class="outer">
+                <div class="inner">
 <!--START EDITING HERE-->
 
-<h2>Table of contents</h2>
+<h1>Deprecated Ghostscript Features</h1>
 
-<blockquote><ul>
-<li><a href="#Options">Deprecated Options</a></li>
-<li><a href="#HP8_color_inkjet">H-P 8xx, 1100, and 1600 color inkjet printers</a></li>
-<ul>
-<li><a href="#HP8_gdevcd8">Drivers contained in <code>gdevcd8.c</code></a></li>
-<li><a href="#HP8_further_documentation">Further documentation</a></li>
+<h2><a name="toc"></a>Table of contents</h2>
+
+<ul class="toc">
+    <li><a href="#Options">Deprecated Options</a></li>
+    <li><a href="#HP8_color_inkjet">H-P 8xx, 1100, and 1600 color inkjet printers</a></li>
+        <li>
+            <ul>
+                <li><a href="#HP8_gdevcd8">Drivers contained in <code>gdevcd8.c</code></a></li>
+                <li><a href="#HP8_further_documentation">Further documentation</a></li>
+            </ul>
+        </li>
+    <li><a href="#HP880_color_inkjet">H-P 812, 815, 832, 880, 882, 895, and 970 color inkjet printers</a></li>
+        <li>
+            <ul>
+                <li><a href="#HP880_gdevcd8">Drivers contained in <code>gdevcd8.c</code></a></li>
+                <li><a href="#HP880_further_documentation">Further documentation</a></li>
+            </ul>
+        </li>
+    <li><a href="#HP_color_inkjet">Other H-P color inkjet printers</a></li>
+        <li>
+            <ul>
+                <li><a href="#HP_gdevcdj">Drivers contained in <code>gdevcdj.c</code></a></li>
+                <li><a href="#HP_paper_size">Default paper size</a></li>
+                <li><a href="#HP_limits">Deskjet physical limits</a></li>
+                <li><a href="#HP_command_line">Printer properties (command-line parameters)</a></li>
+                <li>
+                    <ul>
+                        <li><a href="#HP_bpp">Bits per pixel</a></li>
+                        <li><a href="#HP_deskjet_properties">Deskjet properties</a></li>
+                        <li><a href="#HP_paintjet_properties">Paintjet XL300 / Paintjet XL properties</a></li>
+                    </ul>
+                </li>
+                <li><a href="#HP_gamma">Gamma correction</a></li>
+                <li><a href="#HP_resolution_enhance">HP's resolution-enhanced mode for Inkjet printers</a></li>
+                <li><a href="#HP_tips">General tips</a></li>
+            </ul>
+        </li>
+
+        <li><a href="#BJC_8200">Canon BJC-8200 printer</a></li>
+        <li><a href="#BJC">Other Canon BubbleJet (BJC) printers</a></li>
+        <li>
+            <ul>
+                <li><a href="#BJC_history">History</a></li>
+                <li><a href="#BJC_build">Configuring and building the BJC drivers</a></li>
+                <li>
+                    <ul>
+                        <li><a href="#BJC_defaults">Modify values in <code>gdevbjc.h</code></a></li>
+                        <li><a href="#BJC_CMYK_RGB">CMYK-to-RGB color conversion</a></li>
+                        <li><a href="#BJC_vertical_centering">Vertical centering of the printable area</a></li>
+                        <li><a href="#BJC_margins">Page margins</a></li>
+                        <li><a href="#BJC_compile">Makefile and compilation</a></li>
+                    </ul>
+                </li>
+                <li><a href="#BJC_usage">Use of the drivers</a></li>
+                <li>
+                    <ul>
+                        <li><a href="#BJC_options">Supported Options and Defaults</a></li>
+                        <li><a href="#BJC_device_info">Device information</a></li>
+                        <li><a href="#BJC_HW_margins">Hardware margins</a></li>
+                        <li><a href="#BJC_PPD">PostScript printer description (PPD) files</a></li>
+                        <li><a href="#BJC_PPD_custom">Customizing the PPD files</a></li>
+                    </ul>
+                </li>
+
+                <li><a href="#BJC_bugs">How to report problems</a></li>
+                <li><a href="#BJC_acks">Acknowledgements</a></li>
+            </ul>
+        </li>
+
+        <li><a href="#STC_epson_stylus">Epson Stylus color printer (see also <code>uniprint</code>)</a></li>
+        <li>
+            <ul>
+                <li><a href="#STC_usage">Usage</a></li>
+                <li><a href="#STC_options">Options</a></li>
+                <li><a href="#STC_FAQ">Application note and FAQ</a></li>
+                <li>
+                    <ul>
+                        <li><a href="#STC_FAQ_A3">Support for A3 paper</a></li>
+                        <li><a href="#STC_FAQ_margins">Margins, PageSize</a></li>
+                        <li><a href="#STC_FAQ_II_IIS_1500">Stylus Color II / IIs and 1500</a></li>
+                    </ul>
+                </li>
+                <li><a href="#STC_recommendations">Recommendations</a></li>
+                <li>
+                    <ul>
+                        <li><a href="#STC_dither_experiment">Color dithering experiments with <code>gdevstc</code> 1.21</a></li>
+                    </ul>
+                </li>
+                <li><a href="#STC_color_transform">Color transformation</a></li>
+                <li><a href="#STC_CAM"><code>ColorAdjustMatrix</code></a></li>
+                <li><a href="#STC_RGBCMYK_coding">RGB / CMYK coding and transfer, and <code>BitsPerPixel</code></a></li>
+                <li><a href="#What_is_weaving">What is weaving?</a></li>
+                <li><a href="#STC_print_modes">Print mode parameters</a></li>
+                <li>
+                    <ul>
+                        <li><a href="#STC_unidirectional"><code>Unidirectional</code></a></li>
+                        <li><a href="#STC_noweave"><code>Microweave</code>, <code>noWeave</code> and <code>OutputCode=deltarow</code></a></li>
+                        <li><a href="#STC_model"><code>Model</code></a></li>
+                    </ul>
+                </li>
+                <li><a href="#STC_Pitfalls">Bugs and pitfalls</a></li>
+                <li><a href="#STC_Tests">Tests</a></li>
+                <li>
+                    <ul>
+                        <li><a href="#STC_OutputCodes">The various OutputCodes</a></li>
+                        <li><a href="#STC_printing_time">Printing time related to other options</a></li>
+                    </ul>
+                </li>
+                <li><a href="#STC_acks">Acknowledgments</a></li>
+            </ul>
+        </li>
+    <li><a href="#Uniprint">uniprint, a flexible unified printer driver</a></li>
+    <li>
+        <ul>
+            <li><a href="#Uni_state">The state of this driver</a></li>
+            <li><a href="#Uni_background">Notes on <code>uniprint</code>'s background</a></li>
+            <li><a href="#Uni_make_pfile">Godzilla's guide to the creation of Unified Printer Parameter (<code>.upp</code>) files</a></li>
+            <li><a href="#Uni_all_parameters">All parameters in brief</a></li>
+            <li><a href="#Uni_honors"><code>Uniprint</code>'s Roll of Honor</a></li>
+            <li><a href="#Uni_weaving_howto"><code>Uniprint</code> weaving parameters howto</a></li>
+            <li><a href="#Uni_esc300">Extension to <code>uniprint</code> for the Epson Stylus Color 300</a></li>
+        </ul>
+    </li>
 </ul>
-<li><a href="#HP880_color_inkjet">H-P 812, 815, 832, 880, 882, 895, and 970 color inkjet printers</a></li>
-<ul>
-<li><a href="#HP880_gdevcd8">Drivers contained in <code>gdevcd8.c</code></a></li>
-<li><a href="#HP880_further_documentation">Further documentation</a></li>
-</ul>
-<li><a href="#HP_color_inkjet">Other H-P color inkjet printers</a></li>
-<ul>
-<li><a href="#HP_gdevcdj">Drivers contained in <code>gdevcdj.c</code></a></li>
-<li><a href="#HP_paper_size">Default paper size</a></li>
-<li><a href="#HP_limits">Deskjet physical limits</a></li>
-<li><a href="#HP_command_line">Printer properties (command-line parameters)</a></li>
-<ul>
-<li><a href="#HP_bpp">Bits per pixel</a></li>
-<li><a href="#HP_deskjet_properties">Deskjet properties</a></li>
-<li><a href="#HP_paintjet_properties">Paintjet XL300 / Paintjet XL properties</a></li>
-</ul>
-<li><a href="#HP_gamma">Gamma correction</a></li>
-<li><a href="#HP_resolution_enhance">HP's resolution-enhanced mode for Inkjet printers</a></li>
-<li><a href="#HP_tips">General tips</a></li>
-</ul>
-<li><a href="#BJC_8200">Canon BJC-8200 printer</a></li>
-<li><a href="#BJC">Other Canon BubbleJet (BJC) printers</a></li>
-<ul>
-<li><a href="#BJC_history">History</a></li>
-<li><a href="#BJC_build">Configuring and building the BJC drivers</a></li>
-<ul>
-<li><a href="#BJC_defaults">Modify values in <code>gdevbjc.h</code></a></li>
-<li><a href="#BJC_CMYK_RGB">CMYK-to-RGB color conversion</a></li>
-<li><a href="#BJC_vertical_centering">Vertical centering of the printable area</a></li>
-<li><a href="#BJC_margins">Page margins</a></li>
-<li><a href="#BJC_compile">Makefile and compilation</a></li>
-</ul>
-<li><a href="#BJC_usage">Use of the drivers</a></li>
-<ul>
-<li><a href="#BJC_options">Supported Options and Defaults</a></li>
-<li><a href="#BJC_device_info">Device information</a></li>
-<li><a href="#BJC_HW_margins">Hardware margins</a></li>
-<li><a href="#BJC_PPD">PostScript printer description (PPD) files</a></li>
-<li><a href="#BJC_PPD_custom">Customizing the PPD files</a></li>
-</ul>
-<li><a href="#BJC_bugs">How to report problems</a></li>
-<li><a href="#BJC_acks">Acknowledgements</a></li>
-</ul>
-<li><a href="#STC_epson_stylus">Epson Stylus color printer (see also <code>uniprint</code>)</a></li>
-<ul>
-<li><a href="#STC_usage">Usage</a></li>
-<li><a href="#STC_options">Options</a></li>
-<li><a href="#STC_FAQ">Application note and FAQ</a></li>
-<ul>
-<li><a href="#STC_FAQ_A3">Support for A3 paper</a></li>
-<li><a href="#STC_FAQ_margins">Margins, PageSize</a></li>
-<li><a href="#STC_FAQ_II_IIS_1500">Stylus Color II / IIs and 1500</a></li>
-</ul>
-<li><a href="#STC_recommendations">Recommendations</a></li>
-<ul>
-<li><a href="#STC_dither_experiment">Color dithering experiments with <code>gdevstc</code> 1.21</a></li>
-</ul>
-<li><a href="#STC_color_transform">Color transformation</a></li>
-<li><a href="#STC_CAM"><code>ColorAdjustMatrix</code></a></li>
-<li><a href="#STC_RGBCMYK_coding">RGB / CMYK coding and transfer, and <code>BitsPerPixel</code></a></li>
-<li><a href="#What_is_weaving">What is weaving?</a></li>
-<li><a href="#STC_print_modes">Print mode parameters</a></li>
-<ul>
-<li><a href="#STC_unidirectional"><code>Unidirectional</code></a></li>
-<li><a href="#STC_noweave"><code>Microweave</code>, <code>noWeave</code> and <code>OutputCode=deltarow</code></a></li>
-<li><a href="#STC_model"><code>Model</code></a></li>
-</ul>
-<li><a href="#STC_Pitfalls">Bugs and pitfalls</a></li>
-<li><a href="#STC_Tests">Tests</a></li>
-<ul>
-<li><a href="#STC_OutputCodes">The various OutputCodes</a></li>
-<li><a href="#STC_printing_time">Printing time related to other options</a></li>
-</ul>
-<li><a href="#STC_acks">Acknowledgments</a></li>
-</ul>
-<li><a href="#Uniprint">uniprint, a flexible unified printer driver</a></li>
-<ul>
-<li><a href="#Uni_state">The state of this driver</a></li>
-<li><a href="#Uni_background">Notes on <code>uniprint</code>'s background</a></li>
-<li><a href="#Uni_make_pfile">Godzilla's guide to the creation of Unified Printer Parameter (<code>.upp</code>) files</a></li>
-<li><a href="#Uni_all_parameters">All parameters in brief</a></li>
-<li><a href="#Uni_honors"><code>Uniprint</code>'s Roll of Honor</a></li>
-<li><a href="#Uni_weaving_howto"><code>Uniprint</code> weaving parameters howto</a></li>
-<li><a href="#Uni_esc300">Extension to <code>uniprint</code> for the Epson Stylus Color 300</a></li>
-</ul>
-</ul></blockquote>
+
+
 
 <!-- [1.2 end table of contents] =========================================== -->
 
@@ -5767,36 +5766,12 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
+
 <!--FINISH EDITING HERE-->
-
-    </div>
-    </div>
-    </div>
-
-    <div class="footer">
-    <div class="row">
-        <div class="col-7 footleft">
-        <ul>
-            <li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
-            <li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
-            <li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
-        </ul>
-        </div>
-        <div class="col-1 footcenter">
-         <ul>
-           <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
-           <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
-           <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
-           </ul>
-        </div>
-        <div class="col-ft-3 footright"><img src="../../images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
-              © Copyright 2019-2021 Artifex Software, Inc. <br>
-            All rights reserved.
-        </div>
-          </div>
-    </div>
-
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-    <script src="index.js"></script>
+                </div><!-- close inner -->
+            </div><!-- close outer -->
+         </article>
+    </main>
+    <script src="site.js"></script>
 </body>
 </html>

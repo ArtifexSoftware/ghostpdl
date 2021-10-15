@@ -635,8 +635,13 @@ button.cta a {
 @media (prefers-color-scheme: dark) {
 
     body {
-        background-color: #111;
+        background-color: #000;
         color: white;
+    }
+
+    a {
+        text-decoration: none;
+        color: #289df6;
     }
 
     .markdown-body code, .markdown-body pre, code, .markdown-body blockquote code {

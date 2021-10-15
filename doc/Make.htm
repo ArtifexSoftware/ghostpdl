@@ -1,124 +1,99 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
-<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">
-<title>How to Build Ghostscript from Source Code</title>
-    <!-- Originally: make.txt -->
-<link href="style.css" rel="stylesheet" type="text/css">
-<link href="gs-style.css" rel="stylesheet" type="text/css">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <title>How to Build Ghostscript from Source Code</title>
+    <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
+    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <main>
+        <article>
+            <div class="outer">
 
-    <div class="header">
-    <div class="row">
-        <div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
-        <div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
-        <div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
-        <div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
-    </div>
-    </div>
-    </div>
-
-    <div class="banner">
-    <div class="row">
-        <div class="col-12">How to Build Ghostscript from Source Code</div>
-    </div>
-    </div>
-
-    <div class="main">
-    <div class="row">
-    <div id="sidebar">
-    <div class="sidebar-item"></div>
-    <div class="col-2 leftnav">
-<ul>
-            <li><a href="https://www.ghostscript.com/">Home</a></li>
-            <li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
-            <li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
-            <li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
-            <li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
-            <li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
-            <li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
-            <li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
-            <li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
-            <li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
-        </ul>
-    </div>
-    </div>
-    <div class="col-10 page">
-
+                <div class="inner">
 <!--START EDITING HERE-->
 
-<!-- [1.0 begin visible header] ============================================ -->
+<h1>How to Build Ghostscript from Source Code</h1>
 
-<!-- [1.1 begin headline] ================================================== -->
-
-<h1>How to build Ghostscript from source code</h1>
-
-<!-- [1.1 end headline] ==================================================== -->
-
-<!-- [1.2 begin table of contents] ========================================= -->
-
-<h2>Table of contents</h2>
-
-<blockquote><ul>
+<h2><a name="toc"></a>Table of contents</h2>
+<ul class="toc">
     <li><a href="#General_overview">General overview</a></li>
-<li><a href="#Acquiring">How to acquire the source code</a></li>
-<ul>
-<li><a href="#Acquiring_git">How to acquire the development source code</a></li>
+    <li><a href="#Acquiring">How to acquire the source code</a></li>
+    <li>
+        <ul>
+            <li><a href="#Acquiring_git">How to acquire the development source code</a></li>
+        </ul>
+    </li>
+    <li><a href="#Unpack">How to unpack the source code</a></li>
+    <li>
+        <ul>
+            <li><a href="#Tarfiles">How to unpack compressed tar files generally</a></li>
+            <li><a href="#Unpack_Ghostscript">How to unpack Ghostscript itself</a></li>
+        </ul>
+    </li>
+    <li><a href="#Bug_check">How to check for post-release bug fixes</a></li>
+    <li><a href="#Makefile_overview">How to prepare the makefiles</a></li>
+    <li>
+        <ul>
+            <li><a href="#Preparing_makefiles">Changes for your environment</a></li>
+            <li><a href="#Features_and_devices">Selecting features and devices</a></li>
+            <li>
+                <ul>
+                    <li><a href="#Precompiled_data">Precompiled run-time data</a></li>
+                </ul>
+            </li>
+            <li><a href="#Makefile_setup">Setting up "makefile"</a></li>
+            <li><a href="#MSys/Mingw">MSys/Mingw</a></li>
+            <li><a href="#Invoke_make">Invoking "make"</a></li>
+            <li><a href="#Cross-compiling">Cross-compiling</a></li>
+        </ul>
+    </li>
+    <li><a href="#PC_build">How to build Ghostscript from source (PC version)</a></li>
+    <li>
+        <ul>
+            <li><a href="#Microsoft_build">Microsoft environment</a></li>
+            <li><a href="#Microsoft_build_64">Microsoft environment 64-bit</a></li>
+            <li><a href="#Microsoft_build_winrt">Microsoft environment WinRT</a></li>
+            <li><a href="#Self-extracting_executables">Making self-extracting Installers</a></li>
+            <li><a href="#Cygwin32_build">Cygwin32 gcc</a></li>
+        </ul>
+    </li>
+    <li><a href="#Mac_build">How to build Ghostscript from source (MacOS version)</a></li>
+    <li>
+        <ul>
+            <li><a href="#MacOSX">MacOS X</a></li>
+        </ul>
+    </li>
+    <li><a href="#Unix_build">How to build Ghostscript from source (Unix version)</a></li>
+    <li>
+        <ul>
+            <li><a href="#GNU_make">make tools</a></li>
+            <li><a href="#OS_specific_issues">OS-specific issues</a></li>
+            <li>
+                <ul>
+                    <li><a href="#HP_RISC">H-P RISC workstations</a></li>
+                    <li><a href="#IBMAIX">IBM AIX</a></li>
+                    <li><a href="#Silicon_Graphics">Silicon Graphics</a></li>
+                    <li><a href="#Sun">Oracle/Sun</a></li>
+                    <li><a href="#Solaris">Solaris</a></li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+    <li><a href="#Other_environments">Other environments</a></li>
+    <li>
+        <ul>
+            <li><a href="#No_multi_thread">Environments lacking multi-threading</a></li>
+            <li><a href="#Plan_9">Plan 9</a></li>
+        </ul>
+    </li>
+    <li><a href="#UFST_build">How to build Ghostscript with UFST</a></li>
 </ul>
-<li><a href="#Unpack">How to unpack the source code</a></li>
-<ul>
-<li><a href="#Tarfiles">How to unpack compressed tar files generally</a></li>
-<li><a href="#Unpack_Ghostscript">How to unpack Ghostscript itself</a></li>
-</ul>
-<li><a href="#Bug_check">How to check for post-release bug fixes</a></li>
-<li><a href="#Makefile_overview">How to prepare the makefiles</a></li>
-<ul>
-<li><a href="#Preparing_makefiles">Changes for your environment</a></li>
-<li><a href="#Features_and_devices">Selecting features and devices</a></li>
-<ul>
-<li><a href="#Precompiled_data">Precompiled run-time data</a></li>
-</ul>
-<li><a href="#Makefile_setup">Setting up "makefile"</a></li>
-<li><a href="#MSys/Mingw">MSys/Mingw</a></li>
-<li><a href="#Invoke_make">Invoking "make"</a></li>
-<li><a href="#Cross-compiling">Cross-compiling</a></li>
-</ul>
-<li><a href="#PC_build">How to build Ghostscript from source (PC version)</a></li>
-<ul>
-<li><a href="#Microsoft_build">Microsoft environment</a></li>
-<li><a href="#Microsoft_build_64">Microsoft environment 64-bit</a></li>
-<li><a href="#Microsoft_build_winrt">Microsoft environment WinRT</a></li>
-<li><a href="#Self-extracting_executables">Making self-extracting Installers</a></li>
-    <li><a href="#Cygwin32_build">Cygwin32 gcc</a></li>
-</ul>
-<li><a href="#Mac_build">How to build Ghostscript from source (MacOS version)</a></li>
-<ul>
-<li><a href="#MacOSX">MacOS X</a></li>
-</ul>
-<li><a href="#Unix_build">How to build Ghostscript from source (Unix version)</a></li>
-<ul>
-<li><a href="#GNU_make">make tools</a></li>
-<li><a href="#OS_specific_issues">OS-specific issues</a></li>
-<ul>
-<li><a href="#HP_RISC">H-P RISC workstations</a></li>
-<li><a href="#IBMAIX">IBM AIX</a></li>
-<li><a href="#Silicon_Graphics">Silicon Graphics</a></li>
-<li><a href="#Sun">Oracle/Sun</a></li>
-<li><a href="#Solaris">Solaris</a></li>
-</ul>
-</ul>
-<li><a href="#Other_environments">Other environments</a></li>
-<ul>
-<li><a href="#No_multi_thread">Environments lacking multi-threading</a></li>
-<li><a href="#Plan_9">Plan 9</a></li>
-</ul>
-<li><a href="#UFST_build">How to build Ghostscript with UFST</a></li>
-</ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
 
@@ -1468,34 +1443,12 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <!--FINISH EDITING HERE-->
 
-    </div>
-    </div>
-    </div>
 
-    <div class="footer">
-    <div class="row">
-        <div class="col-7 footleft">
-        <ul>
-            <li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
-            <li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
-            <li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
-        </ul>
-        </div>
-        <div class="col-1 footcenter">
-         <ul>
-           <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
-           <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
-           <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
-           </ul>
-        </div>
-        <div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
-              © Copyright 2019-2021 Artifex Software, Inc. <br>
-            All rights reserved.
-        </div>
-          </div>
-    </div>
-
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-    <script src="index.js"></script>
+<!--FINISH EDITING HERE-->
+          </div><!-- close inner -->
+        </div><!-- close outer -->
+      </article>
+    </main>
+    <script src="site.js"></script>
 </body>
 </html>

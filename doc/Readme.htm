@@ -1,56 +1,24 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
-<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">
-<title>Overview of Ghostscript</title>
-    <!-- Originally: README -->
-<link href="style.css" rel="stylesheet" type="text/css">
-<link href="gs-style.css" rel="stylesheet" type="text/css">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <title>Overview of Ghostscript</title>
+    <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
+    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <main>
+        <article>
+            <div class="outer">
 
-    <div class="header">
-    <div class="row">
-        <div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
-        <div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
-        <div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
-        <div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
-    </div>
-    </div>
-    </div>
-
-    <div class="banner">
-    <div class="row">
-        <div class="col-12">Overview of Ghostscript</div>
-    </div>
-    </div>
-
-    <div class="main">
-    <div class="row">
-    <div id="sidebar">
-    <div class="sidebar-item"></div>
-    <div class="col-2 leftnav">
-<ul>
-            <li><a href="https://www.ghostscript.com/">Home</a></li>
-            <li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
-            <li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
-            <li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
-            <li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
-            <li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
-            <li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
-            <li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
-            <li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
-            <li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
-        </ul>
-    </div>
-    </div>
-    <div class="col-10 page">
-
+                <div class="inner">
 <!--START EDITING HERE-->
+
+<h1>Introduction</h1>
 
 <p>
 This document is a roadmap to the Ghostscript documentation.
@@ -62,87 +30,105 @@ source code (which is necessary before installing it on Unix and VMS
 
 <!-- [1.3 end hint] ======================================================== -->
 
-<hr>
+
 
 <!-- [1.2 begin table of contents] ========================================= -->
 
-<h2>Table of contents</h2>
-<ul>
-<li><a href="WhatIsGS.htm">What is Ghostscript?</a></li>
-<ul>
-<li><a href="WhatIsGS.htm#GhostPDF">What is GhostPDF?</a></li>
-<li><a href="WhatIsGS.htm#GhostPCL">What is GhostPCL?</a></li>
-<li><a href="WhatIsGS.htm#GhostXPS">What is GhostXPS?</a></li>
-<li><a href="WhatIsGS.htm#GhostSVG">What is GhostSVG?</a></li>
-<li><a href="WhatIsGS.htm#GhostPDL">What is GhostPDL?</a></li>
-</ul>
-<li><a href="#Theme_roadmap">Document roadmap by theme</a></li>
-<ul>
-<li><a href="#New_users">What should I read if I'm a new user?</a></li>
-<li><a href="#Two_Ghostscripts">GPL Ghostscript and commercial Ghostscript</a></li>
-<li><a href="#Before_building">Before building Ghostscript</a></li>
-<li><a href="#Not_a_new_user">What should I read if I'm not a new user?</a></li>
-<li><a href="#Developer">What if I'm a developer?</a></li>
-<li><a href="#Writer">What if I'm writing documentation?</a></li>
-</ul>
-<ul>
-    <li><a href="#Web_presence">Presence on the World Wide Web</a></li></ul>
-<ul>
-<li><a href="#Web_home_page">Ghostscript's home pages</a></li>
-<li><a href="#Adobe_documentation">Adobe PostScript, Encapsulated
-PostScript, and PDF reference documentation</a></li>
-<li><a href="#Web_other">Other material on the WWW</a></li>
-</ul>
-<li><a href="#Ordered_roadmap">Which document contains what?</a></li><br>
-<ul>
-<li>Primarily for users:</li><br>
-<table>
-<tr colspan="3">
-<td width="33%">
-<a href="#Deprecated">Deprecated.htm</a><br>
-<a href="#Devices">Devices.htm</a><br>
-<a href="#Ps2epsi">Ps2epsi.htm</a></td>
-<td width="33%">
-<a href="#Vector">VectorDevices.htm</a><br>
-<a href="#Readme">Readme.htm</a></td>
-<td width="33%">
-<a href="#Unix-lpr">Unix-lpr.htm</a><br>
-<a href="#Use">Use.htm</a></td></tr>
-</table><br>
-<li>For both users and developers:</li><br>
-<table>
-<tr colspan="3">
-<td width="33%">
-<a href="#Commprod">Commprod.htm</a><br>
-<a href="#Fonts">Fonts.htm</a><br>
-<a href="#History">History*.htm</a><br>
-<a href="#Install">Install.htm</a><br></td>
-<td width="33%">
-<a href="#Language">Language.htm</a><br>
-<a href="#Make">Make.htm</a><br>
-<a href="#News">News.htm</a></td>
-<td width="33%">
-<a href="#Psfiles">Psfiles.htm</a><br>
-<a href="#COPYING">COPYING</a><br>
-<a href="#THIRDPARTY">thirdparty.htm</a></td></tr>
-</table><br>
-<li>Primarily for developers:</li><br>
-<table>
-<tr colspan="3">
-<td width="33%">
-<a href="#API">API.htm</a><br>
-<a href="#C-style">C-style.htm</a><br>
-<a href="#DLL">DLL.htm</a><br>
-<a href="#Internal">Internal.htm</a><br></td>
-<td>
-<a href="#Lib">Lib.htm</a><br>
-<a href="#Develop">Develop.htm</a><br>
-    <a href="#Drivers">Drivers.htm</a></td>
-<td>
-<a href="#Ps-style">Ps-style.htm</a><br>
-<a href="#Release">Release.htm</a><br>
-<a href="#Source">Source.htm</a><br></td></tr>
-</table>
+<h2><a name="toc"></a>Table of contents</h2>
+<ul class="toc">
+    <li><a href="WhatIsGS.htm">What is Ghostscript?</a></li>
+    <li>
+        <ul>
+            <li><a href="WhatIsGS.htm#GhostPDF">What is GhostPDF?</a></li>
+            <li><a href="WhatIsGS.htm#GhostPCL">What is GhostPCL?</a></li>
+            <li><a href="WhatIsGS.htm#GhostXPS">What is GhostXPS?</a></li>
+            <li><a href="WhatIsGS.htm#GhostSVG">What is GhostSVG?</a></li>
+            <li><a href="WhatIsGS.htm#GhostPDL">What is GhostPDL?</a></li>
+        </ul>
+    </li>
+    <li><a href="#Theme_roadmap">Document roadmap by theme</a></li>
+    <li>
+        <ul>
+            <li><a href="#New_users">What should I read if I'm a new user?</a></li>
+            <li><a href="#Two_Ghostscripts">GPL Ghostscript and commercial Ghostscript</a></li>
+            <li><a href="#Before_building">Before building Ghostscript</a></li>
+            <li><a href="#Not_a_new_user">What should I read if I'm not a new user?</a></li>
+            <li><a href="#Developer">What if I'm a developer?</a></li>
+            <li><a href="#Writer">What if I'm writing documentation?</a></li>
+        </ul>
+    </li>
+
+    <li><a href="#Web_presence">Presence on the World Wide Web</a></li>
+    <li>
+        <ul>
+            <li><a href="#Web_home_page">Ghostscript's home pages</a></li>
+            <li><a href="#Adobe_documentation">Adobe PostScript, Encapsulated
+            PostScript, and PDF reference documentation</a></li>
+            <li><a href="#Web_other">Other material on the WWW</a></li>
+        </ul>
+    </li>
+
+    <li><a href="#Ordered_roadmap">Which document contains what?</a></li>
+    <li>
+        <ul>
+            <li>Primarily for users:</li>
+            <li>
+                <table>
+                <tr colspan="3">
+                <td width="33%">
+                <a href="Deprecated.htm">Deprecated.htm</a><br>
+                <a href="Devices.htm">Devices.htm</a><br>
+                <a href="Ps2epsi.htm">Ps2epsi.htm</a></td>
+                <td width="33%">
+                <a href="VectorDevices.htm">VectorDevices.htm</a><br>
+                <a href="#Readme">Readme.htm</a></td>
+                <td width="33%">
+                <a href="Unix-lpr.htm">Unix-lpr.htm</a><br>
+                <a href="Use.htm">Use.htm</a></td></tr>
+                </table>
+            </li>
+            <li>
+                <li>For both users and developers:</li>
+            <li>
+                <table>
+                <tr colspan="3">
+                <td width="33%">
+                <a href="Fonts.htm">Fonts.htm</a><br>
+                <a href="History9.htm">History*.htm</a><br>
+                <a href="Install.htm">Install.htm</a><br></td>
+                <td width="33%">
+                <a href="Language.htm">Language.htm</a><br>
+                <a href="Make.htm">Make.htm</a><br>
+                <a href="News.htm">News.htm</a></td>
+                <td width="33%">
+                <a href="Psfiles.htm">Psfiles.htm</a><br>
+                <a href="#COPYING">COPYING</a><br>
+                <a href="THIRDPARTY.htm">thirdparty.htm</a></td></tr>
+                </table>
+            </li>
+            <li>
+                <li>Primarily for developers:</li>
+            </li>
+            <li>
+                <table>
+                <tr colspan="3">
+                <td width="33%">
+                <a href="API.htm">API.htm</a><br>
+                <a href="C-style.htm">C-style.htm</a><br>
+                <a href="DLL.htm">DLL.htm</a><br>
+                <a href="Internal.htm">Internal.htm</a><br></td>
+                <td>
+                <a href="Lib.htm">Lib.htm</a><br>
+                <a href="Develop.htm">Develop.htm</a><br>
+                <a href="Drivers.htm">Drivers.htm</a></td>
+                <td>
+                <a href="Ps-style.htm">Ps-style.htm</a><br>
+                <a href="Release.htm">Release.htm</a><br>
+                <a href="Source.htm">Source.htm</a><br></td></tr>
+                </table>
+            </li>
+        </ul>
+    </li>
 </ul>
 <br>
 <!-- [1.2 end table of contents] =========================================== -->
@@ -159,30 +145,30 @@ PostScript, and PDF reference documentation</a></li>
 
 <ul>
 
-<li>how to <a href="Use.htm">use Ghostscript</a>. This includes both
-a quickstart introduction to the commandline version and more extensive
-reference material.</li>
+    <li>how to <a href="Use.htm">use Ghostscript</a>. This includes both
+    a quickstart introduction to the commandline version and more extensive
+    reference material.</li>
 
-<li>detailed information about <a href="Devices.htm">specific
-devices</a> that Ghostscript can use for output</li>
+    <li>detailed information about <a href="Devices.htm">specific
+    devices</a> that Ghostscript can use for output</li>
 
-<li>more detailed information about how to use Ghostscript under
-Unix with <code>lpr</code> <a href="Unix-lpr.htm">as a filter</a>
-for printing</li>
+    <li>more detailed information about how to use Ghostscript under
+    Unix with <code>lpr</code> <a href="Unix-lpr.htm">as a filter</a>
+    for printing</li>
 
-<li>for information about known problems or to report a new one,
-please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>
-but remember that free versions of Ghostscript come with with
-<strong>NO WARRANTY</strong> and <strong>NO SUPPORT</strong></li>
+    <li>for information about known problems or to report a new one,
+    please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>
+    but remember that free versions of Ghostscript come with with
+    <strong>NO WARRANTY</strong> and <strong>NO SUPPORT</strong></li>
 </ul>
 
 <h3><a name="Two_Ghostscripts"></a>GPL and commercial Ghostscript</h3>
 <p>
-GPL Ghostscript, Artifex Ghostscript and AFPL Ghostscript are <a href="Commprod.htm">different releases</a>.</p>
+GPL Ghostscript, Artifex Ghostscript and AFPL Ghostscript are different releases.</p>
 
 <ul>
-<li>additional information about <a href="COPYING">GPL Ghostscript
-releases</a> that is not relevant to commercial versions.</li>
+    <li>additional information about <a href="COPYING">GPL Ghostscript
+    releases</a> that is not relevant to commercial versions.</li>
 </ul>
 
 <p>
@@ -190,14 +176,14 @@ If you run into any questions, or if you are going to be using Ghostscript
     extensively, you should at least skim, and probably eventually read:</p>
 
 <ul>
-<li> about the <a href="Fonts.htm">fonts distributed with
-Ghostscript</a>, including how to add or replace fonts</li>
+    <li> about the <a href="Fonts.htm">fonts distributed with
+    Ghostscript</a>, including how to add or replace fonts</li>
 
-<li> a description of <a href="Language.htm">the Ghostscript language</a>,
-and its differences from the documented PostScript language</li>
+    <li> a description of <a href="Language.htm">the Ghostscript language</a>,
+    and its differences from the documented PostScript language</li>
 
-<li> about the <a href="Psfiles.htm">postscript files distributed with
-Ghostscript</a> (other than fonts)</li>
+    <li> about the <a href="Psfiles.htm">postscript files distributed with
+    Ghostscript</a> (other than fonts)</li>
 </ul>
 
 <h3><a name="Before_building"></a>Before building Ghostscript</h3>
@@ -207,8 +193,8 @@ If you are going to compile Ghostscript from source, rather than just use an exe
     you got from somewhere, you may want to read:</p>
 
 <ul>
-<li> <a href="Make.htm">how to build Ghostscript</a> and
-<a href="Install.htm">install it</a></li>
+    <li> <a href="Make.htm">how to build Ghostscript</a> and
+    <a href="Install.htm">install it</a></li>
 </ul>
 
 <hr>
@@ -217,14 +203,14 @@ If you are going to compile Ghostscript from source, rather than just use an exe
 
 <p>
 If you have already used Ghostscript, when you receive a new release you
-    should begin by reading this file, then</p>
+    should begin by reading this file, then:</p>
 
 <ul>
-<li> <a href="News.htm">News</a>, for incompatible changes and new
-features in the current release;</li>
+    <li> <a href="News.htm">News</a>, for incompatible changes and new
+    features in the current release;</li>
 
-<li> if you wish, History#.htm (currently <a
-href="History9.htm">History9.htm</a>), for changes in the current and earlier releases.</li>
+    <li> if you wish, History#.htm (currently <a
+    href="History9.htm">History9.htm</a>), for changes in the current and earlier releases.</li>
 </ul>
 
 <hr>
@@ -233,21 +219,22 @@ href="History9.htm">History9.htm</a>), for changes in the current and earlier re
 
 <p>
 If you are going to do any development on or with Ghostscript at all, you
-should at least look at</p>
+should at least look at:</p>
 
 <ul>
-<li>the <a href="Develop.htm">roadmap documentation</a> for Ghostscript's
-source files and architecture</li>
+    <li>the <a href="Develop.htm">roadmap documentation</a> for Ghostscript's
+    source files and architecture</li>
 </ul>
 
 <p>
-    If you are going to write a new driver for Ghostscript, you should read</p>
+    If you are going to write a new driver for Ghostscript, you should read:</p>
 
 <ul>
-<li> the <a href="Source.htm">guide to the Ghostscript source code</a></li>
+    <li> the <a href="Source.htm">guide to the Ghostscript source code</a></li>
 
-<li> the interface between Ghostscript and <a href="Drivers.htm">device
-drivers</a></li>
+    <li> the interface between Ghostscript and <a href="Drivers.htm">device
+    drivers</a></li>
+</ul>
 
 <p>
 If you are considering distributing GPL Ghostscript in conjunction
@@ -255,8 +242,8 @@ with a commercial product, you should read the
     <a href="COPYING">license</a> carefully, and you should also read</p>
 
 <ul>
-<li> additional clarification of the circumstances under which Ghostscript
-can be distributed <a href="Commprod.htm">with a commercial product</a></li>
+    <li> additional clarification of the circumstances under which Ghostscript
+    can be distributed with a commercial product</li>
 </ul>
 
 <p>
@@ -265,26 +252,27 @@ If you intend to use Ghostscript in the form of a dynamic link library
 under Linux, read</p>
 
 <ul>
-<li> documentation on <a href="API.htm">Ghostscript Interpreter API</a></li>
+    <li> documentation on <a href="API.htm">Ghostscript Interpreter API</a></li>
 </ul>
 
 <p>
 If you want to use Ghostscript as part of another program--as a callable
 PostScript language interpreter--and not as a DLL or as a self-contained
-executable application, you should begin by reading</p>
+executable application, you should begin by reading:</p>
 
 <ul>
-<li> the source file <code>imain.h</code>, the documented
-API for Ghostscript <em>not</em> as a DLL</li>
+    <li> the source file <code>imain.h</code>, the documented
+    API for Ghostscript <em>not</em> as a DLL</li>
 </ul>
 
 <p>
-or if you are going to use only the Ghostscript graphics library,</p>
+or if you are going to use only the Ghostscript graphics library:</p>
 
 <ul>
-<li> about the structure of the <a href="Lib.htm">Ghostscript library</a>
-and its interfaces</li>
-    </ul></ul>
+    <li> about the structure of the <a href="Lib.htm">Ghostscript library</a>
+    and its interfaces</li>
+
+</ul>
 
 <hr>
 
@@ -365,12 +353,6 @@ change something in Ghostscript. For developers.</dd></dt>
 </dl>
 
 <dl>
-<dt><a name="Commprod"></a><a href="Commprod.htm"><b>Commprod.htm</b></a>
-<dd> The conditions under which Ghostscript may be distributed in a
-commercial context.  See also the <a href="#COPYING">GNU Affero General Public License</a>.</dd></dt>
-</dl>
-
-<dl>
 <dt><a name="DLL"></a><a href="DLL.htm"><b>DLL.htm</b></a>
 <dd> On OS/2, MS Windows-16 and MS Windows-32 platforms, Ghostscript is
 compiled as a dynamic link library (DLL).  This describes how to use it.
@@ -418,14 +400,6 @@ both users and developers.</dd></dt>
 <dd> The history of changes in all Ghostscript releases:
 <blockquote>
 <a href="History9.htm">History9.htm</a> for Ghostscript versions 9.n<br>
-<a href="History8.htm">History8.htm</a> for Ghostscript versions 8.n<br>
-<a href="History7.htm">History7.htm</a> for Ghostscript versions 7.n<br>
-<a href="History6.htm">History6.htm</a> for Ghostscript versions 6.n<br>
-<a href="History5.htm">History5.htm</a> for Ghostscript versions 5.n<br>
-<a href="History4.htm">History4.htm</a> for Ghostscript versions 4.n<br>
-<a href="History3.htm">History3.htm</a> for Ghostscript versions 3.n<br>
-<a href="History2.htm">History2.htm</a> for Ghostscript versions 2.n<br>
-<a href="History1.htm">History1.htm</a> for Ghostscript versions 1.n
 </blockquote></dd></dt>
 </dl>
 
@@ -569,40 +543,18 @@ or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
 Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <p>
+
 <small>Ghostscript version 9.55.0, 27 September 2021
+
+
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
 <!--FINISH EDITING HERE-->
-
-    </div>
-    </div>
-    </div>
-
-    <div class="footer">
-    <div class="row">
-        <div class="col-7 footleft">
-        <ul>
-            <li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
-            <li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
-            <li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
-        </ul>
-        </div>
-        <div class="col-1 footcenter">
-         <ul>
-           <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
-           <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
-           <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
-           </ul>
-        </div>
-        <div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
-              © Copyright 2019-2021 Artifex Software, Inc. <br>
-            All rights reserved.
-        </div>
-          </div>
-    </div>
-
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-    <script src="index.js"></script>
+                </div><!-- close inner -->
+            </div><!-- close outer -->
+        </article>
+    </main>
+    <script src="site.js"></script>
 </body>
 </html>
