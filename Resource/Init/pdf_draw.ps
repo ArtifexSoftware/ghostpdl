@@ -1314,6 +1314,12 @@ currentdict end readonly def
 } bind executeonly odef
 
 /.pdfpaintproc {
+    % Copy the pattern dictionary, we need it to rewind the /File if it is a file
+    % rather than a string, after we've run .actual_pdfpaintproc. If we don't reset
+    % the file position then if we try to run the PaintProc again we will already be
+    % at EOF and nothing will be executed.
+    1 index 3 1 roll
+
     %% Get the /m from pdfopdict (must be present)
     %% and check its a packedarray
     pdfopdict /m get dup type /packedarraytype eq {
@@ -1335,12 +1341,27 @@ currentdict end readonly def
     } ifelse
     %% rearrange the operands, move the boolean to the back
     3 1 roll
-    %% Uncopnditionally use the normal marking ops
+    %% Unconditionally use the normal marking ops
      switch_to_normal_marking_ops
     .actual_pdfpaintproc
     %% If we were in a text block, restore the text marking ops.
     {
       switch_to_text_marking_ops
+    } if
+
+    % If the pattern dictionary has a /File (it should always but let's be safe)
+    % *and* the /File is a file object, not a string, then we need to set the
+    % position of that file (it's a subfiledecode filter) back to 0 so we can
+    % run the PaintProc again, should we need to.
+    % cf bug #704388
+    /File .knownget {
+      dup type /filetype eq
+      {
+        0 setfileposition
+      }
+      {
+        pop
+      } ifelse
     } if
 }bind executeonly odef
 
