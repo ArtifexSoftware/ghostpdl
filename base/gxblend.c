@@ -2565,6 +2565,12 @@ art_pdf_composite_knockout_8(byte *gs_restrict dst,
         byte blend[ART_MAX_CHAN];
         byte a_b, a_s;
         unsigned int a_r;
+        /* Using a volatile variable set to 0 here works around
+           a gcc (10.3.0) compiler optimiser bug that appears to
+           drop the "if (a_r != 0)" test below, meaning we can end
+           up dividing by a_r when it is zero.
+         */
+        volatile const unsigned int vzero = 0;
         int src_scale;
         int c_b, c_s;
 
@@ -2575,7 +2581,7 @@ art_pdf_composite_knockout_8(byte *gs_restrict dst,
         tmp = (0xff - a_b) * (0xff - a_s) + 0x80;
         a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
 
-        if (a_r != 0) {
+        if (a_r != vzero) {
             /* Compute a_s / a_r in 16.16 format */
             src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
@@ -2646,6 +2652,12 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
         uint16_t blend[ART_MAX_CHAN];
         uint16_t a_b, a_s;
         unsigned int a_r;
+        /* Using a volatile variable set to 0 here works around
+           a gcc (10.3.0) compiler optimiser bug that appears to
+           drop the "if (a_r != 0)" test below, meaning we can end
+           up dividing by a_r when it is zero.
+         */
+        volatile const unsigned int vzero = 0;
         int src_scale;
         int c_b, c_s;
 
@@ -2656,7 +2668,7 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
         tmp = (0xffff - a_b) * (0xffff - a_s) + 0x8000;
         a_r = 0xffff - (((tmp >> 16) + tmp) >> 16);
 
-        if (a_r != 0) {
+        if (a_r != vzero) {
             /* Compute a_s / a_r in 16.16 format */
             src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
