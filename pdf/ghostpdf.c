@@ -529,7 +529,7 @@ void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, const char *info
 #endif
 }
 
-static void
+void
 pdfi_report_errors(pdf_context *ctx)
 {
     int code, i, j;

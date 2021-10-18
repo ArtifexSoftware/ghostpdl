@@ -520,6 +520,7 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
     pdfctx = r_ptr(op, pdfctx_t);
 
     if (pdfctx->ctx != NULL) {
+        pdfi_report_errors(pdfctx->ctx);
         if (pdfctx->ps_stream) {
             /* Detach the PostScript stream from the PDF context, otherwise the
              * close code will close the main stream
