@@ -41,6 +41,8 @@
 #include "stream.h"
 #include "strimpl.h"
 
+/* #define EXTRA_OFFSET_MAP_DEBUGGING */
+
 /* forward decl */
 private_st_clist_icctable_entry();
 private_st_clist_icctable();
@@ -72,8 +74,10 @@ typedef struct stream_band_read_state_s {
 #ifdef DEBUG
     bool skip_first;
     cbuf_offset_map_elem *offset_map;
+    int bytes_skipped;
     int offset_map_length;
     int offset_map_max_length;
+    int skip_next;
 #endif
 } stream_band_read_state;
 
@@ -104,15 +108,18 @@ s_band_read_init_offset_map(gx_device_clist_reader *crdev, stream_state * st)
         if (ss->offset_map == NULL)
             return_error(gs_error_VMerror);
         ss->offset_map[0].buffered = 0;
+        ss->bytes_skipped = 0;
         crdev->offset_map = ss->offset_map; /* Prevent collecting it as garbage.
                                             Debugged with ppmraw -r300 014-09.ps . */
     } else {
         ss->offset_map_length = 0;
         ss->offset_map_max_length = 0;
         ss->offset_map = NULL;
+        ss->bytes_skipped = 0;
         crdev->offset_map = NULL;
     }
     ss->skip_first = true;
+    ss->skip_next = 0;
     return 0;
 }
 
@@ -143,16 +150,38 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     const clist_io_procs_t *io_procs = ss->page_info.io_procs;
     int64_t pos;
 
+    /* left = number of bytes unread in the current command. */
+    /* count = number of bytes we have room in our buffer for. */
     while ((count = wlimit - q) != 0) {
         int bmin, bmax;
-        /* If we've got more data left in the current block, use that first. */
+        /* If there is more data to be read in the current command, then pull that in. */
         if (left) {
             if (count > left)
                 count = left;
-#	    ifdef DEBUG
-                if (gs_debug_c('L'))
+#ifdef DEBUG
+            if (gs_debug_c('L')) {
+                if (ss->skip_next) {
+                    /* This buffer fill is NOT going into the normal buffer. */
+                    ss->skip_next = 0;
+                    ss->bytes_skipped += count;
+#ifdef EXTRA_OFFSET_MAP_DEBUGGING
+                    if (ss->offset_map_length != 1) {
+                        dmlprintf(ss->local_memory, "offset_map: confused!\n");
+                        exit(1);
+                    }
+#endif
+                } else {
+#ifdef EXTRA_OFFSET_MAP_DEBUGGING
+                    if (ss->offset_map[ss->offset_map_length - 1].buffered + count > cbuf_size*2) {
+                        dmlprintf2(ss->local_memory, "Invalid update to buffered. %d %d\n",
+                                   ss->offset_map[ss->offset_map_length - 1].buffered, count);
+                        exit(1);
+                    }
+#endif
                     ss->offset_map[ss->offset_map_length - 1].buffered += count;
-#	    endif
+                }
+            }
+#endif
             io_procs->fread_chars(q + 1, count, cfile);
             if (io_procs->ferror_code(cfile) < 0) {
                 status = ERRC;
@@ -163,8 +192,8 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
             process_interrupts(ss->local_memory);
             continue;
         }
-        /* Otherwise, read band details in until we find one that covers
-         * the current band or bands. */
+        /* The current command is over. So find the next command in the bfile
+         * that applies to the current band(s) and read that in. */
         do {
             int nread;
             /* If we hit eof, end! */
@@ -220,11 +249,43 @@ static const stream_template s_band_read_template = {
 };
 
 #ifdef DEBUG
+/* In DEBUG builds, we maintain an "offset_map" within stream_band_read_state,
+ * that allows us to relate offsets within the buffer, to offsets within the
+ * cfile.
+ *
+ * At any given point, for stream_band_read_state *ss:
+ *    There are n = ss->offset_map_length records in the table.
+ *    offset = 0;
+ *    for (i = 0; i < n; i++)
+ *       // Offset 'offset' in the buffer corresponds to ss->offset_map[i].file_offset in the file.
+ *       offset += ss->offset_map[i].buffered
+ *
+ * As we pull data from the stream, we keep file_offset and buffered up to date. Note that
+ * there are 2 cbuf_size sized buffers in play here. The cmd_buffer has one cbuf_size sized
+ * buffer in it. Data is pulled into that from the stream, which has another cbuf_sized
+ * buffer into it. Accordingly, 'buffered' should never be > 2*cbuf_size = 8192.
+ *
+ * Sometimes we will pull data out of the stream, bypassing the cmd_buffer's buffer. In this
+ * case, we 'skip' data, and record the number of bytes skipped in ss->bytes_skipped. This
+ * should only ever happen when we have already advanced as much as possible (i.e. when the
+ * current offset is in the first record).
+ */
+
+/* Given buffer_offset (an offset within the buffer), return the number of the offset_map
+ * record that contains it. Also fill poffset0 in with the offset of the start of that
+ * record within the buffer. (NOTE, depending on how much of the record has already been
+ * read, some bytes may already have been lost). */
 static int
 buffer_segment_index(const stream_band_read_state *ss, uint buffer_offset, uint *poffset0)
 {
     uint i, offset0, offset = 0;
 
+#ifdef EXTRA_OFFSET_MAP_DEBUGGING
+    dmlprintf1(ss->local_memory, "buffer_segment_index: buffer_offset=%d\n", buffer_offset);
+    for (i = 0; i < ss->offset_map_length; i++) {
+        dmlprintf3(ss->local_memory, " offset_map[%d].file_offset=%"PRId64" buffered=%d\n", i, ss->offset_map[i].file_offset, ss->offset_map[i].buffered);
+    }
+#endif
     for (i = 0; i < ss->offset_map_length; i++) {
         offset0 = offset;
         offset += ss->offset_map[i].buffered;
@@ -233,10 +294,17 @@ buffer_segment_index(const stream_band_read_state *ss, uint buffer_offset, uint 
             return i;
         }
     }
+#ifdef EXTRA_OFFSET_MAP_DEBUGGING
+    dmlprintf1(ss->local_memory, "buffer_segment_index fail: buffer_offset=%d not found\n", buffer_offset);
+    exit(1);
+#else
     (void)gs_note_error(gs_error_unregistered); /* Must not happen. */
+#endif
     return -1;
 }
 
+/* Map from a buffer offset, to the offset of the corresponding byte in the
+ * cfile. */
 int64_t
 clist_file_offset(const stream_state * st, uint buffer_offset)
 {
@@ -244,12 +312,10 @@ clist_file_offset(const stream_state * st, uint buffer_offset)
     uint offset0;
     int i = buffer_segment_index(ss, buffer_offset, &offset0);
 
-    if (i < 0)
-        return -1;
     return ss->offset_map[i].file_offset + (uint)(buffer_offset - offset0);
 }
 
-int
+void
 top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byte *end)
 {
     /* NOTE: The clist data are buffered in the clist reader buffer and in the
@@ -257,32 +323,57 @@ top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byt
        from s_band_read_process, offset_map corresponds the union of the 2 buffers.
      */
     stream_band_read_state *const ss = (stream_band_read_state *) st;
+    uint buffer_offset, offset0, consumed;
+    int i;
 
-    if (!gs_debug_c('L')) {
-        return 0;
-    } else if (ss->skip_first) {
+#ifdef EXTRA_OFFSET_MAP_DEBUGGING
+    if (ptr < buf || end < ptr || end < buf || end > buf + cbuf_size)
+    {
+        dmlprintf3(ss->local_memory, "Invalid pointers for top_up_offset_map: buf=%p ptr=%p end=%p\n", buf, ptr, end);
+    }
+#endif
+
+    if (!gs_debug_c('L'))
+        return;
+    if (ss->skip_first) {
         /* Work around the trick with initializing the buffer pointer with the buffer end. */
         ss->skip_first = false;
-        return 0;
-    } else if (ptr == buf)
-        return 0;
-    else {
-        uint buffer_offset = ptr - buf;
-        uint offset0, consumed;
-        int i = buffer_segment_index(ss, buffer_offset, &offset0);
-
-        if (i < 0)
-            return_error(gs_error_unregistered); /* Must not happen. */
-        consumed = buffer_offset - offset0;
-        ss->offset_map[i].buffered -= consumed;
-        ss->offset_map[i].file_offset += consumed;
-        if (i) {
-            memmove(ss->offset_map, ss->offset_map + i,
-                (ss->offset_map_length - i) * sizeof(*ss->offset_map));
-            ss->offset_map_length -= i;
-        }
+        return;
     }
-    return 0;
+    if (ptr == buf)
+        return;
+
+    /* We know that buf <= ptr <= end <= buf+4096, so uint is quite enough! */
+    buffer_offset = ptr - buf;
+    i = buffer_segment_index(ss, buffer_offset, &offset0);
+
+    consumed = buffer_offset - offset0;
+#ifdef EXTRA_OFFSET_MAP_DEBUGGING
+    dmlprintf3(ss->local_memory, "offset_map: dump %d entries + %d bytes + %d skipped bytes\n", i, consumed, ss->bytes_skipped);
+    if (ss->offset_map[i].buffered < consumed) {
+        dmlprintf2(ss->local_memory, "Invalid update to buffered. B %d %d\n", ss->offset_map[i].buffered, consumed);
+        exit(1);
+    }
+#endif
+    ss->offset_map[i].buffered -= consumed;
+    ss->offset_map[i].file_offset += consumed;
+    ss->bytes_skipped = 0;
+    if (i) {
+        memmove(ss->offset_map, ss->offset_map + i,
+                (ss->offset_map_length - i) * sizeof(*ss->offset_map));
+        ss->offset_map_length -= i;
+    }
+}
+
+void
+offset_map_next_data_out_of_band(stream_state *st)
+{
+    stream_band_read_state *const ss = (stream_band_read_state *) st;
+
+    if (!gs_debug_c('L'))
+        return;
+
+    ss->skip_next = 1;
 }
 #endif /* DEBUG */
 
