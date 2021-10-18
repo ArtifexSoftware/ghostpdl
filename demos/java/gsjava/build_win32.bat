@@ -53,7 +53,6 @@ jar -cf ..\gsjava.jar^
 	com\artifex\gsjava\GSAPI.class^
 	com\artifex\gsjava\GSAPI$Revision.class^
 	com\artifex\gsjava\GSInstance.class^
-	com\artifex\gsjava\GSInstance$1.class^
 	com\artifex\gsjava\GSInstance$GSParam.class^
 	com\artifex\gsjava\GSInstance$ParamIterator.class^
 	^
@@ -74,7 +73,6 @@ jar -cf ..\gsjava.jar^
 	^
 	com\artifex\gsjava\devices\BMPDevice.class^
 	com\artifex\gsjava\devices\Device.class^
-	com\artifex\gsjava\devices\Device$1.class^
 	com\artifex\gsjava\devices\Device$StdIO.class^
 	com\artifex\gsjava\devices\DeviceInUseException.class^
 	com\artifex\gsjava\devices\DeviceNotSupportedException.class^
