@@ -141,9 +141,12 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int status = 1;
     uint count;
     const clist_io_procs_t *io_procs = ss->page_info.io_procs;
+    int64_t pos;
 
     while ((count = wlimit - q) != 0) {
-        if (left) {		/* Read more data for the current run. */
+        int bmin, bmax;
+        /* If we've got more data left in the current block, use that first. */
+        if (left) {
             if (count > left)
                 count = left;
 #	    ifdef DEBUG
@@ -160,47 +163,51 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
             process_interrupts(ss->local_memory);
             continue;
         }
-rb:
-        /*
-         * Scan for the next run for the current bands (or a band range
-         * that includes a current band).
-         */
-        if (ss->b_this.band_min == cmd_band_end &&
-            io_procs->ftell(bfile) == ss->page_bfile_end_pos
-            ) {
-            status = EOFC;
-            break;
-        } {
-            int bmin = ss->b_this.band_min;
-            int bmax = ss->b_this.band_max;
-            int64_t pos = ss->b_this.pos;
+        /* Otherwise, read band details in until we find one that covers
+         * the current band or bands. */
+        do {
             int nread;
+            /* If we hit eof, end! */
+            /* Could this test be moved into the nread < sizeof() test below? */
+            if (ss->b_this.band_min == cmd_band_end &&
+                io_procs->ftell(bfile) == ss->page_bfile_end_pos) {
+                pw->ptr = q;
+                ss->left = left;
+                return EOFC;
+            }
 
+            /* Read the next cmd_block from the bfile. Each cmd_block contains
+             * the bands to use, and the file position of the END of the data.
+             * We therefore want to read the data from the file position given
+             * in the PREVIOUS record onwards, and compare to the band min/max
+             * given there too. */
+            bmin = ss->b_this.band_min;
+            bmax = ss->b_this.band_max;
+            pos = ss->b_this.pos; /* Record where our data starts! */
             nread = io_procs->fread_chars(&ss->b_this, sizeof(ss->b_this), bfile);
             if (nread < sizeof(ss->b_this)) {
                 DISCARD(gs_note_error(gs_error_unregistered)); /* Must not happen. */
                 return ERRC;
             }
-            if (!(ss->band_last >= bmin && ss->band_first <= bmax))
-                goto rb;
-            io_procs->fseek(cfile, pos, SEEK_SET, ss->page_cfname);
-            left = (uint) (ss->b_this.pos - pos);
-#	    ifdef DEBUG
-            if (left > 0  && gs_debug_c('L')) {
-                if (ss->offset_map_length >= ss->offset_map_max_length) {
-                    DISCARD(gs_note_error(gs_error_unregistered)); /* Must not happen. */
-                    return ERRC;
-                }
-                ss->offset_map[ss->offset_map_length].file_offset = pos;
-                ss->offset_map[ss->offset_map_length].buffered = 0;
-                ss->offset_map_length++;
+        } while (ss->band_last < bmin || ss->band_first > bmax);
+        /* So let's set up to read the actual command data from cfile. Seek... */
+        io_procs->fseek(cfile, pos, SEEK_SET, ss->page_cfname);
+        left = (uint) (ss->b_this.pos - pos);
+#ifdef DEBUG
+        if (left > 0  && gs_debug_c('L')) {
+            if (ss->offset_map_length >= ss->offset_map_max_length) {
+                DISCARD(gs_note_error(gs_error_unregistered)); /* Must not happen. */
+                return ERRC;
             }
-#	    endif
-            if_debug5m('l', ss->local_memory,
-                      "[l]reading for bands (%d,%d) at bfile %"PRId64", cfile %"PRId64", length %u\n",
-                      bmin, bmax,
-                      (io_procs->ftell(bfile) - sizeof(ss->b_this)), (int64_t)pos, left);
+            ss->offset_map[ss->offset_map_length].file_offset = pos;
+            ss->offset_map[ss->offset_map_length].buffered = 0;
+            ss->offset_map_length++;
         }
+#endif
+        if_debug5m('l', ss->local_memory,
+                   "[l]reading for bands (%d,%d) at bfile %"PRId64", cfile %"PRId64", length %u\n",
+                   bmin, bmax,
+                   (io_procs->ftell(bfile) - sizeof(ss->b_this)), (int64_t)pos, left);
     }
     pw->ptr = q;
     ss->left = left;
