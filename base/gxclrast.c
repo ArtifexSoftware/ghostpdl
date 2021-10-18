@@ -149,6 +149,27 @@ set_cb_end(command_buf_t *pcb, const byte *end)
                                         /**** limit and should check 'end'    ****/
 }
 
+static inline void
+advance_buffer(command_buf_t *pcb, const byte *cbp)
+{
+#ifdef DEBUG
+    stream_state *st = pcb->s->state;
+
+    top_up_offset_map(st, pcb->data, cbp, pcb->end);
+#endif
+    memmove(pcb->data, cbp, pcb->end - cbp);
+}
+
+static inline void
+next_is_skip(command_buf_t *pcb)
+{
+#ifdef DEBUG
+    stream_state *st = pcb->s->state;
+
+    offset_map_next_data_out_of_band(st);
+#endif
+}
+
 /* Read more data into a command buffer. */
 static int
 top_up_cbuf(command_buf_t *pcb, const byte **pcbp)
@@ -156,9 +177,6 @@ top_up_cbuf(command_buf_t *pcb, const byte **pcbp)
     uint nread;
     const byte *cbp = *pcbp;
     byte *cb_top = pcb->data + (pcb->end - cbp);
-#   ifdef DEBUG
-    stream_state *st = pcb->s->state;
-#   endif
 
     if (cbp < pcb->data || cbp > pcb->end) {
         errprintf(pcb->s->memory, "Clist I/O error: cbp outside of buffer\n");
@@ -170,15 +188,7 @@ top_up_cbuf(command_buf_t *pcb, const byte **pcbp)
         pcb->end_status = pcb->s->end_status;
         return 0;
     }
-#   ifdef DEBUG
-    {
-        int code = top_up_offset_map(st, pcb->data, cbp, pcb->end);
-
-        if (code < 0)
-            return code;
-    }
-#   endif
-    memmove(pcb->data, cbp, pcb->end - cbp);
+    advance_buffer(pcb, cbp);
     nread = pcb->end - cb_top;
     pcb->end_status = sgets(pcb->s, cb_top, nread, &nread);
     if ( nread == 0 ) {
@@ -1106,12 +1116,7 @@ in:                             /* Initialize for a new page. */
                             if (cleft < bytes  && !cbuf.end_status) {
                                 uint nread = cbuf_size - cleft;
 
-#                               ifdef DEBUG
-                                    code = top_up_offset_map(st, cbuf.data, cbp, cbuf.end);
-                                    if (code < 0)
-                                        goto top_up_failed;
-#                               endif
-                                memmove(cbuf.data, cbp, cleft);
+                                advance_buffer(&cbuf, cbp);
                                 cbuf.end_status = sgets(s, cbuf.data + cleft, nread, &nread);
                                 set_cb_end(&cbuf, cbuf.data + cleft + nread);
                                 cbp = cbuf.data;
@@ -1556,6 +1561,8 @@ idata:                  data_size = 0;
                             } else
                                 rdata = cbuf.data;
                             memmove(rdata, cbp, cleft);
+                            if (data_on_heap)
+                                next_is_skip(&cbuf);
                             if (sgets(s, rdata + cleft, rleft, &rleft) < 0) {
                                 code = gs_note_error(gs_error_unregistered); /* Must not happen. */
                                 goto out;
@@ -2566,19 +2573,8 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 
         if (cleft < bytes && !pcb->end_status) {
             uint nread = cbuf_size - cleft;
-#   ifdef DEBUG
-            stream_state *st = pcb->s->state;
-#   endif
 
-#           ifdef DEBUG
-            {
-                int code = top_up_offset_map(st, pcb->data, cbp, pcb->end);
-
-                if (code < 0)
-                    return code;
-            }
-#           endif
-            memmove(pcb->data, cbp, cleft);
+            advance_buffer(pcb, cbp);
             pcb->end_status = sgets(pcb->s, pcb->data + cleft, nread, &nread);
             set_cb_end(pcb, pcb->data + cleft + nread);
             cbp = pcb->data;
@@ -2992,6 +2988,7 @@ read_put_params(command_buf_t *pcb, gs_gstate *pgs,
         cleft = pcb->end - cbp;
         rleft = param_length - cleft;
         memmove(param_buf, cbp, cleft);
+        next_is_skip(pcb);
         pcb->end_status = sgets(pcb->s, param_buf + cleft, rleft, &rleft);
         cbp = pcb->end;  /* force refill */
     }
