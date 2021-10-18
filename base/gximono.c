@@ -1071,12 +1071,12 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                 xrun += penum->x_extent.x;
             vdi = penum->hci;
             contone_stride = penum->line_size;
-            offset_threshold = (- (((long)(penum->thresh_buffer)) +
-                                      penum->ht_offset_bits)) & 15;
+            offset_threshold = (- (((int)(intptr_t)(penum->thresh_buffer)) +
+                                   penum->ht_offset_bits)) & 15;
             for (k = 0; k < spp_out; k ++) {
-                offset_contone[k]   = (- (((long)(penum->line)) +
-                                          (long)contone_stride * k +
-                                          penum->ht_offset_bits)) & 15;
+                offset_contone[k]   = (- (((int)(intptr_t)(penum->line)) +
+                                           contone_stride * k +
+                                           penum->ht_offset_bits)) & 15;
             }
             data_length = dest_width;
             dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
@@ -1098,10 +1098,10 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             xrun = dda_current(dda_ht);            /* really yrun, but just used here for landscape */
             dest_height = gxht_dda_length(&dda_ht, src_size);
             data_length = dest_height;
-            offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
+            offset_threshold = (-(int)(intptr_t)(penum->thresh_buffer)) & 15;
             for (k = 0; k < spp_out; k ++) {
-                offset_contone[k] = (- ((long)(penum->line) +
-                                        (long)contone_stride * k)) & 15;
+                offset_contone[k] = (- ((int)(intptr_t)(penum->line) +
+                                        contone_stride * k)) & 15;
             }
             /* In the landscaped case, we want to accumulate multiple columns
                of data before sending to the device.  We want to have a full
