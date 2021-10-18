@@ -561,9 +561,14 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
 
         bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
 
-        if (bytes == 0 && s->eof)
+        if (bytes == 0 && s->eof) {
+            if (nesting > 0)
+                pdfi_set_error(ctx, 0, NULL, E_PDF_UNESCAPEDSTRING, "pdfi_read_string", NULL);
             break;
+        }
         if (bytes <= 0) {
+            if (nesting > 0)
+                pdfi_set_error(ctx, 0, NULL, E_PDF_UNESCAPEDSTRING, "pdfi_read_string", NULL);
             Buffer[index] = 0x00;
             break;
         }
@@ -670,7 +675,6 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
                     escape = true;
                     continue;
                 case '(':
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_UNESCAPEDSTRING, "pdfi_read_string", NULL);
                     nesting++;
                     break;
                 default:

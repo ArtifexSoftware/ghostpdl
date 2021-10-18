@@ -315,7 +315,7 @@ const char *pdf_error_strings[] = {
     "request for unknown filter",
     "missing white space after number",
     "malformed number",
-    "invalid unescaped character '(' in string",
+    "unbalanced or unescaped character '(' in string",
     "invalid object number",
     "object lacks an endobj",
     "error executing PDF token",
