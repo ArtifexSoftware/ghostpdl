@@ -199,6 +199,8 @@ top_up_cbuf(command_buf_t *pcb, const byte **pcbp)
 }
 
 /* Read data from the command buffer and stream. */
+/* From the command_buffer pcb, read rsize bytes to ptr, starting from cbp.
+ * Return the new value for pcb->ptr. */
 static const byte *
 cmd_read_data(command_buf_t *pcb, byte *ptr, uint rsize, const byte *cbp)
 {
@@ -214,8 +216,6 @@ cmd_read_data(command_buf_t *pcb, byte *ptr, uint rsize, const byte *cbp)
         return pcb->end;
     }
 }
-#define cmd_read(ptr, rsize, cbp)\
-  cbp = cmd_read_data(&cbuf, ptr, rsize, cbp)
 
 /* Read a fixed-size value from the command buffer. */
 static inline const byte *
@@ -1159,7 +1159,7 @@ in:                             /* Initialize for a new page. */
                                 source = data_bits;
                         } else {
                             /* Never used for planar data */
-                            cmd_read(cbuf.data, bytes, cbp);
+                            cbp = cmd_read_data(&cbuf, cbuf.data, bytes, cbp);
                             source = cbuf.data;
                         }
                     }
