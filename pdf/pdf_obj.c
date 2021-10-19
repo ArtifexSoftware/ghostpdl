@@ -540,7 +540,7 @@ static int pdfi_obj_int_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *le
     buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_int_str(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
-    snprintf(buf, size, "%ld", number->value.i);
+    snprintf(buf, size, "%"PRId64"", number->value.i);
     *data = (byte *)buf;
     *len = strlen(buf);
     return code;
@@ -554,7 +554,7 @@ static int pdfi_obj_getrefstr(pdf_context *ctx, uint64_t object_num, uint32_t ge
     buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_getrefstr(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
-    snprintf(buf, size, "%ld %d R", object_num, generation);
+    snprintf(buf, size, "%"PRId64" %d R", object_num, generation);
     *data = (byte *)buf;
     *len = strlen(buf);
     return 0;

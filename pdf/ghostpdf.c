@@ -1281,7 +1281,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
             byte *b = Buffer + read;
 
             /* Success! stop now */
-            if(sscanf((char *)b, " %ld", &ctx->startxref) != 1) {
+            if(sscanf((char *)b, " %"PRId64"", &ctx->startxref) != 1) {
                 dmprintf(ctx->memory, "Unable to read offset of xref from PDF file\n");
             }
             break;

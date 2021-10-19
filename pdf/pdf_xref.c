@@ -762,7 +762,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
         if (entry->object_num != 0)
             continue;
 
-        if (sscanf(Buffer, "%ld %d %c", &entry->u.uncompressed.offset, &entry->u.uncompressed.generation_num, &free) != 3) {
+        if (sscanf(Buffer, "%"PRId64" %d %c", &entry->u.uncompressed.offset, &entry->u.uncompressed.generation_num, &free) != 3) {
             dmprintf(ctx->memory, "Invalid xref entry, incorrect format.\n");
             pdfi_unread(ctx, s, (byte *)Buffer, 20);
             code = read_xref_entry_slow(ctx, s, &off, &gen, &free);
