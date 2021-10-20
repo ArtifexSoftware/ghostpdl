@@ -286,7 +286,7 @@ int
 update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_gstate * pgs, const gs_color_space * pcs_in,
     gs_devn_params * pdevn_params, equivalent_cmyk_color_params * pparams)
 {
-    gs_color_space * pcs = pcs_in;
+    const gs_color_space * pcs = pcs_in;
     cmm_dev_profile_t *dev_profile;
     int code;
 
