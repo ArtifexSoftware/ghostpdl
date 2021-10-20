@@ -1007,11 +1007,12 @@ memfile_fread_chars(void *data, uint len, clist_file_ptr cf)
 {
     char *str = (char *)data;
     MEMFILE *f = (MEMFILE *) cf;
-    uint count = len, num_read, move_count;
+    uint count = len, move_count;
+    int64_t num_read;
 
     num_read = f->log_length - f->log_curr_pos;
-    if (count > num_read)
-        count = num_read;
+    if ((int64_t)count > num_read)
+        count = (int)num_read;
     num_read = count;
 
     while (count) {
