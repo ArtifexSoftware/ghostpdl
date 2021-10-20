@@ -2039,7 +2039,7 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_c_
      * been decrypted, we don't need to decrypt any strings contained in the
      * inline dictionary.
      */
-    code = pdfi_dict_from_stack(ctx, 0, 0);
+    code = pdfi_dict_from_stack(ctx, 0, 0, false);
     if (code < 0)
         /* pdfi_dict_from_stack cleans up the stack so we don't need to in case of an error */
         return code;

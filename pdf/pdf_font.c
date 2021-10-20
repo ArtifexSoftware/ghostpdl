@@ -145,6 +145,13 @@ pdfi_font_match_glyph_widths(pdf_font *pdfont)
     return code;
 }
 
+static void pdfi_emprint_font_name(pdf_context *ctx, pdf_name *n)
+{
+    int i;
+    for (i = 0; i < n->length; i++) {
+        dmprintf1(ctx->memory, "%c", n->data[i]);
+    }
+}
 
 /* Call with a CIDFont name to try to find the CIDFont on disk
    call if with ffname NULL to load the default fallback CIDFont
@@ -152,25 +159,130 @@ pdfi_font_match_glyph_widths(pdf_font *pdfont)
    Currently only loads subsitute - DroidSansFallback
  */
 static int
-pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte ** buf, int64_t * buflen)
+pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte ** buf, int64_t * buflen, int *findex)
 {
-    int code = gs_error_invalidfont;
+    int code;
+    char fontfname[gp_file_name_sizeof];
+    stream *s;
+    pdf_name *cidname = NULL;
+    gs_const_string fname;
+
+    (void)pdfi_dict_get(ctx, font_dict, "BaseFont", (pdf_obj **)&cidname);
 
     if (fallback == true) {
-        char fontfname[gp_file_name_sizeof];
-        const char *fsprefix = "CIDFSubst/";
+        pdf_string *mname = NULL;
+
+        code = pdf_fontmap_lookup_cidfont(ctx, font_dict, NULL, (pdf_obj **)&mname, findex);
+        if (code < 0 || mname->type != PDF_STRING) {
+            const char *fsprefix = "CIDFSubst/";
+            const int fsprefixlen = strlen(fsprefix);
+            const char *defcidfallack = "DroidSansFallback.ttf";
+            const int defcidfallacklen = strlen(defcidfallack);
+
+            pdfi_countdown(mname);
+
+            if (ctx->args.nocidfallback == true) {
+                code = gs_note_error(gs_error_invalidfont);
+            }
+            else {
+                memcpy(fontfname, fsprefix, fsprefixlen);
+                memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
+                fontfname[fsprefixlen + defcidfallacklen] = '\0';
+
+                code = pdfi_open_resource_file(ctx, fontfname, strlen(fontfname), &s);
+                if (code < 0) {
+                    code = gs_note_error(gs_error_invalidfont);
+                }
+                else {
+                    if (cidname) {
+                        dmprintf(ctx->memory, "Loading CIDFont ");
+                        pdfi_emprint_font_name(ctx, (pdf_name *)cidname);
+                        dmprintf(ctx->memory, " substitute from ");
+                    }
+                    else {
+                        dmprintf(ctx->memory, "Loading nameless CIDFont from ");
+                    }
+                    sfilename(s, &fname);
+                    if (fname.size < gp_file_name_sizeof) {
+                        memcpy(fontfname, fname.data, fname.size);
+                        fontfname[fname.size] = '\0';
+                    }
+                    else {
+                        strcpy(fontfname, "unnamed file");
+                    }
+                    dmprintf1(ctx->memory, "%s.\n", fontfname);
+
+                    sfseek(s, 0, SEEK_END);
+                    *buflen = sftell(s);
+                    sfseek(s, 0, SEEK_SET);
+                    *buf = gs_alloc_bytes(ctx->memory, *buflen, "pdfi_open_CIDFont_file(buf)");
+                    if (*buf != NULL) {
+                        sfread(*buf, 1, *buflen, s);
+                    }
+                    else {
+                        code = gs_note_error(gs_error_VMerror);
+                    }
+                    sfclose(s);
+                }
+            }
+        }
+        else {
+            code = pdfi_open_resource_file(ctx, (const char *)mname->data, mname->length, &s);
+            pdfi_countdown(mname);
+            if (code < 0) {
+                code = gs_note_error(gs_error_invalidfont);
+            }
+            else {
+                if (cidname) {
+                    dmprintf(ctx->memory, "Loading CIDFont ");
+                    pdfi_emprint_font_name(ctx, (pdf_name *)cidname);
+                    dmprintf(ctx->memory, " (or substitute) from ");
+                }
+                else {
+                    dmprintf(ctx->memory, "Loading nameless CIDFont from ");
+                }
+                sfilename(s, &fname);
+                if (fname.size < gp_file_name_sizeof) {
+                    memcpy(fontfname, fname.data, fname.size);
+                    fontfname[fname.size] = '\0';
+                }
+                else {
+                    strcpy(fontfname, "unnamed file");
+                }
+                dmprintf1(ctx->memory, "%s.\n", fontfname);
+                sfseek(s, 0, SEEK_END);
+                *buflen = sftell(s);
+                sfseek(s, 0, SEEK_SET);
+                *buf = gs_alloc_bytes(ctx->memory, *buflen, "pdfi_open_CIDFont_file(buf)");
+                if (*buf != NULL) {
+                    sfread(*buf, 1, *buflen, s);
+                }
+                else {
+                    code = gs_note_error(gs_error_VMerror);
+                }
+                sfclose(s);
+            }
+        }
+    }
+    else {
+        const char *fsprefix = "CIDFont/";
         const int fsprefixlen = strlen(fsprefix);
-        const char *defcidfallack = "DroidSansFallback.ttf";
-        const int defcidfallacklen = strlen(defcidfallack);
-        stream *s;
-        code = 0;
+
+        if (cidname == NULL || cidname->type != PDF_NAME) {
+            pdfi_countdown(cidname);
+            return_error(gs_error_invalidfont);
+        }
 
         memcpy(fontfname, fsprefix, fsprefixlen);
-        memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
-        fontfname[fsprefixlen + defcidfallacklen] = '\0';
+        memcpy(fontfname + fsprefixlen, cidname->data, cidname->length);
+        fontfname[fsprefixlen + cidname->length] = '\0';
+        pdfi_countdown(cidname);
 
         code = pdfi_open_resource_file(ctx, fontfname, strlen(fontfname), &s);
-        if (code >= 0) {
+        if (code < 0) {
+            code = gs_note_error(gs_error_invalidfont);
+        }
+        else {
             sfseek(s, 0, SEEK_END);
             *buflen = sftell(s);
             sfseek(s, 0, SEEK_SET);
@@ -179,13 +291,10 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
                 sfread(*buf, 1, *buflen, s);
             }
             else {
-                code = gs_note_error(gs_error_VMerror);
+                code = gs_note_error(gs_error_invalidfont);
             }
             sfclose(s);
         }
-    }
-    else {
-        code = gs_error_invalidfont;
     }
 
     return code;
@@ -407,6 +516,9 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
             memcpy(fontfname, fname.data, fname.size);
             fontfname[fname.size] = '\0';
         }
+        else {
+            strcpy(fontfname, "unnamed file");
+        }
         pdfi_print_string(ctx, fontfname);
         pdfi_print_string(ctx, "\n");
 
@@ -593,6 +705,7 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
             }
 
             if (code < 0 && code != gs_error_VMerror && substitute == font_embedded) {
+                int dummy_index;
                 /* Font not embedded, or embedded font not usable - use a substitute */
                 if (fbuf != NULL) {
                     gs_free_object(ctx->memory, fbuf, "pdfi_load_font(fbuf)");
@@ -601,9 +714,9 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                 substitute = font_from_file;
 
                 if (cidfont == true) {
-                    code =  pdfi_open_CIDFont_substitute_file(ctx, font_dict, fontdesc, false, &fbuf, &fbuflen);
+                    code =  pdfi_open_CIDFont_substitute_file(ctx, font_dict, fontdesc, false, &fbuf, &fbuflen, &dummy_index);
                     if (code < 0) {
-                        code =  pdfi_open_CIDFont_substitute_file(ctx, font_dict, fontdesc, true, &fbuf, &fbuflen);
+                        code =  pdfi_open_CIDFont_substitute_file(ctx, font_dict, fontdesc, true, &fbuf, &fbuflen, &dummy_index);
                         substitute |= font_substitute;
                     }
 

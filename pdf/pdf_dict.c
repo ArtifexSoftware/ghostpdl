@@ -104,7 +104,17 @@ int pdfi_dict_alloc(pdf_context *ctx, uint64_t size, pdf_dict **d)
     return pdfi_object_alloc(ctx, PDF_DICT, size, (pdf_obj **)d);
 }
 
-int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen)
+static int pdfi_dict_name_from_string(pdf_context *ctx, pdf_string *s, pdf_name **n)
+{
+    int code = pdfi_object_alloc(ctx, PDF_NAME, s->length, (pdf_obj **)n);
+    if (code >= 0) {
+        memcpy((*n)->data, s->data, s->length);
+        pdfi_countup(*n);
+    }
+    return code;
+}
+
+int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen, bool convert_string_keys)
 {
     uint64_t index = 0;
     pdf_dict *d = NULL;
@@ -146,9 +156,23 @@ int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indir
             d->values[i] = ctx->stack_top[-1];
             pdfi_countup(d->values[i]);
         } else {
-            pdfi_free_dict((pdf_obj *)d);
-            pdfi_clear_to_mark(ctx);
-            return_error(gs_error_typecheck);
+            if (convert_string_keys && ((pdf_obj *)ctx->stack_top[-2])->type == PDF_STRING) {
+                pdf_name *n;
+                code = pdfi_dict_name_from_string(ctx, (pdf_string *)ctx->stack_top[-2], &n);
+                if (code < 0) {
+                    pdfi_free_dict((pdf_obj *)d);
+                    pdfi_clear_to_mark(ctx);
+                    return_error(gs_error_typecheck);
+                }
+                d->keys[i] = (pdf_obj *)n; /* pdfi_dict_name_from_string() sets refcnt to 1 */
+                d->values[i] = ctx->stack_top[-1];
+                pdfi_countup(d->values[i]);
+            }
+            else {
+                pdfi_free_dict((pdf_obj *)d);
+                pdfi_clear_to_mark(ctx);
+                return_error(gs_error_typecheck);
+            }
         }
 
         pdfi_pop(ctx, 2);

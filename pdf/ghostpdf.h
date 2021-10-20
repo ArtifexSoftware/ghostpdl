@@ -481,6 +481,7 @@ typedef struct pdf_context_s
 
     search_paths_t search_paths;
     pdf_dict *pdffontmap;
+    pdf_dict *pdfcidfmap;
 
     /* These function pointers can be replaced by ones intended to replicate
      * PostScript functionality when running inside the Ghostscript PostScript

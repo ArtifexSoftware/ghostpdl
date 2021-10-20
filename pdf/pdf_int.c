@@ -1061,7 +1061,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
             if (bytes <= 0)
                 return (gs_error_ioerror);
             if (Buffer[1] == '>')
-                return pdfi_dict_from_stack(ctx, indirect_num, indirect_gen);
+                return pdfi_dict_from_stack(ctx, indirect_num, indirect_gen, false);
             else {
                 pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
                 return_error(gs_error_syntaxerror);

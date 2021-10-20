@@ -18,3 +18,9 @@
  */
 int
 pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname);
+
+/* The name parameter is to allow for internally derived font names to be looked up,
+   like, for example, /Adobe-Japan1
+ */
+int
+pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name, pdf_obj **mapname, int *findex);
