@@ -1156,20 +1156,61 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     /* If setup requested, tell the device about spots and transparency */
     if (do_setup) {
         gs_c_param_list list;
+        gs_param_string_array sa;
+        gs_param_string *table = NULL;
+        int a = 0;
+        pdf_name *Key = NULL;
+        pdf_obj *Value = NULL;
+        uint64_t index = 0;
 
         gs_c_param_list_write(&list, ctx->memory);
 
         /* If there are spot colours (and by inference, the device renders spot plates) then
          * send the number of Spots to the device, so it can setup correctly.
          */
-        if (tracker.spot_dict)
+        if (tracker.spot_dict) {
             param_write_int((gs_param_list *)&list, "PageSpotColors", &spots);
 
-        code = param_write_bool((gs_param_list *)&list, "PageUsesTransparency",
-                                &tracker.transparent);
+            if (spots > 0) {
+                table = (gs_param_string *)gs_alloc_byte_array(ctx->memory, spots, sizeof(gs_param_string), "SeparationNames");
+                if (table != NULL)
+                {
+                    memset(table, 0x00, spots * sizeof(gs_param_string));
+
+                    code = pdfi_dict_first(ctx, tracker.spot_dict, (pdf_obj **)&Key, &Value, &index);
+                    while (code >= 0)
+                    {
+                        if (Key->type == PDF_NAME) {
+                            table[a].data = ((pdf_string *)Key)->data;
+                            table[a].size = ((pdf_string *)Key)->length;
+                            table[a++].persistent = false;
+                        }
+                        /* Although we count down the returned PDF objects here, the pointers
+                         * to the name data remain valid and won't move. Provided we don't
+                         * retain the pointers after we free the tracker dictionary this is
+                         * safe to do.
+                         */
+                        pdfi_countdown(Key);
+                        Key = NULL;
+                        pdfi_countdown(Value);
+                        Value = NULL;
+                        code = pdfi_dict_next(ctx, tracker.spot_dict, (pdf_obj **)&Key, &Value, &index);
+                    }
+                    sa.data = table;
+                    sa.size = spots;
+                    sa.persistent = false;
+
+                    (void)param_write_string_array((gs_param_list *)&list, "SeparationColorNames", &sa);
+                }
+            }
+        }
+
+        (void)param_write_bool((gs_param_list *)&list, "PageUsesTransparency",
+                                    &tracker.transparent);
         gs_c_param_list_read(&list);
         code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&list);
         gs_c_param_list_release(&list);
+
         if (code > 0) {
             /* The device was closed, we need to reopen it */
             code = gs_setdevice_no_erase(ctx->pgs, ctx->pgs->device);
@@ -1177,6 +1218,8 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
                 goto exit;
             gs_erasepage(ctx->pgs);
         }
+
+        gs_free_object(ctx->memory, table, "SeparationNames");
     }
 
     /* Set our values in the context, for caller */
