@@ -1377,13 +1377,14 @@ retry_scaling:
         ||  ((int64_t)(scale_mat.yy * FontMatrix_div * scale + 0.5)) != ((int32_t)(scale_mat.yy * FontMatrix_div * scale + 0.5))) {
             /* Overflow
                If the scaling is large enough to overflow the 16.16 representation, we forcibly produce an outline
-               unscaled except for the resolution. And then scale the points as we create the Ghostscript path outline_char().
+               unscaled except an arbitrary "midrange" scale (chosen to avoid under/overflow issues). And
+               then scale the points as we create the Ghostscript path outline_char().
                If the glyph is this large, we're really not worried about hinting or dropout detection etc.
              */
 
             memset(&lctm, 0x00, sizeof(gs_matrix));
-            lctm.xx = dev->HWResolution[0];
-            lctm.yy = dev->HWResolution[1];
+            lctm.xx = 256.0;
+            lctm.yy = 256.0;
             I->transform_outline = true;
             I->use_outline = true;
             if ((code = gs_matrix_invert((const gs_matrix *)&lctm, &scale_ctm)) < 0)
