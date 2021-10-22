@@ -707,10 +707,17 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox,
 
     /* TODO: error handling... */
     if (need_group) {
+        bool isolated = false;
+        mode = gs_currentblendmode(ctx->pgs);
+
         stroked_bbox = (caller == TRANSPARENCY_Caller_Stroke || caller == TRANSPARENCY_Caller_FillStroke);
+
         /* When changing to compatible overprint bm, the group pushed must be non-isolated. The exception
-           is if we have a softmask.  See /setupOPtrans in pdf_ops.ps */
-        code = pdfi_trans_begin_simple_group(ctx, bbox, stroked_bbox, igs->SMask != NULL, false);
+           is if we have a softmask AND the blend mode is not normal and not compatible.
+           See /setupOPtrans in pdf_ops.ps  */
+        if (igs->SMask != NULL && mode != BLEND_MODE_Normal && mode != BLEND_MODE_Compatible)
+            isolated = true;
+        code = pdfi_trans_begin_simple_group(ctx, bbox, stroked_bbox, isolated, false);
         state->GroupPushed = true;
         state->saveStrokeAlpha = gs_getstrokeconstantalpha(ctx->pgs);
         state->saveFillAlpha = gs_getfillconstantalpha(ctx->pgs);

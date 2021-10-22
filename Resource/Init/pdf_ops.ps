@@ -716,7 +716,8 @@ end
     //false
   } ifelse
   .currentSMask //null ne or {		% push a group for OP or SMask
-    mark /Subtype /Group /Isolated .currentSMask //null ne .dicttomark
+    % It should only be isolated if there is a softmask and the blend mode is not normal (or compatible)
+    mark /Subtype /Group /Isolated .currentSMask //null ne .currentblendmode /Normal ne and .currentblendmode /Compatible ne and .dicttomark
     2 index aload pop		% pathbbox
     .begintransparencygroup
     % After group pushed, set alphas and blendmode
