@@ -136,6 +136,34 @@ void pdfi_device_set_flags(pdf_context *ctx)
     /* See if it is a DeviceN (spot capable) */
     ctx->device_state.spot_capable = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
 
+    /* This code is fankly icky and deserves to be changed. The problem it solves is that the
+     * PL interpreter code layer specifically sets "PageSpotColours" to 0 (none) in plmain.c
+     * pl_main_process_options(). Once that has been done, there is no simple way to
+     * process more than 4 spot channels. I thought at first we could use pl_main_post_args_init()
+     * but that doesn't get access to the main instance (where the params are stored) or to the
+     * params directly so it is unable to change them.
+     * So the only solution is either to remove the code which sets the PageSpotColours to 0, or
+     * to close the device, set the PageSpotColours to -1 (unknown) and re-open the device.
+     * That's what we do here. This means we end up closing and re-opening the device a lot,
+     * I'd like to avoid that so :
+     * FIXME: only do this once, ideally only call pdfi_device_set_flags once
+     */
+    if (ctx->device_state.spot_capable && dev->is_open) {
+        gs_c_param_list params;
+        int num_spots = -1;
+
+        gs_closedevice(dev);
+
+        gs_c_param_list_write(&params, ctx->memory);
+        (void)param_write_int((gs_param_list *)&params, "PageSpotColors", &(num_spots));
+        gs_c_param_list_read(&params);
+        (void)gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&params);
+        gs_c_param_list_release(&params);
+
+        (void)gs_setdevice_no_erase(ctx->pgs, ctx->pgs->device);
+        gs_erasepage(ctx->pgs);
+    }
+
     /* If multi-page output, can't do certain pdfmarks */
     if (ctx->device_state.writepdfmarks) {
         if (gx_outputfile_is_separate_pages(((gx_device_vector *)dev)->fname, dev->memory)) {
