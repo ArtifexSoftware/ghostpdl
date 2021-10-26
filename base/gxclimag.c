@@ -1143,13 +1143,19 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                                              &re, devn_not_tile_fill);
                 if (code < 0)
                     return code;
-                /* see if phase informaiton must be inserted in the command list */
+                /* see if phase information must be inserted in the command list */
                 /* if so, go ahead and do it for all_bands */
                 if ( pie->dcolor.type->get_phase(&pie->dcolor, &color_phase) &&
                      (color_phase.x != re.pcls->tile_phase.x ||
-                      color_phase.y != re.pcls->tile_phase.y ) &&
-                     (code = cmd_set_tile_phase_generic(cdev, re.pcls,
-                                                        color_phase.x, color_phase.y, true)) < 0  )
+                      color_phase.y != re.pcls->tile_phase.y ) ) {
+                    code = cmd_set_tile_phase_generic(cdev, re.pcls,
+                                                      color_phase.x, color_phase.y, true);
+                    if (code < 0)
+                        return code;
+                }
+            } else if (0 != re.pcls->tile_phase.x || 0 != re.pcls->tile_phase.y) {
+                code = cmd_set_tile_phase(cdev, re.pcls, 0, 0);
+                if (code < 0)
                     return code;
             }
             if (entire_box.p.x != 0 || entire_box.p.y != 0 ||
