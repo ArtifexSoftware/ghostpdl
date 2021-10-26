@@ -447,29 +447,76 @@ systemdict /NEWPDF known not {/NEWPDF //false def} if
 %(newpdf_get_media_box end) == flush
 } bind executeonly def
 
+% [llx lly urx ury] newpdf_check_empty_box [llx lly urx ury] true | false
+% rturns true and the original array if its valid, otherwise returns false
+/newpdf_check_empty_box
+{
+  dup type /arraytype eq
+  {
+    dup aload pop
+    dup 3 index eq
+    {
+      //true
+    }
+    {
+      1 index 4 index eq
+    } ifelse
+    {
+      pop pop pop pop
+     (   **** Warning:  File has an empty Box parameter.\n) print
+     (                  Using the MediaBox instead.\n) print
+     (                  Output may be incorrect.\n) print flush
+     pop //false
+    }
+    {
+      pop pop pop pop
+      //true
+    } ifelse
+  }
+  {
+     (   **** Warning:  File has an invalid Box parameter.\n) print
+     (                  Using the MediaBox instead.\n) print
+     (                  Output may be incorrect.\n) print flush
+    pop //false
+  } ifelse
+} bind executeonly def
+
 /newpdf_get_any_box { % <pagedict> get_any_box <box name> <box>
-%(newpdf_get_any_box start) == flush
   //systemdict /UseBleedBox .knownget dup { and } if {
-    dup /BleedBox get {
-      /BleedBox exch
+    dup /BleedBox .knownget {
+        newpdf_check_empty_box
+        {
+          /BleedBox exch
+        } if
     } if
   } if
-  //systemdict /UseTrimBox .knownget dup { and } if {
-    dup /TrimBox get {
-      /TrimBox exch
+  dup type /arraytype ne {
+    //systemdict /UseTrimBox .knownget dup { and } if {
+      dup /TrimBox .knownget {
+        newpdf_check_empty_box
+        {
+            /TrimBox exch
+        } if
+      } if
     } if
   } if
   dup type /arraytype ne {
     //systemdict /UseArtBox .knownget dup { and } if {
-      dup /ArtBox get {
-        /ArtBox exch
+      dup /ArtBox .knownget {
+        newpdf_check_empty_box
+        {
+            /ArtBox exch
+        } if
       } if
     } if
   } if
   dup type /arraytype ne {
     //systemdict /UseCropBox .knownget dup { and } if {
-      dup /CropBox get {
-        /CropBox exch
+      dup /CropBox .knownget {
+        newpdf_check_empty_box
+        {
+          /CropBox exch
+        } if
       } if
     } if
   } if
@@ -484,6 +531,7 @@ systemdict /NEWPDF known not {/NEWPDF //false def} if
     %% content when we st up the CTM, but we do need to make sure that we clamp
     %% the BoundingBox, and that means we need to take direcitonality into account...
 
+    aload pop
     6 -1 roll newpdf_get_media_box { % /SomeBox x0 y0 x1 y1 [MediaBox]
       aload pop               % /SomeBox x0 y0 x1 y1 X0 Y0 X1 Y1
 
@@ -688,7 +736,9 @@ systemdict /NEWPDF known not {/NEWPDF //false def} if
     } {
       pop
     } ifelse
-  } if
+  } {
+    pop
+  }ifelse
 
   pop
 } bind executeonly def
