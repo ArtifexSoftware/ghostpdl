@@ -150,6 +150,13 @@ typedef struct {
     */
 } ms_SizeDescription;
 
+#define MAX_MEDIASIZES 128
+
+typedef struct {
+	int mediasize_list_inited;
+	const ms_SizeDescription *mediasize_list[MAX_MEDIASIZES];
+} mediasize_table;
+
 /******************************************************************************
 
   Media codes
@@ -254,8 +261,9 @@ extern const ms_SizeDescription *ms_find_size_from_code(ms_MediaCode code);
       and appearance as a qualifier or consider the order of appearance.
     - There is no support for serialization qualifiers.
 */
-extern ms_MediaCode ms_find_code_from_name(const char *name,
-  const ms_Flag *user_flag_list);
+extern ms_MediaCode ms_find_code_from_name(mediasize_table *tables,
+                                           const char *name,
+                                           const ms_Flag *user_flag_list);
 
 /*===========================================================================*/
 

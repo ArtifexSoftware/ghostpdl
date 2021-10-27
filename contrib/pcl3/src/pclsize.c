@@ -36,15 +36,7 @@
     This list is used to find a PCL Page Size code for a particular media code.
     It will be sorted by media code before the first use.
 
-    This structure is based on the assumption that one needs only a single
-    Page Size code for each supported media code. See the discussion in
-    pclgen.h.
 */
-
-typedef struct {
-  ms_MediaCode mc;
-  pcl_PageSize ps;
-} CodeEntry;
 
 #define me(keyword)	{ms_##keyword, pcl_ps_##keyword}
 
@@ -84,6 +76,13 @@ static CodeEntry code_map[] = {
 
 #undef me
 
+/* If the following gives a compile error, then MAX_CODEENTRIES in pclsize.h
+ * must be increased. */
+typedef struct
+{
+        char compile_time_assert[array_size(code_map) <= MAX_CODEENTRIES ? 1 : -1];
+} compile_time_assert_for_codeentry;
+
 /******************************************************************************
 
   Function: cmp_by_size
@@ -108,20 +107,20 @@ static int cmp_by_size(const void *a, const void *b)
 
 ******************************************************************************/
 
-pcl_PageSize pcl3_page_size(ms_MediaCode code)
+pcl_PageSize pcl3_page_size(pcl3_sizetable *table, ms_MediaCode code)
 {
-  static pcl_bool initialized = FALSE;
   CodeEntry key;
   const CodeEntry *result;
 
   /* Sort the table if necessary */
-  if (!initialized) {
-    qsort(code_map, array_size(code_map), sizeof(CodeEntry), cmp_by_size);
-    initialized = TRUE;
+  if (!table->inited_code_map) {
+    memcpy(table->code_map, code_map, array_size(code_map) * sizeof(CodeEntry));
+    qsort(table->code_map, array_size(code_map), sizeof(CodeEntry), cmp_by_size);
+    table->inited_code_map = TRUE;
   }
 
   key.mc = ms_without_flags(code) |( code & PCL_CARD_FLAG);
-  result = (const CodeEntry *)bsearch(&key, code_map, array_size(code_map),
+  result = (const CodeEntry *)bsearch(&key, table->code_map, array_size(code_map),
     sizeof(CodeEntry), cmp_by_size);
 
   return result == NULL? pcl_ps_default: result->ps;
@@ -149,23 +148,21 @@ static int cmp_by_code(const void *a, const void *b)
 
 ******************************************************************************/
 
-ms_MediaCode pcl3_media_code(pcl_PageSize code)
+ms_MediaCode pcl3_media_code(pcl3_sizetable *table, pcl_PageSize code)
 {
-  static CodeEntry inverse_map[array_size(code_map)];
-  static pcl_bool initialized = FALSE;
   CodeEntry key;
   const CodeEntry *result;
 
   /* Construct the table if necessary */
-  if (!initialized) {
-    memcpy(&inverse_map, &code_map, sizeof(inverse_map));
-    qsort(inverse_map, array_size(inverse_map), sizeof(CodeEntry), cmp_by_code);
-    initialized = TRUE;
+  if (!table->inited_inverse_map) {
+    memcpy(&table->inverse_map, &code_map, sizeof(code_map));
+    qsort(table->inverse_map, array_size(code_map), sizeof(CodeEntry), cmp_by_code);
+    table->inited_inverse_map = TRUE;
   }
 
   key.ps = code;
-  result = (const CodeEntry *)bsearch(&key, inverse_map,
-    array_size(inverse_map), sizeof(CodeEntry), cmp_by_code);
+  result = (const CodeEntry *)bsearch(&key, table->inverse_map,
+    array_size(code_map), sizeof(CodeEntry), cmp_by_code);
   if (result == NULL) {
     key.ps = -code;
      /* Actually, this is a generalization on my part: I am assuming that any
@@ -173,8 +170,8 @@ ms_MediaCode pcl3_media_code(pcl_PageSize code)
         same media extension irrespective of sheet orientation in raster space.
         I have found negative Page Size codes in HP documentation only for
         Env10 and EnvDL. */
-    result = (const CodeEntry *)bsearch(&key, inverse_map,
-      array_size(inverse_map), sizeof(CodeEntry), cmp_by_code);
+    result = (const CodeEntry *)bsearch(&key, table->inverse_map,
+      array_size(code_map), sizeof(CodeEntry), cmp_by_code);
   }
 
   return result == NULL? ms_none: result->mc;
@@ -189,7 +186,7 @@ ms_MediaCode pcl3_media_code(pcl_PageSize code)
 
 ******************************************************************************/
 
-const ms_SizeDescription *pcl3_size_description(pcl_PageSize code)
+const ms_SizeDescription *pcl3_size_description(pcl3_sizetable *table, pcl_PageSize code)
 {
-  return ms_find_size_from_code(pcl3_media_code(code));
+  return ms_find_size_from_code(pcl3_media_code(table, code));
 }

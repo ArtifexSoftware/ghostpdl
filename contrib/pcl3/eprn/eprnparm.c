@@ -390,7 +390,7 @@ static char *next_word(char *s)
 
 #define cleanup()       (free(list), gp_fclose(f))
 
-static int eprn_read_media_data(eprn_Eprn *eprn, gs_memory_t *memory)
+static int eprn_read_media_data(mediasize_table *tables, eprn_Eprn *eprn, gs_memory_t *memory)
 {
   char buffer[BUFFER_SIZE];
   const char
@@ -502,7 +502,7 @@ static int eprn_read_media_data(eprn_Eprn *eprn, gs_memory_t *memory)
       t++;
     }
     {
-      ms_MediaCode code = ms_find_code_from_name(s, eprn->flag_desc);
+      ms_MediaCode code = ms_find_code_from_name(tables, s, eprn->flag_desc);
       if (code == ms_none) {
         eprintf5("%s" ERRPREF "Unknown media name (%s) in "
             "media configuration file\n%s  %s, line %d.\n",
@@ -664,7 +664,7 @@ int eprn_set_media_data(eprn_Device *dev, const char *media_file, size_t length)
     else {
       strncpy(eprn->media_file, media_file, length);
       eprn->media_file[length] = '\0';
-      if ((rc = eprn_read_media_data(eprn, dev->memory->non_gc_memory)) != 0) {
+      if ((rc = eprn_read_media_data(&dev->eprn.table, eprn, dev->memory->non_gc_memory)) != 0) {
         gs_free(dev->memory->non_gc_memory, eprn->media_file, length + 1, sizeof(char),
           "eprn_set_media_data");
         eprn->media_file = NULL;

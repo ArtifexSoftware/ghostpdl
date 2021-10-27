@@ -24,9 +24,28 @@
 #define PCL_CARD_FLAG	MS_USER_FLAG_1
 #define PCL_CARD_STRING	"Card"
 
-extern pcl_PageSize pcl3_page_size(ms_MediaCode code);
-extern ms_MediaCode pcl3_media_code(pcl_PageSize code);
-extern const ms_SizeDescription *pcl3_size_description(pcl_PageSize size);
+/*
+    This structure is based on the assumption that one needs only a single
+    Page Size code for each supported media code. See the discussion in
+    pclgen.h.
+*/
+typedef struct {
+  ms_MediaCode mc;
+  pcl_PageSize ps;
+} CodeEntry;
+
+#define MAX_CODEENTRIES 64
+
+typedef struct {
+    int inited_code_map;
+    CodeEntry code_map[MAX_CODEENTRIES];
+    int inited_inverse_map;
+    CodeEntry inverse_map[MAX_CODEENTRIES];
+} pcl3_sizetable;
+
+extern pcl_PageSize pcl3_page_size(pcl3_sizetable *table, ms_MediaCode code);
+extern ms_MediaCode pcl3_media_code(pcl3_sizetable *table, pcl_PageSize code);
+extern const ms_SizeDescription *pcl3_size_description(pcl3_sizetable *table, pcl_PageSize size);
 
 /*****************************************************************************/
 

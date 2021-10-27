@@ -528,6 +528,7 @@ typedef struct s_eprn_Device {
     present in 'next_scan_line' with its device coordinate being "next_y - 1",
     unless 'next_y' is zero in which case we have finished. */
   gs_gstate * pgs;
+  mediasize_table table;
 } eprn_Eprn;
 
 /* Macro for device structure type definitions. Note that in contrast to
@@ -625,7 +626,8 @@ typedef struct {
     0,		/* octets_per_line */	\
     0,		/* output_planes */	\
     0,		/* next_y */		\
-    NULL        /* pgs    */            \
+    NULL,       /* pgs    */            \
+    { 0 }       /* table */             \
   }
 
 /*  For the calling conventions of the following functions consult the comments

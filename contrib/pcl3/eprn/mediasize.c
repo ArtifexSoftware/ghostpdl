@@ -243,15 +243,21 @@ static const ms_Flag substrings[] = {
   {0, NULL}
 };
 
+/* If you get an error when compiling the following, then MAX_MEDIASIZES
+ * (defined in pcltables.h) must be increased. */
+typedef struct
+{
+        char compile_time_assert[array_size(list) <= MAX_MEDIASIZES ? 1 : -1];
+} compile_time_assert_for_list_length;
+
 /*****************************************************************************/
 
-ms_MediaCode ms_find_code_from_name(const char *name,
-  const ms_Flag *user_flag_list)
+ms_MediaCode ms_find_code_from_name(mediasize_table *tables,
+                                    const char *name,
+                                    const ms_Flag *user_flag_list)
 {
   const char *end;
   char stripped_name[LONGER_THAN_NAMES];
-  static const ms_SizeDescription *sorted_list[array_size(list) - 1];
-  static unsigned int entries = 0;
   ms_SizeDescription
     keydata,
     *key = &keydata;
@@ -261,13 +267,14 @@ ms_MediaCode ms_find_code_from_name(const char *name,
 
   /* On the first use of this function, compile a table of pointers into the
      list which is sorted by the names of the sizes. */
-  if (entries == 0) {
-    while (entries < array_size(sorted_list)) {
-      sorted_list[entries] = list + entries + 1;	/* ignore 'ms_none' */
+  if (tables->mediasize_list_inited == 0) {
+    int entries = 1; /* ignore 'ms_none' */
+    while (entries < array_size(list)) {
+      tables->mediasize_list[entries] = list + entries;
       entries++;
     }
-    qsort(sorted_list, array_size(sorted_list), sizeof(ms_SizeDescription *),
-      &cmp_by_name);
+    qsort(tables->mediasize_list, array_size(list) - 1, sizeof(ms_SizeDescription *), &cmp_by_name);
+    tables->mediasize_list_inited = 1;
   }
 
   /* Prevent idiots (like myself) from crashing the routine */
@@ -325,7 +332,7 @@ ms_MediaCode ms_find_code_from_name(const char *name,
   keydata.name = stripped_name;
 
   /* Search */
-  found = (const ms_SizeDescription **)bsearch(&key, sorted_list, entries,
+  found = (const ms_SizeDescription **)bsearch(&key, tables->mediasize_list, array_size(list) - 1,
     sizeof(ms_SizeDescription *), &cmp_by_name);
 
   return found == NULL? ms_none: ((*found)->size | flags);

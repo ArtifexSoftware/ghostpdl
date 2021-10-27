@@ -144,6 +144,7 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
   int j;
   int ll;	/* line length */
   unsigned int min_hres, min_vres, black_levels, non_black_levels, start;
+  pcl3_sizetable sizetable = { 0 };
 
   if (ip->number_of_outputs > 0)
     imessage(ip->out, 10,
@@ -373,7 +374,7 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
   }
 
   if (ip->fdata.size != 0) {
-    ms_MediaCode media_code = pcl3_media_code(ip->fdata.size);
+    ms_MediaCode media_code = pcl3_media_code(&sizetable, ip->fdata.size);
     const ms_SizeDescription *size = ms_find_size_from_code(media_code);
     if (size == NULL)
       imessage(ip->out, 14,

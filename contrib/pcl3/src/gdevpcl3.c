@@ -82,6 +82,7 @@ typedef struct {
     configured,         /* Has the output file been configured? */
     configure_every_page;  /* Repeat the configuration for every page? */
   pcl_FileData file_data;
+  pcl3_sizetable table;
 } pcl3_Device;
 
 /*****************************************************************************/
@@ -305,7 +306,7 @@ static void get_string_for_int(int in_value, const eprn_StringAndInt *table,
     out_value->persistent = true;
   }
   else {
-    static char buffer[22];     /* Must be sufficient for an 'int' */
+    char buffer[22];     /* Must be sufficient for an 'int' */
 
     gs_sprintf(buffer, "%d", in_value);
     assert(strlen(buffer) < sizeof(buffer));
@@ -1326,7 +1327,7 @@ static int pcl3_open_device(gx_device *device)
     unsigned int j;
 
     /* Media handling */
-    data->size = pcl3_page_size(dev->eprn.code);
+    data->size = pcl3_page_size(&dev->table, dev->eprn.code);
     if (data->size == pcl_ps_default) {
       /*  This is due to a media description using a media size code for which
           there is no PCL Page Size code. This is either an error in a builtin
