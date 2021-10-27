@@ -301,6 +301,7 @@ opvp_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs(dev);
 
+    set_dev_proc(dev, initialize_device, gx_init_non_threadsafe_device);
     set_dev_proc(dev, open_device, opvp_open);
     set_dev_proc(dev, get_initial_matrix, opvp_get_initial_matrix);
     set_dev_proc(dev, output_page, opvp_output_page);
@@ -381,6 +382,7 @@ oprp_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs(dev);
 
+    set_dev_proc(dev, initialize_device, gx_init_non_threadsafe_device);
     set_dev_proc(dev, open_device, oprp_open);
     set_dev_proc(dev, output_page, opvp_output_page);
     set_dev_proc(dev, close_device, opvp_close);

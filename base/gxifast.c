@@ -39,9 +39,7 @@
 #include "valgrind.h"
 
 /* Conditionally include statistics code. */
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
-#  define STATS
-#endif
+/* #define COLLECT_STATS_IFAST */
 
 /* ------ Strategy procedure ------ */
 
@@ -195,7 +193,7 @@ image_render_skip(gx_image_enum * penum, const byte * buffer, int data_x,
  * other bits in those bytes are set to zero (i.e., the value of the
  * 'zero' argument).
  */
-#ifdef STATS
+#ifdef COLLECT_STATS_IFAST
 struct stats_image_fast_s {
     long
          calls, all0s, all1s, runs, lbit0, byte00, byte01, byte02, byte03,

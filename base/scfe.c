@@ -25,9 +25,9 @@
 /* ------ Macros and support routines ------ */
 
 /* Statistics */
+/* #define COLLECT_STATS_SCFE */
 
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
-
+#ifdef COLLECT_STATS_SCFE
 typedef struct stats_runs_s {
     ulong termination[64];
     ulong make_up[41];
@@ -52,7 +52,7 @@ print_run_stats(const gs_memory_t *mem, const stats_runs_t * stats)
     dmprintf1(mem, " total=%lu\n", total);
 }
 
-#else /* !DEBUG || defined(GS_THREADSAFE) */
+#else /* !defined(COLLECT_STATS_SCFE) */
 
 #define COUNT_RUN(cnt, i) DO_NOTHING
 
@@ -82,10 +82,9 @@ cf_put_long_run(stream_CFE_state * ss, byte * q, int lenv, const cf_runs * prt)
     hce_declare_state;
     cfe_run rr;
 
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_SCFE
     stats_runs_t *pstats =
     (prt == &cf_white_runs ? &stats_white_runs : &stats_black_runs);
-
 #endif
 
     hce_load_state();
@@ -374,17 +373,19 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
                status, ss->read_count, ss->write_count,
                (intptr_t) pr->ptr, (int)(rlimit - pr->ptr), (intptr_t) rlimit,
                (intptr_t) pw->ptr, (int)(wlimit - pw->ptr), (intptr_t) wlimit);
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef DEBUG
     if (pr->ptr > rlimit || pw->ptr > wlimit) {
         lprintf("Pointer overrun!\n");
         status = ERRC;
     }
+#ifdef COLLECT_STATS_SCFE
     if (gs_debug_c('w') && status == 1) {
         dmlputs(ss->memory, "[w]white runs:");
         print_run_stats(ss->memory, &stats_white_runs);
         dmlputs(ss->memory, "[w]black runs:");
         print_run_stats(ss->memory, &stats_black_runs);
     }
+#endif
 #endif
     return status;
 }

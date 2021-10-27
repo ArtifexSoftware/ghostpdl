@@ -2441,7 +2441,6 @@
     <ClCompile Include="..\base\gdevdevn.c">
       <Filter>base\color</Filter>
     </ClCompile>
-
     <ClCompile Include="..\base\gscdevn.c">
       <Filter>base\color</Filter>
     </ClCompile>
@@ -6746,12 +6745,6 @@
     <ClInclude Include="..\base\gs_mro_e.h">
       <Filter>base %28.h%29</Filter>
     </ClInclude>
-    <ClInclude Include="..\devices\vector\gsagl.h">
-      <Filter>base %28.h%29</Filter>
-    </ClInclude>
-    <ClInclude Include="..\base\a">
-      <Filter>base %28.h%29</Filter>
-    </ClInclude>
     <ClInclude Include="..\base\gsargs.h">
       <Filter>base %28.h%29</Filter>
     </ClInclude>
@@ -10027,6 +10020,15 @@
     </ClInclude>
     <ClInclude Include="..\devices\vector\doc_common.h">
       <Filter>devices\vector</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\globals.h">
+      <Filter>base %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\gsagl.h">
+      <Filter>devices\vector</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\gsalloc.h">
+      <Filter>base %28.h%29</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

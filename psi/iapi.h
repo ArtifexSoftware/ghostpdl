@@ -153,10 +153,10 @@ gsapi_revision(gsapi_revision_t *pr, int len);
 
 /*
  * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
- *  Ghostscript supports only one instance.
- *  The current implementation uses a global static instance
- *  counter to make sure that only a single instance is used.
- *  If you try to create two instances, the second attempt
+ *  On non-threading capable platforms, Ghostscript supports only
+ *  one instance. The current implementation uses a global static
+ *  instance counter to make sure that only a single instance is
+ *  used. If you try to create two instances, the second attempt
  *  will return < 0 and set pinstance to NULL.
  * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
  */
@@ -170,9 +170,10 @@ gsapi_new_instance(void **pinstance, void *caller_handle);
 
 /*
  * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
- *  Ghostscript supports only one instance.
- *  The current implementation uses a global static instance
- *  counter to make sure that only a single instance is used.
+ *  On non-threading capable platforms, Ghostscript supports only
+ *  one instance. The current implementation uses a global static
+ *  instance counter to make sure that only a single instance is
+ *  used.
  * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
  */
 /* Destroy an instance of Ghostscript

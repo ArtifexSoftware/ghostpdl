@@ -1345,10 +1345,8 @@ art_blend_pixel_8_inline(byte *gs_restrict dst, const byte *gs_restrict backdrop
                 break;
             }
         default:
-#ifndef GS_THREADSAFE
             dlprintf1("art_blend_pixel_8: blend mode %d not implemented\n",
                       blend_mode);
-#endif
             memcpy(dst, src, n_chan);
             break;
     }
@@ -1556,10 +1554,8 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
                 break;
             }
         default:
-#ifndef GS_THREADSAFE
             dlprintf1("art_blend_pixel_16: blend mode %d not implemented\n",
                       blend_mode);
-#endif
             memcpy(dst, src, n_chan*2);
             break;
     }

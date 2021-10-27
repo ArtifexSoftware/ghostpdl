@@ -457,7 +457,9 @@ dev_proc_get_bits_rectangle(clist_get_bits_rectangle);
 int cmd_put_params(gx_device_clist_writer *, gs_param_list *);
 
 /* Conditionally keep command statistics. */
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+/* #define COLLECT_STATS_CLIST */
+
+#ifdef COLLECT_STATS_CLIST
 int cmd_count_op(int op, uint size, const gs_memory_t *mem);
 int cmd_count_extended_op(int op, uint size, const gs_memory_t *mem);
 void cmd_uncount_op(int op, uint size);

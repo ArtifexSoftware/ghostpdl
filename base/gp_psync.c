@@ -23,6 +23,8 @@
 #include "gserrors.h"
 #include "gpsync.h"
 #include "assert_.h"
+#include "gp.h"
+#include "globals.h"
 /*
  * Thanks to Larry Jones <larry.jones@sdrc.com> for this revision of
  * Aladdin's original code into a form that depends only on POSIX APIs.
@@ -36,6 +38,65 @@
 #ifndef PTHREAD_CREATE_DETACHED
 #  define PTHREAD_CREATE_DETACHED 1
 #endif
+
+static struct
+{
+    pthread_once_t once;
+    pthread_mutex_t mutex;
+    gs_globals globals;
+#ifdef DEBUG
+    pthread_key_t tlsKey;
+#endif
+} GhostscriptGlobals = { PTHREAD_ONCE_INIT, PTHREAD_MUTEX_INITIALIZER };
+
+static void init_globals(void)
+{
+    if (pthread_mutex_init(&GhostscriptGlobals.mutex, NULL))
+        exit(1);
+#ifdef DEBUG
+    if (pthread_key_create(&GhostscriptGlobals.tlsKey, NULL))
+        exit(1);
+#endif
+    gs_globals_init(&GhostscriptGlobals.globals);
+}
+
+gs_globals *gp_get_globals(void)
+{
+    if (pthread_once(&GhostscriptGlobals.once, init_globals))
+        return NULL;
+
+    return &GhostscriptGlobals.globals;
+}
+
+void gp_global_lock(gs_globals *globals)
+{
+    if (globals == NULL)
+        return;
+    pthread_mutex_lock(&GhostscriptGlobals.mutex);
+}
+
+void gp_global_unlock(gs_globals *globals)
+{
+    if (globals == NULL)
+        return;
+    pthread_mutex_unlock(&GhostscriptGlobals.mutex);
+}
+
+void gp_set_debug_mem_ptr(gs_memory_t *mem)
+{
+#ifdef DEBUG
+    pthread_setspecific(GhostscriptGlobals.tlsKey, mem);
+#endif
+}
+
+gs_memory_t *gp_get_debug_mem_ptr(void)
+{
+#ifdef DEBUG
+    return (gs_memory_t *)pthread_getspecific(GhostscriptGlobals.tlsKey);
+#else
+    return NULL;
+#endif
+}
 
 /* ------- Synchronization primitives -------- */
 
@@ -320,6 +381,9 @@ gp_monitor_leave(gp_monitor * mona)
 typedef struct gp_thread_creation_closure_s {
     gp_thread_creation_callback_t proc;  /* actual start procedure */
     void *proc_data;			/* closure data for proc */
+#ifdef DEBUG
+    gs_memory_t *mem;
+#endif
 } gp_thread_creation_closure_t;
 
 /* Wrapper procedure called to start the new thread. */
@@ -330,6 +394,9 @@ gp_thread_begin_wrapper(void *thread_data /* gp_thread_creation_closure_t * */)
 
     closure = *(gp_thread_creation_closure_t *)thread_data;
     free(thread_data);
+#ifdef DEBUG
+    pthread_setspecific(GhostscriptGlobals.tlsKey, closure.mem);
+#endif
     DISCARD(closure.proc(closure.proc_data));
     return NULL;		/* return value is ignored */
 }
@@ -355,6 +422,9 @@ gp_create_thread(gp_thread_creation_callback_t proc, void *proc_data)
         return_error(gs_error_VMerror);
     closure->proc = proc;
     closure->proc_data = proc_data;
+#ifdef DEBUG
+    closure->mem = pthread_getspecific(GhostscriptGlobals.tlsKey);
+#endif
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     code = pthread_create(&ignore_thread, &attr, gp_thread_begin_wrapper,
@@ -380,6 +450,9 @@ gp_thread_start(gp_thread_creation_callback_t proc, void *proc_data,
         return_error(gs_error_VMerror);
     closure->proc = proc;
     closure->proc_data = proc_data;
+#ifdef DEBUG
+    closure->mem = pthread_getspecific(GhostscriptGlobals.tlsKey);
+#endif
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     code = pthread_create(&new_thread, &attr, gp_thread_begin_wrapper,

@@ -618,7 +618,6 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
     SET_C(yx);
     SET_C(yy);
 #undef SET_C
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
     if (gs_debug_c('x')) {
         dlprintf6("[x]ctm: [%6g %6g %6g %6g %6g %6g]\n",
@@ -627,7 +626,6 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
                   scale, pfc->xx, pfc->xy, pfc->yx, pfc->yy,
                   pfc->shift);
     }
-#endif
 #endif
     pfc->max_bits = max_bits;
     return 0;

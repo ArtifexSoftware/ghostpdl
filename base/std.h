@@ -128,8 +128,8 @@ typedef ulong bits32;
  *
  * If you do not have a gs_memory_t * to hand, then you may call dprintf (and
  * family) and eprintf(and family) insteads. Be aware that these functions
- * compile away to nothing in GS_THREADSAFE builds, as they will not work in
- * multithreaded environments.
+ * compile away to nothing in non-DEBUG builds (and even in some DEBUG
+ * environments), as they rely on platform specific threading tricks.
  *
  * Since we all stdout/stderr output must go via outprintf/errprintf,
  * we have to define dputc and dputs in terms of errprintf also.
@@ -156,10 +156,8 @@ typedef struct gs_memory_s gs_memory_t;
 #define dpfm errprintf
 #define epfm errprintf
 
-#ifndef GS_THREADSAFE
 #define dpf errprintf_nomem
 #define epf errprintf_nomem
-#endif /* GS_THREADSAFE */
 
 /* To allow stdout and stderr to be redirected, all stdout goes
  * though outwrite and all stderr goes through errwrite.
@@ -169,14 +167,6 @@ int outwrite(const gs_memory_t *mem, const char *str, int len);
 int errwrite(const gs_memory_t *mem, const char *str, int len);
 void outflush(const gs_memory_t *mem);
 void errflush(const gs_memory_t *mem);
-
-#ifndef GS_THREADSAFE
-/* As a temporary measure, we allow forms of errwrite/errflush that do not
- * need to be given a memory pointer. Any uses of this (largely the debugging
- * system) will fail with multithreaded usage. */
-int errwrite_nomem(const char *str, int len);
-void errflush_nomem(void);
-#endif /* GS_THREADSAFE */
 
 /* Formatted output to outwrite and errwrite.
  * The maximum string length is 1023 characters.
@@ -193,77 +183,19 @@ void errflush_nomem(void);
 #  endif
 int outprintf(const gs_memory_t *mem, const char *fmt, ...) __printflike(2, 3);
 int errprintf(const gs_memory_t *mem, const char *fmt, ...) __printflike(2, 3);
-#ifndef GS_THREADSAFE
 int errprintf_nomem(const char *fmt, ...) __printflike(1, 2);
-#endif
 #else
 int outprintf();
 int errprintf();
-#ifndef GS_THREADSAFE
 int errprintf_nomem();
 #endif
-#endif
 
-/* Print the program line # for debugging - NON THREADSAFE VERSIONS */
-#ifdef GS_THREADSAFE
-#define dflush() DO_NOTHING
-#define dputc(chr) DO_NOTHING
-#define dlputc(chr) DO_NOTHING
-#define dputs(str) DO_NOTHING
-#define dlputs(str) DO_NOTHING
-#define dprintf(str)\
-  DO_NOTHING
-#define dlprintf(str)\
-  DO_NOTHING
-#define dprintf1(str,arg1)\
-  DO_NOTHING
-#define dlprintf1(str,arg1)\
-  DO_NOTHING
-#define dprintf2(str,arg1,arg2)\
-  DO_NOTHING
-#define dlprintf2(str,arg1,arg2)\
-  DO_NOTHING
-#define dprintf3(str,arg1,arg2,arg3)\
-  DO_NOTHING
-#define dlprintf3(str,arg1,arg2,arg3)\
-  DO_NOTHING
-#define dprintf4(str,arg1,arg2,arg3,arg4)\
-  DO_NOTHING
-#define dlprintf4(str,arg1,arg2,arg3,arg4)\
-  DO_NOTHING
-#define dprintf5(str,arg1,arg2,arg3,arg4,arg5)\
-  DO_NOTHING
-#define dlprintf5(str,arg1,arg2,arg3,arg4,arg5)\
-  DO_NOTHING
-#define dprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
-  DO_NOTHING
-#define dlprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
-  DO_NOTHING
-#define dprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
-  DO_NOTHING
-#define dlprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
-  DO_NOTHING
-#define dprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
-  DO_NOTHING
-#define dlprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
-  DO_NOTHING
-#define dprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
-  DO_NOTHING
-#define dlprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
-  DO_NOTHING
-#define dprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
-  DO_NOTHING
-#define dlprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
-  DO_NOTHING
-#define dprintf11(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11)\
-  DO_NOTHING
-#define dlprintf11(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11)\
-  DO_NOTHING
-#define dprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
-  DO_NOTHING
-#define dlprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
-  DO_NOTHING
-#else
+/* Print the program line # for debugging */
+/* These versions do not take a memory pointer, and hence have to
+ * appeal to platform specific methods to get one from thread local
+ * storage. These are likely to be much slower than the other versions,
+ * and, on some platforms at least, may do nothing. Avoid these if
+ * possible. */
 #if __LINE__                    /* compiler provides it */
 void dprintf_file_and_line(const char *, int);
 #  define _dpl dprintf_file_and_line(__FILE__, __LINE__),
@@ -329,7 +261,6 @@ void dflush(void);              /* flush stderr */
   dpf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12)
 #define dlprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
   (_dpl dprintf12(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12))
-#endif /* GS_THREADSAFE */
 
 /* Print the program line # for debugging. */
 #if __LINE__                    /* compiler provides it */
@@ -400,11 +331,6 @@ void dmprintf_file_only(const gs_memory_t *,const char *);
 
 
 void printf_program_ident(const gs_memory_t *mem, const char *program_name, long revision_number);
-#ifdef GS_THREADSAFE
-#define eprintf_program_ident(NAME,NUM) DO_NOTHING
-#else
-void eprintf_program_ident(const char *program_name, long revision_number);
-#endif /* GS_THREADSAFE */
 void emprintf_program_ident(const gs_memory_t *mem,
                             const char *program_name,
                             long revision_number);
@@ -412,30 +338,12 @@ const char *gs_program_family_name(void);
 const char *gs_program_name(void);
 long gs_revision_number(void);
 
-#ifdef GS_THREADSAFE
-#define eprintf(str)\
-  DO_NOTHING
-#define eprintf1(str,arg1)\
-  DO_NOTHING
-#define eprintf2(str,arg1,arg2)\
-  DO_NOTHING
-#define eprintf3(str,arg1,arg2,arg3)\
-  DO_NOTHING
-#define eprintf4(str,arg1,arg2,arg3,arg4)\
-  DO_NOTHING
-#define eprintf5(str,arg1,arg2,arg3,arg4,arg5)\
-  DO_NOTHING
-#define eprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
-  DO_NOTHING
-#define eprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
-  DO_NOTHING
-#define eprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
-  DO_NOTHING
-#define eprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
-  DO_NOTHING
-#define eprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
-  DO_NOTHING
-#else
+/* These versions do not take a memory pointer, and hence have to
+ * appeal to platform specific methods to get one from thread local
+ * storage. These are likely to be much slower than the other versions,
+ * and, on some platforms at least, may do nothing. Avoid these if
+ * possible. */
+void eprintf_program_ident(const char *program_name, long revision_number);
 #define _epi eprintf_program_ident(gs_program_name(), gs_revision_number()),
 
 #define eprintf(str)\
@@ -460,7 +368,6 @@ long gs_revision_number(void);
   (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
 #define eprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
   (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
-#endif /* GS_THREADSAFE */
 
 #define _epim(mem) emprintf_program_ident(mem, gs_program_name(), gs_revision_number()),
 
@@ -487,30 +394,6 @@ long gs_revision_number(void);
 #define emprintf10(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
   (_epim(mem) epfm(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
 
-#ifdef GS_THREADSAFE
-#define lprintf(str)\
-  DO_NOTHING
-#define lprintf1(str,arg1)\
-  DO_NOTHING
-#define lprintf2(str,arg1,arg2)\
-  DO_NOTHING
-#define lprintf3(str,arg1,arg2,arg3)\
-  DO_NOTHING
-#define lprintf4(str,arg1,arg2,arg3,arg4)\
-  DO_NOTHING
-#define lprintf5(str,arg1,arg2,arg3,arg4,arg5)\
-  DO_NOTHING
-#define lprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
-  DO_NOTHING
-#define lprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
-  DO_NOTHING
-#define lprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
-  DO_NOTHING
-#define lprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
-  DO_NOTHING
-#define lprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
-  DO_NOTHING
-#else
 #if __LINE__			/* compiler provides it */
 void lprintf_file_and_line(const char *, int);
 #  define _epl _epi lprintf_file_and_line(__FILE__, __LINE__),
@@ -541,7 +424,6 @@ void lprintf_file_only(const char *);
   (_epl epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
 #define lprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
   (_epl epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
-#endif /* GS_THREADSAFE */
 
 #if __LINE__			/* compiler provides it */
 void mlprintf_file_and_line(const gs_memory_t *,const char *, int);

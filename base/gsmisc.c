@@ -47,6 +47,7 @@ orig_sqrt(double x)
 #include "gxfixed.h"
 #include "stdint_.h"
 #include "stdio_.h"
+#include "gp.h"
 
 /* ------ Redirected stdout and stderr  ------ */
 
@@ -73,25 +74,26 @@ int outprintf(const gs_memory_t *mem, const char *fmt, ...)
     return count;
 }
 
-#ifndef GS_THREADSAFE
 int errprintf_nomem(const char *fmt, ...)
 {
     int count;
     char buf[PRINTF_BUF_LENGTH];
     va_list args;
+    gs_memory_t *mem = gp_get_debug_mem_ptr();
 
+    if (mem == NULL)
+        return 0;
     va_start(args, fmt);
     count = vsnprintf(buf, sizeof(buf), fmt, args);
     if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99*/
-        errwrite_nomem(buf, sizeof(buf) - 1);
-        errwrite_nomem(msg_truncated, sizeof(msg_truncated) - 1);
+        errwrite(mem, buf, sizeof(buf) - 1);
+        errwrite(mem, msg_truncated, sizeof(msg_truncated) - 1);
     } else {
-        errwrite_nomem(buf, count);
+        errwrite(mem, buf, count);
     }
     va_end(args);
     return count;
 }
-#endif
 
 int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 {
@@ -159,11 +161,12 @@ dprintf_file_tail(const char *file)
         --tail;
     return tail;
 }
-#ifndef GS_THREADSAFE
 void
 dflush(void)
 {
-    errflush_nomem();
+    gs_memory_t *mem = gp_get_debug_mem_ptr();
+    if (mem)
+        errflush(mem);
 }
 #if __LINE__                    /* compiler provides it */
 void
@@ -207,7 +210,6 @@ eprintf_program_ident(const char *program_name,
         epf(": ");
     }
 }
-#endif
 #if __LINE__                    /* compiler provides it */
 void
 dmprintf_file_and_line(const gs_memory_t *mem,const char *file, int line)
@@ -303,12 +305,15 @@ gs_return_check_interrupt(const gs_memory_t *mem, int code)
     }
 }
 
-#ifndef GS_THREADSAFE
 int gs_throw_imp(const char *func, const char *file, int line, int op, int code, const char *fmt, ...)
 {
     char msg[1024];
     va_list ap;
     int count;
+    gs_memory_t *mem = gp_get_debug_mem_ptr();
+
+    if (mem == NULL)
+        return code;
 
     va_start(ap, fmt);
     count = vsnprintf(msg, sizeof(msg), fmt, ap);
@@ -325,26 +330,25 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
 
     /* throw */
     if (op == 0)
-        errprintf_nomem("+ %s:%d: %s(): %s\n", file, line, func, msg);
+        errprintf(mem, "+ %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* rethrow */
     if (op == 1)
-        errprintf_nomem("| %s:%d: %s(): %s\n", file, line, func, msg);
+        errprintf(mem, "| %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* catch */
     if (op == 2)
-        errprintf_nomem("- %s:%d: %s(): %s\n", file, line, func, msg);
+        errprintf(mem, "- %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* warn */
     if (op == 3)
-        errprintf_nomem("  %s:%d: %s(): %s\n", file, line, func, msg);
+        errprintf(mem, "  %s:%d: %s(): %s\n", file, line, func, msg);
 
     if (count < 0 || count >= sizeof(msg))  { /* MSVC || C99 */
-        errwrite_nomem(msg_truncated, sizeof(msg_truncated) - 1);
+        errwrite(mem, msg_truncated, sizeof(msg_truncated) - 1);
     }
     return code;
 }
-#endif
 
 const char *gs_errstr(int code)
 {
@@ -542,7 +546,7 @@ gs_realloc(void *old_ptr, size_t old_size, size_t new_size)
 
 /* ------ Debugging support ------ */
 
-#ifndef GS_THREADSAFE
+#ifdef DEBUG
 /* Print a string in hexdump format. */
 void
 debug_print_string_hex_nomem(const byte * chrs, uint len)
@@ -615,7 +619,7 @@ debug_print_string_hex(const gs_memory_t *mem, const byte * chrs, uint len)
  * first_arg is the first argument of the procedure into which this code
  * is patched.
  */
-#ifndef GS_THREADSAFE
+#ifdef DEBUG
 #define BACKTRACE(first_arg)\
   BEGIN\
     ulong *fp_ = (ulong *)&first_arg - 2;\
@@ -935,7 +939,7 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 double
 gs_sqrt(double x, const char *file, int line)
 {
-#ifndef GS_THREADSAFE
+#ifdef DEBUG
     if (gs_debug_c('~')) {
         dprintf3("[~]sqrt(%g) at %s:%d\n", x, (const char *)file, line);
         dflush();

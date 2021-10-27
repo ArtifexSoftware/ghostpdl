@@ -116,7 +116,9 @@ do_call_operator_verbose(op_proc_t op_proc, i_ctx_t *i_ctx_p)
 #endif
 
 /* Define debugging statistics (not threadsafe as uses globals) */
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+/* #define COLLECT_STATS_IDSTACK */
+
+#ifdef COLLECT_STATS_INTERP
 struct stats_interp_s {
     long top;
     long lit, lit_array, exec_array, exec_operator, exec_name;

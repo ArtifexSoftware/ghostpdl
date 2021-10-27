@@ -75,7 +75,9 @@ enum {
 static int dict_create_contents(uint size, const ref * pdref, bool pack);
 
 /* Debugging statistics - uses a static, so not threadsafe. */
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+/* #define COLLECT_STATS_IDICT */
+
+#ifdef COLLECT_STATS_IDICT
 struct stats_dict_s {
     long lookups;		/* total lookups */
     long probe1;		/* successful lookups on only 1 probe */

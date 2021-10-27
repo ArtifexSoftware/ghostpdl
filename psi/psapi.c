@@ -39,13 +39,12 @@
 #include "interp.h"
 #include "gxgstate.h"
 
-#ifndef GS_THREADSAFE
-/* Number of threads to allow per process. Unless GS_THREADSAFE is defined
- * more than 1 is guaranteed to fail.
+/* This is the fallback for the number of threads to allow per process; i.e. just one.
+ * This is only ever used if the gp_get_globals function returns 0 (i.e. only for
+ * platforms that don't support threading).
  */
 static int gsapi_instance_counter = 0;
 static const int gsapi_instance_max = 1;
-#endif
 
 
 #ifdef METRO
@@ -83,12 +82,15 @@ psapi_new_instance(gs_lib_ctx_t **pinstance,
     if (pinstance == NULL)
         return gs_error_Fatal;
 
-#ifndef GS_THREADSAFE
-    /* limited to 1 instance, till it works :) */
-    if ( gsapi_instance_counter >= gsapi_instance_max )
-        return gs_error_Fatal;
-    ++gsapi_instance_counter;
-#endif
+    if (gp_get_globals() == NULL) {
+        /* This platform does not support the thread safe instance
+         * handling. We'll drop back to the old mechanism we've used
+         * to handle limiting ourselves to 1 instance in the past,
+         * despite this being thread-unsafe itself. */
+        if ( gsapi_instance_counter >= gsapi_instance_max )
+            return gs_error_Fatal;
+        ++gsapi_instance_counter;
+    }
 
     mem = gs_malloc_init_with_context(*pinstance);
     if (mem == NULL)
@@ -159,9 +161,8 @@ psapi_delete_instance(gs_lib_ctx_t *ctx)
     /* Release the memory (frees up everything) */
     gs_malloc_release(mem);
 
-#ifndef GS_THREADSAFE
-    --gsapi_instance_counter;
-#endif
+    if (gp_get_globals() == NULL)
+        --gsapi_instance_counter;
 }
 
 static int utf16le_get_codepoint(gp_file *file, const char **astr)

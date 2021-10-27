@@ -1435,3 +1435,25 @@ gdev_space_params_cmp(const gdev_space_params sp1,
 
   return(0);
 }
+
+static void
+release_nts_lock(gx_device *dev)
+{
+    (void)gs_lib_ctx_nts_adjust(dev->memory, -1);
+}
+
+int gx_init_non_threadsafe_device(gx_device *dev)
+{
+    int code;
+
+    if (dev == NULL || dev->finalize != NULL)
+        return gs_error_unknownerror;
+
+    code = gs_lib_ctx_nts_adjust(dev->memory, 1);
+    if (code < 0)
+        return code;
+
+    dev->finalize = release_nts_lock;
+
+    return 0;
+}

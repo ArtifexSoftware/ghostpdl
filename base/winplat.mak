@@ -67,7 +67,7 @@ $(GLD)winsync.dev : $(WINPLAT_MAK) $(ECHOGS_XE) $(winsync_) $(WINPLAT_MAK)
 
 $(GLOBJ)gp_wsync.$(OBJ): $(GLSRC)gp_wsync.c $(AK)\
  $(dos__h) $(malloc__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gstypes_h) $(WINPLAT_MAK)
+ $(gp_h) $(gsmemory_h) $(gstypes_h) $(globals_h) $(WINPLAT_MAK)
 	$(GLCCWIN) $(GLO_)gp_wsync.$(OBJ) $(C_) $(GLSRC)gp_wsync.c
 
 # The XPS printer

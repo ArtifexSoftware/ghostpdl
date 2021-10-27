@@ -20,7 +20,127 @@
 #include "malloc_.h"
 #include "gserrors.h"
 #include "gpsync.h"
+#include "gp.h"
+#include "globals.h"
 #include <process.h>
+
+/* We have 2 possible implementations of the routines to initialise
+ * globals. One uses the InitOnceExecuteOnce facility present in
+ * windows versions >= Vista, the other uses a mutex and
+ * InterlockedCompareExchangePointer and works on versions >=
+ * XP. Accordingly, we use the XP-capable version. The other version
+ * is retained for reference. */
+#define XP_COMPATIBLE_INIT
+
+/* Whatever happens, if we are compiling for a version < Vista
+ * we MUST use the XP version. */
+#if _WIN32_WINNT < 0x600
+#ifndef XP_COMPATIBLE_INIT
+#define XP_COMPATIBLE_INIT
+#endif
+#endif
+
+static struct
+{
+#ifdef XP_COMPATIBLE_INIT
+    HANDLE once_mutex;
+    int inited;
+#else
+    INIT_ONCE once;
+#endif
+    CRITICAL_SECTION lock;
+    gs_globals globals;
+#ifdef DEBUG
+    DWORD tlsIndex;
+#endif
+} GhostscriptGlobals = { INIT_ONCE_STATIC_INIT };
+
+static BOOL CALLBACK init_globals(PINIT_ONCE InitOnce,
+                                  PVOID Parameter,
+                                  PVOID *lpContext)
+{
+#ifdef METRO
+    InitializeCriticalSectionEx(&GhostscriptGlobals.lock, 0, 0);	/* returns no status */
+#else
+    InitializeCriticalSection(&GhostscriptGlobals.lock);	/* returns no status */
+#endif
+#ifdef DEBUG
+    GhostscriptGlobals.tlsIndex = TlsAlloc();
+#endif
+    gs_globals_init(&GhostscriptGlobals.globals);
+    return TRUE;
+}
+
+gs_globals *gp_get_globals(void)
+{
+    PVOID lpContext;
+#ifdef XP_COMPATIBLE_INIT
+    /* Prior to Windows Vista, we don't have InitOnceExecuteOnce
+     * capability, so we have to fudge it. Windows XP provides
+     * InterlockedCompareExchangePointer, so we can use that.
+     * We don't care about anything earlier than XP. */
+
+    /* If we haven't got a mutex yet...*/
+    if (GhostscriptGlobals.once_mutex == NULL) {
+        /* Make one */
+        HANDLE p = CreateMutex(NULL, FALSE, NULL);
+        /* Now atomically swap that one into the structure. */
+        if (InterlockedCompareExchangePointer((PVOID *)&GhostscriptGlobals.once_mutex, (PVOID)p, NULL) != NULL) {
+            /* If there was one there already, ditch ours and just use the one that was there already. */
+            CloseHandle(p);
+        }
+    }
+    WaitForSingleObject(GhostscriptGlobals.once_mutex, INFINITE);
+    if (GhostscriptGlobals.inited == 0) {
+        init_globals(NULL, NULL, &lpContext);
+        GhostscriptGlobals.inited = 1;
+    }
+    ReleaseMutex(GhostscriptGlobals.once_mutex);
+#else
+    BOOL status = InitOnceExecuteOnce(&GhostscriptGlobals.once,
+                                      init_globals,
+                                      NULL,
+                                      &lpContext);
+    if (status == FALSE)
+        return NULL;
+#endif
+
+    return &GhostscriptGlobals.globals;
+}
+
+
+void gp_global_lock(gs_globals *globals)
+{
+    if (globals == NULL)
+        return;
+    EnterCriticalSection(&GhostscriptGlobals.lock);
+}
+
+void gp_global_unlock(gs_globals *globals)
+{
+    if (globals == NULL)
+        return;
+    LeaveCriticalSection(&GhostscriptGlobals.lock);
+}
+
+void gp_set_debug_mem_ptr(gs_memory_t *mem)
+{
+#ifdef DEBUG
+    if (GhostscriptGlobals.tlsIndex != TLS_OUT_OF_INDEXES)
+        TlsSetValue(GhostscriptGlobals.tlsIndex, mem);
+#endif
+}
+
+gs_memory_t *gp_get_debug_mem_ptr(void)
+{
+#ifdef DEBUG
+    if (GhostscriptGlobals.tlsIndex == TLS_OUT_OF_INDEXES)
+        return NULL;
+    return (gs_memory_t *)TlsGetValue(GhostscriptGlobals.tlsIndex);
+#else
+    return NULL;
+#endif
+}
 
 /* It seems that both Borland and Watcom *should* be able to cope with the
  * new style threading using _beginthreadex/_endthreadex. I am unable to test
@@ -187,6 +307,7 @@ gp_monitor_leave(
 typedef struct gp_thread_creation_closure_s {
     gp_thread_creation_callback_t function;	/* function to start */
     void *data;			/* magic data to pass to thread */
+    gs_memory_t *mem;
 } gp_thread_creation_closure;
 
 /* Origin of new threads started by gp_create_thread */
@@ -199,6 +320,10 @@ gp_thread_begin_wrapper(
 
     closure = *(gp_thread_creation_closure *)thread_data;
     free(thread_data);
+#ifdef DEBUG
+    if (GhostscriptGlobals.tlsIndex != TLS_OUT_OF_INDEXES)
+        TlsSetValue(GhostscriptGlobals.tlsIndex, closure.mem);
+#endif
     (*closure.function)(closure.data);
     _endthread();
 }
@@ -218,6 +343,10 @@ gp_create_thread(
         return_error(gs_error_VMerror);
     closure->function = function;
     closure->data = data;
+#ifdef DEBUG
+    if (GhostscriptGlobals.tlsIndex != TLS_OUT_OF_INDEXES)
+        closure->mem = TlsGetValue(GhostscriptGlobals.tlsIndex);
+#endif
 
     /*
      * Start thread_wrapper.  The Watcom _beginthread returns (int)(-1) if
@@ -246,6 +375,10 @@ gp_thread_start_wrapper(void *thread_data)
 
     closure = *(gp_thread_creation_closure *)thread_data;
     free(thread_data);
+#ifdef DEBUG
+    if (GhostscriptGlobals.tlsIndex != TLS_OUT_OF_INDEXES)
+        TlsSetValue(GhostscriptGlobals.tlsIndex, closure.mem);
+#endif
     (*closure.function)(closure.data);
     _endthreadex(0);
     return 0;
@@ -268,6 +401,10 @@ int gp_thread_start(gp_thread_creation_callback_t function,
         return_error(gs_error_VMerror);
     closure->function = function;
     closure->data = data;
+#ifdef DEBUG
+    if (GhostscriptGlobals.tlsIndex != TLS_OUT_OF_INDEXES)
+        closure->mem = TlsGetValue(GhostscriptGlobals.tlsIndex);
+#endif
     hThread = (HANDLE)_beginthreadex(NULL, 0, &gp_thread_start_wrapper,
                                      closure, 0, &threadID);
     if (hThread == (HANDLE)0)

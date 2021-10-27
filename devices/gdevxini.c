@@ -762,6 +762,10 @@ static int
 x_initialize_device(gx_device *dev)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
+    int code = gx_init_non_threadsafe_device(dev);
+
+    if (code < 0)
+        return code;
 
     /* Mark the new instance as closed. */
     xdev->is_open = false;

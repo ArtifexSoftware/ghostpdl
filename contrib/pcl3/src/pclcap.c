@@ -783,9 +783,9 @@ const pcl_PrinterDescription pcl3_printers[] = {
 };
 
 /*****************************************************************************/
+#undef CHECK_CONSTRAINTS
 
-#if !defined(NDEBUG) && !defined(GS_THREADSAFE)
-
+#ifdef CHECK_CONSTRAINTS
 static int checked = 0;
 
 static void check(void)
@@ -800,8 +800,7 @@ static void check(void)
 
   return;
 }
-
-#endif	/* !NDEBUG && !GS_THREADSAFE */
+#endif
 
 /******************************************************************************
 
@@ -816,9 +815,9 @@ static void check(void)
 
 void pcl3_fill_defaults(pcl_Printer printer, pcl_FileData *data)
 {
-#if !defined(NDEBUG) && !defined(GS_THREADSAFE)
+#ifdef CHECK_CONSTRAINTS
   if (!checked) check();
-#endif	/* !NDEBUG */
+#endif
 
   /* Set everything to zero */
   memset(data, 0, sizeof(pcl_FileData));

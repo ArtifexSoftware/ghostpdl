@@ -23,6 +23,8 @@
 #include "stat_.h"
 #include "gstypes.h"
 #include "gscdefs.h"		/* for gs_serialnumber */
+#include "globals.h"
+
 /*
  * This file defines the interface to ***ALL*** platform-specific routines,
  * with the exception of the thread/synchronization interface (gpsync.h)
@@ -703,5 +705,18 @@ int
 gp_validate_path(const gs_memory_t *mem,
                  const char        *path,
                  const char        *mode);
+
+/*
+ * Fetch a pointer to the globals structure. This is cleverly synchronised
+ * so that the first call to this function is guaranteed to return a safely
+ * (and atomically) initialised structure.
+ *
+ * Platforms that can't perform this synchronisation just return NULL.
+ */
+struct gs_globals *gp_get_globals(void);
+
+void gp_set_debug_mem_ptr(gs_memory_t *mem);
+
+gs_memory_t *gp_get_debug_mem_ptr(void);
 
 #endif /* gp_INCLUDED */

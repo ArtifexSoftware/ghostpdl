@@ -94,6 +94,8 @@ typedef struct gs_callout_list_s {
     void *handle;
 } gs_callout_list_t;
 
+typedef struct gs_globals gs_globals;
+
 typedef struct {
     void *monitor;
     int refs;
@@ -137,6 +139,8 @@ typedef struct {
     int arg_max;
     int argc;
     char **argv;
+
+    gs_globals *globals;
 } gs_lib_ctx_core_t;
 
 typedef struct gs_lib_ctx_s
@@ -213,14 +217,7 @@ int gs_lib_ctx_register_callout(gs_memory_t *mem, gs_callout_fn, void *arg);
 void gs_lib_ctx_deregister_callout(gs_memory_t *mem, gs_callout_fn, void *arg);
 int gs_lib_ctx_callout(gs_memory_t *mem, const char *dev_name,
                        int id, int size, void *data);
-
-
-#ifndef GS_THREADSAFE
-/* HACK to get at non garbage collection memory pointer
- *
- */
-gs_memory_t * gs_lib_ctx_get_non_gc_memory_t(void);
-#endif
+int gs_lib_ctx_nts_adjust(gs_memory_t *mem, int adjust);
 
 int gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
                                  int dir_namelen);

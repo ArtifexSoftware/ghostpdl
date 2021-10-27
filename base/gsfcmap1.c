@@ -23,6 +23,7 @@
 #include "gsstruct.h"
 #include "gsutil.h"		/* for gs_next_ids */
 #include "gxfcmap1.h"
+#include "gp.h"
 
 /* Get a big-endian integer. */
 static inline ulong
@@ -77,21 +78,23 @@ public_st_cmap_lookup_range_element();
  * multi-dimensional range comparator
  */
 
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
 static void
 print_msg_str_in_range(const byte *str,
                        const byte *key_lo, const byte *key_hi,
                        int key_size)
 {
-    debug_print_string_hex_nomem(str, key_size);
-    dlprintf(" in ");
-    debug_print_string_hex_nomem(key_lo, key_size);
-    dlprintf(" - ");
-    debug_print_string_hex_nomem(key_hi, key_size);
-    dlprintf("\n");
+    gs_memory_t *mem = gp_get_debug_mem_ptr();
+
+    if (mem == NULL)
+        return;
+    debug_print_string_hex(mem, str, key_size);
+    dmlprintf(mem, " in ");
+    debug_print_string_hex(mem, key_lo, key_size);
+    dmlprintf(mem, " - ");
+    debug_print_string_hex(mem, key_hi, key_size);
+    dmlprintf(mem, "\n");
 }
-#endif
 #endif
 
 static int
@@ -128,13 +131,11 @@ gs_multidim_CID_offset(const byte *key_str,
     int i;	/* index for current dimension */
     int CID_offset = 0;
 
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
     if (gs_debug_c('J')) {
         dlprintf("[J]gmCo()         calc CID_offset for 0x");
         print_msg_str_in_range(key_str, key_lo, key_hi, key_size);
     }
-#endif
 #endif
 
     for (i = 0; i < key_size; i++)
@@ -183,7 +184,6 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
 
     *pchr = '\0';
 
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
     if (gs_debug_c('J')) {
         dlprintf("[J]CMDNmr() is called: str=(");
@@ -191,7 +191,6 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
         dlprintf3(") @ "PRI_INTPTR" ssize=%d, %d ranges to check\n",
                   (intptr_t)str, ssize, pcmap->num_lookup);
     }
-#endif
 #endif
 
     for (i = pcmap->num_lookup - 1; i >= 0; --i) {
@@ -220,14 +219,12 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
             if (0 == j)			/* no match, skip to next i */
                 continue;
             else if (j < pre_size) {	/* not exact, partial match */
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
                 if (gs_debug_c('J')) {
                     dlprintf("[J]CMDNmr() partial match with prefix:");
                     print_msg_str_in_range(str, prefix,
                                                 prefix, pre_size);
                 }
-#endif
 #endif
                 if (pm_maxlen < j) {
                     pm_maxlen = chr_size;
@@ -238,13 +235,11 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
                 continue ; /* no need to check key, skip to next i */
             }
 
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
             if (gs_debug_c('J')) {
                 dlprintf("[J]CMDNmr()   full match with prefix:");
                 print_msg_str_in_range(str, prefix, prefix, pre_size);
             }
-#endif
 #endif
         } /* if (0 < pre_size) */
 
@@ -266,13 +261,11 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
 
             for (k = 0; k < pclr->num_entries; ++k, key += step) {
 
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
                 if_debug0('j', "[j]CMDNmr()     check key:");
                 if (gs_debug_c('j'))
                     print_msg_str_in_range(str + pre_size,
                         key, key + step - key_size, key_size) ;
-#endif
 #endif
 
                 for (l = 0; l < key_size; l++) {
@@ -302,14 +295,12 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
             *pfidx = pclr->font_index;
             pvalue = pclr->values.data + k * pclr->value_size;
 
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
             if (gs_debug_c('J')) {
                 dlprintf("[J]CMDNmr()     full matched pvalue=(");
                 debug_print_string_hex_nomem(pvalue, pclr->value_size);
                 dlprintf(")\n");
             }
-#endif
 #endif
 
             switch (pclr->value_type) {
@@ -343,14 +334,12 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
     *pfidx = pm_fidx;
     *pglyph = GS_NO_GLYPH;
 
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
     if (gs_debug_c('J')) {
         dlprintf("[J]CMDNmr()     no full match, use partial match for (");
         debug_print_string_hex_nomem(str, pm_maxlen);
         dlprintf(")\n");
     }
-#endif
 #endif
 
     return 0;
@@ -434,7 +423,6 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
             *pglyph = GS_MIN_CID_GLYPH;	/* CID = 0, this is CMap fallback */
             *pindex = save_index + chr_size_shortest;
             *pchr = '\0';
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
             if (gs_debug_c('J')) {
                 const byte *str = pstr->data + save_index;
@@ -444,20 +432,17 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
                 dlprintf(")\n");
             }
 #endif
-#endif
             return 0; /* should return some error for fallback .notdef? */
         }
         else {
             /* Undecodable string is shorter than the shortest character,
              * return 'GS_NO_GLYPH' and update index to end-of-string
              */
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
             if (gs_debug_c('J')) {
                 dlprintf2("[J]GCDN() left data in buffer (%d) is shorter than shortest defined character (%d)\n",
                   ssize, chr_size_shortest);
             }
-#endif
 #endif
             *pglyph = GS_NO_GLYPH;
             *pindex += ssize;

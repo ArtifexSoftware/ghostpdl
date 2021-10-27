@@ -155,7 +155,9 @@ struct line_list_s {
 
 /* ---------------- Statistics ---------------- */
 
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+/* #define COLLECT_STATS_FILL */
+
+#ifdef COLLECT_STATS_FILL
 struct stats_fill_s {
     long
         fill, fill_alloc, y_up, y_down, horiz, x_step, slow_x, iter, find_y,

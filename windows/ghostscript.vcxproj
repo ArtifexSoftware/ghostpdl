@@ -2706,6 +2706,7 @@
     <ClInclude Include="..\base\gdevsclass.h" />
     <ClInclude Include="..\base\gdevvec.h" />
     <ClInclude Include="..\base\gen_ordered.h" />
+    <ClInclude Include="..\base\globals.h" />
     <ClInclude Include="..\base\gp.h" />
     <ClInclude Include="..\base\gpcheck.h" />
     <ClInclude Include="..\base\gpgetenv.h" />

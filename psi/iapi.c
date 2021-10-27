@@ -74,6 +74,7 @@ gsapi_new_instance(void **pinstance, void *caller_handle)
 GSDLLEXPORT void GSDLLAPI
 gsapi_delete_instance(void *instance)
 {
+    gp_set_debug_mem_ptr(((gs_lib_ctx_t *)instance)->memory);
     psapi_delete_instance(instance);
 }
 
@@ -167,6 +168,7 @@ gsapi_set_display_callback(void *instance, display_callback *callback)
     int code;
     if (instance == NULL)
         return gs_error_Fatal;
+    gp_set_debug_mem_ptr(ctx->memory);
     minst = get_minst_from_memory(ctx->memory);
     if (minst->display == NULL && callback != NULL) {
         /* First registration. */
@@ -193,6 +195,7 @@ gsapi_register_callout(void *instance, gs_callout fn, void *handle)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return gs_error_Fatal;
+    gp_set_debug_mem_ptr(ctx->memory);
     return gs_lib_ctx_register_callout(ctx->memory, fn, handle);
 }
 
@@ -202,6 +205,7 @@ gsapi_deregister_callout(void *instance, gs_callout fn, void *handle)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return;
+    gp_set_debug_mem_ptr(ctx->memory);
     gs_lib_ctx_deregister_callout(ctx->memory, fn, handle);
 }
 
@@ -212,6 +216,7 @@ gsapi_set_default_device_list(void *instance, const char *list, int listlen)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return gs_error_Fatal;
+    gp_set_debug_mem_ptr(ctx->memory);
     return gs_lib_ctx_set_default_device_list(ctx->memory, list, listlen);
 }
 
@@ -221,6 +226,7 @@ gsapi_get_default_device_list(void *instance, char **list, int *listlen)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return gs_error_Fatal;
+    gp_set_debug_mem_ptr(ctx->memory);
     return gs_lib_ctx_get_default_device_list(ctx->memory, list, listlen);
 }
 
@@ -229,6 +235,7 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_set_arg_encoding(void *instance, int encoding)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    gp_set_debug_mem_ptr(ctx->memory);
     return psapi_set_arg_encoding(ctx, encoding);
 }
 
@@ -236,6 +243,7 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_init_with_args(void *instance, int argc, char **argv)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    gp_set_debug_mem_ptr(ctx->memory);
     return psapi_init_with_args(ctx, argc, argv);
 }
 
@@ -251,6 +259,7 @@ gsapi_run_string_begin(void *instance,
                        int  *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_string_begin(ctx, user_errors, pexit_code);
 }
 
@@ -262,6 +271,7 @@ gsapi_run_string_continue(void         *instance,
                           int          *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_string_continue(ctx, str, length, user_errors, pexit_code);
 }
 
@@ -271,6 +281,7 @@ gsapi_run_string_end(void *instance,
                      int  *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_string_end(ctx, user_errors, pexit_code);
 }
 
@@ -282,6 +293,7 @@ gsapi_run_string_with_length(void         *instance,
                              int          *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_string_with_length(ctx, str, length, user_errors, pexit_code);
 }
 
@@ -292,6 +304,7 @@ gsapi_run_string(void       *instance,
                  int        *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_string_with_length(ctx,
                                         str,
                                         (unsigned int)strlen(str),
@@ -306,6 +319,7 @@ gsapi_run_file(void       *instance,
                int        *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_file(ctx, file_name, user_errors, pexit_code);
 }
 
@@ -321,6 +335,7 @@ gsapi_init_with_argsW(void     *instance,
     if (instance == NULL)
         return gs_error_Fatal;
 
+    gp_set_debug_mem_ptr(ctx->memory);
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
     code = psapi_set_arg_encoding(ctx, PS_ARG_ENCODING_UTF16LE);
     if (code != 0)
@@ -341,6 +356,7 @@ gsapi_init_with_argsA(void  *instance,
     if (instance == NULL)
         return gs_error_Fatal;
 
+    gp_set_debug_mem_ptr(ctx->memory);
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
     code = psapi_set_arg_encoding(ctx, PS_ARG_ENCODING_LOCAL);
     if (code != 0)
@@ -362,6 +378,7 @@ gsapi_run_fileW(void          *instance,
     if (instance == NULL)
         return gs_error_Fatal;
 
+    gp_set_debug_mem_ptr(ctx->memory);
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
     code = psapi_set_arg_encoding(ctx, PS_ARG_ENCODING_UTF16LE);
     if (code != 0)
@@ -383,6 +400,7 @@ gsapi_run_fileA(void       *instance,
     if (instance == NULL)
         return gs_error_Fatal;
 
+    gp_set_debug_mem_ptr(ctx->memory);
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
     code = psapi_set_arg_encoding(ctx, PS_ARG_ENCODING_LOCAL);
     if (code != 0)
@@ -398,6 +416,7 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_exit(void *instance)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    gp_set_debug_mem_ptr(ctx->memory);
     return psapi_exit(ctx);
 }
 
@@ -414,6 +433,7 @@ gsapi_set_param(void *lib, const char *param, const void *value, gs_set_param_ty
 
     if (lib == NULL)
         return gs_error_Fatal;
+    gp_set_debug_mem_ptr(ctx->memory);
     minst = get_minst_from_memory(ctx->memory);
 
     /* First off, ensure we have a param list to work with. */
@@ -518,6 +538,7 @@ gsapi_get_param(void *lib, const char *param, void *value, gs_set_param_type typ
     if (lib == NULL)
         return gs_error_Fatal;
 
+    gp_set_debug_mem_ptr(ctx->memory);
     gs_c_param_list_write(&params, ctx->memory);
 
     /* Should never be set, but clear the more to come bit anyway in case. */
@@ -673,6 +694,7 @@ gsapi_enumerate_params(void *instance, void **iter, const char **key, gs_set_par
     if (ctx == NULL)
         return gs_error_Fatal;
 
+    gp_set_debug_mem_ptr(ctx->memory);
     minst = get_minst_from_memory(ctx->memory);
     params = &minst->enum_params;
 
@@ -780,6 +802,7 @@ gsapi_add_control_path(void *instance, int type, const char *path)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (ctx == NULL)
         return gs_error_Fatal;
+    gp_set_debug_mem_ptr(ctx->memory);
     return gs_add_control_path(ctx->memory, type, path);
 }
 
@@ -789,6 +812,7 @@ gsapi_remove_control_path(void *instance, int type, const char *path)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (ctx == NULL)
         return gs_error_Fatal;
+    gp_set_debug_mem_ptr(ctx->memory);
     return gs_remove_control_path(ctx->memory, type, path);
 }
 
@@ -798,6 +822,7 @@ gsapi_purge_control_paths(void *instance, int type)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (ctx == NULL)
         return;
+    gp_set_debug_mem_ptr(ctx->memory);
     gs_purge_control_paths(ctx->memory, type);
 }
 
@@ -807,6 +832,7 @@ gsapi_activate_path_control(void *instance, int enable)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (ctx == NULL)
         return;
+    gp_set_debug_mem_ptr(ctx->memory);
     gs_activate_path_control(ctx->memory, enable);
 }
 
@@ -816,6 +842,7 @@ gsapi_is_path_control_active(void *instance)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (ctx == NULL)
         return 0;
+    gp_set_debug_mem_ptr(ctx->memory);
     return gs_is_path_control_active(ctx->memory);
 }
 
@@ -825,6 +852,7 @@ gsapi_add_fs(void *instance, gsapi_fs_t *fs, void *secret)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (ctx == NULL)
         return 0;
+    gp_set_debug_mem_ptr(ctx->memory);
     return gs_add_fs(ctx->memory, (gs_fs_t *)fs, secret);
 }
 
@@ -834,6 +862,7 @@ gsapi_remove_fs(void *instance, gsapi_fs_t *fs, void *secret)
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (ctx == NULL)
         return;
+    gp_set_debug_mem_ptr(ctx->memory);
     gs_remove_fs(ctx->memory, (gs_fs_t *)fs, secret);
 }
 

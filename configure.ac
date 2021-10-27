@@ -49,20 +49,6 @@ ARCH_AUTOCONF_HEADER=arch-config/arch_autoconf.h
 ARCH_AUTOCONF_HEADER_PROTO=arch/arch_autoconf.h.in
 
 dnl --------------------------------------------------
-dnl List of non-threadsafe devices
-dnl defined at the top of the file for ease of access
-dnl --------------------------------------------------
-
-NTS_DEVS='opvp oprp'
-NTS_DEVS="$NTS_DEVS uniprint"
-NTS_DEVS="$NTS_DEVS x11 x11alpha"
-
-# We use this to store a list of devices we have excluded
-# and emit a warning on completion.
-NTS_EXCLUDES=""
-
-
-dnl --------------------------------------------------
 dnl Local utilities
 dnl --------------------------------------------------
 
@@ -560,15 +546,6 @@ fi
 AC_SUBST(HAVE_SSE2)
 CFLAGS=$save_cflags
 
-
-dnl --------------------------------------------------
-dnl Enable thread safe build
-dnl --------------------------------------------------
-AC_ARG_ENABLE([threadsafe], AS_HELP_STRING([--enable-threadsafe],
-    [enable a thread safe build - NOTE: this will exclude non-threadsafe devices]))
-if test x$enable_threadsafe = xyes ; then
-    CFLAGS="-DGS_THREADSAFE"
-fi
 
 dnl --------------------------------------------------
 dnl Check for headers
@@ -2804,51 +2781,6 @@ while test -n "$drivers"; do
         esac
 done
 
-if test x$enable_threadsafe = xyes; then
-
-  for ntsdev in $NTS_DEVS ; do
-    NTS_EXCLUDES="$(echo \"$P_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
-    P_DEVS0=`echo $P_DEVS0 | sed "s/\b$ntsdev\b//g"`
-  done
-
-  for ntsdev in $NTS_DEVS ; do
-    NTS_EXCLUDES="$(echo \"$F_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
-    F_DEVS0=`echo $F_DEVS0 | sed "s/\b$ntsdev\b//g"`
-  done
-
-  for ntsdev in $NTS_DEVS ; do
-    NTS_EXCLUDES="$(echo \"$CUPS_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
-    CUPS_DEVS0=`echo $CUPS_DEVS0 | sed "s/\b$ntsdev\b//g"`
-  done
-
-  for ntsdev in $NTS_DEVS ; do
-    NTS_EXCLUDES="$(echo \"$XPS_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
-    XPS_DEVS0=`echo $XPS_DEVS0 | sed "s/\b$ntsdev\b//g"`
-  done
-
-  for ntsdev in $NTS_DEVS ; do
-    NTS_EXCLUDES="$(echo \"$IJS_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
-    IJS_DEVS0=`echo $IJS_DEVS0 | sed "s/\b$ntsdev\b//g"`
-  done
-
-  for ntsdev in $NTS_DEVS ; do
-    NTS_EXCLUDES="$(echo \"$PNG_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
-    PNG_DEVS0=`echo $PNG_DEVS0 | sed "s/\b$ntsdev\b//g"`
-  done
-
-  for ntsdev in $NTS_DEVS ; do
-    NTS_EXCLUDES="$(echo \"$X11_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
-    X11_DEVS0=`echo $X11_DEVS0 | sed "s/\b$ntsdev\b//g"`
-  done
-
-  for ntsdev in $NTS_DEVS ; do
-    NTS_EXCLUDES="$(echo \"$JBIG2_DEVS{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
-    JBIG2_DEVS=`echo $JBIG2_DEVS | sed "s/\b$ntsdev\b//g"`
-  done
-
-  NTS_EXCLUDES=`echo "$NTS_EXCLUDES" | tr " " "\n" | sort | uniq | tr "\n" " "`
-fi # x$enable_threadsafe = xyes
-
 noncontribmakefiles=`find $srcdir -name '*.mak' -print | grep -v '/contrib/'`
 
 # No need to include opvp/oprp driver without iconv/libiconv.
@@ -3759,11 +3691,6 @@ fi
 if test "x$AFS" = "x1"; then
    AC_MSG_WARN([Using "native" font scaler which is now deprecated (rather than freetype),])
    AC_MSG_WARN([Support for this will be removed in a future release])
-fi
-
-if test "x$NTS_EXCLUDES" != "x" ; then
-   AC_MSG_WARN([Due to the --enable-threadsafe option, the following devices have been excluded because they are not threadsafe:])
-   echo "$NTS_EXCLUDES"
 fi
 
 if test x"$OCR_DEVS_WARNING_LINE1" != x"" ; then

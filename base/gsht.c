@@ -459,7 +459,6 @@ gx_sort_ht_order(gx_ht_bit * recs, uint N)
     for (i = 0; i < N; i++)
         recs[i].offset = i;
     qsort((void *)recs, N, sizeof(*recs), compare_samples);
-#ifndef GS_THREADSAFE
 #ifdef DEBUG
     if (gs_debug_c('H')) {
         uint i;
@@ -469,7 +468,6 @@ gx_sort_ht_order(gx_ht_bit * recs, uint N)
             dlprintf3("%5u: %5u: %u\n",
                       i, recs[i].offset, recs[i].mask);
     }
-#endif
 #endif
 }
 

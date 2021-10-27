@@ -680,4 +680,7 @@ int gx_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
 void gx_subclass_fill_in_page_procs(gx_device *dev);
 
+int gx_init_non_threadsafe_device(gx_device *dev);
+
+
 #endif /* gxdevice_INCLUDED */

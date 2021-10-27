@@ -51,7 +51,7 @@ const char *const *const cmd_sub_op_names[16] =
 const char *cmd_extend_op_names[256] =
 {cmd_extend_op_name_strings};
 
-#ifndef GS_THREADSAFE
+#ifdef COLLECT_STATS_CLIST
 struct stats_cmd_s {
     ulong op_counts[512];
     ulong op_sizes[512];
@@ -105,7 +105,7 @@ cmd_uncount_op(int op, uint size)
 #endif
 
 /* Print statistics. */
-#if defined(DEBUG_CLIST_STATS) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_CLIST
 void
 cmd_print_stats(const gs_memory_t *mem)
 {
@@ -325,7 +325,7 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
     VALGRIND_MAKE_MEM_UNDEFINED(cldev->cbuf, cldev->cend - cldev->cbuf);
 #endif
     cldev->ccl = 0;
-#if defined(DEBUG_CLIST_STATS) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_CLIST
     if (gs_debug_c('l'))
         cmd_print_stats(cldev->memory);
 #endif

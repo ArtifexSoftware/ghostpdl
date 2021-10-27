@@ -32,10 +32,9 @@
 int
 gp_check_interrupts(const gs_memory_t *mem)
 {
-#ifndef GS_THREADSAFE
+#ifdef DEBUG
     if(mem == NULL) {
-        /* MAJOR HACK will NOT work in multithreaded environment */
-        mem = gs_lib_ctx_get_non_gc_memory_t();
+        mem = gp_get_debug_mem_ptr();
     }
 #endif
     if (mem && mem->gs_lib_ctx && mem->gs_lib_ctx->core->poll_fn)

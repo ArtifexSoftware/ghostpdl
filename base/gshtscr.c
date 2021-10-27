@@ -602,7 +602,7 @@ gs_screen_next(gs_screen_enum * penum, double value)
     if (value < -1.0 || value > 1.0)
         return_error(gs_error_rangecheck);
     sample = (ht_sample_t) ((value + 1) * max_ht_sample);
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#if defined(DEBUG)
     if (gs_debug_c('H')) {
         gs_point pt;
 

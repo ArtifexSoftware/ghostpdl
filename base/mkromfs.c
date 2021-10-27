@@ -248,36 +248,43 @@ int errprintf_nomem(const char *fmt, ...)
     return count;
 }
 
-#ifndef GS_THREADSAFE
 #if __LINE__                    /* compiler provides it */
 void
 lprintf_file_and_line(const char *file, int line)
 {
-    errprintf(NULL, "%s(%d): ", file, line);
+    errprintf_nomem("%s(%d): ", file, line);
 }
 #else
 void
 lprintf_file_only(FILE * f, const char *file)
 {
-    errprintf(NULL, "%s(?): ", file);
+    errprintf_nomem("%s(?): ", file);
 }
 #endif
+
+gs_memory_t *gp_get_debug_mem_ptr(void)
+{
+    return NULL;
+}
 
 void
 eprintf_program_ident(const char *program_name,
                       long revision_number)
 {
+    gs_memory_t *mem = gp_get_debug_mem_ptr();
+
+    if (mem == NULL)
+        return;
     if (program_name) {
-        errprintf(NULL, (revision_number ? "%s " : "%s"), program_name);
+        errprintf(mem, (revision_number ? "%s " : "%s"), program_name);
         if (revision_number) {
             int fpart = revision_number % 100;
 
-            errprintf(NULL, "%d.%02d", (int)(revision_number / 100), fpart);
+            errprintf(mem, "%d.%02d", (int)(revision_number / 100), fpart);
         }
-        errprintf(NULL, ": ");
+        errprintf(mem, ": ");
     }
 }
-#endif
 
 void
 emprintf_program_ident(const gs_memory_t *mem,

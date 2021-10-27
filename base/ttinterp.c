@@ -88,7 +88,9 @@
 #  define DBG_PRINT4(fmt, a, b, c, d)
 #endif
 
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+/* #define COLLECT_STATS_TTINTERP */
+
+#ifdef COLLECT_STATS_TTINTERP
 static int nInstrCount=0;
 #endif
 
@@ -4952,7 +4954,7 @@ static int nInstrCount=0;
     Int          A;
     PDefRecord   WITH;
     PCallRecord  WITH1;
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_TTINTERP
     bool bFirst;
 #endif
     bool dbg_prt = (DBG_PRT_FUN != NULL);
@@ -5002,7 +5004,7 @@ static int nInstrCount=0;
         CUR.error = Result;
         goto _LExit;
     }
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_TTINTERP
     bFirst = true;
 #endif
     do
@@ -5037,7 +5039,7 @@ static int nInstrCount=0;
       CUR.step_ins = TRUE;
       CUR.error    = TT_Err_Ok;
 
-#     if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_TTINTERP
         DBG_PRINT3("\n%%n=%5d IP=%5d OP=%s            ", nInstrCount, CUR.IP, Instruct_Dispatch[CUR.opcode].sName);
         /*
         { for(int i=0;i<CUR.top;i++)
@@ -5050,11 +5052,11 @@ static int nInstrCount=0;
           memcpy(save_cx, CUR.pts.cur_x, sizeof(CUR.pts.cur_x[0]) * CUR.pts.n_points);
           memcpy(save_cy, CUR.pts.cur_y, sizeof(CUR.pts.cur_y[0]) * CUR.pts.n_points);
         }
-#     endif
+#endif
 
       Instruct_Dispatch[CUR.opcode].p( EXEC_ARGS &CUR.stack[CUR.args] );
 
-#     if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_TTINTERP
       if (save_ox != NULL) {
         F26Dot6 *pp[4], *qq[4];
         const char *ss[] = {"org.x", "org.y", "cur.x", "cur.y"};
@@ -5084,7 +5086,7 @@ static int nInstrCount=0;
         nInstrCount++;
         bFirst=FALSE;
       }
-#     endif
+#endif
 
       DBG_PAINT
 

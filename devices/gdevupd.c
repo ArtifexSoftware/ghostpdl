@@ -216,6 +216,7 @@ static int             upd_procs_map( upd_device *udev);
 static void
 upd_initialize_device_procs(gx_device *dev)
 {
+    set_dev_proc(dev, initialize_device, gx_init_non_threadsafe_device);
     set_dev_proc(dev, open_device, upd_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page);
     set_dev_proc(dev, close_device, upd_close);

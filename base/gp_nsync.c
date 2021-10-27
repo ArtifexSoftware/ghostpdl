@@ -18,6 +18,8 @@
 #include "std.h"
 #include "gserrors.h"
 #include "gpsync.h"
+#include "gp.h"
+#include "globals.h"
 
 /* ------- Synchronization primitives -------- */
 
@@ -117,4 +119,27 @@ gp_thread_start(gp_thread_creation_callback_t proc, void *proc_data, gp_thread_i
 void
 gp_thread_finish(gp_thread_id thread)
 {
+}
+
+/* No threading -> no globals */
+gs_globals *gp_get_globals(void)
+{
+    return NULL;
+}
+
+void gp_global_lock(gs_globals *globals)
+{
+}
+
+void gp_global_unlock(gs_globals *globals)
+{
+}
+
+void gp_set_debug_mem_ptr(gs_memory_t *mem)
+{
+}
+
+gs_memory_t *gp_get_debug_mem_ptr(void)
+{
+    return NULL;
 }

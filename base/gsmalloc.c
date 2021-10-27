@@ -24,6 +24,7 @@
 #include "gsstruct.h"		/* for st_bytes */
 #include "gsmalloc.h"
 #include "gsmemret.h"		/* retrying wrapper */
+#include "gp.h"
 
 /* ------ Heap allocator ------ */
 
@@ -606,6 +607,8 @@ gs_malloc_init_with_context(gs_lib_ctx_t *ctx)
 
     if (malloc_memory_default == NULL)
         return NULL;
+
+    gp_set_debug_mem_ptr((gs_memory_t *)malloc_memory_default);
 
     if (gs_lib_ctx_init(ctx, (gs_memory_t *)malloc_memory_default) != 0) {
         gs_malloc_release((gs_memory_t *)malloc_memory_default);

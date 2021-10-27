@@ -21,7 +21,9 @@
 #include "gdevmem.h"		/* private definitions */
 
 /* Define debugging statistics. */
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+/* #define COLLECT_STATS_MEM48 */
+
+#ifdef COLLECT_STATS_MEM48
 struct stats_mem48_s {
     long
         fill, fwide, fgray[101], fsetc, fcolor[101], fnarrow[5],
@@ -113,7 +115,7 @@ mem_true48_fill_rectangle(gx_device * dev,
      */
     fit_fill_xywh(dev, x, y, w, h);
     INCR(fill);
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_MEM48
     stats_mem48.ftotal += w;
 #endif
     if (w >= 5) {
@@ -141,7 +143,7 @@ mem_true48_fill_rectangle(gx_device * dev,
                 INCR(fsetc);
                 set_color48_cache(color, a, b, c, d, e, f);
             }
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_MEM48
             {
                 int ci;
                 for (ci = 0; ci < prev_count; ++ci)

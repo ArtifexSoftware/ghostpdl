@@ -101,6 +101,7 @@ srdline_h=$(GLSRC)srdline.h
 gpgetenv_h=$(GLSRC)gpgetenv.h
 gpmisc_h=$(GLSRC)gpmisc.h
 gp_h=$(GLSRC)gp.h
+globals_h=$(GLSRC)globals.h
 gpcheck_h=$(GLSRC)gpcheck.h
 gpsync_h=$(GLSRC)gpsync.h
 
@@ -239,7 +240,7 @@ $(GLOBJ)gsalloc.$(OBJ) : $(GLSRC)gsalloc.c $(AK) $(gx_h) $(gserrors_h)\
 	$(GLCC) $(GLO_)gsalloc.$(OBJ) $(C_) $(GLSRC)gsalloc.c
 
 $(GLOBJ)gsmalloc.$(OBJ) : $(GLSRC)gsmalloc.c $(malloc__h)\
- $(gdebug_h)\
+ $(gdebug_h) $(gp_h) \
  $(gserrors_h)\
  $(gsmalloc_h) $(gsmdebug_h) $(gsmemret_h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(LIB_MAK) $(MAKEDIRS)
@@ -349,7 +350,7 @@ $(GLOBJ)gsargs.$(OBJ) : $(GLSRC)gsargs.c\
 $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gserrors_h)\
  $(vmsmath_h) $(std_h) $(ctype__h) $(malloc__h) $(math__h) $(memory__h)\
  $(string__h) $(gpcheck_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)\
- $(gdbflags_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gdbflags_h) $(gp_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
 $(AUX)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gpmisc_h) $(gserrors_h)\
@@ -358,9 +359,9 @@ $(AUX)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gpmisc_h) $(gserrors_h)\
  $(gdbflags_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCCAUX) $(C_) $(AUXO_)gsmisc.$(OBJ) $(GLSRC)gsmisc.c
 
-$(GLOBJ)gslibctx_1.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gpmisc_h) $(gsmemory_h)\
-  $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h) $(gserrors_h)\
-  $(gscdefs_h) $(gsstruct_h)
+$(GLOBJ)gslibctx_1.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gpmisc_h) \
+  $(gsmemory_h) $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h) \
+  $(gserrors_h) $(gscdefs_h) $(gsstruct_h) $(globals_h)
 	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gslibctx_1.$(OBJ) $(C_) $(GLSRC)gslibctx.c
 
 $(GLOBJ)gslibctx_0.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gpmisc_h) $(gsmemory_h)\
@@ -3726,7 +3727,7 @@ $(GLD)nosync.dev : $(LIB_MAK) $(ECHOGS_XE) $(nosync_) $(LIB_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLD)nosync $(nosync_)
 
 $(GLOBJ)gp_nsync.$(OBJ) : $(GLSRC)gp_nsync.c $(AK) $(std_h)\
- $(gpsync_h) $(gserrors_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gpsync_h) $(gp_h) $(globals_h) $(gserrors_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_nsync.$(OBJ) $(C_) $(GLSRC)gp_nsync.c
 
 # POSIX pthreads-based implementation.
@@ -3736,8 +3737,8 @@ $(GLD)posync.dev : $(LIB_MAK) $(ECHOGS_XE) $(pthreads_) $(LIB_MAK) $(MAKEDIRS)
 	$(ADDMOD) $(GLD)posync -replace $(GLD)nosync
 
 $(GLOBJ)gp_psync.$(OBJ) : $(GLSRC)gp_psync.c $(AK) $(malloc__h) $(string__h) \
- $(std_h) $(gpsync_h) $(gserrors_h) $(assert__h) $(unistd__h) $(LIB_MAK)\
- $(MAKEDIRS)
+ $(std_h) $(gpsync_h) $(gserrors_h) $(assert__h) $(unistd__h) $(globals_h) \
+ $(gp_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_psync.$(OBJ) $(C_) $(GLSRC)gp_psync.c
 
 # Other stuff.
@@ -3975,6 +3976,7 @@ $(GLSRC)gp.h:$(GLSRC)stat_.h
 $(GLSRC)gp.h:$(GLSRC)gsstype.h
 $(GLSRC)gp.h:$(GLSRC)gsmemory.h
 $(GLSRC)gp.h:$(GLSRC)gpgetenv.h
+$(GLSRC)gp.h:$(GLSRC)globals.h
 $(GLSRC)gp.h:$(GLSRC)gscdefs.h
 $(GLSRC)gp.h:$(GLSRC)gslibctx.h
 $(GLSRC)gp.h:$(GLSRC)stdio_.h
@@ -4075,6 +4077,8 @@ $(GLSRC)gsgc.h:$(GLSRC)stdint_.h
 $(GLSRC)gsgc.h:$(GLSRC)std.h
 $(GLSRC)gsgc.h:$(GLSRC)stdpre.h
 $(GLSRC)gsgc.h:$(GLGEN)arch.h
+$(GLSRC)globals.h:$(GLSRC)std.h
+$(GLSRC)globals.h:$(GLSRC)gslibctx.h
 $(GLSRC)gsmalloc.h:$(GLSRC)gxsync.h
 $(GLSRC)gsmalloc.h:$(GLSRC)gpsync.h
 $(GLSRC)gsmalloc.h:$(GLSRC)gsmemory.h

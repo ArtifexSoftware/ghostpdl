@@ -53,6 +53,7 @@
 #include "cal.h"
 #endif
 #include "gsargs.h"
+#include "globals.h"
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
@@ -67,16 +68,6 @@ gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
 
 #include "gslibctx.h"
 #include "gsmemory.h"
-
-#ifndef GS_THREADSAFE
-static gs_memory_t *mem_err_print = NULL;
-
-gs_memory_t *
-gs_lib_ctx_get_non_gc_memory_t()
-{
-    return mem_err_print ? mem_err_print : NULL;
-}
-#endif
 
 /*  This sets the directory to prepend to the ICC profile names specified for
     defaultgray, defaultrgb, defaultcmyk, proofing, linking, named color and device */
@@ -270,10 +261,6 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
     if (mem == 0 || mem != mem->non_gc_memory)
         return_error(gs_error_Fatal);
 
-#ifndef GS_THREADSAFE
-    mem_err_print = mem;
-#endif
-
     if (mem->gs_lib_ctx) /* one time initialization */
         return 0;
 
@@ -301,6 +288,7 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
             return -1;
         }
         memset(pio->core, 0, sizeof(*pio->core));
+        pio->core->globals = gp_get_globals();
         pio->core->fs = (gs_fs_list_t *)gs_alloc_bytes_immovable(mem,
                                                                  sizeof(gs_fs_list_t),
                                                                  "gs_lib_ctx_init(gs_fs_list_t)");
@@ -431,10 +419,6 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     gs_free_object(ctx_mem, ctx->io_device_table_root, "gs_lib_ctx_fin");
     gs_free_object(ctx_mem, ctx->font_dir_root, "gs_lib_ctx_fin");
 
-#ifndef GS_THREADSAFE
-    mem_err_print = NULL;
-#endif
-
     gx_monitor_enter((gx_monitor_t *)(ctx->core->monitor));
     refs = --ctx->core->refs;
     gx_monitor_leave((gx_monitor_t *)(ctx->core->monitor));
@@ -526,13 +510,6 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
     return code;
 }
 
-#ifndef GS_THREADSAFE
-int errwrite_nomem(const char *str, int len)
-{
-    return errwrite(mem_err_print, str, len);
-}
-#endif
-
 int errwrite(const gs_memory_t *mem, const char *str, int len)
 {
     int code;
@@ -541,13 +518,11 @@ int errwrite(const gs_memory_t *mem, const char *str, int len)
     if (len == 0)
         return 0;
     if (mem == NULL) {
-#ifdef GS_THREADSAFE
-        return 0;
-#else
-        mem = mem_err_print;
+#ifdef DEBUG
+        mem = gp_get_debug_mem_ptr();
         if (mem == NULL)
-            return 0;
 #endif
+            return 0;
     }
     ctx = mem->gs_lib_ctx;
     if (ctx == NULL)
@@ -575,13 +550,6 @@ void outflush(const gs_memory_t *mem)
     else if (!core->stdout_fn)
         fflush(core->fstdout);
 }
-
-#ifndef GS_THREADSAFE
-void errflush_nomem(void)
-{
-    errflush(mem_err_print);
-}
-#endif
 
 void errflush(const gs_memory_t *mem)
 {
@@ -1361,4 +1329,40 @@ int gs_lib_ctx_callout(gs_memory_t *mem, const char *dev_name,
         entry = entry->next;
     }
     return -1;
+}
+
+int gs_lib_ctx_nts_adjust(gs_memory_t *mem, int adjust)
+{
+    gs_lib_ctx_core_t *core;
+    int ret = 0;
+    gs_globals *globals;
+
+    if (adjust == 0)
+        return 0;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL || mem->gs_lib_ctx->core == NULL)
+        return_error(gs_error_unknownerror);
+
+    core = mem->gs_lib_ctx->core;
+    globals = core->globals;
+    if (globals == NULL)
+        return 0; /* No globals means just once instance. Adjustment is pointless. */
+
+    gp_global_lock(globals);
+    if (adjust > 0 && globals->non_threadsafe_count != 0)
+        ret = gs_error_unknownerror; /* We already have one non threadsafe device running. */
+    else if (adjust < 0 && globals->non_threadsafe_count == 0)
+        ret = gs_error_unknownerror; /* This indicates something has gone very wrong! */
+    else
+        globals->non_threadsafe_count += adjust;
+    gp_global_unlock(globals);
+
+    if (ret)
+        ret = gs_note_error(ret);
+    return ret;
+}
+
+void gs_globals_init(gs_globals *globals)
+{
+    memset(globals, 0, sizeof(*globals));
 }

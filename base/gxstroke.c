@@ -1401,7 +1401,7 @@ line_intersect(
     double f1;
     double max_result = any_abs(denom) * (double)max_fixed;
 
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef DEBUG
     if (gs_debug_c('O')) {
         dlprintf4("[o]Intersect %f,%f(%f/%f)",
                   fixed2float(pp1->x), fixed2float(pp1->y),
@@ -1744,7 +1744,7 @@ check_miter(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
          * we actually have to do the test backwards.
          */
         ccw0 = v1 * u2 < v2 * u1;
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef DEBUG
         {
             double a1 = atan2(u1, v1), a2 = atan2(u2, v2), dif = a1 - a2;
 
@@ -1767,7 +1767,7 @@ check_miter(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
      */
     if (!ccw0)          /* have plp - nplp, want vice versa */
         num = -num;
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef DEBUG
     if (gs_debug_c('O')) {
         dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
                   u1, v1, u2, v2);
@@ -2515,7 +2515,7 @@ compute_caps(pl_ptr plp)
     plp->o.ce.x = plp->o.p.x - wx2, plp->o.ce.y = plp->o.p.y - wy2;
     plp->e.co.x = plp->e.p.x - wx2, plp->e.co.y = plp->e.p.y - wy2;
     plp->e.ce.x = plp->e.p.x + wx2, plp->e.ce.y = plp->e.p.y + wy2;
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef DEBUG
     if (gs_debug_c('O')) {
         dlprintf4("[o]Stroke o=(%f,%f) e=(%f,%f)\n",
                   fixed2float(plp->o.p.x), fixed2float(plp->o.p.y),

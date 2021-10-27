@@ -80,7 +80,7 @@
 #define TRY_TO_EXTEND_TRAP 0
 #endif
 
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_FILL
 /* Define the statistics structure instance. */
 stats_fill_t stats_fill;
 #endif
@@ -525,7 +525,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
     free_line_list(&lst);
     if (pfpath != ppath)        /* had to flatten */
         gx_path_free(pfpath, "gx_general_fill_path");
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_FILL
     if (gs_debug_c('f')) {
         dmlputs(ppath->memory,
                 "[f]  # alloc    up  down horiz step slowx  iter  find  band bstep bfill\n");

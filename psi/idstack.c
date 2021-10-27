@@ -30,7 +30,9 @@
 */
 
 /* Debugging statistics */
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+/* #define COLLECT_STATS_IDSTACK */
+
+#ifdef COLLECT_STATS_IDSTACK
 #include "idebug.h"
 #define MAX_STATS_DEPTH 6
 struct stats_dstack_s {
@@ -43,7 +45,7 @@ struct stats_dstack_s {
 # define INCR(v) DO_NOTHING
 #endif
 
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
+#ifdef COLLECT_STATS_IDSTACK
 /* Wrapper for dstack_find_name_by_index */
 ref *real_dstack_find_name_by_index(dict_stack_t * pds, uint nidx);
 ref *
