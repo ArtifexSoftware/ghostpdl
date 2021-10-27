@@ -1127,7 +1127,7 @@ pdf_image_put_params_downscale_cmyk_ets(gx_device * dev, gs_param_list * plist)
     return pdf_image_put_some_params(dev, plist, 7);
 }
 
-void
+static void
 PCLm_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
 {
     gx_device_pdf_image *pdev = (gx_device_pdf_image *)dev;
