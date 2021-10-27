@@ -89,7 +89,7 @@ cmd_count_extended_op(int op, uint size,const gs_memory_t *mem)
         if (ext)
             dmlprintf2(mem, ", %s(%u)\n", ext, size);
         else
-            dmlprintf3(mem, ", ?0x%02x?(%u)\n", op, op & 0xf,
+            dmlprintf2(mem, ", ?0x%02x?(%u)\n", op,
                       size);
         dmflush(mem);
     }
@@ -381,7 +381,7 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
                 dmlprintf2(cldev->memory, "[L]Change to bands=(%d->%d)", cldev->band_range_min, cldev->band_range_max);
             else
                 dmlprintf1(cldev->memory, "[L]Change to band=%d",
-                           (int)((intptr_t)pcl-(intptr_t)&cldev->states->list)/sizeof(*cldev->states));
+                           (int)(((intptr_t)pcl-(intptr_t)&cldev->states->list)/sizeof(*cldev->states)));
 
             dmlprintf2(cldev->memory, ", align=%d\n[L] id:%ld+0",
                        (int)((char *)cp-(char *)dp), cp->id);
