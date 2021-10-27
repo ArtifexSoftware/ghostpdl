@@ -28,6 +28,7 @@
 #include "pdf_misc.h"
 #include "pdf_check.h"
 #include "pdf_device.h"
+#include "gsdevice.h"       /* For gs_setdevice_no_erase */
 #include "gspaint.h"        /* For gs_erasepage() */
 
 /* For performance and resource reasons we do not want to install the transparency blending
