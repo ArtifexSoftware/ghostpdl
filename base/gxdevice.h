@@ -650,9 +650,6 @@ int gdev_begin_output_media(gs_param_list * mlist, gs_param_dict * pdict,
 int gdev_write_output_media(int index, gs_param_dict * pdict,
                             const gdev_output_media_t * pom);
 
-/* Can be called from set user params */
-void gx_default_put_icc_dir(gs_param_string *icc_pro, gx_device * dev);
-
 int gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict);
 
 void gx_device_request_leadingedge(gx_device *dev, int le_req);
