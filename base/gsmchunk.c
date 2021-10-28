@@ -967,7 +967,7 @@ chunk_obj_alloc(gs_memory_t *mem, size_t size, gs_memory_type_ptr_t type, client
     gs_memory_chunk_dump_memory(cmem);
 #endif
 
-    return (byte *)(obj) + SIZEOF_ROUND_ALIGN(chunk_obj_node_t);
+    return (byte *)Memento_label((byte *)(obj) + SIZEOF_ROUND_ALIGN(chunk_obj_node_t), cname);
 }
 
 static byte *

@@ -1184,7 +1184,7 @@ i_alloc_bytes(gs_memory_t * mem, size_t ssize, client_name_t cname)
 #if IGC_PTR_STABILITY_CHECK
         obj[-1].d.o.space_id = imem->space_id;
 #endif
-    return (byte *) obj;
+    return (byte *)Memento_label(obj, cname);
 }
 static byte *
 i_alloc_bytes_immovable(gs_memory_t * mem, size_t ssize, client_name_t cname)
@@ -1206,7 +1206,7 @@ i_alloc_bytes_immovable(gs_memory_t * mem, size_t ssize, client_name_t cname)
     if (obj == 0)
         return 0;
     alloc_trace("|+b.", imem, cname, NULL, size, obj);
-    return (byte *) obj;
+    return (byte *)Memento_label(obj, cname);
 }
 static void *
 i_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
@@ -1239,7 +1239,7 @@ i_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
 #if IGC_PTR_STABILITY_CHECK
         obj[-1].d.o.space_id = imem->space_id;
 #endif
-    return obj;
+    return Memento_label(obj, cname);
 }
 static void *
 i_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
@@ -1257,7 +1257,7 @@ i_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
     ALLOC_CHECK_SIZE(mem,pstype);
     obj = alloc_obj(imem, size, pstype, ALLOC_IMMOVABLE | ALLOC_DIRECT, cname);
     alloc_trace("|+<.", imem, cname, pstype, size, obj);
-    return obj;
+    return Memento_label(obj, cname);
 }
 
 static inline bool
@@ -1307,7 +1307,7 @@ i_alloc_byte_array(gs_memory_t * mem, size_t num_elements, size_t elt_size,
                alloc_trace_space(imem), client_name_string(cname),
                num_elements * elt_size,
                num_elements, elt_size, (intptr_t)obj);
-    return (byte *) obj;
+    return (byte *)Memento_label(obj, cname);
 }
 static byte *
 i_alloc_byte_array_immovable(gs_memory_t * mem, size_t num_elements,
@@ -1334,7 +1334,7 @@ i_alloc_byte_array_immovable(gs_memory_t * mem, size_t num_elements,
                alloc_trace_space(imem), client_name_string(cname),
                num_elements * elt_size,
                num_elements, elt_size, (intptr_t)obj);
-    return (byte *) obj;
+    return (byte *)Memento_label(obj, cname);
 }
 static void *
 i_alloc_struct_array(gs_memory_t * mem, size_t num_elements,
@@ -1368,7 +1368,7 @@ i_alloc_struct_array(gs_memory_t * mem, size_t num_elements,
                struct_type_name_string(pstype),
                num_elements * pstype->ssize,
                num_elements, pstype->ssize, (intptr_t)obj);
-    return (char *)obj;
+    return (char *)Memento_label(obj, cname);
 }
 static void *
 i_alloc_struct_array_immovable(gs_memory_t * mem, size_t num_elements,
@@ -1395,7 +1395,7 @@ i_alloc_struct_array_immovable(gs_memory_t * mem, size_t num_elements,
                struct_type_name_string(pstype),
                num_elements * pstype->ssize,
                num_elements, pstype->ssize, (intptr_t)obj);
-    return (char *)obj;
+    return (char *)Memento_label(obj, cname);
 }
 static void *
 i_resize_object(gs_memory_t * mem, void *obj, size_t new_num_elements,
@@ -1440,7 +1440,7 @@ i_resize_object(gs_memory_t * mem, void *obj, size_t new_num_elements,
                    client_name_string(cname),
                    struct_type_name_string(pstype),
                    old_size, new_size, (intptr_t)obj);
-        return new_obj;
+        return Memento_label(new_obj, cname);
     }
     /* Punt. */
     new_obj = gs_alloc_struct_array(mem, new_num_elements, void,
@@ -1449,7 +1449,7 @@ i_resize_object(gs_memory_t * mem, void *obj, size_t new_num_elements,
         return 0;
     memcpy(new_obj, obj, min(old_size, new_size));
     gs_free_object(mem, obj, cname);
-    return new_obj;
+    return Memento_label(new_obj, cname);
 }
 static void
 i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
@@ -1708,7 +1708,7 @@ i_alloc_string_immovable(gs_memory_t * mem, size_t nbytes, client_name_t cname)
     str += HDR_ID_OFFSET;
     ASSIGN_HDR_ID(str);
 
-    return str;
+    return Memento_label(str, cname);
 }
 
 static byte *
@@ -2075,7 +2075,7 @@ done:
     ptr++;
     ASSIGN_HDR_ID(ptr);
     gs_alloc_fill(ptr, gs_alloc_fill_alloc, lsize);
-    return ptr;
+    return Memento_label(ptr, cname);
 }
 
 /*
