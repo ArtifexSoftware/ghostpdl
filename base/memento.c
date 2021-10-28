@@ -15,7 +15,7 @@
 
 /* Set the following if you're only looking for leaks, not memory overwrites
  * to speed the operation */
-#undef MEMENTO_LEAKONLY
+/* #define MEMENTO_LEAKONLY */
 
 /* Unset the following if you don't want the speed hit of tracking references. */
 #define MEMENTO_TRACKREFS
@@ -281,7 +281,9 @@ enum {
     Memento_Flag_BreakOnRealloc = 8,
     Memento_Flag_Freed = 16,
     Memento_Flag_KnownLeak = 32,
-    Memento_Flag_Reported = 64
+    Memento_Flag_Reported = 64,
+    Memento_Flag_LastPhase = 0x80000000,
+    Memento_Flag_PhaseMask = 0xFFFF0000
 };
 
 enum {
@@ -474,6 +476,7 @@ static struct {
     Memento_range *squeezes;
     int            squeezes_num;
     int            squeezes_pos;
+    int            phasing;
 } memento;
 
 #define MEMENTO_EXTRASIZE (sizeof(Memento_BlkHeader) + Memento_PostSize)
@@ -1578,6 +1581,92 @@ void Memento_listNewBlocks(void)
     Memento_appBlocks(&memento.used, Memento_listNewBlock, &counts[0]);
     fprintf(stderr, "  Total number of blocks = "FMTZ"\n", (FMTZ_CAST)counts[0]);
     fprintf(stderr, "  Total size of blocks = "FMTZ"\n", (FMTZ_CAST)counts[1]);
+    MEMENTO_UNLOCK();
+}
+
+typedef struct
+{
+    size_t counts[2];
+    unsigned int phase;
+} phased_t;
+
+static int Memento_listPhasedBlock(Memento_BlkHeader *b,
+                                   void              *arg)
+{
+    phased_t *phase = (phased_t *)arg;
+    if ((b->flags & phase->phase) == 0)
+        return 0;
+    b->flags = (b->flags & ~Memento_Flag_PhaseMask) | ((b->flags >> 1) & Memento_Flag_PhaseMask);
+    return Memento_listBlock(b, arg);
+}
+
+static int Memento_listNewPhasedBlock(Memento_BlkHeader *b,
+                                      void              *arg)
+{
+    phased_t *phase = (phased_t *)arg;
+    if ((b->flags & Memento_Flag_PhaseMask) != 0)
+        return 0;
+    b->flags |= Memento_Flag_LastPhase;
+    return Memento_listBlock(b, arg);
+}
+
+static int Memento_startPhasing(Memento_BlkHeader *b,
+                                void              *arg)
+{
+    b->flags |= *(int *)arg;
+    return 0;
+}
+
+/* On the first call to this, we mark all blocks with the
+ * lowest 'phase' bit, (call this phase m) so they will
+ * never be reported.
+ *
+ * On subsequent calls, we:
+ *   for (n = m-1; n > 0; n--)
+ *     report all blocks in phase n, moving them to n+1.
+ *   report all new blocks, and place them in phase 0.
+ *
+ * The upshot of this is that if you call Memento_listPhasedBlocks()
+ * at a given point in the code, then you can watch for how long blocks
+ * live between each time the code reaches that point.
+ *
+ * This is basically like Memento_listNewBlocks(), but allows for
+ * the fact that sometimes blocks are freed just after the call.
+ */
+void Memento_listPhasedBlocks(void)
+{
+    phased_t phase;
+    int num = 0;
+    MEMENTO_LOCK();
+    phase.phase = Memento_Flag_LastPhase;
+    while ((phase.phase>>1) & Memento_Flag_PhaseMask)
+        num++, phase.phase >>= 1;
+    if (memento.phasing == 0)
+    {
+        fprintf(stderr, "Commencing Phasing:\n");
+        memento.phasing = 1;
+        Memento_appBlocks(&memento.used, Memento_startPhasing, &phase.phase);
+    } else {
+        phase.phase <<= 1;
+        do
+        {
+            phase.counts[0] = 0;
+            phase.counts[1] = 0;
+            fprintf(stderr, "Blocks allocated and still extant: In phase %d (%x):\n", num, phase.phase);
+            Memento_appBlocks(&memento.used, Memento_listPhasedBlock, &phase);
+            fprintf(stderr, "  Total number of blocks = "FMTZ"\n", (FMTZ_CAST)phase.counts[0]);
+            fprintf(stderr, "  Total size of blocks = "FMTZ"\n", (FMTZ_CAST)phase.counts[1]);
+            phase.phase = phase.phase<<1;
+            num--;
+        }
+        while (phase.phase != 0);
+        phase.counts[0] = 0;
+        phase.counts[1] = 0;
+        fprintf(stderr, "Blocks allocated and still extant: In phase 0:\n", num, phase.phase);
+        Memento_appBlocks(&memento.used, Memento_listNewPhasedBlock, &phase);
+        fprintf(stderr, "  Total number of blocks = "FMTZ"\n", (FMTZ_CAST)phase.counts[0]);
+        fprintf(stderr, "  Total size of blocks = "FMTZ"\n", (FMTZ_CAST)phase.counts[1]);
+    }
     MEMENTO_UNLOCK();
 }
 
@@ -3714,6 +3803,10 @@ void (Memento_listBlocks)(void)
 }
 
 void (Memento_listNewBlocks)(void)
+{
+}
+
+void (Memento_listPhasedBlocks)(void)
 {
 }
 
