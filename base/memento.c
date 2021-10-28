@@ -15,10 +15,17 @@
 
 /* Set the following if you're only looking for leaks, not memory overwrites
  * to speed the operation */
-/* #define MEMENTO_LEAKONLY */
+#undef MEMENTO_LEAKONLY
+
+/* Unset the following if you don't want the speed hit of tracking references. */
+#define MEMENTO_TRACKREFS
 
 /* Set the following to keep extra details about the history of blocks */
 #define MEMENTO_DETAILS
+
+/* Set what volume of memory blocks we keep around after it's been freed
+ * to check for overwrites. */
+#define MEMENTO_FREELIST_MAX 0x2000000
 
 /* Don't keep blocks around if they'd mean losing more than a quarter of
  * the freelist. */
@@ -2661,6 +2668,7 @@ int Memento_checkIntPointerOrNull(void *blk)
     return ret;
 }
 
+#ifdef MEMENTO_TRACKREFS
 static void *do_takeRef(void *blk)
 {
     do_reference(safe_find_block(blk), Memento_EventType_takeRef);
@@ -2672,76 +2680,6 @@ static void *do_takeRefAndUnlock(void *blk)
     do_reference(safe_find_block(blk), Memento_EventType_takeRef);
     MEMENTO_UNLOCK();
     return blk;
-}
-
-void *Memento_takeByteRef(void *blk)
-{
-    if (!memento.inited)
-        Memento_init();
-
-    MEMENTO_LOCK();
-    if (Memento_event()) Memento_breakpointLocked();
-
-    if (!blk) {
-        MEMENTO_UNLOCK();
-        return NULL;
-    }
-
-    (void)checkBytePointerOrNullLocked(blk);
-
-    return do_takeRefAndUnlock(blk);
-}
-
-void *Memento_takeShortRef(void *blk)
-{
-    if (!memento.inited)
-        Memento_init();
-
-    MEMENTO_LOCK();
-    if (Memento_event()) Memento_breakpointLocked();
-
-    if (!blk) {
-        MEMENTO_UNLOCK();
-        return NULL;
-    }
-
-    (void)checkShortPointerOrNullLocked(blk);
-
-    return do_takeRefAndUnlock(blk);
-}
-
-void *Memento_takeIntRef(void *blk)
-{
-    if (!memento.inited)
-        Memento_init();
-
-    MEMENTO_LOCK();
-    if (Memento_event()) Memento_breakpointLocked();
-
-    if (!blk) {
-        MEMENTO_UNLOCK();
-        return NULL;
-    }
-
-    (void)checkIntPointerOrNullLocked(blk);
-
-    return do_takeRefAndUnlock(blk);
-}
-
-void *Memento_takeRef(void *blk)
-{
-    if (!memento.inited)
-        Memento_init();
-
-    MEMENTO_LOCK();
-    if (Memento_event()) Memento_breakpointLocked();
-
-    if (!blk) {
-        MEMENTO_UNLOCK();
-        return NULL;
-    }
-
-    return do_takeRefAndUnlock(blk);
 }
 
 static void *do_dropRef(void *blk)
@@ -2756,9 +2694,97 @@ static void *do_dropRefAndUnlock(void *blk)
     MEMENTO_UNLOCK();
     return blk;
 }
+#endif
+
+void *Memento_takeByteRef(void *blk)
+{
+#ifdef MEMENTO_TRACKREFS
+    if (!memento.inited)
+        Memento_init();
+
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
+
+    if (!blk) {
+        MEMENTO_UNLOCK();
+        return NULL;
+    }
+
+    (void)checkBytePointerOrNullLocked(blk);
+
+    return do_takeRefAndUnlock(blk);
+#else
+    return blk;
+#endif
+}
+
+void *Memento_takeShortRef(void *blk)
+{
+#ifdef MEMENTO_TRACKREFS
+    if (!memento.inited)
+        Memento_init();
+
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
+
+    if (!blk) {
+        MEMENTO_UNLOCK();
+        return NULL;
+    }
+
+    (void)checkShortPointerOrNullLocked(blk);
+
+    return do_takeRefAndUnlock(blk);
+#else
+    return blk;
+#endif
+}
+
+void *Memento_takeIntRef(void *blk)
+{
+#ifdef MEMENTO_TRACKREFS
+    if (!memento.inited)
+        Memento_init();
+
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
+
+    if (!blk) {
+        MEMENTO_UNLOCK();
+        return NULL;
+    }
+
+    (void)checkIntPointerOrNullLocked(blk);
+
+    return do_takeRefAndUnlock(blk);
+#else
+    return blk;
+#endif
+}
+
+void *Memento_takeRef(void *blk)
+{
+#ifdef MEMENTO_TRACKREFS
+    if (!memento.inited)
+        Memento_init();
+
+    MEMENTO_LOCK();
+    if (Memento_event()) Memento_breakpointLocked();
+
+    if (!blk) {
+        MEMENTO_UNLOCK();
+        return NULL;
+    }
+
+    return do_takeRefAndUnlock(blk);
+#else
+    return blk;
+#endif
+}
 
 void *Memento_dropByteRef(void *blk)
 {
+#ifdef MEMENTO_TRACKREFS
     if (!memento.inited)
         Memento_init();
 
@@ -2773,10 +2799,14 @@ void *Memento_dropByteRef(void *blk)
     checkBytePointerOrNullLocked(blk);
 
     return do_dropRefAndUnlock(blk);
+#else
+    return blk;
+#endif
 }
 
 void *Memento_dropShortRef(void *blk)
 {
+#ifdef MEMENTO_TRACKREFS
     if (!memento.inited)
         Memento_init();
 
@@ -2791,10 +2821,14 @@ void *Memento_dropShortRef(void *blk)
     checkShortPointerOrNullLocked(blk);
 
     return do_dropRefAndUnlock(blk);
+#else
+    return blk;
+#endif
 }
 
 void *Memento_dropIntRef(void *blk)
 {
+#ifdef MEMENTO_TRACKREFS
     if (!memento.inited)
         Memento_init();
 
@@ -2809,10 +2843,14 @@ void *Memento_dropIntRef(void *blk)
     checkIntPointerOrNullLocked(blk);
 
     return do_dropRefAndUnlock(blk);
+#else
+    return blk;
+#endif
 }
 
 void *Memento_dropRef(void *blk)
 {
+#ifdef MEMENTO_TRACKREFS
     if (!memento.inited)
         Memento_init();
 
@@ -2825,10 +2863,14 @@ void *Memento_dropRef(void *blk)
     }
 
     return do_dropRefAndUnlock(blk);
+#else
+    return blk;
+#endif
 }
 
 void *Memento_adjustRef(void *blk, int adjust)
 {
+#ifdef MEMENTO_TRACKREFS
     if (!memento.inited)
         Memento_init();
 
@@ -2852,11 +2894,13 @@ void *Memento_adjustRef(void *blk, int adjust)
     }
 
     MEMENTO_UNLOCK();
+#endif
     return blk;
- }
+}
 
 void *Memento_reference(void *blk)
 {
+#ifdef MEMENTO_TRACKREFS
     if (!blk)
         return NULL;
 
@@ -2866,6 +2910,7 @@ void *Memento_reference(void *blk)
     MEMENTO_LOCK();
     do_reference(safe_find_block(blk), Memento_EventType_reference);
     MEMENTO_UNLOCK();
+#endif
     return blk;
 }
 
@@ -3252,8 +3297,8 @@ int Memento_checkAllMemory(void)
         Memento_breakpoint();
         return 1;
     }
-    return 0;
 #endif
+    return 0;
 }
 
 int Memento_setParanoia(int i)
