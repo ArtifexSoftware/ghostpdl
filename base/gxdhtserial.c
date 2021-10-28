@@ -110,35 +110,30 @@ gx_ht_read_tf(
     --size;
     tf_type = (gx_ht_tf_type_t)*data++;
 
-    /* if no transfer function, exit now */
-    if (tf_type == gx_ht_tf_none) {
-        *ppmap = 0;
+    /* If no transfer function or identity set to NULL */
+    if (tf_type == gx_ht_tf_none || tf_type == gx_ht_tf_identity) {
+        *ppmap = NULL;
         return 1;
     }
 
-    /* allocate a transfer map */
+    /* If something strange then exit. Likely clist issue */
+    if (tf_type != gx_ht_tf_complete || size < sizeof(pmap->values))
+        return_error(gs_error_rangecheck);
+
+    /* Otherwise we have a real map. Allocate a transfer map */
     rc_alloc_struct_1( pmap,
                        gx_transfer_map,
                        &st_transfer_map,
                        mem,
                        return_error(gs_error_VMerror),
                        "gx_ht_read_tf" );
-
     pmap->id = gs_next_ids(mem, 1);
     pmap->closure.proc = 0;
     pmap->closure.data = 0;
-    if (tf_type == gx_ht_tf_identity) {
-        gx_set_identity_transfer(pmap);
-        return 1;
-    } else if (tf_type == gx_ht_tf_complete && size >= sizeof(pmap->values)) {
-        memcpy(pmap->values, data, sizeof(pmap->values));
-        pmap->proc = gs_mapped_transfer;
-        *ppmap = pmap;
-        return 1 + sizeof(pmap->values);
-    } else {
-        rc_decrement(pmap, "gx_ht_read_tf");
-        return_error(gs_error_rangecheck);
-    }
+    memcpy(pmap->values, data, sizeof(pmap->values));
+    pmap->proc = gs_mapped_transfer;
+    *ppmap = pmap;
+    return 1 + sizeof(pmap->values);
 }
 
 /*
