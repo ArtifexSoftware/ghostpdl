@@ -17,7 +17,7 @@
  * to speed the operation */
 /* #define MEMENTO_LEAKONLY */
 
-/* Unset the following if you don't want the speed hit of tracking references. */
+/* Unset the following if you don't want the speed/memory hit of tracking references. */
 #define MEMENTO_TRACKREFS
 
 /* Set the following to keep extra details about the history of blocks */
@@ -364,10 +364,17 @@ struct Memento_BlkHeader
     int                  sequence;
     int                  lastCheckedOK;
     int                  flags;
+
+    const char          *label;
+
+    /* Blocks are held in a linked list for LRU */
     Memento_BlkHeader   *next;
     Memento_BlkHeader   *prev; /* Reused as 'parent' when printing nested list */
 
-    const char          *label;
+    /* Blocks are held in a splay tree for position. */
+    Memento_BlkHeader   *parent;
+    Memento_BlkHeader   *left;
+    Memento_BlkHeader   *right;
 
     /* Entries for nesting display calculations. Set to magic
      * values at all other time.  */
@@ -389,6 +396,7 @@ typedef struct Memento_Blocks
 {
     Memento_BlkHeader *head;
     Memento_BlkHeader *tail;
+    Memento_BlkHeader *top;
 } Memento_Blocks;
 
 /* What sort of Mutex should we use? */
@@ -1051,10 +1059,198 @@ do { MEMENTO_DO_UNLOCK(); } while (0)
 #define Memento_breakpointLocked() \
 do { MEMENTO_UNLOCK(); Memento_breakpoint(); MEMENTO_LOCK(); } while (0)
 
+/* Move the given node to the root of the tree, by
+ * performing a series of the following rotations.
+ * The key observation here is that all these
+ * rotations preserve the ordering of the tree, and
+ * result in 'x' getting higher.
+ *
+ * Case 1:   z          x           Case 1b:   z                   x
+ *          # #        # #                    # #                 # #
+ *         y   D      A   y                  A   y               y   D
+ *        # #     =>     # #                    # #     =>      # #
+ *       x   C          B   z                  B   x           z   C
+ *      # #                # #                    # #         # #
+ *     A   B              C   D                  C   D       A   B
+ *
+ * Case 2:   z             x        Case 2b:   z                  x
+ *          # #          ## ##                # #               ## ##
+ *         y   D        y     z              A   y             z     y
+ *        # #     =>   # #   # #                # #     =>    # #   # #
+ *       A   x        A   B C   D              x   D         A   B C   D
+ *          # #                               # #
+ *         B   C                             B   C
+ *
+ * Case 3:   y          x           Case 3b:  y                  x
+ *          # #        # #                   # #                # #
+ *         x   C  =>  A   y                 A   x       =>     y   C
+ *        # #            # #                   # #            # #
+ *       A   B          B   C                 B   C          A   B
+ */
+static void
+move_to_root(Memento_BlkHeader *x)
+{
+    Memento_BlkHeader *y, *z;
+
+    if (x == NULL)
+        return;
+
+    while ((y = x->parent) != NULL) {
+        if ((z = y->parent) != NULL) {
+            x->parent = z->parent;
+            if (x->parent) {
+                if (x->parent->left == z)
+                    x->parent->left = x;
+                else
+                    x->parent->right  = x;
+            }
+            y->parent = x;
+            /* Case 1, 1b, 2 or 2b */
+            if (y->left == x) {
+                /* Case 1 or 2b */
+                if (z->left == y) {
+                    /* Case 1 */
+                    y->left = x->right;
+                    if (y->left)
+                        y->left->parent = y;
+                    z->left = y->right;
+                    if (z->left)
+                        z->left->parent = z;
+                    y->right = z;
+                    z->parent = y;
+                } else {
+                    /* Case 2b */
+                    z->right = x->left;
+                    if (z->right)
+                        z->right->parent = z;
+                    y->left = x->right;
+                    if (y->left)
+                        y->left->parent = y;
+                    x->left = z;
+                    z->parent = x;
+                }
+                x->right      = y;
+            } else {
+                /* Case 2 or 1b */
+                if (z->left == y) {
+                    /* Case 2 */
+                    y->right = x->left;
+                    if (y->right)
+                        y->right->parent = y;
+                    z->left = x->right;
+                    if (z->left)
+                        z->left->parent = z;
+                    x->right = z;
+                    z->parent = x;
+                } else {
+                    /* Case 1b */
+                    z->right = y->left;
+                    if (z->right)
+                        z->right->parent = z;
+                    y->right = x->left;
+                    if (y->right)
+                        y->right->parent = y;
+                    y->left = z;
+                    z->parent = y;
+                }
+                x->left = y;
+            }
+        } else {
+            /* Case 3 or 3b */
+            x->parent = NULL;
+            y->parent = x;
+            if (y->left == x) {
+                /* Case 3 */
+                y->left = x->right;
+                if (y->left)
+                    y->left->parent = y;
+                x->right = y;
+            } else {
+                /* Case 3b */
+                y->right = x->left;
+                if (y->right)
+                    y->right->parent = y;
+                x->left = y;
+            }
+        }
+    }
+}
+
+static void Memento_removeBlockSplay(Memento_Blocks    *blks,
+                                     Memento_BlkHeader *b)
+{
+    Memento_BlkHeader *replacement;
+
+    if (b->left == NULL)
+    {
+        /* At most one child - easy */
+        replacement = b->right;
+    }
+    else if (b->right == NULL)
+    {
+        /* Strictly one child - easy */
+        replacement = b->left;
+    }
+    else
+    {
+        /* 2 Children - tricky */
+        /* Find in-order predecessor to b */
+        replacement = b->left;
+        while (replacement->right)
+            replacement = replacement->right;
+        /* Remove replacement - easy as just one child */
+        (void)Memento_removeBlockSplay(NULL, replacement);
+        /* Replace b with replacement */
+        if (b->left)
+            b->left->parent = replacement;
+        b->right->parent = replacement;
+        replacement->left = b->left;
+        replacement->right = b->right;
+    }
+    if (b->parent)
+    {
+        if (b->parent->left == b)
+            b->parent->left = replacement;
+        else
+            b->parent->right = replacement;
+    }
+    else
+        blks->top = replacement;
+    if (replacement)
+        replacement->parent = b->parent;
+}
+
+static void Memento_addBlockSplay(Memento_Blocks    *blks,
+                                  Memento_BlkHeader *b)
+{
+    Memento_BlkHeader *parent = NULL;
+    Memento_BlkHeader **n = &blks->top;
+
+    /* Walk down, looking for a place to put b. */
+    while (*n != NULL) {
+        parent = *n;
+        if (b < parent)
+            n = &parent->left;
+        else
+            n = &parent->right;
+    }
+    /* Place b */
+    *n = b;
+    b->parent = parent;
+    b->left = NULL;
+    b->right = NULL;
+    /* Now perform the splay magic */
+    move_to_root(b);
+    /* This always leaves b at the top. */
+    blks->top = b;
+    b->parent = NULL;
+}
+
 static void Memento_addBlockHead(Memento_Blocks    *blks,
                                  Memento_BlkHeader *b,
                                  int                type)
 {
+    Memento_addBlockSplay(blks, b);
     if (blks->tail == NULL)
         blks->tail = b;
     b->next    = blks->head;
@@ -1083,6 +1279,7 @@ static void Memento_addBlockTail(Memento_Blocks    *blks,
                                  Memento_BlkHeader *b,
                                  int                type)
 {
+    Memento_addBlockSplay(blks, b);
     VALGRIND_MAKE_MEM_DEFINED(&blks->tail, sizeof(Memento_BlkHeader *));
     if (blks->head == NULL)
         blks->head = b;
@@ -1231,6 +1428,7 @@ static void Memento_removeBlock(Memento_Blocks    *blks,
                                 Memento_BlkHeader *b)
 {
     VALGRIND_MAKE_MEM_DEFINED(b, sizeof(*b));
+    Memento_removeBlockSplay(blks, b);
     if (b->next) {
         VALGRIND_MAKE_MEM_DEFINED(&b->next->prev, sizeof(b->next->prev));
         b->next->prev = b->prev;
@@ -1275,6 +1473,7 @@ static int Memento_Internal_makeSpace(size_t space)
         VALGRIND_MAKE_MEM_DEFINED(head, sizeof(*head));
         memento.free.head = head->next;
         memento.freeListSize -= MEMBLK_SIZE(head->rawsize);
+        Memento_removeBlockSplay(&memento.free, head);
         free_block(head);
     }
     /* Make sure we haven't just completely emptied the free list */
@@ -1307,6 +1506,45 @@ static int Memento_appBlocks(Memento_Blocks *blks,
     return 0;
 }
 
+static Memento_BlkHeader *
+find_enclosing_block(Memento_Blocks *blks,
+                     void *addr,
+                     int *flags)
+{
+    Memento_BlkHeader *blk = blks->top;
+
+    while (blk)
+    {
+        Memento_BlkHeader *oblk = blk;
+        char *blkstart;
+        char *blkend;
+        VALGRIND_MAKE_MEM_DEFINED(blk, sizeof(Memento_BlkHeader));
+        if (addr < blk) {
+            blk = blk->left;
+            VALGRIND_MAKE_MEM_UNDEFINED(oblk, sizeof(Memento_BlkHeader));
+            continue;
+        }
+        blkstart = (char *)MEMBLK_TOBLK(blk);
+        blkend = &blkstart[blk->rawsize];
+        if (addr >= blkend + Memento_PostSize) {
+            blk = blk->right;
+            VALGRIND_MAKE_MEM_UNDEFINED(oblk, sizeof(Memento_BlkHeader));
+            continue;
+        }
+        if (flags) {
+            if ((blkstart <= addr) && (addr < blkend))
+                *flags = 1;
+            else if ((blk <= addr) && (addr < blkstart))
+                *flags = 2;
+            else
+                *flags = 3;
+        }
+        VALGRIND_MAKE_MEM_UNDEFINED(oblk, sizeof(Memento_BlkHeader));
+        return blk;
+    }
+    return NULL;
+}
+
 #ifndef MEMENTO_LEAKONLY
 /* Distrustful - check the block is a real one */
 static int Memento_appBlockUser(Memento_Blocks    *blks,
@@ -1315,25 +1553,18 @@ static int Memento_appBlockUser(Memento_Blocks    *blks,
                                 void              *arg,
                                 Memento_BlkHeader *b)
 {
-    Memento_BlkHeader *head = blks->head;
-    Memento_BlkHeader *next;
-    int                result;
-    while (head && head != b) {
-        VALGRIND_MAKE_MEM_DEFINED(head, sizeof(Memento_BlkHeader));
-        next = head->next;
-       VALGRIND_MAKE_MEM_NOACCESS(MEMBLK_POSTPTR(head), Memento_PostSize);
-        head = next;
-    }
-    if (head == b) {
-        VALGRIND_MAKE_MEM_DEFINED(head, sizeof(Memento_BlkHeader));
-        VALGRIND_MAKE_MEM_DEFINED(MEMBLK_TOBLK(head),
-                                  head->rawsize + Memento_PostSize);
-        result = app(head, arg);
-        VALGRIND_MAKE_MEM_NOACCESS(MEMBLK_POSTPTR(head), Memento_PostSize);
-        VALGRIND_MAKE_MEM_NOACCESS(head, sizeof(Memento_BlkHeader));
-        return result;
-    }
-    return 0;
+    int result;
+    Memento_BlkHeader *head = find_enclosing_block(blks, b, NULL);
+    if (head == NULL)
+        return 0;
+
+    VALGRIND_MAKE_MEM_DEFINED(head, sizeof(Memento_BlkHeader));
+    VALGRIND_MAKE_MEM_DEFINED(MEMBLK_TOBLK(head),
+                              head->rawsize + Memento_PostSize);
+    result = app(head, arg);
+    VALGRIND_MAKE_MEM_NOACCESS(MEMBLK_POSTPTR(head), Memento_PostSize);
+    VALGRIND_MAKE_MEM_NOACCESS(head, sizeof(Memento_BlkHeader));
+    return result;
 }
 
 static int Memento_appBlock(Memento_Blocks    *blks,
@@ -1726,22 +1957,16 @@ void Memento_listBlockInfo(void)
 #endif
 }
 
-#ifdef MEMENTO_DETAILS
-static int
-showBlockInfo(Memento_BlkHeader *b, void *arg)
-{
-    if (arg < MEMBLK_TOBLK(b) || (void *)MEMBLK_POSTPTR(b) <= arg)
-        return 0;
-    return showInfo(b, NULL);
-}
-#endif
-
 void Memento_blockInfo(void *p)
 {
 #ifdef MEMENTO_DETAILS
+    Memento_BlkHeader *blk;
     MEMENTO_LOCK();
-    Memento_appBlocks(&memento.used, showBlockInfo, p);
-    Memento_appBlocks(&memento.free, showBlockInfo, p);
+    blk = find_enclosing_block(&memento.used, p, NULL);
+    if (blk == NULL)
+        blk = find_enclosing_block(&memento.free, p, NULL);
+    if (blk)
+        showInfo(blk, NULL);
     MEMENTO_UNLOCK();
 #endif
 }
@@ -2042,54 +2267,16 @@ static void Memento_init(void)
     Memento_breakpoint();
 }
 
-typedef struct findBlkData {
-    void              *addr;
-    Memento_BlkHeader *blk;
-    int                flags;
-} findBlkData;
-
-static int Memento_containsAddr(Memento_BlkHeader *b,
-                                void *arg)
-{
-    findBlkData *data = (findBlkData *)arg;
-    char *blkend = &((char *)MEMBLK_TOBLK(b))[b->rawsize];
-    if ((MEMBLK_TOBLK(b) <= data->addr) &&
-        ((void *)blkend > data->addr)) {
-        data->blk = b;
-        data->flags = 1;
-        return 1;
-    }
-    if (((void *)b <= data->addr) &&
-        (MEMBLK_TOBLK(b) > data->addr)) {
-        data->blk = b;
-        data->flags = 2;
-        return 1;
-    }
-    if (((void *)blkend <= data->addr) &&
-        ((void *)(blkend + Memento_PostSize) > data->addr)) {
-        data->blk = b;
-        data->flags = 3;
-        return 1;
-    }
-    return 0;
-}
-
 static void Memento_infoLocked(void *addr)
 {
 #ifdef MEMENTO_DETAILS
-    findBlkData data;
+    Memento_BlkHeader *blk;
 
-    data.addr  = addr;
-    data.blk   = NULL;
-    data.flags = 0;
-    Memento_appBlocks(&memento.used, Memento_containsAddr, &data);
-    if (data.blk != NULL)
-        showInfo(data.blk, NULL);
-    data.blk   = NULL;
-    data.flags = 0;
-    Memento_appBlocks(&memento.free, Memento_containsAddr, &data);
-    if (data.blk != NULL)
-        showInfo(data.blk, NULL);
+    blk = find_enclosing_block(&memento.used, addr, NULL);
+    if (blk == NULL)
+        blk = find_enclosing_block(&memento.free, addr, NULL);
+    if (blk != NULL)
+        showInfo(blk, NULL);
 #else
     printf("Memento not compiled with details support\n");
 #endif
@@ -2334,15 +2521,7 @@ static void *safe_find_block(void *ptr)
     VALGRIND_MAKE_MEM_NOACCESS(&block->sibling, sizeof(block->sibling));
     if (!valid)
     {
-        findBlkData data;
-
-        data.addr  = ptr;
-        data.blk   = NULL;
-        data.flags = 0;
-        Memento_appBlocks(&memento.used, Memento_containsAddr, &data);
-        if (data.blk == NULL)
-            return NULL;
-        block = data.blk;
+        block = find_enclosing_block(&memento.used, ptr, NULL);
     }
     return block;
 }
@@ -3427,33 +3606,27 @@ int Memento_check(void)
 
 int Memento_find(void *a)
 {
-    findBlkData data;
+    Memento_BlkHeader *blk;
     int s;
+    int flags;
 
     MEMENTO_LOCK();
-    data.addr  = a;
-    data.blk   = NULL;
-    data.flags = 0;
-    Memento_appBlocks(&memento.used, Memento_containsAddr, &data);
-    if (data.blk != NULL) {
+    blk = find_enclosing_block(&memento.used, a, &flags);
+    if (blk != NULL) {
         fprintf(stderr, "Address "FMTP" is in %sallocated block ",
-                data.addr,
-                (data.flags == 1 ? "" : (data.flags == 2 ?
-                                         "preguard of " : "postguard of ")));
-        s = showBlock(data.blk, ' ');
+                a,
+                (flags == 1 ? "" : (flags == 2 ? "preguard of " : "postguard of ")));
+        s = showBlock(blk, ' ');
         fprintf(stderr, "\n");
         MEMENTO_UNLOCK();
         return s;
     }
-    data.blk   = NULL;
-    data.flags = 0;
-    Memento_appBlocks(&memento.free, Memento_containsAddr, &data);
-    if (data.blk != NULL) {
+    blk = find_enclosing_block(&memento.free, a, &flags);
+    if (blk != NULL) {
         fprintf(stderr, "Address "FMTP" is in %sfreed block ",
-                data.addr,
-                (data.flags == 1 ? "" : (data.flags == 2 ?
-                                         "preguard of " : "postguard of ")));
-        s = showBlock(data.blk, ' ');
+                a,
+                (flags == 1 ? "" : (flags == 2 ? "preguard of " : "postguard of ")));
+        s = showBlock(blk, ' ');
         fprintf(stderr, "\n");
         MEMENTO_UNLOCK();
         return s;
@@ -3464,35 +3637,29 @@ int Memento_find(void *a)
 
 void Memento_breakOnFree(void *a)
 {
-    findBlkData data;
+    Memento_BlkHeader *blk;
+    int flags;
 
     MEMENTO_LOCK();
-    data.addr  = a;
-    data.blk   = NULL;
-    data.flags = 0;
-    Memento_appBlocks(&memento.used, Memento_containsAddr, &data);
-    if (data.blk != NULL) {
+    blk = find_enclosing_block(&memento.used, a, &flags);
+    if (blk != NULL) {
         fprintf(stderr, "Will stop when address "FMTP" (in %sallocated block ",
-                data.addr,
-                (data.flags == 1 ? "" : (data.flags == 2 ?
-                                         "preguard of " : "postguard of ")));
-        showBlock(data.blk, ' ');
+                a,
+                (flags == 1 ? "" : (flags == 2 ? "preguard of " : "postguard of ")));
+        showBlock(blk, ' ');
         fprintf(stderr, ") is freed\n");
-        VALGRIND_MAKE_MEM_DEFINED(data.blk, sizeof(Memento_BlkHeader));
-        data.blk->flags |= Memento_Flag_BreakOnFree;
-        VALGRIND_MAKE_MEM_NOACCESS(data.blk, sizeof(Memento_BlkHeader));
+        VALGRIND_MAKE_MEM_DEFINED(blk, sizeof(Memento_BlkHeader));
+        blk->flags |= Memento_Flag_BreakOnFree;
+        VALGRIND_MAKE_MEM_NOACCESS(blk, sizeof(Memento_BlkHeader));
         MEMENTO_UNLOCK();
         return;
     }
-    data.blk   = NULL;
-    data.flags = 0;
-    Memento_appBlocks(&memento.free, Memento_containsAddr, &data);
-    if (data.blk != NULL) {
+    blk = find_enclosing_block(&memento.free, a, &flags);
+    if (blk != NULL) {
         fprintf(stderr, "Can't stop on free; address "FMTP" is in %sfreed block ",
-                data.addr,
-                (data.flags == 1 ? "" : (data.flags == 2 ?
-                                         "preguard of " : "postguard of ")));
-        showBlock(data.blk, ' ');
+                a,
+                (flags == 1 ? "" : (flags == 2 ? "preguard of " : "postguard of ")));
+        showBlock(blk, ' ');
         fprintf(stderr, "\n");
         MEMENTO_UNLOCK();
         return;
@@ -3503,35 +3670,29 @@ void Memento_breakOnFree(void *a)
 
 void Memento_breakOnRealloc(void *a)
 {
-    findBlkData data;
+    Memento_BlkHeader *blk;
+    int flags;
 
     MEMENTO_LOCK();
-    data.addr  = a;
-    data.blk   = NULL;
-    data.flags = 0;
-    Memento_appBlocks(&memento.used, Memento_containsAddr, &data);
-    if (data.blk != NULL) {
+    blk = find_enclosing_block(&memento.used, a, &flags);
+    if (blk != NULL) {
         fprintf(stderr, "Will stop when address "FMTP" (in %sallocated block ",
-                data.addr,
-                (data.flags == 1 ? "" : (data.flags == 2 ?
-                                         "preguard of " : "postguard of ")));
-        showBlock(data.blk, ' ');
+                a,
+                (flags == 1 ? "" : (flags == 2 ? "preguard of " : "postguard of ")));
+        showBlock(blk, ' ');
         fprintf(stderr, ") is freed (or realloced)\n");
-        VALGRIND_MAKE_MEM_DEFINED(data.blk, sizeof(Memento_BlkHeader));
-        data.blk->flags |= Memento_Flag_BreakOnFree | Memento_Flag_BreakOnRealloc;
-        VALGRIND_MAKE_MEM_NOACCESS(data.blk, sizeof(Memento_BlkHeader));
+        VALGRIND_MAKE_MEM_DEFINED(blk, sizeof(Memento_BlkHeader));
+        blk->flags |= Memento_Flag_BreakOnFree | Memento_Flag_BreakOnRealloc;
+        VALGRIND_MAKE_MEM_NOACCESS(blk, sizeof(Memento_BlkHeader));
         MEMENTO_UNLOCK();
         return;
     }
-    data.blk   = NULL;
-    data.flags = 0;
-    Memento_appBlocks(&memento.free, Memento_containsAddr, &data);
-    if (data.blk != NULL) {
+    blk = find_enclosing_block(&memento.free, a, &flags);
+    if (blk != NULL) {
         fprintf(stderr, "Can't stop on free/realloc; address "FMTP" is in %sfreed block ",
-                data.addr,
-                (data.flags == 1 ? "" : (data.flags == 2 ?
-                                         "preguard of " : "postguard of ")));
-        showBlock(data.blk, ' ');
+                a,
+                (flags == 1 ? "" : (flags == 2 ? "preguard of " : "postguard of ")));
+        showBlock(blk, ' ');
         fprintf(stderr, "\n");
         MEMENTO_UNLOCK();
         return;
