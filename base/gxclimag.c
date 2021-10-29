@@ -303,6 +303,7 @@ typedef struct clist_image_enum_s {
     int bits_per_plane;         /* bits per pixel per plane */
     gs_matrix matrix;           /* image space -> device space */
     bool uses_color;
+    bool masked;
     clist_color_space_t color_space;
     int ymin, ymax;
     gx_color_usage_t color_usage;
@@ -514,6 +515,7 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
 #endif
     pie->memory = mem;
     pie->buffer = NULL;
+    pie->masked = masked;
     *pinfo = (gx_image_enum_common_t *) pie;
     /* num_planes and plane_depths[] are set later, */
     /* by gx_image_enum_common_init. */
@@ -1129,9 +1131,9 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                 code = cmd_update_lop(cdev, re.pcls, lop);
             if (code < 0)
                 return code;
+            /* Does the result of this image depend upon the current color in the
+             * graphics state? If so, we need to send it. */
             if (pie->uses_color) {
-                gs_int_point color_phase;
-
                 /* We want to write the color taking into account the entire image so */
                 /* we set re.rect_nbands from pie->ymin and pie->ymax so that we will */
                 /* make the decision to write 'all_bands' the same for the whole image */
@@ -1143,15 +1145,23 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                                              &re, devn_not_tile_fill);
                 if (code < 0)
                     return code;
-                /* see if phase information must be inserted in the command list */
-                /* if so, go ahead and do it for all_bands */
-                if ( pie->dcolor.type->get_phase(&pie->dcolor, &color_phase) &&
-                     (color_phase.x != re.pcls->tile_phase.x ||
-                      color_phase.y != re.pcls->tile_phase.y ) ) {
-                    code = cmd_set_tile_phase_generic(cdev, re.pcls,
-                                                      color_phase.x, color_phase.y, true);
-                    if (code < 0)
-                        return code;
+                if (!pie->masked) {
+                    /* In PS and PDF, masked == uses_color. In PCL, due to rops, we can
+                     * have a non-imagemask image that relies on the current graphics
+                     * color. C303.BIN page 20 has an example of this. Normally the above
+                     * call the cmd_put_drawing_color will have sent through the halftone
+                     * phase, but we can be in the situation where the current drawing
+                     * color is pure (so no phase is sent), but the colors in the image
+                     * are not (so a phase must be sent). Accordingly, we catch that
+                     * here. */
+                    if (pie->pgs->screen_phase[0].x != re.pcls->tile_phase.x ||
+                        pie->pgs->screen_phase[0].y != re.pcls->tile_phase.y) {
+                        code = cmd_set_tile_phase_generic(cdev, re.pcls,
+                                                          pie->pgs->screen_phase[0].x,
+                                                          pie->pgs->screen_phase[0].y, true);
+                        if (code < 0)
+                            return code;
+                    }
                 }
             } else if (0 != re.pcls->tile_phase.x || 0 != re.pcls->tile_phase.y) {
                 code = cmd_set_tile_phase(cdev, re.pcls, 0, 0);
