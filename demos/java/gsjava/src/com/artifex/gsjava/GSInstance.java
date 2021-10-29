@@ -75,13 +75,22 @@ public class GSInstance implements Iterable<GSInstance.GSParam<?>> {
 		}
 	}
 
-	private static volatile boolean instanceExists = false;
+	private static boolean ALLOW_MULTITHREADING = false;
+	private static volatile int INSTANCES = 0;
+
+	public static void setAllowMultithreading(boolean state) {
+		ALLOW_MULTITHREADING = state;
+	}
+
+	public static int getInstanceCount() {
+		return INSTANCES;
+	}
 
 	private long instance;
 	private long callerHandle;
 
 	public GSInstance(long callerHandle) throws IllegalStateException {
-		if (instanceExists)
+		if (!ALLOW_MULTITHREADING && INSTANCES > 0)
 			throw new IllegalStateException("An instance already exists");
 		Reference<Long> ref = new Reference<>();
 		int ret = gsapi_new_instance(ref, callerHandle);
@@ -89,7 +98,7 @@ public class GSInstance implements Iterable<GSInstance.GSParam<?>> {
 			throw new IllegalStateException("Failed to create new instance: " + ret);
 		this.instance = ref.getValue();
 		this.callerHandle = callerHandle;
-		instanceExists = true;
+		INSTANCES++;
 	}
 
 	public GSInstance() throws IllegalStateException {
@@ -99,8 +108,10 @@ public class GSInstance implements Iterable<GSInstance.GSParam<?>> {
 	public void delete_instance() {
 		if (instance != GS_NULL)
 			gsapi_delete_instance(instance);
-		instance = GS_NULL;
-		instanceExists = false;
+		if (instance != GS_NULL) {
+			instance = GS_NULL;
+			INSTANCES--;
+		}
 	}
 
 	public int set_stdio(IStdInFunction stdin, IStdOutFunction stdout, IStdErrFunction stderr) {
