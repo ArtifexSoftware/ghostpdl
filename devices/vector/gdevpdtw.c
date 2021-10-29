@@ -120,7 +120,7 @@ pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
         */
         return true;
     if (!pdfont->TwoByteToUnicode)
-        return true;
+        return false;
 
     for (ch = 0; ch < 256; ++ch) {
         pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
