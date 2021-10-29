@@ -1305,7 +1305,10 @@ gx_gstate_set_effective_xfer(gs_gstate * pgs)
         }
     }
 
-    if (pdht) { /* might not be initialized yet */
+    /* HT may not be initialized yet.  Only do if the target is a halftone device.
+       Per the spec, the HT is a self-contained description of a halftoning process.
+       We don't use any xfer function from the HT if we are not halftoning */
+    if (pdht && !device_is_contone(pgs->device)) {
 
         /* Since the transfer function is pickled into the threshold array (if any)*/
         /*  we need to free it so it can be reconstructed with the current transfer */

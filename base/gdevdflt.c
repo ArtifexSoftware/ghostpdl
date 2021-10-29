@@ -376,6 +376,15 @@ set_linear_color_bits_mask_shift(gx_device * dev)
 /* Determine if a number is a power of two.  Works only for integers. */
 #define is_power_of_two(x) ((((x) - 1) & (x)) == 0)
 
+/* A brutish way to check if we are a HT device */
+bool
+device_is_contone(gx_device* pdev)
+{
+    if ((float)pdev->color_info.depth / (float)pdev->color_info.num_components >= 8)
+        return true;
+    return false;
+}
+
 /*
  * This routine attempts to determine if a device's encode_color procedure
  * produces gx_color_index values which are 'separable'.  A 'separable' value

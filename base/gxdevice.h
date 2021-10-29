@@ -434,6 +434,10 @@ void gx_device_forward_color_procs(gx_device_forward *);
  */
 void check_device_separable(gx_device * dev);
 /*
+ * Is this a contone device?
+ */
+bool device_is_contone(gx_device* pdev);
+/*
  * Check if the device's encode_color routine uses a pdf14 compatible
  * encoding.  For more info see the routine's header.
  */

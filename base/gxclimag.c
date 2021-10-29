@@ -1588,8 +1588,8 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
     int code;
     const gx_device_halftone *pdht = gx_select_dev_ht(pgs);
 
-    /* Put out the halftone, if present. */
-    if (pdht && pdht->id != cldev->device_halftone_id) {
+    /* Put out the halftone, if present, and target is not contone. */
+    if (pdht && pdht->id != cldev->device_halftone_id && !device_is_contone(cldev->target)) {
         code = cmd_put_halftone(cldev, pdht);
         if (code < 0)
             return code;
