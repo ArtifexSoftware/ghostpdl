@@ -2450,7 +2450,23 @@ static int
 pdfmark_MP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
            const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;			/****** NOT IMPLEMENTED YET ******/
+    int code;
+    char *tag;
+
+    if (count != 1) return_error(gs_error_rangecheck);
+
+    tag = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
+                "pdfmark_MP");
+    memcpy(tag, pairs[0].data, pairs[0].size);
+    tag[pairs[0].size] = 0x00;
+
+    code = pdf_open_contents(pdev, PDF_IN_STREAM);
+    if (code < 0) return code;
+
+    pprints1(pdev->strm, "%s MP\n", tag);
+
+    gs_free_object(pdev->memory, tag, "pdfmark_MP");
+    return 0;
 }
 
 /* [ tag propdict /DP pdfmark */
@@ -2458,7 +2474,87 @@ static int
 pdfmark_DP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
            const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;			/****** NOT IMPLEMENTED YET ******/
+    int code;
+    cos_object_t *pco;
+    char *cstring;
+    pdf_resource_t *pres;
+
+    if (count != 2) return_error(gs_error_rangecheck);
+
+    /* check tag for /Name object syntax */
+    if ((pairs[0].data)[0] != '/') return_error(gs_error_rangecheck);
+
+    /* check propdict for {object name} syntax */
+    if (pdf_objname_is_valid(pairs[1].data, pairs[1].size))
+    {
+        code = pdf_refer_named(pdev, &pairs[1], &pco);
+        if(code < 0) return code;
+    }
+    else /* << inline prop dict >> */
+    {
+        /* strip << and >> */
+        if ((pairs[1].data)[0]=='<'&&(pairs[1].data)[1]=='<')
+        {
+            int ix = 0;
+            byte *p = (byte *)pairs[1].data;
+
+            /* Fortunately we don't use the 'size' when freeing the memory
+             * so we can quickly copy the string content up two places and reduce
+             * the size by 2 to remove the '<<'. This saves an alloc and free of the
+             * string data.
+             */
+            for (ix = 0; ix < pairs[1].size - 2;ix++)
+                p[ix] = pairs[1].data[ix + 2];
+            pairs[1].size-=2;
+        }
+        else
+            return_error(gs_error_rangecheck);
+
+        if ((pairs[1].data)[pairs[1].size-1]=='>'&&(pairs[1].data)[pairs[1].size-2]=='>')
+            pairs[1].size-=2;
+
+        /* convert inline propdict to C string with object names replaced by refs */
+        code = pdf_replace_names(pdev, &pairs[1], &pairs[1]);
+        if (code<0) return code;
+        cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[1].size + 1) * sizeof(unsigned char),
+            "pdfmark_DP");
+        memcpy(cstring, pairs[1].data, pairs[1].size);
+        cstring[pairs[1].size] = 0x00;
+
+        code = pdf_make_named_dict(pdev, NULL, (cos_dict_t**) &pco, true);
+        if (code<0) return code;
+
+        /* copy inline propdict to new object */
+        code = cos_dict_put_c_strings((cos_dict_t*) pco, cstring, "");
+        if(code < 0) return code;
+        COS_WRITE_OBJECT(pco, pdev, resourceProperties);
+        COS_RELEASE(pco, "pdfmark_DP");
+        gs_free_object(pdev->memory, cstring, "pdfmark_DP");
+    }
+
+    pres = pdf_find_resource_by_resource_id(pdev, resourceProperties, pco->id);
+    if (pres==0){
+        if ((code = pdf_alloc_resource(pdev, resourceProperties, pco->id, &(pco->pres), pco->id))<0)
+            return code;
+    }
+
+    cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
+                "pdfmark_DP");
+    memcpy(cstring, pairs[0].data, pairs[0].size);
+    cstring[pairs[0].size] = 0x00;
+
+    /* make sure we write to the correct stream */
+    code = pdf_open_contents(pdev, PDF_IN_STREAM);
+    if (code < 0) return code;
+
+    pprints1(pdev->strm, "%s", cstring); /* write tag */
+    pprintld1(pdev->strm, "/R%ld DP\n", pco->id);
+    pco->pres->where_used |= pdev->used_mask;
+    if ((code = pdf_add_resource(pdev, pdev->substream_Resources, "/Properties", pco->pres))<0)
+        return code;
+
+    gs_free_object(pdev->memory, cstring, "pdfmark_DP");
+    return 0;
 }
 
 /* [ tag /BMC pdfmark */
