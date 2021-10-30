@@ -2,6 +2,8 @@
 
 #include <jni.h>
 
+#include "instance_data.h"
+
 namespace callbacks
 {
 	/*!
@@ -10,17 +12,17 @@ namespace callbacks
 
 	@param env A JNIEnv.
 	*/
-	void setJNIEnv(void *instance, JNIEnv *env);
+	void setJNIEnv(GSInstanceData *idata, JNIEnv *env);
 
-	void setIOCallbacks(void *instance, jobject stdIn, jobject stdOut, jobject stdErr);
+	void setIOCallbacks(GSInstanceData *idata, jobject stdIn, jobject stdOut, jobject stdErr);
 	int stdInFunction(void *callerHandle, char *buf, int len);
 	int stdOutFunction(void *callerHandle, const char *str, int len);
 	int stdErrFunction(void *callerHandle, const char *str, int len);
 
-	void setPollCallback(void *instance, jobject poll);
+	void setPollCallback(GSInstanceData *idata, jobject poll);
 	int pollFunction(void *callerHandle);
 
-	void setDisplayCallback(void *instance, jobject displayCallback);
+	void setDisplayCallback(GSInstanceData *idata, jobject displayCallback);
 
 	namespace display
 	{
@@ -49,6 +51,6 @@ namespace callbacks
 			int *x, int *y, int *w, int *h);
 	}
 
-	void setCalloutCallback(void *instance, jobject calout);
+	void setCalloutCallback(GSInstanceData *idata, jobject callout);
 	int calloutFunction(void *instance, void *handle, const char *deviceName, int id, int size, void *data);
 }

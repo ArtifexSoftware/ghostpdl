@@ -2,6 +2,8 @@
 
 #include <jni.h>
 
+#include "settings.h"
+
 #define REFERENCE_VALUE_FILED_NAME "value"
 
 namespace util
@@ -141,7 +143,7 @@ namespace util
 	@param sig The method's signature.
 	@param ... The varargs representing the object's arguments in their respective order.
 	*/
-	int callIntMethod(JNIEnv *env, jobject object, const char *name, const char *sig, ...);
+	jint callIntMethod(JNIEnv *env, jobject object, const char *name, const char *sig, ...);
 
 	void setObjectField(JNIEnv *env, jobject object, const char *field, jobject value);
 

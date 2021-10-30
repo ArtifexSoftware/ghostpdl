@@ -2,6 +2,8 @@
 #include <jni.h>
 /* Header for class com_artifex_gsjava_GSAPI */
 
+#include "settings.h"
+
 #ifndef _Included_com_artifex_gsjava_GSAPI
 #define _Included_com_artifex_gsjava_GSAPI
 #ifdef __cplusplus

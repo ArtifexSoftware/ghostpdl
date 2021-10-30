@@ -1,8 +1,10 @@
 import com.artifex.gsjava.GSInstance;
 
-import java.util.Scanner;
+import java.io.File;
 
 public class Main {
+
+	public static final String INFILE = "../../../examples/tiger.eps";
 
 	public static void main(String[] args) {
 		GSInstance.setAllowMultithreading(true);
@@ -14,19 +16,15 @@ public class Main {
 			} catch (NumberFormatException e) { }
 		}
 
-		//Scanner in = new Scanner(System.in);
-		//in.nextLine();
-
 		Worker[] workers = new Worker[workerCount];
 
 		for (int i = 0; i < workers.length; i++) {
-			workers[i] = new Worker("../../../examples/tiger.eps", "pdfout/out" + i + ".pdf");
+			workers[i] = new Worker(INFILE, "pdfout/out" + i + ".pdf");
 		}
 
 		System.out.println("Starting workers...");
 		for (int i = 0; i < workers.length; i++) {
 			workers[i].start();
 		}
-		System.out.println("Workers dispatched");
 	}
 }

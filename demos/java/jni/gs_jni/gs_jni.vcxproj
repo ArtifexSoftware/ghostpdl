@@ -172,6 +172,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="instance_data.h" />
     <ClInclude Include="jni_util.h" />
+    <ClInclude Include="settings.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="callbacks.cpp" />

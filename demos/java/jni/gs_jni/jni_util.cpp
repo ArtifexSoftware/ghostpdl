@@ -145,14 +145,14 @@ jint util::getIntField(JNIEnv *env, jobject object, const char *field)
     return env->GetIntField(object, fieldID);
 }
 
-int util::callIntMethod(JNIEnv *env, jobject object, const char *method, const char *sig, ...)
+jint util::callIntMethod(JNIEnv *env, jobject object, const char *method, const char *sig, ...)
 {
     jmethodID methodID = getMethodID(env, object, method, sig);
     if (methodID == NULL)
         return 0;
 
     va_list args;
-    int result;
+    jint result;
     va_start(args, sig);
     result = env->CallIntMethodV(object, methodID, args);
     va_end(args);

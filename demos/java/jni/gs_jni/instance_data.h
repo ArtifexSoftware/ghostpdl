@@ -2,6 +2,8 @@
 
 #include <jni.h>
 
+#include "settings.h"
+
 class GSInstanceData
 {
 public:
@@ -24,6 +26,4 @@ public:
 
 GSInstanceData *putInstanceData(GSInstanceData *data);
 GSInstanceData *findDataFromInstance(void *instance);
-GSInstanceData *findDataFromHandle(void *callerHandle);
 void deleteDataFromInstance(void *instance);
-void deleteDataFromHandle(void *callerHandle);

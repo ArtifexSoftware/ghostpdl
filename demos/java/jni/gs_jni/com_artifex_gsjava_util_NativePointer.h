@@ -2,6 +2,8 @@
 #include <jni.h>
 /* Header for class com_artifex_gsjava_util_NativePointer */
 
+#include "settings.h"
+
 #ifndef _Included_com_artifex_gsjava_util_NativePointer
 #define _Included_com_artifex_gsjava_util_NativePointer
 #ifdef __cplusplus

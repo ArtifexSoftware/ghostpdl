@@ -7,10 +7,13 @@ import com.artifex.gsjava.callbacks.*;
 
 import java.io.IOException;
 
+import java.util.Arrays;
+
 import static com.artifex.gsjava.GSAPI.*;
 
 public class Worker implements Runnable {
 
+	public static final boolean USE_CUSTOM_STDIO = true;
 	public static final boolean USE_STDOUT = false;
 
 	private static int ID = 0;
@@ -45,20 +48,19 @@ public class Worker implements Runnable {
 		try {
 			gsInstance = createGSInstance();
 
-			//StdIO io = new StdIO();
-			//gsInstance.set_stdio(io, null, null);
+			if (USE_CUSTOM_STDIO) {
+				StdIO io = new StdIO();
+				gsInstance.set_stdio(io, USE_STDOUT ? io : null, io);
+			}
 
 			if (!outPDF.exists())
 				outPDF.createNewFile();
 
-			final int FORMAT = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_BIGENDIAN;
 			String[] args = {
 				"gs",
 				"-sDEVICE=pdfwrite",
-				//"dFirstPage=1",
-				//"dDisplayFormat=" + FORMAT,
-				"-o", outPDF.getAbsolutePath(),
-				"-f", inPS.getAbsolutePath()
+				"-o", outPDF.getPath(),
+				inPS.getPath()
 			};
 
 			int code = gsInstance.init_with_args(args);
