@@ -8,6 +8,7 @@ What is here?
 * Main.java - Class containing Java main method
 * Worker.java - Class which handles concurrently running Ghostscript
 * build.bat - Builds the Java program
+* runmtd.bat - Starts the Java program
 
 Needed in this directory to run:
 
@@ -20,13 +21,6 @@ How to run:
 Windows:
 
 The application can be started through the command line through the
-command:
-
-java -cp gsjava.jar;. Main
-
-OR
-
-java -cp gsjava.jar;. Main [thread count]
-
-where [thread count] is the number of threads (and files) which will
-be ran/written.
+batch file "runmtd.bat". The batch file takes an optional command
+line argument specifying the number of threads to be created. If
+specified, it should be an integer grater than 0.

@@ -11,15 +11,21 @@ import java.util.Arrays;
 
 import static com.artifex.gsjava.GSAPI.*;
 
+/**
+ * Handles running a separate instance of Ghostscript.
+ */
 public class Worker implements Runnable {
 
+	// Whether to use Java-implemented standard input/output
 	public static final boolean USE_CUSTOM_STDIO = true;
+
+	// Whether stdout is enabled (effective only if USE_CUSTOM_STDIO = true)
 	public static final boolean USE_STDOUT = false;
 
-	private static int ID = 0;
+	private static int ID = 0; // Next thread ID
 
-	private final File inPS, outPDF;
-	private final Thread thread;
+	private final File inPS, outPDF;	// Input and output files
+	private final Thread thread;		// The thread running this worker
 
 	/**
 	 * Create a worker thread to convert a postscript file
@@ -35,6 +41,9 @@ public class Worker implements Runnable {
 		this.thread.setName("Worker-" + ID++);
 	}
 
+	/**
+	 * Starts this worker
+	 */
 	public void start() {
 		System.out.println("Start: " + thread.getName());
 		thread.start();
@@ -48,14 +57,17 @@ public class Worker implements Runnable {
 		try {
 			gsInstance = createGSInstance();
 
+			// If we want to use the IO functions StdIO, set them
 			if (USE_CUSTOM_STDIO) {
 				StdIO io = new StdIO();
 				gsInstance.set_stdio(io, USE_STDOUT ? io : null, io);
 			}
 
+			// Create the output file if it doesn't exist
 			if (!outPDF.exists())
 				outPDF.createNewFile();
 
+			// Ghostscript arguments to use with init_with_args
 			String[] args = {
 				"gs",
 				"-sDEVICE=pdfwrite",
@@ -63,6 +75,7 @@ public class Worker implements Runnable {
 				inPS.getPath()
 			};
 
+			// init_with_args will perform all the conversions
 			int code = gsInstance.init_with_args(args);
 			if (code != GS_ERROR_OK) {
 				gsInstance.delete_instance();
@@ -78,6 +91,7 @@ public class Worker implements Runnable {
 		}
 	}
 
+	// Creates a new Ghostscript inistance
 	private GSInstance createGSInstance() {
 		GSInstance gsInstance = new GSInstance();
 
@@ -91,11 +105,11 @@ public class Worker implements Runnable {
 		return gsInstance;
 	}
 
+	// Handles standard input/output
 	private static class StdIO implements IStdOutFunction, IStdErrFunction, IStdInFunction {
 
 		public int onStdOut(long callerHandle, byte[] str, int len) {
-			//if (USE_STDOUT)
-				System.out.println(new String(str));
+			System.out.println(new String(str));
 			return len;
 		}
 
