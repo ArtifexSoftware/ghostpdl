@@ -169,6 +169,7 @@
     <ClInclude Include="com_artifex_gsjava_GSAPI.h" />
     <ClInclude Include="com_artifex_gsjava_util_NativePointer.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="instance_data.h" />
     <ClInclude Include="jni_util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -176,6 +177,7 @@
     <ClCompile Include="com_artifex_gsjava_GSAPI.cpp" />
     <ClCompile Include="com_artifex_gsjava_util_NativePointer.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="instance_data.cpp" />
     <ClCompile Include="jni_util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

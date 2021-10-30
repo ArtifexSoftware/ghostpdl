@@ -7,6 +7,7 @@
 
 #include "jni_util.h"
 #include "callbacks.h"
+#include "instance_data.h"
 
 using namespace util;
 
@@ -35,18 +36,26 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1new_1instance
 	if (instance == NULL)
 		return throwNullPointerException(env, "LongReference object is NULL");
 
+	GSInstanceData *idata = new GSInstanceData();
+	idata->callerHandle = (void *)callerHandle;
+
 	void *gsInstance;
-	int code = gsapi_new_instance(&gsInstance, (void *)callerHandle);
+	int code = gsapi_new_instance(&gsInstance, idata);
 	if (code == 0)
 		Reference::setValueField(env, instance, toWrapperType(env, (jlong)gsInstance));
+
+	idata->instance = gsInstance;
+
 	return code;
 }
 
 JNIEXPORT void JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1delete_1instance
 	(JNIEnv *env, jclass, jlong instance)
 {
-	callbacks::setJNIEnv(env);
+	callbacks::setJNIEnv((void *)instance, env);
 	gsapi_delete_instance((void *)instance);
+
+	deleteDataFromInstance((void *)instance);
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1stdio_1with_1handle
@@ -56,8 +65,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1stdio_1with_1ha
 		callbacks::stdOutFunction, callbacks::stdErrFunction, (void *)callerHandle);
 	if (code == 0)
 	{
-		callbacks::setJNIEnv(env);
-		callbacks::setIOCallbacks(stdIn, stdOut, stdErr);
+		callbacks::setJNIEnv((void *)instance, env);
+		callbacks::setIOCallbacks((void *)instance, stdIn, stdOut, stdErr);
 	}
 	return code;
 }
@@ -69,8 +78,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1stdio
 		callbacks::stdOutFunction, callbacks::stdErrFunction);
 	if (code == 0)
 	{
-		callbacks::setJNIEnv(env);
-		callbacks::setIOCallbacks(stdIn, stdOut, stdErr);
+		callbacks::setJNIEnv((void *)instance, env);
+		callbacks::setIOCallbacks((void *)instance, stdIn, stdOut, stdErr);
 	}
 	return code;
 }
@@ -81,8 +90,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1poll_1with_1han
 	int code = gsapi_set_poll_with_handle((void *)instance, callbacks::pollFunction, (void *)callerHandle);
 	if (code == 0)
 	{
-		callbacks::setJNIEnv(env);
-		callbacks::setPollCallback(poll);
+		callbacks::setJNIEnv((void *)instance, env);
+		callbacks::setPollCallback((void *)instance, poll);
 	}
 	return code;
 }
@@ -93,8 +102,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1poll
 	int code = gsapi_set_poll((void *)instance, callbacks::pollFunction);
 	if (code == 0)
 	{
-		callbacks::setJNIEnv(env);
-		callbacks::setPollCallback(poll);
+		callbacks::setJNIEnv((void *)instance, env);
+		callbacks::setPollCallback((void *)instance, poll);
 	}
 	return code;
 }
@@ -124,8 +133,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1display_1callba
 	int code = gsapi_set_display_callback((void *)instance, cb);
 	if (code == 0)
 	{
-		callbacks::setJNIEnv(env);
-		callbacks::setDisplayCallback(displayCallback);
+		callbacks::setJNIEnv((void *)instance, env);
+		callbacks::setDisplayCallback((void *)instance, displayCallback);
 	}
 	return code;
 }
@@ -136,8 +145,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1register_1callout
 	int code = gsapi_register_callout((void *)instance, callbacks::calloutFunction, (void *)calloutHandle);
 	if (code == 0)
 	{
-		callbacks::setJNIEnv(env);
-		callbacks::setCalloutCallback(callout);
+		callbacks::setJNIEnv((void *)instance, env);
+		callbacks::setCalloutCallback((void *)instance, callout);
 	}
 	return code;
 }
@@ -160,7 +169,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1default_1device
 	if (list == NULL)
 		return throwNullPointerException(env, "list");
 	jboolean isCopy = false;
-	callbacks::setJNIEnv(env);
+	callbacks::setJNIEnv((void *)instance, env);
 	int code = gsapi_set_default_device_list((void *)instance,
 		(const char *)env->GetByteArrayElements(list, &isCopy), listlen);
 	return code;
@@ -193,7 +202,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1init_1with_1args
 	if (argv == NULL)
 		return throwNullPointerException(env, "argv");
 	char **cargv = jbyteArray2DToCharArray(env, argv);
-	callbacks::setJNIEnv(env);
+	callbacks::setJNIEnv((void *)instance, env);
 	int code = gsapi_init_with_args((void *)instance, argc, cargv);
 	delete2DByteArray(argc, cargv);
 	return code;
@@ -203,7 +212,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1begin
 	(JNIEnv *env, jclass, jlong instance, jint userErrors, jobject pExitCode)
 {
 	int exitCode;
-	callbacks::setJNIEnv(env);
+	callbacks::setJNIEnv((void *)instance, env);
 	int code = gsapi_run_string_begin((void *)instance, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -218,7 +227,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1continu
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
-	callbacks::setJNIEnv(env);
+	callbacks::setJNIEnv((void *)instance, env);
 	int code = gsapi_run_string_continue((void *)instance, cstring, length, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -229,7 +238,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1end
 	(JNIEnv *env, jclass, jlong instance, jint userErrors, jobject pExitCode)
 {
 	int exitCode;
-	callbacks::setJNIEnv(env);
+	callbacks::setJNIEnv((void *)instance, env);
 	int code = gsapi_run_string_end((void *)instance, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -244,7 +253,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1with_1l
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
-	callbacks::setJNIEnv(env);
+	callbacks::setJNIEnv((void *)instance, env);
 	int code = gsapi_run_string_with_length((void *)instance, cstring, length, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -259,7 +268,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
-	callbacks::setJNIEnv(env);
+	callbacks::setJNIEnv((void *)instance, env);
 	int code = gsapi_run_string((void *)instance, cstring, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -274,7 +283,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1file
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(fileName, &copy);
-	callbacks::setJNIEnv(env);
+	callbacks::setJNIEnv((void *)instance, env);
 	int code = gsapi_run_file((void *)instance, cstring, userErrors, &exitCode);
 	if (pExitCode)
 		Reference::setValueField(env, pExitCode, toWrapperType(env, (jint)exitCode));
@@ -308,7 +317,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1param
 	jboolean copy = false;
 	const char *cstring = (const char *)env->GetByteArrayElements(param, &copy);
 
-	callbacks::setJNIEnv(env);
+	callbacks::setJNIEnv((void *)instance, env);
 	int code = gsapi_set_param((void *)instance, cstring, data, type);
 	free(data);
 

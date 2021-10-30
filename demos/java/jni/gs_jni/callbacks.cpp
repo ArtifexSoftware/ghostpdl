@@ -1,9 +1,11 @@
 #include "callbacks.h"
 
 #include "jni_util.h"
+#include "instance_data.h"
 
 #include <string.h>
 #include <unordered_map>
+#include <assert.h>
 
 #define STDIN_SIG "(J[BI)I"
 #define STDOUT_SIG "(J[BI)I"
@@ -32,46 +34,19 @@ Lcom/artifex/gsjava/IntReference;)I"
 
 using namespace util;
 
-class GSInstanceData
-{
-public:
-	JNIEnv *env;
-
-	jobject stdIn = NULL;
-	jobject stdOut = NULL;
-	jobject stdErr = NULL;
-
-	jobject poll = NULL;
-
-	jobject displayCallback = NULL;
-
-	jobject callout = NULL;
-};
-
-static std::unordered_map<void *, GSInstanceData> g_instanceData;
-
-static inline GSInstanceData *getInstanceData(void *instance)
-{
-	GSInstanceData *gsdata;
-
-	auto it = g_instanceData.find(instance);
-	if (it == g_instanceData.end())
-		gsdata = &(g_instanceData[instance] = GSInstanceData());
-	else
-		gsdata = &it->second;
-
-	return gsdata;
-}
-
 void callbacks::setJNIEnv(void *instance, JNIEnv *env)
 {
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromInstance(instance);
+	assert(gsdata);
+
 	gsdata->env = env;
 }
 
 void callbacks::setIOCallbacks(void *instance, jobject stdIn, jobject stdOut, jobject stdErr)
 {
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromInstance(instance);
+	assert(gsdata);
+
 	if (gsdata->env)
 	{
 		if (gsdata->stdIn)
@@ -93,12 +68,14 @@ int callbacks::stdInFunction(void *callerHandle, char *buf, int len)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(callerHandle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->stdIn)
 	{
 		jbyteArray byteArray = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(byteArray, 0, len, (jbyte *)buf);
-		code = callIntMethod(gsdata->env, gsdata->stdIn, "onStdIn", STDIN_SIG, (jlong)callerHandle, byteArray, (jint)len);
+		code = callIntMethod(gsdata->env, gsdata->stdIn, "onStdIn", STDIN_SIG, (jlong)gsdata->callerHandle, byteArray, (jint)len);
 	}
 	return code;
 }
@@ -107,12 +84,14 @@ int callbacks::stdOutFunction(void *callerHandle, const char *str, int len)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(callerHandle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->stdOut)
 	{
 		jbyteArray byteArray = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)str);
-		code = callIntMethod(gsdata->env, gsdata->stdOut, "onStdOut", STDOUT_SIG, (jlong)callerHandle, byteArray, (jint)len);
+		code = callIntMethod(gsdata->env, gsdata->stdOut, "onStdOut", STDOUT_SIG, (jlong)gsdata->callerHandle, byteArray, (jint)len);
 	}
 	return code;
 }
@@ -121,19 +100,23 @@ int callbacks::stdErrFunction(void *callerHandle, const char *str, int len)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(callerHandle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->stdErr)
 	{
 		jbyteArray byteArray = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)str);
-		code = callIntMethod(gsdata->env, gsdata->stdErr, "onStdErr", STDERR_SIG, (jlong)callerHandle, byteArray, (jint)len);
+		code = callIntMethod(gsdata->env, gsdata->stdErr, "onStdErr", STDERR_SIG, (jlong)gsdata->callerHandle, byteArray, (jint)len);
 	}
 	return code;
 }
 
 void callbacks::setPollCallback(void *instance, jobject poll)
 {
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromInstance(instance);
+	assert(gsdata);
+
 	if (gsdata->env)
 	{
 		if (gsdata->poll)
@@ -143,21 +126,25 @@ void callbacks::setPollCallback(void *instance, jobject poll)
 	}
 }
 
-int callbacks::pollFunction(void *instance, void *callerHandle)
+int callbacks::pollFunction(void *callerHandle)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(callerHandle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->poll)
 	{
-		code = callIntMethod(gsdata->env, gsdata->poll, "onPoll", POLL_SIG, (jlong)callerHandle);
+		code = callIntMethod(gsdata->env, gsdata->poll, "onPoll", POLL_SIG, (jlong)gsdata->callerHandle);
 	}
 	return code;
 }
 
 void callbacks::setDisplayCallback(void *instance, jobject displayCallback)
 {
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromInstance(instance);
+	assert(gsdata);
+
 	if (gsdata->env)
 	{
 		if (gsdata->displayCallback)
@@ -173,7 +160,9 @@ void callbacks::setDisplayCallback(void *instance, jobject displayCallback)
 
 void callbacks::setCalloutCallback(void *instance, jobject callout)
 {
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromInstance(instance);
+	assert(gsdata);
+
 	if (gsdata->env)
 	{
 		if (gsdata->callout)
@@ -187,79 +176,91 @@ int callbacks::calloutFunction(void *instance, void *handle, const char *deviceN
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromInstance(instance);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->callout)
 	{
 		jsize len = strlen(deviceName);
 		jbyteArray array = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(array, 0, len, (const jbyte *)deviceName);
-		code = callIntMethod(gsdata->env, gsdata->callout, "onCallout", "(JJ[BIIJ)I", (jlong)instance, (jlong)handle, array, id, size, (jlong)data);
+		code = callIntMethod(gsdata->env, gsdata->callout, "onCallout", "(JJ[BIIJ)I", (jlong)instance, (jlong)gsdata->callerHandle, array, id, size, (jlong)data);
 	}
 	return code;
 }
 
-int callbacks::display::displayOpenFunction(void *instance, void *handle, void *device)
+int callbacks::display::displayOpenFunction(void *handle, void *device)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
 		jclass clazz = gsdata->env->GetObjectClass(gsdata->displayCallback);
 		const char *name = getClassName(gsdata->env, clazz);
 		freeClassName(name);
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayOpen", DISPLAY_OPEN_SIG, (jlong)handle, (jlong)device);
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayOpen", DISPLAY_OPEN_SIG, (jlong)gsdata->callerHandle, (jlong)device);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
 }
 
-int callbacks::display::displayPrecloseFunction(void *instance, void *handle, void *device)
+int callbacks::display::displayPrecloseFunction(void *handle, void *device)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPreclose", DISPLAY_PRECLOSE_SIG, (jlong)handle, (jlong)device);
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPreclose", DISPLAY_PRECLOSE_SIG, (jlong)gsdata->callerHandle, (jlong)device);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
 }
 
-int callbacks::display::displayCloseFunction(void *instance, void *handle, void *device)
+int callbacks::display::displayCloseFunction(void *handle, void *device)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayClose", DISPLAY_CLOSE_SIG, (jlong)handle, (jlong)device);
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayClose", DISPLAY_CLOSE_SIG, (jlong)gsdata->callerHandle, (jlong)device);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
 }
 
-int callbacks::display::displayPresizeFunction(void *instance, void *handle, void *device, int width, int height, int raster, unsigned int format)
+int callbacks::display::displayPresizeFunction(void *handle, void *device, int width, int height, int raster, unsigned int format)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPresize", DISPLAY_PRESIZE_SIG, (jlong)handle,
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPresize", DISPLAY_PRESIZE_SIG, (jlong)gsdata->callerHandle,
 			(jlong)device, width, height, raster, (jint)format);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
 }
 
-int callbacks::display::displaySizeFunction(void *instance, void *handle, void *device, int width, int height, int raster,
+int callbacks::display::displaySizeFunction(void *handle, void *device, int width, int height, int raster,
 	unsigned int format, unsigned char *pimage)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
 		jsize len = height * raster;
@@ -308,92 +309,104 @@ int callbacks::display::displaySizeFunction(void *instance, void *handle, void *
 		gsdata->env->SetLongField(bytePointer, dataPtrID, (jlong)pimage);
 		gsdata->env->SetLongField(bytePointer, lengthID, len);
 
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySize", DISPLAY_SIZE_SIG, (jlong)handle,
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySize", DISPLAY_SIZE_SIG, (jlong)gsdata->callerHandle,
 			(jlong)device, width, height, raster, (jint)format, bytePointer);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
 }
 
-int callbacks::display::displaySyncFunction(void *instance, void *handle, void *device)
+int callbacks::display::displaySyncFunction(void *handle, void *device)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySync", DISPLAY_SYNC_SIG, (jlong)handle, (jlong)device);
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySync", DISPLAY_SYNC_SIG, (jlong)gsdata->callerHandle, (jlong)device);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
 }
 
-int callbacks::display::displayPageFunction(void *instance, void *handle, void *device, int copies, int flush)
+int callbacks::display::displayPageFunction(void *handle, void *device, int copies, int flush)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPage", DISPLAY_PAGE_SIG, (jlong)handle,
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPage", DISPLAY_PAGE_SIG, (jlong)gsdata->callerHandle,
 			(jlong)device, copies, flush);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
 }
 
-int callbacks::display::displayUpdateFunction(void *instance, void *handle, void *device, int x, int y, int w, int h)
+int callbacks::display::displayUpdateFunction(void *handle, void *device, int x, int y, int w, int h)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayUpdate", DISPLAY_UPDATE_SIG, (jlong)handle,
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayUpdate", DISPLAY_UPDATE_SIG, (jlong)gsdata->callerHandle,
 			(jlong)device, x, y, w, h);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
 }
 
-int callbacks::display::displaySeparationFunction(void *instance, void *handle, void *device, int component, const char *componentName,
+int callbacks::display::displaySeparationFunction(void *handle, void *device, int component, const char *componentName,
 	unsigned short c, unsigned short m, unsigned short y, unsigned short k)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
 		jsize len = strlen(componentName);
 		jbyteArray byteArray = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)componentName);
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySeparation", DISPLAY_SEPARATION_SIG, (jlong)handle,
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySeparation", DISPLAY_SEPARATION_SIG, (jlong)gsdata->callerHandle,
 			(jlong)device, component, byteArray, c, m, y, k);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
 }
 
-int callbacks::display::displayAdjustBandHeightFunction(void *instance, void *handle, void *device, int bandHeight)
+int callbacks::display::displayAdjustBandHeightFunction(void *handle, void *device, int bandHeight)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
 		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayAdjustBandHeght", DISPLAY_ADJUST_BAND_HEIGHT_SIG,
-			(jlong)handle, (jlong)device, bandHeight);
+			(jlong)gsdata->callerHandle, (jlong)device, bandHeight);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
 }
 
-int callbacks::display::displayRectangleRequestFunction(void *instance, void *handle, void *device, void **memory, int *ox, int *oy,
+int callbacks::display::displayRectangleRequestFunction(void *handle, void *device, void **memory, int *ox, int *oy,
 	int *raster, int *plane_raster, int *x, int *y, int *w, int *h)
 {
 	int code = 0;
 
-	GSInstanceData *gsdata = getInstanceData(instance);
+	GSInstanceData *gsdata = findDataFromHandle(handle);
+	assert(gsdata);
+
 	if (gsdata->env && gsdata->displayCallback)
 	{
 		Reference memoryRef = Reference(gsdata->env, toWrapperType(gsdata->env, (jlong)*memory));
@@ -407,7 +420,7 @@ int callbacks::display::displayRectangleRequestFunction(void *instance, void *ha
 		Reference hRef = Reference(gsdata->env, toWrapperType(gsdata->env, (jint)*h));
 
 		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayRectangleRequest", DISPLAY_RECTANGLE_REQUEST,
-			(jlong)handle,
+			(jlong)gsdata->callerHandle,
 			(jlong)device,
 			memoryRef.object(),
 			oxRef.object(),

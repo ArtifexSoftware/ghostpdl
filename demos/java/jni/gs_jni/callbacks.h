@@ -18,33 +18,33 @@ namespace callbacks
 	int stdErrFunction(void *callerHandle, const char *str, int len);
 
 	void setPollCallback(void *instance, jobject poll);
-	int pollFunction(void *instance, void *callerHandle);
+	int pollFunction(void *callerHandle);
 
 	void setDisplayCallback(void *instance, jobject displayCallback);
 
 	namespace display
 	{
-		int displayOpenFunction(void *instance, void *handle, void *device);
-		int displayPrecloseFunction(void *instance, void *handle, void *device);
-		int displayCloseFunction(void *instance, void *handle, void *device);
-		int displayPresizeFunction(void *instance, void *handle, void *device, int width,
+		int displayOpenFunction(void *handle, void *device);
+		int displayPrecloseFunction(void *handle, void *device);
+		int displayCloseFunction(void *handle, void *device);
+		int displayPresizeFunction(void *handle, void *device, int width,
 			int height, int raster, unsigned int format);
-		int displaySizeFunction(void *instance, void *handle, void *device, int width,
+		int displaySizeFunction(void *handle, void *device, int width,
 			int height, int raster, unsigned int format,
 			unsigned char *pimage);
-		int displaySyncFunction(void *instance, void *handle, void *device);
-		int displayPageFunction(void *instance, void *handle, void *device, int copies,
+		int displaySyncFunction(void *handle, void *device);
+		int displayPageFunction(void *handle, void *device, int copies,
 			int flush);
-		int displayUpdateFunction(void *instance, void *handle, void *device, int x,
+		int displayUpdateFunction(void *handle, void *device, int x,
 			int y, int w, int h);
 		// display_memalloc omitted
 		// display_memfree omitted
-		int displaySeparationFunction(void *instance, void *handle, void *device,
+		int displaySeparationFunction(void *handle, void *device,
 			int component, const char *componentName, unsigned short c,
 			unsigned short m, unsigned short y, unsigned short k);
-		int displayAdjustBandHeightFunction(void *instance, void *handle, void *device,
+		int displayAdjustBandHeightFunction(void *handle, void *device,
 			int bandHeight);
-		int displayRectangleRequestFunction(void *instance, void *handle, void *device,
+		int displayRectangleRequestFunction(void *handle, void *device,
 			void **memory, int *ox, int *oy, int *raster, int *plane_raster,
 			int *x, int *y, int *w, int *h);
 	}
