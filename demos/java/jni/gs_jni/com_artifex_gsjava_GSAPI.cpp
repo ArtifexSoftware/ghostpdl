@@ -4,6 +4,7 @@
 #include <gdevdsp.h>
 #include <string.h>
 #include <memory>
+#include <assert.h>
 
 #include "jni_util.h"
 #include "callbacks.h"
@@ -46,6 +47,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1new_1instance
 
 	idata->instance = gsInstance;
 
+	putInstanceData(idata);
+
 	return code;
 }
 
@@ -61,8 +64,13 @@ JNIEXPORT void JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1delete_1instance
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1stdio_1with_1handle
 	(JNIEnv *env, jclass, jlong instance, jobject stdIn, jobject stdOut, jobject stdErr, jlong callerHandle)
 {
+	GSInstanceData *idata = findDataFromInstance((void *)instance);
+	assert(idata);
+
+	idata->stdioHandle = (void *)callerHandle;
+
 	int code = gsapi_set_stdio_with_handle((void *)instance, callbacks::stdInFunction,
-		callbacks::stdOutFunction, callbacks::stdErrFunction, (void *)callerHandle);
+		callbacks::stdOutFunction, callbacks::stdErrFunction, idata);
 	if (code == 0)
 	{
 		callbacks::setJNIEnv((void *)instance, env);
@@ -74,8 +82,13 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1stdio_1with_1ha
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1stdio
 	(JNIEnv *env, jclass, jlong instance, jobject stdIn, jobject stdOut, jobject stdErr)
 {
-	int code = gsapi_set_stdio((void *)instance, callbacks::stdInFunction,
-		callbacks::stdOutFunction, callbacks::stdErrFunction);
+	GSInstanceData *idata = findDataFromInstance((void *)instance);
+	assert(idata);
+
+	idata->stdioHandle = NULL;
+
+	int code = gsapi_set_stdio_with_handle((void *)instance, callbacks::stdInFunction,
+		callbacks::stdOutFunction, callbacks::stdErrFunction, idata);
 	if (code == 0)
 	{
 		callbacks::setJNIEnv((void *)instance, env);

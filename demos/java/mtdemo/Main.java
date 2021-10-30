@@ -1,5 +1,7 @@
 import com.artifex.gsjava.GSInstance;
 
+import java.util.Scanner;
+
 public class Main {
 
 	public static void main(String[] args) {
@@ -11,6 +13,9 @@ public class Main {
 				workerCount = Integer.parseInt(args[0]);
 			} catch (NumberFormatException e) { }
 		}
+
+		//Scanner in = new Scanner(System.in);
+		//in.nextLine();
 
 		Worker[] workers = new Worker[workerCount];
 

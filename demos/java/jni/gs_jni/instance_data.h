@@ -7,6 +7,7 @@ class GSInstanceData
 public:
 	void *instance = NULL;
 	void *callerHandle = NULL;
+	void *stdioHandle = NULL;
 
 	JNIEnv *env;
 

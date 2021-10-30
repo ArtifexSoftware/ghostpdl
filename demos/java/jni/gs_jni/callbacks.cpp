@@ -75,7 +75,7 @@ int callbacks::stdInFunction(void *callerHandle, char *buf, int len)
 	{
 		jbyteArray byteArray = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(byteArray, 0, len, (jbyte *)buf);
-		code = callIntMethod(gsdata->env, gsdata->stdIn, "onStdIn", STDIN_SIG, (jlong)gsdata->callerHandle, byteArray, (jint)len);
+		code = callIntMethod(gsdata->env, gsdata->stdIn, "onStdIn", STDIN_SIG, (jlong)gsdata->stdioHandle, byteArray, (jint)len);
 	}
 	return code;
 }
@@ -91,7 +91,7 @@ int callbacks::stdOutFunction(void *callerHandle, const char *str, int len)
 	{
 		jbyteArray byteArray = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)str);
-		code = callIntMethod(gsdata->env, gsdata->stdOut, "onStdOut", STDOUT_SIG, (jlong)gsdata->callerHandle, byteArray, (jint)len);
+		code = callIntMethod(gsdata->env, gsdata->stdOut, "onStdOut", STDOUT_SIG, (jlong)gsdata->stdioHandle, byteArray, (jint)len);
 	}
 	return code;
 }
@@ -107,7 +107,7 @@ int callbacks::stdErrFunction(void *callerHandle, const char *str, int len)
 	{
 		jbyteArray byteArray = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)str);
-		code = callIntMethod(gsdata->env, gsdata->stdErr, "onStdErr", STDERR_SIG, (jlong)gsdata->callerHandle, byteArray, (jint)len);
+		code = callIntMethod(gsdata->env, gsdata->stdErr, "onStdErr", STDERR_SIG, (jlong)gsdata->stdioHandle, byteArray, (jint)len);
 	}
 	return code;
 }

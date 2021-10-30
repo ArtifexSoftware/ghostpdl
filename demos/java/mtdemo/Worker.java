@@ -45,8 +45,8 @@ public class Worker implements Runnable {
 		try {
 			gsInstance = createGSInstance();
 
-			StdIO io = new StdIO();
-			gsInstance.set_stdio(io, null, null);
+			//StdIO io = new StdIO();
+			//gsInstance.set_stdio(io, null, null);
 
 			if (!outPDF.exists())
 				outPDF.createNewFile();
