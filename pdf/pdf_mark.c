@@ -274,7 +274,7 @@ int pdfi_mark_from_dict(pdf_context *ctx, pdf_dict *dict, gs_matrix *ctm, const 
 /* Does a pdfmark, from a c-array of pdf_obj's
  * This will put in a dummy ctm if none provided
  */
-static int pdfi_mark_from_objarray(pdf_context *ctx, pdf_obj **objarray, int len,
+int pdfi_mark_from_objarray(pdf_context *ctx, pdf_obj **objarray, int len,
                             gs_matrix *ctm, const char *type)
 {
     int code = 0;

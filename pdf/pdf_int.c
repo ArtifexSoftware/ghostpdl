@@ -1444,10 +1444,6 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source
                 pdfi_pop(ctx, 1);
                 code = pdfi_setdash(ctx);
                 break;
-            case K2('E','I'):       /* end inline image */
-                pdfi_pop(ctx, 1);
-                code = pdfi_EI(ctx);
-                break;
             case K2('d','0'):       /* set type 3 font glyph width */
                 pdfi_pop(ctx, 1);
                 code = pdfi_d0(ctx);
@@ -1462,10 +1458,11 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source
                 break;
             case K2('D','P'):       /* define marked content point with property list */
                 pdfi_pop(ctx, 1);
-                if (pdfi_count_stack(ctx) >= 2) {
-                    pdfi_pop(ctx, 2);
-                } else
-                    pdfi_clearstack(ctx);
+                code = pdfi_op_DP(ctx, stream_dict, page_dict);
+                break;
+            case K2('E','I'):       /* end inline image */
+                pdfi_pop(ctx, 1);
+                code = pdfi_EI(ctx);
                 break;
             case K2('E','T'):       /* end text */
                 pdfi_pop(ctx, 1);
@@ -1544,8 +1541,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source
                 break;
             case K2('M','P'):       /* define marked content point */
                 pdfi_pop(ctx, 1);
-                if (pdfi_count_stack(ctx) >= 1)
-                    pdfi_pop(ctx, 1);
+                code = pdfi_op_MP(ctx);
                 break;
             case K1('n'):           /* newpath */
                 pdfi_pop(ctx, 1);

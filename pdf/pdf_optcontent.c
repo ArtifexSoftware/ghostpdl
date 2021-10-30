@@ -432,20 +432,112 @@ int pdfi_oc_free(pdf_context *ctx)
     return code;
 }
 
+int pdfi_op_MP(pdf_context *ctx)
+{
+    pdf_obj *o = NULL;
+    int code = 0;
+
+    if (pdfi_count_stack(ctx) < 1)
+        return_error(gs_error_stackunderflow);
+
+    if (!ctx->device_state.writepdfmarks)
+        goto exit;
+
+    o = ctx->stack_top[-1];
+    if (o->type != PDF_NAME) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+
+    code = pdfi_mark_from_objarray(ctx, &o, 1, NULL, "MP");
+    ctx->BMClevel ++;
+
+exit:
+    pdfi_pop(ctx, 1);
+    return code;
+}
+
+int pdfi_op_DP(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
+{
+    pdf_name *properties = NULL;
+    int code = 0;
+    pdf_obj **objarray = NULL;
+
+    if (pdfi_count_stack(ctx) < 2) {
+        pdfi_clearstack(ctx);
+        return gs_note_error(gs_error_stackunderflow);
+    }
+
+    if (!ctx->device_state.writepdfmarks)
+        goto exit;
+
+    if ((ctx->stack_top[-2])->type != PDF_NAME) {
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
+    }
+
+    objarray = (pdf_obj **)gs_alloc_bytes(ctx->memory, 2 * sizeof(pdf_obj *), "pdfi_op_DP");
+    if (objarray == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
+
+    objarray[0] = ctx->stack_top[-2];
+
+    if ((ctx->stack_top[-1])->type == PDF_NAME) {
+        code = pdfi_find_resource(ctx, (unsigned char *)"Properties", (pdf_name *)ctx->stack_top[-1], stream_dict, page_dict, (pdf_obj **)&properties);
+        if(code < 0)
+            goto exit;
+        if (properties->type != PDF_DICT) {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
+        objarray[1] = (pdf_obj *)properties;
+    } else {
+        if ((ctx->stack_top[-1])->type != PDF_DICT) {
+            code = gs_note_error(gs_error_VMerror);
+            goto exit;
+        }
+        objarray[1] = ctx->stack_top[-1];
+    }
+
+    code = pdfi_mark_from_objarray(ctx, objarray, 2, NULL, "DP");
+
+ exit:
+    if (objarray != NULL)
+        gs_free_object(ctx->memory, objarray, "free pdfi_op_DP");
+    pdfi_pop(ctx, 2); /* pop args */
+    pdfi_countdown(properties);
+    return code;
+}
+
 /* begin marked content sequence */
-/* TODO: Incomplete implementation, it is ignoring the argument */
 int pdfi_op_BMC(pdf_context *ctx)
 {
-    if (pdfi_count_stack(ctx) >= 1) {
+    pdf_obj *o = NULL;
+    int code = 0;
+
+    if (pdfi_count_stack(ctx) < 1)
+        return_error(gs_error_stackunderflow);
+
+    if (!ctx->device_state.writepdfmarks)
+        goto exit;
+
+    o = ctx->stack_top[-1];
+    if (o->type != PDF_NAME) {
         pdfi_pop(ctx, 1);
-    } else
-        pdfi_clearstack(ctx);
+        return_error(gs_error_typecheck);
+    }
+
+    code = pdfi_mark_from_objarray(ctx, &o, 1, NULL, "BMC");
     ctx->BMClevel ++;
-    return 0;
+
+exit:
+    pdfi_pop(ctx, 1);
+    return code;
 }
 
 /* begin marked content sequence with property list */
-/* TODO: Incomplete implementation, only tries to do something sensible for OC */
 int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_name *tag = NULL;
@@ -453,21 +545,52 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdf_dict *oc_dict = NULL;
     int code = 0;
     bool ocg_is_visible;
+    pdf_obj **objarray = NULL;
+
 
     if (pdfi_count_stack(ctx) < 2) {
-        /* TODO: Flag error? */
         pdfi_clearstack(ctx);
-        return 0;
+        return gs_note_error(gs_error_stackunderflow);
     }
 
     ctx->BMClevel ++;
 
-    /* Check if second arg is OC and handle it if so */
     tag = (pdf_name *)ctx->stack_top[-2];
     if (tag->type != PDF_NAME)
         goto exit;
-    if (!pdfi_name_is(tag, "OC"))
+
+    if (!pdfi_name_is(tag, "OC")) {
+        if (!ctx->device_state.writepdfmarks)
+            goto exit;
+
+        objarray = (pdf_obj **)gs_alloc_bytes(ctx->memory, 2 * sizeof(pdf_obj *), "pdfi_op_BDC");
+        if (objarray == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto exit;
+        }
+
+        objarray[0] = ctx->stack_top[-2];
+
+        if ((ctx->stack_top[-1])->type == PDF_NAME) {
+            code = pdfi_find_resource(ctx, (unsigned char *)"Properties", (pdf_name *)ctx->stack_top[-1], stream_dict, page_dict, (pdf_obj **)&oc_dict);
+            if(code < 0)
+                goto exit;
+            if (oc_dict->type != PDF_DICT) {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+            objarray[1] = (pdf_obj *)oc_dict;
+        } else {
+            if ((ctx->stack_top[-1])->type != PDF_DICT) {
+                code = gs_note_error(gs_error_VMerror);
+                goto exit;
+            }
+            objarray[1] = ctx->stack_top[-1];
+        }
+
+        code = pdfi_mark_from_objarray(ctx, objarray, 2, NULL, "BDC");
         goto exit;
+    }
 
     /* Check if first arg is a name and handle it if so */
     /* TODO: spec says it could also be an inline dict that we should be able to handle,
@@ -491,6 +614,8 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         code = pdfi_oc_levels_set(ctx, ctx->OFFlevels, ctx->BMClevel);
 
  exit:
+    if (objarray != NULL)
+        gs_free_object(ctx->memory, objarray, "free pdfi_op_BDC");
     pdfi_pop(ctx, 2); /* pop args */
     pdfi_countdown(oc_dict);
     return code;
@@ -499,9 +624,15 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 /* end marked content sequence */
 int pdfi_op_EMC(pdf_context *ctx)
 {
-    int code;
+    int code, code1;
 
     code = pdfi_oc_levels_clear(ctx, ctx->OFFlevels, ctx->BMClevel);
+
+    if (ctx->device_state.writepdfmarks) {
+        code1 = pdfi_mark_from_objarray(ctx, NULL, 0, NULL, "EMC");
+        if (code == 0)
+            code = code1;
+    }
 
     /* TODO: Should we flag error on too many EMC? */
     if (ctx->BMClevel > 0)
