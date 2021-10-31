@@ -25,7 +25,7 @@ Windows:
 
 Needed in this directory to run:
 
-* gpdldll64.dll (COMPILED FOR MULTITHREADING - use DGS_THREADSAFE in psi\msvc.mak)
+* gpdldll64.dll (COMPILED FOR MULTITHREADING - in psi\msvc.mak, near line 865, change "XCFLAGS=" to "XCFLAGS=/DGS_THREADSAFE")
 * gs_jni.dll (COMPILED FOR MULTITHREADING - enable GSJNI_SUPPORT_MT in settings.h)
 * gsjava.jar
 
