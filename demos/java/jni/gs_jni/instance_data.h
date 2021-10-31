@@ -14,7 +14,7 @@ public:
 	void *callerHandle = NULL;		// The caller handle passed to gsapi_new_instance
 	void *stdioHandle = NULL;		// The caller handle passed to gsapi_set_stdio_with_handle
 
-	JNIEnv *env;					// The JNIEnv which should be used for JNI API calls
+	JNIEnv *env = NULL;				// The JNIEnv which should be used for JNI API calls
 
 	jobject stdIn = NULL;			// The user IStdInFunction class for stdin input
 	jobject stdOut = NULL;			// The user IStdOutFunction class for stdout output

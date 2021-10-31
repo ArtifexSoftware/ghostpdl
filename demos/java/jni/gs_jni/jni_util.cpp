@@ -90,7 +90,7 @@ char **util::jbyteArray2DToCharArray(JNIEnv *env, jobjectArray array)
     {
         jbyteArray byteArrayObject = (jbyteArray)env->GetObjectArrayElement(array, i);
         char *elem = (char *)env->GetByteArrayElements(byteArrayObject, &copy);
-        jsize slen = strlen(elem);
+        jsize slen = (jsize)strlen(elem);
         char *nstring = new char[slen + 1LL];
         nstring[slen] = 0;
         memcpy(nstring, elem, slen);

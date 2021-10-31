@@ -422,7 +422,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param_1once
 
 	jbyteArray arr = NULL;
 	const char *str = NULL;
-	int len = 0;
+	jsize len = 0;
 	switch (stripped)
 	{
 	case gs_spt_null:
@@ -449,7 +449,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param_1once
 	case gs_spt_string:
 	case gs_spt_parsed:
 		str = (const char *)data;
-		len = strlen(str) + 1;
+		len = (jsize)strlen(str) + 1;
 		arr = env->NewByteArray(len);
 		env->SetByteArrayRegion(arr, 0, len, (const jbyte *)str);
 		ref.set(arr);
@@ -493,7 +493,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
 	{
 		iterRef.set((jlong)citer);
 
-		jsize len = strlen(ckey) + 1;
+		jsize len = (jsize)strlen(ckey) + 1;
 		jbyteArray arr = env->NewByteArray(len);
 		env->SetByteArrayRegion(arr, 0, len, (const jbyte *)ckey);
 		keyRef.set(arr);
@@ -574,23 +574,53 @@ void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *su
 		break;
 	case gs_spt_bool:
 		result = malloc(sizeof(int));
+		if (!result)
+		{
+			throwAllocationError(env, "getAsPointer");
+			return NULL;
+		}
+
 		*((int *)result) = (bool)toBoolean(env, object);
 		break;
 	case gs_spt_int:
 		result = malloc(sizeof(int));
+		if (!result)
+		{
+			throwAllocationError(env, "getAsPointer");
+			return NULL;
+		}
+
 		*((int *)result) = (int)toInt(env, object);
 		break;
 	case gs_spt_float:
 		result = malloc(sizeof(float));
+		if (!result)
+		{
+			throwAllocationError(env, "getAsPointer");
+			return NULL;
+		}
+
 		*((float *)result) = (float)toFloat(env, object);
 		break;
 	case gs_spt_long:
 	case gs_spt_i64:
 		result = malloc(sizeof(long long));
+		if (!result)
+		{
+			throwAllocationError(env, "getAsPointer");
+			return NULL;
+		}
+
 		*((long long *)result) = (long long)toLong(env, object);
 		break;
 	case gs_spt_size_t:
 		result = malloc(sizeof(size_t));
+		if (!result)
+		{
+			throwAllocationError(env, "getAsPointer");
+			return NULL;
+		}
+
 		*((size_t *)result) = (size_t)toLong(env, object);
 		break;
 	case gs_spt_name:
@@ -600,6 +630,12 @@ void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *su
 		cstring = (const char *)env->GetByteArrayElements(arr, &copy);
 		len = env->GetArrayLength(arr);
 		result = malloc(sizeof(char) * len);
+		if (!result)
+		{
+			throwAllocationError(env, "getAsPointer");
+			return NULL;
+		}
+
 		//((char *)result)[len - 1] = 0;
 		memcpy(result, cstring, len);
 		break;
@@ -608,6 +644,7 @@ void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *su
 		*success = false;
 		break;
 	}
+
 	if (env->ExceptionCheck())
 	{
 		if (result)

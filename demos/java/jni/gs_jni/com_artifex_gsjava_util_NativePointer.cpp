@@ -33,8 +33,8 @@ JNIEXPORT void JNICALL Java_com_artifex_gsjava_util_NativePointer_freeNative
 JNIEXPORT jbyteArray JNICALL Java_com_artifex_gsjava_util_NativePointer_byteArrayNative
 (JNIEnv *env, jclass, jlong address, jlong len)
 {
-	jbyteArray array = env->NewByteArray(len);
-	env->SetByteArrayRegion(array, 0, len, (const jbyte *)address);
+	jbyteArray array = env->NewByteArray((jsize)len);
+	env->SetByteArrayRegion(array, 0, (jsize)len, (const jbyte *)address);
 	return array;
 }
 
@@ -53,8 +53,8 @@ JNIEXPORT void JNICALL Java_com_artifex_gsjava_util_NativePointer_setByteNative
 JNIEXPORT jcharArray JNICALL Java_com_artifex_gsjava_util_NativePointer_charArrayNative
 (JNIEnv *env, jclass, jlong address, jlong len)
 {
-	jcharArray array = env->NewCharArray(len);
-	env->SetCharArrayRegion(array, 0, len, (const jchar *)address);
+	jcharArray array = env->NewCharArray((jsize)len);
+	env->SetCharArrayRegion(array, 0, (jsize)len, (const jchar *)address);
 	return array;
 }
 
@@ -73,8 +73,8 @@ JNIEXPORT void JNICALL Java_com_artifex_gsjava_util_NativePointer_setCharNative
 JNIEXPORT jshortArray JNICALL Java_com_artifex_gsjava_util_NativePointer_shortArrayNative
 (JNIEnv *env, jclass, jlong address, jlong len)
 {
-	jshortArray array = env->NewShortArray(len);
-	env->SetShortArrayRegion(array, 0, len, (const jshort *)address);
+	jshortArray array = env->NewShortArray((jsize)len);
+	env->SetShortArrayRegion(array, 0, (jsize)len, (const jshort *)address);
 	return array;
 }
 
@@ -93,8 +93,8 @@ JNIEXPORT void JNICALL Java_com_artifex_gsjava_util_NativePointer_setShortNative
 JNIEXPORT jintArray JNICALL Java_com_artifex_gsjava_util_NativePointer_intArrayNative
 (JNIEnv *env, jclass, jlong address, jlong len)
 {
-	jintArray array = env->NewIntArray(len);
-	env->SetIntArrayRegion(array, 0, len, (const jint *)address);
+	jintArray array = env->NewIntArray((jsize)len);
+	env->SetIntArrayRegion(array, 0, (jsize)len, (const jint *)address);
 	return array;
 }
 
@@ -113,8 +113,8 @@ JNIEXPORT void JNICALL Java_com_artifex_gsjava_util_NativePointer_setIntNative
 JNIEXPORT jlongArray JNICALL Java_com_artifex_gsjava_util_NativePointer_longArrayNative
 (JNIEnv *env, jclass, jlong address, jlong len)
 {
-	jlongArray array = env->NewLongArray(len);
-	env->SetLongArrayRegion(array, 0, len, (const jlong *)address);
+	jlongArray array = env->NewLongArray((jsize)len);
+	env->SetLongArrayRegion(array, 0, (jsize)len, (const jlong *)address);
 	return array;
 }
 

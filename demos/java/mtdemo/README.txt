@@ -7,20 +7,29 @@ What is here?
 
 * Main.java - Class containing Java main method
 * Worker.java - Class which handles concurrently running Ghostscript
-* build.bat - Builds the Java program
-* runmtd.bat - Starts the Java program
+* build_win32.bat - Builds the Java program for Windows
+* runmtd_win32.bat - Starts the Java program for Windows
 
-Needed in this directory to run:
 
-* gpdldll64.dll (COMPILED FOR MULTITHREADING - use DGS_THREADSAFE)
-* gs_jni.dll
-* gsjava.jar
-
-How to run:
+Building:
 
 Windows:
 
+* Ensure the gsjava project has been built (..\gsjava\build_win32.bat)
+* Run build_win32.bat
+
+
+Running:
+
+Windows:
+
+Needed in this directory to run:
+
+* gpdldll64.dll (COMPILED FOR MULTITHREADING - use DGS_THREADSAFE in psi\msvc.mak)
+* gs_jni.dll (COMPILED FOR MULTITHREADING - enable GSJNI_SUPPORT_MT in settings.h)
+* gsjava.jar
+
 The application can be started through the command line through the
-batch file "runmtd.bat". The batch file takes an optional command
+batch file "runmtd_win32.bat". The batch file takes an optional command
 line argument specifying the number of threads to be created. If
-specified, it should be an integer grater than 0.
+specified, it should be an integer greater than 0.

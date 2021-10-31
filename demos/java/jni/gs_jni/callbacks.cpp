@@ -172,7 +172,7 @@ int callbacks::calloutFunction(void *instance, void *handle, const char *deviceN
 
 	if (gsdata->env && gsdata->callout)
 	{
-		jsize len = strlen(deviceName);
+		jsize len = (jsize)strlen(deviceName);
 		jbyteArray array = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(array, 0, len, (const jbyte *)deviceName);
 		code = callIntMethod(gsdata->env, gsdata->callout, "onCallout", "(JJ[BIIJ)I", (jlong)instance, (jlong)gsdata->callerHandle, array, id, size, (jlong)data);
@@ -364,7 +364,7 @@ int callbacks::display::displaySeparationFunction(void *handle, void *device, in
 
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		jsize len = strlen(componentName);
+		jsize len = (jsize)strlen(componentName);
 		jbyteArray byteArray = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)componentName);
 		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySeparation", DISPLAY_SEPARATION_SIG, (jlong)gsdata->callerHandle,
