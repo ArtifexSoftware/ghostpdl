@@ -20,6 +20,7 @@
 #include "pdf_misc.h"
 #include "pdf_gstate.h"
 #include "gspath.h"             /* For gs_strokepath() */
+#include "gspaint.h"            /* For gs_erasepage() */
 #include "gsicc_manage.h"       /* For gsicc_get_default_type() */
 #include "gsstate.h"            /* for gs_setrenderingintent() */
 

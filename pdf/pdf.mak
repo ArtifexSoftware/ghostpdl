@@ -228,11 +228,11 @@ $(PDFOBJ)pdf_file.$(OBJ): $(PDFOBJ)pdf_file_$(JBIG2_LIB).$(OBJ)
 $(PDFOBJ)pdf_trans.$(OBJ): $(PDFSRC)pdf_trans.c $(PDFINCLUDES) $(gstparam_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_trans.c $(PDFO_)pdf_trans.$(OBJ)
 
-$(PDFOBJ)pdf_device.$(OBJ): $(PDFSRC)pdf_device.c $(PDFINCLUDES) $(gdevvec_h) \
+$(PDFOBJ)pdf_device.$(OBJ): $(PDFSRC)pdf_device.c $(PDFINCLUDES) $(gdevvec_h) $(gspaint_h) \
     $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_device.c $(PDFO_)pdf_device.$(OBJ)
 
-$(PDFOBJ)pdf_misc.$(OBJ): $(PDFSRC)pdf_misc.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+$(PDFOBJ)pdf_misc.$(OBJ): $(PDFSRC)pdf_misc.c $(PDFINCLUDES) $(gspaint_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_misc.c $(PDFO_)pdf_misc.$(OBJ)
 
 $(PDFOBJ)pdf_optcontent.$(OBJ): $(PDFSRC)pdf_optcontent.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)

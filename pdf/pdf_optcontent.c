@@ -22,6 +22,7 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_doc.h"
+#include "pdf_mark.h"
 #include "pdf_optcontent.h"
 
 

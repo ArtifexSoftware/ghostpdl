@@ -19,6 +19,7 @@
 #include "pdf_stack.h"
 #include "pdf_device.h"
 #include "gsdevice.h"       /* For gs_setdevice_no_erase */
+#include "gspaint.h"        /* For gs_erasepage */
 #include "gdevvec.h"        /* for gs_device_vector */
 #include "gxdevsop.h"       /* For special ops : dev_param_req_t */
 
