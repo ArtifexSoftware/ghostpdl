@@ -13,6 +13,27 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+/*
+        Some notes on the structure here:
+
+        At the top level, we have 'instances' of Ghostscript (or GPL).
+        Here, 'instance' is short for 'instance of the Ghostscript API'.
+        Each instance is returned by 'gsapi_new_instance'. Every new
+        instance gets a unique gs_lib_ctx_core_t. Each instance can be
+        called from any number of threads, but only from one thread at
+        a time!
+
+        Each instance of Ghostscript owns one or more interpreters.
+        Each interpreter gets a unique gs_lib_ctx_t, that shares the
+        instance's gs_lib_ctx_core_t.
+
+        Each interpreter (by which we include the graphics library
+        called by that interpreter) can make multiple gs_memory_t's.
+        Certainly, every simultaneous (rendering) thread created by by
+        the interpreter will get a unique gs_memory_t. These
+        gs_memory_t's share the same gs_lib_ctx_t (and hence the same
+        gs_lib_ctx_core_t).
+*/
 
 
 /* library context functionality for ghostscript
