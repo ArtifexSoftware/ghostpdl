@@ -199,6 +199,7 @@ typedef struct cmd_args_s {
     bool dopdfmarks;
     bool preserveannots;
     char **preserveannottypes; /* Null terminated array of strings, NULL if none */
+    bool preservemarkedcontent;
     bool nouserunit;
     bool renderttnotdef;
     bool pdfinfo;
@@ -388,6 +389,7 @@ typedef struct pdf_context_s
     /* Optional/Marked Content stuff */
     void *OFFlevels;
     uint64_t BMClevel;
+    bool BDCWasOC;
 
     /* Bitfields recording whether any errors or warnings were encountered */
     char pdf_errors[PDF_ERROR_BYTE_SIZE];

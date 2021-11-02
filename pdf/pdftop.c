@@ -642,6 +642,11 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
+        if (!strncmp(param, "PreserveMarkedContent", 21)) {
+            code = plist_value_get_bool(&pvalue, &ctx->args.preservemarkedcontent);
+            if (code < 0)
+                return code;
+        }
         if (!strncmp(param, "NoUserUnit", 10)) {
             code = plist_value_get_bool(&pvalue, &ctx->args.nouserunit);
             if (code < 0)

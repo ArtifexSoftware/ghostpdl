@@ -1082,6 +1082,12 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
             pdfctx->ctx->args.preserveannots = pvalueref->value.boolval;
         }
 
+        if (dict_find_string(pdictref, "PreserveMarkedContent", &pvalueref) > 0) {
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->args.preservemarkedcontent = pvalueref->value.boolval;
+        }
+
         if (dict_find_string(pdictref, "NoUserUnit", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;

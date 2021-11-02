@@ -440,7 +440,7 @@ int pdfi_op_MP(pdf_context *ctx)
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    if (!ctx->device_state.writepdfmarks)
+    if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent)
         goto exit;
 
     o = ctx->stack_top[-1];
@@ -468,7 +468,7 @@ int pdfi_op_DP(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return gs_note_error(gs_error_stackunderflow);
     }
 
-    if (!ctx->device_state.writepdfmarks)
+    if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent)
         goto exit;
 
     if ((ctx->stack_top[-2])->type != PDF_NAME) {
@@ -517,10 +517,13 @@ int pdfi_op_BMC(pdf_context *ctx)
     pdf_obj *o = NULL;
     int code = 0;
 
+    /* This will also prevent us writing out an EMC if the BMC is in any way invalid */
+    ctx->BDCWasOC = true;
+
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    if (!ctx->device_state.writepdfmarks)
+    if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent)
         goto exit;
 
     o = ctx->stack_top[-1];
@@ -529,6 +532,7 @@ int pdfi_op_BMC(pdf_context *ctx)
         return_error(gs_error_typecheck);
     }
 
+    ctx->BDCWasOC = false;
     code = pdfi_mark_from_objarray(ctx, &o, 1, NULL, "BMC");
     ctx->BMClevel ++;
 
@@ -547,6 +551,8 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     bool ocg_is_visible;
     pdf_obj **objarray = NULL;
 
+    /* This will also prevent us writing out an EMC if the BDC is in any way invalid */
+    ctx->BDCWasOC = true;
 
     if (pdfi_count_stack(ctx) < 2) {
         pdfi_clearstack(ctx);
@@ -560,7 +566,8 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit;
 
     if (!pdfi_name_is(tag, "OC")) {
-        if (!ctx->device_state.writepdfmarks)
+        ctx->BDCWasOC = false;
+        if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent)
             goto exit;
 
         objarray = (pdf_obj **)gs_alloc_bytes(ctx->memory, 2 * sizeof(pdf_obj *), "pdfi_op_BDC");
@@ -626,13 +633,12 @@ int pdfi_op_EMC(pdf_context *ctx)
 {
     int code, code1;
 
-    code = pdfi_oc_levels_clear(ctx, ctx->OFFlevels, ctx->BMClevel);
-
-    if (ctx->device_state.writepdfmarks) {
+    if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && !ctx->BDCWasOC)
         code1 = pdfi_mark_from_objarray(ctx, NULL, 0, NULL, "EMC");
-        if (code == 0)
-            code = code1;
-    }
+
+    code = pdfi_oc_levels_clear(ctx, ctx->OFFlevels, ctx->BMClevel);
+    if (code == 0)
+        code = code1;
 
     /* TODO: Should we flag error on too many EMC? */
     if (ctx->BMClevel > 0)
