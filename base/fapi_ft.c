@@ -1330,6 +1330,50 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 return_error(gs_error_VMerror);
             }
             a_font->server_font_data = face;
+
+            if (!a_font->is_type1) {
+                for (i = 0; i < GS_FAPI_NUM_TTF_CMAP_REQ && !cmap; i++) {
+                    if (a_font->ttf_cmap_req[i].platform_id > 0) {
+                        for (j = 0; j < face->ft_face->num_charmaps; j++) {
+                            if (FT_Get_CMap_Format(face->ft_face->charmaps[j]) >= 0
+                             && face->ft_face->charmaps[j]->platform_id == a_font->ttf_cmap_req[i].platform_id
+                             && face->ft_face->charmaps[j]->encoding_id == a_font->ttf_cmap_req[i].encoding_id) {
+
+                                cmap = face->ft_face->charmaps[j];
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        break;
+                    }
+                }
+                if (cmap) {
+                    (void)FT_Set_Charmap(face->ft_face, cmap);
+                }
+                else if (a_font->full_font_buf != NULL || a_font->font_file_path != NULL) {
+                    /* If we've passed a complete TTF to Freetype, but *haven't* requested a
+                     * specific cmap table above, try to use a Unicode one
+                     * If that doesn't work, just leave the default in place.
+                     */
+                    (void)FT_Select_Charmap(face->ft_face, ft_encoding_unicode);
+                }
+                /* For PDF, we have to know which cmap table actually was selected */
+                if (face->ft_face->charmap != NULL) {
+                    a_font->ttf_cmap_selected.platform_id = face->ft_face->charmap->platform_id;
+                    a_font->ttf_cmap_selected.encoding_id = face->ft_face->charmap->encoding_id;
+                }
+                else {
+                    /* Just in case */
+                    a_font->ttf_cmap_selected.platform_id = -1;
+                    a_font->ttf_cmap_selected.encoding_id = -1;
+                }
+            }
+            else {
+                /* Just in case */
+                a_font->ttf_cmap_selected.platform_id = -1;
+                a_font->ttf_cmap_selected.encoding_id = -1;
+            }
         }
         else
             a_font->server_font_data = NULL;
@@ -1378,49 +1422,6 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
 
         FT_Set_Transform(face->ft_face, &face->ft_transform, NULL);
 
-        if (!a_font->is_type1) {
-            for (i = 0; i < GS_FAPI_NUM_TTF_CMAP_REQ && !cmap; i++) {
-                if (a_font->ttf_cmap_req[i].platform_id > 0) {
-                    for (j = 0; j < face->ft_face->num_charmaps; j++) {
-                        if (FT_Get_CMap_Format(face->ft_face->charmaps[j]) >= 0
-                         && face->ft_face->charmaps[j]->platform_id == a_font->ttf_cmap_req[i].platform_id
-                         && face->ft_face->charmaps[j]->encoding_id == a_font->ttf_cmap_req[i].encoding_id) {
-
-                            cmap = face->ft_face->charmaps[j];
-                            break;
-                        }
-                    }
-                }
-                else {
-                    break;
-                }
-            }
-            if (cmap) {
-                (void)FT_Set_Charmap(face->ft_face, cmap);
-            }
-            else if (a_font->full_font_buf != NULL || a_font->font_file_path != NULL) {
-                /* If we've passed a complete TTF to Freetype, but *haven't* requested a
-                 * specific cmap table above, try to use a Unicode one
-                 * If that doesn't work, just leave the default in place.
-                 */
-                (void)FT_Select_Charmap(face->ft_face, ft_encoding_unicode);
-            }
-            /* For PDF, we have to know which cmap table actually was selected */
-            if (face->ft_face->charmap != NULL) {
-                a_font->ttf_cmap_selected.platform_id = face->ft_face->charmap->platform_id;
-                a_font->ttf_cmap_selected.encoding_id = face->ft_face->charmap->encoding_id;
-            }
-            else {
-                /* Just in case */
-                a_font->ttf_cmap_selected.platform_id = -1;
-                a_font->ttf_cmap_selected.encoding_id = -1;
-            }
-        }
-        else {
-            /* Just in case */
-            a_font->ttf_cmap_selected.platform_id = -1;
-            a_font->ttf_cmap_selected.encoding_id = -1;
-        }
     }
 
     /* dpf("gs_fapi_ft_get_scaled_font return %d\n", a_font->server_font_data ? 0 : -1); */
