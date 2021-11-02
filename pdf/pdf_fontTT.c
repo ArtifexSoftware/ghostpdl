@@ -383,6 +383,10 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         code = gs_note_error(gs_error_invalidfont);
         goto error;
     }
+    font->object_num = font_dict->object_num;
+    font->generation_num = font_dict->generation_num;
+    font->indirect_num = font_dict->indirect_num;
+    font->indirect_gen = font_dict->indirect_gen;
 
     font->FontDescriptor = (pdf_dict *)fontdesc;
     fontdesc = NULL;

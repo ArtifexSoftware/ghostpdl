@@ -556,6 +556,9 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
 
             t1f->object_num = font_dict->object_num;
             t1f->generation_num = font_dict->generation_num;
+            t1f->indirect_num = font_dict->indirect_num;
+            t1f->indirect_gen = font_dict->indirect_gen;
+
             t1f->PDF_font = font_dict;
             pdfi_countup(font_dict);
             t1f->BaseFont = basefont;

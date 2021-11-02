@@ -238,6 +238,9 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         return code;
 
     font->object_num = font_dict->object_num;
+    font->generation_num = font_dict->generation_num;
+    font->indirect_num = font_dict->indirect_num;
+    font->indirect_gen = font_dict->indirect_gen;
 
     code = pdfi_dict_get_type(ctx, font_dict, "FontBBox", PDF_ARRAY, &obj);
     if (code < 0)

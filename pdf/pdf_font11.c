@@ -306,6 +306,9 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     pdfi_countup(font_dict);
     font->object_num = font_dict->object_num;
     font->generation_num = font_dict->generation_num;
+    font->indirect_num = font_dict->indirect_num;
+    font->indirect_gen = font_dict->indirect_gen;
+
     font->FontDescriptor = (pdf_dict *)fontdesc;
     fontdesc = NULL;
 
