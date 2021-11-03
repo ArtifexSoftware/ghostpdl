@@ -632,7 +632,7 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 /* end marked content sequence */
 int pdfi_op_EMC(pdf_context *ctx)
 {
-    int code, code1;
+    int code, code1 = 0;
 
     if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && !ctx->BDCWasOC)
         code1 = pdfi_mark_from_objarray(ctx, NULL, 0, NULL, "EMC");
