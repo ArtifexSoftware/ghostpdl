@@ -316,12 +316,18 @@ static const char *pdfi_font_substitute_by_flags(unsigned int flags)
     return "Helvetica"; /* Really shouldn't ever happen */
 }
 
-static void pdfi_emprint_font_name(pdf_context *ctx, pdf_name *n)
+/* Print a name object to stdout */
+static void pdfi_print_font_name(pdf_context *ctx, pdf_name *n)
 {
-    int i;
-    for (i = 0; i < n->length; i++) {
-        dmprintf1(ctx->memory, "%c", n->data[i]);
-    }
+    if (ctx->args.QUIET != true)
+        (void)outwrite(ctx->memory, (const char *)n->data, n->length);
+}
+
+/* Print a null terminated string to stdout */
+static void pdfi_print_string(pdf_context *ctx, const char *str)
+{
+    if (ctx->args.QUIET != true)
+        (void)outwrite(ctx->memory, str, strlen(str));
 }
 
 static int
@@ -389,19 +395,20 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
     if (code >= 0) {
         gs_const_string fname;
         if (basefont) {
-            dmprintf(ctx->memory, "Loading font ");
-            pdfi_emprint_font_name(ctx, (pdf_name *)basefont);
-            dmprintf(ctx->memory, " (or substitute) from ");
+            pdfi_print_string(ctx, "Loading font ");
+            pdfi_print_font_name(ctx, (pdf_name *)basefont);
+            pdfi_print_string(ctx, " (or substitute) from ");
         }
         else {
-            dmprintf(ctx->memory, "Loading nameless font from ");
+            pdfi_print_string(ctx, "Loading nameless font from ");
         }
         sfilename(s, &fname);
         if (fname.size < gp_file_name_sizeof) {
             memcpy(fontfname, fname.data, fname.size);
             fontfname[fname.size] = '\0';
         }
-        dmprintf1(ctx->memory, "%s.\n", fontfname);
+        pdfi_print_string(ctx, fontfname);
+        pdfi_print_string(ctx, "\n");
 
         sfseek(s, 0, SEEK_END);
         *buflen = sftell(s);
