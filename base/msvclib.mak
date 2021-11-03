@@ -547,6 +547,10 @@ MSVC_VERSION=14
 # VS2017 or VS2019 (Toolset v141)
 MSVC_VERSION=15
 !endif
+!if "$(_NMAKE_VER)" == "14.16.27043.0"
+# VS2017 or VS2019 (Toolset v141)
+MSVC_VERSION=15
+!endif
 !if "$(_NMAKE_VER)" == "14.24.28314.0"
 # VS2019 (Toolset v142)
 MSVC_VERSION=16
