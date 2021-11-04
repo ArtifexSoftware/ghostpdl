@@ -457,6 +457,7 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
         int iv;
         bool bv;
         int ecode = 0;
+        int page_spot_colors = 0;
 
         fa.data = fv;
         fa.persistent = false;
@@ -464,6 +465,13 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
         gs_c_param_list_write(&list, mem);
         iv = pxs->orientation;  /* might not be an int */
         ecode = param_write_int(plist, "Orientation", &iv);
+        ecode = px_put1(dev, &list, ecode);
+        if (ecode < 0)
+            return ecode;
+
+        /* PXL never has spot colors on the page */
+        gs_c_param_list_write(&list, mem);
+        ecode = param_write_int(plist, "PageSpotColors", &(page_spot_colors));
         ecode = px_put1(dev, &list, ecode);
         if (ecode < 0)
             return ecode;

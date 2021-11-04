@@ -420,6 +420,31 @@ ps_impl_init_job(pl_interp_implementation_t *impl,
         (void)code1;
     }
 
+    /* Make sure the PageSpotColors is set to -1 for PS */
+    {
+        gs_c_param_list* params;
+        int page_spot_colors = -1;
+        int code2;
+
+        params = gs_c_param_list_alloc(psi->memory, "ps_impl_init_job");
+        if (params == NULL)
+            return_error(gs_error_VMerror);
+
+        gs_c_param_list_write(params, psi->memory);
+        gs_param_list_set_persistent_keys((gs_param_list*)params, false);
+
+        code2 = param_write_int((gs_param_list*)params, "PageSpotColors", &(page_spot_colors));
+        if (code2 < 0)
+            return code2;
+
+        gs_c_param_list_read(params);
+
+        code2 = psapi_set_device_param(psi->psapi_instance, (gs_param_list*)params);
+        if (code2 < 0)
+            return code2;
+
+        gs_c_param_list_release(params);
+    }
     return code;
 }
 

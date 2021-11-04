@@ -125,6 +125,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     char base_uri[1024];
     char *s;
     int code, code1, code2;
+    int page_spot_colors = 0;
 
     if_debug1m('|', ctx->memory, "doc: parsing page %s\n", part->name);
 
@@ -205,9 +206,19 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
             }
         }
 
+        /* At some point we may want to add the pre-parse for named colors and n-channel
+           colors here. The XPS spec makes it optional to put the colorant names in the
+           ICC profile. So we would need some sort of fall back and we would need to know
+           if a name color that we encounter is one that we already encountered, which would get
+           very messy in terms of comparing ICC profiles. Especially for example, if
+           the same spot color was used individually AND in an n-channel color profile.
+           Since XPS usage is rare, and the demand for support of real spot color separation
+           non-existent, we will set the PageSpotColors to 0 at this point. */
+
+        code  = param_write_int((gs_param_list *)&list, "PageSpotColors", &(page_spot_colors));
         code1 = param_write_bool((gs_param_list *)&list, "PageUsesTransparency", &(ctx->has_transparency));
         code2 = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
-        if ( code1 >= 0 || code2 >= 0)
+        if ( code >= 0 || code1 >= 0 || code2 >= 0)
         {
             gs_c_param_list_read(&list);
             code = gs_putdeviceparams(dev, (gs_param_list *)&list);

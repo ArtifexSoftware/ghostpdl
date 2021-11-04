@@ -367,6 +367,9 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         code = put_param1_bool(pcs, "BindShortEdge", pcs->bind_short_edge);
         if (code < 0)
             return code;
+        code = put_param1_int(pcs, "PageSpotColors", 0);
+        if (code < 0)
+            return code;
     }
 
     if (type & (pcl_reset_initial ^ pcl_reset_cold))
