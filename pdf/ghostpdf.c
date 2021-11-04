@@ -1363,7 +1363,7 @@ static size_t pdfi_grdir_path_string_match(const byte *str, size_t sl0, byte *pa
 
 int pdfi_add_paths_to_search_paths(pdf_context *ctx, const char *ppath, int l, bool fontpath)
 {
-    int i, slen, npaths = (l > 0);
+    int i, slen, npaths = (l > 0) ? 1 : 0;
     const char *p = ppath;
     char *ps;
     const char *pe = p + l + 1;
@@ -1501,6 +1501,61 @@ static void pdfi_free_search_paths(pdf_context *ctx)
     }
     gs_free_object(ctx->memory, (byte *)ctx->search_paths.resource_paths, "array of paths");
     gs_free_object(ctx->memory, (byte *)ctx->search_paths.font_paths, "array of font paths");
+}
+
+static void pdfi_free_fontmapfiles(pdf_context *ctx)
+{
+    int i;
+    for (i = 0; i < ctx->num_fontmapfiles; i++) {
+        gs_free_object(ctx->memory, ctx->fontmapfiles[i].data, "fontmapfiles string body");
+    }
+    gs_free_object(ctx->memory, ctx->fontmapfiles, "fontmapfiles array");
+}
+
+/* The fontmap file list doesn't extend, later settings in the command line override earlier ones
+   (Unlike the "-I" search paths above).
+ */
+int pdfi_add_fontmapfiles(pdf_context *ctx, const char *ppath, int l)
+{
+    int i, nfilenames = (l > 0) ? 1 : 0;
+    const char *p = ppath;
+    char *ps;
+    const char *pe = p + l + 1;
+    int code = 0;
+
+    pdfi_free_fontmapfiles(ctx);
+
+    for (ps = (char *)p; ps < pe; ps++) {
+        if (*ps == gp_file_name_list_separator)
+           nfilenames++;
+    }
+    if (nfilenames > 0) {
+        ctx->fontmapfiles = (gs_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_string) * nfilenames, "array of fontmap files");
+        if (ctx->fontmapfiles == NULL) {
+            return_error(gs_error_VMerror);
+        }
+        else {
+           memset(ctx->fontmapfiles, 0x00, sizeof(gs_string) * nfilenames);
+           ctx->num_fontmapfiles = nfilenames;
+
+           for (i = 0; i < nfilenames; i++) {
+               for (ps = (char *)p; ps < pe; ps++) {
+                   if (*ps == gp_file_name_list_separator)
+                       break;
+               }
+               ctx->fontmapfiles[i].data = gs_alloc_bytes(ctx->memory, ps - p, "fontmap file name body");
+               if (ctx->fontmapfiles[i].data == NULL) {
+                    code = gs_note_error(gs_error_VMerror);
+                    goto done;
+               }
+               memcpy(ctx->fontmapfiles[i].data, p, ps - p);
+               ctx->fontmapfiles[i].size = ps - p;
+               p = ps + 1;
+           }
+        }
+    }
+done:
+    return code;
 }
 
 /***********************************************************************************/
@@ -1900,6 +1955,7 @@ int pdfi_free_context(pdf_context *ctx)
     }
 
     pdfi_free_search_paths(ctx);
+    pdfi_free_fontmapfiles(ctx);
 
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
 #if PDFI_LEAK_CHECK

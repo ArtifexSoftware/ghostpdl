@@ -338,6 +338,56 @@ done:
     return code >= 0 ? 0 : code;
 }
 
+static int zpdfi_populate_fontmap_files(i_ctx_t *i_ctx_p, pdf_context *ctx)
+{
+    int code, i;
+    ref *fontmaps;
+
+    code = dict_find_string(systemdict, "FONTMAP", &fontmaps);
+    if (code >= 0 && r_has_type(fontmaps, t_array)) {
+        ctx->fontmapfiles = (gs_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_string) * r_size(fontmaps), "array of fontmap files");
+        if (ctx->fontmapfiles != 0) {
+            memset(ctx->fontmapfiles, 0x00, sizeof(gs_string) * r_size(fontmaps));
+            ctx->num_fontmapfiles = r_size(fontmaps);
+            for (i = 0; i < r_size(fontmaps); i++) {
+                const ref *fmapfile = fontmaps->value.refs + i; /* By nature, this cannot be a short/mixed array, only a "normal" array */
+                ctx->fontmapfiles[i].data = gs_alloc_bytes(ctx->memory, r_size(fmapfile), "zpdfi_populate_fontmap_files");
+                if (ctx->fontmapfiles[i].data == NULL) {
+                    code = gs_note_error(gs_error_VMerror);
+                    goto done;
+                }
+                memcpy((char *)ctx->fontmapfiles[i].data, fmapfile->value.const_bytes, r_size(fmapfile));
+                ctx->fontmapfiles[i].size = r_size(fmapfile);
+            }
+        }
+        else {
+            code = gs_note_error(gs_error_VMerror);
+            goto done;
+        }
+    }
+    else if (code >= 0 && r_has_type(fontmaps, t_string)) {
+        ctx->fontmapfiles = (gs_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_string), "array of fontmap files");
+        if (ctx->fontmapfiles != 0) {
+            ctx->num_fontmapfiles = 1;
+            ctx->fontmapfiles[0].data = gs_alloc_bytes(ctx->memory, r_size(fontmaps), "zpdfi_populate_fontmap_files");
+            if (ctx->fontmapfiles[0].data == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto done;
+            }
+            memcpy((char *)ctx->fontmapfiles[0].data, fontmaps->value.const_bytes, r_size(fontmaps));
+            ctx->fontmapfiles[0].size = r_size(fontmaps);
+        }
+        else {
+            code = gs_note_error(gs_error_VMerror);
+            goto done;
+        }
+    }
+    else
+        code = 0;
+done:
+    return code;
+}
+
 /*
  * Declare the structure we use to represent an instance of the PDF parser
  * as a t_struct.
@@ -1129,6 +1179,11 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     code = zpdfi_populate_search_paths(i_ctx_p, ctx);
     if (code < 0)
         goto error;
+
+    code = zpdfi_populate_fontmap_files(i_ctx_p, ctx);
+    if (code < 0)
+        goto error;
+
     op = osp;
     push(1);
     make_tav(op, t_pdfctx, icurrent_space | a_all, pstruct, (obj_header_t *)(pdfctx));

@@ -429,6 +429,11 @@ FONTPATH
 
 %END FONTPATH
 
+/FONTMAP where
+{
+  dup /FONTMAP get /FONTMAP exch [ exch //.pathlist exec] put
+} if
+
 % Try to enumerate native fonts registered with the os
 % and add them to the fontmap. This relies on a custom
 % operator which calls platform-specific C code. It
@@ -1315,7 +1320,7 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
 /.loadinitialfonts
  { NOFONTMAP not
     { /FONTMAP where
-          { pop [ FONTMAP //.pathlist exec]
+          { pop FONTMAP
              { dup VMDEBUG findlibfile
                 { exch pop //.loadFontmap exec }
                 { /undefinedfilename signalerror }

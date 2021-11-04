@@ -145,12 +145,18 @@ pdfi_font_match_glyph_widths(pdf_font *pdfont)
     return code;
 }
 
-static void pdfi_emprint_font_name(pdf_context *ctx, pdf_name *n)
+/* Print a name object to stdout */
+static void pdfi_print_font_name(pdf_context *ctx, pdf_name *n)
 {
-    int i;
-    for (i = 0; i < n->length; i++) {
-        dmprintf1(ctx->memory, "%c", n->data[i]);
-    }
+    if (ctx->args.QUIET != true)
+        (void)outwrite(ctx->memory, (const char *)n->data, n->length);
+}
+
+/* Print a null terminated string to stdout */
+static void pdfi_print_string(pdf_context *ctx, const char *str)
+{
+    if (ctx->args.QUIET != true)
+        (void)outwrite(ctx->memory, str, strlen(str));
 }
 
 /* Call with a CIDFont name to try to find the CIDFont on disk
@@ -195,12 +201,12 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
                 }
                 else {
                     if (cidname) {
-                        dmprintf(ctx->memory, "Loading CIDFont ");
-                        pdfi_emprint_font_name(ctx, (pdf_name *)cidname);
-                        dmprintf(ctx->memory, " substitute from ");
+                        pdfi_print_string(ctx, "Loading CIDFont ");
+                        pdfi_print_font_name(ctx, (pdf_name *)cidname);
+                        pdfi_print_string(ctx, " substitute from ");
                     }
                     else {
-                        dmprintf(ctx->memory, "Loading nameless CIDFont from ");
+                        pdfi_print_string(ctx, "Loading nameless CIDFont from ");
                     }
                     sfilename(s, &fname);
                     if (fname.size < gp_file_name_sizeof) {
@@ -210,7 +216,9 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
                     else {
                         strcpy(fontfname, "unnamed file");
                     }
-                    dmprintf1(ctx->memory, "%s.\n", fontfname);
+                    pdfi_print_string(ctx, fontfname);
+                    pdfi_print_string(ctx, "\n");
+
 
                     sfseek(s, 0, SEEK_END);
                     *buflen = sftell(s);
@@ -234,12 +242,12 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
             }
             else {
                 if (cidname) {
-                    dmprintf(ctx->memory, "Loading CIDFont ");
-                    pdfi_emprint_font_name(ctx, (pdf_name *)cidname);
-                    dmprintf(ctx->memory, " (or substitute) from ");
+                    pdfi_print_string(ctx, "Loading CIDFont ");
+                    pdfi_print_font_name(ctx, (pdf_name *)cidname);
+                    pdfi_print_string(ctx, " (or substitute) from ");
                 }
                 else {
-                    dmprintf(ctx->memory, "Loading nameless CIDFont from ");
+                    pdfi_print_string(ctx, "Loading nameless CIDFont from ");
                 }
                 sfilename(s, &fname);
                 if (fname.size < gp_file_name_sizeof) {
@@ -249,7 +257,8 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
                 else {
                     strcpy(fontfname, "unnamed file");
                 }
-                dmprintf1(ctx->memory, "%s.\n", fontfname);
+                pdfi_print_string(ctx, fontfname);
+                pdfi_print_string(ctx, "\n");
                 sfseek(s, 0, SEEK_END);
                 *buflen = sftell(s);
                 sfseek(s, 0, SEEK_SET);
@@ -423,20 +432,6 @@ static const char *pdfi_font_substitute_by_flags(unsigned int flags)
         }
     }
     return "Helvetica"; /* Really shouldn't ever happen */
-}
-
-/* Print a name object to stdout */
-static void pdfi_print_font_name(pdf_context *ctx, pdf_name *n)
-{
-    if (ctx->args.QUIET != true)
-        (void)outwrite(ctx->memory, (const char *)n->data, n->length);
-}
-
-/* Print a null terminated string to stdout */
-static void pdfi_print_string(pdf_context *ctx, const char *str)
-{
-    if (ctx->args.QUIET != true)
-        (void)outwrite(ctx->memory, str, strlen(str));
 }
 
 enum {

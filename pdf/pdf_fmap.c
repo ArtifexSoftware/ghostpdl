@@ -33,7 +33,7 @@ typedef struct
     const char *mappedname;
 } pdfi_custom_fmap_entry;
 
-pdfi_custom_fmap_entry pdfi_custom_fmap_enties[] =
+pdfi_custom_fmap_entry pdfi_custom_fmap_entries[] =
 {
   {"Helv", "Helvetica"},
   {NULL, NULL}
@@ -103,35 +103,62 @@ pdf_fontmap_open_file(pdf_context *ctx, const char *mapfilename, byte **buf, int
 }
 
 static int
-pdf_make_fontmap(pdf_context *ctx, const char *fmapname, bool cidfmap)
+pdf_make_fontmap(pdf_context *ctx, const char *default_fmapname, int cidfmap)
 {
     byte *fmapbuf = NULL;
     int code, fmapbuflen;
     pdf_c_stream *fmapstr = NULL;
     pdf_stream fakedict = {0};
-    pdfi_custom_fmap_entry *pcfe = pdfi_custom_fmap_enties;
-    int i;
-
+    pdfi_custom_fmap_entry *pcfe = pdfi_custom_fmap_entries;
+    int i, j = 0;
+    char fmapname[gp_file_name_sizeof];
     pdf_c_stream fakemainstream = {0};
+    int stacksize = pdfi_count_stack(ctx);
 
-    code = pdf_fontmap_open_file(ctx, (const char *)fmapname, &fmapbuf, &fmapbuflen);
+    strncpy(fmapname, default_fmapname, strlen(default_fmapname) + 1);
+
+    code = pdfi_mark_stack(ctx, PDF_DICT_MARK);
     if (code < 0)
-        return code;
+        goto done;
 
-    code = pdfi_open_memory_stream_from_memory(ctx, fmapbuflen, fmapbuf, &fmapstr, true);
+    do {
+        if (j < ctx->num_fontmapfiles) {
+            memcpy(fmapname, ctx->fontmapfiles[j].data, ctx->fontmapfiles[j].size);
+            fmapname[ctx->fontmapfiles[j].size] = '\0';
+        }
+
+        code = pdf_fontmap_open_file(ctx, (const char *)fmapname, &fmapbuf, &fmapbuflen);
+        if (code < 0) {
+            if (ctx->args.QUIET != true) {
+                (void)outwrite(ctx->memory, "Warning: ", 9);
+                if (cidfmap)
+                    (void)outwrite(ctx->memory, "cidfmap file ", 13);
+                else
+                    (void)outwrite(ctx->memory, "Fontmap file \"", 14);
+                (void)outwrite(ctx->memory, fmapname, strlen(fmapname));
+                (void)outwrite(ctx->memory, "\" not found.\n", 13);
+                code = 0;
+            }
+        }
+        else {
+            code = pdfi_open_memory_stream_from_memory(ctx, fmapbuflen, fmapbuf, &fmapstr, true);
+            if (code >= 0) {
+
+                if (ctx->main_stream == NULL) {
+                    ctx->main_stream = &fakemainstream;
+                }
+
+                code = pdfi_interpret_content_stream(ctx, fmapstr, &fakedict, NULL);
+                if (ctx->main_stream == &fakemainstream) {
+                    ctx->main_stream = NULL;
+                }
+                gs_free_object(ctx->memory, fmapbuf, "pdf_make_fontmap(fmapbuf)");
+            }
+        }
+        j++;
+    } while(j < ctx->num_fontmapfiles && cidfmap == false && code >= 0);
+
     if (code >= 0) {
-        int stacksize = pdfi_count_stack(ctx);
-
-        if (ctx->main_stream == NULL) {
-            ctx->main_stream = &fakemainstream;
-        }
-        code = pdfi_mark_stack(ctx, PDF_DICT_MARK);
-        if (code < 0)
-            goto done;
-        code = pdfi_interpret_content_stream(ctx, fmapstr, &fakedict, NULL);
-        if (ctx->main_stream == &fakemainstream) {
-            ctx->main_stream = NULL;
-        }
         if (code >= 0 && pdfi_count_stack(ctx) > stacksize) {
             code = pdfi_dict_from_stack(ctx, 0, 0, true);
             if (code < 0)
@@ -173,7 +200,22 @@ pdf_make_fontmap(pdf_context *ctx, const char *fmapname, bool cidfmap)
         }
     }
 done:
-    gs_free_object(ctx->memory, fmapbuf, "pdf_make_fontmap(fmapbuf)");
+    /* We always want to leave here with a valid map dictionary
+       even if it's empty
+     */
+    if (cidfmap == true) {
+        if (ctx->pdfcidfmap == NULL) {
+            code = pdfi_dict_alloc(ctx, 0, &ctx->pdfcidfmap);
+            pdfi_countup(ctx->pdfcidfmap);
+        }
+    }
+    else {
+        if (ctx->pdffontmap == NULL) {
+            code = pdfi_dict_alloc(ctx, 0, &ctx->pdffontmap);
+            pdfi_countup(ctx->pdffontmap);
+        }
+    }
+    pdfi_clearstack(ctx);
     return code;
 }
 
@@ -536,7 +578,7 @@ static bool font_scan_skip_file(char *fname)
 static int pdfi_generate_native_fontmap(pdf_context *ctx)
 {
     file_enum *fe;
-    int i, j;
+    int i;
     char *patrn= NULL;
     char *result = NULL;
     char *working = NULL;
@@ -688,7 +730,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
 int
 pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, int *findex)
 {
-    int code, code2 = gs_error_undefined;
+    int code;
     pdf_obj *mname;
 
     *findex = -1;
@@ -714,7 +756,6 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, in
            subsitute name -> file name
            So we want to loop until we no more hits.
          */
-        code2 = 0;
         while(1) {
             pdf_obj *mname2;
             code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, (pdf_name *)mname, &mname2);
@@ -728,7 +769,6 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, in
         code = pdfi_dict_get_by_key(ctx, ctx->pdfnativefontmap, fname, &record);
         if (code < 0)
             return code;
-        code2 = 0;
         if (record->type == PDF_STRING) {
             mname = record;
         }
@@ -746,11 +786,11 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, in
         }
     }
 
-    if (mname->type == PDF_STRING && pdfi_fmap_file_exists(ctx, (pdf_string *)mname)) {
+    if (mname != NULL && mname->type == PDF_STRING && pdfi_fmap_file_exists(ctx, (pdf_string *)mname)) {
         *mapname = mname;
         code = 0;
     }
-    else if (mname->type == PDF_NAME) { /* If we map to a name, we assume (for now) we have the font as a "built-in" */
+    else if (mname != NULL && mname->type == PDF_NAME) { /* If we map to a name, we assume (for now) we have the font as a "built-in" */
         *mapname = mname;
         code = 0;
     }

@@ -479,6 +479,9 @@ typedef struct pdf_context_s
     /* A name table :-( */
     pdfi_name_entry_t *name_table;
 
+    gs_string *fontmapfiles;
+    int num_fontmapfiles;
+
     search_paths_t search_paths;
     pdf_dict *pdffontmap;
     pdf_dict *pdfnativefontmap; /* Explicit mappings take precedence, hence we need separate dictionaries */
@@ -511,6 +514,7 @@ typedef struct pdf_context_s
 
 int pdfi_add_paths_to_search_paths(pdf_context *ctx, const char *ppath, int l, bool fontpath);
 int pdfi_add_initial_paths_to_search_paths(pdf_context *ctx, const char *ppath, int l);
+int pdfi_add_fontmapfiles(pdf_context *ctx, const char *ppath, int l);
 
 pdf_context *pdfi_create_context(gs_memory_t *pmem);
 int pdfi_clear_context(pdf_context *ctx);
