@@ -61,7 +61,7 @@ static gs_glyph pdfi_ttf_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space
     uint ID;
     int code;
 
-    if ((ttfont->descflags & 4) != 0) {
+    if ((ttfont->descflags & 4) != 0 || sp == GLYPH_SPACE_INDEX) {
         int code = pdfi_fapi_check_cmap_for_GID(pfont, (uint)chr, &ID);
         if (code < 0 || ID == 0)
             code = pdfi_fapi_check_cmap_for_GID(pfont, (uint)(chr | 0xf0 << 8), &ID);
@@ -94,11 +94,8 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
     uint cc = 0;
     int i, code = 0;
 
-    if (glyph >= GS_MIN_GLYPH_INDEX)
-        glyph -= GS_MIN_GLYPH_INDEX;
-
-    if ((ttfont->descflags & 4) != 0) {
-        gind = (uint)glyph;
+    if ((ttfont->descflags & 4) != 0 || glyph >= GS_MIN_GLYPH_INDEX) {
+        gind = (uint)glyph < GS_MIN_GLYPH_INDEX ? glyph : glyph - GS_MIN_GLYPH_INDEX;
     }
     else {
         pdf_context *ctx = (pdf_context *)ttfont->ctx;
