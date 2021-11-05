@@ -29,3 +29,43 @@ tested there. Some fiddling to load the DLL may be required.
 Building with GHOSTPDL=0 will allow the Ghostscript DLL to be
 tested. The VS2019 project will need to be edited to use the
 appropriate .lib file too.
+
+On unix, the file can be built using:
+
+ make api_test
+
+run using:
+
+ make run_api_test
+
+and cleaned up using:
+
+ make post_api_test
+
+
+                            multi_test
+                            ~~~~~~~~~~
+
+This is a simple VS2019 project that loads the gpdl dll and drives
+multiple instances of it from the gsapi functions.
+
+It is intended as a simple demonstration of how to use multiple
+instances of the ghostscript library at once; in this case many
+ghostscript instances run in parallel within a single process
+to convert several different documents at a time.
+
+Building with GHOSTPDL=0 will allow the Ghostscript DLL to be
+tested. The VS2019 project will need to be edited to use the
+appropriate .lib file too.
+
+On unix, the file can be built using:
+
+ make multi_test
+
+run using:
+
+ make run_multi_test
+
+and cleaned up using:
+
+ make post_multi_test
