@@ -2133,7 +2133,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
         }
         if (code >= 0) {
             if (cffpriv.FontType == ft_CID_encrypted) {
-                pdf_obj *obj;
+                pdf_obj *obj = NULL;
                 pdf_cidfont_type0 *cffcid;
                 gs_font_cid0 *pfont;
 
@@ -2154,9 +2154,50 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 pfont->FAPI = NULL;
                 pfont->base = (gs_font *) cffcid->pfont;
 
-                cffcid->registry = cffpriv.pdfcffpriv.registry;
-                cffcid->ordering = cffpriv.pdfcffpriv.ordering;
-                cffcid->supplement = cffpriv.pdfcffpriv.supplement;
+                code = pdfi_dict_knownget_type(ctx, font_dict, "CIDSystemInfo", PDF_DICT, (pdf_obj **)&obj);
+                if (code <= 0) {
+                    cffcid->registry = cffpriv.pdfcffpriv.registry;
+                    cffcid->ordering = cffpriv.pdfcffpriv.ordering;
+                    cffcid->supplement = cffpriv.pdfcffpriv.supplement;
+                }
+                else {
+                    pdf_num *suppl = NULL;
+
+                    code = pdfi_dict_knownget_type(ctx, (pdf_dict *)obj, "Registry", PDF_STRING, (pdf_obj **)&cffcid->registry);
+                    if (code <= 0) {
+                        cffcid->registry = cffpriv.pdfcffpriv.registry;
+                    }
+                    else {
+                        pdfi_countdown(cffpriv.pdfcffpriv.registry);
+                        cffpriv.pdfcffpriv.registry = NULL;
+                    }
+
+                    code = pdfi_dict_knownget_type(ctx, (pdf_dict *)obj, "Ordering", PDF_STRING, (pdf_obj **)&cffcid->ordering);
+                    if (code <= 0) {
+                        cffcid->ordering = cffpriv.pdfcffpriv.ordering;
+                    }
+                    else {
+                        pdfi_countdown(cffpriv.pdfcffpriv.ordering);
+                        cffpriv.pdfcffpriv.ordering = NULL;
+                    }
+                    code = pdfi_dict_knownget_type(ctx, (pdf_dict *)obj, "Supplement", PDF_INT, (pdf_obj **)&suppl);
+                    if (code <= 0 || suppl->type != PDF_INT) {
+                        cffcid->supplement = cffpriv.pdfcffpriv.supplement;
+                    }
+                    else {
+                        cffcid->supplement = suppl->value.i;
+                    }
+                    pdfi_countdown(suppl);
+                }
+                pdfi_countdown(obj);
+                obj = NULL;
+
+                pfont->cidata.common.CIDSystemInfo.Registry.data = cffcid->registry->data;
+                pfont->cidata.common.CIDSystemInfo.Registry.size = cffcid->registry->length;
+                pfont->cidata.common.CIDSystemInfo.Ordering.data = cffcid->ordering->data;
+                pfont->cidata.common.CIDSystemInfo.Ordering.size = cffcid->ordering->length;
+                pfont->cidata.common.CIDSystemInfo.Supplement = cffcid->supplement;
+
                 cffcid->FontDescriptor = (pdf_dict *) fontdesc;
                 fontdesc = NULL;
 
@@ -2166,11 +2207,6 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffcid->cidtogidmap.data = NULL;
                 cffcid->cidtogidmap.size = 0;
 
-                pfont->cidata.common.CIDSystemInfo.Registry.data = cffcid->registry->data;
-                pfont->cidata.common.CIDSystemInfo.Registry.size = cffcid->registry->length;
-                pfont->cidata.common.CIDSystemInfo.Ordering.data = cffcid->ordering->data;
-                pfont->cidata.common.CIDSystemInfo.Ordering.size = cffcid->ordering->length;
-                pfont->cidata.common.CIDSystemInfo.Supplement = cffcid->supplement;
                 pfont->client_data = cffcid;
 
                 cffcid->object_num = font_dict->object_num;

@@ -385,6 +385,48 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         obj = NULL;
     }
 
+    cid2 = (gs_font_cid2 *)font->pfont;
+
+    code = pdfi_dict_knownget_type(ctx, font_dict, "CIDSystemInfo", PDF_DICT, (pdf_obj **)&obj);
+    if (code <= 0) {
+        cid2->cidata.common.CIDSystemInfo.Registry.data = NULL;
+        cid2->cidata.common.CIDSystemInfo.Registry.size = 0;
+        cid2->cidata.common.CIDSystemInfo.Ordering.data = NULL;
+        cid2->cidata.common.CIDSystemInfo.Ordering.size = 0;
+    }
+    else {
+        pdf_num *suppl = NULL;
+
+        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)obj, "Registry", PDF_STRING, (pdf_obj **)&font->registry);
+        if (code <= 0) {
+            cid2->cidata.common.CIDSystemInfo.Registry.data = NULL;
+            cid2->cidata.common.CIDSystemInfo.Registry.size = 0;
+        }
+        else {
+            cid2->cidata.common.CIDSystemInfo.Registry.data = font->registry->data;
+            cid2->cidata.common.CIDSystemInfo.Registry.size = font->registry->length;
+        }
+        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)obj, "Ordering", PDF_STRING, (pdf_obj **)&font->ordering);
+        if (code <= 0) {
+            cid2->cidata.common.CIDSystemInfo.Ordering.data = NULL;
+            cid2->cidata.common.CIDSystemInfo.Ordering.size = 0;
+        }
+        else {
+            cid2->cidata.common.CIDSystemInfo.Ordering.data = font->ordering->data;
+            cid2->cidata.common.CIDSystemInfo.Ordering.size = font->ordering->length;
+        }
+        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)obj, "Supplement", PDF_INT, (pdf_obj **)&suppl);
+        if (code <= 0) {
+            cid2->cidata.common.CIDSystemInfo.Supplement = font->supplement = 0;
+        }
+        else {
+            cid2->cidata.common.CIDSystemInfo.Supplement = font->supplement = suppl->value.i;
+        }
+        pdfi_countdown(suppl);
+    }
+    pdfi_countdown(obj);
+    obj = NULL;
+
     code = gs_type42_font_init((gs_font_type42 *)font->pfont, 0);
     if (code < 0) {
         goto error;
@@ -393,7 +435,6 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     font->pfont->procs.glyph_info = pdfi_cidtype2_glyph_info;
     font->pfont->procs.enumerate_glyph = pdfi_cidtype2_enumerate_glyph;
 
-    cid2 = (gs_font_cid2 *)font->pfont;
     if (font->cidtogidmap.size > 0) {
         gs_font_cid2 *cid2 = (gs_font_cid2 *)font->pfont;
         if (cid2->data.numGlyphs > font->cidtogidmap.size >> 1)
@@ -457,6 +498,8 @@ int pdfi_free_font_cidtype2(pdf_obj *font)
     pdfi_countdown(pdfcidf->W);
     pdfi_countdown(pdfcidf->DW2);
     pdfi_countdown(pdfcidf->W2);
+    pdfi_countdown(pdfcidf->registry);
+    pdfi_countdown(pdfcidf->ordering);
 
     gs_free_object(OBJ_MEMORY(pdfcidf), pdfcidf, "pdfi_free_font_cidtype2(pdfcidf)");
 return 0;
