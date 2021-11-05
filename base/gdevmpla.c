@@ -1918,7 +1918,7 @@ mem_planar_strip_copy_rop2(gx_device * dev,
             return gs_note_error(gs_error_VMerror);
         }
         for (j = 0; j < mdev->color_info.num_components; j++) {
-            sbuf = (byte *)sdata + j * sraster;
+            sbuf = (byte *)sdata + j * sraster * planar_height;
             for (i = height; i > 0; i--) {
                 *line_ptrs++ = sbuf;
                 sbuf += sraster;
@@ -1926,7 +1926,7 @@ mem_planar_strip_copy_rop2(gx_device * dev,
         }
         line_ptrs -= height * mdev->color_info.num_components;
         planar_to_chunky(mdev, sourcex, 0, width, height,
-                         0, chunky_sraster, buf, line_ptrs, planar_height);
+                         0, chunky_sraster, buf, line_ptrs, height);
         gs_free_object(mdev->memory, line_ptrs, "mem_planar_strip_copy_rop(line_ptrs)");
         code = mem_planar_strip_copy_rop2(dev, buf, 0, chunky_sraster,
                                           id, scolors, textures, tcolors,
