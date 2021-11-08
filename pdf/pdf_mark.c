@@ -484,18 +484,20 @@ static int pdfi_mark_handle_dest_names(pdf_context *ctx, pdf_dict *link_dict,
         goto exit;
     }
 
-    /* Next entry is supposed to be a dict */
+    /* Next entry is either a dictionary (with a /D key) or an array */
     code = pdfi_array_get(ctx, Names, i+1, (pdf_obj **)&D_dict);
     if (code < 0) goto exit;
-    if (D_dict->type != PDF_DICT) {
-        /* TODO: flag a warning? */
-        code = 0;
-        goto exit;
-    }
 
-    /* Dict is supposed to contain key "D" with Dest array */
-    code = pdfi_dict_knownget_type(ctx, D_dict, "D", PDF_ARRAY, (pdf_obj **)&dest_array);
-    if (code <= 0) goto exit;
+    if (D_dict->type == PDF_DICT) {
+        /* Dict is supposed to contain key "D" with Dest array */
+        code = pdfi_dict_knownget_type(ctx, D_dict, "D", PDF_ARRAY, (pdf_obj **)&dest_array);
+        if (code <= 0) goto exit;
+    } else {
+        if (D_dict->type == PDF_ARRAY) {
+            dest_array = (pdf_array *)D_dict;
+            D_dict = NULL;
+        }
+    }
 
     /* Process the dest_array to replace with /Page /View */
     code = pdfi_mark_add_Page_View(ctx, link_dict, dest_array);
