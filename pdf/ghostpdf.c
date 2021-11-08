@@ -378,6 +378,7 @@ const char *pdf_warning_strings[] = {
     "failed to read a valid number, assuming 0",
     "A DeviceN space used the /All ink name.",
     "Couldn't retrieve MediaBox for page, using current media size",
+    "CA or ca value not in range 0.0 to 1.0, clamped to range.",
     ""                                                  /* Last warning shuld not be used */
 };
 

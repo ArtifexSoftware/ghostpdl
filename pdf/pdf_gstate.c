@@ -2199,6 +2199,16 @@ static int GS_CA(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
     if (code < 0)
         return code;
 
+    if (d1 > 1.0) {
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_CA_OUTOFRANGE, "GS_CA", NULL);
+        d1 = 1.0;
+    }
+
+    if (d1 < 0.0) {
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_CA_OUTOFRANGE, "GS_CA", NULL);
+        d1 = 0.0;
+    }
+
     code = gs_setstrokeconstantalpha(ctx->pgs, d1);
     return code;
 }
@@ -2211,6 +2221,16 @@ static int GS_ca(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
     code = pdfi_dict_get_number(ctx, GS, "ca", &d1);
     if (code < 0)
         return code;
+
+    if (d1 > 1.0) {
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_CA_OUTOFRANGE, "GS_ca", NULL);
+        d1 = 1.0;
+    }
+
+    if (d1 < 0.0) {
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_CA_OUTOFRANGE, "GS_ca", NULL);
+        d1 = 0.0;
+    }
 
     code = gs_setfillconstantalpha(ctx->pgs, d1);
     return code;
