@@ -256,10 +256,19 @@ static cal_allocators cal_allocs =
 int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
 {
     gs_lib_ctx_t *pio = NULL;
+    gs_globals *globals;
 
     /* Check the non gc allocator is being passed in */
     if (mem == 0 || mem != mem->non_gc_memory)
         return_error(gs_error_Fatal);
+
+    /* Get globals here, earlier than it seems we might need it
+     * because a side effect of this is ensuring that the thread
+     * local storage for the malloc pointer is set up. */
+    globals = gp_get_globals();
+
+    /* Now it's safe to set this. */
+    gp_set_debug_mem_ptr(mem);
 
     if (mem->gs_lib_ctx) /* one time initialization */
         return 0;
@@ -288,7 +297,7 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
             return -1;
         }
         memset(pio->core, 0, sizeof(*pio->core));
-        pio->core->globals = gp_get_globals();
+        pio->core->globals = globals;
         pio->core->fs = (gs_fs_list_t *)gs_alloc_bytes_immovable(mem,
                                                                  sizeof(gs_fs_list_t),
                                                                  "gs_lib_ctx_init(gs_fs_list_t)");
