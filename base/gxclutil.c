@@ -750,6 +750,36 @@ cmd_set_tile_phase(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     return cmd_set_tile_phase_generic(cldev, pcls, px, py, false);
 }
 
+int
+cmd_set_screen_phase_generic(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+                             int px, int py, gs_color_select_t color_select,
+                             bool all_bands)
+{
+    int pcsize;
+    byte *dp;
+    int code;
+
+    pcsize = 1 + cmd_size2w(px, py);
+    if (all_bands)
+        code = set_cmd_put_all_op(&dp, cldev, (byte)cmd_opv_set_screen_phaseT + color_select, pcsize);
+    else
+        code = set_cmd_put_op(&dp, cldev, pcls, (byte)cmd_opv_set_screen_phaseT + color_select, pcsize);
+    if (code < 0)
+        return code;
+    ++dp;
+    pcls->screen_phase[color_select].x = px;
+    pcls->screen_phase[color_select].y = py;
+    cmd_putxy(pcls->screen_phase[color_select], &dp);
+    return 0;
+}
+
+int
+cmd_set_screen_phase(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+                     int px, int py, gs_color_select_t color_select)
+{
+    return cmd_set_screen_phase_generic(cldev, pcls, px, py, color_select, false);
+}
+
 /* Write a command to enable or disable the logical operation. */
 int
 cmd_put_enable_lop(gx_device_clist_writer * cldev, gx_clist_state * pcls,

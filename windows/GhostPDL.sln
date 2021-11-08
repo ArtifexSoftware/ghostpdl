@@ -15,6 +15,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostpdf", "ghostpdf.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "All", "All.vcxproj", "{98351FEF-0032-457C-B9D9-D6B68A829386}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "multi_test", "..\demos\c\multi_test.vcxproj", "{6F11D63A-3533-47E5-8AA8-973D804443A0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C4038125-61B9-4147-9EA8-39690BA3A599} = {C4038125-61B9-4147-9EA8-39690BA3A599}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -216,6 +221,50 @@ Global
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Sanitize|Win32.Build.0 = Sanitize|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Sanitize|x64.ActiveCfg = Sanitize|x64
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Sanitize|x64.Build.0 = Sanitize|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug|Win32.Build.0 = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug|x64.ActiveCfg = Debug|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug|x64.Build.0 = Debug|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug-contrib|Win32.ActiveCfg = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug-contrib|Win32.Build.0 = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug-contrib|x64.ActiveCfg = Debug|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug-contrib|x64.Build.0 = Debug|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug-cups|Win32.ActiveCfg = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug-cups|Win32.Build.0 = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug-cups|x64.ActiveCfg = Debug|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Debug-cups|x64.Build.0 = Debug|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.DebugXP|Win32.ActiveCfg = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.DebugXP|Win32.Build.0 = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.DebugXP|x64.ActiveCfg = Debug|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.DebugXP|x64.Build.0 = Debug|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Memento|Win32.ActiveCfg = Memento|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Memento|Win32.Build.0 = Memento|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Memento|x64.ActiveCfg = Memento|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Memento|x64.Build.0 = Memento|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.MementoXP|Win32.ActiveCfg = Memento|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.MementoXP|Win32.Build.0 = Memento|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.MementoXP|x64.ActiveCfg = Memento|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.MementoXP|x64.Build.0 = Memento|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Profile|Win32.ActiveCfg = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Profile|Win32.Build.0 = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Profile|x64.ActiveCfg = Memento|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Profile|x64.Build.0 = Memento|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Release|Win32.ActiveCfg = Release|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Release|Win32.Build.0 = Release|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Release|x64.ActiveCfg = Release|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Release|x64.Build.0 = Release|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Release-contrib|Win32.ActiveCfg = Release|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Release-contrib|Win32.Build.0 = Release|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Release-contrib|x64.ActiveCfg = Release|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Release-contrib|x64.Build.0 = Release|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.ReleaseXP|Win32.ActiveCfg = Release|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.ReleaseXP|Win32.Build.0 = Release|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.ReleaseXP|x64.ActiveCfg = Release|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.ReleaseXP|x64.Build.0 = Release|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Sanitize|Win32.ActiveCfg = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Sanitize|Win32.Build.0 = Debug|Win32
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Sanitize|x64.ActiveCfg = Memento|x64
+		{6F11D63A-3533-47E5-8AA8-973D804443A0}.Sanitize|x64.Build.0 = Memento|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

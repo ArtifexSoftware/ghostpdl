@@ -505,7 +505,7 @@ clist_playback_band(clist_playback_action playback_action, /* lgtm [cpp/use-of-g
     tile_slot *state_slot;
     gx_strip_bitmap state_tile; /* parameters for reading tiles */
     tile_slot tile_bits;        /* parameters of current tile */
-    gs_int_point tile_phase, color_phase;
+    gs_int_point tile_phase, screen_phase[2];
     gx_path path;
     bool in_path;
     gs_fixed_point ppos;
@@ -600,8 +600,8 @@ in:                             /* Initialize for a new page. */
     state_tile.shift = state_tile.rep_shift = 0;
     state_tile.size.x = state_tile.size.y = 0;
     state_tile.num_planes = 1;
-    tile_phase.x = color_phase.x = x0;
-    tile_phase.y = color_phase.y = y0;
+    tile_phase.x = screen_phase[0].x = screen_phase[1].x = x0;
+    tile_phase.y = screen_phase[0].y = screen_phase[2].y = y0;
     gx_path_init_local(&path, mem);
     in_path = false;
     /*
@@ -756,7 +756,45 @@ in:                             /* Initialize for a new page. */
                         if_debug2m('L', mem, " (%d,%d)\n",
                                    state.tile_phase.x,
                                    state.tile_phase.y);
-                        goto set_phase;
+                        goto set_tile_phase;
+                    case cmd_opv_set_screen_phaseT:
+                        cmd_getw(state.screen_phase[gs_color_select_texture].x, cbp);
+                        cmd_getw(state.screen_phase[gs_color_select_texture].y, cbp);
+                        if_debug2m('L', mem, " (%d,%d)\n",
+                                   state.screen_phase[0].x,
+                                   state.screen_phase[gs_color_select_texture].y);
+                        if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width)
+                            screen_phase[gs_color_select_texture].x =
+                                (state.screen_phase[gs_color_select_texture].x + x0) %
+                                 gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width;
+                        if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height)
+                            screen_phase[gs_color_select_texture].y =
+                                (state.screen_phase[gs_color_select_texture].y + y0) %
+                                     gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height;
+                        gx_gstate_setscreenphase(&gs_gstate,
+                                                 -(state.screen_phase[gs_color_select_texture].x + x0),
+                                                 -(state.screen_phase[gs_color_select_texture].y + y0),
+                                                 gs_color_select_texture);
+                        continue;
+                    case cmd_opv_set_screen_phaseS:
+                        cmd_getw(state.screen_phase[gs_color_select_source].x, cbp);
+                        cmd_getw(state.screen_phase[gs_color_select_source].y, cbp);
+                        if_debug2m('L', mem, " (%d,%d)\n",
+                                   state.screen_phase[gs_color_select_source].x,
+                                   state.screen_phase[gs_color_select_source].y);
+                        if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width)
+                            screen_phase[gs_color_select_source].x =
+                                (state.screen_phase[gs_color_select_source].x + x0) %
+                                 gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width;
+                        if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height)
+                            screen_phase[gs_color_select_source].y =
+                                (state.screen_phase[gs_color_select_source].y + y0) %
+                                     gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height;
+                        gx_gstate_setscreenphase(&gs_gstate,
+                                                 -(state.screen_phase[gs_color_select_source].x + x0),
+                                                 -(state.screen_phase[gs_color_select_source].y + y0),
+                                                 gs_color_select_source);
+                        continue;
                     case cmd_opv_set_tile_bits:
                         bits = tile_bits;
                         compress = 0;
@@ -1202,28 +1240,10 @@ in:                             /* Initialize for a new page. */
                 state_tile.shift = state_slot->shift;
                 state_tile.id = state_slot->id;
                 state_tile.num_planes = state_slot->num_planes;
-set_phase:      /*
-                 * state.tile_phase is overloaded according to the command
-                 * to which it will apply:
-                 *      For fill_path, stroke_path, fill_triangle/p'gram,
-                 * fill_mask, and (mask or CombineWithColor) images,
-                 * it is pdcolor->phase.  For these operations, we
-                 * precompute the color_phase values.
-                 *      For strip_tile_rectangle and strip_copy_rop,
-                 * it is the phase arguments of the call, used with
-                 * state_tile.  For these operations, we precompute the
-                 * tile_phase values.
-                 *
-                 * Note that control may get here before one or both of
-                 * state_tile or dev_ht has been set.
-                 */
+set_tile_phase:
                 if (state_tile.size.x)
                     tile_phase.x =
                         (state.tile_phase.x + x0) % state_tile.size.x;
-                if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width)
-                    color_phase.x =
-                        (state.tile_phase.x + x0) %
-                        gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width;
                 /*
                  * The true tile height for shifted tiles is not
                  * size.y: see gxbitmap.h for the computation.
@@ -1235,20 +1255,11 @@ set_phase:      /*
                         full_height = state_tile.size.y;
                     else
                         full_height = state_tile.rep_height *
-                            (state_tile.rep_width /
-                             igcd(state_tile.rep_shift,
-                                  state_tile.rep_width));
-                    tile_phase.y =
-                        (state.tile_phase.y + y0) % full_height;
+                                    (state_tile.rep_width /
+                                     igcd(state_tile.rep_shift,
+                                          state_tile.rep_width));
+                    tile_phase.y = (state.tile_phase.y + y0) % full_height;
                 }
-                if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height)
-                    color_phase.y =
-                        (state.tile_phase.y + y0) %
-                        gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height;
-                gx_gstate_setscreenphase(&gs_gstate,
-                                         -(state.tile_phase.x + x0),
-                                         -(state.tile_phase.y + y0),
-                                         gs_color_select_all);
                 continue;
             case cmd_op_misc2 >> 4:
                 switch (op) {

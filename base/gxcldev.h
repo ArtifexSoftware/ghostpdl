@@ -93,8 +93,8 @@ typedef enum {
 #define cmd_set_misc_halftone (3 << 6) /* 11: type(6), num_comp# */
     cmd_opv_enable_lop       = 0x07, /* (nothing) */
     cmd_opv_disable_lop      = 0x08, /* (nothing) */
-    /* UNUSED 0x09 */
-    /* UNUSED 0x0a */
+    cmd_opv_set_screen_phaseT= 0x09, /* x#, y# */
+    cmd_opv_set_screen_phaseS= 0x0a, /* x#, y# */
     cmd_opv_end_page         = 0x0b, /* (nothing) */
     cmd_opv_delta_color0     = 0x0c, /* See cmd_put_color in gxclutil.c */
     cmd_opv_delta_color1     = 0x0d, /* <<same as color0>> */
@@ -235,7 +235,7 @@ typedef enum {
 #define cmd_misc_op_name_strings\
   "end_run", "set_tile_size", "set_tile_phase", "set_tile_bits",\
   "set_bits", "set_tile_color", "set_misc", "enable_lop",\
-  "disable_lop", "invalid", "invalid", "end_page",\
+  "disable_lop", "set_screen_phaseT", "set_screen_phaseS", "end_page",\
   "delta2_color0", "delta2_color1", "set_copy_color", "set_copy_alpha",
 
 #ifdef DEBUG
@@ -370,6 +370,7 @@ struct gx_clist_state_s {
    ((tile_slot *)(cldev->data + offset_temp))->id == (tid))
     gs_id pattern_id;		/* the last stored pattern id. */
     gs_int_point tile_phase;	/* most recent tile phase */
+    gs_int_point screen_phase[2];	/* most recent screen phase */
     gx_color_index tile_colors[2];	/* most recent tile colors */
     gx_device_color tile_color_devn[2];  /* devn tile colors */
     gx_cmd_rect rect;		/* most recent rectangle */
@@ -399,7 +400,7 @@ struct gx_clist_state_s {
          { gx_no_color_index, gx_no_color_index },\
         { gx_dc_type_none },\
         0, gx_no_bitmap_id, gs_no_id,\
-         { 0, 0 }, { gx_no_color_index, gx_no_color_index },\
+         { 0, 0 }, { {0, 0}, {0, 0}}, { gx_no_color_index, gx_no_color_index },\
         { {NULL}, {NULL} },\
          { 0, 0, 0, 0 }, lop_default, 0, 0, 0, 0, initial_known,\
         { 0, 0 }, /* cmd_list */\
@@ -636,6 +637,13 @@ cmd_set_tile_phase_generic(gx_device_clist_writer * cldev, gx_clist_state * pcls
                    int px, int py, bool all_bands);
 int cmd_set_tile_phase(gx_device_clist_writer *cldev, gx_clist_state * pcls,
                        int px, int py);
+/* Put out a command to set the screen phase. */
+int
+cmd_set_screen_phase_generic(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+                             int px, int py, gs_color_select_t color_select, bool all_bands);
+int
+cmd_set_screen_phase(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+                     int px, int py, gs_color_select_t color_select);
 
 /* Enable or disable the logical operation. */
 int cmd_put_enable_lop(gx_device_clist_writer *, gx_clist_state *, int);

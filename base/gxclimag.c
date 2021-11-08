@@ -1154,11 +1154,21 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                      * color is pure (so no phase is sent), but the colors in the image
                      * are not (so a phase must be sent). Accordingly, we catch that
                      * here. */
-                    if (pie->pgs->screen_phase[0].x != re.pcls->tile_phase.x ||
-                        pie->pgs->screen_phase[0].y != re.pcls->tile_phase.y) {
-                        code = cmd_set_tile_phase_generic(cdev, re.pcls,
-                                                          pie->pgs->screen_phase[0].x,
-                                                          pie->pgs->screen_phase[0].y, true);
+                    if (pie->pgs->screen_phase[gs_color_select_texture].x != re.pcls->screen_phase[gs_color_select_texture].x ||
+                        pie->pgs->screen_phase[gs_color_select_texture].y != re.pcls->screen_phase[gs_color_select_texture].y) {
+                        code = cmd_set_screen_phase_generic(cdev, re.pcls,
+                                                            pie->pgs->screen_phase[gs_color_select_texture].x,
+                                                            pie->pgs->screen_phase[gs_color_select_texture].y,
+                                                            gs_color_select_texture, true);
+                        if (code < 0)
+                            return code;
+                    }
+                    if (pie->pgs->screen_phase[gs_color_select_source].x != re.pcls->screen_phase[gs_color_select_source].x ||
+                        pie->pgs->screen_phase[gs_color_select_source].y != re.pcls->screen_phase[gs_color_select_source].y) {
+                        code = cmd_set_screen_phase_generic(cdev, re.pcls,
+                                                            pie->pgs->screen_phase[gs_color_select_source].x,
+                                                            pie->pgs->screen_phase[gs_color_select_source].y,
+                                                            gs_color_select_source, true);
                         if (code < 0)
                             return code;
                     }

@@ -175,15 +175,16 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     left = dc_size;
 
     CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
-    /* see if phase informaiton must be inserted in the command list */
-    if ( pdcolor->type->get_phase(pdcolor, &color_phase) &&
-         (color_phase.x != pcls->tile_phase.x ||
-          color_phase.y != pcls->tile_phase.y || all_bands)        &&
-         (code = cmd_set_tile_phase_generic( cldev,
-                                     pcls,
-                                     color_phase.x,
-                                     color_phase.y, all_bands)) < 0  )
-        return code;
+    /* see if phase information must be inserted in the command list */
+    if (pdcolor->type->get_phase(pdcolor, &color_phase) &&
+        (color_phase.x != pcls->screen_phase[gs_color_select_texture].x ||
+         color_phase.y != pcls->screen_phase[gs_color_select_texture].y || all_bands)) {
+        code = cmd_set_screen_phase_generic(cldev, pcls,
+                                            color_phase.x, color_phase.y,
+                                            gs_color_select_texture, all_bands);
+        if (code < 0)
+            return code;
+    }
 
     CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
     if (is_pattern) {
