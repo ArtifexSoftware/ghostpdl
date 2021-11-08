@@ -1017,6 +1017,8 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                         dx = penum->ht_landscape.xstart;
                     }
                     dx = (dx + penum->pgs->screen_phase[0].x) % thresh_width;
+                    if (dx < 0)
+                        dx += thresh_width;
                     dy = (penum->ht_landscape.y_pos -
                               penum->pgs->screen_phase[0].y) % thresh_height;
                     if (dy < 0)
