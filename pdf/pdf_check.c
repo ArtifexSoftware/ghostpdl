@@ -1157,8 +1157,6 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     /* If setup requested, tell the device about spots and transparency */
     if (do_setup) {
         gs_c_param_list list;
-        gs_param_string_array sa;
-        gs_param_string *table = NULL;
         int a = 0;
         pdf_name *Key = NULL;
         pdf_obj *Value = NULL;
@@ -1170,9 +1168,17 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
          * send the number of Spots to the device, so it can setup correctly.
          */
         if (tracker.spot_dict) {
-            param_write_int((gs_param_list *)&list, "PageSpotColors", &spots);
-
+            /* There is some awkwardness here. If the SeparationColorNames setting
+             * fails, we want to ignore it (this can mean that we exceeded the maximum
+             * number of colourants and some will be converted to CMYK). But if that happens,
+             * any other parameters in the same list which haven't already been prcoessed
+             * will be lost. So we need to send two lists, the SeparationColorNames and
+             * 'everything else'.
+             */
             if (spots > 0) {
+                gs_param_string_array sa;
+                gs_param_string *table = NULL;
+
                 table = (gs_param_string *)gs_alloc_byte_array(ctx->memory, spots, sizeof(gs_param_string), "SeparationNames");
                 if (table != NULL)
                 {
@@ -1202,10 +1208,31 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
                     sa.persistent = false;
 
                     (void)param_write_string_array((gs_param_list *)&list, "SeparationColorNames", &sa);
+                    gs_c_param_list_read(&list);
+                    code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&list);
+                    gs_c_param_list_release(&list);
+
+                    gs_free_object(ctx->memory, table, "SeparationNames");
+                    if (code > 0) {
+                        /* The device was closed, we need to reopen it */
+                        code = gs_setdevice_no_erase(ctx->pgs, ctx->pgs->device);
+                        if (code < 0)
+                            goto exit;
+                        gs_erasepage(ctx->pgs);
+                    }
+
+                    /* Reset the list back to being writeable */
+                    gs_c_param_list_write(&list, ctx->memory);
+                }
+                else {
+                    code = gs_note_error(gs_error_VMerror);
+                    goto exit;
                 }
             }
+            /* Update the number of spots */
+            param_write_int((gs_param_list *)&list, "PageSpotColors", &spots);
         }
-
+        /* Update the page transparency */
         (void)param_write_bool((gs_param_list *)&list, "PageUsesTransparency",
                                     &tracker.transparent);
         gs_c_param_list_read(&list);
@@ -1219,8 +1246,6 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
                 goto exit;
             gs_erasepage(ctx->pgs);
         }
-
-        gs_free_object(ctx->memory, table, "SeparationNames");
     }
 
     /* Set our values in the context, for caller */
