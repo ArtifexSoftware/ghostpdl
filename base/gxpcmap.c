@@ -1672,6 +1672,26 @@ pattern_accum_dev_spec_op(gx_device *dev, int dso, void *data, int size)
             return param_write_bool(plist, "NoInterpolateImagemasks", &bool_true);
         }
     }
+    /* Bug 704670.  Pattern accumulator should not allow whatever targets
+       lie beneath it to do any bbox adjustments. If we are here, the
+       pattern accumulator is actually drawing into a buffer
+       and it is not accumulating into a clist device. In this case, if it
+       was a pattern clist, we would be going to the special op for the clist
+       device of the pattern, which will have the proper extent and adjust
+       the bbox.  Here we just need to clip to the buffer into which we are drawing */
+    if (dso == gxdso_restrict_bbox) {
+        gs_int_rect* ibox = (gs_int_rect*)data;
+
+        if (ibox->p.y < 0)
+            ibox->p.y = 0;
+        if (ibox->q.y > padev->height)
+            ibox->q.y = padev->height;
+        if (ibox->p.x < 0)
+            ibox->p.x = 0;
+        if (ibox->q.x > padev->width)
+            ibox->q.x = padev->width;
+        return 0;
+    }
 
     return dev_proc(target, dev_spec_op)(target, dso, data, size);
 }
