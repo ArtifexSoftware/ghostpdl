@@ -613,8 +613,6 @@ gs_malloc_init_with_context(gs_lib_ctx_t *ctx)
         return NULL;
     }
 
-    gp_set_debug_mem_ptr((gs_memory_t *)malloc_memory_default);
-
 #if defined(USE_RETRY_MEMORY_WRAPPER)
     gs_malloc_wrap(&memory_t_default, malloc_memory_default);
 #else
