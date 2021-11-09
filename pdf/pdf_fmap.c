@@ -269,7 +269,7 @@ static int pdfi_add__to_native_fontmap(pdf_context *ctx, const char *fontname, c
         if (code < 0)
             return code;
     }
-    //* index == -1 is a file with a single font in it */
+    /* index == -1 is a file with a single font in it */
     if (index == -1) {
         code = pdfi_object_alloc(ctx, PDF_STRING, strlen(filepath), (pdf_obj **)&fpstr);
         if (code < 0)
