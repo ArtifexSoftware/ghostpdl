@@ -220,11 +220,11 @@ alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
     ibox.q.x = fixed2int_ceiling(bbox.q.x + extra_x) + 1;
     ibox.q.y = fixed2int_ceiling(bbox.q.y + extra_y) + 1;
     (void)dev_proc(dev, dev_spec_op)(dev, gxdso_restrict_bbox, &ibox, sizeof(ibox));
+    if ((ibox.q.y <= ibox.p.y) || (ibox.q.x <= ibox.p.x))
+        return 2;
     width = (ibox.q.x - ibox.p.x) << log2_scale.x;
     raster = bitmap_raster(width);
     band_space = raster << log2_scale.y;
-    if (ibox.q.y <= ibox.p.y)
-        return 2;
     height2 = (ibox.q.y - ibox.p.y);
     height = (abuf_nominal / band_space);
     if (height == 0)
