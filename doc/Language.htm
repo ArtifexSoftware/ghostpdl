@@ -224,77 +224,77 @@ shown.</p>
 <h3><a name="Architectural_limits"></a>Architectural limits</h3>
 
 <blockquote><table>
-<tr><th colspan="7">Architectural limits (corresponds to Adobe table B.1)</th></tr>
+<tr><th colspan="4">Architectural limits (corresponds to Adobe table B.1)</th></tr>
 <tr valign="bottom">
     <th align="left">Quantity</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Limit</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Type</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Adobe</th></tr>
 <tr valign="top">    <td>integer</td>
-    <td>&nbsp;</td>
+
     <td>32-bit</td>
-    <td>&nbsp;</td>
+
     <td>twos complement integer</td>
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td></tr>
 <tr valign="top">    <td>real</td>
-    <td>&nbsp;</td>
+
     <td>single-precision</td>
-    <td>&nbsp;</td>
+
     <td>IEEE float</td>
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td></tr>
 <tr valign="top">    <td>array</td>
-    <td>&nbsp;</td>
+
     <td>16777216</td>
-    <td>&nbsp;</td>
+
     <td>elements</td>
-    <td>&nbsp;</td>
+
     <td>65535</td></tr>
 <tr valign="top">    <td>dictionary</td>
-    <td>&nbsp;</td>
+
     <td>16777215</td>
-    <td>&nbsp;</td>
+
     <td>elements</td>
-    <td>&nbsp;</td>
+
     <td>65535</td></tr>
 <tr valign="top">    <td>string</td>
-    <td>&nbsp;</td>
+
     <td>16777216</td>
-    <td>&nbsp;</td>
+
     <td>characters</td>
-    <td>&nbsp;</td>
+
     <td>65535</td></tr>
 <tr valign="top">    <td>name</td>
-    <td>&nbsp;</td>
+
     <td>16383</td>
-    <td>&nbsp;</td>
+
     <td>characters</td>
-    <td>&nbsp;</td>
+
     <td>127</td></tr>
 <tr valign="top">    <td>filename</td>
-    <td>&nbsp;</td>
+
     <td>128*</td>
-    <td>&nbsp;</td>
+
     <td>characters</td>
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td></tr>
 <tr valign="top">    <td><code>save</code> level</td>
-    <td>&nbsp;</td>
+
     <td>none</td>
-    <td>&nbsp;</td>
+
     <td>(capacity of memory)</td>
-    <td>&nbsp;</td>
+
     <td>15</td></tr>
 <tr valign="top">    <td><code>gsave</code> level</td>
-    <td>&nbsp;</td>
+
     <td>none</td>
-    <td>&nbsp;</td>
+
     <td>(capacity of memory)</td>
-    <td>&nbsp;</td>
+
     <td>13</td></tr>
 </table></blockquote>
 
@@ -306,96 +306,96 @@ starts with a %...% IODevice designation, or 124 characters if it does not.</p>
 
 <blockquote><table>
 
-<tr><th colspan="7">Memory limits (corresponds to Adobe table B.2)</th></tr>
+<tr><th colspan="4">Memory limits (corresponds to Adobe table B.2)</th></tr>
 <tr valign="bottom">
     <th align="left">Quantity</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Limit</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Type</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Adobe</th></tr>
 <tr valign="top">    <td><code>userdict</code></td>
-    <td>&nbsp;</td>
+
     <td>200</td>
+
     <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td></tr>
 <tr valign="top">    <td><code>FontDirectory</code></td>
-    <td>&nbsp;</td>
+
     <td>100</td>
     <td>&nbsp;</td>
+
     <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td></tr>
+    </tr>
 <tr valign="top">    <td>operand stack</td>
-    <td>&nbsp;</td>
+
     <td>800</td>
+
     <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td>500</td></tr>
 <tr valign="top">    <td>dictionary stack</td>
-    <td>&nbsp;</td>
+
     <td>20</td>
     <td>&nbsp;</td>
+
     <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td></tr>
+    </tr>
 <tr valign="top">    <td>execution stack</td>
-    <td>&nbsp;</td>
+
     <td>250</td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td></tr>
+
+    <td>&nbsp;</td><td>&nbsp;</td></tr>
 <tr valign="top">    <td>interpreter level</td>
-    <td>&nbsp;</td>
+
     <td>none</td>
-    <td>&nbsp;</td>
+
     <td>(capacity of memory)</td>
-    <td>&nbsp;</td>
+
     <td>10</td></tr>
 <tr valign="top">    <td>path</td>
-    <td>&nbsp;</td>
+
     <td>none</td>
-    <td>&nbsp;</td>
+
     <td>(capacity of memory)</td>
-    <td>&nbsp;</td>
+
     <td>1500</td></tr>
 <tr valign="top">    <td>dash</td>
-    <td>&nbsp;</td>
+
     <td>11</td>
     <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
+
+
     <td>&nbsp;</td></tr>
 <tr valign="top">    <td>VM</td>
-    <td>&nbsp;</td>
+
     <td>none</td>
-    <td>&nbsp;</td>
+
     <td>(capacity of memory)</td>
-    <td>&nbsp;</td>
+
     <td>240000</td></tr>
 <tr valign="top">    <td>file</td>
-    <td>&nbsp;</td>
+
     <td>none</td>
-    <td>&nbsp;</td>
+
     <td>(determined by operating system)</td>
-    <td>&nbsp;</td>
+
     <td>6</td></tr>
 <tr valign="top">    <td>image</td>
-    <td>&nbsp;</td>
+
     <td>65535</td>
-    <td>&nbsp;</td>
+
     <td>values (samples &times; components)<br>for 1-, 2-, 4-, or 8-bit samples</td>
-    <td>&nbsp;</td>
+
     <td>3300</td></tr>
 <tr valign="top">    <td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td>32767</td>
-    <td>&nbsp;</td>
+
     <td>values for 12-bit samples</td>
-    <td>&nbsp;</td>
+
     <td>3300</td></tr>
 </table></blockquote>
 
@@ -847,10 +847,10 @@ that resides in the /Root directory.</p>
 <blockquote><table>
 <tr valign="bottom">
     <th valign="bottom" align="left">Flag</th>
-    <th>&nbsp;&nbsp;&nbsp;</th>
+
     <th valign="bottom" align="left">Definition</th></tr>
 <tr valign="top">    <td>DELAYBIND</td>
-    <td>&nbsp;</td>
+
     <td>returns the argument, stores the argument for later use by <code>.bindnow</code></td></tr>
 </table></blockquote>
 
@@ -1123,16 +1123,16 @@ These are interpreted as:</p>
 <blockquote><table>
 <tr valign="bottom">
     <th valign="bottom" align="left">Palette</th>
-    <th>&nbsp;&nbsp;&nbsp;</th>
+
     <th valign="bottom" align="left">Bits allocated per color</th></tr>
 <tr valign="top">    <td>16</td>
-    <td>&nbsp;</td>
+
     <td>5 red, 6 green, 5 blue</td></tr>
 <tr valign="top">    <td>24</td>
-    <td>&nbsp;</td>
+
     <td>8 red, 8 green, 8 blue</td></tr>
 <tr valign="top">    <td>32</td>
-    <td>&nbsp;</td>
+
     <td>8C, 8M, 8Y, 8K</td></tr>
 </table></blockquote>
 
@@ -1326,32 +1326,32 @@ See the Adobe <a href="http://partners.adobe.com/public/developer/pdf/index_refe
 graphics format</a>.  Recognized keys are:</p>
 
 <blockquote><table>
-<tr><th colspan="5">Keys recognized in PNG filter algorithms</th></tr>
+<tr><th colspan="3">Keys recognized in PNG filter algorithms</th></tr>
 <tr valign="bottom">
     <th align="left">Key</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Range</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Default</th></tr>
 <tr valign="top">    <td><code>Colors &lt;integer&gt;</code></td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+
     <td>1 to 16</td>
-    <td>&nbsp;&nbsp;</td>
+
     <td>16</td></tr>
 <tr valign="top">    <td><code>BitsPerComponent &lt;integer&gt;</code></td>
-    <td>&nbsp;</td>
+
     <td>1, 2, 4, 8, or 16</td>
-    <td>&nbsp;&nbsp;</td>
+
     <td>8</td></tr>
 <tr valign="top">    <td><code>Columns &lt;integer&gt;</code></td>
-    <td>&nbsp;</td>
+
     <td>&gt;= 0</td>
-    <td>&nbsp;&nbsp;</td>
+
     <td>1</td></tr>
 <tr valign="top">    <td><code>Predictor &lt;integer&gt;</code></td>
-    <td>&nbsp;</td>
+
     <td>10 to 15</td>
-    <td>&nbsp;&nbsp;</td>
+
     <td>15</td></tr>
 </table></blockquote>
 
@@ -2115,70 +2115,66 @@ calling sequence</p>
 <blockquote><table>
 <tr valign="bottom">
     <th align="left">Function</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Calls</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Calls</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Calls</th></tr>
 <tr valign="top">
     <td>runpdf</td>
-    <td>&nbsp;</td>
+
     <td>runpdfbegin</td>
-    <td>&nbsp;</td>
+
     <td>pdfopen</td>
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td></tr>
 <tr valign="top">
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td>
     <td>process_trailer_attrs</td>
+
     <td>&nbsp;</td>
-    <td>&nbsp;</td></tr>
+    <td>&nbsp;</td>
+</tr>
 <tr valign="top">
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td>
     <td>runpdfpagerange</td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
+
+
     <td>&nbsp;</td>
     <td>&nbsp;</td></tr>
 <tr valign="top">
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td>
     <td>dopdfpages</td>
-    <td>&nbsp;</td>
+
     <td>pdfgetpage</td>
     <td>&nbsp;</td></tr>
 <tr valign="top">
     <td>&nbsp;</td>
     <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
     <td>pdfshowpage</td>
-    <td>&nbsp;</td>
+
     <td>pdfshowpage_init</td></tr>
 <tr valign="top">
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td>
     <td>&nbsp;</td>
     <td>&nbsp;</td>
     <td>pdfshowpage_setpage</td></tr>
 <tr valign="top">
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td>
     <td>&nbsp;</td>
     <td>&nbsp;</td>
     <td>pdfshowpage_finish</td></tr>
 <tr valign="top">
-    <td>&nbsp;</td>
+
     <td>&nbsp;</td>
     <td>runpdfend</td>
-    <td>&nbsp;</td>
+
     <td>pdfclose</td>
     <td>&nbsp;</td></tr>
 </table></blockquote>

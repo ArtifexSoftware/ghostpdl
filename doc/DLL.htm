@@ -236,26 +236,26 @@ code = gsdll_execute_cont(command, strlen(command));
 <a name="cont_returns"></a>
 <table>
 <tr>
-    <th colspan="3">Return codes from gsdll_execute_cont()</th>
+    <th colspan="2">Return codes from gsdll_execute_cont()</th>
 </tr>
 <tr>
     <th align="left">Code</th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+
     <th align="left">Status</th>
 </tr>
 <tr>
     <td align="left">0</td>
-    <td>&nbsp;</td>
+
     <td>No errors</td>
     </tr>
 <tr>
     <td align="left">&lt; 0</td>
-    <td>&nbsp;</td>
+
     <td>Error</td>
     </tr>
 <tr>
     <td align="left">&lt;= -100</td>
-    <td>&nbsp;</td>
+
     <td>"<code>quit</code>" has been executed, or fatal error.
 <code>gsdll_exit()</code> must then be called: do not call
 <code>gsdll_execute_end()</code>.</td>
@@ -324,16 +324,16 @@ locking.
 
 <table>
 <tr>
-    <th colspan="3">Locking and unlocking devices</th>
+    <th colspan="2">Locking and unlocking devices</th>
     </tr>
 <tr>
     <td>To lock a device</td>
-        <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
         <td><code>gsdll_lock_device(device, 1)</code>;</td>
     </tr>
 <tr>
     <td>To unlock a device</td>
-        <td>&nbsp;</td>
+
         <td><code>gsdll_lock_device(device, 0)</code>;</td>
     </tr>
 </table>
@@ -420,67 +420,67 @@ char *p;
 
 <table>
     <tr>
-        <th colspan="5">Messages used by callback</th>
+        <th colspan="3">Messages used by callback</th>
         </tr>
 <tr>
     <th align="left">Symbol</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left"></th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Use</th>
     </tr>
 <tr>
     <td><code>GSDLL_STDIN</code></td>
-    <td>&nbsp;</td>
+
     <td>1</td>
-    <td>&nbsp;</td>
+
     <td>get <code>count</code> characters to <code>str</code> from stdin, return number of characters read</td>
     </tr>
 <tr>
     <td><code>GSDLL_STDOUT</code></td>
-    <td>&nbsp;</td>
+
     <td>2</td>
-    <td>&nbsp;</td>
+
     <td>put <code>count</code> characters from <code>str</code>
         to stdout, return number of characters written</td>
     </tr>
 <tr>
     <td><code>GSDLL_DEVICE</code></td>
-    <td>&nbsp;</td>
+
     <td>3</td>
-    <td>&nbsp;</td>
+
     <td>device <code>str</code> has been opened if
         <code>count</code>&nbsp;=&nbsp;1, closed if
         <code>count</code>&nbsp;=&nbsp;0</td>
     </tr>
 <tr>
     <td><code>GSDLL_SYNC</code></td>
-    <td>&nbsp;</td>
+
     <td>4</td>
-    <td>&nbsp;</td>
+
     <td>sync_output for device <code>str</code></td>
     </tr>
 <tr>
     <td><code>GSDLL_PAGE</code></td>
-    <td>&nbsp;</td>
+
     <td>5</td>
-    <td>&nbsp;</td>
+
     <td>output_page for device <code>str</code></td>
     </tr>
 <tr>
     <td><code>GSDLL_SIZE</code></td>
-    <td>&nbsp;</td>
+
     <td>6</td>
-    <td>&nbsp;</td>
+
     <td>resize for device <code>str</code>:
         LOWORD(<code>count</code>) is new <code>xsize</code>,
         HIWORD(<code>count</code>) is new <code>ysize</code></td>
     </tr>
 <tr>
     <td><code>GSDLL_POLL</code></td>
-    <td>&nbsp;</td>
+
     <td>7</td>
-    <td>&nbsp;</td>
+
     <td>Called from <code>gp_check_interrupt()</code><br>
         Can be used by the caller to poll the message queue.
         Normally returns 0.  To abort

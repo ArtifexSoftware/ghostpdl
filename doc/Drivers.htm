@@ -342,19 +342,20 @@ structure for ordinary drivers are:</p>
 
 <blockquote><table>
     <tr valign="top">    <td><code>const char *dname;</code></td>
-    <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
     <td>The device name</td></tr>
+
     <tr valign="top">    <td><code>bool is_open;</code></td>
-    <td>&nbsp;</td>
+
     <td>True if device has been opened</td></tr>
 <tr valign="top">    <td><code>gx_device_color_info color_info;</code></td>
-    <td>&nbsp;</td>
+
     <td>Color information</td></tr>
 <tr valign="top">    <td><code>int width;</code></td>
-    <td>&nbsp;</td>
+
     <td>Width in pixels</td></tr>
 <tr valign="top">    <td><code>int height;</code></td>
-    <td>&nbsp;</td>
+
     <td>Height in pixels</td></tr>
 </table></blockquote>
 
@@ -2139,32 +2140,32 @@ consult the source code, specifically:</p>
 
 <blockquote><table>
 <tr valign="top">    <th align="left">Header</th>
-    <th>&nbsp;&nbsp;&nbsp;</th>
+
     <th align="left">Defines</th></tr>
 <tr valign="top">    <td><a href="../base/gxpaint.h">gxpaint.h</a></td>
-    <td>&nbsp;</td>
+
     <td><code>gx_fill_params</code>, <code>gx_stroke_params</code></td></tr>
 <tr valign="top">    <td><a href="../base/gxfixed.h">gxfixed.h</a></td>
-    <td>&nbsp;</td>
+
     <td><code>fixed</code>, <code>gs_fixed_point</code> (used by
     <code>gx_*_params</code>)</td></tr>
 <tr valign="top">    <td><a href="../base/gxgstate.h">gxgstate.h</a></td>
-    <td>&nbsp;</td>
+
     <td><code>gs_imager_state</code> (used by <code>gx_*_params</code>)</td></tr>
 <tr valign="top">    <td><a href="../base/gxline.h">gxline.h</a></td>
-    <td>&nbsp;</td>
+
     <td><code>gx_line_params</code> (used by <code>gs_imager_state</code>)</td></tr>
 <tr valign="top">    <td><a href="../base/gslparam.h">gslparam.h</a></td>
-    <td>&nbsp;</td>
+
     <td>line cap/join values (used by <code>gx_line_params</code>)</td></tr>
 <tr valign="top">    <td><a href="../base/gxmatrix.h">gxmatrix.h</a></td>
-    <td>&nbsp;</td>
+
     <td><code>gs_matrix_fixed</code> (used by <code>gs_imager_state</code>)</td></tr>
 <tr valign="top">    <td><a href="../base/gspath.h">gspath.h</a>, <a href="../base/gxpath.h">gxpath.h</a>, <a href="../base/gzpath.h">gzpath.h</a></td>
-    <td>&nbsp;</td>
+
     <td><code>gx_path</code></td></tr>
 <tr valign="top">    <td><a href="../base/gxcpath.h">gxcpath.h</a>, <a href="../base/gzcpath.h">gzcpath.h</a></td>
-    <td>&nbsp;</td>
+
     <td><code>gx_clip_path</code></td></tr>
 </table></blockquote>
 
@@ -2222,36 +2223,36 @@ with the given color and logical operation.  The clip path pointer may be
 command is as below.</dd>
 </dl>
 
-<h5><a name="F_spec"></a>The function specification f</h5>
+<h4><a name="F_spec"></a>The function specification f</h4>
 
 <p>
 "Command" indicates the raster operation and transparency as follows:</p>
 
 <blockquote><table>
 <tr valign="bottom">
-    <th colspan ="3">Bits</th>
+    <th colspan ="2">Bits</th>
 </tr>
 <tr valign="top">    <td>7-0</td>
-    <td>&nbsp;</td>
+
     <td>raster op</td></tr>
 <tr valign="top">    <td>8</td>
-    <td>&nbsp;</td>
+
     <td>0 if source opaque, 1 if source transparent</td></tr>
 <tr valign="top">    <td>9</td>
-    <td>&nbsp;</td>
+
     <td>0 if texture opaque, 1 if texture transparent</td></tr>
 <tr valign="top">    <td>10</td>
-    <td>&nbsp;</td>
+
     <td>1 if pdf transparency is in use, 0 otherwise. This makes no
 difference to the rendering, but forces the raster operation to be considered
         non-idempotent by internal routines.</td></tr>
 <tr valign="top">    <td>11</td>
-    <td>&nbsp;</td>
+
     <td>1 if the target of this operation is a specific plane, rather
 than all planes. The plane in question is given by bits 13 upwards. This
 is only used by the planar device.</td></tr>
 <tr valign="top">    <td>12-</td>
-    <td>&nbsp;</td>
+
     <td>If bit 11 = 1, then bits 12 upwards give the plane number to
         operate on. Otherwise, should be set to 0.</td></tr>
 </table></blockquote>
@@ -2268,67 +2269,67 @@ possible 2&times;2&times;2 input values as follows:</p>
 <blockquote><table>
 <tr valign="bottom">
     <th>Bit</th>
-    <th>&nbsp;</th>
+
     <th>Texture</th>
-    <th>&nbsp;</th>
+
     <th>Source</th>
-    <th>&nbsp;</th>
+
     <th>Destination</th></tr>
 <tr valign="top">    <td align="center">7</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td></tr>
 <tr valign="top">    <td align="center">6</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td></tr>
 <tr valign="top">    <td align="center">5</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td></tr>
 <tr valign="top">    <td align="center">4</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td></tr>
 <tr valign="top">    <td align="center">3</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td></tr>
 <tr valign="top">    <td align="center">2</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td></tr>
 <tr valign="top">    <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td></tr>
 <tr valign="top">    <td align="center">0</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td>
-    <td>&nbsp;</td>
+
     <td align="center">0</td></tr>
 </table></blockquote>
 
@@ -2521,8 +2522,8 @@ gx_image_enum_common_t&nbsp;**pinfo)</code> <b><em>[OPTIONAL]</em></b></dt>
 are as follows:</dd>
 
 <blockquote><table>
-<tr valign="top">    <td><code>pis</code></td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+<tr valign="top"><td><code>pis</code></td>
+
     <td>pointer to an imager state.  The only relevant elements of the
         imager state are the CTM (coordinate transformation matrix),
         the logical operation (<code>RasterOp</code> or
@@ -2530,34 +2531,34 @@ are as follows:</dd>
         mask images, if <code>pmat</code> is not NULL and the color is pure,
         <code>pis</code> may be NULL.</td></tr>
 <tr valign="top">    <td><code>pmat</code></td>
-    <td>&nbsp;</td>
+
     <td>pointer to a <code>gs_matrix</code> structure that
         defines the image transformation matrix. If <code>pis</code> is non-NULL,
         and <code>pmat</code> is NULL, then the <code>ctm</code> from <code>pis</code>
         should be used.</td></tr>
 <tr valign="top">    <td><code>pim</code></td>
-    <td>&nbsp;</td>
+
     <td>pointer to the <code>gs_image_t</code> structure that
         defines the image parameters</td></tr>
 <tr valign="top">    <td><code>prect</code></td>
-    <td>&nbsp;</td>
+
     <td>if not <code>NULL</code>, defines a subrectangle of the
         image; only the data for this subrectangle will be passed to
         <code>image_plane_data</code>, and only this subrectangle should
         be drawn</td></tr>
 <tr valign="top">    <td><code>pdcolor</code></td>
-    <td>&nbsp;</td>
+
     <td>defines a drawing color, only needed for masks or if
         <code>CombineWithColor</code> is true</td></tr>
 <tr valign="top">    <td><code>pcpath</code></td>
-    <td>&nbsp;</td>
+
     <td>if not <code>NULL</code>, defines an optional clipping path</td></tr>
 <tr valign="top">    <td><code>memory</code></td>
-    <td>&nbsp;</td>
+
     <td>defines the allocator to be used for allocating bookkeeping
         information</td></tr>
 <tr valign="top">    <td><code>pinfo</code></td>
-    <td>&nbsp;</td>
+
     <td>the implementation should return a pointer to its state
         structure here</td></tr>
 </table></blockquote>
@@ -2705,26 +2706,26 @@ follows:</dd>
 
 <blockquote><table>
 <tr valign="top">    <td><code>dev</code></td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+
     <td>The usual pointer to the device.</td></tr>
 <tr valign="top">    <td><code>pis</code></td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+
     <td>A pointer to an imager state.  All elements may be relevant,
         depending on how the text is rendered.    </td></tr>
 <tr valign="top">    <td><code>text</code></td>
-    <td>&nbsp;</td>
+
     <td>A pointer to the structure that defines the text operation
         and parameters.  See <a href="../base/gstext.h">gstext.h</a> for details.</td></tr>
 <tr valign="top">    <td><code>font</code></td>
-    <td>&nbsp;</td>
+
     <td>Defines the font for drawing.</td></tr>
 <tr valign="top">    <td><code>pcpath</code></td>
-    <td>&nbsp;</td>
+
     <td>If not <code>NULL</code>, defines an optional clipping path.
         Only relevant if the text operation includes
         <code>TEXT_DO_DRAW</code>.</td></tr>
 <tr valign="top">    <td><code>ppte</code></td>
-    <td>&nbsp;</td>
+
     <td>The implementation should return a pointer to its state
         structure here.</td></tr>
 </table></blockquote>
@@ -2845,16 +2846,16 @@ structure consists of:</dd></p>
 
 <table>
 <tr valign="top">    <td><code>options</code></td>
-    <td>&nbsp;</td>
+
     <td>the allowable formats for returning the data</td></tr>
 <tr valign="top">    <td><code>data[32]</code></td>
-    <td>&nbsp;</td>
+
     <td>pointers to the returned data</td></tr>
 <tr valign="top">    <td><code>x_offset</code></td>
-    <td>&nbsp;</td>
+
     <td>the X offset of the first returned pixel in data</td></tr>
 <tr valign="top">    <td><code>raster</code></td>
-    <td>&nbsp;</td>
+
     <td>the distance between scan lines in the returned data</td></tr>
 </table>
 

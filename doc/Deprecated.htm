@@ -217,22 +217,26 @@ The source module <code>gdevcd8.c</code> contains four generic drivers:</p>
   and hp1600 was added by Martin Gerbershagen.</p>
 <blockquote>
     <table>
+        <tr>
+    <th width="20%">Date</th>
+    <th width="20%">Version</th>
+    <th width="60%">Comments</th>
+</tr>
+
 <tr>
     <td>11.11.96</td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
-    <td colspan="1">Version 1.0</td>
+    <td>Version 1.0</td>
+    <td></td>
 </tr>
 <tr>
     <td>25.08.97</td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
-    <td colspan="1">Version 1.2</td>
-    <td colspan="2">Resolved all but one of the known bugs, introduced a couple of perfomance improvements. Complete new color-transfer-function handling (see gamma).</td>
+    <td>Version 1.2</td>
+    <td>Resolved all but one of the known bugs, introduced a couple of perfomance improvements. Complete new color-transfer-function handling (see gamma).</td>
 </tr>
 <tr>
     <td>01.06.98</td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
-    <td colspan="1">Version 1.3</td>
-    <td colspan="2">Due to the most welcome contribution of Martin Gerbershagen
+    <td>Version 1.3</td>
+    <td>Due to the most welcome contribution of Martin Gerbershagen
     (ger@ulm.temic.de), support for the hp670, hp690 and hp890 and
     hp1600 has been added. Martin has also resolved all known bugs.<br>
     Problems:Dark colors are still pale.</td>
@@ -251,43 +255,41 @@ switches to be invoked except <code>-sDEVICE=cdj850</code>,
 <table>
 <tr>
     <td><code>-dPapertype=</code></td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+
     <td>0</td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+
     <td>plain paper [default]</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
+
     <td>1</td>
-    <td>&nbsp;</td>
+
     <td>bond paper</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
+
     <td>2</td>
-    <td>&nbsp;</td>
+
     <td>special paper</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
+
     <td>3</td>
-    <td>&nbsp;</td>
+
     <td>glossy film</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
+
     <td>4</td>
-    <td>&nbsp;</td>
+
     <td>transparency film</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
     <td>&nbsp;</td>
     <td>Currently the lookup tables are unsuited for printing on
     special paper or transparencies. For these please revert to the
@@ -295,44 +297,42 @@ switches to be invoked except <code>-sDEVICE=cdj850</code>,
 </tr>
 <tr>
     <td><code>-dQuality=</code></td>
-    <td>&nbsp;</td>
+
     <td>-1</td>
-    <td>&nbsp;</td>
+
     <td>draft</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
     <td>0</td>
-    <td>&nbsp;</td>
+
     <td>normal [default]</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
     <td>1</td>
-    <td>&nbsp;</td>
+
     <td>presentation</td>
 </tr>
 <tr>
     <td><code>-dRetStatus=</code></td>
-    <td>&nbsp;</td>
+
     <td>0</td>
-    <td>&nbsp;</td>
+
     <td>C-RET off</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
+
     <td>1</td>
-    <td>&nbsp;</td>
+
     <td>C-RET on [default]</td>
 </tr>
 <tr>
     <td><code>-dMasterGamma=</code></td>
-    <td>&nbsp;</td>
+
     <td>3.0</td>
-    <td>&nbsp;</td>
+
     <td>[default = 1.0]</td>
 </tr>
 </table>
@@ -427,7 +427,6 @@ The source module <code>gdevcd8.c</code> contains one generic driver:</p>
 <table>
 <tr>
     <td><code>cdj880</code></td>
-    <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
     <td>HP DeskJet 812, 815, 832, 880, 882, 895, and 970</td>
 </tr>
 </table>
@@ -441,18 +440,24 @@ internal structure, although the PCL3+ interpretation has changed.</p>
 
 <blockquote>
 <table>
+     <tr>
+    <th width="20%">Date</th>
+    <th width="20%">Version</th>
+    <th width="60%">Comments</th>
+</tr>
+
 <tr>
     <td>15.03.99</td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+
     <td>Version 1.3</td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+
     <td>Initial version, based on Version 1.3 of Uli Wortmann's driver.</td>
 </tr>
 <tr>
     <td>26.02.00</td>
-    <td>&nbsp;</td>
+
     <td>Version 1.4beta</td>
-    <td>&nbsp;</td>
+
     <td>Greatly improved color handling &amp; dithering, but not yet complete enough
     to use for text.</td>
 </tr>
@@ -467,43 +472,40 @@ All printers are supported through the cdj880 device.  Invoke with
 <table>
 <tr>
     <td><code>-dPapertype=</code></td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+
     <td>0</td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+
     <td>plain paper [default]</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
     <td>1</td>
-    <td>&nbsp;</td>
+
     <td>bond paper</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
+
     <td>2</td>
-    <td>&nbsp;</td>
+
     <td>special paper</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
+
     <td>3</td>
-    <td>&nbsp;</td>
+
     <td>glossy film</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
+
     <td>4</td>
-    <td>&nbsp;</td>
+
     <td>transparency film</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
     <td>&nbsp;</td>
     <td>Currently the lookup tables are unsuited for printing on
     special paper or transparencies. For these please revert to the
@@ -511,30 +513,30 @@ All printers are supported through the cdj880 device.  Invoke with
 </tr>
 <tr>
     <td><code>-dQuality=</code></td>
-    <td>&nbsp;</td>
+
     <td>-1</td>
-    <td>&nbsp;</td>
+
     <td>draft</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
+
     <td>0</td>
-    <td>&nbsp;</td>
+
     <td>normal [default]</td>
 </tr>
 <tr>
     <td></td>
-    <td>&nbsp;</td>
+
     <td>1</td>
-    <td>&nbsp;</td>
+
     <td>presentation</td>
 </tr>
 <tr>
     <td><code>-dMasterGamma=</code></td>
-    <td>&nbsp;</td>
+
     <td>3.0</td>
-    <td>&nbsp;</td>
+
     <td>[default = 1.0]</td>
 </tr>
 </table>
@@ -582,32 +584,26 @@ The source module <code>gdevcdj.c</code> contains six generic drivers:</p>
 <table>
 <tr>
     <td><code>cdj500</code></td>
-    <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
     <td>HP DeskJet 500C and 540C</td>
 </tr>
 <tr>
     <td><code>cdj550</code></td>
-    <td>&nbsp;</td>
     <td>HP DeskJet 550C, 560C, 660C, 660Cse</td>
 </tr>
 <tr>
     <td><code>pjxl300</code></td>
-    <td>&nbsp;</td>
     <td>HP PaintJet XL300, DeskJet 1200C, and CopyJet</td>
 </tr>
 <tr>
     <td><code>pjtest</code></td>
-    <td>&nbsp;</td>
     <td>HP PaintJet</td>
 </tr>
 <tr>
     <td><code>pjxltest</code></td>
-    <td>&nbsp;</td>
     <td>HP PaintJet XL</td>
 </tr>
 <tr>
     <td><code>declj250</code></td>
-    <td>&nbsp;</td>
     <td>DEC LJ250</td>
 </tr>
 </table>
@@ -634,12 +630,10 @@ drivers above (and <code>cDeskJet</code> is identical to
 <table>
 <tr>
     <td><code>gs -sDEVICE=cdj500 -dBitsPerPixel=24</code></td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
     <td>for <code>cdjcolor</code>, and</td>
 </tr>
 <tr>
     <td><code>gs -sDEVICE=cdj500 -dBitsPerPixel=1</code></td>
-    <td>&nbsp;</td>
     <td>for <code>cdjmono</code></td>
 </tr>
 </table>
@@ -706,6 +700,10 @@ quality, colour, etc.  The valid numbers are:</p>
 
 <blockquote>
 <table>
+    <tr>
+        <th width="15%">BITSPERPIXEL</th>
+        <th width="85%">Comments</th>
+    </tr>
 <tr>
     <td><strong>1</strong></td>
     <td>A standard Ghostscript monochrome driver, using black ink (by
@@ -746,8 +744,8 @@ quality, colour, etc.  The valid numbers are:</p>
     colour cartridge simultaneously (that is, CMYK printing). This printer can
     both be faster and give higher quality than the DeskJet 500C, because of
     the true black ink. (Note that the 24-bit mode also permits CMYK printing
-    on this printer, and uses less memory.  Any differences between 24-bit and
-    32-bit should be small</td>
+    on this printer, and uses less memory). Any differences between 24-bit and
+    32-bit should be small.</td>
 </tr>
 </table>
 </blockquote>
@@ -757,31 +755,29 @@ quality, colour, etc.  The valid numbers are:</p>
 <blockquote>
 <table>
 <tr>
-    <th>Name</th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
-    <th>Type</th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
-    <th>&nbsp;</th>
+    <th width="20%">Name</th>
+    <th width="20%">Type</th>
+    <th width="60%">Comments</th>
 </tr>
 <tr>
     <td><code>BlackCorrect</code></td>
-    <td>&nbsp;</td>
+
     <td><code>int</code></td>
-    <td>&nbsp;</td>
+
     <td>Colour correction to give better blacks when using the DJ500C in colour mode.  For example, the default of 4 reduces the cyan component to 4/5. Range accepted: 0 - 9 (0 = none).</td>
 </tr>
 <tr>
     <td><code>Shingling</code></td>
-    <td>&nbsp;</td>
+
     <td><code>int</code></td>
-    <td>&nbsp;</td>
+
     <td>Interlaced, multi-pass printing: 0 = none, 1 = 50%, 2 = 25%, 2 is best and slowest.</td>
 </tr>
 <tr>
     <td><code>Depletion</code></td>
-    <td>&nbsp;</td>
+
     <td><code>int</code></td>
-    <td>&nbsp;</td>
+
     <td>"Intelligent" dot-removal: 0 = none, 1 = 25%, 2 = 50%, 1 best for graphics? Use 0 for transparencies.</td>
 </tr>
 </table>
@@ -792,36 +788,34 @@ quality, colour, etc.  The valid numbers are:</p>
 <blockquote>
 <table>
 <tr>
-    <th>Name</th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
-    <th>Type</th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
-    <th>&nbsp;</th>
+    <th width="20%">Name</th>
+    <th width="20%">Type</th>
+    <th width="60%">Comments</th>
 </tr>
 <tr>
     <td><code>PrintQuality</code></td>
-    <td>&nbsp;</td>
+
     <td><code>int</code></td>
-    <td>&nbsp;</td>
+
     <td>Mechanical print quality: -1 = fast, 0 = normal, 1 = presentation. Fast mode reduces ink usage and uses single-pass operation for some media types.  Presentation uses more ink and the maximum number of passes, giving slowest printing for highest quality</td>
 </tr>
 <tr>
     <td><code>RenderType</code></td>
-    <td>&nbsp;</td>
+
     <td><code>int</code></td>
-    <td>&nbsp;</td>
+
         <td><dl>
-        <dt><b>0</b><dd>driver does dithering</dd></dt>
-        <dt><b>1</b><dd>snap to primaries</dd></dt>
-        <dt><b>2</b><dd>snap black to white, others to black</dd></dt>
-        <dt><b>3</b><dd>ordered dither</dd></dt>
-        <dt><b>4</b><dd>error diffusion</dd></dt>
-        <dt><b>5</b><dd>monochrome ordered dither</dd></dt>
-        <dt><b>6</b><dd>monochrome error diffusion</dd></dt>
-        <dt><b>7</b><dd>cluster ordered dither</dd></dt>
-        <dt><b>8</b><dd>monochrome cluster ordered dither</dd></dt>
-        <dt><b>9</b><dd>user-defined dither (not supported)</dd></dt>
-        <dt><b>10</b><dd>monochrome user-defined dither ns.</dd></dt>
+        <dt><dd><code>0&nbsp;</code>driver does dithering</dd></dt>
+        <dt><dd><code>1&nbsp;</code>snap to primaries</dd></dt>
+        <dt><dd><code>2&nbsp;</code>snap black to white, others to black</dd></dt>
+        <dt><dd><code>3&nbsp;</code>ordered dither</dd></dt>
+        <dt><dd><code>4&nbsp;</code>error diffusion</dd></dt>
+        <dt><dd><code>5&nbsp;</code>monochrome ordered dither</dd></dt>
+        <dt><dd><code>6&nbsp;</code>monochrome error diffusion</dd></dt>
+        <dt><dd><code>7&nbsp;</code>cluster ordered dither</dd></dt>
+        <dt><dd><code>8&nbsp;</code>monochrome cluster ordered dither</dd></dt>
+        <dt><dd><code>9&nbsp;</code>user-defined dither (not supported)</dd></dt>
+        <dt><dd><code>10&nbsp;</code>monochrome user-defined dither ns.</dd></dt>
         </dl></td>
 </tr>
 </table>
@@ -1322,36 +1316,39 @@ dithering takes also place but because of the low point density it is
 usually not efficient, and thus invisible).</p>
 
 <blockquote>
+
+
+<h4>Descriptions of printing modes by bpp and Colors</h4>
+
+
 <table>
+
 <tr>
-    <th colspan="5">Descriptions of printing modes by bpp and Colors</th>
-</tr>
-<tr>
-    <th>bpp</th>
-    <th>&nbsp;&nbsp;&nbsp;</th>
-    <th>Colors</th>
-    <th>&nbsp;&nbsp;&nbsp;</th>
-    <th align="left">Mode</th>
+    <th width="15%">bpp</th>
+
+    <th width="15%">Colors</th>
+
+    <th align="left" width="70%">Mode</th>
     </tr>
 <tr>
     <td>32</td>
-    <td>&nbsp;</td>
+
     <td align="center">4</td>
-    <td>&nbsp;</td>
+
     <td>CMYK colour printing, Floyd-Steinberg dithering</td>
 </tr>
 <tr>
     <td>24</td>
-    <td>&nbsp;</td>
+
     <td align="center">4</td>
-    <td>&nbsp;</td>
+
     <td>The same. (But each primary colour is stored on 6 bits instead of 8.)</td>
 </tr>
 <tr>
     <td>24</td>
-    <td>&nbsp;</td>
+
     <td align="center">3</td>
-    <td>&nbsp;</td>
+
     <td>RGB colour printing, Floyd-Steinberg dithering.  This mode does
         <code>not</code> use the black cartridge (that's why it
         exists, for when you don't want to use it <code>;-)</code>).
@@ -1362,25 +1359,25 @@ usually not efficient, and thus invisible).</p>
 </tr>
 <tr>
     <td>16</td>
-    <td>&nbsp;</td>
+
     <td align="center">4</td>
-    <td>&nbsp;</td>
+
     <td>CMYK colour printing, halftoned by Ghostscript.  F-S dithering
         is still visible here (but the halftone patterns are visible
         too!).</td>
 </tr>
 <tr>
     <td>8</td>
-    <td>&nbsp;</td>
+
     <td align="center">4</td>
-    <td>&nbsp;</td>
+
     <td>The same.(But each primary colour is stored in 2 bits instead of 4.)</td>
 </tr>
 <tr>
     <td>8</td>
-    <td>&nbsp;</td>
+
     <td align="center">3</td>
-    <td>&nbsp;</td>
+
     <td>RGB colour printing.  This mode is not intended for use. What I
         mean is that it should be used only if you want to use custom
         halftone screens <b>and</b> the halftoning is broken using the
@@ -1388,16 +1385,16 @@ usually not efficient, and thus invisible).</p>
 </tr>
 <tr>
     <td>8</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td>Gray-level printing, Floyd-Steinberg dithering</td>
 </tr>
 <tr>
     <td>1</td>
-    <td>&nbsp;</td>
+
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td>Gray-level printing halftoned by Ghostscript</td>
     </tr>
 </table>
@@ -1453,16 +1450,15 @@ When both are present it means that the dithering of halftones is visible.
 Default choices are indicated by asterisk "*".</p>
 
 <blockquote>
+    <h4>Valid colors values for allowed BitsPerPixel values</h4>
 <table>
+
 <tr>
-    <th colspan="5">Valid colors values for allowed BitsPerPixel values</th>
-</tr>
-<tr>
-    <th align="center">bpp</th>
-    <th align="center">Colors</th>
-    <th></th>
-    <th align="left">Color model</th>
-    <th align="left">Dithering</th>
+    <th>bpp</th>
+    <th>Colors</th>
+    <th>Default</th>
+    <th>Color model</th>
+    <th>Dithering</th>
 </tr>
 <tr>
     <td align="center">32</td>
@@ -1652,7 +1648,7 @@ printer will be set to use thick paper.
     <th>Value</th>
     <th>bjc600</th>
     <th>bjc800</th>
-    <th></th>
+    <th>Comments</th>
 </tr>
 <tr>
     <td><code>Low</code></td>
@@ -1943,52 +1939,57 @@ somehow related to their use during the printing process:</p>
 
 <dl>
 <dt><code>-sDithering=</code><em>{name}</em>
-<dd>Select another dithering algorithm (name) from among
+<dd>Select another dithering algorithm (name) from among:
 <blockquote>
 <table>
+
+    <tr>
+        <th width="25%">Dithering name</th>
+        <th width="75%">Comments</th>
+    </tr>
 <tr>
     <td><code>gscmyk</code></td>
-    <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
     <td>fast color output, CMYK process color model (default)</td>
 </tr>
 <tr>
     <td><code>gsmono</code></td>
-    <td>&nbsp;</td>
+
     <td>fast monochrome output</td>
 </tr>
 <tr>
     <td><code>gsrgb</code></td>
-    <td>&nbsp;</td>
+
     <td>fast color output, RGB process color model</td>
 </tr>
 <tr>
     <td><code>fsmono</code></td>
-    <td>&nbsp;</td>
+
     <td>Floyd-Steinberg, monochrome</td>
 </tr>
 <tr>
     <td><code>fsrgb</code></td>
-    <td>&nbsp;</td>
+
     <td>Floyd-Steinberg, RGB process color model (almost identical to the <code>cdj550</code>/<code>bjc</code> algorithm)</td>
 </tr>
 <tr>
     <td><code>fsx4</code></td>
-    <td>&nbsp;</td>
+
     <td>Floyd-Steinberg, CMYK process color model (shares code with <code>fsmono</code> and <code>fsrgb</code>, but is algorithmically really bad)</td>
 </tr>
 <tr>
     <td><code>fscmyk</code></td>
-    <td>&nbsp;</td>
+
     <td>Floyd-Steinberg, CMYK process color model and proper modifications for CMYK</td>
 </tr>
 <tr>
     <td><code>hscmyk</code></td>
-    <td>&nbsp;</td>
+
     <td>modified Floyd-Steinberg with CMYK model ("hs" stands for "hess" not for "high speed", but the major difference from <code>fscmyk</code> is speed)</td>
 </tr>
 <tr>
     <td><code>fs2</code></td>
-    <td>&nbsp;</td>
+
     <td>algorithm by Steven Singer (RGB) should be identical to <code>escp2cfs2</code>.</td>
 </tr>
 </table>
@@ -2153,7 +2154,6 @@ on STC-IIs ? and st800) are known to work with most printers.</p>
     <td>360x90</td>
     <td>15</td>
     <td><code>noWeave</code></td>
-    <td>&nbsp;</td>
     <td>&nbsp;</td>
 </tr>
 <tr>
@@ -3646,496 +3646,496 @@ gs @stc.upp -sOutputFile=/dev/lp1 tiger.eps -c quit
 <blockquote>
 <table>
 <tr>
-    <th colspan="6">Unified Printer Parameter files distributed with Ghostscript</th>
+    <th colspan="3">Unified Printer Parameter files distributed with Ghostscript</th>
 </tr>
 <tr>
-    <th align="left" colspan="6">Canon BJC 610 (color, rendered)</th>
+    <th align="left" colspan="3">Canon BJC 610 (color, rendered)</th>
 </tr>
 <tr>
-    <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
     <td><code>bjc610a0.upp</code></td>
-    <td>&nbsp;&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;&nbsp;</td>
+
     <td>plain paper, high speed</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610a1.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>plain paper</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610a2.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>coated paper</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610a3.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>transparency film</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610a4.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>back print film</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610a5.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>fabric sheet</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610a6.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>glossy paper</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610a7.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>high gloss film</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610a8.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>high resolution paper</td>
 </tr>
 <tr>
-    <th colspan="6"></th>
+    <th colspan="3"></th>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610b1.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>plain paper</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610b2.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>coated paper</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610b3.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>transparency film</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610b4.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>back print film</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610b6.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>glossy paper</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610b7.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>high-gloss paper</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>bjc610b8.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>high resolution paper</td>
 </tr>
 <tr>
-    <th align="left" colspan="6">HP Ink-Printers</th>
+    <th align="left" colspan="3">HP Ink-Printers</th>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>cdj550.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>300&times;300dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>cdj690.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>300&times;300dpi</td>
-    <td>&nbsp;</td>
+
     <td>Normal mode</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>cdj690ec.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>300&times;300dpi</td>
-    <td>&nbsp;</td>
+
     <td>Economy mode</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>dnj750c.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>300&times;300dpi</td>
-    <td>&nbsp;</td>
+
     <td>Color – also good for 450C</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>dnj750m.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>600&times;600dpi</td>
-    <td>&nbsp;</td>
+
     <td>Monochrome</td>
 </tr>
 <tr>
-    <th align="left" colspan="6">NEC P2X</th>
+    <th align="left" colspan="3">NEC P2X</th>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>necp2x.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>8-bit (Floyd-Steinberg)</td>
 </tr>
 <tr>
-    <th align="left" colspan="6">Any Epson Stylus Color</th>
+    <th align="left" colspan="3">Any Epson Stylus Color</th>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stcany.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>4-bit, PostScript halftoning</td>
 </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stcany_h.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>4-bit, PostScript halftoning</td>
     </tr>
 <tr>
-    <th align="left" colspan="6">Original Epson Stylus and Stylus Pro Color</th>
+    <th align="left" colspan="3">Original Epson Stylus and Stylus Pro Color</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 15-pin</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc_l.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>4-bit, PostScript halftoning, weaved noWeave</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc_h.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 15-pin Weave</td>
     </tr>
 <tr>
-    <th align="left" colspan="6">Epson Stylus Color II</th>
+    <th align="left" colspan="3">Epson Stylus Color II</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc2.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 20-pin, Epson Stylus Color II(s)</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc2_h.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 20-pin, Epson Stylus Color II</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc2s_h.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 20-pin, Epson Stylus Color IIs</td>
     </tr>
 <tr>
-    <th align="left" colspan="6">Epson Stylus Color 200</th>
+    <th align="left" colspan="3">Epson Stylus Color 200</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc200.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>Plain Paper</td>
     </tr>
 <tr>
-    <th align="left" colspan="6">Epson Stylus Color 300</th>
+    <th align="left" colspan="3">Epson Stylus Color 300</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc300.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc300bl.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>180&times;180dpi</td>
-    <td>&nbsp;</td>
+
     <td>black only, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc300bm.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>black only, plain paper</td>
     </tr>
 <tr>
-    <th align="left" colspan="6">Epson Stylus Color 500 (good transfer curves for plain paper)</th>
+    <th align="left" colspan="3">Epson Stylus Color 500 (good transfer curves for plain paper)</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc500p.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, noWeave, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc500ph.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, noWeave, plain paper</td>
     </tr>
 <tr>
-    <th align="left" colspan="6">Epson Stylus Color 600, 32/90-inch weaving</th>
+    <th align="left" colspan="3">Epson Stylus Color 600, 32/90-inch weaving</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc600pl.upp</code></td>
-    <td>&nbsp;</td></td>
-    <td>360&times;360dpi
-    <td>&nbsp;</td>
+
+    <td>360&times;360dpi</td>
+
     <td>32-bit CMYK, 32-pin, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc600p.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 32-pin, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc600ih.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>1440&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 30-pin, inkjet paper</td>
     </tr>
 <tr>
-    <th align="left" colspan="6">Epson Stylus Color 640</th>
+    <th align="left" colspan="3">Epson Stylus Color 640</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc640p.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>plain paper?</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>st640p.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>CMYK, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>st640pg.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>grayscale, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>st640pl.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>CMYK, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>st640plg.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>grayscale, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>st640ih.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>1440&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>CMYK, inkjet paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>st640ihg.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>1440&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>grayscale, inkjet paper</td>
     </tr>
 <tr>
-    <th align="left" colspan="6">Epson Stylus Color 800, 64/180-inch weaving</th>
+    <th align="left" colspan="3">Epson Stylus Color 800, 64/180-inch weaving</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc800pl.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>360&times;360dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 64-pin, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc800p.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>720&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 64-pin, plain paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc800ih.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>1440&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 62-pin, inkjet paper</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>stc1520.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>1440&times;720dpi</td>
-    <td>&nbsp;</td>
+
     <td>32-bit CMYK, 62-pin, inkjet paper</td>
     </tr>
 <tr>
-    <th align="left" colspan="6">Sun raster file</th>
+    <th align="left" colspan="3">Sun raster file</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>ras1.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>1-bit</td>
-    <td>&nbsp;</td>
+
     <td>monochrome (Ghostscript)</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>ras3.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>3-bit</td>
-    <td>&nbsp;</td>
+
     <td>RGB (Ghostscript)</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>ras4.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>4-bit</td>
-    <td>&nbsp;</td>
+
     <td>CMYK (Ghostscript)</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>ras8m.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>8-bit</td>
-    <td>&nbsp;</td>
+
     <td>grayscale (Floyd-Steinberg)</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>ras24.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>24-bit</td>
-    <td>&nbsp;</td>
+
     <td>RGB (Floyd-Steinberg)</td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><code>ras32.upp</code></td>
-    <td>&nbsp;</td>
+
     <td>32-bit</td>
-    <td>&nbsp;</td>
+
     <td>CMYK (CMYK-Floyd-Steinberg)</td>
 </tr>
 </table>
@@ -4320,27 +4320,27 @@ while <code>/FSCMYK32</code> is (almost) identical to
 <table>
 <tr>
     <td><code>/SunRaster</code></td>
-    <td>&nbsp;</td>
+
     <td>creates Sun raster files and requires no other parameters</td>
     </tr>
 <tr>
     <td><code>/Epson</code></td>
-    <td>&nbsp;</td>
+
     <td>is used for the elderly ESC/P format (used by many printers)</td>
     </tr>
 <tr>
     <td><code>/EscP2</code></td>
-    <td>&nbsp;</td>
+
     <td>is used by more recent Epson printers (no X weaving supported)</td>
     </tr>
 <tr>
     <td><code>/EscP2XY</code></td>
-    <td>&nbsp;</td>
+
     <td>supports X-Weaving, used with 1440dpi printers and in <code>stc2s_h</code></td>
     </tr>
 <tr>
     <td><code>/Pcl</code></td>
-    <td>&nbsp;</td>
+
     <td>HP PCL/RTL-style output formatter without weaving</td>
     </tr>
 </table>
@@ -4368,70 +4368,70 @@ numbers given corresponds to a component which depends on the selected
 <table>
 <tr>
     <td align="center">&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td align="center"><code>/DeviceGray</code></td>
-    <td>&nbsp;</td>
+
     <td align="center"><code>/DeviceRGBW</code></td>
-    <td>&nbsp;</td>
+
     <td align="center"><code>/DeviceRGB</code></td>
-    <td>&nbsp;</td>
+
     <td align="center"><code>/DeviceCMYK</code></td>
-    <td>&nbsp;</td>
+
     <td align="center"><code>/DeviceCMYKgenerate</code></td>
     </tr>
 <tr>
-    <td colspan="11"></td>
+    <td colspan="6"></td>
     </tr>
 <tr>
     <td align="center">0</td>
-    <td>&nbsp;</td>
+
     <td align="center">White</td>
-    <td>&nbsp;</td>
+
     <td align="center">White</td>
-    <td>&nbsp;</td>
+
     <td align="center">Red</td>
-    <td>&nbsp;</td>
+
     <td align="center">Black</td>
-    <td>&nbsp;</td>
+
     <td align="center">Black</td>
     </tr>
 <tr>
     <td align="center">1</td>
-    <td>&nbsp;</td>
+
     <td align="center">--</td>
-    <td>&nbsp;</td>
+
     <td align="center">Red</td>
-    <td>&nbsp;</td>
+
     <td align="center">Green</td>
-    <td>&nbsp;</td>
+
     <td align="center">Cyan</td>
-    <td>&nbsp;</td>
+
     <td align="center">Cyan</td>
     </tr>
 <tr>
     <td align="center">2</td>
-    <td>&nbsp;</td>
+
     <td align="center">--</td>
-    <td>&nbsp;</td>
+
     <td align="center">Green</td>
-    <td>&nbsp;</td>
+
     <td align="center">Blue</td>
-    <td>&nbsp;</td>
+
     <td align="center">Magenta</td>
-    <td>&nbsp;</td>
+
     <td align="center">Magenta</td>
     </tr>
 <tr>
     <td align="center">3</td>
-    <td>&nbsp;</td>
+
     <td align="center">--</td>
-    <td>&nbsp;</td>
+
     <td align="center">Blue</td>
-    <td>&nbsp;</td>
+
     <td align="center">--</td>
-    <td>&nbsp;</td>
+
     <td align="center">Yellow</td>
-    <td>&nbsp;</td>
+
     <td align="center">Yellow</td>
     </tr>
 </table>
@@ -4550,523 +4550,523 @@ denotes that a parameter is an array, and "(RO)" that it is read-only.</p>
 <blockquote>
 <table>
 <tr>
-    <th colspan="5">All uniprint parameters</th>
+    <th colspan="3">All uniprint parameters</th>
     </tr>
 <tr>
     <th align="left">Parameter</th>
-    <th>&nbsp;</th>
+
     <th align="left">Type</th>
-    <th>&nbsp;&nbsp;&nbsp;</th>
+
     <th align="left">Use</th>
     </tr>
 <tr>
     <td><code>upAbortCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>End of page and file on interrupt</td>
     </tr>
 <tr>
     <td><code>upAdjustBottomMarginCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Manipulate bottom margin in <code>upBeginPageCommand</code></td>
     </tr>
 <tr>
     <td><code>upAdjustMediaSizeCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Manipulate <code>Mediasize</code> [intended]</td>
     </tr>
 <tr>
     <td><code>upAdjustPageLengthCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Manipulate page length in <code>upBeginPageCommand</code></td>
     </tr>
 <tr>
     <td><code>upAdjustPageWidthCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Manipulate page width in <code>upBeginPageCommand</code></td>
     </tr>
 <tr>
     <td><code>upAdjustResolutionCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Manipulate resolution</td>
     </tr>
 <tr>
     <td><code>upAdjustTopMarginCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Manipulate top margin in <code>upBeginPageCommand</code></td>
     </tr>
 <tr>
     <td><code>upBeginJobCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>Begin each output file</td>
     </tr>
 <tr>
     <td><code>upBeginPageCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>Begin each page</td>
     </tr>
 <tr>
     <td><code>upBlackTransfer</code></td>
-    <td>&nbsp;</td>
+
     <td>Float[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Black transfer (CMYK only!)</td>
     </tr>
 <tr>
     <td><code>upBlueTransfer</code></td>
-    <td>&nbsp;</td>
+
     <td>Float[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Blue transfer</td>
     </tr>
 <tr>
     <td><code>upColorInfo</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>struct <code>gx_device_color_info</code></td>
     </tr>
 <tr>
     <td><code>upColorModel</code></td>
-    <td>&nbsp;</td>
+
     <td>Name</td>
-    <td>&nbsp;</td>
+
     <td>Select color mapping</td>
     </tr>
 <tr>
     <td><code>upColorModelInitialized</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool (RO)</td>
-    <td>&nbsp;</td>
+
     <td>Color mapping OK</td>
     </tr>
 <tr>
     <td><code>upComponentBits</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Bits stored per component</td>
     </tr>
 <tr>
     <td><code>upComponentShift</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Positioning within <code>gx_color_index</code></td>
     </tr>
 <tr>
     <td><code>upCyanTransfer</code></td>
-    <td>&nbsp;</td>
+
     <td>Float[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Cyan transfer</td>
     </tr>
 <tr>
     <td><code>upEndJobCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>End each file unless <code>upAbortCommand</code></td>
     </tr>
 <tr>
     <td><code>upEndPageCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>End each page unless <code>upAbortCommand</code></td>
     </tr>
 <tr>
     <td><code>upErrorDetected</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool (RO)</td>
-    <td>&nbsp;</td>
+
     <td>Severe (VM) error, not fully operational</td>
     </tr>
 <tr>
     <td><code>upFSFixedDirection</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Inhbits direction toggling in rendering</td>
     </tr>
 <tr>
     <td><code>upFSProcessWhiteSpace</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Causes white-space rendering</td>
     </tr>
 <tr>
     <td><code>upFSReverseDirection</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Run rendering in reverse (if fixed)</td>
     </tr>
 <tr>
     <td><code>upFSZeroInit</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Non-random rendering initialization</td>
     </tr>
 <tr>
     <td><code>upFormatXabsolute</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Write absolute X coordinates</td>
     </tr>
 <tr>
     <td><code>upFormatYabsolute</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Write absolute Y coordinates</td>
     </tr>
 <tr>
     <td><code>upGreenTransfer</code></td>
-    <td>&nbsp;</td>
+
     <td>Float[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Green transfer</td>
     </tr>
 <tr>
     <td><code>upMagentaTransfer</code></td>
-    <td>&nbsp;</td>
+
     <td>Float[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Magenta transfer</td>
     </tr>
 <tr>
     <td><code>upMargins</code></td>
-    <td>&nbsp;</td>
+
     <td>Float[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>L/B/R/T margins in points</td>
     </tr>
 <tr>
     <td><code>upModel</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>Comment string, holds some info</td>
     </tr>
 <tr>
     <td><code>upOutputAborted</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool (RO)</td>
-    <td>&nbsp;</td>
+
     <td>Caught an interrupt</td>
     </tr>
 <tr>
     <td><code>upOutputBuffers</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Number of rendering buffers (2^<small><sup><b>N</b></sup></small>)</td>
     </tr>
 <tr>
     <td><code>upOutputComponentOrder</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Order of components when printing</td>
     </tr>
 <tr>
     <td><code>upOutputComponents</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Number of written components, not fully operational</td>
 <tr>
     <td><code>upOutputFormat</code></td>
-    <td>&nbsp;</td>
+
     <td>Name</td>
-    <td>&nbsp;</td>
+
     <td>Select output format</td>
     </tr>
 <tr>
     <td><code>upOutputFormatInitialized</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool (RO)</td>
-    <td>&nbsp;</td>
+
     <td>Format data OK</td>
     </tr>
 <tr>
     <td><code>upOutputHeight</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Output height in pixels</td>
     </tr>
 <tr>
     <td><code>upOutputPins</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Number of pins / nozzles per command</td>
     </tr>
 <tr>
     <td><code>upOutputWidth</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Output width in pixels</td>
     </tr>
 <tr>
     <td><code>upOutputXOffset</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Offset in pixels, if <code>upFormatXabsolute</code></td>
 </tr>
 <tr>
     <td><code>upOutputXStep</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Divisor or multiplier for X coords</td>
     </tr>
 <tr>
     <td><code>upOutputYOffset</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Offset in pixels, if <code>upFormatYabsolute</code></td>
     </tr>
 <tr>
     <td><code>upOutputYStep</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Divisor or multiplier for Y coords</td>
     </tr>
 <tr>
     <td><code>upRasterBufferInitialized</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool (RO)</td>
-    <td>&nbsp;</td>
+
     <td>GS buffer OK</td>
     </tr>
 <tr>
     <td><code>upRedTransfer</code></td>
-    <td>&nbsp;</td>
+
     <td>Float[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Red transfer</td>
 </tr>
 <tr>
     <td><code>upRendering</code></td>
-    <td>&nbsp;</td>
+
     <td>Name</td>
-    <td>&nbsp;</td>
+
     <td>Select rendering algorithm</td>
     </tr>
 <tr>
     <td><code>upRenderingInitialized</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool (RO)</td>
-    <td>&nbsp;</td>
+
     <td>Rendering parameters OK</td>
     </tr>
 <tr>
     <td><code>upSelectComponentCommands</code></td>
-    <td>&nbsp;</td>
+
     <td>String[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Establish color (output order!)</td>
     </tr>
 <tr>
     <td><code>upSetLineFeedCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>Adjust linefeed (Epson only)</td>
     </tr>
 <tr>
     <td><code>upVersion</code></td>
-    <td>&nbsp;</td>
+
     <td>String (RO)</td>
-    <td>&nbsp;</td>
+
     <td>Source code version</td>
     </tr>
 <tr>
     <td><code>upWeaveFinalPins</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Number of bottom pins on EOP passes</td>
     </tr>
 <tr>
     <td><code>upWeaveFinalScan</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Begin EOP passes (Y-coord)</td>
     </tr>
 <tr>
     <td><code>upWeaveFinalXStarts</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>X-pass indices for EOP passes</td>
     </tr>
 <tr>
     <td><code>upWeaveFinalYFeeds</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Y increments for EOP passes</td>
     </tr>
 <tr>
     <td><code>upWeaveInitialPins</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Number of top pins on BOP passes</td>
     </tr>
 <tr>
     <td><code>upWeaveInitialScan</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>End BOP passes (Y coord)</td>
     </tr>
 <tr>
     <td><code>upWeaveInitialXStarts</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>X-pass indices for BOP passes</td>
     </tr>
 <tr>
     <td><code>upWeaveInitialYFeeds</code></td>
-    <td>&nbsp;</td>
+
     <td>int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Y increments for BOP passes</td>
     </tr>
 <tr>
     <td><code>upWeavePasses</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>XPasses &times; YPasses</td>
     </tr>
 <tr>
     <td><code>upWeaveXPasses</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Number of X passes</td>
 </tr>
 <tr>
     <td><code>upWeaveXStarts</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>X-pass indices for normal passes</td>
     </tr>
 <tr>
     <td><code>upWeaveYFeeds</code></td>
-    <td>&nbsp;</td>
+
     <td>Int[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Y increments for normal passes</td>
     </tr>
 <tr>
     <td><code>upWeaveYOffset</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Number of blank or incomplete scans at BOP</td>
     </tr>
 <tr>
     <td><code>upWeaveYPasses</code></td>
-    <td>&nbsp;</td>
+
     <td>Int</td>
-    <td>&nbsp;</td>
+
     <td>Number of X passes</td>
     </tr>
 <tr>
     <td><code>upWhiteTransfer</code></td>
-    <td>&nbsp;</td>
+
     <td>Float[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>White transfer (monochrome devices!)</td>
     </tr>
 <tr>
     <td><code>upWriteComponentCommands</code></td>
-    <td>&nbsp;</td>
+
     <td>String[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Commands to write each component</td>
     </tr>
 <tr>
     <td><code>upWroteData</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool (RO)</td>
-    <td>&nbsp;</td>
+
     <td>Something (<code>BeginJob</code>) written to output</td>
     </tr>
 <tr>
     <td><code>upXMoveCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>X positioning command</td>
     </tr>
 <tr>
     <td><code>upXStepCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>Single step to the right</td>
     </tr>
 <tr>
     <td><code>upYFlip</code></td>
-    <td>&nbsp;</td>
+
     <td>Bool</td>
-    <td>&nbsp;</td>
+
     <td>Flips output along the Y axis</td>
     </tr>
 <tr>
     <td><code>upYMoveCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>Y positioning command</td>
     </tr>
 <tr>
     <td><code>upYStepCommand</code></td>
-    <td>&nbsp;</td>
+
     <td>String</td>
-    <td>&nbsp;</td>
+
     <td>Single step down</td>
     </tr>
 <tr>
     <td><code>upYellowTransfer</code></td>
-    <td>&nbsp;</td>
+
     <td>Float[&nbsp;]</td>
-    <td>&nbsp;</td>
+
     <td>Yellow transfer</td>
     </tr>
 </table>
@@ -5112,6 +5112,7 @@ Germany<br>
 +49 203 376273 telephone (MET evening hours)<br>
 &lt;<a href="mailto:ghess@elmos.de">ghess@elmos.de</a>&gt;
 </address>
+<p/>
 <h3><a name="Uni_weaving_howto"></a><tt>Uniprint</tt> weaving parameters howto</h3>
 <p>This section was contributed by Glenn Ramsey.</p>
 <p>I wrote this because the documentation was very brief and I really struggled
@@ -5404,7 +5405,7 @@ The extension adds a format that I have called EscNozzleMap and adds some
         <tbody>
           <tr valign="Top">
             <td><code>/EscNozzleMap</code></td>
-            <td>&nbsp;</td>
+
             <td>produces output for the Epson Stylus Color 300
         </td>
           </tr>
@@ -5416,58 +5417,49 @@ The extension adds a format that I have called EscNozzleMap and adds some
 <blockquote>
 <table>
       <tr>
-        <th colspan="5">uniprint parameters for the EscNozzleMap format</th>
+        <th colspan="3">uniprint parameters for the EscNozzleMap format</th>
       </tr>
       <tr>
         <th align="Left">Parameter</th>
-        <th></th>
+
         <th align="Left">Type</th>
-        <th>&nbsp;&nbsp;&nbsp;</th>
+
         <th align="Left">Use</th>
       </tr>
       <tr>
-        <td colspan="5"></td>
+        <td colspan="3"></td>
       </tr>
       <tr>
         <td><code>upNozzleMapRowsPerPass</code></td>
-        <td>&nbsp;</td>
+
         <td>Int
     </td>
-        <td>&nbsp;
-    </td>
+
+
         <td>output rows to generate for each pass of the head
     </td>
       </tr>
       <tr>
         <td><code>upNozzleMapPatternRepeat</code></td>
-        <td>&nbsp;
-    </td>
+
         <td>Int
     </td>
-        <td>&nbsp;
-    </td>
+
         <td>no. of rows that correspond to the repeat pattern of the
         nozzles
     </td>
       </tr>
       <tr>
         <td><code>upNozzleMapRowMask</code></td>
-        <td>&nbsp;
-    </td>
         <td>Int[]
-    </td>
-        <td>&nbsp;
     </td>
         <td>mask indicating the colour of the nozzles
     </td>
       </tr>
       <tr>
         <td><code>upNozzleMapMaskScanOffset</code></td>
-        <td>&nbsp;
-    </td>
+
         <td>Int[]
-    </td>
-        <td>&nbsp;
     </td>
         <td>mask indicating the physical position of the nozzles
     </td>
@@ -5500,42 +5492,36 @@ The extension adds a format that I have called EscNozzleMap and adds some
               <tr>
                 <th align="center">colour
             </th>
-                <th>&nbsp;
-            </th>
+
                 <th align="center">mask value
             </th>
               </tr>
               <tr valign="Top" align="center">
                 <td><code>K</code></td>
-                <td>&nbsp;
-            </td>
+
                 <td>1
             </td>
               </tr>
               <tr valign="Top" align="center">
                 <td><code>C</code></td>
-                <td>&nbsp;
-            </td>
+
                 <td>2
               </tr>
               <tr valign="Top" align="center">
                 <td><code>M</code></td>
-                <td>&nbsp;
-            </td>
+
                 <td>3
                 </td>
               </tr>
               <tr valign="Top" align="center">
                 <td><code>Y</code></td>
-                <td>&nbsp;
-            </td>
+
                 <td>4
             </td>
               </tr>
               <tr valign="Top" align="center">
                 <td><code>no data</code></td>
-                <td>&nbsp;
-            </td>
+
                 <td>0
             </td>
               </tr>
@@ -5765,7 +5751,6 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 <small>Ghostscript version 9.55.0, 27 September 2021
 
 <!-- [3.0 end visible trailer] ============================================= -->
-
 
 <!--FINISH EDITING HERE-->
                 </div><!-- close inner -->

@@ -253,10 +253,10 @@ On other systems the executable may have a different name:</p>
 <tr><td>VMS</td>
     <td><code>gs</code></td></tr>
 <tr><td>MS Windows 95 and later</td>
-    <td><code>gswin32.exe</code></td>
-    <td><code>gswin32c.exe</code></td>
-    <td><code>gswin64.exe</code></td>
-    <td><code>gswin64c.exe</code></td>
+    <td><code>gswin32.exe</code><br/>
+    <code>gswin32c.exe</code><br/>
+    <code>gswin64.exe</code><br/>
+    <code>gswin64c.exe</code></td>
 </tr>
 <tr><td>OS/2</td>
     <td><code>gsos2</code></td></tr>
@@ -950,21 +950,21 @@ files named on the command line, and resource files, Ghostscript first tests whe
 file name specifies an absolute path.</p>
 
 <blockquote><table>
-<tr><th colspan="3">Testing a file name for an absolute path</th></tr>
+<tr><th colspan="2">Testing a file name for an absolute path</th></tr>
 <tr><th align="left">System</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Does the name ...</th></tr>
-<tr><td colspan="3"></td></tr>
+<tr><td colspan="2"></td></tr>
 <tr><td valign="top">Unix</td>
-    <td>&nbsp;</td>
+
     <td>Begin with <code><u>/</u></code> ?</td></tr>
 <tr><td valign="top">MS Windows</td>
-    <td>&nbsp;</td>
+
     <td>Have <code><u>:</u></code> as its second character, or
     begin with <code><u>/</u></code>, <code><u>\</u></code>,
         or <code><u>//servername/share/</u></code> ?</td></tr>
 <tr><td valign="top">VMS</td>
-    <td>&nbsp;</td>
+
     <td>Contain a node, device, or root specification?</td></tr>
 </table></blockquote>
 
@@ -1181,30 +1181,30 @@ from among the standard 35 fonts.</li>
 are found using a different method.</p>
 
 <blockquote><table>
-<tr><th colspan="3">Differences between search path and font path</th></tr>
+<tr><th colspan="2">Differences between search path and font path</th></tr>
 <tr><th>Search path</th>
-    <th>&nbsp;&nbsp;&nbsp;</th>
+
     <th>Font path</th></tr>
 <tr><td><code>-I</code> switch</td>
-    <td>&nbsp;</td>
+
     <td><code>-sFONTPATH=</code> switch</td></tr>
 <tr><td><code>GS_LIB</code> and <code>GS_LIB_DEFAULT</code>
             environment variables</td>
-    <td>&nbsp;</td>
+
     <td><code>GS_FONTPATH</code> environment variable</td></tr>
 <tr><td valign="top">Consulted first</td>
-    <td>&nbsp;</td>
+
     <td valign="top">Consulted only if search path and
     <code>FontResourceDir</code> don't provide the file.</td></tr>
 <tr><td valign="top">Font-name-to-file-name mapping given in Fontmap
      files; aliases are possible, and there need not be any relation
      between the font name in the Fontmap and the
     <code>FontName</code> in the file.</td>
-    <td>&nbsp;</td> <td valign="top">Font-name-to-file-name mapping is
+    <td valign="top">Font-name-to-file-name mapping is
      implicit – the <code>FontName</code> in the file is
      used. Aliases are not possible.</td></tr>
 <tr><td valign="top">Only fonts and files named in Fontmap are used.</td>
-    <td>&nbsp;</td>
+
     <td valign="top">Every Type 1 font file in each directory is
      available; if TrueType fonts are supported (the
      <code>ttfont.dev</code> feature was included when the
@@ -1219,64 +1219,64 @@ installed Type 1 (and, if supported, TrueType) fonts (but see below for
 notes on systems marked with "*"):</p>
 
 <blockquote><table>
-<tr><th colspan="5">Suggested GS_FONTPATH for different systems</th></tr>
+<tr><th colspan="3">Suggested GS_FONTPATH for different systems</th></tr>
 <tr><th>&nbsp;</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">System type</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th valign="bottom" align="left">GS_FONTPATH</th></tr>
 <tr><td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td valign="top">Digital Unix</td>
-    <td>&nbsp;</td>
+
     <td><code>/usr/lib/X11/fonts/Type1Adobe</code></td></tr>
 <tr><td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td valign="top">Ultrix</td>
-    <td>&nbsp;</td>
+
     <td><code>/usr/lib/DPS/outline/decwin</code></td></tr>
 <tr><td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td valign="top">HP-UX 9</td>
-    <td>&nbsp;</td>
+
     <td><code>/usr/lib/X11/fonts/type1.st/typefaces</code></td></tr>
 <tr><td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td valign="top">IBM AIX</td>
-    <td>&nbsp;</td>
+
     <td><code>/usr/lpp/DPS/fonts/outlines
     <br>/usr/lpp/X11/lib/X11/fonts/Type1
     <br>/usr/lpp/X11/lib/X11/fonts/Type1/DPS</code></td></tr>
 <tr><td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td valign="top">NeXT</td>
-    <td>&nbsp;</td>
+
     <td><code>/NextLibrary/Fonts/outline</code></td></tr>
 <tr><td>*</td>
-    <td>&nbsp;</td>
+
     <td valign="top">SGI IRIX</td>
-    <td>&nbsp;</td>
+
     <td><code>/usr/lib/DPS/outline/base
     <br>/usr/lib/X11/fonts/Type1</code></td></tr>
 <tr><td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td valign="top">SunOS 4.x<br>(NeWSprint only)</td>
-    <td>&nbsp;</td>
+
     <td valign="top"><code>newsprint_2.5/SUNWsteNP/reloc/&#36;BASEDIR/NeWSprint/<br>&nbsp;&nbsp;&nbsp;&nbsp;small_openwin/lib/fonts</code></td></tr>
 <tr><td>**</td>
-    <td>&nbsp;</td>
+
     <td valign="top">SunOS 4.x</td>
-    <td>&nbsp;</td>
+
     <td><code>/usr/openwin/lib/X11/fonts/Type1/outline</code></td></tr>
 <tr><td>**</td>
-    <td>&nbsp;</td>
+
     <td valign="top">Solaris 2.x</td>
-    <td>&nbsp;</td>
+
     <td><code>/usr/openwin/lib/X11/fonts/Type1/outline</code></td></tr>
 <tr><td>&nbsp;</td>
-    <td>&nbsp;</td>
+
     <td valign="top">VMS</td>
-    <td>&nbsp;</td>
+
     <td><code>SYS&#36;COMMON:[SYSFONT.XDPS.OUTLINE]</code></td></tr>
 </table>
 
@@ -1647,27 +1647,27 @@ especially for the searchability feature
 <h3><a name="Temp_files"></a>Temporary files</h3>
 
 <blockquote><table>
-<tr><th colspan="5">Where Ghostscript puts temporary files</th></tr>
+<tr><th colspan="3">Where Ghostscript puts temporary files</th></tr>
 <tr>
     <th align="left">Platform</th>
-    <th>&nbsp;&nbsp;&nbsp;</th>
+
     <th align="left">Filename</th>
-    <th>&nbsp;&nbsp;&nbsp;</th>
+
     <th align="left">Location</th></tr>
 <tr valign="top"> <td>MS Windows and OpenVMS</td>
-    <td>&nbsp;</td>
+
     <td><code>_temp_</code>XX.XXX</td>
-    <td>&nbsp;</td>
+
     <td>Current directory</td></tr>
 <tr valign="top"> <td>OS/2</td>
-    <td>&nbsp;</td>
+
     <td><code>gs</code>XXXXXX</td>
-    <td>&nbsp;</td>
+
     <td>Current directory</td></tr>
 <tr valign="top"> <td>Unix</td>
-    <td>&nbsp;</td>
+
     <td><code>gs_</code>XXXXX</td>
-    <td>&nbsp;</td>
+
     <td><code>/tmp</code></td></tr>
 </table></blockquote>
 
@@ -1930,101 +1930,101 @@ Ghostscript looks for the following resources under the program name
 calculated from display metrics:</p>
 
 <blockquote><table>
-<tr><th colspan="5">X Windows resources</th></tr>
+<tr><th colspan="3">X Windows resources</th></tr>
 <tr><th align="left">Name</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Class</th>
-    <th>&nbsp;&nbsp;</th>
+
     <th align="left">Default</th></tr>
 <tr><td><code>background</code></td>
-    <td>&nbsp;</td>
+
     <td><code>Background</code></td>
-    <td>&nbsp;</td>
+
     <td><code>white</code></td></tr>
 <tr><td><code>foreground</code></td>
-    <td>&nbsp;</td>
+
     <td><code>Foreground</code></td>
-    <td>&nbsp;</td>
+
     <td><code>black</code></td></tr>
 <tr><td><code>borderColor</code></td>
-    <td>&nbsp;</td>
+
     <td><code>BorderColor</code></td>
-    <td>&nbsp;</td>
+
     <td><code>black</code></td></tr>
 <tr><td><code>borderWidth</code></td>
-    <td>&nbsp;</td>
+
     <td><code>BorderWidth</code></td>
-    <td>&nbsp;</td>
+
     <td><code>1</code></td></tr>
 <tr><td><code>geometry</code></td>
-    <td>&nbsp;</td>
+
     <td><code>Geometry</code></td>
-    <td>&nbsp;</td>
+
     <td><code>NULL</code></td></tr>
 <tr><td><code>xResolution</code></td>
-    <td>&nbsp;</td>
+
     <td><code>Resolution</code></td>
-    <td>&nbsp;</td>
+
     <td>**</td></tr>
 <tr><td><code>yResolution</code></td>
-        <td>&nbsp;</td>
+
         <td><code>Resolution</code></td>
-        <td>&nbsp;</td>
+
         <td>**</td></tr>
 <tr><td><code>useExternalFonts</code></td>
-        <td>&nbsp;</td>
+
         <td><code>UseExternalFonts</code></td>
-        <td>&nbsp;</td>
+
         <td><code>true</code></td></tr>
 <tr><td><code>useScalableFonts</code></td>
-        <td>&nbsp;</td>
+
         <td><code>UseScalableFonts</code></td>
-        <td>&nbsp;</td>
+
         <td><code>true</code></td></tr>
 <tr><td><code>logExternalFonts</code></td>
-        <td>&nbsp;</td>
+
         <td><code>LogExternalFonts</code></td>
-        <td>&nbsp;</td>
+
         <td><code>false</code></td></tr>
 <tr><td><code>externalFontTolerance</code></td>
-        <td>&nbsp;</td>
+
         <td><code>ExternalFontTolerance</code></td>
-        <td>&nbsp;</td>
+
         <td><code>10.0</code></td></tr>
 <tr><td><code>palette</code></td>
-        <td>&nbsp;</td>
+
         <td><code>Palette</code></td>
-        <td>&nbsp;</td>
+
         <td><code>Color</code></td></tr>
 <tr><td><code>maxGrayRamp</code></td>
-        <td>&nbsp;</td>
+
         <td><code>MaxGrayRamp</code></td>
-        <td>&nbsp;</td>
+
         <td><code>128</code></td></tr>
 <tr><td><code>maxRGBRamp</code></td>
-        <td>&nbsp;</td>
+
         <td><code>MaxRGBRamp</code></td>
-        <td>&nbsp;</td>
+
         <td><code>5</code></td></tr>
 <tr>    <td><code>maxDynamicColors</code></td>
-        <td>&nbsp;</td>
+
         <td><code>MaxDynamicColors</code></td>
-        <td>&nbsp;</td>
+
         <td><code>256</code></td></tr>
 <tr><td><code>useBackingPixmap</code></td>
-        <td>&nbsp;</td>
+
         <td><code>UseBackingPixmap</code></td>
-        <td>&nbsp;</td>
+
         <td><code>true</code></td></tr>
 <tr><td><code>useXPutImage</code></td>
-        <td>&nbsp;</td>
+
         <td><code>UseXPutImage</code></td>
-        <td>&nbsp;</td>
+
         <td><code>true</code></td></tr>
 <tr><td><code>useXSetTile</code></td>
-        <td>&nbsp;</td>
+
         <td><code>UseXSetTile</code></td>
-        <td>&nbsp;</td>
+
         <td><code>true</code></td></tr>
 </table></blockquote>
 
@@ -2036,9 +2036,9 @@ To set X resources, put them in a file (such as
 <code>~/.Xdefaults</code> on Unix) in a form like this:</li>
 
 <blockquote><table>
-    <tr><td><code>Ghostscript*geometry:</code></td><td><code>&nbsp;&nbsp;</code></td><td><code>595x842-0+0</code></td></tr>
-    <tr><td><code>Ghostscript*xResolution:</code></td><td><code>&nbsp;</code></td><td><code>72</code></td></tr>
-    <tr><td><code>Ghostscript*yResolution:</code></td><td><code>&nbsp;</code></td><td><code>72</code></td></tr>
+    <tr><td><code>Ghostscript*geometry:</code></td><td><code>595x842-0+0</code></td></tr>
+    <tr><td><code>Ghostscript*xResolution:</code></td><td><code>72</code></td></tr>
+    <tr><td><code>Ghostscript*yResolution:</code></td><td><code>72</code></td></tr>
 </table></blockquote>
 
 <p>
@@ -3683,25 +3683,25 @@ in that it now supports (although does not enforce) case sensitivity.
 Four command line parameters permit explicit control of the paths included in
 the access control lists:
 <ul>
-<li><dt><code>--permit-file-read=<code><em>pathlist</em></dt>
+<li><dt><code>--permit-file-read=</code><em>pathlist</em></dt>
 <p> Adds a path, or list of paths, to the "permit read" list. A list
 of paths is a series of paths separated by the appropriate path list separator
 for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
 and on MS Windows it is &quot;;&quot;).
 </li>
-<li><dt><code>--permit-file-write=<code><em>pathlist</em></dt>
+<li><dt><code>--permit-file-write=</code><em>pathlist</em></dt>
 <p> Adds a path, or list of paths, to the "permit write" list. A list
 of paths is a series of paths separated by the appropriate path list separator
 for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
 and on MS Windows it is &quot;;&quot;).
 </li>
-<li><dt><code>--permit-file-control=<code><em>pathlist</em></dt>
+<li><dt><code>--permit-file-control=</code><em>pathlist</em></dt>
 <p> Adds a path, or list of paths, to the "permit control" list. A list
 of paths is a series of paths separated by the appropriate path list separator
 for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
 and on MS Windows it is &quot;;&quot;).
 </li>
-<li><dt><code>--permit-file-all=<code><em>pathlist</em></dt>
+<li><dt><code>--permit-file-all=</code><em>pathlist</em></dt>
 <p> Adds a path, or list of paths, to the all the above lists. A list
 of paths is a series of paths separated by the appropriate path list separator
 for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
@@ -3906,20 +3906,20 @@ needed to investigate particular areas. For backward compatibilty, the
 <code>-dDEBUG</code> option will set all of the subset switches.</p>
 
 <table>
-  <tr><td><code>-dCCFONTDEBUG</code></td><td></td><td>Compiled Fonts</td></tr>
-  <tr><td><code>-dCFFDEBUG</code></td><td></td><td>CFF Fonts</td></tr>
-  <tr><td><code>-dCMAPDEBUG</code></td><td></td><td>CMAP</td></tr>
-  <tr><td><code>-dDOCIEDEBUG</code></td><td></td><td>CIE color</td></tr>
-  <tr><td><code>-dEPSDEBUG</code></td><td></td><td>EPS handling</td></tr>
-  <tr><td><code>-dFAPIDEBUG</code></td><td></td><td>Font API</td></tr>
-  <tr><td><code>-dINITDEBUG</code></td><td></td><td>Initialization</td></tr>
-  <tr><td><code>-dPDFDEBUG</code></td><td></td><td>PDF Interpreter</td></tr>
-  <tr><td><code>-dPDFWRDEBUG</code></td><td></td><td>PDF Writer</td></tr>
-  <tr><td><code>-dSETPDDEBUG</code></td><td></td><td>setpagedevice</td></tr>
-  <tr><td><code>-dSTRESDEBUG</code></td><td></td><td>Static Resources</td></tr>
-  <tr><td><code>-dTTFDEBUG</code></td><td></td><td>TTF Fonts</td></tr>
-  <tr><td><code>-dVGIFDEBUG</code></td><td></td><td>ViewGIF</td></tr>
-  <tr><td><code>-dVJPGDEBUG</code></td><td></td><td>ViewJPEG</td></tr>
+  <tr><td><code>-dCCFONTDEBUG</code></td><td>Compiled Fonts</td></tr>
+  <tr><td><code>-dCFFDEBUG</code></td><td>CFF Fonts</td></tr>
+  <tr><td><code>-dCMAPDEBUG</code></td><td>CMAP</td></tr>
+  <tr><td><code>-dDOCIEDEBUG</code></td><td>CIE color</td></tr>
+  <tr><td><code>-dEPSDEBUG</code></td><td>EPS handling</td></tr>
+  <tr><td><code>-dFAPIDEBUG</code></td><td>Font API</td></tr>
+  <tr><td><code>-dINITDEBUG</code></td><td>Initialization</td></tr>
+  <tr><td><code>-dPDFDEBUG</code></td><td>PDF Interpreter</td></tr>
+  <tr><td><code>-dPDFWRDEBUG</code></td><td>PDF Writer</td></tr>
+  <tr><td><code>-dSETPDDEBUG</code></td><td>setpagedevice</td></tr>
+  <tr><td><code>-dSTRESDEBUG</code></td><td>Static Resources</td></tr>
+  <tr><td><code>-dTTFDEBUG</code></td><td>TTF Fonts</td></tr>
+  <tr><td><code>-dVGIFDEBUG</code></td><td>ViewGIF</td></tr>
+  <tr><td><code>-dVJPGDEBUG</code></td><td>ViewJPEG</td></tr>
 </table>
 
 <p>
@@ -3927,9 +3927,9 @@ The PDF interpreter normally tries to repair, or ignore, all problems encountere
 Setting <code>-dPDFSTOPONERROR</code> instead causes the interpreter to signal an error and
 stop processing the PDF file, instead of printing a warning.
 </p><p>
-The <code>-dPDFSTOPONWARNING</code> switch behves the same, but will stop if a condition
+The <code>-dPDFSTOPONWARNING</code> switch behaves the same, but will stop if a condition
 which would normally merit a warning (instead of an error) is encountered. Note that
-setting <code>-dPDFSTOPONWARNING</code> also sets <code>-dPDFSTOPONERROR</code>
+setting <code>-dPDFSTOPONWARNING</code> also sets <code>-dPDFSTOPONERROR</code>.
 </p>
 
 <p>
@@ -3939,61 +3939,49 @@ configuration</a>.  In the table below, the first column is a debugging
 switch, the second is an equivalent switch (if any) and the third is its
 usage.</p>
 
+<blockquote>
 <table>
-    <tr><th colspan="5">Switches used in debugging</th></tr>
+    <tr><th colspan="2">Switches used in debugging</th></tr>
     <tr>    <th align="left">Switch</th>
-        <th>&nbsp;&nbsp;</th>
-        <th align="left">&nbsp;&nbsp;</th>
-        <th>&nbsp;&nbsp;</th>
+
+
+
         <th align="left">&nbsp;Description</th></tr>
     <tr>    <td valign="top"><code>-B</code><em>size</em></td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
+
         <td>Run all subsequent files named on the command line (except for
             <code>-F</code>) through the run_string interface, using a
             buffer of <em>size</em> bytes</td></tr>
     <tr>    <td valign="top"><code>-B-</code></td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
+
         <td>Turn off <code>-B</code>: run subsequent files (except for
             <code>-F</code>) directly in the normal way</td></tr>
     <tr>    <td valign="top"><code>-F</code><em>file</em></td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
+
         <td>Execute the file with <code>-B1</code> temporarily in effect</td></tr>
     <tr>    <td valign="top"><code>-K</code><em>n</em></td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
+
         <td>Limit the total amount of memory that the interpreter can have
             allocated at any one time to <b><em>n</em></b>K bytes.
             <b><em>n</em></b> is a positive decimal integer.</td></tr>
     <tr>    <td valign="top"><code>-M</code><em>n</em></td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
+
         <td>Force the interpreter's allocator to acquire additional memory
             in units of <b><em>n</em></b>K bytes, rather than the default
             20K. <b><em>n</em></b> is a positive decimal integer, on
             16-bit systems no greater than 63.</td></tr>
 <tr>    <td valign="top"><code>-N</code><em>n</em></td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
+
         <td>Allocate space for <b><em>n</em></b>K names, rather than the
             default (normally 64K).  <b><em>n</em></b> may be greater than
             64 only if <code>EXTEND_NAMES</code> was defined (in
             inameidx.h) when the interpreter was compiled .</td></tr>
 <tr>    <td valign="top"><code>-Z</code><em>xxx</em><br><code>-Z-</code><em>xxx</em></td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
+
         <td>Turn debugging printout on (off). Each of the <em>xxx</em>
             characters selects an option.  Case is significant: "a" and
             "A" have different meanings.</td></tr>
+</table>
 
 <dl compact>
 <dt><code>0</code><dd>garbage collector, minimal detail</dd></dt>
@@ -4098,7 +4086,7 @@ storage with a marker (a1, c1, and f1 respectively)</dd></dt>
 <dt><code>s</code><dd>the shading algorithm</dd></dt>
 <dt><code>S</code><dd>the stroking algorithm</dd></dt>
 </dl>
-</table>
+</blockquote>
 
 <p>In addition, calling ghostscript with <code>--debug</code> will list all the currently
 defined (non visual trace) debugging flags, both in their short form (as listed
@@ -4977,7 +4965,8 @@ e.g., <code>b0</code> becomes the same as <code>jisb0</code>.</p>
 
 <h4><a name="X_regular_fonts"></a>Regular fonts</h4>
 
-<pre>AvantGarde-Book:              -Adobe-ITC Avant Garde Gothic-Book-R-Normal--\n\
+<pre>
+    AvantGarde-Book:              -Adobe-ITC Avant Garde Gothic-Book-R-Normal--\n\
     AvantGarde-BookOblique:       -Adobe-ITC Avant Garde Gothic-Book-O-Normal--\n\
     AvantGarde-Demi:              -Adobe-ITC Avant Garde Gothic-Demi-R-Normal--\n\
     AvantGarde-DemiOblique:       -Adobe-ITC Avant Garde Gothic-Demi-O-Normal--\n\
@@ -5189,7 +5178,7 @@ The second element is a dictionary with entries :</p>
         <td>Absolute path to font file, or relative path to font file from the FontPath value,
             being specified in <code>FAPIconfig</code>.</td></tr>
 <tr>    <td>FontType</td>
-        <td>interger</td>
+        <td>integer</td>
         <td>PostScript type for this font. Only 1 and 42 are currently allowed.
             Note that this is unrelated to the real type of the font file -
             the bridge will perform a format conversion.</td></tr>
@@ -5257,7 +5246,7 @@ The format is similar to <code>FAPIfontmap</code>,
         <td>Absolute path to font file, or relative path to font file from the CIDFontPath value,
             being specified in <code>FAPIconfig</code>.</td></tr>
 <tr>    <td>CIDFontType</td>
-        <td>interger</td>
+        <td>integer</td>
         <td>PostScript type for this CID font. Only 0, 1 and 2 are currently allowed.
             Note that this is unrelated to the real type of the font file -
             the bridge will perform format conversion.</td></tr>

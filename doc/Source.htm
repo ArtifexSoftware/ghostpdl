@@ -61,60 +61,60 @@ The Ghostscript source code is divided conceptually as follows:
 
 <blockquote><table>
 <tr>    <a href="#PostScript_interpreter"></a>
-    <th align="left" colspan="4">PostScript interpreter:</th>
+    <th align="left" colspan="2">PostScript interpreter:</th>
     </tr>
 <tr>
-    <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
     <td>PostScript operators</td>
-    <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
     <td><code>z</code>*<code>.h</code> and <code>z</code>*<code>.c</code></td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td>Other interpreter code</td>
-    <td>&nbsp;</td>
+
     <td><code>i</code>*<code>.h</code> and <code>i</code>*<code>.c</code></td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td>PostScript code</td>
-    <td>&nbsp;</td>
+
     <td><code>gs_</code>*<code>.ps</code></td>
     </tr>
 <tr>    <a href="#PDF_interpreter"></a>
-    <th align="left" colspan="4">PDF interpreter:</th>
+    <th align="left" colspan="2">PDF interpreter:</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td>PostScript code</td>
-    <td>&nbsp;</td>
+
     <td><code>pdf_</code>*<code>.ps</code></td>
     </tr>
 <tr>    <a href="#Graphics_library"></a>
-    <th align="left" colspan="4">Graphics library:</th>
+    <th align="left" colspan="2">Graphics library:</th>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td>Main library code</td>
-    <td>&nbsp;</td>
+
     <td><code>g</code>*<code>.h</code> and <code>g</code>*<code>.c</code></td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td>Streams</td>
-    <td>&nbsp;</td>
+
     <td><code>s</code>*<code>.h</code> and <code>s</code>*<code>.c</code></td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><a href="#Drivers">Device drivers</a></td>
-    <td>&nbsp;</td>
+
     <td><code>gdev</code>*<code>.h</code> and <code>gdev</code>*<code>.c</code></td>
     </tr>
 <tr>
-    <td>&nbsp;</td>
+
     <td><a href="#Platform_specific_code">Platform-specific code</a></td>
-    <td>&nbsp;</td>
+
     <td><code>gp</code>*<code>.h</code> and <code>gp</code>*<code>.c</code></td>
     </tr>
 </table></blockquote>
@@ -246,71 +246,61 @@ The platform-specific implementations of the
 
 <blockquote><table>
 <tr>
-    <th colspan="3">Platform-specific interfaces</th>
+    <th colspan="2">Platform-specific interfaces</th>
     </tr>
 <tr>
     <th align="left">Routine</th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
     <th align="left">Platform</th>
     </tr>
 <tr>
     <td><code>gp_dosfb.c</code></td>
-    <td>&nbsp;</td>
     <td>DOS</td>
     </tr>
 <tr>
     <td><code>gp_dosfs.c</code></td>
-    <td>&nbsp;</td>
     <td>DOS and MS Windows</td>
     </tr>
 <tr>
     <td><code>gp_itbc.c</code></td>
-    <td>&nbsp;</td>
     <td>DOS, Borland compilers</td>
     </tr>
 <tr>
     <td><code>gp_iwatc.c</code></td>
-    <td>&nbsp;</td>
     <td>DOS, Watcom or Microsoft compiler</td>
     </tr>
 <tr>
     <td><code>gp_msdos.c</code></td>
-    <td>&nbsp;</td>
     <td>DOS and MS Windows</td>
     </tr>
 <tr>
     <td><code>gp_ntfs.c</code></td>
-    <td>&nbsp;</td>
     <td>MS Windows NT</td>
     </tr>
 <tr>
     <td><code>gp_os2.c</code></td>
-    <td>&nbsp;</td>
     <td>OS/2</td>
     </tr>
 <tr>
     <td><code>gp_os9.c</code></td>
-    <td>&nbsp;</td>
     <td>OS-9</td>
     </tr>
 <tr>
     <td><code>gp_unifs.c</code></td>
-    <td>&nbsp;</td>
     <td>Unix, OS-9, and QNX</td>
     </tr>
 <tr>
     <td><code>gp_unix.c</code></td>
-    <td>&nbsp;</td>
+
     <td>Unix and QNX</td>
     </tr>
 <tr>
     <td><code>gp_vms.c</code></td>
-    <td>&nbsp;</td>
+
     <td>VMS</td>
     </tr>
 <tr>
     <td><code>gp_win32.c</code></td>
-    <td>&nbsp;</td>
+
     <td>MS Windows NT</td>
     </tr>
 </table></blockquote>

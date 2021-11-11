@@ -295,14 +295,14 @@ source, make the <b><em>parent</em></b> of the (new) gs directory the current di
 
 <blockquote><table>
 <tr><th align="left" valign="top">2-step:</th>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+
     <td><code>gzip -d ghostscript-</code>#.##<code>.tar.gz</code><br><code>tar -xf ghostscript-</code>#.##<code>.tar</code></td></tr>
 <tr><th align="left" valign="top">Pipe:</th>
-    <td>&nbsp;</td>
+
     <td><code>gzip -d -c ghostscript-</code>#.##<code>.tar.gz | tar -xf -</code></td></tr>
 
 <tr><th align="left" valign="top">GNU tar:</th>
-    <td>&nbsp;</td>
+
     <td><code>tar -zxf ghostscript-</code>#.##<code>.tar.gz</code></td></tr>
 </table></blockquote>
 
@@ -311,48 +311,47 @@ All the Ghostscript source files are now in subdirectories of the gs
 directory.</p>
 
 <blockquote><table>
-    <tr><th colspan="5">Ghostscript Core Source subdirectories</th></tr>
+    <tr><th colspan="2">Ghostscript Core Source subdirectories</th></tr>
     <tr><th valign="bottom" align="left">Subdirectory</th>
-        <th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
         <th valign="bottom" align="left">Contents</th></tr>
     <tr><td><code>arch/</code></td>
-        <td>&nbsp;</td>
+
         <td>Pre-defined architecture header files</td></tr>
     <tr><td><code>base/</code></td>
-        <td>&nbsp;</td>
+
         <td>Graphics library C source code and makefiles</td></tr>
     <tr><td><code>contrib/</code></td>
-        <td>&nbsp;</td>
+
         <td>Community contributed/supported output devices</td></tr>
     <tr><td><code>devices/</code></td>
-        <td>&nbsp;</td>
+
         <td>The output devices supported by the Ghostscript team</td></tr>
     <tr><td><code>psi/</code></td>
-        <td>&nbsp;</td>
+
         <td>PS interpreter C source code and makefiles</td></tr>
     <tr><td><code>Resource/</code></td>
-        <td>&nbsp;</td>
+
         <td>Postscript initialization, resource and font files</td></tr>
     <tr><td><code>lib/</code></td>
-    <td>&nbsp;</td>
+
     <td>PostScript utilities and scripts used with Ghostscript</td></tr>
     <tr><td><code>doc/</code></td>
-        <td>&nbsp;</td>
+
         <td>Documentation</td></tr>
     <tr><td><code>man/</code></td>
-        <td>&nbsp;</td>
+
         <td>Unix <code>man</code> pages</td></tr>
     <tr><td><code>examples/</code></td>
-        <td>&nbsp;</td>
+
         <td>Sample PostScript files</td></tr>
     <tr><td><code>iccprofiles/</code></td>
-        <td>&nbsp;</td>
+
         <td>Default set of ICC profiles</td></tr>
     <tr><td><code>windows/</code></td>
-        <td>&nbsp;</td>
+
         <td>Visual Studio for Windows specific project and solution files</td></tr>
     <tr><td><code>toolbin/</code></td>
-        <td>&nbsp;</td>
+
         <td>Useful (non-Postscript) tools, mostly for developer use only</td></tr>
 </table>
 </blockquote>
@@ -360,15 +359,15 @@ directory.</p>
         <p>Optionally, if you downloaded the GhostPDL archive, you may also have:</p>
 
 <blockquote><table>
-<tr><th colspan="5">Additional GhostPDL source subdirectories</th></tr>
+<tr><th colspan=2>Additional GhostPDL source subdirectories</th></tr>
     <tr><th valign="bottom" align="left">Subdirectory</th>
-        <th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+
         <th valign="bottom" align="left">Contents</th></tr>
     <tr><td><code>pcl/</code></td>
-        <td>&nbsp;</td>
+
         <td>PCL/PXL interpreter C source code, makefiles, fonts etc</td></tr>
     <tr><td><code>xps/</code></td>
-        <td>&nbsp;</td>
+
         <td>XPS interpreter C source code and makefiles</td></tr>
 </table>
 </blockquote>
@@ -432,21 +431,21 @@ Fortunately, the only makefiles you're likely to want to change are
 relatively small ones containing platform-specific information.</p>
 
 <blockquote><a name="Platform-specific_makefiles"></a><table>
-    <tr><th colspan="3">Platform-specific makefiles</th></tr>
+    <tr><th colspan="2">Platform-specific makefiles</th></tr>
     <tr><th align="left">Makefile</th>
-        <th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+
         <th align="left">Used for</th></tr>
     <tr><td><code>Makefile.in</code></td>
-        <td>&nbsp;</td>
+
         <td>Template makefile for the autoconf build</td></tr>
     <tr><td><code>psi/msvc.mak</code></td>
-        <td>&nbsp;</td>
+
         <td>MS Windows with Microsoft Visual Studio 2003 and later.</td></tr>
     <tr><td><code>base/unix-gcc.mak</code></td>
-        <td>&nbsp;</td>
+
         <td>Unix with gcc</td></tr>
     <tr><td><code>base/unixansi.mak</code></td>
-        <td>&nbsp;</td>
+
         <td>Unix with ANSI C compilers other than gcc</td></tr>
 </table>
 </blockquote>
@@ -811,21 +810,21 @@ All Ghostscript builds in PC (DOS and MS Windows) environments are 32- or
 64-bit: 16-bit builds are not supported.  The relevant makefiles are</p>
 
 <blockquote><table>
-    <tr><th colspan="5">PC makefiles</th></tr>
+    <tr><th colspan="3">PC makefiles</th></tr>
     <tr><th align="left">Makefile</th>
-        <th>&nbsp;&nbsp;</th>
+
         <th align="left">Construction tools</th>
-        <th>&nbsp;&nbsp;</th>
+
         <th align="left">For environment</th></tr>
     <tr><td valign="top"><code>msvc.mak</code></td>
-        <td>&nbsp;</td>
+
         <td valign="top"><a href="#Microsoft_build">Microsoft Visual Studio .NET 2003 (or later)</a></td>
-        <td>&nbsp;</td>
+
         <td valign="top">MS Windows 32/64-bit</td></tr>
     <tr><td valign="top"><code>Makefile.in</code></td>
-        <td>&nbsp;</td>
+
         <td valign="top"><a href="#Cygwin_build">Cygwin/gcc</a></td>
-        <td>&nbsp;</td>
+
     <td valign="top"><a href="https://www.cygwin.com/">Cygwin</a> (Use Unix <code>configure</code>)</td></tr>
 </table></blockquote>
 
