@@ -439,8 +439,16 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
     bool include_index = false;
     uint32_t nfonts = 1, tableoffs;
     int findex;
-    /* skip the magic number */
-    (void)sru32(f);
+    gs_offset_t l;
+
+    code2 = sfseek(f, 0, SEEK_END);
+    if (code2 < 0)
+        return code;
+    l = stell(f);
+    /* 4 to skip the magic number */
+    code2 = sfseek(f, 4, SEEK_SET);
+    if (code2 < 0)
+        return code;
 
     if (memcmp(magic, "ttcf", 4) == 0) {
         uint32_t ver;
@@ -451,21 +459,40 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
             return_error(gs_error_invalidaccess);
         }
         nfonts = sru32(f);
+        /* There isn't a specific limit on the number of fonts,
+           freetype limits to 255, so we'll do the same here
+         */
+        if (nfonts > 255)
+            return_error(gs_error_invalidfont);
     }
 
     for (findex = 0; findex < nfonts; findex++) {
         if (include_index == true ) {
+            if (findex * 4 > l)
+                break;
             code2 = sfseek(f, findex * 4, SEEK_CUR);
             tableoffs = sru32(f);
+            if (tableoffs + 4 > l)
+                break;
             code2 = sfseek(f, tableoffs + 4, SEEK_SET);
         }
 
         ntables = sru16(f);
+        /* Similar to above - no spec limit, but we do the same
+           as freetype
+         */
+        if (ntables > 255)
+            continue;
+
         /* Skip the remainder of the invariant header bytes */
         (void)sru16(f);
         (void)sru32(f);
 
-        for (i = 0; i < ntables; i++) {
+        for (i = 0, code2 = 0; i < ntables && code2 >= 0; i++) {
+            if (stell(f) + 4 > l) {
+                code2 = gs_error_ioerror;
+                continue;
+            }
             code2 = sfread(table, 1, 4, f);
             if (code2 < 0)
                 return code2;
@@ -476,18 +503,29 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
 
                 table_pos = sru32(f);
                 table_len = sru32(f);
+                if (table_pos + table_len > l) {
+                    code2 = gs_error_ioerror;
+                    continue;
+                }
 
                 code2 = sfseek(f, table_pos, SEEK_SET);
                 if (code2 < 0)
-                    return code2;
+                    continue;
 
                 namet = (byte *)gs_alloc_bytes(ctx->memory, table_len, "pdfi_ttf_add_to_native_map");
                 if (namet == NULL)
                     return_error(gs_error_VMerror);
                 code2 = sfread(namet, 1, table_len, f);
-                if (code2 < 0)
-                    return code2;
+                if (code2 < 0) {
+                    gs_free_object(ctx->memory, namet,"pdfi_ttf_add_to_native_map");
+                    continue;
+                }
                 nte = u16(namet + 2);
+                /* Again, arbitrary limit... */
+                if (nte > 255) {
+                    gs_free_object(ctx->memory, namet,"pdfi_ttf_add_to_native_map");
+                    continue;
+                }
                 storageOffset = u16(namet + 4);
 
                 for (j = 0; j < nte; j++) {
@@ -495,6 +533,9 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
                     if (u16(rec + 6) == 6) {
                         int nl = u16(rec + 8);
                         int noffs = u16(rec + 10);
+                        if (nl + noffs + storageOffset > table_len) {
+                            break;
+                        }
                         memcpy(pname, namet + storageOffset + noffs, nl);
                         pname[nl] = '\0';
                         for (k = 0; k < nl; k++)
@@ -512,6 +553,9 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
                         if (u16(rec + 6) == 4) {
                             int nl = u16(rec + 8);
                             int noffs = u16(rec + 10);
+                            if (nl + noffs + storageOffset > table_len) {
+                                break;
+                            }
                             memcpy(pname, namet + storageOffset + noffs, nl);
                             pname[nl] = '\0';
                             for (k = 0; k < nl; k++)
