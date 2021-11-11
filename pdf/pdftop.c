@@ -710,14 +710,16 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
             code = pdfi_add_paths_to_search_paths(ctx, (const char *)s, slen, true);
+            gs_free_object(ctx->memory, s, "FONTPATH param string");
         }
         if (!strncmp(param, "FONTMAP", 7)) {
             char *s = NULL;
             int slen;
-            code = plist_value_get_string_or_name(ctx, &pvalue, &s , &slen);
+            code = plist_value_get_string_or_name(ctx, &pvalue, &s, &slen);
             if (code < 0)
                 return code;
             code = pdfi_add_fontmapfiles(ctx, (const char *)s, slen);
+            gs_free_object(ctx->memory, s, "FONTMAP param string");
         }
     }
 
