@@ -628,7 +628,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
     char *working = NULL;
     byte magic[4]; /* We only (currently) use up to 4 bytes for type guessing */
     stream *sf;
-    int code, l;
+    int code = 0, l;
     uint nread;
 
     if (ctx->pdfnativefontmap != NULL) /* Only run this once */
@@ -693,7 +693,14 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
                   break;
             }
             sfclose(sf);
+            /* We ignore most errors, on the basis it probably means it wasn't a valid font file */
+            if (code == gs_error_VMerror)
+                break;
+            code = 0;
         }
+        /* We only need to explicitly destroy the enumerator if we exit before enumeration is complete */
+        if (code < 0)
+            gp_enumerate_files_close(ctx->memory, fe);
     }
 
 #if 0
