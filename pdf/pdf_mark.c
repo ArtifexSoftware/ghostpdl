@@ -496,6 +496,9 @@ static int pdfi_mark_handle_dest_names(pdf_context *ctx, pdf_dict *link_dict,
         if (D_dict->type == PDF_ARRAY) {
             dest_array = (pdf_array *)D_dict;
             D_dict = NULL;
+        } else {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
         }
     }
 
