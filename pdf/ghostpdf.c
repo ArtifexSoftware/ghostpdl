@@ -1919,6 +1919,8 @@ int pdfi_clear_context(pdf_context *ctx)
 
     pdfi_countdown(ctx->pdffontmap);
     ctx->pdffontmap = NULL;
+    pdfi_countdown(ctx->pdfnativefontmap);
+    ctx->pdfnativefontmap = NULL;
 
     return 0;
 }

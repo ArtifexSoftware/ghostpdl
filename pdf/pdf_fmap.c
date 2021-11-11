@@ -268,6 +268,7 @@ static int pdfi_add__to_native_fontmap(pdf_context *ctx, const char *fontname, c
         code = pdfi_dict_alloc(ctx, 32, &ctx->pdfnativefontmap);
         if (code < 0)
             return code;
+        pdfi_countup(ctx->pdfnativefontmap);
     }
     /* index == -1 is a file with a single font in it */
     if (index == -1) {
