@@ -13,6 +13,7 @@ public:
 	void *instance = NULL;			// The Ghostscript instance
 	void *callerHandle = NULL;		// The caller handle passed to gsapi_new_instance
 	void *stdioHandle = NULL;		// The caller handle passed to gsapi_set_stdio_with_handle
+	void *displayHandle = NULL;		// The handle passed to display callbacks
 
 	JNIEnv *env = NULL;				// The JNIEnv which should be used for JNI API calls
 
@@ -25,6 +26,8 @@ public:
 	jobject displayCallback = NULL;	// The user DisplayCallback class
 
 	jobject callout = NULL;			// The user ICalloutFunction class
+
+	bool hasinit = false;			// Whether the user has called init_with_args
 };
 
 GSInstanceData *putInstanceData(GSInstanceData *data);

@@ -46,6 +46,16 @@ g++ -c -Wall -O3 -fPIC \
 	"jni_util.cpp" \
 	-o "obin/jni_util.o"
 
+echo "Compile instance_data.cpp"
+g++ -c -Wall -O3 -fPIC \
+	-std=c++14 \
+	-I./include \
+	-I./include/darwin \
+	-I./../../../../psi \
+	-I./../../../../devices \
+	"instance_data.cpp" \
+	-o "obin/instance_data.o"
+
 echo "Link"
 g++ -dynamiclib -fPIC \
 	-Wl \
@@ -54,4 +64,5 @@ g++ -dynamiclib -fPIC \
 	"obin/com_artifex_gsjava_GSAPI.o" \
 	"obin/com_artifex_gsjava_util_NativePointer.o" \
 	"obin/jni_util.o" \
+	"obin/instance_data.o" \
 	"../../../../sobin/libgpdl.dylib"

@@ -5,6 +5,7 @@
 #include <string.h>
 #include <memory>
 #include <assert.h>
+#include <string>
 
 #include "jni_util.h"
 #include "callbacks.h"
@@ -13,6 +14,8 @@
 using namespace util;
 
 static void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *success);
+
+static void storeDispalyHandle(GSInstanceData *idata);
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1revision
 	(JNIEnv *env, jclass, jobject revision, jint len)
@@ -40,7 +43,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1new_1instance
 	GSInstanceData *idata = new GSInstanceData();
 	idata->callerHandle = (void *)callerHandle;
 
-	void *gsInstance;
+	void *gsInstance = NULL;
 	int code = gsapi_new_instance(&gsInstance, idata);
 	if (code == 0)
 		Reference::setValueField(env, instance, toWrapperType(env, (jlong)gsInstance));
@@ -79,6 +82,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1stdio_1with_1ha
 		callbacks::setJNIEnv(idata, env);
 		callbacks::setIOCallbacks(idata, stdIn, stdOut, stdErr);
 	}
+
 	return code;
 }
 
@@ -97,6 +101,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1stdio
 		callbacks::setJNIEnv(idata, env);
 		callbacks::setIOCallbacks(idata, stdIn, stdOut, stdErr);
 	}
+
 	return code;
 }
 
@@ -135,6 +140,9 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1display_1callba
 {
 	GSInstanceData *idata = findDataFromInstance((void *)instance);
 	assert(idata);
+
+	if (idata->hasinit && idata->displayCallback)
+		storeDispalyHandle(idata);
 
 	display_callback *cb = new display_callback;
 	cb->size = sizeof(display_callback);
@@ -241,6 +249,9 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1init_1with_1args
 	callbacks::setJNIEnv(idata, env);
 	int code = gsapi_init_with_args((void *)instance, argc, cargv);
 	delete2DByteArray(argc, cargv);
+
+	idata->hasinit = true;
+	storeDispalyHandle(idata);
 	return code;
 }
 
@@ -653,4 +664,45 @@ void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *su
 		*success = false;
 	}
 	return result;
+}
+
+void storeDispalyHandle(GSInstanceData *idata)
+{
+	static const char PARAM_NAME[] = "DisplayHandle";
+
+	char *param = NULL;
+	int bytes = gsapi_get_param(idata->instance, PARAM_NAME, NULL, gs_spt_string);
+	if (bytes == com_artifex_gsjava_GSAPI_GS_ERROR_UNDEFINED)
+		idata->displayCallback = NULL;
+	else
+	{
+		// Parse the DisplayHandle string again
+
+		param = new char[bytes];
+		gsapi_get_param(idata->instance, PARAM_NAME, param, gs_spt_string);
+
+		char *toparse = param;
+
+		int radix = 10; // default base 10
+
+		// If there is a # character, we need to change the radix
+		char *rend = strchr(param, '#');
+		if (rend)
+		{
+			*rend = 0;
+			radix = atoi(param);
+			toparse = rend + 1;
+		}
+
+		char *end;
+		long long val = std::strtoll(toparse, &end, radix);
+
+		idata->displayHandle = (void *)val;
+
+		delete[] param;
+	}
+
+	char buf[20]; // 16#[16 hex digits][null terminator]
+	sprintf_s(buf, "16#%llx", (long long)idata);
+	gsapi_set_param(idata->instance, PARAM_NAME, buf, gs_spt_string);
 }

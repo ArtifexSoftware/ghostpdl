@@ -175,6 +175,8 @@ int callbacks::calloutFunction(void *instance, void *handle, const char *deviceN
 		jsize len = (jsize)strlen(deviceName);
 		jbyteArray array = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(array, 0, len, (const jbyte *)deviceName);
+
+		// TODO: gsdata->callerHandle is not consistent with the specification for a callout
 		code = callIntMethod(gsdata->env, gsdata->callout, "onCallout", "(JJ[BIIJ)I", (jlong)instance, (jlong)gsdata->callerHandle, array, id, size, (jlong)data);
 	}
 	return code;
@@ -192,7 +194,7 @@ int callbacks::display::displayOpenFunction(void *handle, void *device)
 		jclass clazz = gsdata->env->GetObjectClass(gsdata->displayCallback);
 		const char *name = getClassName(gsdata->env, clazz);
 		freeClassName(name);
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayOpen", DISPLAY_OPEN_SIG, (jlong)gsdata->callerHandle, (jlong)device);
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayOpen", DISPLAY_OPEN_SIG, (jlong)gsdata->displayHandle, (jlong)device);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
@@ -207,7 +209,7 @@ int callbacks::display::displayPrecloseFunction(void *handle, void *device)
 
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPreclose", DISPLAY_PRECLOSE_SIG, (jlong)gsdata->callerHandle, (jlong)device);
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPreclose", DISPLAY_PRECLOSE_SIG, (jlong)gsdata->displayHandle, (jlong)device);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
@@ -222,7 +224,7 @@ int callbacks::display::displayCloseFunction(void *handle, void *device)
 
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayClose", DISPLAY_CLOSE_SIG, (jlong)gsdata->callerHandle, (jlong)device);
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayClose", DISPLAY_CLOSE_SIG, (jlong)gsdata->displayHandle, (jlong)device);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
@@ -237,7 +239,7 @@ int callbacks::display::displayPresizeFunction(void *handle, void *device, int w
 
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPresize", DISPLAY_PRESIZE_SIG, (jlong)gsdata->callerHandle,
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPresize", DISPLAY_PRESIZE_SIG, (jlong)gsdata->displayHandle,
 			(jlong)device, width, height, raster, (jint)format);
 		CHECK_AND_RETURN(gsdata->env);
 	}
@@ -300,7 +302,7 @@ int callbacks::display::displaySizeFunction(void *handle, void *device, int widt
 		gsdata->env->SetLongField(bytePointer, dataPtrID, (jlong)pimage);
 		gsdata->env->SetLongField(bytePointer, lengthID, len);
 
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySize", DISPLAY_SIZE_SIG, (jlong)gsdata->callerHandle,
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySize", DISPLAY_SIZE_SIG, (jlong)gsdata->displayHandle,
 			(jlong)device, width, height, raster, (jint)format, bytePointer);
 		CHECK_AND_RETURN(gsdata->env);
 	}
@@ -316,7 +318,7 @@ int callbacks::display::displaySyncFunction(void *handle, void *device)
 
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySync", DISPLAY_SYNC_SIG, (jlong)gsdata->callerHandle, (jlong)device);
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySync", DISPLAY_SYNC_SIG, (jlong)gsdata->displayHandle, (jlong)device);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
@@ -331,7 +333,7 @@ int callbacks::display::displayPageFunction(void *handle, void *device, int copi
 
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPage", DISPLAY_PAGE_SIG, (jlong)gsdata->callerHandle,
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayPage", DISPLAY_PAGE_SIG, (jlong)gsdata->displayHandle,
 			(jlong)device, copies, flush);
 		CHECK_AND_RETURN(gsdata->env);
 	}
@@ -347,7 +349,7 @@ int callbacks::display::displayUpdateFunction(void *handle, void *device, int x,
 
 	if (gsdata->env && gsdata->displayCallback)
 	{
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayUpdate", DISPLAY_UPDATE_SIG, (jlong)gsdata->callerHandle,
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayUpdate", DISPLAY_UPDATE_SIG, (jlong)gsdata->displayHandle,
 			(jlong)device, x, y, w, h);
 		CHECK_AND_RETURN(gsdata->env);
 	}
@@ -367,7 +369,7 @@ int callbacks::display::displaySeparationFunction(void *handle, void *device, in
 		jsize len = (jsize)strlen(componentName);
 		jbyteArray byteArray = gsdata->env->NewByteArray(len);
 		gsdata->env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)componentName);
-		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySeparation", DISPLAY_SEPARATION_SIG, (jlong)gsdata->callerHandle,
+		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplaySeparation", DISPLAY_SEPARATION_SIG, (jlong)gsdata->displayHandle,
 			(jlong)device, component, byteArray, c, m, y, k);
 		CHECK_AND_RETURN(gsdata->env);
 	}
@@ -384,7 +386,7 @@ int callbacks::display::displayAdjustBandHeightFunction(void *handle, void *devi
 	if (gsdata->env && gsdata->displayCallback)
 	{
 		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayAdjustBandHeght", DISPLAY_ADJUST_BAND_HEIGHT_SIG,
-			(jlong)gsdata->callerHandle, (jlong)device, bandHeight);
+			(jlong)gsdata->displayHandle, (jlong)device, bandHeight);
 		CHECK_AND_RETURN(gsdata->env);
 	}
 	return code;
@@ -411,7 +413,7 @@ int callbacks::display::displayRectangleRequestFunction(void *handle, void *devi
 		Reference hRef = Reference(gsdata->env, toWrapperType(gsdata->env, (jint)*h));
 
 		code = callIntMethod(gsdata->env, gsdata->displayCallback, "onDisplayRectangleRequest", DISPLAY_RECTANGLE_REQUEST,
-			(jlong)gsdata->callerHandle,
+			(jlong)gsdata->displayHandle,
 			(jlong)device,
 			memoryRef.object(),
 			oxRef.object(),
