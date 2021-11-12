@@ -175,7 +175,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugclean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin32c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin32.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
