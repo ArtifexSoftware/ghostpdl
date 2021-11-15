@@ -34,15 +34,6 @@
  */
 typedef struct stream_s stream;
 
-/* We really want our offset type to be 64 bit for large file support
- * but this allows a particular port to specficy a prefered data type
- */
-#ifdef GS_OFFSET_T
-typedef GS_OFFSET_T gs_offset_t;
-#else
-typedef int64_t gs_offset_t;
-#endif
-
 /*
  * A stream_state records the state specific to a given variety of stream.
  * The buffer processing function of a stream maintains this state.
