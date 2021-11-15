@@ -2648,10 +2648,19 @@ pdf_close(gx_device * dev)
     char str[256];
     pdf_linearisation_t linear_params;
     bool file_per_page = false;
+    int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
 
     if (!dev->is_open)
         return_error(gs_error_undefined);
     dev->is_open = false;
+
+    if (pdev->sbstack_depth > bottom) {
+        emprintf(pdev->pdf_memory, "Error closing device; open substreams detected!\n");
+        emprintf(pdev->pdf_memory, "Probably due to errors in the input. Output file is incorrect/invalid.\n");
+    }
+
+    while(pdev->sbstack_depth > bottom)
+        pdf_exit_substream(pdev);
 
     if (pdev->initial_pattern_states != NULL) {
         int pdepth = 0;
