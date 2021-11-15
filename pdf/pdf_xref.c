@@ -626,7 +626,7 @@ static int write_offset(byte *B, gs_offset_t o, unsigned int g, unsigned char fr
     byte b[20], *ptr = B;
     int index = 0;
 
-    gs_sprintf((char *)b, "%"PRId64"", o);
+    gs_sprintf((char *)b, "%"PRIdOFFSET"", o);
     if (strlen((const char *)b) > 10)
         return_error(gs_error_rangecheck);
     for(index=0;index < 10 - strlen((const char *)b); index++) {
@@ -762,7 +762,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
         if (entry->object_num != 0)
             continue;
 
-        if (sscanf(Buffer, "%"PRId64" %d %c", &entry->u.uncompressed.offset, &entry->u.uncompressed.generation_num, &free) != 3) {
+        if (sscanf(Buffer, "%"PRIdOFFSET" %d %c", &entry->u.uncompressed.offset, &entry->u.uncompressed.generation_num, &free) != 3) {
             dmprintf(ctx->memory, "Invalid xref entry, incorrect format.\n");
             pdfi_unread(ctx, s, (byte *)Buffer, 20);
             code = read_xref_entry_slow(ctx, s, &off, &gen, &free);
@@ -1057,7 +1057,7 @@ int pdfi_read_xref(pdf_context *ctx)
             entry = &ctx->xref_table->xref[i];
             if(entry->compressed) {
                 dmprintf(ctx->memory, "*");
-                gs_sprintf(Buffer, "%ld", entry->object_num);
+                gs_sprintf(Buffer, "%"PRId64"", entry->object_num);
                 j = 10 - strlen(Buffer);
                 while(j--) {
                     dmprintf(ctx->memory, " ");
@@ -1088,7 +1088,7 @@ int pdfi_read_xref(pdf_context *ctx)
                 }
                 dmprintf1(ctx->memory, "%s ", Buffer);
 
-                gs_sprintf(Buffer, "%ld", entry->u.uncompressed.offset);
+                gs_sprintf(Buffer, "%"PRIdOFFSET"", entry->u.uncompressed.offset);
                 j = 10 - strlen(Buffer);
                 while(j--) {
                     dmprintf(ctx->memory, " ");
