@@ -472,10 +472,15 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
             if (findex * 4 > l)
                 break;
             code2 = sfseek(f, findex * 4, SEEK_CUR);
+            if (code2 < 0)
+                return code2;
+
             tableoffs = sru32(f);
             if (tableoffs + 4 > l)
                 break;
             code2 = sfseek(f, tableoffs + 4, SEEK_SET);
+            if (code2 < 0)
+                return code2;
         }
 
         ntables = sru16(f);
