@@ -647,13 +647,6 @@ set_source(const px_args_t * par, px_state_t * pxs, px_paint_t * ppt)
             return_error(errorRasterPatternUndefined);
         pattern = value;
 
-        /* the HP 4700 error page for the pattern and graphic's state
-           color space not matching is wrong, it reports "Error: 15", we
-           use "ColorSpaceMismatch" which we suspect was hp
-           intention */
-        if (pattern->params.color_space != pxgs->color_space)
-            return_error(errorColorSpaceMismatch);
-
         px_set_halftone(pxs);
         code = render_pattern(&ccolor, pattern, par->pv[aPatternOrigin],
                               par->pv[aNewDestinationSize], pxs);
