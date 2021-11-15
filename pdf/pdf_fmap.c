@@ -337,7 +337,7 @@ static int pdfi_type1_add_to_native_map(pdf_context *ctx, stream *f, char *fname
     int code = gs_error_undefined;
     char *namestr = NULL, *enamestr;
     char *typestr;
-    bool pin_eol;
+    bool pin_eol = false; /* initialised just to placate coverity */
     int type = -1;
     buf.data = (byte *)pname;
     buf.size = pname_size;
