@@ -117,9 +117,7 @@ bool gx_hld_saved_color_equal(const gx_hl_saved_color * psc1,
     /* early bailout for pattern comparison */
     if (gx_dc_is_pattern1_color((gx_device_color *)(&psc1->saved_dev_color.type))) {
 
-        if (psc1->saved_dev_color.colors.pattern.id != psc2->saved_dev_color.colors.pattern.id
-         || psc1->saved_dev_color.colors.pattern.phase.x != psc2->saved_dev_color.colors.pattern.phase.x
-         || psc1->saved_dev_color.colors.pattern.phase.y != psc2->saved_dev_color.colors.pattern.phase.y)
+        if (psc1->saved_dev_color.colors.pattern.id != psc2->saved_dev_color.colors.pattern.id)
             return(false);
         else
             return true;

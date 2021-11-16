@@ -376,7 +376,6 @@ struct gx_device_color_saved_s {
         } devn;
         struct _pattern {
             gs_id id;
-            gs_int_point phase;
         }		pattern;
         struct _pattern2 {
             gs_id id;
