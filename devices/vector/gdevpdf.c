@@ -2660,7 +2660,8 @@ pdf_close(gx_device * dev)
     }
 
     while(pdev->sbstack_depth > bottom)
-        pdf_exit_substream(pdev);
+        /* This is an error, and we are trying to recover, so ignore any further errors */
+        (void)pdf_exit_substream(pdev);
 
     if (pdev->initial_pattern_states != NULL) {
         int pdepth = 0;
