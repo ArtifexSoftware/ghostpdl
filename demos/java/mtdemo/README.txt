@@ -7,29 +7,49 @@ What is here?
 
 * Main.java - Class containing Java main method
 * Worker.java - Class which handles concurrently running Ghostscript
-* build_win32.bat - Builds the Java program for Windows
+* build_darwin.sh - Builds the Java program on Darwin systems
+* build_linux.sh - Builds the Java program on Linux systems
+* build_win32.bat - Builds the Java program on Windows
+* install_linux.sh - Installs required libraries to run the demo on Linux
+* install_darwin.sh - Installs required libraries to run the demo on Darwin
 * runmtd_win32.bat - Starts the Java program for Windows
 
+Build/run instructions:
 
-Building:
+-= WINDOWS =-
 
-Windows:
+1. Ensure the following libraries have been built and are in
+   this directory:
+	* gpdldll64.dll
+	* gs_jni.dll
 
-* Ensure the gsjava project has been built (..\gsjava\build_win32.bat)
-* Run build_win32.bat
+2. Run build_win32.bat to build.
+
+3. Run runmtd_win32.bat to start the application.
 
 
-Running:
+-= LINUX =-
 
-Windows:
+1. Ensure the following libraries have been built and are in
+   this directory:
+	* libgpdl.so (this would have been built as a link to another file, so
+	  it should be copied into this directory and renamed to libgpdl.so)
+	  gs_jni.so
 
-Needed in this directory to run:
+2. If using OpenJDK 8, the property "assistive_technologies" may
+   need to be modified for the Java code to build. It can be modified by
+   editing the "accessibility.properties" file. This is located at:
 
-* gpdldll64.dll (COMPILED FOR MULTITHREADING - in psi\msvc.mak, near line 865, change "XCFLAGS=" to "XCFLAGS=/DGS_THREADSAFE")
-* gs_jni.dll (COMPILED FOR MULTITHREADING - enable GSJNI_SUPPORT_MT in settings.h)
-* gsjava.jar
+   /etc/java-8-openjdk/accessibility.properties
 
-The application can be started through the command line through the
-batch file "runmtd_win32.bat". The batch file takes an optional command
-line argument specifying the number of threads to be created. If
-specified, it should be an integer greater than 0.
+3. Run build_linux.sh to build.
+
+4. Run install_linux.sh to install required libraries.
+
+5. Run runmtd_linux.sh to start the application.
+
+
+-= DARWIN =-
+
+Same as Linux, except with .dylib extensions on all shared objects and
+"_darwin.sh" suffixes instead of "_linux.sh".
