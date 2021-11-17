@@ -883,6 +883,7 @@ pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name
     }
     else {
         cidname = (pdf_obj *)name;
+        pdfi_countup(cidname);
     }
 
     code = pdfi_dict_get_by_key(ctx, ctx->pdfcidfmap, (pdf_name *)cidname, &mname);

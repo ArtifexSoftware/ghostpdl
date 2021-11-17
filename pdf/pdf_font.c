@@ -177,8 +177,37 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
 
     if (fallback == true) {
         pdf_string *mname = NULL;
+        pdf_dict *csi = NULL;
 
-        code = pdf_fontmap_lookup_cidfont(ctx, font_dict, NULL, (pdf_obj **)&mname, findex);
+        code = pdfi_dict_get(ctx, font_dict, "CIDSystemInfo", (pdf_obj **)&csi);
+        if (code >= 0 && csi->type == PDF_DICT) {
+            pdf_string *csi_reg = NULL, *csi_ord = NULL;
+
+            if (pdfi_dict_get(ctx, csi, "Registry", (pdf_obj **)&csi_reg) >= 0
+             && pdfi_dict_get(ctx, csi, "Ordering", (pdf_obj **)&csi_ord) >= 0
+             && csi_reg->type == PDF_STRING && csi_ord->type == PDF_STRING
+             && csi_reg->length + csi_ord->length + 1 < gp_file_name_sizeof - 1) {
+                pdf_name *reg_ord;
+                memcpy(fontfname, csi_reg->data, csi_reg->length);
+                memcpy(fontfname + csi_reg->length, "-", 1);
+                memcpy(fontfname + csi_reg->length + 1, csi_ord->data, csi_ord->length);
+                fontfname[csi_reg->length + csi_ord->length + 1] = '\0';
+
+                code = pdfi_name_alloc(ctx, (byte *)fontfname, strlen(fontfname), (pdf_obj **) &reg_ord);
+                if (code >= 0) {
+                    pdfi_countup(reg_ord);
+                    code = pdf_fontmap_lookup_cidfont(ctx, font_dict, reg_ord, (pdf_obj **)&mname, findex);
+                    pdfi_countdown(reg_ord);
+                }
+            }
+            pdfi_countdown(csi_reg);
+            pdfi_countdown(csi_ord);
+        }
+        pdfi_countdown(csi);
+
+        if (mname == NULL || mname->type != PDF_STRING)
+            code = pdf_fontmap_lookup_cidfont(ctx, font_dict, NULL, (pdf_obj **)&mname, findex);
+
         if (code < 0 || mname->type != PDF_STRING) {
             const char *fsprefix = "CIDFSubst/";
             const int fsprefixlen = strlen(fsprefix);
