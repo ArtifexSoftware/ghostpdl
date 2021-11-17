@@ -129,8 +129,12 @@ gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
  * The halftone is never transmitted as part of a device color, so there
  * is no flag for it.
  */
-static const int   dc_ht_colored_has_base = 0x01;
-static const int   dc_ht_colored_has_level = 0x02;
+enum {
+   dc_ht_colored_has_base = 0x01,
+   dc_ht_colored_has_level = 0x02,
+   dc_ht_colored_has_phase_x = 0x04,
+   dc_ht_colored_has_phase_y = 0x08,
+};
 
 /*
  * Serialize a device color that uses a traditional colored halftone.
@@ -219,7 +223,7 @@ gx_dc_ht_colored_write(
     }
 
     plane_mask = pdevc->colors.colored.plane_mask;
-    if ( psdc == 0                                                          ||
+    if ( psdc == NULL                                                       ||
          memcmp( pdevc->colors.colored.c_level,
                  psdc->colors.colored.c_level,
                  num_comps * sizeof(pdevc->colors.colored.c_level[0]) ) != 0  ) {
@@ -242,6 +246,11 @@ gx_dc_ht_colored_write(
                 req_size += enc_u_sizew(pdevc->colors.colored.c_level[i]);
         }
     }
+
+    if (psdc == NULL || psdc->phase.x != pdevc->phase.x)
+        flag_bits |= dc_ht_colored_has_phase_x, req_size += enc_u_sizew(pdevc->phase.x);
+    if (psdc == NULL || psdc->phase.y != pdevc->phase.y)
+        flag_bits |= dc_ht_colored_has_phase_y, req_size += enc_u_sizew(pdevc->phase.y);
 
     /* see if there is anything to do */
     if (flag_bits == 0) {
@@ -299,6 +308,13 @@ gx_dc_ht_colored_write(
         }
     }
 
+    if ((flag_bits & dc_ht_colored_has_phase_x) != 0) {
+        enc_u_putw(pdevc->phase.x, pdata);
+    }
+    if ((flag_bits & dc_ht_colored_has_phase_x) != 0) {
+        enc_u_putw(pdevc->phase.y, pdata);
+    }
+
     *psize = pdata - pdata0;
     return 0;
 }
@@ -336,10 +352,10 @@ gx_dc_ht_colored_write(
 static int
 gx_dc_ht_colored_read(
     gx_device_color *       pdevc,
-    const gs_gstate * pgs,
+    const gs_gstate *       pgs,
     const gx_device_color * prior_devc,
     const gx_device *       dev,
-    int64_t		    offset,
+    int64_t                 offset,
     const byte *            pdata,
     uint                    size,
     gs_memory_t *           mem,        /* ignored */
@@ -432,12 +448,14 @@ gx_dc_ht_colored_read(
         size -= pdata - pdata_start;
     }
 
-    /* set the phase as required (select value is arbitrary) */
-    color_set_phase_mod( &devc,
-                         pgs->screen_phase[0].x,
-                         pgs->screen_phase[0].y,
-                         pgs->dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width,
-                         pgs->dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height );
+    if ((flag_bits & dc_ht_colored_has_phase_x) != 0) {
+        enc_u_getw(devc.phase.x, pdata);
+        devc.phase.x += x0;
+    }
+    if ((flag_bits & dc_ht_colored_has_phase_y) != 0) {
+        enc_u_getw(devc.phase.y, pdata);
+        devc.phase.y += y0;
+    }
 
     /* everything looks OK */
     *pdevc = devc;
