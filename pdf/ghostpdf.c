@@ -1588,6 +1588,7 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
 #endif
 
     pgs = gs_gstate_alloc(pmem);
+    gs_setlimitclamp(pgs, true);
 
     if (!ctx || !pgs)
     {
