@@ -1497,13 +1497,6 @@ entries is not important).</p>
 
 <p>The trailing semicolon and the space before it are both required.</p>
 
-<h4>NOTE: Environment Variables</h4>
-<p>It is also possible to influence the path using standard, or your own environment variables, using
-the custom Postscript operator <code>getenv</code>. Said operator takes a string parameter on the stack
-which is the environment variable to interrogate, and returns either a string, containing the value of
-the environment variable, and boolean <code>true</code> to indicate success, or just a boolean
-<code>false</code> to indicate failure. See below for an example of its use.</p>
-
 <p>
 Examples :</p>
 
@@ -1517,8 +1510,6 @@ Examples :</p>
 /Gulim &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/gulim.ttc) /SubfontID 0 /CSI [(Korea1) 3] &gt;&gt; ;<br>
 /Dotum &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/gulim.ttc) /SubfontID 2 /CSI [(Korea1) 3] &gt;&gt; ;<br>
 <br>
-<h5>Format 2 & environment variable:</h5>
-/SimHei &lt;&lt; /FileType /TrueType /Path (windir) getenv not {(c:/windows)}if (/fonts/simhei.ttf) concatstrings /SubfontID 0 /CSI [(GB1) 2] &gt;&gt; ;<br>
 <h5>Format 1 & 2</h5>
 /SimSun &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/simsun.ttc) /SubfontID 0 /CSI [(GB1) 2] &gt;&gt; ;<br>
 /SimHei &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/simhei.ttf) /SubfontID 0 /CSI [(GB1) 2] &gt;&gt; ;<br>
