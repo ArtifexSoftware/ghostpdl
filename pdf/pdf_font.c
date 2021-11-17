@@ -714,7 +714,7 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                     case tt_font:
                         {
                             if (cidfont)
-                                code = pdfi_read_cidtype2_font(ctx, font_dict, stream_dict, page_dict, fbuf, fbuflen, &ppdffont);
+                                code = pdfi_read_cidtype2_font(ctx, font_dict, stream_dict, page_dict, fbuf, fbuflen, findex, &ppdffont);
                             else
                                 code = pdfi_read_truetype_font(ctx, font_dict, stream_dict, page_dict, fbuf, fbuflen, findex, &ppdffont);
                             fbuf = NULL;
@@ -730,7 +730,6 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
             }
 
             if (code < 0 && code != gs_error_VMerror && substitute == font_embedded) {
-                int dummy_index;
                 /* Font not embedded, or embedded font not usable - use a substitute */
                 if (fbuf != NULL) {
                     gs_free_object(ctx->memory, fbuf, "pdfi_load_font(fbuf)");
@@ -739,9 +738,9 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                 substitute = font_from_file;
 
                 if (cidfont == true) {
-                    code =  pdfi_open_CIDFont_substitute_file(ctx, font_dict, fontdesc, false, &fbuf, &fbuflen, &dummy_index);
+                    code =  pdfi_open_CIDFont_substitute_file(ctx, font_dict, fontdesc, false, &fbuf, &fbuflen, &findex);
                     if (code < 0) {
-                        code =  pdfi_open_CIDFont_substitute_file(ctx, font_dict, fontdesc, true, &fbuf, &fbuflen, &dummy_index);
+                        code =  pdfi_open_CIDFont_substitute_file(ctx, font_dict, fontdesc, true, &fbuf, &fbuflen, &findex);
                         substitute |= font_substitute;
                     }
 
