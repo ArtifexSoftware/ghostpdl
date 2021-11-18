@@ -1773,7 +1773,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
         dp += sizeof(buf1);
         offset1 += sizeof(buf1);
     }
-    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b) {
+    if (offset1 < sizeof(gx_dc_serialized_tile_t) + size_b) {
         int l = min((size_b - sizeof(gx_strip_bitmap)) - (offset1 - sizeof(gx_dc_serialized_tile_t) -  sizeof(gx_strip_bitmap)), left);
 
         memcpy(dp, ptile->tbits.data + (offset1 - sizeof(gx_dc_serialized_tile_t) -  sizeof(gx_strip_bitmap)), l);
@@ -1785,7 +1785,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
         return 0;
     if (size_c == 0)
         return 0;
-    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b + sizeof(gx_strip_bitmap)) {
+    if (offset1 < sizeof(gx_dc_serialized_tile_t) + size_b + sizeof(gx_strip_bitmap)) {
         gx_strip_bitmap buf;
 
         if (left < sizeof(buf))
@@ -1797,7 +1797,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
         dp += sizeof(buf);
         offset1 += sizeof(buf);
     }
-    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b + size_c) {
+    if (offset1 < sizeof(gx_dc_serialized_tile_t) + size_b + size_c) {
         int l = min(size_c - sizeof(gx_strip_bitmap), left);
 
         memcpy(dp, ptile->tmask.data + (offset1 - sizeof(gx_dc_serialized_tile_t) - size_b - sizeof(gx_strip_bitmap)), l);
@@ -1884,9 +1884,9 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
      * plane if this buffer has_tags. */
 
     /* check if we have written it all */
-    if (offset1 <= size) {
+    if (offset1 < size) {
         /* Get the most that we can write */
-        int u = min(size, left);
+        int u = min(size - offset1, left);
 
         /* copy that amount */
         ptr = ptile->ttrans->transbytes;
@@ -1982,7 +1982,7 @@ gx_dc_pattern_write(
         dp += sizeof(buf);
         offset1 += sizeof(buf);
     }
-    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b) {
+    if (offset1 < sizeof(gx_dc_serialized_tile_t) + size_b) {
         l = min(left, size_b - (offset1 - sizeof(gx_dc_serialized_tile_t)));
         code = clist_get_data(ptile->cdev, 0, offset1 - sizeof(gx_dc_serialized_tile_t), dp, l);
         if (code < 0)
@@ -2027,7 +2027,7 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
         size_c = ptile->tmask.data != NULL ? gs_object_size(mem, ptile->tmask.data) + sizeof(gx_strip_bitmap) : 0;
     }
     /* Read tbits : */
-    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + sizeof(gx_strip_bitmap)) {
+    if (offset1 < sizeof(gx_dc_serialized_tile_t) + sizeof(gx_strip_bitmap)) {
         int l = min(sizeof(gx_strip_bitmap), left);
         byte *save = ptile->tbits.data;
 
@@ -2039,7 +2039,7 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
     }
     if (left == 0)
         return size;    /* we've consumed it all */
-    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b) {
+    if (offset1 < sizeof(gx_dc_serialized_tile_t) + size_b) {
         int l = min(sizeof(gx_dc_serialized_tile_t) + size_b - offset1, left);
 
         memcpy(ptile->tbits.data +
@@ -2051,7 +2051,7 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
     if (left == 0 || size_c == 0)
         return size - left;
     /* Read tmask : */
-    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b + sizeof(gx_strip_bitmap)) {
+    if (offset1 < sizeof(gx_dc_serialized_tile_t) + size_b + sizeof(gx_strip_bitmap)) {
         int l = min(sizeof(gx_dc_serialized_tile_t) + size_b + sizeof(gx_strip_bitmap) - offset1, left);
         byte *save = ptile->tmask.data;
 
@@ -2063,7 +2063,7 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
     }
     if (left == 0)
         return size;
-    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b + size_c) {
+    if (offset1 < sizeof(gx_dc_serialized_tile_t) + size_b + size_c) {
         int l = min(sizeof(gx_dc_serialized_tile_t) + size_b + size_c - offset1, left);
 
         memcpy(ptile->tmask.data +
@@ -2096,9 +2096,9 @@ gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, int64_t offset,
                 return_error(gs_error_VMerror);
     }
     /* Read transparency buffer */
-    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + sizeof(tile_trans_clist_info_t) + data_size ) {
+    if (offset1 < sizeof(gx_dc_serialized_tile_t) + sizeof(tile_trans_clist_info_t) + data_size ) {
 
-        int u = min(data_size, left);
+        int u = min(data_size - (offset1 - sizeof(gx_dc_serialized_tile_t) - sizeof(tile_trans_clist_info_t)), left);
         byte *save = trans_pat->transbytes;
 
         memcpy( trans_pat->transbytes + offset1 - sizeof(gx_dc_serialized_tile_t) -
@@ -2292,7 +2292,7 @@ gx_dc_pattern_read(
 
         size_b = ptile->tbits.size.x;
     }
-    if (offset1 <= sizeof(buf) + size_b) {
+    if (offset1 < sizeof(buf) + size_b) {
         l = min(left, size_b - (offset1 - sizeof(buf)));
         code = clist_put_data(ptile->cdev, 0, offset1 - sizeof(buf), dp, l);
         if (code < 0)
