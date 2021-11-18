@@ -1588,7 +1588,6 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
 #endif
 
     pgs = gs_gstate_alloc(pmem);
-    gs_setlimitclamp(pgs, true);
 
     if (!ctx || !pgs)
     {
@@ -1637,6 +1636,12 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
 
     ctx->pgs = pgs;
     pdfi_gstate_set_client(ctx, pgs);
+
+    /* Some (but not all) path construction operations can either return
+     * an error or clamp values when out of range. In order to match Ghostscript's
+     * PDF interpreter written in PostScript, we need to clamp them.
+     */
+    gs_setlimitclamp(pgs, true);
 
     /* Declare PDL client support for high level patterns, for the benefit
      * of pdfwrite and other high-level devices
