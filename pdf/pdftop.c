@@ -567,7 +567,7 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "NOCIDFALLBACK", 13)) {
+        if (!strncmp(param, "PDFNOCIDFALLBACK", 13)) {
             code = plist_value_get_bool(&pvalue, &ctx->args.nocidfallback);
             if (code < 0)
                 return code;

@@ -1060,7 +1060,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
             pdfctx->ctx->args.last_page = pvalueref->value.intval;
         }
 
-        if (dict_find_string(pdictref, "NOCIDFALLBACK", &pvalueref) > 0) {
+        if (dict_find_string(pdictref, "PDFNOCIDFALLBACK", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
             pdfctx->ctx->args.nocidfallback = pvalueref->value.boolval;
