@@ -1893,7 +1893,7 @@ idata:                  data_size = 0;
                                            see gx_dc_null_read.*/
                                         code = pdct->read(pdcolor, &gs_gstate,
                                                           pdcolor, tdev, offset,
-                                                          cbp, 0, mem);
+                                                          cbp, 0, mem, x0, y0);
                                         if (code < 0)
                                             goto out;
                                     }
@@ -1906,7 +1906,7 @@ idata:                  data_size = 0;
                                         l = min(left, cbuf.end - cbp);
                                         code = pdct->read(pdcolor, &gs_gstate,
                                                           pdcolor, tdev, offset,
-                                                          cbp, l, mem);
+                                                          cbp, l, mem, x0, y0);
                                         if (code < 0)
                                             goto out;
                                         l = code;

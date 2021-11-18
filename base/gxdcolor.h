@@ -214,7 +214,7 @@ struct gx_device_color_type_s {
 #define dev_color_proc_read(proc)\
   int proc(gx_device_color *pdevc, const gs_gstate * pgs,\
     const gx_device_color *prior_devc, const gx_device * dev, int64_t offset,\
-    const byte *data, uint size, gs_memory_t *mem)
+    const byte *data, uint size, gs_memory_t *mem, int x0, int y0)
                         dev_color_proc_read((*read));
 
     /*

@@ -2118,7 +2118,9 @@ gx_dc_pattern_read(
     int64_t                    offset,
     const byte *            data,
     uint                    size,
-    gs_memory_t *           mem )
+    gs_memory_t *           mem,
+    int                     x0,
+    int                     y0)
 {
     gx_dc_serialized_tile_t buf;
     int size_b, size_c = -1;

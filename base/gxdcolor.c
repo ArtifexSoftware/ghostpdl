@@ -318,13 +318,15 @@ gx_dc_no_write(
 static int
 gx_dc_no_read(
     gx_device_color *       pdevc,
-    const gs_gstate        * pgs,                /* ignored */
+    const gs_gstate       * pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,                /* ignored */
     int64_t		    offset,             /* ignored */
     const byte *            pdata,              /* ignored */
     uint                    size,               /* ignored */
-    gs_memory_t *           mem )               /* ignored */
+    gs_memory_t *           mem,                /* ignored */
+    int                     x0,                 /* ignored */
+    int                     y0)                 /* ignored */
 {
     pdevc->type = gx_dc_type_none;
     return 0;
@@ -345,13 +347,15 @@ gx_dc_cannot_write(
 int
 gx_dc_cannot_read(
     gx_device_color *       pdevc,
-    const gs_gstate  *       pgs,                /* ignored */
+    const gs_gstate *       pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,                /* ignored */
     int64_t		    offset,             /* ignored */
     const byte *            pdata,              /* ignored */
     uint                    size,               /* ignored */
-    gs_memory_t *           mem )               /* ignored */
+    gs_memory_t *           mem,                /* ignored */
+    int                     x0,                 /* ignored */
+    int                     y0)                 /* ignored */
 {
     return_error(gs_error_unknownerror);
 }
@@ -401,13 +405,15 @@ gx_dc_null_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
 static int
 gx_dc_null_read(
     gx_device_color *       pdevc,
-    const gs_gstate  *       pgs,                /* ignored */
+    const gs_gstate *       pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,                /* ignored */
     int64_t		    offset,             /* ignored */
     const byte *            pdata,              /* ignored */
     uint                    size,               /* ignored */
-    gs_memory_t *           mem )               /* ignored */
+    gs_memory_t *           mem,                /* ignored */
+    int                     x0,                 /* ignored */
+    int                     y0)                 /* ignored */
 {
     pdevc->type = gx_dc_type_null;
     return 0;
@@ -768,13 +774,15 @@ gx_devn_read_color(
 static int
 gx_dc_devn_read(
     gx_device_color *       pdevc,
-    const gs_gstate  *       pgs,                /* ignored */
+    const gs_gstate *       pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,
     int64_t                 offset,             /* ignored */
     const byte *            pdata,
     uint                    size,
-    gs_memory_t *           mem )               /* ignored */
+    gs_memory_t *           mem,                /* ignored */
+    int                     x0,                 /* ignored */
+    int                     y0)                 /* ignored */
 {
     pdevc->type = gx_dc_type_devn;
     return gx_devn_read_color(&(pdevc->colors.devn.values[0]), &(pdevc->tag),
@@ -977,13 +985,15 @@ gx_dc_pure_write(
 static int
 gx_dc_pure_read(
     gx_device_color *       pdevc,
-    const gs_gstate        * pgs,                /* ignored */
+    const gs_gstate       * pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,
     int64_t		    offset,             /* ignored */
     const byte *            pdata,
     uint                    size,
-    gs_memory_t *           mem )               /* ignored */
+    gs_memory_t *           mem,                /* ignored */
+    int                     x0,                 /* ignored */
+    int                     y0)                 /* ignored */
 {
     pdevc->type = gx_dc_type_pure;
     return gx_dc_read_color(&pdevc->colors.pure, dev, pdata, size);

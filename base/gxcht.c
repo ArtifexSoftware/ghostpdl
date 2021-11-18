@@ -342,7 +342,9 @@ gx_dc_ht_colored_read(
     int64_t		    offset,
     const byte *            pdata,
     uint                    size,
-    gs_memory_t *           mem )       /* ignored */
+    gs_memory_t *           mem,        /* ignored */
+    int                     x0,
+    int                     y0)
 {
     gx_device_color         devc;
     int                     num_comps = dev->color_info.num_components;

@@ -528,7 +528,9 @@ gx_dc_ht_binary_read(
     int64_t		    offset,
     const byte *            pdata,
     uint                    size,
-    gs_memory_t *           mem )       /* ignored */
+    gs_memory_t *           mem,        /* ignored */
+    int                     x0,
+    int                     y0)
 {
     gx_device_color         devc;
     const byte *            pdata0 = pdata;
@@ -547,7 +549,7 @@ gx_dc_ht_binary_read(
     /* the halftone is always taken from the gs_gstate */
     devc.colors.binary.b_ht = pgs->dev_ht[HT_OBJTYPE_DEFAULT];
 
-    /* cache is not porvided until the device color is used */
+    /* cache is not provided until the device color is used */
     devc.colors.binary.b_tile = 0;
 
     /* verify the minimum amount of information */
