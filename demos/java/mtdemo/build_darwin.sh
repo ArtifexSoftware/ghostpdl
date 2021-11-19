@@ -8,7 +8,7 @@ bash build_darwin.sh
 
 cd ../mtdemo
 
-cp ../gsjava/gsjava.jar gsjava.jar
+cp ../mtdemo/gsjava.jar gsjava.jar
 
 echo "Compiling Java source..."
 javac -classpath "../gsjava/bin:." "Main.java" "Worker.java"
