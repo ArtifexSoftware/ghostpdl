@@ -6,10 +6,10 @@ cd ../gsjava
 
 bash build_darwin.sh
 
-cs ../mtdemo
+cd ../mtdemo
 
 cp ../gsjava/gsjava.jar gsjava.jar
 
 echo "Compiling Java source..."
-javac -classpath "../gsjava/bin;." "Main.java" "Worker.java"
+javac -classpath "../gsjava/bin:." "Main.java" "Worker.java"
 echo "Done."

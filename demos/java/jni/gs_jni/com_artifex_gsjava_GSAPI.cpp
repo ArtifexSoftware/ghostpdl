@@ -703,6 +703,10 @@ void storeDispalyHandle(GSInstanceData *idata)
 	}
 
 	char buf[20]; // 16#[16 hex digits][null terminator]
+#if defined(_WIN32)
 	sprintf_s(buf, "16#%llx", (long long)idata);
+#else
+    snprintf(buf, sizeof(buf), "16#%llx", (long long)idata);
+#endif
 	gsapi_set_param(idata->instance, PARAM_NAME, buf, gs_spt_string);
 }
