@@ -253,12 +253,12 @@ tile_clip_copy_mono(gx_device * dev,
   } END
 #define FOR_RUNS(data_row, tx1, tx, ty)\
         const byte *data_row = data;\
-        int cy = (y + cdev->phase.y) % cdev->tiles.rep_height;\
+        int cy = imod(y + cdev->phase.y, cdev->tiles.rep_height);\
         const byte *tile_row = cdev->tiles.data + cy * cdev->tiles.raster;\
         int ty;\
 \
         for ( ty = y; ty < y + h; ty++, data_row += raster ) {\
-          int cx = (x + x_offset(ty, cdev)) % cdev->tiles.rep_width;\
+          int cx = imod(x + x_offset(ty, cdev), cdev->tiles.rep_width);\
           const byte *tp = tile_row + (cx >> 3);\
           byte tbit = 0x80 >> (cx & 7);\
           int tx;\

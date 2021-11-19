@@ -293,10 +293,10 @@ mem_mono_strip_copy_rop2_dev(gx_device * dev, const byte * sdata,
                 int sx = sourcex;
                 int dx = x;
                 int w = width;
-                const byte *trow = textures->data + (ty % textures->rep_height) * traster;
+                const byte *trow = textures->data + imod(ty, textures->rep_height) * traster;
                 int xoff = x_offset(phase_x, ty, textures);
                 int nw;
-                int tx = (dx + xoff) % textures->rep_width;
+                int tx = imod(dx + xoff, textures->rep_width);
 
                 /* Loop over (horizontal) copies of the tile. */
                 for (; w > 0; sx += nw, dx += nw, w -= nw, tx = 0) {
@@ -322,10 +322,10 @@ mem_mono_strip_copy_rop2_dev(gx_device * dev, const byte * sdata,
         for (; line_count-- > 0; drow += draster, ++ty) {
             int dx = x;
             int w = width;
-            const byte *trow = textures->data + (ty % textures->rep_height) * traster;
+            const byte *trow = textures->data + imod(ty, textures->rep_height) * traster;
             int xoff = x_offset(phase_x, ty, textures);
             int nw;
-            int tx = (dx + xoff) % textures->rep_width;
+            int tx = imod(dx + xoff, textures->rep_width);
 
             /* Loop over (horizontal) copies of the tile. */
             for (; w > 0; dx += nw, w -= nw, tx = 0) {
@@ -371,10 +371,10 @@ mem_mono_strip_copy_rop2_dev(gx_device * dev, const byte * sdata,
             int sx = sourcex;
             int dx = x;
             int w = width;
-            const byte *trow = textures->data + (ty % textures->rep_height) * traster;
+            const byte *trow = textures->data + imod(ty, textures->rep_height) * traster;
             int xoff = x_offset(phase_x, ty, textures);
             int nw;
-            int tx = (dx + xoff) % textures->rep_width;
+            int tx = imod(dx + xoff, textures->rep_width);
 
             /* Loop over (horizontal) copies of the tile. */
             for (; w > 0; sx += nw, dx += nw, w -= nw, tx = 0) {
@@ -907,7 +907,7 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
     fit_fill(dev, tx, y, tw, th);
     invert = (uint)(-(int) color0);
     source_raster = tiles->raster;
-    source_data = tiles->data + ((y + py) % tiles->rep_height) * source_raster;
+    source_data = tiles->data + (imod(y + py, tiles->rep_height) * source_raster;
     tile_bits_size = tiles->size.y * source_raster;
     end = tiles->data + tile_bits_size;
 #undef END_Y_LOOP
@@ -925,7 +925,7 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
      * have source_x = 0.
      */
     {
-        int source_x = (x + px) % tiles->rep_width;
+        int source_x = imod(x + px, tiles->rep_width;
 
         w = tiles->size.x - source_x;
         bptr = source_data + ((source_x & ~chunk_align_bit_mask) >> 3);
