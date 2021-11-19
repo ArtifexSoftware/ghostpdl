@@ -240,10 +240,6 @@ pdfi_pattern_paint_high_level(const gs_client_color *pcc, gs_gstate *pgs_ignore)
     gx_device_color *pdc = gs_currentdevicecolor_inline(pgs);
     pattern_accum_param_s param;
 
-    code = gx_pattern_cache_add_dummy_entry(pgs, pinst, pgs->device->color_info.depth);
-    if (code < 0)
-        return code;
-
     code = pdfi_gsave(ctx);
     if (code < 0)
         return code;
@@ -293,6 +289,17 @@ pdfi_pattern_paint_high_level(const gs_client_color *pcc, gs_gstate *pgs_ignore)
     code = pdfi_grestore(ctx);
     if (code < 0)
         return code;
+
+    /* We create the dummy cache entry last, after we've executed the Pattern PaintProc. This is because
+     * if we ran another Pattern during the PaintProc, and that pattern has an id which happens to
+     * collide with the id of this pattern, it would overwrite the entry in the pattern cache.
+     * Deferring the entry in the cache until we are complete prevents this happening.
+     * For an example see Bug693422.pdf.
+     */
+    code = gx_pattern_cache_add_dummy_entry(pgs, pinst, pgs->device->color_info.depth);
+    if (code < 0)
+        return code;
+
     return gs_error_handled;
 
  errorExit:
