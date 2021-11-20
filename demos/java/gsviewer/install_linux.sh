@@ -1,7 +1,14 @@
 #!bin/bash
 
-cd ../jni/gs_jni
+echo "Copy gs_jni.so"
+cp "../jni/gs_jni/gs_jni.so" "gs_jni.so"
 
-bash install_linux.sh
+echo "Create libgpdl.so link"
+cp "../../../sobin/libgpdl.so" "libgpdl.so"
 
-cd ../../gsviewer
+cd ../../../sobin
+
+echo "Copy libgpdl.so target"
+cp $(readlink "libgpdl.so")  "../demos/java/gsviewer"
+
+cd ../demos/java/gsviewer
