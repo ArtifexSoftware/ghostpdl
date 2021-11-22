@@ -160,7 +160,7 @@ typedef struct _opvp_brushdata {
 #elif defined(__HP_cc)
         opvp_byte_t data[1];
 #else
-        opvp_byte_t data[];
+        opvp_byte_t data[1];
 #endif
 
 } opvp_brushdata_t;
@@ -222,8 +222,8 @@ typedef	struct _opvp_api_procs {
         opvp_result_t (*opvpEndDoc)(opvp_dc_t);
         opvp_result_t (*opvpStartPage)(opvp_dc_t,const opvp_char_t*);
         opvp_result_t (*opvpEndPage)(opvp_dc_t);
-        opvp_result_t (*opvpQueryDeviceCapability)(opvp_dc_t,opvp_flag_t,opvp_int_t*,opvp_byte_t*);
-        opvp_result_t (*opvpQueryDeviceInfo)(opvp_dc_t,opvp_flag_t,opvp_int_t*,opvp_char_t*);
+        opvp_result_t (*opvpQueryDeviceCapability)(opvp_dc_t, opvp_queryinfoflags_t,opvp_int_t*,opvp_byte_t*);
+        opvp_result_t (*opvpQueryDeviceInfo)(opvp_dc_t, opvp_queryinfoflags_t,opvp_int_t*,opvp_char_t*);
         opvp_result_t (*opvpResetCTM)(opvp_dc_t);
         opvp_result_t (*opvpSetCTM)(opvp_dc_t,const opvp_ctm_t*);
         opvp_result_t (*opvpGetCTM)(opvp_dc_t,opvp_ctm_t*);
@@ -287,8 +287,7 @@ typedef	struct _opvp_api_procs {
 } opvp_api_procs_t;
 
 /* Function prototype */
-opvp_dc_t opvpOpenPrinter(
-        opvp_int_t outputFD,
+extern opvp_dc_t opvpOpenPrinter(opvp_int_t outputFD,
         const opvp_char_t *printerModel,
         const opvp_int_t apiVersion[2],
         opvp_api_procs_t **apiProcs);

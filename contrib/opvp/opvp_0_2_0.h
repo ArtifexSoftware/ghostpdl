@@ -210,7 +210,7 @@ typedef	struct	_OPVP_CTM {
 typedef	struct	_OPVP_api_procs {
         int	(*OpenPrinter)(int,char *,int *,struct _OPVP_api_procs **);
         int	(*ClosePrinter)(int);
-        int	(*StartJob)(int,char *);
+        int	(*StartJob)(int, char *);
         int	(*EndJob)(int);
         int	(*StartDoc)(int,char *);
         int	(*EndDoc)(int);
@@ -238,7 +238,7 @@ typedef	struct	_OPVP_api_procs {
         int	(*GetAlphaConstant)(int,float *);
         int	(*SetLineWidth)(int,OPVP_Fix);
         int	(*GetLineWidth)(int,OPVP_Fix *);
-        int	(*SetLineDash)(int,OPVP_Fix *,int);
+        int	(*SetLineDash)(int, int, OPVP_Fix *);
         int	(*GetLineDash)(int,OPVP_Fix *,int *);
         int	(*SetLineDashOffset)(int,OPVP_Fix);
         int	(*GetLineDashOffset)(int,OPVP_Fix *);
