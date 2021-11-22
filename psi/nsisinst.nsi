@@ -217,11 +217,11 @@ Section "" ; (default section)
 SetOutPath "$INSTDIR"
 CreateDirectory "$INSTDIR\bin"
 ; add files / whatever that need to be installed here.
-File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib doc
-File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib examples
-File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x lib/gssetgs.bat lib
-File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib Resource
-File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib iccprofiles
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x tesseract /x leptonica /x extract /x cal doc
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x tesseract /x leptonica /x extract /x cal examples
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x tesseract /x leptonica /x extract /x cal /x lib/gssetgs.bat lib
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x tesseract /x leptonica /x extract /x cal Resource
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x tesseract /x leptonica /x extract /x cal iccprofiles
 
 
 File /oname=lib\gssetgs.bat .\lib\gssetgs${WINTYPE}.bat
