@@ -953,6 +953,7 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
         pdf_font_descriptor_embedding(pdfont->FontDescriptor)
         ) {
         int code;
+        gs_font_base *pbfont = pdf_font_resource_font(pdfont, false);
 
         if (pdfont->FontDescriptor)
             code = pdf_add_subset_prefix(pdev, &fname, pdfont->used, pdfont->count, pdf_fontfile_hash(pdfont->FontDescriptor));
@@ -962,8 +963,12 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
         if (code < 0)
             return code;
         pdfont->BaseFont = fname;
+
         /* Don't write a UID for subset fonts. */
-        uid_set_invalid(&pdf_font_resource_font(pdfont, false)->UID);
+        if (uid_is_XUID(&pbfont->UID)) {
+            uid_free(&pbfont->UID, pbfont->memory, "gs_font_finalize");
+        }
+        uid_set_invalid(&pbfont->UID);
     }
     if (pdfont->FontType != ft_composite && pdsubf->FontDescriptor)
         *pdf_font_descriptor_name(pdsubf->FontDescriptor) = fname;
