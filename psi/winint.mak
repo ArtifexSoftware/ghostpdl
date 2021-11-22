@@ -26,9 +26,9 @@
 # Define the location of the NSIS makensis installer utility
 !ifndef MAKENSIS_XE
 !if $(BUILD_SYSTEM) == 64
-MAKENSIS_XE="C:\Program Files (x86)\NSIS\makensis.exe"
+MAKENSIS_XE="C:\Program Files (x86)\NSIS-3.0\makensis.exe"
 !else
-MAKENSIS_XE="C:\Program Files\NSIS\makensis.exe"
+MAKENSIS_XE="C:\Program Files\NSIS-3.0\makensis.exe"
 !endif
 !endif
 

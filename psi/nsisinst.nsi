@@ -30,8 +30,18 @@
 ; hand, it removes the short-cuts on Uninstall (which the Winzipse-based
 ; installer doesn't do) and also does not leave behind empty directories.
 
+; Requirements:
+;     NSIS 3.0+
+;     EnVar plug-in from https://nsis.sourceforge.io/EnVar_plug-in
+
 ; Newer nsis releases deprecate ansi encoding, require Unicode
 Unicode True
+
+!include 'LogicLib.nsh'
+
+SetCompressor /SOLID /FINAL lzma
+XPStyle on
+CRCCheck on
 
 ; the following is from: http://nsis.sourceforge.net/StrRep
 !define StrRep "!insertmacro StrRep"
@@ -100,6 +110,16 @@ Unicode True
 !macroend
 !insertmacro Func_StrRep ""
 
+Function WritePath
+  EnVar::SetHKLM
+  EnVar::AddValue "PATH" "$INSTDIR\bin"
+FunctionEnd
+
+Function un.WritePath
+  EnVar::SetHKLM
+  EnVar::DeleteValue "PATH" "$INSTDIR\bin"
+FunctionEnd
+
 !ifndef TARGET
 !define TARGET gs899w32
 !endif
@@ -112,10 +132,6 @@ Unicode True
 !ifndef COMPILE_INITS
 !define COMPILE_INITS 0
 !endif
-
-SetCompressor /SOLID /FINAL lzma
-XPStyle on
-CRCCheck on
 
 !include "MUI2.nsh"
 ; for detecting if running on x64 machine.
@@ -235,11 +251,13 @@ WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninst
 WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "DisplayVersion" "${VERSION}"
 WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "NoModify" "1"
 WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "NoRepair" "1"
+
 ; write out uninstaller
 WriteUninstaller "$INSTDIR\uninstgs.exe"
 SectionEnd ; end of default section
 
 Function .onInstSuccess
+    Call WritePath
     SetShellVarContext all
     CreateDirectory "$SMPROGRAMS\Ghostscript"
     CreateShortCut "$SMPROGRAMS\Ghostscript\Ghostscript ${VERSION}.LNK" "$INSTDIR\bin\gswin${WINTYPE}.exe" '"-I$INSTDIR\lib;$INSTDIR\..\fonts"'
@@ -309,6 +327,7 @@ RMDir "$PROGRAMFILES64\gs"
 !else
 RMDir "$PROGRAMFILES\gs"
 !endif
+Call un.WritePath
 SectionEnd ; end of uninstall section
 
 ; eof
