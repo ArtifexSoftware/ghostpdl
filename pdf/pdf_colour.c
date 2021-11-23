@@ -2359,14 +2359,15 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
         code = pdfi_create_JPX_space(ctx, "sgray", 1, ppcs);
     } else {
         pdf_obj *ref_space = NULL;
+
+        if (ppcs == NULL && check_same_current_space(ctx, name) == 1)
+            return 0;
+
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, (pdf_dict *)stream_dict,
                                   page_dict, &ref_space);
         if (code < 0)
             return code;
 
-        if (ppcs == NULL && check_same_current_space(ctx, name) == 1) {
-            return 0;
-        }
 
         ctx->currentSpace = name;
         /* recursion */
