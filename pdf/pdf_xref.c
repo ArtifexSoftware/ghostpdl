@@ -197,7 +197,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
         ctx->xref_table->type = PDF_XREF_TABLE;
         ctx->xref_table->xref_size = size;
 #if REFCNT_DEBUG
-        ctx->xref_table->UID = ctx->UID++;
+        ctx->xref_table->UID = ctx->ref_UID++;
         dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
         pdfi_countup(ctx->xref_table);
@@ -716,7 +716,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
                 return_error(gs_error_VMerror);
             }
 #if REFCNT_DEBUG
-            ctx->xref_table->UID = ctx->UID++;
+            ctx->xref_table->UID = ctx->ref_UID++;
             dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
 
@@ -862,7 +862,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
         }
         memset(ctx->xref_table, 0x00, sizeof(xref_table_t));
 #if REFCNT_DEBUG
-        ctx->xref_table->UID = ctx->UID++;
+        ctx->xref_table->UID = ctx->ref_UID++;
         dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
 

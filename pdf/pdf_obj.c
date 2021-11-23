@@ -160,7 +160,7 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
             break;
     }
 #if REFCNT_DEBUG
-    (*obj)->UID = ctx->UID++;
+    (*obj)->UID = ctx->ref_UID++;
     dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", (*obj)->type, (*obj)->UID);
 #endif
     return 0;

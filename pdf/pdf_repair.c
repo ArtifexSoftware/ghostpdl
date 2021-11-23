@@ -52,7 +52,7 @@ static int pdfi_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, 
         ctx->xref_table->type = PDF_XREF_TABLE;
         ctx->xref_table->xref_size = obj + 1;
 #if REFCNT_DEBUG
-        ctx->xref_table->UID = ctx->UID++;
+        ctx->xref_table->UID = ctx->ref_UID++;
         dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
         pdfi_countup(ctx->xref_table);

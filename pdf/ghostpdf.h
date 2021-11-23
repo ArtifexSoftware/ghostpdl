@@ -496,7 +496,7 @@ typedef struct pdf_context_s
     int (*get_glyph_index)(gs_font *font, byte *str, uint size, uint *glyph);
 
 #if REFCNT_DEBUG
-    uint64_t UID;
+    uint64_t ref_UID;
 #endif
 #if CACHE_STATISTICS
     uint64_t hits;
