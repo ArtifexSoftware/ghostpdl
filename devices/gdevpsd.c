@@ -875,13 +875,16 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
                 int j;
                 const char* curr = "\377";
                 int curr_size = 1;
+                bool compare;
 
                 for (j=xc->base_num_channels; j < xc->num_channels; j++) {
                     devn_separation_name *separation_name;
 
                     separation_name = &(dev->devn_params.separations.names[j - xc->base_num_channels]);
-                    if (strncmp((const char*) separation_name->data, curr, min(curr_size, separation_name->size)) < 0) {
-                        if (strncmp((const char*) separation_name->data, prev, min(prev_size, separation_name->size)) > 0) {
+                    compare = strncmp((const char*) separation_name->data, curr, min(curr_size, separation_name->size));
+                    if (compare < 0 || (compare == 0 && separation_name->size < curr_size)) {
+                        compare = strncmp((const char*) separation_name->data, prev, min(prev_size, separation_name->size));
+                        if (compare > 0 || (compare == 0 && separation_name->size > prev_size)) {
                             xc->chnl_to_position[i] = j;
                             xc->chnl_to_orig_sep[i] = j;
                             curr = (const char*) separation_name->data;
