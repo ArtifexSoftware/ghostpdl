@@ -210,9 +210,9 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
 
         if (code < 0 || mname->type != PDF_STRING) {
             const char *fsprefix = "CIDFSubst/";
-            const int fsprefixlen = strlen(fsprefix);
+            int fsprefixlen = strlen(fsprefix);
             const char *defcidfallack = "DroidSansFallback.ttf";
-            const int defcidfallacklen = strlen(defcidfallack);
+            int defcidfallacklen = strlen(defcidfallack);
 
             pdfi_countdown(mname);
 
@@ -220,8 +220,27 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
                 code = gs_note_error(gs_error_invalidfont);
             }
             else {
-                memcpy(fontfname, fsprefix, fsprefixlen);
-                memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
+                if (ctx->args.cidsubstpath.data == NULL) {
+                    memcpy(fontfname, fsprefix, fsprefixlen);
+                }
+                else {
+                    memcpy(fontfname, ctx->args.cidsubstpath.data, ctx->args.cidsubstpath.size);
+                    fsprefixlen = ctx->args.cidsubstpath.size;
+                }
+
+                if (ctx->args.cidsubstfont.data == NULL) {
+                    int len = 0;
+                    if (gp_getenv("CIDSUBSTFONT", (char *)0, &len) < 0 && len + fsprefixlen + 1 < gp_file_name_sizeof) {
+                        (void)gp_getenv("CIDSUBSTFONT", (char *)(fontfname + fsprefixlen), &defcidfallacklen);
+                    }
+                    else {
+                        memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
+                    }
+                }
+                else {
+                    memcpy(fontfname, ctx->args.cidsubstfont.data, ctx->args.cidsubstfont.size);
+                    defcidfallacklen = ctx->args.cidsubstfont.size;
+                }
                 fontfname[fsprefixlen + defcidfallacklen] = '\0';
 
                 code = pdfi_open_resource_file(ctx, fontfname, strlen(fontfname), &s);

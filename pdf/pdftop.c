@@ -721,6 +721,16 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             code = pdfi_add_fontmapfiles(ctx, (const char *)s, slen);
             gs_free_object(ctx->memory, s, "FONTMAP param string");
         }
+        if (!strncmp(param, "CIDSubstPath", 12)) {
+            code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.cidsubstpath.data, (int *)&ctx->args.cidsubstpath.size);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "CIDSubstFont", 12)) {
+            code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.cidsubstfont.data, (int *)&ctx->args.cidsubstfont.size);
+            if (code < 0)
+                return code;
+        }
     }
 
  exit:

@@ -1173,6 +1173,20 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
             if (code < 0)
                 goto error;
         }
+        if (dict_find_string(pdictref, "CIDSubstPath", &pvalueref) > 0) {
+            if (!r_has_type(pvalueref, t_string))
+                goto error;
+            pdfctx->ctx->args.cidsubstpath.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF CIDSubstPath from zpdfops");
+            memcpy(pdfctx->ctx->args.cidsubstpath.data, pvalueref->value.const_bytes, r_size(pvalueref));
+            pdfctx->ctx->args.cidsubstpath.size = r_size(pvalueref);
+        }
+        if (dict_find_string(pdictref, "CIDSubstFont", &pvalueref) > 0) {
+            if (!r_has_type(pvalueref, t_string))
+                goto error;
+            pdfctx->ctx->args.cidsubstfont.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF CIDSubstPath from zpdfops");
+            memcpy(pdfctx->ctx->args.cidsubstfont.data, pvalueref->value.const_bytes, r_size(pvalueref));
+            pdfctx->ctx->args.cidsubstfont.size = r_size(pvalueref);
+        }
         code = 0;
         pop(1);
     }
