@@ -889,7 +889,9 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     pdfi_set_DefaultQState(ctx, ctx->pgs);
 
     /* Render one page (including annotations) */
-    outprintf(ctx->memory, "Page %d\n", page_num + 1);
+    if (!ctx->args.QUIET)
+        outprintf(ctx->memory, "Page %"PRId64"\n", page_num + 1);
+
     code = pdfi_process_one_page(ctx, page_dict);
 
     if (ctx->page.has_transparency && page_group_known) {

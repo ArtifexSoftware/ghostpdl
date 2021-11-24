@@ -754,7 +754,7 @@ systemdict /NEWPDF known not {/NEWPDF //false def} if
 /newpdf_gather_parameters
 {
   10 dict begin
-  /PDFSwitches [ /PDFPassword /PDFDEBUG /PDFSTOPONERROR /PDFSTOPONWARNING /NOTRANSPARENCY /FirstPage /LastPage
+  /PDFSwitches [ /QUIET /PDFPassword /PDFDEBUG /PDFSTOPONERROR /PDFSTOPONWARNING /NOTRANSPARENCY /FirstPage /LastPage
                  /NOCIDFALLBACK /NO_PDFMARK_OUTLINES /NO_PDFMARK_DESTS /PDFFitPage /Printed
                  /UseBleedBox /UseCropBox /UseArtBox /UseTrimBox /ShowAcroForm /ShowAnnots /PreserveAnnots
                  /NoUserUnit /RENDERTTNOTDEF /DOPDFMARKS /PDFINFO /SHOWANNOTTYPES /PRESERVEANNOTTYPES] def
@@ -1103,7 +1103,6 @@ systemdict /NEWPDF known not {/NEWPDF //false def} if
       {//true} ifelse
 
       {
-        QUIET not { (Page ) print dup //== exec flush } if
         dup pdfgetpage
         dup //null ne {
           exch 1 index
