@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <mutex>
 
-#if defined(GSJNI_SUPPORT_MT)
+#if !defined(GSJNI_NO_MT)
 
 static std::unordered_map<void *, GSInstanceData *> g_inst2Data; // instance -> data
 static std::mutex g_mtx;
@@ -17,7 +17,7 @@ static GSInstanceData g_global; // Global instance for faster multithreading
 
 GSInstanceData *putInstanceData(GSInstanceData *data)
 {
-#if defined(GSJNI_SUPPORT_MT)
+#if !defined(GSJNI_NO_MT)
 	g_mtx.lock();
 
 	assert(g_inst2Data.find(data->instance) == g_inst2Data.end());
@@ -36,7 +36,7 @@ GSInstanceData *putInstanceData(GSInstanceData *data)
 
 GSInstanceData *findDataFromInstance(void *instance)
 {
-#if defined(GSJNI_SUPPORT_MT)
+#if !defined(GSJNI_NO_MT)
 	g_mtx.lock();
 
 	auto it = g_inst2Data.find(instance);
@@ -52,7 +52,7 @@ GSInstanceData *findDataFromInstance(void *instance)
 
 void deleteDataFromInstance(void *instance)
 {
-#if defined(GSJNI_SUPPORT_MT)
+#if !defined(GSJNI_NO_MT)
 	g_mtx.lock();
 
 	auto i2dit = g_inst2Data.find(instance);
