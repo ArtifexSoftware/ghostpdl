@@ -2236,7 +2236,7 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     return code;
 }
 
-/* We only need this because the ddescndant(s) share the parent
+/* We only need this because the descendant(s) share the parent
  * CIDFont glyph space, so we can't free that if we are a descendant.
  */
 static int gs_free_copied_descendant_font(gs_font *font)
@@ -2257,6 +2257,13 @@ static int gs_free_copied_descendant_font(gs_font *font)
             gs_free_object(mem, cfdata->Encoding, "gs_free_copied_font(Encoding)");
         gs_free_object(mem, cfdata->names, "gs_free_copied_font(names)");
         gs_free_object(mem, cfdata->data, "gs_free_copied_font(data)");
+        if (cfdata->subrs.data != NULL)
+            gs_free_object(mem, cfdata->subrs.data, "gs_free_copied_font(subrs->data)");
+        if (cfdata->subrs.starts != NULL)
+            gs_free_object(mem, cfdata->subrs.starts, "gs_free_copied_font(subrs->starts)");
+        /* global subrs are 'shared with the parent', see copy_font_cid0()
+         * so we don't want to free them here, they are freed by the parent font.
+         */
         gs_free_object(mem, cfdata, "gs_free_copied_font(wrapper data)");
     }
     gs_free_object(mem, font, "gs_free_copied_font(copied font)");
@@ -2295,6 +2302,10 @@ int gs_free_copied_font(gs_font *font)
 
         if (copied2->subst_CID_on_WMode)
             rc_decrement(copied2->subst_CID_on_WMode, "gs_free_copied_font(subst_CID_on_WMode");
+        gs_free_string(mem, (byte *)copied2->cidata.common.CIDSystemInfo.Registry.data, copied2->cidata.common.CIDSystemInfo.Registry.size, "Free copied Registry");
+        gs_free_string(mem, (byte *)copied2->cidata.common.CIDSystemInfo.Ordering.data, copied2->cidata.common.CIDSystemInfo.Ordering.size, "Free copied Registry");
+        copied2->cidata.common.CIDSystemInfo.Registry.data = copied2->cidata.common.CIDSystemInfo.Ordering.data = NULL;
+        copied2->cidata.common.CIDSystemInfo.Registry.size = copied2->cidata.common.CIDSystemInfo.Ordering.size = 0;
     }
 
     if (cfdata) {
