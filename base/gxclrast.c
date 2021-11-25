@@ -505,7 +505,7 @@ clist_playback_band(clist_playback_action playback_action, /* lgtm [cpp/use-of-g
     tile_slot *state_slot;
     gx_strip_bitmap state_tile; /* parameters for reading tiles */
     tile_slot tile_bits;        /* parameters of current tile */
-    gs_int_point tile_phase, screen_phase[2];
+    gs_int_point tile_phase;
     gx_path path;
     bool in_path;
     gs_fixed_point ppos;
@@ -600,8 +600,8 @@ in:                             /* Initialize for a new page. */
     state_tile.shift = state_tile.rep_shift = 0;
     state_tile.size.x = state_tile.size.y = 0;
     state_tile.num_planes = 1;
-    tile_phase.x = screen_phase[0].x = screen_phase[1].x = x0;
-    tile_phase.y = screen_phase[0].y = screen_phase[2].y = y0;
+    tile_phase.x = x0;
+    tile_phase.y = y0;
     gx_path_init_local(&path, mem);
     in_path = false;
     /*
@@ -763,14 +763,6 @@ in:                             /* Initialize for a new page. */
                         if_debug2m('L', mem, " (%d,%d)\n",
                                    state.screen_phase[0].x,
                                    state.screen_phase[gs_color_select_texture].y);
-                        if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width)
-                            screen_phase[gs_color_select_texture].x =
-                                (state.screen_phase[gs_color_select_texture].x + x0) %
-                                 gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width;
-                        if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height)
-                            screen_phase[gs_color_select_texture].y =
-                                (state.screen_phase[gs_color_select_texture].y + y0) %
-                                     gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height;
                         gx_gstate_setscreenphase(&gs_gstate,
                                                  -(state.screen_phase[gs_color_select_texture].x + x0),
                                                  -(state.screen_phase[gs_color_select_texture].y + y0),
@@ -782,14 +774,6 @@ in:                             /* Initialize for a new page. */
                         if_debug2m('L', mem, " (%d,%d)\n",
                                    state.screen_phase[gs_color_select_source].x,
                                    state.screen_phase[gs_color_select_source].y);
-                        if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width)
-                            screen_phase[gs_color_select_source].x =
-                                (state.screen_phase[gs_color_select_source].x + x0) %
-                                 gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_width;
-                        if (gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT] && gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height)
-                            screen_phase[gs_color_select_source].y =
-                                (state.screen_phase[gs_color_select_source].y + y0) %
-                                     gs_gstate.dev_ht[HT_OBJTYPE_DEFAULT]->lcm_height;
                         gx_gstate_setscreenphase(&gs_gstate,
                                                  -(state.screen_phase[gs_color_select_source].x + x0),
                                                  -(state.screen_phase[gs_color_select_source].y + y0),
