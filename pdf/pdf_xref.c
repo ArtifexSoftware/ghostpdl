@@ -176,7 +176,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     if (code < 0)
         return code;
 
-    if (size < 0 || size > ceil(ARCH_MAX_SIZE_T / sizeof(xref_entry)))
+    if (size < 0 || size > floor((double)ARCH_MAX_SIZE_T / (double)sizeof(xref_entry)))
         return_error(gs_error_rangecheck);
 
     /* If this is the first xref stream then allocate the xref table and store the trailer */
@@ -850,7 +850,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
             pdfi_pop(ctx, 1);
             return code;
         }
-        if (size < 0 || size > ceil(ARCH_MAX_SIZE_T / sizeof(xref_entry))) {
+        if (size < 0 || size > floor((double)ARCH_MAX_SIZE_T / (double)sizeof(xref_entry))) {
             pdfi_pop(ctx, 1);
             return_error(gs_error_rangecheck);
         }
