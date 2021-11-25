@@ -834,7 +834,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 int i;
                 for (i = 0; i < s->cur[0].size; i++) {
                     if (pdf_ps_obj_has_type(&s->cur[0].val.arr[i], PDF_PS_OBJ_INTEGER)) {
-                        priv->gsu.gst1.data.WeightVector.values[i] = s->cur[0].val.arr[i].val.i;
+                        priv->gsu.gst1.data.WeightVector.values[i] = (float)s->cur[0].val.arr[i].val.i;
                     }
                     else if (pdf_ps_obj_has_type(&s->cur[0].val.arr[i], PDF_PS_OBJ_FLOAT)) {
                         priv->gsu.gst1.data.WeightVector.values[i] = s->cur[0].val.arr[i].val.f;

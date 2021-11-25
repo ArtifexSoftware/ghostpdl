@@ -550,7 +550,7 @@ pdfi_fapi_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, fl
                     break;
                 }
                 if (v->type == PDF_INT) {
-                    *ret = v->value.i;
+                    *ret = (float)v->value.i;
                 }
                 else {
                     *ret = (float)v->value.d;
