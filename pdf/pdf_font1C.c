@@ -2389,9 +2389,6 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffcid->FontDescriptor = (pdf_dict *) fontdesc;
                 fontdesc = NULL;
 
-                cffcid->PDF_font = font_dict;
-                pdfi_countup(font_dict);
-
                 cffcid->registry = registry;
                 cffcid->ordering = ordering;
                 registry = ordering = NULL;
