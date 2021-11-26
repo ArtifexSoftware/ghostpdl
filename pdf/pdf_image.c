@@ -1955,6 +1955,11 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             if (code < 0)
                 goto cleanupExit;
 
+            /* We'e created a new 'new_stream', which is a C stream, to hold the filter chain
+             * but we still need to free the original C stream 'wrapper' we created with pdfi_filter()
+             * Do that now.
+             */
+            gs_free_object(ctx->memory, s, "free stream replaced by adding image scaling filter");
             image_info.Width *= 4;
             image_info.Height *= 4;
             pim->Width *= 4;
