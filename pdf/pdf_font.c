@@ -325,15 +325,12 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
         const char *fsprefix = "CIDFont/";
         const int fsprefixlen = strlen(fsprefix);
 
-        if (cidname == NULL || cidname->type != PDF_NAME) {
-            pdfi_countdown(cidname);
-            return_error(gs_error_invalidfont);
-        }
+        if (cidname == NULL || cidname->type != PDF_NAME)
+            goto exit;
 
         memcpy(fontfname, fsprefix, fsprefixlen);
         memcpy(fontfname + fsprefixlen, cidname->data, cidname->length);
         fontfname[fsprefixlen + cidname->length] = '\0';
-        pdfi_countdown(cidname);
 
         code = pdfi_open_resource_file(ctx, fontfname, strlen(fontfname), &s);
         if (code < 0) {
@@ -353,6 +350,10 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
             sfclose(s);
         }
     }
+
+exit:
+    if (cidname != NULL)
+        pdfi_countdown(cidname);
 
     return code;
 }
