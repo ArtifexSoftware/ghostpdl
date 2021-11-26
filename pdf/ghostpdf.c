@@ -1975,6 +1975,14 @@ int pdfi_free_context(pdf_context *ctx)
     pdfi_free_search_paths(ctx);
     pdfi_free_fontmapfiles(ctx);
 
+    if (ctx->pdfcidfmap != NULL) {
+        pdfi_countdown(ctx->pdfcidfmap);
+        ctx->pdfcidfmap = NULL;
+    }
+    if (ctx->pdffontmap != NULL) {
+        pdfi_countdown(ctx->pdffontmap);
+        ctx->pdffontmap = NULL;
+    }
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
 #if PDFI_LEAK_CHECK
     gs_memory_status(mem, &mstat);
