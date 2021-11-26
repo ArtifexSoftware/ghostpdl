@@ -456,6 +456,11 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     }
     switch(pdfont->FontType) {
         case ft_composite:
+            if (!pdfont->u.type0.cmap_is_standard && pdfont->u.type0.CMapName.data != NULL) {
+                gs_free_string(pdev->memory, pdfont->u.type0.CMapName.data, pdfont->u.type0.CMapName.size, "font_resource_free(CMapName)");
+                pdfont->u.type0.CMapName.data = NULL;
+                pdfont->u.type0.CMapName.size = 0;
+            }
             break;
         case ft_PCL_user_defined:
         case ft_MicroType:
@@ -486,6 +491,14 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
             break;
         case ft_CID_encrypted:
         case ft_CID_TrueType:
+            if(pdfont->u.cidfont.Widths2) {
+                gs_free_object(pdev->pdf_memory, pdfont->u.cidfont.Widths2, "Free CIDFont Widths2 array");
+                pdfont->u.cidfont.Widths2 = NULL;
+            }
+            if(pdfont->u.cidfont.v) {
+                gs_free_object(pdev->pdf_memory, pdfont->u.cidfont.v, "Free CIDFont v array");
+                pdfont->u.cidfont.v = NULL;
+            }
             if(pdfont->u.cidfont.used2) {
                 gs_free_object(pdev->pdf_memory, pdfont->u.cidfont.used2, "Free CIDFont used2");
                 pdfont->u.cidfont.used2 = 0;
