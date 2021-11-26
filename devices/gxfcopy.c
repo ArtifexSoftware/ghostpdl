@@ -1735,6 +1735,10 @@ copy_font_cid0(gs_font *font, gs_font *copied)
         subdata->glyphs = cfdata->glyphs;
         subdata->glyphs_size = cfdata->glyphs_size;
         subdata->names = 0;
+        if (subdata->global_subrs.data != NULL)
+            gs_free_object(copied->memory, subdata->global_subrs.data, "copy parent global subrs to child, free child global subrs");
+        if (subdata->global_subrs.starts != NULL)
+            gs_free_object(copied->memory, subdata->global_subrs.starts, "copy parent global subrs to child, free child global subrs");
         subdata->global_subrs = cfdata->global_subrs;
         FDArray[i] = subcopy1;
     }
