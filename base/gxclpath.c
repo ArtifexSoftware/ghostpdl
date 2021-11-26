@@ -179,8 +179,9 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     if (pdcolor->type->get_phase(pdcolor, &color_phase) &&
         (color_phase.x != pcls->screen_phase[gs_color_select_texture].x ||
          color_phase.y != pcls->screen_phase[gs_color_select_texture].y || all_bands)) {
+        /* Devc phase is the reverse of screen phase! */
         code = cmd_set_screen_phase_generic(cldev, pcls,
-                                            color_phase.x, color_phase.y,
+                                            -color_phase.x, -color_phase.y,
                                             gs_color_select_texture, all_bands);
         if (code < 0)
             return code;

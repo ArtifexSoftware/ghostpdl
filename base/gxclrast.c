@@ -764,8 +764,8 @@ in:                             /* Initialize for a new page. */
                                    state.screen_phase[0].x,
                                    state.screen_phase[gs_color_select_texture].y);
                         gx_gstate_setscreenphase(&gs_gstate,
-                                                 -(state.screen_phase[gs_color_select_texture].x + x0),
-                                                 -(state.screen_phase[gs_color_select_texture].y + y0),
+                                                 state.screen_phase[gs_color_select_texture].x - x0,
+                                                 state.screen_phase[gs_color_select_texture].y - y0,
                                                  gs_color_select_texture);
                         continue;
                     case cmd_opv_set_screen_phaseS:
@@ -775,8 +775,8 @@ in:                             /* Initialize for a new page. */
                                    state.screen_phase[gs_color_select_source].x,
                                    state.screen_phase[gs_color_select_source].y);
                         gx_gstate_setscreenphase(&gs_gstate,
-                                                 -(state.screen_phase[gs_color_select_source].x + x0),
-                                                 -(state.screen_phase[gs_color_select_source].y + y0),
+                                                 state.screen_phase[gs_color_select_source].x - x0,
+                                                 state.screen_phase[gs_color_select_source].y - y0,
                                                  gs_color_select_source);
                         continue;
                     case cmd_opv_set_tile_bits:
