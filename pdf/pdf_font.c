@@ -167,7 +167,7 @@ static void pdfi_print_string(pdf_context *ctx, const char *str)
 static int
 pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte ** buf, int64_t * buflen, int *findex)
 {
-    int code;
+    int code = 0;
     char fontfname[gp_file_name_sizeof];
     stream *s;
     pdf_name *cidname = NULL;
