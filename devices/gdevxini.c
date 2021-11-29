@@ -989,7 +989,7 @@ gdev_x_close(gx_device_X *xdev)
     }
     if (xdev->dpy && xdev->bpixmap != (Pixmap)0) {
         /* Only free the pixmap if we created it */
-        if (xdev->ghostview != 0) XFreePixmap(xdev->dpy, xdev->bpixmap);
+        if (xdev->ghostview == 0) XFreePixmap(xdev->dpy, xdev->bpixmap);
         xdev->bpixmap = (Pixmap)0;
         xdev->dest = (Pixmap)0;
     }
