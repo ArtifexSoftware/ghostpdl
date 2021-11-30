@@ -4,13 +4,13 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <link rel="shortcut icon" href="images/favicon.svg">
     <title>Deprecated Ghostscript Features</title>
     <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <header><div class="title"><a href="index.html"><h1 aria-label="title">Ghostscript documentation</h1><h2 aria-label="version"></h2></a></div><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
     <main>
         <article>
             <div class="outer">
@@ -1595,54 +1595,53 @@ valid <code>BitsPerPixel</code> values don't include the actual
 </dl>
 
 <dl>
-<dt><code>ProcessColorModel</code> (symbol)
+<dt><code>ProcessColorModel</code> (symbol)</dt>
 <dd>A symbol taken from <code>/DeviceGray</code>,
 <code>/DeviceRGB</code> or <code>/DeviceCMYK</code> which can be used
 to select 1, 3 or 4 colors respectively.  Note that this parameter takes
 precedence over <code>Colors</code>, and that both affect the same
 variable of the driver.  (See <code>Colors</code> above for values
-combined with <code>BitsPerPixel</code>.)
+combined with <code>BitsPerPixel</code>.)</dd>
 </dl>
 
 <dl>
-<dt><code>HWResolution</code> (floats array)
+<dt><code>HWResolution</code> (floats array)</dt>
 <dd>An array of two floats giving the horizontal and vertical resolution in
 dots per inch from among 90, 180 and 360 (the default).  Both values must
 be the same.  On the Ghostscript command line, the resolution may be
 changed with the <a href="Use.htm#Resolution_switch"><code>-r</code>
-switch</a>.
+switch</a>.</dd>
 </dl>
 
 <dl>
-<dt><code>ManualFeed</code> (bool)
+<dt><code>ManualFeed</code> (bool)</dt>
 <dd>Indicate that the sheets won't be fed automatically by the printer,
-<code>false</code> by default.  (Not meaningful on the BJC-600, I fear.)
+<code>false</code> by default.  (Not meaningful on the BJC-600, I fear.)</dd>
 </dl>
 
 <dl>
-<dt><code>MediaType</code> (string)
+<dt><code>MediaType</code> (string)</dt>
 <dd>The media to print on, chosen from among "<code>PlainPaper</code>",
 "<code>CoatedPaper</code>", "<code>TransparencyFilm</code>",
 "<code>Envelope</code>", "<code>Card</code>" and
 "<code>Other</code>".  Default is "<code>PlainPaper</code>".  For
 "<code>Envelope</code>", "<code>Card</code>" or
 "<code>Other</code>" the driver puts the printer into thick mode
-automatically regardless of the actual media weight.
+automatically regardless of the actual media weight.</dd>
 </dl>
 
 <dl>
-<dt><code>MediaWeight</code> (int or null)
+<dt><code>MediaWeight</code> (int or null)</dt>
 <dd>The weight of the media in grams per square meter.  Null (the default)
 indicates that the weight is of no importance.  If the specified media
 weight is greater than 105 (that is, the value of the compilation default
 <code>BJC</code>???<code>_MEDIAWEIGHT_THICKLIMIT</code>) then the
-printer will be set to use thick paper.
+printer will be set to use thick paper.</dd>
 </dl>
 
 <dl>
-<p>dt><code>PrintQuality</code> (string)
+<dt><code>PrintQuality</code> (string)</dt>
 <dd>The quality of printing.</p>
-
 <table>
 <tr colspan="4">
     <th>Value</th>
@@ -1675,6 +1674,8 @@ printer will be set to use thick paper.
     <td>Means 200% black and 100% CMY; lights the "Bk+" light on a BJC-600</td>
 </tr>
 </table>
+</dd>
+
 </dl>
 
 <dl>
@@ -4314,7 +4315,7 @@ while <code>/FSCMYK32</code> is (almost) identical to
 <code>/DeviceCMYKgenerate</code>.</li>
 
 <li><code>upOutputFormat</code> selects the output method, supporting the values
-<code>/SunRaster</code>, <code>/Epson</code>, <code>/EscP2</code>, <code>/EscP2XY</code>, and<code>/Pcl</code>.</li>
+<code>/SunRaster</code>, <code>/Epson</code>, <code>/EscP2</code>, <code>/EscP2XY</code>, and<code>/Pcl</code>.
 
 <blockquote>
 <table>
@@ -4345,7 +4346,7 @@ while <code>/FSCMYK32</code> is (almost) identical to
     </tr>
 </table>
 </blockquote>
-
+</li>
 <li><code>-r360x360</code> is Ghostscript's standard
 <a href="Use.htm#Resolution_switch">resolution switch</a>.</li>
 
@@ -4362,8 +4363,7 @@ Floyd-Steinberg algorithm (but still carrying out the time-consuming
 computation).  The related parameter "<code>upComponentShift</code>"
 controls positioning the components within raster memory.  Each of the
 numbers given corresponds to a component which depends on the selected
-"<code>upColorModel</code>":</li>
-
+"<code>upColorModel</code>":
 <blockquote>
 <table>
 <tr>
@@ -4464,6 +4464,7 @@ the stored component is <code>White</code>, which is the way PostScript
 defines these devices, but most printers require <code>Black</code>.
 Thus one has to provide a falling "<code>upWhiteTransfer</code>" for
 such printers.</p>
+</li>
 
 <li><code>upWeaveYPasses</code> is an integer that gives the number of
 print head passes required to achieve the requested Ydpi. This makes sense
@@ -4493,7 +4494,7 @@ output file.  (Intended for the HP PJL sequences).</li>
 <code>upAdjustPageLengthCommand</code>,
 <code>upAdjustPageWidthCommand</code>,
 <code>upAdjustResolutionCommand</code>, and
-<code>upAdjustTopMarginCommand</code></li>
+<code>upAdjustTopMarginCommand</code>
 
 <p>
 Normally <code>uniprint</code> does not change the
@@ -4501,6 +4502,7 @@ Normally <code>uniprint</code> does not change the
 However, if the above boolean values are set, the corresponding values are
 changed (provided that the code of the formatters supports this change and
 the commands to be adjusted are included in the BOP string).</p>
+</li>
 
 <li><code>upEndPageCommand</code> is the fixed termination sequence for
 each page, and of course there is an "<code>upEndJobCommand</code>" too.</li>
@@ -5112,7 +5114,7 @@ Germany<br>
 +49 203 376273 telephone (MET evening hours)<br>
 &lt;<a href="mailto:ghess@elmos.de">ghess@elmos.de</a>&gt;
 </address>
-<p/>
+
 <h3><a name="Uni_weaving_howto"></a><tt>Uniprint</tt> weaving parameters howto</h3>
 <p>This section was contributed by Glenn Ramsey.</p>
 <p>I wrote this because the documentation was very brief and I really struggled
@@ -5122,7 +5124,7 @@ on.</p>
 at the X parameters yet.</p>
 <ol>
 <li>
-<b>Determine the nozzle geometry (upOutputPins)</b></li>
+<b>Determine the nozzle geometry (upOutputPins)</b>
 <p>
 You need to know how many nozzles the printer has and the spacing between
 them. Usually you can find this out from the printer manual, or the printer
@@ -5136,10 +5138,10 @@ parameter.</p>
 the purpose of demonstration I'll assume that we are using them all.</p>
 <p>
 <a name="escp2ras"></a>* escp2ras is available from Gunther Hess' page at <a href="http://www-md.e-technik.uni-rostock.de/ma/gunther/gs/index.html">http://www-md.e-technik.uni-rostock.de/ma/gunther/gs/index.html</a></p>
-
+</li>
 <li><b>Determine how many passes are required (upWeaveYPasses)</b></li>
 <li>The number of passes required is going to depend on the required resolution
-and the nozzle spacing.</li>
+and the nozzle spacing.
 <blockquote>
 <tt>passes = resolution * nozzle spacing
 </tt>
@@ -5149,9 +5151,10 @@ This will be the value assigned to the upWeaveYPasses parameter.
 spaced at 1/90in then 360 * 1/90 = 4 passes are required. For 720 dpi 8
 passes would be required. The printer would, of course, have to be capable
 of moving the paper in increments of either 360 or 720 dpi too.</p>
-<p>
+
+    </li>
 <li>
-<b>Determine the normal Y feed increment (upWeaveYFeeds)</b></li></p>
+<b>Determine the normal Y feed increment (upWeaveYFeeds)</b></p>
 <p>
 You need to work out how much to feed the paper so that when the paper
 has moved by one head length in however many passes you have then each
@@ -5180,7 +5183,7 @@ must equal the physical distance between each nozzle.</p>
 <p>
 </li>
 <li>
-<b>Determine the beginning of page pins (upWeaveInitialPins)</b></li></p>
+<b>Determine the beginning of page pins (upWeaveInitialPins)</b></p>
 <p>
 These values will be assigned to the upWeaveInitialPins parameter and are
 the numbers of nozzles to operate in each of the initial passes at the top
@@ -5399,7 +5402,7 @@ The extension adds a format that I have called EscNozzleMap and adds some
  additional parameters to uniprint.</p><br>
 <ul>
   <li><code>upOutputFormat</code>selects the output method, and should be set to the value
-<code>/EscNozzleMap</code> to select this format.</li>
+<code>/EscNozzleMap</code> to select this format.
     <blockquote>
       <table cellpadding="0" cellspacing="0">
         <tbody>
@@ -5412,6 +5415,7 @@ The extension adds a format that I have called EscNozzleMap and adds some
          </tbody>
        </table>
      </blockquote>
+     </li>
 </ul>
 
 <blockquote>
@@ -5486,7 +5490,7 @@ The extension adds a format that I have called EscNozzleMap and adds some
   head and whether the nozzles will be used to print. The array index
   defines the row index for the nozzle in the output data
   and the value defines the colour of the nozzle. The mapping
-  of colours to values is defined in the table below.</li>
+  of colours to values is defined in the table below.
         <blockquote>
           <table>
               <tr>
@@ -5531,13 +5535,14 @@ The extension adds a format that I have called EscNozzleMap and adds some
   A value of 0 means that the nozzle is not used and the row in the output data will be
   padded with zeros.<br>
   </li>
+
   <li><code>upNozzleMapMaskScanOffset</code><br>
   An array of integers that defines the physical position of the nozzles relative
   to the first nozzle in the repeated group. The relative distance is measured in
   printed line widths and will be different for different printing resolutions.
   This parameter is used because the physical spacing of the nozzles may not
   correspond to their mapping in the output data. For example the ESC300 has nozzles
-  physically arranged something like this:</li>
+  physically arranged something like this:
 <p></p>
   <table>
     <tr>
@@ -5632,6 +5637,8 @@ The extension adds a format that I have called EscNozzleMap and adds some
   In the output data the data for the last nozzle in the group would be in row 5
   (numbering starts at 0) but the nozzle is physically positioned at 6 spaces from
   the first nozzle. </p>
+
+  </li>
 </ul>
 <h4>Example 1 - Epson Stylus Color 300 - 360 dpi colour</h4>
 <blockquote><pre>

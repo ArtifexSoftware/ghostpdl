@@ -4,13 +4,13 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <link rel="shortcut icon" href="images/favicon.svg">
     <title>Ghostscript C Coding Guidelines</title>
     <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <header><div class="title"><a href="index.html"><h1 aria-label="title">Ghostscript documentation</h1><h2 aria-label="version"></h2></a></div><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
     <main>
 
         <article>
@@ -32,10 +32,10 @@
             <li>Preprocessor:
                 <a href="#Conditionals">Conditionals</a>,
                 <a href="#Macros">Macros</a>,
-                <a href="#Preprocessor_other">Other</a>
+                <a href="#Preprocessor_other">Other</a></li>
             <li><a href="#Lexical_elements">Lexical elements</a></li>
             <li><a href="#Scoping">Scoping</a></li>
-            <li>Data types:</li>
+            <li>Data types:
                 <a href="#Scalars">Scalars</a>,
                 <a href="#Arrays">Arrays</a>,
                 <a href="#Typedefs">Typedefs</a>,
@@ -184,7 +184,7 @@ some compilers do it the other way.)</li>
 compilers erroneously try to expand them.</li>
 
 <li>Don't use macros to define shorthands for casted pointers.  For
-instance, avoid</li>
+instance, avoid
 
 <blockquote><code>
 #define fdev ((gx_device_fubar *)dev)
@@ -200,6 +200,7 @@ gx_device_fubar * const fdev = (gx_device_fubar *)dev;
 <p>
 The use of <code>const</code> alerts the reader that this is effectively
 a synonym.</p>
+</li>
 
 <li>If a macro generates anything larger than a single expression (that is,
 one or more statements), surround it with <code>BEGIN</code> and
@@ -348,7 +349,7 @@ Restrictions:</p>
 
 <ul>
 
-<li>Don't use <code>typedef</code> for function types, such as</li>
+<li>Don't use <code>typedef</code> for function types, such as:
 
 <blockquote>
 <code>typedef int proc_xyz_t(double, int *);</code>
@@ -366,7 +367,7 @@ typedef PROC_XYZ((*proc_xyz_ptr_t));  /* define a type for procedure ptrs */<br>
 <br>
 proc_xyz_ptr_t pp;  /* pointer to procedure */</code>
 </blockquote>
-
+</li>
 <li>Don't redefine <code>typedef</code>'ed names, even with the same
 definition.  Some compilers complain about this, and the standard doesn't
 allow it.</li>
@@ -383,14 +384,14 @@ Restrictions:</p>
 <li>Don't use anonymous structures if you can possibly avoid it, except
 occasionally as components of other structures. Ideally, use the
 <code>struct</code> keyword only for declaring named structure types,
-like this:</li>
+like this:
 
 <blockquote>
 <code>typedef struct xxx_s {</code><br>
 &nbsp;&nbsp;&nbsp;... members ...<br>
 <code>} xxx_t;</code>
 </blockquote>
-
+</li>
 <li>Use <code>struct</code> only when declaring structure types, never
 for referring to them (e.g., never declare a variable as type
 <code>struct&nbsp;xxx_s&nbsp;*</code>).</li>
@@ -500,7 +501,7 @@ the same file; if the procedure is global, the prototype should be in a
 header file.</li>
 
 <li>If a procedure parameter is itself a procedure, do list its parameter
-types rather than just using <code>()</code>.  For example,</li>
+types rather than just using <code>()</code>.  For example:
 
 <blockquote><code>
 int foo(int (*callback)(int, int));
@@ -512,7 +513,7 @@ rather than just</p>
 <blockquote><code>
 int foo(int (*callback)());
 </code></blockquote>
-
+</li>
 <li>Don't use the <code>P</code>* macros in new code.  (See the
 Procedures section of <a href="#Language_extensions">Language extensions</a>
 below for more information.)</li>
@@ -602,11 +603,11 @@ language, such as Java, <code>bool</code> is an enumerated type requiring
 an explicit cast to or from <code>int</code>; however, because C's
 conditionals are defined as producing <code>int</code> values, we can't
 even define <code>bool</code> as a C <code>enum</code> without
-provoking compiler warnings.</dd>
-
+provoking compiler warnings.
 <p>
 Even though <code>bool</code> is a synonym for <code>int</code>, treat
 them as conceptually different types:</p>
+
 
 <ul>
 <li>Initialize or set <code>bool</code> variables to <code>true</code>
@@ -618,18 +619,18 @@ and <code>||</code> only with Booleans.  Don't use the idiom
 <li>Use an explicit <code>(int)</code> cast to convert a Boolean to an
 integer.</li>
 </ul>
-
+</dd>
 <dt><code>byte, ushort, uint, ulong</code></dt>
 
 <dd>These types are simply shorthands for <code>unsigned char, short, int,
-long</code>.</dd>
+long</code>.
 
 <p>
 In addition, the use of <code>byte *</code> indicates a
 Ghostscript-style string, with explicit length given separately, as
 opposed to a null terminated C-style string, which is <code>char
 *</code>.</p>
-
+</dd>
 <dt><code>bits8, bits16, bits32</code></dt>
 
 <dd>These are unsigned integer types of the given width.  Use them wherever
@@ -823,27 +824,27 @@ Parentheses are important in only a few places:</p>
 <ul>
 <li>Around the inner subexpressions in expressions that mix
 <code>&amp;&amp;</code> and <code>||</code>, even if they are not
-required by precedence, for example</li>
+required by precedence, for example:
 
 <blockquote><code>
 (xx &amp;&amp; yy) || zz
 </code></blockquote>
-
+</li>
 <li>Similarly around inner subexpressions in expressions that mix
 <code>&amp;</code>, <code>|</code>, or shifts, especially if mixing
-these with other operators, for instance</li>
+these with other operators, for instance:
 
 <blockquote><code>
 (x &lt;&lt; 3) | (y &gt;&gt; 5)
 </code></blockquote>
-
+</li>
 <li>In macro definitions around every use of an argument that logically
-could be an expression, for example</li>
+could be an expression, for example:
 
 <blockquote><code>
 ((x) * (x) + (y) * (y))
 </code></blockquote>
-
+</li>
 </ul>
 
 <p>
@@ -854,7 +855,7 @@ For stylistic consistency with the existing Ghostscript code, put
 parentheses around conditional expressions even if they aren't
 syntactically required, unless you really dislike doing this.  Note that
 the parentheses should go around the entire expression, not the condition.
-For instance, instead of</p>
+For instance, instead of:</p>
 
 <blockquote><code>
 hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,<br>
@@ -862,7 +863,7 @@ hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,<br>
 </code></blockquote>
 
 <p>
-use</p>
+use:</p>
 
 <blockquote><code>
 hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,<br>
@@ -1133,7 +1134,7 @@ Every code file should start with comments containing</p>
 
 <ol>
 <li>a copyright notice,</li>
-<li>the name of the file in the form of an RCS Id:</li>
+<li>the name of the file in the form of an RCS Id:
 
 <blockquote><code>
 /* &#36;Id: filename.ext &#36;*/
@@ -1141,7 +1142,7 @@ Every code file should start with comments containing</p>
 
 <p>
 (using the comment convention appropriate to the language of the file), and</p>
-
+</li>
 <li>a summary, no more than one line, of what the file contains.</li>
 </ol>
 

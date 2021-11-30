@@ -4,13 +4,13 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <link rel="shortcut icon" href="images/favicon.svg">
     <title>The Interface between Ghostscript and Device Drivers</title>
     <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <header><div class="title"><a href="index.html"><h1 aria-label="title">Ghostscript documentation</h1><h2 aria-label="version"></h2></a></div><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
     <main>
         <article>
             <div class="outer">
@@ -37,10 +37,12 @@
         <ul>
             <li><a href="#Coordinate_system">Coordinate system</a></li>
             <li><a href="#Color_definition">Color definition</a></li>
-            <ul>
-              <li><a href="#sep_and_linear_fields">Separable and linear fields</a></li>
-              <li><a href="#Changing_color_info_data">Changing color_info data</a></li>
-            </ul>
+            <li>
+                <ul>
+                  <li><a href="#sep_and_linear_fields">Separable and linear fields</a></li>
+                  <li><a href="#Changing_color_info_data">Changing color_info data</a></li>
+                </ul>
+            </li>
         <li><a href="#Types">Types</a></li>
         </ul>
     </li>
@@ -134,7 +136,7 @@ need do is edit <code>contrib.mak</code> in two places.</p>
 <li>The list of devices, in the section headed "Catalog".  Add
 <code>smurf</code> to the list.</li>
 
-<li>The section headed "Device drivers".</li>
+<li>The section headed "Device drivers".
 
 <p>
 Suppose the files containing the smurf driver are called
@@ -188,6 +190,7 @@ or</p>
 <p>
 Note that the space before the :, and the explicit compilation rules for the
 .c files, are required for portability,</p>
+</li>
 </ol>
 
 <hr>
@@ -387,6 +390,7 @@ structure, or to add procedures, you must change the following places:</p>
     (probably just adding <code>NULL</code> procedure entries if the
     new procedures don't produce output).</li>
 <li>These devices that must have complete (non-defaulted) procedure vectors:</li>
+<li>
 <ul>
 <li>The null device in <a href="../base/gdevnfwd.c">gdevnfwd.c</a>.</li>
 <li>The command list "device" in <a href="../base/gxclist.c">gxclist.c</a>.
@@ -394,6 +398,7 @@ structure, or to add procedures, you must change the following places:</p>
 <li>The "memory" devices in <a href="../base/gdevmem.h">gdevmem.h</a> and
     <code>gdevm*.c</code>.</li>
 </ul>
+</li>
 <li>The clip list accumulation "device" in
     <a href="../base/gxacpath.c">gxacpath.c</a>.</li>
 <li>The clipping "devices" <a href="../base/gxclip.c">gxclip.c</a>,
@@ -779,7 +784,7 @@ gets <code>gx_color_index</code> values from the device's
 procedures. If the <code>separable_and_linear</code> field in the device's
 <code>color_info</code> structure is not set to
 <code>GX_CINFO_SEP_LIN</code> then Ghostscript does not do
-any computations with <code>gx_color_index</code> values.</dd>
+any computations with <code>gx_color_index</code> values.
 
 <p>
 The special
@@ -820,6 +825,9 @@ For Microsoft and the MSVC compiler, <code>GX_COLOR_INDEX_TYPE</code> will
 be set to <code>unsigned _int64</code> if <code>USE_LARGE_COLOR_INDEX</code>
 is set to 1 either on the make command line or by editing the definition
  in <a href="../psi/msvc32.mak">msvc32.mak</a> </p>
+
+ </dd>
+
 </dl>
 
 <dl>
@@ -841,7 +849,7 @@ filling a region (rectangle).  <code>gx_tile_bitmap</code> is an
 older, deprecated type lacking <code>shift</code> and
 <code>rep_shift</code>;
 <code>gx_strip_bitmap</code> has superseded it, and should be
-used in new code.  Here is a copy of the relevant part of the file:</dd>
+used in new code.  Here is a copy of the relevant part of the file:
 
 <blockquote>
 <pre>
@@ -914,6 +922,9 @@ typedef struct gx_strip_bitmap_s {
         int num_planes;
 } gx_strip_bitmap;</pre>
 </blockquote>
+
+</dd>
+
 </dl>
 
 <hr>
@@ -1356,12 +1367,13 @@ always call <code>gs_opendevice</code> instead.</dd>
 (nominally 1/72 inch per unit) to device coordinates.  The default
 procedure computes this from width, height, and
 [<code>xy</code>]<code>_pixels_per_inch</code> on the assumption that
-the origin is in the upper left corner, that is</dd>
+the origin is in the upper left corner, that is
 <blockquote>
 <code>xx</code> = <code>x_pixels_per_inch</code>/72, <code>xy</code> = 0,<br>
 <code>yx = 0, yy = -y_pixels_per_inch</code>/72,<br>
 <code>tx = 0, ty = height</code>.
 </blockquote>
+</dd>
 </dl>
 
 <dl>
@@ -1471,7 +1483,7 @@ the specified name is not a colorant for the device. A value of 0 to
 of the given name. A value of <code>GX_DEVICE_COLOR_MAX_COMPONENTS</code>
 indicates that the given name is a valid colorant name for the device but the
 colorant is not currently being used. This is used for implementing names
-which are in SeparationColorNames but not in SeparationOrder.</dd>
+which are in SeparationColorNames but not in SeparationOrder.
 
 <p>
 The default procedure returns results based upon process color model
@@ -1479,6 +1491,7 @@ of DeviceGray, DeviceRGB, or DeviceCMYK selected by
 <code>color_info.num_components</code>. This procedure must be
 defined if another process color model is used by the device or spot colors are
 supported by the device.</p>
+</dd>
 </dl>
 
 <dl>
@@ -1488,7 +1501,7 @@ gx_device&nbsp;* dev, const gx_device&nbsp;** tdev)</code> <b><em>[OPTIONAL]</em
 device to pass to them. These procedures are used to translate values in
 either Gray, RGB, or CMYK color spaces into device colorant values. A
 separate procedure is not required for the DeviceN and Separation color
-spaces since these already represent device colorants.</dd>
+spaces since these already represent device colorants.
 
 <p>In many cases, the device returned in <code>tdev</code> will be the
 same as <code>dev</code>, but the caller should not rely on this. For
@@ -1507,6 +1520,7 @@ procedure must be defined if another process color model is used by the
 device or spot colors are to be supported. All these procedures take a
 <code>gx_device</code> pointer; these should be called with the value
 returned in <code>tdev</code> NOT the initial value of <code>dev</code>.</p>
+</dd>
 </dl>
 
 <dl>
@@ -1517,11 +1531,12 @@ value. The range of legal values of the
 arguments is 0 to <code>gx_max_color_value</code>.  The default procedure
 packs bits into a <code>gx_color_index</code> value based upon the
 values in <code>color_info.depth</code> and
-<code>color_info.num_components</code>.</dd>
+<code>color_info.num_components</code>.
 
 <p>
 Note that the <code>encode_color</code> procedure
 must not return <code>gx_no_color_index</code> (all 1s).</p>
+</dd>
 </dl>
 
 <dl>
@@ -1573,11 +1588,12 @@ the point <em>(x,y)</em> is included in the rectangle, as are
 <b><em>not</em></b> <em>(x+w,y)</em>, <em>(x,y+h)</em>, or
 <em>(x+w,y+h)</em>.  If <code>width</code>&nbsp;&lt;=&nbsp;0 or
 height&nbsp;&lt;=&nbsp;0, <code>fill_rectangle</code> should return 0
-without drawing anything.</dd>
+without drawing anything.
 
 <p>
 Note that <code>fill_rectangle</code> is the only non-optional procedure
 in the driver interface.</p>
+</dd>
 </dl>
 
 <h4><a name="Bitmap_imaging"></a>Bitmap imaging</h4>
@@ -1608,13 +1624,14 @@ pixel is unaffected if the image bit is 0 or 1 respectively.  If
 <code>id</code> is different from <code>gx_no_bitmap_id</code>, it
 identifies the bitmap contents unambiguously; a call with the same
 <code>id</code> will always have the same <code>data</code>,
-<code>raster</code>, and data contents.</dd>
+<code>raster</code>, and data contents.
 
 <p>
 This operation, with
 <code>color0</code>&nbsp;=&nbsp;<code>gx_no_color_index</code>, is
 the workhorse for text display in Ghostscript, so implementing it
 efficiently is very important.</p>
+</dd>
 </dl>
 
 <dl>
@@ -1632,7 +1649,7 @@ the device coordinate system.  (Note that this is backwards from the
 PostScript definition of halftone phase.)  <code>phase_x</code> and
 <code>phase_y</code> are guaranteed to be in the range
 <em>[0..</em><code>tile-&gt;width</code><em>)</em> and
-<em>[0..</em><code>tile-&gt;height</code><em>)</em> respectively.</dd>
+<em>[0..</em><code>tile-&gt;height</code><em>)</em> respectively.
 
 <p>
 If <code>color0</code> and <code>color1</code> are both
@@ -1646,6 +1663,7 @@ implementing it efficiently for solid tiles (that is, where either
 <code>gx_no_color_index</code>, for colored halftones, or neither one is
 <code>gx_no_color_index</code>, for monochrome halftones) is very
 important.</p>
+</dd>
 </dl>
 
 <h4><a name="Pixmap_imaging"></a>Pixmap imaging</h4>
@@ -1739,41 +1757,44 @@ Given a 2d source block of pixels (supplied as scanline data), this
 function transforms that data, maps it through the supplied colour
 lookup function, clips it, and plots it into the device.
 
-<p>In all calls to this function a negative return value indicates an error.
+<p>In all calls to this function a negative return value indicates an error.</p>
 
 <p>Called first with the <code>transform_pixel_region_init</code> reason code,
 this prepares for subsequent calls to scale a region as described in the
 <code>data.u.init</code> structure. A pointer to any state required for
 this should be written into <code>data.state</code>, and the caller must
-pass that in to subsequent calls.
+pass that in to subsequent calls.</p>
 
 <p>Subsequently this will be called with <code>transform_pixel_region_data_needed</code>.
 The function will then check to see if the next scanline of data will be trivially
 clipped away. If so, then it will return zero to indicate that it is not needed.
 This can help the caller to avoid unnecessary processing. A positive return value
-indicates that the line is required.
+indicates that the line is required.</p>
 
 <p>For every line where the data is required, the function will be called with
 <code>transform_pixel_region_process_data</code>. The function will then read
 and process the line from <code>data.u.process_data</code>.
 The data in the buffer is packed 8 bit values, which will be fed into the supplied
 <code>cmapper</code> to set the device color as required. This is then written
-into the device.
+into the device.</p>
 
 <p>Once all the scanlines have been fed through calls to <code>transform_pixel_region_data_needed</code>
 and <code>transform_pixel_region_process_data</code>, a final call with <code>transform_pixel_region_end</code>
-is made that frees the state.
+is made that frees the state.</p>
 
 <p>The default implementation of this device function will generally break the pixel
 data down into calls to <code>fill_rectangle</code>, though in some cases (notably
 the portrait 8 bit per component output case), a faster route through <code>copy_color</code>
-can be used.
+can be used.</p>
 
 <p>Memory devices offer a version of this device function that can accelerate direct
-plotting to the memory array.
+plotting to the memory array.</p>
 
 <p>NOTE: Currently the clipping rectangle is not honoured for skewed (not portrait or landscape)
 transformations. This is allowed for in the callers.
+</p>
+</dd>
+
 </dl>
 
 <h4><a name="Compositing"></a>Compositing</h4>
@@ -1791,7 +1812,7 @@ gx_bitmap_id&nbsp;id, int&nbsp;x, int&nbsp;y, int&nbsp;width,
 int&nbsp;height, gx_color_index&nbsp;color, int&nbsp;depth)</code>
 <b><em>[OPTIONAL]</em></b></dt>
 <dd>This procedure is somewhat misnamed: it was added to the interface
-before we really understood alpha channel and compositing.</dd>
+before we really understood alpha channel and compositing.
 
 <p>
 Fill a given region with a given color modified by an individual alpha
@@ -1807,6 +1828,7 @@ rule.</p>
 with an 8 bit depth. In addition they should accept either 2 or 4 if
 the corresponding <code>get_alpha_bits</code> procedure returns either
 of those values.</p>
+</dd>
 </dl>
 
 <dl>
@@ -1833,7 +1855,7 @@ it. Accordingly, the caller must watch the return values from this
 function to understand if a new device has been created to which future
 calls should be made.
 <p>
-Devices will normally implement this in one of the following standard ways:</dd>
+Devices will normally implement this in one of the following standard ways:
 
 <ul>
 <li>Devices that don't do any imaging and don't forward any imaging
@@ -1894,6 +1916,7 @@ Closing a compositor frees all of its storage, including the compositor
 itself.  However, since the <code>composite</code> call may
 return the same device, clients must check for this case, and only call the
 close procedure if a separate device was created.</p>
+</dd>
 </dl>
 
 <h3><a name="Polygon_level_drawing"></a>Polygon-level drawing</h3>
@@ -1954,7 +1977,9 @@ fixed&nbsp;fx0, fixed&nbsp;fy0, fixed&nbsp;fx1, fixed&nbsp;fy1,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 gs_logical_operation_t&nbsp;lop)</code> <b><em>[OPTIONAL]</em></b></dt>
 <dd>Draw a one-pixel-wide line from <em>(fx0,fy0)</em> to
-<em>(fx1,fy1)</em>.</dd>
+<em>(fx1,fy1)</em>.</dd></dl>
+
+<dl><dt></dt><dd>
 
 <h3><a name="Linear_color_drawing"></a>Linear color drawing</h3>
 
@@ -1970,8 +1995,9 @@ or uses a non-separable or a non-linear color model.</p>
     const gs_fixed_point *p0, const gs_fixed_point *p1,
     const gs_fixed_point *p2,
     const frac31 *c0, const frac31 *c1, const frac31 *c2)
-</code></dt>
-<b><em>[OPTIONAL]</em></b>
+</code>
+<b><em>[OPTIONAL]</em></b></dt>
+
 <dd>This function is the highest level one within the linear color function group.
 It fills a triangle with a linearly varying color.
 Arguments specify 3 points in the device space - vertices of a triangle, and their colors.
@@ -2031,8 +2057,8 @@ in <code>gdevddrw.c</code> for sample code.</dd>
     const gs_fixed_point *p2, const gs_fixed_point *p3,
     const frac31 *c0, const frac31 *c1,
     const frac31 *c2, const frac31 *c2)
-</code></dt>
-<b><em>[OPTIONAL]</em></b>
+</code><b><em>[OPTIONAL]</em></b></dt>
+
 <dd>This function is a lower level one within the linear color function group.
 The default implementation of <code> fill_linear_color_triangle </code>
 calls this function 1-2 times per triangle. Besides that,
@@ -2052,7 +2078,7 @@ All those important notes are applicable here.</dd>
 <dd>
 Sample code may be found in in <code>gxdtfill.h</code>; be aware it's rather complicated.
 A linear color function is generated from it as <code> gx_fill_trapezoid_ns_lc </code>
-with the following template parameters :</dd>
+with the following template parameters :
 
 <pre>
 #define LINEAR_COLOR 1
@@ -2067,7 +2093,7 @@ with the following template parameters :</dd>
 <p>See <code>check_gradient_overflow</code>
 (defined in in <code>gdevddrw.c</code>), as an example of an area
 that can't be painted in a single action due to 64-bits fixed overflows.</p>
-
+</dd>
 </dl>
 
 <dl>
@@ -2519,7 +2545,7 @@ gx_image_enum_common_t&nbsp;**pinfo)</code> <b><em>[OPTIONAL]</em></b></dt>
   <code>image_plane_data</code> function supplied in the returned image
   enumerator will follow, and then a call of
 <code>end_image</code>.  The parameters of <code>begin_typed_image</code>
-are as follows:</dd>
+are as follows:
 
 <blockquote><table>
 <tr valign="top"><td><code>pis</code></td>
@@ -2580,6 +2606,7 @@ is called.</p>
 <code>begin_typed_image</code> returns 0 normally, or 1 if the image does not
 need any data.  In the latter case, <code>begin_typed_image</code> does not
 allocate an enumeration structure.</p>
+</dd>
 </dl>
 
 <p>
@@ -2598,7 +2625,7 @@ gx_image_enum_common_t&nbsp;*info,
 const&nbsp;gx_image_plane_t&nbsp;*planes, int&nbsp;height)</code></dt>
 <dd>This call provides more of the image source data: specifically,
 <code>height</code> rows, with <code>Width</code> pixels supplied for
-each row.</dd>
+each row.
 
 <p>
 The data for each row are packed big-endian within each byte, as for
@@ -2652,7 +2679,7 @@ arguments, does not require the data to be aligned in any way.</p>
 <p>
 Note that for some image types, different planes may have different
 numbers of bits per pixel, as defined in the <code>plane_depths</code> array.</p>
-
+</dd>
 </dl>
 
 <dl>
@@ -2698,7 +2725,7 @@ gs_font&nbsp;*font,
 const&nbsp;gx_clip_path&nbsp;*pcpath,
 gs_text_enum_t&nbsp;**ppte)</code> <b><em>[OPTIONAL]</em></b></dt>
 
-<p></p><dd>
+<dd><p></p>
 Begin processing text, by creating a state structure and storing it in
 <code>*ppte</code>.  The parameters of <code>text_begin</code> are as
 follows:</dd>
@@ -2774,9 +2801,9 @@ procedures, which in turn call the procedures in the text enumerator.</p>
 
 <dl>
 <dt><code>int gs_text_process(gs_text_enum_t&nbsp;*pte)</code></dt>
-<p><dd>Continue processing text.  This procedure may return 0 or a negative
+<dd><p></p>Continue processing text.  This procedure may return 0 or a negative
 error code as usual, or one of the following values (see
-<a href="../base/gstext.h">gstext.h</a> for details).</dd></p>
+<a href="../base/gstext.h">gstext.h</a> for details).
 
 <blockquote><table>
 <tr valign="top">    <td><code>TEXT_PROCESS_RENDER</code></td>
@@ -2787,14 +2814,15 @@ error code as usual, or one of the following values (see
     <td>The client has asked to intervene between characters.
         This is used for <code>cshow</code> and <code>kshow</code>.</td></tr>
 </table></blockquote>
+</dd>
 </dl>
 
 <dl>
 <dt><code>int gs_text_release(gs_gstate * pgs, gs_text_enum_t&nbsp;*pte,
-client_name_t&nbsp;cname)</code></dt><p> <dd>Finish processing text and release
+client_name_t&nbsp;cname)</code></dt><dd><p></p>Finish processing text and release
 all associated structures.  Clients must call this procedure after
 <code>gs_text_process</code> returns 0 or an error, and may call it at
-any time.</dd></p>
+any time.</dd>
 </dl>
 
 <p>
@@ -2840,9 +2868,9 @@ if the glyph can't be translated to Unicode.</p>
 <dt><code>int (*get_bits_rectangle)(gx_device&nbsp;*dev,
 const&nbsp;gs_int_rect&nbsp;*prect, gs_get_bits_params_t&nbsp;*params)</code> <b><em>[OPTIONAL]</em></b></dt>
 
-<p><dd>
+<dd>
 Read a rectangle of bits back from the device.  The <code>params</code>
-structure consists of:</dd></p>
+structure consists of:<p></p>
 
 <table>
 <tr valign="top">    <td><code>options</code></td>
@@ -2865,7 +2893,11 @@ willing to accept.  (If the client has more flexibility, the implementation
 may be able to return the data more efficiently, by avoiding representation
 conversions.)  The options are divided into groups.</p>
 
-<blockquote><dl>
+</dd>
+</dl>
+
+<blockquote>
+<dl>
 <dt><b><em>alignment</em></b></dt>
 <dd>Specifies whether the returned data must be aligned in the normal
 manner for bitmaps, or whether unaligned data are acceptable.</dd>
@@ -2910,7 +2942,9 @@ the standard color space.  (Native device pixels use
 <dd>Specifies whether alpha channel information should be returned as the
 first component, the last component, or not at all.  Note that for devices
 that have no alpha capability, the returned alpha values will be all 1s.
-</dd></dl></blockquote>
+</dd></dl>
+
+</blockquote>
 
 <p>
 The client may set more than one option in each of the above groups; the

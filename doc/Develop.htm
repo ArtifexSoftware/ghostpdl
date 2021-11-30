@@ -4,13 +4,13 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <link rel="shortcut icon" href="images/favicon.svg">
     <title>Information for Ghostscript Developers</title>
     <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <header><div class="title"><a href="index.html"><h1 aria-label="title">Ghostscript documentation</h1><h2 aria-label="version"></h2></a></div><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
     <main>
         <article>
             <div class="outer">
@@ -1673,60 +1673,73 @@ Shared support:
 <dd>
 
 <dl>
-<dt>
-Writing fonts:
-<dd>
-<a href="../devices/vector/gdevpsf.h">devices/vector/gdevpsf.h</a>,
-<a href="../devices/vector/gdevpsf1.c">devices/vector/gdevpsf1.c</a>,
-<a href="../devices/vector/gdevpsf2.c">devices/vector/gdevpsf2.c</a>,
-<a href="../devices/vector/gdevpsfm.c">devices/vector/gdevpsfm.c</a>,
-<a href="../devices/vector/gdevpsft.c">devices/vector/gdevpsft.c</a>,
-<a href="../devices/vector/gdevpsfu.c">devices/vector/gdevpsfu.c</a>,
-<a href="../devices/vector/gdevpsfx.c">devices/vector/gdevpsfx.c</a>,
-<a href="../base/gscedata.c">base/gscedata.c</a>,
-<a href="../base/gscedata.h">base/gscedata.h</a>,
-<a href="../base/gscencs.c">base/gscencs.c</a>,
-<a href="../base/gscencs.h">base/gscencs.h</a>.
+    <dt>
+    Writing fonts:</dt>
+    <dd>
+    <a href="../devices/vector/gdevpsf.h">devices/vector/gdevpsf.h</a>,
+    <a href="../devices/vector/gdevpsf1.c">devices/vector/gdevpsf1.c</a>,
+    <a href="../devices/vector/gdevpsf2.c">devices/vector/gdevpsf2.c</a>,
+    <a href="../devices/vector/gdevpsfm.c">devices/vector/gdevpsfm.c</a>,
+    <a href="../devices/vector/gdevpsft.c">devices/vector/gdevpsft.c</a>,
+    <a href="../devices/vector/gdevpsfu.c">devices/vector/gdevpsfu.c</a>,
+    <a href="../devices/vector/gdevpsfx.c">devices/vector/gdevpsfx.c</a>,
+    <a href="../base/gscedata.c">base/gscedata.c</a>,
+    <a href="../base/gscedata.h">base/gscedata.h</a>,
+    <a href="../base/gscencs.c">base/gscencs.c</a>,
+    <a href="../base/gscencs.h">base/gscencs.h</a>.
 
-<dt>
-Other:
-<dd>
-<a href="../devices/vector/gdevpsdf.h">devices/vector/gdevpsdf.h</a>,
-<a href="../devices/vector/gdevpsdi.c">devices/vector/gdevpsdi.c</a>,
-<a href="../devices/vector/gdevpsdp.c">devices/vector/gdevpsdp.c</a>,
-<a href="../devices/vector/gdevpsds.c">devices/vector/gdevpsds.c</a>,
-<a href="../devices/vector/gdevpsds.h">devices/vector/gdevpsds.h</a>,
-<a href="../devices/vector/gdevpsdu.c">devices/vector/gdevpsdu.c</a>.
+    <dt>
+    Other:</dt>
+    <dd>
+    <a href="../devices/vector/gdevpsdf.h">devices/vector/gdevpsdf.h</a>,
+    <a href="../devices/vector/gdevpsdi.c">devices/vector/gdevpsdi.c</a>,
+    <a href="../devices/vector/gdevpsdp.c">devices/vector/gdevpsdp.c</a>,
+    <a href="../devices/vector/gdevpsds.c">devices/vector/gdevpsds.c</a>,
+    <a href="../devices/vector/gdevpsds.h">devices/vector/gdevpsds.h</a>,
+    <a href="../devices/vector/gdevpsdu.c">devices/vector/gdevpsdu.c</a>.
 
 </dl>
 
+<dl>
 <dt>
-Encapsulated PostScript output driver (epswrite):
+Encapsulated PostScript output driver (epswrite):</dt>
 <dd>
 <a href="../devices/vector/gdevpsu.c">devices/vector/gdevpsu.c</a>,
 <a href="../devices/vector/gdevpsu.h">devices/vector/gdevpsu.h</a>.
+</dd>
+</dl>
 
+<dl>
 <dt>
-PDF output driver (pdfwrite):
-<dd>
+PDF output driver (pdfwrite):</dt>
+<dd></dd>
+</dl>
+
 <dl>
 
 <dt>
-Substrate:
+Substrate:</dt>
 <dd>
 <a href="../devices/vector/gdevpdfo.c">devices/vector/gdevpdfo.c</a>,
 <a href="../devices/vector/gdevpdfo.h">devices/vector/gdevpdfo.h</a>,
 <a href="../devices/vector/gdevpdfr.c">devices/vector/gdevpdfr.c</a>,
 <a href="../devices/vector/gdevpdfu.c">devices/vector/gdevpdfu.c</a>.
+</dd>
+</dl>
 
+<dl>
 <dt>
-Old text and fonts:
+Old text and fonts:</dt>
 <dd>
 <a href="../devices/vector/gdevpdfe.c">devices/vector/gdevpdfe.c</a>,
 <a href="../devices/vector/gdevpdft.c">devices/vector/gdevpdft.c</a>.
+</dd>
+</dl>
 
+
+<dl>
 <dt>
-New text and fonts:
+New text and fonts:</dt>
 <dd>
 <a href="../devices/vector/gdevpdt.c">devices/vector/gdevpdt.c</a>,
 <a href="../devices/vector/gdevpdt.h">devices/vector/gdevpdt.h</a>,
@@ -1751,9 +1764,12 @@ New text and fonts:
 <a href="../devices/vector/gdevpdtx.h">devices/vector/gdevpdtx.h</a>.
 <a href="../base/ConvertUTF.h">base/ConvertUTF.h</a>,
 <a href="../base/ConvertUTF.c">base/ConvertUTF.c</a>,
+</dd>
+</dl>
 
+<dl>
 <dt>
-Graphics:
+Graphics:</dt>
 <dd>
 <a href="../devices/vector/gdevpdfc.c">devices/vector/gdevpdfc.c</a>,
 <a href="../devices/vector/gdevpdfc.h">devices/vector/gdevpdfc.h</a>,
@@ -1763,31 +1779,39 @@ Graphics:
 <a href="../devices/vector/gdevpdfk.c">devices/vector/gdevpdfk.c</a>,
 <a href="../devices/vector/gdevpdft.c">devices/vector/gdevpdft.c</a>.
 <a href="../devices/vector/gdevpdfv.c">devices/vector/gdevpdfv.c</a>.
+</dd>
+</dl>
 
+<dl>
 <dt>
-Images:
+Images:</dt>
 <dd>
 <a href="../devices/vector/gdevpdfb.c">devices/vector/gdevpdfb.c</a>,
 <a href="../devices/vector/gdevpdfi.c">devices/vector/gdevpdfi.c</a>,
 <a href="../devices/vector/gdevpdfj.c">devices/vector/gdevpdfj.c</a>.
+</dd>
+</dl>
 
+<dl>
 <dt>
-Other:
+Other:</dt>
 <dd>
 <a href="../devices/vector/gdevpdf.c">devices/vector/gdevpdf.c</a>,
 <a href="../devices/vector/gdevpdfm.c">devices/vector/gdevpdfm.c</a>,
 <a href="../devices/vector/gdevpdfp.c">devices/vector/gdevpdfp.c</a>,
 <a href="../devices/vector/gdevpdfx.h">devices/vector/gdevpdfx.h</a>.
 <a href="../devices/vector/gdevpdfb.h">devices/vector/gdevpdfb.h</a>.
+</dd>
 
 </dl>
 
-</dl>
+
 
 <h4><a name="High_level_devices"></a>Other high-level devices</h4>
 
-<p>
-PCL XL output device (pxlmono, pxlcolor):
+<dl>
+    <dt>
+PCL XL output device (pxlmono, pxlcolor):</dt>
 <dd>
 <a href="../devices/vector/gdevpx.c">devices/vector/gdevpx.c</a>,
 <a href="../base/gdevpxat.h">base/gdevpxat.h</a>,
@@ -1795,18 +1819,25 @@ PCL XL output device (pxlmono, pxlcolor):
 <a href="../base/gdevpxop.h">base/gdevpxop.h</a>,
 <a href="../devices/gdevpxut.c">devices/gdevpxut.c</a>,
 <a href="../devices/gdevpxut.h">devices/gdevpxut.h</a>.
+</dd>
+</dl>
+
+<dl>
 
 <dt>
-Text extraction:
+Text extraction:</dt>
 <dd>
 <a href="../devices/vector/gdevtxtw.c">devices/vector/gdevtxtw.c</a>.
-
+</dd>
+</dl>
+<dl>
 <dt>
-Other high-level devices:
+Other high-level devices:</dt>
 <dd>
 <a href="../devices/gdevtrac.c">devices/gdevtrac.c</a>.
-
+</dd>
 </dl>
+
 
 <h4><a name="Other_maintained_drivers"></a>Other maintained drivers</h4>
 
@@ -1818,7 +1849,7 @@ sense as the Ghostscript core code.
 <dl>
 
 <dt>
-Display drivers:
+Display drivers:</dt>
 <dd>
 <a href="../devices/gdev8bcm.c">devices/gdev8bcm.c</a>,
 <a href="../devices/gdev8bcm.h">devices/gdev8bcm.h</a>,
@@ -1833,15 +1864,19 @@ Display drivers:
 <a href="../devices/gdevsvga.c">devices/gdevsvga.c</a>,
 <a href="../devices/gdevsvga.h">devices/gdevsvga.h</a>,
 <a href="../devices/gdevvglb.c">devices/gdevvglb.c</a>.
+</dd>
+</dl>
 
+<dl>
 <dt>
-Window system drivers:
-<dd>
+Window system drivers:</dt>
+<dd></dd>
+</dl>
 
 <dl>
 
 <dt>
-X Windows:
+X Windows:</dt>
 <dd>
 <a href="../devices/gdevx.c">devices/gdevx.c</a>,
 <a href="../devices/gdevx.h">devices/gdevx.h</a>,
@@ -1850,33 +1885,38 @@ X Windows:
 <a href="../devices/gdevxcmp.h">devices/gdevxcmp.h</a>,
 <a href="../devices/gdevxini.c">devices/gdevxini.c</a>,
 <a href="../devices/gdevxres.c">devices/gdevxres.c</a>.
+</dd>
+</dl>
 
+<dl>
 <dt>
-Microsoft Windows:
+Microsoft Windows:</dt>
 <dd>
 <a href="../devices/gdevmswn.c">devices/gdevmswn.c</a>,
 <a href="../devices/gdevmswn.h">devices/gdevmswn.h</a>,
 <a href="../devices/gdevmsxf.c">devices/gdevmsxf.c</a>,
 <a href="../devices/gdevwddb.c">devices/gdevwddb.c</a>,
-<a href="../devices/gdevwdib.c">devices/gdevwdib.c</a>.
+<a href="../devices/gdevwdib.c">devices/gdevwdib.c</a>.</dd>
 
 <dt>
-OS/2 Presentation Manager:
+OS/2 Presentation Manager:</dt>
 <dd>
 <a href="../devices/gdevpm.h">devices/gdevpm.h</a>,
 <a href="../base/gspmdrv.c">base/gspmdrv.c</a>,
-<a href="../base/gspmdrv.h">base/gspmdrv.h</a>.
+<a href="../base/gspmdrv.h">base/gspmdrv.h</a>.</dd>
 
 </dl>
 
+<dl>
 <dt>
-Raster file output drivers:
-<dd>
+Raster file output drivers:</dt>
+<dd></dd>
+</dl>
 
 <dl>
 
 <dt>
-Fax and TIFF:
+Fax and TIFF:</dt>
 <dd>
 <a href="../devices/gdevfax.c">devices/gdevfax.c</a>,
 <a href="../devices/gdevfax.h">devices/gdevfax.h</a>,
@@ -1887,6 +1927,8 @@ Fax and TIFF:
 <a href="../devices/gdevtfnx.c">devices/gdevtfnx.c</a>.
 <a href="../devices/gdevtsep.c">devices/gdevtsep.c</a>.
 
+</dd>
+
 <dt>
 Example DeviceN devices:
 <dd>
@@ -1895,6 +1937,8 @@ Example DeviceN devices:
 <a href="../devices/gdevxcf.c">devices/gdevxcf.c</a>,
 <a href="../devices/gdevpsd.c">devices/gdevpsd.c</a>,
 <a href="../devices/gdevperm.c">devices/gdevperm.c</a>.
+
+</dd>
 
 <dt>
 Other raster file formats:
@@ -1912,8 +1956,11 @@ Other raster file formats:
 <a href="../devices/gdevpng.c">devices/gdevpng.c</a>,
 <a href="../devices/gdevpsim.c">devices/gdevpsim.c</a>.
 
+</dd>
+
 </dl>
 
+<dl>
 <dt>
 Printer drivers:
 <dd>

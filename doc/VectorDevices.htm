@@ -4,13 +4,13 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <link rel="shortcut icon" href="images/favicon.svg">
     <title>High Level Output Devices</title>
     <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <header><div class="title"><a href="index.html"><h1 aria-label="title">Ghostscript documentation</h1><h2 aria-label="version"></h2></a></div><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
     <main>
         <article>
             <div class="outer">
@@ -133,7 +133,7 @@ contents unchanged, and pdfwrite performs these tasks well.
 <p>The <tt>pxlmono</tt> and <tt>pxlcolor</tt> devices output HP PCL-XL,
 a graphic language understood by many recent laser printers.
 
-<h4>Options</h4>
+<h3>Options</h3>
 <blockquote>
 <dl>
 <dt><code>-dCompressMode=<em>1 | 2 | 3</em></code> (default is 1)
@@ -148,21 +148,21 @@ and masks continues to be compressed with RLE.
 <p> The txtwrite device will output the text contained in the original
 document as Unicode.
 
-<h4>Options</h4>
+<h3>Options</h3>
 <blockquote>
 <dl>
-<dt><code>-dTextFormat=<em>0 | 1 | 2 | 3 | 4 </em></code> (default is 3)
-<p><dd>Format 0 is intended for use by developers and outputs XML-escaped Unicode
+<dt><code>-dTextFormat=<em>0 | 1 | 2 | 3 | 4 </em></code> (default is 3)</dt>
+    <dd>Format 0 is intended for use by developers and outputs XML-escaped Unicode
 along with information regarding the format of the text (position, font name,
 point size, etc). The XML output is the same format as the MuPDF output, but
-no additional processing is performed on the content, so no block detection.</dd></p>
-<p><dd>Format 1 uses the same XML output format, but attempts similar processing to
+no additional processing is performed on the content, so no block detection.<p></dd>
+<dd>Format 1 uses the same XML output format, but attempts similar processing to
 MuPDF, and will output blocks of text. Note the algorithm used is not the same
-as the MuPDF code, and so the results will not be identical.</dd></p>
-<p><dd>Format 2 outputs Unicode (UCS2) text (with a Byte Order Mark) which
-approximates the layout of the text in the original document.</dd></p>
-<p><dd>Format 3 is the same as format 2, but the text is encoded in UTF-8.</dd></p>
-<p><dd>Format 4 is internal format similar to Format 0 but with extra information.</dd></p>
+as the MuPDF code, and so the results will not be identical.<p></dd>
+<dd>Format 2 outputs Unicode (UCS2) text (with a Byte Order Mark) which
+approximates the layout of the text in the original document.<p></dd>
+<dd>Format 3 is the same as format 2, but the text is encoded in UTF-8.<p></dd>
+<dd>Format 4 is internal format similar to Format 0 but with extra information.<p></dd>
 </dl></blockquote>
 
 <p>
@@ -615,25 +615,25 @@ can be disabled by setting <code>-dParseDSCComments=false</code>.
 <p>
 
 <h3><a name="PSPDF_IN"></a>Controls and features specific to PostScript and PDF input</h3>
-<dt><code>-dPDFSETTINGS=</code><em>configuration</em>
-<dd>Presets the "distiller parameters" to one of four predefined settings:
-
+<dl><dt><code>-dPDFSETTINGS=</code><em>configuration</em></dt>
+<dd>Presets the "distiller parameters" to one of four predefined settings:</dd>
+</dl>
 <ul>
 
 <li><code>/screen</code> selects low-resolution output similar to the
-Acrobat Distiller (up to version X) "Screen Optimized" setting.
+Acrobat Distiller (up to version X) "Screen Optimized" setting.</li>
 
 <li><code>/ebook</code> selects medium-resolution output similar to the
-Acrobat Distiller (up to version X) "eBook" setting.
+Acrobat Distiller (up to version X) "eBook" setting.</li>
 
 <li><code>/printer</code> selects output similar to the Acrobat Distiller
-"Print Optimized" (up to version X) setting.
+"Print Optimized" (up to version X) setting.</li>
 
 <li><code>/prepress</code> selects output similar to Acrobat Distiller
-"Prepress Optimized" (up to version X) setting.
+"Prepress Optimized" (up to version X) setting.</li>
 
 <li><code>/default</code> selects output intended to be useful across a
-wide variety of uses, possibly at the expense of a larger output file.
+wide variety of uses, possibly at the expense of a larger output file.</li>
 
 </ul>
 <p>
@@ -643,6 +643,7 @@ names of the PDFSETTINGS parameters. The precise value for each control is liste
 in the table <a href="#distillerparams">above</a>.
 </p>
 
+<dl><dt></dt>
 <dd>Please be aware that the <code>/prepress</code> setting does <b>not</b> indicate
 the highest quality conversion. Using any of these presets will involve altering the
 input, and as such may result in a PDF of poorer quality (compared to the input) than
@@ -655,6 +656,7 @@ output will be altered in a variety of ways from the input. It is usually better
 adjust the controls individually (see the table below) if you have a genuine requirement to produce,
 for example, a PDF file where the images are reduced in resolution.
 </dd>
+</dl>
 
 <h3><a name="PXL_IN"></a>Controls and features specific to PCL and PXL input</h3>
 <p>
@@ -727,6 +729,7 @@ ESC%-12345X
 </p>
 
 <h3><a name="PDF"></a>PDF file output</h3>
+<dl>
 <dt><code>-dMaxInlineImageSize=</code><em>integer</em>
 <dd>Specifies the maximum size of an inline image, in bytes. For images larger
 than this size, <code>pdfwrite</code> will create an XObject instead of embedding
@@ -735,7 +738,7 @@ The default value is <code>4000</code>.
 Note that redundant inline images must be embedded each time they occur in the
 document, while multiple references can be made to a single XObject image. Therefore
 it may be advantageous to set a small or zero value if the source document is expected
-to contain multiple identical images, reducing the size of the generated PDF.
+to contain multiple identical images, reducing the size of the generated PDF.<p></dd>
 
 <dt><code>-dDoNumCopies</code>
 <dd>When present, causes pdfwrite to use the #copies or /NumCopies entry in the page
@@ -743,10 +746,17 @@ device dictionary to duplicate each page in the output PDF file as many times as
 the 'copies' value. This is intended for use by workflow applications like CUPS
 and should not be used for generating general purpose PDF files. In particular any
 pdfmark operations which rely on page numbers, such as Link or Outline annotations
-will not work correctly with this flag.
+will not work correctly with this flag.<p></dd>
 
 <dt><code>-dDetectDuplicateImages</code>
-<dd> Takes a Boolean argument, when set to true (the default) pdfwrite will compare all new images with all the images encountered to date (NOT small images which are stored in-line) to see if the new image is a duplicate of an earlier one. If it is a duplicate then instead of writing a new image into the PDF file, the PDF will reuse the reference to the earlier image. This can considerably reduce the size of the output PDF file, but increases the time taken to process the file. This time grows exponentially as more images are added, and on large input files with numerous images can be prohibitively slow. Setting this to false will improve performance at the cost of final file size.
+<dd> Takes a Boolean argument, when set to true (the default) pdfwrite will compare all new
+ images with all the images encountered to date (NOT small images which are stored in-line) to see if the new image
+  is a duplicate of an earlier one. If it is a duplicate then instead of writing a new image into the PDF file,
+   the PDF will reuse the reference to the earlier image.
+    This can considerably reduce the size of the output PDF file, but increases the
+     time taken to process the file.
+      This time grows exponentially as more images are added, and on large input files with
+       numerous images can be prohibitively slow. Setting this to false will improve performance at the cost of final file size.<p></dd>
 
 <dt><code>-dFastWebView</code>
 <dd> Takes a Boolean argument, default is false. When set to true pdfwrite will
@@ -754,45 +764,44 @@ reorder the output PDF file to conform to the Adobe 'linearised' PDF specificati
 The Acrobat user interface refers to this as 'Optimised for Fast Web Viewing'.
 Note that this will cause the conversion to PDF to be slightly slower and will
 usually result in a slightly larger PDF file.</dd>
-<dd>This option is incompatible with producing an encrypted (password protected) PDF file.</dd>
+<dd>This option is incompatible with producing an encrypted (password protected) PDF file.<p></dd>
 </dt>
+</dl>
 
 <dl>
-<dt><code>-dPreserveAnnots=</code><em>boolean</em>
-<dd>We now attempt to preserve most annotations from input PDF files as annotations in the output PDF file (note, not in output PostScript!)
-There are a few annotation types which are not preserved, most notably Link and Widget annotations. However, should you wish to revert
-to the old behaviour, or find that the new behaviour leads to problems, you can set this switch to false which will cause all annotations to be
-inserted into the page content stream, instead of preserved as annotations.
-<p> In addition, finer control is available by defining an array
-<code>/PreserveAnnotTypes</code>. Annotation types listed in this array will
-be preserved, whilst those not listed will be drawn according to the setting os ShowAnnots and ShowAnnotTypes.
-By using the controls PreserveAnnots, PreserveAnnotTypes, ShowAnnots and ShowAnnotTypes it is possible to select
-by annotation type whether annotations are preserved as annotations, drawn into the page, or simply dropped.
-</p>
-<p> To use this feature:
-<code>-c "/PreserveAnnotTypes [....] def" -f &ltinput file&gt</code>
-<br> Where the array can contain one or more of the following names:
-<code>/Stamp</code>, <code>/Squiggly</code>, <code>/Underline</code>, <code>/Link</code>, <code>/Text</code>, <code>/Highlight</code>, <code>/Ink</code>, <code>/FreeText</code>, <code>/StrikeOut</code> and <code>/stamp_dict</code>.</p>
-<p> For example, adding the follow to the command line:
-<code>-c "/PreserveAnnotTypes [/Text /UnderLine] def" -f &ltinput file&gt</code>
-    <br> would preserve only annotations with the subtypes &quotText&quot and &quotUnderLine&quot</p>
-</dd>
-</dt>
-</d1>
+    <dt><code>-dPreserveAnnots=</code><em>boolean</em>
+    <dd>We now attempt to preserve most annotations from input PDF files as annotations in the output PDF file (note, not in output PostScript!)
+    There are a few annotation types which are not preserved, most notably Link and Widget annotations. However, should you wish to revert
+    to the old behaviour, or find that the new behaviour leads to problems, you can set this switch to false which will cause all annotations to be
+    inserted into the page content stream, instead of preserved as annotations.
+    <p> In addition, finer control is available by defining an array
+    <code>/PreserveAnnotTypes</code>. Annotation types listed in this array will
+    be preserved, whilst those not listed will be drawn according to the setting os ShowAnnots and ShowAnnotTypes.
+    By using the controls PreserveAnnots, PreserveAnnotTypes, ShowAnnots and ShowAnnotTypes it is possible to select
+    by annotation type whether annotations are preserved as annotations, drawn into the page, or simply dropped.
+    </p>
+    <p> To use this feature:
+    <code>-c "/PreserveAnnotTypes [....] def" -f &ltinput file&gt</code>
+    <br> Where the array can contain one or more of the following names:
+    <code>/Stamp</code>, <code>/Squiggly</code>, <code>/Underline</code>, <code>/Link</code>, <code>/Text</code>, <code>/Highlight</code>, <code>/Ink</code>, <code>/FreeText</code>, <code>/StrikeOut</code> and <code>/stamp_dict</code>.</p>
+    <p> For example, adding the follow to the command line:
+    <code>-c "/PreserveAnnotTypes [/Text /UnderLine] def" -f &ltinput file&gt</code>
+        <br> would preserve only annotations with the subtypes &quotText&quot and &quotUnderLine&quot</p>
+    </dd>
+    </dt>
+</dl>
 
 <dl>
-<dt><code>-dPreserveMarkedContent=</code><em>boolean</em>
-<dd>We now attempt to preserve marked content from input PDF files through to the output PDF file (note, not in output PostScript!)
-This does not include marked content relating to optional content, because currently we do not preserve optional content, it is
-instead applied by the interpreter.
-<p>
-This control also requires the PDF interpreter to pass the marked content to the pdfwrite device, this is only done with the
-new (C-based) PDF interpreter. THe old (PostScript-based) interpreter does not support this feature and will not pass marked
-content to the pdfwrite device.
-</p>
-</dd>
-</dt>
-<p>
+    <dt><code>-dPreserveMarkedContent=</code><em>boolean</em></dt>
+    <dd>We now attempt to preserve marked content from input PDF files through to the output PDF file (note, not in output PostScript!)
+    This does not include marked content relating to optional content, because currently we do not preserve optional content, it is
+    instead applied by the interpreter.
+    <p>
+    This control also requires the PDF interpreter to pass the marked content to the pdfwrite device, this is only done with the
+    new (C-based) PDF interpreter. THe old (PostScript-based) interpreter does not support this feature and will not pass marked
+    content to the pdfwrite device.
+    </p>
+    </dd>
 </dl>
 
 The following options are useful for creating PDF 1.2 files:
@@ -800,54 +809,54 @@ The following options are useful for creating PDF 1.2 files:
 
 <dl>
 
-<dt><code>-dPatternImagemask=<em>boolean</em></code>
-<dd>With <code>CompatibilityLevel &lt; 1.3 </code> it specifies whether
-the target viewer handles <code>ImageMask</code> with a pattern color.
-Some old viewers, such as Ghostscript 3.30 fail with such constructs.
-Setting this option to false, one can get more compatibility,
-but the mask interpolation is lost.
-With <code>CompatibilityLevel &ge; 1.3 </code> this option is ignored.
-Default value is <code>false</code>.
+    <dt><code>-dPatternImagemask=<em>boolean</em></code></dt>
+    <dd>With <code>CompatibilityLevel &lt; 1.3 </code> it specifies whether
+    the target viewer handles <code>ImageMask</code> with a pattern color.
+    Some old viewers, such as Ghostscript 3.30 fail with such constructs.
+    Setting this option to false, one can get more compatibility,
+    but the mask interpolation is lost.
+    With <code>CompatibilityLevel &ge; 1.3 </code> this option is ignored.
+    Default value is <code>false</code>.<p></dd>
 
-<dt><code>-dMaxClipPathSize=<em>integer</em></code>
-<dd>Specifies the maximum number of elements in the clipping path
-that the target viewer can handle. This option is used only with
-<code>CompatibilityLevel &lt; 1.3</code> and
-<code>PatternImagemask=false</code>,
-and only when converting a mask into a clipping path.
-If the clipping path exceeds the specified size,
-the masked image and the clipping path is decomposed into smaller images.
-The value of the option counts straight path segments
-(curved segments are not used for representing a mask).
-Default value is <code>12000</code>.
+    <dt><code>-dMaxClipPathSize=<em>integer</em></code></dt>
+    <dd>Specifies the maximum number of elements in the clipping path
+    that the target viewer can handle. This option is used only with
+    <code>CompatibilityLevel &lt; 1.3</code> and
+    <code>PatternImagemask=false</code>,
+    and only when converting a mask into a clipping path.
+    If the clipping path exceeds the specified size,
+    the masked image and the clipping path is decomposed into smaller images.
+    The value of the option counts straight path segments
+    (curved segments are not used for representing a mask).
+    Default value is <code>12000</code>.<p></dd>
 
-<dt><code>-dMaxShadingBitmapSize=<em>integer</em></code>
-<dd>Specifies the maximum number of bytes allowed for representing a shading as a bitmap.
-If a shading exceeds this value, the resolution of the output bitmap
-is reduced to fit into the specified number of bytes.
-Note that the number of bytes depends on the number of color components
-in <code>ProcessColorModel</code> or <code>ColorConversionStrategy</code>, assumes 8 bits per sample,
-and doesn't consider image compression or downsampling. The image is rendered at the current resolution
-as specified by <code>-r</code> or the default of 720 dpi.
+    <dt><code>-dMaxShadingBitmapSize=<em>integer</em></code></dt>
+    <dd>Specifies the maximum number of bytes allowed for representing a shading as a bitmap.
+    If a shading exceeds this value, the resolution of the output bitmap
+    is reduced to fit into the specified number of bytes.
+    Note that the number of bytes depends on the number of color components
+    in <code>ProcessColorModel</code> or <code>ColorConversionStrategy</code>, assumes 8 bits per sample,
+    and doesn't consider image compression or downsampling. The image is rendered at the current resolution
+    as specified by <code>-r</code> or the default of 720 dpi.
 
-Default value is <code>256000</code>.
-In general larger values will result in higher quality,
-but the output file size may increase dramatically, particularly with shadings which cover large areas.
+    Default value is <code>256000</code>.
+    In general larger values will result in higher quality,
+    but the output file size may increase dramatically, particularly with shadings which cover large areas.
 
-Shadings should generally only be rendered to images if <code>CompatibilityLevel</code> is 1.2 or less
-or if <code>ColorCoversionStrategy</code> specifies a color space different to that of the shading.
+    Shadings should generally only be rendered to images if <code>CompatibilityLevel</code> is 1.2 or less
+    or if <code>ColorCoversionStrategy</code> specifies a color space different to that of the shading.<p></dd>
 
-<dt><code>-dHaveTrueTypes=<em>boolean</em></code>
-<dd>With <code>CompatibilityLevel &lt; 1.3</code> it specifies
-whether the target viewer can handle TrueType fonts.
-If not, TrueType fonts are converted into raster fonts
-with resolution specified in <code>HWResolution</code>. Note that large text at higher resolutions
-results in very large bitmaps which are likely to defeat caching in many printers. As a result the
-text is emitted as simple images rather than as a (type 3) bitmap font. The PostScript user parameter
-MaxFontItem can be used to increase the maximum size of a cache entry which will increase the size/resolution
-of the text which can be stored in a font.
-With <code>CompatibilityLevel &ge; 1.3</code> this option is ignored. Default value is <code>true</code>.
-
+    <dt><code>-dHaveTrueTypes=<em>boolean</em></code></dt>
+    <dd>With <code>CompatibilityLevel &lt; 1.3</code> it specifies
+    whether the target viewer can handle TrueType fonts.
+    If not, TrueType fonts are converted into raster fonts
+    with resolution specified in <code>HWResolution</code>. Note that large text at higher resolutions
+    results in very large bitmaps which are likely to defeat caching in many printers. As a result the
+    text is emitted as simple images rather than as a (type 3) bitmap font. The PostScript user parameter
+    MaxFontItem can be used to increase the maximum size of a cache entry which will increase the size/resolution
+    of the text which can be stored in a font.
+    With <code>CompatibilityLevel &ge; 1.3</code> this option is ignored. Default value is <code>true</code>.
+    </dd>
 </dl>
 
 <p>
@@ -856,12 +865,12 @@ The following options are useful for creating PDF 1.3 files:
 
 <dl>
 
-<dt><code>-dHaveTransparency=<em>boolean</em></code>
-<dd>With <code>CompatibilityLevel &ge; 1.4</code> it specifies
-whether the target viewer can handle PDF 1.4 transparency objects.
-If not, the page is converted into a single plain image with all
-transparency flattened.
-Default value is <code>true</code>.
+    <dt><code>-dHaveTransparency=<em>boolean</em></code></dt>
+    <dd>With <code>CompatibilityLevel &ge; 1.4</code> it specifies
+    whether the target viewer can handle PDF 1.4 transparency objects.
+    If not, the page is converted into a single plain image with all
+    transparency flattened.
+    Default value is <code>true</code>.</dd>
 
 </dl>
 
@@ -882,24 +891,24 @@ Default value is <code>false</code>.
 When generating a PDF/X-3 document, Ghostscript performs the following
 special actions to satisfy the PDF/X-3 standard:
 <ul>
-<li> All fonts are embedded.
-<li> <code>DeviceRGB</code> color space is substituted with
-<code>the DefaultRGB</code> color space,
-which must be defined in the <code>ColorSpace</code> category.
-The easiest way is to provide it in the <code>DefaultRGB</code> file in the resource directory.
-<li> <code>DeviceRGB</code> color values are passed unchanged.
-If a user needs a non trivial color adjustment, a non trivial
-<code>DefaultRGB</code> color space must be defined.
-<li> Transfer functions and halftone phases are skipped.
-<li> <code>/PS pdfmark</code> interprets the <code>DataSource</code>
-stream or file.
-<li><code>TrimBox</code> and <code>BleedBox</code> entries
-are generated in page descriptions.
-Their values can be changed using the
-<code>PDFXTrimBoxToMediaBoxOffset</code>,
-<code>PDFXSetBleedBoxToMediaBox</code>, and
-<code>PDFXBleedBoxToTrimBoxOffset</code>
-distiller parameters (see below).
+    <li> All fonts are embedded.</li>
+    <li> <code>DeviceRGB</code> color space is substituted with
+    <code>the DefaultRGB</code> color space,
+    which must be defined in the <code>ColorSpace</code> category.
+    The easiest way is to provide it in the <code>DefaultRGB</code> file in the resource directory.</li>
+    <li> <code>DeviceRGB</code> color values are passed unchanged.
+    If a user needs a non trivial color adjustment, a non trivial
+    <code>DefaultRGB</code> color space must be defined.</li>
+    <li> Transfer functions and halftone phases are skipped.</li>
+    <li> <code>/PS pdfmark</code> interprets the <code>DataSource</code>
+    stream or file.</li>
+    <li><code>TrimBox</code> and <code>BleedBox</code> entries
+    are generated in page descriptions.
+    Their values can be changed using the
+    <code>PDFXTrimBoxToMediaBoxOffset</code>,
+    <code>PDFXSetBleedBoxToMediaBox</code>, and
+    <code>PDFXBleedBoxToTrimBoxOffset</code>
+    distiller parameters (see below).</li>
 </ul>
 
 
@@ -908,35 +917,35 @@ The following switches are used for creating encrypted documents :
 </h4>
 
 <dl>
-<dt><code>-sOwnerPassword=</code><em>string</em>
+<dt><code>-sOwnerPassword=</code><em>string</em></dt>
 <dd>Defines that the document be encrypted with the specified
-owner password.
+owner password.</dd>
 </dl>
 
 <dl>
-<dt><code>-sUserPassword=</code><em>string</em>
+<dt><code>-sUserPassword=</code><em>string</em></dt>
 <dd>Defines the user password for opening the document.
 If empty, the document can be opened with no password,
-but the owner password is required to edit it.
+but the owner password is required to edit it.</dd>
 </dl>
 
 <dl>
-<dt><code>-dPermissions=</code><em>number</em>
+<dt><code>-dPermissions=</code><em>number</em></dt>
 <dd>Defines the PDF permissions flag field. Negative values are allowed
 to represent unsigned integers with the highest bit set. See the PDF
-Reference manual for the meaning of the flag bits.
+Reference manual for the meaning of the flag bits.</dd>
 </dl>
 
 <dl>
-<dt><code>-dEncryptionR=</code><em>number</em>
-<dd>Defines the encryption method revision number - either 2 or 3.
+<dt><code>-dEncryptionR=</code><em>number</em></dt>
+<dd>Defines the encryption method revision number - either 2 or 3.</dd>
 </dl>
 
 <dl>
-<dt><code>-dKeyLength=</code><em>number</em>
+<dt><code>-dKeyLength=</code><em>number</em></dt>
 <dd>Defines the length (in bits) of the encryption key.
 Must be a multiple of 8 in the interval [40, 128].
-If the length isn't 40, <code>-dEncryptionR</code> must be 3.
+If the length isn't 40, <code>-dEncryptionR</code> must be 3.</dd>
 </dl>
 
 
@@ -945,7 +954,7 @@ The following switches are used for generating metadata according to the Adobe X
 </h4>
 
 <dl>
-<dt><code>-sDocumentUUID=</code><em>string</em>
+<dt><code>-sDocumentUUID=</code><em>string</em></dt>
 <dd>Defines a DocumentID to be included into the document Metadata.
 If not specified, Ghostscript generates an UUID automatically.
 Otherwise the specified string is copied into the document without
@@ -958,7 +967,7 @@ a correct UUID through this parameter.
 <p>
 Note that Ghostscript has no assess to the host node ID
 due to a minimization of platform dependent modules.
-Therefore it uses an MD5 hash of the document contents for generating UUIDs.
+Therefore it uses an MD5 hash of the document contents for generating UUIDs.</p>
 </dl>
 
 <dl>
@@ -1003,9 +1012,9 @@ displaying document's properties,
 so we recommend this value.
 </dl>
 
-<d1>
-<a name="UseOCR"></a>
-<dt><code>-sUseOCR=</code><em>string</em>
+<dl>
+
+<dt><a name="UseOCR"></a><code>-sUseOCR=</code><em>string</em>
 <dd>Controls the use of OCR in pdfwrite. If enabled this will use an OCR
 engine to analyse the glyph bitmaps used to draw text in a PDF file, and
 the resulting Unicode code points are then used to construct a ToUnicode
@@ -1026,9 +1035,11 @@ For the reasons above it is useful to be able to exercise some control over the
 action of pdfwrite when OCR processing is available, and the <code>UseOCR</code>
 parameter provides that control. There are three possible values:
 </p>
-<li><code>Never</code> Default - don't use OCR at all even if support is built-in.
-<li><code>AsNeeded</code> If there is no existing ToUnicode information, use OCR.
-<li><code>Always</code> Ignore any existing information and always use OCR.
+<ul>
+<li><code>Never</code> Default - don't use OCR at all even if support is built-in.</li>
+<li><code>AsNeeded</code> If there is no existing ToUnicode information, use OCR.</li>
+<li><code>Always</code> Ignore any existing information and always use OCR.</li>
+</ul>
 <p>
 Our experimentation with the Tesseract OCR engine has shown that the more text we
 can supply for the engine to look at, the better the result we get. We are, unfortunately,
@@ -1057,6 +1068,7 @@ functionality here, but we need concrete examples to work from.
 </p>
 </dd>
 </dt>
+</dl>
 
 <h3><a name="PS"></a>PostScript file output</h3>
 <p>
@@ -1077,21 +1089,23 @@ There are also two additional (not Adobe-standard) Distiller parameters, specifi
 <dd>No default value. If defined, the contents of the string will be emitted in the output PostScript prolog
 enclosed within %%BeginSetup and %%EndSetup comments. This is intended as a means of introducing device-specific document wide
 setup or configuration options into the output. Default media selection, printer resolution etc might be included here.
-</dd>
+
 <code>/PSPageOptions</code><em> array of strings</em>
+</dd>
 <dd>No default value. If defined, the contents of the strings in the array will be emitted in the output PostScript at the start
 of each page, one string per page, enclosed within %%BeginPageSetup and %%EndPageSetup comments. This is intended as a means of introducing device-specific
 setup or configuration options into the output on a page by page basis. The strings are used from the array sequentially, if there are more
 pages than strings then we 'wrap round' and start again with the first string. This makes it convenient to do setup for even/odd pages
 by simply including 2 strings in the array.
-</dd>
+
 <p>
 Note: executing setpagedevice will reset distiller parameters to the default, if you use any of these options via setdistillerparams, and
  expect to execute setpagedevice, you should set /LockDistillerParams true. Ordinarily the PDF interpreter executes setpagedevice for
  every page in order to set the media size.
 </p>
+</dd>
 </dt>
-</d1>
+</dl>
 
 <p>
 NB the strings contained in PSDocOptions, and the PSPageOptions array, are written verbatim to the output. No error checking is (or can be) performed on these strings
@@ -1378,7 +1392,7 @@ a PostScript Printer Description (PPD) file.
 This allows some <a href="#Options">distiller parameters</a>
 to be set when a PostScript file is generated.
 
-<h4>Windows XP or 2000</h4>
+<h3>Windows XP or 2000</h3>
 <p>
 To install a "Ghostscript PDF" printer on Windows XP,
 select the Windows Control Panel,
@@ -1420,7 +1434,7 @@ into the Catalog, creating a conformant set of XML, with all the information syn
 dictionary would be challenging, this pdfmark allows the pdfwrite device to generate all the normal information
 leaving the user with only the task of specifying the additional data.
 
-<dt><code>[ /XML (string containing additional XMP data) /Ext_Metadata pdfmark</code>
+<code>[ /XML (string containing additional XMP data) /Ext_Metadata pdfmark</code>
 </p>
 
 <hr>

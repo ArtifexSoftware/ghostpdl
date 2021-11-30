@@ -4,13 +4,13 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <link rel="shortcut icon" href="images/favicon.svg">
     <title>How to Build Ghostscript from Source Code</title>
     <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <header><div class="title"><a href="index.html"><h1 aria-label="title">Ghostscript documentation</h1><h2 aria-label="version"></h2></a></div><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
     <main>
         <article>
             <div class="outer">
@@ -713,7 +713,7 @@ time with the <code>-DDEBUG</code> or
     <dd>Deletes all the files created by the build process (relocatables,
     executables, and miscellaneous temporary files).  If you've built an
     executable and want to save it, move it first to another place, because
-    "<code>make clean</code>" deletes it.</dd>?
+    "<code>make clean</code>" deletes it.</dd>
 </dl>
 
 <dl>
@@ -1118,7 +1118,7 @@ on your particular platform and compiler.  In fact, that is the
 <b><em>first</em></b> place to check if you build Ghostscript and it crashes
     or produces obviously incorrect results.</p>
 
-<h4><a name="GNU_make"></a>make tools</h4>
+<h3><a name="GNU_make"></a>make tools</h3>
 
 <p>
 You require a make tool which supports separate directories for
@@ -1142,11 +1142,11 @@ Ghostscript.</p>
 
 <h4><a name="HP_RISC"></a>H-P RISC workstations</h4>
 
-<ul>
+
 
 <p>
 (see Autoconf-based method above)</p>
-
+<ul>
 <li>HP-UX versions before 11.0 do not support POSIX threads. Set
     <code>SYNC=nosync</code> in the makefile before building.</li>
 
@@ -1160,6 +1160,8 @@ work.  If <code>cc</code> on your system doesn't accept the
 <li>If you use H-P's compiler, be sure you have upgraded to a recent
 release.  Many bizarre symptoms have been reported trying to build
 Ghostscript with older, buggier compilers, for example:</li>
+
+<li>
 <ul>
 <li>The link step fails with a message about "<code>max</code>" not being defined.</li>
 <li>The build succeeds, but the resulting executable fails to start up,
@@ -1168,6 +1170,7 @@ in .registerencoding".</li>
 <li>The build succeeds, but the resulting executable produces a black
 background on the first page of output.</li>
 </ul>
+</li>
 
 <li>It is reported that On HPUX 9.* you need at least compiler patch
 PHSS_5723 and dld.sl patch PHSS_5734 to build Ghostscript.  (As of late
@@ -1223,7 +1226,7 @@ please read the following carefully.</p>
 
 <ul>
 <li>
-    To make the optimizer allocate enough table space, set</li>
+    To make the optimizer allocate enough table space, set
 
 <p><code>CFLAGS="-Olimit 2500"</code> (for older compilers)
 <br><code>CFLAGS="-OPT:Olimit=2500"</code> (for newer compilers)</p>
@@ -1231,7 +1234,7 @@ please read the following carefully.</p>
 <p>
 MIPSpro compiler version 3.19 is "older", and 7.1 is "newer"; we aren't
 sure at what point in between the latter syntax was introduced.</p>
-
+</li>
 <li>
 With the compiler shipped with Irix 5.2, use the <code>-ansi</code>
     option.</li>
@@ -1252,30 +1255,32 @@ incorrect output and binaries that cause segmentation faults.&nbsp; Various
 solutions have been suggested and you may want to try them in this order,
 until you get a working binary:</li>
 
-<ul>
 <li>
-Compile <code>idict.c</code> and <code>isave.c</code> separately
-without optimization after doing a normal compile; then relink.e.g.:</li>
+    <ul>
+        <li>
+        Compile <code>idict.c</code> and <code>isave.c</code> separately
+        without optimization after doing a normal compile; then relink.e.g.:
 
-<p>
-<code>cc -OPT:Olimit=2500 -I. -I./obj -o ./obj/idict.o -c ./idict.c</code><br>
-    <code>cc -OPT:Olimit=2500 -I. -I./obj -o ./obj/isave.o -c ./isave.c</code></p>
+        <p>
+        <code>cc -OPT:Olimit=2500 -I. -I./obj -o ./obj/idict.o -c ./idict.c</code><br>
+            <code>cc -OPT:Olimit=2500 -I. -I./obj -o ./obj/isave.o -c ./isave.c</code></p>
+        </li>
+        <li>
+        Set <code>CFLAGS=</code> (no optimization).</li>
 
-<li>
-Set <code>CFLAGS=</code> (no optimization).</li>
+        <li>
+        Use only <code>-O2</code>.&nbsp;&nbsp; Compiler produces incorrect output
+        with <code>-O3</code> or "<code>-Ofast=ip32 -show</code>".</li>
 
-<li>
-Use only <code>-O2</code>.&nbsp;&nbsp; Compiler produces incorrect output
-with <code>-O3</code> or "<code>-Ofast=ip32 -show</code>".</li>
-
-<li>
-Irix 6.5.1m with MIPSpro compiler 7.2.1.1m, Irix 6.5.3m with MIPSpro
-compiler 7.2.1, and probably other 6.5x / 7.2x combinations require
-compiling with the <code>-o32</code> option. Compiling with the (default)
-<code>-n32</code> option produces non-working executables.
-<code>-O2</code> is OK (possibly except for <code>idict.c</code>), but
-not <code>-O3</code>.</li>
-</ul>
+        <li>
+        Irix 6.5.1m with MIPSpro compiler 7.2.1.1m, Irix 6.5.3m with MIPSpro
+        compiler 7.2.1, and probably other 6.5x / 7.2x combinations require
+        compiling with the <code>-o32</code> option. Compiling with the (default)
+        <code>-n32</code> option produces non-working executables.
+        <code>-O2</code> is OK (possibly except for <code>idict.c</code>), but
+        not <code>-O3</code>.</li>
+    </ul>
+</li>
 </ul>
 
 <h4><a name="Sun"></a>Oracle/Sun</h4>
@@ -1307,13 +1312,14 @@ Solaris 2.3 and later seem to require "<code>EXTRALIBS=-lnsl&nbsp;-lsocket&nbsp;
 
 <li>For Solaris 2.6 (and possibly some other versions), if you set
 <code>SHARE_LIBPNG=1</code>, <code>SHARE_ZLIB=1</code>, or
-<code>SHARE_JPEG=1</code>, you may need to set</li>
+<code>SHARE_JPEG=1</code>, you may need to set
 
 <p>
     <code>XLDFLAGS=-R /usr/local/</code>xxx<code>/lib:/usr/local/lib</code></p>
 
 <p>
 using the full path names of the relevant directories.</p>
+</li>
 
 <li>Solaris 2.<em>n</em> uses <code>/usr/openwin/share/include</code>
 for the X11 libraries rather than <code>/usr/local/X/include</code>.</li>

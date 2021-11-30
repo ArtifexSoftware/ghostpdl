@@ -66,6 +66,28 @@ header {
     grid-row: 1;
 }
 
+header .title {
+    display: flex;
+    justify-content: start;
+    flex-direction: column;
+}
+
+header h1 {
+    line-height: 40px;
+}
+
+header h2::after {
+    content:"Version 9.55.0";
+}
+
+header h2 {
+    font-weight: bold;
+    margin-top:-45px;
+    font-size: 12px;
+    color: #fff;
+    margin-right:10px;
+}
+
 header .search {
 	width: 50px;
 	height:50px;

@@ -4,13 +4,13 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <link rel="shortcut icon" href="images/favicon.svg">
     <title>How to Install Ghostscript</title>
     <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <header><div class="title"><a href="index.html"><h1 aria-label="title">Ghostscript documentation</h1><h2 aria-label="version"></h2></a></div><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
     <main>
         <article>
             <div class="outer">
@@ -62,6 +62,8 @@ platform-specific.  See below for details.</li>
 
 <li>Initialization files that Ghostscript reads in when it
 starts up; these are the same on all platforms.</li>
+
+<li>
 <ul>
 <li><code>gs_</code>*<code>.ps</code> unless Ghostscript was compiled
 using the "compiled initialization files" option.  See the documentation of
@@ -77,6 +79,7 @@ appropriate <code>Fontmap.</code><em>xxx</em> for your platform), unless
 you plan always to invoke Ghostscript with the <a
 href="Use.htm#FONTMAP_switch"><code>-dNOFONTMAP</code> switch</a>.</li>
 </ul>
+</li>
 
 <li>Fonts, for rendering text.  These are platform-independent,
 but if you already have fonts of the right kind on your platform,
@@ -183,24 +186,24 @@ no responsibility for RPMs created by others.</p>
 We usually distribute Ghostscript releases for Windows as a binary installer,
     for the convenience of most users.</p>
 
-<h4><a name="Windows16"></a>Windows 3.1 (16-bit)</h4>
+<h3><a name="Windows16"></a>Windows 3.1 (16-bit)</h3>
 <p>
     The last version to run on 16-bit Windows 3.1 was Ghostscript 4.03.</p>
 
-<h4><a name="Windows32"></a>Windows 95, 98, Me</h4>
+<h3><a name="Windows32"></a>Windows 95, 98, Me</h3>
 <p>
 The last version to be available as a binary for Windows 95/98/Me was 8.60. Although
 building from source with Visual Studio 2003 should produce a working binary for those
 versions.</p>
 
-<h4><a name="Windows32"></a>Windows NT4, 2000, XP, 2003 or Vista (32-bit)</h4>
+<h3><a name="Windows32"></a>Windows NT4, 2000, XP, 2003 or Vista (32-bit)</h3>
 <p>
 The installer is normally named
 <code>gs###w32.exe</code>,
 where ### is the release number (e.g., 871 for Ghostscript 8.71,
     910 for Ghostscript 9.10).</p>
 
-<h4><a name="Windows64"></a>Windows XP x64 edition, 2003 or Vista (64-bit)</h4>
+<h3><a name="Windows64"></a>Windows XP x64 edition, 2003 or Vista (64-bit)</h3>
 <p>
 The x64 installer is normally named
 <code>gs###w64.exe</code>
@@ -351,28 +354,30 @@ a different location so adjust the following commands accordingly.</p>
 <li>Download the fonts and unpack them into
 <code>DISK1:[DIR.GHOSTSCRIPT.LIB]</code>.</li>
 
-<li>Enable access to the program and support files for all users with:</li>
+<li>Enable access to the program and support files for all users with:
 
 <blockquote><pre>
 &#36; set file/prot=w:re DISK1:[DIR]GHOSTSCRIPT.dir
 &#36; set file/prot=w:re DISK1:[DIR.GHOSTSCRIPT...]*.*
 </pre></blockquote>
-
+</li>
 <li>Optionally, add the Ghostscript help instructions to your system wide
-help file:</li>
+help file:
 
 <blockquote><pre>
 &#36; lib/help sys&#36;help:HELPLIB.HLB DISK1:[DIR.GHOSTSCRIPT.DOC]GS-VMS.HLP
 </pre></blockquote>
+</li>
 
 <li>Lastly, add the following lines to the appropriate system wide or user
-specific login script.</li>
+specific login script.
 
 <blockquote><pre>
 &#36; define gs_exe DISK1:[DIR.GHOSTSCRIPT.BIN]
 &#36; define gs_lib DISK1:[DIR.GHOSTSCRIPT.EXE]
 &#36; gs :== &#36;gs_exe:gs.exe
 </pre></blockquote>
+</li>
 
 </ul>
 

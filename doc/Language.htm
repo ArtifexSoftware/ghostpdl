@@ -4,13 +4,13 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <link rel="shortcut icon" href="images/favicon.svg">
     <title>Ghostscript and the PostScript Language</title>
     <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <header><div class="title"><a href="index.html"><h1 aria-label="title">Ghostscript documentation</h1><h2 aria-label="version"></h2></a></div><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
     <main>
         <article>
             <div class="outer">
@@ -588,12 +588,12 @@ current when beginning the layer.  THIS AREA IS SUBJECT TO CHANGE.</p>
 <dd>Begins a new transparency group.  The <code>ll/ur</code> coordinates
 are the bounding box of the group in the current user coordinate system.
 <code>paramdict</code> has the following keys:</dd>
-<dl>
+
 <dt><code>/Isolated</code></dt>
 <dd>(optional) Boolean; default value = <code>false</code>.</dd>
 <dt><code>/Knockout</code></dt>
 <dd>(optional) Boolean; default value = <code>false</code>.</dd>
-</dl>
+
 </dl>
 
 <dl>
@@ -609,7 +609,7 @@ onto the group that now becomes current.</dd>
 The <code>ll/ur</code> coordinates
 are the bounding box of the mask in the current user coordinate system.
 <code>paramdict</code> has the following keys:</dd>
-<dl>
+
 <dt><code>/Subtype</code></dt>
 <dd>(required) Name, either <code>/Alpha</code> or
 <code>/Luminosity</code>.</dd>
@@ -617,16 +617,18 @@ are the bounding box of the mask in the current user coordinate system.
 <dd>(optional) Array of number.</dd>
 <dt><code>/TransferFunction</code></dt>
 <dd>(optional) Function object (produced by applying
-<code>.buildfunction</code> to a Function dictionary).</dd>
-</dl>
+<code>.buildfunction</code> to a Function dictionary).
+<p>
 The <code>cs_set</code> parameter is a boolean indicating whether the color
 space for the mask group is the current color space in the graphics state, or
 whether mask group color space should be inherited from the previous group
 in the transparency group stack. In general, for the most consistent results,
 it is recommended that this be set to <code>true</code>, and the intended
 color space set in the graphics state prior to the <code>.begintransparencymaskgroup</code>
-call.
+call.</p>
+</dd>
 </dl>
+
 <dl>
 <dt><code>&lt;mask#&gt; .endtransparencymask -</code></dt>
 <dd>Ends the current transparency mask group, compositing the mask group being ended
@@ -778,7 +780,7 @@ pushes false on the stack and returns, rather than causing an error.</dd>
 &lt;string&gt; &lt;file&gt;</code></dt>
 <dd>Creates and opens a temporary file
 like the <code>file</code> operator, also returning the file name.  There
-are three cases for the <code>&lt;prefix_string|null&gt;</code> operand:</dd>
+are three cases for the <code>&lt;prefix_string|null&gt;</code> operand:
 
 <ul>
 <li><code>null</code>: create the file in the same directory and with the
@@ -795,46 +797,48 @@ temporary file might be named <code>/tmp/xxa1234</code>.</li>
 <code>&lt;prefix_string&gt;</code> as the first part of the file name.
 E.g., if <code>&lt;prefix_string&gt;</code> is
 <code>/my/tmpdir/zz</code>, the temporary file might be named
-<code>/my/tmpdir/zza1234</code>.</li>
+<code>/my/tmpdir/zza1234</code>.
 <p>
+
 When running in <code>SAFER</code> mode, the absolute path must
 be one of the strings on the permit file writing list
-(see <a href="Use.htm#Safer"><b>-dSAFER</b></a>) .</p>
+(see <a href="Use.htm#Safer"><b>-dSAFER</b></a>) .</p></li>
 </ul>
-
+</dd>
 </dl>
 
 <p>
 Ghostscript also supports the following <code>IODevice</code> in
 addition to a subset of those defined in the Adobe documentation:</p>
 <ul>
-<li>
-<code>%pipe%command</code>, which opens a pipe on the given command.
-This is supported only on operating systems that provide
-<code>popen</code> (primarily Unix systems, and not all of those).</li>
-<li>
-<code>%disk#%</code>, which emulates the %disk0
-through %disk9 devices on some Adobe PostScript printers. This pseudo
-device provides a flat filenaming system with a user definable location
-for the files (/Root). These devices will only be present if the
-diskn.dev feature is specified during the build.</li>
+    <li>
+    <code>%pipe%command</code>, which opens a pipe on the given command.
+    This is supported only on operating systems that provide
+    <code>popen</code> (primarily Unix systems, and not all of those).</li>
+    <li>
+    <code>%disk#%</code>, which emulates the %disk0
+    through %disk9 devices on some Adobe PostScript printers. This pseudo
+    device provides a flat filenaming system with a user definable location
+    for the files (/Root). These devices will only be present if the
+    diskn.dev feature is specified during the build.
 
-<p>This feature is intended to allow compatibility with font downloaders
-that expect to store fonts on the %disk device of the printer.</p>
-<p>
-Use of the %disk#% devices requires that the location of files be given
-by the user setting the /Root device parameter. The syntax for setting
-the /Root parameter is:<pre>
-    mark /Root (directory_specification) (%disk#) .putdevparams
-</pre>
-For example, to store the files of the %disk0 device on the directory
-/tmp/disk0, use:<pre>
-    mark /Root (/tmp/disk0/) (%disk0) .putdevparams
-</pre></p>
-<p>The files will be stored in the specified directory with arbitrary names.
-A mapping file is used to store the association between the file
-names given for the file operations on the %diskn# device and the file
-that resides in the /Root directory.</p>
+    <p>This feature is intended to allow compatibility with font downloaders
+    that expect to store fonts on the %disk device of the printer.</p>
+    <p>
+    Use of the %disk#% devices requires that the location of files be given
+    by the user setting the /Root device parameter. The syntax for setting
+    the /Root parameter is:<pre>
+        mark /Root (directory_specification) (%disk#) .putdevparams
+    </pre>
+    For example, to store the files of the %disk0 device on the directory
+    /tmp/disk0, use:<pre>
+        mark /Root (/tmp/disk0/) (%disk0) .putdevparams
+    </pre></p>
+    <p>The files will be stored in the specified directory with arbitrary names.
+    A mapping file is used to store the association between the file
+    names given for the file operations on the %diskn# device and the file
+    that resides in the /Root directory.</p>
+    </li>
 </ul>
 
 <h4><a name="Miscellaneous"></a>Miscellaneous operators</h4>
@@ -917,7 +921,7 @@ is useful even with release builds.</p>
 <dt><code>- .setsafe -</code></dt>
 <dd>If Ghostscript is started with <code>-dNOSAFER</code> or
 <code>-dDELAYSAFER</code>, this operator can be used to enter <b>SAFER</b>
-mode (see <a href="Use.htm#Safer"><b>-dSAFER</b></a>)</dd>
+mode (see <a href="Use.htm#Safer"><b>-dSAFER</b></a>)
 <p>
 <strong>The following is deprecated, see <a href="Use.htm#Safer"><b>-dSAFER</b></a></strong>
 <p>
@@ -930,6 +934,7 @@ SAFER was not in operation.</p>
 <p>
 <b>Note: This uses setpagedevice to change .LockSafetyParams, so the page
 will be erased as a side effect of this operator</b></p>
+</dd>
 </dl>
 
 <dl>
@@ -1021,8 +1026,7 @@ activated, <code>false</code> if not.
 <dt><code>&lt;dict&gt; .genordered &lt;string&gt;</code> (/OutputType /ThreshString).</dt>
 <dt><code>&lt;dict&gt; .genordered &lt;array&gt;</code> (/OutputType /TOSArray).</dt>
 <dd>This operator creates an ordered dither screening pattern with the parameters from the dictionary, returning (by default) a PostScript HalftoneType 3 (threshold array based) dictionary suitable for use with  <code>sethalftone</code> or as a component Halftone of a <code>HalftoneType 5</code> Halftone dictionary. The /OutputType parameter can also select other than Halftone Type 3 as the return paramter,
-<code>&lt;dict&gt;</code> has the following keys (all are optional):
-<dl>
+<code>&lt;dict&gt;</code> has the following keys (all are optional):</dd>
 <dt><code>/Frequency</code></dt>
 <dd>Integer; default value = 75</dd>
 <dt><code>/Angle</code></dt>
@@ -1050,10 +1054,6 @@ threshold array bytes (same as /Thresholds of the Type3 dictionary).
 <dt><code>/TOSArray</code></dt>
 <dd>
 First element is the width, next is the height, followed by pairs X, then Y, of the turn-on-sequence of the threshold array. This information can be used to construct a threshold array with a transfer function "pickled into" the threshold array, which is useful if the turn-on-sequence has more than 256 pairs. Refer to toolbin/halftone/thresh_remap for more information.</dt>
-</dd>
-<dl>
-</dl>
-</dl>
 </dd>
 </dl>
 
@@ -1278,7 +1278,7 @@ bytes.</dd>
 Type 1 Font Format documentation.  The <code>seed_integer</code> must be
 55665 or 4330 as described just above.  PDF interpreters don't skip space characters
 after operator <code>eexec</code>.  Use <code>keep_spaces = true</code> for
-decoding embedded PDF fonts.  Recognized dictionary keys are:</dd>
+decoding embedded PDF fonts.  Recognized dictionary keys are:
 
 <blockquote>
 <code>seed &lt;16-bit integer&gt;</code> (required)<br>
@@ -1286,6 +1286,7 @@ decoding embedded PDF fonts.  Recognized dictionary keys are:</dd>
 <code>eexec &lt;bool&gt;</code> (default=<code>false</code>)<br>
 <code>keep_spaces &lt;bool&gt;</code> (default=<code>false</code>)
 </blockquote>
+</dd>
 </dl>
 
 <dl>
@@ -1306,7 +1307,7 @@ are converted to hex; if false, binary packets are not converted.</dd>
 <dt><code>&lt;target&gt; &lt;dict&gt; /PixelDifferenceEncode filter &lt;file&gt;</code></dt>
 <dt><code>&lt;source&gt; &lt;dict&gt; /PixelDifferenceDecode filter &lt;file&gt;</code></dt>
 <dd>Implements the Predictor=2 pixel-differencing option of the LZW
-filters.  Recognized keys are:</dd>
+filters.  Recognized keys are:
 
 <blockquote>
 <code>Colors &lt;integer&gt;</code> (1 to 4, default=1)<br>
@@ -1316,12 +1317,13 @@ filters.  Recognized keys are:</dd>
 
 <p>
 See the Adobe <a href="http://partners.adobe.com/public/developer/pdf/index_reference.html"><em>PDF Reference Manual</em></a> for details.</p>
+</dd>
 </dl>
 
 <dl>
 <dt><code>&lt;target&gt; &lt;dict&gt; /PNGPredictorEncode filter &lt;file&gt;</code></dt>
 <dt><code>&lt;source&gt; &lt;dict&gt; /PNGPredictorDecode filter &lt;file&gt;</code></dt>
-<p><dd>Implements the "filter" algorithms of the
+<dd><p>Implements the "filter" algorithms of the
 <a href="http://www.libpng.org/pub/png/">Portable Network Graphics (PNG)
 graphics format</a>.  Recognized keys are:</p>
 
@@ -1373,7 +1375,7 @@ specification</p>
 <dt><code>&lt;source&gt; /TBCPDecode filter &lt;file&gt;</code></dt>
 <dd>Create filters that implement the Adobe Tagged Binary Communications
 Protocol.  See Adobe documentation for details.</dd>
-        </dl>
+</dl>
 
 <dl>
 <dt><code>&lt;target&gt; /zlibEncode filter &lt;file&gt;</code></dt>
@@ -1411,7 +1413,7 @@ is the inverse mapping of the <code>string</code> for the
 <dd>These filters encode and decode data using Huffman codes.  Since these
 filters aren't used anywhere, we don't document them further, except to note
 the recognized dictionary keys, which must be set identically for encoding
-and decoding:</dd>
+and decoding:
 
 <blockquote>
 <code>FirstBitLowOrder &lt;bool&gt;</code> (default=false)<br>
@@ -1420,6 +1422,7 @@ and decoding:</dd>
 <code>EncodeZeroRuns &lt;int&gt;</code> (default=256)<br>
 <code>Tables &lt;int_array&gt;</code>
 </blockquote>
+</dd>
 </dl>
 
 <dl>
@@ -1428,11 +1431,12 @@ and decoding:</dd>
 method, which we've heard is also used in the popular <code>bzip2</code>
 compression application.  See <a
 href="http://sources.redhat.com/bzip2/">http://sources.redhat.com/bzip2/</a>
-for more information.  The only recognized dictionary key is:</dd>
+for more information.  The only recognized dictionary key is:
 
 <blockquote>
 <code>BlockSize &lt;integer&gt;</code> (default=16384)
 </blockquote>
+</dd>
 </dl>
 
 <hr>
@@ -1451,11 +1455,12 @@ devices:
 <dd>This parameter allows for improved system security by preventing
 PostScript programs from being able to change potentially dangerous
 device paramters such as OutputFile. This parameter cannot be set false
-if it is already true.</dd>
+if it is already true.
 <p>
 If this parameter is true for the current device, attempt to set a new
 device that has <code>.LockSafetyParams</code> false will signal an
 <code> invalidaccess</code> error.</p>
+</dd>
 </dl>
 
 <dl>
@@ -2054,60 +2059,51 @@ document these officially, so that in future the functionality would be availabl
 
 <p>The following functions existed in the original PDF interpreter and have been replicated for the new
 interpreter. It should be possible to use these for the forseeable future.</p>
-
+<dl>
 <dt><code>&ltfile&gt runpdf - </code></dt>
 <dd>     Called from the modified PostScript run operator (which copies stdin to a temp
      file if required). Checks for PDF collections, processes all requested pages.</dd>
 
-<p><dt><code>&ltfile&gt runpdfbegin -</code></dt>
+<dt><code>&ltfile&gt runpdfbegin -</code></dt>
 <dd>     This must be called before performing any further operations. Its exact action depends on which
-interpreter is being used, but it essentially sets up the environment to process the file as a PDF</dd></p>
-
-<p><dt><code>&ltint&gt pdfgetpage &ltpagedict&gt | &ltnull&gt</code></dt>
+interpreter is being used, but it essentially sets up the environment to process the file as a PDF</dd>
+<dt><code>&ltint&gt pdfgetpage &ltpagedict&gt | &ltnull&gt</code></dt>
 <dd>     int is a number from 1 to N indicating the desired page number from
      the PDF file. Returns the a dictionary containing various informational key/value pairs.
-     If this fails, returns a null object.</dd></p>
-
-<p><dt><code> - pdfshowpage_init -</code></dt>
+     If this fails, returns a null object.</dd>
+     <dt><code> - pdfshowpage_init -</code></dt>
 <dd>     In the PostScript PDF interpreter this simply adds 1 to the /DSCPageCount value in a dictionary.
-It has no effect in the new PDF interpreter but is maintained for backwards compatibility.</dd></p>
+It has no effect in the new PDF interpreter but is maintained for backwards compatibility.</dd>
 
-<p><dt><code>&ltpagedict&gt pdfshowpage_setpage &ltpagedict&gt</code></dt>
+<dt><code>&ltpagedict&gt pdfshowpage_setpage &ltpagedict&gt</code></dt>
 <dd>     Takes a dictionary as returned from pdfgetpage, extracts various
      parameters from it, and sets the media size for the page, taking into
-     account the boxes, and requested Box, Rotate value and PDFFitPage.</dd></p>
-
-<p><dt><code>&ltpagedict&gt pdfshowpage_finish -</code></dt>
+     account the boxes, and requested Box, Rotate value and PDFFitPage.</dd>
+     <dt><code>&ltpagedict&gt pdfshowpage_finish -</code></dt>
 <dd>     Takes a dictionary as returned from pdfgetpage, renders the page content
-     executes showpage to transfer the rendered content to the device.</dd></p>
-
-<p><dt><code>- runpdfend        -</code></dt>
-<dd>     Terminates the PDF processing, executes restore and various cleanup activities.</dd></p>
-
-<p><dt><code>&ltfile&gt pdfopen &ltdict&gt</code></dt>
+     executes showpage to transfer the rendered content to the device.</dd>
+     <dt><code>- runpdfend        -</code></dt>
+<dd>     Terminates the PDF processing, executes restore and various cleanup activities.</dd>
+<dt><code>&ltfile&gt pdfopen &ltdict&gt</code></dt>
 <dd>     Open a PDF file and read the header, trailer
-     and cross-reference.</dd></p>
-
-<p><dt><code>&ltdict&gt pdfclose -</code></dt>
+     and cross-reference.</dd>
+     <dt><code>&ltdict&gt pdfclose -</code></dt>
 <dd>     Terminates processing the original PDF file object. The dictionary parameter
- should be the one returned from pdfopen</dd></p>
-
-<p><dt><code>&ltpagedict&gt pdfshowpage -</code></dt>
+ should be the one returned from pdfopen</dd>
+ <dt><code>&ltpagedict&gt pdfshowpage -</code></dt>
 <dd>     Takes a dictionary returned from pdfgetpage and calls the pdfshowpage_init
      pdfshowpage_setpage, pdfshowpage_finish trio to start the page, set up the
-     media and render the page.</dd></p>
-
-<p><dt><code>&ltint&gt &ltint&gt dopdfpages -</code></dt>
+     media and render the page.</dd>
+     <dt><code>&ltint&gt &ltint&gt dopdfpages -</code></dt>
 <dd>     The integers are the first and last pages to be run from the file. Runs a loop from
      the fist integer to the last. NOTE! If the current dictionary contains a PDFPageList
      array then we 'get' the entry from the array corresponding to the current loop
      index, and use that to determine whether we should draw the page. Otherwise we
-     simply draw the page. Uses pdfshowpage to actually render the page.</dd></p>
-
-<p><dt><code>- runpdfpagerange &ltint&gt &ltint&gt</code></dt>
+     simply draw the page. Uses pdfshowpage to actually render the page.</dd>
+     <dt><code>- runpdfpagerange &ltint&gt &ltint&gt</code></dt>
 <dd>     Processes the PostScript /FirstPage, /LastPage and /PageList parameters. These are used together to build an internal array
      of page numbers to run, which is used by dopdfpages to actually process the pages if PageList is present,
-     and a FirstPage and LastPage value. Despite the name this function does not actually 'run' any pages at all.</dd></p>
+     and a FirstPage and LastPage value. Despite the name this function does not actually 'run' any pages at all.
 
 <p>Normal operation simply calls runpdf with an opened-for-read PostScript file object. The table below shows the normal
 calling sequence</p>
@@ -2192,28 +2188,22 @@ would be necessary to set /PageHasTransparency before drawing the first PDF page
 using a small number of custom PostScript operators. These operators do not exist in standard PostScript; they
 are specific to the Ghostscript implementation. These operators are documented here for the benefit of any
 developers wishing to use them directly.</p>
+</dd>
 
-<p><dt><code>dict .PDFInit &ltPDFContext&gt</code></dt>
+<dt><code>dict .PDFInit &ltPDFContext&gt</code></dt>
 <dd>     Initialises an instance of the PDF interpreter. dict is an optional dictionary that contains any interpreter-level
 switches, such as PDFDEBUG, this is used to set the initial state of the PDF interpreter.
-The return value is a PDFcontext object which is an opaque object to be used with the other PDF operators.</dd></p>
-
-<p><dt><code>filename PDFcontext .PDFFile -</code></dt>
+The return value is a PDFcontext object which is an opaque object to be used with the other PDF operators.</dd>
+<dt><code>filename PDFcontext .PDFFile -</code></dt>
 <dd>     Opens a named file and associates it with the instance of the PDF interpreter.
 Filename is a string containing a fully qualified path to the PDF file to open, this file must have been made accesible
 by setting --permit-file-read.
-</dd></p>
-
-<p><dt><code>file PDFcontext .PDFStream -</code></dt>
+</dd><dt><code>file PDFcontext .PDFStream -</code></dt>
 <dd>     Takes an already open (disk-based) file and associates it with the instance of the PDF interpreter.
-</dd></p>
-
-<p><dt><code>PDFcontext .PDFClose -</code></dt>
+</dd><dt><code>PDFcontext .PDFClose -</code></dt>
 <dd>     If the context contains an open PDF file which was opened via the .PDFfile operator, this closes the file.
 Files associated with the context by the .PDFStream operator are unaffected. Regardless of the source it then shuts down the PDF interpreter and frees the associated memory.
-</dd></p>
-
-<p><dt><code>PDFcontext .PDFInfo dict</code></dt>
+</dd><dt><code>PDFcontext .PDFInfo dict</code></dt>
 <dd>     PDFcontext is a PDFcontext object returned from a previous call to .PDFInit.
 The returned dictionary contains various key/value pairs with useful file level information:
 <blockquote>
@@ -2222,17 +2212,13 @@ The returned dictionary contains various key/value pairs with useful file level 
 	<code>/Producer</code> string<br>
 	<code>/IsEncrypted</code> boolean<br>
 </blockquote>
-</dd></p>
-
-<p><dt><code>PDFcontext .PDFMetadata -</code></dt>
+</dd><dt><code>PDFcontext .PDFMetadata -</code></dt>
 <dd>     PDFcontext is a PDFcontext object returned from a previous call to .PDFInit.
 For the benefit of high level devices, this is a replacement for 'process_trailer_attrs' which is a seriously misnamed function now.
 This function needs to write any required output intents, load and send Outlines to the device, copy the Author, Creator, Title, Subject
 and Keywords from the Info dict to the output device, copy Optional Content Properties (OCProperties) to the output device.
 If an AcroForm is present send all its fields and link widget annotations to fields, and finally copy the PageLabels. If we add support for anything else, it will be here too..
-</dd></p>
-
-<p><dt><code>PDFcontext int .PDFPageInfo -</code></dt>
+</dd><dt><code>PDFcontext int .PDFPageInfo -</code></dt>
 <dd>     The integer argument is the page number to retrieve information for.
 Returns a dictionary with the following key/value pairs:
 <blockquote>
@@ -2250,27 +2236,28 @@ May also contain (if they are present in the Page dictionary)
 	<code>/TrimBox</code> [llx lly urx ury]<br>
 	<code>/UserUnit</code> int<br>
 </blockquote>
-</dd></p>
-
-<p><dt><code>PDFcontext int .PDFDrawPage -</code></dt>
+</dd>
+<dt><code>PDFcontext int .PDFDrawPage -</code></dt>
 <dd>     PDFcontext is a PDFcontext object returned from a previous call to .PDFInit.
 The integer argument is the page number to be processed.
 Interprets the page content stream(s) of the specified page using the current graphics state.
-</dd></p>
+</dd>
 
-<p><dt><code>PDFcontext int .PDFDrawAnnots -</code></dt>
+<dt><code>PDFcontext int .PDFDrawAnnots -</code></dt>
 <dd>     PDFcontext is a PDFcontext object returned from a previous call to .PDFInit.
 The integer argument is the page number to be processed.
 Renders the Annotations (if any) of the specified page using the current graphics state
 For correct results, the graphics state when this operator is run should be the same as when
 PDFDrawPage is executed.
-</dd></p>
+
 
 <p>Note: The PDFcontext object created by PDFInit must (clearly) have a PDF file associated
 with it before you can usefully use it. Attempting to use a PDFcontext with
 any of the processing operators (eg .PDFDrawPage) before using either .PDFStream of .PDFFile
 to associate a file with the context will result in an error.
 </p>
+</dd>
+</dl>
 <!-- [2.0 end contents] ==================================================== -->
 
 <!-- [3.0 begin visible trailer] =========================================== -->

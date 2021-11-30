@@ -4,13 +4,13 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="user-scalable=yes, initial-scale=1, width=device-width">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,200i,300,300i,400,400i,600,600i,700,700i,900,900i" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+    <link rel="shortcut icon" href="images/favicon.svg">
     <title>Details of Ghostscript Output Devices</title>
     <link href="default.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-    <header><a href="index.html"><h1>Ghostscript documentation</h1></a><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
+    <header><div class="title"><a href="index.html"><h1 aria-label="title">Ghostscript documentation</h1><h2 aria-label="version"></h2></a></div><a href="Search.htm" aria-label="Search" id="searchSite"><div class="search"></div></a></header>
     <main>
         <article>
             <div class="outer">
@@ -192,11 +192,12 @@ The default value if you don't specify this options is usually 72 <abbr>dpi</abb
 <dd><p>These options control the use of subsample antialiasing. Their use is highly recommended
 for producing high quality rasterizations of the input files. The size of the subsampling
 box <em>n</em> should be 4 for optimum output, but smaller values can be used for faster
-rendering. Antialiasing is enabled separately for text and graphics content.</p></dd>
+rendering. Antialiasing is enabled separately for text and graphics content.</p>
 <p>Because this feature relies upon rendering the input it is incompatible, and will generate
 an error on attempted use, with any of the vector output devices.</p>
-
-</dl></blockquote>
+</dd>
+</dl>
+</blockquote>
 
 <p>
 It is also conventional to call Ghostscript with the '<code>-dSAFER -dBATCH -dNOPAUSE</code>' trio
@@ -237,14 +238,14 @@ anti-aliasing are enabled by default.</p>
 <dl>
 <dt><code>-dDownScaleFactor=</code><b><em>integer</em></b></dt>
 <dd>This causes the internal rendering to be scaled down by the given (integer <= 8) factor before being output. For example, the following will produce
-a 200dpi output png from a 600dpi internal rendering:</dd>
+a 200dpi output png from a 600dpi internal rendering:
 <blockquote>
 <pre>
  <kbd>gs -sDEVICE=png16m -r600 -dDownScaleFactor=3 -o tiger.png\
       examples/tiger.eps</kbd>
 </pre>
 </blockquote>
-
+</dd>
 </dl>
 </blockquote>
 
@@ -409,14 +410,14 @@ drivers that produce uncompressed output:</p>
 <dd>Produces 32-bit CMYK output (8 bits per component).</dd>
 <dt><code>tiff64nc</code></dt>
 <dd>Produces 64-bit CMYK output (16 bits per component).</dd>
-<a name="tiffsep"></a><dt><code>tiffsep</code></dt>
+<dt><a name="tiffsep"></a><code>tiffsep</code></dt>
 <dd>
 The <code>tiffsep</code> device creates multiple output files: a single 32 bit
 composite CMYK file and multiple tiffgray files, one for each
 separation (unless <code>-dNoSeparationFiles</code> is specified). If separation
 files are being produced and more than one page is being generated, the output file
 specification <b>must</b> include a format specifier (e.g <code>-o outfile-%d.tif</code>)
-so that each page can have a uniquely named set of separation files.</dd>
+so that each page can have a uniquely named set of separation files.
 
 <p>The default compression is <code>lzw</code> but this may be overridden by
 the <code>-sCompression=</code> option.</p>
@@ -537,14 +538,15 @@ options, none of these are currently exposed. Any device author
 interested in trying these options should contact Artifex for more
 information. Currently ETS can be enabled using -dDownScaleETS=1.</p>
 
-<a name="tiffsep1"></a><dt><code>tiffsep1</code></dt>
+</dd>
+<dt><a name="tiffsep1"></a><code>tiffsep1</code></dt>
 <dd>
 The <code>tiffsep1</code> device creates multiple output files, one for each component
 or separation color. The device creates multiple tiffg4 files (the compression
 can be set using -sCompression= described below). The 1 bit per component
 output is halftoned using the current screening set by  'setcolorscreen'
 or 'sethalftone' which allows for ordered dither or stochastic threshold
-    array dither to be used. This is faster than error diffusion.</dd>
+    array dither to be used. This is faster than error diffusion.
 
 <p>
 The file specified via the OutputFile command line parameter will not be
@@ -559,8 +561,9 @@ name in '(' and ').tif' to the filename.
 If the file name specified via the OutputFile parameter ends with the suffix
 '.tif', then the suffix is removed prior to adding the component name in
 '(' and ').tif'.</p>
+</dd>
 
-<a name="tiffscaled"></a><dt><code>tiffscaled</code></dt>
+<dt><a name="tiffscaled"></a><code>tiffscaled</code></dt>
 <dd>
 The <code>tiffscaled</code> device renders internally at the specified resolution to an
 8 bit greyscale image. This is then scaled down by an integer scale factor
@@ -569,7 +572,7 @@ The <code>tiffscaled</code> device renders internally at the specified resolutio
 below.</dd>
 
 
-<a name="tiffscaled4"></a><dt><code>tiffscaled4</code></dt>
+<dt><a name="tiffscaled4"></a><code>tiffscaled4</code></dt>
 <dd>
 The <code>tiffscaled4</code> device renders internally at the specified resolution to an
 8 bit cmyk image. This is then scaled down by an integer scale factor
@@ -577,31 +580,31 @@ The <code>tiffscaled4</code> device renders internally at the specified resoluti
 4bpp cmyk output. The compression can be set using -sCompression= as described
 below.</dd>
 
-<a name="tiffscaled8"></a><dt><code>tiffscaled8</code></dt>
+<dt><a name="tiffscaled8"></a><code>tiffscaled8</code></dt>
 <dd>
 The <code>tiffscaled8</code> device renders internally at the specified resolution to an
 8 bit greyscale image. This is then scaled down by an integer scale factor
 (set by <code>-dDownScaleFactor</code>= described below). The compression can be set using
 -sCompression= as described below.</dd>
 
-<a name="tiffscaled24"></a><dt><code>tiffscaled24</code></dt>
+<dt><a name="tiffscaled24"></a><code>tiffscaled24</code></dt>
 <dd>
 The <code>tiffscaled24</code> device renders internally at the specified resolution to a
 24 bit rgb image. This is then scaled down by an integer scale factor
 (set by <code>-dDownScaleFactor</code>= described below). The compression can be set using
--sCompression= as described below.</dd>
+-sCompression= as described below.
 
 <p>In commercial builds, the <code>-dDeskew</code> option can be used to automatically detect/correct skew when generating output bitmaps.</p>
-
-<a name="tiffscaled32"></a><dt><code>tiffscaled32</code></dt>
+</dd>
+<dt><a name="tiffscaled32"></a><code>tiffscaled32</code></dt>
 <dd>
 The <code>tiffscaled32</code> device renders internally at the specified resolution to a
 32 bit cmyk image. This is then scaled down by an integer scale factor
 (set by <code>-dDownScaleFactor</code>= described below). The compression can be set using
--sCompression= as described below.</dd>
+-sCompression= as described below.
 
 <p>In commercial builds, the <code>-dDeskew</code> option can be used to automatically detect/correct skew when generating output bitmaps.</p>
-
+</dd>
 </dl>
 </blockquote>
 
@@ -775,11 +778,12 @@ a 200dpi image.</dd>
 <blockquote><dl>
 <dt><code>-sPostRenderProfile=<em>path</em></code> (path to an ICC profile)</dt>
 <dd>If this option set then the page will be color transformed using that
-profile <b>after</b> downscaling.</dd>
+profile <b>after</b> downscaling.
 <p>
 This is useful when the file uses overprint to separately paint to some
 subset of the C, M, Y, and K colorants, but the final CMYK is to be color
 corrected for printing or display.</p>
+</dd>
 </dl></blockquote>
 
 <p>
@@ -789,7 +793,7 @@ The <code>tiffsep</code> TIFF device also provide this parameter:</p>
 <dt><code>-dPrintSpotCMYK=<em>boolean</em></code> defaults to false. When set to true
 the device will print (to stdout) the name of each ink used on the page, and the CMYK
 values which are equivalent to 100% of that ink. The values are 16-bits ranging from 0
-to 32760.</dt>
+to 32760.</dt><dd></dd>
 </dl></blockquote>
 
 <a name="TIFF_trapping"></a>
@@ -1086,14 +1090,14 @@ to use the existing font Encoding. For English text this may give better results
 <p>For these reasons the OCR functionality of pdfwrite can be controlled by using a new
 parameter <code>-sUseOCR</code>. This has three possible values;
 </p>
+<dl>
 <dt><code>-sUseOCR=</code><b><em>string</em></b></dt>
-<dd>
-  <dl>
-    <dt>Never<dd>Default - don't use OCR at all even if support is built-in.
-    <dt>AsNeeded<dd>If there is no existing ToUnicode information, use OCR.
-    <dt>Always<dd>Ignore any existing information and always use OCR.
-  </dl>
-</dd>
+
+    <dt>Never</dt><dd>Default - don't use OCR at all even if support is built-in.</dd>
+    <dt>AsNeeded</dt><dd>If there is no existing ToUnicode information, use OCR.</dd>
+    <dt>Always</dt><dd>Ignore any existing information and always use OCR.</dd>
+
+</dl>
 </p>
 
 <hr>
@@ -1200,8 +1204,10 @@ OS/2 and the gtk+ versions of ghostscript.
 <dt><code>-dDisplayFormat=</code><b><em>N</em></b> (integer bit-field)</dt>
 <dd>Some common values are 16#30804 for Windows RGB, 16#804 for gtk+ RGB,
 16#20101 for Windows monochrome, 16#102 for gtk+ monochrome,
-16#20802 grayscale, 16#20808 for CMYK, 16#a0800 for separations.</dd>
-The bit fields are
+16#20802 grayscale, 16#20808 for CMYK, 16#a0800 for separations.
+<p>
+The bit fields are:
+</p>
 <ul>
 <li> native (1), gray (2), RGB (4), CMYK (8), or separation (80000)
 color spaces.</li>
@@ -1213,6 +1219,7 @@ color spaces.</li>
 </ul>
 <p>For more details, see the <a href="API.htm#display">Ghostscript
 Interpreter API.</a></p>
+</dd>
 <dt><code>-dDisplayResolution=</code><b><em>DPI</em></b></dt>
 <dd>Set the initial resolution resolution for the display device.
 This is used by the Windows clients to set the display device
@@ -1329,7 +1336,7 @@ are summarized below:
 
 <dl>
 <dt><code>-r</code><em>number</em></dt>
-<br><code>-r</code><em>number1</em><code>x</code><em>number2</em>
+<dt><code>-r</code><em>number1</em><code>x</code><em>number2</em></dt>
 <dd>Sets the resolution, in dpi. If the resolution is not specified,
 Ghostscript queries the IJS server to determine the preferred resolution.
 When the resolution is specified, it overrides the value (if any)
@@ -1713,7 +1720,7 @@ the Windows printer driver; this option can produce huge print jobs).</dd>
 <dd>Sets additional options, defined in a dictionary. The following properties can
 be set:</dd>
 
-<dl>
+
 <dt><code>/DocumentName <em>string</em></code></dt>
 <dd>Defines the user friendly document name which will be displayed by the
 Windows spooler.</dd>
@@ -1737,7 +1744,7 @@ resolution of 1200/4=300 dpi. This can be very useful to reduce the memory
 requirements when printing in True Color on some high resolution ink-jet color
 printers.</dd>
 
-</dl>
+
 </dl>
 </blockquote>
 
