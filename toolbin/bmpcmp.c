@@ -80,6 +80,8 @@ typedef struct
     int        exhaustive;
     int        basenum;
     int        maxdiffs;
+    int        numdiffs;
+    int        score;
     char      *filename1;
     char      *filename2;
     char      *outroot;
@@ -105,12 +107,12 @@ typedef struct
     int            bpp;
     int            cmyk;
     void          *lab;
-    /* Below are the entries for handling spot colors and the	*/
-    /* CMYK equivalents (only used for PSD images currently).	*/
+    /* Below are the entries for handling spot colors and the   */
+    /* CMYK equivalents (only used for PSD images currently).   */
     int           *num_spots;
     unsigned char *spots;
-    /* used to map the second file colors to the same colorants	*/
-    /* as the first and issue a warning if they did not match.	*/
+    /* used to map the second file colors to the same colorants */
+    /* as the first and issue a warning if they did not match.  */
     int           *color_map;
 } Image;
 
@@ -1423,8 +1425,8 @@ static void *psd_read(ImageReader *im,
     {
         int data_len;
 
-        if (ir_len < 12)	/* enough for "8BIM", short data_type (0x3ef), 2-byte pad, int data_len */
-            break;	/* not enough data */
+        if (ir_len < 12)        /* enough for "8BIM", short data_type (0x3ef), 2-byte pad, int data_len */
+            break;      /* not enough data */
         c = get_int(im->file, 1);
         /* c == 8BIM */
         c  = get_short(im->file, 1);
@@ -1439,7 +1441,7 @@ static void *psd_read(ImageReader *im,
             while (data_len > 0) {
                 unsigned char spot[4];
 
-                if (ir_len < 14)	/* enough for short colorspace, and CMYK data */
+                if (ir_len < 14)        /* enough for short colorspace, and CMYK data */
                     break;
                 /* Read the colorspace */
                 c  = get_short(im->file, 1);
@@ -1450,14 +1452,14 @@ static void *psd_read(ImageReader *im,
                 }
                 /* c == 2 = COLORSPACE = CMYK */
                 /* 16 bits C, 16 bits M, 16 bits Y, 16 bits K, ignore the low byte */
-                spot[0] = 0xff - fgetc(im->file);	/* high byte of Cyan */
-                (void)fgetc(im->file);		/* ignore low byte */
-                spot[1] = 0xff - fgetc(im->file);	/* high byte of Magenta */
-                (void)fgetc(im->file);		/* ignore low byte */
-                spot[2] = 0xff - fgetc(im->file);	/* high byte of Yellow */
-                (void)fgetc(im->file);		/* ignore low byte */
-                spot[3] = 0xff - fgetc(im->file);	/* high byte of Black */
-                (void)fgetc(im->file);		/* ignore low byte */
+                spot[0] = 0xff - fgetc(im->file);       /* high byte of Cyan */
+                (void)fgetc(im->file);          /* ignore low byte */
+                spot[1] = 0xff - fgetc(im->file);       /* high byte of Magenta */
+                (void)fgetc(im->file);          /* ignore low byte */
+                spot[2] = 0xff - fgetc(im->file);       /* high byte of Yellow */
+                (void)fgetc(im->file);          /* ignore low byte */
+                spot[3] = 0xff - fgetc(im->file);       /* high byte of Black */
+                (void)fgetc(im->file);          /* ignore low byte */
                 /* 2 bytes opacity (always seems to be 0) */
                 (void)get_short(im->file, 1);
                 /* 1 byte 'kind' (0 = selected, 1 = protected) */
@@ -1467,15 +1469,15 @@ static void *psd_read(ImageReader *im,
                 data_len -= 14;
                 ir_len -= 14;
 
-                /* Check if the spot colorants were filled in by the first image and	*/
-                /* if so, fill in the color_map with the matching spot number.		*/
-                if (*(img->num_spots) == 0) {	/* num_spots not updated until finished with this file */
+                /* Check if the spot colorants were filled in by the first image and    */
+                /* if so, fill in the color_map with the matching spot number.          */
+                if (*(img->num_spots) == 0) {   /* num_spots not updated until finished with this file */
                     /* Spots not seen, this must be the first image */
                     img->spots[spotnum*4 + 0] = spot[0];
                     img->spots[spotnum*4 + 1] = spot[1];
                     img->spots[spotnum*4 + 2] = spot[2];
                     img->spots[spotnum*4 + 3] = spot[3];
-                    img->color_map[spotnum + 4] = spotnum + 4;	/* default, map to self */
+                    img->color_map[spotnum + 4] = spotnum + 4;  /* default, map to self */
                 } else {
                     /* spots were set by the first file. See if the colorant order matches */
                     if (img->spots[spotnum*4 + 0] != spot[0] || img->spots[spotnum*4 + 1] != spot[1] ||
@@ -1500,7 +1502,7 @@ static void *psd_read(ImageReader *im,
                 }
                 spotnum++;
             }
-            *(img->num_spots) = spotnum;	/* save for the next image file */
+            *(img->num_spots) = spotnum;        /* save for the next image file */
 #ifdef VERBOSE
             fprintf(stderr, "color map:");
             for (i=0; i < 4+nimg->um_spots; i++)
@@ -1661,7 +1663,7 @@ static void *psd_read(ImageReader *im,
                     for (x = 0; x < w; x++)
                     {
                         *ptr = 255 - *line++;
-                        line++;		/* skip the low byte of data */
+                        line++;         /* skip the low byte of data */
                         ptr += n;
                     }
                     ptr -= w*n + span;
@@ -1776,7 +1778,9 @@ static void simple_diff_int(unsigned char *bmp,
     {
         for (x = 0; x < w; x++)
         {
-            if (*isrc++ != *isrc2++)
+            int s0 = *isrc++;
+            int s1 = *isrc2++;
+            if (s0 != s1)
             {
                 if (x < bbox.xmin)
                     bbox.xmin = x;
@@ -1786,6 +1790,18 @@ static void simple_diff_int(unsigned char *bmp,
                     bbox.ymin = y;
                 if (y > bbox.ymax)
                     bbox.ymax = y;
+                if (params->outroot == NULL) {
+                    int s;
+                    params->numdiffs++;
+                    s = (s0 && 0xff) - (s1 & 0xff);
+                    params->score += (s > 0 ? s : -s);
+                    s = ((s0>>8) && 0xff) - ((s1>>8) & 0xff);
+                    params->score += (s > 0 ? s : -s);
+                    s = ((s0>>16) && 0xff) - ((s1>>16) & 0xff);
+                    params->score += (s > 0 ? s : -s);
+                    s = ((s0>>24) && 0xff) - ((s1>>24) & 0xff);
+                    params->score += (s > 0 ? s : -s);
+                }
                 *map++ = 1;
             }
             else
@@ -1825,10 +1841,12 @@ static void simple_diff_n(unsigned char *bmp,
     {
         for (x = 0; x < w; x++)
         {
+            int score = 0;
             *map = 0;
             for (z = 0; z < n; z++)
             {
-                if (*src++ != *src2++)
+                int s = *src++ - *src2++;
+                if (s)
                 {
                     if (x < bbox.xmin)
                         bbox.xmin = x;
@@ -1839,8 +1857,10 @@ static void simple_diff_n(unsigned char *bmp,
                     if (y > bbox.ymax)
                         bbox.ymax = y;
                     *map = 1;
+                    score += (s > 0 ? s : -s);
                 }
             }
+            params->score += score;
             map++;
         }
         src  += span;
@@ -3069,7 +3089,7 @@ static void uncmyk_bmp(unsigned char *bmp,
             y = *bmp++;
             k = *bmp++;
 #if BETTER_CMYK
-	    lookup(c,m,y,k,&r,&g,&b);
+            lookup(c,m,y,k,&r,&g,&b);
 #else
             r = (255-c-k);
             if (r < 0)
@@ -3377,6 +3397,7 @@ png_cleanup:
 static void syntax(void)
 {
     fprintf(stderr, "Syntax: bmpcmp [options] <file1> <file2> <outfile_root> [<basenum>] [<maxdiffs>]\n");
+    fprintf(stderr, "    or: bmpcmp [options] <file1> <file2>\n");
     fprintf(stderr, "  -w <window> or -w<window>         window size (default=1)\n");
     fprintf(stderr, "                                    (good values = 1, 3, 5, 7, etc)\n");
     fprintf(stderr, "  -t <threshold> or -t<threshold>   threshold   (default=0)\n");
@@ -3492,7 +3513,7 @@ static void parseArgs(int argc, char *argv[], Params *params)
         i++;
     }
 
-    if (arg < 3)
+    if (arg < 2)
     {
         syntax();
     }
@@ -3716,7 +3737,7 @@ int main(int argc, char *argv[])
 
     /* The following is for CMYK+spots (currently only PSD */
     int           num_spots = 0;
-    unsigned char spots[256*4] = { 0 };		/* shared between both images */
+    unsigned char spots[256*4] = { 0 };         /* shared between both images */
     int           color_map[256] = { 0, 1, 2, 3, 0 };
 
     im1.spots = (unsigned char *)&spots;
@@ -3806,6 +3827,8 @@ int main(int argc, char *argv[])
         params.height = h;
         params.span = s;
         params.bpp = bpp;
+        params.numdiffs = 0;
+        params.score = 0;
 
         if (params.lab) {
             (*diffFn)(lab1, lab2, map, &bbox, &params);
@@ -3813,7 +3836,13 @@ int main(int argc, char *argv[])
             (*diffFn)(bmp, bmp2, map, &bbox, &params);
         }
 
-        if ((bbox.xmin <= bbox.xmax) && (bbox.ymin <= bbox.ymax))
+        if (params.outroot == NULL) {
+          /* Counting mode. Just output the score. */
+          fprintf(stderr, "NumDiffPixels=%d\n", params.numdiffs);
+          fprintf(stderr, "Score=%d\n", params.score);
+          noDifferences = 0;
+        }
+        else if ((bbox.xmin <= bbox.xmax) && (bbox.ymin <= bbox.ymax))
         {
             /* Make the bbox sensibly exclusive */
             bbox.xmax++;
