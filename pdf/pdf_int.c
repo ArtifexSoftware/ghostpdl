@@ -2025,18 +2025,6 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
     pdf_keyword *keyword;
     pdf_stream *s = ctx->current_stream;
 
-    if (content_stream != NULL) {
-        stream = content_stream;
-    } else {
-        code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
-        if (code < 0)
-            return code;
-
-        code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
-        if (code < 0)
-            return code;
-    }
-
     /* Check this stream, and all the streams currently being executed, to see
      * if the stream we've been given is already in train. If it is, then we
      * have encountered recursion. This can happen if a non-page stream such
@@ -2052,6 +2040,18 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
             }
         }
         s = (pdf_stream *)s->parent_obj;
+    }
+
+    if (content_stream != NULL) {
+        stream = content_stream;
+    } else {
+        code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
+        if (code < 0)
+            return code;
+
+        code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
+        if (code < 0)
+            return code;
     }
 
     pdfi_set_stream_parent(ctx, stream_obj, ctx->current_stream);
