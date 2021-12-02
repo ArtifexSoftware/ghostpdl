@@ -347,15 +347,14 @@ int pdfi_gs_setgray(pdf_context *ctx, double d)
         code = gs_setcolorspace(ctx->pgs, ctx->page.DefaultGray_cs);
         if (code < 0)
             return code;
-        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, NULL);
         cc.paint.values[0] = d;
         return gs_setcolor(ctx->pgs, &cc);
     } else {
         code = gs_setgray(ctx->pgs, d);
         if (code < 0)
             return code;
-        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     }
+    pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     return 0;
 }
 
@@ -401,7 +400,6 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
         code = gs_setcolorspace(ctx->pgs, ctx->page.DefaultCMYK_cs);
         if (code < 0)
             return code;
-        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, NULL);
         cc.paint.values[0] = c;
         cc.paint.values[1] = m;
         cc.paint.values[2] = y;
@@ -411,8 +409,8 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
         code = gs_setcmykcolor(ctx->pgs, c, m, y, k);
         if (code < 0)
             return code;
-        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     }
+    pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     return 0;
 }
 
