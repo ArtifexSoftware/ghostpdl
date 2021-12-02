@@ -344,7 +344,7 @@ pdfi_JBIG2Decode_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
     uint min_size = s_jbig2decode_template.min_out_size;
     int code;
     pdf_stream *Globals = NULL;
-    byte *buf;
+    byte *buf = NULL;
     int64_t buflen;
     void *globalctx;
 
@@ -367,8 +367,6 @@ pdfi_JBIG2Decode_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
                     goto cleanupExit;
 
                 s_jbig2decode_set_global_data((stream_state*)&state, NULL, globalctx);
-
-                gs_free_object(ctx->memory, buf, "pdfi_JBIG2Decode_filter (Globals buf)");
             }
         }
     }
@@ -383,6 +381,7 @@ pdfi_JBIG2Decode_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
     code = 0;
 
  cleanupExit:
+    gs_free_object(ctx->memory, buf, "pdfi_JBIG2Decode_filter (Globals buf)");
     pdfi_countdown(Globals);
     return code;
 }
