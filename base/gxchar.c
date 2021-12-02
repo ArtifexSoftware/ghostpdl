@@ -153,8 +153,10 @@ gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
         penum->can_cache = 1; break;
     }
     code = show_state_setup(penum);
-    if (code < 0)
+    if (code < 0) {
+        gs_free_object(mem, penum, "gx_default_text_begin");
         return code;
+    }
     penum->show_gstate =
         (propagate_charpath && (pgs->in_charpath != 0) ?
          pgs->show_gstate : pgs);
