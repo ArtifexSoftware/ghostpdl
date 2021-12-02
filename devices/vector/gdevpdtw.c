@@ -78,9 +78,13 @@ pdf_different_encoding_element(const pdf_font_resource_t *pdfont, int ch, int en
 
         if (code < 0)
             return code; /* Must not happen */
-        if (glyph1 != GS_NO_GLYPH)
-            if (!strings_equal(&str, &pdfont->u.simple.Encoding[ch].str))
+        if (glyph1 != GS_NO_GLYPH) {
+            gs_const_string str2;
+            str2.data = pdfont->u.simple.Encoding[ch].data;
+            str2.size = pdfont->u.simple.Encoding[ch].size;
+            if (!strings_equal(&str, &str2))
                 return 1;
+        }
     }
     return 0;
 }
@@ -129,9 +133,9 @@ pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
         if (glyph == GS_NO_GLYPH)
             continue;
         if (glyph < gs_c_min_std_encoding_glyph || glyph >= GS_MIN_CID_GLYPH) {
-            if (pet->str.size == 0)
+            if (pet->size == 0)
                 return true;
-            glyph = gs_c_name_glyph(pet->str.data, pet->str.size);
+            glyph = gs_c_name_glyph(pet->data, pet->size);
             if (glyph == GS_NO_GLYPH)
                 return true;
         }
@@ -176,12 +180,12 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
              * Enforce writing differences against that.
              */
             if (pdfont->used[ch >> 3] & 0x80 >> (ch & 7))
-                if (pdfont->u.simple.Encoding[ch].str.size)
+                if (pdfont->u.simple.Encoding[ch].size)
                     code = 1;
         }
         if (code) {
-            const byte *d = pdfont->u.simple.Encoding[ch].str.data;
-            int i, l = pdfont->u.simple.Encoding[ch].str.size;
+            const byte *d = pdfont->u.simple.Encoding[ch].data;
+            int i, l = pdfont->u.simple.Encoding[ch].size;
 
             if (pdev->HavePDFWidths) {
                 for (i = 0; i + sl < l; i++)

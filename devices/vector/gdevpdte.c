@@ -547,7 +547,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
             /* PS font has no such glyph. */
             if (bytes_compare(gnstr.data, gnstr.size, (const byte *)".notdef", 7)) {
                 pet->glyph = glyph;
-                pet->str = gnstr;
+                pdf_copy_string_to_encoding(pdev, &gnstr, pet);
                 pet->is_difference = true;
             }
         } else if (pdfont->base_font == NULL && ccfont != NULL &&
@@ -592,8 +592,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
     if(code < 0)
         return code;
     pet->glyph = glyph;
-    pet->str = gnstr;
-    return 0;
+    return pdf_copy_string_to_encoding(pdev, &gnstr, pet);
 }
 
 /*

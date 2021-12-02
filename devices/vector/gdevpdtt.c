@@ -2868,7 +2868,7 @@ pdf_choose_output_char_code(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_char
 }
 
 static int
-pdf_choose_output_glyph_name(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_const_string *gnstr, gs_glyph glyph)
+pdf_choose_output_glyph_name(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_const_string *gnstr, gs_glyph glyph, bool *cleanup)
 {
     if (penum->orig_font->FontType == ft_composite || penum->orig_font->procs.glyph_name(penum->orig_font, glyph, gnstr) < 0
         || (penum->orig_font->FontType > 42 && gnstr->size == 7 && strcmp((const char *)gnstr->data, ".notdef")== 0)) {
@@ -2890,6 +2890,7 @@ pdf_choose_output_glyph_name(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_con
         gs_sprintf(buf, "g%04x", (unsigned int)(glyph & 0xFFFF));
         memcpy(p, buf, 5);
         gnstr->data = p;
+        *cleanup = true;
     }
     return 0;
 }
@@ -3080,10 +3081,11 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
 {
     gs_const_string gnstr;
     int code;
+    bool cleanup = false;
 
     if (pte_default->returned.current_glyph == GS_NO_GLYPH)
       return_error(gs_error_undefined);
-    code = pdf_choose_output_glyph_name(pdev, penum, &gnstr, pte_default->returned.current_glyph);
+    code = pdf_choose_output_glyph_name(pdev, penum, &gnstr, pte_default->returned.current_glyph, &cleanup);
     if (code < 0) {
         return code;
     }
@@ -3126,16 +3128,19 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
     code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp,
                 pte_default->returned.current_glyph, penum->output_char_code, &gnstr);
     if (code < 0)
-        return code;
+        goto exit;
     pdev->accumulating_charproc = false;
     penum->charproc_accum = false;
     code = gx_default_text_restore_state(pte_default);
     if (code < 0)
-        return code;
+        goto exit;
     gs_text_release(NULL, pte_default, "pdf_text_process");
     penum->pte_default = 0;
 
-    return 0;
+exit:
+    if (cleanup)
+        gs_free_string(pdev->pdf_memory, (byte *)gnstr.data, gnstr.size, "pdf_text_set_cache free working name");
+    return code;
 }
 
 /* Nasty hackery. The PCL 'stick font' is drawn by constructing a path, and then stroking it.

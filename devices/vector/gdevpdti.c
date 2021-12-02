@@ -335,7 +335,7 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
     int code;
     /* This code added to store PCL bitmap glyphs in type 3 fonts where possible */
     gs_glyph glyph = GS_NO_GLYPH;
-    gs_const_string *str = NULL;
+    gs_const_string str2, *str = NULL;
     gs_show_enum *show_enum = (gs_show_enum *)pdev->pte;
     pdf_encoding_element_t *pet = 0;
     /* Since this is for text searching, its only useful if the character code
@@ -406,15 +406,17 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
          * then we need to give up, something about the font or text is not acceptable
          * (see various comments above).
          */
-        if (pet && pet->glyph != GS_NO_GLYPH && !(pet->str.size == 7 &&
-            !strncmp((const char *)pet->str.data, ".notdef", 7))) {
+        if (pet && pet->glyph != GS_NO_GLYPH && !(pet->size == 7 &&
+            !strncmp((const char *)pet->data, ".notdef", 7))) {
             if (char_code < font->u.simple.FirstChar)
                 font->u.simple.FirstChar = char_code;
             if ((int)char_code > font->u.simple.LastChar)
                 font->u.simple.LastChar = char_code;
             base->FontBBox.q.x = max(base->FontBBox.q.x, w);
             base->FontBBox.q.y = max(base->FontBBox.q.y, y_offset + h);
-            str = &pet->str;
+            str2.data = pet->data;
+            str2.size = pet->size;
+            str = &str2;
             glyph = pet->glyph;
             /* This is to work around a weird Acrobat bug. If the Encoding of a type 3
              * (possibly other types) is simply a standard encoding (eg WinAnsiEncoding)
@@ -1065,13 +1067,12 @@ complete_adding_char(gx_device_pdf *pdev, gs_font *font,
         pdfont->u.simple.v[ch].y = pcp->v.x;
     }
     pet->glyph = glyph;
-    pet->str = *gnstr;
     pet->is_difference = true;
     if (pdfont->u.simple.LastChar < (int)ch)
         pdfont->u.simple.LastChar = (int)ch;
     if (pdfont->u.simple.FirstChar > (int)ch)
         pdfont->u.simple.FirstChar = (int)ch;
-    return 0;
+    return pdf_copy_string_to_encoding(pdev, (gs_const_string *)gnstr, pet);
 }
 
 static int

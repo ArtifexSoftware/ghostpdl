@@ -39,8 +39,6 @@
 
 /* GC descriptors */
 public_st_pdf_font_resource();
-private_st_pdf_encoding1();
-private_st_pdf_encoding_element();
 private_st_pdf_standard_font();
 private_st_pdf_standard_font_element();
 private_st_pdf_outline_fonts();
@@ -457,7 +455,7 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     switch(pdfont->FontType) {
         case ft_composite:
             if (!pdfont->u.type0.cmap_is_standard && pdfont->u.type0.CMapName.data != NULL) {
-                gs_free_string(pdev->memory, pdfont->u.type0.CMapName.data, pdfont->u.type0.CMapName.size, "font_resource_free(CMapName)");
+                gs_free_string(pdev->memory, (byte *)pdfont->u.type0.CMapName.data, pdfont->u.type0.CMapName.size, "font_resource_free(CMapName)");
                 pdfont->u.type0.CMapName.data = NULL;
                 pdfont->u.type0.CMapName.size = 0;
             }
@@ -469,6 +467,9 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
         case ft_PDF_user_defined:
         case ft_GL2_531:
             if(pdfont->u.simple.Encoding) {
+                int ix;
+                for (ix = pdfont->u.simple.FirstChar; ix <= pdfont->u.simple.LastChar;ix++)
+                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdfont->u.simple.Encoding[ix].data, "Free copied glyph name string");
                 gs_free_object(pdev->pdf_memory, pdfont->u.simple.Encoding, "Free simple Encoding");
                 pdfont->u.simple.Encoding = 0;
             }
@@ -510,6 +511,9 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
             break;
         default:
             if(pdfont->u.simple.Encoding) {
+                int ix;
+                for (ix = pdfont->u.simple.FirstChar; ix <= pdfont->u.simple.LastChar;ix++)
+                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdfont->u.simple.Encoding[ix].data, "Free copied glyph name string");
                 gs_free_object(pdev->pdf_memory, pdfont->u.simple.Encoding, "Free simple Encoding");
                 pdfont->u.simple.Encoding = 0;
             }
@@ -606,10 +610,7 @@ font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
                             gs_id rid, font_type ftype,
                             pdf_font_write_contents_proc_t write_contents)
 {
-    pdf_encoding_element_t *Encoding =
-        gs_alloc_struct_array(pdev->pdf_memory, 256, pdf_encoding_element_t,
-                              &st_pdf_encoding_element,
-                              "font_resource_encoded_alloc");
+    pdf_encoding_element_t *Encoding = (pdf_encoding_element_t *)gs_alloc_bytes(pdev->pdf_memory, 256 * sizeof(pdf_encoding_element_t), "font_resource_encoded_alloc");
     gs_point *v = (gs_point *)gs_alloc_byte_array(pdev->pdf_memory,
                     256, sizeof(gs_point), "pdf_font_simple_alloc");
     pdf_font_resource_t *pdfont;
