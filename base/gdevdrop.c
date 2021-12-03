@@ -1704,7 +1704,6 @@ template_mem_transform_pixel_region_render_landscape_planar(gx_device *dev, mem_
     gx_color_value *conc = &cmapper->conc[0];
     gx_cmapper_fn *mapper = cmapper->set_color;
     byte *out;
-    byte *out_row;
     int miny, maxy;
 
     if (h == 0)
@@ -1727,7 +1726,6 @@ template_mem_transform_pixel_region_render_landscape_planar(gx_device *dev, mem_
 
     miny = state->clip.p.y;
     maxy = state->clip.q.y;
-    out_row = mdev->base + vci * spp;
     bufend = data + w * spp;
     while (data < bufend) {
         /* Find the length of the next run. It will either end when we hit
@@ -1889,7 +1887,10 @@ mem_transform_pixel_region_begin(gx_device *dev, int w, int h, int spp,
 no_cal:
 #endif
         if (mdev->is_planar)
-planar:     state->render = mem_transform_pixel_region_render_portrait_planar;
+#ifdef WITH_CAL
+planar:
+#endif
+            state->render = mem_transform_pixel_region_render_portrait_planar;
         else if (pixels->x.step.dQ == fixed_1 && pixels->x.step.dR == 0)
             state->render = mem_transform_pixel_region_render_portrait_1to1;
         else
