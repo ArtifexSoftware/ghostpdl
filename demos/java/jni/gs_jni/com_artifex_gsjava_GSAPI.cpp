@@ -246,12 +246,16 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1init_1with_1args
 		return throwNullPointerException(env, "argv");
 
 	char **cargv = jbyteArray2DToCharArray(env, argv);
+
 	callbacks::setJNIEnv(idata, env);
 	int code = gsapi_init_with_args((void *)instance, argc, cargv);
 	delete2DByteArray(argc, cargv);
 
-	idata->hasinit = true;
-	storeDispalyHandle(idata);
+	if (code == 0)
+	{
+		idata->hasinit = true;
+		storeDispalyHandle(idata);
+	}
 	return code;
 }
 
@@ -669,6 +673,9 @@ void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *su
 void storeDispalyHandle(GSInstanceData *idata)
 {
 	static const char PARAM_NAME[] = "DisplayHandle";
+
+	assert(idata);
+	assert(idata->instance);
 
 	char *param = NULL;
 	int bytes = gsapi_get_param(idata->instance, PARAM_NAME, NULL, gs_spt_string);

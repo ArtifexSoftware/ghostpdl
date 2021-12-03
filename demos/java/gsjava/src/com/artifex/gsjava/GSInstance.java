@@ -106,9 +106,8 @@ public class GSInstance implements Iterable<GSInstance.GSParam<?>> {
 	}
 
 	public void delete_instance() {
-		if (instance != GS_NULL)
-			gsapi_delete_instance(instance);
 		if (instance != GS_NULL) {
+			gsapi_delete_instance(instance);
 			instance = GS_NULL;
 			INSTANCES--;
 		}

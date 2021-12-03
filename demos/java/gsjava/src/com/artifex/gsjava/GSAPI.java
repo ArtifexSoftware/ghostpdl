@@ -59,7 +59,7 @@ public class GSAPI {
 	public static final long GS_NULL = 0L;
 
 	/**
-	 * Error codes
+	 * Level 1 error codes
 	 */
 	public static final int GS_ERROR_OK = 0,
 							GS_ERROR_UNKNOWNERROR = -1,
@@ -89,13 +89,19 @@ public class GSAPI {
 							GS_ERROR_VMERROR = -25;
 
 	/**
-	 * Error codes
+	 * Level 2 error codes
 	 */
 	public static final int GS_ERROR_CONFIGURATION_ERROR = -26,
 							GS_ERROR_UNDEFINEDRESOURCE = -27,
 							GS_ERROR_UNREGISTERED = -28,
 							GS_ERROR_INVALIDCONTEXT = -29,
 							GS_ERROR_INVALID = -30;
+
+	/**
+	 * Psuedo-errors used internally
+	 */
+	public static final int GS_ERROR_HIT_DETECTED = -59,
+							GS_ERROR_FATAL = -100;
 
 	public static final int GS_COLORS_NATIVE = (1 << 0),
 							GS_COLORS_GRAY = (1 << 1),

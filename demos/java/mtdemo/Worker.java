@@ -77,10 +77,8 @@ public class Worker implements Runnable {
 
 			// init_with_args will perform all the conversions
 			int code = gsInstance.init_with_args(args);
-			if (code != GS_ERROR_OK) {
-				gsInstance.delete_instance();
+			if (code != GS_ERROR_OK)
 				throw new IllegalStateException("Failed to init with args (code = " + code + ")");
-			}
 
 			System.out.println("Worker " + thread.getName() + " completed.");
 		} catch (Exception e) {
