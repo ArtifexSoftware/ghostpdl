@@ -2357,14 +2357,14 @@ opvp_open(gx_device *dev)
     apiVersion[1] = 0;
     dc = OpenPrinterWrapper(dev, pdev->globals.outputFD, (opvp_char_t *)pdev->globals.printerModel,
       apiVersion,&api_entry);
+
     if (!(pdev->globals.apiEntry)) {
-        if (!(pdev->globals.apiEntry = calloc(sizeof(opvp_api_procs_t), 1))) {
-            ecode = -1;
-        }
+        pdev->globals.apiEntry = calloc(sizeof(opvp_api_procs_t), 1);
     } else {
         memset(pdev->globals.apiEntry, 0, sizeof(opvp_api_procs_t));
     }
-    if (dc == -1) {
+
+    if (dc == -1 || pdev->globals.apiEntry == NULL) {
         ecode =  -1;
         if (pdev->globals.apiEntry)
             free(pdev->globals.apiEntry);
@@ -2375,6 +2375,7 @@ opvp_open(gx_device *dev)
         else gdev_vector_close_file((gx_device_vector *)pdev);
         return ecode;
     }
+
     pdev->globals.printerContext = dc;
     pdev->globals.nApiEntry = sizeof(opvp_api_procs_t)/sizeof(void *);
     memcpy(pdev->globals.apiEntry, api_entry, pdev->globals.nApiEntry*sizeof(void *));
