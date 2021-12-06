@@ -1501,6 +1501,9 @@ static void pdfi_free_search_paths(pdf_context *ctx)
     }
     gs_free_object(ctx->memory, (byte *)ctx->search_paths.resource_paths, "array of paths");
     gs_free_object(ctx->memory, (byte *)ctx->search_paths.font_paths, "array of font paths");
+
+    if (ctx->search_paths.genericresourcedir.persistent == false)
+        gs_free_object(ctx->memory, (byte *)ctx->search_paths.genericresourcedir.data, "generic resource directory");
 }
 
 static void pdfi_free_fontmapfiles(pdf_context *ctx)
