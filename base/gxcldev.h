@@ -144,7 +144,7 @@ typedef enum {
                                      /* n x (float) */
     cmd_opv_enable_clip      = 0xd7, /* (nothing) */
     cmd_opv_disable_clip     = 0xd8, /* (nothing) */
-    cmd_opv_begin_clip       = 0xd9, /* (nothing) */
+    cmd_opv_begin_clip       = 0xd9, /* fill_adjust.x#, fill_adjust.y# */
     cmd_opv_end_clip         = 0xda, /* (nothing) */
     cmd_opv_begin_image_rect = 0xdb, /* same as begin_image, followed by */
                                      /* x0#, w-x1#, y0#, h-y1# */

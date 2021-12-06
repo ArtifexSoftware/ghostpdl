@@ -600,56 +600,99 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         int ymin = (pcls - cldev->states) * band_height;
         int ymax = min(ymin + band_height, cldev->height);
         gs_fixed_rect box;
-        bool punt_to_outer_box = false;
         int code;
+        int fill_adjust_size;
+        enum {
+            write_path_as_rect = 0,
+            write_path_as_rects = 1,
+            write_path_as_outer_box = 2,
+            write_path_as_path = 3
+        } method;
 
-        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_begin_clip, 1);
-        if (code < 0)
-            return code;
+        /* We are going to begin_clip followed by the fill_adjust to use.
+         * In order to know what fill_adjust to use, we need to know whether
+         * we are going to send the clip through based upon its actual
+         * 'path' entry, or whether we are going to send it based upon its
+         * rectangle list representation. Accordingly, we have to do the
+         * logic to figure out how we are going to send it now. */
         if (pcpath->path_valid) {
             if (gx_path_is_rectangle(&pcpath->path, &box) &&
-                fixed_is_int(box.p.x | box.p.y | box.q.x | box.q.y)
-                ) {
-                /* Write the path as a rectangle. */
-                code = cmd_write_rect_cmd(cldev, pcls, cmd_op_fill_rect,
-                                          fixed2int_var(box.p.x),
-                                          fixed2int_var(box.p.y),
-                                          fixed2int(box.q.x - box.p.x),
-                                          fixed2int(box.q.y - box.p.y));
-            } else if ( !(cldev->disable_mask & clist_disable_complex_clip) ) {
-                /* Write the path. */
-                code = cmd_put_path(cldev, pcls, &pcpath->path,
-                                    int2fixed(ymin - 1),
-                                    int2fixed(ymax + 1),
-                                    (byte)(pcpath->rule == gx_rule_even_odd ?
-                                     cmd_opv_eofill : cmd_opv_fill),
-                                    true, sn_not_first);
-            } else {
-                  /* Complex paths disabled: write outer box as clip */
-                  punt_to_outer_box = true;
-            }
-        } else {		/* Write out the rectangles. */
+                fixed_is_int(box.p.x | box.p.y | box.q.x | box.q.y))
+                method = write_path_as_rect;
+            else if ( !(cldev->disable_mask & clist_disable_complex_clip) )
+                method = write_path_as_path;
+            else
+                method = write_path_as_outer_box;
+        } else {
+            const gx_clip_list *list = gx_cpath_list(pcpath);
+            const gx_clip_rect *prect = list->head;
+
+            if (prect != NULL &&
+                cldev->disable_mask & clist_disable_complex_clip)
+                method = write_path_as_outer_box;
+            else
+                method = write_path_as_rects;
+        }
+
+        /* And thus how large the fill_adjust values will be. */
+        if (method == write_path_as_path)
+            fill_adjust_size = cmd_size2w(pcpath->path_fill_adjust.x,
+                                          pcpath->path_fill_adjust.y);
+        else
+            fill_adjust_size = cmd_size2w(0, 0);
+
+        /* Send the 'begin_clip' with the fill_adjust values. */
+        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_begin_clip, 1+fill_adjust_size);
+        if (code < 0)
+            return code;
+        dp++;
+        if (method == write_path_as_path)
+            cmd_put2w(pcpath->path_fill_adjust.x,
+                      pcpath->path_fill_adjust.y, &dp);
+        else
+            cmd_put2w(0, 0, &dp);
+
+        /* Then send the actual clip path representation. */
+        switch (method)
+        {
+        case write_path_as_rect:
+            /* Write the path as a rectangle. */
+            code = cmd_write_rect_cmd(cldev, pcls, cmd_op_fill_rect,
+                                      fixed2int_var(box.p.x),
+                                      fixed2int_var(box.p.y),
+                                      fixed2int(box.q.x - box.p.x),
+                                      fixed2int(box.q.y - box.p.y));
+            break;
+        case write_path_as_path:
+            /* Write the path. */
+            code = cmd_put_path(cldev, pcls, &pcpath->path,
+                                int2fixed(ymin - 1),
+                                int2fixed(ymax + 1),
+                                (byte)(pcpath->rule == gx_rule_even_odd ?
+                                 cmd_opv_eofill : cmd_opv_fill),
+                                true, sn_not_first);
+            break;
+        case write_path_as_rects:
+        {
+            /* Write out the rectangles. */
             const gx_clip_list *list = gx_cpath_list(pcpath);
             const gx_clip_rect *prect = list->head;
 
             if (prect == 0)
                 prect = &list->single;
-            else if (cldev->disable_mask & clist_disable_complex_clip)
-                punt_to_outer_box = true;
-            if (!punt_to_outer_box) {
-                for (; prect != 0 && code >= 0; prect = prect->next)
-                    if (prect->xmax > prect->xmin &&
-                        prect->ymin < ymax && prect->ymax > ymin
-                        ) {
-                        code =
-                            cmd_write_rect_cmd(cldev, pcls, cmd_op_fill_rect,
-                                               prect->xmin, prect->ymin,
-                                               prect->xmax - prect->xmin,
-                                       prect->ymax - prect->ymin);
-                    }
+            for (; prect != 0 && code >= 0; prect = prect->next) {
+                if (prect->xmax > prect->xmin &&
+                    prect->ymin < ymax && prect->ymax > ymin) {
+                    code = cmd_write_rect_cmd(cldev, pcls, cmd_op_fill_rect,
+                                              prect->xmin, prect->ymin,
+                                              prect->xmax - prect->xmin,
+                                              prect->ymax - prect->ymin);
+                }
             }
+            break;
         }
-        if (punt_to_outer_box) {
+        default:
+        {
             /* Clip is complex, but disabled. Write out the outer box */
             gs_fixed_rect box;
 
@@ -662,6 +705,9 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                                       fixed2int_ceiling(box.q.x - box.p.x),
                                       fixed2int_ceiling(box.q.y - box.p.y));
         }
+        }
+
+        /* And now we can send 'end_clip' so the reader can finalise everything. */
         {
             int end_code =
                 set_cmd_put_op(&dp, cldev, pcls, cmd_opv_end_clip, 1);

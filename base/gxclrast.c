@@ -1339,10 +1339,8 @@ set_tile_phase:
                         clip_save.dcolor = fill_color;
                         clip_save.fa_save.x = gs_gstate.fill_adjust.x;
                         clip_save.fa_save.y = gs_gstate.fill_adjust.y;
-                        /* clip_path should match fill_path, i.e., with fill_adjust applied	*/
-                        /* If we get here with the fill_adjust = [0, 0], set it to [0.5, 0.5]i	*/
-                        if (clip_save.fa_save.x == 0 || clip_save.fa_save.y == 0)
-                            gs_gstate.fill_adjust.x = gs_gstate.fill_adjust.y = fixed_half;
+                        cmd_getw(gs_gstate.fill_adjust.x, cbp);
+                        cmd_getw(gs_gstate.fill_adjust.y, cbp);
                         /* temporarily set a solid color */
                         color_set_pure(&fill_color, (gx_color_index)1);
                         state.lop_enabled = false;
