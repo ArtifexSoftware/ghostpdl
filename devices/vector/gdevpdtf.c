@@ -1002,7 +1002,18 @@ pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
     if (code >= 0) {
         (*ppfres)->u.type0.DescendantFont = DescendantFont;
-        (*ppfres)->u.type0.CMapName = *CMapName;
+        if ((*ppfres)->u.type0.cmap_is_standard)
+            (*ppfres)->u.type0.CMapName = *CMapName;
+        else {
+            byte *chars = gs_alloc_string(pdev->pdf_memory, CMapName->size,
+                                          "pdf_font_resource_t(CMapName)");
+
+            if (chars == 0)
+                return_error(gs_error_VMerror);
+            memcpy(chars, CMapName->data, CMapName->size);
+            (*ppfres)->u.type0.CMapName.data = chars;
+            (*ppfres)->u.type0.CMapName.size = CMapName->size;
+        }
         (*ppfres)->u.type0.font_index = 0;
         code = pdf_compute_BaseFont(pdev, *ppfres, false);
     }
