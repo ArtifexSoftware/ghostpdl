@@ -770,14 +770,14 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         pdfi_set_error(ctx, 0, NULL, E_PDF_PAGEDICTERROR, "pdfi_page_render", extra_info);
         if (code != gs_error_VMerror && !ctx->args.pdfstoponerror)
             code = 0;
-        goto exit2;
+        goto exit3;
     }
 
     pdfi_device_set_flags(ctx);
 
     code = pdfi_check_page(ctx, page_dict, init_graphics);
     if (code < 0)
-        goto exit2;
+        goto exit3;
 
     if (ctx->args.pdfdebug) {
         dbgmprintf2(ctx->memory, "Current page %ld transparency setting is %d", page_num+1,
@@ -791,7 +791,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
     code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
     if (code < 0)
-        goto exit2;
+        goto exit3;
     if (group_dict != NULL)
         page_group_known = true;
 
@@ -898,9 +898,6 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         code1 = pdfi_trans_end_group(ctx);
     }
 
-    pdfi_countdown(ctx->page.CurrentPageDict);
-    ctx->page.CurrentPageDict = NULL;
-
     if (need_pdf14) {
         if (code1 < 0) {
             (void)gs_abort_pdf14trans_device(ctx->pgs);
@@ -913,10 +910,15 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         }
     }
 
- exit1:
+exit1:
     pdfi_free_DefaultQState(ctx);
     pdfi_grestore(ctx);
- exit2:
+
+exit2:
+    pdfi_countdown(ctx->page.CurrentPageDict);
+    ctx->page.CurrentPageDict = NULL;
+
+exit3:
     pdfi_countdown(page_dict);
     pdfi_countdown(group_dict);
 
