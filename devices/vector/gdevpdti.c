@@ -292,10 +292,11 @@ pdf_attach_charproc(gx_device_pdf * pdev, pdf_font_resource_t *pdfont, pdf_char_
         pcpo->char_name.data = 0;
         pcpo->char_name.size = 0;
     } else {
-        pcpo->char_name.data = gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, gnstr->size, "storage for charproc name");
-        memcpy(pcpo->char_name.data, gnstr->data, gnstr->size);
+        if (gnstr->size > 0) {
+            pcpo->char_name.data = gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, gnstr->size, "storage for charproc name");
+            memcpy(pcpo->char_name.data, gnstr->data, gnstr->size);
+        }
         pcpo->char_name.size = gnstr->size;
-//        pcpo->char_name = *gnstr;
     }
     pcpo->duplicate_char_name = duplicate_char_name;
     return 0;
