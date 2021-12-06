@@ -598,7 +598,7 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
             /* Detach the PostScript stream from the PDF context, otherwise the
              * close code will close the main stream
              */
-            pdfctx->ctx->main_stream = NULL;
+            pdfctx->ctx->main_stream->s = NULL;
         }
         code = pdfi_free_context(pdfctx->ctx);
         pdfctx->ctx = NULL;
