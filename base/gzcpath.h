@@ -79,6 +79,9 @@ struct gx_clip_path_s {
     gs_id id;
     /* The last rectangle we accessed while using this clip_path */
     gx_clip_rect *cached;
+    /* The fill adjust to be used if the path is valid. If the
+     * path is not valid, always use 0,0. */
+    gs_fixed_point path_fill_adjust;
 };
 
 extern_st(st_clip_path);

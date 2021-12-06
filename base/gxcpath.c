@@ -132,6 +132,8 @@ cpath_init_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
     gx_clip_list_from_rectangle(&pcpath->rect_list->list, pbox);
     pcpath->inner_box = *pbox;
     pcpath->path_valid = false;
+    pcpath->path_fill_adjust.x = 0;
+    pcpath->path_fill_adjust.y = 0;
     pcpath->path.bbox = *pbox;
     gx_cpath_set_outer_box(pcpath);
     pcpath->id = gs_next_ids(pcpath->path.memory, 1);	/* path changed => change id */
@@ -151,6 +153,7 @@ cpath_share_own_contents(gx_clip_path * pcpath, const gx_clip_path * shared)
 {
     pcpath->inner_box = shared->inner_box;
     pcpath->path_valid = shared->path_valid;
+    pcpath->path_fill_adjust = shared->path_fill_adjust;
     pcpath->outer_box = shared->outer_box;
     pcpath->id = shared->id;
     pcpath->cached = NULL;
@@ -484,6 +487,8 @@ gx_cpath_to_path(gx_clip_path * pcpath, gx_path * ppath)
         if (code < 0)
             return code;
         pcpath->path_valid = true;
+        pcpath->path_fill_adjust.x = 0;
+        pcpath->path_fill_adjust.y = 0;
     }
     return gx_path_assign_preserve(ppath, &pcpath->path);
 }
@@ -705,6 +710,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
             /* The path is valid; otherwise, defer constructing it. */
             gx_path_assign_preserve(&pcpath->path, ppath);
             pcpath->path_valid = true;
+            pcpath->path_fill_adjust = params != NULL ? params->adjust : pgs->fill_adjust;
         }
     } else {
         /* New clip path is nontrivial.  Intersect the slow way. */
@@ -737,6 +743,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
         if (path_valid) {
             gx_path_assign_preserve(&pcpath->path, ppath_orig);
             pcpath->path_valid = true;
+            pcpath->path_fill_adjust = params != NULL ? params->adjust : pgs->fill_adjust;
             pcpath->rule = rule;
         } else {
             code = gx_cpath_path_list_new(pcpath->path.memory, NULL, rule,
