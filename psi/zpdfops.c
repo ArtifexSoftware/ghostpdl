@@ -587,6 +587,11 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
     check_type(*op, t_pdfctx);
     pdfctx = r_ptr(op, pdfctx_t);
 
+    if (pdfctx->profile_cache != NULL) {
+        rc_decrement(pdfctx->profile_cache, "free the working profile cache");
+        pdfctx->profile_cache = NULL;
+    }
+
     if (pdfctx->ctx != NULL) {
         pdfi_report_errors(pdfctx->ctx);
         if (pdfctx->ps_stream) {
