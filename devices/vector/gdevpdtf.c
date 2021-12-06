@@ -468,7 +468,7 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
         case ft_GL2_531:
             if(pdfont->u.simple.Encoding) {
                 int ix;
-                for (ix = pdfont->u.simple.FirstChar; ix <= pdfont->u.simple.LastChar;ix++)
+                for (ix = 0; ix <= 255;ix++)
                     gs_free_object(pdev->pdf_memory->non_gc_memory, pdfont->u.simple.Encoding[ix].data, "Free copied glyph name string");
                 gs_free_object(pdev->pdf_memory, pdfont->u.simple.Encoding, "Free simple Encoding");
                 pdfont->u.simple.Encoding = 0;
@@ -512,7 +512,7 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
         default:
             if(pdfont->u.simple.Encoding) {
                 int ix;
-                for (ix = pdfont->u.simple.FirstChar; ix <= pdfont->u.simple.LastChar;ix++)
+                for (ix = 0; ix <= 255;ix++)
                     gs_free_object(pdev->pdf_memory->non_gc_memory, pdfont->u.simple.Encoding[ix].data, "Free copied glyph name string");
                 gs_free_object(pdev->pdf_memory, pdfont->u.simple.Encoding, "Free simple Encoding");
                 pdfont->u.simple.Encoding = 0;
