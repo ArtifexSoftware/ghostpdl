@@ -61,11 +61,11 @@ pl_interp_implementation_t *pdl_implementations[] = {
 #ifdef XPS_INCLUDED
     &xps_implementation,
 #endif
-#ifdef PSI_INCLUDED
-    &ps_implementation,
-#endif
 #ifdef PDF_INCLUDED
     &pdf_implementation,
+#endif
+#ifdef PSI_INCLUDED
+    &ps_implementation,
 #endif
 #ifdef URF_INCLUDED
     &urf_implementation,

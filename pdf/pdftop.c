@@ -62,7 +62,7 @@ pdf_detect_language(const char *s, int len)
 {
     if (len < 5)
         return 1;
-    return memcmp(s, "%!PDF", 2);
+    return memcmp(s, "%!PDF", 5);
 }
 
 static const pl_interp_characteristics_t *
@@ -368,6 +368,7 @@ pdf_impl_report_errors(pl_interp_implementation_t *impl,
     return 0;
 }
 
+#if 0
 /*
  * Get the allocator with which to allocate a device
  */
@@ -379,6 +380,7 @@ pdf_impl_get_device_memory(pl_interp_implementation_t *impl)
 
     return ctx->memory;
 }
+#endif
 
 static int plist_value_get_int64(gs_param_typed_value *pvalue, int64_t *pint)
 {
@@ -801,7 +803,7 @@ pl_interp_implementation_t pdf_implementation =
 {
     pdf_impl_characteristics,
     pdf_impl_allocate_interp_instance,
-    pdf_impl_get_device_memory,
+    NULL,  /* pdf_impl_get_device_memory, */
     pdf_impl_set_param,
     pdf_impl_add_path,
     pdf_impl_post_args_init,
