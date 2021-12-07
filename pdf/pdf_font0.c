@@ -77,7 +77,6 @@ pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u
     int code = gs_error_undefined, i;
     uchar *unicode_return = (uchar *)u;
     pdf_cidfont_type2 *decfont = NULL;
-    pdf_cmap *tounicode = (pdf_cmap *)pt0font->ToUnicode;
     pdfi_cid_subst_nwp_table_t *substnwp = pt0font->substnwp;
 
     code = pdfi_array_get(pt0font->ctx, pt0font->DescendantFonts, 0, (pdf_obj **)&decfont);
@@ -89,63 +88,7 @@ pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u
     code = gs_error_undefined;
     while (1) { /* Loop to make retrying with a substitute CID easier */
         /* Favour the ToUnicode if one exists */
-        if (tounicode) {
-            int l = 0;
-            gs_cmap_lookups_enum_t lenum;
-            gs_cmap_lookups_enum_init((const gs_cmap_t *)tounicode->gscmap, 0, &lenum);
-            while (l == 0 && (code = gs_cmap_enum_next_lookup(font->memory, &lenum)) == 0) {
-                gs_cmap_lookups_enum_t counter = lenum;
-                while (l == 0 && (code = gs_cmap_enum_next_entry(&counter) == 0)) {
-                    if (counter.entry.value_type == CODE_VALUE_CID) {
-                        unsigned int v = 0;
-                        for (i = 0; i < counter.entry.key_size; i++) {
-                            v |= (counter.entry.key[0][counter.entry.key_size - i - 1]) << (i * 8);
-                        }
-                        if (ch == v) {
-                            if (counter.entry.value.size == 1) {
-                                l = 2;
-                                if (unicode_return != NULL && length >= l) {
-                                    unicode_return[0] = counter.entry.value.data[0];
-                                    unicode_return[1] = counter.entry.value.data[1];
-                                }
-                            }
-                            else if (counter.entry.value.size == 2) {
-                                l = 2;
-                                if (unicode_return != NULL && length >= l) {
-                                    unicode_return[0] = counter.entry.value.data[0];
-                                    unicode_return[1] = counter.entry.value.data[1];
-                                }
-                            }
-                            else if (counter.entry.value.size == 3) {
-                                l = 4;
-                                if (unicode_return != NULL && length >= l) {
-                                    unicode_return[0] = counter.entry.value.data[0];
-                                    unicode_return[1] = counter.entry.value.data[1];
-                                    unicode_return[2] = counter.entry.value.data[2];
-                                    unicode_return[3] = 0;
-                                }
-                            }
-                            else {
-                                l = 4;
-                                if (unicode_return != NULL && length >= l) {
-                                    unicode_return[0] = counter.entry.value.data[0];
-                                    unicode_return[1] = counter.entry.value.data[1];
-                                    unicode_return[2] = counter.entry.value.data[1];
-                                    unicode_return[3] = counter.entry.value.data[3];
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        l = 0;
-                    }
-                }
-            }
-            if (l > 0)
-                code = l;
-            else
-                code = gs_error_undefined;
-        }
+        code = pdfi_tounicode_char_to_unicode(pt0font->ctx, (pdf_cmap *)pt0font->ToUnicode, glyph, ch, u, length);
 
         if (code == gs_error_undefined && pt0font->decoding) {
             const int *n;
@@ -404,6 +347,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pdft0->indirect_gen = font_dict->indirect_gen;
     pdft0->Encoding = (pdf_obj *)pcmap;
     pdft0->ToUnicode = tounicode;
+    tounicode = NULL;
     pdft0->DescendantFonts = arr;
     pdft0->PDF_font = font_dict;
     pdfi_countup(font_dict);

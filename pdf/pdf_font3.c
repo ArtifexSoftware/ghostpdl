@@ -220,6 +220,7 @@ int pdfi_free_font_type3(pdf_obj *font)
     pdfi_countdown(t3font->FontDescriptor);
     pdfi_countdown(t3font->CharProcs);
     pdfi_countdown(t3font->Encoding);
+    pdfi_countdown(t3font->ToUnicode);
     gs_free_object(OBJ_MEMORY(font), font, "Free type 3 font");
     return 0;
 }
@@ -231,6 +232,7 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pdf_font_type3 *font = NULL;
     pdf_obj *obj = NULL;
     double f;
+    pdf_obj *tounicode = NULL;
 
     *ppdffont = NULL;
     code = alloc_type3_font(ctx, &font);
@@ -317,6 +319,22 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
 
     font->PDF_font = font_dict;
     pdfi_countup(font_dict);
+
+    code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
+    if (code >= 0 && tounicode->type == PDF_STREAM) {
+        pdf_cmap *tu = NULL;
+        code = pdfi_read_cmap(ctx, tounicode, &tu);
+        pdfi_countdown(tounicode);
+        tounicode = (pdf_obj *)tu;
+    }
+    if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
+        pdfi_countdown(tounicode);
+        tounicode = NULL;
+        code = 0;
+    }
+
+    font->ToUnicode = tounicode;
+    tounicode = NULL;
 
     code = replace_cache_entry(ctx, (pdf_obj *)font);
     if (code < 0)

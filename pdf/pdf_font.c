@@ -1539,11 +1539,81 @@ gs_glyph pdfi_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_use
     return g;
 }
 
+int pdfi_tounicode_char_to_unicode(pdf_context *ctx, pdf_cmap *tounicode, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length)
+{
+    int i, l = 0;
+    int code = gs_error_undefined;
+    unsigned char *ucode = (unsigned char *)unicode_return;
+
+    if (tounicode != NULL) {
+        gs_cmap_lookups_enum_t lenum;
+        gs_cmap_lookups_enum_init((const gs_cmap_t *)tounicode->gscmap, 0, &lenum);
+        while (l == 0 && (code = gs_cmap_enum_next_lookup(ctx->memory, &lenum)) == 0) {
+            gs_cmap_lookups_enum_t counter = lenum;
+            while (l == 0 && (code = gs_cmap_enum_next_entry(&counter) == 0)) {
+                if (counter.entry.value_type == CODE_VALUE_CID) {
+                    unsigned int v = 0;
+                    for (i = 0; i < counter.entry.key_size; i++) {
+                        v |= (counter.entry.key[0][counter.entry.key_size - i - 1]) << (i * 8);
+                    }
+                    if (ch == v) {
+                        if (counter.entry.value.size == 1) {
+                            l = 2;
+                            if (ucode != NULL && length >= l) {
+                                ucode[0] = counter.entry.value.data[0];
+                                ucode[1] = counter.entry.value.data[1];
+                            }
+                        }
+                        else if (counter.entry.value.size == 2) {
+                            l = 2;
+                            if (ucode != NULL && length >= l) {
+                                ucode[0] = counter.entry.value.data[0];
+                                ucode[1] = counter.entry.value.data[1];
+                            }
+                        }
+                        else if (counter.entry.value.size == 3) {
+                            l = 4;
+                            if (ucode != NULL && length >= l) {
+                                ucode[0] = counter.entry.value.data[0];
+                                ucode[1] = counter.entry.value.data[1];
+                                ucode[2] = counter.entry.value.data[2];
+                                ucode[3] = 0;
+                            }
+                        }
+                        else {
+                            l = 4;
+                            if (ucode != NULL && length >= l) {
+                                ucode[0] = counter.entry.value.data[0];
+                                ucode[1] = counter.entry.value.data[1];
+                                ucode[2] = counter.entry.value.data[1];
+                                ucode[3] = counter.entry.value.data[3];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (l > 0)
+            code = l;
+    }
+
+    return code;
+}
+
 /* Get the unicode valude for a glyph FIXME - not written yet
  */
 int pdfi_decode_glyph(gs_font * font, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length)
 {
-    return 0;
+    pdf_font *pdffont = (pdf_font *)font->client_data;
+    int code = 0;
+
+    if (pdffont->pdfi_font_type != e_pdf_cidfont_type0 && pdffont->pdfi_font_type != e_pdf_cidfont_type1
+     && pdffont->pdfi_font_type != e_pdf_cidfont_type2 && pdffont->pdfi_font_type != e_pdf_cidfont_type4) {
+        code = pdfi_tounicode_char_to_unicode(pdffont->ctx, (pdf_cmap *)pdffont->ToUnicode, glyph, ch, unicode_return, length);
+    }
+    if (code < 0) code = 0;
+
+    return code;
 }
 
 int pdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph)

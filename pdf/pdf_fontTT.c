@@ -364,6 +364,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     int64_t descflags;
     bool encoding_known = false;
     bool forced_symbolic = false;
+    pdf_obj *tounicode = NULL;
 
     if (ppdffont == NULL)
         return_error(gs_error_invalidaccess);
@@ -450,6 +451,21 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
     pdfi_countdown(obj);
     obj = NULL;
+
+    code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
+    if (code >= 0 && tounicode->type == PDF_STREAM) {
+        pdf_cmap *tu = NULL;
+        code = pdfi_read_cmap(ctx, tounicode, &tu);
+        pdfi_countdown(tounicode);
+        tounicode = (pdf_obj *)tu;
+    }
+    if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
+        pdfi_countdown(tounicode);
+        tounicode = NULL;
+        code = 0;
+    }
+    font->ToUnicode = tounicode;
+    tounicode = NULL;
 
     code = pdfi_dict_get_int(ctx, font->FontDescriptor, "Flags", &descflags);
     if (code < 0)
@@ -617,6 +633,7 @@ int pdfi_free_font_truetype(pdf_obj *font)
     pdfi_countdown(ttfont->Encoding);
     pdfi_countdown(ttfont->BaseFont);
     pdfi_countdown(ttfont->PDF_font);
+    pdfi_countdown(ttfont->ToUnicode);
     gs_free_object(OBJ_MEMORY(ttfont), ttfont, "Free TrueType font");
 
     return 0;

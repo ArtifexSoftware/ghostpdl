@@ -2287,6 +2287,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, (gs_font_base *)cffcid->pfont);
                 if (code < 0)
                     uid_set_invalid(&cffcid->pfont->UID);
+
             }
             else if (forcecid) {
                 pdf_obj *obj;
@@ -2488,6 +2489,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
             else {
                 pdf_font_cff *cfffont;
                 gs_font_type1 *pfont = NULL;
+                pdf_obj *tounicode = NULL;
 
                 code = pdfi_alloc_cff_font(ctx, &cfffont, font_dict->object_num, false);
                 pfont = (gs_font_type1 *) cfffont->pfont;
@@ -2636,15 +2638,20 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     cfffont->Encoding = cffpriv.pdfcffpriv.Encoding;
                     cffpriv.pdfcffpriv.Encoding = NULL;
                 }
-
-                code = pdfi_dict_knownget(ctx, font_dict, "ToUnicode", &tmp);
-                if (code == 1) {
-                    cfffont->ToUnicode = tmp;
-                    tmp = NULL;
+                code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
+                if (code >= 0 && tounicode->type == PDF_STREAM) {
+                    pdf_cmap *tu = NULL;
+                    code = pdfi_read_cmap(ctx, tounicode, &tu);
+                    pdfi_countdown(tounicode);
+                    tounicode = (pdf_obj *)tu;
                 }
-                else {
-                    cfffont->ToUnicode = NULL;
+                if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
+                    pdfi_countdown(tounicode);
+                    tounicode = NULL;
+                    code = 0;
                 }
+                cfffont->ToUnicode = tounicode;
+                tounicode = NULL;
             }
         }
   error:

@@ -506,6 +506,7 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
     pdf_obj *mapname = NULL;
     pdf_obj *tmp = NULL;
     pdf_font_type1 *t1f = NULL;
+    pdf_obj *tounicode = NULL;
     ps_font_interp_private fpriv = { 0 };
 
     (void)pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
@@ -586,6 +587,21 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             if (pdfi_font_known_symbolic(basefont)) {
                 t1f->descflags |= 4;
             }
+
+            code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
+            if (code >= 0 && tounicode->type == PDF_STREAM) {
+                pdf_cmap *tu = NULL;
+                code = pdfi_read_cmap(ctx, tounicode, &tu);
+                pdfi_countdown(tounicode);
+                tounicode = (pdf_obj *)tu;
+            }
+            if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
+                pdfi_countdown(tounicode);
+                tounicode = NULL;
+                code = 0;
+            }
+            t1f->ToUnicode = tounicode;
+            tounicode = NULL;
 
             code = pdfi_dict_knownget_type(ctx, font_dict, "FirstChar", PDF_INT, &tmp);
             if (code == 1) {
@@ -686,14 +702,6 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
                 pdfi_countup(t1f->Encoding);
             }
 
-            code = pdfi_dict_knownget(ctx, font_dict, "ToUnicode", &tmp);
-            if (code == 1) {
-                t1f->ToUnicode = tmp;
-                tmp = NULL;
-            }
-            else {
-                t1f->ToUnicode = NULL;
-            }
             t1f->CharStrings = fpriv.u.t1.CharStrings;
             pdfi_countup(t1f->CharStrings);
             pdfi_patch_charstrings_dict(t1f->CharStrings);
@@ -733,6 +741,7 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
   error:
     pdfi_countdown(fontdesc);
     pdfi_countdown(basefont);
+    pdfi_countdown(tounicode);
     pdfi_countdown(mapname);
     pdfi_countdown(tmp);
     pdfi_countdown(fpriv.u.t1.Encoding);
