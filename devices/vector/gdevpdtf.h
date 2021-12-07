@@ -244,8 +244,8 @@ struct pdf_font_resource_s {
                       sizeof(long) * 8 / 3 + 1 + 4 /* <id> 0 R */
                       ) + 1	/* \0 terminator */
             ];
-            gs_const_string CMapName; /* copied from the original CMap, */
-                                /* or references the table of standard names */
+            byte *CMapName_data;
+            uint CMapName_size;
             uint font_index;	/* The index of the descendent font in the source CMap. */
             bool cmap_is_standard;
             int WMode;		/* of CMap */

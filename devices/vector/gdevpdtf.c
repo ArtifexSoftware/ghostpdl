@@ -64,9 +64,6 @@ case 7: switch (pdfont->FontType) {
      ENUM_RETURN(pdfont->u.simple.Encoding);
 }
 case 8: switch (pdfont->FontType) {
- case ft_composite:
-     return (pdfont->u.type0.cmap_is_standard ? ENUM_OBJ(0) :
-             ENUM_CONST_STRING(&pdfont->u.type0.CMapName));
  case ft_encrypted:
  case ft_encrypted2:
  case ft_TrueType:
@@ -80,6 +77,7 @@ case 8: switch (pdfont->FontType) {
  case ft_CID_encrypted:
  case ft_CID_TrueType:
      ENUM_RETURN(pdfont->u.cidfont.v);
+ case ft_composite:
  default:
      ENUM_RETURN(0);
 }
@@ -139,8 +137,6 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
     RELOC_VAR(pdfont->cmap_ToUnicode);
     switch (pdfont->FontType) {
     case ft_composite:
-        if (!pdfont->u.type0.cmap_is_standard)
-            RELOC_CONST_STRING_VAR(pdfont->u.type0.CMapName);
         RELOC_VAR(pdfont->u.type0.DescendantFont);
         break;
     case ft_PCL_user_defined:
@@ -454,10 +450,10 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     }
     switch(pdfont->FontType) {
         case ft_composite:
-            if (!pdfont->u.type0.cmap_is_standard && pdfont->u.type0.CMapName.data != NULL) {
-                gs_free_string(pdev->memory, (byte *)pdfont->u.type0.CMapName.data, pdfont->u.type0.CMapName.size, "font_resource_free(CMapName)");
-                pdfont->u.type0.CMapName.data = NULL;
-                pdfont->u.type0.CMapName.size = 0;
+            if (pdfont->u.type0.CMapName_data != NULL) {
+                gs_free_object(pdev->memory->non_gc_memory, (byte *)pdfont->u.type0.CMapName_data, "font_resource_free(CMapName)");
+                pdfont->u.type0.CMapName_data = NULL;
+                pdfont->u.type0.CMapName_size = 0;
             }
             break;
         case ft_PCL_user_defined:
@@ -1001,19 +997,17 @@ pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
                                    ft_composite, 0, pdf_write_contents_type0);
 
     if (code >= 0) {
-        (*ppfres)->u.type0.DescendantFont = DescendantFont;
-        if ((*ppfres)->u.type0.cmap_is_standard)
-            (*ppfres)->u.type0.CMapName = *CMapName;
-        else {
-            byte *chars = gs_alloc_string(pdev->pdf_memory, CMapName->size,
-                                          "pdf_font_resource_t(CMapName)");
+        byte *chars = NULL;
 
-            if (chars == 0)
-                return_error(gs_error_VMerror);
-            memcpy(chars, CMapName->data, CMapName->size);
-            (*ppfres)->u.type0.CMapName.data = chars;
-            (*ppfres)->u.type0.CMapName.size = CMapName->size;
-        }
+        (*ppfres)->u.type0.DescendantFont = DescendantFont;
+
+        chars = gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, CMapName->size, "pdf_font_resource_t(CMapName)");
+        if (chars == 0)
+            return_error(gs_error_VMerror);
+        memcpy(chars, CMapName->data, CMapName->size);
+        (*ppfres)->u.type0.CMapName_data = chars;
+        (*ppfres)->u.type0.CMapName_size = CMapName->size;
+
         (*ppfres)->u.type0.font_index = 0;
         code = pdf_compute_BaseFont(pdev, *ppfres, false);
     }

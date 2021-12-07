@@ -341,31 +341,52 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
         }
     }
     if (pcmres || is_identity) {
-        uint size = pcmap->CMapName.size;
-        byte *chars = gs_alloc_string(pdev->pdf_memory, size,
-                                      "pdf_font_resource_t(CMapName)");
+        if (pdfont->u.type0.CMapName_data == NULL || pcmap->CMapName.size != pdfont->u.type0.CMapName_size ||
+            memcmp(pdfont->u.type0.CMapName_data, pcmap->CMapName.data, pcmap->CMapName.size))
+        {
+            byte *chars = gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, pcmap->CMapName.size,
+                                          "pdf_font_resource_t(CMapName)");
 
-        if (chars == 0)
-            return_error(gs_error_VMerror);
-        memcpy(chars, pcmap->CMapName.data, size);
+            if (chars == 0)
+                return_error(gs_error_VMerror);
+            memcpy(chars, pcmap->CMapName.data, pcmap->CMapName.size);
+            if (pdfont->u.type0.CMapName_data != NULL)
+                gs_free_object(pdev->pdf_memory->non_gc_memory, pdfont->u.type0.CMapName_data, "rewriting CMapName");
+            pdfont->u.type0.CMapName_data = chars;
+            pdfont->u.type0.CMapName_size = pcmap->CMapName.size;
+        }
         if (is_identity)
             strcpy(pdfont->u.type0.Encoding_name,
                     (pcmap->WMode ? "/Identity-V" : "/Identity-H"));
         else
             gs_sprintf(pdfont->u.type0.Encoding_name, "%ld 0 R",
                     pdf_resource_id(pcmres));
-        pdfont->u.type0.CMapName.data = chars;
-        pdfont->u.type0.CMapName.size = size;
     } else {
+        uint size = 0;
+
         if (!*pcmn)
             /* Should not be possible, if *pcmn is NULL then either
              * is_identity is true or we create pcmres.
              */
             return_error(gs_error_invalidfont);
 
+        size = strlen(*pcmn);
+        if (pdfont->u.type0.CMapName_data == NULL || size != pdfont->u.type0.CMapName_size ||
+            memcmp(pdfont->u.type0.CMapName_data, *pcmn, size) != 0)
+        {
+            byte *chars = gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, size, "pdf_font_resource_t(CMapName)");
+            if (chars == 0)
+                return_error(gs_error_VMerror);
+
+            memcpy(chars, *pcmn, size);
+
+            if (pdfont->u.type0.CMapName_data != NULL)
+                gs_free_object(pdev->pdf_memory->non_gc_memory, pdfont->u.type0.CMapName_data, "rewriting CMapName");
+            pdfont->u.type0.CMapName_data = chars;
+            pdfont->u.type0.CMapName_size = size;
+        }
+
         gs_sprintf(pdfont->u.type0.Encoding_name, "/%s", *pcmn);
-        pdfont->u.type0.CMapName.data = (const byte *)*pcmn;
-        pdfont->u.type0.CMapName.size = strlen(*pcmn);
         pdfont->u.type0.cmap_is_standard = true;
     }
     pdfont->u.type0.WMode = pcmap->WMode;

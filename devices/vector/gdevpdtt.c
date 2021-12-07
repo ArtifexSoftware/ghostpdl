@@ -1114,11 +1114,10 @@ pdf_is_compatible_encoding(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 
             if (pfont->data.FMapType == fmap_CMap) {
                 const gs_cmap_t *pcmap = pfont->data.CMap;
-                const gs_const_string *s0 = &pdfont->u.type0.CMapName;
                 const gs_const_string *s1 = &pcmap->CMapName;
 
-                return (s0->size == s1->size &&
-                        !memcmp(s0->data, s1->data, s0->size));
+                return (pdfont->u.type0.CMapName_size == s1->size &&
+                        !memcmp(pdfont->u.type0.CMapName_data, s1->data, pdfont->u.type0.CMapName_size));
             }
         }
         return false;
@@ -1283,9 +1282,9 @@ pdf_find_type0_font_resource(gx_device_pdf *pdev, const pdf_font_resource_t *pds
                  */
                 if (pdfont->BaseFont.size != pdsubf->BaseFont.size)
                     continue;
-                if (pdfont->u.type0.CMapName.size != CMapName->size)
+                if (pdfont->u.type0.CMapName_size != CMapName->size)
                     continue;
-                if (memcmp(pdfont->u.type0.CMapName.data, CMapName->data, CMapName->size))
+                if (memcmp(pdfont->u.type0.CMapName_data, CMapName->data, CMapName->size))
                     continue;
             }
 
@@ -2290,9 +2289,16 @@ int
 pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdsubf,
                 uint font_index, const gs_const_string *CMapName, pdf_font_resource_t **pdfont)
 {
+    gs_const_string s1;
+
+    if (pdsubf->u.cidfont.parent != 0) {
+        s1.data = pdsubf->u.cidfont.parent->u.type0.CMapName_data;
+        s1.size = pdsubf->u.cidfont.parent->u.type0.CMapName_size;
+    }
+
     if (pdsubf->u.cidfont.parent != 0 &&
             font_index == pdsubf->u.cidfont.parent->u.type0.font_index &&
-            strings_equal(CMapName, &pdsubf->u.cidfont.parent->u.type0.CMapName))
+            strings_equal(CMapName, &s1))
         *pdfont = pdsubf->u.cidfont.parent;
     else {
         /*
