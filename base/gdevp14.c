@@ -5957,7 +5957,7 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
             break;
         case PDF14_BEGIN_TRANS_MASK:
             code = gx_begin_transparency_mask(pgs, pdev, &params);
-            if (code >= 0)
+            if (code >= 0 && params.subtype != TRANSPARENCY_MASK_None)
                 p14dev->in_smask_construction++;
             break;
         case PDF14_END_TRANS_MASK:
