@@ -588,17 +588,22 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
                 t1f->descflags |= 4;
             }
 
-            code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
-            if (code >= 0 && tounicode->type == PDF_STREAM) {
-                pdf_cmap *tu = NULL;
-                code = pdfi_read_cmap(ctx, tounicode, &tu);
-                pdfi_countdown(tounicode);
-                tounicode = (pdf_obj *)tu;
+            if (ctx->args.ignoretounicode != true) {
+                code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
+                if (code >= 0 && tounicode->type == PDF_STREAM) {
+                    pdf_cmap *tu = NULL;
+                    code = pdfi_read_cmap(ctx, tounicode, &tu);
+                    pdfi_countdown(tounicode);
+                    tounicode = (pdf_obj *)tu;
+                }
+                if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
+                    pdfi_countdown(tounicode);
+                    tounicode = NULL;
+                    code = 0;
+                }
             }
-            if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
-                pdfi_countdown(tounicode);
+            else {
                 tounicode = NULL;
-                code = 0;
             }
             t1f->ToUnicode = tounicode;
             tounicode = NULL;

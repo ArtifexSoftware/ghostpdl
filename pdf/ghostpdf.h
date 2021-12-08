@@ -216,6 +216,7 @@ typedef struct cmd_args_s {
     bool verbose_warnings;
     gs_string cidsubstpath;
     gs_string cidsubstfont;
+    bool ignoretounicode;
 } cmd_args_t;
 
 typedef struct encryption_state_s {

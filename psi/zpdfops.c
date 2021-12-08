@@ -1192,6 +1192,11 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
             memcpy(pdfctx->ctx->args.cidsubstfont.data, pvalueref->value.const_bytes, r_size(pvalueref));
             pdfctx->ctx->args.cidsubstfont.size = r_size(pvalueref);
         }
+        if (dict_find_string(pdictref, "IgnoreToUnicode", &pvalueref) > 0) {
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->args.ignoretounicode = pvalueref->value.boolval;
+        }
         code = 0;
         pop(1);
     }
