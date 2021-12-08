@@ -715,7 +715,10 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
         locked = 1;
 
         code = s_opjd_accumulate_input(state, pr);
-        if (code < 0) return code;
+        if (code < 0) {
+            (void)opj_unlock(ss->memory);
+            return code;
+        }
 
         if (state->codec == NULL) {
             /* state->sb.size is non-zero after successful
