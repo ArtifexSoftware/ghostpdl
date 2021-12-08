@@ -3117,7 +3117,7 @@ pdf_close(gx_device * dev)
         do {
             code = write_xref_section(pdev, tfile, start_section, end_section, resource_pos, linear_params.Offsets);
             if (code < 0)
-                return code;
+                goto error_cleanup;
 
             if (end_section >= pdev->next_id)
                 break;
@@ -3160,6 +3160,7 @@ pdf_close(gx_device * dev)
         gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->ResourceUsage, "Free linearisation resource usage records");
     }
 
+error_cleanup:
     /* Require special handling for Fonts, ColorSpace and Pattern resources
      * These are tracked in pdev->last_resource, and are complex structures which may
      * contain other memory allocations. All other resource types can be simply dicarded
@@ -3581,6 +3582,8 @@ pdf_close(gx_device * dev)
             code = gs_error_ioerror;
     }
 
+    pdf_free_pdf_font_cache(pdev);
+
     code1 = gdev_vector_close_file((gx_device_vector *) pdev);
     if (code >= 0)
         code = code1;
@@ -3607,6 +3610,5 @@ pdf_close(gx_device * dev)
             code = gs_note_error(gs_error_ioerror);
     }
 
-    pdf_free_pdf_font_cache(pdev);
     return code;
 }
