@@ -10890,6 +10890,9 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_gstate *pgs,
     if (code < 0)
         return code;
 
+    if (dev->color_info.separable_and_linear == GX_CINFO_UNKNOWN_SEP_LIN)
+        check_device_separable(dev);
+
     gsicc_extract_profile(GS_UNKNOWN_TAG, fwd_profile, &icc_profile_fwd,
                           &render_cond);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile_dev,
@@ -10951,7 +10954,10 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_gstate *pgs,
     if (code >= 0) {
         new_pgs.trans_device = dev;
         new_pgs.has_transparency = true;
-        code = gx_forward_fill_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
+        if (gx_dc_is_pattern2_color(pdcolor))
+            code = gx_default_fill_path_shading_or_pattern(dev, &new_pgs, ppath, params, pdcolor, pcpath);
+        else
+            code = gx_forward_fill_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
         new_pgs.trans_device = NULL;
         new_pgs.has_transparency = false;
     }
