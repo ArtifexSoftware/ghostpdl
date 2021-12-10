@@ -1162,7 +1162,6 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *
     if (EODString != NULL) {
         state.eod.data = EODString->data;
         state.eod.size = EODString->length;
-        min_size = EODString->length;
     }
 
     if (EODCount > 0)

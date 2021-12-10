@@ -1541,7 +1541,7 @@ static int
 pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_stream *image_stream,
               pdf_c_stream *source, bool inline_image)
 {
-    pdf_c_stream *new_stream = NULL;
+    pdf_c_stream *new_stream = NULL, *SFD_stream = NULL;
     int code = 0, code1 = 0;
     int comps = 0;
     gs_color_space  *pcs = NULL;
@@ -1567,6 +1567,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     int saved_intent;
     gs_offset_t stream_offset;
     float save_strokeconstantalpha = 0.0f, save_fillconstantalpha = 0.0f;
+    pdf_string *EODString = NULL;
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image BEGIN\n");
@@ -1905,8 +1906,21 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     /* Setup the data stream for the image data */
-    if (!inline_image)
+    if (!inline_image) {
+        code = pdfi_object_alloc(ctx, PDF_STRING, 9, (pdf_obj **)&EODString);
+        if (code < 0)
+            goto cleanupExit;
+        pdfi_countup((pdf_obj *)EODString);
+        memcpy(EODString->data, "endstream", 9);
+
         pdfi_seek(ctx, source, stream_offset, SEEK_SET);
+
+        code = pdfi_apply_SubFileDecode_filter(ctx, 0, EODString, source, &SFD_stream, false);
+        if (code < 0)
+            goto cleanupExit;
+        source = SFD_stream;
+    }
+
     code = pdfi_filter(ctx, image_stream, source, &new_stream, inline_image);
     if (code < 0)
         goto cleanupExit;
@@ -2009,6 +2023,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     if (new_stream)
         pdfi_close_file(ctx, new_stream);
+    if (SFD_stream)
+        pdfi_close_file(ctx, SFD_stream);
     if (mask_buffer)
         gs_free_object(ctx->memory, mask_buffer, "pdfi_do_image (mask_buffer)");
 
@@ -2023,6 +2039,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     /* Restore the rendering intent */
     gs_setrenderingintent(ctx->pgs, saved_intent);
+
+    pdfi_countdown(EODString);
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image END\n");
