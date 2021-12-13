@@ -530,7 +530,7 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
     const char *fn;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
-    if (code < 0 || ((pdf_name *)basefont)->length == 0)
+    if (code < 0 || basefont == NULL || ((pdf_name *)basefont)->length == 0)
         fallback = true;
 
     if (fallback == true) {
