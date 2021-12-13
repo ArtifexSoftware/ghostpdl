@@ -1187,7 +1187,7 @@ static int search_table_1(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
 {
     int i, code = 0;
 
-    for (i = 0; i < 39; i++) {
+    for (i = 0; i < 27; i++) {
         if (memcmp(str, op_table_1[i], 1) == 0) {
             code = pdfi_object_alloc(ctx, PDF_KEYWORD, 1, (pdf_obj **)key);
             if (code < 0)
