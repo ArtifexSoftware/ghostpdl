@@ -336,6 +336,7 @@ const char *pdf_error_strings[] = {
     "error in transparency XObject",
     "object lacks a required Subtype",
     "error in image colour",
+    "dictionary contains a key which (indirectly) references the dictionary."
     ""                                          /* last error, should not be used */
 };
 

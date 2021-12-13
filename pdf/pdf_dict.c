@@ -235,8 +235,20 @@ int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
                     code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, o);
                     if (code < 0)
                         return code;
-                    pdfi_countdown(d->values[i]);
-                    d->values[i] = *o;
+                    /* The file Bug690138.pdf has font dictionaries which contain ToUnicode keys where
+                     * the value is an indirect reference to the same font object. If we replace the
+                     * indirect reference in the dictionary with the font dictionary it becomes self
+                     * referencing and never counts down to 0, leading to a memory leak.
+                     * This is clearly an error, so flag it and don't replace the indirect reference.
+                     */
+                    if ((*o)->object_num == 0 || (*o)->object_num != d->object_num)
+                    {
+                        pdfi_countdown(d->values[i]);
+                        d->values[i] = *o;
+                    } else {
+                        pdfi_set_error(ctx, 0, NULL, E_DICT_SELF_REFERENCE, "pdfi_dict_get", NULL);
+                        return 0;
+                    }
                 }
                 *o = d->values[i];
                 pdfi_countup(*o);

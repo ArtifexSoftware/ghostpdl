@@ -29,7 +29,7 @@
 #endif
 
 #ifndef PDFI_LEAK_CHECK
-#define PDFI_LEAK_CHECK 0
+#define PDFI_LEAK_CHECK 1
 #endif
 
 /* A structure for setting/resetting the interpreter graphics state
@@ -86,6 +86,7 @@ typedef enum pdf_error_e {
     E_PDF_INVALID_TRANS_XOBJECT,
     E_PDF_NO_SUBTYPE,
     E_PDF_IMAGECOLOR_ERROR,
+    E_DICT_SELF_REFERENCE,
     E_PDF_MAX_ERROR                     /* Must be last entry, add new errors immediately before this and update pdf_error_strings in ghostpdf.c */
 }pdf_error;
 
