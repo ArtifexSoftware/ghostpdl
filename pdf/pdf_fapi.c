@@ -746,7 +746,10 @@ pdfi_fapi_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
             int leniv = (pfont->data.lenIV > 0 ? pfont->data.lenIV : 0);
             pdf_string *subrstring;
 
-            code = pdfi_array_get(pdffont2->ctx, pdffont2->Subrs, index, (pdf_obj **)&subrstring);
+            if (pdffont2->Subrs == NULL)
+                code = gs_note_error(gs_error_invalidfont);
+            else
+                code = pdfi_array_get(pdffont2->ctx, pdffont2->Subrs, index, (pdf_obj **)&subrstring);
             if (code >= 0) {
                 if (subrstring->length > 0) {
                     code = subrstring->length - leniv;
