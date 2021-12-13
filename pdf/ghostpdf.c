@@ -1300,7 +1300,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
              */
             if (last_lineend) {
                 leftover = last_lineend - Buffer;
-                memcpy(Buffer + bytes - leftover, last_lineend, leftover);
+                memmove(Buffer + bytes - leftover, last_lineend, leftover);
                 bytes -= leftover;
             } else
                 leftover = 0;
