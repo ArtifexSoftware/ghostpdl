@@ -1187,8 +1187,6 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
                 cstrlen = I->ff.char_data_len - leniv;
 
                 if (buf && buf_length >= cstrlen) {
-                    memcpy(buf, I->ff.char_data, I->ff.char_data_len);
-
                     if (ff->need_decrypt && pfont->data.lenIV >= 0)
                         decode_bytes(buf, I->ff.char_data, cstrlen + leniv, leniv);
                     else
