@@ -436,7 +436,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                                                 code = gs_note_error(gs_error_rangecheck);
                                                                 goto exit;
                                                             }
-                                                            if (obj_num > ctx->xref_table->xref_size)
+                                                            if (obj_num >= ctx->xref_table->xref_size)
                                                                 code = pdfi_repair_add_object(ctx, obj_num, 0, 0);
 
                                                             if (code == 0) {
