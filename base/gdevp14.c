@@ -2514,6 +2514,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     int i;
     int alpha_offset, tag_offset;
     const byte* buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int rendering_intent_saved;
 
     /* Nothing was ever drawn. */
     if (buf == NULL)
@@ -2720,11 +2721,16 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     ctm_only_writable(pgs).yy = (float)height;
     ctm_only_writable(pgs).tx = (float)rect.p.x;
     ctm_only_writable(pgs).ty = (float)rect.p.y;
+    /* Make sure that the relative colorimetric rendering intent is
+       used for this image. */
+    rendering_intent_saved = pgs->renderingintent;
+    pgs->renderingintent = gsRELATIVECOLORIMETRIC;
     code = dev_proc(target, begin_typed_image) (target,
                                                 pgs, NULL,
                                                 (gs_image_common_t *)&image,
                                                 NULL, NULL, NULL,
                                                 pgs->memory, &info);
+    pgs->renderingintent = rendering_intent_saved;
     if (code < 0) {
         rc_decrement_only_cs(pcs, "pdf14_put_image");
         return code;
