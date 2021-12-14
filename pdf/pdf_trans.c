@@ -156,13 +156,15 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         code = pdfi_dict_knownget_type(ctx, SMask, "S", PDF_NAME, (pdf_obj **)&S);
         if (code <= 0) {
             dmprintf(ctx->memory, "WARNING: Missing 'S' in SMask (defaulting to Luminosity)\n");
+            subtype = TRANSPARENCY_MASK_Luminosity;
         }
-        if (pdfi_name_is(S, "Luminosity")) {
+        else if (pdfi_name_is(S, "Luminosity")) {
             subtype = TRANSPARENCY_MASK_Luminosity;
         } else if (pdfi_name_is(S, "Alpha")) {
             subtype = TRANSPARENCY_MASK_Alpha;
         } else {
             dmprintf(ctx->memory, "WARNING: Unknown subtype 'S' in SMask (defaulting to Luminosity)\n");
+            subtype = TRANSPARENCY_MASK_Luminosity;
         }
 
         /* TR is transfer function (Optional) */
