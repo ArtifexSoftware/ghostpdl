@@ -278,6 +278,7 @@ dev_proc_get_alpha_bits(gx_default_get_alpha_bits);
 dev_proc_copy_alpha(gx_no_copy_alpha);  /* gives error */
 dev_proc_copy_alpha(gx_default_copy_alpha);
 dev_proc_fill_path(gx_default_fill_path);
+dev_proc_fill_path(gx_default_fill_path_shading_or_pattern);
 dev_proc_stroke_path(gx_default_stroke_path);
 dev_proc_fill_mask(gx_default_fill_mask);
 dev_proc_fill_trapezoid(gx_default_fill_trapezoid);
