@@ -336,7 +336,7 @@ const char *pdf_error_strings[] = {
     "error in transparency XObject",
     "object lacks a required Subtype",
     "error in image colour",
-    "dictionary contains a key which (indirectly) references the dictionary."
+    "dictionary contains a key which (indirectly) references the dictionary.",
     ""                                          /* last error, should not be used */
 };
 
@@ -1587,10 +1587,6 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
 
     ctx = (pdf_context *) gs_alloc_bytes(pmem, sizeof(pdf_context), "pdf_create_context");
 
-#if PDFI_LEAK_CHECK
-    ctx->memstat = mstat;
-#endif
-
     pgs = gs_gstate_alloc(pmem);
 
     if (!ctx || !pgs)
@@ -1608,6 +1604,10 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
     ctx->flags = 0;
     ctx->refcnt = 1;
     ctx->ctx = ctx;
+
+#if PDFI_LEAK_CHECK
+    ctx->memstat = mstat;
+#endif
 
     ctx->stack_bot = (pdf_obj **)gs_alloc_bytes(ctx->memory, INITIAL_STACK_SIZE * sizeof (pdf_obj *), "pdf_imp_allocate_interp_stack");
     if (ctx->stack_bot == NULL) {
