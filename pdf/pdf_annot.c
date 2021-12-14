@@ -3879,8 +3879,8 @@ static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
     }
     if (!dispatch_ptr->subtype) {
         char str[100];
-        memcpy(str, (const char *)subtype->data, subtype->length);
-        str[subtype->length] = '\0';
+        memcpy(str, (const char *)subtype->data, subtype->length < 100 ? subtype->length : 99);
+        str[subtype->length < 100 ? subtype->length : 99] = '\0';
         dbgmprintf1(ctx->memory, "ANNOT: No handler for subtype %s\n", str);
 
         /* Not necessarily an error? We can just render the AP if there is one */
