@@ -946,6 +946,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                 ptpriv->type1data.initialRandomSeed = args[0].ival;
 
             if (b0 == 6) {
+                if (n > max_BlueValues * 2) n = max_BlueValues * 2;
                 ptpriv->type1data.BlueValues.count = n;
                 ptpriv->type1data.BlueValues.values[0] = args[0].fval;
                 for (i = 1; i < n; i++) {
@@ -954,6 +955,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
             }
 
             if (b0 == 7) {
+                if (n > max_OtherBlues * 2) n = max_OtherBlues * 2;
                 ptpriv->type1data.OtherBlues.count = n;
                 ptpriv->type1data.OtherBlues.values[0] = args[0].fval;
                 for (i = 1; i < n; i++) {
@@ -962,6 +964,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
             }
 
             if (b0 == 8) {
+                if (n > max_FamilyBlues * 2) n = max_FamilyBlues * 2;
                 ptpriv->type1data.FamilyBlues.count = n;
                 ptpriv->type1data.FamilyBlues.values[0] = args[0].fval;
                 for (i = 1; i < n; i++) {
@@ -970,6 +973,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
             }
 
             if (b0 == 9) {
+                if (n > max_FamilyOtherBlues * 2) n = max_FamilyOtherBlues * 2;
                 ptpriv->type1data.FamilyOtherBlues.count = n;
                 ptpriv->type1data.FamilyOtherBlues.values[0] = args[0].fval;
                 for (i = 1; i < n; i++) {
