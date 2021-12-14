@@ -2373,7 +2373,7 @@ static int reset_gstate_for_pattern(gx_device_pdf * pdev, gs_gstate *destination
         destination->line_params.dot_orientation = source->line_params.dot_orientation;
         source->line_params.dot_orientation = pdev->vg_initial.line_params.dot_orientation;
         if (destination->line_params.dash.pattern != NULL && destination->line_params.dash.pattern != source->line_params.dash.pattern)
-            gs_free_object(pdev->pdf_memory, destination->line_params.dash.pattern, "free dash assigned during pattern accumulation");
+            gs_free_object(destination->memory, destination->line_params.dash.pattern, "free dash assigned during pattern accumulation");
         memcpy(&destination->line_params.dash, &source->line_params.dash, sizeof(source->line_params.dash));
         memcpy(&source->line_params.dash, &pdev->vg_initial.line_params.dash, sizeof(source->line_params.dash));
     }
