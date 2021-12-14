@@ -538,7 +538,7 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                                  const xref_entry *entry)
 {
     int code = 0;
-    xref_entry *compressed_entry = &ctx->xref_table->xref[entry->u.compressed.compressed_stream_num];
+    xref_entry *compressed_entry;
     pdf_c_stream *compressed_stream = NULL;
     pdf_c_stream *SubFile_stream = NULL;
     pdf_c_stream *Object_stream = NULL;
@@ -551,6 +551,11 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     pdf_dict *compressed_sdict = NULL; /* alias */
     pdf_name *Type = NULL;
     pdf_obj *temp_obj;
+
+    if (entry->u.compressed.compressed_stream_num > ctx->xref_table->xref_size)
+        return_error(gs_error_undefined);
+
+    compressed_entry = &ctx->xref_table->xref[entry->u.compressed.compressed_stream_num];
 
     if (ctx->args.pdfdebug) {
         dmprintf1(ctx->memory, "%% Reading compressed object (%"PRIi64" 0 obj)", obj);
