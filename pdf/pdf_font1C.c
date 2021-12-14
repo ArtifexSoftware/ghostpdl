@@ -786,6 +786,8 @@ pdfi_read_cff_integer(byte *p, byte *e, int b0, int *val)
     return p;
 }
 
+#define PDFI_CFF_STACK_SIZE 48
+
 static int
 pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_offsets *offsets)
 {
@@ -794,7 +796,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
     {
         int ival;
         float fval;
-    } args[48];
+    } args[PDFI_CFF_STACK_SIZE];
     int offset;
     int b0, n;
     double f;
@@ -1039,6 +1041,10 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
             else {
                 dmprintf1(ptpriv->memory, "CFF: corrupt dictionary operand (b0 = %d)", b0);
             }
+        }
+        if (n >= PDFI_CFF_STACK_SIZE) {
+            code = gs_error_invalidfont;
+            break;
         }
     }
 
