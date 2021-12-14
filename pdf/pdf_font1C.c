@@ -789,7 +789,7 @@ pdfi_read_cff_integer(byte *p, byte *e, int b0, int *val)
 #define PDFI_CFF_STACK_SIZE 48
 
 static int
-pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_offsets *offsets)
+pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_offsets *offsets, bool topdict)
 {
     pdfi_cff_font_priv *font = &ptpriv->pdfcffpriv;
     struct
@@ -856,7 +856,14 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
             if (b0 == 18) {
                 offsets->private_size = args[0].ival;
                 offsets->private_off = args[1].ival;
-                do_priv = offsets->private_size > 0 ? true : false;
+                /* Catch a broken font with a self referencing Private dict */
+                if (topdict == true)
+                    do_priv = offsets->private_size > 0 ? true : false;
+                else {
+                    do_priv = false;
+                    code = gs_error_invalidfont;
+                    break;
+                }
             }
 
             if (b0 == 19) {
@@ -1058,7 +1065,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
         if (p == NULL)
             code = gs_error_invalidfont;
         else
-            code = pdfi_read_cff_dict(font->cffdata + offsets->private_off, dend, ptpriv, offsets);
+            code = pdfi_read_cff_dict(font->cffdata + offsets->private_off, dend, ptpriv, offsets, false);
 
         if (code < 0)
             dmprintf(ptpriv->memory, "CFF: cannot read private dictionary");
@@ -1555,7 +1562,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
         font->NumGlobalSubrs = 0;
     }
     /* Read the top and private dictionaries */
-    code = pdfi_read_cff_dict(dictp, dicte, ptpriv, &offsets);
+    code = pdfi_read_cff_dict(dictp, dicte, ptpriv, &offsets, true);
     if (code < 0)
         return gs_rethrow(code, "cannot read top dictionary");
 
@@ -1729,7 +1736,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                 if (fddicte > font->cffend)
                     fddicte = font->cffend;
 
-                code = pdfi_read_cff_dict(fddictp, fddicte, &fdptpriv, &offsets);
+                code = pdfi_read_cff_dict(fddictp, fddicte, &fdptpriv, &offsets, true);
                 if (code < 0) {
                     ptpriv->cidata.FDArray[i] = NULL;
                     code = gs_note_error(gs_error_invalidfont);
