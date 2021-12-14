@@ -1230,7 +1230,7 @@ int pdfi_d1(pdf_context *ctx)
 
     ctx->text.CharProc_is_d1 = true;
 
-    if (pdfi_count_stack(ctx) < 2) {
+    if (pdfi_count_stack(ctx) < 6) {
         code = gs_note_error(gs_error_stackunderflow);
         goto d1_error;
     }
