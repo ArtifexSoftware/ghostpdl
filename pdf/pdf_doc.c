@@ -105,11 +105,16 @@ int pdfi_read_Info(pdf_context *ctx)
 {
     pdf_dict *Info;
     int code;
+    pdf_dict *d;
 
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Reading Info dictionary\n");
 
+    /* See comment in pdfi_read_Root() for details */
+    d = ctx->Trailer;
+    pdfi_countup(d);
     code = pdfi_dict_get_type(ctx, ctx->Trailer, "Info", PDF_DICT, (pdf_obj **)&Info);
+    pdfi_countdown(d);
     if (code < 0)
         return code;
 
