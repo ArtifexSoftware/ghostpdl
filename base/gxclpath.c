@@ -1253,8 +1253,17 @@ clist_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                 return code;
         if (code < 0) {
             /* Something went wrong, use the default implementation. */
-            return gx_default_stroke_path(dev, pgs, ppath, params, pdcolor,
+            cdev->cropping_saved = false;
+            code = gx_default_stroke_path(dev, pgs, ppath, params, pdcolor,
                                           pcpath);
+            if (cdev->cropping_saved) {
+                cdev->cropping_min = cdev->save_cropping_min;
+                cdev->cropping_max = cdev->save_cropping_max;
+                if_debug2m('v', cdev->memory,
+                           "[v] clist_stroke_path: restore cropping_min=%d croping_max=%d\n",
+                           cdev->save_cropping_min, cdev->save_cropping_max);
+            }
+            return code;
         }
         re.pcls->color_usage.slow_rop |= slow_rop;
         CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);

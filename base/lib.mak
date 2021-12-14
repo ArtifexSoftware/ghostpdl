@@ -913,7 +913,7 @@ $(GLOBJ)gxscanc.$(OBJ) : $(GLSRC)gxscanc.c $(GX) $(gxscanc_h) $(gx_h)\
 
 $(GLOBJ)gxstroke.$(OBJ) : $(GLSRC)gxstroke.c $(AK) $(gx_h)\
  $(gserrors_h) $(math__h) $(gpcheck_h) $(gsstate_h)\
- $(gscoord_h) $(gsdcolor_h) $(gsdevice_h) $(gsptype1_h)\
+ $(gscoord_h) $(gsdcolor_h) $(gsdevice_h) $(gsptype1_h) $(gsptype2_h)\
  $(gxdevice_h) $(gxfarith_h) $(gxfixed_h)\
  $(gxhttile_h) $(gxgstate_h) $(gxmatrix_h) $(gxpaint_h)\
  $(gzcpath_h) $(gzline_h) $(gzpath_h) $(LIB_MAK) $(MAKEDIRS)
