@@ -1209,6 +1209,11 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
                 goto error;
             pdfctx->ctx->args.ignoretounicode = pvalueref->value.boolval;
         }
+        if (dict_find_string(pdictref, "NONATIVEFONTMAP", &pvalueref) > 0) {
+            if (!r_has_type(pvalueref, t_boolean))
+                goto error;
+            pdfctx->ctx->args.nonativefontmap = pvalueref->value.boolval;
+        }
         code = 0;
         pop(1);
     }

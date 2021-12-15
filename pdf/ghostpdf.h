@@ -218,6 +218,7 @@ typedef struct cmd_args_s {
     gs_string cidsubstpath;
     gs_string cidsubstfont;
     bool ignoretounicode;
+    bool nonativefontmap;
 } cmd_args_t;
 
 typedef struct encryption_state_s {

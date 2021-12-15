@@ -639,6 +639,14 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
 
     if (ctx->pdfnativefontmap != NULL) /* Only run this once */
         return 0;
+    if (ctx->args.nonativefontmap == true) {
+        /* Basically create an empty dictionary */
+        code = pdfi_dict_alloc(ctx, 1, &ctx->pdfnativefontmap);
+        if (code < 0)
+            return code;
+        pdfi_countup(ctx->pdfnativefontmap);
+        return 0;
+    }
 
     patrn = (char *)gs_alloc_bytes(ctx->memory, gp_file_name_sizeof, "pdfi_generate_native_fontmap");
     result = (char *)gs_alloc_bytes(ctx->memory, gp_file_name_sizeof, "pdfi_generate_native_fontmap");
