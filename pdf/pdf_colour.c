@@ -2297,7 +2297,10 @@ pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int in
     } else if (pdfi_name_is(space, "Separation")) {
         code = pdfi_create_Separation(ctx, color_array, index, stream_dict, page_dict, ppcs, inline_image);
     } else {
-        code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",
+        if (stream_dict == NULL)
+            code = gs_note_error(gs_error_syntaxerror);
+        else
+            code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",
                                   space, (pdf_dict *)stream_dict, page_dict, (pdf_obj **)&a);
         if (code < 0)
             goto exit;
@@ -2440,7 +2443,7 @@ int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_di
             return_error(gs_error_typecheck);
         }
     }
-    if (ppcs && *ppcs && code >= 0)
+    if (code >= 0 && ppcs && *ppcs)
         (void)(*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
 
     (void)pdfi_loop_detector_cleartomark(ctx);
