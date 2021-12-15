@@ -12234,6 +12234,7 @@ pdf14_device_finalize(const gs_memory_t *cmem, void *vptr)
 {
     gx_device * const dev = (gx_device *)vptr;
     pdf14_device * pdev = (pdf14_device *)dev;
+    int k;
 
     pdf14_cleanup_group_color_profiles (pdev);
 
@@ -12245,6 +12246,21 @@ pdf14_device_finalize(const gs_memory_t *cmem, void *vptr)
     while (pdev->color_model_stack) {
         pdf14_pop_group_color(dev, NULL);
     }
+
+    for (k = 0; k < pdev->devn_params.separations.num_separations; k++) {
+        if (pdev->devn_params.separations.names[k].data) {
+            gs_free_object(pdev->memory->stable_memory, pdev->devn_params.separations.names[k].data, "pdf14_device_finalize");
+            pdev->devn_params.separations.names[k].data = NULL;
+        }
+    }
+
+    for (k = 0; k < pdev->devn_params.pdf14_separations.num_separations; k++) {
+        if (pdev->devn_params.pdf14_separations.names[k].data) {
+            gs_free_object(pdev->memory->stable_memory, pdev->devn_params.pdf14_separations.names[k].data, "pdf14_device_finalize");
+            pdev->devn_params.pdf14_separations.names[k].data = NULL;
+        }
+    }
+
     gx_device_finalize(cmem, vptr);
 }
 
