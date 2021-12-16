@@ -1359,6 +1359,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                         /* TODO: Could try DeviceRGB instead of erroring out? */
                         gs_sprintf(extra_info, "**** Error: JPXDecode: Unsupported EnumCS %d\n", jpx_info->cs_enum);
                         pdfi_set_error(ctx, 0, NULL, E_PDF_IMAGECOLOR_ERROR, "pdfi_image_get_color", extra_info);
+                        code = gs_note_error(gs_error_rangecheck);
                         goto cleanupExit;
                     }
                 }
@@ -1747,6 +1748,12 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 if (code < 0)
                     goto cleanupExit;
             }
+        }
+    }
+    else {
+        if (image_info.ImageMask == 0) {
+            code = gs_note_error(gs_error_undefined);
+            goto cleanupExit;
         }
     }
 
@@ -2245,6 +2252,8 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
         return 0;
 
     if (!ctx->args.pdfstoponerror) {
+        pdf_obj *Parent = NULL;
+        pdf_dict *d = NULL;
         pdf_dict *stream_dict = NULL;
 
         code = pdfi_dict_knownget_type(ctx, form_dict, "Contents", PDF_STREAM,
@@ -2254,6 +2263,27 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
             code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
+
+        d = form_dict;
+        pdfi_countup(d);
+        do {
+            code = pdfi_dict_knownget(ctx, d, "Parent", (pdf_obj **)&Parent);
+            if (code > 0) {
+                if (Parent->object_num == stream_obj->object_num) {
+                    pdfi_countdown(d);
+                    pdfi_countdown(Parent);
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
+                    code = gs_note_error(gs_error_undefined);
+                    goto exit;
+                }
+                pdfi_countdown(d);
+                d = Parent;
+            } else {
+                pdfi_countdown(d);
+                break;
+            }
+        } while (Parent != NULL);
+
         code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
         if (code < 0) {
             pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
