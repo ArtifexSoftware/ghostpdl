@@ -2277,7 +2277,7 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
                     goto exit;
                 }
                 pdfi_countdown(d);
-                d = Parent;
+                d = (pdf_dict *)Parent;
             } else {
                 pdfi_countdown(d);
                 break;
