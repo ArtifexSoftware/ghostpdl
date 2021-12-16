@@ -2415,9 +2415,12 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffpriv.pdfcffpriv.Encoding = NULL;
 
                 fdcfffont->CharStrings = cffpriv.pdfcffpriv.CharStrings;
+                cffpriv.pdfcffpriv.CharStrings = NULL;
                 fdcfffont->Subrs = cffpriv.pdfcffpriv.Subrs;
+                cffpriv.pdfcffpriv.Subrs = NULL;
                 fdcfffont->NumSubrs = cffpriv.pdfcffpriv.NumSubrs;
                 fdcfffont->GlobalSubrs = cffpriv.pdfcffpriv.GlobalSubrs;
+                cffpriv.pdfcffpriv.GlobalSubrs = NULL;
                 fdcfffont->NumGlobalSubrs = cffpriv.pdfcffpriv.NumGlobalSubrs;
 
                 cffcid->CharStrings = fdcfffont->CharStrings;
@@ -2464,9 +2467,6 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
 
                 cffcid->PDF_font = font_dict;
                 pdfi_countup(font_dict);
-                cffcid->CharStrings = cffpriv.pdfcffpriv.CharStrings;
-                cffcid->Subrs = cffpriv.pdfcffpriv.Subrs;
-                cffcid->GlobalSubrs = cffpriv.pdfcffpriv.GlobalSubrs;
 
                 cffcid->cidtogidmap.data = NULL;
                 cffcid->cidtogidmap.size = 0;

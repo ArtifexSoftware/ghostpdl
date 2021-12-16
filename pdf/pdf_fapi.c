@@ -688,18 +688,23 @@ pdfi_fapi_get_gsubr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
         }
         else {
             int leniv = (pfont->data.lenIV > 0 ? pfont->data.lenIV : 0);
-            pdf_string *subrstring;
+            pdf_string *subrstring = NULL;
 
             code = pdfi_array_get(pdffont2->ctx, pdffont2->GlobalSubrs, index, (pdf_obj **)&subrstring);
             if (code >= 0) {
-                code = subrstring->length - leniv;
-                if (buf && buf_length >= code) {
-                    if (ff->need_decrypt && pfont->data.lenIV >= 0) {
-                        decode_bytes(buf, subrstring->data, code + leniv, pfont->data.lenIV);
+                if (subrstring->type == PDF_STRING) {
+                    code = subrstring->length - leniv;
+                    if (buf && buf_length >= code) {
+                        if (ff->need_decrypt && pfont->data.lenIV >= 0) {
+                            decode_bytes(buf, subrstring->data, code + leniv, pfont->data.lenIV);
+                        }
+                        else {
+                            memcpy(buf, subrstring->data, code);
+                        }
                     }
-                    else {
-                        memcpy(buf, subrstring->data, code);
-                    }
+                }
+                else {
+                    code = gs_note_error(gs_error_invalidfont);
                 }
                 pdfi_countdown(subrstring);
             }
@@ -751,16 +756,21 @@ pdfi_fapi_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
             else
                 code = pdfi_array_get(pdffont2->ctx, pdffont2->Subrs, index, (pdf_obj **)&subrstring);
             if (code >= 0) {
-                if (subrstring->length > 0) {
-                    code = subrstring->length - leniv;
-                    if (buf && buf_length >= code) {
-                        if (ff->need_decrypt && pfont->data.lenIV >= 0) {
-                            decode_bytes(buf, subrstring->data, code + leniv, pfont->data.lenIV);
-                        }
-                        else {
-                            memcpy(buf, subrstring->data, code);
+                if (subrstring->type == PDF_STRING) {
+                    if (subrstring->length > 0) {
+                        code = subrstring->length - leniv;
+                        if (buf && buf_length >= code) {
+                            if (ff->need_decrypt && pfont->data.lenIV >= 0) {
+                                decode_bytes(buf, subrstring->data, code + leniv, pfont->data.lenIV);
+                            }
+                            else {
+                                memcpy(buf, subrstring->data, code);
+                            }
                         }
                     }
+                }
+                else {
+                    code = gs_note_error(gs_error_invalidfont);
                 }
                 pdfi_countdown(subrstring);
             }
