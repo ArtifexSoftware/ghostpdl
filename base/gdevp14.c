@@ -11066,7 +11066,10 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_gstate *pgs,
     if (code >= 0) {
         new_pgs.trans_device = dev;
         new_pgs.has_transparency = true;
-        code = gx_forward_stroke_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
+        if (gx_dc_is_pattern2_color(pdcolor))
+            code = gx_default_stroke_path_shading_or_pattern(dev, &new_pgs, ppath, params, pdcolor, pcpath);
+        else
+            code = gx_forward_stroke_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
         new_pgs.trans_device = NULL;
         new_pgs.has_transparency = false;
     }

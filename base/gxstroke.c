@@ -341,13 +341,20 @@ gx_default_stroke_path_shading_or_pattern(gx_device        * pdev,
     gx_path spath;
     gx_fill_params fparams;
     int code;
+    /* Override the stroke params to be 'traditional'. This is
+     * required to solve some issues with the 'stroke to a path'
+     * mechanism used by gx_default_stroke_path_shading_or_pattern,
+     * where we can otherwise get differences in the 'underjoins'.
+     * of the stroked path. */
+    gx_stroke_params params2 = *params;
+    params2.traditional = 1;
 
     fparams.flatness = params->flatness;
     fparams.adjust.x = pgs->fill_adjust.x;
     fparams.adjust.y = pgs->fill_adjust.x;
     fparams.rule = gx_rule_winding_number;
     gx_path_init_local(&spath, pgs->memory);
-    code = gx_stroke_path_only(ppath, &spath, pdev, pgs, params,
+    code = gx_stroke_path_only(ppath, &spath, pdev, pgs, &params2,
                                NULL, NULL);
     if (code >= 0)
         code = gx_default_fill_path_shading_or_pattern(pdev, pgs,
@@ -369,17 +376,8 @@ gx_default_stroke_path(gx_device * dev, const gs_gstate * pgs,
         pdevc->type == &gx_dc_type_data_ht_colored ||
         (gx_dc_is_pattern1_color(pdevc) &&
          gx_pattern_tile_is_clist(pdevc->colors.pattern.p_tile)))
-    {
-        /* Override the stroke params to be 'traditional'. This is
-         * required to solve some issues with the 'stroke to a path'
-         * mechanism used by gx_default_stroke_path_shading_or_pattern,
-         * where we can otherwise get differences in the 'underjoins'.
-         * of the stroked path. */
-        gx_stroke_params params2 = *params;
-        params2.traditional = 1;
-        return gx_default_stroke_path_shading_or_pattern(dev, pgs, ppath, &params2,
+        return gx_default_stroke_path_shading_or_pattern(dev, pgs, ppath, params,
                                                          pdevc, pcpath);
-    }
     else
         return gx_stroke_path_only(ppath, (gx_path *) 0, dev, pgs, params,
                                    pdevc, pcpath);
