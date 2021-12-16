@@ -117,9 +117,10 @@ static int cmap_endcodespacerange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *
         }
 
         for (i = nr; i < code_space->num_ranges; i++) {
-            memcpy(code_space->ranges[i].first, s->cur[-((i * 2) + 1)].val.string, s->cur[-((i * 2) + 1)].size);
-            memcpy(code_space->ranges[i].last, s->cur[-(i * 2)].val.string, s->cur[-(i * 2)].size);
-            code_space->ranges[i].size = s->cur[-(i * 2)].size;
+            int si = i - nr;
+            memcpy(code_space->ranges[i].first, s->cur[-((si * 2) + 1)].val.string, s->cur[-((si * 2) + 1)].size);
+            memcpy(code_space->ranges[i].last, s->cur[-(si * 2)].val.string, s->cur[-(si * 2)].size);
+            code_space->ranges[i].size = s->cur[-(si * 2)].size;
         }
     }
     return pdf_ps_stack_pop(s, to_pop);
