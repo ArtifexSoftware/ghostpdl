@@ -1626,7 +1626,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
     font->Subrs = NULL;
     if (font->NumSubrs > 0) {
         code = pdfi_object_alloc(ctx, PDF_ARRAY, font->NumSubrs, (pdf_obj **) &font->Subrs);
-        if (code >= 0) {
+        if (code >= 0 && font->Subrs != NULL) {
             font->Subrs->refcnt = 1;
             for (i = 0; i < font->NumSubrs; i++) {
                 pdf_string *subrstr;
