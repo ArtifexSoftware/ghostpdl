@@ -372,7 +372,7 @@ display_output_page(gx_device * dev, int copies, int flush)
     }
 
     if (code >= 0)
-        code = gx_finish_output_page(ddev, copies, flush);
+        code = gx_finish_output_page((gx_device *)ddev, copies, flush);
     return code;
 }
 
