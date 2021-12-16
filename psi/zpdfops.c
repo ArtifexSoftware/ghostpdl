@@ -1007,7 +1007,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     }
 
     pdfctx->ctx = ctx;
-    get_zfont_glyph_name((void **)&pdfctx->ctx->get_glyph_name);
+    get_zfont_glyph_name(&pdfctx->ctx->get_glyph_name);
     pdfctx->ctx->get_glyph_index = zpdfi_glyph_index;
 
     if (ref_stack_count(&o_stack) > 0 && r_has_type(op, t_dictionary)) {
