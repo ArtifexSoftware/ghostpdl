@@ -755,6 +755,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
                 code = write_offset((byte *)Buffer, off, gen, free);
                 if (code < 0)
                     return code;
+                j = 19;
                 break;
             }
         }
