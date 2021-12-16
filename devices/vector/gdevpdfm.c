@@ -1933,7 +1933,7 @@ pdfmark_PAGELABEL(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     return 0;
 }
 
-static int is_XMP_Key(gs_param_string *param)
+static int is_XMP_Key(const gs_param_string *param)
 {
     if (pdf_key_eq(param, "/Title"))
         return 1;
