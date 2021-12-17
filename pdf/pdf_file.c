@@ -315,6 +315,7 @@ static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stre
     stream_zlib_state zls;
     uint min_size = 2048;
     int code;
+    stream *Flate_source = NULL;
 
     memset(&zls, 0, sizeof(zls));
 
@@ -329,9 +330,10 @@ static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stre
     source = *new_stream;
 
     if (d && d->type == PDF_DICT) {
+        Flate_source = (*new_stream)->strm;
         code = pdfi_Predictor_filter(ctx, d, source, new_stream);
         if (code < 0)
-            pdfi_close_filter_chain(ctx, source, NULL);
+            pdfi_close_filter_chain(ctx, source, Flate_source);
     }
     return code;
 }
