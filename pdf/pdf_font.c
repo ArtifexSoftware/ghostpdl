@@ -653,7 +653,12 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
 
     /* Beyond Type 0 and Type 3, there is no point trusting the Subtype key */
     if (code >= 0 && pdfi_name_is(Subtype, "Type0")) {
-        code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &ppdffont);
+        if (cidfont == true) {
+            code = gs_note_error(gs_error_invalidfont);
+        }
+        else {
+            code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &ppdffont);
+        }
     }
     else if (code >= 0 && pdfi_name_is(Subtype, "Type3")) {
         code = pdfi_read_type3_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &ppdffont);
