@@ -174,6 +174,11 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
                 preflen = 1;
             }
 
+            if (stobj[i].size - preflen < 0 || stobj[i + 1].size - preflen < 0) {
+                (void)pdf_ps_stack_pop(s, to_pop);
+                return_error(gs_error_syntaxerror);
+            }
+
             /* Find how many bytes we need for the cidbase value */
             /* We always store at least two bytes for the cidbase value */
             for (valuelen = 16; valuelen < 32 && (cidbase >> valuelen) > 0; valuelen += 1)
