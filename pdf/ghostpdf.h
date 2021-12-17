@@ -38,6 +38,7 @@
  */
 typedef struct pdf_context_switch {
     gs_gstate *pgs;
+    gs_font *psfont;
     gs_gstate_client_procs procs;
     void *client_data;
     void *profile_cache;

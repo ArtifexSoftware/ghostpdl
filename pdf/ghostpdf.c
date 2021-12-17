@@ -2024,15 +2024,21 @@ void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_swit
     i_switch->profile_cache = pgs->icc_profile_cache;
     pgs->icc_profile_cache = profile_cache;
     pdfi_gstate_set_client(ctx, pgs);
+    i_switch->psfont = pgs->font;
+    pgs->font = NULL;
     ctx->pgs = pgs;
     return;
 }
 
 void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch)
 {
+    pdf_font *f = pdfi_get_current_pdf_font(ctx);
     pgs->client_procs.free(pgs->client_data, pgs->memory, pgs);
     pgs->client_data = NULL;
     pgs->icc_profile_cache = i_switch->profile_cache;
     gs_gstate_set_client(pgs, i_switch->client_data, &i_switch->procs, true);
+    pdfi_countdown(f);
+    ctx->pgs->font = NULL;
     ctx->pgs = i_switch->pgs;
+    pgs->font = i_switch->psfont;
 }
