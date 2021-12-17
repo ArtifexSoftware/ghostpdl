@@ -748,6 +748,9 @@ int pdfi_read_dict(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uin
     code = pdfi_read_token(ctx, s, indirect_num, indirect_gen);
     if (code < 0)
         return code;
+    if (code == 0)
+        return_error(gs_error_syntaxerror);
+
     if (ctx->stack_top[-1]->type != PDF_DICT_MARK)
         return_error(gs_error_typecheck);
     depth = pdfi_count_stack(ctx);
@@ -756,6 +759,8 @@ int pdfi_read_dict(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uin
         code = pdfi_read_token(ctx, s, indirect_num, indirect_gen);
         if (code < 0)
             return code;
+        if (code == 0)
+            return_error(gs_error_syntaxerror);
     } while(pdfi_count_stack(ctx) > depth);
     return 0;
 }
@@ -1026,7 +1031,10 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
                 return code;
             break;
         case '/':
-            return pdfi_read_name(ctx, s, indirect_num, indirect_gen);
+            code = pdfi_read_name(ctx, s, indirect_num, indirect_gen);
+            if (code < 0)
+                return code;
+            return 1;
             break;
         case '<':
             bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
@@ -1041,15 +1049,23 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
             if (Buffer[1] == '<') {
                 if (ctx->args.pdfdebug)
                     dmprintf (ctx->memory, " <<\n");
-                return pdfi_mark_stack(ctx, PDF_DICT_MARK);
+                code = pdfi_mark_stack(ctx, PDF_DICT_MARK);
+                if (code < 0)
+                    return code;
+                return 1;
             } else {
                 if (Buffer[1] == '>') {
                     pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
-                    return pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
+                    code =  pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
+                    if (code < 0)
+                        return code;
+                    return 1;
                 } else {
                     if (ishex(Buffer[1])) {
                         pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
-                        return pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
+                        code = pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
+                        if (code < 0)
+                            return code;
                     }
                     else
                         return_error(gs_error_syntaxerror);
@@ -1060,20 +1076,30 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
             bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
             if (bytes <= 0)
                 return (gs_error_ioerror);
-            if (Buffer[1] == '>')
-                return pdfi_dict_from_stack(ctx, indirect_num, indirect_gen, false);
+            if (Buffer[1] == '>') {
+                code = pdfi_dict_from_stack(ctx, indirect_num, indirect_gen, false);
+                if (code < 0)
+                    return code;
+                return 1;
+            }
             else {
                 pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
                 return_error(gs_error_syntaxerror);
             }
             break;
         case '(':
-            return pdfi_read_string(ctx, s, indirect_num, indirect_gen);
+            code = pdfi_read_string(ctx, s, indirect_num, indirect_gen);
+            if (code < 0)
+                return code;
+            return 1;
             break;
         case '[':
             if (ctx->args.pdfdebug)
                 dmprintf (ctx->memory, "[");
-            return pdfi_mark_stack(ctx, PDF_ARRAY_MARK);
+            code = pdfi_mark_stack(ctx, PDF_ARRAY_MARK);
+            if (code < 0)
+                return code;
+            return 1;
             break;
         case ']':
             code = pdfi_array_from_stack(ctx, indirect_num, indirect_gen);
@@ -1087,7 +1113,10 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
         case '{':
             if (ctx->args.pdfdebug)
                 dmprintf (ctx->memory, "{");
-            return pdfi_mark_stack(ctx, PDF_PROC_MARK);
+            code = pdfi_mark_stack(ctx, PDF_PROC_MARK);
+            if (code < 0)
+                return code;
+            return 1;
             break;
         case '}':
             pdfi_clear_to_mark(ctx);
@@ -1104,10 +1133,13 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
                 return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
             }
             pdfi_unread(ctx, s, (byte *)&Buffer[0], 1);
-            return pdfi_read_keyword(ctx, s, indirect_num, indirect_gen);
+            code = pdfi_read_keyword(ctx, s, indirect_num, indirect_gen);
+            if (code < 0)
+                return code;
+            return 1;
             break;
     }
-    return 0;
+    return 1;
 }
 
 /* In contrast to the 'read' functions, the 'make' functions create an object with a

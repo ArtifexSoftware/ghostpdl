@@ -390,6 +390,8 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
     if (code < 0)
         return code;
+    if (code == 0)
+        return_error(gs_error_syntaxerror);
 
     if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == TOKEN_XREF) {
         /* Read old-style xref table */
@@ -412,7 +414,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s)
         /* Its an integer, lets try for index gen obj as a XRef stream */
         code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
 
-        if (code < 0)
+        if (code <= 0)
             return(pdfi_repair_file(ctx));
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
@@ -425,6 +427,10 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s)
         if (code < 0) {
             pdfi_pop(ctx, 1);
             return code;
+        }
+        if (code == 0) {
+            pdfi_pop(ctx, 1);
+            return_error(gs_error_syntaxerror);
         }
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
@@ -449,7 +455,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s)
 
             do {
                 code = pdfi_read_token(ctx, ctx->main_stream, obj_num, gen_num);
-                if (code < 0)
+                if (code <= 0)
                     return pdfi_repair_file(ctx);
 
                 if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD) {
@@ -688,6 +694,10 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
     if (code < 0) {
         pdfi_pop(ctx, 1);
         return code;
+    }
+    if (code == 0) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_syntaxerror);
     }
 
     o = ctx->stack_top[-1];
@@ -977,6 +987,8 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
     if (code < 0)
         return(code);
+    if (code == 0)
+        return_error(gs_error_syntaxerror);
 
     if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == TOKEN_XREF) {
         /* Read old-style xref table */

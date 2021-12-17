@@ -250,16 +250,18 @@ int pdfi_repair_file(pdf_context *ctx)
                                                     continue;
                                                 goto exit;
                                             }
-                                            if (ctx->stack_top[-1]->type == PDF_KEYWORD){
-                                                pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
-                                                if (k->key == TOKEN_ENDOBJ) {
-                                                    code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
-                                                    if (code < 0) {
-                                                        if (code != gs_error_VMerror && code != gs_error_ioerror)
-                                                            break;
-                                                        goto exit;
+                                            if (code > 0) {
+                                                if (ctx->stack_top[-1]->type == PDF_KEYWORD){
+                                                    pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+                                                    if (k->key == TOKEN_ENDOBJ) {
+                                                        code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
+                                                        if (code < 0) {
+                                                            if (code != gs_error_VMerror && code != gs_error_ioerror)
+                                                                break;
+                                                            goto exit;
+                                                        }
+                                                        break;
                                                     }
-                                                    break;
                                                 }
                                             }
                                         }while(ctx->main_stream->eof == false);
@@ -420,13 +422,14 @@ int pdfi_repair_file(pdf_context *ctx)
                                     if (code == 0) {
                                         for (j=0;j < N; j++) {
                                             code = pdfi_read_token(ctx, compressed_stream, 0, 0);
-                                            if (code == 0) {
+                                            if (code > 0) {
                                                 o = ctx->stack_top[-1];
                                                 if (((pdf_obj *)o)->type == PDF_INT) {
                                                     obj_num = ((pdf_num *)o)->value.i;
                                                     pdfi_pop(ctx, 1);
                                                     code = pdfi_read_token(ctx, compressed_stream, 0, 0);
-                                                    if (code == 0) {
+                                                    if (code > 0) {
+                                                        code = 0;
                                                         o = ctx->stack_top[-1];
                                                         if (((pdf_obj *)o)->type == PDF_INT) {
                                                             offset = ((pdf_num *)o)->value.i;
@@ -450,6 +453,8 @@ int pdfi_repair_file(pdf_context *ctx)
                                                     }
                                                 }
                                             }
+                                            if (code == 0)
+                                                break;
                                         }
                                     }
                                     pdfi_close_file(ctx, compressed_stream);

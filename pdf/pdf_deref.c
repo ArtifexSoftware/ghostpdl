@@ -402,6 +402,10 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
     if (code < 0)
         return code;
 
+    if (code == 0)
+        /* failed to read a token */
+        return_error(gs_error_syntaxerror);
+
     do {
         /* move all the saved offsets up by one */
         saved_offset[0] = saved_offset[1];
@@ -415,6 +419,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
         }
         if (s->eof)
             return_error(gs_error_syntaxerror);
+        code = 0;
     }while (ctx->stack_top[-1]->type != PDF_KEYWORD);
 
     keyword = ((pdf_keyword *)ctx->stack_top[-1]);
@@ -494,6 +499,9 @@ static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t strea
     code = pdfi_read_token(ctx, s, 0, 0);
     if (code < 0)
         return code;
+    if (code == 0)
+        return_error(gs_error_syntaxerror);
+
     if (stack_size >= pdfi_count_stack(ctx))
         return gs_note_error(gs_error_ioerror);
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
@@ -506,6 +514,9 @@ static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t strea
     code = pdfi_read_token(ctx, s, 0, 0);
     if (code < 0)
         return code;
+    if (code == 0)
+        return_error(gs_error_syntaxerror);
+
     if (stack_size >= pdfi_count_stack(ctx))
         return gs_note_error(gs_error_ioerror);
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
@@ -644,6 +655,10 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
             code = pdfi_read_token(ctx, compressed_stream, obj, gen);
             if (code < 0)
                 goto exit;
+            if (code == 0) {
+                code = gs_note_error(gs_error_syntaxerror);
+                goto exit;
+            }
             temp_obj = ctx->stack_top[-1];
             if (temp_obj->type != PDF_INT) {
                 code = gs_note_error(gs_error_typecheck);
@@ -655,6 +670,10 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
             code = pdfi_read_token(ctx, compressed_stream, obj, gen);
             if (code < 0)
                 goto exit;
+            if (code == 0) {
+                code = gs_note_error(gs_error_syntaxerror);
+                goto exit;
+            }
             temp_obj = ctx->stack_top[-1];
             if (temp_obj->type != PDF_INT) {
                 pdfi_pop(ctx, 1);
@@ -702,6 +721,10 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     code = pdfi_read_token(ctx, Object_stream, obj, gen);
     if (code < 0)
         goto exit;
+    if (code == 0) {
+        code = gs_note_error(gs_error_syntaxerror);
+        goto exit;
+    }
     if (ctx->stack_top[-1]->type == PDF_ARRAY_MARK || ctx->stack_top[-1]->type == PDF_DICT_MARK) {
         int start_depth = pdfi_count_stack(ctx);
 
@@ -710,6 +733,10 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
             code = pdfi_read_token(ctx, Object_stream, obj, gen);
             if (code < 0)
                 goto exit;
+            if (code == 0) {
+                code = gs_note_error(gs_error_syntaxerror);
+                goto exit;
+            }
             if (compressed_stream->eof == true) {
                 code = gs_note_error(gs_error_ioerror);
                 goto exit;
