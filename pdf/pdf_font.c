@@ -718,7 +718,8 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                     if (fftype != no_type_font)
                         sftype = fftype;
                     else {
-                        if (pdfi_name_is(Subtype, "Type1") || pdfi_name_is(Subtype, "MMType1"))
+                        /* If we don't have a Subtype, can't work it out, try Type 1 */
+                        if (Subtype == NULL || pdfi_name_is(Subtype, "Type1") || pdfi_name_is(Subtype, "MMType1"))
                             sftype = type1_font;
                         else if (pdfi_name_is(Subtype, "Type1C"))
                             sftype = cff_font;
