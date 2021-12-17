@@ -139,6 +139,9 @@ static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_
         pdf_obj *o1 = NULL;
         pdf_indirect_ref *r = (pdf_indirect_ref *)obj;
 
+        if (r->ref_object_num == a->object_num && r->ref_generation_num == a->generation_num)
+            return_error(gs_error_circular_reference);
+
         code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, &o1);
         if (code < 0)
             return code;

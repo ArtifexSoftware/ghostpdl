@@ -232,6 +232,9 @@ int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
                 if (d->values[i]->type == PDF_INDIRECT) {
                     pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
 
+                    if (r->ref_object_num == d->object_num && r->ref_generation_num == d->generation_num)
+                        return_error(gs_error_circular_reference);
+
                     code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, o);
                     if (code < 0)
                         return code;
