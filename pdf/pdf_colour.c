@@ -710,6 +710,10 @@ int pdfi_setstrokecolor(pdf_context *ctx)
     gs_swapcolors_quick(ctx->pgs);
     pcs = gs_currentcolorspace(ctx->pgs);
     ncomps = cs_num_components(pcs);
+    if (ncomps < 0) {
+        gs_swapcolors_quick(ctx->pgs);
+        return_error(gs_error_syntaxerror);
+    }
     code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code == 0) {
         code = gs_setcolor(ctx->pgs, &cc);
@@ -725,6 +729,8 @@ int pdfi_setfillcolor(pdf_context *ctx)
     gs_client_color cc;
 
     ncomps = cs_num_components(pcs);
+    if (ncomps < 0)
+        return_error(gs_error_syntaxerror);
     code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code == 0) {
         code = gs_setcolor(ctx->pgs, &cc);
