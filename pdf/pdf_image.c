@@ -1398,9 +1398,16 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
         if (ColorSpace->type == PDF_NAME) {
             pdf_name *name = (pdf_name *)ColorSpace;
             char str[100];
-            memcpy(str, (const char *)name->data, name->length);
-            str[name->length] = '\0';
-            dmprintf1(ctx->memory, "NAME:%s\n", str);
+            int length = name->length;
+
+            if (length > 0) {
+                if (length > 100)
+                    length = 99;
+
+                memcpy(str, (const char *)name->data, length);
+                str[length] = '\0';
+                dmprintf1(ctx->memory, "NAME:%s\n", str);
+            }
         } else {
             dmprintf(ctx->memory, "(not a name)\n");
         }
