@@ -335,12 +335,13 @@ pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
     ops[size] = PtCr_return;
 
     code = pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
-    if (code < 0) {
-        function_stream = NULL;
+    function_stream = NULL;
+    if (code < 0)
         goto function_4_error;
-    }
 
     params.ops.data = (const byte *)ops;
+    /* ops will now be freed with the function params, NULL ops now to avoid double free on error */
+    ops = NULL;
     params.ops.size = size + 1;
     code = gs_function_PtCr_init(ppfn, &params, ctx->memory);
     if (code < 0)
