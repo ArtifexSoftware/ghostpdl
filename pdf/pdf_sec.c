@@ -1122,6 +1122,10 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
         code = pdfi_dict_knownget_type(ctx, d, "StrF", PDF_NAME, &o);
         if (code < 0)
             goto done;
+        if (code == 0) {
+            code = gs_note_error(gs_error_undefined);
+            goto done;
+        }
         if (!pdfi_name_is((pdf_name *)o, "StdCF")) {
             if (pdfi_name_is((pdf_name *)o, "Identity")) {
                 ctx->encryption.StrF = CRYPT_IDENTITY;
