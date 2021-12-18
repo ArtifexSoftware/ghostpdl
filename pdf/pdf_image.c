@@ -2289,7 +2289,7 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
                 pdfi_countdown(d);
                 break;
             }
-        } while (Parent != NULL);
+        } while (1);
 
         code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
         if (code < 0) {
