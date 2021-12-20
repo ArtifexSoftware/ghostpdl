@@ -1401,7 +1401,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
             int length = name->length;
 
             if (length > 0) {
-                if (length > 100)
+                if (length > 99)
                     length = 99;
 
                 memcpy(str, (const char *)name->data, length);
