@@ -595,30 +595,32 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
 
     *o = NULL;
 
-    /* Check the provided dict */
-    code = pdfi_resource_knownget_typedict(ctx, Type, dict, &typedict);
-    if (code < 0)
-        goto exit;
-    if (code > 0) {
-        code = pdfi_dict_get_no_store_R_key(ctx, typedict, name, o);
-        if (code != gs_error_undefined)
+    /* Check the provided dict, stream_dict can be NULL if we are trying to find a Default* ColorSpace */
+    if (dict != NULL) {
+        code = pdfi_resource_knownget_typedict(ctx, Type, dict, &typedict);
+        if (code < 0)
             goto exit;
-    }
-
-    /* Check the Parents, if any */
-    code = pdfi_dict_knownget_type(ctx, dict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
-    if (code < 0)
-        goto exit;
-    if (code > 0) {
-        if (Parent->object_num != ctx->page.CurrentPageDict->object_num) {
-            code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
+        if (code > 0) {
+            code = pdfi_dict_get_no_store_R_key(ctx, typedict, name, o);
             if (code != gs_error_undefined)
                 goto exit;
         }
-    }
 
-    pdfi_countdown(typedict);
-    typedict = NULL;
+        /* Check the Parents, if any */
+        code = pdfi_dict_knownget_type(ctx, dict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
+        if (code < 0)
+            goto exit;
+        if (code > 0) {
+            if (Parent->object_num != ctx->page.CurrentPageDict->object_num) {
+                code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
+                if (code != gs_error_undefined)
+                    goto exit;
+            }
+        }
+
+        pdfi_countdown(typedict);
+        typedict = NULL;
+    }
 
     /* Normally page_dict can't be (or shouldn't be) NULL. However, if we are processing
      * a TYpe 3 font, then the 'page dict' is the Resources dictionary of that font. If
