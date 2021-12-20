@@ -983,14 +983,18 @@ static int pdfi_doc_Outlines(pdf_context *ctx)
 static int pdfi_doc_Info(pdf_context *ctx)
 {
     int code = 0;
-    pdf_dict *Info = NULL;
+    pdf_dict *Info = NULL, *d = NULL;
     pdf_dict *tempdict = NULL;
     uint64_t dictsize;
     uint64_t index;
     pdf_name *Key = NULL;
     pdf_obj *Value = NULL;
 
-    code = pdfi_dict_knownget_type(ctx, ctx->Trailer, "Info", PDF_DICT, (pdf_obj **)&Info);
+    /* See comment in pdfi_read_Root() for details */
+    d = ctx->Trailer;
+    pdfi_countup(d);
+    code = pdfi_dict_knownget_type(ctx, d, "Info", PDF_DICT, (pdf_obj **)&Info);
+    pdfi_countdown(d);
     if (code <= 0) {
         /* TODO: flag a warning */
         goto exit;

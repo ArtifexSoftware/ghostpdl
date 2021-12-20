@@ -57,6 +57,7 @@ static int pdf_compute_encryption_key_preR5(pdf_context *ctx, char *Password, in
     gs_md5_state_t md5;
     pdf_array *a = NULL;
     pdf_string *s = NULL;
+    pdf_dict *d = NULL;
 
     *EKey = NULL;
     /* Algorithm 3.2 */
@@ -86,7 +87,11 @@ static int pdf_compute_encryption_key_preR5(pdf_context *ctx, char *Password, in
     gs_md5_append(&md5, (gs_md5_byte_t *)P, 4);
 
     /* 5. Pass the first element of the file's file identifier array */
-    code = pdfi_dict_get_type(ctx, ctx->Trailer, "ID", PDF_ARRAY, (pdf_obj **)&a);
+    /* See comment in pdfi_read_Root() for details of why we indirect through 'd' */
+    d = ctx->Trailer;
+    pdfi_countup(d);
+    code = pdfi_dict_get_type(ctx, d, "ID", PDF_ARRAY, (pdf_obj **)&a);
+    pdfi_countdown(d);
     if (code < 0) {
         if (code == gs_error_undefined) {
             emprintf(ctx->memory, "\n   **** Error: ID key in the trailer is required for encrypted files.\n");
@@ -430,6 +435,7 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
     gs_md5_state_t md5;
     pdf_string *s = NULL;
     pdf_array *a = NULL;
+    pdf_dict *d = NULL;
 
     /* Algorithm 3.6, step 1
      * perform all but the last step of Algorithm 3,4 (Revision 2)
@@ -482,7 +488,11 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
              * Pass the 32 byte padding string from step 1 of Algorithm 3.2 to an MD5 hash */
             gs_md5_init(&md5);
             gs_md5_append(&md5, (gs_md5_byte_t *)PadString, 32);
-            code = pdfi_dict_get_type(ctx, ctx->Trailer, "ID", PDF_ARRAY, (pdf_obj **)&a);
+            /* See comment in pdfi_read_Root() for details of why we indirect through 'd' */
+            d = ctx->Trailer;
+            pdfi_countup(d);
+            code = pdfi_dict_get_type(ctx, d, "ID", PDF_ARRAY, (pdf_obj **)&a);
+            pdfi_countdown(d);
             if (code < 0) {
                 if (code == gs_error_undefined) {
                     emprintf(ctx->memory, "\n   **** Error: ID key in the trailer is required for encrypted files.\n");
@@ -978,7 +988,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
 {
     int code = 0;
     pdf_dict *CF_dict = NULL, *StdCF_dict = NULL;
-    pdf_dict *d = NULL;
+    pdf_dict *d = NULL, *d1 = NULL;
     pdf_obj *o = NULL;
     pdf_string *s = NULL;
     int64_t i64;
@@ -987,7 +997,12 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "%% Checking for Encrypt dictionary\n");
 
-    code = pdfi_dict_get(ctx, ctx->Trailer, "Encrypt", (pdf_obj **)&d);
+    /* See comment in pdfi_read_Root() for details of why we indirect through 'd' */
+    d1 = ctx->Trailer;
+    pdfi_countup(d1);
+    code = pdfi_dict_get(ctx, d1, "Encrypt", (pdf_obj **)&d);
+    pdfi_countdown(d1);
+    d1 = NULL;
 
     /* Undefined is acceptable here, it just means the PDF file is not ostensibly encrypted */
     /* NB pdfi_process_pdf_file() always checks for the Encrypt dictionary before we

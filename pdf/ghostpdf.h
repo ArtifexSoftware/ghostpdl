@@ -445,6 +445,9 @@ typedef struct pdf_context_s
 
     /* Document level PDF objects */
     xref_table_t *xref_table;
+    /* Warning! Do not use ctx->Trailer directly as it may be replaced if the file is repaired.
+     * See pdf_doc.c, pdf_read_Root()
+     */
     pdf_dict *Trailer;
     pdf_dict *Root;
     pdf_dict *Info;

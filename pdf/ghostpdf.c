@@ -1065,7 +1065,12 @@ static int pdfi_init_file(pdf_context *ctx)
     }
 
     if (ctx->Trailer) {
-        code = pdfi_dict_get(ctx, ctx->Trailer, "Encrypt", &o);
+        /* See comment in pdfi_read_Root() (pdf_doc.c) for details */
+        pdf_dict *d = ctx->Trailer;
+
+        pdfi_countup(d);
+        code = pdfi_dict_get(ctx, d, "Encrypt", &o);
+        pdfi_countdown(d);
         if (code < 0 && code != gs_error_undefined)
             goto exit;
         if (code == 0) {
