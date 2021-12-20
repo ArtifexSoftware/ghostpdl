@@ -874,7 +874,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                                 /* Start by setting up the file to be read. Apply a SubFileDecode so that, if the input stream
                                                  * is not compressed we will stop reading when we get to the end of the stream.
                                                  */
-                                                if (pdfi_dict_knownget_number(ctx, stream_dict, "Length", &L)) {
+                                                if (pdfi_dict_knownget_number(ctx, stream_dict, "Length", &L) > 0) {
 
                                                     code = pdfi_apply_SubFileDecode_filter(ctx, (int)L, NULL, ctx->main_stream, &SubFile_stream, false);
                                                     if (code >= 0)

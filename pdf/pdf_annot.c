@@ -3090,6 +3090,11 @@ static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     code = pdfi_dict_knownget_type(ctx, annot, "Vertices", PDF_ARRAY, (pdf_obj **)&Vertices);
     if (code < 0) goto exit;
 
+    if (code == 0) {
+        gs_note_error(gs_error_undefined);
+        goto exit;
+    }
+
     size = pdfi_array_size(Vertices);
     if (size == 0) {
         code = 0;
@@ -3154,7 +3159,7 @@ static int pdfi_annot_draw_Polygon(pdf_context *ctx, pdf_dict *annot, pdf_obj *N
     if (code < 0) goto exit1;
 
     code = pdfi_dict_knownget_type(ctx, annot, "Vertices", PDF_ARRAY, (pdf_obj **)&Vertices);
-    if (code < 0) goto exit;
+    if (code <= 0) goto exit;
 
     code = pdfi_annot_path_array(ctx, annot, Vertices);
     if (code < 0) goto exit1;

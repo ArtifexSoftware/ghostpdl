@@ -1426,7 +1426,7 @@ static int pdfi_create_CalGray(pdf_context *ctx, pdf_array *color_array, int ind
         goto exit;
     }
 
-    if (pdfi_dict_knownget_type(ctx, CalGray_dict, "BlackPoint", PDF_ARRAY, (pdf_obj **)&PDFArray)) {
+    if (pdfi_dict_knownget_type(ctx, CalGray_dict, "BlackPoint", PDF_ARRAY, (pdf_obj **)&PDFArray) > 0) {
         if (pdfi_array_size(PDFArray) != 3){
             code = gs_note_error(gs_error_rangecheck);
             goto exit;
@@ -1448,7 +1448,7 @@ static int pdfi_create_CalGray(pdf_context *ctx, pdf_array *color_array, int ind
         PDFArray = NULL;
     }
 
-    if (pdfi_dict_knownget_number(ctx, CalGray_dict, "Gamma", &f))
+    if (pdfi_dict_knownget_number(ctx, CalGray_dict, "Gamma", &f) > 0)
         Gamma = (float)f;
     /* The PDF 1.7 reference states that Gamma
      * (if present) must be positive.
@@ -1509,7 +1509,7 @@ static int pdfi_create_CalRGB(pdf_context *ctx, pdf_array *color_array, int inde
         goto exit;
     }
 
-    if (pdfi_dict_knownget_type(ctx, CalRGB_dict, "BlackPoint", PDF_ARRAY, (pdf_obj **)&PDFArray)) {
+    if (pdfi_dict_knownget_type(ctx, CalRGB_dict, "BlackPoint", PDF_ARRAY, (pdf_obj **)&PDFArray) > 0) {
         if (pdfi_array_size(PDFArray) != 3){
             code = gs_note_error(gs_error_rangecheck);
             goto exit;
@@ -1531,7 +1531,7 @@ static int pdfi_create_CalRGB(pdf_context *ctx, pdf_array *color_array, int inde
         PDFArray = NULL;
     }
 
-    if (pdfi_dict_knownget_type(ctx, CalRGB_dict, "Gamma", PDF_ARRAY, (pdf_obj **)&PDFArray)) {
+    if (pdfi_dict_knownget_type(ctx, CalRGB_dict, "Gamma", PDF_ARRAY, (pdf_obj **)&PDFArray) > 0) {
         if (pdfi_array_size(PDFArray) != 3){
             code = gs_note_error(gs_error_rangecheck);
             goto exit;
@@ -1546,7 +1546,7 @@ static int pdfi_create_CalRGB(pdf_context *ctx, pdf_array *color_array, int inde
         PDFArray = NULL;
     }
 
-    if (pdfi_dict_knownget_type(ctx, CalRGB_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&PDFArray)) {
+    if (pdfi_dict_knownget_type(ctx, CalRGB_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&PDFArray) > 0) {
         if (pdfi_array_size(PDFArray) != 9){
             code = gs_note_error(gs_error_rangecheck);
             goto exit;

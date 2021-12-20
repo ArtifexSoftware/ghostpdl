@@ -977,7 +977,7 @@ void pdfi_write_docinfo_pdfmark(pdf_context *ctx, pdf_dict *info_dict)
 
     for (i=0;i<5;i++)
     {
-        if (pdfi_dict_knownget(ctx, info_dict, KeyNames[i], &o))
+        if (pdfi_dict_knownget(ctx, info_dict, KeyNames[i], &o) > 0)
         {
             (void)pdfi_dict_put(ctx, Info, KeyNames[i], (pdf_obj *)o);
             pdfi_countdown(o);
@@ -1045,7 +1045,7 @@ void pdfi_write_boxes_pdfmark(pdf_context *ctx, pdf_dict *page_dict)
     for (i=0;i<4;i++)
     {
         /* Check each Bos name in turn */
-        if (pdfi_dict_knownget(ctx, page_dict, BoxNames[i], &o)){
+        if (pdfi_dict_knownget(ctx, page_dict, BoxNames[i], &o) > 0){
             gs_rect box;
             pdf_array *new_array = NULL;
 
