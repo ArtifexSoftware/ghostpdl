@@ -646,6 +646,9 @@ pdf_cmap_open_file(pdf_context *ctx, gs_string *cmap_name, byte **buf, int64_t *
     fname[0] = '\0';
 
     strncat(fname, path_pfx, strlen(path_pfx));
+    if (strlen(fname) + cmap_name->size >= gp_file_name_sizeof)
+        return_error(gs_error_rangecheck);
+
     strncat(fname, (char *)cmap_name->data, cmap_name->size);
     code = pdfi_open_resource_file(ctx, (const char *)fname, (const int)strlen(fname), &s);
     if (code >= 0) {
