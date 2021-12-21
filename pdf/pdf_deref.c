@@ -992,6 +992,8 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj, bool recur
      */
     for (index=0; index<dictsize; index ++) {
         Key = (pdf_name *)dict->keys[index];
+        if (pdfi_name_is(Key, "Parent"))
+            continue;
         code = pdfi_dict_get_no_store_R_key(ctx, dict, Key, &Value);
         if (code == gs_error_circular_reference) {
             /* Just leave as an indirect ref */
