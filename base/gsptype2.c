@@ -222,7 +222,7 @@ gs_pattern2_set_color(const gs_client_color * pcc, gs_gstate * pgs)
 
 /* Fill a rectangle with a PatternType 2 color. */
 /* WARNING: This function doesn't account the shading BBox
-   to allow the clipent to optimize the clipping
+   to allow the client to optimize the clipping
    with changing the order of clip paths and rects.
    The client must clip with the shading BBox before calling this function. */
 static int
