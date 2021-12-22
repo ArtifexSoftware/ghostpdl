@@ -1446,8 +1446,8 @@ static int pdfi_annot_draw_LE_one(pdf_context *ctx, pdf_dict *annot, pdf_name *L
     }
     if (!dispatch_ptr->name) {
         char str[100];
-        memcpy(str, (const char *)LE->data, LE->length);
-        str[LE->length] = '\0';
+        memcpy(str, (const char *)LE->data, LE->length < 100 ? LE->length : 99);
+        str[LE->length < 100 ? LE->length : 99] = '\0';
         dbgmprintf1(ctx->memory, "ANNOT: WARNING No handler for LE %s\n", str);
     }
 
@@ -3712,8 +3712,8 @@ static int pdfi_annot_draw_NotImplemented(pdf_context *ctx, pdf_dict *annot, pdf
     code = pdfi_dict_get_type(ctx, annot, "Subtype", PDF_NAME, (pdf_obj **)&Subtype);
     if (code < 0) goto exit;
 
-    memcpy(str, (const char *)Subtype->data, Subtype->length);
-    str[Subtype->length] = '\0';
+    memcpy(str, (const char *)Subtype->data, Subtype->length < 100 ? Subtype->length : 99);
+    str[Subtype->length < 100 ? Subtype->length : 99] = '\0';
     dbgmprintf1(ctx->memory, "ANNOT: No AP, default appearance for Subtype %s Not Implemented\n", str);
 
  exit:
