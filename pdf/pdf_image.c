@@ -1982,6 +1982,12 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             code = pdfi_apply_imscale_filter(ctx, 0, image_info.Width, image_info.Height, s, &new_stream);
             if (code < 0)
                 goto cleanupExit;
+            /* This adds the filter to the 'chain' of filter we created. When we close this filter
+             * it closes all the filters in the chain, back to either the SubFileDecode filter or the
+             * original main stream. If we don't patch this up then we leak memory for any filters
+             * applied in pdfi_filter above.
+             */
+            new_stream->original = s->original;
 
             /* We'e created a new 'new_stream', which is a C stream, to hold the filter chain
              * but we still need to free the original C stream 'wrapper' we created with pdfi_filter()
