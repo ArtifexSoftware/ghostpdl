@@ -649,8 +649,10 @@ blank_unmasked_bits(gx_device * mask,
 
     if (p->options & GB_PACKING_CHUNKY)
     {
-        if ((depth & 7) != 0 || depth > 64)
-            return_error(gs_error_rangecheck);
+        if ((depth & 7) != 0 || depth > 64) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto fail;
+        }
         ptr = p->data[0];
         depth >>= 3;
         raster -= w*depth;
@@ -705,8 +707,10 @@ blank_unmasked_bits(gx_device * mask,
         /* Planar, only handle 8 or 16 bits */
         int bytes_per_component = (depth/num_comps) >> 3;
 
-        if (depth/num_comps != 8 && depth/num_comps != 16)
-            return_error(gs_error_rangecheck);
+        if (depth/num_comps != 8 && depth/num_comps != 16) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto fail;
+        }
         for (y = 0; y < h; y++)
         {
             int c;
