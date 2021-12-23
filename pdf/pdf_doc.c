@@ -612,7 +612,20 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
             goto exit;
         if (code > 0) {
             if (Parent->object_num != ctx->page.CurrentPageDict->object_num) {
+                if (pdfi_loop_detector_check_object(ctx, Parent->object_num) == true)
+                    return_error(gs_error_circular_reference);
+
+                code = pdfi_loop_detector_mark(ctx);
+                if (code < 0)
+                    return code;
+
+                code = pdfi_loop_detector_add_object(ctx, dict->object_num);
+                if (code < 0) {
+                    (void)pdfi_loop_detector_cleartomark(ctx);
+                    return code;
+                }
                 code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
+                (void)pdfi_loop_detector_cleartomark(ctx);
                 if (code != gs_error_undefined)
                     goto exit;
             }

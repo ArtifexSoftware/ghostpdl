@@ -2568,6 +2568,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             goto exit;
     }
 
+    code = pdfi_loop_detector_cleartomark(ctx);
     /* NOTE: Used to have a pdfi_gsave/pdfi_grestore around this, but it actually makes
      * things render incorrectly (and isn't in the PS code).
      * It also causes demo.ai.pdf to crash.
@@ -2582,8 +2583,9 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     //    pdfi_gsave(ctx);
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, o);
     //    pdfi_grestore(ctx);
-    if (code < 0)
-        goto exit;
+    pdfi_countdown(o);
+    pdfi_pop(ctx, 1);
+    return code;
 
  exit:
     if (code < 0)
