@@ -289,7 +289,7 @@ int pdfi_repair_file(pdf_context *ctx)
                             } else {
                                 if (k->key == TOKEN_TRAILER) {
                                     code = pdfi_read_bare_object(ctx, ctx->main_stream, 0, 0, 0);
-                                    if (code == 0 && ctx->stack_top[-1]->type == PDF_DICT) {
+                                    if (code == 0 && pdfi_count_stack(ctx) > 0 && ctx->stack_top[-1]->type == PDF_DICT) {
                                         if (ctx->Trailer) {
                                             pdf_dict *d = (pdf_dict *)ctx->stack_top[-1];
                                             bool known = false;
