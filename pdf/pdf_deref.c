@@ -282,6 +282,11 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 
             gs_sprintf(extra_info, "Failed to find a valid object at end of stream object %u.\n", objnum);
             pdfi_log_info(ctx, "pdfi_read_stream_object", extra_info);
+            /* It is possible for pdfi_read_token to clear the stack, losing the stream object. If that
+             * happens give up.
+             */
+            if (pdfi_count_stack(ctx) == 0)
+                return code;
         }
         else {
             if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
