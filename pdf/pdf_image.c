@@ -2587,11 +2587,8 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdfi_pop(ctx, 1);
     return code;
 
- exit:
-    if (code < 0)
-        (void)pdfi_loop_detector_cleartomark(ctx);
-    else
-        code = pdfi_loop_detector_cleartomark(ctx);
+exit:
+    (void)pdfi_loop_detector_cleartomark(ctx);
 exit1:
     /* No need to countdown 'n' because that points to the stack object, and we're going to pop that */
     pdfi_countdown(o);
