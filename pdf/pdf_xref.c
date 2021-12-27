@@ -321,7 +321,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
 
         for (i=0;i < pdfi_array_size(a);i+=2){
             code = pdfi_array_get_int(ctx, a, (uint64_t)i, &start);
-            if (code < 0) {
+            if (code < 0 || start < 0) {
                 pdfi_countdown(a);
                 pdfi_close_file(ctx, XRefStrm);
                 pdfi_countdown(ctx->xref_table);
@@ -688,6 +688,11 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
         return_error(gs_error_typecheck);
     }
 
+    if (((pdf_num *)o)->value.i < 0) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_rangecheck);
+    }
+
     *section_start = start = ((pdf_num *)o)->value.i;
 
     code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
@@ -706,6 +711,12 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
         pdfi_pop(ctx, 2);
         return_error(gs_error_typecheck);
     }
+
+    if (((pdf_num *)o)->value.i < 1) {
+        pdfi_pop(ctx, 2);
+        return_error(gs_error_rangecheck);
+    }
+
     *section_size = size = ((pdf_num *)o)->value.i;
     pdfi_pop(ctx, 2);
 
