@@ -1073,6 +1073,10 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     code = pdfi_dict_get_int(ctx, dict, "N", &N);
     if (code < 0)
         goto done;
+    if (N != 1 && N != 3 && N != 4) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto done;
+    }
     code = pdfi_dict_knownget(ctx, dict, "Name", &Name);
     if (code > 0) {
         if(Name->type == PDF_STRING || Name->type == PDF_NAME) {
