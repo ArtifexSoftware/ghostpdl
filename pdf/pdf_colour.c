@@ -2375,6 +2375,12 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
         if (code < 0)
             return code;
 
+        if (ref_space->type == PDF_NAME) {
+            if (ref_space->object_num != 0 && ref_space->object_num == name->object_num) {
+                pdfi_countdown(ref_space);
+                return_error(gs_error_circular_reference);
+            }
+        }
 
         ctx->currentSpace = name;
         /* recursion */
