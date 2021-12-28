@@ -590,6 +590,11 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
         if (code < 0)
             goto exit;
 
+        if (pdfi_count_stack(ctx) < 1) {
+            code = gs_note_error(gs_error_stackunderflow);
+            goto exit;
+        }
+
         if ((ctx->stack_top[-1])->type != PDF_STREAM) {
             pdfi_pop(ctx, 1);
             code = gs_note_error(gs_error_typecheck);
