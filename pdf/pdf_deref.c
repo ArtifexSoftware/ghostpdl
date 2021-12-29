@@ -240,7 +240,6 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
     pdfi_pop(ctx, 1);
     dict = NULL;
     pdfi_push(ctx, (pdf_obj *)stream_obj);
-    pdfi_countdown(stream_obj); /* get rid of extra ref */
 
     stream_obj->stream_dict->indirect_num = stream_obj->stream_dict->object_num = objnum;
     stream_obj->stream_dict->indirect_gen = stream_obj->stream_dict->generation_num = gen;
@@ -258,6 +257,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 
         gs_sprintf(extra_info, "Stream object %u missing mandatory keyword /Length, unable to verify the stream length.\n", objnum);
         pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_read_stream_object", extra_info);
+        pdfi_countdown(stream_obj); /* get rid of extra ref */
         return 0;
     }
 
@@ -270,6 +270,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         code = pdfi_seek(ctx, ctx->main_stream, i, SEEK_CUR);
         if (code < 0) {
             pdfi_pop(ctx, 1);
+            pdfi_countdown(stream_obj); /* get rid of extra ref */
             return code;
         }
 
@@ -285,8 +286,10 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
             /* It is possible for pdfi_read_token to clear the stack, losing the stream object. If that
              * happens give up.
              */
-            if (pdfi_count_stack(ctx) == 0)
+            if (pdfi_count_stack(ctx) == 0) {
+                pdfi_countdown(stream_obj); /* get rid of extra ref */
                 return code;
+            }
         }
         else {
             if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
@@ -325,13 +328,16 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 
         code = pdfi_seek(ctx, ctx->main_stream, stream_obj->stream_offset, SEEK_SET);
         if (code < 0) {
+            pdfi_countdown(stream_obj); /* get rid of extra ref */
             pdfi_pop(ctx, 1);
             return code;
         }
         memset(Buffer, 0x00, 10);
         bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 9, ctx->main_stream);
-        if (bytes < 9)
+        if (bytes < 9) {
+            pdfi_countdown(stream_obj); /* get rid of extra ref */
             return_error(gs_error_ioerror);
+        }
 
         total = bytes;
         do {
@@ -351,6 +357,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
             bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[9], 1, 1, ctx->main_stream);
             total += bytes;
         } while(bytes);
+        pdfi_countdown(stream_obj); /* get rid of extra ref */
         if (bytes <= 0)
             return_error(gs_error_ioerror);
         return 0;
@@ -358,6 +365,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 
     code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
     if (code < 0) {
+        pdfi_countdown(stream_obj); /* get rid of extra ref */
         if (ctx->args.pdfstoponerror)
             return code;
         else
@@ -368,10 +376,13 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         return 0;
     }
 
-    if (pdfi_count_stack(ctx) < 2)
+    if (pdfi_count_stack(ctx) < 2) {
+        pdfi_countdown(stream_obj); /* get rid of extra ref */
         return_error(gs_error_stackunderflow);
+    }
 
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+        pdfi_countdown(stream_obj); /* get rid of extra ref */
         pdfi_pop(ctx, 1);
         if (ctx->args.pdfstoponerror)
             return_error(gs_error_typecheck);
@@ -381,6 +392,8 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
          */
         return 0;
     }
+    pdfi_countdown(stream_obj); /* get rid of extra ref */
+
     keyword = ((pdf_keyword *)ctx->stack_top[-1]);
     if (keyword->key != TOKEN_ENDOBJ) {
         pdfi_pop(ctx, 2);
