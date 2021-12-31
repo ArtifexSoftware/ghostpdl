@@ -840,6 +840,11 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     if (ctx->loop_detection) {
         if (pdfi_loop_detector_check_object(ctx, obj) == true)
             return_error(gs_error_circular_reference);
+        if (entry->free) {
+            code = pdfi_loop_detector_add_object(ctx, obj);
+            if (code < 0)
+                return code;
+        }
     }
     if (entry->cache != NULL){
         pdf_obj_cache_entry *cache_entry = entry->cache;
