@@ -256,10 +256,10 @@ accum_open_device(register gx_device * dev)
     gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
 
     gx_clip_list_init(&adev->list);
-    adev->bbox.p.x = adev->bbox.p.y = max_int;
-    adev->bbox.q.x = adev->bbox.q.y = min_int;
-    adev->clip_box.p.x = adev->clip_box.p.y = min_int;
-    adev->clip_box.q.x = adev->clip_box.q.y = max_int;
+    adev->bbox.p.x = adev->bbox.p.y = fixed2int(max_fixed);
+    adev->bbox.q.x = adev->bbox.q.y = fixed2int(min_fixed);
+    adev->clip_box.p.x = adev->clip_box.p.y = fixed2int(min_fixed);
+    adev->clip_box.q.x = adev->clip_box.q.y = fixed2int(max_fixed);
     return 0;
 }
 
