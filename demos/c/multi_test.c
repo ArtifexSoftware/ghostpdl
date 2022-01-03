@@ -66,7 +66,7 @@ worker(void *td_)
     char *argv[10];
 
     sprintf(out, "multi_out_%d_", td->thread_num);
-    strcat(out, "%%d.png");
+    strcat(out, "%d.png");
     argv[argc++] = "gpdl";
     argv[argc++] = "-sDEVICE=png16m";
     argv[argc++] = "-o";
