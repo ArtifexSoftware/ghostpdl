@@ -949,7 +949,7 @@ get_sep_name(gx_devn_prn_device *pdev, int n)
 }
 
 int
-psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
+psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
 {
     int code = 0;
     int num_channels = xc->num_channels;
@@ -957,9 +957,12 @@ psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
     int chan_idx;
     int chan_names_len = 0;
     int sep_num;
-    const devn_separation_name *separation_name;
+    const devn_separation_name* separation_name;
+    cmm_dev_profile_t* profile_struct;
+    cmm_profile_t* dev_profile;
+    int profile_resource_size;
 
-    psd_write(xc, (const byte *)"8BPS", 4); /* Signature */
+    psd_write(xc, (const byte*)"8BPS", 4); /* Signature */
     psd_write_16(xc, 1); /* Version - Always equal to 1*/
     /* Reserved 6 Bytes - Must be zero */
     psd_write_32(xc, 0);
@@ -969,14 +972,26 @@ psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
     psd_write_32(xc, xc->width); /* Columns */
     psd_write_16(xc, bpc); /* Depth - 1, 8 and 16 */
     /* Modes: Bitmap=0, Grayscale=1, RGB=3, CMYK=4 MultiChannel=7 Lab=9 */
-    psd_write_16(xc, (bits16) xc->base_num_channels);  /* We use 1, 3 or 4. */
+    psd_write_16(xc, (bits16)xc->base_num_channels);  /* We use 1, 3 or 4. */
 
-    /* Color Mode Data */
-    psd_write_32(xc, 0); 	/* No color mode data */
+    /* Color Mode Data.  Only used for indexed and duotone */
+    psd_write_32(xc, 0);
 
-    /* Image Resources */
+    /* Resources */
 
-    /* Channel Names */
+    /* ICC profile */
+    code = dev_proc(pdev, get_profile)((gx_device*)pdev, &profile_struct);
+    if (code < 0) {
+        dev_profile = NULL;
+        profile_resource_size = 0;
+    } else {
+        dev_profile = profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
+
+        /* Resource has to be padded to even size */
+        profile_resource_size = dev_profile->buffer_size + dev_profile->buffer_size % 2;
+    }
+
+    /* Channel Names size computation */
     for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
         fixed_colorant_name n = pdev->devn_params.std_colorant_names[chan_idx];
         if (n == NULL)
@@ -988,9 +1003,13 @@ psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
         separation_name = &(pdev->devn_params.separations.names[sep_num]);
         chan_names_len += (separation_name->size + 1);
     }
+
+    /* Length of resource section */
     psd_write_32(xc, 12 + (chan_names_len + (chan_names_len % 2))
                         + (12 + (14 * (xc->num_channels - xc->base_num_channels)))
-                        + 28);
+                        + (profile_resource_size ? (12 + profile_resource_size) : 0) + 28);
+
+    /* Channel names resource */
     psd_write(xc, (const byte *)"8BIM", 4);
     psd_write_16(xc, 1006); /* 0x03EE */
     psd_write_16(xc, 0); /* PString */
@@ -1013,7 +1032,7 @@ psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
     if (chan_names_len % 2)
         psd_write_8(xc, 0); /* pad */
 
-    /* DisplayInfo - Colors for each spot channels */
+    /* DisplayInfo - Colors for each spot channels resource*/
     psd_write(xc, (const byte *)"8BIM", 4);
     psd_write_16(xc, 1007); /* 0x03EF */
     psd_write_16(xc, 0); /* PString */
@@ -1058,7 +1077,7 @@ psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
         psd_write_8(xc, 0); /* Padding - Always Zero */
     }
 
-    /* Image resolution */
+    /* Image resolution resource */
     psd_write(xc, (const byte *)"8BIM", 4);
     psd_write_16(xc, 1005); /* 0x03ED */
     psd_write_16(xc, 0); /* PString */
@@ -1070,6 +1089,17 @@ psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
     psd_write_32(xc, (int) (pdev->HWResolution[1] * 0x10000 * xc->height / pdev->height + 0.5));
     psd_write_16(xc, 1);	/* height:  1 --> resolution is pixels per inch */
     psd_write_16(xc, 1);	/* height:  1 --> resolution is pixels per inch */
+
+    /* ICC Profile resource */
+    if (profile_resource_size) {
+        psd_write(xc, (const byte*)"8BIM", 4);
+        psd_write_16(xc, 1039); /* 0x040F */
+        psd_write_16(xc, 0);    /* PString */
+        psd_write_32(xc, profile_resource_size);
+        psd_write(xc, dev_profile->buffer, dev_profile->buffer_size);
+        if (dev_profile->buffer_size % 2)
+            psd_write_8(xc, 0);
+    }
 
     /* Layer and Mask information */
     psd_write_32(xc, 0); 	/* No layer or mask information */
