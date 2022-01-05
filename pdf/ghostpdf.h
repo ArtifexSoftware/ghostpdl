@@ -29,7 +29,7 @@
 #endif
 
 #ifndef PDFI_LEAK_CHECK
-#define PDFI_LEAK_CHECK 1
+#define PDFI_LEAK_CHECK 0
 #endif
 
 /* A structure for setting/resetting the interpreter graphics state
