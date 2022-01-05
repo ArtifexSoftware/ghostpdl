@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -240,6 +240,12 @@ docxwrite_open_device(gx_device * dev)
     const char* fmt = NULL;
     gs_parsed_file_name_t parsed;
     int code = 0;
+
+    if (tdev->extract) {
+        /* We can be called multiple times; nothing to do after the first time.
+        */
+        return 0;
+    }
 
     gx_device_fill_in_procs(dev);
     if (tdev->fname[0] == 0)
@@ -728,7 +734,8 @@ docx_update_text_state(docx_list_entry_t *ppts,
         font->font_name.size + 1, "txtwrite alloc font name");
     if (!ppts->FontName)
         return gs_note_error(gs_error_VMerror);
-    memcpy(ppts->FontName, font->font_name.chars, font->font_name.size + 1);
+    memcpy(ppts->FontName, font->font_name.chars, font->font_name.size);
+    ppts->FontName[font->font_name.size] = 0;
 
     if (font->PaintType == 2 && penum->pgs->text_rendering_mode == 0)
     {
@@ -1031,14 +1038,36 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
                 return s_errno_to_gs();
             }
         }
+
+        /* Calculate glyph_width from the **original** glyph metrics, not the overriding
+         * advance width (if TEXT_REPLACE_WIDTHS is set below)
+         */
         txt_char_widths_to_uts(pte->orig_font, &widths); /* convert design->text space */
+        glyph_width = widths.real_width.xy.x * penum->text_state->size;
+
+        if (pte->text.operation & TEXT_REPLACE_WIDTHS)
+        {
+            gs_point tpt;
+
+            /* We are applying a width override, from x/y/xyshow. This could be from
+             * a PostScript file, or it could be from a PDF file where we have a font
+             * with a FontMatrix which is neither horizontal nor vertical.
+             */
+            code = gs_text_replaced_width(&pte->text, pte->xy_index++, &tpt);
+            if (code < 0)
+                return_error(gs_error_unregistered);
+
+            widths.Width.w = widths.real_width.w = tpt.x;
+            widths.Width.xy.x = widths.real_width.xy.x = tpt.x;
+            widths.Width.xy.y = widths.real_width.xy.y = tpt.y;
+        }
+
         gs_distance_transform(widths.real_width.xy.x * penum->text_state->size,
                           widths.real_width.xy.y * penum->text_state->size,
                           &penum->text_state->matrix, &wanted);
         pte->returned.total_width.x += wanted.x;
         pte->returned.total_width.y += wanted.y;
         span_delta_x = widths.real_width.xy.x * penum->text_state->size;
-        glyph_width = widths.real_width.xy.x * penum->text_state->size;
 
         if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
             gs_point tpt;
