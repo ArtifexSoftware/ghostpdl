@@ -5856,6 +5856,7 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
         pdev->is_planar = true;
     else
         pdev->is_planar = target->is_planar;
+    pdev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     pdev->procs = dev_proto.procs;
     if (deep) {
@@ -8537,6 +8538,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         rc_decrement_only(tdev, "pdf14_dev_spec_op");
         return 0;
     }
+    if (dev_spec_op == gxdso_interpolate_threshold)
+        return p14dev->interpolate_threshold;
 
      return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
 }
@@ -8624,6 +8627,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         p14dev->is_planar = true;
     else
         p14dev->is_planar = target->is_planar;
+    p14dev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     p14dev->alpha = 1.0;
     p14dev->shape = 1.0;
@@ -10018,6 +10022,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
         pdev->is_planar = true;
     else
         pdev->is_planar = target->is_planar;
+    pdev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     pdev->op_state = pgs->is_fill_color ? PDF14_OP_STATE_FILL : PDF14_OP_STATE_NONE;
 
@@ -10163,6 +10168,7 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_gstate *	pgs,
         pdev->is_planar = true;
     else
         pdev->is_planar = target->is_planar;
+    pdev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
     gx_device_fill_in_procs((gx_device *)pdev);

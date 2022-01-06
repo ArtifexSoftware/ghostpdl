@@ -264,6 +264,7 @@ typedef struct pdf14_device_s {
     const gx_color_map_procs *(*save_get_cmap_procs)(const gs_gstate *,
                                                      const gx_device *);
     gx_device_color_info saved_target_color_info;
+    int interpolate_threshold;
     dev_proc_encode_color(*saved_target_encode_color);
     dev_proc_decode_color(*saved_target_decode_color);
     dev_proc_get_color_mapping_procs(*saved_target_get_color_mapping_procs);
