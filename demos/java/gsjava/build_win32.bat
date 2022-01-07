@@ -2,7 +2,7 @@
 
 if not exist bin mkdir bin
 
-echo Compiling Java source...
+echo Compiling gsjava Java source...
 javac -sourcepath src\ -d bin^
 	src\com\artifex\gsjava\GSAPI.java^
 	src\com\artifex\gsjava\GSInstance.java^

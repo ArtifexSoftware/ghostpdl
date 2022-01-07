@@ -10,6 +10,6 @@ cd "..\mtdemo"
 
 copy "..\gsjava\gsjava.jar" ".\gsjava.jar"
 
-echo Compiling Java source...
+echo Compiling mtdemo Java source...
 javac -cp ../gsjava/bin;. Main.java Worker.java
 echo Done.

@@ -7,7 +7,7 @@ mkdir -p obin
 echo "Compiling gs_jni C++ source..."
 
 echo "Compile callbacks.cpp"
-g++ -c -Wall -O3 \
+g++ -c -Wall -O3 -fPIC \
 	-std=c++14 \
 	-I./include \
 	-I./include/linux \
@@ -17,7 +17,7 @@ g++ -c -Wall -O3 \
 	-o "obin/callbacks.o"
 
 echo "Compile com_artifex_gsjava_GSAPI.cpp"
-g++ -c -Wall -O3 \
+g++ -c -Wall -O3 -fPIC \
 	-std=c++14 \
 	-I./include \
 	-I./include/linux \
@@ -27,7 +27,7 @@ g++ -c -Wall -O3 \
 	-o "obin/com_artifex_gsjava_GSAPI.o"
 
 echo "Compile com_artifex_gsjava_util_NativePointer.cpp"
-g++ -c -Wall -O3 \
+g++ -c -Wall -O3 -fPIC \
 	-std=c++14 \
 	-I./include \
 	-I./include/linux \
@@ -37,7 +37,7 @@ g++ -c -Wall -O3 \
 	-o "obin/com_artifex_gsjava_util_NativePointer.o"
 
 echo "Compile jni_util.cpp"
-g++ -c -Wall -O3\
+g++ -c -Wall -O3 -fPIC \
 	-std=c++14 \
 	-I./include \
 	-I./include/linux \

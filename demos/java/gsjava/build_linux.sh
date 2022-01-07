@@ -2,8 +2,6 @@
 
 mkdir -p bin
 
-echo "Compiling gs_jni C++ source..."
-
 cd "../jni/gs_jni"
 
 bash build_linux.sh
