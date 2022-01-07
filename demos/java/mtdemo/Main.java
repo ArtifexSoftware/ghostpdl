@@ -12,19 +12,13 @@ public class Main {
 	// The output directory
 	public static final String OUTDIR = "pdfout";
 
-	public static final boolean WAIT_FOR_INPUT = false;
-
 	public static void main(String[] args) {
-		if (WAIT_FOR_INPUT) {
-			System.out.print("Awaiting input: ");
-			new Scanner(System.in).nextLine();
-		}
 		// For multithreading, call this before any GSInstance objects
 		// are created.
 		GSInstance.setAllowMultithreading(true);
 
 		// Parse first command line argument as thread count
-		int workerCount = 2;
+		int workerCount = 10;
 		if (args.length > 0) {
 			try {
 				workerCount = Integer.parseInt(args[0]);

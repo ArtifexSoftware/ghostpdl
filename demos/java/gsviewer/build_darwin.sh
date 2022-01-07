@@ -35,3 +35,17 @@ cd bin
 
 echo "Packing gsviewer JAR file..."
 jar cfm "../gsviewer.jar" "../Manifest.md" "com/"
+
+
+echo "Copy gs_jni.dylib"
+cp "../jni/gs_jni/gs_jni.dylib" "gs_jni.dylib"
+
+echo "Create libgpdl.dylib link"
+cp "../../../sobin/libgpdl.dylib" "libgpdl.dylib"
+
+cd ../../../sobin
+
+echo "Copy libgpdl.dylib target"
+cp $(readlink "libgpdl.dylib") "../demos/java/gsviewer"
+
+cd ../demos/java/gsviewer

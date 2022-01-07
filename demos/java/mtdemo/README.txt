@@ -10,8 +10,8 @@ What is here?
 * build_darwin.sh - Builds the Java program on Darwin systems
 * build_linux.sh - Builds the Java program on Linux systems
 * build_win32.bat - Builds the Java program on Windows
-* install_linux.sh - Installs required libraries to run the demo on Linux
-* install_darwin.sh - Installs required libraries to run the demo on Darwin
+* runmtd_darwin.sh - Runs the Java program on Darwin systems
+* runmtd_linux.sh - Runs the Java program on Linux systems
 * runmtd_win32.bat - Starts the Java program for Windows
 
 Build/run instructions:
@@ -42,9 +42,7 @@ Build/run instructions:
 
    /etc/java-8-openjdk/accessibility.properties
 
-3. Run build_linux.sh to build.
-
-4. Run install_linux.sh to install required libraries.
+3. Run build_linux.sh to build and copy libraries.
 
 5. Run runmtd_linux.sh to start the application.
 
