@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2021 Artifex Software, Inc.
+/* Copyright (C) 2020-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -175,7 +175,8 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
                 preflen = 1;
             }
 
-            if (stobj[i].size - preflen < 0 || stobj[i + 1].size - preflen < 0) {
+            if (preflen > MAX_CMAP_CODE_SIZE || stobj[i].size - preflen > MAX_CMAP_CODE_SIZE
+                || stobj[i].size - preflen < 0 || stobj[i + 1].size - preflen < 0) {
                 (void)pdf_ps_stack_pop(s, to_pop);
                 return_error(gs_error_syntaxerror);
             }
