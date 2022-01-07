@@ -1360,10 +1360,14 @@ int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size, byt
 
 int pdfi_close_memory_stream(pdf_context *ctx, byte *Buffer, pdf_c_stream *source)
 {
-    sclose(source->s);
     gs_free_object(ctx->memory, Buffer, "open memory stream(buffer)");
-    gs_free_object(ctx->memory, source->s, "open memory stream(stream)");
-    gs_free_object(ctx->memory, source, "open memory stream(pdf_stream)");
+    if (source != NULL) {
+        if (source->s != NULL) {
+            sclose(source->s);
+            gs_free_object(ctx->memory, source->s, "open memory stream(stream)");
+        }
+        gs_free_object(ctx->memory, source, "open memory stream(pdf_stream)");
+    }
     return 0;
 }
 
