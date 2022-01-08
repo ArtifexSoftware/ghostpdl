@@ -1277,11 +1277,29 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
     char *backup_color_name = NULL;
     bool using_enum_cs = false;
 
-    /* NOTE: Spec says ImageMask and ColorSpace mutually exclusive */
+    /* NOTE: Spec says ImageMask and ColorSpace mutually exclusive
+     * We need to make sure we do not have both set or we could end up treating
+     * an image as a mask or vice versa and trying to use a non-existent colour space.
+     */
     if (image_info->ImageMask) {
-        *comps = 1;
-        *pcs = NULL;
-        return 0;
+        if (image_info->ColorSpace == NULL) {
+                *comps = 1;
+                *pcs = NULL;
+                return 0;
+        } else {
+            if (image_info->BPC != 1) {
+                pdfi_set_error(ctx, 0, NULL, E_IMAGE_MASKWITHCOLOR, pdfi_image_get_color, "BitsPerComonent is not 1, so treating as an image");
+                image_info->ImageMask = 0;
+            }
+            else {
+                pdfi_set_error(ctx, 0, NULL, E_IMAGE_MASKWITHCOLOR, pdfi_image_get_color, "BitsPerComonent is 1, so treating as a mask");
+                pdfi_countdown(image_info->ColorSpace);
+                image_info->ColorSpace = NULL;
+                *comps = 1;
+                *pcs = NULL;
+                return 0;
+            }
+        }
     }
 
     ColorSpace = image_info->ColorSpace;

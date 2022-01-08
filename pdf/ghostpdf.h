@@ -88,6 +88,7 @@ typedef enum pdf_error_e {
     E_PDF_NO_SUBTYPE,
     E_PDF_IMAGECOLOR_ERROR,
     E_DICT_SELF_REFERENCE,
+    E_IMAGE_MASKWITHCOLOR,
     E_PDF_MAX_ERROR                     /* Must be last entry, add new errors immediately before this and update pdf_error_strings in ghostpdf.c */
 }pdf_error;
 

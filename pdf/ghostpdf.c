@@ -337,6 +337,7 @@ const char *pdf_error_strings[] = {
     "object lacks a required Subtype",
     "error in image colour",
     "dictionary contains a key which (indirectly) references the dictionary.",
+    "Image has both ImageMask and ColorSpace keys.",
     ""                                          /* last error, should not be used */
 };
 
