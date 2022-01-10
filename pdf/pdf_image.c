@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1288,11 +1288,11 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                 return 0;
         } else {
             if (image_info->BPC != 1) {
-                pdfi_set_error(ctx, 0, NULL, E_IMAGE_MASKWITHCOLOR, pdfi_image_get_color, "BitsPerComonent is not 1, so treating as an image");
+                pdfi_set_error(ctx, 0, NULL, E_IMAGE_MASKWITHCOLOR, "pdfi_image_get_color", "BitsPerComonent is not 1, so treating as an image");
                 image_info->ImageMask = 0;
             }
             else {
-                pdfi_set_error(ctx, 0, NULL, E_IMAGE_MASKWITHCOLOR, pdfi_image_get_color, "BitsPerComonent is 1, so treating as a mask");
+                pdfi_set_error(ctx, 0, NULL, E_IMAGE_MASKWITHCOLOR, "pdfi_image_get_color", "BitsPerComonent is 1, so treating as a mask");
                 pdfi_countdown(image_info->ColorSpace);
                 image_info->ColorSpace = NULL;
                 *comps = 1;
