@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1681,6 +1681,9 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
             charset_proc = expert_subset_charset_proc;
             break;
         default:{
+                if (font->cffdata + offsets.charset_off >= font->cffend)
+                    return_error(gs_error_rangecheck);
+
                 switch ((int)font->cffdata[offsets.charset_off]) {
                     case 0:
                         charset_proc = format0_charset_proc;
