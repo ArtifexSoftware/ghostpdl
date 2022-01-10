@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -132,6 +132,7 @@ typedef enum pdf_warning_e {
     W_PDF_DEVICEN_USES_ALL,
     W_PDF_BAD_MEDIABOX,
     W_PDF_CA_OUTOFRANGE,
+    W_PDF_INVALID_DEFAULTSPACE,
     W_PDF_MAX_WARNING               /* Must be last entry, add new warnings immediately before this and update pdf_warning_strings in ghostpdf.c */
 } pdf_warning;
 

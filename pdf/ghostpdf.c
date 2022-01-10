@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -381,6 +381,7 @@ const char *pdf_warning_strings[] = {
     "A DeviceN space used the /All ink name.",
     "Couldn't retrieve MediaBox for page, using current media size",
     "CA or ca value not in range 0.0 to 1.0, clamped to range.",
+    "Invalid DefaultGray, DefaultRGB or DefaultCMYK space specified, ignored.",
     ""                                                  /* Last warning shuld not be used */
 };
 

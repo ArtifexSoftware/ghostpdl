@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2726,4 +2726,172 @@ int pdfi_color_setoutputintent(pdf_context *ctx, pdf_dict *intent_dict, pdf_stre
  exit:
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
     return code;
+}
+
+static int Check_Default_Space(pdf_context *ctx, pdf_obj *space, pdf_dict *source_dict, int num_components)
+{
+    pdf_obj *primary = NULL;
+    pdf_obj *ref_space = NULL;
+    int code = 0;
+
+    if (space->type == PDF_NAME)
+    {
+        if (pdfi_name_is((const pdf_name *)space, "DeviceGray"))
+            return (num_components == 1 ? 0 : gs_error_rangecheck);
+        if (pdfi_name_is((const pdf_name *)space, "DeviceCMYK"))
+            return (num_components == 4 ? 0 : gs_error_rangecheck);
+        if (pdfi_name_is((const pdf_name *)space, "DeviceRGB"))
+            return (num_components == 3 ? 0 : gs_error_rangecheck);
+
+        code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", (pdf_name *)space, (pdf_dict *)source_dict,
+                                  NULL, &ref_space);
+        if (code < 0)
+            return code;
+
+        if (ref_space->type == PDF_NAME) {
+            if (ref_space->object_num != 0 && ref_space->object_num == space->object_num) {
+                pdfi_countdown(ref_space);
+                return_error(gs_error_circular_reference);
+            }
+            if (pdfi_name_is((const pdf_name *)ref_space, "DeviceGray")) {
+                pdfi_countdown(ref_space);
+                return (num_components == 1 ? 0 : gs_error_rangecheck);
+            }
+            if (pdfi_name_is((const pdf_name *)ref_space, "DeviceCMYK")) {
+                pdfi_countdown(ref_space);
+                return (num_components == 4 ? 0 : gs_error_rangecheck);
+            }
+            if (pdfi_name_is((const pdf_name *)ref_space, "DeviceRGB")) {
+                pdfi_countdown(ref_space);
+                return (num_components == 3 ? 0 : gs_error_rangecheck);
+            }
+            pdfi_countdown(ref_space);
+            return_error(gs_error_typecheck);
+        }
+        space = ref_space;
+    }
+
+    if (space->type == PDF_ARRAY) {
+        code = pdfi_array_get(ctx, (pdf_array *)space, 0, &primary);
+        if (code < 0)
+            goto exit;
+
+        if (primary->type == PDF_NAME) {
+            if (pdfi_name_is((pdf_name *)primary, "Lab")) {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+            if (pdfi_name_is((pdf_name *)primary, "Pattern")) {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+            if (pdfi_name_is((pdf_name *)primary, "Indexed")) {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+        }
+    } else
+        code = gs_note_error(gs_error_typecheck);
+
+exit:
+    pdfi_countdown(primary);
+    pdfi_countdown(ref_space);
+    return code;
+}
+
+int pdfi_setup_DefaultSpaces(pdf_context *ctx, pdf_dict *source_dict)
+{
+    int code = 0;
+    pdf_dict *resources_dict = NULL, *colorspaces_dict = NULL;
+    pdf_obj *DefaultSpace = NULL;
+
+    if (ctx->args.NOSUBSTDEVICECOLORS)
+        return 0;
+
+    /* Create any required DefaultGray, DefaultRGB or DefaultCMYK
+     * spaces.
+     */
+    code = pdfi_dict_knownget(ctx, source_dict, "Resources", (pdf_obj **)&resources_dict);
+    if (code > 0) {
+        code = pdfi_dict_knownget(ctx, resources_dict, "ColorSpace", (pdf_obj **)&colorspaces_dict);
+        if (code > 0) {
+            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultGray", &DefaultSpace);
+            if (code > 0) {
+                gs_color_space *pcs;
+
+                code = Check_Default_Space(ctx, DefaultSpace, source_dict, 1);
+                if (code >= 0) {
+                    code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, source_dict, &pcs, false);
+                    /* If any given Default* space fails simply ignore it, we wil then use the Device
+                     * space instead, this is as per the spec.
+                     */
+                    if (code >= 0) {
+                        if (gs_color_space_num_components(pcs) == 1) {
+                            ctx->page.DefaultGray_cs = pcs;
+                            pdfi_set_colour_callback(pcs, ctx, NULL);
+                        } else {
+                            pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DEFAULTSPACE, "pdfi_setup_DefaultSpaces", NULL);
+                            rc_decrement(pcs, "setup_DefautSpaces");
+                        }
+                    }
+                } else
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DEFAULTSPACE, "pdfi_setup_DefaultSpaces", NULL);
+            }
+            pdfi_countdown(DefaultSpace);
+            DefaultSpace = NULL;
+            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultRGB", &DefaultSpace);
+            if (code > 0) {
+                gs_color_space *pcs;
+
+                code = Check_Default_Space(ctx, DefaultSpace, source_dict, 1);
+                if (code >= 0) {
+                    code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, source_dict, &pcs, false);
+                    /* If any given Default* space fails simply ignore it, we wil then use the Device
+                     * space instead, this is as per the spec.
+                     */
+                    if (code >= 0) {
+                        if (gs_color_space_num_components(pcs) == 3) {
+                            ctx->page.DefaultRGB_cs = pcs;
+                            pdfi_set_colour_callback(pcs, ctx, NULL);
+                        } else {
+                            rc_decrement(pcs, "setup_DefautSpaces");
+                            pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DEFAULTSPACE, "pdfi_setup_DefaultSpaces", NULL);
+                        }
+                    }
+                } else
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DEFAULTSPACE, "pdfi_setup_DefaultSpaces", NULL);
+            }
+            pdfi_countdown(DefaultSpace);
+            DefaultSpace = NULL;
+            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultCMYK", &DefaultSpace);
+            if (code > 0) {
+                gs_color_space *pcs;
+
+                code = Check_Default_Space(ctx, DefaultSpace, source_dict, 1);
+                if (code >= 0) {
+                    code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, source_dict, &pcs, false);
+                    /* If any given Default* space fails simply ignore it, we wil then use the Device
+                     * space instead, this is as per the spec.
+                     */
+                    if (code >= 0) {
+                        if (gs_color_space_num_components(pcs) == 4) {
+                            ctx->page.DefaultCMYK_cs = pcs;
+                            pdfi_set_colour_callback(pcs, ctx, NULL);
+                        } else {
+                            pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DEFAULTSPACE, "pdfi_setup_DefaultSpaces", NULL);
+                            rc_decrement(pcs, "setup_DefautSpaces");
+                        }
+                    }
+                } else
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DEFAULTSPACE, "pdfi_setup_DefaultSpaces", NULL);
+            }
+            pdfi_countdown(DefaultSpace);
+            DefaultSpace = NULL;
+        }
+    }
+
+    pdfi_countdown(DefaultSpace);
+    pdfi_countdown(resources_dict);
+    pdfi_countdown(colorspaces_dict);
+    return 0;
 }

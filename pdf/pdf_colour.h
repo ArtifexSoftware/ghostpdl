@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -86,5 +86,8 @@ int pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_c_stream *strea
 int pdfi_check_ColorSpace_for_spots(pdf_context *ctx, pdf_obj *space, pdf_dict *parent_dict, pdf_dict *page_dict, pdf_dict *spot_dict);
 
 int pdfi_color_setoutputintent(pdf_context *ctx, pdf_dict *intent_dict, pdf_stream *profile);
+
+/* Sets up the DefaultRGB, DefaultCMYK and DefaultGray colour spaces if present */
+int pdfi_setup_DefaultSpaces(pdf_context *ctx, pdf_dict *source_dict);
 
 #endif

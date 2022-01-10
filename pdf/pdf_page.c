@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -677,72 +677,10 @@ static void release_page_DefaultSpaces(pdf_context *ctx)
 
 static int setup_page_DefaultSpaces(pdf_context *ctx, pdf_dict *page_dict)
 {
-    int code = 0;
-    pdf_dict *resources_dict = NULL, *colorspaces_dict = NULL;
-    pdf_obj *DefaultSpace = NULL;
-
     /* First off, discard any dangling Default* colour spaces, just in case. */
     release_page_DefaultSpaces(ctx);
 
-    if (ctx->args.NOSUBSTDEVICECOLORS)
-        return 0;
-
-    /* Create any required DefaultGray, DefaultRGB or DefaultCMYK
-     * spaces.
-     */
-    code = pdfi_dict_knownget(ctx, page_dict, "Resources", (pdf_obj **)&resources_dict);
-    if (code > 0) {
-        code = pdfi_dict_knownget(ctx, resources_dict, "ColorSpace", (pdf_obj **)&colorspaces_dict);
-        if (code > 0) {
-            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultGray", &DefaultSpace);
-            if (code > 0) {
-                gs_color_space *pcs;
-                code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, page_dict, &pcs, false);
-                /* If any given Default* space fails simply ignore it, we wil then use the Device
-                 * space instead, this is as per the spec.
-                 */
-                if (code >= 0) {
-                    ctx->page.DefaultGray_cs = pcs;
-                    pdfi_set_colour_callback(pcs, ctx, NULL);
-                }
-            }
-            pdfi_countdown(DefaultSpace);
-            DefaultSpace = NULL;
-            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultRGB", &DefaultSpace);
-            if (code > 0) {
-                gs_color_space *pcs;
-                code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, page_dict, &pcs, false);
-                /* If any given Default* space fails simply ignore it, we wil then use the Device
-                 * space instead, this is as per the spec.
-                 */
-                if (code >= 0) {
-                    ctx->page.DefaultRGB_cs = pcs;
-                    pdfi_set_colour_callback(pcs, ctx, NULL);
-                }
-            }
-            pdfi_countdown(DefaultSpace);
-            DefaultSpace = NULL;
-            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultCMYK", &DefaultSpace);
-            if (code > 0) {
-                gs_color_space *pcs;
-                code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, page_dict, &pcs, false);
-                /* If any given Default* space fails simply ignore it, we wil then use the Device
-                 * space instead, this is as per the spec.
-                 */
-                if (code >= 0) {
-                    ctx->page.DefaultCMYK_cs = pcs;
-                    pdfi_set_colour_callback(pcs, ctx, NULL);
-                }
-            }
-            pdfi_countdown(DefaultSpace);
-            DefaultSpace = NULL;
-        }
-    }
-
-    pdfi_countdown(DefaultSpace);
-    pdfi_countdown(resources_dict);
-    pdfi_countdown(colorspaces_dict);
-    return 0;
+    return(pdfi_setup_DefaultSpaces(ctx, page_dict));
 }
 
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)

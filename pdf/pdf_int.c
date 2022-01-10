@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1783,80 +1783,6 @@ void initialise_stream_save(pdf_context *ctx)
     ctx->current_stream_save.stack_count = pdfi_count_total_stack(ctx);
 }
 
-static int setup_stream_DefaultSpaces(pdf_context *ctx, pdf_dict *stream_dict)
-{
-    int code = 0;
-    pdf_dict *resources_dict = NULL, *colorspaces_dict = NULL;
-    pdf_obj *DefaultSpace = NULL;
-
-    /* Create any required DefaultGray, DefaultRGB or DefaultCMYK
-     * spaces.
-     */
-
-    if (ctx->args.NOSUBSTDEVICECOLORS)
-        return 0;
-
-    code = pdfi_dict_knownget(ctx, stream_dict, "Resources", (pdf_obj **)&resources_dict);
-    if (code > 0) {
-        code = pdfi_dict_knownget(ctx, resources_dict, "ColorSpace", (pdf_obj **)&colorspaces_dict);
-        if (code > 0) {
-            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultGray", &DefaultSpace);
-            if (code > 0) {
-                gs_color_space *pcs;
-                code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, stream_dict, &pcs, false);
-                /* If any given Default* space fails simply ignore it, we wil then use the Device
-                 * space (or page level Default) instead, this is as per the spec.
-                 */
-                if (code >= 0) {
-                    if (ctx->page.DefaultGray_cs)
-                        rc_decrement_only(ctx->page.DefaultGray_cs, "setup_stream_DefaultSpaces");
-                    ctx->page.DefaultGray_cs = pcs;
-                    pdfi_set_colour_callback(pcs, ctx, NULL);
-                }
-            }
-            pdfi_countdown(DefaultSpace);
-            DefaultSpace = NULL;
-            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultRGB", &DefaultSpace);
-            if (code > 0) {
-                gs_color_space *pcs;
-                code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, stream_dict, &pcs, false);
-                /* If any given Default* space fails simply ignore it, we wil then use the Device
-                 * space (or page level Default) instead, this is as per the spec.
-                 */
-                if (code >= 0) {
-                    if (ctx->page.DefaultRGB_cs)
-                        rc_decrement_only(ctx->page.DefaultRGB_cs, "setup_stream_DefaultSpaces");
-                    ctx->page.DefaultRGB_cs = pcs;
-                    pdfi_set_colour_callback(pcs, ctx, NULL);
-                }
-            }
-            pdfi_countdown(DefaultSpace);
-            DefaultSpace = NULL;
-            code = pdfi_dict_knownget(ctx, colorspaces_dict, "DefaultCMYK", &DefaultSpace);
-            if (code > 0) {
-                gs_color_space *pcs;
-                code = pdfi_create_colorspace(ctx, DefaultSpace, NULL, stream_dict, &pcs, false);
-                /* If any given Default* space fails simply ignore it, we wil then use the Device
-                 * space (or page level Default) instead, this is as per the spec.
-                 */
-                if (code >= 0) {
-                    if (ctx->page.DefaultCMYK_cs)
-                        rc_decrement_only(ctx->page.DefaultCMYK_cs, "setup_stream_DefaultSpaces");
-                    ctx->page.DefaultCMYK_cs = pcs;
-                    pdfi_set_colour_callback(pcs, ctx, NULL);
-                }
-            }
-            pdfi_countdown(DefaultSpace);
-            DefaultSpace = NULL;
-        }
-    }
-
-    pdfi_countdown(DefaultSpace);
-    pdfi_countdown(resources_dict);
-    pdfi_countdown(colorspaces_dict);
-    return 0;
-}
-
 /* Run a stream in a sub-context (saves/restores DefaultQState) */
 int pdfi_run_context(pdf_context *ctx, pdf_stream *stream_obj,
                      pdf_dict *page_dict, bool stoponerror, const char *desc)
@@ -1879,7 +1805,7 @@ int pdfi_run_context(pdf_context *ctx, pdf_stream *stream_obj,
     /* If the stream has any Default* colour spaces, replace the page level ones.
      * This will derement the reference counts to the current spaces if they are replaced.
      */
-    setup_stream_DefaultSpaces(ctx, stream_obj->stream_dict);
+    pdfi_setup_DefaultSpaces(ctx, stream_obj->stream_dict);
 
     pdfi_copy_DefaultQState(ctx, &DefaultQState);
     pdfi_set_DefaultQState(ctx, ctx->pgs);
