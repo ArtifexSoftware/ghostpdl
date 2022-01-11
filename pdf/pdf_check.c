@@ -1249,7 +1249,8 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     }
 
     /* Set our values in the context, for caller */
-    ctx->page.has_transparency = tracker.transparent;
+    if (!ctx->args.notransparency)
+        ctx->page.has_transparency = tracker.transparent;
     ctx->page.num_spots = spots;
     ctx->page.has_OP = tracker.has_overprint;
 
