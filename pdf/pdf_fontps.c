@@ -376,6 +376,29 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
     return code;
 }
 
+static inline bool pdf_ps_name_cmp(pdf_ps_stack_object_t *obj, const char *namestr)
+{
+    byte *d = NULL;
+    int l1, l2;
+
+    if (namestr) {
+        l2 = strlen(namestr);
+    }
+
+    if (obj->type == PDF_PS_OBJ_NAME) {
+        d = obj->val.name;
+        l1 = obj->size;
+    }
+    else if (obj->type == PDF_PS_OBJ_STRING) {
+        d = obj->val.name;
+        l1 = obj->size;
+    }
+    if (d != NULL && namestr != NULL && l1 == l2) {
+        return memcmp(d, namestr, l1) == 0 ? true : false;
+    }
+    return false;
+}
+
 static int
 ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
 {
@@ -387,7 +410,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
     }
 
     if (pdf_ps_obj_has_type(&s->cur[-1], PDF_PS_OBJ_NAME)) {
-        if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("FontName"))) {
+        if (pdf_ps_name_cmp(&s->cur[-1], "FontName")) {
             int fnlen = 0;
             char *pname = NULL;
 
@@ -409,12 +432,12 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 priv->gsu.gst1.font_name.size = fnlen;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("PaintType"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "PaintType")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
                 priv->gsu.gst1.PaintType = s->cur[0].val.i;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("StrokeWidth"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "StrokeWidth")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_FLOAT)) {
                 priv->gsu.gst1.StrokeWidth = s->cur[0].val.f;
             }
@@ -422,17 +445,17 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 priv->gsu.gst1.StrokeWidth = (float)s->cur[0].val.i;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("WMode"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "WMode")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
                 priv->gsu.gst1.WMode = s->cur[0].val.i;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("lenIV"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "lenIV")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
                 priv->gsu.gst1.data.lenIV = s->cur[0].val.i;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("UniqueID"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "UniqueID")) {
             /* Ignore UniqueID if we already have a XUID */
             if (priv->gsu.gst1.UID.id >= 0) {
                 if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
@@ -440,7 +463,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 }
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("XUID"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "XUID")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 int i, size = s->cur[0].size;
                 long *xvals = (long *)gs_alloc_bytes(mem, size *sizeof(long), "ps_font_def_func(xuid vals)");
@@ -464,7 +487,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 }
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("FontBBox"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "FontBBox")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 int i, j;
                 double bbox[4] = { 0, 0, 1000, 1000 };
@@ -474,7 +497,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                         pdfi_countup(priv->u.t1.blendfontbbox);
                         for (i = 0; i < s->cur[0].size; i++) {
                             pdf_ps_stack_object_t *arr = &s->cur[0].val.arr[i];
-                            pdf_array *parr;
+                            pdf_array *parr = NULL;
                             pdf_num *n;
                             if (pdf_ps_obj_has_type(arr, PDF_PS_OBJ_ARRAY)) {
                                 code = pdfi_array_alloc(s->pdfi_ctx, arr->size, &parr);
@@ -528,7 +551,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 }
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("FontType"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "FontType")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
                 priv->gsu.gst1.FontType = s->cur[0].val.i;
                 priv->u.t1.pdfi_font_type = s->cur[0].val.i == 1 ? e_pdf_font_type1 : e_pdf_cidfont_type0;
@@ -538,7 +561,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 priv->u.t1.pdfi_font_type = e_pdf_font_type1;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("FontMatrix"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "FontMatrix")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY) && s->cur[0].size >= 6) {
                 int i;
                 double fmat[6] = { 0.001, 0, 0, 0.001, 0, 0 };
@@ -559,7 +582,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 priv->gsu.gst1.orig_FontMatrix = priv->gsu.gst1.FontMatrix;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("BlueValues"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "BlueValues")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 int i, size = s->cur[0].size < 14 ? s->cur[0].size : 14;
 
@@ -581,7 +604,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 priv->gsu.gst1.data.BlueValues.count = size;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("BlueScale"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "BlueScale")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
                 priv->gsu.gst1.data.BlueScale = (float)s->cur[0].val.i;
             }
@@ -589,7 +612,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 priv->gsu.gst1.data.BlueScale = (float)s->cur[0].val.f;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("StdHW"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "StdHW")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 if (pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_INTEGER)) {
                     priv->gsu.gst1.data.StdHW.values[0] = (float)s->cur[0].val.arr[0].val.i;
@@ -601,7 +624,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 }
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("StdVW"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "StdVW")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 if (pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_INTEGER)) {
                     priv->gsu.gst1.data.StdVW.values[0] = (float)s->cur[0].val.arr[0].val.i;
@@ -613,7 +636,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 }
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("StemSnapH"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "StemSnapH")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 int i, size = s->cur[0].size > 12 ? 12 : s->cur[0].size;
 
@@ -628,7 +651,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 priv->gsu.gst1.data.StemSnapH.count = size;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("StemSnapV"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "StemSnapV")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 int i, size = s->cur[0].size > 12 ? 12 : s->cur[0].size;
 
@@ -643,7 +666,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 priv->gsu.gst1.data.StemSnapH.count = size;
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("Encoding"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "Encoding")) {
             pdf_array *new_enc = NULL;
 
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_NAME)) {
@@ -692,7 +715,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 }
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("BlendDesignPositions"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "BlendDesignPositions")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 code = pdfi_array_alloc(s->pdfi_ctx, s->cur[0].size, &priv->u.t1.blenddesignpositions);
                 if (code >= 0) {
@@ -742,7 +765,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
 
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("BlendAxisTypes"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "BlendAxisTypes")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 int i;
                 code = pdfi_array_alloc(s->pdfi_ctx, s->cur[0].size, &priv->u.t1.blendaxistypes);
@@ -767,7 +790,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 }
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("BlendDesignMap"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "BlendDesignMap")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 int i, j, k;
                 pdf_ps_stack_object_t *arr1 = &s->cur[0], *arr2, *arr3;
@@ -829,7 +852,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 }
             }
         }
-        else if (!memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("WeightVector"))) {
+        else if (pdf_ps_name_cmp(&s->cur[-1], "WeightVector")) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 int i;
                 for (i = 0; i < s->cur[0].size; i++) {
