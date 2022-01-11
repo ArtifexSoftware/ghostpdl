@@ -280,6 +280,11 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         descpfont = (pdf_font *)pf->client_data;
     }
 
+    if (descpfont->pdfi_font_type < e_pdf_cidfont_type0 || descpfont->pdfi_font_type > e_pdf_cidfont_type4) {
+        code = gs_note_error(gs_error_invalidfont);
+        goto error;
+    }
+
     if (descpfont != NULL && ((pdf_cidfont_t *)descpfont)->substitute) {
         pdf_obj *csi = NULL;
         pdf_string *reg = NULL, *ord = NULL;
