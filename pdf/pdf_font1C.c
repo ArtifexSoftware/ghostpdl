@@ -1708,7 +1708,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
         int (*fdselect_proc)(const byte *p, const byte *pe, unsigned int i);
 
         p = pdfi_count_cff_index(font->cffdata + offsets.fdarray_off, e, &fdarray_size);
-        if (!p)
+        if (!p || fdarray_size < 1 || fdarray_size > 64) /* 64 is arbitrary, but seems a reasonable upper limit */
             return gs_rethrow(-1, "cannot read charstrings index");
 
         ptpriv->cidata.FDBytes = 1;     /* Basically, always 1 just now */
