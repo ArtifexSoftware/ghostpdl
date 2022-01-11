@@ -1001,12 +1001,14 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                 ptpriv->type1data.BlueFuzz = (int)args[0].fval;
 
             if (b0 == (256 | 12)) {
+                if (n > max_StemSnap) n = max_StemSnap;
                 ptpriv->type1data.StemSnapH.count = n;
                 for (f = 0, i = 0; i < n; f += args[i].fval, i++)
                     ptpriv->type1data.StemSnapH.values[i] = f;
             }
 
             if (b0 == (256 | 13)) {
+                if (n > max_StemSnap) n = max_StemSnap;
                 ptpriv->type1data.StemSnapV.count = n;
                 for (f = 0, i = 0; i < n; f += args[i].fval, i++)
                     ptpriv->type1data.StemSnapV.values[i] = f;
