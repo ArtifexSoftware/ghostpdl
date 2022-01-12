@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1081,6 +1081,13 @@ int pdfi_Tj(pdf_context *ctx)
     if (s->type != PDF_STRING)
         return_error(gs_error_typecheck);
 
+    /* We can't rely on the stack reference because an error during
+       the text operation (i.e. retrieving objects for glyph metrics
+       may cause the stack to be cleared.
+     */
+    pdfi_countup(s);
+    pdfi_pop(ctx, 1);
+
     /* Save the CTM for later restoration */
     saved = ctm_only(ctx->pgs);
     gs_currentpoint(ctx->pgs, &initial_point);
@@ -1155,7 +1162,7 @@ Tj_error:
     ctx->pgs->line_params.half_width = linewidth;
 
  exit:
-    pdfi_pop(ctx, 1);
+    pdfi_countdown(s);
     return code;
 }
 
