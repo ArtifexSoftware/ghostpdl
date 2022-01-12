@@ -1772,6 +1772,13 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 code = pdfi_gs_setcolorspace(ctx, pcs);
                 if (code < 0)
                     goto cleanupExit;
+
+                /* Try to set the device color again as that failure
+                   is why we are here. If it fails again, something
+                   is very wrong */
+                code = gx_set_dev_color(ctx->pgs);
+                if (code < 0)
+                    goto cleanupExit;
             }
         }
     }

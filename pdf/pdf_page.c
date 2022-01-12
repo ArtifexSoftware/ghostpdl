@@ -834,10 +834,12 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
     if (ctx->page.has_transparency && page_group_known) {
         code1 = pdfi_trans_end_group(ctx);
+        if (code >= 0)
+            code = code1;
     }
 
     if (need_pdf14) {
-        if (code1 < 0) {
+        if (code < 0) {
             (void)gs_abort_pdf14trans_device(ctx->pgs);
             goto exit1;
         }
