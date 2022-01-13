@@ -156,6 +156,10 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
      * startcode, endcode and basecid
      */
     while (ncodemaps % 3) ncodemaps--;
+    if (ncodemaps > 300) {
+        (void)pdf_ps_stack_pop(s, to_pop);
+        return_error(gs_error_syntaxerror);
+    }
 
     stobj = &s->cur[-ncodemaps] + 1;
 
@@ -257,6 +261,11 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
     /* mapping should have 3 objects on the stack
      */
     while (ncodemaps % 3) ncodemaps--;
+
+    if (ncodemaps > 300) {
+        (void)pdf_ps_stack_pop(s, to_pop);
+        return_error(gs_error_syntaxerror);
+    }
 
     stobj = &s->cur[-ncodemaps] + 1;
     for (i = 0; i < ncodemaps; i += 3) {
@@ -388,6 +397,11 @@ static int general_endcidchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *
      */
     while (ncodemaps % 2) ncodemaps--;
 
+    if (ncodemaps > 200) {
+        (void)pdf_ps_stack_pop(s, to_pop);
+        return_error(gs_error_syntaxerror);
+    }
+
     stobj = &s->cur[-ncodemaps] + 1;
 
     for (i = 0; i < ncodemaps; i += 2) {
@@ -464,6 +478,11 @@ static int cmap_endbfchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byt
     int ncodemaps = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
     pdf_ps_stack_object_t *stobj;
     int i, j;
+
+    if (ncodemaps > 200) {
+        (void)pdf_ps_stack_pop(s, ncodemaps);
+        return_error(gs_error_syntaxerror);
+    }
 
     stobj = &s->cur[-ncodemaps] + 1;
 
