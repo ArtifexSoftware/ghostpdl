@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -221,6 +221,7 @@ pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
                                   gs_memory_t * mem     /* allocator to allocate instance from */
     )
 {
+    int code;
     /* Allocate everything up front */
     pcl_interp_instance_t *pcli  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
         = (pcl_interp_instance_t *) gs_alloc_bytes(mem,
@@ -255,19 +256,25 @@ pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     /* Init gstate to point to pcl state */
     gs_gstate_set_client(pgs, &pcli->pcs, &pcl_gstate_procs, true);
     /* register commands */
-    {
-        int code = pcl_do_registrations(&pcli->pcs, &pcli->pst);
-
-        if (code < 0) {
-            if (pcli->pcs.pids != NULL)
-                gs_free_object(mem, pcli->pcs.pids, "PCL gsave");
-            gs_gstate_free(pgs);
-            gs_free_object(mem, pcli, "pcl_allocate_interp_instance(pcl_interp_instance_t)");
-            return (code);
-        }
+    code = pcl_do_registrations(&pcli->pcs, &pcli->pst);
+    if (code < 0) {
+        if (pcli->pcs.pids != NULL)
+            gs_free_object(mem, pcli->pcs.pids, "PCL gsave");
+        gs_gstate_free(pgs);
+        gs_free_object(mem, pcli, "pcl_allocate_interp_instance(pcl_interp_instance_t)");
+        return (code);
     }
 
     pcli->pcs.pjls = pl_main_get_pjl_instance(mem);
+
+    /* Perform a gsave. This is to ensure that any grestores done
+     * in the operation of the device never restore to the topmost
+     * gstate. gs_grestore doesn't like that, and if asked to do so
+     * it does another gsave. This leaves us off by one in the
+     * counting which causes leaks. */
+    code = gs_gsave(pcli->pcs.pgs);
+    if (code < 0)
+        return code;
 
     /* Return success */
     impl->interp_client_data = pcli;
@@ -551,6 +558,10 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
 
     /* free default, pdflt_* objects */
     pcl_free_default_objects(mem, &pcli->pcs);
+
+    /* Restore the gstate once, to match the extra 'gsave' done in
+     * pcl_impl_allocate_interp_instance. */
+    gs_grestore_only(pcli->pcs.pgs);
 
     /* free halftone cache in gs state */
     gs_gstate_free(pcli->pcs.pgs);
