@@ -845,6 +845,9 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
             }
         }
     }
+    else {
+        goto error_out;
+    }
     return 0;
 
 error_out:
