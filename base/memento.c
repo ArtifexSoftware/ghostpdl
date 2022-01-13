@@ -1,4 +1,4 @@
-/* Copyright (C) 2009-2021 Artifex Software, Inc.
+/* Copyright (C) 2009-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1095,14 +1095,19 @@ move_to_root(Memento_BlkHeader *x)
     if (x == NULL)
         return;
 
+    VALGRIND_MAKE_MEM_DEFINED(x, sizeof(*x));
     while ((y = x->parent) != NULL) {
+        VALGRIND_MAKE_MEM_DEFINED(y, sizeof(*y));
         if ((z = y->parent) != NULL) {
+            VALGRIND_MAKE_MEM_DEFINED(z, sizeof(*z));
             x->parent = z->parent;
             if (x->parent) {
+                VALGRIND_MAKE_MEM_DEFINED(x->parent, sizeof(*x->parent));
                 if (x->parent->left == z)
                     x->parent->left = x;
                 else
                     x->parent->right  = x;
+                VALGRIND_MAKE_MEM_NOACCESS(x->parent, sizeof(*x->parent));
             }
             y->parent = x;
             /* Case 1, 1b, 2 or 2b */
@@ -1111,21 +1116,33 @@ move_to_root(Memento_BlkHeader *x)
                 if (z->left == y) {
                     /* Case 1 */
                     y->left = x->right;
-                    if (y->left)
+                    if (y->left) {
+                        VALGRIND_MAKE_MEM_DEFINED(y->left, sizeof(*y->left));
                         y->left->parent = y;
+                        VALGRIND_MAKE_MEM_NOACCESS(y->left, sizeof(*y->left));
+                    }
                     z->left = y->right;
-                    if (z->left)
+                    if (z->left) {
+                        VALGRIND_MAKE_MEM_DEFINED(z->left, sizeof(*z->left));
                         z->left->parent = z;
+                        VALGRIND_MAKE_MEM_NOACCESS(z->left, sizeof(*z->left));
+                    }
                     y->right = z;
                     z->parent = y;
                 } else {
                     /* Case 2b */
                     z->right = x->left;
-                    if (z->right)
+                    if (z->right) {
+                        VALGRIND_MAKE_MEM_DEFINED(z->right, sizeof(*z->right));
                         z->right->parent = z;
+                        VALGRIND_MAKE_MEM_NOACCESS(z->right, sizeof(*z->right));
+                    }
                     y->left = x->right;
-                    if (y->left)
+                    if (y->left) {
+                        VALGRIND_MAKE_MEM_DEFINED(y->left, sizeof(*y->left));
                         y->left->parent = y;
+                        VALGRIND_MAKE_MEM_NOACCESS(y->left, sizeof(*y->left));
+                    }
                     x->left = z;
                     z->parent = x;
                 }
@@ -1135,26 +1152,39 @@ move_to_root(Memento_BlkHeader *x)
                 if (z->left == y) {
                     /* Case 2 */
                     y->right = x->left;
-                    if (y->right)
+                    if (y->right) {
+                        VALGRIND_MAKE_MEM_DEFINED(y->right, sizeof(*y->right));
                         y->right->parent = y;
+                        VALGRIND_MAKE_MEM_NOACCESS(y->right, sizeof(*y->right));
+                    }
                     z->left = x->right;
-                    if (z->left)
+                    if (z->left) {
+                        VALGRIND_MAKE_MEM_DEFINED(z->left, sizeof(*z->left));
                         z->left->parent = z;
+                        VALGRIND_MAKE_MEM_NOACCESS(z->left, sizeof(*z->left));
+                    }
                     x->right = z;
                     z->parent = x;
                 } else {
                     /* Case 1b */
                     z->right = y->left;
-                    if (z->right)
+                    if (z->right) {
+                        VALGRIND_MAKE_MEM_DEFINED(z->right, sizeof(*z->right));
                         z->right->parent = z;
+                        VALGRIND_MAKE_MEM_NOACCESS(z->right, sizeof(*z->right));
+                    }
                     y->right = x->left;
-                    if (y->right)
+                    if (y->right) {
+                        VALGRIND_MAKE_MEM_DEFINED(y->right, sizeof(*y->right));
                         y->right->parent = y;
+                        VALGRIND_MAKE_MEM_NOACCESS(y->right, sizeof(*y->right));
+                    }
                     y->left = z;
                     z->parent = y;
                 }
                 x->left = y;
             }
+            VALGRIND_MAKE_MEM_NOACCESS(z, sizeof(*z));
         } else {
             /* Case 3 or 3b */
             x->parent = NULL;
@@ -1162,18 +1192,26 @@ move_to_root(Memento_BlkHeader *x)
             if (y->left == x) {
                 /* Case 3 */
                 y->left = x->right;
-                if (y->left)
+                if (y->left) {
+                    VALGRIND_MAKE_MEM_DEFINED(y->left, sizeof(*y->left));
                     y->left->parent = y;
+                    VALGRIND_MAKE_MEM_NOACCESS(y->left, sizeof(*y->left));
+                }
                 x->right = y;
             } else {
                 /* Case 3b */
                 y->right = x->left;
-                if (y->right)
+                if (y->right) {
+                    VALGRIND_MAKE_MEM_DEFINED(y->right, sizeof(*y->right));
                     y->right->parent = y;
+                    VALGRIND_MAKE_MEM_NOACCESS(y->right, sizeof(*y->right));
+                }
                 x->left = y;
             }
         }
+        VALGRIND_MAKE_MEM_NOACCESS(y, sizeof(*y));
     }
+    VALGRIND_MAKE_MEM_NOACCESS(x, sizeof(*x));
 }
 
 static void Memento_removeBlockSplay(Memento_Blocks    *blks,
@@ -1181,6 +1219,7 @@ static void Memento_removeBlockSplay(Memento_Blocks    *blks,
 {
     Memento_BlkHeader *replacement;
 
+    VALGRIND_MAKE_MEM_DEFINED(b, sizeof(*b));
     if (b->left == NULL)
     {
         /* At most one child - easy */
@@ -1196,28 +1235,50 @@ static void Memento_removeBlockSplay(Memento_Blocks    *blks,
         /* 2 Children - tricky */
         /* Find in-order predecessor to b */
         replacement = b->left;
+        VALGRIND_MAKE_MEM_DEFINED(replacement, sizeof(*replacement));
         while (replacement->right)
+        {
+            Memento_BlkHeader *o = replacement;
             replacement = replacement->right;
+            VALGRIND_MAKE_MEM_DEFINED(replacement, sizeof(*replacement));
+            VALGRIND_MAKE_MEM_NOACCESS(o, sizeof(*o));
+        }
         /* Remove replacement - easy as just one child */
         (void)Memento_removeBlockSplay(NULL, replacement);
         /* Replace b with replacement */
-        if (b->left)
+        VALGRIND_MAKE_MEM_DEFINED(b, sizeof(*b));
+        if (b->left) {
+            VALGRIND_MAKE_MEM_DEFINED(b->left, sizeof(*b->left));
             b->left->parent = replacement;
+            VALGRIND_MAKE_MEM_NOACCESS(b->left, sizeof(*b->left));
+        }
+        VALGRIND_MAKE_MEM_DEFINED(b->right, sizeof(*b->right));
         b->right->parent = replacement;
+        VALGRIND_MAKE_MEM_NOACCESS(b->right, sizeof(*b->right));
+        VALGRIND_MAKE_MEM_DEFINED(replacement, sizeof(*replacement));
         replacement->left = b->left;
         replacement->right = b->right;
     }
     if (b->parent)
     {
+        VALGRIND_MAKE_MEM_DEFINED(b->parent, sizeof(*b->parent));
         if (b->parent->left == b)
             b->parent->left = replacement;
         else
             b->parent->right = replacement;
-    }
-    else
+            VALGRIND_MAKE_MEM_NOACCESS(b->parent, sizeof(*b->parent));
+    } else {
+        VALGRIND_MAKE_MEM_DEFINED(&blks->top, sizeof(blks->top));
         blks->top = replacement;
+        VALGRIND_MAKE_MEM_NOACCESS(&blks->top, sizeof(blks->top));
+    }
     if (replacement)
+    {
+        VALGRIND_MAKE_MEM_DEFINED(replacement, sizeof(*replacement));
         replacement->parent = b->parent;
+        VALGRIND_MAKE_MEM_NOACCESS(replacement, sizeof(*replacement));
+    }
+    VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(*b));
 }
 
 static void Memento_addBlockSplay(Memento_Blocks    *blks,
@@ -1227,8 +1288,13 @@ static void Memento_addBlockSplay(Memento_Blocks    *blks,
     Memento_BlkHeader **n = &blks->top;
 
     /* Walk down, looking for a place to put b. */
+    VALGRIND_MAKE_MEM_DEFINED(&blks->top, sizeof(blks->top));
     while (*n != NULL) {
+        Memento_BlkHeader *o = parent;
+        VALGRIND_MAKE_MEM_DEFINED(*n, sizeof(**n));
         parent = *n;
+        if (o) VALGRIND_MAKE_MEM_NOACCESS(o, sizeof(*o));
+        VALGRIND_MAKE_MEM_DEFINED(parent, sizeof(*parent));
         if (b < parent)
             n = &parent->left;
         else
@@ -1236,6 +1302,7 @@ static void Memento_addBlockSplay(Memento_Blocks    *blks,
     }
     /* Place b */
     *n = b;
+    if (parent) VALGRIND_MAKE_MEM_NOACCESS(parent, sizeof(*parent));
     b->parent = parent;
     b->left = NULL;
     b->right = NULL;
@@ -1243,7 +1310,10 @@ static void Memento_addBlockSplay(Memento_Blocks    *blks,
     move_to_root(b);
     /* This always leaves b at the top. */
     blks->top = b;
+    VALGRIND_MAKE_MEM_DEFINED(b, sizeof(*b));
     b->parent = NULL;
+    VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(*b));
+    VALGRIND_MAKE_MEM_NOACCESS(&blks->top, sizeof(blks->top));
 }
 
 static void Memento_addBlockHead(Memento_Blocks    *blks,
@@ -1253,6 +1323,7 @@ static void Memento_addBlockHead(Memento_Blocks    *blks,
     Memento_addBlockSplay(blks, b);
     if (blks->tail == NULL)
         blks->tail = b;
+    VALGRIND_MAKE_MEM_DEFINED(b, sizeof(*b));
     b->next    = blks->head;
     b->prev    = NULL;
     if (blks->head)
@@ -1270,7 +1341,7 @@ static void Memento_addBlockHead(Memento_Blocks    *blks,
     if (type == 0) { /* malloc */
         VALGRIND_MAKE_MEM_UNDEFINED(MEMBLK_TOBLK(b), b->rawsize);
     } else if (type == 1) { /* free */
-        VALGRIND_MAKE_MEM_NOACCESS(MEMBLK_TOBLK(b), b->rawsize);
+      VALGRIND_MAKE_MEM_NOACCESS(MEMBLK_TOBLK(b), b->rawsize);
     }
     VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(Memento_BlkHeader));
 }
@@ -1283,6 +1354,7 @@ static void Memento_addBlockTail(Memento_Blocks    *blks,
     VALGRIND_MAKE_MEM_DEFINED(&blks->tail, sizeof(Memento_BlkHeader *));
     if (blks->head == NULL)
         blks->head = b;
+    VALGRIND_MAKE_MEM_DEFINED(b, sizeof(*b));
     b->prev = blks->tail;
     b->next = NULL;
     if (blks->tail) {
@@ -1299,7 +1371,7 @@ static void Memento_addBlockTail(Memento_Blocks    *blks,
     if (type == 0) { /* malloc */
         VALGRIND_MAKE_MEM_UNDEFINED(MEMBLK_TOBLK(b), b->rawsize);
     } else if (type == 1) { /* free */
-        VALGRIND_MAKE_MEM_NOACCESS(MEMBLK_TOBLK(b), b->rawsize);
+      VALGRIND_MAKE_MEM_NOACCESS(MEMBLK_TOBLK(b), b->rawsize);
     }
     VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(Memento_BlkHeader));
     VALGRIND_MAKE_MEM_NOACCESS(&blks->tail, sizeof(Memento_BlkHeader *));
@@ -1427,8 +1499,8 @@ mismatch:
 static void Memento_removeBlock(Memento_Blocks    *blks,
                                 Memento_BlkHeader *b)
 {
-    VALGRIND_MAKE_MEM_DEFINED(b, sizeof(*b));
     Memento_removeBlockSplay(blks, b);
+    VALGRIND_MAKE_MEM_DEFINED(b, sizeof(*b));
     if (b->next) {
         VALGRIND_MAKE_MEM_DEFINED(&b->next->prev, sizeof(b->next->prev));
         b->next->prev = b->prev;
@@ -1443,6 +1515,7 @@ static void Memento_removeBlock(Memento_Blocks    *blks,
         blks->tail = b->prev;
     if (blks->head == b)
         blks->head = b->next;
+    VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(*b));
 }
 
 static void free_block(Memento_BlkHeader *head)
@@ -1474,6 +1547,7 @@ static int Memento_Internal_makeSpace(size_t space)
         memento.free.head = head->next;
         memento.freeListSize -= MEMBLK_SIZE(head->rawsize);
         Memento_removeBlockSplay(&memento.free, head);
+        VALGRIND_MAKE_MEM_DEFINED(head, sizeof(*head));
         free_block(head);
     }
     /* Make sure we haven't just completely emptied the free list */
@@ -1511,8 +1585,10 @@ find_enclosing_block(Memento_Blocks *blks,
                      void *addr,
                      int *flags)
 {
-    Memento_BlkHeader *blk = blks->top;
+    Memento_BlkHeader *blk;
 
+    VALGRIND_MAKE_MEM_DEFINED(&blks->top, sizeof(blks->top));
+    blk = blks->top;
     while (blk)
     {
         Memento_BlkHeader *oblk = blk;
@@ -2517,8 +2593,10 @@ static void *safe_find_block(void *ptr)
     VALGRIND_MAKE_MEM_DEFINED(&block->sibling, sizeof(block->sibling));
     valid = (block->child == MEMENTO_CHILD_MAGIC &&
              block->sibling == MEMENTO_SIBLING_MAGIC);
-    VALGRIND_MAKE_MEM_NOACCESS(&block->child, sizeof(block->child));
-    VALGRIND_MAKE_MEM_NOACCESS(&block->sibling, sizeof(block->sibling));
+    if (valid) {
+        VALGRIND_MAKE_MEM_NOACCESS(&block->child, sizeof(block->child));
+        VALGRIND_MAKE_MEM_NOACCESS(&block->sibling, sizeof(block->sibling));
+    }
     if (!valid)
     {
         block = find_enclosing_block(&memento.used, ptr, NULL);
