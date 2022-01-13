@@ -556,8 +556,15 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
                    pcli->pst.hpgl_parser_state,
                    "pcl_deallocate_interp_instance(pcl_interp_instance_t)");
 
+    pl_dict_release(&pcli->pcs.palette_store);
+
     /* free default, pdflt_* objects */
     pcl_free_default_objects(mem, &pcli->pcs);
+
+    if (pcli->pcs.ppaper_type_table) {
+        gs_free_object(pcli->pcs.memory, pcli->pcs.ppaper_type_table, "Paper Table");
+        pcli->pcs.ppaper_type_table = 0;
+    }
 
     /* Restore the gstate once, to match the extra 'gsave' done in
      * pcl_impl_allocate_interp_instance. */
@@ -567,6 +574,18 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
     gs_gstate_free(pcli->pcs.pgs);
     /* remove pcl's gsave grestore stack */
     pcl_free_gstate_stk(&pcli->pcs);
+
+    /* Release font dictionaries. */
+    pl_dict_release(&pcli->pcs.soft_symbol_sets);
+    pl_dict_release(&pcli->pcs.built_in_symbol_sets);
+    pl_dict_release(&pcli->pcs.simm_fonts);
+    pl_dict_release(&pcli->pcs.cartridge_fonts);
+    pl_dict_release(&pcli->pcs.soft_fonts);
+    pl_dict_release(&pcli->pcs.built_in_fonts);
+
+    gs_font_dir_free(pcli->pcs.font_dir);
+
+    gx_path_free(&pcli->pcs.g.polygon.buffer.path, "pcl_deallocate_interp_instance");
     gs_free_object(mem, pcli,
                    "pcl_deallocate_interp_instance(pcl_interp_instance_t)");
     return 0;

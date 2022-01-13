@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -70,6 +70,8 @@ pcl_free_default_objects(gs_memory_t * mem, pcl_state_t * pcs)
         gs_free_object(mem, ppalette, "free_default_palette ppalette free");
         pcs->pdflt_palette = 0;
     }
+    rc_decrement(pcs->pfrgrnd, "free foreground");
+    rc_decrement(pcs->pdflt_frgrnd, "free default foreground");
     /* what on earth is this? */
     rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
     rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");

@@ -322,6 +322,13 @@ gs_font_dir_finalize(const gs_memory_t *cmem, void *vptr)
     }
     pdir->ccache.chunks = NULL;
 }
+void
+gs_font_dir_free(gs_font_dir *dir)
+{
+    if (dir == NULL)
+        return;
+    gs_free_object(dir->memory, dir, "gs_font_dir_free");
+}
 
 /* Allocate and minimally initialize a font. */
 gs_font *
