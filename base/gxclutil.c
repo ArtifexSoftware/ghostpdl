@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -457,7 +457,9 @@ cmd_put_range_op(gx_device_clist_writer * cldev, int band_min, int band_max,
          band_min != cldev->band_range_min ||
          band_max != cldev->band_range_max)
         ) {
-        if ((cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run)) != 0) {
+        /* error_code can come back as +ve as a warning that memory
+         * is getting tight. Don't fail on that. */
+        if ((cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run)) < 0) {
             return NULL;
         }
         cldev->band_range_min = band_min;
