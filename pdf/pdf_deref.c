@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2021 Artifex Software, Inc.
+/* Copyright (C) 2020-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -245,6 +245,28 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
     stream_obj->stream_dict->indirect_gen = stream_obj->stream_dict->generation_num = gen;
     stream_obj->stream_offset = offset;
 
+    /* Exceptional code. Normally we do not need to worry about detecting circular references
+     * when reading objects, because we do not dereference any indirect objects. However streams
+     * are a slight exception in that we do get the Length from the stream dictionay and if that
+     * is an indirect reference, then we dereference it.
+     * OSS-fuzz bug 43247 has a stream where the value associated iwht the /Length is an indirect
+     * reference to the same stream object, and leads to infinite recursion. So deal with that
+     * possibility here.
+     */
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0) {
+        pdfi_countdown(stream_obj); /* get rid of extra ref */
+        return code;
+    }
+    if (pdfi_loop_detector_check_object(ctx, stream_obj->object_num))
+        return_error(gs_error_circular_reference);
+
+    code = pdfi_loop_detector_add_object(ctx, stream_obj->object_num);
+    if (code < 0) {
+        pdfi_countdown(stream_obj); /* get rid of extra ref */
+        return code;
+    }
+
     /* This code may be a performance overhead, it simply skips over the stream contents
      * and checks that the stream ends with a 'endstream endobj' pair. We could add a
      * 'go faster' flag for users who are certain their PDF files are well-formed. This
@@ -255,10 +277,16 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
     if (code < 0) {
         char extra_info[gp_file_name_sizeof];
 
+        (void)pdfi_loop_detector_cleartomark(ctx);
         gs_sprintf(extra_info, "Stream object %u missing mandatory keyword /Length, unable to verify the stream length.\n", objnum);
         pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_read_stream_object", extra_info);
         pdfi_countdown(stream_obj); /* get rid of extra ref */
         return 0;
+    }
+    code = pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0) {
+        pdfi_countdown(stream_obj); /* get rid of extra ref */
+        return code;
     }
 
     if (i < 0 || (i + offset)> ctx->main_stream_length) {
