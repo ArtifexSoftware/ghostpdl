@@ -1553,6 +1553,8 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
         goto exit;
     if (filtered || ctx->encryption.is_encrypted) {
         code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
+        if (code < 0)
+            goto exit;
         sfread(Buffer, 1, buflen, stream->s);
         pdfi_close_file(ctx, stream);
     } else {
