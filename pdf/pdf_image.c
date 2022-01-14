@@ -1287,7 +1287,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                 *pcs = NULL;
                 return 0;
         } else {
-            if (image_info->BPC != 1) {
+            if (image_info->BPC != 1 || image_info->Mask != NULL) {
                 pdfi_set_error(ctx, 0, NULL, E_IMAGE_MASKWITHCOLOR, "pdfi_image_get_color", "BitsPerComonent is not 1, so treating as an image");
                 image_info->ImageMask = 0;
             }
