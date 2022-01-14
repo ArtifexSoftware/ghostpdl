@@ -1,4 +1,4 @@
-/* Copyright (C) 2009-2021 Artifex Software, Inc.
+/* Copyright (C) 2009-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -167,7 +167,7 @@
  *    it's really easy:
  *       git clone git://github.com/ianlancetaylor/libbacktrace
  *       cd libbacktrace
- *       ./configure
+ *       ./configure --enable-shared
  *       make
  *
  *    This leaves the build .so as .libs/libbacktrace.so
