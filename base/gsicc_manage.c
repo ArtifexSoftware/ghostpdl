@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2545,7 +2545,7 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
         position = gsicc_search_icc_table(pcrdev->icc_table,
                                           picc_profile->hashcode, &size);
         if ( position < 0 )
-            return 0;  /* Not found. */
+            return NULL;  /* Not found. */
 
         /* Get the ICC buffer.  We really want to avoid this transfer.
            I need to write  an interface to the CMM to do this through
@@ -2556,10 +2556,14 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
         buffer_ptr = gs_alloc_bytes(memory->non_gc_memory, profile_size,
                                             "gsicc_get_profile_handle_clist");
         if (buffer_ptr == NULL)
-            return 0;
+            return NULL;
         clist_read_chunk(pcrdev, position + GSICC_SERIALIZED_SIZE,
             profile_size, (unsigned char *) buffer_ptr);
         profile_handle = gscms_get_profile_handle_mem(buffer_ptr, profile_size, memory->non_gc_memory);
+        if (profile_handle == NULL) {
+            gs_free_object(memory->non_gc_memory, buffer_ptr, "gsicc_get_profile_handle_clist");
+            return NULL;
+        }
         /* We also need to get some of the serialized information */
         clist_read_chunk(pcrdev, position, GSICC_SERIALIZED_SIZE,
                         (unsigned char *) (&profile_header));
@@ -2583,7 +2587,7 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
         gs_free_object(memory->non_gc_memory, buffer_ptr, "gsicc_get_profile_handle_clist");
         return profile_handle;
      }
-     return 0;
+     return NULL;
 }
 
 gcmmhprofile_t
