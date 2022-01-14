@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -642,14 +642,15 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
            data. (NOTE: if those do not match the original font's metrics, again, the hinting
            can be distorted)
          */
-        if (a_char_ref->metrics_type == gs_fapi_metrics_replace && !a_fapi_font->is_mtx_skipped)
-            face->ft_inc_int->object->metrics_type = gs_fapi_metrics_replace_width;
-        else
+        if (a_char_ref->metrics_type == gs_fapi_metrics_replace && !a_fapi_font->is_mtx_skipped) {
+            face->ft_inc_int->object->glyph_metrics_index = 0xFFFFFFFF;
+            delta.x = FT_MulFix(a_char_ref->sb_x >> 16, ft_face->size->metrics.x_scale);
+            delta.y = FT_MulFix(a_char_ref->sb_y >> 16, ft_face->size->metrics.y_scale);
+            FT_Vector_Transform( &delta, &face->ft_transform);
+        }
+        else {
             face->ft_inc_int->object->metrics_type = a_char_ref->metrics_type;
-
-        delta.x = FT_MulFix(a_char_ref->sb_x >> 16, ft_face->size->metrics.x_scale);
-        delta.y = FT_MulFix(a_char_ref->sb_y >> 16, ft_face->size->metrics.y_scale);
-        FT_Vector_Transform( &delta, &face->ft_transform);
+        }
     }
     else if (face->ft_inc_int)
         /* Make sure we don't leave this set to the last value, as we may then use inappropriate metrics values */
