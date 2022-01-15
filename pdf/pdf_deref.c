@@ -1025,7 +1025,7 @@ static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj, bool recu
             if (object->type != PDF_STREAM)
                 code = pdfi_array_put(ctx, array, index, object);
             if (recurse)
-                code = pdfi_resolve_indirect(ctx, object, recurse);
+                code = pdfi_resolve_indirect_loop_detect(ctx, NULL, object, recurse);
         }
         if (code < 0) goto exit;
 
@@ -1065,7 +1065,7 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj, bool recur
             if (Value->type != PDF_STREAM)
                 pdfi_dict_put_obj(ctx, dict, (pdf_obj *)Key, Value);
             if (recurse)
-                code = pdfi_resolve_indirect(ctx, Value, recurse);
+                code = pdfi_resolve_indirect_loop_detect(ctx, NULL, Value, recurse);
         }
         if (code < 0) goto exit;
 
@@ -1116,7 +1116,7 @@ int pdfi_resolve_indirect_loop_detect(pdf_context *ctx, pdf_obj *parent, pdf_obj
         code = pdfi_loop_detector_add_object(ctx, value->object_num);
         if (code < 0) goto exit;
     }
-    code = pdfi_resolve_indirect(ctx, value, false);
+    code = pdfi_resolve_indirect(ctx, value, recurse);
 
  exit:
     (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current loop */
