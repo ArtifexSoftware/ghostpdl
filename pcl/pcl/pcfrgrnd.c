@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -201,6 +201,8 @@ static int
 frgrnd_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if (type & (pcl_reset_permanent)) {
+        /* pcl_free_default_objects() makes similar calls; probably need to
+        keep synced. */
         rc_decrement(pcs->pfrgrnd, "foreground reset pfrgrnd");
         rc_decrement(pcs->pdflt_frgrnd, "foreground reset pdflt_frgrnd");
         rc_decrement(pcs->pwhite_cs, "foreground reset p_white_cs");
