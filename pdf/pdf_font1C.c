@@ -839,22 +839,37 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
             if (b0 == 14) {     /* XUID */
             }
 
+            /* some CFF file offsets */
             if (b0 == 15) {
+                if (args[0].ival < 0) {
+                    code = gs_note_error(gs_error_invalidfont);
+                    break;
+                }
                 offsets->charset_off = args[0].ival;
             }
 
             if (b0 == 16) {
+                if (args[0].ival < 0) {
+                    code = gs_note_error(gs_error_invalidfont);
+                    break;
+                }
                 offsets->encoding_off = args[0].ival;
             }
 
-            /* some CFF file offsets */
-
             if (b0 == 17) {
+                if (args[0].ival < 0) {
+                    code = gs_note_error(gs_error_invalidfont);
+                    break;
+                }
                 font->charstrings = font->cffdata + args[0].ival;
             }
 
             if (b0 == 18) {
                 offsets->private_size = args[0].ival;
+                if (args[1].ival < 0) {
+                    code = gs_note_error(gs_error_invalidfont);
+                    break;
+                }
                 offsets->private_off = args[1].ival;
                 /* Catch a broken font with a self referencing Private dict */
                 if (topdict == true)
@@ -867,6 +882,10 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
             }
 
             if (b0 == 19) {
+                if (args[0].ival < 0) {
+                    code = gs_note_error(gs_error_invalidfont);
+                    break;
+                }
                 font->subrs = font->cffdata + offset + args[0].ival;
             }
 
