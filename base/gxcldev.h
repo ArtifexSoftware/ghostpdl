@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -484,8 +484,10 @@ byte *cmd_put_list_extended_op(gx_device_clist_writer * cldev, cmd_list * pcl, i
 int cmd_get_buffer_space(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size);
 
 #ifdef DEBUG
+void clist_debug_op(gs_memory_t *mem, const unsigned char *op_ptr);
 byte *cmd_put_op(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size);
 #else
+#define clist_debug_op(mem, op) do { } while (0)
 #  define cmd_put_op(cldev, pcls, size)\
      cmd_put_list_op(cldev, &(pcls)->list, size)
 #  define cmd_put_extended_op(cldev, pcls, op, size)\
@@ -502,6 +504,11 @@ set_cmd_put_op(byte **dp, gx_device_clist_writer * cldev,
         return (cldev)->error_code;
     **dp = cmd_count_op(op, csize, cldev->memory);
 
+    if (gs_debug_c('L')) {
+        clist_debug_op(cldev->memory, *dp);
+        dmlprintf1(cldev->memory, "[%u]\n", csize);
+    }
+
     return 0;
 }
 /* Call cmd_put_extended_op and update stats if no error occurs. */
@@ -516,6 +523,11 @@ set_cmd_put_extended_op(byte **dp, gx_device_clist_writer * cldev,
     **dp = cmd_opv_extend;
     (*dp)[1] = cmd_count_extended_op(op, csize, cldev->memory);
 
+    if (gs_debug_c('L')) {
+        clist_debug_op(cldev->memory, *dp);
+        dmlprintf1(cldev->memory, "[%u]\n", csize);
+    }
+
     return 0;
 }
 
@@ -523,8 +535,6 @@ set_cmd_put_extended_op(byte **dp, gx_device_clist_writer * cldev,
 byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
                        int band_max, uint size);
 
-#define cmd_put_all_op(cldev, size)\
-  cmd_put_range_op(cldev, 0, (cldev)->nbands - 1, size)
 /* Call cmd_put_all/range_op and update stats if no error occurs. */
 static inline int
 set_cmd_put_range_op(byte **dp, gx_device_clist_writer * cldev,
@@ -534,6 +544,11 @@ set_cmd_put_range_op(byte **dp, gx_device_clist_writer * cldev,
     if (*dp == NULL)
         return (cldev)->error_code;
     **dp = cmd_count_op(op, csize, (cldev)->memory);
+
+    if (gs_debug_c('L')) {
+        clist_debug_op(cldev->memory, *dp);
+        dmlprintf1(cldev->memory, "[%u]\n", csize);
+    }
 
     return 0;
 }
@@ -548,6 +563,11 @@ set_cmd_put_range_extended_op(byte **dp, gx_device_clist_writer * cldev,
         return (cldev)->error_code;
     **dp = cmd_opv_extend;
     (*dp)[1] = cmd_count_extended_op(op, csize, (cldev)->memory);
+
+    if (gs_debug_c('L')) {
+        clist_debug_op(cldev->memory, *dp);
+        dmlprintf1(cldev->memory, "[%u]\n", csize);
+    }
 
     return 0;
 }
@@ -840,6 +860,7 @@ int clist_playback_file_bands(clist_playback_action action,
 int64_t clist_file_offset(const stream_state *st, uint buffer_offset);
 void top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byte *end);
 void offset_map_next_data_out_of_band(stream_state *st);
+void clist_debug_op(gs_memory_t *mem, const unsigned char *op_ptr);
 #endif
 
 int clist_writer_push_no_cropping(gx_device_clist_writer *cdev);

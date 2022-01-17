@@ -237,7 +237,7 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
             }
             pcl->head = pcl->tail = 0;
         }
-        if_debug0m('L', cldev->memory, "[L] adding terminator");
+        if_debug0m('L', cldev->memory, "[L] adding terminator\n");
         end  = cmd_count_op(cmd_end, 1, cldev->memory);
         cldev->page_info.io_procs->fwrite_chars(&end, 1, cfile);
         process_interrupts(cldev->memory);
@@ -415,8 +415,15 @@ cmd_put_list_extended_op(gx_device_clist_writer *cldev, cmd_list *pcl, int op, u
 {
     byte *dp = cmd_put_list_op(cldev, pcl, size);
 
-    if (dp)
+    if (dp) {
         dp[1] = op;
+
+        if (gs_debug_c('L')) {
+            clist_debug_op(cldev->memory, dp);
+            dmlprintf1(cldev->memory, "[%u]\n", size);
+        }
+    }
+
     return dp;
 }
 
