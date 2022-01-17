@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1554,8 +1554,8 @@ show_cache_setup(gs_show_enum * penum)
          * The structure is full of garbage so must not call the
          * finalize method but still need to free the structure
          */
-        gs_set_object_type(mem, dev2, NULL);
-        gs_set_object_type(mem, dev, NULL);
+        gs_set_object_type(mem, dev2, &st_bytes);
+        gs_set_object_type(mem, dev, &st_bytes);
         gs_free_object(mem, dev2, "show_cache_setup(dev_cache2)");
         gs_free_object(mem, dev, "show_cache_setup(dev_cache)");
         return_error(gs_error_VMerror);
