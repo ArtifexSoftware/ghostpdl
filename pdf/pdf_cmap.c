@@ -103,6 +103,10 @@ static int cmap_endcodespacerange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *
     /* increment to_pop to cover the mark object */
     numranges = to_pop++;
     while (numranges % 2) numranges--;
+    if (numranges > 200) {
+        (void)pdf_ps_stack_pop(s, to_pop);
+        return_error(gs_error_syntaxerror);
+    }
 
     if (numranges > 0
      && pdf_ps_obj_has_type(&(s->cur[0]), PDF_PS_OBJ_STRING)  && s->cur[0].size <= MAX_CMAP_CODE_SIZE
