@@ -7,8 +7,9 @@ use Data::Dumper;
 
 my $verbose=0;
 
-# bmpcmp usage: [gs] [pcl] [xps] [mupdf] [mujstest] [murun] [mudrawpy] [runtests] [extract] [extractmu] [extractgs] [bmpcmp] [arm] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [nopdfwrite] [relaxtimeout] [extended] [smoke] [cull] [avx2] [$user] | abort
-
+# bmpcmp usage: [-L] [gs] [pcl] [xps] [mupdf] [mujstest] [murun] [mudrawpy] [runtests] [extract] [extractmu] [extractgs] [bmpcmp] [arm] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [nopdfwrite] [relaxtimeout] [extended] [smoke] [cull] [avx2] [$user] | abort
+#
+# -L passes -L to rsync, which expands softlinks.
 
 
 my %products=('abort' =>1,
@@ -31,6 +32,7 @@ my %products=('abort' =>1,
               'muwasm'=>1,
               'extractgs'=>1);
 
+my $rsync_L = "";
 my $user;
 my $product="";
 my $filters="";
@@ -85,6 +87,8 @@ while ($t1=shift) {
     $nopdfwrite="nopdfwrite";
   } elsif ($t1 eq "timeout" || $t1 eq "relaxtimeout") {
     $relaxTimeout="relaxTimeout";
+  } elsif ($t1 eq "-L") {
+    $rsync_L="L";
   } elsif ($t1=~m/^-/ || $t1=~m/^\d/) {
     $command.=$t1.' ';
   } elsif ($t1 =~ m/ifilter=.*/) {
@@ -213,7 +217,7 @@ if ($msys) {
   $hostpath="regression:$dir/$user/$directory";
 }
 
-my $cmd="rsync -axcz";
+my $cmd="rsync -axcz" . $rsync_L;
 
 if ($product eq "extractgs") {
   $cmd .= "L"; # expand links.
