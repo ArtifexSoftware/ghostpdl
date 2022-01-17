@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -482,6 +482,24 @@ read_set_misc_map(byte cb, command_buf_t *pcb, gs_gstate *pgs, gs_memory_t *mem)
     return 0;
 }
 
+#ifdef DEBUG
+void clist_debug_op(gs_memory_t *mem, const unsigned char *cbp)
+{
+    unsigned char op = *cbp++;
+    const char *const *sub = cmd_sub_op_names[op >> 4];
+    if (op == cmd_opv_extend) {
+        unsigned char op2 = *cbp;
+        if (cmd_extend_op_names[op2])
+            dmlprintf1(mem, " %s", cmd_extend_op_names[op2]);
+        else
+            dmlprintf1(mem, " ?0x%02x?", (int)op2);
+    } else if (sub)
+        dmlprintf1(mem, " %s", sub[op & 0xf]);
+    else
+        dmlprintf2(mem, " %s %d", cmd_op_names[op >> 4], op & 0xf);
+}
+#endif
+
 int
 clist_playback_band(clist_playback_action playback_action, /* lgtm [cpp/use-of-goto] */
                     gx_device_clist_reader *cdev, stream *s,
@@ -720,20 +738,10 @@ in:                             /* Initialize for a new page. */
         op = *cbp++;
 #ifdef DEBUG
         if (gs_debug_c('L')) {
-            const char *const *sub = cmd_sub_op_names[op >> 4];
             long offset = (long)clist_file_offset(st, cbp - 1 - cbuf.data);
 
-            dmlprintf1(mem, "[L] %ld: ", offset);
-            if (op == cmd_opv_extend) {
-                unsigned char op2 = *cbp;
-                if (cmd_extend_op_names[op2])
-                    dmlprintf1(mem, "%s", cmd_extend_op_names[op2]);
-                else
-                    dmlprintf1(mem, "?0x%02x?", (int)op2);
-            } else if (sub)
-                dmlprintf1(mem, "%s", sub[op & 0xf]);
-            else
-                dmlprintf2(mem, "%s %d", cmd_op_names[op >> 4], op & 0xf);
+            dmlprintf1(mem, "[L] %ld:", offset);
+            clist_debug_op(mem, cbp-1);
         }
 #endif
         switch (op >> 4) {
@@ -1643,6 +1651,15 @@ idata:                  data_size = 0;
                                         if (code < 0)
                                             goto out;
                                     }
+#ifdef DEBUG
+                                    if (gs_debug_c('L')) {
+                                       long offset = (long)clist_file_offset(st, cbp - cbuf.data);
+
+                                       dmlprintf1(mem, "[L]  %ld:", offset);
+                                       clist_debug_op(mem, cbp);
+                                       dmlprintf(mem, "\n");
+                                    }
+#endif
                                     if (cbp[0] == cmd_opv_extend && cbp[1] == cmd_opv_ext_composite) {
                                         gs_composite_t *pcomp, *pcomp_opening;
                                         gs_compositor_closing_state closing_state;
