@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -33,6 +33,7 @@
 #include "gxblend.h"
 #include "gsicc_cache.h"
 #include "gxdevsop.h"
+#include <limits.h>             /* For INT_MAX etc */
 
 #include "gdevp14.h"
 
@@ -212,6 +213,10 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
             int xoff, yoff;
 
             if_debug4m('T', mem, "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
+            if (x == INT_MIN || y == INT_MIN) {
+                if_debug0m('T', mem, " underflow!\n");
+                continue;
+            }
             if (x < x0)
                 xoff = x0 - x, x = x0, w -= xoff;
             else
