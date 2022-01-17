@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2021 Artifex Software, Inc.
+/* Copyright (C) 2020-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -159,7 +159,7 @@ pdf_make_fontmap(pdf_context *ctx, const char *default_fmapname, int cidfmap)
     } while(j < ctx->num_fontmapfiles && cidfmap == false && code >= 0);
 
     if (code >= 0) {
-        if (code >= 0 && pdfi_count_stack(ctx) > stacksize) {
+        if (pdfi_count_stack(ctx) > stacksize) {
             code = pdfi_dict_from_stack(ctx, 0, 0, true);
             if (code < 0)
                 goto done;
