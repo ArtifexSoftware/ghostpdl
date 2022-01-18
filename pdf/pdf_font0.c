@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -295,7 +295,8 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         if (code >= 0) {
             (void)pdfi_dict_get(ctx, (pdf_dict *)csi, "Registry", (pdf_obj **)&reg);
             (void)pdfi_dict_get(ctx, (pdf_dict *)csi, "Ordering", (pdf_obj **)&ord);
-            if (reg != NULL && ord != NULL) {
+            if (reg != NULL && reg->type == PDF_STRING
+             && ord != NULL && ord->type == PDF_STRING) {
                 r = (char *)reg->data;
                 rlen = reg->length;
                 o = (char *)ord->data;
