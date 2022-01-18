@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2021 Artifex Software, Inc.
+/* Copyright (C) 2020-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -200,6 +200,9 @@ static inline int pdf_ps_stack_push(pdf_ps_ctx_t *s)
                 s->stack = nstack;
                 s->cur = s->stack + currsize - 1;
                 s->toplim = s->stack + newsize - PDF_PS_STACK_GROW_SIZE;
+            }
+            else {
+                return_error(gs_error_VMerror);
             }
         }
     }
