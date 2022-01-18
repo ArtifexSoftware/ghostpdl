@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -616,10 +616,34 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst,
         return code;
 
     /* The stepping matrix : */
-    xx = pinst->templat.XStep * saved->ctm.xx;
-    xy = pinst->templat.XStep * saved->ctm.xy;
-    yx = pinst->templat.YStep * saved->ctm.yx;
-    yy = pinst->templat.YStep * saved->ctm.yy;
+    /* We do not want to overflow the maths here. Since xx etc are all floats
+     * then the multiplication will definitely fit into a double, and we can
+     * check to ensure that the result still fits into a float without
+     * overflowing at any point.
+     */
+    {
+        double double_mult = 0.0;
+
+        double_mult = (double)pinst->templat.XStep * (double)saved->ctm.xx;
+        if (double_mult < -MAX_FLOAT || double_mult > MAX_FLOAT)
+            return_error(gs_error_rangecheck);
+        xx = (float)double_mult;
+
+        double_mult = (double)pinst->templat.XStep * (double)saved->ctm.xy;
+        if (double_mult < -MAX_FLOAT || double_mult > MAX_FLOAT)
+            return_error(gs_error_rangecheck);
+        xy = double_mult;
+
+        double_mult = (double)pinst->templat.YStep * (double)saved->ctm.yx;
+        if (double_mult < -MAX_FLOAT || double_mult > MAX_FLOAT)
+            return_error(gs_error_rangecheck);
+        yx = double_mult;
+
+        double_mult = (double)pinst->templat.YStep * (double)saved->ctm.yy;
+        if (double_mult < -MAX_FLOAT || double_mult > MAX_FLOAT)
+            return_error(gs_error_rangecheck);
+        yy = double_mult;
+    }
 
     /* Adjust the stepping matrix so all coefficients are >= 0. */
     if (xx == 0 || yy == 0) { /* We know that both xy and yx are non-zero. */

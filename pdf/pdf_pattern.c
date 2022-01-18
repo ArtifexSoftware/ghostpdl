@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -445,6 +445,14 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     code = pdfi_dict_get_number(ctx, pdict, "YStep", &YStep);
     if (code < 0)
         goto exit;
+
+    /* The pattern instance holds the pattern step as floats, make sure they
+     * will fit.
+     */
+    if (XStep < -MAX_FLOAT || XStep > MAX_FLOAT || YStep < -MAX_FLOAT || YStep > MAX_FLOAT) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
 
     /* The spec says Resources are required, but in fact this doesn't seem to be true.
      * (tests_private/pdf/sumatra/infinite_pattern_recursion.pdf)
