@@ -583,6 +583,9 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
     pl_dict_release(&pcli->pcs.soft_fonts);
     pl_dict_release(&pcli->pcs.built_in_fonts);
 
+    pl_dict_release(&pcli->pcs.gl_patterns);
+    pl_dict_release(&pcli->pcs.pcl_patterns);
+
     gs_font_dir_free(pcli->pcs.font_dir);
 
     gx_path_free(&pcli->pcs.g.polygon.buffer.path, "pcl_deallocate_interp_instance");
