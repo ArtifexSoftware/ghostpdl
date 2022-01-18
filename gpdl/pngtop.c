@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -293,7 +293,7 @@ bytes_until_uel(const stream_cursor_read *pr)
             p++;
         if (p == q)
             break;
-        avail = pr->limit - pr->ptr;
+        avail = q - p;
         if (memcmp(p, "\033%-12345X", min(avail, 9)) == 0) {
             /* At least a partial match to a UEL. Everything up to
              * the start of the match is up for grabs. */
