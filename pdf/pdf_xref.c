@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -952,6 +952,10 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
             pdfi_pop(ctx, 1);
             return code;
         }
+
+        /* This can happen if pdfi_read_xref_stream tries to repair a broken PDF file */
+        if (d != ctx->Trailer)
+            d = ctx->Trailer;
 
         pdfi_loop_detector_cleartomark(ctx);
     }
