@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2021 Artifex Software, Inc.
+% Copyright (C) 2001-2022 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -1037,7 +1037,11 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
     (   **** Error: Page drawing error occured.\n) newpdf_pdfformaterror
     (               Output may be incorrect.\n) newpdf_pdfformaterror
   } if
-  showpage
+  {showpage} stopped
+  {
+    (   **** Error: Page drawing error occured.\n) newpdf_pdfformaterror
+    (               Could not draw this page at all, page will be missing in the output.\n) newpdf_pdfformaterror
+  } if
   grestore
 } bind def
 
