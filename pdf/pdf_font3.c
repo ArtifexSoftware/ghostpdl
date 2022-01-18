@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -19,10 +19,10 @@
 #include "pdf_stack.h"
 #include "pdf_array.h"
 #include "pdf_dict.h"
+#include "pdf_font_types.h"
 #include "pdf_gstate.h"
 #include "pdf_font.h"
 #include "pdf_font3.h"
-#include "pdf_font_types.h"
 #include "pdf_deref.h"
 #include "gscencs.h"
 #include "gscedata.h"       /* For the encoding arrays */

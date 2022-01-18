@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -23,6 +23,7 @@ typedef struct int_gstate_s {
     pdf_context *ctx;
     pdf_dict *SMask; /* PDF only, null | dictionary | true */
     gs_gstate *GroupGState; /* gstate associated with the SMask */
+    pdf_font *current_font; /* This is the pdfi font pointed at by the "client_data" pointer in the gs_font in the gs_gstate */
     gs_memory_t *memory;
 } pdfi_int_gstate;
 

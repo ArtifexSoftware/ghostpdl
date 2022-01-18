@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -16,6 +16,8 @@
 /* Font operations for the PDF interpreter */
 
 #include "pdf_int.h"
+#include "pdf_font_types.h"
+#include "pdf_gstate.h"
 #include "pdf_file.h"
 #include "pdf_dict.h"
 #include "pdf_loop_detect.h"
@@ -24,7 +26,6 @@
 #include "pdf_stack.h"
 #include "pdf_misc.h"
 #include "pdf_doc.h"
-#include "pdf_font_types.h"
 #include "pdf_font0.h"
 #include "pdf_font1.h"
 #include "pdf_font1C.h"
@@ -41,12 +42,15 @@
 static int pdfi_gs_setfont(pdf_context *ctx, gs_font *pfont)
 {
     int code = 0;
-    pdf_font *old_font = pdfi_get_current_pdf_font(ctx);
+    pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
+    pdf_font *old_font = igs->current_font;
 
     code = gs_setfont(ctx->pgs, pfont);
-    if (code >= 0)
+    if (code >= 0) {
+        igs->current_font = (pdf_font *)pfont->client_data;
+        pdfi_countup(igs->current_font);
         pdfi_countdown(old_font);
-
+    }
     return code;
 }
 
@@ -816,6 +820,7 @@ int pdfi_load_dict_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_
 {
     int code;
     gs_font *pfont;
+    pdf_font *pdfif;
 
     if (font_dict->type == PDF_FONT) {
         pdfi_countup(font_dict);
@@ -836,10 +841,8 @@ int pdfi_load_dict_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_
     if (pfont != ctx->pgs->font) {
         code = pdfi_gs_setfont(ctx, pfont);
     }
-    else {
-        pdf_font *pdfif = (pdf_font *)pfont->client_data;
-        pdfi_countdown(pdfif);
-    }
+    pdfif = (pdf_font *)pfont->client_data;
+    pdfi_countdown(pdfif);
 
     if (code < 0)
         goto exit;

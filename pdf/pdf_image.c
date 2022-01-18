@@ -17,6 +17,7 @@
 
 #include "pdf_int.h"
 #include "pdf_stack.h"
+#include "pdf_font_types.h"
 #include "pdf_gstate.h"
 #include "pdf_doc.h"
 #include "pdf_page.h"

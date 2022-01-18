@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -17,6 +17,7 @@
 
 #include "pdf_int.h"
 #include "pdf_stack.h"
+#include "pdf_font_types.h"
 #include "pdf_gstate.h"
 #include "pdf_shading.h"
 #include "pdf_dict.h"

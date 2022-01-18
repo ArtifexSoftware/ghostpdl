@@ -25,7 +25,7 @@
 #include "pdf_image.h"
 #include "pdf_shading.h"
 #include "pdf_font.h"
-#include "pdf_font.h"
+#include "pdf_font_types.h"
 #include "pdf_cmap.h"
 #include "pdf_text.h"
 #include "pdf_gstate.h"

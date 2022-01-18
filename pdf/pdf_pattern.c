@@ -21,6 +21,7 @@
 #include "pdf_pattern.h"
 #include "pdf_stack.h"
 #include "pdf_array.h"
+#include "pdf_font_types.h"
 #include "pdf_gstate.h"
 #include "pdf_file.h"
 #include "pdf_dict.h"

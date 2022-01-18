@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -17,6 +17,7 @@
 
 #include "pdf_int.h"
 #include "pdf_doc.h"
+#include "pdf_font_types.h"
 #include "pdf_gstate.h"
 #include "pdf_stack.h"
 #include "pdf_dict.h"
@@ -113,7 +114,9 @@ pdfi_gstate_copy_cb(void *to, const void *from)
      */
     if (igs_to != NULL) {
         pdfi_gstate_smask_free(igs_to);
+        pdfi_countdown(igs_to->current_font);
         *(pdfi_int_gstate *) igs_to = *igs_from;
+        pdfi_countup(igs_to->current_font);
         pdfi_gstate_smask_install(igs_to, igs_from->memory, igs_from->SMask, igs_from->GroupGState);
     }
     return 0;
@@ -127,6 +130,7 @@ pdfi_gstate_free_cb(void *old, gs_memory_t * mem, gs_gstate *pgs)
     if (old == NULL)
         return;
     pdfi_gstate_smask_free(igs);
+    pdfi_countdown(igs->current_font);
     /* We need to use the graphics state memory, in case we are running under Ghostscript. */
     gs_free_object(pgs->memory, igs, "pdfi_gstate_free");
 }
@@ -252,93 +256,38 @@ int pdfi_op_Q(pdf_context *ctx)
     return code;
 }
 
+/* We want pdfi_grestore() so we can track and warn of "too many Qs"
+ * in the interests of symmetry, we also have pdfi_gsave()
+ */
 int pdfi_gsave(pdf_context *ctx)
 {
-    int code;
-
-    code = gs_gsave(ctx->pgs);
-
-    if(code < 0)
-        return code;
-    else {
-        pdfi_countup_current_font(ctx);
-        return 0;
-    }
+    return gs_gsave(ctx->pgs);
 }
 
 int pdfi_grestore(pdf_context *ctx)
 {
-    int code;
-    pdf_font *font = NULL, *font1 = NULL;
+    int code = 0;
 
     /* Make sure we have encountered as many gsave operations in this
      * stream as grestores. If not, log an error
      */
     if (ctx->pgs->level > ctx->current_stream_save.gsave_level) {
-        font = pdfi_get_current_pdf_font(ctx);
-
         code = gs_grestore(ctx->pgs);
-
-        font1 = pdfi_get_current_pdf_font(ctx);
-        if (font != NULL && (font != font1 || ((pdf_obj *)font)->refcnt > 1)) {
-            /* TODO: This countdown might have been causing memory corruption (dangling pointer)
-             * but seems to be okay now.  Maybe was fixed by other memory issue. 8-28-19
-             * If you come upon this comment in the future and it all seems fine, feel free to
-             * clean this up... (delete comment, remove the commented out warning message, etc)
-             */
-#if REFCNT_DEBUG
-            dbgmprintf2(ctx->memory, "pdfi_grestore() counting down font UID %ld, refcnt %d\n",
-                        font->UID, font->refcnt);
-#endif
-            //            dbgmprintf(ctx->memory, "WARNING pdfi_grestore() DISABLED pdfi_countdown (FIXME!)\n");
-            pdfi_countdown(font);
-        }
-
-        return code;
     } else {
         /* We don't throw an error here, we just ignore it and continue */
         pdfi_set_warning(ctx, 0, NULL, W_PDF_TOOMANYQ, "pdfi_grestore", (char *)"ignoring q");
     }
-    return 0;
+    return code;
 }
 
-/* gs_setgstate is somewhat unpleasant from our point of view, because it replaces
- * the content of the graphics state, without going through our pdfi_gsave/pdfi_grestore
- * functionaltiy. In particular we replace the current font in the graphics state when
- * we call it, and this means we *don't* count down the PDF_font object reference count
- * which leads to an incorrect count and either memory leaks or early freeing.
- * This function *requires* that the calling function will do a pdfi_gsave *before*
- * calling pdfi_setgstate, and a pdfi_grestore *after* calling pdfi_gs_setgstate.
- * it correctly increments/decrements the font reference counts for that condition
- * and no other.
- */
 int pdfi_gs_setgstate(gs_gstate * pgs, const gs_gstate * pfrom)
 {
-    pdf_font *font = NULL;
     int code = 0;
-
-    /* We are going to release a reference to the font from the graphics state
-    * (if there is one) so count it down to keep things straight.
-    */
-    if (pgs->font) {
-        font = (pdf_font *)pgs->font->client_data;
-        if (font)
-            pdfi_countdown(font);
-    }
 
     code = gs_setgstate(pgs, pfrom);
     if (code < 0)
         return code;
 
-    /* The copied gstate may have contained a font, and we expect to do a
-     * pdfi_grestore on exit from here, which will count down the font
-     * so count it up now in preparation.
-     */
-    if (pgs->font) {
-        font = (pdf_font *)pgs->font->client_data;
-        if (font)
-            pdfi_countup(font);
-    }
     return code;
 }
 
