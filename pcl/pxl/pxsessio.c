@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -545,6 +545,11 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
                 return_error(errorIllegalAttributeValue);
         }
 #undef plist
+    }
+    if (!dev->is_open) {
+        code = gs_opendevice(dev);
+        if (code < 0)
+            return code;
     }
     {
         code = px_initgraphics(pxs);
