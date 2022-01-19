@@ -1805,8 +1805,7 @@ static int pdfi_font_set_internal_inner(pdf_context *ctx, const byte *fontname, 
     code = pdfi_set_font_internal(ctx, font, point_size);
 
  exit:
-    if (code < 0)
-        pdfi_countdown(font); /* Keep the ref if succeeded */
+    pdfi_countdown(font);
     return code;
 }
 
