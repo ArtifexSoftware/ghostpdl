@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2021 Artifex Software, Inc.
+/* Copyright (C) 2020-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1061,11 +1061,19 @@ static int pdfi_doc_PageLabels(pdf_context *ctx)
     int code;
     pdf_dict *PageLabels = NULL;
 
+    if (ctx->loop_detection)
+        code = pdfi_loop_detector_mark(ctx);
+
     code = pdfi_dict_knownget_type(ctx, ctx->Root, "PageLabels", PDF_DICT, (pdf_obj **)&PageLabels);
     if (code <= 0) {
+        if (ctx->loop_detection)
+            code = pdfi_loop_detector_cleartomark(ctx);
         /* TODO: flag a warning */
         goto exit;
     }
+
+    if (ctx->loop_detection)
+        code = pdfi_loop_detector_cleartomark(ctx);
 
     /* This will send the PageLabels object as a 'pdfpagelabels' setdeviceparams */
     code = pdfi_mark_object(ctx, (pdf_obj *)PageLabels, "pdfpagelabels");

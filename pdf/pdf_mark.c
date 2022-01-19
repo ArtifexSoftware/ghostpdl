@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2021 Artifex Software, Inc.
+/* Copyright (C) 2020-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -348,14 +348,8 @@ int pdfi_mark_object(pdf_context *ctx, pdf_obj *object, const char *cmd)
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         goto exit;
-    if (object->object_num != 0) {
-        code = pdfi_loop_detector_add_object(ctx, object->object_num);
-        if (code < 0) {
-            (void)pdfi_loop_detector_cleartomark(ctx);
-            goto exit;
-        }
-    }
-    code = pdfi_resolve_indirect(ctx, object, true);
+
+    code = pdfi_resolve_indirect_loop_detect(ctx, NULL, object, true);
     (void)pdfi_loop_detector_cleartomark(ctx);
     if (code < 0)
         goto exit;

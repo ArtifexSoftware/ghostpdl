@@ -1015,7 +1015,20 @@ static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj, bool recu
 
     arraysize = pdfi_array_size(array);
     for (index = 0; index < arraysize; index++) {
+        if (ctx->loop_detection != NULL) {
+            code = pdfi_loop_detector_mark(ctx);
+            if (code < 0)
+                return code;
+        }
+
         code = pdfi_array_get_no_store_R(ctx, array, index, &object);
+
+        if (ctx->loop_detection != NULL) {
+            int code1 = pdfi_loop_detector_cleartomark(ctx);
+            if (code1 < 0)
+                return code1;
+        }
+
         if (code == gs_error_circular_reference) {
             /* Just leave as an indirect ref */
             code = 0;
@@ -1055,7 +1068,21 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj, bool recur
         Key = (pdf_name *)dict->keys[index];
         if (pdfi_name_is(Key, "Parent"))
             continue;
+
+        if (ctx->loop_detection != NULL) {
+            code = pdfi_loop_detector_mark(ctx);
+            if (code < 0)
+                return code;
+        }
+
         code = pdfi_dict_get_no_store_R_key(ctx, dict, Key, &Value);
+
+        if (ctx->loop_detection != NULL) {
+            int code1 = pdfi_loop_detector_cleartomark(ctx);
+            if (code1 < 0)
+                return code1;
+        }
+
         if (code == gs_error_circular_reference) {
             /* Just leave as an indirect ref */
             code = 0;
@@ -1112,7 +1139,12 @@ int pdfi_resolve_indirect_loop_detect(pdf_context *ctx, pdf_obj *parent, pdf_obj
         code = pdfi_loop_detector_add_object(ctx, parent->object_num);
         if (code < 0) goto exit;
     }
+
     if (value->object_num != 0) {
+        if (pdfi_loop_detector_check_object(ctx, value->object_num)) {
+            code = gs_note_error(gs_error_circular_reference);
+            goto exit;
+        }
         code = pdfi_loop_detector_add_object(ctx, value->object_num);
         if (code < 0) goto exit;
     }
