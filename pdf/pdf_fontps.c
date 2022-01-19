@@ -488,7 +488,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
             }
         }
         else if (pdf_ps_name_cmp(&s->cur[-1], "FontBBox")) {
-            if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
+            if (s->cur[0].size > 0 && pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
                 int i, j;
                 double bbox[4] = { 0, 0, 1000, 1000 };
                 if (pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_ARRAY)) { /* This is (probably) a Blend/FontBBox entry */
