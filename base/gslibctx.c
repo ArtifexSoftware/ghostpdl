@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -325,15 +325,8 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
         pio->core->fs->next   = NULL;
 
         pio->core->monitor = gx_monitor_alloc(mem);
-        if (pio->core->monitor == NULL) {
-#ifdef WITH_CAL
-            cal_fin(pio->core->cal_ctx, mem);
-#endif
-            gs_free_object(mem, pio->core->fs, "gs_lib_ctx_init");
-            gs_free_object(mem, pio->core, "gs_lib_ctx_init");
-            gs_free_object(mem, pio, "gs_lib_ctx_init");
-            return -1;
-        }
+        if (pio->core->monitor == NULL)
+            goto core_create_failed;
         pio->core->refs = 1;
         pio->core->memory = mem;
 
@@ -344,6 +337,18 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
         pio->core->gs_next_id = 5; /* Cloned contexts share the state */
         /* Set scanconverter to 1 (default) */
         pio->core->scanconverter = GS_SCANCONVERTER_DEFAULT;
+        /* Initialise the underlying CMS. */
+        pio->core->cms_context = gscms_create(mem);
+        if (pio->core->cms_context == NULL) {
+core_create_failed:
+#ifdef WITH_CAL
+            cal_fin(pio->core->cal_ctx, mem);
+#endif
+            gs_free_object(mem, pio->core->fs, "gs_lib_ctx_init");
+            gs_free_object(mem, pio->core, "gs_lib_ctx_init");
+            gs_free_object(mem, pio, "gs_lib_ctx_init");
+            return -1;
+        }
     }
 
     /* Now set the non zero/false/NULL things */
@@ -360,10 +365,6 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
 
     if (gs_lib_ctx_set_default_device_list(mem, gs_dev_defaults,
                                            strlen(gs_dev_defaults)) < 0)
-        goto Failure;
-
-    /* Initialise the underlying CMS. */
-    if (gscms_create(mem))
         goto Failure;
 
     /* Initialise any lock required for the jpx codec */
@@ -417,7 +418,6 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     ctx_mem = ctx->memory;
 
     sjpxd_destroy(mem);
-    gscms_destroy(ctx_mem);
     gs_free_object(ctx_mem, ctx->profiledir,
         "gs_lib_ctx_fin");
 
@@ -432,6 +432,7 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     refs = --ctx->core->refs;
     gx_monitor_leave((gx_monitor_t *)(ctx->core->monitor));
     if (refs == 0) {
+        gscms_destroy(ctx->core->cms_context);
         gx_monitor_free((gx_monitor_t *)(ctx->core->monitor));
 #ifdef WITH_CAL
         cal_fin(ctx->core->cal_ctx, ctx->core->memory);
@@ -477,14 +478,7 @@ void *gs_lib_ctx_get_cms_context( const gs_memory_t *mem )
 {
     if (mem == NULL)
         return NULL;
-    return mem->gs_lib_ctx->cms_context;
-}
-
-void gs_lib_ctx_set_cms_context( const gs_memory_t *mem, void *cms_context )
-{
-    if (mem == NULL)
-        return;
-    mem->gs_lib_ctx->cms_context = cms_context;
+    return mem->gs_lib_ctx->core->cms_context;
 }
 
 int gs_lib_ctx_get_act_on_uel( const gs_memory_t *mem )

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -877,7 +877,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
 }
 
 /* Do any initialization if needed to the CMS */
-int
+void *
 gscms_create(gs_memory_t *memory)
 {
     cmsContext ctx;
@@ -885,7 +885,7 @@ gscms_create(gs_memory_t *memory)
     /* Set our own error handling function */
     ctx = cmsCreateContext((void *)&gs_cms_memhandler, memory);
     if (ctx == NULL)
-        return_error(gs_error_VMerror);
+        return NULL;
 
 #ifdef USE_LCMS2_LOCKING
     cmsPlugin(ctx, (void *)&gs_cms_mutexhandler);
@@ -897,20 +897,19 @@ gscms_create(gs_memory_t *memory)
 #endif
 
     cmsSetLogErrorHandler(ctx, gscms_error);
-    gs_lib_ctx_set_cms_context(memory, ctx);
-    return 0;
+
+    return ctx;
 }
 
 /* Do any clean up when done with the CMS if needed */
 void
-gscms_destroy(gs_memory_t *memory)
+gscms_destroy(void *cmsContext_)
 {
-    cmsContext ctx = gs_lib_ctx_get_cms_context(memory);
+    cmsContext ctx = (cmsContext)cmsContext_;
     if (ctx == NULL)
         return;
 
     cmsDeleteContext(ctx);
-    gs_lib_ctx_set_cms_context(memory, NULL);
 }
 
 /* Have the CMS release the link */

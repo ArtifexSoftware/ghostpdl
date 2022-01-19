@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -133,6 +133,8 @@ typedef struct {
      * all builds. */
     void *cal_ctx;
 
+    void *cms_context;  /* Opaque context pointer from underlying CMS in use */
+
     gs_callout_list_t *callouts;
 
     /* Stashed args */
@@ -180,7 +182,6 @@ typedef struct gs_lib_ctx_s
      * and one in the device */
     char *profiledir;               /* Directory used in searching for ICC profiles */
     int profiledir_len;             /* length of directory name (allows for Unicode) */
-    void *cms_context;  /* Opaque context pointer from underlying CMS in use */
     gs_fapi_server **fapi_servers;
     char *default_device_list;
     int gcsignal;
@@ -210,7 +211,6 @@ void gs_lib_ctx_fin( gs_memory_t *mem );
 gs_lib_ctx_t *gs_lib_ctx_get_interp_instance( const gs_memory_t *mem );
 
 void *gs_lib_ctx_get_cms_context( const gs_memory_t *mem );
-void gs_lib_ctx_set_cms_context( const gs_memory_t *mem, void *cms_context );
 int gs_lib_ctx_get_act_on_uel( const gs_memory_t *mem );
 
 int gs_lib_ctx_register_callout(gs_memory_t *mem, gs_callout_fn, void *arg);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -76,8 +76,8 @@ gcmmhlink_t gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                                          gsicc_rendering_param_t *rendering_params,
                                          bool src_dev_link, int cmm_flags,
                                          gs_memory_t *memory);
-int gscms_create(gs_memory_t *memory);
-void gscms_destroy(gs_memory_t *memory);
+void *gscms_create(gs_memory_t *memory);
+void gscms_destroy(void *);
 void gscms_release_link(gsicc_link_t *icclink);
 void gscms_release_profile(void *profile, gs_memory_t *memory);
 int gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value,
