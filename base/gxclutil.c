@@ -346,8 +346,10 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
     CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
 
     if (size + cmd_headroom > cldev->cend - dp) {
-        if ((cldev->error_code =
-             cmd_write_buffer(cldev, cmd_opv_end_run)) != 0 ||
+        cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run);
+        /* error_code can come back as +ve as a warning that memory
+         * is getting tight. Don't fail on that. */
+        if (cldev->error_code < 0 ||
             (size + cmd_headroom > cldev->cend - cldev->cnext)) {
             if (cldev->error_code == 0)
                 cldev->error_code = gs_error_VMerror;
@@ -436,6 +438,8 @@ cmd_get_buffer_space(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint
     CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
 
     if (size + cmd_headroom > cldev->cend - cldev->cnext) {
+        /* error_code can come back as +ve as a warning that memory
+         * is getting tight. Don't fail on that. */
         cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run);
         if (cldev->error_code < 0) {
             return cldev->error_code;
@@ -464,9 +468,10 @@ cmd_put_range_op(gx_device_clist_writer * cldev, int band_min, int band_max,
          band_min != cldev->band_range_min ||
          band_max != cldev->band_range_max)
         ) {
+        cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run);
         /* error_code can come back as +ve as a warning that memory
          * is getting tight. Don't fail on that. */
-        if ((cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run)) < 0) {
+        if (cldev->error_code < 0) {
             return NULL;
         }
         cldev->band_range_min = band_min;
