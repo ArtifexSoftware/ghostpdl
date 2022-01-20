@@ -1787,8 +1787,8 @@ void initialise_stream_save(pdf_context *ctx)
 int pdfi_run_context(pdf_context *ctx, pdf_stream *stream_obj,
                      pdf_dict *page_dict, bool stoponerror, const char *desc)
 {
-    int code;
-    gs_gstate *DefaultQState;
+    int code = 0, code1 = 0;
+    gs_gstate *DefaultQState = NULL;
     /* Save any existing Default* colour spaces */
     gs_color_space *PageDefaultGray = ctx->page.DefaultGray_cs;
     gs_color_space *PageDefaultRGB = ctx->page.DefaultRGB_cs;
@@ -1805,12 +1805,29 @@ int pdfi_run_context(pdf_context *ctx, pdf_stream *stream_obj,
     /* If the stream has any Default* colour spaces, replace the page level ones.
      * This will derement the reference counts to the current spaces if they are replaced.
      */
-    pdfi_setup_DefaultSpaces(ctx, stream_obj->stream_dict);
+    code = pdfi_setup_DefaultSpaces(ctx, stream_obj->stream_dict);
+    if (code < 0)
+        goto exit;
 
-    pdfi_copy_DefaultQState(ctx, &DefaultQState);
-    pdfi_set_DefaultQState(ctx, ctx->pgs);
+    code = pdfi_copy_DefaultQState(ctx, &DefaultQState);
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_set_DefaultQState(ctx, ctx->pgs);
+    if (code < 0)
+        goto exit;
+
     code = pdfi_interpret_inner_content_stream(ctx, stream_obj, page_dict, stoponerror, desc);
-    pdfi_restore_DefaultQState(ctx, &DefaultQState);
+
+    code1 = pdfi_restore_DefaultQState(ctx, &DefaultQState);
+    if (code >= 0)
+        code = code1;
+
+exit:
+    if (DefaultQState != NULL) {
+        gs_gstate_free(DefaultQState);
+        DefaultQState = NULL;
+    }
 
     /* Count down any Default* colour spaces */
     rc_decrement(ctx->page.DefaultGray_cs, "pdfi_run_context");
