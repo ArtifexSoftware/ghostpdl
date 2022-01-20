@@ -753,9 +753,13 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                     default:
                         code = gs_note_error(gs_error_invalidfont);
                 }
+
                 if (code < 0 && substitute == font_embedded) {
-                    dmprintf2(ctx->memory, "**** Error: can't process embedded stream for font object %d %d.\n", font_dict->object_num, font_dict->generation_num);
-                    dmprintf(ctx->memory, "**** Attempting to load substitute font.\n");
+                    char obj[129];
+                    pdfi_print_string(ctx, "**** Warning: cannot process embedded stream for font object ");
+                    gs_snprintf(obj, 128, "%d %d\n", (int)font_dict->object_num, (int)font_dict->generation_num);
+                    pdfi_print_string(ctx, obj);
+                    pdfi_print_string(ctx, "**** Attempting to load a substitute font.\n");
                 }
             }
 
