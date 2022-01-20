@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -560,7 +560,7 @@ DEVICE_DEVS2=$(DD)ap3250.dev $(DD)atx23.dev $(DD)atx24.dev $(DD)atx38.dev $(DD)b
 DEVICE_DEVS3=
 DEVICE_DEVS4=$(DD)ijs.dev
 DEVICE_DEVS5=
-DEVICE_DEVS6=$(DD)png16.dev $(DD)png16m.dev $(DD)png256.dev $(DD)png48.dev $(DD)pngalpha.dev $(DD)pnggray.dev $(DD)pngmono.dev
+DEVICE_DEVS6=$(DD)png16.dev $(DD)png16m.dev $(DD)png256.dev $(DD)png48.dev $(DD)pngalpha.dev $(DD)png16malpha.dev $(DD)pnggray.dev $(DD)pngmono.dev
 DEVICE_DEVS7=
 DEVICE_DEVS8=
 DEVICE_DEVS9=

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -180,7 +180,8 @@ DEVGEN=$(DEVGENDIR)$(D)
 #	png16		4-bit color Portable Network Graphics (PNG)
 #	png256		8-bit color Portable Network Graphics (PNG)
 #	png16m		24-bit color Portable Network Graphics (PNG)
-#	pngalpha	32-bit RGBA color Portable Network Graphics (PNG)
+#	pngalpha	32-bit RGBA color Portable Network Graphics (PNG) (aa)
+#	png16malpha	32-bit RGBA color Portable Network Graphics (PNG)
 #	tiffgray	TIFF 8-bit gray, no compression
 #	tiff12nc	TIFF 12-bit RGB, no compression
 #	tiff24nc 	TIFF 24-bit RGB, no compression (NeXT standard format)
@@ -1521,6 +1522,11 @@ $(DD)pngalpha.dev : $(libpng_dev) $(png_) $(GLD)page.dev $(GDEV) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)pngalpha $(png_)
 	$(ADDMOD) $(DD)pngalpha $(png_i_)
+
+$(DD)png16malpha.dev : $(libpng_dev) $(png_) $(GLD)page.dev $(GDEV) \
+ $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)png16malpha $(png_)
+	$(ADDMOD) $(DD)png16malpha $(png_i_)
 
 ### --------------- Portable Network Graphics file format --------------- ###
 ### Requires zlib 0.95 (or more recent versions).                         ###

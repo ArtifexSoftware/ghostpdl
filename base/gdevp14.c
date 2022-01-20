@@ -3461,10 +3461,10 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     }
 
     /* Sep devices all support put_image (tiffsep and psdcmyk)
-       as well as those devices that support alpha (pngalpha)
-       If we are here, then we are doing an overprint simulation
-       on some other device. Image data is aleady blended and in
-       device color space. */
+       as well as those devices that support alpha (pngalpha,
+       png16malpha). If we are here, then we are doing an
+       overprint simulation on some other device. Image data
+       is aleady blended and in device color space. */
     code = gs_cspace_build_ICC(&pcs, NULL, pgs->memory);
     if (code < 0)
         return code;

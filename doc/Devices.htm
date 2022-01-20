@@ -223,15 +223,17 @@ black-and-white for special needs. The <code>pngmonod</code> device is also a
 black-and-white device, but the output is formed from an internal 8 bit grayscale
 rendering which is then error diffused and converted down to 1bpp.</p>
 
-<p>The <code>pngalpha</code> device is 32-bit RGBA color with transparency
+<p>The <code>png16malpha</code> and <code>pngalpha</code> devices are 32-bit RGBA color with transparency
 indicating pixel coverage.  The background is transparent unless
 it has been explicitly filled.  PDF 1.4 transparent files do not
-give a transparent background with this device.  Text and graphics
-anti-aliasing are enabled by default.</p>
+give a transparent background with this device. The devices differ, in that the <code>pngalpha</code> device
+enables Text and graphics anti-aliasing by default. We now recommend that people use the <code>png16malpha</code>
+device in preference, and achieve any required antialiasing via the <code>DownScaleFactor</code> parameter,
+as this gives better results in many cases.</p>
 
 <h4>Options</h4>
 
-<p>The <code>pngmonod</code>, <code>png16m</code>, <code>pnggray</code> and
+<p>The <code>pngmonod</code>, <code>png16m</code>, <code>pnggray</code>, <code>png16malpha</code> and
 <code>pngalpha</code> devices all respond to the following:</p>
 
 <blockquote>
@@ -267,12 +269,12 @@ behave as for 2.</dd>
 </dl>
 </blockquote>
 
-<p>The <code>pngalpha</code> device responds to the following option:</p>
+<p>The <code>png16malpha</code> and <code>pngalpha</code> devices respond to the following option:</p>
 
 <blockquote>
 <dl>
 <dt><code>-dBackgroundColor=</code><b><em>16#RRGGBB</em></b> (RGB color, default white = 16#ffffff)</dt>
-<dd>For the <code>pngalpha</code> device only,
+<dd>For the <code>png16malpha</code> and <code>pngalpha</code> devices only,
 set the suggested background color in the PNG bKGD chunk.
 When a program reading a PNG file does not support alpha
 transparency, the PNG library converts the image using

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -297,6 +297,41 @@ const gx_device_pngalpha gs_pngalpha_device = {
          256 /* dither grays */,
          256 /* dither colors */,
          { 4, 4 } /* antialias info text, graphics */,
+         GX_CINFO_UNKNOWN_SEP_LIN /* separable_and_linear */,
+         { 0 } /* component shift */,
+         { 0 } /* component bits */,
+         { 0 } /* component mask */,
+         "DeviceRGB" /* process color name */,
+         GX_CINFO_OPMSUPPORTED_UNKNOWN /* opmsupported */,
+         0 /* process_cmps */,
+         0 /* icc_locations */
+        },
+        std_device_part2_(
+          (int)((float)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10 + 0.5),
+          (int)((float)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10 + 0.5),
+           X_DPI, Y_DPI),
+        offset_margin_values(0, 0, 0, 0, 0, 0),
+        std_device_part3_(),
+        prn_device_body_rest_(png_print_page),
+        GX_DOWNSCALER_PARAMS_DEFAULTS,
+        0xffffff	/* white background */
+};
+
+const gx_device_pngalpha gs_png16malpha_device = {
+        std_device_part1_(gx_device_pngalpha,
+                pngalpha_initialize_device_procs, "png16malpha",
+                &st_device_printer, open_init_closed),
+        /* color_info */
+        {3 /* max components */,
+         3 /* number components */,
+         GX_CINFO_POLARITY_ADDITIVE /* polarity */,
+         32 /* depth */,
+         -1 /* gray index */,
+         255 /* max gray */,
+         255 /* max color */,
+         256 /* dither grays */,
+         256 /* dither colors */,
+         { 1, 1 } /* antialias info text, graphics */,
          GX_CINFO_UNKNOWN_SEP_LIN /* separable_and_linear */,
          { 0 } /* component shift */,
          { 0 } /* component bits */,
