@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1285,6 +1285,7 @@ lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *fna
     uint fnamelen;
     ref obj;
     int code;
+    stream *s;
 
     /* open the usual 'stream', then if successful, return the file */
     code = lib_file_open(pfpath, mem, NULL, fname, strlen(fname),
@@ -1292,7 +1293,19 @@ lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *fna
 
     if (code < 0)
         return NULL;
-    file = ((stream *)(obj.value.pfile))->file;
+
+    /* This all seems a bit grotty. The above code has generated us a stream
+     * that wraps a file. We actually want the file. So we reach in, and steal
+     * the file pointer. Nasty. */
+    s = ((stream *)(obj.value.pfile));
+    file = s->file;
+    /* Historically we've then just abandoned the stream, resulting in blocks
+     * leaking. Let's free the leaked blocks (in rather hacky style). First,
+     * we clear the file reference, and then drop the stream. */
+    s->file = NULL;
+    sclose(s);
+    /* Then free the stream block itself. */
+    gs_free_object(s->memory, s, "lib_fopen");
     return file;
 }
 
