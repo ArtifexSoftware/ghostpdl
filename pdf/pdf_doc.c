@@ -1061,19 +1061,25 @@ static int pdfi_doc_PageLabels(pdf_context *ctx)
     int code;
     pdf_dict *PageLabels = NULL;
 
-    if (ctx->loop_detection)
+    if (ctx->loop_detection) {
         code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            return code;
+    }
 
     code = pdfi_dict_knownget_type(ctx, ctx->Root, "PageLabels", PDF_DICT, (pdf_obj **)&PageLabels);
     if (code <= 0) {
         if (ctx->loop_detection)
-            code = pdfi_loop_detector_cleartomark(ctx);
+            (void)pdfi_loop_detector_cleartomark(ctx);
         /* TODO: flag a warning */
         goto exit;
     }
 
-    if (ctx->loop_detection)
+    if (ctx->loop_detection) {
         code = pdfi_loop_detector_cleartomark(ctx);
+        if (code < 0)
+            goto exit;
+    }
 
     /* This will send the PageLabels object as a 'pdfpagelabels' setdeviceparams */
     code = pdfi_mark_object(ctx, (pdf_obj *)PageLabels, "pdfpagelabels");
