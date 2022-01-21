@@ -1305,79 +1305,84 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
         }
     }
     else {
-        code = pdfi_object_alloc(ctx, PDF_ARRAY, 256, (pdf_obj **) &font->Encoding);
-        if (code < 0)
-            return code;
-
-        code = pdfi_name_alloc(ctx, (byte *) ".notdef", 7, (pdf_obj **) &ndname);
-        if (code < 0)
-            return code;
-
-
-        pdfi_countup(font->Encoding);
-        pdfi_countup(ndname);
-        code = 0;
-        /* Prepopulate with notdefs */
-        for (i = 0; i < 256 && code >= 0; i++) {
-            code = pdfi_array_put(ctx, font->Encoding, (uint64_t) i, (pdf_obj *) ndname);
+        if (font->cffdata + offsets->encoding_off > font->cffend) {
+            code = gs_note_error(gs_error_invalidfont);
         }
-
-        if (code >= 0) {
-            byte *p = font->cffdata + offsets->encoding_off;
-
-            enc_format = p[0];
-
-            lp = pdfi_find_cff_index(font->charstrings, font->cffend, 0, &s, &e);
-            if (lp == NULL) {
-                code = gs_note_error(gs_error_rangecheck);
-                goto done;
-            }
-            code = pdfi_object_alloc(ctx, PDF_STRING, e - s, (pdf_obj **) &pstr);
+        else {
+            code = pdfi_object_alloc(ctx, PDF_ARRAY, 256, (pdf_obj **) &font->Encoding);
             if (code < 0)
-                goto done;
-            memcpy(pstr->data, s, e - s);
-            pdfi_countup(pstr);
-            code =
-                pdfi_dict_put_obj(ctx, font->CharStrings, (pdf_obj *) ndname, (pdf_obj *) pstr);
-            pdfi_countdown(pstr);
-            if (code < 0) {
-                goto done;
-            }
-            pdfi_countdown(ndname);
-            ndname = NULL;  /* just to avoid bad things! */
+                return code;
 
-            if ((enc_format &0x7f) == 0) {
-                unsigned int n_codes = p[1];
+            code = pdfi_name_alloc(ctx, (byte *) ".notdef", 7, (pdf_obj **) &ndname);
+            if (code < 0)
+                return code;
 
-                if (p + 2 + n_codes > font->cffend) {
-                    return_error(gs_error_invalidfont);
-                }
-                gid2char[0] = 0;
-                for (i = 0; i < n_codes; i++) {
-                    gid2char[i + 1] = p[2 + i];
-                }
-                memset(gid2char + n_codes + 1, 0, sizeof(gid2char) - n_codes - 1);
-                supp_enc_offset = 2 + n_codes;
-            }
-            else if ((enc_format &0x7f) == 1) {
-                unsigned int n_ranges = p[1];
-                unsigned int first, left, j, k = 1;
 
-                if (p + 2 + 2 * n_ranges > font->cffend) {
-                    return_error(gs_error_invalidfont);
-                }
-                gid2char[0] = 0;
-                for (i = 0; i < n_ranges; i++) {
-                    first = p[2 + 2 * i];
-                    left = p[3 + 2 * i];
-                    for (j = 0; j <= left && k < 256; j++)
-                        gid2char[k++] = first + j;
-                }
-                memset(gid2char + k, 0, sizeof(gid2char) - k);
-                supp_enc_offset = 2 * n_ranges + 2;
+            pdfi_countup(font->Encoding);
+            pdfi_countup(ndname);
+            code = 0;
+            /* Prepopulate with notdefs */
+            for (i = 0; i < 256 && code >= 0; i++) {
+                code = pdfi_array_put(ctx, font->Encoding, (uint64_t) i, (pdf_obj *) ndname);
             }
-            else {
-                return_error(gs_error_rangecheck);
+
+            if (code >= 0) {
+                byte *p = font->cffdata + offsets->encoding_off;
+
+                enc_format = p[0];
+
+                lp = pdfi_find_cff_index(font->charstrings, font->cffend, 0, &s, &e);
+                if (lp == NULL) {
+                    code = gs_note_error(gs_error_rangecheck);
+                    goto done;
+                }
+                code = pdfi_object_alloc(ctx, PDF_STRING, e - s, (pdf_obj **) &pstr);
+                if (code < 0)
+                    goto done;
+                memcpy(pstr->data, s, e - s);
+                pdfi_countup(pstr);
+                code =
+                    pdfi_dict_put_obj(ctx, font->CharStrings, (pdf_obj *) ndname, (pdf_obj *) pstr);
+                pdfi_countdown(pstr);
+                if (code < 0) {
+                    goto done;
+                }
+                pdfi_countdown(ndname);
+                ndname = NULL;  /* just to avoid bad things! */
+
+                if ((enc_format &0x7f) == 0) {
+                    unsigned int n_codes = p[1];
+
+                    if (p + 2 + n_codes > font->cffend) {
+                        return_error(gs_error_invalidfont);
+                    }
+                    gid2char[0] = 0;
+                    for (i = 0; i < n_codes; i++) {
+                        gid2char[i + 1] = p[2 + i];
+                    }
+                    memset(gid2char + n_codes + 1, 0, sizeof(gid2char) - n_codes - 1);
+                    supp_enc_offset = 2 + n_codes;
+                }
+                else if ((enc_format &0x7f) == 1) {
+                    unsigned int n_ranges = p[1];
+                    unsigned int first, left, j, k = 1;
+
+                    if (p + 2 + 2 * n_ranges > font->cffend) {
+                        return_error(gs_error_invalidfont);
+                    }
+                    gid2char[0] = 0;
+                    for (i = 0; i < n_ranges; i++) {
+                        first = p[2 + 2 * i];
+                        left = p[3 + 2 * i];
+                        for (j = 0; j <= left && k < 256; j++)
+                            gid2char[k++] = first + j;
+                    }
+                    memset(gid2char + k, 0, sizeof(gid2char) - k);
+                    supp_enc_offset = 2 * n_ranges + 2;
+                }
+                else {
+                    return_error(gs_error_rangecheck);
+                }
             }
         }
     }
