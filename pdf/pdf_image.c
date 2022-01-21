@@ -1286,6 +1286,10 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
         if (image_info->ColorSpace == NULL) {
                 *comps = 1;
                 *pcs = NULL;
+                if (image_info->Mask) {
+                    pdfi_countdown(image_info->Mask);
+                    image_info->Mask = NULL;
+                }
                 return 0;
         } else {
             if (image_info->BPC != 1 || image_info->Mask != NULL) {
