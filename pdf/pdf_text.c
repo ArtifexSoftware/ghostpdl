@@ -486,6 +486,10 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
         }
         text->size = s->length;
     }
+    else {
+        code = gs_note_error(gs_error_invalidfont);
+        goto text_params_error;
+    }
     return 0;
 
 text_params_error:
