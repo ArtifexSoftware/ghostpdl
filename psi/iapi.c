@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -74,6 +74,8 @@ gsapi_new_instance(void **pinstance, void *caller_handle)
 GSDLLEXPORT void GSDLLAPI
 gsapi_delete_instance(void *instance)
 {
+    if (instance == NULL)
+        return;
     gp_set_debug_mem_ptr(((gs_lib_ctx_t *)instance)->memory);
     psapi_delete_instance(instance);
 }
@@ -235,6 +237,8 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_set_arg_encoding(void *instance, int encoding)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     gp_set_debug_mem_ptr(ctx->memory);
     return psapi_set_arg_encoding(ctx, encoding);
 }
@@ -243,6 +247,8 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_init_with_args(void *instance, int argc, char **argv)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     gp_set_debug_mem_ptr(ctx->memory);
     return psapi_init_with_args(ctx, argc, argv);
 }
@@ -259,6 +265,8 @@ gsapi_run_string_begin(void *instance,
                        int  *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_string_begin(ctx, user_errors, pexit_code);
 }
@@ -271,6 +279,8 @@ gsapi_run_string_continue(void         *instance,
                           int          *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_string_continue(ctx, str, length, user_errors, pexit_code);
 }
@@ -281,6 +291,8 @@ gsapi_run_string_end(void *instance,
                      int  *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_string_end(ctx, user_errors, pexit_code);
 }
@@ -293,6 +305,8 @@ gsapi_run_string_with_length(void         *instance,
                              int          *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_string_with_length(ctx, str, length, user_errors, pexit_code);
 }
@@ -304,6 +318,8 @@ gsapi_run_string(void       *instance,
                  int        *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_string_with_length(ctx,
                                         str,
@@ -319,6 +335,8 @@ gsapi_run_file(void       *instance,
                int        *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     gp_set_debug_mem_ptr(ctx->memory);
     return psapi_run_file(ctx, file_name, user_errors, pexit_code);
 }
@@ -416,6 +434,8 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_exit(void *instance)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     gp_set_debug_mem_ptr(ctx->memory);
     return psapi_exit(ctx);
 }
