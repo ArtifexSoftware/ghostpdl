@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -580,8 +580,9 @@ gdev_prn_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "BandListStorage") == 0) {
         gs_param_string bls;
+        gs_lib_ctx_core_t *core = dev->memory->gs_lib_ctx->core;
         /* Force the default to 'memory' if clist file I/O is not included in this build */
-        if (clist_io_procs_file_global == NULL)
+        if (core->clist_io_procs_file == NULL)
             ppdev->BLS_force_memory = true;
         if (ppdev->BLS_force_memory) {
             bls.data = (byte *)"memory";
@@ -629,6 +630,7 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
     gs_param_string bls;
     gs_param_string saved_pages;
     bool pageneutralcolor = false;
+    gs_lib_ctx_core_t *core = pdev->memory->gs_lib_ctx->core;
 
     if (pdev->icc_struct != NULL)
         pageneutralcolor = pdev->icc_struct->pageneutralcolor;
@@ -646,7 +648,7 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
         return code;
 
     /* Force the default to 'memory' if clist file I/O is not included in this build */
-    if (clist_io_procs_file_global == NULL)
+    if (core->clist_io_procs_file == NULL)
         ppdev->BLS_force_memory = true;
     if (ppdev->BLS_force_memory) {
         bls.data = (byte *)"memory";
@@ -709,6 +711,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     gs_param_dict mdict;
     gs_param_string saved_pages;
     bool pageneutralcolor = false;
+    gs_lib_ctx_core_t *core = ppdev->memory->gs_lib_ctx->core;
 
     memset(&saved_pages, 0, sizeof(gs_param_string));
     save_sp = ppdev->space_params;
@@ -751,7 +754,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
         case 0:
             /* Only accept 'file' if the file procs are include in the build */
             if ((bls.size > 1) && (bls.data[0] == 'm' ||
-                 (clist_io_procs_file_global != NULL && bls.data[0] == 'f')))
+                 (core->clist_io_procs_file != NULL && bls.data[0] == 'f')))
                 break;
             /* fall through */
         default:

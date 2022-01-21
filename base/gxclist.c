@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -178,26 +178,25 @@ clist_initialize_device_procs(gx_device *dev)
 
 /*------------------- Choose the implementation -----------------------
 
-   For choosing the clist i/o implementation by makefile options
-   we define global variables, which are initialized with
-   file/memory io procs when they are included into the build.
- */
-const clist_io_procs_t *clist_io_procs_file_global = NULL;
-const clist_io_procs_t *clist_io_procs_memory_global = NULL;
-
+   For choosing the clist i/o implementation by makefile options we
+   define global variables (in gs_lib_ctx_core_t), which are
+   initialized with file/memory io procs when they are included into
+   the build.
+*/
 void
 clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory)
 {
+    gs_lib_ctx_core_t *core = pclist_dev->common.memory->gs_lib_ctx->core;
 #ifdef PACIFY_VALGRIND
-    VALGRIND_HG_DISABLE_CHECKING(&clist_io_procs_file_global, sizeof(clist_io_procs_file_global));
-    VALGRIND_HG_DISABLE_CHECKING(&clist_io_procs_memory_global, sizeof(clist_io_procs_memory_global));
+    VALGRIND_HG_DISABLE_CHECKING(&core->clist_io_procs_file, sizeof(core->clist_io_procs_file));
+    VALGRIND_HG_DISABLE_CHECKING(&core->clist_io_procs_memory, sizeof(core->clist_io_procs_memory));
 #endif
-    /* if clist_io_procs_file_global is NULL, then BAND_LIST_STORAGE=memory */
+    /* if core->clist_io_procs_file is NULL, then BAND_LIST_STORAGE=memory */
     /* was specified in the build, and "file" is not available */
-    if (in_memory || clist_io_procs_file_global == NULL)
-        pclist_dev->common.page_info.io_procs = clist_io_procs_memory_global;
+    if (in_memory || core->clist_io_procs_file == NULL)
+        pclist_dev->common.page_info.io_procs = core->clist_io_procs_memory;
     else
-        pclist_dev->common.page_info.io_procs = clist_io_procs_file_global;
+        pclist_dev->common.page_info.io_procs = core->clist_io_procs_file;
 }
 
 /* ------ Define the command set and syntax ------ */

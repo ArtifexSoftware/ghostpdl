@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1267,9 +1267,10 @@ init_proc(gs_gxclmem_init);
 int
 gs_gxclmem_init(gs_memory_t *mem)
 {
+    gs_lib_ctx_core_t *core = mem->gs_lib_ctx->core;
 #ifdef PACIFY_VALGRIND
-    VALGRIND_HG_DISABLE_CHECKING(&clist_io_procs_memory_global, sizeof(clist_io_procs_memory_global));
+    VALGRIND_HG_DISABLE_CHECKING(&core->clist_io_procs_memory, sizeof(core->clist_io_procs_memory));
 #endif
-    clist_io_procs_memory_global = &clist_io_procs_memory;
+    core->clist_io_procs_memory = &clist_io_procs_memory;
     return 0;
 }

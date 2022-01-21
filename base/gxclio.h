@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -91,8 +91,5 @@ struct clist_io_procs_s {
 };
 
 typedef struct clist_io_procs_s clist_io_procs_t;
-
-extern const clist_io_procs_t *clist_io_procs_file_global;
-extern const clist_io_procs_t *clist_io_procs_memory_global;
 
 #endif /* gxclio_INCLUDED */

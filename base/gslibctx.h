@@ -142,6 +142,11 @@ typedef struct {
     int argc;
     char **argv;
 
+    /* clist io procs pointers. Indirected through here to allow
+     * easy build time selection. */
+    const void *clist_io_procs_memory;
+    const void *clist_io_procs_file;
+
     gs_globals *globals;
 } gs_lib_ctx_core_t;
 
