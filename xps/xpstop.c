@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -30,9 +30,6 @@
 #include "gsparam.h"
 
 #include <assert.h>
-
-int xps_zip_trace = 0;
-int xps_doc_trace = 0;
 
 static int xps_install_halftone(xps_context_t *ctx, gx_device *pdevice);
 
@@ -195,11 +192,6 @@ xps_impl_init_job(pl_interp_implementation_t *impl,
     bool disable_page_handler = false;
     int true_val = 1;
     gs_memory_t* mem = ctx->memory;
-
-    if (gs_debug_c('|'))
-        xps_zip_trace = 1;
-    if (gs_debug_c('|'))
-        xps_doc_trace = 1;
 
     ctx->font_table = xps_hash_new(ctx);
     ctx->colorspace_table = xps_hash_new(ctx);
