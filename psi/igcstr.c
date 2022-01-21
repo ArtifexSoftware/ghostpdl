@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -35,7 +35,7 @@ gc_strings_set_marks(clump_t * cp, bool mark)
                   (intptr_t)cp->smark, cp->smark_size, (int)mark);
         memset(cp->smark, 0, cp->smark_size);
         if (mark)
-            gc_mark_string(cp->sbase + HDR_ID_OFFSET, (cp->climit - cp->sbase) - HDR_ID_OFFSET, true, cp);
+            gc_mark_string(cp->sbase, (cp->climit - cp->sbase), true, cp);
     }
 }
 
@@ -63,11 +63,11 @@ typedef string_mark_unit bword;
 static bool
 gc_mark_string(const byte * ptr, uint size, bool set, const clump_t * cp)
 {
-    uint offset = (ptr - HDR_ID_OFFSET) - cp->sbase;
+    uint offset = ptr - cp->sbase;
     bword *bp = (bword *) (cp->smark + ((offset & -bword_bits) >> 3));
     uint bn = offset & (bword_bits - 1);
     bword m = bword_1s << bn;
-    uint left = size + HDR_ID_OFFSET;
+    uint left = size;
     bword marks = 0;
 
     bword_swap_bytes(m);
@@ -136,12 +136,12 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     if (size == 0)
         return false;
 #define dmprintstr(mem)\
-  dmputc(mem, '('); dmfwrite(mem, ptr - HDR_ID_OFFSET, min(size, 20));\
+  dmputc(mem, '('); dmfwrite(mem, ptr, min(size, 20));\
   dmputs(mem, (size <= 20 ? ")" : "...)"))
-    if (!(cp = gc_locate(ptr - HDR_ID_OFFSET, gcst))) {		/* not in a clump */
+    if (!(cp = gc_locate(ptr, gcst))) {		/* not in a clump */
 #ifdef DEBUG
         if (gs_debug_c('5')) {
-            dmlprintf2(gcst->heap, "[5]"PRI_INTPTR"[%u]", (intptr_t)ptr - HDR_ID_OFFSET, size);
+            dmlprintf2(gcst->heap, "[5]"PRI_INTPTR"[%u]", (intptr_t)ptr, size);
             dmprintstr(gcst->heap);
             dmputs(gcst->heap, " not in a clump\n");
         }
@@ -151,9 +151,9 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     if (cp->smark == 0)		/* not marking strings */
         return false;
 #ifdef DEBUG
-    if (ptr - HDR_ID_OFFSET < cp->ctop) {
+    if (ptr < cp->ctop) {
         lprintf4("String pointer "PRI_INTPTR"[%u] outside ["PRI_INTPTR".."PRI_INTPTR")\n",
-                 (intptr_t)ptr - HDR_ID_OFFSET, size, (intptr_t)cp->ctop, (intptr_t)cp->climit);
+                 (intptr_t)ptr, size, (intptr_t)cp->ctop, (intptr_t)cp->climit);
         return false;
     } else if (ptr + size > cp->climit) {	/*
                                                  * If this is the bottommost string in a clump that has
@@ -168,11 +168,11 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
                                                  */
         const clump_t *scp = cp;
 
-        while (ptr - HDR_ID_OFFSET == scp->climit && scp->outer != 0)
+        while (ptr == scp->climit && scp->outer != 0)
             scp = scp->outer;
-        if (ptr - HDR_ID_OFFSET + size > scp->climit) {
+        if (ptr + size > scp->climit) {
             lprintf4("String pointer "PRI_INTPTR"[%u] outside ["PRI_INTPTR".."PRI_INTPTR")\n",
-                     (intptr_t)ptr - HDR_ID_OFFSET, size,
+                     (intptr_t)ptr, size,
                      (intptr_t)scp->ctop, (intptr_t)scp->climit);
             return false;
         }
@@ -183,7 +183,7 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     if (gs_debug_c('5')) {
         dmlprintf4(gcst->heap, "[5]%s%smarked "PRI_INTPTR"[%u]",
                   (marks ? "" : "already "), (set ? "" : "un"),
-                  (intptr_t)ptr - HDR_ID_OFFSET, size);
+                  (intptr_t)ptr, size);
         dmprintstr(gcst->heap);
         dmputc(gcst->heap, '\n');
     }
@@ -291,7 +291,6 @@ igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
         return;
     }
     ptr = sptr->data;
-    ptr -= HDR_ID_OFFSET;
 
     if (!(cp = gc_locate(ptr, gcst)))	/* not in a clump */
         return;
@@ -322,7 +321,7 @@ igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
     reloc -= byte_count_one_bits(byt);
     if_debug2('5', "[5]relocate string "PRI_INTPTR" to 0x%lx\n",
               (intptr_t)ptr, (intptr_t)(cp->sdest - reloc));
-    sptr->data = (cp->sdest - reloc) + HDR_ID_OFFSET;
+    sptr->data = (cp->sdest - reloc);
 }
 void
 igc_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -24,20 +24,6 @@
 #include "gxalloc.h"
 #include "stream.h"		/* for clearing stream list */
 #include "malloc_.h" /* For MEMENTO */
-
-#if GS_USE_MEMORY_HEADER_ID
-gs_id hdr_id = 0;
-#ifdef DEBUG
-/**** BIG WARNING: Calling this could be catastrophic if "ptr" does not point
- **** to a GS "struct" allocation.
- ****/
-gs_id get_mem_hdr_id (void *ptr)
-{
-    return (*((hdr_id_t *)((byte *)ptr) - HDR_ID_OFFSET));
-}
-#endif
-#endif
-
 
 /*
  * Define whether to try consolidating space before adding a new clump.
@@ -1118,7 +1104,6 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
                 *pfl = *(obj_header_t **)ptr;\
                 ptr[-1].o_size = (obj_size_t)size;\
                 ptr[-1].o_type = pstype;\
-                ASSIGN_HDR_ID(ptr);\
                 /* If debugging, clear the block in an attempt to */\
                 /* track down uninitialized data errors. */\
                 gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
@@ -1127,7 +1112,6 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
         else if (size > max_freelist_size &&\
                  (ptr = large_freelist_alloc(imem, size)) != 0)\
         {	ptr[-1].o_type = pstype;\
-                ASSIGN_HDR_ID(ptr);\
                 /* If debugging, clear the block in an attempt to */\
                 /* track down uninitialized data errors. */\
                 gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
@@ -1144,7 +1128,6 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
                 ptr->o_size = (obj_size_t)size;\
                 ptr->o_type = pstype;\
                 ptr++;\
-                ASSIGN_HDR_ID(ptr);\
                 /* If debugging, clear the block in an attempt to */\
                 /* track down uninitialized data errors. */\
                 gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
@@ -1624,11 +1607,6 @@ i_alloc_string(gs_memory_t * mem, size_t nbytes, client_name_t cname)
      */
     clump_t *cp = clump_splay_walk_init_mid(&sw, imem->cc);
 
-    if (nbytes + (size_t)HDR_ID_OFFSET < nbytes)
-        return NULL;
-
-    nbytes += HDR_ID_OFFSET;
-
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
@@ -1645,8 +1623,6 @@ top:
                    (intptr_t)(imem->cc->ctop - nbytes));
         str = imem->cc->ctop -= nbytes;
         gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
-        str += HDR_ID_OFFSET;
-        ASSIGN_HDR_ID(str);
         return str;
     }
     /* Try the next clump. */
@@ -1686,8 +1662,6 @@ i_alloc_string_immovable(gs_memory_t * mem, size_t nbytes, client_name_t cname)
     size_t asize;
     clump_t *cp;
 
-    nbytes += HDR_ID_OFFSET;
-
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
@@ -1705,8 +1679,6 @@ i_alloc_string_immovable(gs_memory_t * mem, size_t nbytes, client_name_t cname)
                alloc_trace_space(imem), client_name_string(cname), nbytes,
                (intptr_t)str);
     gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
-    str += HDR_ID_OFFSET;
-    ASSIGN_HDR_ID(str);
 
     return Memento_label(str, cname);
 }
@@ -1720,10 +1692,6 @@ i_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new_num,
 
     if (old_num == new_num)	/* same size returns the same string */
         return data;
-
-    data -= HDR_ID_OFFSET;
-    old_num += HDR_ID_OFFSET;
-    new_num += HDR_ID_OFFSET;
 
     if ( imem->cc && data == imem->cc->ctop &&	/* bottom-most string */
         (new_num < old_num ||
@@ -1744,8 +1712,6 @@ i_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new_num,
         else
             gs_alloc_fill(data, gs_alloc_fill_free, old_num - new_num);
 #endif
-        ptr += HDR_ID_OFFSET;
-        ASSIGN_HDR_ID(ptr);
     } else
         if (new_num < old_num) {
             /* trim the string and create a free space hole */
@@ -1756,13 +1722,7 @@ i_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new_num,
             if_debug5m('A', mem, "[a%d:<> ]%s(%"PRIuSIZE"->%"PRIuSIZE") "PRI_INTPTR"\n",
                        alloc_trace_space(imem), client_name_string(cname),
                        old_num, new_num, (intptr_t)ptr);
-            ptr += HDR_ID_OFFSET;
-            ASSIGN_HDR_ID(ptr);
         } else {			/* Punt. */
-            data += HDR_ID_OFFSET;
-            old_num -= HDR_ID_OFFSET;
-            new_num -= HDR_ID_OFFSET;
-
             ptr = gs_alloc_string(mem, new_num, cname);
             if (ptr == 0)
                 return 0;
@@ -1780,8 +1740,6 @@ i_free_string(gs_memory_t * mem, byte * data, size_t nbytes,
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
 
     if (data) {
-        data -= HDR_ID_OFFSET;
-        nbytes += HDR_ID_OFFSET;
         if (imem->cc && data == imem->cc->ctop) {
             if_debug4m('A', mem, "[a%d:-> ]%s(%"PRIuSIZE") "PRI_INTPTR"\n",
                        alloc_trace_space(imem), client_name_string(cname), nbytes,
@@ -2073,7 +2031,6 @@ done:
         ptr->d.o.space_id = mem->space_id;
 #   endif
     ptr++;
-    ASSIGN_HDR_ID(ptr);
     gs_alloc_fill(ptr, gs_alloc_fill_alloc, lsize);
     return Memento_label(ptr, cname);
 }
