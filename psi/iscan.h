@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -187,19 +187,5 @@ int gs_scanner_error_object(i_ctx_t *i_ctx_p, const scanner_state *pstate,
  */
 int gs_scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * pstate,
                           bool save, op_proc_t cont);
-
-/*
- * Define the procedure "hook" for parsing DSC comments.  If not NULL,
- * this procedure is called for every DSC comment seen by the scanner.
- */
-extern int (*gs_scan_dsc_proc) (const byte *, uint);
-
-/*
- * Define the procedure "hook" for parsing general comments.  If not NULL,
- * this procedure is called for every comment seen by the scanner.
- * If both gs_scan_dsc_proc and gs_scan_comment_proc are set,
- * gs_scan_comment_proc is called only for non-DSC comments.
- */
-extern int (*gs_scan_comment_proc) (const byte *, uint);
 
 #endif /* iscan_INCLUDED */

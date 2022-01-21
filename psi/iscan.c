@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -43,16 +43,6 @@
 #include "ivmspace.h"
 #include "store.h"
 #include "scanchar.h"
-
-/* Procedure for handling DSC comments if desired. */
-/* Set at initialization if a DSC handling module is included. */
-int (*gs_scan_dsc_proc) (const byte *, uint) = NULL;
-
-/* Procedure for handling all comments if desired. */
-/* Set at initialization if a comment handling module is included. */
-/* If both gs_scan_comment_proc and gs_scan_dsc_proc are set, */
-/* scan_comment_proc is called only for non-DSC comments. */
-int (*gs_scan_comment_proc) (const byte *, uint) = NULL;
 
 /*
  * Level 2 includes some changes in the scanner:
@@ -355,10 +345,6 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
             dmputs(imemory, "\n");
         }
 #endif
-        if (gs_scan_dsc_proc != NULL) {
-            code = gs_scan_dsc_proc(base, len);
-            return (code < 0 ? code : 0);
-        }
         if (pstate->s_options & SCAN_PROCESS_DSC_COMMENTS) {
             code = scan_DSC_Comment;
             goto comment;
@@ -374,10 +360,6 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
         }
     }
 #endif
-    if (gs_scan_comment_proc != NULL) {
-        code = gs_scan_comment_proc(base, len);
-        return (code < 0 ? code : 0);
-    }
     if (pstate->s_options & SCAN_PROCESS_COMMENTS) {
         code = scan_Comment;
         goto comment;
