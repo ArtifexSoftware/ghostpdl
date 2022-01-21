@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -93,6 +93,10 @@ typedef struct pjl_parser_state_s
     char *environment_font_path;        /* if there is an operating sytem env
                                            var it is used instead of the
                                            default pjl fontsource */
+    /* permenant soft font slots - bit n is the n'th font number. */
+    #define MAX_PERMANENT_FONTS 256 /* multiple of 8 */
+    unsigned char permanent_soft_fonts[MAX_PERMANENT_FONTS / 8];
+
     gs_memory_t *mem;
 } pjl_parser_state_t;
 
@@ -249,10 +253,6 @@ static const struct
 } pjl_media[] = {
     px_enumerate_media(PJLMEDIA)
 };
-
-/* permenant soft font slots - bit n is the n'th font number. */
-#define MAX_PERMANENT_FONTS 256 /* multiple of 8 */
-unsigned char pjl_permanent_soft_fonts[MAX_PERMANENT_FONTS / 8];
 
 /* ----- private functions and definitions ------------ */
 
@@ -1862,8 +1862,8 @@ pjl_process_init(gs_memory_t * mem)
     {
         int i;
 
-        for (i = 0; i < countof(pjl_permanent_soft_fonts); i++)
-            pjl_permanent_soft_fonts[i] = 0;
+        for (i = 0; i < countof(pjlstate->permanent_soft_fonts); i++)
+            pjlstate->permanent_soft_fonts[i] = 0;
     }
     return (pjl_parser_state *) pjlstate;
 
@@ -1922,10 +1922,10 @@ pjl_register_permanent_soft_font_deletion(pjl_parser_state * pst,
         return 0;
     }
     /* if the font is present. */
-    if ((pjl_permanent_soft_fonts[font_number >> 3]) &
+    if ((pst->permanent_soft_fonts[font_number >> 3]) &
         (128 >> (font_number & 7))) {
         /* set the bit to zero to indicate the fontnumber has been deleted */
-        pjl_permanent_soft_fonts[font_number >> 3] &=
+        pst->permanent_soft_fonts[font_number >> 3] &=
             ~(128 >> (font_number & 7));
         /* if the current font source is 'S' and the current font number
            is the highest number, and *any* soft font was deleted or if
@@ -1942,7 +1942,7 @@ pjl_register_permanent_soft_font_deletion(pjl_parser_state * pst,
             /* check for no more fonts and the highest font number.
                NB should look at longs not bits in the loop */
             for (i = 0; i < MAX_PERMANENT_FONTS; i++)
-                if ((pjl_permanent_soft_fonts[i >> 3]) & (128 >> (i & 7))) {
+                if ((pst->permanent_soft_fonts[i >> 3]) & (128 >> (i & 7))) {
                     empty = false;
                     highest_fontnumber = i;
                 }
@@ -1970,7 +1970,7 @@ pjl_register_permanent_soft_font_addition(pjl_parser_state * pst)
 
     for (font_num = 0; font_num < MAX_PERMANENT_FONTS; font_num++)
         if (!
-            ((pjl_permanent_soft_fonts[font_num >> 3]) &
+            ((pst->permanent_soft_fonts[font_num >> 3]) &
              (128 >> (font_num & 7)))) {
             slot_found = true;
             break;
@@ -1983,6 +1983,6 @@ pjl_register_permanent_soft_font_addition(pjl_parser_state * pst)
         font_num = 0;
     }
     /* set the bit to 1 to indicate the fontnumber has been added */
-    pjl_permanent_soft_fonts[font_num >> 3] |= (128 >> (font_num & 7));
+    pst->permanent_soft_fonts[font_num >> 3] |= (128 >> (font_num & 7));
     return font_num;
 }
