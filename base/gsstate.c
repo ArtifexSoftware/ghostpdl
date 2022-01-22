@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1333,7 +1333,7 @@ gstate_clone_core(const gs_gstate               *pfrom,
         if (pdata == NULL ||
             gstate_copy_client_data(pfrom, pdata, pfrom->client_data,
                                     reason) < 0)
-            goto fail;
+            goto failEarly;
     }
     /* Copy the dash and dash pattern if necessary. */
     clone_data->dash = gs_currentlineparams_inline(pfrom)->dash;
@@ -1368,9 +1368,10 @@ gstate_clone_core(const gs_gstate               *pfrom,
     return pgs;
 
   fail:
+    gs_free_object(mem, clone_data->dash.pattern, cname);
     if (pdata != NULL)
         (*pfrom->client_procs.free) (pdata, mem, pgs);
-    gs_free_object(mem, clone_data->dash.pattern, cname);
+  failEarly:
     gstate_free_parts(pgs, mem, cname);
     gs_free_object(mem, pgs, cname);
 
