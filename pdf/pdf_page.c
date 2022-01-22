@@ -840,6 +840,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     if (need_pdf14) {
         if (code1 < 0) {
             (void)gs_abort_pdf14trans_device(ctx->pgs);
+            code = code1;
             goto exit1;
         }
 

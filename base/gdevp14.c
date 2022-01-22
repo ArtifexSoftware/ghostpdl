@@ -7428,7 +7428,7 @@ pdf14_clist_pop_color_model(gx_device *dev, gs_gstate *pgs)
     gx_device_clist_writer * cldev = (gx_device_clist_writer *)pdev->pclist_device;
 
     if (group_color == NULL)
-        return_error(gs_error_unknownerror);  /* Unmatched group pop */
+        return_error(gs_error_Fatal);  /* Unmatched group pop */
 
     if_debug0m('v', pdev->memory, "[v]pdf14_clist_pop_color_model\n");
     /* The color procs are always pushed.  Simply restore them. */
@@ -10872,7 +10872,8 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
        do a compositor action */
     if (changed != 0) {
         code = gs_create_pdf14trans(&pct_new, &params, pgs->memory);
-        if (code < 0) return code;
+        if (code < 0)
+            return code;
         code = dev_proc(pdev->target, composite)
                     (pdev->target, &pcdev, pct_new, (gs_gstate *)pgs, pgs->memory, NULL);
         gs_free_object(pgs->memory, pct_new, "pdf14_clist_update_params");
@@ -11472,7 +11473,8 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_gstate * pgs,
                     bbox_in.q.y = pim->Height;
                     code = gs_bbox_transform_inverse(&bbox_in, &(pim->ImageMatrix),
                                                      &bbox_out);
-                    if (code < 0) return code;
+                    if (code < 0)
+                        return code;
                     /* Set up a compositor action for pushing the group */
                     if_debug0m('v', pgs->memory, "[v]Pushing special trans group for image\n");
                     tgp.Isolated = true;
