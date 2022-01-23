@@ -878,7 +878,8 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
         float minval, maxval;
 
         /* TODO: Is there a less hacky way to identify Indexed case? */
-        if (pcs && pcs->type == &gs_color_space_type_Indexed) {
+        if (pcs && (pcs->type == &gs_color_space_type_Indexed ||
+                    pcs->type == &gs_color_space_type_Indexed_Named)) {
             /* Default value is [0,N], where N=2^n-1, our hival (which depends on BPC)*/
             minval = 0.0;
             maxval = (float)((1 << info->BPC) - 1);
