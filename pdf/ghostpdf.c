@@ -1647,7 +1647,14 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
     }
 
     ctx->pgs = pgs;
-    pdfi_gstate_set_client(ctx, pgs);
+    code = pdfi_gstate_set_client(ctx, pgs);
+    if (code < 0) {
+        gs_free_object(ctx->memory, ctx->font_dir, "pdf_create_context");
+        gs_free_object(pmem, ctx->stack_bot, "pdf_create_context");
+        gs_free_object(pmem, ctx, "pdf_create_context");
+        gs_gstate_free(pgs);
+        return NULL;
+    }
 
     /* Some (but not all) path construction operations can either return
      * an error or clamp values when out of range. In order to match Ghostscript's
@@ -2024,18 +2031,21 @@ int pdfi_free_context(pdf_context *ctx)
  * complications with the ICC profile cache.
  */
 
-void pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch, gsicc_profile_cache_t *profile_cache)
+int pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch, gsicc_profile_cache_t *profile_cache)
 {
+    int code;
     i_switch->pgs = ctx->pgs;
     i_switch->procs = pgs->client_procs;
     i_switch->client_data = (void *)pgs->client_data;
     i_switch->profile_cache = pgs->icc_profile_cache;
     pgs->icc_profile_cache = profile_cache;
-    pdfi_gstate_set_client(ctx, pgs);
+    code = pdfi_gstate_set_client(ctx, pgs);
+    if (code < 0)
+        return code;
     i_switch->psfont = pgs->font;
     pgs->font = NULL;
     ctx->pgs = pgs;
-    return;
+    return code;
 }
 
 void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch)

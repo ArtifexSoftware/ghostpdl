@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -516,11 +516,13 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
 
     *(pdfctx->pdf_stream) = *(pdfctx->ps_stream);
 
-    pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
+    code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
-    code = pdfi_set_input_stream(pdfctx->ctx, pdfctx->pdf_stream);
+    if (code >= 0) {
+        code = pdfi_set_input_stream(pdfctx->ctx, pdfctx->pdf_stream);
 
-    pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
+        pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
+    }
 
     if (code < 0) {
         memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
@@ -563,11 +565,13 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
     memcpy(pdffilename, (op - 1)->value.bytes, r_size(op - 1));
     pdffilename[r_size(op - 1)] = 0;
 
-    pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
+    code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
-    code = pdfi_open_pdf_file(pdfctx->ctx, pdffilename);
+    if (code >= 0) {
+        code = pdfi_open_pdf_file(pdfctx->ctx, pdffilename);
 
-    pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
+        pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
+    }
 
     if (code < 0)
         return code;
@@ -726,11 +730,13 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     pdfctx = r_ptr(op - 1, pdfctx_t);
 
     if (pdfctx->pdf_stream != NULL) {
-        pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
+        code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
-        code = pdfi_page_info(pdfctx->ctx, (uint64_t)page, &info);
+        if (code >= 0) {
+            code = pdfi_page_info(pdfctx->ctx, (uint64_t)page, &info);
 
-        pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
+            pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
+        }
 
         if (code < 0)
             return code;
@@ -914,13 +920,15 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
         if (code < 0)
             return code;
 
-        pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
+        code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
-        code = pdfi_page_render(pdfctx->ctx, page, false);
-        if (code >= 0)
-            pop(2);
+        if (code >= 0) {
+            code = pdfi_page_render(pdfctx->ctx, page, false);
+            if (code >= 0)
+                pop(2);
 
-        pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
+            pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
+        }
         if (code == 0)
             code = gs_grestore(igs);
         else

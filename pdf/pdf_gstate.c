@@ -149,6 +149,8 @@ pdfi_gstate_set_client(pdf_context *ctx, gs_gstate *pgs)
 
     /* We need to use the graphics state memory, in case we are running under Ghostscript. */
     igs = pdfi_gstate_alloc_cb(pgs->memory);
+    if (igs == NULL)
+        return_error(gs_error_VMerror);
     igs->ctx = ctx;
     gs_gstate_set_client(pgs, igs, &pdfi_gstate_procs, true /* TODO: client_has_pattern_streams ? */);
     return 0;
