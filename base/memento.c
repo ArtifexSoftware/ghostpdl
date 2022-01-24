@@ -13,15 +13,23 @@
 
 /* Inspired by Fortify by Simon P Bullen. */
 
+/* Set the following if we want to do a build specifically for memory
+ * squeezing. We sacrifice some features for speed. */
+/* #define MEMENTO_SQUEEZEBUILD */
+
 /* Set the following if you're only looking for leaks, not memory overwrites
  * to speed the operation */
 /* #define MEMENTO_LEAKONLY */
 
 /* Unset the following if you don't want the speed/memory hit of tracking references. */
+#ifndef MEMENTO_SQUEEZEBUILD
 #define MEMENTO_TRACKREFS
+#endif
 
 /* Set the following to keep extra details about the history of blocks */
+#ifndef MEMENTO_SQUEEZEBUILD
 #define MEMENTO_DETAILS
+#endif
 
 /* Set what volume of memory blocks we keep around after it's been freed
  * to check for overwrites. */
@@ -303,6 +311,7 @@ enum {
     Memento_EventType_vasprintf = 13
 };
 
+#ifdef MEMENTO_DETAILS
 static const char *eventType[] =
 {
     "malloc",
@@ -320,6 +329,7 @@ static const char *eventType[] =
     "asprintf",
     "vasprintf"
 };
+#endif
 
 /* When we list leaked blocks at the end of execution, we search for pointers
  * between blocks in order to be able to give a nice nested view.
@@ -1239,7 +1249,7 @@ static void Memento_removeBlockSplay(Memento_Blocks    *blks,
         while (replacement->right)
         {
             Memento_BlkHeader *o = replacement;
-            replacement = replacement->right;
+            replacement = o->right;
             VALGRIND_MAKE_MEM_DEFINED(replacement, sizeof(*replacement));
             VALGRIND_MAKE_MEM_NOACCESS(o, sizeof(*o));
         }
@@ -1595,22 +1605,22 @@ find_enclosing_block(Memento_Blocks *blks,
         char *blkstart;
         char *blkend;
         VALGRIND_MAKE_MEM_DEFINED(blk, sizeof(Memento_BlkHeader));
-        if (addr < blk) {
+        if (addr < (void *)oblk) {
             blk = blk->left;
             VALGRIND_MAKE_MEM_UNDEFINED(oblk, sizeof(Memento_BlkHeader));
             continue;
         }
         blkstart = (char *)MEMBLK_TOBLK(blk);
         blkend = &blkstart[blk->rawsize];
-        if (addr >= blkend + Memento_PostSize) {
+        if (addr >= (void *)(blkend + Memento_PostSize)) {
             blk = blk->right;
             VALGRIND_MAKE_MEM_UNDEFINED(oblk, sizeof(Memento_BlkHeader));
             continue;
         }
         if (flags) {
-            if ((blkstart <= addr) && (addr < blkend))
+            if (((void *)blkstart <= addr) && (addr < (void *)blkend))
                 *flags = 1;
-            else if ((blk <= addr) && (addr < blkstart))
+            else if (((void *)blk <= addr) && (addr < (void *)blkstart))
                 *flags = 2;
             else
                 *flags = 3;
@@ -1910,7 +1920,6 @@ static int Memento_listPhasedBlock(Memento_BlkHeader *b,
 static int Memento_listNewPhasedBlock(Memento_BlkHeader *b,
                                       void              *arg)
 {
-    phased_t *phase = (phased_t *)arg;
     if ((b->flags & Memento_Flag_PhaseMask) != 0)
         return 0;
     b->flags |= Memento_Flag_LastPhase;
@@ -2860,12 +2869,14 @@ void *Memento_calloc(size_t n, size_t s)
     return block;
 }
 
+#ifdef MEMENTO_TRACKREFS
 static void do_reference(Memento_BlkHeader *blk, int event)
 {
 #ifdef MEMENTO_DETAILS
     Memento_storeDetails(blk, event);
 #endif /* MEMENTO_DETAILS */
 }
+#endif
 
 static int checkPointerOrNullLocked(void *blk)
 {
