@@ -109,6 +109,7 @@ gsicc_cache_new(gs_memory_t *memory)
     result->num_links = 0;
     result->cache_full = false;
     result->memory = memory->stable_memory;
+    result->full_wait = NULL; /* Required so finaliser can work when result freed. */
     result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
                                     "gsicc_cache_new");
     if (result->lock == NULL) {
@@ -118,7 +119,7 @@ gsicc_cache_new(gs_memory_t *memory)
     result->full_wait = gx_semaphore_label(gx_semaphore_alloc(memory->stable_memory),
                                     "gsicc_cache_new");
     if (result->full_wait == NULL) {
-        gx_monitor_free(result->lock);
+        /* Don't free result->lock, as the finaliser for result does that! */
         gs_free_object(memory->stable_memory, result, "gsicc_cache_new");
         return(NULL);
     }
