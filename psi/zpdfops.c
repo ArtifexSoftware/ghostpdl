@@ -300,6 +300,10 @@ static int zpdfi_populate_search_paths(i_ctx_t *i_ctx_p, pdf_context *ctx)
         }
 
         ctx->search_paths.resource_paths = (gs_param_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_param_string) * r_size(&pfpath->list), "array of paths");
+        if (ctx->search_paths.resource_paths == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto done;
+        }
         memset(ctx->search_paths.resource_paths, 0x00, sizeof(gs_param_string) * r_size(&pfpath->list));
 
         ctx->search_paths.num_resource_paths = r_size(&pfpath->list);
