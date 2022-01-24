@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -833,7 +833,10 @@ run_stdin:
 
                     if (strlen(adef) == 10 && strncmp(adef, "OutputFile", 10) == 0 && strlen(eqp) > 0) {
                         code = gs_add_outputfile_control_path(minst->heap, eqp);
-                        if (code < 0) return code;
+                        if (code < 0) {
+                            arg_free((char *)adef, minst->heap);
+                            return code;
+                        }
                     }
 
                     ialloc_set_space(idmemory, avm_system);
