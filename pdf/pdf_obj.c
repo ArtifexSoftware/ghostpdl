@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2021 Artifex Software, Inc.
+/* Copyright (C) 2020-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -238,6 +238,8 @@ static void pdfi_free_stream(pdf_obj *o)
 
 void pdfi_free_object(pdf_obj *o)
 {
+    if (o == NULL)
+        return;
     switch(o->type) {
         case PDF_ARRAY_MARK:
         case PDF_DICT_MARK:

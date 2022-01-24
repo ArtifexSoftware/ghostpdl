@@ -344,6 +344,7 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
             code = pdfi_array_put(ctx, Kids, i, (pdf_obj *)leaf_dict);
             if (code < 0)
                 goto errorExit;
+            leaf_dict = NULL;
         }
     } else {
         child = (pdf_dict *)node;
@@ -354,6 +355,7 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
     child = NULL;
 
  errorExit:
+    pdfi_free_object((pdf_obj *)leaf_dict);
     pdfi_countdown(child);
     pdfi_countdown(node);
     pdfi_countdown(Type);
