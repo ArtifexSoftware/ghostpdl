@@ -110,9 +110,11 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
         /* Use the utility routine above to copy the fill colour to the stroke colour */
         pdfi_type3_copy_color(&OBJ_CTX(font)->pgs->color[0], &OBJ_CTX(font)->pgs->color[1]);
 
-        pdfi_gsave(OBJ_CTX(font));
-        pdfi_run_context(OBJ_CTX(font), CharProc, font->PDF_font, true, "CharProc");
-        pdfi_grestore(OBJ_CTX(font));
+        code = pdfi_gsave(OBJ_CTX(font));
+        if (code >= 0) {
+            code = pdfi_run_context(OBJ_CTX(font), CharProc, font->PDF_font, true, "CharProc");
+            (void)pdfi_grestore(OBJ_CTX(font));
+        }
 
         /* Use the utility routine above to copy the temporary copy to the stroke colour */
         pdfi_type3_copy_color(&tmp_color, &OBJ_CTX(font)->pgs->color[1]);
