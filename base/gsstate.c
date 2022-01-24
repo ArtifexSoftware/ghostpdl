@@ -1290,12 +1290,12 @@ gstate_alloc(gs_memory_t * mem, client_name_t cname, const gs_gstate * pfrom)
     gs_gstate *pgs =
         gs_alloc_struct(mem, gs_gstate, &st_gs_gstate, cname);
 
-    if (pgs == 0)
-        return 0;
+    if (pgs == NULL)
+        return NULL;
     memset(pgs, 0x00, sizeof(gs_gstate));
     if (gstate_alloc_parts(pgs, pfrom, mem, cname) < 0) {
         gs_free_object(mem, pgs, cname);
-        return 0;
+        return NULL;
     }
     pgs->memory = mem;
     return pgs;

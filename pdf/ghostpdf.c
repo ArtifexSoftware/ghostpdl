@@ -1691,6 +1691,13 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
      * grestore back to the initial state, it immediately saves another one.
      */
     code = gs_gsave(ctx->pgs);
+    if (code < 0) {
+        gs_free_object(ctx->memory, ctx->font_dir, "pdf_create_context");
+        gs_free_object(pmem, ctx->stack_bot, "pdf_create_context");
+        gs_gstate_free(ctx->pgs);
+        gs_free_object(pmem, ctx, "pdf_create_context");
+        return NULL;
+    }
 #if REFCNT_DEBUG
     ctx->UID = 1;
 #endif
