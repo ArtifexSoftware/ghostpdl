@@ -775,6 +775,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
             code = gs_note_error(gs_error_syntaxerror);
             goto cleanupExit0;
         }
+        cc.pattern = NULL; /* For safe cleaning up on an error */
         base_space = pcs->base_space;
         code = pdfi_pattern_set(ctx, stream_dict, page_dict, (pdf_name *)ctx->stack_top[-1], &cc);
         pdfi_pop(ctx, 1);

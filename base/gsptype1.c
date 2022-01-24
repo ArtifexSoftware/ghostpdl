@@ -415,6 +415,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     return 0;
   fsaved:gs_gstate_free(saved);
     gs_free_object(mem, pinst, "gs_makepattern");
+    pcc->pattern = NULL; /* We've just freed the memory this points to */
     return code;
 }
 

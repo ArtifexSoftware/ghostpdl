@@ -528,6 +528,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     if (code < 0)
         goto exit;
  exit:
+    gs_free_object(ctx->memory, context, "pdfi_setpattern_type1(context)");
     pdfi_countdown(Resources);
     pdfi_countdown(Matrix);
     pdfi_countdown(BBox);
