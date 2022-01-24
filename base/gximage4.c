@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -109,7 +109,7 @@ gx_begin_image4(gx_device * dev,
     if (code >= 0)
         *pinfo = (gx_image_enum_common_t *)penum;
     else {
-        gs_free_object(mem, penum, "gx_begin_image4");
+        /* penum is freed in by gx_image_enum_begin */
         *pinfo = NULL;
     }
     return code;
