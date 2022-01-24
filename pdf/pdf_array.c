@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -53,7 +53,7 @@ int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
         /* Make a null object */
         code = pdfi_object_alloc(ctx, PDF_NULL, 1, &n);
         if (code < 0) {
-            pdfi_countdown(*a);
+            pdfi_free_object((pdf_obj *)(*a));
             *a = NULL;
             return code;
         }
