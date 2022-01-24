@@ -1244,6 +1244,7 @@ error:
     /* gs_memory_chunk_unwrap() returns the "wrapped" allocator, which we don't need */
     (void)gs_memory_chunk_unwrap(cmem);
     if (pdfctx != NULL) {
+        pdfctx->ctx = NULL; /* Freed already above! */
         if (pdfctx->profile_cache != NULL) {
             gs_free_object(imemory, pdfctx->profile_cache, "discard temporary profile cache");
             pdfctx->profile_cache = NULL;
