@@ -1176,6 +1176,12 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *
         return code;
 
     code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
+    if (code < 0) {
+        gs_free_object(ctx->memory->non_gc_memory, new_s->state, "pdfi_apply_SubFileDecode_filter");
+        gs_free_object(ctx->memory->non_gc_memory, new_s->cbuf, "pdfi_apply_SubFileDecode_filter");
+        gs_free_object(ctx->memory->non_gc_memory, new_s, "pdfi_apply_SubFileDecode_filter");
+        return code;
+    }
     new_s->strm = source->s;
     if (source->unread_size != 0) {
         (*new_stream)->unread_size = source->unread_size;
