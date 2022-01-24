@@ -1145,6 +1145,8 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
      */
     pdfi_device_set_flags(ctx);
     code = pdfi_check_init_tracker(ctx, &tracker);
+    if (code < 0)
+        goto exit;
 
     /* Check for spots and transparency in this page */
     code = pdfi_check_page_inner(ctx, page_dict, &tracker);
