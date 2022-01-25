@@ -117,10 +117,11 @@ dynamic_grow(da_ptr pda, byte * next, uint max_size)
     pda->next = next;
     if (old_size >= max_size)
         return_error(gs_error_limitcheck);
-    while ((code = dynamic_resize(pda, new_size)) < 0 &&
-           new_size > old_size
-        ) {                     /* Try trimming down the requested new size. */
+    while ((code = dynamic_resize(pda, new_size)) < 0) {
+        /* Try trimming down the requested new size. */
         new_size -= (new_size - old_size + 1) >> 1;
+        if (new_size <= old_size)
+                break;
     }
     return code;
 }
