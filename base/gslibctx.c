@@ -340,6 +340,7 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
         /* Initialise the underlying CMS. */
         pio->core->cms_context = gscms_create(mem);
         if (pio->core->cms_context == NULL) {
+            gx_monitor_free((gx_monitor_t *)(pio->core->monitor));
 core_create_failed:
 #ifdef WITH_CAL
             cal_fin(pio->core->cal_ctx, mem);
