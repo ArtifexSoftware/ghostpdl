@@ -480,6 +480,7 @@ static struct {
     int            nextPattern;
     int            patternBit;
     int            leaking;
+    int            showDetailedBlocks;
     int            hideMultipleReallocs;
     int            abortOnLeak;
     int            abortOnCorruption;
@@ -2083,8 +2084,10 @@ void Memento_fin(void)
         if (Memento_nonLeakBlocksLeaked()) {
             Memento_listBlocks();
 #ifdef MEMENTO_DETAILS
-            fprintf(stderr, "\n");
-            Memento_listBlockInfo();
+            if (memento.showDetailedBlocks) {
+                fprintf(stderr, "\n");
+                Memento_listBlockInfo();
+            }
 #endif
             Memento_breakpoint();
         }
@@ -2319,6 +2322,9 @@ static void Memento_init(void)
 
     env = getenv("MEMENTO_PATTERN");
     memento.pattern = (env ? atoi(env) : 0);
+
+    env = getenv("MEMENTO_SHOW_DETAILED_BLOCKS");
+    memento.showDetailedBlocks = (env ? atoi(env) : 1);
 
     env = getenv("MEMENTO_HIDE_MULTIPLE_REALLOCS");
     memento.hideMultipleReallocs = (env ? atoi(env) : 0);
