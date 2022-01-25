@@ -278,6 +278,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
     bool save_is_command_list = false; /* Quiet compiler */
     bool size_ok = 0;
     int ecode = 0;
+    int code;
     int pass;
     gs_memory_t *buffer_memory =
         (ppdev->buffer_memory == 0 ? pdev->memory->non_gc_memory :
@@ -455,6 +456,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
                 gs_free_object(buffer_memory, base, "printer buffer");
                 pdev->procs = ppdev->orig_procs;
                 ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
+                gs_free_object(pdev->memory->non_gc_memory, ppdev->bg_print, "prn bg_print");
                 return_error(code);
             }
         }
@@ -492,14 +494,19 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
 #undef COPY_PROC
         /* If using a command list, already opened the device. */
         if (is_command_list)
-            return ecode;
+            code = ecode;
         else
-            return (*dev_proc(pdev, open_device))(pdev);
+            /* If this open_device fails, do we need to free everything? */
+            code = (*dev_proc(pdev, open_device))(pdev);
     } else {
         pdev->procs = ppdev->orig_procs;
         ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
-        return ecode;
+        code = ecode;
     }
+    if (code < 0) {
+          gs_free_object(pdev->memory->non_gc_memory, ppdev->bg_print, "prn bg_print");
+    }
+    return code;
 }
 
 int
