@@ -329,7 +329,8 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
         const char *fsprefix = "CIDFont/";
         const int fsprefixlen = strlen(fsprefix);
 
-        if (cidname == NULL || cidname->type != PDF_NAME)
+        if (cidname == NULL || cidname->type != PDF_NAME
+         || fsprefixlen + cidname->length >= gp_file_name_sizeof)
             goto exit;
 
         memcpy(fontfname, fsprefix, fsprefixlen);
