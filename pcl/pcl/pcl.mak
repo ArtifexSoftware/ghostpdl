@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -721,6 +721,7 @@ $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(gsstate_h)                \
                         $(gxalloc_h)                \
                         $(gxdevice_h)               \
+			$(gxgstate_h)               \
                         $(gxstate_h)                \
                         $(pjparse_h)                \
                         $(pltop_h)                  \

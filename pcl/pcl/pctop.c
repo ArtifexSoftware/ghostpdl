@@ -33,6 +33,7 @@
 #include "gsstate.h"
 #include "gxalloc.h"
 #include "gxdevice.h"
+#include "gxgstate.h"
 #include "gxstate.h"
 #include "pjparse.h"
 #include "pltop.h"
@@ -569,6 +570,9 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
     /* Restore the gstate once, to match the extra 'gsave' done in
      * pcl_impl_allocate_interp_instance. */
     gs_grestore_only(pcli->pcs.pgs);
+
+    /* Fixes 3 Memento leaks with tests_private/customer_tests/bug692970.pcl. */
+    gx_pattern_cache_free(pcli->pcs.pgs->pattern_cache);
 
     /* free halftone cache in gs state */
     gs_gstate_free(pcli->pcs.pgs);
