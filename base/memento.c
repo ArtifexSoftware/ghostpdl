@@ -873,9 +873,12 @@ static int Memento_getStacktrace(void **stack, int *skip)
 static void Memento_showStacktrace(void **stack, int numberOfFrames)
 {
     MY_IMAGEHLP_LINE line;
-    int i;
+    int i, j;
     char symbol_buffer[sizeof(MY_SYMBOL_INFO) + 1024 + 1];
     MY_SYMBOL_INFO *symbol = (MY_SYMBOL_INFO *)symbol_buffer;
+    bool ok;
+    int prefix = 1; /* Ignore a prefix of 'unknowns' */
+    int suppressed = 0; /* How many unknowns we have suppressed. */
 
     symbol->MaxNameLen = 1024;
     symbol->SizeOfStruct = sizeof(MY_SYMBOL_INFO);
@@ -884,9 +887,18 @@ static void Memento_showStacktrace(void **stack, int numberOfFrames)
     {
         DWORD64 dwDisplacement64;
         DWORD dwDisplacement;
-        Memento_SymFromAddr(Memento_process, (DWORD64)(stack[i]), &dwDisplacement64, symbol);
-        Memento_SymGetLineFromAddr(Memento_process, (DWORD_NATIVESIZED)(stack[i]), &dwDisplacement, &line);
-        fprintf(stderr, "    %s in %s:%d\n", symbol->Name, line.FileName, line.LineNumber);
+        ok = Memento_SymFromAddr(Memento_process, (DWORD64)(stack[i]), &dwDisplacement64, symbol);
+        if (ok == 1)
+            ok = Memento_SymGetLineFromAddr(Memento_process, (DWORD_NATIVESIZED)(stack[i]), &dwDisplacement, &line);
+        if (ok == 1) {
+            for (j = 0; j < suppressed; j++)
+                fprintf(stderr, "    unknown\n");
+            suppressed = 0;
+            fprintf(stderr, "    %s in %s:%d\n", symbol->Name, line.FileName, line.LineNumber);
+            prefix = 0;
+        } else if (prefix == 0) {
+            suppressed++;
+        }
     }
 }
 #elif defined(MEMENTO_STACKTRACE_METHOD) && MEMENTO_STACKTRACE_METHOD == 3
