@@ -2077,6 +2077,7 @@ static int Memento_nonLeakBlocksLeaked(void)
 
 void Memento_fin(void)
 {
+    int leaked = 0;
     Memento_checkAllMemory();
     if (!memento.segv)
     {
@@ -2090,13 +2091,14 @@ void Memento_fin(void)
             }
 #endif
             Memento_breakpoint();
+            leaked = 1;
         }
     }
     if (memento.squeezing) {
         if (memento.pattern == 0)
-            fprintf(stderr, "Memory squeezing @ %d complete%s\n", memento.squeezeAt, memento.segv ? " (with SEGV)" : "");
+            fprintf(stderr, "Memory squeezing @ %d complete%s\n", memento.squeezeAt, memento.segv ? " (with SEGV)" : (leaked ? " (with leaks)" : ""));
         else
-            fprintf(stderr, "Memory squeezing @ %d (%d) complete%s\n", memento.squeezeAt, memento.pattern, memento.segv ? " (with SEGV)" : "");
+            fprintf(stderr, "Memory squeezing @ %d (%d) complete%s\n", memento.squeezeAt, memento.pattern, memento.segv ? " (with SEGV)" : (leaked ? " (with leaks)" : ""));
     } else if (memento.segv) {
         fprintf(stderr, "Memento completed (with SEGV)\n");
     }
