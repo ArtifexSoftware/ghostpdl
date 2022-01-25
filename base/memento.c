@@ -2543,7 +2543,6 @@ static void Memento_startFailing(void)
         memento.failing = 1;
         memento.failAt = memento.sequence;
         memento.nextFailAt = memento.sequence+1;
-        memento.pattern = 0;
         memento.patternBit = 0;
         signal(SIGSEGV, Memento_signal);
         signal(SIGABRT, Memento_signal);
