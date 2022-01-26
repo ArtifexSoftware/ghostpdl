@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1525,6 +1525,7 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
         return gs_throw(gs_error_VMerror, "Allocation of ICC cam failed");
     }
     gsicc_create_compute_cam(lutatobparts->white_point, &(d50), cam);
+    gs_free_object(memory, lutatobparts->cam, "create_lutAtoBprofile");
     lutatobparts->cam = cam;
     get_D50(temp_XYZ); /* See Appendix D6 in spec */
     add_xyzdata(curr_ptr, temp_XYZ);
