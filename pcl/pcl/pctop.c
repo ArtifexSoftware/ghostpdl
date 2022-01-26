@@ -591,6 +591,7 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
 
     pl_dict_release(&pcli->pcs.gl_patterns);
     pl_dict_release(&pcli->pcs.pcl_patterns);
+    pl_dict_release(&pcli->pcs.macros);
 
     gs_font_dir_free(pcli->pcs.font_dir);
 
