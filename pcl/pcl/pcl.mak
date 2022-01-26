@@ -730,6 +730,7 @@ $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(rtgmode_h)                \
                         $(gsicc_manage_h)           \
                         $(pconfig_h)                \
+			$(pcuptrn_h)                \
                         $(PCL_MAK)                  \
                         $(MAKEDIRS)
 	$(PCLCCC) $(PCLSRC)pctop.c $(PCLO_)pctop.$(OBJ)

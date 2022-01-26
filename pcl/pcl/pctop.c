@@ -42,6 +42,7 @@
 #include "rtgmode.h"
 #include "gsicc_manage.h"
 #include "pcparam.h"
+#include "pcuptrn.h"
 
 /* Configuration table for modules */
 extern const pcl_init_t pcparse_init;
@@ -547,6 +548,7 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
 {
     pcl_interp_instance_t *pcli = impl->interp_client_data;
     gs_memory_t *mem = pcli->memory;
+    int i;
 
     /* free memory used by the parsers */
     if (pcl_parser_shutdown(&pcli->pst, mem) < 0) {
@@ -593,6 +595,8 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
     gs_font_dir_free(pcli->pcs.font_dir);
 
     gx_path_free(&pcli->pcs.g.polygon.buffer.path, "pcl_deallocate_interp_instance");
+    for (i = 0; i < sizeof(pcli->pcs.bi_pattern_array)/sizeof(*pcli->pcs.bi_pattern_array); i++)
+        pcl_pattern_free_pattern(pcli->pcs.memory, pcli->pcs.bi_pattern_array[i], "destroy PCL pattern");
     gs_free_object(mem, pcli,
                    "pcl_deallocate_interp_instance(pcl_interp_instance_t)");
     return 0;
