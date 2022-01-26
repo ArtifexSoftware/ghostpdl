@@ -2045,11 +2045,11 @@ int pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switc
     i_switch->procs = pgs->client_procs;
     i_switch->client_data = (void *)pgs->client_data;
     i_switch->profile_cache = pgs->icc_profile_cache;
-    pgs->icc_profile_cache = profile_cache;
     code = pdfi_gstate_set_client(ctx, pgs);
     if (code < 0)
         return code;
     i_switch->psfont = pgs->font;
+    pgs->icc_profile_cache = profile_cache;
     pgs->font = NULL;
     ctx->pgs = pgs;
     return code;
