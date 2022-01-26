@@ -1030,7 +1030,7 @@ static Memento_hashedST oom_hashed_st =
     NULL, /* next */
     0,    /* hash */
     0,    /* count */
-    NULL  /* trace[0] */
+    {NULL}/* trace[0] */
 };
 
 static Memento_hashedST *Memento_getHashedStacktrace(void)
@@ -2130,6 +2130,13 @@ static int showInfo(Memento_BlkHeader *b, void *arg)
         }
         fprintf(stderr, "  Event %d (%s)\n", details->sequence, eventType[(int)details->type]);
         Memento_showHashedStacktrace(details->trace);
+        if (memento.showDetailedBlocks > 0) {
+            memento.showDetailedBlocks -= 1;
+            if (memento.showDetailedBlocks == 0) {
+                fprintf(stderr, "Stopping display of block details because memento.showDetailedBlocks is now zero.\n");
+                return 1;
+            }
+        }
     }
     return 0;
 }
@@ -2436,7 +2443,7 @@ static void Memento_init(void)
     memento.pattern = (env ? atoi(env) : 0);
 
     env = getenv("MEMENTO_SHOW_DETAILED_BLOCKS");
-    memento.showDetailedBlocks = (env ? atoi(env) : 1);
+    memento.showDetailedBlocks = (env ? atoi(env) : -1);
 
     env = getenv("MEMENTO_HIDE_MULTIPLE_REALLOCS");
     memento.hideMultipleReallocs = (env ? atoi(env) : 0);
@@ -3957,6 +3964,10 @@ static int Memento_Internal_checkAllAlloced(Memento_BlkHeader *memblk, void *arg
         fprintf(stderr, "corrupted.\n    "
                 "Block last checked OK at allocation %d. Now %d.\n",
                 memblk->lastCheckedOK, memento.sequence);
+        if (memento.abortOnCorruption) {
+            fprintf(stderr, "*** memblk corrupted, calling abort()\n");
+            abort();
+        }
         data->preCorrupt  = 0;
         data->postCorrupt = 0;
         data->freeCorrupt = 0;
