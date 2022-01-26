@@ -116,6 +116,7 @@ rc_free_proc(rc_free_struct_only);
   BEGIN\
     (vp)->rc.ref_count++;\
     IF_RC_DEBUG(rc_trace_increment(vp, &(vp)->rc));\
+    (void)Memento_adjustRef((vp), 1);\
   END
 #define rc_increment(vp)\
   BEGIN\
