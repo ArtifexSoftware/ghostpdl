@@ -332,7 +332,6 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
             code = pdfi_array_get_int(ctx, a, (uint64_t)i+1, &end);
             if (code < 0) {
                 pdfi_countdown(a);
-                pdfi_countdown(start);
                 pdfi_close_file(ctx, XRefStrm);
                 pdfi_countdown(ctx->xref_table);
                 ctx->xref_table = NULL;
