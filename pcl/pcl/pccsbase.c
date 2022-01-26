@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -896,6 +896,8 @@ free_base_cspace(gs_memory_t * pmem, void *pvbase, client_name_t cname)
     pcl_cs_base_t *pbase = (pcl_cs_base_t *) pvbase;
 
     rc_decrement(pbase->pcspace, "free_base_cspace");
+    rc_decrement(pbase->client_data.plktbl1, "free_base_cspace");
+    rc_decrement(pbase->client_data.plktbl2, "free_base_cspace");
     gs_free_object(pmem, pvbase, cname);
 }
 
