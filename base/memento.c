@@ -311,7 +311,6 @@ enum {
     Memento_EventType_vasprintf = 13
 };
 
-#ifdef MEMENTO_DETAILS
 static const char *eventType[] =
 {
     "malloc",
@@ -329,7 +328,6 @@ static const char *eventType[] =
     "asprintf",
     "vasprintf"
 };
-#endif
 
 /* When we list leaked blocks at the end of execution, we search for pointers
  * between blocks in order to be able to give a nice nested view.
@@ -496,6 +494,7 @@ static struct {
     int            squeezes_num;
     int            squeezes_pos;
     int            phasing;
+    int            verbose;
 } memento;
 
 #define MEMENTO_EXTRASIZE (sizeof(Memento_BlkHeader) + Memento_PostSize)
@@ -2728,12 +2727,10 @@ int Memento_failThisEvent(void)
     return ret;
 }
 
-static void *do_malloc(size_t s, int eventType)
+static void *do_malloc(size_t s, int et)
 {
     Memento_BlkHeader *memblk;
     size_t             smem = MEMBLK_SIZE(s);
-
-    (void)eventType;
 
     if (Memento_failThisEventLocked()) {
         errno = ENOMEM;
@@ -2751,8 +2748,14 @@ static void *do_malloc(size_t s, int eventType)
     }
 
     memblk = MEMENTO_UNDERLYING_MALLOC(smem);
-    if (memblk == NULL)
+    if (memblk == NULL) {
+        if (memento.verbose) {
+            fprintf(stderr, "%s failed (size="FMTZ",num=%d)\n",
+                    eventType[et],
+                    MEMBLK_TOBLK(memblk), memento.sequence);
+        }
         return NULL;
+    }
 
     memento.alloc      += s;
     memento.totalAlloc += s;
@@ -2771,12 +2774,21 @@ static void *do_malloc(size_t s, int eventType)
 #ifdef MEMENTO_DETAILS
     memblk->details       = NULL;
     memblk->details_tail  = &memblk->details;
-    Memento_storeDetails(memblk, eventType);
+    Memento_storeDetails(memblk, et);
 #endif /* MEMENTO_DETAILS */
     Memento_addBlockHead(&memento.used, memblk, 0);
 
     if (memento.leaking > 0)
         memblk->flags |= Memento_Flag_KnownLeak;
+
+    if (memento.verbose) {
+        fprintf(stderr, "%s "FMTP":(size="FMTZ",num=%d)",
+                eventType[et],
+                MEMBLK_TOBLK(memblk), (FMTZ_CAST)memblk->rawsize, memblk->sequence);
+        if (memblk->label)
+            fprintf(stderr, " (%s)", memblk->label);
+        fprintf(stderr, "\n");
+    }
 
     return MEMBLK_TOBLK(memblk);
 }
@@ -3379,12 +3391,10 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
     return 0;
 }
 
-static void do_free(void *blk, int eventType)
+static void do_free(void *blk, int et)
 {
     Memento_BlkHeader *memblk;
     int ret;
-
-    (void)eventType;
 
     if (Memento_event()) Memento_breakpointLocked();
 
@@ -3405,8 +3415,17 @@ static void do_free(void *blk, int eventType)
         return;
     }
 
+    if (memento.verbose) {
+        fprintf(stderr, "%s "FMTP":(size="FMTZ",num=%d)",
+                eventType[et],
+                MEMBLK_TOBLK(memblk), (FMTZ_CAST)memblk->rawsize, memblk->sequence);
+        if (memblk->label)
+            fprintf(stderr, " (%s)", memblk->label);
+        fprintf(stderr, "\n");
+    }
+
 #ifdef MEMENTO_DETAILS
-    Memento_storeDetails(memblk, eventType);
+    Memento_storeDetails(memblk, et);
 #endif
 
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
@@ -3448,6 +3467,7 @@ static void *do_realloc(void *blk, size_t newsize, int type)
     Memento_BlkHeader *memblk, *newmemblk;
     size_t             newsizemem;
     int                flags, ret;
+    size_t             oldsize;
 
     if (Memento_failThisEventLocked()) {
         errno = ENOMEM;
@@ -3458,6 +3478,15 @@ static void *do_realloc(void *blk, size_t newsize, int type)
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     ret = checkBlock(memblk, "realloc");
     if (ret) {
+        if (memento.verbose) {
+            fprintf(stderr, "%s bad block "FMTP":(size=?=>"FMTZ", num=?, now=%d)",
+                eventType[type],
+                MEMBLK_TOBLK(memblk),
+                newsize, memento.sequence);
+            if (memblk->label)
+                fprintf(stderr, " (%s)", memblk->label);
+            fprintf(stderr, "\n");
+        }
         if (ret == 2)
             Memento_breakpoint();
         errno = ENOMEM;
@@ -3473,7 +3502,17 @@ static void *do_realloc(void *blk, size_t newsize, int type)
         Memento_breakpointLocked();
 
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
-    if (memento.maxMemory != 0 && memento.alloc - memblk->rawsize + newsize > memento.maxMemory) {
+    oldsize = memblk->rawsize;
+    if (memento.maxMemory != 0 && memento.alloc - oldsize + newsize > memento.maxMemory) {
+        if (memento.verbose) {
+            fprintf(stderr, "%s failing (memory limit exceeded) "FMTP":(size="FMTZ"=>"FMTZ", num=%d, now=%d)",
+                    eventType[type],
+                    MEMBLK_TOBLK(memblk),
+                    oldsize, newsize, memblk->sequence, memento.sequence);
+            if (memblk->label)
+                fprintf(stderr, " (%s)", memblk->label);
+            fprintf(stderr, "\n");
+        }
         errno = ENOMEM;
         return NULL;
     }
@@ -3485,6 +3524,15 @@ static void *do_realloc(void *blk, size_t newsize, int type)
     newmemblk  = MEMENTO_UNDERLYING_REALLOC(memblk, newsizemem);
     if (newmemblk == NULL)
     {
+        if (memento.verbose) {
+            fprintf(stderr, "%s failed "FMTP":(size="FMTZ"=>"FMTZ", num=%d, now=%d)",
+                    eventType[type],
+                    MEMBLK_TOBLK(memblk), MEMBLK_TOBLK(newmemblk),
+                    oldsize, newsize, memblk->sequence, memento.sequence);
+            if (memblk->label)
+                fprintf(stderr, " (%s)", newmemblk->label);
+            fprintf(stderr, "\n");
+        }
         Memento_addBlockHead(&memento.used, memblk, 2);
         return NULL;
     }
@@ -3512,6 +3560,17 @@ static void *do_realloc(void *blk, size_t newsize, int type)
     memset(MEMBLK_POSTPTR(newmemblk), MEMENTO_POSTFILL, Memento_PostSize);
     VALGRIND_MAKE_MEM_UNDEFINED(MEMBLK_POSTPTR(newmemblk), Memento_PostSize);
 #endif
+
+    if (memento.verbose) {
+        fprintf(stderr, "%s "FMTP"=>"FMTP":(size="FMTZ"=>"FMTZ", num=%d, now=%d)",
+                eventType[type],
+                MEMBLK_TOBLK(memblk), MEMBLK_TOBLK(newmemblk),
+                oldsize, newsize, newmemblk->sequence, memento.sequence);
+        if (memblk->label)
+            fprintf(stderr, " (%s)", newmemblk->label);
+        fprintf(stderr, "\n");
+    }
+
     Memento_addBlockHead(&memento.used, newmemblk, 2);
     return MEMBLK_TOBLK(newmemblk);
 }
@@ -3839,6 +3898,12 @@ int Memento_squeezing(void)
     return memento.squeezing;
 }
 
+int Memento_setVerbose(int x)
+{
+    memento.verbose = x;
+    return x;
+}
+
 #endif /* MEMENTO_CPP_EXTRAS_ONLY */
 
 #ifdef __cplusplus
@@ -4116,6 +4181,11 @@ void (Memento_stopLeaking)(void)
 int (Memento_squeezing)(void)
 {
     return 0;
+}
+
+int (Memento_setVerbose)(int x)
+{
+    return x;
 }
 
 #endif

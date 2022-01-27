@@ -232,6 +232,7 @@ size_t Memento_setMax(size_t);
 void Memento_stats(void);
 void *Memento_label(void *, const char *);
 void Memento_tick(void);
+int Memento_setVerbose(int);
 
 void *Memento_malloc(size_t s);
 void *Memento_realloc(void *, size_t s);
@@ -345,6 +346,7 @@ void Memento_bt(void);
 #define Memento_bt()                       do {} while (0)
 #define Memento_sequence()                 (0)
 #define Memento_squeezing()                (0)
+#define Memento_setVerbose(A)              (A)
 
 #endif /* MEMENTO */
 
