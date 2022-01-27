@@ -95,10 +95,12 @@ int atexit(void (*)(void));
 #define FMTZ "%llu"
 #define FMTZ_CAST _int64
 #define FMTP "0x%p"
+typedef unsigned _int64 mem_uint64_t;
 #else
 #define FMTZ "%zu"
 #define FMTZ_CAST size_t
 #define FMTP "%p"
+typedef long long mem_uint64_t;
 #endif
 
 #define UB(x) ((intptr_t)((x) & 0xFF))
@@ -485,7 +487,7 @@ static struct {
     size_t         maxMemory;
     size_t         alloc;
     size_t         peakAlloc;
-    size_t         totalAlloc;
+    mem_uint64_t   totalAlloc;
     size_t         numMallocs;
     size_t         numFrees;
     size_t         numReallocs;
