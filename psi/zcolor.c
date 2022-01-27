@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -307,6 +307,7 @@ zsetcolor(i_ctx_t * i_ctx_p)
         n_numeric_comps = n_comps;
 
     /* gather the numeric operands */
+    check_op(num_offset + n_numeric_comps);
     code = float_params(op - num_offset, n_numeric_comps, cc.paint.values);
     if (code < 0)
         return code;
