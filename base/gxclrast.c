@@ -652,8 +652,10 @@ in:                             /* Initialize for a new page. */
         goto out;
     }
     code = pcs->type->install_cspace(pcs, &gs_gstate);
-    if (code < 0)
+    if (code < 0) {
+        rc_decrement(pcs, "clist_playback_band");
         goto out;
+    }
     gs_gstate.color[0].color_space = pcs; /* we already have one ref */
     gs_gstate.color[1].color_space = pcs;
     rc_increment_cs(pcs); /* increment for second ref */
