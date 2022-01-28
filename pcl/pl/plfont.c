@@ -1148,9 +1148,7 @@ pl_load_tt_font(stream * in, gs_font_dir * pdir, gs_memory_t * mem,
     if (code < 0)
         goto error;
 
-    code =
-        pl_fapi_passfont(plfont, 0, NULL, NULL, plfont->header + 6,
-                         plfont->header_size - 6);
+    code = pl_fapi_passfont(plfont, 0, NULL, (char *)file_name, NULL, 0);
     if (code < 0)
         goto error;
     if (file_name)

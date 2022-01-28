@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -17,6 +17,6 @@
 # This needs a file on its own due to the required include ordering
 # in the top level makefiles.
 
-PCLXL_FONT_ROMFS_ARGS=-c -P $(PLSRCDIR)$(D)..$(D)urwfonts -d ttfonts /*.ttf
+PCLXL_FONT_ROMFS_ARGS=-b -P $(PLSRCDIR)$(D)..$(D)urwfonts -d ttfonts /*.ttf
 
 PCLXL_ROMFS_ARGS=
