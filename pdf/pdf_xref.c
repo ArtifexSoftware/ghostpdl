@@ -457,7 +457,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s)
                 if (code <= 0)
                     return pdfi_repair_file(ctx);
 
-                if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD) {
+                if (pdfi_count_stack(ctx) >= 2 && ((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD) {
                     keyword = (pdf_keyword *)ctx->stack_top[-1];
                     if (keyword->key == TOKEN_STREAM) {
                         pdf_dict *dict;
