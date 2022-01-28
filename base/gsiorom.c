@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -220,7 +220,7 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
             /* the cbuf, then the cbuf must be empty.			 */
             if (max_count < count) {
 #ifdef DEBUG
-                if ((sbufptr(s)) != s->cursor.r.limit)
+                if ((sbufptr(s)) < s->cursor.r.limit)
                     emprintf(s->memory, "cbuf not empty as expected\n.");
 #endif
                 dest = s->cbuf;
