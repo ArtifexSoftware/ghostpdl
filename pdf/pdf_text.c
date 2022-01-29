@@ -486,10 +486,6 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
         }
         text->size = s->length;
     }
-    else {
-        code = gs_note_error(gs_error_invalidfont);
-        goto text_params_error;
-    }
     return 0;
 
 text_params_error:
@@ -1201,6 +1197,8 @@ int pdfi_TJ(pdf_context *ctx)
         pdfi_pop(ctx, 1);
         return gs_note_error(gs_error_typecheck);
     }
+    pdfi_countup(a);
+    pdfi_pop(ctx, 1);
 
     /* Save the CTM for later restoration */
     saved = ctm_only(ctx->pgs);
@@ -1312,7 +1310,7 @@ TJ_error:
     ctx->pgs->line_params.half_width = linewidth;
 
  exit:
-    pdfi_pop(ctx, 1);
+    pdfi_countdown(a);
     return code;
 }
 
