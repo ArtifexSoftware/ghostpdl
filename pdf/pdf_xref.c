@@ -546,9 +546,16 @@ static int skip_to_digit(pdf_context *ctx, pdf_c_stream *s, unsigned int limit)
     return read;
 }
 
-static int read_digits(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, unsigned int limit)
+static int read_digits(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, int limit)
 {
     int bytes, read = 0;
+
+    /* Since the "limit" is a value calculate by the caller,
+       it's easier to check it in one place (here) than before
+       every call.
+     */
+    if (limit <= 0)
+        return_error(gs_error_syntaxerror);
 
     do {
         bytes = pdfi_read_bytes(ctx, &Buffer[read], 1, 1, s);
