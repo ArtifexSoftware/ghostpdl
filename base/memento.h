@@ -276,6 +276,8 @@ void Memento_fin(void);
 
 void Memento_bt(void);
 
+void Memento_showHash(unsigned int hash);
+
 #ifdef MEMENTO
 
 #ifndef COMPILING_MEMENTO_C
