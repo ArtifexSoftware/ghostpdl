@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -570,14 +570,14 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
     plfont = ((pl_font_t *) value);
 
     if (count < 4 || data[2] > count - 2)
-        return e_Range;
+        goto fail_range;
     if (data[1]) {              /* continuation */
         /* Check that we are continuing data - we know this is the
            case if the previous download character command byte count
            is smaller than the data indicated calculating the space
            for the glyph */
         if ((pcs->soft_font_char_data == 0))
-            return e_Range;
+            goto fail_range;
         /* NB we only enable this for uncompressed bitmap
            characters for now, since we don't have real world
            examples for the other font file formats.  */
@@ -588,7 +588,7 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
         }
         /* check for buffer overrun */
         if (pcs->soft_font_count + count - 2 > gs_object_size(pcs->memory, pcs->soft_font_char_data))
-            return e_Range;
+            goto fail_range;
 
         /* append the new data to the new object */
         memcpy(pcs->soft_font_char_data + pcs->soft_font_count, data + 2,
@@ -612,14 +612,14 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                      format != pcfh_resolution_bitmap &&
                      format != pcfh_truetype_large)
                     )
-                    return e_Range;
+                    goto fail_range;
 
                 width = pl_get_uint16(data + 10);
                 if (width < 1 || width > 16384)
-                    return e_Range;
+                    goto fail_range;
                 height = pl_get_uint16(data + 12);
                 if (height < 1 || height > 16384)
-                    return e_Range;
+                    goto fail_range;
                 /* more error checking of offsets, delta, width and height. */
                 {
                     int toff, loff;
@@ -627,16 +627,16 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
 
                     loff = pl_get_int16(data + 6);
                     if ((-16384 > loff) || (loff > 16384))
-                        return e_Range;
+                        goto fail_range;
                     toff = pl_get_int16(data + 8);
                     if ((-16384 > toff) || (toff > 16384))
-                        return e_Range;
+                        goto fail_range;
                     deltax = pl_get_int16(data + 14);
                     if ((-32768 > deltax) || (deltax > 32767))
-                        return e_Range;
+                        goto fail_range;
                     /* also reject if width * height larger than 1MByte */
                     if ((width * height / 8) > 1024 * 1024)
-                        return e_Range;
+                        goto fail_range;
                 }
 
                 switch (data[3]) {
@@ -671,7 +671,7 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                                     uint rlen = *src++;
 
                                     if (rlen > width - x)
-                                        return e_Range; /* row overrun */
+                                        goto fail_range; /* row overrun */
                                     if (color) {        /* Set the run to black. */
                                         char *data = (char *)row;
 
@@ -693,7 +693,7 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                         }
                         break;
                     default:
-                        return e_Range;
+                        goto fail_range;
                 }
             }
             break;
@@ -702,43 +702,43 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                 (format != pcfh_intellifont_bound &&
                  format != pcfh_intellifont_unbound)
                 )
-                return e_Range;
+                goto fail_range;
             switch (data[3]) {
                 case 3:        /* non-compound character */
                     /* See TRM Table 11-41 (p. 11-60) for the following. */
                     if (count < 14)
-                        return e_Range;
+                        goto fail_range;
                     {
                         uint data_size = pl_get_uint16(data + 4);
 
                         /* The contour data excludes 4 initial bytes of header */
                         /* and 2 final bytes of padding/checksum. */
                         if (data_size != count - 6)
-                            return e_Range;
+                            goto fail_range;
                     }
                     break;
                 case 4:        /* compound character */
                     /* See TRM Figure 11-42 and 11-43 (p. 11-61) */
                     /* for the following. */
                     if (count < 8)
-                        return e_Range;
+                        goto fail_range;
                     {
                         uint num_components = data[6];
 
                         if (count != 8 + num_components * 6 + 2)
-                            return e_Range;
+                            goto fail_range;
                     }
                     break;
                 default:
-                    return e_Range;
+                    goto fail_range;
             }
             break;
         case pccd_truetype:
             if (format != pcfh_truetype && format != pcfh_truetype_large)
-                return e_Range;
+                goto fail_range;
             break;
         default:
-            return e_Range;
+            goto fail_range;
     }
     /* Register the character. */
     /**** FREE PREVIOUS DEFINITION ****/
@@ -769,14 +769,20 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
         plfont->orient = header->Orientation;
     }
     code = pl_font_add_glyph(plfont, pcs->character_code, char_data, font_data_size);
-    if (code < 0)
+    if (code < 0) {
+        gs_free_object(pcs->memory, char_data, "pcl_character_data");
         return code;
+    }
 #ifdef DISABLE_USE_MY_METRICS
     if (data[0] == pccd_truetype)
         code = pl_font_disable_composite_metrics(plfont, pcs->character_code);
 #endif /* DISABLE_USE_MY_METRICS */
     return code;
 #undef plfont
+
+    fail_range:
+    gs_free_object(pcs->memory, char_data, "pcl_character_data");
+    return e_Range;
 }
 
 /* template for casting data to command */
