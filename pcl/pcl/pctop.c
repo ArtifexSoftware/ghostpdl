@@ -483,7 +483,10 @@ pcl_impl_process_eof(pl_interp_implementation_t * impl    /* interp instance to 
     )
 {
     pcl_interp_instance_t *pcli = impl->interp_client_data;
-    int code = pcl_process_init(&pcli->pst, &pcli->pcs);
+    int code;
+    if (pcli->pst.args.data_on_heap)
+        gs_free_object(pcli->memory, pcli->pst.args.data, "command data");
+    code = pcl_process_init(&pcli->pst, &pcli->pcs);
     if (code < 0)
         return code;
     /* force restore & cleanup if unexpected data end was encountered */

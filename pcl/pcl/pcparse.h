@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -87,9 +87,6 @@ struct pcl_parser_state_s
     byte min_bytes_needed; /* number of characters needed to recover from an underflow */
     pcl_command_definitions_t *definitions;
 };
-
-#define pcl_parser_init_inline(pst)\
-    ((pst)->scan_type = scanning_none, (pst)->args.data = 0, (pst)->args.data_on_heap = false, (pst)->short_hand = false, (pst)->min_bytes_needed = 0)
 
 /* Define the prefix of a macro definition. */
 typedef struct pcl_macro_s

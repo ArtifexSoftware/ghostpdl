@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -205,7 +205,11 @@ pcl_process_init(pcl_parser_state_t * pst, pcl_state_t * pcs)
 {
     pcl_args_t args;
     int code = 0;
-    pcl_parser_init_inline(pst);
+    pst->scan_type = scanning_none;
+    pst->args.data = 0;
+    pst->args.data_on_heap = false;
+    pst->short_hand = false;
+    pst->min_bytes_needed = 0;
 
     /*
      * RTL Files should start with a PCL escape sequence to enter the
