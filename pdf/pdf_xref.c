@@ -205,6 +205,9 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
         ctx->Trailer = sdict;
         pdfi_countup(sdict);
     } else {
+        if (size > ctx->xref_table->xref_size)
+            return_error(gs_error_rangecheck);
+
         code = pdfi_merge_dicts(ctx, ctx->Trailer, sdict);
         if (code < 0) {
             if (code == gs_error_VMerror || ctx->args.pdfstoponerror)
