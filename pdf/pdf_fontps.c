@@ -178,7 +178,7 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
                            *pdfpsbuf != char_CR)
                         pdfpsbuf++;
 
-                    if (*pdfpsbuf == char_EOL)
+                    if (pdfpsbuf < buflim && *pdfpsbuf == char_EOL)
                         pdfpsbuf++;
                 }
                 break;
