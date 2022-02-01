@@ -836,6 +836,10 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
     uint64_t index, dictsize;
     uint64_t itemnum = 0;
 
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto exit;
+
     code = pdfi_bufstream_init(ctx, &bufstream);
     if (code < 0) goto exit;
 
@@ -856,11 +860,14 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
      */
     /* Wrong.... */
 
-    code = pdfi_loop_detector_mark(ctx);
     if (dict->object_num !=0 ) {
-        if (pdfi_loop_detector_check_object(ctx, dict->object_num))
-            return_error(gs_error_circular_reference);
+        if (pdfi_loop_detector_check_object(ctx, dict->object_num)) {
+            code = gs_note_error(gs_error_circular_reference);
+            goto exit;
+        }
         code = pdfi_loop_detector_add_object(ctx, dict->object_num);
+        if (code < 0)
+            goto exit;
     }
 
     /* Get each (key,val) pair from dict and setup param for it */
