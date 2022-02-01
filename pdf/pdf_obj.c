@@ -23,6 +23,7 @@
 #include "pdf_deref.h" /* for replace_cache_entry() */
 #include "pdf_mark.h"
 #include "pdf_file.h" /* for pdfi_stream_to_buffer() */
+#include "pdf_loop_detect.h"
 
 /***********************************************************************************/
 /* Functions to create the various kinds of 'PDF objects', Created objects have a  */
@@ -575,7 +576,7 @@ static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
         ref->is_highlevelform = false;
     } else {
         if (!ref->is_marking) {
-            code = pdfi_dereference(ctx, ref->ref_object_num, ref->ref_generation_num, &object);
+            code = pdfi_deref_loop_detect(ctx, ref->ref_object_num, ref->ref_generation_num, &object);
             if (code == gs_error_undefined) {
                 /* Do something sensible for undefined reference (this would be a broken file) */
                 /* TODO: Flag an error? */
@@ -853,6 +854,15 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
     /* Note: We specifically fetch without dereferencing, so there will be no circular
      * references to handle here.
      */
+    /* Wrong.... */
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (dict->object_num !=0 ) {
+        if (pdfi_loop_detector_check_object(ctx, dict->object_num))
+            return_error(gs_error_circular_reference);
+        code = pdfi_loop_detector_add_object(ctx, dict->object_num);
+    }
+
     /* Get each (key,val) pair from dict and setup param for it */
     code = pdfi_dict_key_first(ctx, dict, (pdf_obj **)&Key, &index);
     while (code >= 0) {
@@ -916,6 +926,10 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
     pdfi_countdown(Key);
     pdfi_countdown(Value);
     pdfi_bufstream_free(ctx, &bufstream);
+    if (code < 0)
+        (void)pdfi_loop_detector_cleartomark(ctx);
+    else
+        code = pdfi_loop_detector_cleartomark(ctx);
     return code;
 }
 
