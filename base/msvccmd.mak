@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -173,18 +173,26 @@ LCT=/DEBUG /INCREMENTAL:YES
 COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
 COMPILE_WITH_FRAMES=    # no optimization when debugging
 COMPILE_WITHOUT_FRAMES=    # no optimization when debugging
+!if $(MAKEDLL)
+CMT=/MDd
+!else
 CMT=/MTd
+!endif
 !else
 !if $(DEBUGSYM)==0
 CT=
 LCT=
+!if $(MAKEDLL)
+CMT=/MD
+!else
 CMT=/MT
+!endif
 COMPILE_WITHOUT_FRAMES=/Oy
 !else
 # Assume that DEBUGSYM != 0 implies a PROFILE build
 CT=/Zi /Fd$(GLOBJDIR)\ $(NULL) $(CDCC) $(CPCH)
 LCT=/DEBUG /PROFILE /OPT:REF /OPT:ICF
-CMT=/MTd
+CMT=/MDd
 # Do not disable frame pointers in profile builds.
 COMPILE_WITHOUT_FRAMES=/Oy-
 !endif
@@ -234,8 +242,6 @@ COMPILE_FOR_DLL=
 COMPILE_FOR_EXE=
 COMPILE_FOR_CONSOLE_EXE=
 
-# The /MT is for multi-threading.  We would like to make this an option,
-# but it's too much work right now.
 GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) $(VC8WARN) /nologo $(CMT)
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS) $(MSINCFLAGS) $(SBRFLAGS)

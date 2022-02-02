@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -35,7 +35,7 @@
 #    define unlink(fname) delete(fname)
 #  endif
 #else
-#if !defined(const)
+#if !defined(const) && !defined(_WIN32) && !defined(_WIN64)
 /*
  * Other systems may or may not declare unlink in stdio.h;
  * if they do, the declaration will be compatible with this one, as long

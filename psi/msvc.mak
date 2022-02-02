@@ -1883,109 +1883,31 @@ INT_ARCHIVE_ALL=$(PSOBJ)imainarg.$(OBJ) $(PSOBJ)imain.$(OBJ) $(GLOBJ)iconfig.$(O
  $(INT_ARCHIVE_SOME)
 
 !if $(TDEBUG) != 0
-$(PSGEN)lib.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(PSGEN)lib.rsp
-	echo /NODEFAULTLIB:LIBCMT.lib >> $(PSGEN)lib.rsp
+WIN_LIBS=
 !ifdef METRO
-	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PSGEN)lib.rsp
-!else
-	echo LIBCMTD.lib >> $(PSGEN)lib.rsp
+WIN_LIBS=$(WIN_LIBS) kernel32.lib runtimeobject.lib rpcrt4.lib
 !endif
 !else
-$(PSGEN)lib.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(PSGEN)lib.rsp
-	echo /NODEFAULTLIB:LIBCMTD.lib >> $(PSGEN)lib.rsp
+WIN_LIBS=
 !ifdef METRO
-	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PSGEN)lib.rsp
-!else
-	echo LIBCMT.lib >> $(PSGEN)lib.rsp
+WIN_LIBS=$(WIN_LIBS) kernel32.lib runtimeobject.lib rpcrt4.lib
 !endif
 !endif
 
-# a bit naff - find some way to combine above and this....
-!if $(TDEBUG) != 0
-$(PCLGEN)pcllib.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(PCLGEN)pcllib.rsp
-	echo /NODEFAULTLIB:LIBCMT.lib >> $(PCLGEN)pcllib.rsp
-!ifdef METRO
-	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PCLGEN)pcllib.rsp
-!else
-	echo LIBCMTD.lib >> $(PCLGEN)pcllib.rsp
-!endif
-!else
-$(PCLGEN)pcllib.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(PCLGEN)pcllib.rsp
-	echo /NODEFAULTLIB:LIBCMTD.lib >> $(PCLGEN)pcllib.rsp
-!ifdef METRO
-	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PCLGEN)pcllib.rsp
-!else
-	echo LIBCMT.lib >> $(PCLGEN)pcllib.rsp
-!endif
-!endif
+$(PSGEN)lib.rsp: $(TOP_MAKEFILES)
+	echo "$(WIN_LIBS)" > $(PSGEN)lib.rsp
 
-!if $(TDEBUG) != 0
+$(PCLGEN)pcllib.rsp: $(TOP_MAKEFILES)
+	echo "$(WIN_LIBS)" > $(PCLGEN)pcllib.rsp
 
 $(XPSGEN)xpslib.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(XPSGEN)xpslib.rsp
-	echo /NODEFAULTLIB:LIBCMT.lib >> $(XPSGEN)xpslib.rsp
-!ifdef METRO
-	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(XPSGEN)xpslib.rsp
-!else
-	echo LIBCMTD.lib >> $(XPSGEN)xpslib.rsp
-!endif
-!else
-$(XPSGEN)xpslib.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(XPSGEN)xpslib.rsp
-	echo /NODEFAULTLIB:LIBCMTD.lib >> $(XPSGEN)xpslib.rsp
-!ifdef METRO
-	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(XPSGEN)xpslib.rsp
-!else
-	echo LIBCMT.lib >> $(XPSGEN)xpslib.rsp
-!endif
-!endif
-
-!if $(TDEBUG) != 0
+	echo "$(WIN_LIBS)" > $(XPSGEN)xpslib.rsp
 
 $(PDFGEN)pdflib.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(PDFGEN)pdflib.rsp
-	echo /NODEFAULTLIB:LIBCMT.lib >> $(PDFGEN)pdflib.rsp
-!ifdef METRO
-	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PDFGEN)pdflib.rsp
-!else
-	echo LIBCMTD.lib >> $(PDFGEN)pdflib.rsp
-!endif
-!else
-$(PDFGEN)pdflib.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(PDFGEN)pdflib.rsp
-	echo /NODEFAULTLIB:LIBCMTD.lib >> $(PDFGEN)pdflib.rsp
-!ifdef METRO
-	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PDFGEN)pdflib.rsp
-!else
-	echo LIBCMT.lib >> $(PDFGEN)pdflib.rsp
-!endif
-!endif
-
-!if $(TDEBUG) != 0
+	echo "$(WIN_LIBS)" > $(PDFGEN)pdflib.rsp
 
 $(GPDLGEN)gpdllib.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(XPSGEN)gpdllib.rsp
-	echo /NODEFAULTLIB:LIBCMT.lib >> $(XPSGEN)gpdllib.rsp
-!ifdef METRO
-	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(XPSGEN)gpdllib.rsp
-!else
-	echo LIBCMTD.lib >> $(XPSGEN)gpdllib.rsp
-!endif
-!else
-$(GPDLGEN)gpdllib.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(XPSGEN)gpdllib.rsp
-	echo /NODEFAULTLIB:LIBCMTD.lib >> $(XPSGEN)gpdllib.rsp
-!ifdef METRO
-	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(XPSGEN)gpdllib.rsp
-!else
-	echo LIBCMT.lib >> $(XPSGEN)gpdllib.rsp
-!endif
-!endif
-
+	echo "$(WIN_LIBS)" > $(GPDLGEN)gpdllib.rsp
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
