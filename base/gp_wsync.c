@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -40,6 +40,10 @@
 #endif
 #endif
 
+#ifndef INIT_ONCE_STATIC_INIT
+#define INIT_ONCE_STATIC_INIT { 0 }
+#endif
+
 static struct
 {
 #ifdef XP_COMPATIBLE_INIT
@@ -55,8 +59,11 @@ static struct
 #endif
 } GhostscriptGlobals = { INIT_ONCE_STATIC_INIT };
 
-static BOOL CALLBACK init_globals(PINIT_ONCE InitOnce,
+static BOOL CALLBACK init_globals(
+#ifndef XP_COMPATIBLE_INIT
+                                  PINIT_ONCE InitOnce,
                                   PVOID Parameter,
+#endif
                                   PVOID *lpContext)
 {
 #ifdef METRO
@@ -92,7 +99,7 @@ gs_globals *gp_get_globals(void)
     }
     WaitForSingleObject(GhostscriptGlobals.once_mutex, INFINITE);
     if (GhostscriptGlobals.inited == 0) {
-        init_globals(NULL, NULL, &lpContext);
+        init_globals(&lpContext);
         GhostscriptGlobals.inited = 1;
     }
     ReleaseMutex(GhostscriptGlobals.once_mutex);
