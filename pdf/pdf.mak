@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2021 Artifex Software, Inc.
+# Copyright (C) 2018-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -211,7 +211,7 @@ $(PDFOBJ)pdf_loop_detect.$(OBJ): $(PDFSRC)pdf_loop_detect.c $(PDFINCLUDES) $(PDF
 	$(PDFCCC) $(PDFSRC)pdf_loop_detect.c $(PDFO_)pdf_loop_detect.$(OBJ)
 
 $(PDFOBJ)pdf_int.$(OBJ): $(PDFSRC)pdf_int.c $(PDFINCLUDES) $(plmain_h) \
-	$(stream_h) $(strmio_h) $(PDF_MAK) $(MAKEDIRS)
+	$(stream_h) $(strmio_h) $(gsgstate_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_int.c $(PDFO_)pdf_int.$(OBJ)
 
 $(PDFOBJ)pdf_file_luratech.$(OBJ): $(PDFSRC)pdf_file.c $(sjpeg_h) $(stream_h) $(strimpl_h) \
