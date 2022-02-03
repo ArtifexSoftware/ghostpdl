@@ -1642,22 +1642,6 @@ static void free_block(Memento_BlkHeader *head)
     MEMENTO_UNDERLYING_FREE(head);
 }
 
-void
-checkFreeListSize(void)
-{
-    _int64 sanity = 0;
-    Memento_BlkHeader *head = memento.free.head;
-
-    while (head) {
-        sanity += MEMBLK_SIZE(head->rawsize);
-        head = head->next;
-    }
-
-    if (sanity != memento.freeListSize) {
-        sanity = sanity;
-    }
-}
-
 static int Memento_Internal_makeSpace(size_t space)
 {
     /* If too big, it can never go on the freelist */
