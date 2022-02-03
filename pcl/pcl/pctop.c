@@ -605,6 +605,8 @@ pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* ins
     /* Fixed 114 leaked blocks with tests_private/customer_tests/bug689453.pcl. */
     pcl_pattern_free_pattern(pcli->pcs.memory, pcli->pcs.punsolid_pattern, "destroy PCL unsolid_pattern");
 
+    gs_free_object(mem, pcli->pcs.macro_definition, "pcl_deallocate_interp_instance");
+
     gs_free_object(mem, pcli,
                    "pcl_deallocate_interp_instance(pcl_interp_instance_t)");
     return 0;
