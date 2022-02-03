@@ -838,7 +838,7 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
 
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
-        goto exit;
+        return code;
 
     code = pdfi_bufstream_init(ctx, &bufstream);
     if (code < 0) goto exit;
