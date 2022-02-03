@@ -37,6 +37,8 @@
 #include "pdf_optcontent.h"
 #include "pdf_sec.h"
 
+#include "gsstate.h"    /* for gs_gstate_free */
+
 /* we use -ve returns for error, 0 for success and +ve for 'take an action' */
 /* Defining tis return so we do not need to define a new error */
 #define REPAIRED_KEYWORD 1
