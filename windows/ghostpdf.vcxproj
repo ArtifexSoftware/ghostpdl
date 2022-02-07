@@ -184,7 +184,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin64c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin64.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -193,7 +193,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdf &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdf &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\bin\gpdfwin32c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\bin\gpdfwin32.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -202,7 +202,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdf &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdf &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\bin\gpdfwin64c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\bin\gpdfwin64.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
@@ -211,7 +211,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdfprofile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdfprofile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profileclean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\profbin\gpdfwin32c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\profbin\gpdfwin32.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
@@ -220,7 +220,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdfprofile &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profilebsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdfprofile &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profilebsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profileclean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\profbin\gpdfwin64c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\profbin\gpdfwin64.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'">
@@ -229,7 +229,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdfmemento &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdfmemento &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\membin\gpdfwin32c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\membin\gpdfwin32.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;MEMENTO=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'">
@@ -238,7 +238,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdfmemento &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementobsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdfmemento &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementobsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementoclean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\membin\gpdfwin64c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\membin\gpdfwin64.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|Win32'">
@@ -247,7 +247,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin32c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin32.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|x64'">
@@ -256,7 +256,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin64c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin64.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|Win32'">
@@ -265,7 +265,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin32c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin32.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|x64'">
@@ -274,7 +274,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdfdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin64c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpdfwin64.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|Win32'">
@@ -283,7 +283,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdf &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdf &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\bin\gpdfwin32c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\bin\gpdfwin32.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|x64'">
@@ -292,7 +292,7 @@
     <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gpdf &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 WITH_CONTRIB=1 DEVSTUDIO= gpdf &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean</NMakeCleanCommandLine>
-    <NMakeOutput>$(ProjectDir)\..\bin\gpdfwin64c.exe</NMakeOutput>
+    <NMakeOutput>$(ProjectDir)\..\bin\gpdfwin64.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <ItemDefinitionGroup>
