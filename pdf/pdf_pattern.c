@@ -117,7 +117,7 @@ static void pdfi_free_pattern_context(pdf_pattern_context_t *context)
 static bool
 pdfi_pattern_purge_proc(gx_color_tile * ctile, void *proc_data)
 {
-    gs_id id = (gs_id)proc_data;
+    gs_id id = (gs_id)(intptr_t)proc_data;
     if (ctile->id == id)
         return true;
     return false;
@@ -139,7 +139,7 @@ void pdfi_pattern_cleanup(gs_memory_t * mem, void *p)
         context->shading == NULL &&  context->ctx->pgs->pattern_cache != NULL
      && gx_pattern_cache_get_entry(context->ctx->pgs, pinst->id, &pctile) == 0
      && gx_pattern_tile_is_clist(pctile)) {
-        gx_pattern_cache_winnow(gstate_pattern_cache(context->ctx->pgs), pdfi_pattern_purge_proc, (void *)(pctile->id));
+        gx_pattern_cache_winnow(gstate_pattern_cache(context->ctx->pgs), pdfi_pattern_purge_proc, (void *)(intptr_t)(pctile->id));
     }
 
     if (context != NULL) {
