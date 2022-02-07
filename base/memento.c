@@ -230,16 +230,22 @@ windows_fprintf(FILE *file, const char *fmt, ...)
 #define MEMENTO_HAS_FORK
 #endif
 
+#if defined(_DLL) && defined(_MSC_VER)
+#define MEMENTO_CRT_SPEC __declspec(dllimport)
+#else
+#define MEMENTO_CRT_SPEC
+#endif
+
 /* Define the underlying allocators, just in case */
-void *MEMENTO_UNDERLYING_MALLOC(size_t);
-void MEMENTO_UNDERLYING_FREE(void *);
-void *MEMENTO_UNDERLYING_REALLOC(void *,size_t);
-void *MEMENTO_UNDERLYING_CALLOC(size_t,size_t);
+MEMENTO_CRT_SPEC void *MEMENTO_UNDERLYING_MALLOC(size_t);
+MEMENTO_CRT_SPEC void MEMENTO_UNDERLYING_FREE(void *);
+MEMENTO_CRT_SPEC void *MEMENTO_UNDERLYING_REALLOC(void *,size_t);
+MEMENTO_CRT_SPEC void *MEMENTO_UNDERLYING_CALLOC(size_t,size_t);
 
 /* And some other standard functions we use. We don't include the header
  * files, just in case they pull in unexpected others. */
-int atoi(const char *);
-char *getenv(const char *);
+MEMENTO_CRT_SPEC int atoi(const char *);
+MEMENTO_CRT_SPEC char *getenv(const char *);
 
 /* How far to search for pointers in each block when calculating nestings */
 /* mupdf needs at least 34000ish (sizeof(fz_shade))/ */
