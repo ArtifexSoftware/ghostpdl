@@ -184,8 +184,11 @@
 
 #ifndef MEMENTO_H
 
+/* Include all these first, so our definitions below do
+ * not conflict with them. */
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #define MEMENTO_H
 
