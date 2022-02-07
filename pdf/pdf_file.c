@@ -57,6 +57,8 @@
 #  include "sjpx.h"
 #endif
 
+extern const uint file_default_buffer_size;
+
 static void pdfi_close_filter_chain(pdf_context *ctx, stream *s, stream *target);
 
 /* Utility routine to create a pdf_c_stream object */
@@ -102,6 +104,9 @@ pdfi_filter_open(uint buffer_size,
         if (sst == NULL)
             return_error(gs_error_VMerror);
     }
+    if (buffer_size < 128)
+        buffer_size = file_default_buffer_size;
+
     code = file_open_stream((char *)0, 0, "r", buffer_size, &s,
                                 (gx_io_device *)0, (iodev_proc_fopen_t)0, mem);
     if (code < 0) {
