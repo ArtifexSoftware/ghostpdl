@@ -811,7 +811,7 @@ pdfi_shading_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state, pdf_obj *S
     /* If we didn't get a BBox for the shading, then we need to create one, in order to
      * pass it to the transparency setup, which (potentially, at least, uses it to set
      * up a transparency group.
-     * In the basence of anything better, we take the currnet clip, turn that into a path
+     * In the absence of anything better, we take the current clip, turn that into a path
      * and then get the bounding box of that path. Obviously we don't want to disturb the
      * current path in the graphics state, so we do a gsave/grestore round it.
      */
@@ -853,6 +853,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     gs_shading_t *psh = NULL;
     gs_offset_t savedoffset;
     pdfi_trans_state_t trans_state;
+    int trans_required;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
@@ -899,7 +900,9 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         goto exit2;
 
-    if (ctx->page.has_transparency) {
+    trans_required = pdfi_trans_required(ctx);
+
+    if (trans_required) {
         code = pdfi_shading_setup_trans(ctx, &trans_state, Shading);
         if (code < 0)
             goto exit2;
@@ -911,7 +914,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         code = 0;
     }
 
-    if (ctx->page.has_transparency) {
+    if (trans_required) {
         code1 = pdfi_trans_teardown(ctx, &trans_state);
         if (code == 0)
             code = code1;

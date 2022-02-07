@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -34,6 +34,7 @@ typedef enum {
 } pdfi_transparency_caller_t;
 
 bool pdfi_trans_okOPcs(pdf_context* ctx);
+int pdfi_trans_required(pdf_context *ctx);
 int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_show);
 int pdfi_trans_teardown_text(pdf_context *ctx, pdfi_trans_state_t *state);
 int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox, pdfi_transparency_caller_t caller);

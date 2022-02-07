@@ -740,12 +740,33 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox,
     return code;
 }
 
+int pdfi_trans_required(pdf_context *ctx)
+{
+    gs_blend_mode_t mode;
+
+    if (!ctx->page.has_transparency)
+        return 0;
+
+    mode = gs_currentblendmode(ctx->pgs);
+    if ((mode == BLEND_MODE_Normal || mode == BLEND_MODE_Compatible) &&
+        ctx->pgs->fillconstantalpha == 1 &&
+        ctx->pgs->strokeconstantalpha == 1 &&
+        ((pdfi_int_gstate *)ctx->pgs->client_data)->SMask == NULL)
+        return 0;
+
+    return 1;
+}
+
 int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_show)
 {
-    int Trmode = gs_currenttextrenderingmode(ctx->pgs);
+    int Trmode;
     int code, code1;
     gs_rect bbox;
 
+    if (!pdfi_trans_required(ctx))
+        return 0;
+
+    Trmode = gs_currenttextrenderingmode(ctx->pgs);
     code = gs_gsave(ctx->pgs);
     if (code < 0) goto exit;
 
@@ -781,11 +802,10 @@ int pdfi_trans_setup_text(pdf_context *ctx, pdfi_trans_state_t *state, bool is_s
 
 int pdfi_trans_teardown_text(pdf_context *ctx, pdfi_trans_state_t *state)
 {
-    int code = 0;
+    if (!pdfi_trans_required(ctx))
+         return 0;
 
-    code = pdfi_trans_teardown(ctx, state);
-
-    return code;
+    return pdfi_trans_teardown(ctx, state);
 }
 
 int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)
