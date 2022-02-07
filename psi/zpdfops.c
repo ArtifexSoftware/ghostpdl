@@ -1101,6 +1101,21 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
             pdfctx->ctx->args.no_pdfmark_outlines = pvalueref->value.boolval;
         }
 
+        /* This one can be a boolean OR an integer */
+        if (dict_find_string(pdictref, "UsePDFX3Profile", &pvalueref) > 0) {
+            if (!r_has_type(pvalueref, t_boolean)) {
+                if (!r_has_type(pvalueref, t_integer))
+                    goto error;
+                else {
+                    pdfctx->ctx->args.UsePDFX3Profile = true;
+                    pdfctx->ctx->args.PDFX3Profile_num = pvalueref->value.intval;
+                }
+            } else {
+                pdfctx->ctx->args.UsePDFX3Profile = pvalueref->value.boolval;
+                pdfctx->ctx->args.PDFX3Profile_num = 0;
+            }
+        }
+
         if (dict_find_string(pdictref, "NO_PDFMARK_DESTS", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
