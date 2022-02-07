@@ -809,7 +809,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
     offset = p - font->cffdata;
 
     n = 0;
-    while (p < e) {
+    while (p < e && code >= 0) {
         b0 = *p++;
 
         switch (b0) {
@@ -833,218 +833,288 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                 }
                 b0 = 0x100 | *p++;
             }
-            if (b0 == 13) {     /* UniqueID */
-            }
+            switch (b0) {
+                case 13: /* UniqueID */
+                  break;
 
-            if (b0 == 14) {     /* XUID */
-            }
+                case 14:
+                    break; /* XUID */
 
-            /* some CFF file offsets */
-            if (b0 == 15) {
-                if (args[0].ival < 0) {
-                    code = gs_note_error(gs_error_invalidfont);
+                /* some CFF file offsets */
+                case 15:
+                {
+                    if (args[0].ival < 0) {
+                        code = gs_note_error(gs_error_invalidfont);
+                        break;
+                    }
+                    offsets->charset_off = args[0].ival;
                     break;
                 }
-                offsets->charset_off = args[0].ival;
-            }
-
-            if (b0 == 16) {
-                if (args[0].ival < 0) {
-                    code = gs_note_error(gs_error_invalidfont);
+                case 16:
+                {
+                    if (args[0].ival < 0) {
+                        code = gs_note_error(gs_error_invalidfont);
+                        break;
+                    }
+                    offsets->encoding_off = args[0].ival;
                     break;
                 }
-                offsets->encoding_off = args[0].ival;
-            }
-
-            if (b0 == 17) {
-                if (args[0].ival < 0) {
-                    code = gs_note_error(gs_error_invalidfont);
+                case 17:
+                {
+                    if (args[0].ival < 0) {
+                        code = gs_note_error(gs_error_invalidfont);
+                        break;
+                    }
+                    font->charstrings = font->cffdata + args[0].ival;
                     break;
                 }
-                font->charstrings = font->cffdata + args[0].ival;
-            }
 
-            if (b0 == 18) {
-                offsets->private_size = args[0].ival;
-                if (args[1].ival < 0) {
-                    code = gs_note_error(gs_error_invalidfont);
+                case 18:
+                {
+                    offsets->private_size = args[0].ival;
+                    if (args[1].ival < 0) {
+                        code = gs_note_error(gs_error_invalidfont);
+                        break;
+                    }
+                    offsets->private_off = args[1].ival;
+                    /* Catch a broken font with a self referencing Private dict */
+                    if (topdict == true)
+                        do_priv = offsets->private_size > 0 ? true : false;
+                    else {
+                        do_priv = false;
+                        code = gs_error_invalidfont;
+                        break;
+                    }
                     break;
                 }
-                offsets->private_off = args[1].ival;
-                /* Catch a broken font with a self referencing Private dict */
-                if (topdict == true)
-                    do_priv = offsets->private_size > 0 ? true : false;
-                else {
-                    do_priv = false;
-                    code = gs_error_invalidfont;
+
+                case 19:
+                {
+                    if (args[0].ival < 0) {
+                        code = gs_note_error(gs_error_invalidfont);
+                        break;
+                    }
+                    font->subrs = font->cffdata + offset + args[0].ival;
                     break;
                 }
-            }
 
-            if (b0 == 19) {
-                if (args[0].ival < 0) {
-                    code = gs_note_error(gs_error_invalidfont);
+                case 256 | 30:
+                {
+                    code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &font->registry, font, offsets, args[0].ival);
+                    if (code < 0)
+                        break;
+                    code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &font->ordering, font, offsets, args[1].ival);
+                    if (code < 0)
+                        break;
+                    font->supplement = args[2].ival;
+                    offsets->have_ros = true;
+                    ptpriv->FontType = ft_CID_encrypted;
                     break;
                 }
-                font->subrs = font->cffdata + offset + args[0].ival;
-            }
 
-            if (b0 == (256 | 30)) {
-                code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &font->registry, font, offsets, args[0].ival);
-                if (code < 0)
-                    return code;
-                code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &font->ordering, font, offsets, args[1].ival);
-                if (code < 0)
-                    return code;
-                font->supplement = args[2].ival;
-                offsets->have_ros = true;
-                ptpriv->FontType = ft_CID_encrypted;
-            }
-
-            if (b0 == (256 | 34)) {
-                font->cidcount = args[0].ival;
-            }
-
-            if (b0 == (256 | 35)) {
-                font->uidbase = args[0].ival;
-            }
-
-            if (b0 == (256 | 36)) {
-                offsets->fdarray_off = args[0].ival;
-            }
-
-            if (b0 == (256 | 37)) {
-                offsets->fdselect_off = args[0].ival;
-            }
-
-            if (b0 == (256 | 38)) {
-                pdf_string *fnamestr = NULL;
-
-                code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &fnamestr, font, offsets, args[0].ival);
-                if (code >= 0) {
-                    memcpy(ptpriv->font_name.chars, fnamestr->data, fnamestr->length);
-                    memcpy(ptpriv->key_name.chars, fnamestr->data, fnamestr->length);
-                    ptpriv->font_name.size = ptpriv->key_name.size = fnamestr->length;
-                    pdfi_countdown(fnamestr);
+                case 256 | 34:
+                {
+                    font->cidcount = args[0].ival;
+                    break;
                 }
-            }
 
-            /* Type1 stuff that need to be set for the ptpriv struct */
-
-            if (b0 == (256 | 6)) {
-                if (args[0].ival == 1) {
-                    ptpriv->type1data.interpret = gs_type1_interpret;
-                    ptpriv->type1data.lenIV = -1;       /* FIXME */
+                case 256 | 35:
+                {
+                    font->uidbase = args[0].ival;
+                    break;
                 }
-            }
 
-            if (b0 == (256 | 7)) {
-                ptpriv->FontMatrix.xx = args[0].fval;
-                ptpriv->FontMatrix.xy = args[1].fval;
-                ptpriv->FontMatrix.yx = args[2].fval;
-                ptpriv->FontMatrix.yy = args[3].fval;
-                ptpriv->FontMatrix.tx = args[4].fval;
-                ptpriv->FontMatrix.ty = args[5].fval;
-                offsets->have_matrix = true;
-            }
-
-            if (b0 == 5) {
-                ptpriv->FontBBox.p.x = args[0].fval;
-                ptpriv->FontBBox.p.y = args[1].fval;
-                ptpriv->FontBBox.q.x = args[2].fval;
-                ptpriv->FontBBox.q.y = args[3].fval;
-            }
-
-            if (b0 == 20)
-                ptpriv->type1data.defaultWidthX = float2fixed(args[0].fval);
-
-            if (b0 == 21)
-                ptpriv->type1data.nominalWidthX = float2fixed(args[0].fval);
-
-            if (b0 == (256 | 19))
-                ptpriv->type1data.initialRandomSeed = args[0].ival;
-
-            if (b0 == 6) {
-                if (n > max_BlueValues * 2) n = max_BlueValues * 2;
-                ptpriv->type1data.BlueValues.count = n;
-                ptpriv->type1data.BlueValues.values[0] = args[0].fval;
-                for (i = 1; i < n; i++) {
-                    ptpriv->type1data.BlueValues.values[i] = ptpriv->type1data.BlueValues.values[i - 1] + args[i].fval;
+                case 256 | 36:
+                {
+                    offsets->fdarray_off = args[0].ival;
+                    break;
                 }
-            }
 
-            if (b0 == 7) {
-                if (n > max_OtherBlues * 2) n = max_OtherBlues * 2;
-                ptpriv->type1data.OtherBlues.count = n;
-                ptpriv->type1data.OtherBlues.values[0] = args[0].fval;
-                for (i = 1; i < n; i++) {
-                    ptpriv->type1data.OtherBlues.values[i] = ptpriv->type1data.OtherBlues.values[i - 1] + args[i].fval;
+                case 256 | 37:
+                {
+                    offsets->fdselect_off = args[0].ival;
+                    break;
                 }
-            }
 
-            if (b0 == 8) {
-                if (n > max_FamilyBlues * 2) n = max_FamilyBlues * 2;
-                ptpriv->type1data.FamilyBlues.count = n;
-                ptpriv->type1data.FamilyBlues.values[0] = args[0].fval;
-                for (i = 1; i < n; i++) {
-                    ptpriv->type1data.FamilyBlues.values[i] = ptpriv->type1data.FamilyBlues.values[i - 1] + args[i].fval;
+                case 256 | 38:
+                {
+                    pdf_string *fnamestr = NULL;
+
+                    code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &fnamestr, font, offsets, args[0].ival);
+                    if (code >= 0) {
+                        memcpy(ptpriv->font_name.chars, fnamestr->data, fnamestr->length);
+                        memcpy(ptpriv->key_name.chars, fnamestr->data, fnamestr->length);
+                        ptpriv->font_name.size = ptpriv->key_name.size = fnamestr->length;
+                        pdfi_countdown(fnamestr);
+                    }
+                    break;
                 }
-            }
 
-            if (b0 == 9) {
-                if (n > max_FamilyOtherBlues * 2) n = max_FamilyOtherBlues * 2;
-                ptpriv->type1data.FamilyOtherBlues.count = n;
-                ptpriv->type1data.FamilyOtherBlues.values[0] = args[0].fval;
-                for (i = 1; i < n; i++) {
-                    ptpriv->type1data.FamilyOtherBlues.values[i] = ptpriv->type1data.FamilyOtherBlues.values[i - 1] + args[i].fval;
+                /* Type1 stuff that need to be set for the ptpriv struct */
+
+                case 256 | 6:
+                {
+                    if (args[0].ival == 1) {
+                        ptpriv->type1data.interpret = gs_type1_interpret;
+                        ptpriv->type1data.lenIV = -1;       /* FIXME */
+                    }
+                    break;
                 }
+
+                case 256 | 7:
+                {
+                    ptpriv->FontMatrix.xx = args[0].fval;
+                    ptpriv->FontMatrix.xy = args[1].fval;
+                    ptpriv->FontMatrix.yx = args[2].fval;
+                    ptpriv->FontMatrix.yy = args[3].fval;
+                    ptpriv->FontMatrix.tx = args[4].fval;
+                    ptpriv->FontMatrix.ty = args[5].fval;
+                    offsets->have_matrix = true;
+                    break;
+                }
+                case 5:
+                {
+                    ptpriv->FontBBox.p.x = args[0].fval;
+                    ptpriv->FontBBox.p.y = args[1].fval;
+                    ptpriv->FontBBox.q.x = args[2].fval;
+                    ptpriv->FontBBox.q.y = args[3].fval;
+                    break;
+                }
+
+                case 20:
+                {
+                    ptpriv->type1data.defaultWidthX = float2fixed(args[0].fval);
+                    break;
+                }
+
+                case 21:
+                {
+                    ptpriv->type1data.nominalWidthX = float2fixed(args[0].fval);
+                    break;
+                }
+
+                case 256 | 19:
+                {
+                    ptpriv->type1data.initialRandomSeed = args[0].ival;
+                    break;
+                }
+
+                case 6:
+                {
+                    if (n > max_BlueValues * 2) n = max_BlueValues * 2;
+                    ptpriv->type1data.BlueValues.count = n;
+                    ptpriv->type1data.BlueValues.values[0] = args[0].fval;
+                    for (i = 1; i < n; i++) {
+                        ptpriv->type1data.BlueValues.values[i] = ptpriv->type1data.BlueValues.values[i - 1] + args[i].fval;
+                    }
+                    break;
+                }
+
+                case 7:
+                {
+                    if (n > max_OtherBlues * 2) n = max_OtherBlues * 2;
+                    ptpriv->type1data.OtherBlues.count = n;
+                    ptpriv->type1data.OtherBlues.values[0] = args[0].fval;
+                    for (i = 1; i < n; i++) {
+                        ptpriv->type1data.OtherBlues.values[i] = ptpriv->type1data.OtherBlues.values[i - 1] + args[i].fval;
+                    }
+                    break;
+                }
+
+                case 8:
+                {
+                    if (n > max_FamilyBlues * 2) n = max_FamilyBlues * 2;
+                    ptpriv->type1data.FamilyBlues.count = n;
+                    ptpriv->type1data.FamilyBlues.values[0] = args[0].fval;
+                    for (i = 1; i < n; i++) {
+                        ptpriv->type1data.FamilyBlues.values[i] = ptpriv->type1data.FamilyBlues.values[i - 1] + args[i].fval;
+                    }
+                    break;
+                }
+
+                case 9:
+                {
+                    if (n > max_FamilyOtherBlues * 2) n = max_FamilyOtherBlues * 2;
+                    ptpriv->type1data.FamilyOtherBlues.count = n;
+                    ptpriv->type1data.FamilyOtherBlues.values[0] = args[0].fval;
+                    for (i = 1; i < n; i++) {
+                        ptpriv->type1data.FamilyOtherBlues.values[i] = ptpriv->type1data.FamilyOtherBlues.values[i - 1] + args[i].fval;
+                    }
+                    break;
+                }
+
+                case 10:
+                {
+                    ptpriv->type1data.StdHW.count = 1;
+                    ptpriv->type1data.StdHW.values[0] = args[0].fval;
+                    break;
+                }
+
+                case 11:
+                {
+                    ptpriv->type1data.StdVW.count = 1;
+                    ptpriv->type1data.StdVW.values[0] = args[0].fval;
+                    break;
+                }
+
+                case 256 | 9:
+                {
+                    ptpriv->type1data.BlueScale = args[0].fval;
+                    break;
+                }
+
+                case 256 | 10:
+                {
+                    ptpriv->type1data.BlueShift = args[0].fval;
+                    break;
+                }
+
+                case 256 | 11:
+                {
+                    ptpriv->type1data.BlueFuzz = (int)args[0].fval;
+                    break;
+                }
+
+                case 256 | 12:
+                {
+                    if (n > max_StemSnap) n = max_StemSnap;
+                    ptpriv->type1data.StemSnapH.count = n;
+                    for (f = 0, i = 0; i < n; f += args[i].fval, i++)
+                        ptpriv->type1data.StemSnapH.values[i] = f;
+                    break;
+                }
+
+                case 256 | 13:
+                {
+                    if (n > max_StemSnap) n = max_StemSnap;
+                    ptpriv->type1data.StemSnapV.count = n;
+                    for (f = 0, i = 0; i < n; f += args[i].fval, i++)
+                        ptpriv->type1data.StemSnapV.values[i] = f;
+                    break;
+                }
+
+                case 256 | 14:
+                {
+                    ptpriv->type1data.ForceBold = args[0].ival;
+                    break;
+                }
+
+                case 256 | 17:
+                {
+                    ptpriv->type1data.LanguageGroup = args[0].ival;
+                    break;
+                }
+
+                case 256 | 18:
+                {
+                    ptpriv->type1data.ExpansionFactor = args[0].fval;
+                    break;
+                }
+                default:
+                    break;
             }
-
-            if (b0 == 10) {
-                ptpriv->type1data.StdHW.count = 1;
-                ptpriv->type1data.StdHW.values[0] = args[0].fval;
-            }
-
-            if (b0 == 11) {
-                ptpriv->type1data.StdVW.count = 1;
-                ptpriv->type1data.StdVW.values[0] = args[0].fval;
-            }
-
-            if (b0 == (256 | 9))
-                ptpriv->type1data.BlueScale = args[0].fval;
-
-            if (b0 == (256 | 10))
-                ptpriv->type1data.BlueShift = args[0].fval;
-
-            if (b0 == (256 | 11))
-                ptpriv->type1data.BlueFuzz = (int)args[0].fval;
-
-            if (b0 == (256 | 12)) {
-                if (n > max_StemSnap) n = max_StemSnap;
-                ptpriv->type1data.StemSnapH.count = n;
-                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-                    ptpriv->type1data.StemSnapH.values[i] = f;
-            }
-
-            if (b0 == (256 | 13)) {
-                if (n > max_StemSnap) n = max_StemSnap;
-                ptpriv->type1data.StemSnapV.count = n;
-                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-                    ptpriv->type1data.StemSnapV.values[i] = f;
-            }
-
-            if (b0 == (256 | 14))
-                ptpriv->type1data.ForceBold = args[0].ival;
-
-            if (b0 == (256 | 17))
-                ptpriv->type1data.LanguageGroup = args[0].ival;
-
-            if (b0 == (256 | 18))
-                ptpriv->type1data.ExpansionFactor = args[0].fval;
-
             n = 0;
         }
-
         else {
             if (b0 == 30) {
                 p = pdfi_read_cff_real(p, e, &args[n].fval);
