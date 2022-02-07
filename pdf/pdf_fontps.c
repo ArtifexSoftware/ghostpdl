@@ -979,7 +979,7 @@ ps_font_eexec_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
     stream *strm;
     int c;
 
-    if (bufend < buf) {
+    if (bufend <= buf) {
         return_error(gs_error_invalidfont);
     }
 
