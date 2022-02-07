@@ -700,13 +700,13 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
 {
     int code;
     gs_image_enum *penum = NULL;
-    byte *buffer = NULL;
-    uint64_t linelen, bytes_left;
+    uint64_t bytes_left;
     uint64_t bytes_used = 0;
     uint64_t bytes_avail = 0;
     gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
     int main_plane=0, mask_plane=0;
     bool no_progress = false;
+    int min_left;
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_render_image BEGIN\n");
@@ -763,37 +763,36 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
         main_plane = 0;
     }
 
-    /* Going to feed the data one line at a time.
-     * This isn't required by gs_image_next_planes(), but it might make things simpler.
-     */
-    linelen = pdfi_get_image_line_size((gs_data_image_t *)pim, comps);
     bytes_left = pdfi_get_image_data_size((gs_data_image_t *)pim, comps);
-    buffer = gs_alloc_bytes(ctx->memory, linelen, "pdfi_render_image (buffer)");
-    if (!buffer) {
-        code = gs_note_error(gs_error_VMerror);
-        goto cleanupExit;
-    }
     while (bytes_left > 0) {
         uint used[GS_IMAGE_MAX_COMPONENTS];
 
-        if (bytes_avail == 0) {
-            code = pdfi_read_bytes(ctx, buffer, 1, linelen, image_stream);
-            if (code < 0) {
-                dmprintf3(ctx->memory,
-                          "WARNING: Image data error (pdfi_read_bytes) bytes_left=%ld, linelen=%ld, code=%d\n",
-                          bytes_left, linelen, code);
+        while ((bytes_avail = sbufavailable(image_stream->s)) <= (min_left = sbuf_min_left(image_stream->s))) {
+            switch (image_stream->s->end_status) {
+            case 0:
+                s_process_read_buf(image_stream->s);
+                continue;
+            case EOFC:
+            case INTC:
+            case CALLC:
+                break;
+            default:
+                /* case ERRC: */
+                code = gs_note_error(gs_error_ioerror);
                 goto cleanupExit;
             }
-            if (code != linelen) {
-                dmprintf3(ctx->memory, "WARNING: Image data mismatch, bytes_left=%ld, linelen=%ld, code=%d\n",
-                          bytes_left, linelen, code);
-                code = gs_note_error(gs_error_limitcheck);
-                goto cleanupExit;
-            }
+            break;		/* for EOFC */
         }
 
-        plane_data[main_plane].data = buffer + bytes_used;
-        plane_data[main_plane].size = linelen - bytes_used;
+        /*
+         * Note that in the EOF case, we can get here with no data
+         * available.
+         */
+        if (bytes_avail >= min_left)
+            bytes_avail = (bytes_avail - min_left); /* may be 0 */
+
+        plane_data[main_plane].data = sbufptr(image_stream->s);
+        plane_data[main_plane].size = bytes_avail;
 
         code = gs_image_next_planes(penum, plane_data, used);
         if (code < 0) {
@@ -812,6 +811,8 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
             no_progress = false;
         }
 
+        (void)sbufskip(image_stream->s, used[main_plane]);
+
         /* It might not always consume all the data, but so far the only case
          * I have seen with that was one that had mask data.
          * In that case, it used all of plane 0, and none of plane 1 on the first pass.
@@ -822,14 +823,12 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
          */
         bytes_used = used[main_plane];
         bytes_left -= bytes_used;
-        bytes_avail = linelen - bytes_used;
+        bytes_avail -= bytes_used;
     }
 
     code = 0;
 
  cleanupExit:
-    if (buffer)
-        gs_free_object(ctx->memory, buffer, "pdfi_render_image (buffer)");
     if (penum)
         gs_image_cleanup_and_free_enum(penum, ctx->pgs);
     pdfi_grestore(ctx);
