@@ -1056,8 +1056,8 @@ gx_fill_edgebuffer(gx_device       * gs_restrict pdev,
             left  = *row++;
             right = *row++;
             rowlen -= 2;
-            left  = fixed2int(left + fixed_half);
-            right = fixed2int(right + fixed_half);
+            left  = fixed2int(left + fixed_half - fixed_epsilon);
+            right = fixed2int(right + fixed_half - fixed_epsilon);
             right -= left;
             if (right > 0) {
 #ifdef DEBUG_OUTPUT_SC_AS_PS
@@ -2683,9 +2683,9 @@ int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
     //    if (table[0] == 0) {
     //        /* Zero height rectangle fills a span */
     //        table[0] = 2;
-    //        table[1] = int2fixed(fixed2int(bbox.p.x + fixed_half));
+    //        table[1] = int2fixed(fixed2int(bbox.p.x + fixed_half - fixed_epsilon));
     //        table[2] = 0;
-    //        table[3] = int2fixed(fixed2int(bbox.q.x + fixed_half));
+    //        table[3] = int2fixed(fixed2int(bbox.q.x + fixed_half - fixed_epsilon));
     //        table[4] = 1;
     //    }
     //}
@@ -2862,8 +2862,8 @@ rowdifferent:{}
                 row += 4;
                 rowlen -= 2;
 
-                left  = fixed2int(left + fixed_half);
-                right = fixed2int(right + fixed_half);
+                left  = fixed2int(left + fixed_half - fixed_epsilon);
+                right = fixed2int(right + fixed_half - fixed_epsilon);
                 right -= left;
                 if (right > 0) {
 #ifdef DEBUG_OUTPUT_SC_AS_PS
@@ -2901,8 +2901,8 @@ rowdifferent:{}
                     row2 += 4;
                     row2len -= 2;
 
-                    left  = fixed2int(left + fixed_half);
-                    right = fixed2int(right + fixed_half);
+                    left  = fixed2int(left + fixed_half - fixed_epsilon);
+                    right = fixed2int(right + fixed_half - fixed_epsilon);
                     right -= left;
                     if (right > 0) {
                         dlprintf("0.001 setlinewidth 1 0 0.5 setrgbcolor %%PS\n");
