@@ -1434,6 +1434,22 @@ gs_offset_t pdfi_tell(pdf_c_stream *s)
     return stell(s->s);
 }
 
+/* Would it not make more sense to hold the unget_buffer backwards? */
+int pdfi_unread_byte(pdf_context *ctx, pdf_c_stream *s, char c)
+{
+    if (s->unread_size == UNREAD_BUFFER_SIZE)
+        return_error(gs_error_ioerror);
+
+    if (s->unread_size) {
+        memmove(s->unget_buffer+1, s->unget_buffer, s->unread_size);
+    }
+
+    s->unget_buffer[0] = c;
+    s->unread_size++;
+
+    return 0;
+}
+
 int pdfi_unread(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, uint32_t size)
 {
     if (size + s->unread_size > UNREAD_BUFFER_SIZE)
@@ -1452,6 +1468,41 @@ int pdfi_unread(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, uint32_t size)
 
     return 0;
 }
+
+int pdfi_read_byte(pdf_context *ctx, pdf_c_stream *s)
+{
+    uint32_t bytes = 0;
+    int32_t code;
+    byte buffer;
+
+    if (s->eof && s->unread_size == 0)
+        return EOFC;
+
+    if (s->unread_size) {
+        int c = s->unget_buffer[0];
+        s->unread_size--;
+        if (s->unread_size)
+            memmove(s->unget_buffer, s->unget_buffer+1, s->unread_size);
+        return c;
+    }
+
+    /* TODO the Ghostscript code uses sbufptr(s) to avoid a memcpy
+     * at some point we should modify this code to do so as well.
+     */
+    code = sgets(s->s, &buffer, 1, &bytes);
+    if (code == EOFC) {
+        s->eof = true;
+        return EOFC;
+    } else if (code == gs_error_ioerror) {
+        pdfi_set_error(ctx, code, "sgets", E_PDF_BADSTREAM, "pdfi_read_bytes", NULL);
+        s->eof = true;
+        return EOFC;
+    } else if(code == ERRC) {
+        return ERRC;
+    }
+    return buffer;
+}
+
 
 int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, pdf_c_stream *s)
 {

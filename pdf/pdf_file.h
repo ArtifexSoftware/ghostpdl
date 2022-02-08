@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -85,7 +85,9 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source, 
 int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *d, pdf_c_stream *source, pdf_c_stream **new_stream, bool inline_image);
 void pdfi_close_file(pdf_context *ctx, pdf_c_stream *s);
 int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, pdf_c_stream *s);
+int pdfi_read_byte(pdf_context *ctx, pdf_c_stream *s);
 int pdfi_unread(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, uint32_t size);
+int pdfi_unread_byte(pdf_context *ctx, pdf_c_stream *s, char c);
 int pdfi_seek(pdf_context *ctx, pdf_c_stream *s, gs_offset_t offset, uint32_t origin);
 gs_offset_t pdfi_unread_tell(pdf_context *ctx);
 gs_offset_t pdfi_tell(pdf_c_stream *s);
