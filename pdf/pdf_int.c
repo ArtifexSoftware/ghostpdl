@@ -137,13 +137,74 @@ int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s)
     return 0;
 }
 
+/* Fast(ish) but inaccurate strtof, with Adobe overflow handling,
+ * lifted from MuPDF. */
+static float acrobat_compatible_atof(char *s)
+{
+    int neg = 0;
+    int i = 0;
+
+    while (*s == '-') {
+        neg = 1;
+        ++s;
+    }
+    while (*s == '+') {
+        ++s;
+    }
+
+    while (*s >= '0' && *s <= '9') {
+        /* We deliberately ignore overflow here.
+         * Tests show that Acrobat handles * overflows in exactly the same way we do:
+         * 123450000000000000000678 is read as 678.
+         */
+        i = i * 10 + (*s - '0');
+        ++s;
+    }
+
+    if (*s == '.') {
+        float v = (float)i;
+        float n = 0;
+        float d = 1;
+        ++s;
+        while (*s >= '0' && *s <= '9') {
+            n = 10 * n + (*s - '0');
+            d = 10 * d;
+            ++s;
+        }
+        v += n / d;
+        return neg ? -v : v;
+    } else {
+        return (float)(neg ? -i : i);
+    }
+}
+
+/* Fast but inaccurate atoi, lifted from MuPDF. */
+static int fast_atoi(char *s)
+{
+    int neg = 0;
+    int i = 0;
+
+    while (*s == '-') {
+        neg = 1;
+        ++s;
+    }
+    while (*s == '+') {
+        ++s;
+    }
+
+    while (*s >= '0' && *s <= '9') {
+        /* We deliberately ignore overflow here. */
+        i = i * 10 + (*s - '0');
+        ++s;
+    }
+
+    return neg ? -i : i;
+}
+
 static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     byte Buffer[256];
-    char Max[256];
-    int MaxLen = 0;
     unsigned short index = 0;
-    short bytes;
     bool real = false;
     bool has_decimal_point = false;
     bool has_exponent = false;
@@ -154,21 +215,23 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     pdfi_skip_white(ctx, s);
 
     do {
-        bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
-        if (bytes == 0 && s->eof) {
+        int c = pdfi_read_byte(ctx, s);
+        if (c == EOFC) {
             Buffer[index] = 0x00;
             break;
         }
 
-        if (bytes <= 0)
+        if (c < 0)
             return_error(gs_error_ioerror);
+
+        Buffer[index] = (byte)c;
 
         if (iswhite((char)Buffer[index])) {
             Buffer[index] = 0x00;
             break;
         } else {
             if (isdelimiter((char)Buffer[index])) {
-                pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
+                pdfi_unread_byte(ctx, s, (byte)c);
                 Buffer[index] = 0x00;
                 break;
             }
@@ -221,45 +284,13 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
             pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGWHITESPACE, "pdfi_read_num", (char *)"Ignoring missing white space while parsing number");
             if (ctx->args.pdfstoponerror)
                 return_error(gs_error_syntaxerror);
-            pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
+            pdfi_unread_byte(ctx, s, (byte)c);
             Buffer[index] = 0x00;
             break;
         }
         if (++index > 255)
             return_error(gs_error_syntaxerror);
     } while(1);
-
-    if (!real && index > 7) {
-        /* Check for integer overflow, represent as real if so */
-        gs_sprintf(Max, "%d", (max_uint >> 1));
-        MaxLen = strlen((const char *)Max);
-
-        if (index >= MaxLen) {
-            int j = 0;
-
-            if (Buffer[j] == '-')
-                j++;
-
-            while (Buffer[j] == '0')
-                j++;
-
-            if (index - j > MaxLen)
-                real = true;
-
-            if (index - j == MaxLen)
-            {
-                real = false;
-
-                for (;j< MaxLen; j++) {
-                    if (Buffer[j] == Max[j])
-                        continue;
-                    if (Buffer[j] > Max[j])
-                        real=true;
-                    break;
-                }
-            }
-        }
-    }
 
     if (real && (!malformed || (malformed && recovered)))
         code = pdfi_object_alloc(ctx, PDF_REAL, 0, (pdf_obj **)&num);
@@ -274,62 +305,21 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         gs_sprintf(extra_info, "Treating malformed number %s as 0", Buffer);
         pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", extra_info);
         num->value.i = 0;
-    } else {
-        if (real) {
-            float tempf;
-            char *dot = NULL, mfloat[256];   /* We limit numbers to 255 above so it can't exceed this */
-
-            /* Check for overflow */
-            gs_sprintf(mfloat, "%f", MAX_FLOAT);
-            dot = strstr(mfloat, ".");
-            *dot = 0x00;
-
-            dot = strstr((char *)Buffer, ".");
-            if (dot != NULL)
-                *dot = 0x00;
-            if (strlen((char *)Buffer) > strlen(mfloat)) {
-                if (dot != NULL)
-                    *dot = '.';
-                if (ctx->args.pdfdebug)
-                    dmprintf1(ctx->memory, "overflow reading real number : %s\n", Buffer);
-                pdfi_set_warning(ctx, 0, NULL, W_PDF_OVERFLOW_REAL, "pdfi_read_num", NULL);
-                num->value.d = 0.0;
-            }
-            else {
-                if (strlen((char *)Buffer) == strlen(mfloat)) {
-                    int fi = 0;
-
-                    for (fi = 0;fi < strlen((const char *)Buffer);fi++) {
-                        if (Buffer[fi] > mfloat[fi]) {
-                            if (dot != NULL)
-                                *dot = '.';
-                            if (ctx->args.pdfdebug)
-                                dmprintf1(ctx->memory, "overflow reading real number : %s\n", Buffer);
-                            pdfi_set_warning(ctx, 0, NULL, W_PDF_OVERFLOW_REAL, "pdfi_read_num", NULL);
-                            num->value.d = 0.0;
-                        }
-                    }
-                }
-                if (dot != NULL)
-                    *dot = '.';
-                if (sscanf((const char *)Buffer, "%f", &tempf) == 0) {
-                    if (ctx->args.pdfdebug)
-                        dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
-                    pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_REAL, "pdfi_read_num", NULL);
-                    num->value.d = 0.0;
-                }
-                num->value.d = tempf;
-            }
+    } else if (has_exponent) {
+        float f;
+        if (sscanf((char *)Buffer, "%g", &f) == 1) {
+            num->value.d = f;
         } else {
-            int tempi;
-            if (sscanf((const char *)Buffer, "%d", &tempi) == 0) {
-                if (ctx->args.pdfdebug)
-                    dmprintf1(ctx->memory, "failed to read integer : %s\n", Buffer);
-                gs_free_object(OBJ_MEMORY(num), num, "pdfi_read_num error");
-                return_error(gs_error_syntaxerror);
-            }
-            num->value.i = tempi;
+            char extra_info[gp_file_name_sizeof];
+
+            gs_sprintf(extra_info, "Treating malformed float %s as 0", Buffer);
+            pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", extra_info);
+            num->value.d = 0;
         }
+    } else if (real) {
+        num->value.d = acrobat_compatible_atof((char *)Buffer);
+    } else {
+        num->value.i = fast_atoi((char *)Buffer);
     }
     if (ctx->args.pdfdebug) {
         if (real)
