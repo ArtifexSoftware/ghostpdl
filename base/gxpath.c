@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -440,9 +440,12 @@ gx_path_new(gx_path * ppath)
         int code = path_alloc_segments(&ppath->segments, ppath->memory,
                                        "gx_path_new");
 
-        rc_decrement(psegs, "gx_path_new");
-        if (code < 0)
+        if (code < 0) {
+            /* Leave the path in a valid state, despite the error */
+            ppath->segments = psegs;
             return code;
+        }
+        rc_decrement(psegs, "gx_path_new");
     } else {
         rc_free_path_segments_local(psegs->rc.memory, psegs, "gx_path_new");
     }
