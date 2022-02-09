@@ -50,7 +50,7 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
             break;
         case PDF_STRING:
         case PDF_NAME:
-            bytes = sizeof(pdf_string);
+            bytes = sizeof(pdf_string) + size - sizeof(int32_t);
             break;
         case PDF_ARRAY:
             bytes = sizeof(pdf_array);
@@ -65,7 +65,7 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
             bytes = sizeof(pdf_bool);
             break;
         case PDF_KEYWORD:
-            bytes = sizeof(pdf_keyword);
+            bytes = sizeof(pdf_keyword) + size - sizeof(int32_t);
             break;
         /* The following aren't PDF object types, but are objects we either want to
          * reference count, or store on the stack.
@@ -100,17 +100,7 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         case PDF_KEYWORD:
         case PDF_STRING:
         case PDF_NAME:
-            {
-                unsigned char *data = NULL;
-                data = (unsigned char *)gs_alloc_bytes(ctx->memory, size, "pdfi_object_alloc");
-                if (data == NULL) {
-                    gs_free_object(ctx->memory, *obj, "pdfi_object_alloc");
-                    *obj = NULL;
-                    return_error(gs_error_VMerror);
-                }
-                ((pdf_string *)*obj)->data = data;
-                ((pdf_string *)*obj)->length = size;
-            }
+            ((pdf_string *)*obj)->length = size;
             break;
         case PDF_ARRAY:
             {
@@ -206,18 +196,13 @@ static void pdfi_free_namestring(pdf_obj *o)
     /* Currently names and strings are the same, so a single cast is OK */
     pdf_name *n = (pdf_name *)o;
 
-    if (n->data != NULL)
-        gs_free_object(OBJ_MEMORY(n), n->data, "pdf interpreter free name or string data");
     gs_free_object(OBJ_MEMORY(n), n, "pdf interpreter free name or string");
 }
 
 static void pdfi_free_keyword(pdf_obj *o)
 {
-    /* Currently names and strings are the same, so a single cast is OK */
     pdf_keyword *k = (pdf_keyword *)o;
 
-    if (k->data != NULL)
-        gs_free_object(OBJ_MEMORY(k), k->data, "pdf interpreter free keyword data");
     gs_free_object(OBJ_MEMORY(k), k, "pdf interpreter free keyword");
 }
 

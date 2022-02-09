@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -130,13 +130,13 @@ typedef struct pdf_num_s {
 typedef struct pdf_string_s {
     pdf_obj_common;
     uint32_t length;
-    unsigned char *data;
+    unsigned char data[sizeof(int32_t)];
 } pdf_string;
 
 typedef struct pdf_name_s {
     pdf_obj_common;
     uint32_t length;
-    unsigned char *data;
+    unsigned char data[sizeof(int32_t)];
 } pdf_name;
 
 typedef enum pdf_key_e {
@@ -149,13 +149,13 @@ typedef enum pdf_key_e {
     TOKEN_STARTXREF,
     TOKEN_TRAILER,
     TOKEN_INVALID_KEY,
-}pdf_key;
+} pdf_key;
 
 typedef struct pdf_keyword_s {
     pdf_obj_common;
     uint32_t length;
-    unsigned char *data;
     pdf_key key;
+    unsigned char data[sizeof(int32_t)];
 } pdf_keyword;
 
 typedef struct pdf_array_s {
