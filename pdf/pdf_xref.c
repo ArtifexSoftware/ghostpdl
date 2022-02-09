@@ -533,43 +533,49 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s)
 
 static int skip_to_digit(pdf_context *ctx, pdf_c_stream *s, unsigned int limit)
 {
-    byte c;
-    int bytes, read = 0;
+    int c, read = 0;
 
     do {
-        bytes = pdfi_read_bytes(ctx, &c, 1, 1, s);
-        if (bytes == 0)
+        c = pdfi_read_byte(ctx, s);
+        if (c < 0)
             return_error(gs_error_ioerror);
-        if (c >= 0x30 && c <= 0x39) {
-            pdfi_unread_byte(ctx, s, c);
-            break;
+        if (c >= '0' && c <= '9') {
+            pdfi_unread_byte(ctx, s, (byte)c);
+            return read;
         }
-        read += bytes;
-    }while (read < limit);
+        read++;
+    } while (read < limit);
+
     return read;
 }
 
 static int read_digits(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, int limit)
 {
-    int bytes, read = 0;
+    int c, read = 0;
 
-    /* Since the "limit" is a value calculate by the caller,
+    /* Since the "limit" is a value calculated by the caller,
        it's easier to check it in one place (here) than before
        every call.
      */
     if (limit <= 0)
         return_error(gs_error_syntaxerror);
 
+    /* We assume that Buffer always has limit+1 bytes available, so we can
+     * safely terminate it. */
+
     do {
-        bytes = pdfi_read_bytes(ctx, &Buffer[read], 1, 1, s);
-        if (bytes == 0)
+        c = pdfi_read_byte(ctx, s);
+        if (c < 0)
             return_error(gs_error_ioerror);
-        if (Buffer[read] < 0x30 || Buffer[read] > 0x39) {
-            pdfi_unread_byte(ctx, s, Buffer[read]);
+        if (c < '0' || c > '9') {
+            pdfi_unread_byte(ctx, s, c);
             break;
         }
-        read += bytes;
-    }while (read < limit);
+        *Buffer++ = (byte)c;
+        read++;
+    } while (read < limit);
+    *Buffer = 0;
+
     return read;
 }
 
@@ -577,9 +583,8 @@ static int read_digits(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, int limi
 static int read_xref_entry_slow(pdf_context *ctx, pdf_c_stream *s, gs_offset_t *offset, uint32_t *generation_num, unsigned char *free)
 {
     byte Buffer[20];
-    int code, read = 0, bytes;
+    int c, code, read = 0;
 
-    memset(Buffer, 0x00, 20);
     /* First off, find a number. If we don't find one, and read 20 bytes, throw an error */
     code = skip_to_digit(ctx, s, 20);
     if (code < 0)
@@ -590,7 +595,6 @@ static int read_xref_entry_slow(pdf_context *ctx, pdf_c_stream *s, gs_offset_t *
     code = read_digits(ctx, s, (byte *)&Buffer,  (read > 10 ? 20 - read : 10));
     if (code < 0)
         return code;
-    Buffer[code] = 0x00;
     read += code;
 
     *offset = atol((const char *)Buffer);
@@ -602,23 +606,22 @@ static int read_xref_entry_slow(pdf_context *ctx, pdf_c_stream *s, gs_offset_t *
     read += code;
 
     /* and read it */
-    code = read_digits(ctx, s, (byte *)&Buffer,  (read > 15 ? 20 - read : 5));
+    code = read_digits(ctx, s, (byte *)&Buffer, (read > 15 ? 20 - read : 5));
     if (code < 0)
         return code;
-    Buffer[code] = 0x00;
     read += code;
 
     *generation_num = atol((const char *)Buffer);
 
     do {
-        bytes = pdfi_read_bytes(ctx, &Buffer[0], 1, 1, s);
-        if (bytes == 0)
+        c = pdfi_read_byte(ctx, s);
+        if (c < 0)
             return_error(gs_error_ioerror);
-        read += bytes;
-        if (Buffer[0] == 0x09 || Buffer[0] == 0x20)
+        read ++;
+        if (c == 0x09 || c == 0x20)
             continue;
-        if (Buffer[0] == 'n' || Buffer[0] == 'f') {
-            *free = Buffer[0];
+        if (c == 'n' || c == 'f') {
+            *free = (unsigned char)c;
             break;
         } else {
             return_error(gs_error_syntaxerror);
@@ -628,9 +631,11 @@ static int read_xref_entry_slow(pdf_context *ctx, pdf_c_stream *s, gs_offset_t *
         return_error(gs_error_syntaxerror);
 
     do {
-        bytes = pdfi_read_bytes(ctx, &Buffer[0], 1, 1, s);
-        read += bytes;
-        if (Buffer[0] == 0x20 || Buffer[0] == 0x09 || Buffer[0] == 0x0d || Buffer[0] == 0x0a)
+        c = pdfi_read_byte(ctx, s);
+        if (c < 0)
+            return_error(gs_error_syntaxerror);
+        read++;
+        if (c == 0x20 || c == 0x09 || c == 0x0d || c == 0x0a)
             continue;
     } while (read < 20);
     return 0;

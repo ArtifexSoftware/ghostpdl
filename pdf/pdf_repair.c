@@ -109,24 +109,24 @@ int pdfi_repair_file(pdf_context *ctx)
      */
     pdfi_seek(ctx, ctx->main_stream, 0, SEEK_SET);
     {
-        char Buffer[10], test[] = "%PDF";
+        static const char test[] = "%PDF";
         int index = 0;
 
         do {
-            code = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
-            if (code < 0)
+            int c = pdfi_read_byte(ctx, ctx->main_stream);
+            if (c < 0)
                 goto exit;
 
-            if (Buffer[index] == test[index])
+            if (c == test[index])
                 index++;
             else
                 index = 0;
-        } while (index < 4 && ctx->main_stream->eof == false);
-        if (memcmp(Buffer, test, 4) != 0) {
+        } while (index < 4);
+        if (index != 4) {
             code = gs_note_error(gs_error_undefined);
             goto exit;
         }
-        pdfi_unread(ctx, ctx->main_stream, (byte *)Buffer, 4);
+        pdfi_unread(ctx, ctx->main_stream, (byte *)test, 4);
         pdfi_skip_comment(ctx, ctx->main_stream);
     }
     if (ctx->main_stream->eof == true) {
@@ -228,21 +228,22 @@ int pdfi_repair_file(pdf_context *ctx)
                                     break;
                                 } else {
                                     if (k->key == TOKEN_STREAM) {
-                                        char Buffer[10], test[] = "endstream";
+                                        static const char test[] = "endstream";
                                         int index = 0;
 
                                         do {
-                                            code = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
-                                            if (code < 0) {
-                                                if (code != gs_error_VMerror && code != gs_error_ioerror)
-                                                    continue;
+                                            int c = pdfi_read_byte(ctx, ctx->main_stream);
+                                            if (c == EOFC)
+                                                break;
+                                            if (c < 0)
                                                 goto exit;
-                                            }
-                                            if (Buffer[index] == test[index])
+                                            if (c == test[index])
                                                 index++;
+                                            else if (c == test[0]) /* Pesky 'e' appears twice */
+                                                index = 1;
                                             else
                                                 index = 0;
-                                        } while (index < 9 && ctx->main_stream->eof == false);
+                                        } while (index < 9);
                                         do {
                                             code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
                                             if (code < 0) {

@@ -108,43 +108,32 @@ static int fromhex(char c)
  */
 int pdfi_skip_white(pdf_context *ctx, pdf_c_stream *s)
 {
-    uint32_t read = 0;
-    int32_t bytes = 0;
-    byte c;
+    int c;
 
     do {
-        bytes = pdfi_read_bytes(ctx, &c, 1, 1, s);
-        if (bytes < 0)
-            return_error(gs_error_ioerror);
-        if (bytes == 0)
+        c = pdfi_read_byte(ctx, s);
+        if (c < 0)
             return 0;
-        read += bytes;
     } while (iswhite(c));
 
-    if (read > 0)
-        pdfi_unread_byte(ctx, s, c);
+    pdfi_unread_byte(ctx, s, (byte)c);
     return 0;
 }
 
 int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s)
 {
-    uint32_t read = 0;
-    int32_t bytes = 0;
-    byte c;
+    int c;
 
     do {
-        bytes = pdfi_read_bytes(ctx, &c, 1, 1, s);
-        if (bytes == 0)
+        c = pdfi_read_byte(ctx, s);
+        if (c < 0 || c == 0x0a)
             return 0;
-        if (read) {
-            if (c == 0x0A)
-                return 0;
-            pdfi_unread_byte(ctx, s, c);
-            return 0;
-        }
-        if (c == 0x0D)
-            read++;
-    } while (c != 0x0A);
+    } while (c != 0x0d);
+    c = pdfi_read_byte(ctx, s);
+    if (c == 0x0a)
+        return 0;
+    if (c >= 0)
+        pdfi_unread_byte(ctx, s, (byte)c);
     return 0;
 }
 
@@ -373,31 +362,29 @@ static int pdfi_read_name(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_n
         return_error(gs_error_VMerror);
 
     do {
-        bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
-        if (bytes == 0 && s->eof)
+        int c = pdfi_read_byte(ctx, s);
+        if (c < 0)
             break;
-        if (bytes <= 0)
-            return_error(gs_error_ioerror);
 
-        if (iswhite((char)Buffer[index])) {
+        if (iswhite((char)c)) {
             Buffer[index] = 0x00;
             break;
-        } else {
-            if (isdelimiter((char)Buffer[index])) {
-                pdfi_unread_byte(ctx, s, Buffer[index]);
-                Buffer[index] = 0x00;
-                break;
-            }
+        } else if (isdelimiter((char)c)) {
+            pdfi_unread_byte(ctx, s, (char)c);
+            Buffer[index] = 0x00;
+            break;
         }
+        Buffer[index] = (char)c;
 
         /* Check for and convert escaped name characters */
-        if (Buffer[index] == '#') {
+        if (c == '#') {
             byte NumBuf[2];
 
             bytes = pdfi_read_bytes(ctx, (byte *)&NumBuf, 1, 2, s);
             if (bytes < 2 || (!ishex(NumBuf[0]) || !ishex(NumBuf[1]))) {
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_NAME_ESCAPE, "pdfi_read_name", NULL);
                 pdfi_unread(ctx, s, (byte *)NumBuf, bytes);
+                /* This leaves the name buffer with a # in it, rather than anything sane! */
             }
             else
                 Buffer[index] = (fromhex(NumBuf[0]) << 4) + fromhex(NumBuf[1]);
@@ -441,12 +428,11 @@ static int pdfi_read_name(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_n
 
 static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
-    char *Buffer, *NewBuf = NULL, HexBuf[2];
+    char *Buffer, *NewBuf = NULL;
     unsigned short index = 0;
-    short bytes = 0;
     uint32_t size = 256;
     pdf_string *string = NULL;
-    int code;
+    int code, hex0, hex1;
 
     Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_read_hexstring");
     if (Buffer == NULL)
@@ -457,44 +443,36 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
 
     do {
         do {
-            bytes = pdfi_read_bytes(ctx, (byte *)HexBuf, 1, 1, s);
-            if (bytes == 0 && s->eof)
+            hex0 = pdfi_read_byte(ctx, s);
+            if (hex0 < 0)
                 break;
-            if (bytes <= 0) {
-                code = gs_note_error(gs_error_ioerror);
-                goto exit;
-            }
-        } while(iswhite(HexBuf[0]));
-        if (bytes == 0 && s->eof)
+        } while(iswhite(hex0));
+        if (hex0 < 0)
             break;
 
-        if (HexBuf[0] == '>')
+        if (hex0 == '>')
             break;
 
         if (ctx->args.pdfdebug)
-            dmprintf1(ctx->memory, "%c", HexBuf[0]);
+            dmprintf1(ctx->memory, "%c", (char)hex0);
 
         do {
-            bytes = pdfi_read_bytes(ctx, (byte *)&HexBuf[1], 1, 1, s);
-            if (bytes == 0 && s->eof)
+            hex1 = pdfi_read_byte(ctx, s);
+            if (hex1 < 0)
                 break;
-            if (bytes <= 0) {
-                code = gs_note_error(gs_error_ioerror);
-                goto exit;
-            }
-        } while(iswhite(HexBuf[1]));
-        if (bytes == 0 && s->eof)
+        } while(iswhite(hex1));
+        if (hex1 < 0)
             break;
 
-        if (!ishex(HexBuf[0]) || !ishex(HexBuf[1])) {
+        if (!ishex(hex0) || !ishex(hex1)) {
             code = gs_note_error(gs_error_syntaxerror);
             goto exit;
         }
 
         if (ctx->args.pdfdebug)
-            dmprintf1(ctx->memory, "%c", HexBuf[1]);
+            dmprintf1(ctx->memory, "%c", (char)hex1);
 
-        Buffer[index] = (fromhex(HexBuf[0]) << 4) + fromhex(HexBuf[1]);
+        Buffer[index] = (fromhex(hex0) << 4) + fromhex(hex1);
 
         if (index++ >= size - 1) {
             NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdfi_read_hexstring");
@@ -536,12 +514,11 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
 
 static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
-    char *Buffer, *NewBuf = NULL, octal[3];
+    char *Buffer, *NewBuf = NULL;
     unsigned short index = 0;
-    short bytes = 0;
     uint32_t size = 256;
     pdf_string *string = NULL;
-    int code, octal_index = 0, nesting = 0;
+    int c, code, nesting = 0;
     bool escape = false, skip_eol = false, exit_loop = false;
 
     Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_read_string");
@@ -561,14 +538,9 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
             size += 256;
         }
 
-        bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
+        c = pdfi_read_byte(ctx, s);
 
-        if (bytes == 0 && s->eof) {
-            if (nesting > 0)
-                pdfi_set_error(ctx, 0, NULL, E_PDF_UNESCAPEDSTRING, "pdfi_read_string", NULL);
-            break;
-        }
-        if (bytes <= 0) {
+        if (c < 0) {
             if (nesting > 0)
                 pdfi_set_error(ctx, 0, NULL, E_PDF_UNESCAPEDSTRING, "pdfi_read_string", NULL);
             Buffer[index] = 0x00;
@@ -576,102 +548,91 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
         }
 
         if (skip_eol) {
-            if (Buffer[index] == 0x0a || Buffer[index] == 0x0d)
+            if (c == 0x0a || c == 0x0d)
                 continue;
             skip_eol = false;
         }
+        Buffer[index] = (char)c;
 
         if (escape) {
             escape = false;
-            if (Buffer[index] == 0x0a || Buffer[index] == 0x0d) {
-                skip_eol = true;
-                continue;
-            }
-            if (octal_index) {
-                byte dummy[2];
-                dummy[0] = '\\';
-                dummy[1] = Buffer[index];
-                code = pdfi_unread(ctx, s, dummy, 2);
-                if (code < 0) {
-                    gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
-                    return code;
+            switch (Buffer[index]) {
+                case 0x0a:
+                case 0x0d:
+                    skip_eol = true;
+                    continue;
+                case 'n':
+                    Buffer[index] = 0x0a;
+                    break;
+                case 'r':
+                    Buffer[index] = 0x0d;
+                    break;
+                case 't':
+                    Buffer[index] = 0x09;
+                    break;
+                case 'b':
+                    Buffer[index] = 0x08;
+                    break;
+                case 'f':
+                    Buffer[index] = 0x0c;
+                    break;
+                case '(':
+                case ')':
+                case '\\':
+                    break;
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                {
+                    /* Octal chars can be 1, 2 or 3 chars in length, terminated either
+                     * by being 3 chars long, EOFC, or a non-octal char. We do not allow
+                     * line breaks in the middle of octal chars. */
+                    int c1 = pdfi_read_byte(ctx, s);
+                    c -= '0';
+                    if (c1 < 0) {
+                        /* Nothing to do, or unread */
+                    } else if (c1 < '0' && c1 > '7') {
+                        pdfi_unread_byte(ctx, s, (char)c1);
+                    } else {
+                        c = c*8 + c1 - '0';
+                        c1 = pdfi_read_byte(ctx, s);
+                        if (c1 < 0) {
+                            /* Nothing to do, or unread */
+                        } else if (c1 < '0' || c1 > '7') {
+                            pdfi_unread_byte(ctx, s, (char)c1);
+                        } else
+                            c = c*8 + c1 - '0';
+                    }
+                    Buffer[index] = c;
+                    break;
                 }
-                Buffer[index] = octal[0];
-                if (octal_index == 2)
-                    Buffer[index] = (Buffer[index] * 8) + octal[1];
-                octal_index = 0;
-            } else {
-                switch (Buffer[index]) {
-                    case 'n':
-                        Buffer[index] = 0x0a;
-                        break;
-                    case 'r':
-                        Buffer[index] = 0x0d;
-                        break;
-                    case 't':
-                        Buffer[index] = 0x09;
-                        break;
-                    case 'b':
-                        Buffer[index] = 0x08;
-                        break;
-                    case 'f':
-                        Buffer[index] = 0x0c;
-                        break;
-                    case '(':
-                    case ')':
-                    case '\\':
-                        break;
-                    default:
-                        if (Buffer[index] >= 0x30 && Buffer[index] <= 0x37) {
-                            octal[octal_index] = Buffer[index] - 0x30;
-                            octal_index++;
-                            continue;
-                        }
-                        /* PDF Reference, literal strings, if the character following a
-                         * escape \ character is not recognised, then it is ignored.
-                         */
-                        escape = false;
-                        index++;
-                        continue;
-                }
+                default:
+                    /* PDF Reference, literal strings, if the character following a
+                     * escape \ character is not recognised, then it is ignored.
+                     */
+                    escape = false;
+                    index++;
+                    continue;
             }
         } else {
             switch(Buffer[index]) {
-                case 0x0a:
                 case 0x0d:
-                    if (octal_index != 0) {
-                        code = pdfi_unread_byte(ctx, s, (byte)Buffer[index]);
-                        if (code < 0) {
-                            gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
-                            return code;
-                        }
-                        Buffer[index] = octal[0];
-                        if (octal_index == 2)
-                            Buffer[index] = (Buffer[index] * 8) + octal[1];
-                        octal_index = 0;
-                    } else {
-                        Buffer[index] = 0x0a;
-                        skip_eol = true;
-                    }
+                    Buffer[index] = 0x0a;
+                    /*fallthrough*/
+                case 0x0a:
+                    skip_eol = true;
                     break;
                 case ')':
-                    if (octal_index != 0) {
-                        code = pdfi_unread_byte(ctx, s, (byte)Buffer[index]);
-                        if (code < 0) {
-                            gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
-                            return code;
-                        }
-                        Buffer[index] = octal[0];
-                        if (octal_index == 2)
-                            Buffer[index] = (Buffer[index] * 8) + octal[1];
-                        octal_index = 0;
-                    } else {
-                        if (nesting == 0) {
-                            Buffer[index] = 0x00;
-                            exit_loop = true;
-                        } else
-                            nesting--;
-                    }
+                    if (nesting == 0) {
+                        Buffer[index] = 0x00;
+                        exit_loop = true;
+                    } else
+                        nesting--;
                     break;
                 case '\\':
                     escape = true;
@@ -680,25 +641,6 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
                     nesting++;
                     break;
                 default:
-                    if (octal_index) {
-                        if (Buffer[index] >= 0x30 && Buffer[index] <= 0x37) {
-                            octal[octal_index] = Buffer[index] - 0x30;
-                            if (++octal_index < 3)
-                                continue;
-                            Buffer[index] = (octal[0] * 64) + (octal[1] * 8) + octal[2];
-                            octal_index = 0;
-                        } else {
-                            code = pdfi_unread_byte(ctx, s, (byte)Buffer[index]);
-                            if (code < 0) {
-                                gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
-                                return code;
-                            }
-                            Buffer[index] = octal[0];
-                            if (octal_index == 2)
-                                Buffer[index] = (Buffer[index] * 8) + octal[1];
-                            octal_index = 0;
-                        }
-                    }
                     break;
             }
         }
@@ -769,26 +711,21 @@ int pdfi_read_dict(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uin
 
 int pdfi_skip_comment(pdf_context *ctx, pdf_c_stream *s)
 {
-    byte Buffer;
-    short bytes = 0;
+    int c;
 
     if (ctx->args.pdfdebug)
         dmprintf (ctx->memory, " %%");
 
     do {
-        bytes = pdfi_read_bytes(ctx, (byte *)&Buffer, 1, 1, s);
-        if (bytes < 0)
-            return_error(gs_error_ioerror);
+        c = pdfi_read_byte(ctx, s);
+        if (c < 0)
+            break;
 
-        if (bytes > 0) {
-            if (ctx->args.pdfdebug)
-                dmprintf1 (ctx->memory, " %c", Buffer);
+        if (ctx->args.pdfdebug)
+            dmprintf1 (ctx->memory, " %c", (char)c);
 
-            if ((Buffer == 0x0A) || (Buffer == 0x0D)) {
-                break;
-            }
-        }
-    } while (bytes);
+    } while (c != 0x0a && c != 0x0d);
+
     return 0;
 }
 
@@ -802,30 +739,23 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
 {
     byte Buffer[256];
     unsigned short index = 0;
-    short bytes = 0;
-    int code;
+    int c, code;
     pdf_keyword *keyword;
 
     pdfi_skip_white(ctx, s);
 
     do {
-        bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
-        if (bytes < 0)
-            return_error(gs_error_ioerror);
+        c = pdfi_read_byte(ctx, s);
+        if (c < 0)
+            break;
 
-        if (bytes > 0) {
-            if (iswhite(Buffer[index])) {
-                pdfi_unread_byte(ctx, s, (byte)Buffer[index]);
-                break;
-            } else {
-                if (isdelimiter(Buffer[index])) {
-                    pdfi_unread_byte(ctx, s, (byte)Buffer[index]);
-                    break;
-                }
-            }
-            index++;
+        if (iswhite(c) || isdelimiter(c)) {
+            pdfi_unread_byte(ctx, s, (byte)c);
+            break;
         }
-    } while (bytes && index < 255);
+        Buffer[index] = (byte)c;
+        index++;
+    } while (index < 255);
 
     if (index >= 255 || index == 0) {
         if (ctx->args.pdfstoponerror)
@@ -1001,19 +931,17 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
  */
 int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
-    int32_t bytes = 0;
-    char Buffer[256];
-    int code;
+    int c, code;
 
     pdfi_skip_white(ctx, s);
 
-    bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 1, s);
-    if (bytes < 0)
-        return (gs_error_ioerror);
-    if (bytes == 0 && s->eof)
+    c = pdfi_read_byte(ctx, s);
+    if (c == EOFC)
         return 0;
+    if (c < 0)
+        return_error(gs_error_ioerror);
 
-    switch(Buffer[0]) {
+    switch(c) {
         case 0x30:
         case 0x31:
         case 0x32:
@@ -1027,7 +955,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
         case '+':
         case '-':
         case '.':
-            pdfi_unread_byte(ctx, s, (byte)Buffer[0]);
+            pdfi_unread_byte(ctx, s, (byte)c);
             code = pdfi_read_num(ctx, s, indirect_num, indirect_gen);
             if (code < 0)
                 return code;
@@ -1039,53 +967,48 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
             return 1;
             break;
         case '<':
-            bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
-            if (bytes <= 0)
+            c = pdfi_read_byte(ctx, s);
+            if (c < 0)
                 return (gs_error_ioerror);
-            if (iswhite(Buffer[1])) {
+            if (iswhite(c)) {
                 code = pdfi_skip_white(ctx, s);
                 if (code < 0)
                     return code;
-                bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
+                c = pdfi_read_byte(ctx, s);
             }
-            if (Buffer[1] == '<') {
+            if (c == '<') {
                 if (ctx->args.pdfdebug)
                     dmprintf (ctx->memory, " <<\n");
                 code = pdfi_mark_stack(ctx, PDF_DICT_MARK);
                 if (code < 0)
                     return code;
                 return 1;
-            } else {
-                if (Buffer[1] == '>') {
-                    pdfi_unread_byte(ctx, s, (byte)Buffer[1]);
-                    code =  pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
-                    if (code < 0)
-                        return code;
-                    return 1;
-                } else {
-                    if (ishex(Buffer[1])) {
-                        pdfi_unread_byte(ctx, s, (byte)Buffer[1]);
-                        code = pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
-                        if (code < 0)
-                            return code;
-                    }
-                    else
-                        return_error(gs_error_syntaxerror);
-                }
+            } else if (c == '>') {
+                pdfi_unread_byte(ctx, s, (byte)c);
+                code = pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
+                if (code < 0)
+                    return code;
+                return 1;
+            } else if (ishex(c)) {
+                pdfi_unread_byte(ctx, s, (byte)c);
+                code = pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
+                if (code < 0)
+                    return code;
             }
+            else
+                return_error(gs_error_syntaxerror);
             break;
         case '>':
-            bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
-            if (bytes <= 0)
+            c = pdfi_read_byte(ctx, s);
+            if (c < 0)
                 return (gs_error_ioerror);
-            if (Buffer[1] == '>') {
+            if (c == '>') {
                 code = pdfi_dict_from_stack(ctx, indirect_num, indirect_gen, false);
                 if (code < 0)
                     return code;
                 return 1;
-            }
-            else {
-                pdfi_unread_byte(ctx, s, (byte)Buffer[1]);
+            } else {
+                pdfi_unread_byte(ctx, s, (byte)c);
                 return_error(gs_error_syntaxerror);
             }
             break;
@@ -1125,12 +1048,12 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
             return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
             break;
         default:
-            if (isdelimiter(Buffer[0])) {
+            if (isdelimiter(c)) {
                 if (ctx->args.pdfstoponerror)
                     return_error(gs_error_syntaxerror);
                 return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
             }
-            pdfi_unread_byte(ctx, s, (byte)Buffer[0]);
+            pdfi_unread_byte(ctx, s, (byte)c);
             code = pdfi_read_keyword(ctx, s, indirect_num, indirect_gen);
             if (code < 0)
                 return code;

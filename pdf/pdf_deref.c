@@ -352,7 +352,8 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
      */
     if (stream_obj->length_valid != true) {
         char Buffer[10];
-        unsigned int loop, bytes, total = 0;
+        unsigned int bytes, total = 0;
+        int c = 0;
 
         code = pdfi_seek(ctx, ctx->main_stream, stream_obj->stream_offset, SEEK_SET);
         if (code < 0) {
@@ -379,14 +380,15 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
                 stream_obj->length_valid = true;
                 break;
             }
-            for (loop = 0;loop < 9;loop++){
-                Buffer[loop] = Buffer[loop + 1];
-            }
-            bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[9], 1, 1, ctx->main_stream);
-            total += bytes;
-        } while(bytes);
+            memmove(Buffer, Buffer+1, 9);
+            c = pdfi_read_byte(ctx, ctx->main_stream);
+            if (c < 0)
+                break;
+            Buffer[9] = (byte)c;
+            total++;
+        } while(1);
         pdfi_countdown(stream_obj); /* get rid of extra ref */
-        if (bytes <= 0)
+        if (c < 0)
             return_error(gs_error_ioerror);
         return 0;
     }
@@ -599,7 +601,6 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     pdf_c_stream *compressed_stream = NULL;
     pdf_c_stream *SubFile_stream = NULL;
     pdf_c_stream *Object_stream = NULL;
-    char Buffer[256];
     int i = 0, object_length = 0;
     int64_t num_entries, found_object;
     int64_t Length;
@@ -747,8 +748,8 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     /* Skip to the offset of the object we want to read */
     for (i=0;i < offset;i++)
         {
-            code = pdfi_read_bytes(ctx, (byte *)&Buffer[0], 1, 1, compressed_stream);
-            if (code <= 0) {
+            int c = pdfi_read_byte(ctx, compressed_stream);
+            if (c < 0) {
                 code = gs_note_error(gs_error_ioerror);
                 goto exit;
             }

@@ -146,15 +146,15 @@ static int
 pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, int depth, byte *ops, unsigned int *size)
 {
     int code;
-    byte c;
+    int c;
     char TokenBuffer[17];
     unsigned int Size, IsReal;
     byte *clause = NULL;
     byte *p = (ops ? ops + *size : NULL);
 
-    do {
-        code = pdfi_read_bytes(ctx, &c, 1, 1, function_stream);
-        if (code < 0)
+    while (1) {
+        c = pdfi_read_byte(ctx, function_stream);
+        if (c < 0)
             break;
         switch(c) {
             case 0x20:
@@ -202,32 +202,30 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                         IsReal = 1;
                     else
                         IsReal = 0;
-                    TokenBuffer[0] = c;
-                    do {
-                        code = pdfi_read_bytes(ctx, &c, 1, 1, function_stream);
-                        if (code < 0)
-                            return code;
-                        if (code == 0)
+                    TokenBuffer[0] = (byte)c;
+                    while (1) {
+                        c = pdfi_read_byte(ctx, function_stream);
+                        if (c < 0)
                             return_error(gs_error_syntaxerror);
 
                         if (c == '.'){
                             if (IsReal == 1)
                                 code = gs_error_syntaxerror;
                             else {
-                                TokenBuffer[Size++] = c;
+                                TokenBuffer[Size++] = (byte)c;
                                 IsReal = 1;
                             }
                         } else {
                             if (c >= '0' && c <= '9') {
-                                TokenBuffer[Size++] = c;
+                                TokenBuffer[Size++] = (byte)c;
                             } else
                                 break;
                         }
                         if (Size > NUMBERTOKENSIZE)
                             return_error(gs_error_syntaxerror);
-                    } while (code >= 0);
+                    }
                     TokenBuffer[Size] = 0x00;
-                    pdfi_unread_byte(ctx, function_stream, c);
+                    pdfi_unread_byte(ctx, function_stream, (byte)c);
                     if (IsReal == 1) {
                         *size += put_float(&p, atof(TokenBuffer));
                     } else {
@@ -239,21 +237,19 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
 
                     /* parse an operator */
                     Size = 1;
-                    TokenBuffer[0] = c;
+                    TokenBuffer[0] = (byte)c;
                     while (1) {
-                        code = pdfi_read_bytes(ctx, &c, 1, 1, function_stream);
-                        if (code < 0)
-                            return code;
-                        if (code == 0)
+                        c = pdfi_read_byte(ctx, function_stream);
+                        if (c < 0)
                             return_error(gs_error_syntaxerror);
                         if (c == 0x20 || c == 0x09 || c == 0x0a || c == 0x0d || c == '{' || c == '}')
                             break;
-                        TokenBuffer[Size++] = c;
+                        TokenBuffer[Size++] = (byte)c;
                         if (Size > OPTOKENSIZE)
                             return_error(gs_error_syntaxerror);
                     }
                     TokenBuffer[Size] = 0x00;
-                    pdfi_unread_byte(ctx, function_stream, c);
+                    pdfi_unread_byte(ctx, function_stream, (byte)c);
                     for (i=0;i < NumOps;i++) {
                         Op = (op_struct_t *)&ops_table[i];
                         if (Op->length < Size)
@@ -278,9 +274,9 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                 }
                 break;
         }
-    } while (code >= 0);
+    }
 
-    return code;
+    return 0;
 }
 
 static int
