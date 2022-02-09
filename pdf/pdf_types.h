@@ -164,12 +164,16 @@ typedef struct pdf_array_s {
     pdf_obj **values;
 } pdf_array;
 
+typedef struct pdf_dict_entry_s {
+    pdf_obj *key;
+    pdf_obj *value;
+} pdf_dict_entry;
+
 typedef struct pdf_dict_s {
     pdf_obj_common;
     uint64_t size;
     uint64_t entries;
-    pdf_obj **keys;
-    pdf_obj **values;
+    pdf_dict_entry *list;
     bool dict_written; /* Has dict been written (for pdfwrite) */
 } pdf_dict;
 

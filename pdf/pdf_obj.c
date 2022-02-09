@@ -122,23 +122,18 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
             break;
         case PDF_DICT:
             {
-                pdf_obj **keys = NULL, **values = NULL;
+                pdf_dict_entry *entries = NULL;
 
                 ((pdf_dict *)*obj)->size = size;
                 if (size > 0) {
-                    keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_object_alloc");
-                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_object_alloc");
-                    if (keys == NULL || values == NULL) {
+                    entries = (pdf_dict_entry *)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_dict_entry), "pdfi_object_alloc");
+                    if (entries == NULL) {
                         gs_free_object(ctx->memory, *obj, "pdfi_object_alloc");
-                        gs_free_object(ctx->memory, keys, "pdfi_object_alloc");
-                        gs_free_object(ctx->memory, values, "pdfi_object_alloc");
                         *obj = NULL;
                         return_error(gs_error_VMerror);
                     }
-                    ((pdf_dict *)*obj)->values = values;
-                    ((pdf_dict *)*obj)->keys = keys;
-                    memset(((pdf_dict *)*obj)->values, 0x00, size * sizeof(pdf_obj *));
-                    memset(((pdf_dict *)*obj)->keys, 0x00, size * sizeof(pdf_obj *));
+                    ((pdf_dict *)*obj)->list = entries;
+                    memset(((pdf_dict *)*obj)->list, 0x00, size * sizeof(pdf_dict_entry));
                 }
             }
             break;

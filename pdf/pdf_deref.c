@@ -1065,7 +1065,7 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj, bool recur
      * circular references.
      */
     for (index=0; index<dictsize; index ++) {
-        Key = (pdf_name *)dict->keys[index];
+        Key = (pdf_name *)dict->list[index].key;
         if (pdfi_name_is(Key, "Parent"))
             continue;
 
