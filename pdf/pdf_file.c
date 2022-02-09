@@ -1434,18 +1434,12 @@ gs_offset_t pdfi_tell(pdf_c_stream *s)
     return stell(s->s);
 }
 
-/* Would it not make more sense to hold the unget_buffer backwards? */
 int pdfi_unread_byte(pdf_context *ctx, pdf_c_stream *s, char c)
 {
     if (s->unread_size == UNREAD_BUFFER_SIZE)
         return_error(gs_error_ioerror);
 
-    if (s->unread_size) {
-        memmove(s->unget_buffer+1, s->unget_buffer, s->unread_size);
-    }
-
-    s->unget_buffer[0] = c;
-    s->unread_size++;
+    s->unget_buffer[s->unread_size++] = c;
 
     return 0;
 }
@@ -1455,16 +1449,11 @@ int pdfi_unread(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, uint32_t size)
     if (size + s->unread_size > UNREAD_BUFFER_SIZE)
         return_error(gs_error_ioerror);
 
-    if (s->unread_size) {
-        uint32_t index = s->unread_size - 1;
-
-        do {
-            s->unget_buffer[size + index] = s->unget_buffer[index];
-        } while(index--);
+    Buffer += size;
+    while (size) {
+        s->unget_buffer[s->unread_size++] = *--Buffer;
+        size--;
     }
-
-    memcpy(s->unget_buffer, Buffer, size);
-    s->unread_size += size;
 
     return 0;
 }
@@ -1478,13 +1467,8 @@ int pdfi_read_byte(pdf_context *ctx, pdf_c_stream *s)
     if (s->eof && s->unread_size == 0)
         return EOFC;
 
-    if (s->unread_size) {
-        int c = s->unget_buffer[0];
-        s->unread_size--;
-        if (s->unread_size)
-            memmove(s->unget_buffer, s->unget_buffer+1, s->unread_size);
-        return c;
-    }
+    if (s->unread_size)
+        return (byte)s->unget_buffer[--s->unread_size];
 
     /* TODO the Ghostscript code uses sbufptr(s) to avoid a memcpy
      * at some point we should modify this code to do so as well.
@@ -1514,38 +1498,32 @@ int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t coun
         return 0;
 
     if (s->unread_size) {
-        if (s->unread_size >= total) {
-            memcpy(Buffer, s->unget_buffer, total);
-            for(i=0;i < s->unread_size - total;i++) {
-                s->unget_buffer[i] = s->unget_buffer[i + total];
-            }
-            s->unread_size -= total;
-            return total;
-        } else {
-            memcpy(Buffer, s->unget_buffer, s->unread_size);
-            total -= s->unread_size;
-            Buffer += s->unread_size;
-            i = s->unread_size;
-            s->unread_size = 0;
-            if (s->eof)
-                return i;
+        i = s->unread_size;
+        if (i >= total)
+            i = total;
+        bytes = i;
+        while (bytes) {
+            *Buffer++ = s->unget_buffer[--s->unread_size];
+            bytes--;
         }
+        total -= i;
+        if (total == 0 || s->eof)
+            return i;
     }
-    if (total) {
-        /* TODO the Ghostscript code uses sbufptr(s) to avoid a memcpy
-         * at some point we should modify this code to do so as well.
-         */
-        code = sgets(s->s, Buffer, total, &bytes);
-        if (code == EOFC) {
-            s->eof = true;
-        } else if (code == gs_error_ioerror) {
-            pdfi_set_error(ctx, code, "sgets", E_PDF_BADSTREAM, "pdfi_read_bytes", NULL);
-            s->eof = true;
-        } else if(code == ERRC) {
-            bytes = ERRC;
-        } else {
-            bytes = bytes + i;
-        }
+
+    /* TODO the Ghostscript code uses sbufptr(s) to avoid a memcpy
+     * at some point we should modify this code to do so as well.
+     */
+    code = sgets(s->s, Buffer, total, &bytes);
+    if (code == EOFC) {
+        s->eof = true;
+    } else if (code == gs_error_ioerror) {
+        pdfi_set_error(ctx, code, "sgets", E_PDF_BADSTREAM, "pdfi_read_bytes", NULL);
+        s->eof = true;
+    } else if(code == ERRC) {
+        bytes = ERRC;
+    } else {
+        bytes = bytes + i;
     }
 
     return bytes;
