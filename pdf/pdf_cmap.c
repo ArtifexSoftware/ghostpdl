@@ -33,6 +33,7 @@ static int cmap_usecmap_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte 
     pdf_cmap *pdficmap = (pdf_cmap *)s->client_data;
     pdf_name *n = NULL;
     pdf_cmap *upcmap = NULL;
+    int code = 0;
 
     if (pdf_ps_stack_count(s) < 1)
         return_error(gs_error_stackunderflow);
@@ -40,7 +41,7 @@ static int cmap_usecmap_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte 
     /* If we've already got some definitions, ignore the usecmap op */
     if (pdficmap->code_space.num_ranges == 0) {
         byte *nstr = NULL;
-        int code, len = s->cur[0].size;
+        int len = s->cur[0].size;
 
         if (pdf_ps_obj_has_type(&(s->cur[0]), PDF_PS_OBJ_NAME)) {
             nstr = s->cur[0].val.name;
@@ -49,9 +50,10 @@ static int cmap_usecmap_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte 
             nstr = s->cur[0].val.string;
         }
         else {
-            return_error(gs_error_typecheck);
+            code = gs_note_error(gs_error_typecheck);
         }
-        code = pdfi_name_alloc(pdficmap->ctx, nstr, len, (pdf_obj **)&n);
+        if (code >= 0)
+            code = pdfi_name_alloc(pdficmap->ctx, nstr, len, (pdf_obj **)&n);
         if (code >= 0) {
             pdfi_countup(n);
             code = pdfi_read_cmap(pdficmap->ctx, (pdf_obj *)n, &upcmap);
@@ -77,10 +79,13 @@ static int cmap_usecmap_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte 
                 }
             }
         }
-
     }
     pdfi_countdown(upcmap);
     pdfi_countdown(n);
+    if (code < 0) {
+        (void)pdf_ps_stack_pop(s, 1);
+        return code;
+    }
     return pdf_ps_stack_pop(s, 1);
 }
 
@@ -116,19 +121,25 @@ static int cmap_endcodespacerange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *
 
         code_space->ranges = (gx_code_space_range_t *)gs_alloc_byte_array(mem, code_space->num_ranges,
                           sizeof(gx_code_space_range_t), "cmap_endcodespacerange_func(ranges)");
-        if (nr > 0) {
-            memcpy(code_space->ranges, gcsr, nr);
-            gs_free_object(mem, gcsr, "cmap_endcodespacerange_func(gcsr");
+        if (code_space->ranges != NULL) {
+            if (nr > 0) {
+                memcpy(code_space->ranges, gcsr, nr);
+                gs_free_object(mem, gcsr, "cmap_endcodespacerange_func(gcsr");
+            }
+
+            for (i = nr; i < code_space->num_ranges; i++) {
+                int si = i - nr;
+                int s1 = s->cur[-((si * 2) + 1)].size < MAX_CMAP_CODE_SIZE ? s->cur[-((si * 2) + 1)].size : MAX_CMAP_CODE_SIZE;
+                int s2 = s->cur[-(si * 2)].size < MAX_CMAP_CODE_SIZE ? s->cur[-(si * 2)].size : MAX_CMAP_CODE_SIZE;
+
+                memcpy(code_space->ranges[i].first, s->cur[-((si * 2) + 1)].val.string, s1);
+                memcpy(code_space->ranges[i].last, s->cur[-(si * 2)].val.string, s2);
+                code_space->ranges[i].size = s->cur[-(si * 2)].size;
+            }
         }
-
-        for (i = nr; i < code_space->num_ranges; i++) {
-            int si = i - nr;
-            int s1 = s->cur[-((si * 2) + 1)].size < MAX_CMAP_CODE_SIZE ? s->cur[-((si * 2) + 1)].size : MAX_CMAP_CODE_SIZE;
-            int s2 = s->cur[-(si * 2)].size < MAX_CMAP_CODE_SIZE ? s->cur[-(si * 2)].size : MAX_CMAP_CODE_SIZE;
-
-            memcpy(code_space->ranges[i].first, s->cur[-((si * 2) + 1)].val.string, s1);
-            memcpy(code_space->ranges[i].last, s->cur[-(si * 2)].val.string, s2);
-            code_space->ranges[i].size = s->cur[-(si * 2)].size;
+        else {
+            (void)pdf_ps_stack_pop(s, to_pop);
+            return_error(gs_error_VMerror);
         }
     }
     return pdf_ps_stack_pop(s, to_pop);
@@ -233,7 +244,8 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
                 if (cmap_insert_map(cmap_range, pdfir) < 0) break;
             }
             else {
-                break;
+                (void)pdf_ps_stack_pop(s, to_pop);
+                return_error(gs_error_VMerror);
             }
         }
     }
@@ -280,6 +292,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
             pdf_ps_stack_object_t *arr;
             arr = (pdf_ps_stack_object_t *) gs_alloc_bytes(mem, sizeof(pdf_ps_stack_object_t), "cmap_endfbrange_func(pdf_ps_stack_object_t");
             if (arr == NULL) {
+                (void)pdf_ps_stack_pop(s, to_pop);
                 return_error(gs_error_VMerror);
             }
             else {
@@ -379,7 +392,8 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
                     if (cmap_insert_map(&(pdficmap->cmap_range), pdfir) < 0) break;
                 }
                 else {
-                    break;
+                    (void)pdf_ps_stack_pop(s, to_pop);
+                    return_error(gs_error_VMerror);
                 }
             }
         }
@@ -457,7 +471,8 @@ static int general_endcidchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *
                 if (cmap_insert_map(cmap_range, pdfir) < 0) break;
             }
             else {
-                break;
+                (void)pdf_ps_stack_pop(s, to_pop);
+                return_error(gs_error_VMerror);
             }
         }
     }
