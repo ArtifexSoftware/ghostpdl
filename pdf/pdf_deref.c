@@ -456,7 +456,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
         /* move all the saved offsets up by one */
         saved_offset[0] = saved_offset[1];
         saved_offset[1] = saved_offset[2];
-        saved_offset[2] = pdfi_unread_tell(ctx);;
+        saved_offset[2] = pdfi_unread_tell(ctx);
 
         code = pdfi_read_token(ctx, s, objnum, gen);
         if (code < 0) {

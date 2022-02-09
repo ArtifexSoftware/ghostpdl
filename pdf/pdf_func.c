@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -227,7 +227,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                             return_error(gs_error_syntaxerror);
                     } while (code >= 0);
                     TokenBuffer[Size] = 0x00;
-                    pdfi_unread(ctx, function_stream, &c, 1);
+                    pdfi_unread_byte(ctx, function_stream, c);
                     if (IsReal == 1) {
                         *size += put_float(&p, atof(TokenBuffer));
                     } else {
@@ -253,7 +253,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                             return_error(gs_error_syntaxerror);
                     }
                     TokenBuffer[Size] = 0x00;
-                    pdfi_unread(ctx, function_stream, &c, 1);
+                    pdfi_unread_byte(ctx, function_stream, c);
                     for (i=0;i < NumOps;i++) {
                         Op = (op_struct_t *)&ops_table[i];
                         if (Op->length < Size)

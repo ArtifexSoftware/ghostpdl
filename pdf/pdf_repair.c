@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2021 Artifex Software, Inc.
+/* Copyright (C) 2020-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -188,7 +188,7 @@ int pdfi_repair_file(pdf_context *ctx)
                             /* move all the saved offsets up by one */
                             saved_offset[0] = saved_offset[1];
                             saved_offset[1] = saved_offset[2];
-                            saved_offset[2] = pdfi_unread_tell(ctx);;
+                            saved_offset[2] = pdfi_unread_tell(ctx);
 
                             code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
                             if (code < 0) {

@@ -122,7 +122,7 @@ int pdfi_skip_white(pdf_context *ctx, pdf_c_stream *s)
     } while (iswhite(c));
 
     if (read > 0)
-        pdfi_unread(ctx, s, &c, 1);
+        pdfi_unread_byte(ctx, s, c);
     return 0;
 }
 
@@ -139,7 +139,7 @@ int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s)
         if (read) {
             if (c == 0x0A)
                 return 0;
-            pdfi_unread(ctx, s, &c, 1);
+            pdfi_unread_byte(ctx, s, c);
             return 0;
         }
         if (c == 0x0D)
@@ -384,7 +384,7 @@ static int pdfi_read_name(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_n
             break;
         } else {
             if (isdelimiter((char)Buffer[index])) {
-                pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
+                pdfi_unread_byte(ctx, s, Buffer[index]);
                 Buffer[index] = 0x00;
                 break;
             }
@@ -640,7 +640,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
                 case 0x0a:
                 case 0x0d:
                     if (octal_index != 0) {
-                        code = pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
+                        code = pdfi_unread_byte(ctx, s, (byte)Buffer[index]);
                         if (code < 0) {
                             gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
                             return code;
@@ -656,7 +656,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
                     break;
                 case ')':
                     if (octal_index != 0) {
-                        code = pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
+                        code = pdfi_unread_byte(ctx, s, (byte)Buffer[index]);
                         if (code < 0) {
                             gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
                             return code;
@@ -688,7 +688,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
                             Buffer[index] = (octal[0] * 64) + (octal[1] * 8) + octal[2];
                             octal_index = 0;
                         } else {
-                            code = pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
+                            code = pdfi_unread_byte(ctx, s, (byte)Buffer[index]);
                             if (code < 0) {
                                 gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
                                 return code;
@@ -815,11 +815,11 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
 
         if (bytes > 0) {
             if (iswhite(Buffer[index])) {
-                pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
+                pdfi_unread_byte(ctx, s, (byte)Buffer[index]);
                 break;
             } else {
                 if (isdelimiter(Buffer[index])) {
-                    pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
+                    pdfi_unread_byte(ctx, s, (byte)Buffer[index]);
                     break;
                 }
             }
@@ -1027,7 +1027,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
         case '+':
         case '-':
         case '.':
-            pdfi_unread(ctx, s, (byte *)&Buffer[0], 1);
+            pdfi_unread_byte(ctx, s, (byte)Buffer[0]);
             code = pdfi_read_num(ctx, s, indirect_num, indirect_gen);
             if (code < 0)
                 return code;
@@ -1057,14 +1057,14 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
                 return 1;
             } else {
                 if (Buffer[1] == '>') {
-                    pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
+                    pdfi_unread_byte(ctx, s, (byte)Buffer[1]);
                     code =  pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
                     if (code < 0)
                         return code;
                     return 1;
                 } else {
                     if (ishex(Buffer[1])) {
-                        pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
+                        pdfi_unread_byte(ctx, s, (byte)Buffer[1]);
                         code = pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
                         if (code < 0)
                             return code;
@@ -1085,7 +1085,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
                 return 1;
             }
             else {
-                pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
+                pdfi_unread_byte(ctx, s, (byte)Buffer[1]);
                 return_error(gs_error_syntaxerror);
             }
             break;
@@ -1130,7 +1130,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
                     return_error(gs_error_syntaxerror);
                 return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
             }
-            pdfi_unread(ctx, s, (byte *)&Buffer[0], 1);
+            pdfi_unread_byte(ctx, s, (byte)Buffer[0]);
             code = pdfi_read_keyword(ctx, s, indirect_num, indirect_gen);
             if (code < 0)
                 return code;

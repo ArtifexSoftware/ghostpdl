@@ -541,7 +541,7 @@ static int skip_to_digit(pdf_context *ctx, pdf_c_stream *s, unsigned int limit)
         if (bytes == 0)
             return_error(gs_error_ioerror);
         if (c >= 0x30 && c <= 0x39) {
-            pdfi_unread(ctx, s, &c, 1);
+            pdfi_unread_byte(ctx, s, c);
             break;
         }
         read += bytes;
@@ -565,7 +565,7 @@ static int read_digits(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, int limi
         if (bytes == 0)
             return_error(gs_error_ioerror);
         if (Buffer[read] < 0x30 || Buffer[read] > 0x39) {
-            pdfi_unread(ctx, s, &Buffer[read], 1);
+            pdfi_unread_byte(ctx, s, Buffer[read]);
             break;
         }
         read += bytes;
@@ -776,7 +776,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
             return_error(gs_error_ioerror);
         j = 19;
         while (Buffer[j] != 0x0D && Buffer[j] != 0x0A) {
-            pdfi_unread(ctx, s, (byte *)&Buffer[j], 1);
+            pdfi_unread_byte(ctx, s, (byte)Buffer[j]);
             if (--j < 0) {
                 dmprintf(ctx->memory, "Invalid xref entry, line terminator missing.\n");
                 code = read_xref_entry_slow(ctx, s, &off, &gen, &free);
