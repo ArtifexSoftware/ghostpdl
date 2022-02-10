@@ -458,10 +458,6 @@ typedef struct pdf_context_s
     pdf_dict *AcroForm;
     bool NeedAppearances; /* From AcroForm, if any */
 
-
-    /* Interpreter level PDF objects */
-    pdf_name *currentSpace;
-
     /* The interpreter operand stack */
     uint32_t stack_size;
     pdf_obj **stack_bot;

@@ -23,23 +23,28 @@
 #include "pdf_stack.h"  /* for pdfi_countup/countdown */
 #include "pdf_misc.h"   /* for pdf_name_cmp */
 
-static inline void pdfi_set_colour_callback(gs_color_space *pcs, pdf_context *ctx, gs_cspace_free_proc_t pdfi_cspace_free_callback)
+static inline void pdfi_set_colourspace_name(pdf_context *ctx, gs_color_space *pcs, pdf_name *n)
 {
     if (pcs->interpreter_data != NULL) {
         pdf_obj *o = (pdf_obj *)(pcs->interpreter_data);
-        if (ctx->currentSpace != NULL && o->type == PDF_NAME) {
+        if (n != NULL && o->type == PDF_NAME) {
             pdfi_countdown(o);
             pcs->interpreter_data = NULL;
         }
     }
 
-    if (ctx->currentSpace != NULL) {
-        pcs->interpreter_data = ctx->currentSpace;
-        pdfi_countup(ctx->currentSpace);
+    if (n != NULL) {
+        pcs->interpreter_data = n;
+        pdfi_countup(n);
     } else {
         if (pcs->interpreter_data == NULL)
             pcs->interpreter_data = ctx;
     }
+}
+
+static inline void pdfi_set_colour_callback(gs_color_space *pcs, pdf_context *ctx, gs_cspace_free_proc_t pdfi_cspace_free_callback)
+{
+    pcs->interpreter_data = ctx;
     pcs->interpreter_free_cspace_proc = pdfi_cspace_free_callback;
 }
 
@@ -80,7 +85,7 @@ int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs);
 int pdfi_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict);
 int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image);
 int pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_c_stream *stream, gs_offset_t offset,
-                                           unsigned int length, int comps, int *icc_N, gs_color_space **ppcs);
+                                           unsigned int length, int comps, int *icc_N, ulong dictkey, gs_color_space **ppcs);
 
 /* Page level spot colour detection and enumeration */
 int pdfi_check_ColorSpace_for_spots(pdf_context *ctx, pdf_obj *space, pdf_dict *parent_dict, pdf_dict *page_dict, pdf_dict *spot_dict);

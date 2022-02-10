@@ -1270,7 +1270,7 @@ cleanupExit:
 
 static int
 pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *image_info,
-                     int *comps, gs_color_space **pcs)
+                     int *comps, ulong dictkey, gs_color_space **pcs)
 {
     int code = 0;
     pdfi_jpx_info_t *jpx_info = &image_info->jpx_info;
@@ -1327,7 +1327,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
 
                 code = pdfi_create_icc_colorspace_from_stream(ctx, source, jpx_info->icc_offset,
                                                               jpx_info->icc_length, jpx_info->comps, &dummy,
-                                                              pcs);
+                                                              dictkey, pcs);
                 if (code < 0) {
                     dmprintf2(ctx->memory,
                               "WARNING JPXDecode: Error setting icc colorspace (offset=%d,len=%d)\n",
@@ -1696,7 +1696,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     /* Get the color for this image */
-    code = pdfi_image_get_color(ctx, source, &image_info, &comps, &pcs);
+    code = pdfi_image_get_color(ctx, source, &image_info, &comps, image_stream->object_num, &pcs);
     if (code < 0)
         goto cleanupExit;
 

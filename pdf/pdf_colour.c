@@ -840,7 +840,7 @@ cleanupExit0:
 /* Starting with the ICCBased colour space */
 
 /* This routine is mostly a copy of seticc() in zicc.c */
-static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, int *icc_N, float *range_buff, gs_color_space **ppcs)
+static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, int *icc_N, float *range_buff, ulong dictkey, gs_color_space **ppcs)
 {
     int                     code, k;
     gs_color_space *        pcs;
@@ -997,13 +997,16 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
         rc_adjust(picc_profile, -2, "pdfi_create_icc");
         rc_increment(pcs->cmm_icc_profile_data);
     }
+    /* Add the color space to the profile cache */
+    if (dictkey != 0)
+        gsicc_add_cs(ctx->pgs, pcs, dictkey);
 
     if (ppcs!= NULL){
         *ppcs = pcs;
         pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
     } else {
         code = pdfi_gs_setcolorspace(ctx, pcs);
-        rc_decrement_only_cs(pcs, "pdfi_seticc_cal");
+        rc_decrement_only_cs(pcs, "pdfi_create_icc");
     }
 
     /* The context has taken a reference to the colorspace. We no longer need
@@ -1066,7 +1069,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *c
     }
 
     /* Now, finally, we can call the code to create and set the profile */
-    code = pdfi_create_icc(ctx, cname, profile_stream->s, (int)N, icc_N, range, ppcs);
+    code = pdfi_create_icc(ctx, cname, profile_stream->s, (int)N, icc_N, range, dictkey, ppcs);
 
     code1 = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
 
@@ -1201,15 +1204,11 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         /* Failed to set the ICCBased space, attempt to use the Alternate */
         code = pdfi_dict_knownget(ctx, dict, "Alternate", &Alternate);
         if (code > 0) {
-            pdf_name *Saved = ctx->currentSpace;
-            ctx->currentSpace = NULL;
-
             /* The Alternate should be one of the device spaces, therefore a Name object. If its not, fallback to using /N */
             if (Alternate->type == PDF_NAME)
                 code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict,
                                                       page_dict, ppcs, inline_image);
             pdfi_countdown(Alternate);
-            ctx->currentSpace = Saved;
             if (code == 0) {
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_BADICC_USE_ALT, "pdfi_create_iccbased", NULL);
                 goto done;
@@ -1635,12 +1634,8 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
 
     } else {
         if (o->type == PDF_ARRAY) {
-            pdf_name *Saved = ctx->currentSpace;
-            ctx->currentSpace = NULL;
-
             ArrayAlternate = (pdf_array *)o;
             code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt, inline_image);
-            ctx->currentSpace = Saved;
             if (code < 0)
                 goto pdfi_separation_error;
         }
@@ -1813,12 +1808,8 @@ all_error:
 
     } else {
         if (o->type == PDF_ARRAY) {
-            pdf_name *Saved = ctx->currentSpace;
-            ctx->currentSpace = NULL;
-
             ArrayAlternate = (pdf_array *)o;
             code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt, inline_image);
-            ctx->currentSpace = Saved;
             if (code < 0)
                 /* OSS-fuzz error 42973; we don't need to count down 'o' here because
                  * we have assigned it to ArrayAlternate and both the success and error
@@ -2268,7 +2259,7 @@ static int pdfi_create_JPX_space(pdf_context *ctx, const char *name, int num_com
     int code, icc_N;
     float range_buff[6] = {0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f};
 
-    code = pdfi_create_icc(ctx, (char *)name, NULL, num_components, &icc_N, range_buff, ppcs);
+    code = pdfi_create_icc(ctx, (char *)name, NULL, num_components, &icc_N, range_buff, 0, ppcs);
     return code;
 }
 
@@ -2418,10 +2409,14 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
             }
         }
 
-        ctx->currentSpace = name;
         /* recursion */
         code = pdfi_create_colorspace(ctx, ref_space, stream_dict, page_dict, ppcs, inline_image);
-        ctx->currentSpace = NULL;
+
+        if (ppcs != NULL)
+            pdfi_set_colourspace_name(ctx, *ppcs, name);
+        else
+            pdfi_set_colourspace_name(ctx, ctx->pgs->color[0].color_space, name);
+
         pdfi_countdown(ref_space);
         return code;
     }
@@ -2440,7 +2435,7 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
  */
 int
 pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_c_stream *stream, gs_offset_t offset,
-                                       unsigned int length, int comps, int *icc_N, gs_color_space **ppcs)
+                                       unsigned int length, int comps, int *icc_N, ulong dictkey, gs_color_space **ppcs)
 {
     pdf_c_stream *profile_stream = NULL;
     byte *profile_buffer;
@@ -2463,7 +2458,7 @@ pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_c_stream *stream, g
     }
 
     /* Now, finally, we can call the code to create and set the profile */
-    code = pdfi_create_icc(ctx, NULL, profile_stream->s, comps, icc_N, range, ppcs);
+    code = pdfi_create_icc(ctx, NULL, profile_stream->s, comps, icc_N, range, dictkey, ppcs);
 
     code1 = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
 
