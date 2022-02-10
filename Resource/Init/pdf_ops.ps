@@ -1027,6 +1027,17 @@ end readonly def
    translate } if
 } bind executeonly def
 
+/unsettextmatrix {
+  .currenttextrise 0 ne {
+    0 .currenttextrise neg translate
+  } if
+  .currenttexthscaling 1 ne {
+    1 .currenttexthscaling div 1 scale
+  } if
+  matrix currentmatrix
+  matrix .currenttextmatrix matrix invertmatrix concat setmatrix
+} bind executeonly def
+
 /settextstate {
         % The text state can be set even outside BT/ET.
   currentdict /TextSaveMatrix known {
