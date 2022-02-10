@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2021 Artifex Software, Inc.
+% Copyright (C) 2001-2022 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -366,12 +366,21 @@ drawopdict begin
   /q { q } executeonly def
   /Q { Q } executeonly def
                         % Graphics state setting
-  /cm { //cmmatrix astore
+  /cm {
+        //cmmatrix astore
+        % If inside a BT/ET block, we need to undo the text matrix, then apply
+        % the cm, then re-apply the text matrix :-( Of course the spec says
+        % this isn't even legal.
+        currentdict /TextSaveMatrix .knownget {
+          pop
+          unsettextmatrix
+        } if
         .getpath
         exch concat
         newpath { exec } forall
         % If inside a BT/ET block, we need to update the TextSaveMatrix
         currentdict /TextSaveMatrix .knownget {
+          settextmatrix
           //cmmatrix exch dup concatmatrix pop
         } if
         % And if we ha\ve done a gsave inside a text block, we need to update
