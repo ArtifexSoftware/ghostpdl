@@ -1157,6 +1157,7 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     gs_screen_enum *penum = NULL;
     gs_point pt;
     gx_transfer_map *pmap = NULL;
+    bool as;
 
     code = pdfi_dict_get_number(ctx, halftone_dict, "Frequency", &f);
     if (code < 0)
@@ -1168,6 +1169,12 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
 
     code = pdfi_dict_get(ctx, halftone_dict, "SpotFunction", &obj);
     if (code < 0)
+        return code;
+
+    code = pdfi_dict_get_bool(ctx, halftone_dict, "AccurateScreens", &as);
+    if (code == gs_error_undefined)
+        as = 0;
+    else if (code < 0)
         return code;
 
     order = (gx_ht_order *)gs_alloc_bytes(ctx->memory, sizeof(gx_ht_order), "build_type1_halftone");
@@ -1226,6 +1233,7 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     phtc->params.spot.transfer = (code > 0 ? (gs_mapping_proc) 0 : gs_mapped_transfer);
     phtc->params.spot.transfer_closure.proc = 0;
     phtc->params.spot.transfer_closure.data = 0;
+    phtc->params.spot.accurate_screens = as;
     phtc->type = ht_type_spot;
     code = pdfi_get_name_index(ctx, name, len, (unsigned int *)&phtc->cname);
     if (code < 0)
