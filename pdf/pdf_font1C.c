@@ -1749,6 +1749,8 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                     if (code < 0) {
                         pdfi_countdown(font->Subrs);
                         font->Subrs = NULL;
+                        font->NumSubrs = 0;
+                        break;
                     }
                 }
             }
