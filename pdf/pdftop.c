@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -471,31 +471,6 @@ static int plist_value_get_bool(gs_param_typed_value *pvalue, bool *pbool)
     return_error(gs_error_typecheck);
 }
 
-/* Get the Overprint value and translate it to a numeric value */
-static int
-pdfi_get_overprint_param(pdf_context *ctx, gs_param_typed_value *pvalue)
-{
-    char *val = NULL;
-    int len;
-    int code;
-
-    code = plist_value_get_string_or_name(ctx, pvalue, &val, &len);
-    if (code < 0)
-        return code;
-
-    ctx->args.overprint_control = PDF_OVERPRINT_ENABLE;
-    if (val != NULL && !strncmp(val, "disable", len)) {
-        ctx->args.overprint_control = PDF_OVERPRINT_DISABLE;
-    }
-    if (val != NULL && !strncmp(val, "simulate", len)) {
-        ctx->args.overprint_control = PDF_OVERPRINT_SIMULATE;
-    }
-
-    if (val)
-        gs_free_object(ctx->memory, val, "Transparency param");
-    return code;
-}
-
 static int
 pdf_impl_set_param(pl_interp_implementation_t *impl,
                    gs_param_list    *plist)
@@ -671,11 +646,6 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
         }
         if (!strncmp(param, "PDFPassword", 11)) {
             code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->encryption.Password , &ctx->encryption.PasswordLen);
-            if (code < 0)
-                return code;
-        }
-        if (!strncmp(param, "Overprint", 9)) {
-            code = pdfi_get_overprint_param(ctx, &pvalue);
             if (code < 0)
                 return code;
         }

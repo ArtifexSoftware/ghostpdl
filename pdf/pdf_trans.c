@@ -599,7 +599,7 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
 
     ctx->page.needs_OP = false;
     ctx->page.simulate_op = false;
-    switch(ctx->args.overprint_control) {
+    switch((pdf_overprint_control_t) ctx->pgs->device->icc_struct->overprint_control) {
     case PDF_OVERPRINT_DISABLE:
         /* Use defaults */
         break;
