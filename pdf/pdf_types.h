@@ -109,6 +109,8 @@ typedef enum pdf_obj_type_e {
     uint16_t indirect_gen
 #endif
 
+#define PDF_NAME_DECLARED_LENGTH 4096
+
 typedef struct pdf_obj_s {
     pdf_obj_common;
 } pdf_obj;
@@ -130,13 +132,13 @@ typedef struct pdf_num_s {
 typedef struct pdf_string_s {
     pdf_obj_common;
     uint32_t length;
-    unsigned char data[sizeof(int32_t)];
+    unsigned char data[PDF_NAME_DECLARED_LENGTH];
 } pdf_string;
 
 typedef struct pdf_name_s {
     pdf_obj_common;
     uint32_t length;
-    unsigned char data[sizeof(int32_t)];
+    unsigned char data[PDF_NAME_DECLARED_LENGTH];
 } pdf_name;
 
 typedef enum pdf_key_e {
@@ -155,7 +157,7 @@ typedef struct pdf_keyword_s {
     pdf_obj_common;
     uint32_t length;
     pdf_key key;
-    unsigned char data[sizeof(int32_t)];
+    unsigned char data[PDF_NAME_DECLARED_LENGTH];
 } pdf_keyword;
 
 typedef struct pdf_array_s {
