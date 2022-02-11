@@ -1019,6 +1019,34 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *c
     byte *profile_buffer;
     gs_offset_t savedoffset;
     int code, code1;
+    ulong dictkey = 0;
+
+    /* See if the color space is in the profile cache */
+    /* NOTE! 0 indicates a named colour space for JPX images, do not attempt to
+     * find a cached space for this. Conveniently should we somehow manage to get
+     * here from an array or other object which is not an indirect reference then we will
+     * again not attempt to cache the space or lookup the cache.
+     */
+    if (!gs_currentoverrideicc(ctx->pgs)) {
+        if (ICC_obj != NULL && ICC_obj->object_num != 0) {
+            gs_color_space *pcs = NULL;
+
+            pcs = gsicc_find_cs(ICC_obj->object_num, ctx->pgs);
+            if (pcs != NULL) {
+                if (ppcs!= NULL){
+                    *ppcs = pcs;
+                } else {
+                    code = pdfi_gs_setcolorspace(ctx, pcs);
+                    rc_decrement_only_cs(pcs, "pdfi_create_iccprofile");
+                }
+                *icc_N = gs_color_space_num_components(pcs);
+                /* We're passing back a new reference, increment the count */
+                rc_adjust_only(pcs, 1, "pdfi_create_iccprofile, return cached ICC profile");
+                return 0;
+            }
+            dictkey = ICC_obj->object_num;
+        }
+    }
 
     /* Save the current stream position, and move to the start of the profile stream */
     savedoffset = pdfi_tell(ctx->main_stream);
