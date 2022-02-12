@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -123,7 +123,8 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     while ((flag = shade_next_flag(&cs, num_bits)) >= 0) {
         switch (flag) {
             default:
-                return_error(gs_error_rangecheck);
+                code = gs_note_error(gs_error_rangecheck);
+                goto error;
             case 0:
                 if ((code = Gt_next_vertex(pshm, &cs, &va, ca)) < 0 ||
                     (code = shade_next_flag(&cs, num_bits)) < 0 ||
@@ -150,6 +151,7 @@ v2:		if ((code = Gt_next_vertex(pshm, &cs, &vc, cc)) < 0)
         }
         cs.align(&cs, 8); /* Debugged with 12-14O.PS page 2. */
     }
+error:
     release_colors(&pfs, pfs.color_stack, 3);
     if (pfs.icclink != NULL) gsicc_release_link(pfs.icclink);
     if (term_patch_fill_state(&pfs))
