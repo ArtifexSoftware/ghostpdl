@@ -1031,7 +1031,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *c
      * again not attempt to cache the space or lookup the cache.
      */
     if (!gs_currentoverrideicc(ctx->pgs)) {
-        if (ICC_obj != NULL && ICC_obj->object_num != 0) {
+        if (ICC_obj->object_num != 0) {
             gs_color_space *pcs = NULL;
 
             pcs = gsicc_find_cs(ICC_obj->object_num, ctx->pgs);
