@@ -175,6 +175,8 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     code = pdfi_dict_get_int(ctx, sdict, "Size", &size);
     if (code < 0)
         return code;
+    if (size < 1)
+        return 0;
 
     if (size < 0 || size > floor((double)ARCH_MAX_SIZE_T / (double)sizeof(xref_entry)))
         return_error(gs_error_rangecheck);
