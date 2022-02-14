@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1375,7 +1375,7 @@ static int
 pdfi_fapi_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                    gs_char chr, gs_glyph glyph)
 {
-    int code;
+    int code = 0;
     gs_font_base *pbfont1;
     gs_fapi_server *I;
 
@@ -1393,9 +1393,16 @@ pdfi_fapi_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
             I->ff.client_font_data2 = cidpfont;
         }
     }
+    /* If between the font's creation and now another interpreter has driven FAPI (i.e. in a Postscript Begin/EndPage
+       context, the FAPI server data may end up set appropriately for the other interpreter, if that's happened, put
+       ours back before trying to interpret the glyph.
+    */
+    if (((gs_fapi_server *)pbfont1->FAPI)->ff.get_glyphname_or_cid != pdfi_fapi_get_glyphname_or_cid) {
+        code = pdfi_fapi_passfont((pdf_font *)pbfont1->client_data, 0, NULL, NULL, NULL, 0);
+    }
 
-    code = gs_fapi_do_char((gs_font *)pbfont1, pgs, (gs_text_enum_t *) penum, NULL, false,
-                        NULL, NULL, chr, glyph, 0);
+    if (code >= 0)
+        code = gs_fapi_do_char((gs_font *)pbfont1, pgs, (gs_text_enum_t *) penum, NULL, false, NULL, NULL, chr, glyph, 0);
 
     return (code);
 }
@@ -1463,9 +1470,7 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
         /* doesn't really matter for non-ttf */
         *local_pdf_ff_stub.ttf_cmap_req = *nonsymbolic_req;
     }
-    /* The plfont should contain everything we need, but setting the client data for the server
-     * to pbfont makes as much sense as setting it to NULL.
-     */
+
     gs_fapi_set_servers_client_data(pbfont->memory,
                                     (const gs_fapi_font *)&local_pdf_ff_stub,
                                     (gs_font *)pbfont);
