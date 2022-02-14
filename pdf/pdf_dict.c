@@ -148,7 +148,7 @@ int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indir
             d->list[i].key = ctx->stack_top[-2];
             pdfi_countup(d->list[i].key);
 #if DEBUG_DICT
-            key = (pdf_name *)d->keys[i];
+            key = (pdf_name *)d->list[i].key;
 #endif
             d->list[i].value = ctx->stack_top[-1];
             pdfi_countup(d->list[i].value);
