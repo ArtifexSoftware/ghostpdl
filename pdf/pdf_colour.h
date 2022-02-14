@@ -44,7 +44,8 @@ static inline void pdfi_set_colourspace_name(pdf_context *ctx, gs_color_space *p
 
 static inline void pdfi_set_colour_callback(gs_color_space *pcs, pdf_context *ctx, gs_cspace_free_proc_t pdfi_cspace_free_callback)
 {
-    pcs->interpreter_data = ctx;
+    if (pcs->interpreter_data == NULL)
+        pcs->interpreter_data = ctx;
     pcs->interpreter_free_cspace_proc = pdfi_cspace_free_callback;
 }
 
