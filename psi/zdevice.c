@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -509,10 +509,7 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
 int
 zsetdevice_no_safer(i_ctx_t *i_ctx_p, gx_device *new_dev)
 {
-    gx_device *dev = gs_currentdevice(igs);
     int code;
-
-    dev->ShowpageCount = 0;
 
     if (new_dev == NULL)
         return gs_note_error(gs_error_undefined);
