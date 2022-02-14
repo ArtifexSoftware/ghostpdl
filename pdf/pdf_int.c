@@ -586,7 +586,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
                     c -= '0';
                     if (c1 < 0) {
                         /* Nothing to do, or unread */
-                    } else if (c1 < '0' && c1 > '7') {
+                    } else if (c1 < '0' || c1 > '7') {
                         pdfi_unread_byte(ctx, s, (char)c1);
                     } else {
                         c = c*8 + c1 - '0';
