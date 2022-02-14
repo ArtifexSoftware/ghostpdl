@@ -293,20 +293,14 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         return code;
 
     if ((malformed && !recovered) || (!real && doubleneg)) {
-        char extra_info[gp_file_name_sizeof];
-
-        gs_sprintf(extra_info, "Treating malformed number %s as 0", Buffer);
-        pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", extra_info);
+        pdfi_set_error_var(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed number %s as 0", Buffer);
         num->value.i = 0;
     } else if (has_exponent) {
         float f;
         if (sscanf((char *)Buffer, "%g", &f) == 1) {
             num->value.d = f;
         } else {
-            char extra_info[gp_file_name_sizeof];
-
-            gs_sprintf(extra_info, "Treating malformed float %s as 0", Buffer);
-            pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", extra_info);
+            pdfi_set_error_var(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer);
             num->value.d = 0;
         }
     } else if (real) {

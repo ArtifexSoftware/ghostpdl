@@ -557,6 +557,10 @@ static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, const char *
         pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
 }
 
+/* Variants of the above that work in a printf style. */
+void pdfi_set_error_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *fmt, ...);
+void pdfi_set_warning_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *fmt, ...);
+
 #define PURGE_CACHE_PER_PAGE 0
 
 #if PURGE_CACHE_PER_PAGE

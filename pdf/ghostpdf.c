@@ -526,6 +526,37 @@ void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_fun
     }
 }
 
+void pdfi_set_error_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *fmt, ...)
+{
+    if (pdfi_error != 0)
+        ctx->pdf_errors[pdfi_error / (sizeof(char) * 8)] |= 1 << pdfi_error % (sizeof(char) * 8);
+    if (ctx->args.verbose_errors) {
+        char extra_info[gp_file_name_sizeof];
+        va_list args;
+
+        va_start(args, fmt);
+        (void)vsnprintf(extra_info, sizeof(extra_info), fmt, args);
+        va_end(args);
+
+        pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
+    }
+}
+
+void pdfi_set_warning_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *fmt, ...)
+{
+    ctx->pdf_warnings[pdfi_warning / (sizeof(char) * 8)] |= 1 << pdfi_warning % (sizeof(char) * 8);
+    if (ctx->args.verbose_warnings) {
+        char extra_info[gp_file_name_sizeof];
+        va_list args;
+
+        va_start(args, fmt);
+        (void)vsnprintf(extra_info, sizeof(extra_info), fmt, args);
+        va_end(args);
+
+        pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
+    }
+}
+
 void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, const char *info)
 {
 #ifdef DEBUG
