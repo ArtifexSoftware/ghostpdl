@@ -178,29 +178,6 @@ static float acrobat_compatible_atof(char *s)
     }
 }
 
-/* Fast but inaccurate atoi, lifted from MuPDF. */
-static int fast_atoi(char *s)
-{
-    int neg = 0;
-    int i = 0;
-
-    while (*s == '-') {
-        neg = 1;
-        ++s;
-    }
-    while (*s == '+') {
-        ++s;
-    }
-
-    while (*s >= '0' && *s <= '9') {
-        /* We deliberately ignore overflow here. */
-        i = i * 10 + (*s - '0');
-        ++s;
-    }
-
-    return neg ? -i : i;
-}
-
 static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     byte Buffer[256];
@@ -210,7 +187,8 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     bool has_exponent = false;
     unsigned short exponent_index = 0;
     pdf_num *num;
-    int code = 0, malformed = false, doubleneg = false, recovered = false;
+    int code = 0, malformed = false, doubleneg = false, recovered = false, negative = false;
+    int int_val = 0;
 
     pdfi_skip_white(ctx, s);
 
@@ -224,19 +202,19 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         if (c < 0)
             return_error(gs_error_ioerror);
 
-        Buffer[index] = (byte)c;
-
-        if (iswhite((char)Buffer[index])) {
+        if (iswhite(c)) {
             Buffer[index] = 0x00;
             break;
-        } else {
-            if (isdelimiter((char)Buffer[index])) {
-                pdfi_unread_byte(ctx, s, (byte)c);
-                Buffer[index] = 0x00;
-                break;
-            }
+        } else if (isdelimiter(c)) {
+            pdfi_unread_byte(ctx, s, (byte)c);
+            Buffer[index] = 0x00;
+            break;
         }
-        if (Buffer[index] == '.') {
+        Buffer[index] = (byte)c;
+
+        if (c >= '0' && c <= '9') {
+            int_val = int_val*10 + c - '0';
+        } else if (c == '.') {
             if (has_decimal_point == true) {
                 if (ctx->args.pdfstoponerror)
                     return_error(gs_error_syntaxerror);
@@ -245,7 +223,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                 has_decimal_point = true;
                 real = true;
             }
-        } else if (Buffer[index] == 'e' || Buffer[index] == 'E') {
+        } else if (c == 'e' || c == 'E') {
             /* TODO: technically scientific notation isn't in PDF spec,
              * but gs seems to accept it, so we should also?
              */
@@ -259,28 +237,43 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                 exponent_index = index;
                 real = true;
             }
-        } else if (Buffer[index] == '-' || Buffer[index] == '+') {
+        } else if (c == '-') {
+            /* Any - sign not at the start of the string, or just after an exponent
+             * indicates a malformed number. */
             if (!(index == 0 || (has_exponent && index == exponent_index+1))) {
+                pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL);
                 if (ctx->args.pdfstoponerror)
                     return_error(gs_error_syntaxerror);
-                /* Acrobat weirdness. We need to know if a number starts with two - signs
-                 * because Acrobat treats real and integers defined this way differently!
-                 * Double-negated integers are treated as 0, and reals are treated as if
-                 * they had one negative sign. We can't tell whether the number is a real
-                 * or not yet, we do that below.
-                 */
-                pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL);
-                if (Buffer[index - 1] == '-') {
-                    doubleneg = true;
-                    index -= 1;
-                }
-                else {
+                if (Buffer[index - 1] != '-') {
+                    /* We are parsing a number line 123-56. We should continue parsing, but
+                     * ignore anything from the second -. */
                     malformed = true;
-                    Buffer[index] = 0x00;
+                    Buffer[index] = 0;
                     recovered = true;
                 }
             }
-        } else if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
+            if (!has_exponent) {
+                doubleneg = negative;
+                negative = 1;
+            }
+        } else if (c == '+') {
+            if (index == 0 || (has_exponent && index == exponent_index+1)) {
+                /* Just drop the + it's pointless, and it'll get in the way
+                 * of our negation handling for floats. */
+                index--;
+            } else {
+                pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL);
+                if (ctx->args.pdfstoponerror)
+                    return_error(gs_error_syntaxerror);
+                if (Buffer[index - 1] != '-') {
+                    /* We are parsing a number line 123-56. We should continue parsing, but
+                     * ignore anything from the second -. */
+                    malformed = true;
+                    Buffer[index] = 0;
+                    recovered = true;
+                }
+            }
+        } else {
             pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGWHITESPACE, "pdfi_read_num", (char *)"Ignoring missing white space while parsing number");
             if (ctx->args.pdfstoponerror)
                 return_error(gs_error_syntaxerror);
@@ -319,7 +312,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     } else if (real) {
         num->value.d = acrobat_compatible_atof((char *)Buffer);
     } else {
-        num->value.i = fast_atoi((char *)Buffer);
+        num->value.i = doubleneg ? 0 : negative ? -int_val : int_val;
     }
     if (ctx->args.pdfdebug) {
         if (real)
