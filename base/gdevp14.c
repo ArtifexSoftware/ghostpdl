@@ -10935,7 +10935,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_gstate *pgs,
        this, so we have to pass on the clist_writer device to enable proper
        mapping to the transparency group color space. */
 
-    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
+    if (gx_dc_is_pattern2_color(pdcolor)) {
         /* Non-idempotent blends require a transparency
          * group to be pushed because shadings might
          * paint several pixels twice. */
@@ -11021,7 +11021,7 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_gstate *pgs,
        different color space, then we need to get the proper device information
        passed along so that we use the correct color procs and colorinfo about
        the transparency device and not the final target device */
-    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
+    if (gx_dc_is_pattern2_color(pdcolor)) {
         /* Non-idempotent blends require a transparency
          * group to be pushed because shadings might
          * paint several pixels twice. */
