@@ -1258,6 +1258,10 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     ctx->page.num_spots = spots;
     ctx->page.has_OP = tracker.has_overprint;
 
+    /* High level devices do not render overprint */
+    if (ctx->device_state.HighLevelDevice)
+        ctx->page.has_OP = false;
+
  exit:
     (void)pdfi_check_free_tracker(ctx, &tracker);
     return code;
