@@ -839,8 +839,8 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
         if (code < 0)
             return code;
 
-        if (section_start + section_size > max_obj)
-            max_obj = section_start + section_size;
+        if (section_size > 0 && section_start + section_size - 1 > max_obj)
+            max_obj = section_start + section_size - 1;
 
         if (ctx->stack_top - o > 0) {
             k = (pdf_keyword *)ctx->stack_top[-1];
