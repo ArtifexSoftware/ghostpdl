@@ -304,86 +304,15 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
  * 'unknown' message.
  */
 const char *pdf_error_strings[] = {
-    "no error",
-    "no header detected",
-    "header lacks a version number",
-    "no startxref token found",
-    "startxref offset invalid",
-    "couldn't read hybrid file's XrefStm",
-    "error in xref table",
-    "too few entries in xref table",
-    "content stream lacks endstream",
-    "request for unknown filter",
-    "missing white space after number",
-    "malformed number",
-    "unbalanced or unescaped character '(' in string",
-    "invalid object number",
-    "object lacks an endobj",
-    "error executing PDF token",
-    "potential token is too long",
-    "Page object doe snot have /Page type",
-    "circular reference to indirect object",
-    "couldn't repair PDF file",
-    "PDF file was repaired",
-    "error reading a stream",
-    "obj token missing",
-    "error in Page dictionary",
-    "out of memory",
-    "error reading page dictionary",
-    "stack underflow",
-    "error in stream dictionary",
-    "stream inherited a resource",
-    "counting down reference to freed object",
-    "error in transparency XObject",
-    "object lacks a required Subtype",
-    "error in image colour",
-    "dictionary contains a key which (indirectly) references the dictionary.",
-    "Image has both ImageMask and ColorSpace keys.",
-    ""                                          /* last error, should not be used */
+#define PARAM(A,B) B
+#include "pdf_errors.h"
+    ""                               /* last error, should not be used */
 };
 
 const char *pdf_warning_strings[] = {
-    "no warning",
-    "incorrect xref size",
-    "used inline filter name inappropriately",
-    "used inline colour space inappropriately",
-    "used inline image key inappropriately",
-    "recoverable image error",
-    "recoverable error in image dictionary",
-    "encountered more Q than q",
-    "encountered more q than Q",
-    "garbage left on stack",
-    "stack underflow",
-    "error in group definition",
-    "invalid operator used in text block",
-    "used invalid operator in CharProc",
-    "BT found inside a text block",
-    "ET found outside text block",
-    "text operator outside text block",
-    "degenerate text matrix",
-    "bad ICC colour profile, using alternate",
-    "bad ICC vs number components, using components",
-    "bad value for text rendering mode",
-    "error in shading",
-    "error in pattern",
-    "non standard operator found - ignoring",
-    "number uses illegal exponent form",
-    "Stream has inappropriate /Contents entry",
-    "bad DecodeParms",
-    "error in Mask",
-    "error in annotation Appearance",
-    "badly escaped name",
-    "typecheck error",
-    "bad trailer dictionary",
-    "error in annotation",
-    "failed to create ICC profile link",
-    "overflowed a real reading a number, assuming 0",
-    "failed to read a valid number, assuming 0",
-    "A DeviceN space used the /All ink name.",
-    "Couldn't retrieve MediaBox for page, using current media size",
-    "CA or ca value not in range 0.0 to 1.0, clamped to range.",
-    "Invalid DefaultGray, DefaultRGB or DefaultCMYK space specified, ignored.",
-    ""                                                  /* Last warning shuld not be used */
+#define PARAM(A,B) B
+#include "pdf_warnings.h"
+    ""                               /* Last warning should not be used */
 };
 
 const char *gs_error_strings[] = {

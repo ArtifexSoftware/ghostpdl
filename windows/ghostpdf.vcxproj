@@ -356,6 +356,7 @@
     <ClInclude Include="..\pdf\pdf_device.h" />
     <ClInclude Include="..\pdf\pdf_dict.h" />
     <ClInclude Include="..\pdf\pdf_doc.h" />
+    <ClInclude Include="..\pdf\pdf_errors.h" />
     <ClInclude Include="..\pdf\pdf_file.h" />
     <ClInclude Include="..\pdf\pdf_fmap.h" />
     <ClInclude Include="..\pdf\pdf_font.h" />
@@ -386,6 +387,7 @@
     <ClInclude Include="..\pdf\pdf_trans.h" />
     <ClInclude Include="..\pdf\pdf_types.h" />
     <ClInclude Include="..\pdf\pdf_utf8.h" />
+    <ClInclude Include="..\pdf\pdf_warnings.h" />
     <ClInclude Include="..\pdf\pdf_xref.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
