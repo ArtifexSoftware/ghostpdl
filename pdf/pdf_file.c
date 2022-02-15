@@ -1460,9 +1460,7 @@ int pdfi_unread(pdf_context *ctx, pdf_c_stream *s, byte *Buffer, uint32_t size)
 
 int pdfi_read_byte(pdf_context *ctx, pdf_c_stream *s)
 {
-    uint32_t bytes = 0;
     int32_t code;
-    byte buffer;
 
     if (s->eof && s->unread_size == 0)
         return EOFC;
@@ -1473,7 +1471,7 @@ int pdfi_read_byte(pdf_context *ctx, pdf_c_stream *s)
     /* TODO the Ghostscript code uses sbufptr(s) to avoid a memcpy
      * at some point we should modify this code to do so as well.
      */
-    code = sgets(s->s, &buffer, 1, &bytes);
+    code = spgetc(s->s);
     if (code == EOFC) {
         s->eof = true;
         return EOFC;
@@ -1484,7 +1482,7 @@ int pdfi_read_byte(pdf_context *ctx, pdf_c_stream *s)
     } else if(code == ERRC) {
         return ERRC;
     }
-    return buffer;
+    return (int)code;
 }
 
 
