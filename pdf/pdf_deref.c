@@ -907,7 +907,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             if (code < 0)
                 goto error;
 
-            code = pdfi_name_alloc(ctx, (byte *)"trailer", 6, (pdf_obj **)&EODString);
+            code = pdfi_name_alloc(ctx, (byte *)"trailer", 7, (pdf_obj **)&EODString);
             if (code < 0)
                 goto error;
             pdfi_countup(EODString);
