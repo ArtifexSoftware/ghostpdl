@@ -581,8 +581,15 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
             fontfname[mname->length] = '\0';
         }
         else {
+            pdfi_countdown(mapname);
+            pdfi_countdown(fontname);
             return_error(gs_error_invalidfileaccess);
         }
+    }
+    else {
+        pdfi_countdown(mapname);
+        pdfi_countdown(fontname);
+        return_error(gs_error_invalidfileaccess);
     }
 
     code = pdfi_open_font_file(ctx, fontfname, strlen(fontfname), &s);
