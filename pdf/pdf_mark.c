@@ -619,7 +619,7 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict)
     code = pdfi_dict_known(ctx, A_dict, "URI", &known);
     if (code < 0) goto exit;
     if (known) {
-        code = pdfi_resolve_indirect_loop_detect(ctx, (pdf_obj *)NULL, (pdf_obj *)dict, true);
+        code = pdfi_resolve_indirect_loop_detect(ctx, (pdf_obj *)NULL, (pdf_obj *)A_dict, true);
         goto exit;
     }
 
@@ -712,7 +712,6 @@ int pdfi_mark_modA(pdf_context *ctx, pdf_dict *dict)
     } else if (deref_A) {
         pdfi_countdown(A_dict);
         A_dict = NULL;
-        code = pdfi_dict_get(ctx, dict, "A", (pdf_obj **)&A_dict);
     }
     pdfi_countdown(A_dict);
     pdfi_countdown(S_name);
