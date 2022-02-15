@@ -728,7 +728,9 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
         return_error(gs_error_typecheck);
     }
 
-    if (((pdf_num *)o)->value.i < 1) {
+    /* Zero sized xref sections are valid; see the file attached to
+     * bug 704947 for an example. */
+    if (((pdf_num *)o)->value.i < 0) {
         pdfi_pop(ctx, 2);
         return_error(gs_error_rangecheck);
     }
