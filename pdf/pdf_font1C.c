@@ -2265,14 +2265,13 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
     /* Vestigial magic number check - we can't check the third byte, as we have out of
        spec fonts that have a head size > 4
      */
-    if (fbuf[0] == 1 && fbuf[1] == 0) {
+    if (fbuf[0] == 1 && fbuf[1] == 0 && code >= 0) {
         pdfi_gs_cff_font_priv cffpriv;
 
-        if (code >= 0) {
-            pdfi_init_cff_font_priv(ctx, &cffpriv, fbuf, fbuflen, false);
-            cffpriv.forcecid = forcecid;
-            code = pdfi_read_cff(ctx, &cffpriv);
-        }
+        pdfi_init_cff_font_priv(ctx, &cffpriv, fbuf, fbuflen, false);
+        cffpriv.forcecid = forcecid;
+        code = pdfi_read_cff(ctx, &cffpriv);
+
         if (code >= 0) {
             if (cffpriv.FontType == ft_CID_encrypted) {
                 pdf_obj *obj = NULL;
@@ -2801,7 +2800,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 tounicode = NULL;
             }
         }
-  error:
+error:
         if (code < 0) {
             pdfi_countdown(cffpriv.pdfcffpriv.Subrs);
             pdfi_countdown(cffpriv.pdfcffpriv.GlobalSubrs);
