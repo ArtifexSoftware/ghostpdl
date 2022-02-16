@@ -1720,15 +1720,29 @@ typedef struct tile_trans_clist_info_s {
     int height;
 } tile_trans_clist_info_t;
 
+#define serialized_tile_common \
+    gs_id id;\
+    int size_b, size_c;\
+    gs_matrix step_matrix;\
+    gs_rect bbox;\
+    int flags
+
 typedef struct gx_dc_serialized_tile_s {
-    gs_id id;
-    int size_b, size_c;
-    gs_int_point size;
-    gs_matrix step_matrix;
-    gs_rect bbox;
-    int flags;
-    gs_blend_mode_t blending_mode;	/* in case tile has transparency */
+    serialized_tile_common;
 } gx_dc_serialized_tile_t;
+
+#define serialized_tile_trans \
+    serialized_tile_common;\
+    gs_blend_mode_t blending_mode
+
+typedef struct gx_dc_serialized_trans_tile_s {
+    serialized_tile_trans;
+} gx_dc_serialized_trans_tile_t;
+
+typedef struct gx_dc_serialized_pattern_tile_s {
+    serialized_tile_trans;
+    gs_int_point size;
+} gx_dc_serialized_pattern_tile_t;
 
 enum {
     TILE_IS_LOCKED   = (int)0x80000000,
@@ -1767,8 +1781,6 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
 #endif
 
         buf.id = ptile->id;
-        buf.size.x = 0; /* fixme: don't write with raster patterns. */
-        buf.size.y = 0; /* fixme: don't write with raster patterns. */
         buf.size_b = size_b;
         buf.size_c = size_c;
         buf.step_matrix = ptile->step_matrix;
@@ -1843,7 +1855,7 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
     int64_t offset1 = offset;
     unsigned char *ptr;
 
-    size_h = sizeof(gx_dc_serialized_tile_t) + sizeof(tile_trans_clist_info_t);
+    size_h = sizeof(gx_dc_serialized_trans_tile_t) + sizeof(tile_trans_clist_info_t);
 
     /* Everything that we need to handle the transparent tile */
 
@@ -1857,12 +1869,10 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
         return 0;
     }
     if (offset1 == 0) { /* Serialize tile parameters: */
-        gx_dc_serialized_tile_t buf;
+        gx_dc_serialized_trans_tile_t buf;
         tile_trans_clist_info_t trans_info;
 
         buf.id = ptile->id;
-        buf.size.x = 0; /* fixme: don't write with raster patterns. */
-        buf.size.y = 0; /* fixme: don't write with raster patterns. */
         buf.size_b = size - size_h;
         buf.size_c = 0;
         buf.flags = ptile->depth
@@ -1977,11 +1987,11 @@ gx_dc_pattern_write(
     if (size_c < 0)
         return_error(gs_error_unregistered);
     if (data == NULL) {
-        *psize = sizeof(gx_dc_serialized_tile_t) + size_b + size_c;
+        *psize = sizeof(gx_dc_serialized_pattern_tile_t) + size_b + size_c;
         return 0;
     }
     if (offset1 == 0) { /* Serialize tile parameters: */
-        gx_dc_serialized_tile_t buf;
+        gx_dc_serialized_pattern_tile_t buf;
 
         buf.id = ptile->id;
         buf.size.x = ptile->cdev->common.width;
@@ -2002,14 +2012,14 @@ gx_dc_pattern_write(
             /* For a while we require the client to provide enough buffer size. */
             return_error(gs_error_unregistered); /* Must not happen. */
         }
-        memcpy(dp, &buf, sizeof(gx_dc_serialized_tile_t));
+        memcpy(dp, &buf, sizeof(gx_dc_serialized_pattern_tile_t));
         left -= sizeof(buf);
         dp += sizeof(buf);
         offset1 += sizeof(buf);
     }
-    if (offset1 < sizeof(gx_dc_serialized_tile_t) + size_b) {
-        l = min(left, size_b - (offset1 - sizeof(gx_dc_serialized_tile_t)));
-        code = clist_get_data(ptile->cdev, 0, offset1 - sizeof(gx_dc_serialized_tile_t), dp, l);
+    if (offset1 < sizeof(gx_dc_serialized_pattern_tile_t) + size_b) {
+        l = min(left, size_b - (offset1 - sizeof(gx_dc_serialized_pattern_tile_t)));
+        code = clist_get_data(ptile->cdev, 0, offset1 - sizeof(gx_dc_serialized_pattern_tile_t), dp, l);
         if (code < 0)
             return code;
         left -= l;
@@ -2017,8 +2027,8 @@ gx_dc_pattern_write(
         dp += l;
     }
     if (left > 0) {
-        l = min(left, size_c - (offset1 - sizeof(gx_dc_serialized_tile_t) - size_b));
-        code = clist_get_data(ptile->cdev, 1, offset1 - sizeof(gx_dc_serialized_tile_t) - size_b, dp, l);
+        l = min(left, size_c - (offset1 - sizeof(gx_dc_serialized_pattern_tile_t) - size_b));
+        code = clist_get_data(ptile->cdev, 1, offset1 - sizeof(gx_dc_serialized_pattern_tile_t) - size_b, dp, l);
         if (code < 0)
             return code;
     }
@@ -2121,12 +2131,12 @@ gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, int64_t offset,
                 return_error(gs_error_VMerror);
     }
     /* Read transparency buffer */
-    if (offset1 < sizeof(gx_dc_serialized_tile_t) + sizeof(tile_trans_clist_info_t) + data_size ) {
+    if (offset1 < sizeof(gx_dc_serialized_trans_tile_t) + sizeof(tile_trans_clist_info_t) + data_size ) {
 
-        int u = min(data_size - (offset1 - sizeof(gx_dc_serialized_tile_t) - sizeof(tile_trans_clist_info_t)), left);
+        int u = min(data_size - (offset1 - sizeof(gx_dc_serialized_trans_tile_t) - sizeof(tile_trans_clist_info_t)), left);
         byte *save = trans_pat->transbytes;
 
-        memcpy( trans_pat->transbytes + offset1 - sizeof(gx_dc_serialized_tile_t) -
+        memcpy( trans_pat->transbytes + offset1 - sizeof(gx_dc_serialized_trans_tile_t) -
                                     sizeof(tile_trans_clist_info_t), dp, u);
         trans_pat->transbytes = save;
         left -= u;
@@ -2147,7 +2157,7 @@ gx_dc_pattern_read(
     int                     x0,
     int                     y0)
 {
-    gx_dc_serialized_tile_t buf;
+    gx_dc_serialized_pattern_tile_t buf;
     int size_b, size_c = -1;
     const byte *dp = data;
     int left = size;
@@ -2157,6 +2167,7 @@ gx_dc_pattern_read(
     tile_trans_clist_info_t trans_info = { { { 0 } } };
     int cache_space_needed;
     bool deep = device_is_deep(dev);
+    size_t buf_read;
 
     if (offset == 0) {
         pdevc->mask.id = gx_no_bitmap_id;
@@ -2182,14 +2193,25 @@ gx_dc_pattern_read(
             /* For a while we require the client to provide enough buffer size. */
             return_error(gs_error_unregistered); /* Must not happen. */
         }
-        memcpy(&buf, dp, sizeof(buf));
-        dp += sizeof(buf);
-        left -= sizeof(buf);
-        offset1 += sizeof(buf);
+        memcpy(&buf, dp, sizeof(gx_dc_serialized_tile_t));
+        dp += sizeof(gx_dc_serialized_tile_t);
+        buf_read = sizeof(gx_dc_serialized_tile_t);
+        if (buf.flags & TILE_USES_TRANSP) {
+            memcpy(((char *)&buf)+sizeof(gx_dc_serialized_tile_t), dp, sizeof(gx_dc_serialized_trans_tile_t) - sizeof(gx_dc_serialized_tile_t));
+            dp += sizeof(gx_dc_serialized_trans_tile_t) - sizeof(gx_dc_serialized_tile_t);
+            buf_read = sizeof(gx_dc_serialized_trans_tile_t);
+        }
+        if (buf.flags & TILE_IS_CLIST) {
+            memcpy(((char *)&buf) + sizeof(gx_dc_serialized_trans_tile_t), dp, sizeof(gx_dc_serialized_pattern_tile_t) - sizeof(gx_dc_serialized_trans_tile_t));
+            dp += sizeof(gx_dc_serialized_pattern_tile_t) - sizeof(gx_dc_serialized_trans_tile_t);
+            buf_read = sizeof(gx_dc_serialized_pattern_tile_t);
+        }
+        left -= buf_read;
+        offset1 += buf_read;
 
         if ((buf.flags & TILE_USES_TRANSP) && !(buf.flags & TILE_IS_CLIST)){
 
-            if (sizeof(buf) + sizeof(tile_trans_clist_info_t) > size) {
+            if (buf_read + sizeof(tile_trans_clist_info_t) > size) {
                 return_error(gs_error_unregistered); /* Must not happen. */
             }
 
@@ -2270,13 +2292,13 @@ gx_dc_pattern_read(
                 code = gx_dc_pattern_read_trans_buff(ptile, offset1, dp, left, mem);
                 if (code < 0)
                     return code;
-                return code + sizeof(buf)+sizeof(trans_info);
+                return code + buf_read + sizeof(trans_info);
 
             } else {
-                code = gx_dc_pattern_read_raster(ptile, &buf, offset1, dp, left, mem);
+                code = gx_dc_pattern_read_raster(ptile, (gx_dc_serialized_tile_t *)&buf, offset1, dp, left, mem);
                 if (code < 0)
                     return code;
-                return code + sizeof(buf);
+                return code + buf_read;
             }
 
         }
