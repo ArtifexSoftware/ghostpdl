@@ -1161,6 +1161,7 @@
     <ClCompile Include="..\base\gsroptab.c" />
     <ClCompile Include="..\base\gsserial.c" />
     <ClCompile Include="..\base\gsshade.c" />
+    <ClCompile Include="..\base\gssprintf.c" />
     <ClCompile Include="..\base\gsstate.c" />
     <ClCompile Include="..\base\gsstrl.c" />
     <ClCompile Include="..\base\gstext.c" />
@@ -2825,6 +2826,7 @@
     <ClInclude Include="..\base\gsropt.h" />
     <ClInclude Include="..\base\gsserial.h" />
     <ClInclude Include="..\base\gsshade.h" />
+    <ClInclude Include="..\base\gssprintf.h" />
     <ClInclude Include="..\base\gsstate.h" />
     <ClInclude Include="..\base\gsstrl.h" />
     <ClInclude Include="..\base\gsstruct.h" />

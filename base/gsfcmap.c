@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -568,7 +568,7 @@ gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, i
         char sid[10], *pref = "aux-";
         int sid_len, pref_len = strlen(pref);
 
-        gs_sprintf(sid, "%d", id);
+        gs_snprintf(sid, sizeof(sid), "%d", id);
         sid_len = strlen(sid);
         name_len = pref_len + sid_len;
         cmap_name = gs_alloc_string(mem, name_len, "gs_cmap_ToUnicode_alloc");

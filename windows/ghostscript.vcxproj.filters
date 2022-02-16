@@ -6653,6 +6653,9 @@
     <ClCompile Include="..\extract\src\zip-test.c">
       <Filter>extract</Filter>
     </ClCompile>
+    <ClCompile Include="..\base\gssprintf.c">
+      <Filter>base</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\base\aes.h">
@@ -10028,6 +10031,9 @@
       <Filter>devices\vector</Filter>
     </ClInclude>
     <ClInclude Include="..\base\gsalloc.h">
+      <Filter>base %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\gssprintf.h">
       <Filter>base %28.h%29</Filter>
     </ClInclude>
   </ItemGroup>

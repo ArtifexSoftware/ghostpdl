@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1373,7 +1373,7 @@ spotcmyk_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 
     /* Open the output files for the spot colors */
     for(i = 0; i < nspot; i++) {
-        gs_sprintf(spotname, "%ss%d", pdevn->fname, i);
+        gs_snprintf(spotname, gp_file_name_sizeof, "%ss%d", pdevn->fname, i);
         code = gs_add_control_path(pdev->memory, gs_permit_file_writing, spotname);
         if (code < 0)
             goto prn_done;
@@ -1418,7 +1418,7 @@ spotcmyk_print_page(gx_device_printer * pdev, gp_file * prn_stream)
             goto prn_done;
     }
     for(i = 0; i < nspot; i++) {
-        gs_sprintf(spotname, "%ss%d", pdevn->fname, i);
+        gs_snprintf(spotname, gp_file_name_sizeof, "%ss%d", pdevn->fname, i);
         code = devn_write_pcx_file(pdev, spotname, 1, bpc, linelength[i]);
         if (code < 0)
             goto prn_done;
@@ -1765,7 +1765,7 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
         code = gs_note_error(gs_error_invalidfileaccess);
         goto done;
     }
-    gs_sprintf(outname, "%s.pcx", filename);
+    gs_snprintf(outname, gp_file_name_sizeof, "%s.pcx", filename);
     code = gs_add_control_path(pdev->memory, gs_permit_file_writing, outname);
     if (code < 0)
         goto done;

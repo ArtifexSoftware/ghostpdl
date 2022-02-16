@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -63,7 +63,7 @@ s_jbig2decode_error(void *callback_data, const char *msg, Jbig2Severity severity
         default: type = "unknown message:"; break;;
     }
     if (seg_idx == JBIG2_UNKNOWN_SEGMENT_NUMBER) segment[0] = '\0';
-    else gs_sprintf(segment, "(segment 0x%02x)", seg_idx);
+    else gs_snprintf(segment, sizeof(segment), "(segment 0x%02x)", seg_idx);
 
     if (error_data)
     {

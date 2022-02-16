@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -921,7 +921,7 @@ gdev_write_input_media(int index, gs_param_dict * pdict,
     int code;
     gs_param_string as;
 
-    gs_sprintf(key, "%d", index);
+    gs_snprintf(key, sizeof(key), "%d", index);
     mdict.size = 4;
     code = param_begin_write_dict(pdict->list, key, &mdict, false);
     if (code < 0)
@@ -1009,7 +1009,7 @@ gdev_write_output_media(int index, gs_param_dict * pdict,
     gs_param_dict mdict;
     int code;
 
-    gs_sprintf(key, "%d", index);
+    gs_snprintf(key, sizeof(key), "%d", index);
     mdict.size = 4;
     code = param_begin_write_dict(pdict->list, key, &mdict, false);
     if (code < 0)

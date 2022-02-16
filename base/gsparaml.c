@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -834,20 +834,20 @@ int_array_to_string(gs_param_int_array ia, outstate *out)
 
     out_string(out, "[");
     for (i = 0; i < ia.size; i++) {
-        gs_sprintf(text, "%d", ia.data[i]);
+        gs_snprintf(text, sizeof(text), "%d", ia.data[i]);
         out_string(out, text);
     }
     out_string(out, "]");
 }
 
 static void
-print_float(char *text, float f)
+print_float(char text[32], float f)
 {
     /* We attempt to tidy up %f's somewhat unpredictable output
      * here, so rather than printing 0.10000000 we print 0.1 */
     char *p = text;
     int frac = 0;
-    gs_sprintf(text, "%f", f);
+    gs_snprintf(text, 32, "%f", f);
     /* Find the terminator, or 'e' to spot exponent mode. */
     while (*p && *p != 'e' && *p != 'E') {
         if (*p == '.')
@@ -970,28 +970,28 @@ to_string(gs_param_list *plist, gs_param_name key, outstate *out)
     case gs_param_type_int:
     {
         char text[32];
-        gs_sprintf(text, "%d", pvalue.value.i);
+        gs_snprintf(text, sizeof(text), "%d", pvalue.value.i);
         out_string(out, text);
         break;
     }
     case gs_param_type_i64:
     {
         char text[32];
-        gs_sprintf(text, "%"PRId64, pvalue.value.i64);
+        gs_snprintf(text, sizeof(text), "%"PRId64, pvalue.value.i64);
         out_string(out, text);
         break;
     }
     case gs_param_type_long:
     {
         char text[32];
-        gs_sprintf(text, "%ld", pvalue.value.l);
+        gs_snprintf(text, sizeof(text), "%ld", pvalue.value.l);
         out_string(out, text);
         break;
     }
     case gs_param_type_size_t:
     {
         char text[32];
-        gs_sprintf(text, "%"PRIdSIZE, pvalue.value.z);
+        gs_snprintf(text, sizeof(text), "%"PRIdSIZE, pvalue.value.z);
         out_string(out, text);
         break;
     }

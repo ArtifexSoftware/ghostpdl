@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -201,7 +201,7 @@ s_DCT_get_quantization_tables(gs_param_list * plist,
         gs_param_string str;
         gs_param_float_array fa;
 
-        gs_sprintf(key, "%d", i);
+        gs_snprintf(key, sizeof(key), "%d", i);
         if (QFactor == 1.0) {
             code = quant_param_string(&str, DCTSIZE2,
                             table_ptrs[comp_info[i].quant_tbl_no]->quantval,
@@ -490,7 +490,7 @@ s_DCT_put_quantization_tables(gs_param_list * plist, stream_DCT_state * pdct,
         char istr[5];		/* i converted to string key */
         UINT16 values[DCTSIZE2];
 
-        gs_sprintf(istr, "%d", i);
+        gs_snprintf(istr, sizeof(istr), "%d", i);
         code = quant_params(quant_tables.list, istr, DCTSIZE2, values,
                             pdct->QFactor);
         if (code < 0)
@@ -582,7 +582,7 @@ s_DCT_put_huffman_tables(gs_param_list * plist, stream_DCT_state * pdct,
         UINT8 counts[16], values[256];
 
         /* Collect the Huffman parameters. */
-        gs_sprintf(istr, "%d", i);
+        gs_snprintf(istr, sizeof(istr), "%d", i);
         code = s_DCT_byte_params(huff_tables.list, istr, 0, 16, counts);
         if (code < 0)
             return code;

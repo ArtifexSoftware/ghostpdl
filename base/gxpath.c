@@ -1029,7 +1029,7 @@ gx_print_segment(const gs_memory_t *mem, const segment * pseg)
     double py = fixed2float(pseg->pt.y);
     char out[80];
 
-    gs_sprintf(out, PRI_INTPTR "<"PRI_INTPTR","PRI_INTPTR">:%u",
+    gs_snprintf(out, sizeof(out), PRI_INTPTR "<"PRI_INTPTR","PRI_INTPTR">:%u",
                (intptr_t)pseg, (intptr_t)pseg->prev, (intptr_t)pseg->next, pseg->notes);
     switch (pseg->type) {
         case s_start:{

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -345,11 +345,11 @@ write_profile(void)
 {
     char profile[64];
 
-    gs_sprintf(profile, "%d %d", option.img_origin.x, option.img_origin.y);
+    gs_snprintf(profile, sizeof(profile), "%d %d", option.img_origin.x, option.img_origin.y);
     PrfWriteProfileString(HINI_USERPROFILE, section, "Origin", profile);
-    gs_sprintf(profile, "%d %d", option.img_size.x, option.img_size.y);
+    gs_snprintf(profile, sizeof(profile), "%d %d", option.img_size.x, option.img_size.y);
     PrfWriteProfileString(HINI_USERPROFILE, section, "Size", profile);
-    gs_sprintf(profile, "%d", option.img_max);
+    gs_snprintf(profile, sizeof(profile), "%d", option.img_max);
     PrfWriteProfileString(HINI_USERPROFILE, section, "Maximized", profile);
 }
 
@@ -489,26 +489,26 @@ init_display(int argc, char *argv[])
     find_hwnd_gs(argv[2]);
 
     if (!rc) {
-        gs_sprintf(name, SHARED_NAME, argv[2]);
+        gs_snprintf(name, sizeof(name), SHARED_NAME, argv[2]);
         rc = DosGetNamedSharedMem((PVOID *) & bitmap.pbmi, name, PAG_READ | PAG_WRITE);
         if (rc) {
-            gs_sprintf(buf, "Failed to open: bmp shared memory \"%s\" rc = %d", argv[0], rc);
+            gs_snprintf(buf, sizeof(buf), "Failed to open: bmp shared memory \"%s\" rc = %d", argv[0], rc);
             error_message(buf);
         }
     }
     if (!rc) {
-        gs_sprintf(name, SYNC_NAME, argv[2]);
+        gs_snprintf(name, sizeof(name), SYNC_NAME, argv[2]);
         rc = DosOpenEventSem(name, &update_event_sem);
         if (rc) {
-            gs_sprintf(buf, "Failed to open: update event semaphore \"%s\" rc = %d", argv[1], rc);
+            gs_snprintf(buf, sizeof(buf), "Failed to open: update event semaphore \"%s\" rc = %d", argv[1], rc);
             error_message(buf);
         }
     }
     if (!rc) {
-        gs_sprintf(name, MUTEX_NAME, argv[2]);
+        gs_snprintf(name, sizeof(name), MUTEX_NAME, argv[2]);
         rc = DosOpenMutexSem(name, &bmp_mutex_sem);
         if (rc) {
-            gs_sprintf(buf, "Failed to open: bmp mutex semaphore \"%s\" rc = %d", argv[1], rc);
+            gs_snprintf(buf, sizeof(buf), "Failed to open: bmp mutex semaphore \"%s\" rc = %d", argv[1], rc);
             error_message(buf);
         }
     }
@@ -535,19 +535,19 @@ init_bitmap(int argc, char *argv[])
     if ((rc = DosOpen(argv[2], &hf, &action, 0, FILE_NORMAL, FILE_OPEN,
                       OPEN_ACCESS_READONLY | OPEN_SHARE_DENYREADWRITE, 0))
         != (APIRET) 0) {
-        gs_sprintf(buf, "Error opening: %s", argv[2]);
+        gs_snprintf(buf, sizeof(buf), "Error opening: %s", argv[2]);
         error_message(buf);
         return rc;
     }
     rc = DosSetFilePtr(hf, 0, FILE_END, &length);
     if (rc) {
-        gs_sprintf(buf, "failed seeking to EOF: error = %d", rc);
+        gs_snprintf(buf, sizeof(buf), "failed seeking to EOF: error = %d", rc);
         error_message(buf);
         return rc;
     }
     rc = DosSetFilePtr(hf, 0, FILE_BEGIN, &count);
     if (rc) {
-        gs_sprintf(buf, "failed seeking to BOF: error = %d", rc);
+        gs_snprintf(buf, sizeof(buf), "failed seeking to BOF: error = %d", rc);
         error_message(buf);
         return rc;
     };
@@ -555,14 +555,14 @@ init_bitmap(int argc, char *argv[])
     /* allocate memory for bitmap */
     if ((rc = DosAllocMem((PPVOID) & bbuffer, length, PAG_READ | PAG_WRITE | PAG_COMMIT))
         != (APIRET) 0) {
-        gs_sprintf(buf, "failed allocating memory");
+        gs_snprintf(buf, sizeof(buf), "failed allocating memory");
         error_message(buf);
         return rc;
     }
     rc = DosRead(hf, bbuffer, length, &count);
     DosClose(hf);
     if (rc) {
-        gs_sprintf(buf, "failed reading bitmap, error = %u, count = %u", rc, count);
+        gs_snprintf(buf, sizeof(buf), "failed reading bitmap, error = %u, count = %u", rc, count);
         error_message(buf);
         return rc;
     }
@@ -573,7 +573,7 @@ init_bitmap(int argc, char *argv[])
     scan_bitmap(&bitmap);
     bitmap.valid = TRUE;
 
-    gs_sprintf(buf, "bitmap width = %d, height = %d", bitmap.width, bitmap.height);
+    gs_snprintf(buf, sizeof(buf), "bitmap width = %d, height = %d", bitmap.width, bitmap.height);
     message_box(buf, 0);
     return rc;
 }
@@ -805,7 +805,7 @@ make_bitmap(BMAP * pbm, ULONG left, ULONG bottom, ULONG right, ULONG top, ULONG 
             char buf[256];
 
             eid = WinGetLastError(hab);
-            gs_sprintf(buf, "make_bitmap: GpiDrawBits rc = %08x, eid = %08x", rc, eid);
+            gs_snprintf(buf, sizeof(buf), "make_bitmap: GpiDrawBits rc = %08x, eid = %08x", rc, eid);
             message_box(buf, 0);
         }
     }

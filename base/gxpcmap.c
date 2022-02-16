@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1291,10 +1291,10 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
     is_planar = mdev->is_planar;
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     if (is_planar) {
-        gs_sprintf(full_file_name, "%d)PATTERN_PLANE_%dx%dx%d.raw", global_pat_index,
+        gs_snprintf(full_file_name, sizeof(full_file_name), "%d)PATTERN_PLANE_%dx%dx%d.raw", global_pat_index,
                 mdev->raster, height, max_bands);
     } else {
-        gs_sprintf(full_file_name, "%d)PATTERN_CHUNK_%dx%dx%d.raw", global_pat_index,
+        gs_snprintf(full_file_name, sizeof(full_file_name), "%d)PATTERN_CHUNK_%dx%dx%d.raw", global_pat_index,
                 width, height, max_bands);
     }
     fid = gp_fopen(memory,full_file_name,"wb");

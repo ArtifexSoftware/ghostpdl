@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -491,7 +491,7 @@ MapFileOpen(gs_memory_t *mem, const char * rootpath, const char * filename, cons
     fullname = (char *)gs_alloc_bytes(mem, totlen, "MapFileOpen(fullname)");
     if (fullname) {
 
-        gs_sprintf(fullname, "%s%s", rootpath, filename);
+        gs_snprintf(fullname, totlen, "%s%s", rootpath, filename);
         f = gp_fopen(fullname, attributes);
 
         gs_free_object(mem, fullname , "MapFileOpen(fullname)");
@@ -600,7 +600,7 @@ MapFileUnlink(gs_memory_t *mem, const char * rootpath, const char * filename)
         return;
     fullname = (char *)gs_alloc_bytes(mem, totlen, "MapFileUnlink(fullname)");
     if (fullname) {
-        gs_sprintf(fullname, "%s%s", rootpath, filename);
+        gs_snprintf(fullname, totlen, "%s%s", rootpath, filename);
 
         unlink(fullname);
 
@@ -631,8 +631,8 @@ MapFileRename(gs_memory_t *mem, const char * rootpath, const char * newfilename,
     newfullname = (char *)gs_alloc_bytes(mem, ntotlen, "MapFileRename(newfullname)");
 
     if (oldfullname && newfullname) {
-        gs_sprintf(oldfullname, "%s%s", rootpath, oldfilename);
-        gs_sprintf(newfullname, "%s%s", rootpath, newfilename);
+        gs_snprintf(oldfullname, ototlen, "%s%s", rootpath, oldfilename);
+        gs_snprintf(newfullname, ntotlen, "%s%s", rootpath, newfilename);
         rename(oldfullname, newfullname);
     }
 
@@ -813,7 +813,7 @@ map_file_name_get(gs_memory_t *mem, const char * root_name, const char * Fname, 
     if (d != -1) {
         /* 20 characters are enough for even a 64 bit integer */
         if ((strlen(root_name) + 20) < gp_file_name_sizeof) {
-            gs_sprintf(osname, "%s%d", root_name, d);
+            gs_snprintf(osname, gp_file_name_sizeof, "%s%d", root_name, d);
             return true;
         }
     }

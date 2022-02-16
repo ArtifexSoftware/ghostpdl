@@ -234,7 +234,7 @@ typedef struct
 static void
 file_to_fake_path(clist_file_ptr file, char fname[gp_file_name_sizeof])
 {
-    gs_sprintf(fname, ENC_FILE_STR, file);
+    gs_snprintf(fname, gp_file_name_sizeof, ENC_FILE_STR, file);
 }
 
 static clist_file_ptr

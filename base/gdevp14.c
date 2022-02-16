@@ -10338,7 +10338,7 @@ put_param_pdf14_spot_names(gx_device * pdev,
                 char buff[20];
                 byte * sep_name;
 
-                gs_sprintf(buff, "PDF14SpotName_%d", i);
+                gs_snprintf(buff, sizeof(buff), "PDF14SpotName_%d", i);
                 code = param_read_string(plist, buff, &str);
                 switch (code) {
                     default:

@@ -2727,7 +2727,7 @@ debug_dump_contents(const gs_memory_t *mem, const byte * bot,
             }
             continue;
         }
-        gs_sprintf(label, PRI_INTPTR":", (intptr_t)block);
+        gs_snprintf(label, sizeof(label), PRI_INTPTR":", (intptr_t)block);
         debug_indent(mem, indent);
         dmputs(mem, label);
         for (i = 0; i < block_size; ++i) {

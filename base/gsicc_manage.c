@@ -1604,13 +1604,13 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
                                                "gsicc_set_device_profile_colorants");
             if (name_str == NULL)
                 return gs_throw(gs_error_VMerror, "Insufficient memory for colorant name");
-            gs_sprintf(name_str, DEFAULT_ICC_PROCESS);
+            gs_snprintf(name_str, total_len+1, DEFAULT_ICC_PROCESS);
             for (kk = 0; kk < num_comps-5; kk++) {
-                gs_sprintf(temp_str,"ICC_COLOR_%d,",kk);
+                gs_snprintf(temp_str,sizeof(temp_str),"ICC_COLOR_%d,",kk);
                 strcat(name_str,temp_str);
             }
             /* Last one no comma */
-            gs_sprintf(temp_str,"ICC_COLOR_%d",kk);
+            gs_snprintf(temp_str,sizeof(temp_str),"ICC_COLOR_%d",kk);
             strcat(name_str,temp_str);
         }
         str_len = strlen(name_str);
@@ -2871,7 +2871,7 @@ dump_icc_buffer(const gs_memory_t *mem, int buffersize, char filename[],byte *Bu
     char full_file_name[50];
     gp_file *fid;
 
-    gs_sprintf(full_file_name,"%d)%s_debug.icc",global_icc_index,filename);
+    gs_snprintf(full_file_name,sizeof(full_file_name),"%d)%s_debug.icc",global_icc_index,filename);
     fid = gp_fopen(mem, full_file_name,"wb");
     gp_fwrite(Buffer,sizeof(unsigned char),buffersize,fid);
     gp_fclose(fid);

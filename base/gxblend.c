@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2714,7 +2714,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
     if ((n_chan == 2) || (n_chan == 3)) {
         int x;
         dlprintf2("%02d)%s.pam\n",global_index,filename);dflush();
-        gs_sprintf(full_file_name,"%02d)%s.pam",global_index,filename);
+        gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s.pam",global_index,filename);
         fid = gp_fopen(mem,full_file_name,"wb");
         fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 2\nMAXVAL %d\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n",
                 width, num_rows, deep ? 65535 : 255);
@@ -2735,7 +2735,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
         gp_fclose(fid);
         if (n_chan == 3) {
             dlprintf2("%02d)%s_shape.pgm\n",global_index,filename);dflush();
-            gs_sprintf(full_file_name,"%02d)%s_shape.pgm",global_index,filename);
+            gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_shape.pgm",global_index,filename);
             fid = gp_fopen(mem,full_file_name,"wb");
             fprintf(fid, "P5\n%d %d %d\n",
                     width, num_rows, deep ? 65535 : 255);
@@ -2757,7 +2757,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
     if ((n_chan == 4) || (n_chan == 5) || (n_chan == 6)) {
         int x;
         dprintf2("%02d)%s.pam\n",global_index,filename);dflush();
-        gs_sprintf(full_file_name,"%02d)%s.pam",global_index,filename);
+        gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s.pam",global_index,filename);
         fid = gp_fopen(mem,full_file_name,"wb");
         fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL %d\nTUPLTYPE RGB_ALPHA\nENDHDR\n",
                 width, num_rows, deep ? 65535 : 255);
@@ -2777,7 +2777,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
         }
         gp_fclose(fid);
         if (n_chan > 4) {
-            gs_sprintf(full_file_name,"%02d)%s_shape.pgm",global_index,filename);
+            gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_shape.pgm",global_index,filename);
             fid = gp_fopen(mem,full_file_name,"wb");
             fprintf(fid, "P5\n%d %d %d\n",
                     width, num_rows, deep ? 65535 : 255);
@@ -2796,7 +2796,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
             gp_fclose(fid);
         }
         if (n_chan == 6) {
-            gs_sprintf(full_file_name,"%02d)%s_tags.pgm",global_index,filename);
+            gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_tags.pgm",global_index,filename);
             fid = gp_fopen(mem, full_file_name,"wb");
             fprintf(fid, "P5\n%d %d 255\n", width, num_rows);
             if (deep) {
@@ -2815,7 +2815,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
 #endif
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     dlprintf6("%02d)%s_%dx%dx%dx%d.raw\n",global_index,filename,width,num_rows,deep ? 16 : 8,max_bands);dflush();
-    gs_sprintf(full_file_name,"%02d)%s_%dx%dx%dx%d.raw",global_index,filename,width,num_rows,deep ? 16 : 8,max_bands);
+    gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_%dx%dx%dx%d.raw",global_index,filename,width,num_rows,deep ? 16 : 8,max_bands);
     fid = gp_fopen(mem, full_file_name,"wb");
 
     if (be && deep) {

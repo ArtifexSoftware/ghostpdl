@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -83,7 +83,7 @@ pprintd1(stream * s, const char *format, int v)
     if (*fp == 0 || fp[1] != 'd')	/* shouldn't happen! */
         lprintf1("Bad format in pprintd1: %s\n", format);
 #endif
-    gs_sprintf(str, "%d", v);
+    gs_snprintf(str, sizeof(str), "%d", v);
     pputs_short(s, str);
     return pprintf_scan(s, fp + 2);
 }
@@ -115,12 +115,12 @@ pprintg1(stream * s, const char *format, double v)
     if (*fp == 0 || fp[1] != 'g')	/* shouldn't happen! */
         lprintf1("Bad format in pprintg: %s\n", format);
 #endif
-    gs_sprintf(str, "%f", 1.5);
+    gs_snprintf(str, sizeof(str), "%f", 1.5);
     dot = str[1]; /* locale-dependent */
-    gs_sprintf(str, "%g", v);
+    gs_snprintf(str, sizeof(str), "%g", v);
     if (strchr(str, 'e')) {
         /* Bad news.  Try again using f-format. */
-        gs_sprintf(str, (fabs(v) > 1 ? "%1.1f" : "%1.8f"), v);
+        gs_snprintf(str, sizeof(str), (fabs(v) > 1 ? "%1.1f" : "%1.8f"), v);
     }
     /* Juggling locales isn't thread-safe. Posix me harder. */
     if (dot != '.') {
@@ -165,7 +165,7 @@ pprintld1(stream *s, const char *format, long v)
     if (*fp == 0 || fp[1] != 'l' || fp[2] != 'd')	/* shouldn't happen! */
         lprintf1("Bad format in pprintld: %s\n", format);
 #endif
-    gs_sprintf(str, "%ld", v);
+    gs_snprintf(str, sizeof(str), "%ld", v);
     pputs_short(s, str);
     return pprintf_scan(s, fp + 3);
 }
@@ -197,7 +197,7 @@ pprintzd1(stream *s, const char *format, size_t v)
     if (i != z)
         lprintf1("Bad format in pprintzd: %s\n", format);
 #endif
-    gs_sprintf(str, "%"PRIdSIZE, v);
+    gs_snprintf(str, sizeof(str), "%"PRIdSIZE, v);
     pputs_short(s, str);
     return pprintf_scan(s, fp + z);
 }
@@ -229,7 +229,7 @@ pprinti64d1(stream *s, const char *format, int64_t v)
     if (i != z)
         lprintf1("Bad format in pprinti64d: %s\n", format);
 #endif
-    gs_sprintf(str, "%"PRId64, v);
+    gs_snprintf(str, sizeof(str), "%"PRId64, v);
     pputs_short(s, str);
     return pprintf_scan(s, fp + z);
 }

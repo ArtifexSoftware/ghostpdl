@@ -461,7 +461,7 @@ save_profile(const gs_memory_t *mem, unsigned char *buffer, char filename[], int
     char full_file_name[50];
     gp_file *fid;
 
-    gs_sprintf(full_file_name,"%d)Profile_%s.icc",icc_debug_index,filename);
+    gs_snprintf(full_file_name,sizeof(full_file_name),"%d)Profile_%s.icc",icc_debug_index,filename);
     fid = gp_fopen(mem, full_file_name,"wb");
     gp_fwrite(buffer,sizeof(unsigned char),buffer_size,fid);
     gp_fclose(fid);
