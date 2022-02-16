@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -56,7 +56,7 @@ param_read_password(gs_param_list * plist, const char *kstr, password * ppass)
     code = param_read_long(plist, kstr, &ipass);
     if (code != 0)		/* error or missing */
         return code;
-    gs_sprintf((char *)ppass->data, "%ld", ipass);
+    gs_snprintf((char *)ppass->data, MAX_PASSWORD, "%ld", ipass);
     ppass->size = strlen((char *)ppass->data);
     return 0;
 }

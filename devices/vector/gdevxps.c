@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -960,7 +960,7 @@ write_str_to_current_page(gx_device_xps *xps, const char *str)
     char buf[128]; /* easily enough to accommodate the string and a page number */
 
     /* we're one ahead of the page count */
-    int code = gs_sprintf(buf, page_template, xps->page_count+1);
+    int code = gs_snprintf(buf, sizeof(buf), page_template, xps->page_count+1);
     if (code < 0)
         return gs_rethrow_code(code);
 
@@ -1011,7 +1011,7 @@ close_page_relationship(gx_device_xps *xps)
     const char *rels_template = "Documents/1/Pages/_rels/%d.fpage.rels";
     char buf[128]; /* easily enough to accommodate the string and a page number */
 
-    int code = gs_sprintf(buf, rels_template, xps->page_count + 1);
+    int code = gs_snprintf(buf, sizeof(buf), rels_template, xps->page_count + 1);
     if (code < 0)
         return gs_rethrow_code(code);
 
@@ -1029,7 +1029,7 @@ write_page_relationship(gx_device_xps* xps)
     int count = 0;
     xps_relations_t *rel = xps->relations_head;
 
-    int code = gs_sprintf(buf, rels_template, xps->page_count + 1);
+    int code = gs_snprintf(buf, sizeof(buf), rels_template, xps->page_count + 1);
     if (code < 0)
         return gs_rethrow_code(code);
 
@@ -1037,7 +1037,7 @@ write_page_relationship(gx_device_xps* xps)
     fmt = "<Relationship Target = \"/%s\" Id = \"R%d\" Type = %s/>\n";
 
     while (rel) {
-        gs_sprintf(line, fmt, rel->relation, count, rels_req_type);
+        gs_snprintf(line, sizeof(line), fmt, rel->relation, count, rels_req_type);
         write_str_to_zip_file(xps, buf, line);
         rel = rel->next;
         count++;
@@ -1350,7 +1350,7 @@ xps_beginpage(gx_device_vector *vdev)
     {
         const char *template = "<PageContent Source=\"Pages/%d.fpage\" />";
         /* Note page count is 1 less than the current page */
-        code = gs_sprintf(buf, template, xps->page_count + 1);
+        code = gs_snprintf(buf, sizeof(buf), template, xps->page_count + 1);
         if (code < 0)
             return gs_rethrow_code(code);
 
@@ -1364,7 +1364,7 @@ xps_beginpage(gx_device_vector *vdev)
     {
         const char *page_size_template = "<FixedPage Width=\"%d\" Height=\"%d\" "
             "xmlns=\"http://schemas.microsoft.com/xps/2005/06\" xml:lang=\"en-US\">\n";
-        code = gs_sprintf(buf, page_size_template,
+        code = gs_snprintf(buf, sizeof(buf), page_size_template,
                        (int)(xps->MediaSize[0] * 4.0/3.0),  /* pts -> 1/96 inch */
                        (int)(xps->MediaSize[1] * 4.0/3.0));
         if (code < 0)
@@ -1375,7 +1375,7 @@ xps_beginpage(gx_device_vector *vdev)
     }
     {
         const char *canvas_template = "<Canvas RenderTransform=\"%g,%g,%g,%g,%g,%g\">\n";
-        code = gs_sprintf(buf, canvas_template,
+        code = gs_snprintf(buf, sizeof(buf), canvas_template,
                        96.0/xps->HWResolution[0], 0.0, 0.0,
                        96.0/xps->HWResolution[1], 0.0, 0.0);
         if (code < 0)
@@ -1507,7 +1507,7 @@ xps_finish_image_path(gx_device_vector *vdev)
     write_str_to_current_page(xps, "\t<Path.Fill>\n");
     write_str_to_current_page(xps, "\t\t<ImageBrush ");
     fmt = "ImageSource = \"{ColorConvertedBitmap /%s /%s}\" Viewbox=\"%d, %d, %d, %d\" ViewboxUnits = \"Absolute\" Viewport = \"%d, %d, %d, %d\" ViewportUnits = \"Absolute\" TileMode = \"None\" >\n";
-    gs_sprintf(line, fmt, xps->xps_pie->file_name, xps->xps_pie->icc_name,
+    gs_snprintf(line, sizeof(line), fmt, xps->xps_pie->file_name, xps->xps_pie->icc_name,
         0, 0, xps->xps_pie->width, xps->xps_pie->height, 0, 0,
         xps->xps_pie->width, xps->xps_pie->height);
     write_str_to_current_page(xps, line);
@@ -1517,7 +1517,7 @@ xps_finish_image_path(gx_device_vector *vdev)
     write_str_to_current_page(xps, "\t\t\t<ImageBrush.Transform>\n");
     fmt = "\t\t\t\t<MatrixTransform Matrix = \"%g,%g,%g,%g,%g,%g\" />\n";
     matrix = xps->xps_pie->mat;
-    gs_sprintf(line, fmt,
+    gs_snprintf(line, sizeof(line), fmt,
         matrix.xx, matrix.xy, matrix.yx, matrix.yy, matrix.tx, matrix.ty);
     write_str_to_current_page(xps, line);
     write_str_to_current_page(xps, "\t\t\t</ImageBrush.Transform>\n");
@@ -1559,7 +1559,7 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
     if (image_brush_fill(type, xps->filltype)) {
         /* Do the path data  */
         fmt = "<Path Data=\"M %g, %g L %g, %g %g, %g %g, %g Z\" >\n";
-        gs_sprintf(line, fmt,
+        gs_snprintf(line, sizeof(line), fmt,
             fixed2float(x0), fixed2float(y0),
             fixed2float(x0), fixed2float(y1),
             fixed2float(x1), fixed2float(y1),
@@ -1573,7 +1573,7 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
         /* NB - F0 should be changed for a different winding type */
         fmt = "Fill=\"#%06X\" Data=\"M %g,%g V %g H %g V %g Z\" ";
         c = xps->fillcolor & 0xffffffL;
-        gs_sprintf(line, fmt, c,
+        gs_snprintf(line, sizeof(line), fmt, c,
                    fixed2float(x0), fixed2float(y0),
                    fixed2float(y1), fixed2float(x1),
                    fixed2float(y0));
@@ -1584,7 +1584,7 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
         write_str_to_current_page(xps, "<Path ");
         fmt = "Stroke=\"#%06X\" Data=\"M %g,%g V %g H %g V %g Z\" ";
         c = xps->strokecolor & 0xffffffL;
-        gs_sprintf(line, fmt, c,
+        gs_snprintf(line, sizeof(line), fmt, c,
                    fixed2float(x0), fixed2float(y0),
                    fixed2float(y1), fixed2float(x1),
                    fixed2float(y0));
@@ -1593,7 +1593,7 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
         if (type & gx_path_type_stroke) {
             /* NB format width. */
             fmt = "StrokeThickness=\"%g\" ";
-            gs_sprintf(line, fmt, xps->linewidth);
+            gs_snprintf(line, sizeof(line), fmt, xps->linewidth);
             write_str_to_current_page(xps, line);
         }
         write_str_to_current_page(xps, "/>\n");
@@ -1653,7 +1653,7 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
             fmt = "Fill=\"#%06X\" Data=\"";
         else
             fmt = "Stroke=\"#%06X\" Data=\"";
-        gs_sprintf(line, fmt, c);
+        gs_snprintf(line, sizeof(line), fmt, c);
         write_str_to_current_page(xps, line);
     }
     else {
@@ -1680,7 +1680,7 @@ xps_moveto(gx_device_vector *vdev, double x0, double y0,
         return 0;
     }
 
-    gs_sprintf(line, " M %g,%g", x, y);
+    gs_snprintf(line, sizeof(line), " M %g,%g", x, y);
     write_str_to_current_page(xps, line);
     if_debug1m('_', xps->memory, "xps_moveto %s", line);
     return 0;
@@ -1700,7 +1700,7 @@ xps_lineto(gx_device_vector *vdev, double x0, double y0,
         if_debug1m('_', xps->memory, "xps_lineto: type not supported %x\n", type);
         return 0;
     }
-    gs_sprintf(line, " L %g,%g", x, y);
+    gs_snprintf(line, sizeof(line), " L %g,%g", x, y);
     write_str_to_current_page(xps, line);
     if_debug1m('_', xps->memory, "xps_lineto %s\n", line);
     return 0;
@@ -1720,7 +1720,7 @@ xps_curveto(gx_device_vector *vdev, double x0, double y0,
         return 0;
     }
 
-    gs_sprintf(line, " C %g,%g %g,%g %g,%g", x1, y1,
+    gs_snprintf(line, sizeof(line), " C %g,%g %g,%g %g,%g", x1, y1,
             x2,y2,x3,y3);
     write_str_to_current_page(xps,line);
     if_debug1m('_', xps->memory, "xps_curveto %s\n", line);
@@ -1766,7 +1766,7 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
     } else if (type & gx_path_type_stroke) {
         /* NB format width. */
         fmt = "\" StrokeThickness=\"%g\" />\n";
-        gs_sprintf(line, fmt, xps->linewidth);
+        gs_snprintf(line, sizeof(line), fmt, xps->linewidth);
         write_str_to_current_page(xps, line);
     } else { /* fill */
         /* close the path data attribute */

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -70,7 +70,7 @@ write_type2_float(gs_fapi_font * a_fapi_font, WRF_output * a_output, float a_flo
     int high = true;
     char c = 0;
 
-    gs_sprintf(buffer, "%f", a_float);
+    gs_snprintf(buffer, sizeof(buffer), "%f", a_float);
     WRF_wbyte(a_fapi_font->memory, a_output, 30);
     for (;;) {
         char n = 0;

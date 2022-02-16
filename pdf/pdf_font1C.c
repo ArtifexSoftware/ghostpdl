@@ -128,7 +128,7 @@ pdfi_cff_glyph_data(gs_font_type1 *pfont, gs_glyph glyph, gs_glyph_data_t *pgd)
      */
     if (cfffont->Encoding == NULL) {
         char indstring[33];
-        int l = gs_snprintf(indstring, 32, "%u", (unsigned int)glyph);
+        int l = gs_snprintf(indstring, sizeof(indstring), "%u", (unsigned int)glyph);
 
         code = pdfi_name_alloc(ctx, (byte *) indstring, l, (pdf_obj **) &glyphname);
         if (code >= 0)
@@ -431,7 +431,7 @@ pdfi_cff_cid_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *p
         gid = pdffont9->cidtogidmap.data[gid << 1] << 8 | pdffont9->cidtogidmap.data[(gid << 1) + 1];
     }
 
-    l = snprintf(nbuf, 64, "%" PRId64, gid);
+    l = gs_snprintf(nbuf, sizeof(nbuf), "%" PRId64, gid);
 
     code = pdfi_name_alloc(pdffont9->ctx, (byte *) nbuf, l, (pdf_obj **) &glyphname);
     if (code >= 0) {
@@ -1510,7 +1510,7 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
 
             if (ptpriv->forcecid) {
                 char buf[40];
-                int len = gs_sprintf(buf, "%d", gid);
+                int len = gs_snprintf(buf, sizeof(buf), "%d", gid);
 
                 code = pdfi_name_alloc(ctx, (byte *) buf, len, &gname);
                 if (code < 0) {
@@ -1548,7 +1548,7 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
             pdfi_countdown(gname);
         }
 
-        if (offsets->encoding_off > 1 && (enc_format &0x80)) {
+        if (offsets->encoding_off > 1 && (enc_format & 0x80)) {
             unsigned int n_supp, charcode, sid;
             byte *p = font->cffdata + offsets->encoding_off + supp_enc_offset;
             pdf_obj *gname;
@@ -1561,7 +1561,7 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
 
                 if ((code = pdfi_make_name_from_sid(ctx, &gname, font, offsets, sid)) < 0) {
                     char buf[40];
-                    int len = gs_sprintf(buf, "sid-%d", sid);
+                    int len = gs_snprintf(buf, sizeof(buf), "sid-%d", sid);
 
                     if (len > 0)
                         code = pdfi_name_alloc(ctx, (byte *) buf, len, &gname);

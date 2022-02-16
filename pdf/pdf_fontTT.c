@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -244,7 +244,7 @@ static int pdfi_ttf_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *
         if (code < 0) {
             char buf[64];
             int l;
-            l = gs_sprintf(buf, "~gs~gName~%04x", (uint)glyph);
+            l = gs_snprintf(buf, sizeof(buf), "~gs~gName~%04x", (uint)glyph);
             code = (*ctx->get_glyph_index)(pfont, (byte *)buf, l, &ID);
         }
         else {
