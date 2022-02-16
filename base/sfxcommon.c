@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -182,6 +182,9 @@ file_prepare_stream(const char *fname, uint len, const char *file_access,
 {
     byte *buffer;
     register stream *s;
+
+    if (strlen(file_access) > 2)
+        return_error(gs_error_invalidfileaccess);
 
     /* Open the file, always in binary mode. */
     strcpy(fmode, file_access);
