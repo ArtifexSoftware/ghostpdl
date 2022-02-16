@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,4 +25,4 @@
 
 /* The device descriptor. */
 const gx_device_memory mem_x_device =
-    mem_device("imagex", 256, 0, NULL);
+    mem_device("imagex", 256, 0, mem_initialize_device_procs);
