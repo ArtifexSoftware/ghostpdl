@@ -180,7 +180,7 @@ sixel_print_page(gx_device_printer *pdev, gp_file *prn_stream, const char *init)
               if ( tmp[l] == last ) {
                 count++;
                 if (count==32767) {
-                  run[gs_sprintf(run, "%d", count)]='\0';
+                  run[gs_snprintf(run, sizeof(run), "%d", count)]='\0';
                   for (t=run; *t; t++) gp_fputc( *t, prn_stream );
                   gp_fputc( last, prn_stream );
                   last = '\0';
@@ -193,7 +193,7 @@ sixel_print_page(gx_device_printer *pdev, gp_file *prn_stream, const char *init)
                     case 0: break;
                     case 1: gp_fputc( last, prn_stream );
                             break;
-                    default:run[gs_sprintf(run, "%d", count)]='\0';
+                    default:run[gs_snprintf(run, sizeof(run), "%d", count)]='\0';
                             for (t=run; *t; t++) gp_fputc( *t, prn_stream );
                             gp_fputc( last, prn_stream );
                             break;
@@ -210,7 +210,7 @@ sixel_print_page(gx_device_printer *pdev, gp_file *prn_stream, const char *init)
       case 0: break;
       case 1: gp_fputc( last, prn_stream );
               break;
-      default:run[gs_sprintf(run, "%d", count)]='\0';
+      default:run[gs_snprintf(run, sizeof(run), "%d", count)]='\0';
               for (t=run; *t; t++) gp_fputc( *t, prn_stream );
               gp_fputc( last, prn_stream );
               break;

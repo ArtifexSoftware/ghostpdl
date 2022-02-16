@@ -108,7 +108,7 @@ static char can_inits[] ={ ESC, 'c',              /* Software reset */
 /* Get the paper size code, based on width and height. */
 /* modified from gdevpcl.c, gdevmjc.c and gdevnpdl.c. */
 static char *
-gdev_fmlbp_paper_size(gx_device_printer *dev, char *paper)
+gdev_fmlbp_paper_size(gx_device_printer *dev, char paper[16])
 {
   int    landscape = 0;	/* portrait */
   float height_inches = dev->height / dev->y_pixels_per_inch;
@@ -120,7 +120,7 @@ gdev_fmlbp_paper_size(gx_device_printer *dev, char *paper)
     height_inches = t;
     landscape = 1;
   }
-  gs_sprintf(paper, "%s;%d",
+  gs_snprintf(paper, 16, "%s;%d",
     (height_inches >= 15.9 ? PAPER_SIZE_A3 :
      height_inches >= 11.8 ?
      (width_inches >=  9.2 ? PAPER_SIZE_B4 : PAPER_SIZE_LEGAL) :
@@ -144,7 +144,7 @@ static void goto_xy(gp_file *prn_stream,int x,int y)
 
     gp_fputc(CEX,prn_stream);
     gp_fputc('"',prn_stream);
-    gs_sprintf((char *)buff,"%d",x);
+    gs_snprintf((char *)buff,sizeof(buff),"%d",x);
     while (*p)
       {
         if (!*(p+1)) gp_fputc((*p)+0x30,prn_stream);
@@ -154,7 +154,7 @@ static void goto_xy(gp_file *prn_stream,int x,int y)
       }
 
     p=buff;
-    gs_sprintf((char *)buff,"%d",y);
+    gs_snprintf((char *)buff,sizeof(buff),"%d",y);
     while (*p)
       {
         if (!*(p+1)) gp_fputc((*p)+0x40,prn_stream);

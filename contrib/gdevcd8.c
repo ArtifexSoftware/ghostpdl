@@ -2461,7 +2461,7 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
       if ((*cyan > 0) && (*magenta > 0) && (*yellow > 0))
       {
         char output[255];
-        gs_sprintf(output, "%3d %3d %3d %3d - ", *cyan, *magenta, *yellow, *black);
+        gs_snprintf(output, sizeof(output), "%3d %3d %3d %3d - ", *cyan, *magenta, *yellow, *black);
         debug_print_string(output, strlen(output));
       }
 #endif /* 0 */
@@ -2509,7 +2509,7 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
         if (ucr > 0)
         {
           char output[255];
-          gs_sprintf(output, "%3d %3d %3d %3d - %5d\n", *cyan, *magenta, *yellow, *black, ucr);
+          gs_snprintf(output, sizeof(output), "%3d %3d %3d %3d - %5d\n", *cyan, *magenta, *yellow, *black, ucr);
           debug_print_string(output, strlen(output));
         }
 #endif /* 0 */

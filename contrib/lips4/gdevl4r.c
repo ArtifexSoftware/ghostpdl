@@ -804,9 +804,9 @@ lips2p_image_out(gx_device_printer * pdev, gp_file * prn_stream, int x, int y, i
     move_cap(pdev, prn_stream, x, y);
 
     Len = lips_mode3format_encode(lprn->TmpBuf, lprn->CompBuf, width / 8 * height);
-    gs_sprintf(raw_str, "%c%d;%d;%d.r", LIPS_CSI,
+    gs_snprintf(raw_str, sizeof(raw_str), "%c%d;%d;%d.r", LIPS_CSI,
             width / 8 * height, width / 8, (int)pdev->x_pixels_per_inch);
-    gs_sprintf(comp_str, "%c%d;%d;%d;9;%d.r", LIPS_CSI,
+    gs_snprintf(comp_str, sizeof(comp_str), "%c%d;%d;%d;9;%d.r", LIPS_CSI,
             Len, width / 8, (int)pdev->x_pixels_per_inch, height);
 
     if (Len < width / 8 * height - strlen(comp_str) + strlen(raw_str)) {
@@ -835,11 +835,11 @@ lips4_image_out(gx_device_printer * pdev, gp_file * prn_stream, int x, int y, in
     Len = lips_packbits_encode(lprn->TmpBuf, lprn->CompBuf, width / 8 * height);
     Len_rle = lips_rle_encode(lprn->TmpBuf, lprn->CompBuf2, width / 8 * height);
 
-    gs_sprintf(raw_str, "%c%d;%d;%d.r", LIPS_CSI,
+    gs_snprintf(raw_str, sizeof(raw_str), "%c%d;%d;%d.r", LIPS_CSI,
             width / 8 * height, width / 8, (int)pdev->x_pixels_per_inch);
 
     if (Len < Len_rle) {
-        gs_sprintf(comp_str, "%c%d;%d;%d;11;%d.r", LIPS_CSI,
+        gs_snprintf(comp_str, sizeof(comp_str), "%c%d;%d;%d;11;%d.r", LIPS_CSI,
                 Len, width / 8, (int)pdev->x_pixels_per_inch, height);
         if (Len < width / 8 * height - strlen(comp_str) + strlen(raw_str)) {
             gp_fprintf(prn_stream, "%s", comp_str);
@@ -852,7 +852,7 @@ lips4_image_out(gx_device_printer * pdev, gp_file * prn_stream, int x, int y, in
     } else {
         /* 2019-11-28: changed two occurrencies of 'Len' to 'Len_rle' here, but
         unable to test. */
-        gs_sprintf(comp_str, "%c%d;%d;%d;10;%d.r", LIPS_CSI,
+        gs_snprintf(comp_str, sizeof(comp_str), "%c%d;%d;%d;10;%d.r", LIPS_CSI,
                 Len_rle, width / 8, (int)pdev->x_pixels_per_inch, height);
         if (Len_rle < width / 8 * height - strlen(comp_str) + strlen(raw_str)) {
             gp_fprintf(prn_stream, "%s", comp_str);
