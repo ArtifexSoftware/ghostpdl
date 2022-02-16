@@ -438,11 +438,10 @@ pdfi_cff_cid_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *p
         pdfi_countup(glyphname);
         code = pdfi_dict_get_by_key(pdffont9->ctx, pdffont9->CharStrings, glyphname, (pdf_obj **) &charstring);
         if (code >= 0 && charstring->length > gscidfont->cidata.FDBytes) {
-            if (gscidfont->cidata.FDBytes == 0)
-                *pfidx = 0;
-            else
+            if (gscidfont->cidata.FDBytes != 0)
                 *pfidx = (int)charstring->data[0];
-            if (pgd)
+
+            if (pgd && charstring->length - gscidfont->cidata.FDBytes >= 0)
                 gs_glyph_data_from_bytes(pgd, charstring->data + gscidfont->cidata.FDBytes, 0, charstring->length - gscidfont->cidata.FDBytes, NULL);
         }
     }
