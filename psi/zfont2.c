@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2705,7 +2705,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
                 return sid;
             if ((code = make_name_from_sid(i_ctx_p, &name, strings, data, sid)) < 0) {
                char buf[40];
-               int len = gs_sprintf(buf, "sid-%d", sid);
+               int len = gs_snprintf(buf, sizeof(buf), "sid-%d", sid);
 
                if ((code = name_ref(imemory, (unsigned char *)buf, len, &name, 1)) < 0)
                    return code;

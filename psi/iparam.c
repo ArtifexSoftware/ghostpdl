@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -65,7 +65,7 @@ ref_to_key(const ref * pref, gs_param_key_t * key, iparam_list *plist)
         int len;
         byte *buf;
 
-        gs_sprintf(istr, "%"PRIpsint, pref->value.intval);
+        gs_snprintf(istr, sizeof(istr), "%"PRIpsint, pref->value.intval);
         len = strlen(istr);
         /* GC will take care of freeing this: */
         buf = gs_alloc_string(plist->memory, len, "ref_to_key");

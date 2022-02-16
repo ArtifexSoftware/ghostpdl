@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -640,8 +640,8 @@ void main(void)
     argv[1] = ddevice;
     argv[2] = dformat;
 
-    gs_sprintf(ddevice, "-sDEVICE=display");
-    gs_sprintf(dformat, "-dDisplayFormat=%d", display_format);
+    gs_snprintf(ddevice, sizeof(ddevice), "-sDEVICE=display");
+    gs_snprintf(dformat, sizeof(dformat), "-dDisplayFormat=%d", display_format);
 
     /* Run Ghostscript */
     if (gsapi_new_instance(&instance, NULL) < 0)

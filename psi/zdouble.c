@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -323,7 +323,7 @@ zcvsd(i_ctx_t *i_ctx_p)
     len = r_size(op - 1);
     if (len > MAX_CHARS)
         return_error(gs_error_limitcheck);
-    gs_sprintf(buf, "%f", 1.5);
+    gs_snprintf(buf, sizeof(buf), "%f", 1.5);
     dot = buf[1]; /* locale-dependent */
     memcpy(str, op[-1].value.bytes, len);
     /*
@@ -406,7 +406,7 @@ zdcvs(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     check_write_type(*op, t_string);
-    gs_sprintf(str, "%f", 1.5);
+    gs_snprintf(str, sizeof(str), "%f", 1.5);
     dot = str[1]; /* locale-dependent */
     /*
      * To get fully accurate output results for IEEE double-
@@ -420,10 +420,10 @@ zdcvs(i_ctx_t *i_ctx_p)
     {
         double scanned;
 
-        gs_sprintf(str, "%g", num);
+        gs_snprintf(str, sizeof(str), "%g", num);
         sscanf(str, "%lf", &scanned);
         if (scanned != num)
-            gs_sprintf(str, "%.16g", num);
+            gs_snprintf(str, sizeof(str), "%.16g", num);
     }
     len = strlen(str);
     if (len > r_size(op))
