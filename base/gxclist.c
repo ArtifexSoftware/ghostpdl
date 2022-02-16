@@ -903,7 +903,7 @@ gx_color_index2usage(gx_device *dev, gx_color_index color)
 
     for (i = 0; i < dev->color_info.num_components; i++) {
         if (color & dev->color_info.comp_mask[i])
-            bits |= (1<<i);
+            bits |= (((gx_color_usage_bits)1) << i);
     }
     return bits;
 }
