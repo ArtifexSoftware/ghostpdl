@@ -345,13 +345,14 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
        Uniformly from min range to max range */
     ptr_short = clut->data_short;
     for (i = 0; i < num_points; i++) {
-        if (num_components == 1) {
+        switch (num_components) {
+        case 1:
             /* Get the input vector value */
             fltptr = input_samples[0];
             index = i%table_size;
             cc.paint.values[0] = fltptr[index];
-        }
-        if (num_components == 3) {
+            break;
+        case 3:
             /* The first channel varies least rapidly in the ICC table */
             fltptr = input_samples[2];
             index = i%table_size;
@@ -363,8 +364,8 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
             index = (unsigned int) floor((float) i/(float) (table_size*
                                                         table_size))%table_size;
             cc.paint.values[0] = fltptr[index];
-        }
-        if (num_components == 4) {
+            break;
+        case 4:
             /* The first channel varies least rapidly in the ICC table */
             fltptr = input_samples[3];
             index = i%table_size;
@@ -380,6 +381,9 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
             index = (unsigned int) floor((float) i/(float) (table_size*
                                         table_size*table_size))%table_size;
             cc.paint.values[0] = fltptr[index];
+            break;
+        default:
+            return_error(gs_error_rangecheck); /* Should never happen */
         }
         /* These special concretizations functions do not go through
            the ICC mapping like the procs associated with the color space */
