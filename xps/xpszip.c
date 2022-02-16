@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -371,11 +371,11 @@ xps_read_zip_part(xps_context_t *ctx, const char *partname)
     size = 0;
     while (!seen_last)
     {
-        gs_sprintf(buf, "%s/[%d].piece", name, count);
+        gs_snprintf(buf, sizeof(buf), "%s/[%d].piece", name, count);
         ent = xps_find_zip_entry(ctx, buf);
         if (!ent)
         {
-            gs_sprintf(buf, "%s/[%d].last.piece", name, count);
+            gs_snprintf(buf, sizeof(buf), "%s/[%d].last.piece", name, count);
             ent = xps_find_zip_entry(ctx, buf);
             seen_last = !!ent;
         }
@@ -398,9 +398,9 @@ xps_read_zip_part(xps_context_t *ctx, const char *partname)
         for (i = 0; i < count; i++)
         {
             if (i < count - 1)
-                gs_sprintf(buf, "%s/[%d].piece", name, i);
+                gs_snprintf(buf, sizeof(buf), "%s/[%d].piece", name, i);
             else
-                gs_sprintf(buf, "%s/[%d].last.piece", name, i);
+                gs_snprintf(buf, sizeof(buf), "%s/[%d].last.piece", name, i);
             ent = xps_find_zip_entry(ctx, buf);
             if (!ent)
                 gs_warn("missing piece");
@@ -471,11 +471,11 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
     size = 0;
     while (1)
     {
-        gs_sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, count);
+        gs_snprintf(buf, sizeof(buf), "%s%s/[%d].piece", ctx->directory, name, count);
         file = gp_fopen(ctx->memory, buf, "rb");
         if (!file)
         {
-            gs_sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, count);
+            gs_snprintf(buf, sizeof(buf), "%s%s/[%d].last.piece", ctx->directory, name, count);
             file = gp_fopen(ctx->memory, buf, "rb");
         }
         if (!file)
@@ -495,9 +495,9 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
         for (i = 0; i < count; i++)
         {
             if (i < count - 1)
-                gs_sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, i);
+                gs_snprintf(buf, sizeof(buf), "%s%s/[%d].piece", ctx->directory, name, i);
             else
-                gs_sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, i);
+                gs_snprintf(buf, sizeof(buf), "%s%s/[%d].last.piece", ctx->directory, name, i);
             file = gp_fopen(ctx->memory, buf, "rb");
             n = xps_fread(part->data + offset, 1, size - offset, file);
             offset += n;
