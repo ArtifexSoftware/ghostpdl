@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -189,8 +189,9 @@ sfnts_reader_seek(sfnts_reader *r, ulong pos)
 }
 
 static void
-sfnts_reader_init(sfnts_reader *r, ref *pdr)
+sfnts_reader_init(const gs_memory_t *mem, sfnts_reader *r, ref *pdr)
 {
+    r->memory = mem;
     r->rbyte = sfnts_reader_rbyte;
     r->rword = sfnts_reader_rword;
     r->rlong = sfnts_reader_rlong;
@@ -381,11 +382,11 @@ sfnts_copy_except_glyf(sfnts_reader *r, sfnts_writer *w)
 }
 
 static int
-true_type_size(ref *pdr, unsigned long int *length)
+true_type_size(const gs_memory_t *mem, ref *pdr, unsigned long int *length)
 {
     sfnts_reader r;
 
-    sfnts_reader_init(&r, pdr);
+    sfnts_reader_init(mem, &r, pdr);
     *length = sfnts_copy_except_glyf(&r, 0);
 
     return r.error;
@@ -400,7 +401,7 @@ FAPI_FF_serialize_tt_font(gs_fapi_font *ff, void *buf, int buf_size)
 
     w.buf_size = buf_size;
     w.buf = w.p = buf;
-    sfnts_reader_init(&r, pdr);
+    sfnts_reader_init(ff->memory, &r, pdr);
     return sfnts_copy_except_glyf(&r, &w);
 }
 
@@ -1409,7 +1410,7 @@ FAPI_FF_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             }
             break;
         case gs_fapi_font_feature_TT_size:
-            code = true_type_size(pdr, ret);
+            code = true_type_size(ff->memory, pdr, ret);
             break;
     }
     return code;
@@ -1902,7 +1903,7 @@ sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index,
     ulong fullsize;
 
     if (index < pfont42->data.trueNumGlyphs) {
-        sfnts_reader_init(&r, pdr);
+        sfnts_reader_init(pfont42->memory, &r, pdr);
         r.seek(&r, pfont42->data.loca + index * (ulong)glyf_elem_size);
         *offset0 =
             pfont42->data.glyf + (glyf_elem_size ==
@@ -2156,7 +2157,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
                 if (buf != 0 && !error) {
                     sfnts_reader r;
 
-                    sfnts_reader_init(&r, pdr);
+                    sfnts_reader_init(pfont42->memory, &r, pdr);
 
                     r.seek(&r, offset0);
                     length_read =
