@@ -11314,8 +11314,8 @@ pdf14_clist_fill_stroke_path(gx_device	*dev, const gs_gstate *pgs, gx_path *ppat
        We will need to break up the fill stroke now and do
        the appropriate group pushes and set up. */
 
-    if ((pdevc_fill != NULL && gx_dc_is_pattern2_color(pdevc_fill)) ||
-        (pdevc_stroke != NULL && gx_dc_is_pattern2_color(pdevc_stroke))) {
+    if (gx_dc_is_pattern2_color(pdevc_fill) ||
+        gx_dc_is_pattern2_color(pdevc_stroke)) {
         return pdf14_clist_fill_stroke_path_pattern_setup(dev, pgs, ppath,
             params_fill, pdevc_fill, params_stroke, pdevc_stroke, pcpath);
     }
