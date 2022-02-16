@@ -2527,7 +2527,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
         gs_offset_t savedoffset;
 
         if (xobject_obj->type != PDF_STREAM) {
-            gs_note_error(gs_error_typecheck);
+            code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
         savedoffset = pdfi_tell(ctx->main_stream);

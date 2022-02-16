@@ -3092,7 +3092,7 @@ static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     if (code < 0) goto exit;
 
     if (code == 0) {
-        gs_note_error(gs_error_undefined);
+        code = gs_note_error(gs_error_undefined);
         goto exit;
     }
 
