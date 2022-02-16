@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3093,7 +3093,7 @@ pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs, int num_copies, int fl
     if (pmi->pause) {
         char strbuf[256];
 
-        gs_sprintf(strbuf, "End of page %d, press <enter> to continue.\n",
+        gs_snprintf(strbuf, sizeof(strbuf), "End of page %d, press <enter> to continue.\n",
                 pdev->PageCount);
         pl_log_string(pmi->memory, strbuf, 1);
     } else if (gs_debug_c(':'))

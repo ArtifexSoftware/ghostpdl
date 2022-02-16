@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -167,7 +167,7 @@ px_error_message_line(char message[px_max_error_line + 1], int N,
 
         switch (N) {
             case 1:
-                gs_sprintf(message, "    Subsystem:  %s\n", subsystem);
+                gs_snprintf(message, px_max_error_line, "    Subsystem:  %s\n", subsystem);
                 break;
             case 2:
                 strcpy(message, "    Error:      ");
@@ -187,10 +187,10 @@ px_error_message_line(char message[px_max_error_line + 1], int N,
                         }
                         strcat(end, "\n");
                     } else if (code >= px_error_first && code < px_error_next)
-                        gs_sprintf(end, "%s\n",
+                        gs_snprintf(end, px_max_error_line - strlen(message), "%s\n",
                                 px_error_names[code - px_error_first]);
                     else
-                        gs_sprintf(end, "Internal error 0x%x\n", code);
+                        gs_snprintf(end, px_max_error_line - strlen(message), "Internal error 0x%x\n", code);
                 }
                 break;
             case 3:
@@ -204,19 +204,19 @@ px_error_message_line(char message[px_max_error_line + 1], int N,
                     if (last_operator >= 0x40 && last_operator < 0xc0 &&
                         (oname =
                          px_operator_names[last_operator - 0x40]) != 0)
-                        gs_sprintf(end, "%s\n", oname);
+                        gs_snprintf(end, px_max_error_line - strlen(message), "%s\n", oname);
                     else
-                        gs_sprintf(end, "0x%02x\n", last_operator);
+                        gs_snprintf(end, px_max_error_line - strlen(message), "0x%02x\n", last_operator);
                 }
                 break;
             case 4:
                 strcpy(message, "    Position:   ");
                 end = message + strlen(message);
                 if (st->parent_operator_count)
-                    gs_sprintf(end, "%ld;%ld\n", st->parent_operator_count,
+                    gs_snprintf(end, px_max_error_line - strlen(message), "%ld;%ld\n", st->parent_operator_count,
                             st->operator_count);
                 else
-                    gs_sprintf(end, "%ld\n", st->operator_count);
+                    gs_snprintf(end,  px_max_error_line - strlen(message), "%ld\n", st->operator_count);
                 break;
             default:
                 return -1;

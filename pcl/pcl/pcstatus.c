@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -141,7 +141,7 @@ status_print_idlist(stream * s, const ushort * idlist, int nid,
 
         n = idlist[i] >> 6;
         l = (idlist[i] & 077) + 'A' - 1;
-        gs_sprintf(idstr, "%d%c", n, l);
+        gs_snprintf(idstr, sizeof(idstr), "%d%c", n, l);
         status_put_id(s, title, idstr);
     }
     status_end_id_list(s);
@@ -377,7 +377,7 @@ status_macros(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
         if (((pcl_macro_t *) value)->storage & storage) {
             char id_string[6];
 
-            gs_sprintf(id_string, "%u", (key.data[0] << 8) + key.data[1]);
+            gs_snprintf(id_string, sizeof(id_string), "%u", (key.data[0] << 8) + key.data[1]);
             status_put_id(s, "IDLIST", id_string);
         }
     status_end_id_list(s);
@@ -399,7 +399,7 @@ status_patterns(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
         if ((pptrn != 0) && (pcs->pattern_type == pcl_pattern_user_defined)) {
             char id_string[6];
 
-            gs_sprintf(id_string, "%u", id);
+            gs_snprintf(id_string, sizeof(id_string), "%u", id);
             status_put_id(s, "IDLIST", id_string);
         }
     } else {
@@ -411,7 +411,7 @@ status_patterns(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
             if (pptrn != 0) {
                 char id_string[6];
 
-                gs_sprintf(id_string, "%u", id);
+                gs_snprintf(id_string, sizeof(id_string), "%u", id);
                 status_put_id(s, "IDLIST", id_string);
             }
         }

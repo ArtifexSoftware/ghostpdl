@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -78,7 +78,7 @@ process_font(pcl_state_t * pcs, pl_font_t * fp)
 
         /* reset to default font and print the select font string and pjl number */
         /* create the string command for font selection */
-        gs_sprintf(buff, "<esc>(%u<esc>(s%dp%uv%us%db%dT\n",
+        gs_snprintf(buff, sizeof(buff), "<esc>(%u<esc>(s%dp%uv%us%db%dT\n",
                 pfp->symbol_set, (pfp->proportional_spacing ? 1 : 0),
                 pfp->height_4ths / 10, pfp->style, pfp->stroke_weight,
                 pfp->typeface_family);
@@ -95,7 +95,7 @@ process_font(pcl_state_t * pcs, pl_font_t * fp)
                       false, false);
         if (code < 0)
             return gs_rethrow(code, "failed to set cap x\n");
-        gs_sprintf(buff, "%d", fp->params.pjl_font_number);
+        gs_snprintf(buff, sizeof(buff), "%d", fp->params.pjl_font_number);
 
         code = pcl_text((byte *) buff, strlen(buff), pcs, false);
         if (code < 0)

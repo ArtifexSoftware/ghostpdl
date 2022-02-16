@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1512,7 +1512,7 @@ pcl_ht_init_render_methods(pcl_state_t * pcs, gs_memory_t * pmem)
         if ((pcs->rendering_info[i].flags & HT_FIXED) != 0)
             continue;
         gs_c_param_list_write(&list, pmem);
-        gs_sprintf(nbuff, "Dither_%d", i);
+        gs_snprintf(nbuff, sizeof(nbuff), "Dither_%d", i);
         if ((param_request((gs_param_list *) & list, nbuff) >= 0) &&
             (gs_getdeviceparams(pcur_dev, (gs_param_list *) & list) >= 0)) {
             gs_param_dict dict;
