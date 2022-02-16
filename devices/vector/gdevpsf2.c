@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -274,7 +274,7 @@ cff_put_real(cff_writer_t *pcw, double f)
         byte b = 0xff;
         const char *p;
 
-        gs_sprintf(str, "%g", f);
+        gs_snprintf(str, sizeof(str), "%g", f);
         sputc(pcw->strm, CD_REAL);
         for (p = str; ; ++p) {
             int digit;

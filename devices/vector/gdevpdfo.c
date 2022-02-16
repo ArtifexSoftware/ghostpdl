@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -701,7 +701,7 @@ cos_array_add_int(cos_array_t *pca, int i)
     char str[sizeof(int) * 8 / 3 + 3]; /* sign, rounding, 0 terminator */
     cos_value_t v;
 
-    gs_sprintf(str, "%d", i);
+    gs_snprintf(str, sizeof(str), "%d", i);
     return cos_array_add(pca, cos_string_value(&v, (byte *)str, strlen(str)));
 }
 int
@@ -1380,7 +1380,7 @@ cos_dict_put_c_key_int(cos_dict_t *pcd, const char *key, int value)
 {
     char str[sizeof(int) * 8 / 3 + 3]; /* sign, rounding, 0 terminator */
 
-    gs_sprintf(str, "%d", value);
+    gs_snprintf(str, sizeof(str), "%d", value);
     return cos_dict_put_c_key_string(pcd, key, (byte *)str, strlen(str));
 }
 int

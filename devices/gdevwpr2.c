@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -574,7 +574,7 @@ win_pr2_print_page(gx_device_printer * pdev, gp_file * file)
     }
 
     if (!wdev->nocancel) {
-        gs_sprintf(dlgtext, "Printing page %d", (int)(pdev->PageCount) + 1);
+        gs_snprintf(dlgtext, sizeof(dlgtext), "Printing page %d", (int)(pdev->PageCount) + 1);
         SetWindowText(GetDlgItem(wdev->hDlgModeless, CANCEL_PRINTING), dlgtext);
         ShowWindow(wdev->hDlgModeless, SW_SHOW);
     }
@@ -606,7 +606,7 @@ win_pr2_print_page(gx_device_printer * pdev, gp_file * file)
 
         if (!wdev->nocancel) {
             /* inform user of progress */
-            gs_sprintf(dlgtext, "%d%% done", (int)(y * 100L / scan_lines));
+            gs_snprintf(dlgtext, sizeof(dlgtext), "%d%% done", (int)(y * 100L / scan_lines));
             SetWindowText(GetDlgItem(wdev->hDlgModeless, CANCEL_PCDONE), dlgtext);
         }
         /* process message loop */
@@ -1505,9 +1505,9 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
 
     wdev->user_changed_settings = TRUE;
     if (wdev->use_old_spool_name) {
-        gs_sprintf(wdev->fname, "\\\\spool\\%s", (char*)(devnames)+(devnames->wDeviceOffset));
+        gs_snprintf(wdev->fname, prn_fname_sizeof, "\\\\spool\\%s", (char*)(devnames)+(devnames->wDeviceOffset));
     } else {
-        gs_sprintf(wdev->fname, "%%printer%%%s", (char*)(devnames)+(devnames->wDeviceOffset));
+        gs_snprintf(wdev->fname, prn_fname_sizeof, "%%printer%%%s", (char*)(devnames)+(devnames->wDeviceOffset));
     }
 
     if (mode == 3) {

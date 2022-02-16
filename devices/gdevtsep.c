@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1267,9 +1267,9 @@ tiffsep1_prn_close(gx_device * pdev)
             while (*fmt != 'l' && *fmt != '%')
                 --fmt;
             if (*fmt == 'l')
-                gs_sprintf(compname, parsed.fname, count1);
+                gs_snprintf(compname, gp_file_name_sizeof, parsed.fname, count1);
             else
-                gs_sprintf(compname, parsed.fname, (int)count1);
+                gs_snprintf(compname, gp_file_name_sizeof, parsed.fname, (int)count1);
             parsed.iodev->procs.delete_file(parsed.iodev, compname);
         } else {
             parsed.iodev->procs.delete_file(parsed.iodev, tfdev->fname);
@@ -1393,7 +1393,7 @@ copy_separation_name(tiffsep_device * pdev,
         }
     }
     if (use_sep_num != 0)
-        gs_sprintf(sep_num_str, "%d", sep_num);
+        gs_snprintf(sep_num_str, sizeof(sep_num_str), "%d", sep_num);
 
     /* New code: Copy the name, escaping non gp_file_name_good_char chars,
      * % and top bit set chars using %02x format. In addition, if 'escape'
@@ -1500,7 +1500,7 @@ create_separation_file_name(tiffsep_device * pdev, char * buffer,
                 /* Max of 10 chars in %d format */
             if (max_size < base_filename_length + 11)
                 return_error(gs_error_rangecheck);
-            gs_sprintf(buffer + base_filename_length, "s%d", sep_num);
+            gs_snprintf(buffer + base_filename_length, max_size - base_filename_length, "s%d", sep_num);
         }
     }
     if (use_sep_name)
@@ -2510,9 +2510,9 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
             while (*fmt != 'l' && *fmt != '%')
                 --fmt;
             if (*fmt == 'l')
-                gs_sprintf(compname, parsed.fname, count1);
+                gs_snprintf(compname, gp_file_name_sizeof, parsed.fname, count1);
             else
-                gs_sprintf(compname, parsed.fname, (int)count1);
+                gs_snprintf(compname, gp_file_name_sizeof, parsed.fname, (int)count1);
             parsed.iodev->procs.delete_file(parsed.iodev, compname);
         }
 #endif	/* PPM_COMBINED_OUTPUT */

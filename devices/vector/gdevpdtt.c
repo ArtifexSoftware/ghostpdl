@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2893,7 +2893,7 @@ pdf_choose_output_glyph_name(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_con
         p = (byte *)gs_alloc_string(pdev->pdf_memory, gnstr->size, "pdf_text_set_cache");
         if (p == NULL)
             return_error(gs_error_VMerror);
-        gs_sprintf(buf, "g%04x", (unsigned int)(glyph & 0xFFFF));
+        gs_snprintf(buf, sizeof(buf), "g%04x", (unsigned int)(glyph & 0xFFFF));
         memcpy(p, buf, 5);
         gnstr->data = p;
         *cleanup = true;

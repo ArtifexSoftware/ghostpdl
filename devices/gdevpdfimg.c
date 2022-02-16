@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -603,7 +603,7 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
     pprintd1(pdf_dev->strm, "%d 0 obj\n", page->PageDictObjectNumber);
     pprintd1(pdf_dev->strm, "<<\n/Contents %d 0 R\n", page->PageStreamObjectNumber);
     stream_puts(pdf_dev->strm, "/Type /Page\n/Parent 2 0 R\n");
-    gs_sprintf(Buffer, "/MediaBox [0 0 %f %f]\n", ((double)pdf_dev->width / pdf_dev->HWResolution[0]) * 72, ((double)pdf_dev->height / pdf_dev->HWResolution[1]) * 72);
+    gs_snprintf(Buffer, sizeof(Buffer), "/MediaBox [0 0 %f %f]\n", ((double)pdf_dev->width / pdf_dev->HWResolution[0]) * 72, ((double)pdf_dev->height / pdf_dev->HWResolution[1]) * 72);
     stream_puts(pdf_dev->strm, Buffer);
     pprintd1(pdf_dev->strm, "/Resources <<\n/XObject <<\n/Im1 %d 0 R\n>>\n", page->ImageObjectNumber);
     if (pdf_dev->ocr.file_init)
@@ -699,7 +699,7 @@ static void write_xref_entry (stream *s, gs_offset_t Offset)
     if (Offset > 9999999999){
         Offset = 0;
     }
-    gs_sprintf(O, "%d", Offset);
+    gs_snprintf(O, sizeof(O), "%d", Offset);
     for (i=0; i< (10 - strlen(O)); i++)
         stream_puts(s, "0");
     stream_puts(s, O);
@@ -713,7 +713,7 @@ pdf_store_default_Producer(char *buf)
     int minor = (int)(gs_revision - (major * 1000)) / 10;
     int patch = gs_revision % 10;
 
-    gs_sprintf(buf, "(%s %d.%02d.%d)", gs_product, major, minor, patch);
+    gs_snprintf(buf, sizeof(buf), "(%s %d.%02d.%d)", gs_product, major, minor, patch);
 }
 
 static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
@@ -759,7 +759,7 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
         tms = *localtime(&t);
 #endif
 
-        gs_sprintf(CreationDate, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
+        gs_snprintf(CreationDate, sizeof(CreationDate), "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
             tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
             tms.tm_hour, tms.tm_min, tms.tm_sec,
             timesign, timeoffset / 60, timeoffset % 60);
@@ -1475,7 +1475,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev,
     pprintd1(pdf_dev->strm, "%d 0 obj\n", page->PageDictObjectNumber);
     pprintd1(pdf_dev->strm, "<<\n/Contents %d 0 R\n", page->PageStreamObjectNumber);
     stream_puts(pdf_dev->strm, "/Type /Page\n/Parent 2 0 R\n");
-    gs_sprintf(Buffer, "/MediaBox [0 0 %.3f %.3f]\n", ((double)pdf_dev->width / pdf_dev->HWResolution[0]) * 72, ((double)pdf_dev->height / pdf_dev->HWResolution[1]) * 72);
+    gs_snprintf(Buffer, sizeof(Buffer), "/MediaBox [0 0 %.3f %.3f]\n", ((double)pdf_dev->width / pdf_dev->HWResolution[0]) * 72, ((double)pdf_dev->height / pdf_dev->HWResolution[1]) * 72);
     stream_puts(pdf_dev->strm, Buffer);
     stream_puts(pdf_dev->strm, "/Resources <<\n/XObject <<\n");
 
@@ -1494,9 +1494,9 @@ PCLm_downscale_and_print_page(gx_device_printer *dev,
             double adjusted;
             adjusted = height - (row * pdf_dev->StripHeight);
             adjusted = adjusted / (pdf_dev->HWResolution[1] / (factor * 72));
-            gs_sprintf(Buffer, "%.3f 0 0 %.3f 0 0 cm\n/Im%d Do Q\n", (width / (pdf_dev->HWResolution[0] / 72)) * factor, adjusted, row);
+            gs_snprintf(Buffer, sizeof(Buffer), "%.3f 0 0 %.3f 0 0 cm\n/Im%d Do Q\n", (width / (pdf_dev->HWResolution[0] / 72)) * factor, adjusted, row);
         } else
-            gs_sprintf(Buffer, "%.3f 0 0 %.3f 0 %f cm\n/Im%d Do Q\n", (width / (pdf_dev->HWResolution[0] / 72)) * factor, StripDecrement, ((height / (pdf_dev->HWResolution[1] / 72)) * factor) - (StripDecrement * (row + 1)), row);
+            gs_snprintf(Buffer, sizeof(Buffer), "%.3f 0 0 %.3f 0 %f cm\n/Im%d Do Q\n", (width / (pdf_dev->HWResolution[0] / 72)) * factor, StripDecrement, ((height / (pdf_dev->HWResolution[1] / 72)) * factor) - (StripDecrement * (row + 1)), row);
         stream_puts(pdf_dev->temp_stream.strm, Buffer);
         pprintd2(pdf_dev->strm, "/Im%d %d 0 R\n", row, page->ImageObjectNumber + (row * 2));
     }

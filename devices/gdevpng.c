@@ -638,7 +638,7 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
         int minor = (int)(gs_revision - (major * 1000)) / 10;
         int patch = gs_revision % 10;
 
-        gs_sprintf(software_text, "%s %d.%02d.%d", gs_product, major, minor, patch);
+        gs_snprintf(software_text, sizeof(software_text), "%s %d.%02d.%d", gs_product, major, minor, patch);
     }
     text_png.compression = -1;	/* uncompressed */
     text_png.key = software_key;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -385,7 +385,7 @@ gdev_x_open(gx_device_X * xdev)
             char gstr[40];
             int bitmask;
 
-            gs_sprintf(gstr, "%dx%d+%d+%d", sizehints.width,
+            gs_snprintf(gstr, sizeof(gstr), "%dx%d+%d+%d", sizehints.width,
                     sizehints.height, sizehints.x, sizehints.y);
             bitmask = XWMGeometry(xdev->dpy, DefaultScreen(xdev->dpy),
                                   xdev->geometry, gstr, xdev->borderWidth,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -447,7 +447,7 @@ pdf_initialize_ids(gx_device_pdf * pdev)
         tms = *localtime(&t);
 #endif
 
-        gs_sprintf(buf, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
+        gs_snprintf(buf, sizeof(buf), "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
             tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
             tms.tm_hour, tms.tm_min, tms.tm_sec,
             timesign, timeoffset / 60, timeoffset % 60);
@@ -1600,7 +1600,7 @@ static int write_xref_section(gx_device_pdf *pdev, gp_file *tfile, int64_t start
              * chances of needing to write white space to pad the file out.
              */
             if (!pdev->Linearise) {
-                gs_sprintf(str, "%010"PRId64" 00000 n \n", pos);
+                gs_snprintf(str, sizeof(str), "%010"PRId64" 00000 n \n", pos);
                 stream_puts(pdev->strm, str);
             }
             if (Offsets)
@@ -1633,7 +1633,7 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
         code = gp_fread(&c, 1, 1, linear_params->sfile);
         read++;
     } while (c != '\n' && code > 0);
-    gs_sprintf(Scratch, "%d 0 obj\n", pdev->ResourceUsage[object].NewObjectNumber);
+    gs_snprintf(Scratch, ScratchSize, "%d 0 obj\n", pdev->ResourceUsage[object].NewObjectNumber);
     gp_fwrite(Scratch, strlen(Scratch), 1, linear_params->Lin_File.file);
 
     code = gp_fread(&c, 1, 1, linear_params->sfile);
@@ -1685,7 +1685,7 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
             target++;
             (void)sscanf(target, "%d 0 R", &ID);
             gp_fwrite(source, target - source, 1, linear_params->Lin_File.file);
-            gs_sprintf(Buf, "%d 0 R", pdev->ResourceUsage[ID].NewObjectNumber);
+            gs_snprintf(Buf, sizeof(Buf), "%d 0 R", pdev->ResourceUsage[ID].NewObjectNumber);
             gp_fwrite(Buf, strlen(Buf), 1, linear_params->Lin_File.file);
             source = next;
         } else {
@@ -1874,7 +1874,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     }
 #endif
     /* Linearisation. Part 1, file header */
-    gs_sprintf(Header, "%%PDF-%d.%d\n", level / 10, level % 10);
+    gs_snprintf(Header, sizeof(Header), "%%PDF-%d.%d\n", level / 10, level % 10);
     gp_fwrite(Header, strlen(Header), 1, linear_params->Lin_File.file);
     if (pdev->binary_ok)
         gp_fwrite(Binary, strlen(Binary), 1, linear_params->Lin_File.file);
@@ -1887,16 +1887,16 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
 
     /* Linearisation. Part 2, the Linearisation dictioanry */
     linear_params->LDictOffset = gp_ftell(linear_params->Lin_File.file);
-    gs_sprintf(LDict, "%d 0 obj\n<<                                                                                                                        \n",
+    gs_snprintf(LDict, sizeof(LDict), "%d 0 obj\n<<                                                                                                                        \n",
         LDictObj);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->Lin_File.file);
 
     /* First page cross-reference table here (Part 3) */
     linear_params->FirstxrefOffset = gp_ftell(linear_params->Lin_File.file);
-    gs_sprintf(Header, "xref\n%d %d\n", LDictObj, Part1To6 - LDictObj + 1); /* +1 for the primary hint stream */
+    gs_snprintf(Header, sizeof(Header), "xref\n%d %d\n", LDictObj, Part1To6 - LDictObj + 1); /* +1 for the primary hint stream */
     gp_fwrite(Header, strlen(Header), 1, linear_params->Lin_File.file);
 
-    gs_sprintf(Header, "0000000000 00000 n \n");
+    gs_snprintf(Header, sizeof(Header), "0000000000 00000 n \n");
 
     for (i = LDictObj;i <= linear_params->LastResource + 2; i++) {
         gp_fwrite(Header, 20, 1, linear_params->Lin_File.file);
@@ -1906,7 +1906,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
      * +1 for the linearisation dict and +1 for the primary hint stream.
      */
     linear_params->FirsttrailerOffset = gp_ftell(linear_params->Lin_File.file);
-    gs_sprintf(LDict, "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %d>>\nstartxref\r\n0\n%%%%EOF\n        \n",
+    gs_snprintf(LDict, sizeof(LDict), "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %d>>\nstartxref\r\n0\n%%%%EOF\n        \n",
         linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, fileID, fileID, 0);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->Lin_File.file);
 
@@ -2024,7 +2024,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         }
     }
     /* insert the primary hint stream */
-    gs_sprintf(LDict, "%d 0 obj\n<</Length           \n/S           >>\nstream\n", HintStreamObj);
+    gs_snprintf(LDict, sizeof(LDict), "%d 0 obj\n<</Length           \n/S           >>\nstream\n", HintStreamObj);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
     HintStreamStart = gp_ftell(linear_params->sfile);
@@ -2338,7 +2338,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     flush_hint_stream(linear_params);
     HintLength = gp_ftell(linear_params->sfile) - HintStreamStart;
 
-    gs_sprintf(LDict, "\nendstream\nendobj\n");
+    gs_snprintf(LDict, sizeof(LDict), "\nendstream\nendobj\n");
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
     /* Calculate the length of the primary hint stream */
     HintStreamLen = gp_ftell(linear_params->sfile) - pdev->ResourceUsage[HintStreamObj].LinearisedOffset;
@@ -2371,23 +2371,23 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
 
     /* Now the file is long enough, write the xref */
     mainxref = gp_ftell(linear_params->sfile);
-    gs_sprintf(Header, "xref\n0 %d\n", LDictObj);
+    gs_snprintf(Header, sizeof(Header), "xref\n0 %d\n", LDictObj);
     gp_fwrite(Header, strlen(Header), 1, linear_params->sfile);
 
     linear_params->T = gp_ftell(linear_params->sfile) - 1;
-    gs_sprintf(Header, "0000000000 65535 f \n");
+    gs_snprintf(Header, sizeof(Header), "0000000000 65535 f \n");
     gp_fwrite(Header, strlen(Header), 1, linear_params->sfile);
 
     for (i = 1;i < LDictObj; i++) {
         for (j = 0; j < pdev->ResourceUsageSize;j++) {
             if (pdev->ResourceUsage[j].NewObjectNumber == i) {
-                gs_sprintf(Header, "%010"PRId64" 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset + HintStreamLen);
+                gs_snprintf(Header, sizeof(Header), "%010"PRId64" 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset + HintStreamLen);
                 gp_fwrite(Header, 20, 1, linear_params->sfile);
             }
         }
     }
 
-    gs_sprintf(LDict, "trailer\n<</Size %d>>\nstartxref\n%"PRId64"\n%%%%EOF\n",
+    gs_snprintf(LDict, sizeof(LDict), "trailer\n<</Size %d>>\nstartxref\n%"PRId64"\n%%%%EOF\n",
         LDictObj, linear_params->FirstxrefOffset);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
@@ -2401,19 +2401,19 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
      * versions.
      */
     gp_fseek(linear_params->sfile, linear_params->LDictOffset, SEEK_SET);
-    gs_sprintf(LDict, "%d 0 obj\n<</Linearized 1/L %"PRId64"/H[ ", LDictObj, linear_params->FileLength);
+    gs_snprintf(LDict, sizeof(LDict), "%d 0 obj\n<</Linearized 1/L %"PRId64"/H[ ", LDictObj, linear_params->FileLength);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
-    gs_sprintf(LDict, "%"PRId64"", pdev->ResourceUsage[HintStreamObj].LinearisedOffset);
+    gs_snprintf(LDict, sizeof(LDict), "%"PRId64"", pdev->ResourceUsage[HintStreamObj].LinearisedOffset);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
-    gs_sprintf(LDict, " %"PRId64"]", HintStreamLen);
+    gs_snprintf(LDict, sizeof(LDict), " %"PRId64"]", HintStreamLen);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
     /* Implementation Note 180 in hte PDF Reference 1.7 says that Acrobat
      * gets the 'E' value wrong. So its probably not important....
      */
-    gs_sprintf(LDict, "/O %d/E %"PRId64"",pdev->ResourceUsage[pdev->pages[0].Page->id].NewObjectNumber, linear_params->E);
+    gs_snprintf(LDict, sizeof(LDict), "/O %d/E %"PRId64"",pdev->ResourceUsage[pdev->pages[0].Page->id].NewObjectNumber, linear_params->E);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
-    gs_sprintf(LDict, "/N %d/T %"PRId64">>\nendobj\n", pdev->next_page, linear_params->T);
+    gs_snprintf(LDict, sizeof(LDict), "/N %d/T %"PRId64">>\nendobj\n", pdev->next_page, linear_params->T);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
     /* Return to the secondary xref and write it again filling
@@ -2423,13 +2423,13 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         code = gs_error_ioerror;
         goto error;
     }
-    gs_sprintf(Header, "xref\n%d %d\n", LDictObj, Part1To6 - LDictObj + 1); /* +1 for the primary hint stream */
+    gs_snprintf(Header, sizeof(Header), "xref\n%d %d\n", LDictObj, Part1To6 - LDictObj + 1); /* +1 for the primary hint stream */
     gp_fwrite(Header, strlen(Header), 1, linear_params->sfile);
 
     for (i = LDictObj;i <= linear_params->LastResource + 2; i++) {
         for (j = 0; j < pdev->ResourceUsageSize;j++) {
             if (pdev->ResourceUsage[j].NewObjectNumber == i) {
-                gs_sprintf(Header, "%010"PRId64" 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset);
+                gs_snprintf(Header, sizeof(Header), "%010"PRId64" 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset);
                 gp_fwrite(Header, 20, 1, linear_params->sfile);
             }
         }
@@ -2442,7 +2442,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     if (code != 0)
         return_error(gs_error_ioerror);
 
-    gs_sprintf(LDict, "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %"PRId64">>\nstartxref\r\n0\n%%%%EOF\n",
+    gs_snprintf(LDict, sizeof(LDict), "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %"PRId64">>\nstartxref\r\n0\n%%%%EOF\n",
         linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, fileID, fileID, mainxref);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
@@ -2450,9 +2450,9 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     if (code != 0)
         return_error(gs_error_ioerror);
 
-    gs_sprintf(LDict, "%d 0 obj\n<</Length %10"PRId64"", HintStreamObj, HintLength);
+    gs_snprintf(LDict, sizeof(LDict), "%d 0 obj\n<</Length %10"PRId64"", HintStreamObj, HintLength);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
-    gs_sprintf(LDict, "\n/S %10"PRId64">>\nstream\n", SharedHintOffset);
+    gs_snprintf(LDict, sizeof(LDict), "\n/S %10"PRId64">>\nstream\n", SharedHintOffset);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
 error:
@@ -3103,12 +3103,12 @@ pdf_close(gx_device * dev)
             linear_params.xref = xref;
 
         if (pdev->FirstObjectNumber == 1) {
-            gs_sprintf(str, "xref\n0 %"PRId64"\n0000000000 65535 f \n",
+            gs_snprintf(str, sizeof(str), "xref\n0 %"PRId64"\n0000000000 65535 f \n",
                   end_section);
             stream_puts(s, str);
         }
         else {
-            gs_sprintf(str, "xref\n0 1\n0000000000 65535 f \n%"PRId64" %"PRId64"\n",
+            gs_snprintf(str, sizeof(str), "xref\n0 1\n0000000000 65535 f \n%"PRId64" %"PRId64"\n",
                   start_section,
                   end_section - start_section);
             stream_puts(s, str);
@@ -3125,7 +3125,7 @@ pdf_close(gx_device * dev)
             end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
             if (end_section < 0)
                 return end_section;
-            gs_sprintf(str, "%"PRId64" %"PRId64"\n", start_section, end_section - start_section);
+            gs_snprintf(str, sizeof(str), "%"PRId64" %"PRId64"\n", start_section, end_section - start_section);
             stream_puts(s, str);
         } while (1);
 
@@ -3144,7 +3144,7 @@ pdf_close(gx_device * dev)
                 pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
             }
             stream_puts(s, ">>\n");
-            gs_sprintf(xref_str, "startxref\n%"PRId64"\n%%%%EOF\n", xref);
+            gs_snprintf(xref_str, sizeof(xref_str), "startxref\n%"PRId64"\n%%%%EOF\n", xref);
             stream_puts(s, xref_str);
         }
     }

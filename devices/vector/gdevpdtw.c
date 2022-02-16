@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -885,7 +885,7 @@ pdf_write_OneByteIdentityH(gx_device_pdf *pdev)
     code = cos_dict_put_string_copy(pcd, "/CMapName", "/OneByteIdentityH");
     if (code < 0)
         return code;
-    gs_sprintf(buf, "%ld 0 R", pdev->IdentityCIDSystemInfo_id);
+    gs_snprintf(buf, sizeof(buf), "%ld 0 R", pdev->IdentityCIDSystemInfo_id);
     code = cos_dict_put_string_copy(pcd, "/CIDSystemInfo", buf);
     if (code < 0)
         return code;

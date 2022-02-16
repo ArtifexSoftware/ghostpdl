@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -359,8 +359,8 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
             strcpy(pdfont->u.type0.Encoding_name,
                     (pcmap->WMode ? "/Identity-V" : "/Identity-H"));
         else
-            gs_sprintf(pdfont->u.type0.Encoding_name, "%ld 0 R",
-                    pdf_resource_id(pcmres));
+            gs_snprintf(pdfont->u.type0.Encoding_name, sizeof(pdfont->u.type0.Encoding_name),
+                        "%ld 0 R", pdf_resource_id(pcmres));
     } else {
         uint size = 0;
 
@@ -386,7 +386,7 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
             pdfont->u.type0.CMapName_size = size;
         }
 
-        gs_sprintf(pdfont->u.type0.Encoding_name, "/%s", *pcmn);
+        gs_snprintf(pdfont->u.type0.Encoding_name, sizeof(pdfont->u.type0.Encoding_name), "/%s", *pcmn);
         pdfont->u.type0.cmap_is_standard = true;
     }
     pdfont->u.type0.WMode = pcmap->WMode;

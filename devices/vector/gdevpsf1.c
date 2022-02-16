@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -663,12 +663,12 @@ write_Private(stream *s, gs_font_type1 *pfont,
                                 gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
                             return code;
                         }
-                        gs_sprintf(buf, "dup %d %u -| ", i, code);
+                        gs_snprintf(buf, sizeof(buf), "dup %d %u -| ", i, code);
                         stream_puts(s, buf);
                         write_CharString(s, stripped, code);
                         gs_free_object(pfont->memory, stripped, "free Subrs copy for OtherSubrs");
                     } else {
-                        gs_sprintf(buf, "dup %d %u -| ", i, gdata.bits.size);
+                        gs_snprintf(buf, sizeof(buf), "dup %d %u -| ", i, gdata.bits.size);
                         stream_puts(s, buf);
                         write_CharString(s, gdata.bits.data, gdata.bits.size);
                     }

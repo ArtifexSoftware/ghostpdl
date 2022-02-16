@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1230,7 +1230,8 @@ pdf_convert_truetype_font(gx_device_pdf *pdev, pdf_resource_t *pres)
                 if (code < 0)
                     return 0;
                 pdfont->u.cidfont.CIDSystemInfo_id = pdev->IdentityCIDSystemInfo_id;
-                gs_sprintf(pdfont0->u.type0.Encoding_name, "%ld 0 R", pdf_resource_id(pdev->OneByteIdentityH));
+                gs_snprintf(pdfont0->u.type0.Encoding_name, sizeof(pdfont0->u.type0.Encoding_name),
+                            "%ld 0 R", pdf_resource_id(pdev->OneByteIdentityH));
                 /* Move ToUnicode : */
                 pdfont0->res_ToUnicode = pdfont->res_ToUnicode; pdfont->res_ToUnicode = 0;
                 pdfont0->cmap_ToUnicode = pdfont->cmap_ToUnicode; pdfont->cmap_ToUnicode = 0;

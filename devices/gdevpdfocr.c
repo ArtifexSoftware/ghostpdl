@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -544,20 +544,20 @@ flush_word(gx_device_pdf_image *dev)
 
     size = bbox[3]-bbox[1];
     if (dev->ocr.cur_size != size) {
-        gs_sprintf(buffer, "/Ft0 %.3f Tf", size);
+        gs_snprintf(buffer, sizeof(buffer), "/Ft0 %.3f Tf", size);
         stream_puts(dev->strm, buffer);
         dev->ocr.cur_size = size;
     }
     scale = (bbox[2]-bbox[0]) / size / len * 200;
     if (dev->ocr.cur_scale != scale) {
-        gs_sprintf(buffer, " %.3f Tz", scale);
+        gs_snprintf(buffer, sizeof(buffer), " %.3f Tz", scale);
         stream_puts(dev->strm, buffer);
         dev->ocr.cur_scale = scale;
     }
-    gs_sprintf(buffer, " 1 0 0 1 %.3f %.3f Tm[<", bbox[0], bbox[1]);
+    gs_snprintf(buffer, sizeof(buffer), " 1 0 0 1 %.3f %.3f Tm[<", bbox[0], bbox[1]);
     stream_puts(dev->strm, buffer);
     for (i = 0; i < len; i++) {
-        gs_sprintf(buffer, "%04x", dev->ocr.word_chars[i]);
+        gs_snprintf(buffer, sizeof(buffer), "%04x", dev->ocr.word_chars[i]);
         stream_puts(dev->strm, buffer);
     }
     stream_puts(dev->strm, ">]TJ\n");
@@ -607,19 +607,19 @@ ocr_callback(void *arg, const char *rune_,
 
     size = bbox[3]-bbox[1];
     if (ppdev->ocr.cur_size != size) {
-        gs_sprintf(buffer, "/Ft0 %f Tf ", size);
+        gs_snprintf(buffer, sizeof(buffer), "/Ft0 %f Tf ", size);
         stream_puts(ppdev->strm, buffer);
         ppdev->ocr.cur_size = size;
     }
     scale = (bbox[2]-bbox[0]) / size * 200;
     if (ppdev->ocr.cur_scale != scale) {
-        gs_sprintf(buffer, " %f Tz ", scale);
+        gs_snprintf(buffer, sizeof(buffer), " %f Tz ", scale);
         stream_puts(ppdev->strm, buffer);
         ppdev->ocr.cur_scale = scale;
     }
-    gs_sprintf(buffer, "1 0 0 1 %f %f Tm ", bbox[0], bbox[1]);
+    gs_snprintf(buffer, sizeof(buffer), "1 0 0 1 %f %f Tm ", bbox[0], bbox[1]);
     stream_puts(ppdev->strm, buffer);
-    gs_sprintf(buffer, "<%04x>Tj\n", unicode);
+    gs_snprintf(buffer, sizeof(buffer), "<%04x>Tj\n", unicode);
     stream_puts(ppdev->strm, buffer);
 #else
     bbox[0] = word_bbox[0] * scale / ppdev->ocr.xres;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -371,7 +371,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
             font_name.size -= SUBSET_PREFIX_SIZE;
         }
     } else {
-        gs_sprintf(fnbuf, ".F" PRI_INTPTR, (intptr_t)copied);
+        gs_snprintf(fnbuf, sizeof(fnbuf), ".F" PRI_INTPTR, (intptr_t)copied);
         font_name.data = (byte *)fnbuf;
         font_name.size = strlen(fnbuf);
     }
@@ -572,7 +572,7 @@ pdf_adjust_font_name(gx_device_pdf *pdev, long id, pdf_base_font_t *pbfont)
         size = i + 1;
     }
     /* Create a unique name. */
-    gs_sprintf(suffix, "%c%lx", SUFFIX_CHAR, id);
+    gs_snprintf(suffix, sizeof(suffix), "%c%lx", SUFFIX_CHAR, id);
     suffix_size = strlen(suffix);
     data = gs_resize_string(pdev->pdf_memory, chars, size,
                                   size + suffix_size,

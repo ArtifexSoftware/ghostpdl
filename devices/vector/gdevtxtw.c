@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -647,20 +647,20 @@ static int simple_text_output(gx_device_txtwrite_t *tdev)
     return 0;
 }
 
-static int escaped_Unicode (unsigned short Unicode, char *Buf)
+static int escaped_Unicode (unsigned short Unicode, char Buf[32])
 {
     switch (Unicode)
     {
-    case 0x3C: gs_sprintf(Buf, "&lt;"); break;
-    case 0x3E: gs_sprintf(Buf, "&gt;"); break;
-    case 0x26: gs_sprintf(Buf, "&amp;"); break;
-    case 0x22: gs_sprintf(Buf, "&quot;"); break;
-    case 0x27: gs_sprintf(Buf, "&apos;"); break;
+    case 0x3C: gs_snprintf(Buf, 32, "&lt;"); break;
+    case 0x3E: gs_snprintf(Buf, 32, "&gt;"); break;
+    case 0x26: gs_snprintf(Buf, 32, "&amp;"); break;
+    case 0x22: gs_snprintf(Buf, 32, "&quot;"); break;
+    case 0x27: gs_snprintf(Buf, 32, "&apos;"); break;
     default:
         if (Unicode >= 32 && Unicode <= 127)
-            gs_sprintf(Buf, "%c", Unicode);
+            gs_snprintf(Buf, 32, "%c", Unicode);
         else
-            gs_sprintf(Buf, "&#x%x;", Unicode);
+            gs_snprintf(Buf, 32, "&#x%x;", Unicode);
         break;
     }
 
@@ -683,13 +683,13 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
         x_entry = tdev->PageData.unsorted_text_list;
         while (x_entry) {
             next_x = x_entry->next;
-            gs_sprintf(TextBuffer, "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
+            gs_snprintf(TextBuffer, sizeof(TextBuffer), "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
                 x_entry->end.x, x_entry->end.y, x_entry->FontName,x_entry->size);
             gp_fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
             xpos = x_entry->start.x;
             for (i=0;i<x_entry->Unicode_Text_Size;i++) {
-                escaped_Unicode(x_entry->Unicode_Text[i], (char *)&Escaped);
-                gs_sprintf(TextBuffer, "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\"/>\n", xpos,
+                escaped_Unicode(x_entry->Unicode_Text[i], Escaped);
+                gs_snprintf(TextBuffer, sizeof(TextBuffer), "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\"/>\n", xpos,
                     x_entry->start.y, xpos + x_entry->Widths[i], x_entry->end.y, Escaped);
                 gp_fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
                 xpos += x_entry->Widths[i];
@@ -806,13 +806,13 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
                 gp_fwrite("<line>\n", sizeof(unsigned char), 7, tdev->file);
                 x_entry = block_line->x_ordered_list;
                 while(x_entry) {
-                    gs_sprintf(TextBuffer, "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
+                    gs_snprintf(TextBuffer, sizeof(TextBuffer), "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
                         x_entry->end.x, x_entry->end.y, x_entry->FontName,x_entry->size);
                     gp_fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
                     xpos = x_entry->start.x;
                     for (i=0;i<x_entry->Unicode_Text_Size;i++) {
-                        escaped_Unicode(x_entry->Unicode_Text[i], (char *)&Escaped);
-                        gs_sprintf(TextBuffer, "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\"/>\n", xpos,
+                        escaped_Unicode(x_entry->Unicode_Text[i], Escaped);
+                        gs_snprintf(TextBuffer, sizeof(TextBuffer), "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\"/>\n", xpos,
                             x_entry->start.y, xpos + x_entry->Widths[i], x_entry->end.y, Escaped);
                         gp_fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
                         xpos += x_entry->Widths[i];

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -6484,7 +6484,7 @@ upd_open_wrtrtl(upd_device *udev)
            if(       (B_PAGEWIDTH  & upd->flags) &&
                      ((c == 0x73) || (c == 0x53))  ) { /* esc * r # S */
 
-             gs_sprintf(cv,"%d",upd->pwidth);
+             gs_snprintf(cv,sizeof(cv),"%d",upd->pwidth);
              ncv = strlen(cv);
 
              nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
@@ -6502,7 +6502,7 @@ upd_open_wrtrtl(upd_device *udev)
            } else if((B_PAGELENGTH & upd->flags) &&
                      ((c == 0x74) || (c == 0x54))  ) { /* esc * r # T */
 
-             gs_sprintf(cv,"%d",upd->pheight);
+             gs_snprintf(cv,sizeof(cv),"%d",upd->pheight);
              ncv = strlen(cv);
 
              nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
@@ -6531,7 +6531,7 @@ upd_open_wrtrtl(upd_device *udev)
            if(        (B_RESOLUTION  & upd->flags) &&
                      ((c == 0x72) || (c == 0x52))  ) { /* esc * t # R */
 
-             gs_sprintf(cv,"%d",(int)
+             gs_snprintf(cv,sizeof(cv),"%d",(int)
                ((udev->y_pixels_per_inch < udev->x_pixels_per_inch ?
                  udev->x_pixels_per_inch : udev->y_pixels_per_inch)
                +0.5));
@@ -6738,7 +6738,7 @@ upd_open_wrtrtl(upd_device *udev)
 
              if(B_PAGELENGTH  & upd->flags) { /* insert new number */
 
-               gs_sprintf(cv,"%d",(int)
+               gs_snprintf(cv,sizeof(cv),"%d",(int)
                  (720.0 * udev->height / udev->y_pixels_per_inch + 0.5));
                ncv = strlen(cv);
 
@@ -6803,7 +6803,7 @@ upd_open_wrtrtl(upd_device *udev)
 
              if(B_PAGEWIDTH  & upd->flags) { /* insert new number */
 
-               gs_sprintf(cv,"%d",(int)
+               gs_snprintf(cv,sizeof(cv),"%d",(int)
                  (720.0 * udev->width / udev->x_pixels_per_inch + 0.5));
                ncv = strlen(cv);
 
@@ -6898,7 +6898,7 @@ upd_open_wrtrtl(upd_device *udev)
 
              if(B_RESOLUTION  & upd->flags) { /* insert new number */
 
-               gs_sprintf(cv,"%d",(int)
+               gs_snprintf(cv,sizeof(cv),"%d",(int)
                  ((udev->y_pixels_per_inch < udev->x_pixels_per_inch ?
                    udev->x_pixels_per_inch : udev->y_pixels_per_inch)
                  +0.5));
@@ -6953,7 +6953,7 @@ It must hold:
       char  tmp[16];
 
       if(0 < upd->strings[S_YMOVE].size) {
-         gs_sprintf(tmp,"%d",upd->pheight);
+         gs_snprintf(tmp,sizeof(tmp),"%d",upd->pheight);
          ny = upd->strings[S_YMOVE].size + strlen(tmp);
       } else {
          ny = 1 + upd->string_a[SA_WRITECOMP].data[upd->ocomp-1].size;
@@ -7014,14 +7014,14 @@ upd_wrtrtl(upd_p upd, gp_file *out)
  */
       if(upd->yscan != upd->yprinter) { /* Adjust Y-Position */
          if(1 < upd->strings[S_YMOVE].size) {
-           gs_sprintf((char *)upd->outbuf+ioutbuf,
+           gs_snprintf((char *)upd->outbuf+ioutbuf, upd->noutbuf-ioutbuf,
              (const char *) upd->strings[S_YMOVE].data,
              upd->yscan - upd->yprinter);
            ioutbuf += strlen((char *)upd->outbuf+ioutbuf);
          } else {
            while(upd->yscan > upd->yprinter) {
              for(icomp = 0; icomp < upd->ocomp; ++icomp) {
-               gs_sprintf((char *)upd->outbuf+ioutbuf,
+               gs_snprintf((char *)upd->outbuf+ioutbuf, upd->noutbuf-ioutbuf,
                  (const char *) upd->string_a[SA_WRITECOMP].data[icomp].data,0);
                ioutbuf += strlen((char *)upd->outbuf+ioutbuf);
              }

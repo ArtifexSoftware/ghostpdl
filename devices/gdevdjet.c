@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -330,7 +330,7 @@ ljet4pjl_close(gx_device *pdev)
    init string is stored in buf, so make sure that buf is at least 5
    bytes larger than str. */
 static void
-hpjet_make_init(gx_device_printer *pdev, char *buf, const char *str)
+hpjet_make_init(gx_device_printer *pdev, char buf[80], const char *str)
 {
     gx_device_hpjet *dev = (gx_device_hpjet *)pdev;
     int paper_source = -1;
@@ -339,9 +339,9 @@ hpjet_make_init(gx_device_printer *pdev, char *buf, const char *str)
     else if (dev->MediaPosition_set && dev->MediaPosition >= 0)
         paper_source = dev->MediaPosition;
     if (paper_source >= 0)
-        gs_sprintf(buf, "%s\033&l%dH", str, paper_source);
+        gs_snprintf(buf, 80, "%s\033&l%dH", str, paper_source);
     else
-        gs_sprintf(buf, "%s", str);
+        gs_snprintf(buf, 80, "%s", str);
 }
 
 /* The DeskJet can compress (mode 2) */
@@ -377,7 +377,7 @@ fs600_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
     char base_init[60];
     char init[80];
 
-    gs_sprintf(base_init, "\033*r0F\033&u%dD", dots_per_inch);
+    gs_snprintf(base_init, sizeof(base_init), "\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
                                         dots_per_inch, PCL_FS600_FEATURES,
@@ -441,7 +441,7 @@ ljet3d_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
     bool tumble=dev->Tumble;
 
     hpjet_make_init(pdev, init, "\033&l-180u36Z\033*r0F");
-    gs_sprintf(even_init, "\033&l180u36Z\033*r0F");
+    gs_snprintf(even_init, sizeof(even_init), "\033&l180u36Z\033*r0F");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
                                         300, PCL_LJ3D_FEATURES, init, even_init, tumble);
 }
@@ -456,9 +456,9 @@ ljet4_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
     char base_init[60];
     char init[80];
 
-    gs_sprintf(base_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
+    gs_snprintf(base_init, sizeof(base_init), "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
     if (gdev_pcl_page_orientation((gx_device *) pdev) == PAGE_ORIENTATION_LANDSCAPE)
-        gs_sprintf(base_init, "\033&l0u140Z\033*r0F\033&u%dD", dots_per_inch);
+        gs_snprintf(base_init, sizeof(base_init), "\033&l0u140Z\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
 
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
@@ -490,9 +490,9 @@ ljet4d_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
        in duplex mode we set this parameters for each odd page
        (paper tray is set by "hpjet_make_init")
     */
-    gs_sprintf(base_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
+    gs_snprintf(base_init, sizeof(base_init), "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
-    gs_sprintf(even_init, "\033&l180u36Z\033*r0F\033&u%dD", dots_per_inch);
+    gs_snprintf(even_init, sizeof(even_init), "\033&l180u36Z\033*r0F\033&u%dD", dots_per_inch);
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
                                         dots_per_inch, PCL_LJ4D_FEATURES,
                                         init,even_init,tumble);
@@ -507,7 +507,7 @@ ljet4pjl_print_page_copies(gx_device_printer *pdev, gp_file *prn_stream,
 {	int dots_per_inch = (int)pdev->y_pixels_per_inch;
         char real_init[60];
 
-        gs_sprintf(real_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
+        gs_snprintf(real_init, sizeof(real_init), "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
         return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
                                         dots_per_inch, PCL_LJ4PJL_FEATURES,
                                         real_init, real_init, false);

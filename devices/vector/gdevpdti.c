@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1214,7 +1214,7 @@ pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, pdf_reso
             if (code < 0)
                 return code;
         }
-        gs_sprintf(buf, "%ld 0 R\n", pres->object->id);
+        gs_snprintf(buf, sizeof(buf), "%ld 0 R\n", pres->object->id);
         if (v != NULL) {
             if (v->value_type != COS_VALUE_OBJECT &&
                 v->value_type != COS_VALUE_RESOURCE)

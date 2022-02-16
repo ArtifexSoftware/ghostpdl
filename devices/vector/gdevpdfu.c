@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -335,14 +335,14 @@ static int write_tt_encodings(stream *s, bool HaveTrueTypes)
         char Buffer[256];
         single_glyph_list_t *entry = SingleGlyphList;
 
-        gs_sprintf(Buffer, "/AdobeGlyphList mark\n");
+        gs_snprintf(Buffer, sizeof(Buffer), "/AdobeGlyphList mark\n");
         stream_write(s, Buffer, strlen(Buffer));
         while (entry->Glyph) {
-            gs_sprintf(Buffer, "/%s 16#%04x\n", entry->Glyph, entry->Unicode);
+            gs_snprintf(Buffer, sizeof(Buffer), "/%s 16#%04x\n", entry->Glyph, entry->Unicode);
             stream_write(s, Buffer, strlen(Buffer));
             entry++;
         };
-        gs_sprintf(Buffer, ".dicttomark readonly def\n");
+        gs_snprintf(Buffer, sizeof(Buffer), ".dicttomark readonly def\n");
         stream_write(s, Buffer, strlen(Buffer));
 
         index = 0;
@@ -523,29 +523,29 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
                     }
             }
             if (!pdev->Eps2Write || pdev->BBox.p.x > pdev->BBox.q.x || pdev->BBox.p.y > pdev->BBox.q.y)
-                gs_sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", (int)urx, (int)ury);
+                gs_snprintf(BBox, sizeof(BBox), "%%%%BoundingBox: 0 0 %d %d\n", (int)urx, (int)ury);
             else
-                gs_sprintf(BBox, "%%%%BoundingBox: %d %d %d %d\n", (int)floor(pdev->BBox.p.x), (int)floor(pdev->BBox.p.y), (int)ceil(pdev->BBox.q.x), (int)ceil(pdev->BBox.q.y));
+                gs_snprintf(BBox, sizeof(BBox), "%%%%BoundingBox: %d %d %d %d\n", (int)floor(pdev->BBox.p.x), (int)floor(pdev->BBox.p.y), (int)ceil(pdev->BBox.q.x), (int)ceil(pdev->BBox.q.y));
             stream_write(s, (byte *)BBox, strlen(BBox));
             if (!pdev->Eps2Write || pdev->BBox.p.x > pdev->BBox.q.x || pdev->BBox.p.y > pdev->BBox.q.y)
-                gs_sprintf(BBox, "%%%%HiResBoundingBox: 0 0 %.2f %.2f\n", urx, ury);
+                gs_snprintf(BBox, sizeof(BBox), "%%%%HiResBoundingBox: 0 0 %.2f %.2f\n", urx, ury);
             else
-                gs_sprintf(BBox, "%%%%HiResBoundingBox: %.2f %.2f %.2f %.2f\n", pdev->BBox.p.x, pdev->BBox.p.y, pdev->BBox.q.x, pdev->BBox.q.y);
+                gs_snprintf(BBox, sizeof(BBox), "%%%%HiResBoundingBox: %.2f %.2f %.2f %.2f\n", pdev->BBox.p.x, pdev->BBox.p.y, pdev->BBox.q.x, pdev->BBox.q.y);
             stream_write(s, (byte *)BBox, strlen(BBox));
         }
         cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time) - 1);
         cre_date_time[cre_date_time_len] = 0;
-        gs_sprintf(BBox, "%%%%Creator: %s %d (%s)\n", gs_product, (int)gs_revision,
+        gs_snprintf(BBox, sizeof(BBox), "%%%%Creator: %s %d (%s)\n", gs_product, (int)gs_revision,
                 pdev->dname);
         stream_write(s, (byte *)BBox, strlen(BBox));
         stream_puts(s, "%%LanguageLevel: 2\n");
-        gs_sprintf(BBox, "%%%%CreationDate: %s\n", cre_date_time);
+        gs_snprintf(BBox, sizeof(BBox), "%%%%CreationDate: %s\n", cre_date_time);
         stream_write(s, (byte *)BBox, strlen(BBox));
-        gs_sprintf(BBox, "%%%%Pages: %d\n", pages);
+        gs_snprintf(BBox, sizeof(BBox), "%%%%Pages: %d\n", pages);
         stream_write(s, (byte *)BBox, strlen(BBox));
-        gs_sprintf(BBox, "%%%%EndComments\n");
+        gs_snprintf(BBox, sizeof(BBox), "%%%%EndComments\n");
         stream_write(s, (byte *)BBox, strlen(BBox));
-        gs_sprintf(BBox, "%%%%BeginProlog\n");
+        gs_snprintf(BBox, sizeof(BBox), "%%%%BeginProlog\n");
         stream_write(s, (byte *)BBox, strlen(BBox));
         if (pdev->params.CompressPages) {
             /*  When CompressEntireFile is true and ASCII85EncodePages is false,
@@ -605,7 +605,7 @@ pdfwrite_pdf_open_document(gx_device_pdf * pdev)
                 pdev->CompressEntireFile = 0;
             else {
                 stream_write(s, (byte *)"%!\r", 3);
-                gs_sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", width, height);
+                gs_snprintf(BBox, sizeof(BBox), "%%%%BoundingBox: 0 0 %d %d\n", width, height);
                 stream_write(s, (byte *)BBox, strlen(BBox));
                 if (pdev->params.CompressPages || pdev->CompressEntireFile) {
                     /*  When CompressEntireFile is true and ASCII85EncodePages is false,
@@ -1544,7 +1544,7 @@ void
 pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *pres, long id)
 {
     pres->object->id = (id == 0 ? pdf_obj_ref(pdev) : id);
-    gs_sprintf(pres->rname, "R%ld", pres->object->id);
+    gs_snprintf(pres->rname, sizeof(pres->rname), "R%ld", pres->object->id);
 }
 
 /* Begin an aside (resource, annotation, ...). */
@@ -2006,7 +2006,7 @@ pdf_store_default_Producer(char buf[PDF_MAX_PRODUCER])
     int minor = (int)(gs_revision - (major * 1000)) / 10;
     int patch = gs_revision % 10;
 
-    gs_sprintf(buf, "(%s %d.%02d.%d)", gs_product, major, minor, patch);
+    gs_snprintf(buf, PDF_MAX_PRODUCER, "(%s %d.%02d.%d)", gs_product, major, minor, patch);
 }
 
 /* Write matrix values. */
@@ -2053,7 +2053,7 @@ pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
             case '[': case ']':
             case '{': case '}':
             case '/':
-                gs_sprintf(hex, "#%02x", c);
+                gs_snprintf(hex, sizeof(hex), "#%02x", c);
                 stream_puts(s, hex);
                 break;
             case 0:

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -220,9 +220,9 @@ static int alloc_rb( gs_memory_t *mem, cmyrow **rb, int rows)
       int r;
       for(r=0; r<rows; r++)
         {
-          gs_sprintf((*rb)[r].cname, "C%02x", r);
-          gs_sprintf((*rb)[r].mname, "M%02x", r);
-          gs_sprintf((*rb)[r].yname, "Y%02x", r);
+          gs_snprintf((*rb)[r].cname, sizeof((*rb)[r].cname), "C%02x", r);
+          gs_snprintf((*rb)[r].mname, sizeof((*rb)[r].mname), "M%02x", r);
+          gs_snprintf((*rb)[r].yname, sizeof((*rb)[r].yname), "Y%02x", r);
           (*rb)[r].is_used=0;
         }
       return 0;

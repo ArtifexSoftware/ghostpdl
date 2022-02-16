@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -134,7 +134,7 @@ m8510_output_run(gx_device_printer *pdev,
         /* Transfer the line of data. */
         count = out_end - out;
         if (count > 0) {
-                gs_sprintf(tmp, "\033g%03d", count/8);
+                gs_snprintf(tmp, sizeof(tmp), "\033g%03d", count/8);
                 gp_fwrite(tmp, 1, 5, prn_stream);
                 gp_fwrite(out, 1, count, prn_stream);
                 gp_fwrite("\r", 1, 1, prn_stream);

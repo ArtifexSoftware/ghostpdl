@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2083,7 +2083,7 @@ transfer_map_access_signed(const gs_data_source_t *psrc,
 static int
 pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
                        int range0, bool check_identity,
-                       const char *key, char *ids)
+                       const char *key, char *ids, int id_max)
 {
     gs_memory_t *mem = pdev->pdf_memory;
     gs_function_Sd_params_t params;
@@ -2152,14 +2152,14 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     gs_function_free(pfn, false, mem);
     if (code < 0)
         return code;
-    gs_sprintf(ids, "%s%s%ld 0 R", key, (key[0] && key[0] != ' ' ? " " : ""), id);
+    gs_snprintf(ids, id_max, "%s%s%ld 0 R", key, (key[0] && key[0] != ' ' ? " " : ""), id);
     return 0;
 }
 static int
 pdf_write_transfer(gx_device_pdf *pdev, const gx_transfer_map *map,
-                   const char *key, char *ids)
+                   const char *key, char *ids, int id_max)
 {
-    return pdf_write_transfer_map(pdev, map, 0, true, key, ids);
+    return pdf_write_transfer_map(pdev, map, 0, true, key, ids, id_max);
 }
 
 /* ------ Halftones ------ */
@@ -2395,7 +2395,7 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
 
     if (pdev->CompatibilityLevel <= 1.7) {
         code = pdf_write_transfer(pdev, porder->transfer, "/TransferFunction",
-                                  trs);
+                                  trs, sizeof(trs));
         if (code < 0)
             return code;
     }
@@ -2515,7 +2515,7 @@ pdf_write_threshold_halftone(gx_device_pdf *pdev,
     memset(trs, 0x00, 17 + MAX_FN_CHARS + 1);
     if (pdev->CompatibilityLevel <= 1.7) {
         code = pdf_write_transfer(pdev, porder->transfer, "",
-                                  trs);
+                                  trs, sizeof(trs));
 
         if (code < 0)
             return code;
@@ -2549,7 +2549,7 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
     memset(trs, 0x00, 17 + MAX_FN_CHARS + 1);
     if (pdev->CompatibilityLevel <= 1.7) {
         code = pdf_write_transfer(pdev, porder->transfer, "",
-                                  trs);
+                                  trs, sizeof(trs));
 
         if (code < 0)
             return code;
@@ -2710,7 +2710,7 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev, gs_gstate *pgs,
  */
 static int
 pdf_update_halftone(gx_device_pdf *pdev, const gs_gstate *pgs,
-                    char *hts)
+                    char *hts, int hts_max)
 {
     const gs_halftone *pht = pgs->halftone;
     const gx_device_halftone *pdht = pgs->dev_ht[HT_OBJTYPE_DEFAULT];
@@ -2748,7 +2748,7 @@ pdf_update_halftone(gx_device_pdf *pdev, const gs_gstate *pgs,
     }
     if (code < 0)
         return code;
-    gs_sprintf(hts, "%ld 0 R", id);
+    gs_snprintf(hts, hts_max, "%ld 0 R", id);
     pdev->halftone_id = pgs->dev_ht[HT_OBJTYPE_DEFAULT]->id;
     return code;
 }
@@ -2816,7 +2816,7 @@ pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres)
  */
 static int
 pdf_update_transfer(gx_device_pdf *pdev, const gs_gstate *pgs,
-                    char *trs)
+                    char *trs, int trs_max)
 {
     int i, pi = -1;
     bool multiple = false, update = false;
@@ -2842,7 +2842,7 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_gstate *pgs,
         int mask;
 
         if (!multiple) {
-            code = pdf_write_transfer(pdev, tm[pi], "", trs);
+            code = pdf_write_transfer(pdev, tm[pi], "", trs, trs_max);
             if (code < 0)
                 return code;
             mask = code == 0;
@@ -2851,9 +2851,10 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_gstate *pgs,
             mask = 0;
             for (i = 0; i < 4; ++i)
                 if (tm[i] != NULL) {
+                    int len = (int)strlen(trs);
                     code = pdf_write_transfer_map(pdev,
                                                   tm[i],
-                                                  0, true, " ", trs + strlen(trs));
+                                                  0, true, " ", trs + len, trs_max - len);
                     if (code < 0)
                         return code;
                     mask |= (code == 0) << i;
@@ -2891,7 +2892,7 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
             }
         }
         else{
-            gs_sprintf(buf, "%ld 0 R", pgs->soft_mask_id);
+            gs_snprintf(buf, sizeof(buf), "%ld 0 R", pgs->soft_mask_id);
             code = pdf_open_gstate(pdev, ppres);
             if (code < 0)
                 return code;
@@ -2991,28 +2992,28 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
             pdev->halftone_id != pgs->dev_ht[HT_OBJTYPE_DEFAULT]->id &&
             !pdev->PDFX
             ) {
-            code = pdf_update_halftone(pdev, pgs, hts);
+            code = pdf_update_halftone(pdev, pgs, hts, sizeof(hts));
             if (code < 0)
                 return code;
         }
         if (pdev->params.TransferFunctionInfo != tfi_Remove &&
             !pdev->PDFX && pdev->PDFA == 0
             ) {
-            code = pdf_update_transfer(pdev, pgs, trs);
+            code = pdf_update_transfer(pdev, pgs, trs, sizeof(trs));
             if (code < 0)
                 return code;
         }
         if (pdev->params.UCRandBGInfo == ucrbg_Preserve) {
             if (pgs->black_generation && pdev->black_generation_id != pgs->black_generation->id) {
                 code = pdf_write_transfer_map(pdev, pgs->black_generation,
-                                              0, false, "", bgs);
+                                              0, false, "", bgs, sizeof(bgs));
                 if (code < 0)
                     return code;
                 pdev->black_generation_id = pgs->black_generation->id;
             }
             if (pgs->undercolor_removal && pdev->undercolor_removal_id != pgs->undercolor_removal->id) {
                 code = pdf_write_transfer_map(pdev, pgs->undercolor_removal,
-                                              -1, false, "", ucrs);
+                                              -1, false, "", ucrs, sizeof(ucrs));
                 if (code < 0)
                     return code;
                 pdev->undercolor_removal_id = pgs->undercolor_removal->id;
@@ -3080,7 +3081,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
                 code = pdf_open_gstate(pdev, ppres);
                 if (code < 0)
                     return code;
-                gs_sprintf(buf, "[%d %d]", phase.x, phase.y);
+                gs_snprintf(buf, sizeof(buf), "[%d %d]", phase.x, phase.y);
                 if (pdev->CompatibilityLevel >= 1.999)
                     code = cos_dict_put_string_copy(resource_dict(*ppres), "/HTO", buf);
                 else
