@@ -1194,11 +1194,18 @@ gx_render_plane_init(gx_render_plane_t *render_plane, const gx_device *dev,
     int num_planes = dev->color_info.num_components;
     int plane_depth = dev->color_info.depth / num_planes;
 
-    if (index < 0 || index >= num_planes)
+    if (index < -1 || index >= num_planes)
         return_error(gs_error_rangecheck);
     render_plane->index = index;
-    render_plane->depth = plane_depth;
-    render_plane->shift = plane_depth * (num_planes - 1 - index);
+    if (index == -1) {
+        /* No plane, chunky results required. */
+        render_plane->depth = dev->color_info.depth;
+        render_plane->shift = 0;
+    } else {
+        /* A single plane */
+        render_plane->depth = plane_depth;
+        render_plane->shift = plane_depth * (num_planes - 1 - index);
+    }
     return 0;
 }
 

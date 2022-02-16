@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -146,8 +146,8 @@ make_mcde_default(gx_device *dev, const gs_gstate *pgs,
         return_error(gs_error_VMerror);
     bits.data = mdev->base;
     bits.raster = mdev->raster;
-    bits.size.x = mdev->width;
-    bits.size.y = mdev->height;
+    bits.size.x = bits.rep_width = mdev->width;
+    bits.size.y = bits.rep_height = mdev->height;
     bits.id = gx_no_bitmap_id;
     bits.num_planes = 1;
     code = gx_mask_clip_initialize(mcdev, &gs_mask_clip_device,

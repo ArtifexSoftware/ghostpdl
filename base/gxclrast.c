@@ -1495,7 +1495,7 @@ ibegin:                 if_debug0m('L', mem, "\n");
                                         if (code < 0)
                                             goto top_up_failed;
                                     }
-                                    cmd_getw(planes[plane].raster, cbp)                                ;
+                                    cmd_getw(planes[plane].raster, cbp);
                                     if ((raster1 = planes[plane].raster) != 0)
                                         cmd_getw(data_x, cbp);
                                 } else {

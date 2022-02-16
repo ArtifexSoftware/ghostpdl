@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -995,7 +995,7 @@ clist_process_page(gx_device *dev, gx_process_page_options_t *options)
             return code;
     }
 
-    render_plane.index = -1;
+    gx_render_plane_init(&render_plane, dev, -1);
     for (y = 0; y < dev->height; y += lines_rasterized)
     {
         line_count = band_height;
