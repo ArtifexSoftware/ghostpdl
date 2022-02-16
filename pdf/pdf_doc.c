@@ -122,7 +122,7 @@ int pdfi_read_Info(pdf_context *ctx)
         dmprintf(ctx->memory, "\n");
 
     pdfi_device_set_flags(ctx);
-    pdfi_write_docinfo_pdfmark(ctx, Info);
+    pdfi_pdfmark_write_docinfo(ctx, Info);
 
     /* We don't pdfi_countdown(Info) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
@@ -814,9 +814,9 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
              */
             code = pdfi_dict_delete_pair(ctx, tempdict, Key);
         } else if (pdfi_name_is(Key, "A")) {
-            code = pdfi_mark_modA(ctx, tempdict);
+            code = pdfi_pdfmark_modA(ctx, tempdict);
         } else if (pdfi_name_is(Key, "Dest")) {
-            code = pdfi_mark_modDest(ctx, tempdict);
+            code = pdfi_pdfmark_modDest(ctx, tempdict);
         } else if (pdfi_name_is(Key, "Count")) {
             /* Delete any count we find in the dict
              * We will use our value below
@@ -845,7 +845,7 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
     }
 
     /* Write the pdfmark */
-    code = pdfi_mark_from_dict(ctx, tempdict, NULL, "OUT");
+    code = pdfi_pdfmark_from_dict(ctx, tempdict, NULL, "OUT");
     if (code < 0)
         goto exit;
 
@@ -1047,7 +1047,7 @@ static int pdfi_doc_Info(pdf_context *ctx)
     if (code < 0) goto exit;
 
     /* Write the pdfmark */
-    code = pdfi_mark_from_dict(ctx, tempdict, NULL, "DOCINFO");
+    code = pdfi_pdfmark_from_dict(ctx, tempdict, NULL, "DOCINFO");
 
  exit:
     pdfi_countdown(Key);
@@ -1084,7 +1084,7 @@ static int pdfi_doc_PageLabels(pdf_context *ctx)
     }
 
     /* This will send the PageLabels object as a 'pdfpagelabels' setdeviceparams */
-    code = pdfi_mark_object(ctx, (pdf_obj *)PageLabels, "pdfpagelabels");
+    code = pdfi_pdfmark_object(ctx, (pdf_obj *)PageLabels, "pdfpagelabels");
     if (code < 0)
         goto exit;
 
@@ -1215,7 +1215,7 @@ static int pdfi_doc_EmbeddedFiles_Names(pdf_context *ctx, pdf_array *names)
         code = pdfi_array_get_type(ctx, names, index+1, PDF_DICT, (pdf_obj **)&filespec);
         if (code < 0) goto exit;
 
-        code = pdfi_mark_embed_filespec(ctx, name, filespec);
+        code = pdfi_pdfmark_embed_filespec(ctx, name, filespec);
         if (code < 0) goto exit;
 
         pdfi_countdown(name);

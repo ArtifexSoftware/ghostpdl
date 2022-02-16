@@ -768,7 +768,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     }
 
     /* Write the various CropBox, TrimBox etc to the device */
-    pdfi_write_boxes_pdfmark(ctx, page_dict);
+    pdfi_pdfmark_write_boxes(ctx, page_dict);
 
     code = setup_page_DefaultSpaces(ctx, page_dict);
     if (code < 0)

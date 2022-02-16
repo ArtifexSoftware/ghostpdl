@@ -451,7 +451,7 @@ int pdfi_op_MP(pdf_context *ctx)
         return_error(gs_error_typecheck);
     }
 
-    code = pdfi_mark_from_objarray(ctx, &o, 1, NULL, "MP");
+    code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "MP");
     ctx->BMClevel ++;
 
 exit:
@@ -503,7 +503,7 @@ int pdfi_op_DP(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         objarray[1] = ctx->stack_top[-1];
     }
 
-    code = pdfi_mark_from_objarray(ctx, objarray, 2, NULL, "DP");
+    code = pdfi_pdfmark_from_objarray(ctx, objarray, 2, NULL, "DP");
 
  exit:
     if (objarray != NULL)
@@ -535,7 +535,7 @@ int pdfi_op_BMC(pdf_context *ctx)
     }
 
     ctx->BDCWasOC = false;
-    code = pdfi_mark_from_objarray(ctx, &o, 1, NULL, "BMC");
+    code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "BMC");
     ctx->BMClevel ++;
 
 exit:
@@ -597,7 +597,7 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             objarray[1] = ctx->stack_top[-1];
         }
 
-        code = pdfi_mark_from_objarray(ctx, objarray, 2, NULL, "BDC");
+        code = pdfi_pdfmark_from_objarray(ctx, objarray, 2, NULL, "BDC");
         goto exit;
     }
 
@@ -636,7 +636,7 @@ int pdfi_op_EMC(pdf_context *ctx)
     int code, code1 = 0;
 
     if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && !ctx->BDCWasOC)
-        code1 = pdfi_mark_from_objarray(ctx, NULL, 0, NULL, "EMC");
+        code1 = pdfi_pdfmark_from_objarray(ctx, NULL, 0, NULL, "EMC");
 
     code = pdfi_oc_levels_clear(ctx, ctx->OFFlevels, ctx->BMClevel);
     if (code == 0)

@@ -567,10 +567,10 @@ static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
                 goto exit;
             if (code == 0) {
                 if (object->type == PDF_STREAM) {
-                    code = pdfi_mark_stream(ctx, (pdf_stream *)object);
+                    code = pdfi_pdfmark_stream(ctx, (pdf_stream *)object);
                     if (code < 0) goto exit;
                 } else if (object->type == PDF_DICT) {
-                    code = pdfi_mark_dict(ctx, (pdf_dict *)object);
+                    code = pdfi_pdfmark_dict(ctx, (pdf_dict *)object);
                     if (code < 0) goto exit;
                 } else {
                     code = pdfi_obj_to_string(ctx, object, data, len);
