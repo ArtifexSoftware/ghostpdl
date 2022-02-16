@@ -501,7 +501,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s)
                             /* TODO: Not positive this will actually have a length -- just use 0 */
                             char extra_info[gp_file_name_sizeof];
 
-                            gs_sprintf(extra_info, "Xref Stream object %u missing mandatory keyword /Length\n", obj_num);
+                            gs_snprintf(extra_info, sizeof(extra_info), "Xref Stream object %u missing mandatory keyword /Length\n", obj_num);
                             pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_read_xref_stream_dict", extra_info);
                             code = 0;
                             Length = 0;
@@ -648,7 +648,7 @@ static int write_offset(byte *B, gs_offset_t o, unsigned int g, unsigned char fr
     byte b[20], *ptr = B;
     int index = 0;
 
-    gs_sprintf((char *)b, "%"PRIdOFFSET"", o);
+    gs_snprintf((char *)b, sizeof(b), "%"PRIdOFFSET"", o);
     if (strlen((const char *)b) > 10)
         return_error(gs_error_rangecheck);
     for(index=0;index < 10 - strlen((const char *)b); index++) {
@@ -658,7 +658,7 @@ static int write_offset(byte *B, gs_offset_t o, unsigned int g, unsigned char fr
     ptr += strlen((const char *)b);
     *ptr++ = 0x20;
 
-    gs_sprintf((char *)b, "%d", g);
+    gs_snprintf((char *)b, sizeof(b), "%d", g);
     if (strlen((const char *)b) > 5)
         return_error(gs_error_rangecheck);
     for(index=0;index < 5 - strlen((const char *)b);index++) {
@@ -1103,21 +1103,21 @@ int pdfi_read_xref(pdf_context *ctx)
             entry = &ctx->xref_table->xref[i];
             if(entry->compressed) {
                 dmprintf(ctx->memory, "*");
-                gs_sprintf(Buffer, "%"PRId64"", entry->object_num);
+                gs_snprintf(Buffer, sizeof(Buffer), "%"PRId64"", entry->object_num);
                 j = 10 - strlen(Buffer);
                 while(j--) {
                     dmprintf(ctx->memory, " ");
                 }
                 dmprintf1(ctx->memory, "%s ", Buffer);
 
-                gs_sprintf(Buffer, "%ld", entry->u.compressed.compressed_stream_num);
+                gs_snprintf(Buffer, sizeof(Buffer), "%ld", entry->u.compressed.compressed_stream_num);
                 j = 10 - strlen(Buffer);
                 while(j--) {
                     dmprintf(ctx->memory, " ");
                 }
                 dmprintf1(ctx->memory, "%s ", Buffer);
 
-                gs_sprintf(Buffer, "%ld", entry->u.compressed.object_index);
+                gs_snprintf(Buffer, sizeof(Buffer), "%ld", entry->u.compressed.object_index);
                 j = 10 - strlen(Buffer);
                 while(j--) {
                     dmprintf(ctx->memory, " ");
@@ -1127,21 +1127,21 @@ int pdfi_read_xref(pdf_context *ctx)
             else {
                 dmprintf(ctx->memory, " ");
 
-                gs_sprintf(Buffer, "%ld", entry->object_num);
+                gs_snprintf(Buffer, sizeof(Buffer), "%ld", entry->object_num);
                 j = 10 - strlen(Buffer);
                 while(j--) {
                     dmprintf(ctx->memory, " ");
                 }
                 dmprintf1(ctx->memory, "%s ", Buffer);
 
-                gs_sprintf(Buffer, "%"PRIdOFFSET"", entry->u.uncompressed.offset);
+                gs_snprintf(Buffer, sizeof(Buffer), "%"PRIdOFFSET"", entry->u.uncompressed.offset);
                 j = 10 - strlen(Buffer);
                 while(j--) {
                     dmprintf(ctx->memory, " ");
                 }
                 dmprintf1(ctx->memory, "%s ", Buffer);
 
-                gs_sprintf(Buffer, "%ld", entry->u.uncompressed.generation_num);
+                gs_snprintf(Buffer, sizeof(Buffer), "%ld", entry->u.uncompressed.generation_num);
                 j = 10 - strlen(Buffer);
                 while(j--) {
                     dmprintf(ctx->memory, " ");

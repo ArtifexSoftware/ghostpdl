@@ -705,7 +705,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         char extra_info[256];
 
         page_dict_error = true;
-        gs_sprintf(extra_info, "*** ERROR: Page %ld has invalid Page dict, skipping\n", page_num+1);
+        gs_snprintf(extra_info, sizeof(extra_info), "*** ERROR: Page %ld has invalid Page dict, skipping\n", page_num+1);
         pdfi_set_error(ctx, 0, NULL, E_PDF_PAGEDICTERROR, "pdfi_page_render", extra_info);
         if (code != gs_error_VMerror && !ctx->args.pdfstoponerror)
             code = 0;

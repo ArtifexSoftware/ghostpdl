@@ -579,7 +579,7 @@ ensure_dot(char *buf, size_t buflen)
     if (pe) {
         int i;
         (void)sscanf(pe + 1, "%d", &i);
-        buflen -= (size_t)(pe - buf)
+        buflen -= (size_t)(pe - buf);
         /* MSVC .net 2005 express doesn't support "%+02d" */
         if (i >= 0)
             gs_snprintf(pe + 1, buflen, "+%02d", i);

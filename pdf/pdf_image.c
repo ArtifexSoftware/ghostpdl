@@ -1380,7 +1380,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                     {
                         char extra_info[gp_file_name_sizeof];
                         /* TODO: Could try DeviceRGB instead of erroring out? */
-                        gs_sprintf(extra_info, "**** Error: JPXDecode: Unsupported EnumCS %d\n", jpx_info->cs_enum);
+                        gs_snprintf(extra_info, sizeof(extra_info), "**** Error: JPXDecode: Unsupported EnumCS %d\n", jpx_info->cs_enum);
                         pdfi_set_error(ctx, 0, NULL, E_PDF_IMAGECOLOR_ERROR, "pdfi_image_get_color", extra_info);
                         code = gs_note_error(gs_error_rangecheck);
                         goto cleanupExit;

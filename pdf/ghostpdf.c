@@ -1174,9 +1174,9 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
         char extra_info[gp_file_name_sizeof];
 
         if (ctx->filename)
-            gs_sprintf(extra_info, "%% File %s does not appear to be a PDF file (no %%PDF in first 2Kb of file)\n", ctx->filename);
+            gs_snprintf(extra_info, sizeof(extra_info), "%% File %s does not appear to be a PDF file (no %%PDF in first 2Kb of file)\n", ctx->filename);
         else
-            gs_sprintf(extra_info, "%% File does not appear to be a PDF stream (no %%PDF in first 2Kb of stream)\n");
+            gs_snprintf(extra_info, sizeof(extra_info), "%% File does not appear to be a PDF stream (no %%PDF in first 2Kb of stream)\n");
 
         pdfi_set_error(ctx, 0, NULL, E_PDF_NOHEADER, "pdfi_set_input_stream", extra_info);
     } else {

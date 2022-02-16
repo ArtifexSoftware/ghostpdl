@@ -278,7 +278,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         char extra_info[gp_file_name_sizeof];
 
         (void)pdfi_loop_detector_cleartomark(ctx);
-        gs_sprintf(extra_info, "Stream object %u missing mandatory keyword /Length, unable to verify the stream length.\n", objnum);
+        gs_snprintf(extra_info, sizeof(extra_info), "Stream object %u missing mandatory keyword /Length, unable to verify the stream length.\n", objnum);
         pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_read_stream_object", extra_info);
         pdfi_countdown(stream_obj); /* get rid of extra ref */
         return 0;
@@ -292,7 +292,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
     if (i < 0 || (i + offset)> ctx->main_stream_length) {
         char extra_info[gp_file_name_sizeof];
 
-        gs_sprintf(extra_info, "Stream object %u has /Length which, when added to offset of object, exceeds file size.\n", objnum);
+        gs_snprintf(extra_info, sizeof(extra_info), "Stream object %u has /Length which, when added to offset of object, exceeds file size.\n", objnum);
         pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_read_stream_object", extra_info);
     } else {
         code = pdfi_seek(ctx, ctx->main_stream, i, SEEK_CUR);
@@ -309,7 +309,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         if (code < 0 || pdfi_count_stack(ctx) < 2) {
             char extra_info[gp_file_name_sizeof];
 
-            gs_sprintf(extra_info, "Failed to find a valid object at end of stream object %u.\n", objnum);
+            gs_snprintf(extra_info, sizeof(extra_info), "Failed to find a valid object at end of stream object %u.\n", objnum);
             pdfi_log_info(ctx, "pdfi_read_stream_object", extra_info);
             /* It is possible for pdfi_read_token to clear the stack, losing the stream object. If that
              * happens give up.
@@ -323,14 +323,14 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
             if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
                 char extra_info[gp_file_name_sizeof];
 
-                gs_sprintf(extra_info, "Failed to find 'endstream' keyword at end of stream object %u.\n", objnum);
+                gs_snprintf(extra_info, sizeof(extra_info), "Failed to find 'endstream' keyword at end of stream object %u.\n", objnum);
                 pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", extra_info);
             } else {
                 keyword = ((pdf_keyword *)ctx->stack_top[-1]);
                 if (keyword->key != TOKEN_ENDSTREAM) {
                     char extra_info[gp_file_name_sizeof];
 
-                    gs_sprintf(extra_info, "Stream object %u has an incorrect /Length of %"PRIu64"\n", objnum, i);
+                    gs_snprintf(extra_info, sizeof(extra_info), "Stream object %u has an incorrect /Length of %"PRIu64"\n", objnum, i);
                     pdfi_log_info(ctx, "pdfi_read_stream_object", extra_info);
                 } else {
                     /* Cache the Length in the stream object and mark it valid */
@@ -842,7 +842,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     if (obj >= ctx->xref_table->xref_size) {
         char extra_info[gp_file_name_sizeof];
 
-        gs_sprintf(extra_info, "Error, attempted to dereference object %"PRIu64", which is not present in the xref table\n", obj);
+        gs_snprintf(extra_info, sizeof(extra_info), "Error, attempted to dereference object %"PRIu64", which is not present in the xref table\n", obj);
         pdfi_set_error(ctx, 0, NULL, E_PDF_BADOBJNUMBER, "pdfi_dereference", extra_info);
 
         if(ctx->args.pdfstoponerror)
@@ -862,7 +862,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     if (entry->free) {
         char extra_info[gp_file_name_sizeof];
 
-        gs_sprintf(extra_info, "Attempt to dereference free object %"PRIu64", trying next object number as offset.\n", entry->object_num);
+        gs_snprintf(extra_info, sizeof(extra_info), "Attempt to dereference free object %"PRIu64", trying next object number as offset.\n", entry->object_num);
         pdfi_set_error(ctx, 0, NULL, E_PDF_DEREF_FREE_OBJ, "pdfi_dereference", extra_info);
     }
 

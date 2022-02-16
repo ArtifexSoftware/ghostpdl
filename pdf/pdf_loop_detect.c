@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -84,7 +84,7 @@ bool pdfi_loop_detector_check_object(pdf_context *ctx, uint64_t object)
     for (i=0;i < ctx->loop_detection_entries;i++) {
         if (ctx->loop_detection[i] == object) {
             char info_string[256];
-            gs_sprintf(info_string, "Error! circular reference to object %"PRIu64" detected.\n", object);
+            gs_snprintf(info_string, sizeof(info_string), "Error! circular reference to object %"PRIu64" detected.\n", object);
             pdfi_set_error(ctx, 0, NULL, E_PDF_CIRCULARREF, "pdfi_loop_detector_check_object", info_string);
             return true;
         }

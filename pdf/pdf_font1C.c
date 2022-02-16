@@ -1472,7 +1472,7 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
         pdfi_countup(pstr);
         if (ptpriv->forcecid) {
             char buf[40];
-            int len = gs_sprintf(buf, "%d", 0);
+            int len = gs_snprintf(buf, sizeof(buf), "%d", 0);
 
             code = pdfi_name_alloc(ctx, (byte *) buf, len, &gname);
             if (code < 0) {
@@ -1526,7 +1526,7 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
                 }
                 if ((code = pdfi_make_name_from_sid(ctx, &gname, font, offsets, sid)) < 0) {
                     char buf[40];
-                    int len = gs_sprintf(buf, "sid-%d", sid);
+                    int len = gs_snprintf(buf, sizeof(buf), "sid-%d", sid);
 
                     code = pdfi_name_alloc(ctx, (byte *) buf, len, &gname);
                     if (code < 0) {
