@@ -1190,24 +1190,21 @@ pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 pdfi_countup(key);
 
                 if (buf + size < bufend) {
-                    code = pdfi_dict_known_by_key(s->pdfi_ctx, priv->u.t1.CharStrings, (pdf_name *)key, &key_known);
-                    if (code >=0 && key_known != true) {
-                         code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, size, (pdf_obj **) &str);
-                         if (code < 0) {
-                             pdfi_countdown(key);
-                             (void)pdf_ps_stack_pop(s, 2);
-                             return code;
-                         }
-                         pdfi_countup(str);
-                         memcpy(str->data, buf, size);
+                    code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, size, (pdf_obj **) &str);
+                    if (code < 0) {
+                        pdfi_countdown(key);
+                        (void)pdf_ps_stack_pop(s, 2);
+                        return code;
+                    }
+                    pdfi_countup(str);
+                    memcpy(str->data, buf, size);
 
-                         code = pdfi_dict_put_obj(s->pdfi_ctx, priv->u.t1.CharStrings, key, (pdf_obj *) str);
-                         if (code < 0) {
-                            pdfi_countdown(str);
-                            pdfi_countdown(key);
-                            (void)pdf_ps_stack_pop(s, 2);
-                            return code;
-                        }
+                    code = pdfi_dict_put_obj(s->pdfi_ctx, priv->u.t1.CharStrings, key, (pdf_obj *) str, false);
+                    if (code < 0) {
+                       pdfi_countdown(str);
+                       pdfi_countdown(key);
+                       (void)pdf_ps_stack_pop(s, 2);
+                       return code;
                     }
                 }
                 pdfi_countdown(str);

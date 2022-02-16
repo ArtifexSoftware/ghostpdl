@@ -189,7 +189,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             if (code < 0)
                 goto exit;
 
-            code = pdfi_dict_put_obj(ctx, spot_dict, name, dummy);
+            code = pdfi_dict_put_obj(ctx, spot_dict, name, dummy, true);
             pdfi_countdown(name);
             if (code < 0)
                 break;
@@ -216,7 +216,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         if (code < 0)
             goto exit;
 
-        code = pdfi_dict_put_obj(ctx, spot_dict, (pdf_obj *)space, dummy);
+        code = pdfi_dict_put_obj(ctx, spot_dict, (pdf_obj *)space, dummy, true);
         goto exit;
     } else {
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",

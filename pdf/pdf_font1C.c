@@ -1411,7 +1411,7 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
                 memcpy(pstr->data, s, e - s);
                 pdfi_countup(pstr);
                 code =
-                    pdfi_dict_put_obj(ctx, font->CharStrings, (pdf_obj *) ndname, (pdf_obj *) pstr);
+                    pdfi_dict_put_obj(ctx, font->CharStrings, (pdf_obj *) ndname, (pdf_obj *) pstr, true);
                 pdfi_countdown(pstr);
                 if (code < 0) {
                     goto done;
@@ -1489,7 +1489,7 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
             }
             pdfi_countup(gname);
         }
-        code = pdfi_dict_put_obj(ctx, font->CharStrings, gname, (pdf_obj *) pstr);
+        code = pdfi_dict_put_obj(ctx, font->CharStrings, gname, (pdf_obj *) pstr, true);
         pdfi_countdown(pstr);
         pdfi_countdown(gname);
         if (code < 0)
@@ -1536,7 +1536,7 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
                 }
             }
             pdfi_countup(gname);
-            code = pdfi_dict_put_obj(ctx, font->CharStrings, gname, (pdf_obj *) pstr);
+            code = pdfi_dict_put_obj(ctx, font->CharStrings, gname, (pdf_obj *) pstr, true);
             pdfi_countdown(pstr);
             if (code < 0) {
                 pdfi_countdown(gname);

@@ -1232,7 +1232,7 @@ static int pdfi_create_JPX_Lab(pdf_context *ctx, pdf_obj **ColorSpace)
     }
     num = NULL;
 
-    code = pdfi_dict_put_obj(ctx, Params, (pdf_obj *)WhitePointName, (pdf_obj *)WhitePoint);
+    code = pdfi_dict_put_obj(ctx, Params, (pdf_obj *)WhitePointName, (pdf_obj *)WhitePoint, true);
     if (code < 0)
         goto cleanupExit;
 

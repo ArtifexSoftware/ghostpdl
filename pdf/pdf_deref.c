@@ -1091,7 +1091,7 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj, bool recur
             if (code < 0) goto exit;
             /* don't store the object if it's a stream (leave as a ref) */
             if (Value->type != PDF_STREAM)
-                pdfi_dict_put_obj(ctx, dict, (pdf_obj *)Key, Value);
+                pdfi_dict_put_obj(ctx, dict, (pdf_obj *)Key, Value, true);
             if (recurse)
                 code = pdfi_resolve_indirect_loop_detect(ctx, NULL, Value, recurse);
         }

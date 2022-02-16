@@ -335,7 +335,7 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
                 goto errorExit;
             pdfi_countup(Key);
 
-            code = pdfi_dict_put_obj(ctx, leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
+            code = pdfi_dict_put_obj(ctx, leaf_dict, (pdf_obj *)Key, (pdf_obj *)node, true);
             if (code < 0)
                 goto errorExit;
             code = pdfi_dict_put(ctx, leaf_dict, "Type", (pdf_obj *)Key);
@@ -1029,7 +1029,7 @@ static int pdfi_doc_Info(pdf_context *ctx)
         if (pdfi_name_is(Key, "Author") || pdfi_name_is(Key, "Creator") ||
             pdfi_name_is(Key, "Title") || pdfi_name_is(Key, "Subject") ||
             pdfi_name_is(Key, "Keywords")) {
-            code = pdfi_dict_put_obj(ctx, tempdict, (pdf_obj *)Key, Value);
+            code = pdfi_dict_put_obj(ctx, tempdict, (pdf_obj *)Key, Value, true);
             if (code < 0)
                 goto exit;
         }

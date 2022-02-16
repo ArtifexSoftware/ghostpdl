@@ -751,8 +751,11 @@ int pdfi_make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict
     return array_size;
 }
 
-/* Put into dictionary with key as object */
-int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *value)
+/* Put into dictionary with key as object -
+   If the key already exists, we'll only replace it
+   if "replace" is true.
+*/
+int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *value, bool replace)
 {
     uint64_t i;
     pdf_dict_entry *new_list;
@@ -769,7 +772,7 @@ int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *valu
         n = (pdf_name *)d->list[i].key;
         if (n && n->type == PDF_NAME) {
             if (pdfi_name_cmp((pdf_name *)Key, n) == 0) {
-                if (d->list[i].value == value)
+                if (d->list[i].value == value || replace == false)
                     /* We already have this value stored with this key.... */
                     return 0;
                 pdfi_countdown(d->list[i].value);
@@ -826,7 +829,7 @@ int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value
         return code;
     pdfi_countup(key);
 
-    code = pdfi_dict_put_obj(ctx, d, key, value);
+    code = pdfi_dict_put_obj(ctx, d, key, value, true);
     pdfi_countdown(key); /* get rid of extra ref */
     return code;
 }
@@ -877,7 +880,7 @@ int pdfi_dict_copy(pdf_context *ctx, pdf_dict *target, pdf_dict *source)
     int i=0, code = 0;
 
     for (i=0;i< source->entries;i++) {
-        code = pdfi_dict_put_obj(ctx, target, source->list[i].key, source->list[i].value);
+        code = pdfi_dict_put_obj(ctx, target, source->list[i].key, source->list[i].value, true);
         if (code < 0)
             return code;
     }
@@ -1097,7 +1100,7 @@ int pdfi_merge_dicts(pdf_context *ctx, pdf_dict *target, pdf_dict *source)
         if (code < 0)
             return code;
         if (!known) {
-            code = pdfi_dict_put_obj(ctx, target, source->list[i].key, source->list[i].value);
+            code = pdfi_dict_put_obj(ctx, target, source->list[i].key, source->list[i].value, true);
             if (code < 0)
                 return code;
         }

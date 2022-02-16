@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -31,7 +31,7 @@ int pdfi_dict_knownget(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *
 int pdfi_dict_knownget_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o);
 int pdfi_dict_knownget_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f);
 int pdfi_merge_dicts(pdf_context *ctx, pdf_dict *target, pdf_dict *source);
-int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *value);
+int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *value, bool replace);
 int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value);
 int pdfi_dict_put_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t value);
 int pdfi_dict_put_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool value);
