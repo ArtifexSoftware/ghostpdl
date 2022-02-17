@@ -348,6 +348,7 @@ int pdfi_gs_setgray(pdf_context *ctx, double d)
         if (code < 0)
             return code;
         cc.paint.values[0] = d;
+        cc.pattern = 0;
         return gs_setcolor(ctx->pgs, &cc);
     } else {
         code = gs_setgray(ctx->pgs, d);
@@ -376,6 +377,7 @@ int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
         cc.paint.values[0] = r;
         cc.paint.values[1] = g;
         cc.paint.values[2] = b;
+        cc.pattern = 0;
         return gs_setcolor(ctx->pgs, &cc);
     } else {
         code = gs_setrgbcolor(ctx->pgs, r, g, b);
@@ -404,6 +406,7 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
         cc.paint.values[1] = m;
         cc.paint.values[2] = y;
         cc.paint.values[3] = k;
+        cc.pattern = 0;
         return gs_setcolor(ctx->pgs, &cc);
     } else {
         code = gs_setcmykcolor(ctx->pgs, c, m, y, k);
@@ -710,7 +713,7 @@ int pdfi_setstrokecolor(pdf_context *ctx)
     gs_swapcolors_quick(ctx->pgs);
     pcs = gs_currentcolorspace(ctx->pgs);
     ncomps = cs_num_components(pcs);
-    if (ncomps < 0) {
+    if (ncomps < 1) {
         gs_swapcolors_quick(ctx->pgs);
         return_error(gs_error_syntaxerror);
     }
@@ -729,7 +732,7 @@ int pdfi_setfillcolor(pdf_context *ctx)
     gs_client_color cc;
 
     ncomps = cs_num_components(pcs);
-    if (ncomps < 0)
+    if (ncomps < 1)
         return_error(gs_error_syntaxerror);
     code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code == 0) {
@@ -775,7 +778,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
             code = gs_note_error(gs_error_syntaxerror);
             goto cleanupExit0;
         }
-        cc.pattern = NULL; /* For safe cleaning up on an error */
+        cc.pattern = 0; /* For safe cleaning up on an error */
         base_space = pcs->base_space;
         code = pdfi_pattern_set(ctx, stream_dict, page_dict, (pdf_name *)ctx->stack_top[-1], &cc);
         pdfi_pop(ctx, 1);
@@ -791,15 +794,21 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
             ncomps = 0;
     } else {
         ncomps = cs_num_components(pcs);
-        cc.pattern = NULL;
+        cc.pattern = 0;
     }
 
-    if (ncomps > 0)
+    if (ncomps > 0) {
         code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
-    if (code < 0)
-        goto cleanupExit1;
+        if (code < 0)
+            goto cleanupExit1;
+    }
 
     if (pcs->type == &gs_color_space_type_Indexed) {
+        if (ncomps <= 0)
+        {
+            code = gs_note_error(gs_error_rangecheck);
+            goto cleanupExit1;
+        }
         if (cc.paint.values[0] < 0)
             cc.paint.values[0] = 0.0;
         else
