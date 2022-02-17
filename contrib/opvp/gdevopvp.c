@@ -5253,8 +5253,8 @@ opvp_vector_dopath(
             break;
         default:
             /* error */
-            return_error(gs_error_unknownerror);
-            break;
+            ecode = gs_note_error(gs_error_unknownerror);
+            goto exit;
         }
 
 #ifdef  OPVP_OPT_MULTI_PATH
@@ -5266,6 +5266,7 @@ opvp_vector_dopath(
     code = (*vdev_proc(vdev, endpath))(vdev, type);
     if (code) ecode = code;
 
+exit:
 #ifdef  OPVP_OPT_MULTI_PATH
     if (points) free(points);
     if (opvp_p) free(opvp_p);
