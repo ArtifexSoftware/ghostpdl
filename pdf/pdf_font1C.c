@@ -441,7 +441,7 @@ pdfi_cff_cid_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *p
             if (gscidfont->cidata.FDBytes != 0)
                 *pfidx = (int)charstring->data[0];
 
-            if (pgd && charstring->length - gscidfont->cidata.FDBytes >= 0)
+            if (pgd && ((int64_t)charstring->length - (int64_t)gscidfont->cidata.FDBytes) >= 0)
                 gs_glyph_data_from_bytes(pgd, charstring->data + gscidfont->cidata.FDBytes, 0, charstring->length - gscidfont->cidata.FDBytes, NULL);
         }
     }
@@ -450,6 +450,7 @@ pdfi_cff_cid_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *p
 
     return code;
 }
+
 
 static int
 pdfi_cff_cidfont_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
