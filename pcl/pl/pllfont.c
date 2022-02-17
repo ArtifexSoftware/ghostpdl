@@ -189,7 +189,7 @@ check_resident_ufst_fonts(pl_dict_t * pfontdict,
                                 NULL) /* return data ignored */ )
                 dmprintf2(mem,
                           "%s not available in font dictionary, resident table position: %d\n",
-                          pl_built_in_resident_font_table[j].full_font_name, j);
+                          (char *)pl_built_in_resident_font_table[j].full_font_name, j);
         }
     }
     return;
