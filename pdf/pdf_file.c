@@ -1064,6 +1064,9 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
     if (ctx->encryption.is_encrypted && !inline_image) {
         int64_t Length;
 
+        if (ctx->encryption.StmF == CRYPT_IDENTITY)
+            return pdfi_filter_no_decryption(ctx, stream_obj, source, new_stream, inline_image);
+
         code = pdfi_dict_get_type(ctx, stream_dict, "StreamKey", PDF_STRING, (pdf_obj **)&StreamKey);
         if (code == gs_error_undefined) {
             code = pdfi_compute_objkey(ctx, (pdf_obj *)stream_dict, &StreamKey);
@@ -1090,7 +1093,7 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
          */
         Length = pdfi_stream_length(ctx, stream_obj);
 
-        if (Length <= 0 || ctx->encryption.StrF == CRYPT_IDENTITY) {
+        if (Length <= 0) {
             /* Don't treat as an encrypted stream if Length is 0 */
             pdfi_countdown(StreamKey);
             return pdfi_filter_no_decryption(ctx, stream_obj, source, new_stream, inline_image);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2021 Artifex Software, Inc.
+/* Copyright (C) 2020-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -928,6 +928,9 @@ int pdfi_decrypt_string(pdf_context *ctx, pdf_string *string)
     pdf_string *EKey = NULL;
     char *Buffer = NULL;
 
+    if (ctx->encryption.StrF == CRYPT_IDENTITY)
+        return 0;
+
     if (!is_compressed_object(ctx, string->indirect_num, string->indirect_gen)) {
         Buffer = (char *)gs_alloc_bytes(ctx->memory, string->length, "pdfi_decrypt_string");
         if (Buffer == NULL)
@@ -1386,11 +1389,13 @@ int pdfi_initialise_Decryption(pdf_context *ctx)
             code = check_password_preR5(ctx, ctx->encryption.Password, ctx->encryption.PasswordLen, KeyLen, 3);
             break;
         case 4:
-            /* Revision 4 is either AES or RC4, but its always 128-bits */
-            if (KeyLen == 0)
-                KeyLen = 128;
-            /* We can't set the encryption filter, so we have to hope the PDF file did */
-            code = check_password_preR5(ctx, ctx->encryption.Password, ctx->encryption.PasswordLen, KeyLen, 4);
+            if (ctx->encryption.StrF != CRYPT_IDENTITY || ctx->encryption.StmF != CRYPT_IDENTITY) {
+                /* Revision 4 is either AES or RC4, but its always 128-bits */
+                if (KeyLen == 0)
+                    KeyLen = 128;
+                /* We can't set the encryption filter, so we have to hope the PDF file did */
+                code = check_password_preR5(ctx, ctx->encryption.Password, ctx->encryption.PasswordLen, KeyLen, 4);
+            }
             break;
         case 5:
             /* Set up the defaults if not already set */
