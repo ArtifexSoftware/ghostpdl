@@ -176,7 +176,8 @@ typedef struct pdf_dict_s {
     uint64_t size;
     uint64_t entries;
     pdf_dict_entry *list;
-    bool dict_written; /* Has dict been written (for pdfwrite) */
+    bool dict_written;  /* Has dict been written (for pdfwrite) */
+    bool is_sorted;     /* true if the dictionary has been sorted by Key, for faster searching */
 } pdf_dict;
 
 typedef struct pdf_stream_s {
