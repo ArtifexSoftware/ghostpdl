@@ -88,7 +88,7 @@ gdev_x_open(gx_device_X * xdev)
     XSizeHints sizehints;
     char *window_id;
     XEvent event;
-    XVisualInfo xvinfo;
+    XVisualInfo xvinfo = { 0 };
     int nitems;
     XtAppContext app_con;
     Widget toplevel;
