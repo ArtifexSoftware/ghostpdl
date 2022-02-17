@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -301,6 +301,7 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
     p = params.data[0];
     stream.next_out = &buffer->data[0];
     stream.avail_out = buffer->size;
+    stream.total_out = 0;
 
     /* Nasty zlib hackery here. Zlib always outputs a 'start of stream'
      * marker at the beginning. We just want a block, so for all blocks
@@ -311,7 +312,9 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
     {
         stream.next_in = &sub;
         stream.avail_in = 1;
-        deflate(&stream, Z_FULL_FLUSH);
+        err = deflate(&stream, Z_FULL_FLUSH);
+        if (err != Z_OK)
+            return_error(gs_error_VMerror);
         stream.next_out = &buffer->data[0];
         stream.avail_out = buffer->size;
         stream.total_out = 0;
@@ -321,15 +324,19 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
     for (y = h-1; y >= 0; y--)
     {
         stream.avail_in = 1;
-        deflate(&stream, Z_NO_FLUSH);
+        err = deflate(&stream, Z_NO_FLUSH);
+        if (err != Z_OK)
+            return_error(gs_error_VMerror);
         stream.next_in = p;
         stream.avail_in = w*3;
-        deflate(&stream, (y == 0 ? (lastband ? Z_FINISH : Z_FULL_FLUSH) : Z_NO_FLUSH));
+        err = deflate(&stream, (y == 0 ? (lastband ? Z_FINISH : Z_FULL_FLUSH) : Z_NO_FLUSH));
+        if (err != Z_OK)
+            return_error(gs_error_VMerror);
         p += raster;
         stream.next_in = &paeth;
     }
     /* Ignore errors given here */
-    deflateEnd(&stream);
+    (void)deflateEnd(&stream);
 
     buffer->compressed = stream.total_out;
 
