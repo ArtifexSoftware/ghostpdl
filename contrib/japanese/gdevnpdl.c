@@ -605,6 +605,7 @@ npdl_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_c
             case PAPER_SIZE_A5:
                 gs_snprintf(paper_command, sizeof(paper_command), "A5");
                 break;
+            default:
             case PAPER_SIZE_A4:
                 gs_snprintf(paper_command, sizeof(paper_command), "A4");
                 break;
