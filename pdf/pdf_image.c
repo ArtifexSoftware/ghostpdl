@@ -1952,15 +1952,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     /* Setup the data stream for the image data */
     if (!inline_image) {
-        code = pdfi_object_alloc(ctx, PDF_STRING, 9, (pdf_obj **)&EODString);
-        if (code < 0)
-            goto cleanupExit;
-        pdfi_countup((pdf_obj *)EODString);
-        memcpy(EODString->data, "endstream", 9);
-
         pdfi_seek(ctx, source, stream_offset, SEEK_SET);
 
-        code = pdfi_apply_SubFileDecode_filter(ctx, 0, EODString, source, &SFD_stream, false);
+        code = pdfi_apply_SubFileDecode_filter(ctx, 0, "endstream", source, &SFD_stream, false);
         if (code < 0)
             goto cleanupExit;
         source = SFD_stream;
@@ -2096,8 +2090,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     /* Restore the rendering intent */
     gs_setrenderingintent(ctx->pgs, saved_intent);
-
-    pdfi_countdown(EODString);
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image END\n");

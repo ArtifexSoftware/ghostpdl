@@ -897,7 +897,6 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 goto error;
         } else {
             pdf_c_stream *SubFile_stream = NULL;
-            pdf_string *EODString;
 #if CACHE_STATISTICS
             ctx->misses++;
 #endif
@@ -907,16 +906,9 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             if (code < 0)
                 goto error;
 
-            code = pdfi_name_alloc(ctx, (byte *)"trailer", 7, (pdf_obj **)&EODString);
+            code = pdfi_apply_SubFileDecode_filter(ctx, 0, "trailer", ctx->main_stream, &SubFile_stream, false);
             if (code < 0)
                 goto error;
-            pdfi_countup(EODString);
-
-            code = pdfi_apply_SubFileDecode_filter(ctx, 0, EODString, ctx->main_stream, &SubFile_stream, false);
-            if (code < 0) {
-                pdfi_countdown(EODString);
-                goto error;
-            }
 
             code = pdfi_read_object(ctx, SubFile_stream, entry->u.uncompressed.offset);
 
@@ -925,7 +917,6 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
              */
             entry = &ctx->xref_table->xref[obj];
 
-            pdfi_countdown(EODString);
             pdfi_close_file(ctx, SubFile_stream);
             if (code < 0) {
                 int code1 = 0;

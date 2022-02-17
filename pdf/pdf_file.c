@@ -1155,7 +1155,7 @@ error:
  * NB! The EODString can't be tracked by the stream code. The caller is responsible for
  * managing the lifetime of this object. It must remain valid until the filter is closed.
  */
-int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *EODString, pdf_c_stream *source, pdf_c_stream **new_stream, bool inline_image)
+int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, const char *EODString, pdf_c_stream *source, pdf_c_stream **new_stream, bool inline_image)
 {
     int code;
     stream_SFD_state state;
@@ -1170,8 +1170,8 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *
         s_SFD_template.set_defaults((stream_state *)&state);
 
     if (EODString != NULL) {
-        state.eod.data = EODString->data;
-        state.eod.size = EODString->length;
+        state.eod.data = (const byte *)EODString;
+        state.eod.size = strlen(EODString);
     }
 
     if (EODCount > 0)
