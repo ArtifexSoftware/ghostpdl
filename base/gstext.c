@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -543,6 +543,7 @@ gs_xyshow_begin(gs_gstate * pgs, const byte * str, uint size,
     text.x_widths = x_widths;
     text.y_widths = y_widths;
     text.widths_size = widths_size;
+    text.delta_all.x = text.delta_all.y = 0.0;
 
     /*
      * Check that the widths array is large enough.  gs_text_replaced_width
