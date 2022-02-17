@@ -578,18 +578,8 @@ set_cache_device(gs_show_enum * penum, gs_gstate * pgs, double llx, double lly,
             if (code < 0)
                 return code;
         }
-        /*
-         * If we're oversampling (i.e., the temporary bitmap is
-         * larger than the final monobit or alpha array) and the
-         * temporary bitmap is large, use incremental conversion
-         * from oversampled bitmap strips to alpha values instead of
-         * full oversampling with compression at the end.
-         */
         code = gx_alloc_char_bits(dir, penum->dev_cache,
-                                (iwidth > MAX_CCACHE_TEMP_BITMAP_BITS / iheight &&
-                                 log2_scale.x + log2_scale.y > alpha_bits ?
-                                 penum->dev_cache2 : NULL),
-                                iwidth, iheight, &log2_scale, depth, &cc);
+                                  iwidth, iheight, &log2_scale, depth, &cc);
         if (code < 0)
             return code;
 

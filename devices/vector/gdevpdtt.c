@@ -3543,7 +3543,7 @@ pdf_text_process(gs_text_enum_t *pte)
                     /* end of code copied from show_cache_setup */
 
                     /* This copied from set_cache */
-                    code = gx_alloc_char_bits(pte->current_font->dir, dev, NULL,
+                    code = gx_alloc_char_bits(pte->current_font->dir, dev,
                                 0, 0, &log2_scale, 1, &cc);
                     if (code < 0)
                         return code;
