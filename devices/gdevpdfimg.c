@@ -707,13 +707,13 @@ static void write_xref_entry (stream *s, gs_offset_t Offset)
 }
 
 static void
-pdf_store_default_Producer(char *buf)
+pdf_store_default_Producer(char buf[256])
 {
     int major = (int)(gs_revision / 1000);
     int minor = (int)(gs_revision - (major * 1000)) / 10;
     int patch = gs_revision % 10;
 
-    gs_snprintf(buf, sizeof(buf), "(%s %d.%02d.%d)", gs_product, major, minor, patch);
+    gs_snprintf(buf, 256, "(%s %d.%02d.%d)", gs_product, major, minor, patch);
 }
 
 static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
