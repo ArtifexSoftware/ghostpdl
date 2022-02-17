@@ -393,6 +393,7 @@ download_pcl_pattern(pcl_args_t * pargs, pcl_state_t * pcs)
     depth = puptrn0->depth & 0xf;
     pixinfo.pix_depth = depth;
     pixinfo.raster = (pixinfo.size.x * depth + 7) / 8;
+    pixinfo.id = gx_no_bitmap_id;
     rsize = pixinfo.raster * pixinfo.size.y;
     dsize = min(count - ndsize, rsize);
 
