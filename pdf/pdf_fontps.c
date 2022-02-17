@@ -1178,7 +1178,6 @@ pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 pdf_ps_obj_has_type(&s->cur[-1], PDF_PS_OBJ_NAME)) {
                 pdf_string *str = NULL;
                 pdf_obj *key = NULL;
-                bool key_known;
 
                 size = s->cur[0].val.i;
                 buf++;
