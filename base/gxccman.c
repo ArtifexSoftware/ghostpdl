@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -501,6 +501,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 
     *pcc = 0;
     if (dev == NULL) {
+        rc_init(&mdev, NULL, 0);
         mdev.memory = 0;
         mdev.target = 0;
         pdev = &mdev;
