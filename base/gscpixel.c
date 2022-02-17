@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -110,7 +110,7 @@ gx_remap_concrete_DevicePixel(const gs_color_space * pcs, const frac * pconc,
 static int
 gx_set_overprint_DevicePixel(const gs_color_space * pcs, gs_gstate * pgs)
 {
-    gs_overprint_params_t   params;
+    gs_overprint_params_t params = { 0 };
 
     params.retain_any_comps = false;
     params.effective_opm = pgs->color[0].effective_opm = 0;

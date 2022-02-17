@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -281,7 +281,7 @@ gx_install_Pattern(gs_color_space * pcs, gs_gstate * pgs)
 static int
 gx_set_overprint_Pattern(const gs_color_space * pcs, gs_gstate * pgs)
 {
-    gs_overprint_params_t params;
+    gs_overprint_params_t params = { 0 };
 
     if (!pgs->overprint) {
         params.retain_any_comps = false;
