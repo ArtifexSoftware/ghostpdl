@@ -306,7 +306,8 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     } else if (real) {
         num->value.d = acrobat_compatible_atof((char *)Buffer);
     } else {
-        num->value.i = doubleneg ? 0 : negative ? -int_val : int_val;
+        /* The doubleneg case is taken care of above. */
+        num->value.i = negative ? -int_val : int_val;
     }
     if (ctx->args.pdfdebug) {
         if (real)
