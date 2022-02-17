@@ -191,9 +191,9 @@ lj3100sw_print_page_copies(gx_device_printer *pdev, gp_file *prn_stream, int num
         if (gdev_prn_file_is_new(pdev)) {
                 lj3100sw_output_section_header(prn_stream, 1, 0, 0);
                 lj3100sw_output_repeated_data_bytes(prn_stream, buffer, &ptr, 0x1b, 12);
-                ptr += gs_snprintf(ptr, sizeof(ptr), "\r\nBD");
+                ptr += gs_snprintf(ptr, sizeof(buffer) - (ptr - buffer), "\r\nBD");
                 lj3100sw_output_repeated_data_bytes(prn_stream, buffer, &ptr, 0, 5520);
-                ptr += gs_snprintf(ptr, sizeof(ptr), "%s\r\n%s %d\r\n%s %d\r\n%s %d\r\n%s %d\r\n%s %d\r\n%s %d\r\n",
+                ptr += gs_snprintf(ptr, sizeof(buffer) - (ptr - buffer), "%s\r\n%s %d\r\n%s %d\r\n%s %d\r\n%s %d\r\n%s %d\r\n%s %d\r\n",
                                "NJ",
                                "PQ", -1,
                                "RE",  high_resolution ? 6 : 2,
@@ -205,7 +205,7 @@ lj3100sw_print_page_copies(gx_device_printer *pdev, gp_file *prn_stream, int num
         }
 
         lj3100sw_output_section_header(prn_stream, 3, ppdev->NumCopies, 0);
-        ptr += gs_snprintf(ptr, sizeof(ptr), "%s %d\r\n%s\r\n",
+        ptr += gs_snprintf(ptr, sizeof(buffer) - (ptr - buffer), "%s %d\r\n%s\r\n",
                        "CM", 1,
                        "PD");
         *ptr++ = 0;
