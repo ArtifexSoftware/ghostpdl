@@ -987,7 +987,7 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
             ch = pte->text.data.chars[pte->index];
         } else if (operation & (TEXT_FROM_GLYPHS | TEXT_FROM_SINGLE_GLYPH)) {
             if (operation & TEXT_FROM_GLYPHS) {
-                gdata = pte->text.data.glyphs + (pte->index++ * sizeof (gs_glyph));
+                gdata = pte->text.data.glyphs + pte->index++;
             } else {
                 gdata = &pte->text.data.d_glyph;
             }
@@ -1090,7 +1090,7 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
 
         span_delta_x += dpt.x;
 
-        code = txt_get_unicode(penum->dev, (gs_font *)pte->orig_font, glyph, ch, &chr2[0]);
+        (void) txt_get_unicode(penum->dev, (gs_font *)pte->orig_font, glyph, ch, &chr2[0]);
         /* If a single text code returned multiple Unicode values, then we need to set the
          * 'extra' code points' widths to 0.
          */
