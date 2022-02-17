@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -499,7 +499,7 @@ static int pdf_write_path(gx_device_pdf * pdev, gs_path_enum *cenum, gdev_vector
                         buffering = 0;
                         seg_index = -1;
                     }
-                    if (type & gx_path_type_optimize) {
+                    if (type & gx_path_type_optimize && seg_index > 0) {
                         if (segments[seg_index - 1].op == gs_pe_lineto) {
                             if (segments[seg_index].vs[0].x == segments[seg_index - 1].vs[0].x && segments[seg_index].vs[0].x == line_start.x) {
                                 if (segments[seg_index - 1].vs[0].y > line_start.y && segments[seg_index].vs[0].y >= segments[seg_index - 1].vs[0].y) {
