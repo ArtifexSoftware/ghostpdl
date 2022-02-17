@@ -612,10 +612,9 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
                                  * Set the default halftone method.  We have to do this here,
                                  * rather than earlier, so that the origin is set correctly.
                                  */
-        px_args_t args;
+        px_args_t args = { 0 };
         px_value_t device_matrix;
 
-        memset(args.pv, 0, sizeof(args.pv));
         args.pv[1] = &device_matrix;    /* DeviceMatrix */
         device_matrix.type = pxd_scalar | pxd_ubyte;
         device_matrix.value.i = eDeviceBest;
