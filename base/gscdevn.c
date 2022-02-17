@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -774,8 +774,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
         else
             return gx_set_no_overprint(pgs);
     } else {
-        gs_overprint_params_t   params;
-
+        gs_overprint_params_t   params = { 0 };
 
         params.retain_any_comps = (pgs->overprint && pgs->is_fill_color) ||
                                   (pgs->stroke_overprint && !pgs->is_fill_color);
