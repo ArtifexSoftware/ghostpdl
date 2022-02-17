@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2040,7 +2040,7 @@ hp_colour_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
   int outbuff_size = 0;
   int compression = 0;
   int scan = 0;
-  int *errors[2];
+  int *errors[2] = { 0 }; /* Shut up coverity */
   int code = 0;
   const char *cid_string = (const char*) 0;
   byte *data[4], *plane_data[4][4], *out_data;
