@@ -581,6 +581,7 @@ xps_install_halftone(xps_context_t *ctx, gx_device *pdevice)
 
     if (gx_device_must_halftone(pdevice))
     {
+        memset(&ht.rc, 0x00, sizeof(ht.rc));
         ht.type = ht_type_threshold;
         ht.objtype = HT_OBJTYPE_DEFAULT;
         ht.params.threshold.width = width;

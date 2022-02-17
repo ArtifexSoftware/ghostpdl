@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -39,6 +39,7 @@ pl_set_pcl_halftone(gs_gstate * pgs, gs_mapping_proc transfer_proc,
     code = gs_settransfer(pgs, transfer_proc);
     if (code < 0)
         return code;
+    memset(&ht.rc, 0x00, sizeof(ht.rc));
     ht.type = ht_type_threshold;
     ht.objtype = HT_OBJTYPE_DEFAULT;
     ht.params.threshold.width = width;
