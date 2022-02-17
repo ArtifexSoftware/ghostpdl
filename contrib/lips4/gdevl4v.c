@@ -755,7 +755,7 @@ lips4v_beginpage(gx_device_vector * vdev)
         }
     } else if (paper_size == USER_SIZE) {
         if (pdev->prev_paper_width != width ||
-            pdev->prev_paper_height != height)
+            pdev->prev_paper_height != height) {
                 /* modified by shige 06/27 2003
                 gs_snprintf(paper, sizeof(paper), "%c80;%d;%dp", LIPS_CSI, width * 10, height * 10); */
                 /* modified by shige 11/09 2003
@@ -765,10 +765,11 @@ lips4v_beginpage(gx_device_vector * vdev)
                     LIPS_HEIGHT_MAX_720 : (height * 10),
                     (width * 10 > LIPS_WIDTH_MAX_720)?
                     LIPS_WIDTH_MAX_720 : (width * 10));
-        lputs(s, paper);
+                lputs(s, paper);
+        }
     } else if (paper_size == USER_SIZE + LANDSCAPE) {
         if (pdev->prev_paper_width != width ||
-            pdev->prev_paper_height != height)
+            pdev->prev_paper_height != height) {
                 /* modified by shige 06/27 2003
                 gs_snprintf(paper, sizeof(paper), "%c81;%d;%dp", LIPS_CSI, height * 10, width * 10); */
                 /* modified by shige 11/09 2003
@@ -778,7 +779,8 @@ lips4v_beginpage(gx_device_vector * vdev)
                     LIPS_HEIGHT_MAX_720 : (width * 10),
                     (height * 10 > LIPS_WIDTH_MAX_720)?
                     LIPS_WIDTH_MAX_720 : (height * 10));
-        lputs(s, paper);
+                lputs(s, paper);
+        }
     }
     pdev->prev_paper_size = paper_size;
     pdev->prev_paper_width = width;
