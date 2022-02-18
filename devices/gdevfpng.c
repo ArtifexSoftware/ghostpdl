@@ -302,6 +302,7 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
     stream.next_out = &buffer->data[0];
     stream.avail_out = buffer->size;
     stream.total_out = 0;
+    stream.total_in = 0;
 
     /* Nasty zlib hackery here. Zlib always outputs a 'start of stream'
      * marker at the beginning. We just want a block, so for all blocks

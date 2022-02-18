@@ -278,5 +278,8 @@
     <ClInclude Include="..\pdf\pdf_warnings.h">
       <Filter>pdf %28%2a.h%29</Filter>
     </ClInclude>
+    <ClInclude Include="..\pdf\pdf_tokens.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

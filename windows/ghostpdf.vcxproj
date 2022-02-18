@@ -384,6 +384,7 @@
     <ClInclude Include="..\pdf\pdf_shading.h" />
     <ClInclude Include="..\pdf\pdf_stack.h" />
     <ClInclude Include="..\pdf\pdf_text.h" />
+    <ClInclude Include="..\pdf\pdf_tokens.h" />
     <ClInclude Include="..\pdf\pdf_trans.h" />
     <ClInclude Include="..\pdf\pdf_types.h" />
     <ClInclude Include="..\pdf\pdf_utf8.h" />
