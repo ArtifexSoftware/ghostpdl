@@ -2421,10 +2421,12 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
         /* recursion */
         code = pdfi_create_colorspace(ctx, ref_space, stream_dict, page_dict, ppcs, inline_image);
 
-        if (ppcs != NULL)
-            pdfi_set_colourspace_name(ctx, *ppcs, name);
-        else
-            pdfi_set_colourspace_name(ctx, ctx->pgs->color[0].color_space, name);
+        if (code >= 0) {
+            if (ppcs != NULL)
+                pdfi_set_colourspace_name(ctx, *ppcs, name);
+            else
+                pdfi_set_colourspace_name(ctx, ctx->pgs->color[0].color_space, name);
+        }
 
         pdfi_countdown(ref_space);
         return code;
