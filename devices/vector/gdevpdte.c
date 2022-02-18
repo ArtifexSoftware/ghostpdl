@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -485,14 +485,14 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
                            : *gdata);
     if (glyph == GS_NO_GLYPH || glyph == pet->glyph) {
         if((pdfont->cmap_ToUnicode == NULL || !gs_cmap_ToUnicode_check_pair(pdfont->cmap_ToUnicode, ch)) && pdev->UseOCR != UseOCRNever)
-            (void)pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch, &gnstr);
+            (void)pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch, NULL);
         return 0;
     }
     if (pet->glyph != GS_NO_GLYPH) { /* encoding conflict */
         return_error(gs_error_rangecheck);
         /* Must not happen because pdf_obtain_font_resource
-            * checks for encoding compatibility.
-            */
+         * checks for encoding compatibility.
+         */
     }
     code = font->procs.glyph_name(font, glyph, &gnstr);
     if (code < 0)
@@ -553,7 +553,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
         } else if (pdfont->base_font == NULL && ccfont != NULL &&
                 (gs_copy_glyph_options(font, glyph, (gs_font *)ccfont, COPY_GLYPH_NO_NEW) != 1 ||
                     gs_copied_font_add_encoding((gs_font *)ccfont, ch, glyph) < 0)) {
-            /*
+               /*
                 * The "complete" copy of the font appears incomplete
                 * due to incrementally added glyphs. Drop the "complete"
                 * copy now and continue with subset font only.
@@ -566,7 +566,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
                 * We also check whether the encoding is compatible.
                 * It must be compatible here due to the pdf_obtain_font_resource
                 * and ccfont logics, but we want to ensure for safety reason.
-                    */
+                */
             ccfont = NULL;
             pdf_font_descriptor_drop_complete_font(pdfont->FontDescriptor);
         }
@@ -584,10 +584,10 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
         pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
     }
     /*
-        * We always generate ToUnicode for simple fonts, because
-        * we can't detemine in advance, which glyphs the font actually uses.
-        * The decision about writing it out is deferred until pdf_write_font_resource.
-        */
+     * We always generate ToUnicode for simple fonts, because
+     * we can't detemine in advance, which glyphs the font actually uses.
+     * The decision about writing it out is deferred until pdf_write_font_resource.
+     */
     code = pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch, &gnstr);
     if(code < 0)
         return code;
