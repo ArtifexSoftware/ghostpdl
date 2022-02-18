@@ -710,6 +710,7 @@ int pdfi_setstrokecolor(pdf_context *ctx)
     int ncomps, code;
     gs_client_color cc;
 
+    cc.pattern = 0;
     gs_swapcolors_quick(ctx->pgs);
     pcs = gs_currentcolorspace(ctx->pgs);
     ncomps = cs_num_components(pcs);
@@ -731,6 +732,7 @@ int pdfi_setfillcolor(pdf_context *ctx)
     int ncomps, code;
     gs_client_color cc;
 
+    cc.pattern = 0;
     ncomps = cs_num_components(pcs);
     if (ncomps < 1)
         return_error(gs_error_syntaxerror);
@@ -770,6 +772,8 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         goto cleanupExit1;
     }
 
+    memset(&cc, 0x00, sizeof(gs_client_color));
+
     if (pcs->type == &gs_color_space_type_Pattern)
         is_pattern = true;
     if (is_pattern) {
@@ -778,7 +782,6 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
             code = gs_note_error(gs_error_syntaxerror);
             goto cleanupExit0;
         }
-        cc.pattern = 0; /* For safe cleaning up on an error */
         base_space = pcs->base_space;
         code = pdfi_pattern_set(ctx, stream_dict, page_dict, (pdf_name *)ctx->stack_top[-1], &cc);
         pdfi_pop(ctx, 1);
@@ -792,10 +795,8 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
             ncomps = cs_num_components(base_space);
         else
             ncomps = 0;
-    } else {
+    } else
         ncomps = cs_num_components(pcs);
-        cc.pattern = 0;
-    }
 
     if (ncomps > 0) {
         code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
