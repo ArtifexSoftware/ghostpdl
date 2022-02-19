@@ -1842,6 +1842,13 @@ if ( test -f $srcdir/cups/gdevcups.c ); then
                   CUPSDEV="$CUPSDEV pwgraster"
                 fi
 
+                # appleraster support arrived in cups 2.2.2, so with
+                # API version 2.2 we do not necessarily have it, but
+                # 2.3 has it for sure
+                if test "$CUPSAPIVERSION" ">" "2.2" ; then
+                  CUPSDEV="$CUPSDEV appleraster urf"
+                fi
+
                 CUPSVERSION="`$CUPSCONFIG --version`"
 
                 LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"

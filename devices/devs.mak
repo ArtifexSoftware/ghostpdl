@@ -1900,11 +1900,25 @@ $(DD)pwgraster.dev : $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV) $(GLD)page.dev 
 	$(ADDMOD) $(DD)pwgraster -include $(lcupsi_dev)
 	$(ADDMOD) $(DD)pwgraster -include $(GLD)page
 
+$(DD)appleraster.dev : $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV) $(GLD)page.dev \
+ $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)appleraster $(cups_)
+	$(ADDMOD) $(DD)appleraster -include $(lcups_dev)
+	$(ADDMOD) $(DD)appleraster -include $(lcupsi_dev)
+	$(ADDMOD) $(DD)appleraster -include $(GLD)page
+
+$(DD)urf.dev : $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV) $(GLD)page.dev \
+ $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)urf $(cups_)
+	$(ADDMOD) $(DD)urf -include $(lcups_dev)
+	$(ADDMOD) $(DD)urf -include $(lcupsi_dev)
+	$(ADDMOD) $(DD)urf -include $(GLD)page
+
 $(DEVOBJ)gdevcups.$(OBJ) : $(LCUPSSRCDIR)$(D)gdevcups.c $(std_h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(CUPS_CC) $(DEVO_)gdevcups.$(OBJ) $(C_) $(CFLAGS) $(CUPSCFLAGS) \
 	    $(I_)$(GLSRC) \
 	    $(I_)$(DEVSRC) \
-            $(I_)$(DEVOBJ) $(I_)$(LCUPSSRCDIR)$(D)libs \
+            $(I_)$(DEVOBJ) \
             $(LCUPSSRCDIR)$(D)gdevcups.c
 
 ### ---------------------------- Tracing -------------------------------- ###

@@ -461,6 +461,12 @@ cups_initialize_device_procs(gx_device *dev)
 gx_device_cups	gs_cups_device = { gs_xxx_device("cups", "") };
 gx_device_cups	gs_pwgraster_device = { gs_xxx_device("pwgraster",
 						      "PwgRaster") };
+#if defined(CUPS_RASTER_HAVE_APPLERASTER)
+gx_device_cups	gs_appleraster_device = { gs_xxx_device("appleraster",
+							"PwgRaster") };
+gx_device_cups	gs_urf_device = { gs_xxx_device("urf",
+						"PwgRaster") };
+#endif
 
 /*
  * Local functions...
@@ -2947,7 +2953,14 @@ cups_print_pages(gx_device_printer *pdev,
 #if defined(CUPS_RASTER_HAVE_PWGRASTER)
                                        (strcasecmp(cups->header.MediaClass,
 						   "PwgRaster") == 0 ?
+#if defined(CUPS_RASTER_HAVE_APPLERASTER)
+					(!strcmp(cups->dname, "appleraster") ||
+					 !strcmp(cups->dname, "urf") ?
+					 CUPS_RASTER_WRITE_APPLE :
+					 CUPS_RASTER_WRITE_PWG) :
+#else
 					CUPS_RASTER_WRITE_PWG :
+#endif
 					(cups->cupsRasterVersion == 3 ?
 					 CUPS_RASTER_WRITE :
 					 CUPS_RASTER_WRITE_COMPRESSED)))) ==
