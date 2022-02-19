@@ -606,7 +606,7 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
      * but I am just matching what gs does for now, and it doesn't handle that case.
      */
     properties = (pdf_name *)ctx->stack_top[-1];
-    if (tag->type != PDF_NAME)
+    if (properties->type != PDF_NAME)
         goto exit;
 
     /* If it's a name, look it up in Properties */
