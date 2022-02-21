@@ -2817,24 +2817,20 @@ error:
                 gs_free_object(ctx->memory, cffpriv.cidata.FDArray, "pdfi_read_cff_font(gs_font FDArray, error)");
             }
         }
-        if (code >= 0) {
+        else {
             code = gs_definefont(ctx->font_dir, (gs_font *) ppdfont->pfont);
-            if (code < 0) {
-                goto error;
-            }
 
-            code = pdfi_fapi_passfont((pdf_font *) ppdfont, 0, NULL, NULL, NULL, 0);
-            if (code < 0) {
-                goto error;
-            }
+            if (code >= 0)
+                code = pdfi_fapi_passfont((pdf_font *) ppdfont, 0, NULL, NULL, NULL, 0);
+
             /* object_num can be zero if the dictionary was defined inline */
-            if (ppdfont->object_num != 0) {
-                code = replace_cache_entry(ctx, (pdf_obj *) ppdfont);
-                if (code < 0)
-                    goto error;
+            if (code >= 0 && ppdfont->object_num != 0) {
+                (void)replace_cache_entry(ctx, (pdf_obj *) ppdfont);
             }
-            *ppdffont = (pdf_font *) ppdfont;
-            ppdfont = NULL;
+            if (code >= 0) {
+                *ppdffont = (pdf_font *) ppdfont;
+                ppdfont = NULL;
+            }
         }
     }
     gs_free_object(ctx->memory, pfbuf, "pdfi_read_cff_font(fbuf)");
