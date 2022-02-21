@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -735,9 +735,7 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             }
             /* object_num can be zero if the dictionary was defined inline */
             if (t1f->object_num != 0) {
-                code = replace_cache_entry(ctx, (pdf_obj *) t1f);
-                if (code < 0)
-                    goto error;
+                (void)replace_cache_entry(ctx, (pdf_obj *) t1f);
             }
             *ppdffont = (pdf_font *) t1f;
         }

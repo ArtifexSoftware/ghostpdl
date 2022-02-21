@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2021 Artifex Software, Inc.
+/* Copyright (C) 2020-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -469,9 +469,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     /* object_num can be zero if the dictionary was defined inline */
     if (font->object_num != 0) {
-        code = replace_cache_entry(ctx, (pdf_obj *)font);
-        if (code < 0)
-            goto error;
+        (void)replace_cache_entry(ctx, (pdf_obj *)font);
     }
 
     *ppfont = (pdf_font *)font;

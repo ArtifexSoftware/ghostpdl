@@ -492,12 +492,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
 
     /* object_num can be zero if the dictionary was defined inline */
     if (pdft0->object_num != 0) {
-        code = replace_cache_entry(ctx, (pdf_obj *)pdft0);
-        if (code < 0) {
-            gs_free_object(ctx->memory, pfont0, "pdfi_read_type0_font(pfont0)");
-            code = gs_note_error(gs_error_VMerror);
-            goto error;
-        }
+        (void)replace_cache_entry(ctx, (pdf_obj *)pdft0);
     }
 
     *ppdffont = (pdf_font *)pdft0;

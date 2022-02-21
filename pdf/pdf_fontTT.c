@@ -598,9 +598,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     /* object_num can be zero if the dictionary was defined inline */
     if (font->object_num != 0) {
-        code = replace_cache_entry(ctx, (pdf_obj *)font);
-        if (code < 0)
-            goto error;
+        (void)replace_cache_entry(ctx, (pdf_obj *)font);
     }
 
     *ppdffont = (pdf_font *)font;
