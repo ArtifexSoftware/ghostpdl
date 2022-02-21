@@ -704,62 +704,6 @@ exit:
     return code;
 }
 
-/* Count how many children an outline entry has
- * This is separate just to keep the code from getting cluttered.
- */
-static int pdfi_doc_outline_count(pdf_context *ctx, pdf_dict *outline, int64_t *count)
-{
-    int code = 0;
-    pdf_dict *child = NULL;
-    pdf_dict *Next = NULL;
-
-    /* Handle this outline entry */
-    code = pdfi_loop_detector_mark(ctx);
-    if (code < 0)
-        goto exit1;
-
-    /* Count the children (don't deref them, we don't want to leave them hanging around) */
-    code = pdfi_dict_get_no_store_R(ctx, outline, "First", (pdf_obj **)&child);
-    if (code < 0 || child->type != PDF_DICT) {
-        /* TODO: flag a warning? */
-        code = 0;
-        goto exit;
-    }
-
-    if (child->object_num != 0) {
-        code = pdfi_loop_detector_add_object(ctx, child->object_num);
-        if (code < 0)
-            goto exit;
-    }
-
-    do {
-        (*count) ++;
-
-        code = pdfi_dict_get_no_store_R(ctx, child, "Next", (pdf_obj **)&Next);
-        if (code == gs_error_circular_reference) {
-            code = 0;
-            goto exit;
-        }
-        if (code == gs_error_undefined) {
-            code = 0;
-            break;
-        }
-
-        if (code < 0 || Next->type != PDF_DICT)
-            goto exit;
-
-        pdfi_countdown(child);
-        child = Next;
-    } while (true);
-
- exit:
-    (void)pdfi_loop_detector_cleartomark(ctx);
- exit1:
-    pdfi_countdown(child);
-    pdfi_countdown(Next);
-    return code;
-}
-
 /* Mark the actual outline */
 static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
 {
@@ -774,19 +718,6 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
     /* Basically we only do /Count, /Title, /A, /C, /F
      * The /First, /Last, /Next, /Parent get written magically by pdfwrite
      */
-    /* Count how many kids there are */
-    code = pdfi_doc_outline_count(ctx, outline, &numkids);
-
-    /* If no kids, see if there is a Count */
-    if (numkids == 0) {
-        code = pdfi_dict_get_int(ctx, outline, "Count", &count);
-        if (code < 0 && code != gs_error_undefined)
-            goto exit;
-        if (count < 0)
-            count = -count;
-    } else {
-        count = numkids;
-    }
 
     /* Make a temporary copy of the outline dict */
     dictsize = pdfi_dict_entries(outline);
@@ -817,11 +748,6 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
             code = pdfi_pdfmark_modA(ctx, tempdict);
         } else if (pdfi_name_is(Key, "Dest")) {
             code = pdfi_pdfmark_modDest(ctx, tempdict);
-        } else if (pdfi_name_is(Key, "Count")) {
-            /* Delete any count we find in the dict
-             * We will use our value below
-             */
-            code = pdfi_dict_delete_pair(ctx, tempdict, Key);
         }
         if (code < 0)
             goto exit;
@@ -836,13 +762,6 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
         }
     }
     if (code < 0) goto exit;
-
-    /* If count is non-zero, put in dictionary */
-    if (count != 0) {
-        code = pdfi_dict_put_int(ctx, tempdict, "Count", count);
-        if (code < 0)
-            goto exit;
-    }
 
     /* Write the pdfmark */
     code = pdfi_pdfmark_from_dict(ctx, tempdict, NULL, "OUT");
