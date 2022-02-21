@@ -142,15 +142,7 @@ typedef struct pdf_name_s {
 } pdf_name;
 
 typedef enum pdf_key_e {
-    TOKEN_NOT_A_KEYWORD,
-    TOKEN_OBJ,
-    TOKEN_ENDOBJ,
-    TOKEN_STREAM,
-    TOKEN_ENDSTREAM,
-    TOKEN_XREF,
-    TOKEN_STARTXREF,
-    TOKEN_TRAILER,
-    TOKEN_INVALID_KEY,
+#include "pdf_tokens.h"
 } pdf_key;
 
 typedef struct pdf_keyword_s {
