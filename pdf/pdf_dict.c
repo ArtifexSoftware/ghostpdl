@@ -309,7 +309,7 @@ static int pdfi_dict_find_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key
 /* The object returned by pdfi_dict_get has its reference count incremented by 1 to
  * indicate the reference now held by the caller, in **o.
  */
-int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
+int pdfi_dict_get_common(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o, bool cache)
 {
     int index = 0, code = 0;
 
@@ -328,7 +328,10 @@ int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
         if (r->ref_object_num == d->object_num)
             return_error(gs_error_circular_reference);
 
-        code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, o);
+        if (cache)
+            code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, o);
+        else
+            code = pdfi_deref_loop_detect_nocache(ctx, r->ref_object_num, r->ref_generation_num, o);
         if (code < 0)
             return code;
         /* The file Bug690138.pdf has font dictionaries which contain ToUnicode keys where

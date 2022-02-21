@@ -563,7 +563,18 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
     for (i = 0; i < params.k; ++i) {
         pdf_obj * rsubfn = NULL;
 
-        code = pdfi_array_get(ctx, (pdf_array *)Functions, (int64_t)i, &rsubfn);
+        /* This is basically hacky. The test file /tests_private/pdf/pdf_1.7_ATS/WWTW61EC_file.pdf
+         * has a number of shadings on page 2. Although there are numerous shadings, they each use one
+         * of four functions. However, these functions are themselves type 3 functions with 255
+         * sub-functions. Because our cache only has 200 entries (at this moment), this overfills
+         * the cache, ejecting all the cached objects (and then some). Which means that we throw
+         * out any previous shadings or functions, meaning that on every use we have to reread them. This is,
+         * obviously, slow. So in the hope that reuse of *sub_functions* is unlikely, we choose to
+         * read the subfunction without caching. This means the main shadings, and the functions,
+         * remain cached so we can reuse them saving an enormous amount of time. If we ever find a file
+         * which significantly reuses sub-functions we may need to revisit this.
+         */
+        code = pdfi_array_get_nocache(ctx, (pdf_array *)Functions, (int64_t)i, &rsubfn);
         if (code < 0)
             goto function_3_error;
 

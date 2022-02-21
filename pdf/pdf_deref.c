@@ -594,7 +594,7 @@ static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t strea
 }
 
 static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object,
-                                 const xref_entry *entry)
+                                 const xref_entry *entry, bool cache)
 {
     int code = 0;
     xref_entry *compressed_entry;
@@ -805,10 +805,12 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     pdfi_countup(*object);
     pdfi_pop(ctx, 1);
 
-    code = pdfi_add_to_cache(ctx, *object);
-    if (code < 0) {
-        pdfi_countdown(*object);
-        goto exit;
+    if (cache) {
+        code = pdfi_add_to_cache(ctx, *object);
+        if (code < 0) {
+            pdfi_countdown(*object);
+            goto exit;
+        }
     }
 
  exit:
@@ -827,7 +829,7 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
 /* pdf_dereference returns an object with a reference count of at least 1, this represents the
  * reference being held by the caller (in **object) when we return from this function.
  */
-int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
+static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object, bool cache)
 {
     xref_entry *entry;
     int code, stack_depth = pdfi_count_stack(ctx);
@@ -892,7 +894,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             /* This is an object in a compressed object stream */
             ctx->encryption.decrypt_strings = false;
 
-            code = pdfi_deref_compressed(ctx, obj, gen, object, entry);
+            code = pdfi_deref_compressed(ctx, obj, gen, object, entry, cache);
             if (code < 0 || *object == NULL)
                 goto error;
         } else {
@@ -934,7 +936,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
                 code1 = pdfi_repair_file(ctx);
                 if (code1 == 0)
-                    return pdfi_dereference(ctx, obj, gen, object);
+                    return pdfi_dereference_main(ctx, obj, gen, object, cache);
                 /* Repair failed, just give up and return an error */
                 return code;
             }
@@ -943,10 +945,12 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 *object = ctx->stack_top[-1];
                 pdfi_countup(*object);
                 pdfi_pop(ctx, 1);
-                code = pdfi_add_to_cache(ctx, *object);
-                if (code < 0) {
-                    pdfi_countdown(*object);
-                    goto error;
+                if (cache) {
+                    code = pdfi_add_to_cache(ctx, *object);
+                    if (code < 0) {
+                        pdfi_countdown(*object);
+                        goto error;
+                    }
                 }
             } else {
                 pdfi_pop(ctx, 1);
@@ -983,6 +987,16 @@ error:
     return code;
 }
 
+int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
+{
+    return pdfi_dereference_main(ctx, obj, gen, object, true);
+}
+
+int pdfi_dereference_nocache(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
+{
+    return pdfi_dereference_main(ctx, obj, gen, object, false);
+}
+
 /* do a derefence with loop detection */
 int pdfi_deref_loop_detect(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
 {
@@ -997,6 +1011,18 @@ int pdfi_deref_loop_detect(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj
     return code;
 }
 
+int pdfi_deref_loop_detect_nocache(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
+{
+    int code;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dereference_nocache(ctx, obj, gen, object);
+    (void)pdfi_loop_detector_cleartomark(ctx);
+    return code;
+}
 
 static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj, bool recurse)
 {

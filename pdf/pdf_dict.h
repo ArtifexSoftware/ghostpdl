@@ -20,6 +20,18 @@
 
 static inline uint64_t pdfi_dict_entries(pdf_dict *d) { return d->entries; }
 
+int pdfi_dict_get_common(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o, bool cache);
+static inline int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
+{
+    return pdfi_dict_get_common(ctx, d, Key, o, true);
+}
+
+static inline int pdfi_dict_get_nocache(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
+{
+    return pdfi_dict_get_common(ctx, d, Key, o, true);
+}
+
+
 void pdfi_free_dict(pdf_obj *o);
 int pdfi_dict_delete_pair(pdf_context *ctx, pdf_dict *d, pdf_name *n);
 int pdfi_dict_delete(pdf_context *ctx, pdf_dict *d, const char *str);
@@ -37,7 +49,6 @@ int pdfi_dict_put_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t va
 int pdfi_dict_put_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool value);
 int pdfi_dict_put_name(pdf_context *ctx, pdf_dict *d, const char *Key, const char *name);
 int pdfi_dict_get2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, pdf_obj **o);
-int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
 int pdfi_dict_get_no_deref(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o);
 int pdfi_dict_get_by_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o);
 int pdfi_dict_get_no_store_R_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o);

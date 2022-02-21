@@ -121,7 +121,7 @@ int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indi
 /* Fetch object from array, resolving indirect reference if needed
  * setref -- indicates whether to replace indirect ref with the object
  */
-static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o, bool setref)
+int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o, bool setref, bool cache)
 {
     int code;
     pdf_obj *obj;
@@ -142,7 +142,10 @@ static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_
         if (r->ref_object_num == a->object_num)
             return_error(gs_error_circular_reference);
 
-        code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, &o1);
+        if (cache)
+            code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, &o1);
+        else
+            code = pdfi_deref_loop_detect_nocache(ctx, r->ref_object_num, r->ref_generation_num, &o1);
         if (code < 0)
             return code;
 
@@ -154,19 +157,6 @@ static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_
     }
 
     *o = obj;
-    return 0;
-}
-
-/* The object returned by pdfi_array_get has its reference count incremented by 1 to
- * indicate the reference now held by the caller, in **o.
- */
-int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
-{
-    int code;
-
-    code = pdfi_array_fetch(ctx, a, index, o, true);
-    if (code < 0) return code;
-
     return 0;
 }
 
@@ -193,7 +183,7 @@ int pdfi_array_get_no_store_R(pdf_context *ctx, pdf_array *a, uint64_t index, pd
 {
     int code;
 
-    code = pdfi_array_fetch(ctx, a, index, o, false);
+    code = pdfi_array_fetch(ctx, a, index, o, false, false);
     if (code < 0) return code;
 
     return 0;
@@ -270,7 +260,7 @@ bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
         pdf_obj *val;
         int code;
 
-        code = pdfi_array_fetch(ctx, a, i, &val, true);
+        code = pdfi_array_fetch(ctx, a, i, &val, true, true);
         if (code < 0)
             continue;
         if (val->object_num == o->object_num) {
