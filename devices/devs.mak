@@ -1916,10 +1916,10 @@ $(DD)urf.dev : $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV) $(GLD)page.dev \
 
 $(DEVOBJ)gdevcups.$(OBJ) : $(LCUPSSRCDIR)$(D)gdevcups.c $(std_h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(CUPS_CC) $(DEVO_)gdevcups.$(OBJ) $(C_) $(CFLAGS) $(CUPSCFLAGS) \
-	    $(I_)$(GLSRC) \
-	    $(I_)$(DEVSRC) \
-            $(I_)$(DEVOBJ) \
-            $(LCUPSSRCDIR)$(D)gdevcups.c
+		$(I_)$(GLSRC)$(_I) \
+		$(I_)$(DEVSRC)$(_I) $(I_)$(LIBCUPSSRCDIR)$(D)libs$(_I) \
+		$(I_)$(DEVOBJ)$(_I) \
+		$(LCUPSSRCDIR)$(D)gdevcups.c
 
 ### ---------------------------- Tracing -------------------------------- ###
 
