@@ -533,7 +533,7 @@ gs_xyshow_begin(gs_gstate * pgs, const byte * str, uint size,
                 const float *x_widths, const float *y_widths,
                 uint widths_size, gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
-    gs_text_params_t text;
+    gs_text_params_t text = {0};
     uint widths_needed;
     int code;
 
@@ -543,7 +543,6 @@ gs_xyshow_begin(gs_gstate * pgs, const byte * str, uint size,
     text.x_widths = x_widths;
     text.y_widths = y_widths;
     text.widths_size = widths_size;
-    text.delta_all.x = text.delta_all.y = text.delta_space.x = text.delta_space.y = 0.0;
 
     /*
      * Check that the widths array is large enough.  gs_text_replaced_width
