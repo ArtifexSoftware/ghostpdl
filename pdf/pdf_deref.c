@@ -536,7 +536,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
 static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_offset)
 {
     int code = 0, stack_size = pdfi_count_stack(ctx);
-    uint64_t objnum = 0, gen = 0;
+    int objnum = 0, gen = 0;
     pdf_keyword *keyword = NULL;
 
     /* An object consists of 'num gen obj' followed by a token, follwed by an endobj
@@ -544,35 +544,17 @@ static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t strea
      * want to deal with it specially by getting the Length, jumping to the end and checking
      * for an endobj. Or not, possibly, because it would be slow.
      */
-    code = pdfi_read_token(ctx, s, 0, 0);
+    code = pdfi_read_bare_int(ctx, s, &objnum);
     if (code < 0)
         return code;
     if (code == 0)
         return_error(gs_error_syntaxerror);
 
-    if (stack_size >= pdfi_count_stack(ctx))
-        return gs_note_error(gs_error_ioerror);
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    objnum = ((pdf_num *)ctx->stack_top[-1])->value.i;
-    pdfi_pop(ctx, 1);
-
-    code = pdfi_read_token(ctx, s, 0, 0);
+    code = pdfi_read_bare_int(ctx, s, &gen);
     if (code < 0)
         return code;
     if (code == 0)
         return_error(gs_error_syntaxerror);
-
-    if (stack_size >= pdfi_count_stack(ctx))
-        return gs_note_error(gs_error_ioerror);
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    gen = ((pdf_num *)ctx->stack_top[-1])->value.i;
-    pdfi_pop(ctx, 1);
 
     code = pdfi_read_token(ctx, s, 0, 0);
     if (code < 0)
@@ -602,13 +584,13 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     pdf_c_stream *SubFile_stream = NULL;
     pdf_c_stream *Object_stream = NULL;
     int i = 0, object_length = 0;
-    int64_t num_entries, found_object;
+    int64_t num_entries;
+    int found_object;
     int64_t Length;
     gs_offset_t offset = 0;
     pdf_stream *compressed_object = NULL;
     pdf_dict *compressed_sdict = NULL; /* alias */
     pdf_name *Type = NULL;
-    pdf_obj *temp_obj;
 
     if (entry->u.compressed.compressed_stream_num > ctx->xref_table->xref_size - 1)
         return_error(gs_error_undefined);
@@ -704,32 +686,19 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
 
     for (i=0;i < num_entries;i++)
         {
-            code = pdfi_read_token(ctx, compressed_stream, obj, gen);
+            int new_offset;
+            code = pdfi_read_bare_int(ctx, compressed_stream, &found_object);
             if (code < 0)
                 goto exit;
             if (code == 0) {
                 code = gs_note_error(gs_error_syntaxerror);
                 goto exit;
             }
-            temp_obj = ctx->stack_top[-1];
-            if (temp_obj->type != PDF_INT) {
-                code = gs_note_error(gs_error_typecheck);
-                pdfi_pop(ctx, 1);
-                goto exit;
-            }
-            found_object = ((pdf_num *)temp_obj)->value.i;
-            pdfi_pop(ctx, 1);
-            code = pdfi_read_token(ctx, compressed_stream, obj, gen);
+            code = pdfi_read_bare_int(ctx, compressed_stream, &new_offset);
             if (code < 0)
                 goto exit;
             if (code == 0) {
                 code = gs_note_error(gs_error_syntaxerror);
-                goto exit;
-            }
-            temp_obj = ctx->stack_top[-1];
-            if (temp_obj->type != PDF_INT) {
-                pdfi_pop(ctx, 1);
-                code = gs_note_error(gs_error_typecheck);
                 goto exit;
             }
             if (i == entry->u.compressed.object_index) {
@@ -738,11 +707,10 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                     code = gs_note_error(gs_error_undefined);
                     goto exit;
                 }
-                offset = ((pdf_num *)temp_obj)->value.i;
+                offset = new_offset;
             }
             if (i == entry->u.compressed.object_index + 1)
-                object_length = ((pdf_num *)temp_obj)->value.i - offset;
-            pdfi_pop(ctx, 1);
+                object_length = new_offset - offset;
         }
 
     /* Skip to the offset of the object we want to read */

@@ -403,10 +403,10 @@ int pdfi_repair_file(pdf_context *ctx)
                         }
                         if (code > 0) {
                             if (pdfi_name_is(n, "ObjStm")) {
-                                int64_t N, obj_num, offset;
+                                int64_t N;
+                                int obj_num, offset;
                                 int j;
                                 pdf_c_stream *compressed_stream;
-                                pdf_obj *o;
                                 pdf_stream *stream;
 
                                 offset = pdfi_unread_tell(ctx);
@@ -422,36 +422,27 @@ int pdfi_repair_file(pdf_context *ctx)
                                     code = pdfi_dict_get_int(ctx, d, "N", &N);
                                     if (code == 0) {
                                         for (j=0;j < N; j++) {
-                                            code = pdfi_read_token(ctx, compressed_stream, 0, 0);
+                                            code = pdfi_read_bare_int(ctx, compressed_stream, &obj_num);
                                             if (code == 0)
                                                 break;
                                             if (code > 0) {
-                                                o = ctx->stack_top[-1];
-                                                if (((pdf_obj *)o)->type == PDF_INT) {
-                                                    obj_num = ((pdf_num *)o)->value.i;
-                                                    pdfi_pop(ctx, 1);
-                                                    code = pdfi_read_token(ctx, compressed_stream, 0, 0);
-                                                    if (code > 0) {
-                                                        o = ctx->stack_top[-1];
-                                                        if (((pdf_obj *)o)->type == PDF_INT) {
-                                                            offset = ((pdf_num *)o)->value.i;
-                                                            if (obj_num < 1) {
-                                                                pdfi_close_file(ctx, compressed_stream);
-                                                                pdfi_clearstack(ctx);
-                                                                code = gs_note_error(gs_error_rangecheck);
-                                                                goto exit;
-                                                            }
-                                                            if (obj_num >= ctx->xref_table->xref_size)
-                                                                code = pdfi_repair_add_object(ctx, obj_num, 0, 0);
+                                                code = pdfi_read_bare_int(ctx, compressed_stream, &offset);
+                                                if (code > 0) {
+                                                    if (obj_num < 1) {
+                                                        pdfi_close_file(ctx, compressed_stream);
+                                                        pdfi_clearstack(ctx);
+                                                        code = gs_note_error(gs_error_rangecheck);
+                                                        goto exit;
+                                                    }
+                                                    if (obj_num >= ctx->xref_table->xref_size)
+                                                        code = pdfi_repair_add_object(ctx, obj_num, 0, 0);
 
-                                                            if (code >= 0) {
-                                                                ctx->xref_table->xref[obj_num].compressed = true;
-                                                                ctx->xref_table->xref[obj_num].free = false;
-                                                                ctx->xref_table->xref[obj_num].object_num = obj_num;
-                                                                ctx->xref_table->xref[obj_num].u.compressed.compressed_stream_num = i;
-                                                                ctx->xref_table->xref[obj_num].u.compressed.object_index = j;
-                                                            }
-                                                        }
+                                                    if (code >= 0) {
+                                                        ctx->xref_table->xref[obj_num].compressed = true;
+                                                        ctx->xref_table->xref[obj_num].free = false;
+                                                        ctx->xref_table->xref[obj_num].object_num = obj_num;
+                                                        ctx->xref_table->xref[obj_num].u.compressed.compressed_stream_num = i;
+                                                        ctx->xref_table->xref[obj_num].u.compressed.object_index = j;
                                                     }
                                                 }
                                             }

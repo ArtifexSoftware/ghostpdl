@@ -415,44 +415,35 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s)
         dmprintf(ctx->memory, "\n%% Reading PDF 1.5+ xref stream\n");
 
     if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_INT) {
+        int gen_num;
         /* Its an integer, lets try for index gen obj as a XRef stream */
-        code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
+        code = pdfi_read_bare_int(ctx, ctx->main_stream, &gen_num);
 
         if (code <= 0)
             return(pdfi_repair_file(ctx));
 
-        if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
-            /* Second element is not an integer, not a valid xref */
-            pdfi_pop(ctx, 1);
-            return(pdfi_repair_file(ctx));
-        }
-
+        /* Try to read 'obj' */
         code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
         if (code < 0) {
-            pdfi_pop(ctx, 1);
+            pdfi_pop(ctx, 2);
             return code;
         }
         if (code == 0) {
-            pdfi_pop(ctx, 1);
+            pdfi_pop(ctx, 2);
             return_error(gs_error_syntaxerror);
         }
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-            /* Second element is not an integer, not a valid xref */
-            pdfi_pop(ctx, 2);
+            /* Third element is not a keyword, not a valid xref */
             return(pdfi_repair_file(ctx));
         } else {
-            int obj_num, gen_num;
+            int obj_num;
 
             pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
 
-            if (keyword->key != TOKEN_OBJ) {
-                pdfi_pop(ctx, 3);
+            if (keyword->key != TOKEN_OBJ)
                 return(pdfi_repair_file(ctx));
-            }
-            /* pop the 'obj', generation and object numbers */
-            pdfi_pop(ctx, 1);
-            gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
+            /* pop the 'obj', (but not generation, cos it's not on the stack) and object numbers */
             pdfi_pop(ctx, 1);
             obj_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
             pdfi_pop(ctx, 1);
@@ -677,7 +668,8 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
 {
     int code = 0, i, j;
     pdf_obj *o = NULL;
-    uint64_t start = 0, size = 0;
+    int start = 0;
+    int size = 0;
     int64_t bytes = 0;
     char Buffer[21];
 
@@ -686,57 +678,36 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n%% Reading xref section\n");
 
-    code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
+    code = pdfi_read_bare_int(ctx, ctx->main_stream, &start);
+    if (code < 0) {
+        /* Not an int, might be a keyword */
+        code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
+        if (code < 0)
+            return code;
 
+        o = ctx->stack_top[-1];
+        if (o->type == PDF_KEYWORD)
+            return 0;
+
+        /* element is not an integer, and not a keyword - not a valid xref */
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+
+    *section_start = start;
+
+    code = pdfi_read_bare_int(ctx, ctx->main_stream, &size);
     if (code < 0)
         return code;
-
-    if (pdfi_count_stack(ctx) < 1)
-        return_error(gs_error_stackunderflow);
-
-    o = ctx->stack_top[-1];
-    if (o->type == PDF_KEYWORD)
-        return 0;
-
-    if (o->type != PDF_INT) {
-        /* element is not an integer, not a valid xref */
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-
-    if (((pdf_num *)o)->value.i < 0) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_rangecheck);
-    }
-
-    *section_start = start = ((pdf_num *)o)->value.i;
-
-    code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
-    if (code < 0) {
-        pdfi_pop(ctx, 1);
-        return code;
-    }
-    if (code == 0) {
-        pdfi_pop(ctx, 1);
+    if (code == 0)
         return_error(gs_error_syntaxerror);
-    }
-
-    o = ctx->stack_top[-1];
-    if (o->type != PDF_INT) {
-        /* element is not an integer, not a valid xref */
-        pdfi_pop(ctx, 2);
-        return_error(gs_error_typecheck);
-    }
 
     /* Zero sized xref sections are valid; see the file attached to
      * bug 704947 for an example. */
-    if (((pdf_num *)o)->value.i < 0) {
-        pdfi_pop(ctx, 2);
+    if (size < 0)
         return_error(gs_error_rangecheck);
-    }
 
-    *section_size = size = ((pdf_num *)o)->value.i;
-    pdfi_pop(ctx, 2);
+    *section_size = size;
 
     if (ctx->args.pdfdebug)
         dmprintf2(ctx->memory, "\n%% Section starts at %d and has %d entries\n", (unsigned int) start, (unsigned int)size);

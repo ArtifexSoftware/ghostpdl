@@ -178,6 +178,81 @@ static float acrobat_compatible_atof(char *s)
     }
 }
 
+int pdfi_read_bare_int(pdf_context *ctx, pdf_c_stream *s, int *parsed_int)
+{
+    int index = 0;
+    int int_val = 0;
+    int negative = 0;
+
+restart:
+    pdfi_skip_white(ctx, s);
+
+    do {
+        int c = pdfi_read_byte(ctx, s);
+        if (c == EOFC)
+            break;
+
+        if (c < 0)
+            return_error(gs_error_ioerror);
+
+        if (iswhite(c)) {
+            break;
+        } else if (c == '%' && index == 0) {
+            pdfi_skip_comment(ctx, s);
+            goto restart;
+        } else if (isdelimiter(c)) {
+            pdfi_unread_byte(ctx, s, (byte)c);
+            break;
+        }
+
+        if (c >= '0' && c <= '9') {
+            int_val = int_val*10 + c - '0';
+        } else if (c == '.') {
+            goto error;
+        } else if (c == 'e' || c == 'E') {
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_NUM_EXPONENT, "pdfi_read_num", NULL);
+            goto error;
+        } else if (c == '-') {
+            /* Any - sign not at the start of the string indicates a malformed number. */
+            if (index != 0 || negative) {
+                pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL);
+                if (ctx->args.pdfstoponerror)
+                    return_error(gs_error_syntaxerror);
+                goto error;
+            }
+            negative = 1;
+        } else if (c == '+') {
+            if (index == 0) {
+                /* Just drop the + it's pointless, and it'll get in the way
+                 * of our negation handling for floats. */
+                continue;
+            } else {
+                pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL);
+                if (ctx->args.pdfstoponerror)
+                    return_error(gs_error_syntaxerror);
+                goto error;
+            }
+        } else {
+            if (index > 0) {
+                pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGWHITESPACE, "pdfi_read_num", (char *)"Ignoring missing white space while parsing number");
+                if (ctx->args.pdfstoponerror)
+                    return_error(gs_error_syntaxerror);
+            }
+            pdfi_unread_byte(ctx, s, (byte)c);
+            goto error;
+        }
+        if (++index > 255)
+            return_error(gs_error_syntaxerror);
+    } while(1);
+
+    *parsed_int = negative ? -int_val : int_val;
+    return (index > 0);
+
+error:
+    *parsed_int = 0;
+    return_error(gs_error_syntaxerror);
+}
+
 static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     byte Buffer[256];
