@@ -76,6 +76,12 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include <cups/raster.h>
 #include <cups/ppd.h>
 #include <math.h>
@@ -6093,5 +6099,8 @@ cups_spec_op(gx_device *dev_, int op, void *data, int datasize)
     return gx_default_dev_spec_op(dev_, op, data, datasize);
 }
 
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 /*
  */

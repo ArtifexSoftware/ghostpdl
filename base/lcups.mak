@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -16,21 +16,21 @@
 # makefile for libcups as part of the monolithic gs build.
 #
 # Users of this makefile must define the following:
-#	LCUPSSRCDIR    - the source directory
+#	LIBCUPSSRCDIR    - the source directory
 #	LCUPSGENDIR    - the generated intermediate file directory
 #	LCUPSOBJDIR    - the object file directory
 #	SHARE_LCUPS - 0 to compile in libcups, 1 to link a shared library
 #	LCUPS_LIBS  - if SHARE_CUPS=1, the link options for the shared library
 
 # (Rename directories.)
-LIBCUPSSRC=$(LCUPSSRCDIR)$(D)libs$(D)cups$(D)
+LIBCUPSSRC=$(LIBCUPSSRCDIR)$(D)libs$(D)cups$(D)
 LIBCUPSGEN=$(LCUPSGENDIR)$(D)
 LIBCUPSOBJ=$(LCUPSOBJDIR)$(D)
 LCUPSO_=$(O_)$(LIBCUPSOBJ)
 
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the cups source.
-LCUPS_CC=$(CUPS_CC) $(CUPSCFLAGS) $(I_)$(LIBCUPSSRC) $(I_)$(LIBCUPSGEN)$(D)cups $(I_)$(LCUPSSRCDIR)$(D)libs
+LCUPS_CC=$(CUPS_CC) $(CUPSCFLAGS) $(I_)$(LIBCUPSSRC)$(_I) $(I_)$(LIBCUPSGEN)$(D)cups$(_I) $(I_)$(LIBCUPSSRCDIR)$(D)libs$(_I)
 
 # Define the name of this makefile.
 LCUPS_MAK=$(GLSRC)lcups.mak $(TOP_MAKEFILES)
@@ -106,7 +106,7 @@ LIBCUPS_DEPS	=	\
 libcups.clean : libcups.config-clean libcups.clean-not-config-clean
 
 libcups.clean-not-config-clean :
-	$(EXP)$(ECHOGS_XE) $(LCUPSSRCDIR) $(LCUPSOBJDIR)
+	$(EXP)$(ECHOGS_XE) $(LIBCUPSSRCDIR) $(LCUPSOBJDIR)
 	$(RM_) $(LIBCUPSOBJ)*.$(OBJ)
 
 libcups.config-clean :
@@ -135,8 +135,8 @@ $(LIBCUPSGEN)lcups_0.dev : $(ECHOGS_XE) $(LIBCUPS_OBJS) $(LIBCUPS_DEPS)
 # explicit rules for building the source files
 # for simplicity we have every source file depend on all headers
 
-$(LIBCUPSGEN)$(D)cups$(D)config.h : $(LCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(LIBCUPS_DEPS)
-	$(CP_) $(LCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(LIBCUPSGEN)$(D)cups$(D)config.h
+$(LIBCUPSGEN)$(D)cups$(D)config.h : $(LIBCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(LIBCUPS_DEPS)
+	$(CP_) $(LIBCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(LIBCUPSGEN)$(D)cups$(D)config.h
 
 $(LIBCUPSOBJ)adminutil.$(OBJ) : $(LIBCUPSSRC)adminutil.c $(LIBCUPSGEN)$(D)cups$(D)config.h $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)adminutil.$(OBJ) $(C_) $(LIBCUPSSRC)adminutil.c

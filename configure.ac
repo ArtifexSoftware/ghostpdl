@@ -1763,6 +1763,7 @@ CUPSDATA=""
 CUPSVERSION="0"
 CUPSPDFTORASTER="0"
 CUPS_DIR=""
+LIB_CUPS_DIR="src"
 
 cups_hard_fail=0
 
@@ -1875,6 +1876,7 @@ if ( test -f $srcdir/cups/gdevcups.c ); then
             LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
             LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
             CUPSDEV="cups pwgraster"
+            LIB_CUPS_DIR=$CUPS_DIR
         fi
     fi
 fi
@@ -1889,6 +1891,7 @@ AC_SUBST(CUPSSERVERROOT)
 AC_SUBST(CUPSDATA)
 AC_SUBST(CUPSINSTALL)
 AC_SUBST(CUPS_DIR)
+AC_SUBST(LIB_CUPS_DIR)
 
 AC_SUBST(SHARELCUPS)
 AC_SUBST(SHARELCUPSI)
