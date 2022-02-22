@@ -423,6 +423,8 @@ int pdfi_repair_file(pdf_context *ctx)
                                     if (code == 0) {
                                         for (j=0;j < N; j++) {
                                             code = pdfi_read_token(ctx, compressed_stream, 0, 0);
+                                            if (code == 0)
+                                                break;
                                             if (code > 0) {
                                                 o = ctx->stack_top[-1];
                                                 if (((pdf_obj *)o)->type == PDF_INT) {
@@ -430,7 +432,6 @@ int pdfi_repair_file(pdf_context *ctx)
                                                     pdfi_pop(ctx, 1);
                                                     code = pdfi_read_token(ctx, compressed_stream, 0, 0);
                                                     if (code > 0) {
-                                                        code = 0;
                                                         o = ctx->stack_top[-1];
                                                         if (((pdf_obj *)o)->type == PDF_INT) {
                                                             offset = ((pdf_num *)o)->value.i;
@@ -443,7 +444,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                                             if (obj_num >= ctx->xref_table->xref_size)
                                                                 code = pdfi_repair_add_object(ctx, obj_num, 0, 0);
 
-                                                            if (code == 0) {
+                                                            if (code >= 0) {
                                                                 ctx->xref_table->xref[obj_num].compressed = true;
                                                                 ctx->xref_table->xref[obj_num].free = false;
                                                                 ctx->xref_table->xref[obj_num].object_num = obj_num;
@@ -454,8 +455,6 @@ int pdfi_repair_file(pdf_context *ctx)
                                                     }
                                                 }
                                             }
-                                            if (code == 0)
-                                                break;
                                         }
                                     }
                                     pdfi_close_file(ctx, compressed_stream);
