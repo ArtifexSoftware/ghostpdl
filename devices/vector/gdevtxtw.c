@@ -1483,6 +1483,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
     uint operation = pte->text.operation;
     txt_glyph_widths_t widths;
     gs_point wanted;	/* user space */
+    float glyph_width;
 
     for (i=pte->index;i<pte->text.size;i++) {
         gs_point dpt = {0,0};
@@ -1516,7 +1517,29 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
         if (code < 0)
             return code;
 
+        /* Calculate glyph_width from the **original** glyph metrics, not the overriding
+         * advance width (if TEXT_REPLACE_WIDTHS is set below)
+         */
         txt_char_widths_to_uts(pte->orig_font, &widths); /* convert design->text space */
+        glyph_width = widths.real_width.xy.x * penum->text_state->size;
+
+        if (pte->text.operation & TEXT_REPLACE_WIDTHS)
+        {
+            gs_point tpt;
+
+            /* We are applying a width override, from x/y/xyshow. This could be from
+             * a PostScript file, or it could be from a PDF file where we have a font
+             * with a FontMatrix which is neither horizontal nor vertical.
+             */
+            code = gs_text_replaced_width(&pte->text, pte->xy_index++, &tpt);
+            if (code < 0)
+                return_error(gs_error_unregistered);
+
+            widths.Width.w = widths.real_width.w = tpt.x;
+            widths.Width.xy.x = widths.real_width.xy.x = tpt.x;
+            widths.Width.xy.y = widths.real_width.xy.y = tpt.y;
+        }
+
         gs_distance_transform(widths.real_width.xy.x * penum->text_state->size,
                           widths.real_width.xy.y * penum->text_state->size,
                           &penum->text_state->matrix, &wanted);
@@ -1524,7 +1547,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
         pte->returned.total_width.y += wanted.y;
         penum->Widths[penum->TextBufferIndex] = wanted.x;
         penum->Advs[penum->TextBufferIndex] = wanted.x;
-        penum->GlyphWidths[penum->TextBufferIndex] = widths.real_width.xy.x * penum->text_state->size;
+        penum->GlyphWidths[penum->TextBufferIndex] = glyph_width;
         penum->SpanDeltaX[penum->TextBufferIndex] = widths.real_width.xy.x * penum->text_state->size;
 
         if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
