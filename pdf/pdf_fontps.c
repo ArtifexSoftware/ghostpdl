@@ -441,7 +441,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
 
           case 5:
               if (pdf_ps_name_cmp(&s->cur[-1], "StdHW")) {
-                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
+                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY) && s->cur[0].size > 0) {
                       if (pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_INTEGER)) {
                           priv->gsu.gst1.data.StdHW.values[0] = (float)s->cur[0].val.arr[0].val.i;
                           priv->gsu.gst1.data.StdHW.count = 1;
@@ -453,7 +453,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                   }
               }
               else if (pdf_ps_name_cmp(&s->cur[-1], "StdVW")) {
-                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
+                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY) && s->cur[0].size > 0) {
                       if (pdf_ps_obj_has_type(&s->cur[0].val.arr[0], PDF_PS_OBJ_INTEGER)) {
                           priv->gsu.gst1.data.StdVW.values[0] = (float)s->cur[0].val.arr[0].val.i;
                           priv->gsu.gst1.data.StdVW.count = 1;
