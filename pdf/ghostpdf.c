@@ -2010,6 +2010,7 @@ int pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switc
         return code;
     i_switch->psfont = pgs->font;
     pgs->icc_profile_cache = profile_cache;
+    rc_increment(pgs->icc_profile_cache);
     pgs->font = NULL;
     ctx->pgs = pgs;
     return code;
@@ -2019,6 +2020,7 @@ void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch
 {
     pgs->client_procs.free(pgs->client_data, pgs->memory, pgs);
     pgs->client_data = NULL;
+    rc_decrement(pgs->icc_profile_cache, "pdfi_gstate_to_PS");
     pgs->icc_profile_cache = i_switch->profile_cache;
     gs_gstate_set_client(pgs, i_switch->client_data, &i_switch->procs, true);
     ctx->pgs->font = NULL;
