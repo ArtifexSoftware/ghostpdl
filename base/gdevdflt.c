@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -971,6 +971,7 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         case gxdso_supports_alpha:
         case gxdso_pdf14_sep_device:
         case gxdso_supports_pattern_transparency:
+        case gxdso_overprintsim_state:
             return 0;
         case gxdso_pattern_shfill_doesnt_need_path:
             return (dev_proc(pdev, fill_path) == gx_default_fill_path);

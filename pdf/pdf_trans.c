@@ -606,7 +606,7 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
     case PDF_OVERPRINT_SIMULATE:
         if (!device_transparency && ctx->page.has_OP) {
             if (is_cmyk) {
-                if (ctx->page.num_spots > 0) {
+                if (ctx->page.num_spots > 0  && !ctx->device_state.spot_capable) {
                     ctx->page.needs_OP = true;
                     ctx->page.simulate_op = true;
                 }

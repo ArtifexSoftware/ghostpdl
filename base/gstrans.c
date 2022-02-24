@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -31,6 +31,7 @@
 #include "gxclist.h"
 #include "gsicc_manage.h"
 #include "gsicc_cache.h"
+#include "gxdevsop.h"
 
 /* ------ Transparency-related graphics state elements ------ */
 
@@ -789,6 +790,7 @@ gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain,
     gsicc_rendering_param_t render_cond;
     int code;
     cmm_dev_profile_t *dev_profile;
+    unsigned char pattern_opsim_setting[2];
 
     code = dev_proc(pgs->device, get_profile)(pgs->device,  &dev_profile);
     if (code < 0)
@@ -805,10 +807,18 @@ gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain,
     params.num_spot_colors = get_num_pdf14_spot_colors(pgs);
     params.is_pattern = is_pattern;
 
-    /* Information related to overprint simulation */
-    params.num_spot_colors_int = spot_color_count;
-    if (depth < 0)
-        params.overprint_sim_push = true;
+    /* If pattern, get overprint simulation information from
+       the pattern accumulators target device */
+    if (is_pattern && dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_overprintsim_state, &pattern_opsim_setting, sizeof(pattern_opsim_setting))) {
+        /* Use the target device setting */
+        params.overprint_sim_push = pattern_opsim_setting[0];
+        params.num_spot_colors_int = pattern_opsim_setting[1];
+    } else {
+        /* Use information from interpreter */
+        params.num_spot_colors_int = spot_color_count;
+        if (depth < 0)
+            params.overprint_sim_push = true;
+    }
 
     /* If we have an NCLR ICC profile, the extra spot colorants do not
        get included in the transparency buffers. This is also true

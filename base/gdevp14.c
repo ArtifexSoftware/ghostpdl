@@ -8554,7 +8554,17 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
     if (dev_spec_op == gxdso_interpolate_threshold)
         return p14dev->interpolate_threshold;
 
-     return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
+    if (dev_spec_op == gxdso_overprintsim_state) {
+        unsigned char *data_uchar = (unsigned char *) data;
+        data_uchar[0] = (unsigned char) p14dev->overprint_sim;
+        if (p14dev->ctx != NULL)
+            data_uchar[1] = (unsigned char)p14dev->ctx->num_spots; /* pdf14 page device */
+        else
+            data_uchar[1] = (unsigned char)p14dev->devn_params.page_spot_colors;  /* pdf14 clist device */
+        return 1;
+    }
+
+    return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
 }
 
 /* Needed to set color monitoring in the target device's profile */

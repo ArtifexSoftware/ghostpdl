@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -441,6 +441,14 @@ enum {
 
     /* Determine if a given device is a null device. Returns 1 if it is. */
     gxdso_is_null_device,
+
+    /* Get information about pdf14 device overprint simulation state
+     *     data = unsigned char[2], [0] is overprint_sim_push [1] is num_spot_colors_int
+     *     size = sizeof(unsigned char[2])
+     * Returns 1 if returned values are valid
+     * 0 otherwise.
+     */
+    gxdso_overprintsim_state,
 
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
