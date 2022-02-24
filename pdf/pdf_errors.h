@@ -51,5 +51,6 @@ PARAM(E_PDF_NO_SUBTYPE,                "object lacks a required Subtype"),
 PARAM(E_PDF_IMAGECOLOR_ERROR,          "error in image colour"),
 PARAM(E_DICT_SELF_REFERENCE,           "dictionary contains a key which (indirectly) references the dictionary."),
 PARAM(E_IMAGE_MASKWITHCOLOR,           "Image has both ImageMask and ColorSpace keys."),
+PARAM(E_PDF_INVALID_DECRYPT_LEN,       "Invalid /Length in Encryption dictionary (not in range 40-128 or not a multiple of 8)."),
 
 #undef PARAM

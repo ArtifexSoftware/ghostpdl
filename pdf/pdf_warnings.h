@@ -56,5 +56,6 @@ PARAM(W_PDF_DEVICEN_USES_ALL,       "A DeviceN space used the /All ink name."),
 PARAM(W_PDF_BAD_MEDIABOX,           "Couldn't retrieve MediaBox for page, using current media size"),
 PARAM(W_PDF_CA_OUTOFRANGE,          "CA or ca value not in range 0.0 to 1.0, clamped to range."),
 PARAM(W_PDF_INVALID_DEFAULTSPACE,   "Invalid DefaultGray, DefaultRGB or DefaultCMYK space specified, ignored."),
+PARAM(W_PDF_INVALID_DECRYPT_LEN,    "Invalid /Length supplied in Encryption dictionary."),
 
 #undef PARAM
