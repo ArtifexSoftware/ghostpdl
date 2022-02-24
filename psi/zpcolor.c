@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -245,7 +245,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
         gs_setdevice_no_init(pgs, (gx_device *)pdev);
         if (pinst->templat.uses_transparency) {
             if_debug0m('v', imemory, "   pushing the pdf14 compositor device into this graphics state\n");
-            if ((code = gs_push_pdf14trans_device(pgs, true, true, 0, 0)) < 0)  /* FIXME: do we need spot_color_count ??? */
+            if ((code = gs_push_pdf14trans_device(pgs, true, true, 0, 0)) < 0)  /* spot color count found from pdf14 target */
                 return code;
         } else { /* not transparent */
             if (pinst->templat.PaintType == 1 && !(pinst->is_clist)
