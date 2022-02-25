@@ -4112,6 +4112,117 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
 /* Make a temporary copy of the annotation dict with some fields left out or
  * modified, then do a pdfmark on it
  */
+
+const char *PermittedKeys[] = {
+    /* These keys are valid for all annotation types, we specifically do not allow /P or /Parent */
+    "Type",
+    "Subtype",
+    "Rect",
+    "Contents",
+    "NM",
+    "M",
+    "F",
+    "AP",
+    "AS",
+    "Border",
+    "C",
+    "StructParent",
+    "OC",
+    "AF",
+    "ca",
+    "CA",
+    "BM",
+    "Lang",
+    /* Keys by annotation type (some are common to more than one type, only one entry per key) */
+    /* Markup Annotations we specifically do not permit RT, IRT or Popup */
+    "T",
+    "RC",
+    "CreationDate",
+    "Subj",
+    "IT",
+    "ExData",
+    /* Text annotations */
+    "Open",
+    "Name",
+    "State",
+    "StateModel",
+    /* This isn't specified as being allowed, but Acrobat does something with it, so we need to preserve it */
+    "Rotate",
+    /* Link annotations */
+    "A",
+    "Dest",
+    "H",
+    "PA",
+    "QuadPoints",
+    /* FreeText annotations */
+    "DA",
+    "Q",
+    "DS",
+    "CL",
+    "IT",
+    "BE",
+    "RD",
+    "BS",
+    "LE",
+    /* Line Annotations */
+    "L",
+    "LE",
+    "IC",
+    "LL",
+    "LLE",
+    "Cap",
+    "LLO",
+    "CP",
+    "Measure",
+    "CO",
+    /* Square and Circle annotations */
+    "Path",
+    /* Polygon and PolyLine annotations */
+    "Vertices",
+    /* Text Markup annotations */
+    /* Caret annotations */
+    "Sy",
+    /* Rubber Stamp annotations */
+    /* Ink annotations */
+    "InkList",
+    /* Popup annotations */
+    "Open",
+    /* File attachment annotation */
+    "FS",
+    /* Sound annotations */
+    "Sound",
+    /* Movie annotations */
+    "Movie",
+    /* Screen annotations */
+    "MK",
+    "AA",
+    /* We don't handle Widget annotations as annotations, we draw them */
+    /* Printer's Mark annotations */
+    /* Trap Network annotations */
+    /* Watermark annotations */
+    "FixedPrint",
+    "Matrix",
+    "H",
+    "V",
+    /* Redaction annotations */
+    "RO",
+    "OverlayText",
+    "Repeat",
+    /* Projection annotations */
+    /* 3D and RichMedia annotations */
+};
+
+static int isKnownKey(pdf_context *ctx, pdf_name *Key)
+{
+    int i = 0;
+
+    for (i = 0; i < sizeof(PermittedKeys) / sizeof (const char *); i++) {
+        if (pdfi_name_is(Key, PermittedKeys[i]))
+            return 1;
+    }
+    return 0;
+}
+
 static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name *subtype)
 {
     int code = 0;
@@ -4141,51 +4252,44 @@ static int pdfi_annot_preserve_mark(pdf_context *ctx, pdf_dict *annot, pdf_name 
     while (code >= 0) {
         resolve = false;
 
-        if (pdfi_name_is(Key, "Popup") || pdfi_name_is(Key, "IRT") || pdfi_name_is(Key, "RT") ||
-            pdfi_name_is(Key, "P") || pdfi_name_is(Key, "Parent")) {
-            /* Delete some keys
-             * These would not be handled correctly and are optional.
-             * (see pdf_draw.ps/loadannot())
-             * TODO: Could probably handle some of these since they are typically
-             * just references, and we do have a way to handle references?
-             * Look into it later...
-             */
+        if (!isKnownKey(ctx, Key)) {
             code = pdfi_dict_delete_pair(ctx, tempdict, Key);
             if (code < 0) goto exit;
-        } else if (pdfi_name_is(Key, "AP")) {
-            /* Special handling for AP -- have fun! */
-            code = pdfi_annot_preserve_modAP(ctx, tempdict, Key);
-            if (code < 0) goto exit;
-        } else if (pdfi_name_is(Key, "QuadPoints")) {
-            code = pdfi_annot_preserve_modQP(ctx, tempdict, Key);
-            if (code < 0) goto exit;
-        } else if (pdfi_name_is(Key, "A")) {
-            code = pdfi_pdfmark_modA(ctx, tempdict);
-            if (code < 0) goto exit;
-        } else if (pdfi_name_is(Key, "Dest")) {
-            if (ctx->args.no_pdfmark_dests) {
-                /* If omitting dests, such as for multi-page output, then omit this whole annotation */
-                code = 0;
-                goto exit;
-            }
-            code = pdfi_pdfmark_modDest(ctx, tempdict);
-            if (code < 0) goto exit;
-        } else if (pdfi_name_is(Key, "StructTreeRoot")) {
-            /* TODO: Bug691785 has Link annots with /StructTreeRoot
-             * It is super-circular, and causes issues.
-             * GS code only adds in certain values for Link so it doesn't
-             * run into a problem.  I am just going to delete it.
-             * There should be a better solution to handle circular stuff
-             * generically.
-             */
-            code = pdfi_dict_delete_pair(ctx, tempdict, Key);
-            if (code < 0) goto exit;
-        } else if (pdfi_name_is(Key, "Sound") || pdfi_name_is(Key, "Movie")) {
-            resolve = false;
         } else {
-            resolve = true;
+            if (pdfi_name_is(Key, "AP")) {
+                /* Special handling for AP -- have fun! */
+                code = pdfi_annot_preserve_modAP(ctx, tempdict, Key);
+                if (code < 0) goto exit;
+            } else if (pdfi_name_is(Key, "QuadPoints")) {
+                code = pdfi_annot_preserve_modQP(ctx, tempdict, Key);
+                if (code < 0) goto exit;
+            } else if (pdfi_name_is(Key, "A")) {
+                code = pdfi_pdfmark_modA(ctx, tempdict);
+                if (code < 0) goto exit;
+            } else if (pdfi_name_is(Key, "Dest")) {
+                if (ctx->args.no_pdfmark_dests) {
+                    /* If omitting dests, such as for multi-page output, then omit this whole annotation */
+                    code = 0;
+                    goto exit;
+                }
+                code = pdfi_pdfmark_modDest(ctx, tempdict);
+                if (code < 0) goto exit;
+            } else if (pdfi_name_is(Key, "StructTreeRoot")) {
+                /* TODO: Bug691785 has Link annots with /StructTreeRoot
+                 * It is super-circular, and causes issues.
+                 * GS code only adds in certain values for Link so it doesn't
+                 * run into a problem.  I am just going to delete it.
+                 * There should be a better solution to handle circular stuff
+                 * generically.
+                 */
+                code = pdfi_dict_delete_pair(ctx, tempdict, Key);
+                if (code < 0) goto exit;
+            } else if (pdfi_name_is(Key, "Sound") || pdfi_name_is(Key, "Movie")) {
+                resolve = false;
+            } else {
+                resolve = true;
+            }
         }
-
         if (resolve) {
             code = pdfi_dict_get_by_key(ctx, annot, (const pdf_name *)Key, &Value);
             if (code < 0) goto exit;
