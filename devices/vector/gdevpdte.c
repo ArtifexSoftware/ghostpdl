@@ -724,7 +724,10 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
                 return code;
         }
         if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
-            gs_text_replaced_width(&pte->text, xy_index++, &tpt);
+            code = gs_text_replaced_width(&pte->text, xy_index++, &tpt);
+            if (code < 0)
+                return code;
+
             gs_distance_transform(tpt.x, tpt.y, &ctm_only(pte->pgs), &wanted);
         } else {
             gs_distance_transform(info.width[WMode].x,
