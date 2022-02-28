@@ -444,7 +444,6 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
     (               Output may be incorrect.\n) newpdf_pdfformaterror
     [ 0 0 currentpagedevice /PageSize get aload pop ] //false
   } ifelse
-%(newpdf_get_media_box end) == flush
 } bind executeonly def
 
 % [llx lly urx ury] newpdf_check_empty_box [llx lly urx ury] true | false
@@ -603,6 +602,30 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
 
   dup
   dup newpdf_get_any_box       % Stack: pdfpagedict pdfpagedict /BoxName [box]
+
+  % Check that the box is 'normal' and make it so if not
+  % Also check the array is 4 elements and if it isn't then use the
+  % current PageSize. The normalise arithmetic assumes the array is a 4
+  % element array.
+  dup length 4 ne {
+    % Invalid size of mediabox
+    pop currentpagedevice /PageSize get
+  } {
+    aload 5 1 roll  % array x1 y1 x2 y2
+    exch            % array x1 y1 y2 x2
+    4 -1 roll       % array y1 y2 x2 x1
+    2 copy gt {
+      exch          % array y1 y2 xmin xmax
+    } if
+    4 -2 roll       % array xmin xmax y1 y2
+    2 copy gt {
+      exch          % array xmin xmax ymin ymax
+    } if
+    4 1 roll
+    exch 4 -1 roll
+    5 -1 roll
+    astore
+  } ifelse
 
   //systemdict /PDFFitPage known {
     NewPDF_FitPage
