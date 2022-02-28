@@ -54,6 +54,16 @@ on Windows) which is <i>purely</i> for PDF input. For this release, those new bi
 in the "install" make targets, nor in the Windows installers.
 </li>
 <li>
+<p>Calling Ghostscript via the GS API is now thread safe. The one limitation is that the X11 devices for
+Unix-like systems (x11, x11alpha, x11cmyk, x11cmyk2, x11cmyk4, x11cmyk8, x11gray2, x11gray4 and x11mono)
+cannot be made thread safe, due to their interaction with the X11 server, those devices have been modified
+to only allow one instance in an executable.
+</li>
+<li>
+<p>The <code>PSD</code> output devices now write ICC profiles to their output files, for improved
+color fidelity.
+</li>
+<li>
 <p>Our efforts in code hygiene and maintainability continue.
 </li>
 <li>
