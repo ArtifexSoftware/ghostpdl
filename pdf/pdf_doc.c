@@ -347,6 +347,12 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
             leaf_dict = NULL;
         }
     } else {
+        if (ctx->loop_detection != NULL) {
+            if (node->object_num != 0 && pdfi_loop_detector_check_object(ctx, node->object_num)) {
+                code = gs_note_error(gs_error_circular_reference);
+                goto errorExit;
+            }
+        }
         child = (pdf_dict *)node;
         pdfi_countup(child);
     }
@@ -708,8 +714,6 @@ exit:
 static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
 {
     int code = 0;
-    int64_t count = 0;
-    int64_t numkids = 0;
     pdf_dict *tempdict = NULL;
     uint64_t dictsize;
     uint64_t index;
