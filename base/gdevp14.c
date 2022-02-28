@@ -3186,13 +3186,15 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     const byte* buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int alpha_offset = num_comp;
     int tag_offset = has_tags ? num_comp + 1 : 0;
-    bool keep_native = pdev->overprint_sim && pdev->devn_params.page_spot_colors > 0;
     gs_color_space *pcs;
     gs_image1_t image;
     gx_image_enum_common_t *info;
     gx_image_plane_t planes[GS_IMAGE_MAX_COMPONENTS];
     pdf14_buf *cm_result = NULL;
     bool did_alloc;
+    bool target_sep_device = dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0);
+    bool has_spots = pdev->ctx->num_spots > 0;
+    bool blend_spots = !target_sep_device && has_spots;
 
     /* Check if group color space is CMYK based */
     code = dev_proc(target, get_profile)(target, &dev_target_profile);
@@ -3209,10 +3211,10 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
         src_profile = pdf14dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE];
     }
 
-    /* If we have spot colors and are doing overprint simulation and the source
-       space is not CMYK due to a blending color space being used, then convert
-       base colors to CMYK so that we can properly blend the spot colors */
-    if (keep_native && src_profile->data_cs != gsCMYK) {
+    /* If the target device does not support spot colors and we have spot colors
+       here due to overprint simulation (blend_spots == true), then we will need to convert the base
+       colors to CMYK if it is RGB or Gray so tha we can blend in the spot colors */
+    if (blend_spots && src_profile->data_cs != gsCMYK) {
 
         cm_result = pdf14_transform_color_buffer_no_matte(pgs, pdev->ctx, (gx_device *)dev, buf,
             buf->data, src_profile, pgs->icc_manager->default_cmyk, 0, 0, buf->rect.q.x,
@@ -3231,7 +3233,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
 #if RAW_DUMP
         buf_ptr = buf->data + (rect.p.y - buf->rect.p.y) * buf->rowstride + ((rect.p.x - buf->rect.p.x) << deep);
         dump_raw_buffer(target->memory, height, width, buf->n_planes, planestride, rowstride,
-            "post_to_cmyk_for_spot_blend", buf_ptr, deep);
+            "convertbase_to_cmyk_for_spot_blend", buf_ptr, deep);
         global_index++;
 #endif
     }
@@ -3330,10 +3332,12 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
         global_index++;
 #endif
 
-        /* Delay the baking to big endian if we have to do spots to CMYK still.  We will take
-           care of the conversion at that point */
         if (color_mismatch && (src_profile->data_cs == gsRGB || src_profile->data_cs == gsGRAY)) {
             if (deep) {
+            /* In this case, we are NOT going to bring the spots into the CMYK
+               equivalent colors, since otherwise src_profile would be CMYK based.  So
+               16 bit data will be converted now from native endian to big endian during
+               the blending process */
                 pdf14_blend_image_mixed_buffer16(buf_ptr, width, height, rowstride,
                     planestride, num_comp, src_profile->num_comps);
             } else {
@@ -3342,6 +3346,12 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
             }
         } else {
             if (deep) {
+            /* In this case, if blend_spots == true, we will shortly be bringing
+               the spot colors to CMYK equivalent colors. It is at that time that
+               we will convert from native endian to big endian. In all other
+               cases this blending will due to conversion from native to BE */
+                bool keep_native = (blend_spots == true);
+
                 gx_blend_image_buffer16(buf_ptr, width, height, rowstride,
                     planestride, num_comp, bg, keep_native);
             } else {
@@ -3356,9 +3366,13 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
         global_index++;
 #endif
 
-        /* If doing simulated overprint, Bring the spot color channels into
-           CMYK. Data is planar and 16 bit data is still in native format. */
-        if (pdev->overprint_sim && pdev->devn_params.page_spot_colors > 0) {
+        /* If doing simulated overprint and we are not going to a sep device and
+           we have spot colors, then bring the spot color channels into CMYK
+           (We should have already converted our base color space to CMYK if it was RGB or gray).
+           At this point, data is planar and 16 bit data is still in native format. It is
+           here that 16 bit data will be converted to BE. Otherwise it will have been converted
+           above during the alpha blend operation. */
+        if (blend_spots) {
             cmyk_composite_map cmyk_map[GX_DEVICE_MAX_SEPARATIONS];  /* Fracs */
 
             /* In the clist case, we need to get equiv spots out of the
