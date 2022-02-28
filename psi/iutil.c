@@ -176,7 +176,7 @@ obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
             return (!bytes_compare(pref1->value.bytes, r_size(pref1),
                                    pref2->value.bytes, r_size(pref2)));
         case t_device:
-            return (pref1->value.pdevice == pref2->value.pdevice);
+            return (pref1->value.pdevice->device == pref2->value.pdevice->device);
         case t_struct:
         case t_astruct:
         case t_pdfctx:
