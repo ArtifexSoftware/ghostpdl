@@ -200,7 +200,6 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 {
     int code = 0;
     int64_t i;
-    pdf_keyword *keyword = NULL;
     pdf_dict *dict = NULL;
     gs_offset_t offset;
     pdf_stream *stream_obj = NULL;
@@ -305,8 +304,8 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         stream_obj->Length = 0;
         stream_obj->length_valid = false;
 
-        code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
-        if (code < 0 || pdfi_count_stack(ctx) < 2) {
+        code = pdfi_read_bare_keyword(ctx, ctx->main_stream);
+        if (code == 0) {
             char extra_info[gp_file_name_sizeof];
 
             gs_snprintf(extra_info, sizeof(extra_info), "Failed to find a valid object at end of stream object %u.\n", objnum);
@@ -318,34 +317,27 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
                 pdfi_countdown(stream_obj); /* get rid of extra ref */
                 return code;
             }
-        }
-        else {
-            if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-                char extra_info[gp_file_name_sizeof];
+        } else if (code < 0) {
+            char extra_info[gp_file_name_sizeof];
 
-                gs_snprintf(extra_info, sizeof(extra_info), "Failed to find 'endstream' keyword at end of stream object %u.\n", objnum);
-                pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", extra_info);
-            } else {
-                keyword = ((pdf_keyword *)ctx->stack_top[-1]);
-                if (keyword->key != TOKEN_ENDSTREAM) {
-                    char extra_info[gp_file_name_sizeof];
+            gs_snprintf(extra_info, sizeof(extra_info), "Failed to find 'endstream' keyword at end of stream object %u.\n", objnum);
+            pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", extra_info);
+        } else if (code != TOKEN_ENDSTREAM) {
+            char extra_info[gp_file_name_sizeof];
 
-                    gs_snprintf(extra_info, sizeof(extra_info), "Stream object %u has an incorrect /Length of %"PRIu64"\n", objnum, i);
-                    pdfi_log_info(ctx, "pdfi_read_stream_object", extra_info);
-                } else {
-                    /* Cache the Length in the stream object and mark it valid */
-                    stream_obj->Length = i;
-                    stream_obj->length_valid = true;
-                }
-            }
-            pdfi_pop(ctx, 1);
+            gs_snprintf(extra_info, sizeof(extra_info), "Stream object %u has an incorrect /Length of %"PRIu64"\n", objnum, i);
+            pdfi_log_info(ctx, "pdfi_read_stream_object", extra_info);
+        } else {
+            /* Cache the Length in the stream object and mark it valid */
+            stream_obj->Length = i;
+            stream_obj->length_valid = true;
         }
     }
 
     /* If we failed to find a valid object, or the object wasn't a keyword, or the
      * keywrod wasn't 'endstream' then the Length is wrong. We need to have the correct
      * Length for streams if we have encrypted files, because we must install a
-     * SubFileDecode filter iwth a Length (EODString is incompatible with AES encryption)
+     * SubFileDecode filter with a Length (EODString is incompatible with AES encryption)
      * Rather than mess about checking for encryption, we'll choose to just correctly
      * calculate the Length of all streams. Although this takes time, it will only
      * happen for files which are invalid.
@@ -393,7 +385,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         return 0;
     }
 
-    code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
+    code = pdfi_read_bare_keyword(ctx, ctx->main_stream);
     if (code < 0) {
         pdfi_countdown(stream_obj); /* get rid of extra ref */
         if (ctx->args.pdfstoponerror)
@@ -406,14 +398,13 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         return 0;
     }
 
-    if (pdfi_count_stack(ctx) < 2) {
+    if (code == 0) {
         pdfi_countdown(stream_obj); /* get rid of extra ref */
         return_error(gs_error_stackunderflow);
     }
 
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+    if (code != TOKEN_ENDOBJ) {
         pdfi_countdown(stream_obj); /* get rid of extra ref */
-        pdfi_pop(ctx, 1);
         if (ctx->args.pdfstoponerror)
             return_error(gs_error_typecheck);
         pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_stream_object", NULL);
@@ -424,12 +415,6 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
     }
     pdfi_countdown(stream_obj); /* get rid of extra ref */
 
-    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
-    if (keyword->key != TOKEN_ENDOBJ) {
-        pdfi_pop(ctx, 2);
-        return_error(gs_error_typecheck);
-    }
-    pdfi_pop(ctx, 1);
     return 0;
 }
 
@@ -535,9 +520,8 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
 
 static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_offset)
 {
-    int code = 0, stack_size = pdfi_count_stack(ctx);
+    int code = 0;
     int objnum = 0, gen = 0;
-    pdf_keyword *keyword = NULL;
 
     /* An object consists of 'num gen obj' followed by a token, follwed by an endobj
      * A stream dictionary might have a 'stream' instead of an 'endobj', in which case we
@@ -556,21 +540,14 @@ static int pdfi_read_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t strea
     if (code == 0)
         return_error(gs_error_syntaxerror);
 
-    code = pdfi_read_token(ctx, s, 0, 0);
+    code = pdfi_read_bare_keyword(ctx, s);
     if (code < 0)
         return code;
-    if (stack_size >= pdfi_count_stack(ctx))
+    if (code == 0)
         return gs_note_error(gs_error_ioerror);
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
-    if (keyword->key != TOKEN_OBJ) {
-        pdfi_pop(ctx, 1);
+    if (code != TOKEN_OBJ) {
         return_error(gs_error_syntaxerror);
     }
-    pdfi_pop(ctx, 1);
 
     return pdfi_read_bare_object(ctx, s, stream_offset, objnum, gen);
 }

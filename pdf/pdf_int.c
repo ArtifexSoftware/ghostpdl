@@ -36,6 +36,7 @@
 #include "pdf_trans.h"
 #include "pdf_optcontent.h"
 #include "pdf_sec.h"
+#include <stdlib.h>
 
 #include "gsstate.h"    /* for gs_gstate_free */
 
@@ -781,6 +782,56 @@ int pdfi_skip_comment(pdf_context *ctx, pdf_c_stream *s)
     } while (c != 0x0a && c != 0x0d);
 
     return 0;
+}
+
+#define PARAM1(A) # A,
+#define PARAM2(A,B) A,
+static const char pdf_token_strings[][10] = {
+#include "pdf_tokens.h"
+};
+
+#define nelems(A) (sizeof(A)/sizeof(A[0]))
+
+typedef int (*bsearch_comparator)(const void *, const void *);
+
+int pdfi_read_bare_keyword(pdf_context *ctx, pdf_c_stream *s)
+{
+    byte Buffer[256];
+    int index = 0;
+    int c;
+    void *t;
+
+    pdfi_skip_white(ctx, s);
+
+    do {
+        c = pdfi_read_byte(ctx, s);
+        if (c < 0)
+            break;
+
+        if (iswhite(c) || isdelimiter(c)) {
+            pdfi_unread_byte(ctx, s, (byte)c);
+            break;
+        }
+        Buffer[index] = (byte)c;
+        index++;
+    } while (index < 255);
+
+    if (index >= 255 || index == 0) {
+        if (ctx->args.pdfstoponerror)
+            return_error(gs_error_syntaxerror);
+        return TOKEN_INVALID_KEY;
+    }
+
+    Buffer[index] = 0x00;
+    t = bsearch((const void *)Buffer,
+                (const void *)pdf_token_strings[TOKEN_INVALID_KEY+1],
+                nelems(pdf_token_strings)-(TOKEN_INVALID_KEY+1),
+                sizeof(pdf_token_strings[0]),
+                (bsearch_comparator)&strcmp);
+    if (t == NULL)
+        return TOKEN_INVALID_KEY;
+
+    return (((const char *)t) - pdf_token_strings[0]) / sizeof(pdf_token_strings[0]);
 }
 
 /* This function is slightly misnamed, for some keywords we do

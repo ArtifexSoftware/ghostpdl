@@ -245,27 +245,16 @@ int pdfi_repair_file(pdf_context *ctx)
                                                 index = 0;
                                         } while (index < 9);
                                         do {
-                                            code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
-                                            if (code < 0) {
-                                                if (code != gs_error_VMerror && code != gs_error_ioerror)
-                                                    continue;
+                                            code = pdfi_read_bare_keyword(ctx, ctx->main_stream);
+                                            if (code == gs_error_VMerror || code == gs_error_ioerror)
                                                 goto exit;
+                                            if (code == TOKEN_ENDOBJ) {
+                                                code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
+                                                if (code == gs_error_VMerror || code == gs_error_ioerror)
+                                                    goto exit;
+                                                break;
                                             }
-                                            if (code > 0) {
-                                                if (ctx->stack_top[-1]->type == PDF_KEYWORD){
-                                                    pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
-                                                    if (k->key == TOKEN_ENDOBJ) {
-                                                        code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
-                                                        if (code < 0) {
-                                                            if (code != gs_error_VMerror && code != gs_error_ioerror)
-                                                                break;
-                                                            goto exit;
-                                                        }
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }while(ctx->main_stream->eof == false);
+                                        } while(ctx->main_stream->eof == false);
 
                                         pdfi_clearstack(ctx);
                                         break;

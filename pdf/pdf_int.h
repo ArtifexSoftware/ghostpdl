@@ -30,6 +30,7 @@ int pdfi_name_alloc(pdf_context *ctx, byte *key, uint32_t size, pdf_obj **o);
 int pdfi_read_dict(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen);
 
 int pdfi_read_bare_int(pdf_context *ctx, pdf_c_stream *s, int *parsed_int);
+int pdfi_read_bare_keyword(pdf_context *ctx, pdf_c_stream *s);
 
 void local_save_stream_state(pdf_context *ctx, stream_save *local_save);
 void local_restore_stream_state(pdf_context *ctx, stream_save *local_save);
