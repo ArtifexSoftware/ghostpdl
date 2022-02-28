@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -405,6 +405,10 @@ typedef int (*op_proc_t)(i_ctx_t *i_ctx_p);
 /* real_opproc is a holdover.... */
 #define real_opproc(pref) ((pref)->value.opproc)
 
+typedef struct psi_device_ref_s {
+    struct gx_device_s *device;
+} psi_device_ref;
+
 /* Object reference */
 /*
  * Note that because of the way packed arrays are represented,
@@ -446,7 +450,7 @@ struct ref_s {
         ref_packed *writable_packed;
         op_proc_t opproc;
         struct stream_s *pfile;
-        struct gx_device_s *pdevice;
+        struct psi_device_ref_s *pdevice;
         obj_header_t *pstruct;
         uint64_t dummy; /* force 16-byte ref on 32-bit platforms */
     } value;

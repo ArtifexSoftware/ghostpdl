@@ -36,6 +36,47 @@
 #include "gsicc_manage.h"
 #include "gxdevsop.h"
 
+struct_proc_finalize(psi_device_ref_finalize);
+
+static
+ENUM_PTRS_WITH(psi_device_ref_enum_ptrs, psi_device_ref *devref)
+      {
+          return 0;
+      }
+    case 0:
+      {
+          if (devref->device->memory != NULL) {
+              ENUM_RETURN(gx_device_enum_ptr(devref->device));
+          }
+          return 0;
+      }
+ENUM_PTRS_END
+
+static
+RELOC_PTRS_WITH(psi_device_ref_reloc_ptrs, psi_device_ref *devref)
+    if (devref->device->memory != NULL) {
+        devref->device = gx_device_reloc_ptr(devref->device, gcst);
+    }
+RELOC_PTRS_END
+
+gs_private_st_composite_use_final(st_psi_device_ref, psi_device_ref, "psi_device_ref_t",
+                     psi_device_ref_enum_ptrs, psi_device_ref_reloc_ptrs, psi_device_ref_finalize);
+
+void
+psi_device_ref_finalize(const gs_memory_t *cmem, void *vptr)
+{
+    psi_device_ref *pdref = (psi_device_ref *)vptr;
+    (void)cmem;
+
+    /* pdref->device->memory == NULL indicates either a device prototype
+       or a device allocated on the stack rather than the heap
+     */
+    if (pdref->device->memory != NULL)
+        rc_decrement(pdref->device, "psi_device_ref_finalize");
+
+    pdref->device = NULL;
+}
+
 /* <device> <keep_open> .copydevice2 <newdevice> */
 static int
 zcopydevice2(i_ctx_t *i_ctx_p)
@@ -43,6 +84,7 @@ zcopydevice2(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gx_device *new_dev;
     int code;
+    psi_device_ref *psdev;
 
     check_read_type(op[-1], t_device);
     check_type(*op, t_boolean);
@@ -50,12 +92,20 @@ zcopydevice2(i_ctx_t *i_ctx_p)
         /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
         return_error(gs_error_undefined);
 
-    code = gs_copydevice2(&new_dev, op[-1].value.pdevice, op->value.boolval,
+    code = gs_copydevice2(&new_dev, op[-1].value.pdevice->device, op->value.boolval,
                           imemory);
     if (code < 0)
         return code;
     new_dev->memory = imemory;
-    make_tav(op - 1, t_device, icurrent_space | a_all, pdevice, new_dev);
+
+    psdev = gs_alloc_struct(imemory, psi_device_ref, &st_psi_device_ref, "zcopydevice2");
+    if (!psdev) {
+        rc_decrement(new_dev, "zcopydevice2");
+        return_error(gs_error_VMerror);
+    }
+    psdev->device = new_dev;
+
+    make_tav(op - 1, t_device, icurrent_space | a_all, pdevice, psdev);
     pop(1);
     return 0;
 }
@@ -68,11 +118,19 @@ zcurrentdevice(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
     gs_ref_memory_t *mem = (gs_ref_memory_t *) dev->memory;
+    psi_device_ref *psdev;
+
+    psdev = gs_alloc_struct(imemory, psi_device_ref, &st_psi_device_ref, "zcurrentdevice");
+    if (!psdev) {
+        return_error(gs_error_VMerror);
+    }
+    psdev->device = dev;
+    rc_increment(dev);
 
     push(1);
     make_tav(op, t_device,
              (mem == 0 ? avm_foreign : imemory_space(mem)) | a_all,
-             pdevice, dev);
+             pdevice, psdev);
     return 0;
 }
 
@@ -91,16 +149,24 @@ zcurrentoutputdevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gx_device *odev = NULL, *dev = gs_currentdevice(igs);
+    psi_device_ref *psdev;
     gs_ref_memory_t *mem = (gs_ref_memory_t *) dev->memory;
     int code = dev_proc(dev, dev_spec_op)(dev,
                         gxdso_current_output_device, (void *)&odev, 0);
     if (code < 0)
         return code;
 
+    psdev = gs_alloc_struct(imemory, psi_device_ref, &st_psi_device_ref, "zcurrentdevice");
+    if (!psdev) {
+        return_error(gs_error_VMerror);
+    }
+    psdev->device = odev;
+    rc_increment(odev);
+
     push(1);
     make_tav(op, t_device,
              (mem == 0 ? avm_foreign : imemory_space(mem)) | a_all,
-             pdevice, odev);
+             pdevice, psdev);
     return 0;
 }
 
@@ -116,7 +182,7 @@ zdevicename(i_ctx_t *i_ctx_p)
         /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
         return_error(gs_error_undefined);
 
-    dname = op->value.pdevice->dname;
+    dname = op->value.pdevice->device->dname;
     make_const_string(op, avm_foreign | a_readonly, strlen(dname),
                       (const byte *)dname);
     return 0;
@@ -164,10 +230,11 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
     int code;
 
     check_read_type(op[-7], t_device);
-    dev = op[-7].value.pdevice;
-    if (dev == NULL)
+    if (op[-7].value.pdevice == NULL)
         /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
         return_error(gs_error_undefined);
+
+    dev = op[-7].value.pdevice->device;
 
     check_int_leu(op[-6], dev->width);
     rect.p.x = op[-6].value.intval;
@@ -238,6 +305,7 @@ zgetdevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     const gx_device *dev;
+    psi_device_ref *psdev;
 
     check_type(*op, t_integer);
     if (op->value.intval != (int)(op->value.intval))
@@ -245,10 +313,18 @@ zgetdevice(i_ctx_t *i_ctx_p)
     dev = gs_getdevice((int)(op->value.intval));
     if (dev == 0)		/* index out of range */
         return_error(gs_error_rangecheck);
+
+    psdev = gs_alloc_struct(imemory, psi_device_ref, &st_psi_device_ref, "zgetdevice");
+    if (!psdev) {
+        return_error(gs_error_VMerror);
+    }
+    /* gs_getdevice() returns a device prototype, so no reference counting required */
+    psdev->device = (gx_device *)dev;
+
     /* Device prototypes are read-only; */
     /* the cast is logically unnecessary. */
     make_tav(op, t_device, avm_foreign | a_readonly, pdevice,
-             (gx_device *) dev);
+             psdev);
     return 0;
 }
 
@@ -258,13 +334,21 @@ zgetdefaultdevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     const gx_device *dev;
+    psi_device_ref *psdev;
 
     dev = gs_getdefaultlibdevice(imemory);
     if (dev == 0) /* couldn't find a default device */
         return_error(gs_error_unknownerror);
+
+    psdev = gs_alloc_struct(imemory, psi_device_ref, &st_psi_device_ref, "zgetdefaultdevice");
+    if (!psdev) {
+        return_error(gs_error_VMerror);
+    }
+    /* gs_getdefaultlibdevice() returns a device prototype, so no reference counting required */
+    psdev->device = (gx_device *)dev;
+
     push(1);
-    make_tav(op, t_device, avm_foreign | a_readonly, pdevice,
-                (gx_device *) dev);
+    make_tav(op, t_device, avm_foreign | a_readonly, pdevice, psdev);
     return 0;
 }
 
@@ -285,10 +369,12 @@ zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
         check_type(*op, t_dictionary);
     }
     rkeys = *op;
-    dev = op[-1].value.pdevice;
     if (op[-1].value.pdevice == NULL)
         /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
         return_error(gs_error_undefined);
+
+    dev = op[-1].value.pdevice->device;
+
     ref_stack_pop(&o_stack, 1);
     stack_param_list_write(&list, &o_stack, &rkeys, iimemory);
     code = gs_get_device_or_hardware_params(dev, (gs_param_list *) & list,
@@ -333,6 +419,7 @@ zmakewordimagedevice(i_ctx_t *i_ctx_p)
     const byte *colors;
     int colors_size;
     int code;
+    psi_device_ref *psdev;
 
     check_int_leu(op[-3], max_uint >> 1);	/* width */
     check_int_leu(op[-2], max_uint >> 1);	/* height */
@@ -368,21 +455,17 @@ zmakewordimagedevice(i_ctx_t *i_ctx_p)
                                   op->value.boolval, true, imemory);
     if (code == 0) {
         new_dev->memory = imemory;
-        make_tav(op - 4, t_device, imemory_space(iimemory) | a_all,
-                 pdevice, new_dev);
+
+        psdev = gs_alloc_struct(imemory, psi_device_ref, &st_psi_device_ref, "zcurrentdevice");
+        if (!psdev) {
+            rc_decrement(new_dev, "zmakewordimagedevice");
+            return_error(gs_error_VMerror);
+        }
+        psdev->device = new_dev;
+        make_tav(op - 4, t_device, imemory_space(iimemory) | a_all, pdevice, psdev);
         pop(4);
     }
     return code;
-}
-
-static void invalidate_stack_devices(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osbot;
-    while (op != ostop) {
-        if (r_has_type(op, t_device))
-            op->value.pdevice = 0;
-        op++;
-    }
 }
 
 /* - nulldevice - */
@@ -391,7 +474,6 @@ static int
 znulldevice(i_ctx_t *i_ctx_p)
 {
     int code = gs_nulldevice(igs);
-    invalidate_stack_devices(i_ctx_p);
     clear_pagedevice(istate);
     return code;
 }
@@ -457,7 +539,7 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
         return_error(gs_error_stackunderflow);
     check_type_only(*prequire_all, t_boolean);
     check_write_type_only(*pdev, t_device);
-    dev = pdev->value.pdevice;
+    dev = pdev->value.pdevice->device;
     if (dev == NULL)
         /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
         return_error(gs_error_undefined);
@@ -518,7 +600,6 @@ zsetdevice_no_safer(i_ctx_t *i_ctx_p, gx_device *new_dev)
     if (code < 0)
         return code;
 
-    invalidate_stack_devices(i_ctx_p);
     clear_pagedevice(istate);
     return code;
 }
@@ -545,10 +626,10 @@ zsetdevice(i_ctx_t *i_ctx_p)
      * it's procs initialised, at this point - but we need to check
      * whether we're being asked to change the device here
      */
-    if (dev_proc((op->value.pdevice), dev_spec_op) == NULL)
-        ndev = op->value.pdevice;
+    if (dev_proc((op->value.pdevice->device), dev_spec_op) == NULL)
+        ndev = op->value.pdevice->device;
     else
-        code = dev_proc((op->value.pdevice), dev_spec_op)(op->value.pdevice,
+        code = dev_proc((op->value.pdevice->device), dev_spec_op)(op->value.pdevice->device,
                         gxdso_current_output_device, (void *)&ndev, 0);
 
     if (code < 0)
@@ -558,7 +639,7 @@ zsetdevice(i_ctx_t *i_ctx_p)
         if(ndev != odev) 	  /* don't allow a different device    */
             return_error(gs_error_invalidaccess);
     }
-    code = zsetdevice_no_safer(i_ctx_p, op->value.pdevice);
+    code = zsetdevice_no_safer(i_ctx_p, op->value.pdevice->device);
     make_bool(op, code != 0);	/* erase page if 1 */
     return code;
 }
