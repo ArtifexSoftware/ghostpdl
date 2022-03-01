@@ -1598,7 +1598,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     int saved_intent;
     gs_offset_t stream_offset;
     float save_strokeconstantalpha = 0.0f, save_fillconstantalpha = 0.0f;
-    pdf_string *EODString = NULL;
     int trans_required;
 
 #if DEBUG_IMAGES
