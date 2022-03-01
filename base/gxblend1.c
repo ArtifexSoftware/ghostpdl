@@ -242,7 +242,7 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
         rendering_params.graphics_type_tag = GS_IMAGE_TAG;
         rendering_params.override_icc = false;
         rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-        rendering_params.rendering_intent = gsPERCEPTUAL;
+        rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
         rendering_params.cmm = gsCMM_DEFAULT;
         /* Request the ICC link for the transform that we will need to use */
         icc_link = gsicc_get_link_profile(pgs, dev, tos_profile, group_profile,

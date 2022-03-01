@@ -40,6 +40,13 @@ typedef enum {
     PDF14_OP_STATE_STROKE = 2,
 } PDF14_OP_FS_STATE;
 
+typedef enum {
+    PDF14_BLEND_CS_UNSPECIFIED = 0,
+    PDF14_BLEND_CS_TARGET_CIELAB,
+    PDF14_BLEND_CS_OUTPUTINTENT,
+    PDF14_BLEND_CS_SPECIFIED
+} pdf14_blend_cs_t;
+
 /*
  * This structure contains procedures for processing routine which differ
  * between the different blending color spaces.
@@ -232,7 +239,7 @@ typedef struct pdf14_device_s {
     gx_device * pclist_device;
     bool free_devicen;              /* Used to avoid freeing a deviceN parameter from target clist device */
     bool sep_device;
-    bool using_blend_cs;
+    pdf14_blend_cs_t blend_cs_state;
     bool overprint_sim;
     bool target_support_devn;
 

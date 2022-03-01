@@ -395,8 +395,6 @@ tiff_set_rgb_fields(gx_device_tiff *tfdev)
 
     if (tfdev->icc_struct->postren_profile != NULL)
         icc_profile = tfdev->icc_struct->postren_profile;
-    else if (tfdev->icc_struct->oi_profile != NULL)
-        icc_profile = tfdev->icc_struct->oi_profile;
     else
         icc_profile = tfdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
 

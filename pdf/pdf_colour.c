@@ -2659,32 +2659,47 @@ static int pdfi_device_setoutputintent(pdf_context *ctx, pdf_dict *profile_dict,
        Finally, we will use the output intent profile for the default profile
        of the proper Device profile in the icc manager, again, unless someone
        has explicitly set this default profile.
+
+       All of this is skipped if we are forcing oveprint simulation with
+       the output intent set, in which case we will push the pdf14 device
+       to render directly to the the output intent color space and then
+       do a final transform to the target color space.
     */
     dev_comps = dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps;
     index = gsicc_get_default_type(dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]);
-    if (ncomps == dev_comps && index < gs_color_space_index_DevicePixel) {
-        /* The OI profile is the same type as the profile for the device and a
-           "default" profile for the device was not externally set. So we go
-           ahead and use the OI profile as the device profile.  Care needs to be
-           taken here to keep from screwing up any device parameters.   We will
-           use a keyword of OIProfile for the user/device parameter to indicate
-           its usage.  Also, note conflicts if one is setting object dependent
-           color management */
-        dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE] = picc_profile;
-        rc_increment(picc_profile);
-        if_debug0m(gs_debug_flag_icc, ctx->memory, "[icc] OutputIntent used for device profile\n");
-    } else {
-        if (dev_profile->proof_profile == NULL) {
-            /* This means that we should use the OI profile as the proofing
-               profile.  Note that if someone already has specified a
-               proofing profile it is unclear what they are trying to do
-               with the output intent.  In this case, we will use it
-               just for the source data below */
-            dev_profile->proof_profile = picc_profile;
+
+    /* If we are doing simulate overprint and the output intent is different than
+       what the device profile is the we will end up pushing the pdf14 device
+       and doing a rendering to the output intent color space.  Keep the device
+       profile as is, and do not do a proofing profile */
+
+    if (!(ctx->pgs->device->icc_struct->overprint_control == PDF_OVERPRINT_SIMULATE &&
+        !gsicc_profiles_equal(dev_profile->oi_profile, dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]))) {
+        if (ncomps == dev_comps && index < gs_color_space_index_DevicePixel) {
+            /* The OI profile is the same type as the profile for the device and a
+               "default" profile for the device was not externally set. So we go
+               ahead and use the OI profile as the device profile.  Care needs to be
+               taken here to keep from screwing up any device parameters.   We will
+               use a keyword of OIProfile for the user/device parameter to indicate
+               its usage.  Also, note conflicts if one is setting object dependent
+               color management */
+            dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE] = picc_profile;
             rc_increment(picc_profile);
-            if_debug0m(gs_debug_flag_icc, ctx->memory, "[icc] OutputIntent used for proof profile\n");
+            if_debug0m(gs_debug_flag_icc, ctx->memory, "[icc] OutputIntent used for device profile\n");
+        } else {
+            if (dev_profile->proof_profile == NULL) {
+                /* This means that we should use the OI profile as the proofing
+                   profile.  Note that if someone already has specified a
+                   proofing profile it is unclear what they are trying to do
+                   with the output intent.  In this case, we will use it
+                   just for the source data below */
+                dev_profile->proof_profile = picc_profile;
+                rc_increment(picc_profile);
+                if_debug0m(gs_debug_flag_icc, ctx->memory, "[icc] OutputIntent used for proof profile\n");
+            }
         }
     }
+
     /* Now the source colors.  See which source color space needs to use the
        output intent ICC profile */
     index = gsicc_get_default_type(source_profile);

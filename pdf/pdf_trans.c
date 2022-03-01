@@ -33,6 +33,7 @@
 #include "gscoord.h"            /* For gs_setmatrix()*/
 #include "gsstate.h"            /* For gs_currentstrokeoverprint() and others */
 #include "gspath.h"             /* For gs_clippath() */
+#include "gsicc_cache.h"        /* For gsicc_profiles_equal() */
 
 /* Implement the TransferFunction using a Function. */
 static int
@@ -409,6 +410,32 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     return pdfi_gs_begin_transparency_group(ctx->pgs, &params, (const gs_rect *)bbox, group_type);
 }
 
+static bool pdfi_outputprofile_matches_oiprofile(pdf_context *ctx)
+{
+    cmm_dev_profile_t *profile_struct;
+    int code;
+    int k;
+
+    code = dev_proc(ctx->pgs->device, get_profile)(ctx->pgs->device,  &profile_struct);
+    if (code < 0)
+        return true;  /* Assume they match by default and in error condition */
+
+    if (profile_struct->oi_profile == NULL)
+        return true; /* no OI profile so no special case to worry about */
+    else {
+        /* Check the device profile(s). If any of them do not match, then
+           we assume there is not a match and it may be necessary to
+           use the pdf14 device to prerender to the OI profile */
+        for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+            if (profile_struct->device_profile[k] != NULL) {
+                if (!gsicc_profiles_equal(profile_struct->oi_profile, profile_struct->device_profile[k]))
+                    return false;
+            }
+        }
+        return true;
+    }
+}
+
 /* Begin a simple group
  * pathbbox -- bbox to use, but can be NULL
  */
@@ -606,7 +633,12 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
     case PDF_OVERPRINT_SIMULATE:
         if (!device_transparency && ctx->page.has_OP) {
             if (is_cmyk) {
-                if (ctx->page.num_spots > 0  && !ctx->device_state.spot_capable) {
+                /* If the page has spots and the device is not spot capable OR
+                   if the output intent profile is to be used, but we have
+                   a device output profile that is different, then we will be
+                   doing simulation with the pdf14 device buffer */
+                if ((ctx->page.num_spots > 0  && !ctx->device_state.spot_capable) ||
+                    !pdfi_outputprofile_matches_oiprofile(ctx)) {
                     ctx->page.needs_OP = true;
                     ctx->page.simulate_op = true;
                 }
