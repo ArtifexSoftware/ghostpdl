@@ -805,7 +805,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         /* We don't retain the PDF14 device */
         code = gs_push_pdf14trans_device(ctx->pgs, false, false, trans_depth, ctx->page.num_spots);
         if (code >= 0) {
-            if (page_group_known) {
+            if (ctx->page.has_transparency && page_group_known) {
                 code = pdfi_trans_begin_page_group(ctx, page_dict, group_dict);
                 /* If setting the page group failed for some reason, abandon the page group,
                  *  but continue with the page
@@ -833,7 +833,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
     code = pdfi_process_one_page(ctx, page_dict);
 
-    if (ctx->page.has_transparency && page_group_known) {
+    if (need_pdf14 && ctx->page.has_transparency && page_group_known) {
         code1 = pdfi_trans_end_group(ctx);
     }
 
