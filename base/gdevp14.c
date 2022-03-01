@@ -926,7 +926,7 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     rendering_params.graphics_type_tag = GS_IMAGE_TAG;
     rendering_params.override_icc = false;
     rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-    rendering_params.rendering_intent = gsPERCEPTUAL;
+    rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;  /* Use relative intent */
     rendering_params.cmm = gsCMM_DEFAULT;
     icc_link = gsicc_get_link_profile(pgs, dev, src_profile, des_profile,
         &rendering_params, pgs->memory, false);
@@ -2066,7 +2066,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
                     rendering_params.graphics_type_tag = GS_IMAGE_TAG;
                     rendering_params.override_icc = false;
                     rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-                    rendering_params.rendering_intent = gsPERCEPTUAL;
+                    rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
                     rendering_params.cmm = gsCMM_DEFAULT;
                     icc_link = gsicc_get_link_profile(pgs, dev, des_profile,
                         src_profile, &rendering_params, pgs->memory, false);
@@ -2568,7 +2568,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 
     /* Check if we have a color conversion issue */
     des_profile = dev_target_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE];
-    if (pdev->using_blend_cs || !gsicc_profiles_equal(des_profile, src_profile))
+    if (!gsicc_profiles_equal(des_profile, src_profile))
         color_mismatch = true;
 
     /* Check if target supports alpha */
@@ -3245,7 +3245,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
 
     /* Check if we have a color conversion issue */
     des_profile = dev_target_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE];
-    if (pdev->using_blend_cs || !gsicc_profiles_equal(des_profile, src_profile))
+    if (!gsicc_profiles_equal(des_profile, src_profile))
         color_mismatch = true;
 
     /* Check if target supports alpha */
@@ -3819,6 +3819,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
     cmm_dev_profile_t *profile_targ;
     cmm_dev_profile_t *profile_dev14;
     pdf14_device *pdev = (pdf14_device*) dev;
+    cmm_profile_t *blend_profile = NULL;
     int k;
 
     COPY_PARAM(width);
@@ -3834,11 +3835,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
     COPY_PARAM(graphics_type_tag);
     COPY_PARAM(interpolate_control);
     memcpy(&(dev->space_params), &(target->space_params), sizeof(gdev_space_params));
-    /* The PDF14 device copies only the default profile not the text etc.
-       TODO: MJV.  It has to make its own device structure but
-       can grab a copy of the profile.  This allows swapping of profiles
-       in the PDF14 device without messing up the target device profile.
-       Also if the device is using a blend color space it will grab that too */
+
     if (dev->icc_struct == NULL) {
         dev->icc_struct = gsicc_new_device_profile_array(dev);
         profile_dev14 = dev->icc_struct;
@@ -3863,17 +3860,30 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
         dev->icc_struct->usefastcolor = profile_targ->usefastcolor;
         dev->icc_struct->blacktext = profile_targ->blacktext;
 
-        if (pdev->using_blend_cs) {
-            /* Swap the device profile and the blend profile. */
-            gsicc_adjust_profile_rc(profile_targ->device_profile[GS_DEFAULT_DEVICE_PROFILE],
-                                    1, "gs_pdf14_device_copy_params");
-            gsicc_adjust_profile_rc(profile_targ->blend_profile, 1, "gs_pdf14_device_copy_params");
-            gsicc_adjust_profile_rc(profile_dev14->device_profile[GS_DEFAULT_DEVICE_PROFILE],
-                                    -1, "gs_pdf14_device_copy_params");
-            gsicc_adjust_profile_rc(profile_dev14->blend_profile, -1, "gs_pdf14_device_copy_params");
-            profile_dev14->blend_profile = profile_targ->device_profile[GS_DEFAULT_DEVICE_PROFILE];
-            profile_dev14->device_profile[GS_DEFAULT_DEVICE_PROFILE] = profile_targ->blend_profile;
+        switch (pdev->blend_cs_state) {
+            case PDF14_BLEND_CS_UNSPECIFIED:
+            case PDF14_BLEND_CS_TARGET_CIELAB:
+                /* PDF14_BLEND_CS_TARGET_CIELAB handled
+                   during the device push, when we have
+                   access to the pgs */
+                break;
+            case PDF14_BLEND_CS_OUTPUTINTENT:
+                blend_profile = profile_targ->oi_profile;
+                break;
+            case PDF14_BLEND_CS_SPECIFIED:
+                blend_profile = profile_targ->blend_profile;
+                break;
+            default:
+                break;
         }
+
+        if (blend_profile != NULL) {
+            /* Set the device profile to the blend profile. Note only default profile is set */
+            gsicc_adjust_profile_rc(blend_profile, 1, "gs_pdf14_device_copy_params");
+            gsicc_adjust_profile_rc(profile_dev14->device_profile[GS_DEFAULT_DEVICE_PROFILE], -1, "gs_pdf14_device_copy_params");
+            profile_dev14->device_profile[GS_DEFAULT_DEVICE_PROFILE] = blend_profile;
+        }
+
         profile_dev14->overprint_control = profile_targ->overprint_control;
     }
 #undef COPY_ARRAY_PARAM
@@ -5567,24 +5577,56 @@ pdf14_disable_device(gx_device * dev)
  */
 static	pdf14_default_colorspace_t
 pdf14_determine_default_blend_cs(gx_device * pdev, bool use_pdf14_accum,
-                                 bool *using_blend_cs)
+                                 pdf14_blend_cs_t *blend_cs_state)
 {
     /* If a blend color space was specified, then go ahead and use that to
        define the default color space for the blend modes.  Only Gray, RGB
        or CMYK blend color spaces are allowed.  Note we do not allow this
        setting if we are dealing with a separation device. */
     cmm_dev_profile_t *dev_profile;
+    cmm_profile_t *blend_profile = NULL;
+    pdf14_blend_cs_t temp_cs_state = PDF14_BLEND_CS_UNSPECIFIED;
     int code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
     bool valid_blend_cs = false;
-    *using_blend_cs = false;
 
-    /* Make sure any specified blend color space is valid along with other cond */
-    if (code == 0 && dev_profile->blend_profile != NULL && !use_pdf14_accum) {
-        if (!dev_profile->blend_profile->isdevlink &&
-            !dev_profile->blend_profile->islab &&
-            (dev_profile->blend_profile->data_cs == gsGRAY ||
-             dev_profile->blend_profile->data_cs == gsRGB ||
-             dev_profile->blend_profile->data_cs == gsCMYK)) {
+    *blend_cs_state = PDF14_BLEND_CS_UNSPECIFIED;
+
+    /* Are we using a blend color space or the output intent color space? Also
+       is there a conflict in the settings. i.e. has someone set a blend color
+       space and tried to use the output intent with simulate overprint setting.
+    */
+    if (dev_profile->overprint_control == gs_overprint_control_simulate &&
+        dev_profile->oi_profile != NULL &&
+        !gsicc_profiles_equal(dev_profile->oi_profile, dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE])) {
+        /* If blend profile is also set, throw a warning about output intent not being used. We have
+           possible conflicting command line settings and we will err on using the blend profile
+           if one was specified. */
+        if (dev_profile->blend_profile != NULL &&
+            !gsicc_profiles_equal(dev_profile->blend_profile, dev_profile->oi_profile)) {
+            blend_profile = dev_profile->blend_profile;
+            temp_cs_state = PDF14_BLEND_CS_SPECIFIED;
+            emprintf(pdev->memory, "Warning: OI profile not used for blending CS\n");
+        } else {
+            /* All good, use the output intent profile as we have one
+               and are doing simulate overprint with a different device
+               profile set. */
+            blend_profile = dev_profile->oi_profile;
+            temp_cs_state = PDF14_BLEND_CS_OUTPUTINTENT;
+        }
+    } else if (dev_profile->blend_profile != NULL &&
+               !gsicc_profiles_equal(dev_profile->blend_profile, dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE])) {
+        /* Blend profile is different than device profile */
+        blend_profile = dev_profile->blend_profile;
+        temp_cs_state = PDF14_BLEND_CS_SPECIFIED;
+    }
+
+    /* Make sure any blend color space is valid along with other cond */
+    if (code == 0 && blend_profile != NULL && !use_pdf14_accum) {
+        if (!blend_profile->isdevlink &&
+            !blend_profile->islab &&
+            (blend_profile->data_cs == gsGRAY ||
+             blend_profile->data_cs == gsRGB ||
+             blend_profile->data_cs == gsCMYK)) {
             /* Also, do not allow the use of the blend space when we are pushing
                a pattern pdf14 device.  Those should inherit from the parent */
             if (!(gx_device_is_pattern_clist(pdev) ||
@@ -5604,8 +5646,8 @@ pdf14_determine_default_blend_cs(gx_device * pdev, bool use_pdf14_accum,
         * and 3 colorants for DeviceRGB.
         */
         if (valid_blend_cs) {
-            *using_blend_cs = true;
-            switch (dev_profile->blend_profile->num_comps) {
+            *blend_cs_state = temp_cs_state;
+            switch (blend_profile->num_comps) {
             case 1:
                 return PDF14_DeviceGray;
             case 3:
@@ -5651,8 +5693,8 @@ pdf14_determine_default_blend_cs(gx_device * pdev, bool use_pdf14_accum,
         if (num_cmyk_used == 4 && pdev->color_info.num_components == 4
             && pdev->color_info.max_components == 4) {
             if (valid_blend_cs) {
-                *using_blend_cs = true;
-                switch (dev_profile->blend_profile->num_comps) {
+                *blend_cs_state = temp_cs_state;
+                switch (blend_profile->num_comps) {
                 case 1:
                     return PDF14_DeviceGray;
                 case 3:
@@ -5675,6 +5717,8 @@ pdf14_determine_default_blend_cs(gx_device * pdev, bool use_pdf14_accum,
         /*
          * Otherewise we use a CMYK plus spot colors for blending.
          */
+        if (valid_blend_cs)
+            *blend_cs_state = temp_cs_state;
         return PDF14_DeviceCMYKspot;
     }
 }
@@ -5692,16 +5736,16 @@ get_pdf14_device_proto(gx_device       *dev,
                  const gs_pdf14trans_t *pdf14pct,
                        bool             use_pdf14_accum)
 {
-    bool using_blend_cs;
+    pdf14_blend_cs_t blend_cs_state;
     pdf14_default_colorspace_t dev_cs =
                 pdf14_determine_default_blend_cs(dev, use_pdf14_accum,
-                                                 &using_blend_cs);
+                                                 &blend_cs_state);
     bool deep = device_is_deep(dev);
     int num_spots = pdf14pct->params.num_spot_colors;
 
     /* overprint overide */
-    if (pdf14pct->params.overprint_sim_push) {
-        using_blend_cs = false;
+    if (pdf14pct->params.overprint_sim_push &&
+        blend_cs_state == PDF14_BLEND_CS_UNSPECIFIED) {
         if (pdf14pct->params.num_spot_colors_int > 0) {
             dev_cs = PDF14_DeviceCMYKspot;
             num_spots = pdf14pct->params.num_spot_colors_int;
@@ -5774,7 +5818,7 @@ get_pdf14_device_proto(gx_device       *dev,
             return_error(gs_error_rangecheck);
     }
     pdevproto->initialize_device_procs((gx_device *)pdevproto);
-    pdevproto->using_blend_cs = using_blend_cs;
+    pdevproto->blend_cs_state = blend_cs_state;
     pdevproto->overprint_sim = pdf14pct->params.overprint_sim_push;
     return 0;
 }
@@ -5785,9 +5829,9 @@ get_pdf14_device_proto(gx_device       *dev,
 bool
 pdf14_ok_to_optimize(gx_device *dev)
 {
-    bool using_blend_cs;
+    pdf14_blend_cs_t blend_cs_state;
     pdf14_default_colorspace_t pdf14_cs =
-        pdf14_determine_default_blend_cs(dev, false, &using_blend_cs);
+        pdf14_determine_default_blend_cs(dev, false, &blend_cs_state);
     gsicc_colorbuffer_t dev_icc_cs;
     bool ok = false;
     int tag_depth = device_encodes_tags(dev) ? 8 : 0;
@@ -8687,7 +8731,9 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
            we will convert from RGB to CIELAB.  Need to check that we have a
            default profile, which will not be the case if we are coming from the clist reader */
         if ((icc_profile->data_cs == gsCIELAB || icc_profile->islab)
-            && pgs->icc_manager->default_rgb != NULL && !p14dev->using_blend_cs) {
+            && pgs->icc_manager->default_rgb != NULL &&
+            p14dev->blend_cs_state == PDF14_BLEND_CS_UNSPECIFIED) {
+            p14dev->blend_cs_state = PDF14_BLEND_CS_TARGET_CIELAB;
             gsicc_adjust_profile_rc(pgs->icc_manager->default_rgb, 1, "gs_pdf14_device_push");
             gsicc_adjust_profile_rc(p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
                 -1, "gs_pdf14_device_push");
@@ -8706,7 +8752,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
 
     /* The number of color planes should not exceed that of the target.
        Unless we are using a blend CS */
-    if (!(p14dev->using_blend_cs || p14dev->overprint_sim)) {
+    if (!(p14dev->blend_cs_state != PDF14_BLEND_CS_UNSPECIFIED || p14dev->overprint_sim)) {
         if (p14dev->color_info.num_components > target->color_info.num_components)
             p14dev->color_info.num_components = target->color_info.num_components;
         if (p14dev->color_info.max_components > target->color_info.max_components)
@@ -9896,17 +9942,17 @@ get_pdf14_clist_device_proto(gx_device          *dev,
                        const gs_pdf14trans_t    *pdf14pct,
                              bool                use_pdf14_accum)
 {
-    bool using_blend_cs;
+    pdf14_blend_cs_t blend_cs_state;
     pdf14_default_colorspace_t dev_cs =
                 pdf14_determine_default_blend_cs(dev, use_pdf14_accum,
-                                                 &using_blend_cs);
+                                                 &blend_cs_state);
     bool has_tags = device_encodes_tags(dev);
     bool deep = device_is_deep(dev);
     int num_spots = pdf14pct->params.num_spot_colors;
 
     /* overprint overide */
-    if (pdf14pct->params.overprint_sim_push) {
-        using_blend_cs = false;
+    if (pdf14pct->params.overprint_sim_push &&
+        blend_cs_state == PDF14_BLEND_CS_UNSPECIFIED) {
         if (pdf14pct->params.num_spot_colors_int > 0) {
             dev_cs = PDF14_DeviceCMYKspot;
             num_spots = pdf14pct->params.num_spot_colors_int;
@@ -10007,7 +10053,7 @@ get_pdf14_clist_device_proto(gx_device          *dev,
             return_error(gs_error_rangecheck);
     }
     pdevproto->overprint_sim = pdf14pct->params.overprint_sim_push;
-    pdevproto->using_blend_cs = using_blend_cs;
+    pdevproto->blend_cs_state = blend_cs_state;
     return 0;
 }
 
@@ -10045,7 +10091,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
 
     /* If we are not using a blending color space, the number of color planes
        should not exceed that of the target */
-    if (!(pdev->using_blend_cs || pdev->overprint_sim)) {
+    if (!(pdev->blend_cs_state != PDF14_BLEND_CS_UNSPECIFIED || pdev->overprint_sim)) {
         if (pdev->color_info.num_components > target->color_info.num_components)
             pdev->color_info.num_components = target->color_info.num_components;
         if (pdev->color_info.max_components > target->color_info.max_components)
@@ -10113,7 +10159,8 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
            proper blending.  During put_image we will convert from RGB to
            CIELAB */
         if ((target_profile->data_cs == gsCIELAB || target_profile->islab) &&
-            !pdev->using_blend_cs) {
+            pdev->blend_cs_state != PDF14_BLEND_CS_UNSPECIFIED) {
+            pdev->blend_cs_state = PDF14_BLEND_CS_TARGET_CIELAB;
             rc_assign(pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
                 pgs->icc_manager->default_rgb, "pdf14_create_clist_device");
         }
@@ -11738,8 +11785,12 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                           &render_cond);
 
     /* If we are using the blending color space, then be sure to use that. */
-    if (p14dev->using_blend_cs && dev_profile->blend_profile != NULL)
+    if (p14dev->blend_cs_state == PDF14_BLEND_CS_SPECIFIED &&
+        dev_profile->blend_profile != NULL)
         cl_icc_profile = dev_profile->blend_profile;
+    else if (p14dev->blend_cs_state == PDF14_BLEND_CS_OUTPUTINTENT &&
+        dev_profile->oi_profile != NULL)
+        cl_icc_profile = dev_profile->oi_profile;
 
     dev_proc(p14dev, get_profile)((gx_device *)p14dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &p14_icc_profile,
