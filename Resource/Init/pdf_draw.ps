@@ -1410,6 +1410,25 @@ currentdict end readonly def
   ] cvx put
   dup /BBox 2 copy knownoget { normrect FixPatternBBox put } { pop pop } ifelse
   dup /.pattern_uses_transparency  1 index patternusestransparency put
+
+  % Regardless of whether we are using transparency, if we are doing Overprint
+  % simulation we still need to have the pattern code push the pdf14 compositor.
+  % We consider we are doing overprint simulation if:
+  %   The current page device has /Overprint set to /simulate
+  %   The current page device does NOT contain PageSpotColors (spot-capable devices can overprint)
+  %   The current page device has a /PageUsesOverprint key (set by the interpreter) and it is set to true
+  % If all these conditions are true then we set /.pattern_uses_transparency, otherwise we leave it
+  % untouched as set above.
+  %
+  currentpagedevice dup
+  /Overprint get /simulate eq
+  1 index /PageSpotColors known not and
+  exch /PageUsesOverprint .knownget not { //false } if
+  and
+  {
+    dup /.pattern_uses_transparency //true put
+  } if
+
   PDFDEBUG { //pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%Pattern: ) print dup === flush } if } if
 } bind executeonly def
 
