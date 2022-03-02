@@ -86,7 +86,7 @@ community demand for the feature.
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 <h3><a name="9.55.0_Incompatible_changes"></a>Incompatible changes</h3>
 <h4>Included below are incompatible changes from recent releases (the
-specific release in question listed in parentheses). We include these,
+specific release in question is listed in parentheses). We include these,
 for now, as we are aware that not everyone upgrades with every release.</h4>
 <ul>
 <li>
@@ -104,15 +104,15 @@ for more details.
 </li>
 <li>
 <p>(9.53.0) As of 9.53.0, we have (re-)introduced the patch level to the version number,
-this helps facilitate a revised policy on handling security related issues.
-<p><strong>Note for GSView Users:</strong>The patch level addition breaks GSView 5 (it is
+this helps facilitate a revised policy on handling security-related issues.
+<p><strong>Note for GSView Users: </strong>The patch level addition breaks GSView 5 (it is
 hardcoded to check for versions <code>704-999</code>. It is possible, but not guaranteed that
 a GSView update might be forthcoming to resolve this.
 </li>
 <li>
 <p>(9.52) <code>-dALLOWPSTRANSPARENCY</code>: The transparency compositor (and related
 features), whilst we are improving it, remains sensitive to being driven correctly, and
-incorrect use can have unexpected/undefined results. Hence, as part of improving security
+incorrect use can have unexpected/undefined results. Hence, as part of improving security,
 we limited access to these operators, originally using the <code>-dSAFER</code> feature.
 As we made "SAFER" the default mode, that became unacceptable, hence the new option
 <code>-dALLOWPSTRANSPARENCY</code> which enables access to the operators.
@@ -125,13 +125,13 @@ Secondly, the interaction with <code>save</code>&sol;<code>restore</code> operat
 has changed. See <a href="Use.htm#Safer">SAFER</a>.
 <p><strong>Important Note for Windows Users</strong>:
 <br>
-The file/path pattern matching is case sensitive, even on Windows. This is a
+The file/path pattern matching is case-sensitive, even on Windows. This is a
 change in behaviour compared to the old code which, on Windows, was case
 <i>in</i>sensitive. This is in recognition of changes in Windows behaviour,
 in that it now supports (although does not enforce) case sensitivity.
 </li>
 <li>
-<p>(9.27) The process of &quot;tidying&quot; the PostScript name space should have removed
+<p>(9.27) The process of &quot;tidying&quot; the PostScript namespace should have removed
 only non-standard and undocumented operators. Nevertheless, it is possible that
 any integrations or utilities that rely on those non-standard and undocumented
 operators may stop working or may change behaviour.
