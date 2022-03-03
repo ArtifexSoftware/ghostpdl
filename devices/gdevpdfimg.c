@@ -1095,10 +1095,7 @@ pdf_image_put_some_params(gx_device * dev, gs_param_list * plist, int which)
                                           (which & 2 ? GX_DOWNSCALER_PARAMS_TRAP : 0) |
                                           (which & 4 ? GX_DOWNSCALER_PARAMS_ETS : 0)));
         if (code < 0)
-        {
             ecode = code;
-            param_signal_error(plist, param_name, ecode);
-        }
     }
     if (ecode < 0)
         return ecode;
