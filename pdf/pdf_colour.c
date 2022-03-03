@@ -2673,7 +2673,7 @@ static int pdfi_device_setoutputintent(pdf_context *ctx, pdf_dict *profile_dict,
        and doing a rendering to the output intent color space.  Keep the device
        profile as is, and do not do a proofing profile */
 
-    if (!(ctx->pgs->device->icc_struct->overprint_control == PDF_OVERPRINT_SIMULATE &&
+    if (!(ctx->pgs->device->icc_struct->overprint_control == gs_overprint_control_simulate &&
         !gsicc_profiles_equal(dev_profile->oi_profile, dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]))) {
         if (ncomps == dev_comps && index < gs_color_space_index_DevicePixel) {
             /* The OI profile is the same type as the profile for the device and a

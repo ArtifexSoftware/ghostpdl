@@ -76,12 +76,6 @@ typedef enum pdf_crypt_filter_e {
 } pdf_crypt_filter;
 
 
-typedef enum pdf_overprint_control_e {
-    PDF_OVERPRINT_ENABLE = 0,/* Default */
-    PDF_OVERPRINT_DISABLE,
-    PDF_OVERPRINT_SIMULATE
-} pdf_overprint_control_t;
-
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 524288
 #define MAX_OBJECT_CACHE_SIZE 200

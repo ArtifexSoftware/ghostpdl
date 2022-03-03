@@ -626,11 +626,11 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
 
     ctx->page.needs_OP = false;
     ctx->page.simulate_op = false;
-    switch((pdf_overprint_control_t) ctx->pgs->device->icc_struct->overprint_control) {
-    case PDF_OVERPRINT_DISABLE:
+    switch(ctx->pgs->device->icc_struct->overprint_control) {
+    case gs_overprint_control_disable:
         /* Use defaults */
         break;
-    case PDF_OVERPRINT_SIMULATE:
+    case gs_overprint_control_simulate:
         if (!device_transparency && ctx->page.has_OP) {
             if (is_cmyk) {
                 /* If the page has spots and the device is not spot capable OR
@@ -648,7 +648,7 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
             }
         }
         break;
-    case PDF_OVERPRINT_ENABLE:
+    case gs_overprint_control_enable:
     default:
         if (!is_cmyk || device_transparency)
             ctx->page.needs_OP = false;
