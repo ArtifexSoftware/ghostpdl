@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -66,5 +66,5 @@ bool gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs);
 int  gsicc_get_device_profile_comps(const cmm_dev_profile_t *dev_profile);
 gsicc_link_t * gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, gsicc_rendering_param_t *rendering_params);
-void gsicc_free_link_dev(gs_memory_t *memory, gsicc_link_t *link);
+void gsicc_free_link_dev(gsicc_link_t *link);
 #endif

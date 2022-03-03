@@ -200,8 +200,6 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
                          gp_file *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)pdf_dev;
-    cmm_dev_profile_t *profile_struct;
-    gsicc_rendering_param_t rendering_params;
     int code;
     pdfimage_page *page;
 
@@ -213,39 +211,11 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
 
     if (gdev_prn_file_is_new(pdev)) {
         /* Set up the icc link settings at this time */
-        code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
-        if (code < 0)
-            return_error(gs_error_undefined);
-        if (profile_struct->postren_profile != NULL) {
-            rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
-            rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
-            rendering_params.override_icc = false;
-            rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
-            rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
-            rendering_params.cmm = gsCMM_DEFAULT;
-            if (profile_struct->oi_profile != NULL) {
-                pdf_dev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->oi_profile, profile_struct->postren_profile,
-                    &rendering_params);
-            } else if (profile_struct->link_profile != NULL) {
-                pdf_dev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->link_profile, profile_struct->postren_profile,
-                    &rendering_params);
-            } else {
-                pdf_dev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE], profile_struct->postren_profile,
-                    &rendering_params);
-            }
-            if (pdf_dev->icclink == NULL) {
-                gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
-                return_error(gs_error_VMerror);
-            }
-            /* If it is identity, release it now and set link to NULL */
-            if (pdf_dev->icclink->is_identity) {
-                pdf_dev->icclink->procs.free_link(pdf_dev->icclink);
-                gsicc_free_link_dev(pdev->memory, pdf_dev->icclink);
-                pdf_dev->icclink = NULL;
-            }
+        code = gx_downscaler_create_post_render_link((gx_device *)pdev,
+                                                     &pdf_dev->icclink);
+        if (code < 0) {
+            gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
+            return code;
         }
 
         /* Set up the stream and insert the file header */
@@ -851,12 +821,8 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
         pdf_dev->Pages = NULL;
         pdf_dev->NumPages = 0;
     }
-    if (pdf_dev->icclink != NULL)
-    {
-        pdf_dev->icclink->procs.free_link(pdf_dev->icclink);
-        gsicc_free_link_dev(pdf_dev->memory, pdf_dev->icclink);
-        pdf_dev->icclink = NULL;
-    }
+    gsicc_free_link_dev(pdf_dev->icclink);
+    pdf_dev->icclink = NULL;
     pdf_dev->RootOffset = 0;
     pdf_dev->PagesOffset = 0;
     pdf_dev->xrefOffset = 0;
@@ -1325,8 +1291,6 @@ static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
                          gp_file *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)pdf_dev;
-    cmm_dev_profile_t *profile_struct;
-    gsicc_rendering_param_t rendering_params;
     int code;
     pdfimage_page *page;
 
@@ -1338,39 +1302,11 @@ static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
 
     if (gdev_prn_file_is_new(pdev)) {
         /* Set up the icc link settings at this time */
-        code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
-        if (code < 0)
-            return_error(gs_error_undefined);
-        if (profile_struct->postren_profile != NULL) {
-            rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
-            rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
-            rendering_params.override_icc = false;
-            rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
-            rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
-            rendering_params.cmm = gsCMM_DEFAULT;
-            if (profile_struct->oi_profile != NULL) {
-                pdf_dev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->oi_profile, profile_struct->postren_profile,
-                    &rendering_params);
-            } else if (profile_struct->link_profile != NULL) {
-                pdf_dev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->link_profile, profile_struct->postren_profile,
-                    &rendering_params);
-            } else {
-                pdf_dev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE], profile_struct->postren_profile,
-                    &rendering_params);
-            }
-            if (pdf_dev->icclink == NULL) {
-                gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
-                return_error(gs_error_VMerror);
-            }
-            /* If it is identity, release it now and set link to NULL */
-            if (pdf_dev->icclink->is_identity) {
-                pdf_dev->icclink->procs.free_link(pdf_dev->icclink);
-                gsicc_free_link_dev(pdev->memory, pdf_dev->icclink);
-                pdf_dev->icclink = NULL;
-            }
+        code = gx_downscaler_create_post_render_link((gx_device *)pdev,
+                                                     &pdf_dev->icclink);
+        if (code < 0) {
+            gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
+            return code;
         }
 
         /* Set up the stream and insert the file header */

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -1404,12 +1404,12 @@ downscale_=$(GLOBJ)gxdownscale.$(OBJ) $(claptrap) $(ets)
 
 $(GLOBJ)gxdownscale_0.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) $(string__h)\
  $(gxdownscale_h) $(gserrors_h) $(gdevprn_h) $(assert__h) $(ets_h)\
- $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_cache_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxdownscale_0.$(OBJ) $(C_) $(GLSRC)gxdownscale.c
 
 $(GLOBJ)gxdownscale_1.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) $(string__h)\
  $(gxdownscale_h) $(gserrors_h) $(gdevprn_h) $(assert__h) $(ets_h)\
- $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_cache_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gxdownscale_1.$(OBJ) $(C_) $(GLSRC)gxdownscale.c
 
 $(GLOBJ)gxdownscale.$(OBJ) : $(GLOBJ)gxdownscale_$(WITH_CAL).$(OBJ) $(AK) $(gp_h)
