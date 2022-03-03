@@ -1799,8 +1799,8 @@ $(DD)tiffsep1.dev : $(tiffsep_) $(DD)tiffs.dev $(minftrsz_h)\
 
 plan_=$(DEVOBJ)gdevplan.$(OBJ) $(DEVOBJ)gdevppla.$(OBJ) $(DEVOBJ)gdevmpla.$(OBJ)
 
-$(DEVOBJ)gdevplan.$(OBJ) : $(DEVSRC)gdevplan.c $(PDEVH)\
- $(gdevmpla_h) $(gdevplnx_h) $(gdevppla_h)\
+$(DEVOBJ)gdevplan.$(OBJ) : $(DEVSRC)gdevplan.c $(PDEVH) $(gxdevsop_h)\
+ $(gdevmpla_h) $(gdevplnx_h) $(gdevppla_h) $(gxdownscale_h) $(gsicc_cache_h)\
  $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevplan.$(OBJ) $(C_) $(DEVSRC)gdevplan.c

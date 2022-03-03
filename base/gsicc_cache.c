@@ -258,10 +258,12 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
 
 /* And the related release of the link */
 void
-gsicc_free_link_dev(gs_memory_t *memory, gsicc_link_t *link)
+gsicc_free_link_dev(gsicc_link_t *link)
 {
-    gs_memory_t *nongc_mem = memory->non_gc_memory;
-    gs_free_object(nongc_mem, link, "gsicc_free_link_dev");
+    if (link == NULL)
+        return;
+    link->procs.free_link(link);
+    gs_free_object(link->memory, link, "gsicc_free_link_dev");
 }
 
 static gsicc_link_t *

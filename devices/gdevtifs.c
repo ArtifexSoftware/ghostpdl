@@ -76,12 +76,9 @@ tiff_close(gx_device * pdev)
     if (tfdev->tif)
         TIFFClose(tfdev->tif);
 
-    if (tfdev->icclink != NULL)
-    {
-        tfdev->icclink->procs.free_link(tfdev->icclink);
-        gsicc_free_link_dev(pdev->memory, tfdev->icclink);
-        tfdev->icclink = NULL;
-    }
+    gsicc_free_link_dev(tfdev->icclink);
+    tfdev->icclink = NULL;
+
     return gdev_prn_close(pdev);
 }
 
@@ -298,8 +295,6 @@ int gdev_tiff_begin_page(gx_device_tiff *tfdev,
                          gp_file *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)tfdev;
-    cmm_dev_profile_t *profile_struct;
-    gsicc_rendering_param_t rendering_params;
     int code;
 
     if (gdev_prn_file_is_new(pdev)) {
@@ -308,39 +303,10 @@ int gdev_tiff_begin_page(gx_device_tiff *tfdev,
         if (!tfdev->tif)
             return_error(gs_error_invalidfileaccess);
         /* Set up the icc link settings at this time */
-        code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
+        code = gx_downscaler_create_post_render_link((gx_device *)pdev,
+                                                     &tfdev->icclink);
         if (code < 0)
-            return_error(gs_error_undefined);
-        if (profile_struct->postren_profile != NULL) {
-            rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
-            rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
-            rendering_params.override_icc = false;
-            rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
-            rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
-            rendering_params.cmm = gsCMM_DEFAULT;
-            if (profile_struct->oi_profile != NULL) {
-                tfdev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->oi_profile, profile_struct->postren_profile,
-                    &rendering_params);
-            } else if (profile_struct->link_profile != NULL) {
-                tfdev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->link_profile, profile_struct->postren_profile,
-                    &rendering_params);
-            } else {
-                tfdev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
-                    profile_struct->postren_profile, &rendering_params);
-            }
-            if (tfdev->icclink == NULL) {
-                return_error(gs_error_VMerror);
-            }
-            /* If it is identity, release it now and set link to NULL */
-            if (tfdev->icclink->is_identity) {
-                tfdev->icclink->procs.free_link(tfdev->icclink);
-                gsicc_free_link_dev(pdev->memory, tfdev->icclink);
-                tfdev->icclink = NULL;
-            }
-        }
+            return code;
     }
 
     return tiff_set_fields_for_printer(pdev, tfdev->tif, tfdev->downscale.downscale_factor,

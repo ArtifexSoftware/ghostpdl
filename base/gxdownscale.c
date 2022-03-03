@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -19,6 +19,7 @@
 #include "string_.h"
 #include "gdevprn.h"
 #include "assert_.h"
+#include "gsicc_cache.h"
 
 #ifdef WITH_CAL
 #include "cal_ets.h"
@@ -2046,11 +2047,17 @@ getbits_planar_line(gx_downscale_liner *liner_, void *output, int row)
 
     code = (*dev_proc(liner->dev, get_bits_rectangle))(liner->dev, &rect, &params2);
 
-    /* get_bits_rectangle doesn't like doing planar copies, only return
-     * pointers. This is a problem for us, so fudge it here. */
-    for (i = 0; i < liner->num_comps; i++)
-        if (params->data[i] != params2.data[1])
-            memcpy(params->data[i], params2.data[i], n);
+    /* If our caller can't accept a pointer, we need to do some work. */
+    if (params->options & GB_RETURN_POINTER) {
+        for (i = 0; i < liner->num_comps; i++)
+            params->data[i] = params2.data[i];
+    } else {
+        /* get_bits_rectangle doesn't like doing planar copies, only return
+         * pointers. This is a problem for us, so fudge it here. */
+        for (i = 0; i < liner->num_comps; i++)
+            if (params->data[i] != params2.data[i])
+                memcpy(params->data[i], params2.data[i], n);
+    }
 
     return code;
 }
@@ -2268,23 +2275,25 @@ int gx_downscaler_init_planar_cm(gx_downscaler_t      *ds,
     ds->factor            = factor;
     ds->num_planes        = num_comps;
     ds->src_bpc           = src_bpc;
+    ds->dst_bpc           = dst_bpc;
     ds->scaled_data       = NULL;
     ds->scaled_span       = bitmap_raster((dst_bpc*dev->width*upfactor + downfactor-1)/downfactor);
     ds->apply_cm          = apply_cm;
     ds->apply_cm_arg      = apply_cm_arg;
-    ds->early_cm          = dst_bpc < src_bpc;
+    ds->early_cm          = dst_bpc < src_bpc || (dst_bpc == src_bpc && post_cm_num_comps < num_comps);
     ds->post_cm_num_comps = post_cm_num_comps;
     ds->do_skew_detection = params->do_skew_detection;
 
     if (apply_cm) {
-        for (i = 0; i < post_cm_num_comps; i++) {
-            ds->post_cm[i] = gs_alloc_bytes(dev->memory,
-                                            (size_t)post_span * downfactor,
-                                            "gx_downscaler(planar_data)");
-            if (ds->post_cm[i] == NULL) {
-                code = gs_note_error(gs_error_VMerror);
-                goto cleanup;
-            }
+        ds->post_cm[0] = gs_alloc_bytes(dev->memory,
+                                        (size_t)post_span * downfactor * post_cm_num_comps,
+                                        "gx_downscaler(planar_data)");
+        if (ds->post_cm[0] == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto cleanup;
+        }
+        for (i = 1; i < post_cm_num_comps; i++) {
+            ds->post_cm[i] = ds->post_cm[i-1] + (size_t)post_span * downfactor;
         }
     }
 
@@ -2307,14 +2316,11 @@ int gx_downscaler_init_planar_cm(gx_downscaler_t      *ds,
 
     memcpy(&ds->params, gb_params, sizeof(*gb_params));
     ds->params.raster = span;
-    for (i = 0; i < num_comps; i++) {
-        ds->pre_cm[i] = gs_alloc_bytes(dev->memory,
-                                       (size_t)span * downfactor,
-                                       "gx_downscaler(planar_data)");
-        if (ds->pre_cm[i] == NULL) {
-            code = gs_note_error(gs_error_VMerror);
-            goto cleanup;
-        }
+    ds->pre_cm[0] = gs_alloc_bytes(dev->memory,
+                                   (size_t)span * downfactor * num_comps,
+                                   "gx_downscaler(planar_data)");
+    for (i = 1; i < num_comps; i++) {
+        ds->pre_cm[i] = ds->pre_cm[i-1] + (size_t)span * downfactor;
     }
 
 #ifdef WITH_CAL
@@ -2462,7 +2468,9 @@ int gx_downscaler_init_planar_cm(gx_downscaler_t      *ds,
         code = gs_note_error(gs_error_rangecheck);
         goto cleanup;
     } else if (dst_bpc == 1) {
-        if (mfs > 1)
+        if (src_bpc == dst_bpc)
+            core = NULL;
+        else if (mfs > 1)
             core = &down_core_mfs;
         else if (factor == 4)
             core = &down_core_4;
@@ -2913,19 +2921,15 @@ gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
 
 void gx_downscaler_fin(gx_downscaler_t *ds)
 {
-    int plane;
-
     if (ds->dev == NULL)
         return;
 
-    for (plane=0; plane < GS_CLIENT_COLOR_MAX_COMPONENTS; plane++) {
-        gs_free_object(ds->dev->memory, ds->pre_cm[plane],
-                       "gx_downscaler(planar_data)");
-        gs_free_object(ds->dev->memory, ds->post_cm[plane],
-                       "gx_downscaler(planar_data)");
-        ds->pre_cm[plane] = NULL;
-        ds->post_cm[plane] = NULL;
-    }
+    gs_free_object(ds->dev->memory, ds->pre_cm[0],
+                   "gx_downscaler(planar_data)");
+    gs_free_object(ds->dev->memory, ds->post_cm[0],
+                   "gx_downscaler(planar_data)");
+    ds->pre_cm[0] = NULL;
+    ds->post_cm[0] = NULL;
     ds->num_planes = 0;
 
     gs_free_object(ds->dev->memory, ds->mfs_data, "gx_downscaler(mfs)");
@@ -3018,10 +3022,13 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     int                   subrow;
     int                   copy = (ds->dev->width * ds->src_bpc + 7)>>3;
     int                   i, j, n;
+    int                   num_planes_to_downscale;
 
     n = ds->dev->width;
     if (ds->dev->color_info.depth > ds->dev->color_info.num_components*8+8)
        n *= 2;
+
+    n = (n*ds->src_bpc+7)/8;
 
     gx_downscaler_decode_factor(factor, &upfactor, &downfactor);
 
@@ -3059,11 +3066,10 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
                 params->options &= ~GB_RETURN_POINTER;
                 buffer = saved.data;
             } else
-                buffer = ds->pre_cm;
-            code = ds->apply_cm(ds->apply_cm_arg, params->data, buffer, ds->dev->width, rect.q.y - rect.p.y, params->raster);
-            if ((saved.options & GB_RETURN_COPY) == 0)
-                for (i = 0; i < ds->num_planes; i++)
-                    params->data[i] = buffer[i];
+                buffer = ds->post_cm;
+            code = ds->apply_cm(ds->apply_cm_arg, buffer, params->data, ds->dev->width, rect.q.y - rect.p.y, params->raster);
+            for (i = 0; i < ds->post_cm_num_comps; i++)
+                params->data[i] = buffer[i];
         }
         return code;
     }
@@ -3103,41 +3109,55 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
         for (j = 0; j < ds->num_planes; j++)
             memcpy(ds->pre_cm[j] + i*ds->span, ds->pre_cm[j] + (i-1)*ds->span, copy);
 
+    /* All the data is now in ds->pre_cm. Update params2.data so that this points to
+     * it. From here on in, we will keep params2.data pointing to whereever the
+     * latest processed version of the data is. */
     for (j = 0; j < ds->num_planes; j++)
         params2.data[j] = ds->pre_cm[j];
 
+    num_planes_to_downscale = ds->num_planes;
     if (ds->early_cm && ds->apply_cm) {
-        code = ds->apply_cm(ds->apply_cm_arg, ds->params.data, ds->post_cm, ds->dev->width, downfactor, params->raster);
+        code = ds->apply_cm(ds->apply_cm_arg, ds->post_cm, params2.data, ds->dev->width, downfactor, ds->span);
         if (code < 0)
             return code;
-        for (j = 0; j < ds->num_planes; j++)
+        for (j = 0; j < ds->post_cm_num_comps; j++)
             params2.data[j] = ds->post_cm[j];
+        num_planes_to_downscale = ds->post_cm_num_comps;
     }
 
     if (upfactor > 1) {
         /* Downscale the block of lines into our output buffer */
-        for (plane=0; plane < ds->num_planes; plane++) {
+        for (plane=0; plane < num_planes_to_downscale; plane++) {
             byte *scaled = ds->scaled_data + upfactor * plane * ds->scaled_span;
             (ds->down_core)(ds, scaled, params2.data[plane], row, plane, params2.raster);
-            params->data[plane] = scaled;
+            params2.data[plane] = scaled;
         }
     } else if (ds->down_core != NULL) {
         /* Downscale direct into output buffer */
-        for (plane=0; plane < ds->num_planes; plane++)
+        for (plane=0; plane < num_planes_to_downscale; plane++) {
             (ds->down_core)(ds, params->data[plane], params2.data[plane], row, plane, params2.raster);
+            params2.data[plane] = params->data[plane];
+        }
     } else {
         /* Copy into output buffer */
         /* No color management can be required here */
         assert(!ds->early_cm || ds->apply_cm == NULL);
-        for (plane=0; plane < ds->num_planes; plane++)
+        for (plane=0; plane < num_planes_to_downscale; plane++) {
             memcpy(params->data[plane], params2.data[plane], params2.raster);
+            params2.data[plane] = params->data[plane];
+        }
     }
 
     if (!ds->early_cm && ds->apply_cm) {
-        code = ds->apply_cm(ds->apply_cm_arg, ds->params.data, params2.data, ds->width, 1, params->raster);
+        code = ds->apply_cm(ds->apply_cm_arg, params->data, params2.data, ds->width, 1, params->raster);
         if (code < 0)
             return code;
+        for (plane=0; plane < num_planes_to_downscale; plane++)
+            params2.data[plane] = params->data[plane];
     }
+
+    for (plane=0; plane < num_planes_to_downscale; plane++)
+        params->data[plane] = params->data[plane];
 
     return code;
 }
@@ -3565,4 +3585,38 @@ void ets_free(void *malloc_arg, void *p)
         return;
 
     gs_free_object((gs_memory_t *)malloc_arg, p, "ets_malloc");
+}
+
+int gx_downscaler_create_post_render_link(gx_device *dev, gsicc_link_t **link)
+{
+    cmm_dev_profile_t *profile_struct;
+    gsicc_rendering_param_t rendering_params;
+    int code = dev_proc(dev, get_profile)(dev, &profile_struct);
+    if (code < 0)
+        return_error(gs_error_undefined);
+
+    *link = NULL;
+    if (profile_struct->postren_profile == NULL) {
+        return 0;
+    }
+
+    rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
+    rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
+    rendering_params.override_icc = false;
+    rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
+    rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
+    rendering_params.cmm = gsCMM_DEFAULT;
+    *link = gsicc_alloc_link_dev(dev->memory,
+                                 profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+                                 profile_struct->postren_profile,
+                                 &rendering_params);
+    if (*link == NULL)
+        return_error(gs_error_VMerror);
+
+    /* If it is identity, release it now and set link to NULL */
+    if ((*link)->is_identity) {
+        gsicc_free_link_dev(*link);
+        *link = NULL;
+    }
+    return 0;
 }

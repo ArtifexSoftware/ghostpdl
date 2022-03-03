@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -24,6 +24,9 @@
 #include "gdevplnx.h"
 #include "gdevppla.h"
 #include "gdevmem.h"
+#include "gxdownscale.h"
+#include "gsicc_cache.h"
+#include "gxdevsop.h"
 
 /* This file defines 5 different devices:
  *
@@ -48,6 +51,13 @@
 
 /* ------ The device descriptors ------ */
 
+typedef struct {
+    gx_device_common;
+    gx_prn_device_common;
+    gx_downscaler_params downscale;
+    gsicc_link_t *icclink;
+} gx_device_plan;
+
 /*
  * Default X and Y resolution.
  */
@@ -61,6 +71,7 @@ static dev_proc_decode_color(plang_decode_color);
 static dev_proc_encode_color(planc_encode_color);
 static dev_proc_decode_color(planc_decode_color);
 static dev_proc_map_color_rgb(planc_map_color_rgb);
+static dev_proc_dev_spec_op(plan_spec_op);
 
 static dev_proc_open_device(plan_open);
 static dev_proc_close_device(plan_close);
@@ -77,6 +88,31 @@ static int planr_print_page(gx_device_printer * pdev, gp_file * pstream);
 
 /* The device procedures */
 
+static int
+plan_get_params(gx_device * dev, gs_param_list * plist)
+{
+    gx_device_plan *pdev = (gx_device_plan *)dev;
+    int code = gdev_prn_get_params(dev, plist);
+
+    if (code < 0)
+        return code;
+
+    return gx_downscaler_write_params(plist, &pdev->downscale, 0);
+}
+
+static int
+plan_put_params(gx_device *dev, gs_param_list * plist)
+{
+    gx_device_plan *pdev = (gx_device_plan *)dev;
+    int code;
+
+    code = gx_downscaler_read_params(plist, &pdev->downscale, 0);
+    if (code < 0)
+        return code;
+
+    return gdev_prn_put_params(dev, plist);
+}
+
 static void
 plan_base_initialize_device_procs(gx_device *dev,
                      dev_proc_map_color_rgb(map_color_rgb),
@@ -91,6 +127,8 @@ plan_base_initialize_device_procs(gx_device *dev,
     set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
     set_dev_proc(dev, encode_color, encode_color);
     set_dev_proc(dev, decode_color, decode_color);
+    set_dev_proc(dev, get_params, plan_get_params);
+    set_dev_proc(dev, put_params, plan_put_params);
 }
 
 static void
@@ -109,6 +147,7 @@ plang_initialize_device_procs(gx_device *dev)
                                       plang_decode_color,
                                       plang_encode_color,
                                       plang_decode_color);
+    set_dev_proc(dev, dev_spec_op, plan_spec_op);
 }
 
 static void
@@ -118,6 +157,7 @@ plan_initialize_device_procs(gx_device *dev)
                                       plan_decode_color,
                                       gx_default_rgb_map_rgb_color,
                                       plan_decode_color);
+    set_dev_proc(dev, dev_spec_op, plan_spec_op);
 }
 
 static void
@@ -127,6 +167,7 @@ planc_initialize_device_procs(gx_device *dev)
                                       planc_map_color_rgb,
                                       planc_encode_color,
                                       planc_decode_color);
+    set_dev_proc(dev, dev_spec_op, plan_spec_op);
 }
 
 static void
@@ -149,30 +190,31 @@ planr_initialize_device_procs(gx_device *dev)
 
 /* Macro for generating device descriptors. */
 #define plan_prn_device(init, dev_name, num_comp, depth, max_gray, max_rgb, print_page) \
-{       prn_device_body(gx_device_printer, init, dev_name,\
+{       prn_device_body(gx_device_plan, init, dev_name,\
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, X_DPI, Y_DPI,\
         0, 0, 0, 0,\
         num_comp, depth, max_gray, max_rgb, max_gray + 1, max_rgb + 1,\
-        print_page)\
+        print_page),\
+        GX_DOWNSCALER_PARAMS_DEFAULTS\
 }
 
 /* The device descriptors themselves */
-const gx_device_printer gs_plan_device =
+const gx_device_plan gs_plan_device =
   plan_prn_device(plan_initialize_device_procs, "plan",
                   3, 24, 255, 255, plan_print_page);
-const gx_device_printer gs_plang_device =
+const gx_device_plan gs_plang_device =
   plan_prn_device(plang_initialize_device_procs, "plang",
                   1, 8, 255, 0, plang_print_page);
-const gx_device_printer gs_planm_device =
+const gx_device_plan gs_planm_device =
   plan_prn_device(planm_initialize_device_procs, "planm",
                   1, 1, 1, 0, planm_print_page);
-const gx_device_printer gs_plank_device =
+const gx_device_plan gs_plank_device =
   plan_prn_device(plank_initialize_device_procs, "plank",
                   4, 4, 1, 1, plank_print_page);
-const gx_device_printer gs_planc_device =
+const gx_device_plan gs_planc_device =
   plan_prn_device(planc_initialize_device_procs, "planc",
                   4, 32, 255, 255, planc_print_page);
-const gx_device_printer gs_planr_device =
+const gx_device_plan gs_planr_device =
   plan_prn_device(planr_initialize_device_procs, "planr",
                   3, 3, 1, 1, planr_print_page);
 
@@ -363,10 +405,14 @@ plan_open(gx_device * pdev)
 static int
 plan_close(gx_device *pdev)
 {
+    gx_device_plan *dev = (gx_device_plan *)pdev;
+
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "plan_close\n");
 #endif
 
+    gsicc_free_link_dev(dev->icclink);
+    dev->icclink = NULL;
     return gdev_prn_close(pdev);
 }
 
@@ -486,26 +532,71 @@ planc_encode_color(gx_device * dev, const gx_color_value cv[])
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
+static int
+plan_spec_op(gx_device *dev, int op, void *data, int datasize)
+{
+    if (op == gxdso_supports_iccpostrender) {
+        int bpc = dev->color_info.depth / dev->color_info.num_components;
+        return bpc == 8;
+    }
+    return gdev_prn_dev_spec_op(dev, op, data, datasize);
+}
+
 /* ------ Internal routines ------ */
+
+static int post_cm(void  *arg,
+                   byte **dst,
+                   byte **src,
+                   int    w,
+                   int    h,
+                   int    raster)
+{
+    gsicc_bufferdesc_t input_buffer_desc, output_buffer_desc;
+    gsicc_link_t *icclink = (gsicc_link_t*)arg;
+
+    gsicc_init_buffer(&input_buffer_desc, icclink->num_input, 1, false,
+        false, true, src[1] - src[0], raster, h, w);
+    gsicc_init_buffer(&output_buffer_desc, icclink->num_output, 1, false,
+        false, true, dst[1] - dst[0], raster, h, w);
+    icclink->procs.map_buffer(NULL, icclink, &input_buffer_desc, &output_buffer_desc,
+        src[0], dst[0]);
+    return 0;
+}
 
 /* Print a page using a given row printing routine. */
 static int
-plan_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
+plan_print_page_loop(gx_device_printer *pdev, int log2bits, int numComps,
                      gp_file *pstream)
 {
-    int lnum;
+    gx_device_plan *dev = (gx_device_plan *)pdev;
+    int i, lnum;
     int code = 0;
     gs_get_bits_options_t options;
+    gx_downscaler_t ds;
+    gs_get_bits_params_t params;
+    int post_cm_comps;
+    byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int factor = dev->downscale.downscale_factor;
+    int width = gx_downscaler_scale(pdev->width, factor);
+    int height = gx_downscaler_scale(pdev->height, factor);
+    int raster_plane = bitmap_raster(width << log2bits);
+
 #ifdef DEBUG_DUMP
     dump_row row_proc = NULL;
     int output_is_nul = !strncmp(pdev->fname, "nul:", min(strlen(pdev->fname), 4)) ||
         !strncmp(pdev->fname, "/dev/null", min(strlen(pdev->fname), 9));
-
-    if (!output_is_nul)
-        row_proc = dump_start(pdev->width, pdev->height, numComps, log2bits, pstream);
 #endif
+
+    if (gdev_prn_file_is_new(pdev)) {
+        code = gx_downscaler_create_post_render_link((gx_device *)pdev,
+                                                     &dev->icclink);
+        if (code < 0)
+            return code;
+    }
+
     options = GB_ALIGN_ANY |
               GB_RETURN_POINTER |
+              GB_RETURN_COPY |
               GB_OFFSET_0 |
               GB_RASTER_STANDARD |
               GB_COLORS_NATIVE |
@@ -514,25 +605,54 @@ plan_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
         options |= GB_PACKING_CHUNKY;
     else
         options |= GB_PACKING_PLANAR;
-    for (lnum = 0; lnum < pdev->height; lnum++) {
-        gs_int_rect rect;
-        gs_get_bits_params_t params;
 
-        rect.p.x = 0;
-        rect.p.y = lnum;
-        rect.q.x = pdev->width;
-        rect.q.y = lnum+1;
-        memset(&params, 0, sizeof(params));
-        params.options = options;
-        params.x_offset = 0;
-        code = (*dev_proc(pdev, get_bits_rectangle))((gx_device *)pdev, &rect, &params);
+    memset(&params, 0, sizeof(params));
+    params.options = options;
+    params.x_offset = 0;
+    post_cm_comps = dev->icclink ? dev->icclink->num_output : numComps;
+
+    planes[0] = gs_alloc_bytes(pdev->memory, raster_plane * post_cm_comps,
+                               "plan_print_page_loop");
+    if (planes[0] == NULL)
+        return_error(gs_error_VMerror);
+    for (i = 1; i < post_cm_comps; i++) {
+        planes[i] = planes[i-1] + raster_plane;
+        params.data[i] = planes[i];
+    }
+
+    code = gx_downscaler_init_planar_cm(&ds,
+                                        (gx_device *)dev,
+                                        1<<log2bits, /* src_bpc */
+                                        1<<log2bits, /* dst_bpc */
+                                        numComps,
+                                        &dev->downscale,
+                                        &params,
+                                        dev->icclink ? post_cm : NULL,
+                                        dev->icclink,
+                                        post_cm_comps);
+    if (code < 0)
+        goto fail;
+
+#ifdef DEBUG_DUMP
+    if (!output_is_nul)
+        row_proc = dump_start(width, height, post_cm_comps, log2bits, pstream);
+#endif
+
+    for (lnum = 0; lnum < height; lnum++) {
+        for (i = 0; i < post_cm_comps; i++)
+            params.data[i] = planes[i];
+        code = gx_downscaler_get_bits_rectangle(&ds, &params, lnum);
         if (code < 0)
             break;
 #ifdef DEBUG_DUMP
         if (row_proc)
-            (*row_proc)(pdev->width, params.data, pstream);
+            (*row_proc)(width, params.data, pstream);
 #endif
     }
+
+    gx_downscaler_fin(&ds);
+fail:
+    gs_free_object(pdev->memory, planes[0], "plan_print_page_loop");
     return (code < 0 ? code : 0);
 }
 
