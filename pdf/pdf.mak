@@ -192,7 +192,7 @@ $(PDFOBJ)pdf_gstate.$(OBJ): $(PDFSRC)pdf_gstate.c $(PDFINCLUDES) $(gsstate_h) \
 	$(PDFCCC) $(PDFSRC)pdf_gstate.c $(PDFO_)pdf_gstate.$(OBJ)
 
 $(PDFOBJ)pdf_colour.$(OBJ): $(PDFSRC)pdf_colour.c $(PDFINCLUDES) \
-	$(gsicc_manage_h) $(gsicc_profilecache_h) $(gsicc_create_h) $(gsptype2_h) $(gscsepr_h) \
+	$(gsicc_manage_h) $(gsicc_profilecache_h) $(gsicc_create_h) $(gsicc_cache_h) $(gsptype2_h) $(gscsepr_h) \
 	$(stream_h) $(strmio_h) $(gscdevn_h) $(gxcdevn_h) $(gscolor_h) $(gsicc_h) $(gsstate_h) \
 	$(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_colour.c $(PDFO_)pdf_colour.$(OBJ)

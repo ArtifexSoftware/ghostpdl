@@ -24,8 +24,11 @@
 #include "pdf_misc.h"
 #include "gsicc_manage.h"
 #include "gsicc_profilecache.h"
+#include "gsicc_cache.h"
+
 #include "gsicc_create.h"
 #include "gsptype2.h"
+
 
 #include "pdf_file.h"
 #include "pdf_dict.h"
