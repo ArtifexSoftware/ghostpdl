@@ -1212,6 +1212,11 @@ pdfi_count_cff_index(byte *p, byte *e, int *countp)
     p += offsize;
     p--;                        /* stupid offsets */
 
+    if (last < 0) {
+        gs_throw(-1, "corrupt index");
+        return 0;
+    }
+
     if (p + last > e) {
         gs_throw(-1, "not enough data for index data");
         return 0;
@@ -1650,6 +1655,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
     /* String index */
     pstore = p;
     p = pdfi_find_cff_index(p, e, 0, &strp, &stre);
+
     offsets.strings_off = pstore - font->cffdata;
 
     p = pdfi_count_cff_index(pstore, e, &count);
