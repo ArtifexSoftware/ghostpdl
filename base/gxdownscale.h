@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -247,5 +247,10 @@ int gx_downscaler_read_params(gs_param_list        *plist,
 int gx_downscaler_write_params(gs_param_list        *plist,
                                gx_downscaler_params *params,
                                int                   features);
+
+/* A helper function for creating the post render ICC link.
+ * This should be destroyed using gsicc_free_link_dev.*/
+int gx_downscaler_create_post_render_link(gx_device     *dev,
+                                          gsicc_link_t **link);
 
 #endif
