@@ -7229,6 +7229,9 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     new_group_color = gs_alloc_struct(dev->memory->stable_memory, pdf14_group_color_t,
         &st_pdf14_clr, "pdf14_clist_push_color_model");
 
+    if (new_group_color == NULL)
+        return_error(gs_error_VMerror);
+
     /* Link to old one */
     new_group_color->previous = pdev->color_model_stack;
 
