@@ -11021,10 +11021,15 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_gstate *pgs,
     }
     if (push_group) {
         gs_fixed_rect box;
-        if (pcpath)
+        gs_fixed_rect dev_bbox;
+
+        if (pcpath) {
             gx_cpath_outer_box(pcpath, &box);
-        else
+            (*dev_proc(dev, get_clipping_box)) (dev, &dev_bbox);
+            rect_intersect(box, dev_bbox);
+        } else
             (*dev_proc(dev, get_clipping_box)) (dev, &box);
+
         if (ppath) {
             gs_fixed_rect path_box;
 
@@ -11038,6 +11043,15 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_gstate *pgs,
             if (box.q.y > path_box.q.y)
                 box.q.y = path_box.q.y;
         }
+
+        if (box.p.y >= box.q.y || box.p.x >= box.q.x) {
+            /* No need to do anything */
+            if (pinst != NULL) {
+                pinst->saved->trans_device = NULL;
+            }
+            return 0;
+        }
+
         /* Group alpha set from fill value. push_shfill_group does reset to 1.0 */
         code = push_shfill_group(pdev, &new_pgs, &box);
     } else
