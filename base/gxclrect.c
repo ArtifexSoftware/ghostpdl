@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -890,9 +890,21 @@ copy:{
         }
         op += compress;
         if (dx) {
+            if_debug0m('L', dev->memory,
+                       "[L] fake end_run: really set_misc_data_x[2]\n");
             *dp++ = cmd_count_op(cmd_opv_set_misc, 2, dev->memory);
             *dp++ = cmd_set_misc_data_x + dx;
         }
+#ifdef DEBUG
+        if (gs_debug_c('L')) {
+            const char *const *sub = cmd_sub_op_names[op >> 4];
+
+            if (sub)
+                dmlprintf1(dev->memory, "[L] fake end_run: really %s\n", sub[op & 0xf]);
+            else
+                dmlprintf2(dev->memory, "[L] fake end_run: really %s %d\n", cmd_op_names[op >> 4], op & 0xf);
+        }
+#endif
         *dp++ = cmd_count_op(op, csize, dev->memory);
         /* Store the plane_height */
         cmd_putw(0, &dp);
@@ -1012,9 +1024,21 @@ clist_copy_planes(gx_device * dev,
          * cmd_put_bits fill the buffer up. */
         dp2 = dp;
         if (dx) {
+            if_debug0m('L', cdev->memory,
+                       "[L] fake end_run: really set_misc_data_x[2]\n");
             *dp2++ = cmd_count_op(cmd_opv_set_misc, 2, cdev->memory);
             *dp2++ = cmd_set_misc_data_x + dx;
         }
+#ifdef DEBUG
+        if (gs_debug_c('L')) {
+            const char *const *sub = cmd_sub_op_names[(op+code) >> 4];
+
+            if (sub)
+                dmlprintf1(cdev->memory, "[L] fake end_run: really %s\n", sub[(op+code) & 0xf]);
+            else
+                dmlprintf2(cdev->memory, "[L] fake end_run: really %s %d\n", cmd_op_names[(op+code) >> 4], (op+code) & 0xf);
+        }
+#endif
         *dp2++ = cmd_count_op(op + code, csize, cdev->memory);
         cmd_putw(plane_height, &dp2);
         cmd_put2w(rx, re.y, &dp2);
@@ -1144,9 +1168,21 @@ copy:{
             }
             op += compress;
             if (dx) {
+                if_debug0m('L', dev->memory,
+                           "[L] fake end_run: really set_misc_data_x[2]\n");
                 *dp++ = cmd_count_op(cmd_opv_set_misc, 2, dev->memory);
                 *dp++ = cmd_set_misc_data_x + dx;
             }
+#ifdef DEBUG
+            if (gs_debug_c('L')) {
+                const char *const *sub = cmd_sub_op_names[op >> 4];
+
+                if (sub)
+                    dmlprintf1(dev->memory, "[L] fake end_run: really %s\n", sub[op & 0xf]);
+                else
+                    dmlprintf2(dev->memory, "[L] fake end_run: really %s %d\n", cmd_op_names[op >> 4], op & 0xf);
+            }
+#endif
             *dp++ = cmd_count_op(op, csize, dev->memory);
             cmd_put2w(rx, re.y, &dp);
             cmd_put2w(w1, re.height, &dp);
@@ -1273,9 +1309,21 @@ copy:{
             }
             op += compress;
             if (dx) {
+                if_debug0m('L', dev->memory,
+                           "[L] fake end_run: really set_misc_data_x[2]\n");
                 *dp++ = cmd_count_op(cmd_opv_set_misc, 2, dev->memory);
                 *dp++ = cmd_set_misc_data_x + dx;
             }
+#ifdef DEBUG
+            if (gs_debug_c('L')) {
+                const char *const *sub = cmd_sub_op_names[op >> 4];
+
+                if (sub)
+                    dmlprintf1(dev->memory, "[L] fake end_run: really %s\n", sub[op & 0xf]);
+                else
+                    dmlprintf2(dev->memory, "[L] fake end_run: really %s %d\n", cmd_op_names[op >> 4], op & 0xf);
+            }
+#endif
             *dp++ = cmd_count_op(op, csize, dev->memory);
             *dp++ = depth;
             cmd_put2w(rx, re.y, &dp);
@@ -1403,9 +1451,21 @@ copy:{
             }
             op += compress;
             if (dx) {
+                if_debug0m('L', dev->memory,
+                           "[L] fake end_run: really set_misc_data_x[2]\n");
                 *dp++ = cmd_count_op(cmd_opv_set_misc, 2, dev->memory);
                 *dp++ = cmd_set_misc_data_x + dx;
             }
+#ifdef DEBUG
+            if (gs_debug_c('L')) {
+                const char *const *sub = cmd_sub_op_names[op >> 4];
+
+                if (sub)
+                    dmlprintf1(dev->memory, "[L] fake end_run: really %s\n", sub[op & 0xf]);
+                else
+                    dmlprintf2(dev->memory, "[L] fake end_run: really %s %d\n", cmd_op_names[op >> 4], op & 0xf);
+            }
+#endif
             *dp++ = cmd_count_op(op, csize, dev->memory);
             *dp++ = depth;
             cmd_put2w(rx, re.y, &dp);

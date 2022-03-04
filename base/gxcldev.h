@@ -871,6 +871,7 @@ int64_t clist_file_offset(const stream_state *st, uint buffer_offset);
 void top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byte *end);
 void offset_map_next_data_out_of_band(stream_state *st);
 void clist_debug_op(gs_memory_t *mem, const unsigned char *op_ptr);
+void adjust_offset_map_for_skipped_data(stream_state *st, uint buffer_offset, uint skipped);
 #endif
 
 int clist_writer_push_no_cropping(gx_device_clist_writer *cdev);
