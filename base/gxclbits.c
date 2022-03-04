@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -711,6 +711,8 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 if (code < 0)
                     return code;
                 if (extra) {	/* Write the tile parameters before writing the bits. */
+                    if_debug1m('L', cldev->memory,
+                               "[L] fake end_run: really set_tile_size[%d]\n", extra);
                     cmd_store_tile_params(dp, &cldev->tile_params, depth,
                                           extra, for_pattern, cldev->memory);
                     dp += extra;
@@ -721,6 +723,8 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                     if (band_index > cldev->tile_known_max)
                         cldev->tile_known_max = band_index;
                 }
+                if_debug1m('L', cldev->memory,
+                           "[L] fake end_run: really set_tile_bits[%d]\n", csize-extra);
                 *dp = cmd_count_op(cmd_opv_set_tile_bits, csize - extra, cldev->memory);
                 dp++;
                 dp = cmd_put_w(loc.index, dp);
@@ -801,6 +805,8 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
             if (code < 0)
                 return code;
+            if_debug1m('L', cldev->memory,
+                       "[L] fake end_run: really set_bits[%d]\n", csize);
             *dp = cmd_count_op(cmd_opv_set_bits, csize, cldev->memory);
             dp[1] = (depth << 2) + code;
             dp += 2;
@@ -808,6 +814,8 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             dp = cmd_put_w(loc.tile->height, dp);
             dp = cmd_put_w(loc.index, dp);
             cmd_put_w(offset, dp);
+            if_debug6m('L', cldev->memory, " compress=%d depth=%d size=(%d,%d) index=%d offset=%d\n",
+                       code, depth, loc.tile->width, loc.tile->height, loc.index, offset);
             if (bit_pcls == NULL) {
                 memset(ts_mask(loc.tile), 0xff,
                        cldev->tile_band_mask_size);

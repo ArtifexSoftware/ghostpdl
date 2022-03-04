@@ -223,6 +223,13 @@ cmd_read_data(command_buf_t *pcb, byte *ptr, uint rsize, const byte *cbp)
 
         memmove(ptr, cbp, cleft);
         sgets(pcb->s, ptr + cleft, rleft, &rleft);
+#ifdef DEBUG
+        {
+            stream_state *st = pcb->s->state;
+
+            adjust_offset_map_for_skipped_data(st, (uint)(pcb->end - pcb->data), rleft);
+        }
+#endif
         return pcb->end;
     }
 }
