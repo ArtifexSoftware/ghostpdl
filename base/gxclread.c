@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -363,6 +363,24 @@ top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byt
                 (ss->offset_map_length - i) * sizeof(*ss->offset_map));
         ss->offset_map_length -= i;
     }
+}
+
+/* This function is called when data is copied from the stream out into a separate
+ * buffer without going through the usual clist buffers. Essentially data for the
+ * id we are reading at buffer_offset within the buffer is skipped. */
+void adjust_offset_map_for_skipped_data(stream_state *st, uint buffer_offset, uint skipped)
+{
+    uint offset0;
+    stream_band_read_state *const ss = (stream_band_read_state *) st;
+    int i;
+
+    if (!gs_debug_c('L'))
+        return;
+
+    i = buffer_segment_index(ss, buffer_offset, &offset0);
+
+    ss->offset_map[i].buffered -= skipped;
+    ss->offset_map[i].file_offset += skipped;
 }
 
 void
