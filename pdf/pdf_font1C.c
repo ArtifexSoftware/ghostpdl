@@ -1933,6 +1933,9 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                 }
             }
             else {
+                if (font->cffdata + offsets.fdselect_off > font->cffend)
+                    return_error(gs_error_rangecheck);
+
                 switch ((int)font->cffdata[offsets.fdselect_off]) {
                     case 0:
                         fdselect_proc = format0_fdselect_proc;
