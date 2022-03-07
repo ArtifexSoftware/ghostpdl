@@ -972,6 +972,7 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         case gxdso_pdf14_sep_device:
         case gxdso_supports_pattern_transparency:
         case gxdso_overprintsim_state:
+        case gxdso_skip_icc_component_validation:
             return 0;
         case gxdso_pattern_shfill_doesnt_need_path:
             return (dev_proc(pdev, fill_path) == gx_default_fill_path);
