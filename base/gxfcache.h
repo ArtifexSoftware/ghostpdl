@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -126,8 +126,8 @@ struct cached_char_s {
     /* gx_cached_bits_common includes depth. */
 
     gx_cached_bits_common;	/* (must be first) */
-#define cc_depth(cc) ((cc)->cb_depth)
-#define cc_set_depth(cc, d) ((cc)->cb_depth = (d))
+#define cc_depth(cc) ((cc)->head.depth)
+#define cc_set_depth(cc, d) ((cc)->head.depth = (d))
     cached_fm_pair *pair;
     bool linked;
 #define cc_pair(cc) ((cc)->pair)
