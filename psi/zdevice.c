@@ -128,9 +128,7 @@ zcurrentdevice(i_ctx_t *i_ctx_p)
     rc_increment(dev);
 
     push(1);
-    make_tav(op, t_device,
-             (mem == 0 ? avm_foreign : imemory_space(mem)) | a_all,
-             pdevice, psdev);
+    make_tav(op, t_device, imemory_space(mem) | a_all, pdevice, psdev);
     return 0;
 }
 
@@ -164,9 +162,7 @@ zcurrentoutputdevice(i_ctx_t *i_ctx_p)
     rc_increment(odev);
 
     push(1);
-    make_tav(op, t_device,
-             (mem == 0 ? avm_foreign : imemory_space(mem)) | a_all,
-             pdevice, psdev);
+    make_tav(op, t_device, imemory_space(mem) | a_all, pdevice, psdev);
     return 0;
 }
 
@@ -323,8 +319,7 @@ zgetdevice(i_ctx_t *i_ctx_p)
 
     /* Device prototypes are read-only; */
     /* the cast is logically unnecessary. */
-    make_tav(op, t_device, avm_foreign | a_readonly, pdevice,
-             psdev);
+    make_tav(op, t_device, imemory_space(imemory) | a_readonly, pdevice, psdev);
     return 0;
 }
 
@@ -348,7 +343,7 @@ zgetdefaultdevice(i_ctx_t *i_ctx_p)
     psdev->device = (gx_device *)dev;
 
     push(1);
-    make_tav(op, t_device, avm_foreign | a_readonly, pdevice, psdev);
+    make_tav(op, t_device, imemory_space(imemory) | a_readonly, pdevice, psdev);
     return 0;
 }
 
