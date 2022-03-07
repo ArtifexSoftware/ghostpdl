@@ -81,7 +81,7 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
 
     OBJ_CTX(font)->text.BlockDepth = 0;
     OBJ_CTX(font)->text.inside_CharProc = true;
-    OBJ_CTX(font)->text.CharProc_is_d1 = false;
+    OBJ_CTX(font)->text.CharProc_d_type = pdf_type3_d_none;
 
     {
         /* It turns out that if a type 3 font uses a stroke to draw, and does not
@@ -122,7 +122,7 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     }
 
     OBJ_CTX(font)->text.inside_CharProc = false;
-    OBJ_CTX(font)->text.CharProc_is_d1 = false;
+    OBJ_CTX(font)->text.CharProc_d_type = pdf_type3_d_none;
     OBJ_CTX(font)->text.BlockDepth = SavedTextBlockDepth;
 
 build_char_error:

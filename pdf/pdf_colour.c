@@ -341,7 +341,7 @@ int pdfi_gs_setgray(pdf_context *ctx, double d)
     int code = 0;
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
-    if (ctx->text.inside_CharProc && ctx->text.CharProc_is_d1)
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
         return 0;
 
     if (ctx->page.DefaultGray_cs != NULL) {
@@ -367,7 +367,7 @@ int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
     int code = 0;
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
-    if (ctx->text.inside_CharProc && ctx->text.CharProc_is_d1)
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
         return 0;
 
     if (ctx->page.DefaultRGB_cs != NULL) {
@@ -396,7 +396,7 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
     int code = 0;
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
-    if (ctx->text.inside_CharProc && ctx->text.CharProc_is_d1)
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
         return 0;
 
     if (ctx->page.DefaultCMYK_cs != NULL) {
@@ -427,7 +427,7 @@ int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
      */
     if (ctx->pgs->color[0].color_space->id != pcs->id) {
         /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
-        if (ctx->text.inside_CharProc && ctx->text.CharProc_is_d1)
+        if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
             return 0;
 
         pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);

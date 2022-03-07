@@ -75,6 +75,11 @@ typedef enum pdf_crypt_filter_e {
     CRYPT_AESV3,  /* 256-bit AES */
 } pdf_crypt_filter;
 
+typedef enum pdf_type3_d_type_e {
+    pdf_type3_d_none,
+    pdf_type3_d0,
+    pdf_type3_d1
+} pdf_type3_d_type;
 
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 524288
@@ -226,8 +231,14 @@ typedef struct text_state_s {
     /* We need to know if we're in a type 3 CharProc which has executed a 'd1' operator.
      * Colour operators are technically invalid if we are in a 'd1' context and we must
      * ignore them.
+     * OSS-fuzz #45320 has a type 3 font with a BuildChar which has a 'RG' before the
+     * d1. This is (obviously) illegal because the spec says the first operation must
+     * be either a d0 or d1, in addition because of the graphics state depth hackery
+     * (see comments in pdf_d0() in pdf_font.c) this messes up the reference counting
+     * of the colour spaces, leading to a crash. So what was a boolean flag is now an
+     * enumerated type; pdf_type3_d_none, pdf_type3_d0 or pdf_type3_d1.
      */
-    bool CharProc_is_d1;
+    pdf_type3_d_type CharProc_d_type;
     /* If there is no current point when we do a BT we start by doing a 0 0 moveto in order
      * to establish an initial point. However, this also starts a path. When we finish
      * off with a BT we need to clear that path by doing a newpath, otherwise we might
