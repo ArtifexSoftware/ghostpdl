@@ -486,21 +486,19 @@ clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
     uint size_bytes = raster * tiles->size.y * tiles->num_planes;
     uint tsize =
     sizeof(tile_slot) + cldev->tile_band_mask_size + size_bytes;
-    gx_cached_bits_head *slot_head;
-
-#define slot ((tile_slot *)slot_head)
+    tile_slot *slot;
 
     if (cldev->bits.csize == cldev->tile_max_count) {	/* Don't let the hash table get too full: delete an entry. */
         /* Since gx_bits_cache_alloc returns an entry to delete when */
         /* it fails, just force it to fail. */
         gx_bits_cache_alloc(&cldev->bits, (ulong) cldev->cache_chunk->size,
-                            &slot_head);
-        if (slot_head == 0) {	/* Wrap around and retry. */
+                            (gx_cached_bits_head **)&slot);
+        if (slot == NULL) {	/* Wrap around and retry. */
             cldev->bits.cnext = 0;
             gx_bits_cache_alloc(&cldev->bits, (ulong) cldev->cache_chunk->size,
-                                &slot_head);
+                                (gx_cached_bits_head **)&slot);
 #ifdef DEBUG
-            if (slot_head == 0) {
+            if (slot == NULL) {
                 lprintf("No entry to delete!\n");
                 return_error(gs_error_Fatal);
             }
@@ -509,8 +507,8 @@ clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
         clist_delete_tile(cldev, slot);
     }
     /* Allocate the space for the new entry, deleting entries as needed. */
-    while (gx_bits_cache_alloc(&cldev->bits, (ulong) tsize, &slot_head) < 0) {
-        if (slot_head == 0) {	/* Wrap around. */
+    while (gx_bits_cache_alloc(&cldev->bits, (ulong) tsize, (gx_cached_bits_head **)&slot) < 0) {
+        if (slot == NULL) {	/* Wrap around. */
             if (cldev->bits.cnext == 0) {	/* Too big to fit.  We should probably detect this */
                 /* sooner, since if we get here, we've cleared the */
                 /* cache. */
@@ -521,8 +519,8 @@ clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
             clist_delete_tile(cldev, slot);
     }
     /* Fill in the entry. */
-    slot->cb_depth = depth;
-    slot->cb_raster = raster;
+    slot->head.depth = depth;
+    slot->raster = raster;
     slot->width = tiles->rep_width;
     slot->height = tiles->rep_height;
     slot->shift = slot->rep_shift = tiles->rep_shift;
@@ -549,7 +547,7 @@ clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
 #endif
         slot->index = loc.index;
         cldev->tile_table[loc.index].offset =
-            (byte *) slot_head - cldev->data;
+            (byte *) slot - cldev->data;
         if_debug2m('L', cldev->memory, "[L]adding index=%u, offset=%lu\n",
                    loc.index, cldev->tile_table[loc.index].offset);
     }
@@ -701,7 +699,7 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 code = cmd_put_bits(cldev, pcls, ts_bits(cldev, loc.tile),
                                     tiles->rep_width * pdepth,
                                     tiles->rep_height * tiles->num_planes,
-                                    loc.tile->cb_raster, rsize,
+                                    loc.tile->raster, rsize,
                                     allow_large_bitmap |
                                         (cldev->tile_params.size.x > tiles->rep_width ?
                                              decompress_elsewhere | decompress_spread :
@@ -766,72 +764,73 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 {
     tile_loc loc;
     int code;
+    uint band_index = pcls - cldev->states;
+    byte bmask = 1 << (band_index & 7);
+    byte *bptr;
 
-   top:if (clist_find_bits(cldev, tiles->id, &loc)) {	/* The bitmap is in the cache.  Check whether this band */
-        /* knows about it. */
-        uint band_index = pcls - cldev->states;
-        byte *bptr = ts_mask(loc.tile) + (band_index >> 3);
-        byte bmask = 1 << (band_index & 7);
-
-        if (*bptr & bmask) {	/* Already known.  Just set the index. */
-            if (pcls->tile_index == loc.index)
-                return 0;
-            cmd_put_tile_index(cldev, pcls, loc.index);
-        } else {		/* Not known yet.  Output the bits. */
-            /* Note that the offset we write is the one used by */
-            /* the reading phase, not the writing phase. */
-            ulong offset = (byte *) loc.tile - cldev->cache_chunk->data;
-            uint rsize = 2 + cmd_size_w(loc.tile->width) +
-            cmd_size_w(loc.tile->height) + cmd_size_w(loc.index) +
-            cmd_size_w(offset);
-            byte *dp;
-            uint csize;
-            gx_clist_state *bit_pcls = pcls;
-            int code;
-            int pdepth = depth;
-
-            if (tiles->num_planes != 1)
-                    pdepth /= loc.tile->num_planes;
-            if (loc.tile->num_bands == CHAR_ALL_BANDS_COUNT)
-                bit_pcls = NULL;
-            /* put the bits, but don't restrict to a single buffer */
-            code = cmd_put_bits(cldev, bit_pcls, ts_bits(cldev, loc.tile),
-                                loc.tile->width * pdepth,
-                                loc.tile->height * loc.tile->num_planes, loc.tile->cb_raster,
-                                rsize,
-                                decompress_elsewhere |
-                                    (cldev->target->BLS_force_memory ? (1 << cmd_compress_cfe) : 0),
-                                &dp, &csize);
-
-            if (code < 0)
-                return code;
-            if_debug1m('L', cldev->memory,
-                       "[L] fake end_run: really set_bits[%d]\n", csize);
-            *dp = cmd_count_op(cmd_opv_set_bits, csize, cldev->memory);
-            dp[1] = (depth << 2) + code;
-            dp += 2;
-            dp = cmd_put_w(loc.tile->width, dp);
-            dp = cmd_put_w(loc.tile->height, dp);
-            dp = cmd_put_w(loc.index, dp);
-            cmd_put_w(offset, dp);
-            if_debug6m('L', cldev->memory, " compress=%d depth=%d size=(%d,%d) index=%d offset=%d\n",
-                       code, depth, loc.tile->width, loc.tile->height, loc.index, offset);
-            if (bit_pcls == NULL) {
-                memset(ts_mask(loc.tile), 0xff,
-                       cldev->tile_band_mask_size);
-                loc.tile->num_bands = cldev->nbands;
-            } else {
-                *bptr |= bmask;
-                loc.tile->num_bands++;
-            }
-        }
-        pcls->tile_index = loc.index;
-        pcls->tile_id = loc.tile->id;
-        return 0;
+    while (!clist_find_bits(cldev, tiles->id, &loc)) {
+        /* The tile is not in the cache. */
+        code = clist_add_tile(cldev, tiles, tiles->raster, depth);
+        if (code < 0)
+            return code;
     }
-    /* The tile is not in the cache. */
-    code = clist_add_tile(cldev, tiles, tiles->raster, depth);
-    if (code < 0)
-        return code;
-    goto top;
+
+    /* The bitmap is in the cache.  Check whether this band */
+    /* knows about it. */
+    bptr = ts_mask(loc.tile) + (band_index >> 3);
+
+    if (*bptr & bmask) {	/* Already known.  Just set the index. */
+        if (pcls->tile_index == loc.index)
+            return 0;
+        cmd_put_tile_index(cldev, pcls, loc.index);
+    } else {		/* Not known yet.  Output the bits. */
+        /* Note that the offset we write is the one used by */
+        /* the reading phase, not the writing phase. */
+        ulong offset = (byte *) loc.tile - cldev->cache_chunk->data;
+        uint rsize = 2 + cmd_size_w(loc.tile->width) +
+                     cmd_size_w(loc.tile->height) + cmd_size_w(loc.index) +
+                     cmd_size_w(offset);
+        byte *dp;
+        uint csize;
+        gx_clist_state *bit_pcls = pcls;
+        int pdepth = depth;
+
+        if (tiles->num_planes != 1)
+            pdepth /= loc.tile->num_planes;
+        if (loc.tile->num_bands == CHAR_ALL_BANDS_COUNT)
+            bit_pcls = NULL;
+        /* put the bits, but don't restrict to a single buffer */
+        code = cmd_put_bits(cldev, bit_pcls, ts_bits(cldev, loc.tile),
+                            loc.tile->width * pdepth,
+                            loc.tile->height * loc.tile->num_planes, loc.tile->raster,
+                            rsize,
+                            decompress_elsewhere |
+                                (cldev->target->BLS_force_memory ? (1 << cmd_compress_cfe) : 0),
+                            &dp, &csize);
+
+        if (code < 0)
+            return code;
+        if_debug1m('L', cldev->memory,
+                   "[L] fake end_run: really set_bits[%d]\n", csize);
+        *dp = cmd_count_op(cmd_opv_set_bits, csize, cldev->memory);
+        dp[1] = (depth << 2) + code;
+        dp += 2;
+        dp = cmd_put_w(loc.tile->width, dp);
+        dp = cmd_put_w(loc.tile->height, dp);
+        dp = cmd_put_w(loc.index, dp);
+        cmd_put_w(offset, dp);
+        if_debug6m('L', cldev->memory, " compress=%d depth=%d size=(%d,%d) index=%d offset=%d\n",
+                   code, depth, loc.tile->width, loc.tile->height, loc.index, offset);
+        if (bit_pcls == NULL) {
+            memset(ts_mask(loc.tile), 0xff,
+                   cldev->tile_band_mask_size);
+            loc.tile->num_bands = cldev->nbands;
+        } else {
+            *bptr |= bmask;
+            loc.tile->num_bands++;
+        }
+    }
+    pcls->tile_index = loc.index;
+    pcls->tile_id = loc.tile->id;
+    return 0;
 }

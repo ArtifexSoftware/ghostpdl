@@ -47,8 +47,6 @@ typedef struct gx_cached_bits_head_s {
         ushort width, height, shift;\
         ushort raster;\
         gx_bitmap_id id
-/* Define aliases for head members. */
-#define cb_depth head.depth
 /* Define aliases for common members formerly in the head. */
 #define cb_raster raster
 typedef struct gx_cached_bits_s {

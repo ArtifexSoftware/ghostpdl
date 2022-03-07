@@ -786,14 +786,14 @@ in:                             /* Initialize for a new page. */
                         goto stp;
                     case cmd_opv_set_bits:
                         compress = *cbp & 3;
-                        bits.cb_depth = *cbp++ >> 2;
+                        bits.head.depth = *cbp++ >> 2;
                         cmd_getw(bits.width, cbp);
                         cmd_getw(bits.height, cbp);
                         if_debug4m('L', mem, " compress=%d depth=%d size=(%d,%d)",
-                                   compress, bits.cb_depth,
+                                   compress, bits.head.depth,
                                    bits.width, bits.height);
-                        bits.cb_raster =
-                            bitmap_raster(bits.width * bits.cb_depth);
+                        bits.raster =
+                            bitmap_raster(bits.width * bits.head.depth);
                         bits.x_reps = bits.y_reps = 1;
                         bits.shift = bits.rep_shift = 0;
                         bits.num_planes = 1;
@@ -1054,12 +1054,12 @@ in:                             /* Initialize for a new page. */
                         goto out;
                     }
 #endif
-                    depth = state_slot->cb_depth;
+                    depth = state_slot->head.depth;
                     state.rect.width = state_slot->width;
                     state.rect.height = state_slot->height;
                     if (state.rect.y + state.rect.height > cdev->height)
                         state.rect.height = cdev->height - state.rect.y;	/* clamp as writer did */
-                    raster = state_slot->cb_raster;
+                    raster = state_slot->raster;
                     source = (byte *) (state_slot + 1);
                 } else {        /* Read width, height, bits. */
                     /* depth was set already. */
@@ -1208,7 +1208,7 @@ in:                             /* Initialize for a new page. */
                 state_tile.data = (byte *) (state_slot + 1);
               stp:state_tile.size.x = state_slot->width;
                 state_tile.size.y = state_slot->height;
-                state_tile.raster = state_slot->cb_raster;
+                state_tile.raster = state_slot->raster;
                 state_tile.rep_width = state_tile.size.x /
                     state_slot->x_reps;
                 state_tile.rep_height = state_tile.size.y /
@@ -2494,7 +2494,7 @@ read_set_tile_size(command_buf_t *pcb, tile_slot *bits, bool for_pattern)
     uint pdepth;
     byte bd = *cbp++;
 
-    bits->cb_depth = cmd_code_to_depth(bd);
+    bits->head.depth = cmd_code_to_depth(bd);
     if (for_pattern)
         cmd_getw(bits->id, cbp);
     cmd_getw(rep_width, cbp);
@@ -2522,16 +2522,16 @@ read_set_tile_size(command_buf_t *pcb, tile_slot *bits, bool for_pattern)
     else
         bits->num_planes = 1;
     if_debug7('L', " depth=%d size=(%d,%d), rep_size=(%d,%d), rep_shift=%d, num_planes=%d\n",
-              bits->cb_depth, bits->width,
+              bits->head.depth, bits->width,
               bits->height, rep_width,
               rep_height, bits->rep_shift, bits->num_planes);
     bits->shift =
         (bits->rep_shift == 0 ? 0 :
          (bits->rep_shift * (bits->height / rep_height)) % rep_width);
-    pdepth = bits->cb_depth;
+    pdepth = bits->head.depth;
     if (bits->num_planes != 1)
         pdepth /= bits->num_planes;
-    bits->cb_raster = bitmap_raster(bits->width * pdepth);
+    bits->raster = bitmap_raster(bits->width * pdepth);
     pcb->ptr = cbp;
     return 0;
 }
@@ -2552,7 +2552,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
     uint bytes;
     byte *data;
     tile_slot *slot;
-    uint depth = bits->cb_depth;
+    uint depth = bits->head.depth;
 
     if (bits->num_planes != 1)
         depth /= bits->num_planes;
@@ -2634,26 +2634,26 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
             return_error(gs_error_unregistered);
         }
         cbp = r.ptr + 1;
-    } else if (rep_height * bits->num_planes > 1 && width_bytes != bits->cb_raster) {
+    } else if (rep_height * bits->num_planes > 1 && width_bytes != bits->raster) {
         cbp = cmd_read_short_bits(pcb, data, bytes,
                                   width_bytes, rep_height * bits->num_planes,
-                                  bits->cb_raster, cbp);
+                                  bits->raster, cbp);
     } else {
         cbp = cmd_read_data(pcb, data, bytes, cbp);
     }
     if (bits->width > rep_width)
         bits_replicate_horizontally(data,
                                     rep_width * depth, rep_height * bits->num_planes,
-                                    bits->cb_raster,
+                                    bits->raster,
                                     bits->width * depth,
-                                    bits->cb_raster);
+                                    bits->raster);
     if (bits->height > rep_height)
         bits_replicate_vertically(data,
-                                  rep_height, bits->cb_raster,
+                                  rep_height, bits->raster,
                                   bits->height);
 #ifdef DEBUG
     if (gs_debug_c('L'))
-        cmd_print_bits(mem, data, bits->width, bits->height, bits->cb_raster);
+        cmd_print_bits(mem, data, bits->width, bits->height, bits->raster);
 #endif
     pcb->ptr = cbp;
     return 0;
