@@ -1169,6 +1169,8 @@ int pdfi_d0(pdf_context *ctx)
     if (ctx->text.inside_CharProc == false)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_NOTINCHARPROC, "pdfi_d0", NULL);
 
+    ctx->text.CharProc_d_type = pdf_type3_d0;
+
     if (pdfi_count_stack(ctx) < 2) {
         code = gs_note_error(gs_error_stackunderflow);
         goto d0_error;
@@ -1249,7 +1251,7 @@ int pdfi_d1(pdf_context *ctx)
     if (ctx->text.inside_CharProc == false)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_NOTINCHARPROC, "pdfi_d1", NULL);
 
-    ctx->text.CharProc_is_d1 = true;
+    ctx->text.CharProc_d_type = pdf_type3_d1;
 
     if (pdfi_count_stack(ctx) < 6) {
         code = gs_note_error(gs_error_stackunderflow);
