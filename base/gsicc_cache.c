@@ -181,15 +181,16 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     gsicc_link_t *result;
     int cms_flags = 0;
 
-    result = (gsicc_link_t*) gs_malloc(memory->stable_memory, 1,
+    memory = memory->non_gc_memory;
+    result = (gsicc_link_t*)gs_alloc_byte_array(memory, 1,
         sizeof(gsicc_link_t), "gsicc_alloc_link_dev");
 
     if (result == NULL)
         return NULL;
-    result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
+    result->lock = gx_monitor_label(gx_monitor_alloc(memory),
         "gsicc_link_new");
     if (result->lock == NULL) {
-        gs_free_object(memory->stable_memory, result, "gsicc_alloc_link(lock)");
+        gs_free_object(memory, result, "gsicc_alloc_link(lock)");
         return NULL;
     }
     gx_monitor_enter(result->lock);
@@ -214,35 +215,35 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     result->includes_devlink = 0;
     result->is_identity = false;
     result->valid = true;
-    result->memory = memory->stable_memory;
+    result->memory = memory;
 
     if_debug1m('^', result->memory, "[^]icclink "PRI_INTPTR" init = 1\n",
                (intptr_t)result);
 
     if (src_profile->profile_handle == NULL) {
         src_profile->profile_handle = gsicc_get_profile_handle_buffer(
-            src_profile->buffer, src_profile->buffer_size, memory->stable_memory);
+            src_profile->buffer, src_profile->buffer_size, memory);
     }
 
     if (des_profile->profile_handle == NULL) {
         des_profile->profile_handle = gsicc_get_profile_handle_buffer(
-            des_profile->buffer, des_profile->buffer_size, memory->stable_memory);
+            des_profile->buffer, des_profile->buffer_size, memory);
     }
 
     /* Check for problems.. */
     if (src_profile->profile_handle == 0 || des_profile->profile_handle == 0) {
-        gs_free_object(memory->stable_memory, result, "gsicc_alloc_link_dev");
+        gs_free_object(memory, result, "gsicc_alloc_link_dev");
         return NULL;
     }
 
     /* [0] is chunky, littleendian, noalpha, 16-in, 16-out */
     result->link_handle = gscms_get_link(src_profile->profile_handle,
         des_profile->profile_handle, rendering_params, cms_flags,
-        memory->stable_memory);
+        memory);
 
     /* Check for problems.. */
     if (result->link_handle == NULL) {
-        gs_free_object(memory->stable_memory, result, "gsicc_alloc_link_dev");
+        gs_free_object(memory, result, "gsicc_alloc_link_dev");
         return NULL;
     }
 
