@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -156,7 +156,10 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
                 }
             }
           finish:
-            p += i;		/* advance to the '>' */
+            if (p + i <= rlimit)
+                p += i;		/* advance to the '>' */
+            else
+                p = rlimit; /* Can happen if the '>' is missing */
             pw->ptr = q;
             status = a85d_finish(ccount, word, pw);
             q = pw->ptr;
