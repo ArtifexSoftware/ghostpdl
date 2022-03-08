@@ -788,7 +788,9 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         /* the reading phase, not the writing phase. */
         ulong offset = (byte *) loc.tile - cldev->cache_chunk->data;
         uint rsize = 2 + cmd_size_w(loc.tile->width) +
-                     cmd_size_w(loc.tile->height) + cmd_size_w(loc.index) +
+                     cmd_size_w(loc.tile->height) +
+                     (loc.tile->num_planes > 1 ? 1 : 0) +
+                     cmd_size_w(loc.index) +
                      cmd_size_w(offset);
         byte *dp;
         uint csize;
@@ -812,15 +814,18 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             return code;
         if_debug1m('L', cldev->memory,
                    "[L] fake end_run: really set_bits[%d]\n", csize);
-        *dp = cmd_count_op(cmd_opv_set_bits, csize, cldev->memory);
+        *dp = cmd_count_op(loc.tile->num_planes > 1 ? cmd_opv_set_bits_planar : cmd_opv_set_bits,
+                           csize, cldev->memory);
         dp[1] = (depth << 2) + code;
         dp += 2;
         dp = cmd_put_w(loc.tile->width, dp);
         dp = cmd_put_w(loc.tile->height, dp);
+        if (loc.tile->num_planes > 1)
+            *dp++ = loc.tile->num_planes;
         dp = cmd_put_w(loc.index, dp);
         cmd_put_w(offset, dp);
-        if_debug6m('L', cldev->memory, " compress=%d depth=%d size=(%d,%d) index=%d offset=%d\n",
-                   code, depth, loc.tile->width, loc.tile->height, loc.index, offset);
+        if_debug7m('L', cldev->memory, " compress=%d depth=%d size=(%d,%d) planes=%d index=%d offset=%d\n",
+                   code, depth, loc.tile->width, loc.tile->height, loc.tile->num_planes, loc.index, offset);
         if (bit_pcls == NULL) {
             memset(ts_mask(loc.tile), 0xff,
                    cldev->tile_band_mask_size);
