@@ -119,6 +119,8 @@ typedef enum {
     cmd_op_delta_tile_index  = 0xb0, /* +delta+8 */
     cmd_op_set_tile_index    = 0xc0, /* +index[11:8], index[7:0] */
     cmd_op_misc2             = 0xd0, /* (see below) */
+    cmd_opv_set_bits_planar  = 0xd0, /* depth*4+compress, width#, height#, */
+                                     /* num_planes, index#, offset#, <bits> */
     cmd_op_fill_rect_hl      = 0xd1, /* rect fill with devn color */
     cmd_opv_set_fill_adjust  = 0xd2, /* adjust_x/y(fixed) */
     cmd_opv_set_ctm          = 0xd3, /* [per sput/sget_matrix] */
@@ -160,7 +162,7 @@ typedef enum {
 
 
 #define cmd_misc2_op_name_strings\
-  "?d0?", "fill_hl_color", \
+  "set_bits_planar", "fill_hl_color", \
   "set_fill_adjust", "set_ctm",\
   "set_color_space", "set_misc2", "set_dash", "enable_clip",\
   "disable_clip", "begin_clip", "end_clip", "begin_image_rect",\
@@ -223,7 +225,7 @@ typedef enum {
   "?f8?", "polyfill", "?fa?", "?fb?",\
   "fill_trapezoid", "?fd?", "?fe?", "?ff?"
 
-/* unused cmd_op values: 0xd0, 0xf2, 0xf7, 0xf8, 0xfa, 0xfb, 0xfd, 0xfe, 0xff */
+/* unused cmd_op values: 0xf2, 0xf7, 0xf8, 0xfa, 0xfb, 0xfd, 0xfe, 0xff */
 } gx_cmd_op;
 
 #define cmd_op_name_strings\
