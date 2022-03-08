@@ -539,6 +539,10 @@ plan_spec_op(gx_device *dev, int op, void *data, int datasize)
         int bpc = dev->color_info.depth / dev->color_info.num_components;
         return bpc == 8;
     }
+    if (op == gxdso_skip_icc_component_validation) {
+        int bpc = dev->color_info.depth / dev->color_info.num_components;
+        return bpc == 8;
+    }
     return gdev_prn_dev_spec_op(dev, op, data, datasize);
 }
 
