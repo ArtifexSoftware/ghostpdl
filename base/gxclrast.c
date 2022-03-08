@@ -785,18 +785,22 @@ in:                             /* Initialize for a new page. */
                             goto out;
                         goto stp;
                     case cmd_opv_set_bits:
+do_opv_set_bits:
                         compress = *cbp & 3;
                         bits.head.depth = *cbp++ >> 2;
                         cmd_getw(bits.width, cbp);
                         cmd_getw(bits.height, cbp);
-                        if_debug4m('L', mem, " compress=%d depth=%d size=(%d,%d)",
+                        if (op == cmd_opv_set_bits_planar)
+                            cmd_getw(bits.num_planes, cbp);
+                        else
+                            bits.num_planes = 1;
+                        if_debug5m('L', mem, " compress=%d depth=%d size=(%d,%d) planes=%d",
                                    compress, bits.head.depth,
-                                   bits.width, bits.height);
+                                   bits.width, bits.height, bits.num_planes);
                         bits.raster =
                             bitmap_raster(bits.width * bits.head.depth);
                         bits.x_reps = bits.y_reps = 1;
                         bits.shift = bits.rep_shift = 0;
-                        bits.num_planes = 1;
                         goto stb;
                     case cmd_opv_set_tile_color:
                         set_colors = state.tile_colors;
@@ -1267,6 +1271,8 @@ set_phase:      /*
                 continue;
             case cmd_op_misc2 >> 4:
                 switch (op) {
+                    case cmd_opv_set_bits_planar:
+                        goto do_opv_set_bits;
                     case cmd_opv_set_fill_adjust:
                         cmd_get_value(gs_gstate.fill_adjust.x, cbp);
                         cmd_get_value(gs_gstate.fill_adjust.y, cbp);
