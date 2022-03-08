@@ -1599,6 +1599,8 @@ tiffsep_prn_open(gx_device * pdev)
     tiff_set_handlers();
 
     code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
+    if (code < 0)
+        return code;
 
     /* For the planar device we need to set up the bit depth of each plane.
        For other devices this is handled in check_device_separable where
@@ -1671,6 +1673,8 @@ tiffsep_prn_open(gx_device * pdev)
                              pdev_sep->devn_params.bitspercomponent;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     code = gdev_prn_open_planar(pdev, true);
+    if (code < 0)
+        return code;
     while (pdev->child)
         pdev = pdev->child;
     ppdev = (gx_device_printer *)pdev;
@@ -1680,11 +1684,8 @@ tiffsep_prn_open(gx_device * pdev)
 
     /* Set up the icc link settings at this time.  Only CMYK post render profiles
        are allowed */
-    code = gx_downscaler_create_post_render_link((gx_device *)pdev,
+    return gx_downscaler_create_post_render_link((gx_device *)pdev,
                                                  &pdev_sep->icclink);
-    if (code < 0)
-        return code;
-    return code;
 }
 
 static int
