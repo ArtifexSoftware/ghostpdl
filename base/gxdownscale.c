@@ -3157,7 +3157,7 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     }
 
     for (plane=0; plane < num_planes_to_downscale; plane++)
-        params->data[plane] = params->data[plane];
+        params->data[plane] = params2.data[plane];
 
     return code;
 }
