@@ -3596,9 +3596,8 @@ int gx_downscaler_create_post_render_link(gx_device *dev, gsicc_link_t **link)
         return_error(gs_error_undefined);
 
     *link = NULL;
-    if (profile_struct->postren_profile == NULL) {
+    if (profile_struct->postren_profile == NULL)
         return 0;
-    }
 
     rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
     rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
@@ -3609,6 +3608,41 @@ int gx_downscaler_create_post_render_link(gx_device *dev, gsicc_link_t **link)
     *link = gsicc_alloc_link_dev(dev->memory,
                                  profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
                                  profile_struct->postren_profile,
+                                 &rendering_params);
+    if (*link == NULL)
+        return_error(gs_error_VMerror);
+
+    /* If it is identity, release it now and set link to NULL */
+    if ((*link)->is_identity) {
+        gsicc_free_link_dev(*link);
+        *link = NULL;
+    }
+    return 0;
+}
+
+int gx_downscaler_create_icc_link(gx_device *dev, gsicc_link_t **link, cmm_profile_t *icc_profile)
+{
+    gsicc_rendering_param_t rendering_params;
+    cmm_dev_profile_t *profile_struct;
+    int code = dev_proc(dev, get_profile)(dev, &profile_struct);
+
+    *link = NULL;
+
+    if (code < 0)
+        return code;
+
+    if (icc_profile == NULL)
+        return 0; /* Should be an error, maybe? */
+
+    rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
+    rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
+    rendering_params.override_icc = false;
+    rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
+    rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
+    rendering_params.cmm = gsCMM_DEFAULT;
+    *link = gsicc_alloc_link_dev(dev->memory,
+                                 profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+                                 icc_profile,
                                  &rendering_params);
     if (*link == NULL)
         return_error(gs_error_VMerror);

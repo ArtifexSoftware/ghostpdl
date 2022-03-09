@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -277,6 +277,14 @@ pxl_impl_init_job(pl_interp_implementation_t * impl,
     if ((code = gs_setdevice_no_erase(pxli->pgs, device)) < 0)  /* can't erase yet */
         goto pisdEnd;
 
+    /* Warn the device that PXL uses ROPs. */
+    if (code == 0) {
+        code = put_param_bool(pxli, "LanguageUsesROPs", true);
+
+        if (!device->is_open)
+            code = gs_opendevice(device);
+    }
+
     /* Init XL graphics */
     stage = Sinitg;
     if ((code = px_initgraphics(pxli->pxs)) < 0)
@@ -320,14 +328,6 @@ pxl_impl_init_job(pl_interp_implementation_t * impl,
         case Ssetdevice:       /* gs_setdevice failed */
         case Sbegin:           /* nothing left to undo */
             break;
-    }
-
-    /* Warn the device that PXL uses ROPs. */
-    if (code == 0) {
-        code = put_param_bool(pxli, "LanguageUsesROPs", true);
-
-        if (!device->is_open)
-            code = gs_opendevice(device);
     }
 
     return code;

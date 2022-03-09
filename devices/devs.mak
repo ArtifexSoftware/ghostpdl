@@ -1166,7 +1166,7 @@ $(DD)chameleon.dev : $(chameleon_) $(GLD)page.dev $(GLD)cielib.dev $(GDEV) \
 
 $(DEVOBJ)gdevchameleon.$(OBJ) : $(DEVSRC)gdevchameleon.c $(PDEVH)\
  $(gsparam_h) $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gxdcconv_h)\
- $(gsutil_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gsutil_h) $(gsicc_manage_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevchameleon.$(OBJ) $(C_) $(DEVSRC)gdevchameleon.c
 
 ### ------------------------- .BMP file formats ------------------------- ###
