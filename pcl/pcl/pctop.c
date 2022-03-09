@@ -346,6 +346,14 @@ pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to
     if ((code = gs_setdevice_no_erase(pcli->pcs.pgs, device)) < 0)      /* can't erase yet */
         goto pisdEnd;
 
+    /* Warn the device we use ROPs. Do this early, as it may cause the
+     * device to change color model. */
+    code = put_param1_bool(&pcli->pcs, "LanguageUsesROPs", true);
+    if (!device->is_open)
+        code = gs_opendevice(device);
+    if (code < 0)
+        return code;
+
     stage = Sinitg;
     /* Do inits of gstate that may be reset by setdevice */
     /* PCL no longer uses the graphic library transparency mechanism */
@@ -415,13 +423,6 @@ pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to
         case Ssetdevice:       /* gs_setdevice failed */
         case Sbegin:           /* nothing left to undo */
             break;
-    }
-
-    /* Warn the device we use ROPs */
-    if (code == 0) {
-        code = put_param1_bool(&pcli->pcs, "LanguageUsesROPs", true);
-        if (!device->is_open)
-            code = gs_opendevice(device);
     }
 
     return code;

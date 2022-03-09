@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,6 +25,7 @@
 #include "gdevdcrd.h"
 #include "gxdownscale.h"
 #include "gxdevsop.h"
+#include "gsicc_manage.h"
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -45,6 +46,13 @@ static dev_proc_get_params(chameleon_get_params);
 static dev_proc_put_params(chameleon_put_params);
 static dev_proc_print_page(chameleon_print_page);
 static dev_proc_dev_spec_op(chameleon_spec_op);
+static dev_proc_close_device(chameleon_close);
+
+typedef enum {
+    linktype_none = 0,
+    linktype_postrender,
+    linktype_device
+} linktype_t;
 
 struct gx_device_chameleon_s {
     gx_device_common;
@@ -56,8 +64,19 @@ struct gx_device_chameleon_s {
     int output_as_pxm;
     bool language_uses_rops;
     gx_downscaler_params downscale;
+    gsicc_link_t *icclink;
+    linktype_t linktype;
+    cmm_profile_t *default_device_profile;
 };
 typedef struct gx_device_chameleon_s gx_device_chameleon;
+
+static void
+chameleon_finalize(gx_device *dev)
+{
+    gx_device_chameleon *pcdev = (gx_device_chameleon *)dev;
+
+    gsicc_adjust_profile_rc(pcdev->default_device_profile, -1, "chameleon_finalize");
+}
 
 static void
 chameleon_initialize_device_procs(gx_device *dev)
@@ -72,6 +91,8 @@ chameleon_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, encode_color, chameleon_rgb_encode_color);
     set_dev_proc(dev, decode_color, chameleon_rgb_decode_color);
     set_dev_proc(dev, dev_spec_op, chameleon_spec_op);
+    set_dev_proc(dev, close_device, chameleon_close);
+    dev->finalize = chameleon_finalize;
 }
 
 const gx_device_chameleon gs_chameleon_device =
@@ -208,62 +229,143 @@ chameleon_cmyk_decode_color(gx_device * dev, gx_color_index color, gx_color_valu
 #undef cvalue
 }
 
-/* # So long, oh, I hate to see you go */
+static int
+fixup_icc_struct(gx_device_chameleon *pcdev, gsicc_colorbuffer_t cs, char *profile)
+{
+    if (pcdev->icc_struct &&
+        pcdev->icc_struct->device_profile[gsDEFAULTPROFILE] &&
+        pcdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs == cs)
+        return 0; /* Already the right profile type */
+
+    rc_decrement(pcdev->icc_struct, "fixup_icc_struct(chameleon)");
+
+    pcdev->icc_struct = gsicc_new_device_profile_array((gx_device *)pcdev);
+    if (pcdev->icc_struct == NULL)
+        return gs_error_VMerror;
+
+    return gsicc_set_device_profile((gx_device *)pcdev, pcdev->memory,
+                                    profile, gsDEFAULTPROFILE);
+}
+
+static void reset_icclink(gx_device_chameleon *pcdev)
+{
+    gsicc_free_link_dev(pcdev->icclink);
+    pcdev->icclink = NULL;
+    pcdev->linktype = linktype_none;
+}
+
 static void
+stash_default_device_profile(gx_device_chameleon *pcdev)
+{
+    if (pcdev->default_device_profile != NULL)
+        return;
+
+    pcdev->default_device_profile = pcdev->icc_struct->device_profile[gsDEFAULTPROFILE];
+    gsicc_adjust_profile_rc(pcdev->default_device_profile, 1, "stash_default_device_profile");
+}
+
+/* # So long, oh, I hate to see you go */
+static int
 reconfigure_baby(gx_device_chameleon *pcdev)
 {
     int bpc = pcdev->dst_bpc;
     int num_comps = pcdev->dst_num_components;
+    int code;
+
+    stash_default_device_profile(pcdev);
 
     if (pcdev->language_uses_rops) {
         bpc = 8;
         num_comps = 3;
     }
 
-    if (pcdev->bpc != bpc ||
-        pcdev->num_components != num_comps) {
+    if (pcdev->bpc == bpc && pcdev->num_components == num_comps)
+        return 0; /* Nothing needs to change! */
 
-        gs_closedevice((gx_device *)pcdev);
+    gs_closedevice((gx_device *)pcdev);
 
-        pcdev->bpc = bpc;
-        pcdev->num_components = num_comps;
+    pcdev->bpc = bpc;
+    pcdev->num_components = num_comps;
 
-        switch (num_comps * bpc) {
-            case 1*1: case 1*2: case 1*4: case 1*8:
-            case 4*4: case 4*8:
-                pcdev->color_info.depth = bpc * num_comps;
-                break;
-            case 3*1:
-                pcdev->color_info.depth = 4;
-                break;
-            case 3*2:
-                pcdev->color_info.depth = 8;
-                break;
-            case 3*4:
-                pcdev->color_info.depth = 16;
-                break;
-        }
-        pcdev->color_info.max_gray = pcdev->color_info.max_color =
-            (pcdev->color_info.dither_grays = pcdev->color_info.dither_colors = 1<<bpc) - 1;
-
-        set_dev_proc(pcdev, map_cmyk_color, NULL);
-        set_dev_proc(pcdev, map_rgb_color, NULL);
-        set_dev_proc(pcdev, map_color_rgb, NULL);
-        set_dev_proc(pcdev, encode_color,
-                     num_comps == 1 ? chameleon_mono_encode_color :
-                     num_comps == 4 ? chameleon_cmyk_encode_color :
-                                      chameleon_rgb_encode_color);
-        set_dev_proc(pcdev, decode_color,
-                     num_comps == 1 ? chameleon_mono_decode_color :
-                     num_comps == 4 ? chameleon_cmyk_decode_color :
-                                      chameleon_rgb_decode_color);
-
-        /* Reset the separable and linear shift, masks, bits. */
-        set_linear_color_bits_mask_shift((gx_device *)pcdev);
-        pcdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
-        pcdev->bpc = bpc;
-        pcdev->num_components = num_comps;
+    switch (num_comps * bpc) {
+        case 1*1: case 1*2: case 1*4: case 1*8:
+        case 3*8:
+        case 4*4: case 4*8:
+            pcdev->color_info.depth = bpc * num_comps;
+            break;
+        case 3*1:
+            pcdev->color_info.depth = 4;
+            break;
+        case 3*2:
+            pcdev->color_info.depth = 8;
+            break;
+        case 3*4:
+            pcdev->color_info.depth = 16;
+            break;
     }
+    pcdev->color_info.num_components = num_comps;
+    pcdev->color_info.max_components = num_comps;
+    pcdev->color_info.max_gray = pcdev->color_info.max_color =
+        (pcdev->color_info.dither_grays = pcdev->color_info.dither_colors = 1<<bpc) - 1;
+
+    switch (num_comps) {
+        case 1:
+            set_dev_proc(pcdev, encode_color, chameleon_mono_encode_color);
+            set_dev_proc(pcdev, decode_color, chameleon_mono_decode_color);
+            set_dev_proc(pcdev, get_color_mapping_procs,
+                         gx_default_DevGray_get_color_mapping_procs);
+            set_dev_proc(pcdev, get_color_comp_index,
+                         gx_default_DevGray_get_color_comp_index);
+            pcdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
+            pcdev->color_info.cm_name = "DeviceGray";
+            pcdev->color_info.gray_index = 0;
+            code = fixup_icc_struct(pcdev, gsGRAY, DEFAULT_GRAY_ICC);
+            if (code < 0)
+                return code;
+            break;
+        case 3:
+            set_dev_proc(pcdev, encode_color, chameleon_rgb_encode_color);
+            set_dev_proc(pcdev, decode_color, chameleon_rgb_decode_color);
+            set_dev_proc(pcdev, get_color_mapping_procs,
+                         gx_default_DevRGB_get_color_mapping_procs);
+            set_dev_proc(pcdev, get_color_comp_index,
+                         gx_default_DevRGB_get_color_comp_index);
+            pcdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
+            pcdev->color_info.cm_name = "DeviceRGB";
+            pcdev->color_info.gray_index = GX_CINFO_COMP_NO_INDEX;
+            code = fixup_icc_struct(pcdev, gsRGB, DEFAULT_RGB_ICC);
+            if (code < 0)
+                return code;
+            break;
+        case 4:
+            set_dev_proc(pcdev, encode_color, chameleon_cmyk_encode_color);
+            set_dev_proc(pcdev, decode_color, chameleon_cmyk_decode_color);
+            set_dev_proc(pcdev, get_color_mapping_procs,
+                         gx_default_DevCMYK_get_color_mapping_procs);
+            set_dev_proc(pcdev, get_color_comp_index,
+                         gx_default_DevCMYK_get_color_comp_index);
+            pcdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+            pcdev->color_info.cm_name = "DevicCMYK";
+            pcdev->color_info.gray_index = 3;
+            code = fixup_icc_struct(pcdev, gsCMYK, DEFAULT_CMYK_ICC);
+            if (code < 0)
+                return code;
+            break;
+    }
+    set_dev_proc(pcdev, map_color_rgb, dev_proc(pcdev, decode_color));
+    set_dev_proc(pcdev, map_cmyk_color, dev_proc(pcdev, encode_color));
+    set_dev_proc(pcdev, map_rgb_color, dev_proc(pcdev, encode_color));
+
+    /* Reset the separable and linear shift, masks, bits. */
+    set_linear_color_bits_mask_shift((gx_device *)pcdev);
+    pcdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+    pcdev->bpc = bpc;
+    pcdev->num_components = num_comps;
+
+    /* Invalidate the link. */
+    reset_icclink(pcdev);
+
+    return 0;
 }
 
 /* Get parameters.  We provide a default CRD. */
@@ -357,9 +459,7 @@ chameleon_put_params(gx_device * pdev, gs_param_list * plist)
     pcdev->output_as_pxm = pxm;
     pcdev->language_uses_rops = language_uses_rops;
 
-    reconfigure_baby(pcdev);
-
-    return 0;
+    return reconfigure_baby(pcdev);
 }
 
 static int
@@ -371,35 +471,6 @@ chameleon_spec_op(gx_device *dev_, int op, void *data, int datasize)
         return true;
     }
     return gdev_prn_dev_spec_op(dev_, op, data, datasize);
-}
-
-static int
-craprgbtocmyk(void  *arg,
-              byte **dst,
-              byte **src,
-              int    w,
-              int    h,
-              int    raster)
-{
-    byte *d = *dst;
-    byte *s = *src;
-
-    while (w--) {
-        int c = 255-*s++;
-        int m = 255-*s++;
-        int y = 255-*s++;
-        int k = c;
-        if (k > m)
-            k = m;
-        if (k > y)
-            k = y;
-        *d++ = c - k;
-        *d++ = m - k;
-        *d++ = y - k;
-        *d++ = k;
-    }
-
-    return 0;
 }
 
 static int
@@ -448,12 +519,20 @@ header_3x8(gp_file *file, gx_device_chameleon *pcdev)
 }
 
 static int
+header_4x8(gp_file *file, gx_device_chameleon *pcdev)
+{
+    gp_fprintf(file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n",
+        pcdev->width, pcdev->height);
+    return 0;
+}
+
+static int
 do_fwrite(const byte *data, int n, gp_file *file)
 {
     return gp_fwrite(data, 1, (n+7)>>3, file);
 }
 
-static int tiff_chunky_post_cm(void  *arg, byte **dst, byte **src, int w, int h,
+static int chunky_post_cm(void  *arg, byte **dst, byte **src, int w, int h,
     int raster)
 {
     gsicc_bufferdesc_t input_buffer_desc, output_buffer_desc;
@@ -517,8 +596,6 @@ chameleon_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     int (*write)(const byte *, int, gp_file *) = do_fwrite;
     int (*header)(gp_file *, gx_device_chameleon *) = NULL;
     int bitwidth;
-    gx_downscale_cm_fn *col_convert = NULL;
-    void *col_convert_arg = NULL;
 
     switch (pcdev->dst_num_components * pcdev->dst_bpc) {
         case 1*1: case 1*2: case 1*4: case 1*8:
@@ -552,6 +629,8 @@ chameleon_print_page(gx_device_printer * pdev, gp_file * prn_stream)
         case 4:
             if (pcdev->dst_bpc == 1)
                 header = header_4x1, write = write_4x1;
+            else if (pcdev->dst_bpc == 8)
+                header = header_4x8;
             break;
         case 3:
             if (pcdev->dst_bpc == 8)
@@ -565,18 +644,48 @@ chameleon_print_page(gx_device_printer * pdev, gp_file * prn_stream)
      * components, then use that. */
     if (pcdev->icc_struct->postren_profile &&
         pcdev->icc_struct->postren_profile->num_comps == pcdev->dst_num_components) {
-        col_convert = tiff_chunky_post_cm;
-        col_convert_arg = pcdev->icc_struct->postren_profile;
-    }
-    /* Can we get away with no conversion? */
-    else if (pcdev->num_components == pcdev->dst_num_components &&
-             pcdev->bpc == pcdev->dst_bpc) {
+        if (pcdev->linktype != linktype_postrender) {
+            reset_icclink(pcdev);
+            code = gx_downscaler_create_post_render_link((gx_device *)pdev,
+                                                         &pcdev->icclink);
+            if (code < 0)
+                return code;
+            pcdev->linktype = linktype_postrender;
+        }
+    } else if (pcdev->num_components == pcdev->dst_num_components &&
+               pcdev->bpc == pcdev->dst_bpc) {
         /* Nothing to do */
-    }
-    /* Otherwise, use some inbuilt crap conversions */
-    else if (pcdev->num_components == 3 && pcdev->bpc == 8 && pcdev->dst_num_components == 4) {
-        col_convert = craprgbtocmyk;
-        col_convert_arg = NULL;
+        reset_icclink(pcdev);
+    } else if (pcdev->bpc == 8 && pcdev->dst_num_components == 4) {
+        if (pcdev->linktype != linktype_device) {
+            reset_icclink(pcdev);
+            code = gx_downscaler_create_icc_link((gx_device *)pdev,
+                                                 &pcdev->icclink,
+                                                 pcdev->default_device_profile);
+            if (code < 0)
+                return code;
+            pcdev->linktype = linktype_device;
+        }
+    } else if (pcdev->bpc == 8 && pcdev->dst_num_components == 3) {
+        if (pcdev->linktype != linktype_device) {
+            reset_icclink(pcdev);
+            code = gx_downscaler_create_icc_link((gx_device *)pdev,
+                                                 &pcdev->icclink,
+                                                 pcdev->default_device_profile);
+            if (code < 0)
+                return code;
+            pcdev->linktype = linktype_device;
+        }
+    } else if (pcdev->bpc == 8 && pcdev->dst_num_components == 1) {
+        if (pcdev->linktype != linktype_device) {
+            reset_icclink(pcdev);
+            code = gx_downscaler_create_icc_link((gx_device *)pdev,
+                                                 &pcdev->icclink,
+                                                 pcdev->default_device_profile);
+            if (code < 0)
+                return code;
+            pcdev->linktype = linktype_device;
+        }
     } else {
         emprintf(pdev->memory, "Chameleon device doesn't support this color conversion.\n");
         return gs_error_rangecheck;
@@ -589,7 +698,8 @@ chameleon_print_page(gx_device_printer * pdev, gp_file * prn_stream)
                                           pcdev->num_components,
                                           &pcdev->downscale,
                                           NULL, 0, /* Adjust width */
-                                          col_convert, col_convert_arg, /* Color Management */
+                                          pcdev->icclink ? chunky_post_cm : NULL,
+                                          pcdev->icclink, /* Color Management */
                                           pcdev->dst_num_components,
                                           default_ht);
     if (code < 0)
@@ -612,4 +722,14 @@ chameleon_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 cleanup:
     gs_free_object(pdev->memory, in_alloc, "chameleon_print_page(in)");
     return code;
+}
+
+static int
+chameleon_close(gx_device *pdev)
+{
+    gx_device_chameleon *pcdev = (gx_device_chameleon *)pdev;
+
+    gsicc_free_link_dev(pcdev->icclink);
+    pcdev->icclink = NULL;
+    return gdev_prn_close(pdev);
 }

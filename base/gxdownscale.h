@@ -249,8 +249,19 @@ int gx_downscaler_write_params(gs_param_list        *plist,
                                int                   features);
 
 /* A helper function for creating the post render ICC link.
+ * This maps from the device space to the space given by the
+ * post render profile entry in the device icc struct.
  * This should be destroyed using gsicc_free_link_dev.*/
 int gx_downscaler_create_post_render_link(gx_device     *dev,
                                           gsicc_link_t **link);
+
+/* A helper function for creating an ICC link. This maps
+ * from the device space to the space given by the
+ * supplied ICC profile.
+ * This should be destroyed using gsicc_free_link_dev.*/
+int
+gx_downscaler_create_icc_link(gx_device      *dev,
+                              gsicc_link_t  **link,
+                              cmm_profile_t  *profile);
 
 #endif
