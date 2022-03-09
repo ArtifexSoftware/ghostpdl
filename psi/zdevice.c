@@ -318,8 +318,7 @@ zgetdevice(i_ctx_t *i_ctx_p)
     psdev->device = (gx_device *)dev;
 
     /* Device prototypes are read-only; */
-    /* the cast is logically unnecessary. */
-    make_tav(op, t_device, imemory_space(imemory) | a_readonly, pdevice, psdev);
+    make_tav(op, t_device, imemory_space(iimemory) | a_readonly, pdevice, psdev);
     return 0;
 }
 
@@ -343,7 +342,7 @@ zgetdefaultdevice(i_ctx_t *i_ctx_p)
     psdev->device = (gx_device *)dev;
 
     push(1);
-    make_tav(op, t_device, imemory_space(imemory) | a_readonly, pdevice, psdev);
+    make_tav(op, t_device, imemory_space(iimemory) | a_readonly, pdevice, psdev);
     return 0;
 }
 
