@@ -1369,7 +1369,7 @@ int pdfi_initialise_Decryption(pdf_context *ctx)
         case 2:
             /* Set up the defaults if not already set */
             /* Revision 2 is always 40-bit RC4 */
-            if (KeyLen != 0 && KeyLen < 40 || KeyLen > 128 || KeyLen % 8 != 0) {
+            if (KeyLen != 0 && (KeyLen < 40 || KeyLen > 128 || KeyLen % 8 != 0)) {
                 pdfi_set_error(ctx, 0, NULL, E_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
                 return_error(gs_error_rangecheck);
             }
