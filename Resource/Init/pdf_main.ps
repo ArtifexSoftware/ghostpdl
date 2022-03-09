@@ -1007,7 +1007,7 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
 
   % These are also for the benefit of pdf2dsc, which assumes they
   % are available.
-  /knownoget {2 copy known {get //true}{pop //false}ifelse} bind def
+  /knownoget {2 copy known {get //true}{pop pop //false}ifelse} bind def
   /pget {2 copy known {get //true}{pop pop //false}ifelse}bind def
 
   newpdf_gather_parameters
