@@ -1940,129 +1940,151 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
 {
     cmm_profile_t *icc_profile;
     stream *str;
-    int code = 0;
+    int code;
 
-    /* This is slightly silly, we have a device method for 'get_profile' we really ought to
-     * have one for 'set_profile' as well. In its absence, make sure we are setting the profile
-     * of the bootm level device.
-     */
-    while(pdev->child)
-        pdev = pdev->child;
+    if (file_name == NULL)
+        return 0;
 
     /* Check if device has a profile for this slot. Note that we already
        decremented for any profile that we might be replacing
        in gsicc_init_device_profile_struct */
-    if (file_name != NULL) {
-        /* Silent on failure if this is an output intent profile that
-         * could not be found.  Bug 695042.  Multi-threaded rendering
-         * set up will try to find the file for the profile during the set
-         * up via put/get params. but one does not exist.  The OI profile
-         * will be cloned after the put/get params */
-        if (strncmp(file_name, OI_PROFILE, strlen(OI_PROFILE)) == 0)
-            return -1;
+    /* Silent on failure if this is an output intent profile that
+     * could not be found.  Bug 695042.  Multi-threaded rendering
+     * set up will try to find the file for the profile during the set
+     * up via put/get params. but one does not exist.  The OI profile
+     * will be cloned after the put/get params */
+    if (strncmp(file_name, OI_PROFILE, strlen(OI_PROFILE)) == 0)
+        return -1;
 
-        code = gsicc_open_search(file_name, strlen(file_name), mem,
-                                 mem->gs_lib_ctx->profiledir,
-                                 mem->gs_lib_ctx->profiledir_len, &str);
-        if (code < 0)
-            return code;
-        if (str != NULL) {
-            icc_profile =
-                gsicc_profile_new(str, mem, file_name, strlen(file_name));
-            code = sfclose(str);
-            if (icc_profile == NULL)
-                return gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
-            if (pro_enum < gsPROOFPROFILE) {
-                if_debug1m(gs_debug_flag_icc, mem,
-                           "[icc] Setting device profile %d\n", pro_enum);
-                pdev->icc_struct->device_profile[pro_enum] = icc_profile;
-            } else {
-                /* The proof, link or post render profile. Output intent
-                   profile is set in zicc.c */
-                if (pro_enum == gsPROOFPROFILE) {
-                    if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting proof profile\n");
-                    pdev->icc_struct->proof_profile = icc_profile;
-                } else if (pro_enum ==  gsLINKPROFILE) {
-                    if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting link profile\n");
-                    pdev->icc_struct->link_profile = icc_profile;
-                } else if (pro_enum == gsPRPROFILE) {
-                    if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting postrender profile\n");
-                    pdev->icc_struct->postren_profile = icc_profile;
-                } else {
-                    if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting blend profile\n");
-                    pdev->icc_struct->blend_profile = icc_profile;
-                }
-            }
+    code = gsicc_open_search(file_name, strlen(file_name), mem,
+                             mem->gs_lib_ctx->profiledir,
+                             mem->gs_lib_ctx->profiledir_len, &str);
+    if (code < 0)
+        return code;
+    if (str == NULL)
+        return gs_rethrow(-1, "cannot find device profile");
 
-            /* Get the profile handle */
-            icc_profile->profile_handle =
+    icc_profile =
+            gsicc_profile_new(str, mem, file_name, strlen(file_name));
+    code = sfclose(str);
+    if (icc_profile == NULL)
+        return gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
+
+    /* Get the profile handle */
+    icc_profile->profile_handle =
                 gsicc_get_profile_handle_buffer(icc_profile->buffer,
                                                 icc_profile->buffer_size,
                                                 mem);
-            if (icc_profile->profile_handle == NULL)
-                return_error(gs_error_unknownerror);
-
-            /* Compute the hash code of the profile. Everything in the
-               ICC manager will have it's hash code precomputed */
-            gsicc_get_icc_buff_hash(icc_profile->buffer,
-                                    &(icc_profile->hashcode),
-                                    icc_profile->buffer_size);
-            icc_profile->hash_is_valid = true;
-
-            /* Get the number of channels in the output profile */
-            icc_profile->num_comps =
-                gscms_get_input_channel_count(icc_profile->profile_handle,
-                    icc_profile->memory);
-            if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile has %d components\n",
-                       icc_profile->num_comps);
-            icc_profile->num_comps_out =
-                gscms_get_output_channel_count(icc_profile->profile_handle,
-                    icc_profile->memory);
-            icc_profile->data_cs =
-                gscms_get_profile_data_space(icc_profile->profile_handle,
-                    icc_profile->memory);
-
-            /* Check that everything is OK with regard to the number of
-               components. */
-            if (gsicc_verify_device_profiles(pdev) < 0)
-                return gs_rethrow(-1, "Error in device profiles");
-
-            /* We need to know if this is one of the "default" profiles or
-               if someone has externally set it.  The reason is that if there
-               is an output intent in the file, and someone wants to use the
-               output intent our handling of the output intent profile is
-               different depending upon if someone specified a particular
-               output profile */
-            switch (icc_profile->num_comps) {
-                case 1:
-                    if (strncmp(icc_profile->name, DEFAULT_GRAY_ICC,
-                    strlen(icc_profile->name)) == 0) {
-                        icc_profile->default_match = DEFAULT_GRAY;
-                    }
-                    break;
-                case 3:
-                    if (strncmp(icc_profile->name, DEFAULT_RGB_ICC,
-                    strlen(icc_profile->name)) == 0) {
-                        icc_profile->default_match = DEFAULT_RGB;
-                    }
-                    break;
-                case 4:
-                    if (strncmp(icc_profile->name, DEFAULT_CMYK_ICC,
-                    strlen(icc_profile->name)) == 0) {
-                        icc_profile->default_match = DEFAULT_CMYK;
-                    }
-                    break;
-                default:
-                    /* NCLR Profile.  Set up default colorant names */
-                    code = gsicc_set_device_profile_colorants(pdev, NULL);
-                    break;
-            }
-            if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile data CS is %d\n",
-                       icc_profile->data_cs);
-        } else
-            return gs_rethrow(-1, "cannot find device profile");
+    if (icc_profile->profile_handle == NULL) {
+        rc_decrement(icc_profile, "gsicc_set_device_profile");
+        return_error(gs_error_unknownerror);
     }
-    return code;
+
+    /* Compute the hash code of the profile. Everything in the
+       ICC manager will have it's hash code precomputed */
+    gsicc_get_icc_buff_hash(icc_profile->buffer,
+                            &(icc_profile->hashcode),
+                            icc_profile->buffer_size);
+    icc_profile->hash_is_valid = true;
+
+    /* Get the number of channels in the output profile */
+    icc_profile->num_comps =
+                gscms_get_input_channel_count(icc_profile->profile_handle,
+                                              icc_profile->memory);
+    if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile has %d components\n",
+               icc_profile->num_comps);
+    icc_profile->num_comps_out =
+                gscms_get_output_channel_count(icc_profile->profile_handle,
+                                               icc_profile->memory);
+    icc_profile->data_cs =
+                gscms_get_profile_data_space(icc_profile->profile_handle,
+                                             icc_profile->memory);
+
+    /* We need to know if this is one of the "default" profiles or
+       if someone has externally set it.  The reason is that if there
+       is an output intent in the file, and someone wants to use the
+       output intent our handling of the output intent profile is
+       different depending upon if someone specified a particular
+       output profile */
+    switch (icc_profile->num_comps) {
+        case 1:
+            if (strncmp(icc_profile->name, DEFAULT_GRAY_ICC,
+                        strlen(icc_profile->name)) == 0) {
+                icc_profile->default_match = DEFAULT_GRAY;
+            }
+            break;
+        case 3:
+            if (strncmp(icc_profile->name, DEFAULT_RGB_ICC,
+                        strlen(icc_profile->name)) == 0) {
+                icc_profile->default_match = DEFAULT_RGB;
+            }
+            break;
+        case 4:
+            if (strncmp(icc_profile->name, DEFAULT_CMYK_ICC,
+                        strlen(icc_profile->name)) == 0) {
+                icc_profile->default_match = DEFAULT_CMYK;
+            }
+            break;
+    }
+
+    if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile data CS is %d\n",
+               icc_profile->data_cs);
+
+    /* This is slightly silly, we have a device method for 'get_profile' we really ought to
+     * have one for 'set_profile' as well. In its absence, make sure we are setting the profile
+     * of the bottom level device.
+     */
+    while(pdev->child)
+        pdev = pdev->child;
+
+    switch (pro_enum)
+    {
+        case gsDEFAULTPROFILE:
+        case gsGRAPHICPROFILE:
+        case gsIMAGEPROFILE:
+        case gsTEXTPROFILE:
+            if_debug1m(gs_debug_flag_icc, mem,
+                       "[icc] Setting device profile %d\n", pro_enum);
+            pdev->icc_struct->device_profile[pro_enum] = icc_profile;
+            break;
+        case gsPROOFPROFILE:
+            if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting proof profile\n");
+            pdev->icc_struct->proof_profile = icc_profile;
+            break;
+        case gsLINKPROFILE:
+            if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting link profile\n");
+            pdev->icc_struct->link_profile = icc_profile;
+            break;
+        case gsPRPROFILE:
+            if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting postrender profile\n");
+            pdev->icc_struct->postren_profile = icc_profile;
+            break;
+        case gsBLENDPROFILE:
+            if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting blend profile\n");
+            pdev->icc_struct->blend_profile = icc_profile;
+            break;
+        default:
+        case gsOIPROFILE:
+            /* This never happens as output intent profile is set in zicc.c */
+            rc_decrement(icc_profile, "gsicc_set_device_profile");
+            return_error(gs_error_unknownerror);
+    }
+
+    /* Check that everything is OK with regard to the number of
+       components. */
+    if (gsicc_verify_device_profiles(pdev) < 0)
+        return gs_rethrow(-1, "Error in device profiles");
+
+    if (icc_profile->num_comps != 1 &&
+        icc_profile->num_comps != 3 &&
+        icc_profile->num_comps != 4) {
+        /* NCLR Profile.  Set up default colorant names */
+        code = gsicc_set_device_profile_colorants(pdev, NULL);
+        if (code < 0)
+            return code;
+    }
+
+    return 0;
 }
 
 /* Set the icc profile in the gs_color_space object */
