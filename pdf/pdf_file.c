@@ -1541,8 +1541,6 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
     byte *Buffer = NULL;
     int code = 0;
     int64_t buflen = 0;
-    int bytes;
-    char c;
     gs_offset_t savedoffset;
     pdf_c_stream *stream;
     bool filtered;
@@ -1572,12 +1570,11 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
         if (code < 0) {
             goto exit;
         }
-        /* Find out how big it is */
-        do {
-            bytes = sfread(&c, 1, 1, stream->s);
-            if (bytes > 0)
-                buflen++;
-        } while (bytes >= 0);
+        while (seofp(stream->s) != true && serrorp(stream->s) != true) {
+            sreset(stream->s);
+            s_process_read_buf(stream->s);
+            buflen += sbufavailable(stream->s);
+        }
         pdfi_close_file(ctx, stream);
     } else {
         buflen = pdfi_stream_length(ctx, stream_obj);
