@@ -1571,7 +1571,7 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
             goto exit;
         }
         while (seofp(stream->s) != true && serrorp(stream->s) != true) {
-            sreset(stream->s);
+            (void)sbufskip(stream->s, sbufavailable(stream->s));
             s_process_read_buf(stream->s);
             buflen += sbufavailable(stream->s);
         }
