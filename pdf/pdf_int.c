@@ -834,6 +834,20 @@ int pdfi_read_bare_keyword(pdf_context *ctx, pdf_c_stream *s)
     return (((const char *)t) - pdf_token_strings[0]) / sizeof(pdf_token_strings[0]);
 }
 
+static pdf_key lookup_keyword(const byte *Buffer)
+{
+    void *t = bsearch((const void *)Buffer,
+                      (const void *)pdf_token_strings[TOKEN_INVALID_KEY+1],
+                      nelems(pdf_token_strings)-(TOKEN_INVALID_KEY+1),
+                      sizeof(pdf_token_strings[0]),
+                      (bsearch_comparator)&strcmp);
+    if (t == NULL)
+        return TOKEN_NOT_A_KEYWORD;
+
+    return (pdf_key)((((const char *)t) - pdf_token_strings[0]) /
+                     sizeof(pdf_token_strings[0]));
+}
+
 /* This function is slightly misnamed, for some keywords we do
  * indeed read the keyword and return a PDF_KEYWORD object, but
  * for null, true, false and R we create an appropriate object
@@ -846,6 +860,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     unsigned short index = 0;
     int c, code;
     pdf_keyword *keyword;
+    pdf_key key;
 
     pdfi_skip_white(ctx, s);
 
@@ -865,168 +880,113 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     if (index >= 255 || index == 0) {
         if (ctx->args.pdfstoponerror)
             return_error(gs_error_syntaxerror);
-        strcpy((char *)Buffer, "KEYWORD_TOO_LONG");
-        index = 16;
+        key = (index >= 255 ? TOKEN_TOO_LONG : TOKEN_INVALID_KEY);
+        index = 0;
+        Buffer[0] = 0;
+    } else {
+        Buffer[index] = 0x00;
+        key = lookup_keyword(Buffer);
+        if (key != TOKEN_NOT_A_KEYWORD)
+            index = 0;
     }
 
-    /* NB The code below uses 'Buffer', not the data stored in keyword->data to compare strings */
-    Buffer[index] = 0x00;
+    switch (key) {
+        case TOKEN_R:
+        {
+            pdf_indirect_ref *o;
+            uint64_t obj_num;
+            uint32_t gen_num;
+
+            if(pdfi_count_stack(ctx) < 2) {
+                pdfi_clearstack(ctx);
+                return_error(gs_error_stackunderflow);
+            }
+
+            if(((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT || ((pdf_obj *)ctx->stack_top[-2])->type != PDF_INT) {
+                pdfi_clearstack(ctx);
+                return_error(gs_error_typecheck);
+            }
+
+            gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
+            pdfi_pop(ctx, 1);
+            obj_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
+            pdfi_pop(ctx, 1);
+
+            code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&o);
+            if (code < 0)
+                return code;
+
+            o->ref_generation_num = gen_num;
+            o->ref_object_num = obj_num;
+            o->indirect_num = indirect_num;
+            o->indirect_gen = indirect_gen;
+
+            code = pdfi_push(ctx, (pdf_obj *)o);
+            if (code < 0)
+                pdfi_free_object((pdf_obj *)o);
+
+            return code;
+        }
+        case TOKEN_TRUE:
+        case TOKEN_FALSE:
+        {
+            pdf_bool *o;
+
+            code = pdfi_object_alloc(ctx, PDF_BOOL, 0, (pdf_obj **)&o);
+            if (code < 0)
+                return code;
+
+            o->value = (key == TOKEN_TRUE);
+            o->indirect_num = indirect_num;
+            o->indirect_gen = indirect_gen;
+
+            code = pdfi_push(ctx, (pdf_obj *)o);
+            if (code < 0)
+                pdfi_free_object((pdf_obj *)o);
+            return code;
+        }
+        case TOKEN_null:
+        {
+            pdf_obj *o;
+
+            code = pdfi_object_alloc(ctx, PDF_NULL, 0, &o);
+            if (code < 0)
+                return code;
+            o->indirect_num = indirect_num;
+            o->indirect_gen = indirect_gen;
+
+            code = pdfi_push(ctx, o);
+            if (code < 0)
+                pdfi_free_object((pdf_obj *)o);
+            return code;
+        }
+        case TOKEN_STREAM:
+            code = pdfi_skip_eol(ctx, s);
+            if (code < 0)
+                return code;
+            break;
+        default:
+            break;
+    }
 
     code = pdfi_object_alloc(ctx, PDF_KEYWORD, index, (pdf_obj **)&keyword);
     if (code < 0)
         return code;
 
-    memcpy(keyword->data, Buffer, index);
-    pdfi_countup(keyword);
+    if (index)
+        memcpy(keyword->data, Buffer, index);
 
+    keyword->key = key;
+    /* keyword->length set as part of allocation. */
     keyword->indirect_num = indirect_num;
     keyword->indirect_gen = indirect_gen;
 
     if (ctx->args.pdfdebug)
         dmprintf1(ctx->memory, " %s\n", Buffer);
 
-    switch(Buffer[0]) {
-        case 'K':
-            if (keyword->length == 16 && memcmp(keyword->data, "KEYWORD_TOO_LONG", 16) == 0) {
-                keyword->key = TOKEN_INVALID_KEY;
-            }
-            break;
-        case 'R':
-            if (keyword->length == 1){
-                pdf_indirect_ref *o;
-                uint64_t obj_num;
-                uint32_t gen_num;
-
-                pdfi_countdown(keyword);
-
-                if(pdfi_count_stack(ctx) < 2) {
-                    pdfi_clearstack(ctx);
-                    return_error(gs_error_stackunderflow);
-                }
-
-                if(((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT || ((pdf_obj *)ctx->stack_top[-2])->type != PDF_INT) {
-                    pdfi_clearstack(ctx);
-                    return_error(gs_error_typecheck);
-                }
-
-                gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
-                pdfi_pop(ctx, 1);
-                obj_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
-                pdfi_pop(ctx, 1);
-
-                code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&o);
-                if (code < 0)
-                    return code;
-
-                o->ref_generation_num = gen_num;
-                o->ref_object_num = obj_num;
-                o->indirect_num = indirect_num;
-                o->indirect_gen = indirect_gen;
-
-                code = pdfi_push(ctx, (pdf_obj *)o);
-                if (code < 0)
-                    pdfi_free_object((pdf_obj *)o);
-
-                return code;
-            }
-            break;
-        case 'e':
-            if (keyword->length == 9 && memcmp((const char *)Buffer, "endstream", 9) == 0)
-                keyword->key = TOKEN_ENDSTREAM;
-            else {
-                if (keyword->length == 6 && memcmp((const char *)Buffer, "endobj", 6) == 0)
-                    keyword->key = TOKEN_ENDOBJ;
-            }
-            break;
-        case 'o':
-            if (keyword->length == 3 && memcmp((const char *)Buffer, "obj", 3) == 0)
-                keyword->key = TOKEN_OBJ;
-            break;
-        case 's':
-            if (keyword->length == 6 && memcmp((const char *)Buffer, "stream", 6) == 0){
-                keyword->key = TOKEN_STREAM;
-                code = pdfi_skip_eol(ctx, s);
-                if (code < 0) {
-                    pdfi_countdown(keyword);
-                    return code;
-                }
-            }
-            else {
-                if (keyword->length == 9 && memcmp((const char *)Buffer, "startxref", 9) == 0)
-                    keyword->key = TOKEN_STARTXREF;
-            }
-            break;
-        case 't':
-            if (keyword->length == 4 && memcmp((const char *)Buffer, "true", 4) == 0) {
-                pdf_bool *o;
-
-                pdfi_countdown(keyword);
-
-                code = pdfi_object_alloc(ctx, PDF_BOOL, 0, (pdf_obj **)&o);
-                if (code < 0)
-                    return code;
-
-                o->value = true;
-                o->indirect_num = indirect_num;
-                o->indirect_gen = indirect_gen;
-
-                code = pdfi_push(ctx, (pdf_obj *)o);
-                if (code < 0)
-                    pdfi_free_object((pdf_obj *)o);
-                return code;
-            }
-            else {
-                if (keyword->length == 7 && memcmp((const char *)Buffer, "trailer", 7) == 0)
-                    keyword->key = TOKEN_TRAILER;
-            }
-            break;
-        case 'f':
-            if (keyword->length == 5 && memcmp((const char *)Buffer, "false", 5) == 0)
-            {
-                pdf_bool *o;
-
-                pdfi_countdown(keyword);
-
-                code = pdfi_object_alloc(ctx, PDF_BOOL, 0, (pdf_obj **)&o);
-                if (code < 0)
-                    return code;
-
-                o->value = false;
-                o->indirect_num = indirect_num;
-                o->indirect_gen = indirect_gen;
-
-                code = pdfi_push(ctx, (pdf_obj *)o);
-                if (code < 0)
-                    pdfi_free_object((pdf_obj *)o);
-                return code;
-            }
-            break;
-        case 'n':
-            if (keyword->length == 4 && memcmp((const char *)Buffer, "null", 4) == 0){
-                pdf_obj *o;
-
-                pdfi_countdown(keyword);
-
-                code = pdfi_object_alloc(ctx, PDF_NULL, 0, &o);
-                if (code < 0)
-                    return code;
-                o->indirect_num = indirect_num;
-                o->indirect_gen = indirect_gen;
-
-                code = pdfi_push(ctx, o);
-                if (code < 0)
-                    pdfi_free_object((pdf_obj *)o);
-                return code;
-            }
-            break;
-        case 'x':
-            if (keyword->length == 4 && memcmp((const char *)Buffer, "xref", 4) == 0)
-                keyword->key = TOKEN_XREF;
-            break;
-    }
-
     code = pdfi_push(ctx, (pdf_obj *)keyword);
-    pdfi_countdown(keyword);
+    if (code < 0)
+        pdfi_free_object((pdf_obj *)keyword);
 
     return code;
 }
@@ -1206,17 +1166,37 @@ static char op_table_1[27][1] = {
 static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source,
                                           pdf_dict *stream_dict, pdf_dict *page_dict);
 
+static int
+make_keyword_obj(pdf_context *ctx, const byte *data, int length, pdf_keyword **pkey)
+{
+    byte Buffer[256];
+    pdf_key key;
+    int code;
+
+    memcpy(Buffer, data, length);
+    Buffer[length] = 0;
+    key = lookup_keyword(Buffer);
+    if (key != TOKEN_INVALID_KEY)
+        length = 0;
+    code = pdfi_object_alloc(ctx, PDF_KEYWORD, length, (pdf_obj **)pkey);
+    if (code < 0)
+        return code;
+    if (length)
+        memcpy((*pkey)->data, Buffer, length);
+    (*pkey)->key = key;
+
+    return 0;
+}
+
 static int search_table_3(pdf_context *ctx, unsigned char *str, pdf_keyword **key)
 {
     int i, code = 0;
 
     for (i = 0; i < 5; i++) {
         if (memcmp(str, op_table_3[i], 3) == 0) {
-            code = pdfi_object_alloc(ctx, PDF_KEYWORD, 3, (pdf_obj **)key);
+            code = make_keyword_obj(ctx, str, 3, key);
             if (code < 0)
                 return code;
-            memcpy((*key)->data, str, 3);
-            (*key)->key = TOKEN_NOT_A_KEYWORD;
             pdfi_countup(*key);
             return 1;
         }
@@ -1230,11 +1210,9 @@ static int search_table_2(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
 
     for (i = 0; i < 39; i++) {
         if (memcmp(str, op_table_2[i], 2) == 0) {
-            code = pdfi_object_alloc(ctx, PDF_KEYWORD, 2, (pdf_obj **)key);
+            code = make_keyword_obj(ctx, str, 2, key);
             if (code < 0)
                 return code;
-            memcpy((*key)->data, str, 2);
-            (*key)->key = TOKEN_NOT_A_KEYWORD;
             pdfi_countup(*key);
             return 1;
         }
@@ -1248,11 +1226,9 @@ static int search_table_1(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
 
     for (i = 0; i < 27; i++) {
         if (memcmp(str, op_table_1[i], 1) == 0) {
-            code = pdfi_object_alloc(ctx, PDF_KEYWORD, 1, (pdf_obj **)key);
+            code = make_keyword_obj(ctx, str, 1, key);
             if (code < 0)
                 return code;
-            memcpy((*key)->data, str, 1);
-            (*key)->key = TOKEN_NOT_A_KEYWORD;
             pdfi_countup(*key);
             return 1;
         }
@@ -1264,43 +1240,41 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
 {
     int code = 0;
     pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1], *key1 = NULL, *key2 = NULL;
+    int length = keyword->length - 6;
 
-    if (keyword->length > 6) {
+    if (length > 0) {
         /* Longer than 2 3-character operators, we only allow for up to two
          * operators. Check to see if it includes an endstream or endobj.
          */
-        if (memcmp(&keyword->data[keyword->length - 6], "endobj", 6) == 0) {
-            code = pdfi_object_alloc(ctx, PDF_KEYWORD, keyword->length - 6, (pdf_obj **)&key1);
+        if (memcmp(&keyword->data[length], "endobj", 6) == 0) {
+            code = make_keyword_obj(ctx, keyword->data, length, &key1);
             if (code < 0)
                 goto error_exit;
-            memcpy(key1->data, keyword->data, key1->length);
             pdfi_pop(ctx, 1);
             pdfi_push(ctx, (pdf_obj *)key1);
             code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
             if (code < 0)
                 goto error_exit;
-            code = pdfi_object_alloc(ctx, PDF_KEYWORD, 6, (pdf_obj **)&key1);
+            code = pdfi_object_alloc(ctx, PDF_KEYWORD, 0, (pdf_obj **)&key1);
             if (code < 0)
                 goto error_exit;
-            memcpy(key1->data, "endobj", 6);
             key1->key = TOKEN_ENDOBJ;
             pdfi_push(ctx, (pdf_obj *)key1);
             return 0;
         } else {
-            if (keyword->length > 9 && memcmp(&keyword->data[keyword->length - 9], "endstream", 9) == 0) {
-                code = pdfi_object_alloc(ctx, PDF_KEYWORD, keyword->length - 9, (pdf_obj **)&key1);
+            length = keyword->length - 9;
+            if (length > 0 && memcmp(&keyword->data[length], "endstream", 9) == 0) {
+                code = make_keyword_obj(ctx, keyword->data, length, &key1);
                 if (code < 0)
                     goto error_exit;
-                memcpy(key1->data, keyword->data, key1->length);
                 pdfi_pop(ctx, 1);
                 pdfi_push(ctx, (pdf_obj *)key1);
                 code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
                 if (code < 0)
                     goto error_exit;
-                code = pdfi_object_alloc(ctx, PDF_KEYWORD, 9, (pdf_obj **)&key1);
+                code = pdfi_object_alloc(ctx, PDF_KEYWORD, 0, (pdf_obj **)&key1);
                 if (code < 0)
                     goto error_exit;
-                memcpy(key1->data, "endstream", 9);
                 key1->key = TOKEN_ENDSTREAM;
                 pdfi_push(ctx, (pdf_obj *)key1);
                 return 0;
@@ -1415,16 +1389,11 @@ error_exit:
     return code;
 }
 
-#define K1(a) (a)
-#define K2(a, b) ((a << 8) + b)
-#define K3(a, b, c) ((a << 16) + (b << 8) + c)
-
 static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source,
                                           pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
-    uint32_t op = 0;
-    int i, code = 0;
+    int code = 0;
 
     if (keyword->length > 3) {
         /* This means we either have a corrupted or illegal operator. The most
@@ -1443,304 +1412,300 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source
         } else
             return 0;
     } else {
-        for (i=0;i < keyword->length;i++) {
-            op = (op << 8) + keyword->data[i];
-        }
-        switch(op) {
-            case K1('b'):           /* closepath, fill, stroke */
+        switch(keyword->key) {
+            case TOKEN_b:           /* closepath, fill, stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_b(ctx);
                 break;
-            case K1('B'):           /* fill, stroke */
+            case TOKEN_B:           /* fill, stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_B(ctx);
                 break;
-            case K2('b','*'):       /* closepath, eofill, stroke */
+            case TOKEN_bstar:       /* closepath, eofill, stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_b_star(ctx);
                 break;
-            case K2('B','*'):       /* eofill, stroke */
+            case TOKEN_Bstar:       /* eofill, stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_B_star(ctx);
                 break;
-            case K2('B','I'):       /* begin inline image */
+            case TOKEN_BI:       /* begin inline image */
                 pdfi_pop(ctx, 1);
                 code = pdfi_BI(ctx);
                 break;
-            case K3('B','D','C'):   /* begin marked content sequence with property list */
+            case TOKEN_BDC:   /* begin marked content sequence with property list */
                 pdfi_pop(ctx, 1);
                 code = pdfi_op_BDC(ctx, stream_dict, page_dict);
                 break;
-            case K3('B','M','C'):   /* begin marked content sequence */
+            case TOKEN_BMC:   /* begin marked content sequence */
                 pdfi_pop(ctx, 1);
                 code = pdfi_op_BMC(ctx);
                 break;
-            case K2('B','T'):       /* begin text */
+            case TOKEN_BT:       /* begin text */
                 pdfi_pop(ctx, 1);
                 code = pdfi_BT(ctx);
                 break;
-            case K2('B','X'):       /* begin compatibility section */
+            case TOKEN_BX:       /* begin compatibility section */
                 pdfi_pop(ctx, 1);
                 break;
-            case K1('c'):           /* curveto */
+            case TOKEN_c:           /* curveto */
                 pdfi_pop(ctx, 1);
                 code = pdfi_curveto(ctx);
                 break;
-            case K2('c','m'):       /* concat */
+            case TOKEN_cm:       /* concat */
                 pdfi_pop(ctx, 1);
                 code = pdfi_concat(ctx);
                 break;
-            case K2('C','S'):       /* set stroke colour space */
+            case TOKEN_CS:       /* set stroke colour space */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setstrokecolor_space(ctx, stream_dict, page_dict);
                 break;
-            case K2('c','s'):       /* set non-stroke colour space */
+            case TOKEN_cs:       /* set non-stroke colour space */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setfillcolor_space(ctx, stream_dict, page_dict);
                 break;
-                break;
-            case K1('d'):           /* set dash params */
+            case TOKEN_d:           /* set dash params */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setdash(ctx);
                 break;
-            case K2('d','0'):       /* set type 3 font glyph width */
+            case TOKEN_d0:       /* set type 3 font glyph width */
                 pdfi_pop(ctx, 1);
                 code = pdfi_d0(ctx);
                 break;
-            case K2('d','1'):       /* set type 3 font glyph width and bounding box */
+            case TOKEN_d1:       /* set type 3 font glyph width and bounding box */
                 pdfi_pop(ctx, 1);
                 code = pdfi_d1(ctx);
                 break;
-            case K2('D','o'):       /* invoke named XObject */
+            case TOKEN_Do:       /* invoke named XObject */
                 pdfi_pop(ctx, 1);
                 code = pdfi_Do(ctx, stream_dict, page_dict);
                 break;
-            case K2('D','P'):       /* define marked content point with property list */
+            case TOKEN_DP:       /* define marked content point with property list */
                 pdfi_pop(ctx, 1);
                 code = pdfi_op_DP(ctx, stream_dict, page_dict);
                 break;
-            case K2('E','I'):       /* end inline image */
+            case TOKEN_EI:       /* end inline image */
                 pdfi_pop(ctx, 1);
                 code = pdfi_EI(ctx);
                 break;
-            case K2('E','T'):       /* end text */
+            case TOKEN_ET:       /* end text */
                 pdfi_pop(ctx, 1);
                 code = pdfi_ET(ctx);
                 break;
-            case K3('E','M','C'):   /* end marked content sequence */
+            case TOKEN_EMC:   /* end marked content sequence */
                 pdfi_pop(ctx, 1);
                 code = pdfi_op_EMC(ctx);
                 break;
-            case K2('E','X'):       /* end compatibility section */
+            case TOKEN_EX:       /* end compatibility section */
                 pdfi_pop(ctx, 1);
                 break;
-            case K1('f'):           /* fill */
-                pdfi_pop(ctx, 1);
-                code = pdfi_fill(ctx);
-                break;
-            case K1('F'):           /* fill (obselete operator) */
+            case TOKEN_f:           /* fill */
                 pdfi_pop(ctx, 1);
                 code = pdfi_fill(ctx);
                 break;
-            case K2('f','*'):       /* eofill */
+            case TOKEN_F:           /* fill (obselete operator) */
+                pdfi_pop(ctx, 1);
+                code = pdfi_fill(ctx);
+                break;
+            case TOKEN_fstar:       /* eofill */
                 pdfi_pop(ctx, 1);
                 code = pdfi_eofill(ctx);
                 break;
-            case K1('G'):           /* setgray for stroke */
+            case TOKEN_G:           /* setgray for stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setgraystroke(ctx);
                 break;
-            case K1('g'):           /* setgray for non-stroke */
+            case TOKEN_g:           /* setgray for non-stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setgrayfill(ctx);
                 break;
-            case K2('g','s'):       /* set graphics state from dictionary */
+            case TOKEN_gs:       /* set graphics state from dictionary */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setgstate(ctx, stream_dict, page_dict);
                 break;
-            case K1('h'):           /* closepath */
+            case TOKEN_h:           /* closepath */
                 pdfi_pop(ctx, 1);
                 code = pdfi_closepath(ctx);
                 break;
-            case K1('i'):           /* setflat */
+            case TOKEN_i:           /* setflat */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setflat(ctx);
                 break;
-            case K2('I','D'):       /* begin inline image data */
+            case TOKEN_ID:       /* begin inline image data */
                 pdfi_pop(ctx, 1);
                 code = pdfi_ID(ctx, stream_dict, page_dict, source);
                 break;
-            case K1('j'):           /* setlinejoin */
+            case TOKEN_j:           /* setlinejoin */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setlinejoin(ctx);
                 break;
-            case K1('J'):           /* setlinecap */
+            case TOKEN_J:           /* setlinecap */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setlinecap(ctx);
                 break;
-            case K1('K'):           /* setcmyk for non-stroke */
+            case TOKEN_K:           /* setcmyk for non-stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setcmykstroke(ctx);
                 break;
-            case K1('k'):           /* setcmyk for non-stroke */
+            case TOKEN_k:           /* setcmyk for non-stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setcmykfill(ctx);
                 break;
-            case K1('l'):           /* lineto */
+            case TOKEN_l:           /* lineto */
                 pdfi_pop(ctx, 1);
                 code = pdfi_lineto(ctx);
                 break;
-            case K1('m'):           /* moveto */
+            case TOKEN_m:           /* moveto */
                 pdfi_pop(ctx, 1);
                 code = pdfi_moveto(ctx);
                 break;
-            case K1('M'):           /* setmiterlimit */
+            case TOKEN_M:           /* setmiterlimit */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setmiterlimit(ctx);
                 break;
-            case K2('M','P'):       /* define marked content point */
+            case TOKEN_MP:       /* define marked content point */
                 pdfi_pop(ctx, 1);
                 code = pdfi_op_MP(ctx);
                 break;
-            case K1('n'):           /* newpath */
+            case TOKEN_n:           /* newpath */
                 pdfi_pop(ctx, 1);
                 code = pdfi_newpath(ctx);
                 break;
-            case K1('q'):           /* gsave */
+            case TOKEN_q:           /* gsave */
                 pdfi_pop(ctx, 1);
                 code = pdfi_op_q(ctx);
                 break;
-            case K1('Q'):           /* grestore */
+            case TOKEN_Q:           /* grestore */
                 pdfi_pop(ctx, 1);
                 code = pdfi_op_Q(ctx);
                 break;
-            case K1('r'):       /* non-standard set rgb colour for non-stroke */
+            case TOKEN_r:       /* non-standard set rgb colour for non-stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setrgbfill_array(ctx);
                 break;
-            case K2('r','e'):       /* append rectangle */
+            case TOKEN_re:       /* append rectangle */
                 pdfi_pop(ctx, 1);
                 code = pdfi_rectpath(ctx);
                 break;
-            case K2('R','G'):       /* set rgb colour for stroke */
+            case TOKEN_RG:       /* set rgb colour for stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setrgbstroke(ctx);
                 break;
-            case K2('r','g'):       /* set rgb colour for non-stroke */
+            case TOKEN_rg:       /* set rgb colour for non-stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setrgbfill(ctx);
                 break;
-            case K2('r','i'):       /* set rendering intent */
+            case TOKEN_ri:       /* set rendering intent */
                 pdfi_pop(ctx, 1);
                 code = pdfi_ri(ctx);
                 break;
-            case K1('s'):           /* closepath, stroke */
+            case TOKEN_s:           /* closepath, stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_closepath_stroke(ctx);
                 break;
-            case K1('S'):           /* stroke */
+            case TOKEN_S:           /* stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_stroke(ctx);
                 break;
-            case K2('S','C'):       /* set colour for stroke */
+            case TOKEN_SC:       /* set colour for stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setstrokecolor(ctx);
                 break;
-            case K2('s','c'):       /* set colour for non-stroke */
+            case TOKEN_sc:       /* set colour for non-stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setfillcolor(ctx);
                 break;
-            case K3('S','C','N'):   /* set special colour for stroke */
+            case TOKEN_SCN:   /* set special colour for stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setcolorN(ctx, stream_dict, page_dict, false);
                 break;
-            case K3('s','c','n'):   /* set special colour for non-stroke */
+            case TOKEN_scn:   /* set special colour for non-stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setcolorN(ctx, stream_dict, page_dict, true);
                 break;
-            case K2('s','h'):       /* fill with sahding pattern */
+            case TOKEN_sh:       /* fill with sahding pattern */
                 pdfi_pop(ctx, 1);
                 code = pdfi_shading(ctx, stream_dict, page_dict);
                 break;
-            case K2('T','*'):       /* Move to start of next text line */
+            case TOKEN_Tstar:       /* Move to start of next text line */
                 pdfi_pop(ctx, 1);
                 code = pdfi_T_star(ctx);
                 break;
-            case K2('T','c'):       /* set character spacing */
+            case TOKEN_Tc:       /* set character spacing */
                 pdfi_pop(ctx, 1);
                 code = pdfi_Tc(ctx);
                 break;
-            case K2('T','d'):       /* move text position */
+            case TOKEN_Td:       /* move text position */
                 pdfi_pop(ctx, 1);
                 code = pdfi_Td(ctx);
                 break;
-            case K2('T','D'):       /* Move text position, set leading */
+            case TOKEN_TD:       /* Move text position, set leading */
                 pdfi_pop(ctx, 1);
                 code = pdfi_TD(ctx);
                 break;
-            case K2('T','f'):       /* set font and size */
+            case TOKEN_Tf:       /* set font and size */
                 pdfi_pop(ctx, 1);
                 code = pdfi_Tf(ctx, stream_dict, page_dict);
                 break;
-            case K2('T','j'):       /* show text */
+            case TOKEN_Tj:       /* show text */
                 pdfi_pop(ctx, 1);
                 code = pdfi_Tj(ctx);
                 break;
-            case K2('T','J'):       /* show text with individual glyph positioning */
+            case TOKEN_TJ:       /* show text with individual glyph positioning */
                 pdfi_pop(ctx, 1);
                 code = pdfi_TJ(ctx);
                 break;
-            case K2('T','L'):       /* set text leading */
+            case TOKEN_TL:       /* set text leading */
                 pdfi_pop(ctx, 1);
                 code = pdfi_TL(ctx);
                 break;
-            case K2('T','m'):       /* set text matrix */
+            case TOKEN_Tm:       /* set text matrix */
                 pdfi_pop(ctx, 1);
                 code = pdfi_Tm(ctx);
                 break;
-            case K2('T','r'):       /* set text rendering mode */
+            case TOKEN_Tr:       /* set text rendering mode */
                 pdfi_pop(ctx, 1);
                 code = pdfi_Tr(ctx);
                 break;
-            case K2('T','s'):       /* set text rise */
+            case TOKEN_Ts:       /* set text rise */
                 pdfi_pop(ctx, 1);
                 code = pdfi_Ts(ctx);
                 break;
-            case K2('T','w'):       /* set word spacing */
+            case TOKEN_Tw:       /* set word spacing */
                 pdfi_pop(ctx, 1);
                 code = pdfi_Tw(ctx);
                 break;
-            case K2('T','z'):       /* set text matrix */
+            case TOKEN_Tz:       /* set text matrix */
                 pdfi_pop(ctx, 1);
                 code = pdfi_Tz(ctx);
                 break;
-            case K1('v'):           /* append curve (initial point replicated) */
+            case TOKEN_v:           /* append curve (initial point replicated) */
                 pdfi_pop(ctx, 1);
                 code = pdfi_v_curveto(ctx);
                 break;
-            case K1('w'):           /* setlinewidth */
+            case TOKEN_w:           /* setlinewidth */
                 pdfi_pop(ctx, 1);
                 code = pdfi_setlinewidth(ctx);
                 break;
-            case K1('W'):           /* clip */
+            case TOKEN_W:           /* clip */
                 pdfi_pop(ctx, 1);
                 ctx->clip_active = true;
                 ctx->do_eoclip = false;
                 break;
-            case K2('W','*'):       /* eoclip */
+            case TOKEN_Wstar:       /* eoclip */
                 pdfi_pop(ctx, 1);
                 ctx->clip_active = true;
                 ctx->do_eoclip = true;
                 break;
-            case K1('y'):           /* append curve (final point replicated) */
+            case TOKEN_y:           /* append curve (final point replicated) */
                 pdfi_pop(ctx, 1);
                 code = pdfi_y_curveto(ctx);
                 break;
-            case K1('\''):          /* move to next line and show text */
+            case TOKEN_APOSTROPHE:          /* move to next line and show text */
                 pdfi_pop(ctx, 1);
                 code = pdfi_singlequote(ctx);
                 break;
-            case K1('"'):           /* set word and character spacing, move to next line, show text */
+            case TOKEN_QUOTE:           /* set word and character spacing, move to next line, show text */
                 pdfi_pop(ctx, 1);
                 code = pdfi_doublequote(ctx);
                 break;
@@ -2094,7 +2059,7 @@ repaired_keyword:
                         code = gs_note_error(gs_error_syntaxerror);
                     goto exit;
                     break;
-                case TOKEN_NOT_A_KEYWORD:
+                default:
                     {
                         pdf_dict *stream_dict = NULL;
 
@@ -2119,7 +2084,7 @@ repaired_keyword:
                     pdfi_set_error(ctx, 0, NULL, E_PDF_KEYWORDTOOLONG, "pdfi_interpret_content_stream", NULL);
                     pdfi_clearstack(ctx);
                     break;
-                default:
+                case TOKEN_TOO_LONG:
                     pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDSTREAM, "pdfi_interpret_content_stream", NULL);
                     pdfi_clearstack(ctx);
                     break;
