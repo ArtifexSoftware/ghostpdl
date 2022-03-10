@@ -179,7 +179,7 @@ CMT=/MDd
 CMT=/MTd
 !endif
 !else
-!if $(DEBUGSYM)==0
+!if "$(DEBUGSYM)"=="0"
 CT=
 LCT=
 !if $(MAKEDLL)
@@ -192,7 +192,7 @@ COMPILE_WITHOUT_FRAMES=/Oy
 # Assume that DEBUGSYM != 0 implies a PROFILE build
 CT=/Zi /Fd$(GLOBJDIR)\ $(NULL) $(CDCC) $(CPCH)
 LCT=/DEBUG /PROFILE /OPT:REF /OPT:ICF
-CMT=/MDd
+CMT=/MD
 # Do not disable frame pointers in profile builds.
 COMPILE_WITHOUT_FRAMES=/Oy-
 !endif

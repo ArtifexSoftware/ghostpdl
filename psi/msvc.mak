@@ -48,7 +48,7 @@ DEBUGSYM=1
 DEBUG=0
 !endif
 !ifndef TDEBUG
-TDEBUG=1
+TDEBUG=0
 !endif
 !ifndef DEBUGSYM
 DEBUGSYM=1
