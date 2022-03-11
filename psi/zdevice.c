@@ -120,7 +120,7 @@ zcurrentdevice(i_ctx_t *i_ctx_p)
     gs_ref_memory_t *mem = (gs_ref_memory_t *) dev->memory;
     psi_device_ref *psdev;
 
-    psdev = gs_alloc_struct(imemory, psi_device_ref, &st_psi_device_ref, "zcurrentdevice");
+    psdev = gs_alloc_struct(dev->memory, psi_device_ref, &st_psi_device_ref, "zcurrentdevice");
     if (!psdev) {
         return_error(gs_error_VMerror);
     }
@@ -154,7 +154,7 @@ zcurrentoutputdevice(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
-    psdev = gs_alloc_struct(imemory, psi_device_ref, &st_psi_device_ref, "zcurrentdevice");
+    psdev = gs_alloc_struct(dev->memory, psi_device_ref, &st_psi_device_ref, "zcurrentdevice");
     if (!psdev) {
         return_error(gs_error_VMerror);
     }
