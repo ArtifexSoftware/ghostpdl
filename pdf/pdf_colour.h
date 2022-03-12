@@ -27,7 +27,7 @@ static inline void pdfi_set_colourspace_name(pdf_context *ctx, gs_color_space *p
 {
     if (pcs->interpreter_data != NULL) {
         pdf_obj *o = (pdf_obj *)(pcs->interpreter_data);
-        if (o != NULL && o->type == PDF_NAME) {
+        if (o != NULL && pdfi_type_of(o) == PDF_NAME) {
             pdfi_countdown(o);
             pcs->interpreter_data = NULL;
         }
@@ -53,7 +53,7 @@ static inline int check_same_current_space(pdf_context *ctx, pdf_name *n)
 {
     pdf_obj *o = (pdf_obj *)(ctx->pgs->color[0].color_space->interpreter_data);
 
-    if (o == NULL || o->type != PDF_NAME)
+    if (o == NULL || pdfi_type_of(o) != PDF_NAME)
         return 0;
 
     if (pdfi_name_cmp(n, (pdf_name *)o) == 0) {

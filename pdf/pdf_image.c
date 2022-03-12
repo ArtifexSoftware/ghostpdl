@@ -173,7 +173,7 @@ pdfi_find_alternate(pdf_context *ctx, pdf_obj *alt)
     int code;
     bool flag;
 
-    if (alt->type != PDF_ARRAY)
+    if (pdfi_type_of(alt) != PDF_ARRAY)
         return NULL;
 
     array = (pdf_array *)alt;
@@ -558,7 +558,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
             code = 0;
         }
     } else {
-        if (info->SMask->type == PDF_NAME) {
+        if (pdfi_type_of(info->SMask) == PDF_NAME) {
             pdf_obj *o = NULL;
 
             code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", (pdf_name *)info->SMask, image_dict, page_dict, &o);
@@ -568,7 +568,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
             }
         }
 
-        if (info->SMask->type != PDF_STREAM){
+        if (pdfi_type_of(info->SMask) != PDF_STREAM){
             pdfi_countdown(info->SMask);
             info->SMask = NULL;
         }
@@ -646,7 +646,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
 
     /* Check and set JPXDecode flag for later */
     info->is_JPXDecode = false;
-    if (info->Filter && info->Filter->type == PDF_NAME) {
+    if (info->Filter && pdfi_type_of(info->Filter) == PDF_NAME) {
         if (pdfi_name_is((pdf_name *)info->Filter, "JPXDecode"))
             info->is_JPXDecode = true;
     }
@@ -1018,22 +1018,23 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
     pdfi_seek(ctx, ctx->main_stream,
               pdfi_stream_offset(ctx, (pdf_stream *)image_info->SMask), SEEK_SET);
 
-    if (image_info->SMask->type == PDF_DICT) {
-        code = pdfi_obj_dict_to_stream(ctx, (pdf_dict *)image_info->SMask, &stream_obj, false);
-        if (code == 0) {
-            code = pdfi_do_image_or_form(ctx, image_info->stream_dict,
-                                         image_info->page_dict, (pdf_obj *)stream_obj);
+    switch (pdfi_type_of(image_info->SMask)) {
+        case PDF_DICT:
+            code = pdfi_obj_dict_to_stream(ctx, (pdf_dict *)image_info->SMask, &stream_obj, false);
+            if (code == 0) {
+                code = pdfi_do_image_or_form(ctx, image_info->stream_dict,
+                                             image_info->page_dict, (pdf_obj *)stream_obj);
 
-            pdfi_countdown(stream_obj);
-        }
-    } else {
-        if (image_info->SMask->type == PDF_STREAM)
+                pdfi_countdown(stream_obj);
+            }
+            break;
+        case PDF_STREAM:
             code = pdfi_do_image_or_form(ctx, image_info->stream_dict,
                                          image_info->page_dict, image_info->SMask);
-        else {
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
             goto exit;
-        }
     }
 
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
@@ -1434,7 +1435,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                                   pcs, image_info->inline_image);
     if (code < 0) {
         dmprintf(ctx->memory, "WARNING: Image has unsupported ColorSpace ");
-        if (ColorSpace->type == PDF_NAME) {
+        if (pdfi_type_of(ColorSpace) == PDF_NAME) {
             pdf_name *name = (pdf_name *)ColorSpace;
             char str[100];
             int length = name->length;
@@ -1496,7 +1497,7 @@ pdfi_make_smask_dict(pdf_context *ctx, pdf_stream *image_stream, pdfi_image_info
         goto exit;
     }
 
-    if (image_stream->type != PDF_STREAM) {
+    if (pdfi_type_of(image_stream) != PDF_STREAM) {
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
@@ -1623,7 +1624,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     memset(&smask_info, 0, sizeof(mask_info));
 
     /* Make sure the image is a stream (which we will assume in later code) */
-    if (image_stream->type != PDF_STREAM)
+    if (pdfi_type_of(image_stream) != PDF_STREAM)
         return_error(gs_error_typecheck);
 
     if (!inline_image) {
@@ -1867,23 +1868,26 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     /* Get the Mask data either as an array or a dict, if present */
     if (image_info.Mask != NULL) {
-        if (image_info.Mask->type == PDF_ARRAY) {
-            mask_array = (pdf_array *)image_info.Mask;
-        } else if (image_info.Mask->type == PDF_STREAM) {
-            mask_stream = (pdf_stream *)image_info.Mask;
-            code = pdfi_get_image_info(ctx, mask_stream, page_dict,
-                                       stream_dict, inline_image, &mask_info);
-            if (code < 0)
-                goto cleanupExit;
-        } else {
-            pdfi_countdown(image_info.Mask);
-            image_info.Mask = NULL;
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_MASK_ERROR, "pdfi_do_image", NULL);
+        switch (pdfi_type_of(image_info.Mask)) {
+            case PDF_ARRAY:
+                mask_array = (pdf_array *)image_info.Mask;
+                break;
+            case PDF_STREAM:
+                mask_stream = (pdf_stream *)image_info.Mask;
+                code = pdfi_get_image_info(ctx, mask_stream, page_dict,
+                                           stream_dict, inline_image, &mask_info);
+                if (code < 0)
+                    goto cleanupExit;
+                break;
+            default:
+                pdfi_countdown(image_info.Mask);
+                image_info.Mask = NULL;
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_MASK_ERROR, "pdfi_do_image", NULL);
         }
     }
 
     /* Get the SMask info if we will need it (Type 3x images) */
-    if (image_info.SMask && image_info.SMask->type == PDF_STREAM && ctx->device_state.preserve_smask) {
+    if (image_info.SMask && pdfi_type_of(image_info.SMask) == PDF_STREAM && ctx->device_state.preserve_smask) {
         /* smask_dict non-NULL is used to flag a Type 3x image below */
         smask_stream = (pdf_stream *)image_info.SMask;
         code = pdfi_get_image_info(ctx, smask_stream, page_dict, stream_dict,
@@ -2305,7 +2309,7 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
 
     *hacked_stream = NULL;
 
-    if (form_dict->type == PDF_STREAM)
+    if (pdfi_type_of(form_dict) == PDF_STREAM)
         return 0;
 
     if (!ctx->args.pdfstoponerror) {
@@ -2386,7 +2390,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_form BEGIN\n");
 #endif
-    if (form_obj->type != PDF_STREAM) {
+    if (pdfi_type_of(form_obj) != PDF_STREAM) {
         code = pdfi_form_stream_hack(ctx, (pdf_dict *)form_obj, &hacked_stream);
         if (code < 0)
             return code;
@@ -2533,7 +2537,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     if (pdfi_name_is(n, "Image")) {
         gs_offset_t savedoffset;
 
-        if (xobject_obj->type != PDF_STREAM) {
+        if (pdfi_type_of(xobject_obj) != PDF_STREAM) {
             code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
@@ -2575,7 +2579,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit1;
     }
     n = (pdf_name *)ctx->stack_top[-1];
-    if (n->type != PDF_NAME) {
+    if (pdfi_type_of(n) != PDF_NAME) {
         code = gs_note_error(gs_error_typecheck);
         goto exit1;
     }
@@ -2590,7 +2594,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         goto exit;
 
-    if (o->type != PDF_STREAM && o->type != PDF_DICT) {
+    if (pdfi_type_of(o) != PDF_STREAM && pdfi_type_of(o) != PDF_DICT) {
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }

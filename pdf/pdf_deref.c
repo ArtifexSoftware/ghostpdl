@@ -224,7 +224,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
     dict->indirect_num = dict->object_num = objnum;
     dict->indirect_gen = dict->generation_num = gen;
 
-    if (dict->type != PDF_DICT) {
+    if (pdfi_type_of(dict) != PDF_DICT) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_syntaxerror);
     }
@@ -453,7 +453,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
         if (s->eof)
             return_error(gs_error_syntaxerror);
         code = 0;
-    }while (ctx->stack_top[-1]->type != PDF_KEYWORD);
+    } while (pdfi_type_of(ctx->stack_top[-1]) != PDF_KEYWORD);
 
     keyword = ((pdf_keyword *)ctx->stack_top[-1]);
     if (keyword->key == TOKEN_ENDOBJ) {
@@ -596,7 +596,7 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
             goto exit;
         }
 
-        if ((ctx->stack_top[-1])->type != PDF_STREAM) {
+        if (pdfi_type_of(ctx->stack_top[-1]) != PDF_STREAM) {
             pdfi_pop(ctx, 1);
             code = gs_note_error(gs_error_typecheck);
             goto exit;
@@ -722,7 +722,7 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
         code = gs_note_error(gs_error_syntaxerror);
         goto exit;
     }
-    if (ctx->stack_top[-1]->type == PDF_ARRAY_MARK || ctx->stack_top[-1]->type == PDF_DICT_MARK) {
+    if (pdfi_type_of(ctx->stack_top[-1]) == PDF_ARRAY_MARK || pdfi_type_of(ctx->stack_top[-1]) == PDF_DICT_MARK) {
         int start_depth = pdfi_count_stack(ctx);
 
         /* Need to read all the elements from COS objects */
@@ -738,7 +738,7 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                 code = gs_note_error(gs_error_ioerror);
                 goto exit;
             }
-        }while ((ctx->stack_top[-1]->type != PDF_ARRAY && ctx->stack_top[-1]->type != PDF_DICT) || pdfi_count_stack(ctx) > start_depth);
+        } while ((pdfi_type_of(ctx->stack_top[-1]) != PDF_ARRAY && pdfi_type_of(ctx->stack_top[-1]) != PDF_DICT) || pdfi_count_stack(ctx) > start_depth);
     }
 
     *object = ctx->stack_top[-1];
@@ -998,7 +998,7 @@ static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj, bool recu
         } else {
             if (code < 0) goto exit;
             /* don't store the object if it's a stream (leave as a ref) */
-            if (object->type != PDF_STREAM)
+            if (pdfi_type_of(object) != PDF_STREAM)
                 code = pdfi_array_put(ctx, array, index, object);
             if (recurse)
                 code = pdfi_resolve_indirect_loop_detect(ctx, NULL, object, recurse);
@@ -1052,7 +1052,7 @@ static int pdfi_resolve_indirect_dict(pdf_context *ctx, pdf_obj *obj, bool recur
         } else {
             if (code < 0) goto exit;
             /* don't store the object if it's a stream (leave as a ref) */
-            if (Value->type != PDF_STREAM)
+            if (pdfi_type_of(Value) != PDF_STREAM)
                 pdfi_dict_put_obj(ctx, dict, (pdf_obj *)Key, Value, true);
             if (recurse)
                 code = pdfi_resolve_indirect_loop_detect(ctx, NULL, Value, recurse);
@@ -1075,7 +1075,7 @@ int pdfi_resolve_indirect(pdf_context *ctx, pdf_obj *value, bool recurse)
 {
     int code = 0;
 
-    switch(value->type) {
+    switch(pdfi_type_of(value)) {
     case PDF_ARRAY:
         code = pdfi_resolve_indirect_array(ctx, value, recurse);
         break;

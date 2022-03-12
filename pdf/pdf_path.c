@@ -42,25 +42,27 @@ int pdfi_moveto (pdf_context *ctx)
 
     n1 = (pdf_num *)ctx->stack_top[-1];
     n2 = (pdf_num *)ctx->stack_top[-2];
-    if (n1->type == PDF_INT){
-        y = (double)n1->value.i;
-    } else{
-        if (n1->type == PDF_REAL) {
+    switch (pdfi_type_of(n1)) {
+        case PDF_INT:
+            y = (double)n1->value.i;
+            break;
+        case PDF_REAL:
             y = n1->value.d;
-        } else {
+            break;
+        default:
             pdfi_pop(ctx, 2);
             return_error(gs_error_typecheck);
-        }
     }
-    if (n2->type == PDF_INT){
-        x = (double)n2->value.i;
-    } else{
-        if (n2->type == PDF_REAL) {
+    switch (pdfi_type_of(n2)) {
+        case PDF_INT:
+            x = (double)n2->value.i;
+            break;
+        case PDF_REAL:
             x = n2->value.d;
-        } else {
+            break;
+        default:
             pdfi_pop(ctx, 2);
             return_error(gs_error_typecheck);
-        }
     }
 
     code = gs_moveto(ctx->pgs, x, y);
@@ -84,25 +86,27 @@ int pdfi_lineto (pdf_context *ctx)
 
     n1 = (pdf_num *)ctx->stack_top[-1];
     n2 = (pdf_num *)ctx->stack_top[-2];
-    if (n1->type == PDF_INT){
-        y = (double)n1->value.i;
-    } else{
-        if (n1->type == PDF_REAL) {
+    switch (pdfi_type_of(n1)) {
+        case PDF_INT:
+            y = (double)n1->value.i;
+            break;
+        case PDF_REAL:
             y = n1->value.d;
-        } else {
+            break;
+        default:
             pdfi_pop(ctx, 2);
             return_error(gs_error_typecheck);
-        }
     }
-    if (n2->type == PDF_INT){
-        x = (double)n2->value.i;
-    } else{
-        if (n2->type == PDF_REAL) {
+    switch (pdfi_type_of(n2)) {
+        case PDF_INT:
+            x = (double)n2->value.i;
+            break;
+        case PDF_REAL:
             x = n2->value.d;
-        } else {
+            break;
+        default:
             pdfi_pop(ctx, 2);
             return_error(gs_error_typecheck);
-        }
     }
 
     code = gs_lineto(ctx->pgs, x, y);
@@ -227,15 +231,16 @@ int pdfi_curveto(pdf_context *ctx)
 
     for (i=0;i < 6;i++){
         num = (pdf_num *)ctx->stack_top[i - 6];
-        if (num->type != PDF_INT) {
-            if(num->type != PDF_REAL) {
+        switch (pdfi_type_of(num)) {
+            case PDF_INT:
+                Values[i] = (double)num->value.i;
+                break;
+            case PDF_REAL:
+                Values[i] = num->value.d;
+                break;
+            default:
                 pdfi_pop(ctx, 6);
                 return_error(gs_error_typecheck);
-            }
-            else
-                Values[i] = num->value.d;
-        } else {
-            Values[i] = (double)num->value.i;
         }
     }
 
@@ -261,15 +266,16 @@ int pdfi_v_curveto(pdf_context *ctx)
 
     for (i=0;i < 4;i++){
         num = (pdf_num *)ctx->stack_top[i - 4];
-        if (num->type != PDF_INT) {
-            if(num->type != PDF_REAL) {
+        switch (pdfi_type_of(num)) {
+            case PDF_INT:
+                Values[i] = (double)num->value.i;
+                break;
+            case PDF_REAL:
+                Values[i] = num->value.d;
+                break;
+            default:
                 pdfi_pop(ctx, 4);
                 return_error(gs_error_typecheck);
-            }
-            else
-                Values[i] = num->value.d;
-        } else {
-            Values[i] = (double)num->value.i;
         }
     }
 
@@ -300,15 +306,16 @@ int pdfi_y_curveto(pdf_context *ctx)
 
     for (i=0;i < 4;i++){
         num = (pdf_num *)ctx->stack_top[i - 4];
-        if (num->type != PDF_INT) {
-            if(num->type != PDF_REAL) {
+        switch (pdfi_type_of(num)) {
+            case PDF_INT:
+                Values[i] = (double)num->value.i;
+                break;
+            case PDF_REAL:
+                Values[i] = num->value.d;
+                break;
+            default:
                 pdfi_pop(ctx, 4);
                 return_error(gs_error_typecheck);
-            }
-            else
-                Values[i] = num->value.d;
-        } else {
-            Values[i] = (double)num->value.i;
         }
     }
 
@@ -459,15 +466,16 @@ int pdfi_rectpath(pdf_context *ctx)
 
     for (i=0;i < 4;i++){
         num = (pdf_num *)ctx->stack_top[i - 4];
-        if (num->type != PDF_INT) {
-            if(num->type != PDF_REAL) {
+        switch (pdfi_type_of(num)) {
+            case PDF_INT:
+                Values[i] = (double)num->value.i;
+                break;
+            case PDF_REAL:
+                Values[i] = num->value.d;
+                break;
+            default:
                 pdfi_pop(ctx, 4);
                 return_error(gs_error_typecheck);
-            }
-            else
-                Values[i] = num->value.d;
-        } else {
-            Values[i] = (double)num->value.i;
         }
     }
 

@@ -227,7 +227,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         if (code < 0)
             goto exit;
 
-        if (a->type != PDF_ARRAY) {
+        if (pdfi_type_of(a) != PDF_ARRAY) {
             code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
@@ -256,15 +256,16 @@ int pdfi_check_ColorSpace_for_spots(pdf_context *ctx, pdf_obj *space, pdf_dict *
     if (code < 0)
         return code;
 
-    if (space->type == PDF_NAME) {
-        code = pdfi_check_for_spots_by_name(ctx, (pdf_name *)space, parent_dict, page_dict, spot_dict);
-    } else {
-        if (space->type == PDF_ARRAY) {
+    switch(pdfi_type_of(space)) {
+        case PDF_NAME:
+            code = pdfi_check_for_spots_by_name(ctx, (pdf_name *)space, parent_dict, page_dict, spot_dict);
+            break;
+        case PDF_ARRAY:
             code = pdfi_check_for_spots_by_array(ctx, (pdf_array *)space, parent_dict, page_dict, spot_dict);
-        } else {
+            break;
+        default:
             pdfi_loop_detector_cleartomark(ctx);
             return 0;
-        }
     }
 
     (void)pdfi_loop_detector_cleartomark(ctx);
@@ -282,7 +283,7 @@ int pdfi_ri(pdf_context *ctx)
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    if (ctx->stack_top[-1]->type != PDF_NAME) {
+    if (pdfi_type_of(ctx->stack_top[-1]) != PDF_NAME) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
@@ -330,7 +331,7 @@ static void pdfi_cspace_free_callback(gs_memory_t * mem, void *cs)
         if (pfn)
             pdfi_free_function(ctx, pfn);
     }
-    if (o->type != PDF_CTX) {
+    if (pdfi_type_of(o) != PDF_CTX) {
         pdfi_countdown(o);
         pcs->interpreter_data = NULL;
     }
@@ -447,15 +448,16 @@ int pdfi_setgraystroke(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
 
     n1 = (pdf_num *)ctx->stack_top[-1];
-    if (n1->type == PDF_INT){
-        d1 = (double)n1->value.i;
-    } else{
-        if (n1->type == PDF_REAL) {
+    switch (pdfi_type_of(n1)) {
+        case PDF_INT:
+            d1 = (double)n1->value.i;
+            break;
+        case PDF_REAL:
             d1 = n1->value.d;
-        } else {
+            break;
+        default:
             pdfi_pop(ctx, 1);
             return_error(gs_error_typecheck);
-        }
     }
     gs_swapcolors_quick(ctx->pgs);
     code = pdfi_gs_setgray(ctx, d1);
@@ -474,15 +476,16 @@ int pdfi_setgrayfill(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
 
     n1 = (pdf_num *)ctx->stack_top[-1];
-    if (n1->type == PDF_INT){
-        d1 = (double)n1->value.i;
-    } else{
-        if (n1->type == PDF_REAL) {
+    switch (pdfi_type_of(n1)) {
+        case PDF_INT:
+            d1 = (double)n1->value.i;
+            break;
+        case PDF_REAL:
             d1 = n1->value.d;
-        } else {
+            break;
+        default:
             pdfi_pop(ctx, 1);
             return_error(gs_error_typecheck);
-        }
     }
     code = pdfi_gs_setgray(ctx, d1);
     pdfi_pop(ctx, 1);
@@ -502,15 +505,16 @@ int pdfi_setrgbstroke(pdf_context *ctx)
 
     for (i=0;i < 3;i++){
         num = (pdf_num *)ctx->stack_top[i - 3];
-        if (num->type != PDF_INT) {
-            if(num->type != PDF_REAL) {
+        switch (pdfi_type_of(num)) {
+            case PDF_INT:
+                Values[i] = (double)num->value.i;
+                break;
+            case PDF_REAL:
+                Values[i] = num->value.d;
+                break;
+            default:
                 pdfi_pop(ctx, 3);
                 return_error(gs_error_typecheck);
-            }
-            else
-                Values[i] = num->value.d;
-        } else {
-            Values[i] = (double)num->value.i;
         }
     }
     gs_swapcolors_quick(ctx->pgs);
@@ -534,7 +538,7 @@ int pdfi_setrgbfill_array(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
 
     array = (pdf_array *)ctx->stack_top[-1];
-    if (array->type != PDF_ARRAY) {
+    if (pdfi_type_of(array) != PDF_ARRAY) {
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
@@ -558,15 +562,16 @@ int pdfi_setrgbfill(pdf_context *ctx)
 
     for (i=0;i < 3;i++){
         num = (pdf_num *)ctx->stack_top[i - 3];
-        if (num->type != PDF_INT) {
-            if(num->type != PDF_REAL) {
+        switch (pdfi_type_of(num)) {
+            case PDF_INT:
+                Values[i] = (double)num->value.i;
+                break;
+            case PDF_REAL:
+                Values[i] = num->value.d;
+                break;
+            default:
                 pdfi_pop(ctx, 3);
                 return_error(gs_error_typecheck);
-            }
-            else
-                Values[i] = num->value.d;
-        } else {
-            Values[i] = (double)num->value.i;
         }
     }
     code = pdfi_gs_setrgbcolor(ctx, Values[0], Values[1], Values[2]);
@@ -587,15 +592,16 @@ int pdfi_setcmykstroke(pdf_context *ctx)
 
     for (i=0;i < 4;i++){
         num = (pdf_num *)ctx->stack_top[i - 4];
-        if (num->type != PDF_INT) {
-            if(num->type != PDF_REAL) {
+        switch (pdfi_type_of(num)) {
+            case PDF_INT:
+                Values[i] = (double)num->value.i;
+                break;
+            case PDF_REAL:
+                Values[i] = num->value.d;
+                break;
+            default:
                 pdfi_pop(ctx, 4);
                 return_error(gs_error_typecheck);
-            }
-            else
-                Values[i] = num->value.d;
-        } else {
-            Values[i] = (double)num->value.i;
         }
     }
     gs_swapcolors_quick(ctx->pgs);
@@ -618,15 +624,16 @@ int pdfi_setcmykfill(pdf_context *ctx)
 
     for (i=0;i < 4;i++){
         num = (pdf_num *)ctx->stack_top[i - 4];
-        if (num->type != PDF_INT) {
-            if(num->type != PDF_REAL) {
+        switch (pdfi_type_of(num)) {
+            case PDF_INT:
+                Values[i] = (double)num->value.i;
+                break;
+            case PDF_REAL:
+                Values[i] = num->value.d;
+                break;
+            default:
                 pdfi_pop(ctx, 4);
                 return_error(gs_error_typecheck);
-            }
-            else
-                Values[i] = num->value.d;
-        } else {
-            Values[i] = (double)num->value.i;
         }
     }
     code = pdfi_gs_setcmykcolor(ctx, Values[0], Values[1], Values[2], Values[3]);
@@ -684,15 +691,16 @@ pdfi_get_color_from_stack(pdf_context *ctx, gs_client_color *cc, int ncomps)
     }
     for (i=0;i<ncomps;i++){
         n = (pdf_num *)ctx->stack_top[i - ncomps];
-        if (n->type == PDF_INT) {
-            cc->paint.values[i] = (float)n->value.i;
-        } else {
-            if (n->type == PDF_REAL) {
+        switch (pdfi_type_of(n)) {
+            case PDF_INT:
+                cc->paint.values[i] = (float)n->value.i;
+                break;
+            case PDF_REAL:
                 cc->paint.values[i] = n->value.d;
-            } else {
+                break;
+            default:
                 pdfi_clearstack(ctx);
                 return_error(gs_error_typecheck);
-            }
         }
     }
     pdfi_pop(ctx, ncomps);
@@ -780,7 +788,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
     if (pcs->type == &gs_color_space_type_Pattern)
         is_pattern = true;
     if (is_pattern) {
-        if (ctx->stack_top[-1]->type != PDF_NAME) {
+        if (pdfi_type_of(ctx->stack_top[-1]) != PDF_NAME) {
             pdfi_clearstack(ctx);
             code = gs_note_error(gs_error_syntaxerror);
             goto cleanupExit0;
@@ -1125,14 +1133,19 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     }
     code = pdfi_dict_knownget(ctx, dict, "Name", &Name);
     if (code > 0) {
-        if(Name->type == PDF_STRING || Name->type == PDF_NAME) {
-            cname = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)Name)->length + 1, "pdfi_create_iccbased (profile name)");
-            if (cname == NULL) {
-                code = gs_note_error(gs_error_VMerror);
-                goto done;
-            }
-            memset(cname, 0x00, ((pdf_name *)Name)->length + 1);
-            memcpy(cname, ((pdf_name *)Name)->data, ((pdf_name *)Name)->length);
+        switch (pdfi_type_of(Name)) {
+            case PDF_STRING:
+            case PDF_NAME:
+                cname = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)Name)->length + 1, "pdfi_create_iccbased (profile name)");
+                if (cname == NULL) {
+                    code = gs_note_error(gs_error_VMerror);
+                    goto done;
+                }
+                memset(cname, 0x00, ((pdf_name *)Name)->length + 1);
+                memcpy(cname, ((pdf_name *)Name)->data, ((pdf_name *)Name)->length);
+                break;
+            default:
+                break;
         }
     }
     if (code < 0)
@@ -1218,7 +1231,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         code = pdfi_dict_knownget(ctx, dict, "Alternate", &Alternate);
         if (code > 0) {
             /* The Alternate should be one of the device spaces, therefore a Name object. If its not, fallback to using /N */
-            if (Alternate->type == PDF_NAME)
+            if (pdfi_type_of(Alternate) == PDF_NAME)
                 code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict,
                                                       page_dict, ppcs, inline_image);
             pdfi_countdown(Alternate);
@@ -1639,23 +1652,22 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     if (code < 0)
         goto pdfi_separation_error;
 
-    if (o->type == PDF_NAME) {
-        NamedAlternate = (pdf_name *)o;
-        code = pdfi_create_colorspace_by_name(ctx, NamedAlternate, stream_dict, page_dict, &pcs_alt, inline_image);
-        if (code < 0)
-            goto pdfi_separation_error;
-
-    } else {
-        if (o->type == PDF_ARRAY) {
+    switch (pdfi_type_of(o)) {
+        case PDF_NAME:
+            NamedAlternate = (pdf_name *)o;
+            code = pdfi_create_colorspace_by_name(ctx, NamedAlternate, stream_dict, page_dict, &pcs_alt, inline_image);
+            if (code < 0)
+                goto pdfi_separation_error;
+            break;
+        case PDF_ARRAY:
             ArrayAlternate = (pdf_array *)o;
             code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt, inline_image);
             if (code < 0)
                 goto pdfi_separation_error;
-        }
-        else {
+            break;
+        default:
             code = gs_error_typecheck;
             goto pdfi_separation_error;
-        }
     }
 
     code = pdfi_array_get(ctx, color_array, index + 3, &transform);
@@ -1814,14 +1826,14 @@ all_error:
     if (code < 0)
         goto pdfi_devicen_error;
 
-    if (o->type == PDF_NAME) {
-        NamedAlternate = (pdf_name *)o;
-        code = pdfi_create_colorspace_by_name(ctx, NamedAlternate, stream_dict, page_dict, &pcs_alt, inline_image);
-        if (code < 0)
-            goto pdfi_devicen_error;
-
-    } else {
-        if (o->type == PDF_ARRAY) {
+    switch (pdfi_type_of(o)) {
+        case PDF_NAME:
+            NamedAlternate = (pdf_name *)o;
+            code = pdfi_create_colorspace_by_name(ctx, NamedAlternate, stream_dict, page_dict, &pcs_alt, inline_image);
+            if (code < 0)
+                goto pdfi_devicen_error;
+            break;
+        case PDF_ARRAY:
             ArrayAlternate = (pdf_array *)o;
             code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt, inline_image);
             if (code < 0)
@@ -1830,12 +1842,11 @@ all_error:
                  * paths count down ArrayAlternate.
                  */
                 goto pdfi_devicen_error;
-        }
-        else {
+            break;
+        default:
             code = gs_error_typecheck;
             pdfi_countdown(o);
             goto pdfi_devicen_error;
-        }
     }
 
     /* Now the tint transform */
@@ -1889,21 +1900,24 @@ all_error:
         if (code == 0) {
             pcs->params.device_n.subtype = gs_devicen_DeviceN;
         } else {
-            if (subtype->type == PDF_NAME || subtype->type == PDF_STRING) {
-                if (memcmp(((pdf_name *)subtype)->data, "DeviceN", 7) == 0) {
-                    pcs->params.device_n.subtype = gs_devicen_DeviceN;
-                } else {
-                    if (memcmp(((pdf_name *)subtype)->data, "NChannel", 8) == 0) {
-                        pcs->params.device_n.subtype = gs_devicen_NChannel;
+            switch (pdfi_type_of(subtype)) {
+                case PDF_NAME:
+                case PDF_STRING:
+                    if (memcmp(((pdf_name *)subtype)->data, "DeviceN", 7) == 0) {
+                        pcs->params.device_n.subtype = gs_devicen_DeviceN;
                     } else {
-                        pdfi_countdown(subtype);
-                        goto pdfi_devicen_error;
+                        if (memcmp(((pdf_name *)subtype)->data, "NChannel", 8) == 0) {
+                            pcs->params.device_n.subtype = gs_devicen_NChannel;
+                        } else {
+                            pdfi_countdown(subtype);
+                            goto pdfi_devicen_error;
+                        }
                     }
-                }
-                pdfi_countdown(subtype);
-            } else {
-                pdfi_countdown(subtype);
-                goto pdfi_devicen_error;
+                    pdfi_countdown(subtype);
+                    break;
+                default:
+                    pdfi_countdown(subtype);
+                    goto pdfi_devicen_error;
             }
         }
 
@@ -1944,21 +1958,24 @@ all_error:
                     goto pdfi_devicen_error;
                 }
 
-                if (name->type == PDF_NAME || name->type == PDF_STRING) {
-                    pcs->params.device_n.process_names[ix] = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, ((pdf_name *)name)->length + 1, "pdfi_devicen(Processnames)");
-                    if (pcs->params.device_n.process_names[ix] == NULL) {
+                switch (pdfi_type_of(name)) {
+                    case PDF_NAME:
+                    case PDF_STRING:
+                        pcs->params.device_n.process_names[ix] = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, ((pdf_name *)name)->length + 1, "pdfi_devicen(Processnames)");
+                        if (pcs->params.device_n.process_names[ix] == NULL) {
+                            pdfi_countdown(Components);
+                            pdfi_countdown(name);
+                            code = gs_error_VMerror;
+                            goto pdfi_devicen_error;
+                        }
+                        memcpy(pcs->params.device_n.process_names[ix], ((pdf_name *)name)->data, ((pdf_name *)name)->length);
+                        pcs->params.device_n.process_names[ix][((pdf_name *)name)->length] = 0x00;
+                        pdfi_countdown(name);
+                        break;
+                    default:
                         pdfi_countdown(Components);
                         pdfi_countdown(name);
-                        code = gs_error_VMerror;
                         goto pdfi_devicen_error;
-                    }
-                    memcpy(pcs->params.device_n.process_names[ix], ((pdf_name *)name)->data, ((pdf_name *)name)->length);
-                    pcs->params.device_n.process_names[ix][((pdf_name *)name)->length] = 0x00;
-                    pdfi_countdown(name);
-                } else {
-                    pdfi_countdown(Components);
-                    pdfi_countdown(name);
-                    goto pdfi_devicen_error;
                 }
             }
             pdfi_countdown(Components);
@@ -1979,17 +1996,26 @@ all_error:
                 goto pdfi_devicen_error;
 
             do {
-                if (Space->type != PDF_STRING && Space->type != PDF_NAME && Space->type != PDF_ARRAY) {
-                    pdfi_countdown(Space);
-                    pdfi_countdown(Colorant);
-                    code = gs_note_error(gs_error_typecheck);
-                    goto pdfi_devicen_error;
+                switch (pdfi_type_of(Space)) {
+                    case PDF_STRING:
+                    case PDF_NAME:
+                    case PDF_ARRAY:
+                        break;
+                    default:
+                        pdfi_countdown(Space);
+                        pdfi_countdown(Colorant);
+                        code = gs_note_error(gs_error_typecheck);
+                        goto pdfi_devicen_error;
                 }
-                if (Colorant->type != PDF_STRING && Colorant->type != PDF_NAME) {
-                    pdfi_countdown(Space);
-                    pdfi_countdown(Colorant);
-                    code = gs_note_error(gs_error_typecheck);
-                    goto pdfi_devicen_error;
+                switch (pdfi_type_of(Colorant)) {
+                    case PDF_STRING:
+                    case PDF_NAME:
+                        break;
+                    default:
+                        pdfi_countdown(Space);
+                        pdfi_countdown(Colorant);
+                        code = gs_note_error(gs_error_typecheck);
+                        goto pdfi_devicen_error;
                 }
 
                 code = pdfi_create_colorspace(ctx, Space, stream_dict, page_dict, &colorant_space, inline_image);
@@ -2115,11 +2141,14 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     if (code < 0)
         goto exit;
 
-    if (lookup->type == PDF_STREAM) {
+    switch (pdfi_type_of(lookup)) {
+    case PDF_STREAM:
         code = pdfi_stream_to_buffer(ctx, (pdf_stream *)lookup, &Buffer, &lookup_length);
         if (code < 0)
             goto exit;
-    } else if (lookup->type == PDF_STRING) {
+        break;
+    case PDF_STRING:
+    {
         /* This is not legal, but Acrobat seems to accept it */
         pdf_string *lookup_string = (pdf_string *)lookup; /* alias */
 
@@ -2131,7 +2160,9 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
 
         memcpy(Buffer, lookup_string->data, lookup_string->length);
         lookup_length = lookup_string->length;
-    } else {
+        break;
+    }
+    default:
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
@@ -2352,7 +2383,7 @@ pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int in
         if (code < 0)
             goto exit;
 
-        if (a->type != PDF_ARRAY) {
+        if (pdfi_type_of(a) != PDF_ARRAY) {
             code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
@@ -2416,7 +2447,7 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
         if (code < 0)
             return code;
 
-        if (ref_space->type == PDF_NAME) {
+        if (pdfi_type_of(ref_space) == PDF_NAME) {
             if (ref_space->object_num != 0 && ref_space->object_num == name->object_num) {
                 pdfi_countdown(ref_space);
                 return_error(gs_error_circular_reference);
@@ -2496,15 +2527,16 @@ int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_di
     if (code < 0)
         return code;
 
-    if (space->type == PDF_NAME) {
+    switch (pdfi_type_of(space)) {
+    case PDF_NAME:
         code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)space, stream_dict, page_dict, ppcs, inline_image);
-    } else {
-        if (space->type == PDF_ARRAY) {
-            code = pdfi_create_colorspace_by_array(ctx, (pdf_array *)space, 0, stream_dict, page_dict, ppcs, inline_image);
-        } else {
-            pdfi_loop_detector_cleartomark(ctx);
-            return_error(gs_error_typecheck);
-        }
+        break;
+    case PDF_ARRAY:
+        code = pdfi_create_colorspace_by_array(ctx, (pdf_array *)space, 0, stream_dict, page_dict, ppcs, inline_image);
+        break;
+    default:
+        pdfi_loop_detector_cleartomark(ctx);
+        return_error(gs_error_typecheck);
     }
     if (code >= 0 && ppcs && *ppcs)
         (void)(*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
@@ -2526,7 +2558,7 @@ int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    if (ctx->stack_top[-1]->type != PDF_NAME) {
+    if (pdfi_type_of(ctx->stack_top[-1]) != PDF_NAME) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_stackunderflow);
     }
@@ -2545,7 +2577,7 @@ int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *p
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    if (ctx->stack_top[-1]->type != PDF_NAME) {
+    if (pdfi_type_of(ctx->stack_top[-1]) != PDF_NAME) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_stackunderflow);
     }
@@ -2794,7 +2826,7 @@ static int Check_Default_Space(pdf_context *ctx, pdf_obj *space, pdf_dict *sourc
     pdf_obj *ref_space = NULL;
     int code = 0;
 
-    if (space->type == PDF_NAME)
+    if (pdfi_type_of(space) == PDF_NAME)
     {
         if (pdfi_name_is((const pdf_name *)space, "DeviceGray"))
             return (num_components == 1 ? 0 : gs_error_rangecheck);
@@ -2808,7 +2840,7 @@ static int Check_Default_Space(pdf_context *ctx, pdf_obj *space, pdf_dict *sourc
         if (code < 0)
             return code;
 
-        if (ref_space->type == PDF_NAME) {
+        if (pdfi_type_of(ref_space) == PDF_NAME) {
             if (ref_space->object_num != 0 && ref_space->object_num == space->object_num) {
                 pdfi_countdown(ref_space);
                 return_error(gs_error_circular_reference);
@@ -2831,12 +2863,12 @@ static int Check_Default_Space(pdf_context *ctx, pdf_obj *space, pdf_dict *sourc
         space = ref_space;
     }
 
-    if (space->type == PDF_ARRAY) {
+    if (pdfi_type_of(space) == PDF_ARRAY) {
         code = pdfi_array_get(ctx, (pdf_array *)space, 0, &primary);
         if (code < 0)
             goto exit;
 
-        if (primary->type == PDF_NAME) {
+        if (pdfi_type_of(primary) == PDF_NAME) {
             if (pdfi_name_is((pdf_name *)primary, "Lab")) {
                 code = gs_note_error(gs_error_typecheck);
                 goto exit;

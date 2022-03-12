@@ -198,12 +198,14 @@ int pdfi_Tc(pdf_context *ctx)
 
     n = (pdf_num *)ctx->stack_top[-1];
 
-    if (n->type == PDF_INT)
-        code = pdfi_set_Tc(ctx, (double)n->value.i);
-    else {
-        if (n->type == PDF_REAL)
+    switch (pdfi_type_of(n)) {
+        case PDF_INT:
+            code = pdfi_set_Tc(ctx, (double)n->value.i);
+            break;
+        case PDF_REAL:
             code = pdfi_set_Tc(ctx, n->value.d);
-        else
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
     }
     pdfi_pop(ctx, 1);
@@ -226,26 +228,28 @@ int pdfi_Td(pdf_context *ctx)
     Ty = (pdf_num *)ctx->stack_top[-1];
     Tx = (pdf_num *)ctx->stack_top[-2];
 
-    if (Tx->type == PDF_INT) {
-        m.tx = (float)Tx->value.i;
-    } else {
-        if (Tx->type == PDF_REAL) {
+    switch (pdfi_type_of(Tx)) {
+        case PDF_INT:
+            m.tx = (float)Tx->value.i;
+            break;
+        case PDF_REAL:
             m.tx = (float)Tx->value.d;
-        } else {
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
             goto Td_error;
-        }
     }
 
-    if (Ty->type == PDF_INT) {
-        m.ty = (float)Ty->value.i;
-    } else {
-        if (Ty->type == PDF_REAL) {
+    switch (pdfi_type_of(Ty)) {
+        case PDF_INT:
+            m.ty = (float)Ty->value.i;
+            break;
+        case PDF_REAL:
             m.ty = (float)Ty->value.d;
-        } else {
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
             goto Td_error;
-        }
     }
 
     if (ctx->text.BlockDepth == 0) {
@@ -297,26 +301,28 @@ int pdfi_TD(pdf_context *ctx)
     Ty = (pdf_num *)ctx->stack_top[-1];
     Tx = (pdf_num *)ctx->stack_top[-2];
 
-    if (Tx->type == PDF_INT) {
-        m.tx = (float)Tx->value.i;
-    } else {
-        if (Tx->type == PDF_REAL) {
+    switch (pdfi_type_of(Tx)) {
+        case PDF_INT:
+            m.tx = (float)Tx->value.i;
+            break;
+        case PDF_REAL:
             m.tx = (float)Tx->value.d;
-        } else {
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
             goto TD_error;
-        }
     }
 
-    if (Ty->type == PDF_INT) {
-        m.ty = (float)Ty->value.i;
-    } else {
-        if (Ty->type == PDF_REAL) {
+    switch (pdfi_type_of(Ty)) {
+        case PDF_INT:
+            m.ty = (float)Ty->value.i;
+            break;
+        case PDF_REAL:
             m.ty = (float)Ty->value.d;
-        } else {
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
             goto TD_error;
-        }
     }
 
     if (ctx->text.BlockDepth == 0) {
@@ -1083,7 +1089,7 @@ int pdfi_Tj(pdf_context *ctx)
         goto exit;
 
     s = (pdf_string *)ctx->stack_top[-1];
-    if (s->type != PDF_STRING)
+    if (pdfi_type_of(s) != PDF_STRING)
         return_error(gs_error_typecheck);
 
     /* We can't rely on the stack reference because an error during
@@ -1198,7 +1204,7 @@ int pdfi_TJ(pdf_context *ctx)
         goto exit;
 
     a = (pdf_array *)ctx->stack_top[-1];
-    if (a->type != PDF_ARRAY) {
+    if (pdfi_type_of(a) != PDF_ARRAY) {
         pdfi_pop(ctx, 1);
         return gs_note_error(gs_error_typecheck);
     }
@@ -1260,16 +1266,17 @@ int pdfi_TJ(pdf_context *ctx)
         if (code < 0)
             goto TJ_error;
 
-        if (o->type == PDF_INT) {
-            dx = (double)((pdf_num *)o)->value.i / -1000;
-            if (current_font->pfont && current_font->pfont->WMode == 0)
-                code = gs_rmoveto(ctx->pgs, dx, 0);
-            else
-                code = gs_rmoveto(ctx->pgs, 0, dx);
-            if (code < 0)
-                goto TJ_error;
-        } else {
-            if (o->type == PDF_REAL) {
+        switch (pdfi_type_of(o)) {
+            case PDF_INT:
+                dx = (double)((pdf_num *)o)->value.i / -1000;
+                if (current_font->pfont && current_font->pfont->WMode == 0)
+                    code = gs_rmoveto(ctx->pgs, dx, 0);
+                else
+                    code = gs_rmoveto(ctx->pgs, 0, dx);
+                if (code < 0)
+                    goto TJ_error;
+                break;
+            case PDF_REAL:
                 dx = ((pdf_num *)o)->value.d / -1000;
                 if (current_font->pfont && current_font->pfont->WMode == 0)
                     code = gs_rmoveto(ctx->pgs, dx, 0);
@@ -1277,12 +1284,12 @@ int pdfi_TJ(pdf_context *ctx)
                     code = gs_rmoveto(ctx->pgs, 0, dx);
                 if (code < 0)
                     goto TJ_error;
-            } else {
-                if (o->type == PDF_STRING)
+                break;
+            case PDF_STRING:
                     code = pdfi_show(ctx, (pdf_string *)o);
-                else
+                    break;
+            default:
                     code = gs_note_error(gs_error_typecheck);
-            }
         }
         pdfi_countdown(o);
         o = NULL;
@@ -1336,12 +1343,14 @@ int pdfi_TL(pdf_context *ctx)
 
     n = (pdf_num *)ctx->stack_top[-1];
 
-    if (n->type == PDF_INT)
-        code = pdfi_set_TL(ctx, (double)(n->value.i * -1));
-    else {
-        if (n->type == PDF_REAL)
+    switch (pdfi_type_of(n)) {
+        case PDF_INT:
+            code = pdfi_set_TL(ctx, (double)(n->value.i * -1));
+            break;
+        case PDF_REAL:
             code = pdfi_set_TL(ctx, n->value.d * -1.0);
-        else
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
     }
     pdfi_pop(ctx, 1);
@@ -1361,15 +1370,16 @@ int pdfi_Tm(pdf_context *ctx)
     }
     for (i = 1;i < 7;i++) {
         n = (pdf_num *)ctx->stack_top[-1 * i];
-        if (n->type == PDF_INT)
-            m[6 - i] = (float)n->value.i;
-        else {
-            if (n->type == PDF_REAL)
+        switch (pdfi_type_of(n)) {
+            case PDF_INT:
+                m[6 - i] = (float)n->value.i;
+                break;
+            case PDF_REAL:
                 m[6 - i] = (float)n->value.d;
-            else {
+                break;
+            default:
                 pdfi_pop(ctx, 6);
                 return_error(gs_error_typecheck);
-            }
         }
     }
     pdfi_pop(ctx, 6);
@@ -1411,15 +1421,16 @@ int pdfi_Tr(pdf_context *ctx)
 
     n = (pdf_num *)ctx->stack_top[-1];
 
-    if (n->type == PDF_INT)
-        mode = n->value.i;
-    else {
-        if (n->type == PDF_REAL)
+    switch (pdfi_type_of(n)) {
+        case PDF_INT:
+            mode = n->value.i;
+            break;
+        case PDF_REAL:
             mode = (int)n->value.d;
-        else {
+            break;
+        default:
             pdfi_pop(ctx, 1);
             return_error(gs_error_typecheck);
-        }
     }
     pdfi_pop(ctx, 1);
 
@@ -1499,12 +1510,14 @@ int pdfi_Ts(pdf_context *ctx)
 
     n = (pdf_num *)ctx->stack_top[-1];
 
-    if (n->type == PDF_INT)
-        code = pdfi_set_Ts(ctx, (double)n->value.i);
-    else {
-        if (n->type == PDF_REAL)
+    switch (pdfi_type_of(n)) {
+        case PDF_INT:
+            code = pdfi_set_Ts(ctx, (double)n->value.i);
+            break;
+        case PDF_REAL:
             code = pdfi_set_Ts(ctx, n->value.d);
-        else
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
     }
     pdfi_pop(ctx, 1);
@@ -1528,12 +1541,14 @@ int pdfi_Tw(pdf_context *ctx)
 
     n = (pdf_num *)ctx->stack_top[-1];
 
-    if (n->type == PDF_INT)
-        code = pdfi_set_Tw(ctx, (double)n->value.i);
-    else {
-        if (n->type == PDF_REAL)
+    switch (pdfi_type_of(n)) {
+        case PDF_INT:
+            code = pdfi_set_Tw(ctx, (double)n->value.i);
+            break;
+        case PDF_REAL:
             code = pdfi_set_Tw(ctx, n->value.d);
-        else
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
     }
     pdfi_pop(ctx, 1);
@@ -1552,12 +1567,14 @@ int pdfi_Tz(pdf_context *ctx)
 
     n = (pdf_num *)ctx->stack_top[-1];
 
-    if (n->type == PDF_INT)
-        code = gs_settexthscaling(ctx->pgs, (double)n->value.i);
-    else {
-        if (n->type == PDF_REAL)
+    switch (pdfi_type_of(n)) {
+        case PDF_INT:
+            code = gs_settexthscaling(ctx->pgs, (double)n->value.i);
+            break;
+        case PDF_REAL:
             code = gs_settexthscaling(ctx->pgs, n->value.d);
-        else
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
     }
     pdfi_pop(ctx, 1);
@@ -1602,13 +1619,13 @@ int pdfi_doublequote(pdf_context *ctx)
     s = (pdf_string *)ctx->stack_top[-1];
     Tc = (pdf_num *)ctx->stack_top[-2];
     Tw = (pdf_num *)ctx->stack_top[-3];
-    if (s->type != PDF_STRING || (Tc->type != PDF_INT && Tc->type != PDF_REAL) ||
-        (Tw->type != PDF_INT && Tw->type != PDF_REAL)) {
+    if (pdfi_type_of(s) != PDF_STRING || (pdfi_type_of(Tc) != PDF_INT && pdfi_type_of(Tc) != PDF_REAL) ||
+        (pdfi_type_of(Tw) != PDF_INT && pdfi_type_of(Tw) != PDF_REAL)) {
         pdfi_pop(ctx, 3);
         return gs_note_error(gs_error_typecheck);
     }
 
-    if (Tc->type == PDF_INT)
+    if (pdfi_type_of(Tc) == PDF_INT)
         code = pdfi_set_Tc(ctx, (double)Tc->value.i);
     else
         code = pdfi_set_Tc(ctx, Tc->value.d);
@@ -1617,7 +1634,7 @@ int pdfi_doublequote(pdf_context *ctx)
         return code;
     }
 
-    if (Tw->type == PDF_INT)
+    if (pdfi_type_of(Tw) == PDF_INT)
         code = pdfi_set_Tw(ctx, (double)Tw->value.i);
     else
         code = pdfi_set_Tw(ctx, Tw->value.d);

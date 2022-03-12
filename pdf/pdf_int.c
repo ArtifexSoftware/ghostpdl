@@ -750,7 +750,7 @@ int pdfi_read_dict(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uin
     if (code == 0)
         return_error(gs_error_syntaxerror);
 
-    if (ctx->stack_top[-1]->type != PDF_DICT_MARK)
+    if (pdfi_type_of(ctx->stack_top[-1]) != PDF_DICT_MARK)
         return_error(gs_error_typecheck);
     depth = pdfi_count_stack(ctx);
 
@@ -902,7 +902,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
                 return_error(gs_error_stackunderflow);
             }
 
-            if(((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT || ((pdf_obj *)ctx->stack_top[-2])->type != PDF_INT) {
+            if(pdfi_type_of(ctx->stack_top[-1]) != PDF_INT || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT) {
                 pdfi_clearstack(ctx);
                 return_error(gs_error_typecheck);
             }
@@ -1999,7 +1999,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
      * Resources, and instead inherits it from the parent. We cannot detect that
      * before the Resource is used, so all we can do is check here.
      */
-    while (s != NULL && s->type == PDF_STREAM) {
+    while (s != NULL && pdfi_type_of(s) == PDF_STREAM) {
         if (s->object_num > 0) {
             if (s->object_num == stream_obj->object_num) {
                 pdfi_set_error(ctx, 0, NULL, E_PDF_CIRCULARREF, "pdfi_interpret_content_stream", "Aborting stream");
@@ -2043,7 +2043,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
                 break;
         }
 
-        if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
+        if (pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD) {
 repaired_keyword:
             keyword = (pdf_keyword *)ctx->stack_top[-1];
 

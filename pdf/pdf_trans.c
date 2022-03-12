@@ -172,21 +172,25 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         /* TR is transfer function (Optional) */
         code = pdfi_dict_knownget(ctx, SMask, "TR", (pdf_obj **)&TR);
         if (code > 0) {
-            if (TR->type == PDF_DICT || TR->type == PDF_STREAM) {
-                code = pdfi_build_function(ctx, &gsfunc, NULL, 1, TR, NULL);
-                if (code < 0)
-                    goto exit;
-                if (gsfunc->params.m != 1 || gsfunc->params.n != 1) {
-                    pdfi_free_function(ctx, gsfunc);
-                    gsfunc = NULL;
-                    dmprintf(ctx->memory, "WARNING: Ignoring invalid TR (number of inpuits or outputs not 1) in SMask\n");
-                }
-            } else if (TR->type == PDF_NAME) {
-                if (!pdfi_name_is((pdf_name *)TR, "Identity")) {
-                    dmprintf(ctx->memory, "WARNING: Unknown TR in SMask\n");
-                }
-            } else {
-                dmprintf(ctx->memory, "WARNING: Ignoring invalid TR in SMask\n");
+            switch (pdfi_type_of(TR)) {
+                case PDF_DICT:
+                case PDF_STREAM:
+                    code = pdfi_build_function(ctx, &gsfunc, NULL, 1, TR, NULL);
+                    if (code < 0)
+                        goto exit;
+                    if (gsfunc->params.m != 1 || gsfunc->params.n != 1) {
+                        pdfi_free_function(ctx, gsfunc);
+                        gsfunc = NULL;
+                        dmprintf(ctx->memory, "WARNING: Ignoring invalid TR (number of inpuits or outputs not 1) in SMask\n");
+                    }
+                    break;
+                case PDF_NAME:
+                    if (!pdfi_name_is((pdf_name *)TR, "Identity")) {
+                        dmprintf(ctx->memory, "WARNING: Unknown TR in SMask\n");
+                    }
+                    break;
+                default:
+                    dmprintf(ctx->memory, "WARNING: Ignoring invalid TR in SMask\n");
             }
         }
 
@@ -402,7 +406,7 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
         /* Didn't find a /CS key, try again using /ColorSpace */
         code = pdfi_dict_knownget(ctx, group_dict, "ColorSpace", &CS);
     }
-    if (code > 0 && CS->type != PDF_NULL) {
+    if (code > 0 && pdfi_type_of(CS) != PDF_NULL) {
         code = pdfi_setcolorspace(ctx, CS, group_dict, page_dict);
         if (code < 0)
             goto exit;

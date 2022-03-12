@@ -197,7 +197,7 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict,
                 }
 
                 code = pdfi_dict_next(ctx, cspace_dict, &Key, &Value, &index);
-                if (code == 0 && Value->type == PDF_ARRAY)
+                if (code == 0 && pdfi_type_of(Value) == PDF_ARRAY)
                     break;
                 pdfi_countdown(Key);
                 Key = NULL;
@@ -263,7 +263,7 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
             return code;
 
         code = pdfi_dict_first(ctx, shading_dict, &Key, &Value, &index);
-        if (code < 0 || !(Value->type == PDF_DICT || Value->type == PDF_STREAM))
+        if (code < 0 || !(pdfi_type_of(Value) == PDF_DICT || pdfi_type_of(Value) == PDF_STREAM))
             goto error1;
 
         i = 1;
@@ -290,7 +290,7 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
                 }
 
                 code = pdfi_dict_next(ctx, shading_dict, &Key, &Value, &index);
-                if (code == 0 && Value->type == PDF_DICT)
+                if (code == 0 && pdfi_type_of(Value) == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
                 Key = NULL;
@@ -425,7 +425,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
         code = pdfi_dict_first(ctx, xobject_dict, &Key, &Value, &index);
         if (code < 0)
             goto error_exit;
-        if (Value->type != PDF_STREAM)
+        if (pdfi_type_of(Value) != PDF_STREAM)
             goto error_exit;
 
         i = 1;
@@ -457,7 +457,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
                 }
 
                 code = pdfi_dict_next(ctx, xobject_dict, &Key, &Value, &index);
-                if (code == 0 && Value->type == PDF_STREAM)
+                if (code == 0 && pdfi_type_of(Value) == PDF_STREAM)
                     break;
                 pdfi_countdown(Key);
                 Key = NULL;
@@ -502,14 +502,16 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_
         /* Check SMask */
         code = pdfi_dict_knownget(ctx, extgstate_dict, "SMask", &o);
         if (code > 0) {
-            if (o->type == PDF_NAME) {
-                if (!pdfi_name_is((pdf_name *)o, "None")) {
-                    pdfi_countdown(o);
-                    tracker->transparent = true;
-                    return 0;
-                }
-            } else {
-                if (o->type == PDF_DICT) {
+            switch (pdfi_type_of(o)) {
+                case PDF_NAME:
+                    if (!pdfi_name_is((pdf_name *)o, "None")) {
+                        pdfi_countdown(o);
+                        tracker->transparent = true;
+                        return 0;
+                    }
+                    break;
+                case PDF_DICT:
+                {
                     pdf_obj *G = NULL;
 
                     tracker->transparent = true;
@@ -526,6 +528,8 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_
                     pdfi_countdown(o);
                     return code;
                 }
+                default:
+                    break;
             }
         }
         pdfi_countdown(o);
@@ -611,7 +615,7 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
                 }
 
                 code = pdfi_dict_next(ctx, extgstate_dict, &Key, &Value, &index);
-                if (code == 0 && Value->type == PDF_DICT)
+                if (code == 0 && pdfi_type_of(Value) == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
                 Key = NULL;
@@ -717,7 +721,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
         if (code < 0)
             goto error1;
 
-        if(Value->type != PDF_DICT && Value->type != PDF_STREAM)
+        if (pdfi_type_of(Value) != PDF_DICT && pdfi_type_of(Value) != PDF_STREAM)
             goto transparency_exit;
 
         i = 1;
@@ -748,7 +752,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
                 }
 
                 code = pdfi_dict_next(ctx, pattern_dict, &Key, &Value, &index);
-                if (code == 0 && (Value->type == PDF_DICT || Value->type == PDF_STREAM))
+                if (code == 0 && (pdfi_type_of(Value) == PDF_DICT || pdfi_type_of(Value) == PDF_STREAM))
                     break;
                 pdfi_countdown(Key);
                 Key = NULL;
@@ -782,7 +786,7 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
     if (resource_is_checked(tracker, (pdf_obj *)font))
         return 0;
 
-    if (font->type != PDF_DICT)
+    if (pdfi_type_of(font) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     code = pdfi_dict_knownget_type(ctx, font, "Subtype", PDF_NAME, &o);
@@ -846,7 +850,7 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
                 }
 
                 code = pdfi_dict_next(ctx, font_dict, &Key, &Value, &index);
-                if (code == 0 && Value->type == PDF_DICT)
+                if (code == 0 && pdfi_type_of(Value) == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
                 Key = NULL;
@@ -1191,7 +1195,7 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
                     code = pdfi_dict_first(ctx, tracker.spot_dict, (pdf_obj **)&Key, &Value, &index);
                     while (code >= 0)
                     {
-                        if (Key->type == PDF_NAME) {
+                        if (pdfi_type_of(Key) == PDF_NAME) {
                             table[a].data = ((pdf_string *)Key)->data;
                             table[a].size = ((pdf_string *)Key)->length;
                             table[a++].persistent = false;

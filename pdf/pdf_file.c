@@ -334,7 +334,7 @@ static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stre
     (*new_stream)->strm = source;
     source = *new_stream;
 
-    if (d && d->type == PDF_DICT) {
+    if (d && pdfi_type_of(d) == PDF_DICT) {
         Flate_source = (*new_stream)->strm;
         code = pdfi_Predictor_filter(ctx, d, source, new_stream);
         if (code < 0)
@@ -403,7 +403,7 @@ static int pdfi_LZW_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream
     /* s_zlibD_template defined in base/szlibd.c */
     s_LZW_set_defaults_inline(&lzs);
 
-    if (d && d->type == PDF_DICT) {
+    if (d && pdfi_type_of(d) == PDF_DICT) {
         code = pdfi_dict_get_int(ctx, d, "EarlyChange", &i);
         if (code < 0 && code != gs_error_undefined)
             return code;
@@ -421,7 +421,7 @@ static int pdfi_LZW_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream
     (*new_stream)->strm = source;
     source = *new_stream;
 
-    if (d && d->type == PDF_DICT)
+    if (d && pdfi_type_of(d) == PDF_DICT)
         pdfi_Predictor_filter(ctx, d, source, new_stream);
     return 0;
 }
@@ -473,21 +473,25 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
     }
     if (dict && pdfi_dict_get(ctx, dict, "ColorSpace", &csobj) == 0) {
         /* parse the value */
-        if (csobj->type == PDF_ARRAY) {
+        switch (pdfi_type_of(csobj)) {
+        case PDF_ARRAY:
             /* assume it's the first array element */
             code = pdfi_array_get(ctx, (pdf_array *)csobj, (uint64_t)0, (pdf_obj **)&csname);
             if (code < 0) {
                 pdfi_countdown(csobj);
                 return code;
             }
-        } else if (csobj->type == PDF_NAME) {
+            break;
+        case PDF_NAME:
             /* use the name directly */
             csname = (pdf_name *)csobj;
             csobj = NULL; /* To keep ref counting straight */
-        } else {
+            break;
+        default:
             dmprintf(ctx->memory, "warning: JPX ColorSpace value is an unhandled type!\n");
+            break;
         }
-        if (csname != NULL && csname->type == PDF_NAME) {
+        if (csname != NULL && pdfi_type_of(csname) == PDF_NAME) {
             /* request raw index values if the colorspace is /Indexed */
             if (pdfi_name_is(csname, "Indexed"))
                 state.colorspace = gs_jpx_cs_indexed;
@@ -613,7 +617,7 @@ static int pdfi_DCT_filter(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *de
         return code;
     }
 
-    if (decode && decode->type == PDF_DICT) {
+    if (decode && pdfi_type_of(decode) == PDF_DICT) {
         /* TODO: Why is this here?  'i' never gets used? */
         code = pdfi_dict_get_int(ctx, decode, "ColorTransform", &i);
         if (code < 0 && code != gs_error_undefined)
@@ -674,7 +678,7 @@ static int pdfi_CCITTFax_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
 
     s_CF_set_defaults_inline(&ss);
 
-    if (d && d->type == PDF_DICT) {
+    if (d && pdfi_type_of(d) == PDF_DICT) {
         code = pdfi_dict_get_int(ctx, d, "K", &i);
         if (code < 0 && code != gs_error_undefined)
             return code;
@@ -922,12 +926,11 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
         goto exit;
     }
 
-    if (Filter->type != PDF_ARRAY && Filter->type != PDF_NAME) {
+    switch (pdfi_type_of(Filter)) {
+    default:
         code = gs_note_error(gs_error_typecheck);
         goto exit;
-    }
-
-    if (Filter->type == PDF_NAME) {
+    case PDF_NAME:
         code = pdfi_dict_knownget(ctx, stream_dict, "DecodeParms", &decode);
         if (code == 0 && inline_image)
             code = pdfi_dict_knownget(ctx, stream_dict, "DP", &decode);
@@ -940,7 +943,9 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
             goto exit;
 
         code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
-    } else {
+        break;
+    case PDF_ARRAY:
+    {
         pdf_array *filter_array = (pdf_array *)Filter;
 
         code = pdfi_dict_knownget_type(ctx, stream_dict, "DecodeParms", PDF_ARRAY, (pdf_obj **)&DecodeParams);
@@ -1003,7 +1008,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
                     goto error;
                 }
             }
-            if (decode && decode->type != PDF_NULL && decode->type != PDF_DICT) {
+            if (decode && pdfi_type_of(decode) != PDF_NULL && pdfi_type_of(decode) != PDF_DICT) {
                 pdfi_countdown(decode);
                 decode = NULL;
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_STREAM_BAD_DECODEPARMS, "pdfi_filter_no_decryption", NULL);
@@ -1021,6 +1026,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
             s = new_s;
         }
         code = pdfi_alloc_stream(ctx, s, source->s, new_stream);
+    }
     }
 
  exit:

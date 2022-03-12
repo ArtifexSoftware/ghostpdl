@@ -156,7 +156,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     int objnum;
     bool known = false;
 
-    if (stream_obj->type != PDF_STREAM)
+    if (pdfi_type_of(stream_obj) != PDF_STREAM)
         return_error(gs_error_typecheck);
 
     code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &sdict);
@@ -435,7 +435,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
         if (code <= 0)
             return pdfi_repair_file(ctx);
 
-        if (pdfi_count_stack(ctx) >= 2 && ((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD) {
+        if (pdfi_count_stack(ctx) >= 2 && pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD) {
             pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
             if (keyword->key == TOKEN_STREAM) {
                 pdf_dict *dict;
@@ -444,7 +444,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
 
                 /* Remove the 'stream' token from the stack, should leave a dictionary object on the stack */
                 pdfi_pop(ctx, 1);
-                if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_DICT) {
+                if (pdfi_type_of(ctx->stack_top[-1]) != PDF_DICT) {
                     return pdfi_repair_file(ctx);
                 }
                 dict = (pdf_dict *)ctx->stack_top[-1];
@@ -787,7 +787,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
         return code;
 
     d = (pdf_dict *)ctx->stack_top[-1];
-    if (d->type != PDF_DICT) {
+    if (pdfi_type_of(d) != PDF_DICT) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
@@ -950,7 +950,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     if (code == 0)
         return_error(gs_error_syntaxerror);
 
-    if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == TOKEN_XREF) {
+    if (pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == TOKEN_XREF) {
         /* Read old-style xref table */
         pdfi_pop(ctx, 1);
         return(read_xref(ctx, ctx->main_stream));

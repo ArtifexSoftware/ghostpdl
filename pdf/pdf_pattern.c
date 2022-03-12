@@ -395,7 +395,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     gs_pattern1_init(&templat);
 
     /* Must be a stream */
-    if (stream->type != PDF_STREAM) {
+    if (pdfi_type_of(stream) != PDF_STREAM) {
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }

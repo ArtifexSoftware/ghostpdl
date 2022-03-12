@@ -373,7 +373,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         /* CIDToGIDMap can only be a stream or a name, and if it's a name
            it's only permitted to be "/Identity", so ignore it
          */
-        if (obj->type == PDF_STREAM) {
+        if (pdfi_type_of(obj) == PDF_STREAM) {
             int64_t sz;
             code = pdfi_stream_to_buffer(ctx, (pdf_stream *)obj, &(font->cidtogidmap.data), &sz);
             if (code < 0) {

@@ -56,7 +56,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
     if (code < 0)
         return code;
 
-    if (o->type == PDF_INDIRECT) {
+    if (pdfi_type_of(o) == PDF_INDIRECT) {
         if (((pdf_indirect_ref *)o)->ref_object_num == page_dict->object_num)
             return_error(gs_error_circular_reference);
 
@@ -77,7 +77,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
     }
 
     ctx->encryption.decrypt_strings = false;
-    if (o->type == PDF_ARRAY) {
+    if (pdfi_type_of(o) == PDF_ARRAY) {
         pdf_array *a = (pdf_array *)o;
 
         for (i=0;i < pdfi_array_size(a); i++) {
@@ -85,13 +85,13 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
             code = pdfi_array_get_no_deref(ctx, a, i, (pdf_obj **)&r);
             if (code < 0)
                 goto page_error;
-            if (r->type == PDF_STREAM) {
+            if (pdfi_type_of (r) == PDF_STREAM) {
                 code = pdfi_interpret_content_stream(ctx, NULL, (pdf_stream *)r, page_dict);
                 pdfi_countdown(r);
                 if (code < 0)
                     goto page_error;
             } else {
-                if (r->type != PDF_INDIRECT) {
+                if (pdfi_type_of(r) != PDF_INDIRECT) {
                         pdfi_countdown(r);
                         code = gs_note_error(gs_error_typecheck);
                         goto page_error;
@@ -108,7 +108,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                             code = 0;
                         goto page_error;
                     }
-                    if (o1->type != PDF_STREAM) {
+                    if (pdfi_type_of(o1) != PDF_STREAM) {
                         pdfi_countdown(o1);
                         code = gs_note_error(gs_error_typecheck);
                         goto page_error;
@@ -123,7 +123,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
             }
         }
     } else {
-        if (o->type == PDF_STREAM) {
+        if (pdfi_type_of(o) == PDF_STREAM) {
             code = pdfi_interpret_content_stream(ctx, NULL, (pdf_stream *)o, page_dict);
         } else {
             pdfi_countdown(o);
@@ -585,7 +585,7 @@ int pdfi_page_get_dict(pdf_context *ctx, uint64_t page_num, pdf_dict **dict)
         code = pdfi_dict_get(ctx, ctx->Root, "Pages", &o);
         if (code < 0)
             goto page_error;
-        if (o->type != PDF_DICT) {
+        if (pdfi_type_of(o) != PDF_DICT) {
             code = gs_note_error(gs_error_typecheck);
             goto page_error;
         }

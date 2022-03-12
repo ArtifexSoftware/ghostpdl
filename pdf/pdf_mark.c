@@ -50,7 +50,7 @@ static int pdfi_pdfmark_setparam_pair(pdf_context *ctx, pdf_name *Key, pdf_obj *
     int code = 0;
 
     /* Handle the Key */
-    if (Key->type != PDF_NAME) {
+    if (pdfi_type_of(Key) != PDF_NAME) {
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
@@ -391,7 +391,7 @@ static int pdfi_pdfmark_add_Page_View(pdf_context *ctx, pdf_dict *link_dict, pdf
     code = pdfi_array_get_no_store_R(ctx, dest_array, 0, (pdf_obj **)&page_dict);
     if (code < 0) goto exit;
 
-    if (page_dict->type != PDF_DICT) {
+    if (pdfi_type_of(page_dict) != PDF_DICT) {
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
@@ -457,12 +457,12 @@ static int pdfi_pdfmark_handle_dest_names(pdf_context *ctx, pdf_dict *link_dict,
         /* Note: in current implementation, PDF_STRING and PDF_NAME have all the same
          * fields, but just in case that changes I treat them separately here.
          */
-        if (name->type == PDF_STRING && dest->type == PDF_STRING) {
+        if (pdfi_type_of(name) == PDF_STRING && pdfi_type_of(dest) == PDF_STRING) {
             if (!pdfi_string_cmp((pdf_string *)name, (pdf_string *)dest)) {
                 found = true;
                 break;
             }
-        } else if (name->type == PDF_NAME && dest->type == PDF_NAME) {
+        } else if (pdfi_type_of(name) == PDF_NAME && pdfi_type_of(dest) == PDF_NAME) {
             if (!pdfi_name_cmp((pdf_name *)name, (pdf_name *)dest)) {
                 found = true;
                 break;
@@ -482,18 +482,19 @@ static int pdfi_pdfmark_handle_dest_names(pdf_context *ctx, pdf_dict *link_dict,
     code = pdfi_array_get(ctx, Names, i+1, (pdf_obj **)&D_dict);
     if (code < 0) goto exit;
 
-    if (D_dict->type == PDF_DICT) {
-        /* Dict is supposed to contain key "D" with Dest array */
-        code = pdfi_dict_knownget_type(ctx, D_dict, "D", PDF_ARRAY, (pdf_obj **)&dest_array);
-        if (code <= 0) goto exit;
-    } else {
-        if (D_dict->type == PDF_ARRAY) {
+    switch (pdfi_type_of(D_dict)) {
+        case PDF_DICT:
+            /* Dict is supposed to contain key "D" with Dest array */
+            code = pdfi_dict_knownget_type(ctx, D_dict, "D", PDF_ARRAY, (pdf_obj **)&dest_array);
+            if (code <= 0) goto exit;
+            break;
+        case PDF_ARRAY:
             dest_array = (pdf_array *)D_dict;
             D_dict = NULL;
-        } else {
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
             goto exit;
-        }
     }
 
     /* Process the dest_array to replace with /Page /View */
@@ -529,14 +530,13 @@ int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
     code = pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, (pdf_obj **)&Names_dict);
     if (code < 0) goto exit;
 
-    switch (Dest->type) {
+    switch (pdfi_type_of(Dest)) {
     case PDF_ARRAY:
         code = pdfi_pdfmark_add_Page_View(ctx, link_dict, (pdf_array *)Dest);
         if (code < 0) goto exit;
         break;
     case PDF_NAME:
-    case PDF_STRING:
-        if (Dest->type == PDF_NAME && Dests != NULL) {
+        if (Dests != NULL) {
             /* Case where it's a name to look up in Contents(Root) /Dests */
             code = pdfi_dict_get_by_key(ctx, Dests, (const pdf_name *)Dest, (pdf_obj **)&dest_array);
             if (code == gs_error_undefined) {
@@ -545,13 +545,17 @@ int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
                 goto exit;
             }
             if (code < 0) goto exit;
-            if (dest_array->type != PDF_ARRAY) {
+            if (pdfi_type_of(dest_array) != PDF_ARRAY) {
                 code = gs_note_error(gs_error_typecheck);
                 goto exit;
             }
             code = pdfi_pdfmark_add_Page_View(ctx, link_dict, dest_array);
             if (code < 0) goto exit;
-        } else if (Names_dict != NULL) {
+            break;
+        }
+        /* fallthrough */
+    case PDF_STRING:
+        if (Names_dict != NULL) {
             /* Looking in Catalog(Root) for /Names<</Dests<</Names [name dict array]>>>> */
             code = pdfi_dict_knownget_type(ctx, Names_dict, "Dests", PDF_DICT, (pdf_obj **)&Dests);
             if (code < 0) goto exit;
@@ -607,7 +611,7 @@ int pdfi_pdfmark_modA(pdf_context *ctx, pdf_dict *dict)
     code = pdfi_dict_get_no_store_R(ctx, dict, "A", (pdf_obj **)&A_dict);
     if (code < 0) goto exit;
 
-    if (A_dict->type != PDF_DICT) {
+    if (pdfi_type_of(A_dict) != PDF_DICT) {
         /* Invalid AP, just delete it because I dunno what to do...
          * TODO: Should flag a warning here
          */
@@ -1043,7 +1047,7 @@ void pdfi_pdfmark_write_boxes(pdf_context *ctx, pdf_dict *page_dict)
             pdf_array *new_array = NULL;
 
             /* Box is present in page dicitonayr, check it's an array */
-            if (o->type != PDF_ARRAY) {
+            if (pdfi_type_of(o) != PDF_ARRAY) {
                 pdfi_countdown(o);
                 continue;
             }

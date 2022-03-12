@@ -140,7 +140,7 @@ int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indir
         i = (index / 2) - 1;
 
         /* In PDF keys are *required* to be names, so we ought to check that here */
-        if (((pdf_obj *)ctx->stack_top[-2])->type == PDF_NAME) {
+        if (pdfi_type_of((pdf_obj *)ctx->stack_top[-2]) == PDF_NAME) {
             d->list[i].key = ctx->stack_top[-2];
             pdfi_countup(d->list[i].key);
 #if DEBUG_DICT
@@ -149,7 +149,7 @@ int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indir
             d->list[i].value = ctx->stack_top[-1];
             pdfi_countup(d->list[i].value);
         } else {
-            if (convert_string_keys && ((pdf_obj *)ctx->stack_top[-2])->type == PDF_STRING) {
+            if (convert_string_keys && (pdfi_type_of((pdf_obj *)ctx->stack_top[-2]) == PDF_STRING)) {
                 pdf_name *n;
                 code = pdfi_dict_name_from_string(ctx, (pdf_string *)ctx->stack_top[-2], &n);
                 if (code < 0) {
@@ -266,7 +266,7 @@ static int pdfi_dict_find_unsorted(pdf_context *ctx, pdf_dict *d, const char *Ke
     for (i=0;i< d->entries;i++) {
         t = (pdf_name *)d->list[i].key;
 
-        if (t && t->type == PDF_NAME) {
+        if (t && pdfi_type_of(t) == PDF_NAME) {
             if (pdfi_name_is((pdf_name *)t, Key)) {
                 return i;
             }
@@ -315,14 +315,14 @@ int pdfi_dict_get_common(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj
 
     *o = NULL;
 
-    if (d->type != PDF_DICT)
+    if (pdfi_type_of(d) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     index = pdfi_dict_find(ctx, d, Key, true);
     if (index < 0)
         return index;
 
-    if (d->list[index].value->type == PDF_INDIRECT) {
+    if (pdfi_type_of(d->list[index].value) == PDF_INDIRECT) {
         pdf_indirect_ref *r = (pdf_indirect_ref *)d->list[index].value;
 
         if (r->ref_object_num == d->object_num)
@@ -364,7 +364,7 @@ int pdfi_dict_get_no_deref(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, p
 
     *o = NULL;
 
-    if (d->type != PDF_DICT)
+    if (pdfi_type_of(d) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     index = pdfi_dict_find_key(ctx, d, Key, true);
@@ -386,14 +386,14 @@ int pdfi_dict_get_by_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf
 
     *o = NULL;
 
-    if (d->type != PDF_DICT)
+    if (pdfi_type_of(d) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     index = pdfi_dict_find_key(ctx, d, Key, true);
     if (index < 0)
         return index;
 
-    if (d->list[index].value->type == PDF_INDIRECT) {
+    if (pdfi_type_of(d->list[index].value) == PDF_INDIRECT) {
         pdf_indirect_ref *r = (pdf_indirect_ref *)d->list[index].value;
 
         code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, o);
@@ -414,14 +414,14 @@ int pdfi_dict_get_ref(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_indire
 
     *o = NULL;
 
-    if (d->type != PDF_DICT)
+    if (pdfi_type_of(d) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     index = pdfi_dict_find(ctx, d, Key, true);
     if (index < 0)
         return index;
 
-    if (d->list[index].value->type == PDF_INDIRECT) {
+    if (pdfi_type_of(d->list[index].value) == PDF_INDIRECT) {
         *o = (pdf_indirect_ref *)d->list[index].value;
         pdfi_countup(*o);
         return 0;
@@ -444,7 +444,7 @@ static int pdfi_dict_get_no_store_R_inner(pdf_context *ctx, pdf_dict *d, const c
 
     *o = NULL;
 
-    if (d->type != PDF_DICT)
+    if (pdfi_type_of(d) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     if (strKey == NULL)
@@ -455,7 +455,7 @@ static int pdfi_dict_get_no_store_R_inner(pdf_context *ctx, pdf_dict *d, const c
     if (index < 0)
         return index;
 
-    if (d->list[index].value->type == PDF_INDIRECT) {
+    if (pdfi_type_of(d->list[index].value) == PDF_INDIRECT) {
         pdf_indirect_ref *r = (pdf_indirect_ref *)d->list[index].value;
 
         code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, o);
@@ -500,7 +500,7 @@ int pdfi_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_t
     if (code < 0)
         return code;
 
-    if ((*o)->type != type) {
+    if (pdfi_type_of(*o) != type) {
         pdfi_countdown(*o);
         *o = NULL;
         return_error(gs_error_typecheck);
@@ -595,15 +595,16 @@ int pdfi_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double 
     code = pdfi_dict_get(ctx, d, Key, (pdf_obj **)&o);
     if (code < 0)
         return code;
-    if (o->type == PDF_INT) {
-        *f = (double)(o->value.i);
-    } else {
-        if (o->type == PDF_REAL){
+    switch (pdfi_type_of(o)) {
+        case PDF_INT:
+            *f = (double)(o->value.i);
+            break;
+        case PDF_REAL:
             *f = o->value.d;
-        } else {
+            break;
+        default:
             pdfi_countdown(o);
             return_error(gs_error_typecheck);
-        }
     }
     pdfi_countdown(o);
     return 0;
@@ -627,7 +628,7 @@ int fill_domain_from_dict(pdf_context *ctx, float *parray, int size, pdf_dict *d
     code = pdfi_dict_get(ctx, dict, "Domain", (pdf_obj **)&a);
     if (code < 0)
         return code;
-    if (a->type != PDF_ARRAY) {
+    if (pdfi_type_of(a) != PDF_ARRAY) {
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
@@ -659,7 +660,7 @@ int fill_float_array_from_dict(pdf_context *ctx, float *parray, int size, pdf_di
     code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
     if (code < 0)
         return code;
-    if (a->type != PDF_ARRAY) {
+    if (pdfi_type_of(a) != PDF_ARRAY) {
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
@@ -691,7 +692,7 @@ int fill_bool_array_from_dict(pdf_context *ctx, bool *parray, int size, pdf_dict
     code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
     if (code < 0)
         return code;
-    if (a->type != PDF_ARRAY) {
+    if (pdfi_type_of(a) != PDF_ARRAY) {
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
@@ -722,7 +723,7 @@ int fill_matrix_from_dict(pdf_context *ctx, float *parray, pdf_dict *dict)
     code = pdfi_dict_get(ctx, dict, "Matrix", (pdf_obj **)&a);
     if (code < 0)
         return code;
-    if (a->type != PDF_ARRAY) {
+    if (pdfi_type_of(a) != PDF_ARRAY) {
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
@@ -758,7 +759,7 @@ int pdfi_make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *
     code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
     if (code < 0)
         return code;
-    if (a->type != PDF_ARRAY) {
+    if (pdfi_type_of(a) != PDF_ARRAY) {
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
@@ -795,7 +796,7 @@ int pdfi_make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict
     code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
     if (code < 0)
         return code;
-    if (a->type != PDF_ARRAY) {
+    if (pdfi_type_of(a) != PDF_ARRAY) {
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
@@ -828,10 +829,10 @@ int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *valu
     int i;
     pdf_dict_entry *new_list;
 
-    if (d->type != PDF_DICT)
+    if (pdfi_type_of(d) != PDF_DICT)
         return_error(gs_error_typecheck);
 
-    if (Key->type != PDF_NAME)
+    if (pdfi_type_of(Key) != PDF_NAME)
         return_error(gs_error_typecheck);
 
     /* First, do we have a Key/value pair already ? */
@@ -957,7 +958,7 @@ int pdfi_dict_known(pdf_context *ctx, pdf_dict *d, const char *Key, bool *known)
 {
     int i;
 
-    if (d->type != PDF_DICT)
+    if (pdfi_type_of(d) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     *known = false;
@@ -972,7 +973,7 @@ int pdfi_dict_known_by_key(pdf_context *ctx, pdf_dict *d, pdf_name *Key, bool *k
 {
     int i;
 
-    if (d->type != PDF_DICT)
+    if (pdfi_type_of(d) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     *known = false;
@@ -1055,7 +1056,7 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
 {
     int code;
 
-    if (d->type != PDF_DICT)
+    if (pdfi_type_of(d) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     while (1) {
@@ -1078,7 +1079,7 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
             continue;
         }
 
-        if (d->list[*index].value->type == PDF_INDIRECT) {
+        if (pdfi_type_of(d->list[*index].value) == PDF_INDIRECT) {
             pdf_indirect_ref *r = (pdf_indirect_ref *)d->list[*index].value;
             pdf_obj *o;
 
@@ -1113,7 +1114,7 @@ int pdfi_dict_key_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *i
 {
     uint64_t *i = index;
 
-    if (d->type != PDF_DICT)
+    if (pdfi_type_of(d) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     while (1) {
@@ -1169,7 +1170,7 @@ int64_t pdfi_stream_length(pdf_context *ctx, pdf_stream *stream)
     int64_t Length = 0;
     int code;
 
-    if (stream->type != PDF_STREAM)
+    if (pdfi_type_of(stream) != PDF_STREAM)
         return 0;
 
     if (stream->length_valid)
@@ -1195,14 +1196,14 @@ int64_t pdfi_stream_length(pdf_context *ctx, pdf_stream *stream)
  */
 gs_offset_t pdfi_stream_offset(pdf_context *ctx, pdf_stream *stream)
 {
-    if (stream->type != PDF_STREAM)
+    if (pdfi_type_of(stream) != PDF_STREAM)
         return 0;
     return stream->stream_offset;
 }
 
 pdf_stream *pdfi_stream_parent(pdf_context *ctx, pdf_stream *stream)
 {
-    if (stream->type != PDF_STREAM)
+    if (pdfi_type_of(stream) != PDF_STREAM)
         return 0;
     return (pdf_stream *)stream->parent_obj;
 }
@@ -1233,11 +1234,15 @@ void pdfi_clear_stream_parent(pdf_context *ctx, pdf_stream *stream)
 int pdfi_dict_from_obj(pdf_context *ctx, pdf_obj *obj, pdf_dict **dict)
 {
     *dict = NULL;
-    if (obj->type == PDF_DICT)
-        *dict = (pdf_dict *)obj;
-    else if (obj->type == PDF_STREAM)
-        *dict = ((pdf_stream *)obj)->stream_dict;
-    else
-        return_error(gs_error_typecheck);
+    switch (pdfi_type_of(obj)) {
+        case PDF_DICT:
+            *dict = (pdf_dict *)obj;
+            break;
+        case PDF_STREAM:
+            *dict = ((pdf_stream *)obj)->stream_dict;
+            break;
+        default:
+            return_error(gs_error_typecheck);
+    }
     return 0;
 }

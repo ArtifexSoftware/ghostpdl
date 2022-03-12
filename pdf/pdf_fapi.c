@@ -412,7 +412,7 @@ pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, uns
                         *ret = 0;
                         break;
                     }
-                    if (v->type == PDF_INT)
+                    if (pdfi_type_of(v) == PDF_INT)
                         *ret = (unsigned short)v->value.i;
                     else
                         *ret = (unsigned short)v->value.d;
@@ -551,7 +551,7 @@ pdfi_fapi_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, fl
                     code = 0;
                     break;
                 }
-                if (v->type == PDF_INT) {
+                if (pdfi_type_of(v) == PDF_INT) {
                     *ret = (float)v->value.i;
                 }
                 else {
@@ -586,7 +586,7 @@ pdfi_fapi_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, fl
                                 code = pdfi_array_get(pdffont1->ctx, suba, i, (pdf_obj **)&n);
                                 if (code < 0)
                                     continue;
-                                if (n->type == PDF_INT)
+                                if (pdfi_type_of(n) == PDF_INT)
                                     *ret = (float)n->value.i;
                                 else
                                     *ret = (float)n->value.d;
@@ -694,7 +694,7 @@ pdfi_fapi_get_gsubr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
 
             code = pdfi_array_get(pdffont2->ctx, pdffont2->GlobalSubrs, index, (pdf_obj **)&subrstring);
             if (code >= 0) {
-                if (subrstring->type == PDF_STRING) {
+                if (pdfi_type_of(subrstring) == PDF_STRING) {
                     code = subrstring->length - leniv;
                     if (buf && buf_length >= code) {
                         if (ff->need_decrypt && pfont->data.lenIV >= 0) {
@@ -758,7 +758,7 @@ pdfi_fapi_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
             else
                 code = pdfi_array_get(pdffont2->ctx, pdffont2->Subrs, index, (pdf_obj **)&subrstring);
             if (code >= 0) {
-                if (subrstring->type == PDF_STRING) {
+                if (pdfi_type_of(subrstring) == PDF_STRING) {
                     if (subrstring->length > 0) {
                         code = subrstring->length - leniv;
                         if (buf && buf_length >= code) {

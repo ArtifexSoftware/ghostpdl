@@ -177,7 +177,7 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
                 if (i != 0)
                     dmprintf(ctx->memory, " ");
                 if (code == 0) {
-                    if (a->values[i]->type == PDF_INT)
+                    if (pdfi_type_of(a->values[i]) == PDF_INT)
                         dmprintf1(ctx->memory, "%"PRIi64"", ((pdf_num *)a->values[i])->value.i);
                     else
                         dmprintf1(ctx->memory, "%f", ((pdf_num *)a->values[i])->value.d);
@@ -785,7 +785,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                     if (code < 0)
                         goto exit;
 
-                    if (File->type == PDF_DICT) {
+                    if (pdfi_type_of(File) == PDF_DICT) {
                         if (pdfi_dict_knownget_type(ctx, (pdf_dict *)File, "EF", PDF_DICT, &EF)) {
                             if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EF, "F", PDF_STREAM, &F)) {
                                 pdf_dict *stream_dict = NULL;
@@ -860,7 +860,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                                     /* Create an entry for the Description in the names array */
                                                     code = pdfi_array_get(ctx, FileNames, ix * 2, (pdf_obj **)&Name);
                                                     if (code >= 0) {
-                                                        if (Name->type == PDF_STRING) {
+                                                        if (pdfi_type_of((pdf_obj *)Name) == PDF_STRING) {
                                                             working_array[(index * 2) + 1] = (char *)gs_alloc_bytes(ctx->memory, Name->length + 3, "Collection file names array entry");
                                                             if (working_array[(index * 2) + 1] != NULL) {
                                                                 memset(working_array[(index * 2) + 1], 0x00, Name->length + 3);

@@ -790,17 +790,20 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
     pdf_ps_ctx_t cmap_ctx;
 
     pdfi_cmap->ctx = ctx;
-    if (cmap->type == PDF_NAME) {
-        gs_string cmname;
-        pdf_name *cmapn = (pdf_name *)cmap;
-        cmname.data = cmapn->data;
-        cmname.size = cmapn->length;
-        code = pdf_cmap_open_file(ctx, &cmname, &buf, &buflen);
-        if (code < 0)
-            goto error_out;
-    }
-    else {
-        if (cmap->type == PDF_STREAM) {
+    switch (pdfi_type_of(cmap)) {
+        case PDF_NAME:
+        {
+            gs_string cmname;
+            pdf_name *cmapn = (pdf_name *)cmap;
+            cmname.data = cmapn->data;
+            cmname.size = cmapn->length;
+            code = pdf_cmap_open_file(ctx, &cmname, &buf, &buflen);
+            if (code < 0)
+                goto error_out;
+            break;
+        }
+        case PDF_STREAM:
+        {
             pdf_obj *ucmap;
             pdf_cmap *upcmap = NULL;
             pdf_dict *cmap_dict = NULL;
@@ -842,11 +845,11 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
             if (code < 0) {
                 goto error_out;
             }
+            break;
         }
-        else {
-          code = gs_note_error(gs_error_typecheck);
-          goto error_out;
-        }
+        default:
+            code = gs_note_error(gs_error_typecheck);
+            goto error_out;
     }
     pdfi_cmap->ctx = ctx;
     pdfi_cmap->buf = buf;

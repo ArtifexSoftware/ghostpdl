@@ -149,7 +149,7 @@ int pdfi_setrenderingintent(pdf_context *ctx, pdf_name *n)
 
 int pdfi_string_from_name(pdf_context *ctx, pdf_name *n, char **str, int *len)
 {
-    if (n->type != PDF_NAME)
+    if (pdfi_type_of(n) != PDF_NAME)
         return gs_note_error(gs_error_typecheck);
 
     *str = NULL;

@@ -269,7 +269,7 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP
 
     if (NormAP == NULL)
         return 0;
-    if (NormAP->type != PDF_STREAM)
+    if (pdfi_type_of(NormAP) != PDF_STREAM)
         return_error(gs_error_typecheck);
 
     code = pdfi_op_q(ctx);
@@ -1475,11 +1475,13 @@ static int pdfi_annot_draw_LE(pdf_context *ctx, pdf_dict *annot,
     double dx, dy;
     double angle;
     int code;
+    pdf_obj_type type;
 
     code = pdfi_dict_knownget(ctx, annot, "LE", (pdf_obj **)&LE);
     if (code <= 0)
         goto exit;
-    if (LE->type != PDF_ARRAY && LE->type != PDF_NAME) {
+    type = pdfi_type_of(LE);
+    if (type != PDF_ARRAY && type != PDF_NAME) {
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
@@ -1490,7 +1492,7 @@ static int pdfi_annot_draw_LE(pdf_context *ctx, pdf_dict *annot,
     if (code < 0)
         angle = 0;
 
-    if (LE->type == PDF_ARRAY) {
+    if (type == PDF_ARRAY) {
         code = pdfi_array_get_type(ctx, (pdf_array *)LE, 0, PDF_NAME, (pdf_obj **)&LE1);
         if (code < 0) goto exit;
 
@@ -1554,34 +1556,35 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
     /* Nothing found */
     if (code == 0) goto exit;
 
-    if (baseAP->type == PDF_STREAM) {
-        /* Use baseAP for the AP */
-        AP = (pdf_stream *)baseAP;
-        baseAP = NULL;
-    } else {
-        if (baseAP->type != PDF_DICT) {
+    switch (pdfi_type_of(baseAP)) {
+        case PDF_STREAM:
+            /* Use baseAP for the AP */
+            AP = (pdf_stream *)baseAP;
+            baseAP = NULL;
+            break;
+        case PDF_DICT:
+            code = pdfi_dict_knownget_type(ctx, annot, "AS", PDF_NAME, (pdf_obj **)&AS);
+            if (code < 0) goto exit;
+            if (code == 0) {
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_AP_ERROR, "pdfi_annot_get_NormAP", "WARNING Annotation has non-stream AP but no AS.  Don't know what to render");
+                goto exit;
+            }
+
+            /* Lookup the AS in the NormAP and use that as the AP */
+            code = pdfi_dict_get_by_key(ctx, (pdf_dict *)baseAP, AS, (pdf_obj **)&AP);
+            if (code < 0) {
+                /* Apparently this is not an error, just silently don't have an AP */
+                code = 0;
+                goto exit;
+            }
+            if (pdfi_type_of(AP) != PDF_STREAM) {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+            break;
+        default:
             code = gs_error_typecheck;
             goto exit;
-        }
-
-        code = pdfi_dict_knownget_type(ctx, annot, "AS", PDF_NAME, (pdf_obj **)&AS);
-        if (code < 0) goto exit;
-        if (code == 0) {
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_AP_ERROR, "pdfi_annot_get_NormAP", "WARNING Annotation has non-stream AP but no AS.  Don't know what to render");
-            goto exit;
-        }
-
-        /* Lookup the AS in the NormAP and use that as the AP */
-        code = pdfi_dict_get_by_key(ctx, (pdf_dict *)baseAP, AS, (pdf_obj **)&AP);
-        if (code < 0) {
-            /* Apparently this is not an error, just silently don't have an AP */
-            code = 0;
-            goto exit;
-        }
-        if (AP->type != PDF_STREAM) {
-            code = gs_note_error(gs_error_typecheck);
-            goto exit;
-        }
     }
 
    *NormAP = (pdf_obj *)AP;
@@ -3950,7 +3953,7 @@ static int pdfi_annot_preserve_modQP(pdf_context *ctx, pdf_dict *annot, pdf_name
     code = pdfi_dict_get(ctx, annot, "QuadPoints", (pdf_obj **)&QP);
     if (code < 0) goto exit;
 
-    if (QP->type != PDF_ARRAY) {
+    if (pdfi_type_of(QP) != PDF_ARRAY) {
         /* Invalid QuadPoints, just delete it because I dunno what to do...
          * TODO: Should flag a warning here
          */
@@ -4024,7 +4027,7 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
     code = pdfi_dict_get(ctx, annot, "AP", (pdf_obj **)&AP);
     if (code < 0) goto exit;
 
-    if (AP->type != PDF_DICT) {
+    if (pdfi_type_of(AP) != PDF_DICT) {
         /* This is an invalid AP, we will flag and delete it below */
         found_ap = false;
         goto exit;
@@ -4037,14 +4040,14 @@ static int pdfi_annot_preserve_modAP(pdf_context *ctx, pdf_dict *annot, pdf_name
         if (code < 0) goto exit;
 
         /* Handle indirect object */
-        if (Value->type != PDF_INDIRECT)
+        if (pdfi_type_of(Value) != PDF_INDIRECT)
             goto loop_continue;
 
         /* Dereference it */
         code = pdfi_dereference(ctx, Value->ref_object_num, Value->ref_generation_num, &object);
         if (code < 0) goto exit;
 
-        if (object->type == PDF_STREAM) {
+        if (pdfi_type_of(object) == PDF_STREAM) {
             /* Get a form label */
             code = pdfi_annot_preserve_nextformlabel(ctx, &labeldata, &labellen);
             if (code < 0) goto exit;

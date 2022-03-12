@@ -55,13 +55,13 @@ int pdfi_read_Root(pdf_context *ctx)
     }
     pdfi_countdown(d);
 
-    if (o1->type == PDF_INDIRECT) {
+    if (pdfi_type_of(o1) == PDF_INDIRECT) {
         code = pdfi_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
         pdfi_countdown(o1);
         if (code < 0)
             return code;
 
-        if (o->type != PDF_DICT) {
+        if (pdfi_type_of(o) != PDF_DICT) {
             pdfi_countdown(o);
             return_error(gs_error_typecheck);
         }
@@ -73,7 +73,7 @@ int pdfi_read_Root(pdf_context *ctx)
         }
         o1 = o;
     } else {
-        if (o1->type != PDF_DICT) {
+        if (pdfi_type_of(o1) != PDF_DICT) {
             pdfi_countdown(o1);
             return_error(gs_error_typecheck);
         }
@@ -144,15 +144,15 @@ int pdfi_read_Pages(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    if (o1->type == PDF_INDIRECT) {
+    if (pdfi_type_of(o1) == PDF_INDIRECT) {
         code = pdfi_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
         pdfi_countdown(o1);
         if (code < 0)
             return code;
 
-        if (o->type != PDF_DICT) {
+        if (pdfi_type_of(o) != PDF_DICT) {
             pdfi_countdown(o);
-            if (o->type == PDF_INDIRECT)
+            if (pdfi_type_of(o) == PDF_INDIRECT)
                 pdfi_set_error(ctx, 0, NULL, E_PDF_BADPAGEDICT, "pdfi_read_Pages", (char *)"*** Error: Something is wrong with the Pages dictionary.  Giving up.");
             else
                 pdfi_set_error(ctx, 0, NULL, E_PDF_BADPAGEDICT, "pdfi_read_Pages", (char *)"*** Error: Something is wrong with the Pages dictionary.  Giving up.\n           Double indirect reference.  Loop in Pages tree?");
@@ -166,7 +166,7 @@ int pdfi_read_Pages(pdf_context *ctx)
         }
         o1 = o;
     } else {
-        if (o1->type != PDF_DICT) {
+        if (pdfi_type_of(o1) != PDF_DICT) {
             pdfi_countdown(o1);
             return_error(gs_error_typecheck);
         }
@@ -278,12 +278,12 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
     if (code < 0)
         goto errorExit;
 
-    if (node->type != PDF_INDIRECT && node->type != PDF_DICT) {
+    if (pdfi_type_of(node) != PDF_INDIRECT && pdfi_type_of(node) != PDF_DICT) {
         code = gs_note_error(gs_error_typecheck);
         goto errorExit;
     }
 
-    if (node->type == PDF_INDIRECT) {
+    if (pdfi_type_of(node) == PDF_INDIRECT) {
         code = pdfi_dereference(ctx, node->ref_object_num, node->ref_generation_num,
                                 (pdf_obj **)&child);
         if (code < 0) {
@@ -295,7 +295,7 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
             if (code < 0)
                 goto errorExit;
         }
-        if (child->type != PDF_DICT) {
+        if (pdfi_type_of(child) != PDF_DICT) {
             code = gs_note_error(gs_error_typecheck);
             goto errorExit;
         }
@@ -803,7 +803,7 @@ static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
 
     /* Handle any children (don't deref them, we don't want to leave them hanging around) */
     code = pdfi_dict_get_no_store_R(ctx, outline, "First", (pdf_obj **)&child);
-    if (code < 0 || child->type != PDF_DICT) {
+    if (code < 0 || pdfi_type_of(child) != PDF_DICT) {
         /* TODO: flag a warning? */
         code = 0;
         goto exit;
@@ -829,7 +829,7 @@ static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
             code = 0;
             goto exit;
         }
-        if (code < 0 || Next->type != PDF_DICT)
+        if (code < 0 || pdfi_type_of(Next) != PDF_DICT)
             goto exit;
 
         pdfi_countdown(child);
@@ -869,7 +869,7 @@ static int pdfi_doc_Outlines(pdf_context *ctx)
 
     /* Handle any children (don't deref them, we don't want to leave them hanging around) */
     code = pdfi_dict_get_no_store_R(ctx, Outlines, "First", (pdf_obj **)&outline);
-    if (code < 0 || outline->type != PDF_DICT) {
+    if (code < 0 || pdfi_type_of(outline) != PDF_DICT) {
         /* TODO: flag a warning? */
         code = 0;
         goto exit;
@@ -900,7 +900,7 @@ static int pdfi_doc_Outlines(pdf_context *ctx)
             code = 0;
             goto exit;
         }
-        if (code < 0 || Next->type != PDF_DICT)
+        if (code < 0 || pdfi_type_of(Next) != PDF_DICT)
             goto exit;
 
         pdfi_countdown(outline);

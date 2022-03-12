@@ -92,7 +92,7 @@ pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u
     pdfi_cid_subst_nwp_table_t *substnwp = pt0font->substnwp;
 
     code = pdfi_array_get(pt0font->ctx, pt0font->DescendantFonts, 0, (pdf_obj **)&decfont);
-    if (code < 0 || decfont->type != PDF_FONT) {
+    if (code < 0 || pdfi_type_of(decfont) != PDF_FONT) {
         pdfi_countdown(decfont);
         return gs_error_undefined;
     }
@@ -201,7 +201,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     code = pdfi_dict_get(ctx, font_dict, "Encoding", &cmap);
     if (code < 0) goto error;
 
-    if (cmap->type == PDF_CMAP) {
+    if (pdfi_type_of(cmap) == PDF_CMAP) {
         pcmap = (pdf_cmap *)cmap;
         cmap = NULL;
     }
@@ -215,7 +215,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     code = pdfi_dict_get(ctx, font_dict, "DescendantFonts", (pdf_obj **)&arr);
     if (code < 0) goto error;
 
-    if (arr->type != PDF_ARRAY || arr->size != 1) {
+    if (pdfi_type_of(arr) != PDF_ARRAY || arr->size != 1) {
         code = gs_note_error(gs_error_invalidfont);
         goto error;
     }
@@ -223,24 +223,25 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pdfi_countdown(arr);
     arr = NULL;
     if (code < 0) goto error;
-    if (decfontdict->type == PDF_FONT) {
-        descpfont = (pdf_font *)decfontdict;
-        decfontdict = descpfont->PDF_font;
-        pdfi_countup(decfontdict);
-    }
-    else {
-        if (decfontdict->type != PDF_DICT) {
-            code = gs_note_error(gs_error_invalidfont);
-            goto error;
-        }
-        code = pdfi_dict_get(ctx, (pdf_dict *)decfontdict, "Type", (pdf_obj **)&n);
-        if (code < 0) goto error;
-        if (n->type != PDF_NAME || n->length != 4 || memcmp(n->data, "Font", 4) != 0) {
+    switch (pdfi_type_of(decfontdict)) {
+        case PDF_FONT:
+            descpfont = (pdf_font *)decfontdict;
+            decfontdict = descpfont->PDF_font;
+            pdfi_countup(decfontdict);
+            break;
+        case PDF_DICT:
+            code = pdfi_dict_get(ctx, (pdf_dict *)decfontdict, "Type", (pdf_obj **)&n);
+            if (code < 0) goto error;
+            if (pdfi_type_of(n) != PDF_NAME || n->length != 4 || memcmp(n->data, "Font", 4) != 0) {
+                pdfi_countdown(n);
+                code = gs_note_error(gs_error_invalidfont);
+                goto error;
+            }
             pdfi_countdown(n);
+            break;
+        default:
             code = gs_note_error(gs_error_invalidfont);
             goto error;
-        }
-        pdfi_countdown(n);
     }
 #if 0
     code = pdfi_dict_get(ctx, (pdf_dict *)decfontdict, "Subtype", (pdf_obj **)&n);
@@ -267,13 +268,13 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
 
     if (ctx->args.ignoretounicode != true) {
         code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
-        if (code >= 0 && tounicode->type == PDF_STREAM) {
+        if (code >= 0 && pdfi_type_of(tounicode) == PDF_STREAM) {
             pdf_cmap *tu = NULL;
             code = pdfi_read_cmap(ctx, tounicode, &tu);
             pdfi_countdown(tounicode);
             tounicode = (pdf_obj *)tu;
         }
-        if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
+        if (code < 0 || (tounicode != NULL && pdfi_type_of(tounicode) != PDF_CMAP)) {
             pdfi_countdown(tounicode);
             tounicode = NULL;
             code = 0;
@@ -307,8 +308,8 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         if (code >= 0) {
             (void)pdfi_dict_get(ctx, (pdf_dict *)csi, "Registry", (pdf_obj **)&reg);
             (void)pdfi_dict_get(ctx, (pdf_dict *)csi, "Ordering", (pdf_obj **)&ord);
-            if (reg != NULL && reg->type == PDF_STRING
-             && ord != NULL && ord->type == PDF_STRING) {
+            if (reg != NULL && pdfi_type_of(reg) == PDF_STRING
+             && ord != NULL && pdfi_type_of(ord) == PDF_STRING) {
                 r = (char *)reg->data;
                 rlen = reg->length;
                 o = (char *)ord->data;

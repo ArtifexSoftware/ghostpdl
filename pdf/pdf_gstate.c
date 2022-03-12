@@ -173,15 +173,16 @@ int pdfi_concat(pdf_context *ctx)
 
     for (i=0;i < 6;i++){
         num = (pdf_num *)ctx->stack_top[i - 6];
-        if (num->type != PDF_INT) {
-            if(num->type != PDF_REAL) {
+        switch (pdfi_type_of(num)) {
+            case PDF_INT:
+                Values[i] = (double)num->value.i;
+                break;
+            case PDF_REAL:
+                Values[i] = num->value.d;
+                break;
+            default:
                 pdfi_pop(ctx, 6);
                 return_error(gs_error_typecheck);
-            }
-            else
-                Values[i] = num->value.d;
-        } else {
-            Values[i] = (double)num->value.i;
         }
     }
     m.xx = (float)Values[0];
@@ -303,15 +304,16 @@ int pdfi_setlinewidth(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
 
     n1 = (pdf_num *)ctx->stack_top[-1];
-    if (n1->type == PDF_INT){
-        d1 = (double)n1->value.i;
-    } else{
-        if (n1->type == PDF_REAL) {
+    switch (pdfi_type_of(n1)) {
+        case PDF_INT:
+            d1 = (double)n1->value.i;
+            break;
+        case PDF_REAL:
             d1 = n1->value.d;
-        } else {
+            break;
+        default:
             pdfi_pop(ctx, 1);
             return_error(gs_error_typecheck);
-        }
     }
     code = gs_setlinewidth(ctx->pgs, d1);
     pdfi_pop(ctx, 1);
@@ -327,7 +329,7 @@ int pdfi_setlinejoin(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
 
     n1 = (pdf_num *)ctx->stack_top[-1];
-    if (n1->type == PDF_INT){
+    if (pdfi_type_of(n1) == PDF_INT) {
         code = gs_setlinejoin(ctx->pgs, n1->value.i);
     } else {
         pdfi_pop(ctx, 1);
@@ -346,7 +348,7 @@ int pdfi_setlinecap(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
 
     n1 = (pdf_num *)ctx->stack_top[-1];
-    if (n1->type == PDF_INT){
+    if (pdfi_type_of(n1) == PDF_INT) {
         code = gs_setlinecap(ctx->pgs, n1->value.i);
     } else {
         pdfi_pop(ctx, 1);
@@ -366,15 +368,16 @@ int pdfi_setflat(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
 
     n1 = (pdf_num *)ctx->stack_top[-1];
-    if (n1->type == PDF_INT){
-        d1 = (double)n1->value.i;
-    } else{
-        if (n1->type == PDF_REAL) {
+    switch (pdfi_type_of(n1)) {
+        case PDF_INT:
+            d1 = (double)n1->value.i;
+            break;
+        case PDF_REAL:
             d1 = n1->value.d;
-        } else {
+            break;
+        default:
             pdfi_pop(ctx, 1);
             return_error(gs_error_typecheck);
-        }
     }
     /* PDF spec says the value is 1-100, with 0 meaning "use the default"
      * But gs code (and now our code) forces the value to be <= 1
@@ -425,19 +428,20 @@ int pdfi_setdash(pdf_context *ctx)
     }
 
     phase = (pdf_num *)ctx->stack_top[-1];
-    if (phase->type == PDF_INT){
-        phase_d = (double)phase->value.i;
-    } else{
-        if (phase->type == PDF_REAL) {
+    switch (pdfi_type_of(phase)) {
+        case PDF_INT:
+            phase_d = (double)phase->value.i;
+            break;
+        case PDF_REAL:
             phase_d = phase->value.d;
-        } else {
+            break;
+        default:
             pdfi_pop(ctx, 2);
             return_error(gs_error_typecheck);
-        }
     }
 
     a = (pdf_array *)ctx->stack_top[-2];
-    if (a->type != PDF_ARRAY) {
+    if (pdfi_type_of(a) != PDF_ARRAY) {
         pdfi_pop(ctx, 2);
         return_error(gs_error_typecheck);
     }
@@ -457,15 +461,16 @@ int pdfi_setmiterlimit(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
 
     n1 = (pdf_num *)ctx->stack_top[-1];
-    if (n1->type == PDF_INT){
-        d1 = (double)n1->value.i;
-    } else{
-        if (n1->type == PDF_REAL) {
+    switch (pdfi_type_of(n1)) {
+        case PDF_INT:
+            d1 = (double)n1->value.i;
+            break;
+        case PDF_REAL:
             d1 = n1->value.d;
-        } else {
+            break;
+        default:
             pdfi_pop(ctx, 1);
             return_error(gs_error_typecheck);
-        }
     }
     code = gs_setmiterlimit(ctx->pgs, d1);
     pdfi_pop(ctx, 1);
@@ -652,46 +657,45 @@ static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *pa
     int code = 0, i;
     gs_function_t *pfn;
 
-    if (obj->type == PDF_NAME) {
-        if (pdfi_name_is((const pdf_name *)obj, "Identity")) {
-            code = gs_setblackgeneration_remap(ctx->pgs, gs_identity_transfer, false);
-            goto exit;
-        } else {
-            if (!is_BG && pdfi_name_is((const pdf_name *)obj, "Default")) {
+    switch (pdfi_type_of(obj)) {
+        case PDF_NAME:
+            if (pdfi_name_is((const pdf_name *)obj, "Identity"))
+                code = gs_setblackgeneration_remap(ctx->pgs, gs_identity_transfer, false);
+            else if (!is_BG && pdfi_name_is((const pdf_name *)obj, "Default")) {
                 code = gs_setblackgeneration_remap(ctx->pgs, ctx->page.DefaultBG.proc, false);
                 memcpy(ctx->pgs->black_generation->values, ctx->page.DefaultBG.values, transfer_map_size * sizeof(frac));
-                goto exit;
-            } else {
+            } else
                 code = gs_note_error(gs_error_rangecheck);
-                goto exit;
-            }
-        }
-    } else {
-        if (obj->type != PDF_DICT && obj->type != PDF_STREAM)
-            return_error(gs_error_typecheck);
+            goto exit;
 
-        code = pdfi_build_function(ctx, &pfn, NULL, 1, obj, page_dict);
-        if (code < 0)
-            return code;
-
-        gs_setblackgeneration_remap(ctx->pgs, gs_mapped_transfer, false);
-        for (i = 0; i < transfer_map_size; i++) {
-            float v, f;
-
-            f = (1.0f / (transfer_map_size - 1)) * i;
-
-            code = gs_function_evaluate(pfn, (const float *)&f, &v);
-            if (code < 0) {
-                pdfi_free_function(ctx, pfn);
+        case PDF_DICT:
+        case PDF_STREAM:
+            code = pdfi_build_function(ctx, &pfn, NULL, 1, obj, page_dict);
+            if (code < 0)
                 return code;
-            }
 
-            ctx->pgs->black_generation->values[i] =
-                (v < 0.0 ? float2frac(0.0) :
-                 v >= 1.0 ? frac_1 :
-                 float2frac(v));
-        }
-        code = pdfi_free_function(ctx, pfn);
+            gs_setblackgeneration_remap(ctx->pgs, gs_mapped_transfer, false);
+            for (i = 0; i < transfer_map_size; i++) {
+                float v, f;
+
+                f = (1.0f / (transfer_map_size - 1)) * i;
+
+                code = gs_function_evaluate(pfn, (const float *)&f, &v);
+                if (code < 0) {
+                    pdfi_free_function(ctx, pfn);
+                    return code;
+                }
+
+                ctx->pgs->black_generation->values[i] =
+                    (v < 0.0 ? float2frac(0.0) :
+                     v >= 1.0 ? frac_1 :
+                     float2frac(v));
+            }
+            code = pdfi_free_function(ctx, pfn);
+            break;
+
+        default:
+            return_error(gs_error_typecheck);
     }
 exit:
     return code;
@@ -741,46 +745,46 @@ static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *
     int code = 0, i;
     gs_function_t *pfn;
 
-    if (obj->type == PDF_NAME) {
-        if (pdfi_name_is((const pdf_name *)obj, "Identity")) {
-            code = gs_setundercolorremoval_remap(ctx->pgs, gs_identity_transfer, false);
-            goto exit;
-        } else {
-            if (!is_BG && pdfi_name_is((const pdf_name *)obj, "Default")) {
+    switch (pdfi_type_of(obj)) {
+        case PDF_NAME:
+            if (pdfi_name_is((const pdf_name *)obj, "Identity")) {
+                code = gs_setundercolorremoval_remap(ctx->pgs, gs_identity_transfer, false);
+            } else if (!is_BG && pdfi_name_is((const pdf_name *)obj, "Default")) {
                 code = gs_setundercolorremoval_remap(ctx->pgs, ctx->page.DefaultUCR.proc, false);
                 memcpy(ctx->pgs->undercolor_removal->values, ctx->page.DefaultUCR.values, transfer_map_size * sizeof(frac));
-                goto exit;
             } else {
                 code = gs_note_error(gs_error_rangecheck);
-                goto exit;
             }
-        }
-    } else {
-        if (obj->type != PDF_DICT && obj->type != PDF_STREAM)
-            return_error(gs_error_typecheck);
+            goto exit;
 
-        code = pdfi_build_function(ctx, &pfn, NULL, 1, obj, page_dict);
-        if (code < 0)
-            return code;
-
-        gs_setundercolorremoval_remap(ctx->pgs, gs_mapped_transfer, false);
-        for (i = 0; i < transfer_map_size; i++) {
-            float v, f;
-
-            f = (1.0f / (transfer_map_size - 1)) * i;
-
-            code = gs_function_evaluate(pfn, (const float *)&f, &v);
-            if (code < 0) {
-                pdfi_free_function(ctx, pfn);
+        case PDF_DICT:
+        case PDF_STREAM:
+            code = pdfi_build_function(ctx, &pfn, NULL, 1, obj, page_dict);
+            if (code < 0)
                 return code;
-            }
 
-            ctx->pgs->undercolor_removal->values[i] =
-                (v < 0.0 ? float2frac(0.0) :
-                 v >= 1.0 ? frac_1 :
-                 float2frac(v));
-        }
-        code = pdfi_free_function(ctx, pfn);
+            gs_setundercolorremoval_remap(ctx->pgs, gs_mapped_transfer, false);
+            for (i = 0; i < transfer_map_size; i++) {
+                float v, f;
+
+                f = (1.0f / (transfer_map_size - 1)) * i;
+
+                code = gs_function_evaluate(pfn, (const float *)&f, &v);
+                if (code < 0) {
+                    pdfi_free_function(ctx, pfn);
+                    return code;
+                }
+
+                ctx->pgs->undercolor_removal->values[i] =
+                    (v < 0.0 ? float2frac(0.0) :
+                     v >= 1.0 ? frac_1 :
+                     float2frac(v));
+            }
+            code = pdfi_free_function(ctx, pfn);
+            break;
+
+        default:
+            return_error(gs_error_typecheck);
     }
 exit:
     return code;
@@ -852,12 +856,12 @@ static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page
         code = pdfi_array_get(ctx, a, (uint64_t)i, &o);
         if (code < 0)
             goto exit;
-        if (o->type == PDF_NAME) {
-            if (pdfi_name_is((const pdf_name *)o, "Identity")) {
-                proc_types[i] = E_IDENTITY;
-                map_procs[i] = gs_identity_transfer;
-            } else {
-                if (!is_TR && pdfi_name_is((const pdf_name *)o, "Default")) {
+        switch (pdfi_type_of(o)) {
+            case PDF_NAME:
+                if (pdfi_name_is((const pdf_name *)o, "Identity")) {
+                    proc_types[i] = E_IDENTITY;
+                    map_procs[i] = gs_identity_transfer;
+                } else if (!is_TR && pdfi_name_is((const pdf_name *)o, "Default")) {
                     proc_types[i] = E_DEFAULT;
                     map_procs[i] = ctx->page.DefaultTransfers[i].proc;
                 } else {
@@ -865,9 +869,9 @@ static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page
                     code = gs_note_error(gs_error_typecheck);
                     goto exit;
                 }
-            }
-        } else {
-            if (o->type == PDF_STREAM || o->type == PDF_DICT) {
+                break;
+            case PDF_STREAM:
+            case PDF_DICT:
                 proc_types[i] = E_FUNCTION;
                 map_procs[i] = gs_mapped_transfer;
                 code = pdfi_build_function(ctx, &pfn[i], NULL, 1, o, page_dict);
@@ -880,11 +884,11 @@ static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page
                     code = gs_note_error(gs_error_rangecheck);
                     goto exit;
                 }
-            } else {
+                break;
+            default:
                 pdfi_countdown(o);
                 code = gs_note_error(gs_error_typecheck);
                 goto exit;
-            }
         }
         pdfi_countdown(o);
     }
@@ -954,7 +958,7 @@ static int pdfi_set_gray_transfer(pdf_context *ctx, pdf_obj *tr_obj, pdf_dict *p
     int code = 0, i;
     gs_function_t *pfn;
 
-    if (tr_obj->type != PDF_DICT && tr_obj->type != PDF_STREAM)
+    if (pdfi_type_of(tr_obj) != PDF_DICT && pdfi_type_of(tr_obj) != PDF_STREAM)
         return_error(gs_error_typecheck);
 
     code = pdfi_build_function(ctx, &pfn, NULL, 1, tr_obj, page_dict);
@@ -990,7 +994,7 @@ static int pdfi_set_transfer(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict
 {
     int code = 0;
 
-    if (obj->type == PDF_NAME) {
+    if (pdfi_type_of(obj) == PDF_NAME) {
         if (pdfi_name_is((const pdf_name *)obj, "Identity")) {
             code = gs_settransfer_remap(ctx->pgs, gs_identity_transfer, false);
             goto exit;
@@ -1006,7 +1010,7 @@ static int pdfi_set_transfer(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict
         }
     }
 
-    if (obj->type == PDF_ARRAY) {
+    if (pdfi_type_of(obj) == PDF_ARRAY) {
         if (pdfi_array_size((pdf_array *)obj) != 4) {
             code = gs_note_error(gs_error_rangecheck);
             goto exit;
@@ -1157,7 +1161,7 @@ error:
 
 static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len, int comp_num)
 {
-    int code;
+    int code, i;
     pdf_obj *obj = NULL, *transfer = NULL;
     double f, a;
     float values[2] = {0, 0}, domain[4] = {-1, 1, -1, 1}, out;
@@ -1193,46 +1197,48 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     }
     memset(order, 0x00, sizeof(gx_ht_order));
 
-    if (obj->type == PDF_NAME) {
-        int i;
-
-        if (pdfi_name_is((pdf_name *)obj, "Default")) {
-            i = 0;
-        } else {
-            for (i = 0; i < (sizeof(spot_table) / sizeof (char *)); i++){
-                if (pdfi_name_is((pdf_name *)obj, spot_table[i]))
-                    break;
+    switch (pdfi_type_of(obj)) {
+        case PDF_NAME:
+            if (pdfi_name_is((pdf_name *)obj, "Default")) {
+                i = 0;
+            } else {
+                for (i = 0; i < (sizeof(spot_table) / sizeof (char *)); i++) {
+                    if (pdfi_name_is((pdf_name *)obj, spot_table[i]))
+                        break;
+                }
+                if (i >= (sizeof(spot_table) / sizeof (char *)))
+                    return gs_note_error(gs_error_rangecheck);
             }
-            if (i >= (sizeof(spot_table) / sizeof (char *)))
-                return gs_note_error(gs_error_rangecheck);
-        }
-        code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
-        if (code < 0)
-            goto error;
-    } else {
-        if (obj->type == PDF_DICT || obj->type == PDF_STREAM) {
+            code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
+            if (code < 0)
+                goto error;
+            break;
+        case PDF_DICT:
+        case PDF_STREAM:
             code = pdfi_build_function(ctx, &pfn, (const float *)domain, 2, obj, page_dict);
             if (code < 0)
                 goto error;
-        } else {
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
             goto error;
-        }
     }
 
     if (pdfi_dict_knownget(ctx, halftone_dict, "TransferFunction", &transfer) > 0) {
-        if (transfer->type == PDF_NAME) {
-            /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
-             * names, if it's not Identity it would be an error (which we would ignore) and if
-             * it is, it has no effect. So what's the point ?
-             */
-        } else {
-            if (transfer->type == PDF_STREAM) {
+        switch (pdfi_type_of(transfer)) {
+            case PDF_NAME:
+                /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
+                 * names, if it's not Identity it would be an error (which we would ignore) and if
+                 * it is, it has no effect. So what's the point ?
+                 */
+                break;
+            case PDF_STREAM:
                 pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
-            } else {
+                break;
+            default:
                 /* should be an error, but we can just ignore it */
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_TYPECHECK, "build_type1_halftone", NULL);
-            }
+                break;
         }
     }
 
@@ -1557,7 +1563,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
      * members.
      */
     do {
-        if (Key->type != PDF_NAME) {
+        if (pdfi_type_of(Key) != PDF_NAME) {
             code = gs_note_error(gs_error_typecheck);
             goto error;
         }
@@ -1630,7 +1636,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
      */
     ix = 1;
     do {
-        if (Key->type != PDF_NAME) {
+        if (pdfi_type_of(Key) != PDF_NAME) {
             code = gs_note_error(gs_error_typecheck);
             goto error;
         }
@@ -1673,7 +1679,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                                 goto error;
                             break;
                         case 6:
-                            if (Value->type != PDF_STREAM) {
+                            if (pdfi_type_of(Value) != PDF_STREAM) {
                                 code = gs_note_error(gs_error_typecheck);
                                 goto error;
                             }
@@ -1682,7 +1688,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                                 goto error;
                             break;
                         case 10:
-                            if (Value->type != PDF_STREAM) {
+                            if (pdfi_type_of(Value) != PDF_STREAM) {
                                 code = gs_note_error(gs_error_typecheck);
                                 goto error;
                             }
@@ -1691,7 +1697,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                                 goto error;
                             break;
                         case 16:
-                            if (Value->type != PDF_STREAM) {
+                            if (pdfi_type_of(Value) != PDF_STREAM) {
                                 code = gs_note_error(gs_error_typecheck);
                                 goto error;
                             }
@@ -1849,7 +1855,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             break;
 
         case 6:
-            if (halftone_obj->type != PDF_STREAM)
+            if (pdfi_type_of(halftone_obj) != PDF_STREAM)
                 return_error(gs_error_typecheck);
             phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component), "pdfi_do_halftone");
             if (phtc == 0) {
@@ -1870,22 +1876,24 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
 
             /* Transfer function pdht->order->transfer */
             if (pdfi_dict_knownget(ctx, ((pdf_stream *)halftone_obj)->stream_dict, "TransferFunction", &transfer) > 0) {
-                if (transfer->type == PDF_NAME) {
-                    /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
-                     * names, if it's not Identity it would be an error (which we would ignore) and if
-                     * it is, it has no effect. So what's the point ?
-                     */
-                } else {
-                    if (transfer->type == PDF_STREAM) {
+                switch (pdfi_type_of(transfer)) {
+                    case PDF_NAME:
+                        /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
+                         * names, if it's not Identity it would be an error (which we would ignore) and if
+                         * it is, it has no effect. So what's the point ?
+                         */
+                        break;
+                    case PDF_STREAM:
                         /* If we get an error here, we can just ignore it, and not apply the transfer */
                         code = pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
                         if (code >= 0) {
                             pdht->order.transfer = pmap;
                         }
-                    } else {
+                        break;
+                    default:
                         /* should be an error, but we can just ignore it */
                         pdfi_set_warning(ctx, 0, NULL, W_PDF_TYPECHECK, "do_halftone", NULL);
-                    }
+                        break;
                 }
                 pdfi_countdown(transfer);
             }
@@ -1901,7 +1909,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             gx_unset_both_dev_colors(ctx->pgs);
             break;
         case 10:
-            if (halftone_obj->type != PDF_STREAM)
+            if (pdfi_type_of(halftone_obj) != PDF_STREAM)
                 return_error(gs_error_typecheck);
             phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component), "pdfi_do_halftone");
             if (phtc == 0) {
@@ -1922,22 +1930,24 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
 
             /* Transfer function pdht->order->transfer */
             if (pdfi_dict_knownget(ctx, ((pdf_stream *)halftone_obj)->stream_dict, "TransferFunction", &transfer) > 0) {
-                if (transfer->type == PDF_NAME) {
-                    /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
-                     * names, if it's not Identity it would be an error (which we would ignore) and if
-                     * it is, it has no effect. So what's the point ?
-                     */
-                } else {
-                    if (transfer->type == PDF_STREAM) {
+                switch (pdfi_type_of(transfer)) {
+                    case PDF_NAME:
+                        /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
+                         * names, if it's not Identity it would be an error (which we would ignore) and if
+                         * it is, it has no effect. So what's the point ?
+                         */
+                        break;
+                    case PDF_STREAM:
                         /* If we get an error here, we can just ignore it, and not apply the transfer */
                         code = pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
                         if (code >= 0) {
                             pdht->order.transfer = pmap;
                         }
-                    } else {
+                        break;
+                    default:
                         /* should be an error, but we can just ignore it */
                         pdfi_set_warning(ctx, 0, NULL, W_PDF_TYPECHECK, "do_halftone", NULL);
-                    }
+                        break;
                 }
                 pdfi_countdown(transfer);
             }
@@ -1953,7 +1963,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             gx_unset_both_dev_colors(ctx->pgs);
             break;
         case 16:
-            if (halftone_obj->type != PDF_STREAM)
+            if (pdfi_type_of(halftone_obj) != PDF_STREAM)
                 return_error(gs_error_typecheck);
             phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component), "pdfi_do_halftone");
             if (phtc == 0) {
@@ -1974,22 +1984,24 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
 
             /* Transfer function pdht->order->transfer */
             if (pdfi_dict_knownget(ctx, ((pdf_stream *)halftone_obj)->stream_dict, "TransferFunction", &transfer) > 0) {
-                if (transfer->type == PDF_NAME) {
-                    /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
-                     * names, if it's not Identity it would be an error (which we would ignore) and if
-                     * it is, it has no effect. So what's the point ?
-                     */
-                } else {
-                    if (transfer->type == PDF_STREAM) {
+                switch (pdfi_type_of(transfer)) {
+                    case PDF_NAME:
+                        /* As far as I can tell, only /Identity is valid as a name, so we can just ignore
+                         * names, if it's not Identity it would be an error (which we would ignore) and if
+                         * it is, it has no effect. So what's the point ?
+                         */
+                        break;
+                    case PDF_STREAM:
                         /* If we get an error here, we can just ignore it, and not apply the transfer */
                         code = pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
                         if (code >= 0) {
                             pdht->order.transfer = pmap;
                         }
-                    } else {
+                        break;
+                    default:
                         /* should be an error, but we can just ignore it */
                         pdfi_set_warning(ctx, 0, NULL, W_PDF_TYPECHECK, "do_halftone", NULL);
-                    }
+                        break;
                 }
                 pdfi_countdown(transfer);
             }
@@ -2034,7 +2046,7 @@ static int GS_HT(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
         return code;
 
 
-    if (obj->type == PDF_NAME) {
+    if (pdfi_type_of(obj) == PDF_NAME) {
         if (pdfi_name_is((const pdf_name *)obj, "Default")) {
             goto exit;
         } else {
@@ -2125,35 +2137,44 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
     if (code < 0)
         return code;
 
-    if (o->type == PDF_NAME) {
-        pdf_name *n = (pdf_name *)o;
+    switch (pdfi_type_of(o)) {
+        case PDF_NAME:
+        {
+            pdf_name *n = (pdf_name *)o;
 
-        if (pdfi_name_is(n, "None")) {
-            if (igs->SMask) {
-                pdfi_gstate_smask_free(igs);
-                code = pdfi_trans_end_smask_notify(ctx);
+            if (pdfi_name_is(n, "None")) {
+                if (igs->SMask) {
+                    pdfi_gstate_smask_free(igs);
+                    code = pdfi_trans_end_smask_notify(ctx);
+                }
+                goto exit;
             }
-            goto exit;
+            code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", n, stream_dict, page_dict, &o);
+            pdfi_countdown(n);
+            if (code < 0)
+                return code;
+            break;
         }
-        code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", n, stream_dict, page_dict, &o);
-        pdfi_countdown(n);
-        if (code < 0)
-            return code;
-    }
 
-    if (o->type == PDF_DICT) {
-        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Processed", PDF_BOOL, (pdf_obj **)&Processed);
-        /* Need to clear the Processed flag in the SMask if another value is set
-         * (even if it's the same SMask?)
-         * TODO: I think there is a better way to do this that doesn't require sticking this
-         * flag in the SMask dictionary.  But for now, let's get correct behavior.
-         */
-        if (code > 0 && Processed->value)
-            Processed->value = false;
-        if (igs->SMask)
-            pdfi_gstate_smask_free(igs);
-        /* We need to use the graphics state memory, in case we are running under Ghostscript. */
-        pdfi_gstate_smask_install(igs, ctx->pgs->memory, (pdf_dict *)o, ctx->pgs);
+        case PDF_DICT:
+        {
+            code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Processed", PDF_BOOL, (pdf_obj **)&Processed);
+            /* Need to clear the Processed flag in the SMask if another value is set
+             * (even if it's the same SMask?)
+             * TODO: I think there is a better way to do this that doesn't require sticking this
+             * flag in the SMask dictionary.  But for now, let's get correct behavior.
+             */
+            if (code > 0 && Processed->value)
+                Processed->value = false;
+            if (igs->SMask)
+                pdfi_gstate_smask_free(igs);
+            /* We need to use the graphics state memory, in case we are running under Ghostscript. */
+            pdfi_gstate_smask_install(igs, ctx->pgs->memory, (pdf_dict *)o, ctx->pgs);
+            break;
+        }
+
+        default:
+            break;
     }
 
  exit:
@@ -2310,7 +2331,7 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto setgstate_error;
     }
     n = (pdf_name *)ctx->stack_top[-1];
-    if (n->type != PDF_NAME) {
+    if (pdfi_type_of(n) != PDF_NAME) {
         pdfi_pop(ctx, 1);
         code = gs_note_error(gs_error_typecheck);
         goto setgstate_error;
@@ -2322,7 +2343,7 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         goto setgstate_error;
 
-    if (o->type != PDF_DICT) {
+    if (pdfi_type_of(o) != PDF_DICT) {
         code = gs_note_error(gs_error_typecheck);
         goto setgstate_error;
     }

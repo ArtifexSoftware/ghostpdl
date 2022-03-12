@@ -536,8 +536,8 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
         gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font");
 
         /* If we have a full CharStrings dictionary, we probably have enough to make a font */
-        if (code < 0 || (fpriv.u.t1.CharStrings == NULL || fpriv.u.t1.CharStrings->type != PDF_DICT
-            || fpriv.u.t1.CharStrings->entries == 0)) {
+        if (code < 0 || fpriv.u.t1.CharStrings == NULL || pdfi_type_of(fpriv.u.t1.CharStrings) != PDF_DICT
+            || fpriv.u.t1.CharStrings->entries == 0) {
                 code = gs_note_error(gs_error_invalidfont);
                 goto error;
         }
@@ -596,13 +596,13 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
 
             if (ctx->args.ignoretounicode != true) {
                 code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
-                if (code >= 0 && tounicode->type == PDF_STREAM) {
+                if (code >= 0 && pdfi_type_of(tounicode) == PDF_STREAM) {
                     pdf_cmap *tu = NULL;
                     code = pdfi_read_cmap(ctx, tounicode, &tu);
                     pdfi_countdown(tounicode);
                     tounicode = (pdf_obj *)tu;
                 }
-                if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
+                if (code < 0 || (tounicode != NULL && pdfi_type_of(tounicode) != PDF_CMAP)) {
                     pdfi_countdown(tounicode);
                     tounicode = NULL;
                     code = 0;
@@ -697,12 +697,12 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
 
             code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
             if (code == 1) {
-                if ((tmp->type == PDF_NAME || tmp->type == PDF_DICT) && (t1f->descflags & 4) == 0) {
+                if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT) && (t1f->descflags & 4) == 0) {
                     code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & t1f->Encoding);
                     if (code >= 0)
                         code = 1;
                 }
-                else if (tmp->type == PDF_DICT && (t1f->descflags & 4) != 0) {
+                else if (pdfi_type_of(tmp) == PDF_DICT && (t1f->descflags & 4) != 0) {
                     code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)fpriv.u.t1.Encoding, (pdf_obj **) & t1f->Encoding);
                     if (code >= 0)
                         code = 1;

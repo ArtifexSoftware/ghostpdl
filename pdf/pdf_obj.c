@@ -445,7 +445,7 @@ int pdfi_obj_get_label(pdf_context *ctx, pdf_obj *obj, char **label)
         goto exit;
     }
 
-    if (obj->type == PDF_INDIRECT)
+    if (pdfi_type_of(obj) == PDF_INDIRECT)
         snprintf(string, length, template, ref->ref_object_num, ref->ref_generation_num);
     else
         snprintf(string, length, template, obj->object_num, obj->generation_num);

@@ -106,7 +106,7 @@ int pdfi_count_to_mark(pdf_context *ctx, uint64_t *count)
 
     *count = 0;
     while (&ctx->stack_top[index] >= save_bot) {
-        if (o->type == PDF_ARRAY_MARK || o->type == PDF_DICT_MARK)
+        if (pdfi_type_of(o) == PDF_ARRAY_MARK || pdfi_type_of(o) == PDF_DICT_MARK)
             return 0;
         o = ctx->stack_top[--index];
         (*count)++;

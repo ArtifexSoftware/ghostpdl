@@ -305,7 +305,7 @@ pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
     params.ops.data = 0;	/* in case of failure */
     params.ops.size = 0;	/* ditto */
 
-    if (function_obj->type != PDF_STREAM)
+    if (pdfi_type_of(function_obj) != PDF_STREAM)
         return_error(gs_error_undefined);
     Length = pdfi_stream_length(ctx, (pdf_stream *)function_obj);
 
@@ -387,7 +387,7 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
     params.Size = params.array_step = params.stream_step = NULL;
     params.Order = 0;
 
-    if (function_obj->type != PDF_STREAM)
+    if (pdfi_type_of(function_obj) != PDF_STREAM)
         return_error(gs_error_undefined);
 
     code = pdfi_dict_from_obj(ctx, (pdf_obj *)function_obj, &function_dict);

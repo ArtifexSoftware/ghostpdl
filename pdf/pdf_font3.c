@@ -74,7 +74,7 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     }
     if (code < 0)
         goto build_char_error;
-    if (CharProc->type != PDF_STREAM) {
+    if (pdfi_type_of(CharProc) != PDF_STREAM) {
         code = gs_note_error(gs_error_typecheck);
         goto build_char_error;
     }
@@ -347,13 +347,13 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
 
     if (ctx->args.ignoretounicode != true) {
         code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
-        if (code >= 0 && tounicode->type == PDF_STREAM) {
+        if (code >= 0 && pdfi_type_of(tounicode) == PDF_STREAM) {
             pdf_cmap *tu = NULL;
             code = pdfi_read_cmap(ctx, tounicode, &tu);
             pdfi_countdown(tounicode);
             tounicode = (pdf_obj *)tu;
         }
-        if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
+        if (code < 0 || (tounicode != NULL && pdfi_type_of(tounicode) != PDF_CMAP)) {
             pdfi_countdown(tounicode);
             tounicode = NULL;
             code = 0;

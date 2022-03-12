@@ -243,4 +243,11 @@ typedef struct pdf_c_stream_s {
     char unget_buffer[UNREAD_BUFFER_SIZE];
 } pdf_c_stream;
 
+#define pdfi_type_of(A) pdfi_type_of_imp((pdf_obj *)A)
+
+static pdf_obj_type pdfi_type_of_imp(pdf_obj *obj)
+{
+    return obj->type;
+}
+
 #endif

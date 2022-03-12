@@ -163,7 +163,7 @@ int pdfi_repair_file(pdf_context *ctx)
                     goto exit;
             }
             if (pdfi_count_stack(ctx) > 0) {
-                if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
+                if (pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD) {
                     pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
                     pdf_num *n;
 
@@ -174,7 +174,7 @@ int pdfi_repair_file(pdf_context *ctx)
 
                         saved_offset[0] = saved_offset[1] = saved_offset[2] = 0;
 
-                        if (pdfi_count_stack(ctx) < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
+                        if (pdfi_count_stack(ctx) < 3 || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT) {
                             pdfi_clearstack(ctx);
                             continue;
                         }
@@ -199,7 +199,7 @@ int pdfi_repair_file(pdf_context *ctx)
                             if (code == 0 && ctx->main_stream->eof)
                                 break;
 
-                            if (ctx->stack_top[-1]->type == PDF_KEYWORD){
+                            if (pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD) {
                                 pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
 
                                 if (k->key == TOKEN_OBJ) {
@@ -207,7 +207,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                      * and start afresh.
                                      */
                                     code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
-                                    if (pdfi_count_stack(ctx) < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
+                                    if (pdfi_count_stack(ctx) < 3 || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT) {
                                         pdfi_clearstack(ctx);
                                         break;
                                     }
@@ -279,7 +279,7 @@ int pdfi_repair_file(pdf_context *ctx)
                             } else {
                                 if (k->key == TOKEN_TRAILER) {
                                     code = pdfi_read_bare_object(ctx, ctx->main_stream, 0, 0, 0);
-                                    if (code == 0 && pdfi_count_stack(ctx) > 0 && ctx->stack_top[-1]->type == PDF_DICT) {
+                                    if (code == 0 && pdfi_count_stack(ctx) > 0 && pdfi_type_of(ctx->stack_top[-1]) == PDF_DICT) {
                                         if (ctx->Trailer) {
                                             pdf_dict *d = (pdf_dict *)ctx->stack_top[-1];
                                             bool known = false;
@@ -308,7 +308,7 @@ int pdfi_repair_file(pdf_context *ctx)
                             goto exit;
                     }
                 }
-                if (pdfi_count_stack(ctx) > 0 && ctx->stack_top[-1]->type != PDF_INT)
+                if (pdfi_count_stack(ctx) > 0 && pdfi_type_of(ctx->stack_top[-1]) != PDF_INT)
                     pdfi_clearstack(ctx);
             }
         } while (ctx->main_stream->eof == false);
@@ -338,7 +338,7 @@ int pdfi_repair_file(pdf_context *ctx)
                     break;
                 if (code < 0)
                     goto exit;
-                if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
+                if (pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD) {
                     pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
 
                     if (k->key == TOKEN_OBJ){
@@ -346,7 +346,7 @@ int pdfi_repair_file(pdf_context *ctx)
                     }
                     if (k->key == TOKEN_ENDOBJ) {
                         if (pdfi_count_stack(ctx) > 1) {
-                            if (ctx->stack_top[-2]->type == PDF_DICT) {
+                            if (pdfi_type_of(ctx->stack_top[-2]) == PDF_DICT) {
                                 pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
                                 pdf_obj *o = NULL;
 
@@ -379,7 +379,7 @@ int pdfi_repair_file(pdf_context *ctx)
                             break;;
                         }
                         d = (pdf_dict *)ctx->stack_top[-2];
-                        if (d->type != PDF_DICT) {
+                        if (pdfi_type_of(d) != PDF_DICT) {
                             pdfi_clearstack(ctx);
                             break;;
                         }

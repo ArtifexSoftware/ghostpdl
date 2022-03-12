@@ -128,14 +128,14 @@ int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o
 
     *o = NULL;
 
-    if (a->type != PDF_ARRAY)
+    if (pdfi_type_of(a) != PDF_ARRAY)
         return_error(gs_error_typecheck);
 
     if (index >= a->size)
         return_error(gs_error_rangecheck);
     obj = a->values[index];
 
-    if (obj->type == PDF_INDIRECT) {
+    if (pdfi_type_of(obj) == PDF_INDIRECT) {
         pdf_obj *o1 = NULL;
         pdf_indirect_ref *r = (pdf_indirect_ref *)obj;
 
@@ -166,7 +166,7 @@ int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o
  */
 int pdfi_array_get_no_deref(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
-    if (a->type != PDF_ARRAY)
+    if (pdfi_type_of(a) != PDF_ARRAY)
         return_error(gs_error_typecheck);
 
     if (index >= a->size)
@@ -201,7 +201,7 @@ int pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index,
     if (code < 0)
         return code;
 
-    if ((*o)->type != type) {
+    if (pdfi_type_of(*o) != type) {
         pdfi_countdown(*o);
         *o = NULL;
         return_error(gs_error_typecheck);
@@ -231,14 +231,16 @@ int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double
     if (code < 0)
         return code;
 
-    if (n->type == PDF_INT)
-        *f = (double)n->value.i;
-    else {
-        if (n->type == PDF_REAL)
+    switch (pdfi_type_of(n)) {
+        case PDF_INT:
+            *f = (double)n->value.i;
+            break;
+        case PDF_REAL:
             *f = n->value.d;
-        else {
+            break;
+        default:
             code = gs_note_error(gs_error_typecheck);
-        }
+            break;
     }
     pdfi_countdown(n);
 
@@ -253,7 +255,7 @@ bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
 {
     int i;
 
-    if (a->type != PDF_ARRAY)
+    if (pdfi_type_of(a) != PDF_ARRAY)
         return_error(gs_error_typecheck);
 
     for (i=0; i < a->size; i++) {
@@ -275,7 +277,7 @@ bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
 
 int pdfi_array_put(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj *o)
 {
-    if (a->type != PDF_ARRAY)
+    if (pdfi_type_of(a) != PDF_ARRAY)
         return_error(gs_error_typecheck);
 
     if (index >= a->size)
@@ -292,7 +294,7 @@ int pdfi_array_put_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t v
     int code;
     pdf_num *obj;
 
-    if (a->type != PDF_ARRAY)
+    if (pdfi_type_of(a) != PDF_ARRAY)
         return_error(gs_error_typecheck);
 
     code = pdfi_object_alloc(ctx, PDF_INT, 0, (pdf_obj **)&obj);
@@ -308,7 +310,7 @@ int pdfi_array_put_real(pdf_context *ctx, pdf_array *a, uint64_t index, double v
     int code;
     pdf_num *obj;
 
-    if (a->type != PDF_ARRAY)
+    if (pdfi_type_of(a) != PDF_ARRAY)
         return_error(gs_error_typecheck);
 
     code = pdfi_object_alloc(ctx, PDF_REAL, 0, (pdf_obj **)&obj);
@@ -358,7 +360,7 @@ int pdfi_array_to_gs_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect)
     rect->q.y = 1.0;
 
     /* Identity matrix if no array */
-    if (array == NULL || array->type != PDF_ARRAY) {
+    if (array == NULL || pdfi_type_of(array) != PDF_ARRAY) {
         return 0;
     }
     if (pdfi_array_size(array) != 4) {
@@ -451,7 +453,7 @@ int pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
     mat->ty = 0.0;
 
     /* Identity matrix if no array */
-    if (array == NULL || array->type != PDF_ARRAY) {
+    if (array == NULL || pdfi_type_of(array) != PDF_ARRAY) {
         return 0;
     }
     if (pdfi_array_size(array) != 6) {

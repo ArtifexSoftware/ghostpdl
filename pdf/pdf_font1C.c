@@ -2340,7 +2340,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                         cffpriv.pdfcffpriv.ordering = NULL;
                     }
                     code = pdfi_dict_knownget_type(ctx, (pdf_dict *)obj, "Supplement", PDF_INT, (pdf_obj **)&suppl);
-                    if (code <= 0 || suppl->type != PDF_INT) {
+                    if (code <= 0 || pdfi_type_of(suppl) != PDF_INT) {
                         cffcid->supplement = cffpriv.pdfcffpriv.supplement;
                     }
                     else {
@@ -2397,7 +2397,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                        it's only permitted to be "/Identity", so ignore it
                      */
                     int64_t size = 0;
-                    if (obj->type == PDF_STREAM) {
+                    if (pdfi_type_of(obj) == PDF_STREAM) {
                         code = pdfi_stream_to_buffer(ctx, (pdf_stream *) obj, &(cffcid->cidtogidmap.data), &size);
                     }
                     pdfi_countdown(obj);
@@ -2594,7 +2594,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                        it's only permitted to be "/Identity", so ignore it
                      */
                     int64_t size = 0;
-                    if (obj->type == PDF_STREAM) {
+                    if (pdfi_type_of(obj) == PDF_STREAM) {
                         code = pdfi_stream_to_buffer(ctx, (pdf_stream *) obj, &(cffcid->cidtogidmap.data), (int64_t *) &size);
                     }
                     pdfi_countdown(obj);
@@ -2790,7 +2790,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 tmp = NULL;
                 code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
                 if (code == 1) {
-                    if ((cfffont->descflags & 4) != 0 && tmp->type == PDF_DICT) {
+                    if ((cfffont->descflags & 4) != 0 && pdfi_type_of(tmp) == PDF_DICT) {
                         code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)cffpriv.pdfcffpriv.Encoding, (pdf_obj **) &cfffont->Encoding);
                         if (code >= 0) {
                             pdfi_countdown(cffpriv.pdfcffpriv.Encoding);
@@ -2798,7 +2798,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                             code = 1;
                         }
                     }
-                    else if ((tmp->type == PDF_NAME || tmp->type == PDF_DICT)) {
+                    else if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT)) {
                         code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) &cfffont->Encoding);
                         if (code >= 0) {
                             pdfi_countdown(cffpriv.pdfcffpriv.Encoding);
@@ -2822,13 +2822,13 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 }
                 if (ctx->args.ignoretounicode != true) {
                     code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
-                    if (code >= 0 && tounicode->type == PDF_STREAM) {
+                    if (code >= 0 && pdfi_type_of(tounicode) == PDF_STREAM) {
                         pdf_cmap *tu = NULL;
                         code = pdfi_read_cmap(ctx, tounicode, &tu);
                         pdfi_countdown(tounicode);
                         tounicode = (pdf_obj *)tu;
                     }
-                    if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
+                    if (code < 0 || (tounicode != NULL && pdfi_type_of(tounicode) != PDF_CMAP)) {
                         pdfi_countdown(tounicode);
                         tounicode = NULL;
                         code = 0;

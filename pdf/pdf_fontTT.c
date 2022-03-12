@@ -477,13 +477,13 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     if (ctx->args.ignoretounicode != true) {
         code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
-        if (code >= 0 && tounicode->type == PDF_STREAM) {
+        if (code >= 0 && pdfi_type_of(tounicode) == PDF_STREAM) {
             pdf_cmap *tu = NULL;
             code = pdfi_read_cmap(ctx, tounicode, &tu);
             pdfi_countdown(tounicode);
             tounicode = (pdf_obj *)tu;
         }
-        if (code < 0 || (tounicode != NULL && tounicode->type != PDF_CMAP)) {
+        if (code < 0 || (tounicode != NULL && pdfi_type_of(tounicode) != PDF_CMAP)) {
             pdfi_countdown(tounicode);
             tounicode = NULL;
             code = 0;
