@@ -27,7 +27,7 @@ static inline void pdfi_set_colourspace_name(pdf_context *ctx, gs_color_space *p
 {
     if (pcs->interpreter_data != NULL) {
         pdf_obj *o = (pdf_obj *)(pcs->interpreter_data);
-        if (n != NULL && o->type == PDF_NAME) {
+        if (o != NULL && o->type == PDF_NAME) {
             pdfi_countdown(o);
             pcs->interpreter_data = NULL;
         }
