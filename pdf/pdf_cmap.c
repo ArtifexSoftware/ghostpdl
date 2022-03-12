@@ -603,7 +603,7 @@ static int cmap_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *buf
                 pdficmap->cmaptype = s->cur[0].val.i;
             }
             else {
-                pdficmap->type = 1;
+                pdficmap->cmaptype = 1;
             }
         }
         else if (!memcmp(s->cur[-1].val.name, CMAP_NAME_AND_LEN("XUID"))) {
