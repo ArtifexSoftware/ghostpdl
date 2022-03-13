@@ -1671,6 +1671,7 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
         goto pdfi_separation_error;
 
     rc_decrement(pcs_alt, "pdfi_create_Separation");
+    pcs_alt = NULL;
     pcs->params.separation.mem = ctx->memory;
     pcs->params.separation.sep_type = sep_type;
     pcs->params.separation.sep_name = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, name->length + 1, "pdfi_setseparationspace(ink)");
