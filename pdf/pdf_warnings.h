@@ -60,5 +60,6 @@ PARAM(W_PDF_INVALID_DECRYPT_LEN,    "Invalid /Length supplied in Encryption dict
 PARAM(W_PDF_INVALID_FONT_BASEENC,   "Ignoring invalid BaseEncoding name in font"),
 PARAM(W_PDF_GROUP_HAS_COLORSPACE,   "Group attributes dictionary has /ColorSpace instead of /CS"),
 PARAM(W_PDF_GROUP_BAD_BC,           "Group attributes dictionary /BC differs in number of components from the colour space"),
+PARAM(W_PDF_INT_AS_REAL,            "found real number when expecting int"),
 
 #undef PARAM

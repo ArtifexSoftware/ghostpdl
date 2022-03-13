@@ -158,8 +158,7 @@ pdfi_gstate_set_client(pdf_context *ctx, gs_gstate *pgs)
 
 int pdfi_concat(pdf_context *ctx)
 {
-    int i, code;
-    pdf_num *num;
+    int code;
     double Values[6];
     gs_matrix m;
 
@@ -171,29 +170,18 @@ int pdfi_concat(pdf_context *ctx)
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_concat", NULL);
 
-    for (i=0;i < 6;i++){
-        num = (pdf_num *)ctx->stack_top[i - 6];
-        switch (pdfi_type_of(num)) {
-            case PDF_INT:
-                Values[i] = (double)num->value.i;
-                break;
-            case PDF_REAL:
-                Values[i] = num->value.d;
-                break;
-            default:
-                pdfi_pop(ctx, 6);
-                return_error(gs_error_typecheck);
-        }
-    }
+    code = pdfi_destack_reals(ctx, Values, 6);
+    if (code < 0)
+        return code;
+
     m.xx = (float)Values[0];
     m.xy = (float)Values[1];
     m.yx = (float)Values[2];
     m.yy = (float)Values[3];
     m.tx = (float)Values[4];
     m.ty = (float)Values[5];
-    code = gs_concat(ctx->pgs, (const gs_matrix *)&m);
-    pdfi_pop(ctx, 6);
-    return code;
+
+    return gs_concat(ctx->pgs, (const gs_matrix *)&m);
 }
 
 int pdfi_op_q(pdf_context *ctx)
@@ -297,88 +285,60 @@ int pdfi_gs_setgstate(gs_gstate * pgs, const gs_gstate * pfrom)
 int pdfi_setlinewidth(pdf_context *ctx)
 {
     int code;
-    pdf_num *n1;
     double d1;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    n1 = (pdf_num *)ctx->stack_top[-1];
-    switch (pdfi_type_of(n1)) {
-        case PDF_INT:
-            d1 = (double)n1->value.i;
-            break;
-        case PDF_REAL:
-            d1 = n1->value.d;
-            break;
-        default:
-            pdfi_pop(ctx, 1);
-            return_error(gs_error_typecheck);
-    }
-    code = gs_setlinewidth(ctx->pgs, d1);
-    pdfi_pop(ctx, 1);
-    return code;
+    code = pdfi_destack_real(ctx, &d1);
+    if (code < 0)
+        return code;
+
+    return gs_setlinewidth(ctx->pgs, d1);
 }
 
 int pdfi_setlinejoin(pdf_context *ctx)
 {
     int code;
-    pdf_num *n1;
+    int64_t i;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    n1 = (pdf_num *)ctx->stack_top[-1];
-    if (pdfi_type_of(n1) == PDF_INT) {
-        code = gs_setlinejoin(ctx->pgs, n1->value.i);
-    } else {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    pdfi_pop(ctx, 1);
-    return code;
+    code = pdfi_destack_int(ctx, &i);
+    if (code < 0)
+        return code;
+
+    return gs_setlinejoin(ctx->pgs, (int)i);
 }
 
 int pdfi_setlinecap(pdf_context *ctx)
 {
     int code;
-    pdf_num *n1;
+    int64_t i;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    n1 = (pdf_num *)ctx->stack_top[-1];
-    if (pdfi_type_of(n1) == PDF_INT) {
-        code = gs_setlinecap(ctx->pgs, n1->value.i);
-    } else {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    pdfi_pop(ctx, 1);
-    return code;
+    code = pdfi_destack_int(ctx, &i);
+    if (code < 0)
+        return code;
+
+    return gs_setlinecap(ctx->pgs, i);
 }
 
 int pdfi_setflat(pdf_context *ctx)
 {
     int code;
-    pdf_num *n1;
     double d1;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    n1 = (pdf_num *)ctx->stack_top[-1];
-    switch (pdfi_type_of(n1)) {
-        case PDF_INT:
-            d1 = (double)n1->value.i;
-            break;
-        case PDF_REAL:
-            d1 = n1->value.d;
-            break;
-        default:
-            pdfi_pop(ctx, 1);
-            return_error(gs_error_typecheck);
-    }
+    code = pdfi_destack_real(ctx, &d1);
+    if (code < 0)
+        return code;
+
     /* PDF spec says the value is 1-100, with 0 meaning "use the default"
      * But gs code (and now our code) forces the value to be <= 1
      * This matches what Adobe and evince seem to do (see Bug 555657).
@@ -387,9 +347,7 @@ int pdfi_setflat(pdf_context *ctx)
      */
     if (d1 > 1.0)
         d1 = 1.0;
-    code = gs_setflat(ctx->pgs, d1);
-    pdfi_pop(ctx, 1);
-    return code;
+    return gs_setflat(ctx->pgs, d1);
 }
 
 int pdfi_setdash_impl(pdf_context *ctx, pdf_array *a, double phase_d)
@@ -415,9 +373,9 @@ int pdfi_setdash_impl(pdf_context *ctx, pdf_array *a, double phase_d)
     gs_free_object(ctx->memory, dash_array, "error in setdash");
     return code;
 }
+
 int pdfi_setdash(pdf_context *ctx)
 {
-    pdf_num *phase;
     pdf_array *a;
     double phase_d;
     int code;
@@ -427,54 +385,36 @@ int pdfi_setdash(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
     }
 
-    phase = (pdf_num *)ctx->stack_top[-1];
-    switch (pdfi_type_of(phase)) {
-        case PDF_INT:
-            phase_d = (double)phase->value.i;
-            break;
-        case PDF_REAL:
-            phase_d = phase->value.d;
-            break;
-        default:
-            pdfi_pop(ctx, 2);
-            return_error(gs_error_typecheck);
+    code = pdfi_destack_real(ctx, &phase_d);
+    if (code < 0) {
+        pdfi_pop(ctx, 1);
+        return code;
     }
 
-    a = (pdf_array *)ctx->stack_top[-2];
+    a = (pdf_array *)ctx->stack_top[-1];
     if (pdfi_type_of(a) != PDF_ARRAY) {
-        pdfi_pop(ctx, 2);
+        pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
 
     code = pdfi_setdash_impl(ctx, a, phase_d);
-    pdfi_pop(ctx, 2);
+    pdfi_pop(ctx, 1);
     return code;
 }
 
 int pdfi_setmiterlimit(pdf_context *ctx)
 {
     int code;
-    pdf_num *n1;
     double d1;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    n1 = (pdf_num *)ctx->stack_top[-1];
-    switch (pdfi_type_of(n1)) {
-        case PDF_INT:
-            d1 = (double)n1->value.i;
-            break;
-        case PDF_REAL:
-            d1 = n1->value.d;
-            break;
-        default:
-            pdfi_pop(ctx, 1);
-            return_error(gs_error_typecheck);
-    }
-    code = gs_setmiterlimit(ctx->pgs, d1);
-    pdfi_pop(ctx, 1);
-    return code;
+    code = pdfi_destack_real(ctx, &d1);
+    if (code < 0)
+        return code;
+
+    return gs_setmiterlimit(ctx->pgs, d1);
 }
 
 static int GS_LW(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)

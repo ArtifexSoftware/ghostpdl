@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -29,6 +29,11 @@ int pdfi_mark_stack(pdf_context *ctx, pdf_obj_type type);
 void pdfi_clearstack(pdf_context *ctx);
 int pdfi_count_to_mark(pdf_context *ctx, uint64_t *count);
 int pdfi_clear_to_mark(pdf_context *ctx);
+int pdfi_destack_real(pdf_context *ctx, double *d);
+int pdfi_destack_reals(pdf_context *ctx, double *d, int n);
+int pdfi_destack_floats(pdf_context *ctx, float *d, int n);
+int pdfi_destack_int(pdf_context *ctx, int64_t *i);
+int pdfi_destack_ints(pdf_context *ctx, int64_t *i, int n);
 
 static inline void pdfi_countup_impl(pdf_obj *o)
 {

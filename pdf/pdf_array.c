@@ -212,36 +212,26 @@ int pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index,
 int pdfi_array_get_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t *i)
 {
     int code;
-    pdf_num *n;
+    pdf_obj *n;
 
-    code = pdfi_array_get_type(ctx, a, index, PDF_INT, (pdf_obj **)&n);
+    code = pdfi_array_get(ctx, a, index, &n);
     if (code < 0)
         return code;
-    *i = n->value.i;
+    code = pdfi_obj_to_int(ctx, n, i);
     pdfi_countdown(n);
-    return 0;
+    return code;
 }
 
-int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double *f)
+int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double *d)
 {
     int code;
-    pdf_num *n;
+    pdf_obj *n;
 
-    code = pdfi_array_get(ctx, a, index, (pdf_obj **)&n);
+    code = pdfi_array_get(ctx, a, index, &n);
     if (code < 0)
         return code;
 
-    switch (pdfi_type_of(n)) {
-        case PDF_INT:
-            *f = (double)n->value.i;
-            break;
-        case PDF_REAL:
-            *f = n->value.d;
-            break;
-        default:
-            code = gs_note_error(gs_error_typecheck);
-            break;
-    }
+    code = pdfi_obj_to_real(ctx, n, d);
     pdfi_countdown(n);
 
     return code;

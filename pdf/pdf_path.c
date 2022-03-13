@@ -28,90 +28,32 @@
 
 int pdfi_moveto (pdf_context *ctx)
 {
-    pdf_num *n1, *n2;
     int code;
-    double x, y;
+    double xy[2];
 
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_moveto", NULL);
 
-    if (pdfi_count_stack(ctx) < 2) {
-        pdfi_clearstack(ctx);
-        return_error(gs_error_stackunderflow);
-    }
+    code = pdfi_destack_reals(ctx, xy, 2);
+    if (code < 0)
+        return code;
 
-    n1 = (pdf_num *)ctx->stack_top[-1];
-    n2 = (pdf_num *)ctx->stack_top[-2];
-    switch (pdfi_type_of(n1)) {
-        case PDF_INT:
-            y = (double)n1->value.i;
-            break;
-        case PDF_REAL:
-            y = n1->value.d;
-            break;
-        default:
-            pdfi_pop(ctx, 2);
-            return_error(gs_error_typecheck);
-    }
-    switch (pdfi_type_of(n2)) {
-        case PDF_INT:
-            x = (double)n2->value.i;
-            break;
-        case PDF_REAL:
-            x = n2->value.d;
-            break;
-        default:
-            pdfi_pop(ctx, 2);
-            return_error(gs_error_typecheck);
-    }
-
-    code = gs_moveto(ctx->pgs, x, y);
-    pdfi_pop(ctx, 2);
-    return code;
+    return gs_moveto(ctx->pgs, xy[0], xy[1]);
 }
 
 int pdfi_lineto (pdf_context *ctx)
 {
-    pdf_num *n1, *n2;
     int code;
-    double x, y;
+    double xy[2];
 
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_lineto", NULL);
 
-    if (pdfi_count_stack(ctx) < 2) {
-        pdfi_clearstack(ctx);
-        return_error(gs_error_stackunderflow);
-    }
+    code = pdfi_destack_reals(ctx, xy, 2);
+    if (code < 0)
+        return code;
 
-    n1 = (pdf_num *)ctx->stack_top[-1];
-    n2 = (pdf_num *)ctx->stack_top[-2];
-    switch (pdfi_type_of(n1)) {
-        case PDF_INT:
-            y = (double)n1->value.i;
-            break;
-        case PDF_REAL:
-            y = n1->value.d;
-            break;
-        default:
-            pdfi_pop(ctx, 2);
-            return_error(gs_error_typecheck);
-    }
-    switch (pdfi_type_of(n2)) {
-        case PDF_INT:
-            x = (double)n2->value.i;
-            break;
-        case PDF_REAL:
-            x = n2->value.d;
-            break;
-        default:
-            pdfi_pop(ctx, 2);
-            return_error(gs_error_typecheck);
-    }
-
-    code = gs_lineto(ctx->pgs, x, y);
-    pdfi_pop(ctx, 2);
-    return code;
+    return gs_lineto(ctx->pgs, xy[0], xy[1]);
 }
 
 static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
@@ -219,112 +161,52 @@ int pdfi_closepath_stroke(pdf_context *ctx)
 
 int pdfi_curveto(pdf_context *ctx)
 {
-    int i, code;
-    pdf_num *num;
+    int code;
     double Values[6];
 
-    if (pdfi_count_stack(ctx) < 6) {
-        pdfi_clearstack(ctx);
-        pdfi_set_error(ctx, 0, NULL, E_PDF_STACKUNDERFLOWERROR, "pdfi_curveto", NULL);
-        return_error(gs_error_stackunderflow);
-    }
-
-    for (i=0;i < 6;i++){
-        num = (pdf_num *)ctx->stack_top[i - 6];
-        switch (pdfi_type_of(num)) {
-            case PDF_INT:
-                Values[i] = (double)num->value.i;
-                break;
-            case PDF_REAL:
-                Values[i] = num->value.d;
-                break;
-            default:
-                pdfi_pop(ctx, 6);
-                return_error(gs_error_typecheck);
-        }
-    }
+    code = pdfi_destack_reals(ctx, Values, 6);
+    if (code < 0)
+        return code;
 
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_curveto", NULL);
 
-    code = gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[4], Values[5]);
-    pdfi_pop(ctx, 6);
-    return code;
+    return gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[4], Values[5]);
 }
 
 int pdfi_v_curveto(pdf_context *ctx)
 {
-    int i, code;
-    pdf_num *num;
+    int code;
     double Values[4];
     gs_point pt;
 
-    if (pdfi_count_stack(ctx) < 4) {
-        pdfi_clearstack(ctx);
-        return_error(gs_error_stackunderflow);
-    }
-
-    for (i=0;i < 4;i++){
-        num = (pdf_num *)ctx->stack_top[i - 4];
-        switch (pdfi_type_of(num)) {
-            case PDF_INT:
-                Values[i] = (double)num->value.i;
-                break;
-            case PDF_REAL:
-                Values[i] = num->value.d;
-                break;
-            default:
-                pdfi_pop(ctx, 4);
-                return_error(gs_error_typecheck);
-        }
-    }
+    code = pdfi_destack_reals(ctx, Values, 4);
+    if (code < 0)
+        return code;
 
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_v_curveto", NULL);
 
     code = gs_currentpoint(ctx->pgs, &pt);
-    if (code < 0) {
-        pdfi_pop(ctx, 4);
+    if (code < 0)
         return code;
-    }
 
-    code = gs_curveto(ctx->pgs, pt.x, pt.y, Values[0], Values[1], Values[2], Values[3]);
-    pdfi_pop(ctx, 4);
-    return code;
+    return gs_curveto(ctx->pgs, pt.x, pt.y, Values[0], Values[1], Values[2], Values[3]);
 }
 
 int pdfi_y_curveto(pdf_context *ctx)
 {
-    int i, code;
-    pdf_num *num;
+    int code;
     double Values[4];
 
-    if (pdfi_count_stack(ctx) < 4) {
-        pdfi_clearstack(ctx);
-        return_error(gs_error_stackunderflow);
-    }
-
-    for (i=0;i < 4;i++){
-        num = (pdf_num *)ctx->stack_top[i - 4];
-        switch (pdfi_type_of(num)) {
-            case PDF_INT:
-                Values[i] = (double)num->value.i;
-                break;
-            case PDF_REAL:
-                Values[i] = num->value.d;
-                break;
-            default:
-                pdfi_pop(ctx, 4);
-                return_error(gs_error_typecheck);
-        }
-    }
+    code = pdfi_destack_reals(ctx, Values, 4);
+    if (code < 0)
+        return code;
 
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_y_curveto", NULL);
 
-    code = gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[2], Values[3]);
-    pdfi_pop(ctx, 4);
-    return code;
+    return gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[2], Values[3]);
 }
 
 int pdfi_closepath(pdf_context *ctx)
@@ -455,46 +337,23 @@ int pdfi_eoclip(pdf_context *ctx)
 
 int pdfi_rectpath(pdf_context *ctx)
 {
-    int i, code;
-    pdf_num *num;
+    int code;
     double Values[4];
 
-    if (pdfi_count_stack(ctx) < 4) {
-        pdfi_clearstack(ctx);
-        return_error(gs_error_stackunderflow);
-    }
-
-    for (i=0;i < 4;i++){
-        num = (pdf_num *)ctx->stack_top[i - 4];
-        switch (pdfi_type_of(num)) {
-            case PDF_INT:
-                Values[i] = (double)num->value.i;
-                break;
-            case PDF_REAL:
-                Values[i] = num->value.d;
-                break;
-            default:
-                pdfi_pop(ctx, 4);
-                return_error(gs_error_typecheck);
-        }
-    }
+    code = pdfi_destack_reals(ctx, Values, 4);
+    if (code < 0)
+        return code;
 
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_rectpath", NULL);
 
     code = gs_moveto(ctx->pgs, Values[0], Values[1]);
-    if (code == 0) {
-        code = gs_rlineto(ctx->pgs, Values[2], 0);
-        if (code == 0){
-            code = gs_rlineto(ctx->pgs, 0, Values[3]);
-            if (code == 0) {
-                code = gs_rlineto(ctx->pgs, -Values[2], 0);
-                if (code == 0){
-                    code = gs_closepath(ctx->pgs);
-                }
-            }
-        }
-    }
-    pdfi_pop(ctx, 4);
-    return code;
+    if (code < 0) return code;
+    code = gs_rlineto(ctx->pgs, Values[2], 0);
+    if (code < 0) return code;
+    code = gs_rlineto(ctx->pgs, 0, Values[3]);
+    if (code < 0) return code;
+    code = gs_rlineto(ctx->pgs, -Values[2], 0);
+    if (code < 0) return code;
+    return gs_closepath(ctx->pgs);
 }

@@ -732,7 +732,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
             pdf_num *n;
             pdf_string *val2;
             code = pdfi_dict_get(ctx, (pdf_dict *)v, "Index", (pdf_obj **)&n);
-            if (code >= 0 && n->type == PDF_INT)
+            if (code >= 0 && pdfi_type_of(n) == PDF_INT)
                 find = n->value.i;
             else
                 code = 0;
@@ -762,7 +762,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
                 pdf_num *n;
                 pdf_string *val2;
                 code = pdfi_dict_get(ctx, (pdf_dict *)v, "Index", (pdf_obj **)&n);
-                if (code >= 0 && n->type == PDF_INT)
+                if (code >= 0 && pdfi_type_of(n) == PDF_INT)
                     find = n->value.i;
                 else
                     code = 0;
@@ -838,16 +838,15 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, in
             mname = record;
         }
         else {
-            pdf_num *ind;
+            int64_t i64;
             code = pdfi_dict_get(ctx, (pdf_dict *)record, "Path", &mname);
+            if (code > 0)
+                code = pdfi_dict_get_int(ctx, (pdf_dict *)record, "Index", &i64);
             if (code < 0) {
                 pdfi_countdown(record);
                 return code;
             }
-            code = pdfi_dict_get(ctx, (pdf_dict *)record, "Index", (pdf_obj **)&ind);
-            if (code >= 0 && pdfi_type_of(ind) == PDF_INT) {
-                *findex = ind->value.i;
-            }
+            *findex = (int)i64; /* Rangecheck? */
         }
     }
 
@@ -914,11 +913,10 @@ pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name
         pdf_dict *rec = (pdf_dict *)mname;
         pdf_name *filetype;
         pdf_name *path = NULL;
-        pdf_num *ind = NULL;
         pdf_array *mcsi = NULL;
         pdf_dict *ocsi = NULL;
         pdf_string *ord1 = NULL, *ord2 = NULL;
-        pdf_num *sup1, *sup2;
+        int64_t sup1, sup2, i64;
 
         code = pdfi_dict_get(ctx, rec, "FileType", (pdf_obj **)&filetype);
         /* We only handle TTF files, just now */
@@ -970,27 +968,21 @@ pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name
         }
         pdfi_countdown(ord1);
         pdfi_countdown(ord2);
-        code = pdfi_dict_get(ctx, ocsi, "Supplement", (pdf_obj **)&sup1);
-        if (code < 0 || pdfi_type_of(sup1) != PDF_INT) {
+        code = pdfi_dict_get_int(ctx, ocsi, "Supplement", &sup1);
+        if (code < 0) {
             pdfi_countdown(ord1);
             pdfi_countdown(ocsi);
             pdfi_countdown(mcsi);
             pdfi_countdown(rec);
             return_error(gs_error_undefined);
         }
-        code = pdfi_array_get(ctx, mcsi, 1, (pdf_obj **)&sup2);
-        if (code < 0 || pdfi_type_of(sup2) != PDF_INT || sup1->value.i != sup2->value.i) {
-            pdfi_countdown(sup1);
-            pdfi_countdown(sup2);
-            pdfi_countdown(ocsi);
-            pdfi_countdown(mcsi);
+        code = pdfi_array_get_int(ctx, mcsi, 1, &sup2);
+        pdfi_countdown(ocsi);
+        pdfi_countdown(mcsi);
+        if (code < 0 || sup1 != sup2) {
             pdfi_countdown(rec);
             return_error(gs_error_undefined);
         }
-        pdfi_countdown(sup1);
-        pdfi_countdown(sup2);
-        pdfi_countdown(ocsi);
-        pdfi_countdown(mcsi);
 
         code = pdfi_dict_get(ctx, rec, "Path", (pdf_obj **)&path);
         if (code < 0 || pdfi_type_of(path) != PDF_STRING || !pdfi_fmap_file_exists(ctx, (pdf_string *)path)) {
@@ -999,14 +991,8 @@ pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name
         }
 
         *mapname = (pdf_obj *)path;
-        code = pdfi_dict_get(ctx, rec, "Index", (pdf_obj **)&ind);
-        if (code >= 0 && pdfi_type_of(ind) != PDF_INT) {
-            *findex = ind->value.i;
-        }
-        else {
-            *findex = 0;
-        }
-        pdfi_countdown(ind);
+        code = pdfi_dict_get_int(ctx, rec, "Index", &i64);
+        *findex = (code < 0) ? 0 : (int)i64; /* rangecheck? */
         code = 0;
 
     }

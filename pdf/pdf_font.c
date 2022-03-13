@@ -937,6 +937,7 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
 
             type = pdfi_type_of(o);
             if (type == PDF_INT) {
+                double d;
                 c2 = (pdf_num *)o;
                 o = NULL;
                 if (i + 2 >= W->size){
@@ -946,18 +947,10 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
                     break;
                 }
 
-                code = pdfi_array_get(pdffont->ctx, W, i + 2, (pdf_obj **)&o);
+                code = pdfi_array_get_number(pdffont->ctx, W, i + 2, &d);
                 if (code < 0) goto cleanup;
-                if (pdfi_type_of(o) != PDF_INT && pdfi_type_of(o) != PDF_REAL) {
-                    code = gs_note_error(gs_error_typecheck);
-                    goto cleanup;
-                }
                 if (cid >= c->value.i && cid <= c2->value.i) {
-                    if (pdfi_type_of(o) == PDF_INT)
-                        widths[GLYPH_W0_WIDTH_INDEX] = (double)((pdf_num *)o)->value.i;
-                    else
-                        widths[GLYPH_W0_WIDTH_INDEX] = ((pdf_num *)o)->value.d;
-
+                    widths[GLYPH_W0_WIDTH_INDEX] = d;
                     widths[GLYPH_W0_HEIGHT_INDEX] = 0.0;
                     /* We countdown and NULL c, c2 and o after exit from the loop
                      * in order to avoid doing so in the break statements
@@ -968,9 +961,7 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
                     i += 3;
                     pdfi_countdown(c2);
                     pdfi_countdown(c);
-                    pdfi_countdown(o);
                     c = c2 = NULL;
-                    o = NULL;
                     continue;
                 }
             }
@@ -978,20 +969,9 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
                 pdf_array *a = (pdf_array *)o;
                 o = NULL;
                 if (cid >= c->value.i && cid < c->value.i + a->size) {
-                    code = pdfi_array_get(pdffont->ctx, a, cid - c->value.i, (pdf_obj **)&o);
+                    code = pdfi_array_get_number(pdffont->ctx, a, cid - c->value.i, &widths[GLYPH_W0_WIDTH_INDEX]);
                     if (code >= 0) {
                         pdfi_countdown(a);
-                        switch (pdfi_type_of(o)) {
-                            case PDF_INT:
-                                widths[GLYPH_W0_WIDTH_INDEX] = (double)((pdf_num *)o)->value.i;
-                                break;
-                            case PDF_REAL:
-                                widths[GLYPH_W0_WIDTH_INDEX] = ((pdf_num *)o)->value.d;
-                                break;
-                            default:
-                                code = gs_note_error(gs_error_typecheck);
-                                goto cleanup;
-                        }
                         widths[GLYPH_W0_HEIGHT_INDEX] = 0.0;
                         /* We countdown and NULL c, c2 and o on exit from the loop
                          * in order to avoid doing so in the break statements
@@ -1001,8 +981,6 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
                 }
                 pdfi_countdown(a);
                 pdfi_countdown(c);
-                pdfi_countdown(o);
-                o = NULL;
                 c = NULL;
                 i += 2;
                 continue;
@@ -1028,27 +1006,13 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
 
         if (DW2 != NULL && pdfi_type_of(DW2) == PDF_ARRAY
             && DW2->size >= 2) {
-            pdf_num *w2_0 = NULL, *w2_1 = NULL;
-
-            code = pdfi_array_get(pdffont->ctx, (pdf_array *)DW2, 0, (pdf_obj **)&w2_0);
-            if (code >= 0 && (pdfi_type_of(w2_0) == PDF_INT || pdfi_type_of(w2_0) == PDF_REAL)) {
-                code = pdfi_array_get(pdffont->ctx, (pdf_array *)DW2, 1, (pdf_obj **)&w2_1);
-                if (code >= 0 && (pdfi_type_of(w2_1) == PDF_INT || pdfi_type_of(w2_1) == PDF_REAL)) {
-                    widths[GLYPH_W1_V_X_INDEX] = widths[GLYPH_W0_WIDTH_INDEX] / 2.0;
-                    if (pdfi_type_of(w2_0) == PDF_INT)
-                        widths[GLYPH_W1_V_Y_INDEX] = (double)w2_0->value.i;
-                    else
-                        widths[GLYPH_W1_V_Y_INDEX] = (double)w2_0->value.d;
-
-                    widths[GLYPH_W1_WIDTH_INDEX] = 0.0;
-                    if (pdfi_type_of(w2_1) == PDF_INT)
-                        widths[GLYPH_W1_HEIGHT_INDEX] = (double)w2_1->value.i;
-                    else
-                        widths[GLYPH_W1_HEIGHT_INDEX] = (double)w2_1->value.d;
-                }
+            code = pdfi_array_get_number(pdffont->ctx, (pdf_array *)DW2, 0, &widths[GLYPH_W1_V_Y_INDEX]);
+            if (code >= 0)
+                code = pdfi_array_get_number(pdffont->ctx, (pdf_array *)DW2, 1, &widths[GLYPH_W1_HEIGHT_INDEX]);
+            if (code >= 0) {
+                widths[GLYPH_W1_V_X_INDEX] = widths[GLYPH_W0_WIDTH_INDEX] / 2.0;
+                widths[GLYPH_W1_WIDTH_INDEX] = 0.0;
             }
-            pdfi_countdown(w2_0);
-            pdfi_countdown(w2_1);
         }
         if (W2 != NULL && pdfi_type_of(W2) == PDF_ARRAY) {
             i = 0;
@@ -1065,41 +1029,17 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
                 type = pdfi_type_of(o);
                 if (type == PDF_INT) {
                     if (cid >= c->value.i && cid <= ((pdf_num *)o)->value.i) {
-                        pdf_num *w1y, *v1x, *v1y;
                         if (i + 4 >= W2->size) {
                             /* We countdown and NULL c, and o on exit from the function
                              * so we don't need to do so in the break statements
                              */
                             break;
                         }
-                        (void)pdfi_array_get(pdffont->ctx, W2, i + 1, (pdf_obj **)&w1y);
-                        (void)pdfi_array_get(pdffont->ctx, W2, i + 1, (pdf_obj **)&v1x);
-                        (void)pdfi_array_get(pdffont->ctx, W2, i + 1, (pdf_obj **)&v1y);
-                        if (w1y != NULL && (pdfi_type_of(w1y) == PDF_INT || pdfi_type_of(w1y) == PDF_REAL)
-                         && v1x != NULL && (pdfi_type_of(v1x) == PDF_INT || pdfi_type_of(v1x) == PDF_REAL)
-                         && v1y != NULL && (pdfi_type_of(v1y) == PDF_INT || pdfi_type_of(v1y) == PDF_REAL)) {
-                            widths[GLYPH_W1_WIDTH_INDEX] = 0;
-                            if (pdfi_type_of(w1y) == PDF_INT)
-                                widths[GLYPH_W1_HEIGHT_INDEX] = (double)w1y->value.i;
-                            else
-                                widths[GLYPH_W1_HEIGHT_INDEX] = w1y->value.d;
-
-                            if (pdfi_type_of(v1x) == PDF_INT)
-                                widths[GLYPH_W1_V_X_INDEX] = (double)v1x->value.i;
-                            else
-                                widths[GLYPH_W1_V_X_INDEX] = v1x->value.d;
-
-                            if (pdfi_type_of(v1y) == PDF_INT)
-                                widths[GLYPH_W1_V_Y_INDEX] = (double)v1y->value.i;
-                            else
-                                widths[GLYPH_W1_V_Y_INDEX] = v1y->value.d;
-                        }
-                        else
-                            code = gs_note_error(gs_error_typecheck);
-
-                        pdfi_countdown(w1y);
-                        pdfi_countdown(v1x);
-                        pdfi_countdown(v1y);
+                        code = pdfi_array_get_number(pdffont->ctx, W2, i + 1, &widths[GLYPH_W1_HEIGHT_INDEX]);
+                        if (code < 0) goto cleanup;
+                        code = pdfi_array_get_number(pdffont->ctx, W2, i + 1, &widths[GLYPH_W1_V_X_INDEX]);
+                        if (code < 0) goto cleanup;
+                        code = pdfi_array_get_number(pdffont->ctx, W2, i + 1, &widths[GLYPH_W1_V_Y_INDEX]);
                         if (code < 0) goto cleanup;
                         /* We countdown and NULL c, and o on exit from the function
                          * so we don't need to do so in the break statements
@@ -1113,38 +1053,21 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
                     int l = a->size - (a->size % 3);
                     o = NULL;
                     if (cid >= c->value.i && cid < c->value.i + (l / 3)) {
-                        pdf_num *w1y = NULL, *v1x = NULL, *v1y = NULL;
                         int index = (cid - c->value.i) * 3;
-                        (void)pdfi_array_get(pdffont->ctx, a, index, (pdf_obj **)&w1y);
-                        (void)pdfi_array_get(pdffont->ctx, a, index + 1, (pdf_obj **)&v1x);
-                        (void)pdfi_array_get(pdffont->ctx, a, index + 2, (pdf_obj **)&v1y);
-                        pdfi_countdown(a);
-
-                        if (w1y != NULL && (pdfi_type_of(w1y) == PDF_INT || pdfi_type_of(w1y) == PDF_REAL)
-                         && v1x != NULL && (pdfi_type_of(v1x) == PDF_INT || pdfi_type_of(v1x) == PDF_REAL)
-                         && v1y != NULL && (pdfi_type_of(v1y) == PDF_INT || pdfi_type_of(v1y) == PDF_REAL)) {
-                            widths[GLYPH_W1_WIDTH_INDEX] = 0.0;
-                            if (pdfi_type_of(w1y) == PDF_INT)
-                                widths[GLYPH_W1_HEIGHT_INDEX] = (double)w1y->value.i;
-                            else
-                                widths[GLYPH_W1_HEIGHT_INDEX] = w1y->value.d;
-
-                            if (pdfi_type_of(v1x) == PDF_INT)
-                                widths[GLYPH_W1_V_X_INDEX] = (double)v1x->value.i;
-                            else
-                                widths[GLYPH_W1_V_X_INDEX] = v1x->value.d;
-
-                            if (pdfi_type_of(v1y) == PDF_INT)
-                                widths[GLYPH_W1_V_Y_INDEX] = (double)v1y->value.i;
-                            else
-                                widths[GLYPH_W1_V_Y_INDEX] = v1y->value.d;
+                        code = pdfi_array_get_number(pdffont->ctx, a, index, &widths[GLYPH_W1_HEIGHT_INDEX]);
+                        if (code < 0) {
+                            pdfi_countdown(a);
+                            goto cleanup;
                         }
-                        else
-                            code = gs_note_error(gs_error_typecheck);
-                        pdfi_countdown(w1y);
-                        pdfi_countdown(v1x);
-                        pdfi_countdown(v1y);
+                        code = pdfi_array_get_number(pdffont->ctx, a, index + 1, &widths[GLYPH_W1_V_X_INDEX]);
+                        if (code < 0) {
+                            pdfi_countdown(a);
+                            goto cleanup;
+                        }
+                        code = pdfi_array_get_number(pdffont->ctx, a, index + 2, &widths[GLYPH_W1_V_Y_INDEX]);
+                        pdfi_countdown(a);
                         if (code < 0) goto cleanup;
+
                         /* We countdown and NULL c, and o on exit from the function
                          * so we don't need to do so in the break statements
                          */
@@ -1257,7 +1180,7 @@ d0_error:
 
 int pdfi_d1(pdf_context *ctx)
 {
-    int code = 0, i, gsave_level;
+    int code = 0, gsave_level;
     double wbox[6];
 
     if (ctx->text.inside_CharProc == false)
@@ -1265,24 +1188,9 @@ int pdfi_d1(pdf_context *ctx)
 
     ctx->text.CharProc_d_type = pdf_type3_d1;
 
-    if (pdfi_count_stack(ctx) < 6) {
-        code = gs_note_error(gs_error_stackunderflow);
+    code = pdfi_destack_reals(ctx, wbox, 6);
+    if (code < 0)
         goto d1_error;
-    }
-
-    for (i=-6;i < 0;i++) {
-        switch (pdfi_type_of(ctx->stack_top[i])) {
-            case PDF_INT:
-                wbox[i + 6] = (double)((pdf_num *)ctx->stack_top[i])->value.i;
-                break;
-            case PDF_REAL:
-                wbox[i + 6] = ((pdf_num *)ctx->stack_top[i])->value.d;
-                break;
-            default:
-                code = gs_note_error(gs_error_typecheck);
-                goto d1_error;
-        }
-    }
 
     /*
      * We don't intend to retain this, instead we will use (effectively) xyshow to apply
@@ -1306,7 +1214,6 @@ int pdfi_d1(pdf_context *ctx)
 
     if (code < 0)
         goto d1_error;
-    pdfi_pop(ctx, 6);
     return 0;
 
 d1_error:
@@ -1334,17 +1241,9 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdfi_pop(ctx, 2);
 
     /* Get the point_size */
-    switch (pdfi_type_of(point_arg)) {
-        case PDF_INT:
-            point_size = (double)((pdf_num *)point_arg)->value.i;
-            break;
-        case PDF_REAL:
-            point_size = ((pdf_num *)point_arg)->value.d;
-            break;
-        default:
-            code = gs_note_error(gs_error_typecheck);
-            goto exit0;
-    }
+    code = pdfi_obj_to_real(ctx, point_arg, &point_size);
+    if (code < 0)
+        goto exit0;
 
     code = pdfi_load_resource_font(ctx, stream_dict, page_dict, fontname, point_size);
 

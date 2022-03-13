@@ -524,15 +524,14 @@ pdfi_dict_get_int2(pdf_context *ctx, pdf_dict *d, const char *Key1,
 int pdfi_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i)
 {
     int code;
-    pdf_num *n;
+    pdf_obj *n;
 
-    code = pdfi_dict_get_type(ctx, d, Key, PDF_INT, (pdf_obj **)&n);
+    code = pdfi_dict_get(ctx, d, Key, &n);
     if (code < 0)
         return code;
-
-    *i = n->value.i;
+    code = pdfi_obj_to_int(ctx, n, i);
     pdfi_countdown(n);
-    return 0;
+    return code;
 }
 
 /* Get an int from dict, and if undefined, return provided default */
@@ -590,24 +589,15 @@ int pdfi_dict_get_number2(pdf_context *ctx, pdf_dict *d, const char *Key1, const
 int pdfi_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f)
 {
     int code;
-    pdf_num *o;
+    pdf_obj *o;
 
-    code = pdfi_dict_get(ctx, d, Key, (pdf_obj **)&o);
+    code = pdfi_dict_get(ctx, d, Key, &o);
     if (code < 0)
         return code;
-    switch (pdfi_type_of(o)) {
-        case PDF_INT:
-            *f = (double)(o->value.i);
-            break;
-        case PDF_REAL:
-            *f = o->value.d;
-            break;
-        default:
-            pdfi_countdown(o);
-            return_error(gs_error_typecheck);
-    }
+    code = pdfi_obj_to_real(ctx, o, f);
     pdfi_countdown(o);
-    return 0;
+
+    return code;
 }
 
 /* convenience functions for retrieving arrys, see shadings and functions */

@@ -124,3 +124,105 @@ int pdfi_clear_to_mark(pdf_context *ctx)
         return code;
     return pdfi_pop(ctx, count + 1);
 }
+
+int
+pdfi_destack_real(pdf_context *ctx, double *d)
+{
+    int code;
+
+    if (pdfi_count_stack(ctx) < 1)
+        return_error(gs_error_stackunderflow);
+
+    code = pdfi_obj_to_real(ctx, ctx->stack_top[-1], d);
+    if (code < 0) {
+        pdfi_clearstack(ctx);
+        return code;
+    }
+    pdfi_pop(ctx, 1);
+
+    return 0;
+}
+
+int
+pdfi_destack_reals(pdf_context *ctx, double *d, int n)
+{
+    int i, code;
+
+    if (pdfi_count_stack(ctx) < n) {
+        pdfi_clearstack(ctx);
+        return_error(gs_error_stackunderflow);
+    }
+
+    for (i = 0; i < n; i++) {
+        code = pdfi_obj_to_real(ctx, ctx->stack_top[i-n], &d[i]);
+        if (code < 0) {
+            pdfi_clearstack(ctx);
+            return code;
+        }
+    }
+    pdfi_pop(ctx, n);
+
+    return 0;
+}
+
+int
+pdfi_destack_floats(pdf_context *ctx, float *d, int n)
+{
+    int i, code;
+
+    if (pdfi_count_stack(ctx) < n) {
+        pdfi_clearstack(ctx);
+        return_error(gs_error_stackunderflow);
+    }
+
+    for (i = 0; i < n; i++) {
+        code = pdfi_obj_to_float(ctx, ctx->stack_top[i-n], &d[i]);
+        if (code < 0) {
+            pdfi_clearstack(ctx);
+            return code;
+        }
+    }
+    pdfi_pop(ctx, n);
+
+    return 0;
+}
+
+int
+pdfi_destack_int(pdf_context *ctx, int64_t *i)
+{
+    int code;
+
+    if (pdfi_count_stack(ctx) < 1)
+        return_error(gs_error_stackunderflow);
+
+    code = pdfi_obj_to_int(ctx, ctx->stack_top[-1], i);
+    if (code < 0) {
+        pdfi_clearstack(ctx);
+        return code;
+    }
+    pdfi_pop(ctx, 1);
+
+    return 0;
+}
+
+int
+pdfi_destack_ints(pdf_context *ctx, int64_t *i64, int n)
+{
+    int i, code;
+
+    if (pdfi_count_stack(ctx) < n) {
+        pdfi_clearstack(ctx);
+        return_error(gs_error_stackunderflow);
+    }
+
+    for (i = 0; i < n; i++) {
+        code = pdfi_obj_to_int(ctx, ctx->stack_top[i-n], &i64[i]);
+        if (code < 0) {
+            pdfi_clearstack(ctx);
+            return code;
+        }
+    }
+    pdfi_pop(ctx, n);
+
+    return 0;
+}

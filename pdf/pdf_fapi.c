@@ -397,7 +397,7 @@ pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, uns
                 pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
                 if (pdffont1->blendfontbbox != NULL) {
                     pdf_array *suba;
-                    pdf_num *v;
+                    double d;
                     int ind, aind;
                     ind = index % 4;
                     aind = (index - ind) / 4;
@@ -406,17 +406,13 @@ pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, uns
                         *ret = 0;
                         break;
                     }
-                    code = pdfi_array_get(pdffont1->ctx, suba, ind, (pdf_obj **)&v);
+                    code = pdfi_array_get_number(pdffont1->ctx, suba, ind, &d);
                     pdfi_countdown(suba);
                     if (code < 0) {
                         *ret = 0;
                         break;
                     }
-                    if (pdfi_type_of(v) == PDF_INT)
-                        *ret = (unsigned short)v->value.i;
-                    else
-                        *ret = (unsigned short)v->value.d;
-                    pdfi_countdown(v);
+                    *ret = (unsigned short)d;
                 }
                 else {
                     *ret = 0;
@@ -522,7 +518,7 @@ pdfi_fapi_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, fl
             {
                 int array_index, subind;
                 pdf_array *suba;
-                pdf_num *v;
+                double d;
                 pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pbfont->client_data;
                 *ret = 0;
 
@@ -545,19 +541,13 @@ pdfi_fapi_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, fl
                     break;
                 }
 
-                code = pdfi_array_get(pdffont1->ctx, suba, subind, (pdf_obj**)&v);
+                code = pdfi_array_get_number(pdffont1->ctx, suba, subind, &d);
                 pdfi_countdown(suba);
                 if (code < 0) {
                     code = 0;
                     break;
                 }
-                if (pdfi_type_of(v) == PDF_INT) {
-                    *ret = (float)v->value.i;
-                }
-                else {
-                    *ret = (float)v->value.d;
-                }
-                pdfi_countdown(v);
+                *ret = (float)d;
             }
             break;
         case gs_fapi_font_feature_BlendDesignMapArrayValue:
@@ -582,15 +572,11 @@ pdfi_fapi_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, fl
                                pdfi doesn't, hence the multiplications by 64.
                              */
                             if ((i * 64) + (j * 64) + k  == index) {
-                                pdf_num *n;
-                                code = pdfi_array_get(pdffont1->ctx, suba, i, (pdf_obj **)&n);
+                                double d;
+                                code = pdfi_array_get_number(pdffont1->ctx, suba, i, &d);
                                 if (code < 0)
                                     continue;
-                                if (pdfi_type_of(n) == PDF_INT)
-                                    *ret = (float)n->value.i;
-                                else
-                                    *ret = (float)n->value.d;
-                                pdfi_countdown(n);
+                                *ret = (float)d;
                                 pdfi_countdown(subsuba);
                                 pdfi_countdown(suba);
                                 goto gotit;

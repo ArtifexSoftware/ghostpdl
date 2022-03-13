@@ -440,87 +440,45 @@ int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
 /* Start with the simple cases, where we set the colour space and colour in a single operation */
 int pdfi_setgraystroke(pdf_context *ctx)
 {
-    pdf_num *n1;
     int code;
     double d1;
 
-    if (pdfi_count_stack(ctx) < 1)
-        return_error(gs_error_stackunderflow);
+    code = pdfi_destack_real(ctx, &d1);
+    if (code < 0)
+        return code;
 
-    n1 = (pdf_num *)ctx->stack_top[-1];
-    switch (pdfi_type_of(n1)) {
-        case PDF_INT:
-            d1 = (double)n1->value.i;
-            break;
-        case PDF_REAL:
-            d1 = n1->value.d;
-            break;
-        default:
-            pdfi_pop(ctx, 1);
-            return_error(gs_error_typecheck);
-    }
     gs_swapcolors_quick(ctx->pgs);
     code = pdfi_gs_setgray(ctx, d1);
     gs_swapcolors_quick(ctx->pgs);
-    pdfi_pop(ctx, 1);
+
     return code;
 }
 
 int pdfi_setgrayfill(pdf_context *ctx)
 {
-    pdf_num *n1;
     int code;
     double d1;
 
-    if (pdfi_count_stack(ctx) < 1)
-        return_error(gs_error_stackunderflow);
+    code = pdfi_destack_real(ctx, &d1);
+    if (code < 0)
+        return code;
 
-    n1 = (pdf_num *)ctx->stack_top[-1];
-    switch (pdfi_type_of(n1)) {
-        case PDF_INT:
-            d1 = (double)n1->value.i;
-            break;
-        case PDF_REAL:
-            d1 = n1->value.d;
-            break;
-        default:
-            pdfi_pop(ctx, 1);
-            return_error(gs_error_typecheck);
-    }
-    code = pdfi_gs_setgray(ctx, d1);
-    pdfi_pop(ctx, 1);
-    return code;
+    return pdfi_gs_setgray(ctx, d1);
 }
 
 int pdfi_setrgbstroke(pdf_context *ctx)
 {
-    pdf_num *num;
     double Values[3];
-    int i, code;
+    int code;
 
-    if (pdfi_count_stack(ctx) < 3) {
-        pdfi_clearstack(ctx);
-        return_error(gs_error_stackunderflow);
-    }
+    code = pdfi_destack_reals(ctx, Values, 3);
+    if (code < 0)
+        return code;
 
-    for (i=0;i < 3;i++){
-        num = (pdf_num *)ctx->stack_top[i - 3];
-        switch (pdfi_type_of(num)) {
-            case PDF_INT:
-                Values[i] = (double)num->value.i;
-                break;
-            case PDF_REAL:
-                Values[i] = num->value.d;
-                break;
-            default:
-                pdfi_pop(ctx, 3);
-                return_error(gs_error_typecheck);
-        }
-    }
     gs_swapcolors_quick(ctx->pgs);
     code = pdfi_gs_setrgbcolor(ctx, Values[0], Values[1], Values[2]);
     gs_swapcolors_quick(ctx->pgs);
-    pdfi_pop(ctx, 3);
+
     return code;
 }
 
@@ -551,94 +509,42 @@ int pdfi_setrgbfill_array(pdf_context *ctx)
 
 int pdfi_setrgbfill(pdf_context *ctx)
 {
-    pdf_num *num;
     double Values[3];
-    int i, code;
+    int code;
 
-    if (pdfi_count_stack(ctx) < 3) {
-        pdfi_clearstack(ctx);
-        return_error(gs_error_stackunderflow);
-    }
+    code = pdfi_destack_reals(ctx, Values, 3);
+    if (code < 0)
+        return code;
 
-    for (i=0;i < 3;i++){
-        num = (pdf_num *)ctx->stack_top[i - 3];
-        switch (pdfi_type_of(num)) {
-            case PDF_INT:
-                Values[i] = (double)num->value.i;
-                break;
-            case PDF_REAL:
-                Values[i] = num->value.d;
-                break;
-            default:
-                pdfi_pop(ctx, 3);
-                return_error(gs_error_typecheck);
-        }
-    }
-    code = pdfi_gs_setrgbcolor(ctx, Values[0], Values[1], Values[2]);
-    pdfi_pop(ctx, 3);
-    return code;
+    return pdfi_gs_setrgbcolor(ctx, Values[0], Values[1], Values[2]);
 }
 
 int pdfi_setcmykstroke(pdf_context *ctx)
 {
-    pdf_num *num;
     double Values[4];
-    int i, code;
+    int code;
 
-    if (pdfi_count_stack(ctx) < 4) {
-        pdfi_clearstack(ctx);
-        return_error(gs_error_stackunderflow);
-    }
+    code = pdfi_destack_reals(ctx, Values, 4);
+    if (code < 0)
+        return code;
 
-    for (i=0;i < 4;i++){
-        num = (pdf_num *)ctx->stack_top[i - 4];
-        switch (pdfi_type_of(num)) {
-            case PDF_INT:
-                Values[i] = (double)num->value.i;
-                break;
-            case PDF_REAL:
-                Values[i] = num->value.d;
-                break;
-            default:
-                pdfi_pop(ctx, 4);
-                return_error(gs_error_typecheck);
-        }
-    }
     gs_swapcolors_quick(ctx->pgs);
     code = pdfi_gs_setcmykcolor(ctx, Values[0], Values[1], Values[2], Values[3]);
     gs_swapcolors_quick(ctx->pgs);
-    pdfi_pop(ctx, 4);
+
     return code;
 }
 
 int pdfi_setcmykfill(pdf_context *ctx)
 {
-    pdf_num *num;
     double Values[4];
-    int i, code;
+    int code;
 
-    if (pdfi_count_stack(ctx) < 4) {
-        pdfi_clearstack(ctx);
-        return_error(gs_error_stackunderflow);
-    }
+    code = pdfi_destack_reals(ctx, Values, 4);
+    if (code < 0)
+        return code;
 
-    for (i=0;i < 4;i++){
-        num = (pdf_num *)ctx->stack_top[i - 4];
-        switch (pdfi_type_of(num)) {
-            case PDF_INT:
-                Values[i] = (double)num->value.i;
-                break;
-            case PDF_REAL:
-                Values[i] = num->value.d;
-                break;
-            default:
-                pdfi_pop(ctx, 4);
-                return_error(gs_error_typecheck);
-        }
-    }
-    code = pdfi_gs_setcmykcolor(ctx, Values[0], Values[1], Values[2], Values[3]);
-    pdfi_pop(ctx, 4);
-    return code;
+    return pdfi_gs_setcmykcolor(ctx, Values[0], Values[1], Values[2], Values[3]);
 }
 
 /* Do a setcolor using values in an array
@@ -682,28 +588,22 @@ int pdfi_setcolor_from_array(pdf_context *ctx, pdf_array *array)
 static int
 pdfi_get_color_from_stack(pdf_context *ctx, gs_client_color *cc, int ncomps)
 {
-    int i;
-    pdf_num *n;
+    int i, code;
 
     if (pdfi_count_stack(ctx) < ncomps) {
         pdfi_clearstack(ctx);
         return_error(gs_error_stackunderflow);
     }
-    for (i=0;i<ncomps;i++){
-        n = (pdf_num *)ctx->stack_top[i - ncomps];
-        switch (pdfi_type_of(n)) {
-            case PDF_INT:
-                cc->paint.values[i] = (float)n->value.i;
-                break;
-            case PDF_REAL:
-                cc->paint.values[i] = n->value.d;
-                break;
-            default:
-                pdfi_clearstack(ctx);
-                return_error(gs_error_typecheck);
+
+    for (i = 0; i < ncomps; i++) {
+        code = pdfi_obj_to_float(ctx, ctx->stack_top[i - ncomps], &cc->paint.values[i]);
+        if (code < 0) {
+            pdfi_clearstack(ctx);
+            return code;
         }
     }
     pdfi_pop(ctx, ncomps);
+
     return 0;
 }
 
