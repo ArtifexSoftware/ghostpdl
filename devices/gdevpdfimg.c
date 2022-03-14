@@ -1139,6 +1139,21 @@ PCLm_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
 }
 
+static void
+PCLm8_initialize_device_procs(gx_device *dev)
+{
+    gdev_prn_initialize_device_procs_rgb(dev);
+
+    set_dev_proc(dev, open_device, PCLm_open);
+    set_dev_proc(dev, output_page, gdev_prn_output_page);
+    set_dev_proc(dev, get_initial_matrix, PCLm_get_initial_matrix);
+    set_dev_proc(dev, close_device, PCLm_close);
+    set_dev_proc(dev, get_params, pdf_image_get_params_downscale);
+    set_dev_proc(dev, put_params, pdf_image_put_params_downscale);
+    set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
+    set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
+}
+
 static dev_proc_print_page(PCLm_print_page);
 
 const gx_device_pdf_image gs_PCLm_device = {
@@ -1151,6 +1166,24 @@ const gx_device_pdf_image gs_PCLm_device = {
                            3,          /* num components */
                            24,         /* bits per sample */
                            255, 255, 256, 256,
+                           PCLm_print_page),
+    3,
+    GX_DOWNSCALER_PARAMS_DEFAULTS,
+    16, /* StripHeight */
+    0.0, /* QFactor */
+    0  /* JPEGQ */
+};
+
+const gx_device_pdf_image gs_PCLm8_device = {
+    prn_device_body_duplex(gx_device_pdf_image,
+                           PCLm8_initialize_device_procs,
+                           "pclm8",
+                           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                           600, 600,   /* 600 dpi by default */
+                           0, 0, 0, 0, /* Margins */
+                           1,          /* num components */
+                           8,         /* bits per sample */
+                           255, 0, 256, 0,
                            PCLm_print_page),
     3,
     GX_DOWNSCALER_PARAMS_DEFAULTS,
@@ -1507,7 +1540,10 @@ PCLm_downscale_and_print_page(gx_device_printer *dev,
             stream_puts(pdf_dev->strm, "/Subtype /Image\n");
             pprintd1(pdf_dev->strm, "/Width %d\n", width);
             pprintd1(pdf_dev->strm, "/Height %d\n", Read);
-            stream_puts(pdf_dev->strm, "/ColorSpace /DeviceRGB\n");
+            if (dev->color_info.max_components == 1)
+                stream_puts(pdf_dev->strm, "/ColorSpace /DeviceGray\n");
+            else
+                stream_puts(pdf_dev->strm, "/ColorSpace /DeviceRGB\n");
             stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
             switch (pdf_dev->Compression) {
                 case COMPRESSION_FLATE:
@@ -1607,7 +1643,10 @@ PCLm_downscale_and_print_page(gx_device_printer *dev,
         stream_puts(pdf_dev->strm, "/Subtype /Image\n");
         pprintd1(pdf_dev->strm, "/Width %d\n", width);
         pprintd1(pdf_dev->strm, "/Height %d\n", Read);
-        stream_puts(pdf_dev->strm, "/ColorSpace /DeviceRGB\n");
+        if (dev->color_info.max_components == 1)
+            stream_puts(pdf_dev->strm, "/ColorSpace /DeviceGray\n");
+        else
+            stream_puts(pdf_dev->strm, "/ColorSpace /DeviceRGB\n");
         stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
         switch (pdf_dev->Compression) {
             case COMPRESSION_FLATE:

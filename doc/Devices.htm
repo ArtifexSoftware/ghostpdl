@@ -915,8 +915,9 @@ to permit production of PDF files from input where the graphics
 model differs significantly from PDF (eg PCL and RasterOPs).
 </p>
 <p>
-There are four devices named pdfimage8, pdfimage24, pdfimage32 and PCLm. These produce valid
-PDF files with a colour depth of 8 (Gray), 24 (RGB) or 32 (CMYK), the PCLm device only supports 24-bit RGB.
+There are five devices named pdfimage8, pdfimage24, pdfimage32, pclm and pclm8. These produce valid
+PDF files with a colour depth of 8 (Gray), 24 (RGB) or 32 (CMYK), the pclm device only supports 24-bit RGB
+and the pclm8 device only supports 8-bit gray.
 These are all implemented as 'downscale' devices, which means they can implement page level
 anti-aliasing using the <code>-dDownScaleFactor</code> switch.
 </p>
