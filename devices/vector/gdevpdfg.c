@@ -2942,6 +2942,9 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
     int bottom;
 
     if (pdev->CompatibilityLevel >= 1.4) {
+        code = pdf_update_alpha(pdev, pgs, ppres, for_text);
+        if (code < 0)
+            return code;
         if (pdev->state.blend_mode != pgs->blend_mode) {
             static const char *const bm_names[] = { GS_BLEND_MODE_NAMES };
             char buf[20];
@@ -2956,9 +2959,6 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
                 return code;
             pdev->state.blend_mode = pgs->blend_mode;
         }
-        code = pdf_update_alpha(pdev, pgs, ppres, for_text);
-        if (code < 0)
-            return code;
     } else {
         /*
          * If the graphics state calls for any transparency functions,
