@@ -1969,6 +1969,10 @@ $(DD)PCLm.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(
 	$(SETPDEV2) $(DD)PCLm $(DEVOBJ)gdevpdfimg.$(OBJ)
 	$(ADDMOD) $(DD)PCLm -include $(GLD)page
 
+$(DD)PCLm8.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)PCLm8 $(DEVOBJ)gdevpdfimg.$(OBJ)
+	$(ADDMOD) $(DD)PCLm8 -include $(GLD)page
+
 $(DEVOBJ)gdevpdfimg.$(OBJ) : $(DEVSRC)gdevpdfimg.c $(AK) $(gdevkrnlsclass_h) \
   $(DEVS_MAK) $(arch_h) $(stdint__h) $(gdevprn_h) $(gxdownscale_h) \
   $(stream_h) $(spprint_h) $(time__h) $(smd5_h) $(sstring_h) $(strimpl_h) \
