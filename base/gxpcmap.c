@@ -676,7 +676,7 @@ blank_unmasked_bits(gx_device * mask,
             for (x = 0; x < w; x++)
             {
                 int xx = x+x0;
-                if (((mine[xx>>3]>>(x&7)) & 1) == 0) {
+                if (((mine[xx>>3]<<(x&7)) & 128) == 0) {
                     switch (depth)
                     {
                     case 8:
