@@ -331,7 +331,7 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
     /* We start gs with the nullpage device, and replace the device with the
      * set_device call from the language independent code.
      */
-    gsargs[nargs++] = "-dNODISPLAY";
+    gsargs[nargs++] = "-sDEVICE=nullpage";
     /* As we're "printer targetted, use a jobserver */
     gsargs[nargs++] = "-dJOBSERVER";
 
