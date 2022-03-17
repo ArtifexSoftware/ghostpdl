@@ -128,6 +128,7 @@ struct pl_main_instance_s
     bool pause;                 /* -dNOPAUSE => false */
     gx_device *device;
     gs_gc_root_t *device_root;
+    int device_index;
     pl_main_get_codepoint_t *get_codepoint;
                                 /* Get next 'unicode' codepoint */
 
@@ -1363,7 +1364,7 @@ pl_main_alloc_instance(gs_memory_t * mem)
 
 /* Create a default device if not already defined. */
 static int
-pl_top_create_device(pl_main_instance_t * pti, int index)
+pl_top_create_device(pl_main_instance_t * pti)
 {
     int code = 0;
 
@@ -1379,13 +1380,13 @@ pl_top_create_device(pl_main_instance_t * pti, int index)
         if (pti->device != NULL)
             pti->device = NULL;
 
-        if (index == -1) {
+        if (pti->device_index == -1) {
             dev = gs_getdefaultlibdevice(pti->memory);
         }
         else {
-            const gx_device **list;
-            gs_lib_device_list((const gx_device * const **)&list, NULL);
-            dev = list[index];
+            dev = gs_getdevice(pti->device_index);
+            if (dev == NULL) /* Shouldn't ever happen */
+                return -1;
         }
         for (impl = pti->implementations; *impl != 0; ++impl) {
            mem = pl_get_device_memory(*impl);
@@ -1503,7 +1504,7 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int6
         return (b == 1) ? 0 : gs_note_error(gs_error_rangecheck);
     if (argcmp(arg, "NOPAUSE", 7)) {
         pmi->pause = !b;
-        return 0;
+        return 1;
     }
     if (argcmp(arg, "DOINTERPOLATE", 13)) {
         pmi->interpolate = !!b;
@@ -1520,6 +1521,13 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int6
     if (argcmp(arg, "RESETRESOURCES", 14)) {
         pmi->reset_resources = b;
         return 0;
+    }
+    if (argcmp(arg, "NODISPLAY", 9)) {
+        pmi->pause = !b;
+        pmi->device_index = get_device_index(pmi->memory, "nullpage");
+        if (pmi->device_index == -1)
+            return -1;
+        return 1;
     }
     return 1;
 }
@@ -2278,7 +2286,7 @@ int pl_main_enumerate_params(pl_main_instance_t *pmi, void **iter, const char **
 }
 
 static int
-handle_dash_s(pl_main_instance_t *pmi, const char *arg, int *device_index)
+handle_dash_s(pl_main_instance_t *pmi, const char *arg)
 {
     int code = 0;
     char *eqp;
@@ -2292,16 +2300,12 @@ handle_dash_s(pl_main_instance_t *pmi, const char *arg, int *device_index)
     }
     value = eqp + 1;
     if (!strncmp(arg, "DEVICE", 6)) {
-        if (device_index == NULL) {
-            dmprintf(pmi->memory, "DEVICE cannot be set this late!\n");
+        if (pmi->device_index != -1) {
+            dmprintf(pmi->memory, "DEVICE already set!\n");
             return -1;
         }
-        if (*device_index != -1) {
-            dmprintf(pmi->memory, "DEVICE can only be set once!\n");
-            return -1;
-        }
-        *device_index = get_device_index(pmi->memory, value);
-        if (*device_index == -1)
+        pmi->device_index = get_device_index(pmi->memory, value);
+        if (pmi->device_index == -1)
             return -1;
     } else if (!strncmp(arg, "DefaultGrayProfile",
                         strlen("DefaultGrayProfile"))) {
@@ -2350,10 +2354,10 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     int code = 0;
     const char *arg = NULL;
     gs_c_param_list *params = &pmi->params;
-    int device_index = -1;
     char *collected_commands = NULL;
     bool not_an_arg = 1;
 
+    pmi->device_index = -1;
     /* By default, stdin_is_interactive = 1. This mirrors what stdin_init
      * would have done in the iodev one time initialisation. We aren't
      * getting our stdin via an iodev though, so we do it here. */
@@ -2757,7 +2761,7 @@ help:
                 break;
             case 's':
             case 'S':
-                code = handle_dash_s(pmi, arg, &device_index);
+                code = handle_dash_s(pmi, arg);
                 if (code < 0)
                     return code;
                 break;
@@ -2787,7 +2791,7 @@ help:
         return code;
 
     gs_c_param_list_read(params);
-    code = pl_top_create_device(pmi, device_index); /* create default device if needed */
+    code = pl_top_create_device(pmi); /* create default device if needed */
     if (code < 0)
         return code;
 
@@ -2821,7 +2825,7 @@ help:
                 continue; /* We've already read any -f into arg */
             } else if (!not_an_arg && arg[0] == '-' &&
                        (arg[1] == 's' || arg[1] == 'S')) {
-                code = handle_dash_s(pmi, arg+2, NULL);
+                code = handle_dash_s(pmi, arg+2);
                 if (code < 0)
                     break;
                 arg = NULL;
