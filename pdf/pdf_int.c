@@ -911,6 +911,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
 {
     int c, code;
 
+rescan:
     pdfi_skip_white(ctx, s);
 
     c = pdfi_read_byte(ctx, s);
@@ -1019,17 +1020,17 @@ int pdfi_read_token(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, ui
             break;
         case '}':
             pdfi_clear_to_mark(ctx);
-            return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
+            goto rescan;
             break;
         case '%':
             pdfi_skip_comment(ctx, s);
-            return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
+            goto rescan;
             break;
         default:
             if (isdelimiter(c)) {
                 if (ctx->args.pdfstoponerror)
                     return_error(gs_error_syntaxerror);
-                return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
+                goto rescan;
             }
             pdfi_unread_byte(ctx, s, (byte)c);
             code = pdfi_read_keyword(ctx, s, indirect_num, indirect_gen);
