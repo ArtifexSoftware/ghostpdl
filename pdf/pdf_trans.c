@@ -758,7 +758,11 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox,
         if (igs->SMask != NULL && mode != BLEND_MODE_Normal && mode != BLEND_MODE_Compatible)
             isolated = true;
         code = pdfi_trans_begin_simple_group(ctx, bbox, stroked_bbox, isolated, false);
-        state->GroupPushed = true;
+
+        /* Group was not pushed if error */
+        if (code >= 0)
+            state->GroupPushed = true;
+
         state->saveStrokeAlpha = gs_getstrokeconstantalpha(ctx->pgs);
         state->saveFillAlpha = gs_getfillconstantalpha(ctx->pgs);
         code = gs_setfillconstantalpha(ctx->pgs, 1.0);
