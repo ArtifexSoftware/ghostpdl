@@ -390,7 +390,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     int ecode, code;
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     float cl = (float)pdev->CompatibilityLevel;
-    bool locked = pdev->params.LockDistillerParams, ForOPDFRead, OmitInfoDate = pdev->OmitInfoDate, OmitID = pdev->OmitID, OmitXMP = pdev->OmitXMP;
+    bool locked = pdev->params.LockDistillerParams, ForOPDFRead;
     gs_param_name param_name;
 
     pdev->pdf_memory = gs_memory_stable(pdev->memory);
