@@ -875,6 +875,11 @@ static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page
                     pdfi_countdown(o);
                     goto exit;
                 }
+                if (pfn[i]->params.m != 1 || pfn[i]->params.n != 1) {
+                    pdfi_countdown(o);
+                    code = gs_note_error(gs_error_rangecheck);
+                    goto exit;
+                }
             } else {
                 pdfi_countdown(o);
                 code = gs_note_error(gs_error_typecheck);
@@ -938,7 +943,6 @@ static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page
         }
     }
  exit:
-//    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     for (i = 0; i < 4; i++) {
         pdfi_free_function(ctx, pfn[i]);
     }
@@ -956,6 +960,11 @@ static int pdfi_set_gray_transfer(pdf_context *ctx, pdf_obj *tr_obj, pdf_dict *p
     code = pdfi_build_function(ctx, &pfn, NULL, 1, tr_obj, page_dict);
     if (code < 0)
         return code;
+
+    if (pfn->params.m != 1 || pfn->params.n != 1) {
+        (void)pdfi_free_function(ctx, pfn);
+        return_error(gs_error_rangecheck);
+    }
 
     gs_settransfer_remap(ctx->pgs, gs_mapped_transfer, false);
     for (i = 0; i < transfer_map_size; i++) {
