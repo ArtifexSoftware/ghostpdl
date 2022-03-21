@@ -425,6 +425,7 @@ pdf_initialize_ids(gx_device_pdf * pdev)
      * date and time, rather than (for example) %%CreationDate from the
      * PostScript file.  We think this is wrong, but we do the same.
      */
+    if (!pdev->OmitInfoDate)
     {
         struct tm tms;
         time_t t;
@@ -466,6 +467,7 @@ pdf_initialize_ids(gx_device_pdf * pdev)
 static int
 pdf_compute_fileID(gx_device_pdf * pdev)
 {
+
     /* We compute a file identifier when beginning a document
        to allow its usage with PDF encryption. Due to that,
        in contradiction to the Adobe recommendation, our
@@ -1906,7 +1908,11 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
      * +1 for the linearisation dict and +1 for the primary hint stream.
      */
     linear_params->FirsttrailerOffset = gp_ftell(linear_params->Lin_File.file);
-    gs_snprintf(LDict, sizeof(LDict), "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %d>>\nstartxref\r\n0\n%%%%EOF\n        \n",
+    if (pdev->OmitID)
+        gs_snprintf(LDict, sizeof(LDict), "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/Prev %d>>\nstartxref\r\n0\n%%%%EOF\n        \n",
+        linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, 0);
+    else
+        gs_snprintf(LDict, sizeof(LDict), "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %d>>\nstartxref\r\n0\n%%%%EOF\n        \n",
         linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, fileID, fileID, 0);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->Lin_File.file);
 
@@ -2442,7 +2448,11 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     if (code != 0)
         return_error(gs_error_ioerror);
 
-    gs_snprintf(LDict, sizeof(LDict), "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %"PRId64">>\nstartxref\r\n0\n%%%%EOF\n",
+    if (pdev->OmitID)
+        gs_snprintf(LDict, sizeof(LDict), "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/Prev %"PRId64">>\nstartxref\r\n0\n%%%%EOF\n",
+        linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, mainxref);
+    else
+        gs_snprintf(LDict, sizeof(LDict), "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %"PRId64">>\nstartxref\r\n0\n%%%%EOF\n",
         linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, fileID, fileID, mainxref);
     gp_fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
@@ -2871,10 +2881,12 @@ pdf_close(gx_device * dev)
             COS_WRITE_OBJECT(pdev->PageLabels, pdev, resourceLabels);
         }
 
-        /* Write the document metadata. */
-        code1 = pdf_document_metadata(pdev);
-        if (code >= 0)
-            code = code1;
+        if (!pdev->OmitXMP) {
+            /* Write the document metadata. */
+            code1 = pdf_document_metadata(pdev);
+            if (code >= 0)
+                code = code1;
+        }
 
         /* Write the Catalog. */
 
@@ -3136,10 +3148,12 @@ pdf_close(gx_device * dev)
             stream_puts(s, "trailer\n");
             pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
                   pdev->next_id, Catalog_id, Info_id);
-            stream_puts(s, "/ID [");
-            psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
-            psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
-            stream_puts(s, "]\n");
+            if (!pdev->OmitID) {
+                stream_puts(s, "/ID [");
+                psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+                psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+                stream_puts(s, "]\n");
+            }
             if (pdev->OwnerPassword.size > 0) {
                 pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
             }

@@ -696,21 +696,23 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
             pdf_xml_attribute_name(s, "xmlns:xmp");
             pdf_xml_attribute_value(s, "http://ns.adobe.com/xap/1.0/");
             pdf_xml_tag_end(s);
-            {
-                pdf_xml_tag_open_beg(s, "xmp:ModifyDate");
-                pdf_xml_tag_end(s);
-                mod_date_time[mod_date_time_len] = 0x00;
-                pdf_xml_copy(s, mod_date_time);
-                pdf_xml_tag_close(s, "xmp:ModifyDate");
-                pdf_xml_newline(s);
-            }
-            {
-                pdf_xml_tag_open_beg(s, "xmp:CreateDate");
-                pdf_xml_tag_end(s);
-                cre_date_time[cre_date_time_len] = 0x00;
-                pdf_xml_copy(s, cre_date_time);
-                pdf_xml_tag_close(s, "xmp:CreateDate");
-                pdf_xml_newline(s);
+            if (!pdev->OmitInfoDate) {
+                {
+                    pdf_xml_tag_open_beg(s, "xmp:ModifyDate");
+                    pdf_xml_tag_end(s);
+                    mod_date_time[mod_date_time_len] = 0x00;
+                    pdf_xml_copy(s, mod_date_time);
+                    pdf_xml_tag_close(s, "xmp:ModifyDate");
+                    pdf_xml_newline(s);
+                }
+                {
+                    pdf_xml_tag_open_beg(s, "xmp:CreateDate");
+                    pdf_xml_tag_end(s);
+                    cre_date_time[cre_date_time_len] = 0x00;
+                    pdf_xml_copy(s, cre_date_time);
+                    pdf_xml_tag_close(s, "xmp:CreateDate");
+                    pdf_xml_newline(s);
+                }
             }
             {
                 pdf_xml_tag_open_beg(s, "xmp:CreatorTool");

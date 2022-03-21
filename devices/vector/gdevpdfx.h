@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -946,7 +946,7 @@ struct gx_device_pdf_s {
                                      * anything in the image processing routines.
                                      */
     float UserUnit;
-    pdf_OCR_usage UseOCR;                     /* Never, AsNeeded or Always */
+    pdf_OCR_usage UseOCR;           /* Never, AsNeeded or Always */
     gs_text_enum_t* OCRSaved;       /* Saved state of the text enumerator before rendering glyph bitmaps for later OCR */
     pdf_OCR_stage OCRStage;         /* Used to control a (sort of) state machine when using OCR to get a Unicode value for a glyph */
     int *OCRUnicode;                /* Used to pass back the Unicode value from the OCR engine to the text processing */
@@ -954,6 +954,9 @@ struct gx_device_pdf_s {
     gs_glyph OCR_glyph;             /* Passes the current glyph code from text processing to the image processing code when rendering glyph bitmaps for OCR */
     ocr_glyph_t *ocr_glyphs;        /* Records bitmaps and other data from text processing when doing OCR */
     gs_gstate **initial_pattern_states;
+    bool OmitInfoDate;              /* If true, do not emit CreationDate and ModDate in the Infor dictionary and XMP Metadata (must not be true for PDF/X support) */
+    bool OmitXMP;                   /* If true, do not emit an XMP /Metadata block and do not reference it from the Catalog (must not be true for PDF/A output) */
+    bool OmitID;                    /* If true, do not emit a /ID array in the trailer dicionary (must not be true for encrypted files or PDF 2.0) */
 };
 
 #define is_in_page(pdev)\

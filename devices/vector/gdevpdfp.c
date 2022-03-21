@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -129,6 +129,9 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("NoOutputFonts", gs_param_type_bool, FlattenFonts),
     pi("WantsPageLabels", gs_param_type_bool, WantsPageLabels),
     pi("UserUnit", gs_param_type_float, UserUnit),
+    pi("OmitInfoDate", gs_param_type_bool, OmitInfoDate),
+    pi("OmitID", gs_param_type_bool, OmitID),
+    pi("OmitXMP", gs_param_type_bool, OmitXMP),
 #undef pi
     gs_param_item_end
 };
@@ -297,6 +300,13 @@ gdev_pdf_get_param(gx_device *dev, char *Param, void *list)
     }
 #endif
 
+    if (strcmp(Param, "OmitInfoDate") == 0)
+        return(param_write_bool(plist, "OmitInfoDate", &pdev->OmitInfoDate));
+    if (strcmp(Param, "OmitXMP") == 0)
+        return(param_write_bool(plist, "OmitXMP", &pdev->OmitXMP));
+    if (strcmp(Param, "OmitID") == 0)
+        return(param_write_bool(plist, "OmitID", &pdev->OmitID));
+
     return gdev_psdf_get_param(dev, Param, list);
 }
 
@@ -380,7 +390,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     int ecode, code;
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     float cl = (float)pdev->CompatibilityLevel;
-    bool locked = pdev->params.LockDistillerParams, ForOPDFRead;
+    bool locked = pdev->params.LockDistillerParams, ForOPDFRead, OmitInfoDate = pdev->OmitInfoDate, OmitID = pdev->OmitID, OmitXMP = pdev->OmitXMP;
     gs_param_name param_name;
 
     pdev->pdf_memory = gs_memory_stable(pdev->memory);
@@ -647,6 +657,25 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 
     if (pdev->is_ps2write && (code = param_read_bool(plist, "ProduceDSC", &pdev->ProduceDSC)) < 0) {
         param_signal_error(plist, param_name, code);
+    }
+
+    if (pdev->OmitInfoDate && pdev->PDFX != 0) {
+        emprintf(pdev->memory, "\nIt is not possible to omit the CreationDate when creating PDF/X\nOmitInfoDate is being ignored.\n");
+        pdev->OmitInfoDate = 0;
+    }
+
+    if (pdev->OmitID && pdev->CompatibilityLevel > 1.7) {
+        emprintf(pdev->memory, "\nIt is not possible to omit the ID array when creating a version 2.0 or greater PDF\nOmitID is being ignored.\n");
+        pdev->OmitID = 0;
+    }
+    if (pdev->OmitID && pdev->OwnerPassword.size != 0) {
+        emprintf(pdev->memory, "\nIt is not possible to omit the ID array when creating an encrypted PDF\nOmitID is being ignored.\n");
+        pdev->OmitID = 0;
+    }
+
+    if (pdev->OmitXMP && pdev->PDFA != 0) {
+        emprintf(pdev->memory, "\nIt is not possible to omit the XMP metadta when creating a PDF/A\nOmitXMP is being ignored.\n");
+        pdev->OmitXMP = 0;
     }
 
     /* PDFA and PDFX are stored in the page device dictionary and therefore
