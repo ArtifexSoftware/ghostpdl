@@ -1375,6 +1375,29 @@ int pdfi_free_font(pdf_obj *font)
     return 0;
 }
 
+static inline int pdfi_encoding_name_to_index(pdf_name *name)
+{
+    int ind = gs_error_undefined;
+    if (name->type == PDF_NAME) {
+        if (pdfi_name_is(name, "StandardEncoding")) {
+            ind = ENCODING_INDEX_STANDARD;
+        } else {
+            if (pdfi_name_is(name, "WinAnsiEncoding")){
+                ind = ENCODING_INDEX_WINANSI;
+            } else {
+                if (pdfi_name_is(name, "MacRomanEncoding")){
+                    ind = ENCODING_INDEX_MACROMAN;
+                } else {
+                    if (pdfi_name_is(name, "MacExpertEncoding")){
+                        ind = ENCODING_INDEX_MACEXPERT;
+                    }
+                }
+            }
+        }
+    }
+    return ind;
+}
+
 /*
  * Routine to fill in an array with each of the glyph names from a given
  * 'standard' Encoding.
@@ -1390,25 +1413,13 @@ static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Enco
     if (pdfi_array_size(Encoding) < 256)
         return gs_note_error(gs_error_rangecheck);
 
-    if (pdfi_name_is(name, "StandardEncoding")) {
-        gs_encoding = ENCODING_INDEX_STANDARD;
-    } else {
-        if (pdfi_name_is(name, "WinAnsiEncoding")){
-            gs_encoding = ENCODING_INDEX_WINANSI;
-        } else {
-            if (pdfi_name_is(name, "MacRomanEncoding")){
-                gs_encoding = ENCODING_INDEX_MACROMAN;
-            } else {
-                if (pdfi_name_is(name, "MacExpertEncoding")){
-                    gs_encoding = ENCODING_INDEX_MACEXPERT;
-                } else {
-                    return_error(gs_error_undefined);
-                }
-            }
-        }
-    }
-    i = 0;
-    for (i=0;i<256;i++) {
+    code = pdfi_encoding_name_to_index(name);
+    if (code < 0)
+        return code;
+    gs_encoding = (unsigned char)code;
+    code = 0;
+
+    for (i = 0;i<256;i++) {
         temp = gs_c_known_encode(i, gs_encoding);
         gs_c_glyph_name(temp, &str);
         code = pdfi_name_alloc(ctx, (byte *)str.data, str.size, (pdf_obj **)&n);
@@ -1471,6 +1482,18 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
             }
             else {
                 code = pdfi_dict_get(ctx, (pdf_dict *)pdf_Encoding, "BaseEncoding", (pdf_obj **)&n);
+                if (code >= 0) {
+                    if (pdfi_encoding_name_to_index(n) < 0) {
+                        pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_FONT_BASEENC, "pdfi_create_Encoding", NULL);
+                        pdfi_countdown(n);
+                        n = NULL;
+                        code = gs_error_undefined;
+                    }
+                    else if (pdfi_name_is(n, "StandardEncoding") == true) {
+                        pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_FONT_BASEENC, "pdfi_create_Encoding", NULL);
+                    }
+                }
+
                 if (code < 0) {
                     code = pdfi_name_alloc(ctx, (byte *)"StandardEncoding", 16, (pdf_obj **)&n);
                     if (code < 0) {
@@ -1480,6 +1503,7 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
                     }
                     pdfi_countup(n);
                 }
+
                 code = pdfi_build_Encoding(ctx, n, (pdf_array *)*Encoding);
                 if (code < 0) {
                     pdfi_countdown(*Encoding);
