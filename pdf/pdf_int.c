@@ -213,7 +213,8 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         Buffer[index] = (byte)c;
 
         if (c >= '0' && c <= '9') {
-            int_val = int_val*10 + c - '0';
+            if  (!(malformed && recovered))
+                int_val = int_val*10 + c - '0';
         } else if (c == '.') {
             if (has_decimal_point == true) {
                 if (ctx->args.pdfstoponerror)
@@ -252,7 +253,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                     recovered = true;
                 }
             }
-            if (!has_exponent) {
+            if (!has_exponent && !(malformed && recovered)) {
                 doubleneg = negative;
                 negative = 1;
             }
