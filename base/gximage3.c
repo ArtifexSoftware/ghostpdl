@@ -209,7 +209,8 @@ gx_begin_image3_generic(gx_device * dev,
     int code;
 
     /* Validate the parameters. */
-    if (pim->Height <= 0 || pim->MaskDict.Height <= 0)
+    if (pim->Width <= 0 || pim->MaskDict.Width <= 0 ||
+        pim->Height <= 0 || pim->MaskDict.Height <= 0)
         return_error(gs_error_rangecheck);
     switch (pim->InterleaveType) {
         default:
