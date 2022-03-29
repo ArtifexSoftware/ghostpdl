@@ -1872,7 +1872,7 @@ use_image_as_pattern(gx_device_pdf *pdev, pdf_resource_t *pres1,
     }
     if (code >= 0)
         code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
-            gxdso_pattern_load, &inst, id);
+            gxdso_pattern_load, &id, sizeof(gs_id));
     if (code >= 0) {
         stream_puts(pdev->strm, "q ");
         code = pdf_cs_Pattern_colored(pdev, &v);
@@ -2695,7 +2695,6 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 gs_pattern1_instance_t *pinst = param->pinst;
                 gs_gstate *pgs = param->graphics_state;
 
-                id = param->pinst_id;
                 code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
                 if (code < 0)
                     return code;
@@ -2735,7 +2734,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 memset(pdev->initial_pattern_states[pdev->PatternDepth], 0x00, sizeof(gs_gstate));
 
                 reset_gstate_for_pattern(pdev, pdev->initial_pattern_states[pdev->PatternDepth], pgs);
-                code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false,
+                code = pdf_enter_substream(pdev, resourcePattern, pinst->id, &pres, false,
                         pdev->CompressStreams);
                 if (code < 0) {
                     gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
@@ -2751,7 +2750,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                  * the ID is restored when we finish capturing the pattern.
                  */
                 pdev->state.soft_mask_id = pgs->soft_mask_id;
-                pres->rid = id;
+                pres->rid = pinst->id;
                 code = pdf_store_pattern1_params(pdev, pres, pinst);
                 if (code < 0) {
                     gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
@@ -2830,7 +2829,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             }
             return 1;
         case gxdso_pattern_load:
-            pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, id);
+            pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, *((gx_bitmap_id *)data));
             if (pres == 0)
                 return 0;
             pres = pdf_substitute_pattern(pres);

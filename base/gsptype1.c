@@ -1618,7 +1618,7 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_gstate * pgs,
         gx_color_tile *ctile = &pcache->tiles[id % pcache->num_tiles];
         bool internal_accum = true;
         if (pgs->have_pattern_streams) {
-            int code = dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_load, NULL, id);
+            int code = dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_load, &id, sizeof(gx_bitmap_id));
             internal_accum = (code == 0);
             if (code < 0)
                 return false;

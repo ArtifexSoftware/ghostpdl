@@ -1302,7 +1302,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
         }
         if (code >= 0)
             code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
-                gxdso_pattern_load, &inst, id);
+                gxdso_pattern_load, &id, sizeof(gs_id));
         if (code >= 0)
             code = pdf_cs_Pattern_colored(pdev, &v);
         if (code >= 0) {
