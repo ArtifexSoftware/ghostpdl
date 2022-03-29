@@ -114,35 +114,12 @@ static void pdfi_free_pattern_context(pdf_pattern_context_t *context)
     gs_free_object(context->ctx->memory, context, "Free pattern context");
 }
 
-static bool
-pdfi_pattern_purge_proc(gx_color_tile * ctile, void *proc_data)
-{
-    if (ctile->id == *((gx_bitmap_id *)proc_data))
-        return true;
-    return false;
-}
-
 void pdfi_pattern_cleanup(gs_memory_t * mem, void *p)
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)p;
-    pdf_pattern_context_t *context;
-    gx_color_tile *pctile = NULL;
 
-    context = (pdf_pattern_context_t *)pinst->client_data;
-
-    /* If are being called from Ghostscript, the clist pattern accumulator device (in
-       the tile cache) *can* outlast outlast our pattern instance, so if the pattern
-       instance is being freed, also remove the entry from the cache
-     */
-    if (context != NULL && context->ctx != NULL && context->ctx->pgs != NULL &&
-        context->shading == NULL &&  context->ctx->pgs->pattern_cache != NULL
-     && gx_pattern_cache_get_entry(context->ctx->pgs, pinst->id, &pctile) == 0
-     && gx_pattern_tile_is_clist(pctile)) {
-        gx_pattern_cache_winnow(gstate_pattern_cache(context->ctx->pgs), pdfi_pattern_purge_proc, (void *)(&pctile->id));
-    }
-
-    if (context != NULL) {
-        pdfi_free_pattern_context(context);
+    if (pinst->client_data != NULL) {
+        pdfi_free_pattern_context((pdf_pattern_context_t *)pinst->client_data);
         pinst->client_data = NULL;
         pinst->notify_free = NULL;
     }
@@ -525,6 +502,19 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 
     cc->pattern->client_data = context;
     cc->pattern->notify_free = pdfi_pattern_cleanup;
+    {
+        unsigned long hash = 5381;
+        unsigned int i;
+        const char *str = (const char *)&ctx->pgs->ctm;
+
+        gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)cc->pattern;
+
+
+        for (i = 0; i < 4 * sizeof(float); i++)
+            hash = ((hash << 5) + hash) + str[i]; /* hash * 33 + c */
+
+        pinst->id = hash + pdict->object_num;
+    }
     context = NULL;
 
     code = pdfi_grestore(ctx);

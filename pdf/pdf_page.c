@@ -684,6 +684,12 @@ static int setup_page_DefaultSpaces(pdf_context *ctx, pdf_dict *page_dict)
     return(pdfi_setup_DefaultSpaces(ctx, page_dict));
 }
 
+static bool
+pdfi_pattern_purge_all_proc(gx_color_tile * ctile, void *proc_data)
+{
+    return true;
+}
+
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 {
     int code, code1=0;
@@ -863,6 +869,11 @@ exit3:
     pdfi_countdown(group_dict);
 
     release_page_DefaultSpaces(ctx);
+
+    /* Flush any pattern tiles. We don't want to (potentially) return to PostScript
+     * with any pattern tiles referencing our objects, in case the garbager runs.
+     */
+    gx_pattern_cache_winnow(gstate_pattern_cache(ctx->pgs), pdfi_pattern_purge_all_proc, NULL);
 
     if (code == 0 || (!ctx->args.pdfstoponerror && code != gs_error_stackoverflow))
         if (!page_dict_error && ctx->finish_page != NULL)
