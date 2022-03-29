@@ -273,7 +273,8 @@ docxwrite_open_device(gx_device * dev)
         code = s_errno_to_gs();
         goto end;
     }
-    if (extract_page_begin(tdev->extract)) {
+    /* Pass dummy page bbox for now; our simple use of extract ignores it. */
+    if (extract_page_begin(tdev->extract, 0, 0, 0, 0)) {
         code = s_errno_to_gs();
         goto end;
     }
@@ -383,7 +384,8 @@ docxwrite_output_page(gx_device * dev, int num_copies, int flush)
             goto end;
         }
     }
-    if (extract_page_begin(tdev->extract)) {
+    /* Pass dummy page bbox for now; our simple use of extract ignores it. */
+    if (extract_page_begin(tdev->extract, 0, 0, 0, 0)) {
         code = s_errno_to_gs();
         goto end;
     }
@@ -939,13 +941,16 @@ docxwrite_process_cmap_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
 
             txt_get_unicode(penum->dev, (gs_font *)pte->orig_font, glyph, chr, &buffer[0]);
 
+            /* Pass dummy glyph bbox because our use of extract does not
+            currently cause it to be used. */
             if (extract_add_char(
                     tdev->extract,
                     tdev->x,
                     fixed2float(penum->origin.y) - penum->text_state->matrix.ty,
                     buffer[0] /*ucs*/,
                     glyph_width / penum->text_state->size /*adv*/,
-                    0 /*autosplit*/
+                    0 /*autosplit*/,
+                    0, 0, 0, 0 /* bbox*/
                     )) {
                 return s_errno_to_gs();
             }
@@ -1095,13 +1100,16 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
          * 'extra' code points' widths to 0.
          */
 
+        /* Pass dummy glyph bbox because our use of extract does not currently
+        cause it to be used. */
         if (extract_add_char(
                 tdev->extract,
                 tdev->x,
                 fixed2float(penum->origin.y) - penum->text_state->matrix.ty,
                 chr2[0] /*ucs*/,
                 glyph_width / penum->text_state->size /*adv*/,
-                0 /*autosplit*/
+                0 /*autosplit*/,
+                0, 0, 0, 0 /*bbox*/
                 )) {
             return s_errno_to_gs();
         }

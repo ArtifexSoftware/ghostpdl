@@ -6599,6 +6599,9 @@
     <ClCompile Include="..\extract\src\astring.c">
       <Filter>extract</Filter>
     </ClCompile>
+    <ClCompile Include="..\extract\src\boxer.c">
+      <Filter>extract</Filter>
+    </ClCompile>
     <ClCompile Include="..\extract\src\buffer.c">
       <Filter>extract</Filter>
     </ClCompile>
@@ -6636,6 +6639,9 @@
       <Filter>extract</Filter>
     </ClCompile>
     <ClCompile Include="..\extract\src\outf.c">
+      <Filter>extract</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extract\src\rect.c">
       <Filter>extract</Filter>
     </ClCompile>
     <ClCompile Include="..\extract\src\sys.c">

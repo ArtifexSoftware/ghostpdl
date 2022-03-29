@@ -1622,6 +1622,7 @@
     <ClCompile Include="..\expat\tests\runtestspp.cpp" />
     <ClCompile Include="..\extract\src\alloc.c" />
     <ClCompile Include="..\extract\src\astring.c" />
+    <ClCompile Include="..\extract\src\boxer.c" />
     <ClCompile Include="..\extract\src\buffer-test.c" />
     <ClCompile Include="..\extract\src\buffer.c" />
     <ClCompile Include="..\extract\src\docx.c" />
@@ -1635,6 +1636,7 @@
     <ClCompile Include="..\extract\src\memento.c" />
     <ClCompile Include="..\extract\src\misc-test.c" />
     <ClCompile Include="..\extract\src\outf.c" />
+    <ClCompile Include="..\extract\src\rect.c" />
     <ClCompile Include="..\extract\src\sys.c" />
     <ClCompile Include="..\extract\src\text.c" />
     <ClCompile Include="..\extract\src\xml.c" />

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -21,6 +21,9 @@ $(extract_out_prefix)alloc.$(OBJ):          $(EXTRACT_DIR)/src/alloc.c $(MAKEDIR
 
 $(extract_out_prefix)astring.$(OBJ):        $(EXTRACT_DIR)/src/astring.c $(MAKEDIRS)
 	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/astring.c
+
+$(extract_out_prefix)boxer.$(OBJ):         $(EXTRACT_DIR)/src/boxer.c $(MAKEDIRS)
+	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/boxer.c
 
 $(extract_out_prefix)buffer.$(OBJ):         $(EXTRACT_DIR)/src/buffer.c $(MAKEDIRS)
 	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/buffer.c
@@ -55,6 +58,9 @@ $(extract_out_prefix)odt_template.$(OBJ):   $(EXTRACT_DIR)/src/odt_template.c $(
 $(extract_out_prefix)outf.$(OBJ):           $(EXTRACT_DIR)/src/outf.c $(MAKEDIRS)
 	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/outf.c
 
+$(extract_out_prefix)rect.$(OBJ):           $(EXTRACT_DIR)/src/rect.c $(MAKEDIRS)
+	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/rect.c
+
 $(extract_out_prefix)sys.$(OBJ):           $(EXTRACT_DIR)/src/sys.c $(MAKEDIRS)
 	$(extract_cc)$@ $(C_) $(EXTRACT_DIR)/src/sys.c
 
@@ -70,6 +76,7 @@ $(extract_out_prefix)zip.$(OBJ):            $(EXTRACT_DIR)/src/zip.c $(MAKEDIRS)
 EXTRACT_OBJS = \
 	$(extract_out_prefix)alloc.$(OBJ) \
 	$(extract_out_prefix)astring.$(OBJ) \
+	$(extract_out_prefix)boxer.$(OBJ) \
 	$(extract_out_prefix)buffer.$(OBJ) \
 	$(extract_out_prefix)document.$(OBJ) \
 	$(extract_out_prefix)docx.$(OBJ) \
@@ -81,6 +88,7 @@ EXTRACT_OBJS = \
 	$(extract_out_prefix)odt.$(OBJ) \
 	$(extract_out_prefix)odt_template.$(OBJ) \
 	$(extract_out_prefix)outf.$(OBJ) \
+	$(extract_out_prefix)rect.$(OBJ) \
 	$(extract_out_prefix)sys.$(OBJ) \
 	$(extract_out_prefix)text.$(OBJ) \
 	$(extract_out_prefix)xml.$(OBJ) \
