@@ -340,8 +340,10 @@ int pdfi_dict_get_common(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj
          * referencing and never counts down to 0, leading to a memory leak.
          * This is clearly an error, so flag it and don't replace the indirect reference.
          */
-        if ((*o)->object_num == 0 || (*o)->object_num != d->object_num)
-        {
+        if ((*o) < (pdf_obj *)(uintptr_t)(TOKEN__LAST_KEY)) {
+            /* "FAST" object, therefore can't be a problem. */
+            d->list[index].value = *o;
+        } else if ((*o)->object_num == 0 || (*o)->object_num != d->object_num) {
             pdfi_countdown(d->list[index].value);
             d->list[index].value = *o;
         } else {
@@ -565,15 +567,22 @@ pdfi_dict_get_bool2(pdf_context *ctx, pdf_dict *d, const char *Key1,
 int pdfi_dict_get_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool *val)
 {
     int code;
-    pdf_bool *b;
+    pdf_obj *b;
 
-    code = pdfi_dict_get_type(ctx, d, Key, PDF_BOOL, (pdf_obj **)&b);
+    code = pdfi_dict_get(ctx, d, Key, &b);
     if (code < 0)
         return code;
 
-    *val = b->value;
-    pdfi_countdown(b);
-    return 0;
+    if (b == PDF_TRUE_OBJ) {
+        *val = 1;
+        return 0;
+    } else if (b == PDF_FALSE_OBJ) {
+        *val = 0;
+        return 0;
+    }
+
+    *val = 0; /* Be consistent at least! */
+    return_error(gs_error_typecheck);
 }
 
 int pdfi_dict_get_number2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, double *f)
@@ -676,7 +685,7 @@ int fill_bool_array_from_dict(pdf_context *ctx, bool *parray, int size, pdf_dict
 {
     int code, i;
     pdf_array *a = NULL;
-    pdf_bool *o;
+    pdf_obj *o;
     uint64_t array_size;
 
     code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
@@ -691,13 +700,20 @@ int fill_bool_array_from_dict(pdf_context *ctx, bool *parray, int size, pdf_dict
         return_error(gs_error_rangecheck);
 
     for (i=0;i< array_size;i++) {
-        code = pdfi_array_get_type(ctx, a, (uint64_t)i, PDF_BOOL, (pdf_obj **)&o);
+        code = pdfi_array_get(ctx, a, (uint64_t)i, (pdf_obj **)&o);
         if (code < 0) {
             pdfi_countdown(a);
             return_error(code);
         }
-        parray[i] = o->value;
-        pdfi_countdown(o);
+        if (o == PDF_TRUE_OBJ) {
+            parray[i] = 1;
+        } else if (o == PDF_FALSE_OBJ) {
+            parray[i] = 0;
+        } else {
+            pdfi_countdown(o);
+            pdfi_countdown(a);
+            return_error(gs_error_typecheck);
+        }
     }
     pdfi_countdown(a);
     return array_size;
@@ -905,15 +921,9 @@ int pdfi_dict_put_int(pdf_context *ctx, pdf_dict *d, const char *key, int64_t va
 
 int pdfi_dict_put_bool(pdf_context *ctx, pdf_dict *d, const char *key, bool value)
 {
-    int code;
-    pdf_bool *obj = NULL;
+    pdf_obj *obj = (value ? PDF_TRUE_OBJ : PDF_FALSE_OBJ);
 
-    code = pdfi_object_alloc(ctx, PDF_BOOL, 0, (pdf_obj **)&obj);
-    if (code < 0)
-        return code;
-
-    obj->value = value;
-    return pdfi_dict_put(ctx, d, key, (pdf_obj *)obj);
+    return pdfi_dict_put(ctx, d, key, obj);
 }
 
 int pdfi_dict_put_name(pdf_context *ctx, pdf_dict *d, const char *key, const char *name)
@@ -1015,6 +1025,25 @@ int pdfi_dict_knownget_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_
         return 0;
 
     code = pdfi_dict_get_type(ctx, d, Key, type, o);
+    if (code < 0)
+        return code;
+
+    return 1;
+}
+
+int pdfi_dict_knownget_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool *b)
+{
+    bool known = false;
+    int code;
+
+    code = pdfi_dict_known(ctx, d, Key, &known);
+    if (code < 0)
+        return code;
+
+    if (known == false)
+        return 0;
+
+    code = pdfi_dict_get_bool(ctx, d, Key, b);
     if (code < 0)
         return code;
 

@@ -84,6 +84,7 @@ static inline bool resource_is_checked(pdfi_check_tracker_t *tracker, pdf_obj *o
 {
     uint32_t byte_offset;
     byte bit_offset;
+    int object_num;
 
     if(tracker->CheckedResources == NULL)
         return 0;
@@ -91,14 +92,15 @@ static inline bool resource_is_checked(pdfi_check_tracker_t *tracker, pdf_obj *o
     /* objects with object number 0 are directly defined, we can't
      * store those so just return immediately
      */
-    if (o->object_num > 0 && (o->object_num >> 3) < tracker->size) {
+    object_num = pdf_object_num(o);
+    if (object_num > 0 && (object_num >> 3) < tracker->size) {
         /* CheckedResources is a byte array, each byte represents
          * 8 objects. So the object number / 8 is the byte offset
          * into the array, and then object number % 8 is the bit
          * within that byte that we want.
          */
-        bit_offset = 0x01 << (o->object_num % 8);
-        byte_offset = o->object_num >> 3;
+        bit_offset = 0x01 << (object_num % 8);
+        byte_offset = object_num >> 3;
 
         /* If its already set, then return that. */
         if (tracker->CheckedResources[byte_offset] & bit_offset)

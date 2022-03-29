@@ -40,7 +40,6 @@ void pdfi_free_array(pdf_obj *o)
 int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
 {
     int code, i;
-    pdf_obj *n = NULL;
 
     *a = NULL;
     code = pdfi_object_alloc(ctx, PDF_ARRAY, size, (pdf_obj **)a);
@@ -50,22 +49,14 @@ int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
     (*a)->size = size;
 
     if (size > 0) {
-        /* Make a null object */
-        code = pdfi_object_alloc(ctx, PDF_NULL, 1, &n);
-        if (code < 0) {
-            pdfi_free_object((pdf_obj *)(*a));
-            *a = NULL;
-            return code;
-        }
-        /* And start all the array entries pointing at that null object.
+        /* Start all the array entries pointing to null.
          * array_put will replace tehm. This ensures we always have a valid
          * object for every entry. pdfi_array_from_stack() doesn't do this
          * initialisation because we know how many obejcts there are in the array
          * and we have valid objects for each entry on the stack already created.
          */
         for (i=0;i<size;i++){
-            (*a)->values[i] = n;
-            pdfi_countup(n);
+            (*a)->values[i] = PDF_NULL_OBJ;
         }
     }
     return 0;
@@ -255,7 +246,7 @@ bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
         code = pdfi_array_fetch(ctx, a, i, &val, true, true);
         if (code < 0)
             continue;
-        if (val->object_num == o->object_num) {
+        if (pdf_object_num(val) == pdf_object_num(o)) {
             if (index != NULL) *index = i;
             pdfi_countdown(val);
             return true;

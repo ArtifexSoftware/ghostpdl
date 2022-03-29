@@ -514,38 +514,36 @@ static int GS_RI(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
 static int GS_OP(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    pdf_bool *b = NULL;
+    bool b;
     int code;
     bool known=false;
 
-    code = pdfi_dict_get_type(ctx, GS, "OP", PDF_BOOL, (pdf_obj **)&b);
+    code = pdfi_dict_get_bool(ctx, GS, "OP", &b);
     if (code < 0)
         return code;
 
-    gs_setstrokeoverprint(ctx->pgs, b->value);
+    gs_setstrokeoverprint(ctx->pgs, b);
 
     /* If op not in the dict, then also set it with OP
      * Because that's what gs does pdf_draw.ps/gsparamdict/OP
      */
     code = pdfi_dict_known(ctx, GS, "op", &known);
     if (!known)
-        gs_setfilloverprint(ctx->pgs, b->value);
+        gs_setfilloverprint(ctx->pgs, b);
 
-    pdfi_countdown(b);
     return 0;
 }
 
 static int GS_op(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    pdf_bool *b;
+    bool b;
     int code;
 
-    code = pdfi_dict_get_type(ctx, GS, "op", PDF_BOOL, (pdf_obj **)&b);
+    code = pdfi_dict_get_bool(ctx, GS, "op", &b);
     if (code < 0)
         return code;
 
-    gs_setfilloverprint(ctx->pgs, b->value);
-    pdfi_countdown(b);
+    gs_setfilloverprint(ctx->pgs, b);
     return 0;
 }
 
@@ -2034,16 +2032,14 @@ static int GS_SM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
 static int GS_SA(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    pdf_bool *b;
+    bool b;
     int code;
 
-    code = pdfi_dict_get_type(ctx, GS, "SA", PDF_BOOL, (pdf_obj **)&b);
+    code = pdfi_dict_get_bool(ctx, GS, "SA", &b);
     if (code < 0)
         return code;
 
-    code = gs_setstrokeadjust(ctx->pgs, b->value);
-    pdfi_countdown(b);
-    return 0;
+    return gs_setstrokeadjust(ctx->pgs, b);
 }
 
 static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
@@ -2068,7 +2064,7 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
     pdf_obj *o = NULL;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     int code;
-    pdf_bool *Processed = NULL;
+    bool Processed;
 
     if (ctx->page.has_transparency == false || ctx->args.notransparency == true)
         return 0;
@@ -2098,14 +2094,17 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
 
         case PDF_DICT:
         {
-            code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Processed", PDF_BOOL, (pdf_obj **)&Processed);
+            code = pdfi_dict_knownget_bool(ctx, (pdf_dict *)o, "Processed", &Processed);
             /* Need to clear the Processed flag in the SMask if another value is set
              * (even if it's the same SMask?)
              * TODO: I think there is a better way to do this that doesn't require sticking this
              * flag in the SMask dictionary.  But for now, let's get correct behavior.
              */
-            if (code > 0 && Processed->value)
-                Processed->value = false;
+            if (code > 0 && Processed) {
+                code = pdfi_dict_put_bool(ctx, (pdf_dict *)o, "Processed", false);
+                if (code < 0)
+                    return code;
+            }
             if (igs->SMask)
                 pdfi_gstate_smask_free(igs);
             /* We need to use the graphics state memory, in case we are running under Ghostscript. */
@@ -2119,7 +2118,6 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
 
  exit:
     pdfi_countdown(o);
-    pdfi_countdown(Processed);
     return 0;
 }
 
@@ -2171,30 +2169,26 @@ static int GS_ca(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
 static int GS_AIS(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    pdf_bool *b;
+    bool b;
     int code;
 
-    code = pdfi_dict_get_type(ctx, GS, "AIS", PDF_BOOL, (pdf_obj **)&b);
+    code = pdfi_dict_get_bool(ctx, GS, "AIS", &b);
     if (code < 0)
         return code;
 
-    code = gs_setalphaisshape(ctx->pgs, b->value);
-    pdfi_countdown(b);
-    return 0;
+    return gs_setalphaisshape(ctx->pgs, b);
 }
 
 static int GS_TK(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    pdf_bool *b;
+    bool b;
     int code;
 
-    code = pdfi_dict_get_type(ctx, GS, "TK", PDF_BOOL, (pdf_obj **)&b);
+    code = pdfi_dict_get_bool(ctx, GS, "TK", &b);
     if (code < 0)
         return code;
 
-    code = gs_settextknockout(ctx->pgs, b->value);
-    pdfi_countdown(b);
-    return 0;
+    return gs_settextknockout(ctx->pgs, b);
 }
 
 typedef int (*GS_proc)(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict);

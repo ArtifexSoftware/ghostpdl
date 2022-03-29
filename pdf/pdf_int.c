@@ -848,11 +848,12 @@ static pdf_key lookup_keyword(const byte *Buffer)
                      sizeof(pdf_token_strings[0]));
 }
 
-/* This function is slightly misnamed, for some keywords we do
- * indeed read the keyword and return a PDF_KEYWORD object, but
- * for null, true, false and R we create an appropriate object
- * of that type (PDF_NULL, PDF_BOOL or PDF_INDIRECT_REF)
- * and return it instead.
+/* This function is slightly misnamed. We read 'keywords' from
+ * the stream (including null, true, false and R), and will usually
+ * return them directly as TOKENs cast to be pointers. In the event
+ * that we can't match what we parse to a known keyword, we'll
+ * instead return a PDF_KEYWORD object. In the even that we parse
+ * an 'R', we will return a PDF_INDIRECT object.
  */
 static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
@@ -886,89 +887,64 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     } else {
         Buffer[index] = 0x00;
         key = lookup_keyword(Buffer);
-        if (key != TOKEN_NOT_A_KEYWORD)
-            index = 0;
+
+        switch (key) {
+            case TOKEN_R:
+            {
+                pdf_indirect_ref *o;
+                uint64_t obj_num;
+                uint32_t gen_num;
+
+                if(pdfi_count_stack(ctx) < 2) {
+                    pdfi_clearstack(ctx);
+                    return_error(gs_error_stackunderflow);
+                }
+
+                if(pdfi_type_of(ctx->stack_top[-1]) != PDF_INT || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT) {
+                    pdfi_clearstack(ctx);
+                    return_error(gs_error_typecheck);
+                }
+
+                gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
+                pdfi_pop(ctx, 1);
+                obj_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
+                pdfi_pop(ctx, 1);
+
+                code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&o);
+                if (code < 0)
+                    return code;
+
+                o->ref_generation_num = gen_num;
+                o->ref_object_num = obj_num;
+                o->indirect_num = indirect_num;
+                o->indirect_gen = indirect_gen;
+
+                code = pdfi_push(ctx, (pdf_obj *)o);
+                if (code < 0)
+                    pdfi_free_object((pdf_obj *)o);
+
+                return code;
+            }
+            case TOKEN_NOT_A_KEYWORD:
+                 /* Unexpected keyword found. We'll allocate an object for the buffer below. */
+                 break;
+            case TOKEN_STREAM:
+                code = pdfi_skip_eol(ctx, s);
+                if (code < 0)
+                    return code;
+                /* fallthrough */
+            case TOKEN_TRUE:
+            case TOKEN_FALSE:
+            case TOKEN_null:
+            default:
+                /* This is the fast, common exit case. We just push the key
+                 * onto the stack. No allocation required. No deallocation
+                 * in the case of error. */
+                return pdfi_push(ctx, (pdf_obj *)(intptr_t)key);
+        }
     }
 
-    switch (key) {
-        case TOKEN_R:
-        {
-            pdf_indirect_ref *o;
-            uint64_t obj_num;
-            uint32_t gen_num;
-
-            if(pdfi_count_stack(ctx) < 2) {
-                pdfi_clearstack(ctx);
-                return_error(gs_error_stackunderflow);
-            }
-
-            if(pdfi_type_of(ctx->stack_top[-1]) != PDF_INT || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT) {
-                pdfi_clearstack(ctx);
-                return_error(gs_error_typecheck);
-            }
-
-            gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
-            pdfi_pop(ctx, 1);
-            obj_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
-            pdfi_pop(ctx, 1);
-
-            code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&o);
-            if (code < 0)
-                return code;
-
-            o->ref_generation_num = gen_num;
-            o->ref_object_num = obj_num;
-            o->indirect_num = indirect_num;
-            o->indirect_gen = indirect_gen;
-
-            code = pdfi_push(ctx, (pdf_obj *)o);
-            if (code < 0)
-                pdfi_free_object((pdf_obj *)o);
-
-            return code;
-        }
-        case TOKEN_TRUE:
-        case TOKEN_FALSE:
-        {
-            pdf_bool *o;
-
-            code = pdfi_object_alloc(ctx, PDF_BOOL, 0, (pdf_obj **)&o);
-            if (code < 0)
-                return code;
-
-            o->value = (key == TOKEN_TRUE);
-            o->indirect_num = indirect_num;
-            o->indirect_gen = indirect_gen;
-
-            code = pdfi_push(ctx, (pdf_obj *)o);
-            if (code < 0)
-                pdfi_free_object((pdf_obj *)o);
-            return code;
-        }
-        case TOKEN_null:
-        {
-            pdf_obj *o;
-
-            code = pdfi_object_alloc(ctx, PDF_NULL, 0, &o);
-            if (code < 0)
-                return code;
-            o->indirect_num = indirect_num;
-            o->indirect_gen = indirect_gen;
-
-            code = pdfi_push(ctx, o);
-            if (code < 0)
-                pdfi_free_object((pdf_obj *)o);
-            return code;
-        }
-        case TOKEN_STREAM:
-            code = pdfi_skip_eol(ctx, s);
-            if (code < 0)
-                return code;
-            break;
-        default:
-            break;
-    }
-
+    /* Unexpected keyword. We can't handle this with the fast no-allocation case. */
     code = pdfi_object_alloc(ctx, PDF_KEYWORD, index, (pdf_obj **)&keyword);
     if (code < 0)
         return code;
@@ -976,7 +952,6 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     if (index)
         memcpy(keyword->data, Buffer, index);
 
-    keyword->key = key;
     /* keyword->length set as part of allocation. */
     keyword->indirect_num = indirect_num;
     keyword->indirect_gen = indirect_gen;
@@ -1176,62 +1151,53 @@ make_keyword_obj(pdf_context *ctx, const byte *data, int length, pdf_keyword **p
     memcpy(Buffer, data, length);
     Buffer[length] = 0;
     key = lookup_keyword(Buffer);
-    if (key != TOKEN_INVALID_KEY)
-        length = 0;
+    if (key != TOKEN_INVALID_KEY) {
+        /* The common case. We've found a real key, just cast the token to
+         * a pointer, and return that. */
+        *pkey = (pdf_keyword *)PDF_TOKEN_AS_OBJ(key);
+        return 1;
+    }
+    /* We still haven't found a real keyword. Allocate a new object and
+     * return it. */
     code = pdfi_object_alloc(ctx, PDF_KEYWORD, length, (pdf_obj **)pkey);
     if (code < 0)
         return code;
     if (length)
         memcpy((*pkey)->data, Buffer, length);
-    (*pkey)->key = key;
+    pdfi_countup(*pkey);
 
-    return 0;
+    return 1;
 }
 
 static int search_table_3(pdf_context *ctx, unsigned char *str, pdf_keyword **key)
 {
-    int i, code = 0;
+    int i;
 
     for (i = 0; i < 5; i++) {
-        if (memcmp(str, op_table_3[i], 3) == 0) {
-            code = make_keyword_obj(ctx, str, 3, key);
-            if (code < 0)
-                return code;
-            pdfi_countup(*key);
-            return 1;
-        }
+        if (memcmp(str, op_table_3[i], 3) == 0)
+            return make_keyword_obj(ctx, str, 3, key);
     }
     return 0;
 }
 
 static int search_table_2(pdf_context *ctx, unsigned char *str, pdf_keyword **key)
 {
-    int i, code = 0;
+    int i;
 
     for (i = 0; i < 39; i++) {
-        if (memcmp(str, op_table_2[i], 2) == 0) {
-            code = make_keyword_obj(ctx, str, 2, key);
-            if (code < 0)
-                return code;
-            pdfi_countup(*key);
-            return 1;
-        }
+        if (memcmp(str, op_table_2[i], 2) == 0)
+            return make_keyword_obj(ctx, str, 2, key);
     }
     return 0;
 }
 
 static int search_table_1(pdf_context *ctx, unsigned char *str, pdf_keyword **key)
 {
-    int i, code = 0;
+    int i;
 
     for (i = 0; i < 27; i++) {
-        if (memcmp(str, op_table_1[i], 1) == 0) {
-            code = make_keyword_obj(ctx, str, 1, key);
-            if (code < 0)
-                return code;
-            pdfi_countup(*key);
-            return 1;
-        }
+        if (memcmp(str, op_table_1[i], 1) == 0)
+            return make_keyword_obj(ctx, str, 1, key);
     }
     return 0;
 }
@@ -1247,36 +1213,34 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
          * operators. Check to see if it includes an endstream or endobj.
          */
         if (memcmp(&keyword->data[length], "endobj", 6) == 0) {
+            /* Keyword is "<something>endobj". So make a keyword just from
+             * <something>, push that, execute it, then push endobj. */
             code = make_keyword_obj(ctx, keyword->data, length, &key1);
             if (code < 0)
                 goto error_exit;
             pdfi_pop(ctx, 1);
             pdfi_push(ctx, (pdf_obj *)key1);
+            pdfi_countdown(key1); /* Drop the reference returned by make_keyword_obj. */
             code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
             if (code < 0)
                 goto error_exit;
-            code = pdfi_object_alloc(ctx, PDF_KEYWORD, 0, (pdf_obj **)&key1);
-            if (code < 0)
-                goto error_exit;
-            key1->key = TOKEN_ENDOBJ;
-            pdfi_push(ctx, (pdf_obj *)key1);
+            pdfi_push(ctx, PDF_TOKEN_AS_OBJ(TOKEN_ENDOBJ));
             return 0;
         } else {
             length = keyword->length - 9;
             if (length > 0 && memcmp(&keyword->data[length], "endstream", 9) == 0) {
+                /* Keyword is "<something>endstream". So make a keyword just from
+                 * <something>, push that, execute it, then push endstream. */
                 code = make_keyword_obj(ctx, keyword->data, length, &key1);
                 if (code < 0)
                     goto error_exit;
                 pdfi_pop(ctx, 1);
                 pdfi_push(ctx, (pdf_obj *)key1);
+                pdfi_countdown(key1); /* Drop the reference returned by make_keyword_obj. */
                 code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
                 if (code < 0)
                     goto error_exit;
-                code = pdfi_object_alloc(ctx, PDF_KEYWORD, 0, (pdf_obj **)&key1);
-                if (code < 0)
-                    goto error_exit;
-                key1->key = TOKEN_ENDSTREAM;
-                pdfi_push(ctx, (pdf_obj *)key1);
+                pdfi_push(ctx, PDF_TOKEN_AS_OBJ(TOKEN_ENDSTREAM));
                 return 0;
             } else {
                 pdfi_clearstack(ctx);
@@ -1291,15 +1255,15 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
             goto error_exit;
 
         if (code > 0) {
-            switch(keyword->length - 3) {
+            switch (keyword->length - 3) {
                 case 1:
-                    code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                    code = search_table_1(ctx, &keyword->data[3], &key2);
                     break;
                 case 2:
-                    code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                    code = search_table_2(ctx, &keyword->data[3], &key2);
                     break;
                 case 3:
-                    code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                    code = search_table_3(ctx, &keyword->data[3], &key2);
                     break;
                 default:
                     goto error_exit;
@@ -1325,13 +1289,13 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
     if (code > 0) {
         switch(keyword->length - 2) {
             case 1:
-                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                code = search_table_1(ctx, &keyword->data[2], &key2);
                 break;
             case 2:
-                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                code = search_table_2(ctx, &keyword->data[2], &key2);
                 break;
             case 3:
-                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                code = search_table_3(ctx, &keyword->data[2], &key2);
                 break;
             default:
                 goto error_exit;
@@ -1355,13 +1319,13 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
 
     switch(keyword->length - 1) {
         case 1:
-            code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+            code = search_table_1(ctx, &keyword->data[1], &key2);
             break;
         case 2:
-            code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+            code = search_table_2(ctx, &keyword->data[1], &key2);
             break;
         case 3:
-            code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+            code = search_table_3(ctx, &keyword->data[1], &key2);
             break;
         default:
             goto error_exit;
@@ -1392,27 +1356,12 @@ error_exit:
 static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source,
                                           pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
+    pdf_obj *keyword = ctx->stack_top[-1];
     int code = 0;
 
-    if (keyword->length > 3) {
-        /* This means we either have a corrupted or illegal operator. The most
-         * usual corruption is two concatented operators (eg QBT instead of Q BT)
-         * I plan to tackle this by trying to see if I can make two or more operators
-         * out of the mangled one. Note this will also be done below in the 'default'
-         * case where we don't recognise a keyword with 3 or fewer characters.
-         */
-        code = split_bogus_operator(ctx, source, stream_dict, page_dict);
-        if (code < 0)
-            return code;
-        if (pdfi_count_stack(ctx) > 0) {
-            keyword = (pdf_keyword *)ctx->stack_top[-1];
-            if (keyword->key != TOKEN_NOT_A_KEYWORD)
-                return REPAIRED_KEYWORD;
-        } else
-            return 0;
-    } else {
-        switch(keyword->key) {
+    if (keyword < PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY))
+    {
+        switch((uintptr_t)keyword) {
             case TOKEN_b:           /* closepath, fill, stroke */
                 pdfi_pop(ctx, 1);
                 code = pdfi_b(ctx);
@@ -1710,24 +1659,33 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source
                 code = pdfi_doublequote(ctx);
                 break;
             default:
-                code = split_bogus_operator(ctx, source, stream_dict, page_dict);
-                if (code < 0)
-                    return code;
-                if (pdfi_count_stack(ctx) > 0) {
-                    keyword = (pdf_keyword *)ctx->stack_top[-1];
-                    if (keyword->key != TOKEN_NOT_A_KEYWORD)
-                        return REPAIRED_KEYWORD;
-                }
+                /* Shouldn't we return an error here? Original code didn't seem to. */
                 break;
-       }
+        }
+        /* We use a return value of 1 to indicate a repaired keyword (a pair of operators
+         * was concatenated, and we split them up). We must not return a value > 0 from here
+         * to avoid tripping that test.
+         */
+        if (code > 0)
+            code = 0;
+        return code;
+    } else if (((pdf_keyword *)keyword)->length > 3) {
+        /* This means we either have a corrupted or illegal operator. The most
+         * usual corruption is two concatented operators (eg QBT instead of Q BT)
+         * I plan to tackle this by trying to see if I can make two or more operators
+         * out of the mangled one. Note this will also be done below in the 'default'
+         * case where we don't recognise a keyword with 3 or fewer characters.
+         */
+        code = split_bogus_operator(ctx, source, stream_dict, page_dict);
+        if (code < 0)
+            return code;
+        if (pdfi_count_stack(ctx) > 0) {
+            keyword = ctx->stack_top[-1];
+            if (keyword != PDF_TOKEN_AS_OBJ(TOKEN_NOT_A_KEYWORD))
+                return REPAIRED_KEYWORD;
+        }
     }
-    /* We use a return value of 1 to indicate a repaired keyword (a pair of operators
-     * was concatenated, and we split them up). We must not return a value > 0 from here
-     * to avoid tripping that test.
-     */
-    if (code > 0)
-        code = 0;
-    return code;
+    return 0;
 }
 
 void local_save_stream_state(pdf_context *ctx, stream_save *local_save)
@@ -1991,6 +1949,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
     pdf_c_stream *stream;
     pdf_keyword *keyword;
     pdf_stream *s = ctx->current_stream;
+    pdf_obj_type type;
 
     /* Check this stream, and all the streams currently being executed, to see
      * if the stream we've been given is already in train. If it is, then we
@@ -2043,11 +2002,12 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
                 break;
         }
 
-        if (pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD) {
 repaired_keyword:
+        type = pdfi_type_of(ctx->stack_top[-1]);
+        if (type == PDF_FAST_KEYWORD) {
             keyword = (pdf_keyword *)ctx->stack_top[-1];
 
-            switch(keyword->key) {
+            switch((uintptr_t)keyword) {
                 case TOKEN_ENDSTREAM:
                     pdfi_pop(ctx,1);
                     goto exit;
@@ -2059,27 +2019,6 @@ repaired_keyword:
                         code = gs_note_error(gs_error_syntaxerror);
                     goto exit;
                     break;
-                default:
-                    {
-                        pdf_dict *stream_dict = NULL;
-
-                        code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
-                        if (code < 0)
-                            goto exit;
-
-                        code = pdfi_interpret_stream_operator(ctx, stream, stream_dict, page_dict);
-                        if (code == REPAIRED_KEYWORD)
-                            goto repaired_keyword;
-
-                        if (code < 0) {
-                            pdfi_set_error(ctx, code, NULL, E_PDF_TOKENERROR, "pdf_interpret_content_stream", NULL);
-                            if (ctx->args.pdfstoponerror) {
-                                pdfi_clearstack(ctx);
-                                goto exit;
-                            }
-                        }
-                    }
-                    break;
                 case TOKEN_INVALID_KEY:
                     pdfi_set_error(ctx, 0, NULL, E_PDF_KEYWORDTOOLONG, "pdfi_interpret_content_stream", NULL);
                     pdfi_clearstack(ctx);
@@ -2088,6 +2027,31 @@ repaired_keyword:
                     pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDSTREAM, "pdfi_interpret_content_stream", NULL);
                     pdfi_clearstack(ctx);
                     break;
+                default:
+                    goto execute;
+            }
+        }
+        else if (type == PDF_KEYWORD)
+        {
+execute:
+            {
+                pdf_dict *stream_dict = NULL;
+
+                code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
+                if (code < 0)
+                    goto exit;
+
+                code = pdfi_interpret_stream_operator(ctx, stream, stream_dict, page_dict);
+                if (code == REPAIRED_KEYWORD)
+                    goto repaired_keyword;
+
+                if (code < 0) {
+                    pdfi_set_error(ctx, code, NULL, E_PDF_TOKENERROR, "pdf_interpret_content_stream", NULL);
+                    if (ctx->args.pdfstoponerror) {
+                        pdfi_clearstack(ctx);
+                        goto exit;
+                    }
+                }
             }
         }
         if(stream->eof == true)

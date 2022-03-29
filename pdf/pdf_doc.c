@@ -788,6 +788,9 @@ static int pdfi_doc_mark_outline(pdf_context *ctx, pdf_dict *outline)
     pdf_dict *child = NULL;
     pdf_dict *Next = NULL;
 
+    if (outline == (pdf_dict *)PDF_NULL_OBJ)
+        return 0;
+
     /* Mark the outline */
     /* NOTE: I think the pdfmark for this needs to be written before the children
      * because I think pdfwrite relies on the order of things.
@@ -874,6 +877,9 @@ static int pdfi_doc_Outlines(pdf_context *ctx)
         code = 0;
         goto exit;
     }
+
+    if (pdfi_type_of(outline) != PDF_DICT)
+        goto exit; /* Exit with no error? */
 
     if (outline->object_num != 0) {
         code = pdfi_loop_detector_add_object(ctx, outline->object_num);

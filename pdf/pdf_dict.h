@@ -42,6 +42,7 @@ int pdfi_dict_known_by_key(pdf_context *ctx, pdf_dict *d, pdf_name *Key, bool *k
 int pdfi_dict_knownget(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
 int pdfi_dict_knownget_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o);
 int pdfi_dict_knownget_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f);
+int pdfi_dict_knownget_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool *b);
 int pdfi_merge_dicts(pdf_context *ctx, pdf_dict *target, pdf_dict *source);
 int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *value, bool replace);
 int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value);

@@ -103,7 +103,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     double f;
     gs_matrix save_matrix, GroupMat, group_Matrix;
     gs_transparency_mask_subtype_t subtype = TRANSPARENCY_MASK_Luminosity;
-    pdf_bool *Processed = NULL;
+    bool Processed, ProcessedKnown = 0;
     bool save_OverrideICC = gs_currentoverrideicc(ctx->pgs);
 
 #if DEBUG_TRANSPARENCY
@@ -114,28 +114,25 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     /* Following the logic of the ps code, cram a /Processed key in the SMask dict to
      * track whether it's already been processed.
      */
-    code = pdfi_dict_knownget_type(ctx, SMask, "Processed", PDF_BOOL, (pdf_obj **)&Processed);
-    if (code > 0 && Processed->value) {
+    code = pdfi_dict_knownget_bool(ctx, SMask, "Processed", &Processed);
+    if (code > 0) {
+        if (Processed) {
 #if DEBUG_TRANSPARENCY
-        dbgmprintf(ctx->memory, "SMask already built, skipping\n");
+          dbgmprintf(ctx->memory, "SMask already built, skipping\n");
 #endif
-        goto exit;
+          goto exit;
+        }
+        ProcessedKnown = 1;
     }
 
     gs_setoverrideicc(ctx->pgs, true);
 
     /* If /Processed not in the dict, put it there */
     if (code == 0) {
-        /* the cleanup at end of this routine assumes Processed has a ref */
-        code = pdfi_object_alloc(ctx, PDF_BOOL, 0, (pdf_obj **)&Processed);
+        code = pdfi_dict_put_bool(ctx, SMask, "Processed", false);
         if (code < 0)
             goto exit;
-        Processed->value = false;
-        /* pdfi_object_alloc() doesn't grab a ref */
-        pdfi_countup(Processed);
-        code = pdfi_dict_put(ctx, SMask, "Processed", (pdf_obj *)Processed);
-        if (code < 0)
-            goto exit;
+        ProcessedKnown = 1;
     }
 
     /* See pdf1.7 pg 553 (pain in the butt to find this!) */
@@ -322,8 +319,12 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         gs_setmatrix(ctx->pgs, &save_matrix);
 
         /* Set Processed flag */
-        if (code == 0 && Processed)
-            Processed->value = true;
+        if (code == 0 && ProcessedKnown)
+        {
+            code = pdfi_dict_put_bool(ctx, SMask, "Processed", true);
+            if (code < 0)
+                goto exit;
+        }
     } else {
         /* take action on a non-/Mask entry. What does this mean ? What do we need to do */
         dmprintf(ctx->memory, "Warning: Type is not /Mask, entry ignored in pdfi_set_trans_mask\n");
@@ -345,7 +346,6 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdfi_countdown(BBox);
     pdfi_countdown(Matrix);
     pdfi_countdown(CS);
-    pdfi_countdown(Processed);
 #if DEBUG_TRANSPARENCY
     dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) END\n");
 #endif

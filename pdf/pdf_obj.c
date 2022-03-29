@@ -41,7 +41,6 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         case PDF_ARRAY_MARK:
         case PDF_DICT_MARK:
         case PDF_PROC_MARK:
-        case PDF_NULL:
             bytes = sizeof(pdf_obj);
             break;
         case PDF_INT:
@@ -61,9 +60,6 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         case PDF_INDIRECT:
             bytes = sizeof(pdf_indirect_ref);
             break;
-        case PDF_BOOL:
-            bytes = sizeof(pdf_bool);
-            break;
         case PDF_KEYWORD:
             bytes = sizeof(pdf_keyword) + size - sizeof(PDF_NAME_DECLARED_LENGTH);
             break;
@@ -76,6 +72,8 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         case PDF_STREAM:
             bytes = sizeof(pdf_stream);
             break;
+        case PDF_NULL:
+        case PDF_BOOL:
         default:
             return_error(gs_error_typecheck);
     }
@@ -221,15 +219,15 @@ void pdfi_free_object(pdf_obj *o)
 {
     if (o == NULL)
         return;
+    if ((intptr_t)o < (intptr_t)TOKEN__LAST_KEY)
+        return;
     switch(o->type) {
         case PDF_ARRAY_MARK:
         case PDF_DICT_MARK:
         case PDF_PROC_MARK:
-        case PDF_NULL:
         case PDF_INT:
         case PDF_REAL:
         case PDF_INDIRECT:
-        case PDF_BOOL:
             gs_free_object(OBJ_MEMORY(o), o, "pdf interpreter object refcount to 0");
             break;
         case PDF_STRING:
@@ -257,8 +255,12 @@ void pdfi_free_object(pdf_obj *o)
         case PDF_CMAP:
             pdfi_free_cmap(o);
             break;
+        case PDF_BOOL:
+        case PDF_NULL:
+            dbgmprintf(OBJ_MEMORY(o), "!!! Attempting to free non-allocated object type !!!\n");
+            break;
         default:
-            dbgmprintf(OBJ_MEMORY(o), "!!! Attempting to free unknown obect type !!!\n");
+            dbgmprintf(OBJ_MEMORY(o), "!!! Attempting to free unknown object type !!!\n");
             break;
     }
 }
@@ -596,13 +598,12 @@ static int pdfi_obj_bool_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
 {
     int code = 0;
     int size = 5;
-    pdf_bool *bool = (pdf_bool *)obj;
     char *buf;
 
     buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_bool_str(data)");
     if (buf == NULL)
         return_error(gs_error_VMerror);
-    if (bool->value) {
+    if (obj == PDF_TRUE_OBJ) {
         memcpy(buf, (byte *)"true", 4);
         *len = 4;
     } else {
@@ -920,6 +921,28 @@ static int pdfi_obj_dict_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
     return code;
 }
 
+#define PARAM1(A) # A,
+#define PARAM2(A,B) A,
+static const char pdf_token_strings[][10] = {
+#include "pdf_tokens.h"
+};
+
+static int pdfi_obj_fast_keyword_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
+{
+    int code = 0;
+    const char *s = pdf_token_strings[(uintptr_t)obj];
+    int size = (int)strlen(s) + 1;
+    byte *buf;
+
+    buf = gs_alloc_bytes(ctx->memory, size, "pdfi_obj_name_str(data)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(buf, s, size);
+    *data = buf;
+    *len = size;
+    return code;
+}
+
 obj_str_dispatch_t obj_str_dispatch[] = {
     {PDF_NAME, pdfi_obj_name_str},
     {PDF_ARRAY, pdfi_obj_array_str},
@@ -931,6 +954,7 @@ obj_str_dispatch_t obj_str_dispatch[] = {
     {PDF_STREAM, pdfi_obj_stream_str},
     {PDF_INDIRECT, pdfi_obj_indirect_str},
     {PDF_NULL, pdfi_obj_null_str},
+    {PDF_FAST_KEYWORD, pdfi_obj_fast_keyword_str},
     {0, NULL}
 };
 
@@ -940,11 +964,13 @@ int pdfi_obj_to_string(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
     obj_str_dispatch_t *dispatch_ptr;
     int code = 0;
+    pdf_obj_type type;
 
     *data = NULL;
     *len = 0;
+    type = pdfi_type_of(obj);
     for (dispatch_ptr = obj_str_dispatch; dispatch_ptr->func; dispatch_ptr ++) {
-        if (obj->type == dispatch_ptr->type) {
+        if (type == dispatch_ptr->type) {
             code = dispatch_ptr->func(ctx, obj, data, len);
             goto exit;
         }

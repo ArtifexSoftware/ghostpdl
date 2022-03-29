@@ -1703,7 +1703,6 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
             font->GlobalSubrs->refcnt = 1;
             for (i = 0; i < font->NumGlobalSubrs; i++) {
                 pdf_string *gsubrstr;
-                pdf_obj *nullobj = NULL;
 
                 p = pdfi_find_cff_index(font->gsubrs, font->cffend, i, &strp, &stre);
                 if (p) {
@@ -1720,11 +1719,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                     }
                 }
                 else {
-                    code = 0;
-                    if (nullobj == NULL)
-                        code = pdfi_object_alloc(ctx, PDF_NULL, 1, (pdf_obj **) &nullobj);
-                    if (code >= 0)
-                        code = pdfi_array_put(ctx, font->GlobalSubrs, (uint64_t) i, (pdf_obj *) nullobj);
+                    code = pdfi_array_put(ctx, font->GlobalSubrs, (uint64_t) i, PDF_NULL_OBJ);
                     if (code < 0) {
                         pdfi_countdown(font->GlobalSubrs);
                         font->GlobalSubrs = NULL;
@@ -1741,7 +1736,6 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
             font->Subrs->refcnt = 1;
             for (i = 0; i < font->NumSubrs; i++) {
                 pdf_string *subrstr;
-                pdf_obj *nullobj = NULL;
 
                 p = pdfi_find_cff_index(font->subrs, font->cffend, i, &strp, &stre);
                 if (p) {
@@ -1756,11 +1750,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                     }
                 }
                 else {
-                    code = 0;
-                    if (nullobj == NULL)
-                        code = pdfi_object_alloc(ctx, PDF_NULL, 1, (pdf_obj **) &nullobj);
-                    if (code >= 0)
-                        code = pdfi_array_put(ctx, font->Subrs, (uint64_t) i, (pdf_obj *) nullobj);
+                    code = pdfi_array_put(ctx, font->Subrs, (uint64_t) i, PDF_NULL_OBJ);
                     if (code < 0) {
                         pdfi_countdown(font->Subrs);
                         font->Subrs = NULL;

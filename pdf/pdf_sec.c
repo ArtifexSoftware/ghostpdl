@@ -993,6 +993,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     pdf_dict *CF_dict = NULL, *StdCF_dict = NULL;
     pdf_dict *d = NULL, *d1 = NULL;
     pdf_obj *o = NULL;
+    bool b;
     pdf_string *s = NULL;
     int64_t i64;
     double f;
@@ -1109,12 +1110,11 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     pdfi_countdown(s);
     s = NULL;
 
-    code = pdfi_dict_knownget_type(ctx, d, "EncryptMetadata", PDF_BOOL, &o);
+    code = pdfi_dict_knownget_bool(ctx, d, "EncryptMetadata", &b);
     if (code < 0)
         goto done;
     if (code > 0) {
-        ctx->encryption.EncryptMetadata = ((pdf_bool *)o)->value;
-        pdfi_countdown(o);
+        ctx->encryption.EncryptMetadata = b;
     }
     else
         ctx->encryption.EncryptMetadata = true;

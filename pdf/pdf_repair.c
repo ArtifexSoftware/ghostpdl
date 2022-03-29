@@ -163,11 +163,11 @@ int pdfi_repair_file(pdf_context *ctx)
                     goto exit;
             }
             if (pdfi_count_stack(ctx) > 0) {
-                if (pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD) {
-                    pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+                if (pdfi_type_of(ctx->stack_top[-1]) == PDF_FAST_KEYWORD) {
+                    pdf_obj *k = ctx->stack_top[-1];
                     pdf_num *n;
 
-                    if (k->key == TOKEN_OBJ) {
+                    if (k == PDF_TOKEN_AS_OBJ(TOKEN_OBJ)) {
                         gs_offset_t saved_offset[3];
 
                         offset = outer_saved_offset[0];
@@ -199,10 +199,10 @@ int pdfi_repair_file(pdf_context *ctx)
                             if (code == 0 && ctx->main_stream->eof)
                                 break;
 
-                            if (pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD) {
-                                pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+                            if (pdfi_type_of(ctx->stack_top[-1]) == PDF_FAST_KEYWORD) {
+                                pdf_obj *k = ctx->stack_top[-1];
 
-                                if (k->key == TOKEN_OBJ) {
+                                if (k == PDF_TOKEN_AS_OBJ(TOKEN_OBJ)) {
                                     /* Found obj while looking for endobj, store the existing 'obj'
                                      * and start afresh.
                                      */
@@ -220,14 +220,14 @@ int pdfi_repair_file(pdf_context *ctx)
                                     continue;
                                 }
 
-                                if (k->key == TOKEN_ENDOBJ) {
+                                if (k == PDF_TOKEN_AS_OBJ(TOKEN_ENDOBJ)) {
                                     code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
                                     if (code < 0)
                                         goto exit;
                                     pdfi_clearstack(ctx);
                                     break;
                                 } else {
-                                    if (k->key == TOKEN_STREAM) {
+                                    if (k == PDF_TOKEN_AS_OBJ(TOKEN_STREAM)) {
                                         static const char test[] = "endstream";
                                         int index = 0;
 
@@ -266,10 +266,10 @@ int pdfi_repair_file(pdf_context *ctx)
                         } while(1);
                         break;
                     } else {
-                        if (k->key == TOKEN_ENDOBJ) {
+                        if (k == PDF_TOKEN_AS_OBJ(TOKEN_ENDOBJ)) {
                             pdfi_clearstack(ctx);
                         } else
-                            if (k->key == TOKEN_STARTXREF) {
+                            if (k == PDF_TOKEN_AS_OBJ(TOKEN_STARTXREF)) {
                                 code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
                                 if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
                                     continue;
@@ -277,7 +277,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                     goto exit;
                                 pdfi_clearstack(ctx);
                             } else {
-                                if (k->key == TOKEN_TRAILER) {
+                                if (k == PDF_TOKEN_AS_OBJ(TOKEN_TRAILER)) {
                                     code = pdfi_read_bare_object(ctx, ctx->main_stream, 0, 0, 0);
                                     if (code == 0 && pdfi_count_stack(ctx) > 0 && pdfi_type_of(ctx->stack_top[-1]) == PDF_DICT) {
                                         if (ctx->Trailer) {
@@ -338,13 +338,13 @@ int pdfi_repair_file(pdf_context *ctx)
                     break;
                 if (code < 0)
                     goto exit;
-                if (pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD) {
-                    pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+                if (pdfi_type_of(ctx->stack_top[-1]) == PDF_FAST_KEYWORD) {
+                    pdf_obj *k = ctx->stack_top[-1];
 
-                    if (k->key == TOKEN_OBJ){
+                    if (k == PDF_TOKEN_AS_OBJ(TOKEN_OBJ)) {
                         continue;
                     }
-                    if (k->key == TOKEN_ENDOBJ) {
+                    if (k == PDF_TOKEN_AS_OBJ(TOKEN_ENDOBJ)) {
                         if (pdfi_count_stack(ctx) > 1) {
                             if (pdfi_type_of(ctx->stack_top[-2]) == PDF_DICT) {
                                 pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
@@ -370,7 +370,7 @@ int pdfi_repair_file(pdf_context *ctx)
                         pdfi_clearstack(ctx);
                         break;
                     }
-                    if (k->key == TOKEN_STREAM) {
+                    if (k == PDF_TOKEN_AS_OBJ(TOKEN_STREAM)) {
                         pdf_dict *d;
                         pdf_name *n = NULL;
 

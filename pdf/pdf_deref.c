@@ -45,6 +45,9 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
 {
     pdf_obj_cache_entry *entry;
 
+    if (o < PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY))
+        return 0;
+
     if (ctx->xref_table->xref[o->object_num].cache != NULL) {
 #if DEBUG_CACHE
         dmprintf1(ctx->memory, "Attempting to add object %d to cache when the object is already cached!\n", o->object_num);
@@ -426,8 +429,9 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_offset, uint32_t objnum, uint32_t gen)
 {
     int code = 0;
-    pdf_keyword *keyword = NULL;
+    pdf_key keyword;
     gs_offset_t saved_offset[3];
+    pdf_obj_type type;
 
     saved_offset[0] = saved_offset[1] = saved_offset[2] = 0;
 
@@ -453,10 +457,13 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
         if (s->eof)
             return_error(gs_error_syntaxerror);
         code = 0;
-    } while (pdfi_type_of(ctx->stack_top[-1]) != PDF_KEYWORD);
+        type = pdfi_type_of(ctx->stack_top[-1]);
+        if (type == PDF_KEYWORD)
+            goto missing_endobj;
+    } while (type != PDF_FAST_KEYWORD);
 
-    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
-    if (keyword->key == TOKEN_ENDOBJ) {
+    keyword = (pdf_key)(uintptr_t)(ctx->stack_top[-1]);
+    if (keyword == TOKEN_ENDOBJ) {
         pdf_obj *o;
 
         if (pdfi_count_stack(ctx) < 2) {
@@ -468,15 +475,17 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
 
         pdfi_pop(ctx, 1);
 
-        o->indirect_num = o->object_num = objnum;
-        o->indirect_gen = o->generation_num = gen;
+        if (o >= PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY)) {
+            o->indirect_num = o->object_num = objnum;
+            o->indirect_gen = o->generation_num = gen;
+        }
         return code;
     }
-    if (keyword->key == TOKEN_STREAM) {
+    if (keyword == TOKEN_STREAM) {
         pdfi_pop(ctx, 1);
         return pdfi_read_stream_object(ctx, s, stream_offset, objnum, gen);
     }
-    if (keyword->key == TOKEN_OBJ) {
+    if (keyword == TOKEN_OBJ) {
         pdf_obj *o;
 
         pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_bare_object", NULL);
@@ -497,6 +506,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
         return 0;
     }
 
+missing_endobj:
     /* Assume that any other keyword means a missing 'endobj' */
     if (!ctx->args.pdfstoponerror) {
         pdf_obj *o;
@@ -745,9 +755,11 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     /* For compressed objects we don't get a 'obj gen obj' sequence which is what sets
      * the object number for uncompressed objects. So we need to do that here.
      */
-    (*object)->indirect_num = (*object)->object_num = obj;
-    (*object)->indirect_gen = (*object)->generation_num = gen;
-    pdfi_countup(*object);
+    if (*object >= PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY)) {
+        (*object)->indirect_num = (*object)->object_num = obj;
+        (*object)->indirect_gen = (*object)->generation_num = gen;
+        pdfi_countup(*object);
+    }
     pdfi_pop(ctx, 1);
 
     if (cache) {
@@ -795,10 +807,8 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
         if(ctx->args.pdfstoponerror)
             return_error(gs_error_rangecheck);
 
-        code = pdfi_object_alloc(ctx, PDF_NULL, 0, object);
-        if (code == 0)
-            pdfi_countup(*object);
-        return code;
+        *object = PDF_NULL_OBJ;
+        return 0;
     }
 
     entry = &ctx->xref_table->xref[obj];
@@ -869,11 +879,8 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                 int code1 = 0;
                 if (entry->free) {
                     dmprintf2(ctx->memory, "Dereference of free object %"PRIu64", next object number as offset failed (code = %d), returning NULL object.\n", entry->object_num, code);
-                    code = pdfi_object_alloc(ctx, PDF_NULL, 1, object);
-                    if (code >= 0) {
-                        pdfi_countup(*object);
-                        goto free_obj;
-                    }
+                    *object = PDF_NULL_OBJ;
+                    goto free_obj;
                 }
                 ctx->encryption.decrypt_strings = saved_decrypt_strings;
                 (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
@@ -886,7 +893,9 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                 return code;
             }
 
-            if (pdfi_count_stack(ctx) > 0 && (ctx->stack_top[-1])->object_num == obj) {
+            if (pdfi_count_stack(ctx) > 0 &&
+                (ctx->stack_top[-1] > PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY) &&
+                (ctx->stack_top[-1])->object_num == obj)) {
                 *object = ctx->stack_top[-1];
                 pdfi_countup(*object);
                 pdfi_pop(ctx, 1);
@@ -901,10 +910,8 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                 pdfi_pop(ctx, 1);
                 if (entry->free) {
                     dmprintf1(ctx->memory, "Dereference of free object %"PRIu64", next object number as offset failed, returning NULL object.\n", entry->object_num);
-                    code = pdfi_object_alloc(ctx, PDF_NULL, 1, object);
-                    if (code >= 0)
-                        pdfi_countup(*object);
-                    return code;
+                    *object = PDF_NULL_OBJ;
+                    return 0;
                 }
                 code = gs_note_error(gs_error_undefined);
                 goto error;
@@ -914,7 +921,7 @@ free_obj:
         (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     }
 
-    if (ctx->loop_detection && (*object)->object_num != 0) {
+    if (ctx->loop_detection && pdf_object_num(*object) != 0) {
         code = pdfi_loop_detector_add_object(ctx, (*object)->object_num);
         if (code < 0) {
             ctx->encryption.decrypt_strings = saved_decrypt_strings;
@@ -1103,7 +1110,7 @@ int pdfi_resolve_indirect_loop_detect(pdf_context *ctx, pdf_obj *parent, pdf_obj
         if (code < 0) goto exit;
     }
 
-    if (value->object_num != 0) {
+    if (pdf_object_num(value) != 0) {
         if (pdfi_loop_detector_check_object(ctx, value->object_num)) {
             code = gs_note_error(gs_error_circular_reference);
             goto exit;

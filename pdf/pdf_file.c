@@ -1008,7 +1008,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
                     goto error;
                 }
             }
-            if (decode && pdfi_type_of(decode) != PDF_NULL && pdfi_type_of(decode) != PDF_DICT) {
+            if (decode && decode != PDF_NULL_OBJ && pdfi_type_of(decode) != PDF_DICT) {
                 pdfi_countdown(decode);
                 decode = NULL;
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_STREAM_BAD_DECODEPARMS, "pdfi_filter_no_decryption", NULL);

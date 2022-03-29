@@ -435,9 +435,9 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
         if (code <= 0)
             return pdfi_repair_file(ctx);
 
-        if (pdfi_count_stack(ctx) >= 2 && pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD) {
-            pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
-            if (keyword->key == TOKEN_STREAM) {
+        if (pdfi_count_stack(ctx) >= 2 && pdfi_type_of(ctx->stack_top[-1]) == PDF_FAST_KEYWORD) {
+            uintptr_t keyword = (uintptr_t)ctx->stack_top[-1];
+            if (keyword == TOKEN_STREAM) {
                 pdf_dict *dict;
                 pdf_stream *sdict = NULL;
                 int64_t Length;
@@ -484,7 +484,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
                 }
                 pdfi_countdown(sdict);
                 break;
-            } else if (keyword->key == TOKEN_ENDOBJ) {
+            } else if (keyword == TOKEN_ENDOBJ) {
                 /* Something went wrong, this is not a stream dictionary */
                 return(pdfi_repair_file(ctx));
             }
@@ -950,7 +950,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     if (code == 0)
         return_error(gs_error_syntaxerror);
 
-    if (pdfi_type_of(ctx->stack_top[-1]) == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == TOKEN_XREF) {
+    if ((intptr_t)(ctx->stack_top[-1]) == (intptr_t)TOKEN_XREF) {
         /* Read old-style xref table */
         pdfi_pop(ctx, 1);
         return(read_xref(ctx, ctx->main_stream));

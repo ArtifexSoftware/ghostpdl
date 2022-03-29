@@ -628,6 +628,7 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     int64_t Type;
     gs_function_params_t params;
     pdf_dict *stream_dict;
+    int obj_num;
 
     params.Range = params.Domain = NULL;
 
@@ -635,10 +636,11 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     if (code < 0)
         return code;
 
-    if (stream_obj->object_num != 0) {
-        if (pdfi_loop_detector_check_object(ctx, stream_obj->object_num))
+    obj_num = pdf_object_num(stream_obj);
+    if (obj_num != 0) {
+        if (pdfi_loop_detector_check_object(ctx, obj_num))
             return gs_note_error(gs_error_circular_reference);
-        code = pdfi_loop_detector_add_object(ctx, stream_obj->object_num);
+        code = pdfi_loop_detector_add_object(ctx, obj_num);
         if (code < 0)
             goto sub_function_error;
     }

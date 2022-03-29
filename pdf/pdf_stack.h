@@ -37,57 +37,67 @@ int pdfi_destack_ints(pdf_context *ctx, int64_t *i, int n);
 
 static inline void pdfi_countup_impl(pdf_obj *o)
 {
-    if (o != NULL) {
-        o->refcnt++;
+    if ((uintptr_t)o < TOKEN__LAST_KEY)
+    {
+#if REFCNT_DEBUG
+        if (o == NULL)
+            dprintf("Incrementing reference count of NULL pointer\n");
+#endif
+        return;
+    }
+    o->refcnt++;
 #if REFCNT_DEBUG
     dmprintf3(OBJ_MEMORY(o), "Incrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
-#endif
-    }
-#if REFCNT_DEBUG
-    else {
-        dprintf("Incrementing reference count of NULL pointer\n");
-    }
 #endif
 }
 
 static inline void pdfi_countdown_impl(pdf_obj *o)
 {
-    if (o != NULL) {
-#ifdef DEBUG
-        pdf_context *ctx1 = (pdf_context *)o->ctx;
-        if (o->refcnt == 0)
-            emprintf(OBJ_MEMORY(o), "Decrementing object with refcount at 0!\n");
+#if defined(DEBUG) || defined(REFCNT_DEBUG)
+    pdf_context *ctx;
 #endif
-        o->refcnt--;
-#if REFCNT_DEBUG
-        dmprintf3(OBJ_MEMORY(o), "Decrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
-#endif
-        if (o->refcnt == 0) {
-#if REFCNT_DEBUG
-            pdf_context *ctx = (pdf_context *)o->ctx;
-            if (ctx != NULL && ctx->cache_entries != 0) {
-                pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
 
-                while(entry) {
-                    next = entry->next;
-                    if (entry->o->object_num != 0 && entry->o->object_num == o->object_num)
-                        dmprintf2(OBJ_MEMORY(o), "Freeing object %d, UID %lu, but there is still a cache entry!\n", o->object_num, o->UID);
-                    entry = next;
-                }
-            }
-            dmprintf2(OBJ_MEMORY(o), "Freeing object %d, UID %lu\n", o->object_num, o->UID);
+    /* A 'low' pointer value indicates a type that is not an
+     * actual object (typically keyword). This includes the
+     * NULL case. Nothing to free in that case. */
+    if ((uintptr_t)o < TOKEN__LAST_KEY)
+        return;
+
+#if defined(DEBUG) || REFCNT_DEBUG
+    ctx = (pdf_context *)o->ctx;
 #endif
 #ifdef DEBUG
-            if (ctx1->xref_table != NULL && o->object_num > 0 &&
-                o->object_num < ctx1->xref_table->xref_size &&
-                ctx1->xref_table->xref[o->object_num].cache != NULL &&
-                ctx1->xref_table->xref[o->object_num].cache->o == o) {
-                dmprintf1(OBJ_MEMORY(o), "Freeing object %d while it is still in the object cache!\n", o->object_num);
-            }
+    if (o->refcnt == 0)
+        emprintf(OBJ_MEMORY(o), "Decrementing object with refcount at 0!\n");
 #endif
-            pdfi_free_object(o);
+    o->refcnt--;
+#if REFCNT_DEBUG
+    dmprintf3(OBJ_MEMORY(o), "Decrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
+#endif
+    if (o->refcnt != 0)
+        return;
+#if REFCNT_DEBUG
+    if (ctx != NULL && ctx->cache_entries != 0) {
+        pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
+
+        while(entry) {
+            next = entry->next;
+            if (entry->o->object_num != 0 && entry->o->object_num == o->object_num)
+                dmprintf2(OBJ_MEMORY(o), "Freeing object %d, UID %lu, but there is still a cache entry!\n", o->object_num, o->UID);
+            entry = next;
         }
     }
+    dmprintf2(OBJ_MEMORY(o), "Freeing object %d, UID %lu\n", o->object_num, o->UID);
+#endif
+#ifdef DEBUG
+    if (ctx->xref_table != NULL && o->object_num > 0 &&
+        o->object_num < ctx->xref_table->xref_size &&
+        ctx->xref_table->xref[o->object_num].cache != NULL &&
+        ctx->xref_table->xref[o->object_num].cache->o == o) {
+        dmprintf1(OBJ_MEMORY(o), "Freeing object %d while it is still in the object cache!\n", o->object_num);
+    }
+#endif
+    pdfi_free_object(o);
 }
 
 /* These two macros are present simply to add a cast to the generic object type, so that
