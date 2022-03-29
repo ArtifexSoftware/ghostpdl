@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1732,6 +1732,9 @@ plane_strip_copy_rop2(gx_device_memory * mdev,
     int code;
     const gdev_mem_functions *fns;
     int n;
+    dev_proc_encode_color(*save_encode);
+    dev_proc_get_color_mapping_procs(*save_gcmp);
+    gx_color_index save_black, save_white;
 
     /* assert(planar_height == 0); */
 
@@ -1742,6 +1745,24 @@ plane_strip_copy_rop2(gx_device_memory * mdev,
      * so ensure we have the right ones in there. */
     set_dev_proc(mdev, get_bits_rectangle, fns->get_bits_rectangle);
     set_dev_proc(mdev, fill_rectangle, fns->fill_rectangle);
+    /* We are about to change the number of components, so the cached black
+     * and white values are no longer correct. */
+    save_black = mdev->cached_colors.black;
+    save_white = mdev->cached_colors.white;
+    mdev->cached_colors.black = gx_no_color_index;
+    mdev->cached_colors.white = gx_no_color_index;
+    /* The strip_copy_rop2 routine can end up trying to calculate black
+     * and white values. For this it will call 'get_color_mapping_procs'
+     * and encode_color. We can't have it calling the devices own ones
+     * because they assume multiple planes, not just one. Store the
+     * originals, and swap them out for sane ones. It's possible that
+     * for some crazy devices, these choices might not be perfect,
+     * but it's hard to see what we could do better, so those devices
+     * might need to implement their own strip_copy_rop2. */
+    save_encode = dev_proc(mdev, encode_color);
+    save_gcmp = dev_proc(mdev, get_color_mapping_procs);
+    set_dev_proc(mdev, get_color_mapping_procs, gx_default_DevGray_get_color_mapping_procs);
+    set_dev_proc(mdev, encode_color, gx_default_gray_encode_color);
     /* mdev->color_info.depth is restored by MEM_RESTORE_PARAMS below. */
     mdev->color_info.depth = mdev->planes[plane].depth;
     n = mdev->color_info.num_components;
@@ -1750,9 +1771,14 @@ plane_strip_copy_rop2(gx_device_memory * mdev,
                                 id, scolors, textures, tcolors,
                                 x, y, width, height,
                                 phase_x, phase_y, lop, planar_height);
+    /* Restore color details. */
     mdev->color_info.num_components = n;
     set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
+    set_dev_proc(mdev, encode_color, save_encode);
+    set_dev_proc(mdev, get_color_mapping_procs, save_gcmp);
+    mdev->cached_colors.black = save_black;
+    mdev->cached_colors.white = save_white;
     /* The following effectively does: mdev->line_ptrs -= mdev->height * plane; */
     MEM_RESTORE_PARAMS(mdev, save);
     return code;
