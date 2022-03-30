@@ -10162,7 +10162,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
            proper blending.  During put_image we will convert from RGB to
            CIELAB */
         if ((target_profile->data_cs == gsCIELAB || target_profile->islab) &&
-            pdev->blend_cs_state != PDF14_BLEND_CS_UNSPECIFIED) {
+            pdev->blend_cs_state == PDF14_BLEND_CS_UNSPECIFIED) {
             pdev->blend_cs_state = PDF14_BLEND_CS_TARGET_CIELAB;
             rc_assign(pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
                 pgs->icc_manager->default_rgb, "pdf14_create_clist_device");
