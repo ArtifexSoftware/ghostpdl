@@ -193,15 +193,16 @@ gpdl-so-links-subtarget: $(GPDL_SO) $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(NO_OP)
 
 # Build the small Ghostscript loaders, with Gtk+ and without
-$(GLOBJ)dxmainc.$(OBJ): $(PSSRC)dxmainc.c $(UNIX_DLL_MAK) $(MAKEDIRS)
+$(GLO)dxmainc.$(OBJ): $(PSSRC)dxmainc.c $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)dxmainc.$(OBJ) $(C_) $(PSSRC)dxmainc.c
 
-$(GSSOC_XE): gs-so-links-subtarget $(GLOBJ)dxmainc.$(OBJ) $(UNIX_DLL_MAK) $(MAKEDIRS)
+$(GLO)dxmain.$(OBJ): $(PSSRC)dxmain.c $(UNIX_DLL_MAK) $(MAKEDIRS)
+	$(GLCC) $(SOC_CFLAGS) $(GLO_)dxmain.$(OBJ) $(C_) $(PSSRC)dxmain.c
+
+$(GSSOC_XE): gs-so-links-subtarget $(GLO)dxmainc.$(OBJ) $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(GLCC) -L$(BINDIR) $(LDFLAGS) $(O_) $(GSSOC_XE) $(GLOBJ)dxmainc.$(OBJ) -l$(GS_SO_BASE)
 
-$(GLO_)$(SOC_LOADER).$(OBJ): $(PSSRC)$(SOC_LOADER).c $(UNIX_DLL_MAK) $(MAKEDIRS)
-
-$(GSSOX_XE): gs-so-links-subtarget $(GLO_)$(SOC_LOADER).$(OBJ) $(UNIX_DLL_MAK) $(MAKEDIRS)
+$(GSSOX_XE): gs-so-links-subtarget $(GLO)$(SOC_LOADER).$(OBJ) $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(GLCC) -L$(BINDIR) $(LDFLAGS) $(O_) $(GSSOX_XE) $(GLOBJ)$(SOC_LOADER).$(OBJ) -l$(GS_SO_BASE) $(SOC_LIBS)
 
 $(PCLSOC_XE): gpcl6-so-links-subtarget $(UNIX_DLL_MAK) $(PLOBJ)$(REALMAIN_SRC).$(OBJ) $(MAKEDIRS)
