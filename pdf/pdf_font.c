@@ -1595,9 +1595,9 @@ int pdfi_tounicode_char_to_unicode(pdf_context *ctx, pdf_cmap *tounicode, gs_gly
     if (tounicode != NULL) {
         gs_cmap_lookups_enum_t lenum;
         gs_cmap_lookups_enum_init((const gs_cmap_t *)tounicode->gscmap, 0, &lenum);
-        while (l == 0 && (code = gs_cmap_enum_next_lookup(ctx->memory, &lenum)) == 0) {
+        while (l == 0 && gs_cmap_enum_next_lookup(ctx->memory, &lenum) == 0) {
             gs_cmap_lookups_enum_t counter = lenum;
-            while (l == 0 && (code = gs_cmap_enum_next_entry(&counter) == 0)) {
+            while (l == 0 && gs_cmap_enum_next_entry(&counter) == 0) {
                 if (counter.entry.value_type == CODE_VALUE_CID) {
                     unsigned int v = 0;
                     for (i = 0; i < counter.entry.key_size; i++) {
