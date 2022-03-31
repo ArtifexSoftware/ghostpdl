@@ -1464,6 +1464,7 @@ gsicc_new_device_profile_array(gx_device *dev)
     result->pageneutralcolor = false;
     result->usefastcolor = false;  /* Default is to not use fast color */
     result->blacktext = false;
+    result->blackvector = false;
     result->prebandthreshold = true;
     result->supports_devn = false;
     result->overprint_control = gs_overprint_control_enable;  /* Default overprint if the device can */

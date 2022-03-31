@@ -273,10 +273,23 @@ alpha_buffer_release(gs_gstate * pgs, bool newpath)
     return code;
 }
 
+/* Setup for black vector handling */
+static inline bool black_vectors(gs_gstate *pgs, gx_device *dev)
+{
+    if (dev->icc_struct != NULL && dev->icc_struct->blackvector &&
+        pgs->black_textvec_state == NULL) {
+        return gsicc_setup_black_textvec(pgs, dev, false);
+    }
+    return false;
+}
+
 static int do_fill(gs_gstate *pgs, int rule)
 {
     int code, abits, acode, rcode = 0;
     bool devn;
+    bool black_vector = false;
+    bool in_smask =
+        (dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_in_smask_construction, NULL, 0)) > 0;
 
     /* We need to distinguish text from vectors to set the object tag.
 
@@ -294,17 +307,18 @@ static int do_fill(gs_gstate *pgs, int rule)
        handle that, we'll have to add a flag to the path structure, or to the path
        segment structure (depending on how fine grained we require it to be).
      */
-    if (pgs->show_gstate == NULL)
+    if (pgs->show_gstate == NULL && !in_smask) {
         ensure_tag_is_set(pgs, pgs->device, GS_VECTOR_TAG);	/* NB: may unset_dev_color */
-    else
+        black_vector = black_vectors(pgs, pgs->device); /* Set vector fill to black */
+    } else
         ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
     code = gx_set_dev_color(pgs);
     if (code != 0)
-        return code;
+        goto out;
     code = gs_gstate_color_load(pgs);
     if (code < 0)
-        return code;
+        goto out;
 
     if (pgs->overprint || (!pgs->overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
         gxdso_overprint_active, NULL, 0))) {
@@ -314,7 +328,7 @@ static int do_fill(gs_gstate *pgs, int rule)
             "[overprint] Fill Overprint\n");
         code = gs_do_set_overprint(pgs);
         if (code < 0)
-            return code;
+            goto out;
 
         op_params.op_state = OP_STATE_FILL;
         gs_gstate_update_overprint(pgs, &op_params);
@@ -330,10 +344,14 @@ static int do_fill(gs_gstate *pgs, int rule)
     if (abits > 1) {
         acode = alpha_buffer_init(pgs, pgs->fill_adjust.x,
                                   pgs->fill_adjust.y, abits, devn);
-        if (acode == 2) /* Special case for no fill required */
-            return 0;
-        if (acode < 0)
-            return acode;
+        if (acode == 2) { /* Special case for no fill required */
+            code = 0;
+            goto out;
+        }
+        if (acode < 0) {
+            code = acode;
+            goto out;
+        }
     } else
         acode = 0;
     code = gx_fill_path(pgs->path, gs_currentdevicecolor_inline(pgs), pgs, rule,
@@ -342,6 +360,12 @@ static int do_fill(gs_gstate *pgs, int rule)
         rcode = alpha_buffer_release(pgs, code >= 0);
     if (code >= 0 && rcode < 0)
         code = rcode;
+
+out:
+    if (black_vector) {
+        /* Restore color */
+        gsicc_restore_blacktextvec(pgs, false);
+    }
 
     return code;
 }
@@ -397,6 +421,10 @@ do_stroke(gs_gstate * pgs)
     int code, abits, acode, rcode = 0;
     bool devn;
     bool is_fill_correct = true;
+    bool black_vector = false;
+    bool in_smask =
+        (dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_in_smask_construction, NULL, 0)) > 0;
+
 
     /* We need to distinguish text from vectors to set the object tag.
 
@@ -414,17 +442,18 @@ do_stroke(gs_gstate * pgs)
        handle that, we'll have to add a flag to the path structure, or to the path
        segment structure (depending on how fine grained we require it to be).
      */
-    if (pgs->show_gstate == NULL)
+    if (pgs->show_gstate == NULL && !in_smask) {
         ensure_tag_is_set(pgs, pgs->device, GS_VECTOR_TAG);	/* NB: may unset_dev_color */
-    else
+        black_vector = black_vectors(pgs, pgs->device);
+    } else
         ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
     code = gx_set_dev_color(pgs);
     if (code != 0)
-        return code;
+        goto out;
     code = gs_gstate_color_load(pgs);
     if (code < 0)
-        return code;
+        goto out;
 
 
     if (pgs->stroke_overprint || (!pgs->stroke_overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
@@ -446,7 +475,7 @@ do_stroke(gs_gstate * pgs)
             if (!is_fill_correct) {
                 pgs->is_fill_color = true;
             }
-            return code;
+            goto out;
         }
 
         op_params.op_state = OP_STATE_STROKE;
@@ -487,13 +516,15 @@ do_stroke(gs_gstate * pgs)
             if (!is_fill_correct) {
                 pgs->is_fill_color = true;
             }
-            return 0;
+            code = 0;
+            goto out;
         }
         if (acode < 0) {
             if (!is_fill_correct) {
                 pgs->is_fill_color = true;
             }
-            return acode;
+            code = acode;
+            goto out;
         }
         gs_setlinewidth(pgs, new_width);
         scale_dash_pattern(pgs, scale);
@@ -522,6 +553,12 @@ do_stroke(gs_gstate * pgs)
 
     if (!is_fill_correct) {
         pgs->is_fill_color = true;
+    }
+
+out:
+    if (black_vector) {
+        /* Restore color */
+        gsicc_restore_blacktextvec(pgs, false);
     }
     return code;
 }
@@ -603,6 +640,10 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     int code, abits, acode = 0, rcode = 0;
     bool devn;
     float orig_width, scale, orig_flatness;
+    bool black_vector = false;
+    bool in_smask =
+        (dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_in_smask_construction, NULL, 0)) > 0;
+
 
     /* It is either our first time, or the stroke was a pattern and
        we are coming back from the error if restart < 1 (0 is first
@@ -643,18 +684,19 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
            handle that, we'll have to add a flag to the path structure, or to the path
            segment structure (depending on how fine grained we require it to be).
          */
-        if (pgs->show_gstate == NULL)
+        if (pgs->show_gstate == NULL && !in_smask) {
             ensure_tag_is_set(pgs, pgs->device, GS_VECTOR_TAG);	/* NB: may unset_dev_color */
-        else
+            black_vector = black_vectors(pgs, pgs->device);
+        } else
             ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
         /* if we are at restart == 0, we set the stroke color. */
         code = gx_set_dev_color(pgs);
         if (code != 0)
-            return code;		/* may be gs_error_Remap_color or real error */
+            goto out2;		/* may be gs_error_Remap_color or real error */
         code = gs_gstate_color_load(pgs);
         if (code < 0)
-            return code;
+            goto out2;
         /* If this was a pattern color, make sure and lock it in the pattern_cache */
         if (gx_dc_is_pattern1_color(gs_currentdevicecolor_inline(pgs))) {
             gs_id id;
@@ -665,8 +707,8 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
             } else {
                 code = 0;
             }
-	    if (code < 0)
-		return code;	/* lock failed -- tile not in cache? */
+            if (code < 0)
+                goto out2;	/* lock failed -- tile not in cache? */
         }
     }
 
@@ -676,7 +718,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
             "[overprint] StrokeFill Stroke Set Overprint\n");
         code = gs_do_set_overprint(pgs);
         if (code < 0)
-            return code;
+            goto out2;
     }
     *restart = 1;		/* finished, successfully with stroke_color */
 
@@ -690,7 +732,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
 
     code = gx_set_dev_color(pgs);
     if (code != 0) {
-        return code;
+        goto out2;
     }
     code = gs_gstate_color_load(pgs);
     if (code < 0) {
@@ -774,10 +816,15 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
                 code = 0;
             }
 	    if (code < 0)
-		return code;	/* lock failed -- tile not in cache? */
+		    goto out2;	/* lock failed -- tile not in cache? */
         }
     }
 out:
+    if (black_vector) {
+        /* Restore color */
+        gsicc_restore_blacktextvec(pgs, false);
+    }
+
     if (gx_dc_is_pattern1_color(gs_swappeddevicecolor_inline(pgs))) {
         gs_id id;
 
@@ -792,6 +839,13 @@ out:
     }
     if (code >= 0 && acode < 0)
         code = acode;
+    return code;
+
+out2:
+    if (black_vector) {
+        /* Restore color */
+        gsicc_restore_blacktextvec(pgs, false);
+    }
     return code;
 }
 

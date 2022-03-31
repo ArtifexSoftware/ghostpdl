@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1020,7 +1020,7 @@ op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
        If we are going to be doing the stroke
        operation through zstroke then we do not want to restore yet. */
     if (penum->k_text_release) {
-        gsicc_restore_black_text(igs);
+        gsicc_restore_blacktextvec(igs, true);
     }
 
     gs_text_release(NULL, penum, "op_show_restore");

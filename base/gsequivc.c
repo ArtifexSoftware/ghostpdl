@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -472,9 +472,9 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_gstate * pgs,
                           0 /* blend_profile */, 0 /* postren_profile */,
                           { {0} } /* rendercond[] */, 0 /* devicegraytok */,
                           0 /* graydection */, 0 /* pageneutralcolor */,
-                          0 /* usefastcolor */, 0 /* blacktext */, 0 /* supports_devn */,
-                          0 /* overprint_control */, 0 /* spotnames */,
-                          0 /* prebandthreshold */, 0 /* memory */,
+                          0 /* usefastcolor */, 0 /* blacktext */, 0 /* blackvectir */,
+                          0 /* supports_devn */, 0 /* overprint_control */,
+                          0 /* spotnames */, 0 /* prebandthreshold */, 0 /* memory */,
                           { 0 } /* rc_header */
                           };
 
@@ -502,6 +502,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_gstate * pgs,
 
     temp_profile.usefastcolor = false;  /* This avoids a few headaches */
     temp_profile.blacktext = false;
+    temp_profile.blackvector = false;
     temp_profile.prebandthreshold = true;
     temp_profile.supports_devn = false;
     temp_profile.rendercond[0] = render_cond;

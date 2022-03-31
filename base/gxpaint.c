@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -72,8 +72,8 @@ gx_stroke_fill(gx_path * ppath, gs_gstate * pgs)
         (dev, (const gs_gstate *)pgs, ppath, &params,
          gs_currentdevicecolor_inline(pgs), pcpath);
 
-    if (pgs->black_text_state) {
-        gsicc_restore_black_text(pgs);
+    if (pgs->black_textvec_state) {
+        gsicc_restore_blacktextvec(pgs, true);
     }
 
     return code;
@@ -103,8 +103,8 @@ gx_fill_stroke_path(gs_gstate * pgs, int rule)
          &stroke_params, gs_swappeddevicecolor_inline(pgs),
          pcpath);
 
-    if (pgs->black_text_state) {
-        gsicc_restore_black_text(pgs);
+    if (pgs->black_textvec_state) {
+        gsicc_restore_blacktextvec(pgs, true);
     }
 
     return code;

@@ -655,7 +655,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
     penum->output_char_code = GS_NO_CHAR;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
                              dev, pgs, text, font, pcpath, mem);
-    penum->k_text_release = 1; /* early release of black_text_state */
+    penum->k_text_release = 1; /* early release of black_textvec_state */
 
     if (code < 0) {
         gs_free_object(mem, penum, "gdev_pdf_text_begin");

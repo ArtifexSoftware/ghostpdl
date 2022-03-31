@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -291,6 +291,7 @@ struct cmm_dev_profile_s {
         bool pageneutralcolor;      /* Only valid if graydetection true */
         bool usefastcolor;         /* Used when we want to use no cm */
         bool blacktext;           /* Force text to be pure black */
+        bool blackvector;         /* Force vectors to be pure black */
         bool supports_devn;        /* If the target handles devn colors */
         gs_overprint_control_t overprint_control;	/* enable is the default */
         gsicc_namelist_t *spotnames;  /* If our device profiles are devn */
