@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -467,8 +467,8 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
         check_read_type(*ptref, t_array);
         if (r_size(ptref) != 5)
             return_error(gs_error_rangecheck);
-            /* Stable memory due to current caching of color space */
-            code = gs_cspace_build_CIEDEFG(&pcs, NULL, mem->stable_memory);
+        /* Stable memory due to current caching of color space */
+        code = gs_cspace_build_CIEDEFG(&pcs, NULL, mem->stable_memory);
         if (code < 0)
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         pcie = pcs->params.defg;
@@ -580,8 +580,8 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
         check_read_type(*ptref, t_array);
         if (r_size(ptref) != 4)
             return_error(gs_error_rangecheck);
-            /* Stable memory due to current caching of color space */
-            code = gs_cspace_build_CIEDEF(&pcs, NULL, mem->stable_memory);
+       /* Stable memory due to current caching of color space */
+        code = gs_cspace_build_CIEDEF(&pcs, NULL, mem->stable_memory);
         if (code < 0)
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         pcie = pcs->params.def;

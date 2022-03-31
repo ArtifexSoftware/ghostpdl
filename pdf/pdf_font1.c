@@ -168,11 +168,13 @@ pdfi_t1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph, gs_const_st
             pdfi_countup(glyphname);
             code = pdfi_dict_get_by_key(ctx, pdffont1->CharStrings, glyphname, (pdf_obj **)&charstring);
             pdfi_countdown(glyphname);
-            if (code >= 0)
-                if (pgd != NULL)
+            if (code >= 0) {
+                if (pgd != NULL) {
                     gs_glyph_data_from_bytes(pgd, charstring->data, 0, charstring->length, NULL);
+                }
                 pdfi_countdown(charstring);
             }
+        }
     }
 
     return code;
