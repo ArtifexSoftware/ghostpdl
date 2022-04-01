@@ -1802,8 +1802,8 @@ gdev_prn_initialize_device_procs_gray(gx_device *dev)
 
     set_dev_proc(dev, map_rgb_color, gx_default_gray_map_rgb_color);
     set_dev_proc(dev, map_color_rgb, gx_default_gray_map_color_rgb);
-    set_dev_proc(dev, encode_color, gx_default_gray_map_rgb_color);
-    set_dev_proc(dev, decode_color, gx_default_gray_map_color_rgb);
+    set_dev_proc(dev, encode_color, gx_default_gray_encode_color);
+    set_dev_proc(dev, decode_color, gx_default_gray_decode_color);
 }
 
 void gdev_prn_initialize_device_procs_gray_bg(gx_device *dev)
