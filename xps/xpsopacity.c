@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -90,6 +90,7 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_trans_mask_params_init(&tmp, TRANSPARENCY_MASK_Luminosity);
         gs_gsave(ctx->pgs);
         gs_setcolorspace(ctx->pgs, ctx->gray_lin);
+        tmp.ColorSpace = ctx->gray_lin;
         gs_begin_transparency_mask(ctx->pgs, &tmp, &bbox, 0);
 
         /* Create a path if we dont have one that defines the opacity.

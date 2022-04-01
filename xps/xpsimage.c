@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -319,6 +319,7 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
         gs_setfillconstantalpha(ctx->pgs, 1.0);
         gs_setstrokeconstantalpha(ctx->pgs, 1.0);
         gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
+        params.ColorSpace = gs_currentcolorspace_inline(ctx->pgs);
         gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
         code = xps_paint_image_brush_imp(ctx, image, 1);
         if (code < 0)

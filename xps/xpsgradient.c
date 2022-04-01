@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -984,6 +984,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
 
             gs_setblendmode(ctx->pgs, BLEND_MODE_Normal);
             gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
+            params.ColorSpace = gs_currentcolorspace_inline(ctx->pgs);
             gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
             /* I dont like this, but dont want to change interface of draw */
             /* For the opacity case, we want to make sure the functions

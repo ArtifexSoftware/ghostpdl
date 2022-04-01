@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -107,6 +107,7 @@ struct gs_pdf14trans_params_s {
     bool function_is_identity;
     int Background_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    const gs_color_space *ColorSpace;
     int Matte_components;
     float Matte[GS_CLIENT_COLOR_MAX_COMPONENTS];
     float GrayBackground;  /* This is used to determine if the

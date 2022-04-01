@@ -222,6 +222,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
     params.blend_mode = pgs->blend_mode;
     params.text_group = ptgp->text_group;
     params.shade_group = ptgp->shade_group;
+    params.ColorSpace = ptgp->ColorSpace;
     /* This function is called during the c-list writer side.
        Store some information so that we know what the color space is
        so that we can adjust according later during the clist reader.
@@ -560,6 +561,7 @@ gs_begin_transparency_mask(gs_gstate * pgs,
     params.subtype = ptmp->subtype;
     params.Background_components = ptmp->Background_components;
     memcpy(params.Background, ptmp->Background, l);
+    params.ColorSpace = ptmp->ColorSpace;
     params.Matte_components = ptmp->Matte_components;
     memcpy(params.Matte, ptmp->Matte, m);
     params.GrayBackground = ptmp->GrayBackground;

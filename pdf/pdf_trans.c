@@ -251,8 +251,14 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         if (code > 0) {
             /* TODO: Stuff with colorspace, see .execmaskgroup */
             code = pdfi_dict_knownget(ctx, Group, "CS", &CS);
-            if (code < 0)
-                goto exit;
+            if (code < 0) {
+                code = pdfi_dict_knownget(ctx, Group, "ColorSpace", &CS);
+                if (code < 0) {
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_GROUP_NO_CS, "pdfi_trans_set_mask", (char *)"*** Defaulting to currrent colour space");
+                    goto exit;
+                }
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_GROUP_HAS_COLORSPACE, "pdfi_trans_set_mask", NULL);
+            }
             if (code > 0) {
                 code = pdfi_create_colorspace(ctx, CS, (pdf_dict *)ctx->main_stream,
                                               ctx->page.CurrentPageDict, &pcs, false);
@@ -283,6 +289,9 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
                 params.Background[i] = (float)num;
             }
             params.Background_components = pdfi_array_size(BC);
+
+            if (gs_color_space_num_components(params.ColorSpace) != params.Background_components)
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_GROUP_BAD_BC, "pdfi_trans_set_mask", NULL);
 
             /* TODO: Not sure how to handle this...  recheck PS code (pdf_draw.ps/gssmask) */
             /* This should be "currentgray" for the color that we put in params.ColorSpace,
