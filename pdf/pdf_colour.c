@@ -2421,6 +2421,10 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
                 pdfi_countdown(ref_space);
                 return_error(gs_error_circular_reference);
             }
+            if (((pdf_name *)ref_space)->length <= 0) {
+                pdfi_countdown(ref_space);
+                return_error(gs_error_syntaxerror);
+            }
         }
 
         /* recursion */
