@@ -821,12 +821,12 @@ static int pdfi_show_Tr_preserve(pdf_context *ctx, gs_text_params_t *text)
     Trmode = gs_currenttextrenderingmode(ctx->pgs);
     if (Trmode == 3) {
         if (current_font->pdfi_font_type == e_pdf_font_type3)
-            text->operation = TEXT_FROM_CHARS | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+            text->operation = TEXT_RETURN_WIDTH | TEXT_FROM_CHARS | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
         else
-            text->operation = TEXT_FROM_BYTES | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+            text->operation = TEXT_RETURN_WIDTH | TEXT_FROM_BYTES | TEXT_DO_NONE | TEXT_RENDER_MODE_3;
     }
     else
-        text->operation |= TEXT_DO_DRAW;
+        text->operation |= TEXT_RETURN_WIDTH | TEXT_DO_DRAW;
 
     /* If we're preserving the text rendering mode, then we don't run a separate
      * stroke operation, we do effectively run a fill. The fill setup loads the
