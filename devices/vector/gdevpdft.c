@@ -108,8 +108,14 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
        In this case, the parent group is inherited from
        the previous group or the device color space */
     if (pgs != NULL && pparams->group_color_type != UNKNOWN) {
-        code = pdf_color_space_named(pdev, pgs, &cs_value, NULL, pparams->ColorSpace,
-                &pdf_color_space_names, false, NULL, 0, false);
+        const gs_color_space *cs = gs_currentcolorspace_inline(pgs);
+
+        if (pparams->ColorSpace == NULL)
+            code = pdf_color_space_named(pdev, pgs, &cs_value, NULL, cs,
+                    &pdf_color_space_names, false, NULL, 0, false);
+        else
+            code = pdf_color_space_named(pdev, pgs, &cs_value, NULL, pparams->ColorSpace,
+                    &pdf_color_space_names, false, NULL, 0, false);
         if (code < 0)
             return code;
         code = cos_dict_put_c_key(group_dict, "/CS", &cs_value);
