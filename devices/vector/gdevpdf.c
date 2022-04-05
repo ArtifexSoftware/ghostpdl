@@ -1184,7 +1184,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
         const cos_value_t *v_artbox = cos_dict_find_c_key(page->Page, "/ArtBox");
         const cos_value_t *v_cropbox = cos_dict_find_c_key(page->Page, "/CropBox");
         const cos_value_t *v_bleedbox = cos_dict_find_c_key(page->Page, "/BleedBox");
-        double trimbox[4] = {0, 0}, bleedbox[4] = {0, 0};
+        float trimbox[4] = {0, 0}, bleedbox[4] = {0, 0};
         bool print_bleedbox = false;
 
         trimbox[2] = bleedbox[2] = mediabox[2];
