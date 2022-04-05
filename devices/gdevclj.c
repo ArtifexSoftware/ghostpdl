@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -380,7 +380,7 @@ pack_and_compress_scanline(
     }
 
     /* clear to up a longword boundary */
-    while ((((ulong)p_c) & (sizeof(ulong) - 1)) != 0) {
+    while ((((intptr_t)p_c) & (sizeof(ulong) - 1)) != 0) {
         *p_c++ = 0;
         *p_m++ = 0;
         *p_y++ = 0;
