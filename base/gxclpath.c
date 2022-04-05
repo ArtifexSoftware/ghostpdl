@@ -927,6 +927,28 @@ clist_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
     return 0;
 }
 
+int clist_lock_pattern(gx_device * pdev, gs_gstate * pgs, gs_id pattern, int lock)
+{
+    gx_device_clist_writer * const cdev =
+        &((gx_device_clist *)pdev)->writer;
+    byte *dp;
+    int code;
+
+    /* We need to both lock now, and ensure that we lock on reading this back. */
+    code = gx_pattern_cache_entry_set_lock(pgs, pattern, lock);
+    if (code < 0)
+        return code;
+
+    code = set_cmd_put_all_op(&dp, cdev, cmd_opv_lock_pattern,
+                              1 + 1 + sizeof(pattern));
+
+    if (code < 0)
+        return code;
+    dp[1] = lock;
+    memcpy(dp+2, &pattern, sizeof(pattern));
+    return 0;
+}
+
 int
 clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
                             gx_path * ppath,

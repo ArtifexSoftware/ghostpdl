@@ -204,7 +204,7 @@ typedef enum {
     cmd_op_path              = 0xf0, /* (see below) */
     cmd_opv_fill             = 0xf0,
     cmd_opv_rgapto           = 0xf1, /* dx%, dy% */
-    /* UNUSED 0xf2 */
+    cmd_opv_lock_pattern     = 0xf2, /* lock, id */
     cmd_opv_eofill           = 0xf3,
     cmd_opv_fill_stroke      = 0xf4,
     cmd_opv_eofill_stroke    = 0xf5,
@@ -220,12 +220,12 @@ typedef enum {
     /* UNUSED 0xff */
 
 #define cmd_path_op_name_strings\
-  "fill", "rgapto", "?f2?", "eofill",\
+  "fill", "rgapto", "lock_pattern", "eofill",\
   "fill_stroke", "eofill_stroke", "stroke", "?f7?",\
   "?f8?", "polyfill", "?fa?", "?fb?",\
   "fill_trapezoid", "?fd?", "?fe?", "?ff?"
 
-/* unused cmd_op values: 0xf2, 0xf7, 0xf8, 0xfa, 0xfb, 0xfd, 0xfe, 0xff */
+/* unused cmd_op values: 0xf7, 0xf8, 0xfa, 0xfb, 0xfd, 0xfe, 0xff */
 } gx_cmd_op;
 
 #define cmd_op_name_strings\

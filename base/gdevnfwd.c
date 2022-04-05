@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -106,6 +106,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, strip_tile_rect_devn, gx_forward_strip_tile_rect_devn);
     fill_dev_proc(dev, transform_pixel_region, gx_forward_transform_pixel_region);
     fill_dev_proc(dev, fill_stroke_path, gx_forward_fill_stroke_path);
+    fill_dev_proc(dev, lock_pattern, gx_forward_lock_pattern);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -364,6 +365,19 @@ gx_forward_fill_stroke_path(gx_device * dev, const gs_gstate * pgs,
          dev_proc(tdev, fill_stroke_path));
 
     return proc(tdev, pgs, ppath, params_fill, pdcolor_fill, params_stroke, pdcolor_stroke, pcpath);
+}
+
+int
+gx_forward_lock_pattern(gx_device * dev, gs_gstate * pgs, gs_id pattern_id, int lock)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+    dev_proc_lock_pattern((*proc)) =
+        (tdev == 0 ? (tdev = dev, gx_default_lock_pattern) :
+         dev_proc(tdev, lock_pattern));
+
+    return proc(tdev, pgs, pattern_id, lock);
+
 }
 
 int

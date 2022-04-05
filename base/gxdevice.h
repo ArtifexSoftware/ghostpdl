@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -318,6 +318,7 @@ dev_proc_copy_alpha_hl_color(gx_default_copy_alpha_hl_color);
 dev_proc_process_page(gx_default_process_page);
 dev_proc_transform_pixel_region(gx_default_transform_pixel_region);
 dev_proc_fill_stroke_path(gx_default_fill_stroke_path);
+dev_proc_lock_pattern(gx_default_lock_pattern);
 dev_proc_begin_transparency_group(gx_default_begin_transparency_group);
 dev_proc_end_transparency_group(gx_default_end_transparency_group);
 dev_proc_begin_transparency_mask(gx_default_begin_transparency_mask);
@@ -418,6 +419,7 @@ dev_proc_strip_tile_rect_devn(gx_forward_strip_tile_rect_devn);
 dev_proc_copy_alpha_hl_color(gx_forward_copy_alpha_hl_color);
 dev_proc_transform_pixel_region(gx_forward_transform_pixel_region);
 dev_proc_fill_stroke_path(gx_forward_fill_stroke_path);
+dev_proc_lock_pattern(gx_forward_lock_pattern);
 void gx_forward_device_initialize_procs(gx_device *dev);
 
 /* ---------------- Implementation utilities ---------------- */

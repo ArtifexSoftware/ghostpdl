@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -668,6 +668,15 @@ gx_default_fill_path(gx_device * pdev, const gs_gstate * pgs,
         return gx_default_fill_path_shading_or_pattern(pdev, pgs, ppath, params, pdevc, pcpath);
     else
         return gx_general_fill_path(pdev, pgs, ppath, params, pdevc, pcpath);
+}
+
+int
+gx_default_lock_pattern(gx_device *pdev,
+                        gs_gstate *pgs,
+                        gs_id      pattern_id,
+                        int        lock)
+{
+    return gx_pattern_cache_entry_set_lock(pgs, pattern_id, lock);
 }
 
 /*

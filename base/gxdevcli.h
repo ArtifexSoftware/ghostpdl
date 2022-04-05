@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -997,6 +997,16 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_fill_stroke_path(proc)\
   dev_t_proc_fill_stroke_path(proc, gx_device)
 
+                /* Added in release 9.57 */
+
+#define dev_t_proc_lock_pattern(proc, dev_t)\
+  int proc(dev_t *dev,\
+           gs_gstate *pgs,\
+           gs_id pattern_id,\
+           int lock)
+#define dev_proc_lock_pattern(proc)\
+  dev_t_proc_lock_pattern(proc, gx_device)
+
                 /* Added in release 3.60 */
 
 #define dev_t_proc_fill_mask(proc, dev_t)\
@@ -1508,6 +1518,7 @@ typedef struct {
         dev_t_proc_process_page((*process_page), dev_t);\
         dev_t_proc_transform_pixel_region((*transform_pixel_region), dev_t);\
         dev_t_proc_fill_stroke_path((*fill_stroke_path), dev_t);\
+        dev_t_proc_lock_pattern((*lock_pattern), dev_t);\
 }
 
 /*

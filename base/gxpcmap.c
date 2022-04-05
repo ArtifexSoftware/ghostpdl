@@ -133,6 +133,7 @@ pattern_accum_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, strip_tile_rect_devn, gx_default_strip_tile_rect_devn);
     set_dev_proc(dev, transform_pixel_region, gx_default_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, gx_default_fill_stroke_path);
+    set_dev_proc(dev, lock_pattern, gx_default_lock_pattern);
     set_dev_proc(dev, copy_alpha_hl_color, gx_default_copy_alpha_hl_color);
 }
 

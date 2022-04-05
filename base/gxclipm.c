@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -77,6 +77,7 @@ mask_clip_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, copy_alpha_hl_color, mask_clip_copy_alpha_hl_color);
     set_dev_proc(dev, transform_pixel_region, gx_default_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, gx_forward_fill_stroke_path);
+    set_dev_proc(dev, lock_pattern, gx_forward_lock_pattern);
 
     /* Ideally these defaults would be set up automatically for us. */
     set_dev_proc(dev, open_device, gx_default_open_device);

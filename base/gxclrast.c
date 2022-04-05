@@ -2014,14 +2014,26 @@ idata:                  data_size = 0;
                 }
                 continue;
             case cmd_op_path >> 4:
-                {
+                if (op == cmd_opv_rgapto)
+                    goto rgapto;
+                else if (op == cmd_opv_lock_pattern) {
+                    gs_id id;
+                    int lock = *cbp++;
+                    cmd_get_value(id, cbp);
+                    if_debug2m('L', mem, "id=0x%lx, lock=%d\n", id, lock);
+                    /* We currently lock the pattern in all the bands, even in ones
+                     * where we haven't used the pattern. This can cause the following
+                     * call to return with 'undefined' because the pattern is not
+                     * found. Just swallow this error and continue. */
+                    code = gx_pattern_cache_entry_set_lock(&gs_gstate, id, lock);
+                    if (code == gs_error_undefined)
+                        code = 0;
+                    if (code < 0)
+                        goto out;
+                    continue;
+                } else {
                     gx_path fpath;
-                    gx_path *ppath;
-
-                    if (op == cmd_opv_rgapto)
-                        goto rgapto;
-
-                    ppath = &path;
+                    gx_path *ppath = &path;
 
                     if_debug0m('L', mem, "\n");
                     /* if in clip, flatten path first */
@@ -2059,26 +2071,6 @@ idata:                  data_size = 0;
                             code = (*dev_proc(tdev, fill_stroke_path))(tdev, &gs_gstate, ppath,
                                                                 &fill_params, &fill_color,
                                                                 &stroke_params, &stroke_color, pcpath);
-                            /* if the color is a pattern, it may have had the "is_locked" flag set	*/
-                            /* clear those now (see do_fill_stroke).					*/
-                            if (gx_dc_is_pattern1_color(&stroke_color)) {
-                                if (stroke_color.colors.pattern.p_tile != NULL) {
-                                    gs_id id = stroke_color.colors.pattern.p_tile->id;
-
-                                    code = gx_pattern_cache_entry_set_lock(&gs_gstate, id, false);
-                                    if (code < 0)
-                                        return code;	/* unlock failed -- should not happen */
-                                }
-                            }
-                            if (gx_dc_is_pattern1_color(&fill_color)) {
-                                if (fill_color.colors.pattern.p_tile != NULL) {
-                                    gs_id id = fill_color.colors.pattern.p_tile->id;
-
-                                    code = gx_pattern_cache_entry_set_lock(&gs_gstate, id, false);
-                                    if (code < 0)
-                                        return code;	/* unlock failed -- should not happen */
-                                }
-                            }
                             break;
                         case cmd_opv_stroke:
                             stroke_params.flatness = gs_gstate.flatness;

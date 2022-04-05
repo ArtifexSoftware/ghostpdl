@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -235,6 +235,7 @@ disable_self(gx_device *dev)
     set_dev_proc(dev, process_page, default_subclass_process_page);
     set_dev_proc(dev, transform_pixel_region, default_subclass_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, default_subclass_fill_stroke_path);
+    set_dev_proc(dev, lock_pattern, default_subclass_lock_pattern);
 }
 
 int

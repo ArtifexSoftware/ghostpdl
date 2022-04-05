@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -757,6 +757,13 @@ int default_subclass_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_p
     return 0;
 }
 
+int default_subclass_lock_pattern(gx_device *dev, gs_gstate *pgs, gs_id pattern_id, int lock)
+{
+    if (dev->child)
+        return dev_proc(dev->child, lock_pattern)(dev->child, pgs, pattern_id, lock);
+    return 0;
+}
+
 int default_subclass_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason, transform_pixel_region_data *data)
 {
     if (dev->child)
@@ -860,6 +867,7 @@ void default_subclass_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, process_page, default_subclass_process_page);
     set_dev_proc(dev, transform_pixel_region, default_subclass_transform_pixel_region);
     set_dev_proc(dev, fill_stroke_path, default_subclass_fill_stroke_path);
+    set_dev_proc(dev, lock_pattern, default_subclass_lock_pattern);
 }
 
 int

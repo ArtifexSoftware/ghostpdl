@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -89,6 +89,7 @@ dev_proc_copy_alpha_hl_color(default_subclass_copy_alpha_hl_color);
 dev_proc_process_page(default_subclass_process_page);
 dev_proc_transform_pixel_region(default_subclass_transform_pixel_region);
 dev_proc_fill_stroke_path(default_subclass_fill_stroke_path);
+dev_proc_lock_pattern(default_subclass_lock_pattern);
 dev_page_proc_install(default_subclass_install);
 dev_page_proc_begin_page(default_subclass_begin_page);
 dev_page_proc_end_page(default_subclass_end_page);

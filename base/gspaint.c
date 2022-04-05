@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -615,7 +615,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
 
             if(gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
                 id = gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
-                code = gx_pattern_cache_entry_set_lock(pgs, id, true);
+                code = dev_proc(pgs->device, lock_pattern)(pgs->device, pgs, id, true);
             } else {
                 code = 0;
             }
@@ -661,7 +661,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
 
             if(gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
                 id = gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
-                code = gx_pattern_cache_entry_set_lock(pgs, id, true);
+                code = dev_proc(pgs->device, lock_pattern)(pgs->device, pgs, id, true);
             } else {
                 code = 0;
             }
@@ -769,7 +769,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
 
             if(gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
                 id = gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
-                code = gx_pattern_cache_entry_set_lock(pgs, id, false);
+                code = dev_proc(pgs->device, lock_pattern)(pgs->device, pgs, id, false);
             } else {
                 code = 0;
             }
@@ -783,9 +783,9 @@ out:
 
         if (gs_swappeddevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
             id = gs_swappeddevicecolor_inline(pgs)->colors.pattern.p_tile->id;
-            rcode = gx_pattern_cache_entry_set_lock(pgs, id, false);
-	        if (rcode < 0)
-	            return rcode;	/* unlock failed -- shouldn't be possible */
+            rcode = dev_proc(pgs->device, lock_pattern)(pgs->device, pgs, id, false);
+            if (rcode < 0)
+	        return rcode;	/* unlock failed -- shouldn't be possible */
         } else {
             code = 0;
         }

@@ -174,6 +174,7 @@ clist_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, copy_alpha_hl_color, clist_copy_alpha_hl_color);
     set_dev_proc(dev, process_page, clist_process_page);
     set_dev_proc(dev, fill_stroke_path, clist_fill_stroke_path);
+    set_dev_proc(dev, lock_pattern, clist_lock_pattern);
 }
 
 /*------------------- Choose the implementation -----------------------

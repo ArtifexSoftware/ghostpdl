@@ -729,6 +729,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, process_page, gx_default_process_page);
     fill_dev_proc(dev, transform_pixel_region, gx_default_transform_pixel_region);
     fill_dev_proc(dev, fill_stroke_path, gx_default_fill_stroke_path);
+    fill_dev_proc(dev, lock_pattern, gx_default_lock_pattern);
 }
 
 
