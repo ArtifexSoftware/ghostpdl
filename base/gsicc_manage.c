@@ -251,19 +251,17 @@ gsicc_initialize_iccsmask(gsicc_manager_t *icc_manager)
     /* Load the gray, rgb, and cmyk profiles */
     if ((icc_manager->smask_profiles->smask_gray =
         gsicc_set_iccsmaskprofile(SMASK_GRAY_ICC, strlen(SMASK_GRAY_ICC),
-        icc_manager, stable_mem) ) == NULL) {
-        return gs_throw(-1, "failed to load gray smask profile");
-    }
+        icc_manager, stable_mem) ) == NULL)
+        goto error;
     if ((icc_manager->smask_profiles->smask_rgb =
         gsicc_set_iccsmaskprofile(SMASK_RGB_ICC, strlen(SMASK_RGB_ICC),
-        icc_manager, stable_mem)) == NULL) {
-        return gs_throw(-1, "failed to load rgb smask profile");
-    }
+        icc_manager, stable_mem)) == NULL)
+        goto error;
     if ((icc_manager->smask_profiles->smask_cmyk =
         gsicc_set_iccsmaskprofile(SMASK_CMYK_ICC, strlen(SMASK_CMYK_ICC),
-        icc_manager, stable_mem)) == NULL) {
-        return gs_throw(-1, "failed to load cmyk smask profile");
-    }
+        icc_manager, stable_mem)) == NULL)
+        goto error;
+
     /* Set these as "default" so that pdfwrite or other high level devices
        will know that these are manufactured profiles, and default spaces
        should be used */
@@ -271,6 +269,17 @@ gsicc_initialize_iccsmask(gsicc_manager_t *icc_manager)
     icc_manager->smask_profiles->smask_rgb->default_match = DEFAULT_RGB;
     icc_manager->smask_profiles->smask_cmyk->default_match = DEFAULT_CMYK;
     return 0;
+
+error:
+    if (icc_manager->smask_profiles->smask_gray)
+        rc_free_icc_profile(stable_mem, icc_manager->smask_profiles->smask_gray, "gsicc_initialize_iccsmask");
+    if (icc_manager->smask_profiles->smask_rgb)
+        rc_free_icc_profile(stable_mem, icc_manager->smask_profiles->smask_rgb, "gsicc_initialize_iccsmask");
+    if (icc_manager->smask_profiles->smask_cmyk)
+        rc_free_icc_profile(stable_mem, icc_manager->smask_profiles->smask_cmyk, "gsicc_initialize_iccsmask");
+    gs_free_object(stable_mem, icc_manager->smask_profiles, "gsicc_initialize_iccsmask");
+    icc_manager->smask_profiles = NULL;
+    return gs_throw(-1, "failed to load an smask profile");
 }
 
 static int
