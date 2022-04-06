@@ -294,6 +294,12 @@ buffer_segment_index(const stream_band_read_state *ss, uint buffer_offset, uint 
             return i;
         }
     }
+    /* Now cope with the case where we've read exactly to the end of the buffer.
+    * There might be more data still to come. */
+    if (buffer_offset == offset) {
+      *poffset0 = offset0;
+      return i-1;
+    }
 #ifdef EXTRA_OFFSET_MAP_DEBUGGING
     dmlprintf1(ss->local_memory, "buffer_segment_index fail: buffer_offset=%d not found\n", buffer_offset);
     exit(1);
