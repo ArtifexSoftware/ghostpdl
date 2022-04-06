@@ -402,6 +402,7 @@ typedef struct pdfctx_s {
     gs_memory_t *pdf_memory;        /* The 'wrapped' memory allocator used by the PDF interpreter. Not exposed to garbager */
     gs_memory_t *pdf_stream_memory; /* The memory allocator used to copy the PostScript stream to pdf_stream. Not exposed to garbager */
     stream *pdf_stream;
+    bool UsingPDFFile;
     gsicc_profile_cache_t *profile_cache;
     gs_memory_t *cache_memory;      /* The memory allocator used to allocate the working (GC'ed) profile cache */
 } pdfctx_t;
@@ -508,7 +509,7 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
     pdfctx = r_ptr(op, pdfctx_t);
 
     /* If the supplied context already has a file open, signal an error */
-    if (pdfctx->ps_stream != NULL)
+    if (pdfctx->ps_stream != NULL || pdfctx->UsingPDFFile)
         return_error(gs_error_ioerror);
 
     s->close_at_eod = false;
@@ -580,6 +581,7 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
+    pdfctx->UsingPDFFile = true;
     pdfctx->ctx->finish_page = NULL;
 
     pop(2);
@@ -634,7 +636,7 @@ static int zPDFinfo(i_ctx_t *i_ctx_p)
     check_type(*(op), t_pdfctx);
     pdfctx = r_ptr(op, pdfctx_t);
 
-    if (pdfctx->pdf_stream != NULL) {
+    if (pdfctx->pdf_stream != NULL || pdfctx->UsingPDFFile) {
         code = dict_create(4, op);
         if (code < 0)
             return code;
@@ -733,7 +735,7 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     check_type(*(op - 1), t_pdfctx);
     pdfctx = r_ptr(op - 1, pdfctx_t);
 
-    if (pdfctx->pdf_stream != NULL) {
+    if (pdfctx->pdf_stream != NULL || pdfctx->UsingPDFFile) {
         code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
         if (code >= 0) {
@@ -919,7 +921,7 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
     check_type(*(op - 1), t_pdfctx);
     pdfctx = r_ptr(op - 1, pdfctx_t);
 
-    if (pdfctx->pdf_stream != NULL) {
+    if (pdfctx->pdf_stream != NULL || pdfctx->UsingPDFFile) {
         code = gs_gsave(igs);
         if (code < 0)
             return code;
@@ -1004,6 +1006,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     pdfctx->ctx = NULL;
     pdfctx->ps_stream = NULL;
     pdfctx->pdf_stream = NULL;
+    pdfctx->UsingPDFFile = false;
     pdfctx->pdf_stream_memory = NULL;
     pdfctx->profile_cache = gsicc_profilecache_new(imemory);
     if (pdfctx->profile_cache == NULL) {
