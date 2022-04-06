@@ -980,6 +980,41 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
     }
 }
 
+/*
+    Historically, the pattern cache has used a very simple hashing
+    scheme whereby pattern A goes into slot idx = (A.id % num_tiles).
+    Unfortunately, now we allow tiles to be 'locked' into the
+    pattern cache, we might run into the case where we want both
+    tiles A and B to be in the cache at once where:
+      (A.id % num_tiles) == (B.id % num_tiles).
+
+    We have a maximum of 2 locked tiles, and one of those can be
+    placed while the other one is locked. So we only need to cope
+    with a single 'collision'.
+
+    We therefore allow tiles to either go in at idx or at
+    (idx + 1) % num_tiles. This means we need to be prepared to
+    search a bit further for them, hence we now have 2 helper
+    functions to do this.
+*/
+
+/* We can have at most 1 locked tile while looking for a place to
+ * put another tile. */
+gx_color_tile *
+gx_pattern_cache_find_tile_for_id(gx_pattern_cache *pcache, gs_id id)
+{
+    gx_color_tile *ctile  = &pcache->tiles[id % pcache->num_tiles];
+    gx_color_tile *ctile2 = &pcache->tiles[(id+1) % pcache->num_tiles];
+    if (ctile->id == id || ctile->id == gs_no_id)
+        return ctile;
+    if (ctile2->id == id || ctile2->id == gs_no_id)
+        return ctile2;
+    if (!ctile->is_locked)
+        return ctile;
+    return ctile2;
+}
+
+
 /* Given the size of a new pattern tile, free entries from the cache until  */
 /* enough space is available (or nothing left to free).                     */
 /* This will allow 1 oversized entry                                        */
@@ -1124,7 +1159,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
         used = size_b + size_c;
     }
     id = pinst->id;
-    ctile = &pcache->tiles[id % pcache->num_tiles];
+    ctile = gx_pattern_cache_find_tile_for_id(pcache, id);
     gx_pattern_cache_free_entry(pcache, ctile);         /* ensure that this cache slot is empty */
     ctile->id = id;
     ctile->is_planar = pinst->is_planar;
@@ -1194,15 +1229,13 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
 int
 gx_pattern_cache_entry_set_lock(gs_gstate *pgs, gs_id id, bool new_lock_value)
 {
-    gx_pattern_cache *pcache;
     gx_color_tile *ctile;
     int code = ensure_pattern_cache(pgs);
 
     if (code < 0)
         return code;
-    pcache = pgs->pattern_cache;
-    ctile = &pcache->tiles[id % pcache->num_tiles];
-    if (ctile->id != id)
+    ctile = gx_pattern_cache_find_tile_for_id(pgs->pattern_cache, id);
+    if (ctile == NULL)
         return_error(gs_error_undefined);
     ctile->is_locked = new_lock_value;
     return 0;
@@ -1219,7 +1252,7 @@ gx_pattern_cache_get_entry(gs_gstate * pgs, gs_id id, gx_color_tile ** pctile)
     if (code < 0)
         return code;
     pcache = pgs->pattern_cache;
-    ctile = &pcache->tiles[id % pcache->num_tiles];
+    ctile = gx_pattern_cache_find_tile_for_id(pcache, id);
     gx_pattern_cache_free_entry(pgs->pattern_cache, ctile);
     ctile->id = id;
     *pctile = ctile;
@@ -1246,7 +1279,7 @@ gx_pattern_cache_add_dummy_entry(gs_gstate *pgs,
     if (code < 0)
         return code;
     pcache = pgs->pattern_cache;
-    ctile = &pcache->tiles[id % pcache->num_tiles];
+    ctile = gx_pattern_cache_find_tile_for_id(pcache, id);
     gx_pattern_cache_free_entry(pcache, ctile);
     ctile->id = id;
     ctile->depth = depth;

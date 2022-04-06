@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -295,6 +295,9 @@ bool gx_device_is_pattern_accum(gx_device *dev);
 /* enough space is available (or nothing left to free).			    */
 /* This will allow 1 oversized entry					    */
 void gx_pattern_cache_ensure_space(gs_gstate * pgs, size_t needed);
+
+gx_color_tile *
+gx_pattern_cache_find_tile_for_id(gx_pattern_cache *pcache, gs_id id);
 
 void gx_pattern_cache_update_used(gs_gstate *pgs, size_t used);
 

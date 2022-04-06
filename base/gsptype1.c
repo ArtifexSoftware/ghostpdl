@@ -1615,7 +1615,7 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_gstate * pgs,
         return true;
     }
     if (pcache != 0) {
-        gx_color_tile *ctile = &pcache->tiles[id % pcache->num_tiles];
+        gx_color_tile *ctile = gx_pattern_cache_find_tile_for_id(pcache, id);
         bool internal_accum = true;
         if (pgs->have_pattern_streams) {
             int code = dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_load, &id, sizeof(gx_bitmap_id));
