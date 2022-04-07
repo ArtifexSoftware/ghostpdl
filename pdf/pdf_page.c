@@ -735,8 +735,12 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     }
 
     code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
+    /* Ignore errors retrieving the Group dictionary, we will just ignore it. This allows us
+     * to handle files such as Bug #705206 where the Group dictionary is a free object in a
+     * compressed object stream.
+     */
     if (code < 0)
-        goto exit3;
+        pdfi_set_error(ctx, 0, NULL, E_BAD_GROUP_DICT, "pdfi_page_render", NULL);
     if (group_dict != NULL)
         page_group_known = true;
 
