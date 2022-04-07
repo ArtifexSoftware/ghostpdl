@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -183,14 +183,16 @@ uncompress_9(pcl_seed_row_t * pout, const byte * pin, int in_size)
             more_cnt = (cnt == 0x8);
         }
 
-        while (more_offset && (i-- > 0)) {
+        while (more_offset && (i > 0)) {
             uint extra = *pin++;
+            i -= 1;
 
             more_offset = (extra == 0xff);
             offset += extra;
         }
-        while (more_cnt && (i-- > 0)) {
+        while (more_cnt && (i > 0)) {
             uint extra = *pin++;
+            i -= 1;
 
             more_cnt = (extra == 0xff);
             offset += extra;
