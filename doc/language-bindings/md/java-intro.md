@@ -101,7 +101,7 @@ Navigate to `ghostpdl/demos/java/gsjava` and use the following:
 |Linux| `build_linux.sh` |
 
 > **NOTE**<br>
-> `gsjava` has a dependancy on [jni], please ensure that `gs_jni` is able to be built beforehand.
+> `gsjava` has a dependency on [jni], please ensure that `gs_jni` is able to be built beforehand.
 
 #### Building with Eclipse
 

@@ -79,7 +79,7 @@ Below is a screenshot of the sample application with a PDF open:
 
 ## GhostMono
 
-`GhostMono` is the [Mono] equivalent of `GhostNET` and as such has no dependancy on a Windows environment.
+`GhostMono` is the [Mono] equivalent of `GhostNET` and as such has no dependency on a Windows environment.
 
 
 [Visual Studio]: https://visualstudio.microsoft.com
