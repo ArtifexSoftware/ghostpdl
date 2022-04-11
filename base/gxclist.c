@@ -709,6 +709,7 @@ clist_open(gx_device *dev)
 errxit:
     /* prevent leak */
     gs_free_object(cdev->memory->non_gc_memory, cdev->cache_chunk, "free tile cache for clist");
+    dev->is_open = save_is_open;
     cdev->cache_chunk = NULL;
     return code;
 }
@@ -1544,5 +1545,7 @@ open_c:
             pdev->buf = NULL;
         }
     }
+    if (code < 0)
+        pdev->is_open = save_is_open;
     return code;
 }

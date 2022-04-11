@@ -457,6 +457,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
                 pdev->procs = ppdev->orig_procs;
                 ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
                 gs_free_object(pdev->memory->non_gc_memory, ppdev->bg_print, "prn bg_print");
+                ppdev->bg_print = NULL;
                 return_error(code);
             }
         }
@@ -505,6 +506,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
     }
     if (code < 0) {
           gs_free_object(pdev->memory->non_gc_memory, ppdev->bg_print, "prn bg_print");
+          ppdev->bg_print = NULL;
     }
     return code;
 }
