@@ -937,7 +937,7 @@ cmsHPROFILE CreateNamedColorDevicelink(cmsContext ContextID, cmsHTRANSFORM xform
     v ->OutputFormat = OutputFormat;
     v ->FromInput    = FromInput;
     v ->ToOutput     = ToOutput;
-    _cmsFindFormatter(v, InputFormat, OutputFormat, v->core->dwOriginalFlags);
+    _cmsFindFormatter(ContextID, v, InputFormat, OutputFormat, v->core->dwOriginalFlags);
 
     // Apply the transfor to colorants.
     for (i=0; i < nColors; i++) {

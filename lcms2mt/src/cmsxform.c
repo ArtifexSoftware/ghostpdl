@@ -1939,18 +1939,20 @@ cmsUInt32Number CMSEXPORT _cmsGetTransformFlags(struct _cmstransform_struct* CMM
 }
 
 void
-_cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number OutputFormat, cmsUInt32Number dwFlags)
+_cmsFindFormatter(cmsContext ContextID, _cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number OutputFormat, cmsUInt32Number dwFlags)
 {
+    int isIdentity;
     if (dwFlags & cmsFLAGS_NULLTRANSFORM) {
         p ->xform = NullXFORM;
         return;
     }
+    isIdentity = ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
+                  _cmsLutIsIdentity(p->core->Lut));
     if (dwFlags & cmsFLAGS_PREMULT) {
         if (dwFlags & cmsFLAGS_NOCACHE) {
             if (dwFlags & cmsFLAGS_GAMUTCHECK)
                 p ->xform = PrecalculatedXFORMGamutCheck_P;  // Gamut check, no cache
-            else if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
-                     _cmsLutIsIdentity(p->core->Lut)) {
+            else if (isIdentity) {
                 if (T_PLANAR(InputFormat))
                     p ->xform = PrecalculatedXFORMIdentityPlanar;
                 else
@@ -1963,8 +1965,7 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
             p ->xform = CachedXFORMGamutCheck_P;    // Gamut check, cache
             return;
         }
-        if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
-            _cmsLutIsIdentity(p->core->Lut)) {
+        if (isIdentity) {
             /* No point in a cache here! */
             if (T_PLANAR(InputFormat))
                 p ->xform = PrecalculatedXFORMIdentityPlanar;
@@ -1976,8 +1977,7 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
     if (dwFlags & cmsFLAGS_NOCACHE) {
         if (dwFlags & cmsFLAGS_GAMUTCHECK)
             p ->xform = PrecalculatedXFORMGamutCheck;  // Gamut check, no cache
-        else if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
-                 _cmsLutIsIdentity(p->core->Lut)) {
+        else if (isIdentity) {
             if (T_PLANAR(InputFormat))
                 p ->xform = PrecalculatedXFORMIdentityPlanar;
             else
@@ -1990,8 +1990,7 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
         p ->xform = CachedXFORMGamutCheck;    // Gamut check, cache
         return;
     }
-    if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
-        _cmsLutIsIdentity(p->core->Lut)) {
+    if (isIdentity) {
         /* No point in a cache here! */
         if (T_PLANAR(InputFormat))
             p ->xform = PrecalculatedXFORMIdentityPlanar;
@@ -1999,6 +1998,11 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
             p ->xform = PrecalculatedXFORMIdentity;
         return;
     }
+#ifdef WITH_CAL
+    if (cal_cms_find_formatter_and_xform(ContextID, &p->xform, InputFormat, OutputFormat, &dwFlags)) {
+        return;
+    }
+#endif
     if (T_EXTRA(InputFormat) == 1 && T_EXTRA(OutputFormat) == 1) {
         if (dwFlags & cmsFLAGS_PREMULT) {
             if ((InputFormat & ~(COLORSPACE_SH(31)|CHANNELS_SH(7)|BYTES_SH(3)|EXTRA_SH(1))) == 0 &&
@@ -2329,7 +2333,7 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
 
         }
 
-        _cmsFindFormatter(p, *InputFormat, *OutputFormat, *dwFlags);
+        _cmsFindFormatter(ContextID, p, *InputFormat, *OutputFormat, *dwFlags);
     }
 
     p ->InputFormat     = *InputFormat;
@@ -2745,7 +2749,7 @@ cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
     xform ->OutputFormat = OutputFormat;
     xform ->FromInput    = FromInput;
     xform ->ToOutput     = ToOutput;
-    _cmsFindFormatter(xform, InputFormat, OutputFormat, xform->core->dwOriginalFlags);
+    _cmsFindFormatter(ContextID, xform, InputFormat, OutputFormat, xform->core->dwOriginalFlags);
 
     (void)_cmsAdjustReferenceCount(&xform->core->refs, 1);
 

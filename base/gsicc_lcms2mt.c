@@ -892,7 +892,6 @@ gscms_create(gs_memory_t *memory)
 #endif
 
 #ifdef WITH_CAL
-    cmsPlugin(ctx, cal_cms_extensions());
     cmsPlugin(ctx, cal_cms_extensions2());
 #endif
 

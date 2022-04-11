@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -166,8 +166,15 @@ $(LCMS2OBJ)cmswtpnt.$(OBJ) : $(LCMS2SRC)cmswtpnt.c $(LCMS2_DEPS)
 $(LCMS2OBJ)cmsvirt.$(OBJ) : $(LCMS2SRC)cmsvirt.c $(LCMS2_DEPS)
 	$(LCMS2_CC) $(LCMS2O_)cmsvirt.$(OBJ) $(C_) $(LCMS2SRC)cmsvirt.c
 
-$(LCMS2OBJ)cmsxform.$(OBJ) : $(LCMS2SRC)cmsxform.c $(LCMS2_DEPS)
-	$(LCMS2_CC) $(LCMS2O_)cmsxform.$(OBJ) $(C_) $(LCMS2SRC)cmsxform.c
+$(LCMS2OBJ)cmsxform_0.$(OBJ) : $(LCMS2SRC)cmsxform.c $(LCMS2_DEPS)
+	$(LCMS2_CC) $(LCMS2O_)cmsxform_0.$(OBJ) $(C_) $(LCMS2SRC)cmsxform.c
+
+$(LCMS2OBJ)cmsxform_1.$(OBJ) : $(LCMS2SRC)cmsxform.c $(LCMS2_DEPS)
+	$(LCMS2_CC) $(LCMS2O_)cmsxform_1.$(OBJ) $(D_)WITH_CAL$(_D) $(C_) $(LCMS2SRC)cmsxform.c
+
+$(LCMS2OBJ)cmsxform.$(OBJ) : $(LCMS2OBJ)cmsxform_$(WITH_CAL).$(OBJ) $(AK) \
+ $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(LCMS2OBJ)cmsxform_$(WITH_CAL).$(OBJ) $(LCMS2OBJ)cmsxform.$(OBJ)
 
 $(LCMS2OBJ)cmsalpha.$(OBJ) : $(LCMS2SRC)cmsalpha.c $(LCMS2_DEPS)
 	$(LCMS2_CC) $(LCMS2O_)cmsalpha.$(OBJ) $(C_) $(LCMS2SRC)cmsalpha.c
