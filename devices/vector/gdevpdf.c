@@ -3531,7 +3531,7 @@ error_cleanup:
         for (i=0;i < pdev->num_pages;i++) {
             if (pdev->pages[i].Page != NULL) {
                 emprintf(pdev->memory,
-                         "Page object was reserved for an Annotation destinatio, but no such page was drawn, annotation in output will be invalid.\n");
+                         "Page object was reserved for an Annotation destination, but no such page was drawn, annotation in output will be invalid.\n");
                 gs_free_object(mem, pdev->pages[i].Page, "Free Page object");
                 pdev->pages[i].Page = NULL;
             }
