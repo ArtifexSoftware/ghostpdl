@@ -1144,6 +1144,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     }
 
     /* Determine file size */
+    pdfi_seek(ctx, ctx->main_stream, 0, SEEK_SET);
     pdfi_seek(ctx, ctx->main_stream, 0, SEEK_END);
     ctx->main_stream_length = pdfi_tell(ctx->main_stream);
     Offset = BUF_SIZE;
@@ -1268,8 +1269,15 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
              */
             if (last_lineend) {
                 leftover = last_lineend - Buffer;
-                memmove(Buffer + bytes - leftover, last_lineend, leftover);
-                bytes -= leftover;
+                /* Ensure we don't try to copy more than half a buffer, because that will
+                 * end up overrunning the buffer end. Since we are only doing this to
+                 * ensure we don't drop a partial 'startxref' that's far more than enough.
+                 */
+                if (leftover < BUF_SIZE / 2) {
+                    memmove(Buffer + bytes - leftover, last_lineend, leftover);
+                    bytes -= leftover;
+                } else
+                    leftover = 0;
             } else
                 leftover = 0;
         }
