@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -34,8 +34,10 @@ MAKENSIS_XE="C:\Program Files\NSIS-3.0\makensis.exe"
 
 !ifdef WIN64
 NSISTARGET=gs$(GS_VERSION)w64
+VCREDIST=vcredist_x64.exe
 !else
 NSISTARGET=gs$(GS_VERSION)w32
+VCREDIST=vcredist_x86.exe
 !endif
 
 # Define the C++ compiler invocation for library modules.
@@ -185,8 +187,10 @@ $(PSOBJ)zwinutf8.$(OBJ) : $(PSSRC)zwinutf8.c $(OP)\
 
 # -------------------- NSIS Installer -------------------------------- #
 nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_ALL) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib \
+      "$(VCINSTALLDIR)Redist\MSVC\$(MS_TOOLSET_VERSION)\$(VCREDIST)" \
       $(WININT_MAK)
-	$(MAKENSIS_XE) -NOCD -DTARGET=$(NSISTARGET) -DVERSION=$(GS_DOT_VERSION) -DCOMPILE_INITS=$(COMPILE_INITS) $(PSSRC)nsisinst.nsi
+	$(CP_) "$(VCINSTALLDIR)Redist\MSVC\$(MS_TOOLSET_VERSION)\$(VCREDIST)" .
+	$(MAKENSIS_XE) -NOCD -DVCREDIST=$(VCREDIST) -DTARGET=$(NSISTARGET) -DVERSION=$(GS_DOT_VERSION) -DCOMPILE_INITS=$(COMPILE_INITS) $(PSSRC)nsisinst.nsi
 !if defined(KEYFILE) && defined(KEYPWORD) && defined(TIMESTAMP)
         signtool sign -f $(KEYFILE) /p $(KEYPWORD) /t $(TIMESTAMP) $(NSISTARGET)$(XE)
 !endif
