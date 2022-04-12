@@ -52,6 +52,7 @@ pcl_status_read(byte * data, uint max_data, pcl_state_t * pcs)
     pcs->status.read_pos += count;
     if (pcs->status.read_pos == pcs->status.write_pos) {
         gs_free_object(pcs->memory, pcs->status.buffer, "status buffer");
+        pcs->status.buffer = NULL;
         pcs->status.write_pos = pcs->status.read_pos = 0;
     }
     return count;
