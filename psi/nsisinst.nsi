@@ -1,4 +1,4 @@
-;  Copyright (C) 2001-2021 Artifex Software, Inc.
+;  Copyright (C) 2001-2022 Artifex Software, Inc.
 ;  All Rights Reserved.
 ;
 ;  This software is provided AS-IS with no warranty, either express or
@@ -42,6 +42,8 @@ Unicode True
 SetCompressor /SOLID /FINAL lzma
 XPStyle on
 CRCCheck on
+
+Var RebootRequired
 
 ; the following is from: http://nsis.sourceforge.net/StrRep
 !define StrRep "!insertmacro StrRep"
@@ -159,7 +161,6 @@ Page custom OldVersionsPageCreate
 
 Function OldVersionsPageCreate
   !insertmacro MUI_HEADER_TEXT "Previous Ghostscript Installations" "Optionally run the uninstallers for previous Ghostscript installations$\nClick $\"Cancel$\" to stop uninstalling previous installs"
-
   StrCpy $0 0
   loop:
     EnumRegKey $1 HKLM "Software\Artifex\GPL Ghostscript" $0
@@ -172,6 +173,13 @@ Function OldVersionsPageCreate
     Goto loop
   done:
 
+FunctionEnd
+
+Function RedistInstCreate
+    ExecWait '"$INSTDIR\${VCREDIST}" /norestart /install /quiet' $0
+    ${If} $0 == 3010
+      StrCpy $RebootRequired "yes"
+    ${EndIf}
 FunctionEnd
 
 !searchparse /ignorecase /noerrors "${TARGET}" w WINTYPE
@@ -230,6 +238,8 @@ File /oname=bin\gsdll${WINTYPE}.lib .\bin\gsdll${WINTYPE}.lib
 File /oname=bin\gswin${WINTYPE}.exe .\bin\gswin${WINTYPE}.exe
 File /oname=bin\gswin${WINTYPE}c.exe .\bin\gswin${WINTYPE}c.exe
 
+File /oname=${VCREDIST} .\${VCREDIST}
+
 !if "${WINTYPE}" == "64"
   SetRegView 64
 !endif
@@ -254,6 +264,9 @@ WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghos
 
 ; write out uninstaller
 WriteUninstaller "$INSTDIR\uninstgs.exe"
+
+Call RedistInstCreate
+
 SectionEnd ; end of default section
 
 Function .onInstSuccess
@@ -265,6 +278,15 @@ Function .onInstSuccess
     CreateShortCut "$SMPROGRAMS\Ghostscript\Uninstall Ghostscript ${VERSION}.LNK" "$INSTDIR\uninstgs.exe"
 FunctionEnd
 
+Function .onGUIEnd
+    StrCmp $RebootRequired "yes" doit
+    Goto done
+    doit:
+    MessageBox MB_YESNO|MB_ICONQUESTION "Do you wish to reboot the system?" IDNO +2
+    Reboot
+    done:
+FunctionEnd
+
 Function CJKGen
     ${StrRep} $0 "$FONTS" "\" "/"
     ${StrRep} $1 "$INSTDIR\lib\cidfmap" "\" "/"
@@ -273,6 +295,7 @@ Function CJKGen
 FunctionEnd
 
 Function .onInit
+    StrCpy $RebootRequired "no"
 !if "${WINTYPE}" == "64"
     SetRegView 64
     ${IfNot} ${RunningX64}
@@ -320,6 +343,7 @@ Delete   "$INSTDIR\bin\gsdll${WINTYPE}.dll"
 Delete   "$INSTDIR\bin\gsdll${WINTYPE}.lib"
 Delete   "$INSTDIR\bin\gswin${WINTYPE}.exe"
 Delete   "$INSTDIR\bin\gswin${WINTYPE}c.exe"
+Delete   "$INSTDIR\${VCREDIST}"
 RMDir    "$INSTDIR\bin"
 RMDir    "$INSTDIR"
 !if "${WINTYPE}" == "64"
