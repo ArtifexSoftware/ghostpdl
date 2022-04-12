@@ -169,8 +169,8 @@ $(LCMS2OBJ)cmsvirt.$(OBJ) : $(LCMS2SRC)cmsvirt.c $(LCMS2_DEPS)
 $(LCMS2OBJ)cmsxform_0.$(OBJ) : $(LCMS2SRC)cmsxform.c $(LCMS2_DEPS)
 	$(LCMS2_CC) $(LCMS2O_)cmsxform_0.$(OBJ) $(C_) $(LCMS2SRC)cmsxform.c
 
-$(LCMS2OBJ)cmsxform_1.$(OBJ) : $(LCMS2SRC)cmsxform.c $(LCMS2_DEPS)
-	$(LCMS2_CC) $(LCMS2O_)cmsxform_1.$(OBJ) $(D_)WITH_CAL$(_D) $(C_) $(LCMS2SRC)cmsxform.c
+$(LCMS2OBJ)cmsxform_1.$(OBJ) : $(LCMS2SRC)cmsxform.c $(CAL_SRC)$(D)cal_cms.h $(LCMS2_DEPS)
+	$(LCMS2_CC) $(LCMS2O_)cmsxform_1.$(OBJ) $(I_)$(CAL_SRC)$(_I) $(D_)WITH_CAL$(_D) $(C_) $(LCMS2SRC)cmsxform.c
 
 $(LCMS2OBJ)cmsxform.$(OBJ) : $(LCMS2OBJ)cmsxform_$(WITH_CAL).$(OBJ) $(AK) \
  $(LIB_MAK) $(MAKEDIRS)

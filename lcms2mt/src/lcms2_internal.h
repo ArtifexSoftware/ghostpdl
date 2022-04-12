@@ -1123,14 +1123,5 @@ cmsUInt32Number _cmsAdjustReferenceCount(cmsUInt32Number *rc, int delta);
 // thread-safe gettime
 cmsBool _cmsGetTime(struct tm* ptr_time);
 
-// CAL extensions
-#ifdef WITH_CAL
-int cal_cms_find_formatter_and_xform(cmsContext        ContextID,
-                                     _cmsTransform2Fn *xformPtr,
-                                     cmsUInt32Number   InputFormat,
-                                     cmsUInt32Number   OutputFormat,
-                                     cmsUInt32Number  *dwFlags);
-#endif
-
 #define _lcms_internal_H
 #endif

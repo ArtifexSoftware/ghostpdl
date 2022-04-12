@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2021 Artifex Software, Inc.
+# Copyright (C) 2019-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -82,7 +82,7 @@ $(GLOBJ)cal.dev : $(ECHOGS_XE) $(cal_OBJS) \
 	$(SETMOD) $(GLOBJ)cal $(cal_OBJS)
 
 # define our specific compiler
-CAL_CC=$(CC) $(CCFLAGS) $(CAL_CFLAGS) $(I_)$(CAL_GEN)$(_I) $(I_)$(CAL_SRC)$(_I)
+CAL_CC=$(CC) $(CCFLAGS) $(CAL_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(CAL_GEN)$(_I) $(I_)$(CAL_SRC)$(_I)
 CAL_O=$(O_)$(CAL_OBJ)$(CAL_PREFIX)
 
 CAL_DEP=$(AK) $(CAL_MAK) $(MAKEDIRS)
@@ -103,16 +103,16 @@ $(CAL_OBJ)$(CAL_PREFIX)doubler.$(OBJ) : $(CAL_SRC)doubler.c $(cal_HDRS) $(CAL_DE
 	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(CAL_NEON_CFLAGS) $(CAL_O)doubler.$(OBJ) $(C_) $(CAL_SRC)doubler.c
 
 $(CAL_OBJ)$(CAL_PREFIX)cmsavx2.$(OBJ) : $(CAL_SRC)cmsavx2.c $(cal_HDRS) $(CAL_DEP)
-	$(CAL_CC) $(CAL_AVX2_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmsavx2.$(OBJ) $(C_) $(CAL_SRC)cmsavx2.c
+	$(CAL_CC) $(CAL_AVX2_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmsavx2.$(OBJ) $(C_) $(CAL_SRC)cmsavx2.c
 
 $(CAL_OBJ)$(CAL_PREFIX)cmssse42.$(OBJ) : $(CAL_SRC)cmssse42.c $(cal_HDRS) $(CAL_DEP)
-	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmssse42.$(OBJ) $(C_) $(CAL_SRC)cmssse42.c
+	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmssse42.$(OBJ) $(C_) $(CAL_SRC)cmssse42.c
 
 $(CAL_OBJ)$(CAL_PREFIX)cmsneon.$(OBJ) : $(CAL_SRC)cmsneon.c $(cal_HDRS) $(CAL_DEP)
-	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(CAL_NEON_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmsneon.$(OBJ) $(C_) $(CAL_SRC)cmsneon.c
+	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(CAL_NEON_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmsneon.$(OBJ) $(C_) $(CAL_SRC)cmsneon.c
 
 $(CAL_OBJ)$(CAL_PREFIX)lcms2mt_cal.$(OBJ) : $(CAL_SRC)lcms2mt_cal.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
-	$(CAL_CC) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(GLSRC) $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)lcms2mt_cal.$(OBJ) $(C_) $(CAL_SRC)lcms2mt_cal.c
+	$(CAL_CC) $(I_)$(GLSRC) $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)lcms2mt_cal.$(OBJ) $(C_) $(CAL_SRC)lcms2mt_cal.c
 
 $(CAL_OBJ)$(CAL_PREFIX)blendavx2.$(OBJ) : $(CAL_SRC)blendavx2.c $(cal_HDRS) $(CAL_DEP) $(gxblend_h)
 	$(CAL_CC) $(CAL_AVX2_CFLAGS) $(I_)$(GLSRC) $(CAL_O)blendavx2.$(OBJ) $(C_) $(CAL_SRC)blendavx2.c

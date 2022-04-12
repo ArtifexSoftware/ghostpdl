@@ -26,6 +26,10 @@
 
 #include "lcms2_internal.h"
 
+#ifdef WITH_CAL
+#include "cal_cms.h"
+#endif
+
 // Transformations stuff
 // -----------------------------------------------------------------------
 
