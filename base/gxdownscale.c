@@ -2168,7 +2168,7 @@ static int
 planar_skew_line(gx_downscale_liner *liner_, void *params_, int row)
 {
     liner_skew *liner = (liner_skew *)liner_;
-    int code;
+    int code = 0;
     gs_get_bits_params_t *params = (gs_get_bits_params_t *)params_;
     int i;
 
