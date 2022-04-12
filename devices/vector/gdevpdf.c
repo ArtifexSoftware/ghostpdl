@@ -3443,6 +3443,27 @@ error_cleanup:
         }
     }
 
+    /* Free named objects. */
+
+    if (pdev->NI_stack != NULL) {
+        cos_release((cos_object_t *)pdev->NI_stack, "Release Name Index stack");
+        gs_free_object(mem, pdev->NI_stack, "Free Name Index stack");
+        pdev->NI_stack = 0;
+    }
+
+    if (pdev->local_named_objects != NULL) {
+        cos_dict_objects_delete(pdev->local_named_objects);
+        COS_FREE(pdev->local_named_objects, "pdf_close(local_named_objects)");
+        pdev->local_named_objects = 0;
+    }
+
+    if (pdev->global_named_objects != NULL) {
+        /* global resources include the Catalog object and apparently the Info dict */
+        cos_dict_objects_delete(pdev->global_named_objects);
+        COS_FREE(pdev->global_named_objects, "pdf_close(global_named_objects)");
+        pdev->global_named_objects = 0;
+    }
+
     code1 = pdf_free_resource_objects(pdev, resourceOther);
     if (code >= 0)
         code = code1;
@@ -3489,27 +3510,6 @@ error_cleanup:
             gs_free_object(mem, pres, "pdf_resource_t");
         }
         pdev->last_resource = 0;
-    }
-
-    /* Free named objects. */
-
-    if (pdev->NI_stack != NULL) {
-        cos_release((cos_object_t *)pdev->NI_stack, "Release Name Index stack");
-        gs_free_object(mem, pdev->NI_stack, "Free Name Index stack");
-        pdev->NI_stack = 0;
-    }
-
-    if (pdev->local_named_objects != NULL) {
-        cos_dict_objects_delete(pdev->local_named_objects);
-        COS_FREE(pdev->local_named_objects, "pdf_close(local_named_objects)");
-        pdev->local_named_objects = 0;
-    }
-
-    if (pdev->global_named_objects != NULL) {
-        /* global resources include the Catalog object and apparently the Info dict */
-        cos_dict_objects_delete(pdev->global_named_objects);
-        COS_FREE(pdev->global_named_objects, "pdf_close(global_named_objects)");
-        pdev->global_named_objects = 0;
     }
 
     /* Wrap up. */
