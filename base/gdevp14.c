@@ -1614,6 +1614,23 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
         return 0;
     }
 
+    /* Before we get started, lets see if we have somehow gotten into
+       what should be an impossible situation where the group color
+       information does not match the buffer color information. This
+       can occur is there were memory issues that have perhaps blown
+       away information, or in the example of Bug 705197 the PDF interpreter
+       reuses a pattern during a circular reference causing an aliasing
+       of two nested patterns, one of which has a softmask. The change in
+       the buffer size of the inner one blows away the buffer of the
+       outer one leading to a mismatch of color spaces.  This is clearly
+       a problem, and one that should be solved by the interpreter. Here
+       we can at least catch the case when the color space sizes have
+       changed and avoid buffer over-runs that would occur when we try
+       to do the group composition */
+    if (nos->n_chan - 1 != nos->group_color_info->num_components ||
+        tos->n_chan - 1 != tos_num_color_comp)
+        return_error(gs_error_Fatal);
+
     /* Here is the case with the soft mask.  Go ahead and create a new
        target buffer (nos) with the same color information etc, but blank
        and go ahead and do the blend with the softmask so that it gets applied. */
@@ -5180,7 +5197,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                 curr_clip_rect = cpath_intersection.rect_list->list.head->next;
                 for( k = 0; k < cpath_intersection.rect_list->list.count && code >= 0; k++){
                     if_debug5m('v', pgs->memory,
-                               "[v]pdf14_tile_pattern_fill, (%d, %d), %d x %d pat_id %d \n",
+                               "[v]pdf14_tile_pattern_fill, (%d, %d), %d x %d pat_id %u \n",
                                curr_clip_rect->xmin, curr_clip_rect->ymin,
                                curr_clip_rect->xmax-curr_clip_rect->xmin,
                                curr_clip_rect->ymax-curr_clip_rect->ymin, (int)ptile->id);
@@ -5192,7 +5209,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             } else if (cpath_intersection.rect_list->list.count == 1) {
                 /* The case when there is just a single rect */
                 if_debug5m('v', pgs->memory,
-                           "[v]pdf14_tile_pattern_fill, (%d, %d), %d x %d pat_id %d \n",
+                           "[v]pdf14_tile_pattern_fill, (%d, %d), %d x %d pat_id %u \n",
                            cpath_intersection.rect_list->list.single.xmin,
                            cpath_intersection.rect_list->list.single.ymin,
                            cpath_intersection.rect_list->list.single.xmax-

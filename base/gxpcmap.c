@@ -947,7 +947,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 
         if (ctile->ttrans != NULL) {
             if_debug2m('v', mem,
-                       "[v*] Freeing trans pattern from cache, uid = %ld id = %ld\n",
+                       "[v*] Freeing trans pattern from cache, uid = %ld id = %u\n",
                        ctile->uid.id, ctile->id);
             if ( ctile->ttrans->pdev14 == NULL) {
                 /* This can happen if we came from the clist */
@@ -1192,7 +1192,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
             ctile->tmask.data = 0;
         if (trans != 0) {
             if_debug2m('v', pgs->memory,
-                       "[v*] Adding trans pattern to cache, uid = %ld id = %ld\n",
+                       "[v*] Adding trans pattern to cache, uid = %ld id = %u\n",
                        ctile->uid.id, ctile->id);
             ctile->ttrans = trans;
         }
@@ -1524,7 +1524,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
     if (code < 0)
         goto fail;
     if (pinst->templat.uses_transparency) {
-        if_debug0m('v', mem, "gx_pattern_load: pushing the pdf14 compositor device into this graphics state\n");
+        if_debug1m('v', mem, "gx_pattern_load: pushing the pdf14 compositor device into this graphics state pat_id = %u\n", pinst->id);
         if ((code = gs_push_pdf14trans_device(saved, true, false, 0, 0)) < 0)   /* spot_color_count taken from pdf14 target values */
             return code;
         saved->device->is_open = true;
