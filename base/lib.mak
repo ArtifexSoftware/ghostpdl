@@ -3000,7 +3000,7 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(AK)\
 
 $(GLOBJ)gsicc_blacktext.$(OBJ) : $(GLSRC)gsicc_blacktext.c $(AK)\
  $(gsmemory_h) $(gsstruct_h) $(gzstate_h) $(gsicc_blacktext_h)\
- $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_cache_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsicc_blacktext.$(OBJ) $(C_) $(GLSRC)gsicc_blacktext.c
 
 $(GLOBJ)gsicc_lcms2mt_1_0.$(OBJ) : $(GLSRC)gsicc_lcms2mt.c\

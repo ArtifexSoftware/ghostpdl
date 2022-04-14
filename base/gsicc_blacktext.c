@@ -21,6 +21,11 @@
 #include "gsstruct.h"
 #include "gzstate.h"
 #include "gsicc_blacktext.h"
+#include "gsicc_cache.h"
+
+/* L* value.  Above this value things are mapped to pure white.
+   Below this value things are mapped to pure black. */
+#define WHITE_THRESHOLD 95
 
 /* gsicc_blacktextvec_state_t is going to be storing GCed items
    (color spaces and client colors) and so will need to be GCed */
@@ -63,39 +68,90 @@ gsicc_blacktextvec_state_new(gs_memory_t *memory, bool is_text)
 
 /* Crude white color check. Only valid for ICC based RGB, CMYK, Gray, and LAB CS.
   Makes some assumptions about profile.  Also may want some tolerance check. */
-static inline bool is_white(gs_color_space* pcs, gs_client_color* pcc)
+static inline bool is_white(gs_gstate *pgs, gs_color_space* pcs, gs_client_color* pcc)
 {
+    double Lstar = 0;
+
     if (gs_color_space_get_index(pcs) == gs_color_space_index_ICC) {
-        switch (pcs->cmm_icc_profile_data->data_cs) {
-            case gsGRAY:
-                if (pcc->paint.values[0] == 1.0)
-                    return true;
-                else
-                    return false;
-                break;
-            case gsRGB:
-                if (pcc->paint.values[0] == 1.0 && pcc->paint.values[1] == 1.0 &&
-                    pcc->paint.values[2] == 1.0)
-                    return true;
-                else
-                    return false;
-                break;
-            case gsCMYK:
-                if (pcc->paint.values[0] == 0.0 && pcc->paint.values[1] == 0.0 &&
-                    pcc->paint.values[2] == 0.0 && pcc->paint.values[3] == 0.0)
-                    return true;
-                else
-                    return false;
-                break;
-            case gsCIELAB:
-                if (pcc->paint.values[0] == 100.0 && pcc->paint.values[1] == 0.0 &&
-                    pcc->paint.values[2] == 0.0)
-                    return true;
-                else
-                    return false;
-                break;
-            default:
+        if (pcs->cmm_icc_profile_data->data_cs == gsCIELAB) {
+            if (pcc->paint.values[0] >= WHITE_THRESHOLD)
+                return true;
+            else
                 return false;
+        }
+        /* For all others, lets get to CIELAB value */
+        if (pgs->icc_manager->lab_profile != NULL) {
+            gsicc_link_t *icc_link;
+            gsicc_rendering_param_t rendering_params;
+            unsigned short psrc[4];
+            unsigned short pdes[3];
+
+            rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
+            rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
+            rendering_params.override_icc = false;
+            rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
+            rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
+            rendering_params.cmm = gsCMM_DEFAULT;
+
+            icc_link = gsicc_get_link_profile(pgs, NULL, pcs->cmm_icc_profile_data,
+                                          pgs->icc_manager->lab_profile, &rendering_params,
+                                          pgs->memory, false);
+            if (icc_link == NULL)
+                return false;
+
+            switch (pcs->cmm_icc_profile_data->data_cs) {
+                case gsGRAY:
+                    psrc[0] = pcc->paint.values[0] * 65535;
+                    break;
+                case gsRGB:
+                    psrc[0] = pcc->paint.values[0] * 65535;
+                    psrc[1] = pcc->paint.values[1] * 65535;
+                    psrc[2] = pcc->paint.values[2] * 65535;
+                    break;
+                case gsCMYK:
+                    psrc[0] = pcc->paint.values[0] * 65535;
+                    psrc[1] = pcc->paint.values[1] * 65535;
+                    psrc[2] = pcc->paint.values[2] * 65535;
+                    psrc[3] = pcc->paint.values[3] * 65535;
+                    break;
+                default:
+                    gsicc_release_link(icc_link);
+                    return false;
+            }
+            (icc_link->procs.map_color)(NULL, icc_link, psrc, pdes, 2);
+            gsicc_release_link(icc_link);
+
+            Lstar = pdes[0] * 100.0 / 65535.0;
+            if (Lstar >= WHITE_THRESHOLD)
+                return true;
+            else
+                return false;
+        } else {
+            /* Something to fall back on */
+            switch (pcs->cmm_icc_profile_data->data_cs) {
+                case gsGRAY:
+                    if (pcc->paint.values[0] == 1.0)
+                        return true;
+                    else
+                        return false;
+                    break;
+                case gsRGB:
+                    if (pcc->paint.values[0] == 1.0 && pcc->paint.values[1] == 1.0 &&
+                        pcc->paint.values[2] == 1.0)
+                        return true;
+                    else
+                        return false;
+                    break;
+                case gsCMYK:
+                    if (pcc->paint.values[0] == 0.0 && pcc->paint.values[1] == 0.0 &&
+                        pcc->paint.values[2] == 0.0 && pcc->paint.values[3] == 0.0)
+                        return true;
+                    else
+                        return false;
+                    break;
+                default:
+                    return false;
+            }
         }
     } else
         return false;
@@ -123,7 +179,7 @@ bool gsicc_setup_black_textvec(gs_gstate *pgs, gx_device *dev, bool is_text)
         cs_adjust_color_count(pgs, 1); /* The set_gray will do a decrement, only need if pattern */
         pgs->black_textvec_state->value[0] = pgs->color[0].ccolor->paint.values[0];
 
-        if (is_white(pcs_curr, pgs->color[0].ccolor))
+        if (is_white(pgs, pcs_curr, pgs->color[0].ccolor))
             gs_setgray(pgs, 1.0);
         else
             gs_setgray(pgs, 0.0);
@@ -139,7 +195,7 @@ bool gsicc_setup_black_textvec(gs_gstate *pgs, gx_device *dev, bool is_text)
         cs_adjust_color_count(pgs, 1); /* The set_gray will do a decrement, only need if pattern */
         pgs->black_textvec_state->value[1] = pgs->color[0].ccolor->paint.values[0];
 
-        if (is_white(pcs_alt, pgs->color[0].ccolor))
+        if (is_white(pgs, pcs_alt, pgs->color[0].ccolor))
             gs_setgray(pgs, 1.0);
         else
             gs_setgray(pgs, 0.0);
