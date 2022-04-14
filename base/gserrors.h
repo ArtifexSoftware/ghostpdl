@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -62,6 +62,12 @@ enum gs_error_type {
 /* invalidid is for the NeXT DPS extension. */
     gs_error_invalidid = -30,
 
+/* We need a specific stackoverflow error for the PDF interpreter to avoid dropping into
+ * the Postscript interpreter's stack extending code, when the PDF interpreter is called from
+ * Postscript
+ */
+    gs_error_pdf_stackoverflow = -31,
+
         /* ------ Pseudo-errors used internally ------ */
 
     gs_error_hit_detected = -99,
@@ -122,7 +128,7 @@ enum gs_error_type {
     gs_error_handled = -111,
 
 /* Internal error for the C-based PDF interpreter, to indicate a circular PDF reference */
-  gs_error_circular_reference = -112,
+    gs_error_circular_reference = -112,
 };
 
 /* We do provide a typedef type for external API use */

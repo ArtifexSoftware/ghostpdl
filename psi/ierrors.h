@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -57,8 +57,11 @@ extern const char *const gs_error_names[];
 #define DPS_ERROR_NAMES\
  "invalidcontext", "invalidid"
 
+#define PDF_ERROR_NAMES\
+ "pdf_stackoverflow"
+
 #define ERROR_NAMES\
- LEVEL1_ERROR_NAMES, LEVEL2_ERROR_NAMES, DPS_ERROR_NAMES
+ LEVEL1_ERROR_NAMES, LEVEL2_ERROR_NAMES, DPS_ERROR_NAMES, PDF_ERROR_NAMES
 
 /*
  * Define which error codes require re-executing the current object.

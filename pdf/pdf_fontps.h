@@ -208,7 +208,7 @@ static inline int pdf_ps_stack_push(pdf_ps_ctx_t *s)
     }
     s->cur++;
     if (pdf_ps_obj_has_type(s->cur, PDF_PS_OBJ_STACK_TOP))
-        return_error(gs_error_stackoverflow);
+        return_error(gs_error_pdf_stackoverflow);
     if (pdf_ps_obj_has_type(s->cur, PDF_PS_OBJ_STACK_BOTTOM))
         return_error(gs_error_stackunderflow);
     return 0;
@@ -239,7 +239,7 @@ static inline int pdf_ps_stack_pop(pdf_ps_ctx_t *s, unsigned int n)
         pdf_ps_make_null(s->cur);
         s->cur--;
         if (pdf_ps_obj_has_type(s->cur, PDF_PS_OBJ_STACK_TOP))
-            return_error(gs_error_stackoverflow);
+            return_error(gs_error_pdf_stackoverflow);
         if (pdf_ps_obj_has_type(s->cur, PDF_PS_OBJ_STACK_BOTTOM))
             return_error(gs_error_stackunderflow);
     }

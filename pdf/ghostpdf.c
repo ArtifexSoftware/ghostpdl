@@ -347,6 +347,7 @@ const char *gs_error_strings[] = {
     "unregistered",
     "invalidcontext",
     "invalidid",
+    "pdf_stackoverflow"
 };
 
 const char *gs_internal_error_strings[] = {
@@ -365,7 +366,7 @@ const char *gs_internal_error_strings[] = {
     "handled",
     "circular reference"
 };
-#define LASTNORMALGSERROR gs_error_invalidid * -1
+#define LASTNORMALGSERROR gs_error_pdf_stackoverflow * -1
 #define FIRSTINTERNALERROR gs_error_hit_detected * -1
 #define LASTGSERROR gs_error_circular_reference * -1
 

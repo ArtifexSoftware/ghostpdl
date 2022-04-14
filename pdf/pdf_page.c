@@ -879,7 +879,7 @@ exit3:
      */
     gx_pattern_cache_winnow(gstate_pattern_cache(ctx->pgs), pdfi_pattern_purge_all_proc, NULL);
 
-    if (code == 0 || (!ctx->args.pdfstoponerror && code != gs_error_stackoverflow))
+    if (code == 0 || (!ctx->args.pdfstoponerror && code != gs_error_pdf_stackoverflow))
         if (!page_dict_error && ctx->finish_page != NULL)
             code = ctx->finish_page(ctx);
     return code;

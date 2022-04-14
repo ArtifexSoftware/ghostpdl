@@ -1282,7 +1282,7 @@ pdfi_read_ps_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, int fbuflen
        and that can end up in a stackoverflow error, even though we have a complete font. Override it
        and let the Type 1 specific code decide for itself if it can use the font.
      */
-    if (code == gs_error_stackoverflow)
+    if (code == gs_error_pdf_stackoverflow)
         code = 0;
 
     return code;
