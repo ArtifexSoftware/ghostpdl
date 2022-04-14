@@ -772,26 +772,26 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
 % NB device parameters will already have been sent to the device and used to configure it
 % so here we should only handle parameters which control the behaviour of the interpreter.
 %
+/PDFSwitches [ /QUIET /PDFPassword /PDFDEBUG /PDFSTOPONERROR /PDFSTOPONWARNING /NOTRANSPARENCY /FirstPage /LastPage
+               /PDFNOCIDFALLBACK /NO_PDFMARK_OUTLINES /NO_PDFMARK_DESTS /PDFFitPage /Printed /UsePDFX3Profile
+               /UseBleedBox /UseCropBox /UseArtBox /UseTrimBox /ShowAcroForm /ShowAnnots /PreserveAnnots
+               /NoUserUnit /RENDERTTNOTDEF /DOPDFMARKS /PDFINFO /SHOWANNOTTYPES /PRESERVEANNOTTYPES
+               /CIDSubstPath /CIDSubstFont /IgnoreToUnicode /NONATIVEFONTMAP ] def
+
 /newpdf_gather_parameters
 {
   10 dict begin
-  /PDFSwitches [ /QUIET /PDFPassword /PDFDEBUG /PDFSTOPONERROR /PDFSTOPONWARNING /NOTRANSPARENCY /FirstPage /LastPage
-                 /PDFNOCIDFALLBACK /NO_PDFMARK_OUTLINES /NO_PDFMARK_DESTS /PDFFitPage /Printed /UsePDFX3Profile
-                 /UseBleedBox /UseCropBox /UseArtBox /UseTrimBox /ShowAcroForm /ShowAnnots /PreserveAnnots
-                 /NoUserUnit /RENDERTTNOTDEF /DOPDFMARKS /PDFINFO /SHOWANNOTTYPES /PRESERVEANNOTTYPES
-                 /CIDSubstPath /CIDSubstFont /IgnoreToUnicode /NONATIVEFONTMAP ] def
 
-  0 1 PDFSwitches length 1 sub {
-    PDFSwitches exch get dup where {
-      exch dup 3 1 roll get def
-    }
-    {
-      pop
-    } ifelse
-  } for
-  currentdict /PDFSwitches undef
+  //PDFSwitches {
+    dup where
+    { exch dup 3 1 roll get def }
+    { pop } ifelse
+  } forall
+
   currentdict end
 } bind executeonly def
+
+currentdict /PDFSwitches undef
 
 /newpdf_pagecount
 {
