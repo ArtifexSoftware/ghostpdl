@@ -6423,6 +6423,7 @@ static int validate_spaces(i_ctx_t *i_ctx_p, ref *arr, int *depth)
 static int
 setcolor_cont(i_ctx_t *i_ctx_p)
 {
+    os_ptr  op = osp;
     ref arr, *parr = &arr;
     es_ptr ep = esp;
     int i=0, code = 0, usealternate, stage, stack_depth, CIESubst = 0, IsICC = 0;
@@ -6497,6 +6498,8 @@ setcolor_cont(i_ctx_t *i_ctx_p)
 
     /* Remove our next continuation and our data */
     obj->numcomponents(i_ctx_p, parr, &i);
+    /* This would be better done sooner, but we need the color space object first */
+    check_op(i);
     pop(i);
     esp -= 5;
     return o_pop_estack;
