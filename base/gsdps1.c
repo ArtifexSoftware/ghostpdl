@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -182,6 +182,16 @@ gs_rectclip(gs_gstate * pgs, const gs_rect * pr, uint count)
     return 0;
 }
 
+/* Setup for black vector handling */
+static inline bool black_vectors(gs_gstate *pgs, gx_device *dev)
+{
+    if (dev->icc_struct != NULL && dev->icc_struct->blackvector &&
+        pgs->black_textvec_state == NULL) {
+        return gsicc_setup_black_textvec(pgs, dev, false);
+    }
+    return false;
+}
+
 /* Fill a list of rectangles. */
 /* We take the trouble to do this efficiently in the simple cases. */
 int
@@ -199,13 +209,16 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
                 dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_hlcolor,
                                   NULL, 0));
     bool center_of_pixel = (pgs->fill_adjust.x == 0 && pgs->fill_adjust.y == 0);
+    bool black_vector = false;
 
     /* Processing a fill object operation */
     ensure_tag_is_set(pgs, pgs->device, GS_VECTOR_TAG);	/* NB: may unset_dev_color */
 
+    black_vector = black_vectors(pgs, pgs->device); /* Set vector fill to black */
+
     code = gx_set_dev_color(pgs);
     if (code != 0)
-        return code;
+        goto exit;
 
     if ( !(pgs->device->page_uses_transparency ||
           dev_proc(pgs->device, dev_spec_op)(pgs->device,
@@ -231,7 +244,7 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
         /* We should never plot anything for an empty clip rectangle */
         if ((clip_rect.p.x >= clip_rect.q.x) &&
             (clip_rect.p.y >= clip_rect.q.y))
-            return 0;
+            goto exit;
         for (i = 0; i < count; ++i) {
             gs_fixed_point p, q;
             gs_fixed_rect draw_rect;
@@ -258,7 +271,7 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
                     code = dev_proc(pdev, fill_rectangle_hl_color)(pdev,
                              &draw_rect, pgs2, pdc, pcpath);
                     if (code < 0)
-                        return code;
+                        goto exit;
                 }
             } else {
                 int x, y, w, h;
@@ -304,7 +317,7 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
 
         if (do_save) {
             if ((code = gs_gsave(pgs)) < 0)
-                return code;
+                goto exit;
             code = gs_newpath(pgs);
         }
         if ((code >= 0) &&
@@ -316,6 +329,12 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
             gs_grestore(pgs);
         else if (code < 0)
             gs_newpath(pgs);
+    }
+
+exit:
+    if (black_vector) {
+        /* Restore color */
+        gsicc_restore_blacktextvec(pgs, false);
     }
     return code;
 }
