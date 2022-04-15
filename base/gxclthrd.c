@@ -113,12 +113,15 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
      * will spot the same profile being used, and treat it as a no-op. Otherwise it will try to find
      * a profile with the 'special' name "OI_PROFILE" and throw an error.
      */
-    if (!gscms_is_threadsafe() || (dev->icc_struct != NULL &&
-        ((dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] != NULL &&
-          strncmp(dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->name,
-              OI_PROFILE, strlen(OI_PROFILE)) == 0)
-        || (dev->icc_struct->proof_profile != NULL &&
-        strncmp(dev->icc_struct->proof_profile->name, OI_PROFILE, strlen(OI_PROFILE)) == 0)))) {
+#define DEV_PROFILE_IS(DEV, PROFILE, MATCH) \
+    ((DEV)->icc_struct != NULL &&\
+     (DEV)->icc_struct->PROFILE != NULL &&\
+     strcmp((DEV)->icc_struct->PROFILE->name, MATCH) == 0)
+
+    if (bg_print ||
+        !gscms_is_threadsafe() ||
+        DEV_PROFILE_IS(dev, device_profile[GS_DEFAULT_DEVICE_PROFILE], OI_PROFILE) ||
+        DEV_PROFILE_IS(dev, proof_profile, OI_PROFILE)) {
         ndev->icc_struct = gsicc_new_device_profile_array(ndev);
         if (!ndev->icc_struct) {
             emprintf1(ndev->memory,
