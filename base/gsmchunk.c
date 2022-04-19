@@ -803,7 +803,7 @@ chunk_obj_alloc(gs_memory_t *mem, size_t size, gs_memory_type_ptr_t type, client
 #endif
 
     /* Large blocks are allocated directly */
-    if (SINGLE_OBJECT_CHUNK(newsize)) {
+    if (SINGLE_OBJECT_CHUNK(size)) {
         obj = (chunk_obj_node_t *)gs_alloc_bytes_immovable(cmem->target, newsize, cname);
         if (obj == NULL)
             return NULL;
@@ -1118,7 +1118,7 @@ chunk_free_object(gs_memory_t *mem, void *ptr, client_name_t cname)
 
     cmem->used -= obj->size;
 
-    if (SINGLE_OBJECT_CHUNK(obj->size)) {
+    if (SINGLE_OBJECT_CHUNK(obj->size - obj->padding)) {
         gs_free_object(cmem->target, obj, "chunk_free_object(single object)");
 #ifdef DEBUG_CHUNK
         gs_memory_chunk_dump_memory(cmem);
