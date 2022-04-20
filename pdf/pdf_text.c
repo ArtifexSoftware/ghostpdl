@@ -436,7 +436,7 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
             for (i = 0;i < s->length; i++) {
                 /* Get the width (in unscaled text units) */
                 if (s->data[i] < current_font->FirstChar || s->data[i] > current_font->LastChar)
-                    width = 0;
+                    width = current_font->MissingWidth;
                 else
                     width = current_font->Widths[s->data[i] - current_font->FirstChar];
                 /* And convert the width into an appropriate value for the current environment */

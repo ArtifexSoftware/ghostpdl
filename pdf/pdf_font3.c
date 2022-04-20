@@ -286,6 +286,29 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto font3_error;
 
+    if (font->FontDescriptor != NULL) {
+        code = pdfi_dict_knownget(ctx, font->FontDescriptor, "MissingWidth", &obj);
+        if (code > 0) {
+            if (obj->type == PDF_INT) {
+                font->MissingWidth = ((pdf_num *) obj)->value.i;
+            }
+            else if (obj->type == PDF_REAL) {
+                font->MissingWidth = ((pdf_num *) obj)->value.d;
+            }
+            else {
+                font->MissingWidth = 0;
+            }
+            pdfi_countdown(obj);
+            obj = NULL;
+        }
+        else {
+            font->MissingWidth = 0;
+        }
+    }
+    else {
+        font->MissingWidth = 1000;
+    }
+
     code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, (pdf_obj **)&obj);
     if (code < 0)
         goto font3_error;

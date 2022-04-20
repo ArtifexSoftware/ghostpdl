@@ -2646,6 +2646,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 pdf_font_cff *cfffont;
                 gs_font_type1 *pfont = NULL;
                 pdf_obj *tounicode = NULL;
+                double x_scale;
 
                 code = pdfi_alloc_cff_font(ctx, &cfffont, font_dict->object_num, false);
                 pfont = (gs_font_type1 *) cfffont->pfont;
@@ -2727,10 +2728,38 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     goto error;
                 }
                 memset(cfffont->fake_glyph_names, 0x00, cfffont->LastChar * sizeof(gs_string));
+
+                /* Widths are defined assuming a 1000x1000 design grid, but we apply
+                 * them in font space - so undo the 1000x1000 scaling, and apply
+                 * the inverse of the font's x scaling
+                 */
+                x_scale = 0.001 / hypot(pfont->FontMatrix.xx, pfont->FontMatrix.xy);
+                if (cfffont->FontDescriptor != NULL) {
+                    code = pdfi_dict_knownget(ctx, cfffont->FontDescriptor, "MissingWidth", &tmp);
+                    if (code > 0) {
+                        if (tmp->type == PDF_INT) {
+                            cfffont->MissingWidth = ((pdf_num *) tmp)->value.i * x_scale;
+                        }
+                        else if (tmp->type == PDF_REAL) {
+                            cfffont->MissingWidth = ((pdf_num *) tmp)->value.d * x_scale;
+                        }
+                        else {
+                            cfffont->MissingWidth = 0;
+                        }
+                        pdfi_countdown(tmp);
+                        tmp = NULL;
+                    }
+                    else {
+                        cfffont->MissingWidth = 0;
+                    }
+                }
+                else {
+                    cfffont->MissingWidth = 1000 * x_scale;
+                }
+
                 code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, &tmp);
                 if (code > 0) {
                     int i;
-                    double x_scale;
                     int num_chars = cfffont->LastChar - cfffont->FirstChar + 1;
 
                     if (num_chars != pdfi_array_size((pdf_array *) tmp)) {
@@ -2745,12 +2774,6 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                         goto error;
                     }
                     memset(cfffont->Widths, 0x00, sizeof(double) * num_chars);
-
-                    /* Widths are defined assuming a 1000x1000 design grid, but we apply
-                     * them in font space - so undo the 1000x1000 scaling, and apply
-                     * the inverse of the font's x scaling
-                     */
-                    x_scale = 0.001 / hypot(pfont->FontMatrix.xx, pfont->FontMatrix.xy);
 
                     for (i = 0; i < num_chars; i++) {
                         code = pdfi_array_get_number(ctx, (pdf_array *) tmp, (uint64_t) i, &cfffont->Widths[i]);

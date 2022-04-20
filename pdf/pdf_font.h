@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -57,6 +57,7 @@ static inline pdf_font *pdfi_get_current_pdf_font(pdf_context *ctx)
     return NULL;
 }
 
+int pdfi_create_Widths(pdf_context *ctx, pdf_dict *font_dict, pdf_font *pdffont);
 int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_Encoding, pdf_obj **Encoding);
 gs_glyph pdfi_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_used);
 int pdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -92,6 +92,7 @@ typedef enum pdf_font_type_e {
     pdf_obj *Name;                  /* Should be a name object, but best allow for strings as well */\
     unsigned int FirstChar;         /* For PDF up to 1.4 this may be absent for the base 14 */\
     unsigned int LastChar;          /* For PDF up to 1.4 this may be absent for the base 14 */\
+    double MissingWidth; \
     double *Widths;                  /* For PDF up to 1.4 this may be absent for the base 14 */\
     pdf_array *Encoding;            /* Array built from name or dictionary */\
     pdf_obj *ToUnicode;             /* Name or stream (technically should be a stream, but we've seen Identity names */ \

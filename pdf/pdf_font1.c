@@ -503,6 +503,7 @@ int
 pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, byte *fbuf, int64_t fbuflen, pdf_font **ppdffont)
 {
     int code = 0;
+    double x_scale;
     pdf_obj *fontdesc = NULL;
     pdf_obj *basefont = NULL;
     pdf_obj *mapname = NULL;
@@ -636,10 +637,37 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             }
             memset(t1f->fake_glyph_names, 0x00, t1f->LastChar * sizeof(gs_string));
 
+            /* Widths are defined assuming a 1000x1000 design grid, but we apply
+             * them in font space - so undo the 1000x1000 scaling, and apply
+             * the inverse of the font's x scaling
+             */
+            x_scale = 0.001 / hypot(pfont1->FontMatrix.xx, pfont1->FontMatrix.xy);
+            if (t1f->FontDescriptor != NULL) {
+                code = pdfi_dict_knownget(ctx, t1f->FontDescriptor, "MissingWidth", &tmp);
+                if (code > 0) {
+                    if (tmp->type == PDF_INT) {
+                        t1f->MissingWidth = ((pdf_num *) tmp)->value.i * x_scale;
+                    }
+                    else if (tmp->type == PDF_REAL) {
+                        t1f->MissingWidth = ((pdf_num *) tmp)->value.d * x_scale;
+                    }
+                    else {
+                        t1f->MissingWidth = 0;
+                    }
+                    pdfi_countdown(tmp);
+                    tmp = NULL;
+                }
+                else {
+                    t1f->MissingWidth = 0;
+                }
+            }
+            else {
+                t1f->MissingWidth = 1000 * x_scale;
+            }
+
             code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, &tmp);
             if (code > 0) {
                 int i;
-                double x_scale;
                 int num_chars = t1f->LastChar - t1f->FirstChar + 1;
 
                 if (num_chars == pdfi_array_size((pdf_array *) tmp)) {
@@ -648,12 +676,6 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
                         code = gs_note_error(gs_error_VMerror);
                         goto error;
                     }
-
-                    /* Widths are defined assuming a 1000x1000 design grid, but we apply
-                     * them in font space - so undo the 1000x1000 scaling, and apply
-                     * the inverse of the font's x scaling
-                     */
-                    x_scale = 0.001 / hypot(pfont1->FontMatrix.xx, pfont1->FontMatrix.xy);
 
                     memset(t1f->Widths, 0x00, sizeof(double) * num_chars);
                     for (i = 0; i < num_chars; i++) {

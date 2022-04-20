@@ -427,6 +427,29 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     font->PDF_font = font_dict;
     pdfi_countup(font_dict);
 
+    if (font->FontDescriptor != NULL) {
+        code = pdfi_dict_knownget(ctx, font->FontDescriptor, "MissingWidth", &obj);
+        if (code > 0) {
+            if (obj->type == PDF_INT) {
+                font->MissingWidth = ((pdf_num *) obj)->value.i / 1000.0;
+            }
+            else if (obj->type == PDF_REAL) {
+                font->MissingWidth = ((pdf_num *) obj)->value.d  / 1000.0;
+            }
+            else {
+                font->MissingWidth = 0;
+            }
+            pdfi_countdown(obj);
+            obj = NULL;
+        }
+        else {
+            font->MissingWidth = 0;
+        }
+    }
+    else {
+        font->MissingWidth = 1.0;
+    }
+
     code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, (pdf_obj **)&obj);
     if (code < 0)
         goto error;
@@ -446,7 +469,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             code = pdfi_array_get_number(ctx, (pdf_array *)obj, (uint64_t)i, &font->Widths[i]);
             if (code < 0)
                 goto error;
-            font->Widths[i] /= 1000;
+            font->Widths[i] /= 1000.0;
         }
     }
     pdfi_countdown(obj);
