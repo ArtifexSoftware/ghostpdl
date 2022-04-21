@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -501,12 +501,9 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
              * (unused) stack stack space to allow for this but the function
              * exceeded even that.  Data on the stack may have been lost.
              * The only thing that we can do is move the stack pointer back and
-             * hope.  (We have not seen real Postscript files that have this
-             * problem.)
+             * hope.
              */
             push(-stack_depth_adjust);
-            ifree_object(penum->pfn, "sampled_data_continue(pfn)");
-            ifree_object(penum, "sampled_data_continue((enum)");
             return_error(gs_error_undefinedresult);
         }
     }
