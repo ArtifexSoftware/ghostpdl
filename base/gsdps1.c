@@ -309,7 +309,8 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
                     goto slow;
             }
         }
-        return 0;
+        code = 0;
+        goto exit;
       slow:rlist = pr + i;
         rcount = count - i;
     } {
