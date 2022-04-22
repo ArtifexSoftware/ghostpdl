@@ -444,7 +444,7 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
 
     code = pdfi_make_int_array_from_dict(ctx, (int **)&params.Size, function_dict, "Size");
     if (code != params.m) {
-        if (code > 0)
+        if (code >= 0)
             code = gs_error_rangecheck;
         goto function_0_error;
     }
