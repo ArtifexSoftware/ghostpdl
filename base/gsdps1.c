@@ -187,7 +187,7 @@ static inline bool black_vectors(gs_gstate *pgs, gx_device *dev)
 {
     if (dev->icc_struct != NULL && dev->icc_struct->blackvector &&
         pgs->black_textvec_state == NULL) {
-        return gsicc_setup_black_textvec(pgs, dev, false);
+        return gsicc_setup_blacktextvec(pgs, dev, false);
     }
     return false;
 }

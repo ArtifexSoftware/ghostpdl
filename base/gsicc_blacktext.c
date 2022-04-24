@@ -68,7 +68,7 @@ gsicc_blacktextvec_state_new(gs_memory_t *memory, bool is_text)
 
 /* Crude white color check. Only valid for ICC based RGB, CMYK, Gray, and LAB CS.
   Makes some assumptions about profile.  Also may want some tolerance check. */
-static inline bool is_white(gs_gstate *pgs, gs_color_space* pcs, gs_client_color* pcc)
+bool gsicc_is_white_blacktextvec(gs_gstate *pgs, gs_color_space* pcs, gs_client_color* pcc)
 {
     double Lstar = 0;
 
@@ -157,7 +157,7 @@ static inline bool is_white(gs_gstate *pgs, gs_color_space* pcs, gs_client_color
         return false;
 }
 
-bool gsicc_setup_black_textvec(gs_gstate *pgs, gx_device *dev, bool is_text)
+bool gsicc_setup_blacktextvec(gs_gstate *pgs, gx_device *dev, bool is_text)
 {
     gs_color_space *pcs_curr = gs_currentcolorspace_inline(pgs);
     gs_color_space *pcs_alt = gs_swappedcolorspace_inline(pgs);
@@ -179,7 +179,7 @@ bool gsicc_setup_black_textvec(gs_gstate *pgs, gx_device *dev, bool is_text)
         cs_adjust_color_count(pgs, 1); /* The set_gray will do a decrement, only need if pattern */
         pgs->black_textvec_state->value[0] = pgs->color[0].ccolor->paint.values[0];
 
-        if (is_white(pgs, pcs_curr, pgs->color[0].ccolor))
+        if (gsicc_is_white_blacktextvec(pgs, pcs_curr, pgs->color[0].ccolor))
             gs_setgray(pgs, 1.0);
         else
             gs_setgray(pgs, 0.0);
@@ -195,7 +195,7 @@ bool gsicc_setup_black_textvec(gs_gstate *pgs, gx_device *dev, bool is_text)
         cs_adjust_color_count(pgs, 1); /* The set_gray will do a decrement, only need if pattern */
         pgs->black_textvec_state->value[1] = pgs->color[0].ccolor->paint.values[0];
 
-        if (is_white(pgs, pcs_alt, pgs->color[0].ccolor))
+        if (gsicc_is_white_blacktextvec(pgs, pcs_alt, pgs->color[0].ccolor))
             gs_setgray(pgs, 1.0);
         else
             gs_setgray(pgs, 0.0);

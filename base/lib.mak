@@ -2650,7 +2650,8 @@ $(GLOBJ)gxpcmap.$(OBJ) : $(GLSRC)gxpcmap.c $(AK) $(gx_h) $(gserrors_h)\
  $(gsstruct_h) $(gsutil_h) $(gp_h) $(gxcoord_h) $(gxgetbit_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxfixed_h) $(gxmatrix_h) $(gxpcolor_h) $(gxclist_h) $(gxcldev_h)\
- $(gzstate_h) $(gdevp14_h) $(gdevmpla_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gzstate_h) $(gdevp14_h) $(gdevmpla_h) $(gsicc_blacktext_h)\
+ $(gscspace_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxpcmap.$(OBJ) $(C_) $(GLSRC)gxpcmap.c
 
 # ---------------- PostScript Type 1 (and Type 4) fonts ---------------- #

@@ -40,6 +40,8 @@
 #include "gdevp14.h"
 #include "gxgetbit.h"
 #include "gscoord.h"
+#include "gsicc_blacktext.h"
+#include "gscspace.h"
 
 #if RAW_PATTERN_DUMP
 unsigned int global_pat_index = 0;
@@ -1667,10 +1669,29 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
         return 0;
     }
     if (pinst->templat.PaintType == 2) {       /* uncolored */
-        if (pcs->base_space)
-            code = (pcs->base_space->type->remap_color)
-                (pc, pcs->base_space, pdc, pgs, dev, select);
-        else
+        if (pcs->base_space) {
+            if (dev->icc_struct != NULL && dev->icc_struct->blackvector) {
+                gs_client_color temppc;
+                gs_color_space *graycs = gs_cspace_new_DeviceGray(pgs->memory);
+
+                if (graycs == NULL) {
+                    code = (pcs->base_space->type->remap_color)
+                        (pc, pcs->base_space, pdc, pgs, dev, select);
+                } else {
+                    if (gsicc_is_white_blacktextvec((gs_gstate*) pgs,
+                        (gs_color_space*) pcs, (gs_client_color*) pc))
+                        temppc.paint.values[0] = 1.0;
+                    else
+                        temppc.paint.values[0] = 0.0;
+                    code = (graycs->type->remap_color)
+                        (&temppc, graycs, pdc, pgs, dev, select);
+                    rc_decrement_cs(graycs, "gs_pattern1_remap_color");
+                }
+            } else {
+                code = (pcs->base_space->type->remap_color)
+                    (pc, pcs->base_space, pdc, pgs, dev, select);
+            }
+        } else
             code = gs_note_error(gs_error_unregistered);
         if (code < 0)
             return code;

@@ -32,6 +32,6 @@ struct gsicc_blacktextvec_state_s {
 
 gsicc_blacktextvec_state_t* gsicc_blacktextvec_state_new(gs_memory_t *memory, bool is_text);
 void gsicc_restore_blacktextvec(gs_gstate *pgs, bool is_text);
-bool gsicc_setup_black_textvec(gs_gstate *pgs, gx_device *dev, bool is_text);
-
+bool gsicc_setup_blacktextvec(gs_gstate *pgs, gx_device *dev, bool is_text);
+bool gsicc_is_white_blacktextvec(gs_gstate *pgs, gs_color_space *pcs, gs_client_color *pcc);
 #endif

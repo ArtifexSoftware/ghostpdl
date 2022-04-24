@@ -325,7 +325,7 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
     ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
     if (black_text && pgs->black_textvec_state == NULL) {
-        gsicc_setup_black_textvec(pgs, (gx_device *)pgs->device, true);
+        gsicc_setup_blacktextvec(pgs, (gx_device *)pgs->device, true);
     }
 
     code = gx_set_dev_color(pgs);
