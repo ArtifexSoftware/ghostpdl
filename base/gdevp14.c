@@ -8449,6 +8449,11 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
     } else {
         frac comp_value[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
+        if (pgs->color_component_map.sep_type == SEP_NONE) {
+            color_set_null(pdc);
+            return;
+        }
+
         /* map to the color model */
         for (i = pgs->color_component_map.num_components - 1; i >= 0; i--)
             comp_value[i] = all;

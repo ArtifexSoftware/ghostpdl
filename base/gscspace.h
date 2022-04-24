@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -251,6 +251,7 @@ typedef struct gs_device_n_params_s {
     gs_color_space       *devn_process_space;
     uint num_process_names;
     char **process_names;
+    bool all_none;
 } gs_device_n_params;
 
 /* Define an abstract type for the client color space data */

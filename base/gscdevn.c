@@ -126,6 +126,7 @@ gs_cspace_new_DeviceN(
     pcsdevn->num_process_names = 0;
     pcsdevn->process_names = NULL;
     pcsdevn->mem = pmem->non_gc_memory;
+    pcsdevn->all_none = false;
 
     /* Allocate space for color names list. */
     code = alloc_device_n_map(&pcsdevn->map, pmem, "gs_cspace_build_DeviceN");
@@ -577,6 +578,7 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_gstate * pgs)
         = &pgs->color_component_map;
     gx_device * dev = pgs->device;
     bool non_match = false;
+    int none_count = 0;
 
     pcolor_component_map->num_components = num_comp;
     pcolor_component_map->cspace_id = pcs->id;
@@ -642,10 +644,15 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_gstate * pgs)
                    pcolor_component_map->color_map[i] = -1 and watching
                    for this case later during the remap operation. */
                 pcolor_component_map->color_map[i] = -1;
+                none_count++;
             }
         }
     }
     pcolor_component_map->use_alt_cspace = non_match;
+
+    if (none_count == num_comp)
+        return 1;
+
     return 0;
 }
 
@@ -705,6 +712,10 @@ gx_install_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
     code = check_DeviceN_component_names(pcs, pgs);
     if (code < 0)
        return code;
+
+    /* Indicates all colorants are /None */
+    if (code > 0)
+        pcs->params.device_n.all_none = true;
 
     if (pgs->icc_manager->device_named != NULL) {
         pcs->params.device_n.named_color_supported =

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1361,6 +1361,11 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
         for (i = 0; i < pgs->color_component_map.num_colorants; i++)
             cm_comps[i] = comp_value;
     } else {
+        if (pgs->color_component_map.sep_type == SEP_NONE) {
+            color_set_null(pdc);
+            return;
+        }
+
         /* map to the color model */
         map_components_to_colorants(&all, &(pgs->color_component_map), cm_comps,
             pgs->color_component_map.num_colorants);
@@ -1427,8 +1432,12 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
         if (des_profile->data_cs == gsCIELAB || des_profile->islab) {
             use_rgb2dev_icc = true;
         }
-    }
-    else {
+    } else {
+        if (pgs->color_component_map.sep_type == SEP_NONE) {
+            color_set_null(pdc);
+            return;
+        }
+
         /* map to the color model */
         map_components_to_colorants(&comp_value, &(pgs->color_component_map), cm_comps,
             pgs->color_component_map.num_colorants);
@@ -1532,6 +1541,11 @@ cmap_devicen_halftoned(const frac * pcc,
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
+    if (pcs->params.device_n.all_none == true) {
+        color_set_null(pdc);
+        return;
+    }
+
     dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag,
                           dev_profile, &des_profile, &render_cond);
@@ -1578,6 +1592,11 @@ cmap_devicen_direct(const frac * pcc,
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
+
+    if (pcs->params.device_n.all_none == true) {
+        color_set_null(pdc);
+        return;
+    }
 
     dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag,
