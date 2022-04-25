@@ -64,9 +64,21 @@ static void pdfi_font0_cid_subst_tables(const char *reg, const int reglen, const
 }
 
 static int
-pdfi_font0_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
+pdfi_font0_glyph_name(gs_font *pfont, gs_glyph index, gs_const_string *pstr)
 {
-    return_error(gs_error_rangecheck);
+    int code;
+    pdf_font_type0 *pt0font = (pdf_font_type0 *)pfont->client_data;
+    char gnm[64];
+    pdf_context *ctx = pt0font->ctx;
+    uint gindex = 0;
+
+    gs_snprintf(gnm, 64, "%lu", (long)index);
+    code = (*ctx->get_glyph_index)((gs_font *)pfont, (byte *)gnm, strlen(gnm), &gindex);
+    if (code < 0)
+        return code;
+    code = (*ctx->get_glyph_name)(pfont, (gs_glyph)gindex, (gs_const_string *)pstr);
+
+    return code;
 }
 
 static int
