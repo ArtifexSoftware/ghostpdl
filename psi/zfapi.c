@@ -2024,7 +2024,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
             glyph_length = get_type1_data(ff, &glyph, buf, buf_length);
         }
         else {
-            ref *CharStrings, char_name, *glyph;
+            ref *CharStrings, *CFFCharStrings, char_name, *glyph;
 
             if (ff->char_data != NULL) {
                 /*
@@ -2069,6 +2069,20 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
             }
             if (r_has_type(glyph, t_array) || r_has_type(glyph, t_mixedarray))
                 return gs_fapi_glyph_invalid_format;
+
+            if (r_has_type(glyph, t_integer)
+                && dict_find_string(pdr, "CFFCharStrings", &CFFCharStrings) > 0) {
+                ref *g2;
+                if (dict_find(CFFCharStrings, glyph, &g2) <= 0) {
+                    ref nd;
+                    make_int(&nd, 0);
+                    if (dict_find(CFFCharStrings, &nd, &g2) <= 0) {
+                        return gs_fapi_glyph_invalid_format;
+                    }
+                }
+                glyph = g2;
+            }
+
             if (!r_has_type(glyph, t_string))
                 return 0;
             glyph_length = get_type1_data(ff, glyph, buf, buf_length);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -309,9 +309,25 @@ int
 zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
 {
     ref *pcstr;
+    ref *cffcstr;
+    ref *pdr = pfont_dict(font);
 
     if (dict_find(&pfont_data(font)->CharStrings, pgref, &pcstr) <= 0)
         return_error(gs_error_undefined);
+
+    if (r_has_type(pcstr, t_integer)
+       && dict_find_string(pdr, "CFFCharStrings", &cffcstr) > 0) {
+        ref *pcstr2;
+        if (dict_find(cffcstr, pcstr, &pcstr2) <= 0) {
+            ref nd;
+            make_int(&nd, 0);
+            if (dict_find(cffcstr, &nd, &pcstr2) <= 0) {
+                return_error(gs_error_undefined);
+            }
+        }
+        pcstr = pcstr2;
+    }
+
     if (!r_has_type(pcstr, t_string)) {
         /*
          * The ADOBEPS4 Windows driver replaces the .notdef entry of
