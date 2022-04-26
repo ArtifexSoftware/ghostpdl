@@ -117,6 +117,9 @@ pdfi_t1_glyph_data(gs_font_type1 *pfont, gs_glyph glyph, gs_glyph_data_t *pgd)
 
     if (code >= 0) {
         code = pdfi_dict_get_by_key(ctx, pdffont1->CharStrings, glyphname, (pdf_obj **)&charstring);
+        if (code < 0) {
+            code = pdfi_map_glyph_name_via_agl(pdffont1->CharStrings, glyphname, &charstring);
+        }
         if (code >= 0)
             gs_glyph_data_from_bytes(pgd, charstring->data, 0, charstring->length, NULL);
     }

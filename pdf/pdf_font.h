@@ -73,6 +73,8 @@ int pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
 
 int pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint c, uint *g);
 
+int pdfi_map_glyph_name_via_agl(pdf_dict *cstrings, pdf_name *gname, pdf_string **cstring);
+
 int pdfi_init_font_directory(pdf_context *ctx);
 
 int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, gs_font **ppfont, bool cidfont);

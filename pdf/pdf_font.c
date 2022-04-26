@@ -34,10 +34,13 @@
 #include "pdf_font0.h"
 #include "pdf_fmap.h"
 #include "gscencs.h"            /* For gs_c_known_encode and gs_c_glyph_name */
+#include "gsagl.h"
 
 #include "strmio.h"
 #include "stream.h"
 #include "gsstate.h"            /* For gs_setPDFfontsize() */
+
+extern single_glyph_list_t SingleGlyphList[];
 
 static int pdfi_gs_setfont(pdf_context *ctx, gs_font *pfont)
 {
@@ -1701,6 +1704,62 @@ static int pdfi_global_glyph_code(const gs_font *pfont, gs_const_string *gstr, g
     else {
         code = gs_note_error(gs_error_invalidaccess);
     }
+    return code;
+}
+
+int pdfi_map_glyph_name_via_agl(pdf_dict *cstrings, pdf_name *gname, pdf_string **cstring)
+{
+    single_glyph_list_t *sgl = (single_glyph_list_t *)&(SingleGlyphList);
+    int i, code, ucode = gs_error_undefined;
+    *cstring = NULL;
+
+    if (gname->length == 7 && strncmp((char *)gname->data, "uni", 3) == 0) {
+        char u[5] = {0};
+        memcpy(u, gname->data + 3, 4);
+        code = sscanf(u, "%x", &ucode);
+        if (code <= 0)
+            ucode = gs_error_undefined;
+    }
+
+    if (ucode == gs_error_undefined) {
+        for (i = 0; sgl[i].Glyph != 0x00; i++) {
+            if (sgl[i].Glyph[0] == gname->data[0]
+                && strlen(sgl[i].Glyph) == gname->length
+                && !strncmp((char *)sgl[i].Glyph, (char *)gname->data, gname->length)) {
+                ucode = (int)sgl[i].Unicode;
+                break;
+            }
+        }
+    }
+    if (ucode > 0) {
+        for (i = 0; sgl[i].Glyph != 0x00; i++) {
+            if (sgl[i].Unicode == (unsigned short)ucode) {
+                pdf_string *s;
+                code = pdfi_dict_get((pdf_context *)cstrings->ctx, cstrings, (char *)sgl[i].Glyph, (pdf_obj **)&s);
+                if (code >= 0) {
+                    *cstring = s;
+                    break;
+                }
+            }
+        }
+        if (*cstring == NULL) {
+            char u[8] = {0};
+            code = gs_sprintf(u, "uni%04x", ucode);
+            if (code > 0) {
+                pdf_string *s;
+                code = pdfi_dict_get((pdf_context *)cstrings->ctx, cstrings, u, (pdf_obj **)&s);
+                if (code >= 0) {
+                    *cstring = s;
+                }
+            }
+        }
+    }
+
+    if (*cstring == NULL)
+        code = gs_note_error(gs_error_undefined);
+    else
+        code = 0;
+
     return code;
 }
 

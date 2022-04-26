@@ -35,11 +35,13 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_font.h"
-#include "pdf_font.h"
 #include "gscencs.h"
 #include "gsagl.h"
 #include "gxfont1.h"        /* for gs_font_type1_s */
 #include "gscrypt1.h"       /* for crypt_c1 */
+
+extern single_glyph_list_t SingleGlyphList[];
+
 
 /* forward declarations for the pdfi_ff_stub definition */
 static int
@@ -815,8 +817,6 @@ pdfi_fapi_get_charstring_name(gs_fapi_font *ff, int index, byte *buf, ushort buf
     return 0;
 }
 
-extern single_glyph_list_t SingleGlyphList[];
-
 static int
 pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
                 gs_string * name, gs_glyph ccode, gs_string * enc_char_name,
@@ -944,7 +944,9 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         code = pdfi_dict_get_by_key(cfffont->ctx, cfffont->CharStrings, glyphname, (pdf_obj **)&charstr);
         pdfi_countdown(glyphname);
         if (code < 0) {
-            code = pdfi_dict_get(cfffont->ctx, cfffont->CharStrings, ".notdef", (pdf_obj **)&charstr);
+            code = pdfi_map_glyph_name_via_agl(cfffont->CharStrings, glyphname, &charstr);
+            if (code < 0)
+                code = pdfi_dict_get(cfffont->ctx, cfffont->CharStrings, ".notdef", (pdf_obj **)&charstr);
         }
         if (code < 0)
             return code;
@@ -1139,10 +1141,13 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
                 code = pdfi_dict_get_by_key(pdffont1->ctx, pdffont1->CharStrings, glyphname, (pdf_obj **)&charstring);
                 pdfi_countdown(glyphname);
                 if (code < 0) {
-                    code = pdfi_dict_get(pdffont1->ctx, pdffont1->CharStrings, ".notdef", (pdf_obj **)&charstring);
+                    code = pdfi_map_glyph_name_via_agl(pdffont1->CharStrings, glyphname, &charstring);
                     if (code < 0) {
-                        code = gs_note_error(gs_error_invalidfont);
-                        goto done;
+                        code = pdfi_dict_get(pdffont1->ctx, pdffont1->CharStrings, ".notdef", (pdf_obj **)&charstring);
+                        if (code < 0) {
+                            code = gs_note_error(gs_error_invalidfont);
+                            goto done;
+                        }
                     }
                 }
                 cstrlen = charstring->length - leniv;
