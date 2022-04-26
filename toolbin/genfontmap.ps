@@ -58,8 +58,10 @@ QUIET not {
 
 % Create an array so we can sort it
 
+mark
 Fontmap { [ 3 1 roll ] } forall
-count array astore
+.nativeFontmap { [ 3 1 roll ] } forall
+counttomark array astore exch pop
 
 % sort the array
 { 0 get 100 string cvs exch 0 get 100 string cvs gt } .sort
@@ -75,6 +77,6 @@ count array astore
 flush
 
 (\ngenfontmap completed OK. ) =error
-Fontmap length Initial_count sub 10 string cvs =error
+Fontmap length .nativeFontmap length add Initial_count sub 10 string cvs =error
 ( new fonts added.\n\n) =error
 quit
