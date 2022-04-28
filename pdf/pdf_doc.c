@@ -900,7 +900,7 @@ static int pdfi_doc_Outlines(pdf_context *ctx)
             code = 0;
             goto exit;
         }
-        if (code < 0 || outline->type != PDF_DICT)
+        if (code < 0 || Next->type != PDF_DICT)
             goto exit;
 
         pdfi_countdown(outline);
