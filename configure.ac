@@ -2238,6 +2238,7 @@ if test x$WITH_CAL != x0; then
     unsigned char buf1[[256]];
     input1 = _mm256_loadu_si256((const __m256i *)buf1);
     input1 = _mm256_adds_epu8(input1, input1);
+    (void)_mm256_insert_epi64(input1, 0, 0);
     return(0);
     ])],
     [HAVE_AVX2="-DHAVE_AVX2"], [HAVE_AVX2=""])
