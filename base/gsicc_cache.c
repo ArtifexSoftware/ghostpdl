@@ -35,6 +35,7 @@
 #include "gxsync.h"
 #include "gzstate.h"
 #include "stdint_.h"
+#include "assert_.h"
         /*
          *  Note that the the external memory used to maintain
          *  links in the CMS is generally not visible to GS.
@@ -101,24 +102,25 @@ gsicc_cache_new(gs_memory_t *memory)
 
     /* We want this to be maintained in stable_memory.  It should be be effected by the
        save and restores */
-    result = gs_alloc_struct(memory->stable_memory, gsicc_link_cache_t, &st_icc_linkcache,
+    memory = memory->stable_memory;
+    result = gs_alloc_struct(memory, gsicc_link_cache_t, &st_icc_linkcache,
                              "gsicc_cache_new");
     if ( result == NULL )
         return(NULL);
     result->head = NULL;
     result->num_links = 0;
     result->cache_full = false;
-    result->memory = memory->stable_memory;
+    result->memory = memory;
     result->full_wait = NULL; /* Required so finaliser can work when result freed. */
-    rc_init_free(result, memory->stable_memory, 1, rc_gsicc_link_cache_free);
-    result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
+    rc_init_free(result, memory, 1, rc_gsicc_link_cache_free);
+    result->lock = gx_monitor_label(gx_monitor_alloc(memory),
                                     "gsicc_cache_new");
     if (result->lock == NULL) {
         rc_decrement(result, "gsicc_cache_new");
         return(NULL);
     }
-    result->full_wait = gx_semaphore_label(gx_semaphore_alloc(memory->stable_memory),
-                                    "gsicc_cache_new");
+    result->full_wait = gx_semaphore_label(gx_semaphore_alloc(memory),
+                                           "gsicc_cache_new");
     if (result->full_wait == NULL) {
         /* Don't free result->lock, as the finaliser for result does that! */
         rc_decrement(result, "gsicc_cache_new");
@@ -136,11 +138,15 @@ rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     /* Ending the entire cache.  The ref counts on all the links should be 0 */
     gsicc_link_cache_t *link_cache = (gsicc_link_cache_t * ) ptr_in;
 
-    if_debug2m(gs_debug_flag_icc, mem,
+    /* mem is unused, but we are passed it anyway by the ref counting mechanisms. */
+    assert(link_cache != NULL && mem == link_cache->memory);
+    if (link_cache == NULL)
+        return;
+    if_debug2m(gs_debug_flag_icc, link_cache->memory,
                "[icc] Removing link cache = "PRI_INTPTR" memory = "PRI_INTPTR"\n",
                (intptr_t)link_cache, (intptr_t)link_cache->memory);
     /* NB: freeing the link_cache will call icc_linkcache_finalize */
-    gs_free_object(mem->stable_memory, link_cache, "rc_gsicc_link_cache_free");
+    gs_free_object(link_cache->memory, link_cache, "rc_gsicc_link_cache_free");
 }
 
 /* release the monitor of the link_cache when it is freed */
@@ -149,9 +155,13 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
 {
     gsicc_link_cache_t *link_cache = (gsicc_link_cache_t * ) ptr;
 
+    /* mem is unused, but we are passed it anyway by the ref counting mechanisms. */
+    assert(link_cache != NULL && mem == link_cache->memory);
+    if (link_cache == NULL)
+        return;
     while (link_cache->head != NULL) {
         if (link_cache->head->ref_count != 0) {
-            emprintf2(mem, "link at "PRI_INTPTR" being removed, but has ref_count = %d\n",
+            emprintf2(link_cache->memory, "link at "PRI_INTPTR" being removed, but has ref_count = %d\n",
                       (intptr_t)link_cache->head, link_cache->head->ref_count);
             link_cache->head->ref_count = 0;	/* force removal */
         }
@@ -159,7 +169,7 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
     }
 #ifdef DEBUG
     if (link_cache->num_links != 0) {
-        emprintf1(mem, "num_links is %d, should be 0.\n", link_cache->num_links);
+        emprintf1(link_cache->memory, "num_links is %d, should be 0.\n", link_cache->num_links);
     }
 #endif
     if (link_cache->rc.ref_count == 0) {
@@ -276,7 +286,8 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
 
     /* The link has to be added in stable memory. We want them
        to be maintained across the gsave and grestore process */
-    result = gs_alloc_struct(memory->stable_memory, gsicc_link_t, &st_icc_link,
+    memory = memory->stable_memory;
+    result = gs_alloc_struct(memory, gsicc_link_t, &st_icc_link,
                              "gsicc_alloc_link");
     if (result == NULL)
         return NULL;
@@ -299,12 +310,12 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
     result->includes_devlink = 0;
     result->is_identity = false;
     result->valid = false;		/* not yet complete */
-    result->memory = memory->stable_memory;
+    result->memory = memory;
 
-    result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
+    result->lock = gx_monitor_label(gx_monitor_alloc(memory),
                                     "gsicc_link_new");
     if (result->lock == NULL) {
-        gs_free_object(memory->stable_memory, result, "gsicc_alloc_link(lock)");
+        gs_free_object(memory, result, "gsicc_alloc_link(lock)");
         return NULL;
     }
     gx_monitor_enter(result->lock);     /* this link is owned by this thread until built and made "valid" */
@@ -888,6 +899,8 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
     gsicc_link_t *link;
     int retries = 0;
 
+    assert(cache_mem == cache_mem->stable_memory);
+
     *ret_link = NULL;
     /* First see if we can add a link */
     /* TODO: this should be based on memory usage, not just num_links */
@@ -940,7 +953,7 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
     /* insert an empty link that we will reserve so we can unlock while	*/
     /* building the link contents. If successful, the entry will set	*/
     /* the hash for the link, Set valid=false, and lock the profile     */
-    (*ret_link) = gsicc_alloc_link(cache_mem->stable_memory, hash);
+    (*ret_link) = gsicc_alloc_link(cache_mem, hash);
     /* NB: the link returned will be have the lock owned by this thread */
     /* the lock will be released when the link becomes valid.           */
     if (*ret_link) {
@@ -1221,10 +1234,11 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
         gs_input_profile->default_match == DEFAULT_GRAY &&
         pgs->icc_manager != NULL && devicegraytok) {
         if (icc_manager->graytok_profile == NULL) {
+            assert(pgs->icc_manager->memory == pgs->icc_manager->memory->stable_memory);
             icc_manager->graytok_profile =
                 gsicc_set_iccsmaskprofile(GRAY_TO_K, strlen(GRAY_TO_K),
                                           pgs->icc_manager,
-                                          pgs->icc_manager->memory->stable_memory);
+                                          pgs->icc_manager->memory);
             if (icc_manager->graytok_profile == NULL) {
                 /* Cant create the link */
                 link->ref_count--;

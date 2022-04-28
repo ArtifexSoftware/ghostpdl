@@ -40,6 +40,7 @@
 #include "gpmisc.h"
 #include "gxdevice.h"
 #include "gxdevsop.h"
+#include "assert_.h"
 
 #define ICC_HEADER_SIZE 128
 #define CREATE_V2_DATA 0
@@ -2368,11 +2369,12 @@ gsicc_manager_new(gs_memory_t *memory)
 
     /* Allocated in stable gc memory.  This done since the profiles
        may be introduced late in the process. */
-    result = gs_alloc_struct(memory->stable_memory, gsicc_manager_t, &st_gsicc_manager,
+    memory = memory->stable_memory;
+    result = gs_alloc_struct(memory, gsicc_manager_t, &st_gsicc_manager,
                              "gsicc_manager_new");
     if ( result == NULL )
         return NULL;
-    rc_init_free(result, memory->stable_memory, 1, rc_gsicc_manager_free);
+    rc_init_free(result, memory, 1, rc_gsicc_manager_free);
     result->default_gray = NULL;
     result->default_rgb = NULL;
     result->default_cmyk = NULL;
@@ -2382,14 +2384,14 @@ gsicc_manager_new(gs_memory_t *memory)
     result->device_named = NULL;
     result->device_n = NULL;
     result->smask_profiles = NULL;
-    result->memory = memory->stable_memory;
+    result->memory = memory;
     result->srcgtag_profile = NULL;
     result->override_internal = false;
     return result;
 }
 
 static void gsicc_manager_free_contents(gsicc_manager_t *icc_manager,
-                                  client_name_t cname)
+                                        client_name_t cname)
 {
     int k;
     gsicc_devicen_entry_t *device_n, *device_n_next;
@@ -2428,6 +2430,8 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     /* Ending the manager.  Decrement the ref counts of the profiles
        and then free the structure */
     gsicc_manager_t *icc_manager = (gsicc_manager_t * ) ptr_in;
+
+    assert(mem == icc_manager->memory);
 
     gs_free_object(icc_manager->memory, icc_manager, "rc_gsicc_manager_free");
 }
@@ -2476,7 +2480,7 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
 /* Allocates and loads the named color structure from the stream. */
 static int
 gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
-                          gs_memory_t *memory)
+                             gs_memory_t *memory)
 {
     int                     num_bytes,profile_size;
     unsigned char           *buffer_ptr;
@@ -2494,7 +2498,7 @@ gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
         return code;
     /* Allocate the buffer, stuff with the profile */
     buffer_ptr = gs_alloc_bytes(memory->non_gc_memory, profile_size,
-                                        "gsicc_load_profile");
+                                "gsicc_load_profile");
     if (buffer_ptr == NULL)
         return gs_throw(gs_error_VMerror, "Insufficient memory for profile buffer");
     num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
