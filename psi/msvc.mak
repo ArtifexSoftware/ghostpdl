@@ -278,6 +278,15 @@ IMGGENDIR=$(GLGENDIR)
 IMGOBJDIR=$(GLOBJDIR)
 !endif
 
+# CAL detects the presence of SSE/AVX2 at runtime. We assume
+# modern windows compilers can build for both, and they will
+# just be disabled automatically if not present. If the compiler
+# can't cope with this, then define CAL_CFLAGS to be empty
+# in the makefile invocation.
+!ifndef CAL_CFLAGS
+CAL_CFLAGS=/DHAVE_SSE4_2 /DHAVE_AVX2
+!endif
+
 CONTRIBDIR=.\contrib
 
 # Can we build PCL and XPS and PDF
