@@ -62,7 +62,7 @@ static int gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gx_device *dev,
                                   gsicc_rendering_param_t *rendering_params,
                                   gsicc_hashlink_t *hash);
 
-static void gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory);
+static void gsicc_remove_link(gsicc_link_t *link);
 
 static void gsicc_get_buff_hash(unsigned char *data, int64_t *hash, unsigned int num_bytes);
 
@@ -155,7 +155,7 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
                       (intptr_t)link_cache->head, link_cache->head->ref_count);
             link_cache->head->ref_count = 0;	/* force removal */
         }
-        gsicc_remove_link(link_cache->head, mem);
+        gsicc_remove_link(link_cache->head);
     }
 #ifdef DEBUG
     if (link_cache->num_links != 0) {
@@ -356,11 +356,13 @@ gsicc_link_free_contents(gsicc_link_t *icc_link)
 }
 
 void
-gsicc_link_free(gsicc_link_t *icc_link, const gs_memory_t *memory)
+gsicc_link_free(gsicc_link_t *icc_link)
 {
+    if (icc_link == NULL)
+        return;
     gsicc_link_free_contents(icc_link);
 
-    gs_free_object(memory->stable_memory, icc_link, "gsicc_link_free");
+    gs_free_object(icc_link->memory, icc_link, "gsicc_link_free");
 }
 
 void
@@ -589,14 +591,15 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
 
 /* Remove link from cache.  Notify CMS and free */
 static void
-gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory)
+gsicc_remove_link(gsicc_link_t *link)
 {
     gsicc_link_t *curr, *prev;
     gsicc_link_cache_t *icc_link_cache = link->icc_link_cache;
+    const gs_memory_t *memory = link->memory;
 
     if_debug2m(gs_debug_flag_icc, memory,
                "[icc] Removing link = "PRI_INTPTR" memory = "PRI_INTPTR"\n",
-               (intptr_t)link, (intptr_t)memory->stable_memory);
+               (intptr_t)link, (intptr_t)memory);
     /* NOTE: link->ref_count must be 0: assert ? */
     gx_monitor_enter(icc_link_cache->lock);
     if (link->ref_count != 0) {
@@ -627,7 +630,7 @@ gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory)
             gx_semaphore_signal(icc_link_cache->full_wait);	/* let a waiting thread run */
         }
         gx_monitor_leave(icc_link_cache->lock);
-        gsicc_link_free(link, memory);	/* outside link cache now. */
+        gsicc_link_free(link);	/* outside link cache now. */
     } else {
         /* even if we didn't find the link to remove, unlock the cache */
         gx_monitor_leave(icc_link_cache->lock);
@@ -931,7 +934,7 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
             /* Even if we remove this link, we may still be maxed out so*/
             /* the outermost 'while' will check to make sure some other	*/
             /* thread did not grab the one we remove.			*/
-            gsicc_remove_link(link, cache_mem);
+            gsicc_remove_link(link);
         }
     }
     /* insert an empty link that we will reserve so we can unlock while	*/
@@ -1307,7 +1310,7 @@ icc_link_error:
        does not maintain an invalid entry.  Any other allocations
        (e.g. profile handles) would get freed when the profiles
         are freed */
-    gsicc_remove_link(link, cache_mem);
+    gsicc_remove_link(link);
 
     return NULL;
 }
