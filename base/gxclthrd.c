@@ -255,7 +255,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
             }
             rc_increment(*cachep);
                 ncdev->icc_cache_cl = *cachep;
-        } else if ((ncdev->icc_cache_cl = gsicc_cache_new(thread_mem)) == NULL)
+        } else if ((ncdev->icc_cache_cl = gsicc_cache_new(thread_mem->thread_safe_memory)) == NULL)
             goto out_cleanup;
     }
     if (bg_print) {
