@@ -2212,6 +2212,7 @@ if test x$WITH_CAL != x0; then
     unsigned char buf1[[128]];
     input1 = _mm_loadu_si128((const __m128i *)buf1);
     input1 = _mm_hadd_epi32(input1, input1);
+    (void)_mm_extract_epi64(input1, 0);
     return(0);
     ])],
     [HAVE_SSE4_2="-DHAVE_SSE4_2"], [HAVE_SSE4_2=""])
