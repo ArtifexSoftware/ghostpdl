@@ -157,6 +157,15 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
         if (c < 0)
             break;
         switch(c) {
+            case '%':
+                do {
+                    c = pdfi_read_byte(ctx, function_stream);
+                    if (c < 0)
+                        break;
+                    if (c == 0x0a || c == 0x0d)
+                        break;
+                }while (1);
+                break;
             case 0x20:
             case 0x0a:
             case 0x0d:
