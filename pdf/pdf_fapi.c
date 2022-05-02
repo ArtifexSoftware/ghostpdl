@@ -933,8 +933,9 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         code = (*ctx->get_glyph_name)((gs_font *)pbfont, ccode, &gname);
         if (code >= 0) {
             code = pdfi_name_alloc(ctx, (byte *) gname.data, gname.size, (pdf_obj **) &glyphname);
-            if (code >= 0)
-                pdfi_countup(glyphname);
+            if (code < 0)
+                return code;
+            pdfi_countup(glyphname);
         }
 
         if (code < 0) {
@@ -942,12 +943,12 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
             return code;
         }
         code = pdfi_dict_get_by_key(cfffont->ctx, cfffont->CharStrings, glyphname, (pdf_obj **)&charstr);
-        pdfi_countdown(glyphname);
         if (code < 0) {
             code = pdfi_map_glyph_name_via_agl(cfffont->CharStrings, glyphname, &charstr);
             if (code < 0)
                 code = pdfi_dict_get(cfffont->ctx, cfffont->CharStrings, ".notdef", (pdf_obj **)&charstr);
         }
+        pdfi_countdown(glyphname);
         if (code < 0)
             return code;
 
@@ -1139,17 +1140,18 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
                     return code;
                 pdfi_countup(glyphname);
                 code = pdfi_dict_get_by_key(pdffont1->ctx, pdffont1->CharStrings, glyphname, (pdf_obj **)&charstring);
-                pdfi_countdown(glyphname);
                 if (code < 0) {
                     code = pdfi_map_glyph_name_via_agl(pdffont1->CharStrings, glyphname, &charstring);
                     if (code < 0) {
                         code = pdfi_dict_get(pdffont1->ctx, pdffont1->CharStrings, ".notdef", (pdf_obj **)&charstring);
                         if (code < 0) {
+                            pdfi_countdown(glyphname);
                             code = gs_note_error(gs_error_invalidfont);
                             goto done;
                         }
                     }
                 }
+                pdfi_countdown(glyphname);
                 cstrlen = charstring->length - leniv;
                 if (buf != NULL && cstrlen <= buf_length) {
                     if (ff->need_decrypt && pfont1->data.lenIV >= 0)
