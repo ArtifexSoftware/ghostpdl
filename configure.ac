@@ -2288,12 +2288,15 @@ if test x$WITH_CAL != x0; then
   CAL_NEON_CFLAGS=""
   if test "x$HAVE_SSE4_2" != x; then
     CAL_SSE4_2_CFLAGS="-msse4.2"
+    CAL_CFLAGS="$CAL_CFLAGS $HAVE_SSE4_2"
   fi
   if test "x$HAVE_AVX2" != x; then
     CAL_AVX2_CFLAGS="-mavx2"
+    CAL_CFLAGS="$CAL_CFLAGS $HAVE_AVX2"
   fi
   if test "x$HAVE_NEON" != x; then
     CAL_NEON_CFLAGS="-mfpu=neon -mcpu=cortex-a53"
+    CAL_CFLAGS="$CAL_CFLAGS $HAVE_NEON"
   fi
 fi
 
