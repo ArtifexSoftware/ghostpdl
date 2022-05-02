@@ -303,7 +303,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
     ppdev->orig_procs = pdev->procs;
     for ( pass = 1; pass <= (reallocate ? 2 : 1); ++pass ) {
         ulong mem_space;
-        ulong pdf14_trans_buffer_size = 0;
+        size_t pdf14_trans_buffer_size = 0;
         byte *base = 0;
         bool bufferSpace_is_default = false;
         gdev_space_params space_params;
@@ -335,7 +335,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
         mem_space = buf_space.bits + buf_space.line_ptrs;
         if (ppdev->page_uses_transparency) {
             pdf14_trans_buffer_size = (ESTIMATED_PDF14_ROW_SPACE(max(1, pdev->width), pdev->color_info.num_components, deep ? 16 : 8) >> 3);
-            if (new_height < (max_ulong - mem_space) / pdf14_trans_buffer_size) {
+            if (new_height < (max_size_t - mem_space) / pdf14_trans_buffer_size) {
                 pdf14_trans_buffer_size *= pdev->height;
             } else {
                 size_ok = 0;
