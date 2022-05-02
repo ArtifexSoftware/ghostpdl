@@ -28,7 +28,7 @@ static inline int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, 
 
 static inline int pdfi_dict_get_nocache(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
 {
-    return pdfi_dict_get_common(ctx, d, Key, o, true);
+    return pdfi_dict_get_common(ctx, d, Key, o, false);
 }
 
 
