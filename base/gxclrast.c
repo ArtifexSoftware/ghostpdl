@@ -747,9 +747,9 @@ in:                             /* Initialize for a new page. */
         op = *cbp++;
 #ifdef DEBUG
         if (gs_debug_c('L')) {
-            long offset = (long)clist_file_offset(st, cbp - 1 - cbuf.data);
+            int64_t offset = clist_file_offset(st, cbp - 1 - cbuf.data);
 
-            dmlprintf1(mem, "[L] %ld:", offset);
+            dmlprintf1(mem, "[L] %"PRIu64":", offset);
             clist_debug_op(mem, cbp-1);
         }
 #endif
