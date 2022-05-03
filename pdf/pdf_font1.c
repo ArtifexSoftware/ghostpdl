@@ -373,7 +373,7 @@ pdfi_t1_decode_pfb(pdf_context *ctx, byte *inbuf, int inlen, byte **outbuf, int 
     *outbuf = NULL;
     *outlen = 0;
 
-    strm = push_pfb_filter(ctx->memory, inbuf, inbuf + inlen + 1);
+    strm = push_pfb_filter(ctx->memory, inbuf, inbuf + inlen);
     if (strm == NULL) {
         code = gs_note_error(gs_error_VMerror);
     }
@@ -391,7 +391,7 @@ pdfi_t1_decode_pfb(pdf_context *ctx, byte *inbuf, int inlen, byte **outbuf, int 
         }
         else {
             d = decodebuf;
-            strm = push_pfb_filter(ctx->memory, inbuf, inbuf + inlen + 1);
+            strm = push_pfb_filter(ctx->memory, inbuf, inbuf + inlen);
             while (1) {
                 c = sgetc(strm);
                 if (c < 0)
