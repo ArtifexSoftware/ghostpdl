@@ -292,6 +292,8 @@ struct cmm_dev_profile_s {
         bool usefastcolor;         /* Used when we want to use no cm */
         bool blacktext;           /* Force text to be pure black */
         bool blackvector;         /* Force vectors to be pure black */
+        float blackthresholdL;    /* Luminance threshold */
+        float blackthresholdC;    /* Chrominance threshold */
         bool supports_devn;        /* If the target handles devn colors */
         gs_overprint_control_t overprint_control;	/* enable is the default */
         gsicc_namelist_t *spotnames;  /* If our device profiles are devn */

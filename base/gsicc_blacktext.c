@@ -23,10 +23,6 @@
 #include "gsicc_blacktext.h"
 #include "gsicc_cache.h"
 
-/* L* value.  Above this value things are mapped to pure white.
-   Below this value things are mapped to pure black. */
-#define WHITE_THRESHOLD 95
-
 /* gsicc_blacktextvec_state_t is going to be storing GCed items
    (color spaces and client colors) and so will need to be GCed */
 gs_private_st_ptrs4(st_blacktextvec_state, gsicc_blacktextvec_state_t,
@@ -68,14 +64,21 @@ gsicc_blacktextvec_state_new(gs_memory_t *memory, bool is_text)
 
 /* Crude white color check. Only valid for ICC based RGB, CMYK, Gray, and LAB CS.
   Makes some assumptions about profile.  Also may want some tolerance check. */
-bool gsicc_is_white_blacktextvec(gs_gstate *pgs, gs_color_space* pcs, gs_client_color* pcc)
+bool gsicc_is_white_blacktextvec(gs_gstate *pgs, gx_device *dev, gs_color_space* pcs, gs_client_color* pcc)
 {
     double Lstar = 0;
+    double astar = 0;
+    double bstar = 0;
+    cmm_dev_profile_t* dev_profile;
+
+    dev_proc(dev, get_profile)(dev, &dev_profile);
 
     if (gs_color_space_get_index(pcs) == gs_color_space_index_ICC) {
         if (pcs->cmm_icc_profile_data->data_cs == gsCIELAB) {
-            if (pcc->paint.values[0] >= WHITE_THRESHOLD)
-                return true;
+            if (pcc->paint.values[0] >= dev_profile->blackthresholdL &&
+                fabs(pcc->paint.values[1]) < dev_profile->blackthresholdC &&
+                fabs(pcc->paint.values[2]) < dev_profile->blackthresholdC)
+                    return true;
             else
                 return false;
         }
@@ -122,7 +125,12 @@ bool gsicc_is_white_blacktextvec(gs_gstate *pgs, gs_color_space* pcs, gs_client_
             gsicc_release_link(icc_link);
 
             Lstar = pdes[0] * 100.0 / 65535.0;
-            if (Lstar >= WHITE_THRESHOLD)
+            astar = pdes[1] * 256.0 / 65535.0 - 128.0;
+            bstar = pdes[2] * 256.0 / 65535.0 - 128.0;
+
+            if (Lstar >= dev_profile->blackthresholdL &&
+                fabs(astar) < dev_profile->blackthresholdC &&
+                fabs(bstar) < dev_profile->blackthresholdC)
                 return true;
             else
                 return false;
@@ -179,7 +187,7 @@ bool gsicc_setup_blacktextvec(gs_gstate *pgs, gx_device *dev, bool is_text)
         cs_adjust_color_count(pgs, 1); /* The set_gray will do a decrement, only need if pattern */
         pgs->black_textvec_state->value[0] = pgs->color[0].ccolor->paint.values[0];
 
-        if (gsicc_is_white_blacktextvec(pgs, pcs_curr, pgs->color[0].ccolor))
+        if (gsicc_is_white_blacktextvec(pgs, dev, pcs_curr, pgs->color[0].ccolor))
             gs_setgray(pgs, 1.0);
         else
             gs_setgray(pgs, 0.0);
@@ -195,7 +203,7 @@ bool gsicc_setup_blacktextvec(gs_gstate *pgs, gx_device *dev, bool is_text)
         cs_adjust_color_count(pgs, 1); /* The set_gray will do a decrement, only need if pattern */
         pgs->black_textvec_state->value[1] = pgs->color[0].ccolor->paint.values[0];
 
-        if (gsicc_is_white_blacktextvec(pgs, pcs_alt, pgs->color[0].ccolor))
+        if (gsicc_is_white_blacktextvec(pgs, dev, pcs_alt, pgs->color[0].ccolor))
             gs_setgray(pgs, 1.0);
         else
             gs_setgray(pgs, 0.0);

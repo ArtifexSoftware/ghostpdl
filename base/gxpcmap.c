@@ -1679,7 +1679,7 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
                         (pc, pcs->base_space, pdc, pgs, dev, select);
                 } else {
                     if (gsicc_is_white_blacktextvec((gs_gstate*) pgs,
-                        (gs_color_space*) pcs, (gs_client_color*) pc))
+                        dev, (gs_color_space*) pcs, (gs_client_color*) pc))
                         temppc.paint.values[0] = 1.0;
                     else
                         temppc.paint.values[0] = 0.0;

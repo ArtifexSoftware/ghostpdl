@@ -32,6 +32,9 @@ extern gx_device_nup gs_nup_device;
 /* This is for backward compatibility only. */
 #define PAGESIZE_IS_MEDIASIZE
 
+#define BLACKTHRESHOLDL 90
+#define BLACKTHRESHOLDC 3
+
 /* Names corresponding to gs_overprint_control_t enum */
 static const char *const overprint_control_names[] = {
     gs_overprint_control_names, 0
@@ -97,6 +100,8 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     bool usefastcolor = false;  /* set for unmanaged color */
     bool blacktext = false;
     bool blackvector = false;
+    float blackthresholdL = BLACKTHRESHOLDL;
+    float blackthresholdC = BLACKTHRESHOLDC;
     /* By default overprinting only valid with cmyk devices */
     gs_overprint_control_t overprint_control = gs_overprint_control_enable;
     bool prebandthreshold = true, temp_bool = false;
@@ -356,6 +361,8 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         usefastcolor = dev_profile->usefastcolor;
         blacktext = dev_profile->blacktext;
         blackvector = dev_profile->blackvector;
+        blackthresholdC = dev_profile->blackthresholdC;
+        blackthresholdL = dev_profile->blackthresholdL;
         overprint_control = dev_profile->overprint_control;
         prebandthreshold = dev_profile->prebandthreshold;
         /* With respect to Output profiles that have non-standard colorants,
@@ -401,6 +408,12 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "BlackVector") == 0) {
         return param_write_bool(plist, "BlackVector", &blackvector);
+    }
+    if (strcmp(Param, "BlackThresholdL") == 0) {
+        return param_write_float(plist, "BlackThresholdL", &blackthresholdL);
+    }
+    if (strcmp(Param, "BlackThresholdC") == 0) {
+        return param_write_float(plist, "BlackThresholdC", &blackthresholdC);
     }
     if (strcmp(Param, "Overprint") == 0) {
         gs_param_string opc_name;
@@ -545,6 +558,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     bool usefastcolor = false;  /* set for unmanaged color */
     bool blacktext = false;
     bool blackvector = false;
+    float blackthresholdL = BLACKTHRESHOLDL;
+    float blackthresholdC = BLACKTHRESHOLDC;
     /* By default, only overprint if the device supports it */
     gs_overprint_control_t overprint_control = gs_overprint_control_enable;
     bool prebandthreshold = true, temp_bool;
@@ -661,6 +676,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         usefastcolor = dev_profile->usefastcolor;
         blacktext = dev_profile->blacktext;
         blackvector = dev_profile->blackvector;
+        blackthresholdC = dev_profile->blackthresholdC;
+        blackthresholdL = dev_profile->blackthresholdL;
         overprint_control = dev_profile->overprint_control;
         prebandthreshold = dev_profile->prebandthreshold;
         /* With respect to Output profiles that have non-standard colorants,
@@ -723,6 +740,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_bool(plist, "UseFastColor", &usefastcolor)) < 0 ||
         (code = param_write_bool(plist, "BlackText", &blacktext)) < 0 ||
         (code = param_write_bool(plist, "BlackVector", &blackvector)) < 0 ||
+        (code = param_write_float(plist, "BlackThresholdL", &blackthresholdL)) < 0 ||
+        (code = param_write_float(plist, "BlackThresholdC", &blackthresholdC)) < 0 ||
         (code = param_write_bool(plist, "PreBandThreshold", &prebandthreshold)) < 0 ||
         (code = param_write_string(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
         (code = param_write_string(plist,"VectorICCProfile", &(profile_array[1]))) < 0 ||
@@ -1247,6 +1266,35 @@ gx_default_put_blacktext(bool blacktext, gx_device* dev)
 }
 
 static int
+gx_default_put_blackthresholds(float blackthresholdL, float blackthresholdC, gx_device *dev)
+{
+    int code = 0;
+    cmm_dev_profile_t* profile_struct;
+
+    if (dev_proc(dev, get_profile) == NULL) {
+        if (dev->icc_struct == NULL) {
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
+            if (dev->icc_struct == NULL)
+                return_error(gs_error_VMerror);
+        }
+        dev->icc_struct->blackthresholdL = blackthresholdL;
+        dev->icc_struct->blackthresholdC = blackthresholdC;
+    } else {
+        code = dev_proc(dev, get_profile)(dev, &profile_struct);
+        if (profile_struct == NULL) {
+            /* Create now  */
+            dev->icc_struct = gsicc_new_device_profile_array(dev);
+            profile_struct = dev->icc_struct;
+            if (profile_struct == NULL)
+                return_error(gs_error_VMerror);
+        }
+        profile_struct->blackthresholdL = blackthresholdL;
+        profile_struct->blackthresholdC = blackthresholdC;
+    }
+    return code;
+}
+
+static int
 gx_default_put_blackvector(bool blackvector, gx_device* dev)
 {
     int code = 0;
@@ -1551,6 +1599,8 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     bool usefastcolor = false;
     bool blacktext = false;
     bool blackvector = false;
+    float blackthresholdL = BLACKTHRESHOLDL;
+    float blackthresholdC = BLACKTHRESHOLDC;
     gs_overprint_control_t overprint_control = gs_overprint_control_enable;
     bool prebandthreshold = false;
     bool use_antidropout = dev->color_info.use_antidropout_downscaler;
@@ -1572,6 +1622,8 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
         usefastcolor = dev->icc_struct->usefastcolor;
         blacktext = dev->icc_struct->blacktext;
         blackvector = dev->icc_struct->blackvector;
+        blackthresholdL = dev->icc_struct->blackthresholdL;
+        blackthresholdC = dev->icc_struct->blackthresholdC;
         prebandthreshold = dev->icc_struct->prebandthreshold;
         overprint_control = dev->icc_struct->overprint_control;
     } else {
@@ -1889,6 +1941,16 @@ nce:
     }
     if ((code = param_read_bool(plist, (param_name = "BlackVector"),
                                                         &blackvector)) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    }
+    if ((code = param_read_float(plist, (param_name = "BlackThresholdL"),
+                                                        &blackthresholdL)) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    }
+    if ((code = param_read_float(plist, (param_name = "BlackThresholdC"),
+                                                        &blackthresholdC)) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
@@ -2339,6 +2401,9 @@ label:\
     if (code < 0)
         return code;
     code = gx_default_put_blackvector(blackvector, dev);
+    if (code < 0)
+        return code;
+    code = gx_default_put_blackthresholds(blackthresholdL, blackthresholdC, dev);
     if (code < 0)
         return code;
     code = gx_default_put_overprint_control(overprint_control, dev);

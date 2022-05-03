@@ -2667,7 +2667,46 @@ processing of PostScript source files. Note: in releases 7.30 and
 <dd>Forces text to be drawn with black.  This occurs for text fill and
 text stroke operations.  PDF output created with this setting will be
 updated to be drawn with gray values of 0.  Type 3 fonts, which are
-sometimes used for graphics, are not affected by this parameter. </dd>
+sometimes used for graphics, are not affected by this parameter. Note,
+works only for fills with gray, rgb, and cmyk.  Pattern,
+separation, and deviceN fills will not be affected.</dd>
+</dl>
+
+<a name="BlackVector"></a>
+<dl>
+    <dt><code>-dBlackVector</code></dt>
+<dd>Forces vector stroke and fills to be drawn with black.  PDF output created with this setting will be
+updated to be drawn with gray values of 0.  Note, works only for fills with gray, rgb, and cmyk.  Pattern,
+separation, and deviceN fills will not be affected. </dd>
+</dl>
+
+<a name="BlackThresholdL"></a>
+<dl>
+    <dt><code>-dBlackThresholdL=</code><em>float</em></dt>
+<dd>Sets the threshold for the luminance value (L*) at which that value
+and above will be mapped to white when using the BlackText and BlackVector
+option.  Default is 90. Pure white has a value of 100.  Pure black has a value
+of 0. This means that if you set BlackThresholdL=101, all colors will be
+mapped to black. If you set BlackThresholdL=75, colors that are below an
+L* value of 75 will be mapped to black. Colors at or above an L* of 75 will
+be mapped to white, depending upon the setting of BlackThresholdC (see below). </dd>
+</dl>
+
+<a name="BlackThresholdC"></a>
+<dl>
+    <dt><code>-dBlackThresholdC=</code><em>float</em></dt>
+<dd>For colors that are at or above the value set by BlackThresholdL
+(or the default setting of 90), map colors to white that are within
+a distance of BlackThresholdC from the CIELAB neutral axis in terms
+of the L1 norm on the a* and b* value.  All others are mapped to black.
+This has the effect of forcing colors with high luminance and high
+chrominance to black (e.g. pure yellow) while those with a lower luminance and less
+chrominance to white (e.g. a light gray).  Default value is 3.  You can
+visualize the region that is mapped to white as a cuboid that is centered
+on the CIELAB neutral axis with one end tied to the L*=100 value.
+The cuboid cross sections across the
+neutral axis are squares whose size is set by BlackThresholdC.  The cuboid
+length is set by BlackThresholdL and is effectively 100-BlackThresholdL. </dd>
 </dl>
 
 <h4><a name="Page_parameters"></a>Page parameters</h4>
