@@ -2044,6 +2044,10 @@ static int GS_HT(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
     } else {
         code = pdfi_do_halftone(ctx, obj, page_dict);
     }
+    if (code < 0 && !ctx->args.pdfstoponerror) {
+        pdfi_set_error(ctx, code, NULL, E_BAD_HALFTONE, "GS_HT", "Halftone will be ignored");
+        code = 0;
+    }
 
 exit:
     pdfi_countdown(obj);
