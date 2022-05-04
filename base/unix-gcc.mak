@@ -201,7 +201,6 @@ SHARE_FT=0
 FTSRCDIR=./freetype
 FT_CFLAGS=-I./freetype/include
 FT_LIBS=
-FT_CONFIG_SYSTEM_ZLIB=
 
 # Define whether to compile in UFST.
 # FAPI/UFST depends on UFST_BRIDGE being undefined - hence the construct below.
