@@ -1743,8 +1743,8 @@ int pdfi_map_glyph_name_via_agl(pdf_dict *cstrings, pdf_name *gname, pdf_string 
             }
         }
         if (*cstring == NULL) {
-            char u[8] = {0};
-            code = gs_sprintf(u, "uni%04x", ucode);
+            char u[16] = {0};
+            code = gs_snprintf(u, 16, "uni%04x", ucode);
             if (code > 0) {
                 pdf_string *s;
                 code = pdfi_dict_get((pdf_context *)cstrings->ctx, cstrings, u, (pdf_obj **)&s);
