@@ -104,18 +104,18 @@ bool gsicc_is_white_blacktextvec(gs_gstate *pgs, gx_device *dev, gs_color_space*
 
             switch (pcs->cmm_icc_profile_data->data_cs) {
                 case gsGRAY:
-                    psrc[0] = pcc->paint.values[0] * 65535;
+                    psrc[0] = (unsigned short)(pcc->paint.values[0] * 65535);
                     break;
                 case gsRGB:
-                    psrc[0] = pcc->paint.values[0] * 65535;
-                    psrc[1] = pcc->paint.values[1] * 65535;
-                    psrc[2] = pcc->paint.values[2] * 65535;
+                    psrc[0] = (unsigned short)(pcc->paint.values[0] * 65535);
+                    psrc[1] = (unsigned short)(pcc->paint.values[1] * 65535);
+                    psrc[2] = (unsigned short)(pcc->paint.values[2] * 65535);
                     break;
                 case gsCMYK:
-                    psrc[0] = pcc->paint.values[0] * 65535;
-                    psrc[1] = pcc->paint.values[1] * 65535;
-                    psrc[2] = pcc->paint.values[2] * 65535;
-                    psrc[3] = pcc->paint.values[3] * 65535;
+                    psrc[0] = (unsigned short)(pcc->paint.values[0] * 65535);
+                    psrc[1] = (unsigned short)(pcc->paint.values[1] * 65535);
+                    psrc[2] = (unsigned short)(pcc->paint.values[2] * 65535);
+                    psrc[3] = (unsigned short)(pcc->paint.values[3] * 65535);
                     break;
                 default:
                     gsicc_release_link(icc_link);
