@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -101,7 +101,7 @@ err_code_string(int err_code)
   {
   if ((err_code<EMOTOR)||(err_code>ESERIAL))
     {
-    gs_sprintf(err_buffer,"err_code out of range: %d",err_code);
+    gs_snprintf(err_buffer, 80, "err_code out of range: %d",err_code);
     return err_buffer;
     }
   return errmsg[err_code];
