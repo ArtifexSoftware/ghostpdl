@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -26,9 +26,6 @@ gs_snprintf(char *zBuf, int n, const char *zFormat, ...);
 
 int
 gs_vsprintf(char *zBuf, const char *zFormat, va_list ap);
-
-int
-gs_sprintf(char *zBuf, const char *zFormat, ...);
 
 int
 gs_sscanf(char *buf, const char *format, ...);
