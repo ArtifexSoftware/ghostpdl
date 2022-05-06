@@ -885,7 +885,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                                       }
                                   }
                                   if (code >= 0) {
-                                      pdfi_array_put(s->pdfi_ctx, priv->u.t1.blenddesignpositions, i, (pdf_obj *)sa);
+                                      code = pdfi_array_put(s->pdfi_ctx, priv->u.t1.blenddesignpositions, i, (pdf_obj *)sa);
                                   }
                                   pdfi_countdown(sa);
                               }

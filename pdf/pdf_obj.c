@@ -86,11 +86,17 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
     (*obj)->type = type;
 
     switch(type) {
+/*      PDF_NULL and PDF_BOOL are now handled as special (not allocated) data types
+        and we will return an error in the switch above if we get a call to allocate
+        one of these. Having the cases isn't harmful but Coverity complains of dead
+        code, so commenting these out to silence Coverity while preserving the old
+        semantics to indicate what's happening.
         case PDF_NULL:
+        case PDF_BOOL: */
+
         case PDF_INT:
         case PDF_REAL:
         case PDF_INDIRECT:
-        case PDF_BOOL:
         case PDF_ARRAY_MARK:
         case PDF_DICT_MARK:
         case PDF_PROC_MARK:

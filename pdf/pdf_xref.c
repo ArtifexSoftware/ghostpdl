@@ -877,7 +877,11 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
             }
         }
 
-        pdfi_loop_detector_mark(ctx);
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0) {
+            pdfi_pop(ctx, 1);
+            return code;
+        }
         /* Because of the way the code works when we read a file which is a pure
          * xref stream file, we need to read the first integer of 'x y obj'
          * because the xref stream decoding code expects that to be on the stack.

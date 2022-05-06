@@ -840,7 +840,7 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, in
         else {
             int64_t i64;
             code = pdfi_dict_get(ctx, (pdf_dict *)record, "Path", &mname);
-            if (code > 0)
+            if (code >= 0)
                 code = pdfi_dict_get_int(ctx, (pdf_dict *)record, "Index", &i64);
             if (code < 0) {
                 pdfi_countdown(record);
