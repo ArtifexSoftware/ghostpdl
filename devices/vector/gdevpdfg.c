@@ -3069,7 +3069,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
                         break;
                     default:
                         emprintf(pdev->memory,
-                             "\nSetting Overprint Mode to 1\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                             "\nSetting Halftone Phase or Halftone Offset\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
                         pdev->AbortPDFAX = true;
                         pdev->PDFA = 0;
                         break;
