@@ -1472,25 +1472,6 @@ int gs_snprintf(char *buf, int len,
     return (cc == -1) ? (int)len - 1 : cc;
 }
 
-int gs_sprintf(char *buf, const char *format, ...)
-{
-    int cc;
-    va_list ap;
-    apr_vformatter_buff_t vbuff;
-
-    /* save one byte for nul terminator */
-    vbuff.curpos = buf;
-    vbuff.endpos = buf + NUM_BUF_SIZE - 1;
-
-    va_start(ap, format);
-    cc = apr_vformatter(snprintf_flush, &vbuff, format, ap);
-    va_end(ap);
-    *vbuff.curpos = '\0';
-
-    return cc;
-}
-
-
 int gs_vsnprintf(char *buf, int len, const char *format,
                                va_list ap)
 {
