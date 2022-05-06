@@ -49,7 +49,7 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
             break;
         case PDF_STRING:
         case PDF_NAME:
-            bytes = sizeof(pdf_string) + size - sizeof(PDF_NAME_DECLARED_LENGTH);
+            bytes = sizeof(pdf_string) + size - PDF_NAME_DECLARED_LENGTH;
             break;
         case PDF_ARRAY:
             bytes = sizeof(pdf_array);
@@ -61,7 +61,7 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
             bytes = sizeof(pdf_indirect_ref);
             break;
         case PDF_KEYWORD:
-            bytes = sizeof(pdf_keyword) + size - sizeof(PDF_NAME_DECLARED_LENGTH);
+            bytes = sizeof(pdf_keyword) + size - PDF_NAME_DECLARED_LENGTH;
             break;
         /* The following aren't PDF object types, but are objects we either want to
          * reference count, or store on the stack.
