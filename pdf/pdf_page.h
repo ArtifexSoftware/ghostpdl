@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -18,30 +18,8 @@
 #ifndef PDF_PAGE_OPERATORS
 #define PDF_PAGE_OPERATORS
 
-typedef enum pdfi_box_enum_e {
-    BOX_NONE = 0,
-    MEDIA_BOX = 1,
-    CROP_BOX = 2,
-    TRIM_BOX = 4,
-    ART_BOX = 8,
-    BLEED_BOX = 16
-}pdfi_box_enum;
-
-typedef struct {
-    bool HasTransparency;
-    int NumSpots;
-    pdfi_box_enum boxes;
-    float MediaBox[4];
-    float CropBox[4];
-    float ArtBox[4];
-    float BleedBox[4];
-    float TrimBox[4];
-    float Rotate;
-    float UserUnit;
-} pdf_info_t;
-
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics);
-int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info);
+int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info_dict, bool extended);
 int pdfi_page_graphics_begin(pdf_context *ctx);
 int pdfi_page_get_dict(pdf_context *ctx, uint64_t page_num, pdf_dict **dict);
 int pdfi_page_get_number(pdf_context *ctx, pdf_dict *target_dict, uint64_t *page_num);

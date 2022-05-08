@@ -22,6 +22,9 @@
 #include "gzht.h"
 #include "gsrefct.h"
 #include "pdf_misc.h"
+#include "pdf_stack.h"
+#include "pdf_dict.h"
+#include "pdf_array.h"
 
 #include "iminst.h"
 #include "dstack.h"
@@ -624,6 +627,164 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
     return code;
 }
 
+static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, ref *PSobj);
+
+static int PDFdict_to_PSdict(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_dict *PDFdict, ref *PSdict)
+{
+    int code = 0;
+    uint64_t index = 0;
+    pdf_name *Key = NULL;
+    pdf_obj *Value = NULL;
+    ref nameref, valueref;
+    char *str = NULL;
+    int len = 0;
+
+    code = dict_create(pdfi_dict_entries(PDFdict), PSdict);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_first(pdfctx->ctx, PDFdict, (pdf_obj **)&Key, &Value, &index);
+    if (code == gs_error_undefined)
+        return 0;
+
+    while (code >= 0) {
+        code = pdfi_string_from_name(pdfctx->ctx, Key, &str, &len);
+        if (code < 0)
+            goto exit;
+
+        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)str, len, &nameref, 1);
+        if (code < 0)
+            goto exit;
+
+        code = PDFobj_to_PSobj(i_ctx_p, pdfctx, Value, &valueref);
+        if (code < 0)
+            goto exit;
+
+        code = dict_put(PSdict, &nameref, &valueref, &i_ctx_p->dict_stack);
+        if (code < 0)
+            goto exit;
+
+        pdfi_countdown(Key);
+        pdfi_countdown(Value);
+        Key = NULL;
+        Value = NULL;
+        (void)pdfi_free_string_from_name(pdfctx->ctx, str);
+        str = NULL;
+        code = pdfi_dict_next(pdfctx->ctx, PDFdict, (pdf_obj **)&Key, &Value, &index);
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+    }
+exit:
+    (void)pdfi_free_string_from_name(pdfctx->ctx, str);
+    pdfi_countdown(Key);
+    pdfi_countdown(Value);
+    return code;
+}
+
+static int PDFarray_to_PSarray(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_array *PDFarray, ref *PSarray)
+{
+    int code = 0, i = 0;
+    ref PS_ref;
+    pdf_obj *array_obj = NULL;
+    ref *eltp = NULL;
+
+    code = ialloc_ref_array(PSarray, a_all, pdfi_array_size(PDFarray), "zPDFInfo");
+    if (code < 0)
+        return code;
+
+    for (i = 0;i < pdfi_array_size(PDFarray); i++) {
+        code = pdfi_array_get(pdfctx->ctx, PDFarray, i, &array_obj);
+        if (code < 0)
+            goto exit;
+        code = PDFobj_to_PSobj(i_ctx_p, pdfctx, array_obj, &PS_ref);
+        if (code < 0) {
+            pdfi_countdown(array_obj);
+            goto exit;
+        }
+
+        eltp = PSarray->value.refs + i;
+        ref_assign_old((const ref *)PSarray, eltp, &PS_ref, "zPDFInfo");
+
+        pdfi_countdown(array_obj);
+        array_obj = NULL;
+    }
+exit:
+    return code;
+}
+
+static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, ref *PSobj)
+{
+    int code = 0;
+
+    switch(pdfi_type_of(PDFobj)) {
+        case PDF_NAME:
+            {
+                char *str = NULL;
+                int len;
+
+                code = pdfi_string_from_name(pdfctx->ctx, (pdf_name *)PDFobj, &str, &len);
+                if (code < 0)
+                    return code;
+                code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)str, len, PSobj, 1);
+                (void)pdfi_free_string_from_name(pdfctx->ctx, str);
+            }
+            break;
+        case PDF_STRING:
+            {
+                byte *sbody;
+                uint size = ((pdf_name *)PDFobj)->length;
+
+                sbody = ialloc_string(size, "string");
+                if (sbody == 0) {
+                    code = gs_note_error(gs_error_VMerror);
+                } else {
+                    make_string(PSobj, a_all | icurrent_space, size, sbody);
+                    memcpy(sbody, ((pdf_name *)PDFobj)->data, size);
+                }
+            }
+            break;
+        case PDF_INT:
+            {
+                int64_t i;
+
+                code = pdfi_obj_to_int(pdfctx->ctx, PDFobj, &i);
+                if (code < 0)
+                    return code;
+                make_int(PSobj, i);
+            }
+            break;
+        case PDF_BOOL:
+            if (PDFobj == PDF_TRUE_OBJ)
+                make_bool(PSobj, 1);
+            else
+                make_bool(PSobj, 0);
+            break;
+        case PDF_REAL:
+            {
+                double d;
+
+                code = pdfi_obj_to_real(pdfctx->ctx, PDFobj, &d);
+                if (code < 0)
+                    return code;
+                make_real(PSobj, d);
+            }
+            break;
+        case PDF_DICT:
+            code = PDFdict_to_PSdict(i_ctx_p, pdfctx, (pdf_dict *)PDFobj, PSobj);
+            break;
+        case PDF_ARRAY:
+            code = PDFarray_to_PSarray(i_ctx_p, pdfctx, (pdf_array *)PDFobj, PSobj);
+            break;
+        default:
+            gs_note_error(gs_error_typecheck);
+            break;
+    }
+
+    return code;
+}
+
 static int zPDFinfo(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -704,6 +865,36 @@ static int zPDFinfo(i_ctx_t *i_ctx_p)
             }
             gs_free_object(pdfctx->ctx->memory, names_array, "free collection temporary filenames");
             code = 0;
+        } else {
+            if (pdfctx->ctx->Info != NULL) {
+                code = PDFobj_to_PSobj(i_ctx_p, pdfctx, (pdf_obj *)pdfctx->ctx->Info, (ref *)op);
+                if (code < 0)
+                    return code;
+
+                code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"NumPages", 8, &nameref, 1);
+                if (code < 0)
+                    return code;
+
+                make_int(&intref, pdfctx->ctx->num_pages);
+
+                code = dict_put(op, &nameref, &intref, &i_ctx_p->dict_stack);
+                if (code < 0)
+                    return code;
+            } else {
+                code = dict_create(1, op);
+                if (code < 0)
+                    return code;
+
+                code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"NumPages", 8, &nameref, 1);
+                if (code < 0)
+                    return code;
+
+                make_int(&intref, pdfctx->ctx->num_pages);
+
+                code = dict_put(op, &nameref, &intref, &i_ctx_p->dict_stack);
+                if (code < 0)
+                    return code;
+            }
         }
     }
     else {
@@ -721,10 +912,9 @@ error:
 static int zPDFpageinfo(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    ref aref, boolref, nameref, numref, *eltp;
-    int page = 0, code = 0, i;
+    int page = 0, code = 0;
     pdfctx_t *pdfctx;
-    pdf_info_t info;
+    pdf_dict *InfoDict = NULL;
     pdfi_switch_t i_switch;
 
     check_op(2);
@@ -739,7 +929,7 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
         code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
         if (code >= 0) {
-            code = pdfi_page_info(pdfctx->ctx, (uint64_t)page, &info);
+            code = pdfi_page_info(pdfctx->ctx, (uint64_t)page, &InfoDict, false);
 
             pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
         }
@@ -750,141 +940,52 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
         pop(1);
         op = osp;
 
-        code = dict_create(4, op);
+        code = PDFobj_to_PSobj(i_ctx_p, pdfctx, (pdf_obj *)InfoDict, op);
+        pdfi_countdown(InfoDict);
         if (code < 0)
             return code;
+    }
+    else {
+        return_error(gs_error_ioerror);
+    }
+    return 0;
+}
 
-        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"HasAnnots", 9, &nameref, 1);
-        if (code < 0)
-            return code;
-        make_bool(&boolref, false);
-        code = dict_put(op, &nameref, &boolref, &i_ctx_p->dict_stack);
-        if (code < 0)
-            return code;
+static int zPDFpageinfoExt(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int page = 0, code = 0;
+    pdfctx_t *pdfctx;
+    pdf_dict *InfoDict = NULL;
+    pdfi_switch_t i_switch;
 
-        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"UsesTransparency", 16, &nameref, 1);
-        if (code < 0)
-            return code;
-        make_bool(&boolref, info.HasTransparency);
-        code = dict_put(op, &nameref, &boolref, &i_ctx_p->dict_stack);
-        if (code < 0)
-            return code;
+    check_op(2);
 
-        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"NumSpots", 8, &nameref, 1);
-        if (code < 0)
-            return code;
-        make_int(&numref, info.NumSpots);
-        code = dict_put(op, &nameref, &numref, &i_ctx_p->dict_stack);
-        if (code < 0)
-            return code;
+    check_type(*op, t_integer);
+    page = op->value.intval;
 
-        if (info.boxes & MEDIA_BOX) {
-            code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"MediaBox", 8, &nameref, 1);
-            if (code < 0)
-                return code;
-            code = ialloc_ref_array(&aref, a_all, 4, "array");
-            if (code < 0)
-                return code;
-            refset_null(aref.value.refs, 4);
-            for (i=0;i < 4;i++) {
-                make_real(&numref, info.MediaBox[i]);
-                eltp = aref.value.refs + i;
-                ref_assign_old(&aref, eltp, &numref, "put");
-            }
-            code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
-            if (code < 0)
-                return code;
+    check_type(*(op - 1), t_pdfctx);
+    pdfctx = r_ptr(op - 1, pdfctx_t);
+
+    if (pdfctx->pdf_stream != NULL || pdfctx->UsingPDFFile) {
+        code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
+
+        if (code >= 0) {
+            code = pdfi_page_info(pdfctx->ctx, (uint64_t)page, &InfoDict, true);
+
+            pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
         }
 
-        if (info.boxes & CROP_BOX) {
-            code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"CropBox", 7, &nameref, 1);
-            if (code < 0)
-                return code;
-            code = ialloc_ref_array(&aref, a_all, 4, "array");
-            if (code < 0)
-                return code;
-            refset_null(aref.value.refs, 4);
-            for (i=0;i < 4;i++) {
-                make_real(&numref, info.CropBox[i]);
-                eltp = aref.value.refs + i;
-                ref_assign_old(&aref, eltp, &numref, "put");
-            }
-            code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
-            if (code < 0)
-                return code;
-        }
-
-        if (info.boxes & TRIM_BOX) {
-            code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"TrimBox", 7, &nameref, 1);
-            if (code < 0)
-                return code;
-            code = ialloc_ref_array(&aref, a_all, 4, "array");
-            if (code < 0)
-                return code;
-            refset_null(aref.value.refs, 4);
-            for (i=0;i < 4;i++) {
-                make_real(&numref, info.TrimBox[i]);
-                eltp = aref.value.refs + i;
-                ref_assign_old(&aref, eltp, &numref, "put");
-            }
-            code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
-            if (code < 0)
-                return code;
-        }
-
-        if (info.boxes & ART_BOX) {
-            code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"ArtBox", 6, &nameref, 1);
-            if (code < 0)
-                return code;
-            code = ialloc_ref_array(&aref, a_all, 4, "array");
-            if (code < 0)
-                return code;
-            refset_null(aref.value.refs, 4);
-            for (i=0;i < 4;i++) {
-                make_real(&numref, info.ArtBox[i]);
-                eltp = aref.value.refs + i;
-                ref_assign_old(&aref, eltp, &numref, "put");
-            }
-            code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
-            if (code < 0)
-                return code;
-        }
-
-        if (info.boxes & BLEED_BOX) {
-            code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"BleedBox", 8, &nameref, 1);
-            if (code < 0)
-                return code;
-            code = ialloc_ref_array(&aref, a_all, 4, "array");
-            if (code < 0)
-                return code;
-            refset_null(aref.value.refs, 4);
-            for (i=0;i < 4;i++) {
-                make_real(&numref, info.BleedBox[i]);
-                eltp = aref.value.refs + i;
-                ref_assign_old(&aref, eltp, &numref, "put");
-            }
-            code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
-            if (code < 0)
-                return code;
-        }
-
-        code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"Rotate", 6, &nameref, 1);
-        if (code < 0)
-            return code;
-        make_real(&numref, info.Rotate);
-        code = dict_put(op, &nameref, &numref, &i_ctx_p->dict_stack);
         if (code < 0)
             return code;
 
-        if (info.UserUnit != 1) {
-            code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"UserUnit", 8, &nameref, 1);
-            if (code < 0)
-                return code;
-            make_real(&numref, info.UserUnit);
-            code = dict_put(op, &nameref, &numref, &i_ctx_p->dict_stack);
-            if (code < 0)
-                return code;
-        }
+        pop(1);
+        op = osp;
+
+        code = PDFobj_to_PSobj(i_ctx_p, pdfctx, (pdf_obj *)InfoDict, op);
+        pdfi_countdown(InfoDict);
+        if (code < 0)
+            return code;
     }
     else {
         return_error(gs_error_ioerror);
@@ -929,7 +1030,10 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
         code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
         if (code >= 0) {
-            code = pdfi_page_render(pdfctx->ctx, page, false);
+            if (pdfctx->ctx->args.pdfinfo)
+                code = pdfi_output_page_info(pdfctx->ctx, page);
+            else
+                code = pdfi_page_render(pdfctx->ctx, page, false);
             if (code >= 0)
                 pop(2);
 
@@ -1336,6 +1440,7 @@ const op_def zpdfops_op_defs[] =
     {"1.PDFClose", zPDFclose},
     {"1.PDFInfo", zPDFinfo},
     {"1.PDFPageInfo", zPDFpageinfo},
+    {"1.PDFPageInfoExt", zPDFpageinfoExt},
     {"1.PDFMetadata", zPDFmetadata},
     {"1.PDFDrawPage", zPDFdrawpage},
     {"1.PDFDrawAnnots", zPDFdrawannots},

@@ -79,10 +79,15 @@ static int pdfi_output_metadata(pdf_context *ctx)
 {
     int code = 0;
 
-    if (ctx->num_pages > 1)
-        dmprintf2(ctx->memory, "\n        %s has %"PRIi64" pages\n\n", ctx->filename, ctx->num_pages);
+    if (ctx->filename != NULL)
+        dmprintf2(ctx->memory, "\n        %s has %"PRIi64" ", ctx->filename, ctx->num_pages);
     else
-        dmprintf2(ctx->memory, "\n        %s has %"PRIi64" page.\n\n", ctx->filename, ctx->num_pages);
+        dmprintf1(ctx->memory, "\n        File has %"PRIi64" ", ctx->num_pages);
+
+    if (ctx->num_pages > 1)
+        dmprintf(ctx->memory, "pages\n\n");
+    else
+        dmprintf(ctx->memory, "page.\n\n");
 
     if (ctx->Info != NULL) {
         pdf_name *n = NULL;
@@ -151,6 +156,7 @@ static int pdfi_output_metadata(pdf_context *ctx)
         pdfi_countdown(n);
         n = NULL;
     }
+    dmprintf(ctx->memory, "\n");
     return code;
 }
 
@@ -192,6 +198,90 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
     return code;
 }
 
+static int dump_font(pdf_context *ctx, pdf_dict *font_dict, bool space_name)
+{
+    pdf_obj *obj = NULL;
+    char *str = NULL;
+    int len = 0, code = 0, i;
+    bool known = false, type0 = false;
+
+    code = pdfi_dict_get_type(ctx, font_dict, "BaseFont", PDF_NAME, &obj);
+    if (code >= 0) {
+        code = pdfi_string_from_name(ctx, (pdf_name *)obj, &str, &len);
+        if (code >= 0) {
+            dmprintf1(ctx->memory, "%s", str);
+            if (len < 32 && space_name) {
+                for (i = 0; i < 32 - len;i++)
+                    dmprintf(ctx->memory, " ");
+            } else
+                dmprintf(ctx->memory, "    ");
+            (void)pdfi_free_string_from_name(ctx, str);
+        }
+        pdfi_countdown(obj);
+        obj = NULL;
+    }
+
+    code = pdfi_dict_get_type(ctx, font_dict, "Subtype", PDF_NAME, &obj);
+    if (code >= 0) {
+        code = pdfi_string_from_name(ctx, (pdf_name *)obj, &str, &len);
+        if (code >= 0) {
+            dmprintf1(ctx->memory, "%s", str);
+            for (i = 0; i < 16 - len;i++)
+                dmprintf(ctx->memory, " ");
+            (void)pdfi_free_string_from_name(ctx, str);
+        }
+        if (pdfi_name_is((pdf_name *)obj, "Type0"))
+            type0 = true;
+        pdfi_countdown(obj);
+        obj = NULL;
+    }
+
+    if (!type0) {
+        code = pdfi_dict_get_type(ctx, font_dict, "Embedded", PDF_BOOL, &obj);
+        if (code >= 0) {
+            if (obj == PDF_FALSE_OBJ)
+                dmprintf(ctx->memory, "Not embedded    ");
+            else
+                dmprintf(ctx->memory, "Embedded        ");
+            pdfi_countdown(obj);
+            obj = NULL;
+        }
+        else
+            dmprintf(ctx->memory, "Not embedded    ");
+    } else
+        dmprintf(ctx->memory, "                ");
+
+    code = pdfi_dict_get_type(ctx, font_dict, "ToUnicode", PDF_BOOL, &obj);
+    if (code >= 0) {
+        if (obj == PDF_TRUE_OBJ)
+            dmprintf(ctx->memory, "Has ToUnicode    ");
+        else
+            dmprintf(ctx->memory, "No ToUnicode     ");
+        pdfi_countdown(obj);
+        obj = NULL;
+    }
+    else
+        dmprintf(ctx->memory, "No ToUnicode    ");
+
+    code = pdfi_dict_known(ctx, font_dict, "Descendants", &known);
+    if (code >= 0 && known) {
+        code = pdfi_dict_get_type(ctx, font_dict, "Descendants", PDF_ARRAY, &obj);
+        if (code >= 0) {
+            pdf_obj *desc = NULL;
+
+            code = pdfi_array_get_type(ctx, (pdf_array *)obj, 0, PDF_DICT, &desc);
+            if (code >= 0) {
+                dmprintf(ctx->memory, "\n            Descendants: [");
+                (void)dump_font(ctx, (pdf_dict *)desc, false);
+                dmprintf(ctx->memory, "]");
+            }
+            pdfi_countdown(obj);
+            obj = NULL;
+        }
+    }
+    return 0;
+}
+
 /*
  * This routine along with pdfi_output_metadtaa above, dumps certain kinds
  * of metadata from the PDF file, and from each page in the PDF file. It is
@@ -202,12 +292,13 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
  * we always emit them, and the switches -dDumpFontsNeeded, -dDumpXML,
  * -dDumpFontsUsed and -dShowEmbeddedFonts are not implemented at all yet.
  */
-static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
+int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 {
     int code;
     bool known = false;
     double f;
     pdf_dict *page_dict = NULL;
+    pdf_array *fonts_array = NULL, *spots_array = NULL;
 
     code = pdfi_page_get_dict(ctx, page_num, &page_dict);
     if (code < 0)
@@ -271,7 +362,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
         return code;
     }
 
-    code = pdfi_check_page(ctx, page_dict, false);
+    code = pdfi_check_page(ctx, page_dict, &fonts_array, &spots_array, false);
     if (code < 0) {
         if (ctx->args.pdfstoponerror)
             return code;
@@ -283,16 +374,62 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
     code = pdfi_dict_known(ctx, page_dict, "Annots", &known);
     if (code < 0) {
         if (code != gs_error_undefined && ctx->args.pdfstoponerror)
-            return code;
+            goto error;
     } else {
         if (known == true)
             dmprintf(ctx->memory, "     Page contains Annotations");
+        code = 0;
     }
 
+    if (spots_array != NULL) {
+        uint64_t index = 0;
+        pdf_name *spot = NULL;
+        char *str = NULL;
+        int len;
+
+        dmprintf(ctx->memory, "\n    Page Spot colors: \n");
+        for (index = 0;index < pdfi_array_size(spots_array);index++) {
+            code = pdfi_array_get(ctx, spots_array, index, (pdf_obj **)&spot);
+            if (code >= 0) {
+                if (spot->type == PDF_NAME) {
+                    code = pdfi_string_from_name(ctx, spot, &str, &len);
+                    if (code >= 0) {
+                        dmprintf1(ctx->memory, "        '%s'\n", str);
+                        (void)pdfi_free_string_from_name(ctx, str);
+                    }
+                }
+                pdfi_countdown(spot);
+                spot = NULL;
+            }
+        }
+        code = 0;
+    }
+
+    if (fonts_array != NULL && pdfi_array_size(fonts_array) != 0) {
+        uint64_t index = 0;
+        pdf_dict *font_dict = NULL;
+
+        dmprintf(ctx->memory, "\n    Fonts used: \n");
+        for (index = 0;index < pdfi_array_size(fonts_array);index++) {
+            code = pdfi_array_get_type(ctx, fonts_array, index, PDF_DICT, (pdf_obj **)&font_dict);
+            if (code >= 0) {
+                dmprintf(ctx->memory, "        ");
+                (void)dump_font(ctx, font_dict, true);
+                dmprintf(ctx->memory, "\n");
+                pdfi_countdown(font_dict);
+                font_dict = NULL;
+            }
+        }
+        code = 0;
+    }
+
+error:
+    pdfi_countdown(fonts_array);
+    pdfi_countdown(spots_array);
     dmprintf(ctx->memory, "\n\n");
     pdfi_countdown(page_dict);
 
-    return 0;
+    return code;
 }
 
 /* Error and warning string tables. There should be a string for each error and warning

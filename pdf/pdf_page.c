@@ -458,26 +458,20 @@ static void pdfi_setup_transfers(pdf_context *ctx)
     }
 }
 
-static int store_box(pdf_context *ctx, float *box, pdf_array *a)
-{
-    double f;
-    int code = 0, i;
-
-    for (i=0;i < 4;i++) {
-        code = pdfi_array_get_number(ctx, a, (uint64_t)i, &f);
-        if (code < 0)
-            return code;
-        box[i] = (float)f;
-    }
-    return 0;
-}
-
-int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
+/* Return a dictionary containing information about the page. Basic information is that
+ * required to render the page; if extended is true then additionally contains an
+ * array of spot ink names and an array of dictionaries each of which contains
+ * information about a font used on the page. THis is normally only used for tools
+ * like pdf_info.ps
+ */
+int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool extended)
 {
     int code = 0;
-    pdf_dict *page_dict = NULL;
+    pdf_dict *page_dict = NULL, *info_dict = NULL;
+    pdf_array *fonts_array = NULL, *spots_array = NULL;
     pdf_array *a = NULL;
-    double dbl = 0.0;
+    pdf_obj *o = NULL;
+    bool known = false;
 
     code = pdfi_page_get_dict(ctx, page_num, &page_dict);
     if (code < 0)
@@ -488,79 +482,132 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
         goto done;
     }
 
-    code = pdfi_check_page(ctx, page_dict, false);
+    code = pdfi_dict_alloc(ctx, 6, &info_dict);
     if (code < 0)
         goto done;
 
-    info->boxes = BOX_NONE;
+    pdfi_countup(info_dict);
+
+    if (extended)
+        code = pdfi_check_page(ctx, page_dict, &fonts_array, &spots_array, false);
+    else
+        code = pdfi_check_page(ctx, page_dict, NULL, NULL, false);
+    if (code < 0)
+        goto done;
+
+    if (spots_array != NULL) {
+        code = pdfi_dict_put(ctx, info_dict, "Spots", (pdf_obj *)spots_array);
+        if (code < 0)
+            goto done;
+        pdfi_countdown(spots_array);
+    }
+
+    if (fonts_array != NULL) {
+        code = pdfi_dict_put(ctx, info_dict, "Fonts", (pdf_obj *)fonts_array);
+        if (code < 0)
+            goto done;
+        pdfi_countdown(fonts_array);
+    }
+
     code = pdfi_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code < 0)
         pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_MEDIABOX, "pdfi_page_info", NULL);
 
     if (code >= 0) {
-        code = store_box(ctx, (float *)&info->MediaBox, a);
+        code = pdfi_dict_put(ctx, info_dict, "MediaBox", (pdf_obj *)a);
         if (code < 0)
             goto done;
-        info->boxes |= MEDIA_BOX;
         pdfi_countdown(a);
         a = NULL;
     }
 
     code = pdfi_dict_get_type(ctx, page_dict, "ArtBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
-        code = store_box(ctx, (float *)&info->ArtBox, a);
+        code = pdfi_dict_put(ctx, info_dict, "ArtBox", (pdf_obj *)a);
         if (code < 0)
             goto done;
-        info->boxes |= ART_BOX;
         pdfi_countdown(a);
         a = NULL;
     }
 
     code = pdfi_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
-        code = store_box(ctx, (float *)&info->CropBox, a);
+        code = pdfi_dict_put(ctx, info_dict, "CropBox", (pdf_obj *)a);
         if (code < 0)
             goto done;
-        info->boxes |= CROP_BOX;
         pdfi_countdown(a);
         a = NULL;
     }
 
     code = pdfi_dict_get_type(ctx, page_dict, "TrimBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
-        code = store_box(ctx, (float *)&info->TrimBox, a);
+        code = pdfi_dict_put(ctx, info_dict, "TrimBox", (pdf_obj *)a);
         if (code < 0)
             goto done;
-        info->boxes |= TRIM_BOX;
         pdfi_countdown(a);
         a = NULL;
     }
 
     code = pdfi_dict_get_type(ctx, page_dict, "BleedBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
-        code = store_box(ctx, (float *)&info->BleedBox, a);
+        code = pdfi_dict_put(ctx, info_dict, "BleedBox", (pdf_obj *)a);
         if (code < 0)
             goto done;
-        info->boxes |= BLEED_BOX;
         pdfi_countdown(a);
         a = NULL;
     }
     code = 0;
 
-    dbl = info->Rotate = 0;
-    code = pdfi_dict_get_number(ctx, page_dict, "Rotate", &dbl);
-    code = 0;
-    info->Rotate = dbl;
+    code = pdfi_dict_get(ctx, page_dict, "Rotate", &o);
+    if (code >= 0) {
+        if (pdfi_type_of(o) == PDF_INT || pdfi_type_of(o) == PDF_REAL) {
+            code = pdfi_dict_put(ctx, info_dict, "Rotate", o);
+            if (code < 0)
+                goto done;
+        }
+        pdfi_countdown(o);
+    }
 
-    dbl = info->UserUnit = 1;
-    code = pdfi_dict_get_number(ctx, page_dict, "UserUnit", &dbl);
-    code = 0;
-    info->UserUnit = dbl;
+    code = pdfi_dict_get(ctx, page_dict, "UserUnit", &o);
+    if (code >= 0) {
+        if (pdfi_type_of(o) == PDF_INT || pdfi_type_of(o) == PDF_REAL) {
+            code = pdfi_dict_put(ctx, info_dict, "UserUnit", o);
+            if (code < 0)
+                goto done;
+        }
+        pdfi_countdown(o);
+    }
 
-    info->HasTransparency = ctx->page.has_transparency;
-    info->NumSpots = ctx->page.num_spots;
+    if (ctx->page.has_transparency)
+        code = pdfi_dict_put(ctx, info_dict, "UsesTransparency", PDF_TRUE_OBJ);
+    else
+        code = pdfi_dict_put(ctx, info_dict, "UsesTransparency", PDF_FALSE_OBJ);
+
+    code = pdfi_dict_known(ctx, page_dict, "Annots", &known);
+    if (code >= 0 && known)
+        code = pdfi_dict_put(ctx, info_dict, "Annots", PDF_TRUE_OBJ);
+    else
+        code = pdfi_dict_put(ctx, info_dict, "Annots", PDF_FALSE_OBJ);
+
+    code = pdfi_object_alloc(ctx, PDF_INT, 0, &o);
+    if (code >= 0) {
+        pdfi_countup(o);
+        ((pdf_num *)o)->value.i = ctx->page.num_spots;
+        code = pdfi_dict_put(ctx, info_dict, "NumSpots", o);
+        pdfi_countdown(o);
+        o = NULL;
+        if (code < 0)
+            goto done;
+    }
 
 done:
+    if (code < 0) {
+        pdfi_countdown(info_dict);
+        info_dict = NULL;
+        *info = NULL;
+    } else
+        *info = info_dict;
+
     pdfi_countdown(a);
     pdfi_countdown(page_dict);
     return code;
@@ -720,7 +767,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
     pdfi_device_set_flags(ctx);
 
-    code = pdfi_check_page(ctx, page_dict, init_graphics);
+    code = pdfi_check_page(ctx, page_dict, NULL, NULL, init_graphics);
     if (code < 0)
         goto exit3;
 

@@ -166,6 +166,13 @@ int pdfi_string_from_name(pdf_context *ctx, pdf_name *n, char **str, int *len)
     return 0;
 }
 
+int pdfi_free_string_from_name(pdf_context *ctx, char *str)
+{
+    if (str != NULL)
+        gs_free_object(ctx->memory, str, "pdfi_free_string_from_name");
+    return 0;
+}
+
 void normalize_rectangle(double *d)
 {
     double d1[4];

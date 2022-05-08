@@ -2219,14 +2219,13 @@ This function needs to write any required output intents, load and send Outlines
 and Keywords from the Info dict to the output device, copy Optional Content Properties (OCProperties) to the output device.
 If an AcroForm is present send all its fields and link widget annotations to fields, and finally copy the PageLabels. If we add support for anything else, it will be here too..
 </dd><dt><code>PDFcontext int .PDFPageInfo -</code></dt>
-<dd>     The integer argument is the page number to retrieve information for.
+<dd>     The integer argument is the page number to retrieve information for. This value starts from zero for the first page.
 Returns a dictionary with the following key/value pairs:
 <blockquote>
     <code>/UsesTransparency</code> true|false<br>
-	<code>/SpotColours</code> array of names, may be empty|<br>
+	<code>/NumSpots</code> integer containing the number of spot inks on this page<br>
 	<code>/MediaBox</code> [llx lly urx ury]<br>
 	<code>/HasAnnots</code> true|false<br>
-	<code>/FontsUsed</code> array of names, may be empty.<br>
 </blockquote>
 May also contain (if they are present in the Page dictionary)
 <blockquote>
@@ -2235,6 +2234,23 @@ May also contain (if they are present in the Page dictionary)
 	<code>/BleedBox</code> [llx lly urx ury]<br>
 	<code>/TrimBox</code> [llx lly urx ury]<br>
 	<code>/UserUnit</code> int<br>
+	<code>/Rotate</code> number<br>
+</blockquote>
+</dd>
+</dd><dt><code>PDFcontext int .PDFPageInfoExt -</code></dt>
+<dd>     As per .PDFPageInfo above but returns 'Extended' information. This consists of two additional arrays in the returned dictionary:
+<blockquote>
+	<code>/Spots</code> array of names, may be empty<br>
+	<code>/Fonts</code> array of dictionaries, one dictionary per font used on the page.
+</blockquote>
+Each font dictionary contains
+<blockquote>
+    <code>/BaseFont</code> string containing the name of the font.<br>
+    <code>/Subtype</code> string containing the type of the font, as per the PDF Reference.<br>
+    <code>/ObjectNum</code> If present, the object number of the font in the file (fonts may be defined inline and have no object number).<br>
+    <code>/Embedded</code> boolean indicating if the font's FontDescriptor includes a FontFile and is therefore embedded.<br>
+    Type 0 fonts also contain <br>
+    <code>/Descendants</code> An array containing a single font dictionary, contents as above.<br>
 </blockquote>
 </dd>
 <dt><code>PDFcontext int .PDFDrawPage -</code></dt>

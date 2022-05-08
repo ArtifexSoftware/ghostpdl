@@ -630,7 +630,26 @@ when true.</p>
 </dd>
 </dl>
 
- <dl>
+ <d1>
+<dt><code>-dPDFINFO</code></dt>
+<dd>Starting with release 9.56.0 this new switch will work with the PDF interpreter (GhostPDF) and with
+the PDF interpreter integrated into Ghostscript. When this switch is set the interpreter will emit
+information regarding the file, similar to that produced by the old pdf_info.ps program in the 'lib'
+folder.
+<p>
+The format is not entirely the same, and the search for fonts and spot colours is 'deeper' than the
+old program; pdf_info.ps stops at the page level whereas the PDFINFO switch will descend into objects
+such as Forms, Images, type 3 fonts and Patterns. In addition different instances of fonts with the
+same name are now enumerated.
+</p>
+<p>
+Unlike the pdf_info.ps program there is no need to add the input file to the list of permitted files
+for reading (using --permit-file-read).
+</p>
+</dd>
+</d1>
+
+<dl>
 <dt><code>-dPDFFitPage</code></dt>
 <dd>Rather than selecting a PageSize given by the PDF MediaBox, BleedBox (see -dUseBleedBox),
 TrimBox (see -dUseTrimBox), ArtBox (see -dUseArtBox), or CropBox (see -dUseCropBox),

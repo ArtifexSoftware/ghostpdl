@@ -66,7 +66,7 @@
  * stores all the objects (which we don't want to do because its wasteful) and checking
  * to see if its already tested a given resource for spots/transparency.
  * This is a temporary allocation, big enough to hold all the objects in the file (1 per bit)
- * each time we have fully checked a resource we add it here, when checking a resoruce we
+ * each time we have fully checked a resource we add it here, when checking a resource we
  * first check this list to see if its already been checked, in which case we can skip
  * it. When done we release the memory.
  */
@@ -74,6 +74,7 @@ typedef struct {
     bool transparent;
     bool has_overprint; /* Does it have OP or op in an ExtGState? */
     pdf_dict *spot_dict;
+    pdf_array *font_array;
     uint32_t size;
     byte *CheckedResources;
 } pdfi_check_tracker_t;
@@ -118,12 +119,13 @@ pdfi_check_free_tracker(pdf_context *ctx, pdfi_check_tracker_t *tracker)
 {
     gs_free_object(ctx->memory, tracker->CheckedResources, "pdfi_check_free_tracker(flags)");
     pdfi_countdown(tracker->spot_dict);
+    pdfi_countdown(tracker->font_array);
     memset(tracker, 0, sizeof(*tracker));
     return 0;
 }
 
 static int
-pdfi_check_init_tracker(pdf_context *ctx, pdfi_check_tracker_t *tracker)
+pdfi_check_init_tracker(pdf_context *ctx, pdfi_check_tracker_t *tracker, pdf_array **fonts_array, pdf_array **spot_array)
 {
     int code = 0;
 
@@ -138,16 +140,25 @@ pdfi_check_init_tracker(pdf_context *ctx, pdfi_check_tracker_t *tracker)
     memset(tracker->CheckedResources, 0x00, tracker->size);
 
     if (ctx->device_state.spot_capable ||
-        (ctx->pgs->device->icc_struct->overprint_control) == gs_overprint_control_simulate) {
+        (ctx->pgs->device->icc_struct->overprint_control) == gs_overprint_control_simulate ||
+        spot_array != NULL)
+    {
         code = pdfi_dict_alloc(ctx, 32, &tracker->spot_dict);
         if (code < 0)
             goto cleanup;
         pdfi_countup(tracker->spot_dict);
     }
 
+    if (fonts_array != NULL) {
+        code = pdfi_array_alloc(ctx, 0, &tracker->font_array);
+        if (code < 0)
+            goto cleanup;
+        pdfi_countup(tracker->font_array);
+    }
+
     return 0;
 
- cleanup:
+cleanup:
     pdfi_check_free_tracker(ctx, tracker);
     return code;
 }
@@ -683,7 +694,7 @@ int pdfi_check_Pattern_transparency(pdf_context *ctx, pdf_dict *pattern, pdf_dic
                                     bool *transparent)
 {
     int code;
-    pdfi_check_tracker_t tracker = {0, 0, NULL, 0, NULL};
+    pdfi_check_tracker_t tracker = {0, 0, NULL, NULL, 0, NULL};
 
     /* NOTE: We use a "null" tracker that won't do any optimization to prevent
      * checking the same resource twice.
@@ -777,7 +788,8 @@ error1:
 
 /*
  * This routine checks a Font dictionary to see if it contains any spot
- * colour definitions, or transparency usage.
+ * colour definitions, or transparency usage. While we are here, if the tracker's font_array
+ * is not NULL, pick up the font information and store it in the array.
  */
 static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict,
                            pdfi_check_tracker_t *tracker)
@@ -791,19 +803,179 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
     if (pdfi_type_of(font) != PDF_DICT)
         return_error(gs_error_typecheck);
 
-    code = pdfi_dict_knownget_type(ctx, font, "Subtype", PDF_NAME, &o);
-    if (code > 0) {
-        if (pdfi_name_is((pdf_name *)o, "Type3")) {
-            pdfi_countdown(o);
-            o = NULL;
+    if (tracker->font_array != NULL) {
+        /* If we get to here this is a font we have not seen before. We need
+         * to make a new font array big enough to hold the existing entries +1
+         * copy the existing entries to the new array and free the old array.
+         * Finally create a dictionary with all the font information we want
+         * and add it to the array.
+         */
+        pdf_array *new_fonts = NULL;
+        int index = 0;
+        pdf_obj *array_obj = NULL;
+        pdf_dict *font_info_dict = NULL;
 
-            code = pdfi_dict_knownget_type(ctx, font, "Resources", PDF_DICT, &o);
-            if (code > 0)
-                (void)pdfi_check_Resources(ctx, (pdf_dict *)o, page_dict, tracker);
+        /* Let's start by gathering the information we need and storing it in a dictionary */
+        code = pdfi_dict_alloc(ctx, 4, &font_info_dict);
+        if (code < 0)
+            return code;
+        pdfi_countup(font_info_dict);
+
+        if (font->object_num != 0) {
+            pdf_num *int_obj = NULL;
+
+            code = pdfi_object_alloc(ctx, PDF_INT, 0, (pdf_obj **)&int_obj);
+            if (code >= 0) {
+                pdfi_countup(int_obj);
+                int_obj->value.i = font->object_num;
+                code = pdfi_dict_put(ctx, font_info_dict, "ObjectNum", (pdf_obj *)int_obj);
+                pdfi_countdown(int_obj);
+            }
+            if (code < 0) {
+                pdfi_countdown(font_info_dict);
+                return code;
+            }
         }
+
+        code = pdfi_dict_get(ctx, font, "BaseFont", &array_obj);
+        if (code >= 0) {
+            code = pdfi_dict_put(ctx, font_info_dict, "BaseFont", array_obj);
+            if (code < 0) {
+                pdfi_countdown(array_obj);
+                pdfi_countdown(font_info_dict);
+                return code;
+            }
+        }
+        pdfi_countdown(array_obj);
+        array_obj = NULL;
+
+        code = pdfi_dict_get(ctx, font, "ToUnicode", &array_obj);
+        if (code >= 0)
+            code = pdfi_dict_put(ctx, font_info_dict, "ToUnicode", PDF_TRUE_OBJ);
+        else
+            code = pdfi_dict_put(ctx, font_info_dict, "ToUnicode", PDF_FALSE_OBJ);
+        pdfi_countdown(array_obj);
+        array_obj = NULL;
+        if (code < 0)
+            return code;
+
+        code = pdfi_dict_get(ctx, font, "FontDescriptor", &array_obj);
+        if (code >= 0) {
+            bool known = false;
+
+            (void)pdfi_dict_known(ctx, (pdf_dict *)array_obj, "FontFile", &known);
+            if (!known) {
+                (void)pdfi_dict_known(ctx, (pdf_dict *)array_obj, "FontFile2", &known);
+                if (!known) {
+                    (void)pdfi_dict_known(ctx, (pdf_dict *)array_obj, "FontFile3", &known);
+                }
+            }
+
+            if (known >= 0)
+                code = pdfi_dict_put(ctx, font_info_dict, "Embedded", PDF_TRUE_OBJ);
+            else
+                code = pdfi_dict_put(ctx, font_info_dict, "Embedded", PDF_FALSE_OBJ);
+        } else
+            code = pdfi_dict_put(ctx, font_info_dict, "Embedded", PDF_FALSE_OBJ);
+
+        pdfi_countdown(array_obj);
+        array_obj = NULL;
+
+        code = pdfi_dict_knownget_type(ctx, font, "Subtype", PDF_NAME, &array_obj);
+        if (code >= 0) {
+            code = pdfi_dict_put(ctx, font_info_dict, "Subtype", array_obj);
+            if (code < 0) {
+                pdfi_countdown(array_obj);
+                pdfi_countdown(font_info_dict);
+                return code;
+            }
+
+            if (pdfi_name_is((pdf_name *)array_obj, "Type3")) {
+                pdfi_countdown(o);
+                o = NULL;
+
+                code = pdfi_dict_knownget_type(ctx, font, "Resources", PDF_DICT, &o);
+                if (code > 0)
+                    (void)pdfi_check_Resources(ctx, (pdf_dict *)o, page_dict, tracker);
+            }
+
+            if (pdfi_name_is((const pdf_name *)array_obj, "Type0")){
+                pdf_array *descendants = NULL;
+                pdf_dict *desc_font = NULL;
+
+                code = pdfi_dict_get(ctx, font, "DescendantFonts", (pdf_obj **)&descendants);
+                if (code >= 0) {
+                    code = pdfi_array_get(ctx, descendants, 0, (pdf_obj **)&desc_font);
+                    if (code >= 0){
+                        pdf_array *desc_array = NULL;
+
+                        code = pdfi_array_alloc(ctx, 0, &desc_array);
+                        pdfi_countup(desc_array);
+                        if (code >= 0) {
+                            pdf_array *saved = tracker->font_array;
+
+                            tracker->font_array = desc_array;
+                            (void)pdfi_check_Font(ctx, desc_font, page_dict, tracker);
+                            (void)pdfi_dict_put(ctx, font_info_dict, "Descendants", (pdf_obj *)tracker->font_array);
+                            pdfi_countdown((pdf_obj *)tracker->font_array);
+                            tracker->font_array = saved;
+                        }
+                        pdfi_countdown(descendants);
+                        pdfi_countdown(desc_font);
+                    }
+                }
+            }
+        }
+        pdfi_countdown(array_obj);
+        array_obj = NULL;
+
+        code = pdfi_array_alloc(ctx, pdfi_array_size(tracker->font_array) + 1, &new_fonts);
+        if (code < 0) {
+            pdfi_countdown(font_info_dict);
+            return code;
+        }
+        pdfi_countup(new_fonts);
+
+        for (index = 0; index < pdfi_array_size(tracker->font_array); index++) {
+            code = pdfi_array_get(ctx, tracker->font_array, index, &array_obj);
+            if (code < 0) {
+                pdfi_countdown(font_info_dict);
+                pdfi_countdown(new_fonts);
+                return code;
+            }
+            code = pdfi_array_put(ctx, new_fonts, index, array_obj);
+            pdfi_countdown(array_obj);
+            if (code < 0) {
+                pdfi_countdown(font_info_dict);
+                pdfi_countdown(new_fonts);
+                return code;
+            }
+        }
+        code = pdfi_array_put(ctx, new_fonts, index, (pdf_obj *)font_info_dict);
+        if (code < 0) {
+            pdfi_countdown(font_info_dict);
+            pdfi_countdown(new_fonts);
+            return code;
+        }
+        pdfi_countdown(font_info_dict);
+        pdfi_countdown(tracker->font_array);
+        tracker->font_array = new_fonts;
+    } else {
+        code = pdfi_dict_knownget_type(ctx, font, "Subtype", PDF_NAME, &o);
+        if (code > 0) {
+            if (pdfi_name_is((pdf_name *)o, "Type3")) {
+                pdfi_countdown(o);
+                o = NULL;
+
+                code = pdfi_dict_knownget_type(ctx, font, "Resources", PDF_DICT, &o);
+                if (code > 0)
+                    (void)pdfi_check_Resources(ctx, (pdf_dict *)o, page_dict, tracker);
+            }
+        }
+
+        pdfi_countdown(o);
+        o = NULL;
     }
-    pdfi_countdown(o);
-    o = NULL;
 
     return 0;
 }
@@ -1136,7 +1308,7 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
  * Sets ctx->page.has_transparency and ctx->page.num_spots
  * do_setup -- indicates whether to actually set up the device with the spot count.
  */
-int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
+int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, pdf_array **fonts_array, pdf_array **spots_array, bool do_setup)
 {
     int code;
     int spots = 0;
@@ -1151,7 +1323,7 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
      * TODO: Should probably look into that..
      */
     pdfi_device_set_flags(ctx);
-    code = pdfi_check_init_tracker(ctx, &tracker);
+    code = pdfi_check_init_tracker(ctx, &tracker, fonts_array, spots_array);
     if (code < 0)
         goto exit;
 
@@ -1269,6 +1441,47 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
         ctx->page.has_OP = false;
 
  exit:
+    if (fonts_array != NULL) {
+        *fonts_array = tracker.font_array;
+        pdfi_countup(*fonts_array);
+    }
+
+    if (spots_array != NULL && tracker.spot_dict != NULL && pdfi_dict_entries(tracker.spot_dict) != 0) {
+        pdf_array *new_array = NULL;
+        pdf_name *Key = NULL;
+        pdf_obj *Value = NULL;
+        uint64_t index = 0, a_index = 0;
+
+        index = pdfi_dict_entries(tracker.spot_dict);
+
+        code = pdfi_array_alloc(ctx, index, &new_array);
+        if (code < 0)
+            goto error;
+        pdfi_countup(new_array);
+
+        code = pdfi_dict_first(ctx, tracker.spot_dict, (pdf_obj **)&Key, &Value, &index);
+        while (code >= 0)
+        {
+            if (Key->type == PDF_NAME) {
+                code = pdfi_array_put(ctx, new_array, a_index++, (pdf_obj *)Key);
+                if (code < 0) {
+                    pdfi_countdown(new_array);
+                    pdfi_countdown(Key);
+                    pdfi_countdown(Value);
+                    goto error;
+                }
+            }
+
+            pdfi_countdown(Key);
+            Key = NULL;
+            pdfi_countdown(Value);
+            Value = NULL;
+            code = pdfi_dict_next(ctx, tracker.spot_dict, (pdf_obj **)&Key, &Value, &index);
+        }
+        code = 0;
+        *spots_array = new_array;
+    }
+error:
     (void)pdfi_check_free_tracker(ctx, &tracker);
     return code;
 }

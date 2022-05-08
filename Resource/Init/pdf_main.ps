@@ -1068,9 +1068,15 @@ currentdict /PDFSwitches undef
 
 /newpdf_pdfshowpage
 {
-  pdfshowpage_init
-  pdfshowpage_setpage
-  pdfshowpage_finish
+  /PDFINFO where {/PDFINFO get}{//false}ifelse
+  {
+    /Page# get PDFFile exch 1 sub {.PDFDrawPage} stopped pop
+  }
+  {
+    pdfshowpage_init
+    pdfshowpage_setpage
+    pdfshowpage_finish
+  }ifelse
 } bind def
 
 /newpdf_runpdfend

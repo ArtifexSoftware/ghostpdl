@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -23,6 +23,7 @@ bool pdfi_name_is(const pdf_name *n, const char *s);
 int pdfi_name_cmp(const pdf_name *n1, const pdf_name *n2);
 int pdfi_string_cmp(const pdf_string *n1, const pdf_string *n2);
 int pdfi_string_from_name(pdf_context *ctx, pdf_name *n, char **str, int *len);
+int pdfi_free_string_from_name(pdf_context *ctx, char *str);
 
 gs_color_space_index pdfi_get_color_space_index(pdf_context *ctx, const gs_color_space *pcs);
 gs_color_space_index pdfi_currentcolorspace(pdf_context *ctx, int index);
