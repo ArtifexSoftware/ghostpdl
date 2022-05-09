@@ -1109,22 +1109,18 @@ jpeg_idct_1x1 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 	       JCOEFPTR coef_block,
 	       JSAMPARRAY output_buf, JDIMENSION output_col)
 {
-  DCTELEM dcval;
+  int dcval;
   ISLOW_MULT_TYPE * quantptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
-  ISHIFT_TEMPS
+  SHIFT_TEMPS
 
   /* 1x1 is trivial: just take the DC coefficient divided by 8. */
-
   quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
-
   dcval = DEQUANTIZE(coef_block[0], quantptr[0]);
   CLAMP_DC(dcval);
-  /* Add range center and fudge factor for descale and range-limit. */
-  dcval += (((DCTELEM) RANGE_CENTER) << 3) + (1 << 2);
+  dcval = (int) DESCALE((INT32) dcval, 3);
 
-  output_buf[0][output_col] =
-    range_limit[(int) IRIGHT_SHIFT(dcval, 3) & RANGE_MASK];
+  output_buf[0][output_col] = range_limit[dcval & RANGE_MASK];
 }
 
 
@@ -4109,11 +4105,11 @@ jpeg_idct_2x1 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 	       JCOEFPTR coef_block,
 	       JSAMPARRAY output_buf, JDIMENSION output_col)
 {
-  DCTELEM tmp0, tmp1;
+  INT32 tmp0, tmp1;
   ISLOW_MULT_TYPE * quantptr;
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
-  ISHIFT_TEMPS
+  SHIFT_TEMPS
 
   /* Pass 1: empty. */
 
@@ -4126,8 +4122,8 @@ jpeg_idct_2x1 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 
   tmp0 = DEQUANTIZE(coef_block[0], quantptr[0]);
   CLAMP_DC(tmp0);
-  /* Add range center and fudge factor for final descale and range-limit. */
-  tmp0 += (((DCTELEM) RANGE_CENTER) << 3) + (1 << 2);
+  /* Add fudge factor here for final descale. */
+  tmp0 += ONE << 2;
 
   /* Odd part */
 
@@ -4135,8 +4131,8 @@ jpeg_idct_2x1 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 
   /* Final output stage */
 
-  outptr[0] = range_limit[(int) IRIGHT_SHIFT(tmp0 + tmp1, 3) & RANGE_MASK];
-  outptr[1] = range_limit[(int) IRIGHT_SHIFT(tmp0 - tmp1, 3) & RANGE_MASK];
+  outptr[0] = range_limit[(int) RIGHT_SHIFT(tmp0 + tmp1, 3) & RANGE_MASK];
+  outptr[1] = range_limit[(int) RIGHT_SHIFT(tmp0 - tmp1, 3) & RANGE_MASK];
 }
 
 
@@ -4956,8 +4952,6 @@ jpeg_idct_4x8 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
      */
 
     z2 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 4)
-      CLAMP_DC(z2);
     z3 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
     z2 <<= CONST_BITS;
     z3 <<= CONST_BITS;
@@ -5286,32 +5280,34 @@ jpeg_idct_1x2 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 	       JCOEFPTR coef_block,
 	       JSAMPARRAY output_buf, JDIMENSION output_col)
 {
-  DCTELEM tmp0, tmp1;
+  INT32 tmp0, tmp1;
   ISLOW_MULT_TYPE * quantptr;
+  JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
-  ISHIFT_TEMPS
+  SHIFT_TEMPS
 
-  /* Process 1 column from input, store into output array. */
+  /* Pass 1: empty. */
+
+  /* Pass 2: process 1 row from input, store into output array. */
 
   quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  outptr = output_buf[0] + output_col;
 
   /* Even part */
 
-  tmp0 = DEQUANTIZE(coef_block[DCTSIZE*0], quantptr[DCTSIZE*0]);
+  tmp0 = DEQUANTIZE(coef_block[0], quantptr[0]);
   CLAMP_DC(tmp0);
-  /* Add range center and fudge factor for final descale and range-limit. */
-  tmp0 += (((DCTELEM) RANGE_CENTER) << 3) + (1 << 2);
+  /* Add fudge factor here for final descale. */
+  tmp0 += ONE << 2;
 
   /* Odd part */
 
-  tmp1 = DEQUANTIZE(coef_block[DCTSIZE*1], quantptr[DCTSIZE*1]);
+  tmp1 = DEQUANTIZE(coef_block[1], quantptr[1]);
 
   /* Final output stage */
 
-  output_buf[0][output_col] =
-    range_limit[(int) IRIGHT_SHIFT(tmp0 + tmp1, 3) & RANGE_MASK];
-  output_buf[1][output_col] =
-    range_limit[(int) IRIGHT_SHIFT(tmp0 - tmp1, 3) & RANGE_MASK];
+  outptr[0] = range_limit[(int) RIGHT_SHIFT(tmp0 + tmp1, 3) & RANGE_MASK];
+  outptr[1] = range_limit[(int) RIGHT_SHIFT(tmp0 - tmp1, 3) & RANGE_MASK];
 }
 
 #endif /* IDCT_SCALING_SUPPORTED */

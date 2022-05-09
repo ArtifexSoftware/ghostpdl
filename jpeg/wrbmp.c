@@ -322,7 +322,7 @@ write_colormap (j_decompress_ptr cinfo, bmp_dest_ptr dest,
 	putc(0, outfile);
     }
   }
-  /* Pad colormap to ensure specified number of colormap entries */
+  /* Pad colormap to ensure specified number of colormap entries */ 
   if (i > map_colors)
     ERREXIT1(cinfo, JERR_TOO_MANY_COLORS, i);
   for (; i < map_colors; i++) {
