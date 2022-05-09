@@ -338,7 +338,7 @@ do_drop (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
 	for (offset_y = 0; offset_y < compptr->v_samp_factor; offset_y++) {
 	  FMEMZERO(dst_buffer[offset_y] + x_drop_blocks,
 		   comp_width * SIZEOF(JBLOCK));
-	}
+	} 	
       }
     }
   }
