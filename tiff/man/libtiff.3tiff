@@ -93,20 +93,20 @@ The following typedefs are exposed to users either through function
 definitions or through parameters passed through the varargs interfaces.
 .in +.5i
 .sp 5p
-.ta +\w'typedef unsigned <\fIthing\fP> uint32;    'u
+.ta +\w'typedef unsigned <\fIthing\fP> uint32_t;    'u
 .nf
-typedef unsigned short uint16;	16-bit unsigned integer
-typedef unsigned <\fIthing\fP> uint32;	32-bit unsigned integer
+typedef unsigned short uint16_t;	16-bit unsigned integer
+typedef unsigned <\fIthing\fP> uint32_t;	32-bit unsigned integer
 .sp 5p
 typedef unsigned int ttag_t;	directory tag
-typedef uint16 tdir_t;	directory index
-typedef uint16 tsample_t;	sample number
-typedef uint32 tstrip_t;	strip number
-typedef uint32 ttile_t;	tile number
-typedef int32 tsize_t;	i/o size in bytes
+typedef uint16_t tdir_t;	directory index
+typedef uint16_t tsample_t;	sample number
+typedef uint32_t tstrip_t;	strip number
+typedef uint32_t ttile_t;	tile number
+typedef int32_t tsize_t;	i/o size in bytes
 typedef void* tdata_t;	image data ref
 typedef void* thandle_t;	client data handle
-typedef int32 toff_t;	file offset
+typedef int32_t toff_t;	file offset
 .fi
 .sp 5p
 .in -.5i
@@ -134,7 +134,7 @@ a varargs interface and
 .SM "ANSI C"
 restricts the type of the parameter before an ellipsis to be a promoted type.
 .I toff_t
-is defined as int32 because TIFF file offsets are (unsigned) 32-bit
+is defined as int32_t because TIFF file offsets are (unsigned) 32-bit
 quantities. A signed value is used because some interfaces return \-1 on
 error. Finally, note that user-specified data references are passed as opaque
 handles and only cast at the lowest layers where their type is presumed.

@@ -23,6 +23,7 @@
  */
 
 #include "tif_config.h"
+#include "libport.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -31,10 +32,6 @@
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
-#endif
-
-#ifdef NEED_LIBPORT
-# include "libport.h"
 #endif
 
 #include "tiffio.h"
@@ -53,7 +50,7 @@ static	void usage(int code);
 static	void cpTags(TIFF* in, TIFF* out);
 
 static int
-checkcmap(int n, uint16* r, uint16* g, uint16* b)
+checkcmap(int n, uint16_t* r, uint16_t* g, uint16_t* b)
 {
 	while (n-- > 0)
 	    if (*r++ >= 256 || *g++ >= 256 || *b++ >= 256)
@@ -67,8 +64,8 @@ checkcmap(int n, uint16* r, uint16* g, uint16* b)
 #define	CopyField3(tag, v1, v2, v3) \
     if (TIFFGetField(in, tag, &v1, &v2, &v3)) TIFFSetField(out, tag, v1, v2, v3)
 
-static	uint16 compression = (uint16) -1;
-static	uint16 predictor = 0;
+static	uint16_t compression = (uint16_t) -1;
+static	uint16_t predictor = 0;
 static	int quality = 75;	/* JPEG quality */
 static	int jpegcolormode = JPEGCOLORMODE_RGB;
 static	int processCompressOptions(char*);
@@ -76,13 +73,13 @@ static	int processCompressOptions(char*);
 int
 main(int argc, char* argv[])
 {
-	uint16 bitspersample, shortv;
-	uint32 imagewidth, imagelength;
-	uint16 config = PLANARCONFIG_CONTIG;
-	uint32 rowsperstrip = (uint32) -1;
-	uint16 photometric = PHOTOMETRIC_RGB;
-	uint16 *rmap, *gmap, *bmap;
-	uint32 row;
+	uint16_t bitspersample, shortv;
+	uint32_t imagewidth, imagelength;
+	uint16_t config = PLANARCONFIG_CONTIG;
+	uint32_t rowsperstrip = (uint32_t) -1;
+	uint16_t photometric = PHOTOMETRIC_RGB;
+	uint16_t *rmap, *gmap, *bmap;
+	uint32_t row;
 	int cmap = -1;
 	TIFF *in, *out;
 	int c;
@@ -114,6 +111,7 @@ main(int argc, char* argv[])
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
+			break;
 		case '?':
 			usage(EXIT_FAILURE);
 			/*NOTREACHED*/
@@ -153,7 +151,7 @@ main(int argc, char* argv[])
 	cpTags(in, out);
 	TIFFGetField(in, TIFFTAG_IMAGEWIDTH, &imagewidth);
 	TIFFGetField(in, TIFFTAG_IMAGELENGTH, &imagelength);
-	if (compression != (uint16)-1)
+	if (compression != (uint16_t)-1)
 		TIFFSetField(out, TIFFTAG_COMPRESSION, compression);
 	else
 		TIFFGetField(in, TIFFTAG_COMPRESSION, &compression);
@@ -195,7 +193,7 @@ main(int argc, char* argv[])
 	}
 	{ unsigned char *ibuf, *obuf;
 	  register unsigned char* pp;
-	  register uint32 x;
+	  register uint32_t x;
 	  tmsize_t tss_in = TIFFScanlineSize(in);
 	  tmsize_t tss_out = TIFFScanlineSize(out);
 	  if (tss_out / tss_in < 3) {
@@ -301,27 +299,27 @@ processCompressOptions(char* opt)
     if (TIFFGetField(in, tag, &v1, &v2, &v3, &v4)) TIFFSetField(out, tag, v1, v2, v3, v4)
 
 static void
-cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
+cpTag(TIFF* in, TIFF* out, uint16_t tag, uint16_t count, TIFFDataType type)
 {
 	switch (type) {
 	case TIFF_SHORT:
 		if (count == 1) {
-			uint16 shortv;
+			uint16_t shortv;
 			CopyField(tag, shortv);
 		} else if (count == 2) {
-			uint16 shortv1, shortv2;
+			uint16_t shortv1, shortv2;
 			CopyField2(tag, shortv1, shortv2);
 		} else if (count == 4) {
-			uint16 *tr, *tg, *tb, *ta;
+			uint16_t *tr, *tg, *tb, *ta;
 			CopyField4(tag, tr, tg, tb, ta);
-		} else if (count == (uint16) -1) {
-			uint16 shortv1;
-			uint16* shortav;
+		} else if (count == (uint16_t) -1) {
+			uint16_t shortv1;
+			uint16_t* shortav;
 			CopyField2(tag, shortv1, shortav);
 		}
 		break;
 	case TIFF_LONG:
-		{ uint32 longv;
+		{ uint32_t longv;
 		  CopyField(tag, longv);
 		}
 		break;
@@ -329,7 +327,7 @@ cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
 		if (count == 1) {
 			float floatv;
 			CopyField(tag, floatv);
-		} else if (count == (uint16) -1) {
+		} else if (count == (uint16_t) -1) {
 			float* floatav;
 			CopyField(tag, floatav);
 		}
@@ -343,7 +341,7 @@ cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
 		if (count == 1) {
 			double doublev;
 			CopyField(tag, doublev);
-		} else if (count == (uint16) -1) {
+		} else if (count == (uint16_t) -1) {
 			double* doubleav;
 			CopyField(tag, doubleav);
 		}
@@ -360,9 +358,9 @@ cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
 #undef CopyField2
 #undef CopyField
 
-static struct cpTag {
-    uint16	tag;
-    uint16	count;
+static const struct cpTag {
+    uint16_t	tag;
+    uint16_t	count;
     TIFFDataType type;
 } tags[] = {
     { TIFFTAG_IMAGEWIDTH,		1, TIFF_LONG },
@@ -384,49 +382,49 @@ static struct cpTag {
     { TIFFTAG_XRESOLUTION,		1, TIFF_RATIONAL },
     { TIFFTAG_YRESOLUTION,		1, TIFF_RATIONAL },
     { TIFFTAG_PAGENAME,			1, TIFF_ASCII },
-    { TIFFTAG_XPOSITION,		1, TIFF_RATIONAL },
-    { TIFFTAG_YPOSITION,		1, TIFF_RATIONAL },
-    { TIFFTAG_GROUP4OPTIONS,		1, TIFF_LONG },
-    { TIFFTAG_RESOLUTIONUNIT,		1, TIFF_SHORT },
-    { TIFFTAG_PAGENUMBER,		2, TIFF_SHORT },
-    { TIFFTAG_SOFTWARE,			1, TIFF_ASCII },
-    { TIFFTAG_DATETIME,			1, TIFF_ASCII },
-    { TIFFTAG_ARTIST,			1, TIFF_ASCII },
-    { TIFFTAG_HOSTCOMPUTER,		1, TIFF_ASCII },
-    { TIFFTAG_WHITEPOINT,		2, TIFF_RATIONAL },
-    { TIFFTAG_PRIMARYCHROMATICITIES,	(uint16) -1,TIFF_RATIONAL },
-    { TIFFTAG_HALFTONEHINTS,		2, TIFF_SHORT },
-    { TIFFTAG_BADFAXLINES,		1, TIFF_LONG },
-    { TIFFTAG_CLEANFAXDATA,		1, TIFF_SHORT },
-    { TIFFTAG_CONSECUTIVEBADFAXLINES,	1, TIFF_LONG },
-    { TIFFTAG_INKSET,			1, TIFF_SHORT },
+    { TIFFTAG_XPOSITION,		1,                     TIFF_RATIONAL },
+    { TIFFTAG_YPOSITION,		1,                     TIFF_RATIONAL },
+    { TIFFTAG_GROUP4OPTIONS,		1,                 TIFF_LONG },
+    { TIFFTAG_RESOLUTIONUNIT,		1,                TIFF_SHORT },
+    { TIFFTAG_PAGENUMBER,		2,                    TIFF_SHORT },
+    { TIFFTAG_SOFTWARE,			1,                  TIFF_ASCII },
+    { TIFFTAG_DATETIME,			1,                  TIFF_ASCII },
+    { TIFFTAG_ARTIST,			1,                    TIFF_ASCII },
+    { TIFFTAG_HOSTCOMPUTER,		1,                  TIFF_ASCII },
+    { TIFFTAG_WHITEPOINT,		2,                    TIFF_RATIONAL },
+    { TIFFTAG_PRIMARYCHROMATICITIES,	(uint16_t) -1, TIFF_RATIONAL },
+    { TIFFTAG_HALFTONEHINTS,		2,                 TIFF_SHORT },
+    { TIFFTAG_BADFAXLINES,		1,                   TIFF_LONG },
+    { TIFFTAG_CLEANFAXDATA,		1,                  TIFF_SHORT },
+    { TIFFTAG_CONSECUTIVEBADFAXLINES,	1,            TIFF_LONG },
+    { TIFFTAG_INKSET,			1,                    TIFF_SHORT },
     /*{ TIFFTAG_INKNAMES,			1, TIFF_ASCII },*/ /* Needs much more complicated logic. See tiffcp */
-    { TIFFTAG_DOTRANGE,			2, TIFF_SHORT },
-    { TIFFTAG_TARGETPRINTER,		1, TIFF_ASCII },
-    { TIFFTAG_SAMPLEFORMAT,		1, TIFF_SHORT },
-    { TIFFTAG_YCBCRCOEFFICIENTS,	(uint16) -1,TIFF_RATIONAL },
-    { TIFFTAG_YCBCRSUBSAMPLING,		2, TIFF_SHORT },
-    { TIFFTAG_YCBCRPOSITIONING,		1, TIFF_SHORT },
-    { TIFFTAG_REFERENCEBLACKWHITE,	(uint16) -1,TIFF_RATIONAL },
+    { TIFFTAG_DOTRANGE,			2,                  TIFF_SHORT },
+    { TIFFTAG_TARGETPRINTER,		1,                 TIFF_ASCII },
+    { TIFFTAG_SAMPLEFORMAT,		1,                  TIFF_SHORT },
+    { TIFFTAG_YCBCRCOEFFICIENTS,	(uint16_t) -1,     TIFF_RATIONAL },
+    { TIFFTAG_YCBCRSUBSAMPLING,		2,              TIFF_SHORT },
+    { TIFFTAG_YCBCRPOSITIONING,		1,              TIFF_SHORT },
+    { TIFFTAG_REFERENCEBLACKWHITE,	(uint16_t) -1,   TIFF_RATIONAL },
 };
 #define	NTAGS	(sizeof (tags) / sizeof (tags[0]))
 
 static void
 cpTags(TIFF* in, TIFF* out)
 {
-    struct cpTag *p;
+    const struct cpTag *p;
     for (p = tags; p < &tags[NTAGS]; p++)
     {
         if( p->tag == TIFFTAG_GROUP3OPTIONS )
         {
-            uint16 compression;
+            uint16_t compression;
             if( !TIFFGetField(in, TIFFTAG_COMPRESSION, &compression) ||
                     compression != COMPRESSION_CCITTFAX3 )
                 continue;
         }
         if( p->tag == TIFFTAG_GROUP4OPTIONS )
         {
-            uint16 compression;
+            uint16_t compression;
             if( !TIFFGetField(in, TIFFTAG_COMPRESSION, &compression) ||
                     compression != COMPRESSION_CCITTFAX4 )
                 continue;
@@ -436,35 +434,42 @@ cpTags(TIFF* in, TIFF* out)
 }
 #undef NTAGS
 
-const char* stuff[] = {
-"usage: pal2rgb [options] input.tif output.tif",
-"where options are:",
-" -p contig	pack samples contiguously (e.g. RGBRGB...)",
-" -p separate	store samples separately (e.g. RRR...GGG...BBB...)",
-" -r #		make each strip have no more than # rows",
-" -C 8		assume 8-bit colormap values (instead of 16-bit)",
-" -C 16		assume 16-bit colormap values",
-"",
-" -c lzw[:opts]	compress output with Lempel-Ziv & Welch encoding",
-" -c zip[:opts]	compress output with deflate encoding",
-" -c packbits	compress output with packbits encoding",
-" -c none	use no compression algorithm on output",
-"",
-"LZW and deflate options:",
-" #		set predictor value",
-"For example, -c lzw:2 to get LZW-encoded data with horizontal differencing",
-NULL
-};
+static const char usage_info[] =
+"Convert a palette color TIFF image to a full color image\n\n"
+"usage: pal2rgb [options] input.tif output.tif\n"
+"where options are:\n"
+" -p contig	pack samples contiguously (e.g. RGBRGB...)\n"
+" -p separate	store samples separately (e.g. RRR...GGG...BBB...)\n"
+" -r #		make each strip have no more than # rows\n"
+" -C 8		assume 8-bit colormap values (instead of 16-bit)\n"
+" -C 16		assume 16-bit colormap values\n"
+"\n"
+#ifdef LZW_SUPPORT
+" -c lzw[:opts]	compress output with Lempel-Ziv & Welch encoding\n"
+/* "    LZW options:\n" */
+"    #  set predictor value\n"
+"    For example, -c lzw:2 to get LZW-encoded data with horizontal differencing\n"
+#endif
+#ifdef ZIP_SUPPORT
+" -c zip[:opts]	compress output with deflate encoding\n"
+/* "    Deflate (ZIP) options:\n" */
+"    #  set predictor value\n"
+#endif
+#ifdef PACKBITS_SUPPORT
+" -c packbits	compress output with packbits encoding\n"
+#endif
+#if defined(LZW_SUPPORT) || defined(ZIP_SUPPORT) || defined(PACKBITS_SUPPORT)
+" -c none	use no compression algorithm on output\n"
+#endif
+;
 
 static void
 usage(int code)
 {
-	int i;
 	FILE * out = (code == EXIT_SUCCESS) ? stdout : stderr;
 
         fprintf(out, "%s\n\n", TIFFGetVersion());
-	for (i = 0; stuff[i] != NULL; i++)
-		fprintf(out, "%s\n", stuff[i]);
+        fprintf(out, "%s", usage_info);
 	exit(code);
 }
 

@@ -32,7 +32,7 @@ file
 .sp
 .BI "int TIFFSetDirectory(TIFF *" tif ", tdir_t " dirnum ")"
 .br
-.BI "int TIFFSetSubDirectory(TIFF *" tif ", uint64 " diroff ")"
+.BI "int TIFFSetSubDirectory(TIFF *" tif ", uint64_t " diroff ")"
 .SH DESCRIPTION
 .I TIFFSetDirectory
 changes the current directory and reads its contents with

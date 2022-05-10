@@ -29,7 +29,7 @@
 
 #include "tiffio.h"
 
-#define ROUND(x)    (uint16) ((x) + 0.5)
+#define ROUND(x)    (uint16_t) ((x) + 0.5)
 #define CMSIZE      256
 #define WIDTH       525
 #define HEIGHT      512
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     int             i, j;
     TIFF *          tif;
     unsigned char * scan_line;
-    uint16          red[CMSIZE], green[CMSIZE], blue[CMSIZE];
+    uint16_t        red[CMSIZE], green[CMSIZE], blue[CMSIZE];
     float	    refblackwhite[2*3];
 
     programName = argv[0];

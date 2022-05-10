@@ -30,7 +30,7 @@ file
 .SH SYNOPSIS
 .B "#include <tiffio.h>"
 .sp
-.BI "int TIFFReadScanline(TIFF *" tif ", tdata_t " buf ", uint32 " row ", tsample_t " sample ")"
+.BI "int TIFFReadScanline(TIFF *" tif ", tdata_t " buf ", uint32_t " row ", tsample_t " sample ")"
 .SH DESCRIPTION
 Read the data for the specified row into the (user supplied) data buffer
 .IR buf .

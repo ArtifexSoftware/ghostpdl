@@ -23,6 +23,7 @@
  */
 
 #include "tif_config.h"
+#include "libport.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,15 +42,7 @@
 # include <io.h>
 #endif
 
-#ifdef NEED_LIBPORT
-# include "libport.h"
-#endif
-
 #include "tiffio.h"
-
-#ifndef HAVE_GETOPT
-extern int getopt(int argc, char * const argv[], const char *optstring);
-#endif
 
 #ifndef EXIT_SUCCESS
 #define EXIT_SUCCESS 0
@@ -61,17 +54,17 @@ extern int getopt(int argc, char * const argv[], const char *optstring);
 #define	streq(a,b)	(strcmp(a,b) == 0)
 #define	strneq(a,b,n)	(strncmp(a,b,n) == 0)
 
-static	uint16 compression = COMPRESSION_PACKBITS;
-static	uint16 predictor = 0;
+static	uint16_t compression = COMPRESSION_PACKBITS;
+static	uint16_t predictor = 0;
 static	int quality = 75;	/* JPEG quality */
 static	int jpegcolormode = JPEGCOLORMODE_RGB;
-static  uint32 g3opts;
+static  uint32_t g3opts;
 
 static	void usage(int code);
 static	int processCompressOptions(char*);
 
 static void
-pack_none (unsigned char *buf, unsigned int smpls, uint16 bps)
+pack_none (unsigned char *buf, unsigned int smpls, uint16_t bps)
 {
 	(void)buf;
 	(void)smpls;
@@ -80,7 +73,7 @@ pack_none (unsigned char *buf, unsigned int smpls, uint16 bps)
 }
 
 static void
-pack_swab (unsigned char *buf, unsigned int smpls, uint16 bps)
+pack_swab (unsigned char *buf, unsigned int smpls, uint16_t bps)
 {
 	unsigned int s;
 	unsigned char h;
@@ -99,13 +92,13 @@ pack_swab (unsigned char *buf, unsigned int smpls, uint16 bps)
 }
 
 static void
-pack_bytes (unsigned char *buf, unsigned int smpls, uint16 bps)
+pack_bytes (unsigned char *buf, unsigned int smpls, uint16_t bps)
 {
 	unsigned int s;
 	unsigned int in;
 	unsigned int out;
 	int bits;
-	uint16 t;
+	uint16_t t;
 
 	in   = 0;
 	out  = 0;
@@ -115,7 +108,7 @@ pack_bytes (unsigned char *buf, unsigned int smpls, uint16 bps)
 	for (s = 0; smpls > s; s++) {
 
 		t <<= bps;
-		t |= (uint16) buf [in++];
+		t |= (uint16_t) buf [in++];
 
 		bits += bps;
 
@@ -129,13 +122,13 @@ pack_bytes (unsigned char *buf, unsigned int smpls, uint16 bps)
 }
 
 static void
-pack_words (unsigned char *buf, unsigned int smpls, uint16 bps)
+pack_words (unsigned char *buf, unsigned int smpls, uint16_t bps)
 {
 	unsigned int s;
 	unsigned int in;
 	unsigned int out;
 	int bits;
-	uint32 t;
+	uint32_t t;
 
 	in   = 0;
 	out  = 0;
@@ -145,8 +138,8 @@ pack_words (unsigned char *buf, unsigned int smpls, uint16 bps)
 	for (s = 0; smpls > s; s++) {
 
 		t <<= bps;
-		t |= (uint32) buf [in++] << 8;
-		t |= (uint32) buf [in++] << 0;
+		t |= (uint32_t) buf [in++] << 8;
+		t |= (uint32_t) buf [in++] << 0;
 
 		bits += bps;
 
@@ -173,9 +166,6 @@ BadPPM(char* file)
 }
 
 
-#define TIFF_SIZE_T_MAX ((size_t) ~ ((size_t)0))
-#define TIFF_TMSIZE_T_MAX (tmsize_t)(TIFF_SIZE_T_MAX >> 1)
-
 static tmsize_t
 multiply_ms(tmsize_t m1, tmsize_t m2)
 {
@@ -187,15 +177,15 @@ multiply_ms(tmsize_t m1, tmsize_t m2)
 int
 main(int argc, char* argv[])
 {
-	uint16 photometric = 0;
-	uint32 rowsperstrip = (uint32) -1;
+	uint16_t photometric = 0;
+	uint32_t rowsperstrip = (uint32_t) -1;
 	double resolution = -1;
 	unsigned char *buf = NULL;
 	tmsize_t linebytes = 0;
 	int pbm;
-	uint16 spp = 1;
-	uint16 bpp = 8;
-	void (*pack_func) (unsigned char *buf, unsigned int smpls, uint16 bps);
+	uint16_t spp = 1;
+	uint16_t bpp = 8;
+	void (*pack_func) (unsigned char *buf, unsigned int smpls, uint16_t bps);
 	TIFF *out;
 	FILE *in;
 	unsigned int w, h, prec, row;
@@ -225,6 +215,7 @@ main(int argc, char* argv[])
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
+			break;
 		case '?':
 			usage(EXIT_FAILURE);
 			/*NOTREACHED*/
@@ -349,8 +340,8 @@ main(int argc, char* argv[])
 	out = TIFFOpen(argv[optind], "w");
 	if (out == NULL)
 		return (EXIT_FAILURE);
-	TIFFSetField(out, TIFFTAG_IMAGEWIDTH, (uint32) w);
-	TIFFSetField(out, TIFFTAG_IMAGELENGTH, (uint32) h);
+	TIFFSetField(out, TIFFTAG_IMAGEWIDTH, (uint32_t) w);
+	TIFFSetField(out, TIFFTAG_IMAGELENGTH, (uint32_t) h);
 	TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 	TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, spp);
 	TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, bpp);
@@ -379,7 +370,7 @@ main(int argc, char* argv[])
 	} else {
 		linebytes = multiply_ms(2 * spp, w);
 	}
-	if (rowsperstrip == (uint32) -1) {
+	if (rowsperstrip == (uint32_t) -1) {
 		TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, h);
 	} else {
 		TIFFSetField(out, TIFFTAG_ROWSPERSTRIP,
@@ -412,8 +403,8 @@ main(int argc, char* argv[])
 	}
 	for (row = 0; row < h; row++) {
 		if (fread(buf, linebytes, 1, in) != 1) {
-			fprintf(stderr, "%s: scanline %lu: Read error.\n",
-			    infile, (unsigned long) row);
+			fprintf(stderr, "%s: scanline %u: Read error.\n",
+			    infile, row);
 			break;
 		}
 		pack_func (buf, w * spp, bpp);
@@ -489,38 +480,49 @@ processCompressOptions(char* opt)
 	return (1);
 }
 
-const char* stuff[] = {
-"usage: ppm2tiff [options] input.ppm output.tif",
-"where options are:",
-" -r #		make each strip have no more than # rows",
-" -R #		set x&y resolution (dpi)",
-"",
-" -c jpeg[:opts]  compress output with JPEG encoding",
-" -c lzw[:opts]	compress output with Lempel-Ziv & Welch encoding",
-" -c zip[:opts]	compress output with deflate encoding",
-" -c packbits	compress output with packbits encoding (the default)",
-" -c g3[:opts]  compress output with CCITT Group 3 encoding",
-" -c g4         compress output with CCITT Group 4 encoding",
-" -c none	use no compression algorithm on output",
-"",
-"JPEG options:",
-" #		set compression quality level (0-100, default 75)",
-" r		output color image as RGB rather than YCbCr",
-"LZW and deflate options:",
-" #		set predictor value",
-"For example, -c lzw:2 to get LZW-encoded data with horizontal differencing",
-NULL
-};
+static const char usage_info[] =
+"Create a TIFF file from PPM, PGM and PBM image files\n\n"
+"usage: ppm2tiff [options] input.ppm output.tif\n"
+"where options are:\n"
+" -r #		make each strip have no more than # rows\n"
+" -R #		set x&y resolution (dpi)\n"
+"\n"
+#ifdef JPEG_SUPPORT
+" -c jpeg[:opts] compress output with JPEG encoding\n"
+/*     "JPEG options:\n" */
+"    #  set compression quality level (0-100, default 75)\n"
+"    r  output color image as RGB rather than YCbCr\n"
+#endif
+#ifdef LZW_SUPPORT
+" -c lzw[:opts]  compress output with Lempel-Ziv & Welch encoding\n"
+/* "    LZW options:\n" */
+"    #  set predictor value\n"
+"    For example, -c lzw:2 for LZW-encoded data with horizontal differencing\n"
+#endif
+#ifdef ZIP_SUPPORT
+" -c zip[:opts]  compress output with deflate encoding\n"
+/* "    Deflate (ZIP) options:\n" */
+"    #  set predictor value\n"
+#endif
+#ifdef PACKBITS_SUPPORT
+" -c packbits    compress output with packbits encoding (the default)\n"
+#endif
+#ifdef CCITT_SUPPORT
+" -c g3[:opts]   compress output with CCITT Group 3 encoding\n"
+" -c g4          compress output with CCITT Group 4 encoding\n"
+#endif
+#if defined(JPEG_SUPPORT) || defined(LZW_SUPPORT) || defined(ZIP_SUPPORT) || defined(PACKBITS_SUPPORT) || defined(CCITT_SUPPORT)
+" -c none        use no compression algorithm on output\n"
+#endif
+;
 
 static void
 usage(int code)
 {
-	int i;
 	FILE * out = (code == EXIT_SUCCESS) ? stdout : stderr;
 
         fprintf(out, "%s\n\n", TIFFGetVersion());
-	for (i = 0; stuff[i] != NULL; i++)
-		fprintf(out, "%s\n", stuff[i]);
+        fprintf(out, "%s", usage_info);
 	exit(code);
 }
 

@@ -253,18 +253,7 @@ operating system-dependencies
 as possible in two files: <B>tiffcomp.h</B> and
 <B>libtiff/tif_&lt;os&gt;.c</B>.  The latter file contains
 operating system-specific routines to do I/O and I/O-related operations.
-The UNIX (<B>tif_unix.c</B>),
-Macintosh (<B>tif_apple.c</B>),
-and VMS (<B>tif_vms.c</B>)
-code has had the most use;
-the MS/DOS support (<B>tif_msdos.c</B>) assumes
-some level of UNIX system call emulation (i.e.
-<TT>open</TT>,
-<TT>read</TT>,
-<TT>write</TT>,
-<TT>fstat</TT>,
-<TT>malloc</TT>,
-<TT>free</TT>).
+The UNIX (<B>tif_unix.c</B>) code has had the most use.
 
 <P>
 Native CPU byte order is determined on the fly by
@@ -289,7 +278,7 @@ The following defines control general portability:
 <TR>
 <TD VALIGN=top><TT>HAVE_IEEEFP</TT></TD>
 <TD>Define this as 0 or 1 according to the floating point
-		format suported by the machine.  If your machine does
+		format supported by the machine.  If your machine does
 		not support IEEE floating point then you will need to
 		add support to tif_machdep.c to convert between the
 		native format and IEEE format.</TD>
@@ -338,37 +327,37 @@ purely by fiddling with the following machine-dependent typedefs:
 <TABLE BORDER CELLPADDING=3 WIDTH="100%">
 
 <TR>
-<TD>uint8</TD>
+<TD>uint8_t</TD>
 <TD>8-bit unsigned integer</TD>
 <TD>tiff.h</TD>
 </TR>
 
 <TR>
-<TD>int8</TD>
+<TD>int8_t</TD>
 <TD>8-bit signed integer</TD>
 <TD>tiff.h</TD>
 </TR>
 
 <TR>
-<TD>uint16</TD>
+<TD>uint16_t</TD>
 <TD>16-bit unsigned integer</TD>
 <TD>tiff.h</TD>
 </TR>
 
 <TR>
-<TD>int16</TD>
+<TD>int16_t</TD>
 <TD>16-bit signed integer</TD>
 <TD>tiff.h</TD>
 </TR>
 
 <TR>
-<TD>uint32</TD>
+<TD>uint32_t</TD>
 <TD>32-bit unsigned integer</TD>
 <TD>tiff.h</TD>
 </TR>
 
 <TR>
-<TD>int32</TD>
+<TD>int32_t</TD>
 <TD>32-bit signed integer</TD>
 <TD>tiff.h</TD>
 </TR>
@@ -399,23 +388,23 @@ structure:
 </TR>
 
 <TR>
-<TD>typedef uint16 tdir_t;</TD>		<TD>directory index</TD>
+<TD>typedef uint16_t tdir_t;</TD>		<TD>directory index</TD>
 </TR>
 
 <TR>
-<TD>typedef uint16 tsample_t;</TD>	<TD>sample number</TD>
+<TD>typedef uint16_t tsample_t;</TD>	<TD>sample number</TD>
 </TR>
 
 <TR>
-<TD>typedef uint32 tstrip_t;</TD>	<TD>strip number</TD>
+<TD>typedef uint32_t tstrip_t;</TD>	<TD>strip number</TD>
 </TR>
 
 <TR>
-<TD>typedef uint32 ttile_t;</TD>		<TD>tile number</TD>
+<TD>typedef uint32_t ttile_t;</TD>		<TD>tile number</TD>
 </TR>
 
 <TR>
-<TD>typedef int32 tsize_t;</TD>		<TD>i/o size in bytes</TD>
+<TD>typedef int32_t tsize_t;</TD>		<TD>i/o size in bytes</TD>
 </TR>
 
 <TR>
@@ -427,7 +416,7 @@ structure:
 </TR>
 
 <TR>
-<TD>typedef int32 toff_t;</TD>		<TD>file offset (should be off_t)</TD>
+<TD>typedef int32_t toff_t;</TD>		<TD>file offset (should be off_t)</TD>
 </TR>
 
 <TR>
@@ -449,7 +438,7 @@ be an arbitrary size (without penalty).  <TT>ttag_t</TT> must be either
 because the library uses a varargs
 interface and ANSI C restricts the type of the parameter before an
 ellipsis to be a promoted type.  <TT>toff_t</TT> is defined as
-<TT>int32</TT> because
+<TT>int32_t</TT> because
 TIFF file offsets are (unsigned) 32-bit quantities.  A signed
 value is used because some interfaces return -1 on error (sigh).
 Finally, note that <TT>tidata_t</TT> is used internally to the library to

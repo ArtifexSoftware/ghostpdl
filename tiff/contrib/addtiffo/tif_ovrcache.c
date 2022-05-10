@@ -138,7 +138,7 @@ static void TIFFWriteOvrRow( TIFFOvrCache * psCache )
     int		nRet, iTileX, iTileY = psCache->nBlockOffset;
     unsigned char *pabyData;
     toff_t	nBaseDirOffset;
-    uint32      RowsInStrip;
+    uint32_t  RowsInStrip;
 
 /* -------------------------------------------------------------------- */
 /*      If the output cache is multi-byte per sample, and the file      */
@@ -148,11 +148,11 @@ static void TIFFWriteOvrRow( TIFFOvrCache * psCache )
     if( TIFFIsByteSwapped(psCache->hTIFF) )
     {
         if( psCache->nBitsPerPixel == 16 )
-            TIFFSwabArrayOfShort( (uint16 *) psCache->pabyRow1Blocks,
+            TIFFSwabArrayOfShort( (uint16_t *) psCache->pabyRow1Blocks,
                       (psCache->nBytesPerBlock * psCache->nSamples) / 2 );
 
         else if( psCache->nBitsPerPixel == 32 )
-            TIFFSwabArrayOfLong( (uint32 *) psCache->pabyRow1Blocks,
+            TIFFSwabArrayOfLong( (uint32_t *) psCache->pabyRow1Blocks,
                          (psCache->nBytesPerBlock * psCache->nSamples) / 4 );
 
         else if( psCache->nBitsPerPixel == 64 )

@@ -48,13 +48,13 @@ or
 When a
 .I count
 is required, it will be of type
-.BR uint32
+.BR uint32_t
 when
 .BR TIFFFieldReadCount
 reports
 .BR TIFF_VARIABLE2 ,
 and of type
-.BR uint16
+.BR uint16_t
 otherwise.  (This distinction is critical for use of
 .BR TIFFGetField ,
 but normally not so for use of

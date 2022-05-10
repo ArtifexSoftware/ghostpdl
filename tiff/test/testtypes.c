@@ -42,16 +42,15 @@
 int
 main()
 {
-	CHECK_TYPE(TIFF_INT8_T, 1)
-	CHECK_TYPE(TIFF_INT16_T, 2)
-	CHECK_TYPE(TIFF_INT32_T, 4)
-	CHECK_TYPE(TIFF_INT64_T, 8)
-	CHECK_TYPE(TIFF_UINT8_T, 1)
-	CHECK_TYPE(TIFF_UINT16_T, 2)
-	CHECK_TYPE(TIFF_UINT32_T, 4)
-	CHECK_TYPE(TIFF_UINT64_T, 8)
-	CHECK_TYPE(TIFF_SIZE_T, sizeof(size_t))
-	CHECK_TYPE(TIFF_SSIZE_T, sizeof(size_t))
+	CHECK_TYPE(int8_t, 1)
+	CHECK_TYPE(int16_t, 2)
+	CHECK_TYPE(int32_t, 4)
+	CHECK_TYPE(int64_t, 8)
+	CHECK_TYPE(uint8_t, 1)
+	CHECK_TYPE(uint16_t, 2)
+	CHECK_TYPE(uint32_t, 4)
+	CHECK_TYPE(uint64_t, 8)
+	CHECK_TYPE(tmsize_t , sizeof(size_t))
 	return 0;
 }
 

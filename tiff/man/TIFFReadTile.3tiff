@@ -30,7 +30,7 @@ file
 .SH SYNOPSIS
 .B "#include <tiffio.h>"
 .sp
-.BI "tsize_t TIFFReadTile(TIFF *" tif ", tdata_t " buf ", uint32 " x ", uint32 " y ", uint32 " z ", tsample_t " sample ")"
+.BI "tsize_t TIFFReadTile(TIFF *" tif ", tdata_t " buf ", uint32_t " x ", uint32_t " y ", uint32_t " z ", tsample_t " sample ")"
 .SH DESCRIPTION
 Return the data for the tile
 .I containing

@@ -445,7 +445,7 @@ tiffscaled24_print_page(gx_device_printer * pdev, gp_file * file)
 static void
 tiff_set_cmyk_fields(gx_device_printer *pdev, TIFF *tif,
                      short bits_per_sample,
-                     uint16 compression,
+                     uint16_t compression,
                      long max_strip_size)
 {
     TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bits_per_sample);
@@ -667,7 +667,7 @@ static dev_proc_decode_color(tiffsep1_decode_color);
     bool  UseBigTIFF;           /* true = output bigtiff, false don't */ \
     bool  write_datetime;       /* true = write DATETIME tag, false = don't */ \
     bool  PrintSpotCMYK;        /* true = print CMYK equivalents for spot inks; false = do nothing */\
-    uint16 Compression;         /* for the separation files, same values as TIFFTAG_COMPRESSION */\
+    uint16_t Compression;         /* for the separation files, same values as TIFFTAG_COMPRESSION */\
     long MaxStripSize;\
     long BitsPerComponent;\
     int max_spots;\

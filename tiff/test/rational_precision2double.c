@@ -72,12 +72,12 @@
 int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags);
 
 #define	SPP	3		/* Samples per pixel */
-const uint16	width = 1;
-const uint16	length = 1;
-const uint16	bps = 8;
-const uint16	photometric = PHOTOMETRIC_RGB;
-const uint16	rows_per_strip = 1;
-const uint16	planarconfig = PLANARCONFIG_CONTIG;
+const uint16_t	width = 1;
+const uint16_t	length = 1;
+const uint16_t	bps = 8;
+const uint16_t	photometric = PHOTOMETRIC_RGB;
+const uint16_t	rows_per_strip = 1;
+const uint16_t	planarconfig = PLANARCONFIG_CONTIG;
 
 /*-- Additional custom TIFF tags for testing of Rational2Double precision --*/
 #define TIFFTAG_RATIONAL_DOUBLE		60000
@@ -148,11 +148,11 @@ It merges in our new fields and then calls the next extender if there is one in 
 static void
 _XTIFFDefaultDirectory(TIFF *tif)
 {
-	uint32 n, nadded;
+	uint32_t n, nadded;
 
 	/* Install the extended Tag field info */
 	n = N(tifFieldInfo);
-	//_TIFFMergeFields(tif, const TIFFField info[], uint32 n);
+	//_TIFFMergeFields(tif, const TIFFField info[], uint32_t n);
 	nadded = _TIFFMergeFields(tif, tifFieldInfo, n);
         (void)nadded;
 
@@ -261,8 +261,8 @@ write_test_tiff(TIFF* tif, const char* filenameRead, int blnAllCustomTags) {
 	int				retCode;
 	float			auxFloat = 0.0f;
 	double			auxDouble = 0.0;
-	uint16			auxUint16 = 0;
-	uint32			auxUint32 = 0;
+	uint16_t			auxUint16 = 0;
+	uint32_t			auxUint32 = 0;
 	long			auxLong = 0;
 	void* pVoid;
 	int				blnIsRational2Double;
@@ -292,7 +292,7 @@ write_test_tiff(TIFF* tif, const char* filenameRead, int blnAllCustomTags) {
 	float			auxFloatArrayResolutions[4] = {5.456789f, 6.666666f, 0.0033f, 5.0f / 213.0f};
 
 	/* -- Variables for reading -- */
-	uint16      count16 = 0;
+	uint16_t      count16 = 0;
 	union {
 		long		Long;
 		short		Short1;

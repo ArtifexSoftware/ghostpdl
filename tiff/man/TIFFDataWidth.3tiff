@@ -65,7 +65,7 @@ Currently following data types are supported:
 .br
 .IR TIFFDataWidth
 returns a number of bytes occupied by the item of given type. 0 returned when
-uknown data type supplied.
+unknown data type supplied.
 .SH "SEE ALSO"
 .BR libtiff (3TIFF),
 .PP

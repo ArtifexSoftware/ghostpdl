@@ -108,8 +108,8 @@ main()
 	for (i = 0; i < NTAGS; i++) {
 		if (!TIFFSetField(tif, ascii_tags[i].tag,
 				  ascii_tags[i].value)) {
-			fprintf(stderr, "Can't set tag %lu.\n",
-				(unsigned long)ascii_tags[i].tag);
+			fprintf(stderr, "Can't set tag %"PRIu32".\n",
+				ascii_tags[i].tag);
 			goto failure;
 		}
 	}
@@ -144,8 +144,8 @@ main()
 	for (i = 0; i < NTAGS; i++) {
 		if (!TIFFGetField(tif, ascii_tags[i].tag, &value)
 		    || strcmp(value, ascii_tags[i].value)) {
-			fprintf(stderr, "Can't get tag %lu.\n",
-				(unsigned long)ascii_tags[i].tag);
+			fprintf(stderr, "Can't get tag %"PRIu32".\n",
+				ascii_tags[i].tag);
 			goto failure;
 		}
 	}

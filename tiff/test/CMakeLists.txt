@@ -22,11 +22,6 @@
 # LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
 # OF THIS SOFTWARE.
 
-include_directories(${PROJECT_SOURCE_DIR}/libtiff
-                    ${PROJECT_BINARY_DIR}/libtiff
-                    ${CMAKE_CURRENT_BINARY_DIR}
-                    ${TIFF_INCLUDES})
-
 # Test scripts (not used by CMake)
 set(TESTSCRIPTS
     bmp2tiff_palette.sh
@@ -168,58 +163,65 @@ set(IMAGES_EXTRA_DIST
     ${PNMIMAGES}
     ${TIFFIMAGES})
 
-extra_dist(
-    ${TESTSCRIPTS}
-    ${IMAGES_EXTRA_DIST}
-    common.sh)
-
 set(noinst_HEADERS tifftest.h)
 
-add_executable(ascii_tag ascii_tag.c)
-target_link_libraries(ascii_tag tiff port)
+add_executable(ascii_tag)
+target_sources(ascii_tag PRIVATE ascii_tag.c)
+target_link_libraries(ascii_tag PRIVATE tiff port)
 
-add_executable(long_tag long_tag.c check_tag.c)
-target_link_libraries(long_tag tiff port)
+add_executable(long_tag)
+target_sources(long_tag PRIVATE long_tag.c check_tag.c)
+target_link_libraries(long_tag PRIVATE tiff port)
 
-add_executable(short_tag short_tag.c check_tag.c)
-target_link_libraries(short_tag tiff port)
+add_executable(short_tag)
+target_sources(short_tag PRIVATE short_tag.c check_tag.c)
+target_link_libraries(short_tag PRIVATE tiff port)
 
-add_executable(strip_rw strip_rw.c strip.c test_arrays.c test_arrays.h)
-target_link_libraries(strip_rw tiff port)
+add_executable(strip_rw)
+target_sources(strip_rw PRIVATE strip_rw.c strip.c test_arrays.c test_arrays.h)
+target_link_libraries(strip_rw PRIVATE tiff port)
 
-add_executable(rewrite rewrite_tag.c)
-target_link_libraries(rewrite tiff port)
+add_executable(rewrite)
+target_sources(rewrite PRIVATE rewrite_tag.c)
+target_link_libraries(rewrite PRIVATE tiff port)
 
 if(JPEG_SUPPORT)
-  add_executable(raw_decode raw_decode.c)
-  target_link_libraries(raw_decode tiff port)
+  add_executable(raw_decode)
+  target_sources(raw_decode PRIVATE raw_decode.c)
+  target_link_libraries(raw_decode PRIVATE tiff port JPEG::JPEG)
 endif()
 
-add_executable(custom_dir custom_dir.c)
-target_link_libraries(custom_dir tiff port)
+add_executable(custom_dir)
+target_sources(custom_dir PRIVATE custom_dir.c)
+target_link_libraries(custom_dir PRIVATE tiff port)
 
 if(NOT BUILD_SHARED_LIBS)
-add_executable(rational_precision2double rational_precision2double.c)
-target_link_libraries(rational_precision2double tiff port)
+add_executable(rational_precision2double)
+target_sources(rational_precision2double PRIVATE rational_precision2double.c)
+target_link_libraries(rational_precision2double PRIVATE tiff port)
 add_test(NAME "rational_precision2double"
          COMMAND "rational_precision2double")
 endif()
 
 if(NOT BUILD_SHARED_LIBS)
-add_executable(custom_dir_EXIF_231 custom_dir_EXIF_231.c)
-target_link_libraries(custom_dir_EXIF_231 tiff port)
+add_executable(custom_dir_EXIF_231)
+target_sources(custom_dir_EXIF_231 PRIVATE custom_dir_EXIF_231.c)
+target_link_libraries(custom_dir_EXIF_231 PRIVATE tiff port)
 add_test(NAME "custom_dir_EXIF_231"
          COMMAND "custom_dir_EXIF_231")
 endif()
 
-add_executable(defer_strile_loading defer_strile_loading.c)
-target_link_libraries(defer_strile_loading tiff port)
+add_executable(defer_strile_loading)
+target_sources(defer_strile_loading PRIVATE defer_strile_loading.c)
+target_link_libraries(defer_strile_loading PRIVATE tiff port)
 
-add_executable(defer_strile_writing defer_strile_writing.c)
-target_link_libraries(defer_strile_writing tiff port)
+add_executable(defer_strile_writing)
+target_sources(defer_strile_writing PRIVATE defer_strile_writing.c)
+target_link_libraries(defer_strile_writing PRIVATE tiff port)
 
-add_executable(testtypes testtypes.c)
-target_link_libraries(testtypes tiff port)
+add_executable(testtypes)
+target_sources(testtypes PRIVATE testtypes.c)
+target_link_libraries(testtypes PRIVATE tiff port)
 
 if(WEBP_SUPPORT AND EMSCRIPTEN)
   # Emscripten is pretty finnicky about linker flags.

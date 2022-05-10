@@ -38,7 +38,7 @@ but there are some special values:
 .br
 .BR TIFF_VARIABLE
 indicates that a variable number of values is possible; then, a
-.BR uint16
+.BR uint16_t
 .I count
 argument and a pointer
 .I data
@@ -51,7 +51,7 @@ is the same as
 except that the
 .I count
 argument must have type
-.BR uint32 .
+.BR uint32_t .
 (On most modern machines, this makes no practical difference, and the
 .I count
 argument can simply be an

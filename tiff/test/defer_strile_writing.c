@@ -131,7 +131,7 @@ int test(const char* mode, int tiled, int height)
     ret = TIFFForceStrileArrayWriting(tif);
     assert(ret);
 
-    /* Now write data on frist directory */
+    /* Now write data on first directory */
     ret = TIFFSetDirectory( tif, 0 );
     assert(ret);
 

@@ -83,5 +83,3 @@ install(FILES ${docfiles}
 
 add_subdirectory(images)
 add_subdirectory(man)
-
-extra_dist(${docfiles})

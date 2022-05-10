@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -47,7 +47,7 @@ struct gx_device_tfax_s {
                                 /* The type and range of FillOrder follows TIFF 6 spec  */
     bool  BigEndian;            /* true = big endian; false = little endian*/
     bool UseBigTIFF;
-    uint16 Compression;         /* same values as TIFFTAG_COMPRESSION */
+    uint16_t Compression;         /* same values as TIFFTAG_COMPRESSION */
     bool write_datetime;
     TIFF *tif;                  /* For TIFF output only */
 };
@@ -160,7 +160,7 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
     bool big_endian = tfdev->BigEndian;
     bool usebigtiff = tfdev->UseBigTIFF;
     bool write_datetime = tfdev->write_datetime;
-    uint16 compr = tfdev->Compression;
+    uint16_t compr = tfdev->Compression;
     gs_param_string comprstr;
 
     switch (code = param_read_long(plist, (param_name = "MaxStripSize"), &mss)) {

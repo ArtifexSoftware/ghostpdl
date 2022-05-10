@@ -41,7 +41,7 @@ TIFFGetVersion
 .SH SYNOPSIS
 .B "#include <tiffio.h>"
 .sp
-.BI "uint32 TIFFCurrentRow(TIFF* " tif ")"
+.BI "uint32_t TIFFCurrentRow(TIFF* " tif ")"
 .br
 .BI "tstrip_t TIFFCurrentStrip(TIFF* " tif ")"
 .br

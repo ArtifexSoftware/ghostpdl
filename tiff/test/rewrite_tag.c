@@ -39,8 +39,8 @@
 #include "tiffio.h"
 #include "tiffiop.h"
 
-const uint32	length = 40;
-const uint32	rows_per_strip = 1;
+const uint32_t	length = 40;
+const uint32_t	rows_per_strip = 1;
 
 int test_packbits()
 
@@ -49,7 +49,7 @@ int test_packbits()
     int             i;
     unsigned char   buf[10] = {0,0,0,0,0,0,0,0,0,0};
 
-    uint32 width = 10;
+    uint32_t width = 10;
     int  length = 20;
     const char *filename = "test_packbits.tif";
 
@@ -137,16 +137,16 @@ int test_packbits()
 /************************************************************************/
 /*                            rewrite_test()                            */
 /************************************************************************/
-int rewrite_test( const char *filename, uint32 width, int length, int bigtiff, 
-                  uint64 base_value )
+int rewrite_test(const char *filename, uint32_t width, int length, int bigtiff,
+                 uint64_t base_value )
 
 {
     TIFF		*tif;
     int			i;
     unsigned char	*buf;
-    uint64		*rowoffset, *rowbytes;
-    uint64		*upd_rowoffset;
-    uint64		*upd_bytecount;
+    uint64_t		*rowoffset, *rowbytes;
+    uint64_t		*upd_rowoffset = NULL;
+    uint64_t		*upd_bytecount = NULL;
 
     buf = calloc(1, width);
     assert(buf);
@@ -223,7 +223,7 @@ int rewrite_test( const char *filename, uint32 width, int length, int bigtiff,
         goto failure;
     }
 
-    upd_rowoffset = (uint64 *) _TIFFmalloc(sizeof(uint64) * length);
+    upd_rowoffset = (uint64_t *) _TIFFmalloc(sizeof(uint64_t) * length);
     for( i = 0; i < length; i++ )
         upd_rowoffset[i] = base_value + i*width;
 
@@ -235,8 +235,9 @@ int rewrite_test( const char *filename, uint32 width, int length, int bigtiff,
     }
 
     _TIFFfree( upd_rowoffset );
+    upd_rowoffset = NULL;
 
-    upd_bytecount = (uint64 *) _TIFFmalloc(sizeof(uint64) * length);
+    upd_bytecount = (uint64_t *) _TIFFmalloc(sizeof(uint64_t) * length);
     for( i = 0; i < length; i++ )
         upd_bytecount[i] = 100 + i*width;
 
@@ -248,6 +249,7 @@ int rewrite_test( const char *filename, uint32 width, int length, int bigtiff,
     }
 
     _TIFFfree( upd_bytecount );
+    upd_bytecount = NULL;
 
     TIFFClose(tif);
 
@@ -268,7 +270,7 @@ int rewrite_test( const char *filename, uint32 width, int length, int bigtiff,
         
     for( i = 0; i < length; i++ )
     {
-        uint64 expect = base_value + i*width;
+        uint64_t expect = base_value + i * width;
 
         if( rowoffset[i] != expect )
         {
@@ -291,7 +293,7 @@ int rewrite_test( const char *filename, uint32 width, int length, int bigtiff,
         
     for( i = 0; i < length; i++ )
     {
-        uint64 expect = 100 + i*width;
+        uint64_t expect = 100 + i * width;
 
         if( rowbytes[i] != expect )
         {
@@ -317,6 +319,14 @@ int rewrite_test( const char *filename, uint32 width, int length, int bigtiff,
     /* Something goes wrong; close file and return unsuccessful status. */
     TIFFClose(tif);
     free(buf);
+    if( upd_rowoffset != NULL )
+    {
+        _TIFFfree( upd_rowoffset );
+    }
+    if ( upd_bytecount != NULL )
+    {
+        _TIFFfree( upd_bytecount );
+    }
     /*  unlink(filename); */
 
     return 1;

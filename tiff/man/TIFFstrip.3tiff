@@ -29,15 +29,15 @@ TIFFComputeStrip, TIFFNumberOfStrips \- strip-related utility routines
 .SH SYNOPSIS
 .B "#include <tiffio.h>"
 .sp
-.BI "uint32 TIFFDefaultStripSize(TIFF *" tif ", uint32 " estimate ")"
+.BI "uint32_t TIFFDefaultStripSize(TIFF *" tif ", uint32_t " estimate ")"
 .br
 .BI "tmsize_t TIFFStripSize(TIFF *" tif ")"
 .br
-.BI "tmsize_t TIFFVStripSize(TIFF *" tif ", uint32 " nrows ")"
+.BI "tmsize_t TIFFVStripSize(TIFF *" tif ", uint32_t " nrows ")"
 .br
-.BI "tmsize_t TIFFRawStripSize(TIFF *" tif ", uint32 " strip ")"
+.BI "tmsize_t TIFFRawStripSize(TIFF *" tif ", uint32_t " strip ")"
 .br
-.BI "tstrip_t TIFFComputeStrip(TIFF *" tif ", uint32 " row ", tsample_t " sample ")"
+.BI "tstrip_t TIFFComputeStrip(TIFF *" tif ", uint32_t " row ", tsample_t " sample ")"
 .br
 .BI "tstrip_t TIFFNumberOfStrips(TIFF *" tif ")"
 .SH DESCRIPTION

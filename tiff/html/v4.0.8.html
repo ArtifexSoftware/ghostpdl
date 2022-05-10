@@ -98,7 +98,7 @@ information is located here:
         makes it unnecessary.
 
     <LI> libtiff/tif_dirread.c: modify ChopUpSingleUncompressedStrip()
-        to instanciate compute ntrips as
+        to instantiate compute ntrips as
         TIFFhowmany_32(td->td_imagelength, rowsperstrip), instead of a
         logic based on the total size of data. Which is faulty is the
         total size of data is not sufficient to fill the whole image,

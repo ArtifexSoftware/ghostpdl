@@ -149,7 +149,7 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     bool big_endian = tfdev->BigEndian;
     bool usebigtiff = tfdev->UseBigTIFF;
     bool write_datetime = tfdev->write_datetime;
-    uint16 compr = tfdev->Compression;
+    uint16_t compr = tfdev->Compression;
     gs_param_string comprstr;
     long mss = tfdev->MaxStripSize;
     long aw = tfdev->AdjustWidth;
@@ -458,7 +458,7 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size)
         if (row - line_lag >= 0) {
 #if defined(ARCH_IS_BIG_ENDIAN) && (!ARCH_IS_BIG_ENDIAN)
             if (bpc == 16)
-                TIFFSwabArrayOfShort((uint16 *)data,
+                TIFFSwabArrayOfShort((uint16_t *)data,
                                      dev->width * (long)dev->color_info.num_components);
 #endif
 
@@ -565,7 +565,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif,
 
 
 static struct compression_string {
-    uint16 id;
+    uint16_t id;
     const char *str;
 } compression_strings [] = {
     { COMPRESSION_NONE, "none" },
@@ -579,7 +579,7 @@ static struct compression_string {
 };
 
 int
-tiff_compression_param_string(gs_param_string *param, uint16 id)
+tiff_compression_param_string(gs_param_string *param, uint16_t id)
 {
     struct compression_string *c;
     for (c = compression_strings; c->str; c++)
@@ -591,7 +591,7 @@ tiff_compression_param_string(gs_param_string *param, uint16 id)
 }
 
 int
-tiff_compression_id(uint16 *id, gs_param_string *param)
+tiff_compression_id(uint16_t *id, gs_param_string *param)
 {
     struct compression_string *c;
     for (c = compression_strings; c->str; c++)
@@ -604,7 +604,7 @@ tiff_compression_id(uint16 *id, gs_param_string *param)
     return_error(gs_error_undefined);
 }
 
-int tiff_compression_allowed(uint16 compression, byte depth)
+int tiff_compression_allowed(uint16_t compression, byte depth)
 {
     return ((depth == 1 && (compression == COMPRESSION_NONE ||
                           compression == COMPRESSION_CCITTRLE ||

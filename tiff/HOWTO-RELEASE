@@ -25,7 +25,11 @@ Notes on releasing.
 1. Commit any unsaved changes.
 
 2. Use gnulib's gitlog-to-changelog script to add new (since the last
-   release) entries to the traditional ChangeLog file.  Take note of
+   release) entries to the traditional ChangeLog file.
+
+   http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;f=build-aux/gitlog-to-changelog
+
+   Take note of
    the most recent change note time stamp and use that as the starting
    point.  Concatenate the old logs to the new logs.  The added logs
    may be used to help produce the release notes (in next step).  For
@@ -43,7 +47,8 @@ Notes on releasing.
 
 4. Add vX.X.html file to the list of 'docfiles' files in the html/Makefile.am.
 
-5. Update html/index.html to refer to this new page as the current release.
+5. Update html/index.html to refer to this new page as the current release,
+   and update date at the bottom of the page
 
 6. Increment the release version in configure.ac.  Put 'alpha' or
    'beta' after the version, if applicable.  For example:
@@ -140,7 +145,7 @@ Notes on releasing.
 17. Copy release packages from the build tree to the
     ftp.remotesensing.org ftp site.
 
-      scp tiff-*.tar.gz tiff-*.zip \
+      scp tiff-*.tar.gz tiff-*.tar.gz.sig tiff-*.zip tiff-*.zip.sig \
          bfriesen@upload.osgeo.org:/osgeo/download/libtiff
 
 18. Announce to list, tiff@lists.maptools.org

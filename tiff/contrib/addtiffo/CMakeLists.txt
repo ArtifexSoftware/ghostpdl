@@ -22,14 +22,6 @@
 # LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
 # OF THIS SOFTWARE.
 
-extra_dist(
-  README
-  Makefile.vc)
-
-include_directories(${PROJECT_SOURCE_DIR}/libtiff
-                    ${PROJECT_BINARY_DIR}/libtiff
-                    ${CMAKE_CURRENT_BINARY_DIR})
-
 add_executable(addtiffo addtiffo.c tif_overview.c tif_ovrcache.c tif_ovrcache.h)
 target_link_libraries(addtiffo tiff port)
 

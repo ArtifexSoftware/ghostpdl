@@ -32,9 +32,9 @@
 
 #include "tiffio.h"
 
-int CheckShortField(TIFF *, const ttag_t, const uint16);
-int CheckShortPairedField(TIFF *, const ttag_t, const uint16*);
-int CheckLongField(TIFF *, const ttag_t, const uint32);
+int CheckShortField(TIFF *, const ttag_t, const uint16_t);
+int CheckShortPairedField(TIFF *, const ttag_t, const uint16_t*);
+int CheckLongField(TIFF *, const ttag_t, const uint32_t);
 
 #endif /* _TIFFTEST_ */
 

@@ -30,7 +30,7 @@ file
 .SH SYNOPSIS
 .B "#include <tiffio.h>"
 .sp
-.BI "int TIFFWriteScanline(TIFF *" tif ", tdata_t " buf ", uint32 " row ", tsample_t " sample ")"
+.BI "int TIFFWriteScanline(TIFF *" tif ", tdata_t " buf ", uint32_t " row ", tsample_t " sample ")"
 .SH DESCRIPTION
 Write data to a file at the specified row. The
 .I sample

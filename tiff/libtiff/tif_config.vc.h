@@ -104,24 +104,11 @@
 /* Set the native cpu bit order */
 #define HOST_FILLORDER FILLORDER_LSB2MSB
 
-/*
-  Please see associated settings in "nmake.opt" which configure porting
-  settings. It should not be necessary to edit the following pre-processor
-  logic.
-*/
-#if defined(_MSC_VER)
 /* Visual Studio 2015 / VC 14 / MSVC 19.00 finally has snprintf() */
-#  if _MSC_VER < 1900 /* Visual C++ 2015 */
-#    define snprintf _snprintf
-#  else
-#    define HAVE_SNPRINTF 1
-#  endif
-#  define HAVE_STRTOL 1
-#  define HAVE_STRTOUL 1
-#  if _MSC_VER >= 1900 /* Visual Studio 2015 added strtoll/strtoull */
-#    define HAVE_STRTOLL 1
-#    define HAVE_STRTOULL 1
-#  endif
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define snprintf _snprintf
+#else
+#define HAVE_SNPRINTF 1
 #endif
 
 /* Define to 1 if your processor stores words with the most significant byte
@@ -139,6 +126,38 @@
 #define lfind _lfind
 
 #pragma warning(disable : 4996) /* function deprecation warnings */
+
+typedef char int8_t;
+typedef unsigned char uint8_t;
+typedef short int16_t;
+typedef unsigned short uint16_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
+typedef long long int64_t;
+typedef unsigned long long uint64_t;
+
+#define UINT32_MAX 0xFFFFFFFF
+#define UINT64_MAX 0xFFFFFFFFFFFFFFFF
+#define INT64_MAX 0x7FFFFFFFFFFFFFFF
+
+#if _WIN64
+#define SIZE_MAX UINT64_MAX
+#else
+#define SIZE_MAX UINT32_MAX
+#endif
+
+#define PRIu8 "u"
+#define PRId8 "d"
+#define PRIx8 "x"
+#define PRIu16 "u"
+#define PRId16 "d"
+#define PRIx16 "x"
+#define PRIu32 "u"
+#define PRId32 "d"
+#define PRIx32 "x"
+#define PRIu64 "llu"
+#define PRId64 "lld"
+#define PRIx64 "llx"
 
 #endif /* _TIF_CONFIG_H_ */
 /*

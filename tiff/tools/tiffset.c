@@ -46,27 +46,25 @@
 #define EXIT_FAILURE 1
 #endif
 
-static const char* usageMsg[] = {
-"usage: tiffset [options] filename",
-"where options are:",
-" -s <tagname> [count] <value>...   set the tag value",
-" -u <tagname> to unset the tag",
-" -d <dirno> set the directory",
-" -sd <diroff> set the subdirectory",
-" -sf <tagname> <filename>  read the tag value from file (for ASCII tags only)",
-" -h  this help screen",
-NULL
-};
+static const char usageMsg[] =
+"Set the value of a TIFF header to a specified value\n\n"
+"usage: tiffset [options] filename\n"
+"where options are:\n"
+" -s  <tagname> [count] <value>...   set the tag value\n"
+" -u  <tagname> to unset the tag\n"
+" -d  <dirno> set the directory\n"
+" -sd <diroff> set the subdirectory\n"
+" -sf <tagname> <filename>  read the tag value from file (for ASCII tags only)\n"
+" -h  this help screen\n"
+;
 
 static void
 usage(int code)
 {
-	int i;
 	FILE * out = (code == EXIT_SUCCESS) ? stdout : stderr;
 
 	fprintf(out, "%s\n\n", TIFFGetVersion());
-	for (i = 0; usageMsg[i]; i++)
-		fprintf(out, "%s\n", usageMsg[i]);
+        fprintf(out, "%s", usageMsg);
 	exit(code);
 }
 
@@ -221,37 +219,37 @@ main(int argc, char* argv[])
                         switch (TIFFFieldDataType(fip)) {
                             case TIFF_BYTE:
                                 for (i = 0; i < wc; i++)
-                                    ((uint8 *)array)[i] = atoi(argv[arg_index+i]);
+                                    ((uint8_t *)array)[i] = atoi(argv[arg_index + i]);
                                 break;
                             case TIFF_SHORT:
                                 for (i = 0; i < wc; i++)
-                                    ((uint16 *)array)[i] = atoi(argv[arg_index+i]);
+                                    ((uint16_t *)array)[i] = atoi(argv[arg_index + i]);
                                 break;
                             case TIFF_SBYTE:
                                 for (i = 0; i < wc; i++)
-                                    ((int8 *)array)[i] = atoi(argv[arg_index+i]);
+                                    ((int8_t *)array)[i] = atoi(argv[arg_index + i]);
                                 break;
                             case TIFF_SSHORT:
                                 for (i = 0; i < wc; i++)
-                                    ((int16 *)array)[i] = atoi(argv[arg_index+i]);
+                                    ((int16_t *)array)[i] = atoi(argv[arg_index + i]);
                                 break;
                             case TIFF_LONG:
                                 for (i = 0; i < wc; i++)
-                                    ((uint32 *)array)[i] = atol(argv[arg_index+i]);
+                                    ((uint32_t *)array)[i] = atol(argv[arg_index + i]);
                                 break;
                             case TIFF_SLONG:
                             case TIFF_IFD:
                                 for (i = 0; i < wc; i++)
-                                    ((int32 *)array)[i] = atol(argv[arg_index+i]);
+                                    ((int32_t *)array)[i] = atol(argv[arg_index + i]);
                                 break;
                             case TIFF_LONG8:
                                 for (i = 0; i < wc; i++)
-                                    ((uint64 *)array)[i] = strtoll(argv[arg_index+i], (char **)NULL, 10);
+                                    ((uint64_t *)array)[i] = strtoll(argv[arg_index + i], (char **)NULL, 10);
                                 break;
                             case TIFF_SLONG8:
                             case TIFF_IFD8:
                                 for (i = 0; i < wc; i++)
-                                    ((int64 *)array)[i] = strtoll(argv[arg_index+i], (char **)NULL, 10);
+                                    ((int64_t *)array)[i] = strtoll(argv[arg_index + i], (char **)NULL, 10);
                                 break;
                             case TIFF_DOUBLE:
                                 for (i = 0; i < wc; i++)
@@ -276,10 +274,10 @@ main(int argc, char* argv[])
 				   || TIFFFieldTag(fip) == TIFFTAG_DOTRANGE) {
        				if (TIFFFieldDataType(fip) == TIFF_BYTE) {
 					ret = TIFFSetField(tiff, TIFFFieldTag(fip),
-						((uint8 *)array)[0], ((uint8 *)array)[1]);
+                                       ((uint8_t *)array)[0], ((uint8_t *)array)[1]);
 				} else if (TIFFFieldDataType(fip) == TIFF_SHORT) {
 					ret = TIFFSetField(tiff, TIFFFieldTag(fip),
-						((uint16 *)array)[0], ((uint16 *)array)[1]);
+                                       ((uint16_t *)array)[0], ((uint16_t *)array)[1]);
 				}
 			} else {
                                 ret = TIFFSetField(tiff, TIFFFieldTag(fip),
@@ -367,7 +365,7 @@ main(int argc, char* argv[])
             fclose( fp );
 
             if(TIFFFieldPassCount( fip )) {
-                ret = TIFFSetField( tiff, TIFFFieldTag(fip), (uint16)len, text );
+                ret = TIFFSetField(tiff, TIFFFieldTag(fip), (uint16_t)len, text );
             } else {
                 ret = TIFFSetField( tiff, TIFFFieldTag(fip), text );
             }
