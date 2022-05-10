@@ -53,7 +53,7 @@ static inline void pdfi_countup_impl(pdf_obj *o)
 
 static inline void pdfi_countdown_impl(pdf_obj *o)
 {
-#if defined(DEBUG) || defined(REFCNT_DEBUG)
+#if defined(DEBUG) || REFCNT_DEBUG
     pdf_context *ctx;
 #endif
 
