@@ -881,6 +881,10 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
         pdfi_countdown(array_obj);
         array_obj = NULL;
 
+        if (code < 0)
+            return code;
+
+
         code = pdfi_dict_knownget_type(ctx, font, "Subtype", PDF_NAME, &array_obj);
         if (code >= 0) {
             code = pdfi_dict_put(ctx, font_info_dict, "Subtype", array_obj);

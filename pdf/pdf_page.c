@@ -582,12 +582,16 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
         code = pdfi_dict_put(ctx, info_dict, "UsesTransparency", PDF_TRUE_OBJ);
     else
         code = pdfi_dict_put(ctx, info_dict, "UsesTransparency", PDF_FALSE_OBJ);
+    if (code < 0)
+        goto done;
 
     code = pdfi_dict_known(ctx, page_dict, "Annots", &known);
     if (code >= 0 && known)
         code = pdfi_dict_put(ctx, info_dict, "Annots", PDF_TRUE_OBJ);
     else
         code = pdfi_dict_put(ctx, info_dict, "Annots", PDF_FALSE_OBJ);
+    if (code < 0)
+        goto done;
 
     code = pdfi_object_alloc(ctx, PDF_INT, 0, &o);
     if (code >= 0) {
