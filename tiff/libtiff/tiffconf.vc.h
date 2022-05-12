@@ -142,6 +142,84 @@
 #define PHOTOSHOP_SUPPORT
 #define IPTC_SUPPORT
 
+
+typedef char int8_t;
+typedef unsigned char uint8_t;
+typedef short int16_t;
+typedef unsigned short uint16_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
+typedef long long int64_t;
+typedef unsigned long long uint64_t;
+
+#ifndef UINT32_MAX
+#define UINT32_MAX 0xFFFFFFFF
+#endif
+
+#ifndef UINT64_MAX
+#define UINT64_MAX 0xFFFFFFFFFFFFFFFF
+#endif
+
+#ifndef INT64_MAX
+#define INT64_MAX 0x7FFFFFFFFFFFFFFF
+#endif
+
+#ifndef SIZE_MAX
+#if _WIN64
+#define SIZE_MAX UINT64_MAX
+#else
+#define SIZE_MAX UINT32_MAX
+#endif
+#endif
+
+#ifndef PRIu8
+#define PRIu8 "u"
+#endif
+
+#ifndef PRId8
+#define PRId8 "d"
+#endif
+
+#ifndef PRIx8
+#define PRIx8 "x"
+#endif
+
+#ifndef PRIu16
+#define PRIu16 "u"
+#endif
+
+#ifndef PRId16
+#define PRId16 "d"
+#endif
+
+#ifndef PRIx16
+#define PRIx16 "x"
+#endif
+
+#ifndef PRIu32
+#define PRIu32 "u"
+#endif
+
+#ifndef PRId32
+#define PRId32 "d"
+#endif
+
+#ifndef PRIx32
+#define PRIx32 "x"
+#endif
+
+#ifndef PRIu64
+#define PRIu64 "llu"
+#endif
+
+#ifndef PRId64
+#define PRId64 "lld"
+#endif
+
+#ifndef PRIx64
+#define PRIx64 "llx"
+#endif
+
 #endif /* _TIFFCONF_ */
 /*
  * Local Variables:

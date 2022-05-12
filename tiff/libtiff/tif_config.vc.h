@@ -127,38 +127,6 @@
 
 #pragma warning(disable : 4996) /* function deprecation warnings */
 
-typedef char int8_t;
-typedef unsigned char uint8_t;
-typedef short int16_t;
-typedef unsigned short uint16_t;
-typedef int int32_t;
-typedef unsigned int uint32_t;
-typedef long long int64_t;
-typedef unsigned long long uint64_t;
-
-#define UINT32_MAX 0xFFFFFFFF
-#define UINT64_MAX 0xFFFFFFFFFFFFFFFF
-#define INT64_MAX 0x7FFFFFFFFFFFFFFF
-
-#if _WIN64
-#define SIZE_MAX UINT64_MAX
-#else
-#define SIZE_MAX UINT32_MAX
-#endif
-
-#define PRIu8 "u"
-#define PRId8 "d"
-#define PRIx8 "x"
-#define PRIu16 "u"
-#define PRId16 "d"
-#define PRIx16 "x"
-#define PRIu32 "u"
-#define PRId32 "d"
-#define PRIx32 "x"
-#define PRIu64 "llu"
-#define PRId64 "lld"
-#define PRIx64 "llx"
-
 #endif /* _TIF_CONFIG_H_ */
 /*
  * Local Variables:
