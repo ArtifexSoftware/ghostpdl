@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -128,7 +128,8 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
  $(GLOBJDIR)\*.res $(GLOBJDIR)\*.ico\
  $(BINDIR)\$(GSDLL).dll $(BINDIR)\$(GSCONSOLE).exe\
  $(BINDIR)\setupgs.exe $(BINDIR)\uninstgs.exe\
- $(GLOBJDIR)\cups\*.h $(AUXDIR)\*.sbr $(AUXDIR)\*.pdb \
+ $(GLOBJDIR)\cups\*.h $(GLOBJDIR)\*.h $(GLOBJDIR)\*.c $(AUXDIR)\*.sbr \
+ $(AUXDIR)\*.pdb \
  $(BEGINFILES2)
 
 # Include the generic makefiles.
