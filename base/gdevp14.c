@@ -3876,6 +3876,8 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
         dev->icc_struct->usefastcolor = profile_targ->usefastcolor;
         dev->icc_struct->blacktext = profile_targ->blacktext;
         dev->icc_struct->blackvector = profile_targ->blackvector;
+        dev->icc_struct->blackthresholdL = profile_targ->blackthresholdL;
+        dev->icc_struct->blackthresholdC = profile_targ->blackthresholdC;
 
         switch (pdev->blend_cs_state) {
             case PDF14_BLEND_CS_UNSPECIFIED:
