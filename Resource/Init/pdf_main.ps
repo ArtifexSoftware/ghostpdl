@@ -1026,13 +1026,17 @@ currentdict /PDFSwitches undef
 
 /newpdf_pdfgetpage
 {
-  PDFFile exch 1 sub {.PDFPageInfo} stopped
+  dup 1 sub
+  PDFFile exch {.PDFPageInfo} stopped
   {
     pop pop
     (   **** Error: Couldn't get page info.\n) newpdf_pdfformaterror
     (               Output may be incorrect.\n) newpdf_pdfformaterror
     //null
-  } if
+  }{
+    dup 3 -1 roll
+    /Page# exch put
+  } ifelse
 } bind def
 
 /newpdf_process_trailer_attrs
@@ -1135,10 +1139,8 @@ currentdict /PDFSwitches undef
       {//true} ifelse
 
       {
-        dup pdfgetpage
+        pdfgetpage
         dup //null ne {
-          exch 1 index
-          /Page# 3 -1 roll put
           pdfshowpage
         } {
           PDFSTOPONERROR {
