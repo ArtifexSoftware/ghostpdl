@@ -573,7 +573,7 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     int i = 0, object_length = 0;
     int64_t num_entries;
     int found_object;
-    int64_t Length;
+    int64_t Length, First;
     gs_offset_t offset = 0;
     pdf_stream *compressed_object = NULL;
     pdf_dict *compressed_sdict = NULL; /* alias */
@@ -663,6 +663,10 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     if (code < 0)
         goto exit;
 
+    code = pdfi_dict_get_int(ctx, compressed_sdict, "First", &First);
+    if (code < 0)
+        goto exit;
+
     code = pdfi_apply_SubFileDecode_filter(ctx, Length, NULL, ctx->main_stream, &SubFile_stream, false);
     if (code < 0)
         goto exit;
@@ -672,43 +676,86 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
         goto exit;
 
     for (i=0;i < num_entries;i++)
-        {
-            int new_offset;
-            code = pdfi_read_bare_int(ctx, compressed_stream, &found_object);
-            if (code < 0)
-                goto exit;
-            if (code == 0) {
-                code = gs_note_error(gs_error_syntaxerror);
-                goto exit;
-            }
-            code = pdfi_read_bare_int(ctx, compressed_stream, &new_offset);
-            if (code < 0)
-                goto exit;
-            if (code == 0) {
-                code = gs_note_error(gs_error_syntaxerror);
-                goto exit;
-            }
-            if (i == entry->u.compressed.object_index) {
-                if (found_object != obj) {
-                    pdfi_pop(ctx, 1);
-                    code = gs_note_error(gs_error_undefined);
-                    goto exit;
-                }
-                offset = new_offset;
-            }
-            if (i == entry->u.compressed.object_index + 1)
-                object_length = new_offset - offset;
+    {
+        int new_offset;
+        code = pdfi_read_bare_int(ctx, compressed_stream, &found_object);
+        if (code < 0)
+            goto exit;
+        if (code == 0) {
+            code = gs_note_error(gs_error_syntaxerror);
+            goto exit;
         }
+        code = pdfi_read_bare_int(ctx, compressed_stream, &new_offset);
+        if (code < 0)
+            goto exit;
+        if (code == 0) {
+            code = gs_note_error(gs_error_syntaxerror);
+            goto exit;
+        }
+        if (i == entry->u.compressed.object_index) {
+            if (found_object != obj) {
+                pdfi_pop(ctx, 1);
+                code = gs_note_error(gs_error_undefined);
+                goto exit;
+            }
+            offset = new_offset;
+        }
+        if (i == entry->u.compressed.object_index + 1)
+            object_length = new_offset - offset;
+    }
+
+    /* Bug #705259 - The first object need not lie immediately after the initial
+     * table of object numbers and offsets. The start of the first object is given
+     * by the value of First. We don't know how many bytes we consumed getting to
+     * the end of the table, unfortunately, so we close the stream, rewind the main
+     * stream back to the beginning of the ObjStm, and then read and discard 'First'
+     * bytes in order to get to the start of the first object. Then we read the
+     * number of bytes required to get from there to the start of the object we
+     * actually want.
+     * If this ever looks like it's causing performance problems we could read the
+     * initial table above manually instead of using the existing code, and track
+     * how many bytes we'd read, which would avoid us having to tear down and
+     * rebuild the stream.
+     */
+    if (compressed_stream)
+        pdfi_close_file(ctx, compressed_stream);
+    if (SubFile_stream)
+        pdfi_close_file(ctx, SubFile_stream);
+
+    code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, compressed_object), SEEK_SET);
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_dict_get_int(ctx, compressed_sdict, "Length", &Length);
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_apply_SubFileDecode_filter(ctx, Length, NULL, ctx->main_stream, &SubFile_stream, false);
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_filter(ctx, compressed_object, SubFile_stream, &compressed_stream, false);
+    if (code < 0)
+        goto exit;
+
+    for (i=0;i < First;i++)
+    {
+        int c = pdfi_read_byte(ctx, compressed_stream);
+        if (c < 0) {
+            code = gs_note_error(gs_error_ioerror);
+            goto exit;
+        }
+    }
 
     /* Skip to the offset of the object we want to read */
     for (i=0;i < offset;i++)
-        {
-            int c = pdfi_read_byte(ctx, compressed_stream);
-            if (c < 0) {
-                code = gs_note_error(gs_error_ioerror);
-                goto exit;
-            }
+    {
+        int c = pdfi_read_byte(ctx, compressed_stream);
+        if (c < 0) {
+            code = gs_note_error(gs_error_ioerror);
+            goto exit;
         }
+    }
 
     /* If object_length is not 0, then we want to apply a SubFileDecode filter to limit
      * the number of bytes we read to the declared size of the object (difference between
