@@ -1361,6 +1361,9 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source
 
     if (keyword < PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY))
     {
+        if (ctx->args.pdfdebug)
+            dmprintf1(ctx->memory, " %s\n", pdf_token_strings[(uintptr_t)keyword]);
+
         switch((uintptr_t)keyword) {
             case TOKEN_b:           /* closepath, fill, stroke */
                 pdfi_pop(ctx, 1);
@@ -1670,6 +1673,20 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source
             code = 0;
         return code;
     } else if (((pdf_keyword *)keyword)->length > 3) {
+        if (ctx->args.pdfdebug) {
+            char Buffer[1024];
+            int length;
+
+            if (((pdf_keyword *)keyword)->length > 1023)
+                length = 1023;
+            else
+                length = ((pdf_keyword *)keyword)->length;
+
+            memcpy(Buffer, ((pdf_keyword *)keyword)->data, length);
+            Buffer[length] = 0x00;
+            dmprintf1(ctx->memory, " %s\n", Buffer);
+        }
+
         /* This means we either have a corrupted or illegal operator. The most
          * usual corruption is two concatented operators (eg QBT instead of Q BT)
          * I plan to tackle this by trying to see if I can make two or more operators
