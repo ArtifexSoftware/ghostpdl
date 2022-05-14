@@ -188,7 +188,7 @@ $(PDFOBJ)pdf_stack.$(OBJ): $(PDFSRC)pdf_stack.c $(PDFINCLUDES) $(PDF_MAK) $(MAKE
 
 $(PDFOBJ)pdf_gstate.$(OBJ): $(PDFSRC)pdf_gstate.c $(PDFINCLUDES) $(gsstate_h) \
 	$(gsmatrix_h) $(gslparam_h) $(gstparam_h) $(gxdht_h) $(gxht_h) $(gzht_h) $(gsht_h) \
-	$(gscoord_h) $(gsutil_h) $(gscolor3_h) $(PDF_MAK) $(MAKEDIRS)
+	$(gscoord_h) $(gsutil_h) $(gscolor3_h) $(PDF_MAK) $(MAKEDIRS) $(gzpath_h) $(gspenum_h)
 	$(PDFCCC) $(PDFSRC)pdf_gstate.c $(PDFO_)pdf_gstate.$(OBJ)
 
 $(PDFOBJ)pdf_colour.$(OBJ): $(PDFSRC)pdf_colour.c $(PDFINCLUDES) \

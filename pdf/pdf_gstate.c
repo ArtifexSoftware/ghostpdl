@@ -44,6 +44,8 @@
 #include "gscoord.h"        /* For gs_concat() */
 #include "gsutil.h"         /* For gs_next_ids() */
 #include "gscolor3.h"       /* For gs_setsmoothness() */
+#include "gzpath.h"
+#include "gspenum.h"
 
 static const char *blend_mode_names[] = {
     GS_BLEND_MODE_NAMES, 0
@@ -205,7 +207,6 @@ int pdfi_op_q(pdf_context *ctx)
 int pdfi_op_Q(pdf_context *ctx)
 {
     int code = 0;
-    gx_path *ppath = NULL;
 
 #if DEBUG_GSAVE
     dbgmprintf(ctx->memory, "(doing Q)\n"); /* TODO: Spammy, delete me at some point */
@@ -221,30 +222,7 @@ int pdfi_op_Q(pdf_context *ctx)
             return code;
     }
 
-    /* Section 4.4.1 of the 3rd Edition PDF_Refrence Manual, p226 of the 1.7 version
-     * states that the current path is **NOT** part of the graphics state and is not
-     * saved and restored along with the other graphics state parameters. So here
-     * we need to indulge in some ugliness. We take a copy of the current path
-     * before we do a grestore, and below we assign the copy to the graphics state
-     * after the grestore, thus preserving it unchanged. This is still better than
-     * the 'PDF interpreter written in PostScript' method.
-     */
-    ppath = gx_path_alloc_shared(ctx->pgs->path, ctx->memory, "temporary current path copy for Q");
-    if (ppath == NULL)
-        return_error(gs_error_VMerror);
-
-    code = pdfi_grestore(ctx);
-
-    if (code >= 0) {
-        /* Put the path back, and make sure current point is properly set */
-        code = gx_path_assign_preserve(ctx->pgs->path, ppath);
-        if (gx_path_position_valid(ctx->pgs->path))
-            gx_setcurrentpoint_from_path(ctx->pgs, ctx->pgs->path);
-    }
-
-    gx_path_free(ppath, "temporary current path copy for Q");
-
-    return code;
+    return pdfi_grestore(ctx);
 }
 
 /* We want pdfi_grestore() so we can track and warn of "too many Qs"
@@ -413,6 +391,14 @@ int pdfi_setmiterlimit(pdf_context *ctx)
     code = pdfi_destack_real(ctx, &d1);
     if (code < 0)
         return code;
+
+    /* PostScript (and therefore the graphics library) impose a minimum
+     * value of 1.0 on miter limit. PDF does not specify a minimum, but less
+     * than 1 doesn't make a lot of sense. This code brought over from the old
+     * PDF interpreter which silently clamped the value to 1.
+     */
+    if (d1 < 1.0)
+        d1 = 1.0;
 
     return gs_setmiterlimit(ctx->pgs, d1);
 }

@@ -339,6 +339,23 @@ typedef struct pdf_context_s
     gs_font_dir * font_dir;
     /* Obviously we need a graphics state */
     gs_gstate *pgs;
+
+    /* PDF really doesn't have a path in the graphics state. This is different to
+     * PostScript and has implications; changing the CTM partway through path
+     * construction affects path segments already accumulated. The path is
+     * unaffected by gsvae and grestore. Previously we've unwound any pending
+     * path and rerun it, this is causing problems so instead we'll do what
+     * Acrobat obviously does and build the path outside the graphics state
+     */
+    char *PathBottom;
+    /* We make allocations in chunks for the path to avoid lots of little
+     * allocations, but we need to know where the end of the current allocation
+     * is so that we can tell if we would overflow and increase it.
+     */
+    char *PathTop;
+    /* And the current insertion point. */
+    char *PathAccumulator;
+
     /* set up by pdf_impl_set_device, this is the 'high water mark' for
      * restoring back to when we close a PDF file. This ensures the device
      * is correctly set up for any subesquent file to be run.

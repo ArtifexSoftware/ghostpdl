@@ -26,6 +26,173 @@
 #include "gspath.h"         /* For gs_moveto() and friends */
 #include "gspaint.h"        /* For gs_fill() and friends */
 
+typedef enum path_segment_e {
+    pdfi_moveto_seg,
+    pdfi_lineto_seg,
+    pdfi_curveto_seg,
+    pdfi_re_seg,
+    pdfi_v_curveto_seg,
+    pdfi_y_curveto_seg,
+    pdfi_closepath_seg
+} pdfi_path_segment;
+
+static int StorePathSegment(pdf_context *ctx, pdfi_path_segment segment, double *pts)
+{
+    int size = sizeof(char);
+    char *op;
+    double *dpts;
+
+    switch (segment)
+    {
+        case pdfi_moveto_seg:
+        case pdfi_lineto_seg:
+            size += 2 * sizeof(double);
+            break;
+        case pdfi_re_seg:
+        case pdfi_v_curveto_seg:
+        case pdfi_y_curveto_seg:
+            size += 4 * sizeof(double);
+                break;
+        case pdfi_curveto_seg:
+            size += 6 * sizeof(double);
+            break;
+        case pdfi_closepath_seg:
+            break;
+    }
+    if (ctx->PathBottom == NULL) {
+        ctx->PathBottom = (char *)gs_alloc_bytes(ctx->memory, 4096, "StorePathSegment");
+        if (ctx->PathBottom < 0)
+            return_error(gs_error_VMerror);
+
+        ctx->PathAccumulator = ctx->PathBottom;
+        ctx->PathTop = ctx->PathBottom + 4096;
+    }
+    if ((char *)ctx->PathAccumulator + size > ctx->PathTop) {
+        char *new_accumulator = NULL;
+        uint64_t old_size;
+
+        old_size = ctx->PathTop - ctx->PathBottom;
+        new_accumulator = (char *)gs_alloc_bytes(ctx->memory, old_size + 4096, "StorePathSegment");
+        if (new_accumulator == NULL)
+            return_error(gs_error_VMerror);
+
+        memcpy(new_accumulator, ctx->PathBottom, old_size);
+        ctx->PathAccumulator = new_accumulator + (ctx->PathAccumulator - ctx->PathBottom);
+        gs_free_object(ctx->memory, ctx->PathBottom, "StorePathSegment");
+        ctx->PathBottom = new_accumulator;
+        ctx->PathTop = ctx->PathBottom + old_size + 4096;
+    }
+
+    op = ctx->PathAccumulator;
+    dpts = (double *)(op + 1);
+
+    *op = (char)segment;
+    switch (segment)
+    {
+        case pdfi_moveto_seg:
+        case pdfi_lineto_seg:
+            memcpy(dpts, pts, 2 * sizeof(double));
+            dpts += 2;
+            break;
+        case pdfi_re_seg:
+        case pdfi_v_curveto_seg:
+        case pdfi_y_curveto_seg:
+            memcpy(dpts, pts, 4 * sizeof(double));
+            dpts += 4;
+            break;
+        case pdfi_curveto_seg:
+            memcpy(dpts, pts, 6 * sizeof(double));
+            dpts += 6;
+            break;
+        case pdfi_closepath_seg:
+            break;
+    }
+    ctx->PathAccumulator = (void *)dpts;
+    return 0;
+}
+
+static int ApplyStoredPath(pdf_context *ctx)
+{
+    int code = 0;
+    char *op = NULL;
+    double *dpts = NULL;
+
+    if (ctx->PathBottom == NULL)
+        return 0;
+
+    if (ctx->pgs->current_point_valid) {
+        code = gs_newpath(ctx->pgs);
+        if (code < 0)
+            return code;
+    }
+
+    op = ctx->PathBottom;
+    while (op < ctx->PathAccumulator) {
+        switch(*op++) {
+            case pdfi_moveto_seg:
+                dpts = (double *)op;
+                op = (char *)(dpts + 2);
+                code = gs_moveto(ctx->pgs, dpts[0], dpts[1]);
+                break;
+            case pdfi_lineto_seg:
+                dpts = (double *)op;
+                op = (char *)(dpts + 2);
+                code = gs_lineto(ctx->pgs, dpts[0], dpts[1]);
+                break;
+            case pdfi_re_seg:
+                dpts = (double *)op;
+                op = (char *)(dpts + 4);
+                code = gs_moveto(ctx->pgs, dpts[0], dpts[1]);
+                if (code >= 0) {
+                    code = gs_rlineto(ctx->pgs, dpts[2], 0);
+                    if (code >= 0) {
+                        code = gs_rlineto(ctx->pgs, 0, dpts[3]);
+                        if (code >= 0) {
+                            code = gs_rlineto(ctx->pgs, -dpts[2], 0);
+                            if (code >= 0)
+                                code = gs_closepath(ctx->pgs);
+                        }
+                    }
+                }
+                break;
+            case pdfi_v_curveto_seg:
+                {
+                    gs_point pt;
+
+                    code = gs_currentpoint(ctx->pgs, &pt);
+                    if (code >= 0) {
+                        dpts = (double *)op;
+                        op = (char *)(dpts + 4);
+                        code = gs_curveto(ctx->pgs, pt.x, pt.y, dpts[0], dpts[1], dpts[2], dpts[3]);
+                    }
+                }
+                break;
+            case pdfi_y_curveto_seg:
+                dpts = (double *)op;
+                op = (char *)(dpts + 4);
+                code = gs_curveto(ctx->pgs, dpts[0], dpts[1], dpts[2], dpts[3], dpts[2], dpts[3]);
+                break;
+            case pdfi_curveto_seg:
+                dpts = (double *)op;
+                op = (char *)(dpts + 6);
+                code = gs_curveto(ctx->pgs, dpts[0], dpts[1], dpts[2], dpts[3], dpts[4], dpts[5]);
+                break;
+            case pdfi_closepath_seg:
+                code = gs_closepath(ctx->pgs);
+                break;
+            default:
+                code = gs_note_error(gs_error_rangecheck);
+                break;
+        }
+        if (code < 0)
+            break;
+    }
+
+    gs_free_object(ctx->memory, ctx->PathBottom, "ApplyStoredPath");
+    ctx->PathTop = ctx->PathAccumulator = ctx->PathBottom = NULL;
+    return code;
+}
+
 int pdfi_moveto (pdf_context *ctx)
 {
     int code;
@@ -38,7 +205,7 @@ int pdfi_moveto (pdf_context *ctx)
     if (code < 0)
         return code;
 
-    return gs_moveto(ctx->pgs, xy[0], xy[1]);
+    return StorePathSegment(ctx, pdfi_moveto_seg, (double *)&xy);
 }
 
 int pdfi_lineto (pdf_context *ctx)
@@ -53,7 +220,7 @@ int pdfi_lineto (pdf_context *ctx)
     if (code < 0)
         return code;
 
-    return gs_lineto(ctx->pgs, xy[0], xy[1]);
+    return StorePathSegment(ctx, pdfi_lineto_seg, (double *)&xy);
 }
 
 static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
@@ -66,6 +233,10 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
 
     if (pdfi_oc_is_off(ctx))
         goto exit;
+
+    code = ApplyStoredPath(ctx);
+    if (code < 0)
+        return code;
 
     code = pdfi_trans_setup(ctx, &state, NULL, TRANSPARENCY_Caller_Fill);
     if (code == 0) {
@@ -117,8 +288,9 @@ int pdfi_stroke(pdf_context *ctx)
     if (pdfi_oc_is_off(ctx))
         goto exit;
 
-/*    code = pdfi_gsave(ctx);
-    if (code < 0) goto exit;*/
+    code = ApplyStoredPath(ctx);
+    if (code < 0)
+        return code;
 
     gs_swapcolors_quick(ctx->pgs);
     code = pdfi_trans_setup(ctx, &state, NULL, TRANSPARENCY_Caller_Stroke);
@@ -136,9 +308,6 @@ int pdfi_stroke(pdf_context *ctx)
     }
     gs_swapcolors_quick(ctx->pgs);
 
-/*    code1 = pdfi_grestore(ctx);
-    if (code == 0) code = code1;*/
-
  exit:
     code1 = pdfi_newpath(ctx);
     if (code == 0) code = code1;
@@ -153,10 +322,11 @@ int pdfi_closepath_stroke(pdf_context *ctx)
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_closepath_stroke", NULL);
 
-    code = gs_closepath(ctx->pgs);
-    if (code == 0)
-        code = pdfi_stroke(ctx);
-    return code;
+    code = StorePathSegment(ctx, pdfi_closepath_seg, NULL);
+    if (code < 0)
+        return code;
+
+    return pdfi_stroke(ctx);
 }
 
 int pdfi_curveto(pdf_context *ctx)
@@ -171,14 +341,13 @@ int pdfi_curveto(pdf_context *ctx)
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_curveto", NULL);
 
-    return gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[4], Values[5]);
+    return StorePathSegment(ctx, pdfi_curveto_seg, (double *)&Values);
 }
 
 int pdfi_v_curveto(pdf_context *ctx)
 {
     int code;
     double Values[4];
-    gs_point pt;
 
     code = pdfi_destack_reals(ctx, Values, 4);
     if (code < 0)
@@ -187,11 +356,7 @@ int pdfi_v_curveto(pdf_context *ctx)
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_v_curveto", NULL);
 
-    code = gs_currentpoint(ctx->pgs, &pt);
-    if (code < 0)
-        return code;
-
-    return gs_curveto(ctx->pgs, pt.x, pt.y, Values[0], Values[1], Values[2], Values[3]);
+    return StorePathSegment(ctx, pdfi_v_curveto_seg, (double *)&Values);
 }
 
 int pdfi_y_curveto(pdf_context *ctx)
@@ -206,17 +371,15 @@ int pdfi_y_curveto(pdf_context *ctx)
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_y_curveto", NULL);
 
-    return gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[2], Values[3]);
+    return StorePathSegment(ctx, pdfi_y_curveto_seg, (double *)&Values);
 }
 
 int pdfi_closepath(pdf_context *ctx)
 {
-    int code = gs_closepath(ctx->pgs);
-
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_closepath", NULL);
 
-    return code;
+    return StorePathSegment(ctx, pdfi_closepath_seg, NULL);
 }
 
 int pdfi_newpath(pdf_context *ctx)
@@ -224,8 +387,13 @@ int pdfi_newpath(pdf_context *ctx)
     int code = 0, code1;
 
     /* This code is to deal with the wacky W and W* operators */
-    if (ctx->pgs->current_point_valid) {
-        if (ctx->clip_active) {
+    if (ctx->clip_active) {
+        if (ctx->PathBottom != NULL) {
+            code = ApplyStoredPath(ctx);
+            if (code < 0)
+                return code;
+        }
+        if (ctx->pgs->current_point_valid) {
             if (ctx->do_eoclip)
                 code = gs_eoclip(ctx->pgs);
             else
@@ -234,12 +402,22 @@ int pdfi_newpath(pdf_context *ctx)
     }
     ctx->clip_active = false;
 
+    if (ctx->PathBottom != NULL){
+        gs_free_object(ctx->memory, ctx->PathBottom, "ApplyStoredPath");
+        ctx->PathTop= ctx->PathAccumulator = ctx->PathBottom = NULL;
+    }
+
     code1 = gs_newpath(ctx->pgs);
     if (code == 0) code = code1;
 
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_newpath", NULL);
 
+    if (ctx->PathBottom != NULL)
+    {
+        gs_free_object(ctx->memory, ctx->PathBottom, "pdfi_newpath");
+        ctx->PathBottom = ctx->PathTop = ctx->PathAccumulator = NULL;
+    }
     return code;
 }
 
@@ -250,10 +428,11 @@ int pdfi_b(pdf_context *ctx)
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_b", NULL);
 
-    code = gs_closepath(ctx->pgs);
-    if (code >= 0)
-        code = pdfi_B(ctx);
-    return code;
+    code = StorePathSegment(ctx, pdfi_closepath_seg, NULL);
+    if (code < 0)
+        return code;
+
+    return pdfi_B(ctx);
 }
 
 int pdfi_b_star(pdf_context *ctx)
@@ -263,10 +442,11 @@ int pdfi_b_star(pdf_context *ctx)
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_b_star", NULL);
 
-    code = gs_closepath(ctx->pgs);
-    if (code >= 0)
-        code = pdfi_B_star(ctx);
-    return code;
+    code = StorePathSegment(ctx, pdfi_closepath_seg, NULL);
+    if (code < 0)
+        return code;
+
+    return pdfi_B_star(ctx);
 }
 
 /* common code for B and B* */
@@ -280,6 +460,10 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
 
     if (pdfi_oc_is_off(ctx))
         goto exit;
+
+    code = ApplyStoredPath(ctx);
+    if (code < 0)
+        return code;
 
     code = pdfi_trans_setup(ctx, &state, NULL, TRANSPARENCY_Caller_FillStroke);
     if (code == 0) {
@@ -347,13 +531,5 @@ int pdfi_rectpath(pdf_context *ctx)
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_rectpath", NULL);
 
-    code = gs_moveto(ctx->pgs, Values[0], Values[1]);
-    if (code < 0) return code;
-    code = gs_rlineto(ctx->pgs, Values[2], 0);
-    if (code < 0) return code;
-    code = gs_rlineto(ctx->pgs, 0, Values[3]);
-    if (code < 0) return code;
-    code = gs_rlineto(ctx->pgs, -Values[2], 0);
-    if (code < 0) return code;
-    return gs_closepath(ctx->pgs);
+    return StorePathSegment(ctx, pdfi_re_seg, (double *)&Values);
 }
