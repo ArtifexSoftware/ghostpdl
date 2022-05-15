@@ -61,7 +61,7 @@ static int StorePathSegment(pdf_context *ctx, pdfi_path_segment segment, double 
     }
     if (ctx->PathBottom == NULL) {
         ctx->PathBottom = (char *)gs_alloc_bytes(ctx->memory, 4096, "StorePathSegment");
-        if (ctx->PathBottom < 0)
+        if (ctx->PathBottom == NULL)
             return_error(gs_error_VMerror);
 
         ctx->PathAccumulator = ctx->PathBottom;
