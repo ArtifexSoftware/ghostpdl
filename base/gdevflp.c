@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -411,44 +411,6 @@ flp_put_params(gx_device * dev, gs_param_list * plist)
     int code, ecode = 0;
     gs_param_string pagelist;
 
-    code = param_read_int(plist, "FirstPage", &dev->FirstPage);
-    if (code < 0)
-        ecode = code;
-    if (code == 0) {
-        first_last_subclass_data *psubclass_data = dev->subclass_data;
-
-        dev->DisablePageHandler = false;
-        psubclass_data->PageCount = 0;
-        if (dev->PageList) {
-            rc_decrement(dev->PageList, "flp_put_params");
-            dev->PageList = NULL;
-        }
-        if (psubclass_data->PageArray != NULL) {
-            gs_free(dev->memory->non_gc_memory, psubclass_data->PageArray, 1, psubclass_data->PageArraySize, "array of pages selected");
-            psubclass_data->PageArray = NULL;
-            psubclass_data->PageArraySize = 0;
-        }
-    }
-
-    code = param_read_int(plist,  "LastPage", &dev->LastPage);
-    if (code < 0)
-        ecode = code;
-    if (code == 0) {
-        first_last_subclass_data *psubclass_data = dev->subclass_data;
-
-        dev->DisablePageHandler = false;
-        psubclass_data->PageCount = 0;
-        if (dev->PageList) {
-            rc_decrement(dev->PageList, "flp_put_params");
-            dev->PageList = NULL;
-        }
-        if (psubclass_data->PageArray != NULL) {
-            gs_free(dev->memory->non_gc_memory, psubclass_data->PageArray, 1, psubclass_data->PageArraySize, "array of pages selected");
-            psubclass_data->PageArray = NULL;
-            psubclass_data->PageArraySize = 0;
-        }
-    }
-
     code = param_read_bool(plist, "DisablePageHandler", &temp_bool);
     if (code < 0)
         ecode = code;
@@ -461,40 +423,79 @@ flp_put_params(gx_device * dev, gs_param_list * plist)
         }
     }
 
-    code = param_read_string(plist, "PageList", &pagelist);
-    if (code < 0)
-        ecode = code;
+    if (dev->DisablePageHandler == false) {
+        code = param_read_int(plist, "FirstPage", &dev->FirstPage);
+        if (code < 0)
+            ecode = code;
+        if (code == 0) {
+            first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (code == 0 && pagelist.size > 0) {
-        first_last_subclass_data *psubclass_data = dev->subclass_data;
-
-        if (dev->PageList)
-            rc_decrement(dev->PageList, "flp_put_params");
-
-        if (psubclass_data->PageArray != NULL) {
-            gs_free(dev->memory->non_gc_memory, psubclass_data->PageArray, 1, psubclass_data->PageArraySize, "array of pages selected");
-            psubclass_data->PageArray = NULL;
-            psubclass_data->PageArraySize = 0;
+            dev->DisablePageHandler = false;
+            psubclass_data->PageCount = 0;
+            if (dev->PageList) {
+                rc_decrement(dev->PageList, "flp_put_params");
+                dev->PageList = NULL;
+            }
+            if (psubclass_data->PageArray != NULL) {
+                gs_free(dev->memory->non_gc_memory, psubclass_data->PageArray, 1, psubclass_data->PageArraySize, "array of pages selected");
+                psubclass_data->PageArray = NULL;
+                psubclass_data->PageArraySize = 0;
+            }
         }
 
-        dev->PageList = (gdev_pagelist *)gs_alloc_bytes(dev->memory->non_gc_memory, sizeof(gdev_pagelist), "structure to hold page list");
-        if (!dev->PageList)
-            return gs_note_error(gs_error_VMerror);
-        dev->PageList->Pages = (void *)gs_alloc_bytes(dev->memory->non_gc_memory, pagelist.size + 1, "String to hold page list");
-        if (!dev->PageList->Pages){
-            gs_free(dev->memory->non_gc_memory, dev->PageList, 1, sizeof(gdev_pagelist), "free structure to hold page list");
-            dev->PageList = 0;
-            return gs_note_error(gs_error_VMerror);
+        code = param_read_int(plist,  "LastPage", &dev->LastPage);
+        if (code < 0)
+            ecode = code;
+        if (code == 0) {
+            first_last_subclass_data *psubclass_data = dev->subclass_data;
+
+            dev->DisablePageHandler = false;
+            psubclass_data->PageCount = 0;
+            if (dev->PageList) {
+                rc_decrement(dev->PageList, "flp_put_params");
+                dev->PageList = NULL;
+            }
+            if (psubclass_data->PageArray != NULL) {
+                gs_free(dev->memory->non_gc_memory, psubclass_data->PageArray, 1, psubclass_data->PageArraySize, "array of pages selected");
+                psubclass_data->PageArray = NULL;
+                psubclass_data->PageArraySize = 0;
+            }
         }
-        memset(dev->PageList->Pages, 0x00, pagelist.size + 1);
-        memcpy(dev->PageList->Pages, pagelist.data, pagelist.size);
-        dev->PageList->PagesSize = pagelist.size + 1;
-        rc_init_free(dev->PageList, dev->memory->non_gc_memory, 1, flp_rc_free_pages_list);
-        psubclass_data->ProcessedPageList = false;
-        dev->DisablePageHandler = false;
-        psubclass_data->PageCount = 0;
+
+        code = param_read_string(plist, "PageList", &pagelist);
+        if (code < 0)
+            ecode = code;
+
+        if (code == 0 && pagelist.size > 0) {
+            first_last_subclass_data *psubclass_data = dev->subclass_data;
+
+            if (dev->PageList)
+                rc_decrement(dev->PageList, "flp_put_params");
+
+            if (psubclass_data->PageArray != NULL) {
+                gs_free(dev->memory->non_gc_memory, psubclass_data->PageArray, 1, psubclass_data->PageArraySize, "array of pages selected");
+                psubclass_data->PageArray = NULL;
+                psubclass_data->PageArraySize = 0;
+            }
+
+            dev->PageList = (gdev_pagelist *)gs_alloc_bytes(dev->memory->non_gc_memory, sizeof(gdev_pagelist), "structure to hold page list");
+            if (!dev->PageList)
+                return gs_note_error(gs_error_VMerror);
+            dev->PageList->Pages = (void *)gs_alloc_bytes(dev->memory->non_gc_memory, pagelist.size + 1, "String to hold page list");
+            if (!dev->PageList->Pages){
+                gs_free(dev->memory->non_gc_memory, dev->PageList, 1, sizeof(gdev_pagelist), "free structure to hold page list");
+                dev->PageList = 0;
+                return gs_note_error(gs_error_VMerror);
+            }
+            memset(dev->PageList->Pages, 0x00, pagelist.size + 1);
+            memcpy(dev->PageList->Pages, pagelist.data, pagelist.size);
+            dev->PageList->PagesSize = pagelist.size + 1;
+            rc_init_free(dev->PageList, dev->memory->non_gc_memory, 1, flp_rc_free_pages_list);
+            psubclass_data->ProcessedPageList = false;
+            dev->DisablePageHandler = false;
+            psubclass_data->PageCount = 0;
+        }
     }
-
     code = default_subclass_put_params(dev, plist);
 
     if (code < 0)
