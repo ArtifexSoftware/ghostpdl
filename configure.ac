@@ -2877,17 +2877,17 @@ GPDL_SONAME="lib\$(GPDL${libname1}"
 GPDL_SONAME_MAJOR="lib\$(GPDL${libname2}"
 GPDL_SONAME_MAJOR_MINOR="lib\$(GPDL${libname3}"
 
-hide_symbols=no
+hide_symbols=yes
 attr_default=
 attr_hidden=
 _ldflags=
 
 AC_ARG_ENABLE([hidden-visibility],
-    AS_HELP_STRING([--enable-hidden-visibility],
-        [hide all shared library symbols which are not part of its public API]),
-    [hide_symbols=yes])
+    AS_HELP_STRING([--disable-hidden-visibility],
+        [expose all shared library symbols even those which are not part of its public API]),
+    [hide_symbols=no])
 
-if test x$hide_symbols = xyes -a x"$GCC" = x"yes"; then
+if test x"$hide_symbols" = x"yes" -a x"$GCC" = x"yes"; then
     attr_default="__attribute__((visibility(\\\"default\\\")))"
     attr_hidden="__attribute__((visibility(\\\"hidden\\\")))"
 fi
@@ -2909,7 +2909,7 @@ case $host in
       SO_LIB_EXT=".so"
     ;;
     *-mingw*|*-msys*)
-      if test x$hide_symbols = xyes; then
+      if test x"$hide_symbols" = x"yes"; then
         attr_default="__declspec(dllexport)"
         attr_hidden=""
       else
@@ -2941,7 +2941,7 @@ case $host in
       GPDL_SONAME_MAJOR_MINOR="lib\$(GPDL${libname2}"
     ;;
     *-cygwin*)
-      if test x$hide_symbols = xyes; then
+      if test x"$hide_symbols" = x"yes"; then
         attr_default="__declspec(dllexport)"
         attr_hidden=""
       fi
@@ -2991,7 +2991,7 @@ case $host in
         DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
       else
         DYNAMIC_CFLAGS="-KPIC $DYNAMIC_CFLAGS"
-        #if test x$hide_symbols = xyes; then
+        #if test x"$hide_symbols" = x"yes"; then
         #  attr_default="__global"
         #  attr_hidden="__hidden"
         #  _ldflags="-xldscope=hidden"
@@ -3028,16 +3028,17 @@ case $host in
       ;;
 esac
 
-if test x$hide_symbols = xyes ; then
+if test x"$hide_symbols" = x"yes" ; then
   if test x"$GCC" = x"yes"; then
     DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -fvisibility=hidden"
   fi
   DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -DGSDLLEXPORT=\"$attr_default\""
   if test "x$FT_BRIDGE" = x1 -a "x$SHARE_FT" = x0 ; then
-    DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -D\"FT_EXPORT(x)\"=\"$attr_hidden x\""
+    # disable warnings for redefined macros, so our abuse of FT_EXPORT() to hide symbols doesn't flag warnings
+    FT_HIDDEN_CFLAGS="-Wp,-w -D\"FT_EXPORT(x)\"=\"$attr_hidden x\" -D\"FT_EXPORT_DEF(x)\"=\"$attr_hidden x\""
   fi
   if test "x$SHARE_EXPAT" = x0 ; then
-    DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -DXML_STATIC -DXMLIMPORT=\"$attr_hidden\""
+    XML_HIDDEN_CFLAGS="-DXML_STATIC -DXMLIMPORT=\"$attr_hidden\""
   fi
 fi
 
@@ -3058,6 +3059,9 @@ AC_SUBST(PDF_SONAME_MAJOR_MINOR)
 AC_SUBST(GPDL_SONAME)
 AC_SUBST(GPDL_SONAME_MAJOR)
 AC_SUBST(GPDL_SONAME_MAJOR_MINOR)
+
+AC_SUBST(FT_HIDDEN_CFLAGS)
+AC_SUBST(XML_HIDDEN_CFLAGS)
 
 AC_ARG_ENABLE([dynamic], AS_HELP_STRING([--enable-dynamic],
     [Enable dynamically loaded drivers]),

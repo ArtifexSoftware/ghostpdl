@@ -33,7 +33,7 @@ FTO_=$(O_)$(FTOBJ)
 # Define our local compiler alias
 # we must define FT2_BUILD_LIBRARY to get internal declarations
 # If GS is using the system zlib, freetype should also do so,
-FTCC=$(CC) $(I_)$(FTGEN)$(_I) $(I_)$(FTSRCDIR)$(D)include$(_I) \
+FTCC=$(CC) $(I_)$(FTGEN)$(_I) $(I_)$(FTSRCDIR)$(D)include$(_I) $(FT_CFLAGS) \
      $(D_)FT_CONFIG_OPTIONS_H=\"$(FTCONFH)\"$(_D) $(D_)FT2_BUILD_LIBRARY$(_D) \
      $(D_)DARWIN_NO_CARBON$(_D) $(D_)FT_CONFIG_OPTION_SYSTEM_ZLIB$(_D) $(CCFLAGS)
 
