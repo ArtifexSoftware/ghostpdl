@@ -1115,6 +1115,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
         goto done;
     if (code > 0) {
         ctx->encryption.EncryptMetadata = b;
+        code = 0;
     }
     else
         ctx->encryption.EncryptMetadata = true;
