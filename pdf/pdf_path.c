@@ -38,76 +38,93 @@ typedef enum path_segment_e {
 
 static int StorePathSegment(pdf_context *ctx, pdfi_path_segment segment, double *pts)
 {
-    int size = sizeof(char);
-    char *op;
-    double *dpts;
+    int size = 0;
 
     switch (segment)
     {
         case pdfi_moveto_seg:
         case pdfi_lineto_seg:
-            size += 2 * sizeof(double);
+            size = 2;
             break;
         case pdfi_re_seg:
         case pdfi_v_curveto_seg:
         case pdfi_y_curveto_seg:
-            size += 4 * sizeof(double);
+            size = 4;
                 break;
         case pdfi_curveto_seg:
-            size += 6 * sizeof(double);
+            size = 6;
             break;
         case pdfi_closepath_seg:
             break;
+        default:
+            return_error(gs_error_undefined);
+            break;
     }
-    if (ctx->PathBottom == NULL) {
-        ctx->PathBottom = (char *)gs_alloc_bytes(ctx->memory, 4096, "StorePathSegment");
-        if (ctx->PathBottom == NULL)
+    if (ctx->PathSegments == NULL) {
+        ctx->PathSegments = (char *)gs_alloc_bytes(ctx->memory, 1024, "StorePathSegment");
+        if (ctx->PathSegments == NULL)
             return_error(gs_error_VMerror);
-
-        ctx->PathAccumulator = ctx->PathBottom;
-        ctx->PathTop = ctx->PathBottom + 4096;
+        ctx->PathSegmentsCurrent = ctx->PathSegments;
+        ctx->PathSegmentsTop = ctx->PathSegments + 1024;
     }
-    if ((char *)ctx->PathAccumulator + size > ctx->PathTop) {
+    if (ctx->PathSegmentsCurrent == ctx->PathSegmentsTop) {
         char *new_accumulator = NULL;
         uint64_t old_size;
 
-        old_size = ctx->PathTop - ctx->PathBottom;
-        new_accumulator = (char *)gs_alloc_bytes(ctx->memory, old_size + 4096, "StorePathSegment");
+        old_size = ctx->PathSegmentsCurrent - ctx->PathSegments;
+        new_accumulator = (char *)gs_alloc_bytes(ctx->memory, old_size + 1024, "StorePathSegment");
         if (new_accumulator == NULL)
             return_error(gs_error_VMerror);
-
-        memcpy(new_accumulator, ctx->PathBottom, old_size);
-        ctx->PathAccumulator = new_accumulator + (ctx->PathAccumulator - ctx->PathBottom);
-        gs_free_object(ctx->memory, ctx->PathBottom, "StorePathSegment");
-        ctx->PathBottom = new_accumulator;
-        ctx->PathTop = ctx->PathBottom + old_size + 4096;
+        memcpy(new_accumulator, ctx->PathSegments, old_size);
+        ctx->PathSegmentsCurrent = new_accumulator + old_size;
+        gs_free_object(ctx->memory, ctx->PathSegments, "StorePathSegment");
+        ctx->PathSegments = new_accumulator;
+        ctx->PathSegmentsTop = ctx->PathSegments + old_size + 1024;
     }
 
-    op = ctx->PathAccumulator;
-    dpts = (double *)(op + 1);
+    if (ctx->PathPts == NULL) {
+        ctx->PathPts = (double *)gs_alloc_bytes(ctx->memory, 4096, "StorePathSegment");
+        if (ctx->PathPts == NULL)
+            return_error(gs_error_VMerror);
+        ctx->PathPtsCurrent = ctx->PathPts;
+        ctx->PathPtsTop = ctx->PathPts + (4096 / sizeof(double));
+    }
+    if (ctx->PathPtsCurrent + size > ctx->PathPtsTop) {
+        double *new_accumulator = NULL;
+        uint64_t old_size;
 
-    *op = (char)segment;
+        old_size = (char *)ctx->PathPtsCurrent - (char *)ctx->PathPts;
+        new_accumulator = (double *)gs_alloc_bytes(ctx->memory, old_size + 4096, "StorePathSegment");
+        if (new_accumulator == NULL)
+            return_error(gs_error_VMerror);
+        memcpy(new_accumulator, ctx->PathPts, old_size);
+        ctx->PathPtsCurrent = new_accumulator + (old_size / sizeof(double));
+        gs_free_object(ctx->memory, ctx->PathPts, "StorePathSegment");
+        ctx->PathPts = new_accumulator;
+        ctx->PathPtsTop = ctx->PathPts + ((old_size + 4096) / sizeof(double));
+    }
+
+    *(ctx->PathSegmentsCurrent++) = (char)segment;
     switch (segment)
     {
         case pdfi_moveto_seg:
         case pdfi_lineto_seg:
-            memcpy(dpts, pts, 2 * sizeof(double));
-            dpts += 2;
+            memcpy(ctx->PathPtsCurrent, pts, 2 * sizeof(double));
+            ctx->PathPtsCurrent += 2;
             break;
         case pdfi_re_seg:
         case pdfi_v_curveto_seg:
         case pdfi_y_curveto_seg:
-            memcpy(dpts, pts, 4 * sizeof(double));
-            dpts += 4;
+            memcpy(ctx->PathPtsCurrent, pts, 4 * sizeof(double));
+            ctx->PathPtsCurrent += 4;
             break;
         case pdfi_curveto_seg:
-            memcpy(dpts, pts, 6 * sizeof(double));
-            dpts += 6;
+            memcpy(ctx->PathPtsCurrent, pts, 6 * sizeof(double));
+            ctx->PathPtsCurrent += 6;
             break;
         case pdfi_closepath_seg:
             break;
     }
-    ctx->PathAccumulator = (void *)dpts;
     return 0;
 }
 
@@ -117,31 +134,39 @@ static int ApplyStoredPath(pdf_context *ctx)
     char *op = NULL;
     double *dpts = NULL;
 
-    if (ctx->PathBottom == NULL)
+    if (ctx->PathSegments == NULL)
         return 0;
+
+    if (ctx->PathPts == NULL) {
+        code = gs_note_error(gs_error_unknownerror);
+        goto error;
+    }
 
     if (ctx->pgs->current_point_valid) {
         code = gs_newpath(ctx->pgs);
         if (code < 0)
-            return code;
+            goto error;
     }
 
-    op = ctx->PathBottom;
-    while (op < ctx->PathAccumulator) {
+    op = ctx->PathSegments;
+    dpts = ctx->PathPts;
+
+    while (op < ctx->PathSegmentsCurrent) {
+        if (dpts > ctx->PathPtsCurrent) {
+            code = gs_note_error(gs_error_unknownerror);
+            goto error;
+        }
+
         switch(*op++) {
             case pdfi_moveto_seg:
-                dpts = (double *)op;
-                op = (char *)(dpts + 2);
                 code = gs_moveto(ctx->pgs, dpts[0], dpts[1]);
+                dpts+= 2;
                 break;
             case pdfi_lineto_seg:
-                dpts = (double *)op;
-                op = (char *)(dpts + 2);
                 code = gs_lineto(ctx->pgs, dpts[0], dpts[1]);
+                dpts+= 2;
                 break;
             case pdfi_re_seg:
-                dpts = (double *)op;
-                op = (char *)(dpts + 4);
                 code = gs_moveto(ctx->pgs, dpts[0], dpts[1]);
                 if (code >= 0) {
                     code = gs_rlineto(ctx->pgs, dpts[2], 0);
@@ -154,6 +179,7 @@ static int ApplyStoredPath(pdf_context *ctx)
                         }
                     }
                 }
+                dpts+= 4;
                 break;
             case pdfi_v_curveto_seg:
                 {
@@ -161,21 +187,18 @@ static int ApplyStoredPath(pdf_context *ctx)
 
                     code = gs_currentpoint(ctx->pgs, &pt);
                     if (code >= 0) {
-                        dpts = (double *)op;
-                        op = (char *)(dpts + 4);
                         code = gs_curveto(ctx->pgs, pt.x, pt.y, dpts[0], dpts[1], dpts[2], dpts[3]);
+                        dpts+= 4;
                     }
                 }
                 break;
             case pdfi_y_curveto_seg:
-                dpts = (double *)op;
-                op = (char *)(dpts + 4);
                 code = gs_curveto(ctx->pgs, dpts[0], dpts[1], dpts[2], dpts[3], dpts[2], dpts[3]);
+                dpts+= 4;
                 break;
             case pdfi_curveto_seg:
-                dpts = (double *)op;
-                op = (char *)(dpts + 6);
                 code = gs_curveto(ctx->pgs, dpts[0], dpts[1], dpts[2], dpts[3], dpts[4], dpts[5]);
+                dpts+= 6;
                 break;
             case pdfi_closepath_seg:
                 code = gs_closepath(ctx->pgs);
@@ -188,8 +211,11 @@ static int ApplyStoredPath(pdf_context *ctx)
             break;
     }
 
-    gs_free_object(ctx->memory, ctx->PathBottom, "ApplyStoredPath");
-    ctx->PathTop = ctx->PathAccumulator = ctx->PathBottom = NULL;
+error:
+    gs_free_object(ctx->memory, ctx->PathSegments, "ApplyStoredPath");
+    ctx->PathSegmentsTop = ctx->PathSegmentsCurrent = ctx->PathSegments = NULL;
+    gs_free_object(ctx->memory, ctx->PathPts, "ApplyStoredPath");
+    ctx->PathPtsTop = ctx->PathPtsCurrent = ctx->PathPts = NULL;
     return code;
 }
 
@@ -388,7 +414,7 @@ int pdfi_newpath(pdf_context *ctx)
 
     /* This code is to deal with the wacky W and W* operators */
     if (ctx->clip_active) {
-        if (ctx->PathBottom != NULL) {
+        if (ctx->PathSegments != NULL) {
             code = ApplyStoredPath(ctx);
             if (code < 0)
                 return code;
@@ -402,9 +428,11 @@ int pdfi_newpath(pdf_context *ctx)
     }
     ctx->clip_active = false;
 
-    if (ctx->PathBottom != NULL){
-        gs_free_object(ctx->memory, ctx->PathBottom, "ApplyStoredPath");
-        ctx->PathTop= ctx->PathAccumulator = ctx->PathBottom = NULL;
+    if (ctx->PathSegments != NULL){
+        gs_free_object(ctx->memory, ctx->PathSegments, "ApplyStoredPath");
+        ctx->PathSegmentsTop = ctx->PathSegmentsCurrent = ctx->PathSegments = NULL;
+        gs_free_object(ctx->memory, ctx->PathPts, "ApplyStoredPath");
+        ctx->PathPtsTop = ctx->PathPtsCurrent = ctx->PathPts = NULL;
     }
 
     code1 = gs_newpath(ctx->pgs);
@@ -413,11 +441,6 @@ int pdfi_newpath(pdf_context *ctx)
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_newpath", NULL);
 
-    if (ctx->PathBottom != NULL)
-    {
-        gs_free_object(ctx->memory, ctx->PathBottom, "pdfi_newpath");
-        ctx->PathBottom = ctx->PathTop = ctx->PathAccumulator = NULL;
-    }
     return code;
 }
 

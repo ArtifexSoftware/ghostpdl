@@ -347,14 +347,18 @@ typedef struct pdf_context_s
      * path and rerun it, this is causing problems so instead we'll do what
      * Acrobat obviously does and build the path outside the graphics state
      */
-    char *PathBottom;
     /* We make allocations in chunks for the path to avoid lots of little
      * allocations, but we need to know where the end of the current allocation
      * is so that we can tell if we would overflow and increase it.
      */
-    char *PathTop;
-    /* And the current insertion point. */
-    char *PathAccumulator;
+    char *PathSegments;
+    /* The current insertion point. */
+    char *PathSegmentsCurrent;
+    /* The current limit of the block */
+    char *PathSegmentsTop;
+    double *PathPts;
+    double *PathPtsCurrent;
+    double *PathPtsTop;
 
     /* set up by pdf_impl_set_device, this is the 'high water mark' for
      * restoring back to when we close a PDF file. This ensures the device
