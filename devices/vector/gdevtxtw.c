@@ -1879,6 +1879,9 @@ textw_text_process(gs_text_enum_t *pte)
         switch (font->FontType) {
         case ft_CID_encrypted:
         case ft_CID_TrueType:
+            errprintf(pte->memory, "\n\n*** The txtwrite device does not currently support the use of CID-Keyed fonts. ***\n\n");
+	        return_error(gs_error_typecheck);
+            break;
         case ft_composite:
               code = txtwrite_process_cmap_text(pte);
             break;
@@ -1892,7 +1895,7 @@ textw_text_process(gs_text_enum_t *pte)
             code = txtwrite_process_plain_text(pte);
             break;
         default:
-	  return_error(gs_error_rangecheck);
+	        return_error(gs_error_rangecheck);
             break;
         }
         if (code == 0) {
@@ -1954,7 +1957,11 @@ textw_text_process(gs_text_enum_t *pte)
 static int
 textw_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
 {
-    return gs_text_resync(pte, pfrom);
+    if ((pte->text.operation ^ pfrom->text.operation) & ~TEXT_FROM_ANY)
+        return_error(gs_error_rangecheck);
+    pte->text = pfrom->text;
+    gs_text_enum_copy_dynamic(pte, pfrom, false);
+    return 0;
 }
 static bool
 textw_text_is_width_only(const gs_text_enum_t *pte)
