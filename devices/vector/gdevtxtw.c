@@ -1167,7 +1167,7 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         return code;
 
-    if (ofs.data != 0) {	/* Close the file if it's open. */
+    if (ofs.data != 0 && (ofs.size != strlen(tdev->fname) || strncmp(ofs.data, tdev->fname, ofs.size)) != 0) {	/* Close the file if it's open. */
         if (tdev->file != 0) {
             gp_fclose(tdev->file);
             tdev->file = 0;
@@ -1185,10 +1185,10 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
         dev->is_open = false;
 
     code = gx_default_put_params(dev, plist);
+    dev->is_open = open;
     if (code < 0)
         return code;
 
-    dev->is_open = open;
 
     dev->interpolate_control = 0;
 
