@@ -1,3 +1,18 @@
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
 #include "doc_common.h"
 
 #include "gxfont.h"
@@ -32,6 +47,7 @@ font_orig_matrix(const gs_font *font, gs_glyph cid, gs_matrix *pmat)
     case ft_encrypted2:
     case ft_CID_encrypted:
     case ft_user_defined:
+    case ft_PDF_user_defined:
     case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
     case ft_GL2_531:

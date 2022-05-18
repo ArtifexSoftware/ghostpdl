@@ -1167,7 +1167,7 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         return code;
 
-    if (ofs.data != 0 && (ofs.size != strlen(tdev->fname) || strncmp(ofs.data, tdev->fname, ofs.size)) != 0) {	/* Close the file if it's open. */
+    if (ofs.data != 0 && (ofs.size != strlen(tdev->fname) || strncmp((const char *)ofs.data, tdev->fname, ofs.size)) != 0) {	/* Close the file if it's open. */
         if (tdev->file != 0) {
             gp_fclose(tdev->file);
             tdev->file = 0;
@@ -1875,6 +1875,7 @@ textw_text_process(gs_text_enum_t *pte)
         if (!penum->SpanDeltaX)
             return gs_note_error(gs_error_VMerror);
     }
+retry:
     {
         switch (font->FontType) {
         case ft_CID_encrypted:
@@ -1889,6 +1890,7 @@ textw_text_process(gs_text_enum_t *pte)
         case ft_encrypted2:
         case ft_TrueType:
         case ft_user_defined:
+        case ft_PDF_user_defined:
         case ft_PCL_user_defined:
         case ft_GL2_stick_user_defined:
         case ft_GL2_531:
@@ -1938,6 +1940,9 @@ textw_text_process(gs_text_enum_t *pte)
             penum->pte_fallback = pte_fallback;
             gs_text_enum_copy_dynamic(pte_fallback, pte, false);
 
+            if (font->FontType == ft_PDF_user_defined && pte->text.size != 1)
+                pte_fallback->text.size = pte->index + 1;
+
             code = gs_text_process(pte_fallback);
             if (code != 0) {
                 penum->returned.current_char = pte_fallback->returned.current_char;
@@ -1946,6 +1951,8 @@ textw_text_process(gs_text_enum_t *pte)
             }
             gs_text_release(NULL, pte_fallback, "txtwrite_text_process");
             penum->pte_fallback = 0;
+            if (font->FontType == ft_PDF_user_defined)
+                goto retry;
         }
     }
     return code;
