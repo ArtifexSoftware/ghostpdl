@@ -814,22 +814,7 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, in
             return code;
     }
 
-    code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, fname, &mname);
-    if (code >= 0) {
-        /* Fontmap can map in multiple "jump" i.e.
-           name -> substitute name
-           subsitute name -> file name
-           So we want to loop until we no more hits.
-         */
-        while(1) {
-            pdf_obj *mname2;
-            code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, (pdf_name *)mname, &mname2);
-            if (code < 0) break;
-            pdfi_countdown(mname);
-            mname = mname2;
-        }
-    }
-    else if (ctx->pdfnativefontmap != NULL) {
+    if (ctx->pdfnativefontmap != NULL) {
         pdf_obj *record;
         code = pdfi_dict_get_by_key(ctx, ctx->pdfnativefontmap, fname, &record);
         if (code < 0)
@@ -849,7 +834,27 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, in
             *findex = (int)i64; /* Rangecheck? */
         }
     }
+    else {
+        code = gs_error_undefined;
+    }
 
+    if (code < 0) {
+        code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, fname, &mname);
+        if (code >= 0) {
+            /* Fontmap can map in multiple "jump" i.e.
+               name -> substitute name
+               subsitute name -> file name
+               So we want to loop until we no more hits.
+             */
+            while(1) {
+                pdf_obj *mname2;
+                code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, (pdf_name *)mname, &mname2);
+                if (code < 0) break;
+                pdfi_countdown(mname);
+                mname = mname2;
+            }
+        }
+    }
     if (mname != NULL && pdfi_type_of(mname) == PDF_STRING && pdfi_fmap_file_exists(ctx, (pdf_string *)mname)) {
         *mapname = mname;
         code = 0;
