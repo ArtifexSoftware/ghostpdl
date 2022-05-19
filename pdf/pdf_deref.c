@@ -499,8 +499,10 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
 
         pdfi_pop(ctx, 3);
 
-        o->indirect_num = o->object_num = objnum;
-        o->indirect_gen = o->generation_num = gen;
+        if (pdfi_type_of(o) != PDF_BOOL && pdfi_type_of(o) != PDF_NULL && pdfi_type_of(o) != PDF_FAST_KEYWORD) {
+            o->indirect_num = o->object_num = objnum;
+            o->indirect_gen = o->generation_num = gen;
+        }
         if (saved_offset[0] > 0)
             (void)pdfi_seek(ctx, s, saved_offset[0], SEEK_SET);
         return 0;
@@ -520,8 +522,10 @@ missing_endobj:
 
         pdfi_pop(ctx, 1);
 
-        o->indirect_num = o->object_num = objnum;
-        o->indirect_gen = o->generation_num = gen;
+        if (pdfi_type_of(o) != PDF_BOOL && pdfi_type_of(o) != PDF_NULL && pdfi_type_of(o) != PDF_FAST_KEYWORD) {
+            o->indirect_num = o->object_num = objnum;
+            o->indirect_gen = o->generation_num = gen;
+        }
         return code;
     }
     pdfi_pop(ctx, 2);
