@@ -533,6 +533,7 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
     pdf_obj *fontname = NULL;
     stream *s;
     const char *fn;
+    bool f_retry = true;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
     if (code < 0 || basefont == NULL || ((pdf_name *)basefont)->length == 0)
@@ -558,74 +559,98 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
     if (((pdf_name *)fontname)->length < gp_file_name_sizeof) {
         memcpy(fontfname, ((pdf_name *)fontname)->data, ((pdf_name *)fontname)->length);
         fontfname[((pdf_name *)fontname)->length] = '\0';
-        fn = pdfi_clean_font_name(fontfname);
-        if (fn != NULL) {
-            pdfi_countdown(fontname);
+        pdfi_countdown(fontname);
 
-            code = pdfi_name_alloc(ctx, (byte *)fn, strlen(fn), (pdf_obj **) &fontname);
-            if (code < 0)
-                return code;
-            pdfi_countup(fontname);
+        code = pdfi_name_alloc(ctx, (byte *)fontfname, strlen(fontfname), (pdf_obj **) &fontname);
+        if (code < 0)
+            return code;
+        pdfi_countup(fontname);
+    }
+
+    do {
+        code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname, findex);
+        if (code < 0) {
+            if (((pdf_name *)fontname)->length < gp_file_name_sizeof) {
+                memcpy(fontfname, ((pdf_name *)fontname)->data, ((pdf_name *)fontname)->length);
+                fontfname[((pdf_name *)fontname)->length] = '\0';
+                fn = pdfi_clean_font_name(fontfname);
+                if (fn != NULL) {
+                    pdfi_countdown(fontname);
+
+                    code = pdfi_name_alloc(ctx, (byte *)fn, strlen(fn), (pdf_obj **) &fontname);
+                    if (code < 0)
+                        return code;
+                    pdfi_countup(fontname);
+                }
+            }
+            code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname, findex);
+            if (code < 0) {
+                mapname = fontname;
+                pdfi_countup(mapname);
+                code = 0;
+            }
         }
-    }
-    code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname, findex);
-    if (code < 0) {
-        mapname = fontname;
-        pdfi_countup(mapname);
-        code = 0;
-    }
-    if (mapname->type == PDF_NAME || mapname->type == PDF_STRING) {
-        pdf_name *mname = (pdf_name *) mapname;
-        if (mname->length + 1 < gp_file_name_sizeof) {
-            memcpy(fontfname, mname->data, mname->length);
-            fontfname[mname->length] = '\0';
+        if (mapname->type == PDF_NAME || mapname->type == PDF_STRING) {
+            pdf_name *mname = (pdf_name *) mapname;
+            if (mname->length + 1 < gp_file_name_sizeof) {
+                memcpy(fontfname, mname->data, mname->length);
+                fontfname[mname->length] = '\0';
+            }
+            else {
+                pdfi_countdown(mapname);
+                pdfi_countdown(fontname);
+                return_error(gs_error_invalidfileaccess);
+            }
         }
         else {
             pdfi_countdown(mapname);
             pdfi_countdown(fontname);
             return_error(gs_error_invalidfileaccess);
         }
-    }
-    else {
-        pdfi_countdown(mapname);
-        pdfi_countdown(fontname);
-        return_error(gs_error_invalidfileaccess);
-    }
 
-    code = pdfi_open_font_file(ctx, fontfname, strlen(fontfname), &s);
-    if (code >= 0) {
-        gs_const_string fname;
-        if (basefont) {
-            pdfi_print_string(ctx, "Loading font ");
-            pdfi_print_font_name(ctx, (pdf_name *)basefont);
-            pdfi_print_string(ctx, " (or substitute) from ");
+        code = pdfi_open_font_file(ctx, fontfname, strlen(fontfname), &s);
+        if (code < 0 && f_retry && mapname->type == PDF_NAME) {
+            pdfi_countdown(fontname);
+            fontname = mapname;
+            mapname = NULL;
+            f_retry = false;
+            continue;
         }
-        else {
-            pdfi_print_string(ctx, "Loading nameless font from ");
-        }
-        sfilename(s, &fname);
-        if (fname.size < gp_file_name_sizeof) {
-            memcpy(fontfname, fname.data, fname.size);
-            fontfname[fname.size] = '\0';
-        }
-        else {
-            strcpy(fontfname, "unnamed file");
-        }
-        pdfi_print_string(ctx, fontfname);
-        pdfi_print_string(ctx, "\n");
+        if (code >= 0) {
+            gs_const_string fname;
+            if (basefont) {
+                pdfi_print_string(ctx, "Loading font ");
+                pdfi_print_font_name(ctx, (pdf_name *)basefont);
+                pdfi_print_string(ctx, " (or substitute) from ");
+            }
+            else {
+                pdfi_print_string(ctx, "Loading nameless font from ");
+            }
+            sfilename(s, &fname);
+            if (fname.size < gp_file_name_sizeof) {
+                memcpy(fontfname, fname.data, fname.size);
+                fontfname[fname.size] = '\0';
+            }
+            else {
+                strcpy(fontfname, "unnamed file");
+            }
+            pdfi_print_string(ctx, fontfname);
+            pdfi_print_string(ctx, "\n");
 
-        sfseek(s, 0, SEEK_END);
-        *buflen = sftell(s);
-        sfseek(s, 0, SEEK_SET);
-        *buf = gs_alloc_bytes(ctx->memory, *buflen, "pdfi_open_t1_font_file(buf)");
-        if (*buf != NULL) {
-            sfread(*buf, 1, *buflen, s);
+            sfseek(s, 0, SEEK_END);
+            *buflen = sftell(s);
+            sfseek(s, 0, SEEK_SET);
+            *buf = gs_alloc_bytes(ctx->memory, *buflen, "pdfi_open_t1_font_file(buf)");
+            if (*buf != NULL) {
+                sfread(*buf, 1, *buflen, s);
+            }
+            else {
+                code = gs_note_error(gs_error_VMerror);
+            }
+            sfclose(s);
         }
-        else {
-            code = gs_note_error(gs_error_VMerror);
-        }
-        sfclose(s);
-    }
+        break;
+    } while (1);
 
     pdfi_countdown(basefont);
     pdfi_countdown(mapname);
