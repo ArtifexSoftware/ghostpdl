@@ -25,6 +25,7 @@
 #include "pdf_stack.h"
 #include "pdf_dict.h"
 #include "pdf_array.h"
+#include "pdf_loop_detect.h"
 
 #include "iminst.h"
 #include "dstack.h"
