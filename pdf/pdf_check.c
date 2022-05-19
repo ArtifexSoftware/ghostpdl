@@ -177,6 +177,9 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict,
     if (resource_is_checked(tracker, (pdf_obj *)cspace_dict))
         return 0;
 
+    if (pdfi_type_of(cspace_dict) != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     if (pdfi_dict_entries(cspace_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
         if (code < 0)
@@ -248,6 +251,9 @@ static int pdfi_check_Shading(pdf_context *ctx, pdf_obj *shading,
     if (code < 0)
         return code;
 
+    if (pdfi_type_of(shading_dict) != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     code = pdfi_dict_knownget(ctx, shading_dict, "ColorSpace", (pdf_obj **)&o);
     if (code > 0) {
         code = pdfi_check_ColorSpace_for_spots(ctx, o, shading_dict, page_dict, tracker->spot_dict);
@@ -269,6 +275,9 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
 
     if (resource_is_checked(tracker, (pdf_obj *)shading_dict))
         return 0;
+
+    if (pdfi_type_of(shading_dict) != PDF_DICT)
+        return_error(gs_error_typecheck);
 
     if (pdfi_dict_entries(shading_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the Shading dictionary loop */
@@ -338,6 +347,9 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
 
     if (resource_is_checked(tracker, (pdf_obj *)xobject))
         return 0;
+
+    if (pdfi_type_of(xobject) != PDF_DICT)
+        return_error(gs_error_typecheck);
 
     code = pdfi_dict_get_type(ctx, xobject, "Subtype", PDF_NAME, (pdf_obj **)&n);
     if (code >= 0) {
@@ -430,6 +442,9 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
     if (resource_is_checked(tracker, (pdf_obj *)xobject_dict))
         return 0;
 
+    if (pdfi_type_of(xobject_dict) != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     if (pdfi_dict_entries(xobject_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the XObject dictionary loop */
         if (code < 0)
@@ -502,6 +517,9 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_
 
     if (resource_is_checked(tracker, (pdf_obj *)extgstate_dict))
         return 0;
+
+    if (pdfi_type_of(extgstate_dict) != PDF_DICT)
+        return_error(gs_error_typecheck);
 
     if (pdfi_dict_entries(extgstate_dict) > 0) {
         /* See if /OP or /op is true */
@@ -594,6 +612,9 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
     if (resource_is_checked(tracker, (pdf_obj *)extgstate_dict))
         return 0;
 
+    if (pdfi_type_of(extgstate_dict) != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     if (pdfi_dict_entries(extgstate_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
         if (code < 0)
@@ -661,6 +682,9 @@ static int pdfi_check_Pattern(pdf_context *ctx, pdf_dict *pattern, pdf_dict *pag
     if (resource_is_checked(tracker, (pdf_obj *)pattern))
         return 0;
 
+    if (pdfi_type_of(pattern) != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     if (tracker->spot_dict != NULL) {
         code = pdfi_dict_knownget(ctx, pattern, "Shading", &o);
         if (code > 0)
@@ -724,6 +748,9 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
 
     if (resource_is_checked(tracker, (pdf_obj *)pattern_dict))
         return 0;
+
+    if (pdfi_type_of(pattern_dict) != PDF_DICT)
+        return_error(gs_error_typecheck);
 
     if (pdfi_dict_entries(pattern_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the Pattern dictionary loop */
@@ -997,6 +1024,9 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
     if (resource_is_checked(tracker, (pdf_obj *)font_dict))
         return 0;
 
+    if (pdfi_type_of(font_dict) != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     if (pdfi_dict_entries(font_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the Font dictionary loop */
         if (code < 0)
@@ -1056,6 +1086,9 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
 
     if (resource_is_checked(tracker, (pdf_obj *)Resources_dict))
         return 0;
+
+    if (pdfi_type_of(Resources_dict) != PDF_DICT)
+        return_error(gs_error_typecheck);
 
     /* First up, check any colour spaces, for new spot colours.
      * We only do this if asked because its expensive. spot_dict being NULL
@@ -1118,6 +1151,9 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
 
     if (resource_is_checked(tracker, (pdf_obj *)annot))
         return 0;
+
+    if (pdfi_type_of(annot) != PDF_DICT)
+        return_error(gs_error_typecheck);
 
     /* Check #1 Does the (Normal) Appearnce stream use any Resources which include transparency.
      * We check this first, because this also checks for spot colour spaces. Once we've done that we
@@ -1217,6 +1253,9 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
     if (resource_is_checked(tracker, (pdf_obj *)annots_array))
         return 0;
 
+    if (pdfi_type_of(annots_array) != PDF_ARRAY)
+        return_error(gs_error_typecheck);
+
     for (i=0; i < pdfi_array_size(annots_array); i++) {
         code = pdfi_array_get_type(ctx, annots_array, (uint64_t)i, PDF_DICT, (pdf_obj **)&annot);
         if (code >= 0) {
@@ -1265,6 +1304,10 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
     pdf_obj *CS = NULL;
 
     tracker->transparent = false;
+
+    if (pdfi_type_of(page_dict) != PDF_DICT)
+        return_error(gs_error_typecheck);
+
 
     /* Check if the page dictionary has a page Group entry (for spots).
      * Page group should mean the page has transparency but we ignore it for the purposes
