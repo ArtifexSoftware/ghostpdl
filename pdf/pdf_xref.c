@@ -660,6 +660,9 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
         return 1;
     }
 
+    if (start < 0)
+        return_error(gs_error_rangecheck);
+
     *section_start = start;
 
     code = pdfi_read_bare_int(ctx, ctx->main_stream, &size);
