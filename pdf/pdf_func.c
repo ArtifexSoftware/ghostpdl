@@ -569,6 +569,18 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
 
     params.Functions = (const gs_function_t * const *)ptr;
 
+    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Bounds, function_dict, "Bounds");
+    if (code < 0)
+        goto function_3_error;
+
+    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Encode, function_dict, "Encode");
+    if (code < 0)
+        goto function_3_error;
+
+    if (code != 2 * params.k)
+        goto function_3_error;
+    code = 0;
+
     for (i = 0; i < params.k; ++i) {
         pdf_obj * rsubfn = NULL;
 
@@ -587,22 +599,11 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
         if (code < 0)
             goto function_3_error;
 
-        code = pdfi_build_sub_function(ctx, &ptr[i], shading_domain, num_inputs, rsubfn, page_dict);
+        code = pdfi_build_sub_function(ctx, &ptr[i], &params.Encode[i * 2], num_inputs, rsubfn, page_dict);
         pdfi_countdown(rsubfn);
         if (code < 0)
             goto function_3_error;
     }
-
-    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Bounds, function_dict, "Bounds");
-    if (code < 0)
-        goto function_3_error;
-
-    code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Encode, function_dict, "Encode");
-    if (code < 0)
-        goto function_3_error;
-
-    if (code != 2 * params.k)
-        goto function_3_error;
 
     if (params.Range == 0)
         params.n = params.Functions[0]->params.n;
