@@ -643,31 +643,46 @@ static int PDFdict_to_PSdict(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_dict *PDFdi
     if (code < 0)
         return code;
 
+    code = pdfi_loop_detector_mark(pdfctx->ctx);
+    if (code < 0)
+        goto error;
+
     code = pdfi_dict_first(pdfctx->ctx, PDFdict, (pdf_obj **)&Key, &Value, &index);
-    if (code == gs_error_undefined)
-        return 0;
+    if (code == gs_error_undefined) {
+        code = 0;
+        goto error;
+    }
 
     while (code >= 0) {
         code = pdfi_string_from_name(pdfctx->ctx, Key, &str, &len);
         if (code < 0)
-            goto exit;
+            goto error;
 
         code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)str, len, &nameref, 1);
         if (code < 0)
-            goto exit;
+            goto error;
 
         code = PDFobj_to_PSobj(i_ctx_p, pdfctx, Value, &valueref);
         if (code < 0)
-            goto exit;
+            goto error;
 
         code = dict_put(PSdict, &nameref, &valueref, &i_ctx_p->dict_stack);
         if (code < 0)
-            goto exit;
+            goto error;
 
         pdfi_countdown(Key);
         pdfi_countdown(Value);
         Key = NULL;
         Value = NULL;
+
+        code = pdfi_loop_detector_cleartomark(pdfctx->ctx);
+        if (code < 0)
+            goto error;
+
+        code = pdfi_loop_detector_mark(pdfctx->ctx);
+        if (code < 0)
+            goto error;
+
         (void)pdfi_free_string_from_name(pdfctx->ctx, str);
         str = NULL;
         code = pdfi_dict_next(pdfctx->ctx, PDFdict, (pdf_obj **)&Key, &Value, &index);
@@ -676,10 +691,15 @@ static int PDFdict_to_PSdict(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_dict *PDFdi
             break;
         }
     }
-exit:
+error:
     (void)pdfi_free_string_from_name(pdfctx->ctx, str);
     pdfi_countdown(Key);
     pdfi_countdown(Value);
+
+    if (code < 0)
+        (void)pdfi_loop_detector_cleartomark(pdfctx->ctx);
+    else
+        code = pdfi_loop_detector_cleartomark(pdfctx->ctx);
     return code;
 }
 
@@ -690,18 +710,22 @@ static int PDFarray_to_PSarray(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_array *PD
     pdf_obj *array_obj = NULL;
     ref *eltp = NULL;
 
+    code = pdfi_loop_detector_mark(pdfctx->ctx);
+    if (code < 0)
+        goto error;
+
     code = ialloc_ref_array(PSarray, a_all, pdfi_array_size(PDFarray), "zPDFInfo");
     if (code < 0)
-        return code;
+        goto error;
 
     for (i = 0;i < pdfi_array_size(PDFarray); i++) {
         code = pdfi_array_get(pdfctx->ctx, PDFarray, i, &array_obj);
         if (code < 0)
-            goto exit;
+            goto error;
         code = PDFobj_to_PSobj(i_ctx_p, pdfctx, array_obj, &PS_ref);
         if (code < 0) {
             pdfi_countdown(array_obj);
-            goto exit;
+            goto error;
         }
 
         eltp = PSarray->value.refs + i;
@@ -710,13 +734,21 @@ static int PDFarray_to_PSarray(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_array *PD
         pdfi_countdown(array_obj);
         array_obj = NULL;
     }
-exit:
+error:
+    if (code < 0)
+        (void)pdfi_loop_detector_cleartomark(pdfctx->ctx);
+    else
+        code = pdfi_loop_detector_cleartomark(pdfctx->ctx);
     return code;
 }
 
 static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, ref *PSobj)
 {
     int code = 0;
+
+    code = pdfi_loop_detector_mark(pdfctx->ctx);
+    if (code < 0)
+        goto error;
 
     switch(pdfi_type_of(PDFobj)) {
         case PDF_NAME:
@@ -726,7 +758,7 @@ static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, 
 
                 code = pdfi_string_from_name(pdfctx->ctx, (pdf_name *)PDFobj, &str, &len);
                 if (code < 0)
-                    return code;
+                    goto error;
                 code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)str, len, PSobj, 1);
                 (void)pdfi_free_string_from_name(pdfctx->ctx, str);
             }
@@ -751,7 +783,7 @@ static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, 
 
                 code = pdfi_obj_to_int(pdfctx->ctx, PDFobj, &i);
                 if (code < 0)
-                    return code;
+                    goto error;
                 make_int(PSobj, i);
             }
             break;
@@ -767,7 +799,7 @@ static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, 
 
                 code = pdfi_obj_to_real(pdfctx->ctx, PDFobj, &d);
                 if (code < 0)
-                    return code;
+                    goto error;
                 make_real(PSobj, d);
             }
             break;
@@ -782,6 +814,11 @@ static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, 
             break;
     }
 
+error:
+    if (code < 0)
+        (void)pdfi_loop_detector_cleartomark(pdfctx->ctx);
+    else
+        code = pdfi_loop_detector_cleartomark(pdfctx->ctx);
     return code;
 }
 
