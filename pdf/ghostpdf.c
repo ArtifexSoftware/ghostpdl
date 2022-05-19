@@ -485,6 +485,7 @@ const char *gs_error_strings[] = {
     "invalidcontext",
     "invalidid",
     "pdf_stackoverflow"
+    "circular reference"
 };
 
 const char *gs_internal_error_strings[] = {
@@ -501,9 +502,8 @@ const char *gs_internal_error_strings[] = {
     "need file",
     "error info",
     "handled",
-    "circular reference"
 };
-#define LASTNORMALGSERROR gs_error_pdf_stackoverflow * -1
+#define LASTNORMALGSERROR gs_error_circular_reference * -1
 #define FIRSTINTERNALERROR gs_error_hit_detected * -1
 #define LASTGSERROR gs_error_circular_reference * -1
 

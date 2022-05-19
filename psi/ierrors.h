@@ -58,7 +58,7 @@ extern const char *const gs_error_names[];
  "invalidcontext", "invalidid"
 
 #define PDF_ERROR_NAMES\
- "pdf_stackoverflow"
+ "pdf_stackoverflow", "pdf_circular_reference"
 
 #define ERROR_NAMES\
  LEVEL1_ERROR_NAMES, LEVEL2_ERROR_NAMES, DPS_ERROR_NAMES, PDF_ERROR_NAMES
