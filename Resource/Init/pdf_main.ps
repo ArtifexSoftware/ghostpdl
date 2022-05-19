@@ -1608,7 +1608,26 @@ currentdict /EnablePageHandlerDevice undef
 
 /runpdf {        % <file> runpdf -
   /NEWPDF where {/NEWPDF get} {//true} ifelse
-  {newpdf_runpdf}
+  {
+    dup type /filetype eq
+    {
+      dup
+      PDFSTOPONERROR
+      {
+        newpdf_runpdf
+      }
+      {
+        {newpdf_runpdf} stopped
+        {
+          (   **** Error: PDF interpreter encountered an error processing the file.\n) pdfformaterror
+        } if
+      }ifelse
+      closefile
+    }
+    {
+      (   **** Error: Attempt to process something other than a file object in runpdf.\n) pdfformaterror
+    } ifelse
+  }
   {
     %% Get the PDF filename (it *must* be a file even if it came from stdin it gets
     %% copied to a temporary file) and store it in pdfdict. We will use this for
