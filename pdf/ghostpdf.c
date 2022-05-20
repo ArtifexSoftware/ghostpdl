@@ -484,7 +484,7 @@ const char *gs_error_strings[] = {
     "unregistered",
     "invalidcontext",
     "invalidid",
-    "pdf_stackoverflow"
+    "pdf_stackoverflow",
     "circular reference"
 };
 
@@ -497,15 +497,15 @@ const char *gs_internal_error_strings[] = {
     "exec stack underflow",
     "VMreclaim",
     "Need input",
+    "need file",
     "No defined error",
     "No defined error (2)",
-    "need file",
     "error info",
     "handled",
 };
 #define LASTNORMALGSERROR gs_error_circular_reference * -1
 #define FIRSTINTERNALERROR gs_error_hit_detected * -1
-#define LASTGSERROR gs_error_circular_reference * -1
+#define LASTGSERROR gs_error_handled * -1
 
 void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, const char *extra_info)
 {
