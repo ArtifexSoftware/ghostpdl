@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -643,6 +643,25 @@ gs_image_class_0_interpolate(gx_image_enum * penum, irender_proc_t *render_fn)
                 &image_render_interpolate_landscape_icc);
         return 0;
     } else {
+
+        /* If we are doing fastcolor we may still have
+           a decode situation.  To avoid yet another
+           variable, use the existing one in the
+           icc setup */
+        if (dev_profile->usefastcolor) {
+            int k;
+            int src_num_comp = cs_num_components(penum->pcs);
+
+            penum->icc_setup.need_decode = false;
+            /* Check if we need to do any decoding.  If yes, then that will slow us down */
+            for (k = 0; k < src_num_comp; k++) {
+                if ( penum->map[k].decoding != sd_none ) {
+                    penum->icc_setup.need_decode = true;
+                    break;
+                }
+            }
+        }
+
         *render_fn = (penum->posture == image_portrait ?
                 &image_render_interpolate :
                 &image_render_interpolate_landscape);
@@ -677,8 +696,15 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
            cs is neither a device color nor a CIE color (i.e. if it's DeviceN,
            Index or Separation) The color space cannot be a pattern for an image */
         need_decode = (penum->icc_setup.need_decode || is_devn_sep_index);
-    } else
-        need_decode = is_devn_sep_index;
+    } else {
+        cmm_dev_profile_t *dev_profile;
+
+        dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+        if (dev_profile != NULL && dev_profile->usefastcolor)
+            need_decode = (penum->icc_setup.need_decode || is_devn_sep_index);
+        else
+            need_decode = is_devn_sep_index;
+    }
 
     if (h != 0) {
         /* Convert the unpacked data to concrete values in the source buffer. */
