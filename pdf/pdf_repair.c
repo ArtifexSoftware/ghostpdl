@@ -174,7 +174,7 @@ int pdfi_repair_file(pdf_context *ctx)
 
                         saved_offset[0] = saved_offset[1] = saved_offset[2] = 0;
 
-                        if (pdfi_count_stack(ctx) < 3 || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT) {
+                        if (pdfi_count_stack(ctx) < 3 || pdfi_type_of(ctx->stack_top[-3]) != PDF_INT || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT) {
                             pdfi_clearstack(ctx);
                             continue;
                         }
@@ -207,7 +207,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                      * and start afresh.
                                      */
                                     code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
-                                    if (pdfi_count_stack(ctx) < 3 || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT) {
+                                    if (pdfi_count_stack(ctx) < 3 || pdfi_type_of(ctx->stack_top[-3]) != PDF_INT || pdfi_type_of(ctx->stack_top[-2]) != PDF_INT) {
                                         pdfi_clearstack(ctx);
                                         break;
                                     }
