@@ -2583,6 +2583,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         code = gs_note_error(gs_error_typecheck);
         goto exit1;
     }
+    pdfi_countup(n);
 
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_Do", NULL);
@@ -2631,6 +2632,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     //    pdfi_gsave(ctx);
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, o);
     //    pdfi_grestore(ctx);
+    pdfi_countdown(n);
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);
     return code;
@@ -2638,7 +2640,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 exit:
     (void)pdfi_loop_detector_cleartomark(ctx);
 exit1:
-    /* No need to countdown 'n' because that points to the stack object, and we're going to pop that */
+    pdfi_countdown(n);
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);
     return code;
