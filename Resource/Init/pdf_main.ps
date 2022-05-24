@@ -801,7 +801,14 @@ currentdict /PDFSwitches undef
 {
   PDFFile //null eq not
   {
-    PDFFile {.PDFInfo} stopped not
+    PDFSTOPONERROR
+    {
+      PDFFile .PDFInfo //true
+    }
+    {
+      PDFFile {.PDFInfo} stopped not
+    } ifelse
+
     {
       dup /NumPages known
       {
@@ -1015,32 +1022,50 @@ currentdict /PDFSwitches undef
   /pget {2 copy known {get //true}{pop pop //false}ifelse}bind def
 
   newpdf_gather_parameters
-  {.PDFInit} stopped
+  PDFSTOPONERROR
   {
-    /PDFFile //null def
-    /PDFInfo //null def
-  }
-  {
+    .PDFInit
     /PDFFile exch def
     pdfopen
     /PDFInfo exch def
     pop
+  }
+  {
+    {.PDFInit} stopped
+    {
+      /PDFFile //null def
+      /PDFInfo //null def
+    }
+    {
+      /PDFFile exch def
+      pdfopen
+      /PDFInfo exch def
+      pop
+    }ifelse
   }ifelse
 } bind def
 
 /newpdf_pdfgetpage
 {
   dup 1 sub
-  PDFFile exch {.PDFPageInfo} stopped
+  PDFSTOPONERROR
   {
-    pop pop
-    (   **** Error: Couldn't get page info.\n) newpdf_pdfformaterror
-    (               Output may be incorrect.\n) newpdf_pdfformaterror
-    //null
-  }{
+    PDFFile exch .PDFPageInfo
     dup 3 -1 roll
     /Page# exch put
-  } ifelse
+  }
+  {
+    PDFFile exch {.PDFPageInfo} stopped
+    {
+      pop pop
+      (   **** Error: Couldn't get page info.\n) newpdf_pdfformaterror
+      (               Output may be incorrect.\n) newpdf_pdfformaterror
+      //null
+    }{
+      dup 3 -1 roll
+      /Page# exch put
+    } ifelse
+  }ifelse
 } bind def
 
 /newpdf_process_trailer_attrs
@@ -1060,17 +1085,24 @@ currentdict /PDFSwitches undef
 
 /newpdf_pdfshowpage_finish
 {
-  /Page# get PDFFile exch 1 sub {.PDFDrawPage} stopped
+  PDFSTOPONERROR
   {
-    pop pop
-    (   **** Error: Page drawing error occured.\n) newpdf_pdfformaterror
-    (               Output may be incorrect.\n) newpdf_pdfformaterror
-  } if
-  {showpage} stopped
+    /Page# get PDFFile exch 1 sub .PDFDrawPage
+    showpage
+  }
   {
-    (   **** Error: Page drawing error occured.\n) newpdf_pdfformaterror
-    (               Could not draw this page at all, page will be missing in the output.\n) newpdf_pdfformaterror
-  } if
+    /Page# get PDFFile exch 1 sub {.PDFDrawPage} stopped
+    {
+      pop pop
+      (   **** Error: Page drawing error occured.\n) newpdf_pdfformaterror
+      (               Output may be incorrect.\n) newpdf_pdfformaterror
+    } if
+    {showpage} stopped
+    {
+      (   **** Error: Page drawing error occured.\n) newpdf_pdfformaterror
+      (               Could not draw this page at all, page will be missing in the output.\n) newpdf_pdfformaterror
+    } if
+  }ifelse
   grestore
 } bind def
 
@@ -1098,22 +1130,29 @@ currentdict /PDFSwitches undef
 {
   dup PDFFile //null ne
   {
-    PDFFile {.PDFStream} stopped
+    PDFSTOPONERROR
     {
-      pop pop
-      (   **** Error: Couldn't initialise file.\n) newpdf_pdfformaterror
-      (               Output may be incorrect.\n) newpdf_pdfformaterror
-      <</NumPages 0>>
+      PDFFile .PDFStream
+      PDFFile .PDFInfo
     }
     {
-      PDFFile {.PDFInfo} stopped
+      PDFFile {.PDFStream} stopped
       {
-        pop
-        (   **** Error: Couldn't get page information.\n) newpdf_pdfformaterror
+        pop pop
+        (   **** Error: Couldn't initialise file.\n) newpdf_pdfformaterror
         (               Output may be incorrect.\n) newpdf_pdfformaterror
         <</NumPages 0>>
-      } if
-    } ifelse
+      }
+      {
+        PDFFile {.PDFInfo} stopped
+        {
+          pop
+          (   **** Error: Couldn't get page information.\n) newpdf_pdfformaterror
+          (               Output may be incorrect.\n) newpdf_pdfformaterror
+          <</NumPages 0>>
+        } if
+      } ifelse
+    }ifelse
   }
   {
     pop
@@ -1123,10 +1162,16 @@ currentdict /PDFSwitches undef
 
 /newpdf_pdfclose
 {
-  PDFFile {.PDFClose} stopped
+  PDFSTOPONERROR
   {
-    pop
-  } if
+    PDFFile .PDFClose
+  }
+  {
+    PDFFile {.PDFClose} stopped
+    {
+      pop
+    } if
+  }ifelse
 } bind def
 
 % <int> <int> dopdfpages -
