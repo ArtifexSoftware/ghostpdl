@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -93,6 +93,10 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string,
         }
         else
         {
+            if (strlen(string) < 7) {
+                gs_warn1("Colour specification '%s' is invalid (wrong length)", string);
+                return;
+            }
             samples[0] = 255.0;
             samples[1] = (float)(unhex(string[1]) * 16 + unhex(string[2]));
             samples[2] = (float)(unhex(string[3]) * 16 + unhex(string[4]));
