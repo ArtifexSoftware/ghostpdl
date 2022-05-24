@@ -352,8 +352,10 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
                 code = gs_note_error(gs_error_circular_reference);
                 goto errorExit;
             }
-            if (node->object_num > 0)
-                pdfi_loop_detector_add_object(ctx, node->object_num);
+            if (node->object_num > 0) {
+                code = pdfi_loop_detector_add_object(ctx, node->object_num);
+                goto errorExit;
+            }
         }
         child = (pdf_dict *)node;
         pdfi_countup(child);
@@ -425,7 +427,10 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
         return code;
     pdfi_countup(inheritable);
 
-    pdfi_loop_detector_mark(ctx);
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
     /* if we are being passed any inherited values from our parent, copy them now */
     if (inherited != NULL) {
         code = pdfi_dict_copy(ctx, inheritable, inherited);
