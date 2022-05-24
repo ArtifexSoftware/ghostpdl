@@ -811,7 +811,7 @@ static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, 
             code = PDFarray_to_PSarray(i_ctx_p, pdfctx, (pdf_array *)PDFobj, PSobj);
             break;
         default:
-            code = gs_note_error(gs_error_typecheck);
+            make_null(PSobj);
             break;
     }
 
