@@ -1040,15 +1040,6 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     pdfi_countdown(o);
     o = NULL;
 
-    code = pdfi_dict_knownget_number(ctx, d, "Length", &f);
-    if (code < 0)
-        goto done;
-
-    if (code > 0)
-        *KeyLen = (int)f;
-    else
-        *KeyLen = 0;
-
     code = pdfi_dict_get_int(ctx, d, "V", &i64);
     if (code < 0)
         goto done;
@@ -1059,6 +1050,16 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     }
 
     ctx->encryption.V = (int)i64;
+
+    *KeyLen = 0;
+    if (ctx->encryption.V == 2 || ctx->encryption.V == 3) {
+        code = pdfi_dict_knownget_number(ctx, d, "Length", &f);
+        if (code < 0)
+            goto done;
+
+        if (code > 0)
+            *KeyLen = (int)f;
+    }
 
     code = pdfi_dict_get_int(ctx, d, "R", &i64);
     if (code < 0)
