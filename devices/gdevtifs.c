@@ -355,6 +355,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
     TIFFSetField(tif, TIFFTAG_XRESOLUTION, (float)xpi);
     TIFFSetField(tif, TIFFTAG_YRESOLUTION, (float)ypi);
 
+#ifndef CLUSTER
     {
         char revs[32];
 #define maxSoftware 40
@@ -372,6 +373,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
 
         TIFFSetField(tif, TIFFTAG_SOFTWARE, softwareValue);
     }
+#endif
     if (writedatetime) {
         struct tm tms;
         time_t t;

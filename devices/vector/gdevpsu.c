@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -180,8 +180,12 @@ psw_begin_file_header(gp_file *f, const gx_device *dev, const gs_rect *pbbox,
         fputs("%...............................................................\n", f);
         fputs("%...............................................................\n", f);
     }
+#ifdef CLUSTER
+    fprintf(f, "%%%%Creator: GPL Ghostscript (%s)\n", dev->dname);
+#else
     fprintf(f, "%%%%Creator: %s %ld (%s)\n", gs_product, (long)gs_revision,
             dev->dname);
+#endif
     {
         time_t t;
         struct tm tms;
@@ -204,7 +208,9 @@ psw_begin_file_header(gp_file *f, const gx_device *dev, const gs_rect *pbbox,
     else if (pdpc->LanguageLevel == 1.5)
         fputs("%%Extensions: CMYK\n", f);
     psw_print_lines(f, psw_begin_prolog);
+#ifndef CLUSTER
     fprintf(f, "%% %s\n", gs_copyright);
+#endif
     fputs("%%BeginResource: procset ", f);
     fflush(f);
     psw_print_procset_name(f, dev, pdpc);

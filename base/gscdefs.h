@@ -17,6 +17,15 @@
 #  define gscdefs_INCLUDED
 
 
+/* If we are cluster testing, then we want to nobble stuff
+ * that might change between versions. */
+#ifdef CLUSTER
+#undef     GS_PRODUCTFAMILY
+#define    GS_PRODUCTFAMILY "GPL Ghostscript"
+#undef     GS_PRODUCT
+#define    GS_PRODUCT GS_PRODUCTFAMILY
+#endif
+
 #define GS_STRINGIZE2(s) #s
 #define GS_STRINGIZE(s) GS_STRINGIZE2(s)
 

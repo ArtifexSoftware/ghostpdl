@@ -632,6 +632,10 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
         num_palette = 0;
     }
     /* add comment */
+#ifdef CLUSTER
+    strncpy(software_key, "GPL Ghostscript", sizeof(software_key));
+    strncpy(software_text, "GPL Ghostscript", sizeof(software_text));
+#else
     strncpy(software_key, "Software", sizeof(software_key));
     {
         int major = (int)(gs_revision / 1000);
@@ -640,6 +644,7 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
 
         gs_snprintf(software_text, sizeof(software_text), "%s %d.%02d.%d", gs_product, major, minor, patch);
     }
+#endif
     text_png.compression = -1;	/* uncompressed */
     text_png.key = software_key;
     text_png.text = software_text;
