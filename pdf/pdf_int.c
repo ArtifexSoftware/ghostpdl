@@ -135,6 +135,7 @@ int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s)
         return 0;
     if (c >= 0)
         pdfi_unread_byte(ctx, s, (byte)c);
+    pdfi_set_warning(ctx, 0, NULL, W_PDF_STREAM_BAD_KEYWORD, "pdfi_skip_eol", NULL);
     return 0;
 }
 

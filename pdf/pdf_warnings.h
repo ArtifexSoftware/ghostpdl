@@ -18,6 +18,9 @@
 #endif
 PARAM(W_PDF_NOWARNING,	            "no warning"),
 PARAM(W_PDF_BAD_XREF_SIZE,          "incorrect xref size"),
+PARAM(W_PDF_BAD_XREF_ENTRY_SIZE,    "xref entry not exactly 20 bytes"),
+PARAM(W_PDF_BAD_XREF_ENTRY_NO_EOL,  "xref entry not terminated with EOL"),
+PARAM(W_PDF_BAD_XREF_ENTRY_FORMAT,  "xref entry not valid format"),
 PARAM(W_PDF_BAD_INLINEFILTER,       "used inline filter name inappropriately"),
 PARAM(W_PDF_BAD_INLINECOLORSPACE,   "used inline colour space inappropriately"),
 PARAM(W_PDF_BAD_INLINEIMAGEKEY,     "used inline image key inappropriately"),
@@ -43,6 +46,7 @@ PARAM(W_PDF_NONSTANDARD_OP,         "non standard operator found - ignoring"),
 PARAM(W_PDF_NUM_EXPONENT,           "number uses illegal exponent form"),
 PARAM(W_PDF_STREAM_HAS_CONTENTS,    "Stream has inappropriate /Contents entry"),
 PARAM(W_PDF_STREAM_BAD_DECODEPARMS, "bad DecodeParms"),
+PARAM(W_PDF_STREAM_BAD_KEYWORD,     "A stream keyword was not terminated with a linefeed (0x0A)"),
 PARAM(W_PDF_MASK_ERROR,             "error in Mask"),
 PARAM(W_PDF_ANNOT_AP_ERROR,         "error in annotation Appearance"),
 PARAM(W_PDF_BAD_NAME_ESCAPE,        "badly escaped name"),
@@ -61,5 +65,4 @@ PARAM(W_PDF_INVALID_FONT_BASEENC,   "Ignoring invalid BaseEncoding name in font"
 PARAM(W_PDF_GROUP_HAS_COLORSPACE,   "Group attributes dictionary has /ColorSpace instead of /CS"),
 PARAM(W_PDF_GROUP_BAD_BC,           "Group attributes dictionary /BC differs in number of components from the colour space"),
 PARAM(W_PDF_INT_AS_REAL,            "found real number when expecting int"),
-
 #undef PARAM

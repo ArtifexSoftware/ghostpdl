@@ -400,8 +400,10 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     if (code < 0)
         return code;
     if (code == TOKEN_XREF) {
-        /* Read old-style xref table */
-        return(read_xref(ctx, ctx->main_stream));
+        pdfi_set_error(ctx, 0, NULL, E_PDF_PREV_NOT_XREF_STREAM, "pdfi_process_xref_stream", NULL);
+        if (!ctx->args.pdfstoponerror)
+            /* Read old-style xref table */
+            return(read_xref(ctx, ctx->main_stream));
     }
     return_error(gs_error_syntaxerror);
 }
@@ -724,9 +726,12 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
         if (bytes < 20)
             return_error(gs_error_ioerror);
         j = 19;
+        if (Buffer[19] != 0x0a || (Buffer[18] != 0x0d && Buffer[17] != 0x20))
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_XREF_ENTRY_SIZE, "read_xref_section", NULL);
         while (Buffer[j] != 0x0D && Buffer[j] != 0x0A) {
             pdfi_unread_byte(ctx, s, (byte)Buffer[j]);
             if (--j < 0) {
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_XREF_ENTRY_NO_EOL, "read_xref_section", NULL);
                 dmprintf(ctx->memory, "Invalid xref entry, line terminator missing.\n");
                 code = read_xref_entry_slow(ctx, s, &off, &gen, &free);
                 if (code < 0)
@@ -743,6 +748,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
             continue;
 
         if (sscanf(Buffer, "%"PRIdOFFSET" %d %c", &entry->u.uncompressed.offset, &entry->u.uncompressed.generation_num, &free) != 3) {
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_XREF_ENTRY_FORMAT, "read_xref_section", NULL);
             dmprintf(ctx->memory, "Invalid xref entry, incorrect format.\n");
             pdfi_unread(ctx, s, (byte *)Buffer, 20);
             code = read_xref_entry_slow(ctx, s, &off, &gen, &free);
