@@ -595,6 +595,82 @@ int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
     return code;
 }
 
+static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest)
+{
+    int code = 0, len = 0;
+    pdf_dict *Names = NULL, *Dests = NULL;
+    pdf_array *NamesArray = NULL;
+    bool known;
+    char *str = NULL;
+
+    code = pdfi_dict_get_type(ctx, ctx->Root, "Names", PDF_DICT, (pdf_obj **)&Names);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_dict_get_type(ctx, Names, "Dests", PDF_DICT, (pdf_obj **)&Dests);
+    if (code < 0)
+        goto error;
+
+    if (pdfi_type_of(Named) == PDF_NAME) {
+        code = pdfi_string_from_name(ctx, (pdf_name *)Named, &str, &len);
+        if (code < 0)
+            return code;
+    } else {
+        len = ((pdf_string *)Named)->length;
+        str = (char *)gs_alloc_bytes(ctx->memory, len, "pdfi_get_named_dest");
+        if (str == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto error;
+        }
+        memcpy(str, ((pdf_string *)Named)->data, len);
+        str[len] = 0;
+    }
+
+    /* At initial node, if we have a Names array here then this is the only array
+     * otherwise we will need to deal with Kids.
+     */
+    code = pdfi_dict_known(ctx, Dests, "Names", &known);
+    if (code < 0)
+        goto error;
+
+    if (known) {
+        int i = 0;
+        pdf_string *StrKey = NULL;
+
+        code = pdfi_dict_get_type(ctx, Dests, "Names", PDF_ARRAY, (pdf_obj **)&NamesArray);
+        if (code < 0)
+            goto error;
+        for (i = 0;i < pdfi_array_size(NamesArray); i+=2) {
+            code = pdfi_array_get_type(ctx, NamesArray, i, PDF_STRING, (pdf_obj **)&StrKey);
+            if (code < 0)
+                goto error;
+
+            if (StrKey->length == len && strncmp((const char *)StrKey->data, str, len) == 0) {
+                pdfi_countdown(StrKey);
+                code = pdfi_array_get(ctx, NamesArray, i + 1, (pdf_obj **)Dest);
+                break;
+            }
+            pdfi_countdown(StrKey);
+            StrKey = NULL;
+        }
+    } else {
+        code = pdfi_dict_get_type(ctx, Dests, "Kids", PDF_ARRAY, (pdf_obj **)&NamesArray);
+        if (code < 0)
+            goto error;
+
+    }
+
+error:
+    if (pdfi_type_of(Named) == PDF_NAME)
+        (void)pdfi_free_string_from_name(ctx, str);
+    else
+        gs_free_object(ctx->memory, str, "pdfi_get_named_dest");
+    pdfi_countdown(Names);
+    pdfi_countdown(Dests);
+    pdfi_countdown(NamesArray);
+    return code;
+}
+
 /* Special handling for "A" in Link annotations and Outlines
  * Will delete A if handled and if A_key is provided.
  */
@@ -635,19 +711,33 @@ int pdfi_pdfmark_modA(pdf_context *ctx, pdf_dict *dict)
     if (code <= 0) goto exit;
     /* We only handle GoTo for now */
     if (pdfi_name_is(S_name, "GoTo")) {
-        code = pdfi_dict_knownget_type(ctx, A_dict, "D", PDF_ARRAY, (pdf_obj **)&D_array);
-        if (code == 0) goto exit;
-        if (code < 0) {
-            if (code == gs_error_typecheck) {
-                /* TODO: Are there other cases to handle?
-                 * Sample tests_private/pdf/sumatra/recursive_action_destinations.pdf
-                 * has a recursive destination that has an indirect ref here.  We return a
-                 * typecheck and that causes us to omit the whole thing, but is that
-                 * really the best treatment?
-                 */
+        code = pdfi_dict_knownget(ctx, A_dict, "D", (pdf_obj **)&D_array);
+        if (code <= 0)
+            goto exit;
+        if (pdfi_type_of(D_array) == PDF_STRING || pdfi_type_of(D_array) == PDF_NAME)
+        {
+            pdf_obj *Dest = NULL;
+
+            code = pdfi_get_named_dest(ctx, (pdf_obj *)D_array, &Dest);
+            if (code < 0)
+                goto exit;
+            pdfi_countdown(D_array);
+            D_array = NULL;
+            if (pdfi_type_of(Dest) != PDF_DICT) {
+                pdfi_countdown(Dest);
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
             }
+            code = pdfi_dict_knownget(ctx, (pdf_dict *)Dest, "D", (pdf_obj **)&D_array);
+            pdfi_countdown(Dest);
+            if (code <= 0)
+                goto exit;
+        }
+        if (pdfi_type_of(D_array) != PDF_ARRAY) {
+            code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
+
         /* Process the D array to replace with /Page /View */
         code = pdfi_pdfmark_add_Page_View(ctx, dict, D_array);
         if (code < 0) goto exit;
