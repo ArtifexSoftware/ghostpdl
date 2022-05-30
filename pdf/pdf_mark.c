@@ -617,7 +617,7 @@ static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest)
             return code;
     } else {
         len = ((pdf_string *)Named)->length;
-        str = (char *)gs_alloc_bytes(ctx->memory, len, "pdfi_get_named_dest");
+        str = (char *)gs_alloc_bytes(ctx->memory, len + 1, "pdfi_get_named_dest");
         if (str == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
