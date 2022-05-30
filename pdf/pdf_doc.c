@@ -354,7 +354,8 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
             }
             if (node->object_num > 0) {
                 code = pdfi_loop_detector_add_object(ctx, node->object_num);
-                goto errorExit;
+                if (code < 0)
+                    goto errorExit;
             }
         }
         child = (pdf_dict *)node;
