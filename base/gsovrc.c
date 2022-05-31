@@ -904,7 +904,9 @@ overprint_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     overprint_device_t *    opdev = (overprint_device_t *)dev;
     int code;
 
-    opdev->copy_alpha_hl = true;
+    if ((opdev->op_state == OP_STATE_FILL && !opdev->retain_none_fill) ||
+        (opdev->op_state == OP_STATE_STROKE && !opdev->retain_none_stroke))
+        opdev->copy_alpha_hl = true;
     code = gx_default_copy_alpha_hl_color(dev, data, data_x, raster, id, x, y,
                                           width, height, pdcolor, depth);
     opdev->copy_alpha_hl = false;
