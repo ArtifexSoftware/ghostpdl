@@ -786,32 +786,47 @@ be drawn, whilst those not listed will not be drawn.</p>
     <dd>Stop after the designated page of the document.
     Pages of all documents in PDF collections are numbered sequentionally.</dd>
 </dl>
+<p>
+</pre></blockquote>
+NOTE: The PDF and XPS interpreters allow the use of a -dLastPage less than -dFirstPage.  In this
+case the pages will be processed backwards from LastPage to FirstPage.
+</p>
 
 <dl>
-    <dt><code>-sPageList=</code><em>pagenumber</em></dt>
+    <dt><code>-sPageList=</code><em>pageranges</em></dt>
 
-<dd>There are three possible values for this; even, odd or a list of pages to be processed.
-A list can include single pages or ranges of pages.
-Ranges of pages use the minus sign '-', individual pages and ranges of pages are separated
-by commas ','. A trailing minus '-' means process all remaining pages. For example;
+<dd>Page ranges are separated by a comma ','. Each range of pages can consist of:
+<p><blockquote><pre>
+(a) a single page number.
+(b) a range with a starting page number, followed by a dash '-' followed by an ending page number.
+(c) a range with a starting page number, followed by a dash '-' which ends at the last page.
+(d) the keyword "even" or "odd", which optionally can be followed by a colon ':' and a page range.
+    If there is no page range then all even or odd pages are processed in forward order.
+(e) a range with an initial dash '-' followed by and ending page number which starts at the
+    last page and ends at the specified page <i>(PDF and XPS only)</i>.
+</pre></blockquote>
+For example:
 <p><blockquote><pre>
 -sPageList=1,3,5 indicates that pages 1, 3 and 5 should be processed.
 -sPageList=5-10 indicates that pages 5, 6, 7, 8, 9 and 10 should be processed.
 -sPageList=1,5-10,12- indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
+-sPageList=odd:3-7,9-,-1,8 processes pages 3, 5, 7, 9, 10, 11, ..., last, last, last-1, ..., 1, 8
 </pre></blockquote>
-Note: Use of PageList overrides FirstPage and/or LastPage, if you set these as well as PageList they will be ignored. The
- list of pages should be given in increasing order, you cannot process pages out of order and inserting higher numbered pages before lower numbered
- pages in the list will generate an error.
+Note: Use of PageList overrides FirstPage and/or LastPage, if you set these as well as PageList they will be ignored.
 </p>
-
-<p>The PDF interpreter and the other language interpreters handle these in slightly different ways. Because
-PDF files enable random access to pages in the document the PDF inerpreter only interprets and renders
-the required pages. PCL and PostScript cannot be handled in ths way, and so all the pages must be interpreted.
-However only the requested pages are rendered, which can still lead to savings in time. Be aware that
-using the '%d' syntax for OutputFile does not reflect the page number in the original document. If you
-chose (for example) to process even pages by using <code>-sPageList=even</code>, then the output of
+<p>
+Be aware that using the <code>%d</code> syntax for <code>-sOutputFile=...</code> does not reflect the page number in the original document.
+If you chose (for example) to process even pages by using <code>-sPageList=even</code>, then the output of
 <code>-sOutputFile=out%d.png</code> would still be
-out0.png, out1.png, out2.png etc......
+out1.png, out2.png, out3.png etc......
+</p>
+<p>
+For PostScript or PCL input files, the list of pages must be given in increasing order, you cannot process pages out of order or
+repeat pages and this will generate an error. PCL and PostScript require that all the pages must be interpreted,
+however since only the requested pages are rendered, this can still lead to savings in time.
+</p>
+<p>The PDF and XPS interpreters handle this in a slightly different way. Because these file types provide for random access to
+individual pages in the document these inerpreters only need to process the required pages, and can do so in any order.
 </p>
 <p>
 Because the PostScript and PCL interpreters cannot determine when a document terminates, sending multple
@@ -823,17 +838,6 @@ is applied to each PDF file separately. So if you were to set <code>-sPageList=1
  file. The PostScript interpreter, by contrast, would only render pages 1 and 2 from the first file. This means you must
  exercise caution when using this switch, and probably should not use it at all when processing a mixture of PostScript
  and PDF files on the same command line.
-</p>
-<p>
-The XPS language like the PDF language allows random access to pages.  The XPS interpreter handles all the PageList cases
-discussed above.  It also handles cases such as:
-<blockquote><pre>
--sPageList=1,2,1,2 indicates repeated pages.  Pages processed in order 1, 2, 1, 2.
--sPageList=10-5 indicates pages will be processed in the order 10, 9, 8, 7, 6, 5.
--sPageList=1-,-1 indicates first processing from page 1 to end and then from end to page 1.
-</pre></blockquote>
-In addition, the XPS interpreter allows the use of a -dLastPage < -dFirstPage.  In this
-case the pages will be processed backwards from LastPage to FirstPage.
 </p>
 
 </dd>

@@ -1544,7 +1544,7 @@ rc_free_pages_list(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     gdev_pagelist *PageList = (gdev_pagelist *)ptr_in;
 
     if (PageList->rc.ref_count <= 1) {
-        gs_free(mem->non_gc_memory, PageList->Pages, 1, PagesSize, "free page list");
+        gs_free(mem->non_gc_memory, PageList->Pages, 1, strlen(PageList->Pages), "free page list");
         gs_free(mem->non_gc_memory, PageList, 1, sizeof(gdev_pagelist), "free structure to hold page list");
     }
 }
@@ -2212,7 +2212,6 @@ label:\
         }
         memset(dev->PageList->Pages, 0x00, pagelist.size + 1);
         memcpy(dev->PageList->Pages, pagelist.data, pagelist.size);
-        dev->PageList->PagesSize = pagelist.size + 1;
         rc_init_free(dev->PageList, dev->memory->non_gc_memory, 1, rc_free_pages_list);
     }
 

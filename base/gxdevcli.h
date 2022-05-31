@@ -705,7 +705,6 @@ typedef struct gdev_nupcontrol_s {
 typedef struct gdev_pagelist_s {
         rc_header rc;
         char *Pages;
-        int PagesSize;
 } gdev_pagelist;
 
 #define dev_t_proc_initialize_device_procs(proc, dev_t)\

@@ -196,6 +196,7 @@ gxsync_h=$(GLSRC)gxsync.h
 gxclthrd_h=$(GLSRC)gxclthrd.h
 gxdevsop_h=$(GLSRC)gxdevsop.h
 gdevflp_h=$(GLSRC)gdevflp.h
+pagelist_h=$(GLSRC)pagelist.h
 gdevkrnlsclass_h=$(GLSRC)gdevkrnlsclass.h
 gdevsclass_h=$(GLSRC)gdevsclass.h
 
@@ -1415,11 +1416,15 @@ $(GLOBJ)gxdownscale_1.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) $(string__h)\
 $(GLOBJ)gxdownscale.$(OBJ) : $(GLOBJ)gxdownscale_$(WITH_CAL).$(OBJ) $(AK) $(gp_h)
 	$(CP_) $(GLOBJ)gxdownscale_$(WITH_CAL).$(OBJ) $(GLOBJ)gxdownscale.$(OBJ)
 
+# ---- Various subclass devices ----
+subclass_=$(GLOBJ)gdevflp.$(OBJ) $(GLOBJ)gdevkrnlsclass.$(OBJ) $(GLOBJ)gdevepo.$(OBJ) \
+ $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevnup.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
+
 ###### Create a pseudo-"feature" for the entire graphics library.
 
-LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ) $(GLOBJ)strmio.$(OBJ)
-LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gxdownscale.$(OBJ) $(downscale_) $(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevflp.$(OBJ) $(GLOBJ)gdevkrnlsclass.$(OBJ) $(GLOBJ)gdevepo.$(OBJ)
-LIB2s=$(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevnup.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
+LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ) $(GLOBJ)strmio.$(OBJ) $(GLOBJ)pagelist.$(OBJ)
+LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gxdownscale.$(OBJ) $(downscale_) $(GLOBJ)gdevprn.$(OBJ) $(subclass_)
+LIB2s=$(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
 # we include it only for backward compatibility for library clients.
 LIB3s=$(GLOBJ)gscedata.$(OBJ) $(GLOBJ)gscencs.$(OBJ) $(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ)
@@ -2072,11 +2077,14 @@ $(GLOBJ)gdevmplt.$(OBJ) : $(GLSRC)gdevmplt.c $(gdevmplt_h) $(gdevp14_h)\
  $(memory__h)
 	$(GLCC) $(GLO_)gdevmplt.$(OBJ) $(C_) $(GLSRC)gdevmplt.c
 
+$(GLOBJ)pagelist.$(OBJ) : $(GLSRC)pagelist.c $(pagelist_h) $(gserrors_h) $(memory__h)
+	$(GLCC) $(GLO_)pagelist.$(OBJ) $(C_) $(GLSRC)pagelist.c
+
 $(GLOBJ)gdevflp.$(OBJ) : $(GLSRC)gdevflp.c $(gdevflp_h) $(gdevp14_h) \
  $(gdevprn_h) $(gdevsclass_h) $(gsdevice_h) $(gserrors_h) $(gsparam_h)\
  $(gsstype_h) $(gx_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h) \
  $(gxgstate_h) $(gximage_h) $(gxiparam_h) $(gxpaint_h) $(gxpath_h) $(math__h)\
- $(memory__h)
+ $(string__h) $(memory__h)
 	$(GLCC) $(GLO_)gdevflp.$(OBJ) $(C_) $(GLSRC)gdevflp.c
 
 $(GLOBJ)gdevepo.$(OBJ) : $(GLSRC)gdevepo.c $(gdevepo_h) $(gdevp14_h) \

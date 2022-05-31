@@ -835,125 +835,24 @@ currentdict /PDFSwitches undef
 /newpdf_runpdfpagerange
 {
   /PageList where {
-    pop PageList
-    (even) anchorsearch {
-      pop length 0 gt {
-        /runpdfpagerange cvx /syntaxerror signalerror
-      } if
-        /PDFPageList pdfpagecount 1 add array def
-        2 2 pdfpagecount {
-          PDFPageList exch 1 put
-        } for
-        QUIET not {
-          (Processing even-numbered pages\n) print (1 through ) print pdfpagecount =only
-          (.) = flush
-        } if
-    } {
-      (odd) anchorsearch {
-        pop length 0 gt {
-          /runpdfpagerange cvx /syntaxerror signalerror
-        } if
-        /PDFPageList pdfpagecount 1 add array def
-        1 2 pdfpagecount {
-          PDFPageList exch 1 put
-        } for
-        QUIET not {
-          (Processing odd-numbered pages\n) print (1 through ) print pdfpagecount =only
-          (.) = flush
-        } if
-      } {
-        %% validate string contents, check for digit comma or minus
-        dup
-        {
-          dup 44 eq not {
-            dup 45 eq not {
-              dup 48 lt 1 index 57 gt or {
-                /runpdfpagerange cvx /syntaxerror signalerror
-              } if
-            } if
-          } if
-          pop
-        }
-        forall
-        /PDFPageList pdfpagecount 1 add array def
-        {
-          (,) search {
-            %% We now have (post) (,) (pre)
-            exch pop %% get rid of the (,), leave the (post) as the string for the next iteration, deal with the section up to the comma
-            (-) search {
-              %% Now we have (end) (-) (start)
-              exch pop %% get rid of the minus (end) (start)
-              0 exch {48 sub exch 10 mul add} forall
-              %% Make sure the start of the range is inside the number of available pages
-              dup pdfpagecount le {
-                exch
-                %% deal with a trailing '-' by replacing it with the number of pages in the file
-                dup length 0 eq {
-                  pop pdfpagecount
-                }{
-                  0 exch {48 sub exch 10 mul add} forall
-                } ifelse
-                1 exch %% start 1 end
-                %% Make sure the end of the range is inside the number of available pages
-                dup pdfpagecount gt {pop pdfpagecount} if
-                {PDFPageList exch 1 put} for
-              } {
-                %% start of range invalid, drop this range.
-                pop pop
-              }ifelse
-            }{
-              %% no minus signs, must be a simple page number
-              0 exch {48 sub exch 10 mul add} forall
-              %% ensure its in the valid range of pages
-              dup pdfpagecount le {
-                 PDFPageList exch 1 put
-              } {
-                pop
-              } ifelse
-            } ifelse
-          }{
-            %% no commas separating pages, just the original string (), deal with its as a section, then exit the loop
-            (-) search {
-              %% Now we have (end) (-) (start)
-              exch pop %% get rid of the minus (end) (start)
-              0 exch {48 sub exch 10 mul add} forall
-              %% Make sure the start of the range is inside the number of available pages
-              dup pdfpagecount le {
-                exch
-                %% deal with a trailing '-' by replacing it with the number of pages in the file
-                dup length 0 eq {
-                  pop pdfpagecount
-                }{
-                  0 exch {48 sub exch 10 mul add} forall
-                } ifelse
-                1 exch %% start 1 end
-                %% Make sure the end of the range is inside the number of available pages
-                dup pdfpagecount gt {pop pdfpagecount} if
-                {PDFPageList exch 1 put} for
-              } {
-                %% start of range invalid, drop this range.
-                pop pop
-              }ifelse
-            }{
-              %% no minus signs, must be a simple page number
-              0 exch {48 sub exch 10 mul add} forall
-              %% ensure its in the valid range of pages
-              dup pdfpagecount le {
-                 PDFPageList exch 1 put
-              } {
-                pop
-              } ifelse
-            } ifelse
-            exit %% done all the sections.
-          } ifelse
-        } loop
-        QUIET not {
-          (Processing pages ) print PageList =only
-          (.) = flush
-        } if
-      } ifelse
-    } ifelse
-    1 pdfpagecount
+    pop
+    % make sure string is NUL terminated as C expects.
+    PageList 1 string dup 0 0 put concatstrings
+    pdfpagecount
+    .PDFparsePageList
+    dup 0 eq {	% No ranges, error
+      (\n   **** Error: Invalid PageList: ) print
+      PageList  print
+      (\n   No pages will be processed.) = flush
+      /runpdfpagerange cvx /syntaxerror signalerror
+    } if
+    array astore	% move integer triples from the stack to the array
+    % newpdf PDFPageList is an array of 3 elements per range: even/odd flag, start, end
+    /PDFPageList exch def
+    QUIET not {
+      (Processing pages ) print PageList =only (.) = flush
+    } if
+    1 pdfpagecount	% dummy parameters for newpdf_dopages
   }{
     /FirstPage where {
       pop FirstPage dup pdfpagecount gt {
@@ -1197,17 +1096,26 @@ currentdict /PDFSwitches undef
 
 % <int> <int> dopdfpages -
 % First Page and then LastPage
+% If PDFPageList array exists, the parameters are 1 pdfpagecount and are ignored.
 /newpdf_dopdfpages
 {
   //DisablePageHandlerDevice exec
-  1 exch
-  {
-      %% If we have a array of pages to render, use it.
-      /PDFPageList where {
-        pop dup PDFPageList exch get 1 eq
-      }
-      {//true} ifelse
-
+  %% If we have a array of page ranges to render, use it.
+  /PDFPageList where {
+    pop
+    pop pop		% don't use dummy parameters
+    PDFPageList
+    % process the ranges (3 elements per range)
+    0 3 2 index length 1 sub {
+      1 index 1 index get		% even = 2, odd = 1 any = 0
+      2 index 2 index 1 add get		% start of range
+      exch
+      3 index 3 index 2 add get		% end of range
+      exch
+      % stack: start end even/odd
+      0 eq { 1 } { 2 } ifelse
+      2 index 2 index gt { neg } if	% negate increment for reverse range
+      exch
       {
         pdfgetpage
         dup //null ne {
@@ -1221,10 +1129,28 @@ currentdict /PDFSwitches undef
             ( not found.\n) newpdf_pdfformaterror
           } ifelse
         } ifelse
-      }{
-        pop
-      }ifelse
-  } for
+      } for
+      pop		% for loop index
+    } for
+    pop		% done with array
+  } {
+    % else, Process the pages given by the FirstPage, LastPage
+    1 exch
+    {
+      pdfgetpage
+      dup //null ne {
+        pdfshowpage
+      } {
+        PDFSTOPONERROR {
+          /dopdfpages cvx /syntaxerror signalerror
+        } {
+          pop pop
+          (   **** Error: page) newpdf_pdfformaterror
+          ( not found.\n) newpdf_pdfformaterror
+        } ifelse
+      } ifelse
+    } for
+  } ifelse
   //EnablePageHandlerDevice exec
 } bind def
 

@@ -17,6 +17,7 @@
 /* XPS interpreter - zip container parsing */
 
 #include "ghostxps.h"
+#include "pagelist.h"
 
 static int isfile(gs_memory_t *mem, char *path)
 {
@@ -263,7 +264,7 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
         (void) getlong(ctx->file); /* ext file atts */
         ctx->zip_table[i].offset = getlong(ctx->file);
 
-	if (ctx->zip_table[i].csize < 0 || ctx->zip_table[i].usize < 0)
+        if (ctx->zip_table[i].csize < 0 || ctx->zip_table[i].usize < 0)
             return gs_throw(gs_error_ioerror, "cannot read zip entries larger than 2GB");
 
         ctx->zip_table[i].name = xps_alloc(ctx, namesize + 1);
@@ -611,51 +612,11 @@ xps_reorder_add_page(xps_context_t* ctx, xps_page_t ***page_ptr, xps_page_t* pag
     return 0;
 }
 
-static char*
-xps_reorder_get_range(xps_context_t *ctx, char *page_list, int *start, int *end, int num_pages)
-{
-    int comma, dash, len;
-
-    len = strlen(page_list);
-    comma = strcspn(page_list, ",");
-    dash = strcspn(page_list, "-");
-
-    if (dash < comma)
-    {
-        /* Dash at start */
-        if (dash == 0)
-        {
-            *start = num_pages;
-            *end = atoi(&(page_list[dash + 1]));
-        }
-        else
-        {
-            *start = atoi(page_list);
-
-            /* Dash at end */
-            if (page_list[dash + 1] == 0 || page_list[dash + 1] == ',')
-            {
-                *end = num_pages;
-            }
-            else
-            {
-                *end = atoi(&(page_list[dash + 1]));
-            }
-        }
-    }
-    else
-    {
-        *start = atoi(page_list);
-        *end = *start;
-    }
-    return comma == len ? page_list + comma : page_list + comma + 1;
-}
 
 static int
 xps_reorder_pages(xps_context_t *ctx)
 {
     char *page_list = ctx->page_range->page_list;
-    char *str;
     xps_page_t **page_ptr_array, *page = ctx->first_page;
     int count = 0, k;
     int code;
@@ -664,6 +625,8 @@ xps_reorder_pages(xps_context_t *ctx)
     xps_page_t* first_page = NULL;
     xps_page_t* last_page;
     xps_page_t** page_tail = &first_page;
+    int *page_range_array;
+    int ranges_count = 0;
 
     if (page == NULL)
         return 0;
@@ -686,80 +649,37 @@ xps_reorder_pages(xps_context_t *ctx)
         page = page->next;
     }
 
-    if (strcmp(page_list, "even") == 0)
-    {
-        for (k = 1; k < count; k += 2)
-        {
-            code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[k]);
-            if (code < 0)
-                return code;
-        }
-    }
-    else if (strcmp(page_list, "odd") == 0)
-    {
-        for (k = 0; k < count; k += 2)
-        {
-            code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[k]);
-            if (code < 0)
-                return code;
-        }
-    }
-    else
-    {
-        /* Requirements. All characters must be 0 to 9 or - and ,
-          No ,, or --  */
-        str = page_list;
-        do
-        {
-            if (*str != ',' && *str != '-' && (*str < 0x30 || *str > 0x39))
-                return gs_throw(gs_error_typecheck, "Bad page list: xps_reorder_pages\n");
+    /* Use the common function to parse the page_list into a 'page_range_array' */
+    ranges_count = pagelist_parse_to_array(page_list, ctx->memory, count, &page_range_array);
+    if (ranges_count <= 0)
+        return gs_throw(gs_error_typecheck, "Bad page list: xps_reorder_pages\n");
 
-            if ((*str == ',' && *(str + 1) == ',') || (*str == '-' && *(str + 1) == '-'))
-                return gs_throw(gs_error_typecheck, "Bad page list: xps_reorder_pages\n");
-        }
-        while (*(++str));
+    ranges_count--;			/* ignore the final marker range 0, 0, 0 */
 
-        str = page_list;
-        do
-        {
-            /* Process each comma separated item. */
-            str = xps_reorder_get_range(ctx, str, &start, &end, count);
+    /* start processing ranges, ignoring the "ordered" flag at the start of the array */
+    for (k = 1; k < 1 + 3 * ranges_count; k += 3) {
+        start = page_range_array[k+1];
+        end = page_range_array[k+2];
 
-            /* Threshold page range */
-            if (start > count)
-                start = count;
-
-            if (end > count)
-                end = count;
-
-            /* Add page(s) */
-            if (start == end)
-            {
+        if (start == end)
+            code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[start - 1]);
+        else if (start < end) {
+            do {
                 code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[start - 1]);
                 if (code < 0)
-                    return code;
-            }
-            else if (start < end)
-            {
-                for (k = start - 1; k < end; k++)
-                {
-                    code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[k]);
-                    if (code < 0)
-                        return code;
-                }
-            }
-            else
-            {
-                for (k = start; k >= end; k--)
-                {
-                    code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[k - 1]);
-                    if (code < 0)
-                        return code;
-                }
-            }
+                    break;
+                start += ((page_range_array[k] == 0) ? 1 : 2);	/* double bump for even/odd */
+            } while (start <= end);
+        } else {	/* start > end -- reverse direction */
+            do {
+                code = xps_reorder_add_page(ctx, &page_tail, page_ptr_array[start - 1]);
+                if (code < 0)
+                    break;
+                start -= ((page_range_array[k] == 0) ? 1 : 2);	/* double bump for even/odd */
+            } while (start >= end);
         }
-        while (*str);
     }
+    pagelist_free_range_array(ctx->memory, page_range_array);	/* done with all ranges */
 
     /* Replace the pages. */
     if (first_page != NULL)
@@ -775,7 +695,7 @@ xps_reorder_pages(xps_context_t *ctx)
     else
         return gs_throw(gs_error_rangecheck, "Bad page list: xps_reorder_pages\n");
 
-    return 0;
+    return code;
 }
 
 /*

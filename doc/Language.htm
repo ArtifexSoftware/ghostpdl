@@ -2096,10 +2096,11 @@ It has no effect in the new PDF interpreter but is maintained for backwards comp
      media and render the page.</dd>
      <dt><code>&ltint&gt &ltint&gt dopdfpages -</code></dt>
 <dd>     The integers are the first and last pages to be run from the file. Runs a loop from
-     the fist integer to the last. NOTE! If the current dictionary contains a PDFPageList
-     array then we 'get' the entry from the array corresponding to the current loop
-     index, and use that to determine whether we should draw the page. Otherwise we
-     simply draw the page. Uses pdfshowpage to actually render the page.</dd>
+     the fist integer to the last.
+     <p>NOTE! If the current dictionary contains a PDFPageList array the two values on the stack
+     are ignored and we use the range triples from that array (even/odd, start, end) to determine
+     the pages to process. Page numbers for start and end are 1..lastpage and even/odd is 1
+     for odd, 2 for even, otherwise 0. Uses pdfshowpage to actually render the page.</dd>
      <dt><code>- runpdfpagerange &ltint&gt &ltint&gt</code></dt>
 <dd>     Processes the PostScript /FirstPage, /LastPage and /PageList parameters. These are used together to build an internal array
      of page numbers to run, which is used by dopdfpages to actually process the pages if PageList is present,

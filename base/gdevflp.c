@@ -30,6 +30,7 @@
  */
 
 #include "math_.h"
+#include "string_.h"		/* for strlen */
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -49,6 +50,7 @@
 #include "gximage.h"        /* For gx_image_enum */
 #include "gdevsclass.h"
 #include "gdevflp.h"
+#include "pagelist.h"
 #include <stdlib.h>
 
 /* GC descriptor */
@@ -137,134 +139,8 @@ gx_device_flp gs_flp_device =
 
 static int ParsePageList(gx_device *dev, first_last_subclass_data *psubclass_data, char *PageList)
 {
-    char *str, *oldstr, *workstr, c, *ArgCopy;
-    int LastPage, Page, byte, bit, i, prev_page = -1;
-
-    psubclass_data->ProcessedPageList = true;
-    if (strcmp(PageList, "even") == 0) {
-        psubclass_data->EvenOdd = even;
-    } else {
-        if (strcmp(PageList, "odd") == 0) {
-            psubclass_data->EvenOdd = odd;
-        } else {
-            psubclass_data->EvenOdd = none;
-
-            /* validation of parameter */
-            str = PageList;
-            do {
-                /* Must be digit, ',' or - */
-                if (*str != ',' && *str != '-' && (*str < 0x30 || *str > 0x39)) {
-                    return (gs_note_error(gs_error_typecheck));
-                }
-                /* Check we don't have 2 special characters (, or -) in a row */
-                if ((*str == ',' || *str == '-') && (*(str+1) == ',' || *(str+1) == '-'))
-                    return (gs_note_error(gs_error_typecheck));
-            } while(*(++str));
-
-            str = PageList;
-            oldstr = str;
-            do {
-                str = strchr(oldstr, ',');
-                /* Check for trailing ',' in parameter, zap it if we find one. */
-                if (str) {
-                    if (*(str + 1))
-                        oldstr = ++str;
-                    else {
-                        *str = 0x00;
-                        break;
-                    }
-                }
-            }while (str);
-
-            /* In case last set is a page range */
-            str = strchr(oldstr, '-');
-            if (!str)
-                str = oldstr;
-            else {
-                /* We permit a trailing '-' to indicate all pages from this one to the end */
-                if (*(str + 1))
-                    str++;
-                else {
-                    *str = 0x00;
-                    str = oldstr;
-                    psubclass_data->FromToEnd = atoi(str);
-                }
-            }
-            /* str should now point to the last page number (we hope!) */
-            psubclass_data->LastListPage = LastPage = atoi(str);
-
-            psubclass_data->PageArraySize = (LastPage + 7) / 8;
-            psubclass_data->PageArray = gs_alloc_bytes(dev->memory->non_gc_memory, psubclass_data->PageArraySize, "array of pages selected");
-            if (!psubclass_data->PageArray) {
-                psubclass_data->PageArraySize = 0;
-                return (gs_note_error(gs_error_VMerror));
-            }
-            memset(psubclass_data->PageArray, 0x00, psubclass_data->PageArraySize);
-
-            oldstr = ArgCopy = (char *)gs_alloc_bytes(dev->memory->non_gc_memory, strlen(PageList) + 1, "temp working string");
-            if (!ArgCopy) {
-                gs_free_object(dev->memory->non_gc_memory, psubclass_data->PageArray, "free array of pages selected");
-                psubclass_data->PageArray = 0;
-                psubclass_data->PageArraySize = 0;
-                return (gs_note_error(gs_error_VMerror));
-            }
-            memcpy(ArgCopy, PageList, strlen(PageList) + 1);
-            do {
-                str = strchr(oldstr, ',');
-                if (str)
-                    *str++ = 0x00;
-                /* oldstr now points to a null terminated string and is either a number or a number pair */
-                workstr = strchr(oldstr, '-');
-                if (workstr) {
-                    *workstr++ = 0x00;
-                    /* oldstr points to null terminated string of start, workstr to null terminated string of end */
-                    Page = atoi(oldstr) - 1;
-                    if (Page < 0)
-                        Page = 0;
-
-                    LastPage = atoi(workstr) - 1;
-                    if (LastPage < 0)
-                        LastPage = 0;
-
-                    if (LastPage < Page || Page <= prev_page) {
-                        /* Strictly monotonic increasing required */
-                        emprintf(dev->memory, "\n**** Error : rangecheck processing PageList\n");
-                        return_error(gs_error_rangecheck);
-                    }
-                    prev_page = LastPage;
-
-                    for (i=Page; i<= LastPage;i++) {
-                        if (i > psubclass_data->LastListPage - 1) {
-                            emprintf(dev->memory, "\n**** Error : rangecheck processing PageList\n");
-                            return_error(gs_error_rangecheck);
-                        }
-                        byte = (int)(i / 8);
-                        bit = i % 8;
-                        c = 0x01 << bit;
-                        ((char *)psubclass_data->PageArray)[byte] |= c;
-                    }
-                } else {
-                    Page = atoi(oldstr) - 1;
-                    if (Page < 0)
-                        Page = 0;
-                    if (Page <= prev_page || Page > psubclass_data->LastListPage - 1) {
-                        /* Strictly monotonic increasing required */
-                        emprintf(dev->memory, "\n**** Error : rangecheck processing PageList\n");
-                        return_error(gs_error_rangecheck);
-                    }
-                    prev_page = Page;
-
-                    byte = (int)(Page / 8);
-                    bit = Page % 8;
-                    c = 0x01 << bit;
-                    ((char *)psubclass_data->PageArray)[byte] |= c;
-                }
-                oldstr = str;
-            } while (str);
-            gs_free_object(dev->memory->non_gc_memory, ArgCopy, "free temp working string");
-        }
-    }
-    return 0;
+    return pagelist_parse_to_array(PageList, dev->memory->non_gc_memory, 0x7fffffff,
+                                   &(psubclass_data->page_range_array));
 }
 
 static int SkipPage(gx_device *dev)
@@ -277,51 +153,28 @@ static int SkipPage(gx_device *dev)
         return 0;
 
     /* If we haven't parsed any extant PageList, do it now */
-    if (dev->PageList && !psubclass_data->ProcessedPageList) {
+    if (dev->PageList && psubclass_data->page_range_array == NULL) {
         code = ParsePageList(dev, psubclass_data, dev->PageList->Pages);
-        if (code < 0)
+        if (code < 0) {
+            emprintf1(dev->memory, "*** Invalid PageList=%s ***\n", dev->PageList->Pages);
             return code;
-        psubclass_data->ProcessedPageList = true;
+        }
     }
 
-    if (psubclass_data->PageArray) {
-        if (psubclass_data->FromToEnd != 0 && psubclass_data->PageCount >= psubclass_data->FromToEnd - 1)
-            return 0;
-        else {
-            if (psubclass_data->PageCount > psubclass_data->LastListPage - 1)
-                return 1;
-            else {
-                int byte, bit;
-                char c;
+    /* SkipPage can only handle PageList that moves forward */
+    if (psubclass_data->page_range_array != NULL &&
+        pagelist_test_ordered(psubclass_data->page_range_array) == false) {
+        emprintf(dev->memory, "*** Bad PageList: Must be increasing order. ***\n");
+        return gs_error_rangecheck;
+    }
 
-                byte = (int)((psubclass_data->PageCount) / 8);
-                bit = (psubclass_data->PageCount) % 8;
-                c = 0x01 << bit;
-                if (((char *)psubclass_data->PageArray)[byte] & c)
-                    return 0;
-                else
-                    return 1;
-            }
-        }
+    if (psubclass_data->page_range_array != NULL) {
+        /* PageCount is 0 based, page_range_array starts at page 1 */
+        return pagelist_test_printed(psubclass_data->page_range_array, psubclass_data->PageCount + 1) == false;
     } else {
-        if (psubclass_data->EvenOdd != none) {
-            /* Page count is 0 based so the even/odd tests are 'upside down' */
-            if (psubclass_data->PageCount % 2 == 0) {
-                if (psubclass_data->EvenOdd == odd)
-                    return 0;
-                else
-                    return 1;
-            } else {
-                if (psubclass_data->EvenOdd == even)
-                    return 0;
-                else
-                    return 1;
-            }
-        } else {
-            if (psubclass_data->PageCount >= dev->FirstPage - 1)
-                if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1)
-                    return 0;
-        }
+        if (psubclass_data->PageCount >= dev->FirstPage - 1)
+            if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1)
+                return 0;
     }
     return 1;
 }
@@ -344,11 +197,10 @@ int flp_close_device(gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageArraySize)
+    if (psubclass_data->page_range_array != NULL)
     {
-        gs_free(dev->memory->non_gc_memory, psubclass_data->PageArray, 1, psubclass_data->PageArraySize, "array of pages selected");
-        psubclass_data->PageArray = 0;
-        psubclass_data->PageArraySize = 0;
+        pagelist_free_range_array(dev->memory->non_gc_memory, psubclass_data->page_range_array);
+        psubclass_data->page_range_array = NULL;
     }
 
     return default_subclass_close_device(dev);
@@ -399,7 +251,7 @@ flp_rc_free_pages_list(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     gdev_pagelist *PageList = (gdev_pagelist *)ptr_in;
 
     if (PageList->rc.ref_count <= 1) {
-        gs_free(mem->non_gc_memory, PageList->Pages, 1, PagesSize, "free page list");
+        gs_free(mem->non_gc_memory, PageList->Pages, 1, strlen(PageList->Pages), "free page list");
         gs_free(mem->non_gc_memory, PageList, 1, sizeof(gdev_pagelist), "free structure to hold page list");
     }
 }
@@ -420,6 +272,7 @@ flp_put_params(gx_device * dev, gs_param_list * plist)
             first_last_subclass_data *psubclass_data = dev->subclass_data;
 
             psubclass_data->PageCount = 0;
+            psubclass_data->page_range_array = NULL;
         }
     }
 
@@ -432,14 +285,14 @@ flp_put_params(gx_device * dev, gs_param_list * plist)
 
             dev->DisablePageHandler = false;
             psubclass_data->PageCount = 0;
+            psubclass_data->page_range_array = NULL;
             if (dev->PageList) {
                 rc_decrement(dev->PageList, "flp_put_params");
                 dev->PageList = NULL;
             }
-            if (psubclass_data->PageArray != NULL) {
-                gs_free(dev->memory->non_gc_memory, psubclass_data->PageArray, 1, psubclass_data->PageArraySize, "array of pages selected");
-                psubclass_data->PageArray = NULL;
-                psubclass_data->PageArraySize = 0;
+            if (psubclass_data->page_range_array != NULL) {
+                pagelist_free_range_array(dev->memory->non_gc_memory, psubclass_data->page_range_array);
+                psubclass_data->page_range_array = NULL;
             }
         }
 
@@ -451,14 +304,14 @@ flp_put_params(gx_device * dev, gs_param_list * plist)
 
             dev->DisablePageHandler = false;
             psubclass_data->PageCount = 0;
+            psubclass_data->page_range_array = NULL;
             if (dev->PageList) {
                 rc_decrement(dev->PageList, "flp_put_params");
                 dev->PageList = NULL;
             }
-            if (psubclass_data->PageArray != NULL) {
-                gs_free(dev->memory->non_gc_memory, psubclass_data->PageArray, 1, psubclass_data->PageArraySize, "array of pages selected");
-                psubclass_data->PageArray = NULL;
-                psubclass_data->PageArraySize = 0;
+            if (psubclass_data->page_range_array != NULL) {
+                pagelist_free_range_array(dev->memory->non_gc_memory, psubclass_data->page_range_array);
+                psubclass_data->page_range_array = NULL;
             }
         }
 
@@ -472,10 +325,9 @@ flp_put_params(gx_device * dev, gs_param_list * plist)
             if (dev->PageList)
                 rc_decrement(dev->PageList, "flp_put_params");
 
-            if (psubclass_data->PageArray != NULL) {
-                gs_free(dev->memory->non_gc_memory, psubclass_data->PageArray, 1, psubclass_data->PageArraySize, "array of pages selected");
-                psubclass_data->PageArray = NULL;
-                psubclass_data->PageArraySize = 0;
+            if (psubclass_data->page_range_array != NULL) {
+                pagelist_free_range_array(dev->memory->non_gc_memory, psubclass_data->page_range_array);
+                psubclass_data->page_range_array = NULL;
             }
 
             dev->PageList = (gdev_pagelist *)gs_alloc_bytes(dev->memory->non_gc_memory, sizeof(gdev_pagelist), "structure to hold page list");
@@ -489,11 +341,11 @@ flp_put_params(gx_device * dev, gs_param_list * plist)
             }
             memset(dev->PageList->Pages, 0x00, pagelist.size + 1);
             memcpy(dev->PageList->Pages, pagelist.data, pagelist.size);
-            dev->PageList->PagesSize = pagelist.size + 1;
             rc_init_free(dev->PageList, dev->memory->non_gc_memory, 1, flp_rc_free_pages_list);
-            psubclass_data->ProcessedPageList = false;
+            psubclass_data->page_range_array = NULL;
             dev->DisablePageHandler = false;
             psubclass_data->PageCount = 0;
+            psubclass_data->page_range_array = NULL;
         }
     }
     code = default_subclass_put_params(dev, plist);
@@ -990,11 +842,15 @@ int flp_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
 
 int flp_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
+    first_last_subclass_data *psubclass_data = dev->subclass_data;
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
-    if (!code)
+
+    /* allow fillpage to be processed at the first page */
+    /* This is needed to allow all parsers to start with non-ordered PageList */
+    if (!code || psubclass_data->PageCount == 0)
         return default_subclass_fillpage(dev, pgs, pdevc);
 
     return 0;

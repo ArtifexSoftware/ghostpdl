@@ -30,6 +30,7 @@
 #include "iminst.h"
 #include "dstack.h"
 #include "gsicc_profilecache.h"
+#include "pagelist.h"
 #endif
 
 #include "ghost.h"
@@ -1453,6 +1454,36 @@ error:
     }
     return code;
 }
+
+/*   <Pagelist_string> num_pages .PDFparsePageList even/odd, start, end ... range_count	*/
+/*   PostScript will create an array of 3 integers per range			*/
+static int zPDFparsePageList(i_ctx_t *i_ctx_p)
+{
+    int code = 0, size = 0, i;
+    os_ptr op = osp;
+    int *page_range_array;
+    int num_pages = op->value.intval;
+
+    code = pagelist_parse_to_array((char *)((op - 1)->value.const_bytes), imemory, num_pages, &page_range_array);
+    make_int(op, 0);				/* default return 0 */
+    if (code < 0) {
+        return code;
+    }
+    /* code returned is the number of ranges */
+    size = 3 * (code - 1);		/* runpdfpagerange doesn't use 0, 0, 0 marker at end */
+    code = ref_stack_push(&o_stack, size - 1);
+    if (code < 0) {
+        return code;
+    }
+    /* push the even/odd, start, end triples on the stack */
+    for (i=0; i < size;  i++) {
+        /* skip the initial "ordered" flag */
+        make_int(ref_stack_index(&o_stack, size - i), page_range_array[i+1]);
+    }
+    make_int(ref_stack_index(&o_stack, 0), size);
+    pagelist_free_range_array(imemory, page_range_array);		/* all done with C array */
+    return 0;
+}
 #else
 
 static int zPDFfile(i_ctx_t *i_ctx_p)
@@ -1499,6 +1530,11 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
 {
     return_error(gs_error_undefined);
 }
+
+static int zPDFparsePageList(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
 #endif
 
 /* ------ Initialization procedure ------ */
@@ -1518,6 +1554,7 @@ const op_def zpdfops_op_defs[] =
     {"1.PDFDrawPage", zPDFdrawpage},
     {"1.PDFDrawAnnots", zPDFdrawannots},
     {"1.PDFInit", zPDFInit},
+    {"1.PDFparsePageList", zPDFparsePageList},
 #ifdef HAVE_LIBIDN
     {"1.saslprep", zsaslprep},
 #endif

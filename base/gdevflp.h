@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -33,12 +33,7 @@ typedef enum {none, even, odd} flp_EOType;
 typedef struct {
     subclass_common;
     int PageCount;
-    int ProcessedPageList;
-    void *PageArray;
-    int PageArraySize;
-    int LastListPage;
-    int FromToEnd;
-    flp_EOType EvenOdd;
+    int *page_range_array;
 } first_last_subclass_data;
 
 typedef struct flp_text_enum_s {
