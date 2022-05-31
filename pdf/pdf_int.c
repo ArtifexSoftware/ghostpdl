@@ -520,6 +520,22 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
         if (hex1 < 0)
             break;
 
+        if (hex1 == '>') {
+            /* PDF Reference 1.7 page 56:
+             * "If the final digit of a hexadecimal string is missing—that is,
+             * if there is an odd number of digits—the final digit is assumed to be 0."
+             */
+            hex1 = 0;
+            if (!ishex(hex0) || !ishex(hex1)) {
+                code = gs_note_error(gs_error_syntaxerror);
+                goto exit;
+            }
+            Buffer[index] = (fromhex(hex0) << 4) + fromhex(hex1);
+            if (ctx->args.pdfdebug)
+                dmprintf1(ctx->memory, "%c", hex1);
+            break;
+        }
+
         if (!ishex(hex0) || !ishex(hex1)) {
             code = gs_note_error(gs_error_syntaxerror);
             goto exit;
