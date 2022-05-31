@@ -588,7 +588,9 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             font->descflags = descflags;
         }
         else if (encoding_known == true) {
-            static const char encstr[] = "WinAnsiEncoding";
+            static const char mrencstr[] = "MacRomanEncoding";
+            static const char waencstr[] = "WinAnsiEncoding";
+            const char *encstr = ((cmaps_available & CMAP_TABLE_31_PRESENT) == CMAP_TABLE_31_PRESENT) ? waencstr : mrencstr;
             font->descflags = descflags & ~4;
             code = pdfi_name_alloc(ctx, (byte *)encstr, strlen(encstr), (pdf_obj **)&obj);
             if (code >= 0)
@@ -607,6 +609,15 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
     else {
         font->descflags = descflags;
+    }
+
+    if ((font->descflags & 4) == 0) {
+        /* Horrid hacky solution */
+        /* We don't want to draw the TTF notdef */
+        gs_font_type42 *gst42 = ((gs_font_type42 *)font->pfont);
+        if (gst42->data.len_glyphs[0] > 10) {
+            gst42->data.len_glyphs[0] = 0;
+        }
     }
 
     code = gs_definefont(ctx->font_dir, (gs_font *)font->pfont);
