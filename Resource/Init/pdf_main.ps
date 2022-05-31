@@ -792,6 +792,11 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
     { pop } ifelse
   } forall
 
+  % This isn't a command line parameter, we track it internally, but we need to
+  % send it to the interpreter. It is used to 'offset' the page Dest for Link
+  % annotations and Outlines by the numebr of pages processed so far.
+  /PageCount CumulativePageCount def
+
   currentdict end
 } bind executeonly def
 
@@ -997,6 +1002,8 @@ currentdict /PDFSwitches undef
   /pdfdict 10 dict def
   pdfdict begin
 
+  currentpagedevice /PageCount get
+  /CumulativePageCount exch def
   % This is for the benefit of pdf2dsc which assumes it will be present
   /Trailer << >> def
   /PDFSave save def
@@ -1121,9 +1128,23 @@ currentdict /PDFSwitches undef
 
 /newpdf_runpdfend
 {
+  % Get the accumulated count of pages processed so far
+  % and the number of pages in this file. Do this before
+  % we close the file and restore the state. Save the values
+  % on the stack.
+  pdfpagecount
+  CumulativePageCount
+
   pdfclose
   PDFSave restore
+
   end   % pdfdict
+
+  % add the number of pages in this file to the accumulated count,
+  % and store that in the device for later reuse. This allows us to
+  % add the number of pages already in the output to the 'Dest' of
+  % Outlines and Link annotations.
+  add <</PageCount 3 -1 roll >> setpagedevice
 } bind def
 
 /newpdf_pdfopen

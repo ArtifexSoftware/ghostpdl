@@ -321,6 +321,11 @@ typedef struct pdf_context_s
 
     /* Doing a high level form for pdfwrite (annotations) */
     bool PreservePDFForm;
+    /* If processing multiple files, the number of pages to add to /Page Destinations
+     * when handling Outlines and Annotations. This is the number of pages in all
+     * files completely processed so far.
+     */
+    int Pdfmark_InitialPage;
 
     /* Optional things from Root */
     pdf_dict *OCProperties;

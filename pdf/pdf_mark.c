@@ -400,6 +400,8 @@ static int pdfi_pdfmark_add_Page_View(pdf_context *ctx, pdf_dict *link_dict, pdf
     code = pdfi_page_get_number(ctx, page_dict, &page_num);
     if (code < 0) goto exit;
 
+    page_num += ctx->Pdfmark_InitialPage;
+
     /* Add /Page key to the link_dict
      * Of course pdfwrite is numbering its pages starting at 1, because... of course :(
      */
@@ -595,11 +597,171 @@ int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
     return code;
 }
 
+static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int len)
+{
+    int code = 0, min, i;
+    pdf_array *Limits = NULL;
+    pdf_string *Str = NULL;
+
+    code = pdfi_dict_get_type(ctx, node, "Limits", PDF_ARRAY, (pdf_obj **)&Limits);
+    if (code < 0)
+        goto error;
+
+    if (pdfi_array_size(Limits) != 2) {
+        /* Limits are not valid, just ignore them. The calling code will then check
+         * the Names array.
+         */
+        pdfi_set_warning(ctx, 0, NULL, PDF_W_BAD_TREE_LIMITS, "pdfi_get_name_from_node", 0);
+        goto error;
+    }
+
+    code = pdfi_array_get_type(ctx, Limits, 0, PDF_STRING, (pdf_obj **)&Str);
+    if (code < 0)
+        goto error;
+
+    if (pdfi_type_of(Str) == PDF_NAME) {
+        code = pdfi_string_from_name(ctx, (pdf_name *)Str, &str, &len);
+        if (code < 0)
+            return code;
+    } else {
+        len = ((pdf_string *)Str)->length;
+        str = (char *)gs_alloc_bytes(ctx->memory, len + 1, "pdfi_get_named_dest");
+        if (str == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto error;
+        }
+         memcpy(str, ((pdf_string *)Str)->data, len);
+         str[len] = 0;
+    }
+
+    min = len;
+    if (Str->length < min)
+        min = Str->length;
+
+    for (i=0;i< min;i++) {
+        if (str[i] < Str->data[i]) {
+            code = gs_note_error(gs_error_undefined);
+            goto error;
+        }
+        if (str[i] != Str->data[i])
+            break;
+    }
+    if (i > min && len < Str->length) {
+        code = gs_note_error(gs_error_undefined);
+        goto error;
+    }
+
+    pdfi_countdown(Str);
+    Str = NULL;
+
+    code = pdfi_array_get_type(ctx, Limits, 1, PDF_STRING, (pdf_obj **)&Str);
+    if (code < 0)
+        goto error;
+
+    min = len;
+    if (Str->length < min)
+        min = Str->length;
+
+    for (i=0;i< min;i++) {
+        if (str[i] > Str->data[i]) {
+            code = gs_note_error(gs_error_undefined);
+            goto error;
+        }
+        if (str[i] != Str->data[i])
+            break;
+    }
+
+    if (i > min && len > Str->length)
+        code = gs_note_error(gs_error_undefined);
+
+error:
+    pdfi_countdown(Str);
+    pdfi_countdown(Limits);
+    return code;
+}
+
+static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, pdf_obj **Name)
+{
+    int i = 0, len = strlen(str), code = 0;
+    pdf_string *StrKey = NULL;
+    pdf_array *NamesArray = NULL;
+    pdf_dict *Kid = NULL;
+    bool known;
+
+    code = pdfi_dict_known(ctx, node, "Names", &known);
+    if (code < 0)
+        goto error;
+
+    if (known) {
+        code = pdfi_dict_known(ctx, node, "Limits", &known);
+        if (code < 0)
+            goto error;
+
+        if (!known) {
+            /* No Limits array (a required entry), so just assume that the
+             * string is in this node and check all the Names anyway
+             */
+            pdfi_set_warning(ctx, 0, NULL, PDF_W_NO_TREE_LIMITS, "pdfi_get_name_from_node", 0);
+        } else {
+            code = pdfi_check_limits(ctx, node, str, len);
+            if (code < 0)
+                goto error;
+        }
+
+        code = pdfi_dict_get_type(ctx, node, "Names", PDF_ARRAY, (pdf_obj **)&NamesArray);
+        if (code < 0)
+            goto error;
+
+        if (pdfi_array_size(NamesArray) & 1)
+            pdfi_set_warning(ctx, 0, NULL, PDF_W_NAMES_ARRAY_SIZE, "pdfi_get_name_from_node", 0);
+
+        for (i = 0;i < pdfi_array_size(NamesArray) / 2; i++) {
+            code = pdfi_array_get_type(ctx, NamesArray, i * 2, PDF_STRING, (pdf_obj **)&StrKey);
+            if (code < 0)
+                goto error;
+
+            if (StrKey->length == len && strncmp((const char *)StrKey->data, str, len) == 0) {
+                code = pdfi_array_get(ctx, NamesArray, (i * 2) + 1, (pdf_obj **)Name);
+                goto error;
+            }
+            pdfi_countdown(StrKey);
+            StrKey = NULL;
+        }
+        pdfi_countdown(NamesArray);
+        NamesArray = NULL;
+    }
+
+    /* Either no Names array (initial node) or not in array */
+    code = pdfi_dict_get_type(ctx, node, "Kids", PDF_ARRAY, (pdf_obj **)&NamesArray);
+    if (code < 0)
+        goto error;
+
+    for (i = 0;i < pdfi_array_size(NamesArray); i++) {
+        code = pdfi_array_get_type(ctx, NamesArray, i, PDF_DICT, (pdf_obj **)&Kid);
+        if (code < 0)
+            goto error;
+
+        code = pdfi_get_name_from_node(ctx, Kid, str, Name);
+        pdfi_countdown(Kid);
+        Kid = NULL;
+        if (code < 0) {
+            if (code = gs_error_undefined)
+                continue;
+            goto error;
+        }
+    }
+
+error:
+    pdfi_countdown(Kid);
+    pdfi_countdown(StrKey);
+    pdfi_countdown(NamesArray);
+    return code;
+}
+
 static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest)
 {
     int code = 0, len = 0;
     pdf_dict *Names = NULL, *Dests = NULL;
-    pdf_array *NamesArray = NULL;
     bool known;
     char *str = NULL;
 
@@ -617,7 +779,7 @@ static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest)
             return code;
     } else {
         len = ((pdf_string *)Named)->length;
-        str = (char *)gs_alloc_bytes(ctx->memory, len + 1, "pdfi_get_named_dest");
+        str = (char *)gs_alloc_bytes(ctx->memory, len, "pdfi_get_named_dest");
         if (str == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
@@ -626,39 +788,7 @@ static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest)
         str[len] = 0;
     }
 
-    /* At initial node, if we have a Names array here then this is the only array
-     * otherwise we will need to deal with Kids.
-     */
-    code = pdfi_dict_known(ctx, Dests, "Names", &known);
-    if (code < 0)
-        goto error;
-
-    if (known) {
-        int i = 0;
-        pdf_string *StrKey = NULL;
-
-        code = pdfi_dict_get_type(ctx, Dests, "Names", PDF_ARRAY, (pdf_obj **)&NamesArray);
-        if (code < 0)
-            goto error;
-        for (i = 0;i < pdfi_array_size(NamesArray); i+=2) {
-            code = pdfi_array_get_type(ctx, NamesArray, i, PDF_STRING, (pdf_obj **)&StrKey);
-            if (code < 0)
-                goto error;
-
-            if (StrKey->length == len && strncmp((const char *)StrKey->data, str, len) == 0) {
-                pdfi_countdown(StrKey);
-                code = pdfi_array_get(ctx, NamesArray, i + 1, (pdf_obj **)Dest);
-                break;
-            }
-            pdfi_countdown(StrKey);
-            StrKey = NULL;
-        }
-    } else {
-        code = pdfi_dict_get_type(ctx, Dests, "Kids", PDF_ARRAY, (pdf_obj **)&NamesArray);
-        if (code < 0)
-            goto error;
-
-    }
+    code = pdfi_get_name_from_node(ctx, Dests, str, Dest);
 
 error:
     if (pdfi_type_of(Named) == PDF_NAME)
@@ -667,7 +797,6 @@ error:
         gs_free_object(ctx->memory, str, "pdfi_get_named_dest");
     pdfi_countdown(Names);
     pdfi_countdown(Dests);
-    pdfi_countdown(NamesArray);
     return code;
 }
 

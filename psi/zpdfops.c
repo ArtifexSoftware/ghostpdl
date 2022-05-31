@@ -1404,6 +1404,11 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
                 goto error;
             pdfctx->ctx->args.nonativefontmap = pvalueref->value.boolval;
         }
+        if (dict_find_string(pdictref, "PageCount", &pvalueref) > 0) {
+            if (!r_has_type(pvalueref, t_integer))
+                goto error;
+            pdfctx->ctx->Pdfmark_InitialPage = pvalueref->value.intval;
+        }
         code = 0;
         pop(1);
     }

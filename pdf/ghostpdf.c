@@ -1137,6 +1137,13 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
     else
         code = pdfi_process(ctx);
 
+    /* Pdfmark_InitialPage is the offset for Page Dests in
+     * /Outlines and Link annotations. It is the count of pages
+     * processed so far. Update it by the number of pages in
+     * this file.
+     */
+    ctx->Pdfmark_InitialPage += ctx->num_pages;
+
     pdfi_close_pdf_file(ctx);
     return code;
 }
