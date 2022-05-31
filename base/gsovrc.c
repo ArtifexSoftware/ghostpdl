@@ -931,7 +931,7 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
     uchar                   num_comps;
     uchar                   k,j;
     gs_memory_t *           mem = dev->memory;
-    gx_color_index          comps = opdev->op_state == OP_STATE_FILL ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
+    gx_color_index          comps_orig = opdev->op_state == OP_STATE_FILL ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
     byte                    *curr_data = (byte *) data + data_x;
     int                     row, offset;
 
@@ -973,6 +973,7 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
         /* step through the height */
         row = 0;
         while (h-- > 0 && code >= 0) {
+            gx_color_index comps = comps_orig;
             gb_rect.p.y = y++;
             gb_rect.q.y = y;
             offset = row * raster_in + data_x;
@@ -982,23 +983,23 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
             for (k = 0; k < tdev->color_info.num_components; k++) {
                 /* First set the params to zero for all planes except the one we want */
                 for (j = 0; j < tdev->color_info.num_components; j++)
-                        gb_params.data[j] = 0;
-                    gb_params.data[k] = gb_buff + k * raster;
-                    code = dev_proc(tdev, get_bits_rectangle) (tdev, &gb_rect,
-                                                               &gb_params);
-                    if (code < 0) {
-                        gs_free_object(mem, gb_buff, "overprint_copy_planes" );
-                        return code;
-                    }
-                    /* Skip the plane if this component is not to be drawn.  If
-                       its the one that we want to draw, replace it with our
-                       buffer data */
-                    if ((comps & 0x01) == 1) {
-                        memcpy(gb_params.data[k], curr_data, w);
-                    }
-                    /* Next plane */
-                    curr_data += plane_height * raster_in;
-                    comps >>= 1;
+                    gb_params.data[j] = 0;
+                gb_params.data[k] = gb_buff + k * raster;
+                code = dev_proc(tdev, get_bits_rectangle) (tdev, &gb_rect,
+                                                           &gb_params);
+                if (code < 0) {
+                    gs_free_object(mem, gb_buff, "overprint_copy_planes" );
+                    return code;
+                }
+                /* Skip the plane if this component is not to be drawn.  If
+                   its the one that we want to draw, replace it with our
+                   buffer data */
+                if ((comps & 0x01) == 1) {
+                    memcpy(gb_params.data[k], curr_data, w);
+                }
+                /* Next plane */
+                curr_data += plane_height * raster_in;
+                comps >>= 1;
             }
             code = dev_proc(tdev, copy_planes)(tdev, gb_buff, 0, raster,
                                                gs_no_bitmap_id, x, y - 1, w, 1, 1);
