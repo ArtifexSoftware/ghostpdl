@@ -1304,6 +1304,14 @@ overprint_dev_spec_op(gx_device* pdev, int dev_spec_op,
     if (dev_spec_op == gxdso_overprint_active)
         return !opdev->is_idle;
 
+    if (dev_spec_op == gxdso_overprint_op)
+    {
+        int ret = opdev->op_state;
+        if (*(int *)data >= 0)
+            opdev->op_state = *(int *)data;
+        return ret;
+    }
+
     if (dev_spec_op == gxdso_device_child) {
         gxdso_device_child_request *d = (gxdso_device_child_request *)data;
         if (d->target == pdev) {

@@ -353,7 +353,7 @@ enum {
     gxdso_is_encoding_direct,
     /* gxdso_event_info:
      *     data = dev_param_req_t
-     *     size = sizeof(dev_param-req_t
+     *     size = sizeof(dev_param_req_t)
      * Passes a single name in request->Param, naming the event which occurred.
      * Used to send a warning to pdfwrite that some event has happened we want to know about.
      * Currently this is used in pdf_font.ps to signal that a substittue font has been
@@ -449,6 +449,14 @@ enum {
      * 0 otherwise.
      */
     gxdso_overprintsim_state,
+
+    /* Get/Set information about the overprint op state.
+     *     data = overprint op state to set (OP_STATE_{NONE, FILL, STROKE}) or -1
+     *            for no change.
+     *     size = 0
+     * Returns -1 if unhandled, otherwise the current state.
+     */
+    gxdso_overprint_op,
 
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
