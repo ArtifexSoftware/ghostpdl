@@ -164,11 +164,14 @@ static float acrobat_compatible_atof(char *s)
     }
 
     if (*s == '.') {
+        float MAX = (MAX_FLOAT-9)/10;
         float v = (float)i;
         float n = 0;
         float d = 1;
         ++s;
-        while (*s >= '0' && *s <= '9') {
+        /* Bug 705211: Ensure that we don't overflow n here - just ignore any
+         * trailing digits after this. This will be plenty accurate enough. */
+        while (*s >= '0' && *s <= '9' && n <= MAX) {
             n = 10 * n + (*s - '0');
             d = 10 * d;
             ++s;
