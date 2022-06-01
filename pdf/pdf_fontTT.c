@@ -615,7 +615,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         /* Horrid hacky solution */
         /* We don't want to draw the TTF notdef */
         gs_font_type42 *gst42 = ((gs_font_type42 *)font->pfont);
-        if (gst42->data.len_glyphs[0] > 10) {
+        if (gst42->data.len_glyphs != NULL && gst42->data.len_glyphs[0] > 10) {
             gst42->data.len_glyphs[0] = 0;
         }
     }
