@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -17,3 +17,13 @@
 
 /* Freetype build customisations */
 #undef TT_CONFIG_OPTION_EMBEDDED_BITMAPS
+#undef FT_CONFIG_OPTION_USE_LZW
+#undef FT_CONFIG_OPTION_USE_ZLIB
+#undef FT_CONFIG_OPTION_USE_BZIP2
+#undef FT_CONFIG_OPTION_USE_PNG
+#undef FT_CONFIG_OPTION_USE_HARFBUZZ
+#undef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+#undef TT_CONFIG_OPTION_BDF
+#undef T1_CONFIG_OPTION_NO_AFM
+#undef FT_CONFIG_OPTION_SVG
+#undef TT_CONFIG_OPTION_COLOR_LAYERS
