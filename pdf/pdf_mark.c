@@ -745,7 +745,7 @@ static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, 
         pdfi_countdown(Kid);
         Kid = NULL;
         if (code < 0) {
-            if (code = gs_error_undefined)
+            if (code == gs_error_undefined)
                 continue;
             goto error;
         }
