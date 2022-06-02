@@ -525,7 +525,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
              * "If the final digit of a hexadecimal string is missing—that is,
              * if there is an odd number of digits—the final digit is assumed to be 0."
              */
-            hex1 = 0;
+            hex1 = 0x30;
             if (!ishex(hex0) || !ishex(hex1)) {
                 code = gs_note_error(gs_error_syntaxerror);
                 goto exit;
