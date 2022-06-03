@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -228,8 +228,9 @@ gs_gstate_arc_add(gx_path * ppath, gs_gstate * pgs, bool clockwise,
     arc.p3.x = axc + ar * arc.sincos.cos;
     arc.p3.y = ayc + ar * arc.sincos.sin;
     if (clockwise) {
-        while (ang1 < ang2)
-            ang2 -= 360;
+        if (ang1 < ang2) {
+            ang2 -= ceil((ang2 - ang1) / 360) * 360;
+        }
         if (ang2 < 0) {
             double adjust = ceil(-ang2 / 360) * 360;
 
@@ -258,8 +259,9 @@ gs_gstate_arc_add(gx_path * ppath, gs_gstate * pgs, bool clockwise,
             arc.notes = sn_not_first;
         }
     } else {
-        while (ang2 < ang1)
-            ang2 += 360;
+        if (ang2 < ang1) {
+            ang2 += ceil((ang1 - ang2) / 360) * 360;
+        }
         if (ang1 < 0) {
             double adjust = ceil(-ang1 / 360) * 360;
 
