@@ -334,8 +334,14 @@ int pdfi_repair_file(pdf_context *ctx)
             pdfi_seek(ctx, ctx->main_stream, ctx->xref_table->xref[i].u.uncompressed.offset, SEEK_SET);
             do {
                 code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
-                if (ctx->main_stream->eof == true || (code < 0 && code != gs_error_ioerror && code != gs_error_VMerror))
+                if (ctx->main_stream->eof == true || (code < 0 && code != gs_error_ioerror && code != gs_error_VMerror)) {
+                    /* object offset is beyond EOF or object is broken (possibly due to multiple xref
+                     * errors) ignore the error and carry on, if the object gets used then we will
+                     * error out at that point.
+                     */
+                    code = 0;
                     break;
+                }
                 if (code < 0)
                     goto exit;
                 if (pdfi_type_of(ctx->stack_top[-1]) == PDF_FAST_KEYWORD) {
