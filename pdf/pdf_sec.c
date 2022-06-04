@@ -1040,31 +1040,40 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     pdfi_countdown(o);
     o = NULL;
 
-    code = pdfi_dict_get_int(ctx, d, "V", &i64);
-    if (code < 0)
-        goto done;
-
-    if (i64 < 1 || i64 > 5) {
-        code = gs_error_rangecheck;
-        goto done;
-    }
-
-    ctx->encryption.V = (int)i64;
-
     *KeyLen = 0;
-    if (ctx->encryption.V == 2 || ctx->encryption.V == 3) {
-        code = pdfi_dict_knownget_number(ctx, d, "Length", &f);
-        if (code < 0)
-            goto done;
-
-        if (code > 0)
-            *KeyLen = (int)f;
-    }
+    ctx->encryption.V = -1;
 
     code = pdfi_dict_get_int(ctx, d, "R", &i64);
     if (code < 0)
         goto done;
     ctx->encryption.R = (int)i64;
+
+    /* V is required for PDF 2.0 but only strongly recommended for earlier versions */
+    code = pdfi_dict_known(ctx, d, "V", &b);
+    if (code < 0)
+        goto done;
+
+    if (b) {
+        code = pdfi_dict_get_int(ctx, d, "V", &i64);
+        if (code < 0)
+            goto done;
+
+        if (i64 < 1 || i64 > 5) {
+            code = gs_error_rangecheck;
+            goto done;
+        }
+
+        ctx->encryption.V = (int)i64;
+
+        if (ctx->encryption.V == 2 || ctx->encryption.V == 3) {
+            code = pdfi_dict_knownget_number(ctx, d, "Length", &f);
+            if (code < 0)
+                goto done;
+
+            if (code > 0)
+                *KeyLen = (int)f;
+        }
+    }
 
     code = pdfi_dict_get_int(ctx, d, "P", &i64);
     if (code < 0)
@@ -1370,13 +1379,19 @@ int pdfi_initialise_Decryption(pdf_context *ctx)
     switch(ctx->encryption.R) {
         case 2:
             /* Set up the defaults if not already set */
-            /* Revision 2 is always 40-bit RC4 */
-            if (KeyLen != 0 && (KeyLen < 40 || KeyLen > 128 || KeyLen % 8 != 0)) {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
-                return_error(gs_error_rangecheck);
+            /* R of 2 means V < 2 which is either algorithm 3.1 with a 40-bit key
+             * or an undocumented and unsupported algorithm.
+             */
+            if (ctx->encryption.V >= 0) {
+                if (ctx->encryption.V == 0) {
+                    code = gs_note_error(gs_error_undefined);
+                    goto done;
+                }
             }
-            if (KeyLen == 0)
-                KeyLen = 40;
+            /* Revision 2 is always 40-bit RC4 */
+            if (KeyLen != 0 && KeyLen != 40)
+                pdfi_set_error(ctx, 0, NULL, E_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
+            KeyLen = 40;
             if (ctx->encryption.StmF == CRYPT_NONE)
                 ctx->encryption.StmF = CRYPT_V1;
             if (ctx->encryption.StrF == CRYPT_NONE)
@@ -1385,10 +1400,17 @@ int pdfi_initialise_Decryption(pdf_context *ctx)
             break;
         case 3:
             /* Set up the defaults if not already set */
-            /* Revision 3 is always 128-bit RC4 */
-            if (KeyLen != 0 && KeyLen != 128)
+            if (ctx->encryption.V >= 0) {
+                if (ctx->encryption.V == 3) {
+                    code = gs_note_error(gs_error_undefined);
+                    goto done;
+                }
+            }
+            /* Revision 3 *may* be more than 40 bits of RC4 */
+            if (KeyLen != 0 && (KeyLen < 40 || KeyLen > 128 || KeyLen % 8 != 0)) {
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
-            KeyLen = 128;
+                KeyLen = 128;
+            }
             if (ctx->encryption.StmF == CRYPT_NONE)
                 ctx->encryption.StmF = CRYPT_V2;
             if (ctx->encryption.StrF == CRYPT_NONE)
