@@ -851,6 +851,9 @@ int pdfi_read_bare_keyword(pdf_context *ctx, pdf_c_stream *s)
     if (t == NULL)
         return TOKEN_INVALID_KEY;
 
+    if (ctx->args.pdfdebug)
+        dmprintf1(ctx->memory, " %s\n", Buffer);
+
     return (((const char *)t) - pdf_token_strings[0]) / sizeof(pdf_token_strings[0]);
 }
 
@@ -907,6 +910,9 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     } else {
         Buffer[index] = 0x00;
         key = lookup_keyword(Buffer);
+
+        if (ctx->args.pdfdebug)
+            dmprintf1(ctx->memory, " %s\n", Buffer);
 
         switch (key) {
             case TOKEN_R:
@@ -1381,9 +1387,6 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source
 
     if (keyword < PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY))
     {
-        if (ctx->args.pdfdebug)
-            dmprintf1(ctx->memory, " %s\n", pdf_token_strings[(uintptr_t)keyword]);
-
         switch((uintptr_t)keyword) {
             case TOKEN_b:           /* closepath, fill, stroke */
                 pdfi_pop(ctx, 1);
