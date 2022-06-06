@@ -817,21 +817,25 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, in
     if (ctx->pdfnativefontmap != NULL) {
         pdf_obj *record;
         code = pdfi_dict_get_by_key(ctx, ctx->pdfnativefontmap, fname, &record);
-        if (code < 0)
-            return code;
-        if (pdfi_type_of(record) == PDF_STRING) {
-            mname = record;
-        }
-        else {
-            int64_t i64;
-            code = pdfi_dict_get(ctx, (pdf_dict *)record, "Path", &mname);
-            if (code >= 0)
-                code = pdfi_dict_get_int(ctx, (pdf_dict *)record, "Index", &i64);
-            if (code < 0) {
-                pdfi_countdown(record);
-                return code;
+        if (code >= 0) {
+            if (pdfi_type_of(record) == PDF_STRING) {
+                mname = record;
             }
-            *findex = (int)i64; /* Rangecheck? */
+            else if (pdfi_type_of(record) == PDF_DICT) {
+                int64_t i64;
+                code = pdfi_dict_get(ctx, (pdf_dict *)record, "Path", &mname);
+                if (code >= 0)
+                    code = pdfi_dict_get_int(ctx, (pdf_dict *)record, "Index", &i64);
+                if (code < 0) {
+                    pdfi_countdown(record);
+                    return code;
+                }
+                *findex = (int)i64; /* Rangecheck? */
+            }
+            else {
+                pdfi_countdown(record);
+                code = gs_error_undefined;
+            }
         }
     }
     else {
