@@ -857,7 +857,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
                     FF_free(s->ftmemory, bmg);
                 }
             }
-            else {
+            else if (ft_face->glyph->format == FT_GLYPH_FORMAT_OUTLINE) {
                 FT_OutlineGlyph olg;
 
                 ft_error = FT_Get_Glyph(ft_face->glyph, (FT_Glyph *) & olg);
