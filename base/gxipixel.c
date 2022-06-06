@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -434,7 +434,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     /* Can we restrict the amount of image we need? */
     while (pcpath) /* So we can break out of it */
     {
-        gs_rect rect, rect_out;
+        gs_rect rect, rect_src;
         gs_matrix mi;
         const gs_matrix *m = pgs != NULL ? &ctm_only(pgs) : NULL;
         gs_fixed_rect obox;
@@ -449,15 +449,42 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         rect.p.y = fixed2float(obox.p.y);
         rect.q.x = fixed2float(obox.q.x);
         rect.q.y = fixed2float(obox.q.y);
-        code = gs_bbox_transform(&rect, &mi, &rect_out);
+        /* rect is in destination space. Calculate rect_src, in source space. */
+        code = gs_bbox_transform(&rect, &mi, &rect_src);
         if (code < 0) {
             /* Give up trying to shrink the render/decode boxes, but continue processing */
             break;
         }
-        irect.p.x = (int)(rect_out.p.x-1.0);
-        irect.p.y = (int)(rect_out.p.y-1.0);
-        irect.q.x = (int)(rect_out.q.x+1.0);
-        irect.q.y = (int)(rect_out.q.y+1.0);
+        /* Need to expand the region to allow for the fact that the mitchell
+         * scaler reads multiple pixels in. */
+        /* If mi.{xx,yy} > 1 then we are downscaling. During downscaling,
+         * the support increases to ensure that we don't lose pixels contributions
+         * entirely. */
+        {
+            float support = any_abs(mi.xx);
+            int isupport;
+            if (any_abs(mi.yy) > support)
+                support = any_abs(mi.yy);
+            if (any_abs(mi.xy) > support)
+                support = any_abs(mi.xy);
+            if (any_abs(mi.yx) > support)
+                support = any_abs(mi.yx);
+            /* If upscaling (support < 1) then we need 2 extra lines on each side of the source region
+             * (2 being the maximum support for mitchell scaling).
+             * If downscaling, then the number of lines is increased to avoid individual
+             * contributions dropping out. */
+            isupport = 2; /* Mitchell support. */
+            if (support > 1)
+                isupport = (int)ceil(isupport * support);
+            rect_src.p.x -= isupport;
+            rect_src.p.y -= isupport;
+            rect_src.q.x += isupport;
+            rect_src.q.y += isupport;
+        }
+        irect.p.x = (int)floor(rect_src.p.x);
+        irect.p.y = (int)floor(rect_src.p.y);
+        irect.q.x = (int)ceil(rect_src.q.x);
+        irect.q.y = (int)ceil(rect_src.q.y);
         /* We therefore only need to render within irect. Restrict rrect to this. */
         if (penum->rrect.x < irect.p.x) {
             penum->rrect.w -= irect.p.x - penum->rrect.x;
@@ -480,29 +507,6 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
             penum->rrect.h = irect.q.y - penum->rrect.y;
             if (penum->rrect.h < 0)
                 penum->rrect.h = 0;
-        }
-        /* Need to expand the region to allow for the fact that the mitchell
-         * scaler reads multiple pixels in. */
-        /* If mi.{xx,yy} > 1 then we are downscaling. During downscaling,
-         * the support increases to ensure that we don't lose pixels contributions
-         * entirely. */
-        /* I do not understand the need for the +/- 1 fudge factors,
-         * but they seem to be required. Increasing the decode rectangle can
-         * never be bad at least... RJW */
-        {
-            float support = any_abs(mi.xx);
-            int isupport;
-            if (any_abs(mi.yy) > support)
-                support = any_abs(mi.yy);
-            if (any_abs(mi.xy) > support)
-                support = any_abs(mi.xy);
-            if (any_abs(mi.yx) > support)
-                support = any_abs(mi.yx);
-            isupport = (int)(MAX_ISCALE_SUPPORT * (support+1)) + 1;
-            irect.p.x -= isupport;
-            irect.p.y -= isupport;
-            irect.q.x += isupport;
-            irect.q.y += isupport;
         }
         if (penum->drect.x < irect.p.x) {
             penum->drect.w -= irect.p.x - penum->drect.x;

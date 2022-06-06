@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -210,7 +210,7 @@ calculate_contrib(
     int i, j;
     int last_index = -1;
 
-    if_debug1('w', "[w]calculate_contrib scale=%lg\n", scale);
+    if_debug1('W', "[W]calculate_contrib scale=%lg\n", scale);
     if (scale < 1.0) {
         double clamped_scale = max(scale, min_scale);
         WidthIn = ((double)fWidthIn) / clamped_scale;
@@ -250,7 +250,7 @@ calculate_contrib(
         int last_pixel = clamp_pixel(right);
         CONTRIB *p;
 
-        if_debug4('w', "[w]i=%d, i+offset=%lg scale=%lg center=%lg : ", starting_output_index + i,
+        if_debug4('W', "[W]i=%d, i+offset=%lg scale=%lg center=%lg : ", starting_output_index + i,
                 starting_output_index + i + (double)src_y_offset / src_size * dst_size, scale, center);
         if (last_pixel > last_index)
             last_index = last_pixel;
@@ -275,7 +275,7 @@ calculate_contrib(
                 ie = (int)(e + 0.5);
                 p[k].weight += ie;
                 e -= ie;
-                if_debug2('w', " %d %f", k, (float)p[k].weight);
+                if_debug2('W', " %d %f", k, (float)p[k].weight);
             }
 
         } else {
@@ -293,10 +293,10 @@ calculate_contrib(
                 ie = (int)(e + 0.5);
                 p[k].weight += ie;
                 e -= ie;
-                if_debug2('w', " %d %f", k, (float)p[k].weight);
+                if_debug2('W', " %d %f", k, (float)p[k].weight);
             }
         }
-        if_debug0('w', "\n");
+        if_debug0('W', "\n");
     }
     return last_index;
 }
@@ -860,16 +860,18 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
     int limited_WidthOut = (ss->params.WidthOut + abs_interp_limit - 1) / abs_interp_limit;
     int limited_EntireHeightOut = (ss->params.EntireHeightOut + abs_interp_limit - 1) / abs_interp_limit;
     uint row_size = limited_WidthOut * ss->params.spp_interp;
-    int last_index =
-    calculate_contrib(&ss->dst_next_list, ss->dst_items,
+    int last_index, first_index_mod;
+
+    if_debug2m('W', ss->memory, "[W]calculate_dst_contrib for y = %d, y+offset=%d\n", y, y + ss->src_y_offset);
+
+    last_index = calculate_contrib(&ss->dst_next_list, ss->dst_items,
                       (double)limited_EntireHeightOut / ss->params.EntireHeightIn,
                       y, ss->src_y_offset, limited_EntireHeightOut, ss->params.EntireHeightIn,
                       1, ss->params.HeightIn, ss->max_support, row_size,
                       (double)ss->params.MaxValueOut / 255, ss->filter_width,
                       ss->filter, ss->min_scale);
-    int first_index_mod = ss->dst_next_list.first_pixel / row_size;
+    first_index_mod = ss->dst_next_list.first_pixel / row_size;
 
-    if_debug2m('w', ss->memory, "[W]calculate_dst_contrib for y = %d, y+offset=%d\n", y, y + ss->src_y_offset);
     ss->dst_last_index = last_index;
     last_index %= ss->max_support;
     if (last_index < first_index_mod) {         /* Shuffle the indices to account for wraparound. */
@@ -1101,7 +1103,8 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
                 row = ss->dst;
             }
             /* Apply filter to zoom vertically from tmp to dst. */
-            if (ss->params.Active)
+            if (ss->params.Active) {
+                if_debug1('w', "[w]zoom_y y = %d\n", ss->dst_y);
                 ss->zoom_y(row, /* Where to scale to */
                        ss->tmp, /* Line buffer */
                        limited_LeftMarginOut, /* Skip */
@@ -1109,6 +1112,7 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
                        limited_WidthOut, /* Stride */
                        ss->params.spp_interp, /* Color count */
                        &ss->dst_next_list, ss->dst_items);
+            }
             /* Idiotic C coercion rules allow T* and void* to be */
             /* inter-assigned freely, but not compared! */
             if ((void *)row != ss->dst)         /* no buffering */
@@ -1156,8 +1160,9 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
                 ss->src_offset = 0;
             }
             /* Apply filter to zoom horizontally from src to tmp. */
-            if_debug2('w', "[w]zoom_x y = %d to tmp row %d\n",
-                      ss->src_y, (ss->src_y % ss->max_support));
+            if_debug3('w', "[w]zoom_x y = %d to tmp row %d%s\n",
+                      ss->src_y, (ss->src_y % ss->max_support),
+                      ss->params.Active ? "" : " (Inactive)");
             if (ss->params.Active)
                 ss->zoom_x(/* Where to scale to (dst line address in tmp buffer) */
                        ss->tmp + (ss->src_y % ss->max_support) *
