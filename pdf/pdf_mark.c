@@ -762,7 +762,6 @@ static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest)
 {
     int code = 0, len = 0;
     pdf_dict *Names = NULL, *Dests = NULL;
-    bool known;
     char *str = NULL;
 
     code = pdfi_dict_get_type(ctx, ctx->Root, "Names", PDF_DICT, (pdf_obj **)&Names);
