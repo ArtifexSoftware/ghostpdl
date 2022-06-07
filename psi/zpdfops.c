@@ -805,27 +805,9 @@ static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, 
             }
             break;
         case PDF_DICT:
-            if (PDFobj->object_num != 0) {
-                if (pdfi_loop_detector_check_object(pdfctx->ctx, PDFobj->object_num)) {
-                    gs_note_error(gs_error_circular_reference);
-                    goto error;
-                }
-                code = pdfi_loop_detector_add_object(pdfctx->ctx, PDFobj->object_num);
-                if (code < 0)
-                    goto error;
-            }
             code = PDFdict_to_PSdict(i_ctx_p, pdfctx, (pdf_dict *)PDFobj, PSobj);
             break;
         case PDF_ARRAY:
-            if (PDFobj->object_num != 0) {
-                if (pdfi_loop_detector_check_object(pdfctx->ctx, PDFobj->object_num)) {
-                    gs_note_error(gs_error_circular_reference);
-                    goto error;
-                }
-                code = pdfi_loop_detector_add_object(pdfctx->ctx, PDFobj->object_num);
-                if (code < 0)
-                    goto error;
-            }
             code = PDFarray_to_PSarray(i_ctx_p, pdfctx, (pdf_array *)PDFobj, PSobj);
             break;
         default:

@@ -101,6 +101,148 @@ int pdfi_read_Root(pdf_context *ctx)
     return 0;
 }
 
+static int Info_check_dict(pdf_context *ctx, pdf_dict *d);
+
+static int Info_check_array(pdf_context *ctx, pdf_array *a)
+{
+    int code = 0, i = 0;
+    pdf_obj *array_obj = NULL;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
+    for (i = 0;i < pdfi_array_size(a); i++) {
+        code = pdfi_array_get(ctx, a, i, &array_obj);
+        if (code < 0)
+            goto error;
+
+        switch(pdfi_type_of(array_obj)) {
+            case PDF_DICT:
+                code = Info_check_dict(ctx, (pdf_dict *)array_obj);
+                if (code < 0)
+                    goto error;
+                break;
+            case PDF_ARRAY:
+                code = Info_check_array(ctx, (pdf_array *)array_obj);
+                if (code < 0)
+                    goto error;
+                break;
+            default:
+                break;
+        }
+
+        pdfi_countdown(array_obj);
+        array_obj = NULL;
+    }
+error:
+    pdfi_countdown(array_obj);
+    pdfi_loop_detector_cleartomark(ctx);
+    return code;
+}
+
+static int Info_check_dict(pdf_context *ctx, pdf_dict *d)
+{
+    int code = 0;
+    uint64_t index = 0;
+    pdf_name *Key = NULL;
+    pdf_obj *Value = NULL;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_first(ctx, d, (pdf_obj **)&Key, &Value, &index);
+    if (code == gs_error_undefined) {
+        code = 0;
+        goto error;
+    }
+
+    while (code >= 0) {
+        switch(pdfi_type_of(Value)) {
+            case PDF_DICT:
+                code = Info_check_dict(ctx, (pdf_dict *)Value);
+                if (code < 0)
+                    goto error;
+                break;
+            case PDF_ARRAY:
+                code = Info_check_array(ctx, (pdf_array *)Value);
+                if (code < 0)
+                    goto error;
+                break;
+            default:
+                break;
+        }
+        pdfi_countdown(Key);
+        Key = NULL;
+        pdfi_countdown(Value);
+        Value = NULL;
+
+        code = pdfi_dict_next(ctx, d, (pdf_obj **)&Key, &Value, &index);
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+    }
+error:
+    pdfi_countdown(Key);
+    pdfi_countdown(Value);
+    pdfi_loop_detector_cleartomark(ctx);
+    return code;
+}
+
+static int pdfi_sanitize_Info_references(pdf_context *ctx, pdf_dict *Info)
+{
+    int code = 0;
+    uint64_t index = 0;
+    pdf_name *Key = NULL;
+    pdf_obj *Value = NULL;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_first(ctx, Info, (pdf_obj **)&Key, &Value, &index);
+    if (code == gs_error_undefined) {
+        code = 0;
+        goto error;
+    }
+
+    while (code >= 0) {
+        switch(pdfi_type_of(Value)) {
+            case PDF_DICT:
+                code = Info_check_dict(ctx, (pdf_dict *)Value);
+                break;
+            case PDF_ARRAY:
+                code = Info_check_array(ctx, (pdf_array *)Value);
+                break;
+            default:
+                code = 0;
+                break;
+        }
+        pdfi_countdown(Value);
+        Value = NULL;
+        if (code < 0) {
+            code = pdfi_dict_delete_pair(ctx, Info, Key);
+            if (code < 0)
+                goto error;
+        }
+        pdfi_countdown(Key);
+        Key = NULL;
+
+        code = pdfi_dict_next(ctx, Info, (pdf_obj **)&Key, &Value, &index);
+        if (code == gs_error_undefined) {
+            code = 0;
+            break;
+        }
+    }
+error:
+    pdfi_countdown(Key);
+    pdfi_countdown(Value);
+    pdfi_loop_detector_cleartomark(ctx);
+    return code;
+}
+
 int pdfi_read_Info(pdf_context *ctx)
 {
     pdf_dict *Info;
@@ -120,6 +262,11 @@ int pdfi_read_Info(pdf_context *ctx)
 
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n");
+
+    /* sanitize Info for circular references */
+    code = pdfi_sanitize_Info_references(ctx, Info);
+    if (code < 0)
+        return code;
 
     pdfi_device_set_flags(ctx);
     pdfi_pdfmark_write_docinfo(ctx, Info);
