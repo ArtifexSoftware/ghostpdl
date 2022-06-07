@@ -2095,6 +2095,8 @@ int pdfi_clear_context(pdf_context *ctx)
     ctx->pdffontmap = NULL;
     pdfi_countdown(ctx->pdfnativefontmap);
     ctx->pdfnativefontmap = NULL;
+    pdfi_countdown(ctx->pdf_substitute_fonts);
+    ctx->pdf_substitute_fonts = NULL;
 
     return 0;
 }

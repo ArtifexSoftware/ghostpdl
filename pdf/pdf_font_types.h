@@ -84,8 +84,9 @@ typedef enum pdf_font_type_e {
     pdf_dict *PDF_font;             /* The original font dictionary from the PDF file */\
     pdf_obj *BaseFont;              /* Should be a name object, but best allow for strings as well */\
     pdf_dict *FontDescriptor;       /* For PDF up to 1.4 this may be absent for the base 14 */ \
-    int64_t descflags
-
+    int64_t descflags; \
+    pdf_obj *ToUnicode;            /* Name or stream (technically should be a stream, but we've seen Identity names */ \
+    pdf_string *filename           /* If we read this from disk, this is the file it came from */
 
 #define pdf_font_common \
     pdf_font_base;\
@@ -93,10 +94,8 @@ typedef enum pdf_font_type_e {
     unsigned int FirstChar;         /* For PDF up to 1.4 this may be absent for the base 14 */\
     unsigned int LastChar;          /* For PDF up to 1.4 this may be absent for the base 14 */\
     double MissingWidth; \
-    double *Widths;                  /* For PDF up to 1.4 this may be absent for the base 14 */\
-    pdf_array *Encoding;            /* Array built from name or dictionary */\
-    pdf_obj *ToUnicode;             /* Name or stream (technically should be a stream, but we've seen Identity names */ \
-    gs_string *fake_glyph_names     /* For when we encounter a glyph not in the Encoding */
+    double *Widths;                 /* For PDF up to 1.4 this may be absent for the base 14 */\
+    pdf_array *Encoding             /* Array built from name or dictionary */\
 
 
 /* The registry and ordering strings in gs_font_cid0_data are just references to
@@ -113,7 +112,7 @@ typedef enum pdf_font_type_e {
     pdf_string *registry; \
     pdf_string *ordering; \
     int supplement; \
-    gs_string cidtogidmap; \
+    pdf_buffer *cidtogidmap; \
     bool substitute; /* We need to know what a CIDFont is a substitute */ \
     font_proc_glyph_info((*orig_glyph_info))
 
@@ -148,16 +147,14 @@ typedef struct pdf_font_type0_s {
 
     pdf_obj *Encoding;              /* CMap */
     pdf_array *DescendantFonts;     /* A single element array specifying the CIDFont dictionary */
-    pdf_obj *ToUnicode;             /* Name or stream (technically shoudl be a stream, but we've seen Identity names */
     pdfi_cid_decoding_t *decoding;  /* Used when substituting a non-Identity CIDFont */
     pdfi_cid_subst_nwp_table_t *substnwp; /* Also used for CIDFont substitions */
 } pdf_font_type0;
 
 typedef struct pdf_font_type1_s {
     pdf_font_common;
-    gs_string *Subrs;
+    pdf_array *Subrs;
     pdf_dict *CharStrings;
-    int NumSubrs;
     /* Multiple Master Support - weightvector is stored in gs_font_type1 */
     pdf_array *blenddesignpositions;
     pdf_array *blenddesignmap;
@@ -172,11 +169,6 @@ typedef struct pdf_font_cff_s {
     pdf_array *GlobalSubrs;
     int NumGlobalSubrs;
     pdf_dict *CharStrings;
-    byte *cffdata;
-    byte *cffend;
-    byte *gsubrs;
-    byte *subrs;
-    byte *charstrings;
     int ncharstrings;
 } pdf_font_cff;
 
@@ -198,7 +190,7 @@ typedef enum {
 
 typedef struct pdf_font_truetype_s {
     pdf_font_common;
-    gs_string sfnt;
+    pdf_buffer *sfnt;
     pdfi_truetype_cmap cmap;
 } pdf_font_truetype;
 
@@ -213,11 +205,6 @@ typedef struct pdf_cidfont_type0_s {
     pdf_array *GlobalSubrs;
     int NumGlobalSubrs;
     pdf_dict *CharStrings;
-    byte *cffdata;
-    byte *cffend;
-    byte *gsubrs;
-    byte *subrs;
-    byte *charstrings;
     int ncharstrings;
     pdf_array *FDArray;
     int cidcount;
@@ -226,7 +213,7 @@ typedef struct pdf_cidfont_type0_s {
 
 typedef struct pdf_cidfont_type2_s {
     pdf_cid_font_common;
-    gs_string sfnt;
+    pdf_buffer *sfnt;
 } pdf_cidfont_type2;
 
 #endif

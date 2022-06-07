@@ -365,6 +365,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", pdft0->type, pdft0->UID);
 #endif
     pdft0->refcnt = 1;
+    pdft0->filename = NULL;
     pdft0->object_num = font_dict->object_num;
     pdft0->generation_num = font_dict->generation_num;
     pdft0->indirect_num = font_dict->indirect_num;
@@ -537,6 +538,8 @@ pdfi_free_font_type0(pdf_obj *font)
     pdfi_countdown(pdft0->Encoding);
     pdfi_countdown(pdft0->DescendantFonts);
     pdfi_countdown(pdft0->ToUnicode);
+    pdfi_countdown(pdft0->filename);
+
     gs_free_object(OBJ_MEMORY(pdft0), pfont0->data.Encoding, "pdfi_free_font_type0(data.Encoding)");
     /* We shouldn't need to free the fonts in the FDepVector, that should happen
         with DescendantFonts above.

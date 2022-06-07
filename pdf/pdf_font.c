@@ -159,8 +159,14 @@ static void pdfi_print_font_name(pdf_context *ctx, pdf_name *n)
         (void)outwrite(ctx->memory, (const char *)n->data, n->length);
 }
 
+static void pdfi_print_font_string(pdf_context *ctx, pdf_string *s)
+{
+    if (ctx->args.QUIET != true)
+        (void)outwrite(ctx->memory, (const char *)s->data, s->length);
+}
+
 /* Print a null terminated string to stdout */
-static void pdfi_print_string(pdf_context *ctx, const char *str)
+static void pdfi_print_cstring(pdf_context *ctx, const char *str)
 {
     if (ctx->args.QUIET != true)
         (void)outwrite(ctx->memory, str, strlen(str));
@@ -256,12 +262,12 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                 }
                 else {
                     if (cidname) {
-                        pdfi_print_string(ctx, "Loading CIDFont ");
+                        pdfi_print_cstring(ctx, "Loading CIDFont ");
                         pdfi_print_font_name(ctx, (pdf_name *)cidname);
-                        pdfi_print_string(ctx, " substitute from ");
+                        pdfi_print_cstring(ctx, " substitute from ");
                     }
                     else {
-                        pdfi_print_string(ctx, "Loading nameless CIDFont from ");
+                        pdfi_print_cstring(ctx, "Loading nameless CIDFont from ");
                     }
                     sfilename(s, &fname);
                     if (fname.size < gp_file_name_sizeof) {
@@ -271,8 +277,8 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                     else {
                         strcpy(fontfname, "unnamed file");
                     }
-                    pdfi_print_string(ctx, fontfname);
-                    pdfi_print_string(ctx, "\n");
+                    pdfi_print_cstring(ctx, fontfname);
+                    pdfi_print_cstring(ctx, "\n");
 
 
                     sfseek(s, 0, SEEK_END);
@@ -303,12 +309,12 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
             }
             else {
                 if (cidname) {
-                    pdfi_print_string(ctx, "Loading CIDFont ");
+                    pdfi_print_cstring(ctx, "Loading CIDFont ");
                     pdfi_print_font_name(ctx, (pdf_name *)cidname);
-                    pdfi_print_string(ctx, " (or substitute) from ");
+                    pdfi_print_cstring(ctx, " (or substitute) from ");
                 }
                 else {
-                    pdfi_print_string(ctx, "Loading nameless CIDFont from ");
+                    pdfi_print_cstring(ctx, "Loading nameless CIDFont from ");
                 }
                 sfilename(s, &fname);
                 if (fname.size < gp_file_name_sizeof) {
@@ -318,8 +324,8 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                 else {
                     strcpy(fontfname, "unnamed file");
                 }
-                pdfi_print_string(ctx, fontfname);
-                pdfi_print_string(ctx, "\n");
+                pdfi_print_cstring(ctx, fontfname);
+                pdfi_print_cstring(ctx, "\n");
                 sfseek(s, 0, SEEK_END);
                 *buflen = sftell(s);
                 sfseek(s, 0, SEEK_SET);
@@ -559,22 +565,100 @@ static int pdfi_fonttype_picker(byte *buf, int64_t buflen)
 #undef MAKEMAGIC
 }
 
-static int
-pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte **buf, int64_t *buflen, int *findex)
+static int pdfi_copy_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pdf_font **tpdffont)
+{
+    int code;
+    if (pdfi_type_of(spdffont) != PDF_FONT)
+        return_error(gs_error_typecheck);
+
+    switch(spdffont->pdfi_font_type) {
+        case e_pdf_font_type1:
+          code = pdfi_copy_type1_font(ctx, spdffont, font_dict, tpdffont);
+          break;
+        case e_pdf_font_cff:
+          code = pdfi_copy_cff_font(ctx, spdffont, font_dict, tpdffont);
+          break;
+        case e_pdf_font_truetype:
+          code = pdfi_copy_truetype_font(ctx, spdffont, font_dict, tpdffont);
+          break;
+        default:
+            return_error(gs_error_invalidfont);
+    }
+    return code;
+}
+
+enum {
+  font_embedded = 0,
+  font_from_file = 1,
+  font_substitute = 2
+};
+
+static int pdfi_load_font_buffer(pdf_context *ctx, byte *fbuf, int fbuflen, int fftype, pdf_name *Subtype, int findex, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, pdf_font **ppdffont, bool cidfont)
+{
+    int code = gs_error_invalidfont;
+    if (fbuf != NULL) {
+        /* First, see if we can glean the type from the magic number */
+        int sftype = pdfi_fonttype_picker(fbuf, fbuflen);
+        if (sftype == no_type_font) {
+            if (fftype != no_type_font)
+                sftype = fftype;
+            else {
+                /* If we don't have a Subtype, can't work it out, try Type 1 */
+                if (Subtype == NULL || pdfi_name_is(Subtype, "Type1") || pdfi_name_is(Subtype, "MMType1"))
+                    sftype = type1_font;
+                else if (pdfi_name_is(Subtype, "Type1C"))
+                    sftype = cff_font;
+                else if (pdfi_name_is(Subtype, "TrueType"))
+                    sftype = tt_font;
+            }
+        }
+        /* fbuf ownership passes to the font loader */
+        switch (sftype) {
+            case type1_font:
+                code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, fbuf, fbuflen, ppdffont);
+                fbuf = NULL;
+                break;
+            case cff_font:
+                code = pdfi_read_cff_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, fbuf, fbuflen, cidfont, ppdffont);
+                fbuf = NULL;
+                break;
+            case tt_font:
+                {
+                    if (cidfont)
+                        code = pdfi_read_cidtype2_font(ctx, font_dict, stream_dict, page_dict, fbuf, fbuflen, findex, ppdffont);
+                    else
+                        code = pdfi_read_truetype_font(ctx, font_dict, stream_dict, page_dict, fbuf, fbuflen, findex, ppdffont);
+                    fbuf = NULL;
+                }
+                break;
+            default:
+                gs_free_object(ctx->memory, fbuf, "pdfi_load_font_buffer(fbuf)");
+                code = gs_note_error(gs_error_invalidfont);
+        }
+    }
+    return code;
+}
+
+static int pdfi_load_font_file(pdf_context *ctx, int fftype, pdf_name *Subtype, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, pdf_dict *fontdesc, bool substitute, pdf_font **ppdffont)
 {
     int code;
     char fontfname[gp_file_name_sizeof];
-    pdf_obj *basefont = NULL, *mapname;
+    pdf_obj *basefont = NULL, *mapname = NULL;
     pdf_obj *fontname = NULL;
     stream *s;
     const char *fn;
+    int findex = 0;
+    byte *buf;
+    int buflen;
+    pdf_font *pdffont = NULL;
+    pdf_font *substpdffont = NULL;
     bool f_retry = true;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
     if (code < 0 || basefont == NULL || ((pdf_name *)basefont)->length == 0)
-        fallback = true;
+        return_error(gs_error_invalidfont);
 
-    if (fallback == true) {
+    if (substitute == true) {
         char *fbname;
         int fbnamelen;
         int64_t flags = 0;
@@ -607,7 +691,7 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
     }
 
     do {
-        code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname, findex);
+        code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname, &findex);
         if (code < 0) {
             if (((pdf_name *)fontname)->length < gp_file_name_sizeof) {
                 memcpy(fontfname, ((pdf_name *)fontname)->data, ((pdf_name *)fontname)->length);
@@ -622,7 +706,7 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
                     pdfi_countup(fontname);
                 }
             }
-            code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname, findex);
+            code = pdf_fontmap_lookup_font(ctx, (pdf_name *) fontname, &mapname, &findex);
             if (code < 0) {
                 mapname = fontname;
                 pdfi_countup(mapname);
@@ -647,61 +731,99 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
             return_error(gs_error_invalidfileaccess);
         }
 
-        code = pdfi_open_font_file(ctx, fontfname, strlen(fontfname), &s);
-        if (code < 0 && f_retry && pdfi_type_of(mapname) == PDF_NAME) {
-            pdfi_countdown(fontname);
-            fontname = mapname;
-            mapname = NULL;
-            f_retry = false;
-            continue;
+        if (ctx->pdf_substitute_fonts != NULL) {
+            code = pdfi_dict_knownget_type(ctx, ctx->pdf_substitute_fonts, fontfname, PDF_FONT, (pdf_obj **)&pdffont);
+            if (code == 1 && pdffont->filename == NULL) {
+                pdfi_countdown(pdffont);
+                pdffont = NULL;
+                code = 0;
+            }
         }
-        if (code >= 0) {
-            gs_const_string fname;
-            if (basefont) {
-                pdfi_print_string(ctx, "Loading font ");
-                pdfi_print_font_name(ctx, (pdf_name *)basefont);
-                pdfi_print_string(ctx, " (or substitute) from ");
-            }
-            else {
-                pdfi_print_string(ctx, "Loading nameless font from ");
-            }
-            sfilename(s, &fname);
-            if (fname.size < gp_file_name_sizeof) {
-                memcpy(fontfname, fname.data, fname.size);
-                fontfname[fname.size] = '\0';
-            }
-            else {
-                strcpy(fontfname, "unnamed file");
-            }
-            pdfi_print_string(ctx, fontfname);
-            pdfi_print_string(ctx, "\n");
+        else
+            code = 0;
 
-            sfseek(s, 0, SEEK_END);
-            *buflen = sftell(s);
-            sfseek(s, 0, SEEK_SET);
-            *buf = gs_alloc_bytes(ctx->memory, *buflen, "pdfi_open_t1_font_file(buf)");
-            if (*buf != NULL) {
-                sfread(*buf, 1, *buflen, s);
+        if (code != 1) {
+            code = pdfi_open_font_file(ctx, fontfname, strlen(fontfname), &s);
+            if (code < 0 && f_retry && pdfi_type_of(mapname) == PDF_NAME) {
+                pdfi_countdown(fontname);
+                fontname = mapname;
+                mapname = NULL;
+                f_retry = false;
+                continue;
             }
-            else {
-                code = gs_note_error(gs_error_VMerror);
+            if (code >= 0) {
+                gs_const_string fname;
+
+                sfilename(s, &fname);
+                if (fname.size < gp_file_name_sizeof) {
+                    memcpy(fontfname, fname.data, fname.size);
+                    fontfname[fname.size] = '\0';
+                }
+                else {
+                    strcpy(fontfname, "unnamed file");
+                }
+                sfseek(s, 0, SEEK_END);
+                buflen = sftell(s);
+                sfseek(s, 0, SEEK_SET);
+                buf = gs_alloc_bytes(ctx->memory, buflen, "pdfi_open_t1_font_file(buf)");
+                if (buf != NULL) {
+                    sfread(buf, 1, buflen, s);
+                }
+                else {
+                    code = gs_note_error(gs_error_VMerror);
+                }
+                sfclose(s);
+                /* On success, the buffer owership moves to the font object */
+                code = pdfi_load_font_buffer(ctx, buf, buflen, no_type_font, NULL, findex, stream_dict, page_dict, NULL, &pdffont, false);
+                if (code < 0) {
+                    gs_free_object(ctx->memory, buf, "pdfi_load_font_file");
+                }
+                else {
+                    pdffont->filename = NULL;
+                    code = pdfi_object_alloc(ctx, PDF_STRING,strlen(fontfname) , (pdf_obj **)&pdffont->filename);
+                    if (code >= 0) {
+                        pdfi_countup(pdffont->filename);
+                        memcpy(pdffont->filename->data, fontfname, strlen(fontfname));
+                        pdffont->filename->length = strlen(fontfname);
+                    }
+
+                    if (ctx->pdf_substitute_fonts == NULL) {
+                        code = pdfi_dict_alloc(ctx, 16, &ctx->pdf_substitute_fonts);
+                        if (code >= 0)
+                            pdfi_countup(ctx->pdf_substitute_fonts);
+                    }
+                    if (ctx->pdf_substitute_fonts != NULL) {
+                        code = pdfi_dict_put_obj(ctx, ctx->pdf_substitute_fonts, mapname, (pdf_obj *)pdffont, true);
+                    }
+                }
             }
-            sfclose(s);
         }
         break;
     } while (1);
+
+    if (code >= 0) {
+        if (basefont) {
+            pdfi_print_cstring(ctx, "Loading font ");
+            pdfi_print_font_name(ctx, (pdf_name *)basefont);
+            pdfi_print_cstring(ctx, " (or substitute) from ");
+        }
+        else {
+            pdfi_print_cstring(ctx, "Loading nameless font from ");
+        }
+        pdfi_print_font_string(ctx, pdffont->filename);
+        pdfi_print_cstring(ctx, "\n");
+
+        code = pdfi_copy_font(ctx, pdffont, font_dict, &substpdffont);
+        pdfi_countdown(pdffont);
+    }
+
+    *ppdffont = substpdffont;
 
     pdfi_countdown(basefont);
     pdfi_countdown(mapname);
     pdfi_countdown(fontname);
     return code;
 }
-
-enum {
-  font_embedded = 0,
-  font_from_file = 1,
-  font_substitute = 2
-};
 
 int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, gs_font **ppfont, bool cidfont)
 {
@@ -788,59 +910,27 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
 
         while (1) {
             if (fbuf != NULL) {
-                /* First, see if we can glean the type from the magic number */
-                int sftype = pdfi_fonttype_picker(fbuf, fbuflen);
-                if (sftype == no_type_font) {
-                    if (fftype != no_type_font)
-                        sftype = fftype;
-                    else {
-                        /* If we don't have a Subtype, can't work it out, try Type 1 */
-                        if (Subtype == NULL || pdfi_name_is(Subtype, "Type1") || pdfi_name_is(Subtype, "MMType1"))
-                            sftype = type1_font;
-                        else if (pdfi_name_is(Subtype, "Type1C"))
-                            sftype = cff_font;
-                        else if (pdfi_name_is(Subtype, "TrueType"))
-                            sftype = tt_font;
-                    }
-                }
-                /* fbuf ownership passes to the font loader */
-                switch (sftype) {
-                    case type1_font:
-                        code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, fbuf, fbuflen, &ppdffont);
-                        fbuf = NULL;
-                        break;
-                    case cff_font:
-                        code = pdfi_read_cff_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, fbuf, fbuflen, cidfont, &ppdffont);
-                        fbuf = NULL;
-                        break;
-                    case tt_font:
-                        {
-                            if (cidfont)
-                                code = pdfi_read_cidtype2_font(ctx, font_dict, stream_dict, page_dict, fbuf, fbuflen, findex, &ppdffont);
-                            else
-                                code = pdfi_read_truetype_font(ctx, font_dict, stream_dict, page_dict, fbuf, fbuflen, findex, &ppdffont);
-                            fbuf = NULL;
-                        }
-                        break;
-                    default:
-                        code = gs_note_error(gs_error_invalidfont);
-                }
+                /* fbuf overship passes to pdfi_load_font_buffer() */
+                code = pdfi_load_font_buffer(ctx, fbuf, fbuflen, fftype, Subtype, findex, stream_dict, page_dict, font_dict, &ppdffont, cidfont);
 
                 if (code < 0 && substitute == font_embedded) {
-                    char obj[129];
-                    pdfi_print_string(ctx, "**** Warning: cannot process embedded stream for font object ");
-                    gs_snprintf(obj, 128, "%d %d\n", (int)font_dict->object_num, (int)font_dict->generation_num);
-                    pdfi_print_string(ctx, obj);
-                    pdfi_print_string(ctx, "**** Attempting to load a substitute font.\n");
+                    if (ctx->args.pdfstoponerror == true) {
+                        goto exit;
+                    }
+                    else {
+                        char obj[129];
+                        pdfi_print_cstring(ctx, "**** Warning: cannot process embedded stream for font object ");
+                        gs_snprintf(obj, 128, "%d %d\n", (int)font_dict->object_num, (int)font_dict->generation_num);
+                        pdfi_print_cstring(ctx, obj);
+                        pdfi_print_cstring(ctx, "**** Attempting to load a substitute font.\n");
+                    }
                 }
+            }
+            else {
+                code = gs_error_invalidfont;
             }
 
             if (code < 0 && code != gs_error_VMerror && substitute == font_embedded) {
-                /* Font not embedded, or embedded font not usable - use a substitute */
-                if (fbuf != NULL) {
-                    gs_free_object(ctx->memory, fbuf, "pdfi_load_font(fbuf)");
-                }
-
                 substitute = font_from_file;
 
                 if (cidfont == true) {
@@ -854,14 +944,12 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                         goto exit;
                 }
                 else {
-                    code = pdfi_open_font_substitute_file(ctx, font_dict, fontdesc, false, &fbuf, &fbuflen, &findex);
+                    code = pdfi_load_font_file(ctx, no_type_font, Subtype, stream_dict, page_dict, font_dict, fontdesc, false, &ppdffont);
                     if (code < 0) {
-                        code = pdfi_open_font_substitute_file(ctx, font_dict, fontdesc, true, &fbuf, &fbuflen, &findex);
+                        code = pdfi_load_font_file(ctx, no_type_font, Subtype, stream_dict, page_dict, font_dict, fontdesc, true, &ppdffont);
                         substitute |= font_substitute;
                     }
-
-                    if (code < 0)
-                        goto exit;
+                    break;
                 }
                 continue;
             }
@@ -1800,6 +1888,91 @@ int pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, size_t
     pdfi_countdown(fname);
     pdfi_countdown(fdict);
     return code;
+}
+
+
+int pdfi_font_create_widths(pdf_context *ctx, pdf_dict *fontdict, pdf_font *font, double scale)
+{
+    int code = 0;
+    pdf_obj *obj = NULL;
+    int i;
+
+    font->Widths = NULL;
+
+    if (font->FontDescriptor != NULL) {
+        code = pdfi_dict_knownget(ctx, font->FontDescriptor, "MissingWidth", &obj);
+        if (code > 0) {
+            if (pdfi_type_of(obj) == PDF_INT) {
+                font->MissingWidth = ((pdf_num *) obj)->value.i * scale;
+            }
+            else if (pdfi_type_of(obj) == PDF_REAL) {
+                font->MissingWidth = ((pdf_num *) obj)->value.d  * scale;
+            }
+            else {
+                font->MissingWidth = 0;
+            }
+            pdfi_countdown(obj);
+            obj = NULL;
+        }
+        else {
+            font->MissingWidth = 0;
+        }
+    }
+    else {
+        font->MissingWidth = 1000.0 * scale;
+    }
+
+    code = pdfi_dict_knownget_type(ctx, fontdict, "Widths", PDF_ARRAY, (pdf_obj **)&obj);
+    if (code > 0) {
+        if (pdfi_array_size((pdf_array *)obj) < font->LastChar - font->FirstChar + 1) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto error;
+        }
+
+        font->Widths = (double *)gs_alloc_bytes(OBJ_MEMORY(font), sizeof(double) * (font->LastChar - font->FirstChar + 1), "pdfi_font_create_widths(Widths)");
+        if (font->Widths == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto error;
+        }
+        memset(font->Widths, 0x00, sizeof(double) * (font->LastChar - font->FirstChar + 1));
+        for (i = 0; i < (font->LastChar - font->FirstChar + 1); i++) {
+            code = pdfi_array_get_number(ctx, (pdf_array *)obj, (uint64_t)i, &font->Widths[i]);
+            if (code < 0)
+                goto error;
+            font->Widths[i] *= scale;
+        }
+    }
+error:
+    pdfi_countdown(obj);
+    if (code < 0) {
+        gs_free_object(OBJ_MEMORY(font), font->Widths, "pdfi_font_create_widths(Widths)");
+        font->Widths = NULL;
+    }
+    return code;
+}
+
+void pdfi_font_set_first_last_char(pdf_context *ctx, pdf_dict *fontdict, pdf_font *font)
+{
+    double f;
+    int code;
+
+    if (fontdict == NULL) {
+        font->FirstChar = 0;
+        font->LastChar = 255;
+    }
+    else {
+        code = pdfi_dict_get_number(ctx, fontdict, "FirstChar", &f);
+        if (code < 0)
+            font->FirstChar = 0;
+        else
+            font->FirstChar = (int)(f < 0 ? 0 : f);
+
+        code = pdfi_dict_get_number(ctx, fontdict, "LastChar", &f);
+        if (code < 0)
+            font->LastChar = 255;
+        else
+            font->LastChar = (int)(f > 255 ? 255 : f);
+    }
 }
 
 /* Patch or create a new XUID based on the existing UID/XUID, a simple hash

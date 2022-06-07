@@ -1045,21 +1045,14 @@ ps_font_array_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
         !memcmp(s->cur[-1].val.name, PDF_PS_OPER_NAME_AND_LEN("Subrs"))) {
 
         if (s->cur[0].val.i > 0) {
-            if (priv->u.t1.Subrs != NULL) {
-                int i;
-                for (i = 0; i < priv->u.t1.NumSubrs; i++) {
-                    gs_free_object(mem, priv->u.t1.Subrs[i].data, "ps_font_array_func(Subrs[i])");
-                }
-                gs_free_object(mem, priv->u.t1.Subrs, "ps_font_array_func(Subrs)");
-            }
+            pdfi_countdown(priv->u.t1.Subrs);
 
-            priv->u.t1.Subrs = (gs_string *) gs_alloc_bytes(mem, s->cur[0].val.i *sizeof(gs_string), "ps_font_array_func(Subrs)");
-            if (priv->u.t1.Subrs == NULL) {
-                return_error(gs_error_VMerror);
+            pdfi_object_alloc(s->pdfi_ctx, PDF_ARRAY, (unsigned int)s->cur[0].val.i, (pdf_obj **)&priv->u.t1.Subrs);
+            if (code < 0) {
+                return code;
             }
-            memset(priv->u.t1.Subrs, 0x00, s->cur[0].val.i * sizeof(gs_string));
+            pdfi_countup(priv->u.t1.Subrs);
         }
-        priv->u.t1.NumSubrs = s->cur[0].val.i;
         code = pdf_ps_stack_pop(s, 1);
     }
     else if (pdf_ps_obj_has_type(&s->cur[-1], PDF_PS_OBJ_NAME) &&
@@ -1162,14 +1155,19 @@ pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 size = s->cur[0].val.i;
                 buf++;
                 if (buf + size < bufend) {
-                    priv->u.t1.Subrs[inx].data =
-                        gs_alloc_bytes(mem, size, "pdf_ps_RD_oper_func(subr string)");
-                    if (priv->u.t1.Subrs[inx].data == NULL) {
-                        (void)pdf_ps_stack_pop(s, 2);
-                        return_error(gs_error_VMerror);
+                    pdf_string *subr_str;
+
+                    code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, (unsigned int)size, (pdf_obj **)&subr_str);
+                    if (code < 0) {
+                        return code;
                     }
-                    memcpy(priv->u.t1.Subrs[inx].data, buf, size);
-                    priv->u.t1.Subrs[inx].size = size;
+                    memcpy(subr_str->data, buf, size);
+                    pdfi_countup(subr_str);
+                    code = pdfi_array_put(s->pdfi_ctx, priv->u.t1.Subrs, inx, (pdf_obj *)subr_str);
+                    if (code < 0) {
+                        pdfi_countdown(subr_str);
+                        return code;
+                    }
                 }
             }
         }

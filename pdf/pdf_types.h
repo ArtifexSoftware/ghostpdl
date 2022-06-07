@@ -58,6 +58,7 @@ typedef enum pdf_obj_type_e {
     PDF_DICT_MARK = '<',
     PDF_PROC_MARK = '{',
     PDF_CMAP = 'C',
+    PDF_BUFFER = 'B',
     /* Lastly, for the benefit of duplicate colour space identification, we store either
      * a name for a colour space, or if there is no name, the context (we can get the
      * context from the name object if there is one). We need to be able to tell if a
@@ -136,6 +137,16 @@ typedef struct pdf_name_s {
     uint32_t length;
     unsigned char data[PDF_NAME_DECLARED_LENGTH];
 } pdf_name;
+
+/* For storing arbitrary byte arrays where the length may be
+   greater than PDF_NAME_DECLARED_LENGTH - prevents static
+   alalysis tools complaining if we just used pdf_string
+ */
+typedef struct pdf_buffer_s {
+    pdf_obj_common;
+    uint32_t length;
+    unsigned char *data;
+} pdf_buffer;
 
 typedef enum pdf_key_e {
 #include "pdf_tokens.h"

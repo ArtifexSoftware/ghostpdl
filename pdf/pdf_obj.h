@@ -93,4 +93,22 @@ pdfi_obj_to_int(pdf_context *ctx, pdf_obj *obj, int64_t *i)
     return 0;
 }
 
+/* NOTE: the buffer object takes ownership of "data" */
+static inline int
+pdfi_buffer_set_data(pdf_obj *o, byte *data, int32_t length)
+{
+    pdf_buffer *b = (pdf_buffer *)o;
+    if (pdfi_type_of(b) != PDF_BUFFER) {
+        return_error(gs_error_typecheck);
+    }
+
+    if (b->data) {
+        gs_free_object(OBJ_MEMORY(b), b->data, "pdfi_buffer_set_data(data)");
+    }
+    b->data = data;
+    b->length = length;
+    return 0;
+}
+
+
 #endif

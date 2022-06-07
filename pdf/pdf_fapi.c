@@ -254,7 +254,7 @@ pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, uns
             {
                 if (pfont->FontType == ft_encrypted2) {
                     pdf_font_cff *pdffont2 = (pdf_font_cff *)pfont->client_data;
-                    *ret = pdffont2->NumGlobalSubrs;
+                    *ret = pdffont2->GlobalSubrs == NULL ? 0 : pdfi_array_size(pdffont2->GlobalSubrs);
                 }
                 else {
                     *ret = 0;
@@ -266,11 +266,11 @@ pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, uns
             {
                 if (pfont->FontType == ft_encrypted) {
                     pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
-                    *ret = pdffont1->NumSubrs;
+                    *ret = pdffont1->Subrs == NULL ? 0 : pdfi_array_size(pdffont1->Subrs);
                 }
                 else if (pfont->FontType == ft_encrypted2) {
                     pdf_font_cff *pdffont2 = (pdf_font_cff *)pfont->client_data;
-                    *ret = pdffont2->NumSubrs;
+                    *ret = pdffont2->Subrs == NULL ? 0 : pdfi_array_size(pdffont2->Subrs);
                 }
                 else {
                     *ret = 0;
@@ -449,8 +449,13 @@ pdfi_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index, un
                     pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
                     int i;
                     *ret = 0;
-                    for (i = 0; i < pdffont1->NumSubrs; i++) {
-                        *ret += pdffont1->Subrs[i].size;
+                    for (i = 0; i < (pdffont1->Subrs == NULL ? 0 : pdfi_array_size(pdffont1->Subrs)); i++) {
+                        pdf_string *subr_str = NULL;
+                        code = pdfi_array_get_type(pdffont1->ctx, pdffont1->Subrs, i, PDF_STRING, (pdf_obj **)&subr_str);
+                        if (code >= 0) {
+                             *ret += subr_str->length;
+                        }
+                        pdfi_countdown(subr_str);
                     }
                 }
             }
@@ -675,7 +680,7 @@ pdfi_fapi_get_gsubr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
     int code = 0;
     if (pfont->FontType == ft_encrypted2) {
         pdf_font_cff *pdffont2 = (pdf_font_cff *)pfont->client_data;
-        if (index > pdffont2->NumGlobalSubrs) {
+        if (index > (pdffont2->GlobalSubrs == NULL ? 0 : pdfi_array_size(pdffont2->GlobalSubrs))) {
             code = gs_error_rangecheck;
         }
         else {
@@ -716,27 +721,35 @@ pdfi_fapi_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
 
     if (pfont->FontType == ft_encrypted) {
         pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
-        if (index > pdffont1->NumSubrs) {
+        if (index > (pdffont1->Subrs == NULL ? 0 : pdfi_array_size(pdffont1->Subrs))) {
             code = gs_note_error(gs_error_rangecheck);
         }
         else {
             int leniv = (pfont->data.lenIV > 0 ? pfont->data.lenIV : 0);
-            if (pdffont1->Subrs[index].size > 0) {
-                 code = pdffont1->Subrs[index].size - leniv;
+            pdf_string *subr_str = NULL;
+
+            code = pdfi_array_get_type(pdffont1->ctx, pdffont1->Subrs, index, PDF_STRING, (pdf_obj **)&subr_str);
+            if (code >= 0) {
+                 code = subr_str->length - leniv;
                  if (buf && buf_length >= code) {
                      if (ff->need_decrypt && pfont->data.lenIV >= 0) {
-                         decode_bytes(buf, pdffont1->Subrs[index].data, code + leniv, pfont->data.lenIV);
+                         decode_bytes(buf, subr_str->data, code + leniv, pfont->data.lenIV);
                      }
                      else {
-                         memcpy(buf, pdffont1->Subrs[index].data, code);
+                         memcpy(buf, subr_str->data, code);
                      }
                  }
             }
+            else {
+                /* Ignore invalid or missing subrs */
+                code = 0;
+            }
+            pdfi_countdown(subr_str);
         }
     }
     else if (pfont->FontType == ft_encrypted2) {
         pdf_font_cff *pdffont2 = (pdf_font_cff *)pfont->client_data;
-        if (index > pdffont2->NumSubrs) {
+        if (index > (pdffont2->Subrs == NULL ? 0 : pdfi_array_size(pdffont2->Subrs))) {
             code = gs_error_rangecheck;
         }
         else {
@@ -782,14 +795,23 @@ pdfi_fapi_get_raw_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
 
     if (pfont->FontType == ft_encrypted) {
         pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
-        if (index > pdffont1->NumSubrs) {
+        if (index > (pdffont1->Subrs == NULL ? 0 : pdfi_array_size(pdffont1->Subrs))) {
             code = gs_error_rangecheck;
         }
         else {
-            code = pdffont1->Subrs[index].size;
-            if (buf && buf_length >= code) {
-                memcpy(buf, pdffont1->Subrs[index].data, code);
+            pdf_string *subr_str = NULL;
+            code = pdfi_array_get_type(pdffont1->ctx, pdffont1->Subrs, index, PDF_STRING, (pdf_obj **)&subr_str);
+            if (code >= 0) {
+                code = subr_str->length;
+                if (buf && buf_length >= code) {
+                    memcpy(buf, subr_str->data, code);
+                }
             }
+            else {
+                /* Ignore missing or invalid subrs */
+                code = 0;
+            }
+            pdfi_countdown(subr_str);
         }
     }
     return code;
@@ -825,8 +847,8 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 
         if (pttfont->substitute == false) {
             gid = ccode;
-            if (pttfont->cidtogidmap.size > (ccode << 1) + 1) {
-                gid = pttfont->cidtogidmap.data[ccode << 1] << 8 | pttfont->cidtogidmap.data[(ccode << 1) + 1];
+            if (pttfont->cidtogidmap != NULL && pttfont->cidtogidmap->length > (ccode << 1) + 1) {
+                gid = pttfont->cidtogidmap->data[ccode << 1] << 8 | pttfont->cidtogidmap->data[(ccode << 1) + 1];
             }
             cr->client_char_code = ccode;
             cr->char_codes[0] = gid;
@@ -1287,8 +1309,8 @@ pdfi_fapi_retrieve_tt_font(gs_fapi_font * ff, void **buf, int *buf_size)
     gs_font_type42 *pfonttt = (gs_font_type42 *) ff->client_font_data;
     pdf_font_truetype *pdfttf = (pdf_font_truetype *)pfonttt->client_data;
 
-    *buf = pdfttf->sfnt.data;
-    *buf_size = pdfttf->sfnt.size;
+    *buf = pdfttf->sfnt->data;
+    *buf_size = pdfttf->sfnt->length;
 
     return 0;
 }
@@ -1472,8 +1494,8 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
         fdatap = NULL;
     }
     else if (font->pdfi_font_type == e_pdf_cidfont_type2) {
-        fdatap->data = ((pdf_cidfont_type2 *)font)->sfnt.data;
-        fdatap->size = ((pdf_cidfont_type2 *)font)->sfnt.size;
+        fdatap->data = ((pdf_cidfont_type2 *)font)->sfnt->data;
+        fdatap->size = ((pdf_cidfont_type2 *)font)->sfnt->length;
     }
     else {
         fdatap->data = font_data;

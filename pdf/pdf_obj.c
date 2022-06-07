@@ -36,6 +36,7 @@
 int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pdf_obj **obj)
 {
     int bytes = 0;
+    int code = 0;
 
     switch(type) {
         case PDF_ARRAY_MARK:
@@ -50,6 +51,9 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         case PDF_STRING:
         case PDF_NAME:
             bytes = sizeof(pdf_string) + size - PDF_NAME_DECLARED_LENGTH;
+            break;
+        case PDF_BUFFER:
+            bytes = sizeof(pdf_buffer);
             break;
         case PDF_ARRAY:
             bytes = sizeof(pdf_array);
@@ -75,11 +79,14 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         case PDF_NULL:
         case PDF_BOOL:
         default:
-            return_error(gs_error_typecheck);
+            code = gs_note_error(gs_error_typecheck);
+            goto error_out;
     }
     *obj = (pdf_obj *)gs_alloc_bytes(ctx->memory, bytes, "pdfi_object_alloc");
-    if (*obj == NULL)
-        return_error(gs_error_VMerror);
+    if (*obj == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error_out;
+    }
 
     memset(*obj, 0x00, bytes);
     (*obj)->ctx = ctx;
@@ -106,6 +113,24 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         case PDF_NAME:
             ((pdf_string *)*obj)->length = size;
             break;
+        case PDF_BUFFER:
+            {
+                pdf_buffer *b = (pdf_buffer *)*obj;
+               /* NOTE: size can be 0 if the caller wants to allocate the data area itself
+                */
+                if (size > 0) {
+                    b->data = gs_alloc_bytes(ctx->memory, size, "pdfi_object_alloc");
+                    if (b->data == NULL) {
+                        code = gs_note_error(gs_error_VMerror);
+                        goto error_out;
+                    }
+                }
+                else {
+                    b->data = NULL;
+                }
+                b->length = size;
+            }
+            break;
         case PDF_ARRAY:
             {
                 pdf_obj **values = NULL;
@@ -114,10 +139,8 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
                 if (size > 0) {
                     values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_object_alloc");
                     if (values == NULL) {
-                        gs_free_object(ctx->memory, *obj, "pdfi_object_alloc");
-                        gs_free_object(ctx->memory, values, "pdfi_object_alloc");
-                        *obj = NULL;
-                        return_error(gs_error_VMerror);
+                        code = gs_note_error(gs_error_VMerror);
+                        goto error_out;
                     }
                     ((pdf_array *)*obj)->values = values;
                     memset(((pdf_array *)*obj)->values, 0x00, size * sizeof(pdf_obj *));
@@ -132,9 +155,8 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
                 if (size > 0) {
                     entries = (pdf_dict_entry *)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_dict_entry), "pdfi_object_alloc");
                     if (entries == NULL) {
-                        gs_free_object(ctx->memory, *obj, "pdfi_object_alloc");
-                        *obj = NULL;
-                        return_error(gs_error_VMerror);
+                        code = gs_note_error(gs_error_VMerror);
+                        goto error_out;
                     }
                     ((pdf_dict *)*obj)->list = entries;
                     memset(((pdf_dict *)*obj)->list, 0x00, size * sizeof(pdf_dict_entry));
@@ -154,6 +176,10 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
     dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", (*obj)->type, (*obj)->UID);
 #endif
     return 0;
+error_out:
+    gs_free_object(ctx->memory, *obj, "pdfi_object_alloc");
+    *obj = NULL;
+    return code;
 }
 
 /* Create a PDF number object from a numeric value. Attempts to create
@@ -221,6 +247,14 @@ static void pdfi_free_stream(pdf_obj *o)
     gs_free_object(OBJ_MEMORY(o), o, "pdfi_free_stream");
 }
 
+static void pdfi_free_buffer(pdf_obj *o)
+{
+    pdf_buffer *b = (pdf_buffer *)o;
+
+    gs_free_object(OBJ_MEMORY(b), b->data, "pdfi_free_buffer(data)");
+    gs_free_object(OBJ_MEMORY(o), o, "pdfi_free_buffer");
+}
+
 void pdfi_free_object(pdf_obj *o)
 {
     if (o == NULL)
@@ -239,6 +273,9 @@ void pdfi_free_object(pdf_obj *o)
         case PDF_STRING:
         case PDF_NAME:
             pdfi_free_namestring(o);
+            break;
+        case PDF_BUFFER:
+            pdfi_free_buffer(o);
             break;
         case PDF_ARRAY:
             pdfi_free_array(o);

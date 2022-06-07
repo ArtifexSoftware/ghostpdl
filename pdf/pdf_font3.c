@@ -223,6 +223,8 @@ int pdfi_free_font_type3(pdf_obj *font)
     pdfi_countdown(t3font->CharProcs);
     pdfi_countdown(t3font->Encoding);
     pdfi_countdown(t3font->ToUnicode);
+    pdfi_countdown(t3font->filename); /* Should never exist, but just in case */
+
     gs_free_object(OBJ_MEMORY(font), font, "Free type 3 font");
     return 0;
 }
@@ -230,10 +232,9 @@ int pdfi_free_font_type3(pdf_obj *font)
 
 int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_font **ppdffont)
 {
-    int code = 0, i, num_chars = 0;
+    int code = 0;
     pdf_font_type3 *font = NULL;
     pdf_obj *obj = NULL;
-    double f;
     pdf_obj *tounicode = NULL;
 
     *ppdffont = NULL;
@@ -271,67 +272,15 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto font3_error;
 
-    code = pdfi_dict_get_number(ctx, font_dict, "FirstChar", &f);
-    if (code < 0)
-        goto font3_error;
-    font->FirstChar = (int)f;
 
-    code = pdfi_dict_get_number(ctx, font_dict, "LastChar", &f);
-    if (code < 0)
-        goto font3_error;
-    font->LastChar = (int)f;
-
-    num_chars = (font->LastChar - font->FirstChar) + 1;
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, (pdf_obj **)&font->FontDescriptor);
     if (code < 0)
         goto font3_error;
 
-    if (font->FontDescriptor != NULL) {
-        code = pdfi_dict_knownget(ctx, font->FontDescriptor, "MissingWidth", &obj);
-        if (code > 0) {
-            if (pdfi_type_of(obj) == PDF_INT) {
-                font->MissingWidth = (double)((pdf_num *) obj)->value.i;
-            }
-            else if (pdfi_type_of(obj) == PDF_REAL) {
-                font->MissingWidth = ((pdf_num *) obj)->value.d;
-            }
-            else {
-                font->MissingWidth = 0;
-            }
-            pdfi_countdown(obj);
-            obj = NULL;
-        }
-        else {
-            font->MissingWidth = 0;
-        }
-    }
-    else {
-        font->MissingWidth = 1000;
-    }
+    pdfi_font_set_first_last_char(ctx, font_dict, (pdf_font *)font);
+    /* ignore errors with widths... for now */
+    (void)pdfi_font_create_widths(ctx, font_dict, (pdf_font*)font, 1.0);
 
-    code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, (pdf_obj **)&obj);
-    if (code < 0)
-        goto font3_error;
-    if (code > 0) {
-        if (num_chars != pdfi_array_size((pdf_array *)obj)) {
-            code = gs_note_error(gs_error_rangecheck);
-            goto font3_error;
-        }
-
-        font->Widths = (double *)gs_alloc_bytes(ctx->memory, sizeof(double) * num_chars, "type 3 font Widths array");
-        if (font->Widths == NULL) {
-            code = gs_note_error(gs_error_VMerror);
-            goto font3_error;
-        }
-        memset(font->Widths, 0x00, sizeof(double) * num_chars);
-        for (i = 0; i < num_chars; i++) {
-            code = pdfi_array_get_number(ctx, (pdf_array *)obj, (uint64_t)i, &font->Widths[i]);
-            if (code < 0)
-                goto font3_error;
-        }
-    }
-    pdfi_countdown(obj);
-    obj = NULL;
 
     code = pdfi_dict_get(ctx, font_dict, "Encoding", &obj);
     if (code < 0)

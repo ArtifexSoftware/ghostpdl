@@ -60,7 +60,7 @@ typedef struct pdfi_cff_font_priv_s {
     pdf_array *W;
     pdf_array *DW2;
     pdf_array *W2;
-    gs_string cidtogidmap;
+    pdf_buffer *cidtogidmap;
     pdf_array *FDArray;
     /* The registry and ordering strings in gs_font_cid0_data are just references to
        strings assumed to be managed be managed by the interpreter - so we have to stash
@@ -301,9 +301,9 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
         }
         if (l > 0) {
             pdf_cidfont_type0 *cffcidfont = (pdf_cidfont_type0 *) pdffont;
-            if (cffcidfont->cidtogidmap.size > 0) {
-                for (j = (cffcidfont->cidtogidmap.size >> 1) - 1; j >= 0; j--) {
-                    if (val == (cffcidfont->cidtogidmap.data[j << 1] << 8 | cffcidfont->cidtogidmap.data[(j << 1) + 1])) {
+            if (cffcidfont->cidtogidmap != NULL && cffcidfont->cidtogidmap->length > 0) {
+                for (j = (cffcidfont->cidtogidmap->length >> 1) - 1; j >= 0; j--) {
+                    if (val == (cffcidfont->cidtogidmap->data[j << 1] << 8 | cffcidfont->cidtogidmap->data[(j << 1) + 1])) {
                         val = j;
                         break;
                     }
@@ -432,8 +432,8 @@ pdfi_cff_cid_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *p
     else
         gid = glyph - GS_MIN_CID_GLYPH;
 
-    if (pdffont9->cidtogidmap.size > (gid << 1) + 1) {
-        gid = pdffont9->cidtogidmap.data[gid << 1] << 8 | pdffont9->cidtogidmap.data[(gid << 1) + 1];
+    if (pdffont9->cidtogidmap != NULL && pdffont9->cidtogidmap->length > (gid << 1) + 1) {
+        gid = pdffont9->cidtogidmap->data[gid << 1] << 8 | pdffont9->cidtogidmap->data[(gid << 1) + 1];
     }
 
     l = gs_snprintf(nbuf, sizeof(nbuf), "%" PRId64, gid);
@@ -1874,9 +1874,8 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
 
                 /* Check the subrs index */
                 pdffont->Subrs = NULL;
-                pdffont->subrs = fdptpriv.pdfcffpriv.subrs;
-                if (pdffont->subrs) {
-                    p = pdfi_count_cff_index(pdffont->subrs, e, &pdffont->NumSubrs);
+                if (fdptpriv.pdfcffpriv.subrs) {
+                    p = pdfi_count_cff_index(fdptpriv.pdfcffpriv.subrs, e, &pdffont->NumSubrs);
                     if (!p) {
                         pdffont->Subrs = NULL;
                         pdffont->NumSubrs = 0;
@@ -1892,7 +1891,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                         for (j = 0; j < pdffont->NumSubrs; j++) {
                             pdf_string *subrstr;
 
-                            p = pdfi_find_cff_index(pdffont->subrs, e, j, &strp, &stre);
+                            p = pdfi_find_cff_index(fdptpriv.pdfcffpriv.subrs, e, j, &strp, &stre);
                             if (p) {
                                 code = pdfi_object_alloc(ctx, PDF_STRING, stre - strp, (pdf_obj **) &subrstr);
                                 if (code >= 0) {
@@ -2265,8 +2264,13 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
         fbuflen = tlen;
     }
 
-    code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
-    if (code < 0) {
+    if (font_dict != NULL) {
+        code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
+        if (code < 0) {
+            fontdesc = NULL;
+        }
+    }
+    else {
         fontdesc = NULL;
     }
 
@@ -2353,9 +2357,6 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffcid->PDF_font = font_dict;
                 pdfi_countup(font_dict);
 
-                cffcid->cidtogidmap.data = NULL;
-                cffcid->cidtogidmap.size = 0;
-
                 pfont->client_data = cffcid;
 
                 cffcid->object_num = font_dict->object_num;
@@ -2379,23 +2380,35 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
 
                 pfont->cidata.common.CIDCount = cffpriv.pdfcffpriv.cidcount;
 
-                cffcid->cidtogidmap.data = NULL;
-                cffcid->cidtogidmap.size = 0;
+                cffcid->cidtogidmap = NULL;
                 code = pdfi_dict_knownget(ctx, font_dict, "CIDToGIDMap", (pdf_obj **) &obj);
                 if (code > 0) {
                     /* CIDToGIDMap can only be a stream or a name, and if it's a name
                        it's only permitted to be "/Identity", so ignore it
                      */
-                    int64_t size = 0;
                     if (pdfi_type_of(obj) == PDF_STREAM) {
-                        code = pdfi_stream_to_buffer(ctx, (pdf_stream *) obj, &(cffcid->cidtogidmap.data), &size);
+                        byte *d;
+                        int64_t sz;
+
+                        code = pdfi_object_alloc(ctx, PDF_BUFFER, 0, (pdf_obj **)&cffcid->cidtogidmap);
+                        if (code < 0) {
+                            goto error;
+                        }
+                        pdfi_countup(cffcid->cidtogidmap);
+                        code = pdfi_stream_to_buffer(ctx, (pdf_stream *)obj, &d, &sz);
+                        if (code < 0) {
+                            goto error;
+                        }
+                        code = pdfi_buffer_set_data((pdf_obj *)cffcid->cidtogidmap, d, (int32_t)sz);
+                        if (code < 0) {
+                            goto error;
+                        }
                     }
                     pdfi_countdown(obj);
                     obj = NULL;
-                    cffcid->cidtogidmap.size = size;
 
-                    if (size > 0) {
-                        pfont->cidata.common.CIDCount = size >> 1;
+                    if (cffcid->cidtogidmap != NULL && cffcid->cidtogidmap->length > 0) {
+                        pfont->cidata.common.CIDCount = cffcid->cidtogidmap->length >> 1;
                     }
                 }
                 pfont->cidata.common.MaxCID = pfont->cidata.common.CIDCount - 1;
@@ -2576,22 +2589,34 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffcid->PDF_font = font_dict;
                 pdfi_countup(font_dict);
 
-                cffcid->cidtogidmap.data = NULL;
-                cffcid->cidtogidmap.size = 0;
+                cffcid->cidtogidmap = NULL;
                 code = pdfi_dict_knownget(ctx, font_dict, "CIDToGIDMap", (pdf_obj **) &obj);
                 if (code > 0) {
+                    byte *d;
+                    int64_t sz;
                     /* CIDToGIDMap can only be a stream or a name, and if it's a name
                        it's only permitted to be "/Identity", so ignore it
                      */
-                    int64_t size = 0;
                     if (pdfi_type_of(obj) == PDF_STREAM) {
-                        code = pdfi_stream_to_buffer(ctx, (pdf_stream *) obj, &(cffcid->cidtogidmap.data), (int64_t *) &size);
+                        code = pdfi_object_alloc(ctx, PDF_BUFFER, 0, (pdf_obj **)&cffcid->cidtogidmap);
+                        if (code < 0) {
+                            goto error;
+                        }
+                        pdfi_countup(cffcid->cidtogidmap);
+                        code = pdfi_stream_to_buffer(ctx, (pdf_stream *)obj, &d, &sz);
+                        if (code < 0) {
+                            goto error;
+                        }
+                        code = pdfi_buffer_set_data((pdf_obj *)cffcid->cidtogidmap, d, (int32_t)sz);
+                        if (code < 0) {
+                            goto error;
+                        }
                     }
                     pdfi_countdown(obj);
                     obj = NULL;
-                    cffcid->cidtogidmap.size = size;
-                    if (size > 0) {
-                        pfont->cidata.common.CIDCount = size >> 1;
+
+                    if (cffcid->cidtogidmap != NULL && cffcid->cidtogidmap->length > 0) {
+                        pfont->cidata.common.CIDCount = cffcid->cidtogidmap->length >> 1;
                     }
                 }
                 pfont->cidata.common.MaxCID = pfont->cidata.common.CIDCount - 1;
@@ -2639,9 +2664,8 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 pdf_font_cff *cfffont;
                 gs_font_type1 *pfont = NULL;
                 pdf_obj *tounicode = NULL;
-                double x_scale;
 
-                code = pdfi_alloc_cff_font(ctx, &cfffont, font_dict->object_num, false);
+                code = pdfi_alloc_cff_font(ctx, &cfffont, font_dict != NULL ? font_dict->object_num : 0, false);
                 pfont = (gs_font_type1 *) cfffont->pfont;
                 ppdfont = (pdf_font *) cfffont;
 
@@ -2653,12 +2677,15 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
 
                 pfont->procs.glyph_info = pdfi_cff_glyph_info;
 
-                cfffont->object_num = font_dict->object_num;
-                cfffont->generation_num = font_dict->generation_num;
-                cfffont->indirect_num = font_dict->indirect_num;
-                cfffont->indirect_gen = font_dict->indirect_gen;
+                if (font_dict) {
+                    cfffont->object_num = font_dict->object_num;
+                    cfffont->generation_num = font_dict->generation_num;
+                    cfffont->indirect_num = font_dict->indirect_num;
+                    cfffont->indirect_gen = font_dict->indirect_gen;
 
-                (void)pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
+                    (void)pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
+                }
+
                 cfffont->BaseFont = basefont;
                 cfffont->Name = basefont;
                 pdfi_countup(basefont);
@@ -2696,89 +2723,21 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     cfffont->descflags |= 4;
                 }
 
-                code = pdfi_dict_knownget_type(ctx, font_dict, "FirstChar", PDF_INT, &tmp);
-                if (code == 1) {
-                    cfffont->FirstChar = ((pdf_num *) tmp)->value.i;
-                    pdfi_countdown(tmp);
-                    tmp = NULL;
-                }
-                else {
-                    cfffont->FirstChar = 0;
-                }
-                code = pdfi_dict_knownget_type(ctx, font_dict, "LastChar", PDF_INT, &tmp);
-                if (code == 1) {
-                    cfffont->LastChar = ((pdf_num *) tmp)->value.i;
-                    pdfi_countdown(tmp);
-                    tmp = NULL;
-                }
-                else {
-                    cfffont->LastChar = 255;
-                }
-
-                cfffont->fake_glyph_names = (gs_string *) gs_alloc_bytes(ctx->memory, cfffont->LastChar * sizeof(gs_string), "pdfi_read_cff_font: fake_glyph_names");
-                if (!cfffont->fake_glyph_names) {
-                    code = gs_note_error(gs_error_VMerror);
-                    goto error;
-                }
-                memset(cfffont->fake_glyph_names, 0x00, cfffont->LastChar * sizeof(gs_string));
+                pdfi_font_set_first_last_char(ctx, font_dict, (pdf_font *)cfffont);
 
                 /* Widths are defined assuming a 1000x1000 design grid, but we apply
                  * them in font space - so undo the 1000x1000 scaling, and apply
                  * the inverse of the font's x scaling
                  */
-                x_scale = 0.001 / hypot(pfont->FontMatrix.xx, pfont->FontMatrix.xy);
-                if (cfffont->FontDescriptor != NULL) {
-                    code = pdfi_dict_knownget(ctx, cfffont->FontDescriptor, "MissingWidth", &tmp);
-                    if (code > 0) {
-                        if (pdfi_type_of(tmp) == PDF_INT) {
-                            cfffont->MissingWidth = ((pdf_num *) tmp)->value.i * x_scale;
-                        }
-                        else if (pdfi_type_of(tmp) == PDF_REAL) {
-                            cfffont->MissingWidth = ((pdf_num *) tmp)->value.d * x_scale;
-                        }
-                        else {
-                            cfffont->MissingWidth = 0;
-                        }
-                        pdfi_countdown(tmp);
-                        tmp = NULL;
-                    }
-                    else {
-                        cfffont->MissingWidth = 0;
-                    }
-                }
-                else {
-                    cfffont->MissingWidth = 1000 * x_scale;
+                if (font_dict != NULL) {
+                    /* ignore errors with widths... for now */
+                    (void)pdfi_font_create_widths(ctx, font_dict, (pdf_font*)cfffont, (double)(0.001 / hypot(pfont->FontMatrix.xx, pfont->FontMatrix.xy)));
                 }
 
-                code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, &tmp);
-                if (code > 0) {
-                    int i;
-                    int num_chars = cfffont->LastChar - cfffont->FirstChar + 1;
-
-                    if (num_chars != pdfi_array_size((pdf_array *) tmp)) {
-                        pdfi_countdown(tmp);
-                        code = gs_note_error(gs_error_rangecheck);
-                        goto error;
-                    }
-
-                    cfffont->Widths = (double *)gs_alloc_bytes(ctx->memory, sizeof(double) * num_chars, "Type 1C font Widths array");
-                    if (cfffont->Widths == NULL) {
-                        code = gs_note_error(gs_error_VMerror);
-                        goto error;
-                    }
-                    memset(cfffont->Widths, 0x00, sizeof(double) * num_chars);
-
-                    for (i = 0; i < num_chars; i++) {
-                        code = pdfi_array_get_number(ctx, (pdf_array *) tmp, (uint64_t) i, &cfffont->Widths[i]);
-                        if (code < 0)
-                            goto error;
-                        cfffont->Widths[i] *= x_scale;
-                    }
-                }
-                pdfi_countdown(tmp);
-
-                tmp = NULL;
-                code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
+                if (font_dict != NULL)
+                    code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
+                else
+                    code = gs_error_undefined;
                 if (code == 1) {
                     if ((cfffont->descflags & 4) != 0 && pdfi_type_of(tmp) == PDF_DICT) {
                         code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)cffpriv.pdfcffpriv.Encoding, (pdf_obj **) &cfffont->Encoding);
@@ -2810,7 +2769,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     cfffont->Encoding = cffpriv.pdfcffpriv.Encoding;
                     cffpriv.pdfcffpriv.Encoding = NULL;
                 }
-                if (ctx->args.ignoretounicode != true) {
+                if (ctx->args.ignoretounicode != true && font_dict != NULL) {
                     code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
                     if (code >= 0 && pdfi_type_of(tounicode) == PDF_STREAM) {
                         pdf_cmap *tu = NULL;
@@ -2916,6 +2875,167 @@ pdfi_read_type1C_font(pdf_context *ctx, pdf_dict *font_dict,
 }
 
 int
+pdfi_copy_cff_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pdf_font **tpdffont)
+{
+    int code = 0;
+    pdf_font_cff *font = NULL;
+    gs_font_type1 *spfont1 = (gs_font_type1 *) spdffont->pfont;
+    gs_font_type1 *dpfont1;
+    gs_id t_id;
+    pdf_obj *tmp;
+
+    if (font_dict == NULL)
+        return_error(gs_error_invalidfont);
+
+    code = pdfi_alloc_cff_font(ctx, &font, font_dict->object_num, false);
+    if (code < 0)
+        return code;
+    dpfont1 = (gs_font_type1 *) font->pfont;
+
+    t_id = dpfont1->id;
+    memcpy(dpfont1, spfont1, sizeof(gs_font_type1));
+    dpfont1->id = t_id;
+    dpfont1->FAPI = NULL;
+    dpfont1->FAPI_font_data = NULL;
+    dpfont1->notify_list.memory = NULL;
+    dpfont1->notify_list.first = NULL;
+    gs_notify_init(&dpfont1->notify_list, dpfont1->memory);
+
+    memcpy(font, spdffont, sizeof(pdf_font_type1));
+    font->refcnt = 1;
+    font->pfont = (gs_font_base *)dpfont1;
+    dpfont1->client_data = (void *)font;
+    font->filename = NULL;
+
+    font->PDF_font = font_dict;
+    font->object_num = font_dict->object_num;
+    font->generation_num = font_dict->generation_num;
+    pdfi_countup(font->PDF_font);
+
+    /* We want basefont and descriptor, but we can live without them */
+    font->BaseFont = NULL;
+    (void)pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &font->BaseFont);
+    font->FontDescriptor = NULL;
+    (void)pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, (pdf_obj **)&font->FontDescriptor);
+
+    pdfi_countup(font->Name);
+    pdfi_countup(font->CharStrings);
+    pdfi_countup(font->Subrs);
+    pdfi_countup(font->GlobalSubrs);
+
+    if (font->BaseFont != NULL && ((pdf_name *)font->BaseFont)->length <= gs_font_name_max) {
+        memcpy(dpfont1->key_name.chars, ((pdf_name *)font->BaseFont)->data, ((pdf_name *)font->BaseFont)->length);
+        dpfont1->key_name.size = ((pdf_name *)font->BaseFont)->length;
+        memcpy(dpfont1->font_name.chars, ((pdf_name *)font->BaseFont)->data, ((pdf_name *)font->BaseFont)->length);
+        dpfont1->font_name.size = ((pdf_name *)font->BaseFont)->length;
+    }
+
+    font->Encoding = NULL;
+    font->ToUnicode = NULL;
+    font->Widths = NULL;
+
+    pdfi_font_set_first_last_char(ctx, font_dict, (pdf_font *)font);
+    (void)pdfi_font_create_widths(ctx, font_dict, (pdf_font *)font, (double)(0.001 / hypot(dpfont1->FontMatrix.xx, dpfont1->FontMatrix.xy)));
+
+    font->descflags = 0;
+    if (font->FontDescriptor != NULL) {
+        code = pdfi_dict_get_int(ctx, font->FontDescriptor, "Flags", &font->descflags);
+        if (code >= 0) {
+            /* If both the symbolic and non-symbolic flag are set,
+               believe that latter.
+             */
+            if ((font->descflags & 32) != 0)
+                font->descflags = (font->descflags & ~4);
+        }
+    }
+
+    if (pdfi_font_known_symbolic(font->BaseFont)) {
+        font->descflags |= 4;
+    }
+
+
+    tmp = NULL;
+    code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
+    if (code == 1) {
+        if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT) && (font->descflags & 4) == 0) {
+            code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & font->Encoding);
+            if (code >= 0)
+                code = 1;
+        }
+        else if (pdfi_type_of(tmp) == PDF_DICT && (font->descflags & 4) != 0) {
+            code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
+            if (code >= 0)
+                code = 1;
+        }
+        else
+            code = gs_error_undefined;
+        pdfi_countdown(tmp);
+        tmp = NULL;
+        if (code == 1) {
+            /* Since the underlying font stream can be shared between font descriptors,
+               and the font descriptors can be shared between font objects, if we change
+               the encoding, we can't share cached glyphs with other instances of this
+               underlying font, so invalidate the UniqueID/XUID so the glyph cache won't
+               try.
+            */
+            if (uid_is_XUID(&font->pfont->UID))
+                uid_free(&font->pfont->UID, font->pfont->memory, "pdfi_read_type1_font");
+            uid_set_invalid(&font->pfont->UID);
+        }
+    }
+    else {
+        pdfi_countdown(tmp);
+        tmp = NULL;
+        code = 0;
+    }
+
+    if (code <= 0) {
+        font->Encoding = spdffont->Encoding;
+        pdfi_countup(font->Encoding);
+    }
+
+    if (ctx->args.ignoretounicode != true) {
+        code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tmp);
+        if (code >= 0 && pdfi_type_of(tmp) == PDF_STREAM) {
+            pdf_cmap *tu = NULL;
+            code = pdfi_read_cmap(ctx, tmp, &tu);
+            pdfi_countdown(tmp);
+            tmp = (pdf_obj *)tu;
+        }
+        if (code < 0 || (tmp != NULL && pdfi_type_of(tmp) != PDF_CMAP)) {
+            pdfi_countdown(tmp);
+            tmp = NULL;
+            code = 0;
+        }
+    }
+    else {
+        tmp = NULL;
+    }
+    font->ToUnicode = tmp;
+
+    code = gs_definefont(ctx->font_dir, (gs_font *) font->pfont);
+    if (code < 0) {
+        goto error;
+    }
+
+    code = pdfi_fapi_passfont((pdf_font *) font, 0, NULL, NULL, NULL, 0);
+    if (code < 0) {
+        goto error;
+    }
+    /* object_num can be zero if the dictionary was defined inline */
+    if (font->object_num != 0) {
+        (void)replace_cache_entry(ctx, (pdf_obj *) font);
+    }
+
+    *tpdffont = (pdf_font *)font;
+
+error:
+    if (code < 0)
+        pdfi_countdown(font);
+    return code;
+}
+
+int
 pdfi_free_font_cff(pdf_obj *font)
 {
     pdf_font_cff *pdfontcff = (pdf_font_cff *) font;
@@ -2931,8 +3051,8 @@ pdfi_free_font_cff(pdf_obj *font)
     pdfi_countdown(pdfontcff->GlobalSubrs);
     pdfi_countdown(pdfontcff->Encoding);
     pdfi_countdown(pdfontcff->ToUnicode);
+    pdfi_countdown(pdfontcff->filename);
 
-    gs_free_object(OBJ_MEMORY(font), pdfontcff->fake_glyph_names, "Type 2 fake_glyph_names");
     gs_free_object(OBJ_MEMORY(font), pdfontcff->Widths, "Type 2 fontWidths");
     gs_free_object(OBJ_MEMORY(font), pdfontcff, "pdfi_free_font_cff(pbfont)");
 
@@ -2966,8 +3086,9 @@ pdfi_free_font_cidtype0(pdf_obj *font)
     pdfi_countdown(pdfont0->FDArray);
     pdfi_countdown(pdfont0->registry);
     pdfi_countdown(pdfont0->ordering);
+    pdfi_countdown(pdfont0->cidtogidmap);
+    pdfi_countdown(pdfont0->filename);
 
-    gs_free_object(OBJ_MEMORY(font), pdfont0->cidtogidmap.data, "pdfi_free_font_cff(cidtogidmap.data)");
     gs_free_object(OBJ_MEMORY(font), pdfont0, "pdfi_free_font_cff(pbfont)");
 
     return 0;

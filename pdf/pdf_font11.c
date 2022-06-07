@@ -36,12 +36,12 @@ static int pdfi_cidtype2_string_proc(gs_font_type42 * pfont, ulong offset, uint 
     pdf_cidfont_type2 *ttfont = (pdf_cidfont_type2 *)pfont->client_data;
     int code = 0;
 
-    if (offset + length > ttfont->sfnt.size) {
+    if (offset + length > ttfont->sfnt->length) {
         *pdata = NULL;
         code = gs_note_error(gs_error_invalidfont);
     }
     else {
-        *pdata = ttfont->sfnt.data + offset;
+        *pdata = ttfont->sfnt->data + offset;
     }
     return code;
 }
@@ -51,8 +51,8 @@ static int pdfi_cidtype2_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
     pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)pfont->client_data;
     uint gid = glyph - GS_MIN_CID_GLYPH;
 
-    if (pdffont11->cidtogidmap.size > (gid << 1) + 1) {
-        gid = pdffont11->cidtogidmap.data[gid << 1] << 8 | pdffont11->cidtogidmap.data[(gid << 1) + 1];
+    if (pdffont11->cidtogidmap != NULL && pdffont11->cidtogidmap->length > (gid << 1) + 1) {
+        gid = pdffont11->cidtogidmap->data[gid << 1] << 8 | pdffont11->cidtogidmap->data[(gid << 1) + 1];
     }
 
     return (int)gid;
@@ -69,8 +69,8 @@ static uint pdfi_cidtype2_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
     else {
         if (glyph < GS_MIN_GLYPH_INDEX) {
             gid = glyph - GS_MIN_CID_GLYPH;
-            if (pdffont11->cidtogidmap.size > 0) {
-                gid = pdffont11->cidtogidmap.data[gid << 1] << 8 | pdffont11->cidtogidmap.data[(gid << 1) + 1];
+            if (pdffont11->cidtogidmap != NULL && pdffont11->cidtogidmap->length > 0) {
+                gid = pdffont11->cidtogidmap->data[gid << 1] << 8 | pdffont11->cidtogidmap->data[(gid << 1) + 1];
             }
         }
         else {
@@ -151,15 +151,15 @@ pdfi_cidtype2_enumerate_glyph(gs_font *font, int *pindex,
     if (*pindex <= 0)
         *pindex = 0;
 
-    if (pdffont11->cidtogidmap.size > 0) {
+    if (pdffont11->cidtogidmap != NULL && pdffont11->cidtogidmap->length > 0) {
         do {
-            *pglyph = pdffont11->cidtogidmap.data[(*pindex) << 1] << 8 | pdffont11->cidtogidmap.data[((*pindex) << 1) + 1];
+            *pglyph = pdffont11->cidtogidmap->data[(*pindex) << 1] << 8 | pdffont11->cidtogidmap->data[((*pindex) << 1) + 1];
             (*pindex)++;
             if (*pglyph == 0 && *pindex == 1) /* notdef - special case */
                 break;
-        } while (*pglyph == 0 && ((*pindex) << 1) < pdffont11->cidtogidmap.size);
+        } while (*pglyph == 0 && ((*pindex) << 1) < pdffont11->cidtogidmap->length);
 
-        if (((*pindex) << 1) >= pdffont11->cidtogidmap.size) {
+        if (((*pindex) << 1) >= pdffont11->cidtogidmap->length) {
             *pindex = 0;
         }
         else {
@@ -312,9 +312,16 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     font->FontDescriptor = (pdf_dict *)fontdesc;
     fontdesc = NULL;
 
-    /* Ownership of buf is now part of the font and managed via its lifetime */
-    font->sfnt.data = buf;
-    font->sfnt.size = buflen;
+    code = pdfi_object_alloc(ctx, PDF_BUFFER, 0, (pdf_obj **)&font->sfnt);
+    if (code < 0) {
+        goto error;
+    }
+    pdfi_countup(font->sfnt);
+    code = pdfi_buffer_set_data((pdf_obj *)font->sfnt, buf, buflen);
+    if (code < 0) {
+        goto error;
+    }
+    buf = NULL;
 
     /* Strictly speaking BaseFont is required, but we can continue without one */
     code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, (pdf_obj **)&obj);
@@ -368,18 +375,26 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     code = pdfi_dict_knownget(ctx, font_dict, "CIDToGIDMap", (pdf_obj **)&obj);
     if (code > 0) {
-        font->cidtogidmap.data = NULL;
-        font->cidtogidmap.size = 0;
         /* CIDToGIDMap can only be a stream or a name, and if it's a name
            it's only permitted to be "/Identity", so ignore it
          */
         if (pdfi_type_of(obj) == PDF_STREAM) {
+            byte *d;
             int64_t sz;
-            code = pdfi_stream_to_buffer(ctx, (pdf_stream *)obj, &(font->cidtogidmap.data), &sz);
+
+            code = pdfi_object_alloc(ctx, PDF_BUFFER, 0, (pdf_obj **)&font->cidtogidmap);
             if (code < 0) {
                 goto error;
             }
-            font->cidtogidmap.size = (uint)sz;
+            pdfi_countup(font->cidtogidmap);
+            code = pdfi_stream_to_buffer(ctx, (pdf_stream *)obj, &d, &sz);
+            if (code < 0) {
+                goto error;
+            }
+            code = pdfi_buffer_set_data((pdf_obj *)font->cidtogidmap, d, (int32_t)sz);
+            if (code < 0) {
+                goto error;
+            }
         }
         pdfi_countdown(obj);
         obj = NULL;
@@ -435,12 +450,12 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     font->pfont->procs.glyph_info = pdfi_cidtype2_glyph_info;
     font->pfont->procs.enumerate_glyph = pdfi_cidtype2_enumerate_glyph;
 
-    if (font->cidtogidmap.size > 0) {
+    if (font->cidtogidmap != NULL) {
         gs_font_cid2 *cid2 = (gs_font_cid2 *)font->pfont;
-        if (cid2->data.numGlyphs > font->cidtogidmap.size >> 1)
+        if (cid2->data.numGlyphs > font->cidtogidmap->length >> 1)
             cid2->cidata.common.CIDCount = cid2->data.numGlyphs;
         else {
-            cid2->cidata.common.CIDCount = font->cidtogidmap.size >> 1;
+            cid2->cidata.common.CIDCount = font->cidtogidmap->length >> 1;
         }
         cid2->cidata.common.MaxCID = cid2->cidata.common.CIDCount;
     }
@@ -462,7 +477,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         goto error;
     }
 
-    code = pdfi_fapi_passfont((pdf_font *)font, 0, NULL, NULL, font->sfnt.data, font->sfnt.size);
+    code = pdfi_fapi_passfont((pdf_font *)font, 0, NULL, NULL, font->sfnt->data, font->sfnt->length);
     if (code < 0) {
         goto error;
     }
@@ -487,9 +502,9 @@ int pdfi_free_font_cidtype2(pdf_obj *font)
     gs_font_cid2 *pfont = (gs_font_cid2 *)pdfcidf->pfont;
     gs_free_object(OBJ_MEMORY(pdfcidf), pfont, "pdfi_free_font_cidtype2(pfont)");
 
-    gs_free_object(OBJ_MEMORY(pdfcidf), pdfcidf->cidtogidmap.data, "pdfi_free_font_cidtype2(cidtogidmap.data)");
-    gs_free_object(OBJ_MEMORY(pdfcidf), pdfcidf->sfnt.data, "pdfi_free_font_cidtype2(sfnt.data)");
+    pdfi_countdown(pdfcidf->cidtogidmap);
 
+    pdfi_countdown(pdfcidf->sfnt);
     pdfi_countdown(pdfcidf->PDF_font);
     pdfi_countdown(pdfcidf->BaseFont);
     pdfi_countdown(pdfcidf->FontDescriptor);
@@ -498,6 +513,7 @@ int pdfi_free_font_cidtype2(pdf_obj *font)
     pdfi_countdown(pdfcidf->W2);
     pdfi_countdown(pdfcidf->registry);
     pdfi_countdown(pdfcidf->ordering);
+    pdfi_countdown(pdfcidf->filename);
 
     gs_free_object(OBJ_MEMORY(pdfcidf), pdfcidf, "pdfi_free_font_cidtype2(pdfcidf)");
 return 0;

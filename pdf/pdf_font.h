@@ -106,5 +106,7 @@ enum {
 };
 
 int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths, bool vertical);
+int pdfi_font_create_widths(pdf_context *ctx, pdf_dict *fontdict, pdf_font *font, double wscale);
+void pdfi_font_set_first_last_char(pdf_context *ctx, pdf_dict *fontdict, pdf_font *font);
 int pdfi_font_generate_pseudo_XUID(pdf_context *ctx, pdf_dict *fontdict, gs_font_base *pfont);
 #endif
