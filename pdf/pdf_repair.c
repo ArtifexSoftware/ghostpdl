@@ -248,7 +248,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                             code = pdfi_read_bare_keyword(ctx, ctx->main_stream);
                                             if (code == gs_error_VMerror || code == gs_error_ioerror)
                                                 goto exit;
-                                            if (code == TOKEN_ENDOBJ) {
+                                            if (code == TOKEN_ENDOBJ || code == TOKEN_INVALID_KEY) {
                                                 code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
                                                 if (code == gs_error_VMerror || code == gs_error_ioerror)
                                                     goto exit;
