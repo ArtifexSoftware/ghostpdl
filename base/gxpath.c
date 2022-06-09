@@ -111,10 +111,10 @@ gx_path_init_contents(gx_path * ppath)
     ppath->bbox_set = 0;
     ppath->bbox_accurate = 0;
     ppath->last_charpath_segment = 0;
-    ppath->bbox.p.x = max_int;
-    ppath->bbox.p.y = max_int;
-    ppath->bbox.q.x = min_int;
-    ppath->bbox.q.y = min_int;
+    ppath->bbox.p.x = max_fixed;
+    ppath->bbox.p.y = max_fixed;
+    ppath->bbox.q.x = min_fixed;
+    ppath->bbox.q.y = min_fixed;
 }
 
 /*
