@@ -371,11 +371,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     *ppdffont = NULL;
 
-    code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
-    if (code <= 0) {
-        code = gs_note_error(gs_error_invalidfont);
-        goto error;
-    }
+    (void)pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
 
     if ((code = pdfi_alloc_tt_font(ctx, &font, false)) < 0) {
         code = gs_note_error(gs_error_invalidfont);
@@ -391,13 +387,15 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     code = pdfi_dict_get_number(ctx, font_dict, "FirstChar", &f);
     if (code < 0) {
-        goto error;
+        f = 0;
+        code = 0;
     }
     font->FirstChar = (int)f;
 
     code = pdfi_dict_get_number(ctx, font_dict, "LastChar", &f);
     if (code < 0) {
-        goto error;
+        f = 255;
+        code = 0;
     }
     font->LastChar = (int)f;
 
@@ -428,8 +426,6 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     pdfi_countup(font_dict);
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, (pdf_obj **)&obj);
-    if (code < 0)
-        goto error;
     if (code > 0) {
         if (num_chars != pdfi_array_size((pdf_array *)obj)) {
             code = gs_note_error(gs_error_rangecheck);
@@ -472,9 +468,14 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     font->ToUnicode = tounicode;
     tounicode = NULL;
 
-    code = pdfi_dict_get_int(ctx, font->FontDescriptor, "Flags", &descflags);
-    if (code < 0)
+    if (font->FontDescriptor != NULL) {
+        code = pdfi_dict_get_int(ctx, font->FontDescriptor, "Flags", &descflags);
+        if (code < 0)
+            descflags = 0;
+    }
+    else {
         descflags = 0;
+    }
 
     code = pdfi_dict_get(ctx, font_dict, "Encoding", &obj);
     if (code < 0) {
