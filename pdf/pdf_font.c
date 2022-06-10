@@ -107,7 +107,7 @@ pdfi_font_match_glyph_widths(pdf_font *pdfont)
 
     /* For "best" results, restrict to what we *hope* are A-Z,a-z */
     sindex = pdfont->FirstChar < 96 ? 96 : pdfont->FirstChar;
-    lindex = pdfont->LastChar > 122 ? 122 : pdfont->LastChar;
+    lindex = pdfont->LastChar > 122 ? 123 : pdfont->LastChar + 1;
 
     for (i = sindex; i < lindex; i++) {
         gs_glyph_info_t ginfo = {0};
