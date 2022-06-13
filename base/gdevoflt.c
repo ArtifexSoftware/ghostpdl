@@ -32,6 +32,7 @@
 #include "gdevprn.h"
 #include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
 #include "gximage.h"        /* For gx_image_enum */
+#include "gximag3x.h"
 #include "gdevsclass.h"
 #include "gdevoflt.h"
 #include "gximag3x.h"
@@ -111,6 +112,7 @@ obj_filter_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, strip_copy_rop2, obj_filter_strip_copy_rop2);
     set_dev_proc(dev, strip_tile_rect_devn, obj_filter_strip_tile_rect_devn);
     set_dev_proc(dev, fill_stroke_path, obj_filter_fill_stroke_path);
+    set_dev_proc(dev, composite, default_subclass_composite_front);
 }
 
 const

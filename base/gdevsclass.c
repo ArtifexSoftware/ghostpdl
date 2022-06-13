@@ -359,6 +359,88 @@ int default_subclass_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect
     return gx_default_get_bits_rectangle(dev, prect, params);
 }
 
+static void subclass_composite_front_finalize(gx_device *dev)
+{
+    generic_subclass_data *psubclass_data = (generic_subclass_data *)dev->parent->subclass_data;
+
+    dev->parent->child = psubclass_data->pre_composite_device;
+    psubclass_data->saved_finalize_method(dev);
+}
+
+int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+    gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
+{
+    int code = 0;
+    gs_pdf14trans_t *pct = (gs_pdf14trans_t *)pcte;
+    generic_subclass_data *psubclass_data = (generic_subclass_data *)dev->subclass_data;
+
+    if (dev->child) {
+        code = dev_proc(dev->child, composite)(dev->child, pcdev, pcte, pgs, memory, cdev);
+        if (code < 0)
+            return code;
+
+        if (gs_is_pdf14trans_compositor(pcte)) {
+            switch(pct->params.pdf14_op)
+            {
+                case PDF14_POP_DEVICE:
+                    if (psubclass_data->pre_composite_device != NULL) {
+                        if (dev->child) {
+                            dev->child->parent = NULL;
+                            dev->child->child = NULL;
+                            dev->child->finalize = psubclass_data->saved_finalize_method;
+                            rc_decrement(dev->child, "default_subclass_composite_front");
+                        }
+                        dev->child = psubclass_data->pre_composite_device;
+                        psubclass_data->pre_composite_device = NULL;
+                        psubclass_data->saved_finalize_method = NULL;
+                        memcpy(&(dev->color_info), &(dev->child->color_info), sizeof(gx_device_color_info));
+                    }
+                    break;
+                case PDF14_PUSH_DEVICE:
+                    /* *pcdev is always returned containing a device capable of doing
+                     * compositing. This may mean it is a new device. If this wants
+                     * to be the new 'device' in the graphics state, then code will
+                     * return as 1. */
+                    if (code == 1) {
+                        /* We want this device to stay ahead of the compositor; the newly created compositor has
+                         * inserted itself in front of our child device, so basically we want to replace
+                         * our current child with the newly created compositor. I hope !
+                         */
+                        psubclass_data = (generic_subclass_data *)dev->subclass_data;
+                        if (psubclass_data == NULL)
+                            return_error(gs_error_undefined);
+                        psubclass_data->pre_composite_device = dev->child;
+                        psubclass_data->saved_finalize_method = (*pcdev)->finalize;
+                        (*pcdev)->finalize = subclass_composite_front_finalize;
+
+                        (*pcdev)->child = dev->child;
+                        dev->child = *pcdev;
+                        (*pcdev)->parent = dev;
+                        memcpy(&dev->color_info, &(*pcdev)->color_info, sizeof(gx_device_color_info));
+                    }
+                    break;
+                default:
+                    /* It seems like many operations can result in the pdf14 device altering its color
+                     * info, presumably as we push different blending spaces. Ick. In order to stay in sync
+                     * any time we have inserted a compositor after this class, we must update the color info
+                     * of this device after every operation, in case it changes....
+                     */
+                    if (psubclass_data->pre_composite_device != NULL)
+                        memcpy(&(dev->color_info), &(dev->child->color_info), sizeof(gx_device_color_info));
+                    break;
+            }
+
+        }
+        /* We are inserting the compositor code after this device, or the compositor
+         * did not create a new compositor. Either way we don't want the compositor code
+         * to think we want to push a new device, so just return this device to the caller.
+         */
+        *pcdev = dev;
+        return 0;
+    }
+    return 0;
+}
+
 int default_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
@@ -439,7 +521,7 @@ int default_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_compo
         else {
             /* See the 2 comments above. Now, if the child did not create a new compositor (eg its a clist)
              * then it returns pcdev pointing to the passed in device (the child in our case). Now this is a
-             * problem, if we return with pcdev == child->dev, and teh current device is 'dev' then the
+             * problem, if we return with pcdev == child->dev, and the current device is 'dev' then the
              * compositor code will think we wanted to push a new device and will select the child device.
              * so here if pcdev == dev->child we change it to be our own device, so that the calling code
              * won't redirect the device in the graphics state.
@@ -783,12 +865,12 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
     if (dev->finalize)
         dev->finalize(dev);
 
+    if (dev->child) {
+        gs_free_object(dev->memory->stable_memory, dev->child, "free child device memory for subclassing device");
+    }
     if (psubclass_data) {
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "gx_epo_finalize(suclass data)");
         dev->subclass_data = NULL;
-    }
-    if (dev->child) {
-        gs_free_object(dev->memory->stable_memory, dev->child, "free child device memory for subclassing device");
     }
     if (dev->stype_is_dynamic)
         gs_free_const_object(dev->memory->non_gc_memory, dev->stype,

@@ -667,13 +667,17 @@ int gs_is_pdf14trans_compositor(const gs_composite_t * pct);
 
 #define subclass_common\
     t_dev_proc_composite *saved_compositor_method;\
-    gx_device_forward *forwarding_dev
+    gx_device_forward *forwarding_dev;\
+    gx_device *pre_composite_device;\
+    void (*saved_finalize_method)(gx_device *)
 
 typedef int (t_dev_proc_composite) (gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte, gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
 
 typedef struct {
     t_dev_proc_composite *saved_compositor_method;
     gx_device_forward *forwarding_dev;
+    gx_device *pre_composite_device;
+    void (*saved_finalize_method)(gx_device *);
 } generic_subclass_data;
 
 int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device *prototype);
