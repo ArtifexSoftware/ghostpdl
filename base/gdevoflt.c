@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -34,6 +34,7 @@
 #include "gximage.h"        /* For gx_image_enum */
 #include "gdevsclass.h"
 #include "gdevoflt.h"
+#include "gximag3x.h"
 
 int gs_is_pdf14trans_compositor(const gs_composite_t * pct);
 
@@ -219,8 +220,10 @@ int obj_filter_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles
 
 typedef struct obj_filter_image_enum_s {
     gx_image_enum_common;
-    int y;
-    int height;
+    int y, mask_y;
+    int height, mask_height;
+    int type;
+    int InterleaveType;
 } obj_filter_image_enum;
 gs_private_st_composite(st_obj_filter_image_enum, obj_filter_image_enum, "obj_filter_image_enum",
   obj_filter_image_enum_enum_ptrs, obj_filter_image_enum_reloc_ptrs);
@@ -243,15 +246,25 @@ obj_filter_image_plane_data(gx_image_enum_common_t * info,
 {
     obj_filter_image_enum *pie = (obj_filter_image_enum *)info;
 
-    if (height > pie->height - pie->y)
-        height = pie->height - pie->y;
+    if (pie->type == 3 && pie->InterleaveType == interleave_separate_source) {
+        pie->y += height;
+        pie->mask_y += height;
+        *rows_used = height;
 
-    pie->y += height;
-    *rows_used = height;
+        if (pie->y < pie->height || pie->mask_y < pie->mask_height)
+            return 0;
+        return 1;
+    } else {
+        if (height > pie->height - pie->y)
+            height = pie->height - pie->y;
 
-    if (pie->y < pie->height)
-        return 0;
-    return 1;
+        pie->y += height;
+        *rows_used = height;
+
+        if (pie->y < pie->height)
+            return 0;
+        return 1;
+    }
 }
 
 static int
@@ -299,8 +312,76 @@ int obj_filter_begin_typed_image(gx_device *dev, const gs_gstate *pgs, const gs_
     pie->memory = memory;
     pie->skipping = true;
     pie->height = pim->Height;
-    pie->y = 0;
+    pie->mask_y = pie->y = 0;
+    pie->type = pic->type->index;
 
+    if (pic->type->index == 3) {
+        const gs_image3_t *pim = (const gs_image3_t *)pic;
+
+        switch (pim->InterleaveType)
+        {
+            case interleave_chunky:
+                /* Add the mask data to the depth of the image data. */
+                pie->num_planes = 1;
+                break;
+            case interleave_scan_lines:
+                /*
+                 * There is only 1 plane, with dynamically changing width & depth.
+                 * Initialize it for the mask data, since that is what will be
+                 * read first.
+                 */
+                pie->num_planes = 1;
+                pie->plane_depths[0] = 1;
+                pie->plane_widths[0] = pim->MaskDict.Width;
+                break;
+            case interleave_separate_source:
+                /* Insert the mask data as a separate plane before the image data. */
+                pie->num_planes = 2;
+                pie->plane_depths[1] = pie->plane_depths[0];
+                pie->plane_widths[1] = pie->plane_widths[0];
+                pie->plane_widths[0] = pim->MaskDict.Width;
+                pie->plane_depths[0] = 1;
+                pie->mask_height = pim->MaskDict.Height;
+                break;
+        }
+        pie->InterleaveType = pim->InterleaveType;
+    }
+    if (pic->type->index == IMAGE3X_IMAGETYPE) {
+        const gs_image3x_t *pim = (const gs_image3x_t *)pic;
+
+        if (pim->Opacity.MaskDict.BitsPerComponent != 0) {
+            switch(pim->Opacity.InterleaveType) {
+            case interleave_separate_source:
+                pie->num_planes++;
+                pie->plane_depths[1] = pie->plane_depths[0];
+                pie->plane_widths[1] = pie->plane_widths[0];
+                pie->plane_depths[0] = pim->Opacity.MaskDict.BitsPerComponent;
+                pie->plane_widths[0] = pim->Opacity.MaskDict.Width;
+                break;
+            case interleave_chunky:
+                pie->plane_depths[0] += pim->BitsPerComponent;
+                break;
+            default:		/* can't happen */
+                return_error(gs_error_Fatal);
+            }
+        }
+        if (pim->Shape.MaskDict.BitsPerComponent != 0) {
+            switch(pim->Opacity.InterleaveType) {
+            case interleave_separate_source:
+                pie->num_planes++;
+                pie->plane_depths[1] = pie->plane_depths[0];
+                pie->plane_widths[1] = pie->plane_widths[0];
+                pie->plane_depths[0] = pim->Shape.MaskDict.BitsPerComponent;
+                pie->plane_widths[0] = pim->Shape.MaskDict.Width;
+                break;
+            case interleave_chunky:
+                pie->plane_depths[0] += pim->BitsPerComponent;
+                break;
+            default:		/* can't happen */
+                return_error(gs_error_Fatal);
+            }
+        }
+    }
     return 0;
 }
 
