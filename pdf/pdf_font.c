@@ -488,7 +488,7 @@ static const char *pdfi_font_substitute_by_flags(unsigned int flags)
             }
         }
     }
-    return "Helvetica"; /* Really shouldn't ever happen */
+    return "Helvetica";
 }
 
 enum {
