@@ -366,7 +366,7 @@ int obj_filter_begin_typed_image(gx_device *dev, const gs_gstate *pgs, const gs_
             }
         }
         if (pim->Shape.MaskDict.BitsPerComponent != 0) {
-            switch(pim->Opacity.InterleaveType) {
+            switch(pim->Shape.InterleaveType) {
             case interleave_separate_source:
                 pie->num_planes++;
                 pie->plane_depths[1] = pie->plane_depths[0];
