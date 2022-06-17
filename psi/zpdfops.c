@@ -1362,19 +1362,49 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
             if (code < 0)
                 goto error;
         }
-        if (dict_find_string(pdictref, "CIDSubstPath", &pvalueref) > 0) {
+        if (dict_find_string(pdictref, "CIDFSubstPath", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_string))
                 goto error;
-            pdfctx->ctx->args.cidsubstpath.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF CIDSubstPath from zpdfops");
-            memcpy(pdfctx->ctx->args.cidsubstpath.data, pvalueref->value.const_bytes, r_size(pvalueref));
-            pdfctx->ctx->args.cidsubstpath.size = r_size(pvalueref);
+            pdfctx->ctx->args.cidfsubstpath.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF cidfsubstpath from zpdfops");
+            if (pdfctx->ctx->args.cidfsubstpath.data == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto error;
+            }
+            memcpy(pdfctx->ctx->args.cidfsubstpath.data, pvalueref->value.const_bytes, r_size(pvalueref));
+            pdfctx->ctx->args.cidfsubstpath.size = r_size(pvalueref);
         }
-        if (dict_find_string(pdictref, "CIDSubstFont", &pvalueref) > 0) {
+        if (dict_find_string(pdictref, "CIDFSubstFont", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_string))
                 goto error;
-            pdfctx->ctx->args.cidsubstfont.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF CIDSubstPath from zpdfops");
-            memcpy(pdfctx->ctx->args.cidsubstfont.data, pvalueref->value.const_bytes, r_size(pvalueref));
-            pdfctx->ctx->args.cidsubstfont.size = r_size(pvalueref);
+            pdfctx->ctx->args.cidfsubstfont.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF cidfsubstfont from zpdfops");
+            if (pdfctx->ctx->args.cidfsubstfont.data == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto error;
+            }
+            memcpy(pdfctx->ctx->args.cidfsubstfont.data, pvalueref->value.const_bytes, r_size(pvalueref));
+            pdfctx->ctx->args.cidfsubstfont.size = r_size(pvalueref);
+        }
+        if (dict_find_string(pdictref, "SUBSTFONT", &pvalueref) > 0) {
+            ref nmstr, *namstrp;
+            if (r_has_type(pvalueref, t_string)) {
+                namstrp = pvalueref;
+                pdfctx->ctx->args.defaultfont_is_name = false;
+            } else if (r_has_type(pvalueref, t_name)) {
+                name_string_ref(imemory, pvalueref, &nmstr);
+                namstrp = &nmstr;
+                pdfctx->ctx->args.defaultfont_is_name = true;
+            }
+            else {
+                code = gs_note_error(gs_error_typecheck);
+                goto error;
+            }
+            pdfctx->ctx->args.defaultfont.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(namstrp) + 1, "PDF defaultfontname from zpdfops");
+            if (pdfctx->ctx->args.defaultfont.data == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto error;
+            }
+            memcpy(pdfctx->ctx->args.defaultfont.data, pvalueref->value.const_bytes, r_size(namstrp));
+            pdfctx->ctx->args.defaultfont.size = r_size(namstrp);
         }
         if (dict_find_string(pdictref, "IgnoreToUnicode", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))

@@ -172,7 +172,7 @@ static void pdfi_print_string(pdf_context *ctx, const char *str)
    Currently only loads subsitute - DroidSansFallback
  */
 static int
-pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte ** buf, int64_t * buflen, int *findex)
+pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte ** buf, int64_t * buflen, int *findex)
 {
     int code = 0;
     char fontfname[gp_file_name_sizeof];
@@ -227,26 +227,26 @@ pdfi_open_CIDFont_substitute_file(pdf_context * ctx, pdf_dict *font_dict, pdf_di
                 code = gs_note_error(gs_error_invalidfont);
             }
             else {
-                if (ctx->args.cidsubstpath.data == NULL) {
+                if (ctx->args.cidfsubstpath.data == NULL) {
                     memcpy(fontfname, fsprefix, fsprefixlen);
                 }
                 else {
-                    memcpy(fontfname, ctx->args.cidsubstpath.data, ctx->args.cidsubstpath.size);
-                    fsprefixlen = ctx->args.cidsubstpath.size;
+                    memcpy(fontfname, ctx->args.cidfsubstpath.data, ctx->args.cidfsubstpath.size);
+                    fsprefixlen = ctx->args.cidfsubstpath.size;
                 }
 
-                if (ctx->args.cidsubstfont.data == NULL) {
+                if (ctx->args.cidfsubstfont.data == NULL) {
                     int len = 0;
-                    if (gp_getenv("CIDSUBSTFONT", (char *)0, &len) < 0 && len + fsprefixlen + 1 < gp_file_name_sizeof) {
-                        (void)gp_getenv("CIDSUBSTFONT", (char *)(fontfname + fsprefixlen), &defcidfallacklen);
+                    if (gp_getenv("CIDFSUBSTFONT", (char *)0, &len) < 0 && len + fsprefixlen + 1 < gp_file_name_sizeof) {
+                        (void)gp_getenv("CIDFSUBSTFONT", (char *)(fontfname + fsprefixlen), &defcidfallacklen);
                     }
                     else {
                         memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
                     }
                 }
                 else {
-                    memcpy(fontfname, ctx->args.cidsubstfont.data, ctx->args.cidsubstfont.size);
-                    defcidfallacklen = ctx->args.cidsubstfont.size;
+                    memcpy(fontfname, ctx->args.cidfsubstfont.data, ctx->args.cidfsubstfont.size);
+                    defcidfallacklen = ctx->args.cidfsubstfont.size;
                 }
                 fontfname[fsprefixlen + defcidfallacklen] = '\0';
 
@@ -431,64 +431,90 @@ static const char *pdfi_clean_font_name(const char *fontname)
     return NULL;
 }
 
-static const char *pdfi_font_substitute_by_flags(unsigned int flags)
+static int pdfi_font_substitute_by_flags(pdf_context *ctx, unsigned int flags, char **name, int *namelen)
 {
     bool fixed = ((flags & pdfi_font_flag_fixed) != 0);
     bool serif = ((flags & pdfi_font_flag_serif) != 0);
     bool italic = ((flags & pdfi_font_flag_italic) != 0);
     bool bold = ((flags & pdfi_font_flag_forcebold) != 0);
+    int code = 0;
 
-    if (fixed) {
+    if (ctx->args.defaultfont_is_name == true && ctx->args.defaultfont.size == 4
+        && !memcmp(ctx->args.defaultfont.data, "None", 4)) {
+       *name = NULL;
+       *namelen = 0;
+       code = gs_error_invalidfont;
+    }
+    else if (ctx->args.defaultfont.data != NULL && ctx->args.defaultfont.size > 0) {
+        *name = (char *)ctx->args.defaultfont.data;
+        *namelen = ctx->args.defaultfont.size;
+    }
+    else if (fixed) {
         if (bold) {
             if (italic) {
-                return "Courier-BoldOblique";
+                *name = (char *)pdfi_base_font_names[3][0];
+                *namelen = strlen(*name);
             }
             else {
-                return "Courier-Bold";
+                *name = (char *)pdfi_base_font_names[1][0];
+                *namelen = strlen(*name);
             }
         }
         else {
             if (italic) {
-                return "Courier-Oblique";
+                *name = (char *)pdfi_base_font_names[2][0];
+                *namelen = strlen(*name);
             }
             else {
-                return "Courier";
+                *name = (char *)pdfi_base_font_names[0][0];
+                *namelen = strlen(*name);
             }
         }
     }
     else if (serif) {
         if (bold) {
             if (italic) {
-                return "Times-BoldItalic";
+                *name = (char *)pdfi_base_font_names[11][0];
+                *namelen = strlen(*name);
             }
             else {
-                return "Times-Bold";
+                *name = (char *)pdfi_base_font_names[9][0];
+                *namelen = strlen(*name);
             }
         }
         else {
             if (italic) {
-                return "Times-Italic";
+                *name = (char *)pdfi_base_font_names[10][0];
+                *namelen = strlen(*name);
             }
             else {
-                return "Times-Roman";
+                *name = (char *)pdfi_base_font_names[8][0];
+                *namelen = strlen(*name);
             }
         }
     } else {
         if (bold) {
             if (italic) {
-                return "Helvetica-BoldOblique";
+                *name = (char *)pdfi_base_font_names[7][0];
+                *namelen = strlen(*name);
             }
             else {
-                return "Helvetica-Bold";
+                *name = (char *)pdfi_base_font_names[5][0];
+                *namelen = strlen(*name);
             }
         }
         else {
             if (italic) {
-                return "Helvetica-Oblique";
+                *name = (char *)pdfi_base_font_names[6][0];
+                *namelen = strlen(*name);
+            }
+            else {
+                *name = (char *)pdfi_base_font_names[4][0];
+                *namelen = strlen(*name);
             }
         }
     }
-    return "Helvetica";
+    return code;
 }
 
 enum {
@@ -543,12 +569,16 @@ pdfi_open_font_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *
         fallback = true;
 
     if (fallback == true) {
-        const char *fbname;
+        char *fbname;
+        int fbnamelen;
         int64_t flags = 0;
         if (fontdesc != NULL) {
             (void)pdfi_dict_get_int(ctx, fontdesc, "Flags", &flags);
         }
-        fbname = pdfi_font_substitute_by_flags((int)flags);
+        code = pdfi_font_substitute_by_flags(ctx, (int)flags, &fbname, &fbnamelen);
+        if (code < 0)
+            return code;
+
         code = pdfi_name_alloc(ctx, (byte *)fbname, strlen(fbname), (pdf_obj **) &fontname);
         if (code < 0)
             return code;

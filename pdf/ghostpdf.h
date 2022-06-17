@@ -143,8 +143,11 @@ typedef struct cmd_args_s {
     bool QUIET;
     bool verbose_errors;
     bool verbose_warnings;
-    gs_string cidsubstpath;
-    gs_string cidsubstfont;
+    gs_string cidfsubstpath;
+    gs_string cidfsubstfont;
+    gs_string defaultfont;
+    bool defaultfont_is_name;
+
     bool ignoretounicode;
     bool nonativefontmap;
 } cmd_args_t;

@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2021 Artifex Software, Inc.
+% Copyright (C) 2001-2022 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -929,10 +929,14 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
         } if
                         % No aliasing.
                         % This mode is incompatible with high level devices.
+        defaultfontname /None eq { /findfont cvx /invalidfont signalerror } if
         cleartomark mark defaultfontname
       } {
         dup .substitutefont
-        2 copy eq { pop defaultfontname } if
+        2 copy eq {
+          defaultfontname /None eq { /findfont cvx /invalidfont signalerror } if
+          pop defaultfontname
+        } if
         //.checkalias exec
         QUIET not {
           SHORTERRORS {

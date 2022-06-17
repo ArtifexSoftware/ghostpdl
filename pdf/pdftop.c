@@ -393,7 +393,7 @@ static int plist_value_get_int64(gs_param_typed_value *pvalue, int64_t *pint)
 
 /* Get the value for a string or a name (null terminated) */
 static int plist_value_get_string_or_name(pdf_context *ctx, gs_param_typed_value *pvalue,
-                                          char **pstr, int *plen)
+                                          char **pstr, int *plen, bool *is_name)
 {
     const byte *data;
     uint size;
@@ -401,9 +401,11 @@ static int plist_value_get_string_or_name(pdf_context *ctx, gs_param_typed_value
     if (pvalue->type == gs_param_type_string) {
         data = pvalue->value.s.data;
         size = pvalue->value.s.size;
+        *is_name = false;
     } else if (pvalue->type == gs_param_type_name) {
         data = pvalue->value.n.data;
         size = pvalue->value.n.size;
+        *is_name = true;
     } else {
         return_error(gs_error_typecheck);
     }
@@ -481,6 +483,7 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
     gs_param_key_t key;
     int code;
     int len;
+    bool discard_isname;
 
     param_init_enumerator(&enumerator);
     if ((code = param_get_next_key(plist, &enumerator, &key)) == 0) {
@@ -645,7 +648,7 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
                 return code;
         }
         if (!strncmp(param, "PDFPassword", 11)) {
-            code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->encryption.Password , &ctx->encryption.PasswordLen);
+            code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->encryption.Password , &ctx->encryption.PasswordLen, &discard_isname);
             if (code < 0)
                 return code;
         }
@@ -671,14 +674,14 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
                 return code;
         }
         if (!strncmp(param, "UseOutputIntent", strlen("UseOutputIntent"))) {
-            code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->args.UseOutputIntent, &len);
+            code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->args.UseOutputIntent, &len, &discard_isname);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "FONTPATH", 11)) {
             char *s = NULL;
             int slen;
-            code = plist_value_get_string_or_name(ctx, &pvalue, &s , &slen);
+            code = plist_value_get_string_or_name(ctx, &pvalue, &s , &slen, &discard_isname);
             if (code < 0)
                 return code;
             code = pdfi_add_paths_to_search_paths(ctx, (const char *)s, slen, true);
@@ -687,19 +690,24 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
         if (!strncmp(param, "FONTMAP", 7)) {
             char *s = NULL;
             int slen;
-            code = plist_value_get_string_or_name(ctx, &pvalue, &s, &slen);
+            code = plist_value_get_string_or_name(ctx, &pvalue, &s, &slen, &discard_isname);
             if (code < 0)
                 return code;
             code = pdfi_add_fontmapfiles(ctx, (const char *)s, slen);
             gs_free_object(ctx->memory, s, "FONTMAP param string");
         }
         if (!strncmp(param, "CIDSubstPath", 12)) {
-            code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.cidsubstpath.data, (int *)&ctx->args.cidsubstpath.size);
+            code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.cidfsubstpath.data, (int *)&ctx->args.cidfsubstpath.size, &discard_isname);
             if (code < 0)
                 return code;
         }
         if (!strncmp(param, "CIDSubstFont", 12)) {
-            code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.cidsubstfont.data, (int *)&ctx->args.cidsubstfont.size);
+            code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.cidfsubstfont.data, (int *)&ctx->args.cidfsubstfont.size, &discard_isname);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "SUBSTFONT", 12)) {
+            code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.defaultfont.data, (int *)&ctx->args.defaultfont.size, &ctx->args.defaultfont_is_name);
             if (code < 0)
                 return code;
         }

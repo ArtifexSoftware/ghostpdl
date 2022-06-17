@@ -1939,14 +1939,19 @@ int pdfi_clear_context(pdf_context *ctx)
         ctx->PagesTree = NULL;
     }
 
-    if (ctx->args.cidsubstpath.data != NULL) {
-        gs_free_object(ctx->memory, ctx->args.cidsubstpath.data, "cidsubstpath.data");
-        ctx->args.cidsubstpath.data = NULL;
+    if (ctx->args.cidfsubstpath.data != NULL) {
+        gs_free_object(ctx->memory, ctx->args.cidfsubstpath.data, "cidfsubstpath.data");
+        ctx->args.cidfsubstpath.data = NULL;
     }
 
-    if (ctx->args.cidsubstfont.data != NULL) {
-        gs_free_object(ctx->memory, ctx->args.cidsubstfont.data, "cidsubstpath.data");
-        ctx->args.cidsubstfont.data = NULL;
+    if (ctx->args.cidfsubstfont.data != NULL) {
+        gs_free_object(ctx->memory, ctx->args.cidfsubstfont.data, "cidfsubstfont.data");
+        ctx->args.cidfsubstfont.data = NULL;
+    }
+
+    if (ctx->args.defaultfont.data != NULL) {
+        gs_free_object(ctx->memory, ctx->args.defaultfont.data, "cidfsubstfont.data");
+        ctx->args.defaultfont.data = NULL;
     }
 
     pdfi_free_cstring_array(ctx, &ctx->args.showannottypes);
