@@ -433,6 +433,7 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
     xps_part_t *part;
     gp_file *file;
     int count, size, offset, i, n;
+    int seen_last = 0;
 
     gs_strlcpy(buf, ctx->directory, sizeof buf);
     gs_strlcat(buf, name, sizeof buf);
@@ -469,7 +470,7 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
     /* Count the number of pieces and their total size */
     count = 0;
     size = 0;
-    while (1)
+    while (!seen_last)
     {
         gs_snprintf(buf, sizeof(buf), "%s%s/[%d].piece", ctx->directory, name, count);
         file = gp_fopen(ctx->memory, buf, "rb");
@@ -477,6 +478,7 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
         {
             gs_snprintf(buf, sizeof(buf), "%s%s/[%d].last.piece", ctx->directory, name, count);
             file = gp_fopen(ctx->memory, buf, "rb");
+            seen_last = !!file;
         }
         if (!file)
             break;
@@ -485,6 +487,11 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
             break;;
         size += xps_ftell(file);
         gp_fclose(file);
+    }
+    if (!seen_last)
+    {
+        gs_throw1(-1, "cannot find all pieces for part '%s'", name);
+        return NULL;
     }
 
     /* Inflate the pieces */
