@@ -117,6 +117,12 @@ static int Info_check_array(pdf_context *ctx, pdf_array *a)
         if (code < 0)
             goto error;
 
+        if (array_obj->object_num != 0) {
+            code = pdfi_loop_detector_add_object(ctx, array_obj->object_num);
+            if (code < 0)
+                goto error;
+        }
+
         switch(pdfi_type_of(array_obj)) {
             case PDF_DICT:
                 code = Info_check_dict(ctx, (pdf_dict *)array_obj);
@@ -156,6 +162,12 @@ static int Info_check_dict(pdf_context *ctx, pdf_dict *d)
     if (code == gs_error_undefined) {
         code = 0;
         goto error;
+    }
+
+    if (Value->object_num != 0) {
+        code = pdfi_loop_detector_add_object(ctx, Value->object_num);
+        if (code < 0)
+            goto error;
     }
 
     while (code >= 0) {
