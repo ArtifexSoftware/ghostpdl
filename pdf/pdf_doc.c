@@ -159,8 +159,9 @@ static int Info_check_dict(pdf_context *ctx, pdf_dict *d)
         return code;
 
     code = pdfi_dict_first(ctx, d, (pdf_obj **)&Key, &Value, &index);
-    if (code == gs_error_undefined) {
-        code = 0;
+    if (code < 0) {
+        if (code == gs_error_undefined)
+            code = 0;
         goto error;
     }
 
