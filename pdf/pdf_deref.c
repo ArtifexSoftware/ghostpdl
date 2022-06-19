@@ -224,13 +224,14 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         return_error(gs_error_stackunderflow);
 
     dict = (pdf_dict *)ctx->stack_top[-1];
-    dict->indirect_num = dict->object_num = objnum;
-    dict->indirect_gen = dict->generation_num = gen;
 
     if (pdfi_type_of(dict) != PDF_DICT) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_syntaxerror);
     }
+
+    dict->indirect_num = dict->object_num = objnum;
+    dict->indirect_gen = dict->generation_num = gen;
 
     /* Convert the dict into a stream */
     code = pdfi_obj_dict_to_stream(ctx, dict, &stream_obj, true);
