@@ -2534,6 +2534,11 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
         else
             goto exit;
     }
+    if (pdfi_type_of(n) != PDF_NAME) {
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
+    }
+
     if (pdfi_name_is(n, "Image")) {
         gs_offset_t savedoffset;
 
