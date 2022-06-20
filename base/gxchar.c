@@ -168,12 +168,19 @@ gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
 
         if (dev_null == 0)
             return_error(gs_error_VMerror);
-        /* Do an extra gsave and suppress output */
-        if ((code = gs_gsave(pgs)) < 0)
-            return code;
-        penum->level = pgs->level;      /* for level check in show_update */
+
         /* Set up a null device that forwards xfont requests properly. */
+        /* We have to set the device up here, so the contents are
+           initialised, and safe to free in the event of an error.
+         */
         gs_make_null_device(dev_null, gs_currentdevice_inline(pgs), mem);
+
+        /* Do an extra gsave and suppress output */
+        if ((code = gs_gsave(pgs)) < 0) {
+            gs_free_object(mem, dev_null, "gx_default_text_begin");
+            return code;
+        }
+        penum->level = pgs->level;      /* for level check in show_update */
         pgs->ctm_default_set = false;
         penum->dev_null = dev_null;
         /* Retain this device, since it is referenced from the enumerator. */
