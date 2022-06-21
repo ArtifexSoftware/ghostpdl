@@ -1,0 +1,105 @@
+/* icon sizing in the left menu */
+.icon-home {
+    width: 100px;
+    height: auto;
+}
+
+/* main document page: ensures pages fit to the available width and height */
+.wy-nav-content {
+    min-width: 100%;
+    min-height: 100vh;
+}
+
+/* Accessibility: Artifex color for main document links */
+.wy-nav-content a {
+    color: #007aff;
+}
+
+/* Artifex blue color for background elements */
+.wy-side-nav-search, .wy-nav-top {
+    background-color: #007aff;
+}
+
+/* Accessibility: ensures that the version number is readable against the background color */
+.wy-side-nav-search>div.version {
+    color:hsla(0,0%,100%,1);
+}
+
+h1, h2, h3, h4 {
+    padding: 10px;
+    border: 1px solid #007aff;
+    background-color: #007aff;
+    color: #fff;
+    border-radius: 5px;
+}
+
+h1 a, h2 a, h3 a, h4 a {
+    color: #fff;
+}
+
+cite {
+    font-family: monospace;
+    font-weight: bold;
+}
+
+
+button.cta {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border:0;
+    text-transform:uppercase;
+    border-radius:5px;
+    font-size:16px;
+    font-weight:500;
+    min-height:40px;
+    line-height:40px;
+    padding: 0 15px;
+    color:#fff;
+    cursor:pointer;
+}
+
+button.cta.orange {
+    width:auto;
+    background-image: linear-gradient(to right, #ea5842, #ec6343, #ed6d45, #ef7747, #f0804a) !important;
+}
+
+button.cta.orange:hover {
+    background:#ea5842 !important;
+}
+
+button.cta a {
+    color:#fff !important;
+}
+
+
+/* Dark mode colors */
+@media (prefers-color-scheme: dark) {
+
+
+    /* main document page */
+    .wy-nav-content {
+        background-color: #000;
+        color: #fff;
+    }
+
+    th {
+        color: #fff;
+    }
+
+    td {
+        background-color: #000 !important;
+    }
+
+    tr:nth-child(2n-1) td{
+        background-color: #333 !important;
+    }
+
+    pre {
+        color: #000;
+    }
+
+    .admonition {
+        color: #000;
+    }
+
+}
