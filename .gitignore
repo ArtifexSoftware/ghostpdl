@@ -111,6 +111,9 @@ tiff-config
 /Makefile
 /auxflags.mak
 
+doc/.doctrees
+doc/.buildinfo
+
 
 # Adding the following lines would help limit the 'noise' seen in git status
 # due to files created during testing. Conversely, it prevents them being
