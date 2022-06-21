@@ -2032,7 +2032,7 @@ pdf_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 static int
 pdf_image_end_image_cvd(gx_image_enum_common_t * info, bool draw_last)
 {   pdf_lcvd_t *cvd = (pdf_lcvd_t *)info->dev;
-    int code = pdf_dump_converted_image(cvd->pdev, cvd);
+    int code = pdf_dump_converted_image(cvd->pdev, cvd, 0);
     int code1 = gx_image1_end_image(info, draw_last);
     int code2 = gs_closedevice((gx_device *)cvd->mask);
     int code3 = gs_closedevice((gx_device *)cvd);

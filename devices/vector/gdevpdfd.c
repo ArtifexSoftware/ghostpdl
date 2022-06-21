@@ -973,13 +973,13 @@ lcvd_close_device_with_writing(gx_device *pdev)
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)pdev;
     int code, code1;
 
-    code = pdf_dump_converted_image(cvd->pdev, cvd);
+    code = pdf_dump_converted_image(cvd->pdev, cvd, 0);
     code1 = cvd->std_close_device((gx_device *)&cvd->mdev);
     return code < 0 ? code : code1;
 }
 
 static int
-write_image(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
+write_image(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m, int for_pattern)
 {
     gs_image_t image;
     pdf_image_writer writer;
@@ -990,7 +990,7 @@ write_image(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
         pdf_put_matrix(pdev, NULL, m, " cm\n");
     code = pdf_copy_color_data(pdev, mdev->base, sourcex,
                 mdev->raster, gx_no_bitmap_id, 0, 0, mdev->width, mdev->height,
-                &image, &writer, 2);
+                &image, &writer, for_pattern);
     if (code == 1)
         code = 0; /* Empty image. */
     else if (code == 0)
@@ -1176,7 +1176,7 @@ mask_to_clip(gx_device_pdf *pdev, int width, int height,
 }
 
 static int
-write_subimage(gx_device_pdf *pdev, gx_device_memory *mdev, int x, int y, int x1, int y1)
+write_subimage(gx_device_pdf *pdev, gx_device_memory *mdev, int x, int y, int x1, int y1, int for_pattern)
 {
     gs_image_t image;
     pdf_image_writer writer;
@@ -1190,7 +1190,7 @@ write_subimage(gx_device_pdf *pdev, gx_device_memory *mdev, int x, int y, int x1
     code = pdf_copy_color_data(pdev, mdev->base + mdev->raster * Y, X,
                 mdev->raster, gx_no_bitmap_id,
                 X, Y, X1 - X, Y1 - Y,
-                &image, &writer, 2);
+                &image, &writer, for_pattern);
     if (code < 0)
         return code;
     if (!writer.pres)
@@ -1199,7 +1199,7 @@ write_subimage(gx_device_pdf *pdev, gx_device_memory *mdev, int x, int y, int x1
 }
 
 static int
-write_image_with_clip(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
+write_image_with_clip(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern)
 {
     int x = 0, y = 0;
     int code, code1;
@@ -1219,7 +1219,7 @@ write_image_with_clip(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
         if (code < 0)
             return code;
         if (code > 0) {
-            code1 = write_subimage(pdev, &cvd->mdev, x, y, x1, y1);
+            code1 = write_subimage(pdev, &cvd->mdev, x, y, x1, y1, for_pattern);
             if (code1 < 0)
                 return code1;
         }
@@ -1241,14 +1241,14 @@ write_image_with_clip(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 }
 
 int
-pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
+pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern)
 {
     int code = 0;
 
     if (!cvd->path_is_empty || cvd->has_background) {
         if (!cvd->has_background)
             stream_puts(pdev->strm, "W n\n");
-        code = write_image(pdev, &cvd->mdev, (cvd->write_matrix ? &cvd->m : NULL));
+        code = write_image(pdev, &cvd->mdev, (cvd->write_matrix ? &cvd->m : NULL), for_pattern);
         cvd->path_is_empty = true;
     } else if (!cvd->mask_is_empty && pdev->PatternImagemask) {
         /* Convert to imagemask with a pattern color. */
@@ -1288,7 +1288,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 
         if (code >= 0) {
             stream_puts(pdev->strm, "W n\n");
-            code = write_image(pdev, &cvd->mdev, NULL);
+            code = write_image(pdev, &cvd->mdev, NULL, for_pattern);
         }
         pres = pdev->accumulating_substream_resource;
         if (code >= 0) {
@@ -1315,7 +1315,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
     } else if (!cvd->mask_is_empty && !pdev->PatternImagemask) {
         /* Convert to image with a clipping path. */
         stream_puts(pdev->strm, "q\n");
-        code = write_image_with_clip(pdev, cvd);
+        code = write_image_with_clip(pdev, cvd, for_pattern);
         stream_puts(pdev->strm, "Q\n");
     }
     if (code > 0)
@@ -1338,7 +1338,7 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
     if (gx_path_is_null(ppath)) {
         /* use the mask. */
         if (!cvd->path_is_empty) {
-            code = pdf_dump_converted_image(pdev, cvd);
+            code = pdf_dump_converted_image(pdev, cvd, 2);
             if (code < 0)
                 return code;
             stream_puts(pdev->strm, "Q q\n");
@@ -1362,7 +1362,7 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
         gs_make_translation(cvd->path_offset.x, cvd->path_offset.y, &m);
         /* use the clipping. */
         if (!cvd->mask_is_empty) {
-            code = pdf_dump_converted_image(pdev, cvd);
+            code = pdf_dump_converted_image(pdev, cvd, 2);
             if (code < 0)
                 return code;
             stream_puts(pdev->strm, "Q q\n");
@@ -1685,7 +1685,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                 code = gs_shading_do_fill_rectangle(pi.templat.Shading,
                      NULL, (gx_device *)&cvd.mdev, pgs2, !pi.shfill);
             if (code >= 0)
-                code = pdf_dump_converted_image(pdev, &cvd);
+                code = pdf_dump_converted_image(pdev, &cvd, 2);
             stream_puts(pdev->strm, "Q Q\n");
             pdf_remove_masked_image_converter(pdev, &cvd, need_mask);
             gs_setmatrix((gs_gstate *)pgs, &save_ctm);

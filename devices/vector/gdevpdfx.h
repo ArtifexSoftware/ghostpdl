@@ -1293,7 +1293,7 @@ typedef struct pdf_lcvd_s {
 
 int pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs_matrix *m, pdf_lcvd_t **pcvd,
                                  bool need_mask, int x, int y, int w, int h, bool write_on_close);
-int pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd);
+int pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern);
 void pdf_remove_masked_image_converter(gx_device_pdf *pdev, pdf_lcvd_t *cvd, bool need_mask);
 
 /* ------ Miscellaneous output ------ */
