@@ -699,7 +699,6 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
         }
         if (i == entry->u.compressed.object_index) {
             if (found_object != obj) {
-                pdfi_pop(ctx, 1);
                 code = gs_note_error(gs_error_undefined);
                 goto exit;
             }
