@@ -446,16 +446,19 @@ int pdfi_op_MP(pdf_context *ctx)
         goto exit;
 
     o = ctx->stack_top[-1];
+    pdfi_countup(o);
+    pdfi_pop(ctx, 1);
+
     if (pdfi_type_of(o) != PDF_NAME) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
     }
 
     code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "MP");
     ctx->BMClevel ++;
 
 exit:
-    pdfi_pop(ctx, 1);
+    pdfi_countdown(o);
     return code;
 }
 
@@ -463,7 +466,7 @@ int pdfi_op_DP(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_name *properties = NULL;
     int code = 0;
-    pdf_obj **objarray = NULL;
+    pdf_obj **objarray = NULL, *o = NULL;
 
     if (pdfi_count_stack(ctx) < 2) {
         pdfi_clearstack(ctx);
@@ -474,6 +477,7 @@ int pdfi_op_DP(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit;
 
     if (pdfi_type_of(ctx->stack_top[-2]) != PDF_NAME) {
+        pdfi_pop(ctx, 2); /* pop args */
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
@@ -485,10 +489,14 @@ int pdfi_op_DP(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     }
 
     objarray[0] = ctx->stack_top[-2];
+    pdfi_countup(objarray[0]);
+    o = ctx->stack_top[-2];
+    pdfi_countup(o);
+    pdfi_pop(ctx, 2); /* pop args */
 
-    switch (pdfi_type_of(ctx->stack_top[-1])) {
+    switch (pdfi_type_of(o)) {
         case PDF_NAME:
-            code = pdfi_find_resource(ctx, (unsigned char *)"Properties", (pdf_name *)ctx->stack_top[-1], stream_dict, page_dict, (pdf_obj **)&properties);
+            code = pdfi_find_resource(ctx, (unsigned char *)"Properties", (pdf_name *)o, stream_dict, page_dict, (pdf_obj **)&properties);
             if(code < 0)
                 goto exit;
             if (pdfi_type_of(properties) != PDF_DICT) {
@@ -498,7 +506,7 @@ int pdfi_op_DP(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             objarray[1] = (pdf_obj *)properties;
             break;
         case PDF_DICT:
-            objarray[1] = ctx->stack_top[-1];
+            objarray[1] = o;
             break;
         default:
             code = gs_note_error(gs_error_VMerror);
@@ -508,9 +516,11 @@ int pdfi_op_DP(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     code = pdfi_pdfmark_from_objarray(ctx, objarray, 2, NULL, "DP");
 
  exit:
-    if (objarray != NULL)
+    if (objarray != NULL) {
+        pdfi_countdown(objarray[0]);
         gs_free_object(ctx->memory, objarray, "free pdfi_op_DP");
-    pdfi_pop(ctx, 2); /* pop args */
+    }
+    pdfi_countdown(o);
     pdfi_countdown(properties);
     return code;
 }
@@ -531,9 +541,12 @@ int pdfi_op_BMC(pdf_context *ctx)
         goto exit;
 
     o = ctx->stack_top[-1];
+    pdfi_countup(o);
+    pdfi_pop(ctx, 1);
+
     if (pdfi_type_of(o) != PDF_NAME) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
     }
 
     ctx->BDCWasOC = false;
@@ -541,7 +554,7 @@ int pdfi_op_BMC(pdf_context *ctx)
     ctx->BMClevel ++;
 
 exit:
-    pdfi_pop(ctx, 1);
+    pdfi_countdown(o);
     return code;
 }
 
@@ -553,7 +566,7 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdf_dict *oc_dict = NULL;
     int code = 0;
     bool ocg_is_visible;
-    pdf_obj **objarray = NULL;
+    pdf_obj **objarray = NULL, *o = NULL;;
 
     /* This will also prevent us writing out an EMC if the BDC is in any way invalid */
     ctx->BDCWasOC = true;
@@ -566,6 +579,11 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     ctx->BMClevel ++;
 
     tag = (pdf_name *)ctx->stack_top[-2];
+    pdfi_countup(tag);
+    o = ctx->stack_top[-1];
+    pdfi_countup(o);
+    pdfi_pop(ctx, 2);
+
     if (pdfi_type_of(tag) != PDF_NAME)
         goto exit;
 
@@ -580,11 +598,11 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             goto exit;
         }
 
-        objarray[0] = ctx->stack_top[-2];
+        objarray[0] = (pdf_obj *)tag;
 
-        switch (pdfi_type_of(ctx->stack_top[-1])) {
+        switch (pdfi_type_of(o)) {
             case PDF_NAME:
-                code = pdfi_find_resource(ctx, (unsigned char *)"Properties", (pdf_name *)ctx->stack_top[-1], stream_dict, page_dict, (pdf_obj **)&oc_dict);
+                code = pdfi_find_resource(ctx, (unsigned char *)"Properties", (pdf_name *)o, stream_dict, page_dict, (pdf_obj **)&oc_dict);
                 if(code < 0)
                     goto exit;
                 if (pdfi_type_of(oc_dict) != PDF_DICT) {
@@ -594,7 +612,7 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                 objarray[1] = (pdf_obj *)oc_dict;
                 break;
             case PDF_DICT:
-                objarray[1] = ctx->stack_top[-1];
+                objarray[1] = o;
                 break;
             default:
                 code = gs_note_error(gs_error_VMerror);
@@ -609,7 +627,7 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     /* TODO: spec says it could also be an inline dict that we should be able to handle,
      * but I am just matching what gs does for now, and it doesn't handle that case.
      */
-    properties = (pdf_name *)ctx->stack_top[-1];
+    properties = (pdf_name *)o;
     if (pdfi_type_of(properties) != PDF_NAME)
         goto exit;
 
@@ -629,7 +647,8 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
  exit:
     if (objarray != NULL)
         gs_free_object(ctx->memory, objarray, "free pdfi_op_BDC");
-    pdfi_pop(ctx, 2); /* pop args */
+    pdfi_countdown(o);
+    pdfi_countdown(tag);
     pdfi_countdown(oc_dict);
     return code;
 }

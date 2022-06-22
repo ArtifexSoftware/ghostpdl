@@ -288,8 +288,10 @@ int pdfi_ri(pdf_context *ctx)
         return_error(gs_error_typecheck);
     }
     n = (pdf_name *)ctx->stack_top[-1];
-    code = pdfi_setrenderingintent(ctx, n);
+    pdfi_countup(n);
     pdfi_pop(ctx, 1);
+    code = pdfi_setrenderingintent(ctx, n);
+    pdfi_countdown(n);
     return code;
 }
 
@@ -496,6 +498,8 @@ int pdfi_setrgbfill_array(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
 
     array = (pdf_array *)ctx->stack_top[-1];
+    pdfi_countup(array);
+    pdfi_pop(ctx, 1);
     if (pdfi_type_of(array) != PDF_ARRAY) {
         code = gs_note_error(gs_error_typecheck);
         goto exit;
@@ -503,7 +507,7 @@ int pdfi_setrgbfill_array(pdf_context *ctx)
 
     code = pdfi_setcolor_from_array(ctx, array);
  exit:
-    pdfi_pop(ctx, 1);
+    pdfi_countdown(array);
     return code;
 }
 
@@ -688,14 +692,20 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
     if (pcs->type == &gs_color_space_type_Pattern)
         is_pattern = true;
     if (is_pattern) {
+        pdf_name *n = NULL;
+
         if (pdfi_type_of(ctx->stack_top[-1]) != PDF_NAME) {
             pdfi_clearstack(ctx);
-            code = gs_note_error(gs_error_syntaxerror);
+            code = gs_note_error(gs_error_typecheck);
             goto cleanupExit0;
         }
-        base_space = pcs->base_space;
-        code = pdfi_pattern_set(ctx, stream_dict, page_dict, (pdf_name *)ctx->stack_top[-1], &cc);
+        n = (pdf_name *)ctx->stack_top[-1];
+        pdfi_countup(n);
         pdfi_pop(ctx, 1);
+
+        base_space = pcs->base_space;
+        code = pdfi_pattern_set(ctx, stream_dict, page_dict, n, &cc);
+        pdfi_countdown(n);
         if (code < 0) {
             /* Ignore the pattern if we failed to set it */
             pdfi_set_warning(ctx, 0, NULL, W_PDF_BADPATTERN, "pdfi_setcolorN", (char *)"PATTERN: Error setting pattern");
@@ -2454,36 +2464,46 @@ int pdfi_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, 
 int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
+    pdf_obj *n = NULL;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
     if (pdfi_type_of(ctx->stack_top[-1]) != PDF_NAME) {
         pdfi_pop(ctx, 1);
-        return_error(gs_error_stackunderflow);
+        return_error(gs_error_typecheck);
     }
-    gs_swapcolors_quick(ctx->pgs);
-    code = pdfi_setcolorspace(ctx, ctx->stack_top[-1], stream_dict, page_dict);
-    gs_swapcolors_quick(ctx->pgs);
+    n = ctx->stack_top[-1];
+    pdfi_countup(n);
     pdfi_pop(ctx, 1);
 
+    gs_swapcolors_quick(ctx->pgs);
+    code = pdfi_setcolorspace(ctx, n, stream_dict, page_dict);
+    gs_swapcolors_quick(ctx->pgs);
+
+    pdfi_countdown(n);
     return code;
 }
 
 int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
+    pdf_obj *n = NULL;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
     if (pdfi_type_of(ctx->stack_top[-1]) != PDF_NAME) {
         pdfi_pop(ctx, 1);
-        return_error(gs_error_stackunderflow);
+        return_error(gs_error_typecheck);
     }
-    code = pdfi_setcolorspace(ctx, ctx->stack_top[-1], stream_dict, page_dict);
+    n = ctx->stack_top[-1];
+    pdfi_countup(n);
     pdfi_pop(ctx, 1);
 
+    code = pdfi_setcolorspace(ctx, n, stream_dict, page_dict);
+
+    pdfi_countdown(n);
     return code;
 }
 

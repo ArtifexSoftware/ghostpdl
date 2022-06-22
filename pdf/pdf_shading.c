@@ -861,17 +861,26 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_shading", NULL);
 
-    if (pdfi_oc_is_off(ctx))
+    if (pdfi_oc_is_off(ctx)) {
+        pdfi_pop(ctx, 1);
         return 0;
+    }
 
     n = (pdf_name *)ctx->stack_top[-1];
-    if (pdfi_type_of(n) != PDF_NAME)
-        return_error(gs_error_typecheck);
+    pdfi_countup(n);
+    pdfi_pop(ctx, 1);
+
+    if (pdfi_type_of(n) != PDF_NAME) {
+        code = gs_note_error(gs_error_typecheck);
+        goto exit1;
+    }
 
     savedoffset = pdfi_tell(ctx->main_stream);
     code = pdfi_loop_detector_mark(ctx);
-    if (code < 0)
+    if (code < 0) {
+        pdfi_countdown(n);
         return code;
+    }
 
     code = pdfi_op_q(ctx);
     if (code < 0)
@@ -929,7 +938,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code == 0)
         code = code1;
  exit1:
-    pdfi_pop(ctx, 1);
+    pdfi_countdown(n);
     (void)pdfi_loop_detector_cleartomark(ctx);
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
     return code;

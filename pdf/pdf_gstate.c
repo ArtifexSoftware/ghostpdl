@@ -370,13 +370,16 @@ int pdfi_setdash(pdf_context *ctx)
     }
 
     a = (pdf_array *)ctx->stack_top[-1];
+    pdfi_countup(a);
+    pdfi_pop(ctx, 1);
+
     if (pdfi_type_of(a) != PDF_ARRAY) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
 
     code = pdfi_setdash_impl(ctx, a, phase_d);
-    pdfi_pop(ctx, 1);
+    pdfi_countdown(a);
     return code;
 }
 
@@ -2251,15 +2254,16 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto setgstate_error;
     }
     n = (pdf_name *)ctx->stack_top[-1];
+    pdfi_countup(n);
+    pdfi_pop(ctx, 1);
+
     if (pdfi_type_of(n) != PDF_NAME) {
-        pdfi_pop(ctx, 1);
         code = gs_note_error(gs_error_typecheck);
         goto setgstate_error;
     }
 
     code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", n, (pdf_dict *)stream_dict,
                               page_dict, &o);
-    pdfi_pop(ctx, 1);
     if (code < 0)
         goto setgstate_error;
 
@@ -2274,6 +2278,7 @@ setgstate_error:
     code1 = pdfi_loop_detector_cleartomark(ctx);
     if (code == 0) code = code1;
 
+    pdfi_countdown(n);
     pdfi_countdown(o);
     return code;
 }

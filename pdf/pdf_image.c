@@ -2584,11 +2584,13 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit1;
     }
     n = (pdf_name *)ctx->stack_top[-1];
+    pdfi_countup(n);
+    pdfi_pop(ctx, 1);
+
     if (pdfi_type_of(n) != PDF_NAME) {
         code = gs_note_error(gs_error_typecheck);
         goto exit1;
     }
-    pdfi_countup(n);
 
     if (ctx->text.BlockDepth != 0)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_Do", NULL);
@@ -2647,6 +2649,5 @@ exit:
 exit1:
     pdfi_countdown(n);
     pdfi_countdown(o);
-    pdfi_pop(ctx, 1);
     return code;
 }

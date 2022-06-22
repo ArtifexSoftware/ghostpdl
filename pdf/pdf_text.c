@@ -1007,8 +1007,10 @@ int pdfi_Tj(pdf_context *ctx)
         goto exit;
 
     s = (pdf_string *)ctx->stack_top[-1];
-    if (pdfi_type_of(s) != PDF_STRING)
+    if (pdfi_type_of(s) != PDF_STRING) {
+        pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
+    }
 
     /* We can't rely on the stack reference because an error during
        the text operation (i.e. retrieving objects for glyph metrics
