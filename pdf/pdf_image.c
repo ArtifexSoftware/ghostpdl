@@ -2641,7 +2641,6 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     //    pdfi_grestore(ctx);
     pdfi_countdown(n);
     pdfi_countdown(o);
-    pdfi_pop(ctx, 1);
     return code;
 
 exit:
