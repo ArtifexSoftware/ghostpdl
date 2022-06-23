@@ -247,6 +247,14 @@ static int pdfi_sanitize_Info_references(pdf_context *ctx, pdf_dict *Info)
         pdfi_countdown(Key);
         Key = NULL;
 
+        pdfi_loop_detector_cleartomark(ctx);
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0) {
+            pdfi_countdown(Key);
+            pdfi_countdown(Value);
+            return code;
+        }
+
         code = pdfi_dict_next(ctx, Info, (pdf_obj **)&Key, &Value, &index);
         if (code == gs_error_undefined) {
             code = 0;
