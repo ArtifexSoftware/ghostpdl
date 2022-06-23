@@ -200,6 +200,8 @@ struct gs_fapi_font_s
 
     int (*serialize_tt_font) (gs_fapi_font *ff, void *buf, int buf_size);
 
+    int (*retrieve_tt_font) (gs_fapi_font *ff, void **buf, int *buf_size);
+
     int (*get_charstring) (gs_fapi_font *ff, int index, byte *buf, ushort buf_length);
 
     int (*get_charstring_name) (gs_fapi_font *ff, int index, byte *buf, ushort buf_length);

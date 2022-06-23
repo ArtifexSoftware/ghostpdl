@@ -2269,6 +2269,7 @@ static const gs_fapi_font ps_ff_stub = {
     FAPI_FF_get_raw_subr,
     FAPI_FF_get_glyph,
     FAPI_FF_serialize_tt_font,
+    NULL,                       /* retrieve_tt_font */
     FAPI_FF_get_charstring,
     FAPI_FF_get_charstring_name,
     ps_get_GlyphDirectory_data_ptr,

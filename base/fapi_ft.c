@@ -1277,26 +1277,39 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 /* Get the length of the TrueType data. */
                 unsigned long ms;
 
-                code = a_font->get_long(a_font, gs_fapi_font_feature_TT_size, 0, &ms);
-                if (code < 0)
-                    return code;
-                if (ms == 0)
-                    return_error(gs_error_invalidfont);
+                if (a_font->retrieve_tt_font != NULL) {
+                    code = a_font->retrieve_tt_font(a_font, &own_font_data, &ms);
+                    if (code == 0) {
+                        data_owned = false;
+                        open_args.memory_base = own_font_data;
+                        open_args.memory_size = own_font_data_len = ms;
+                    }
+                }
+                else
+                    code = gs_error_unregistered;
 
-                open_args.memory_size = (FT_Long)ms;
+                if (code < 0) {
+                    code = a_font->get_long(a_font, gs_fapi_font_feature_TT_size, 0, &ms);
+                    if (code < 0)
+                        return code;
+                    if (ms == 0)
+                        return_error(gs_error_invalidfont);
 
-                /* Load the TrueType data into a single buffer. */
-                open_args.memory_base = own_font_data =
-                    FF_alloc(s->ftmemory, open_args.memory_size);
-                if (!own_font_data)
-                    return_error(gs_error_VMerror);
+                    open_args.memory_size = (FT_Long)ms;
 
-                own_font_data_len = open_args.memory_size;
+                    /* Load the TrueType data into a single buffer. */
+                    open_args.memory_base = own_font_data =
+                        FF_alloc(s->ftmemory, open_args.memory_size);
+                    if (!own_font_data)
+                        return_error(gs_error_VMerror);
 
-                code = a_font->serialize_tt_font(a_font, own_font_data,
-                                      open_args.memory_size);
-                if (code < 0)
-                    return code;
+                    own_font_data_len = open_args.memory_size;
+
+                    code = a_font->serialize_tt_font(a_font, own_font_data,
+                                          open_args.memory_size);
+                    if (code < 0)
+                        return code;
+                }
 
                 /* We always load incrementally. */
                 ft_inc_int = new_inc_int(a_server, a_font);

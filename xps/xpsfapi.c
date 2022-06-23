@@ -84,6 +84,7 @@ static const gs_fapi_font pl_ff_stub = {
     NULL,                       /* get_raw_subr */
     xps_fapi_get_glyph,         /* get_glyph */
     xps_fapi_serialize_tt_font, /* serialize_tt_font */
+    NULL,                       /* retrieve_tt_font */
     NULL,                       /* get_charstring */
     NULL,                       /* get_charstring_name */
     xps_get_glyphdirectory_data,        /* get_GlyphDirectory_data_ptr */
