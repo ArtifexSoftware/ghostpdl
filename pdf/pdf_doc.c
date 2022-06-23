@@ -117,19 +117,23 @@ static int Info_check_array(pdf_context *ctx, pdf_array *a)
         if (code < 0)
             goto error;
 
-        if (array_obj->object_num != 0) {
-            code = pdfi_loop_detector_add_object(ctx, array_obj->object_num);
-            if (code < 0)
-                goto error;
-        }
-
         switch(pdfi_type_of(array_obj)) {
             case PDF_DICT:
+                if (array_obj->object_num != 0) {
+                    code = pdfi_loop_detector_add_object(ctx, array_obj->object_num);
+                    if (code < 0)
+                        goto error;
+                }
                 code = Info_check_dict(ctx, (pdf_dict *)array_obj);
                 if (code < 0)
                     goto error;
                 break;
             case PDF_ARRAY:
+                if (array_obj->object_num != 0) {
+                    code = pdfi_loop_detector_add_object(ctx, array_obj->object_num);
+                    if (code < 0)
+                        goto error;
+                }
                 code = Info_check_array(ctx, (pdf_array *)array_obj);
                 if (code < 0)
                     goto error;
