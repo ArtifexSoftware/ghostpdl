@@ -2716,7 +2716,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
         dlprintf2("%02d)%s.pam\n",global_index,filename);dflush();
         gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s.pam",global_index,filename);
         fid = gp_fopen(mem,full_file_name,"wb");
-        fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 2\nMAXVAL %d\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n",
+        gp_fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 2\nMAXVAL %d\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n",
                 width, num_rows, deep ? 65535 : 255);
         if (deep) {
             for(y=0; y<num_rows; y++)
@@ -2737,7 +2737,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
             dlprintf2("%02d)%s_shape.pgm\n",global_index,filename);dflush();
             gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_shape.pgm",global_index,filename);
             fid = gp_fopen(mem,full_file_name,"wb");
-            fprintf(fid, "P5\n%d %d %d\n",
+            gp_fprintf(fid, "P5\n%d %d %d\n",
                     width, num_rows, deep ? 65535 : 255);
             if (deep) {
                 for(y=0; y<num_rows; y++)
@@ -2759,7 +2759,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
         dprintf2("%02d)%s.pam\n",global_index,filename);dflush();
         gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s.pam",global_index,filename);
         fid = gp_fopen(mem,full_file_name,"wb");
-        fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL %d\nTUPLTYPE RGB_ALPHA\nENDHDR\n",
+        gp_fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL %d\nTUPLTYPE RGB_ALPHA\nENDHDR\n",
                 width, num_rows, deep ? 65535 : 255);
         if (deep) {
             for(y=0; y<num_rows; y++)
@@ -2779,7 +2779,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
         if (n_chan > 4) {
             gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_shape.pgm",global_index,filename);
             fid = gp_fopen(mem,full_file_name,"wb");
-            fprintf(fid, "P5\n%d %d %d\n",
+            gp_fprintf(fid, "P5\n%d %d %d\n",
                     width, num_rows, deep ? 65535 : 255);
             if (deep) {
                 for(y=0; y<num_rows; y++)
@@ -2798,7 +2798,7 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
         if (n_chan == 6) {
             gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_tags.pgm",global_index,filename);
             fid = gp_fopen(mem, full_file_name,"wb");
-            fprintf(fid, "P5\n%d %d 255\n", width, num_rows);
+            gp_fprintf(fid, "P5\n%d %d 255\n", width, num_rows);
             if (deep) {
                 for(y=0; y<num_rows; y++)
                     for(x=0; x<width; x++)
