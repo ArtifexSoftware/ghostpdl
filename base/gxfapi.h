@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -199,6 +199,8 @@ struct gs_fapi_font_s
     int (*get_glyph) (gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_length);
 
     int (*serialize_tt_font) (gs_fapi_font *ff, void *buf, int buf_size);
+
+    int (*retrieve_tt_font) (gs_fapi_font *ff, void **buf, int *buf_size);
 
     int (*get_charstring) (gs_fapi_font *ff, int index, byte *buf, ushort buf_length);
 

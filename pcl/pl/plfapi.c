@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -121,6 +121,7 @@ static const gs_fapi_font pl_ff_stub = {
     NULL,                       /* get_raw_subr */
     pl_fapi_get_glyph,          /* get_glyph */
     pl_fapi_serialize_tt_font,  /* serialize_tt_font */
+    NULL,                       /* retrieve_tt_font */
     NULL,                       /* get_charstring */
     NULL,                       /* get_charstring_name */
     pl_get_glyphdirectory_data, /* get_GlyphDirectory_data_ptr */

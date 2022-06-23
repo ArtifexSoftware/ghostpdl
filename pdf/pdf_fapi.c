@@ -72,6 +72,9 @@ static int
 pdfi_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size);
 
 static int
+pdfi_fapi_retrieve_tt_font(gs_fapi_font * ff, void **buf, int *buf_size);
+
+static int
 pdfi_fapi_get_charstring(gs_fapi_font *ff, int index, byte *buf, ushort buf_length);
 
 static int
@@ -132,6 +135,7 @@ static const gs_fapi_font pdfi_ff_stub = {
     pdfi_fapi_get_raw_subr,                         /* get_raw_subr */
     pdfi_fapi_get_glyph,                            /* get_glyph */
     pdfi_fapi_serialize_tt_font,                    /* serialize_tt_font */
+    pdfi_fapi_retrieve_tt_font,                     /* retrieve_tt_font */
     pdfi_fapi_get_charstring,                       /* get_charstring */
     pdfi_fapi_get_charstring_name,                  /* get_charstring_name */
     pdfi_get_glyphdirectory_data,                   /* get_GlyphDirectory_data_ptr */
@@ -1110,7 +1114,6 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
     pdf_name *encn;
     int cstrlen = 0;
 
-    /* This should only get called for Postscript-type fonts */
     if (ff->is_type1) {
 
         if (pbfont->FontType == ft_encrypted) {
@@ -1254,7 +1257,16 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
         }
     }
     else {
-        code = gs_error_invalidaccess;
+        gs_font_type42 *pfont42 = (gs_font_type42 *)pbfont;
+        gs_glyph_data_t pgd;
+
+        code = pfont42->data.get_outline(pfont42, char_code, &pgd);
+        cstrlen = pgd.bits.size;
+        if (code >= 0) {
+            if (buf && buf_length >= cstrlen) {
+                memcpy(buf, pgd.bits.data, cstrlen);
+            }
+        }
     }
 done:
     if (code < 0)
@@ -1268,6 +1280,19 @@ pdfi_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size)
 {
     return 0;
 }
+
+static int
+pdfi_fapi_retrieve_tt_font(gs_fapi_font * ff, void **buf, int *buf_size)
+{
+    gs_font_type42 *pfonttt = (gs_font_type42 *) ff->client_font_data;
+    pdf_font_truetype *pdfttf = (pdf_font_truetype *)pfonttt->client_data;
+
+    *buf = pdfttf->sfnt.data;
+    *buf_size = pdfttf->sfnt.size;
+
+    return 0;
+}
+
 
 static int
 pdfi_get_glyphdirectory_data(gs_fapi_font * ff, int char_code,
@@ -1432,6 +1457,7 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
     char *fapi_id = NULL;
     int code = 0;
     gs_string fdata;
+    gs_string *fdatap = &fdata;
     gs_font_base *pbfont = (gs_font_base *)font->pfont;
     gs_fapi_font local_pdf_ff_stub = pdfi_ff_stub;
     gs_fapi_ttf_cmap_request symbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{3, 0}, {1, 0}, {3, 1}, {3, 10}, {-1, -1}};
@@ -1443,16 +1469,15 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
     }
 
     if (font->pdfi_font_type == e_pdf_font_truetype) {
-        fdata.data = ((pdf_font_truetype *)font)->sfnt.data;
-        fdata.size = ((pdf_font_truetype *)font)->sfnt.size;
+        fdatap = NULL;
     }
     else if (font->pdfi_font_type == e_pdf_cidfont_type2) {
-        fdata.data = ((pdf_cidfont_type2 *)font)->sfnt.data;
-        fdata.size = ((pdf_cidfont_type2 *)font)->sfnt.size;
+        fdatap->data = ((pdf_cidfont_type2 *)font)->sfnt.data;
+        fdatap->size = ((pdf_cidfont_type2 *)font)->sfnt.size;
     }
     else {
-        fdata.data = font_data;
-        fdata.size = font_data_len;
+        fdatap->data = font_data;
+        fdatap->size = font_data_len;
     }
 
     if (font->pdfi_font_type == e_pdf_font_truetype) {
@@ -1469,7 +1494,7 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
                                     (gs_font *)pbfont);
 
     code =
-        gs_fapi_passfont((gs_font *)pbfont, subfont, (char *)file_name, &fdata,
+        gs_fapi_passfont((gs_font *)pbfont, subfont, (char *)file_name, fdatap,
                          (char *)fapi_request, NULL, (char **)&fapi_id,
                          (gs_fapi_get_server_param_callback)
                          pdfi_get_server_param);
