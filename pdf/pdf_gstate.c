@@ -2241,7 +2241,7 @@ int pdfi_set_ExtGState(pdf_context *ctx, pdf_dict *stream_dict,
 
 int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    pdf_name *n;
+    pdf_name *n = NULL;
     pdf_obj *o = NULL;
     int code=0, code1 = 0;
 

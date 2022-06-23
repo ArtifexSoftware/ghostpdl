@@ -866,6 +866,8 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return 0;
     }
 
+    savedoffset = pdfi_tell(ctx->main_stream);
+
     n = (pdf_name *)ctx->stack_top[-1];
     pdfi_countup(n);
     pdfi_pop(ctx, 1);
@@ -875,7 +877,6 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit1;
     }
 
-    savedoffset = pdfi_tell(ctx->main_stream);
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0) {
         pdfi_countdown(n);
