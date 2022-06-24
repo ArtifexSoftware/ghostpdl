@@ -377,12 +377,29 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         pdfi_set_error_var(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed number %s as 0", Buffer);
         num->value.i = 0;
     } else if (has_exponent) {
-        float f;
-        if (sscanf((char *)Buffer, "%g", &f) == 1) {
-            num->value.d = f;
-        } else {
+        float f, exp;
+        char *p = strstr((const char *)Buffer, "e");
+
+        if (p == NULL)
+            p = strstr((const char *)Buffer, "E");
+
+        if (p == NULL) {
             pdfi_set_error_var(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer);
             num->value.d = 0;
+        } else {
+            p++;
+
+            if (sscanf((char *)p, "%g", &exp) != 1 || exp > 38) {
+                pdfi_set_error_var(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer);
+                num->value.d = 0;
+            } else {
+                if (sscanf((char *)Buffer, "%g", &f) == 1) {
+                    num->value.d = f;
+                } else {
+                    pdfi_set_error_var(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer);
+                    num->value.d = 0;
+                }
+            }
         }
     } else if (real) {
         num->value.d = acrobat_compatible_atof((char *)Buffer);
