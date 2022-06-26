@@ -169,20 +169,24 @@ static int Info_check_dict(pdf_context *ctx, pdf_dict *d)
         goto error;
     }
 
-    if (Value->object_num != 0) {
-        code = pdfi_loop_detector_add_object(ctx, Value->object_num);
-        if (code < 0)
-            goto error;
-    }
-
     while (code >= 0) {
         switch(pdfi_type_of(Value)) {
             case PDF_DICT:
+                if (Value->object_num != 0) {
+                    code = pdfi_loop_detector_add_object(ctx, Value->object_num);
+                    if (code < 0)
+                        goto error;
+                }
                 code = Info_check_dict(ctx, (pdf_dict *)Value);
                 if (code < 0)
                     goto error;
                 break;
             case PDF_ARRAY:
+                if (Value->object_num != 0) {
+                    code = pdfi_loop_detector_add_object(ctx, Value->object_num);
+                    if (code < 0)
+                        goto error;
+                }
                 code = Info_check_array(ctx, (pdf_array *)Value);
                 if (code < 0)
                     goto error;
