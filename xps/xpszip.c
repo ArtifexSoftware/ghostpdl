@@ -495,25 +495,28 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
     }
 
     /* Inflate the pieces */
-    if (count)
+
+    part = xps_new_part(ctx, name, size);
+    if (!part)
     {
-        part = xps_new_part(ctx, name, size);
-        offset = 0;
-        for (i = 0; i < count; i++)
-        {
-            if (i < count - 1)
-                gs_snprintf(buf, sizeof(buf), "%s%s/[%d].piece", ctx->directory, name, i);
-            else
-                gs_snprintf(buf, sizeof(buf), "%s%s/[%d].last.piece", ctx->directory, name, i);
-            file = gp_fopen(ctx->memory, buf, "rb");
-            n = xps_fread(part->data + offset, 1, size - offset, file);
-            offset += n;
-            gp_fclose(file);
-        }
-        return part;
+        gs_rethrow1(-1, "failed to create part '%s'", name);
+        return NULL;
     }
 
-    return NULL;
+    offset = 0;
+    for (i = 0; i < count; i++)
+    {
+        if (i < count - 1)
+            gs_snprintf(buf, sizeof(buf), "%s%s/[%d].piece", ctx->directory, name, i);
+        else
+            gs_snprintf(buf, sizeof(buf), "%s%s/[%d].last.piece", ctx->directory, name, i);
+        file = gp_fopen(ctx->memory, buf, "rb");
+        n = xps_fread(part->data + offset, 1, size - offset, file);
+        offset += n;
+        gp_fclose(file);
+    }
+    return part;
+
 }
 
 xps_part_t *
