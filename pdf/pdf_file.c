@@ -1013,6 +1013,10 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
                 decode = NULL;
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_STREAM_BAD_DECODEPARMS, "pdfi_filter_no_decryption", NULL);
             }
+            if (decode && decode == PDF_NULL_OBJ) {
+                pdfi_countdown(decode);
+                decode = NULL;
+            }
 
             code = pdfi_apply_filter(ctx, stream_dict, (pdf_name *)o,
                                      (pdf_dict *)decode, s, &new_s, inline_image);
