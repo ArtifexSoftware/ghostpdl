@@ -340,6 +340,7 @@ xps_read_zip_part(xps_context_t *ctx, const char *partname)
     xps_entry_t *ent;
     xps_part_t *part;
     int count, size, offset, i;
+    int last_size;
     int code = 0;
     const char *name;
     int seen_last = 0;
@@ -382,7 +383,15 @@ xps_read_zip_part(xps_context_t *ctx, const char *partname)
         if (!ent)
             break;
         count ++;
+        last_size = size;
         size += ent->usize;
+
+        /* check for integer overflow */
+        if (size < last_size)
+        {
+            gs_throw1(-1, "part '%s' is too large", partname);
+            return NULL;
+        }
     }
     if (!seen_last)
     {
