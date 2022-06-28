@@ -634,6 +634,7 @@ static int get_shading_common(pdf_context *ctx, pdf_dict *shading_dict, gs_shadi
 get_shading_common_error:
     pdfi_countdown((pdf_obj *)a);
     gs_free_object(ctx->memory, params->Background, "Background (common_shading_error)");
+    params->Background = NULL;
     return code;
 }
 
