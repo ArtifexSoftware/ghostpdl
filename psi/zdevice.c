@@ -45,7 +45,7 @@ ENUM_PTRS_WITH(psi_device_ref_enum_ptrs, psi_device_ref *devref)
       }
     case 0:
       {
-          if (devref->device->memory != NULL) {
+          if (devref->device != NULL && devref->device->memory != NULL) {
               ENUM_RETURN(gx_device_enum_ptr(devref->device));
           }
           return 0;
@@ -54,7 +54,7 @@ ENUM_PTRS_END
 
 static
 RELOC_PTRS_WITH(psi_device_ref_reloc_ptrs, psi_device_ref *devref)
-    if (devref->device->memory != NULL) {
+    if (devref->device != NULL && devref->device->memory != NULL) {
         devref->device = gx_device_reloc_ptr(devref->device, gcst);
     }
 RELOC_PTRS_END
@@ -71,7 +71,7 @@ psi_device_ref_finalize(const gs_memory_t *cmem, void *vptr)
     /* pdref->device->memory == NULL indicates either a device prototype
        or a device allocated on the stack rather than the heap
      */
-    if (pdref->device->memory != NULL)
+    if (pdref->device != NULL && pdref->device->memory != NULL)
         rc_decrement(pdref->device, "psi_device_ref_finalize");
 
     pdref->device = NULL;
@@ -456,6 +456,7 @@ zmakewordimagedevice(i_ctx_t *i_ctx_p)
             return_error(gs_error_VMerror);
         }
         psdev->device = new_dev;
+        rc_increment(new_dev);
         make_tav(op - 4, t_device, imemory_space(iimemory) | a_all, pdevice, psdev);
         pop(4);
     }
