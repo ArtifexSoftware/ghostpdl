@@ -313,6 +313,9 @@ typedef struct gx_device_cups_s
   int			Matrix[3][3][CUPS_MAX_VALUE + 1];/* Color transform matrix LUT */
   int                   user_icc;
   int                   cupsRasterVersion;
+  char                  cupsBackSideOrientation[64];
+  int                   cupsBackSideFlipMargins;
+  int                   cupsManualCopies;
   char                  pageSizeRequested[64];
 
   /* Used by cups_put_params(): */
@@ -462,6 +465,9 @@ cups_initialize_device_procs(gx_device *dev)
    {{0x00},{0x00},{0x00}}},                /* Matrix */\
   0,                                       /* user_icc */\
   3,                                     /* cupsRasterVersion */\
+  "Normal",                                /* cupsBackSideOrientation */\
+  0,                                       /* cupsBackSideFlipMargins */\
+  0,                                       /* cupsManualCopies */\
   ""                                     /* pageSizeRequested */
 
 gx_device_cups	gs_cups_device = { gs_xxx_device("cups", "") };
@@ -1113,6 +1119,27 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
   if ((code = param_write_string(plist, "cupsPageSizeName", &s)) < 0)
     goto done;
 #endif /* CUPS_RASTER_SYNCv1 */
+
+ /*
+  * Variables for PPD-less use only. If these settings are defined in the
+  * PPD file, the PPD file's definitions get priority.
+  */
+
+  if ((code = param_write_int(plist, "cupsRasterVersion",
+			      (int *)&(cups->cupsRasterVersion))) < 0)
+    goto done;
+
+  param_string_from_transient_string(s, cups->cupsBackSideOrientation);
+  if ((code = param_write_string(plist, "cupsBackSideOrientation", &s)) < 0)
+    goto done;
+
+  b = cups->cupsBackSideFlipMargins;
+  if ((code = param_write_bool(plist, "cupsBackSideFlipMargins", &b)) < 0)
+    goto done;
+
+  b = cups->cupsManualCopies;
+  if ((code = param_write_bool(plist, "cupsManualCopies", &b)) < 0)
+    goto done;
 
 done:
 
@@ -2989,7 +3016,8 @@ cups_print_pages(gx_device_printer *pdev,
   if (num_copies < 1)
     num_copies = 1;
 
-  if (cups->PPD != NULL && !cups->PPD->manual_copies)
+  if ((cups->PPD == NULL && !cups->cupsManualCopies) ||
+      (cups->PPD != NULL && !cups->PPD->manual_copies))
   {
     cups->header.NumCopies = num_copies;
     num_copies = 1;
@@ -3278,6 +3306,69 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   if ((code = cups_set_color_info(pdev)) < 0) {
       goto done;
   }
+
+ /*
+  * Variables for PPD-less use only. If these settings are defined in the
+  * PPD file, the PPD file's definitions get priority.
+  */
+
+  if ((code = param_read_int(plist, "cupsRasterVersion", &intval)) < 0)
+  {
+    dmprintf1(pdev->memory, "ERROR: Error setting %s ...\n",
+	      "cupsRasterVersion");
+    param_signal_error(plist, "cupsRasterVersion", code); \
+    goto done;
+  }
+  else if (code == 0)
+    cups->cupsRasterVersion = (int)intval;
+
+  if ((code = param_read_string(plist, "cupsBackSideOrientation",
+				&stringval)) < 0)
+  {
+    dmprintf1(pdev->memory, "ERROR: Error setting %s...\n",
+	      "cupsBackSideOrientation");
+    param_signal_error(plist, "cupsBackSideOrientation", code);
+    goto done;
+  }
+  else if (code == 0)
+  {
+    intval = min(sizeof(cups->cupsBackSideOrientation) - 1, stringval.size);
+    strncpy(cups->cupsBackSideOrientation, (const char *)(stringval.data),
+	    intval);
+    cups->cupsBackSideOrientation[intval] = '\0';
+  }
+
+  if ((code = param_read_bool(plist, "cupsBackSideFlipMargins",
+			      &boolval)) < 0)
+  {
+    if ((code = param_read_null(plist, "cupsBackSideFlipMargins")) < 0)
+    {
+      dmprintf1(pdev->memory, "ERROR: Error setting %s ...\n",
+		"cupsBackSideFlipMargins");
+      param_signal_error(plist, "cupsBackSideFlipMargins", code);
+      goto done;
+    }
+    if (code == 0)
+      cups->cupsBackSideFlipMargins = CUPS_FALSE;
+  }
+  else if (code == 0)
+    cups->cupsBackSideFlipMargins = (cups_bool_t)boolval;
+
+  if ((code = param_read_bool(plist, "cupsManualCopies",
+			      &boolval)) < 0)
+  {
+    if ((code = param_read_null(plist, "cupsManualCopies")) < 0)
+    {
+      dmprintf1(pdev->memory, "ERROR: Error setting %s ...\n",
+		"cupsManualCopies");
+      param_signal_error(plist, "cupsManualCopies", code);
+      goto done;
+    }
+    if (code == 0)
+      cups->cupsManualCopies = CUPS_FALSE;
+  }
+  else if (code == 0)
+    cups->cupsManualCopies = (cups_bool_t)boolval;
 
   /*
   * Then process standard page device options...
@@ -3900,6 +3991,86 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     else
     {
       /* No PPD file available */
+#ifdef CUPS_DEBUG
+      dmprintf1(pdev->memory, "DEBUG2: cups->header.Duplex = %d\n", cups->header.Duplex);
+      dmprintf1(pdev->memory, "DEBUG2: cups->header.Tumble = %d\n", cups->header.Tumble);
+      dmprintf1(pdev->memory, "DEBUG2: cups->page = %d\n", cups->page);
+#endif /* CUPS_DEBUG */
+
+#ifdef CUPS_DEBUG
+      dmprintf1(pdev->memory, "DEBUG2: cupsBackSideOrientation = %s\n",
+		cups->cupsBackSideOrientation);
+#endif /* CUPS_DEBUG */
+
+#ifdef CUPS_DEBUG
+      if (cups->cupsBackSideFlipMargins)
+        dmprintf0(pdev->memory, "DEBUG2: Duplex requires flipped margins\n");
+#endif /* CUPS_DEBUG */
+
+      if (cups->header.Duplex &&
+	  (cups->header.Tumble &&
+	   (!strcasecmp(cups->cupsBackSideOrientation, "Flipped"))) &&
+	  !(cups->page & 1))
+      {
+	xflip = 1;
+	if (!cups->cupsBackSideFlipMargins) {
+#ifdef CUPS_DEBUG
+          dmprintf(pdev->memory, "DEBUG2: (1) Flip: X=1 Y=0\n");
+#endif /* CUPS_DEBUG */
+	  yflip = 0;
+	} else {
+#ifdef CUPS_DEBUG
+          dmprintf(pdev->memory, "DEBUG2: (1) Flip: X=1 Y=1\n");
+#endif /* CUPS_DEBUG */
+	  yflip = 1;
+	}
+      }
+      else if (cups->header.Duplex &&
+	       (!cups->header.Tumble &&
+		(!strcasecmp(cups->cupsBackSideOrientation, "Flipped"))) &&
+	       !(cups->page & 1))
+      {
+	xflip = 0;
+	if (!cups->cupsBackSideFlipMargins) {
+#ifdef CUPS_DEBUG
+          dmprintf(pdev->memory, "DEBUG2: (2) Flip: X=0 Y=1\n");
+#endif /* CUPS_DEBUG */
+	  yflip = 1;
+	} else {
+#ifdef CUPS_DEBUG
+          dmprintf(pdev->memory, "DEBUG2: (2) Flip: X=0 Y=0\n");
+#endif /* CUPS_DEBUG */
+	  yflip = 0;
+	}
+      }
+      else if (cups->header.Duplex &&
+	       ((!cups->header.Tumble &&
+		 (!strcasecmp(cups->cupsBackSideOrientation, "Rotated"))) ||
+		(cups->header.Tumble &&
+		 (!strcasecmp(cups->cupsBackSideOrientation, "ManualTumble")))) &&
+	       !(cups->page & 1))
+      {
+	xflip = 1;
+	if (cups->cupsBackSideFlipMargins) {
+#ifdef CUPS_DEBUG
+          dmprintf(pdev->memory, "DEBUG2: (3) Flip: X=1 Y=0\n");
+#endif /* CUPS_DEBUG */
+	  yflip = 0;
+	} else {
+#ifdef CUPS_DEBUG
+          dmprintf(pdev->memory, "DEBUG2: (3) Flip: X=1 Y=1\n");
+#endif /* CUPS_DEBUG */
+	  yflip = 1;
+	}
+      }
+      else
+      {
+#ifdef CUPS_DEBUG
+        dmprintf(pdev->memory, "DEBUG2: (4) Flip: X=0 Y=0\n");
+#endif /* CUPS_DEBUG */
+	xflip = 0;
+	yflip = 0;
+      }
       mediasize[0] = cups->MediaSize[0];
       mediasize[1] = cups->MediaSize[1];
 #ifdef CUPS_RASTER_SYNCv1
@@ -3914,6 +4085,14 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	margins[1] = pdev->HWMargins[1] / 72.0;
 	margins[2] = pdev->HWMargins[2] / 72.0;
 	margins[3] = pdev->HWMargins[3] / 72.0;
+	if (xflip == 1)
+	{
+	  swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	}
+	if (yflip == 1)
+	{
+	  swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	}
 #ifdef CUPS_RASTER_SYNCv1
       }
       else
@@ -4799,6 +4978,8 @@ cups_print_chunked(gx_device_printer *pdev,
 #endif
                 ystart, yend, ystep;    /* Loop control for scanline order */
   ppd_attr_t    *backside = NULL;
+  char          *backside_str = "Normal";
+  int           flip_duplex = 0;
 
 #ifdef CUPS_DEBUG
   dmprintf1(pdev->memory, "DEBUG2: cups->header.Duplex = %d\n", cups->header.Duplex);
@@ -4810,30 +4991,34 @@ cups_print_chunked(gx_device_printer *pdev,
   if (cups->PPD) {
     backside = ppdFindAttr(cups->PPD, "cupsBackSide", NULL);
     if (backside) {
-#ifdef CUPS_DEBUG
-      dmprintf1(pdev->memory, "DEBUG2: cupsBackSide = %s\n", backside->value);
-#endif /* CUPS_DEBUG */
+      backside_str = backside->value;
       cups->PPD->flip_duplex = 0;
     }
+    flip_duplex = cups->PPD->flip_duplex;
   }
-  if (cups->header.Duplex && cups->PPD &&
+  else
+    backside_str = cups->cupsBackSideOrientation;
+#ifdef CUPS_DEBUG
+  dmprintf1(pdev->memory, "DEBUG2: Back side orientation: %s\n", backside_str);
+#endif /* CUPS_DEBUG */
+  if (cups->header.Duplex &&
       ((!cups->header.Tumble &&
-	(cups->PPD->flip_duplex ||
-	 (backside && !strcasecmp(backside->value, "Rotated")))) ||
+	(flip_duplex ||
+	 (!strcasecmp(backside_str, "Rotated")))) ||
        (cups->header.Tumble &&
-	(backside && (!strcasecmp(backside->value, "Flipped") ||
-		      !strcasecmp(backside->value, "ManualTumble"))))) &&
+	((!strcasecmp(backside_str, "Flipped") ||
+	  !strcasecmp(backside_str, "ManualTumble"))))) &&
       !(cups->page & 1))
     xflip = 1;
   else
     xflip = 0;
-  if (cups->header.Duplex && cups->PPD &&
+  if (cups->header.Duplex &&
       ((!cups->header.Tumble &&
-	(cups->PPD->flip_duplex ||
-	 (backside && (!strcasecmp(backside->value, "Flipped") ||
-		       !strcasecmp(backside->value, "Rotated"))))) ||
+	(flip_duplex ||
+	 ((!strcasecmp(backside_str, "Flipped") ||
+	   !strcasecmp(backside_str, "Rotated"))))) ||
        (cups->header.Tumble &&
-	(backside && !strcasecmp(backside->value, "ManualTumble")))) &&
+	(!strcasecmp(backside_str, "ManualTumble")))) &&
       !(cups->page & 1)) {
 #ifdef CUPS_DEBUG
     yflip = 1;
@@ -5032,6 +5217,8 @@ cups_print_banded(gx_device_printer *pdev,
 #endif
                 ystart, yend, ystep;    /* Loop control for scanline order */
   ppd_attr_t    *backside = NULL;
+  char          *backside_str = "Normal";
+  int           flip_duplex = 0;
 
 #ifdef CUPS_DEBUG
   dmprintf1(pdev->memory, "DEBUG2: cups->header.Duplex = %d\n", cups->header.Duplex);
@@ -5043,30 +5230,34 @@ cups_print_banded(gx_device_printer *pdev,
   if (cups->PPD) {
     backside = ppdFindAttr(cups->PPD, "cupsBackSide", NULL);
     if (backside) {
-#ifdef CUPS_DEBUG
-      dmprintf1(pdev->memory, "DEBUG2: cupsBackSide = %s\n", backside->value);
-#endif /* CUPS_DEBUG */
+      backside_str = backside->value;
       cups->PPD->flip_duplex = 0;
     }
+    flip_duplex = cups->PPD->flip_duplex;
   }
-  if (cups->header.Duplex && cups->PPD &&
+  else
+    backside_str = cups->cupsBackSideOrientation;
+#ifdef CUPS_DEBUG
+  dmprintf1(pdev->memory, "DEBUG2: Back side orientation: %s\n", backside_str);
+#endif /* CUPS_DEBUG */
+  if (cups->header.Duplex &&
       ((!cups->header.Tumble &&
-	(cups->PPD->flip_duplex ||
-	 (backside && !strcasecmp(backside->value, "Rotated")))) ||
+	(flip_duplex ||
+	 (!strcasecmp(backside_str, "Rotated")))) ||
        (cups->header.Tumble &&
-	(backside && (!strcasecmp(backside->value, "Flipped") ||
-		      !strcasecmp(backside->value, "ManualTumble"))))) &&
+	((!strcasecmp(backside_str, "Flipped") ||
+	  !strcasecmp(backside_str, "ManualTumble"))))) &&
       !(cups->page & 1))
     xflip = 1;
   else
     xflip = 0;
-  if (cups->header.Duplex && cups->PPD &&
+  if (cups->header.Duplex &&
       ((!cups->header.Tumble &&
-	(cups->PPD->flip_duplex ||
-	 (backside && (!strcasecmp(backside->value, "Flipped") ||
-		       !strcasecmp(backside->value, "Rotated"))))) ||
+	(flip_duplex ||
+	 ((!strcasecmp(backside_str, "Flipped") ||
+	   !strcasecmp(backside_str, "Rotated"))))) ||
        (cups->header.Tumble &&
-	(backside && !strcasecmp(backside->value, "ManualTumble")))) &&
+	(!strcasecmp(backside_str, "ManualTumble")))) &&
       !(cups->page & 1)) {
 #ifdef CUPS_DEBUG
     yflip = 1;
