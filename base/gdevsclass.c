@@ -393,7 +393,10 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
                         dev->child = psubclass_data->pre_composite_device;
                         psubclass_data->pre_composite_device = NULL;
                         psubclass_data->saved_finalize_method = NULL;
-                        memcpy(&(dev->color_info), &(dev->child->color_info), sizeof(gx_device_color_info));
+                        while (dev) {
+                            memcpy(&(dev->color_info), &(dev->child->color_info), sizeof(gx_device_color_info));
+                            dev = dev->parent;
+                        }
                     }
                     break;
                 case PDF14_PUSH_DEVICE:
@@ -416,7 +419,10 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
                         (*pcdev)->child = dev->child;
                         dev->child = *pcdev;
                         (*pcdev)->parent = dev;
-                        memcpy(&dev->color_info, &(*pcdev)->color_info, sizeof(gx_device_color_info));
+                        while (dev) {
+                            memcpy(&dev->color_info, &(*pcdev)->color_info, sizeof(gx_device_color_info));
+                            dev = dev->parent;
+                        }
                     }
                     break;
                 default:
@@ -425,8 +431,12 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
                      * any time we have inserted a compositor after this class, we must update the color info
                      * of this device after every operation, in case it changes....
                      */
-                    if (psubclass_data->pre_composite_device != NULL)
-                        memcpy(&(dev->color_info), &(dev->child->color_info), sizeof(gx_device_color_info));
+                    if (psubclass_data->pre_composite_device != NULL) {
+                        while (dev) {
+                            memcpy(&(dev->color_info), &(dev->child->color_info), sizeof(gx_device_color_info));
+                            dev = dev->parent;
+                        }
+                    }
                     break;
             }
 
