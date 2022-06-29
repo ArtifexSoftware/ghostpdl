@@ -2329,7 +2329,7 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
         pdfi_countup(d);
         do {
             code = pdfi_dict_knownget(ctx, d, "Parent", (pdf_obj **)&Parent);
-            if (code > 0) {
+            if (code > 0 && pdfi_type_of(Parent) == PDF_DICT) {
                 if (Parent->object_num == stream_obj->object_num) {
                     pdfi_countdown(d);
                     pdfi_countdown(Parent);
