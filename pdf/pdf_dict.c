@@ -342,6 +342,7 @@ int pdfi_dict_get_common(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj
          */
         if ((*o) < (pdf_obj *)(uintptr_t)(TOKEN__LAST_KEY)) {
             /* "FAST" object, therefore can't be a problem. */
+            pdfi_countdown(d->list[index].value);
             d->list[index].value = *o;
         } else if ((*o)->object_num == 0 || (*o)->object_num != d->object_num) {
             pdfi_countdown(d->list[index].value);
