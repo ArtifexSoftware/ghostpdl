@@ -59,7 +59,6 @@
 #include FT_TRUETYPE_TABLES_H
 #include FT_MULTIPLE_MASTERS_H
 #include FT_TYPE1_TABLES_H
-#include FT_SIZES_H
 
 /* Note: structure definitions here start with FF_, which stands for 'FAPI FreeType". */
 
@@ -707,20 +706,6 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
 
     if (ft_error == FT_Err_Out_Of_Memory
         || ft_error == FT_Err_Array_Too_Large) {
-        /* An out of memory error can leave the FT TTF hinting context in a partially initialized state.
-           Meaning bad things can happen if we try to render another glyph using the same context.
-           Ideally this would be handled by FT internally, but that means some implications for supporting
-           out of spec fonts, and performance.
-           By destroying, recreating and resetting the size, it invalidates the (possibly corrupt) hinting
-           context, and ensures a fresh start in any subsequent call.
-         */
-        FT_Size ftsize = NULL;
-        FT_Done_Size(ft_face->size);
-        FT_New_Size(face->ft_face, &ftsize);
-        FT_Activate_Size(ftsize);
-        ft_error = FT_Set_Char_Size(face->ft_face, face->width, face->height, face->horz_res, face->vert_res);
-        if (ft_error != 0) return_error(gs_error_invalidfont);
-
         return (gs_error_VMerror);
     }
 
