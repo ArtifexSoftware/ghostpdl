@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -24,6 +24,11 @@
  */
 #define FORCE_TESTING_SUBCLASSING 0
 
+/* This installs the 'kernel' device classes. If you add any devices here you should
+ * almost certainly edit gdevp14.c, gs_pdf14_device_push() and add the new device to the list
+ * of devices which the push of the compositor claims are already installed (to prevent
+ * a second copy being installed by gdev_prn_open).
+ */
 int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded)
 {
     int code = 0;

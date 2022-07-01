@@ -875,7 +875,11 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
     if (dev->finalize)
         dev->finalize(dev);
 
-    rc_decrement(dev->child, "de-reference child device");
+    /* Use rc_decrement_only here not rc_decrement because rc_decrement zeroes the
+     * pointer if the count reaches 0. That would be disastrous for us because we
+     * rely on recursively calling finalize in order to fix up the chain of devices.
+     */
+    rc_decrement_only(dev->child, "de-reference child device");
 
     if (psubclass_data) {
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "gx_epo_finalize(suclass data)");

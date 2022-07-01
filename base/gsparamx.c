@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -144,7 +144,12 @@ param_list_copy(gs_param_list *plto, gs_param_list *plfrom)
             code = (code > 0 ? gs_note_error(gs_error_unknownerror) : code);
             break;
         }
-        gs_param_list_set_persistent_keys(plto, key.persistent);
+        /* We used to use 'key.persistent' to determine whether we needed to copy the
+         * key (by setting persistent_keys in the param list to false), but that isn't
+         * correct! We are going to use the heap buffer 'string_key', not the original
+         * key, and since that's on the heap it is NOT persistent....
+         */
+        gs_param_list_set_persistent_keys(plto, false);
         switch (value.type) {
         case gs_param_type_dict:
             coll_type = gs_param_collection_dict_any;

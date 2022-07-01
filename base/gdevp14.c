@@ -8891,6 +8891,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
 
         new_target->PageHandlerPushed = true;
         new_target->ObjectHandlerPushed = true;
+        new_target->NupHandlerPushed = true;
         /* if the device has separations already defined (by SeparationOrderNames) */
         /* we need to copy them (allocating new names) so the colorants are in the */
         /* same order as the target device.                                        */
