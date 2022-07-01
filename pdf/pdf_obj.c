@@ -282,7 +282,7 @@ int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **strea
     int code = 0;
     pdf_stream *new_stream = NULL;
 
-    if (dict->type != PDF_DICT)
+    if (pdfi_type_of(dict) != PDF_DICT)
         return_error(gs_error_typecheck);
 
     code = pdfi_object_alloc(ctx, PDF_STREAM, 0, (pdf_obj **)&new_stream);
@@ -574,10 +574,10 @@ static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
             if (code < 0 && code != gs_error_circular_reference)
                 goto exit;
             if (code == 0) {
-                if (object->type == PDF_STREAM) {
+                if (pdfi_type_of(object) == PDF_STREAM) {
                     code = pdfi_pdfmark_stream(ctx, (pdf_stream *)object);
                     if (code < 0) goto exit;
-                } else if (object->type == PDF_DICT) {
+                } else if (pdfi_type_of(object) == PDF_DICT) {
                     code = pdfi_pdfmark_dict(ctx, (pdf_dict *)object);
                     if (code < 0) goto exit;
                 } else {

@@ -728,7 +728,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
         (void)pdfi_dict_get_by_key(ctx, ctx->pdfnativefontmap, key, (pdf_obj **)&v);
         for (j = 0; j < key->length; j++)
             dprintf1("%c", key->data[j]);
-        if (v->type == PDF_DICT) {
+        if (pdfi_type_of(v) == PDF_DICT) {
             pdf_num *n;
             pdf_string *val2;
             code = pdfi_dict_get(ctx, (pdf_dict *)v, "Index", (pdf_obj **)&n);
@@ -758,7 +758,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
             (void)pdfi_dict_get_by_key(ctx, ctx->pdfnativefontmap, key, (pdf_obj **)&v);
             for (j = 0; j < key->length; j++)
                 dprintf1("%c", key->data[j]);
-            if (v->type == PDF_DICT) {
+            if (pdfi_type_of(v) == PDF_DICT) {
                 pdf_num *n;
                 pdf_string *val2;
                 code = pdfi_dict_get(ctx, (pdf_dict *)v, "Index", (pdf_obj **)&n);

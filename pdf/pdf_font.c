@@ -1318,7 +1318,7 @@ int pdfi_free_font(pdf_obj *font)
 static inline int pdfi_encoding_name_to_index(pdf_name *name)
 {
     int ind = gs_error_undefined;
-    if (name->type == PDF_NAME) {
+    if (pdfi_type_of(name) == PDF_NAME) {
         if (pdfi_name_is(name, "StandardEncoding")) {
             ind = ENCODING_INDEX_STANDARD;
         } else {

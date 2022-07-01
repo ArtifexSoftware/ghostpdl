@@ -648,10 +648,10 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             if (t1f->FontDescriptor != NULL) {
                 code = pdfi_dict_knownget(ctx, t1f->FontDescriptor, "MissingWidth", &tmp);
                 if (code > 0) {
-                    if (tmp->type == PDF_INT) {
+                    if (pdfi_type_of(tmp) == PDF_INT) {
                         t1f->MissingWidth = ((pdf_num *) tmp)->value.i * x_scale;
                     }
-                    else if (tmp->type == PDF_REAL) {
+                    else if (pdfi_type_of(tmp) == PDF_REAL) {
                         t1f->MissingWidth = ((pdf_num *) tmp)->value.d * x_scale;
                     }
                     else {

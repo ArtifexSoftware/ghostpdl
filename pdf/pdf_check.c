@@ -1509,7 +1509,7 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, pdf_array **fonts_arr
         code = pdfi_dict_first(ctx, tracker.spot_dict, (pdf_obj **)&Key, &Value, &index);
         while (code >= 0)
         {
-            if (Key->type == PDF_NAME) {
+            if (pdfi_type_of(Key) == PDF_NAME) {
                 code = pdfi_array_put(ctx, new_array, a_index++, (pdf_obj *)Key);
                 if (code < 0) {
                     pdfi_countdown(new_array);

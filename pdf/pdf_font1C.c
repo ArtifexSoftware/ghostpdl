@@ -2730,10 +2730,10 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 if (cfffont->FontDescriptor != NULL) {
                     code = pdfi_dict_knownget(ctx, cfffont->FontDescriptor, "MissingWidth", &tmp);
                     if (code > 0) {
-                        if (tmp->type == PDF_INT) {
+                        if (pdfi_type_of(tmp) == PDF_INT) {
                             cfffont->MissingWidth = ((pdf_num *) tmp)->value.i * x_scale;
                         }
-                        else if (tmp->type == PDF_REAL) {
+                        else if (pdfi_type_of(tmp) == PDF_REAL) {
                             cfffont->MissingWidth = ((pdf_num *) tmp)->value.d * x_scale;
                         }
                         else {

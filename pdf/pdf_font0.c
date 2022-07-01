@@ -248,7 +248,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto error;
 
-    if (n->type != PDF_NAME || n->length != 12 || memcmp(n->data, "CIDFontType", 11) != 0) {
+    if (pdfi_type_of(n) != PDF_NAME || n->length != 12 || memcmp(n->data, "CIDFontType", 11) != 0) {
         pdfi_countdown(n);
         code = gs_note_error(gs_error_invalidfont);
         goto error;

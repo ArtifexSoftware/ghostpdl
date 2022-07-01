@@ -289,10 +289,10 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (font->FontDescriptor != NULL) {
         code = pdfi_dict_knownget(ctx, font->FontDescriptor, "MissingWidth", &obj);
         if (code > 0) {
-            if (obj->type == PDF_INT) {
+            if (pdfi_type_of(obj) == PDF_INT) {
                 font->MissingWidth = (double)((pdf_num *) obj)->value.i;
             }
-            else if (obj->type == PDF_REAL) {
+            else if (pdfi_type_of(obj) == PDF_REAL) {
                 font->MissingWidth = ((pdf_num *) obj)->value.d;
             }
             else {

@@ -391,7 +391,7 @@ int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
         for (index = 0;index < pdfi_array_size(spots_array);index++) {
             code = pdfi_array_get(ctx, spots_array, index, (pdf_obj **)&spot);
             if (code >= 0) {
-                if (spot->type == PDF_NAME) {
+                if (pdfi_type_of(spot) == PDF_NAME) {
                     code = pdfi_string_from_name(ctx, spot, &str, &len);
                     if (code >= 0) {
                         dmprintf1(ctx->memory, "        '%s'\n", str);
