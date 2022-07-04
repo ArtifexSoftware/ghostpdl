@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -269,8 +269,13 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
             pfont->data.os2_offset = offset;
         }
     }
-    loca_size >>= pfont->data.indexToLocFormat + 1;
+    loca_size >>= (pfont->data.indexToLocFormat == 0 ? 1 : 2);
     pfont->data.numGlyphs = loca_size - 1;
+    if (pfont->data.numGlyphs > 65535) {
+        pfont->data.numGlyphs = 65535;
+        loca_size = (65536 << (pfont->data.indexToLocFormat == 0 ? 1 : 2));
+    }
+
     if (pfont->data.numGlyphs > (int)pfont->data.trueNumGlyphs) {
         /* pfont->key_name.chars is ASCIIZ due to copy_font_name. */
         char buf[gs_font_name_max + 2];
