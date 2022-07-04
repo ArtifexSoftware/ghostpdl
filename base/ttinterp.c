@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1825,6 +1825,12 @@ static int nInstrCount=0;
   {
     if ( args[1] == 0 )
     {
+      if ( BOUNDS(CUR.IP + args[0], CUR.codeSize ) )
+      {
+        CUR.error = TT_Err_Invalid_Reference;
+        return;
+      }
+
       CUR.IP      += (Int)(args[0]);
       CUR.step_ins = FALSE;
 
@@ -4378,8 +4384,14 @@ static int nInstrCount=0;
         end_point   = CUR.pts.contours[contour];
         first_point = point;
 
-        while ( point <= end_point && (CUR.pts.touch[point] & mask) == 0 )
+        while ( point <= end_point && point < CUR.pts.n_points && (CUR.pts.touch[point] & mask) == 0 )
           point++;
+
+        if (BOUNDS(point, CUR.pts.n_points ))
+        {
+            CUR.error = TT_Err_Invalid_Reference;
+            return;
+        }
 
         if ( point <= end_point )
         {
@@ -4392,12 +4404,21 @@ static int nInstrCount=0;
           {
             if ( (CUR.pts.touch[point] & mask) != 0 )
             {
-              Interp( (Int)(cur_touched + 1),
+              if (BOUNDS(cur_touched,  CUR.pts.n_points)
+               || BOUNDS(point, CUR.pts.n_points))
+              {
+                 CUR.error = TT_Err_Invalid_Reference;
+                 return;
+              }
+              else
+              {
+                Interp( (Int)(cur_touched + 1),
                       (Int)(point - 1),
                       (Int)cur_touched,
                       (Int)point,
                       &V );
-              cur_touched = point;
+                cur_touched = point;
+              }
             }
 
             point++;

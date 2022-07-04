@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -302,6 +302,22 @@ static int free_aux(ttfMemory *mem, void *ptr)
    n_twilight      = maxp->maxTwilightPoints;
    if (n_points < 100)
        n_points = 100; /* Bug 689907 */
+
+   exec->pts.cur_x = NULL;
+   exec->pts.cur_y = NULL;
+   exec->pts.org_x = NULL;
+   exec->pts.org_y = NULL;
+   exec->pts.touch = NULL;
+   exec->pts.contours = NULL;
+   exec->twilight.cur_y = NULL;
+   exec->twilight.cur_x = NULL;
+   exec->twilight.org_y = NULL;
+   exec->twilight.org_x = NULL;
+   exec->twilight.touch = NULL;
+   exec->twilight.contours = NULL;
+
+   exec->n_contours = exec->n_points = 0;
+   exec->twilight.n_points = 0;
 
    if ( ALLOC_ARRAY( exec->callStack, exec->callSize, callSize, TCallRecord ) ||
         /* reserve interpreter call stack */
