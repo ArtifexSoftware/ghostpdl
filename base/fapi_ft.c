@@ -1332,7 +1332,8 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                              &ft_face);
             if (ft_error) {
                 delete_inc_int (a_server, ft_inc_int);
-                FF_free(s->ftmemory, own_font_data);
+                if (data_owned)
+                    FF_free(s->ftmemory, own_font_data);
                 return ft_to_gs_error(ft_error);
             }
         }
