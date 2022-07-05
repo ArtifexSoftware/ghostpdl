@@ -1060,12 +1060,109 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
     pdf_c_stream *crypt_stream = NULL, *SubFile_stream = NULL;
     pdf_string *StreamKey = NULL;
     pdf_dict *stream_dict = NULL;
+    pdf_obj *FileSpec = NULL;
+    pdf_stream *NewStream = NULL;
+    bool known = false;
 
     *new_stream = NULL;
 
     code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
     if (code < 0)
         goto error;
+
+    /* Horrifyingly, any stream dictionary can contain a file specification, which means that
+     * instead of using the stream from the PDF file we must use an external file.
+     * So much for portability!
+     * Note: We must not do this for inline images as an inline image dictionary can
+     * contain the abbreviation /F for the Filter, and an inline image is never a
+     * separate stream, it is (obviously) contained in the current stream.
+     */
+    if (!inline_image) {
+        code = pdfi_dict_known(ctx, stream_dict, "F", &known);
+        if (code >= 0 && known) {
+            pdf_obj *FS = NULL, *o = NULL;
+            pdf_dict *dict = NULL;
+            char *filename;
+            int len;
+            stream *gstream = NULL;
+
+            code = pdfi_dict_get(ctx, stream_dict, "F", &FileSpec);
+            if (code < 0)
+                goto error;
+            if (pdfi_type_of(FileSpec) == PDF_DICT) {
+                /* We don't really support FileSpec dictionaries, partly because we
+                 * don't really know which platform to use. If there is a /F string
+                 * then we will use that, just as if we had been given a string in
+                 * the first place.
+                 */
+                code = pdfi_dict_knownget(ctx, (pdf_dict *)FileSpec, "F", &FS);
+                if (code < 0) {
+                    goto error;
+                }
+                pdfi_countdown(FileSpec);
+                FileSpec = FS;
+                FS = NULL;
+            }
+            if (pdfi_type_of(FileSpec) != PDF_STRING) {
+                code = gs_note_error(gs_error_typecheck);
+                goto error;
+            }
+            /* We should now have a string with the filename (or URL). We need
+             * to open the file and create a stream, if that succeeds.
+             */
+            gstream = sfopen((const char *)((pdf_string *)FileSpec)->data, "r", ctx->memory);
+            if (gstream == NULL) {
+                emprintf1(ctx->memory, "Failed to open file %s\n", (const char *)((pdf_string *)FileSpec)->data);
+                code = gs_note_error(gs_error_ioerror);
+                goto error;
+            }
+
+            source = (pdf_c_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_c_stream), "external stream");
+            if (source == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto error;
+            }
+            memset(source, 0x00, sizeof(pdf_c_stream));
+            source->s = gstream;
+
+            code = pdfi_object_alloc(ctx, PDF_STREAM, 0, (pdf_obj **)&NewStream);
+            if (code < 0)
+                goto error;
+            pdfi_countup(NewStream);
+            code = pdfi_dict_alloc(ctx, 32, &dict);
+            if (code < 0){
+                pdfi_countdown(NewStream);
+                goto error;
+            }
+            pdfi_countup(dict);
+            NewStream->stream_dict = dict;
+            code = pdfi_dict_get(ctx, stream_dict, "FFilter", &o);
+            if (code >= 0) {
+                code = pdfi_dict_put(ctx, NewStream->stream_dict, "Filter", o);
+                if (code < 0) {
+                    pdfi_countdown(NewStream);
+                    goto error;
+                }
+            }
+            code = pdfi_dict_get(ctx, stream_dict, "FPredictor", &o);
+            if (code >= 0) {
+                code = pdfi_dict_put(ctx, NewStream->stream_dict, "Predictor", o);
+                if (code < 0) {
+                    pdfi_countdown(NewStream);
+                    goto error;
+                }
+            }
+            pdfi_countup(NewStream->stream_dict);
+            NewStream->stream_offset = 0;
+            NewStream->Length = 0;
+            NewStream->length_valid = 0;
+            NewStream->stream_written = 0;
+            NewStream->is_marking = 0;
+            NewStream->parent_obj = NULL;
+            stream_obj = NewStream;
+            stream_dict = NewStream->stream_dict;
+        }
+    }
 
     /* If the file isn't encrypted, don't apply encryption. If this is an inline
      * image then its in a content stream and will already be decrypted, so don't
@@ -1153,7 +1250,9 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
         code = pdfi_filter_no_decryption(ctx, stream_obj, source, new_stream, inline_image);
     }
 error:
+    pdfi_countdown(NewStream);
     pdfi_countdown(StreamKey);
+    pdfi_countdown(FileSpec);
     return code;
 }
 
