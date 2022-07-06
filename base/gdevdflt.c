@@ -1261,6 +1261,7 @@ int gx_copy_device_procs(gx_device *dest, const gx_device *src, const gx_device 
     set_dev_proc(dest, process_page, dev_proc(&prototype, process_page));
     set_dev_proc(dest, transform_pixel_region, dev_proc(&prototype, transform_pixel_region));
     set_dev_proc(dest, fill_stroke_path, dev_proc(&prototype, fill_stroke_path));
+    set_dev_proc(dest, lock_pattern, dev_proc(&prototype, lock_pattern));
 
     /*
      * We absolutely must set the 'set_graphics_type_tag' to the default subclass one
