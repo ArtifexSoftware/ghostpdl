@@ -391,14 +391,18 @@ static int pdfi_pdfmark_add_Page_View(pdf_context *ctx, pdf_dict *link_dict, pdf
     code = pdfi_array_get_no_store_R(ctx, dest_array, 0, (pdf_obj **)&page_dict);
     if (code < 0) goto exit;
 
-    if (pdfi_type_of(page_dict) != PDF_DICT) {
-        code = gs_note_error(gs_error_typecheck);
-        goto exit;
-    }
+    if(pdfi_type_of(page_dict) == PDF_INT) {
+        page_num = ((pdf_num *)page_dict)->value.i;
+    } else {
+        if (pdfi_type_of(page_dict) != PDF_DICT) {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
 
-    /* Find out which page number this is */
-    code = pdfi_page_get_number(ctx, page_dict, &page_num);
-    if (code < 0) goto exit;
+        /* Find out which page number this is */
+        code = pdfi_page_get_number(ctx, page_dict, &page_num);
+        if (code < 0) goto exit;
+    }
 
     page_num += ctx->Pdfmark_InitialPage;
 
@@ -515,7 +519,7 @@ static int pdfi_pdfmark_handle_dest_names(pdf_context *ctx, pdf_dict *link_dict,
  */
 int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
 {
-    int code = 0;
+    int code = 0, code1 = 0;
     pdf_dict *Dests = NULL;
     pdf_obj *Dest = NULL;
     bool delete_Dest = true;
@@ -586,8 +590,9 @@ int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
  exit:
     if (delete_Dest) {
         /* Delete the Dest key */
-        code = pdfi_dict_delete(ctx, link_dict, "Dest");
-        if (code < 0) goto exit;
+        code1 = pdfi_dict_delete(ctx, link_dict, "Dest");
+        if (code1 < 0 && code >= 0)
+            code = code1;
     }
     pdfi_countdown(Dest);
     pdfi_countdown(Dests);
