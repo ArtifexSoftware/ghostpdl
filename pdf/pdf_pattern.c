@@ -513,7 +513,10 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         for (i = 0; i < 4 * sizeof(float); i++)
             hash = ((hash << 5) + hash) + str[i]; /* hash * 33 + c */
 
-        pinst->id = hash + pdict->object_num;
+        /* Include num_components for case where we have softmask and non-softmask
+           fills with the same tile. We may need two tiles for this if there is a
+           change in color space for the transparency group. */
+        pinst->id = hash + pdict->object_num + ctx->pgs->device->color_info.num_components;
     }
     context = NULL;
 
