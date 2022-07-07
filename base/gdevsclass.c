@@ -373,6 +373,7 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
     int code = 0;
     gs_pdf14trans_t *pct = (gs_pdf14trans_t *)pcte;
     generic_subclass_data *psubclass_data = (generic_subclass_data *)dev->subclass_data;
+    gx_device *thisdev = dev;
 
     if (dev->child) {
         code = dev_proc(dev->child, composite)(dev->child, pcdev, pcte, pgs, memory, cdev);
@@ -445,7 +446,7 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
          * did not create a new compositor. Either way we don't want the compositor code
          * to think we want to push a new device, so just return this device to the caller.
          */
-        *pcdev = dev;
+        *pcdev = thisdev;
         return 0;
     }
     return 0;
