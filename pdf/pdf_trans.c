@@ -120,6 +120,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
 #if DEBUG_TRANSPARENCY
           dbgmprintf(ctx->memory, "SMask already built, skipping\n");
 #endif
+          code = 0;
           goto exit;
         }
         ProcessedKnown = 1;
@@ -310,7 +311,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         code = pdfi_form_execgroup(ctx, ctx->page.CurrentPageDict, G_stream,
                                    igs->GroupGState, NULL, &group_Matrix);
         code1 = gs_end_transparency_mask(ctx->pgs, colorindex);
-        if (code != 0)
+        if (code == 0)
             code = code1;
 
         /* Put back the matrix (we couldn't just rely on gsave/grestore for whatever reason,
@@ -878,6 +879,7 @@ int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)
 
 int pdfi_trans_set_params(pdf_context *ctx)
 {
+    int code = 0;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     gs_transparency_channel_selector_t csel;
 
@@ -887,9 +889,9 @@ int pdfi_trans_set_params(pdf_context *ctx)
         else
             csel = TRANSPARENCY_CHANNEL_Opacity;
         if (igs->SMask) {
-            pdfi_trans_set_mask(ctx, igs, csel);
+            code = pdfi_trans_set_mask(ctx, igs, csel);
         }
     }
 
-    return 0;
+    return code;
 }
