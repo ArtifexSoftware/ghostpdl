@@ -290,7 +290,13 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
             }
         }
         else {
-            code = pdfi_open_resource_file(ctx, (const char *)mname->data, mname->length, &s);
+            if (mname->length > gp_file_name_sizeof) {
+                pdfi_countdown(mname);
+                return_error(gs_error_invalidfont);
+            }
+            memcpy(fontfname, mname->data, mname->length);
+            fontfname[mname->length] = '\0';
+            code = pdfi_open_resource_file(ctx, (const char *)fontfname, mname->length, &s);
             pdfi_countdown(mname);
             if (code < 0) {
                 code = gs_note_error(gs_error_invalidfont);
