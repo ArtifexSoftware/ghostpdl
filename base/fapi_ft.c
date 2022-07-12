@@ -1314,7 +1314,8 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 /* We always load incrementally. */
                 ft_inc_int = new_inc_int(a_server, a_font);
                 if (!ft_inc_int) {
-                    FF_free(s->ftmemory, own_font_data);
+                    if (data_owned)
+                        FF_free(s->ftmemory, own_font_data);
                     return_error(gs_error_VMerror);
                 }
             }
