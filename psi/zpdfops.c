@@ -518,8 +518,8 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
 
     s->close_at_eod = false;
     pdfctx->ps_stream = s;
-    pdfctx->pdf_stream = s_alloc_immovable(imemory, "PDFstream copy of PS stream");
-    pdfctx->pdf_stream_memory = imemory;
+    pdfctx->pdf_stream = s_alloc_immovable(imemory->stable_memory, "PDFstream copy of PS stream");
+    pdfctx->pdf_stream_memory = imemory->stable_memory;
     if (pdfctx->pdf_stream == NULL)
         return_error(gs_error_VMerror);
 
