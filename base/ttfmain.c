@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -533,6 +533,10 @@ retry:
     subglyph.bbox.xMax = ttfReader__Short(r);
     subglyph.bbox.yMax = ttfReader__Short(r);
 
+    if (exec->metrics.x_scale1 == 0 || exec->metrics.x_scale2 == 0
+    ||  exec->metrics.y_scale1 == 0 || exec->metrics.y_scale2 == 0) {
+        goto errex;
+    }
     gOutline->xMinB = Scale_X(&exec->metrics, subglyph.bbox.xMin);
     gOutline->yMinB = Scale_Y(&exec->metrics, subglyph.bbox.yMin);
     gOutline->xMaxB = Scale_X(&exec->metrics, subglyph.bbox.xMax);
@@ -875,7 +879,7 @@ static FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *self, int glyphInde
 
 #define AVECTOR_BUG 1 /* Work around a bug in AVector fonts. */
 
-void ttfOutliner__DrawGlyphOutline(ttfOutliner *self)
+int ttfOutliner__DrawGlyphOutline(ttfOutliner *self)
 {   ttfGlyphOutline* out = &self->out;
     FloatMatrix *m = &self->post_transform;
     ttfFont *pFont = self->pFont;
@@ -890,10 +894,23 @@ void ttfOutliner__DrawGlyphOutline(ttfOutliner *self)
     short sp, ctr;
     FloatPoint p0, p1, p2, p3;
 #   if AVECTOR_BUG
-    F26Dot6 expand_x = Scale_X(&exec->metrics, pFont->nUnitsPerEm * 2);
-    F26Dot6 expand_y = Scale_Y(&exec->metrics, pFont->nUnitsPerEm * 2);
-    F26Dot6 xMin = out->xMinB - expand_x, xMax = out->xMaxB + expand_x;
-    F26Dot6 yMin = out->yMinB - expand_y, yMax = out->yMaxB + expand_y;
+    F26Dot6 expand_x;
+    F26Dot6 expand_y;
+    F26Dot6 xMin, xMax;
+    F26Dot6 yMin, yMax;
+
+
+    if (exec->metrics.x_scale1 == 0 || exec->metrics.x_scale2 == 0
+    ||  exec->metrics.y_scale1 == 0 || exec->metrics.y_scale2 == 0) {
+        return_error(gs_error_invalidfont);
+    }
+
+    expand_x = Scale_X(&exec->metrics, pFont->nUnitsPerEm * 2);
+    expand_y = Scale_Y(&exec->metrics, pFont->nUnitsPerEm * 2);
+    xMin = out->xMinB - expand_x;
+    xMax = out->xMaxB + expand_x;
+    yMin = out->yMinB - expand_y;
+    yMax = out->yMaxB + expand_y;
 #   endif
 
     TransformF26Dot6PointFloat(&p1, out->advance.x, out->advance.y, m);
@@ -1014,6 +1031,7 @@ void ttfOutliner__DrawGlyphOutline(ttfOutliner *self)
         onCurve += pts;
         sp = *endP++;
     }
+    return 0;
 }
 
 FontError ttfOutliner__Outline(ttfOutliner *self, int glyphIndex,

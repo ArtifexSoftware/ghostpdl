@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -195,6 +195,6 @@ void ttfOutliner__init(ttfOutliner *, ttfFont *f, ttfReader *r, ttfExport *exp,
                         bool bOutline, bool bFirst, bool bVertical);
 FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
         float orig_x, float orig_y, FloatMatrix *m1);
-void ttfOutliner__DrawGlyphOutline(ttfOutliner *this);
+int ttfOutliner__DrawGlyphOutline(ttfOutliner *this);
 
 #endif

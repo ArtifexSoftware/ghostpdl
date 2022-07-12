@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -687,9 +687,9 @@ static int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
         o->post_transform.a = o->post_transform.d = 1;
         o->post_transform.b = o->post_transform.c = 0;
         o->post_transform.tx = o->post_transform.ty = 0;
-        ttfOutliner__DrawGlyphOutline(o);
-        if (e->error < 0)
-            return e->error;
+        code = ttfOutliner__DrawGlyphOutline(o);
+        if (code < 0)
+            return code;
         code = t1_hinter__set_font42_data(&h.super, FontType, &pfont->data, false);
         if (code < 0)
             return code;
@@ -734,8 +734,8 @@ static int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
             return code;
         code = t1_hinter__endglyph(&h.super);
     } else {
-        ttfOutliner__DrawGlyphOutline(o);
-        if (e->error < 0)
+        code = ttfOutliner__DrawGlyphOutline(o);
+        if (code < 0)
             return e->error;
     }
     return code;
@@ -755,6 +755,7 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     bool dg;
     uint gftt = gs_currentgridfittt(pfont->dir);
     bool ttin = (gftt & 1);
+    int code;
     /*	gs_currentgridfittt values (binary) :
         00 - no grid fitting;
         01 - Grid fit with TT interpreter; On failure warn and render unhinted.
@@ -801,14 +802,16 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
         case fNoError:
             if (!design_grid && !ttin && auth)
                 return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
-            ttfOutliner__DrawGlyphOutline(&o);
-            if (e.error)
-                return e.error;
+            code = ttfOutliner__DrawGlyphOutline(&o);
+            if (code < 0)
+                return code;
             return 0;
         case fMemoryError:
             return_error(gs_error_VMerror);
         case fUnimplemented:
             return_error(gs_error_unregistered);
+        case fBadFontData:
+            return_error(gs_error_invalidfont);
         default:
             {	int code = r->super.Error(&r->super);
 
