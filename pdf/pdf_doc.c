@@ -292,10 +292,19 @@ int pdfi_read_Info(pdf_context *ctx)
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n");
 
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto error;
+    code = pdfi_loop_detector_add_object(ctx, Info->object_num);
+    if (code < 0)
+        goto error1;
+
     /* sanitize Info for circular references */
     code = pdfi_sanitize_Info_references(ctx, Info);
     if (code < 0)
-        return code;
+        goto error1;
+
+    (void)pdfi_loop_detector_cleartomark(ctx);
 
     pdfi_device_set_flags(ctx);
     pdfi_pdfmark_write_docinfo(ctx, Info);
@@ -305,6 +314,12 @@ int pdfi_read_Info(pdf_context *ctx)
      */
     ctx->Info = Info;
     return 0;
+
+error1:
+    pdfi_loop_detector_cleartomark(ctx);
+error:
+    pdfi_countdown(Info);
+    return code;
 }
 
 int pdfi_read_Pages(pdf_context *ctx)
