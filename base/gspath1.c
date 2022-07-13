@@ -219,6 +219,9 @@ gs_gstate_arc_add(gx_path * ppath, gs_gstate * pgs, bool clockwise,
         ang2 += 180;
         ar = -ar;
     }
+    if (ang1 > (max_int - 360) || ang2 > (max_int - 360))
+        return_error(gs_error_limitcheck);
+
     arc.radius = ar;
     arc.action = (add_line ? arc_lineto : arc_moveto);
     arc.notes = sn_none;
