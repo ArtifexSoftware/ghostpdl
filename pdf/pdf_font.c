@@ -290,7 +290,7 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
             }
         }
         else {
-            if (mname->length > gp_file_name_sizeof) {
+            if (mname->length + 1 > gp_file_name_sizeof) {
                 pdfi_countdown(mname);
                 return_error(gs_error_invalidfont);
             }
