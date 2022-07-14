@@ -303,19 +303,6 @@ static int free_aux(ttfMemory *mem, void *ptr)
    if (n_points < 100)
        n_points = 100; /* Bug 689907 */
 
-   exec->pts.cur_x = NULL;
-   exec->pts.cur_y = NULL;
-   exec->pts.org_x = NULL;
-   exec->pts.org_y = NULL;
-   exec->pts.touch = NULL;
-   exec->pts.contours = NULL;
-   exec->twilight.cur_y = NULL;
-   exec->twilight.cur_x = NULL;
-   exec->twilight.org_y = NULL;
-   exec->twilight.org_x = NULL;
-   exec->twilight.touch = NULL;
-   exec->twilight.contours = NULL;
-
    exec->n_contours = exec->n_points = 0;
    exec->twilight.n_points = 0;
 
