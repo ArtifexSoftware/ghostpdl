@@ -374,7 +374,7 @@ int pdfi_setdash(pdf_context *ctx)
     pdfi_pop(ctx, 1);
 
     if (pdfi_type_of(a) != PDF_ARRAY) {
-        pdfi_pop(ctx, 1);
+        pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
 
