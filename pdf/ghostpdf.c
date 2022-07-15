@@ -1910,6 +1910,15 @@ int pdfi_clear_context(pdf_context *ctx)
     dmprintf1(ctx->memory, "Normal object cache hit rate: %f\n", hit_rate);
     dmprintf1(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
 #endif
+    if (ctx->PathSegments != NULL) {
+        gs_free_object(ctx->memory, ctx->PathSegments, "pdfi_clear_context");
+        ctx->PathSegments = NULL;
+    }
+    if (ctx->PathPts != NULL) {
+        gs_free_object(ctx->memory, ctx->PathPts, "pdfi_clear_context");
+        ctx->PathPts = NULL;
+    }
+
     if (ctx->args.PageList) {
         gs_free_object(ctx->memory, ctx->args.PageList, "pdfi_clear_context");
         ctx->args.PageList = NULL;
