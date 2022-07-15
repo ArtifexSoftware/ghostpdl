@@ -408,8 +408,10 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
                 qsort(psortary, loca_size, sizeof(gs_type42_font_init_sort_t), gs_type42_font_init_compare);
                 while (num_valid_loca_elm > 0 && psortary[num_valid_loca_elm - 1].glyph_offset > glyph_size)
                     num_valid_loca_elm --;
-                if (0 == num_valid_loca_elm)
+                if (0 == num_valid_loca_elm) {
+                    gs_free_object(pfont->memory, psortary, "gs_type42_font_init(sort loca)");
                     return_error(gs_error_invalidfont);
+                }
                 for (i = num_valid_loca_elm; i--;) {
                     long old_length;
 
