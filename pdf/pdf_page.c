@@ -714,14 +714,35 @@ int pdfi_page_get_number(pdf_context *ctx, pdf_dict *target_dict, uint64_t *page
 static void release_page_DefaultSpaces(pdf_context *ctx)
 {
     if (ctx->page.DefaultGray_cs != NULL) {
+        if (ctx->page.DefaultGray_cs->interpreter_data != NULL) {
+            pdf_obj *o = (pdf_obj *)(ctx->page.DefaultGray_cs->interpreter_data);
+            if (o != NULL && pdfi_type_of(o) == PDF_NAME) {
+                pdfi_countdown(o);
+                ctx->page.DefaultGray_cs->interpreter_data = NULL;
+            }
+        }
         rc_decrement(ctx->page.DefaultGray_cs, "pdfi_page_render");
         ctx->page.DefaultGray_cs = NULL;
     }
     if (ctx->page.DefaultRGB_cs != NULL) {
+        if (ctx->page.DefaultRGB_cs->interpreter_data != NULL) {
+            pdf_obj *o = (pdf_obj *)(ctx->page.DefaultRGB_cs->interpreter_data);
+            if (o != NULL && pdfi_type_of(o) == PDF_NAME) {
+                pdfi_countdown(o);
+                ctx->page.DefaultRGB_cs->interpreter_data = NULL;
+            }
+        }
         rc_decrement(ctx->page.DefaultRGB_cs, "pdfi_page_render");
         ctx->page.DefaultRGB_cs = NULL;
     }
     if (ctx->page.DefaultCMYK_cs != NULL) {
+        if (ctx->page.DefaultCMYK_cs->interpreter_data != NULL) {
+            pdf_obj *o = (pdf_obj *)(ctx->page.DefaultCMYK_cs->interpreter_data);
+            if (o != NULL && pdfi_type_of(o) == PDF_NAME) {
+                pdfi_countdown(o);
+                ctx->page.DefaultCMYK_cs->interpreter_data = NULL;
+            }
+        }
         rc_decrement(ctx->page.DefaultCMYK_cs, "pdfi_page_render");
         ctx->page.DefaultCMYK_cs = NULL;
     }
