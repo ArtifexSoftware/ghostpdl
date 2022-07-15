@@ -604,9 +604,10 @@ int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
 
 static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int len)
 {
-    int code = 0, min, i;
+    int code = 0, min, i, len2 = 0;
     pdf_array *Limits = NULL;
     pdf_string *Str = NULL;
+    char *str2 = NULL;
 
     code = pdfi_dict_get_type(ctx, node, "Limits", PDF_ARRAY, (pdf_obj **)&Limits);
     if (code < 0)
@@ -625,61 +626,82 @@ static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int le
         goto error;
 
     if (pdfi_type_of(Str) == PDF_NAME) {
-        code = pdfi_string_from_name(ctx, (pdf_name *)Str, &str, &len);
+        code = pdfi_string_from_name(ctx, (pdf_name *)Str, &str2, &len2);
         if (code < 0)
             return code;
     } else {
-        len = ((pdf_string *)Str)->length;
-        str = (char *)gs_alloc_bytes(ctx->memory, len + 1, "pdfi_get_named_dest");
-        if (str == NULL) {
+        len2 = ((pdf_string *)Str)->length;
+        str2 = (char *)gs_alloc_bytes(ctx->memory, len2 + 1, "pdfi_get_named_dest");
+        if (str2 == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
         }
-         memcpy(str, ((pdf_string *)Str)->data, len);
-         str[len] = 0;
-    }
-
-    min = len;
-    if (Str->length < min)
-        min = Str->length;
-
-    for (i=0;i< min;i++) {
-        if (str[i] < Str->data[i]) {
-            code = gs_note_error(gs_error_undefined);
-            goto error;
-        }
-        if (str[i] != Str->data[i])
-            break;
-    }
-    if (i > min && len < Str->length) {
-        code = gs_note_error(gs_error_undefined);
-        goto error;
+         memcpy(str2, ((pdf_string *)Str)->data, len2);
+         str2[len2] = 0;
     }
 
     pdfi_countdown(Str);
     Str = NULL;
 
+    min = len;
+    if (len2 < min)
+        min = len2;
+
+    for (i=0;i< min;i++) {
+        if (str[i] < str2[i]) {
+            code = gs_note_error(gs_error_undefined);
+            goto error;
+        }
+        if (str[i] != str2[i])
+            break;
+    }
+    if (i > min && len2 < Str->length) {
+        code = gs_note_error(gs_error_undefined);
+        goto error;
+    }
+    gs_free_object(ctx->memory, str2, "pdfi_get_named_dest");
+    str2 = NULL;
+
     code = pdfi_array_get_type(ctx, Limits, 1, PDF_STRING, (pdf_obj **)&Str);
     if (code < 0)
         goto error;
 
+    if (pdfi_type_of(Str) == PDF_NAME) {
+        code = pdfi_string_from_name(ctx, (pdf_name *)Str, &str2, &len2);
+        if (code < 0)
+            return code;
+    } else {
+        len2 = ((pdf_string *)Str)->length;
+        str2 = (char *)gs_alloc_bytes(ctx->memory, len2 + 1, "pdfi_get_named_dest");
+        if (str2 == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto error;
+        }
+         memcpy(str2, ((pdf_string *)Str)->data, len2);
+         str2[len2] = 0;
+    }
+
+    pdfi_countdown(Str);
+    Str = NULL;
+
     min = len;
-    if (Str->length < min)
-        min = Str->length;
+    if (len2 < min)
+        min = len2;
 
     for (i=0;i< min;i++) {
-        if (str[i] > Str->data[i]) {
+        if (str[i] > str2[i]) {
             code = gs_note_error(gs_error_undefined);
             goto error;
         }
-        if (str[i] != Str->data[i])
+        if (str[i] != str2[i])
             break;
     }
 
-    if (i > min && len > Str->length)
+    if (i > min && len > len2)
         code = gs_note_error(gs_error_undefined);
 
 error:
+    gs_free_object(ctx->memory, str2, "pdfi_get_named_dest");
     pdfi_countdown(Str);
     pdfi_countdown(Limits);
     return code;
