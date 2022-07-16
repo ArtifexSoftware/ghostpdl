@@ -473,8 +473,10 @@ int pdfi_op_DP(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return gs_note_error(gs_error_stackunderflow);
     }
 
-    if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent)
+    if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent) {
+        pdfi_pop(ctx, 2); /* pop args */
         goto exit;
+    }
 
     if (pdfi_type_of(ctx->stack_top[-2]) != PDF_NAME) {
         pdfi_pop(ctx, 2); /* pop args */
@@ -537,8 +539,10 @@ int pdfi_op_BMC(pdf_context *ctx)
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent)
+    if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent) {
+        pdfi_pop(ctx, 1);
         goto exit;
+    }
 
     o = ctx->stack_top[-1];
     pdfi_countup(o);
