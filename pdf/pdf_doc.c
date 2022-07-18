@@ -820,7 +820,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
         if (code < 0)
             goto exit;
         if (code > 0) {
-            if (Parent->object_num != ctx->page.CurrentPageDict->object_num) {
+            if (ctx->page.CurrentPageDict != NULL && Parent->object_num != ctx->page.CurrentPageDict->object_num) {
                 if (pdfi_loop_detector_check_object(ctx, Parent->object_num) == true)
                     return_error(gs_error_circular_reference);
 
