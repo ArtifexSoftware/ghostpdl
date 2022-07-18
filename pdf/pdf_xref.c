@@ -726,7 +726,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
         if (bytes < 20)
             return_error(gs_error_ioerror);
         j = 19;
-        if (Buffer[19] != 0x0a || (Buffer[18] != 0x0d && Buffer[18] != 0x20))
+        if ((Buffer[19] != 0x0a && Buffer[19] != 0x0d) || (Buffer[18] != 0x0d && Buffer[18] != 0x0a && Buffer[18] != 0x20))
             pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_XREF_ENTRY_SIZE, "read_xref_section", NULL);
         while (Buffer[j] != 0x0D && Buffer[j] != 0x0A) {
             pdfi_unread_byte(ctx, s, (byte)Buffer[j]);
