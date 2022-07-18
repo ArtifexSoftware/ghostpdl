@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -23,5 +23,7 @@
 TIFF *
 tiff_from_filep(gx_device_printer *dev,  const char *name, gp_file *filep, int big_endian, bool usebigtiff);
 void tiff_set_handlers (void);
+int tiff_filename_from_tiff(TIFF *t, char **name);
+int tiff_free_private_tiff(gx_device_printer *dev, TIFF *t);
 
 #endif /* gstiffio_INCLUDED */

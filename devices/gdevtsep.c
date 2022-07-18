@@ -678,7 +678,8 @@ static dev_proc_decode_color(tiffsep1_decode_color);
     bool warning_given;		/* avoid issuing lots of warnings */\
     gp_file *comp_file;            /* Underlying file for tiff_comp */\
     TIFF *tiff_comp;            /* tiff file for comp file */\
-    gsicc_link_t *icclink      /* link profile if we are doing post rendering */
+    gsicc_link_t *icclink;      /* link profile if we are doing post rendering */\
+    unsigned int page_num_comps    /* Number of components at end of page, for cleanup */
 
 /*
  * A structure definition for a DeviceN type device
@@ -1224,16 +1225,10 @@ int
 tiffsep1_prn_close(gx_device * pdev)
 {
     tiffsep1_device * const tfdev = (tiffsep1_device *) pdev;
-    int num_dev_comp = tfdev->color_info.num_components;
-    int num_std_colorants = tfdev->devn_params.num_std_colorant_names;
-    int num_order = tfdev->devn_params.num_separation_order_names;
-    int num_spot = tfdev->devn_params.separations.num_separations;
     char *name= NULL;
     int code = gdev_prn_close(pdev);
     short map_comp_to_sep[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int comp_num;
-    int num_comp = number_output_separations(num_dev_comp, num_std_colorants,
-                                        num_order, num_spot);
     const char *fmt;
     gs_parsed_file_name_t parsed;
 
@@ -1278,15 +1273,9 @@ tiffsep1_prn_close(gx_device * pdev)
 
     build_comp_to_sep_map((tiffsep_device *)tfdev, map_comp_to_sep);
     /* Close the separation files */
-    for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
+    for (comp_num = 0; comp_num < tfdev->page_num_comps; comp_num++ ) {
         if (tfdev->sep_file[comp_num] != NULL) {
-            int sep_num = map_comp_to_sep[comp_num];
-
-            code = create_separation_file_name((tiffsep_device *)tfdev, name,
-                                                gp_file_name_sizeof, sep_num, true);
-            if (code < 0) {
-                goto done;
-            }
+            tiff_filename_from_tiff(tfdev->tiff[comp_num], &name);
             code = gx_device_close_output_file(pdev, name, tfdev->sep_file[comp_num]);
             if (code >= 0)
                 code = gs_remove_outputfile_control_path(pdev->memory, name);
@@ -1296,15 +1285,15 @@ tiffsep1_prn_close(gx_device * pdev)
             tfdev->sep_file[comp_num] = NULL;
         }
         if (tfdev->tiff[comp_num]) {
+            void *t;
+
+            tiff_free_private_tiff((gx_device_printer *)tfdev, tfdev->tiff[comp_num]);
             TIFFCleanup(tfdev->tiff[comp_num]);
             tfdev->tiff[comp_num] = NULL;
         }
     }
 
 done:
-
-    if (name)
-        gs_free_object(pdev->memory, name, "tiffsep1_prn_close(name)");
     return code;
 }
 
@@ -1730,16 +1719,10 @@ int
 tiffsep_prn_close(gx_device * pdev)
 {
     tiffsep_device * const pdevn = (tiffsep_device *) pdev;
-    int num_dev_comp = pdevn->color_info.num_components;
-    int num_std_colorants = pdevn->devn_params.num_std_colorant_names;
-    int num_order = pdevn->devn_params.num_separation_order_names;
-    int num_spot = pdevn->devn_params.separations.num_separations;
     short map_comp_to_sep[GX_DEVICE_COLOR_MAX_COMPONENTS];
     char *name = NULL;
     int code;
     int comp_num;
-    int num_comp = number_output_separations(num_dev_comp, num_std_colorants,
-                                        num_order, num_spot);
 
     gsicc_free_link_dev(pdevn->icclink);
     pdevn->icclink = NULL;
@@ -1749,6 +1732,7 @@ tiffsep_prn_close(gx_device * pdev)
         return_error(gs_error_VMerror);
 
     if (pdevn->tiff_comp) {
+        tiff_free_private_tiff((gx_device_printer *)pdevn, pdevn->tiff_comp);
         TIFFCleanup(pdevn->tiff_comp);
         pdevn->tiff_comp = NULL;
     }
@@ -1759,27 +1743,28 @@ tiffsep_prn_close(gx_device * pdev)
 
     build_comp_to_sep_map(pdevn, map_comp_to_sep);
     /* Close the separation files */
-    for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
+    for (comp_num = 0; comp_num < pdevn->page_num_comps; comp_num++ ) {
         if (pdevn->sep_file[comp_num] != NULL) {
-            int sep_num = pdevn->devn_params.separation_order_map[comp_num];
+            tiff_filename_from_tiff(pdevn->tiff[comp_num], &name);
 
-            code = create_separation_file_name(pdevn, name,
-                    gp_file_name_sizeof, sep_num, true);
-            if (code < 0) {
-                goto done;
-            }
-            code = tiffsep_close_sep_file(pdevn, name, comp_num);
+            code = gx_device_close_output_file((gx_device *)pdevn, name, pdevn->sep_file[comp_num]);
             if (code >= 0)
                 code = gs_remove_outputfile_control_path(pdevn->memory, name);
             if (code < 0) {
                 goto done;
             }
+            pdevn->sep_file[comp_num] = NULL;
+            if (pdevn->tiff[comp_num]) {
+                void *t;
+
+                tiff_free_private_tiff((gx_device_printer *)pdevn, pdevn->tiff[comp_num]);
+                TIFFCleanup(pdevn->tiff[comp_num]);
+                pdevn->tiff[comp_num] = NULL;
+            }
         }
     }
 
 done:
-    if (name)
-        gs_free_object(pdev->memory, name, "tiffsep_prn_close(name)");
     return code;
 }
 
@@ -2123,6 +2108,7 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
     /* Set up the separation output files */
     num_comp = number_output_separations( tfdev->color_info.num_components,
                                         num_std_colorants, num_order, num_spot);
+    tfdev->page_num_comps = num_comp;
 
     if (!tfdev->NoSeparationFiles && !num_order && num_comp < num_std_colorants + num_spot) {
         dmlprintf(pdev->memory, "Warning: skipping one or more colour separations, see: Devices.htm#TIFF\n");
@@ -2493,6 +2479,8 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
     /* Set up the separation output files */
     num_comp = number_output_separations(tfdev->color_info.num_components,
                                          num_std_colorants, num_order, num_spot);
+    tfdev->page_num_comps = num_comp;
+
     build_cmyk_map((gx_device *)tfdev, num_comp, &tfdev->equiv_cmyk_colors, cmyk_map);
     if (tfdev->PrintSpotCMYK) {
         code = print_cmyk_equivalent_colors((tiffsep_device *)tfdev, num_comp, cmyk_map);
