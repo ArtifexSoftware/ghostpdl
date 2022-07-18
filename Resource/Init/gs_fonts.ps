@@ -432,6 +432,7 @@ FONTPATH
 /FONTMAP where
 {
   dup /FONTMAP get /FONTMAP exch [ exch //.pathlist exec] put
+  /FONTMAP dup where pop exch get {/PermitFileReading exch .addcontrolpath} forall
 } if
 
 % Try to enumerate native fonts registered with the os
