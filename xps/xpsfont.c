@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -132,6 +132,15 @@ xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp)
     if (!memcmp(font->data, "ttcf", 4))
     {
         int nfonts = u32(font->data + 8);
+
+        /* check if the buffer contains enough data to contain nfonts subfonts */
+        int min_len = 12 + nfonts * 4;
+        if (min_len < font->length)
+        {
+            gs_warn("font data length too small");
+            return -1;
+        }
+
         if (font->subfontid < 0 || font->subfontid >= nfonts)
         {
             gs_warn("Invalid subfont ID");
