@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1133,7 +1133,7 @@ gx_gstate_dev_ht_install(
          * be cleared immediately below, so subsequently it will not be
          * possible to tell if that this information is being shared.
          */
-        if (pdht->components != NULL) {
+        if (pdht->components != NULL && !mem_diff) {
             int     input_ncomps = pdht->num_comp;
 
             for (i = 0; i < input_ncomps; i++) {
@@ -1149,7 +1149,7 @@ gx_gstate_dev_ht_install(
                     memset(p_s_order, 0, sizeof(*p_s_order));
             }
         }
-        if (used_default) {
+        if (used_default && !mem_diff) {
             memset(&pdht->order, 0, sizeof(pdht->order));
         }
 
