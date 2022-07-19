@@ -325,11 +325,16 @@ int tiff_set_compression(gx_device_printer *pdev,
         TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, pdev->height);
     }
     else {
-        int rows = max_strip_size /
+        int rows = 0;
+
+        if (pdev->width >=1) {
+            rows = max_strip_size /
             gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-        TIFFSetField(tif,
+            TIFFSetField(tif,
                      TIFFTAG_ROWSPERSTRIP,
                      TIFFDefaultStripSize(tif, max(1, rows)));
+        } else
+            return_error(gs_error_rangecheck);
     }
 
     return 0;
