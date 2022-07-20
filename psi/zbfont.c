@@ -136,8 +136,11 @@ zfont_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
                         &nref, 1);
         if (code < 0)
             return code;
-    } else
+    } else {
         name_index_ref(font->memory, index, &nref);
+        if (nref.value.pname == NULL)
+            return_error(gs_error_unknownerror);
+    }
     name_string_ref(font->memory, &nref, &sref);
     pstr->data = sref.value.const_bytes;
     pstr->size = r_size(&sref);

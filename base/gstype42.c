@@ -1290,8 +1290,13 @@ parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 
         memset(&mat, 0, sizeof(mat)); /* arbitrary */
         for (i = 0; flags & TT_CG_MORE_COMPONENTS; ++i) {
-            if (pieces)
+            if (pieces) {
                 pieces[i] = U16(gdata + 2) + GS_MIN_GLYPH_INDEX;
+                if (U16(gdata + 2) > pfont->data.numGlyphs) {
+                    *pnum_pieces = 0;
+                    return_error(gs_error_invalidfont);
+                }
+            }
             gs_type42_parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
         }
         *pnum_pieces = i;
