@@ -1082,8 +1082,6 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
         if (code >= 0 && known) {
             pdf_obj *FS = NULL, *o = NULL;
             pdf_dict *dict = NULL;
-            char *filename;
-            int len;
             stream *gstream = NULL;
 
             code = pdfi_dict_get(ctx, stream_dict, "F", &FileSpec);
