@@ -1554,6 +1554,10 @@ gs_glyph pdfi_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_use
             pdf_name *GlyphName = NULL;
             code = pdfi_array_get(ctx, font->Encoding, (uint64_t)chr, (pdf_obj **)&GlyphName);
             if (code >= 0) {
+                if (pdfi_type_of(GlyphName) != PDF_NAME)
+                    /* Can't signal an error, just return the 'not found' case */
+                    return g;
+
                 code = (*ctx->get_glyph_index)(pfont, (byte *)GlyphName->data, GlyphName->length, &nindex);
                 pdfi_countdown(GlyphName);
                 if (code >= 0)
