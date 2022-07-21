@@ -1846,9 +1846,18 @@ exit:
     rc_decrement(ctx->page.DefaultCMYK_cs, "pdfi_run_context");
 
     /* And restore the page level ones (if any) */
-    ctx->page.DefaultGray_cs = PageDefaultGray;
-    ctx->page.DefaultRGB_cs = PageDefaultRGB;
-    ctx->page.DefaultCMYK_cs = PageDefaultCMYK;
+    if (ctx->page.DefaultGray_cs != PageDefaultGray) {
+        ctx->page.DefaultGray_cs = PageDefaultGray;
+        rc_decrement(PageDefaultGray, "pdfi_run_context");
+    }
+    if (ctx->page.DefaultRGB_cs != PageDefaultRGB) {
+        ctx->page.DefaultRGB_cs = PageDefaultRGB;
+        rc_decrement(PageDefaultRGB, "pdfi_run_context");
+    }
+    if (ctx->page.DefaultCMYK_cs != PageDefaultCMYK) {
+        ctx->page.DefaultCMYK_cs = PageDefaultCMYK;
+        rc_decrement(PageDefaultCMYK, "pdfi_run_context");
+    }
 #if DEBUG_CONTEXT
     dbgmprintf(ctx->memory, "pdfi_run_context END\n");
 #endif
