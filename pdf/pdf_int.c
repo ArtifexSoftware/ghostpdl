@@ -1805,10 +1805,9 @@ int pdfi_run_context(pdf_context *ctx, pdf_stream *stream_obj,
     gs_color_space *PageDefaultRGB = ctx->page.DefaultRGB_cs;
     gs_color_space *PageDefaultCMYK = ctx->page.DefaultCMYK_cs;
 
-    /* increment their reference counts because we took a new reference to each */
-    rc_increment(ctx->page.DefaultGray_cs);
-    rc_increment(ctx->page.DefaultRGB_cs);
-    rc_increment(ctx->page.DefaultCMYK_cs);
+    ctx->page.DefaultGray_cs = NULL;
+    ctx->page.DefaultRGB_cs = NULL;
+    ctx->page.DefaultCMYK_cs = NULL;
 
 #if DEBUG_CONTEXT
     dbgmprintf(ctx->memory, "pdfi_run_context BEGIN\n");
@@ -1819,6 +1818,20 @@ int pdfi_run_context(pdf_context *ctx, pdf_stream *stream_obj,
     code = pdfi_setup_DefaultSpaces(ctx, stream_obj->stream_dict);
     if (code < 0)
         goto exit;
+
+    /* If no Default* space found, try using the Page level ones (if any) */
+    if (ctx->page.DefaultGray_cs == NULL) {
+        ctx->page.DefaultGray_cs = PageDefaultGray;
+        rc_increment(PageDefaultGray);
+    }
+    if (ctx->page.DefaultRGB_cs == NULL) {
+        ctx->page.DefaultRGB_cs = PageDefaultRGB;
+        rc_increment(PageDefaultRGB);
+    }
+    if (ctx->page.DefaultCMYK_cs == NULL) {
+        ctx->page.DefaultCMYK_cs = PageDefaultCMYK;
+        rc_increment(PageDefaultCMYK);
+    }
 
     code = pdfi_copy_DefaultQState(ctx, &DefaultQState);
     if (code < 0)
@@ -1846,18 +1859,10 @@ exit:
     rc_decrement(ctx->page.DefaultCMYK_cs, "pdfi_run_context");
 
     /* And restore the page level ones (if any) */
-    if (ctx->page.DefaultGray_cs != PageDefaultGray) {
-        ctx->page.DefaultGray_cs = PageDefaultGray;
-        rc_decrement(PageDefaultGray, "pdfi_run_context");
-    }
-    if (ctx->page.DefaultRGB_cs != PageDefaultRGB) {
-        ctx->page.DefaultRGB_cs = PageDefaultRGB;
-        rc_decrement(PageDefaultRGB, "pdfi_run_context");
-    }
-    if (ctx->page.DefaultCMYK_cs != PageDefaultCMYK) {
-        ctx->page.DefaultCMYK_cs = PageDefaultCMYK;
-        rc_decrement(PageDefaultCMYK, "pdfi_run_context");
-    }
+    ctx->page.DefaultGray_cs = PageDefaultGray;
+    ctx->page.DefaultRGB_cs = PageDefaultRGB;
+    ctx->page.DefaultCMYK_cs = PageDefaultCMYK;
+
 #if DEBUG_CONTEXT
     dbgmprintf(ctx->memory, "pdfi_run_context END\n");
 #endif
