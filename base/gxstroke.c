@@ -741,6 +741,7 @@ gx_stroke_path_only_aux(gx_path          *ppath, /* lgtm[cpp/use-of-goto] */
             )
             return code;
         spath = &fpath;
+        flattened_path = true;
     }
     if (dash_count) {
         float max_dash_len = 0;
@@ -1138,7 +1139,7 @@ gx_stroke_path_only_aux(gx_path          *ppath, /* lgtm[cpp/use-of-goto] */
     if (dash_count)
         gx_path_free(&dpath, "gx_stroke_path exit(dash path)");
     /* If we flattened the path then we set spath to &fpath. If we flattned the path then now we need to free fpath */
-    if(spath == &fpath)
+    if(flattened_path)
         gx_path_free(&fpath, "gx_stroke_path exit(flattened path)");
     return code;
 }
