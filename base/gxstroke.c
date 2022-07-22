@@ -558,7 +558,7 @@ gx_stroke_path_only_aux(gx_path          *ppath, /* lgtm[cpp/use-of-goto] */
     double device_dot_length = pgs_lp->dot_length * fixed_1;
     const subpath *psub;
     gs_matrix initial_matrix;
-    bool initial_matrix_reflected;
+    bool initial_matrix_reflected, flattened_path = false;
     note_flags flags;
 
     (*dev_proc(pdev, get_initial_matrix)) (pdev, &initial_matrix);
@@ -1137,7 +1137,8 @@ gx_stroke_path_only_aux(gx_path          *ppath, /* lgtm[cpp/use-of-goto] */
   exf:
     if (dash_count)
         gx_path_free(&dpath, "gx_stroke_path exit(dash path)");
-    if (ppath->curve_count)
+    /* If we flattened the path then we set spath to &fpath. If we flattned the path then now we need to free fpath */
+    if(spath == &fpath)
         gx_path_free(&fpath, "gx_stroke_path exit(flattened path)");
     return code;
 }
