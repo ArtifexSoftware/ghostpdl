@@ -672,6 +672,8 @@ static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
          * can have special characters.  So I will handle the minimum that seems needed for that.
          */
         switch (*ptr) {
+        case 0x0a:
+        case 0x0d:
         case '(':
         case ')':
         case '\\':
@@ -701,6 +703,16 @@ static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
         bufptr = buf + 1;
         for (i=0,ptr=string->data;i<string_len;i++) {
             switch (*ptr) {
+            case 0x0d:
+                *bufptr++ = '\\';
+                *bufptr++ = 'r';
+                *ptr++;
+                continue;
+            case 0x0a:
+                *bufptr++ = '\\';
+                *bufptr++ = 'n';
+                *ptr++;
+                continue;
             case '(':
             case ')':
             case '\\':
