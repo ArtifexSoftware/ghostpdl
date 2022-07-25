@@ -644,7 +644,7 @@ since readers need only store and process one strip at a time.  The
 
 <blockquote>
 <dl>
-<dt><code>-dMaxStripSize=<em>N</em></code> (non-negative integer; default = 8192)</dt>
+<dt><code>-dMaxStripSize=<em>N</em></code> (non-negative integer; default = 8192, 0 on Fax devices)</dt>
 <dd>Set the maximum (uncompressed) size of a strip.</dd>
 </dl>
 </blockquote>
@@ -852,6 +852,15 @@ The fax devices support the <code>MinFeatureSize</code> parameter as defined in
 the TIFF device section.
 </p>
 
+<p>
+It appears from this commit: 0abc209b8460396cdece8fc824c053a2662c4cbf that some (many ?)
+fax readers cannot cope with multiple strip TIFF files. The commit noted above works
+around this by assuming no fax output wil exceed 1MB. Unfrotunately it also altered
+<b>all</b> the TIFF devices' default strip size which we now think was inadvisable.
+
+The fax devices now use a MaxStripSize of 0 so that the file only contains a single strip.
+This can still be overridden by specifying MaxStripSize on the command line.
+</p>
 <h3><a name="BMP"></a>BMP</h3>
 
 <p>

@@ -63,7 +63,7 @@ void tiff_set_handlers (void);
  * Sets the compression tag for TIFF and updates the rows_per_strip tag to
  * reflect max_strip_size under the new compression scheme.
  */
-#define TIFF_DEFAULT_STRIP_SIZE 1048576
+#define TIFF_DEFAULT_STRIP_SIZE 8192
 
 #define TIFF_DEFAULT_DOWNSCALE 1
 

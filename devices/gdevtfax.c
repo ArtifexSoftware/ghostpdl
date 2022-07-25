@@ -71,7 +71,10 @@ tfax_initialize_device_procs(gx_device *dev)
 #define TFAX_DEVICE(dname, print_page, compr)\
 {\
     FAX_DEVICE_BODY(gx_device_tfax, tfax_initialize_device_procs, dname, print_page),\
-    TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,\
+    /* We want Fax output to be contained in one strip because apparently 'many' fax readers have\
+     * problems reading TIFF images in strips (see commit 0abc209b8460396cdece8fc824c053a2662c4cbf\
+     */\
+    0     /* strip size byte count */,\
     ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,\
     false,                      /* default to not using bigtiff */\
     compr,\
