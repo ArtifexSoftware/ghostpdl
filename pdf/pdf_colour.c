@@ -2149,6 +2149,7 @@ static int pdfi_create_DeviceGray(pdf_context *ctx, gs_color_space **ppcs)
         }
     } else {
         code = pdfi_gs_setgray(ctx, 0);
+        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     }
     return code;
 }
@@ -2177,6 +2178,7 @@ static int pdfi_create_DeviceRGB(pdf_context *ctx, gs_color_space **ppcs)
         }
     } else {
         code = pdfi_gs_setrgbcolor(ctx, 0, 0, 0);
+        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     }
     return code;
 }
@@ -2205,6 +2207,7 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
         }
     } else {
         code = pdfi_gs_setcmykcolor(ctx, 0, 0, 0, 1);
+        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     }
     return code;
 }
