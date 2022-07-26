@@ -582,6 +582,8 @@ int pdfi_dict_get_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool *val
         return 0;
     }
 
+    pdfi_countdown(b);
+
     *val = 0; /* Be consistent at least! */
     return_error(gs_error_typecheck);
 }
