@@ -425,6 +425,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                                 if (code > 0) {
                                                     if (obj_num < 1) {
                                                         pdfi_close_file(ctx, compressed_stream);
+                                                        pdfi_countdown(n);
                                                         pdfi_clearstack(ctx);
                                                         code = gs_note_error(gs_error_rangecheck);
                                                         goto exit;
@@ -447,6 +448,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                 }
                                 if (code < 0) {
                                     if (ctx->args.pdfstoponerror || code == gs_error_VMerror) {
+                                        pdfi_countdown(n);
                                         pdfi_clearstack(ctx);
                                         goto exit;
                                     }
