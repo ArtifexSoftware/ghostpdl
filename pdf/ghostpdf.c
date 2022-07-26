@@ -1182,9 +1182,14 @@ static int pdfi_init_file(pdf_context *ctx)
         if (code < 0 && code != gs_error_undefined)
             goto exit;
         if (code == 0) {
-            code = pdfi_initialise_Decryption(ctx);
-            if (code < 0)
-                goto exit;
+            if (pdfi_type_of(o) == PDF_DICT) {
+                code = pdfi_initialise_Decryption(ctx);
+                if (code < 0)
+                    goto exit;
+            } else {
+                if (pdfi_type_of(o) != PDF_NULL)
+                    pdfi_set_error(ctx, code, NULL, E_PDF_BADENCRYPT, "pdfi_init_file", NULL);
+            }
         }
     }
 

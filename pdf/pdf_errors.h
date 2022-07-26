@@ -56,5 +56,7 @@ PARAM(E_PDF_INVALID_DECRYPT_LEN,       "Invalid /Length in Encryption dictionary
 PARAM(E_PDF_GROUP_NO_CS,               "Group attributes dictionary is missing /CS"),
 PARAM(E_BAD_GROUP_DICT,                "Error retrieving Group dictionary for a page or XObject"),
 PARAM(E_BAD_HALFTONE,                  "Error setting a halftone"),
+PARAM(E_PDF_BADENCRYPT,                "Encrypt diciotnary not a dictionary"),
+PARAM(E_PDF_MISSINGTYPE,               "A dictionary is missing a required /Type key."),
 
 #undef PARAM
