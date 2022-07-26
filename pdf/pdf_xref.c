@@ -996,6 +996,10 @@ int pdfi_read_xref(pdf_context *ctx)
         pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTARTXREF, "pdfi_read_xref", (char *)"startxref offset is beyond end of file");
         goto repair;
     }
+    if (ctx->startxref < 0) {
+        pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTARTXREF, "pdfi_read_xref", (char *)"startxref offset is before start of file");
+        goto repair;
+    }
 
     /* Read the xref(s) */
     pdfi_seek(ctx, ctx->main_stream, ctx->startxref, SEEK_SET);
