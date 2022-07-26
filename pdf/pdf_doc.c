@@ -75,21 +75,38 @@ int pdfi_read_Root(pdf_context *ctx)
     } else {
         if (pdfi_type_of(o1) != PDF_DICT) {
             pdfi_countdown(o1);
-            return_error(gs_error_typecheck);
+            if (ctx->Root == NULL)
+                return_error(gs_error_typecheck);
+            return 0;
         }
     }
 
     code = pdfi_dict_get_type(ctx, (pdf_dict *)o1, "Type", PDF_NAME, &o);
     if (code < 0) {
-        pdfi_countdown(o1);
-        return code;
+        bool known = false;
+
+        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGTYPE, "pdfi_read_Root", NULL);
+
+        /* Missing the *required* /Type key! See if it has /Pages at least, if it does carry on */
+        code = pdfi_dict_known(ctx, (pdf_dict *)o1, "Pages", &known);
+        if (code < 0 || known == false) {
+            pdfi_countdown(o1);
+            return code;
+        }
     }
-    if (pdfi_name_strcmp((pdf_name *)o, "Catalog") != 0){
+    else {
+        if (pdfi_name_strcmp((pdf_name *)o, "Catalog") != 0){
+            pdfi_countdown(o);
+            pdfi_countdown(o1);
+            /* If we repaired the file, we may already have spotted a potential Root dictionary
+             * so if the one we found here isn't valid, try the one we found when scanning
+             */
+            if (ctx->Root == NULL)
+                return_error(gs_error_syntaxerror);
+            return 0;
+        }
         pdfi_countdown(o);
-        pdfi_countdown(o1);
-        return_error(gs_error_syntaxerror);
     }
-    pdfi_countdown(o);
 
     if (ctx->args.pdfdebug)
         dmprintf(ctx->memory, "\n");

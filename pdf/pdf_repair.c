@@ -465,6 +465,8 @@ int pdfi_repair_file(pdf_context *ctx)
     }
 
 exit:
+    if (code > 0)
+        code = 0;
     pdfi_seek(ctx, ctx->main_stream, saved_offset, SEEK_SET);
     ctx->main_stream->eof = false;
     return code;
