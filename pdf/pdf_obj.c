@@ -706,12 +706,12 @@ static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
             case 0x0d:
                 *bufptr++ = '\\';
                 *bufptr++ = 'r';
-                *ptr++;
+                ptr++;
                 continue;
             case 0x0a:
                 *bufptr++ = '\\';
                 *bufptr++ = 'n';
-                *ptr++;
+                ptr++;
                 continue;
             case '(':
             case ')':
