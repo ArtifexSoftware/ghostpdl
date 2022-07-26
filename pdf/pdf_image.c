@@ -987,6 +987,9 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
     if (code < 0)
         return code;
 
+    if (pdfi_type_of(image_info->SMask) != PDF_STREAM)
+        return_error(gs_error_typecheck);
+
     if (image_info->SMask->object_num != 0) {
         if (pdfi_loop_detector_check_object(ctx, image_info->SMask->object_num))
             return gs_note_error(gs_error_circular_reference);

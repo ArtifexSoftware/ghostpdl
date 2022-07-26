@@ -858,8 +858,15 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
         if(ctx->args.pdfstoponerror)
             return_error(gs_error_rangecheck);
 
-        *object = PDF_NULL_OBJ;
-        return 0;
+        code = pdfi_repair_file(ctx);
+        if (code < 0) {
+            *object = PDF_NULL_OBJ;
+            return code;
+        }
+        if (obj >= ctx->xref_table->xref_size) {
+            *object = PDF_NULL_OBJ;
+            return_error(gs_error_rangecheck);
+        }
     }
 
     entry = &ctx->xref_table->xref[obj];
