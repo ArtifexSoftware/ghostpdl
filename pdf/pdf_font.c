@@ -756,7 +756,7 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
             }
             if (code < 0) {
                 code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile3", PDF_STREAM, (pdf_obj**)&fontfile);
-                if (fontfile != NULL) {
+                if (code >= 0 && fontfile != NULL) {
                     code = pdfi_dict_get_type(ctx, fontfile->stream_dict, "Subtype", PDF_NAME, (pdf_obj **)&ffsubtype);
                     if (code >= 0) {
                         if (pdfi_name_is(ffsubtype, "Type1"))
