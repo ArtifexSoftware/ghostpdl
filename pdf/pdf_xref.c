@@ -778,6 +778,9 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     int64_t num;
     int obj_num;
 
+    if (ctx->repaired)
+        return 0;
+
     do {
         uint64_t section_start, section_size;
 
@@ -957,11 +960,14 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     if (code < 0)
         return code;
 
-    code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
-    if (code < 0)
-        return(code);
-    if (code == 0)
+    if (!ctx->repaired) {
+        code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
+        if (code < 0)
+            return(code);
+        if (code == 0)
         return_error(gs_error_syntaxerror);
+    } else
+        return 0;
 
     if ((intptr_t)(ctx->stack_top[-1]) == (intptr_t)TOKEN_XREF) {
         /* Read old-style xref table */
@@ -1097,5 +1103,7 @@ int pdfi_read_xref(pdf_context *ctx)
 
 repair:
     (void)pdfi_loop_detector_cleartomark(ctx);
-    return(pdfi_repair_file(ctx));
+    if (!ctx->repaired)
+        return(pdfi_repair_file(ctx));
+    return 0;
 }

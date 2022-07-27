@@ -25,15 +25,15 @@
 #include "pdf_misc.h"
 #include "pdf_repair.h"
 
-static int pdfi_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, gs_offset_t offset)
+static int pdfi_repair_add_object(pdf_context *ctx, int64_t obj, int64_t gen, gs_offset_t offset)
 {
     /* Although we can handle object numbers larger than this, on some systems (32-bit Windows)
      * memset is limited to a (signed!) integer for the size of memory to clear. We could deal
      * with this by clearing the memory in blocks, but really, this is almost certainly a
      * corrupted file or something.
      */
-    if (obj >= 0x7ffffff / sizeof(xref_entry))
-        return_error(gs_error_rangecheck);
+    if (obj >= 0x7ffffff / sizeof(xref_entry) || obj < 1 || gen < 0 || offset < 0)
+        return 0;
 
     if (ctx->xref_table == NULL) {
         ctx->xref_table = (xref_table_t *)gs_alloc_bytes(ctx->memory, sizeof(xref_table_t), "repair xref table");
@@ -85,7 +85,7 @@ int pdfi_repair_file(pdf_context *ctx)
 {
     int code = 0;
     gs_offset_t offset, saved_offset;
-    uint64_t object_num = 0, generation_num = 0;
+    int64_t object_num = 0, generation_num = 0;
     int i;
     gs_offset_t outer_saved_offset[3];
 
@@ -327,8 +327,13 @@ int pdfi_repair_file(pdf_context *ctx)
         if (ctx->xref_table->xref[i].object_num != 0) {
             /* At this stage, all the objects we've found must be uncompressed */
             if (ctx->xref_table->xref[i].u.uncompressed.offset > ctx->main_stream_length) {
-                code = gs_note_error(gs_error_rangecheck);
-                goto exit;
+                /* This can only happen if we had read an xref table before we tried to repair
+                 * the file, and the table has entries we didn't find in the file. So
+                 * mark the entry as free, and offset of 0, and just carry on.
+                 */
+                ctx->xref_table->xref[i].free = 1;
+                ctx->xref_table->xref[i].u.uncompressed.offset = 0;
+                continue;
             }
 
             pdfi_seek(ctx, ctx->main_stream, ctx->xref_table->xref[i].u.uncompressed.offset, SEEK_SET);
@@ -359,7 +364,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                 code = pdfi_dict_knownget_type(ctx, d, "Type", PDF_NAME, &o);
                                 if (code < 0) {
                                     pdfi_clearstack(ctx);
-                                    goto exit;
+                                    continue;
                                 }
                                 if (code > 0) {
                                     pdf_name *n = (pdf_name *)o;
