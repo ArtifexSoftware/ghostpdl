@@ -24,6 +24,5 @@ TIFF *
 tiff_from_filep(gx_device_printer *dev,  const char *name, gp_file *filep, int big_endian, bool usebigtiff);
 void tiff_set_handlers (void);
 int tiff_filename_from_tiff(TIFF *t, char **name);
-int tiff_free_private_tiff(gx_device_printer *dev, TIFF *t);
 
 #endif /* gstiffio_INCLUDED */

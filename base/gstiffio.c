@@ -176,13 +176,6 @@ int tiff_filename_from_tiff(TIFF *t, char **name)
     return 0;
 }
 
-int tiff_free_private_tiff(gx_device_printer *dev, TIFF *t)
-{
-    thandle_t h = TIFFClientdata(t);
-    gs_free(dev->memory, h, sizeof(tifs_io_private), 1, "tiffsep_free_private");
-    return 0;
-}
-
 static void
 gs_tifsWarningHandlerEx(thandle_t client_data, const char* module, const char* fmt, va_list ap)
 {

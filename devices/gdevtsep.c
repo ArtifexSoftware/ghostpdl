@@ -1274,23 +1274,36 @@ tiffsep1_prn_close(gx_device * pdev)
     build_comp_to_sep_map((tiffsep_device *)tfdev, map_comp_to_sep);
     /* Close the separation files */
     for (comp_num = 0; comp_num < tfdev->page_num_comps; comp_num++ ) {
+        char *lname = NULL;
         if (tfdev->sep_file[comp_num] != NULL) {
             tiff_filename_from_tiff(tfdev->tiff[comp_num], &name);
-            code = gx_device_close_output_file(pdev, name, tfdev->sep_file[comp_num]);
+            if (name != NULL) {
+                lname = (char *)gs_alloc_bytes(tfdev->memory, strlen(name) + 1, "tiffsep1_prn_close");
+                if (lname == NULL) {
+                    code = gs_note_error(gs_error_VMerror);
+                    goto done;
+                }
+                memcpy(lname, name, strlen(name) + 1);
+            }
+        }
+
+        if (tfdev->tiff[comp_num]) {
+            void *t = TIFFClientdata(tfdev->tiff[comp_num]);
+
+            TIFFCleanup(tfdev->tiff[comp_num]);
+            gs_free(pdev->memory, t, sizeof(tifs_io_private), 1, "tiffsep1_prn_close");
+            tfdev->tiff[comp_num] = NULL;
+        }
+        if (tfdev->sep_file[comp_num] != NULL) {
+            code = gx_device_close_output_file(pdev, lname, tfdev->sep_file[comp_num]);
             if (code >= 0)
-                code = gs_remove_outputfile_control_path(pdev->memory, name);
+                code = gs_remove_outputfile_control_path(pdev->memory, lname);
             if (code < 0) {
                 goto done;
             }
             tfdev->sep_file[comp_num] = NULL;
         }
-        if (tfdev->tiff[comp_num]) {
-            void *t;
-
-            tiff_free_private_tiff((gx_device_printer *)tfdev, tfdev->tiff[comp_num]);
-            TIFFCleanup(tfdev->tiff[comp_num]);
-            tfdev->tiff[comp_num] = NULL;
-        }
+        gs_free_object(tfdev->memory, lname, "tiffsep1_prn_close");
     }
 
 done:
@@ -1732,8 +1745,9 @@ tiffsep_prn_close(gx_device * pdev)
         return_error(gs_error_VMerror);
 
     if (pdevn->tiff_comp) {
-        tiff_free_private_tiff((gx_device_printer *)pdevn, pdevn->tiff_comp);
+        void *t = TIFFClientdata(pdevn->tiff_comp);
         TIFFCleanup(pdevn->tiff_comp);
+        gs_free(pdev->memory, t, sizeof(tifs_io_private), 1, "tiffsep_prn_close");
         pdevn->tiff_comp = NULL;
     }
     code = gdev_prn_close(pdev);
@@ -1744,24 +1758,34 @@ tiffsep_prn_close(gx_device * pdev)
     build_comp_to_sep_map(pdevn, map_comp_to_sep);
     /* Close the separation files */
     for (comp_num = 0; comp_num < pdevn->page_num_comps; comp_num++ ) {
+        char *lname = NULL;
         if (pdevn->sep_file[comp_num] != NULL) {
             tiff_filename_from_tiff(pdevn->tiff[comp_num], &name);
+            if (name != NULL) {
+                lname = (char *)gs_alloc_bytes(pdevn->memory, strlen(name) + 1, "tiffsep1_prn_close");
+                if (lname == NULL) {
+                    code = gs_note_error(gs_error_VMerror);
+                    goto done;
+                }
+                memcpy(lname, name, strlen(name) + 1);
+            }
 
-            code = gx_device_close_output_file((gx_device *)pdevn, name, pdevn->sep_file[comp_num]);
+            if (pdevn->tiff[comp_num]) {
+                void *t = TIFFClientdata(pdevn->tiff[comp_num]);
+                TIFFCleanup(pdevn->tiff[comp_num]);
+                gs_free(pdevn->memory, t, sizeof(tifs_io_private), 1, "tiffsep_prn_close");
+                pdevn->tiff[comp_num] = NULL;
+            }
+
+            code = gx_device_close_output_file((gx_device *)pdevn, lname, pdevn->sep_file[comp_num]);
             if (code >= 0)
                 code = gs_remove_outputfile_control_path(pdevn->memory, name);
             if (code < 0) {
                 goto done;
             }
             pdevn->sep_file[comp_num] = NULL;
-            if (pdevn->tiff[comp_num]) {
-                void *t;
-
-                tiff_free_private_tiff((gx_device_printer *)pdevn, pdevn->tiff[comp_num]);
-                TIFFCleanup(pdevn->tiff[comp_num]);
-                pdevn->tiff[comp_num] = NULL;
-            }
         }
+        gs_free_object(pdevn->memory, lname, "tiffsep1_prn_close");
     }
 
 done:
