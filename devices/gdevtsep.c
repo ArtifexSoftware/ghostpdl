@@ -1294,7 +1294,7 @@ tiffsep1_prn_close(gx_device * pdev)
             gs_free(pdev->memory, t, sizeof(tifs_io_private), 1, "tiffsep1_prn_close");
             tfdev->tiff[comp_num] = NULL;
         }
-        if (tfdev->sep_file[comp_num] != NULL) {
+        if (tfdev->sep_file[comp_num] != NULL && lname != NULL) {
             code = gx_device_close_output_file(pdev, lname, tfdev->sep_file[comp_num]);
             if (code >= 0)
                 code = gs_remove_outputfile_control_path(pdev->memory, lname);
@@ -1777,11 +1777,13 @@ tiffsep_prn_close(gx_device * pdev)
                 pdevn->tiff[comp_num] = NULL;
             }
 
-            code = gx_device_close_output_file((gx_device *)pdevn, lname, pdevn->sep_file[comp_num]);
-            if (code >= 0)
-                code = gs_remove_outputfile_control_path(pdevn->memory, name);
-            if (code < 0) {
-                goto done;
+            if (lname != NULL) {
+                code = gx_device_close_output_file((gx_device *)pdevn, lname, pdevn->sep_file[comp_num]);
+                if (code >= 0)
+                    code = gs_remove_outputfile_control_path(pdevn->memory, lname);
+                if (code < 0) {
+                    goto done;
+                }
             }
             pdevn->sep_file[comp_num] = NULL;
         }
