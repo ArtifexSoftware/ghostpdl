@@ -91,7 +91,7 @@ static void
 pdf_show_text_release(gs_text_enum_t *pte, client_name_t cname)
 {
      gs_show_enum *const penum = (gs_show_enum *)pte;
-     gs_text_enum_procs_t *procs = penum->procs;
+     gs_text_enum_procs_t *procs = (gs_text_enum_procs_t *)penum->procs;
 
      penum->cc = 0;
      if (penum->dev_cache2) {
