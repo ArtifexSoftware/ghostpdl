@@ -261,12 +261,16 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         pdfi_countdown(stream_obj); /* get rid of extra ref */
         return code;
     }
-    if (pdfi_loop_detector_check_object(ctx, stream_obj->object_num))
+    if (pdfi_loop_detector_check_object(ctx, stream_obj->object_num)) {
+        pdfi_countdown(stream_obj); /* get rid of extra ref */
+        pdfi_loop_detector_cleartomark(ctx);
         return_error(gs_error_circular_reference);
+    }
 
     code = pdfi_loop_detector_add_object(ctx, stream_obj->object_num);
     if (code < 0) {
         pdfi_countdown(stream_obj); /* get rid of extra ref */
+        pdfi_loop_detector_cleartomark(ctx);
         return code;
     }
 
