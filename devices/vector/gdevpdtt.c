@@ -86,6 +86,30 @@ pdf_text_current_width(const gs_text_enum_t *pte, gs_point *pwidth)
         return gs_text_current_width(penum->pte_default, pwidth);
     return_error(gs_error_rangecheck); /* can't happen */
 }
+
+static void
+pdf_show_text_release(gs_text_enum_t *pte, client_name_t cname)
+{
+     gs_show_enum *const penum = (gs_show_enum *)pte;
+     gs_text_enum_procs_t *procs = penum->procs;
+
+     penum->cc = 0;
+     if (penum->dev_cache2) {
+         gx_device_retain((gx_device *)penum->dev_cache2, false);
+         penum->dev_cache2 = 0;
+     }
+     if (penum->dev_cache) {
+         gx_device_retain((gx_device *)penum->dev_cache, false);
+         penum->dev_cache = 0;
+     }
+     if (penum->dev_null) {
+         gx_device_retain((gx_device *)penum->dev_null, false);
+         penum->dev_null = 0;
+     }
+     gx_default_text_release(pte, cname);
+     gs_free_object(penum->memory->non_gc_memory, procs, "pdf_show_text_release");
+}
+
 static int
 pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
                    gs_text_cache_control_t control)
@@ -3392,12 +3416,18 @@ pdf_text_process(gs_text_enum_t *pte)
                  */
                 gs_show_enum psenum = *(gs_show_enum *)pte_default;
                 gs_gstate *pgs = (gs_gstate *)penum->pgs;
-                gs_text_enum_procs_t special_procs = *pte_default->procs;
+                gs_text_enum_procs_t *special_procs;
                 void (*save_proc)(gx_device *, gs_matrix *) = pdev->procs.get_initial_matrix;
                 gs_matrix m, savem;
 
-                special_procs.set_cache = pdf_text_set_cache;
-                pte_default->procs = &special_procs;
+                special_procs = (gs_text_enum_procs_t *)gs_alloc_bytes(pte_default->memory->non_gc_memory, sizeof(gs_text_enum_procs_t), "pdf_text_process");
+                if (special_procs == NULL)
+                    return_error(gs_error_VMerror);
+
+                *special_procs = *pte_default->procs;
+                special_procs->set_cache = pdf_text_set_cache;
+                special_procs->release = pdf_show_text_release;
+                pte_default->procs = special_procs;
 
                 {
                     /* We should not come here if we already have a cached character (except for the special case
