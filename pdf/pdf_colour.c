@@ -1576,6 +1576,7 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
                 goto pdfi_separation_error;
             break;
         default:
+            pdfi_countdown(o);
             code = gs_error_typecheck;
             goto pdfi_separation_error;
     }
