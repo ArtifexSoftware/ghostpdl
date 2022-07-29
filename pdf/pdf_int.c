@@ -2032,6 +2032,15 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
     while (s != NULL && pdfi_type_of(s) == PDF_STREAM) {
         if (s->object_num > 0) {
             if (s->object_num == stream_obj->object_num) {
+                pdf_dict *d = NULL;
+                bool known = false;
+
+                code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &d);
+                if (code >= 0) {
+                    code = pdfi_dict_known(ctx, d, "Parent", &known);
+                    if (code >= 0 && known)
+                        (void)pdfi_dict_delete(ctx, d, "Parent");
+                }
                 pdfi_set_error(ctx, 0, NULL, E_PDF_CIRCULARREF, "pdfi_interpret_content_stream", "Aborting stream");
                 return_error(gs_error_circular_reference);
             }
