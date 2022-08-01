@@ -35,6 +35,9 @@
 
 % Usage example:
 %	(jpeg-6/testimg.jpg) viewJPEG
+% From version 9.50 you must supply permissions for this program
+% to read the input file(s) either by using -dNOSAFER or by
+% supplying --permit-file-read=<filename>
 
 /languagelevel where {pop languagelevel 2 lt}{true} ifelse {
   (JPEG needs PostScript Level 2!\n) print flush stop
