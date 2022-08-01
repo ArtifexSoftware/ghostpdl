@@ -345,8 +345,10 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
         const int fsprefixlen = strlen(fsprefix);
 
         if (cidname == NULL || pdfi_type_of(cidname) != PDF_NAME
-         || fsprefixlen + cidname->length >= gp_file_name_sizeof)
+         || fsprefixlen + cidname->length >= gp_file_name_sizeof) {
+            code = gs_note_error(gs_error_invalidfont);
             goto exit;
+        }
 
         memcpy(fontfname, fsprefix, fsprefixlen);
         memcpy(fontfname + fsprefixlen, cidname->data, cidname->length);
