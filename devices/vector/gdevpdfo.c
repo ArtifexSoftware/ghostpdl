@@ -1485,6 +1485,8 @@ cos_dict_find(const cos_dict_t *pcd, const byte *key_data, uint key_size)
 const cos_value_t *
 cos_dict_find_c_key(const cos_dict_t *pcd, const char *key)
 {
+    if (pcd == NULL)
+        return NULL;
     return cos_dict_find(pcd, (const byte *)key, strlen(key));
 }
 

@@ -1147,7 +1147,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
         return_error(gs_error_undefined);
 
     page = &pdev->pages[page_num - 1];
-    v_mediabox = cos_dict_find_c_key(page->Page, "/MediaBox");
+    if (page->Page != NULL)
+        v_mediabox = cos_dict_find_c_key(page->Page, "/MediaBox");
     page_id = pdf_page_id(pdev, page_num);
 
     /* If we have not been given a MediaBox overriding pdfmark, use the current media size. */
@@ -1172,7 +1173,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
         buf[l] = 0;
         if (sscanf(buf, "[ %g %g %g %g ]",
                 &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
-            cos_dict_delete_c_key(page->Page, "/MediaBox");
+            if (page->Page)
+             cos_dict_delete_c_key(page->Page, "/MediaBox");
         }
         pprintg4(s, "<</Type/Page/MediaBox [%g %g %g %g]\n",
                 temp[0], temp[1], temp[2], temp[3]);
@@ -1180,12 +1182,19 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
             mediabox[i] = temp[i];
     }
     if (pdev->PDFX) {
-        const cos_value_t *v_trimbox = cos_dict_find_c_key(page->Page, "/TrimBox");
-        const cos_value_t *v_artbox = cos_dict_find_c_key(page->Page, "/ArtBox");
-        const cos_value_t *v_cropbox = cos_dict_find_c_key(page->Page, "/CropBox");
-        const cos_value_t *v_bleedbox = cos_dict_find_c_key(page->Page, "/BleedBox");
+        const cos_value_t *v_trimbox = NULL;
+        const cos_value_t *v_artbox = NULL;
+        const cos_value_t *v_cropbox = NULL;
+        const cos_value_t *v_bleedbox = NULL;
         float trimbox[4] = {0, 0}, bleedbox[4] = {0, 0};
         bool print_bleedbox = false;
+
+        if (page->Page != NULL) {
+            v_trimbox = cos_dict_find_c_key(page->Page, "/TrimBox");
+            v_artbox = cos_dict_find_c_key(page->Page, "/ArtBox");
+            v_cropbox = cos_dict_find_c_key(page->Page, "/CropBox");
+            v_bleedbox = cos_dict_find_c_key(page->Page, "/BleedBox");
+        }
 
         trimbox[2] = bleedbox[2] = mediabox[2];
         trimbox[3] = bleedbox[3] = mediabox[3];
@@ -1205,9 +1214,10 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                 trimbox[1] = temp[1];
                 trimbox[2] = temp[2];
                 trimbox[3] = temp[3];
-                cos_dict_delete_c_key(page->Page, "/TrimBox");
+                if (page->Page != NULL)
+                    cos_dict_delete_c_key(page->Page, "/TrimBox");
             }
-            if (v_artbox != NULL && v_artbox->value_type == COS_VALUE_SCALAR)
+            if (v_artbox != NULL && v_artbox->value_type == COS_VALUE_SCALAR && page->Page != NULL)
                 cos_dict_delete_c_key(page->Page, "/ArtBox");
 
         } else if (v_artbox != NULL && v_artbox->value_type == COS_VALUE_SCALAR) {
@@ -1227,7 +1237,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                 trimbox[1] = temp[1];
                 trimbox[2] = temp[2];
                 trimbox[3] = temp[3];
-                cos_dict_delete_c_key(page->Page, "/ArtBox");
+                if (page->Page != NULL)
+                    cos_dict_delete_c_key(page->Page, "/ArtBox");
             }
         } else {
             if (pdev->PDFXTrimBoxToMediaBoxOffset.size >= 4 &&
@@ -1269,7 +1280,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                 else
                     bleedbox[3] = temp[3];
                 print_bleedbox = true;
-                cos_dict_delete_c_key(page->Page, "/BleedBox");
+                if (page->Page != NULL)
+                    cos_dict_delete_c_key(page->Page, "/BleedBox");
             }
         } else if (pdev->PDFXSetBleedBoxToMediaBox)
             print_bleedbox = true;
@@ -1332,7 +1344,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
             buf[l] = 0;
             if (sscanf(buf, "[ %g %g %g %g ]",
                     &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
-                cos_dict_delete_c_key(page->Page, "/CropBox");
+                if (page->Page != NULL)
+                    cos_dict_delete_c_key(page->Page, "/CropBox");
                 /* Ensure that CropBox is no larger than MediaBox. The spec says *nothing* about
                  * this, but Acrobat Preflight complains if it is larger. This can happen because
                  * we apply 'round_box_coord' to the mediabox at the start of this rouinte.
@@ -1388,14 +1401,16 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
             }
         }
 
-        if (cos_dict_find_c_key(page->Page, "/TrimBox") == NULL &&
-            cos_dict_find_c_key(page->Page, "/ArtBox") == NULL)
-            pprintg4(s, "/TrimBox [%g %g %g %g]\n",
-                trimbox[0], trimbox[1], trimbox[2], trimbox[3]);
-        if (print_bleedbox &&
-            cos_dict_find_c_key(page->Page, "/BleedBox") == NULL)
-            pprintg4(s, "/BleedBox [%g %g %g %g]\n",
-                bleedbox[0], bleedbox[1], bleedbox[2], bleedbox[3]);
+        if (page->Page != NULL) {
+            if (cos_dict_find_c_key(page->Page, "/TrimBox") == NULL &&
+                cos_dict_find_c_key(page->Page, "/ArtBox") == NULL)
+                pprintg4(s, "/TrimBox [%g %g %g %g]\n",
+                    trimbox[0], trimbox[1], trimbox[2], trimbox[3]);
+            if (print_bleedbox &&
+                cos_dict_find_c_key(page->Page, "/BleedBox") == NULL)
+                pprintg4(s, "/BleedBox [%g %g %g %g]\n",
+                    bleedbox[0], bleedbox[1], bleedbox[2], bleedbox[3]);
+        }
     }
     pdf_print_orientation(pdev, page);
     if (page->UserUnit != 1)
@@ -1482,7 +1497,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 
     /* Write any elements stored by pdfmarks. */
 
-    cos_dict_elements_write(page->Page, pdev);
+    if (page->Page != NULL)
+        cos_dict_elements_write(page->Page, pdev);
 
     stream_puts(s, ">>\n");
     pdf_end_obj(pdev, resourcePage);
