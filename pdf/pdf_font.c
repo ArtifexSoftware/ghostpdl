@@ -1990,10 +1990,10 @@ int pdfi_font_generate_pseudo_XUID(pdf_context *ctx, pdf_dict *fontdict, gs_font
     int i;
     uint32_t hash = 0;
     long *xvalues;
-    int xuidlen = 2;
+    int xuidlen = 3;
 
     sfilename(ctx->main_stream->s, &fn);
-    if (fn.size > 0 && fontdict->object_num != 0) {
+    if (fn.size > 0 && fontdict!= NULL && fontdict->object_num != 0) {
         for (i = 0; i < fn.size; i++) {
             hash = ((((hash & 0xf8000000) >> 27) ^ (hash << 5)) & 0x7ffffffff) ^ fn.data[i];
         }
@@ -2009,14 +2009,17 @@ int pdfi_font_generate_pseudo_XUID(pdf_context *ctx, pdf_dict *fontdict, gs_font
         }
         xvalues[0] = 1000000; /* "Private" value */
         xvalues[1] = hash;
+
+        xvalues[2] = ctx->device_state.HighLevelDevice ? pfont->id : 0;
+
         if (uid_is_XUID(&pfont->UID)) {
             for (i = 0; i < uid_XUID_size(&pfont->UID); i++) {
-                xvalues[i + 2] = uid_XUID_values(&pfont->UID)[i];
+                xvalues[i + 3] = uid_XUID_values(&pfont->UID)[i];
             }
             uid_free(&pfont->UID, pfont->memory, "pdfi_font_generate_pseudo_XUID");
         }
         else if (uid_is_valid(&pfont->UID))
-            xvalues[2] = pfont->UID.id;
+            xvalues[3] = pfont->UID.id;
 
         uid_set_XUID(&pfont->UID, xvalues, xuidlen);
     }

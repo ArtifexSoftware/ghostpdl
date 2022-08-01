@@ -564,6 +564,15 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         font->descflags = descflags;
     }
 
+    if (uid_is_XUID(&font->pfont->UID))
+        uid_free(&font->pfont->UID, font->pfont->memory, "pdfi_read_type1_font");
+    uid_set_invalid(&font->pfont->UID);
+
+    code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, font->pfont);
+    if (code < 0) {
+        goto error;
+    }
+
     if ((font->descflags & 4) == 0) {
         /* Horrid hacky solution */
         /* We don't want to draw the TTF notdef */
@@ -690,22 +699,23 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
             code = gs_error_undefined;
         pdfi_countdown(tmp);
         tmp = NULL;
-        if (code == 1) {
-            /* Since the underlying font stream can be shared between font descriptors,
-               and the font descriptors can be shared between font objects, if we change
-               the encoding, we can't share cached glyphs with other instances of this
-               underlying font, so invalidate the UniqueID/XUID so the glyph cache won't
-               try.
-            */
-            if (uid_is_XUID(&font->pfont->UID))
-                uid_free(&font->pfont->UID, font->pfont->memory, "pdfi_read_type1_font");
-            uid_set_invalid(&font->pfont->UID);
-        }
     }
     else {
         pdfi_countdown(tmp);
         tmp = NULL;
         code = 0;
+    }
+
+    /* Since various aspects of the font may differ (widths, encoding, etc)
+       we cannot reliably use the UniqueID/XUID for copied fonts.
+     */
+    if (uid_is_XUID(&font->pfont->UID))
+        uid_free(&font->pfont->UID, font->pfont->memory, "pdfi_read_type1_font");
+    uid_set_invalid(&font->pfont->UID);
+
+    code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, font->pfont);
+    if (code < 0) {
+        goto error;
     }
 
     if (code <= 0) {

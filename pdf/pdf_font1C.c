@@ -2446,10 +2446,10 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 else {
                     cffcid->W2 = NULL;
                 }
-                code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, (gs_font_base *)cffcid->pfont);
-                if (code < 0)
-                    uid_set_invalid(&cffcid->pfont->UID);
-
+                if (uid_is_XUID(&cffcid->pfont->UID))
+                    uid_free(&cffcid->pfont->UID, cffcid->pfont->memory, "pdfi_read_type1_font");
+                uid_set_invalid(&cffcid->pfont->UID);
+                cffcid->pfont->id = gs_next_ids(ctx->memory, 1);
             }
             else if (forcecid) {
                 pdf_obj *obj;
@@ -2655,10 +2655,10 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     cffcid->W2 = NULL;
                 }
 
-                code = pdfi_font_generate_pseudo_XUID(ctx, cffcid->PDF_font, ppdfont->pfont);
-                if (code < 0)
-                    goto error;
-
+                if (uid_is_XUID(&cffcid->pfont->UID))
+                    uid_free(&cffcid->pfont->UID, cffcid->pfont->memory, "pdfi_read_type1_font");
+                uid_set_invalid(&cffcid->pfont->UID);
+                cffcid->pfont->id = gs_next_ids(ctx->memory, 1);
             }
             else {
                 pdf_font_cff *cfffont;
@@ -2757,6 +2757,9 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     }
                     else
                         code = gs_error_undefined;
+
+                    if (code == 1) {
+                    }
                     pdfi_countdown(tmp);
                     tmp = NULL;
                 }
@@ -2769,6 +2772,18 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     cfffont->Encoding = cffpriv.pdfcffpriv.Encoding;
                     cffpriv.pdfcffpriv.Encoding = NULL;
                 }
+
+                /* Since the underlying font stream can be shared between font descriptors,
+                   and the font descriptors can be shared between font objects, if we change
+                   the encoding, we can't share cached glyphs with other instances of this
+                   underlying font, so invalidate the UniqueID/XUID so the glyph cache won't
+                   try.
+                */
+                if (uid_is_XUID(&cfffont->pfont->UID))
+                    uid_free(&cfffont->pfont->UID, cfffont->pfont->memory, "pdfi_read_type1_font");
+                uid_set_invalid(&cfffont->pfont->UID);
+                cfffont->pfont->id = gs_next_ids(ctx->memory, 1);
+
                 if (ctx->args.ignoretounicode != true && font_dict != NULL) {
                     code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tounicode);
                     if (code >= 0 && pdfi_type_of(tounicode) == PDF_STREAM) {
@@ -2808,6 +2823,11 @@ error:
             }
         }
         else {
+            code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, ppdfont->pfont);
+            if (code < 0) {
+                goto error;
+            }
+
             code = gs_definefont(ctx->font_dir, (gs_font *) ppdfont->pfont);
 
             if (code >= 0)
@@ -2817,6 +2837,7 @@ error:
             if (code >= 0 && ppdfont->object_num != 0) {
                 (void)replace_cache_entry(ctx, (pdf_obj *) ppdfont);
             }
+
             if (code >= 0) {
                 *ppdffont = (pdf_font *) ppdfont;
                 ppdfont = NULL;
@@ -2971,17 +2992,6 @@ pdfi_copy_cff_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pd
             code = gs_error_undefined;
         pdfi_countdown(tmp);
         tmp = NULL;
-        if (code == 1) {
-            /* Since the underlying font stream can be shared between font descriptors,
-               and the font descriptors can be shared between font objects, if we change
-               the encoding, we can't share cached glyphs with other instances of this
-               underlying font, so invalidate the UniqueID/XUID so the glyph cache won't
-               try.
-            */
-            if (uid_is_XUID(&font->pfont->UID))
-                uid_free(&font->pfont->UID, font->pfont->memory, "pdfi_read_type1_font");
-            uid_set_invalid(&font->pfont->UID);
-        }
     }
     else {
         pdfi_countdown(tmp);
@@ -2992,6 +3002,18 @@ pdfi_copy_cff_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pd
     if (code <= 0) {
         font->Encoding = spdffont->Encoding;
         pdfi_countup(font->Encoding);
+    }
+
+    /* Since various aspects of the font may differ (widths, encoding, etc)
+       we cannot reliably use the UniqueID/XUID for copied fonts.
+     */
+    if (uid_is_XUID(&font->pfont->UID))
+        uid_free(&font->pfont->UID, font->pfont->memory, "pdfi_read_type1_font");
+    uid_set_invalid(&font->pfont->UID);
+
+    code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, font->pfont);
+    if (code < 0) {
+        goto error;
     }
 
     if (ctx->args.ignoretounicode != true) {

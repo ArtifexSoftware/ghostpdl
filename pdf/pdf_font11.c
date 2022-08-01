@@ -442,10 +442,21 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     pdfi_countdown(obj);
     obj = NULL;
 
+
     code = gs_type42_font_init((gs_font_type42 *)font->pfont, 0);
     if (code < 0) {
         goto error;
     }
+    if (uid_is_XUID(&font->pfont->UID))
+        uid_free(&font->pfont->UID, font->pfont->memory, "pdfi_read_type1_font");
+    uid_set_invalid(&font->pfont->UID);
+    font->pfont->id = gs_next_ids(ctx->memory, 1);
+
+    code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, font->pfont);
+    if (code < 0)
+        goto error;
+
+
     font->orig_glyph_info = font->pfont->procs.glyph_info;
     font->pfont->procs.glyph_info = pdfi_cidtype2_glyph_info;
     font->pfont->procs.enumerate_glyph = pdfi_cidtype2_enumerate_glyph;
@@ -467,10 +478,6 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     cid2->data.substitute_glyph_index_vertical = gs_type42_substitute_glyph_index_vertical;
     cid2->cidata.orig_procs.get_outline = cid2->data.get_outline;
     cid2->data.get_glyph_index = pdfi_cidtype2_get_glyph_index;
-
-    code = pdfi_font_generate_pseudo_XUID(ctx, font->PDF_font, font->pfont);
-    if (code < 0)
-        goto error;
 
     code = gs_definefont(ctx->font_dir, (gs_font *)font->pfont);
     if (code < 0) {
