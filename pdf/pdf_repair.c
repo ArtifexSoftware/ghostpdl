@@ -33,7 +33,7 @@ static int pdfi_repair_add_object(pdf_context *ctx, int64_t obj, int64_t gen, gs
      * corrupted file or something.
      */
     if (obj >= 0x7ffffff / sizeof(xref_entry) || obj < 1 || gen < 0 || offset < 0)
-        return 0;
+        return_error(gs_error_rangecheck);
 
     if (ctx->xref_table == NULL) {
         ctx->xref_table = (xref_table_t *)gs_alloc_bytes(ctx->memory, sizeof(xref_table_t), "repair xref table");
