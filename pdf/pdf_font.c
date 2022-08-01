@@ -655,7 +655,7 @@ static int pdfi_load_font_file(pdf_context *ctx, int fftype, pdf_name *Subtype, 
     bool f_retry = true;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
-    if (code < 0 || basefont == NULL || ((pdf_name *)basefont)->length == 0)
+    if (substitute == false && (code < 0 || basefont == NULL || ((pdf_name *)basefont)->length == 0))
         return_error(gs_error_invalidfont);
 
     if (substitute == true) {

@@ -1047,7 +1047,7 @@ ps_font_array_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
         if (s->cur[0].val.i > 0) {
             pdfi_countdown(priv->u.t1.Subrs);
 
-            pdfi_object_alloc(s->pdfi_ctx, PDF_ARRAY, (unsigned int)s->cur[0].val.i, (pdf_obj **)&priv->u.t1.Subrs);
+            code = pdfi_object_alloc(s->pdfi_ctx, PDF_ARRAY, (unsigned int)s->cur[0].val.i, (pdf_obj **)&priv->u.t1.Subrs);
             if (code < 0) {
                 return code;
             }
