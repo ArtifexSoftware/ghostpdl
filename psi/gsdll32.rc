@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -51,8 +51,8 @@ BEGIN
 END
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION        0,0,GS_VERSION_MAJOR,GS_VERSION_MINOR
- PRODUCTVERSION     0,0,GS_VERSION_MAJOR,GS_VERSION_MINOR
+ FILEVERSION        GS_VERSION_MAJOR,GS_VERSION_MINOR,GS_VERSION_PATCH,0
+ PRODUCTVERSION     GS_VERSION_MAJOR,GS_VERSION_MINOR,GS_VERSION_PATCH,0
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
