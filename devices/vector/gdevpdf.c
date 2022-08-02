@@ -1141,7 +1141,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     pdf_page_t *page;
     double mediabox[4] = {0, 0};
     stream *s;
-    const cos_value_t *v_mediabox;
+    const cos_value_t *v_mediabox = NULL;
 
     if (pdev->pages == NULL)
         return_error(gs_error_undefined);
