@@ -631,6 +631,46 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
 
 static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, ref *PSobj);
 
+static void debug_pdfobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj)
+{
+    char *str = NULL;
+    int code = 0, len = 0;
+
+    switch(pdfi_type_of(PDFobj)) {
+        case PDF_NAME:
+            code = pdfi_string_from_name(pdfctx->ctx, (pdf_name *)PDFobj, &str, &len);
+            if (code < 0)
+                return;
+            dbgprintf1("/%s ", str);
+            (void)pdfi_free_string_from_name(pdfctx->ctx, str);
+            break;
+        case PDF_STRING:
+            str = (char *)gs_alloc_bytes(pdfctx->ctx->memory, ((pdf_string *)PDFobj)->length + 1, "");
+            if (str == NULL)
+                return;
+            memset(str, 0x00, ((pdf_string *)PDFobj)->length + 1);
+            memcpy(str, ((pdf_string *)PDFobj)->data, ((pdf_string *)PDFobj)->length);
+            dbgprintf1("/%s ", str);
+            gs_free_object(pdfctx->ctx->memory, str, "");
+            break;
+        case PDF_INT:
+            dbgprintf1("/%d ", ((pdf_num *)PDFobj)->value.i);
+            break;
+        case PDF_REAL:
+            dbgprintf1("/%f ", ((pdf_num *)PDFobj)->value.d);
+            break;
+            break;
+        case PDF_BOOL:
+            if (PDFobj == PDF_TRUE_OBJ)
+                dbgprintf("true ");
+            else
+                dbgprintf("false ");
+            break;
+        default:
+            break;
+    }
+}
+
 static int PDFdict_to_PSdict(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_dict *PDFdict, ref *PSdict)
 {
     int code = 0;
@@ -660,6 +700,8 @@ static int PDFdict_to_PSdict(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_dict *PDFdi
         if (code < 0)
             goto error;
 
+        debug_pdfobj(i_ctx_p, pdfctx, (pdf_obj *)Key);
+
         code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)str, len, &nameref, 1);
         if (code < 0)
             goto error;
@@ -672,6 +714,7 @@ static int PDFdict_to_PSdict(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_dict *PDFdi
         if (code < 0)
             goto error;
 
+        dbgprintf("\n");
         pdfi_countdown(Key);
         pdfi_countdown(Value);
         Key = NULL;
@@ -752,6 +795,8 @@ static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, 
     if (code < 0)
         goto error;
 
+    debug_pdfobj(i_ctx_p, pdfctx, PDFobj);
+
     switch(pdfi_type_of(PDFobj)) {
         case PDF_NAME:
             {
@@ -806,10 +851,26 @@ static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, 
             }
             break;
         case PDF_DICT:
+            code = pdfi_loop_detector_mark(pdfctx->ctx);
+            if (code < 0)
+                goto error;
+            if (PDFobj->object_num != 0)
+                pdfi_loop_detector_add_object(pdfctx->ctx, PDFobj->object_num);
+            dbgprintf("<<\n");
             code = PDFdict_to_PSdict(i_ctx_p, pdfctx, (pdf_dict *)PDFobj, PSobj);
+            dbgprintf(">>\n");
+            pdfi_loop_detector_cleartomark(pdfctx->ctx);
             break;
         case PDF_ARRAY:
+            code = pdfi_loop_detector_mark(pdfctx->ctx);
+            if (code < 0)
+                goto error;
+            if (PDFobj->object_num != 0)
+                pdfi_loop_detector_add_object(pdfctx->ctx, PDFobj->object_num);
+            dbgprintf("[ ");
             code = PDFarray_to_PSarray(i_ctx_p, pdfctx, (pdf_array *)PDFobj, PSobj);
+            dbgprintf("]\n");
+            pdfi_loop_detector_cleartomark(pdfctx->ctx);
             break;
         default:
             make_null(PSobj);
