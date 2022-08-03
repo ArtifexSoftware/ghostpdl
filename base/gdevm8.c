@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -195,6 +195,7 @@ mapped8_copyN1(chunk * dest, const byte * line, int first_bit,
                     goto enter7;
             }
             do {
+                sbyte = *sptr++;
                 enter0: if (sbyte & 128)
                             *pptr = b1;
                         pptr++;
@@ -219,11 +220,13 @@ mapped8_copyN1(chunk * dest, const byte * line, int first_bit,
                 enter7: if (sbyte & 1)
                             *pptr = b1;
                         pptr++;
-                sbyte = *sptr++;
                 count -= 8;
             } while (count >= 0);
             bit = 128;
             count += 8;
+            if (count > 0)
+                /* read the byte containing the trailing bits */
+                sbyte = *sptr++;
         } else {
             /* Less than 1 byte to do */
             bit = 0x80>>first_bit;
