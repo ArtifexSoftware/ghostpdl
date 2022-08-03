@@ -631,8 +631,31 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
 
 static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, ref *PSobj);
 
+#define DEBUG_INFO_DICT 0
+
+static void debug_printmark(int type)
+{
+#if DEBUG_INFO_DICT
+    switch(type) {
+        case 0:
+            dbgprintf("<<\n");
+            break;
+        case 1:
+            dbgprintf(">>\n");
+            break;
+        case 2:
+            dbgprintf("[");
+            break;
+        case 3:
+            dbgprintf("]\n");
+            break;
+    }
+#endif
+}
+
 static void debug_pdfobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj)
 {
+#if DEBUG_INFO_DICT
     char *str = NULL;
     int code = 0, len = 0;
 
@@ -669,6 +692,7 @@ static void debug_pdfobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj)
         default:
             break;
     }
+#endif
 }
 
 static int PDFdict_to_PSdict(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_dict *PDFdict, ref *PSdict)
@@ -714,7 +738,6 @@ static int PDFdict_to_PSdict(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_dict *PDFdi
         if (code < 0)
             goto error;
 
-        dbgprintf("\n");
         pdfi_countdown(Key);
         pdfi_countdown(Value);
         Key = NULL;
@@ -851,26 +874,24 @@ static int PDFobj_to_PSobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj, 
             }
             break;
         case PDF_DICT:
-            code = pdfi_loop_detector_mark(pdfctx->ctx);
-            if (code < 0)
-                goto error;
-            if (PDFobj->object_num != 0)
-                pdfi_loop_detector_add_object(pdfctx->ctx, PDFobj->object_num);
-            dbgprintf("<<\n");
+            if (PDFobj->object_num != 0) {
+                code = pdfi_loop_detector_add_object(pdfctx->ctx, PDFobj->object_num);
+                if (code < 0)
+                    goto error;
+            }
+            debug_printmark(0);
             code = PDFdict_to_PSdict(i_ctx_p, pdfctx, (pdf_dict *)PDFobj, PSobj);
-            dbgprintf(">>\n");
-            pdfi_loop_detector_cleartomark(pdfctx->ctx);
+            debug_printmark(1);
             break;
         case PDF_ARRAY:
-            code = pdfi_loop_detector_mark(pdfctx->ctx);
-            if (code < 0)
-                goto error;
-            if (PDFobj->object_num != 0)
-                pdfi_loop_detector_add_object(pdfctx->ctx, PDFobj->object_num);
-            dbgprintf("[ ");
+            if (PDFobj->object_num != 0) {
+                code = pdfi_loop_detector_add_object(pdfctx->ctx, PDFobj->object_num);
+                if (code < 0)
+                    goto error;
+            }
+            debug_printmark(2);
             code = PDFarray_to_PSarray(i_ctx_p, pdfctx, (pdf_array *)PDFobj, PSobj);
-            dbgprintf("]\n");
-            pdfi_loop_detector_cleartomark(pdfctx->ctx);
+            debug_printmark(3);
             break;
         default:
             make_null(PSobj);
