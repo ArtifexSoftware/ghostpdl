@@ -942,12 +942,20 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
     xc->num_channels = i;
     if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE
         && strcmp(dev->dname, "psdcmykog") != 0) {
+
+        /* Note: num_separation_order_names is only set if
+        SeparationColorNames was setup. If this was not set,
+        we need may need to make use of the ICCOutputColors
+        and page spot colors for our setup. */
         if (dev->devn_params.num_separation_order_names == 0) {
             /* Page spot colors has been truncated to ensure max
                colorants of the target device is not exceeded. This
                is set if PDF file was encountered and should be used.
-               Also make sure PS file does not exceed limit of device. */
-            if (dev->devn_params.page_spot_colors > 0)
+               Also make sure PS file does not exceed limit of device.
+               However, if ICCOutputColors was specified, that should
+               take precedence. */
+            if (dev->devn_params.page_spot_colors > 0 &&
+                dev->icc_struct->spotnames == NULL)
                 xc->n_extra_channels = dev->devn_params.page_spot_colors;
             else {
                 if (dev->devn_params.separations.num_separations <= (dev->color_info.max_components - NUM_CMYK_COMPONENTS))

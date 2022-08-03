@@ -822,16 +822,27 @@ gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain,
             params.overprint_sim_push = true;
     }
 
-    /* If we have an NCLR ICC profile, the extra spot colorants do not
-       get included in the transparency buffers. This is also true
-       for any extra colorant names listed, which go beyond the profile.
-       Finally, we could have a CMYK profile with colorants listed, that
-       go beyond CMYK. To detect, simply look at dev_profile->spotnames */
+    /* If we have an NCLR ICC profile, the extra spot colorants do
+    *  get included in the transparency buffers. Trying to avoid
+    * including them became a rube goldberg mess in terms of knowing
+    * which colorants are on the page vs what has been specified and
+    * any aliasing between these two.  Just too many things to go wrong.
+    * So we allocate all and carry around. If you are doing special
+    * spot handling with transparency this is the cost. */
+
     if (dev_profile->spotnames != NULL && dev_profile->spotnames->count > 4) {
-        /* Making an assumption here, that list is CMYK + extra. */
-        int delta = dev_profile->spotnames->count - 4;
-        params.num_spot_colors_int -= delta;
-        params.num_spot_colors -= delta;
+        /* Making an assumption here, that list is CMYK + extra.
+           An error should have been thrown by the target device if not. */
+        int avail_page_spots = pgs->device->color_info.num_components - 4;
+        params.num_spot_colors_int = avail_page_spots;
+        params.num_spot_colors = avail_page_spots;
+
+        /* This should not be possible, but lets be safe. We can't have a negative
+          number of source spots to carry forward, so apply threshold. */
+        if (params.num_spot_colors_int < 0)
+            params.num_spot_colors_int = 0;
+        if (params.num_spot_colors < 0)
+            params.num_spot_colors = 0;
     }
 
     /* If we happen to be in a situation where we are going out to a device

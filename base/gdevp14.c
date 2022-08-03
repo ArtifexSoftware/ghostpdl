@@ -3135,48 +3135,6 @@ pdf14_blend_image_mixed_buffer16(byte* buf_ptr_, int width, int height, int rows
     }
 }
 
-static pdf14_buf*
-insert_empty_planes(pdf14_ctx* ctx, pdf14_buf** src_buf, int num_new_planes, int insert_index)
-{
-    int planestride = (*src_buf)->planestride;
-    int src_n_planes = (*src_buf)->n_planes;
-    int src_n_chan = (*src_buf)->n_chan;
-    int des_n_planes = src_n_planes + num_new_planes;
-    int des_n_chan = src_n_chan + num_new_planes;
-    byte *src_ptr = (*src_buf)->data;
-    byte* des_ptr;
-    byte *des_data;
-    bool deep = ctx->deep;
-
-    des_data = gs_alloc_bytes(ctx->memory,
-        (size_t)planestride * des_n_planes + CAL_SLOP,
-        "insert_empty_planes");
-    if (des_data == NULL)
-        return NULL;
-
-    des_ptr = des_data;
-
-    /* First copy portion prior to insert point */
-    memcpy(des_ptr, src_ptr, (planestride * insert_index) << deep);
-
-    /* New planes */
-    des_ptr += (planestride * insert_index) << deep;
-    src_ptr += (planestride * insert_index) << deep;
-    memset(des_ptr, 0, (planestride * num_new_planes) << deep);
-
-    /* Extra planes (i.e. doc spots, tags) */
-    des_ptr += (planestride * num_new_planes) << deep;
-    memcpy(des_ptr, src_ptr, (planestride * (src_n_planes - insert_index)) << deep);
-
-    /* Set up buffer structure */
-    gs_free_object(ctx->memory, (*src_buf)->data, "insert_empty_planes");
-    (*src_buf)->n_planes = des_n_planes;
-    (*src_buf)->n_chan = des_n_chan;
-    (*src_buf)->data = des_data;
-
-    return *src_buf;
-}
-
 static int
 pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     gs_gstate* pgs, pdf14_buf* buf, int planestride_in,
@@ -3434,30 +3392,6 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
             tag_offset = buf->has_tags ? buf->n_chan : 0;
         }
 
-        /* We may need to pad the buffers to ensure that any additional spot
-           channels that are not created by the ICC color conversion (or
-           non-conversion if this is not an NCLR profile) get placed properly.
-           It is up to the target device to
-           handle these planes how it sees fit based upon the image data
-           and/or any tags plane during any put image call.  We *could*
-           do something here to possibly communicate through the put_image
-           call where the page related spots start, but that would/could
-           be confusing, especially for long term maintenance. Easier just
-           to have put_image hand all the data */
-        if (dev_target_profile->spotnames != NULL &&
-            dev_target_profile->spotnames->count > des_profile->num_comps) {
-            int num_new_planes = dev_target_profile->spotnames->count - des_profile->num_comps;
-            int insert_index = des_profile->num_comps;
-            pdf14_buf* result;
-
-            result = insert_empty_planes(pdev->ctx, &buf, num_new_planes, insert_index);
-            if (result == NULL)
-                return_error(gs_error_VMerror);
-
-            num_comp = buf->n_chan;
-            tag_offset = buf->has_tags ? buf->n_chan : 0;
-            buf_ptr = buf->data + (rect.p.y - buf->rect.p.y) * buf->rowstride + ((rect.p.x - buf->rect.p.x) << deep);
-        }
 #if RAW_DUMP
         /* Dump after the CS transform */
         dump_raw_buffer_be(target->memory, height, width, buf->n_planes, planestride, rowstride,
@@ -11875,18 +11809,23 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                  * device (which coming into this are the same as the p14dev)
                  * are smaller than the number of page spot colors then
                  * use that for the number of components. Otherwise use
-                 * the page_spot_colors.
+                 * the page_spot_colors.  The exception is, if we had used
+                 * the sICCOutputColors setting, then just use that, which
+                 * should be already baked into num_comp
                  */
-                p14dev->devn_params.page_spot_colors =
-                    pclist_devn_params->page_spot_colors;
-                if (num_comp < p14dev->devn_params.page_spot_colors + 4 ) {
-                    p14dev->color_info.num_components = num_comp;
-                } else {
-                    /* if page_spot_colors < 0, this will be wrong, so don't update num_components */
-                    if (p14dev->devn_params.page_spot_colors >= 0) {
-                        p14dev->color_info.num_components =
-                            p14dev->devn_params.num_std_colorant_names +
-                            p14dev->devn_params.page_spot_colors;
+
+                if (cdev->icc_struct->spotnames == NULL) {
+                    p14dev->devn_params.page_spot_colors =
+                        pclist_devn_params->page_spot_colors;
+                    if (num_comp < p14dev->devn_params.page_spot_colors + 4 ) {
+                        p14dev->color_info.num_components = num_comp;
+                    } else {
+                        /* if page_spot_colors < 0, this will be wrong, so don't update num_components */
+                        if (p14dev->devn_params.page_spot_colors >= 0) {
+                            p14dev->color_info.num_components =
+                                p14dev->devn_params.num_std_colorant_names +
+                                p14dev->devn_params.page_spot_colors;
+                        }
                     }
                 }
                 /* limit the num_components to the max. */
