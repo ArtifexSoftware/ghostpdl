@@ -1016,13 +1016,13 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
             bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT);
 
             xc->num_channels += xc->n_extra_channels;
-            for (i=xc->base_num_channels; i < xc->num_channels; i++) {
+            for (i=xc->base_num_channels + has_tags; i < xc->num_channels; i++) {
                 int j;
                 const char *curr = "\377";
                 int curr_size = 1;
                 bool compare;
 
-                for (j=xc->base_num_channels; j < (xc->num_channels - has_tags); j++) {
+                for (j=xc->base_num_channels + has_tags; j < xc->num_channels; j++) {
                     devn_separation_name *separation_name;
 
                     separation_name = &(dev->devn_params.separations.names[j - xc->base_num_channels]);
