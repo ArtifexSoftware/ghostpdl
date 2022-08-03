@@ -11800,7 +11800,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
              * was buffered into the output device.
              */
             pclist_devn_params = dev_proc(cdev, ret_devn_params)(cdev);
-            if (pclist_devn_params != NULL && pclist_devn_params->page_spot_colors != 0) {
+            if (pclist_devn_params != NULL && pclist_devn_params->page_spot_colors > 0) {
                 int num_comp = p14dev->color_info.num_components;
                 /*
                  * The number of components for the PDF14 device is the sum
