@@ -843,13 +843,19 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
     int findex = -1;
 
     code = pdfi_dict_get_type(ctx, font_dict, "Type", PDF_NAME, (pdf_obj **)&Type);
-    if (code < 0)
-        goto exit;
-    if (!pdfi_name_is(Type, "Font")){
-        code = gs_note_error(gs_error_typecheck);
-        goto exit;
+    if (code < 0) {
+        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGTYPE, "pdfi_load_font", NULL);
+    }
+    else {
+        if (!pdfi_name_is(Type, "Font")){
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
     }
     code = pdfi_dict_get_type(ctx, font_dict, "Subtype", PDF_NAME, (pdf_obj **)&Subtype);
+    if (code < 0) {
+        pdfi_set_error(ctx, 0, NULL, E_PDF_NO_SUBTYPE, "pdfi_load_font", NULL);
+    }
 
     /* Beyond Type 0 and Type 3, there is no point trusting the Subtype key */
     if (code >= 0 && pdfi_name_is(Subtype, "Type0")) {
