@@ -1164,10 +1164,9 @@ pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                     memcpy(subr_str->data, buf, size);
                     pdfi_countup(subr_str);
                     code = pdfi_array_put(s->pdfi_ctx, priv->u.t1.Subrs, inx, (pdf_obj *)subr_str);
-                    if (code < 0) {
-                        pdfi_countdown(subr_str);
+                    pdfi_countdown(subr_str);
+                    if (code < 0)
                         return code;
-                    }
                 }
             }
         }
