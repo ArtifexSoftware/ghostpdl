@@ -577,8 +577,10 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
     if (code < 0)
         goto function_3_error;
 
-    if (code != 2 * params.k)
+    if (code != 2 * params.k) {
+        code = gs_note_error(gs_error_rangecheck);
         goto function_3_error;
+    }
     code = 0;
 
     for (i = 0; i < params.k; ++i) {
