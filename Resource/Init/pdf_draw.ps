@@ -1421,7 +1421,7 @@ currentdict end readonly def
   % untouched as set above.
   %
   currentpagedevice dup
-  /Overprint get /simulate eq
+  /Overprint .knownget {/simulate eq}{false} ifelse
   1 index /PageSpotColors known not and
   exch /PageUsesOverprint .knownget not { //false } if
   and
