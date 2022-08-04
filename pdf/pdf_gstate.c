@@ -690,24 +690,30 @@ static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *
             if (code < 0)
                 return code;
 
-            gs_setundercolorremoval_remap(ctx->pgs, gs_mapped_transfer, false);
-            for (i = 0; i < transfer_map_size; i++) {
-                float v, f;
+            if (pfn->params.n == 1) {
+                gs_setundercolorremoval_remap(ctx->pgs, gs_mapped_transfer, false);
+                for (i = 0; i < transfer_map_size; i++) {
+                    float v, f;
 
-                f = (1.0f / (transfer_map_size - 1)) * i;
+                    f = (1.0f / (transfer_map_size - 1)) * i;
 
-                code = gs_function_evaluate(pfn, (const float *)&f, &v);
-                if (code < 0) {
-                    pdfi_free_function(ctx, pfn);
-                    return code;
+                    code = gs_function_evaluate(pfn, (const float *)&f, &v);
+                    if (code < 0) {
+                        pdfi_free_function(ctx, pfn);
+                        return code;
+                    }
+
+                    ctx->pgs->undercolor_removal->values[i] =
+                        (v < 0.0 ? float2frac(0.0) :
+                         v >= 1.0 ? frac_1 :
+                         float2frac(v));
                 }
-
-                ctx->pgs->undercolor_removal->values[i] =
-                    (v < 0.0 ? float2frac(0.0) :
-                     v >= 1.0 ? frac_1 :
-                     float2frac(v));
+                code = pdfi_free_function(ctx, pfn);
             }
-            code = pdfi_free_function(ctx, pfn);
+            else {
+                (void)pdfi_free_function(ctx, pfn);
+                code = gs_note_error(gs_error_rangecheck);
+            }
             break;
 
         default:
