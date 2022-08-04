@@ -6245,7 +6245,17 @@ pdf14_copy_mono(gx_device * dev,
         /* Set up for the start of each line of the area. */
         sptr = line;
         sbyte = *sptr++;
-        bit = first_bit;
+        /* The +1 here is 'sacrificial', we are going to decrement it by 1 immediately in
+         * the loop below so adding 1 means that we don't fall into the bit == 0
+         * case and incorrectly read a new byte from the source. This weirdness is because
+         * the original code wouold read off the end of the buffer if the number of bits in
+         * the raster was an exact multiple of 8. If it was also a multiple of the word
+         * size we might read unallocated memory. Moving the 'sbyte = *sptr++' from the end
+         * of the loop to the beginning meant we would not read past the end of the buffer
+         * because we would drop out of the 'do ... while (count-- > 0)' loop before
+         * reading another byte.
+         */
+        bit = first_bit + 1;
         count = w;
         run_length = 0;
         startx = x;
@@ -6254,6 +6264,13 @@ pdf14_copy_mono(gx_device * dev,
 
         /* Loop across each pixel of a line. */
         do {
+            /* Move to the next input bit. */
+            if (bit == 0) {
+                bit = 7;
+                sbyte = *sptr++;
+            }
+            else
+                bit--;
             bit_value = (sbyte >> bit) & 1;
             if (bit_value == current_bit) {
                 /* The value did not change, simply increment our run length */
@@ -6273,13 +6290,6 @@ pdf14_copy_mono(gx_device * dev,
                 current_color = bit_value ? one : zero;
                 current_bit = bit_value;
             }
-            /* Move to the next input bit. */
-            if (bit == 0) {
-                bit = 7;
-                sbyte = *sptr++;
-            }
-            else
-                bit--;
         } while (--count > 0);
         /* Fill the last rectangle in the line. */
         if (run_length != 0 && current_color != gx_no_color_index) {
