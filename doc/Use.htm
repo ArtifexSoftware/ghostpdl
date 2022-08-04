@@ -3451,7 +3451,8 @@ object types and do custom color replacements.  An example file is given in
 Profiles to demonstrate this method of specification are also
 included in this folder.  Note that if objects are colorimetrically
 specified through this mechanism other operations like -dImageIntent,
--dOverrideICC, have no affect.  See further details in the document
+-dOverrideICC, have no affect. Also see below the interaction with
+the -dDeviceGrayToK option. See further details in the document
     <a href="GS9_Color_Management.pdf">GS9 Color Management</a>.</dd>
 </dl>
 
@@ -3463,7 +3464,17 @@ pure K when the output device is CMYK based.  This may not
 always be desired.  In particular, it may be desired to map
 from the gray ICC profile specified by -sDefaultGrayProfile
 to the output device profile.  To achieve this, one should
-    specify -dDeviceGrayToK=false.</dd>
+    specify -dDeviceGrayToK=false.
+Note that this option may not have any effect in cases where
+SourceObjectICC settings are made for gray objects. In particular,
+if the gray objects in SourceObjectICC are set to None, which implies that
+ICC color management is not to be applied to these objects, then they
+are treated as DeviceGray and always mapped to K values in a CMYK target device,
+regardless of the settings of -dDeviceGrayToK (i.e. there is no color
+management).
+If instead, the gray objects in SourceObjectICC are set to a specific ICC
+profile, then they are no longer DeviceGray but are ICC colors. They will
+be color managed, regardless of the setting of -dDeviceGrayToK.</dd>
 </dl>
 
 <dl>

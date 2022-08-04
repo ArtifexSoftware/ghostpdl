@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -474,6 +474,8 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 #endif
         return_error(gs_error_unknownerror);
     }
+
+
     code = gx_remap_ICC_with_link(pcc, pcs, pdc, pgs, dev, select, icc_link);
     /* Release the link */
     gsicc_release_link(icc_link);

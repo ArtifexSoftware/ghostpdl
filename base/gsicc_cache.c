@@ -803,11 +803,8 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
                     if (render_cond.cmm == gsCMM_NONE) {
                         gsicc_link_t *link;
 
-                        if (gs_input_profile->data_cs == gsRGB) {
-                            link = gsicc_nocm_get_link(pgs, dev, 3);
-                        } else {
-                            link = gsicc_nocm_get_link(pgs, dev, 4);
-                        }
+                        link = gsicc_nocm_get_link(pgs, dev, gs_input_profile->num_comps);
+
                         /* Set the identity case if we are in that situation */
                         if (link != NULL) {
                             if (gs_input_profile->num_comps ==
@@ -1072,11 +1069,9 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
            We also have the Replace option.  */
         if (gs_input_profile->rend_is_valid &&
             gs_input_profile->rend_cond.cmm == gsCMM_NONE) {
-            if (gs_input_profile->data_cs == gsRGB) {
-                link = gsicc_nocm_get_link(pgs, dev, 3);
-            } else {
-                link = gsicc_nocm_get_link(pgs, dev, 4);
-            }
+
+            link = gsicc_nocm_get_link(pgs, dev, gs_input_profile->num_comps);
+
             /* Set the identity case if we are in that situation */
             if (link != NULL) {
                 if (gs_input_profile->num_comps ==

@@ -41,7 +41,7 @@ int gsicc_mcm_begin_monitor(gsicc_link_cache_t *cache, gx_device *dev);
 gsicc_link_t* gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
                                  gsicc_colorbuffer_t data_cs);
 gsicc_link_t* gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev,
-                                  gs_color_space_index src_index );
+                                  int num_input );
 gcmmhprofile_t gscms_get_profile_handle_mem(unsigned char *buffer,
                                             unsigned int input_size,
                                             gs_memory_t *mem);

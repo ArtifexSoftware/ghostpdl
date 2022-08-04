@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -349,7 +349,7 @@ gsicc_nocm_copy_curve(gx_transfer_map *in_map, gs_memory_t *mem)
    transformation case. */
 gsicc_link_t*
 gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev,
-                    gs_color_space_index src_index)
+                    int num_input)
 {
     gsicc_link_t *result;
     gsicc_hashlink_t hash;
@@ -378,8 +378,8 @@ gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev,
        a lot of link requests.  */
     hash.rend_hash = gsCMM_NONE;
     hash.des_hash = dev->color_info.num_components;
-    hash.src_hash = src_index;
-    hash.link_hashcode = src_index + hash.des_hash * 256 + hash.rend_hash * 4096;
+    hash.src_hash = num_input;
+    hash.link_hashcode = num_input + hash.des_hash * 256 + hash.rend_hash * 4096;
 
     /* Check the cache for a hit. */
     result = gsicc_findcachelink(hash, pgs->icc_link_cache, false, false);
@@ -426,7 +426,7 @@ gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev,
     }
     nocm_link->num_out = min(dev->color_info.num_components,
                              GS_CLIENT_COLOR_MAX_COMPONENTS);
-    nocm_link->num_in = src_index;
+    nocm_link->num_in = num_input;
 
     result->num_input = nocm_link->num_in;
     result->num_output = nocm_link->num_out;
