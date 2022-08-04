@@ -644,35 +644,70 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     if (code < 0)
         return code;
 
+    if (ctx->loop_detection != NULL) {
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            goto exit;
+        if (compressed_sdict->object_num != 0) {
+            if (pdfi_loop_detector_check_object(ctx, compressed_sdict->object_num)) {
+                code = gs_note_error(gs_error_circular_reference);
+            } else {
+                code = pdfi_loop_detector_add_object(ctx, compressed_sdict->object_num);
+            }
+            if (code < 0) {
+                (void)pdfi_loop_detector_cleartomark(ctx);
+                goto exit;
+            }
+        }
+    }
     /* Check its an ObjStm ! */
     code = pdfi_dict_get_type(ctx, compressed_sdict, "Type", PDF_NAME, (pdf_obj **)&Type);
-    if (code < 0)
+    if (code < 0) {
+        if (ctx->loop_detection != NULL)
+            (void)pdfi_loop_detector_cleartomark(ctx);
         goto exit;
+    }
 
     if (!pdfi_name_is(Type, "ObjStm")){
+        if (ctx->loop_detection != NULL)
+            (void)pdfi_loop_detector_cleartomark(ctx);
         code = gs_note_error(gs_error_syntaxerror);
         goto exit;
     }
 
     /* Need to check the /N entry to see if the object is actually in this stream! */
     code = pdfi_dict_get_int(ctx, compressed_sdict, "N", &num_entries);
-    if (code < 0)
+    if (code < 0) {
+        if (ctx->loop_detection != NULL)
+            (void)pdfi_loop_detector_cleartomark(ctx);
         goto exit;
+    }
 
     if (num_entries < 0 || num_entries > ctx->xref_table->xref_size) {
+        if (ctx->loop_detection != NULL)
+            (void)pdfi_loop_detector_cleartomark(ctx);
         code = gs_note_error(gs_error_rangecheck);
         goto exit;
     }
 
-    code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, compressed_object), SEEK_SET);
-    if (code < 0)
-        goto exit;
-
     code = pdfi_dict_get_int(ctx, compressed_sdict, "Length", &Length);
-    if (code < 0)
+    if (code < 0) {
+        if (ctx->loop_detection != NULL)
+            (void)pdfi_loop_detector_cleartomark(ctx);
         goto exit;
+    }
 
     code = pdfi_dict_get_int(ctx, compressed_sdict, "First", &First);
+    if (code < 0) {
+        if (ctx->loop_detection != NULL)
+            (void)pdfi_loop_detector_cleartomark(ctx);
+        goto exit;
+    }
+
+    if (ctx->loop_detection != NULL)
+        (void)pdfi_loop_detector_cleartomark(ctx);
+
+    code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, compressed_object), SEEK_SET);
     if (code < 0)
         goto exit;
 
@@ -734,6 +769,7 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     if (code < 0)
         goto exit;
 
+    /* We already dereferenced this above, so we don't need the loop detection checking here */
     code = pdfi_dict_get_int(ctx, compressed_sdict, "Length", &Length);
     if (code < 0)
         goto exit;
