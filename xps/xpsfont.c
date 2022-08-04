@@ -135,7 +135,7 @@ xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp)
 
         /* check if the buffer contains enough data to contain nfonts subfonts */
         int min_len = 12 + nfonts * 4;
-        if (font->length < min_len)
+        if (min_len < 0 || font->length < min_len)
         {
             gs_warn("font data length too small");
             return -1;
