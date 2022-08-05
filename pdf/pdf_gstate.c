@@ -2041,17 +2041,37 @@ static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 {
     pdf_name *n;
     int code;
-    gs_blend_mode_t mode;
+    gs_blend_mode_t mode = 0; /* Start with /Normal */
 
-    code = pdfi_dict_get_type(ctx, GS, "BM", PDF_NAME, (pdf_obj **)&n);
+    code = pdfi_dict_get(ctx, GS, "BM", (pdf_obj **)&n);
     if (code < 0)
         return code;
 
-    code = pdfi_get_blend_mode(ctx, n, &mode);
-    pdfi_countdown(n);
-    if (code == 0)
+    if (pdfi_type_of(n) == PDF_ARRAY) {
+        int i;
+        pdf_array *a = (pdf_array *)n;
+
+        for (i=0;i < pdfi_array_size(a);i++){
+            code = pdfi_array_get_type(ctx, a, i, PDF_NAME, (pdf_obj **)&n);
+            if (code < 0)
+                continue;
+            code = pdfi_get_blend_mode(ctx, n, &mode);
+            pdfi_countdown(n);
+            if (code == 0)
+                break;
+        }
+        pdfi_countdown(a);
         return gs_setblendmode(ctx->pgs, mode);
-    return_error(gs_error_undefined);
+    }
+
+    if (pdfi_type_of(n) == PDF_NAME) {
+        code = pdfi_get_blend_mode(ctx, n, &mode);
+        pdfi_countdown(n);
+        if (code == 0)
+            return gs_setblendmode(ctx->pgs, mode);
+        return_error(gs_error_undefined);
+    }
+    return_error(gs_error_typecheck);
 }
 
 static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
