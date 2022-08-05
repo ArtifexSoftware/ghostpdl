@@ -781,9 +781,17 @@ pdfi_copy_type1_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, 
 
     /* We want basefont and descriptor, but we can live without them */
     font->BaseFont = NULL;
-    (void)pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &font->BaseFont);
+    code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &font->BaseFont);
+    if (code < 0) {
+        pdfi_countdown(font->BaseFont);
+        font->BaseFont = NULL;
+    }
     font->FontDescriptor = NULL;
-    (void)pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, (pdf_obj **)&font->FontDescriptor);
+    code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, (pdf_obj **)&font->FontDescriptor);
+    if (code < 0) {
+        pdfi_countdown(font->FontDescriptor);
+        font->FontDescriptor = NULL;
+    }
 
     pdfi_countup(font->Name);
     pdfi_countup(font->CharStrings);
