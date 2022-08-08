@@ -687,16 +687,10 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
     if (code == 1) {
         if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT) && (font->descflags & 4) == 0) {
             code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & font->Encoding);
-            if (code >= 0)
-                code = 1;
         }
         else if (pdfi_type_of(tmp) == PDF_DICT && (font->descflags & 4) != 0) {
             code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
-            if (code >= 0)
-                code = 1;
         }
-        else
-            code = gs_error_undefined;
         pdfi_countdown(tmp);
         tmp = NULL;
     }
@@ -704,6 +698,9 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
         pdfi_countdown(tmp);
         tmp = NULL;
         code = 0;
+    }
+    if (code < 0) {
+        goto error;
     }
 
     /* Since various aspects of the font may differ (widths, encoding, etc)
