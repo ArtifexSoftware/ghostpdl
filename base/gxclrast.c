@@ -1146,6 +1146,8 @@ do_opv_set_bits:
                             cbp = cmd_read_data(&cbuf, plane_bits, 1, cbp);
                             if (width_bytes > 0 && state.rect.height > 0)
                                 memset(plane_bits+1, *plane_bits, width_bytes * state.rect.height - 1);
+                            if (pln == 0)
+                                source = data_bits;
 
                         } else if (compression) {       /* Decompress the image data. */
                             stream_cursor_read r;
