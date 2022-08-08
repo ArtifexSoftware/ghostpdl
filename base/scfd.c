@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -211,17 +211,18 @@ static inline int skip_data(stream_CFD_state *ss, stream_cursor_read *pr, int rl
 
 static inline int invert_data(stream_CFD_state *ss, stream_cursor_read *pr, int *rlen, byte black_byte)
 {
+    byte *qlim = ss->lbuf + ss->raster + CFD_BUFFER_SLOP;
     cfd_declare_state;
     cfd_load_state();
     (void)rlimit;
 
-    if (q >= ss->lbuf + ss->raster + CFD_BUFFER_SLOP || q < ss->lbufstart) {
+    if (q >= qlim || q < ss->lbufstart) {
         return(-1);
     }
 
     if ( (*rlen) > qbit )
     {
-        if (q + ((*rlen - qbit) >> 3) > ss->lbuf + ss->raster + CFD_BUFFER_SLOP) {
+        if (q + ((*rlen - qbit) >> 3) > qlim) {
             return(-1);
         }
 
@@ -232,6 +233,10 @@ static inline int invert_data(stream_CFD_state *ss, stream_cursor_read *pr, int 
             q++;
         }
         (*rlen) -= qbit;
+
+        if (q + ((*rlen) >> 3) >= qlim) {
+            return(-1);
+        }
 
         switch ( (*rlen) >> 3 )
         {
