@@ -1344,7 +1344,8 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 new_face(a_server, ft_face, ft_inc_int, ft_strm,
                          own_font_data, own_font_data_len, data_owned);
             if (!face) {
-                FF_free(s->ftmemory, own_font_data);
+                if (data_owned)
+                    FF_free(s->ftmemory, own_font_data);
                 FT_Done_Face(ft_face);
                 delete_inc_int(a_server, ft_inc_int);
                 return_error(gs_error_VMerror);
