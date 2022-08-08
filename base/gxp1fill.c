@@ -368,8 +368,9 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     bits = &ptile->tbits;
 
     code = tile_fill_init(&state, pdevc, dev, false);	/* This _may_ allocate state.cdev */
-    if (code < 0)
-        return code;
+    if (code < 0) {
+        goto exit;
+    }
     if (ptile->is_simple && ptile->cdev == NULL) {
         int px =
             imod(-(int)fastfloor(ptile->step_matrix.tx - state.phase.x + 0.5),
@@ -417,6 +418,7 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
                                  &tbits, tile_pattern_clist);
         }
     }
+exit:
     if (CLIPDEV_INSTALLED) {
         tile_clip_free((gx_device_tile_clip *)state.cdev);
         state.cdev = NULL;
