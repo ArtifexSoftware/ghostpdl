@@ -1961,25 +1961,29 @@ error:
 
 void pdfi_font_set_first_last_char(pdf_context *ctx, pdf_dict *fontdict, pdf_font *font)
 {
-    double f;
+    double f, l;
     int code;
 
     if (fontdict == NULL) {
-        font->FirstChar = 0;
-        font->LastChar = 255;
+        f = (double)0;
+        l = (double)255;
     }
     else {
         code = pdfi_dict_get_number(ctx, fontdict, "FirstChar", &f);
-        if (code < 0)
-            font->FirstChar = 0;
-        else
-            font->FirstChar = (int)(f < 0 ? 0 : f);
+        if (code < 0 || f < 0)
+            f = (double)0;
 
-        code = pdfi_dict_get_number(ctx, fontdict, "LastChar", &f);
-        if (code < 0)
-            font->LastChar = 255;
-        else
-            font->LastChar = (int)(f > 255 ? 255 : f);
+        code = pdfi_dict_get_number(ctx, fontdict, "LastChar", &l);
+        if (code < 0 || l < 0)
+            l = (double)255;
+    }
+    if (f <= l) {
+        font->FirstChar = f;
+        font->LastChar = l;
+    }
+    else {
+        font->FirstChar = 0;
+        font->LastChar = 255;
     }
 }
 
