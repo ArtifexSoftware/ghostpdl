@@ -1970,11 +1970,11 @@ void pdfi_font_set_first_last_char(pdf_context *ctx, pdf_dict *fontdict, pdf_fon
     }
     else {
         code = pdfi_dict_get_number(ctx, fontdict, "FirstChar", &f);
-        if (code < 0 || f < 0)
+        if (code < 0 || f < 0 || f > 255)
             f = (double)0;
 
         code = pdfi_dict_get_number(ctx, fontdict, "LastChar", &l);
-        if (code < 0 || l < 0)
+        if (code < 0 || l < 0 || l > 255)
             l = (double)255;
     }
     if (f <= l) {
