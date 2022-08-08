@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -812,6 +812,7 @@ xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font)
     gs_font_type1 *pt1;
     int cffofs;
     int cfflen;
+    int cffend;
     int code;
 
     /* Find the CFF table and parse it to create a charstring based font */
@@ -822,11 +823,13 @@ xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font)
     if (cffofs < 0)
         return gs_throw(-1, "cannot find CFF table");
 
-    if (cfflen < 0 || cffofs + cfflen > font->length)
+    /* check the table is within the buffer and no integer overflow occurs */
+    cffend = cffofs + cfflen;
+    if (cffend < cffofs || cfflen < 0 || cffend > font->length)
         return gs_throw(-1, "corrupt CFF table location");
 
     font->cffdata = font->data + cffofs;
-    font->cffend = font->data + cffofs + cfflen;
+    font->cffend = font->data + cffend;
 
     font->gsubrs = 0;
     font->subrs = 0;
