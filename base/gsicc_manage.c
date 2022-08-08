@@ -274,10 +274,13 @@ gsicc_initialize_iccsmask(gsicc_manager_t *icc_manager)
 error:
     if (icc_manager->smask_profiles->smask_gray)
         rc_free_icc_profile(stable_mem, icc_manager->smask_profiles->smask_gray, "gsicc_initialize_iccsmask");
+    icc_manager->smask_profiles->smask_gray = NULL;
     if (icc_manager->smask_profiles->smask_rgb)
         rc_free_icc_profile(stable_mem, icc_manager->smask_profiles->smask_rgb, "gsicc_initialize_iccsmask");
+    icc_manager->smask_profiles->smask_rgb = NULL;
     if (icc_manager->smask_profiles->smask_cmyk)
         rc_free_icc_profile(stable_mem, icc_manager->smask_profiles->smask_cmyk, "gsicc_initialize_iccsmask");
+    icc_manager->smask_profiles->smask_cmyk = NULL;
     gs_free_object(stable_mem, icc_manager->smask_profiles, "gsicc_initialize_iccsmask");
     icc_manager->smask_profiles = NULL;
     return gs_throw(-1, "failed to load an smask profile");
