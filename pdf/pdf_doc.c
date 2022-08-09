@@ -236,6 +236,7 @@ static int pdfi_sanitize_Info_references(pdf_context *ctx, pdf_dict *Info)
     pdf_name *Key = NULL;
     pdf_obj *Value = NULL;
 
+restart_scan:
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         return code;
@@ -264,6 +265,11 @@ static int pdfi_sanitize_Info_references(pdf_context *ctx, pdf_dict *Info)
             code = pdfi_dict_delete_pair(ctx, Info, Key);
             if (code < 0)
                 goto error;
+            pdfi_countdown(Key);
+            Key = NULL;
+
+            pdfi_loop_detector_cleartomark(ctx);
+            goto restart_scan;
         }
         pdfi_countdown(Key);
         Key = NULL;
