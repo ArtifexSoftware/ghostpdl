@@ -55,4 +55,6 @@ int pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *matri
 int pdfi_array_to_num_array(pdf_context *ctx, pdf_array *array, double *out, int start, int size);
 void pdfi_bbox_transform(pdf_context *ctx, gs_rect *bbox, gs_matrix *matrix);
 
+int pdfi_array_fetch_recursing(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o, bool setref, bool cache);
+
 #endif

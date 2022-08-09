@@ -20,6 +20,7 @@
 #include "pdf_stack.h"
 #include "pdf_deref.h"
 #include "pdf_array.h"
+#include "pdf_loop_detect.h"
 
 /* NOTE: I think this should take a pdf_context param, but it's not available where it's
  * called, would require some surgery.
@@ -107,6 +108,48 @@ int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indi
         pdfi_free_array((pdf_obj *)a);
 
     return code;
+}
+
+int pdfi_array_fetch_recursing(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o, bool setref, bool cache)
+{
+    int code;
+    pdf_obj *obj;
+
+    *o = NULL;
+
+    if (pdfi_type_of(a) != PDF_ARRAY)
+        return_error(gs_error_typecheck);
+
+    if (index >= a->size)
+        return_error(gs_error_rangecheck);
+    obj = a->values[index];
+
+    if (pdfi_type_of(obj) == PDF_INDIRECT) {
+        pdf_obj *o1 = NULL;
+        pdf_indirect_ref *r = (pdf_indirect_ref *)obj;
+
+        if (r->ref_object_num == a->object_num)
+            return_error(gs_error_circular_reference);
+
+        if (cache)
+            code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, &o1);
+        else
+            code = pdfi_deref_loop_detect_nocache(ctx, r->ref_object_num, r->ref_generation_num, &o1);
+        if (code < 0)
+            return code;
+
+        if (setref)
+            (void)pdfi_array_put(ctx, a, index, o1);
+        obj = o1;
+    } else {
+        if (ctx->loop_detection != NULL && (uintptr_t)obj > TOKEN__LAST_KEY && obj->object_num != 0)
+            if (pdfi_loop_detector_check_object(ctx, obj->object_num))
+                return gs_note_error(gs_error_circular_reference);
+        pdfi_countup(obj);
+    }
+
+    *o = obj;
+    return 0;
 }
 
 /* Fetch object from array, resolving indirect reference if needed

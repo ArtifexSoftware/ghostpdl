@@ -130,7 +130,7 @@ static int Info_check_array(pdf_context *ctx, pdf_array *a)
         return code;
 
     for (i = 0;i < pdfi_array_size(a); i++) {
-        code = pdfi_array_get(ctx, a, i, &array_obj);
+        code = pdfi_array_fetch_recursing(ctx, a, i, &array_obj, true, true);
         if (code < 0)
             goto error;
 
