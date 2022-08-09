@@ -1544,7 +1544,15 @@ static int zPDFparsePageList(i_ctx_t *i_ctx_p)
     int code = 0, size = 0, i;
     os_ptr op = osp;
     int *page_range_array;
-    int num_pages = op->value.intval;
+    int num_pages;
+
+    check_op(2);
+
+    code = int_param(op, max_int, &num_pages);
+    if (code < 0)
+        return code;
+
+    check_type_only(*(op - 1), t_string);
 
     code = pagelist_parse_to_array((char *)((op - 1)->value.const_bytes), imemory, num_pages, &page_range_array);
     make_int(op, 0);				/* default return 0 */
