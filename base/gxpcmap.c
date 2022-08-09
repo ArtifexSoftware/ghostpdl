@@ -1586,7 +1586,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
                 /* Send the compositor command to close the PDF14 device */
                 code = gs_pop_pdf14trans_device(saved, true);
                 if (code < 0)
-                    return code;
+                    goto fail;
             } else {
                 /* Not a clist, get PDF14 buffer information */
                 code =
@@ -1597,7 +1597,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
                 /* PDF14 device (and buffer) is destroyed when pattern cache
                    entry is removed */
                 if (code < 0)
-                    return code;
+                    goto fail;
             }
     }
     /* We REALLY don't like the following cast.... */
@@ -1646,6 +1646,8 @@ fail:
         cdev->common.data = 0;
     }
     dev_proc(adev, close_device)((gx_device *)adev);
+    gx_device_set_target(adev, NULL);
+    rc_decrement(adev, "gx_pattern_load");
     gs_gstate_free_chain(saved);
     return code;
 }
