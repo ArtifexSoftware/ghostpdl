@@ -1280,14 +1280,12 @@ tiffsep1_prn_close(gx_device * pdev)
             name = (char *)lname_empty;
         }
 
-        if (name != NULL) {
-            lname = (char *)gs_alloc_bytes(tfdev->memory, strlen(name) + 1, "tiffsep1_prn_close");
-            if (lname == NULL) {
-                code = gs_note_error(gs_error_VMerror);
-                goto done;
-            }
-            memcpy(lname, name, strlen(name) + 1);
+        lname = (char *)gs_alloc_bytes(tfdev->memory, strlen(name) + 1, "tiffsep1_prn_close");
+        if (lname == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto done;
         }
+        memcpy(lname, name, strlen(name) + 1);
 
         if (tfdev->tiff[comp_num]) {
             void *t = TIFFClientdata(tfdev->tiff[comp_num]);
@@ -1298,7 +1296,7 @@ tiffsep1_prn_close(gx_device * pdev)
         }
         if (tfdev->sep_file[comp_num] != NULL) {
             code = gx_device_close_output_file(pdev, lname, tfdev->sep_file[comp_num]);
-            if (code >= 0 && lname != NULL)
+            if (code >= 0)
                 code = gs_remove_outputfile_control_path(pdev->memory, lname);
             if (code < 0) {
                 goto done;
@@ -1766,14 +1764,12 @@ tiffsep_prn_close(gx_device * pdev)
             name = (char *)lname_empty;
         }
 
-        if (name != NULL) {
-            lname = (char *)gs_alloc_bytes(pdevn->memory, strlen(name) + 1, "tiffsep1_prn_close");
-            if (lname == NULL) {
-                code = gs_note_error(gs_error_VMerror);
-                goto done;
-            }
-            memcpy(lname, name, strlen(name) + 1);
+        lname = (char *)gs_alloc_bytes(pdevn->memory, strlen(name) + 1, "tiffsep1_prn_close");
+        if (lname == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto done;
         }
+        memcpy(lname, name, strlen(name) + 1);
 
         if (pdevn->tiff[comp_num]) {
             void *t = TIFFClientdata(pdevn->tiff[comp_num]);
@@ -1784,7 +1780,7 @@ tiffsep_prn_close(gx_device * pdev)
 
         if (pdevn->sep_file[comp_num]) {
             code = gx_device_close_output_file((gx_device *)pdevn, lname, pdevn->sep_file[comp_num]);
-            if (code >= 0 && lname != NULL)
+            if (code >= 0)
                 code = gs_remove_outputfile_control_path(pdevn->memory, lname);
             if (code < 0) {
                 goto done;
