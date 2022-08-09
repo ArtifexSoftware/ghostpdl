@@ -515,7 +515,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
         pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_MEDIABOX, "pdfi_page_info", NULL);
 
     if (code >= 0) {
-        for (i = 0;i < 4; i++) {
+        for (i = 0;i < pdfi_array_size(a); i++) {
             code = pdfi_array_get_number(ctx, a, i, &dummy);
             if (code < 0) {
                 pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_MEDIABOX, "pdfi_page_info", NULL);
@@ -532,7 +532,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
 
     code = pdfi_dict_get_type(ctx, page_dict, "ArtBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
-        for (i = 0;i < 4; i++) {
+        for (i = 0;i < pdfi_array_size(a); i++) {
             code = pdfi_array_get_number(ctx, a, i, &dummy);
             if (code < 0)
                 break;
@@ -548,7 +548,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
 
     code = pdfi_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
-        for (i = 0;i < 4; i++) {
+        for (i = 0;i < pdfi_array_size(a); i++) {
             code = pdfi_array_get_number(ctx, a, i, &dummy);
             if (code < 0)
                 break;
@@ -564,7 +564,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
 
     code = pdfi_dict_get_type(ctx, page_dict, "TrimBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
-        for (i = 0;i < 4; i++) {
+        for (i = 0;i < pdfi_array_size(a); i++) {
             code = pdfi_array_get_number(ctx, a, i, &dummy);
             if (code < 0)
                 break;
@@ -580,7 +580,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
 
     code = pdfi_dict_get_type(ctx, page_dict, "BleedBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
-        for (i = 0;i < 4; i++) {
+        for (i = 0;i < pdfi_array_size(a); i++) {
             code = pdfi_array_get_number(ctx, a, i, &dummy);
             if (code < 0)
                 break;
