@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2108,6 +2108,8 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     copied = gs_alloc_struct(mem, gs_font, fstype,
                              "gs_copy_font(copied font)");
     if (copied) {
+        gs_font_base *bfont = (gs_font_base *)copied;
+
         /* Initialize the copied font - minumum we need
          * so we can safely free it in the "fail:" case
          * below
@@ -2118,6 +2120,15 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
         copied->is_resource = false;
         gs_notify_init(&copied->notify_list, mem);
         copied->base = copied;
+
+        bfont->FAPI = 0;
+        bfont->FAPI_font_data = 0;
+        bfont->encoding_index = ENCODING_INDEX_UNKNOWN;
+        code = uid_copy(&bfont->UID, mem, "gs_copy_font(UID)");
+        if (code < 0) {
+            uid_set_invalid(&bfont->UID);
+            goto fail;
+        }
     }
     cfdata = gs_alloc_struct(mem, gs_copied_font_data_t,
                             &st_gs_copied_font_data,
@@ -2179,16 +2190,6 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     copied->procs.encode_char = procs->encode_char;
     copied->procs.glyph_info = procs->glyph_info;
     copied->procs.glyph_outline = procs->glyph_outline;
-    {
-        gs_font_base *bfont = (gs_font_base *)copied;
-
-        bfont->FAPI = 0;
-        bfont->FAPI_font_data = 0;
-        bfont->encoding_index = ENCODING_INDEX_UNKNOWN;
-        code = uid_copy(&bfont->UID, mem, "gs_copy_font(UID)");
-        if (code < 0)
-            goto fail;
-    }
 
     cfdata->procs = procs;
     memset(glyphs, 0, glyphs_size * sizeof(*glyphs));
