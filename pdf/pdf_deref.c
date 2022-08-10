@@ -433,11 +433,12 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
  */
 int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_offset, uint32_t objnum, uint32_t gen)
 {
-    int code = 0;
+    int code = 0, initial_depth = 0;
     pdf_key keyword;
     gs_offset_t saved_offset[3];
     pdf_obj_type type;
 
+    initial_depth = pdfi_count_stack(ctx);
     saved_offset[0] = saved_offset[1] = saved_offset[2] = 0;
 
     code = pdfi_read_token(ctx, s, objnum, gen);
@@ -471,7 +472,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
     if (keyword == TOKEN_ENDOBJ) {
         pdf_obj *o;
 
-        if (pdfi_count_stack(ctx) < 2) {
+        if (pdfi_count_stack(ctx) - initial_depth < 2) {
             pdfi_clearstack(ctx);
             return_error(gs_error_stackunderflow);
         }
@@ -496,7 +497,7 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
         pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_bare_object", NULL);
 
         /* 4 for; the object we want, the object number, generation number and 'obj' keyword */
-        if (pdfi_count_stack(ctx) < 4)
+        if (pdfi_count_stack(ctx) - initial_depth < 4)
             return_error(gs_error_stackunderflow);
 
         /* If we have that many objects, assume that we can throw away the x y obj and just use the remaining object */
@@ -520,7 +521,7 @@ missing_endobj:
 
         pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDOBJ, "pdfi_read_bare_object", NULL);
 
-        if (pdfi_count_stack(ctx) < 2)
+        if (pdfi_count_stack(ctx) - initial_depth < 2)
             return_error(gs_error_stackunderflow);
 
         o = ctx->stack_top[-2];
