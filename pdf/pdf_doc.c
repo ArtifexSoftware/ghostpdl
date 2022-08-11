@@ -823,12 +823,15 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
 {
     pdf_dict *typedict = NULL;
     pdf_dict *Parent = NULL;
+    pdf_name *n = NULL;
     int code;
 
     *o = NULL;
 
     /* Check the provided dict, stream_dict can be NULL if we are trying to find a Default* ColorSpace */
     if (dict != NULL) {
+        bool deref_parent = true;
+
         code = pdfi_resource_knownget_typedict(ctx, Type, dict, &typedict);
         if (code < 0)
             goto exit;
@@ -839,30 +842,40 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
         }
 
         /* Check the Parents, if any */
-        code = pdfi_dict_knownget_type(ctx, dict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
-        if (code < 0)
-            goto exit;
-        if (code > 0) {
-            if (ctx->page.CurrentPageDict != NULL && Parent->object_num != ctx->page.CurrentPageDict->object_num) {
-                if (pdfi_loop_detector_check_object(ctx, Parent->object_num) == true)
-                    return_error(gs_error_circular_reference);
-
-                code = pdfi_loop_detector_mark(ctx);
-                if (code < 0)
-                    return code;
-
-                code = pdfi_loop_detector_add_object(ctx, dict->object_num);
-                if (code < 0) {
-                    (void)pdfi_loop_detector_cleartomark(ctx);
-                    return code;
-                }
-                code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
-                (void)pdfi_loop_detector_cleartomark(ctx);
-                if (code != gs_error_undefined)
-                    goto exit;
-            }
+        /* If the current dictionary is a Page dictionary, do NOT dereference it's Parent, as that
+         * will be the Pages tree, and we will end up with circular references, causing a memory leak.
+         */
+        if (pdfi_dict_knownget_type(ctx, dict, "Type", PDF_NAME, (pdf_obj **)&n)) {
+            if (pdfi_name_is(n, "Page"))
+                deref_parent = false;
+            pdfi_countdown(n);
         }
 
+        if (deref_parent) {
+            code = pdfi_dict_knownget_type(ctx, dict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
+            if (code < 0)
+                goto exit;
+            if (code > 0) {
+                if (ctx->page.CurrentPageDict != NULL && Parent->object_num != ctx->page.CurrentPageDict->object_num) {
+                    if (pdfi_loop_detector_check_object(ctx, Parent->object_num) == true)
+                        return_error(gs_error_circular_reference);
+
+                    code = pdfi_loop_detector_mark(ctx);
+                    if (code < 0)
+                        return code;
+
+                    code = pdfi_loop_detector_add_object(ctx, dict->object_num);
+                    if (code < 0) {
+                        (void)pdfi_loop_detector_cleartomark(ctx);
+                        return code;
+                    }
+                    code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
+                    (void)pdfi_loop_detector_cleartomark(ctx);
+                    if (code != gs_error_undefined)
+                        goto exit;
+                }
+            }
+        }
         pdfi_countdown(typedict);
         typedict = NULL;
     }
