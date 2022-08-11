@@ -251,6 +251,8 @@ restart:
     } while(1);
 
     *parsed_int = negative ? -int_val : int_val;
+    if (ctx->args.pdfdebug)
+        dmprintf1(ctx->memory, " %d", *parsed_int);
     return (index > 0);
 
 error:
