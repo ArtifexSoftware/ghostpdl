@@ -415,6 +415,12 @@ xps_count_cff_index(byte *p, byte *e, int *countp)
 
     p += count * offsize;
     last = uofs(p, offsize);
+    if (last < 0 || p + last > e)
+    {
+        gs_throw(-1, "corrupt index header");
+        return 0;
+    }
+
     p += offsize;
     p --; /* stupid offsets */
 
