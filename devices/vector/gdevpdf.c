@@ -935,10 +935,14 @@ pdf_ferror(gx_device_pdf *pdev)
 {
     gp_fflush(pdev->file);
     gp_fflush(pdev->xref.file);
-    sflush(pdev->strm);
-    sflush(pdev->asides.strm);
-    sflush(pdev->streams.strm);
-    sflush(pdev->pictures.strm);
+    if (pdev->strm->file != NULL)
+        sflush(pdev->strm);
+    if (pdev->asides.strm->file != NULL)
+        sflush(pdev->asides.strm);
+    if (pdev->streams.strm->file != NULL)
+        sflush(pdev->streams.strm);
+    if (pdev->pictures.strm->file != NULL)
+        sflush(pdev->pictures.strm);
     return gp_ferror(pdev->file) || gp_ferror(pdev->xref.file) ||
         gp_ferror(pdev->asides.file) || gp_ferror(pdev->streams.file) ||
         gp_ferror(pdev->pictures.file);
