@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -137,7 +137,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     pdf_stream_position_t ipos;
     pdf_resource_t *pres = 0;
     byte invert = 0;
-    bool in_line = false;
+    bool in_line = false, char_proc_begun = false;
     gs_show_enum *show_enum = (gs_show_enum *)pdev->pte;
     int x_offset, y_offset;
     double width;
@@ -181,6 +181,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
                                            &pcp, &ipos);
                 if (code < 0)
                     return code;
+                char_proc_begun = true;
                 y_offset = -y_offset;
                 width = psdf_round(pdev->char_width.x, 100, 10); /* See
                         pdf_write_Widths about rounding. We need to provide
@@ -192,7 +193,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
                 pdf_image_writer_init(&writer);
                 code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, true);
                 if (code < 0)
-                    return code;
+                    goto fail;
                 pres = (pdf_resource_t *) pcp;
                 goto wr;
             } else if (pdev->pte != NULL) {
@@ -216,13 +217,17 @@ pdf_copy_mono(gx_device_pdf *pdev,
             set_image_color(pdev, zero);
     } else if (zero == pdev->black && one == pdev->white) {
         pcs = gs_cspace_new_DeviceGray(pdev->memory);
-        if (pcs == NULL)
-            return_error(gs_error_VMerror);
+        if (pcs == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto fail;
+        }
         gs_image_t_init(&image, pcs);
     } else if (zero == pdev->white && one == pdev->black) {
         pcs = gs_cspace_new_DeviceGray(pdev->memory);
-        if (pcs == NULL)
-            return_error(gs_error_VMerror);
+        if (pcs == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto fail;
+        }
         gs_image_t_init(&image, pcs);
         invert = 0xff;
     } else {
@@ -240,13 +245,14 @@ pdf_copy_mono(gx_device_pdf *pdev,
 
         code = pdf_cspace_init_Device(pdev->memory, &pcs_base, ncomp);
         if (code < 0)
-            return code;
+            goto fail;
         c[0] = psdf_adjust_color_index((gx_device_vector *)pdev, zero);
         c[1] = psdf_adjust_color_index((gx_device_vector *)pdev, one);
         pcs = gs_cspace_alloc(pdev->memory, &gs_color_space_type_Indexed);
         if (pcs == NULL) {
             rc_decrement_cs(pcs_base, "pdf_copy_mono");
-            return_error(gs_error_VMerror);
+            code = gs_note_error(gs_error_VMerror);
+            goto fail;
         }
         pcs->base_space = pcs_base;
         pcs->params.indexed.hival = 1;
@@ -267,14 +273,14 @@ pdf_copy_mono(gx_device_pdf *pdev,
 
         code = pdf_open_page(pdev, PDF_IN_STREAM);
         if (code < 0)
-            return code;
+            goto fail;
         in_line = nbytes < pdev->MaxInlineImageSize;
         if (in_line)
             pdf_put_image_matrix(pdev, &image.ImageMatrix, 1.0);
         pdf_image_writer_init(&writer);
         code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, in_line);
         if (code < 0)
-            return code;
+            goto fail;
     }
   wr:
     if (image.ImageMask)
@@ -287,7 +293,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
         code = pdf_color_space_named(pdev, NULL, &cs_value, NULL, pcs,
                                &writer.pin->color_spaces, in_line, NULL, 0, false);
         if (code < 0)
-            return code;
+            goto fail;
         pcsvalue = &cs_value;
     }
     /*
@@ -322,33 +328,37 @@ pdf_copy_mono(gx_device_pdf *pdev,
     code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image,
                          pcsvalue, 0);
     if (code < 0)
-        return code;
+        goto fail;
 
     code = pdf_copy_mask_bits(writer.binary[0].strm, base, sourcex, raster,
                               w, h, invert);
     if (code < 0)
-        return code;
+        goto fail;
     code = pdf_end_image_binary(pdev, &writer, writer.height);
     if (code < 0)
-        return code;
+        goto fail;
 
     if (!pres) {
         switch ((code = pdf_end_write_image(pdev, &writer))) {
             default:                /* error */
-                return code;
+                goto fail;
             case 1:
-                return 0;
+                code = 0;
+                goto fail;
             case 0:
-                return pdf_do_image(pdev, writer.pres, &image.ImageMatrix,
+                code = pdf_do_image(pdev, writer.pres, &image.ImageMatrix,
                                     true);
+                goto fail;
         }
     }
     writer.end_string = "";        /* no Q */
     switch ((code = pdf_end_write_image(pdev, &writer))) {
     default:                /* error */
+        goto fail;
         return code;
     case 0:                        /* not possible */
-        return_error(gs_error_Fatal);
+        code = gs_note_error(gs_error_Fatal);
+        goto fail;
     case 1:
         break;
     }
@@ -365,6 +375,11 @@ pdf_copy_mono(gx_device_pdf *pdev,
         imat.yy /= h;
         return pdf_do_char_image(pdev, (const pdf_char_proc_t *)pres, &imat);
     }
+
+fail:
+    if (char_proc_begun)
+        (void)pdf_end_char_proc(pdev, &ipos);
+    return code;
 }
 int
 gdev_pdf_copy_mono(gx_device * dev,
