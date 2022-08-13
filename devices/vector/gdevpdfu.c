@@ -1589,10 +1589,15 @@ pdf_begin_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
                 pdf_resource_type_t type)
 {
     long id = pdf_begin_separate(pdev, type);
+    int code = 0;
 
     if (id < 0)
         return (int)id;
-    return pdf_alloc_aside(pdev, plist, pst, ppres, id);
+    code = pdf_alloc_aside(pdev, plist, pst, ppres, id);
+    if (code < 0)
+        (void)pdf_end_separate(pdev, type);
+
+    return code;
 }
 
 /* Begin a resource of a given type. */
