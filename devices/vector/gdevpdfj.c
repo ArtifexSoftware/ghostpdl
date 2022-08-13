@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -348,8 +348,10 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
     }
     pdev->strm = pdev->streams.strm;
     pdev->strm = cos_write_stream_alloc(data, pdev, "pdf_begin_write_image");
-    if (pdev->strm == 0)
+    if (pdev->strm == 0) {
+        pdev->strm = save_strm;
         return_error(gs_error_VMerror);
+    }
     if (!mask)
         piw->data = data;
     piw->height = h;
