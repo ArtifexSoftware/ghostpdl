@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -295,6 +295,7 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->color_stack = NULL;
     pfs->color_stack_limit = NULL;
     pfs->unlinear = !is_linear_color_applicable(pfs);
+    pfs->pcic = NULL;
     return alloc_patch_fill_memory(pfs, pfs->pgs->memory, pcs);
 }
 
