@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -560,7 +560,13 @@ top :
             return code;
         notes |= sn_not_first;
         goto top;
-    } else if (k == -1) {
+    } else if (k < 0) {
+        /* This used to be k == -1, but... If we have a very long curve, we will first
+         * go through the code above to split the long curve into 2. In fact for very
+         * long curves we can go through that multiple times. This can lead to k being
+         * < -1 by the time we finish subdividing the curve, and that meant we did not
+         * satisfy the exit condition here, leading to a loop until VM error.
+         */
         /* fixme : Don't need to init the iterator. Just wanted to check in_range. */
         return gx_path_add_curve_notes(ppath, pc->p1.x, pc->p1.y, pc->p2.x, pc->p2.y,
                         pc->pt.x, pc->pt.y, notes);
