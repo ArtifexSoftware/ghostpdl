@@ -819,7 +819,8 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
 
     n = 0;
     while (p < e && code >= 0) {
-        b0 = *p++;
+        b0 = *p;
+        p++;
 
         switch (b0) {
             case 22:
@@ -1833,7 +1834,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
                 pdf_font_cff *pdffont = NULL;
                 gs_font_type1 *pt1font;
 
-                pdfi_init_cff_font_priv(ctx, &fdptpriv, font->cffdata, (font->cffend - font->cffdata) + 1, true);
+                pdfi_init_cff_font_priv(ctx, &fdptpriv, font->cffdata, (font->cffend - font->cffdata), true);
 
                 offsets.private_off = 0;
 
