@@ -560,6 +560,16 @@ dnl feature set of GNU make. We still prefer GNU make,
 dnl but......
 dnl --------------------------------------------------
 
+AC_ARG_WITH([make], AS_HELP_STRING([--with-make=@<:@"make" program name@:>@],
+                                   [If you use a version of make not called "make"]),
+            [MAKE=$with_make], [MAKE=make])
+
+AC_CHECK_PROG(MAKE_EXISTS,[$MAKE],[yes],[no])
+
+if test x"$MAKE_EXISTS" = x"no" ; then
+  AC_MSG_ERROR([Required make program '$MAKE' not found.])
+fi
+
 OBJDIR_BSDMAKE_WORKAROUND=obj
 SUB_MAKE_OPTION=
 ORDER_ONLY=""
