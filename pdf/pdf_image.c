@@ -2580,7 +2580,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdf_name *n = NULL;
     pdf_obj *o = NULL;
     pdf_dict *sdict = NULL;
-    bool known = false;
+    bool known = false, AddedParent = false;
 
     if (pdfi_count_stack(ctx) < 1) {
         code = gs_note_error(gs_error_stackunderflow);
@@ -2625,6 +2625,8 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         code = pdfi_dict_put(ctx, sdict, "Parent", (pdf_obj *)stream_dict);
         if (code < 0)
             goto exit;
+        pdfi_countup(sdict);
+        AddedParent = true;
     }
 
     code = pdfi_loop_detector_cleartomark(ctx);
@@ -2644,9 +2646,23 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     //    pdfi_grestore(ctx);
     pdfi_countdown(n);
     pdfi_countdown(o);
+    if (AddedParent == true) {
+        if (code >= 0)
+            code = pdfi_dict_delete(ctx, sdict, "Parent");
+        else
+            (void)pdfi_dict_delete(ctx, sdict, "Parent");
+        pdfi_countdown(sdict);
+    }
     return code;
 
 exit:
+    if (AddedParent == true) {
+        if (code >= 0)
+            code = pdfi_dict_delete(ctx, sdict, "Parent");
+        else
+            (void)pdfi_dict_delete(ctx, sdict, "Parent");
+        pdfi_countdown(sdict);
+    }
     (void)pdfi_loop_detector_cleartomark(ctx);
 exit1:
     pdfi_countdown(n);
