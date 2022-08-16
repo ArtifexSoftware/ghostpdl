@@ -3633,9 +3633,9 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
 {
     int code = 0;
     bool found_T = false;
-    bool found_TF = false;
+    bool found_FT = false;
     pdf_obj *T = NULL;
-    pdf_obj *TF = NULL;
+    pdf_obj *FT = NULL;
     pdf_dict *Parent = NULL;
     pdf_dict *currdict = NULL;
 
@@ -3663,10 +3663,10 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
             found_T = true;
             break;
         }
-        code = pdfi_dict_knownget(ctx, currdict, "TF", &TF);
+        code = pdfi_dict_knownget(ctx, currdict, "FT", &FT);
         if (code < 0) goto exit;
         if (code > 0) {
-            found_TF = true;
+            found_FT = true;
             break;
         }
         /* Check for Parent */
@@ -3680,7 +3680,7 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
     }
 
     code = 0;
-    if (!found_T && !found_TF) {
+    if (!found_T && !found_FT) {
         *render_done = true;
         dmprintf(ctx->memory, "**** Warning: A Widget annotation dictionary lacks either the FT or T key.\n");
         dmprintf(ctx->memory, "              Acrobat ignores such annoataions, annotation will not be rendered.\n");
@@ -3700,7 +3700,7 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
 
  exit:
     pdfi_countdown(T);
-    pdfi_countdown(TF);
+    pdfi_countdown(FT);
     pdfi_countdown(Parent);
     pdfi_countdown(currdict);
     return code;
