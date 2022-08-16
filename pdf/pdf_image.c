@@ -2657,10 +2657,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
 exit:
     if (AddedParent == true) {
-        if (code >= 0)
-            code = pdfi_dict_delete(ctx, sdict, "Parent");
-        else
-            (void)pdfi_dict_delete(ctx, sdict, "Parent");
+        (void)pdfi_dict_delete(ctx, sdict, "Parent");
         pdfi_countdown(sdict);
     }
     (void)pdfi_loop_detector_cleartomark(ctx);
