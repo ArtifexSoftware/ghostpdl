@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -223,6 +223,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 return_error(gs_error_invalidfont);
             case c_callsubr:
                 if (CS_CHECK_CSTACK_BOUNDS(csp, cstack)) {
+                    CS_CHECK_IPSTACK(&(ipsp[1]), pcis->ipstack);
                     c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
                     code = pdata->procs.subr_data
                         (pfont, c, false, &ipsp[1].cs_data);
@@ -556,6 +557,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 continue;
             case c2_callgsubr:
                 if (CS_CHECK_CSTACK_BOUNDS(csp, cstack)) {
+                    CS_CHECK_IPSTACK(&(ipsp[1]), pcis->ipstack);
                     c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
                     code = pdata->procs.subr_data
                         (pfont, c, true, &ipsp[1].cs_data);
