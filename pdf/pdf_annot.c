@@ -3632,8 +3632,8 @@ static int pdfi_annot_render_Widget(pdf_context *ctx, pdf_dict *annot)
 static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
-    bool found_T = false;
-    bool found_FT = false;
+    bool found_T = true;
+    bool found_FT = true, known = false;
     pdf_obj *T = NULL;
     pdf_obj *FT = NULL;
     pdf_dict *Parent = NULL;
@@ -3661,26 +3661,47 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
         if (code < 0) goto exit;
         if (code > 0) {
             found_T = true;
-            break;
+            if (found_FT)
+                break;
         }
         code = pdfi_dict_knownget(ctx, currdict, "FT", &FT);
         if (code < 0) goto exit;
         if (code > 0) {
             found_FT = true;
-            break;
+            if (found_T)
+                break;
         }
-        /* Check for Parent */
-        code = pdfi_dict_knownget_type(ctx, currdict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
-        if (code < 0) goto exit;
-        if (code == 0)
+        /* Check for Parent. Do not store the dereferenced Parent back to the dictionary
+         * as this can cause circular references.
+         */
+        code = pdfi_dict_known(ctx, currdict, "Parent", &known);
+        if (code >= 0 && known == true)
+        {
+            code = pdfi_dict_get_no_store_R(ctx, currdict, "Parent", (pdf_obj **)&Parent);
+            if (code < 0)
+                goto exit;
+            if (pdfi_type_of(Parent) != PDF_DICT) {
+                if (pdfi_type_of(Parent) == PDF_INDIRECT) {
+                    pdf_indirect_ref *o = (pdf_indirect_ref *)Parent;
+
+                    code = pdfi_dereference(ctx, o->ref_object_num, o->ref_generation_num, (pdf_obj **)&Parent);
+                    pdfi_countdown(o);
+                    if (code < 0)
+                        break;
+                } else {
+                    pdfi_countdown(Parent);
+                    break;
+                }
+            }
+            pdfi_countdown(currdict);
+            currdict = Parent;
+            pdfi_countup(currdict);
+        } else
             break;
-        pdfi_countdown(currdict);
-        currdict = Parent;
-        pdfi_countup(currdict);
     }
 
     code = 0;
-    if (!found_T && !found_FT) {
+    if (!found_T || !found_FT) {
         *render_done = true;
         dmprintf(ctx->memory, "**** Warning: A Widget annotation dictionary lacks either the FT or T key.\n");
         dmprintf(ctx->memory, "              Acrobat ignores such annoataions, annotation will not be rendered.\n");
