@@ -1074,7 +1074,7 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
 
             /* Set the identity case if we are in that situation */
             if (link != NULL) {
-                if (gs_input_profile->num_comps ==
+                if (dev_profile != NULL && gs_input_profile->num_comps ==
                     dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps) {
                     link->is_identity = true;
                 }
