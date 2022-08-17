@@ -2214,8 +2214,10 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_gstate *pgs,
     code = pdf_begin_typed_image
         ((gx_device_pdf *)dev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
          pinfo, PDF_IMAGE_TYPE3_DATA);
-    if (code < 0)
+    if (code < 0) {
+        rc_decrement(*pmcdev, "pdf_image3x_make_mcde");
         return code;
+    }
     if ((*pinfo)->procs != &pdf_image_enum_procs) {
         /* We couldn't handle the image.  Bail out. */
         gx_image_end(*pinfo, false);
