@@ -2629,7 +2629,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         AddedParent = true;
     }
 
-    code = pdfi_loop_detector_cleartomark(ctx);
+    (void)pdfi_loop_detector_cleartomark(ctx);
     /* NOTE: Used to have a pdfi_gsave/pdfi_grestore around this, but it actually makes
      * things render incorrectly (and isn't in the PS code).
      * It also causes demo.ai.pdf to crash.
@@ -2656,10 +2656,6 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     return code;
 
 exit:
-    if (AddedParent == true) {
-        (void)pdfi_dict_delete(ctx, sdict, "Parent");
-        pdfi_countdown(sdict);
-    }
     (void)pdfi_loop_detector_cleartomark(ctx);
 exit1:
     pdfi_countdown(n);
