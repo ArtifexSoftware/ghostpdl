@@ -382,6 +382,8 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
 
         if (!unicode) {
             unicode = (ushort *)gs_alloc_bytes(pdev->memory, length * sizeof(short), "temporary Unicode array");
+            if (unicode == NULL)
+                return_error(gs_error_VMerror);
             length = font->procs.decode_glyph((gs_font *)font, glyph, ch, unicode, length);
         }
 
