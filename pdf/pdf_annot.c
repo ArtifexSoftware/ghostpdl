@@ -3632,8 +3632,8 @@ static int pdfi_annot_render_Widget(pdf_context *ctx, pdf_dict *annot)
 static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP, bool *render_done)
 {
     int code = 0;
-    bool found_T = true;
-    bool found_FT = true, known = false;
+    bool found_T = false;
+    bool found_FT = false, known = false;
     pdf_obj *T = NULL;
     pdf_obj *FT = NULL;
     pdf_dict *Parent = NULL;
