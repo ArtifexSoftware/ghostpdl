@@ -13,11 +13,11 @@
 # Makefile fragment containing the current revision identification.
 
 # Major, minor and patch version numbers.
-GS_VERSION_MAJOR=9
-GS_VERSION_MINOR=57
+GS_VERSION_MAJOR=10
+GS_VERSION_MINOR=00
 GS_VERSION_PATCH=0
 # Revision date: year x 10000 + month x 100 + day.
-GS_REVISIONDATE=20220329
+GS_REVISIONDATE=20220817
 # Derived values
 GS_VERSION=$(GS_VERSION_MAJOR)$(GS_VERSION_MINOR)$(GS_VERSION_PATCH)
 GS_DOT_VERSION=$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR).$(GS_VERSION_PATCH)
