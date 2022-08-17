@@ -586,6 +586,7 @@ gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, i
                                   "gs_cmap_ToUnicode_alloc");
     if (map == NULL) {
         gs_cmap_free(*ppcmap, mem);
+        *ppcmap = NULL;
         return_error(gs_error_VMerror);
     }
     memset(map, 0, (size_t)num_codes * (value_size + 2));
