@@ -3689,7 +3689,6 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
                     if (code < 0)
                         break;
                 } else {
-                    pdfi_countdown(Parent);
                     break;
                 }
             }
