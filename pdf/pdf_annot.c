@@ -3661,6 +3661,8 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
         if (code < 0) goto exit;
         if (code > 0) {
             found_T = true;
+            pdfi_countdown(T);
+            T = NULL;
             if (found_FT)
                 break;
         }
@@ -3668,6 +3670,8 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
         if (code < 0) goto exit;
         if (code > 0) {
             found_FT = true;
+            pdfi_countdown(FT);
+            FT = NULL;
             if (found_T)
                 break;
         }
@@ -3719,8 +3723,6 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
     *render_done = true;
 
  exit:
-    pdfi_countdown(T);
-    pdfi_countdown(FT);
     pdfi_countdown(Parent);
     pdfi_countdown(currdict);
     return code;
