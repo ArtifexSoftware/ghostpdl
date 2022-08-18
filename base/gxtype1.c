@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -459,6 +459,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont, /* lgtm[cpp/use-of-goto] */
             else {
                 c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
             }
+            CS_CHECK_IPSTACK(ipsp + 1, ipstack);
             code = pdata->procs.subr_data
                 (pfont, c, true, &ipsp[1].cs_data);
             if (code < 0)
@@ -479,6 +480,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont, /* lgtm[cpp/use-of-goto] */
             else {
                 c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
             }
+            CS_CHECK_IPSTACK(ipsp + 1, ipstack);
             code = pdata->procs.subr_data
                 (pfont, c, false, &ipsp[1].cs_data);
             if (code < 0)
@@ -498,6 +500,7 @@ c_return:
             else
                 call_depth--;
             gs_glyph_data_free(&ipsp->cs_data, "gs_type1_piece_codes");
+            CS_CHECK_IPSTACK(ipsp, ipstack);
             --ipsp;
             if (ipsp < ipstack)
                 return (gs_note_error(gs_error_invalidfont));

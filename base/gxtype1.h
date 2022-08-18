@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -196,7 +196,7 @@ typedef fixed *cs_ptr;
 
 #define CS_CHECK_IPSTACK(ips, ipstack)\
   BEGIN\
-    if (ips > &ipstack[ipstack_size + 1] \
+    if (ips > &ipstack[ipstack_size] \
         || ips < &ipstack[0])\
       return_error(gs_error_invalidfont);\
   END
