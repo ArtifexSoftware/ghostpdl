@@ -1117,21 +1117,21 @@ There are also two additional (not Adobe-standard) Distiller parameters, specifi
 <dd>No default value. If defined, the contents of the string will be emitted in the output PostScript prolog
 enclosed within %%BeginSetup and %%EndSetup comments. This is intended as a means of introducing device-specific document wide
 setup or configuration options into the output. Default media selection, printer resolution etc might be included here.
+</dd>
 
 <code>/PSPageOptions</code><em> array of strings</em>
-</dd>
 <dd>No default value. If defined, the contents of the strings in the array will be emitted in the output PostScript at the start
 of each page, one string per page, enclosed within %%BeginPageSetup and %%EndPageSetup comments. This is intended as a means of introducing device-specific
 setup or configuration options into the output on a page by page basis. The strings are used from the array sequentially, if there are more
 pages than strings then we 'wrap round' and start again with the first string. This makes it convenient to do setup for even/odd pages
 by simply including 2 strings in the array.
+</dd>
 
 <p>
 Note: executing setpagedevice will reset distiller parameters to the default, if you use any of these options via setdistillerparams, and
  expect to execute setpagedevice, you should set /LockDistillerParams true. Ordinarily the PDF interpreter executes setpagedevice for
  every page in order to set the media size.
 </p>
-</dd>
 </dt>
 </dl>
 

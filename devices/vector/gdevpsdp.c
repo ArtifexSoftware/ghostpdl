@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1254,13 +1254,17 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 exit:
     if (!(pdev->params.LockDistillerParams && params.LockDistillerParams)) {
         /* Only update the device paramters if there was no error */
-        /* If we have any copied param_string_arrays, start by freeing them */
-        if (pdev->params.PSPageOptions.size && params.PSPageOptions.size) {
-            int ix;
+        /* Do not permit changes to pdev->Params.PSPageOptions, it doesn't make any sense */
+        if (pdev->params.PSPageOptions.size != 0) {
+            if (params.PSPageOptions.size != 0 && params.PSPageOptions.data != pdev->params.PSPageOptions.data) {
+                int ix;
 
-            for (ix = 0; ix < pdev->params.PSPageOptions.size;ix++)
-                gs_free_object(mem->non_gc_memory, (byte *)pdev->params.PSPageOptions.data[ix].data, "freeing old string array copy");
-            gs_free_object(mem->non_gc_memory, (byte *)pdev->params.PSPageOptions.data, "freeing old string array");
+                for (ix = 0; ix < pdev->params.PSPageOptions.size;ix++)
+                    gs_free_object(mem->non_gc_memory, (byte *)params.PSPageOptions.data[ix].data, "freeing old string array copy");
+                gs_free_object(mem->non_gc_memory, (byte *)params.PSPageOptions.data, "freeing old string array");
+            }
+            params.PSPageOptions.data = pdev->params.PSPageOptions.data;
+            params.PSPageOptions.size = pdev->params.PSPageOptions.size;
         }
         pdev->params = params;
     } else {
