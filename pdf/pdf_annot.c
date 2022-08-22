@@ -3698,7 +3698,7 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
             }
             pdfi_countdown(currdict);
             currdict = Parent;
-            pdfi_countup(currdict);
+            Parent = NULL;
         } else
             break;
     }
