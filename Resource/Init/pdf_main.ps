@@ -1000,12 +1000,12 @@ currentdict /PDFSwitches undef
     /Page# get PDFFile exch 1 sub {.PDFDrawPage} stopped
     {
       pop pop
-      (   **** Error: Page drawing error occured.\n) newpdf_pdfformaterror
+      (   **** Error: Page drawing error occurred.\n) newpdf_pdfformaterror
       (               Output may be incorrect.\n) newpdf_pdfformaterror
     } if
     {showpage} stopped
     {
-      (   **** Error: Page drawing error occured.\n) newpdf_pdfformaterror
+      (   **** Error: Page drawing error occurred.\n) newpdf_pdfformaterror
       (               Could not draw this page at all, page will be missing in the output.\n) newpdf_pdfformaterror
     } if
   }ifelse
