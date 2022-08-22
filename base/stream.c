@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1294,6 +1294,7 @@ s_add_filter(stream **ps, const stream_template *templat,
 int
 s_close_filters(stream **ps, stream *target)
 {
+    int code = 0;
     while (*ps != target) {
         stream *s = *ps;
         gs_memory_t *mem = s->state->memory;
@@ -1304,8 +1305,8 @@ s_close_filters(stream **ps, stream *target)
         int status = sclose(s);
         stream_state *ss = s->state; /* sclose may set this to s */
 
-        if (status < 0)
-            return status;
+        if (code == 0)
+            code = status;
 
         if (s->cbuf_string_memory != NULL) { /* stream owns string buffer, so free it */
             gs_free_object(cbuf_string_memory, cbuf, "s_close_filters(cbuf)");
@@ -1320,7 +1321,7 @@ s_close_filters(stream **ps, stream *target)
         }
         *ps = next;
     }
-    return 0;
+    return code;
 }
 
 /* ------ Stream closing ------ */
