@@ -845,7 +845,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
         /* If the current dictionary is a Page dictionary, do NOT dereference it's Parent, as that
          * will be the Pages tree, and we will end up with circular references, causing a memory leak.
          */
-        if (pdfi_dict_knownget_type(ctx, dict, "Type", PDF_NAME, (pdf_obj **)&n)) {
+        if (pdfi_dict_knownget_type(ctx, dict, "Type", PDF_NAME, (pdf_obj **)&n) > 0) {
             if (pdfi_name_is(n, "Page"))
                 deref_parent = false;
             pdfi_countdown(n);
