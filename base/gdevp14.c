@@ -8573,6 +8573,29 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         return p14dev->in_smask_construction > 0;
     if (dev_spec_op == gxdso_in_smask)
         return p14dev->in_smask_construction > 0 || p14dev->depth_within_smask;
+    if (dev_spec_op == gxdso_replacecolor) {
+        gx_device *tdev = p14dev->target;
+        cmm_dev_profile_t *tdev_profile;
+        int code;
+
+         /* If in a softmask or softmask construction do not allow
+           replacement. */
+        if (p14dev->in_smask_construction > 0 || p14dev->depth_within_smask)
+            return 0;
+
+        /* If the target CS is different than the pdf14 profile do not
+           allow replacement. */
+        code = dev_proc(tdev, get_profile)((gx_device*) tdev, &tdev_profile);
+        if (code != 0)
+            return 0;
+
+        if (tdev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->hashcode !=
+            p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->hashcode)
+            return 0;
+
+        /* Pass on to target device */
+        return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
+    }
     if (dev_spec_op == gxdso_device_insert_child) {
         gx_device *tdev = p14dev->target;
         p14dev->target = (gx_device *)data;

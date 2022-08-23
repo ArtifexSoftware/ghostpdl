@@ -454,6 +454,18 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     cmm_dev_profile_t *dev_profile;
     int code;
 
+    color_replace_s param;
+    param.pcc = pcc;
+    param.pcs = pcs;
+    param.pdc = pdc;
+    param.pgs = pgs;
+
+    /* Try color replacement. If successful (>0) then no
+       ICC color management for this color. */
+    if (dev_proc(pgs->device, dev_spec_op)(pgs->device,
+        gxdso_replacecolor, &param, sizeof(color_replace_s)) > 0)
+        return 0;
+
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     if (code < 0)
         return code;
@@ -474,7 +486,6 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 #endif
         return_error(gs_error_unknownerror);
     }
-
 
     code = gx_remap_ICC_with_link(pcc, pcs, pdc, pgs, dev, select, icc_link);
     /* Release the link */

@@ -423,6 +423,7 @@ pattern_accum_open(gx_device * dev)
 #undef PDSET
                     bits->color_info = padev->color_info;
                     bits->bitmap_memory = mem;
+
                     if (target->is_planar > 0)
                     {
                         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];

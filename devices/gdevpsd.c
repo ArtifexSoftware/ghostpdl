@@ -50,6 +50,8 @@
 #  define Y_DPI 72
 #endif
 
+#define ENABLE_COLOR_REPLACE 0
+
 /* The device descriptor */
 static dev_proc_open_device(psd_prn_open);
 static dev_proc_close_device(psd_prn_close);
@@ -143,6 +145,77 @@ psd_spec_op(gx_device *dev_, int op, void *data, int datasize)
     if (op == gxdso_supports_devn || op == gxdso_skip_icc_component_validation) {
         return true;
     }
+
+#if ENABLE_COLOR_REPLACE
+    /* Demo of doing color replacement in the device in place of
+       standard ICC color management */
+    if (op == gxdso_replacecolor) {
+
+        color_replace_s *replace_data = (color_replace_s *)data;
+        gx_device_color *pdc = replace_data->pdc;
+        const gs_color_space *pcs = replace_data->pcs;
+        const gs_client_color *pcc = replace_data->pcc;
+        const gs_gstate *pgs = replace_data->pgs;  /* Perhaps needed for named color profile information */
+
+        /* CMYK or CIELAB source colors that are vector fills. */
+        if ((pcs->cmm_icc_profile_data->data_cs == gsCMYK ||
+             pcs->cmm_icc_profile_data->data_cs == gsCIELAB) &&
+            dev_->graphics_type_tag == GS_VECTOR_TAG) {
+
+            int jj, ii;
+            int values[4];
+            int replace = 0;
+
+            /* Zero out all the device values including any spots */
+            for (ii = 0; ii < dev_->color_info.num_components; ii++) {
+                pdc->colors.devn.values[ii] = 0;
+            }
+
+            if (pcs->cmm_icc_profile_data->data_cs == gsCMYK) {
+
+                for (jj = 0; jj < 4; jj++) {
+                    values[jj] = 65535 * pcc->paint.values[jj];
+                }
+
+                if (values[0] == 40959 && values[1] == 0 && values[2] == 11730 && values[3] == 0) {
+                    replace = 1;
+                    pdc->colors.devn.values[1] = 32000;
+                } else if (values[0] == 0 && values[1] == 49741 && values[2] == 65535 && values[3] == 0) {
+                    replace = 1;
+                    pdc->colors.devn.values[0] = 48000;
+                } else {
+                    /* Test of shading.... */
+                    replace = 1;
+                    for (ii = 0; ii < 3; ii++) {
+                        pdc->colors.devn.values[ii] = 65535 - values[ii];
+                    }
+                }
+            } else {
+                /* CIELAB case.  Lets make color K only based upon luminance */
+                int luminance = 65535 * pcc->paint.values[0] / 100.0;
+                replace = 1;
+
+                if (luminance > 65535)
+                    luminance = 65535;
+                pdc->colors.devn.values[3] = luminance;
+            }
+
+            if (replace) {
+                /* This is only for devn type devices. */
+                pdc->type = gx_dc_type_devn;
+
+                /* Save original color space and color info into dev color */
+                ii = pcs->cmm_icc_profile_data->num_comps;
+                for (ii--; ii >= 0; ii--)
+                    pdc->ccolor.paint.values[ii] = pcc->paint.values[ii];
+                pdc->ccolor_valid = true;
+                return true;
+            } else
+                return false;  /* No replacement */
+        } else
+            return false;
+    }
+#endif
     return gdev_prn_dev_spec_op(dev_, op, data, datasize);
 }
 

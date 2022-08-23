@@ -134,6 +134,14 @@ typedef struct pattern_accum_param_t {
     int pinst_id;
 }pattern_accum_param_s;
 
+/* Structure used for device specific color setting */
+typedef struct color_replace_t {
+    gx_device_color *pdc;
+    const gs_color_space *pcs;
+    const gs_client_color *pcc;
+    const gs_gstate *pgs;  /* Perhaps needed for named color profile information */
+} color_replace_s;
+
 enum {
     /* All gxdso_ keys must be defined in this structure.
      * Do NOT rely on your particular gxdso_ having a particular value.
@@ -457,6 +465,16 @@ enum {
      * Returns -1 if unhandled, otherwise the current state.
      */
     gxdso_overprint_op,
+
+    /* Color replacement method.  Intercepts remap color method(s) to
+     *  enable the device map source colors to device colors directly
+     *  in a method defined in the device.
+     *       data = color_replace_s
+     *       size = sizeof(color_replace_s)
+     *
+     *  Returns 0 is no replacment is made.
+     *  Returns >0 if replacement occurred. */
+    gxdso_replacecolor,
 
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
