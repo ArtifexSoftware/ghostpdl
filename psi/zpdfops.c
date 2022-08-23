@@ -787,7 +787,7 @@ static int PDFarray_to_PSarray(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_array *PD
         goto error;
 
     for (i = 0;i < pdfi_array_size(PDFarray); i++) {
-        code = pdfi_array_get(pdfctx->ctx, PDFarray, i, &array_obj);
+        code = pdfi_array_fetch_recursing(pdfctx->ctx, PDFarray, i, &array_obj, true, true);
         if (code < 0)
             goto error;
         code = PDFobj_to_PSobj(i_ctx_p, pdfctx, array_obj, &PS_ref);
