@@ -925,7 +925,7 @@ pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name
         pdf_array *mcsi = NULL;
         pdf_dict *ocsi = NULL;
         pdf_string *ord1 = NULL, *ord2 = NULL;
-        int64_t sup1, sup2, i64;
+        int64_t i64;
 
         code = pdfi_dict_get(ctx, rec, "FileType", (pdf_obj **)&filetype);
         /* We only handle TTF files, just now */
@@ -977,21 +977,6 @@ pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name
         }
         pdfi_countdown(ord1);
         pdfi_countdown(ord2);
-        code = pdfi_dict_get_int(ctx, ocsi, "Supplement", &sup1);
-        if (code < 0) {
-            pdfi_countdown(ord1);
-            pdfi_countdown(ocsi);
-            pdfi_countdown(mcsi);
-            pdfi_countdown(rec);
-            return_error(gs_error_undefined);
-        }
-        code = pdfi_array_get_int(ctx, mcsi, 1, &sup2);
-        pdfi_countdown(ocsi);
-        pdfi_countdown(mcsi);
-        if (code < 0 || sup1 != sup2) {
-            pdfi_countdown(rec);
-            return_error(gs_error_undefined);
-        }
 
         code = pdfi_dict_get(ctx, rec, "Path", (pdf_obj **)&path);
         if (code < 0 || pdfi_type_of(path) != PDF_STRING || !pdfi_fmap_file_exists(ctx, (pdf_string *)path)) {
