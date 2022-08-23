@@ -61,7 +61,7 @@ static int pdfi_cidtype2_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 static uint pdfi_cidtype2_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
 {
     pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)pfont->client_data;
-    uint gid;
+    uint gid = 0;
 
     if (glyph < GS_MIN_CID_GLYPH) {
         gid = 0;
@@ -69,12 +69,9 @@ static uint pdfi_cidtype2_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
     else {
         if (glyph < GS_MIN_GLYPH_INDEX) {
             gid = glyph - GS_MIN_CID_GLYPH;
-            if (pdffont11->cidtogidmap != NULL && pdffont11->cidtogidmap->length > 0) {
+            if (pdffont11->cidtogidmap != NULL && pdffont11->cidtogidmap->length > (gid << 1) + 1) {
                 gid = pdffont11->cidtogidmap->data[gid << 1] << 8 | pdffont11->cidtogidmap->data[(gid << 1) + 1];
             }
-        }
-        else {
-            gid = (uint)(glyph - GS_MIN_GLYPH_INDEX);
         }
     }
 
