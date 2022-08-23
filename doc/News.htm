@@ -41,27 +41,18 @@ overview</a>.
 <p> Highlights in this release include:
 <ul>
 <li>
-<p><b>New PDF Interpreter:</b> This is an entirely new implementation written in C (rather than
-PostScript, as before). For a full discussion of this change and reasons for it see:
-<a href="https://ghostscript.com/pdfi.html">Changes Coming to the PDF Interpreter</a>.
-<p>In this (10.00.0) release, the new PDF interpreter is now <em><u>ENABLED</u></em> by default
-in Ghostscript, but the old PDF interpreter can be used as a fallback by specifying
-<code>-dNEWPDF=false</code>. We've provided this so users that encounter issues with the new
-interpreter can keep working while we iron out those issues, the option will not be available in
-the long term.
-<p>This also allows us to offer a new executable (<code>gpdf</code>, or <code>gpdfwin??.exe</code>
-on Windows) which is <i>purely</i> for PDF input. For this release, those new binaries are not included
-in the "install" make targets, nor in the Windows installers.
+<p>The big change in this release is that the old PDF interpreter (written in PostScript)
+is now fully deprecated. We will not be making any further changes to it. For this release,
+the <code>-dNEWPDF=false</code> option remains for &quot;emergency&quot; use, but the option
+to fall back to the old intepreter will also be removed in the next full release (10.01.0) in
+spring 2023.
+<p>So we once again encourage all users to test the new interpreter in their use cases, and
+report any problems.
 </li>
 <li>
-<p>Calling Ghostscript via the GS API is now thread safe. The one limitation is that the X11 devices for
-Unix-like systems (x11, x11alpha, x11cmyk, x11cmyk2, x11cmyk4, x11cmyk8, x11gray2, x11gray4 and x11mono)
-cannot be made thread safe, due to their interaction with the X11 server, those devices have been modified
-to only allow one instance in an executable.
-</li>
-<li>
-<p>The <code>PSD</code> output devices now write ICC profiles to their output files, for improved
-color fidelity.
+<p>The new PDF interpreter written in C has had several performance improvements. It was already
+quicker for the majority of cases than the PostScript implementation, but we found further improvements
+for common cases, and also several speed improvements in edge cases.
 </li>
 <li>
 <p>Our efforts in code hygiene and maintainability continue.
