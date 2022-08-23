@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2690,6 +2690,11 @@ main(int argc, char *argv[])
         Xlist_head = Xlist_scan;
     }
     printf("Total %%rom%% structure size is %d bytes.\n", totlen);
-
+    if (splits.outname != NULL)
+       free(splits.outname);
+    if (splits.outname_formatted != NULL)
+        free(splits.outname_formatted);
+    if (splits.sizes != NULL)
+        free(splits.sizes);
     return 0;
 }
