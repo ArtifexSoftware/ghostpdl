@@ -1103,11 +1103,12 @@ static int pdfi_resolve_indirect_array(pdf_context *ctx, pdf_obj *obj, bool recu
             code = 0;
         } else {
             if (code < 0) goto exit;
+            if (recurse)
+                code = pdfi_resolve_indirect_loop_detect(ctx, NULL, object, recurse);
+            if (code < 0) goto exit;
             /* don't store the object if it's a stream (leave as a ref) */
             if (pdfi_type_of(object) != PDF_STREAM)
                 code = pdfi_array_put(ctx, array, index, object);
-            if (recurse)
-                code = pdfi_resolve_indirect_loop_detect(ctx, NULL, object, recurse);
         }
         if (code < 0) goto exit;
 
