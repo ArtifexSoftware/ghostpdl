@@ -515,8 +515,14 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
         pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_MEDIABOX, "pdfi_page_info", NULL);
 
     if (code >= 0) {
+        pdf_obj *box_obj = NULL;
+
         for (i = 0;i < pdfi_array_size(a); i++) {
-            code = pdfi_array_get_number(ctx, a, i, &dummy);
+            code = pdfi_array_get_no_store_R(ctx, a, i, &box_obj);
+            if (code >= 0) {
+                code = pdfi_obj_to_real(ctx, box_obj, &dummy);
+                pdfi_countdown(box_obj);
+            }
             if (code < 0) {
                 pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_MEDIABOX, "pdfi_page_info", NULL);
                 goto done;
@@ -532,8 +538,14 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
 
     code = pdfi_dict_get_type(ctx, page_dict, "ArtBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
+        pdf_obj *box_obj = NULL;
+
         for (i = 0;i < pdfi_array_size(a); i++) {
-            code = pdfi_array_get_number(ctx, a, i, &dummy);
+            code = pdfi_array_get_no_store_R(ctx, a, i, &box_obj);
+            if (code >= 0) {
+                code = pdfi_obj_to_real(ctx, box_obj, &dummy);
+                pdfi_countdown(box_obj);
+            }
             if (code < 0)
                 break;
         }
@@ -548,8 +560,14 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
 
     code = pdfi_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
+        pdf_obj *box_obj = NULL;
+
         for (i = 0;i < pdfi_array_size(a); i++) {
-            code = pdfi_array_get_number(ctx, a, i, &dummy);
+            code = pdfi_array_get_no_store_R(ctx, a, i, &box_obj);
+            if (code >= 0) {
+                code = pdfi_obj_to_real(ctx, box_obj, &dummy);
+                pdfi_countdown(box_obj);
+            }
             if (code < 0)
                 break;
         }
@@ -564,8 +582,14 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
 
     code = pdfi_dict_get_type(ctx, page_dict, "TrimBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
+        pdf_obj *box_obj = NULL;
+
         for (i = 0;i < pdfi_array_size(a); i++) {
-            code = pdfi_array_get_number(ctx, a, i, &dummy);
+            code = pdfi_array_get_no_store_R(ctx, a, i, &box_obj);
+            if (code >= 0) {
+                code = pdfi_obj_to_real(ctx, box_obj, &dummy);
+                pdfi_countdown(box_obj);
+            }
             if (code < 0)
                 break;
         }
@@ -580,8 +604,14 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_dict **info, bool ex
 
     code = pdfi_dict_get_type(ctx, page_dict, "BleedBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code >= 0) {
+        pdf_obj *box_obj = NULL;
+
         for (i = 0;i < pdfi_array_size(a); i++) {
-            code = pdfi_array_get_number(ctx, a, i, &dummy);
+            code = pdfi_array_get_no_store_R(ctx, a, i, &box_obj);
+            if (code >= 0) {
+                code = pdfi_obj_to_real(ctx, box_obj, &dummy);
+                pdfi_countdown(box_obj);
+            }
             if (code < 0)
                 break;
         }
