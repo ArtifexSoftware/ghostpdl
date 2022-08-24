@@ -313,7 +313,20 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     ctx->page.UserUnit = userunit;
 
     for (i=0;i<4;i++) {
-        code = pdfi_array_get_number(ctx, a, i, &d[i]);
+        pdf_obj *box_obj = NULL;
+
+        code = pdfi_array_get_no_store_R(ctx, a, i, &box_obj);
+        if (code >= 0) {
+            code = pdfi_obj_to_real(ctx, box_obj, &d[i]);
+            pdfi_countdown(box_obj);
+        }
+
+        if (code < 0) {
+            pdfi_countdown(a);
+            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_MEDIABOX, "pdfi_get_media_size", NULL);
+            code = gs_erasepage(ctx->pgs);
+            return 0;
+        }
         d[i] *= userunit;
     }
     pdfi_countdown(a);
