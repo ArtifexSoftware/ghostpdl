@@ -998,6 +998,16 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                 *object = ctx->stack_top[-1];
                 pdfi_countup(*object);
                 pdfi_pop(ctx, 1);
+                if (pdfi_type_of(*object) == PDF_INDIRECT) {
+                    pdf_indirect_ref *iref = (pdf_indirect_ref *)*object;
+
+                    if (iref->ref_object_num == obj) {
+                        code = gs_note_error(gs_error_circular_reference);
+                        pdfi_countdown(*object);
+                        *object = NULL;
+                        goto error;
+                    }
+                }
                 if (cache) {
                     code = pdfi_add_to_cache(ctx, *object);
                     if (code < 0) {
