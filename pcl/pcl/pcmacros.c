@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -32,8 +32,8 @@ pcl_dump_current_macro(pcl_state_t * pcs, const char *msg)
 
     dmputs(pcs->memory, msg);
     dmputs(pcs->memory, " ");
-    for (i = 0; i < current_macro_id_size; i++)
-        dmprintf1(pcs->memory, "%02x", current_macro_id[i]);
+    for (i = 0; i < CURRENT_MACRO_ID_SIZE; i++)
+        dmprintf1(pcs->memory, "%02x", CURRENT_MACRO_ID[i]);
     dmputs(pcs->memory, "\n");
     return;
 }
@@ -133,8 +133,8 @@ pcl_macro_control(pcl_args_t * pargs, pcl_state_t * pcs)
             /* in the macro_definition, so we can finish things up. */
             int code;
 
-            code = pl_dict_put(&pcs->macros, current_macro_id,
-                               current_macro_id_size, pcs->macro_definition);
+            code = pl_dict_put(&pcs->macros, CURRENT_MACRO_ID,
+                               CURRENT_MACRO_ID_SIZE, pcs->macro_definition);
             pcs->defining_macro = false;
             pcs->macro_definition = 0;
 #ifdef DEBUG
@@ -183,7 +183,7 @@ pcl_macro_control(pcl_args_t * pargs, pcl_state_t * pcs)
                 void *value;
 
                 if (!pl_dict_find
-                    (&pcs->macros, current_macro_id, current_macro_id_size,
+                    (&pcs->macros, CURRENT_MACRO_ID, CURRENT_MACRO_ID_SIZE,
                      &value)
                     )
                     return 0;
@@ -196,7 +196,7 @@ pcl_macro_control(pcl_args_t * pargs, pcl_state_t * pcs)
                 void *value;
 
                 if (!pl_dict_find
-                    (&pcs->macros, current_macro_id, current_macro_id_size,
+                    (&pcs->macros, CURRENT_MACRO_ID, CURRENT_MACRO_ID_SIZE,
                      &value)
                     )
                     return 0;
@@ -231,14 +231,14 @@ pcl_macro_control(pcl_args_t * pargs, pcl_state_t * pcs)
             }
         case 8:
             {                   /* Delete <macro_id>. */
-                pl_dict_undef_purge_synonyms(&pcs->macros, current_macro_id,
-                                             current_macro_id_size);
+                pl_dict_undef_purge_synonyms(&pcs->macros, CURRENT_MACRO_ID,
+                                             CURRENT_MACRO_ID_SIZE);
                 return 0;
             }
         case 9:
             {                   /* Make <macro_id> temporary. */
                 if (pl_dict_find
-                    (&pcs->macros, current_macro_id, current_macro_id_size,
+                    (&pcs->macros, CURRENT_MACRO_ID, CURRENT_MACRO_ID_SIZE,
                      &value))
                     ((pcl_macro_t *) value)->storage = pcds_temporary;
                 return 0;
@@ -246,7 +246,7 @@ pcl_macro_control(pcl_args_t * pargs, pcl_state_t * pcs)
         case 10:
             {                   /* Make <macro_id> permanent. */
                 if (pl_dict_find
-                    (&pcs->macros, current_macro_id, current_macro_id_size,
+                    (&pcs->macros, CURRENT_MACRO_ID, CURRENT_MACRO_ID_SIZE,
                      &value))
                     ((pcl_macro_t *) value)->storage = pcds_permanent;
                 return 0;

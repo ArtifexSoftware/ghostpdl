@@ -119,11 +119,11 @@ pcl_make_resident_font_copy(pcl_state_t * pcs)
 
     /* first check for a duplicate key, if found remove it */
     if (pl_dict_lookup
-        (&pcs->built_in_fonts, current_font_id, current_font_id_size, &value,
+        (&pcs->built_in_fonts, CURRENT_FONT_ID, CURRENT_FONT_ID_SIZE, &value,
          false, (pl_dict_t **) 0))
         if (pl_dict_undef
-            (&pcs->built_in_fonts, current_font_id,
-             current_font_id_size) == false)
+            (&pcs->built_in_fonts, CURRENT_FONT_ID,
+             CURRENT_FONT_ID_SIZE) == false)
             /* shouldn't fail */
             return -1;
 
@@ -137,7 +137,7 @@ pcl_make_resident_font_copy(pcl_state_t * pcs)
     if (found == false)
         return -1;
     return pl_dict_put_synonym(&pcs->built_in_fonts, key.data,
-                        key.size, current_font_id, current_font_id_size);
+                        key.size, CURRENT_FONT_ID, CURRENT_FONT_ID_SIZE);
 }
 
 static int                      /* ESC * c <fc_enum> F */
@@ -178,7 +178,7 @@ pcl_font_control(pcl_args_t * pargs, pcl_state_t * pcs)
             break;
         case 2:
             /* Delete soft font <font_id>. */
-            code = pcl_delete_soft_font(pcs, current_font_id, current_font_id_size,
+            code = pcl_delete_soft_font(pcs, CURRENT_FONT_ID, CURRENT_FONT_ID_SIZE,
                                  NULL);
             /* decache the currently selected font in case we deleted it. */
             pcl_decache_font(pcs, -1, true);
@@ -187,7 +187,7 @@ pcl_font_control(pcl_args_t * pargs, pcl_state_t * pcs)
         case 3:
             /* Delete character <font_id, character_code>. */
             if (pl_dict_find_no_stack
-                (&pcs->soft_fonts, current_font_id, current_font_id_size,
+                (&pcs->soft_fonts, CURRENT_FONT_ID, CURRENT_FONT_ID_SIZE,
                  &value))
                 pl_font_remove_glyph((pl_font_t *) value,
                                      pcs->character_code);
@@ -197,7 +197,7 @@ pcl_font_control(pcl_args_t * pargs, pcl_state_t * pcs)
         case 4:
             /* Make soft font <font_id> temporary. */
             if (pl_dict_find_no_stack
-                (&pcs->soft_fonts, current_font_id, current_font_id_size,
+                (&pcs->soft_fonts, CURRENT_FONT_ID, CURRENT_FONT_ID_SIZE,
                  &value))
                 ((pl_font_t *) value)->storage = pcds_temporary;
 
@@ -205,7 +205,7 @@ pcl_font_control(pcl_args_t * pargs, pcl_state_t * pcs)
         case 5:
             /* Make soft font <font_id> permanent. */
             if (pl_dict_find_no_stack
-                (&pcs->soft_fonts, current_font_id, current_font_id_size,
+                (&pcs->soft_fonts, CURRENT_FONT_ID, CURRENT_FONT_ID_SIZE,
                  &value)) {
                 ((pl_font_t *) value)->storage = pcds_permanent;
                 ((pl_font_t *) value)->params.pjl_font_number =
@@ -238,14 +238,14 @@ pcl_font_control(pcl_args_t * pargs, pcl_state_t * pcs)
                     if (code < 0)
                         return code;
 
-                    code = pcl_delete_soft_font(pcs, current_font_id,
-                                         current_font_id_size, NULL);
+                    code = pcl_delete_soft_font(pcs, CURRENT_FONT_ID,
+                                         CURRENT_FONT_ID_SIZE, NULL);
                     if (code < 0)
                         return code;
                     plfont->storage = pcds_temporary;
                     plfont->data_are_permanent = false;
-                    code = pl_dict_put(&pcs->soft_fonts, current_font_id,
-                                current_font_id_size, plfont);
+                    code = pl_dict_put(&pcs->soft_fonts, CURRENT_FONT_ID,
+                                CURRENT_FONT_ID_SIZE, plfont);
                 }
             }
             break;
@@ -330,7 +330,7 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
         }
     }
     /* Delete any previous font with this ID. */
-    code = pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
+    code = pcl_delete_soft_font(pcs, CURRENT_FONT_ID, CURRENT_FONT_ID_SIZE, NULL);
     if (code < 0)
         return code;
     /* Create the generic font information. */
@@ -514,8 +514,8 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
         (pfh->TypefaceMSB << 8) + pfh->TypefaceLSB;
     plfont->params.pjl_font_number = pcs->pjl_dlfont_number++;
 
-    code = pl_dict_put(&pcs->soft_fonts, current_font_id,
-                current_font_id_size, plfont);
+    code = pl_dict_put(&pcs->soft_fonts, CURRENT_FONT_ID,
+                CURRENT_FONT_ID_SIZE, plfont);
     if (code < 0) {
         /* on error, pl_dict_put consumes plfont */
         return code;
@@ -563,8 +563,8 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
     }
 #endif
 
-    if (!pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id,
-                               current_font_id_size, &value))
+    if (!pl_dict_find_no_stack(&pcs->soft_fonts, CURRENT_FONT_ID,
+                               CURRENT_FONT_ID_SIZE, &value))
         return 0;               /* font not found */
 
     plfont = ((pl_font_t *) value);
@@ -865,17 +865,17 @@ pcl_find_resource(pcl_state_t * pcs,
        downloaded in the recursive interpreter invocation above, so we
        don't need to add (put) it in the dictionary. */
     if (resource_type == macro_resource) {
-        code = pl_dict_put(&pcs->macros, current_macro_id, current_macro_id_size, value);
+        code = pl_dict_put(&pcs->macros, CURRENT_MACRO_ID, CURRENT_MACRO_ID_SIZE, value);
         if (code == 0)
-            code = pl_dict_put_synonym(&pcs->macros, current_macro_id,
-                                       current_macro_id_size, sid, sid_size);
+            code = pl_dict_put_synonym(&pcs->macros, CURRENT_MACRO_ID,
+                                       CURRENT_MACRO_ID_SIZE, sid, sid_size);
         if (code < 0) {
             gs_free_object(pcs->memory, value, "resource");
             return_error(code);
         }
     } else {
-        code = pl_dict_put_synonym(&pcs->soft_fonts, current_font_id,
-                                   current_font_id_size, sid, sid_size);
+        code = pl_dict_put_synonym(&pcs->soft_fonts, CURRENT_FONT_ID,
+                                   CURRENT_FONT_ID_SIZE, sid, sid_size);
         /* font was constructed separately, don't need the
            original PCL commands from which the font was
            constructed. */
@@ -938,8 +938,8 @@ pcl_alphanumeric_id_data(pcl_args_t * pargs, pcl_state_t * pcs)
                 /* simple case the font is in the dictionary */
                 if (pl_dict_find_no_stack(&pcs->soft_fonts, alpha_data->string_id, string_id_size, &value)) {
                     return pl_dict_put_synonym(&pcs->soft_fonts, alpha_data->string_id,
-                                               string_id_size, current_font_id,
-                                               current_font_id_size);
+                                               string_id_size, CURRENT_FONT_ID,
+                                               CURRENT_FONT_ID_SIZE);
                 } else {
                     /* search the PJL file system for a font resource */
                     return pcl_find_resource(pcs, alpha_data->string_id,
@@ -1009,8 +1009,8 @@ pcl_alphanumeric_id_data(pcl_args_t * pargs, pcl_state_t * pcs)
                 /* simple case - the macro is in the dictionary */
                 if (pl_dict_find_no_stack(&pcs->macros, alpha_data->string_id, string_id_size, &value)) {
                     return pl_dict_put_synonym(&pcs->macros, alpha_data->string_id,
-                                               string_id_size, current_macro_id,
-                                               current_macro_id_size);
+                                               string_id_size, CURRENT_MACRO_ID,
+                                               CURRENT_MACRO_ID_SIZE);
                 } else {
                     /* search the PJL file system for a macro resource */
                     return pcl_find_resource(pcs, alpha_data->string_id,
@@ -1021,14 +1021,14 @@ pcl_alphanumeric_id_data(pcl_args_t * pargs, pcl_state_t * pcs)
         case 20:
             /* deletes the font association named by the current Font ID */
             if (pcs->font_id_type == string_id)
-                return pcl_delete_soft_font(pcs, current_font_id,
-                                     current_font_id_size, NULL);
+                return pcl_delete_soft_font(pcs, CURRENT_FONT_STRING_ID,
+                                         CURRENT_FONT_STRING_ID_SIZE, NULL);
             break;
         case 21:
             /* deletes the macro association named the the current macro id */
             if (pcs->macro_id_type == string_id)
-                pl_dict_undef(&pcs->macros, current_macro_id,
-                              current_macro_id_size);
+                pl_dict_undef(&pcs->macros, CURRENT_MACRO_ID,
+                              CURRENT_MACRO_ID_SIZE);
             break;
         case 100:
             /* media select */
