@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -134,6 +134,7 @@ void pdfi_device_set_flags(pdf_context *ctx)
     ctx->device_state.preserve_tr_mode = pdfi_device_check_param_bool(dev, "PreserveTrMode");
     ctx->device_state.preserve_smask = pdfi_device_check_param_bool(dev, "PreserveSMask");
     ctx->device_state.HighLevelDevice = pdfi_device_check_param_bool(dev, "HighLevelDevice");
+    ctx->device_state.WantsPageLabels = pdfi_device_check_param_bool(dev, "WantsPageLabels");
 
     /* See if it is a DeviceN (spot capable) */
     ctx->device_state.spot_capable = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);

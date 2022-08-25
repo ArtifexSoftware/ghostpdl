@@ -329,7 +329,6 @@ int pdfi_read_Info(pdf_context *ctx)
 
     (void)pdfi_loop_detector_cleartomark(ctx);
 
-    pdfi_device_set_flags(ctx);
     pdfi_pdfmark_write_docinfo(ctx, Info);
 
     /* We don't pdfi_countdown(Info) now, because we've transferred our
@@ -1249,10 +1248,12 @@ static int pdfi_doc_PageLabels(pdf_context *ctx)
             goto exit;
     }
 
-    /* This will send the PageLabels object as a 'pdfpagelabels' setdeviceparams */
-    code = pdfi_pdfmark_object(ctx, (pdf_obj *)PageLabels, "pdfpagelabels");
-    if (code < 0)
-        goto exit;
+    if (ctx->device_state.WantsPageLabels) {
+        /* This will send the PageLabels object as a 'pdfpagelabels' setdeviceparams */
+        code = pdfi_pdfmark_object(ctx, (pdf_obj *)PageLabels, "pdfpagelabels");
+        if (code < 0)
+            goto exit;
+    }
 
  exit:
     pdfi_countdown(PageLabels);

@@ -1124,11 +1124,6 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
         return code;
     }
 
-    /* Need to do this here so that ctx->writepdfmarks will be setup
-     * It is also called in pdfi_page_render()
-     * TODO: Should probably look into that..
-     */
-    pdfi_device_set_flags(ctx);
     /* Do any custom device configuration */
     pdfi_device_misc_config(ctx);
 
@@ -1246,6 +1241,8 @@ read_root:
 
     if (ctx->num_pages == 0)
         dmprintf(ctx->memory, "\n   **** Warning: PDF document has no pages.\n");
+
+    pdfi_device_set_flags(ctx);
 
     code = pdfi_doc_trailer(ctx);
     if (code < 0)

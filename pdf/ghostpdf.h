@@ -274,6 +274,8 @@ typedef struct device_state_s {
     bool writepdfmarks;
     /* Should annotations be preserved or marked for current output device? */
     bool annotations_preserved;
+    /* Should we pass on PageLabels (using a device param, not a pdfmark) */
+    bool WantsPageLabels;
 } device_state_t;
 
 /*

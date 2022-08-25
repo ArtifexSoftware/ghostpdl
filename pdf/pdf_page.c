@@ -870,8 +870,6 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         goto exit3;
     }
 
-    pdfi_device_set_flags(ctx);
-
     code = pdfi_check_page(ctx, page_dict, NULL, NULL, init_graphics);
     if (code < 0)
         goto exit3;
