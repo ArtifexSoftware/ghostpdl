@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -210,12 +210,15 @@ struct pcl_state_s
     alphanumeric_string_id_t alpha_font_id;
     id_type_t font_id_type;
 
-#define current_font_id                                                 \
-    ( ((pcs->font_id_type == string_id) ? (pcs->alpha_font_id.id)     \
+
+#define CURRENT_FONT_STRING_ID (pcs->alpha_font_id.id)
+#define CURRENT_FONT_ID                                                 \
+    ( ((pcs->font_id_type == string_id) ? CURRENT_FONT_STRING_ID        \
                                          : (id_key(pcs->font_id))) )
 
-#define current_font_id_size                                                  \
-    ( ((pcs->font_id_type == string_id) ? (pcs->alpha_font_id.size) : (2)) )
+#define CURRENT_FONT_STRING_ID_SIZE (pcs->alpha_font_id.size)
+#define CURRENT_FONT_ID_SIZE                                                  \
+    ( ((pcs->font_id_type == string_id) ? CURRENT_FONT_STRING_ID_SIZE : (2)) )
 
     /* Chapter 12 (pcmacros.c) */
     pcl_id_t macro_id;
@@ -232,12 +235,14 @@ struct pcl_state_s
     alphanumeric_string_id_t alpha_macro_id;
     id_type_t macro_id_type;
 
-#define current_macro_id                                                \
-    ( ((pcs->macro_id_type == string_id) ? (pcs->alpha_macro_id.id)   \
+#define CURRENT_MACRO_STRING_ID (pcs->alpha_macro_id.id)
+#define CURRENT_MACRO_ID                                                \
+    ( ((pcs->macro_id_type == string_id) ? CURRENT_MACRO_STRING_ID   \
                                           : (id_key(pcs->macro_id))) )
 
-#define current_macro_id_size                                                   \
-    ( ((pcs->macro_id_type == string_id) ? (pcs->alpha_macro_id.size) : (2)) )
+#define CURRENT_MACRO_STRING_ID_SIZE (pcs->alpha_macro_id.size)
+#define CURRENT_MACRO_ID_SIZE                                                   \
+    ( ((pcs->macro_id_type == string_id) ? CURRENT_MACRO_STRING_ID_SIZE : (2)) )
 
     /* Chapter 13 (pcprint.c) */
     gs_point pat_ref_pt;        /* active pattern reference point,
