@@ -295,14 +295,23 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     if (a == NULL) {
         code = pdfi_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
         if (code >= 0 && pdfi_array_size(a) >= 4) {
+            pdf_obj *box_obj = NULL;
+
             for (i=0;i<4;i++) {
-                code = pdfi_array_get_number(ctx, a, i, &d_crop[i]);
-                d_crop[i] *= userunit;
+                code = pdfi_array_get_no_store_R(ctx, a, i, &box_obj);
+                if (code >= 0) {
+                    code = pdfi_obj_to_real(ctx, box_obj, &d_crop[i]);
+                    pdfi_countdown(box_obj);
+                }
+                if (code < 0)
+                    break;
             }
             pdfi_countdown(a);
-            normalize_rectangle(d_crop);
-            memcpy(ctx->page.Crop, d_crop, 4 * sizeof(double));
-            do_crop = true;
+            if (code >= 0) {
+                normalize_rectangle(d_crop);
+                memcpy(ctx->page.Crop, d_crop, 4 * sizeof(double));
+                do_crop = true;
+            }
         }
         a = default_media;
     }
