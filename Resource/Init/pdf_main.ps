@@ -258,6 +258,9 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
 %     Uses currentdict as an argument to pdfclose, which closes /PDFfile. Also
 %     executes restore and various cleanup activities.
 %
+% pdfavailable     - pdfavailable <bool>
+%     Determines if there is a PDF interpreter available
+%
 % Also Used by gsview 5
 % =====================
 % pdfopen            <file> pdfopen <dict>
@@ -878,22 +881,27 @@ currentdict /PDFSwitches undef
 /newpdf_runpdf
 {
   runpdfbegin                       % <file> runpdfbegin -
-  PDFInfo /Collection known
+  PDFInfo type /dicttype eq
   {
-    PDFInfo /Collection get
-    pdfclose
-    dup length 1 sub 0 2 3 -1 roll
+    PDFInfo /Collection known
     {
-      1 index exch get (r) file runpdf
-    } for
-    pop
-  }
-  {
-    process_trailer_attrs             % - process_trailer_attrs -
-    runpdfpagerange                   % - runpdfpagerange <int> <int>
-    dopdfpages                        % <int> <int> dopdfpages -
-    runpdfend                         % - runpdfend -
-  } ifelse
+      PDFInfo /Collection get
+      pdfclose
+      dup length 1 sub 0 2 3 -1 roll
+      {
+        1 index exch get (r) file runpdf
+      } for
+      pop
+    }
+    {
+      process_trailer_attrs             % - process_trailer_attrs -
+      runpdfpagerange                   % - runpdfpagerange <int> <int>
+      dopdfpages                        % <int> <int> dopdfpages -
+      runpdfend                         % - runpdfend -
+    } ifelse
+  } {
+    pop pop
+  }ifelse
 } bind def
 
 /newpdf_runpdfbegin
@@ -939,6 +947,7 @@ currentdict /PDFSwitches undef
   {
     {.PDFInit} stopped
     {
+      (   **** Error: Failed to initialise PDF interpreter.\n) newpdf_pdfformaterror
       /PDFFile //null def
       /PDFInfo //null def
     }
@@ -1094,6 +1103,11 @@ currentdict /PDFSwitches undef
   }ifelse
 } bind def
 
+/pdfavailable
+{
+  .PDFAvailable NEWPDF not or
+} bind def
+
 % <int> <int> dopdfpages -
 % First Page and then LastPage
 % If PDFPageList array exists, the parameters are 1 pdfpagecount and are ignored.
@@ -1199,10 +1213,20 @@ currentdict /PDFSwitches undef
             % stack: tempname tempfile
             dup 0 setfileposition
             dup
-              runpdf
+              pdfavailable {
+                runpdf
+              }{
+                closefile
+                (%stderr) (w) file (   **** ERROR: No PDF interpreter available, unable to process PDF files as input.\n)writestring
+              } ifelse
             closefile deletefile
           } {
-              runpdf
+              pdfavailable {
+                runpdf
+              }{
+                closefile
+                (%stderr) (w) file (   **** ERROR: No PDF interpreter available, unable to process PDF files as input.\n)writestring
+              } ifelse
           } ifelse
         } {
           pop pop pop pop cvx .runps % (%!PS) found first

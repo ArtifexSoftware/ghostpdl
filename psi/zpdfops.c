@@ -1601,6 +1601,11 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     return_error(gs_error_undefined);
 }
 
+static int zPDFpageinfoExt(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
+
 static int zPDFmetadata(i_ctx_t *i_ctx_p)
 {
     return_error(gs_error_undefined);
@@ -1627,6 +1632,19 @@ static int zPDFparsePageList(i_ctx_t *i_ctx_p)
 }
 #endif
 
+static int zPDFAvailable(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+#if defined(BUILD_PDF) && BUILD_PDF == 1
+    make_bool(op, true);
+#else
+    make_bool(op, false);
+#endif
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zpdfops_op_defs[] =
@@ -1645,6 +1663,7 @@ const op_def zpdfops_op_defs[] =
     {"1.PDFDrawAnnots", zPDFdrawannots},
     {"1.PDFInit", zPDFInit},
     {"1.PDFparsePageList", zPDFparsePageList},
+    {"0.PDFAvailable", zPDFAvailable},
 #ifdef HAVE_LIBIDN
     {"1.saslprep", zsaslprep},
 #endif
