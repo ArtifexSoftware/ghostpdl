@@ -772,18 +772,25 @@ ztempfile(i_ctx_t *i_ctx_p)
     if (gp_file_name_is_absolute(pstr, strlen(pstr))) {
         int plen = strlen(pstr);
         const char *sep = gp_file_name_separator();
-#ifdef DEBUG
         int seplen = strlen(sep);
-        if (seplen != 1)
+
+        /* This should not be possible if gp_file_name_is_absolute is true I think
+         * But let's avoid the problem.
+         */
+        if (plen < seplen)
             return_error(gs_error_Fatal);
-#endif
+
+        plen -= seplen;
         /* strip off the file name prefix, leave just the directory name
          * so we can check if we are allowed to write to it
          */
         for ( ; plen >=0; plen--) {
-            if (pstr[plen] == sep[0])
+            if ( gs_file_name_check_separator(&pstr[plen], seplen, &pstr[plen]))
                 break;
         }
+        if (plen < 0)
+            return_error(gs_error_Fatal);
+
         memcpy(fname, pstr, plen);
         fname[plen] = '\0';
         if (check_file_permissions(i_ctx_p, fname, strlen(fname),
