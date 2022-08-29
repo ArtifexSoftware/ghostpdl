@@ -952,9 +952,10 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
 
                     code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &fnamestr, font, offsets, args[0].ival);
                     if (code >= 0) {
-                        memcpy(ptpriv->font_name.chars, fnamestr->data, fnamestr->length);
-                        memcpy(ptpriv->key_name.chars, fnamestr->data, fnamestr->length);
-                        ptpriv->font_name.size = ptpriv->key_name.size = fnamestr->length;
+                        int nlen = fnamestr->length > gs_font_name_max ? gs_font_name_max : fnamestr->length;
+                        memcpy(ptpriv->font_name.chars, fnamestr->data, nlen);
+                        memcpy(ptpriv->key_name.chars, fnamestr->data, nlen);
+                        ptpriv->font_name.size = ptpriv->key_name.size = nlen;
                         pdfi_countdown(fnamestr);
                     }
                     break;
