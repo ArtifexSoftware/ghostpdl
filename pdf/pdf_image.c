@@ -528,6 +528,10 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
         }
         info->BPC = 1;
     }
+    else if (info->BPC != 1 && info->BPC != 2 && info->BPC != 4 && info->BPC != 8 && info->BPC != 16) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto errorExit;
+    }
     /* TODO: spec says if ImageMask is specified, and BPC is specified, then BPC must be 1
        Should we flag an error if this is violated?
      */
