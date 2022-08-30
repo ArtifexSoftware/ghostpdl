@@ -1069,7 +1069,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         int i;
 
         if (pdfi_array_size(a) >= N * 2) {
-            for (i = 0; i < pdfi_array_size(a);i++) {
+            for (i = 0; i < N * 2;i++) {
                 code = pdfi_array_get_number(ctx, a, i, &dbl);
                 if (code < 0) {
                     known = false;
