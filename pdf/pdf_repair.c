@@ -423,9 +423,9 @@ int pdfi_repair_file(pdf_context *ctx)
                                     if (code == 0) {
                                         for (j=0;j < N; j++) {
                                             code = pdfi_read_bare_int(ctx, compressed_stream, &obj_num);
-                                            if (code == 0)
+                                            if (code <= 0)
                                                 break;
-                                            if (code > 0) {
+                                            else {
                                                 code = pdfi_read_bare_int(ctx, compressed_stream, &offset);
                                                 if (code > 0) {
                                                     if (obj_num < 1) {
