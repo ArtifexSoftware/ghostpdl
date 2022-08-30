@@ -68,6 +68,8 @@ font_proc_font_info(gs_truetype_font_info); /* Type check. */
 
 #define PUTU16(p, n, offs) {(p + offs)[0] = n >> 8  & 255; (p + offs)[1] = n & 255;}
 
+static byte const ver10[4] = {0x00, 0x01, 0x00, 0x00};
+static byte const ver20[4] = {0x00, 0x02, 0x00, 0x00};
 
 /* ---------------- Font level ---------------- */
 
@@ -207,7 +209,14 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
         if (!memcmp(tab, "cmap", 4))
             pfont->data.cmap = offset;
         else if (!memcmp(tab, "post", 4)) {
-            pfont->data.post_offset = offset;
+            byte ver[4];
+            READ_SFNTS(pfont, offset, 4, ver);
+            if (memcmp(ver, ver10, 4) == 0 ||  memcmp(ver, ver20, 4) == 0) {
+                pfont->data.post_offset = offset;
+            }
+            else {
+                pfont->data.post_offset = 0;
+            }
         }
         else if (!memcmp(tab, "glyf", 4)) {
             pfont->data.glyf = offset;
@@ -761,8 +770,6 @@ gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gnam
     if (pfont->FontType == ft_TrueType) {
         if (pfont->data.post_offset != 0) {
             byte ver[4];
-            byte const ver10[4] = {0x00, 0x01, 0x00, 0x00};
-            byte const ver20[4] = {0x00, 0x02, 0x00, 0x00};
 
             READ_SFNTS(pfont, pfont->data.post_offset, 4, ver);
             if (!memcmp(ver, ver10, 4)){
@@ -807,6 +814,9 @@ gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gnam
                        }
                     }
                 }
+            }
+            else {
+                code2 = gs_error_invalidfont;
             }
         }
     }
