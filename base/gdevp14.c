@@ -10783,9 +10783,13 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
             if ((code = info->procs->plane_data(info, &planes, 1, &rows_used)) < 0)
                 goto put_accum_error;
         }
-        code = info->procs->end_image(info, true);
 
 put_accum_error:
+        if (code < 0)
+            (void)info->procs->end_image(info, true);
+        else
+            code = info->procs->end_image(info, true);
+
         gs_free_object(pdev->memory, linebuf, "pdf14_put_image");
         /* This will also decrement the device profile */
         rc_decrement_only_cs(pcs, "pdf14_put_image");

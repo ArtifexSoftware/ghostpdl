@@ -1930,6 +1930,7 @@ xps_begin_typed_image(gx_device               *dev,
     pie->buffer = NULL;
     pie->devc_buffer = NULL;
     pie->pgs = NULL;
+    pie->tif = NULL;
 
     /* Set the brush types to image */
     xps_setstrokebrush(xdev, xps_imagebrush);
@@ -2297,6 +2298,7 @@ xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     code = TIFFWriteDirectory(pie->tif);
     tiff_client_release((gx_device_xps*)(pie->dev), pie->tif);
     TIFFCleanup(pie->tif);
+    pie->tif = NULL;
 
     /* Stuff the image into the zip archive and close the file */
     code = xps_add_tiff_image(pie);
@@ -2597,5 +2599,10 @@ xps_image_enum_finalize(const gs_memory_t *cmem, void *vptr)
     /* ICC clean up */
     if (xpie->icc_link != NULL)
         gsicc_release_link(xpie->icc_link);
+    if (xpie->tif != NULL) {
+        tiff_client_release((gx_device_xps*)(xpie->dev), xpie->tif);
+        TIFFCleanup(xpie->tif);
+        xpie->tif = NULL;
+    }
     xdev->xps_pie = NULL;
 }
