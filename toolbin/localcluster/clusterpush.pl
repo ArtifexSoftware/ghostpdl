@@ -30,6 +30,7 @@ my %products=('abort' =>1,
               'extract'=>1,
               'extractmu'=>1,
               'muwasm'=>1,
+              'mucsharp'=>1,
               'extractgs'=>1);
 
 my $rsync_L = "";
