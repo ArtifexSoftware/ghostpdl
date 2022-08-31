@@ -807,31 +807,36 @@ currentdict /PDFSwitches undef
 
 /newpdf_pagecount
 {
-  PDFFile //null eq not
+  currentdict /PDFInfo known
   {
-    PDFSTOPONERROR
+    PDFInfo
+  }
+  {
+    PDFFile //null eq not
     {
-      PDFFile .PDFInfo //true
-    }
-    {
-      PDFFile {.PDFInfo} stopped not
-    } ifelse
-
-    {
-      dup /NumPages known
+      PDFSTOPONERROR
       {
-        /NumPages get
+        PDFFile .PDFInfo //false
       }
       {
-        pop 0
+        PDFFile {.PDFInfo} stopped
       } ifelse
     }
     {
-      pop 0
-    } ifelse
+      //true
+    }ifelse
+
+    {
+      <</NumPages 0>>
+    } if
+  } ifelse
+
+  dup /NumPages known
+  {
+    /NumPages get
   }
   {
-    0
+    pop 0
   } ifelse
 }bind def
 
@@ -958,6 +963,7 @@ currentdict /PDFSwitches undef
       pop
     }ifelse
   }ifelse
+  (Defined PDFInfo) == flush
 } bind def
 
 /newpdf_pdfgetpage
@@ -1073,6 +1079,7 @@ currentdict /PDFSwitches undef
         <</NumPages 0>>
       }
       {
+(2) == flush
         PDFFile {.PDFInfo} stopped
         {
           pop
