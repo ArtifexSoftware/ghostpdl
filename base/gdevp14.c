@@ -10668,7 +10668,7 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
         gx_device *target = ((pdf14_device *)(tdev->save_p14dev))->target;
         gs_image1_t image;
         gs_color_space *pcs;
-        gx_image_enum_common_t *info;
+        gx_image_enum_common_t *info = NULL;
         gx_image_plane_t planes;
         gsicc_rendering_param_t render_cond;
         cmm_dev_profile_t *dev_profile;
@@ -10785,10 +10785,12 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
         }
 
 put_accum_error:
-        if (code < 0)
-            (void)info->procs->end_image(info, true);
-        else
-            code = info->procs->end_image(info, true);
+        if (info != NULL) {
+            if (code < 0)
+                (void)info->procs->end_image(info, true);
+            else
+                code = info->procs->end_image(info, true);
+        }
 
         gs_free_object(pdev->memory, linebuf, "pdf14_put_image");
         /* This will also decrement the device profile */
