@@ -963,7 +963,6 @@ currentdict /PDFSwitches undef
       pop
     }ifelse
   }ifelse
-  (Defined PDFInfo) == flush
 } bind def
 
 /newpdf_pdfgetpage
@@ -1079,7 +1078,6 @@ currentdict /PDFSwitches undef
         <</NumPages 0>>
       }
       {
-(2) == flush
         PDFFile {.PDFInfo} stopped
         {
           pop
