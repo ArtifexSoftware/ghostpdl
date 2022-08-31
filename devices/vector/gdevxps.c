@@ -2588,6 +2588,12 @@ xps_image_enum_finalize(const gs_memory_t *cmem, void *vptr)
     xps_image_enum_t *xpie = (xps_image_enum_t *)vptr;
     gx_device_xps *xdev = (gx_device_xps *)xpie->dev;
 
+    if (xpie->tif != NULL) {
+        tiff_client_release((gx_device_xps*)(xpie->dev), xpie->tif);
+        TIFFCleanup(xpie->tif);
+        xpie->tif = NULL;
+    }
+
     xpie->dev = NULL;
     if (xpie->pcs != NULL)
         rc_decrement(xpie->pcs, "xps_image_end_image (pcs)");
@@ -2599,10 +2605,5 @@ xps_image_enum_finalize(const gs_memory_t *cmem, void *vptr)
     /* ICC clean up */
     if (xpie->icc_link != NULL)
         gsicc_release_link(xpie->icc_link);
-    if (xpie->tif != NULL) {
-        tiff_client_release((gx_device_xps*)(xpie->dev), xpie->tif);
-        TIFFCleanup(xpie->tif);
-        xpie->tif = NULL;
-    }
     xdev->xps_pie = NULL;
 }
