@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -845,7 +845,6 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
         length = u32(tab + 12);
         /* Copy the table data now (a rudiment of old code). */
         memcpy(&tables[numTables * 16], tab, 16);
-
         switch (u32(tab)) {
         case W('h','e','a','d'):
             if (length < 54)
@@ -900,13 +899,16 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
             /* falls through */
         case W('c','v','t',' '):
         case W('f','p','g','m'):
-        case W('g','a','s','p'):
-        case W('k','e','r','n'):
         case W('p','r','e','p'):
             break;		/* always copy these if present */
+        case W('D','S','I','G'):
         case W('E','B','D','T'):
         case W('E','B','L','C'):
         case W('E','B','S','C'):
+        case W('G','D','E','F'):
+        case W('G','P','O','S'):
+        case W('g','a','s','p'):
+        case W('k','e','r','n'):
             continue;
         default:
             if (writing_cid)
