@@ -1978,6 +1978,14 @@ pixels, e.g.,</p>
 gs -dNOPAUSE -dBATCH -sDEVICE=bbox -r100 -g500000x500000
 </code></blockquote>
 
+<p>
+The box returned by the bbox device is just sufficient to contain the pixels which would be rendered by
+Ghostscript at the selected resolution. The language rendering rules can mean this differs by up to two pixels from
+the 'theoretical' area covered, and the precise area covered by curves and line joins is also, to some
+extent, related to the resolution. Finally the actual pixel position needs to be converted back to
+PostScript points, and that can be affected by mathematical precision, which can cause rounding errors.
+As a result the bounding box returned may differ very slightly from that which was expected.
+</p>
 <h3><a name="Ink_coverage_output"></a>Ink coverage output</h3>
 
 <p>
