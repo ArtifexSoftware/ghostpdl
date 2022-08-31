@@ -784,7 +784,7 @@ static int pdfi_load_font_file(pdf_context *ctx, int fftype, pdf_name *Subtype, 
                 }
                 else {
                     pdffont->filename = NULL;
-                    code = pdfi_object_alloc(ctx, PDF_STRING,strlen(fontfname) , (pdf_obj **)&pdffont->filename);
+                    code = pdfi_object_alloc(ctx, PDF_STRING, strlen(fontfname) , (pdf_obj **)&pdffont->filename);
                     if (code >= 0) {
                         pdfi_countup(pdffont->filename);
                         memcpy(pdffont->filename->data, fontfname, strlen(fontfname));
@@ -797,7 +797,24 @@ static int pdfi_load_font_file(pdf_context *ctx, int fftype, pdf_name *Subtype, 
                             pdfi_countup(ctx->pdf_substitute_fonts);
                     }
                     if (ctx->pdf_substitute_fonts != NULL) {
-                        code = pdfi_dict_put_obj(ctx, ctx->pdf_substitute_fonts, mapname, (pdf_obj *)pdffont, true);
+                        if (pdfi_type_of(mapname) == PDF_STRING) {
+                            pdf_name *n = NULL;
+                            pdf_string *mn = (pdf_string *)mapname;
+
+                            code = pdfi_name_alloc(ctx, mn->data, mn->length, (pdf_obj **)&n);
+                            if (code >= 0) {
+                                pdfi_countdown(mapname);
+                                mapname = (pdf_obj *)n;
+                                pdfi_countup(mapname);
+                                code = 0;
+                            }
+                        }
+                        else
+                            code = 0;
+
+                        if (code == 0)
+                            (void)pdfi_dict_put_obj(ctx, ctx->pdf_substitute_fonts, mapname, (pdf_obj *)pdffont, true);
+                        code = 0;
                     }
                 }
             }
