@@ -2350,7 +2350,9 @@ static int nInstrCount=0;
 
     L = (Int)CUR.code[CUR.IP + 1];
 
-    if ( BOUNDS( L, CUR.stackSize+1-CUR.top ) )
+    /* GET_ShortIns() reads two values from the execution stream */
+    if ( BOUNDS( L, CUR.stackSize+1-CUR.top )
+      || BOUNDS( L * 2, CUR.codeSize+1-CUR.IP))
     {
       CUR.error = TT_Err_Stack_Overflow;
       return;
