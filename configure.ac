@@ -2483,6 +2483,14 @@ PDF_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 PDFROMFS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 
 if test x"$with_pdf" != x"no" ; then
+
+  if test x"$JBIG2_DECODER" = x""; then
+      AC_MSG_ERROR([No JBIG2 decoder available, required for PDF support])
+  fi
+  if test x"$JPX_DECODER" = x""; then
+      AC_MSG_ERROR([No JPX/JPEG2000 decoder available, required for PDF support])
+  fi
+
   if test -f $srcdir/pdf/pdf.mak; then
     AC_ARG_WITH([pdf], AS_HELP_STRING([--with-pdf=NAME],
         [name of the Ghostpdf executible (if the source is available, ignored otherwise) [[gpdf]]]),
