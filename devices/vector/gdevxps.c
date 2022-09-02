@@ -1790,7 +1790,7 @@ static TIFF* tiff_from_name(gx_device_xps *dev, const char *name, int big_endian
 static int tiff_set_values(xps_image_enum_t *pie, TIFF *tif,
                             cmm_profile_t *profile, bool force8bit);
 static void xps_tiff_set_handlers(void);
-static void tiff_client_release(gx_device_xps* dev, TIFF* t);
+static void xps_tiff_cleanup(xps_image_enum_t *xpie);
 
 /* Check if we have the ICC profile in the package */
 static xps_icc_data_t*
@@ -2296,9 +2296,7 @@ xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     /* N.B. Write the final strip, if any. */
 
     code = TIFFWriteDirectory(pie->tif);
-    tiff_client_release((gx_device_xps*)(pie->dev), pie->tif);
-    TIFFCleanup(pie->tif);
-    pie->tif = NULL;
+    xps_tiff_cleanup(pie);
 
     /* Stuff the image into the zip archive and close the file */
     code = xps_add_tiff_image(pie);
@@ -2575,11 +2573,14 @@ tiff_from_name(gx_device_xps *dev, const char *name, int big_endian, bool usebig
     return t;
 }
 
-static void
-tiff_client_release(gx_device_xps *dev, TIFF *t)
+static void xps_tiff_cleanup(xps_image_enum_t *xpie)
 {
-    gs_free_object(dev->memory->non_gc_memory, TIFFClientdata(t),
-        "tiff_client_release");
+    if (xpie->tif != NULL) {
+        void *t = TIFFClientdata(xpie->tif);
+        TIFFCleanup(xpie->tif);
+        xpie->tif = NULL;
+        gs_free_object(xpie->memory->non_gc_memory, t, "xps_image_enum_finalize");
+    }
 }
 
 static void
@@ -2588,11 +2589,7 @@ xps_image_enum_finalize(const gs_memory_t *cmem, void *vptr)
     xps_image_enum_t *xpie = (xps_image_enum_t *)vptr;
     gx_device_xps *xdev = (gx_device_xps *)xpie->dev;
 
-    if (xpie->tif != NULL) {
-        tiff_client_release((gx_device_xps*)(xpie->dev), xpie->tif);
-        TIFFCleanup(xpie->tif);
-        xpie->tif = NULL;
-    }
+    xps_tiff_cleanup(xpie);
 
     xpie->dev = NULL;
     if (xpie->pcs != NULL)
