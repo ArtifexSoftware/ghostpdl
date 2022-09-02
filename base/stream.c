@@ -110,6 +110,8 @@ s_init(stream *s, gs_memory_t * mem)
     s->prev = s->next = 0;	/* clean for GC */
     s->file_name.data = 0;	/* ibid. */
     s->file_name.size = 0;
+    s->end_status = 0;
+    s->modes = 0;
     s->close_strm = false;	/* default */
     s->close_at_eod = true;	/* default */
     s->cbuf_string_memory = NULL;
