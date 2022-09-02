@@ -3654,9 +3654,19 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
     /* TODO: See top part of pdf_draw.ps/drawwidget
      * check for /FT and /T and stuff
      */
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto exit;
+
     currdict = annot;
     pdfi_countup(currdict);
     while (true) {
+        if (currdict->object_num != 0) {
+            code = pdfi_loop_detector_add_object(ctx, currdict->object_num);
+            if (code < 0)
+                break;
+        }
+
         code = pdfi_dict_knownget(ctx, currdict, "T", &T);
         if (code < 0) goto exit;
         if (code > 0) {
@@ -3682,8 +3692,10 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
         if (code >= 0 && known == true)
         {
             code = pdfi_dict_get_no_store_R(ctx, currdict, "Parent", (pdf_obj **)&Parent);
-            if (code < 0)
+            if (code < 0) {
+                (void)pdfi_loop_detector_cleartomark(ctx);
                 goto exit;
+            }
             if (pdfi_type_of(Parent) != PDF_DICT) {
                 if (pdfi_type_of(Parent) == PDF_INDIRECT) {
                     pdf_indirect_ref *o = (pdf_indirect_ref *)Parent;
@@ -3702,6 +3714,8 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_obj *No
         } else
             break;
     }
+
+    (void)pdfi_loop_detector_cleartomark(ctx);
 
     code = 0;
     if (!found_T || !found_FT) {
