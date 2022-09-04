@@ -651,7 +651,7 @@ retry:
                 e->m.ty = Scale_Y( &exec->metrics, e->arg2 ) << 10;
             } else {
                 if (e->arg1 < 0 || e->arg1 > pts->n_points
-                 || (gOutline->pointCount + e->arg2) < 0 || (gOutline->pointCount + e->arg2) > pts->n_points) {
+                 || ((int)gOutline->pointCount + e->arg2) < 0 || (gOutline->pointCount + e->arg2) > pts->n_points) {
                     error = fBadFontData;
                     goto ex;
                 }
