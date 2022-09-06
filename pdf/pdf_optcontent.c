@@ -367,7 +367,7 @@ static int pdfi_oc_levels_set(pdf_context *ctx, pdfi_oc_levels_t *levels, uint64
     byte *new = NULL;
     uint64_t newmax;
 
-    if (index > levels->max_flags) {
+    if (index > levels->max_flags - 1) {
         /* Expand the flags buffer */
         newmax = levels->max_flags + NUM_CONTENT_LEVELS;
         if (index > newmax)
