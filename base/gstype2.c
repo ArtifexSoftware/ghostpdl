@@ -49,6 +49,7 @@
   BEGIN\
     if ( pcis->init_done < 0 )\
       { ipsp->ip = cip, ipsp->dstate = state;\
+        ipsp->ip_end = endp;\
         return type2_sbw(pcis, csp, cstack, ipsp, explicit_width);\
       }\
   END
@@ -130,7 +131,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
     cs_ptr csp;
 #define clear CLEAR_CSTACK(cstack, csp)
     ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
-    register const byte *cip;
+    register const byte *cip, *endp = NULL;
     register crypt_state state;
     register int c;
     cs_ptr ap;
@@ -176,9 +177,15 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
     cip = pgd->bits.data;
     if (cip == 0)
         return (gs_note_error(gs_error_invalidfont));
+    endp = cip + pgd->bits.size;
     goto call;
     for (;;) {
-        uint c0 = *cip++;
+        uint c0;
+
+        if (endp != NULL && cip > endp)
+            return_error(gs_error_invalidfont);
+
+        c0 = *cip++;
 
         charstring_next(c0, state, c, encrypted);
         if (c >= c_num1) {
@@ -242,6 +249,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
   cont:         if (ipsp < pcis->ipstack || ipsp->ip == 0)
                     return (gs_note_error(gs_error_invalidfont));
                 cip = ipsp->ip;
+                endp = ipsp->ip_end;
                 state = ipsp->dstate;
                 continue;
             case c_undoc15:
@@ -466,6 +474,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     }
                     if_debug0m('1', pfont->memory, "\n");
                     ipsp->ip = cip;
+                    ipsp->ip_end = endp;
                     ipsp->dstate = state;
                     if (c == c2_cntrmask) {
                         /****** NYI ******/
@@ -575,8 +584,10 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     }
                     --csp;
                     ipsp->ip = cip, ipsp->dstate = state;
+                    ipsp->ip_end = endp;
                     ++ipsp;
                     cip = ipsp->cs_data.bits.data;
+                    endp = cip + ipsp->cs_data.bits.size;
   call:
                     state = crypt_charstring_seed;
                     if (encrypted) {
