@@ -22,6 +22,12 @@
 
 #define BUF_SIZE 2048
 
+/* Limit nesting of arrays and dictionaries. We don't want to allow this
+ * to be unbounded, because on exit we could end up exceeding the C execution stack
+ * if we get too deeply nested.
+ */
+#define MAX_NESTING_DEPTH 100
+
 #include "pdf_types.h"
 
 #if defined(MEMENTO)
@@ -434,6 +440,12 @@ typedef struct pdf_context_s
     uint32_t loop_detection_size;
     uint32_t loop_detection_entries;
     uint64_t *loop_detection;
+
+    /* A counter for nesting of arrays and dictionaries. We don't want to allow this
+     * to be unbounded, because on exit we could end up exceeding the C execution stack
+     * if we get too deeply nested.
+     */
+    uint32_t object_nesting;
 
     /* Used to set the 'parent' stream of a stream that gets created by dereferencing
      * We should not need this but badly fromed PDF files can use Resources defined in
