@@ -1971,7 +1971,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
 
                         if (g > maxcid) maxcid = g;
                         gs_snprintf(gkey, sizeof(gkey), "%d", g);
-                        code = pdfi_dict_put(ctx, font->CharStrings, gkey, (pdf_obj *) charstr);
+                        code = pdfi_dict_put_unchecked(ctx, font->CharStrings, gkey, (pdf_obj *) charstr);
                     }
                     if (maxcid > ptpriv->pdfcffpriv.cidcount - 1)
                         ptpriv->pdfcffpriv.cidcount = maxcid + 1;
