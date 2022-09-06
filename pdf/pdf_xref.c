@@ -308,7 +308,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
             return code;
         }
     } else {
-        int64_t start, end;
+        int64_t start, size;
 
         if (code < 0) {
             pdfi_close_file(ctx, XRefStrm);
@@ -335,7 +335,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
                 return code;
             }
 
-            code = pdfi_array_get_int(ctx, a, (uint64_t)i+1, &end);
+            code = pdfi_array_get_int(ctx, a, (uint64_t)i+1, &size);
             if (code < 0) {
                 pdfi_countdown(a);
                 pdfi_close_file(ctx, XRefStrm);
@@ -344,8 +344,11 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
                 return code;
             }
 
-            if (start + end >= ctx->xref_table->xref_size) {
-                code = resize_xref(ctx, start + end);
+            if (size < 1)
+                continue;
+
+            if (start + size >= ctx->xref_table->xref_size) {
+                code = resize_xref(ctx, start + size);
                 if (code < 0) {
                     pdfi_countdown(a);
                     pdfi_close_file(ctx, XRefStrm);
@@ -355,7 +358,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
                 }
             }
 
-            code = read_xref_stream_entries(ctx, XRefStrm, start, start + end - 1, (uint64_t *)W);
+            code = read_xref_stream_entries(ctx, XRefStrm, start, start + size - 1, (uint64_t *)W);
             if (code < 0) {
                 pdfi_countdown(a);
                 pdfi_close_file(ctx, XRefStrm);
