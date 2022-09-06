@@ -58,5 +58,6 @@ PARAM(E_BAD_GROUP_DICT,                "Error retrieving Group dictionary for a 
 PARAM(E_BAD_HALFTONE,                  "Error setting a halftone"),
 PARAM(E_PDF_BADENCRYPT,                "Encrypt diciotnary not a dictionary"),
 PARAM(E_PDF_MISSINGTYPE,               "A dictionary is missing a required /Type key."),
+PARAM(E_PDF_NESTEDTOODEEP,             "Dictionaries/arrays nested too deeply"),
 
 #undef PARAM
