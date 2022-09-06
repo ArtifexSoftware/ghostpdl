@@ -227,12 +227,13 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
          * losing content. */
         inst.size.x = (int)floor(bbw+0.5);
         inst.size.y = (int)floor(bbh+0.5);
-        /* Ensure we never round down to 0. Or below zero (bug 705768). */
-        if (bbw > 0 && inst.size.x <= 0)
-            inst.size.x = 1;
-        if (bbh > 0 && inst.size.y <= 0)
-            inst.size.y = 1;
     }
+
+    /* Ensure we never round down to 0. Or below zero (bug 705768). */
+    if (inst.size.x <= 0)
+        inst.size.x = bbw > 0 ? 1 : 0;
+    if (inst.size.y <= 0)
+        inst.size.y = bbh > 0 ? 1 : 0;
 
     /* After compute_inst_matrix above, we are guaranteed that
      * inst.step_matrix.xx > 0 and inst.step_matrix.yy > 0.
