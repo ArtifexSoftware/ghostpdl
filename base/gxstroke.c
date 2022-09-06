@@ -2730,7 +2730,9 @@ add_pie_join(gx_path * ppath, pl_ptr plp, pl_ptr nplp, bool reflected,
     r = (double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
 
     if (l == r) {
-        if (cap)
+        /* Colinear. Suppress drawing a cap unless the path reverses direction. */
+        if (cap &&
+            ((double)(plp->width.x) * (nplp->width.x) + (double)(nplp->width.y) * (plp->width.y)) < 0)
             return add_pie_cap(ppath, &plp->e);
         else
             return gx_path_add_line(ppath, plp->e.ce.x, plp->e.ce.y);
