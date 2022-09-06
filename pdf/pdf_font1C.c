@@ -277,8 +277,13 @@ pdfi_cff_enumerate_glyph(gs_font *pfont, int *pindex,
     else if (pdffont->pdfi_font_type != e_pdf_cidfont_type0 && pdffont->Encoding != NULL) {
         unsigned int nindex;
         code = (*ctx->get_glyph_index)(pfont, key->data, key->length, &nindex);
-        if (code < 0)
-            *pglyph = GS_NO_GLYPH;
+        if (code < 0) {
+            code = (*ctx->get_glyph_index)(pfont, (byte *)".notdef", 7, &nindex);
+            if (code < 0)
+                *pglyph = GS_NO_GLYPH;
+            else
+                *pglyph = (gs_glyph)nindex;
+        }
         else
             *pglyph = (gs_glyph)nindex;
     }
