@@ -371,6 +371,7 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
     3 1 roll eq
     or                   % square media or square page, no point in rotating
     {
+      pop pop pop pop
       //false
     }
     {
