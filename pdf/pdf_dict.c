@@ -893,6 +893,60 @@ int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *valu
     return 0;
 }
 
+/*
+ * Be very cautious using this routine; it does not check to see if a key already exists
+ * in a dictionary!. This is initially at least intended for use by the font code, to build
+ * a CharStrings dictionary. We do that by adding each glyph individually with a name
+ * created from a loop counter, so we know there cannot be any duplicates, and the time
+ * taken to check that each of 64K names was unique was quite significant.
+ * See bug #705534, the old PDF interpreter (nullpage, 72 dpi) runs this file in ~20 seconds
+ * pdfi runs it in around 40 seconds. With this change it runs in around 3 seconds. THis is,
+ * of course, an extreme example.
+ */
+int pdfi_dict_put_unchecked(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value)
+{
+    int i, code = 0;
+    pdf_dict_entry *new_list;
+    pdf_obj *key = NULL;
+
+    code = pdfi_name_alloc(ctx, (byte *)Key, strlen(Key), &key);
+    if (code < 0)
+        return code;
+    pdfi_countup(key);
+
+    /* Nope, its a new Key */
+    if (d->size > d->entries) {
+        /* We have a hole, find and use it */
+        for (i=0;i< d->size;i++) {
+            if (d->list[i].key == NULL) {
+                d->list[i].key = key;
+                d->list[i].value = value;
+                pdfi_countup(value);
+                d->entries++;
+                return 0;
+            }
+        }
+    }
+
+    new_list = (pdf_dict_entry *)gs_alloc_bytes(ctx->memory, (d->size + 1) * sizeof(pdf_dict_entry), "pdfi_dict_put reallocate dictionary key/values");
+    if (new_list == NULL) {
+        return_error(gs_error_VMerror);
+    }
+    memcpy(new_list, d->list, d->size * sizeof(pdf_dict_entry));
+
+    gs_free_object(ctx->memory, d->list, "pdfi_dict_put key/value reallocation");
+
+    d->list = new_list;
+
+    d->list[d->size].key = key;
+    d->list[d->size].value = value;
+    d->size++;
+    d->entries++;
+    pdfi_countup(value);
+
+    return 0;
+}
+
 /* Put into dictionary with key as string */
 int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value)
 {
