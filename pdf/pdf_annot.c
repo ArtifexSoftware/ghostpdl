@@ -649,11 +649,55 @@ static int pdfi_form_get_inheritable(pdf_context *ctx, pdf_dict *field, const ch
 {
     int code = 0;
     pdf_dict *Parent = NULL;
+    bool known = false;
 
     /* Check this field */
     code = pdfi_dict_knownget_type(ctx, field, Key, type, o);
-    if (code != 0) goto exit;
+    if (code != 0) goto exit1;
 
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto exit;
+
+    /* Check for Parent. Do not store the dereferenced Parent back to the dictionary
+     * as this can cause circular references.
+     */
+    code = pdfi_dict_known(ctx, field, "Parent", &known);
+    if (code >= 0 && known == true)
+    {
+        code = pdfi_dict_get_no_store_R(ctx, field, "Parent", (pdf_obj **)&Parent);
+        if (code < 0)
+            goto exit;
+
+        if (pdfi_type_of(Parent) != PDF_DICT) {
+            if (pdfi_type_of(Parent) == PDF_INDIRECT) {
+                pdf_indirect_ref *o = (pdf_indirect_ref *)Parent;
+
+                code = pdfi_dereference(ctx, o->ref_object_num, o->ref_generation_num, (pdf_obj **)&Parent);
+                pdfi_countdown(o);
+                goto exit;
+            } else {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+        }
+        if (Parent->object_num != 0) {
+            code = pdfi_loop_detector_add_object(ctx, Parent->object_num);
+            if (code < 0)
+                goto exit;
+        }
+        code = pdfi_form_get_inheritable(ctx, Parent, Key, type, o);
+        if (code <= 0) {
+            if (ctx->AcroForm)
+                code = pdfi_dict_knownget_type(ctx, ctx->AcroForm, Key, type, o);
+        }
+    } else {
+        /* No Parent, so check AcroForm, if any */
+        if (ctx->AcroForm)
+            code = pdfi_dict_knownget_type(ctx, ctx->AcroForm, Key, type, o);
+    }
+
+#if 0
     /* If not found, recursively check Parent, if any */
     code = pdfi_dict_knownget_type(ctx, field, "Parent", PDF_DICT, (pdf_obj **)&Parent);
     if (code < 0) goto exit;
@@ -665,8 +709,12 @@ static int pdfi_form_get_inheritable(pdf_context *ctx, pdf_dict *field, const ch
         if (ctx->AcroForm)
             code = pdfi_dict_knownget_type(ctx, ctx->AcroForm, Key, type, o);
     }
+#endif
 
- exit:
+exit:
+    (void)pdfi_loop_detector_cleartomark(ctx);
+
+exit1:
     pdfi_countdown(Parent);
     return code;
 }
