@@ -390,7 +390,7 @@ static int pdfi_oc_levels_set(pdf_context *ctx, pdfi_oc_levels_t *levels, uint64
 
 static int pdfi_oc_levels_clear(pdf_context *ctx, pdfi_oc_levels_t *levels, uint64_t index)
 {
-    if (index > levels->max_flags)
+    if (index > levels->max_flags - 1)
         return -1;
     if (levels->flags[index] != 0)
         levels->num_off --;
