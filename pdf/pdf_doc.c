@@ -348,7 +348,8 @@ error:
 int pdfi_read_Pages(pdf_context *ctx)
 {
     pdf_obj *o, *o1;
-    int code;
+    pdf_array *a = NULL;
+    int code, pagecount = 0;
     double d;
 
     if (ctx->args.pdfdebug)
@@ -424,6 +425,86 @@ int pdfi_read_Pages(pdf_context *ctx)
         return_error(gs_error_rangecheck);
     } else {
         ctx->num_pages = (int)floor(d);
+    }
+
+    /* A simple confidence check in the value of Count. We only do this because
+     * the OSS-fuzz tool keeps on coming up with files that time out because the
+     * initial Count is insanely huge, and we spend much time trying to find
+     * millions of pages which don't exist.
+     */
+    code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o1, "Kids", PDF_ARRAY, (pdf_obj **)&a);
+    if (code == 0)
+        code = gs_note_error(gs_error_undefined);
+    if (code < 0) {
+        pdfi_countdown(o1);
+        return code;
+    }
+
+    /* Firstly check if the Kids array has enough nodes, in which case it's
+     * probably flat (the common case)
+     */
+    if (a->size != ctx->num_pages) {
+        int i = 0;
+        pdf_obj *p = NULL, *p1 = NULL;
+        pdf_num *c = NULL;
+
+        /* Either its not a flat tree, or the top node /Count is incorrect.
+         * Get each entry in the Kids array in turn and total the /Count of
+         * each node and add any leaf nodes.
+         */
+        for (i=0;i < a->size; i++) {
+            code = pdfi_array_get(ctx, a, i, &p);
+            if (code < 0)
+                continue;
+            if (pdfi_type_of(p) != PDF_DICT) {
+                pdfi_countdown(p);
+                p = NULL;
+                continue;
+            }
+            code = pdfi_dict_knownget_type(ctx, (pdf_dict *)p, "Type", PDF_NAME, (pdf_obj **)&p1);
+            if (code <= 0) {
+                pdfi_countdown(p);
+                p = NULL;
+                continue;
+            }
+            if (pdfi_name_is((pdf_name *)p1, "Page")) {
+                pagecount++;
+            } else {
+                if (pdfi_name_is((pdf_name *)p1, "Pages")) {
+                    code = pdfi_dict_knownget(ctx, (pdf_dict *)o1, "Count", (pdf_obj **)&c);
+                    if (code >= 0) {
+                        if (pdfi_type_of(c) == PDF_INT)
+                            pagecount += c->value.i;
+                        if (pdfi_type_of(c) == PDF_REAL)
+                            pagecount += (int)c->value.d;
+                        pdfi_countdown(c);
+                        c = NULL;
+                    }
+                }
+            }
+            pdfi_countdown(p1);
+            p1 = NULL;
+            pdfi_countdown(p);
+            p = NULL;
+        }
+    } else
+        pagecount = a->size;
+
+    pdfi_countdown(a);
+
+    /* If the count of the top level of the tree doesn't match the /Count
+     * of the root node then something is wrong. We could abort right now
+     * and will if this continues to be a problem, but initially let's assume
+     * the count of the top level is correct and the root node /Count is wrong.
+     * This will allow us to recover if only the root /Count gets corrupted.
+     * In future we could also try validating the entire tree at this point,
+     * though I suspect that's pointless; if the tree is corrupted we aren't
+     * likely to get much that's usable from it.
+     */
+    if (pagecount != ctx->num_pages) {
+        ctx->num_pages = pagecount;
+        code = pdfi_dict_put_int(ctx, (pdf_dict *)o1, "Count", ctx->num_pages);
+        pdfi_set_error(ctx, 0, NULL, E_PDF_BADPAGECOUNT, "pdfi_read_Pages", NULL);
     }
 
     /* We don't pdfi_countdown(o1) now, because we've transferred our
