@@ -632,6 +632,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         --csp;
                         break;
                     case ce2_not:
+                        if (!CS_CHECK_CSTACK_BOUNDS(csp, cstack))
+                            return_error(gs_error_invalidfont);
                         *csp = (*csp ? 0 : fixed_1);
                         break;
                     case ce2_store:
@@ -656,6 +658,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         csp -= 4;
                         break;
                     case ce2_abs:
+                        if (!CS_CHECK_CSTACK_BOUNDS(csp, cstack))
+                            return_error(gs_error_invalidfont);
                         if (*csp < 0)
                             *csp = -*csp;
                         break;
@@ -765,6 +769,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         --csp;
                         break;
                     case ce2_sqrt:
+                        if (!CS_CHECK_CSTACK_BOUNDS(csp, cstack))
+                            return_error(gs_error_invalidfont);
                         if (*csp >= 0)
                             *csp = float2fixed(sqrt(fixed2float(*csp)));
                         break;
