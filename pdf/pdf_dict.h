@@ -45,6 +45,7 @@ int pdfi_dict_knownget_number(pdf_context *ctx, pdf_dict *d, const char *Key, do
 int pdfi_dict_knownget_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool *b);
 int pdfi_merge_dicts(pdf_context *ctx, pdf_dict *target, pdf_dict *source);
 int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *value, bool replace);
+int pdfi_dict_put_unchecked(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value);
 int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value);
 int pdfi_dict_put_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t value);
 int pdfi_dict_put_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool value);
