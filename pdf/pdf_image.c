@@ -545,10 +545,17 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
          * GS implementation does.
          */
         if (code != gs_error_undefined) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+           pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
            if (ctx->args.pdfstoponwarning)
                 goto errorExit;
         }
+    }
+    if (info->Mask != NULL && (pdfi_type_of(info->Mask) != PDF_ARRAY && pdfi_type_of(info->Mask) != PDF_STREAM)) {
+        pdfi_countdown(info->Mask);
+        info->Mask = NULL;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+        if (ctx->args.pdfstoponwarning)
+            goto errorExit;
     }
 
     /* Optional (apparently there is no abbreviation for "SMask"? */
@@ -575,6 +582,9 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
         if (pdfi_type_of(info->SMask) != PDF_STREAM){
             pdfi_countdown(info->SMask);
             info->SMask = NULL;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+            if (ctx->args.pdfstoponwarning)
+                goto errorExit;
         }
     }
 
@@ -596,6 +606,13 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
         if (code != gs_error_undefined)
             goto errorExit;
     }
+    if (info->ColorSpace != NULL && (pdfi_type_of(info->ColorSpace) != PDF_NAME && pdfi_type_of(info->ColorSpace) != PDF_ARRAY)) {
+        pdfi_countdown(info->ColorSpace);
+        info->ColorSpace = NULL;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+        if (ctx->args.pdfstoponwarning)
+            goto errorExit;
+    }
 
     /* Optional (default is to use from graphics state) */
     /* (no abbreviation for inline) */
@@ -611,11 +628,25 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
         if (code != gs_error_undefined)
             goto errorExit;
     }
+    if (info->Alternates != NULL && pdfi_type_of(info->Alternates) != PDF_ARRAY) {
+        pdfi_countdown(info->Alternates);
+        info->Alternates = NULL;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+        if (ctx->args.pdfstoponwarning)
+            goto errorExit;
+    }
 
     /* Optional (required in PDF1.0, obsolete, do we support?) */
     code = pdfi_dict_get(ctx, image_dict, "Name", &info->Name);
     if (code < 0) {
         if (code != gs_error_undefined)
+            goto errorExit;
+    }
+    if (info->Name != NULL && pdfi_type_of(info->Name) != PDF_NAME) {
+        pdfi_countdown(info->Name);
+        info->Name = NULL;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+        if (ctx->args.pdfstoponwarning)
             goto errorExit;
     }
 
@@ -633,6 +664,13 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
         if (code != gs_error_undefined)
             goto errorExit;
     }
+    if (info->Decode != NULL && pdfi_type_of(info->Decode) != PDF_ARRAY) {
+        pdfi_countdown(info->Decode);
+        info->Decode = NULL;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+        if (ctx->args.pdfstoponwarning)
+            goto errorExit;
+    }
 
     /* Optional "Optional Content" */
     code = pdfi_dict_get_type(ctx, image_dict, "OC", PDF_DICT, (pdf_obj **)&info->OC);
@@ -647,6 +685,13 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
         if (code != gs_error_undefined)
             goto errorExit;
     }
+    if (info->Filter != NULL && (pdfi_type_of(info->Filter) != PDF_NAME && pdfi_type_of(info->Filter) != PDF_ARRAY)) {
+        pdfi_countdown(info->Filter);
+        info->Filter = NULL;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+        if (ctx->args.pdfstoponwarning)
+            goto errorExit;
+    }
 
     /* Check and set JPXDecode flag for later */
     info->is_JPXDecode = false;
@@ -659,6 +704,13 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     code = pdfi_dict_get2(ctx, image_dict, "DecodeParms", "DP", &info->DecodeParms);
     if (code < 0) {
         if (code != gs_error_undefined)
+            goto errorExit;
+    }
+    if (info->DecodeParms != NULL && (pdfi_type_of(info->DecodeParms) != PDF_DICT && pdfi_type_of(info->DecodeParms) != PDF_ARRAY)) {
+        pdfi_countdown(info->DecodeParms);
+        info->DecodeParms = NULL;
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+        if (ctx->args.pdfstoponwarning)
             goto errorExit;
     }
 
