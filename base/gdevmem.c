@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -34,11 +34,12 @@ public_st_device_memory();
 static
 ENUM_PTRS_WITH(device_memory_enum_ptrs, gx_device_memory *mptr)
 {
-    return ENUM_USING(st_device_forward, vptr, sizeof(gx_device_forward), index - 3);
+    return ENUM_USING(st_device_forward, vptr, sizeof(gx_device_forward), index - 4);
 }
 case 0: ENUM_RETURN((mptr->foreign_bits ? NULL : (void *)mptr->base));
 case 1: ENUM_RETURN((mptr->foreign_line_pointers ? NULL : (void *)mptr->line_ptrs));
 ENUM_STRING_PTR(2, gx_device_memory, palette);
+case 3: ENUM_RETURN(mptr->owner);
 ENUM_PTRS_END
 static
 RELOC_PTRS_WITH(device_memory_reloc_ptrs, gx_device_memory *mptr)
@@ -62,6 +63,7 @@ RELOC_PTRS_WITH(device_memory_reloc_ptrs, gx_device_memory *mptr)
         RELOC_PTR(gx_device_memory, line_ptrs);
     }
     RELOC_CONST_STRING_PTR(gx_device_memory, palette);
+    RELOC_PTR(gx_device_memory, owner);
     RELOC_USING(st_device_forward, vptr, sizeof(gx_device_forward));
 }
 RELOC_PTRS_END
@@ -210,7 +212,6 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
         dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
 
         set_dev_proc(dev, put_image, gx_forward_put_image);
-        set_dev_proc(dev, dev_spec_op, gx_default_dev_spec_op);
     }
     if (dev->color_info.depth == 1) {
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -224,9 +225,11 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
        gdev_mem_mono_set_inverted(dev, (target == NULL ||
                                    (*dev_proc(dev, encode_color))((gx_device *)dev, cv) != 0));
     }
+    set_dev_proc(dev, dev_spec_op, mem_spec_op);
     check_device_separable((gx_device *)dev);
     gx_device_fill_in_procs((gx_device *)dev);
     dev->band_y = 0;
+    dev->owner = target;
 }
 
 /* Make a memory device using copydevice, this should replace gs_make_mem_device. */
@@ -339,7 +342,8 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
     /* Should this be forwarding, monochrome profile, or not set? MJV */
     set_dev_proc(dev, get_profile, gx_forward_get_profile);
     set_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
-    set_dev_proc(dev, dev_spec_op, gx_default_dev_spec_op);
+    set_dev_proc(dev, dev_spec_op, mem_spec_op);
+    dev->owner = target;
     /* initialize to same tag as target */
     dev->graphics_type_tag = target ? target->graphics_type_tag : GS_UNKNOWN_TAG;
 }

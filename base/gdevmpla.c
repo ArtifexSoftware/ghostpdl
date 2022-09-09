@@ -42,28 +42,27 @@ static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
 static dev_proc_fill_rectangle_hl_color(mem_planar_fill_rectangle_hl_color);
 static dev_proc_put_image(mem_planar_put_image);
 
-static int
-mem_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
-                       void *data, int size)
+int
+mem_spec_op(gx_device *pdev, int dev_spec_op,
+            void *data, int size)
 {
     cmm_dev_profile_t *dev_profile;
+    gx_device_memory *mdev = (gx_device_memory *)pdev;
 
-    if (dev_spec_op == gxdso_supports_devn
-     || dev_spec_op == gxdso_skip_icc_component_validation) {
+    if (pdev->is_planar &&
+        (dev_spec_op == gxdso_supports_devn ||
+         dev_spec_op == gxdso_skip_icc_component_validation)) {
         dev_proc(pdev, get_profile)(pdev, &dev_profile);
         if (dev_profile != NULL && dev_profile->supports_devn &&
             dev_proc(pdev, fill_rectangle_hl_color) == mem_planar_fill_rectangle_hl_color)
             return 1;
     }
-    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
-}
-
-static int
-mem_planar_dev_spec_op_cmyk4(gx_device *pdev, int dev_spec_op,
-                             void *data, int size)
-{
     if (dev_spec_op == gxdso_is_std_cmyk_1bit)
-        return 1;
+         return dev_proc(pdev, copy_color) == mem_planar_copy_color_4to1;
+    if (dev_spec_op == gxdso_is_pdf14_device || dev_spec_op == gxdso_pattern_handles_clip_path)
+         return 0;
+    if (mdev->owner)
+        return dev_proc(mdev->owner, dev_spec_op)(mdev->owner, dev_spec_op, data, size);
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
@@ -155,7 +154,6 @@ gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
         set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
         set_dev_proc(mdev, copy_alpha_hl_color, gx_default_copy_alpha_hl_color);
         set_dev_proc(mdev, copy_mono, mem_planar_copy_mono);
-        set_dev_proc(mdev, dev_spec_op, mem_planar_dev_spec_op);
         if ((mdev->color_info.depth == 24) &&
             (num_planes == 3) &&
             (mdev->planes[0].depth == 8) && (mdev->planes[0].shift == 16) &&
@@ -169,7 +167,6 @@ gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
                  (mdev->planes[2].depth == 1) && (mdev->planes[2].shift == 1) &&
                  (mdev->planes[3].depth == 1) && (mdev->planes[3].shift == 0)) {
             set_dev_proc(mdev, copy_color, mem_planar_copy_color_4to1);
-            set_dev_proc(mdev, dev_spec_op, mem_planar_dev_spec_op_cmyk4);
         } else
             set_dev_proc(mdev, copy_color, mem_planar_copy_color);
         set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
@@ -178,6 +175,7 @@ gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
         set_dev_proc(mdev, strip_copy_rop2, mem_planar_strip_copy_rop2);
         set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     }
+    set_dev_proc(mdev, dev_spec_op, mem_spec_op);
     set_dev_proc(mdev, copy_planes, mem_planar_copy_planes);
     return 0;
 }

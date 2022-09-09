@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -127,6 +127,10 @@ struct gx_device_memory_s {
         gx_color_index abcdefgh;	/* cache key */
         bits32 abcd, efgh;	/* cache value */
     } color64;
+    /* The following is used to indicate the device that 'owns' this one as
+     * a buffer device. Any dev_spec_ops that come to us should be forwarded
+     * up to that one if we can't cope with them. */
+    gx_device *owner;
     /* Following are only used for alpha buffers. */
     /* The client initializes those marked with $; */
     /* they don't change after initialization. */
@@ -166,6 +170,7 @@ extern_st(st_device_memory);
         { gx_no_color_index },	/* color48 */\
         { gx_no_color_index },	/* color56 */\
         { gx_no_color_index },	/* color64 */\
+        0,			/* owner */\
         { 0, 0 }, 0,		/* scale, log2_alpha_bits */\
         0, 0, 0, 0,		/* mapped_* */\
         gx_no_color_index	/* save_color */
@@ -343,5 +348,9 @@ bool gs_device_is_abuf(const gx_device *);
 
 /* Check for getting the antialiasing bit depth */
 int alpha_buffer_bits(gs_gstate * pgs);
+
+/* Dev spec op handler for memory devices. */
+dev_proc_dev_spec_op(mem_spec_op);
+
 
 #endif /* gxdevmem_INCLUDED */
