@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -214,6 +214,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
     int c;
     int i;
     bool in_quote, eol;
+    int prev_c_was_equals = 0;
 
     *argstr = NULL;
 
@@ -304,9 +305,10 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                         c = get_codepoint(pal, pas);
                     if (c == '\n')
                         c = get_codepoint(pal, pas);
+                    prev_c_was_equals = 0;
                     continue; /* Next char */
                 }
-                if (c == '\\') {
+                if (c == '\\' && pal->depth > 0) {
                     /* Check for \ followed by newline. */
                     c = get_codepoint(pal, pas);
                     if (is_eol(c)) {
@@ -315,18 +317,33 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                         if (c == '\n')
                             c = get_codepoint(pal, pas);
                         eol = true;
+                        prev_c_was_equals = 0;
                         continue; /* Next char */
                     }
-                    /* \ anywhere else is treated as a printing character. */
-                    /* This is different from the Unix shells. */
-                    if (i >= arg_str_max - 1) {
-                        cstr[i] = 0;
-                        errprintf(errmem, "Command too long: %s\n", cstr);
-                        return_error(gs_error_Fatal);
+                    {
+                        char what;
+
+                        if (c == '"') {
+                            /* currently \" is treated as literal ". No other literals yet.
+                             * We may expand this in future. */
+                            what = c;
+                            c = get_codepoint(pal, pas);
+                        } else {
+                            /* \ anywhere else is treated as a printing character. */
+                            /* This is different from the Unix shells. */
+                            what = '\\';
+                        }
+
+                        if (i >= arg_str_max - 1) {
+                            cstr[i] = 0;
+                            errprintf(errmem, "Command too long: %s\n", cstr);
+                            return_error(gs_error_Fatal);
+                        }
+                        cstr[i++] = what;
+                        eol = false;
+                        prev_c_was_equals = 0;
+                        continue; /* Next char */
                     }
-                    cstr[i++] = '\\';
-                    eol = false;
-                    continue; /* Next char */
                 }
                 /* c will become part of the argument */
                 if (i >= arg_str_max - 1) {
@@ -341,7 +358,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                  * have to have carefully quoted double-quotes to make them survive the
                  * shell anyway! */
                 if (c == '"' && pal->depth > 0) {
-                    if (i == 0 && !in_quote)
+                    if ((i == 0 || prev_c_was_equals) && !in_quote)
                         in_quote = true;
                     else if (in_quote) {
                         /* Need to check the next char to see if we're closing at the end */
@@ -355,6 +372,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                         /* Not a close quote, just a literal quote. */
                         i += codepoint_to_utf8(&cstr[i], '"');
                         eol = false;
+                        prev_c_was_equals = 0;
                         continue; /* Jump to the start of the loop without reading another char. */
                     } else
                         i += codepoint_to_utf8(&cstr[i], c);
@@ -362,6 +380,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                 else
                     i += codepoint_to_utf8(&cstr[i], c);
                 eol = is_eol(c);
+                prev_c_was_equals = (c == '=');
                 c = get_codepoint(pal, pas);
             }
             cstr[i] = 0;
