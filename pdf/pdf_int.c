@@ -1063,13 +1063,15 @@ rescan:
                 c = pdfi_read_byte(ctx, s);
             }
             if (c == '<') {
-                if (ctx->object_nesting < MAX_NESTING_DEPTH)
-                    ctx->object_nesting++;
                 if (ctx->args.pdfdebug)
                     dmprintf (ctx->memory, " <<\n");
-                code = pdfi_mark_stack(ctx, PDF_DICT_MARK);
-                if (code < 0)
-                    return code;
+                if (ctx->object_nesting < MAX_NESTING_DEPTH) {
+                    ctx->object_nesting++;
+                    code = pdfi_mark_stack(ctx, PDF_DICT_MARK);
+                    if (code < 0)
+                        return code;
+                }else
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL);
                 return 1;
             } else if (c == '>') {
                 pdfi_unread_byte(ctx, s, (byte)c);
@@ -1091,14 +1093,13 @@ rescan:
             if (c < 0)
                 return (gs_error_ioerror);
             if (c == '>') {
-                if (ctx->object_nesting > 0)
+                if (ctx->object_nesting > 0) {
                     ctx->object_nesting--;
-                if (ctx->object_nesting < MAX_NESTING_DEPTH) {
                     code = pdfi_dict_from_stack(ctx, indirect_num, indirect_gen, false);
                     if (code < 0)
                         return code;
                 } else
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL);
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL);
                 return 1;
             } else {
                 pdfi_unread_byte(ctx, s, (byte)c);
@@ -1112,24 +1113,25 @@ rescan:
             return 1;
             break;
         case '[':
-            if (ctx->object_nesting < MAX_NESTING_DEPTH)
-                ctx->object_nesting++;
             if (ctx->args.pdfdebug)
                 dmprintf (ctx->memory, "[");
-            code = pdfi_mark_stack(ctx, PDF_ARRAY_MARK);
+            if (ctx->object_nesting < MAX_NESTING_DEPTH) {
+                ctx->object_nesting++;
+                code = pdfi_mark_stack(ctx, PDF_ARRAY_MARK);
+            } else
+                pdfi_set_error(ctx, 0, NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL);
             if (code < 0)
                 return code;
             return 1;
             break;
         case ']':
-            if (ctx->object_nesting > 0)
+            if (ctx->object_nesting > 0) {
                 ctx->object_nesting--;
-            if (ctx->object_nesting < MAX_NESTING_DEPTH) {
                 code = pdfi_array_from_stack(ctx, indirect_num, indirect_gen);
                 if (code < 0)
                     return code;
             } else
-                pdfi_set_error(ctx, 0, NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL);
+                pdfi_set_error(ctx, 0, NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL);
             break;
         case '{':
             if (ctx->args.pdfdebug)
