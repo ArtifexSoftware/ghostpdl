@@ -682,6 +682,14 @@ static int pdfi_form_get_inheritable(pdf_context *ctx, pdf_dict *field, const ch
             }
         }
         if (Parent->object_num != 0) {
+            /* It is possible that we might have ended up with an object which has already
+             * been stored in the /Parent, but contains circular references (if we were careless
+             * about storing the dereferenced object). See OSS-fuzz 51034.
+             */
+            if(pdfi_loop_detector_check_object(ctx, Parent->object_num)){
+                code = gs_note_error(gs_error_circular_reference);
+                goto exit;
+            }
             code = pdfi_loop_detector_add_object(ctx, Parent->object_num);
             if (code < 0)
                 goto exit;
