@@ -503,7 +503,10 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     if (code < 0)
                         return code;
                 }
-                code = t1_hinter__rlineto(h, ap[0], ap[1]);
+                if (ap + 1 <= csp)
+                    code = t1_hinter__rlineto(h, ap[0], ap[1]);
+                else
+                    return_error(gs_error_invalidfont);
                 goto cc;
             case c2_rlinecurve:
                 for (ap = cstack; ap + 7 <= csp; ap += 2) {
@@ -511,8 +514,11 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     if (code < 0)
                         return code;
                 }
-                code = t1_hinter__rcurveto(h, ap[0], ap[1], ap[2], ap[3],
+                if (ap + 5 <= csp)
+                    code = t1_hinter__rcurveto(h, ap[0], ap[1], ap[2], ap[3],
                                         ap[4], ap[5]);
+                else
+                    return_error(gs_error_invalidfont);
   move:
   cc:
                 if (code < 0)
