@@ -423,6 +423,12 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     if (code < 0)
         goto exit;
 
+    /* XStep and YStep must be non-zero; table 425; page 293 of the 1.7 Reference */
+    if (XStep == 0.0 || YStep == 0.0) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
     /* The pattern instance holds the pattern step as floats, make sure they
      * will fit.
      */
