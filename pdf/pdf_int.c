@@ -1118,10 +1118,10 @@ rescan:
             if (ctx->object_nesting < MAX_NESTING_DEPTH) {
                 ctx->object_nesting++;
                 code = pdfi_mark_stack(ctx, PDF_ARRAY_MARK);
+                if (code < 0)
+                    return code;
             } else
                 pdfi_set_error(ctx, 0, NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL);
-            if (code < 0)
-                return code;
             return 1;
             break;
         case ']':
