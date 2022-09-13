@@ -3101,7 +3101,7 @@ static int apply_composite(gx_device_clist_reader *cdev, gs_gstate *pgs,
 
     code = pcomp->type->procs.adjust_ctm(pcomp, x0, y0, pgs);
     if (code < 0)
-        return code;
+        goto exit;
     /*
      * Apply the compositor to the target device; note that this may
      * change the target device.
@@ -3114,14 +3114,12 @@ static int apply_composite(gx_device_clist_reader *cdev, gs_gstate *pgs,
         code = 0;
     }
     if (code < 0)
-        return code;
+        goto exit;
 
     /* Perform any updates for the clist device required */
     code = pcomp->type->procs.clist_compositor_read_update(pcomp,
                                         (gx_device *)cdev, tdev, pgs, mem);
-    if (code < 0)
-        return code;
-
+exit:
     /* free the compositor object */
     gs_free_object(mem, pcomp, "read_composite");
 
