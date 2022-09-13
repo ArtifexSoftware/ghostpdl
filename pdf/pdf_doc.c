@@ -905,6 +905,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
     pdf_dict *Parent = NULL;
     pdf_name *n = NULL;
     int code;
+    bool known = false;
 
     *o = NULL;
 
@@ -932,22 +933,45 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
         }
 
         if (deref_parent) {
-            code = pdfi_dict_knownget_type(ctx, dict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
-            if (code < 0)
-                goto exit;
-            if (code > 0) {
+            code = pdfi_dict_known(ctx, dict, "Parent", &known);
+            if (code >= 0 && known == true) {
+                code = pdfi_dict_get_no_store_R(ctx, dict, "Parent", (pdf_obj **)&Parent);
+
+                if (code >= 0) {
+                    if (pdfi_type_of(Parent) != PDF_DICT) {
+                        if (pdfi_type_of(Parent) == PDF_INDIRECT) {
+                            pdf_indirect_ref *o = (pdf_indirect_ref *)Parent;
+
+                            Parent = NULL;
+                            code = pdfi_dereference(ctx, o->ref_object_num, o->ref_generation_num, (pdf_obj **)&Parent);
+                            pdfi_countdown(o);
+                            if (code >= 0 && pdfi_type_of(Parent) != PDF_DICT) {
+                                pdfi_countdown(Parent);
+                                Parent = NULL;
+                            }
+                        } else {
+                            pdfi_countdown(Parent);
+                            Parent = NULL;
+                        }
+                    }
+                }
+            }
+
+            if (Parent != NULL) {
                 if (ctx->page.CurrentPageDict != NULL && Parent->object_num != ctx->page.CurrentPageDict->object_num) {
-                    if (pdfi_loop_detector_check_object(ctx, Parent->object_num) == true)
-                        return_error(gs_error_circular_reference);
+                    if (pdfi_loop_detector_check_object(ctx, Parent->object_num) == true) {
+                        code = gs_note_error(gs_error_circular_reference);
+                        goto exit;
+                    }
 
                     code = pdfi_loop_detector_mark(ctx);
                     if (code < 0)
-                        return code;
+                        goto exit;
 
                     code = pdfi_loop_detector_add_object(ctx, dict->object_num);
                     if (code < 0) {
                         (void)pdfi_loop_detector_cleartomark(ctx);
-                        return code;
+                        goto exit;
                     }
                     code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
                     (void)pdfi_loop_detector_cleartomark(ctx);
@@ -955,6 +979,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
                         goto exit;
                 }
             }
+            code = 0;
         }
         pdfi_countdown(typedict);
         typedict = NULL;
