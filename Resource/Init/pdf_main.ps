@@ -417,15 +417,33 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
     translate
 
     % Now use the box and media values to calculate the required x/y scale factors
-    3 -1 roll div                       % box boxwidth mediawidth (mediaheight / boxheight)
-    3 1 roll                            % box (mediaheight / boxheight) boxwidth mediawidth
-    exch                                % box (mediaheight / boxheight) mediawidth boxwidth
-    div                                 % box (mediaheight / boxheight) (mediawidth / boxwidth)
+    4 copy                              % Stack - box boxwidth boxheight mediawidth mediaheight boxwidth boxheight mediawidth mediaheight
+    3 -1 roll div                       % box boxwidth boxheight mediawidth mediaheight boxwidth mediawidth (mediaheight / boxheight)
+    3 1 roll                            % box boxwidth boxheight mediawidth mediaheight (mediaheight / boxheight) boxwidth mediawidth
+    exch                                % box boxwidth boxheight mediawidth mediaheight (mediaheight / boxheight) mediawidth boxwidth
+    div                                 % box boxwidth boxheight mediawidth mediaheight (mediaheight / boxheight) (mediawidth / boxwidth)
 
-    2 copy                              % box Yscale Xscale Yscale Xscale
-    gt {exch} if                        % select smallest scale factor
-    pop                                 %
-    dup scale                           % and scale page isomorphically
+    % Stack - box boxwidth boxheight mediawidth mediaheight Yscale Xscale
+
+    % Centre the output on the media
+    2 copy                              % box boxwidth boxheight mediawidth mediaheight Yscale Xscale Yscale Xscale
+    gt {
+      exch pop                          % box boxwidth boxheight mediawidth mediaheight Xscale
+      dup 4 index mul                   % box boxwidth boxheight mediawidth mediaheight Xscale (boxheight * Xscale)
+      3 -1 roll sub dup
+      0 lt {-1 mul} if                  % box boxwidth boxheight mediawidth Xscale ((boxheight * Xscale) - mediaheight)
+      dup 0 ne {2 div} if               % box boxwidth boxheight mediawidth Xscale (heightdiff / 2)
+      0 exch translate                  % box boxwidth boxheight mediawidth Xscale
+    } {
+      pop                               % box boxwidth boxheight mediawidth mediaheight Yscale
+      dup 5 index mul                   % box boxwidth boxheight mediawidth mediaheight Yscale (boxwidth * Yscale)
+      4 -1 roll sub dup
+      0 lt {-1 mul} if                  % box boxwidth boxheight mediaheight Yscale ((boxwidth * Yscale) - mediawidth)
+      dup 0 ne {2 div} if               % box boxwidth boxheight mediawidth Yscale (widthdiff / 2)
+      0 translate                       % box boxwidth boxheight mediawidth Yscale
+    } ifelse
+    dup scale                           % scale both axes the same
+    pop pop pop                         % remove the leftover boxwidth, boxheight and mediawidth/height
 } bind def
 
 /newpdf_get_media_box { % <pagedict> get_media_box <box> <bool>
