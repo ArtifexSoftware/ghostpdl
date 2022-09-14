@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -121,4 +121,8 @@ char *pl_main_get_pcl_personality(const gs_memory_t *mem);
 
 pl_interp_implementation_t *pl_main_get_pcl_instance(const gs_memory_t *mem);
 pl_interp_implementation_t *pl_main_get_pjl_instance(const gs_memory_t *mem);
+pl_interp_implementation_t *pl_main_get_pdf_instance(const gs_memory_t *mem);
+pl_interp_implementation_t *pl_main_get_xps_instance(const gs_memory_t *mem);
+pl_interp_implementation_t *pl_main_get_language_instance(const gs_memory_t *mem, const char *name);
+
 #endif /* plmain_INCLUDED */

@@ -465,6 +465,7 @@
     <ClCompile Include="..\gpdl\psitop.c" />
     <ClCompile Include="..\gpdl\pwgtop.c" />
     <ClCompile Include="..\gpdl\tifftop.c" />
+    <ClCompile Include="..\so\sotop.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

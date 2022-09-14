@@ -2178,6 +2178,22 @@ AC_SUBST(URF_INCLUDE)
 AC_SUBST(URF_DEV)
 AC_SUBST(SURFX_H)
 
+ENABLESO=
+AC_ARG_WITH([so], AS_HELP_STRING([--without-smartoffice],
+    [do not try to include SmartOffice support]))
+
+if test x$with_so != xno; then
+  AC_MSG_CHECKING([for SmartOffice support])
+  if test -d $srcdir/so; then
+    AC_MSG_RESULT([yes])
+    ENABLESO="\$(D_)SO_INCLUDED\$(_D)"
+    GPDL_SO_TOP_OBJ="\$(GPDLOBJ)/\$(GPDL_SO_TOP_OBJ_FILE)"
+fi
+fi
+
+AC_SUBST(ENABLESO)
+AC_SUBST(GPDL_SO_TOP_OBJ)
+
 AC_ARG_WITH([cal], AS_HELP_STRING([--without-cal],
     [do not try to use the CAL library for acceleration]))
 
