@@ -154,7 +154,8 @@ gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
     }
     code = show_state_setup(penum);
     if (code < 0) {
-        gs_free_object(mem, penum, "gx_default_text_begin");
+        gs_text_release(pgs, (gs_text_enum_t *)penum, "gx_default_text_begin");
+        penum = NULL;
         return code;
     }
     penum->show_gstate =
@@ -166,8 +167,11 @@ gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
             gs_alloc_struct(mem, gx_device_null, &st_device_null,
                             "stringwidth(dev_null)");
 
-        if (dev_null == 0)
+        if (dev_null == 0) {
+            gs_text_release(pgs, (gs_text_enum_t *)penum, "gx_default_text_begin");
+            penum = NULL;
             return_error(gs_error_VMerror);
+        }
 
         /* Set up a null device that forwards xfont requests properly. */
         /* We have to set the device up here, so the contents are
@@ -177,6 +181,8 @@ gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
 
         /* Do an extra gsave and suppress output */
         if ((code = gs_gsave(pgs)) < 0) {
+            gs_text_release(pgs, (gs_text_enum_t *)penum, "gx_default_text_begin");
+            penum = NULL;
             gs_free_object(mem, dev_null, "gx_default_text_begin");
             return code;
         }
@@ -191,6 +197,8 @@ gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
         gx_translate_to_fixed(pgs, fixed_0, fixed_0);
         code = gx_path_add_point(pgs->path, fixed_0, fixed_0);
         if (code < 0) {
+            gs_text_release(pgs, (gs_text_enum_t *)penum, "gx_default_text_begin");
+            penum = NULL;
             gs_grestore(pgs);
             return code;
         }
