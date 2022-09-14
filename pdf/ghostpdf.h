@@ -469,6 +469,7 @@ typedef struct pdf_context_s
     pdf_dict *pdf_substitute_fonts;
     pdf_dict *pdfcidfmap;
 
+    gx_device *devbbox; /* Cached for use in pdfi_string_bbox */
     /* These function pointers can be replaced by ones intended to replicate
      * PostScript functionality when running inside the Ghostscript PostScript
      * interpreter.

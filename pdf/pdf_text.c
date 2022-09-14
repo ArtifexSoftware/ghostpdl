@@ -908,11 +908,17 @@ int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, gs_point
 
     for_stroke = current_font->pdfi_font_type == e_pdf_font_type3 ? false : for_stroke;
 
-    bbdev = gs_alloc_struct_immovable(ctx->memory, gx_device_bbox, &st_device_bbox, "pdfi_string_bbox(bbdev)");
-    if (bbdev == NULL)
-        return_error(gs_error_VMerror);
-
-    gx_device_bbox_init(bbdev, NULL, ctx->memory);
+    if (ctx->devbbox == NULL) {
+        bbdev = gs_alloc_struct_immovable(ctx->memory, gx_device_bbox, &st_device_bbox, "pdfi_string_bbox(bbdev)");
+        if (bbdev == NULL)
+           return_error(gs_error_VMerror);
+        gx_device_bbox_init(bbdev, NULL, ctx->memory);
+        ctx->devbbox = (gx_device *)bbdev;
+        rc_increment(ctx->devbbox);
+    }
+    else {
+        bbdev = (gx_device_bbox *)ctx->devbbox;
+    }
     gx_device_retain((gx_device *)bbdev, true);
     gx_device_bbox_set_white_opaque(bbdev, true);
 
@@ -987,6 +993,7 @@ int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, gs_point
     }
 out:
     pdfi_grestore(ctx);
+    (void)gs_closedevice((gx_device *)bbdev);
     gx_device_retain((gx_device *)bbdev, false);
 
     return code;

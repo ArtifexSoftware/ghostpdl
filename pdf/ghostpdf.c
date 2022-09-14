@@ -2140,6 +2140,8 @@ int pdfi_free_context(pdf_context *ctx)
         pdfi_countdown(ctx->pdffontmap);
         ctx->pdffontmap = NULL;
     }
+    rc_decrement(ctx->devbbox, "pdfi_free_context");
+
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
 #if PDFI_LEAK_CHECK
     gs_memory_status(mem, &mstat);
