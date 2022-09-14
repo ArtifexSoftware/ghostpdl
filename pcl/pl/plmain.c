@@ -2993,18 +2993,6 @@ pl_log_string(const gs_memory_t * mem, const char *str, int wait_for_key)
         (void)fgetc(mem->gs_lib_ctx->core->fstdin);
 }
 
-pl_interp_implementation_t *
-pl_main_get_pcl_instance(const gs_memory_t *mem)
-{
-    return pl_main_get_instance(mem)->implementations[1];
-}
-
-pl_interp_implementation_t *
-pl_main_get_pjl_instance(const gs_memory_t *mem)
-{
-    return pl_main_get_instance(mem)->implementations[0];
-}
-
 bool pl_main_get_interpolate(const gs_memory_t *mem)
 {
     return pl_main_get_instance(mem)->interpolate;
@@ -3105,4 +3093,45 @@ pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs, int num_copies, int fl
     } else if (gs_debug_c(':'))
         pl_print_usage(pmi, "render done :");
     return 0;
+}
+
+pl_interp_implementation_t *
+pl_main_get_language_instance(const gs_memory_t *mem, const char *name)
+{
+    pl_main_instance_t *minst = pl_main_get_instance(mem);
+    pl_interp_implementation_t **inst = minst->implementations;
+
+    while (*inst)
+    {
+        const pl_interp_characteristics_t *chars = (*inst)->proc_characteristics(*inst);
+
+        if (strcmp(chars->language, name) == 0)
+            return *inst;
+        inst++;
+    }
+
+    return NULL;
+}
+
+pl_interp_implementation_t *pl_main_get_pdf_instance(const gs_memory_t *mem)
+{
+    return pl_main_get_language_instance(mem, "PDF");
+}
+
+pl_interp_implementation_t *
+pl_main_get_pcl_instance(const gs_memory_t *mem)
+{
+    return pl_main_get_language_instance(mem, "PCLXL");
+}
+
+pl_interp_implementation_t *
+pl_main_get_pjl_instance(const gs_memory_t *mem)
+{
+    return pl_main_get_language_instance(mem, "PJL");
+}
+
+pl_interp_implementation_t *
+pl_main_get_xps_instance(const gs_memory_t *mem)
+{
+    return pl_main_get_language_instance(mem, "XPS");
 }

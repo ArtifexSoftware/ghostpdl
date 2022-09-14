@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -51,6 +51,8 @@ extern pl_interp_implementation_t jp2k_implementation;
 
 extern pl_interp_implementation_t png_implementation;
 
+extern pl_interp_implementation_t so_implementation;
+
 /* Zero-terminated list of pointers to implementations */
 pl_interp_implementation_t *pdl_implementations[] = {
     &pjl_implementation,
@@ -87,6 +89,9 @@ pl_interp_implementation_t *pdl_implementations[] = {
 #endif
 #ifdef PNG_INCLUDED
     &png_implementation,
+#endif
+#ifdef SO_INCLUDED
+    &so_implementation,
 #endif
     0
 };

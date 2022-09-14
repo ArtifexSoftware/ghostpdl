@@ -33,8 +33,6 @@
 
 static int xps_install_halftone(xps_context_t *ctx, gx_device *pdevice);
 
-#define XPS_PARSER_MIN_INPUT_SIZE (8192 * 4)
-
 /*
  * The XPS interpeter is identical to pl_interp_t.
  * The XPS interpreter instance is derived from pl_interp_implementation_t.
@@ -57,7 +55,7 @@ xps_detect_language(const char *s, int len)
     if (len < 2)
         return 0;
     if (memcmp(s, "PK", 2) == 0)
-        return 100;
+        return 80; /* Pretty sure, but not 100, so the SO one can override us. */
     return 0;
 }
 
@@ -94,7 +92,7 @@ xps_set_icc_user_params(pl_interp_implementation_t *impl, gs_gstate *pgs)
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int
 xps_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
-                                 gs_memory_t *pmem)
+                                  gs_memory_t *pmem)
 {
     int code = 0;
     xps_interp_instance_t *instance;

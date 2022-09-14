@@ -689,6 +689,28 @@ WITH_CAL=0
 !endif
 !endif
 
+# Should we build using SO...
+SOSRCDIR=so
+!ifdef WITH_SO
+!if "$(WITH_SO)"!="0"
+WITH_SO=1
+!else
+WITH_SO=0
+!endif
+!else
+!if exist ("$(SOSRCDIR)")
+WITH_SO=1
+!else
+WITH_SO=0
+!endif
+!endif
+!if "$(WITH_SO)"=="1"
+ENABLE_SO=$(D_)SO_INCLUDED$(_D)
+GPDL_SO_TOP_OBJ=$(GPDLOBJ)/$(GPDL_SO_TOP_OBJ_FILE)
+SO_INCLUDE=$(I_)$(SOSRCDIR)$(_I)
+!endif
+
+
 # We can't build cups libraries in a Metro friendly way,
 # so if building for Metro, disable cups regardless of the
 # request

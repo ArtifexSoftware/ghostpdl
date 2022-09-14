@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -18,6 +18,7 @@ GPDL_MAK=$(GPDLSRCDIR)$(D)gpdl.mak
 GPDLSRC=$(GPDLSRCDIR)$(D)
 GPDLPSISRC=$(GPDLSRCDIR)$(D)psi$(D)
 GPDLURFSRC=$(URFSRCDIR)$(D)
+GPDLSOSRC=$(SOSRCDIR)$(D)
 
 GPDLOBJ=$(GPDLOBJDIR)$(D)
 GPDLGEN=$(GPDLGENDIR)$(D)
@@ -28,6 +29,8 @@ GPDL_PSI_TOP_OBJ_FILE=psitop.$(OBJ)
 GPDL_PSI_TOP_OBJ=$(GPDLOBJ)$(GPDL_PSI_TOP_OBJ_FILE)
 
 GPDL_URF_TOP_OBJ_FILE=urftop.$(OBJ)
+
+GPDL_SO_TOP_OBJ_FILE=sotop.$(OBJ)
 
 GPDL_JPG_TOP_OBJ_FILE=jpgtop.$(OBJ)
 GPDL_JPG_TOP_OBJ=$(GPDLOBJ)$(GPDL_JPG_TOP_OBJ_FILE)
@@ -56,6 +59,7 @@ GPDL_PSI_TOP_OBJS=\
 	$(GPDL_JPG_TOP_OBJ)\
 	$(GPDL_URF_TOP_OBJ)\
 	$(GPDL_PSI_TOP_OBJ)\
+	$(GPDL_SO_TOP_OBJ)\
 	$(GPDLOBJ)gpdlimpl.$(OBJ)
 
 LANG_CFLAGS=\
@@ -70,6 +74,7 @@ LANG_CFLAGS=\
 	$(D_)JBIG2_INCLUDED$(_D)\
 	$(D_)JP2K_INCLUDED$(_D)\
 	$(D_)PNG_INCLUDED$(_D)\
+	$(ENABLE_SO)\
 
 GPDLCC=$(CC_) $(LANG_CFLAGS) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
@@ -102,6 +107,14 @@ $(GPDLOBJ)/$(GPDL_URF_TOP_OBJ_FILE): $(GPDLURFSRC)urftop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(surfx_h) $(strimpl_h)\
  $(gscoord_h) $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
 	$(GPDLCC) $(GPDLURFSRC)urftop.c $(GPDLO_)$(GPDL_URF_TOP_OBJ_FILE)
+
+# Note that we don't use $(GPDL_SO_TOP_OBJ) as the target of the
+# next make rule, as this expands to "" in builds that don't use
+# SO.
+$(GPDLOBJ)/$(GPDL_SO_TOP_OBJ_FILE): $(GPDLSOSRC)sotop.c $(AK)\
+ $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h)\
+ $(gscoord_h) $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
+	$(GPDLCC) $(GPDLSOSRC)sotop.c $(GPDLO_)$(GPDL_SO_TOP_OBJ_FILE)
 
 $(GPDL_JPG_TOP_OBJ): $(GPDLSRC)jpgtop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
