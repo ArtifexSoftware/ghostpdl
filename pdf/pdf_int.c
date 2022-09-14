@@ -1098,8 +1098,10 @@ rescan:
                     code = pdfi_dict_from_stack(ctx, indirect_num, indirect_gen, false);
                     if (code < 0)
                         return code;
-                } else
+                } else {
                     pdfi_set_error(ctx, 0, NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL);
+                    goto rescan;
+                }
                 return 1;
             } else {
                 pdfi_unread_byte(ctx, s, (byte)c);
@@ -1130,8 +1132,10 @@ rescan:
                 code = pdfi_array_from_stack(ctx, indirect_num, indirect_gen);
                 if (code < 0)
                     return code;
-            } else
+            } else {
                 pdfi_set_error(ctx, 0, NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL);
+                goto rescan;
+            }
             break;
         case '{':
             if (ctx->args.pdfdebug)

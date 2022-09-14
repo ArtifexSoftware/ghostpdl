@@ -59,6 +59,6 @@ PARAM(E_BAD_HALFTONE,                  "Error setting a halftone"),
 PARAM(E_PDF_BADENCRYPT,                "Encrypt diciotnary not a dictionary"),
 PARAM(E_PDF_MISSINGTYPE,               "A dictionary is missing a required /Type key."),
 PARAM(E_PDF_NESTEDTOODEEP,             "Dictionaries/arrays nested too deeply"),
-PARAM(E_PDF_UNMATCHEDMARK,             "A closing mark (] or >>) was had no matching mark"),
+PARAM(E_PDF_UNMATCHEDMARK,             "A closing mark (] or >>) had no matching mark, ignoring the closing mark"),
 PARAM(E_PDF_BADPAGECOUNT,              "page tree root node /Count did not match the actual number of pages in the tree."),
 #undef PARAM
