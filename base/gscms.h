@@ -39,6 +39,8 @@
 #define DEV_NEUTRAL_8 5
 #define DEV_NEUTRAL_16 5
 
+#define ARTIFEX_sRGB_HASH 0xfbea006420fca6be
+
 /* Define the preferred size of the output by the CMS */
 /* This can be different than the size of gx_color_value
    which can range between 8 and 16.  Here we can only

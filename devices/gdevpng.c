@@ -56,6 +56,7 @@
 #include "gscdefs.h"
 #include "gxdownscale.h"
 #include "gxdevsop.h"
+#include "gscms.h"
 
 /* ------ The device descriptors ------ */
 
@@ -675,13 +676,18 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
 
     if (pdev->icc_struct != NULL && pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] != NULL) {
         cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
-        /* PNG can only be RGB or gray.  No CIELAB :(  */
-        if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) {
-            if (icc_profile->num_comps == pdev->color_info.num_components &&
-                !(pdev->icc_struct->usefastcolor)) {
-                png_set_iCCP(png_ptr, info_ptr, icc_profile->name,
-                    PNG_COMPRESSION_TYPE_DEFAULT, icc_profile->buffer,
-                    icc_profile->buffer_size);
+        if (icc_profile->hash_is_valid && icc_profile->hashcode == ARTIFEX_sRGB_HASH) {
+            /* sRGB case. Just use the tag */
+            png_set_sRGB(png_ptr, info_ptr, PNG_sRGB_INTENT_RELATIVE);
+        } else {
+            /* PNG can only be RGB or gray.  No CIELAB :(  */
+            if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) {
+                if (icc_profile->num_comps == pdev->color_info.num_components &&
+                    !(pdev->icc_struct->usefastcolor)) {
+                    png_set_iCCP(png_ptr, info_ptr, icc_profile->name,
+                        PNG_COMPRESSION_TYPE_DEFAULT, icc_profile->buffer,
+                        icc_profile->buffer_size);
+                }
             }
         }
     }
@@ -701,14 +707,19 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
     /* Set up the ICC information */
     if (pdev->icc_struct != NULL && pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] != NULL) {
         cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
-        /* PNG can only be RGB or gray.  No CIELAB :(  */
-        if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) {
-            if (icc_profile->num_comps == pdev->color_info.num_components &&
-                !(pdev->icc_struct->usefastcolor)) {
-                info_ptr->iccp_name = icc_profile->name;
-                info_ptr->iccp_profile = icc_profile->buffer;
-                info_ptr->iccp_proflen = icc_profile->buffer_size;
-                info_ptr->valid |= PNG_INFO_iCCP;
+        if (icc_profile->hash_is_valid && icc_profile->hashcode == ARTIFEX_sRGB_HASH) {
+            /* sRGB case. Just use the tag */
+            png_set_sRGB(png_ptr, info_ptr, PNG_sRGB_INTENT_RELATIVE);
+        } else {
+            /* PNG can only be RGB or gray.  No CIELAB :(  */
+            if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) {
+                if (icc_profile->num_comps == pdev->color_info.num_components &&
+                    !(pdev->icc_struct->usefastcolor)) {
+                    info_ptr->iccp_name = icc_profile->name;
+                    info_ptr->iccp_profile = icc_profile->buffer;
+                    info_ptr->iccp_proflen = icc_profile->buffer_size;
+                    info_ptr->valid |= PNG_INFO_iCCP;
+                }
             }
         }
     }
