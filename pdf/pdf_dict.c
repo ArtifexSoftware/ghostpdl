@@ -914,18 +914,25 @@ int pdfi_dict_put_unchecked(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_
         return code;
     pdfi_countup(key);
 
-    /* Nope, its a new Key */
     if (d->size > d->entries) {
-        /* We have a hole, find and use it */
-        for (i=0;i< d->size;i++) {
-            if (d->list[i].key == NULL) {
-                d->list[i].key = key;
-                d->list[i].value = value;
-                pdfi_countup(value);
-                d->entries++;
-                return 0;
+        int search_start = d->entries < 1 ? 0 : d->entries - 1;
+        do {
+            /* We have a hole, find and use it */
+            for (i = search_start; i < d->size; i++) {
+                if (d->list[i].key == NULL) {
+                    d->list[i].key = key;
+                    d->list[i].value = value;
+                    pdfi_countup(value);
+                    d->entries++;
+                    return 0;
+                }
             }
-        }
+            if (search_start == 0) {
+                /* This shouldn't ever happen, but just in case.... */
+                break;
+            }
+            search_start = 0;
+        } while(1);
     }
 
     new_list = (pdf_dict_entry *)gs_alloc_bytes(ctx->memory, (d->size + 1) * sizeof(pdf_dict_entry), "pdfi_dict_put reallocate dictionary key/values");
