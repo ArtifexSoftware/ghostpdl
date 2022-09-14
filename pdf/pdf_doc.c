@@ -471,7 +471,7 @@ int pdfi_read_Pages(pdf_context *ctx)
                 pagecount++;
             } else {
                 if (pdfi_name_is((pdf_name *)p1, "Pages")) {
-                    code = pdfi_dict_knownget(ctx, (pdf_dict *)o1, "Count", (pdf_obj **)&c);
+                    code = pdfi_dict_knownget(ctx, (pdf_dict *)p, "Count", (pdf_obj **)&c);
                     if (code >= 0) {
                         if (pdfi_type_of(c) == PDF_INT)
                             pagecount += c->value.i;
