@@ -385,11 +385,11 @@ static inline bool pdf_ps_name_cmp(pdf_ps_stack_object_t *obj, const char *names
         l2 = strlen(namestr);
     }
 
-    if (pdfi_type_of(obj) == PDF_PS_OBJ_NAME) {
+    if (obj->type == PDF_PS_OBJ_NAME) {
         d = obj->val.name;
         l1 = obj->size;
     }
-    else if (pdfi_type_of(obj) == PDF_PS_OBJ_STRING) {
+    else if (obj->type == PDF_PS_OBJ_STRING) {
         d = obj->val.name;
         l1 = obj->size;
     }
