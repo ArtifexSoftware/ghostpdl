@@ -1507,6 +1507,16 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
         pdc->type = gx_dc_type_devn;
+
+        /* Let device set the tags if present */
+        if (device_encodes_tags(dev)) {
+	        const gx_device *cmdev;
+	        const gx_cm_color_map_procs *cmprocs;
+
+            cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
+            cmprocs->map_cmyk(cmdev, 0, 0, 0, 0, cm_comps);
+            pdc->colors.devn.values[ncomps - 1] = frac2cv(cm_comps[ncomps - 1]);
+        }
         return;
     }
 
@@ -1647,6 +1657,17 @@ cmap_devicen_direct(const frac * pcc,
                 pdc->colors.devn.values[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
                             (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
         pdc->type = gx_dc_type_devn;
+
+        /* Let device set the tags if present */
+        if (device_encodes_tags(dev)) {
+	        const gx_device *cmdev;
+	        const gx_cm_color_map_procs *cmprocs;
+
+            cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
+            cmprocs->map_cmyk(cmdev, 0, 0, 0, 0, cm_comps);
+            pdc->colors.devn.values[ncomps - 1] = frac2cv(cm_comps[ncomps - 1]);
+        }
+
         return;
     }
 

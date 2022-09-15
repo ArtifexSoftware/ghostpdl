@@ -628,10 +628,10 @@ cmyk_cs_to_psdcmyktags_cm(const gx_device *dev,
     const gs_devn_params *devn = gx_devn_prn_ret_devn_params_const(dev);
     const int *map = devn->separation_order_map;
     int j;
+    int ncomps = dev->color_info.num_components;
 
     if (devn->num_separation_order_names > 0) {
         /* This is to set only those that we are using */
-        int ncomps = dev->color_info.num_components;
         for (j = 0; j < ncomps; j++)
             out[j] = 0;
         for (j = 0; j < devn->num_separation_order_names; j++) {
@@ -660,8 +660,8 @@ cmyk_cs_to_psdcmyktags_cm(const gx_device *dev,
        need to encode the graphics type, which is 0 to 255
        accordingly, as it goes through the same mappings on
        its way to devn and then eventually to 8 or 16 bit values */
-    if (map[4] != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[4] = byte2frac(dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+    if (map[ncomps - 1] != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[ncomps - 1] = byte2frac(dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
 }
 
 static void
