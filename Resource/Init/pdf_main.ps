@@ -1013,7 +1013,6 @@ currentdict /PDFSwitches undef
 
 /newpdf_pdfshowpage_init
 {
-    gsave
 } bind def
 
 /newpdf_pdfshowpage_setpage
@@ -1042,7 +1041,6 @@ currentdict /PDFSwitches undef
       (               Could not draw this page at all, page will be missing in the output.\n) newpdf_pdfformaterror
     } if
   }ifelse
-  grestore
 } bind def
 
 /newpdf_pdfshowpage
