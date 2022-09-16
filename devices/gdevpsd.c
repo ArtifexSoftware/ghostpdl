@@ -1076,42 +1076,52 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
                 }
             }
         } else {
-            /* No order specified, map them alpabetically */
-            /* This isn't at all speed critical -- only runs once per page and */
-            /* there are never very many spot colors, so just search in a loop */
+            /* If ICCOutputColors specified then just use that ordering, which
+               has already been set. */
+            cmm_dev_profile_t *profile_struct;
+            int code;
 
-            /* If the device has tags, then that goes at the end, after all the
-               spot colors */
+            code = dev_proc(dev, get_profile)((gx_device *)dev, &profile_struct);
+            if (code == 0 && profile_struct->spotnames != NULL)
+                xc->num_channels += dev->devn_params.separations.num_separations;
+            else {
+                /* No order specified, map them alpabetically */
+                /* This isn't at all speed critical -- only runs once per page and */
+                /* there are never very many spot colors, so just search in a loop */
 
-            const char *prev = " ";
-            int prev_size = 1;
-            psd_device *pdev_psd = (psd_device*)dev;
-            bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT);
+                /* If the device has tags, then that goes at the end, after all the
+                   spot colors */
 
-            xc->num_channels += xc->n_extra_channels;
-            for (i=xc->base_num_channels + has_tags; i < xc->num_channels; i++) {
-                int j;
-                const char *curr = "\377";
-                int curr_size = 1;
-                bool compare;
+                const char *prev = " ";
+                int prev_size = 1;
+                psd_device *pdev_psd = (psd_device*)dev;
+                bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT);
 
-                for (j=xc->base_num_channels + has_tags; j < xc->num_channels; j++) {
-                    devn_separation_name *separation_name;
+                xc->num_channels += xc->n_extra_channels;
+                for (i=xc->base_num_channels + has_tags; i < xc->num_channels; i++) {
+                    int j;
+                    const char *curr = "\377";
+                    int curr_size = 1;
+                    bool compare;
 
-                    separation_name = &(dev->devn_params.separations.names[j - xc->base_num_channels]);
-                    compare = strncmp((const char*) separation_name->data, curr, min(curr_size, separation_name->size));
-                    if (compare < 0 || (compare == 0 && separation_name->size < curr_size)) {
-                        compare = strncmp((const char*) separation_name->data, prev, min(prev_size, separation_name->size));
-                        if (compare > 0 || (compare == 0 && separation_name->size > prev_size)) {
-                            xc->chnl_to_position[i] = j;
-                            xc->chnl_to_orig_sep[i] = j;
-                            curr = (const char*) separation_name->data;
-                            curr_size = separation_name->size;
+                    for (j=xc->base_num_channels + has_tags; j < xc->num_channels; j++) {
+                        devn_separation_name *separation_name;
+
+                        separation_name = &(dev->devn_params.separations.names[j - xc->base_num_channels]);
+                        compare = strncmp((const char*) separation_name->data, curr, min(curr_size, separation_name->size));
+                        if (compare < 0 || (compare == 0 && separation_name->size < curr_size)) {
+                            compare = strncmp((const char*) separation_name->data, prev, min(prev_size, separation_name->size));
+                            if (compare > 0 || (compare == 0 && separation_name->size > prev_size)) {
+                                xc->chnl_to_position[i] = j;
+                                xc->chnl_to_orig_sep[i] = j;
+                                curr = (const char*) separation_name->data;
+                                curr_size = separation_name->size;
+                            }
                         }
                     }
+                    prev = curr;		/* next color has to sort after this one */
+                    prev_size = curr_size;
                 }
-                prev = curr;		/* next color has to sort after this one */
-                prev_size = curr_size;
             }
         }
     }
