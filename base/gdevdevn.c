@@ -236,6 +236,12 @@ check_pcm_and_separation_names(const gx_device * dev,
             color_component_number++;
         }
     }
+    /* For some devices, Tags is part of the process color model list. If so,
+     * that throws us off here since it is thrown at the end of the list. Adjust. */
+    if (device_encodes_tags(dev)) {
+        color_component_number--;
+    }
+
     return check_separation_names(dev, pparams, pname, name_size,
         component_type, color_component_number);
 }
