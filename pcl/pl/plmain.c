@@ -2718,9 +2718,11 @@ help:
                         break;
                     param_string_from_transient_string(str, adef);
                     gs_c_param_list_write_more(params);
-                    code =
-                        param_write_string((gs_param_list *) params,
-                                           "OutputFile", &str);
+                    code = param_write_string((gs_param_list *) params,
+                                              "OutputFile", &str);
+                    if (code < 0)
+                        break;
+                    code = pl_main_set_param(pmi, "NOPAUSE");
                     pmi->pause = false;
                     break;
                 }
