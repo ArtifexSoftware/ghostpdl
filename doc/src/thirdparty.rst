@@ -105,7 +105,11 @@ The table below details the third party libraries that Ghostscript and/or GhostP
 
        "a permissive free software license"
      - http://www.zlib.net/
-
+   * - libtiff
+     - 4.3.0
+     - TIFF image encoding/decoding
+     - BSD-style
+     - http://www.remotesensing.org/libtiff
 
 
 The following are optional.
