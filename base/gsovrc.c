@@ -1307,8 +1307,8 @@ overprint_dev_spec_op(gx_device* pdev, int dev_spec_op,
     if (dev_spec_op == gxdso_overprint_op)
     {
         int ret = opdev->op_state;
-        if (*(int *)data >= 0)
-            opdev->op_state = *(int *)data;
+        if ((intptr_t)data >= 0)
+            opdev->op_state = (intptr_t)data;
         return ret;
     }
 
