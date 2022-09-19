@@ -2052,6 +2052,9 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     if (code < 0)
         goto exit;
 
+    num_values = (hival+1) * cs_num_components(pcs_base);
+    lookup_length = num_values;
+
     switch (pdfi_type_of(lookup)) {
     case PDF_STREAM:
         code = pdfi_stream_to_buffer(ctx, (pdf_stream *)lookup, &Buffer, &lookup_length);
@@ -2078,7 +2081,6 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
         goto exit;
     }
 
-    num_values = (hival+1) * cs_num_components(pcs_base);
     if (num_values > lookup_length) {
         dmprintf2(ctx->memory, "WARNING: pdfi_create_indexed() got %"PRIi64" values, expected at least %d values\n",
                   lookup_length, num_values);

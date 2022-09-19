@@ -786,7 +786,7 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
     pdf_cmap pdficm[3] = {0};
     pdf_cmap *pdfi_cmap = &(pdficm[1]);
     byte *buf = NULL;
-    int64_t buflen;
+    int64_t buflen = 0;
     pdf_ps_ctx_t cmap_ctx;
 
     pdfi_cmap->ctx = ctx;

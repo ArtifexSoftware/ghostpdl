@@ -828,7 +828,7 @@ static int pdfi_obj_stream_str(pdf_context *ctx, pdf_obj *obj, byte **data, int 
     int code = 0;
     byte *buf;
     pdf_stream *stream = (pdf_stream *)obj;
-    int64_t bufsize;
+    int64_t bufsize = 0;
     pdf_indirect_ref *streamref = NULL;
 
     /* TODO: How to deal with stream dictionaries?

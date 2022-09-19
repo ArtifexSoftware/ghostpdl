@@ -2395,7 +2395,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                      */
                     if (pdfi_type_of(obj) == PDF_STREAM) {
                         byte *d;
-                        int64_t sz;
+                        int64_t sz = 0;
 
                         code = pdfi_object_alloc(ctx, PDF_BUFFER, 0, (pdf_obj **)&cffcid->cidtogidmap);
                         if (code < 0) {
@@ -2600,7 +2600,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 code = pdfi_dict_knownget(ctx, font_dict, "CIDToGIDMap", (pdf_obj **) &obj);
                 if (code > 0) {
                     byte *d;
-                    int64_t sz;
+                    int64_t sz = 0;
                     /* CIDToGIDMap can only be a stream or a name, and if it's a name
                        it's only permitted to be "/Identity", so ignore it
                      */
@@ -2873,7 +2873,7 @@ pdfi_read_type1C_font(pdf_context *ctx, pdf_dict *font_dict,
     pdf_obj *fontdesc = NULL;
     pdf_obj *fontfile = NULL;
     byte *fbuf;
-    int64_t fbuflen;
+    int64_t fbuflen = 0;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
 

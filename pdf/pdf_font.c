@@ -857,7 +857,7 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
     pdf_name *ffsubtype = NULL;
     int fftype = no_type_font;
     byte *fbuf = NULL;
-    int64_t fbuflen;
+    int64_t fbuflen = 0;
     int substitute = font_embedded;
     int findex = -1;
 

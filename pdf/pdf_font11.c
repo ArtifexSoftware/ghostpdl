@@ -377,7 +377,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
          */
         if (pdfi_type_of(obj) == PDF_STREAM) {
             byte *d;
-            int64_t sz;
+            int64_t sz = 0;
 
             code = pdfi_object_alloc(ctx, PDF_BUFFER, 0, (pdf_obj **)&font->cidtogidmap);
             if (code < 0) {

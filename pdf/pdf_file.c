@@ -352,7 +352,7 @@ pdfi_JBIG2Decode_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
     int code;
     pdf_stream *Globals = NULL;
     byte *buf = NULL;
-    int64_t buflen;
+    int64_t buflen = 0;
     void *globalctx;
 
     s_jbig2decode_set_global_data((stream_state*)&state, NULL, NULL);
@@ -1647,7 +1647,7 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
 {
     byte *Buffer = NULL;
     int code = 0;
-    int64_t buflen = 0;
+    int64_t buflen = 0, read = 0, ToRead = *bufferlen;
     gs_offset_t savedoffset;
     pdf_c_stream *stream;
     bool filtered;
@@ -1672,20 +1672,24 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
             goto exit;
     }
 
-    if (filtered || ctx->encryption.is_encrypted) {
-        code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
-        if (code < 0) {
-            goto exit;
+retry:
+    if (ToRead == 0) {
+        if (filtered || ctx->encryption.is_encrypted) {
+            code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
+            if (code < 0) {
+                goto exit;
+            }
+            while (seofp(stream->s) != true && serrorp(stream->s) != true) {
+                (void)sbufskip(stream->s, sbufavailable(stream->s));
+                s_process_read_buf(stream->s);
+                buflen += sbufavailable(stream->s);
+            }
+            pdfi_close_file(ctx, stream);
+        } else {
+            buflen = pdfi_stream_length(ctx, stream_obj);
         }
-        while (seofp(stream->s) != true && serrorp(stream->s) != true) {
-            (void)sbufskip(stream->s, sbufavailable(stream->s));
-            s_process_read_buf(stream->s);
-            buflen += sbufavailable(stream->s);
-        }
-        pdfi_close_file(ctx, stream);
-    } else {
-        buflen = pdfi_stream_length(ctx, stream_obj);
-    }
+    } else
+        buflen = *bufferlen;
 
     /* Alloc buffer */
     Buffer = gs_alloc_bytes(ctx->memory, buflen, "pdfi_stream_to_buffer (Buffer)");
@@ -1693,24 +1697,59 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
         code = gs_note_error(gs_error_VMerror);
         goto exit;
     }
+
     code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
-    if (code < 0)
+    if (code < 0) {
+        buflen = 0;
         goto exit;
+    }
     if (filtered || ctx->encryption.is_encrypted) {
         code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
         if (code < 0)
             goto exit;
-        sfread(Buffer, 1, buflen, stream->s);
+        read = sfread(Buffer, 1, buflen, stream->s);
+        if (read == ERRC) {
+            /* Error reading the expected number of bytes. If we already calculated the number of
+             * bytes in the loop above, then ignore the error and carry on. If, however, we were
+             * told how many bytes to expect, and failed to read that many, go back and do this
+             * the slow way to determine how many bytes are *really* available.
+             */
+            if(ToRead != 0) {
+                buflen = ToRead = 0;
+                pdfi_close_file(ctx, stream);
+                code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
+                if (code < 0)
+                    goto exit;
+                gs_free_object(ctx->memory, Buffer, "pdfi_stream_to_buffer (Buffer)");
+                goto retry;
+            }
+        }
         pdfi_close_file(ctx, stream);
     } else {
-        sfread(Buffer, 1, buflen, ctx->main_stream->s);
+        read = sfread(Buffer, 1, buflen, ctx->main_stream->s);
+        if (read == ERRC) {
+            /* Error reading the expected number of bytes. If we already calculated the number of
+             * bytes in the loop above, then ignore the error and carry on. If, however, we were
+             * told how many bytes to expect, and failed to read that many, go back and do this
+             * the slow way to determine how many bytes are *really* available.
+             */
+            if(ToRead != 0) {
+                buflen = ToRead = 0;
+                code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
+                if (code < 0)
+                    goto exit;
+                gs_free_object(ctx->memory, Buffer, "pdfi_stream_to_buffer (Buffer)");
+                goto retry;
+            }
+        }
     }
 
  exit:
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
     if (Buffer && code < 0)
         gs_free_object(ctx->memory, Buffer, "pdfi_stream_to_buffer (Buffer)");
-    *buf = Buffer;
+    else
+        *buf = Buffer;
     *bufferlen = buflen;
     return code;
 }

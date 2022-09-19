@@ -1251,7 +1251,7 @@ static int build_type6_halftone(pdf_context *ctx, pdf_stream *halftone_stream, p
                                 gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
-    int64_t w, h, length;
+    int64_t w, h, length = 0;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
     pdf_dict *halftone_dict = NULL;
 
@@ -1285,6 +1285,7 @@ static int build_type6_halftone(pdf_context *ctx, pdf_stream *halftone_stream, p
 
     phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
 
+    length = w * h;
     code = pdfi_stream_to_buffer(ctx, halftone_stream,
                                  (byte **)&ptp->thresholds.data, &length);
     if (code < 0)
@@ -1308,7 +1309,7 @@ error:
 static int build_type10_halftone(pdf_context *ctx, pdf_stream *halftone_stream, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
-    int64_t w, h, length;
+    int64_t w, h, length = 0;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
     pdf_dict *halftone_dict = NULL;
 
@@ -1338,6 +1339,7 @@ static int build_type10_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
 
     phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
 
+    length = (w * w) + (h * h);
     code = pdfi_stream_to_buffer(ctx, halftone_stream,
                                  (byte **)&ptp->thresholds.data, &length);
     if (code < 0)
@@ -1361,7 +1363,7 @@ error:
 static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
-    int64_t w, h, length;
+    int64_t w, h, length = 0;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
     pdf_dict *halftone_dict = NULL;
 
@@ -1404,6 +1406,12 @@ static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
         goto error;
 
     phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
+
+    if (ptp->width2 != 0 && ptp->height2 != 0) {
+        length = ((ptp->width * ptp->height) + (ptp->width2 * ptp->height2)) * 2;
+    } else {
+        length = ptp->width * ptp->height * 2;
+    }
 
     code = pdfi_stream_to_buffer(ctx, halftone_stream,
                                  (byte **)&ptp->thresholds.data, &length);
