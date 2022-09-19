@@ -2,6 +2,8 @@
 [attr]tabs              whitespace=trailing-space,space-before-tab,indent-with-non-tab,tabwidth=4
 [attr]spaces            whitespace=trailing-space,space-before-tab,tabs-in-indent
 [attr]makefile          whitespace=trailing-space,space-before-tab,indent-with-non-tab,tabwidth=8
+[attr]rst               -whitespace
+[attr]svg               -whitespace
 
 *		text=auto
 Make*		makefile
@@ -14,6 +16,8 @@ Make*		makefile
 *.htm		spaces
 *.css		spaces
 *.pdf		binary
+*.rst       rst
+*.svg       svg
 
 # Source files
 *.c		spaces
