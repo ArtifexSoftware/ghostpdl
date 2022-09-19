@@ -954,7 +954,8 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
                             Parent = NULL;
                         }
                     }
-                }
+                } else
+                    Parent = NULL;
             }
 
             if (Parent != NULL) {
