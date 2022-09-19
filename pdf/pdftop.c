@@ -60,9 +60,9 @@ extern const char gp_file_name_list_separator;
 static int
 pdf_detect_language(const char *s, int len)
 {
-    if (len < 5)
-        return 1;
-    return memcmp(s, "%!PDF", 5);
+    if (len >= 5 && memcmp(s, "%!PDF", 5) == 0)
+        return 100;
+    return 0;
 }
 
 static const pl_interp_characteristics_t *
