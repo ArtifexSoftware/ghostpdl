@@ -520,6 +520,7 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
     pdf_font_type1 *t1f = NULL;
     pdf_obj *tounicode = NULL;
     ps_font_interp_private fpriv = { 0 };
+    bool key_known;
 
     if (font_dict != NULL)
         (void)pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
@@ -700,6 +701,18 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             t1f->blendaxistypes = fpriv.u.t1.blendaxistypes;
             pdfi_countup(t1f->blendaxistypes);
 
+            key_known = false;
+            if (t1f->FontDescriptor != NULL) {
+                 code = pdfi_dict_known(ctx, t1f->FontDescriptor, "FontFile", &key_known);
+                 if (code < 0 || key_known == false) {
+                     code = pdfi_dict_known(ctx, t1f->FontDescriptor, "FontFile2", &key_known);
+                     if (code < 0 || key_known == false) {
+                         code = pdfi_dict_known(ctx, t1f->FontDescriptor, "FontFile3", &key_known);
+                     }
+                 }
+            }
+            t1f->pfont->is_resource = (key_known == false);
+
             code = gs_definefont(ctx->font_dir, (gs_font *) t1f->pfont);
             if (code < 0) {
                 goto error;
@@ -801,11 +814,13 @@ pdfi_copy_type1_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, 
     pdfi_countup(font->blendaxistypes);
     pdfi_countup(font->Subrs);
 
-    if (font->BaseFont != NULL && ((pdf_name *)font->BaseFont)->length <= gs_font_name_max) {
+    if (font->BaseFont != NULL && ((pdf_name *)font->BaseFont)->length <= gs_font_name_max - 1) {
         memcpy(dpfont1->key_name.chars, ((pdf_name *)font->BaseFont)->data, ((pdf_name *)font->BaseFont)->length);
         dpfont1->key_name.size = ((pdf_name *)font->BaseFont)->length;
+        dpfont1->key_name.chars[dpfont1->key_name.size] = '\0';
         memcpy(dpfont1->font_name.chars, ((pdf_name *)font->BaseFont)->data, ((pdf_name *)font->BaseFont)->length);
         dpfont1->font_name.size = ((pdf_name *)font->BaseFont)->length;
+        dpfont1->font_name.chars[dpfont1->font_name.size] = '\0';
     }
 
     font->Encoding = NULL;
