@@ -901,11 +901,11 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
 
         code = pdfi_repair_file(ctx);
         if (code < 0) {
-            *object = PDF_NULL_OBJ;
+            *object = NULL;
             return code;
         }
         if (obj >= ctx->xref_table->xref_size) {
-            *object = PDF_NULL_OBJ;
+            *object = NULL;
             return_error(gs_error_rangecheck);
         }
     }
