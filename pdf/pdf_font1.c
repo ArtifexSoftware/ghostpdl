@@ -708,6 +708,9 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
                      code = pdfi_dict_known(ctx, t1f->FontDescriptor, "FontFile2", &key_known);
                      if (code < 0 || key_known == false) {
                          code = pdfi_dict_known(ctx, t1f->FontDescriptor, "FontFile3", &key_known);
+                         if (code < 0) {
+                             key_known = false;
+                         }
                      }
                  }
             }
