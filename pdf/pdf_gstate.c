@@ -1410,7 +1410,7 @@ static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
     if (ptp->width2 != 0 && ptp->height2 != 0) {
         length = ((ptp->width * ptp->height) + (ptp->width2 * ptp->height2)) * 2;
     } else {
-        length = ptp->width * ptp->height * 2;
+        length = (int64_t)ptp->width * (int64_t)ptp->height * 2;
     }
 
     code = pdfi_stream_to_buffer(ctx, halftone_stream,
