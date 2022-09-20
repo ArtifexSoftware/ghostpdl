@@ -3121,7 +3121,7 @@ pl_interp_implementation_t *pl_main_get_pdf_instance(const gs_memory_t *mem)
 pl_interp_implementation_t *
 pl_main_get_pcl_instance(const gs_memory_t *mem)
 {
-    return pl_main_get_language_instance(mem, "PCLXL");
+    return pl_main_get_language_instance(mem, "PCL");
 }
 
 pl_interp_implementation_t *
