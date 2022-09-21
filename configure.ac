@@ -2188,11 +2188,14 @@ if test x$with_so != xno; then
     AC_MSG_RESULT([yes])
     ENABLESO="\$(D_)SO_INCLUDED\$(_D)"
     GPDL_SO_TOP_OBJ="\$(GPDLOBJ)/\$(GPDL_SO_TOP_OBJ_FILE)"
+    # This will do for now, though clearly it's not ideal.
+    SO_PDFEXPORT_LIB="\$(SOSRCDIR)/lib/linux/x64/smart-office-lib.a"
 fi
 fi
 
 AC_SUBST(ENABLESO)
 AC_SUBST(GPDL_SO_TOP_OBJ)
+AC_SUBST(SO_PDFEXPORT_LIB)
 
 AC_ARG_WITH([cal], AS_HELP_STRING([--without-cal],
     [do not try to use the CAL library for acceleration]))

@@ -76,7 +76,9 @@ LANG_CFLAGS=\
 	$(D_)PNG_INCLUDED$(_D)\
 	$(ENABLE_SO)\
 
-GPDLCC=$(CC_) $(LANG_CFLAGS) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+GPDL_CFLAGS=$(LANG_CFLAGS) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+
+GPDLCC=$(CC_) $(GPDL_CFLAGS)
 
 GPDLJB2CC=$(CC) $(LANG_CFLAGS) $(I_)$(LDF_JB2I_) $(JBIG2_CFLAGS) $(II)$(JB2I_)$(_I) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) \
 $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(CCFLAGS) $(C_)
@@ -111,10 +113,15 @@ $(GPDLOBJ)/$(GPDL_URF_TOP_OBJ_FILE): $(GPDLURFSRC)urftop.c $(AK)\
 # Note that we don't use $(GPDL_SO_TOP_OBJ) as the target of the
 # next make rule, as this expands to "" in builds that don't use
 # SO.
+# sotop.c uses windows.h on windows. This requires that /Za not be
+# used (as this disables Microsoft extensions, which breaks windows.h).
+# GLCC has the /Za pickled into it on windows, so we can't use GLCC.
+# Therefore use our own compiler invocation.
+SOTOP_CC=$(CC) $(GENOPT) $(GLINCLUDES) $(CFLAGS) $(GPDL_CFLAGS)
 $(GPDLOBJ)/$(GPDL_SO_TOP_OBJ_FILE): $(GPDLSOSRC)sotop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h)\
  $(gscoord_h) $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
-	$(GPDLCC) $(GPDLSOSRC)sotop.c $(GPDLO_)$(GPDL_SO_TOP_OBJ_FILE)
+	$(SOTOP_CC) $(GPDLSOSRC)sotop.c $(GPDLO_)$(GPDL_SO_TOP_OBJ_FILE)
 
 $(GPDL_JPG_TOP_OBJ): $(GPDLSRC)jpgtop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
