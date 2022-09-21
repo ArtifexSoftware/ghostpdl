@@ -143,7 +143,7 @@ FunctionEnd
 !define MUI_FINISHPAGE_RUN_TEXT "Generate cidfmap for Windows CJK TrueType fonts"
 !define MUI_FINISHPAGE_RUN_FUNCTION CJKGen
 ; !define MUI_FINISHPAGE_RUN_NOTCHECKED
-!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\doc\Readme.htm"
+; !define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\doc\Readme.htm"
 ; MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
 !define MUI_FINISHPAGE_LINK          "Visit the Ghostscript web site"
 !define MUI_FINISHPAGE_LINK_LOCATION http://www.ghostscript.com/
@@ -225,7 +225,7 @@ Section "" ; (default section)
 SetOutPath "$INSTDIR"
 CreateDirectory "$INSTDIR\bin"
 ; add files / whatever that need to be installed here.
-File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x tesseract /x leptonica /x extract /x cal doc
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x tesseract /x leptonica /x extract /x cal /x doc/src doc
 File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x tesseract /x leptonica /x extract /x cal examples
 File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x tesseract /x leptonica /x extract /x cal /x lib/gssetgs.bat lib
 File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x tesseract /x leptonica /x extract /x cal Resource
@@ -274,7 +274,7 @@ Function .onInstSuccess
     SetShellVarContext all
     CreateDirectory "$SMPROGRAMS\Ghostscript"
     CreateShortCut "$SMPROGRAMS\Ghostscript\Ghostscript ${VERSION}.LNK" "$INSTDIR\bin\gswin${WINTYPE}.exe" '"-I$INSTDIR\lib;$INSTDIR\..\fonts"'
-    CreateShortCut "$SMPROGRAMS\Ghostscript\Ghostscript Readme ${VERSION}.LNK" "$INSTDIR\doc\Readme.htm"
+;    CreateShortCut "$SMPROGRAMS\Ghostscript\Ghostscript Readme ${VERSION}.LNK" "$INSTDIR\doc\Readme.htm"
     CreateShortCut "$SMPROGRAMS\Ghostscript\Uninstall Ghostscript ${VERSION}.LNK" "$INSTDIR\uninstgs.exe"
 FunctionEnd
 
@@ -324,7 +324,7 @@ Section Uninstall
 ; add delete commands to delete whatever files/registry keys/etc you installed here.
 SetShellVarContext all
 Delete   "$SMPROGRAMS\Ghostscript\Ghostscript ${VERSION}.LNK"
-Delete   "$SMPROGRAMS\Ghostscript\Ghostscript Readme ${VERSION}.LNK"
+; Delete   "$SMPROGRAMS\Ghostscript\Ghostscript Readme ${VERSION}.LNK"
 Delete   "$SMPROGRAMS\Ghostscript\Uninstall Ghostscript ${VERSION}.LNK"
 RMDir    "$SMPROGRAMS\Ghostscript"
 Delete   "$INSTDIR\uninstgs.exe"
