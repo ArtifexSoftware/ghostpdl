@@ -708,6 +708,11 @@ WITH_SO=0
 ENABLE_SO=$(D_)SO_INCLUDED$(_D)
 GPDL_SO_TOP_OBJ=$(GPDLOBJ)/$(GPDL_SO_TOP_OBJ_FILE)
 SO_INCLUDE=$(I_)$(SOSRCDIR)$(_I)
+!ifdef WIN64
+SO_PDFEXPORT_LIB=$(SOSRCDIR)/lib/win/x64/smart-office-lib.lib winmm.lib
+!else
+SO_PDFEXPORT_LIB=$(SOSRCDIR)/lib/win/x86/smart-office-lib.lib winmm.lib
+!endif
 !endif
 
 
@@ -2136,6 +2141,7 @@ $(GPDLDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_AL
 	echo Linking $(GPDLDLL)  $(GPDLDLL_DLL) $(METRO)
 	copy $(gpdlld_tr) $(GPDLGEN)gpdlwin.tr
 	echo $(MAIN_OBJ) $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(PDF_TOP_OBJ) $(XOBJS) >> $(GPDLGEN)gpdlwin.tr
+	echo $(SO_PDFEXPORT_LIB) >> $(GPDLGEN)gpdlwin.tr
 	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
 	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS)c0.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
 	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS)c1.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
@@ -2161,7 +2167,7 @@ $(GPDL_XE): $(GPDLDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
 	echo /wholearchive:clang_rt.asan_cxx-i386.lib >> $(GPDLGEN)gpdlwin.rsp
 !endif
 	echo  /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
-	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp $(DWMAINOBJS) $(BINDIR)\$(GPDLDLL).lib $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res
+	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp $(DWMAINOBJS) $(BINDIR)\$(GPDLDLL).lib $(SO_PDFEXPORT_LIB) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res
 	del $(GPDLGEN)gpdlwin.rsp
 
 
@@ -2275,6 +2281,7 @@ $(GPDL_XE): $(ECHOGS_XE) $(ld_tr) $(gpdl_tr) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS)
 	copy $(gpdlld_tr) $(GPDLGEN)gpdlwin.tr
 	echo $(WINMAINOBJS) $(MAIN_OBJ) $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(PDF_TOP_OBJ) $(XOBJS) >> $(GPDLGEN)gpdlwin.tr
 	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(SO_PDFEXPORT_LIB) >> $(GPDLGEN)gpdlwin.tr
 	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(GPDLGEN)gpdlwin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PSGEN)gpdlwin.rsp
