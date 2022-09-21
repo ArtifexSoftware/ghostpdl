@@ -2402,7 +2402,8 @@ static int nInstrCount=0;
 
     L = CUR.opcode - 0xB8 + 1;
 
-    if ( BOUNDS( L, CUR.stackSize+1-CUR.top ) )
+    if ( BOUNDS( L, CUR.stackSize+1-CUR.top )
+      || BOUNDS( CUR.IP + (L * 2), CUR.codeSize ))
     {
       CUR.error = TT_Err_Stack_Overflow;
       return;
