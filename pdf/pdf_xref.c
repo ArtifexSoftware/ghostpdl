@@ -421,8 +421,11 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
 
     /* We have the obj_num. Lets try for obj_num gen obj as a XRef stream */
     code = pdfi_read_bare_int(ctx, ctx->main_stream, &gen_num);
-    if (code <= 0)
+    if (code <= 0) {
+        if (ctx->args.pdfstoponerror)
+            return code;
         return(pdfi_repair_file(ctx));
+    }
 
     /* Try to read 'obj' */
     code = pdfi_read_bare_keyword(ctx, ctx->main_stream);
@@ -432,13 +435,19 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
         return_error(gs_error_syntaxerror);
 
     /* Third element must be obj, or it's not a valid xref */
-    if (code != TOKEN_OBJ)
+    if (code != TOKEN_OBJ) {
+        if (ctx->args.pdfstoponerror)
+            return code;
         return(pdfi_repair_file(ctx));
+    }
 
     do {
         code = pdfi_read_token(ctx, ctx->main_stream, obj_num, gen_num);
-        if (code <= 0)
+        if (code <= 0) {
+            if (ctx->args.pdfstoponerror)
+                return code;
             return pdfi_repair_file(ctx);
+        }
 
         if (pdfi_count_stack(ctx) >= 2 && pdfi_type_of(ctx->stack_top[-1]) == PDF_FAST_KEYWORD) {
             uintptr_t keyword = (uintptr_t)ctx->stack_top[-1];
@@ -450,6 +459,8 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
                 /* Remove the 'stream' token from the stack, should leave a dictionary object on the stack */
                 pdfi_pop(ctx, 1);
                 if (pdfi_type_of(ctx->stack_top[-1]) != PDF_DICT) {
+                    if (ctx->args.pdfstoponerror)
+                        return code;
                     return pdfi_repair_file(ctx);
                 }
                 dict = (pdf_dict *)ctx->stack_top[-1];
@@ -459,6 +470,8 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
                 /* Pop off the dict */
                 pdfi_pop(ctx, 1);
                 if (code < 0) {
+                    if (ctx->args.pdfstoponerror)
+                        return code;
                     /* TODO: should I return code instead of trying to repair?
                      * Normally the above routine should not fail so something is
                      * probably seriously fubar.
@@ -485,12 +498,16 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
                 code = pdfi_process_xref_stream(ctx, sdict, ctx->main_stream);
                 if (code < 0) {
                     pdfi_countdown(sdict);
+                    if (ctx->args.pdfstoponerror)
+                        return code;
                     return (pdfi_repair_file(ctx));
                 }
                 pdfi_countdown(sdict);
                 break;
             } else if (keyword == TOKEN_ENDOBJ) {
                 /* Something went wrong, this is not a stream dictionary */
+                if (ctx->args.pdfstoponerror)
+                    return code;
                 return(pdfi_repair_file(ctx));
             }
         }

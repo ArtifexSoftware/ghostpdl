@@ -1216,6 +1216,9 @@ currentdict /PDFSwitches undef
             (%stderr) (w) file dup
             (   **** Warning: File has some garbage before %PDF- .\n)
             writestring flushfile
+            PDFSTOPONWARNING {
+              /run cvx /unregistered signalerror
+            } if
           } {
             pop
           } ifelse
