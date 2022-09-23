@@ -1270,6 +1270,8 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
             pdfctx->ctx->args.pdfstoponwarning = pvalueref->value.boolval;
+            if (pvalueref->value.boolval)
+                pdfctx->ctx->args.pdfstoponerror = pvalueref->value.boolval;
         }
 
         if (dict_find_string(pdictref, "NOTRANSPARENCY", &pvalueref) > 0) {

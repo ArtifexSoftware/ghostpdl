@@ -541,6 +541,8 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             code = plist_value_get_bool(&pvalue, &ctx->args.pdfstoponwarning);
             if (code < 0)
                 return code;
+            if (ctx->args.pdfstoponwarning != 0)
+                ctx->args.pdfstoponerror = 1;
         }
         if (!strncmp(param, "NOTRANSPARENCY", 14)) {
             code = plist_value_get_bool(&pvalue, &ctx->args.notransparency);
