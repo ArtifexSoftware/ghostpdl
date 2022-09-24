@@ -220,7 +220,7 @@ latex_domain_indices = True
 # Grouping the document tree into PDF files. List of tuples
 # (source start file, target name, title, author).
 
-pdf_documents = [("index", "Ghostscript", "Ghostscript Manual", "Artifex")]
+pdf_documents = [("toc", "Ghostscript", "Ghostscript Manual", "Artifex")]
 
 # A comma-separated list of custom stylesheets. Example:
 #pdf_stylesheets = ["sphinx", "bahnschrift", "a4"]
