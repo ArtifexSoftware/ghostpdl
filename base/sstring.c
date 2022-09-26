@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -387,8 +387,11 @@ s_hex_process(stream_cursor_read * pr, stream_cursor_write * pw,
 
     if (q >= wlimit)
         return 1;
-    if (val1 <= 0xf)
+    if (val1 <= 0xf) {
+        if (p >= rlimit)
+            return 1;
         goto d2;
+    }
     do {
         /* No digits read */
         if ((rcount = (rlimit - p) >> 1) != 0)
