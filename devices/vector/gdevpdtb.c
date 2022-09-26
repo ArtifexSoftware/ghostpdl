@@ -743,10 +743,10 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
         swrite_position_only(&poss);
         code = psf_write_truetype_font(&poss, pfont, options, NULL, 0, &fnstr);
         if (code < 0)
-            return code;
+            goto finish;
         code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, "/Length1", stell(&poss));
         if (code < 0)
-            return code;
+            goto finish;
         code = psf_write_truetype_font(writer.binary.strm, pfont,
                                        options, NULL, 0, &fnstr);
         goto finish;
