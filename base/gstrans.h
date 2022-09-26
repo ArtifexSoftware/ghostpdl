@@ -74,7 +74,7 @@ typedef enum {
 #define PDF14_SET_FILLCONSTANTALPHA (1 << 6)
 #define PDF14_SET_STROKECONSTANTALPHA (1 << 7)
 #define PDF14_SET_STROKEOVERPRINT (1 << 8)
-#define PDF_SET_FILLSTROKE_STATE (1 << 9)
+#define PDF14_SET_FILLSTROKE_STATE (1 << 9)
 
 /* Used for keeping track of the text group madness, since we have the pdf14
    device needs to know if we are int an BT/ET group vs. a FreeText Annotation

@@ -1304,12 +1304,25 @@ overprint_dev_spec_op(gx_device* pdev, int dev_spec_op,
     if (dev_spec_op == gxdso_overprint_active)
         return !opdev->is_idle;
 
-    if (dev_spec_op == gxdso_overprint_op)
+    if (dev_spec_op == gxdso_abuf_optrans)
     {
-        int ret = opdev->op_state;
-        if ((intptr_t)data >= 0)
-            opdev->op_state = (intptr_t)data;
-        return ret;
+        overprint_abuf_state_t *state = (overprint_abuf_state_t *)data;
+        switch (state->op_trans)
+        {
+        case OP_FS_TRANS_PREFILL:
+            state->storage[0] = opdev->op_state;
+            opdev->op_state = OP_STATE_FILL;
+            break;
+        case OP_FS_TRANS_PRESTROKE:
+            opdev->op_state = OP_STATE_STROKE;
+            break;
+        default:
+        case OP_FS_TRANS_POSTSTROKE:
+        case OP_FS_TRANS_CLEANUP:
+            opdev->op_state = (OP_FS_STATE)state->storage[0];
+            break;
+        }
+        return 0;
     }
 
     if (dev_spec_op == gxdso_device_child) {

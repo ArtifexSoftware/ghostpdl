@@ -4276,6 +4276,7 @@ $(GLSRC)gxclthrd.h:$(GLSRC)stdpre.h
 $(GLSRC)gxclthrd.h:$(GLGEN)arch.h
 $(GLSRC)gxclthrd.h:$(GLSRC)gs_dll_call.h
 $(GLSRC)gxdevsop.h:$(GLSRC)gxdevcli.h
+$(GLSRC)gxdevsop.h:$(GLSRC)gsovrc.h
 $(GLSRC)gxdevsop.h:$(GLSRC)gxcmap.h
 $(GLSRC)gxdevsop.h:$(GLSRC)gxtext.h
 $(GLSRC)gxdevsop.h:$(GLSRC)gstext.h

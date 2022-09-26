@@ -20,6 +20,7 @@
 #  define gxdevsop_INCLUDED
 
 #include "gxdevcli.h"
+#include "gsovrc.h"
 
 /* This file enumerates a series of device specific operations, that can be
  * performed using the 'dev_spec_op' procedure in the gs_device structure.
@@ -141,6 +142,30 @@ typedef struct color_replace_t {
     const gs_client_color *pcc;
     const gs_gstate *pgs;  /* Perhaps needed for named color profile information */
 } color_replace_s;
+
+/* Operation for pdf14 device to perform when in fill stroke
+   commands occurring in gdevabuf.c (alphabits) device. This
+   lets us get the pdf14 device setup for the stroke fill
+   operation, and to clean up following the operation */
+typedef enum {
+    OP_FS_TRANS_PREFILL,
+    OP_FS_TRANS_PRESTROKE,
+    OP_FS_TRANS_POSTSTROKE,
+    OP_FS_TRANS_CLEANUP
+} OP_FS_TRANS;
+
+/* Structure used for overprint communication coming from alpha buffer to owner */
+typedef struct overprint_abuf_state_s {
+    /* Client filled data that changes each call. */
+    OP_FS_TRANS op_trans; /* What are we doing? */
+    /* Client filled data that remains constant. */
+    const gs_gstate *pgs;          /* From client (abuf) */
+    gx_path *ppath;
+    const gx_clip_path *pcpath;
+    gs_log2_scale_point alpha_buf_path_scale;
+    /* Callee storage. */
+    unsigned char storage[256];
+} overprint_abuf_state_t;
 
 enum {
     /* All gxdso_ keys must be defined in this structure.
@@ -458,13 +483,22 @@ enum {
      */
     gxdso_overprintsim_state,
 
-    /* Get/Set information about the overprint op state.
-     *     data = overprint op state to set (OP_STATE_{NONE, FILL, STROKE}) or -1
-     *            for no change.
-     *     size = 0
-     * Returns -1 if unhandled, otherwise the current state.
-     */
-    gxdso_overprint_op,
+    /* Used for handing state settings between the abuf device and the
+     * transparency and overprint compositor.
+     *     data = pointer to overprint_abuf_state_t structure.
+     *            op_trans will be OP_FS_TRANS_PREFILL on the first call.
+     *            In normal operation it will then be OP_FS_TRANS_PRESTROKE
+     *            and then OP_FS_TRANS_POSTSTROKE on subsequent calls. The
+     *            contents of the structure will otherwise remain constant
+     *            between calls.
+     *            In the event of an error return from this call, no further
+     *            calls will be made on with this param block (i.e. the
+     *            callee must tidy itself up).
+     *            In the event of an error in the caller between calls to
+     *            this, an OP_FS_TRANS_CLEANUP call will be made.
+     *     size = size of structure
+     * Returns error. */
+    gxdso_abuf_optrans,
 
     /* Color replacement method.  Intercepts remap color method(s) to
      *  enable the device map source colors to device colors directly

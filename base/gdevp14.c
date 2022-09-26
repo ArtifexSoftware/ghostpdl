@@ -136,6 +136,20 @@ static pdf14_mask_t * pdf14_mask_element_new(gs_memory_t * memory);
 static void pdf14_debug_mask_stack_state(pdf14_ctx *ctx);
 #endif
 
+/* A structure used by the pdf14 device so that
+   we can do the proper dance when the alphabuf
+   device is being used */
+typedef struct pdf14_abuf_state_s {
+    bool op_ca_eq_CA;
+    bool path_empty;
+    float stroke_alpha;
+    float fill_alpha;
+    gs_gstate* pgs;
+    gs_blend_mode_t blend_mode;
+    bool group_needed;
+    OP_FS_STATE orig_state;
+} pdf14_abuf_state_t;
+
 /* Buffer stack	data structure */
 gs_private_st_ptrs7(st_pdf14_buf, pdf14_buf, "pdf14_buf",
                     pdf14_buf_enum_ptrs, pdf14_buf_reloc_ptrs,
@@ -3938,6 +3952,11 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     pdev->fillconstantalpha = pgs->fillconstantalpha;
     pdev->strokeconstantalpha = pgs->strokeconstantalpha;
 
+    if (pgs->is_fill_color)
+        pdev->op_state = PDF14_OP_STATE_FILL;
+    else
+        pdev->op_state = PDF14_OP_STATE_STROKE;
+
     if_debug6m('v', dev->memory,
                "[v]set_marking_params, opacity = %g, shape = %g, bm = %d, op = %d, eop = %d seop = %d\n",
                pdev->opacity, pdev->shape, pgs->blend_mode, pgs->overprint, pdev->effective_overprint_mode,
@@ -4266,46 +4285,35 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
     return code;
 }
 
+/* Pull out steps of transparency updates for fill/stroke
+   so that they can be invoked elsewhere (e.g.
+   when the abuf device is handling the stroke/fill */
+
+/* Set-up prior to fill operation in fill-stroke */
 static int
-pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
-    const gx_fill_params *fill_params, const gx_drawing_color *pdcolor_fill,
-    const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
-    const gx_clip_path *pcpath)
+pdf14_fill_stroke_prefill(gx_device* dev, gs_gstate* pgs, gx_path* ppath,
+    const gx_clip_path* pcpath, float fill_alpha, float stroke_alpha,
+    gs_blend_mode_t blend_mode, bool* op_ca_eq_CA, bool* path_empty, gs_log2_scale_point path_log2scale)
 {
-    union {
-        const gs_gstate *cpgs;
-        gs_gstate *pgs;
-    } const_breaker;
-    gs_gstate *pgs;
-    int code, code2;
+    int code = 0;
     gs_transparency_group_params_t params = { 0 };
     gs_fixed_rect clip_bbox;
     gs_rect bbox, group_stroke_box;
     gs_fixed_rect path_bbox;
     int expansion_code;
     gs_fixed_point expansion;
-    pdf14_device *p14dev = (pdf14_device *)dev;
-    float stroke_alpha = cpgs->strokeconstantalpha;
-    float fill_alpha = cpgs->fillconstantalpha;
-    gs_blend_mode_t blend_mode = cpgs->blend_mode;
-    PDF14_OP_FS_STATE save_op_state = p14dev->op_state;
+    pdf14_device* p14dev = (pdf14_device*)dev;
 
-    /* Break const just once, neatly */
-    const_breaker.cpgs = cpgs;
-    pgs = const_breaker.pgs;
+    *path_empty = false;
 
     if ((pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0) ||
         (pgs->ctm.xx == 0.0 && pgs->ctm.xy == 0.0 && pgs->ctm.yx == 0.0 && pgs->ctm.yy == 0.0))
         return 0;
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, cpgs);
-    if (code < 0)
-        return code;
-
     code = gx_curr_fixed_bbox(pgs, &clip_bbox, NO_PATH);
     if (code < 0 && code != gs_error_unknownerror)
         return code;
+
     if (code == gs_error_unknownerror) {
         /* didn't get clip box from gx_curr_fixed_bbox */
         clip_bbox.p.x = clip_bbox.p.y = 0;
@@ -4317,10 +4325,25 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
 
     /* expand the ppath using stroke expansion rule, then intersect it */
     code = gx_path_bbox(ppath, &path_bbox);
-    if (code == gs_error_nocurrentpoint && ppath->segments->contents.subpath_first == 0)
-        return 0;		/* ignore empty path */
+
+    /* If we are coming from the abuf device, the path has been scaled
+       by a factor (see alpha_buffer_init).  Undo the scaling here so
+       on the path_bbox so that we get the proper bounding box for our group. */
+    if (path_log2scale.x != 0 || path_log2scale.y != 0) {
+        path_bbox.p.x = path_bbox.p.x >> path_log2scale.x;
+        path_bbox.q.x = path_bbox.q.x >> path_log2scale.x;
+        path_bbox.p.y = path_bbox.p.y >> path_log2scale.y;
+        path_bbox.q.y = path_bbox.q.y >> path_log2scale.y;
+    }
+
+    if (code == gs_error_nocurrentpoint && ppath->segments->contents.subpath_first == 0) {
+        *path_empty = true;
+        return 0; /* ignore empty path -- could try to send back a positive code for this but
+                     there are simply too many return cases that I can't account for. */
+    }
     if (code < 0)
         return code;
+
     expansion_code = gx_stroke_path_expansion(pgs, ppath, &expansion);
     if (expansion_code >= 0) {
         path_bbox.p.x -= expansion.x;
@@ -4337,17 +4360,21 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
     code = gs_bbox_transform_inverse(&bbox, &ctm_only(pgs), &group_stroke_box);
     if (code < 0)
         return code;
+
     if (p14dev->overprint != pgs->overprint || p14dev->stroke_overprint != pgs->stroke_overprint) {
         p14dev->overprint = pgs->overprint;
         p14dev->stroke_overprint = pgs->stroke_overprint;
     }
+
     /* See if overprint is enabled for both stroke and fill AND if ca == CA */
     if (fill_alpha == stroke_alpha &&
         p14dev->overprint && p14dev->stroke_overprint &&
         dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
+
         /* Push a non-isolated non-knockout group with alpha = 1.0 and
            compatible overprint mode.  Group will be composited with
            original alpha and blend mode */
+        *op_ca_eq_CA = true;
         params.Isolated = false;
         params.group_color_type = UNKNOWN;
         params.Knockout = false;
@@ -4356,8 +4383,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         params.group_shape = fill_alpha;
 
         /* non-isolated non-knockout group pushed with original alpha and blend mode */
-        code = pdf14_begin_transparency_group(dev, &params,
-                                              &group_stroke_box, pgs, dev->memory);
+        code = gs_begin_transparency_group(pgs, &params, &group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
         if (code < 0)
             return code;
 
@@ -4365,22 +4391,10 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         (void)gs_setfillconstantalpha(pgs, 1.0);
         (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
 
-        p14dev->op_state = PDF14_OP_STATE_FILL;
-        code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
-        if (code < 0)
-            goto cleanup;
-
-        (void)gs_setstrokeconstantalpha(pgs, 1.0);
-        gs_swapcolors_quick(pgs);	/* flips stroke_color_index (to stroke) */
-        p14dev->op_state = PDF14_OP_STATE_STROKE;
-        code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-        gs_swapcolors_quick(pgs);	/* this flips pgs->stroke_color_index back as well */
-        if (code < 0)
-            goto cleanup;       /* bail out (with colors swapped back to fill) */
-
     } else {
         /* Push a non-isolated knockout group. Do not change the alpha or
             blend modes. Note: we need to draw those that have alpha = 0 */
+        *op_ca_eq_CA = false;
         params.Isolated = false;
         params.group_color_type = UNKNOWN;
         params.Knockout = true;
@@ -4390,8 +4404,9 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
 
         /* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
         (void)gs_setblendmode(pgs, BLEND_MODE_Normal); /* Can never fail */
-        code = pdf14_begin_transparency_group(dev, &params, &group_stroke_box,
-                                              pgs, dev->memory);
+        code = gs_begin_transparency_group(pgs, &params, &group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
+        if (code < 0)
+            return code;
 
         /* restore blend mode for actual drawing in the group */
         (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
@@ -4401,48 +4416,178 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         if ((p14dev->icc_struct->overprint_control != gs_overprint_control_disable) && pgs->overprint &&
             dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
             (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
-        code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+    }
+    p14dev->op_state = PDF14_OP_STATE_FILL;
+    return code;
+}
+
+/* Set-up prior to stroke operation in fill-stroke */
+static void
+pdf14_fill_stroke_prestroke(gx_device* dev, gs_gstate* pgs, float stroke_alpha,
+    gs_blend_mode_t blend_mode, bool op_ca_eq_CA)
+{
+    pdf14_device* p14dev = (pdf14_device*)dev;
+
+    if (op_ca_eq_CA) {
+        (void)gs_setstrokeconstantalpha(pgs, 1.0);
+    } else {
         if ((p14dev->icc_struct->overprint_control != gs_overprint_control_disable) && pgs->overprint &&
             dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
             (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
-        if (code < 0)
-            goto cleanup;
 
         /* Note that the stroke can end up doing fill methods */
         (void)gs_setfillconstantalpha(pgs, stroke_alpha);
 
-        gs_swapcolors_quick(pgs);
-        p14dev->op_state = PDF14_OP_STATE_STROKE;
         if ((p14dev->icc_struct->overprint_control != gs_overprint_control_disable) && pgs->stroke_overprint &&
             dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
             (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
-        code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-        /* Don't need to restore blendmode here, as it will be restored below. */
-        gs_swapcolors_quick(pgs);
-        if (code < 0)
-            goto cleanup;
+    }
+    p14dev->op_state = PDF14_OP_STATE_STROKE;
+}
+
+/* Cleanup after the stroke in fill-stroke  */
+static void
+pdf14_fill_stroke_poststroke(gx_device* dev, gs_gstate* pgs, float fill_alpha, bool op_ca_eq_CA)
+{
+    pdf14_device* p14dev = (pdf14_device*)dev;
+
+    if (!op_ca_eq_CA) {
         /* Bug 703324 we need to reset the fill constant alpha in the graphics
-         * state to the correct saved value. We also need to reset the 'opacity' member of the
-         * device, because some device methods (eg fill_masked_image) don't take a graphics
-         * state pointer as a parameter and so are unable to set the opacity value themselves.
-         * We therefore need to make sure it is set according to the current fill state.
-         */
+          * state to the correct saved value. We also need to reset the 'opacity' member of the
+          * device, because some device methods (eg fill_masked_image) don't take a graphics
+          * state pointer as a parameter and so are unable to set the opacity value themselves.
+          * We therefore need to make sure it is set according to the current fill state.
+          */
         (void)gs_setfillconstantalpha(pgs, fill_alpha);
         pdf14_set_marking_params(dev, pgs);
     }
+}
 
-cleanup:
+/* cleanup in fill-stroke  */
+static int
+pdf14_fill_stroke_cleanup(gx_device* dev, gs_gstate* pgs, float fill_alpha, float stroke_alpha,
+    gs_blend_mode_t blend_mode, PDF14_OP_FS_STATE save_op_state)
+{
+    pdf14_device* p14dev = (pdf14_device*)dev;
+    int code2;
+    int code = 0;
+
     /* Restore the state */
     p14dev->op_state = save_op_state;
     (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
     (void)gs_setstrokeconstantalpha(pgs, stroke_alpha);
     (void)gs_setfillconstantalpha(pgs, fill_alpha);
 
-    code2 = pdf14_end_transparency_group(dev, pgs);
+    code2 = gs_end_transparency_group(pgs);
     if (code2 < 0) {
         /* At this point things have gone very wrong. We should just shut down */
         code = gs_abort_pdf14trans_device(pgs);
         return code2;
+    }
+    return code;
+}
+
+static int
+pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
+    const gx_fill_params *fill_params, const gx_drawing_color *pdcolor_fill,
+    const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
+    const gx_clip_path *pcpath)
+{
+    bool op_ca_eq_CA;
+    bool path_empty;
+    int code;
+    float stroke_alpha = cpgs->strokeconstantalpha;
+    float fill_alpha = cpgs->fillconstantalpha;
+    gs_blend_mode_t blend_mode = cpgs->blend_mode;
+    pdf14_device* p14dev = (pdf14_device*)dev;
+    PDF14_OP_FS_STATE save_op_state = p14dev->op_state;
+    gs_log2_scale_point path_log2scale;
+    bool group_needed = true;
+    gx_device* curr_pgs_dev = cpgs->device;
+
+    union {
+        const gs_gstate* cpgs;
+        gs_gstate* pgs;
+    } const_breaker;
+    gs_gstate* pgs;
+
+    /* Break const just once, neatly */
+    const_breaker.cpgs = cpgs;
+    pgs = const_breaker.pgs;
+    path_log2scale.x = 0;
+    path_log2scale.y = 0;
+
+    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
+    if (code < 0)
+        return code;
+
+    /* From looking at what AR is doing, it appears that if alpha is 1 and
+     * blend is normal we don't do a group push. Just do the stroke
+     * and the fill, even with overprint */
+    if (stroke_alpha == 1 && fill_alpha == 1 && blend_mode == BLEND_MODE_Normal)
+        group_needed = false;
+
+    if (group_needed) {
+        pgs->device = dev; /* This is needed due to the gs_trans calls.  This method
+                              can be called on the clist writer side when dealing
+                              with the abuf/pdf14 interaction. Those calls have to
+                              go through the gs_trans API not the gx_trans or pdf14
+                              methods.  Perhaps these methods should have a different
+                              suffix, but they are static methods here in the pdf14
+                              file. */
+        code = pdf14_fill_stroke_prefill(dev, pgs, ppath, pcpath, fill_alpha, stroke_alpha,
+            blend_mode, &op_ca_eq_CA, &path_empty, path_log2scale);
+        pgs->device = curr_pgs_dev;
+        if (code < 0)
+            goto cleanup;
+        if (path_empty)
+            return 0;
+    }
+
+    code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+    if (code < 0)
+        goto cleanup;
+
+    if (group_needed)
+        pdf14_fill_stroke_prestroke(dev, pgs, stroke_alpha, blend_mode, op_ca_eq_CA);
+    gs_swapcolors_quick(pgs);
+
+
+#if RAW_DUMP
+    /* Dump the current buffer to see what we have. */
+    dump_raw_buffer(p14dev->ctx->memory,
+        p14dev->ctx->stack->rect.q.y - p14dev->ctx->stack->rect.p.y,
+        p14dev->ctx->stack->rowstride >> p14dev->ctx->stack->deep, p14dev->ctx->stack->n_planes,
+        p14dev->ctx->stack->planestride, p14dev->ctx->stack->rowstride,
+        "BeforeStrokeOnFillStroke", p14dev->ctx->stack->data, p14dev->ctx->stack->deep);
+    global_index++;
+#endif
+
+    code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+    gs_swapcolors_quick(pgs);
+    if (code < 0) {
+        goto cleanup;
+    }
+
+#if RAW_DUMP
+    /* Dump the current buffer to see what we have. */
+    dump_raw_buffer(p14dev->ctx->memory,
+        p14dev->ctx->stack->rect.q.y - p14dev->ctx->stack->rect.p.y,
+        p14dev->ctx->stack->rowstride >> p14dev->ctx->stack->deep, p14dev->ctx->stack->n_planes,
+        p14dev->ctx->stack->planestride, p14dev->ctx->stack->rowstride,
+        "AfterStrokeOnFillStroke", p14dev->ctx->stack->data, p14dev->ctx->stack->deep);
+    global_index++;
+#endif
+    if (group_needed)
+        pdf14_fill_stroke_poststroke(dev, pgs, fill_alpha, save_op_state);
+
+cleanup:
+    if (group_needed) {
+        pgs->device = dev; /* This is needed due to the gs_trans calls */
+        code = pdf14_fill_stroke_cleanup(dev, pgs, fill_alpha, stroke_alpha, blend_mode,
+            save_op_state);
+        pgs->device = curr_pgs_dev;
     }
     return code;
 }
@@ -5427,7 +5572,7 @@ pdf14_set_params(gs_gstate * pgs,
         pgs->fillconstantalpha = pparams->fillconstantalpha;
     if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
         pgs->strokeconstantalpha = pparams->strokeconstantalpha;
-    if (pparams->changed & PDF_SET_FILLSTROKE_STATE) {
+    if (pparams->changed & PDF14_SET_FILLSTROKE_STATE) {
         gs_swapcolors_quick(pgs);
         if (pparams->op_fs_state == PDF14_OP_STATE_STROKE)
             pgs->is_fill_color = false;
@@ -6073,10 +6218,9 @@ pdf14_composite(gx_device * dev, gx_device * * pcdev,
                    See gx_spot_colors_set_overprint in gscspace for issues... */
                 const gs_overprint_t * op_pct = (const gs_overprint_t *) pct;
                 gx_color_index drawn_comps;
+                PDF14_OP_FS_STATE curr_state = p14dev->op_state;
 
                 p14dev->op_state = op_pct->params.op_state;
-
-
                 if (p14dev->op_state == PDF14_OP_STATE_NONE) {
                     if (op_pct->params.retain_any_comps) {
                         drawn_comps = op_pct->params.drawn_comps;
@@ -6093,7 +6237,9 @@ pdf14_composite(gx_device * dev, gx_device * * pcdev,
                         p14dev->stroke_effective_op_mode = op_pct->params.effective_opm;
                         p14dev->drawn_comps_stroke = drawn_comps;
                     }
-
+                    /* We restore the NONE states as that is used just to force
+                       overprint settings in the overprint compositor communication */
+                    p14dev->op_state = curr_state;
                 }
                 *pcdev = dev;
                 return 0;
@@ -8569,6 +8715,98 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
             return p14dev->overprint || p14dev->stroke_overprint;
         }
     }
+
+    /* These should be coming only from the abuf device
+       during fill-stroke operation. Any other use will
+       result in bad things. */
+    if (dev_spec_op == gxdso_abuf_optrans)
+    {
+        int ret = p14dev->op_state;
+        overprint_abuf_state_t *state_data = (overprint_abuf_state_t *)data;
+        pdf14_abuf_state_t *pdf14_abuf = (pdf14_abuf_state_t *)&state_data->storage[0];
+        const gs_gstate* cpgs = state_data->pgs;
+        union {
+            const gs_gstate* cpgs;
+            gs_gstate* pgs;
+        } const_breaker;
+        gs_gstate* pgs;
+        int code = 0;
+        int code1 = 0;
+
+        /* A compile time assert to check our storage types are appropriately sized. */
+        typedef char compile_time_assert[sizeof(pdf14_abuf_state_t) <= sizeof(state_data->storage) ? 1 : -1];
+
+        /* I don't really like this, but there is no easy way around it. The device
+           in the pgs needs to be the pdf14 device to ensure that the compositor
+           actions occur with the gs_transparency calls. We have to call at that
+           level (as opposed to the gx_ or pdf14_ level) to ensure that the clist
+           operations are invoked. We could change the gs_trans calls to take a
+           device to avoid this dance but that changes the device procs. */
+        gx_device *curr_dev;
+
+        const_breaker.cpgs = cpgs;
+        pgs = const_breaker.pgs;
+        curr_dev = pgs->device;
+        pgs->device = pdev;
+
+        switch (state_data->op_trans) {
+
+            case OP_FS_TRANS_PREFILL:
+                pdf14_abuf->orig_state = p14dev->op_state;
+                pdf14_abuf->blend_mode = cpgs->blend_mode;
+                pdf14_abuf->fill_alpha = cpgs->fillconstantalpha;
+                pdf14_abuf->stroke_alpha = cpgs->strokeconstantalpha;
+                pdf14_abuf->pgs = pgs; /* ref count? only used for this back and forth so ok */
+                if (pdf14_abuf->fill_alpha == 1.0 && pdf14_abuf->stroke_alpha == 1.0 &&
+                    pdf14_abuf->blend_mode == BLEND_MODE_Normal)
+                    pdf14_abuf->group_needed = false;
+                else
+                    pdf14_abuf->group_needed = true;
+
+                if (pdf14_abuf->group_needed) {
+                    code = pdf14_fill_stroke_prefill(pdev, pgs, state_data->ppath,
+                        state_data->pcpath, pdf14_abuf->fill_alpha,
+                        pdf14_abuf->stroke_alpha, pdf14_abuf->blend_mode,
+                        &(pdf14_abuf->op_ca_eq_CA), &(pdf14_abuf->path_empty),
+                        state_data->alpha_buf_path_scale);
+                    if (code < 0)
+                        goto cleanup;
+                }
+                gs_update_trans_marking_params(pgs);
+                break;
+
+            case OP_FS_TRANS_PRESTROKE:
+                if (pdf14_abuf->group_needed) {
+                    pdf14_fill_stroke_prestroke(pdev, pdf14_abuf->pgs, pdf14_abuf->stroke_alpha,
+                                                pdf14_abuf->blend_mode, pdf14_abuf->op_ca_eq_CA);
+                }
+                gs_update_trans_marking_params(pgs);
+                break;
+
+            case OP_FS_TRANS_POSTSTROKE:
+                if (pdf14_abuf->group_needed) {
+                    pdf14_fill_stroke_poststroke(pdev, pdf14_abuf->pgs, pdf14_abuf->fill_alpha,
+                                                 pdf14_abuf->op_ca_eq_CA);
+                }
+                gs_update_trans_marking_params(pgs);
+
+                /* fallthrough */
+
+            case OP_FS_TRANS_CLEANUP:
+cleanup:
+                if (pdf14_abuf->group_needed) {
+                    code1 = pdf14_fill_stroke_cleanup(pdev, pdf14_abuf->pgs, pdf14_abuf->fill_alpha,
+                        pdf14_abuf->stroke_alpha, pdf14_abuf->blend_mode, (PDF14_OP_FS_STATE)pdf14_abuf->orig_state);
+                    if (code1 < 0)
+                        code = gs_note_error(gs_error_Fatal);
+                }
+                break;
+        }
+        pgs->device = curr_dev;
+
+        return (code < 0) ? code : ret;
+    }
+
     if (dev_spec_op == gxdso_in_smask_construction)
         return p14dev->in_smask_construction > 0;
     if (dev_spec_op == gxdso_in_smask)
@@ -9157,7 +9395,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 put_value(pbuf, pparams->fillconstantalpha);
             if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
                 put_value(pbuf, pparams->strokeconstantalpha);
-            if (pparams->changed & PDF_SET_FILLSTROKE_STATE)
+            if (pparams->changed & PDF14_SET_FILLSTROKE_STATE)
                 put_value(pbuf, pparams->op_fs_state);
             break;
         case PDF14_PUSH_TRANS_STATE:
@@ -9362,7 +9600,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
                 read_value(data, params.fillconstantalpha);
             if (params.changed & PDF14_SET_STROKECONSTANTALPHA)
                 read_value(data, params.strokeconstantalpha);
-            if (params.changed & PDF_SET_FILLSTROKE_STATE)
+            if (params.changed & PDF14_SET_FILLSTROKE_STATE)
                 read_value(data, params.op_fs_state);
             break;
     }
@@ -10927,12 +11165,16 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
         params.strokeconstantalpha = pdev->strokeconstantalpha = pgs->strokeconstantalpha;
     }
     if ((pgs->is_fill_color && pdev->op_state != PDF14_OP_STATE_FILL)) {
-        changed |= PDF_SET_FILLSTROKE_STATE;
+        changed |= PDF14_SET_FILLSTROKE_STATE;
         params.op_fs_state = pdev->op_state = PDF14_OP_STATE_FILL;
+        if_debug0m('v', pgs->memory,
+            "[v]c_pdf14_clist_update_params op_fs_state written in clist as PDF14_OP_STATE_FILL \n");
     }
     if ((!pgs->is_fill_color && pdev->op_state != PDF14_OP_STATE_STROKE)) {
-        changed |= PDF_SET_FILLSTROKE_STATE;
+        changed |= PDF14_SET_FILLSTROKE_STATE;
         params.op_fs_state = pdev->op_state = PDF14_OP_STATE_STROKE;
+        if_debug0m('v', pgs->memory,
+            "[v]c_pdf14_clist_update_params op_fs_state written in clist as PDF14_OP_STATE_STROKE \n");
     }
     if (crop_blend_params) {
         params.ctm = group_params->ctm;

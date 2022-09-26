@@ -782,7 +782,12 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox,
         code = gs_setfillconstantalpha(ctx->pgs, 1.0);
         code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
     }
-    if (ChangeBM) {
+
+    /* If we are in a fill stroke situation, do not change the blend mode.
+       We can have situations where the fill and the stroke have different
+       blending needs (one may need compatible overprint and the other may
+       need the normal mode) This is all handled in the fill stroke logic */
+    if (ChangeBM && caller != TRANSPARENCY_Caller_FillStroke) {
         state->saveBM = mode;
         state->ChangeBM = true;
         code = gs_setblendmode(ctx->pgs, BLEND_MODE_CompatibleOverprint);

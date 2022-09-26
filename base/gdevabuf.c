@@ -430,25 +430,63 @@ mem_abuf_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
                           const gx_device_color * pdevc_stroke,
                           const gx_clip_path * pcpath)
 {
-    int orig_state;
-    int code;
+    int code = 0;
+    int code1;
+    int has_comp = 1;
+    overprint_abuf_state_t param;
+    gx_device_memory* const mdev = (gx_device_memory*)pdev;
 
-    orig_state = dev_proc(pdev, dev_spec_op)(pdev, gxdso_overprint_op, (void *)OP_STATE_FILL, 0);
+    param.op_trans = OP_FS_TRANS_PREFILL;
+    param.pgs = pgs;
+    param.pcpath = pcpath;
+    param.ppath = ppath;
+    param.alpha_buf_path_scale = mdev->log2_scale;
+
+    /* Tell any overprint compositor (maybe a pdf14 device) that's listening to get ready for a fill/stroke. */
+    code = dev_proc(pdev, dev_spec_op)(pdev, gxdso_abuf_optrans, &param, sizeof(param));
+    if (code == gs_error_undefined)
+        has_comp = false; /* No compositor listening. */
+    else if (code < 0)
+        return code; /* Any other error is real. */
+
+    /* Do the fill. */
     code = dev_proc(pdev, fill_path)(pdev, pgs, ppath, params_fill, pdevc_fill, pcpath);
-
-    if (code < 0)
+    if (code < 0) {
+        /* If the fill failed do any tidy up necessary. */
+        if (has_comp) {
+            param.op_trans = OP_FS_TRANS_CLEANUP;
+            code1 = dev_proc(pdev, dev_spec_op)(pdev, gxdso_abuf_optrans, &param, sizeof(param));
+            if (code1 < 0)
+                code = code1; /* If the pdf14 cleanup failed that is (more) fatal! */
+        }
         return code;
-    /* Swap colors to make sure the pgs colorspace is correct for stroke */
-    gs_swapcolors_quick(pgs);
-    (void)dev_proc(pdev, dev_spec_op)(pdev, gxdso_overprint_op, (void *)OP_STATE_STROKE, 0);
-    code = dev_proc(pdev, stroke_path)(pdev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
-    gs_swapcolors_quick(pgs);
-    if (orig_state >= 0)
-        (void)dev_proc(pdev, dev_spec_op)(pdev, gxdso_overprint_op, (void *)(intptr_t)orig_state, 0);
+    }
+    abuf_flush(mdev);
 
+    /* Handle stroke */
+    gs_swapcolors_quick(pgs);
+    if (has_comp) {
+        param.op_trans = OP_FS_TRANS_PRESTROKE;
+        code = dev_proc(pdev, dev_spec_op)(pdev, gxdso_abuf_optrans, &param, sizeof(param));
+        if (code < 0)
+        {
+            gs_swapcolors_quick(pgs);
+            return code;
+        }
+    }
+    code = dev_proc(pdev, stroke_path)(pdev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+    abuf_flush(mdev);
+    gs_swapcolors_quick(pgs);
+
+    /* Tell the compositors we're done. */
+    if (has_comp) {
+        param.op_trans = OP_FS_TRANS_POSTSTROKE;
+        code1 = dev_proc(pdev, dev_spec_op)(pdev, gxdso_abuf_optrans, &param, sizeof(param));
+        if (code >= 0)
+            code = code1;
+    }
     return code;
 }
-
 
 /* Get the clipping box.  We must scale this up by the number of alpha bits. */
 static void
