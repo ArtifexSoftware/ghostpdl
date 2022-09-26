@@ -460,6 +460,16 @@ int pdfi_read_Pages(pdf_context *ctx)
                 p = NULL;
                 continue;
             }
+            /* Explicit check that the root node Kids array entry is not a self-reference
+             * back to the root node. We only check one level of the Kids array. so we don't
+             * need a full loop detection setup here.
+             */
+            if (p->object_num != 0 && p->object_num == o1->object_num) {
+                pdfi_countdown(p);
+                p = NULL;
+                ctx->num_pages = 0;
+                return_error(gs_error_circular_reference);
+            }
             code = pdfi_dict_knownget_type(ctx, (pdf_dict *)p, "Type", PDF_NAME, (pdf_obj **)&p1);
             if (code <= 0) {
                 pdfi_countdown(p);
