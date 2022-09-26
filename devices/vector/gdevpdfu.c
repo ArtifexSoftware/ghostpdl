@@ -1080,7 +1080,11 @@ none_to_stream(gx_device_pdf * pdev)
             es->procs.process = templat->process;
             es->strm = s;
             (*templat->set_defaults) ((stream_state *) st);
-            (*templat->init) ((stream_state *) st);
+            code = (*templat->init) ((stream_state *) st);
+            if (code < 0) {
+                gs_free_object(pdev->pdf_memory, st, "none_to_stream");
+                return code;
+            }
             pdev->strm = s = es;
         }
     }
