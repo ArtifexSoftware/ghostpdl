@@ -529,6 +529,14 @@ int txt_get_unicode(gx_device *dev, gs_font *font, gs_glyph glyph, gs_char ch, u
         char *b, *u;
         int l = length - 1;
 
+        /* Real Unicode values should be at least 2 bytes. In fact I think the code assumes exactly
+         * 2 bytes. If we got an odd number, give up and return the character code.
+         */
+        if (length & 1) {
+            *Buffer = fallback;
+            return 1;
+        }
+
         unicode = (ushort *)gs_alloc_bytes(dev->memory, length, "temporary Unicode array");
         length = font->procs.decode_glyph((gs_font *)font, glyph, ch, unicode, length);
 #if ARCH_IS_BIG_ENDIAN
