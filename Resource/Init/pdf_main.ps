@@ -817,7 +817,7 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
   % This isn't a command line parameter, we track it internally, but we need to
   % send it to the interpreter. It is used to 'offset' the page Dest for Link
   % annotations and Outlines by the numebr of pages processed so far.
-  /PageCount CumulativePageCount def
+  /PageCount /CumulativePageCount where { /CumulativePageCount get }{currentpagedevice /PageCount get} ifelse def
 
   currentdict end
 } bind executeonly def
