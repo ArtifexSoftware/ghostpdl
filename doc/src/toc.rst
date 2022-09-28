@@ -1,3 +1,6 @@
+.. Copyright (C) 2001-2022 Artifex Software, Inc.
+.. All Rights Reserved.
+
 Table of Contents
 ========================================
 
@@ -25,14 +28,3 @@ Table of Contents
    Source.rst
    thirdparty.rst
    UnsupportedDevices.rst
-
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-

@@ -1,3 +1,6 @@
+.. Copyright (C) 2001-2022 Artifex Software, Inc.
+.. All Rights Reserved.
+
 .. title:: Ghostscript Introduction
 
 
@@ -149,7 +152,7 @@ What should I read if I'm *not* a new user?
 
 If you have already used Ghostscript, when you receive a new release you should begin by reading this file, then:
 
-- `News`_, for incompatible changes and new features in the current release.
+- :ref:`News<News.htm>`, for incompatible changes and new features in the current release.
 
 
 What if I'm a developer?
@@ -200,11 +203,6 @@ Ghostscript has a home page on the World Wide Web with helpful information such 
 
 `www.ghostscript.com`_
 
-Adobe PostScript, Encapsulated PostScript, and PDF reference documentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Adobe makes a wealth of technical documentation available over the Web, including the `PostScript Language Reference Manual (Third Edition)`_ ; the `Encapsulated PostScript`_ (EPS) Format Specification version 3, including :ref:`Encapsulated PostScript Interchange<Ps2epsi.htm>` (EPSI) format; the `PDF Reference manuals`_. The `Acrobat SDK`_ contains `pdfmark and Acrobat Distiller parameters documentation`_.
-
 
 Other material on the WWW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -223,17 +221,9 @@ Much other material about Ghostscript is available on the World Wide Web, both a
 .. _AFPL: https://en.wikipedia.org/wiki/Aladdin_Free_Public_License
 .. _commercial licensing: https://artifex.com/licensing/commercial/
 .. _Artifex: https://artifex.com
-.. _News: https://ghostscript.com/doc/current/News.htm
 .. _bugs.ghostscript.com: https://bugs.ghostscript.com
-.. _History#.htm: https://ghostscript.com/doc/current/History9.htm
-.. _GPL Ghostscript releases: COPYING
-.. _license: COPYING
-.. _COPYING: COPYING
+.. _license:
+.. _GPL Ghostscript releases: https://github.com/ArtifexSoftware/ghostpdl/blob/master/doc/COPYING
 
-.. _PostScript Language Reference Manual (Third Edition): http://partners.adobe.com/public/developer/en/ps/PLRM.pdf
-.. _Encapsulated Postscript: http://partners.adobe.com/public/developer/en/ps/5002.EPSF_Spec.pdf
-.. _PDF Reference manuals: http://partners.adobe.com/public/developer/pdf/index_reference.html
-.. _Acrobat SDK: http://partners.adobe.com/public/developer/acrobat/sdk/index.html
-.. _pdfmark and Acrobat Distiller parameters documentation: http://partners.adobe.com/public/developer/acrobat/sdk/index_doc.html
 
 .. include:: footer.rst

@@ -1,3 +1,6 @@
+.. Copyright (C) 2001-2022 Artifex Software, Inc.
+.. All Rights Reserved.
+
 .. title:: Third Party Libraries Used by Ghostscript and GhostPDL
 
 .. meta::
