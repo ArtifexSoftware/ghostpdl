@@ -1718,7 +1718,7 @@ Rendering parameters
 
 **-dUseCIEColor**
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   Set ``UseCIEColor`` in the page device dictionary, remapping device-dependent color values through a Postscript defined CIE color space. Document ``DeviceGray``, ``DeviceRGB`` and ``DeviceCMYK`` source colors will be substituted respectively by Postscript CIEA, CIEABC and CIEDEFG color spaces. See the document `GS9 Color Management`_ for details on how this option will interact with Ghostscript's ICC-based color workflow. If accurate colors are desired, it is recommended that an ICC workflow be used.
+   Set ``UseCIEColor`` in the page device dictionary, remapping device-dependent color values through a Postscript defined CIE color space. Document ``DeviceGray``, ``DeviceRGB`` and ``DeviceCMYK`` source colors will be substituted respectively by Postscript CIEA, CIEABC and CIEDEFG color spaces. See the document :ref:`Ghostscript Color Management<GhostscriptColorManagement.htm>` for details on how this option will interact with Ghostscript's ICC-based color workflow. If accurate colors are desired, it is recommended that an ICC workflow be used.
 
 **-dNOCIE**
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -23,6 +23,7 @@ Table of Contents
    Ps2epsi.rst
    Psfiles.rst
    Fonts.rst
+   GhostscriptColorManagement.rst
    Unix-lpr.rst
    News.rst
    Source.rst
