@@ -11850,10 +11850,11 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                  * use that for the number of components. Otherwise use
                  * the page_spot_colors.  The exception is, if we had used
                  * the sICCOutputColors setting, then just use that, which
-                 * should be already baked into num_comp
+                 * should be already baked into num_comp. With clist patterns,
+                 * cdev->icc_struct may be null.
                  */
 
-                if (cdev->icc_struct->spotnames == NULL) {
+                if (cdev->icc_struct == NULL || cdev->icc_struct->spotnames == NULL) {
                     p14dev->devn_params.page_spot_colors =
                         pclist_devn_params->page_spot_colors;
                     if (num_comp < p14dev->devn_params.page_spot_colors + 4 ) {
