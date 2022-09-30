@@ -101,6 +101,7 @@ s_AXD_process(stream_state * st, stream_cursor_read * pr,
                 if (pw->ptr == pw->limit)
                     return 1;
                 *++(pw->ptr) = ss->odd << 4;
+                ss->odd = -1;
             }
             /* falls through */
         case 1:
@@ -387,11 +388,8 @@ s_hex_process(stream_cursor_read * pr, stream_cursor_write * pw,
 
     if (q >= wlimit)
         return 1;
-    if (val1 <= 0xf) {
-        if (p >= rlimit)
-            return 1;
+    if (val1 <= 0xf)
         goto d2;
-    }
     do {
         /* No digits read */
         if ((rcount = (rlimit - p) >> 1) != 0)
