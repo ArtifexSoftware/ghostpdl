@@ -641,7 +641,7 @@ struct gx_device_pdf_s {
     gs_param_string OwnerPassword;
     gs_param_string UserPassword;
     uint KeyLength;
-    uint Permissions;
+    int32_t Permissions;
     uint EncryptionR;
     gs_param_string NoEncrypt;
     bool EncryptMetadata;

@@ -3115,7 +3115,7 @@ pdf_close(gx_device * dev)
             pprintld1(s, "/V %ld ", pdev->EncryptionV);
             pprintld1(s, "/Length %ld ", pdev->KeyLength);
             pprintld1(s, "/R %ld ", pdev->EncryptionR);
-            pprintld1(s, "/P %ld ", pdev->Permissions);
+            pprintd1(s, "/P %d ", pdev->Permissions);
             stream_puts(s, "/O ");
             pdf_put_string(pdev, pdev->EncryptionO, sizeof(pdev->EncryptionO));
             stream_puts(s, "\n/U ");
