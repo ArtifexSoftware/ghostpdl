@@ -589,9 +589,9 @@ x_set_buffer(gx_device_X * xdev)
          * *But* if we run buffered, we have to use the real specs of the real x11 device.
          * Hence, the real color_info is saved into orig_color_info, and we use that here.
          */
-        if (mdev == 0 || mdev->color_info.depth != xdev->color_info.depth) {
+        if (mdev == 0 || mdev->color_info.depth != xdev->orig_color_info.depth) {
             const gx_device_memory *mdproto =
-                gdev_mem_device_for_bits(xdev->color_info.depth);
+                gdev_mem_device_for_bits(xdev->orig_color_info.depth);
 
             if (!mdproto) {
                 buffered = false;
@@ -643,7 +643,7 @@ x_set_buffer(gx_device_X * xdev)
             rc_decrement(mdev->icc_struct, "x_set_buffer");
             mdev->icc_struct = xdev->icc_struct;
             rc_increment(xdev->icc_struct);
-            mdev->color_info = xdev->color_info;
+            mdev->color_info = xdev->orig_color_info;
             mdev->base = xdev->buffer;
             gdev_mem_open_scan_lines(mdev, xdev->height);
         }
