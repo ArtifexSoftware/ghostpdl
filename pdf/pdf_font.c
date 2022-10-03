@@ -1558,8 +1558,18 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
             pdf_array *a = NULL;
             pdf_obj *o = NULL;
             int offset = 0;
+            bool b_e_known;
 
-            if (font_Encoding != NULL && pdfi_type_of(font_Encoding) == PDF_ARRAY) {
+            if (pdfi_type_of(pdf_Encoding) == PDF_DICT) {
+                code = pdfi_dict_known(ctx, (pdf_dict *)pdf_Encoding, "BaseEncoding", &b_e_known);
+                if (code < 0)
+                    b_e_known = false;
+            }
+            else {
+                b_e_known = false;
+            }
+
+            if (b_e_known == false && font_Encoding != NULL && pdfi_type_of(font_Encoding) == PDF_ARRAY) {
                 pdf_array *fenc = (pdf_array *)font_Encoding;
                 for (i = 0; i < pdfi_array_size(fenc) && code >= 0; i++) {
                     code = pdfi_array_get(ctx, fenc, (uint64_t)i, &o);
