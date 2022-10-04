@@ -139,19 +139,52 @@
  *    Memento has some experimental code in it to trap new/delete (and
  *    new[]/delete[] if required) calls.
  *
- *    In order for this to work, either:
+ *    In all cases, Memento will provide a C API that new/delete
+ *    operators can be built upon:
+ *         void *Memento_cpp_new(size_t size);
+ *         void Memento_cpp_delete(void *pointer);
+ *         void *Memento_cpp_new_array(size_t size);
+ *         void Memento_cpp_delete_array(void *pointer);
  *
- *    1) Build memento.c with the c++ compiler.
+ *    There are various ways that actual operator definitions can be
+ *    provided:
+ *
+ *    1) If memento.c is built with the c++ compiler, then global new
+ *    and delete operators will be built in to memento by default.
+ *
+ *    2) If memento.c is built as normal with the C compiler, then
+ *    no such veneers will be built in. The caller must provide them
+ *    themselves. This can be done either by:
+ *
+ *       a) Copying the lines between:
+ *               // C++ Operator Veneers - START
+ *       and
+ *               // C++ Operator Veneers - END
+ *       from memento.c into a C++ file within their own project.
  *
  *    or
  *
- *    2) Build memento.c as normal with the C compiler, then from any
- *       one of your .cpp files, do:
+ *       b) Add the following lines to a C++ file in the project:
+ *          #define MEMENTO_CPP_EXTRAS_ONLY
+ *          #include "memento.c"
  *
- *       #define MEMENTO_CPP_EXTRAS_ONLY
- *       #include "memento.c"
+ *    3) For those people that would like to be able to compile memento.c
+ *    with a C compiler, and provide new/delete veneers globally
+ *    within their own C++ code (so avoiding the need for memento.h to
+ *    be included from every file), define MEMENTO_NO_CPLUSPLUS as you
+ *    build, and Memento will not provide any veneers itself, instead
+ *    relying on the library user to provide them.
  *
- *       In the case where MEMENTO is not defined, this will not do anything.
+ *    For convenience the lines to implement such veneers can be found
+ *    at the end of memento.c between:
+ *        // C++ Operator Veneers - START
+ *    and
+ *        // C++ Operator Veneers - END
+ *
+ *    Memento's interception of new/delete can be disabled at runtime
+ *    by using Memento_setIgnoreNewDelete(1). Alternatively the
+ *    MEMENTO_IGNORENEWDELETE environment variable can be set to 1 to
+ *    achieve the same result.
  *
  *    Both Windows and GCC provide separate new[] and delete[] operators
  *    for arrays. Apparently some systems do not. If this is the case for
@@ -181,6 +214,14 @@
  *       sudo mkdir /opt/lib
  *       sudo cp .libs/libbacktrace.so /opt/lib/
  */
+
+#ifdef __cplusplus
+
+// Avoids problems with strdup()'s throw() attribute on Linux.
+#include <string.h>
+
+extern "C" {
+#endif
 
 #ifndef MEMENTO_H
 
@@ -236,6 +277,7 @@ void Memento_stats(void);
 void *Memento_label(void *, const char *);
 void Memento_tick(void);
 int Memento_setVerbose(int);
+int Memento_setIgnoreNewDelete(int ignore);
 
 void *Memento_malloc(size_t s);
 void *Memento_realloc(void *, size_t s);
@@ -278,6 +320,11 @@ int Memento_squeezing(void);
 void Memento_fin(void);
 
 void Memento_bt(void);
+
+void *Memento_cpp_new(size_t size);
+void Memento_cpp_delete(void *pointer);
+void *Memento_cpp_new_array(size_t size);
+void Memento_cpp_delete_array(void *pointer);
 
 void Memento_showHash(unsigned int hash);
 
@@ -343,6 +390,7 @@ void Memento_showHash(unsigned int hash);
 #define Memento_checkBytePointerOrNull(A)  0
 #define Memento_checkShortPointerOrNull(A) 0
 #define Memento_checkIntPointerOrNull(A)   0
+#define Memento_setIgnoreNewDelete(v)      0
 
 #define Memento_tick()                     do {} while (0)
 #define Memento_startLeaking()             do {} while (0)
@@ -354,5 +402,9 @@ void Memento_showHash(unsigned int hash);
 #define Memento_setVerbose(A)              (A)
 
 #endif /* MEMENTO */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MEMENTO_H */

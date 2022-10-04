@@ -11,6 +11,8 @@
    Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+#ifndef MEMENTO_CPP_EXTRAS_ONLY
+
 /* Inspired by Fortify by Simon P Bullen. */
 
 /* Set the following if we want to do a build specifically for memory
@@ -124,8 +126,6 @@ typedef long long mem_uint64_t;
 #define MEMENTO_FREEFILL_PTR (void *)(((uintptr_t)MEMENTO_FREEFILL_UINT) | ((((uintptr_t)MEMENTO_FREEFILL_UINT)<<16)<<16))
 
 #ifdef MEMENTO
-
-#ifndef MEMENTO_CPP_EXTRAS_ONLY
 
 #ifdef MEMENTO_ANDROID
 #include <android/log.h>
@@ -510,6 +510,7 @@ static struct {
     Memento_range *squeezes;
     int            squeezes_num;
     int            squeezes_pos;
+    int            ignoreNewDelete;
     int            phasing;
     int            verbose;
     int            verboseNewlineSuppressed;
@@ -2127,6 +2128,8 @@ static int showInfo(Memento_BlkHeader *b, void *arg)
             MEMBLK_TOBLK(b), (FMTZ_CAST)b->rawsize, b->sequence);
     if (b->label)
         fprintf(stderr, " (%s)", b->label);
+    if (b->flags & Memento_Flag_KnownLeak)
+        fprintf(stderr, "(Known Leak)");
     fprintf(stderr, "\nEvents:\n");
 
     for (details = b->details; details; details = details->next)
@@ -2479,6 +2482,9 @@ static void Memento_init(void)
 
     env = getenv("MEMENTO_VERBOSE");
     memento.verbose = (env ? atoi(env) : 0);
+
+    env = getenv("MEMENTO_IGNORENEWDELETE");
+    memento.ignoreNewDelete = (env ? atoi(env) : 0);
 
     /* For Windows, we can _onexit rather than atexit. This is because
      * _onexit registered handlers are called when the DLL that they are
@@ -4081,6 +4087,13 @@ int Memento_setParanoia(int i)
     return i;
 }
 
+int Memento_setIgnoreNewDelete(int ignore)
+{
+    int ret = memento.ignoreNewDelete;
+    memento.ignoreNewDelete = ignore;
+    return ret;
+}
+
 int Memento_paranoidAt(int i)
 {
     memento.paranoidAt = i;
@@ -4239,17 +4252,15 @@ int Memento_setVerbose(int x)
     return x;
 }
 
-#endif /* MEMENTO_CPP_EXTRAS_ONLY */
-
-#ifdef __cplusplus
-/* Dumb overrides for the new and delete operators */
-
-void *operator new(size_t size)
+void *Memento_cpp_new(size_t size)
 {
     void *ret;
 
     if (!memento.inited)
         Memento_init();
+
+    if (memento.ignoreNewDelete)
+        return MEMENTO_UNDERLYING_MALLOC(size);
 
     if (size == 0)
         size = 1;
@@ -4259,10 +4270,18 @@ void *operator new(size_t size)
     return ret;
 }
 
-void  operator delete(void *pointer)
+void Memento_cpp_delete(void *pointer)
 {
     if (!pointer)
         return;
+
+    if (!memento.inited)
+        Memento_init();
+    if (memento.ignoreNewDelete)
+    {
+        MEMENTO_UNDERLYING_FREE(pointer);
+        return;
+    }
 
     MEMENTO_LOCK();
     do_free(pointer, Memento_EventType_delete);
@@ -4271,8 +4290,7 @@ void  operator delete(void *pointer)
 
 /* Some C++ systems (apparently) don't provide new[] or delete[]
  * operators. Provide a way to cope with this */
-#ifndef MEMENTO_CPP_NO_ARRAY_CONSTRUCTORS
-void *operator new[](size_t size)
+void *Memento_cpp_new_array(size_t size)
 {
     void *ret;
     if (!memento.inited)
@@ -4280,22 +4298,30 @@ void *operator new[](size_t size)
 
     if (size == 0)
         size = 1;
+
+    if (memento.ignoreNewDelete)
+        return MEMENTO_UNDERLYING_MALLOC(size);
+
     MEMENTO_LOCK();
     ret = do_malloc(size, Memento_EventType_newArray);
     MEMENTO_UNLOCK();
     return ret;
 }
 
-void  operator delete[](void *pointer)
+void  Memento_cpp_delete_array(void *pointer)
 {
+    if (memento.ignoreNewDelete)
+    {
+        MEMENTO_UNDERLYING_FREE(pointer);
+        return;
+    }
+
     MEMENTO_LOCK();
     do_free(pointer, Memento_EventType_deleteArray);
     MEMENTO_UNLOCK();
 }
-#endif /* MEMENTO_CPP_NO_ARRAY_CONSTRUCTORS */
-#endif /* __cplusplus */
 
-#else
+#else /* MEMENTO */
 
 /* Just in case anyone has left some debugging code in... */
 void (Memento_breakpoint)(void)
@@ -4479,6 +4505,11 @@ void (Memento_listPhasedBlocks)(void)
 {
 }
 
+int (Memento_setIgnoreNewDelete)(int ignore)
+{
+    return 0;
+}
+
 size_t (Memento_setMax)(size_t max)
 {
     return 0;
@@ -4527,4 +4558,48 @@ void Memento_showHash(unsigned int hash)
 {
 }
 
-#endif
+#endif /* MEMENTO */
+
+#endif /* MEMENTO_CPP_EXTRAS_ONLY */
+
+/* Everything here is only for C++, and then only if we haven't
+ * disabled it. */
+
+#ifndef MEMENTO_NO_CPLUSPLUS
+#ifdef __cplusplus
+
+// C++ Operator Veneers - START
+void *operator new(size_t size)
+{
+    return Memento_cpp_new(size);
+}
+void operator delete(void *pointer)
+{
+    Memento_cpp_delete(pointer);
+}
+void *operator new[](size_t size)
+{
+    return Memento_cpp_new_array(size);
+}
+void operator delete[](void *pointer)
+{
+   Memento_cpp_delete_array(pointer);
+}
+
+/* Some C++ systems (apparently) don't provide new[] or delete[]
+ * operators. Provide a way to cope with this */
+#ifndef MEMENTO_CPP_NO_ARRAY_CONSTRUCTORS
+void *operator new[](size_t size)
+{
+    return Memento_cpp_new_array(size);
+}
+
+void operator delete[](void *pointer)
+{
+    Memento_cpp_delete_array(pointer);
+}
+#endif /* MEMENTO_CPP_NO_ARRAY_CONSTRUCTORS */
+// C++ Operator Veneers - END
+
+#endif /* __cplusplus */
+#endif /* MEMENTO_NO_CPLUSPLUS */
