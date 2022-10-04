@@ -344,6 +344,13 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
         return code;
     }
 
+    /* The above call to psapi_new_instance will have set the ps interpreter
+     * to expect 'local' encoding. When running under PL, this means we'll
+     * end up decoding the input stuff to utf8, and then feed that into the
+     * gs instance, where it will decode it again! Avoid this, by setting
+     * gs to expect UTF8 input. */
+    psapi_set_arg_encoding(psi->psapi_instance, PS_ARG_ENCODING_UTF8);
+
     impl->interp_client_data = psi;
 
     /* Tell gs not to ignore a UEL, but do an interpreter exit */
