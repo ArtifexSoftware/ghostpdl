@@ -617,7 +617,7 @@ static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int le
         /* Limits are not valid, just ignore them. The calling code will then check
          * the Names array.
          */
-        pdfi_set_warning(ctx, 0, NULL, PDF_W_BAD_TREE_LIMITS, "pdfi_get_name_from_node", 0);
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_TREE_LIMITS, "pdfi_get_name_from_node", 0);
         goto error;
     }
 
@@ -728,7 +728,7 @@ static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, 
             /* No Limits array (a required entry), so just assume that the
              * string is in this node and check all the Names anyway
              */
-            pdfi_set_warning(ctx, 0, NULL, PDF_W_NO_TREE_LIMITS, "pdfi_get_name_from_node", 0);
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_NO_TREE_LIMITS, "pdfi_get_name_from_node", 0);
         } else {
             code = pdfi_check_limits(ctx, node, str, len);
             if (code < 0)
@@ -740,7 +740,7 @@ static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, 
             goto error;
 
         if (pdfi_array_size(NamesArray) & 1)
-            pdfi_set_warning(ctx, 0, NULL, PDF_W_NAMES_ARRAY_SIZE, "pdfi_get_name_from_node", 0);
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_NAMES_ARRAY_SIZE, "pdfi_get_name_from_node", 0);
 
         for (i = 0;i < pdfi_array_size(NamesArray) / 2; i++) {
             code = pdfi_array_get_type(ctx, NamesArray, i * 2, PDF_STRING, (pdf_obj **)&StrKey);

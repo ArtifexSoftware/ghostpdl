@@ -65,7 +65,8 @@ PARAM(W_PDF_INVALID_FONT_BASEENC,   "Ignoring invalid BaseEncoding name in font"
 PARAM(W_PDF_GROUP_HAS_COLORSPACE,   "Group attributes dictionary has /ColorSpace instead of /CS"),
 PARAM(W_PDF_GROUP_BAD_BC,           "Group attributes dictionary /BC differs in number of components from the colour space"),
 PARAM(W_PDF_INT_AS_REAL,            "found real number when expecting int"),
-PARAM(PDF_W_NO_TREE_LIMITS,         "Name tree node missing required Limits entry"),
-PARAM(PDF_W_BAD_TREE_LIMITS,        "Name tree node Limits array does not have 2 entries"),
-PARAM(PDF_W_NAMES_ARRAY_SIZE,       "Name tree Names array size not a mulitple of 2"),
+PARAM(W_PDF_NO_TREE_LIMITS,         "Name tree node missing required Limits entry"),
+PARAM(W_PDF_BAD_TREE_LIMITS,        "Name tree node Limits array does not have 2 entries"),
+PARAM(W_PDF_NAMES_ARRAY_SIZE,       "Name tree Names array size not a mulitple of 2"),
+PARAM(W_PDF_MISSING_NAMED_RESOURCE, "Couldn't find a named resource"),
 #undef PARAM

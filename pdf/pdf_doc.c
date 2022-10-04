@@ -1044,7 +1044,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
                 goto exit;
             if (code > 0) {
                 code = pdfi_dict_get_no_store_R_key(ctx, typedict, name, o);
-                pdfi_set_error(ctx, 0, NULL, E_PDF_INHERITED_STREAM_RESOURCE, "pdfi_find_resource", (char *)"Couldn't find named resource in suppled dictionary, or Parents, or Pages, matching name located in earlier stream Resource");
+                pdfi_set_error(ctx, 0, NULL, E_PDF_INHERITED_STREAM_RESOURCE, "pdfi_find_resource", (char *)"Couldn't find named resource in supplied dictionary, or Parents, or Pages, matching name located in earlier stream Resource");
                 goto exit;
             }
             pdfi_countdown(typedict);
@@ -1054,7 +1054,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
     }
 
     /* If we got all the way down there, we didn't find it */
-    dmprintf(ctx->memory, "Couldn't find named resource\n");
+    pdfi_set_warning(ctx, 0, NULL, W_PDF_MISSING_NAMED_RESOURCE, "pdfi_find_resource", NULL);
     code = gs_error_undefined;
 
 exit:
