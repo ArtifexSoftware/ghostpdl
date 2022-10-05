@@ -781,6 +781,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                             *csp = float2fixed(sqrt(fixed2float(*csp)));
                         break;
                     case ce2_dup:
+                        if (!CS_CHECK_CSTACK_BOUNDS(csp, cstack))
+                            return_error(gs_error_invalidfont);
                         CS_CHECK_PUSH(csp, cstack);
                         csp[1] = *csp;
                         ++csp;
