@@ -2039,10 +2039,11 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
                               pdf_stream *stream_obj, pdf_dict *page_dict)
 {
     int code;
-    pdf_c_stream *stream;
+    pdf_c_stream *stream = NULL, *SubFile_stream = NULL;
     pdf_keyword *keyword;
     pdf_stream *s = ctx->current_stream;
     pdf_obj_type type;
+    char EODString[] = "endstream";
 
     /* Check this stream, and all the streams currently being executed, to see
      * if the stream we've been given is already in train. If it is, then we
@@ -2077,9 +2078,18 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
         if (code < 0)
             return code;
 
-        code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
+        if (stream_obj->length_valid)
+            code = pdfi_apply_SubFileDecode_filter(ctx, stream_obj->Length, NULL, ctx->main_stream, &SubFile_stream, false);
+        else
+            code = pdfi_apply_SubFileDecode_filter(ctx, 0, EODString, ctx->main_stream, &SubFile_stream, false);
         if (code < 0)
             return code;
+
+        code = pdfi_filter(ctx, stream_obj, SubFile_stream, &stream, false);
+        if (code < 0) {
+            pdfi_close_file(ctx, SubFile_stream);
+            return code;
+        }
     }
 
     pdfi_set_stream_parent(ctx, stream_obj, ctx->current_stream);
@@ -2164,5 +2174,7 @@ exit:
     ctx->current_stream = pdfi_stream_parent(ctx, stream_obj);
     pdfi_clear_stream_parent(ctx, stream_obj);
     pdfi_close_file(ctx, stream);
+    if (SubFile_stream != NULL)
+        pdfi_close_file(ctx, SubFile_stream);
     return code;
 }
