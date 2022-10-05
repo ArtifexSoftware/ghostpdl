@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -95,7 +95,7 @@ s_zlibD_process(stream_state * st, stream_cursor_read * pr,
                  * Adobe, Apple and xpdf don't fail on pdf:s where this happens,
                  * so neither should we. fixes bug 688716.
                  */
-                errprintf(st->memory,
+                dmprintf1(st->memory,
                           "warning: ignoring zlib error: %s\n", zs->msg);
                 return EOFC;
             }
