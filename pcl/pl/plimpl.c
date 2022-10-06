@@ -53,6 +53,8 @@ extern pl_interp_implementation_t png_implementation;
 
 extern pl_interp_implementation_t so_implementation;
 
+extern pl_interp_implementation_t txt_implementation;
+
 /* Zero-terminated list of pointers to implementations */
 pl_interp_implementation_t *pdl_implementations[] = {
     &pjl_implementation,
@@ -92,6 +94,9 @@ pl_interp_implementation_t *pdl_implementations[] = {
 #endif
 #ifdef SO_INCLUDED
     &so_implementation,
+#endif
+#ifdef TXT_INCLUDED
+    &txt_implementation,
 #endif
     0
 };

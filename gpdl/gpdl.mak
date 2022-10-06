@@ -50,6 +50,9 @@ GPDL_JP2K_TOP_OBJ=$(GPDLOBJ)$(GPDL_JP2K_TOP_OBJ_FILE)
 GPDL_PNG_TOP_OBJ_FILE=pngtop.$(OBJ)
 GPDL_PNG_TOP_OBJ=$(GPDLOBJ)$(GPDL_PNG_TOP_OBJ_FILE)
 
+GPDL_TXT_TOP_OBJ_FILE=txttop.$(OBJ)
+GPDL_TXT_TOP_OBJ=$(GPDLOBJ)$(GPDL_TXT_TOP_OBJ_FILE)
+
 GPDL_PSI_TOP_OBJS=\
 	$(GPDL_PNG_TOP_OBJ)\
 	$(GPDL_JP2K_TOP_OBJ)\
@@ -60,6 +63,7 @@ GPDL_PSI_TOP_OBJS=\
 	$(GPDL_URF_TOP_OBJ)\
 	$(GPDL_PSI_TOP_OBJ)\
 	$(GPDL_SO_TOP_OBJ)\
+	$(GPDL_TXT_TOP_OBJ)\
 	$(GPDLOBJ)gpdlimpl.$(OBJ)
 
 LANG_CFLAGS=\
@@ -75,6 +79,7 @@ LANG_CFLAGS=\
 	$(D_)JP2K_INCLUDED$(_D)\
 	$(D_)PNG_INCLUDED$(_D)\
 	$(ENABLE_SO)\
+	$(D_)TXT_INCLUDED$(_D)\
 
 GPDL_CFLAGS=$(LANG_CFLAGS) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
@@ -163,3 +168,8 @@ $(GPDL_PNG_TOP_OBJ): $(GPDLSRC)pngtop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
  $(png__h) $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
 	$(GPDLCC) $(II)$(PI_)$(_I) $(PCF_) $(GPDLSRC)pngtop.c $(GPDLO_)$(GPDL_PNG_TOP_OBJ_FILE)
+
+$(GPDL_TXT_TOP_OBJ): $(GPDLSRC)txttop.c $(AK)\
+ $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
+ $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
+	$(GPDLCC) $(II)$(PI_)$(_I) $(PCF_) $(GPDLSRC)txttop.c $(GPDLO_)$(GPDL_TXT_TOP_OBJ_FILE)
