@@ -1607,14 +1607,16 @@ int pdfi_doc_trailer(pdf_context *ctx)
     int code = 0;
 
     /* Can't do this stuff with no Trailer */
-    if (!ctx->Trailer)
+    if (!ctx->Trailer) {
+        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
         goto exit;
+    }
 
     if (ctx->device_state.writepdfmarks) {
         /* Handle Outlines */
         code = pdfi_doc_Outlines(ctx);
         if (code < 0) {
-            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
+            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_OUTLINES, "pdfi_doc_trailer", NULL);
             if (ctx->args.pdfstoponerror)
                 goto exit;
         }
@@ -1622,7 +1624,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
         /* Handle Info */
         code = pdfi_doc_Info(ctx);
         if (code < 0) {
-            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
+            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_INFO, "pdfi_doc_trailer", NULL);
             if (ctx->args.pdfstoponerror)
                 goto exit;
         }
@@ -1631,7 +1633,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
         /* TODO: add a configuration option to embed or omit */
         code = pdfi_doc_EmbeddedFiles(ctx);
         if (code < 0) {
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_EMBEDDEDFILES, "pdfi_doc_trailer", NULL);
             if (ctx->args.pdfstoponerror)
                 goto exit;
         }
@@ -1643,7 +1645,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
     /* Handle AcroForm -- this is some bookkeeping once per doc, not rendering them yet */
     code = pdfi_doc_AcroForm(ctx);
     if (code < 0) {
-        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
+        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_ACROFORM, "pdfi_doc_trailer", NULL);
         if (ctx->args.pdfstoponerror)
             goto exit;
     }
@@ -1651,7 +1653,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
     /* Handle OutputIntent ICC Profile */
     code = pdfi_doc_OutputIntents(ctx);
     if (code < 0) {
-        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
+        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_OUTPUTINTENTS, "pdfi_doc_trailer", NULL);
         if (ctx->args.pdfstoponerror)
             goto exit;
     }
@@ -1659,7 +1661,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
     /* Handle PageLabels */
     code = pdfi_doc_PageLabels(ctx);
     if (code < 0) {
-        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
+        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_PAGELABELS, "pdfi_doc_trailer", NULL);
         if (ctx->args.pdfstoponerror)
             goto exit;
     }
