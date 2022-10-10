@@ -691,16 +691,21 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
         else if (pdfi_type_of(tmp) == PDF_DICT && (font->descflags & 4) != 0) {
             code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
         }
+        else {
+            code = gs_error_undefined;
+        }
         pdfi_countdown(tmp);
         tmp = NULL;
     }
     else {
         pdfi_countdown(tmp);
         tmp = NULL;
-        code = 0;
+        code = gs_error_undefined;
     }
+
     if (code < 0) {
-        goto error;
+        font->Encoding = spdffont->Encoding;
+        pdfi_countup(font->Encoding);
     }
 
     /* Since various aspects of the font may differ (widths, encoding, etc)
@@ -713,11 +718,6 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
     code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, font->pfont);
     if (code < 0) {
         goto error;
-    }
-
-    if (code <= 0) {
-        font->Encoding = spdffont->Encoding;
-        pdfi_countup(font->Encoding);
     }
 
     if (ctx->args.ignoretounicode != true) {
