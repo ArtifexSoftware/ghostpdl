@@ -1446,7 +1446,7 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
     /* Check if we have the standard colorants.  If yes, then we will apply
       ICC color management to those colorants. */
     if (devicen_has_cmyk(dev, des_profile) && des_profile->data_cs == gsCMYK &&
-        !named_color_supported(pgs)) {
+        !named_color_supported(pgs) && pgs->color_component_map.sep_type != SEP_ALL) {
         /* We need to do a CMYK to CMYK conversion here.  This will always
            use the default CMYK profile and the device's output profile.
            We probably need to add some checking here
