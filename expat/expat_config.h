@@ -23,7 +23,7 @@
 #define HAVE_GETPAGESIZE 1
 
 /* Define to 1 if you have the `getrandom' function. */
-#define HAVE_GETRANDOM 1
+/*#define HAVE_GETRANDOM 1*/
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
@@ -35,7 +35,21 @@
 #define HAVE_MMAP 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#define HAVE_STDINT_H 1
+/*#define HAVE_STDINT_H 1*/
+# if defined(__WIN32__) /* MSVC currently doesn't provide C99 headers */
+   typedef signed char             int8_t;
+   typedef short int               int16_t;
+   typedef int                     int32_t;
+   typedef __int64                 int64_t;
+   typedef unsigned char           uint8_t;
+   typedef unsigned short int      uint16_t;
+   typedef unsigned int            uint32_t;
+   typedef unsigned __int64        uint64_t;
+   typedef unsigned char uint8_t;
+   typedef unsigned short uint16_t;
+   typedef unsigned int uint32_t;
+   typedef unsigned long long uint64_t;
+#endif
 
 /* Define to 1 if you have the <stdio.h> header file. */
 #define HAVE_STDIO_H 1
@@ -50,7 +64,7 @@
 #define HAVE_STRING_H 1
 
 /* Define to 1 if you have `syscall' and `SYS_getrandom'. */
-#define HAVE_SYSCALL_GETRANDOM 1
+/*#define HAVE_SYSCALL_GETRANDOM 1*/
 
 /* Define to 1 if you have the <sys/param.h> header file. */
 #define HAVE_SYS_PARAM_H 1
@@ -117,7 +131,7 @@
 #define XML_CONTEXT_BYTES 1024
 
 /* Define to include code reading entropy from `/dev/urandom'. */
-#define XML_DEV_URANDOM 1
+/*#define XML_DEV_URANDOM 1*/
 
 /* Define to make parameter entity parsing functionality available. */
 #define XML_DTD 1

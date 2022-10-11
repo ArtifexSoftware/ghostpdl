@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -31,7 +31,7 @@ EXPATGEN=$(EXPATGENDIR)$(D)
 EXPATOBJ=$(EXPATOBJDIR)$(D)
 EXPATO_=$(O_)$(EXPATOBJ)
 
-EXPATCC=$(CC) $(I_)$(EXPATSRC)lib$(_I) \
+EXPATCC=$(CC) $(I_)$(EXPATSRCDIR)$(_I) $(I_)$(EXPATSRCDIR)$(D)lib$(_I) \
 $(D_)XML_POOR_ENTROPY$(_D) $(EXPAT_CFLAGS) $(CCFLAGS)
 
 expat.clean : expat.config-clean expat.clean-not-config-clean

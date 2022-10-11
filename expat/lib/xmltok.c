@@ -48,7 +48,12 @@
 
 #include <stddef.h>
 #include <string.h> /* memcpy */
+#if 0
 #include <stdbool.h>
+#endif
+typedef int bool;
+#define true 1
+#define false 0
 
 #ifdef _WIN32
 #  include "winconfig.h"

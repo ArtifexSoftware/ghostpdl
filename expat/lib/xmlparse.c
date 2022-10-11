@@ -78,7 +78,9 @@
 #include <limits.h> /* UINT_MAX */
 #include <stdio.h>  /* fprintf */
 #include <stdlib.h> /* getenv, rand_s */
+#ifdef HAVE_STDINT_H
 #include <stdint.h> /* uintptr_t */
+#endif
 #include <math.h>   /* isnan */
 
 #ifdef _WIN32
@@ -2533,7 +2535,7 @@ XML_Bool XMLCALL
 XML_SetBillionLaughsAttackProtectionMaximumAmplification(
     XML_Parser parser, float maximumAmplificationFactor) {
   if ((parser == NULL) || (parser->m_parentParser != NULL)
-      || isnan(maximumAmplificationFactor)
+/*      || isnan(maximumAmplificationFactor) */
       || (maximumAmplificationFactor < 1.0f)) {
     return XML_FALSE;
   }
@@ -5283,6 +5285,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
     case XML_ROLE_GROUP_OPEN:
       if (parser->m_prologState.level >= parser->m_groupSize) {
         char *new_connector;
+        int *new_scaff_index;
         if (parser->m_groupSize) {
           {
             /* Detect and prevent integer overflow */
@@ -5310,7 +5313,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
             }
 #endif
 
-            int *const new_scaff_index = (int *)REALLOC(
+            new_scaff_index = (int *)REALLOC(
                 parser, dtd->scaffIndex, parser->m_groupSize * sizeof(int));
             if (new_scaff_index == NULL)
               return XML_ERROR_NO_MEMORY;
