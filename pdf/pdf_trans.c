@@ -717,7 +717,7 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, gs_rect *bbox,
     bool current_overprint;
     bool okOPcs = false;
     bool ChangeBM = false;
-    gs_blend_mode_t mode;
+    gs_blend_mode_t  mode = gs_currentblendmode(ctx->pgs);  /* quite warning */
     bool need_group = false;
 
     memset(state, 0, sizeof(*state));

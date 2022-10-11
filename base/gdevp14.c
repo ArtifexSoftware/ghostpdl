@@ -4449,8 +4449,6 @@ pdf14_fill_stroke_prestroke(gx_device* dev, gs_gstate* pgs, float stroke_alpha,
 static void
 pdf14_fill_stroke_poststroke(gx_device* dev, gs_gstate* pgs, float fill_alpha, bool op_ca_eq_CA)
 {
-    pdf14_device* p14dev = (pdf14_device*)dev;
-
     if (!op_ca_eq_CA) {
         /* Bug 703324 we need to reset the fill constant alpha in the graphics
           * state to the correct saved value. We also need to reset the 'opacity' member of the
