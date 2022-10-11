@@ -175,7 +175,7 @@ gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
         set_dev_proc(mdev, strip_copy_rop2, mem_planar_strip_copy_rop2);
         set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     }
-    set_dev_proc(mdev, dev_spec_op, mem_spec_op);
+    fill_dev_proc(mdev, dev_spec_op, mem_spec_op);
     set_dev_proc(mdev, copy_planes, mem_planar_copy_planes);
     return 0;
 }
