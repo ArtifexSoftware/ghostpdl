@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -52,7 +52,7 @@ gpdfclean: cleansub
 gpdl: .gpdlsubtarget $(UNIX_END_MAK)
 	$(NO_OP)
 
-gpdlclean: .cleansub
+gpdlclean: cleansub
 	$(NO_OP)
 
 libgs: $(GS_A)
