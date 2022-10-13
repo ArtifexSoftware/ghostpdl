@@ -22,6 +22,11 @@
 
 /*** SET BY GS CONFIGURE SCRIPT ****/
 /* #define OPJ_HAVE_FSEEKO ON */
+/* #define OPJ_HAVE_MALLOC_H 	1 */
+/* #define OPJ_HAVE_ALIGNED_ALLOC 	1 */
+/* #define OPJ_HAVE_ALIGNED_MALLOC 	1 */
+/* #define OPJ_HAVE_MEMALIGN 	1 */
+/* #define OPJ_HAVE_POSIX_MEMALIGN 	1 */
 
 /* Byte order.  */
 /* All compilers that support Mac OS X define either __BIG_ENDIAN__ or
