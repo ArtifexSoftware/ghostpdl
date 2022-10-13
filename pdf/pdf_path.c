@@ -133,6 +133,7 @@ static int ApplyStoredPath(pdf_context *ctx)
     int code = 0;
     char *op = NULL;
     double *dpts = NULL;
+    double *current;
 
     if (ctx->PathSegments == NULL)
         return 0;
@@ -150,6 +151,7 @@ static int ApplyStoredPath(pdf_context *ctx)
 
     op = ctx->PathSegments;
     dpts = ctx->PathPts;
+    current = dpts; /* Stop stupid compilers complaining. */
 
     while (op < ctx->PathSegmentsCurrent) {
         if (dpts > ctx->PathPtsCurrent) {
@@ -160,10 +162,12 @@ static int ApplyStoredPath(pdf_context *ctx)
         switch(*op++) {
             case pdfi_moveto_seg:
                 code = gs_moveto(ctx->pgs, dpts[0], dpts[1]);
+                current = dpts;
                 dpts+= 2;
                 break;
             case pdfi_lineto_seg:
                 code = gs_lineto(ctx->pgs, dpts[0], dpts[1]);
+                current = dpts;
                 dpts+= 2;
                 break;
             case pdfi_re_seg:
@@ -179,25 +183,22 @@ static int ApplyStoredPath(pdf_context *ctx)
                         }
                     }
                 }
+                current = dpts;
                 dpts+= 4;
                 break;
             case pdfi_v_curveto_seg:
-                {
-                    gs_point pt;
-
-                    code = gs_currentpoint(ctx->pgs, &pt);
-                    if (code >= 0) {
-                        code = gs_curveto(ctx->pgs, pt.x, pt.y, dpts[0], dpts[1], dpts[2], dpts[3]);
-                        dpts+= 4;
-                    }
-                }
+                code = gs_curveto(ctx->pgs, current[0], current[1], dpts[0], dpts[1], dpts[2], dpts[3]);
+                current = dpts + 2;
+                dpts+= 4;
                 break;
             case pdfi_y_curveto_seg:
                 code = gs_curveto(ctx->pgs, dpts[0], dpts[1], dpts[2], dpts[3], dpts[2], dpts[3]);
+                current = dpts + 2;
                 dpts+= 4;
                 break;
             case pdfi_curveto_seg:
                 code = gs_curveto(ctx->pgs, dpts[0], dpts[1], dpts[2], dpts[3], dpts[4], dpts[5]);
+                current = dpts + 4;
                 dpts+= 6;
                 break;
             case pdfi_closepath_seg:
