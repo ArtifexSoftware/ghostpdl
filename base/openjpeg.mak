@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -47,6 +47,7 @@ open_jpeg_OBJS = \
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)dwt.$(OBJ)		\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)event.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)function_list.$(OBJ)			\
+	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)ht_dec.$(OBJ)		\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)image.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)invert.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)j2k.$(OBJ)		\
@@ -139,6 +140,9 @@ $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)event.$(OBJ) : $(OPEN_JPEG_SRC)event.c $(open
 
 $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)function_list.$(OBJ) : $(OPEN_JPEG_SRC)function_list.c $(open_jpeg_HDRS) $(OPEN_JPEG_DEP)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)function_list.$(OBJ) $(C_) $(OPEN_JPEG_SRC)function_list.c
+
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)ht_dec.$(OBJ) : $(OPEN_JPEG_SRC)ht_dec.c $(open_jpeg_HDRS) $(OPEN_JPEG_DEP)
+	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)ht_dec.$(OBJ) $(C_) $(OPEN_JPEG_SRC)ht_dec.c
 
 $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)image.$(OBJ) : $(OPEN_JPEG_SRC)image.c $(open_jpeg_HDRS) $(OPEN_JPEG_DEP)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)image.$(OBJ) $(C_) $(OPEN_JPEG_SRC)image.c
