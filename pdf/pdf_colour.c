@@ -342,6 +342,7 @@ static void pdfi_cspace_free_callback(gs_memory_t * mem, void *cs)
 int pdfi_gs_setgray(pdf_context *ctx, double d)
 {
     int code = 0;
+    gs_color_space *pcs = ctx->pgs->color[0].color_space;
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
@@ -353,6 +354,11 @@ int pdfi_gs_setgray(pdf_context *ctx, double d)
         code = gs_setcolorspace(ctx->pgs, ctx->page.DefaultGray_cs);
         if (code < 0)
             return code;
+        /* If we didn't change the colour space in the graphics state, do not attempt to
+         * set the callbacks, the current space might be inherited from PostScript.
+         */
+        if (pcs != ctx->pgs->color[0].color_space)
+            pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
         cc.paint.values[0] = d;
         cc.pattern = 0;
         return gs_setcolor(ctx->pgs, &cc);
@@ -361,13 +367,18 @@ int pdfi_gs_setgray(pdf_context *ctx, double d)
         if (code < 0)
             return code;
     }
-    pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+    /* If we didn't change the colour space in the graphics state, do not attempt to
+     * set the callbacks, the current space might be inherited from PostScript.
+     */
+    if (pcs != ctx->pgs->color[0].color_space)
+        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     return 0;
 }
 
 int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
 {
     int code = 0;
+    gs_color_space *pcs = ctx->pgs->color[0].color_space;
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
@@ -379,7 +390,11 @@ int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
         code = gs_setcolorspace(ctx->pgs, ctx->page.DefaultRGB_cs);
         if (code < 0)
             return code;
-        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, NULL);
+        /* If we didn't change the colour space in the graphics state, do not attempt to
+         * set the callbacks, the current space might be inherited from PostScript.
+         */
+        if (pcs != ctx->pgs->color[0].color_space)
+            pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
         cc.paint.values[0] = r;
         cc.paint.values[1] = g;
         cc.paint.values[2] = b;
@@ -389,7 +404,11 @@ int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
         code = gs_setrgbcolor(ctx->pgs, r, g, b);
         if (code < 0)
             return code;
-        pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
+        /* If we didn't change the colour space in the graphics state, do not attempt to
+         * set the callbacks, the current space might be inherited from PostScript.
+         */
+        if (pcs != ctx->pgs->color[0].color_space)
+            pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     }
     return 0;
 }
@@ -397,6 +416,7 @@ int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
 static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, double k)
 {
     int code = 0;
+    gs_color_space *pcs = ctx->pgs->color[0].color_space;
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
@@ -408,6 +428,11 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
         code = gs_setcolorspace(ctx->pgs, ctx->page.DefaultCMYK_cs);
         if (code < 0)
             return code;
+        /* If we didn't change the colour space in the graphics state, do not attempt to
+         * set the callbacks, the current space might be inherited from PostScript.
+         */
+        if (pcs != ctx->pgs->color[0].color_space)
+            pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
         cc.paint.values[0] = c;
         cc.paint.values[1] = m;
         cc.paint.values[2] = y;
@@ -418,13 +443,19 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
         code = gs_setcmykcolor(ctx->pgs, c, m, y, k);
         if (code < 0)
             return code;
+        /* If we didn't change the colour space in the graphics state, do not attempt to
+         * set the callbacks, the current space might be inherited from PostScript.
+         */
+        if (pcs != ctx->pgs->color[0].color_space)
+            pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     }
-    pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     return 0;
 }
 
 int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
 {
+    gs_color_space *old_pcs = ctx->pgs->color[0].color_space;
+    int code = 0;
     /* If the target colour space is already the current colour space, don't
      * bother to do anything.
      */
@@ -433,8 +464,14 @@ int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
         if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
             return 0;
 
-        pdfi_set_colour_callback(pcs, ctx, pdfi_cspace_free_callback);
-        return gs_setcolorspace(ctx->pgs, pcs);
+        code = gs_setcolorspace(ctx->pgs, pcs);
+        if (code < 0)
+            return code;
+        /* If we didn't change the colour space in the graphics state, do not attempt to
+         * set the callbacks, the current space might be inherited from PostScript.
+         */
+        if (old_pcs != ctx->pgs->color[0].color_space)
+            pdfi_set_colour_callback(ctx->pgs->color[0].color_space, ctx, pdfi_cspace_free_callback);
     }
     return 0;
 }
