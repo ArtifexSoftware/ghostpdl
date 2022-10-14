@@ -92,16 +92,26 @@ void
 gx_cpath_accum_set_cbox(gx_device_cpath_accum * padev,
                         const gs_fixed_rect * pbox)
 {
+    /* fixed2int_var_ceiling(x) overflows for anything larger
+     * than max_fixed - fixed_scale - 1. So to protect against
+     * us doing bad things when passed a min_fixed/max_fixed box,
+     * clip appropriately. */
+    fixed upperx = pbox->q.x;
+    fixed uppery = pbox->q.y;
+    if (upperx > max_fixed - fixed_scale - 1)
+        upperx = max_fixed - fixed_scale - 1;
+    if (uppery > max_fixed - fixed_scale - 1)
+        uppery = max_fixed - fixed_scale - 1;
     if (padev->list.transpose) {
         padev->clip_box.p.x = fixed2int_var(pbox->p.y);
         padev->clip_box.p.y = fixed2int_var(pbox->p.x);
-        padev->clip_box.q.x = fixed2int_var_ceiling(pbox->q.y);
-        padev->clip_box.q.y = fixed2int_var_ceiling(pbox->q.x);
+        padev->clip_box.q.x = fixed2int_var_ceiling(uppery);
+        padev->clip_box.q.y = fixed2int_var_ceiling(upperx);
     } else {
         padev->clip_box.p.x = fixed2int_var(pbox->p.x);
         padev->clip_box.p.y = fixed2int_var(pbox->p.y);
-        padev->clip_box.q.x = fixed2int_var_ceiling(pbox->q.x);
-        padev->clip_box.q.y = fixed2int_var_ceiling(pbox->q.y);
+        padev->clip_box.q.x = fixed2int_var_ceiling(upperx);
+        padev->clip_box.q.y = fixed2int_var_ceiling(uppery);
     }
 }
 

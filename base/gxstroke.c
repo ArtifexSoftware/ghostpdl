@@ -345,6 +345,7 @@ gx_default_stroke_path_shading_or_pattern(gx_device        * pdev,
     gx_device_color devc;
     gx_clip_path stroke_as_clip_path;
     int code;
+    gs_fixed_rect dev_clip_rect = { {min_fixed, min_fixed}, {max_fixed, max_fixed}};
 
     /* We want to make a image of the stroke as a clip path, so
      * create an empty structure on the stack. */
@@ -353,6 +354,9 @@ gx_default_stroke_path_shading_or_pattern(gx_device        * pdev,
         return code;
     /* Now we make an accumulator device that will fill that out. */
     gx_cpath_accum_begin(&adev, stroke_as_clip_path.path.memory, false);
+    if (pdev != 0)
+        (*dev_proc(pdev, get_clipping_box))(pdev, &dev_clip_rect);
+    gx_cpath_accum_set_cbox(&adev, &dev_clip_rect);
     set_nonclient_dev_color(&devc, 0);	/* arbitrary, but not transparent */
     gs_set_logical_op_inline(pgs, lop_default);
     /* Stroke the path to the accumulator. */
