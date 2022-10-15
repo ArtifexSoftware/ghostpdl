@@ -1071,6 +1071,7 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
     uint64_t dictsize;
     uint64_t index;
     pdf_name *Key = NULL;
+    double num;
 
     /* Basically we only do /Count, /Title, /A, /C, /F
      * The /First, /Last, /Next, /Parent get written magically by pdfwrite
@@ -1083,6 +1084,42 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
     pdfi_countup(tempdict);
     code = pdfi_dict_copy(ctx, tempdict, outline);
     if (code < 0) goto exit;
+
+    /* Due to some craziness on the part of Adobe, the /Count in an Outline entry
+     * in a PDF file, and the /Count value in an /OUT pdfmark mean different things(!)
+     * In a PDF file it is the number of outline entries beneath the current entry
+     * (all child descsndants) whereas in a pdfmark it is the number of entries
+     * in just the next level. So we cannot use the /Count from the PDF file, we
+     * need to go to the /First entry of the next level, and then count all
+     * the entries at that level by following each /Next.
+     */
+    code = pdfi_dict_knownget_number(ctx, outline, "Count", &num);
+    if (code < 0)
+        goto exit;
+
+    if (code > 0) {
+        pdf_dict *current = NULL, *next = NULL;
+        int count = 0;
+
+        code = pdfi_dict_knownget_type(ctx, outline, "First", PDF_DICT, (pdf_obj **)&current);
+        if (code > 0) {
+            count++;
+            do {
+                code = pdfi_dict_knownget_type(ctx, current, "Next", PDF_DICT, (pdf_obj **)&next);
+                if (code > 0) {
+                    pdfi_countdown(current);
+                    current = next;
+                    next = NULL;
+                    count++;
+                } else
+                    break;
+            } while (1);
+            pdfi_countdown(current);
+        }
+        if (num < 0)
+            count *= -1;
+        pdfi_dict_put_int(ctx, tempdict, "Count", count);
+    }
 
     /* Go through the dict, removing some keys and doing special handling for others.
      */
