@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2021 Artifex Software, Inc.
+/* Copyright (C) 2018-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,6 +25,6 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
 int pdfi_do_highlevel_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_stream);
 int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj *xobject_obj);
 int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *xobject_dict,
-                        gs_gstate *GroupGState, gs_color_space *pcs, gs_matrix *matrix);
+                        gs_gstate *GroupGState, gs_color_space *pcs, gs_client_color *pcc, gs_matrix *matrix);
 
 #endif

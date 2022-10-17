@@ -309,7 +309,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
             goto exit;
 
         code = pdfi_form_execgroup(ctx, ctx->page.CurrentPageDict, G_stream,
-                                   igs->GroupGState, NULL, &group_Matrix);
+                                   igs->GroupGState, NULL, NULL, &group_Matrix);
         code1 = gs_end_transparency_mask(ctx->pgs, colorindex);
         if (code == 0)
             code = code1;

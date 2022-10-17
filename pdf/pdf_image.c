@@ -2223,7 +2223,7 @@ int pdfi_EI(pdf_context *ctx)
 
 /* see .execgroup */
 int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *xobject_obj,
-                        gs_gstate *GroupGState, gs_color_space *pcs, gs_matrix *matrix)
+                        gs_gstate *GroupGState, gs_color_space *pcs, gs_client_color *pcc, gs_matrix *matrix)
 {
     int code;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
@@ -2241,6 +2241,9 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *xobje
     /* Override the colorspace if specified */
     if (pcs) {
         code = pdfi_gs_setcolorspace(ctx, pcs);
+        if (code < 0)
+            goto exit2;
+        code = gs_setcolor(ctx->pgs, (const gs_client_color *)pcc);
         if (code < 0)
             goto exit2;
     }
@@ -2448,6 +2451,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
     pdf_stream *hacked_stream = NULL;
     pdf_dict *form_dict;
     gs_color_space *pcs = NULL;
+    gs_client_color cc, *pcc;
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_form BEGIN\n");
@@ -2509,12 +2513,14 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
         /* Save the current color space in case it gets changed */
         pcs = gs_currentcolorspace(ctx->pgs);
         rc_increment(pcs);
+        pcc = (gs_client_color *)gs_currentcolor(ctx->pgs);
+        cc = *pcc;
 
         code = pdfi_trans_begin_form_group(ctx, page_dict, form_dict);
         (void)pdfi_loop_detector_cleartomark(ctx);
         if (code < 0) goto exit1;
 
-        code = pdfi_form_execgroup(ctx, page_dict, form_stream, NULL, pcs, NULL);
+        code = pdfi_form_execgroup(ctx, page_dict, form_stream, NULL, pcs, &cc, NULL);
         code1 = pdfi_trans_end_group(ctx);
         if (code == 0) code = code1;
     } else {
