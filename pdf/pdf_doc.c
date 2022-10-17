@@ -1044,6 +1044,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
                 goto exit;
             if (code > 0) {
                 code = pdfi_dict_get_no_store_R_key(ctx, typedict, name, o);
+                /* Triggered by: tests_private/comparefiles/Bug692783.pdf */
                 pdfi_set_error(ctx, 0, NULL, E_PDF_INHERITED_STREAM_RESOURCE, "pdfi_find_resource", (char *)"Couldn't find named resource in supplied dictionary, or Parents, or Pages, matching name located in earlier stream Resource");
                 goto exit;
             }
