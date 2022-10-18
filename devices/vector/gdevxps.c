@@ -1961,8 +1961,10 @@ xps_begin_typed_image(gx_device               *dev,
         if (gs_color_space_is_PSCIE(pcs)) {
             if (pcs->icc_equivalent == NULL) {
                 bool is_lab;
-                if (pgs == NULL)
-                    return(gs_error_invalidaccess);
+                if (pgs == NULL) {
+                    gs_free_object(mem, *pinfo, "xps_begin_image");
+                    return_error(gs_error_invalidaccess);
+                }
                 gs_colorspace_set_icc_equivalent(pcs, &is_lab, pgs->memory);
             }
             icc_profile = pcs->icc_equivalent->cmm_icc_profile_data;
@@ -1981,8 +1983,10 @@ xps_begin_typed_image(gx_device               *dev,
         rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
         rendering_params.rendering_intent = gsPERCEPTUAL;
         rendering_params.cmm = gsCMM_DEFAULT;
-        if (pgs == NULL)
-            return(gs_error_invalidaccess);
+        if (pgs == NULL) {
+            gs_free_object(mem, *pinfo, "xps_begin_image");
+            return_error(gs_error_invalidaccess);
+        }
         pie->icc_link = gsicc_get_link_profile(pgs, dev, icc_profile,
             pgs->icc_manager->default_rgb, &rendering_params, pgs->memory, false);
         icc_profile = pgs->icc_manager->default_rgb;
@@ -1996,8 +2000,9 @@ xps_begin_typed_image(gx_device               *dev,
         icc_data = (xps_icc_data_t*)gs_alloc_bytes(dev->memory->non_gc_memory,
             sizeof(xps_icc_data_t), "xps_begin_image");
         if (icc_data == NULL) {
+            gs_free_object(mem, *pinfo, "xps_begin_image");
             gs_throw(gs_error_VMerror, "Allocation of icc_data failed");
-            return(gs_error_VMerror);
+            return_error(gs_error_VMerror);
         }
 
         icc_data->hash = gsicc_get_hash(icc_profile);
@@ -2014,24 +2019,32 @@ xps_begin_typed_image(gx_device               *dev,
         /* Get name for mark up and for relationship. Have to wait and do
            this after it is added to the package */
         code = xps_create_icc_name(xdev, icc_profile, &(pie->icc_name[0]));
-        if (code < 0)
-            return gs_rethrow_code(code);
+        if (code < 0) {
+            gs_free_object(mem, *pinfo, "xps_begin_image");
+            return_error(gs_rethrow_code(code));
+        }
 
         /* Add profile to the package. Here like images we are going to write
            the data now.  Rather than later. */
-        if (pgs == NULL)
-            return(gs_error_invalidaccess);
+        if (pgs == NULL) {
+            gs_free_object(mem, *pinfo, "xps_begin_image");
+            return_error(gs_error_invalidaccess);
+        }
         code = xps_write_profile(pgs, &(pie->icc_name[0]), icc_profile, xdev);
-        if (code < 0)
-            return gs_rethrow_code(code);
+        if (code < 0) {
+            gs_free_object(mem, *pinfo, "xps_begin_image");
+            return_error(gs_rethrow_code(code));
+        }
 
         /* Add ICC relationship */
         xps_add_icc_relationship(pie);
     } else {
         /* Get name for mark up.  We already have it in the resource list */
         code = xps_create_icc_name(xdev, icc_profile, &(pie->icc_name[0]));
-        if (code < 0)
-            return gs_rethrow_code(code);
+        if (code < 0) {
+            gs_free_object(mem, *pinfo, "xps_begin_image");
+            return_error(gs_rethrow_code(code));
+        }
 
         /* Add ICC relationship.  It may not yet be present for this page. */
         xps_add_icc_relationship(pie);
@@ -2047,8 +2060,10 @@ xps_begin_typed_image(gx_device               *dev,
         (*dev_proc(dev, get_clipping_box)) (dev, &bbox);
         gx_cpath_init_local(&cpath, dev->memory);
         code = gx_cpath_from_rectangle(&cpath, &bbox);
-        if (code < 0)
-            return gs_rethrow_code(code);
+        if (code < 0) {
+            gs_free_object(mem, *pinfo, "xps_begin_image");
+            return_error(gs_rethrow_code(code));
+        }
         pcpath = &cpath;
     } else {
         /* Force vector device to do new path as the clip path is the image
@@ -2058,23 +2073,31 @@ xps_begin_typed_image(gx_device               *dev,
         ((gx_device_vector*) vdev)->clip_path_id = vdev->no_clip_path_id;
     }
 
-    if (pgs == NULL)
-        return(gs_error_invalidaccess);
+    if (pgs == NULL) {
+        gs_free_object(mem, *pinfo, "xps_begin_image");
+        return_error(gs_error_invalidaccess);
+    }
     code = gdev_vector_begin_image(vdev, pgs, pim, pim->format, prect,
         pdcolor, pcpath, mem, &xps_image_enum_procs,
         (gdev_vector_image_enum_t *)pie);
-    if (code < 0)
-        return code;
+    if (code < 0) {
+        gs_free_object(mem, pie, "xps_begin_image");
+        return_error(gs_rethrow_code(code));
+    }
 
-    if ((pie->tif = tiff_from_name(xdev, pie->file_name, false, false)) == NULL)
+    if ((pie->tif = tiff_from_name(xdev, pie->file_name, false, false)) == NULL) {
+        gs_free_object(mem, pie, "xps_begin_image");
         return_error(gs_error_VMerror);
+    }
 
     /* Null out pie.  Only needed for the above vector command and tiff set up */
     xdev->xps_pie = NULL;
     xps_tiff_set_handlers();
     code = tiff_set_values(pie, pie->tif, icc_profile, force8bit);
-    if (code < 0)
-        return gs_rethrow_code(code);
+    if (code < 0) {
+        gs_free_object(mem, pie, "xps_begin_image");
+        return_error(gs_rethrow_code(code));
+    }
     code = TIFFCheckpointDirectory(pie->tif);
 
     num_components = gs_color_space_num_components(pcs);
