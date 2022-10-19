@@ -269,8 +269,8 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     bool has_exponent = false;
     unsigned short exponent_index = 0;
     pdf_num *num;
-    int code = 0, malformed = false, doubleneg = false, recovered = false, negative = false;
-    int int_val = 0;
+    int code = 0, malformed = false, doubleneg = false, recovered = false, negative = false, overflowed = false;
+    int int_val = 0, tenth_max_int = max_int / 10;
 
     pdfi_skip_white(ctx, s);
 
@@ -295,8 +295,14 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         Buffer[index] = (byte)c;
 
         if (c >= '0' && c <= '9') {
-            if  (!(malformed && recovered))
-                int_val = int_val*10 + c - '0';
+            if  (!(malformed && recovered) && !overflowed) {
+                if (int_val < tenth_max_int)
+                    int_val = int_val*10 + c - '0';
+                else {
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_NUMBEROVERFLOW, "pdfi_read_num", NULL);
+                    overflowed = true;
+                }
+            }
         } else if (c == '.') {
             if (has_decimal_point == true) {
                 if (ctx->args.pdfstoponerror)
