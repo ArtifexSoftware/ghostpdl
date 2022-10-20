@@ -893,6 +893,11 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
         case gsUNDEFINED:        /* Silence warnings */
             break;
     }
+    if (expected == 0) {
+        rc_decrement(picc_profile,"pdfi_create_icc");
+        rc_decrement(pcs,"pdfi_create_icc");
+        return_error(gs_error_rangecheck);
+    }
     /* Return the number of components the ICC profile has */
     *icc_N = expected;
     if (expected != ncomps)
