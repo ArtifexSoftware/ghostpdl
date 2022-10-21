@@ -680,14 +680,13 @@ process_block(txt_interp_instance_t *instance, const byte *ptr, int n)
                 return code;
             break;
         case TXT_STATE_ASCII:
-            do
+            while (instance->buffered > 0)
             {
                 code = send_codepoint(instance, s[0]);
                 if (code < 0)
                     return code;
                 drop_buffered(instance, 1);
             }
-            while (instance->buffered > 0);
             break;
         default:
             return_error(gs_error_Fatal);
