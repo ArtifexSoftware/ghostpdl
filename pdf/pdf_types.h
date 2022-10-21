@@ -154,8 +154,8 @@ typedef enum pdf_key_e {
 } pdf_key;
 
 #define PDF_NULL_OBJ ((pdf_obj *)(uintptr_t)TOKEN_null)
-#define PDF_TRUE_OBJ ((pdf_obj *)(uintptr_t)TOKEN_TRUE)
-#define PDF_FALSE_OBJ ((pdf_obj *)(uintptr_t)TOKEN_FALSE)
+#define PDF_TRUE_OBJ ((pdf_obj *)(uintptr_t)TOKEN_PDF_TRUE)
+#define PDF_FALSE_OBJ ((pdf_obj *)(uintptr_t)TOKEN_PDF_FALSE)
 #define PDF_TOKEN_AS_OBJ(token) ((pdf_obj *)(uintptr_t)(token))
 
 typedef struct pdf_keyword_s {
@@ -265,7 +265,7 @@ static inline pdf_obj_type pdfi_type_of_imp(pdf_obj *obj)
 {
     if ((uintptr_t)obj > TOKEN__LAST_KEY)
         return obj->type;
-    else if ((uintptr_t)obj == TOKEN_TRUE || (uintptr_t)obj == TOKEN_FALSE)
+    else if ((uintptr_t)obj == TOKEN_PDF_TRUE || (uintptr_t)obj == TOKEN_PDF_FALSE)
         return PDF_BOOL;
     else if ((uintptr_t)obj == TOKEN_null)
         return PDF_NULL;

@@ -984,8 +984,8 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
                 if (code < 0)
                     return code;
                 /* fallthrough */
-            case TOKEN_TRUE:
-            case TOKEN_FALSE:
+            case TOKEN_PDF_TRUE:
+            case TOKEN_PDF_FALSE:
             case TOKEN_null:
             default:
                 /* This is the fast, common exit case. We just push the key
