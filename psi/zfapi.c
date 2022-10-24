@@ -103,6 +103,10 @@ sfnts_next_elem(sfnts_reader *r)
             r->error = code;
             return;
         }
+        if (!r_has_type(&s, t_string)) {
+            r->error = gs_note_error(gs_error_typecheck);
+            return;
+        }
     	r->p = s.value.const_bytes;
     	r->length = r_size(&s) & ~(uint) 1; /* See Adobe Technical Note # 5012, section 4.2. */
     } while (r->length == 0);
