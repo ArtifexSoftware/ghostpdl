@@ -4012,7 +4012,8 @@ static int nInstrCount=0;
 
       point = (Int)CUR.stack[CUR.args];
 
-      if ( BOUNDS( point, CUR.zp1.n_points ) )
+      if ( BOUNDS( point, CUR.zp1.n_points ) ||
+           BOUNDS( CUR.GS.rp0, CUR.zp0.n_points ) )
       {
         CUR.error = TT_Err_Invalid_Reference;
         return;
