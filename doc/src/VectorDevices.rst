@@ -974,6 +974,8 @@ PDF file output
 ``-dOmitXMPboolean``
    Under some conditions the XMP ``/Metadata`` entry in the ``Catalog`` dictionary is optional and can be omitted. It is required when producing PDF/A output however. This control will allow the user to omit the ``/Metadata`` entry in the ``Catalog`` dictionary. If you try to set this control when writing PDF/A output, the device will give a warning and ignore this control.
 
+``-dNO_PDFMARK_OUTLINES``
+  When the input is a PDF file which has an ``/Outlines`` tree (called "Bookmarks" in Adobe Acrobat) these are normally turned into ``pdfmarks`` and sent to the ``pdfwrite`` device so that they are preserved in the output PDF file. However, if this control is set then the interpreter will ignore the Outlines in the input.
 
 
 The following options are useful for creating PDF 1.2 files:

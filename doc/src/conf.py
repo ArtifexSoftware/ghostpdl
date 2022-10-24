@@ -187,7 +187,15 @@ htmlhelp_basename = "Ghostscript"
 
 
 # -- Options for LaTeX output ---------------------------------------------
+# This ensures that the ≥ character (Unicode character ≥ = U+2265) will
+# render correctly in the PDF
 latex_elements = {
+    "preamble" : r'''
+\ifdefined\sphinxDUC
+  \sphinxDUC{2265}{\ensuremath{\ge}}
+\fi
+''',
+
     # "fontpkg": r"\usepackage[sfdefault]{ClearSans} \usepackage[T1]{fontenc}"
 }
 # Grouping the document tree into LaTeX files. List of tuples

@@ -25,10 +25,9 @@ Within this project the following namespaces and corresponding C# files are of r
 Platform & setup
 =======================
 
-
 Ghostscript should be built as a shared library for your platform.
 
-See :ref:`Building Ghostscript<Building Ghostscript>`.
+See :ref:`Building Ghostscript<Make.htm>`.
 
 
 GhostAPI
@@ -456,6 +455,7 @@ There is a 64 KB length limit on any buffer submitted to a ``gsapi_run_*`` funct
   public static extern int gsapi_run_string_begin(IntPtr instance,
                                                      int usererr,
                                                  ref int exitcode);
+
 ``gsapi_run_string_continue``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -479,6 +479,7 @@ There is a 64 KB length limit on any buffer submitted to a ``gsapi_run_*`` funct
                                                              uint length,
                                                               int usererr,
                                                           ref int exitcode);
+
 ``gsapi_run_string``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -488,6 +489,7 @@ There is a 64 KB length limit on any buffer submitted to a ``gsapi_run_*`` funct
                                             IntPtr command,
                                                int usererr,
                                            ref int exitcode);
+
 ``gsapi_run_string_end``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -676,6 +678,7 @@ Callback and Callout prototypes
   public delegate int gs_stdio_handler(IntPtr caller_handle,
                                        IntPtr buffer,
                                           int len);
+
 ``gsPollHandler``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1416,7 +1419,7 @@ Launches a thread rendering a set of pages with the :ref:`display device<Devices
 ``GetStatus``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Returns the current :ref:`status<_GhostNET_Status>` of Ghostscript.
+Returns the current :ref:`status<GhostNET_Status>` of Ghostscript.
 
 
 .. code-block:: csharp
@@ -2082,7 +2085,7 @@ Launches a thread rendering a set of pages with the :ref:`display device<Devices
 ``GetStatus``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Returns the current :ref:`status<_GhostNET_Status>` of Ghostscript.
+Returns the current :ref:`status<GhostNET_Status>` of Ghostscript.
 
 
 .. code-block:: csharp

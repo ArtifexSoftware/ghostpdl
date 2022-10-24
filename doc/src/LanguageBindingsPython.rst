@@ -23,7 +23,7 @@ Platform & setup
 
 Ghostscript should be built as a shared library for your platform.
 
-See :ref:`Building Ghostscript<Building Ghostscript>`.
+See :ref:`Building Ghostscript<Make.htm>`.
 
 
 
@@ -242,7 +242,7 @@ Set the callback function for polling.
    Your instance of Ghostscript.
 
 ``poll_fn``
-   Will be called with ``caller_handle`` as passed to :ref:`gsapi_new_instance(python gsapi_new_instance)<>`.
+   Will be called with ``caller_handle`` as passed to :ref:`gsapi_new_instance<python gsapi_new_instance>`.
 
 
 **Sample code**:

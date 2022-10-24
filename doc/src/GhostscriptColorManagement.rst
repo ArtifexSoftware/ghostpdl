@@ -837,8 +837,7 @@ the following:
 ``gsicc_link_cache_t* gsicc_cache_new(gs_memory_t *memory);``
     Creator for the Link Cache.
 
-``void gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsigned char bytes_per_chan, bool has_alpha, bool alpha_first,
-bool is_planar, int plane_stride, int row_stride, int num_rows, int pixels_per_row);``
+``void gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsigned char bytes_per_chan, bool has_alpha, bool alpha_first, bool is_planar, int plane_stride, int row_stride, int num_rows, int pixels_per_row);``
     This is used to initialize a ``gsicc_bufferdesc_t`` object. Two of these objects are used to describe the format of the source and destination buffers when transforming a buffer of color values.
 
 ``gsicc_link_t* gsicc_get_link(gs_imager_state * pis, gx_device *dev, gs_color_space *input_colorspace, gs_color_space *output_colorspace, gsicc_rendering_param_t *rendering_params, gs_memory_t *memory);``
