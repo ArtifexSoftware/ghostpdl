@@ -29,6 +29,8 @@
 
 #include "gscoord.h"         /* For gs_currentmatrix */
 
+static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest);
+
 static int pdfi_pdfmark_setparam_obj(pdf_context *ctx, pdf_obj *obj, gs_param_string *entry)
 {
     int code = 0;
@@ -567,16 +569,22 @@ int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
             if (code < 0) goto exit;
             if (code == 0) {
                 /* TODO: Not found -- not sure if there is another case here or not */
+                code = gs_note_error(gs_error_undefined);
                 goto exit;
             }
 
             code = pdfi_dict_knownget_type(ctx, Dests, "Names", PDF_ARRAY, (pdf_obj **)&Names);
             if (code < 0) goto exit;
             if (code == 0) {
-                /* TODO: Not found -- not sure if there is another case here or not */
-                goto exit;
-            }
-            code = pdfi_pdfmark_handle_dest_names(ctx, link_dict, Dest, Names);
+                code = pdfi_get_named_dest(ctx, Dest, (pdf_obj **)&dest_array);
+                if (code < 0)
+                    goto exit;
+                code = pdfi_pdfmark_add_Page_View(ctx, link_dict, dest_array);
+                if (code < 0)
+                    goto exit;
+                break;
+            } else
+                code = pdfi_pdfmark_handle_dest_names(ctx, link_dict, Dest, Names);
             if (code < 0) goto exit;
         } else {
             /* TODO: Ignore it -- flag a warning? */
@@ -617,7 +625,7 @@ static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int le
         /* Limits are not valid, just ignore them. The calling code will then check
          * the Names array.
          */
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_TREE_LIMITS, "pdfi_get_name_from_node", 0);
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_TREE_LIMITS, "pdfi_check_limits", 0);
         goto error;
     }
 
@@ -631,7 +639,7 @@ static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int le
             return code;
     } else {
         len2 = ((pdf_string *)Str)->length;
-        str2 = (char *)gs_alloc_bytes(ctx->memory, len2 + 1, "pdfi_get_named_dest");
+        str2 = (char *)gs_alloc_bytes(ctx->memory, len2 + 1, "pdfi_check_limits");
         if (str2 == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
@@ -659,7 +667,7 @@ static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int le
         code = gs_note_error(gs_error_undefined);
         goto error;
     }
-    gs_free_object(ctx->memory, str2, "pdfi_get_named_dest");
+    gs_free_object(ctx->memory, str2, "pdfi_check_limits");
     str2 = NULL;
 
     code = pdfi_array_get_type(ctx, Limits, 1, PDF_STRING, (pdf_obj **)&Str);
@@ -672,7 +680,7 @@ static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int le
             return code;
     } else {
         len2 = ((pdf_string *)Str)->length;
-        str2 = (char *)gs_alloc_bytes(ctx->memory, len2 + 1, "pdfi_get_named_dest");
+        str2 = (char *)gs_alloc_bytes(ctx->memory, len2 + 1, "pdfi_check_limits");
         if (str2 == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
@@ -701,7 +709,7 @@ static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int le
         code = gs_note_error(gs_error_undefined);
 
 error:
-    gs_free_object(ctx->memory, str2, "pdfi_get_named_dest");
+    gs_free_object(ctx->memory, str2, "pdfi_check_limits");
     pdfi_countdown(Str);
     pdfi_countdown(Limits);
     return code;
@@ -714,6 +722,10 @@ static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, 
     pdf_array *NamesArray = NULL;
     pdf_dict *Kid = NULL;
     bool known;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
 
     code = pdfi_dict_known(ctx, node, "Names", &known);
     if (code < 0)
@@ -785,6 +797,7 @@ error:
     pdfi_countdown(Kid);
     pdfi_countdown(StrKey);
     pdfi_countdown(NamesArray);
+    (void)pdfi_loop_detector_cleartomark(ctx);
     return code;
 }
 
@@ -793,6 +806,10 @@ static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest)
     int code = 0, len = 0;
     pdf_dict *Names = NULL, *Dests = NULL;
     char *str = NULL;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
 
     code = pdfi_dict_get_type(ctx, ctx->Root, "Names", PDF_DICT, (pdf_obj **)&Names);
     if (code < 0)
@@ -826,6 +843,7 @@ error:
         gs_free_object(ctx->memory, str, "pdfi_get_named_dest");
     pdfi_countdown(Names);
     pdfi_countdown(Dests);
+    pdfi_loop_detector_cleartomark(ctx);
     return code;
 }
 
