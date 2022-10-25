@@ -797,10 +797,11 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         }
                         break;
                     case ce2_index:
-                        if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack))
+                        if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack) ||
+                            !CS_CHECK_CSTACK_BOUNDS(&csp[0], cstack) ||
+                            !CS_CHECK_CSTACK_BOUNDS(&csp[-1 - fixed2int_var(csp[-1])], cstack))
                             return_error(gs_error_invalidfont);
-                        *csp =
-                            (*csp < 0 ? csp[-1] : csp[-1 - fixed2int_var(csp[-1])]);
+                        *csp = (*csp < 0 ? csp[-1] : csp[-1 - fixed2int_var(csp[-1])]);
                         break;
                     case ce2_roll:
                         if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack))
