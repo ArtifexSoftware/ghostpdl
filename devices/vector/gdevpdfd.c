@@ -911,6 +911,21 @@ lcvd_copy_color_shifted(gx_device * dev,
 }
 
 static int
+lcvd_copy_mono_shifted(gx_device * dev,
+               const byte * base, int sourcex, int sraster, gx_bitmap_id id,
+                      int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
+{
+    pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
+    int code;
+
+    code = cvd->std_copy_mono((gx_device *)&cvd->mdev, base, sourcex, sraster, id,
+                              x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, w, h,
+                              zero, one);
+
+    return code;
+}
+
+static int
 lcvd_fill_rectangle_shifted(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
@@ -1476,6 +1491,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
         }
     }
     cvd->std_copy_color = dev_proc(&cvd->mdev, copy_color);
+    cvd->std_copy_mono = dev_proc(&cvd->mdev, copy_mono);
     cvd->std_fill_rectangle = dev_proc(&cvd->mdev, fill_rectangle);
     cvd->std_close_device = dev_proc(&cvd->mdev, close_device);
     cvd->std_get_clipping_box = dev_proc(&cvd->mdev, get_clipping_box);
@@ -1490,6 +1506,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
         dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_shifted_from_mdev;
     }
     dev_proc(&cvd->mdev, copy_color) = lcvd_copy_color_shifted;
+    dev_proc(&cvd->mdev, copy_mono) = lcvd_copy_mono_shifted;
     dev_proc(&cvd->mdev, dev_spec_op) = lcvd_dev_spec_op;
     dev_proc(&cvd->mdev, fill_path) = lcvd_handle_fill_path_as_shading_coverage;
     dev_proc(&cvd->mdev, transform_pixel_region) = lcvd_transform_pixel_region;
