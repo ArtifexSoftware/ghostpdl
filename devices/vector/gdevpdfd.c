@@ -905,9 +905,20 @@ lcvd_copy_color_shifted(gx_device * dev,
                       int x, int y, int w, int h)
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
+    int code;
+    int dw = cvd->mdev.width;
+    int dh = cvd->mdev.height;
 
-    return cvd->std_copy_color((gx_device *)&cvd->mdev, base, sourcex, sraster, id,
+    cvd->mdev.width -= cvd->mdev.mapped_x;
+    cvd->mdev.height -= cvd->mdev.mapped_y;
+
+    code = cvd->std_copy_color((gx_device *)&cvd->mdev, base, sourcex, sraster, id,
         x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, w, h);
+
+    cvd->mdev.width = dw;
+    cvd->mdev.height = dh;
+
+    return code;
 }
 
 static int
@@ -917,10 +928,18 @@ lcvd_copy_mono_shifted(gx_device * dev,
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
     int code;
+    int dw = cvd->mdev.width;
+    int dh = cvd->mdev.height;
+
+    cvd->mdev.width -= cvd->mdev.mapped_x;
+    cvd->mdev.height -= cvd->mdev.mapped_y;
 
     code = cvd->std_copy_mono((gx_device *)&cvd->mdev, base, sourcex, sraster, id,
                               x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, w, h,
                               zero, one);
+
+    cvd->mdev.width = dw;
+    cvd->mdev.height = dh;
 
     return code;
 }
@@ -929,32 +948,61 @@ static int
 lcvd_fill_rectangle_shifted(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
+    int code;
+    int w = cvd->mdev.width;
+    int h = cvd->mdev.height;
 
-    return cvd->std_fill_rectangle((gx_device *)&cvd->mdev,
+    cvd->mdev.width -= cvd->mdev.mapped_x;
+    cvd->mdev.height -= cvd->mdev.mapped_y;
+
+    code = cvd->std_fill_rectangle((gx_device *)&cvd->mdev,
         x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
+
+    cvd->mdev.width = w;
+    cvd->mdev.height = h;
+
+    return code;
 }
 static int
 lcvd_fill_rectangle_shifted2(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
     int code;
+    int w = cvd->mdev.width;
+    int h = cvd->mdev.height;
+
+    cvd->mdev.width -= cvd->mdev.mapped_x;
+    cvd->mdev.height -= cvd->mdev.mapped_y;
 
     if (cvd->mask) {
         code = (*dev_proc(cvd->mask, fill_rectangle))((gx_device *)cvd->mask,
             x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, (gx_color_index)1);
         if (code < 0)
-            return code;
+            goto fail;
     }
-    return cvd->std_fill_rectangle((gx_device *)&cvd->mdev,
+    code = cvd->std_fill_rectangle((gx_device *)&cvd->mdev,
         x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
+
+fail:
+    cvd->mdev.width = w;
+    cvd->mdev.height = h;
+
+    return code;
 }
 static void
 lcvd_get_clipping_box_shifted_from_mdev(gx_device *dev, gs_fixed_rect *pbox)
 {
     fixed ofs;
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
+    int w = cvd->mdev.width;
+    int h = cvd->mdev.height;
+
+    cvd->mdev.width -= cvd->mdev.mapped_x;
+    cvd->mdev.height -= cvd->mdev.mapped_y;
 
     cvd->std_get_clipping_box((gx_device *)&cvd->mdev, pbox);
+    cvd->mdev.width = w;
+    cvd->mdev.height = h;
     ofs = int2fixed(cvd->mdev.mapped_x);
     pbox->p.x += ofs;
     pbox->q.x += ofs;
@@ -966,6 +1014,9 @@ static int
 lcvd_dev_spec_op(gx_device *pdev1, int dev_spec_op,
                 void *data, int size)
 {
+    pdf_lcvd_t *cvd = (pdf_lcvd_t *)pdev1;
+    int code, w, h;
+
     switch (dev_spec_op) {
         case gxdso_pattern_shading_area:
             return 1; /* Request shading area. */
@@ -979,7 +1030,18 @@ lcvd_dev_spec_op(gx_device *pdev1, int dev_spec_op,
         case gxdso_copy_color_is_fast:
             return 0;
     }
-    return gx_default_dev_spec_op(pdev1, dev_spec_op, data, size);
+
+    w = cvd->mdev.width;
+    h = cvd->mdev.height;
+    cvd->mdev.width -= cvd->mdev.mapped_x;
+    cvd->mdev.height -= cvd->mdev.mapped_y;
+
+    code = gx_default_dev_spec_op(pdev1, dev_spec_op, data, size);
+
+    cvd->mdev.width = w;
+    cvd->mdev.height = h;
+
+    return code;
 }
 static int
 lcvd_close_device_with_writing(gx_device *pdev)
@@ -1260,6 +1322,9 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern)
 {
     int code = 0;
 
+    cvd->mdev.width -= cvd->mdev.mapped_x;
+    cvd->mdev.height -= cvd->mdev.mapped_y;
+
     if (!cvd->path_is_empty || cvd->has_background) {
         if (!cvd->has_background)
             stream_puts(pdev->strm, "W n\n");
@@ -1333,6 +1398,8 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern)
         code = write_image_with_clip(pdev, cvd, for_pattern);
         stream_puts(pdev->strm, "Q\n");
     }
+    cvd->mdev.width += cvd->mdev.mapped_x;
+    cvd->mdev.height += cvd->mdev.mapped_y;
     if (code > 0)
         code = (*dev_proc(&cvd->mdev, fill_rectangle))((gx_device *)&cvd->mdev,
                 0, 0, cvd->mdev.width, cvd->mdev.height, (gx_color_index)0);
@@ -1403,6 +1470,11 @@ lcvd_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason
     int ret;
     dev_t_proc_fill_rectangle((*fill_rectangle), gx_device);
     dev_t_proc_copy_color((*copy_color), gx_device);
+    int w = cvd->mdev.width;
+    int h = cvd->mdev.height;
+
+    cvd->mdev.width -= cvd->mdev.mapped_x;
+    cvd->mdev.height -= cvd->mdev.mapped_y;
 
     if (reason == transform_pixel_region_begin) {
         local_data = *data;
@@ -1422,6 +1494,8 @@ lcvd_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason
         local_clip.q.y -= cvd->mdev.mapped_y;
         ret = cvd->std_transform_pixel_region(dev, reason, &local_data);
         data->state = local_data.state;
+        cvd->mdev.width = w;
+        cvd->mdev.height = h;
         return ret;
     }
     copy_color = dev_proc(&cvd->mdev, copy_color);
@@ -1431,6 +1505,8 @@ lcvd_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason
     ret = cvd->std_transform_pixel_region(dev, reason, data);
     dev_proc(&cvd->mdev, copy_color) = copy_color;
     dev_proc(&cvd->mdev, fill_rectangle) = fill_rectangle;
+    cvd->mdev.width = w;
+    cvd->mdev.height = h;
     return ret;
 }
 
@@ -1451,7 +1527,10 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     cvd->pdev = pdev;
     gs_make_mem_device(&cvd->mdev, gdev_mem_device_for_bits(pdev->color_info.depth),
                 mem, 0, (gx_device *)pdev);
-    cvd->mdev.width  = w;
+    /* x and y are always non-negative here. */
+    if (x < 0 || y < 0)
+        return_error(gs_error_Fatal);
+    cvd->mdev.width  = w; /* The size we want to allocate for */
     cvd->mdev.height = h;
     cvd->mdev.mapped_x = x;
     cvd->mdev.mapped_y = y;
@@ -1465,15 +1544,15 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     cvd->write_matrix = true;
     code = (*dev_proc(&cvd->mdev, open_device))((gx_device *)&cvd->mdev);
     if (code < 0)
-        return code;
+        return code; /* FIXME: free cvd? */
     code = (*dev_proc(&cvd->mdev, fill_rectangle))((gx_device *)&cvd->mdev,
                 0, 0, cvd->mdev.width, cvd->mdev.height, (gx_color_index)0);
     if (code < 0)
-        return code;
+        return code; /* FIXME: free cvd? */
     if (need_mask) {
         mask = gs_alloc_struct(mem, gx_device_memory, &st_device_memory, "pdf_setup_masked_image_converter");
         if (mask == NULL)
-            return_error(gs_error_VMerror);
+            return_error(gs_error_VMerror); /* FIXME: free cvd? */
         cvd->mask = mask;
         gs_make_mem_mono_device(mask, mem, (gx_device *)pdev);
         mask->width = cvd->mdev.width;
@@ -1482,12 +1561,12 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
         mask->bitmap_memory = mem;
         code = (*dev_proc(mask, open_device))((gx_device *)mask);
         if (code < 0)
-            return code;
+            return code; /* FIXME: free cvd? */
         if (write_on_close) {
             code = (*dev_proc(mask, fill_rectangle))((gx_device *)mask,
                         0, 0, mask->width, mask->height, (gx_color_index)0);
             if (code < 0)
-                return code;
+                return code; /* FIXME: free cvd? */
         }
     }
     cvd->std_copy_color = dev_proc(&cvd->mdev, copy_color);
@@ -1500,11 +1579,10 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
         /* Type 3 images will write to the mask directly. */
         dev_proc(&cvd->mdev, fill_rectangle) = (need_mask ? lcvd_fill_rectangle_shifted2
                                                           : lcvd_fill_rectangle_shifted);
-        dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_shifted_from_mdev;
     } else {
         dev_proc(&cvd->mdev, fill_rectangle) = lcvd_fill_rectangle_shifted;
-        dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_shifted_from_mdev;
     }
+    dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_shifted_from_mdev;
     dev_proc(&cvd->mdev, copy_color) = lcvd_copy_color_shifted;
     dev_proc(&cvd->mdev, copy_mono) = lcvd_copy_mono_shifted;
     dev_proc(&cvd->mdev, dev_spec_op) = lcvd_dev_spec_op;
@@ -1517,12 +1595,16 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
             mask->is_open = true;
         dev_proc(&cvd->mdev, close_device) = lcvd_close_device_with_writing;
     }
+    cvd->mdev.width  = w + x; /* The size we appear to the world as */
+    cvd->mdev.height = h + y;
     return 0;
 }
 
 void
 pdf_remove_masked_image_converter(gx_device_pdf *pdev, pdf_lcvd_t *cvd, bool need_mask)
 {
+    cvd->mdev.width  -= cvd->mdev.mapped_x;
+    cvd->mdev.height -= cvd->mdev.mapped_y;
     (*dev_proc(&cvd->mdev, close_device))((gx_device *)&cvd->mdev);
     if (cvd->mask) {
         (*dev_proc(cvd->mask, close_device))((gx_device *)cvd->mask);

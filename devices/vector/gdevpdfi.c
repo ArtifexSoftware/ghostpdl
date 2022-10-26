@@ -2145,6 +2145,8 @@ pdf_image3_make_mcde(gx_device *dev, const gs_gstate *pgs,
         cvd->m = pdev->converting_image_matrix;
         cvd->mdev.mapped_x = origin->x;
         cvd->mdev.mapped_y = origin->y;
+        cvd->mdev.width += origin->x;
+        cvd->mdev.height += origin->y;
         *pmcdev = (gx_device *)&cvd->mdev;
         code = gx_default_begin_typed_image
             ((gx_device *)&cvd->mdev, pgs, pmat, pic, prect, pdcolor, NULL, mem,
