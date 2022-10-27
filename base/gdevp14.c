@@ -8819,15 +8819,21 @@ cleanup:
         if (p14dev->in_smask_construction > 0 || p14dev->depth_within_smask)
             return 0;
 
-        /* If the target CS is different than the pdf14 profile do not
-           allow replacement. */
+        /* If the target CS is different than the pdf14 profile add this information
+           for the target device that will be handling the replacement. While not
+           perfect this at least lets you do the replacehment and have some information
+           about what the situation is. */
         code = dev_proc(tdev, get_profile)((gx_device*) tdev, &tdev_profile);
         if (code != 0)
             return 0;
 
         if (tdev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->hashcode !=
-            p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->hashcode)
-            return 0;
+            p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->hashcode) {
+            color_replace_t* replace_data = (color_replace_t*)data;
+            /* Not ref counted as data is on the stack (from gx_remap_ICC) and we should be fine during this
+               color remap operation. */
+            replace_data->pdf14_iccprofile = p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
+        }
 
         /* Pass on to target device */
         return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);

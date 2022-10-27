@@ -454,16 +454,17 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     cmm_dev_profile_t *dev_profile;
     int code;
 
-    color_replace_s param;
+    color_replace_t param;
     param.pcc = pcc;
     param.pcs = pcs;
     param.pdc = pdc;
     param.pgs = pgs;
+    param.pdf14_iccprofile = NULL;
 
     /* Try color replacement. If successful (>0) then no
        ICC color management for this color. */
     if (dev_proc(pgs->device, dev_spec_op)(pgs->device,
-        gxdso_replacecolor, &param, sizeof(color_replace_s)) > 0)
+        gxdso_replacecolor, &param, sizeof(color_replace_t)) > 0)
         return 0;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);

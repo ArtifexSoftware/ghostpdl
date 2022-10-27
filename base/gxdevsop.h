@@ -136,12 +136,13 @@ typedef struct pattern_accum_param_t {
 }pattern_accum_param_s;
 
 /* Structure used for device specific color setting */
-typedef struct color_replace_t {
+typedef struct color_replace_s {
     gx_device_color *pdc;
     const gs_color_space *pcs;
     const gs_client_color *pcc;
     const gs_gstate *pgs;  /* Perhaps needed for named color profile information */
-} color_replace_s;
+    cmm_profile_t *pdf14_iccprofile;
+} color_replace_t;
 
 /* Operation for pdf14 device to perform when in fill stroke
    commands occurring in gdevabuf.c (alphabits) device. This
@@ -503,8 +504,8 @@ enum {
     /* Color replacement method.  Intercepts remap color method(s) to
      *  enable the device map source colors to device colors directly
      *  in a method defined in the device.
-     *       data = color_replace_s
-     *       size = sizeof(color_replace_s)
+     *       data = color_replace_t
+     *       size = sizeof(color_replace_t)
      *
      *  Returns 0 is no replacment is made.
      *  Returns >0 if replacement occurred. */

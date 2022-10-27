@@ -120,6 +120,10 @@ typedef struct psd_device_s {
 
     bool warning_given;  /* Used to notify the user that max colorants reached */
 
+#if ENABLE_COLOR_REPLACE
+    bool color_replace_warning_given;
+#endif
+
 } psd_device;
 
 /* GC procedures */
@@ -151,15 +155,32 @@ psd_spec_op(gx_device *dev_, int op, void *data, int datasize)
        standard ICC color management */
     if (op == gxdso_replacecolor) {
 
-        color_replace_s *replace_data = (color_replace_s *)data;
+        color_replace_t *replace_data = (color_replace_t *)data;
         gx_device_color *pdc = replace_data->pdc;
         const gs_color_space *pcs = replace_data->pcs;
         const gs_client_color *pcc = replace_data->pcc;
         const gs_gstate *pgs = replace_data->pgs;  /* Perhaps needed for named color profile information */
+        psd_device* pdev_psd = (psd_device*)dev_;
+
+        /* Just a warning here for now. When pdf14_profile is set, the user
+           may need to do some extra work to get a desired color replacement.
+           Note that the pdf14 color space can be completely different
+           than the target device color space, which is what this will indicate.
+           If the color space is gray or rgb we don't fool with any remap in this
+           example. */
+        if (replace_data->pdf14_iccprofile != NULL && !(pdev_psd->color_replace_warning_given)) {
+            dmlprintf(pdev_psd->memory, "Warning. Doing color replacement for PDF14 device!\n");
+            pdev_psd->color_replace_warning_given = true;
+            if (replace_data->pdf14_iccprofile->num_comps == 3 ||
+                replace_data->pdf14_iccprofile->num_comps == 1) {
+                return false;
+            }
+        }
 
         /* CMYK or CIELAB source colors that are vector fills. */
         if ((pcs->cmm_icc_profile_data->data_cs == gsCMYK ||
-             pcs->cmm_icc_profile_data->data_cs == gsCIELAB) &&
+             pcs->cmm_icc_profile_data->data_cs == gsCIELAB ||
+             pcs->cmm_icc_profile_data->data_cs == gsRGB ) &&
             dev_->graphics_type_tag == GS_VECTOR_TAG) {
 
             int jj, ii;
@@ -190,7 +211,7 @@ psd_spec_op(gx_device *dev_, int op, void *data, int datasize)
                         pdc->colors.devn.values[ii] = 65535 - values[ii];
                     }
                 }
-            } else {
+            } else if (pcs->cmm_icc_profile_data->data_cs == gsCIELAB) {
                 /* CIELAB case.  Lets make color K only based upon luminance */
                 int luminance = 65535 * pcc->paint.values[0] / 100.0;
                 replace = 1;
@@ -198,6 +219,14 @@ psd_spec_op(gx_device *dev_, int op, void *data, int datasize)
                 if (luminance > 65535)
                     luminance = 65535;
                 pdc->colors.devn.values[3] = luminance;
+            } else {
+                /* Source is RGB case */
+                /* Lets invert these as C = R, M = G, Y = B, K = 0 */
+                replace = 1;
+
+                for (ii = 0; ii < 3; ii++) {
+                    pdc->colors.devn.values[ii] = 65535 * pcc->paint.values[ii];
+                }
             }
 
             if (replace) {
@@ -458,6 +487,11 @@ psd_prn_open(gx_device * pdev)
     code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
 
     pdev_psd->warning_given = false;
+
+#if ENABLE_COLOR_REPLACE
+    pdev_psd->color_replace_warning_given = false;
+#endif
+
     /* For the planar device we need to set up the bit depth of each plane.
        For other devices this is handled in check_device_separable where
        we compute the bit shift for the components etc. */
