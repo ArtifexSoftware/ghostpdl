@@ -76,7 +76,13 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
     if (index <= pdev->outline_depth && pdev->outline_levels)
         ENUM_RETURN(pdev->outline_levels[index].last.action);
     index -= pdev->outline_depth + 1;
+
+    if (index < pdev->PatternDepth) {
+       ENUM_RETURN(pdev->initial_pattern_states[index]);
+    }
+    index -= pdev->PatternDepth;
     ENUM_PREFIX(st_device_psdf, 0);
+
 }
  ENUM_PTR(0, gx_device_pdf, asides.strm);
  ENUM_PTR(1, gx_device_pdf, asides.strm_buf);
@@ -191,6 +197,9 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
                 RELOC_PTR(gx_device_pdf, outline_levels[i].first.action);
                 RELOC_PTR(gx_device_pdf, outline_levels[i].last.action);
             }
+        }
+        for (i = 0; i < pdev->PatternDepth; i++) {
+            RELOC_PTR(gx_device_pdf, initial_pattern_states[i]);
         }
     }
  RELOC_PTR(gx_device_pdf, outline_levels);

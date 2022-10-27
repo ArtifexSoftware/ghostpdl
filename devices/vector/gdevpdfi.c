@@ -39,6 +39,8 @@
 #include "gsform1.h"
 #include "gxpath.h"
 
+extern_st(st_gs_gstate);
+
 /* Forward references */
 static image_enum_proc_plane_data(pdf_image_plane_data);
 static image_enum_proc_end_image(pdf_image_end_image);
@@ -2714,7 +2716,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     int pdepth = 0;
 
                     while (pdev->initial_pattern_states[pdepth] != 0x00) {
-                        gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdepth], "Freeing dangling pattern state");
+                        gs_free_object(pdev->pdf_memory, pdev->initial_pattern_states[pdepth], "Freeing dangling pattern state");
                         pdev->initial_pattern_states[pdepth] = NULL;
                         pdepth++;
                     }
@@ -2732,16 +2734,17 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states, "Freeing old pattern state stack");
                     pdev->initial_pattern_states = new_states;
                 }
-                pdev->initial_pattern_states[pdev->PatternDepth] = (gs_gstate *)gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, sizeof(gs_gstate), "pattern initial graphics state");
+                pdev->initial_pattern_states[pdev->PatternDepth] = (gs_gstate *)gs_alloc_struct(pdev->pdf_memory, gs_gstate, &st_gs_gstate, "gdev_pdf_dev_spec_op");
                 if (pdev->initial_pattern_states[pdev->PatternDepth] == NULL)
                     return code;
                 memset(pdev->initial_pattern_states[pdev->PatternDepth], 0x00, sizeof(gs_gstate));
+                pdev->initial_pattern_states[pdev->PatternDepth]->memory = pdev->pdf_memory;
 
                 reset_gstate_for_pattern(pdev, pdev->initial_pattern_states[pdev->PatternDepth], pgs);
                 code = pdf_enter_substream(pdev, resourcePattern, pinst->id, &pres, false,
                         pdev->CompressStreams);
                 if (code < 0) {
-                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                    gs_free_object(pdev->pdf_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
                     pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
                     return code;
                 }
@@ -2757,7 +2760,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 pres->rid = pinst->id;
                 code = pdf_store_pattern1_params(pdev, pres, pinst);
                 if (code < 0) {
-                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                    gs_free_object(pdev->pdf_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
                     pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
                     return code;
                 }
@@ -2781,7 +2784,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     }
                     code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
                     if (code < 0) {
-                        gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                        gs_free_object(pdev->pdf_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
                         pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
                         return code;
                     }
@@ -2789,7 +2792,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 pres = pres1 = pdev->accumulating_substream_resource;
                 code = pdf_exit_substream(pdev);
                 if (code < 0) {
-                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                    gs_free_object(pdev->pdf_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
                     pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
                     return code;
                 }
@@ -2801,7 +2804,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 }
                 code = pdf_find_same_resource(pdev, resourcePattern, &pres, check_unsubstituted2);
                 if (code < 0) {
-                    gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                    gs_free_object(pdev->pdf_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
                     pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
                     return code;
                 }
@@ -2810,7 +2813,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
 
                     code = pdf_cancel_resource(pdev, pres1, resourcePattern);
                     if (code < 0) {
-                        gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
+                        gs_free_object(pdev->pdf_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
                         pdev->initial_pattern_states[pdev->PatternDepth] = NULL;
                         return code;
                     }
@@ -2821,7 +2824,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 } else if (pres->object->id < 0)
                     pdf_reserve_object_id(pdev, pres, 0);
                 reset_gstate_for_pattern(pdev, pgs, pdev->initial_pattern_states[pdev->PatternDepth - 1]);
-                gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdev->PatternDepth - 1], "Freeing dangling pattern state");
+                gs_free_object(pdev->pdf_memory, pdev->initial_pattern_states[pdev->PatternDepth - 1], "Freeing dangling pattern state");
                 pdev->initial_pattern_states[pdev->PatternDepth - 1] = NULL;
                 if (pdev->PatternDepth == 1) {
                     gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states, "Freeing dangling pattern state");
