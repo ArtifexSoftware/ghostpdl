@@ -339,7 +339,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
 
                     cidbase = 0;
                     for (m = 0; m < size; m++) {
-                        cidbase |= stobj[i + 2].val.arr[k - srcs].val.string[size - m - 1];
+                        cidbase |= stobj[i + 2].val.arr[k - srcs].val.string[size - m - 1] << (8 * m);
                     }
                 }
                 else {
