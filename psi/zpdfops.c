@@ -1195,18 +1195,42 @@ static int zpdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph)
     return 0;
 }
 
-static int param_value_get_namelist(pdf_context *ctx, ref *pvalueref, char ***pstrlist)
+static int param_value_get_namelist(gs_memory_t *ps_mem, pdf_context *ctx, ref *pvalueref, char ***pstrlist)
 {
     char *data;
-    uint size;
+    uint size, count;
+    char **strlist = NULL;
+    ref lval, sref;
+    int code;
 
-    if (!r_has_type(pvalueref, t_string))
-        return_error(gs_error_typecheck);
+    check_read_type(*pvalueref, t_array);
 
-    data = (char *)pvalueref->value.bytes;
-    size = pvalueref->tas.rsize;
+    strlist = (char **)gs_alloc_bytes(ctx->memory, (r_size(pvalueref)+1)*sizeof(char *), "param_value_get_namelist");
+    if (strlist == NULL)
+        return_error(gs_error_VMerror);
+    memset(strlist, 0x00, (r_size(pvalueref)+1)*sizeof(char *));
 
-    return pdfi_parse_name_cstring_array(ctx, data, size, pstrlist);
+    for (count = 0;count < r_size(pvalueref); count++) {
+        code = array_get(ps_mem, pvalueref, count, &lval);
+        if (code < 0)
+            return code;
+
+        if (!r_has_type(&lval, t_string) && !r_has_type(&lval, t_name))
+            return_error(gs_error_typecheck);
+
+        if (r_has_type(&lval, t_name))
+            name_string_ref(ps_mem, (const ref *)&lval, &sref);
+        else
+            sref = lval;
+
+        strlist[count] = (char *)gs_alloc_bytes(ctx->memory, sref.tas.rsize + 1, "param_value_get_namelist");
+        if (strlist[count] == NULL)
+            return_error(gs_error_VMerror);
+        memset(strlist[count], 0x00, sref.tas.rsize + 1);
+        memcpy(strlist[count], sref.value.bytes, sref.tas.rsize);
+    }
+    *pstrlist = strlist;
+    return 0;
 }
 
 static int zPDFInit(i_ctx_t *i_ctx_p)
@@ -1435,14 +1459,14 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
                 goto error;
             pdfctx->ctx->args.pdfinfo = pvalueref->value.boolval;
         }
-        if (dict_find_string(pdictref, "SHOWANNOTTYPES", &pvalueref) > 0) {
-            code = param_value_get_namelist(pdfctx->ctx, pvalueref,
+        if (dict_find_string(pdictref, "ShowAnnotTypes", &pvalueref) > 0) {
+            code = param_value_get_namelist(imemory, pdfctx->ctx, pvalueref,
                                             &pdfctx->ctx->args.showannottypes);
             if (code < 0)
                 goto error;
         }
-        if (dict_find_string(pdictref, "PRESERVEANNOTTYPES", &pvalueref) > 0) {
-            code = param_value_get_namelist(pdfctx->ctx, pvalueref,
+        if (dict_find_string(pdictref, "PreserveAnnotTypes", &pvalueref) > 0) {
+            code = param_value_get_namelist(imemory, pdfctx->ctx, pvalueref,
                                             &pdfctx->ctx->args.preserveannottypes);
             if (code < 0)
                 goto error;
