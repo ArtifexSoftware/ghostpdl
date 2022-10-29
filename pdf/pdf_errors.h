@@ -62,4 +62,6 @@ PARAM(E_PDF_MISSINGTYPE,               "A dictionary is missing a required /Type
 PARAM(E_PDF_NESTEDTOODEEP,             "Dictionaries/arrays nested too deeply"),
 PARAM(E_PDF_UNMATCHEDMARK,             "A closing mark (] or >>) had no matching mark, ignoring the closing mark"),
 PARAM(E_PDF_BADPAGECOUNT,              "page tree root node /Count did not match the actual number of pages in the tree."),
+PARAM(E_PDF_NO_ROOT,                   "Can't find the document Catalog"),
+PARAM(E_PDF_BAD_ROOT_TYPE,             "Document Catalog has incorrect /Type"),
 #undef PARAM

@@ -96,14 +96,29 @@ int pdfi_read_Root(pdf_context *ctx)
     }
     else {
         if (pdfi_name_strcmp((pdf_name *)o, "Catalog") != 0){
-            pdfi_countdown(o);
-            pdfi_countdown(o1);
-            /* If we repaired the file, we may already have spotted a potential Root dictionary
-             * so if the one we found here isn't valid, try the one we found when scanning
+            pdf_obj *pages = NULL;
+
+            /* Bug #706038 has a Root dictionary with /Type /Calalog which (of course) Acrobat
+             * happily opens :-( So if we find a /Type and it's not /Catalog, try and see if
+             * we have a /Pages key (the only other required entry). If we do assume that the
+             * Type is wrong and use this dictionary, otherwise fall back to seeing if we
+             * have a repaired Root. See above for handling a missing /Type.....
              */
-            if (ctx->Root == NULL)
-                return_error(gs_error_syntaxerror);
-            return 0;
+            code = pdfi_dict_get_type(ctx, (pdf_dict *)o1, "Pages", PDF_DICT, &pages);
+            if (code < 0) {
+                pdfi_countdown(o);
+                pdfi_countdown(o1);
+                /* If we repaired the file, we may already have spotted a potential Root dictionary
+                 * so if the one we found here isn't valid, try the one we found when scanning
+                 */
+                if (ctx->Root == NULL) {
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_NO_ROOT, "pdfi_read_Root", NULL);
+                    return_error(gs_error_syntaxerror);
+                }
+                return 0;
+            }
+            pdfi_countdown(pages);
+            pdfi_set_error(ctx, 0, NULL, E_PDF_BAD_ROOT_TYPE, "pdfi_read_Root", NULL);
         }
         pdfi_countdown(o);
     }
