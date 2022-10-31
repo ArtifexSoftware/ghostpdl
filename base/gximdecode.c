@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2021 Artifex Software, Inc.
+/* Copyright (C) 2014-2022 Artifex Software, Inc.
 All Rights Reserved.
 
 This software is provided AS-IS with no warranty, either express or
@@ -39,6 +39,10 @@ get_unpack_proc(gx_image_enum_common_t *pie, image_decode_t *imd,
     int i;
     int index_bps = (imd->bps < 8 ? imd->bps >> 1 : (imd->bps >> 2) + 1);
     int log2_xbytes = (imd->bps <= 8 ? 0 : arch_log2_sizeof_frac);
+
+    imd->unpack = NULL;
+    if (index_bps < 0 || index_bps > 5)
+        return;
 
     switch (format) {
     case gs_image_format_chunky:

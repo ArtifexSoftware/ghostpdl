@@ -2108,6 +2108,10 @@ xps_begin_typed_image(gx_device               *dev,
     pie->decode_st.unpack = NULL;
     get_unpack_proc((gx_image_enum_common_t*)pie, &(pie->decode_st), pim->format,
         pim->Decode);
+    if (pie->decode_st.unpack == NULL){
+        gs_free_object(mem, pie, "xps_begin_image");
+        return_error(gs_rethrow_code(gs_error_rangecheck));
+    }
 
     /* The decode mapping for index colors needs an adjustment */
     if (csindex == gs_color_space_index_Indexed) {

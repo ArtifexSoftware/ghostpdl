@@ -1775,6 +1775,11 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (code < 0)
         goto cleanupExit;
 
+    if (image_info.BPC != 1 && image_info.BPC != 2 && image_info.BPC != 4 && image_info.BPC != 8 && image_info.BPC != 16) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto cleanupExit;
+    }
+
     /* Set the colorspace */
     if (pcs) {
         gs_color_space  *pcs1 = pcs;
