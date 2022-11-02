@@ -1018,6 +1018,10 @@ static void Memento_showStacktrace(void **stack, int numberOfFrames)
 }
 #endif /* MEMENTO_STACKTRACE_METHOD */
 
+#ifndef MEMENTO_BACKTRACE_MAX
+#define MEMENTO_BACKTRACE_MAX 1
+#endif
+
 #ifdef MEMENTO_DETAILS
 static MEMENTO_UINT32
 hashStackTrace(void **stack, int count)
