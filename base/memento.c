@@ -1874,104 +1874,108 @@ int Memento_listBlocksNested(void)
         count++;
     }
 
-    /* Make our block list */
-    blocks = MEMENTO_UNDERLYING_MALLOC(sizeof(void *) * count);
-    if (blocks == NULL)
-        return 1;
+    if (memento.showDetailedBlocks)
+    {
+        /* Make our block list */
+        blocks = MEMENTO_UNDERLYING_MALLOC(sizeof(void *) * count);
+        if (blocks == NULL)
+            return 1;
 
-    /* Populate our block list */
-    b = memento.used.head;
-    minptr = maxptr = MEMBLK_TOBLK(b);
-    mask = (intptr_t)minptr;
-    for (i = 0; b; b = b->next, i++) {
-        void *p = MEMBLK_TOBLK(b);
-        mask &= (intptr_t)p;
-        if (p < minptr)
-            minptr = p;
-        if (p > maxptr)
-            maxptr = p;
-        blocks[i] = p;
-        b->flags &= ~Memento_Flag_HasParent;
-        b->child   = NULL;
-        b->sibling = NULL;
-        b->prev    = NULL; /* parent */
-    }
-    qsort(blocks, count, sizeof(void *), ptrcmp);
+        /* Populate our block list */
+        b = memento.used.head;
+        minptr = maxptr = MEMBLK_TOBLK(b);
+        mask = (intptr_t)minptr;
+        for (i = 0; b; b = b->next, i++) {
+            void *p = MEMBLK_TOBLK(b);
+            mask &= (intptr_t)p;
+            if (p < minptr)
+                minptr = p;
+            if (p > maxptr)
+                maxptr = p;
+            blocks[i] = p;
+            b->flags &= ~Memento_Flag_HasParent;
+            b->child   = NULL;
+            b->sibling = NULL;
+            b->prev    = NULL; /* parent */
+        }
+        qsort(blocks, count, sizeof(void *), ptrcmp);
 
-    /* Now, calculate tree */
-    for (b = memento.used.head; b; b = b->next) {
-        char *p = MEMBLK_TOBLK(b);
-        size_t end = (b->rawsize < MEMENTO_PTRSEARCH ? b->rawsize : MEMENTO_PTRSEARCH);
-        size_t z;
-        VALGRIND_MAKE_MEM_DEFINED(p, end);
-        if (end > sizeof(void *)-1)
-            end -= sizeof(void *)-1;
-        else
-            end = 0;
-        for (z = MEMENTO_SEARCH_SKIP; z < end; z += sizeof(void *)) {
-            void *q = *(void **)(&p[z]);
-            void **r;
+        /* Now, calculate tree */
+        for (b = memento.used.head; b; b = b->next) {
+            char *p = MEMBLK_TOBLK(b);
+            size_t end = (b->rawsize < MEMENTO_PTRSEARCH ? b->rawsize : MEMENTO_PTRSEARCH);
+            size_t z;
+            VALGRIND_MAKE_MEM_DEFINED(p, end);
+            if (end > sizeof(void *)-1)
+                end -= sizeof(void *)-1;
+            else
+                end = 0;
+            for (z = MEMENTO_SEARCH_SKIP; z < end; z += sizeof(void *)) {
+                void *q = *(void **)(&p[z]);
+                void **r;
 
-            /* Do trivial checks on pointer */
-            if ((mask & (intptr_t)q) != mask || q < minptr || q > maxptr)
-                continue;
-
-            /* Search for pointer */
-            r = bsearch(&q, blocks, count, sizeof(void *), ptrcmp);
-            if (r) {
-                /* Found child */
-                Memento_BlkHeader *child = MEMBLK_FROMBLK(*r);
-                Memento_BlkHeader *parent;
-
-                /* We're assuming tree structure, not graph - ignore second
-                 * and subsequent pointers. */
-                if (child->prev != NULL) /* parent */
-                    continue;
-                if (child->flags & Memento_Flag_HasParent)
+                /* Do trivial checks on pointer */
+                if ((mask & (intptr_t)q) != mask || q < minptr || q > maxptr)
                     continue;
 
-                /* Not interested in pointers to ourself! */
-                if (child == b)
-                    continue;
+                /* Search for pointer */
+                r = bsearch(&q, blocks, count, sizeof(void *), ptrcmp);
+                if (r) {
+                    /* Found child */
+                    Memento_BlkHeader *child = MEMBLK_FROMBLK(*r);
+                    Memento_BlkHeader *parent;
 
-                /* We're also assuming acyclicness here. If this is one of
-                 * our parents, ignore it. */
-                parent = b->prev; /* parent */
-                while (parent != NULL && parent != child)
-                    parent = parent->prev; /* parent */
-                if (parent == child)
-                    continue;
+                    /* We're assuming tree structure, not graph - ignore second
+                     * and subsequent pointers. */
+                    if (child->prev != NULL) /* parent */
+                        continue;
+                    if (child->flags & Memento_Flag_HasParent)
+                        continue;
 
-                child->sibling = b->child;
-                b->child = child;
-                child->prev = b; /* parent */
-                child->flags |= Memento_Flag_HasParent;
+                    /* Not interested in pointers to ourself! */
+                    if (child == b)
+                        continue;
+
+                    /* We're also assuming acyclicness here. If this is one of
+                     * our parents, ignore it. */
+                    parent = b->prev; /* parent */
+                    while (parent != NULL && parent != child)
+                        parent = parent->prev; /* parent */
+                    if (parent == child)
+                        continue;
+
+                    child->sibling = b->child;
+                    b->child = child;
+                    child->prev = b; /* parent */
+                    child->flags |= Memento_Flag_HasParent;
+                }
             }
+        }
+
+        /* Now display with nesting */
+        for (b = memento.used.head; b; b = b->next) {
+            if ((b->flags & Memento_Flag_HasParent) == 0)
+            doNestedDisplay(b, 0);
+        }
+
+        MEMENTO_UNDERLYING_FREE(blocks);
+
+        /* Now put the blocks back for valgrind, and restore the prev
+         * and magic values. */
+        prev = NULL;
+        for (b = memento.used.head; b;) {
+            Memento_BlkHeader *next = b->next;
+            b->prev = prev;
+            b->child = MEMENTO_CHILD_MAGIC;
+            b->sibling = MEMENTO_SIBLING_MAGIC;
+            prev = b;
+            VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(*b));
+            b = next;
         }
     }
 
-    /* Now display with nesting */
-    for (b = memento.used.head; b; b = b->next) {
-        if ((b->flags & Memento_Flag_HasParent) == 0)
-            doNestedDisplay(b, 0);
-    }
     fprintf(stderr, " Total number of blocks = %d\n", count);
     fprintf(stderr, " Total size of blocks = "FMTZ"\n", (FMTZ_CAST)size);
-
-    MEMENTO_UNDERLYING_FREE(blocks);
-
-    /* Now put the blocks back for valgrind, and restore the prev
-     * and magic values. */
-    prev = NULL;
-    for (b = memento.used.head; b;) {
-      Memento_BlkHeader *next = b->next;
-      b->prev = prev;
-      b->child = MEMENTO_CHILD_MAGIC;
-      b->sibling = MEMENTO_SIBLING_MAGIC;
-      prev = b;
-      VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(*b));
-      b = next;
-    }
 
     return 0;
 }
@@ -2210,10 +2214,9 @@ void Memento_fin(void)
         if (Memento_nonLeakBlocksLeaked()) {
             Memento_listBlocks();
 #ifdef MEMENTO_DETAILS
-            if (memento.showDetailedBlocks) {
-                fprintf(stderr, "\n");
+            fprintf(stderr, "\n");
+            if (memento.showDetailedBlocks)
                 Memento_listBlockInfo();
-            }
 #endif
             Memento_breakpoint();
             leaked = 1;
