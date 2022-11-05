@@ -829,7 +829,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         }
                         break;
                     case ce2_hflex:
-                        if (!CS_CHECK_CSTACK_BOUNDS(&csp[-5], cstack))
+                        if (!CS_CHECK_CSTACK_BOUNDS(&csp[-6], cstack))
                             return_error(gs_error_invalidfont);
                         CS_CHECK_PUSHN(csp, cstack, 6);
                         csp[6] = fixed_half;	/* fd/100 */
@@ -847,7 +847,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         *csp /= 100;	/* fd/100 */
                         goto flex;
                     case ce2_hflex1:
-                        if (!CS_CHECK_CSTACK_BOUNDS(&csp[-3], cstack))
+                        if (!CS_CHECK_CSTACK_BOUNDS(&csp[-8], cstack))
                             return_error(gs_error_invalidfont);
                         CS_CHECK_PUSHN(csp, cstack, 4);
                         csp[4] = fixed_half;	/* fd/100 */
