@@ -235,7 +235,7 @@ static int pdfi_get_media_size(pdf_context *ctx, pdf_dict *page_dict)
         a = default_media;
     }
 
-    if (!ctx->args.nouserunit) {
+    if (!ctx->args.nouserunit && !ctx->device_state.PassUserUnit) {
         (void)pdfi_dict_knownget_number(ctx, page_dict, "UserUnit", &userunit);
     }
     ctx->page.UserUnit = userunit;
@@ -317,7 +317,13 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     }
 
     if (!ctx->args.nouserunit) {
-        (void)pdfi_dict_knownget_number(ctx, page_dict, "UserUnit", &userunit);
+        if (ctx->device_state.PassUserUnit) {
+            double unit = 1.0;
+            (void)pdfi_dict_knownget_number(ctx, page_dict, "UserUnit", &unit);
+            (void)pdfi_device_set_param_float(ctx->pgs->device, "UserUnit", unit);
+        } else {
+            (void)pdfi_dict_knownget_number(ctx, page_dict, "UserUnit", &userunit);
+        }
     }
     ctx->page.UserUnit = userunit;
 

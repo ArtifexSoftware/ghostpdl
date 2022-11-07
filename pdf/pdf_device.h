@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2021 Artifex Software, Inc.
+/* Copyright (C) 2019-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -21,6 +21,7 @@ bool pdfi_device_check_param_bool(gx_device *dev, const char *param);
 bool pdfi_device_check_param_exists(gx_device *dev, const char *param);
 int pdfi_device_set_param_string(gx_device *dev, const char *paramname, const char *value);
 int pdfi_device_set_param_bool(gx_device *dev, const char *param, bool value);
+int pdfi_device_set_param_float(gx_device *dev, const char *param, float value);
 void pdfi_device_set_flags(pdf_context *ctx);
 int pdfi_device_misc_config(pdf_context *ctx);
 

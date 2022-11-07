@@ -673,18 +673,27 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
       }
       {
         2 index /UserUnit get
-        % The PageSize needs to be multiplied too
-        exch aload 5 1 roll % UserUnit box llx lly urx ury
-        2 index sub exch    % UserUnit box llx lly (ury - lly) urx
-        3 index sub         % UserUnit box llx lly boxheight boxwidth
-        5 index mul         % UserUnit box llx lly boxheight (Boxwidth*UserUnit)
-        exch
-        5 index mul         % UserUnit box llx lly (Boxwidth*UserUnit) (boxheight*UserUnit)
-        4 -2 roll
-        5 index mul exch    % UserUnit box (Boxwidth*UserUnit) (boxheight*UserUnit) (lly*UserUnit) llx
-        5 index mul exch    % UserUnit box (Boxwidth*UserUnit) (boxheight*UserUnit) (llx*UserUnit) (lly*UserUnit)
-        4 2 roll            % UserUnit box (llx*UserUnit) (lly*UserUnit) (Boxwidth*UserUnit) (boxheight*UserUnit)
-        6 -1 roll pop       % box (llx*UserUnit) (lly*UserUnit) (Boxwidth*UserUnit) (boxheight*UserUnit)
+        /PassUserUnit /GetDeviceParam .special_op {exch pop} {//false} ifelse {
+          [ /UserUnit 3 -1 roll .pdfputparams pop pop
+          % No media scaling required, calculate PageSize as the width and height of the box
+          aload 5 1 roll      % box llx lly urx ury
+          2 index sub         % box llx lly urx (ury - lly)
+          exch 3 index sub    % box llx lly (ury - lly) (urx - llx)
+          exch
+        }{
+          % The PageSize needs to be multiplied too
+          exch aload 5 1 roll % UserUnit box llx lly urx ury
+          2 index sub exch    % UserUnit box llx lly (ury - lly) urx
+          3 index sub         % UserUnit box llx lly boxheight boxwidth
+          5 index mul         % UserUnit box llx lly boxheight (Boxwidth*UserUnit)
+          exch
+          5 index mul         % UserUnit box llx lly (Boxwidth*UserUnit) (boxheight*UserUnit)
+          4 -2 roll
+          5 index mul exch    % UserUnit box (Boxwidth*UserUnit) (boxheight*UserUnit) (lly*UserUnit) llx
+          5 index mul exch    % UserUnit box (Boxwidth*UserUnit) (boxheight*UserUnit) (llx*UserUnit) (lly*UserUnit)
+          4 2 roll            % UserUnit box (llx*UserUnit) (lly*UserUnit) (Boxwidth*UserUnit) (boxheight*UserUnit)
+          6 -1 roll pop       % box (llx*UserUnit) (lly*UserUnit) (Boxwidth*UserUnit) (boxheight*UserUnit)
+        } ifelse
       } ifelse
     }
     {
@@ -768,8 +777,18 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
     //systemdict /NoUserUnit .knownget not { //false } if not
     {
       2 index /UserUnit known {
-        2 index /UserUnit get
-        dup scale
+        /PassUserUnit /GetDeviceParam .special_op {
+          exch pop not
+        } {
+          true
+        }ifelse
+
+        % If PassUserUnit isn't handled by the device, or it returns 'false'
+        % then scale the content by the UserUnit. Otherwise do not scale.
+        {
+          2 index /UserUnit get
+          dup scale
+        } if
       } if
     } if
   } ifelse
@@ -777,7 +796,7 @@ systemdict /NEWPDF known not {/NEWPDF //true def} if
   pop % The box
 
   % If we are using the MediaBox (and only the MediaBox) then we
-  % want to clip to the CropBox, if there s one present
+  % want to clip to the CropBox, if there is one present
 
   /MediaBox eq {
     dup /CropBox known {
