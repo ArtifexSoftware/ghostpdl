@@ -3639,7 +3639,8 @@ static int nInstrCount=0;
 
     point = (Int)args[0];
 
-    if ( BOUNDS( args[0], CUR.zp1.n_points ) )
+    if ( BOUNDS( args[0], CUR.zp1.n_points )
+      || BOUNDS( CUR.GS.rp0, CUR.zp0.n_points) )
     {
       CUR.error = TT_Err_Invalid_Reference;
       return;
