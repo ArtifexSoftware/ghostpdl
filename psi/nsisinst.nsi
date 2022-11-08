@@ -298,6 +298,7 @@ Function CJKGen
 FunctionEnd
 
 Function .onInit
+    SetSilent normal
     StrCpy $RebootRequired "no"
 !if "${WINTYPE}" == "64"
     SetRegView 64
