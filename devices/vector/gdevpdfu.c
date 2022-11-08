@@ -1915,8 +1915,10 @@ pdf_page_id(gx_device_pdf * pdev, int page_num)
         pdev->num_pages = new_num_pages;
     }
     if ((Page = pdev->pages[page_num - 1].Page) == 0) {
-        pdev->pages[page_num - 1].Page = Page =
-            cos_dict_alloc(pdev, "pdf_page_id");
+        pdev->pages[page_num - 1].Page = Page = cos_dict_alloc(pdev, "pdf_page_id");
+        if (Page == NULL) {
+            return 0;
+        }
         Page->id = pdf_obj_forward_ref(pdev);
     }
     return Page->id;
