@@ -285,13 +285,16 @@ Function .onGUIEnd
     MessageBox MB_YESNO|MB_ICONQUESTION "Do you wish to reboot the system?" IDNO +2
     Reboot
     done:
+    MessageBox MB_OK "Installation Complete"
 FunctionEnd
 
 Function CJKGen
     ${StrRep} $0 "$FONTS" "\" "/"
     ${StrRep} $1 "$INSTDIR\lib\cidfmap" "\" "/"
     ${StrRep} $2 "$INSTDIR\lib\mkcidfm.ps" "\" "/"
-    ExecWait '"$INSTDIR\bin\gswin${WINTYPE}c.exe" -q -dNOSAFER -dBATCH "-sFONTDIR=$0" "-sCIDFMAP=$1" "$2"'
+;    ExecWait '"$INSTDIR\bin\gswin${WINTYPE}c.exe" -q -dNOSAFER -dBATCH "-sFONTDIR=$0" "-sCIDFMAP=$1" "$2"'
+; NOTE: TIMEOUT below is how long we wait for output from the call, *not* how long we allow it to run for
+    nsExec::Exec /TIMEOUT=30000 '"$INSTDIR\bin\gswin${WINTYPE}c.exe" -q -dNOSAFER -dBATCH "-sFONTDIR=$0" "-sCIDFMAP=$1" "$2"'
 FunctionEnd
 
 Function .onInit
