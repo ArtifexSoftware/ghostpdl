@@ -1124,6 +1124,13 @@ pdfi_annot_display_formatted_text(pdf_context *ctx, pdf_dict *annot,
         /* If EOL character encountered, move down to next line */
         if (charlen == 1) { /* Can only check this for ASCII font */
             if (ch == '\r' || ch == '\n') {
+                if (linestart == true) {
+                    pdf_string dummy;
+
+                    dummy.length = 0;
+                    code = pdfi_annot_display_text(ctx, annot, 0, -lineheight, &dummy);
+                    if (code < 0) goto exit;
+                }
                 linestart = true;
                 continue;
             }
@@ -2924,7 +2931,6 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     bool has_color;
     gs_rect rect, rect2;
     bool need_grestore = false;
-    double x, y;
 
     /* Render only if open */
     code = pdfi_dict_get_bool(ctx, annot, "Open", &Open);
@@ -2999,18 +3005,23 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     code = pdfi_dict_knownget_type(ctx, Parent, "Contents", PDF_STRING, (pdf_obj **)&Contents);
     if (code < 0) goto exit;
     if (code > 0) {
+        gs_rect text_rect;
+
         code = pdfi_gsave(ctx);
         if (code < 0) goto exit;
         need_grestore = true;
         code = pdfi_gs_setgray(ctx, 0);
         if (code < 0) goto exit;
-        x = rect.p.x + 5;
-        y = rect.q.y - 30;
+
+        text_rect.p.x = rect.p.x + 3;
+        text_rect.q.x = rect.q.x - 3;
+        text_rect.p.y = rect.p.y + 3;
+        text_rect.q.y = rect.q.y - 18;
 
         code = pdfi_annot_set_font(ctx, "Helvetica", 9);
         if (code < 0) goto exit;
 
-        code = pdfi_annot_display_simple_text(ctx, annot, x, y, Contents);
+        code = pdfi_annot_display_formatted_text(ctx, annot, &text_rect, Contents, false);
         if (code < 0) goto exit;
 
         code = pdfi_grestore(ctx);
