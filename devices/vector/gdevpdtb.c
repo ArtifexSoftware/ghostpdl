@@ -329,6 +329,8 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
             emprintf1(pdev->memory,
                       "Can't embed the complete font %s due to font error.\n",
                       buf);
+            gs_free_copied_font(copied);
+            copied = NULL;
             goto fail;
         }
         if (code < 0) {
