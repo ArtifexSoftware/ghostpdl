@@ -995,7 +995,8 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     if (has_matte &&
         /* Should always happen, but check for safety */
         ((mask_stack = ctx->mask_stack) != NULL) &&
-        ((maskbuf = mask_stack->rc_mask->mask_buf) != NULL))
+        ((maskbuf = mask_stack->rc_mask->mask_buf) != NULL) &&
+         (maskbuf->data != NULL))
     {
         resolve_matte(maskbuf, src_data, src_planestride, src_rowstride, width, height, src_profile, deep);
     }
