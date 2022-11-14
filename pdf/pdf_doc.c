@@ -1364,6 +1364,7 @@ static int pdfi_doc_Info(pdf_context *ctx)
         if (pdfi_name_is(Key, "Author") || pdfi_name_is(Key, "Creator") ||
             pdfi_name_is(Key, "Title") || pdfi_name_is(Key, "Subject") ||
             pdfi_name_is(Key, "Keywords")) {
+
             code = pdfi_dict_put_obj(ctx, tempdict, (pdf_obj *)Key, Value, true);
             if (code < 0)
                 goto exit;

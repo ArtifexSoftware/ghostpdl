@@ -715,7 +715,7 @@ error:
     return code;
 }
 
-static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, pdf_obj **Name)
+static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, pdf_obj **Name, bool is_root)
 {
     int i = 0, len = strlen(str), code = 0;
     pdf_string *StrKey = NULL;
@@ -737,10 +737,11 @@ static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, 
             goto error;
 
         if (!known) {
-            /* No Limits array (a required entry), so just assume that the
-             * string is in this node and check all the Names anyway
-             */
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_NO_TREE_LIMITS, "pdfi_get_name_from_node", 0);
+            if (!is_root)
+                /* No Limits array (a required entry, except in the Root), so just assume that the
+                 * string is in this node and check all the Names anyway
+                 */
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_NO_TREE_LIMITS, "pdfi_get_name_from_node", 0);
         } else {
             code = pdfi_check_limits(ctx, node, str, len);
             if (code < 0)
@@ -780,7 +781,7 @@ static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, 
         if (code < 0)
             goto error;
 
-        code = pdfi_get_name_from_node(ctx, Kid, str, Name);
+        code = pdfi_get_name_from_node(ctx, Kid, str, Name, false);
         pdfi_countdown(Kid);
         Kid = NULL;
         if (code == 0)
@@ -834,7 +835,7 @@ static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest)
         str[len] = 0;
     }
 
-    code = pdfi_get_name_from_node(ctx, Dests, str, Dest);
+    code = pdfi_get_name_from_node(ctx, Dests, str, Dest, true);
 
 error:
     if (pdfi_type_of(Named) == PDF_NAME)
@@ -899,15 +900,18 @@ int pdfi_pdfmark_modA(pdf_context *ctx, pdf_dict *dict)
                 goto exit;
             pdfi_countdown(D_array);
             D_array = NULL;
-            if (pdfi_type_of(Dest) != PDF_DICT) {
+            if (pdfi_type_of(Dest) != PDF_ARRAY) {
+                if (pdfi_type_of(Dest) != PDF_DICT) {
+                    pdfi_countdown(Dest);
+                    code = gs_note_error(gs_error_typecheck);
+                    goto exit;
+                }
+                code = pdfi_dict_knownget(ctx, (pdf_dict *)Dest, "D", (pdf_obj **)&D_array);
                 pdfi_countdown(Dest);
-                code = gs_note_error(gs_error_typecheck);
-                goto exit;
-            }
-            code = pdfi_dict_knownget(ctx, (pdf_dict *)Dest, "D", (pdf_obj **)&D_array);
-            pdfi_countdown(Dest);
-            if (code <= 0)
-                goto exit;
+                if (code <= 0)
+                    goto exit;
+            } else
+                D_array = (pdf_array *)Dest;
         }
         if (pdfi_type_of(D_array) != PDF_ARRAY) {
             code = gs_note_error(gs_error_typecheck);

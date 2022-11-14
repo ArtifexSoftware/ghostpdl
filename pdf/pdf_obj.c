@@ -674,99 +674,58 @@ static int pdfi_obj_null_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
 
 static int pdfi_obj_string_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
 {
-    int code = 0;
     pdf_string *string = (pdf_string *)obj;
-    int size;
-    int string_len;
     char *buf;
-    char *bufptr;
-    bool non_ascii = false;
-    int num_esc = 0;
-    int i;
-    byte *ptr;
+    int i, length = 0, j;
 
-    string_len = string->length;
-    /* See if there are any non-ascii chars */
-    for (i=0,ptr=string->data;i<string_len;i++,ptr++) {
-        /* TODO: I wanted to convert non-ascii to hex strings, but there
-         * are cases (such as /Author field) where the non-ascii is not really binary
-         * and then pdfwrite barfs on it later.
-         * see gdevpdfu.c/pdf_put_encoded_hex_string(), which is not implemented
-         * and causes crashes...
-         * See sample: tests_private/pdf/sumatra/1532_-_Freetype_crash.pdf
-         *
-         * For now, just disabling the generation of hex strings, which will match
-         * what gs does.  Seems lame.
-         */
-#if 0
-        if (*ptr > 127) {
-            non_ascii = true;
-            break;
-        }
-#endif
-        /* TODO: I was going to just turn special chars into hexstrings, but it turns out
-         * that the pdfwrite driver expects to be able to parse URI strings, and these
-         * can have special characters.  So I will handle the minimum that seems needed for that.
-         */
-        switch (*ptr) {
-        case 0x0a:
-        case 0x0d:
-        case '(':
-        case ')':
-        case '\\':
-            num_esc ++;
-            break;
-        default:
-            break;
+    for (j=0;j<string->length;j++) {
+        if (string->data[j] == 0x0a || string->data[j] == 0x0d || string->data[j] == '(' || string->data[j] == ')' || string->data[j] == '\\')
+                length += 2;
+        else {
+            if (string->data[j] < 0x20 || string->data[j] > 0x7F || string->data[j] == '\\')
+                length += 4;
+            else
+                length++;
         }
     }
-
-    if (non_ascii) {
-        size = string->length * 2 + 2;
-        buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_string_str(data)");
-        if (buf == NULL)
-            return_error(gs_error_VMerror);
-        buf[0] = '<';
-        for (i=0,ptr=string->data;i<string_len;i++,ptr++) {
-            snprintf(buf+2*i+1, 3, "%02X", *ptr);
-        }
-        buf[size-1] = '>';
-    } else {
-        size = string->length + 2 + num_esc;
-        buf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_obj_string_str(data)");
-        if (buf == NULL)
-            return_error(gs_error_VMerror);
-        buf[0] = '(';
-        bufptr = buf + 1;
-        for (i=0,ptr=string->data;i<string_len;i++) {
-            switch (*ptr) {
-            case 0x0d:
-                *bufptr++ = '\\';
-                *bufptr++ = 'r';
-                ptr++;
-                continue;
+    length += 2;
+    buf = (char *)gs_alloc_bytes(ctx->memory, length, "pdfi_obj_string_str(data)");
+    if (buf == NULL)
+        return_error(gs_error_VMerror);
+    buf[0] = '(';
+    i = 1;
+    for (j=0;j<string->length;j++) {
+        switch(string->data[j]) {
             case 0x0a:
-                *bufptr++ = '\\';
-                *bufptr++ = 'n';
-                ptr++;
-                continue;
+                buf[i++] = '\\';
+                buf[i++] = 'n';
+                break;
+            case 0x0d:
+                buf[i++] = '\\';
+                buf[i++] = 'r';
+                break;
             case '(':
             case ')':
             case '\\':
-                *bufptr++ = '\\';
+                buf[i++] = '\\';
+                buf[i++] = string->data[j];
                 break;
             default:
+                if (string->data[j] < 0x20 || string->data[j] > 0x7F) {
+                    buf[i++] = '\\';
+                    buf[i++] = (string->data[j] >> 6) + 0x30;
+                    buf[i++] = ((string->data[j] & 0x3F) >> 3) + 0x30;
+                    buf[i++] = (string->data[j] & 0x07) + 0x30;
+                } else
+                buf[i++] = string->data[j];
                 break;
-            }
-            *bufptr++ = *ptr++;
         }
-        buf[size-1] = ')';
     }
+    buf[i++] = ')';
 
-
-    *len = size;
+    *len = i;
     *data = (byte *)buf;
-    return code;
+    return 0;
 }
 
 static int pdfi_obj_array_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *len)
