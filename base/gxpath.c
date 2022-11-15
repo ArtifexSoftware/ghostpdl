@@ -243,6 +243,16 @@ gx_path_init_bbox_accumulator(gx_path * ppath)
     ppath->procs = &path_bbox_procs;
 }
 
+/* Guarantee that a path's segments are not shared with any other path. */
+static inline int path_unshare(gx_path *ppath)
+{
+    int code = 0;
+
+    if (gx_path_is_shared(ppath))
+        code = path_alloc_copy(ppath);
+    return code;
+}
+
 /*
  * Ensure that a path owns its segments, by copying the segments if
  * they currently have multiple references.
@@ -250,11 +260,7 @@ gx_path_init_bbox_accumulator(gx_path * ppath)
 int
 gx_path_unshare(gx_path * ppath)
 {
-    int code = 0;
-
-    if (gx_path_is_shared(ppath))
-        code = path_alloc_copy(ppath);
-    return code;
+    return path_unshare(ppath);
 }
 
 /*
@@ -390,45 +396,51 @@ rc_free_path_segments(gs_memory_t * mem, void *vpsegs, client_name_t cname)
 
 /* ------ Incremental path building ------ */
 
-/* Guarantee that a path's segments are not shared with any other path. */
-#define path_unshare(ppath)\
-  BEGIN\
-    if ( gx_path_is_shared(ppath) ) {\
-      int code_;\
-      if( (code_ = path_alloc_copy(ppath)) < 0 ) return code_;\
-    }\
-  END
-
 /* Macro for opening the current subpath. */
 /* ppath points to the path; sets psub to ppath->current_subpath. */
-#define path_open()\
-  BEGIN\
-    if ( !path_is_drawing(ppath) ) {\
-      int code_;\
-      if ( !path_position_valid(ppath) )\
-        return_error(gs_error_nocurrentpoint);\
-      code_ = gx_path_new_subpath(ppath);\
-      if ( code_ < 0 ) return code_;\
-    }\
-  END
+static inline int path_open(gx_path *ppath)
+{
+    int code = 0;
+    if ( !path_is_drawing(ppath) ) {
+      if ( path_position_valid(ppath) ) {
+          code = gx_path_new_subpath(ppath);
+      }
+      else {
+          code = gs_note_error(gs_error_nocurrentpoint);
+      }
+    }
+    return code;
+}
 
 /* Macros for allocating path segments. */
 /* Note that they assume that ppath points to the path. */
 /* We have to split the macro into two because of limitations */
 /* on the size of a single statement (sigh). */
-#define path_alloc_segment(pseg,ctype,pstype,stype,snotes,cname)\
-  path_unshare(ppath);\
-  psub = ppath->current_subpath;\
-  if( !(pseg = gs_alloc_struct(gs_memory_stable(ppath->memory), ctype,\
-                               pstype, cname)) )\
-    return_error(gs_error_VMerror);\
-  pseg->type = stype, pseg->notes = snotes, pseg->next = 0
-#define path_alloc_link(pseg)\
-  { segment *prev = psub->last;\
-    prev->next = (segment *)pseg;\
-    pseg->prev = prev;\
-    psub->last = (segment *)pseg;\
-  }
+static inline int path_alloc_segment(gx_path *ppath, segment **ppseg, subpath **ppsub, gs_memory_type_ptr_t pstype, segment_type seg_type, ushort notes, client_name_t cname)
+{
+    int code;
+
+    code = path_unshare(ppath);
+    if (code < 0) return code;
+    if (ppsub)
+        *ppsub = ppath->current_subpath;
+
+    if( !(*ppseg = gs_alloc_struct(gs_memory_stable(ppath->memory), segment, pstype, cname)) )
+      return_error(gs_error_VMerror);
+    (*ppseg)->type = seg_type;
+    (*ppseg)->notes = notes;
+    (*ppseg)->next = 0;
+
+    return 0;
+}
+
+static inline void path_alloc_link(segment *pseg, subpath *psub)
+{
+    segment *prev = psub->last;
+    prev->next = (segment *)pseg;
+    pseg->prev = prev;
+    psub->last = (segment *)pseg;
+}
 
 /* Make a new path (newpath). */
 int
@@ -460,9 +472,12 @@ gx_path_new_subpath(gx_path * ppath)
 {
     subpath *psub;
     subpath *spp;
+    int code;
 
-    path_alloc_segment(spp, subpath, &st_subpath, s_start, sn_none,
-                       "gx_path_new_subpath");
+    code = path_alloc_segment(ppath, (segment **)&spp, &psub, &st_subpath, s_start, sn_none, "gx_path_new_subpath");
+    if (code < 0)
+        return code;
+
     spp->last = (segment *) spp;
     spp->curve_count = 0;
     spp->is_closed = 0;
@@ -574,13 +589,15 @@ gz_path_add_line_notes(gx_path * ppath, fixed x, fixed y, segment_notes notes)
 {
     subpath *psub;
     line_segment *lp;
+    int code;
 
     if (ppath->bbox_set)
         check_in_bbox(ppath, x, y);
-    path_open();
-    path_alloc_segment(lp, line_segment, &st_line, s_line, notes,
-                       "gx_path_add_line");
-    path_alloc_link(lp);
+    code = path_open(ppath);
+    if (code < 0) return code;
+    code = path_alloc_segment(ppath, (segment **)&lp, &psub, &st_line, s_line, notes, "gx_path_add_line");
+    if (code < 0) return code;
+    path_alloc_link((segment *)lp, psub);
     path_set_point(lp, x, y);
     path_update_draw(ppath);
     trace_segment("[P]", ppath->memory, (segment *) lp);
@@ -604,13 +621,15 @@ gz_path_add_gap_notes(gx_path * ppath, fixed x, fixed y, segment_notes notes)
 {
     subpath *psub;
     line_segment *lp;
+    int code;
 
     if (ppath->bbox_set)
         check_in_bbox(ppath, x, y);
-    path_open();
-    path_alloc_segment(lp, line_segment, &st_line, s_gap, notes,
-                       "gx_path_add_gap");
-    path_alloc_link(lp);
+    code = path_open(ppath);
+    if (code < 0) return code;
+    code = path_alloc_segment(ppath, (segment **)&lp, &psub, &st_line, s_gap, notes, "gx_path_add_gap");
+    if (code < 0) return code;
+    path_alloc_link((segment *)lp, psub);
     path_set_point(lp, x, y);
     path_update_draw(ppath);
     trace_segment("[P]", ppath->memory, (segment *) lp);
@@ -638,8 +657,12 @@ gx_path_add_lines_notes(gx_path *ppath, const gs_fixed_point *ppts, int count,
 
     if (count <= 0)
         return 0;
-    path_unshare(ppath);
-    path_open();
+    code = path_unshare(ppath);
+    if (code < 0)
+        return code;
+
+    code = path_open(ppath);
+    if (code < 0) return code;
     psub = ppath->current_subpath;
     prev = psub->last;
     /*
@@ -690,13 +713,15 @@ gx_path_add_dash_notes(gx_path * ppath, fixed x, fixed y, fixed dx, fixed dy, se
 {
     subpath *psub;
     dash_segment *lp;
+    int code;
 
     if (ppath->bbox_set)
         check_in_bbox(ppath, x, y);
-    path_open();
-    path_alloc_segment(lp, dash_segment, &st_dash, s_dash, notes,
-                       "gx_dash_add_dash");
-    path_alloc_link(lp);
+    code = path_open(ppath);
+    if (code < 0) return code;
+    code = path_alloc_segment(ppath, (segment **)&lp, &psub, &st_dash, s_dash, notes, "gx_dash_add_dash");
+    if (code < 0) return code;
+    path_alloc_link((segment *)lp, psub);
     path_set_point(lp, x, y);
     lp->tangent.x = dx;
     lp->tangent.y = dy;
@@ -740,16 +765,18 @@ gz_path_add_curve_notes(gx_path * ppath,
 {
     subpath *psub;
     curve_segment *lp;
+    int code;
 
     if (ppath->bbox_set) {
         check_in_bbox(ppath, x1, y1);
         check_in_bbox(ppath, x2, y2);
         check_in_bbox(ppath, x3, y3);
     }
-    path_open();
-    path_alloc_segment(lp, curve_segment, &st_curve, s_curve, notes,
-                       "gx_path_add_curve");
-    path_alloc_link(lp);
+    code = path_open(ppath);
+    if (code < 0) return code;
+    code = path_alloc_segment(ppath, (segment **)&lp, &psub, &st_curve, s_curve, notes, "gx_path_add_curve");
+    if (code < 0) return code;
+    path_alloc_link((segment *)lp, psub);
     lp->p1.x = x1;
     lp->p1.y = y1;
     lp->p2.x = x2;
@@ -812,8 +839,12 @@ fixed x3, fixed y3, fixed xt, fixed yt, double fraction, segment_notes notes)
 int
 gx_path_add_path(gx_path * ppath, gx_path * ppfrom)
 {
-    path_unshare(ppfrom);
-    path_unshare(ppath);
+    int code = path_unshare(ppfrom);
+    if (code < 0)
+        return code;
+    code = path_unshare(ppath);
+    if (code < 0)
+        return code;
     if (ppfrom->first_subpath) {	/* i.e. ppfrom not empty */
         if (ppath->first_subpath) {	/* i.e. ppath not empty */
             subpath *psub = ppath->current_subpath;
@@ -900,9 +931,9 @@ gz_path_close_subpath_notes(gx_path * ppath, segment_notes notes)
         if (code < 0)
             return code;
     }
-    path_alloc_segment(lp, line_close_segment, &st_line_close,
-                       s_line_close, notes, "gx_path_close_subpath");
-    path_alloc_link(lp);
+    code = path_alloc_segment(ppath, (segment **)&lp, &psub, &st_line_close, s_line_close, notes, "gx_path_close_subpath");
+    if (code < 0) return code;
+    path_alloc_link((segment *)lp, psub);
     path_set_point(lp, psub->pt.x, psub->pt.y);
     lp->sub = psub;
     psub->is_closed = 1;
