@@ -555,12 +555,12 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                     i += 4, j += 2;
                 } else
                     cstr[j++] = cstr[i++];
-                if (j != i) {
-                    pcv->contents.chars.data =
-                    gs_resize_string(pdev->pdf_memory, cstr, csize, j,
-                                     "pdfmark_put_ao_pairs");
-                    pcv->contents.chars.size = j;
-                }
+            if (j != i) {
+                pcv->contents.chars.data =
+                gs_resize_string(pdev->pdf_memory, cstr, csize, j,
+                                 "pdfmark_put_ao_pairs");
+                pcv->contents.chars.size = j;
+            }
         } else if (pdf_key_eq(pair, "/Rect")) {
             gs_rect rect;
             char rstr[MAX_RECT_STRING];
