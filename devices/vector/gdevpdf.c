@@ -2137,7 +2137,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
             /* If the final page makes marks but does not call showpage we don't emit it
              * which can lead to references to non-existent pages.
              */
-            if (page < pdev->next_page) {
+            if (page <= pdev->next_page) {
                 pagehint = &linear_params->PageHints[page - 1];
                 pagehint->NumUniqueObjects++;
                 if (record->LinearisedOffset - LinearisedPageOffset > pagehint->PageLength)
