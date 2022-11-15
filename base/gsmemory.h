@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -77,6 +77,8 @@ typedef struct gs_memory_status_s {
      * allocated data, space available for allocation, and overhead.
      */
     size_t allocated;
+    /* Set by -K for non-gc memory, max memory to use. */
+    size_t limit;
     /*
      * "Used" space is the amount of space used by allocated data
      * plus overhead.

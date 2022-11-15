@@ -1786,6 +1786,7 @@ i_status(gs_memory_t * mem, gs_memory_status_t * pstat)
     pstat->allocated = imem->allocated +
         imem->previous_status.allocated;
     pstat->max_used = 0;		/* unknown for this allocator */
+    pstat->limit = imem->limit;
     pstat->is_thread_safe = false;	/* this allocator is not thread safe */
 }
 

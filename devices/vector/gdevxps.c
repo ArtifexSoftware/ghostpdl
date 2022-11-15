@@ -2102,6 +2102,35 @@ xps_begin_typed_image(gx_device               *dev,
 
     num_components = gs_color_space_num_components(pcs);
     bits_per_pixel = pim->BitsPerComponent * num_components;
+
+    {
+        /* This is a really hacky attempt to avoid running out of memory. This is
+         * inspired by various OSS-fuzz bugs but in particular 53398. This device
+         * uses the libtiff library to write images into the XPS file, libtiff won't
+         * let us use our own memory manager and have rejected patches to allow it
+         * to do so, so it uses system memory. If we have a badly broken file we
+         * might end up asking it to write a ridiculously large image which will
+         * cause it to eat all system memory. So here we try to limit it to any pre-defined
+         * limit. Also, if the width * height * 24 bits (RGB) goes negative then we know
+         * we've exceeded 2^(64 - 1) bytes, which is unreasonable too.
+         */
+        int64_t memory_needed = (int64_t)pim->Width * (int64_t)pim->Height * 3;
+        gs_memory_status_t status;
+
+        if (memory_needed < 0) {
+            gs_free_object(mem, pie, "xps_begin_image");
+            return_error(gs_error_VMerror);
+        }
+
+        gs_memory_status(dev->memory->gs_lib_ctx->memory, &status);
+        if (status.limit < (size_t)~1) {
+            if ( memory_needed > status.limit) {
+                gs_free_object(mem, pie, "xps_begin_image");
+                return_error(gs_error_VMerror);
+            }
+        }
+    }
+
     pie->decode_st.bps = bits_per_pixel / num_components;
     pie->bytes_comp = (pie->decode_st.bps > 8 ? 2 : 1);
     pie->decode_st.spp = num_components;

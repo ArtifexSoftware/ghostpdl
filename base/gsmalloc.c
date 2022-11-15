@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -465,6 +465,7 @@ gs_heap_status(gs_memory_t * mem, gs_memory_status_t * pstat)
     pstat->allocated = mmem->used + avail_snapshot;
     pstat->used = mmem->used;
     pstat->max_used = mmem->max_used;
+    pstat->limit = mmem->limit;
     pstat->is_thread_safe = true;	/* this allocator has a mutex (monitor) and IS thread safe */
     if (mmem->monitor)
         gx_monitor_leave(mmem->monitor);	/* Done with exclusive access */

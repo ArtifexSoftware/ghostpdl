@@ -1362,6 +1362,7 @@ chunk_status(gs_memory_t * mem, gs_memory_status_t * pstat)
     pstat->allocated = cmem->used;
     pstat->used = cmem->used - cmem->total_free;
     pstat->max_used = cmem->max_used;
+    pstat->limit = (size_t)~1;      /* No limit on allocations */
     pstat->is_thread_safe = false;	/* this allocator does not have an internal mutex */
 }
 
