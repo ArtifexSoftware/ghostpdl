@@ -837,6 +837,9 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
                             "pdf_attach_font_resource");
         gs_free_object(pdev->pdf_memory, e->real_widths,
                             "alloc_font_cache_elem_arrays");
+        /* Avoid risk of double freeing above if we come around again */
+        e->glyph_usage = NULL;
+        e->real_widths = NULL;
         return_error(gs_error_VMerror);
     }
     e->num_chars = num_chars;
