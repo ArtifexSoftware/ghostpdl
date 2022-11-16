@@ -1734,6 +1734,7 @@ static int pdfi_annot_draw_InkList(pdf_context *ctx, pdf_dict *annot, pdf_array 
             code = pdfi_array_get_number(ctx, points, j+1, &y2);
             if (code < 0) goto exit;
             code = gs_lineto(ctx->pgs, x2, y2);
+            if (code < 0) goto exit;
         }
 
     stroke:
