@@ -84,6 +84,12 @@ static int pdfi_check_for_spots_by_name(pdf_context *ctx, pdf_name *name,
         if (code < 0)
             return code;
 
+        if (pdfi_type_of(ref_space) == PDF_NAME) {
+            if (pdfi_name_cmp(name, (pdf_name *)ref_space) == 0) {
+                pdfi_set_error(ctx, gs_error_circular_reference, NULL, E_PDF_CIRCULARNAME, NULL, NULL);
+                return_error(gs_error_circular_reference);
+            }
+        }
         /* recursion */
         return pdfi_check_ColorSpace_for_spots(ctx, ref_space, parent_dict, page_dict, spot_dict);
     }
