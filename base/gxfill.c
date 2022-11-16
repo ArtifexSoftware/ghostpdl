@@ -639,10 +639,13 @@ gx_default_fill_path_shading_or_pattern(gx_device * pdev, const gs_gstate * pgs,
                 set_dev_proc(&cdev, fill_path, pass_shading_area_through_clip_path_device);
             code = 0;
         }
-        if (code >= 0)
-            code = pdevc->type->fill_rectangle(pdevc,
+        if (code >= 0) {
+            /* Check clip rectangle covers an actual area */
+            if (cb.p.x != cb.q.x && cb.p.y != cb.q.y)
+                code = pdevc->type->fill_rectangle(pdevc,
                         cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
                         dev, pgs->log_op, rs);
+        }
     }
     if (ppath != NULL)
         gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
