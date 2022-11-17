@@ -579,6 +579,15 @@ int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
                 code = pdfi_get_named_dest(ctx, Dest, (pdf_obj **)&dest_array);
                 if (code < 0)
                     goto exit;
+                if (pdfi_type_of(dest_array) == PDF_DICT) {
+                    pdf_obj *D = NULL;
+                    /* Dict is supposed to contain key "D" with Dest array */
+                    code = pdfi_dict_knownget_type(ctx, (pdf_dict *)dest_array, "D", PDF_ARRAY, &D);
+                    if (code <= 0) goto exit;
+
+                    pdfi_countdown(dest_array);
+                    dest_array = (pdf_array *)D;
+                }
                 code = pdfi_pdfmark_add_Page_View(ctx, link_dict, dest_array);
                 if (code < 0)
                     goto exit;
