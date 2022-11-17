@@ -4181,12 +4181,11 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                 return code;
             pcs->params.separation.sep_type = sep_type;
             pcs->params.separation.mem = imemory->non_gc_memory;
-            name_string_ref(imemory, &sname, &sname);
-            pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, r_size(&sname) + 1, "Separation name");
+            pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, r_size(&tname) + 1, "Separation name");
             if (pcs->params.separation.sep_name == NULL)
                 return_error(gs_error_VMerror);
-            memcpy(pcs->params.separation.sep_name, sname.value.bytes, r_size(&sname));
-            pcs->params.separation.sep_name[r_size(&sname)] = 0x00;
+            memcpy(pcs->params.separation.sep_name, tname.value.bytes, r_size(&tname));
+            pcs->params.separation.sep_name[r_size(&tname)] = 0x00;
             code = array_get(imemory, &namesarray, (long)0, &sname);
             if (code < 0)
                 return code;
