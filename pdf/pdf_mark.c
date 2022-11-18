@@ -588,9 +588,13 @@ int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
                     pdfi_countdown(dest_array);
                     dest_array = (pdf_array *)D;
                 }
-                code = pdfi_pdfmark_add_Page_View(ctx, link_dict, dest_array);
-                if (code < 0)
-                    goto exit;
+                if (pdfi_type_of(dest_array) == PDF_ARRAY) {
+                    code = pdfi_pdfmark_add_Page_View(ctx, link_dict, dest_array);
+                    if (code < 0)
+                        goto exit;
+                } else {
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_BAD_NAMED_DEST, "pdfi_pdfmark_modDest", NULL);
+                }
                 break;
             } else
                 code = pdfi_pdfmark_handle_dest_names(ctx, link_dict, Dest, Names);
