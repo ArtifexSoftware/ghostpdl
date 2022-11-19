@@ -1292,8 +1292,8 @@ void pdfi_pdfmark_write_boxes(pdf_context *ctx, pdf_dict *page_dict)
         "CropBox", "BleedBox", "TrimBox", "ArtBox"
     };
 
-    /* If the device doesn't support pdfmar, exit now */
-    if (!ctx->device_state.writepdfmarks)
+    /* If the device doesn't support pdfmark, or the device modifies the Page Size (making the other boxes unreliable) exit now */
+    if (!ctx->device_state.writepdfmarks || ctx->device_state.ModifiesPageSize)
         return;
 
     /* If we are using somethign other than the MediaBox, don't send these */

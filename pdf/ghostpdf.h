@@ -283,6 +283,8 @@ typedef struct device_state_s {
     /* Should we pass on PageLabels (using a device param, not a pdfmark) */
     bool WantsPageLabels;
     bool PassUserUnit;
+    bool ModifiesPageSize;
+    bool ModifiesPageOrder;
 } device_state_t;
 
 /*

@@ -697,6 +697,23 @@ nup_dev_spec_op(gx_device *dev, int dev_spec_op, void *data, int size)
                 if (strcmp(request->Param, "PdfmarkCapable") == 0) {
                     return(param_write_bool(request->list, "PdfmarkCapable", &code));
                 }
+
+                /* The parameter above is a legacy special op used only by the old PostScript-based
+                 * interpreter. By claiming that the device is not capable of pdfmarks this disables
+                 * ALL pdfmarks with the pdfwrite device which means that many features go missing
+                 * including all annotations (eg Link, Stamp, Text, FreeText etc). which is not
+                 * ideal. The new PDF interpreter written in C has finer grained control and uses
+                 * these two parameters to disable CropBox (and other Boxes) being written with a
+                 * pdfmark, and disables Outlines and Dests if the page order is not preserved.
+                 * We may need more of these later.
+                 */
+                code = true;
+                if (strcmp(request->Param, "ModifiesPageSize") == 0) {
+                    return(param_write_bool(request->list, "ModifiesPageSize", &code));
+                }
+                if (strcmp(request->Param, "ModifiesPageOrder") == 0) {
+                    return(param_write_bool(request->list, "ModifiesPageOrder", &code));
+                }
             }
             /* Fall through */
         default:

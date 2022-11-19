@@ -158,9 +158,12 @@ void pdfi_device_set_flags(pdf_context *ctx)
     /* See if it is a DeviceN (spot capable) */
     ctx->device_state.spot_capable = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
 
+    ctx->device_state.ModifiesPageSize = pdfi_device_check_param_bool(dev, "ModifiesPageSize");
+    ctx->device_state.ModifiesPageOrder = pdfi_device_check_param_bool(dev, "ModifiesPageOrder");
+
     /* If multi-page output, can't do certain pdfmarks */
     if (ctx->device_state.writepdfmarks) {
-        if (gx_outputfile_is_separate_pages(((gx_device_vector *)dev)->fname, dev->memory)) {
+        if (gx_outputfile_is_separate_pages(((gx_device_vector *)dev)->fname, dev->memory) || ctx->device_state.ModifiesPageOrder) {
             ctx->args.no_pdfmark_outlines = true;
             ctx->args.no_pdfmark_dests = true;
         }
